@@ -22,9 +22,11 @@ public static class MartenConfiguration
                 ?? throw new InvalidOperationException("WarehouseDb connection string not found");
             
             options.Connection(connectionString);
-            
-            // Event store configuration per blueprint
-            options.Events.DatabaseSchemaName = "warehouse_events";
+                
+                // Event store configuration per blueprint
+                // ADR-001: Use string stream identity for named streams (stock-ledger-{warehouseId}, etc.)
+                options.Events.StreamIdentity = Marten.Events.StreamIdentity.AsString;
+                options.Events.DatabaseSchemaName = "warehouse_events";
             
             // Performance tuning
             options.Events.MetadataConfig.HeadersEnabled = true;

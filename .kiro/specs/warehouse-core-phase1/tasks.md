@@ -33,40 +33,47 @@ This implementation plan breaks down the Phase 1 warehouse system into increment
   - Set up transactional outbox pattern
   - _Requirements: All (foundation for entire system)_
 
-- [ ] 2. Implement StockLedger Aggregate (Event Sourced)
-  - [ ] 2.1 Create StockLedger aggregate with RecordStockMovement command
+- [x] 2. Implement StockLedger Aggregate (Event Sourced) — **DONE (Package A)**
+  - [x] 2.1 Create StockLedger aggregate with RecordStockMovement command — **DONE**
     - Define StockMovement value objects (MovementId, SKU, Quantity, Location, etc.)
     - Implement RecordStockMovement command handler
     - Implement balance validation logic (physical locations only)
     - Emit StockMoved event
     - _Requirements: 1.1, 1.2, 1.3, 1.6, 1.7_
+    - **Files:** `Domain/Aggregates/StockLedger.cs`, `Domain/MovementType.cs`, `Domain/StockLedgerStreamId.cs`, `Domain/InsufficientBalanceException.cs`, `Application/Commands/RecordStockMovementCommand.cs`, `Application/Commands/RecordStockMovementCommandHandler.cs`, `Application/Ports/IStockLedgerRepository.cs`, `Infrastructure/Persistence/MartenStockLedgerRepository.cs`
+    - **Tests:** `Tests.Unit/StockLedgerTests.cs`, `Tests.Unit/StockLedgerStreamIdTests.cs`, `Tests.Unit/RecordStockMovementCommandHandlerTests.cs`
   
-  - [ ]* 2.2 Write property test for StockLedger balance non-negativity
+  - [x]* 2.2 Write property test for StockLedger balance non-negativity — **DONE**
     - **Property 2: Balance Non-Negativity**
     - **Validates: Requirements 1.2**
+    - **Tests:** `Tests.Property/StockLedgerPropertyTests.cs` → `NoNegativeBalance_AfterAnyValidEventSequence`
   
   - [ ]* 2.3 Write property test for movement immutability
     - **Property 1: Movement Immutability**
     - **Validates: Requirements 1.1**
   
-  - [ ]* 2.4 Write property test for movement constraints
+  - [x]* 2.4 Write property test for movement constraints — **DONE**
     - **Property 4: Movement Constraint Validation**
     - **Validates: Requirements 1.6, 1.7**
+    - **Tests:** `Tests.Property/StockLedgerPropertyTests.cs` → `RecordMovement_AlwaysRejects_NonPositiveQuantity`, `SameFromTo_AlwaysRejected_ForTransfer`
   
   - [ ]* 2.5 Write property test for virtual location bypass
     - **Property 3: Virtual Location Bypass**
     - **Validates: Requirements 1.3**
   
-  - [ ] 2.6 Implement StockLedger concurrency enforcement [MITIGATION V-2]
+  - [x] 2.6 Implement StockLedger concurrency enforcement [MITIGATION V-2] — **DONE**
     - Add expected-version append to RecordStockMovement
     - Implement retry logic with exponential backoff (max 3 retries)
     - Handle EventStreamUnexpectedMaxEventIdException
     - Return concurrency error after retries exhausted
     - _Requirements: 1.9, 1.10, 1.11_
+    - **Files:** `Application/Commands/RecordStockMovementCommandHandler.cs` (Polly retry, max 3, exponential backoff), `Infrastructure/Persistence/MartenStockLedgerRepository.cs` (expected-version append via Marten)
+    - **Tests:** `Tests.Unit/RecordStockMovementCommandHandlerTests.cs` → `Handle_ShouldRetry_OnConcurrencyConflict_AndSucceedOnSecondAttempt`, `Handle_ShouldFail_AfterMaxRetries`
   
-  - [ ]* 2.7 Write property test for StockLedger atomic balance validation [MITIGATION V-2]
+  - [x]* 2.7 Write property test for StockLedger atomic balance validation [MITIGATION V-2] — **DONE**
     - **Property 50: StockLedger Atomic Balance Validation**
     - **Validates: Requirements 1.9-1.11**
+    - **Tests:** `Tests.Property/StockLedgerPropertyTests.cs` → `NoNegativeBalance_AfterAnyValidEventSequence`, `InsufficientBalance_AlwaysDetected`, `TotalStock_IsConserved_ByInternalTransfers`
 
 - [ ] 3. Implement Command Infrastructure
   - [ ] 3.1 Create command handler pipeline with validation
