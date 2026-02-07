@@ -1,4 +1,5 @@
 using LKvitai.MES.Application.Behaviors;
+using LKvitai.MES.Application.Commands;
 using MediatR;
 
 namespace LKvitai.MES.Api.Configuration;
@@ -13,6 +14,8 @@ public static class MediatRConfiguration
         services.AddMediatR(cfg =>
         {
             cfg.RegisterServicesFromAssembly(typeof(Program).Assembly);
+            // Also scan Application assembly for command handlers
+            cfg.RegisterServicesFromAssemblyContaining<StartPickingCommand>();
             
             // Add pipeline behaviors per blueprint
             cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(IdempotencyBehavior<,>));

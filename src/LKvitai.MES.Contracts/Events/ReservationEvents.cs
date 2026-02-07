@@ -62,6 +62,8 @@ public class AllocationDto
 {
     public string SKU { get; set; } = string.Empty;
     public decimal Quantity { get; set; }
+    public string Location { get; set; } = string.Empty;
+    public string WarehouseId { get; set; } = string.Empty;
     public List<Guid> HandlingUnitIds { get; set; } = new();
 }
 
@@ -71,6 +73,7 @@ public class AllocationDto
 /// </summary>
 public class HardLockLineDto
 {
+    public string WarehouseId { get; set; } = string.Empty;
     public string Location { get; set; } = string.Empty;
     public string SKU { get; set; } = string.Empty;
     public decimal HardLockedQty { get; set; }

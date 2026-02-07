@@ -15,10 +15,16 @@
     <PackageReference Include="FluentAssertions" Version="6.12.0" />
     <PackageReference Include="Testcontainers.PostgreSql" Version="3.6.0" />
     <PackageReference Include="coverlet.collector" Version="6.0.0" />
+    <PackageReference Include="Xunit.SkippableFact" Version="1.5.61" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\LKvitai.MES.Api\LKvitai.MES.Api.csproj" />
+    <ProjectReference Include="..\..\LKvitai.MES.Infrastructure\LKvitai.MES.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\LKvitai.MES.Projections\LKvitai.MES.Projections.csproj" />
+    <ProjectReference Include="..\..\LKvitai.MES.Domain\LKvitai.MES.Domain.csproj" />
+    <ProjectReference Include="..\..\LKvitai.MES.Application\LKvitai.MES.Application.csproj" />
+    <ProjectReference Include="..\..\LKvitai.MES.Contracts\LKvitai.MES.Contracts.csproj" />
   </ItemGroup>
 
 </Project>

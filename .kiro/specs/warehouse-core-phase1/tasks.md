@@ -152,14 +152,17 @@ This implementation plan breaks down the Phase 1 warehouse system into increment
     - **Property 22: Hard Reservation No Auto-Expiry**
     - **Validates: Requirements 3.10-3.12**
   
-  - [ ] 7.5 Implement StartPicking orchestration [MITIGATION R-3]
-    - Create StartPicking command handler
+  - [x] 7.5 Implement StartPicking orchestration [MITIGATION R-3] — **DONE (Package B)**
+    - Create StartPicking command handler (delegates to IStartPickingOrchestration)
     - Re-validate balance from event stream (not projection)
     - Query ActiveHardLocks projection for conflict detection
     - Acquire HARD lock with expected-version append
+    - PostgreSQL advisory locks (pg_advisory_xact_lock) for cross-reservation serialization
     - Implement retry logic with exponential backoff (max 3 retries)
     - Update ActiveHardLocks projection inline (same transaction)
     - _Requirements: 3.4, 3.5, 3.13, 3.14, 3.15, 3.16_
+    - **Files:** `Application/Commands/StartPickingCommandHandler.cs`, `Application/Orchestration/IStartPickingOrchestration.cs`, `Application/Ports/IReservationRepository.cs`, `Application/Ports/IActiveHardLocksRepository.cs`, `Infrastructure/Persistence/MartenStartPickingOrchestration.cs`, `Infrastructure/Persistence/MartenReservationRepository.cs`, `Infrastructure/Persistence/MartenActiveHardLocksRepository.cs`, `Infrastructure/DependencyInjection.cs`
+    - **Tests:** `Tests.Unit/ActiveHardLocksProjectionTests.cs` (AdvisoryLockKeyTests), `Tests.Integration/StartPickingConcurrencyTests.cs` (concurrent StartPicking, different stock, non-existent, pending, hard lock rows created)
   
   - [ ]* 7.6 Write property test for StartPicking atomic HARD lock acquisition [MITIGATION R-3]
     - **Property 51: StartPicking Atomic HARD Lock Acquisition**
@@ -218,14 +221,17 @@ This implementation plan breaks down the Phase 1 warehouse system into increment
     - Update on_hand_value table
     - _Requirements: 6.8_
 
-- [ ] 14. Implement ActiveHardLocks Projection [MITIGATION R-4]
-  - [ ] 14.1 Create ActiveHardLocks projection from Reservation events
+- [x] 14. Implement ActiveHardLocks Projection [MITIGATION R-4] — **DONE (Package B)**
+  - [x] 14.1 Create ActiveHardLocks projection from Reservation events — **DONE**
     - Subscribe to PickingStarted events (INSERT row)
     - Subscribe to ReservationConsumed events (DELETE row)
     - Subscribe to ReservationCancelled events (DELETE row)
     - Update active_hard_locks table inline (same transaction as event)
     - Implement idempotent event processing
     - _Requirements: 19.1-19.8_
+    - **Files:** `Projections/ActiveHardLocksProjection.cs` (EventProjection with multi-row store), `Projections/ProjectionRegistration.cs` (Inline lifecycle), `Contracts/ReadModels/ActiveHardLockView.cs` (read-model schema shared by Projections and Infrastructure)
+    - **Tests:** `Tests.Unit/ActiveHardLocksProjectionTests.cs` (12 unit tests: Store, DeleteWhere, ComputeId, idempotency)
+    - **Boundary fix:** ActiveHardLockView moved from Projections to Contracts to avoid Infrastructure→Projections reference
   
   - [ ]* 14.2 Write property test for ActiveHardLocks consistency [MITIGATION R-4]
     - **Property 52: ActiveHardLocks Consistency**

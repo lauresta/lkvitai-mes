@@ -1,69 +1,58 @@
-using Marten.Events.Aggregation;
+using Marten;
 using Marten.Events.Projections;
 using LKvitai.MES.Contracts.Events;
+using LKvitai.MES.Contracts.ReadModels;
 
 namespace LKvitai.MES.Projections;
 
 /// <summary>
-/// ActiveHardLocks projection per blueprint [MITIGATION R-4]
-/// INLINE projection for efficient HARD lock conflict detection
-/// Updated atomically with PickingStarted/Consumed/Cancelled events
-/// CRITICAL: Must be MultiStreamProjection (flat table across all reservations)
+/// ActiveHardLocks inline projection per blueprint [MITIGATION R-4].
+///
+/// Uses EventProjection (not MultiStreamProjection) because a single PickingStartedEvent
+/// can create MULTIPLE rows (one per hard-locked line). EventProjection gives direct access
+/// to IDocumentOperations for multi-document writes within the same transaction.
+///
 /// CRITICAL: Must be ProjectionLifecycle.Inline (same-transaction update)
+/// CRITICAL: V-5 Rule B — uses only self-contained event data (no external queries)
+///
+/// The document type <see cref="ActiveHardLockView"/> lives in Contracts so that
+/// Infrastructure can query it without referencing the Projections project.
 /// </summary>
-public class ActiveHardLocksProjection : MultiStreamProjection<ActiveHardLockView, Guid>
+public class ActiveHardLocksProjection : EventProjection
 {
-    public ActiveHardLocksProjection()
-    {
-        // Identity: composite key (ReservationId, Location, SKU)
-        Identity<PickingStartedEvent>(e => e.ReservationId);
-        Identity<ReservationConsumedEvent>(e => e.ReservationId);
-        Identity<ReservationCancelledEvent>(e => e.ReservationId);
-    }
-    
     /// <summary>
-    /// Insert rows when picking starts (HARD lock acquired)
-    /// V-5 Rule B: Uses only self-contained event data (no external queries)
+    /// Insert one row per hard-locked line when picking starts.
     /// </summary>
-    public void Apply(PickingStartedEvent evt, ActiveHardLockView view)
+    public void Project(PickingStartedEvent evt, IDocumentOperations ops)
     {
-        // Create one row per hard-locked line
         foreach (var line in evt.HardLockedLines)
         {
-            view.ReservationId = evt.ReservationId;
-            view.Location = line.Location;
-            view.SKU = line.SKU;
-            view.HardLockedQty = line.HardLockedQty;
-            view.StartedAt = evt.Timestamp;
+            ops.Store(new ActiveHardLockView
+            {
+                Id = ActiveHardLockView.ComputeId(evt.ReservationId, line.Location, line.SKU),
+                WarehouseId = line.WarehouseId,
+                ReservationId = evt.ReservationId,
+                Location = line.Location,
+                SKU = line.SKU,
+                HardLockedQty = line.HardLockedQty,
+                StartedAt = evt.Timestamp
+            });
         }
     }
-    
-    /// <summary>
-    /// Delete rows when reservation consumed (HARD lock released)
-    /// </summary>
-    public void Apply(ReservationConsumedEvent evt, ActiveHardLockView view)
-    {
-        // Mark for deletion (Marten will handle removal)
-        view.IsDeleted = true;
-    }
-    
-    /// <summary>
-    /// Delete rows when reservation cancelled (HARD lock released)
-    /// </summary>
-    public void Apply(ReservationCancelledEvent evt, ActiveHardLockView view)
-    {
-        // Mark for deletion (Marten will handle removal)
-        view.IsDeleted = true;
-    }
-}
 
-public class ActiveHardLockView
-{
-    public Guid Id { get; set; }
-    public Guid ReservationId { get; set; }
-    public string Location { get; set; } = string.Empty;
-    public string SKU { get; set; } = string.Empty;
-    public decimal HardLockedQty { get; set; }
-    public DateTime StartedAt { get; set; }
-    public bool IsDeleted { get; set; }
+    /// <summary>
+    /// Delete all rows for a reservation when it is consumed (HARD lock released).
+    /// </summary>
+    public void Project(ReservationConsumedEvent evt, IDocumentOperations ops)
+    {
+        ops.DeleteWhere<ActiveHardLockView>(x => x.ReservationId == evt.ReservationId);
+    }
+
+    /// <summary>
+    /// Delete all rows for a reservation when it is cancelled (HARD lock released).
+    /// </summary>
+    public void Project(ReservationCancelledEvent evt, IDocumentOperations ops)
+    {
+        ops.DeleteWhere<ActiveHardLockView>(x => x.ReservationId == evt.ReservationId);
+    }
 }

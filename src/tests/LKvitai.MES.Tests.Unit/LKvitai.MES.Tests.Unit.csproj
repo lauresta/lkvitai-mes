@@ -20,6 +20,9 @@
   <ItemGroup>
     <ProjectReference Include="..\..\LKvitai.MES.Domain\LKvitai.MES.Domain.csproj" />
     <ProjectReference Include="..\..\LKvitai.MES.Application\LKvitai.MES.Application.csproj" />
+    <ProjectReference Include="..\..\LKvitai.MES.Contracts\LKvitai.MES.Contracts.csproj" />
+    <ProjectReference Include="..\..\LKvitai.MES.Projections\LKvitai.MES.Projections.csproj" />
+    <ProjectReference Include="..\..\LKvitai.MES.Infrastructure\LKvitai.MES.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,4 +1,7 @@
+using LKvitai.MES.Application.Orchestration;
+using LKvitai.MES.Application.Ports;
 using LKvitai.MES.Application.Projections;
+using LKvitai.MES.Infrastructure.Persistence;
 using LKvitai.MES.Infrastructure.Projections;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -13,9 +16,14 @@ public static class DependencyInjection
     {
         // Register projection rebuild service (MITIGATION V-5)
         services.AddScoped<IProjectionRebuildService, ProjectionRebuildService>();
-        
-        // Additional infrastructure services to be registered here
-        
+
+        // Repository implementations (Application ports)
+        services.AddScoped<IReservationRepository, MartenReservationRepository>();
+        services.AddScoped<IActiveHardLocksRepository, MartenActiveHardLocksRepository>();
+
+        // Orchestration implementations
+        services.AddScoped<IStartPickingOrchestration, MartenStartPickingOrchestration>();
+
         return services;
     }
 }

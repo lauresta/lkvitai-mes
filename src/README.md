@@ -73,15 +73,24 @@ Swagger UI: `https://localhost:5001/swagger`
 ### 4. Run Tests
 
 ```bash
-# Unit tests
+# All tests (integration tests will be SKIPPED unless Docker is opted-in)
+dotnet test LKvitai.MES.sln
+
+# Unit tests only
 dotnet test tests/LKvitai.MES.Tests.Unit
 
-# Property-based tests
+# Property-based tests only
 dotnet test tests/LKvitai.MES.Tests.Property
 
-# Integration tests
-dotnet test tests/LKvitai.MES.Tests.Integration
+# Integration tests (requires Docker — uses Testcontainers)
+TESTCONTAINERS_ENABLED=1 dotnet test tests/LKvitai.MES.Tests.Integration
 ```
+
+> **Note:** Integration tests use [Testcontainers](https://dotnet.testcontainers.org/) to
+> spin up a real PostgreSQL instance in Docker. They are **opt-in** via the
+> `TESTCONTAINERS_ENABLED=1` environment variable. When the variable is not set,
+> `dotnet test` reports them as **Skipped** (not Failed), so the full solution
+> test suite always passes on machines without Docker.
 
 ## Configuration
 

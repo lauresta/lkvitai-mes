@@ -60,7 +60,7 @@ This document provides the COMPLETE implementation task universe for Warehouse C
 - 2.3.2: Reservation - SOFT/HARD Lock State Machine → Deps: 2.3.1
 - 2.3.3: Reservation - Bumping Logic → Deps: 2.3.2
 - 2.3.4: Reservation - Property Tests → Deps: 2.3.3
-- 2.3.5: Reservation - StartPicking with Re-Validation (R-3) → Deps: 2.3.3, 2.1.1, 4.3.5
+- 2.3.5: Reservation - StartPicking with Re-Validation (R-3) → Deps: 2.3.3, 2.1.1, 4.3.5 ✅ **DONE** — `Application/Commands/StartPickingCommandHandler.cs`, `Infrastructure/Persistence/MartenStartPickingOrchestration.cs`
 - 2.4.1: Valuation - ApplyCostAdjustment Command → Deps: 1.2.1
 - 2.4.2: Valuation - Approval Workflow → Deps: 2.4.1
 - 2.4.3: Valuation - Property Tests → Deps: 2.4.2
@@ -94,11 +94,11 @@ This document provides the COMPLETE implementation task universe for Warehouse C
 - 4.2.1: AvailableStock - Compute Available Qty → Deps: 4.1.1, 2.3.1
 - 4.2.2: AvailableStock - Subscribe to Reservation Events → Deps: 4.2.1
 - 4.2.3: AvailableStock - Property Tests → Deps: 4.2.2
-- 4.3.1: ActiveHardLocks - Inline Projection (R-4) → Deps: 2.3.3
-- 4.3.2: ActiveHardLocks - Insert on HARD Lock → Deps: 4.3.1
-- 4.3.3: ActiveHardLocks - Delete on Consume/Cancel → Deps: 4.3.1
-- 4.3.4: ActiveHardLocks - Property Tests → Deps: 4.3.3
-- 4.3.5: ActiveHardLocks - Query by (location, SKU) → Deps: 4.3.1
+- 4.3.1: ActiveHardLocks - Inline Projection (R-4) → Deps: 2.3.3 ✅ **DONE** — `Projections/ActiveHardLocksProjection.cs` (EventProjection), `Contracts/ReadModels/ActiveHardLockView.cs` (schema in Contracts to avoid Infrastructure→Projections ref)
+- 4.3.2: ActiveHardLocks - Insert on HARD Lock → Deps: 4.3.1 ✅ **DONE** — `ActiveHardLocksProjection.Project(PickingStartedEvent)` stores one view per line
+- 4.3.3: ActiveHardLocks - Delete on Consume/Cancel → Deps: 4.3.1 ✅ **DONE** — `ActiveHardLocksProjection.Project(ReservationConsumedEvent/CancelledEvent)` DeleteWhere
+- 4.3.4: ActiveHardLocks - Property Tests → Deps: 4.3.3 (unit tests done in `Tests.Unit/ActiveHardLocksProjectionTests.cs`)
+- 4.3.5: ActiveHardLocks - Query by (location, SKU) → Deps: 4.3.1 ✅ **DONE** — `Infrastructure/Persistence/MartenActiveHardLocksRepository.cs`, `Application/Ports/IActiveHardLocksRepository.cs`
 - 4.4.1: HandlingUnit Read Model - Query Optimization → Deps: 2.2.2
 - 4.4.2: HandlingUnit Read Model - Projection Lag Monitoring → Deps: 4.4.1
 - 4.5.1: Projection Rebuild - Shadow Table Strategy (V-5) → Deps: 4.1.1
