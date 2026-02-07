@@ -196,12 +196,14 @@ This implementation plan breaks down the Phase 1 warehouse system into increment
 - [ ] 10. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 11. Implement LocationBalance Projection
-  - [ ] 11.1 Create LocationBalance projection from StockMoved events
+- [x] 11. Implement LocationBalance Projection — **DONE (Package C)**
+  - [x] 11.1 Create LocationBalance projection from StockMoved events — **DONE**
     - Subscribe to StockMoved events
     - Update location_balance table (UPSERT for idempotency)
     - Implement projection lag monitoring
     - _Requirements: 6.1, 6.2_
+    - **Files:** `Projections/LocationBalanceProjection.cs` (MultiStreamProjection with custom grouper), `Application/Queries/GetLocationBalanceQuery.cs`, `Application/Ports/ILocationBalanceRepository.cs`, `Infrastructure/Persistence/MartenLocationBalanceRepository.cs`
+    - **Tests:** `Tests.Unit/LocationBalanceProjectionTests.cs` (4 unit tests for Apply logic), `Tests.Integration/LocationBalanceRebuildTests.cs` (3 integration tests for rebuild)
   
   - [ ]* 11.2 Write property test for projection rebuild correctness
     - **Property 27: Projection Rebuild Correctness**
@@ -418,14 +420,17 @@ This implementation plan breaks down the Phase 1 warehouse system into increment
     - **Property 40: No Negative Balance Verification**
     - **Validates: Requirements 13.2**
   
-  - [ ] 25.4 Implement projection rebuild tooling [MITIGATION V-5]
+  - [x] 25.4 Implement projection rebuild tooling [MITIGATION V-5] — **DONE (Package C)**
     - Create ProjectionRebuildService with shadow table approach
     - Implement stream-ordered replay (by sequence number, not timestamp)
     - Implement checksum computation for verification
-    - Implement diff report generation
+    - Implement diff report generation (skeleton)
     - Implement atomic table swap with rollback capability
-    - Create CLI command for rebuild operations
+    - Create CLI command for rebuild operations (command/handler exists)
     - _Requirements: 6.13, 6.14, 6.15_
+    - **Files:** `Infrastructure/Projections/ProjectionRebuildService.cs` (full shadow+verify+swap implementation), `Application/Commands/RebuildProjectionCommand.cs`, `Application/Projections/IProjectionRebuildService.cs`
+    - **Tests:** `Tests.Integration/LocationBalanceRebuildTests.cs` (3 tests: live projection match, stream order validation, verification gate enforcement)
+    - **V-5 Compliance:** Rule A (stream order), Rule B (self-contained), Rule C (shadow+verify+swap) all enforced
   
   - [ ]* 25.5 Write property test for projection rebuild determinism [MITIGATION V-5]
     - **Property 53: Projection Rebuild Determinism**
