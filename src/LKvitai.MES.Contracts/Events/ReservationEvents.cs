@@ -17,10 +17,20 @@ public class StockAllocatedEvent : DomainEvent
     public string LockType { get; set; } = string.Empty;
 }
 
+/// <summary>
+/// Event published when picking starts (SOFT → HARD lock transition)
+/// CRITICAL: Must include all data needed by ActiveHardLocks inline projection (V-5 Rule B compliance)
+/// </summary>
 public class PickingStartedEvent : DomainEvent
 {
     public Guid ReservationId { get; set; }
     public string LockType { get; set; } = "HARD";
+    
+    /// <summary>
+    /// Lines being hard-locked (location, SKU, quantity)
+    /// Required for ActiveHardLocks inline projection to avoid querying Reservation state
+    /// </summary>
+    public List<HardLockLineDto> HardLockedLines { get; set; } = new();
 }
 
 public class ReservationConsumedEvent : DomainEvent
@@ -53,4 +63,15 @@ public class AllocationDto
     public string SKU { get; set; } = string.Empty;
     public decimal Quantity { get; set; }
     public List<Guid> HandlingUnitIds { get; set; } = new();
+}
+
+/// <summary>
+/// Hard lock line data for ActiveHardLocks projection
+/// Self-contained event data (V-5 Rule B compliance)
+/// </summary>
+public class HardLockLineDto
+{
+    public string Location { get; set; } = string.Empty;
+    public string SKU { get; set; } = string.Empty;
+    public decimal HardLockedQty { get; set; }
 }
