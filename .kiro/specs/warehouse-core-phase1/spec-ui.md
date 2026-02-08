@@ -73,8 +73,7 @@ src/LKvitai.MES.WebUI/
 │   ├── RecentMovementDto.cs
 │   ├── AvailableStockItemDto.cs
 │   ├── WarehouseDto.cs
-│   ├── ReservationListItemDto.cs
-│   ├── ReservationDetailDto.cs
+│   ├── ReservationDto.cs
 │   ├── ReservationLineDto.cs
 │   ├── AllocatedHUDto.cs
 │   ├── StartPickingResponseDto.cs
@@ -148,11 +147,13 @@ Each client is a scoped service injected with `IHttpClientFactory.CreateClient("
 
 ### Error Handling Policy (all clients)
 
-1. Call `response.EnsureSuccessStatusCode()` — if throws, go to step 2.
-2. Read response body. If Content-Type is `application/problem+json`, parse into `ProblemDetailsModel`.
-3. Throw `ApiException(problemDetails)` with `StatusCode`, `ErrorCode` (from `type` extension), `TraceId`, `UserMessage` (looked up from `ErrorCodeMessages`).
-4. If response is not ProblemDetails (e.g., plain 500), throw `ApiException` with generic message + status code.
+1. Always read response content first (await `response.Content.ReadAsStringAsync()`).
+2. If `!response.IsSuccessStatusCode`: Parse response body. If Content-Type is `application/problem+json`, parse into `ProblemDetailsModel`. Throw `ApiException(problemDetails)` with `StatusCode`, `ErrorCode` (from `type` extension), `TraceId`, `UserMessage` (looked up from `ErrorCodeMessages`).
+3. If response is not ProblemDetails (e.g., plain 500), throw `ApiException` with generic message + status code.
+4. If `response.IsSuccessStatusCode`: Deserialize response content to expected DTO type.
 5. Page catches `ApiException`, sets error state, renders `ErrorBanner` with message + traceId.
+
+**CRITICAL**: Never use `EnsureSuccessStatusCode()` before reading response body. Always read content first to ensure ProblemDetails can be parsed from error responses.
 
 ---
 
@@ -279,6 +280,7 @@ VerifyResultDto
 
 Defined in `Infrastructure/ErrorCodeMessages.cs` as `static Dictionary<string, string>`:
 
+**Domain-Specific Codes** (from domain logic):
 | ErrorCode | HTTP | User Message |
 |-----------|------|-------------|
 | `INSUFFICIENT_BALANCE` | 422 | Insufficient balance. Cannot complete operation. |
@@ -288,11 +290,19 @@ Defined in `Infrastructure/ErrorCodeMessages.cs` as `static Dictionary<string, s
 | `IDEMPOTENCY_IN_PROGRESS` | 409 | Request is currently being processed. Please wait. |
 | `IDEMPOTENCY_ALREADY_PROCESSED` | 409 | Request already processed. Idempotency key conflict. |
 | `CONCURRENCY_CONFLICT` | 409 | Concurrent modification detected. Please retry. |
+
+**Generic Codes** (from `SharedKernel.DomainErrorCodes`, used by middleware for non-domain failures):
+| ErrorCode | HTTP | User Message |
+|-----------|------|-------------|
 | `VALIDATION_ERROR` | 400 | One or more validation errors occurred. |
 | `NOT_FOUND` | 404 | The requested resource was not found. |
 | `UNAUTHORIZED` | 401 | Authentication required. |
 | `FORBIDDEN` | 403 | You do not have permission to perform this action. |
 | `INTERNAL_ERROR` | 500 | Server error. Please try again later. |
+
+**Fallback Messages** (when no error code present):
+| Scenario | HTTP | User Message |
+|----------|------|-------------|
 | *(unknown code)* | * | An unexpected error occurred. Please try again. |
 | *(no code, HTTP 500)* | 500 | Server error. Please try again later. |
 | *(no code, HTTP 503)* | 503 | Backend unavailable. Please check system status. |

@@ -551,18 +551,18 @@ Query: session.Query<ReservationSummaryView>().Where(r => status == null || r.St
 Pagination: Skip((page-1)*pageSize).Take(pageSize)
 ```
 
-**UI-Res-Idx.4: Create GetReservationDetailQuery + Handler**
+**UI-Res-Idx.4: Enhance SearchReservationsQuery to Return Full Details**
 - **Dependencies:** UI-Res-Idx.2
 - **Acceptance Criteria:**
-  - [ ] Loads single reservation aggregate via IReservationRepository.LoadAsync() for detail modal
-  - [ ] Returns ReservationDetailDto with lines (SKU, requestedQty, allocatedQty, location, warehouseId, allocatedHUs)
-  - [ ] Unit test: handler logic
+  - [ ] Update SearchReservationsQuery to return full ReservationDto (including lines + allocatedHUs) suitable for detail modal
+  - [ ] No separate detail API call needed - list endpoint returns complete data
+  - [ ] Returns ReservationDto with lines (SKU, requestedQty, allocatedQty, location, warehouseId, allocatedHUs with LPN)
+  - [ ] Unit test: handler returns full details in paginated list
 - **Cursor Minimal Context:**
 ```
-Files: Application/Queries/GetReservationDetailQuery.cs, Application/Queries/GetReservationDetailQueryHandler.cs
-Pattern: Load aggregate from event stream, map to DTO
-Repository: IReservationRepository.LoadAsync(reservationId)
-DTO: Include full line details for modal display
+Files: Application/Queries/SearchReservationsQuery.cs, Application/Queries/SearchReservationsQueryHandler.cs
+Pattern: Query returns full DTO with nested collections, join with HandlingUnit for LPN
+DTO: ReservationDto includes complete line details for modal display without extra API call
 ```
 
 ---
@@ -1318,6 +1318,8 @@ Error: Show error banner on 404 (shadow table not found)
 | Projections Admin | UI-0, UI-4 | 21 |
 | **Total** | **6 packages** | **61 tasks** |
 
+**Note:** Per-page totals include shared UI-0 tasks and are not unique totals. Authoritative total is package sum: UI-0 (14) + UI-Res-Index (4) + UI-1 (10) + UI-2 (15) + UI-3 (14) + UI-4 (14) = 71 tasks.
+
 ### Packages to API Endpoints
 
 | Package | API Endpoints | Backend Module |
@@ -1329,10 +1331,6 @@ Error: Show error banner on 404 (shadow table not found)
 | UI-3 | POST /api/reservations/{id}/start-picking<br>POST /api/reservations/{id}/pick | LKvitai.MES.Api (new controller routes) |
 | UI-4 | POST /api/projections/rebuild (sync)<br>POST /api/projections/verify | LKvitai.MES.Api (updated controller) |
 
-### API Endpoints to Backend Commands/Queries
-
-| API Endpoint | Backend Command/Query | Module |
-|--------------|----------------------|--------|
 ### API Endpoints to Backend Commands/Queries
 
 | API Endpoint | Backend Command/Query | Module |

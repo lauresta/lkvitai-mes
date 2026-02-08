@@ -75,7 +75,7 @@ Constraint: Must handle missing traceId gracefully
 
 **Acceptance Criteria:**
 - [ ] `ErrorCodeMessages.cs` created with static `Dictionary<string, string>`
-- [ ] All 12 domain error codes from requirements-ui.md mapped: INSUFFICIENT_BALANCE, RESERVATION_NOT_ALLOCATED, HARD_LOCK_CONFLICT, INVALID_PROJECTION_NAME, IDEMPOTENCY_IN_PROGRESS, IDEMPOTENCY_ALREADY_PROCESSED, CONCURRENCY_CONFLICT, VALIDATION_ERROR, NOT_FOUND, UNAUTHORIZED, FORBIDDEN, INTERNAL_ERROR
+- [ ] All 12 domain error codes from requirements-ui.md mapped: 7 domain-specific codes (INSUFFICIENT_BALANCE, RESERVATION_NOT_ALLOCATED, HARD_LOCK_CONFLICT, INVALID_PROJECTION_NAME, IDEMPOTENCY_IN_PROGRESS, IDEMPOTENCY_ALREADY_PROCESSED, CONCURRENCY_CONFLICT) + 5 generic codes from SharedKernel.DomainErrorCodes (VALIDATION_ERROR, NOT_FOUND, UNAUTHORIZED, FORBIDDEN, INTERNAL_ERROR)
 - [ ] Generic fallback message for unknown codes: "An unexpected error occurred. Please try again."
 - [ ] HTTP status fallbacks: 500 → "Server error. Please try again later.", 503 → "Backend unavailable. Please check system status."
 - [ ] Unit tests verify all required error codes present
@@ -84,7 +84,7 @@ Constraint: Must handle missing traceId gracefully
 ```
 Files: Infrastructure/ErrorCodeMessages.cs
 Pattern: Static dictionary, DomainErrorCode → user message
-Constraint: Must match requirements-ui.md Section 5 table exactly (12 codes including INTERNAL_ERROR)
+Constraint: Must match requirements-ui.md Section 5 table exactly (7 domain + 5 generic = 12 codes)
 ```
 
 **BLOCKER:** Requires backend DomainErrorCode enum definition (API task)
@@ -232,7 +232,7 @@ Constraint: 30s timeout for sync rebuild operations
 **Dependencies:** None (backend task)
 
 **Acceptance Criteria:**
-- [ ] `ReservationSummaryView.cs` created in `LKvitai.MES.Application/ReadModels/`
+- [ ] `ReservationSummaryView.cs` created in `Contracts/ReadModels/ReservationSummaryView.cs`
 - [ ] Properties: `ReservationId`, `Purpose`, `Priority`, `Status`, `LockType`, `CreatedAt`, `LineCount`, `LastUpdated`
 - [ ] Marten index on `Status` field for fast filtering
 - [ ] Marten index on `CreatedAt` field for sorting (Phase 2 prep)
@@ -241,7 +241,7 @@ Constraint: 30s timeout for sync rebuild operations
 
 **Cursor Minimal Context:**
 ```
-Files: Application/ReadModels/ReservationSummaryView.cs, Infrastructure/MartenConfiguration.cs
+Files: Contracts/ReadModels/ReservationSummaryView.cs, Infrastructure/MartenConfiguration.cs
 Pattern: Marten document with indexes, read model projection
 Constraint: Status filter must be fast (<100ms for 10k reservations)
 ```
@@ -250,24 +250,27 @@ Constraint: Status filter must be fast (<100ms for 10k reservations)
 
 ### Task UI-Res-Index.2: Implement ReservationSummaryProjection
 
-**Description:** Create inline projection handler to populate ReservationSummaryView from StockLedger events.
+**Description:** Create SingleStreamProjection to populate ReservationSummaryView from StockLedger events.
 
 **Dependencies:** UI-Res-Index.1
 
 **Acceptance Criteria:**
-- [ ] `ReservationSummaryProjection.cs` created in `LKvitai.MES.Application/Projections/`
-- [ ] Handles `ReservationAllocated` event: Create view with status=ALLOCATED
-- [ ] Handles `PickingStarted` event: Update status to PICKING
-- [ ] Handles `StockPicked` event: Update LastUpdated timestamp
-- [ ] Handles `ReservationConsumed` event: Delete view (or mark inactive)
-- [ ] Projection registered in Marten configuration
+- [ ] `ReservationSummaryProjection.cs` created in `Projections/ReservationSummaryProjection.cs`
+- [ ] Projection type: Marten `SingleStreamProjection<ReservationSummaryView>` with Async lifecycle
+- [ ] Handles `ReservationCreatedEvent`: Create view with initial status
+- [ ] Handles `StockAllocatedEvent`: Update status to ALLOCATED
+- [ ] Handles `PickingStartedEvent`: Update status to PICKING
+- [ ] Handles `ReservationConsumedEvent`: Delete view (or mark inactive)
+- [ ] Handles `ReservationCancelledEvent`: Delete view (or mark cancelled)
+- [ ] Handles `ReservationBumpedEvent`: Update LastUpdated timestamp
+- [ ] Projection registered in Marten configuration as Async
 - [ ] Integration test verifies projection updates on events
-- [ ] Manual test: Allocate reservation → view created, StartPicking → status updated
+- [ ] Manual test: Create reservation → view created, Allocate → status updated, StartPicking → status updated
 
 **Cursor Minimal Context:**
 ```
-Files: Application/Projections/ReservationSummaryProjection.cs, Infrastructure/MartenConfiguration.cs
-Pattern: Marten inline projection, event handlers, CRUD on read model
+Files: Projections/ReservationSummaryProjection.cs, Infrastructure/MartenConfiguration.cs
+Pattern: Marten SingleStreamProjection<T>, Async lifecycle, event handlers
 Constraint: Must handle out-of-order events gracefully
 ```
 
@@ -321,36 +324,11 @@ Constraint: Must include LPN from HandlingUnit projection in list response
 
 ---
 
-### Task UI-Res-Index.5: Create Reservations API Controller
-
-**Description:** Implement ReservationsController with GET /api/reservations endpoint that returns full details.
-
-**Dependencies:** UI-Res-Index.3, UI-Res-Index.4
-
-**Acceptance Criteria:**
-- [ ] `ReservationsController.cs` created in `LKvitai.MES.Api/Controllers/`
-- [ ] GET `/api/reservations` endpoint with query params: `status`, `page`, `pageSize`
-- [ ] Endpoint returns full reservation details including lines and allocated HUs in paginated response
-- [ ] Controller uses MediatR to dispatch SearchReservationsQuery
-- [ ] Controller returns ProblemDetails on errors (404, 500)
-- [ ] Swagger documentation generated for endpoint
-- [ ] Integration test verifies pagination, status filtering, and full details in response
-- [ ] Manual test: Postman/curl returns paginated reservations with lines and HUs
-
-**Cursor Minimal Context:**
-```
-Files: Api/Controllers/ReservationsController.cs, Application/Queries/SearchReservationsQuery.cs
-Pattern: ASP.NET Core controller, MediatR dispatch, ProblemDetails errors
-Constraint: Must return RFC 7807 ProblemDetails on all errors, full details in list response
-```
-
----
-
 ## Package UI-1: Dashboard Page
 
 **Purpose:** Implement Dashboard page with 5 summary cards and auto-refresh.
 
-**Dependencies:** UI-0 (foundation), UI-Res-Index (for reservation summary)
+**Dependencies:** UI-0 (foundation)
 
 **Estimated Effort:** 3-4 days
 
@@ -674,6 +652,30 @@ Constraint: Must validate at least one filter provided (400 error), virtual loca
 
 ---
 
+### Task UI-2.7: Implement CSV Export for Available Stock
+
+**Description:** Add CSV export functionality to Available Stock page for current page items via JS interop.
+
+**Dependencies:** UI-2.4
+
+**Acceptance Criteria:**
+- [ ] Add "Export CSV" button to Available Stock page
+- [ ] Button exports current page items only (not full dataset)
+- [ ] Use JS interop to generate and download CSV file client-side
+- [ ] CSV includes all 7 columns: Warehouse, Location, SKU, Physical Qty, Reserved Qty, Available Qty, Last Updated
+- [ ] CSV filename format: `available-stock-{timestamp}.csv`
+- [ ] Button disabled when no results displayed
+- [ ] Manual test: Export works, CSV opens in Excel/spreadsheet app, data matches table
+
+**Cursor Minimal Context:**
+```
+Files: Pages/AvailableStock.razor, wwwroot/js/csvExport.js
+Pattern: Blazor JS interop, client-side CSV generation, current page export
+Constraint: Export current page only (≤100 rows), no server-side streaming in Phase 1
+```
+
+---
+
 ## Package UI-3: Reservations List Page
 
 **Purpose:** Implement Reservations list page with status filter, detail modal, pick modal, and StartPicking/Pick actions.
@@ -686,7 +688,32 @@ Constraint: Must validate at least one filter provided (400 error), virtual loca
 
 ---
 
-### Task UI-3.1: Create Reservation DTOs
+### Task UI-3.1: Create Reservations API Controller
+
+**Description:** Implement ReservationsController with GET /api/reservations endpoint that returns full details.
+
+**Dependencies:** UI-Res-Index.3, UI-Res-Index.4
+
+**Acceptance Criteria:**
+- [ ] `ReservationsController.cs` created in `LKvitai.MES.Api/Controllers/`
+- [ ] GET `/api/reservations` endpoint with query params: `status`, `page`, `pageSize`
+- [ ] Endpoint returns full reservation details including lines and allocated HUs in paginated response
+- [ ] Controller uses MediatR to dispatch SearchReservationsQuery
+- [ ] Controller returns ProblemDetails on errors (404, 500)
+- [ ] Swagger documentation generated for endpoint
+- [ ] Integration test verifies pagination, status filtering, and full details in response
+- [ ] Manual test: Postman/curl returns paginated reservations with lines and HUs
+
+**Cursor Minimal Context:**
+```
+Files: Api/Controllers/ReservationsController.cs, Application/Queries/SearchReservationsQuery.cs
+Pattern: ASP.NET Core controller, MediatR dispatch, ProblemDetails errors
+Constraint: Must return RFC 7807 ProblemDetails on all errors, full details in list response
+```
+
+---
+
+### Task UI-3.2: Create Reservation DTOs
 
 **Description:** Define DTOs for reservation list (with full details) per spec-ui.md Section 6.
 
@@ -710,11 +737,11 @@ Constraint: Must match API contract exactly, single DTO for list and detail
 
 ---
 
-### Task UI-3.2: Implement ReservationsClient
+### Task UI-3.3: Implement ReservationsClient
 
 **Description:** Create typed HttpClient wrapper for reservations list, StartPicking, and Pick endpoints.
 
-**Dependencies:** UI-0.3 (ApiException), UI-0.7 (HttpClient DI), UI-3.1
+**Dependencies:** UI-0.3 (ApiException), UI-0.7 (HttpClient DI), UI-3.2
 
 **Acceptance Criteria:**
 - [ ] `ReservationsClient.cs` created in `Services/` folder
@@ -732,27 +759,15 @@ Constraint: Must match API contract exactly, single DTO for list and detail
 Files: Services/ReservationsClient.cs, Infrastructure/ApiException.cs, Models/Reservation*.cs
 Pattern: Typed HttpClient, GET list with full details, POST actions, error handling
 Constraint: Must surface specific error codes (409, 422) for user messages
-```ity)`
-- [ ] All methods use `IHttpClientFactory.CreateClient("WarehouseApi")`
-- [ ] All methods parse ProblemDetails on error and throw `ApiException`
-- [ ] Client registered as scoped service in `Program.cs`
-- [ ] Unit test verifies error parsing for 409 (HARD_LOCK_CONFLICT), 422 (INSUFFICIENT_BALANCE)
-- [ ] Integration test calls real API endpoints
-
-**Cursor Minimal Context:**
-```
-Files: Services/ReservationsClient.cs, Infrastructure/ApiException.cs, Models/Reservation*.cs
-Pattern: Typed HttpClient, POST with JSON body, error handling
-Constraint: Must surface specific error codes (409, 422) for user messages
 ```
 
 ---
 
-### Task UI-3.3: Create Reservation Components (Filter, Table, Detail Modal)
+### Task UI-3.4: Create Reservation Components (Filter, Table, Detail Modal)
 
 **Description:** Implement ReservationStatusFilter, ReservationsTable, and ReservationDetailModal components.
 
-**Dependencies:** UI-0.4 (DataTable, Pagination), UI-3.1
+**Dependencies:** UI-0.4 (DataTable, Pagination), UI-3.2
 
 **Acceptance Criteria:**
 - [ ] `ReservationStatusFilter.razor` created with dropdown: All, ALLOCATED, PICKING
@@ -773,11 +788,11 @@ Constraint: Action buttons conditional on status (ALLOCATED → Start Picking, P
 
 ---
 
-### Task UI-3.4: Create Pick Modal Component
+### Task UI-3.5: Create Pick Modal Component
 
 **Description:** Implement PickModal component with HU selection dropdown and quantity input with validation.
 
-**Dependencies:** UI-3.1
+**Dependencies:** UI-3.2
 
 **Acceptance Criteria:**
 - [ ] `PickModal.razor` created with Bootstrap modal
@@ -797,11 +812,11 @@ Constraint: Quantity must be > 0 and <= allocated qty for selected HU
 
 ---
 
-### Task UI-3.5: Implement Reservations Page
+### Task UI-3.6: Implement Reservations Page
 
 **Description:** Create Reservations.razor page with status filter, data table, detail modal, pick modal, and action handlers.
 
-**Dependencies:** UI-3.2, UI-3.3, UI-3.4
+**Dependencies:** UI-3.3, UI-3.4, UI-3.5
 
 **Acceptance Criteria:**
 - [ ] `Reservations.razor` created at route `/reservations`
@@ -825,7 +840,7 @@ Constraint: Must refresh table after successful action, display specific error m
 
 ---
 
-### Task UI-3.6: Create Reservations Action API Endpoints
+### Task UI-3.7: Create Reservations Action API Endpoints
 
 **Description:** Implement POST /api/reservations/{id}/start-picking and POST /api/reservations/{id}/pick endpoints.
 
@@ -1038,14 +1053,14 @@ Constraint: Rebuild must block until complete, no async job/polling
 
 **Total Packages:** 6 (UI-0, UI-Res-Index, UI-1, UI-2, UI-3, UI-4)
 
-**Total Tasks:** 41
+**Total Tasks:** 38
 
 **Package Breakdown:**
 - UI-0 (Foundation): 7 tasks
-- UI-Res-Index (Reservation Projection): 5 tasks
+- UI-Res-Index (Reservation Projection): 4 tasks
 - UI-1 (Dashboard): 6 tasks
-- UI-2 (Available Stock): 6 tasks
-- UI-3 (Reservations): 6 tasks
+- UI-2 (Available Stock): 7 tasks
+- UI-3 (Reservations): 7 tasks
 - UI-4 (Projections): 7 tasks
 
 **Critical Dependencies:**
