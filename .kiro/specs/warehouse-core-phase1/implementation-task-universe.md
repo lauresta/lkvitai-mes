@@ -2527,3 +2527,71 @@ Aligned StockLedger stream partitioning with approved strategy: `(warehouseId, l
 ---
 
 **End of CRIT-01 Hotfix**
+
+---
+
+## CHANGELOG — Hotfix H (CRIT-02): Implement AvailableStock projection rebuild (V-5)
+
+**Date:** 2026-02-08  
+**Severity:** CRIT-02 / V-5
+
+### Problem
+
+`ProjectionRebuildService` only supported `LocationBalance` projection rebuild. The `AvailableStock` projection — a multi-stream projection spanning StockLedger streams (StockMovedEvent) and Reservation streams (PickingStartedEvent, ReservationConsumedEvent, ReservationCancelledEvent) — had no rebuild path. This meant there was no way to verify or repair the AvailableStock projection from the event store.
+
+Additionally, the existing checksum mechanism used `jsonb::text` serialization for comparison, which is nondeterministic due to JSON key ordering and whitespace differences between Marten's default serializer (camelCase) and the shadow table serializer (was PascalCase). This is **MED-01**.
+
+### Solution
+
+1. **Extended `ProjectionRebuildService`** with `projectionName == "AvailableStock"` support:
+   - Replays ALL relevant events in **GLOBAL sequence order** (V-5 Rule A): StockMoved, PickingStarted, ReservationConsumed, ReservationCancelled
+   - Events come from heterogeneous streams (StockLedger + Reservation) — queried via `QueryAllRawEvents().OrderBy(e => e.Sequence)` and filtered by C# type
+   - Apply logic mirrors `AvailableStockProjection` exactly (V-5 Rule B: no external queries)
+   - Shadow table creation, field-based checksum verification, and atomic swap (V-5 Rule C)
+
+2. **Fixed MED-01: Field-based checksum** replaces `jsonb::text`:
+   - Extracts specific fields from JSONB using `data->>'fieldName'` operators
+   - Deterministic regardless of JSON key ordering or serializer differences
+   - Applied to both LocationBalance and AvailableStock projections
+
+3. **Fixed shadow table serialization**:
+   - Shadow data now serialized with `JsonNamingPolicy.CamelCase` to match Marten's default serializer
+   - Ensures checksums can match between live (Marten-serialized) and shadow (manually-serialized) data
+
+4. **Refactored `ProjectionRebuildService`** for multi-projection support:
+   - Extracted generic helpers: `CreateShadowTableAsync`, `SwapTablesAsync`, `InsertDocumentsToShadowAsync`, `ComputeFieldChecksumAsync`
+   - Projection-specific logic in dedicated methods: `ReplayLocationBalanceEventsAsync`, `ReplayAvailableStockEventsAsync`
+   - Table name routing via `projectionName` switch
+
+### Changed Files
+
+| File | Change |
+|------|--------|
+| `src/LKvitai.MES.Infrastructure/Projections/ProjectionRebuildService.cs` | Extended with AvailableStock rebuild, field-based checksum (MED-01), camelCase serialization, multi-projection refactor |
+| `src/tests/LKvitai.MES.Tests.Unit/AvailableStockRebuildUnitTests.cs` | **NEW** — 6 unit tests for rebuild logic |
+| `src/tests/LKvitai.MES.Tests.Integration/AvailableStockRebuildTests.cs` | **NEW** — 3 Docker-gated integration tests |
+| `.kiro/specs/warehouse-core-phase1/tasks.md` | Marked Hotfix H DONE |
+| `.kiro/specs/warehouse-core-phase1/implementation-task-universe.md` | Added CRIT-02 changelog |
+
+### Test Results
+
+- **6 new unit tests** (`AvailableStockRebuildUnitTests`):
+  - Sequence ordering determinism (V-5 Rule A)
+  - Full lifecycle: Receipt → Lock → Pick → Consume
+  - Reservation cancellation releases hard lock
+  - HardLockedQty never goes negative (defensive)
+  - Event type coverage (4 types required)
+  - ComputeId determinism
+
+- **3 new Docker-gated integration tests** (`AvailableStockRebuildTests`):
+  - `RebuildAvailableStock_FullLifecycle_MatchesLiveProjection` — seeds receipt + lock + pick + consume, runs async daemon, rebuilds, verifies checksum match + correct final values
+  - `RebuildAvailableStock_StockMovedOnly_MatchesLive` — simpler case with only StockMoved events
+  - `RebuildProjection_UnknownName_ReturnsError` — error handling for unsupported projection names
+
+**Build Status:** ✅ GREEN (0 errors)  
+**Test Status:** ✅ GREEN (159 unit passed, 26 integration: 1 passed + 25 Docker-gated skipped, 0 failures)  
+**Compliance:** ✅ PASS (V-5 rebuild contract: Rule A global sequence, Rule B self-contained, Rule C shadow+verify+swap; MED-01 field-based checksum)
+
+---
+
+**End of CRIT-02 Hotfix**

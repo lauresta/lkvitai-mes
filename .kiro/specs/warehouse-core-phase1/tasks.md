@@ -546,6 +546,16 @@ This implementation plan breaks down the Phase 1 warehouse system into increment
   - **Tests**: 17 new unit tests (`StockLockKeyTests.cs`), 1 new Docker-gated integration test (`ConcurrentStartPicking_VsTransferOut_NeverExceedsBalance`)
   - **Total tests**: 153 unit+property passed, 23 integration (1 passed, 22 Docker-gated skipped), 0 failures
 
+- [x] **Hotfix H (CRIT-02)**: Implement AvailableStock projection rebuild (V-5) — **DONE**
+  - **Problem**: `ProjectionRebuildService` only supported `LocationBalance`. AvailableStock (a multi-stream projection spanning StockLedger + Reservation streams) had no rebuild path. Additionally, the checksum used `jsonb::text` which is nondeterministic (MED-01).
+  - **Fix**: Extended `ProjectionRebuildService` with `projectionName == "AvailableStock"`. Replays StockMoved, PickingStarted, ReservationConsumed, ReservationCancelled events in GLOBAL sequence order. Shadow table + field-based checksum (MED-01 fix) + atomic swap. Also refactored LocationBalance rebuild to use the same field-based checksum and camelCase serialization for consistency.
+  - **Files**:
+    - `Infrastructure/Projections/ProjectionRebuildService.cs` (modified) — added AvailableStock rebuild path, field-based checksum, camelCase serialization, refactored to support multiple projections
+  - **Tests**:
+    - 6 new unit tests (`AvailableStockRebuildUnitTests.cs`): sequence ordering, full lifecycle, cancellation, HardLockedQty floor, event type coverage, ComputeId determinism
+    - 3 new Docker-gated integration tests (`AvailableStockRebuildTests.cs`): full lifecycle rebuild vs live, stock-moved-only rebuild, unknown projection error
+  - **Total tests**: 159 unit passed, 26 integration (1 passed, 25 Docker-gated skipped), 0 failures
+
 ## Notes
 
 - Tasks marked with `*` are optional and can be skipped for faster MVP
