@@ -28,6 +28,50 @@ public class LocationBalanceProjection : MultiStreamProjection<LocationBalanceVi
         // and create identities for both FROM and TO locations
         CustomGrouping(new LocationBalanceGrouper());
     }
+
+    public LocationBalanceView Apply(StockMovedEvent evt, LocationBalanceView current)
+    {
+        // Marten sets the aggregate identity to current.Id for multi-stream projections.
+        // Use it to detect whether this slice represents FROM or TO location.
+        var isFromLocation = current.Id.EndsWith($":{evt.FromLocation}:{evt.SKU}", StringComparison.Ordinal);
+        var isToLocation = current.Id.EndsWith($":{evt.ToLocation}:{evt.SKU}", StringComparison.Ordinal);
+
+        if (string.IsNullOrEmpty(current.WarehouseId))
+        {
+            InitializeIdentityFields(current);
+        }
+
+        if (isFromLocation)
+        {
+            current.Quantity -= evt.Quantity;
+        }
+
+        if (isToLocation)
+        {
+            current.Quantity += evt.Quantity;
+        }
+
+        current.LastUpdated = evt.Timestamp;
+        return current;
+    }
+
+    private static void InitializeIdentityFields(LocationBalanceView current)
+    {
+        if (string.IsNullOrWhiteSpace(current.Id))
+        {
+            return;
+        }
+
+        var parts = current.Id.Split(':', 3, StringSplitOptions.None);
+        if (parts.Length != 3)
+        {
+            return;
+        }
+
+        current.WarehouseId = parts[0];
+        current.Location = parts[1];
+        current.SKU = parts[2];
+    }
 }
 
 /// <summary>
