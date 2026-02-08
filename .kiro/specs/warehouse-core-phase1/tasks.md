@@ -209,12 +209,16 @@ This implementation plan breaks down the Phase 1 warehouse system into increment
     - **Property 27: Projection Rebuild Correctness**
     - **Validates: Requirements 6.11, 6.12**
 
-- [ ] 12. Implement AvailableStock Projection
-  - [ ] 12.1 Create AvailableStock projection from StockMoved and Reservation events
-    - Subscribe to StockMoved and StockAllocated events
-    - Compute available = physical - reserved
-    - Update available_stock table
+- [x] 12. Implement AvailableStock Projection — **DONE (Package D)**
+  - [x] 12.1 Create AvailableStock projection from StockMoved and Reservation events — **DONE**
+    - Subscribe to StockMovedEvent (onHand), PickingStartedEvent / ReservationConsumedEvent / ReservationCancelledEvent (hardLocked)
+    - Compute available = max(0, onHand - hardLocked); SOFT allocations do NOT reduce availability (Req 3.3 overbooking)
+    - V-5 Rule B: self-contained event data (ReleasedHardLockLines added to Consumed/Cancelled events)
+    - MultiStreamProjection<AvailableStockView, string> with CustomGrouping (Async lifecycle)
     - _Requirements: 6.7_
+    - **Files:** `Contracts/ReadModels/AvailableStockView.cs`, `Projections/AvailableStockProjection.cs` (projection + grouper + static aggregation helper), `Projections/ProjectionRegistration.cs` (Async lifecycle), `Application/Queries/GetAvailableStockQuery.cs` (query + DTO + handler), `Application/Ports/IAvailableStockRepository.cs`, `Infrastructure/Persistence/MartenAvailableStockRepository.cs`, `Infrastructure/DependencyInjection.cs`
+    - **Events enriched:** `Contracts/Events/ReservationEvents.cs` — added `ReleasedHardLockLines` to `ReservationConsumedEvent` and `ReservationCancelledEvent` for V-5 Rule B compliance
+    - **Tests:** `Tests.Unit/AvailableStockProjectionTests.cs` (16 unit tests: receipt, pick, transfer, hardLock, consume, cancel, non-negative guard, full lifecycle, ComputeId, empty lines, V-5 Rule B), `Tests.Integration/AvailableStockIntegrationTests.cs` (3 Docker-gated integration tests: StockMoved-only, StockMoved+PickingStarted, full lifecycle)
 
 - [ ] 13. Implement OnHandValue Projection
   - [ ] 13.1 Create OnHandValue projection from LocationBalance and Valuation

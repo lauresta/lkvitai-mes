@@ -22,5 +22,10 @@ public static class ProjectionRegistration
         // Register async projections
         // Async projections updated by async daemon
         options.Projections.Add<LocationBalanceProjection>(ProjectionLifecycle.Async);
+
+        // AvailableStock: async projection combining on-hand (StockMoved) and
+        // hard-locked quantities (PickingStarted / ReservationConsumed / ReservationCancelled).
+        // Async is sufficient because the AllocationSaga that consumes this data is itself async.
+        options.Projections.Add<AvailableStockProjection>(ProjectionLifecycle.Async);
     }
 }

@@ -91,9 +91,9 @@ This document provides the COMPLETE implementation task universe for Warehouse C
 - 4.1.2: LocationBalance - Idempotency Check → Deps: 4.1.1
 - 4.1.3: LocationBalance - UPSERT Logic → Deps: 4.1.1
 - 4.1.4: LocationBalance - Property Tests → Deps: 4.1.3
-- 4.2.1: AvailableStock - Compute Available Qty → Deps: 4.1.1, 2.3.1
-- 4.2.2: AvailableStock - Subscribe to Reservation Events → Deps: 4.2.1
-- 4.2.3: AvailableStock - Property Tests → Deps: 4.2.2
+- 4.2.1: AvailableStock - Compute Available Qty → Deps: 4.1.1, 2.3.1 ✅ **DONE** — `Projections/AvailableStockProjection.cs` (MultiStreamProjection<AvailableStockView,string> with AvailableStockGrouper), `Contracts/ReadModels/AvailableStockView.cs` (flat table keyed by warehouseId:location:sku), `Application/Queries/GetAvailableStockQuery.cs` + handler, `Application/Ports/IAvailableStockRepository.cs`, `Infrastructure/Persistence/MartenAvailableStockRepository.cs`
+- 4.2.2: AvailableStock - Subscribe to Reservation Events → Deps: 4.2.1 ✅ **DONE** — Subscribes to StockMovedEvent (onHand), PickingStartedEvent (hardLock+), ReservationConsumedEvent/CancelledEvent (hardLock−). Events enriched with ReleasedHardLockLines for V-5 Rule B. SOFT reservations do NOT reduce availability (Req 3.3).
+- 4.2.3: AvailableStock - Property Tests → Deps: 4.2.2 ✅ **DONE** — `Tests.Unit/AvailableStockProjectionTests.cs` (16 unit tests), `Tests.Integration/AvailableStockIntegrationTests.cs` (3 Docker-gated integration tests). All pass.
 - 4.3.1: ActiveHardLocks - Inline Projection (R-4) → Deps: 2.3.3 ✅ **DONE** — `Projections/ActiveHardLocksProjection.cs` (EventProjection), `Contracts/ReadModels/ActiveHardLockView.cs` (schema in Contracts to avoid Infrastructure→Projections ref)
 - 4.3.2: ActiveHardLocks - Insert on HARD Lock → Deps: 4.3.1 ✅ **DONE** — `ActiveHardLocksProjection.Project(PickingStartedEvent)` stores one view per line
 - 4.3.3: ActiveHardLocks - Delete on Consume/Cancel → Deps: 4.3.1 ✅ **DONE** — `ActiveHardLocksProjection.Project(ReservationConsumedEvent/CancelledEvent)` DeleteWhere

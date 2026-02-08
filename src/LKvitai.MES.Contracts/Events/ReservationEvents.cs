@@ -37,12 +37,26 @@ public class ReservationConsumedEvent : DomainEvent
 {
     public Guid ReservationId { get; set; }
     public decimal ActualQuantity { get; set; }
+
+    /// <summary>
+    /// Lines released from HARD lock when reservation is consumed.
+    /// Required for AvailableStock projection (V-5 Rule B compliance).
+    /// Empty list for reservations that were never HARD-locked.
+    /// </summary>
+    public List<HardLockLineDto> ReleasedHardLockLines { get; set; } = new();
 }
 
 public class ReservationCancelledEvent : DomainEvent
 {
     public Guid ReservationId { get; set; }
     public string Reason { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Lines released from HARD lock when reservation is cancelled.
+    /// Required for AvailableStock projection (V-5 Rule B compliance).
+    /// Empty list for reservations that were never HARD-locked.
+    /// </summary>
+    public List<HardLockLineDto> ReleasedHardLockLines { get; set; } = new();
 }
 
 public class ReservationBumpedEvent : DomainEvent

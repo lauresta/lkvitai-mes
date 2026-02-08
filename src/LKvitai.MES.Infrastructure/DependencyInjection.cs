@@ -21,6 +21,7 @@ public static class DependencyInjection
         services.AddScoped<IReservationRepository, MartenReservationRepository>();
         services.AddScoped<IActiveHardLocksRepository, MartenActiveHardLocksRepository>();
         services.AddScoped<ILocationBalanceRepository, MartenLocationBalanceRepository>();
+        services.AddScoped<IAvailableStockRepository, MartenAvailableStockRepository>();
         services.AddScoped<IStockLedgerRepository, MartenStockLedgerRepository>();
 
         // Orchestration implementations
