@@ -529,6 +529,23 @@ This implementation plan breaks down the Phase 1 warehouse system into increment
     - Optimize as needed
     - _Requirements: All (performance targets in design)_
 
+## Hotfixes
+
+- [x] **Hotfix G (CRIT-01)**: Serialize StartPicking against balance-changing StockLedger movements — **DONE**
+  - **Problem**: `hardLockedSum(location,sku)` could exceed `StockLedger balance` due to concurrent outbound movements (PICK, TRANSFER, DISPATCH, ADJUSTMENT_OUT) not acquiring the same advisory lock as StartPicking.
+  - **Fix**: Canonical `StockLockKey.ForLocation(warehouseId, location, sku)` derivation. Both StartPicking and all balance-decreasing movements now acquire `pg_advisory_xact_lock(StockLockKey)` before reading balance and appending events.
+  - **Files**:
+    - `Domain/StockLockKey.cs` (new) — canonical lock key derivation
+    - `Domain/MovementType.cs` (modified) — added `Pick` constant, `IsBalanceDecreasing()` helper
+    - `Application/Ports/IBalanceGuardLock.cs` (new) — application port for advisory locks
+    - `Application/Commands/RecordStockMovementCommandHandler.cs` (modified) — acquires lock for outbound movements
+    - `Infrastructure/Persistence/PostgresBalanceGuardLock.cs` (new) — Npgsql advisory lock implementation
+    - `Infrastructure/Persistence/MartenStartPickingOrchestration.cs` (modified) — uses canonical `StockLockKey`
+    - `Infrastructure/Persistence/MartenPickStockOrchestration.cs` (modified) — acquires lock for PICK movements
+    - `Infrastructure/DependencyInjection.cs` (modified) — registers `IBalanceGuardLockFactory`
+  - **Tests**: 17 new unit tests (`StockLockKeyTests.cs`), 1 new Docker-gated integration test (`ConcurrentStartPicking_VsTransferOut_NeverExceedsBalance`)
+  - **Total tests**: 153 unit+property passed, 23 integration (1 passed, 22 Docker-gated skipped), 0 failures
+
 ## Notes
 
 - Tasks marked with `*` are optional and can be skipped for faster MVP

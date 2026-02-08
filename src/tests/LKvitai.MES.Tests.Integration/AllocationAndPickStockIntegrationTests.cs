@@ -14,6 +14,7 @@ using LKvitai.MES.SharedKernel;
 using Marten;
 using Marten.Events.Projections;
 using MediatR;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Testcontainers.PostgreSql;
 using Xunit;
@@ -67,6 +68,16 @@ public class AllocationAndPickStockIntegrationTests : IAsyncLifetime
         {
             cfg.RegisterServicesFromAssemblyContaining<AllocateReservationCommandHandler>();
         });
+
+        // [HOTFIX CRIT-01] Balance guard lock for serializing balance-affecting operations
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["ConnectionStrings:WarehouseDb"] = _postgres!.GetConnectionString()
+            })
+            .Build();
+        services.AddSingleton<IConfiguration>(config);
+        services.AddSingleton<IBalanceGuardLockFactory, PostgresBalanceGuardLockFactory>();
 
         // Orchestrations
         services.AddScoped<IReceiveGoodsOrchestration, MartenReceiveGoodsOrchestration>();

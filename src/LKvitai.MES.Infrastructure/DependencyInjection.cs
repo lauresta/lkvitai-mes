@@ -35,6 +35,9 @@ public static class DependencyInjection
         services.AddScoped<IAllocateReservationOrchestration, MartenAllocateReservationOrchestration>();
         services.AddScoped<IPickStockOrchestration, MartenPickStockOrchestration>();
 
+        // [HOTFIX CRIT-01] Balance guard lock for serializing balance-affecting operations
+        services.AddSingleton<IBalanceGuardLockFactory, PostgresBalanceGuardLockFactory>();
+
         // Command idempotency store (Marten document — application port impl)
         services.AddScoped<IProcessedCommandStore, MartenProcessedCommandStore>();
 

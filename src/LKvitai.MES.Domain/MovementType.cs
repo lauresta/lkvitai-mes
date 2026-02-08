@@ -20,10 +20,21 @@ public static class MovementType
     /// <summary>Inventory correction removing stock.</summary>
     public const string AdjustmentOut = "ADJUSTMENT_OUT";
 
+    /// <summary>Pick movement — removing stock for production/order fulfillment.</summary>
+    public const string Pick = "PICK";
+
     /// <summary>
     /// Returns true if the movement type is inbound (no FROM-balance check required).
     /// </summary>
     public static bool IsInbound(string movementType)
         => string.Equals(movementType, Receipt, StringComparison.OrdinalIgnoreCase)
         || string.Equals(movementType, AdjustmentIn, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// [HOTFIX CRIT-01] Returns true if the movement type decreases balance at the FROM location.
+    /// These movements MUST acquire StockLockKey advisory lock to serialize with StartPicking.
+    /// </summary>
+    public static bool IsBalanceDecreasing(string movementType)
+        => !IsInbound(movementType)
+        && !string.IsNullOrEmpty(movementType);
 }

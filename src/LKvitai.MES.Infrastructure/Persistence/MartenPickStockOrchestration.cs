@@ -1,4 +1,5 @@
 using LKvitai.MES.Application.Orchestration;
+using LKvitai.MES.Application.Ports;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Domain;
 using LKvitai.MES.Domain.Aggregates;
@@ -17,6 +18,9 @@ namespace LKvitai.MES.Infrastructure.Persistence;
 ///   2. Record StockMovement to PRODUCTION via StockLedger (FIRST)
 ///   3. Consume reservation (independent of HU projection)
 ///
+/// [HOTFIX CRIT-01] RecordStockMovement acquires pg_advisory_xact_lock via
+/// IBalanceGuardLock to serialize with StartPicking and other outbound operations.
+///
 /// HU projection processes StockMoved event ASYNCHRONOUSLY — NOT waited on.
 ///
 /// If StockMovement succeeds but reservation consumption fails, the result
@@ -26,14 +30,17 @@ namespace LKvitai.MES.Infrastructure.Persistence;
 public class MartenPickStockOrchestration : IPickStockOrchestration
 {
     private readonly IDocumentStore _store;
+    private readonly IBalanceGuardLockFactory _lockFactory;
     private readonly ILogger<MartenPickStockOrchestration> _logger;
     private const int MaxConcurrencyRetries = 3;
 
     public MartenPickStockOrchestration(
         IDocumentStore store,
+        IBalanceGuardLockFactory lockFactory,
         ILogger<MartenPickStockOrchestration> logger)
     {
         _store = store;
+        _lockFactory = lockFactory;
         _logger = logger;
     }
 
@@ -187,6 +194,9 @@ public class MartenPickStockOrchestration : IPickStockOrchestration
     /// <summary>
     /// Records the StockMovement from picking location to PRODUCTION.
     /// Uses expected-version append with bounded retry.
+    ///
+    /// [HOTFIX CRIT-01] Acquires advisory lock for the (warehouseId, fromLocation, sku)
+    /// to serialize with StartPicking and other outbound operations.
     /// </summary>
     private async Task<Guid> RecordStockMovementAsync(
         string warehouseId, string sku, decimal quantity,
@@ -194,47 +204,62 @@ public class MartenPickStockOrchestration : IPickStockOrchestration
         CancellationToken ct)
     {
         var movementId = Guid.NewGuid();
+        var lockKeys = StockLockKey.ForLocations(new[] { (warehouseId, fromLocation, sku) });
 
-        for (int attempt = 1; attempt <= MaxConcurrencyRetries; attempt++)
+        await using var guardLock = await _lockFactory.CreateAsync(ct);
+        await guardLock.AcquireAsync(lockKeys, ct);
+
+        try
         {
-            await using var session = _store.LightweightSession();
-
-            try
+            for (int attempt = 1; attempt <= MaxConcurrencyRetries; attempt++)
             {
-                var ledgerStreamId = StockLedgerStreamId.For(warehouseId, fromLocation, sku);
+                await using var session = _store.LightweightSession();
 
-                // Hydrate the StockLedger aggregate to check balance (V-2 invariant)
-                var ledger = await session.Events.AggregateStreamAsync<StockLedger>(
-                    ledgerStreamId, token: ct) ?? new StockLedger();
+                try
+                {
+                    var ledgerStreamId = StockLedgerStreamId.For(warehouseId, fromLocation, sku);
 
-                // Get current stream version for optimistic concurrency
-                var streamState = await session.Events.FetchStreamStateAsync(ledgerStreamId, ct);
-                var expectedVersion = streamState?.Version ?? 0;
+                    // Hydrate the StockLedger aggregate to check balance (V-2 invariant)
+                    var ledger = await session.Events.AggregateStreamAsync<StockLedger>(
+                        ledgerStreamId, token: ct) ?? new StockLedger();
 
-                // Produce the event (validates balance invariant)
-                var stockMovedEvent = ledger.RecordMovement(
-                    movementId: movementId,
-                    sku: sku,
-                    quantity: quantity,
-                    fromLocation: fromLocation,
-                    toLocation: "PRODUCTION",
-                    movementType: "PICK",
-                    operatorId: operatorId,
-                    handlingUnitId: handlingUnitId,
-                    reason: "Pick for reservation");
+                    // Get current stream version for optimistic concurrency
+                    var streamState = await session.Events.FetchStreamStateAsync(ledgerStreamId, ct);
+                    var expectedVersion = streamState?.Version ?? 0;
 
-                session.Events.Append(ledgerStreamId, expectedVersion, stockMovedEvent);
-                await session.SaveChangesAsync(ct);
+                    // Produce the event (validates balance invariant)
+                    var stockMovedEvent = ledger.RecordMovement(
+                        movementId: movementId,
+                        sku: sku,
+                        quantity: quantity,
+                        fromLocation: fromLocation,
+                        toLocation: "PRODUCTION",
+                        movementType: "PICK",
+                        operatorId: operatorId,
+                        handlingUnitId: handlingUnitId,
+                        reason: "Pick for reservation");
 
-                return movementId;
+                    session.Events.Append(ledgerStreamId, expectedVersion, stockMovedEvent);
+                    await session.SaveChangesAsync(ct);
+
+                    // [CRIT-01] Commit lock AFTER Marten commit succeeds
+                    await guardLock.CommitAsync(ct);
+
+                    return movementId;
+                }
+                catch (EventStreamUnexpectedMaxEventIdException) when (attempt < MaxConcurrencyRetries)
+                {
+                    await Task.Delay(100 * attempt, ct);
+                }
             }
-            catch (EventStreamUnexpectedMaxEventIdException) when (attempt < MaxConcurrencyRetries)
-            {
-                await Task.Delay(100 * attempt, ct);
-            }
+
+            throw new InvalidOperationException(
+                $"Failed to record StockMovement after {MaxConcurrencyRetries} attempts");
         }
-
-        throw new InvalidOperationException(
-            $"Failed to record StockMovement after {MaxConcurrencyRetries} attempts");
+        catch
+        {
+            // Lock disposed without commit → rollback releases advisory locks
+            throw;
+        }
     }
 }

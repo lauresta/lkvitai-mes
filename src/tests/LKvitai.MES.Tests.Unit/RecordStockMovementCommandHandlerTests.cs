@@ -18,12 +18,25 @@ namespace LKvitai.MES.Tests.Unit;
 public class RecordStockMovementCommandHandlerTests
 {
     private readonly Mock<IStockLedgerRepository> _repoMock = new();
+    private readonly Mock<IBalanceGuardLockFactory> _lockFactoryMock = new();
+    private readonly Mock<IBalanceGuardLock> _lockMock = new();
     private readonly Mock<ILogger<RecordStockMovementCommandHandler>> _loggerMock = new();
     private readonly RecordStockMovementCommandHandler _handler;
 
     public RecordStockMovementCommandHandlerTests()
     {
-        _handler = new RecordStockMovementCommandHandler(_repoMock.Object, _loggerMock.Object);
+        // [HOTFIX CRIT-01] Set up mock lock factory to return a mock lock
+        _lockMock.Setup(l => l.AcquireAsync(It.IsAny<long[]>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        _lockMock.Setup(l => l.CommitAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        _lockMock.Setup(l => l.DisposeAsync())
+            .Returns(ValueTask.CompletedTask);
+        _lockFactoryMock.Setup(f => f.CreateAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(_lockMock.Object);
+
+        _handler = new RecordStockMovementCommandHandler(
+            _repoMock.Object, _lockFactoryMock.Object, _loggerMock.Object);
     }
 
     // ── Happy path ───────────────────────────────────────────────────────

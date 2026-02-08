@@ -1,12 +1,18 @@
 using FluentAssertions;
+using LKvitai.MES.Application.Commands;
+using LKvitai.MES.Application.Ports;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Contracts.ReadModels;
+using LKvitai.MES.Domain;
 using LKvitai.MES.Domain.Aggregates;
 using LKvitai.MES.Infrastructure.Persistence;
 using LKvitai.MES.Projections;
+using LKvitai.MES.SharedKernel;
 using Marten;
 using Marten.Events.Projections;
+using MediatR;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Testcontainers.PostgreSql;
@@ -237,6 +243,110 @@ public class StartPickingConcurrencyTests : IAsyncLifetime
         locks[0].SKU.Should().Be(sku);
         locks[0].HardLockedQty.Should().Be(qty);
         locks[0].WarehouseId.Should().Be(warehouseId);
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // [HOTFIX CRIT-01] StartPicking vs concurrent outbound movement
+    // ══════════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// [HOTFIX CRIT-01] Concurrent StartPicking + TransferOut on same (location, sku).
+    /// Stock: 100 units. Reservation wants 80. TransferOut wants 30.
+    /// If both proceed, hardLocked(80) > balance(70) — invariant violation.
+    /// With advisory lock serialization, one must fail or reduce available correctly.
+    ///
+    /// Expected outcome:
+    /// - If StartPicking goes first: hardLocked=80, then TransferOut reads balance=100
+    ///   but 80 is hard-locked: should fail or reduce balance to 20 (less than 30 needed).
+    /// - If TransferOut goes first: balance becomes 70, then StartPicking reads
+    ///   available=70, which may or may not be enough (70 ge 80? NO: StartPicking fails).
+    ///
+    /// Either way: hardLockedSum ≤ balance must hold.
+    /// </summary>
+    [SkippableFact]
+    public async Task ConcurrentStartPicking_VsTransferOut_NeverExceedsBalance()
+    {
+        DockerRequirement.EnsureEnabled();
+
+        var warehouseId = "WH1";
+        var location = "LOC-CRIT01";
+        var sku = "SKU-CRIT01";
+        var stockQty = 100m;
+        var reservationQty = 80m;
+        var transferOutQty = 30m;
+
+        // Seed stock
+        await SeedStockLedger(warehouseId, location, sku, stockQty);
+
+        // Create allocated reservation wanting 80 units
+        var reservationId = Guid.NewGuid();
+        await CreateAllocatedReservation(reservationId, warehouseId, location, sku, reservationQty);
+
+        // Build services for MediatR handler path
+        var config = BuildConfiguration();
+        var services = new ServiceCollection();
+        services.AddSingleton<IDocumentStore>(_store!);
+        services.AddSingleton<IConfiguration>(config);
+        services.AddSingleton<IBalanceGuardLockFactory, PostgresBalanceGuardLockFactory>();
+        services.AddScoped<IStockLedgerRepository, MartenStockLedgerRepository>();
+        services.AddLogging();
+        services.AddMediatR(cfg =>
+        {
+            cfg.RegisterServicesFromAssemblyContaining<RecordStockMovementCommandHandler>();
+        });
+
+        await using var sp = services.BuildServiceProvider();
+
+        // ── Act: Run StartPicking + TransferOut concurrently ──
+        var logger = NullLogger<MartenStartPickingOrchestration>.Instance;
+        var orch = new MartenStartPickingOrchestration(_store!, config, logger);
+
+        var startPickingTask = orch.StartPickingAsync(
+            reservationId, Guid.NewGuid(), CancellationToken.None);
+
+        Task<Result> transferOutTask;
+        using (var scope = sp.CreateScope())
+        {
+            var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
+            transferOutTask = mediator.Send(new RecordStockMovementCommand
+            {
+                WarehouseId = warehouseId,
+                SKU = sku,
+                Quantity = transferOutQty,
+                FromLocation = location,
+                ToLocation = "LOC-ELSEWHERE",
+                MovementType = MovementType.Transfer,
+                OperatorId = Guid.NewGuid()
+            });
+
+            var results = await Task.WhenAll(startPickingTask, transferOutTask);
+
+            // ── Assert: invariant hardLockedSum ≤ balance must hold ──
+            // At least one operation should fail (not enough stock for both)
+            await using var session = _store!.LightweightSession();
+
+            // Check current balance
+            var ledgerStreamId = StockLedgerStreamId.For(warehouseId, location, sku);
+            var ledger = await session.Events.AggregateStreamAsync<StockLedger>(
+                ledgerStreamId) ?? new StockLedger();
+            var currentBalance = ledger.GetBalance(location, sku);
+
+            // Check hard locks
+            await using var querySession = _store.QuerySession();
+            var hardLocks = await querySession.Query<ActiveHardLockView>()
+                .Where(x => x.Location == location && x.SKU == sku)
+                .ToListAsync();
+            var totalHardLocked = hardLocks.Sum(x => x.HardLockedQty);
+
+            // THE INVARIANT: hardLockedSum must never exceed balance
+            totalHardLocked.Should().BeLessThanOrEqualTo(currentBalance,
+                $"CRIT-01 INVARIANT: hardLockedSum({totalHardLocked}) must be ≤ " +
+                $"balance({currentBalance})");
+
+            // Verify at least one succeeded (the test is meaningful)
+            var anySuccess = results.Any(r => r.IsSuccess);
+            anySuccess.Should().BeTrue("at least one operation should succeed");
+        }
     }
 
     // ── Helper methods ───────────────────────────────────────────────

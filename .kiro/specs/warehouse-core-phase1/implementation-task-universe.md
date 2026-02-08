@@ -2474,3 +2474,56 @@ Aligned StockLedger stream partitioning with approved strategy: `(warehouseId, l
 ---
 
 **End of Governance Consistency Patch**
+
+---
+
+## CHANGELOG - Hotfix G (CRIT-01): Serialize StartPicking Against Balance-Changing Movements
+
+**Date:** 2026-02-08  
+**Version:** 1.3 (CRIT-01 Hotfix)
+
+### Problem
+
+`hardLockedSum(location,sku)` could exceed `StockLedger balance(location,sku)` when concurrent outbound stock movements (PICK, TRANSFER, DISPATCH, ADJUSTMENT_OUT) reduced the balance BETWEEN StartPicking's balance read and its PickingStartedEvent commit. The root cause: StartPicking acquired pg_advisory_xact_lock for cross-reservation serialization, but RecordStockMovement did NOT acquire the same lock, leaving a race window.
+
+### Fix
+
+1. **Canonical lock key** (`Domain/StockLockKey.cs`): Single `StockLockKey.ForLocation(warehouseId, location, sku)` derivation function — SHA-256 of `stock-lock:{warehouseId}:{location}:{sku}` truncated to Int64. Both StartPicking and outbound movements use this same key.
+
+2. **Application port** (`Application/Ports/IBalanceGuardLock.cs`): `IBalanceGuardLock` + `IBalanceGuardLockFactory` — transaction-scoped advisory lock abstraction. Infrastructure provides `PostgresBalanceGuardLock` implementation.
+
+3. **Outbound movements serialized** (`Application/Commands/RecordStockMovementCommandHandler.cs`): Handler acquires `pg_advisory_xact_lock(StockLockKey)` for all balance-decreasing movements before load-validate-append cycle. Lock released AFTER Marten commit (READ COMMITTED visibility guarantee).
+
+4. **PickStock serialized** (`Infrastructure/Persistence/MartenPickStockOrchestration.cs`): `RecordStockMovementAsync` acquires the same lock for PICK movements.
+
+5. **StartPicking unified** (`Infrastructure/Persistence/MartenStartPickingOrchestration.cs`): `ComputeAdvisoryLockKey` now delegates to `StockLockKey.ForLocation` — same key as outbound movements.
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `Domain/StockLockKey.cs` | **NEW** — canonical lock key derivation |
+| `Domain/MovementType.cs` | Added `Pick` constant, `IsBalanceDecreasing()` helper |
+| `Application/Ports/IBalanceGuardLock.cs` | **NEW** — application port for advisory locks |
+| `Application/Commands/RecordStockMovementCommandHandler.cs` | Wraps outbound movements in advisory lock |
+| `Infrastructure/Persistence/PostgresBalanceGuardLock.cs` | **NEW** — Npgsql advisory lock implementation |
+| `Infrastructure/Persistence/MartenStartPickingOrchestration.cs` | Uses canonical StockLockKey |
+| `Infrastructure/Persistence/MartenPickStockOrchestration.cs` | Acquires lock for PICK movements |
+| `Infrastructure/DependencyInjection.cs` | Registers IBalanceGuardLockFactory |
+| `Tests.Unit/StockLockKeyTests.cs` | **NEW** — 17 unit tests |
+| `Tests.Unit/RecordStockMovementCommandHandlerTests.cs` | Updated for new constructor |
+| `Tests.Integration/StartPickingConcurrencyTests.cs` | Added CRIT-01 concurrent test |
+| `Tests.Integration/AllocationAndPickStockIntegrationTests.cs` | Registered lock factory in DI |
+
+### Tests
+
+- **17 new unit tests** (StockLockKeyTests): determinism, ordering, deduplication, null guards, movement type classification, key matching with StartPicking
+- **1 new Docker-gated integration test**: `ConcurrentStartPicking_VsTransferOut_NeverExceedsBalance` — asserts `hardLockedSum ≤ balance` after concurrent StartPicking + TransferOut
+
+**Build Status:** ✅ GREEN (0 errors)  
+**Test Status:** ✅ GREEN (153 unit+property passed, 23 integration: 1 passed + 22 Docker-gated skipped, 0 failures)  
+**Compliance:** ✅ PASS (CRIT-01 invariant: hardLockedSum ≤ balance enforced by shared advisory lock)
+
+---
+
+**End of CRIT-01 Hotfix**

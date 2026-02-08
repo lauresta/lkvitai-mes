@@ -1,5 +1,3 @@
-using System.Security.Cryptography;
-using System.Text;
 using LKvitai.MES.Application.Orchestration;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Domain;
@@ -101,10 +99,9 @@ public class MartenStartPickingOrchestration : IStartPickingOrchestration
                 }
 
                 // ─── Step 2: Acquire advisory locks (sorted to prevent deadlocks) ───
-                var lockKeys = reservation.Lines
-                    .Select(l => ComputeAdvisoryLockKey(l.WarehouseId, l.Location, l.SKU))
-                    .Distinct()
-                    .OrderBy(k => k)
+                // [HOTFIX CRIT-01] Uses canonical StockLockKey — same key as outbound movements.
+                var lockKeys = StockLockKey.ForLocations(
+                    reservation.Lines.Select(l => (l.WarehouseId, l.Location, l.SKU)))
                     .ToList();
 
                 foreach (var key in lockKeys)
@@ -264,15 +261,11 @@ public class MartenStartPickingOrchestration : IStartPickingOrchestration
     // ----------------------------------------------------------------
 
     /// <summary>
-    /// Computes a 64-bit advisory lock key from (warehouseId, location, sku).
-    /// Uses SHA-256 truncated to 8 bytes for consistent hashing.
+    /// [HOTFIX CRIT-01] Delegates to canonical StockLockKey.ForLocation.
+    /// Retained for backward compatibility (e.g., existing tests that reference this method).
     /// </summary>
     public static long ComputeAdvisoryLockKey(string warehouseId, string location, string sku)
-    {
-        var combined = $"hard-lock:{warehouseId}:{location}:{sku}";
-        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(combined));
-        return BitConverter.ToInt64(hash, 0);
-    }
+        => StockLockKey.ForLocation(warehouseId, location, sku);
 
     // ----------------------------------------------------------------
     // Query helpers (within same Marten session)
