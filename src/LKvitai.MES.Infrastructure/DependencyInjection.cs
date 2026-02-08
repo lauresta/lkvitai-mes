@@ -8,7 +8,11 @@ using Microsoft.Extensions.DependencyInjection;
 namespace LKvitai.MES.Infrastructure;
 
 /// <summary>
-/// Infrastructure layer dependency injection configuration
+/// Infrastructure layer dependency injection configuration.
+///
+/// NOTE: MediatR pipeline behaviors (IdempotencyBehavior, ValidationBehavior, etc.)
+/// are registered in Api/Configuration/MediatRConfiguration.cs — NOT here.
+/// Registering them in both places causes the behavior to run twice.
 /// </summary>
 public static class DependencyInjection
 {
@@ -26,6 +30,10 @@ public static class DependencyInjection
 
         // Orchestration implementations
         services.AddScoped<IStartPickingOrchestration, MartenStartPickingOrchestration>();
+        services.AddScoped<IReceiveGoodsOrchestration, MartenReceiveGoodsOrchestration>();
+
+        // Command idempotency store (Marten document — application port impl)
+        services.AddScoped<IProcessedCommandStore, MartenProcessedCommandStore>();
 
         return services;
     }

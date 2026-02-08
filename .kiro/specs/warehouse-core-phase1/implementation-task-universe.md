@@ -51,8 +51,8 @@ This document provides the COMPLETE implementation task universe for Warehouse C
 - 2.1.3: StockLedger - StockMoved Event Schema → Deps: 2.1.1 ✅ **DONE** — `Contracts/Events/StockMovedEvent.cs` (already existed, verified)
 - 2.1.4: StockLedger - Optimistic Concurrency (V-2) → Deps: 2.1.1 ✅ **DONE** — `Application/Commands/RecordStockMovementCommandHandler.cs` (Polly retry 3x exponential), `Infrastructure/Persistence/MartenStockLedgerRepository.cs` (expected-version append)
 - 2.1.5: StockLedger - Property Tests (49 properties) → Deps: 2.1.4 ✅ **DONE** (6 property tests) — `Tests.Property/StockLedgerPropertyTests.cs`
-- 2.2.1: HandlingUnit - Create/AddLine/Seal Commands → Deps: 1.2.1
-- 2.2.2: HandlingUnit - Projection from StockMoved → Deps: 2.1.3
+- 2.2.1: HandlingUnit - Create/AddLine/Seal Commands → Deps: 1.2.1 — **Partial (Package E):** HU lifecycle events defined in `Contracts/Events/HandlingUnitEvents.cs` (HandlingUnitCreated, LineAdded, LineRemoved, Sealed + Split/Merge TODO placeholders). Full EF Core aggregate deferred.
+- 2.2.2: HandlingUnit - Projection from StockMoved → Deps: 2.1.3 ✅ **DONE (Package E)** — `Projections/HandlingUnitProjection.cs` (MultiStreamProjection<HandlingUnitView,string> with HandlingUnitGrouper), `Contracts/ReadModels/HandlingUnitView.cs` (flat doc: huId, warehouseId, currentLocation, status, lines), `Contracts/Events/HandlingUnitEvents.cs` (6 event types). Registered as Async. 18 unit tests in `Tests.Unit/HandlingUnitProjectionTests.cs`.
 - 2.2.3: HandlingUnit - Sealed Immutability Invariant → Deps: 2.2.1
 - 2.2.4: HandlingUnit - Split/Merge Operations → Deps: 2.2.1
 - 2.2.5: HandlingUnit - Property Tests → Deps: 2.2.4
@@ -70,9 +70,9 @@ This document provides the COMPLETE implementation task universe for Warehouse C
 - 2.5.4: WarehouseLayout - Property Tests → Deps: 2.5.3
 
 **Wave 3: Workflows & Sagas (2 weeks) - 16 tasks**
-- 3.1.1: ReceiveGoods Saga - State Machine → Deps: 2.1.1, 2.2.1
+- 3.1.1: ReceiveGoods Saga - State Machine → Deps: 2.1.1, 2.2.1 — **Partial (Package E):** Minimal ReceiveGoods orchestration implemented via `Application/Commands/ReceiveGoodsCommand.cs`, `Application/Commands/ReceiveGoodsCommandHandler.cs`, `Application/Orchestration/IReceiveGoodsOrchestration.cs`, `Infrastructure/Persistence/MartenReceiveGoodsOrchestration.cs`. Atomic multi-stream transaction (HandlingUnitCreated → StockMoved per line → HandlingUnitSealed). Full MassTransit saga state machine deferred.
 - 3.1.2: ReceiveGoods Saga - Compensation Logic → Deps: 3.1.1
-- 3.1.3: ReceiveGoods Saga - Integration Tests → Deps: 3.1.2
+- 3.1.3: ReceiveGoods Saga - Integration Tests → Deps: 3.1.2 — **Partial (Package E):** 3 Docker-gated integration tests in `Tests.Integration/ReceiveGoodsIntegrationTests.cs` (HU view, LocationBalance, AvailableStock). Full saga compensation tests deferred.
 - 3.2.1: TransferStock Saga - Multi-Line Transfer → Deps: 2.1.1, 2.2.1
 - 3.2.2: TransferStock Saga - Rollback on Failure → Deps: 3.2.1
 - 3.2.3: TransferStock Saga - Integration Tests → Deps: 3.2.2
@@ -99,7 +99,7 @@ This document provides the COMPLETE implementation task universe for Warehouse C
 - 4.3.3: ActiveHardLocks - Delete on Consume/Cancel → Deps: 4.3.1 ✅ **DONE** — `ActiveHardLocksProjection.Project(ReservationConsumedEvent/CancelledEvent)` DeleteWhere
 - 4.3.4: ActiveHardLocks - Property Tests → Deps: 4.3.3 (unit tests done in `Tests.Unit/ActiveHardLocksProjectionTests.cs`)
 - 4.3.5: ActiveHardLocks - Query by (location, SKU) → Deps: 4.3.1 ✅ **DONE** — `Infrastructure/Persistence/MartenActiveHardLocksRepository.cs`, `Application/Ports/IActiveHardLocksRepository.cs`
-- 4.4.1: HandlingUnit Read Model - Query Optimization → Deps: 2.2.2
+- 4.4.1: HandlingUnit Read Model - Query Optimization → Deps: 2.2.2 — **Note (Package E):** HandlingUnitView read model and projection now exist. Query optimization (indexes, etc.) pending.
 - 4.4.2: HandlingUnit Read Model - Projection Lag Monitoring → Deps: 4.4.1
 - 4.5.1: Projection Rebuild - Shadow Table Strategy (V-5) → Deps: 4.1.1
 - 4.5.2: Projection Rebuild - Checksum Verification → Deps: 4.5.1

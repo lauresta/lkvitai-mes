@@ -27,5 +27,10 @@ public static class ProjectionRegistration
         // hard-locked quantities (PickingStarted / ReservationConsumed / ReservationCancelled).
         // Async is sufficient because the AllocationSaga that consumes this data is itself async.
         options.Projections.Add<AvailableStockProjection>(ProjectionLifecycle.Async);
+
+        // HandlingUnit: async projection from HU lifecycle events + StockMoved events.
+        // Maintains HU state (status, location, lines) per design spec.
+        // Async is consistent with all other non-inline projections.
+        options.Projections.Add<HandlingUnitProjection>(ProjectionLifecycle.Async);
     }
 }

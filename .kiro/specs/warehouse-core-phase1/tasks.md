@@ -104,20 +104,24 @@ This implementation plan breaks down the Phase 1 warehouse system into increment
 - [ ] 5. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 6. Implement HandlingUnit Aggregate (State-Based with Projection)
+- [ ] 6. Implement HandlingUnit Aggregate (State-Based with Projection) — **Partially DONE (Package E: read model + projection)**
   - [ ] 6.1 Create HandlingUnit aggregate with state-based storage
     - Define HandlingUnit entity and HandlingUnitLine entity
     - Implement CreateHandlingUnit command
     - Implement AddLine, RemoveLine, SealHandlingUnit commands
     - Implement sealed immutability invariant
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.8_
+    - **Note (Package E):** HU lifecycle events defined in `Contracts/Events/HandlingUnitEvents.cs` (HandlingUnitCreated, LineAdded, LineRemoved, Sealed, Split/Merge TODO placeholders). Full EF Core aggregate with sealed immutability deferred to later package.
   
-  - [ ] 6.2 Implement HandlingUnit projection from StockMoved events
+  - [x] 6.2 Implement HandlingUnit projection from StockMoved events — **DONE (Package E)**
     - Subscribe to StockMoved events
     - Update HU lines when StockMoved event references HU
     - Update HU location when movement changes location
     - Implement idempotent event processing
     - _Requirements: 2.6, 2.7_
+    - **Files:** `Contracts/Events/HandlingUnitEvents.cs` (6 event types), `Contracts/ReadModels/HandlingUnitView.cs` (flat doc keyed by huId), `Projections/HandlingUnitProjection.cs` (MultiStreamProjection with CustomGrouping — consumes HU lifecycle events + StockMovedEvent), `Projections/ProjectionRegistration.cs` (Async lifecycle)
+    - **Tests:** `Tests.Unit/HandlingUnitProjectionTests.cs` (18 unit tests: created, lineAdded, lineRemoved, sealed, StockMoved receipt/pick/transfer/partial/multi-sku, before-created edge case, lifecycle, replay determinism, V-5 Rule B, IsEmpty)
+    - **V-5 Compliance:** Rule B — all events self-contained; projection uses only event data; CustomGrouping routes by huId from event stream
   
   - [ ]* 6.3 Write property test for sealed HU immutability
     - **Property 7: Sealed Handling Unit Immutability**
@@ -243,16 +247,15 @@ This implementation plan breaks down the Phase 1 warehouse system into increment
     - **Property 52: ActiveHardLocks Consistency**
     - **Validates: Requirement 19**
 
-- [ ] 14. Implement ReceiveGoodsSaga
-  - [ ] 14.1 Create ReceiveGoodsSaga for goods receipt workflow
-    - Implement saga state machine (STARTED → MOVEMENT_RECORDED → HU_CREATED → HU_SEALED → LABEL_REQUESTED → COMPLETED)
-    - Step 1: Record StockMovement via StockLedger
-    - Step 2: Create HandlingUnit
-    - Step 3: Add lines to HU
-    - Step 4: Seal HU
-    - Step 5: Request label print
-    - Implement compensation for HU creation failure (orphan movement alert)
-    - _Requirements: 15.1-15.9_
+- [ ] 14. Implement ReceiveGoodsSaga — **Partially DONE (Package E: minimal orchestration)**
+  - [x] 14.1 Create ReceiveGoods minimal workflow — **DONE (Package E)**
+    - Implement minimal ReceiveGoods orchestration (command handler + orchestration port + Marten implementation)
+    - StockLedger-first ordering: HandlingUnitCreated → StockMoved (per line) → HandlingUnitSealed in single atomic Marten session
+    - Atomic transaction boundary (all or nothing via lightweight session)
+    - _Requirements: 15.1-15.9 (minimal Phase 1 subset)_
+    - **Files:** `Application/Commands/ReceiveGoodsCommand.cs` (command + ReceiveGoodsLineDto), `Application/Commands/ReceiveGoodsCommandHandler.cs` (MediatR handler with validation), `Application/Orchestration/IReceiveGoodsOrchestration.cs` (port), `Infrastructure/Persistence/MartenReceiveGoodsOrchestration.cs` (atomic multi-stream implementation), `Infrastructure/DependencyInjection.cs` (DI registration)
+    - **Tests:** `Tests.Integration/ReceiveGoodsIntegrationTests.cs` (3 Docker-gated integration tests: HU view creation, LocationBalance update, AvailableStock update)
+    - **Deferred:** Full MassTransit saga state machine (STARTED → MOVEMENT_RECORDED → HU_CREATED → HU_SEALED → LABEL_REQUESTED → COMPLETED), compensation logic, label print step
   
   - [ ]* 14.2 Write unit tests for ReceiveGoodsSaga
     - Test happy path
