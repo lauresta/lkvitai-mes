@@ -6,7 +6,7 @@ LKvitai.MES is a warehouse management module (WMS) for a Manufacturing Execution
 DDD + Event Sourcing + CQRS + Sagas. C# / .NET 8 modular monolith. PostgreSQL + Marten (event store) + MassTransit (saga orchestration).
 StockLedger is the sole source of truth for inventory. HandlingUnit, Reservation, Valuation are downstream.
 Architecture is frozen (docs/04-system-architecture.md v2.0 FINAL BASELINE). Do NOT redesign.
-Phase 1 implementation is in progress — Packages A–F committed.
+Phase 1 implementation is in progress — Packages A–F committed + Hotfixes G & H applied.
 
 ## Non-Negotiable Constraints
 
@@ -25,7 +25,7 @@ Phase 1 implementation is in progress — Packages A–F committed.
 |---------|-------------|-----------|
 | **A** | StockLedger V-2: event-sourced aggregate, stream partitioning (warehouseId:location:sku), expected-version append, bounded retry (3x) | `StockLedger.cs`, `StockLedgerStreamId.cs`, `RecordStockMovementCommandHandler.cs`, `MartenStockLedgerRepository.cs` |
 | **B** | StartPicking R-3 + ActiveHardLocks R-4: advisory-lock serialization, balance re-validation from event stream, inline projection, `PickingStartedEvent` carries `HardLockedLines` | `MartenStartPickingOrchestration.cs`, `ActiveHardLocksProjection.cs`, `ActiveHardLockView.cs` |
-| **C** | LocationBalance async projection + V-5 rebuild tooling: shadow table, stream-order replay, MD5 checksum, atomic swap | `LocationBalanceProjection.cs`, `ProjectionRebuildService.cs` |
+| **C** | LocationBalance async projection + V-5 rebuild tooling: shadow table, global-sequence replay, field-based checksum, atomic swap | `LocationBalanceProjection.cs`, `ProjectionRebuildService.cs` |
 | **D** | AvailableStock async projection: onHandQty - hardLockedQty, custom grouper across StockLedger + Reservation streams | `AvailableStockProjection.cs`, `AvailableStockView.cs` |
 | **E** | HandlingUnit projection + ReceiveGoods: HU lifecycle events, StockMoved-driven line updates, sealed-HU guard, atomic multi-stream commit | `HandlingUnitProjection.cs`, `MartenReceiveGoodsOrchestration.cs` |
 | **F** | Allocation + PickStock sagas: SOFT allocation from AvailableStock, PickStock with durable MassTransit retry, DLQ via `PickStockFailedPermanentlyEvent` | `MartenAllocateReservationOrchestration.cs`, `MartenPickStockOrchestration.cs`, `PickStockSaga.cs` |
@@ -37,6 +37,7 @@ Phase 1 implementation is in progress — Packages A–F committed.
 | No negative balance | `StockLedger.RecordMovement()` — throws `InsufficientBalanceException` |
 | Optimistic concurrency (V-2) | `MartenStockLedgerRepository.AppendEventAsync()` — expected-version, catches `EventStreamUnexpectedMaxEventIdException` |
 | HARD lock serialization (R-3) | `MartenStartPickingOrchestration` — `pg_advisory_xact_lock` per (location, SKU), sorted to prevent deadlocks |
+| Balance-vs-HardLock serialization (CRIT-01) | `StockLockKey` canonical lock + `IBalanceGuardLockFactory` — serializes StartPicking with ALL outbound movements |
 | ActiveHardLocks consistency (R-4) | `ActiveHardLocksProjection` — Inline lifecycle, same-transaction as event append |
 | Ledger-first pick ordering (V-3) | `MartenPickStockOrchestration.ExecuteAsync()` — StockMovement Step 2, Reservation Step 3 |
 | Command idempotency | `IdempotencyBehavior` + `MartenProcessedCommandStore` — atomic INSERT-based claim |
@@ -51,8 +52,22 @@ Phase 1 implementation is in progress — Packages A–F committed.
 | **DLQ / supervisor** | `PickStockFailedPermanentlyEvent` published after 3 exhausted retries |
 | **Orphan HARD lock detection** | `OrphanHardLockCheck` — compares ActiveHardLocks vs Reservation PICKING state |
 | **Stuck reservation detection** | `StuckReservationCheck` — flags PICKING reservations > 2 hours |
-| **Projection rebuild (V-5)** | `ProjectionRebuildService` — shadow table + stream-order replay + checksum verify + atomic swap. Currently LocationBalance only |
+| **Projection rebuild (V-5)** | `ProjectionRebuildService` — shadow table + global-sequence replay + field-based checksum + atomic swap. Supports LocationBalance AND AvailableStock |
 | **HARD reservation timeout** | 2-hour policy (doc 04). Detected by `StuckReservationCheck`. Auto-cancellation NOT implemented yet |
+
+## Applied Hotfixes
+
+| Hotfix | Finding | What Changed | Key Files |
+|--------|---------|--------------|-----------|
+| **G (CRIT-01)** | Advisory lock gap: concurrent outbound movement could reduce balance between StartPicking's read and commit, causing hardLockedSum > balance | Canonical `StockLockKey` for lock key derivation. `IBalanceGuardLockFactory` abstraction. All balance-decreasing movements (`MovementType.IsBalanceDecreasing()`) now acquire advisory lock before reading balance and appending events. | `StockLockKey.cs`, `IBalanceGuardLock.cs`, `MovementType.cs`, `RecordStockMovementCommandHandler.cs`, `MartenPickStockOrchestration.cs`, `MartenStartPickingOrchestration.cs` |
+| **H (CRIT-02)** | AvailableStock projection rebuild missing + JSONB checksum nondeterminism | `ReplayAvailableStockEventsAsync()` replays StockMoved + PickingStarted + ReservationConsumed + ReservationCancelled in GLOBAL sequence order. Field-based checksums replace `data::text`. | `ProjectionRebuildService.cs` |
+
+## Known Open Items (Phase 2)
+
+| ID | Severity | Description | Recommendation |
+|----|----------|-------------|----------------|
+| HIGH-02 | BY DESIGN | `PickStockFailedPermanentlyEvent` does NOT release HARD locks — requires supervisor intervention | Implement `ReservationTimeoutSaga` for auto-cancellation after 2-hour policy |
+| MED-02 | LOW impact | Virtual locations (SUPPLIER, PRODUCTION, SCRAP, SYSTEM) create phantom AvailableStock documents | Filter at projection or query layer |
 
 ## How to Implement UI Safely
 
