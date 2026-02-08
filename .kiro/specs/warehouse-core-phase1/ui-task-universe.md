@@ -454,12 +454,13 @@ Props: CurrentPage, TotalPages, PageSize, PageSizeOptions
 - **Dependencies:** None
 - **Acceptance Criteria:**
   - [ ] Create `LoadingIndicator.razor` component
-  - [ ] Support spinner, progress bar, skeleton loader
+  - [ ] Support spinner only (Phase 1)
+  - [ ] Progress bar and skeleton loader deferred to Phase 2
 - **Cursor Minimal Context:**
 ```
 Files: WebUI/Components/LoadingIndicator.razor
 Pattern: Bootstrap 5 spinner component
-Variants: Spinner (default), ProgressBar (optional), Skeleton (optional)
+Variants: Spinner only in Phase 1 (ProgressBar/Skeleton deferred to Phase 2)
 Usage: <LoadingIndicator Type="Spinner" />
 ```
 - **Tests**: None (UI component)
@@ -1524,8 +1525,28 @@ This UI task universe provides a complete implementation plan for UI Slice 0 (Ad
 
 **Error Model (Governance Approved):**
 - ✅ ProblemDetails mapper middleware (UI-0.2a)
-- ✅ 10 standardized DomainErrorCodes with HTTP status mapping
-- ✅ 4 new codes added: INSUFFICIENT_BALANCE, RESERVATION_NOT_ALLOCATED, HARD_LOCK_CONFLICT, INVALID_PROJECTION_NAME (UI-0.2b)
+- ✅ 12 canonical DomainErrorCodes with HTTP status mapping (UI-0.2b)
+
+**Canonical DomainErrorCode to HTTP Status Mapping:**
+
+| DomainErrorCode | HTTP Status | Title | User-Friendly Message |
+|-----------------|-------------|-------|----------------------|
+| INSUFFICIENT_BALANCE | 422 Unprocessable Entity | Insufficient Balance | Insufficient balance. Cannot complete operation. |
+| RESERVATION_NOT_ALLOCATED | 400 Bad Request | Invalid Reservation State | Reservation is not in ALLOCATED state. Cannot start picking. |
+| HARD_LOCK_CONFLICT | 409 Conflict | Lock Conflict | HARD lock conflict detected. Another reservation is already picking this stock. |
+| INVALID_PROJECTION_NAME | 400 Bad Request | Invalid Projection Name | Invalid projection name. Must be LocationBalance or AvailableStock. |
+| IDEMPOTENCY_IN_PROGRESS | 409 Conflict | Request In Progress | Request is currently being processed. Please wait. |
+| IDEMPOTENCY_ALREADY_PROCESSED | 409 Conflict | Duplicate Request | Request already processed. Idempotency key conflict. |
+| CONCURRENCY_CONFLICT | 409 Conflict | Concurrent Modification | Concurrent modification detected. Please retry. |
+| VALIDATION_ERROR | 400 Bad Request | Validation Failed | One or more validation errors occurred. |
+| NOT_FOUND | 404 Not Found | Resource Not Found | The requested resource was not found. |
+| UNAUTHORIZED | 401 Unauthorized | Unauthorized | Authentication required. |
+| FORBIDDEN | 403 Forbidden | Forbidden | You do not have permission to perform this action. |
+| INTERNAL_ERROR | 500 Internal Server Error | Internal Server Error | Server error. Please try again later. |
+
+**Generic HTTP Status Messages:**
+- **500 Internal Server Error**: "Server error. Please try again later."
+- **503 Service Unavailable**: "Backend unavailable. Please check system status."
 
 **Scalability (Governance Approved):**
 - ✅ ReservationSummaryProjection added (UI-Res-Index package)

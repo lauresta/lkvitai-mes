@@ -334,6 +334,7 @@ All API errors return RFC 7807 ProblemDetails format:
 | NOT_FOUND | 404 Not Found | Resource Not Found | The requested resource was not found. |
 | UNAUTHORIZED | 401 Unauthorized | Unauthorized | Authentication required. |
 | FORBIDDEN | 403 Forbidden | Forbidden | You do not have permission to perform this action. |
+| INTERNAL_ERROR | 500 Internal Server Error | Internal Server Error | Server error. Please try again later. |
 
 **Generic HTTP Status Messages:**
 - **500 Internal Server Error**: "Server error. Please try again later."
@@ -405,7 +406,7 @@ All API errors return RFC 7807 ProblemDetails format:
 ### Package Coverage
 
 - **UI-0 (Foundation)**: Shared components (DataTable, Pagination, ErrorBanner, LoadingIndicator, StaleDataBadge), ProblemDetails error handler, MainLayout
-- **UI-Res-Index (Reservation Projection)**: ReservationSummaryView read model, ReservationSummaryProjection, SearchReservationsQuery, GetReservationDetailQuery (BLOCKER for UI-3)
+- **UI-Res-Index (Reservation Projection)**: ReservationSummaryView read model, ReservationSummaryProjection, SearchReservationsQuery with full details (BLOCKER for UI-3)
 - **UI-1 (Dashboard)**: Dashboard page, health/stock/reservation/projection summary APIs, dashboard DTOs and services
 - **UI-2 (Available Stock)**: Available Stock search page, search filters, data table, virtual location filtering, pagination, CSV export
 - **UI-3 (Reservations)**: Reservations list page, status filter, reservation details modal, pick modal, StartPicking and Pick actions
