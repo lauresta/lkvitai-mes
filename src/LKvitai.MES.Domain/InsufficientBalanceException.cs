@@ -15,8 +15,10 @@ public class InsufficientBalanceException : DomainException
 
     public InsufficientBalanceException(
         string location, string sku, decimal requested, decimal available)
-        : base($"Insufficient balance at '{location}' for SKU '{sku}': " +
-               $"requested {requested}, available {available}")
+        : base(
+            DomainErrorCodes.InsufficientBalance,
+            $"Insufficient balance at '{location}' for SKU '{sku}': " +
+            $"requested {requested}, available {available}")
     {
         Location = location;
         SKU = sku;

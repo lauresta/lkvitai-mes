@@ -74,6 +74,7 @@ public class ProjectionRebuildService : IProjectionRebuildService
             if (tableName is null)
             {
                 return Result<ProjectionRebuildReport>.Fail(
+                    DomainErrorCodes.InvalidProjectionName,
                     $"Projection '{projectionName}' rebuild not implemented");
             }
 
@@ -114,6 +115,7 @@ public class ProjectionRebuildService : IProjectionRebuildService
 
                     stopwatch.Stop();
                     return Result<ProjectionRebuildReport>.Fail(
+                        DomainErrorCodes.ValidationError,
                         $"Checksum verification failed. " +
                         $"Production: {productionChecksum}, Shadow: {shadowChecksum}");
                 }
@@ -151,7 +153,9 @@ public class ProjectionRebuildService : IProjectionRebuildService
         {
             _logger.LogError(ex, "Error rebuilding projection {ProjectionName}", projectionName);
             stopwatch.Stop();
-            return Result<ProjectionRebuildReport>.Fail($"Rebuild failed: {ex.Message}");
+            return Result<ProjectionRebuildReport>.Fail(
+                DomainErrorCodes.InternalError,
+                $"Rebuild failed: {ex.Message}");
         }
     }
 

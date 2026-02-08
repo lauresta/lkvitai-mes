@@ -1,0 +1,21 @@
+@inherits LayoutComponentBase
+@inject IWebHostEnvironment Environment
+
+<div class="d-flex">
+    <nav class="sidebar bg-dark text-white" style="width: 250px; min-height: 100vh;">
+        <NavMenu />
+    </nav>
+
+    <div class="flex-grow-1">
+        <header class="navbar navbar-light bg-light border-bottom px-3">
+            <span class="navbar-brand mb-0 h1">LKvitai.MES Warehouse</span>
+            <span class="text-muted small">@Environment.EnvironmentName</span>
+            <button class="btn btn-outline-secondary btn-sm" disabled>Login</button>
+        </header>
+
+        <main class="container-fluid p-4 position-relative">
+            <ToastContainer />
+            @Body
+        </main>
+    </div>
+</div>

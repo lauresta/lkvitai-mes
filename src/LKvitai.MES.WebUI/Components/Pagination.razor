@@ -1,0 +1,57 @@
+<div class="d-flex justify-content-between align-items-center gap-3 flex-wrap">
+    <div>Page @CurrentPage of @Math.Max(TotalPages, 1)</div>
+    <nav aria-label="Pagination">
+        <ul class="pagination mb-0">
+            <li class="page-item @(CurrentPage <= 1 ? "disabled" : null)">
+                <button class="page-link" @onclick="PreviousAsync" disabled="@(CurrentPage <= 1)">Previous</button>
+            </li>
+            <li class="page-item @(CurrentPage >= TotalPages ? "disabled" : null)">
+                <button class="page-link" @onclick="NextAsync" disabled="@(CurrentPage >= TotalPages)">Next</button>
+            </li>
+        </ul>
+    </nav>
+    <div class="d-flex align-items-center gap-2">
+        <label class="form-label mb-0" for="page-size">Page size</label>
+        <select id="page-size" class="form-select form-select-sm" value="@PageSize" @onchange="OnPageSizeChangedInternalAsync">
+            @foreach (var option in EffectivePageSizeOptions)
+            {
+                <option value="@option">@option</option>
+            }
+        </select>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int CurrentPage { get; set; } = 1;
+
+    [Parameter]
+    public int TotalPages { get; set; } = 1;
+
+    [Parameter]
+    public int PageSize { get; set; } = 50;
+
+    [Parameter]
+    public int[]? PageSizeOptions { get; set; }
+
+    [Parameter]
+    public EventCallback<int> OnPageChanged { get; set; }
+
+    [Parameter]
+    public EventCallback<int> OnPageSizeChanged { get; set; }
+
+    private int[] EffectivePageSizeOptions => PageSizeOptions is { Length: > 0 } ? PageSizeOptions : [25, 50, 100];
+
+    private Task PreviousAsync() => OnPageChanged.InvokeAsync(Math.Max(1, CurrentPage - 1));
+
+    private Task NextAsync() => OnPageChanged.InvokeAsync(Math.Min(Math.Max(1, TotalPages), CurrentPage + 1));
+
+    private async Task OnPageSizeChangedInternalAsync(ChangeEventArgs args)
+    {
+        if (int.TryParse(args.Value?.ToString(), out var selected))
+        {
+            await OnPageSizeChanged.InvokeAsync(selected);
+            await OnPageChanged.InvokeAsync(1);
+        }
+    }
+}

@@ -1,0 +1,17 @@
+@{
+    var lag = DateTime.UtcNow - LastUpdated;
+}
+
+@if (lag.TotalSeconds >= 30)
+{
+    <span class="badge bg-danger">Stale</span>
+}
+else if (lag.TotalSeconds >= 5)
+{
+    <span class="badge bg-warning text-dark">Stale</span>
+}
+
+@code {
+    [Parameter]
+    public DateTime LastUpdated { get; set; }
+}

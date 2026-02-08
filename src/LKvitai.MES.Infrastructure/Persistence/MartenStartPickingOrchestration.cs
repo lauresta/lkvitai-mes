@@ -84,7 +84,9 @@ public class MartenStartPickingOrchestration : IStartPickingOrchestration
                 if (reservation is null)
                 {
                     await lockTx.RollbackAsync(cancellationToken);
-                    return Result.Fail($"Reservation {reservationId} not found.");
+                    return Result.Fail(
+                        DomainErrorCodes.NotFound,
+                        $"Reservation {reservationId} not found.");
                 }
 
                 // Domain validation (status + lock type)
@@ -95,7 +97,7 @@ public class MartenStartPickingOrchestration : IStartPickingOrchestration
                 catch (DomainException ex)
                 {
                     await lockTx.RollbackAsync(cancellationToken);
-                    return Result.Fail(ex.Message);
+                    return Result.Fail(ex.ErrorCode, ex.Message);
                 }
 
                 // ─── Step 2: Acquire advisory locks (sorted to prevent deadlocks) ───
@@ -124,7 +126,9 @@ public class MartenStartPickingOrchestration : IStartPickingOrchestration
                 if (reservation is null)
                 {
                     await lockTx.RollbackAsync(cancellationToken);
-                    return Result.Fail($"Reservation {reservationId} not found.");
+                    return Result.Fail(
+                        DomainErrorCodes.NotFound,
+                        $"Reservation {reservationId} not found.");
                 }
 
                 try
@@ -134,7 +138,7 @@ public class MartenStartPickingOrchestration : IStartPickingOrchestration
                 catch (DomainException ex)
                 {
                     await lockTx.RollbackAsync(cancellationToken);
-                    return Result.Fail(ex.Message);
+                    return Result.Fail(ex.ErrorCode, ex.Message);
                 }
 
                 // ─── Step 4: Query hard locks + balances ───
@@ -171,7 +175,8 @@ public class MartenStartPickingOrchestration : IStartPickingOrchestration
                 {
                     await lockTx.RollbackAsync(cancellationToken);
                     return Result.Fail(
-                        $"Insufficient available stock: {string.Join("; ", insufficientLines)}");
+                        DomainErrorCodes.HardLockConflict,
+                        $"Insufficient available stock after HARD lock check: {string.Join("; ", insufficientLines)}");
                 }
 
                 // ─── Step 5: Get stream version for optimistic concurrency ───
@@ -241,6 +246,7 @@ public class MartenStartPickingOrchestration : IStartPickingOrchestration
                     attempt, MaxRetries, reservationId);
 
                 return Result.Fail(
+                    DomainErrorCodes.ConcurrencyConflict,
                     $"Concurrency conflict after {MaxRetries} attempts for reservation {reservationId}.");
             }
             catch (Exception)
@@ -253,7 +259,9 @@ public class MartenStartPickingOrchestration : IStartPickingOrchestration
             }
         }
 
-        return Result.Fail($"Unexpected: exceeded retry loop ({MaxRetries} attempts).");
+        return Result.Fail(
+            DomainErrorCodes.InternalError,
+            $"Unexpected: exceeded retry loop ({MaxRetries} attempts).");
     }
 
     // ----------------------------------------------------------------

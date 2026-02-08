@@ -1,0 +1,28 @@
+@if (!string.IsNullOrWhiteSpace(Message))
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <div>@Message</div>
+        @if (!string.IsNullOrWhiteSpace(TraceId))
+        {
+            <small class="text-muted d-block">Error ID: @TraceId</small>
+        }
+        <div class="mt-2 d-flex gap-2">
+            <button type="button" class="btn btn-outline-danger btn-sm" @onclick="OnRetry">Retry</button>
+            <button type="button" class="btn-close" aria-label="Close" @onclick="OnDismiss"></button>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string Message { get; set; } = string.Empty;
+
+    [Parameter]
+    public string? TraceId { get; set; }
+
+    [Parameter]
+    public EventCallback OnRetry { get; set; }
+
+    [Parameter]
+    public EventCallback OnDismiss { get; set; }
+}

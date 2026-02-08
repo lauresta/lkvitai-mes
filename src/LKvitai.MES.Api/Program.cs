@@ -1,4 +1,5 @@
 using LKvitai.MES.Api.Configuration;
+using LKvitai.MES.Api.ErrorHandling;
 using LKvitai.MES.Api.Services;
 using LKvitai.MES.Application.Ports;
 using LKvitai.MES.Infrastructure;
@@ -20,6 +21,7 @@ builder.Host.UseSerilog();
 
 // Add services per blueprint
 builder.Services.AddControllers();
+builder.Services.AddProblemDetails();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -62,6 +64,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseMiddleware<ProblemDetailsExceptionMiddleware>();
 app.UseAuthorization();
 app.MapControllers();
 

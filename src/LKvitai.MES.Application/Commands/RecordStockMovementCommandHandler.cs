@@ -107,13 +107,21 @@ public class RecordStockMovementCommandHandler : IRequestHandler<RecordStockMove
 
                     return Result.Ok();
                 }
-                catch (DomainException ex)
+                catch (InsufficientBalanceException ex)
                 {
                     // Domain rule violation — do NOT retry
                     _logger.LogWarning(
                         "StockMovement {MovementId} rejected: {Error}",
                         movementId, ex.Message);
-                    return Result.Fail(ex.Message);
+                    var detail = $"Warehouse '{request.WarehouseId}': {ex.Message}";
+                    return Result.Fail(DomainErrorCodes.InsufficientBalance, detail);
+                }
+                catch (DomainException ex)
+                {
+                    _logger.LogWarning(
+                        "StockMovement {MovementId} rejected: {Error}",
+                        movementId, ex.Message);
+                    return Result.Fail(ex.ErrorCode, ex.Message);
                 }
                 catch (ConcurrencyException ex) when (attempt < MaxRetries)
                 {
@@ -133,12 +141,16 @@ public class RecordStockMovementCommandHandler : IRequestHandler<RecordStockMove
                         ex,
                         "Concurrency conflict on final attempt {Attempt}/{MaxRetries} for movement {MovementId} on stream {StreamId}",
                         attempt, MaxRetries, movementId, streamId);
-                    return Result.Fail($"Concurrency conflict after {MaxRetries} attempts: {ex.Message}");
+                    return Result.Fail(
+                        DomainErrorCodes.ConcurrencyConflict,
+                        $"Concurrency conflict after {MaxRetries} attempts: {ex.Message}");
                 }
             }
 
             // Should never reach here, but satisfy the compiler
-            return Result.Fail($"Unexpected: exceeded retry loop ({MaxRetries} attempts)");
+            return Result.Fail(
+                DomainErrorCodes.InternalError,
+                $"Unexpected: exceeded retry loop ({MaxRetries} attempts)");
         }
         finally
         {

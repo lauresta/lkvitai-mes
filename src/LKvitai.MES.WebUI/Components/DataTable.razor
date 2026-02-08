@@ -1,0 +1,54 @@
+@typeparam TItem
+
+<table class="table table-striped table-hover">
+    <thead>
+        <tr>
+            @Columns
+        </tr>
+    </thead>
+    <tbody>
+        @if (Items.Count == 0)
+        {
+            <tr>
+                <td colspan="100%" class="text-muted">@EmptyMessage</td>
+            </tr>
+        }
+        else
+        {
+            @foreach (var item in Items)
+            {
+                <tr @onclick="() => HandleRowClickAsync(item)">
+                    @RowTemplate(item)
+                </tr>
+            }
+        }
+    </tbody>
+</table>
+
+@code {
+    [Parameter]
+    public IReadOnlyList<TItem> Items { get; set; } = Array.Empty<TItem>();
+
+    [Parameter]
+    public int TotalCount { get; set; }
+
+    [Parameter]
+    public RenderFragment Columns { get; set; } = default!;
+
+    [Parameter]
+    public RenderFragment<TItem> RowTemplate { get; set; } = default!;
+
+    [Parameter]
+    public string EmptyMessage { get; set; } = "No items";
+
+    [Parameter]
+    public EventCallback<TItem> OnRowClick { get; set; }
+
+    private async Task HandleRowClickAsync(TItem item)
+    {
+        if (OnRowClick.HasDelegate)
+        {
+            await OnRowClick.InvokeAsync(item);
+        }
+    }
+}

@@ -40,7 +40,7 @@ public class ValidationBehavior<TRequest, TResponse> : IPipelineBehavior<TReques
         if (failures.Any())
         {
             var errorMessage = string.Join("; ", failures.Select(f => f.ErrorMessage));
-            return (TResponse)(object)Result.Fail(errorMessage);
+            return (TResponse)(object)Result.Fail(DomainErrorCodes.ValidationError, errorMessage);
         }
         
         return await next();

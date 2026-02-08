@@ -87,14 +87,17 @@ public class Reservation
     {
         if (Status != ReservationStatus.ALLOCATED)
             throw new DomainException(
+                DomainErrorCodes.ReservationNotAllocated,
                 $"Reservation {ReservationId} must be ALLOCATED to start picking. Current status: {Status}");
 
         if (LockType != ReservationLockType.SOFT)
             throw new DomainException(
+                DomainErrorCodes.HardLockConflict,
                 $"Reservation {ReservationId} must have SOFT lock to start picking. Current lock: {LockType}");
 
         if (!Lines.Any())
             throw new DomainException(
+                DomainErrorCodes.ValidationError,
                 $"Reservation {ReservationId} has no allocated lines.");
     }
 

@@ -1,0 +1,47 @@
+@implements IDisposable
+@inject ToastService ToastService
+
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 2000;">
+    @foreach (var toast in _toasts)
+    {
+        <div class="toast show text-white mb-2 @GetToastClass(toast.Type)" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-body">@toast.Message</div>
+        </div>
+    }
+</div>
+
+@code {
+    private readonly List<ToastMessage> _toasts = [];
+
+    protected override void OnInitialized()
+    {
+        ToastService.OnShow += HandleShow;
+    }
+
+    public void Dispose()
+    {
+        ToastService.OnShow -= HandleShow;
+    }
+
+    private void HandleShow(ToastMessage message)
+    {
+        _toasts.Add(message);
+        _ = AutoDismissAsync(message);
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private async Task AutoDismissAsync(ToastMessage message)
+    {
+        await Task.Delay(TimeSpan.FromSeconds(5));
+        _toasts.Remove(message);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private static string GetToastClass(ToastType type) => type switch
+    {
+        ToastType.Success => "bg-success",
+        ToastType.Error => "bg-danger",
+        ToastType.Warning => "bg-warning text-dark",
+        _ => "bg-secondary"
+    };
+}
