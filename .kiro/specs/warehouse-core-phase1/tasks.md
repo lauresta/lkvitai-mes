@@ -278,37 +278,49 @@ This implementation plan breaks down the Phase 1 warehouse system into increment
     - Test compensation
     - _Requirements: 16.1-16.5_
 
-- [ ] 16. Implement PickStockSaga (CRITICAL - Transaction Ordering) [MITIGATION V-3]
-  - [ ] 16.1 Create PickStockSaga with simplified two-step process
-    - Implement saga state machine
+- [x] 16. Implement PickStockSaga (CRITICAL - Transaction Ordering) [MITIGATION V-3] — **DONE (Package F)**
+  - [x] 16.1 Create PickStockSaga with simplified two-step process
+    - MassTransit state machine with durable retry (no Task.Delay) + DLQ
+    - V-3 compliant: StockMovement recorded FIRST, HU projection NOT waited on
     - Step 1: Validate reservation is PICKING (HARD locked)
-    - Step 2: Validate HU is allocated to reservation
-    - Step 3: Record StockMovement via StockLedger FIRST
-    - Step 4: Update Reservation consumption (do NOT wait for HU projection)
-    - Remove projection wait step (HU projection updates asynchronously)
-    - Implement compensation for each step
+    - Step 2: Record StockMovement via StockLedger FIRST
+    - Step 3: Consume reservation (independent of HU projection)
+    - Durable retry via MassTransit Schedule with exponential backoff (5s, 15s, 45s)
+    - Permanent failure → PickStockFailedPermanentlyEvent (DLQ/supervisor alert)
+    - Files: Sagas/PickStockSaga.cs, Application/Commands/PickStockCommand.cs,
+      Application/Commands/PickStockCommandHandler.cs, Application/Orchestration/IPickStockOrchestration.cs,
+      Infrastructure/Persistence/MartenPickStockOrchestration.cs, Contracts/Messages/PickStockMessages.cs,
+      Application/Ports/IEventBus.cs, Api/Services/MassTransitEventBus.cs
     - _Requirements: 4.1-4.7, 17.1-17.12_
   
   - [ ]* 16.2 Write property test for pick transaction ordering
     - **Property 23: Pick Transaction Ordering**
     - **Validates: Requirements 4.1-4.7, 17.3-17.12**
+    - Deferred to Phase 2 (property tests)
   
-  - [ ]* 16.3 Write unit tests for PickStockSaga
-    - Test happy path
-    - Test compensation scenarios
-    - Test transaction ordering enforcement
+  - [x]* 16.3 Write unit tests for PickStockSaga — **DONE (18 tests)**
+    - Activity tests (3): orchestration call success/failure/exception
+    - Saga definition tests (4): states, events, schedule, max retries
+    - Saga state tests (3): defaults, properties, interface compliance
+    - Message contract tests (3): default values, field access
+    - Handler tests (5): full success, movement fail, consumption deferred, not picking, correlation id
     - _Requirements: 4.1-4.7, 17.1-17.12_
 
 - [ ] 17. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 18. Implement AllocationSaga
-  - [ ] 18.1 Create AllocationSaga for reservation allocation
-    - Implement saga state machine
-    - Query AvailableStock projection
-    - Find HUs matching requested SKUs
-    - Allocate HUs to reservation (SOFT lock)
-    - Implement compensation (insufficient stock notification)
+- [x] 18. Implement AllocationSaga — **DONE (Package F)**
+  - [x] 18.1 Create AllocationSaga for reservation allocation
+    - MediatR command handler + Marten orchestration (single-step, no saga needed)
+    - Queries AvailableStock projection for candidates (warehouseId, SKU)
+    - Allocates stock to reservation (SOFT lock via StockAllocatedEvent)
+    - Expected-version append with bounded retry for concurrency safety
+    - Idempotent via CommandId + ProcessedCommandStore
+    - Files: Application/Commands/AllocateReservationCommand.cs,
+      Application/Commands/AllocateReservationCommandHandler.cs,
+      Application/Orchestration/IAllocateReservationOrchestration.cs,
+      Infrastructure/Persistence/MartenAllocateReservationOrchestration.cs
+    - Tests: 4 unit tests (handler delegation, error codes, parameters)
     - _Requirements: 3.2_
 
 - [ ] 19. Implement Split and Merge Operations

@@ -15,4 +15,27 @@ public interface IReservationRepository
     /// </summary>
     Task<(Reservation? Reservation, long Version)> LoadAsync(
         Guid reservationId, CancellationToken ct);
+
+    /// <summary>
+    /// Returns lightweight DTOs for all reservations currently in the given state.
+    /// Used by consistency checks (e.g. StuckReservationCheck).
+    /// </summary>
+    Task<IReadOnlyList<ReservationStateDto>> GetReservationsInStateAsync(
+        string status, CancellationToken ct);
+
+    /// <summary>
+    /// Returns the current status string of a reservation, or null if not found.
+    /// Used by consistency checks (e.g. OrphanHardLockCheck).
+    /// </summary>
+    Task<string?> GetReservationStatusAsync(Guid reservationId, CancellationToken ct);
+}
+
+/// <summary>
+/// Lightweight DTO for consistency check queries.
+/// </summary>
+public record ReservationStateDto
+{
+    public Guid ReservationId { get; init; }
+    public string Status { get; init; } = string.Empty;
+    public DateTime? PickingStartedAt { get; init; }
 }

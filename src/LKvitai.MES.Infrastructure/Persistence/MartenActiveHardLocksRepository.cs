@@ -30,4 +30,22 @@ public class MartenActiveHardLocksRepository : IActiveHardLocksRepository
 
         return locks.Sum(x => x.HardLockedQty);
     }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<ActiveHardLockDto>> GetAllActiveLocksAsync(CancellationToken ct)
+    {
+        await using var session = _store.QuerySession();
+
+        var locks = await session.Query<ActiveHardLockView>()
+            .ToListAsync(ct);
+
+        return locks.Select(l => new ActiveHardLockDto
+        {
+            ReservationId = l.ReservationId,
+            WarehouseId = l.WarehouseId,
+            Location = l.Location,
+            SKU = l.SKU,
+            HardLockedQty = l.HardLockedQty
+        }).ToList();
+    }
 }

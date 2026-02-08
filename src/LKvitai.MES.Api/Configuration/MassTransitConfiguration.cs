@@ -13,6 +13,9 @@ public static class MassTransitConfiguration
         this IServiceCollection services,
         IConfiguration configuration)
     {
+        // Register ConsumeReservationActivity for DI resolution by the saga
+        services.AddScoped<ConsumeReservationActivity>();
+
         services.AddMassTransit(x =>
         {
             // Register sagas per blueprint with Marten persistence
@@ -45,6 +48,8 @@ public static class MassTransitConfiguration
                         h.Password(configuration["RabbitMQ:Password"] ?? "guest");
                     });
                     
+                    // Use delayed message exchange for durable retry scheduling (prod)
+                    cfg.UseDelayedMessageScheduler();
                     cfg.ConfigureEndpoints(context);
                 });
             }

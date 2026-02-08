@@ -13,4 +13,22 @@ public interface IActiveHardLocksRepository
     /// </summary>
     Task<decimal> SumHardLockedQtyAsync(
         string warehouseId, string location, string sku, CancellationToken ct);
+
+    /// <summary>
+    /// Returns all active hard lock entries.
+    /// Used by consistency checks (e.g. OrphanHardLockCheck).
+    /// </summary>
+    Task<IReadOnlyList<ActiveHardLockDto>> GetAllActiveLocksAsync(CancellationToken ct);
+}
+
+/// <summary>
+/// Lightweight DTO for active hard lock entries used in consistency checks.
+/// </summary>
+public record ActiveHardLockDto
+{
+    public Guid ReservationId { get; init; }
+    public string WarehouseId { get; init; } = string.Empty;
+    public string Location { get; init; } = string.Empty;
+    public string SKU { get; init; } = string.Empty;
+    public decimal HardLockedQty { get; init; }
 }

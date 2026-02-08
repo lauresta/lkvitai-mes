@@ -1,3 +1,4 @@
+using LKvitai.MES.Application.ConsistencyChecks;
 using LKvitai.MES.Application.Orchestration;
 using LKvitai.MES.Application.Ports;
 using LKvitai.MES.Application.Projections;
@@ -31,9 +32,15 @@ public static class DependencyInjection
         // Orchestration implementations
         services.AddScoped<IStartPickingOrchestration, MartenStartPickingOrchestration>();
         services.AddScoped<IReceiveGoodsOrchestration, MartenReceiveGoodsOrchestration>();
+        services.AddScoped<IAllocateReservationOrchestration, MartenAllocateReservationOrchestration>();
+        services.AddScoped<IPickStockOrchestration, MartenPickStockOrchestration>();
 
         // Command idempotency store (Marten document — application port impl)
         services.AddScoped<IProcessedCommandStore, MartenProcessedCommandStore>();
+
+        // Consistency checks
+        services.AddScoped<IConsistencyCheck, StuckReservationCheck>();
+        services.AddScoped<IConsistencyCheck, OrphanHardLockCheck>();
 
         return services;
     }

@@ -18,11 +18,16 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="MassTransit" Version="8.1.3" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\LKvitai.MES.Domain\LKvitai.MES.Domain.csproj" />
     <ProjectReference Include="..\..\LKvitai.MES.Application\LKvitai.MES.Application.csproj" />
     <ProjectReference Include="..\..\LKvitai.MES.Contracts\LKvitai.MES.Contracts.csproj" />
     <ProjectReference Include="..\..\LKvitai.MES.Projections\LKvitai.MES.Projections.csproj" />
     <ProjectReference Include="..\..\LKvitai.MES.Infrastructure\LKvitai.MES.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\LKvitai.MES.Sagas\LKvitai.MES.Sagas.csproj" />
   </ItemGroup>
 
 </Project>

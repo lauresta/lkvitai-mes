@@ -76,15 +76,15 @@ This document provides the COMPLETE implementation task universe for Warehouse C
 - 3.2.1: TransferStock Saga - Multi-Line Transfer → Deps: 2.1.1, 2.2.1
 - 3.2.2: TransferStock Saga - Rollback on Failure → Deps: 3.2.1
 - 3.2.3: TransferStock Saga - Integration Tests → Deps: 3.2.2
-- 3.3.1: PickStock Saga - Transaction Ordering (V-3) → Deps: 2.1.1, 2.2.2, 2.3.5
-- 3.3.2: PickStock Saga - Async Projection Handling → Deps: 3.3.1
-- 3.3.3: PickStock Saga - Durable Retry with MassTransit Schedule → Deps: 3.3.2
-- 3.3.4: PickStock Saga - Compensation Logic → Deps: 3.3.3
-- 3.3.5: PickStock Saga - Integration Tests → Deps: 3.3.4
-- 3.4.1: Allocation Saga - Query AvailableStock → Deps: 2.3.1, 4.2.3
-- 3.4.2: Allocation Saga - Find Suitable HUs → Deps: 3.4.1
-- 3.4.3: Allocation Saga - Conflict Detection → Deps: 3.4.2
-- 3.4.4: Allocation Saga - Integration Tests → Deps: 3.4.3
+- 3.3.1: PickStock Saga - Transaction Ordering (V-3) → Deps: 2.1.1, 2.2.2, 2.3.5 ✅ **DONE** — `Sagas/PickStockSaga.cs` (MassTransit state machine), `Infrastructure/Persistence/MartenPickStockOrchestration.cs`, `Application/Commands/PickStockCommand.cs`, `Application/Commands/PickStockCommandHandler.cs`
+- 3.3.2: PickStock Saga - Async Projection Handling → Deps: 3.3.1 ✅ **DONE** — V-3 compliant: HU projection NOT waited on. StockMovement recorded FIRST, reservation consumed independently.
+- 3.3.3: PickStock Saga - Durable Retry with MassTransit Schedule → Deps: 3.3.2 ✅ **DONE** — `PickStockSaga` uses MassTransit `Schedule<>` with exponential backoff (5s/15s/45s). No Task.Delay. Survives process restart.
+- 3.3.4: PickStock Saga - Compensation Logic → Deps: 3.3.3 ✅ **DONE** — Permanent failure → `PickStockFailedPermanentlyEvent` published (DLQ). Supervisor alert via log + event. `ConsumeReservationActivity` handles retries.
+- 3.3.5: PickStock Saga - Integration Tests → Deps: 3.3.4 ✅ **DONE** — `Tests.Integration/AllocationAndPickStockIntegrationTests.cs` (3 Docker-gated tests: happy path, consumption failure, idempotent consumption). `Tests.Unit/PickStockSagaTests.cs` (18 unit tests).
+- 3.4.1: Allocation Saga - Query AvailableStock → Deps: 2.3.1, 4.2.3 ✅ **DONE** — `Infrastructure/Persistence/MartenAllocateReservationOrchestration.cs` queries `AvailableStockView` for candidates.
+- 3.4.2: Allocation Saga - Find Suitable HUs → Deps: 3.4.1 ✅ **DONE** — Allocation finds stock per SKU across warehouse locations, prefers locations with most stock.
+- 3.4.3: Allocation Saga - Conflict Detection → Deps: 3.4.2 ✅ **DONE** — Expected-version append with bounded retry (3 attempts). Insufficient stock detection with per-line error reporting.
+- 3.4.4: Allocation Saga - Integration Tests → Deps: 3.4.3 ✅ **DONE** — 4 unit tests + 3 Docker-gated integration tests covering full Receive→Allocate→StartPicking→PickStock flow.
 
 **Wave 4: Projections & Rebuild Tooling (2 weeks) - 20 tasks**
 - 4.1.1: LocationBalance - Event Handler → Deps: 2.1.3
@@ -138,16 +138,16 @@ This document provides the COMPLETE implementation task universe for Warehouse C
 - 6.1.4: Consistency Check - Orphaned HUs → Deps: 2.2.2, 2.5.1
 - 6.1.5: Consistency Check - Consumed Reservations → Deps: 2.3.1
 - 6.1.6: Consistency Check - Event Stream Gaps → Deps: 2.1.1
-- 6.1.7: Consistency Check - ActiveHardLocks vs Reservation State → Deps: 4.3.1, 2.3.1
-- 6.1.8: Consistency Check - Reservation Stuck in PICKING > 2h → Deps: 2.3.1
+- 6.1.7: Consistency Check - ActiveHardLocks vs Reservation State → Deps: 4.3.1, 2.3.1 ✅ **DONE** — `Application/ConsistencyChecks/OrphanHardLockCheck.cs`, `Tests.Unit/ConsistencyCheckTests.cs` (4 unit tests)
+- 6.1.8: Consistency Check - Reservation Stuck in PICKING > 2h → Deps: 2.3.1 ✅ **DONE** — `Application/ConsistencyChecks/StuckReservationCheck.cs`, 2-hour threshold per blueprint, `Tests.Unit/ConsistencyCheckTests.cs` (3 unit tests)
 - 6.2.1: Metrics - Projection Lag Monitoring → Deps: 4.1.1
 - 6.2.2: Metrics - Saga Timeout Alerts → Deps: 3.1.1
 - 6.2.3: Metrics - Integration Failure Alerts → Deps: 5.4.1, 5.5.1
 - 6.2.4: Dashboards - Grafana Setup → Deps: 6.2.1
 - 6.3.1: DLQ - Dead Letter Queue Setup → Deps: 1.1.2
 - 6.3.2: DLQ - Retry Tooling → Deps: 6.3.1
-- 6.3.3: DLQ - PickStock Recovery Policy → Deps: 6.3.2, 3.3.1
-- 6.3.4: DLQ - Supervisor Alert for Permanent Failures → Deps: 6.3.3
+- 6.3.3: DLQ - PickStock Recovery Policy → Deps: 6.3.2, 3.3.1 ✅ **DONE** — `PickStockSaga` transitions to Failed state after MaxRetryAttempts, publishes `PickStockFailedPermanentlyEvent`. Policy: exponential backoff (3 retries), then DLQ.
+- 6.3.4: DLQ - Supervisor Alert for Permanent Failures → Deps: 6.3.3 ✅ **DONE** — `PickStockSaga` logs P0 error and publishes `PickStockFailedPermanentlyEvent` with ReservationId, MovementId, Reason, FailedAt for supervisor dashboards.
 - 6.4.1: Reconciliation - Cycle Count Wizard → Deps: 6.1.1
 - 6.4.2: Reconciliation - Adjustment Wizard → Deps: 6.4.1
 - 6.4.3: Reconciliation - Controlled Lock Release Policy → Deps: 6.1.7

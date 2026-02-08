@@ -1,4 +1,6 @@
 using LKvitai.MES.Api.Configuration;
+using LKvitai.MES.Api.Services;
+using LKvitai.MES.Application.Ports;
 using LKvitai.MES.Infrastructure;
 using LKvitai.MES.Infrastructure.Persistence;
 using LKvitai.MES.Projections;
@@ -43,6 +45,9 @@ builder.Services.AddMediatRPipeline();
 
 // MassTransit saga orchestration
 builder.Services.AddMassTransitConfiguration(builder.Configuration);
+
+// IEventBus — MassTransit implementation (composition root wires this)
+builder.Services.AddScoped<IEventBus, MassTransitEventBus>();
 
 // OpenTelemetry observability
 builder.Services.AddOpenTelemetryConfiguration(builder.Configuration);
