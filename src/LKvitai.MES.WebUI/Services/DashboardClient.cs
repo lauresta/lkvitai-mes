@@ -20,17 +20,8 @@ public class DashboardClient
 
     public Task<HealthStatusDto> GetHealthAsync() => GetAsync<HealthStatusDto>("/api/dashboard/health");
 
-    public Task<StockSummaryDto> GetStockSummaryAsync() => GetAsync<StockSummaryDto>("/api/dashboard/stock-summary");
-
-    public Task<ReservationSummaryDto> GetReservationSummaryAsync() => GetAsync<ReservationSummaryDto>("/api/dashboard/reservation-summary");
-
-    public Task<ProjectionHealthDto> GetProjectionHealthAsync() => GetAsync<ProjectionHealthDto>("/api/dashboard/projection-health");
-
-    public async Task<IReadOnlyList<RecentMovementDto>> GetRecentActivityAsync(int limit = 10)
-    {
-        var dto = await GetAsync<RecentActivityResponseDto>($"/api/dashboard/recent-activity?limit={limit}");
-        return dto.Movements;
-    }
+    public Task<IReadOnlyList<ProjectionHealthDto>> GetProjectionHealthAsync()
+        => GetAsync<IReadOnlyList<ProjectionHealthDto>>("/api/dashboard/projection-health");
 
     private async Task<T> GetAsync<T>(string relativeUrl)
     {
@@ -46,10 +37,5 @@ public class DashboardClient
 
         var model = JsonSerializer.Deserialize<T>(body, JsonOptions);
         return model ?? throw new JsonException($"Unable to deserialize response to {typeof(T).Name}.");
-    }
-
-    private sealed record RecentActivityResponseDto
-    {
-        public IReadOnlyList<RecentMovementDto> Movements { get; init; } = Array.Empty<RecentMovementDto>();
     }
 }

@@ -26,6 +26,18 @@ public static class ProblemDetailsParser
                 return null;
             }
 
+            if (string.IsNullOrWhiteSpace(model.TraceId) &&
+                model.Extensions is not null &&
+                model.Extensions.TryGetValue("traceId", out var traceIdElement) &&
+                traceIdElement.ValueKind == JsonValueKind.String)
+            {
+                var extensionTraceId = traceIdElement.GetString();
+                if (!string.IsNullOrWhiteSpace(extensionTraceId))
+                {
+                    return model with { TraceId = extensionTraceId };
+                }
+            }
+
             if (!string.IsNullOrWhiteSpace(model.TraceId))
             {
                 return model;

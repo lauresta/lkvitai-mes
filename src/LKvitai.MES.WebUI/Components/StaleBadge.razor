@@ -1,17 +1,27 @@
-@{
-    var lag = DateTime.UtcNow - LastUpdated;
+@if (!LagSeconds.HasValue)
+{
+    <span class="badge bg-secondary">Unknown</span>
 }
-
-@if (lag.TotalSeconds >= 30)
+else if (LagSeconds.Value < WarnSeconds)
+{
+    <span class="badge bg-success">Fresh</span>
+}
+else if (LagSeconds.Value < AlertSeconds)
+{
+    <span class="badge bg-warning text-dark">Lagging</span>
+}
+else
 {
     <span class="badge bg-danger">Stale</span>
-}
-else if (lag.TotalSeconds >= 5)
-{
-    <span class="badge bg-warning text-dark">Stale</span>
 }
 
 @code {
     [Parameter]
-    public DateTime LastUpdated { get; set; }
+    public double? LagSeconds { get; set; }
+
+    [Parameter]
+    public double WarnSeconds { get; set; } = 5;
+
+    [Parameter]
+    public double AlertSeconds { get; set; } = 30;
 }

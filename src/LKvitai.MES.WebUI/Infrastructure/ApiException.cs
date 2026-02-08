@@ -13,7 +13,7 @@ public class ApiException : Exception
     {
         StatusCode = statusCode;
         ProblemDetails = problemDetails;
-        ErrorCode = ExtractErrorCode(problemDetails?.Type);
+        ErrorCode = problemDetails?.ErrorCode ?? ExtractErrorCode(problemDetails?.Type);
         TraceId = problemDetails?.TraceId;
         UserMessage = ErrorCodeMessages.GetMessage(ErrorCode, problemDetails?.Status ?? statusCode);
     }
@@ -25,7 +25,7 @@ public class ApiException : Exception
 
     private static string ResolveMessage(ProblemDetailsModel? problemDetails, int statusCode)
     {
-        var code = ExtractErrorCode(problemDetails?.Type);
+        var code = problemDetails?.ErrorCode ?? ExtractErrorCode(problemDetails?.Type);
         return ErrorCodeMessages.GetMessage(code, problemDetails?.Status ?? statusCode);
     }
 

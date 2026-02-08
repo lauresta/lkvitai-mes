@@ -1,6 +1,159 @@
 @page "/dashboard"
+@inject DashboardClient DashboardClient
 
 <PageTitle>Dashboard - LKvitai.MES</PageTitle>
 
-<h3>Dashboard</h3>
-<p class="text-muted">Coming soon: health cards, stock summary, reservation summary, projection health, recent activity.</p>
+<div class="position-relative">
+    <LoadingSpinner IsLoading="_isLoading" />
+
+    <h3>Dashboard</h3>
+
+    @if (_apiError is not null)
+    {
+        <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                     TraceId="@_apiError.TraceId"
+                     OnRetry="LoadAsync"
+                     OnDismiss="DismissError" />
+    }
+
+    @if (!_isLoading && _apiError is null)
+    {
+        <div class="row g-3 mb-4">
+            <div class="col-12 col-lg-5">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">Service Health</h5>
+                        @if (_health is null)
+                        {
+                            <p class="text-muted mb-0">No health data available.</p>
+                        }
+                        else
+                        {
+                            <dl class="row mb-0">
+                                <dt class="col-4">Status</dt>
+                                <dd class="col-8">
+                                    @if (_health.Ok)
+                                    {
+                                        <span class="badge bg-success">OK</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">Degraded</span>
+                                    }
+                                </dd>
+
+                                <dt class="col-4">Service</dt>
+                                <dd class="col-8">@_health.Service</dd>
+
+                                <dt class="col-4">Version</dt>
+                                <dd class="col-8">@_health.Version</dd>
+
+                                <dt class="col-4">UTC Time</dt>
+                                <dd class="col-8">@_health.UtcNow.ToString("u")</dd>
+                            </dl>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title mb-3">Projection Health</h5>
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th scope="col">ProjectionName</th>
+                                <th scope="col">HighWaterMark</th>
+                                <th scope="col">LastProcessed</th>
+                                <th scope="col">LagSeconds</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (_projectionHealth.Count == 0)
+                            {
+                                <tr>
+                                    <td colspan="4" class="text-muted">No projection data available.</td>
+                                </tr>
+                            }
+                            else
+                            {
+                                @foreach (var projection in _projectionHealth)
+                                {
+                                    <tr>
+                                        <td>@projection.ProjectionName</td>
+                                        <td>@FormatNullableLong(projection.HighWaterMark)</td>
+                                        <td>@FormatNullableLong(projection.LastProcessed)</td>
+                                        <td>
+                                            @FormatLag(projection.LagSeconds)
+                                            <span class="ms-2">
+                                                <StaleBadge LagSeconds="@projection.LagSeconds" />
+                                            </span>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private bool _isLoading = true;
+    private HealthStatusDto? _health;
+    private IReadOnlyList<ProjectionHealthDto> _projectionHealth = Array.Empty<ProjectionHealthDto>();
+    private ApiException? _apiError;
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            var healthTask = DashboardClient.GetHealthAsync();
+            var projectionHealthTask = DashboardClient.GetProjectionHealthAsync();
+
+            await Task.WhenAll(healthTask, projectionHealthTask);
+
+            _health = await healthTask;
+            _projectionHealth = await projectionHealthTask;
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            _health = null;
+            _projectionHealth = Array.Empty<ProjectionHealthDto>();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void DismissError() => _apiError = null;
+
+    private static string FormatNullableLong(long? value) => value?.ToString("N0") ?? "n/a";
+
+    private static string FormatLag(double? value) => value.HasValue ? $"{value:0.##}s" : "n/a";
+
+    private static string BuildErrorMessage(ApiException error)
+    {
+        var title = error.ProblemDetails?.Title ?? "Request failed";
+        var detail = error.ProblemDetails?.Detail;
+        var errorCode = error.ProblemDetails?.ErrorCode ?? error.ErrorCode ?? "unknown";
+
+        if (string.IsNullOrWhiteSpace(detail))
+        {
+            return $"{title} (errorCode: {errorCode})";
+        }
+
+        return $"{title}: {detail} (errorCode: {errorCode})";
+    }
+}
