@@ -1,0 +1,74 @@
+<div class="card shadow-sm h-100 position-relative">
+    <LoadingSpinner IsLoading="IsLoading" />
+
+    <div class="card-body">
+        <h5 class="card-title mb-3">Projection Health</h5>
+
+        @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+        {
+            <ErrorBanner Message="@ErrorMessage"
+                         TraceId="@TraceId"
+                         OnRetry="OnRetry"
+                         OnDismiss="OnDismissErrorAsync" />
+        }
+        else if (Data is null)
+        {
+            <p class="text-muted mb-0">No projection health data available.</p>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">Projection</th>
+                            <th scope="col">Lag</th>
+                            <th scope="col">Last Rebuild</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @RenderRow("LocationBalance", Data.LocationBalanceLag, Data.LastRebuildLB)
+                        @RenderRow("AvailableStock", Data.AvailableStockLag, Data.LastRebuildAS)
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public ProjectionHealthDto? Data { get; set; }
+
+    [Parameter]
+    public bool IsLoading { get; set; }
+
+    [Parameter]
+    public string? ErrorMessage { get; set; }
+
+    [Parameter]
+    public string? TraceId { get; set; }
+
+    [Parameter]
+    public EventCallback OnRetry { get; set; }
+
+    private RenderFragment RenderRow(string projectionName, double? lag, DateTime? rebuildAt) => @<tr>
+        <td>@projectionName</td>
+        <td>
+            @FormatLag(lag)
+            <span class="ms-2"><StaleBadge LagSeconds="lag" /></span>
+        </td>
+        <td>@FormatTimestamp(rebuildAt)</td>
+    </tr>;
+
+    private static string FormatLag(double? lag) => lag.HasValue ? $"{lag:0.##}s" : "n/a";
+
+    private static string FormatTimestamp(DateTime? timestamp)
+        => timestamp.HasValue ? timestamp.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss") : "n/a";
+
+    private Task OnDismissErrorAsync()
+    {
+        ErrorMessage = null;
+        return Task.CompletedTask;
+    }
+}

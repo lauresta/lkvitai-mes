@@ -1,0 +1,59 @@
+<div class="card shadow-sm h-100 position-relative">
+    <LoadingSpinner IsLoading="IsLoading" />
+
+    <div class="card-body">
+        <h5 class="card-title mb-3">Stock Summary</h5>
+
+        @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+        {
+            <ErrorBanner Message="@ErrorMessage"
+                         TraceId="@TraceId"
+                         OnRetry="OnRetry"
+                         OnDismiss="OnDismissErrorAsync" />
+        }
+        else if (Data is null)
+        {
+            <p class="text-muted mb-0">No stock summary available.</p>
+        }
+        else
+        {
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item d-flex justify-content-between px-0">
+                    <span>Total SKUs</span>
+                    <strong>@Data.TotalSKUs.ToString("N0")</strong>
+                </li>
+                <li class="list-group-item d-flex justify-content-between px-0">
+                    <span>Total Quantity</span>
+                    <strong>@Data.TotalQuantity.ToString("N2")</strong>
+                </li>
+                <li class="list-group-item d-flex justify-content-between px-0">
+                    <span>Total Value</span>
+                    <strong>@Data.TotalValue.ToString("C2")</strong>
+                </li>
+            </ul>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public StockSummaryDto? Data { get; set; }
+
+    [Parameter]
+    public bool IsLoading { get; set; }
+
+    [Parameter]
+    public string? ErrorMessage { get; set; }
+
+    [Parameter]
+    public string? TraceId { get; set; }
+
+    [Parameter]
+    public EventCallback OnRetry { get; set; }
+
+    private Task OnDismissErrorAsync()
+    {
+        ErrorMessage = null;
+        return Task.CompletedTask;
+    }
+}

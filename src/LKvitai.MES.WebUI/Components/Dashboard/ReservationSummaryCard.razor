@@ -1,0 +1,59 @@
+<div class="card shadow-sm h-100 position-relative">
+    <LoadingSpinner IsLoading="IsLoading" />
+
+    <div class="card-body">
+        <h5 class="card-title mb-3">Reservation Summary</h5>
+
+        @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+        {
+            <ErrorBanner Message="@ErrorMessage"
+                         TraceId="@TraceId"
+                         OnRetry="OnRetry"
+                         OnDismiss="OnDismissErrorAsync" />
+        }
+        else if (Data is null)
+        {
+            <p class="text-muted mb-0">No reservation summary available.</p>
+        }
+        else
+        {
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                    <span>ALLOCATED</span>
+                    <span class="badge bg-primary rounded-pill">@Data.Allocated</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                    <span>PICKING</span>
+                    <span class="badge bg-warning text-dark rounded-pill">@Data.Picking</span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                    <span>CONSUMED</span>
+                    <span class="badge bg-success rounded-pill">@Data.Consumed</span>
+                </li>
+            </ul>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public ReservationSummaryDto? Data { get; set; }
+
+    [Parameter]
+    public bool IsLoading { get; set; }
+
+    [Parameter]
+    public string? ErrorMessage { get; set; }
+
+    [Parameter]
+    public string? TraceId { get; set; }
+
+    [Parameter]
+    public EventCallback OnRetry { get; set; }
+
+    private Task OnDismissErrorAsync()
+    {
+        ErrorMessage = null;
+        return Task.CompletedTask;
+    }
+}

@@ -1,0 +1,89 @@
+<div class="card shadow-sm h-100 position-relative">
+    <LoadingSpinner IsLoading="IsLoading" />
+
+    <div class="card-body">
+        <h5 class="card-title mb-3">Service Health</h5>
+
+        @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+        {
+            <ErrorBanner Message="@ErrorMessage"
+                         TraceId="@TraceId"
+                         OnRetry="OnRetry"
+                         OnDismiss="OnDismissErrorAsync" />
+        }
+        else if (Data is null)
+        {
+            <p class="text-muted mb-0">No health data available.</p>
+        }
+        else
+        {
+            <dl class="row mb-0">
+                <dt class="col-5">Status</dt>
+                <dd class="col-7">
+                    <span class="badge @GetStatusClass(Data)">@Data.EffectiveStatus.ToUpperInvariant()</span>
+                </dd>
+
+                <dt class="col-5">Projection lag</dt>
+                <dd class="col-7">@FormatLag(Data.ProjectionLag)</dd>
+
+                <dt class="col-5">Last check</dt>
+                <dd class="col-7">@FormatTimestamp(Data.EffectiveLastCheck)</dd>
+            </dl>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public HealthStatusDto? Data { get; set; }
+
+    [Parameter]
+    public bool IsLoading { get; set; }
+
+    [Parameter]
+    public string? ErrorMessage { get; set; }
+
+    [Parameter]
+    public string? TraceId { get; set; }
+
+    [Parameter]
+    public EventCallback OnRetry { get; set; }
+
+    private static string GetStatusClass(HealthStatusDto dto)
+    {
+        var lag = dto.ProjectionLag;
+        if (lag.HasValue)
+        {
+            if (lag.Value > 30)
+            {
+                return "bg-danger";
+            }
+
+            if (lag.Value >= 5)
+            {
+                return "bg-warning text-dark";
+            }
+
+            return "bg-success";
+        }
+
+        return dto.EffectiveStatus.ToLowerInvariant() switch
+        {
+            "healthy" => "bg-success",
+            "degraded" => "bg-warning text-dark",
+            "unhealthy" => "bg-danger",
+            _ => "bg-secondary"
+        };
+    }
+
+    private static string FormatLag(double? lag) => lag.HasValue ? $"{lag:0.##}s" : "n/a";
+
+    private static string FormatTimestamp(DateTime? timestamp)
+        => timestamp.HasValue ? timestamp.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss") : "n/a";
+
+    private Task OnDismissErrorAsync()
+    {
+        ErrorMessage = null;
+        return Task.CompletedTask;
+    }
+}

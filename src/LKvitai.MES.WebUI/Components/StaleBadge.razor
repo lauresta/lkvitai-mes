@@ -1,14 +1,14 @@
-@if (!LagSeconds.HasValue)
+@if (!EffectiveLagSeconds.HasValue)
 {
     <span class="badge bg-secondary">Unknown</span>
 }
-else if (LagSeconds.Value < WarnSeconds)
+else if (EffectiveLagSeconds.Value < WarnSeconds)
 {
-    <span class="badge bg-success">Fresh</span>
+    @* Fresh values intentionally render no badge. *@
 }
-else if (LagSeconds.Value < AlertSeconds)
+else if (EffectiveLagSeconds.Value < AlertSeconds)
 {
-    <span class="badge bg-warning text-dark">Lagging</span>
+    <span class="badge bg-warning text-dark">Stale</span>
 }
 else
 {
@@ -20,8 +20,16 @@ else
     public double? LagSeconds { get; set; }
 
     [Parameter]
+    public DateTime? LastUpdated { get; set; }
+
+    [Parameter]
     public double WarnSeconds { get; set; } = 5;
 
     [Parameter]
     public double AlertSeconds { get; set; } = 30;
+
+    private double? EffectiveLagSeconds =>
+        LagSeconds ?? (LastUpdated.HasValue
+            ? (DateTime.UtcNow - LastUpdated.Value.ToUniversalTime()).TotalSeconds
+            : null);
 }
