@@ -32,5 +32,8 @@ public static class ProjectionRegistration
         // Maintains HU state (status, location, lines) per design spec.
         // Async is consistent with all other non-inline projections.
         options.Projections.Add<HandlingUnitProjection>(ProjectionLifecycle.Async);
+
+        // ReservationSummary: async projection for scalable paginated reservation list queries.
+        options.Projections.Add<ReservationSummaryProjection>(ProjectionLifecycle.Async);
     }
 }

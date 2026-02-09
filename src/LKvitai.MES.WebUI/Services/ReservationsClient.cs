@@ -19,7 +19,7 @@ public class ReservationsClient
         _factory = factory;
     }
 
-    public Task<PagedResult<ReservationDto>> SearchReservationsAsync(string? status, int page = 1, int pageSize = 50)
+    public Task<PagedResult<ReservationDto>> GetReservationsAsync(string? status, int page = 1, int pageSize = 50)
     {
         var url = $"/api/reservations?page={page}&pageSize={pageSize}";
         if (!string.IsNullOrWhiteSpace(status))
@@ -29,6 +29,9 @@ public class ReservationsClient
 
         return GetAsync<PagedResult<ReservationDto>>(url);
     }
+
+    public Task<PagedResult<ReservationDto>> SearchReservationsAsync(string? status, int page = 1, int pageSize = 50)
+        => GetReservationsAsync(status, page, pageSize);
 
     public Task<StartPickingResponseDto> StartPickingAsync(Guid reservationId)
     {
