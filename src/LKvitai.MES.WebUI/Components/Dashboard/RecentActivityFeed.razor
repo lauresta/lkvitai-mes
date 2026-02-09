@@ -9,7 +9,7 @@
             <ErrorBanner Message="@ErrorMessage"
                          TraceId="@TraceId"
                          OnRetry="OnRetry"
-                         OnDismiss="OnDismissErrorAsync" />
+                         OnDismiss="OnDismiss" />
         }
         else if (Items.Count == 0)
         {
@@ -54,9 +54,6 @@
     [Parameter]
     public EventCallback OnRetry { get; set; }
 
-    private Task OnDismissErrorAsync()
-    {
-        ErrorMessage = null;
-        return Task.CompletedTask;
-    }
+    [Parameter]
+    public EventCallback OnDismiss { get; set; }
 }

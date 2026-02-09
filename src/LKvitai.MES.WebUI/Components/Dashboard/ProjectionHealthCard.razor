@@ -9,7 +9,7 @@
             <ErrorBanner Message="@ErrorMessage"
                          TraceId="@TraceId"
                          OnRetry="OnRetry"
-                         OnDismiss="OnDismissErrorAsync" />
+                         OnDismiss="OnDismiss" />
         }
         else if (Data is null)
         {
@@ -52,6 +52,9 @@
     [Parameter]
     public EventCallback OnRetry { get; set; }
 
+    [Parameter]
+    public EventCallback OnDismiss { get; set; }
+
     private RenderFragment RenderRow(string projectionName, double? lag, DateTime? rebuildAt) => @<tr>
         <td>@projectionName</td>
         <td>
@@ -65,10 +68,4 @@
 
     private static string FormatTimestamp(DateTime? timestamp)
         => timestamp.HasValue ? timestamp.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss") : "n/a";
-
-    private Task OnDismissErrorAsync()
-    {
-        ErrorMessage = null;
-        return Task.CompletedTask;
-    }
 }

@@ -2,6 +2,7 @@
 @implements IDisposable
 @inject DashboardClient DashboardClient
 @inject IConfiguration Configuration
+@using System.Diagnostics
 
 <PageTitle>Dashboard - LKvitai.MES</PageTitle>
 
@@ -21,7 +22,8 @@
                           IsLoading="@_health.IsLoading"
                           ErrorMessage="@BuildErrorMessage(_health.Error)"
                           TraceId="@_health.Error?.TraceId"
-                          OnRetry="LoadHealthAsync" />
+                          OnRetry="LoadHealthAsync"
+                          OnDismiss="@(() => DismissCardError(_health))" />
     </div>
 
     <div class="col-12 col-xl-6">
@@ -29,7 +31,8 @@
                           IsLoading="@_stockSummary.IsLoading"
                           ErrorMessage="@BuildErrorMessage(_stockSummary.Error)"
                           TraceId="@_stockSummary.Error?.TraceId"
-                          OnRetry="LoadStockSummaryAsync" />
+                          OnRetry="LoadStockSummaryAsync"
+                          OnDismiss="@(() => DismissCardError(_stockSummary))" />
     </div>
 
     <div class="col-12 col-xl-6">
@@ -37,7 +40,8 @@
                                 IsLoading="@_reservationSummary.IsLoading"
                                 ErrorMessage="@BuildErrorMessage(_reservationSummary.Error)"
                                 TraceId="@_reservationSummary.Error?.TraceId"
-                                OnRetry="LoadReservationSummaryAsync" />
+                                OnRetry="LoadReservationSummaryAsync"
+                                OnDismiss="@(() => DismissCardError(_reservationSummary))" />
     </div>
 
     <div class="col-12 col-xl-6">
@@ -45,7 +49,8 @@
                               IsLoading="@_projectionHealth.IsLoading"
                               ErrorMessage="@BuildErrorMessage(_projectionHealth.Error)"
                               TraceId="@_projectionHealth.Error?.TraceId"
-                              OnRetry="LoadProjectionHealthAsync" />
+                              OnRetry="LoadProjectionHealthAsync"
+                              OnDismiss="@(() => DismissCardError(_projectionHealth))" />
     </div>
 
     <div class="col-12">
@@ -53,7 +58,8 @@
                             IsLoading="@_recentActivity.IsLoading"
                             ErrorMessage="@BuildErrorMessage(_recentActivity.Error)"
                             TraceId="@_recentActivity.Error?.TraceId"
-                            OnRetry="LoadRecentActivityAsync" />
+                            OnRetry="LoadRecentActivityAsync"
+                            OnDismiss="@(() => DismissCardError(_recentActivity))" />
     </div>
 </div>
 
@@ -163,6 +169,19 @@
             state.Data = default;
             state.Error = ex;
         }
+        catch (Exception ex)
+        {
+            state.Data = default;
+            state.Error = new ApiException(
+                new ProblemDetailsModel
+                {
+                    Title = "Dashboard request failed",
+                    Detail = ex.Message,
+                    Status = 500,
+                    TraceId = Activity.Current?.Id
+                },
+                500);
+        }
         finally
         {
             state.IsLoading = false;
@@ -175,6 +194,11 @@
     }
 
     private void DismissPageError() => _pageError = null;
+
+    private static void DismissCardError<T>(CardState<T> state)
+    {
+        state.Error = null;
+    }
 
     private static string? BuildErrorMessage(ApiException? error)
     {

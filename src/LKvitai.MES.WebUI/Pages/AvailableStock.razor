@@ -1,6 +1,7 @@
 @page "/available-stock"
 @inject StockClient StockApiClient
 @inject IJSRuntime JavaScript
+@using System.Diagnostics
 
 <PageTitle>Available Stock - LKvitai.MES</PageTitle>
 
@@ -101,6 +102,19 @@
             _apiError = ex;
             _warehouses = Array.Empty<WarehouseDto>();
         }
+        catch (Exception ex)
+        {
+            _apiError = new ApiException(
+                new ProblemDetailsModel
+                {
+                    Title = "Warehouse lookup failed",
+                    Detail = ex.Message,
+                    Status = 500,
+                    TraceId = Activity.Current?.Id
+                },
+                500);
+            _warehouses = Array.Empty<WarehouseDto>();
+        }
         finally
         {
             _isLoadingWarehouses = false;
@@ -151,6 +165,20 @@
         catch (ApiException ex)
         {
             _apiError = ex;
+            _items = Array.Empty<AvailableStockItemDto>();
+            _totalCount = 0;
+        }
+        catch (Exception ex)
+        {
+            _apiError = new ApiException(
+                new ProblemDetailsModel
+                {
+                    Title = "Stock search failed",
+                    Detail = ex.Message,
+                    Status = 500,
+                    TraceId = Activity.Current?.Id
+                },
+                500);
             _items = Array.Empty<AvailableStockItemDto>();
             _totalCount = 0;
         }
