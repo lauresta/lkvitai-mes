@@ -54,7 +54,7 @@
     </div>
 
     <div class="col-12">
-        <RecentActivityFeed Items="@_recentActivity.Data"
+        <RecentActivityFeed Items="@(_recentActivity.Data ?? Array.Empty<RecentMovementDto>())"
                             IsLoading="@_recentActivity.IsLoading"
                             ErrorMessage="@BuildErrorMessage(_recentActivity.Error)"
                             TraceId="@_recentActivity.Error?.TraceId"
