@@ -29,6 +29,7 @@
     <ProjectReference Include="..\..\LKvitai.MES.Infrastructure\LKvitai.MES.Infrastructure.csproj" />
     <ProjectReference Include="..\..\LKvitai.MES.Sagas\LKvitai.MES.Sagas.csproj" />
     <ProjectReference Include="..\..\LKvitai.MES.Api\LKvitai.MES.Api.csproj" />
+    <ProjectReference Include="..\..\LKvitai.MES.WebUI\LKvitai.MES.WebUI.csproj" />
   </ItemGroup>
 
 </Project>

@@ -50,8 +50,37 @@ public class StockClient
 
     public async Task<IReadOnlyList<WarehouseDto>> GetWarehousesAsync()
     {
-        var dto = await GetAsync<WarehousesResponseDto>("/api/warehouses");
-        return dto.Warehouses;
+        var client = _factory.CreateClient("WarehouseApi");
+        var response = await client.GetAsync("/api/warehouses");
+        var body = await response.Content.ReadAsStringAsync();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var problem = await ProblemDetailsParser.ParseAsync(response);
+            throw new ApiException(problem, (int)response.StatusCode);
+        }
+
+        if (string.IsNullOrWhiteSpace(body))
+        {
+            return Array.Empty<WarehouseDto>();
+        }
+
+        using var document = JsonDocument.Parse(body);
+        var root = document.RootElement;
+
+        if (root.ValueKind == JsonValueKind.Array)
+        {
+            return root.Deserialize<IReadOnlyList<WarehouseDto>>(JsonOptions) ?? Array.Empty<WarehouseDto>();
+        }
+
+        if (root.ValueKind == JsonValueKind.Object &&
+            root.TryGetProperty("warehouses", out var warehouses) &&
+            warehouses.ValueKind == JsonValueKind.Array)
+        {
+            return warehouses.Deserialize<IReadOnlyList<WarehouseDto>>(JsonOptions) ?? Array.Empty<WarehouseDto>();
+        }
+
+        throw new JsonException("Unexpected warehouses response payload.");
     }
 
     private async Task<T> GetAsync<T>(string relativeUrl)
@@ -68,10 +97,5 @@ public class StockClient
 
         var model = JsonSerializer.Deserialize<T>(body, JsonOptions);
         return model ?? throw new JsonException($"Unable to deserialize response to {typeof(T).Name}.");
-    }
-
-    private sealed record WarehousesResponseDto
-    {
-        public IReadOnlyList<WarehouseDto> Warehouses { get; init; } = Array.Empty<WarehouseDto>();
     }
 }
