@@ -1,4 +1,6 @@
 using LKvitai.MES.Api.ErrorHandling;
+using LKvitai.MES.Application.Commands;
+using LKvitai.MES.Application.Ports;
 using LKvitai.MES.Application.Queries;
 using LKvitai.MES.SharedKernel;
 using MediatR;
@@ -11,10 +13,14 @@ namespace LKvitai.MES.Api.Controllers;
 public sealed class ReservationsController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly IReservationRepository _reservationRepository;
 
-    public ReservationsController(IMediator mediator)
+    public ReservationsController(
+        IMediator mediator,
+        IReservationRepository reservationRepository)
     {
         _mediator = mediator;
+        _reservationRepository = reservationRepository;
     }
 
     [HttpGet]
@@ -50,6 +56,116 @@ public sealed class ReservationsController : ControllerBase
         return this.ToApiResult(result);
     }
 
+    [HttpPost("{id:guid}/start-picking")]
+    public async Task<IActionResult> StartPickingAsync(
+        Guid id,
+        [FromBody] StartPickingRequestDto? request,
+        CancellationToken cancellationToken = default)
+    {
+        if (request is not null &&
+            request.ReservationId != Guid.Empty &&
+            request.ReservationId != id)
+        {
+            return ValidationFailure("Route reservation id and payload reservationId must match.");
+        }
+
+        var result = await _mediator.Send(new StartPickingCommand
+        {
+            ReservationId = id,
+            OperatorId = Guid.Empty
+        }, cancellationToken);
+
+        if (result.IsSuccess)
+        {
+            return Ok(new StartPickingResponseDto(true, "Picking started"));
+        }
+
+        return Failure(result);
+    }
+
+    [HttpPost("{id:guid}/pick")]
+    public async Task<IActionResult> PickAsync(
+        Guid id,
+        [FromBody] PickRequestDto? request,
+        CancellationToken cancellationToken = default)
+    {
+        if (request is null)
+        {
+            return ValidationFailure("Request body is required.");
+        }
+
+        if (request.ReservationId != Guid.Empty && request.ReservationId != id)
+        {
+            return ValidationFailure("Route reservation id and payload reservationId must match.");
+        }
+
+        if (request.HuId == Guid.Empty)
+        {
+            return ValidationFailure("Field 'huId' is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Sku))
+        {
+            return ValidationFailure("Field 'sku' is required.");
+        }
+
+        if (request.Quantity <= 0m)
+        {
+            return ValidationFailure("Field 'quantity' must be greater than 0.");
+        }
+
+        var loaded = await _reservationRepository.LoadAsync(id, cancellationToken);
+        if (loaded.Reservation is null)
+        {
+            return Failure(Result.Fail(
+                DomainErrorCodes.NotFound,
+                $"Reservation {id} was not found."));
+        }
+
+        var line = loaded.Reservation.Lines.FirstOrDefault(x =>
+            string.Equals(x.SKU, request.Sku, StringComparison.OrdinalIgnoreCase) &&
+            x.AllocatedHUs.Contains(request.HuId));
+
+        if (line is null)
+        {
+            return ValidationFailure(
+                $"No allocated line found for SKU '{request.Sku}' and HU '{request.HuId}'.");
+        }
+
+        if (line.AllocatedQuantity > 0m && request.Quantity > line.AllocatedQuantity)
+        {
+            return ValidationFailure(
+                $"Quantity {request.Quantity} exceeds allocated quantity {line.AllocatedQuantity} for SKU '{request.Sku}'.");
+        }
+
+        var result = await _mediator.Send(new PickStockCommand
+        {
+            ReservationId = id,
+            HandlingUnitId = request.HuId,
+            SKU = request.Sku.Trim(),
+            Quantity = request.Quantity,
+            WarehouseId = line.WarehouseId,
+            FromLocation = line.Location,
+            OperatorId = Guid.Empty
+        }, cancellationToken);
+
+        if (result.IsSuccess)
+        {
+            return Ok(new PickResponseDto(true, "Pick completed"));
+        }
+
+        return Failure(result);
+    }
+
+    private ObjectResult Failure(Result result)
+    {
+        var problemDetails = ResultProblemDetailsMapper.ToProblemDetails(result, HttpContext);
+        return new ObjectResult(problemDetails)
+        {
+            StatusCode = problemDetails.Status
+        };
+    }
+
     private ObjectResult ValidationFailure(string detail)
     {
         var problemDetails = ResultProblemDetailsMapper.ToProblemDetails(
@@ -62,4 +178,9 @@ public sealed class ReservationsController : ControllerBase
             StatusCode = StatusCodes.Status400BadRequest
         };
     }
+
+    public sealed record StartPickingRequestDto(Guid ReservationId);
+    public sealed record PickRequestDto(Guid ReservationId, Guid HuId, string Sku, decimal Quantity);
+    public sealed record StartPickingResponseDto(bool Success, string Message);
+    public sealed record PickResponseDto(bool Success, string Message);
 }

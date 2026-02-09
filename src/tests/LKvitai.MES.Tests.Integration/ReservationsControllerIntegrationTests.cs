@@ -106,7 +106,8 @@ public class ReservationsControllerIntegrationTests : IAsyncLifetime
 
         using var scope = _provider!.CreateScope();
         var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
-        var controller = new ReservationsController(mediator)
+        var reservationRepository = scope.ServiceProvider.GetRequiredService<IReservationRepository>();
+        var controller = new ReservationsController(mediator, reservationRepository)
         {
             ControllerContext = new ControllerContext
             {

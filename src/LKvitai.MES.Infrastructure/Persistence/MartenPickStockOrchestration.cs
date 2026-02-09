@@ -76,6 +76,13 @@ public class MartenPickStockOrchestration : IPickStockOrchestration
             movementId = await RecordStockMovementAsync(
                 warehouseId, sku, quantity, fromLocation, operatorId, handlingUnitId, ct);
         }
+        catch (DomainException ex)
+        {
+            _logger.LogWarning(ex,
+                "PickStock StockMovement domain failure: Reservation {ReservationId}, SKU {SKU}, Code {ErrorCode}",
+                reservationId, sku, ex.ErrorCode);
+            return PickStockResult.MovementFailed(ex.ErrorCode);
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex,
@@ -253,8 +260,9 @@ public class MartenPickStockOrchestration : IPickStockOrchestration
                 }
             }
 
-            throw new InvalidOperationException(
-                $"Failed to record StockMovement after {MaxConcurrencyRetries} attempts");
+            throw new DomainException(
+                DomainErrorCodes.ConcurrencyConflict,
+                $"Failed to record StockMovement after {MaxConcurrencyRetries} concurrency retries.");
         }
         catch
         {

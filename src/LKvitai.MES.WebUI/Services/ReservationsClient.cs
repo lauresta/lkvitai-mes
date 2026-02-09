@@ -38,15 +38,13 @@ public class ReservationsClient
         return PostAsync<StartPickingResponseDto>($"/api/reservations/{reservationId}/start-picking", new { reservationId });
     }
 
-    public Task<PickResponseDto> PickAsync(Guid reservationId, Guid huId, string sku, decimal quantity)
+    public Task<PickResponseDto> PickAsync(Guid reservationId, PickRequestDto requestDto)
     {
-        return PostAsync<PickResponseDto>($"/api/reservations/{reservationId}/pick", new
-        {
-            reservationId,
-            huId,
-            sku,
-            quantity
-        });
+        var payload = requestDto.ReservationId == Guid.Empty
+            ? requestDto with { ReservationId = reservationId }
+            : requestDto;
+
+        return PostAsync<PickResponseDto>($"/api/reservations/{reservationId}/pick", payload);
     }
 
     private async Task<T> GetAsync<T>(string relativeUrl)
