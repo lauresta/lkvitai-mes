@@ -1,0 +1,37 @@
+<DataTable TItem="AvailableStockItemDto"
+           Items="Items"
+           TotalCount="TotalCount"
+           EmptyMessage="No stock found matching filters."
+           Columns="@Columns"
+           RowTemplate="@RowTemplate" />
+
+@code {
+    [Parameter]
+    public IReadOnlyList<AvailableStockItemDto> Items { get; set; } = Array.Empty<AvailableStockItemDto>();
+
+    [Parameter]
+    public int TotalCount { get; set; }
+
+    private RenderFragment Columns => @<>
+        <th scope="col">Warehouse</th>
+        <th scope="col">Location</th>
+        <th scope="col">SKU</th>
+        <th scope="col" class="text-end">Physical Qty</th>
+        <th scope="col" class="text-end">Reserved Qty</th>
+        <th scope="col" class="text-end">Available Qty</th>
+        <th scope="col">Last Updated</th>
+    </>;
+
+    private RenderFragment<AvailableStockItemDto> RowTemplate => item => @<>
+        <td>@item.WarehouseId</td>
+        <td>@item.Location</td>
+        <td>@item.SKU</td>
+        <td class="text-end">@item.PhysicalQty.ToString("N2")</td>
+        <td class="text-end">@item.ReservedQty.ToString("N2")</td>
+        <td class="text-end">@item.AvailableQty.ToString("N2")</td>
+        <td>
+            @item.LastUpdated.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")
+            <span class="ms-2"><StaleBadge LastUpdated="item.LastUpdated" /></span>
+        </td>
+    </>;
+}

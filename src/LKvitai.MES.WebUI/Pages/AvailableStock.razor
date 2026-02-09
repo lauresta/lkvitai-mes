@@ -1,6 +1,265 @@
 @page "/available-stock"
+@inject StockClient StockApiClient
+@inject IJSRuntime JavaScript
 
 <PageTitle>Available Stock - LKvitai.MES</PageTitle>
 
 <h3>Available Stock</h3>
-<p class="text-muted">Coming soon: stock filters, virtual-location toggle, results table, pagination, CSV export.</p>
+
+<StockFilters Warehouses="@_warehouses"
+              Filters="@_filters"
+              OnSearch="HandleSearchAsync" />
+
+@if (_apiError is not null)
+{
+    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                 TraceId="@_apiError.TraceId"
+                 OnRetry="RetryAsync"
+                 OnDismiss="DismissError" />
+}
+
+<div class="card shadow-sm position-relative">
+    <LoadingSpinner IsLoading="@(_isLoadingWarehouses || _isSearching)" />
+
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="text-muted">
+                @_summaryText
+            </div>
+            <button class="btn btn-outline-secondary btn-sm"
+                    @onclick="ExportCsvAsync"
+                    disabled="@(_items.Count == 0)">
+                Export CSV
+            </button>
+        </div>
+
+        @if (!_hasSearched)
+        {
+            <p class="text-muted mb-0">Enter at least one filter and click Search.</p>
+        }
+        else
+        {
+            <StockTable Items="@_items" TotalCount="@_totalCount" />
+
+            @if (_items.Count == 0 && _apiError is null && !_isSearching)
+            {
+                <p class="text-muted mb-0">No stock found matching filters.</p>
+            }
+
+            @if (_totalPages > 1)
+            {
+                <div class="mt-3">
+                    <Pagination CurrentPage="@_page"
+                                TotalPages="@_totalPages"
+                                PageSize="@_pageSize"
+                                OnPageChanged="OnPageChangedAsync"
+                                OnPageSizeChanged="OnPageSizeChangedAsync" />
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    private IReadOnlyList<WarehouseDto> _warehouses = Array.Empty<WarehouseDto>();
+    private IReadOnlyList<AvailableStockItemDto> _items = Array.Empty<AvailableStockItemDto>();
+
+    private AvailableStockSearchFilters _filters = new();
+
+    private bool _isLoadingWarehouses = true;
+    private bool _isSearching;
+    private bool _hasSearched;
+
+    private int _page = 1;
+    private int _pageSize = 50;
+    private int _totalCount;
+
+    private ApiException? _apiError;
+
+    private int _totalPages => Math.Max(1, (int)Math.Ceiling(_totalCount / (double)Math.Max(1, _pageSize)));
+
+    private string _summaryText => _hasSearched
+        ? $"Showing {_items.Count} item(s) on page {_page} of {_totalPages}."
+        : "Search has not been run yet.";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadWarehousesAsync();
+    }
+
+    private async Task LoadWarehousesAsync()
+    {
+        _isLoadingWarehouses = true;
+        _apiError = null;
+
+        try
+        {
+            _warehouses = await StockApiClient.GetWarehousesAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            _warehouses = Array.Empty<WarehouseDto>();
+        }
+        finally
+        {
+            _isLoadingWarehouses = false;
+        }
+    }
+
+    private async Task HandleSearchAsync(AvailableStockSearchFilters filters)
+    {
+        _filters = filters;
+
+        if (!_filters.HasAtLeastOneFilter)
+        {
+            _hasSearched = false;
+            _items = Array.Empty<AvailableStockItemDto>();
+            _totalCount = 0;
+            _apiError = null;
+            return;
+        }
+
+        _page = 1;
+        await SearchAsync();
+    }
+
+    private async Task SearchAsync()
+    {
+        if (!_filters.HasAtLeastOneFilter)
+        {
+            return;
+        }
+
+        _isSearching = true;
+        _apiError = null;
+        _hasSearched = true;
+
+        try
+        {
+            var result = await StockApiClient.SearchAvailableStockAsync(
+                _filters.Warehouse,
+                _filters.Location,
+                _filters.Sku,
+                _filters.IncludeVirtual,
+                _page,
+                _pageSize);
+
+            _items = result.Items;
+            _totalCount = result.TotalCount;
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            _items = Array.Empty<AvailableStockItemDto>();
+            _totalCount = 0;
+        }
+        finally
+        {
+            _isSearching = false;
+        }
+    }
+
+    private async Task OnPageChangedAsync(int page)
+    {
+        if (!_hasSearched)
+        {
+            return;
+        }
+
+        _page = Math.Max(1, page);
+        await SearchAsync();
+    }
+
+    private async Task OnPageSizeChangedAsync(int pageSize)
+    {
+        _pageSize = pageSize;
+
+        if (!_hasSearched)
+        {
+            return;
+        }
+
+        _page = 1;
+        await SearchAsync();
+    }
+
+    private async Task RetryAsync()
+    {
+        if (_hasSearched)
+        {
+            await SearchAsync();
+            return;
+        }
+
+        await LoadWarehousesAsync();
+    }
+
+    private void DismissError() => _apiError = null;
+
+    private async Task ExportCsvAsync()
+    {
+        if (_items.Count == 0)
+        {
+            return;
+        }
+
+        var csv = BuildCsv(_items);
+        var filename = $"available-stock-{DateTime.UtcNow:yyyyMMdd-HHmmss}.csv";
+        await JavaScript.InvokeVoidAsync("csvExport.download", filename, csv);
+    }
+
+    private static string BuildCsv(IReadOnlyList<AvailableStockItemDto> rows)
+    {
+        var builder = new System.Text.StringBuilder();
+        builder.AppendLine("Warehouse,Location,SKU,Physical Qty,Reserved Qty,Available Qty,Last Updated");
+
+        foreach (var row in rows)
+        {
+            builder.Append(EscapeCsv(row.WarehouseId)).Append(',')
+                .Append(EscapeCsv(row.Location)).Append(',')
+                .Append(EscapeCsv(row.SKU)).Append(',')
+                .Append(row.PhysicalQty.ToString("0.##")).Append(',')
+                .Append(row.ReservedQty.ToString("0.##")).Append(',')
+                .Append(row.AvailableQty.ToString("0.##")).Append(',')
+                .Append(EscapeCsv(row.LastUpdated.ToString("O")))
+                .AppendLine();
+        }
+
+        return builder.ToString();
+    }
+
+    private static string EscapeCsv(string value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return string.Empty;
+        }
+
+        if (value.Contains(',') || value.Contains('"') || value.Contains('\n') || value.Contains('\r'))
+        {
+            return "\"" + value.Replace("\"", "\"\"") + "\"";
+        }
+
+        return value;
+    }
+
+    private static string BuildErrorMessage(ApiException error)
+    {
+        if (error.ProblemDetails?.Errors is { Count: > 0 } fieldErrors)
+        {
+            var flattened = fieldErrors
+                .SelectMany(entry => entry.Value.Select(message => $"{entry.Key}: {message}"));
+
+            var details = string.Join("; ", flattened);
+            return string.IsNullOrWhiteSpace(details) ? error.UserMessage : $"{error.UserMessage} {details}";
+        }
+
+        if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
+        {
+            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+        }
+
+        return error.UserMessage;
+    }
+}

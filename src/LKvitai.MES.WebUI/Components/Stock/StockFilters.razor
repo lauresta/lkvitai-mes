@@ -1,0 +1,108 @@
+<EditForm OnValidSubmit="SearchAsync">
+    <div class="card shadow-sm mb-3">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-12 col-md-3">
+                    <label class="form-label" for="warehouse">Warehouse</label>
+                    <select id="warehouse" class="form-select" @bind="_warehouse">
+                        <option value="">All</option>
+                        @foreach (var warehouse in Warehouses)
+                        {
+                            <option value="@warehouse.Id">@warehouse.Code - @warehouse.Name</option>
+                        }
+                    </select>
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <label class="form-label" for="location">Location</label>
+                    <input id="location" class="form-control" @bind="_location" placeholder="e.g. A01*" />
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <label class="form-label" for="sku">SKU</label>
+                    <input id="sku" class="form-control" @bind="_sku" placeholder="e.g. SKU*" />
+                </div>
+
+                <div class="col-12 col-md-3 d-flex align-items-end">
+                    <div class="form-check">
+                        <input id="include-virtual" class="form-check-input" type="checkbox" @bind="_includeVirtual" />
+                        <label class="form-check-label" for="include-virtual">Show virtual locations</label>
+                    </div>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(_validationError))
+            {
+                <div class="text-danger mt-2">@_validationError</div>
+            }
+
+            <div class="mt-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary">Search</button>
+                <button type="button" class="btn btn-outline-secondary" @onclick="ResetAsync">Reset</button>
+            </div>
+        </div>
+    </div>
+</EditForm>
+
+@code {
+    [Parameter]
+    public IReadOnlyList<WarehouseDto> Warehouses { get; set; } = Array.Empty<WarehouseDto>();
+
+    [Parameter]
+    public AvailableStockSearchFilters Filters { get; set; } = new();
+
+    [Parameter]
+    public EventCallback<AvailableStockSearchFilters> OnSearch { get; set; }
+
+    private string? _warehouse;
+    private string _location = string.Empty;
+    private string _sku = string.Empty;
+    private bool _includeVirtual;
+    private string? _validationError;
+
+    protected override void OnParametersSet()
+    {
+        _warehouse = Filters.Warehouse;
+        _location = Filters.Location;
+        _sku = Filters.Sku;
+        _includeVirtual = Filters.IncludeVirtual;
+    }
+
+    private async Task SearchAsync()
+    {
+        var next = new AvailableStockSearchFilters
+        {
+            Warehouse = _warehouse,
+            Location = _location.Trim(),
+            Sku = _sku.Trim(),
+            IncludeVirtual = _includeVirtual
+        };
+
+        if (!next.HasAtLeastOneFilter)
+        {
+            _validationError = "Provide at least one filter: warehouse, location, or SKU.";
+            return;
+        }
+
+        _validationError = null;
+
+        if (OnSearch.HasDelegate)
+        {
+            await OnSearch.InvokeAsync(next);
+        }
+    }
+
+    private async Task ResetAsync()
+    {
+        _warehouse = null;
+        _location = string.Empty;
+        _sku = string.Empty;
+        _includeVirtual = false;
+        _validationError = null;
+
+        if (OnSearch.HasDelegate)
+        {
+            await OnSearch.InvokeAsync(new AvailableStockSearchFilters());
+        }
+    }
+}
