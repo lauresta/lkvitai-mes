@@ -1,4 +1,4 @@
-<EditForm OnValidSubmit="SearchAsync">
+<form @onsubmit="HandleSubmitAsync" @onsubmit:preventDefault="true">
     <div class="card shadow-sm mb-3">
         <div class="card-body">
             <div class="row g-3">
@@ -42,7 +42,7 @@
             </div>
         </div>
     </div>
-</EditForm>
+</form>
 
 @code {
     [Parameter]
@@ -68,7 +68,7 @@
         _includeVirtual = Filters.IncludeVirtual;
     }
 
-    private async Task SearchAsync()
+    private async Task HandleSubmitAsync()
     {
         var next = new AvailableStockSearchFilters
         {
