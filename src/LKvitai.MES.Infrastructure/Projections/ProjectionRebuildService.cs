@@ -27,6 +27,8 @@ namespace LKvitai.MES.Infrastructure.Projections;
 /// </summary>
 public class ProjectionRebuildService : IProjectionRebuildService
 {
+    private const long RebuildAdvisoryLockKey = 884522073391450564;
+
     private readonly IDocumentStore _documentStore;
     private readonly ILogger<ProjectionRebuildService> _logger;
 
@@ -57,6 +59,8 @@ public class ProjectionRebuildService : IProjectionRebuildService
         CancellationToken cancellationToken = default)
     {
         var stopwatch = Stopwatch.StartNew();
+        IQuerySession? lockSession = null;
+        bool lockAcquired = false;
 
         _logger.LogInformation(
             "Starting projection rebuild for {ProjectionName} with verify={Verify}",
@@ -64,6 +68,17 @@ public class ProjectionRebuildService : IProjectionRebuildService
 
         try
         {
+            lockSession = _documentStore.QuerySession();
+            var lockConnection = (NpgsqlConnection)(lockSession.Connection
+                ?? throw new InvalidOperationException("Marten query session connection is unavailable."));
+            lockAcquired = await TryAcquireRebuildLockAsync(lockConnection, cancellationToken);
+            if (!lockAcquired)
+            {
+                return Result<ProjectionRebuildReport>.Fail(
+                    DomainErrorCodes.IdempotencyInProgress,
+                    "Projection rebuild is already in progress.");
+            }
+
             var tableName = projectionName switch
             {
                 "LocationBalance" => LocationBalanceTable,
@@ -78,10 +93,18 @@ public class ProjectionRebuildService : IProjectionRebuildService
                     $"Projection '{projectionName}' rebuild not implemented");
             }
 
-            var shadowTable = $"{tableName}_shadow";
+            var productionTable = await ResolveQualifiedTableNameAsync(lockConnection, tableName, cancellationToken);
+            if (string.IsNullOrWhiteSpace(productionTable))
+            {
+                return Result<ProjectionRebuildReport>.Fail(
+                    DomainErrorCodes.NotFound,
+                    $"Projection table for '{projectionName}' was not found.");
+            }
+
+            var shadowTable = BuildShadowTableName(productionTable);
 
             // Step 1: Create shadow table
-            await CreateShadowTableAsync(tableName, shadowTable, cancellationToken);
+            await CreateShadowTableAsync(productionTable, shadowTable, cancellationToken);
 
             // Step 2: Replay events to shadow table in GLOBAL sequence order (V-5 Rule A)
             var eventsProcessed = projectionName switch
@@ -93,7 +116,7 @@ public class ProjectionRebuildService : IProjectionRebuildService
 
             // Step 3: Compute field-based checksums (MED-01 fix)
             var checksumSql = GetFieldBasedChecksumSql(projectionName);
-            var productionChecksum = await ComputeFieldChecksumAsync(tableName, checksumSql, cancellationToken);
+            var productionChecksum = await ComputeFieldChecksumAsync(productionTable, checksumSql, cancellationToken);
             var shadowChecksum = await ComputeFieldChecksumAsync(shadowTable, checksumSql, cancellationToken);
 
             var checksumMatch = productionChecksum == shadowChecksum;
@@ -120,7 +143,7 @@ public class ProjectionRebuildService : IProjectionRebuildService
                         $"Production: {productionChecksum}, Shadow: {shadowChecksum}");
                 }
 
-                await SwapTablesAsync(tableName, shadowTable, cancellationToken);
+                await SwapTablesAsync(productionTable, shadowTable, cancellationToken);
                 swapped = true;
 
                 _logger.LogInformation(
@@ -149,13 +172,50 @@ public class ProjectionRebuildService : IProjectionRebuildService
 
             return Result<ProjectionRebuildReport>.Ok(report);
         }
+        catch (PostgresException ex) when (
+            ex.SqlState == PostgresErrorCodes.UndefinedTable &&
+            ex.MessageText.Contains("_shadow", StringComparison.OrdinalIgnoreCase))
+        {
+            _logger.LogWarning(
+                ex,
+                "Projection rebuild for {ProjectionName} failed due to shadow-table race/conflict",
+                projectionName);
+            stopwatch.Stop();
+            return Result<ProjectionRebuildReport>.Fail(
+                DomainErrorCodes.IdempotencyInProgress,
+                "Projection rebuild conflict detected. Retry the operation.");
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error rebuilding projection {ProjectionName}", projectionName);
             stopwatch.Stop();
             return Result<ProjectionRebuildReport>.Fail(
                 DomainErrorCodes.InternalError,
-                $"Rebuild failed: {ex.Message}");
+                "Rebuild failed due to an internal error.");
+        }
+        finally
+        {
+            if (lockSession is not null)
+            {
+                try
+                {
+                    if (lockAcquired && lockSession.Connection is NpgsqlConnection lockConnection)
+                    {
+                        try
+                        {
+                            await ReleaseRebuildLockAsync(lockConnection, cancellationToken);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning(ex, "Failed to release projection rebuild advisory lock cleanly");
+                        }
+                    }
+                }
+                finally
+                {
+                    await lockSession.DisposeAsync();
+                }
+            }
         }
     }
 
@@ -211,16 +271,19 @@ public class ProjectionRebuildService : IProjectionRebuildService
 
         try
         {
-            var oldTable = $"{productionTable}_old";
+            var productionName = GetUnqualifiedTableName(productionTable);
+            var productionSchema = GetSchemaName(productionTable);
+            var oldTable = $"{productionName}_old";
+            var qualifiedOldTable = $"{productionSchema}.{oldTable}";
 
             await using var renameOldCmd = conn.CreateCommand();
             renameOldCmd.Transaction = transaction;
-            renameOldCmd.CommandText = $"ALTER TABLE {productionTable} RENAME TO {oldTable.Split('.').Last()}";
+            renameOldCmd.CommandText = $"ALTER TABLE {productionTable} RENAME TO {oldTable}";
             await renameOldCmd.ExecuteNonQueryAsync(ct);
 
             await using var renameShadowCmd = conn.CreateCommand();
             renameShadowCmd.Transaction = transaction;
-            renameShadowCmd.CommandText = $"ALTER TABLE {shadowTable} RENAME TO {productionTable.Split('.').Last()}";
+            renameShadowCmd.CommandText = $"ALTER TABLE {shadowTable} RENAME TO {productionName}";
             await renameShadowCmd.ExecuteNonQueryAsync(ct);
 
             await transaction.CommitAsync(ct);
@@ -228,7 +291,7 @@ public class ProjectionRebuildService : IProjectionRebuildService
             _logger.LogInformation("Tables swapped successfully");
 
             await using var dropCmd = conn.CreateCommand();
-            dropCmd.CommandText = $"DROP TABLE IF EXISTS {oldTable} CASCADE";
+            dropCmd.CommandText = $"DROP TABLE IF EXISTS {qualifiedOldTable} CASCADE";
             await dropCmd.ExecuteNonQueryAsync(ct);
         }
         catch
@@ -554,5 +617,68 @@ public class ProjectionRebuildService : IProjectionRebuildService
             cmd.Parameters.AddWithValue("data", JsonSerializer.Serialize(doc, CamelCaseOptions));
             await cmd.ExecuteNonQueryAsync(ct);
         }
+    }
+
+    private static async Task<bool> TryAcquireRebuildLockAsync(
+        NpgsqlConnection connection,
+        CancellationToken ct)
+    {
+        await using var cmd = connection.CreateCommand();
+        cmd.CommandText = "SELECT pg_try_advisory_lock(@key)";
+        cmd.Parameters.AddWithValue("key", RebuildAdvisoryLockKey);
+        return (bool?)(await cmd.ExecuteScalarAsync(ct)) ?? false;
+    }
+
+    private static async Task ReleaseRebuildLockAsync(
+        NpgsqlConnection connection,
+        CancellationToken ct)
+    {
+        await using var cmd = connection.CreateCommand();
+        cmd.CommandText = "SELECT pg_advisory_unlock(@key)";
+        cmd.Parameters.AddWithValue("key", RebuildAdvisoryLockKey);
+        await cmd.ExecuteScalarAsync(ct);
+    }
+
+    private static async Task<string?> ResolveQualifiedTableNameAsync(
+        NpgsqlConnection connection,
+        string tableName,
+        CancellationToken ct)
+    {
+        await using var cmd = connection.CreateCommand();
+        cmd.CommandText = @"
+            SELECT n.nspname || '.' || c.relname
+            FROM pg_class c
+            JOIN pg_namespace n ON n.oid = c.relnamespace
+            WHERE c.relkind = 'r' AND c.relname = @tableName
+            ORDER BY CASE WHEN n.nspname = 'public' THEN 0 ELSE 1 END, n.nspname
+            LIMIT 1";
+        cmd.Parameters.AddWithValue("tableName", tableName);
+        return await cmd.ExecuteScalarAsync(ct) as string;
+    }
+
+    private static string BuildShadowTableName(string qualifiedProductionTable)
+    {
+        var schema = GetSchemaName(qualifiedProductionTable);
+        var name = GetUnqualifiedTableName(qualifiedProductionTable);
+        return $"{schema}.{name}_shadow";
+    }
+
+    private static string GetSchemaName(string qualifiedTableName)
+    {
+        var dotIndex = qualifiedTableName.IndexOf('.');
+        if (dotIndex <= 0)
+        {
+            return "public";
+        }
+
+        return qualifiedTableName[..dotIndex];
+    }
+
+    private static string GetUnqualifiedTableName(string qualifiedTableName)
+    {
+        var dotIndex = qualifiedTableName.LastIndexOf('.');
+        return dotIndex >= 0
+            ? qualifiedTableName[(dotIndex + 1)..]
+            : qualifiedTableName;
     }
 }

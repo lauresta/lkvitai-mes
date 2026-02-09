@@ -62,13 +62,20 @@ public class VerifyProjectionQueryHandler
                 $"Projection '{projectionName}' is not supported.");
         }
 
-        var shadowTable = $"{tableName}_shadow";
-
         await using var session = _store.QuerySession();
         var connection = session.Connection
             ?? throw new InvalidOperationException("Marten query session connection is unavailable.");
 
-        if (!await TableExistsAsync(connection, shadowTable, cancellationToken))
+        var productionTable = await ResolveQualifiedTableNameAsync(connection, tableName, cancellationToken);
+        if (string.IsNullOrWhiteSpace(productionTable))
+        {
+            return Result<VerifyProjectionResultDto>.Fail(
+                DomainErrorCodes.NotFound,
+                $"Projection table for '{projectionName}' was not found.");
+        }
+
+        var shadowTable = await ResolveQualifiedTableNameAsync(connection, $"{tableName}_shadow", cancellationToken);
+        if (string.IsNullOrWhiteSpace(shadowTable))
         {
             return Result<VerifyProjectionResultDto>.Fail(
                 DomainErrorCodes.NotFound,
@@ -93,11 +100,11 @@ public class VerifyProjectionQueryHandler
         };
 
         var productionChecksum = await ComputeChecksumAsync(
-            connection, tableName, fieldExpression, cancellationToken);
+            connection, productionTable, fieldExpression, cancellationToken);
         var shadowChecksum = await ComputeChecksumAsync(
             connection, shadowTable, fieldExpression, cancellationToken);
 
-        var productionRowCount = await CountRowsAsync(connection, tableName, cancellationToken);
+        var productionRowCount = await CountRowsAsync(connection, productionTable, cancellationToken);
         var shadowRowCount = await CountRowsAsync(connection, shadowTable, cancellationToken);
 
         return Result<VerifyProjectionResultDto>.Ok(new VerifyProjectionResultDto
@@ -110,21 +117,26 @@ public class VerifyProjectionQueryHandler
         });
     }
 
-    private static async Task<bool> TableExistsAsync(
+    private static async Task<string?> ResolveQualifiedTableNameAsync(
         DbConnection connection,
         string tableName,
         CancellationToken cancellationToken)
     {
         await using var cmd = connection.CreateCommand();
-        cmd.CommandText = "SELECT to_regclass(@tableName) IS NOT NULL";
+        cmd.CommandText = @"
+            SELECT n.nspname || '.' || c.relname
+            FROM pg_class c
+            JOIN pg_namespace n ON n.oid = c.relnamespace
+            WHERE c.relkind = 'r' AND c.relname = @tableName
+            ORDER BY CASE WHEN n.nspname = 'public' THEN 0 ELSE 1 END, n.nspname
+            LIMIT 1";
 
         var tableParam = cmd.CreateParameter();
         tableParam.ParameterName = "tableName";
         tableParam.Value = tableName;
         cmd.Parameters.Add(tableParam);
 
-        var exists = (bool?)(await cmd.ExecuteScalarAsync(cancellationToken)) ?? false;
-        return exists;
+        return await cmd.ExecuteScalarAsync(cancellationToken) as string;
     }
 
     private static async Task<int> CountRowsAsync(
