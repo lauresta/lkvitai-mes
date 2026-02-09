@@ -25,7 +25,8 @@ public class StockClient
         string? sku,
         bool includeVirtual = false,
         int page = 1,
-        int pageSize = 50)
+        int pageSize = 50,
+        CancellationToken cancellationToken = default)
     {
         var query = new StringBuilder("/api/available-stock?");
         query.Append($"includeVirtual={includeVirtual.ToString().ToLowerInvariant()}&page={page}&pageSize={pageSize}");
@@ -45,14 +46,14 @@ public class StockClient
             query.Append("&sku=").Append(Uri.EscapeDataString(sku));
         }
 
-        return GetAsync<PagedResult<AvailableStockItemDto>>(query.ToString());
+        return GetAsync<PagedResult<AvailableStockItemDto>>(query.ToString(), cancellationToken);
     }
 
-    public async Task<IReadOnlyList<WarehouseDto>> GetWarehousesAsync()
+    public async Task<IReadOnlyList<WarehouseDto>> GetWarehousesAsync(CancellationToken cancellationToken = default)
     {
         var client = _factory.CreateClient("WarehouseApi");
-        var response = await client.GetAsync("/api/warehouses");
-        var body = await response.Content.ReadAsStringAsync();
+        var response = await client.GetAsync("/api/warehouses", cancellationToken);
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -83,11 +84,11 @@ public class StockClient
         throw new JsonException("Unexpected warehouses response payload.");
     }
 
-    private async Task<T> GetAsync<T>(string relativeUrl)
+    private async Task<T> GetAsync<T>(string relativeUrl, CancellationToken cancellationToken = default)
     {
         var client = _factory.CreateClient("WarehouseApi");
-        var response = await client.GetAsync(relativeUrl);
-        var body = await response.Content.ReadAsStringAsync();
+        var response = await client.GetAsync(relativeUrl, cancellationToken);
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
 
         if (!response.IsSuccessStatusCode)
         {

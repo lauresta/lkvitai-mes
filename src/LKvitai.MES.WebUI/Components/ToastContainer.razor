@@ -12,6 +12,7 @@
 
 @code {
     private readonly List<ToastMessage> _toasts = [];
+    private bool _isDisposed;
 
     protected override void OnInitialized()
     {
@@ -20,21 +21,50 @@
 
     public void Dispose()
     {
+        _isDisposed = true;
         ToastService.OnShow -= HandleShow;
     }
 
     private void HandleShow(ToastMessage message)
     {
+        if (_isDisposed)
+        {
+            return;
+        }
+
         _toasts.Add(message);
         _ = AutoDismissAsync(message);
-        _ = InvokeAsync(StateHasChanged);
+        _ = SafeStateHasChangedAsync();
     }
 
     private async Task AutoDismissAsync(ToastMessage message)
     {
         await Task.Delay(TimeSpan.FromSeconds(5));
+
+        if (_isDisposed)
+        {
+            return;
+        }
+
         _toasts.Remove(message);
-        await InvokeAsync(StateHasChanged);
+        await SafeStateHasChangedAsync();
+    }
+
+    private async Task SafeStateHasChangedAsync()
+    {
+        if (_isDisposed)
+        {
+            return;
+        }
+
+        try
+        {
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (ObjectDisposedException)
+        {
+            // Layout/component disposed while delayed callback was finishing.
+        }
     }
 
     private static string GetToastClass(ToastType type) => type switch

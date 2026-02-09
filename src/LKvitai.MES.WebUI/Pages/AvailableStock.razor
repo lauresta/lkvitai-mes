@@ -1,4 +1,5 @@
 @page "/available-stock"
+@implements IDisposable
 @inject StockClient StockApiClient
 @inject IJSRuntime JavaScript
 @using System.Diagnostics
@@ -76,6 +77,8 @@
     private int _totalCount;
 
     private ApiException? _apiError;
+    private bool _isDisposed;
+    private readonly CancellationTokenSource _disposeCts = new();
 
     private int _totalPages => Math.Max(1, (int)Math.Ceiling(_totalCount / (double)Math.Max(1, _pageSize)));
 
@@ -88,22 +91,57 @@
         await LoadWarehousesAsync();
     }
 
+    public void Dispose()
+    {
+        if (_isDisposed)
+        {
+            return;
+        }
+
+        _isDisposed = true;
+        _disposeCts.Cancel();
+        _disposeCts.Dispose();
+    }
+
     private async Task LoadWarehousesAsync()
     {
+        if (_isDisposed)
+        {
+            return;
+        }
+
         _isLoadingWarehouses = true;
         _apiError = null;
 
         try
         {
-            _warehouses = await StockApiClient.GetWarehousesAsync();
+            _warehouses = await StockApiClient.GetWarehousesAsync(_disposeCts.Token);
+            if (_isDisposed)
+            {
+                return;
+            }
         }
         catch (ApiException ex)
         {
+            if (_isDisposed)
+            {
+                return;
+            }
+
             _apiError = ex;
             _warehouses = Array.Empty<WarehouseDto>();
         }
+        catch (OperationCanceledException) when (_disposeCts.IsCancellationRequested)
+        {
+            return;
+        }
         catch (Exception ex)
         {
+            if (_isDisposed)
+            {
+                return;
+            }
+
             _apiError = new ApiException(
                 new ProblemDetailsModel
                 {
@@ -117,12 +155,20 @@
         }
         finally
         {
-            _isLoadingWarehouses = false;
+            if (!_isDisposed)
+            {
+                _isLoadingWarehouses = false;
+            }
         }
     }
 
     private async Task HandleSearchAsync(AvailableStockSearchFilters filters)
     {
+        if (_isDisposed)
+        {
+            return;
+        }
+
         _filters = filters;
 
         if (!_filters.HasAtLeastOneFilter)
@@ -140,6 +186,11 @@
 
     private async Task SearchAsync()
     {
+        if (_isDisposed)
+        {
+            return;
+        }
+
         if (!_filters.HasAtLeastOneFilter)
         {
             return;
@@ -157,19 +208,39 @@
                 _filters.Sku,
                 _filters.IncludeVirtual,
                 _page,
-                _pageSize);
+                _pageSize,
+                _disposeCts.Token);
+
+            if (_isDisposed)
+            {
+                return;
+            }
 
             _items = result.Items;
             _totalCount = result.TotalCount;
         }
         catch (ApiException ex)
         {
+            if (_isDisposed)
+            {
+                return;
+            }
+
             _apiError = ex;
             _items = Array.Empty<AvailableStockItemDto>();
             _totalCount = 0;
         }
+        catch (OperationCanceledException) when (_disposeCts.IsCancellationRequested)
+        {
+            return;
+        }
         catch (Exception ex)
         {
+            if (_isDisposed)
+            {
+                return;
+            }
+
             _apiError = new ApiException(
                 new ProblemDetailsModel
                 {
@@ -184,12 +255,20 @@
         }
         finally
         {
-            _isSearching = false;
+            if (!_isDisposed)
+            {
+                _isSearching = false;
+            }
         }
     }
 
     private async Task OnPageChangedAsync(int page)
     {
+        if (_isDisposed)
+        {
+            return;
+        }
+
         if (!_hasSearched)
         {
             return;
@@ -201,6 +280,11 @@
 
     private async Task OnPageSizeChangedAsync(int pageSize)
     {
+        if (_isDisposed)
+        {
+            return;
+        }
+
         _pageSize = pageSize;
 
         if (!_hasSearched)
@@ -214,6 +298,11 @@
 
     private async Task RetryAsync()
     {
+        if (_isDisposed)
+        {
+            return;
+        }
+
         if (_hasSearched)
         {
             await SearchAsync();
@@ -227,6 +316,11 @@
 
     private async Task ExportCsvAsync()
     {
+        if (_isDisposed)
+        {
+            return;
+        }
+
         if (_items.Count == 0)
         {
             return;
@@ -234,7 +328,7 @@
 
         var csv = BuildCsv(_items);
         var filename = $"available-stock-{DateTime.UtcNow:yyyyMMdd-HHmmss}.csv";
-        await JavaScript.InvokeVoidAsync("csvExport.download", filename, csv);
+        await JavaScript.InvokeVoidAsync("csvExport.download", _disposeCts.Token, filename, csv);
     }
 
     private static string BuildCsv(IReadOnlyList<AvailableStockItemDto> rows)
