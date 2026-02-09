@@ -1,6 +1,232 @@
 @page "/projections"
+@inject ProjectionsClient ProjectionsClient
+@inject ToastService ToastService
+@using System.Diagnostics
 
 <PageTitle>Projections - LKvitai.MES</PageTitle>
 
 <h3>Projections</h3>
-<p class="text-muted">Coming soon: synchronous rebuild and verification controls with result details.</p>
+
+@if (_apiError is not null)
+{
+    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                 TraceId="@_apiError.TraceId"
+                 OnRetry="RetryAsync"
+                 OnDismiss="DismissError" />
+}
+
+<div class="card shadow-sm position-relative">
+    <LoadingSpinner IsLoading="@_isBusy" />
+
+    <div class="card-body">
+        <div class="mb-3">
+            <label class="form-label">Projection</label>
+            <select class="form-select" value="@_selectedProjection" @onchange="OnProjectionChanged">
+                @foreach (var projection in _projections)
+                {
+                    <option value="@projection">@projection</option>
+                }
+            </select>
+        </div>
+
+        <div class="d-flex gap-2 mb-3">
+            <button class="btn btn-primary" @onclick="OpenRebuildConfirmation" disabled="@_isBusy">
+                Rebuild
+            </button>
+            <button class="btn btn-outline-primary" @onclick="VerifyAsync" disabled="@_isBusy">
+                Verify
+            </button>
+        </div>
+
+        @if (_rebuildResult is not null)
+        {
+            var resultClass = _rebuildResult.ChecksumMatch && _rebuildResult.Swapped
+                ? "border-success"
+                : "border-danger";
+
+            <div class="card mb-3 @resultClass">
+                <div class="card-header">Rebuild Result</div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">Projection</dt>
+                        <dd class="col-sm-8">@_rebuildResult.ProjectionName</dd>
+
+                        <dt class="col-sm-4">Events Processed</dt>
+                        <dd class="col-sm-8">@_rebuildResult.EventsProcessed</dd>
+
+                        <dt class="col-sm-4">Checksum Match</dt>
+                        <dd class="col-sm-8">@_rebuildResult.ChecksumMatch</dd>
+
+                        <dt class="col-sm-4">Swapped</dt>
+                        <dd class="col-sm-8">@_rebuildResult.Swapped</dd>
+
+                        <dt class="col-sm-4">Duration</dt>
+                        <dd class="col-sm-8">@_rebuildResult.Duration</dd>
+                    </dl>
+                </div>
+            </div>
+        }
+
+        @if (_verifyResult is not null)
+        {
+            var verifyClass = _verifyResult.ChecksumMatch
+                ? "alert-success"
+                : "alert-danger";
+
+            <div class="alert @verifyClass mb-0" role="alert">
+                <strong>Verify:</strong> ChecksumMatch=@_verifyResult.ChecksumMatch,
+                ProductionRows=@_verifyResult.ProductionRowCount,
+                ShadowRows=@_verifyResult.ShadowRowCount
+            </div>
+        }
+    </div>
+</div>
+
+<ConfirmDialog Title="Rebuild projection?"
+               Message="Are you sure? This will rebuild the projection from scratch."
+               ConfirmText="Rebuild"
+               IsVisible="@_showRebuildConfirm"
+               OnConfirm="ConfirmRebuildAsync"
+               OnCancel="CancelRebuildConfirm" />
+
+@code {
+    private static readonly string[] _projections = ["LocationBalance", "AvailableStock"];
+
+    private string _selectedProjection = "LocationBalance";
+    private bool _isBusy;
+    private bool _showRebuildConfirm;
+    private ApiException? _apiError;
+    private RebuildResultDto? _rebuildResult;
+    private VerifyResultDto? _verifyResult;
+
+    private void OnProjectionChanged(ChangeEventArgs args)
+    {
+        _selectedProjection = args.Value?.ToString() ?? "LocationBalance";
+    }
+
+    private void OpenRebuildConfirmation()
+    {
+        _showRebuildConfirm = true;
+    }
+
+    private void CancelRebuildConfirm()
+    {
+        _showRebuildConfirm = false;
+    }
+
+    private async Task ConfirmRebuildAsync()
+    {
+        _showRebuildConfirm = false;
+        _isBusy = true;
+        _apiError = null;
+
+        try
+        {
+            _rebuildResult = await ProjectionsClient.RebuildAsync(_selectedProjection);
+            _verifyResult = null;
+
+            if (_rebuildResult.ChecksumMatch && _rebuildResult.Swapped)
+            {
+                ToastService.ShowSuccess($"Rebuild completed for {_selectedProjection}.");
+            }
+            else
+            {
+                ToastService.ShowWarning($"Rebuild finished with mismatch for {_selectedProjection}.");
+            }
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        catch (Exception ex)
+        {
+            _apiError = new ApiException(
+                new ProblemDetailsModel
+                {
+                    Title = "Projection rebuild failed",
+                    Detail = ex.Message,
+                    Status = 500,
+                    TraceId = Activity.Current?.Id
+                },
+                500);
+            ToastService.ShowError(_apiError.UserMessage);
+        }
+        finally
+        {
+            _isBusy = false;
+        }
+    }
+
+    private async Task VerifyAsync()
+    {
+        _isBusy = true;
+        _apiError = null;
+
+        try
+        {
+            _verifyResult = await ProjectionsClient.VerifyAsync(_selectedProjection);
+            if (_verifyResult.ChecksumMatch)
+            {
+                ToastService.ShowSuccess($"Verify succeeded for {_selectedProjection}.");
+            }
+            else
+            {
+                ToastService.ShowWarning($"Verify mismatch for {_selectedProjection}.");
+            }
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        catch (Exception ex)
+        {
+            _apiError = new ApiException(
+                new ProblemDetailsModel
+                {
+                    Title = "Projection verify failed",
+                    Detail = ex.Message,
+                    Status = 500,
+                    TraceId = Activity.Current?.Id
+                },
+                500);
+            ToastService.ShowError(_apiError.UserMessage);
+        }
+        finally
+        {
+            _isBusy = false;
+        }
+    }
+
+    private async Task RetryAsync()
+    {
+        if (_rebuildResult is not null)
+        {
+            await ConfirmRebuildAsync();
+            return;
+        }
+
+        await VerifyAsync();
+    }
+
+    private void DismissError() => _apiError = null;
+
+    private static string BuildErrorMessage(ApiException error)
+    {
+        if (error.ProblemDetails?.Errors is { Count: > 0 } fieldErrors)
+        {
+            var flattened = fieldErrors
+                .SelectMany(entry => entry.Value.Select(message => $"{entry.Key}: {message}"));
+            var details = string.Join("; ", flattened);
+            return string.IsNullOrWhiteSpace(details) ? error.UserMessage : $"{error.UserMessage} {details}";
+        }
+
+        if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
+        {
+            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+        }
+
+        return error.UserMessage;
+    }
+}

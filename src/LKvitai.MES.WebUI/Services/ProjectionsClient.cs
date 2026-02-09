@@ -19,9 +19,9 @@ public class ProjectionsClient
         _factory = factory;
     }
 
-    public Task<RebuildResultDto> RebuildAsync(string projectionName, bool verify)
+    public Task<RebuildResultDto> RebuildAsync(string projectionName)
     {
-        return PostAsync<RebuildResultDto>("/api/projections/rebuild", new { projectionName, verify });
+        return PostAsync<RebuildResultDto>("/api/projections/rebuild", new { projectionName });
     }
 
     public Task<VerifyResultDto> VerifyAsync(string projectionName)
