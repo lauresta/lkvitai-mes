@@ -1,7 +1,6 @@
 using LKvitai.MES.Application.Services;
 using LKvitai.MES.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
 
 namespace LKvitai.MES.Infrastructure.Persistence;
 
@@ -21,48 +20,20 @@ public sealed class SkuGenerationService : ISkuGenerationService
 
         return await executionStrategy.ExecuteAsync(async () =>
         {
-            for (var attempt = 1; attempt <= 3; attempt++)
-            {
-                await using var tx = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
-                try
-                {
-                    var sequence = await _dbContext.SKUSequences
-                        .SingleOrDefaultAsync(x => x.Prefix == prefix, cancellationToken);
+            // Atomic upsert to allocate SKU number.
+            // Inserts first row per prefix, then increments on conflict.
+            var nextValue = await _dbContext.Database
+                .SqlQuery<int>($"""
+                    INSERT INTO public.sku_sequences ("Prefix", "NextValue", "RowVersion")
+                    VALUES ({prefix}, 2, '\x'::bytea)
+                    ON CONFLICT ("Prefix")
+                    DO UPDATE SET "NextValue" = public.sku_sequences."NextValue" + 1
+                    RETURNING "NextValue";
+                    """)
+                .SingleAsync(cancellationToken);
 
-                    int next;
-                    if (sequence is null)
-                    {
-                        next = 1;
-                        _dbContext.SKUSequences.Add(new SKUSequence
-                        {
-                            Prefix = prefix,
-                            NextValue = 2
-                        });
-                    }
-                    else
-                    {
-                        next = sequence.NextValue;
-                        sequence.NextValue += 1;
-                    }
-
-                    await _dbContext.SaveChangesAsync(cancellationToken);
-                    await tx.CommitAsync(cancellationToken);
-
-                    return $"{prefix}-{next:D4}";
-                }
-                catch (DbUpdateConcurrencyException) when (attempt < 3)
-                {
-                    await tx.RollbackAsync(cancellationToken);
-                    _dbContext.ChangeTracker.Clear();
-                }
-                catch (DbUpdateException ex) when (attempt < 3 && IsUniqueConstraintViolation(ex))
-                {
-                    await tx.RollbackAsync(cancellationToken);
-                    _dbContext.ChangeTracker.Clear();
-                }
-            }
-
-            throw new InvalidOperationException("Could not generate SKU due to repeated concurrency conflicts.");
+            var issuedNumber = nextValue - 1;
+            return $"{prefix}-{issuedNumber:D4}";
         });
     }
 
@@ -84,10 +55,5 @@ public sealed class SkuGenerationService : ISkuGenerationService
         }
 
         return "ITEM";
-    }
-
-    private static bool IsUniqueConstraintViolation(DbUpdateException ex)
-    {
-        return ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation };
     }
 }
