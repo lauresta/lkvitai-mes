@@ -3,6 +3,7 @@ using LKvitai.MES.Application.Orchestration;
 using LKvitai.MES.Application.Ports;
 using LKvitai.MES.Application.Projections;
 using LKvitai.MES.Application.Services;
+using LKvitai.MES.Infrastructure.Imports;
 using LKvitai.MES.Infrastructure.Locking;
 using LKvitai.MES.Infrastructure.Persistence;
 using LKvitai.MES.Infrastructure.Projections;
@@ -27,6 +28,8 @@ public static class DependencyInjection
         services.AddScoped<IProjectionRebuildService, ProjectionRebuildService>();
         services.AddScoped<IProjectionCleanupService, ProjectionCleanupService>();
         services.AddScoped<ISkuGenerationService, SkuGenerationService>();
+        services.AddScoped<IExcelTemplateService, ExcelTemplateService>();
+        services.AddScoped<IMasterDataImportService, MasterDataImportService>();
 
         // Repository implementations (Application ports)
         services.AddScoped<IReservationRepository, MartenReservationRepository>();
