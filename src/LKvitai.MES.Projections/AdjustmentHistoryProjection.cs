@@ -18,6 +18,7 @@ public sealed class AdjustmentHistoryProjection : SingleStreamProjection<Adjustm
             ItemId = evt.ItemId,
             SKU = evt.SKU,
             ItemName = null,
+            LocationId = evt.LocationId,
             Location = evt.Location,
             LocationCode = evt.Location,
             QtyDelta = evt.QtyDelta,

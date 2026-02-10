@@ -7,6 +7,7 @@ public sealed class AdjustmentHistoryView
     public int ItemId { get; set; }
     public string SKU { get; set; } = string.Empty;
     public string? ItemName { get; set; }
+    public int? LocationId { get; set; }
     public string Location { get; set; } = string.Empty;
     public string? LocationCode { get; set; }
     public decimal QtyDelta { get; set; }
