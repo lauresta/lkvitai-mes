@@ -93,9 +93,8 @@ public sealed class SuppliersController : ControllerBase
         _dbContext.Suppliers.Add(entity);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        return CreatedAtAction(
-            nameof(GetAsync),
-            new { id = entity.Id },
+        return Created(
+            $"/api/warehouse/v1/suppliers/{entity.Id}",
             new SupplierListItemDto(
                 entity.Id,
                 entity.Code,

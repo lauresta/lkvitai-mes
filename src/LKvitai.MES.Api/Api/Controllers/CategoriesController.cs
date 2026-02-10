@@ -79,7 +79,7 @@ public sealed class CategoriesController : ControllerBase
         _dbContext.ItemCategories.Add(entity);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        return CreatedAtAction(nameof(GetAsync), new { id = entity.Id }, new CategoryDto(
+        return Created($"/api/warehouse/v1/categories/{entity.Id}", new CategoryDto(
             entity.Id,
             entity.Code,
             entity.Name,

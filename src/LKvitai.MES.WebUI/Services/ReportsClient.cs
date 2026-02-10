@@ -12,10 +12,14 @@ public sealed class ReportsClient
     };
 
     private readonly IHttpClientFactory _factory;
+    private readonly ILogger<ReportsClient>? _logger;
 
-    public ReportsClient(IHttpClientFactory factory)
+    public ReportsClient(
+        IHttpClientFactory factory,
+        ILogger<ReportsClient>? logger = null)
     {
         _factory = factory;
+        _logger = logger;
     }
 
     public Task<StockLevelResponseDto> GetStockLevelAsync(
@@ -159,7 +163,7 @@ public sealed class ReportsClient
         return await response.Content.ReadAsByteArrayAsync(cancellationToken);
     }
 
-    private static async Task EnsureSuccessAsync(HttpResponseMessage response)
+    private async Task EnsureSuccessAsync(HttpResponseMessage response)
     {
         if (response.IsSuccessStatusCode)
         {
@@ -167,6 +171,15 @@ public sealed class ReportsClient
         }
 
         var problem = await ProblemDetailsParser.ParseAsync(response);
+        _logger?.LogError(
+            "Warehouse API request failed. Method={Method} Uri={Uri} StatusCode={StatusCode} ErrorCode={ErrorCode} TraceId={TraceId} Detail={Detail}",
+            response.RequestMessage?.Method.Method ?? "UNKNOWN",
+            response.RequestMessage?.RequestUri?.ToString() ?? "UNKNOWN",
+            (int)response.StatusCode,
+            problem?.ErrorCode ?? "UNKNOWN",
+            problem?.TraceId ?? "UNKNOWN",
+            problem?.Detail ?? "n/a");
+
         throw new ApiException(problem, (int)response.StatusCode);
     }
 

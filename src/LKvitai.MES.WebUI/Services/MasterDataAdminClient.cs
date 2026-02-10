@@ -13,10 +13,14 @@ public sealed class MasterDataAdminClient
     };
 
     private readonly IHttpClientFactory _factory;
+    private readonly ILogger<MasterDataAdminClient> _logger;
 
-    public MasterDataAdminClient(IHttpClientFactory factory)
+    public MasterDataAdminClient(
+        IHttpClientFactory factory,
+        ILogger<MasterDataAdminClient> logger)
     {
         _factory = factory;
+        _logger = logger;
     }
 
     public Task<PagedApiResponse<AdminItemDto>> GetItemsAsync(
@@ -214,7 +218,7 @@ public sealed class MasterDataAdminClient
         await EnsureSuccessAsync(response);
     }
 
-    private static async Task EnsureSuccessAsync(HttpResponseMessage response)
+    private async Task EnsureSuccessAsync(HttpResponseMessage response)
     {
         if (response.IsSuccessStatusCode)
         {
@@ -222,6 +226,15 @@ public sealed class MasterDataAdminClient
         }
 
         var problem = await ProblemDetailsParser.ParseAsync(response);
+        _logger.LogError(
+            "Warehouse API request failed. Method={Method} Uri={Uri} StatusCode={StatusCode} ErrorCode={ErrorCode} TraceId={TraceId} Detail={Detail}",
+            response.RequestMessage?.Method.Method ?? "UNKNOWN",
+            response.RequestMessage?.RequestUri?.ToString() ?? "UNKNOWN",
+            (int)response.StatusCode,
+            problem?.ErrorCode ?? "UNKNOWN",
+            problem?.TraceId ?? "UNKNOWN",
+            problem?.Detail ?? "n/a");
+
         throw new ApiException(problem, (int)response.StatusCode);
     }
 }

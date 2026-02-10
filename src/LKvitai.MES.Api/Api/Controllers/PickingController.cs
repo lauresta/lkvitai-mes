@@ -80,9 +80,8 @@ public sealed class PickingController : ControllerBase
         _dbContext.PickTasks.Add(task);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        return CreatedAtAction(
-            nameof(GetHistoryAsync),
-            new { id = task.TaskId },
+        return Created(
+            $"/api/warehouse/v1/picking/tasks/{task.TaskId}",
             new PickTaskCreatedResponse(
                 task.TaskId,
                 task.OrderId,

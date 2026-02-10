@@ -13,10 +13,14 @@ public class StockClient
     };
 
     private readonly IHttpClientFactory _factory;
+    private readonly ILogger<StockClient>? _logger;
 
-    public StockClient(IHttpClientFactory factory)
+    public StockClient(
+        IHttpClientFactory factory,
+        ILogger<StockClient>? logger = null)
     {
         _factory = factory;
+        _logger = logger;
     }
 
     public Task<PagedResult<AvailableStockItemDto>> SearchAvailableStockAsync(
@@ -58,6 +62,7 @@ public class StockClient
         if (!response.IsSuccessStatusCode)
         {
             var problem = await ProblemDetailsParser.ParseAsync(response);
+            LogFailure(response, problem);
             throw new ApiException(problem, (int)response.StatusCode);
         }
 
@@ -93,10 +98,23 @@ public class StockClient
         if (!response.IsSuccessStatusCode)
         {
             var problem = await ProblemDetailsParser.ParseAsync(response);
+            LogFailure(response, problem);
             throw new ApiException(problem, (int)response.StatusCode);
         }
 
         var model = JsonSerializer.Deserialize<T>(body, JsonOptions);
         return model ?? throw new JsonException($"Unable to deserialize response to {typeof(T).Name}.");
+    }
+
+    private void LogFailure(HttpResponseMessage response, ProblemDetailsModel? problem)
+    {
+        _logger?.LogError(
+            "Warehouse API request failed. Method={Method} Uri={Uri} StatusCode={StatusCode} ErrorCode={ErrorCode} TraceId={TraceId} Detail={Detail}",
+            response.RequestMessage?.Method.Method ?? "UNKNOWN",
+            response.RequestMessage?.RequestUri?.ToString() ?? "UNKNOWN",
+            (int)response.StatusCode,
+            problem?.ErrorCode ?? "UNKNOWN",
+            problem?.TraceId ?? "UNKNOWN",
+            problem?.Detail ?? "n/a");
     }
 }

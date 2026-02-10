@@ -13,10 +13,14 @@ public class DashboardClient
     };
 
     private readonly IHttpClientFactory _factory;
+    private readonly ILogger<DashboardClient>? _logger;
 
-    public DashboardClient(IHttpClientFactory factory)
+    public DashboardClient(
+        IHttpClientFactory factory,
+        ILogger<DashboardClient>? logger = null)
     {
         _factory = factory;
+        _logger = logger;
     }
 
     public Task<HealthStatusDto> GetHealthAsync() => GetAsync<HealthStatusDto>("/api/dashboard/health");
@@ -41,6 +45,7 @@ public class DashboardClient
         if (!response.IsSuccessStatusCode)
         {
             var problem = await ProblemDetailsParser.ParseAsync(response);
+            LogFailure(response, problem);
             throw new ApiException(problem, (int)response.StatusCode);
         }
 
@@ -99,6 +104,7 @@ public class DashboardClient
         if (!response.IsSuccessStatusCode)
         {
             var problem = await ProblemDetailsParser.ParseAsync(response);
+            LogFailure(response, problem);
             throw new ApiException(problem, (int)response.StatusCode);
         }
 
@@ -134,6 +140,7 @@ public class DashboardClient
         if (!response.IsSuccessStatusCode)
         {
             var problem = await ProblemDetailsParser.ParseAsync(response);
+            LogFailure(response, problem);
             throw new ApiException(problem, (int)response.StatusCode);
         }
 
@@ -164,5 +171,17 @@ public class DashboardClient
             JsonValueKind.String when double.TryParse(value.GetString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed) => parsed,
             _ => null
         };
+    }
+
+    private void LogFailure(HttpResponseMessage response, ProblemDetailsModel? problem)
+    {
+        _logger?.LogError(
+            "Warehouse API request failed. Method={Method} Uri={Uri} StatusCode={StatusCode} ErrorCode={ErrorCode} TraceId={TraceId} Detail={Detail}",
+            response.RequestMessage?.Method.Method ?? "UNKNOWN",
+            response.RequestMessage?.RequestUri?.ToString() ?? "UNKNOWN",
+            (int)response.StatusCode,
+            problem?.ErrorCode ?? "UNKNOWN",
+            problem?.TraceId ?? "UNKNOWN",
+            problem?.Detail ?? "n/a");
     }
 }

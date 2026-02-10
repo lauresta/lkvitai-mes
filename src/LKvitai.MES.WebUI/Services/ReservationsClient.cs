@@ -13,10 +13,14 @@ public class ReservationsClient
     };
 
     private readonly IHttpClientFactory _factory;
+    private readonly ILogger<ReservationsClient>? _logger;
 
-    public ReservationsClient(IHttpClientFactory factory)
+    public ReservationsClient(
+        IHttpClientFactory factory,
+        ILogger<ReservationsClient>? logger = null)
     {
         _factory = factory;
+        _logger = logger;
     }
 
     public Task<PagedResult<ReservationDto>> GetReservationsAsync(string? status, int page = 1, int pageSize = 50)
@@ -56,6 +60,7 @@ public class ReservationsClient
         if (!response.IsSuccessStatusCode)
         {
             var problem = await ProblemDetailsParser.ParseAsync(response);
+            LogFailure(response, problem);
             throw new ApiException(problem, (int)response.StatusCode);
         }
 
@@ -72,10 +77,23 @@ public class ReservationsClient
         if (!response.IsSuccessStatusCode)
         {
             var problem = await ProblemDetailsParser.ParseAsync(response);
+            LogFailure(response, problem);
             throw new ApiException(problem, (int)response.StatusCode);
         }
 
         var model = JsonSerializer.Deserialize<T>(body, JsonOptions);
         return model ?? throw new JsonException($"Unable to deserialize response to {typeof(T).Name}.");
+    }
+
+    private void LogFailure(HttpResponseMessage response, ProblemDetailsModel? problem)
+    {
+        _logger?.LogError(
+            "Warehouse API request failed. Method={Method} Uri={Uri} StatusCode={StatusCode} ErrorCode={ErrorCode} TraceId={TraceId} Detail={Detail}",
+            response.RequestMessage?.Method.Method ?? "UNKNOWN",
+            response.RequestMessage?.RequestUri?.ToString() ?? "UNKNOWN",
+            (int)response.StatusCode,
+            problem?.ErrorCode ?? "UNKNOWN",
+            problem?.TraceId ?? "UNKNOWN",
+            problem?.Detail ?? "n/a");
     }
 }

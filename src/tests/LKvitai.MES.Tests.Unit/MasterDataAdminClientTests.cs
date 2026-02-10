@@ -94,7 +94,7 @@ public class MasterDataAdminClientTests
             .Setup(x => x.CreateClient("WarehouseApi"))
             .Returns(client);
 
-        return new MasterDataAdminClient(factory.Object);
+        return new MasterDataAdminClient(factory.Object, new NullLogger<MasterDataAdminClient>());
     }
 
     private static HttpClient CreateHttpClient(Func<HttpRequestMessage, HttpResponseMessage> responder)

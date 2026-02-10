@@ -146,7 +146,7 @@ public sealed class LocationsController : ControllerBase
         _dbContext.Locations.Add(entity);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
-        return CreatedAtAction(nameof(GetAsync), new { id = entity.Id }, new LocationListItemDto(
+        return Created($"/api/warehouse/v1/locations/{entity.Id}", new LocationListItemDto(
             entity.Id,
             entity.Code,
             entity.Barcode,

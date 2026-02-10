@@ -206,9 +206,8 @@ public sealed class ReceivingController : ControllerBase
             await session.SaveChangesAsync(cancellationToken);
         }
 
-        return CreatedAtAction(
-            nameof(GetShipmentsAsync),
-            new { id = shipment.Id },
+        return Created(
+            $"/api/warehouse/v1/receiving/shipments/{shipment.Id}",
             new ShipmentCreatedResponse(
                 shipment.Id,
                 shipment.ReferenceNumber,
