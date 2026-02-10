@@ -25,9 +25,13 @@ jobs:
   validate-schema:
     needs: docker-gated-integration-tests
     runs-on: ubuntu-latest
+    env:
+      WAREHOUSE_DB_CONNECTION: ${{ secrets.WAREHOUSE_DB_CONNECTION }}
     steps:
       - uses: actions/checkout@v4
+      - name: Skip schema validation when secret is missing
+        if: ${{ env.WAREHOUSE_DB_CONNECTION == '' }}
+        run: echo "WAREHOUSE_DB_CONNECTION is not configured. Skipping schema validation."
       - name: Validate Marten schema
-        env:
-          WAREHOUSE_DB_CONNECTION: ${{ secrets.WAREHOUSE_DB_CONNECTION }}
+        if: ${{ env.WAREHOUSE_DB_CONNECTION != '' }}
         run: scripts/validate-schema.sh
