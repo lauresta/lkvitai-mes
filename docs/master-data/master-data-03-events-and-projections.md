@@ -26,6 +26,23 @@
 
 ---
 
+## Phase 1 Event Inventory (Authoritative)
+
+The core Phase 1 operational event surface contains these 8 events:
+
+1. `GoodsReceivedEvent`
+2. `StockMovedEvent`
+3. `PickCompletedEvent`
+4. `StockAdjustedEvent`
+5. `ReservationCreatedMasterDataEvent`
+6. `ReservationReleasedMasterDataEvent`
+7. `QCPassedEvent`
+8. `QCFailedEvent`
+
+Note: `InboundShipmentCreatedEvent` is also emitted for shipment lifecycle/projection support, but it is not part of the 8 stock-operation events above.
+
+---
+
 ## Phase 1 Event Contracts
 
 ### GoodsReceived

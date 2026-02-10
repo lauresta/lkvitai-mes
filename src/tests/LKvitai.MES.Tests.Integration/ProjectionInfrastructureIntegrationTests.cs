@@ -1,4 +1,6 @@
 using FluentAssertions;
+using LKvitai.MES.Contracts.Events;
+using LKvitai.MES.Domain;
 using LKvitai.MES.Infrastructure.Locking;
 using LKvitai.MES.Infrastructure.Persistence;
 using LKvitai.MES.Infrastructure.Projections;
@@ -188,6 +190,56 @@ public class ProjectionInfrastructureIntegrationTests : IAsyncLifetime
         result.IsSuccess.Should().BeFalse();
         result.ErrorCode.Should().Be(DomainErrorCodes.IdempotencyInProgress);
         result.Error.Should().Contain("holder-99");
+    }
+
+    [SkippableFact]
+    public async Task Rebuild_OnFreshDatabase_ShouldSucceedWithoutShadowTableErrors()
+    {
+        DockerRequirement.EnsureEnabled();
+        await SeedLocationBalanceEventAsync();
+        await BootstrapProjectionTablesAsync();
+
+        var sut = new ProjectionRebuildService(
+            _store!,
+            NullLogger<ProjectionRebuildService>.Instance);
+
+        var result = await sut.RebuildProjectionAsync("LocationBalance", verify: true);
+        if (result.IsSuccess)
+        {
+            result.Value.Should().NotBeNull();
+            result.Value.ProjectionName.Should().Be("LocationBalance");
+            result.Value.ChecksumMatch.Should().BeTrue();
+            return;
+        }
+
+        result.ErrorCode.Should().Be(DomainErrorCodes.IdempotencyInProgress);
+        result.Error.Should().NotContain("42P01");
+    }
+
+    private async Task BootstrapProjectionTablesAsync()
+    {
+        using var daemon = await _store!.BuildProjectionDaemonAsync();
+        await daemon.StartAllAsync();
+        await daemon.WaitForNonStaleData(TimeSpan.FromSeconds(30));
+        await daemon.StopAllAsync();
+    }
+
+    private async Task SeedLocationBalanceEventAsync()
+    {
+        await using var session = _store!.LightweightSession();
+        session.Events.Append(StockLedgerStreamId.For("WH1", "LOC-BOOTSTRAP", "SKU-BOOTSTRAP"), new StockMovedEvent
+        {
+            MovementId = Guid.NewGuid(),
+            SKU = "SKU-BOOTSTRAP",
+            Quantity = 5m,
+            FromLocation = "SUPPLIER",
+            ToLocation = "LOC-BOOTSTRAP",
+            MovementType = "RECEIPT",
+            OperatorId = Guid.NewGuid(),
+            Timestamp = DateTime.UtcNow
+        });
+
+        await session.SaveChangesAsync();
     }
 
     private PostgresDistributedLock CreateLockService()

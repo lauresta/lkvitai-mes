@@ -20,7 +20,7 @@ jobs:
           dotnet test src/tests/LKvitai.MES.Tests.Integration/LKvitai.MES.Tests.Integration.csproj
           -v minimal
           --filter
-          "FullyQualifiedName~ImportControllerIntegrationTests|FullyQualifiedName~ReceiveThenQcPass_ShouldMoveStockFromQcHoldToReceiving|FullyQualifiedName~ReceiveThenQcFail_ShouldMoveStockFromQcHoldToQuarantine|FullyQualifiedName~CreateAdjustment_ShouldUpdateProjectionAndBeVisibleInHistory"
+          "FullyQualifiedName~ImportControllerIntegrationTests|FullyQualifiedName~ReceiveThenQcPass_ShouldMoveStockFromQcHoldToReceiving|FullyQualifiedName~ReceiveThenQcFail_ShouldMoveStockFromQcHoldToQuarantine|FullyQualifiedName~CreateAdjustment_ShouldUpdateProjectionAndBeVisibleInHistory|FullyQualifiedName~ProjectionInfrastructureIntegrationTests.Rebuild_OnFreshDatabase_ShouldSucceedWithoutShadowTableErrors|FullyQualifiedName~ProjectionIdempotencyIntegrationTests.ProjectionDaemon_ReprocessingWithoutNewEvents_ShouldNotDoubleStock"
 
   validate-schema:
     needs: docker-gated-integration-tests
