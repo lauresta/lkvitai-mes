@@ -105,6 +105,13 @@ BEGIN
 END $$;
 ```
 
+**Alternative (recommended in production)**:
+```bash
+curl -X POST http://localhost:5000/api/warehouse/v1/admin/projections/cleanup-shadows \
+  -H "Authorization: Bearer <admin-token>"
+```
+The API skips cleanup if a rebuild lock is active and returns lock-holder details.
+
 ---
 
 **Step 3: Initialize Marten Schema (Fresh Database)**

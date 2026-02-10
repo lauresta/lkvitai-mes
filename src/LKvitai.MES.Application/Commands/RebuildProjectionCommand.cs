@@ -14,6 +14,7 @@ public record RebuildProjectionCommand : ICommand<ProjectionRebuildReport>
     
     public string ProjectionName { get; init; } = string.Empty;
     public bool Verify { get; init; } = true;
+    public bool ResetProgress { get; init; } = false;
 }
 
 /// <summary>

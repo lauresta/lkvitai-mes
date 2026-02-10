@@ -2,6 +2,7 @@ using LKvitai.MES.Application.ConsistencyChecks;
 using LKvitai.MES.Application.Orchestration;
 using LKvitai.MES.Application.Ports;
 using LKvitai.MES.Application.Projections;
+using LKvitai.MES.Infrastructure.Locking;
 using LKvitai.MES.Infrastructure.Persistence;
 using LKvitai.MES.Infrastructure.Projections;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,8 +20,11 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructureServices(this IServiceCollection services)
     {
+        services.AddSingleton<IDistributedLock, PostgresDistributedLock>();
+
         // Register projection rebuild service (MITIGATION V-5)
         services.AddScoped<IProjectionRebuildService, ProjectionRebuildService>();
+        services.AddScoped<IProjectionCleanupService, ProjectionCleanupService>();
 
         // Repository implementations (Application ports)
         services.AddScoped<IReservationRepository, MartenReservationRepository>();

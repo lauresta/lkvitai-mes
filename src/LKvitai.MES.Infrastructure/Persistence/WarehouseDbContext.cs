@@ -18,6 +18,11 @@ public class WarehouseDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        // Schema separation contract:
+        // - EF Core state tables in `public`
+        // - Marten event/projection tables in `warehouse_events`
+        modelBuilder.HasDefaultSchema("public");
         
         // HandlingUnit configuration per blueprint
         modelBuilder.Entity<HandlingUnit>(entity =>

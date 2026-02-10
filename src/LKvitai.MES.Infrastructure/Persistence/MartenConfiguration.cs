@@ -22,11 +22,16 @@ public static class MartenConfiguration
                 ?? throw new InvalidOperationException("WarehouseDb connection string not found");
             
             options.Connection(connectionString);
-                
-                // Event store configuration per blueprint
-                // ADR-001: Use string stream identity for named streams (stock-ledger-{warehouseId}, etc.)
-                options.Events.StreamIdentity = Marten.Events.StreamIdentity.AsString;
-                options.Events.DatabaseSchemaName = "warehouse_events";
+
+            // Schema separation: EF Core relational tables stay in `public`,
+            // Marten events + projection documents stay in `warehouse_events`.
+            // This prevents mt_doc_* rebuild shadow tables from colliding with EF objects.
+            options.DatabaseSchemaName = "warehouse_events";
+
+            // Event store configuration per blueprint
+            // ADR-001: Use string stream identity for named streams (stock-ledger-{warehouseId}, etc.)
+            options.Events.StreamIdentity = Marten.Events.StreamIdentity.AsString;
+            options.Events.DatabaseSchemaName = "warehouse_events";
             
             // Performance tuning
             options.Events.MetadataConfig.HeadersEnabled = true;
@@ -56,7 +61,8 @@ public static class MartenConfiguration
         {
             options.UseNpgsql(connectionString, npgsqlOptions =>
             {
-                npgsqlOptions.MigrationsHistoryTable("__EFMigrationsHistory", "warehouse");
+                // Keep EF migration metadata in `public` to match EF schema placement.
+                npgsqlOptions.MigrationsHistoryTable("__EFMigrationsHistory", "public");
                 npgsqlOptions.EnableRetryOnFailure(maxRetryCount: 3);
             });
             

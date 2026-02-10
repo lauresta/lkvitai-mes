@@ -23,6 +23,7 @@ public interface IProjectionRebuildService
     Task<Result<Commands.ProjectionRebuildReport>> RebuildProjectionAsync(
         string projectionName,
         bool verify = true,
+        bool resetProgress = false,
         CancellationToken cancellationToken = default);
     
     /// <summary>
@@ -32,6 +33,10 @@ public interface IProjectionRebuildService
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Diff report</returns>
     Task<ProjectionDiffReport> GenerateDiffReportAsync(
+        string projectionName,
+        CancellationToken cancellationToken = default);
+
+    Task<ProjectionRebuildLockStatus?> GetRebuildStatusAsync(
         string projectionName,
         CancellationToken cancellationToken = default);
 }
@@ -46,4 +51,13 @@ public record ProjectionDiffReport
     public int RowsOnlyInShadow { get; init; }
     public int RowsWithDifferences { get; init; }
     public List<string> SampleDifferences { get; init; } = new();
+}
+
+public sealed record ProjectionRebuildLockStatus
+{
+    public string ProjectionName { get; init; } = string.Empty;
+    public bool Locked { get; init; }
+    public string? Holder { get; init; }
+    public DateTimeOffset? AcquiredAtUtc { get; init; }
+    public DateTimeOffset? ExpiresAtUtc { get; init; }
 }

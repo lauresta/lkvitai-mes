@@ -2,11 +2,13 @@ using LKvitai.MES.Application.Commands;
 using LKvitai.MES.Application.Projections;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Contracts.ReadModels;
+using LKvitai.MES.Infrastructure.Locking;
 using LKvitai.MES.SharedKernel;
 using Marten;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 using System.Diagnostics;
+using System.Diagnostics.Metrics;
 using System.Text.Json;
 
 namespace LKvitai.MES.Infrastructure.Projections;
@@ -27,10 +29,13 @@ namespace LKvitai.MES.Infrastructure.Projections;
 /// </summary>
 public class ProjectionRebuildService : IProjectionRebuildService
 {
-    private const long RebuildAdvisoryLockKey = 884522073391450564;
+    private static readonly Meter RebuildMeter = new("LKvitai.MES.Projections.Rebuild");
+    private static readonly Histogram<double> RebuildDurationSeconds =
+        RebuildMeter.CreateHistogram<double>("projection.rebuild.duration.seconds");
 
     private readonly IDocumentStore _documentStore;
     private readonly ILogger<ProjectionRebuildService> _logger;
+    private readonly IDistributedLock _distributedLock;
 
     /// <summary>
     /// JSON serializer options matching Marten's default (camelCase property names).
@@ -48,36 +53,61 @@ public class ProjectionRebuildService : IProjectionRebuildService
     public ProjectionRebuildService(
         IDocumentStore documentStore,
         ILogger<ProjectionRebuildService> logger)
+        : this(documentStore, logger, new NoOpDistributedLock())
+    {
+    }
+
+    public ProjectionRebuildService(
+        IDocumentStore documentStore,
+        ILogger<ProjectionRebuildService> logger,
+        IDistributedLock distributedLock)
     {
         _documentStore = documentStore;
         _logger = logger;
+        _distributedLock = distributedLock;
     }
 
     public async Task<Result<ProjectionRebuildReport>> RebuildProjectionAsync(
         string projectionName,
         bool verify = true,
+        bool resetProgress = false,
         CancellationToken cancellationToken = default)
     {
         var stopwatch = Stopwatch.StartNew();
-        IQuerySession? lockSession = null;
+        var lockKey = ProjectionRebuildLockKey.For(projectionName);
+        var holder = $"{Environment.MachineName}:{Guid.NewGuid():N}";
         bool lockAcquired = false;
 
         _logger.LogInformation(
-            "Starting projection rebuild for {ProjectionName} with verify={Verify}",
-            projectionName, verify);
+            "Starting projection rebuild for {ProjectionName} with verify={Verify}, resetProgress={ResetProgress}",
+            projectionName, verify, resetProgress);
 
         try
         {
-            lockSession = _documentStore.QuerySession();
-            var lockConnection = (NpgsqlConnection)(lockSession.Connection
-                ?? throw new InvalidOperationException("Marten query session connection is unavailable."));
-            lockAcquired = await TryAcquireRebuildLockAsync(lockConnection, cancellationToken);
+            var lockResult = await _distributedLock.TryAcquireAsync(
+                lockKey,
+                holder,
+                TimeSpan.FromMinutes(30),
+                cancellationToken);
+            lockAcquired = lockResult.Acquired;
             if (!lockAcquired)
             {
+                var existing = lockResult.ExistingLock;
+                var message = existing is null
+                    ? "Projection rebuild is already in progress."
+                    : $"Projection rebuild is already in progress by '{existing.Holder}' until {existing.ExpiresAtUtc:O}.";
+
+                RebuildDurationSeconds.Record(
+                    stopwatch.Elapsed.TotalSeconds,
+                    new KeyValuePair<string, object?>("projection", projectionName));
                 return Result<ProjectionRebuildReport>.Fail(
                     DomainErrorCodes.IdempotencyInProgress,
-                    "Projection rebuild is already in progress.");
+                    message);
             }
+
+            await using var querySession = _documentStore.QuerySession();
+            var lockConnection = (NpgsqlConnection)(querySession.Connection
+                ?? throw new InvalidOperationException("Marten query session connection is unavailable."));
 
             var tableName = projectionName switch
             {
@@ -137,6 +167,9 @@ public class ProjectionRebuildService : IProjectionRebuildService
                         projectionName, productionChecksum, shadowChecksum);
 
                     stopwatch.Stop();
+                    RebuildDurationSeconds.Record(
+                        stopwatch.Elapsed.TotalSeconds,
+                        new KeyValuePair<string, object?>("projection", projectionName));
                     return Result<ProjectionRebuildReport>.Fail(
                         DomainErrorCodes.ValidationError,
                         $"Checksum verification failed. " +
@@ -170,6 +203,10 @@ public class ProjectionRebuildService : IProjectionRebuildService
                 Duration = stopwatch.Elapsed
             };
 
+            RebuildDurationSeconds.Record(
+                report.Duration.TotalSeconds,
+                new KeyValuePair<string, object?>("projection", projectionName));
+
             return Result<ProjectionRebuildReport>.Ok(report);
         }
         catch (PostgresException ex) when (
@@ -181,6 +218,9 @@ public class ProjectionRebuildService : IProjectionRebuildService
                 "Projection rebuild for {ProjectionName} failed due to shadow-table race/conflict",
                 projectionName);
             stopwatch.Stop();
+            RebuildDurationSeconds.Record(
+                stopwatch.Elapsed.TotalSeconds,
+                new KeyValuePair<string, object?>("projection", projectionName));
             return Result<ProjectionRebuildReport>.Fail(
                 DomainErrorCodes.IdempotencyInProgress,
                 "Projection rebuild conflict detected. Retry the operation.");
@@ -189,31 +229,24 @@ public class ProjectionRebuildService : IProjectionRebuildService
         {
             _logger.LogError(ex, "Error rebuilding projection {ProjectionName}", projectionName);
             stopwatch.Stop();
+            RebuildDurationSeconds.Record(
+                stopwatch.Elapsed.TotalSeconds,
+                new KeyValuePair<string, object?>("projection", projectionName));
             return Result<ProjectionRebuildReport>.Fail(
                 DomainErrorCodes.InternalError,
                 "Rebuild failed due to an internal error.");
         }
         finally
         {
-            if (lockSession is not null)
+            if (lockAcquired)
             {
                 try
                 {
-                    if (lockAcquired && lockSession.Connection is NpgsqlConnection lockConnection)
-                    {
-                        try
-                        {
-                            await ReleaseRebuildLockAsync(lockConnection, cancellationToken);
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogWarning(ex, "Failed to release projection rebuild advisory lock cleanly");
-                        }
-                    }
+                    await _distributedLock.ReleaseAsync(lockKey, holder, cancellationToken);
                 }
-                finally
+                catch (Exception ex)
                 {
-                    await lockSession.DisposeAsync();
+                    _logger.LogWarning(ex, "Failed to release projection rebuild distributed lock cleanly");
                 }
             }
         }
@@ -233,6 +266,38 @@ public class ProjectionRebuildService : IProjectionRebuildService
             RowsOnlyInShadow = 0,
             RowsWithDifferences = 0,
             SampleDifferences = new List<string> { "Diff report not yet implemented" }
+        };
+    }
+
+    public async Task<ProjectionRebuildLockStatus?> GetRebuildStatusAsync(
+        string projectionName,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(projectionName))
+        {
+            return null;
+        }
+
+        var lockInfo = await _distributedLock.GetActiveLockAsync(
+            ProjectionRebuildLockKey.For(projectionName),
+            cancellationToken);
+
+        if (lockInfo is null)
+        {
+            return new ProjectionRebuildLockStatus
+            {
+                ProjectionName = projectionName,
+                Locked = false
+            };
+        }
+
+        return new ProjectionRebuildLockStatus
+        {
+            ProjectionName = projectionName,
+            Locked = true,
+            Holder = lockInfo.Holder,
+            AcquiredAtUtc = lockInfo.AcquiredAtUtc,
+            ExpiresAtUtc = lockInfo.ExpiresAtUtc
         };
     }
 
@@ -375,6 +440,12 @@ public class ProjectionRebuildService : IProjectionRebuildService
         {
             if (rawEvent.Data is not StockMovedEvent evt) continue;
             processed++;
+            if (processed % 1000 == 0)
+            {
+                _logger.LogInformation(
+                    "LocationBalance rebuild progress: {Processed} events processed",
+                    processed);
+            }
 
             // V-5 Rule B: Extract warehouseId from stream key (self-contained)
             var streamKey = rawEvent.StreamKey
@@ -470,21 +541,45 @@ public class ProjectionRebuildService : IProjectionRebuildService
                 case StockMovedEvent stockMoved:
                     ApplyStockMovedToAvailableStock(rawEvent, stockMoved, views);
                     processed++;
+                    if (processed % 1000 == 0)
+                    {
+                        _logger.LogInformation(
+                            "AvailableStock rebuild progress: {Processed} events processed",
+                            processed);
+                    }
                     break;
 
                 case PickingStartedEvent pickingStarted:
                     ApplyPickingStartedToAvailableStock(pickingStarted, views);
                     processed++;
+                    if (processed % 1000 == 0)
+                    {
+                        _logger.LogInformation(
+                            "AvailableStock rebuild progress: {Processed} events processed",
+                            processed);
+                    }
                     break;
 
                 case ReservationConsumedEvent consumed:
                     ApplyReservationConsumedToAvailableStock(consumed, views);
                     processed++;
+                    if (processed % 1000 == 0)
+                    {
+                        _logger.LogInformation(
+                            "AvailableStock rebuild progress: {Processed} events processed",
+                            processed);
+                    }
                     break;
 
                 case ReservationCancelledEvent cancelled:
                     ApplyReservationCancelledToAvailableStock(cancelled, views);
                     processed++;
+                    if (processed % 1000 == 0)
+                    {
+                        _logger.LogInformation(
+                            "AvailableStock rebuild progress: {Processed} events processed",
+                            processed);
+                    }
                     break;
             }
         }
@@ -619,26 +714,6 @@ public class ProjectionRebuildService : IProjectionRebuildService
         }
     }
 
-    private static async Task<bool> TryAcquireRebuildLockAsync(
-        NpgsqlConnection connection,
-        CancellationToken ct)
-    {
-        await using var cmd = connection.CreateCommand();
-        cmd.CommandText = "SELECT pg_try_advisory_lock(@key)";
-        cmd.Parameters.AddWithValue("key", RebuildAdvisoryLockKey);
-        return (bool?)(await cmd.ExecuteScalarAsync(ct)) ?? false;
-    }
-
-    private static async Task ReleaseRebuildLockAsync(
-        NpgsqlConnection connection,
-        CancellationToken ct)
-    {
-        await using var cmd = connection.CreateCommand();
-        cmd.CommandText = "SELECT pg_advisory_unlock(@key)";
-        cmd.Parameters.AddWithValue("key", RebuildAdvisoryLockKey);
-        await cmd.ExecuteScalarAsync(ct);
-    }
-
     private static async Task<string?> ResolveQualifiedTableNameAsync(
         NpgsqlConnection connection,
         string tableName,
@@ -680,5 +755,33 @@ public class ProjectionRebuildService : IProjectionRebuildService
         return dotIndex >= 0
             ? qualifiedTableName[(dotIndex + 1)..]
             : qualifiedTableName;
+    }
+
+    private sealed class NoOpDistributedLock : IDistributedLock
+    {
+        public Task<DistributedLockAcquireResult> TryAcquireAsync(
+            string key,
+            string holder,
+            TimeSpan ttl,
+            CancellationToken cancellationToken = default)
+            => Task.FromResult(
+                new DistributedLockAcquireResult(
+                    true,
+                    new DistributedLockInfo(
+                        key,
+                        holder,
+                        DateTimeOffset.UtcNow,
+                        DateTimeOffset.UtcNow.Add(ttl))));
+
+        public Task ReleaseAsync(
+            string key,
+            string holder,
+            CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
+
+        public Task<DistributedLockInfo?> GetActiveLockAsync(
+            string key,
+            CancellationToken cancellationToken = default)
+            => Task.FromResult<DistributedLockInfo?>(null);
     }
 }
