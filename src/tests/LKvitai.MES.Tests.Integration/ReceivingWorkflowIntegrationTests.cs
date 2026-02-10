@@ -39,6 +39,11 @@ public class ReceivingWorkflowIntegrationTests : IAsyncLifetime
             .UseNpgsql(_postgres.GetConnectionString())
             .Options;
 
+        await using (var db = CreateDbContext())
+        {
+            await db.Database.EnsureCreatedAsync();
+        }
+
         _store = DocumentStore.For(opts =>
         {
             opts.Connection(_postgres.GetConnectionString());
@@ -49,10 +54,6 @@ public class ReceivingWorkflowIntegrationTests : IAsyncLifetime
         });
 
         await _store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
-
-        await using var db = CreateDbContext();
-        await db.Database.EnsureDeletedAsync();
-        await db.Database.EnsureCreatedAsync();
     }
 
     public async Task DisposeAsync()
@@ -193,6 +194,124 @@ public class ReceivingWorkflowIntegrationTests : IAsyncLifetime
         hasQcPass.Should().BeTrue();
     }
 
+    [SkippableFact]
+    public async Task ReceiveThenQcPass_ShouldMoveStockFromQcHoldToReceiving()
+    {
+        DockerRequirement.EnsureEnabled();
+
+        await SeedBaseDataAsync(requiresLotTracking: false, requiresQc: true);
+
+        await using var db = CreateDbContext();
+        var shipment = await CreateShipmentAsync(db, "PO-QC-PASS", 1, 1, 50m);
+        var lineId = shipment.Lines.Single().Id;
+
+        var receivingController = CreateReceivingController(db);
+        var receiveResult = await receivingController.ReceiveGoodsAsync(
+            shipment.Id,
+            new ReceivingController.ReceiveShipmentLineRequest(
+                lineId,
+                20m,
+                null,
+                null,
+                null,
+                "received"));
+
+        var receiveOk = receiveResult.Should().BeOfType<OkObjectResult>().Subject;
+        var receivePayload = receiveOk.Value.Should().BeOfType<ReceivingController.ReceiveGoodsResponse>().Subject;
+        receivePayload.DestinationLocationCode.Should().Be("QC_HOLD");
+
+        await RunDaemonAsync();
+
+        var qcController = CreateQcController(db);
+        var qcResult = await qcController.PassAsync(
+            new QCController.QcActionRequest(1, null, 12m, null, "qc pass"),
+            CancellationToken.None);
+
+        var qcOk = qcResult.Should().BeOfType<OkObjectResult>().Subject;
+        var qcPayload = qcOk.Value.Should().BeOfType<QCController.QcActionResponse>().Subject;
+        qcPayload.DestinationLocationCode.Should().Be("RECEIVING");
+
+        await RunDaemonAsync();
+
+        await using var query = _store!.QuerySession();
+        var qcHold = await Marten.QueryableExtensions.SingleOrDefaultAsync(
+            query.Query<AvailableStockView>()
+                .Where(x => x.WarehouseId == "WH1" && x.Location == "QC_HOLD" && x.SKU == "RM-0001"),
+            CancellationToken.None);
+        var rawEvents = await Marten.QueryableExtensions.ToListAsync(query.Events.QueryAllRawEvents(), CancellationToken.None);
+        var hasQcPass = rawEvents
+            .Select(x => x.Data)
+            .OfType<QCPassedEvent>()
+            .Any(x =>
+                x.SKU == "RM-0001" &&
+                x.FromLocation == "QC_HOLD" &&
+                x.ToLocation == "RECEIVING" &&
+                x.Qty == 12m);
+
+        qcHold.Should().NotBeNull();
+        qcHold!.OnHandQty.Should().Be(8m);
+        qcHold.AvailableQty.Should().Be(8m);
+        hasQcPass.Should().BeTrue();
+    }
+
+    [SkippableFact]
+    public async Task ReceiveThenQcFail_ShouldMoveStockFromQcHoldToQuarantine()
+    {
+        DockerRequirement.EnsureEnabled();
+
+        await SeedBaseDataAsync(requiresLotTracking: false, requiresQc: true);
+
+        await using var db = CreateDbContext();
+        var shipment = await CreateShipmentAsync(db, "PO-QC-FAIL", 1, 1, 50m);
+        var lineId = shipment.Lines.Single().Id;
+
+        var receivingController = CreateReceivingController(db);
+        var receiveResult = await receivingController.ReceiveGoodsAsync(
+            shipment.Id,
+            new ReceivingController.ReceiveShipmentLineRequest(
+                lineId,
+                20m,
+                null,
+                null,
+                null,
+                "received"));
+
+        receiveResult.Should().BeOfType<OkObjectResult>();
+
+        await RunDaemonAsync();
+
+        var qcController = CreateQcController(db);
+        var qcResult = await qcController.FailAsync(
+            new QCController.QcActionRequest(1, null, 7m, "DAMAGE", "qc fail"),
+            CancellationToken.None);
+
+        var qcOk = qcResult.Should().BeOfType<OkObjectResult>().Subject;
+        var qcPayload = qcOk.Value.Should().BeOfType<QCController.QcActionResponse>().Subject;
+        qcPayload.DestinationLocationCode.Should().Be("QUARANTINE");
+
+        await RunDaemonAsync();
+
+        await using var query = _store!.QuerySession();
+        var qcHold = await Marten.QueryableExtensions.SingleOrDefaultAsync(
+            query.Query<AvailableStockView>()
+                .Where(x => x.WarehouseId == "WH1" && x.Location == "QC_HOLD" && x.SKU == "RM-0001"),
+            CancellationToken.None);
+        var rawEvents = await Marten.QueryableExtensions.ToListAsync(query.Events.QueryAllRawEvents(), CancellationToken.None);
+        var hasQcFail = rawEvents
+            .Select(x => x.Data)
+            .OfType<QCFailedEvent>()
+            .Any(x =>
+                x.SKU == "RM-0001" &&
+                x.FromLocation == "QC_HOLD" &&
+                x.ToLocation == "QUARANTINE" &&
+                x.Qty == 7m);
+
+        qcHold.Should().NotBeNull();
+        qcHold!.OnHandQty.Should().Be(13m);
+        qcHold.AvailableQty.Should().Be(13m);
+        hasQcFail.Should().BeTrue();
+    }
+
     private WarehouseDbContext CreateDbContext()
         => new(_dbOptions!, new StaticCurrentUserService("tester"));
 
@@ -272,6 +391,13 @@ public class ReceivingWorkflowIntegrationTests : IAsyncLifetime
     }
 
     private static string ShipmentStreamId(int shipmentId) => $"inbound-shipment:{shipmentId}";
+
+    private async Task RunDaemonAsync()
+    {
+        using var daemon = await _store!.BuildProjectionDaemonAsync();
+        await daemon.StartAllAsync();
+        await daemon.WaitForNonStaleData(TimeSpan.FromSeconds(15));
+    }
 
     private sealed class StaticCurrentUserService : ICurrentUserService
     {

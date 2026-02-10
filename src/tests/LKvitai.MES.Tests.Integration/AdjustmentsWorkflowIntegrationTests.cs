@@ -39,6 +39,11 @@ public class AdjustmentsWorkflowIntegrationTests : IAsyncLifetime
             .UseNpgsql(_postgres.GetConnectionString())
             .Options;
 
+        await using (var db = CreateDbContext())
+        {
+            await db.Database.EnsureCreatedAsync();
+        }
+
         _store = DocumentStore.For(opts =>
         {
             opts.Connection(_postgres.GetConnectionString());
@@ -48,10 +53,6 @@ public class AdjustmentsWorkflowIntegrationTests : IAsyncLifetime
             opts.RegisterProjections();
         });
         await _store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
-
-        await using var db = CreateDbContext();
-        await db.Database.EnsureDeletedAsync();
-        await db.Database.EnsureCreatedAsync();
     }
 
     public async Task DisposeAsync()
@@ -123,6 +124,54 @@ public class AdjustmentsWorkflowIntegrationTests : IAsyncLifetime
         var stream = await query.Events.FetchStreamAsync($"stock-adjustment:{payload.AdjustmentId:N}");
         stream.Select(x => x.Data).Should().ContainSingle(
             x => x is StockAdjustedEvent && ((StockAdjustedEvent)x).QtyDelta == -10m);
+    }
+
+    [SkippableFact]
+    public async Task CreateAdjustment_ShouldUpdateProjectionAndBeVisibleInHistory()
+    {
+        DockerRequirement.EnsureEnabled();
+
+        await SeedBaseDataAsync();
+        await SeedStockAsync(location: "A-01", qty: 20m);
+
+        await using var db = CreateDbContext();
+        var controller = CreateController(db);
+
+        var createResult = await controller.CreateAsync(
+            new AdjustmentsController.CreateAdjustmentRequest(
+                ItemId: 1,
+                LocationId: 1,
+                QtyDelta: 5m,
+                ReasonCode: "INVENTORY",
+                Notes: "cycle count",
+                LotId: null));
+
+        var createOk = createResult.Should().BeOfType<OkObjectResult>().Subject;
+        var created = createOk.Value.Should().BeOfType<AdjustmentsController.CreateAdjustmentResponse>().Subject;
+        created.UserId.Should().Be("manager-1");
+
+        await RunDaemonAsync();
+
+        var historyResult = await controller.GetAsync(itemId: 1, locationId: 1, pageSize: 20);
+        var historyOk = historyResult.Should().BeOfType<OkObjectResult>().Subject;
+        var history = historyOk.Value.Should().BeOfType<AdjustmentsController.PagedResponse<AdjustmentsController.AdjustmentHistoryItemDto>>().Subject;
+
+        history.TotalCount.Should().BeGreaterThan(0);
+        history.Items.Should().ContainSingle(x =>
+            x.AdjustmentId == created.AdjustmentId &&
+            x.ReasonCode == "INVENTORY" &&
+            x.UserId == "manager-1" &&
+            x.Notes == "cycle count");
+
+        await using var query = _store!.QuerySession();
+        var stock = await Marten.QueryableExtensions.SingleOrDefaultAsync(
+            query.Query<AvailableStockView>()
+                .Where(x => x.WarehouseId == "WH1" && x.Location == "A-01" && x.SKU == "RM-0001"),
+            CancellationToken.None);
+
+        stock.Should().NotBeNull();
+        stock!.OnHandQty.Should().Be(25m);
+        stock.AvailableQty.Should().Be(25m);
     }
 
     [SkippableFact]
@@ -269,6 +318,13 @@ public class AdjustmentsWorkflowIntegrationTests : IAsyncLifetime
         });
 
         await session.SaveChangesAsync();
+    }
+
+    private async Task RunDaemonAsync()
+    {
+        using var daemon = await _store!.BuildProjectionDaemonAsync();
+        await daemon.StartAllAsync();
+        await daemon.WaitForNonStaleData(TimeSpan.FromSeconds(15));
     }
 
     private sealed class StaticCurrentUserService : ICurrentUserService

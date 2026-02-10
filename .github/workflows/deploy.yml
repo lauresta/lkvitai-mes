@@ -6,7 +6,24 @@ on:
     branches: [ "main" ]
 
 jobs:
+  docker-gated-integration-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Run docker-gated integration tests
+        env:
+          TESTCONTAINERS_ENABLED: "1"
+        run: >
+          dotnet test src/tests/LKvitai.MES.Tests.Integration/LKvitai.MES.Tests.Integration.csproj
+          -v minimal
+          --filter
+          "FullyQualifiedName~ImportControllerIntegrationTests|FullyQualifiedName~ReceiveThenQcPass_ShouldMoveStockFromQcHoldToReceiving|FullyQualifiedName~ReceiveThenQcFail_ShouldMoveStockFromQcHoldToQuarantine|FullyQualifiedName~CreateAdjustment_ShouldUpdateProjectionAndBeVisibleInHistory"
+
   validate-schema:
+    needs: docker-gated-integration-tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

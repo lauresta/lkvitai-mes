@@ -195,12 +195,14 @@ public class AvailableStockProjection : MultiStreamProjection<AvailableStockView
         if (isFromLocation)
         {
             current.OnHandQty -= qty;
+            current.Location = fromLocation;
             current.LocationCode = fromLocation;
         }
 
         if (isToLocation)
         {
             current.OnHandQty += qty;
+            current.Location = toLocation;
             current.LocationCode = toLocation;
         }
 
