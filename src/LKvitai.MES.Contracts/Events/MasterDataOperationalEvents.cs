@@ -14,7 +14,7 @@ public abstract class WarehouseOperationalEvent : DomainEvent
 
 public sealed class InboundShipmentCreatedEvent : WarehouseOperationalEvent
 {
-    public Guid ShipmentId { get; set; }
+    public int ShipmentId { get; set; }
     public string ReferenceNumber { get; set; } = string.Empty;
     public int SupplierId { get; set; }
     public string SupplierName { get; set; } = string.Empty;
@@ -26,7 +26,7 @@ public sealed class InboundShipmentCreatedEvent : WarehouseOperationalEvent
 public sealed class GoodsReceivedEvent : WarehouseOperationalEvent
 {
     public string WarehouseId { get; set; } = string.Empty;
-    public Guid ShipmentId { get; set; }
+    public int ShipmentId { get; set; }
     public int LineId { get; set; }
     public int ItemId { get; set; }
     public string SKU { get; set; } = string.Empty;

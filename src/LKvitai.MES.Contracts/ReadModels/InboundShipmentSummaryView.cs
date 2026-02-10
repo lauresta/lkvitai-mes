@@ -3,7 +3,7 @@ namespace LKvitai.MES.Contracts.ReadModels;
 public sealed class InboundShipmentSummaryView
 {
     public string Id { get; set; } = string.Empty;
-    public Guid ShipmentId { get; set; }
+    public int ShipmentId { get; set; }
     public string ReferenceNumber { get; set; } = string.Empty;
     public int SupplierId { get; set; }
     public string SupplierName { get; set; } = string.Empty;
@@ -16,6 +16,6 @@ public sealed class InboundShipmentSummaryView
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset LastUpdated { get; set; }
 
-    public static string ComputeId(Guid shipmentId)
-        => shipmentId.ToString("N");
+    public static string ComputeId(int shipmentId)
+        => shipmentId.ToString(System.Globalization.CultureInfo.InvariantCulture);
 }

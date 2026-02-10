@@ -1,0 +1,287 @@
+using FluentAssertions;
+using LKvitai.MES.Api.Controllers;
+using LKvitai.MES.Application.Services;
+using LKvitai.MES.Contracts.Events;
+using LKvitai.MES.Contracts.ReadModels;
+using LKvitai.MES.Domain.Entities;
+using LKvitai.MES.Infrastructure.Persistence;
+using LKvitai.MES.Projections;
+using Marten;
+using Marten.Events.Projections;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Testcontainers.PostgreSql;
+using Xunit;
+
+namespace LKvitai.MES.Tests.Integration;
+
+public class ReceivingWorkflowIntegrationTests : IAsyncLifetime
+{
+    private PostgreSqlContainer? _postgres;
+    private DbContextOptions<WarehouseDbContext>? _dbOptions;
+    private IDocumentStore? _store;
+
+    public async Task InitializeAsync()
+    {
+        if (!DockerRequirement.IsEnabled)
+        {
+            return;
+        }
+
+        _postgres = new PostgreSqlBuilder()
+            .WithImage("postgres:16-alpine")
+            .Build();
+
+        await _postgres.StartAsync();
+
+        _dbOptions = new DbContextOptionsBuilder<WarehouseDbContext>()
+            .UseNpgsql(_postgres.GetConnectionString())
+            .Options;
+
+        _store = DocumentStore.For(opts =>
+        {
+            opts.Connection(_postgres.GetConnectionString());
+            opts.DatabaseSchemaName = "warehouse_events";
+            opts.Events.DatabaseSchemaName = "warehouse_events";
+            opts.Events.StreamIdentity = Marten.Events.StreamIdentity.AsString;
+            opts.RegisterProjections();
+        });
+
+        await _store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
+
+        await using var db = CreateDbContext();
+        await db.Database.EnsureDeletedAsync();
+        await db.Database.EnsureCreatedAsync();
+    }
+
+    public async Task DisposeAsync()
+    {
+        _store?.Dispose();
+        if (_postgres is not null)
+        {
+            await _postgres.DisposeAsync();
+        }
+    }
+
+    [SkippableFact]
+    public async Task CreateShipment_ShouldPersistShipmentAndAppendEvent()
+    {
+        DockerRequirement.EnsureEnabled();
+
+        await SeedBaseDataAsync(requiresLotTracking: false, requiresQc: false);
+
+        await using var db = CreateDbContext();
+        var controller = CreateReceivingController(db);
+
+        var result = await controller.CreateShipmentAsync(new ReceivingController.CreateInboundShipmentRequest(
+            "PO-100",
+            1,
+            "PurchaseOrder",
+            DateOnly.FromDateTime(DateTime.UtcNow.AddDays(1)),
+            [new ReceivingController.CreateInboundShipmentLineRequest(1, 100m)]));
+
+        var created = result.Should().BeOfType<CreatedAtActionResult>().Subject;
+        var payload = created.Value.Should().BeOfType<ReceivingController.ShipmentCreatedResponse>().Subject;
+
+        payload.Id.Should().BeGreaterThan(0);
+
+        var shipment = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.SingleAsync(
+            db.InboundShipments.Include(x => x.Lines));
+        shipment.ReferenceNumber.Should().Be("PO-100");
+        shipment.Lines.Should().HaveCount(1);
+
+        await using var session = _store!.QuerySession();
+        var events = await session.Events.FetchStreamAsync(ShipmentStreamId(payload.Id));
+        events.Select(x => x.Data).Should().Contain(x => x is InboundShipmentCreatedEvent);
+    }
+
+    [SkippableFact]
+    public async Task ReceiveGoods_LotTrackedWithoutLot_ShouldReturn422()
+    {
+        DockerRequirement.EnsureEnabled();
+
+        await SeedBaseDataAsync(requiresLotTracking: true, requiresQc: true);
+
+        await using var db = CreateDbContext();
+        var shipment = await CreateShipmentAsync(db, "PO-LOT", 1, 1, 50m);
+        var lineId = shipment.Lines.Single().Id;
+
+        var controller = CreateReceivingController(db);
+        var result = await controller.ReceiveGoodsAsync(
+            shipment.Id,
+            new ReceivingController.ReceiveShipmentLineRequest(
+                lineId,
+                10m,
+                null,
+                null,
+                null,
+                null));
+
+        var objectResult = result.Should().BeOfType<ObjectResult>().Subject;
+        objectResult.StatusCode.Should().Be(StatusCodes.Status422UnprocessableEntity);
+    }
+
+    [SkippableFact]
+    public async Task ReceiveGoods_WithLotAndQcItem_ShouldCreateLotAndRouteToQcHold()
+    {
+        DockerRequirement.EnsureEnabled();
+
+        await SeedBaseDataAsync(requiresLotTracking: true, requiresQc: true);
+
+        await using var db = CreateDbContext();
+        var shipment = await CreateShipmentAsync(db, "PO-QC", 1, 1, 80m);
+        var lineId = shipment.Lines.Single().Id;
+
+        var controller = CreateReceivingController(db);
+        var result = await controller.ReceiveGoodsAsync(
+            shipment.Id,
+            new ReceivingController.ReceiveShipmentLineRequest(
+                lineId,
+                20m,
+                "LOT-001",
+                DateOnly.FromDateTime(DateTime.UtcNow.Date),
+                DateOnly.FromDateTime(DateTime.UtcNow.Date.AddMonths(6)),
+                "partial"));
+
+        var ok = result.Should().BeOfType<OkObjectResult>().Subject;
+        var payload = ok.Value.Should().BeOfType<ReceivingController.ReceiveGoodsResponse>().Subject;
+
+        payload.DestinationLocationCode.Should().Be("QC_HOLD");
+        payload.LotId.Should().NotBeNull();
+
+        var lot = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.SingleAsync(db.Lots);
+        lot.LotNumber.Should().Be("LOT-001");
+    }
+
+    [SkippableFact]
+    public async Task QcPass_WithAvailableStock_ShouldAppendEvent()
+    {
+        DockerRequirement.EnsureEnabled();
+
+        await SeedBaseDataAsync(requiresLotTracking: false, requiresQc: true);
+
+        await using var session = _store!.LightweightSession();
+        session.Store(new AvailableStockView
+        {
+            Id = AvailableStockView.ComputeId("WH1", "QC_HOLD", "RM-0001"),
+            WarehouseId = "WH1",
+            Location = "QC_HOLD",
+            LocationCode = "QC_HOLD",
+            SKU = "RM-0001",
+            ItemId = 1,
+            OnHandQty = 100m,
+            AvailableQty = 100m,
+            LastUpdated = DateTime.UtcNow
+        });
+        await session.SaveChangesAsync();
+
+        await using var db = CreateDbContext();
+        var controller = CreateQcController(db);
+
+        var result = await controller.PassAsync(
+            new QCController.QcActionRequest(1, null, 25m, null, "ok"),
+            CancellationToken.None);
+
+        var ok = result.Should().BeOfType<OkObjectResult>().Subject;
+        ok.Value.Should().BeOfType<QCController.QcActionResponse>();
+
+        await using var query = _store.QuerySession();
+        var hasQcPass = await Marten.QueryableExtensions.AnyAsync(
+            query.Events.QueryAllRawEvents(),
+            x => x.Data is QCPassedEvent);
+        hasQcPass.Should().BeTrue();
+    }
+
+    private WarehouseDbContext CreateDbContext()
+        => new(_dbOptions!, new StaticCurrentUserService("tester"));
+
+    private ReceivingController CreateReceivingController(WarehouseDbContext db)
+        => new(db, _store!, new StaticCurrentUserService("tester"))
+        {
+            ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext()
+            }
+        };
+
+    private QCController CreateQcController(WarehouseDbContext db)
+        => new(db, _store!, new StaticCurrentUserService("qc-tester"))
+        {
+            ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext()
+            }
+        };
+
+    private async Task SeedBaseDataAsync(bool requiresLotTracking, bool requiresQc)
+    {
+        await using var db = CreateDbContext();
+        db.ItemCategories.Add(new ItemCategory { Id = 1, Code = "RAW", Name = "Raw" });
+        db.UnitOfMeasures.Add(new UnitOfMeasure { Code = "PCS", Name = "Pieces", Type = "Piece" });
+        db.Suppliers.Add(new Supplier { Id = 1, Code = "SUP-1", Name = "Supplier" });
+        db.Items.Add(new Item
+        {
+            Id = 1,
+            InternalSKU = "RM-0001",
+            Name = "Bolt",
+            CategoryId = 1,
+            BaseUoM = "PCS",
+            RequiresLotTracking = requiresLotTracking,
+            RequiresQC = requiresQc,
+            Status = "Active"
+        });
+
+        db.Locations.AddRange(
+            new Location { Id = 1, Code = "RECEIVING", Barcode = "VIRTUAL-RCV", Type = "Zone", IsVirtual = true, Status = "Active" },
+            new Location { Id = 2, Code = "QC_HOLD", Barcode = "VIRTUAL-QC", Type = "Zone", IsVirtual = true, Status = "Active" },
+            new Location { Id = 3, Code = "QUARANTINE", Barcode = "VIRTUAL-QTN", Type = "Zone", IsVirtual = true, Status = "Active" });
+
+        db.AdjustmentReasonCodes.Add(new AdjustmentReasonCode { Code = "DAMAGE", Name = "Damage", IsActive = true });
+
+        await db.SaveChangesAsync();
+    }
+
+    private static async Task<InboundShipment> CreateShipmentAsync(
+        WarehouseDbContext db,
+        string reference,
+        int supplierId,
+        int itemId,
+        decimal expectedQty)
+    {
+        var shipment = new InboundShipment
+        {
+            ReferenceNumber = reference,
+            SupplierId = supplierId,
+            Status = "Draft",
+            Lines =
+            {
+                new InboundShipmentLine
+                {
+                    ItemId = itemId,
+                    BaseUoM = "PCS",
+                    ExpectedQty = expectedQty,
+                    ReceivedQty = 0m
+                }
+            }
+        };
+
+        db.InboundShipments.Add(shipment);
+        await db.SaveChangesAsync();
+        return shipment;
+    }
+
+    private static string ShipmentStreamId(int shipmentId) => $"inbound-shipment:{shipmentId}";
+
+    private sealed class StaticCurrentUserService : ICurrentUserService
+    {
+        private readonly string _user;
+
+        public StaticCurrentUserService(string user)
+        {
+            _user = user;
+        }
+
+        public string GetCurrentUserId() => _user;
+    }
+}

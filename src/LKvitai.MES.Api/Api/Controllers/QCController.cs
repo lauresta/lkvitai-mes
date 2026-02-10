@@ -1,0 +1,204 @@
+using System.Diagnostics;
+using LKvitai.MES.Api.ErrorHandling;
+using LKvitai.MES.Api.Security;
+using LKvitai.MES.Application.Services;
+using LKvitai.MES.Contracts.Events;
+using LKvitai.MES.Contracts.ReadModels;
+using LKvitai.MES.Infrastructure.Persistence;
+using LKvitai.MES.SharedKernel;
+using IDocumentStore = Marten.IDocumentStore;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+
+namespace LKvitai.MES.Api.Controllers;
+
+[ApiController]
+[Authorize(Policy = WarehousePolicies.QcOrManager)]
+[Route("api/warehouse/v1/qc")]
+public sealed class QCController : ControllerBase
+{
+    private const string DefaultWarehouseId = "WH1";
+
+    private readonly WarehouseDbContext _dbContext;
+    private readonly IDocumentStore _documentStore;
+    private readonly ICurrentUserService _currentUserService;
+
+    public QCController(
+        WarehouseDbContext dbContext,
+        IDocumentStore documentStore,
+        ICurrentUserService currentUserService)
+    {
+        _dbContext = dbContext;
+        _documentStore = documentStore;
+        _currentUserService = currentUserService;
+    }
+
+    [HttpPost("pass")]
+    public Task<IActionResult> PassAsync([FromBody] QcActionRequest request, CancellationToken cancellationToken = default)
+        => ProcessQcAsync(request, true, cancellationToken);
+
+    [HttpPost("fail")]
+    public Task<IActionResult> FailAsync([FromBody] QcActionRequest request, CancellationToken cancellationToken = default)
+        => ProcessQcAsync(request, false, cancellationToken);
+
+    private async Task<IActionResult> ProcessQcAsync(
+        QcActionRequest request,
+        bool isPass,
+        CancellationToken cancellationToken)
+    {
+        if (request.ItemId <= 0)
+        {
+            return ValidationFailure("Field 'itemId' is required.");
+        }
+
+        if (request.Qty <= 0m)
+        {
+            return ValidationFailure("Field 'qty' must be greater than 0.");
+        }
+
+        if (!isPass && string.IsNullOrWhiteSpace(request.ReasonCode))
+        {
+            return ValidationFailure("Field 'reasonCode' is required for QC fail.");
+        }
+
+        var item = await _dbContext.Items
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == request.ItemId, cancellationToken);
+        if (item is null)
+        {
+            return Failure(Result.Fail(DomainErrorCodes.NotFound, $"Item '{request.ItemId}' does not exist."));
+        }
+
+        if (request.LotId.HasValue)
+        {
+            var lotExists = await _dbContext.Lots
+                .AsNoTracking()
+                .AnyAsync(x => x.Id == request.LotId.Value && x.ItemId == item.Id, cancellationToken);
+            if (!lotExists)
+            {
+                return Failure(Result.Fail(DomainErrorCodes.NotFound, $"Lot '{request.LotId.Value}' does not exist for item '{item.Id}'."));
+            }
+        }
+
+        if (!isPass)
+        {
+            var reasonExists = await _dbContext.AdjustmentReasonCodes
+                .AsNoTracking()
+                .AnyAsync(x => x.Code == request.ReasonCode, cancellationToken);
+            if (!reasonExists)
+            {
+                return ValidationFailure($"ReasonCode '{request.ReasonCode}' does not exist.");
+            }
+        }
+
+        await using var querySession = _documentStore.QuerySession();
+        var availableQcQty = await Marten.QueryableExtensions.SumAsync(
+            querySession.Query<AvailableStockView>()
+                .Where(x => x.WarehouseId == DefaultWarehouseId && x.Location == "QC_HOLD" && x.SKU == item.InternalSKU),
+            x => x.AvailableQty,
+            cancellationToken);
+
+        if (availableQcQty < request.Qty)
+        {
+            return UnprocessableFailure(
+                $"Insufficient stock in QC_HOLD for item '{item.InternalSKU}'. Available {availableQcQty}, requested {request.Qty}.");
+        }
+
+        var now = DateTime.UtcNow;
+        WarehouseOperationalEvent evt = isPass
+            ? new QCPassedEvent
+            {
+                AggregateId = Guid.NewGuid(),
+                UserId = _currentUserService.GetCurrentUserId(),
+                TraceId = Activity.Current?.Id ?? HttpContext.TraceIdentifier,
+                WarehouseId = DefaultWarehouseId,
+                ItemId = item.Id,
+                SKU = item.InternalSKU,
+                Qty = request.Qty,
+                FromLocation = "QC_HOLD",
+                ToLocation = "RECEIVING",
+                LotId = request.LotId,
+                InspectorNotes = request.InspectorNotes,
+                Timestamp = now
+            }
+            : new QCFailedEvent
+            {
+                AggregateId = Guid.NewGuid(),
+                UserId = _currentUserService.GetCurrentUserId(),
+                TraceId = Activity.Current?.Id ?? HttpContext.TraceIdentifier,
+                WarehouseId = DefaultWarehouseId,
+                ItemId = item.Id,
+                SKU = item.InternalSKU,
+                Qty = request.Qty,
+                FromLocation = "QC_HOLD",
+                ToLocation = "QUARANTINE",
+                LotId = request.LotId,
+                ReasonCode = request.ReasonCode!.Trim(),
+                InspectorNotes = request.InspectorNotes,
+                Timestamp = now
+            };
+
+        await using (var session = _documentStore.LightweightSession())
+        {
+            session.Events.Append($"qc-task:{Guid.NewGuid():N}", evt);
+            await session.SaveChangesAsync(cancellationToken);
+        }
+
+        return Ok(new QcActionResponse(
+            evt.EventId,
+            item.Id,
+            request.Qty,
+            isPass ? "RECEIVING" : "QUARANTINE",
+            now));
+    }
+
+    private ObjectResult ValidationFailure(string detail)
+    {
+        var problemDetails = ResultProblemDetailsMapper.ToProblemDetails(
+            DomainErrorCodes.ValidationError,
+            detail,
+            HttpContext);
+
+        return new ObjectResult(problemDetails)
+        {
+            StatusCode = StatusCodes.Status400BadRequest
+        };
+    }
+
+    private ObjectResult UnprocessableFailure(string detail)
+    {
+        var problemDetails = ResultProblemDetailsMapper.ToProblemDetails(
+            DomainErrorCodes.ValidationError,
+            detail,
+            HttpContext);
+
+        return new ObjectResult(problemDetails)
+        {
+            StatusCode = StatusCodes.Status422UnprocessableEntity
+        };
+    }
+
+    private ObjectResult Failure(Result result)
+    {
+        var problemDetails = ResultProblemDetailsMapper.ToProblemDetails(result, HttpContext);
+        return new ObjectResult(problemDetails)
+        {
+            StatusCode = problemDetails.Status
+        };
+    }
+
+    public sealed record QcActionRequest(
+        int ItemId,
+        int? LotId,
+        decimal Qty,
+        string? ReasonCode,
+        string? InspectorNotes);
+
+    public sealed record QcActionResponse(
+        Guid EventId,
+        int ItemId,
+        decimal Qty,
+        string DestinationLocationCode,
+        DateTime Timestamp);
+}
