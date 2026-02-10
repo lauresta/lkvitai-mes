@@ -9,19 +9,7 @@ using LKvitai.MES.Domain;
 namespace LKvitai.MES.Projections;
 
 /// <summary>
-/// AvailableStock projection per design doc (Requirement 6.7).
-/// Maintains available stock per (warehouseId, location, SKU):
-///   availableQty = max(0, onHandQty - hardLockedQty)
-///
-/// Subscribes to:
-///   - StockMovedEvent         → updates onHandQty (same as LocationBalance)
-///   - PickingStartedEvent     → increases hardLockedQty (HARD lock acquired)
-///   - ReservationConsumedEvent → decreases hardLockedQty (HARD lock released)
-///   - ReservationCancelledEvent → decreases hardLockedQty (HARD lock released)
-///
-/// CRITICAL: Async lifecycle (uses Marten async daemon)
-/// CRITICAL: V-5 Rule B — uses only self-contained event data (no external queries)
-/// CRITICAL: SOFT allocations do NOT reduce availability (overbooking per Req 3.3)
+/// Available stock projection. Maintains quantities per (warehouseId, location, SKU).
 /// </summary>
 public class AvailableStockProjection : MultiStreamProjection<AvailableStockView, string>
 {
@@ -30,21 +18,22 @@ public class AvailableStockProjection : MultiStreamProjection<AvailableStockView
         CustomGrouping(new AvailableStockGrouper());
     }
 
-    // ── StockMovedEvent → update onHandQty ────────────────────────────
-
     public AvailableStockView Apply(StockMovedEvent evt, AvailableStockView current)
     {
-        // Determine if this document is the FROM or TO location
-        var isFromLocation = current.Id.EndsWith($":{evt.FromLocation}:{evt.SKU}");
-        var isToLocation = current.Id.EndsWith($":{evt.ToLocation}:{evt.SKU}");
+        var isFromLocation = current.Id.EndsWith($":{evt.FromLocation}:{evt.SKU}", StringComparison.Ordinal);
+        var isToLocation = current.Id.EndsWith($":{evt.ToLocation}:{evt.SKU}", StringComparison.Ordinal);
+
+        InitializeFromId(current);
 
         if (isFromLocation)
         {
             current.OnHandQty -= evt.Quantity;
+            current.LocationCode ??= evt.FromLocation;
         }
         else if (isToLocation)
         {
             current.OnHandQty += evt.Quantity;
+            current.LocationCode ??= evt.ToLocation;
         }
 
         current.RecomputeAvailable();
@@ -52,11 +41,8 @@ public class AvailableStockProjection : MultiStreamProjection<AvailableStockView
         return current;
     }
 
-    // ── PickingStartedEvent → increase hardLockedQty ──────────────────
-
     public AvailableStockView Apply(PickingStartedEvent evt, AvailableStockView current)
     {
-        // Find the matching line for this document's (warehouseId, location, sku)
         var matchingLine = evt.HardLockedLines.FirstOrDefault(l =>
             current.Id == AvailableStockView.ComputeId(l.WarehouseId, l.Location, l.SKU));
 
@@ -70,11 +56,8 @@ public class AvailableStockProjection : MultiStreamProjection<AvailableStockView
         return current;
     }
 
-    // ── ReservationConsumedEvent → decrease hardLockedQty ─────────────
-
     public AvailableStockView Apply(ReservationConsumedEvent evt, AvailableStockView current)
     {
-        // Find the matching released line for this document
         var matchingLine = evt.ReleasedHardLockLines.FirstOrDefault(l =>
             current.Id == AvailableStockView.ComputeId(l.WarehouseId, l.Location, l.SKU));
 
@@ -87,12 +70,9 @@ public class AvailableStockProjection : MultiStreamProjection<AvailableStockView
         current.LastUpdated = evt.Timestamp;
         return current;
     }
-
-    // ── ReservationCancelledEvent → decrease hardLockedQty ────────────
 
     public AvailableStockView Apply(ReservationCancelledEvent evt, AvailableStockView current)
     {
-        // Find the matching released line for this document
         var matchingLine = evt.ReleasedHardLockLines.FirstOrDefault(l =>
             current.Id == AvailableStockView.ComputeId(l.WarehouseId, l.Location, l.SKU));
 
@@ -105,13 +85,171 @@ public class AvailableStockProjection : MultiStreamProjection<AvailableStockView
         current.LastUpdated = evt.Timestamp;
         return current;
     }
+
+    public AvailableStockView Apply(GoodsReceivedEvent evt, AvailableStockView current)
+    {
+        EnsureIdentity(current, evt.WarehouseId, evt.DestinationLocation, evt.SKU);
+        current.ItemId = evt.ItemId;
+        current.LocationCode = evt.DestinationLocation;
+        current.LotNumber = evt.LotNumber;
+        current.ExpiryDate = evt.ExpiryDate;
+        current.BaseUoM = evt.BaseUoM;
+        current.OnHandQty += evt.ReceivedQty;
+        current.RecomputeAvailable();
+        current.LastUpdated = evt.Timestamp;
+        return current;
+    }
+
+    public AvailableStockView Apply(PickCompletedEvent evt, AvailableStockView current)
+    {
+        var isFromLocation = current.Id == AvailableStockView.ComputeId(evt.WarehouseId, evt.FromLocation, evt.SKU);
+        var isToLocation = current.Id == AvailableStockView.ComputeId(evt.WarehouseId, evt.ToLocation, evt.SKU);
+
+        EnsureIdentity(current, current.WarehouseId, current.Location, evt.SKU);
+        current.ItemId = evt.ItemId;
+        current.LotNumber = evt.LotNumber;
+
+        if (isFromLocation)
+        {
+            current.OnHandQty -= evt.PickedQty;
+            current.LocationCode = evt.FromLocation;
+        }
+
+        if (isToLocation)
+        {
+            current.OnHandQty += evt.PickedQty;
+            current.LocationCode = evt.ToLocation;
+        }
+
+        current.RecomputeAvailable();
+        current.LastUpdated = evt.Timestamp;
+        return current;
+    }
+
+    public AvailableStockView Apply(StockAdjustedEvent evt, AvailableStockView current)
+    {
+        EnsureIdentity(current, evt.WarehouseId, evt.Location, evt.SKU);
+        current.ItemId = evt.ItemId;
+        current.LocationCode = evt.Location;
+        current.LotNumber = evt.LotNumber;
+        current.OnHandQty += evt.QtyDelta;
+        current.RecomputeAvailable();
+        current.LastUpdated = evt.Timestamp;
+        return current;
+    }
+
+    public AvailableStockView Apply(ReservationCreatedMasterDataEvent evt, AvailableStockView current)
+    {
+        EnsureIdentity(current, evt.WarehouseId, evt.Location, evt.SKU);
+        current.ItemId = evt.ItemId;
+        current.LocationCode = evt.Location;
+        current.LotNumber = evt.LotNumber;
+        current.ReservedQty += evt.ReservedQty;
+        current.RecomputeAvailable();
+        current.LastUpdated = evt.Timestamp;
+        return current;
+    }
+
+    public AvailableStockView Apply(ReservationReleasedMasterDataEvent evt, AvailableStockView current)
+    {
+        EnsureIdentity(current, evt.WarehouseId, current.Location, evt.SKU);
+        current.ItemId = evt.ItemId;
+        current.ReservedQty = Math.Max(0m, current.ReservedQty - evt.ReleasedQty);
+        current.RecomputeAvailable();
+        current.LastUpdated = evt.Timestamp;
+        return current;
+    }
+
+    public AvailableStockView Apply(QCPassedEvent evt, AvailableStockView current)
+        => ApplyQcMovement(evt, current, evt.Qty, evt.FromLocation, evt.ToLocation);
+
+    public AvailableStockView Apply(QCFailedEvent evt, AvailableStockView current)
+        => ApplyQcMovement(evt, current, evt.Qty, evt.FromLocation, evt.ToLocation);
+
+    private static AvailableStockView ApplyQcMovement(
+        WarehouseOperationalEvent evt,
+        AvailableStockView current,
+        decimal qty,
+        string fromLocation,
+        string toLocation)
+    {
+        var sku = evt switch
+        {
+            QCPassedEvent passed => passed.SKU,
+            QCFailedEvent failed => failed.SKU,
+            _ => string.Empty
+        };
+
+        var warehouseId = evt switch
+        {
+            QCPassedEvent passed => passed.WarehouseId,
+            QCFailedEvent failed => failed.WarehouseId,
+            _ => string.Empty
+        };
+
+        var isFromLocation = current.Id == AvailableStockView.ComputeId(warehouseId, fromLocation, sku);
+        var isToLocation = current.Id == AvailableStockView.ComputeId(warehouseId, toLocation, sku);
+
+        EnsureIdentity(current, warehouseId, current.Location, sku);
+
+        if (isFromLocation)
+        {
+            current.OnHandQty -= qty;
+            current.LocationCode = fromLocation;
+        }
+
+        if (isToLocation)
+        {
+            current.OnHandQty += qty;
+            current.LocationCode = toLocation;
+        }
+
+        current.RecomputeAvailable();
+        current.LastUpdated = evt.Timestamp;
+        return current;
+    }
+
+    private static void InitializeFromId(AvailableStockView current)
+    {
+        if (!string.IsNullOrWhiteSpace(current.WarehouseId) || string.IsNullOrWhiteSpace(current.Id))
+        {
+            return;
+        }
+
+        var parts = current.Id.Split(':', 3, StringSplitOptions.None);
+        if (parts.Length != 3)
+        {
+            return;
+        }
+
+        current.WarehouseId = parts[0];
+        current.Location = parts[1];
+        current.SKU = parts[2];
+        current.LocationCode ??= parts[1];
+    }
+
+    private static void EnsureIdentity(AvailableStockView current, string warehouseId, string location, string sku)
+    {
+        InitializeFromId(current);
+
+        if (string.IsNullOrWhiteSpace(current.WarehouseId))
+        {
+            current.WarehouseId = warehouseId;
+        }
+
+        if (string.IsNullOrWhiteSpace(current.Location))
+        {
+            current.Location = location;
+            current.LocationCode ??= location;
+        }
+
+        if (string.IsNullOrWhiteSpace(current.SKU))
+        {
+            current.SKU = sku;
+        }
+    }
 }
 
-/// <summary>
-/// Custom grouper for AvailableStock projection.
-/// Routes events from heterogeneous streams (StockLedger + Reservation)
-/// into AvailableStockView documents keyed by (warehouseId:location:sku).
-/// </summary>
 public class AvailableStockGrouper : IAggregateGrouper<string>
 {
     public async Task Group(IQuerySession session, IEnumerable<IEvent> events, ITenantSliceGroup<string> grouping)
@@ -123,17 +261,48 @@ public class AvailableStockGrouper : IAggregateGrouper<string>
                 case StockMovedEvent stockMoved:
                     GroupStockMoved(evt, stockMoved, grouping);
                     break;
-
                 case PickingStartedEvent pickingStarted:
                     GroupPickingStarted(evt, pickingStarted, grouping);
                     break;
-
                 case ReservationConsumedEvent consumed:
                     GroupReservationConsumed(evt, consumed, grouping);
                     break;
-
                 case ReservationCancelledEvent cancelled:
                     GroupReservationCancelled(evt, cancelled, grouping);
+                    break;
+                case GoodsReceivedEvent goodsReceived:
+                    GroupSingle(evt, goodsReceived.WarehouseId, goodsReceived.DestinationLocation, goodsReceived.SKU, grouping);
+                    break;
+                case PickCompletedEvent pickCompleted:
+                    GroupDual(evt, pickCompleted.WarehouseId, pickCompleted.FromLocation, pickCompleted.ToLocation, pickCompleted.SKU, grouping);
+                    break;
+                case StockAdjustedEvent adjusted:
+                    GroupSingle(evt, adjusted.WarehouseId, adjusted.Location, adjusted.SKU, grouping);
+                    break;
+                case ReservationCreatedMasterDataEvent reservationCreated:
+                    GroupSingle(evt, reservationCreated.WarehouseId, reservationCreated.Location, reservationCreated.SKU, grouping);
+                    break;
+                case ReservationReleasedMasterDataEvent reservationReleased:
+                    // Release events may not include location. Group by SKU across warehouse by deriving from stream only when possible.
+                    if (!string.IsNullOrWhiteSpace(reservationReleased.SKU))
+                    {
+                        var keyPrefix = $":{reservationReleased.SKU}";
+                        var candidateIds = await session.Query<AvailableStockView>()
+                            .Where(x => x.WarehouseId == reservationReleased.WarehouseId && x.SKU == reservationReleased.SKU)
+                            .Select(x => x.Id)
+                            .ToListAsync();
+
+                        foreach (var id in candidateIds.Where(x => x.EndsWith(keyPrefix, StringComparison.Ordinal)))
+                        {
+                            grouping.AddEvent(id, evt);
+                        }
+                    }
+                    break;
+                case QCPassedEvent qcPassed:
+                    GroupDual(evt, qcPassed.WarehouseId, qcPassed.FromLocation, qcPassed.ToLocation, qcPassed.SKU, grouping);
+                    break;
+                case QCFailedEvent qcFailed:
+                    GroupDual(evt, qcFailed.WarehouseId, qcFailed.FromLocation, qcFailed.ToLocation, qcFailed.SKU, grouping);
                     break;
             }
         }
@@ -143,24 +312,20 @@ public class AvailableStockGrouper : IAggregateGrouper<string>
 
     private static void GroupStockMoved(IEvent evt, StockMovedEvent stockMoved, ITenantSliceGroup<string> grouping)
     {
-        // Extract warehouseId from the stock-ledger stream key
         var streamKey = evt.StreamKey
             ?? throw new InvalidOperationException("StreamKey is null for StockMovedEvent");
         var streamId = StockLedgerStreamId.Parse(streamKey);
         var warehouseId = streamId.WarehouseId;
 
-        // Route to FROM location document (onHand decreases)
         var fromKey = AvailableStockView.ComputeId(warehouseId, stockMoved.FromLocation, stockMoved.SKU);
         grouping.AddEvent(fromKey, evt);
 
-        // Route to TO location document (onHand increases)
         var toKey = AvailableStockView.ComputeId(warehouseId, stockMoved.ToLocation, stockMoved.SKU);
         grouping.AddEvent(toKey, evt);
     }
 
     private static void GroupPickingStarted(IEvent evt, PickingStartedEvent pickingStarted, ITenantSliceGroup<string> grouping)
     {
-        // Route to each hard-locked line's (warehouseId, location, sku) document
         foreach (var line in pickingStarted.HardLockedLines)
         {
             var key = AvailableStockView.ComputeId(line.WarehouseId, line.Location, line.SKU);
@@ -170,7 +335,6 @@ public class AvailableStockGrouper : IAggregateGrouper<string>
 
     private static void GroupReservationConsumed(IEvent evt, ReservationConsumedEvent consumed, ITenantSliceGroup<string> grouping)
     {
-        // Route to each released line's (warehouseId, location, sku) document
         foreach (var line in consumed.ReleasedHardLockLines)
         {
             var key = AvailableStockView.ComputeId(line.WarehouseId, line.Location, line.SKU);
@@ -180,29 +344,48 @@ public class AvailableStockGrouper : IAggregateGrouper<string>
 
     private static void GroupReservationCancelled(IEvent evt, ReservationCancelledEvent cancelled, ITenantSliceGroup<string> grouping)
     {
-        // Route to each released line's (warehouseId, location, sku) document
         foreach (var line in cancelled.ReleasedHardLockLines)
         {
             var key = AvailableStockView.ComputeId(line.WarehouseId, line.Location, line.SKU);
             grouping.AddEvent(key, evt);
         }
     }
+
+    private static void GroupSingle(
+        IEvent evt,
+        string warehouseId,
+        string location,
+        string sku,
+        ITenantSliceGroup<string> grouping)
+    {
+        if (string.IsNullOrWhiteSpace(warehouseId) ||
+            string.IsNullOrWhiteSpace(location) ||
+            string.IsNullOrWhiteSpace(sku))
+        {
+            return;
+        }
+
+        var key = AvailableStockView.ComputeId(warehouseId, location, sku);
+        grouping.AddEvent(key, evt);
+    }
+
+    private static void GroupDual(
+        IEvent evt,
+        string warehouseId,
+        string fromLocation,
+        string toLocation,
+        string sku,
+        ITenantSliceGroup<string> grouping)
+    {
+        GroupSingle(evt, warehouseId, fromLocation, sku, grouping);
+        GroupSingle(evt, warehouseId, toLocation, sku, grouping);
+    }
 }
 
-/// <summary>
-/// Static helper exposing the same aggregation logic for unit testing
-/// without Marten infrastructure. Mirrors the Apply methods on AvailableStockProjection.
-///
-/// V-5 Rule B: Uses only self-contained event data (no external queries).
-/// </summary>
 public static class AvailableStockAggregation
 {
-    /// <summary>
-    /// Apply StockMovedEvent: updates onHandQty for FROM (decrease) or TO (increase) location.
-    /// </summary>
     public static AvailableStockView Apply(StockMovedEvent evt, AvailableStockView current, string streamId)
     {
-        // Extract warehouseId to initialise the document if needed
         var parsedStreamId = StockLedgerStreamId.Parse(streamId);
 
         var isFromLocation = current.Id.EndsWith($":{evt.FromLocation}:{evt.SKU}");
@@ -224,9 +407,6 @@ public static class AvailableStockAggregation
         return current;
     }
 
-    /// <summary>
-    /// Apply PickingStartedEvent: increases hardLockedQty for the matching line.
-    /// </summary>
     public static AvailableStockView ApplyPickingStarted(PickingStartedEvent evt, AvailableStockView current)
     {
         var matchingLine = evt.HardLockedLines.FirstOrDefault(l =>
@@ -243,9 +423,6 @@ public static class AvailableStockAggregation
         return current;
     }
 
-    /// <summary>
-    /// Apply ReservationConsumedEvent: decreases hardLockedQty for the matching released line.
-    /// </summary>
     public static AvailableStockView ApplyReservationConsumed(ReservationConsumedEvent evt, AvailableStockView current)
     {
         var matchingLine = evt.ReleasedHardLockLines.FirstOrDefault(l =>
@@ -261,9 +438,6 @@ public static class AvailableStockAggregation
         return current;
     }
 
-    /// <summary>
-    /// Apply ReservationCancelledEvent: decreases hardLockedQty for the matching released line.
-    /// </summary>
     public static AvailableStockView ApplyReservationCancelled(ReservationCancelledEvent evt, AvailableStockView current)
     {
         var matchingLine = evt.ReleasedHardLockLines.FirstOrDefault(l =>
@@ -286,6 +460,7 @@ public static class AvailableStockAggregation
             view.WarehouseId = warehouseId;
             view.Location = location;
             view.SKU = sku;
+            view.LocationCode = location;
         }
     }
 }

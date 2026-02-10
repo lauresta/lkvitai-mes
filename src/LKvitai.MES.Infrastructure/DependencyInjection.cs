@@ -27,6 +27,7 @@ public static class DependencyInjection
         // Register projection rebuild service (MITIGATION V-5)
         services.AddScoped<IProjectionRebuildService, ProjectionRebuildService>();
         services.AddScoped<IProjectionCleanupService, ProjectionCleanupService>();
+        services.AddScoped<IProjectionHealthService, ProjectionHealthService>();
         services.AddScoped<ISkuGenerationService, SkuGenerationService>();
         services.AddScoped<IExcelTemplateService, ExcelTemplateService>();
         services.AddScoped<IMasterDataImportService, MasterDataImportService>();

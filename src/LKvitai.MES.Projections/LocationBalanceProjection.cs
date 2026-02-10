@@ -9,30 +9,17 @@ using LKvitai.MES.Domain;
 namespace LKvitai.MES.Projections;
 
 /// <summary>
-/// LocationBalance projection per blueprint
-/// Subscribes to StockMoved events and maintains current balance per (warehouseId, location, SKU)
-/// CRITICAL: Must be MultiStreamProjection (flat table across all StockLedger streams)
-/// CRITICAL: Must be Async lifecycle (uses Marten async daemon)
-/// CRITICAL: V-5 Rule B - Uses only self-contained event data (no external queries)
-/// 
-/// Marten MultiStreamProjection works by:
-/// 1. Each StockMoved event affects 2 balances (FROM and TO locations)
-/// 2. We use CustomGrouping to extract warehouseId from stream ID
-/// 3. Marten creates/updates separate documents for each identity
+/// Location balance projection per (warehouseId, location, SKU).
 /// </summary>
 public class LocationBalanceProjection : MultiStreamProjection<LocationBalanceView, string>
 {
     public LocationBalanceProjection()
     {
-        // CustomGrouping allows us to extract warehouseId from stream ID
-        // and create identities for both FROM and TO locations
         CustomGrouping(new LocationBalanceGrouper());
     }
 
     public LocationBalanceView Apply(StockMovedEvent evt, LocationBalanceView current)
     {
-        // Marten sets the aggregate identity to current.Id for multi-stream projections.
-        // Use it to detect whether this slice represents FROM or TO location.
         var isFromLocation = current.Id.EndsWith($":{evt.FromLocation}:{evt.SKU}", StringComparison.Ordinal);
         var isToLocation = current.Id.EndsWith($":{evt.ToLocation}:{evt.SKU}", StringComparison.Ordinal);
 
@@ -49,6 +36,86 @@ public class LocationBalanceProjection : MultiStreamProjection<LocationBalanceVi
         if (isToLocation)
         {
             current.Quantity += evt.Quantity;
+        }
+
+        current.LastUpdated = evt.Timestamp;
+        return current;
+    }
+
+    public LocationBalanceView Apply(GoodsReceivedEvent evt, LocationBalanceView current)
+    {
+        EnsureIdentity(current, evt.WarehouseId, evt.DestinationLocation, evt.SKU);
+        current.Quantity += evt.ReceivedQty;
+        current.LastUpdated = evt.Timestamp;
+        return current;
+    }
+
+    public LocationBalanceView Apply(PickCompletedEvent evt, LocationBalanceView current)
+    {
+        EnsureIdentity(current, evt.WarehouseId, current.Location, evt.SKU);
+
+        var isFromLocation = current.Id == BuildKey(evt.WarehouseId, evt.FromLocation, evt.SKU);
+        var isToLocation = current.Id == BuildKey(evt.WarehouseId, evt.ToLocation, evt.SKU);
+
+        if (isFromLocation)
+        {
+            current.Quantity -= evt.PickedQty;
+        }
+
+        if (isToLocation)
+        {
+            current.Quantity += evt.PickedQty;
+        }
+
+        current.LastUpdated = evt.Timestamp;
+        return current;
+    }
+
+    public LocationBalanceView Apply(StockAdjustedEvent evt, LocationBalanceView current)
+    {
+        EnsureIdentity(current, evt.WarehouseId, evt.Location, evt.SKU);
+        current.Quantity += evt.QtyDelta;
+        current.LastUpdated = evt.Timestamp;
+        return current;
+    }
+
+    public LocationBalanceView Apply(QCPassedEvent evt, LocationBalanceView current)
+        => ApplyQc(evt, current, evt.Qty, evt.FromLocation, evt.ToLocation);
+
+    public LocationBalanceView Apply(QCFailedEvent evt, LocationBalanceView current)
+        => ApplyQc(evt, current, evt.Qty, evt.FromLocation, evt.ToLocation);
+
+    private static LocationBalanceView ApplyQc(
+        WarehouseOperationalEvent evt,
+        LocationBalanceView current,
+        decimal qty,
+        string fromLocation,
+        string toLocation)
+    {
+        var warehouseId = evt switch
+        {
+            QCPassedEvent passed => passed.WarehouseId,
+            QCFailedEvent failed => failed.WarehouseId,
+            _ => string.Empty
+        };
+
+        var sku = evt switch
+        {
+            QCPassedEvent passed => passed.SKU,
+            QCFailedEvent failed => failed.SKU,
+            _ => string.Empty
+        };
+
+        EnsureIdentity(current, warehouseId, current.Location, sku);
+
+        if (current.Id == BuildKey(warehouseId, fromLocation, sku))
+        {
+            current.Quantity -= qty;
+        }
+
+        if (current.Id == BuildKey(warehouseId, toLocation, sku))
+        {
+            current.Quantity += qty;
         }
 
         current.LastUpdated = evt.Timestamp;
@@ -72,61 +139,117 @@ public class LocationBalanceProjection : MultiStreamProjection<LocationBalanceVi
         current.Location = parts[1];
         current.SKU = parts[2];
     }
+
+    private static void EnsureIdentity(LocationBalanceView current, string warehouseId, string location, string sku)
+    {
+        InitializeIdentityFields(current);
+
+        if (string.IsNullOrWhiteSpace(current.WarehouseId))
+        {
+            current.WarehouseId = warehouseId;
+        }
+
+        if (string.IsNullOrWhiteSpace(current.Location))
+        {
+            current.Location = location;
+        }
+
+        if (string.IsNullOrWhiteSpace(current.SKU))
+        {
+            current.SKU = sku;
+        }
+    }
+
+    private static string BuildKey(string warehouseId, string location, string sku)
+        => $"{warehouseId}:{location}:{sku}";
 }
 
-/// <summary>
-/// Custom grouper for LocationBalance projection
-/// Extracts warehouseId from stream ID and creates identities for FROM and TO locations
-/// </summary>
 public class LocationBalanceGrouper : IAggregateGrouper<string>
 {
     public async Task Group(IQuerySession session, IEnumerable<IEvent> events, ITenantSliceGroup<string> grouping)
     {
-        var stockMovedEvents = events
-            .OfType<IEvent<StockMovedEvent>>()
-            .ToList();
-        
-        foreach (var evt in stockMovedEvents)
+        foreach (var evt in events)
         {
-            // Extract warehouseId from the StreamKey (string-based stream ID)
-            // StreamKey is used because MartenConfiguration sets StreamIdentity.AsString
-            var streamKey = evt.StreamKey ?? throw new InvalidOperationException("StreamKey is null");
-            var streamId = StockLedgerStreamId.Parse(streamKey);
-            var warehouseId = streamId.WarehouseId;
-            
-            // Create identity for FROM location (balance decreases)
-            var fromKey = $"{warehouseId}:{evt.Data.FromLocation}:{evt.Data.SKU}";
-            grouping.AddEvent(fromKey, evt);
-            
-            // Create identity for TO location (balance increases)
-            var toKey = $"{warehouseId}:{evt.Data.ToLocation}:{evt.Data.SKU}";
-            grouping.AddEvent(toKey, evt);
+            switch (evt.Data)
+            {
+                case StockMovedEvent stockMoved:
+                    GroupStockMoved(evt, stockMoved, grouping);
+                    break;
+                case GoodsReceivedEvent goodsReceived:
+                    GroupSingle(evt, goodsReceived.WarehouseId, goodsReceived.DestinationLocation, goodsReceived.SKU, grouping);
+                    break;
+                case PickCompletedEvent pickCompleted:
+                    GroupDual(evt, pickCompleted.WarehouseId, pickCompleted.FromLocation, pickCompleted.ToLocation, pickCompleted.SKU, grouping);
+                    break;
+                case StockAdjustedEvent adjusted:
+                    GroupSingle(evt, adjusted.WarehouseId, adjusted.Location, adjusted.SKU, grouping);
+                    break;
+                case QCPassedEvent qcPassed:
+                    GroupDual(evt, qcPassed.WarehouseId, qcPassed.FromLocation, qcPassed.ToLocation, qcPassed.SKU, grouping);
+                    break;
+                case QCFailedEvent qcFailed:
+                    GroupDual(evt, qcFailed.WarehouseId, qcFailed.FromLocation, qcFailed.ToLocation, qcFailed.SKU, grouping);
+                    break;
+            }
         }
-        
+
         await Task.CompletedTask;
+    }
+
+    private static void GroupStockMoved(IEvent evt, StockMovedEvent stockMoved, ITenantSliceGroup<string> grouping)
+    {
+        var streamKey = evt.StreamKey ?? throw new InvalidOperationException("StreamKey is null");
+        var streamId = StockLedgerStreamId.Parse(streamKey);
+        var warehouseId = streamId.WarehouseId;
+
+        var fromKey = $"{warehouseId}:{stockMoved.FromLocation}:{stockMoved.SKU}";
+        grouping.AddEvent(fromKey, evt);
+
+        var toKey = $"{warehouseId}:{stockMoved.ToLocation}:{stockMoved.SKU}";
+        grouping.AddEvent(toKey, evt);
+    }
+
+    private static void GroupSingle(
+        IEvent evt,
+        string warehouseId,
+        string location,
+        string sku,
+        ITenantSliceGroup<string> grouping)
+    {
+        if (string.IsNullOrWhiteSpace(warehouseId) ||
+            string.IsNullOrWhiteSpace(location) ||
+            string.IsNullOrWhiteSpace(sku))
+        {
+            return;
+        }
+
+        grouping.AddEvent($"{warehouseId}:{location}:{sku}", evt);
+    }
+
+    private static void GroupDual(
+        IEvent evt,
+        string warehouseId,
+        string fromLocation,
+        string toLocation,
+        string sku,
+        ITenantSliceGroup<string> grouping)
+    {
+        GroupSingle(evt, warehouseId, fromLocation, sku, grouping);
+        GroupSingle(evt, warehouseId, toLocation, sku, grouping);
     }
 }
 
-/// <summary>
-/// Aggregation logic for LocationBalance
-/// V-5 Rule B: Uses only self-contained event data (no external queries)
-/// NOTE: For testing purposes, this class provides standalone Apply logic
-/// that mimics the projection behavior
-/// </summary>
 public static class LocationBalanceAggregation
 {
     public static LocationBalanceView Apply(StockMovedEvent evt, LocationBalanceView current, string streamId)
     {
-        // Extract warehouseId from stream ID
         var parsedStreamId = StockLedgerStreamId.Parse(streamId);
-        
-        // Determine if this is FROM or TO location based on identity
+
         var isFromLocation = current.Id.EndsWith($":{evt.FromLocation}:{evt.SKU}");
         var isToLocation = current.Id.EndsWith($":{evt.ToLocation}:{evt.SKU}");
-        
+
         if (isFromLocation)
         {
-            // FROM location - decrease balance
             if (string.IsNullOrEmpty(current.WarehouseId))
             {
                 current.WarehouseId = parsedStreamId.WarehouseId;
@@ -137,7 +260,6 @@ public static class LocationBalanceAggregation
         }
         else if (isToLocation)
         {
-            // TO location - increase balance
             if (string.IsNullOrEmpty(current.WarehouseId))
             {
                 current.WarehouseId = parsedStreamId.WarehouseId;
@@ -146,7 +268,7 @@ public static class LocationBalanceAggregation
             }
             current.Quantity += evt.Quantity;
         }
-        
+
         current.LastUpdated = evt.Timestamp;
         return current;
     }

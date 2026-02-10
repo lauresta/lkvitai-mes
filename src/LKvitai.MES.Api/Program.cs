@@ -5,6 +5,7 @@ using LKvitai.MES.Api.Services;
 using LKvitai.MES.Application.Ports;
 using LKvitai.MES.Application.Services;
 using LKvitai.MES.Infrastructure;
+using LKvitai.MES.Infrastructure.BackgroundJobs;
 using LKvitai.MES.Infrastructure.Persistence;
 using LKvitai.MES.Infrastructure.Projections;
 using LKvitai.MES.Projections;
@@ -76,6 +77,7 @@ builder.Services.AddWarehouseDbContext(builder.Configuration);
 // Outbox processor background service
 builder.Services.AddHostedService<LKvitai.MES.Infrastructure.Outbox.OutboxProcessor>();
 builder.Services.AddHostedService<SchemaValidationService>();
+builder.Services.AddHostedService<ReservationExpiryJob>();
 
 // Infrastructure services (projection rebuild, etc.)
 builder.Services.AddInfrastructureServices();
