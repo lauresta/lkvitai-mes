@@ -48,6 +48,29 @@ public record AdminSupplierDto
 
 public record CreateOrUpdateSupplierRequest(string Code, string Name, string? ContactInfo);
 
+public record AdminSupplierMappingDto
+{
+    public int Id { get; init; }
+    public int SupplierId { get; init; }
+    public string SupplierCode { get; init; } = string.Empty;
+    public string SupplierName { get; init; } = string.Empty;
+    public string SupplierSKU { get; init; } = string.Empty;
+    public int ItemId { get; init; }
+    public string ItemSKU { get; init; } = string.Empty;
+    public string ItemName { get; init; } = string.Empty;
+    public int? LeadTimeDays { get; init; }
+    public decimal? MinOrderQty { get; init; }
+    public decimal? PricePerUnit { get; init; }
+}
+
+public record CreateOrUpdateSupplierMappingRequest(
+    int SupplierId,
+    string SupplierSKU,
+    int ItemId,
+    int? LeadTimeDays,
+    decimal? MinOrderQty,
+    decimal? PricePerUnit);
+
 public record AdminLocationDto
 {
     public int Id { get; init; }

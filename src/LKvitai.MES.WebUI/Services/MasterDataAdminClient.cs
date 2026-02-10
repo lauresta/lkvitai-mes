@@ -94,6 +94,51 @@ public sealed class MasterDataAdminClient
     public Task UpdateSupplierAsync(int id, CreateOrUpdateSupplierRequest request, CancellationToken cancellationToken = default)
         => SendNoContentAsync(HttpMethod.Put, $"/api/warehouse/v1/suppliers/{id}", request, cancellationToken);
 
+    public Task<PagedApiResponse<AdminSupplierMappingDto>> GetSupplierMappingsAsync(
+        string? search,
+        int? supplierId,
+        int? itemId,
+        int pageNumber,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new List<string>
+        {
+            $"pageNumber={pageNumber}",
+            $"pageSize={pageSize}"
+        };
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            query.Add($"search={Uri.EscapeDataString(search)}");
+        }
+
+        if (supplierId.HasValue)
+        {
+            query.Add($"supplierId={supplierId.Value}");
+        }
+
+        if (itemId.HasValue)
+        {
+            query.Add($"itemId={itemId.Value}");
+        }
+
+        return GetAsync<PagedApiResponse<AdminSupplierMappingDto>>(
+            $"/api/warehouse/v1/supplier-item-mappings?{string.Join("&", query)}",
+            cancellationToken);
+    }
+
+    public Task CreateSupplierMappingAsync(
+        CreateOrUpdateSupplierMappingRequest request,
+        CancellationToken cancellationToken = default)
+        => SendNoContentAsync(HttpMethod.Post, "/api/warehouse/v1/supplier-item-mappings", request, cancellationToken);
+
+    public Task UpdateSupplierMappingAsync(
+        int id,
+        CreateOrUpdateSupplierMappingRequest request,
+        CancellationToken cancellationToken = default)
+        => SendNoContentAsync(HttpMethod.Put, $"/api/warehouse/v1/supplier-item-mappings/{id}", request, cancellationToken);
+
     public Task<PagedApiResponse<AdminLocationDto>> GetLocationsAsync(
         string? search,
         string? status,

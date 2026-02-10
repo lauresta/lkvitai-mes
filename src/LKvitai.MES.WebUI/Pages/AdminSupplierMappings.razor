@@ -1,0 +1,405 @@
+@page "/admin/supplier-mappings"
+@inject MasterDataAdminClient AdminClient
+@inject ToastService ToastService
+
+<PageTitle>Supplier Mappings - LKvitai.MES</PageTitle>
+
+<h3>Supplier Mappings</h3>
+
+@if (_apiError is not null)
+{
+    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                 TraceId="@_apiError.TraceId"
+                 OnRetry="ReloadAsync"
+                 OnDismiss="@(() => _apiError = null)" />
+}
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">Search</label>
+                <input class="form-control" @bind="_search" placeholder="Supplier SKU / supplier / item" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Supplier</label>
+                <select class="form-select" @bind="_supplierFilter">
+                    <option value="">All</option>
+                    @foreach (var supplier in _suppliers)
+                    {
+                        <option value="@supplier.Id">@supplier.Code - @supplier.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Item</label>
+                <select class="form-select" @bind="_itemFilter">
+                    <option value="">All</option>
+                    @foreach (var item in _items)
+                    {
+                        <option value="@item.Id">@item.InternalSKU - @item.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2 d-grid">
+                <button class="btn btn-primary" @onclick="ApplyFiltersAsync">Filter</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-3 position-relative">
+    <LoadingSpinner IsLoading="@_isLoading" />
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <strong>Total: @_totalCount</strong>
+            <button class="btn btn-sm btn-outline-primary" @onclick="@(() => _showCreate = !_showCreate)">
+                @(_showCreate ? "Hide Create Form" : "Create Mapping")
+            </button>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle">
+                <thead>
+                <tr>
+                    <th>Supplier</th>
+                    <th>Supplier SKU</th>
+                    <th>Item</th>
+                    <th>Lead Time (days)</th>
+                    <th>MOQ</th>
+                    <th>Price</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                @if (_mappings.Count == 0)
+                {
+                    <tr>
+                        <td colspan="7" class="text-muted">No mappings found.</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var row in _mappings)
+                    {
+                        <tr>
+                            <td>@row.SupplierCode - @row.SupplierName</td>
+                            <td>@row.SupplierSKU</td>
+                            <td>@row.ItemSKU - @row.ItemName</td>
+                            <td>@(row.LeadTimeDays?.ToString() ?? "-")</td>
+                            <td>@(row.MinOrderQty?.ToString("0.###") ?? "-")</td>
+                            <td>@(row.PricePerUnit?.ToString("0.##") ?? "-")</td>
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-outline-secondary" @onclick="@(() => BeginEdit(row))">Edit</button>
+                            </td>
+                        </tr>
+                    }
+                }
+                </tbody>
+            </table>
+        </div>
+
+        @if (_totalCount > 0)
+        {
+            <Pagination CurrentPage="@_pageNumber"
+                        TotalPages="@TotalPages"
+                        PageSize="@_pageSize"
+                        OnPageChanged="OnPageChangedAsync"
+                        OnPageSizeChanged="OnPageSizeChangedAsync" />
+        }
+    </div>
+</div>
+
+@if (_showCreate)
+{
+    <div class="card shadow-sm mb-3">
+        <div class="card-header">Create Supplier Mapping</div>
+        <div class="card-body">
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <label class="form-label">Supplier</label>
+                    <select class="form-select" @bind="_create.SupplierId">
+                        @foreach (var supplier in _suppliers)
+                        {
+                            <option value="@supplier.Id">@supplier.Code - @supplier.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Supplier SKU</label>
+                    <input class="form-control" @bind="_create.SupplierSKU" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Item</label>
+                    <select class="form-select" @bind="_create.ItemId">
+                        @foreach (var item in _items)
+                        {
+                            <option value="@item.Id">@item.InternalSKU - @item.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Lead Time (days)</label>
+                    <input class="form-control" type="number" min="0" @bind="_create.LeadTimeDays" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">MOQ</label>
+                    <input class="form-control" type="number" step="0.001" min="0" @bind="_create.MinOrderQty" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Price</label>
+                    <input class="form-control" type="number" step="0.01" min="0" @bind="_create.PricePerUnit" />
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button class="btn btn-primary btn-fixed-height px-4" @onclick="CreateAsync">Save Mapping</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (_editing is not null)
+{
+    <div class="card shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span>Edit Mapping: @_editing.SupplierSKU</span>
+            <button class="btn btn-sm btn-outline-secondary" @onclick="@(() => _editing = null)">Close</button>
+        </div>
+        <div class="card-body">
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <label class="form-label">Supplier</label>
+                    <select class="form-select" @bind="_editing.SupplierId">
+                        @foreach (var supplier in _suppliers)
+                        {
+                            <option value="@supplier.Id">@supplier.Code - @supplier.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Supplier SKU</label>
+                    <input class="form-control" @bind="_editing.SupplierSKU" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Item</label>
+                    <select class="form-select" @bind="_editing.ItemId">
+                        @foreach (var item in _items)
+                        {
+                            <option value="@item.Id">@item.InternalSKU - @item.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Lead Time (days)</label>
+                    <input class="form-control" type="number" min="0" @bind="_editing.LeadTimeDays" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">MOQ</label>
+                    <input class="form-control" type="number" step="0.001" min="0" @bind="_editing.MinOrderQty" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Price</label>
+                    <input class="form-control" type="number" step="0.01" min="0" @bind="_editing.PricePerUnit" />
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button class="btn btn-primary btn-fixed-height px-4" @onclick="UpdateAsync">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private readonly List<AdminSupplierMappingDto> _mappings = [];
+    private readonly List<AdminSupplierDto> _suppliers = [];
+    private readonly List<AdminItemDto> _items = [];
+
+    private string? _search;
+    private string? _supplierFilter;
+    private string? _itemFilter;
+    private int _pageNumber = 1;
+    private int _pageSize = 50;
+    private int _totalCount;
+    private bool _isLoading;
+    private bool _showCreate;
+    private ApiException? _apiError;
+
+    private MappingFormModel _create = new();
+    private MappingEditModel? _editing;
+
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling(_totalCount / (double)Math.Max(1, _pageSize)));
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            await LoadReferenceDataAsync();
+            await LoadMappingsAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task LoadReferenceDataAsync()
+    {
+        var supplierResult = await AdminClient.GetSuppliersAsync(null, 1, 500);
+        _suppliers.Clear();
+        _suppliers.AddRange(supplierResult.Items);
+
+        var itemResult = await AdminClient.GetItemsAsync(null, null, null, 1, 500);
+        _items.Clear();
+        _items.AddRange(itemResult.Items);
+
+        if (_create.SupplierId == 0 && _suppliers.Count > 0)
+        {
+            _create.SupplierId = _suppliers[0].Id;
+        }
+
+        if (_create.ItemId == 0 && _items.Count > 0)
+        {
+            _create.ItemId = _items[0].Id;
+        }
+    }
+
+    private async Task ApplyFiltersAsync()
+    {
+        _pageNumber = 1;
+        await LoadMappingsAsync();
+    }
+
+    private async Task LoadMappingsAsync()
+    {
+        int? supplierId = int.TryParse(_supplierFilter, out var supplierValue) ? supplierValue : null;
+        int? itemId = int.TryParse(_itemFilter, out var itemValue) ? itemValue : null;
+
+        var result = await AdminClient.GetSupplierMappingsAsync(
+            _search,
+            supplierId,
+            itemId,
+            _pageNumber,
+            _pageSize);
+
+        _mappings.Clear();
+        _mappings.AddRange(result.Items);
+        _totalCount = result.TotalCount;
+    }
+
+    private async Task OnPageChangedAsync(int page)
+    {
+        _pageNumber = Math.Max(1, page);
+        await LoadMappingsAsync();
+    }
+
+    private async Task OnPageSizeChangedAsync(int size)
+    {
+        _pageSize = Math.Clamp(size, 1, 500);
+        _pageNumber = 1;
+        await LoadMappingsAsync();
+    }
+
+    private async Task CreateAsync()
+    {
+        try
+        {
+            _apiError = null;
+            await AdminClient.CreateSupplierMappingAsync(_create.ToRequest());
+            ToastService.ShowSuccess("Supplier mapping created.");
+
+            _create = new MappingFormModel
+            {
+                SupplierId = _suppliers.FirstOrDefault()?.Id ?? 0,
+                ItemId = _items.FirstOrDefault()?.Id ?? 0
+            };
+
+            await LoadMappingsAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+    }
+
+    private void BeginEdit(AdminSupplierMappingDto row)
+    {
+        _editing = new MappingEditModel
+        {
+            Id = row.Id,
+            SupplierId = row.SupplierId,
+            SupplierSKU = row.SupplierSKU,
+            ItemId = row.ItemId,
+            LeadTimeDays = row.LeadTimeDays,
+            MinOrderQty = row.MinOrderQty,
+            PricePerUnit = row.PricePerUnit
+        };
+    }
+
+    private async Task UpdateAsync()
+    {
+        if (_editing is null)
+        {
+            return;
+        }
+
+        try
+        {
+            _apiError = null;
+            await AdminClient.UpdateSupplierMappingAsync(_editing.Id, _editing.ToRequest());
+            ToastService.ShowSuccess("Supplier mapping updated.");
+            _editing = null;
+            await LoadMappingsAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+    }
+
+    private static string BuildErrorMessage(ApiException error)
+    {
+        if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
+        {
+            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+        }
+
+        return error.UserMessage;
+    }
+
+    private class MappingFormModel
+    {
+        public int SupplierId { get; set; }
+        public string SupplierSKU { get; set; } = string.Empty;
+        public int ItemId { get; set; }
+        public int? LeadTimeDays { get; set; }
+        public decimal? MinOrderQty { get; set; }
+        public decimal? PricePerUnit { get; set; }
+
+        public CreateOrUpdateSupplierMappingRequest ToRequest() => new(
+            SupplierId,
+            SupplierSKU,
+            ItemId,
+            LeadTimeDays,
+            MinOrderQty,
+            PricePerUnit);
+    }
+
+    private sealed class MappingEditModel : MappingFormModel
+    {
+        public int Id { get; set; }
+    }
+}

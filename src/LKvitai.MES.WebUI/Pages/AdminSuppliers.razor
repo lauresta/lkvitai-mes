@@ -24,7 +24,10 @@
             <div class="col-md-2 d-grid">
                 <button class="btn btn-primary" @onclick="ApplyFiltersAsync">Filter</button>
             </div>
-            <div class="col-md-4 d-grid">
+            <div class="col-md-2 d-grid">
+                <a class="btn btn-outline-secondary" href="/admin/supplier-mappings">View Mappings</a>
+            </div>
+            <div class="col-md-2 d-grid">
                 <button class="btn btn-outline-primary" @onclick="@(() => _showCreate = !_showCreate)">
                     @(_showCreate ? "Hide Create Form" : "Create Supplier")
                 </button>
