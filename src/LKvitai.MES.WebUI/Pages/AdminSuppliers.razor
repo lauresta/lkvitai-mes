@@ -1,0 +1,283 @@
+@page "/admin/suppliers"
+@inject MasterDataAdminClient AdminClient
+@inject ToastService ToastService
+
+<PageTitle>Admin Suppliers - LKvitai.MES</PageTitle>
+
+<h3>Suppliers Management</h3>
+
+@if (_apiError is not null)
+{
+    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                 TraceId="@_apiError.TraceId"
+                 OnRetry="ReloadAsync"
+                 OnDismiss="@(() => _apiError = null)" />
+}
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-6">
+                <label class="form-label">Search</label>
+                <input class="form-control" @bind="_search" placeholder="Code or name" />
+            </div>
+            <div class="col-md-2 d-grid">
+                <button class="btn btn-primary" @onclick="ApplyFiltersAsync">Filter</button>
+            </div>
+            <div class="col-md-4 d-grid">
+                <button class="btn btn-outline-primary" @onclick="@(() => _showCreate = !_showCreate)">
+                    @(_showCreate ? "Hide Create Form" : "Create Supplier")
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-3 position-relative">
+    <LoadingSpinner IsLoading="@_isLoading" />
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle">
+                <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Name</th>
+                    <th>Contact Info</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                @if (_suppliers.Count == 0)
+                {
+                    <tr>
+                        <td colspan="4" class="text-muted">No suppliers found.</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var row in _suppliers)
+                    {
+                        <tr>
+                            <td>@row.Code</td>
+                            <td>@row.Name</td>
+                            <td>@row.ContactInfo</td>
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-outline-secondary" @onclick="@(() => BeginEdit(row))">Edit</button>
+                            </td>
+                        </tr>
+                    }
+                }
+                </tbody>
+            </table>
+        </div>
+
+        @if (_totalCount > 0)
+        {
+            <Pagination CurrentPage="@_pageNumber"
+                        TotalPages="@TotalPages"
+                        PageSize="@_pageSize"
+                        OnPageChanged="OnPageChangedAsync"
+                        OnPageSizeChanged="OnPageSizeChangedAsync" />
+        }
+    </div>
+</div>
+
+@if (_showCreate)
+{
+    <div class="card shadow-sm mb-3">
+        <div class="card-header">Create Supplier</div>
+        <div class="card-body">
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <label class="form-label">Code</label>
+                    <input class="form-control" @bind="_create.Code" />
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label">Name</label>
+                    <input class="form-control" @bind="_create.Name" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Contact Info</label>
+                    <input class="form-control" @bind="_create.ContactInfo" />
+                </div>
+                <div class="col-md-3 d-grid">
+                    <button class="btn btn-primary" @onclick="CreateAsync">Save Supplier</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (_editing is not null)
+{
+    <div class="card shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span>Edit Supplier: @_editing.Code</span>
+            <button class="btn btn-sm btn-outline-secondary" @onclick="@(() => _editing = null)">Close</button>
+        </div>
+        <div class="card-body">
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <label class="form-label">Code</label>
+                    <input class="form-control" @bind="_editing.Code" />
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label">Name</label>
+                    <input class="form-control" @bind="_editing.Name" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Contact Info</label>
+                    <input class="form-control" @bind="_editing.ContactInfo" />
+                </div>
+                <div class="col-md-3 d-grid">
+                    <button class="btn btn-primary" @onclick="UpdateAsync">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private readonly List<AdminSupplierDto> _suppliers = [];
+
+    private string? _search;
+    private int _pageNumber = 1;
+    private int _pageSize = 50;
+    private int _totalCount;
+    private bool _isLoading;
+    private bool _showCreate;
+    private ApiException? _apiError;
+
+    private SupplierForm _create = new();
+    private SupplierEditForm? _editing;
+
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling(_totalCount / (double)Math.Max(1, _pageSize)));
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            await LoadSuppliersAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task ApplyFiltersAsync()
+    {
+        _pageNumber = 1;
+        await LoadSuppliersAsync();
+    }
+
+    private async Task LoadSuppliersAsync()
+    {
+        var result = await AdminClient.GetSuppliersAsync(_search, _pageNumber, _pageSize);
+        _suppliers.Clear();
+        _suppliers.AddRange(result.Items);
+        _totalCount = result.TotalCount;
+    }
+
+    private async Task OnPageChangedAsync(int page)
+    {
+        _pageNumber = Math.Max(1, page);
+        await LoadSuppliersAsync();
+    }
+
+    private async Task OnPageSizeChangedAsync(int size)
+    {
+        _pageSize = Math.Clamp(size, 1, 500);
+        _pageNumber = 1;
+        await LoadSuppliersAsync();
+    }
+
+    private async Task CreateAsync()
+    {
+        try
+        {
+            _apiError = null;
+            await AdminClient.CreateSupplierAsync(new CreateOrUpdateSupplierRequest(
+                _create.Code,
+                _create.Name,
+                _create.ContactInfo));
+            ToastService.ShowSuccess("Supplier created.");
+            _create = new SupplierForm();
+            await LoadSuppliersAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+    }
+
+    private void BeginEdit(AdminSupplierDto row)
+    {
+        _editing = new SupplierEditForm
+        {
+            Id = row.Id,
+            Code = row.Code,
+            Name = row.Name,
+            ContactInfo = row.ContactInfo
+        };
+    }
+
+    private async Task UpdateAsync()
+    {
+        if (_editing is null)
+        {
+            return;
+        }
+
+        try
+        {
+            _apiError = null;
+            await AdminClient.UpdateSupplierAsync(
+                _editing.Id,
+                new CreateOrUpdateSupplierRequest(_editing.Code, _editing.Name, _editing.ContactInfo));
+            ToastService.ShowSuccess("Supplier updated.");
+            _editing = null;
+            await LoadSuppliersAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+    }
+
+    private static string BuildErrorMessage(ApiException error)
+    {
+        if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
+        {
+            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+        }
+
+        return error.UserMessage;
+    }
+
+    private class SupplierForm
+    {
+        public string Code { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string? ContactInfo { get; set; }
+    }
+
+    private sealed class SupplierEditForm : SupplierForm
+    {
+        public int Id { get; set; }
+    }
+}

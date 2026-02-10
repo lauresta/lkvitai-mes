@@ -1,0 +1,227 @@
+using System.Net.Http.Json;
+using System.Text.Json;
+using LKvitai.MES.WebUI.Infrastructure;
+using LKvitai.MES.WebUI.Models;
+
+namespace LKvitai.MES.WebUI.Services;
+
+public sealed class MasterDataAdminClient
+{
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
+    private readonly IHttpClientFactory _factory;
+
+    public MasterDataAdminClient(IHttpClientFactory factory)
+    {
+        _factory = factory;
+    }
+
+    public Task<PagedApiResponse<AdminItemDto>> GetItemsAsync(
+        string? search,
+        int? categoryId,
+        string? status,
+        int pageNumber,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new List<string>
+        {
+            $"pageNumber={pageNumber}",
+            $"pageSize={pageSize}"
+        };
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            query.Add($"search={Uri.EscapeDataString(search)}");
+        }
+
+        if (categoryId.HasValue)
+        {
+            query.Add($"categoryId={categoryId.Value}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            query.Add($"status={Uri.EscapeDataString(status)}");
+        }
+
+        return GetAsync<PagedApiResponse<AdminItemDto>>(
+            $"/api/warehouse/v1/items?{string.Join("&", query)}",
+            cancellationToken);
+    }
+
+    public Task CreateItemAsync(CreateOrUpdateItemRequest request, CancellationToken cancellationToken = default)
+        => SendNoContentAsync(HttpMethod.Post, "/api/warehouse/v1/items", request, cancellationToken);
+
+    public Task UpdateItemAsync(int id, CreateOrUpdateItemRequest request, CancellationToken cancellationToken = default)
+        => SendNoContentAsync(HttpMethod.Put, $"/api/warehouse/v1/items/{id}", request, cancellationToken);
+
+    public Task DeactivateItemAsync(int id, CancellationToken cancellationToken = default)
+        => SendNoContentAsync(HttpMethod.Post, $"/api/warehouse/v1/items/{id}/deactivate", null, cancellationToken);
+
+    public Task<PagedApiResponse<AdminSupplierDto>> GetSuppliersAsync(
+        string? search,
+        int pageNumber,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new List<string>
+        {
+            $"pageNumber={pageNumber}",
+            $"pageSize={pageSize}"
+        };
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            query.Add($"search={Uri.EscapeDataString(search)}");
+        }
+
+        return GetAsync<PagedApiResponse<AdminSupplierDto>>(
+            $"/api/warehouse/v1/suppliers?{string.Join("&", query)}",
+            cancellationToken);
+    }
+
+    public Task CreateSupplierAsync(CreateOrUpdateSupplierRequest request, CancellationToken cancellationToken = default)
+        => SendNoContentAsync(HttpMethod.Post, "/api/warehouse/v1/suppliers", request, cancellationToken);
+
+    public Task UpdateSupplierAsync(int id, CreateOrUpdateSupplierRequest request, CancellationToken cancellationToken = default)
+        => SendNoContentAsync(HttpMethod.Put, $"/api/warehouse/v1/suppliers/{id}", request, cancellationToken);
+
+    public Task<PagedApiResponse<AdminLocationDto>> GetLocationsAsync(
+        string? search,
+        string? status,
+        bool includeVirtual,
+        int pageNumber,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new List<string>
+        {
+            $"includeVirtual={includeVirtual.ToString().ToLowerInvariant()}",
+            $"pageNumber={pageNumber}",
+            $"pageSize={pageSize}"
+        };
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            query.Add($"search={Uri.EscapeDataString(search)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            query.Add($"status={Uri.EscapeDataString(status)}");
+        }
+
+        return GetAsync<PagedApiResponse<AdminLocationDto>>(
+            $"/api/warehouse/v1/locations?{string.Join("&", query)}",
+            cancellationToken);
+    }
+
+    public Task CreateLocationAsync(CreateOrUpdateLocationRequest request, CancellationToken cancellationToken = default)
+        => SendNoContentAsync(HttpMethod.Post, "/api/warehouse/v1/locations", request, cancellationToken);
+
+    public Task UpdateLocationAsync(int id, CreateOrUpdateLocationRequest request, CancellationToken cancellationToken = default)
+        => SendNoContentAsync(HttpMethod.Put, $"/api/warehouse/v1/locations/{id}", request, cancellationToken);
+
+    public Task<IReadOnlyList<AdminCategoryDto>> GetCategoriesAsync(CancellationToken cancellationToken = default)
+        => GetAsync<IReadOnlyList<AdminCategoryDto>>("/api/warehouse/v1/categories", cancellationToken);
+
+    public Task CreateCategoryAsync(CreateOrUpdateCategoryRequest request, CancellationToken cancellationToken = default)
+        => SendNoContentAsync(HttpMethod.Post, "/api/warehouse/v1/categories", request, cancellationToken);
+
+    public Task UpdateCategoryAsync(int id, CreateOrUpdateCategoryRequest request, CancellationToken cancellationToken = default)
+        => SendNoContentAsync(HttpMethod.Put, $"/api/warehouse/v1/categories/{id}", request, cancellationToken);
+
+    public async Task DeleteCategoryAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var client = _factory.CreateClient("WarehouseApi");
+        var response = await client.DeleteAsync($"/api/warehouse/v1/categories/{id}", cancellationToken);
+        await EnsureSuccessAsync(response);
+    }
+
+    public async Task<byte[]> DownloadTemplateAsync(string entityType, CancellationToken cancellationToken = default)
+    {
+        var client = _factory.CreateClient("WarehouseApi");
+        var response = await client.GetAsync($"/api/warehouse/v1/admin/import/{entityType}/template", cancellationToken);
+        await EnsureSuccessAsync(response);
+        return await response.Content.ReadAsByteArrayAsync(cancellationToken);
+    }
+
+    public async Task<ImportExecutionResultDto> ImportAsync(
+        string entityType,
+        string fileName,
+        byte[] fileBytes,
+        bool dryRun,
+        CancellationToken cancellationToken = default)
+    {
+        var client = _factory.CreateClient("WarehouseApi");
+        using var content = new MultipartFormDataContent();
+        var fileContent = new ByteArrayContent(fileBytes);
+        content.Add(fileContent, "file", fileName);
+
+        var response = await client.PostAsync(
+            $"/api/warehouse/v1/admin/import/{entityType}?dryRun={dryRun.ToString().ToLowerInvariant()}",
+            content,
+            cancellationToken);
+
+        await EnsureSuccessAsync(response);
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+        var model = JsonSerializer.Deserialize<ImportExecutionResultDto>(body, JsonOptions);
+        return model ?? new ImportExecutionResultDto();
+    }
+
+    public async Task<byte[]> DownloadErrorReportAsync(
+        IReadOnlyList<ImportErrorDto> errors,
+        CancellationToken cancellationToken = default)
+    {
+        var client = _factory.CreateClient("WarehouseApi");
+        var response = await client.PostAsJsonAsync(
+            "/api/warehouse/v1/admin/import/error-report",
+            errors,
+            cancellationToken);
+        await EnsureSuccessAsync(response);
+        return await response.Content.ReadAsByteArrayAsync(cancellationToken);
+    }
+
+    private async Task<T> GetAsync<T>(string relativeUrl, CancellationToken cancellationToken)
+    {
+        var client = _factory.CreateClient("WarehouseApi");
+        var response = await client.GetAsync(relativeUrl, cancellationToken);
+        await EnsureSuccessAsync(response);
+
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+        var model = JsonSerializer.Deserialize<T>(body, JsonOptions);
+        return model ?? throw new JsonException($"Unable to deserialize response to {typeof(T).Name}.");
+    }
+
+    private async Task SendNoContentAsync(
+        HttpMethod method,
+        string relativeUrl,
+        object? payload,
+        CancellationToken cancellationToken)
+    {
+        var client = _factory.CreateClient("WarehouseApi");
+        using var request = new HttpRequestMessage(method, relativeUrl);
+        if (payload is not null)
+        {
+            request.Content = JsonContent.Create(payload);
+        }
+
+        var response = await client.SendAsync(request, cancellationToken);
+        await EnsureSuccessAsync(response);
+    }
+
+    private static async Task EnsureSuccessAsync(HttpResponseMessage response)
+    {
+        if (response.IsSuccessStatusCode)
+        {
+            return;
+        }
+
+        var problem = await ProblemDetailsParser.ParseAsync(response);
+        throw new ApiException(problem, (int)response.StatusCode);
+    }
+}

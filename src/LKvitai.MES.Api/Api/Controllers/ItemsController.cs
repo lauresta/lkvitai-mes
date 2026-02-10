@@ -165,6 +165,150 @@ public sealed class ItemsController : ControllerBase
         return Ok(item);
     }
 
+    [HttpPut("{id:int}")]
+    [Authorize(Policy = WarehousePolicies.ManagerOrAdmin)]
+    public async Task<IActionResult> UpdateAsync(
+        int id,
+        [FromBody] UpdateItemRequestDto request,
+        CancellationToken cancellationToken = default)
+    {
+        var item = await _dbContext.Items.FirstOrDefaultAsync(i => i.Id == id, cancellationToken);
+        if (item is null)
+        {
+            return Failure(Result.Fail(DomainErrorCodes.NotFound, $"Item with ID {id} does not exist."));
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Name))
+        {
+            return ValidationFailure("Field 'name' is required.");
+        }
+
+        var categoryExists = await _dbContext.ItemCategories
+            .AnyAsync(c => c.Id == request.CategoryId, cancellationToken);
+        if (!categoryExists)
+        {
+            return ValidationFailure($"Category '{request.CategoryId}' does not exist.");
+        }
+
+        var uomExists = await _dbContext.UnitOfMeasures
+            .AnyAsync(u => u.Code == request.BaseUoM, cancellationToken);
+        if (!uomExists)
+        {
+            return ValidationFailure($"UoM '{request.BaseUoM}' does not exist.");
+        }
+
+        item.Name = request.Name.Trim();
+        item.Description = request.Description?.Trim();
+        item.CategoryId = request.CategoryId;
+        item.BaseUoM = request.BaseUoM.Trim();
+        item.Weight = request.Weight;
+        item.Volume = request.Volume;
+        item.RequiresLotTracking = request.RequiresLotTracking;
+        item.RequiresQC = request.RequiresQC;
+        item.Status = string.IsNullOrWhiteSpace(request.Status) ? item.Status : request.Status.Trim();
+        item.PrimaryBarcode = request.PrimaryBarcode?.Trim();
+        item.ProductConfigId = request.ProductConfigId?.Trim();
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return Ok(new ItemUpdatedDto(item.Id, item.InternalSKU, item.Name, item.Status, item.UpdatedAt));
+    }
+
+    [HttpPost("{id:int}/deactivate")]
+    [Authorize(Policy = WarehousePolicies.ManagerOrAdmin)]
+    public async Task<IActionResult> DeactivateAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var item = await _dbContext.Items.FirstOrDefaultAsync(i => i.Id == id, cancellationToken);
+        if (item is null)
+        {
+            return Failure(Result.Fail(DomainErrorCodes.NotFound, $"Item with ID {id} does not exist."));
+        }
+
+        item.Status = "Discontinued";
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return Ok(new ItemUpdatedDto(item.Id, item.InternalSKU, item.Name, item.Status, item.UpdatedAt));
+    }
+
+    [HttpGet("{id:int}/barcodes")]
+    [Authorize(Policy = WarehousePolicies.OperatorOrAbove)]
+    public async Task<IActionResult> GetBarcodesAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var item = await _dbContext.Items
+            .AsNoTracking()
+            .FirstOrDefaultAsync(i => i.Id == id, cancellationToken);
+
+        if (item is null)
+        {
+            return Failure(Result.Fail(DomainErrorCodes.NotFound, $"Item with ID {id} does not exist."));
+        }
+
+        var barcodes = await _dbContext.ItemBarcodes
+            .AsNoTracking()
+            .Where(b => b.ItemId == id)
+            .OrderByDescending(b => b.IsPrimary)
+            .ThenBy(b => b.Barcode)
+            .Select(b => new ItemBarcodeDto(b.Id, b.Barcode, b.BarcodeType, b.IsPrimary))
+            .ToListAsync(cancellationToken);
+
+        return Ok(new ItemBarcodesResponse(id, item.InternalSKU, barcodes));
+    }
+
+    [HttpPost("{id:int}/barcodes")]
+    [Authorize(Policy = WarehousePolicies.ManagerOrAdmin)]
+    public async Task<IActionResult> AddBarcodeAsync(
+        int id,
+        [FromBody] AddBarcodeRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.Barcode))
+        {
+            return ValidationFailure("Field 'barcode' is required.");
+        }
+
+        var item = await _dbContext.Items.FirstOrDefaultAsync(i => i.Id == id, cancellationToken);
+        if (item is null)
+        {
+            return Failure(Result.Fail(DomainErrorCodes.NotFound, $"Item with ID {id} does not exist."));
+        }
+
+        var barcode = request.Barcode.Trim();
+        var barcodeExists = await _dbContext.ItemBarcodes
+            .AsNoTracking()
+            .AnyAsync(b => b.Barcode == barcode, cancellationToken);
+        if (barcodeExists)
+        {
+            return Failure(Result.Fail(
+                DomainErrorCodes.ConcurrencyConflict,
+                $"Barcode '{barcode}' already exists."));
+        }
+
+        if (request.IsPrimary)
+        {
+            var existingPrimary = await _dbContext.ItemBarcodes
+                .Where(x => x.ItemId == id && x.IsPrimary)
+                .ToListAsync(cancellationToken);
+            foreach (var current in existingPrimary)
+            {
+                current.IsPrimary = false;
+            }
+            item.PrimaryBarcode = barcode;
+        }
+
+        var entity = new ItemBarcode
+        {
+            ItemId = id,
+            Barcode = barcode,
+            BarcodeType = string.IsNullOrWhiteSpace(request.BarcodeType) ? "Code128" : request.BarcodeType.Trim(),
+            IsPrimary = request.IsPrimary
+        };
+
+        _dbContext.ItemBarcodes.Add(entity);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return Ok(new ItemBarcodeDto(entity.Id, entity.Barcode, entity.BarcodeType, entity.IsPrimary));
+    }
+
     private ObjectResult ValidationFailure(string detail)
     {
         var problemDetails = ResultProblemDetailsMapper.ToProblemDetails(
@@ -201,7 +345,21 @@ public sealed class ItemsController : ControllerBase
         string? PrimaryBarcode,
         string? ProductConfigId);
 
+    public sealed record UpdateItemRequestDto(
+        string Name,
+        string? Description,
+        int CategoryId,
+        string BaseUoM,
+        decimal? Weight,
+        decimal? Volume,
+        bool RequiresLotTracking,
+        bool RequiresQC,
+        string? Status,
+        string? PrimaryBarcode,
+        string? ProductConfigId);
+
     public sealed record ItemCreatedDto(int Id, string InternalSKU, string Name, DateTimeOffset CreatedAt);
+    public sealed record ItemUpdatedDto(int Id, string InternalSKU, string Name, string Status, DateTimeOffset? UpdatedAt);
 
     public sealed record ItemListItemDto(
         int Id,
@@ -216,6 +374,10 @@ public sealed class ItemsController : ControllerBase
         string? PrimaryBarcode,
         DateTimeOffset CreatedAt,
         DateTimeOffset? UpdatedAt);
+
+    public sealed record AddBarcodeRequest(string Barcode, string BarcodeType, bool IsPrimary);
+    public sealed record ItemBarcodeDto(int Id, string Barcode, string BarcodeType, bool IsPrimary);
+    public sealed record ItemBarcodesResponse(int ItemId, string InternalSKU, IReadOnlyList<ItemBarcodeDto> Barcodes);
 
     public sealed record PagedResponse<T>(
         IReadOnlyList<T> Items,

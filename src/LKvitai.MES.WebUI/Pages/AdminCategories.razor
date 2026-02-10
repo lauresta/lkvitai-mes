@@ -1,0 +1,245 @@
+@page "/admin/categories"
+@inject MasterDataAdminClient AdminClient
+@inject ToastService ToastService
+
+<PageTitle>Admin Categories - LKvitai.MES</PageTitle>
+
+<h3>Categories Management</h3>
+
+@if (_apiError is not null)
+{
+    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                 TraceId="@_apiError.TraceId"
+                 OnRetry="ReloadAsync"
+                 OnDismiss="@(() => _apiError = null)" />
+}
+
+<div class="card shadow-sm mb-3">
+    <div class="card-header">Create Category</div>
+    <div class="card-body">
+        <div class="row g-2">
+            <div class="col-md-3">
+                <label class="form-label">Code</label>
+                <input class="form-control" @bind="_create.Code" />
+            </div>
+            <div class="col-md-5">
+                <label class="form-label">Name</label>
+                <input class="form-control" @bind="_create.Name" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Parent Id</label>
+                <input class="form-control" type="number" @bind="_create.ParentCategoryId" />
+            </div>
+            <div class="col-md-2 d-grid">
+                <button class="btn btn-primary" @onclick="CreateAsync">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm position-relative">
+    <LoadingSpinner IsLoading="@_isLoading" />
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle">
+                <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Name</th>
+                    <th>Parent</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                @if (_categories.Count == 0)
+                {
+                    <tr>
+                        <td colspan="4" class="text-muted">No categories found.</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var row in _categories)
+                    {
+                        <tr>
+                            <td>@row.Code</td>
+                            <td>@row.Name</td>
+                            <td>@ResolveParent(row.ParentCategoryId)</td>
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-outline-secondary me-1" @onclick="@(() => BeginEdit(row))">Edit</button>
+                                <button class="btn btn-sm btn-outline-danger" @onclick="@(() => DeleteAsync(row.Id))">Delete</button>
+                            </td>
+                        </tr>
+                    }
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@if (_editing is not null)
+{
+    <div class="card shadow-sm mt-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span>Edit Category: @_editing.Code</span>
+            <button class="btn btn-sm btn-outline-secondary" @onclick="@(() => _editing = null)">Close</button>
+        </div>
+        <div class="card-body">
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <label class="form-label">Code</label>
+                    <input class="form-control" @bind="_editing.Code" />
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label">Name</label>
+                    <input class="form-control" @bind="_editing.Name" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Parent Id</label>
+                    <input class="form-control" type="number" @bind="_editing.ParentCategoryId" />
+                </div>
+                <div class="col-md-2 d-grid">
+                    <button class="btn btn-primary" @onclick="UpdateAsync">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private readonly List<AdminCategoryDto> _categories = [];
+    private CategoryForm _create = new();
+    private CategoryEditForm? _editing;
+    private bool _isLoading;
+    private ApiException? _apiError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            var rows = await AdminClient.GetCategoriesAsync();
+            _categories.Clear();
+            _categories.AddRange(rows.OrderBy(x => x.Code));
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private string ResolveParent(int? parentId)
+    {
+        if (!parentId.HasValue)
+        {
+            return "-";
+        }
+
+        return _categories.FirstOrDefault(x => x.Id == parentId.Value)?.Code ?? parentId.Value.ToString();
+    }
+
+    private async Task CreateAsync()
+    {
+        try
+        {
+            _apiError = null;
+            await AdminClient.CreateCategoryAsync(new CreateOrUpdateCategoryRequest(
+                _create.Code,
+                _create.Name,
+                _create.ParentCategoryId));
+            ToastService.ShowSuccess("Category created.");
+            _create = new CategoryForm();
+            await ReloadAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+    }
+
+    private void BeginEdit(AdminCategoryDto row)
+    {
+        _editing = new CategoryEditForm
+        {
+            Id = row.Id,
+            Code = row.Code,
+            Name = row.Name,
+            ParentCategoryId = row.ParentCategoryId
+        };
+    }
+
+    private async Task UpdateAsync()
+    {
+        if (_editing is null)
+        {
+            return;
+        }
+
+        try
+        {
+            _apiError = null;
+            await AdminClient.UpdateCategoryAsync(
+                _editing.Id,
+                new CreateOrUpdateCategoryRequest(_editing.Code, _editing.Name, _editing.ParentCategoryId));
+            ToastService.ShowSuccess("Category updated.");
+            _editing = null;
+            await ReloadAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+    }
+
+    private async Task DeleteAsync(int id)
+    {
+        try
+        {
+            _apiError = null;
+            await AdminClient.DeleteCategoryAsync(id);
+            ToastService.ShowWarning("Category deleted.");
+            await ReloadAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+    }
+
+    private static string BuildErrorMessage(ApiException error)
+    {
+        if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
+        {
+            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+        }
+
+        return error.UserMessage;
+    }
+
+    private class CategoryForm
+    {
+        public string Code { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public int? ParentCategoryId { get; set; }
+    }
+
+    private sealed class CategoryEditForm : CategoryForm
+    {
+        public int Id { get; set; }
+    }
+}

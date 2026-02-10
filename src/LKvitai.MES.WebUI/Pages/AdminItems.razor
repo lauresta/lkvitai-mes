@@ -1,0 +1,418 @@
+@page "/admin/items"
+@inject MasterDataAdminClient AdminClient
+@inject ToastService ToastService
+
+<PageTitle>Admin Items - LKvitai.MES</PageTitle>
+
+<h3>Items Management</h3>
+
+@if (_apiError is not null)
+{
+    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                 TraceId="@_apiError.TraceId"
+                 OnRetry="ReloadAsync"
+                 OnDismiss="@(() => _apiError = null)" />
+}
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">Search</label>
+                <input class="form-control" @bind="_search" placeholder="SKU or name" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Category</label>
+                <select class="form-select" @bind="_categoryFilter">
+                    <option value="">All</option>
+                    @foreach (var category in _categories)
+                    {
+                        <option value="@category.Id">@category.Code - @category.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Status</label>
+                <select class="form-select" @bind="_status">
+                    <option value="">All</option>
+                    <option value="Active">Active</option>
+                    <option value="Discontinued">Discontinued</option>
+                    <option value="Obsolete">Obsolete</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-grid">
+                <button class="btn btn-primary" @onclick="ApplyFiltersAsync">Filter</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-3 position-relative">
+    <LoadingSpinner IsLoading="@_isLoading" />
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <strong>Total: @_totalCount</strong>
+            <button class="btn btn-sm btn-outline-primary" @onclick="@(() => _showCreate = !_showCreate)">
+                @(_showCreate ? "Hide Create Form" : "Create Item")
+            </button>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle">
+                <thead>
+                <tr>
+                    <th>SKU</th>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Status</th>
+                    <th>Lot</th>
+                    <th>QC</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                @if (_items.Count == 0)
+                {
+                    <tr>
+                        <td colspan="7" class="text-muted">No items found.</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var row in _items)
+                    {
+                        <tr>
+                            <td>@row.InternalSKU</td>
+                            <td>@row.Name</td>
+                            <td>@row.CategoryName</td>
+                            <td>@row.Status</td>
+                            <td>@(row.RequiresLotTracking ? "Yes" : "No")</td>
+                            <td>@(row.RequiresQC ? "Yes" : "No")</td>
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-outline-secondary me-1" @onclick="@(() => BeginEdit(row))">Edit</button>
+                                <button class="btn btn-sm btn-outline-danger"
+                                        disabled="@string.Equals(row.Status, "Discontinued", StringComparison.OrdinalIgnoreCase)"
+                                        @onclick="@(() => DeactivateAsync(row.Id))">
+                                    Deactivate
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                }
+                </tbody>
+            </table>
+        </div>
+
+        @if (_totalCount > 0)
+        {
+            <Pagination CurrentPage="@_pageNumber"
+                        TotalPages="@TotalPages"
+                        PageSize="@_pageSize"
+                        OnPageChanged="OnPageChangedAsync"
+                        OnPageSizeChanged="OnPageSizeChangedAsync" />
+        }
+    </div>
+</div>
+
+@if (_showCreate)
+{
+    <div class="card shadow-sm mb-3">
+        <div class="card-header">Create Item</div>
+        <div class="card-body">
+            <div class="row g-2">
+                <div class="col-md-4">
+                    <label class="form-label">Name</label>
+                    <input class="form-control" @bind="_create.Name" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Category</label>
+                    <select class="form-select" @bind="_create.CategoryId">
+                        @foreach (var category in _categories)
+                        {
+                            <option value="@category.Id">@category.Code</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Base UoM</label>
+                    <input class="form-control" @bind="_create.BaseUoM" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" @bind="_create.Status">
+                        <option value="Active">Active</option>
+                        <option value="Discontinued">Discontinued</option>
+                        <option value="Obsolete">Obsolete</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Primary Barcode</label>
+                    <input class="form-control" @bind="_create.PrimaryBarcode" />
+                </div>
+                <div class="col-md-4 d-flex align-items-end gap-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" @bind="_create.RequiresLotTracking" />
+                        <label class="form-check-label">Requires lot tracking</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" @bind="_create.RequiresQC" />
+                        <label class="form-check-label">Requires QC</label>
+                    </div>
+                </div>
+                <div class="col-md-4 d-grid">
+                    <button class="btn btn-primary" @onclick="CreateAsync">Save Item</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (_editing is not null)
+{
+    <div class="card shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span>Edit Item: @_editing.InternalSKU</span>
+            <button class="btn btn-sm btn-outline-secondary" @onclick="@(() => _editing = null)">Close</button>
+        </div>
+        <div class="card-body">
+            <div class="row g-2">
+                <div class="col-md-4">
+                    <label class="form-label">Name</label>
+                    <input class="form-control" @bind="_editing.Name" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Category</label>
+                    <select class="form-select" @bind="_editing.CategoryId">
+                        @foreach (var category in _categories)
+                        {
+                            <option value="@category.Id">@category.Code</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Base UoM</label>
+                    <input class="form-control" @bind="_editing.BaseUoM" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" @bind="_editing.Status">
+                        <option value="Active">Active</option>
+                        <option value="Discontinued">Discontinued</option>
+                        <option value="Obsolete">Obsolete</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Primary Barcode</label>
+                    <input class="form-control" @bind="_editing.PrimaryBarcode" />
+                </div>
+                <div class="col-md-4 d-flex align-items-end gap-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" @bind="_editing.RequiresLotTracking" />
+                        <label class="form-check-label">Requires lot tracking</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" @bind="_editing.RequiresQC" />
+                        <label class="form-check-label">Requires QC</label>
+                    </div>
+                </div>
+                <div class="col-md-4 d-grid">
+                    <button class="btn btn-primary" @onclick="UpdateAsync">Save Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private readonly List<AdminItemDto> _items = [];
+    private readonly List<AdminCategoryDto> _categories = [];
+
+    private string? _search;
+    private string? _status;
+    private string? _categoryFilter;
+    private int _pageNumber = 1;
+    private int _pageSize = 50;
+    private int _totalCount;
+    private bool _isLoading;
+    private bool _showCreate;
+    private ApiException? _apiError;
+
+    private ItemFormModel _create = new();
+    private ItemEditModel? _editing;
+
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling(_totalCount / (double)Math.Max(1, _pageSize)));
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            var categories = await AdminClient.GetCategoriesAsync();
+            _categories.Clear();
+            _categories.AddRange(categories);
+
+            if (_create.CategoryId == 0 && _categories.Count > 0)
+            {
+                _create.CategoryId = _categories[0].Id;
+            }
+
+            await LoadItemsAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task ApplyFiltersAsync()
+    {
+        _pageNumber = 1;
+        await LoadItemsAsync();
+    }
+
+    private async Task LoadItemsAsync()
+    {
+        int? categoryId = int.TryParse(_categoryFilter, out var value) ? value : null;
+        var result = await AdminClient.GetItemsAsync(_search, categoryId, _status, _pageNumber, _pageSize);
+
+        _items.Clear();
+        _items.AddRange(result.Items);
+        _totalCount = result.TotalCount;
+    }
+
+    private async Task OnPageChangedAsync(int page)
+    {
+        _pageNumber = Math.Max(1, page);
+        await LoadItemsAsync();
+    }
+
+    private async Task OnPageSizeChangedAsync(int size)
+    {
+        _pageSize = Math.Clamp(size, 1, 500);
+        _pageNumber = 1;
+        await LoadItemsAsync();
+    }
+
+    private async Task CreateAsync()
+    {
+        try
+        {
+            _apiError = null;
+            await AdminClient.CreateItemAsync(_create.ToRequest());
+            ToastService.ShowSuccess("Item created.");
+            _create = new ItemFormModel
+            {
+                CategoryId = _categories.FirstOrDefault()?.Id ?? 0
+            };
+            await LoadItemsAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+    }
+
+    private void BeginEdit(AdminItemDto row)
+    {
+        _editing = new ItemEditModel
+        {
+            Id = row.Id,
+            InternalSKU = row.InternalSKU,
+            Name = row.Name,
+            CategoryId = row.CategoryId,
+            BaseUoM = row.BaseUoM,
+            Status = row.Status,
+            PrimaryBarcode = row.PrimaryBarcode,
+            RequiresLotTracking = row.RequiresLotTracking,
+            RequiresQC = row.RequiresQC
+        };
+    }
+
+    private async Task UpdateAsync()
+    {
+        if (_editing is null)
+        {
+            return;
+        }
+
+        try
+        {
+            _apiError = null;
+            await AdminClient.UpdateItemAsync(_editing.Id, _editing.ToRequest());
+            ToastService.ShowSuccess("Item updated.");
+            _editing = null;
+            await LoadItemsAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+    }
+
+    private async Task DeactivateAsync(int id)
+    {
+        try
+        {
+            _apiError = null;
+            await AdminClient.DeactivateItemAsync(id);
+            ToastService.ShowWarning("Item deactivated.");
+            await LoadItemsAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+    }
+
+    private static string BuildErrorMessage(ApiException error)
+    {
+        if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
+        {
+            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+        }
+
+        return error.UserMessage;
+    }
+
+    private class ItemFormModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public int CategoryId { get; set; }
+        public string BaseUoM { get; set; } = "PCS";
+        public string Status { get; set; } = "Active";
+        public string? PrimaryBarcode { get; set; }
+        public bool RequiresLotTracking { get; set; }
+        public bool RequiresQC { get; set; }
+
+        public CreateOrUpdateItemRequest ToRequest() => new()
+        {
+            Name = Name,
+            CategoryId = CategoryId,
+            BaseUoM = BaseUoM,
+            Status = Status,
+            PrimaryBarcode = PrimaryBarcode,
+            RequiresLotTracking = RequiresLotTracking,
+            RequiresQC = RequiresQC
+        };
+    }
+
+    private sealed class ItemEditModel : ItemFormModel
+    {
+        public int Id { get; set; }
+        public string InternalSKU { get; set; } = string.Empty;
+    }
+}

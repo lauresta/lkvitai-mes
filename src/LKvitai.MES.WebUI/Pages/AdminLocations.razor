@@ -1,0 +1,407 @@
+@page "/admin/locations"
+@inject MasterDataAdminClient AdminClient
+@inject ToastService ToastService
+
+<PageTitle>Admin Locations - LKvitai.MES</PageTitle>
+
+<h3>Locations Management</h3>
+
+@if (_apiError is not null)
+{
+    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                 TraceId="@_apiError.TraceId"
+                 OnRetry="ReloadAsync"
+                 OnDismiss="@(() => _apiError = null)" />
+}
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">Search</label>
+                <input class="form-control" @bind="_search" placeholder="Code or barcode" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Status</label>
+                <select class="form-select" @bind="_status">
+                    <option value="">All</option>
+                    <option value="Active">Active</option>
+                    <option value="Blocked">Blocked</option>
+                    <option value="Maintenance">Maintenance</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-center">
+                <div class="form-check mt-4">
+                    <input class="form-check-input" type="checkbox" @bind="_includeVirtual" />
+                    <label class="form-check-label">Include virtual locations</label>
+                </div>
+            </div>
+            <div class="col-md-2 d-grid">
+                <button class="btn btn-primary" @onclick="ApplyFiltersAsync">Filter</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-3 position-relative">
+    <LoadingSpinner IsLoading="@_isLoading" />
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <strong>Total: @_totalCount</strong>
+            <button class="btn btn-sm btn-outline-primary" @onclick="@(() => _showCreate = !_showCreate)">
+                @(_showCreate ? "Hide Create Form" : "Create Location")
+            </button>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle">
+                <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Barcode</th>
+                    <th>Type</th>
+                    <th>Parent</th>
+                    <th>Status</th>
+                    <th>Virtual</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                @if (_locations.Count == 0)
+                {
+                    <tr>
+                        <td colspan="7" class="text-muted">No locations found.</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var row in _locations)
+                    {
+                        <tr>
+                            <td>@row.Code</td>
+                            <td>@row.Barcode</td>
+                            <td>@row.Type</td>
+                            <td>@ResolveParentCode(row.ParentLocationId)</td>
+                            <td>@row.Status</td>
+                            <td>@(row.IsVirtual ? "Yes" : "No")</td>
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-outline-secondary" @onclick="@(() => BeginEdit(row))">Edit</button>
+                            </td>
+                        </tr>
+                    }
+                }
+                </tbody>
+            </table>
+        </div>
+
+        @if (_totalCount > 0)
+        {
+            <Pagination CurrentPage="@_pageNumber"
+                        TotalPages="@TotalPages"
+                        PageSize="@_pageSize"
+                        OnPageChanged="OnPageChangedAsync"
+                        OnPageSizeChanged="OnPageSizeChangedAsync" />
+        }
+    </div>
+</div>
+
+@if (_showCreate)
+{
+    <div class="card shadow-sm mb-3">
+        <div class="card-header">Create Location</div>
+        <div class="card-body">
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <label class="form-label">Code</label>
+                    <input class="form-control" @bind="_create.Code" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Barcode</label>
+                    <input class="form-control" @bind="_create.Barcode" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Type</label>
+                    <input class="form-control" @bind="_create.Type" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Parent Id</label>
+                    <input class="form-control" type="number" @bind="_create.ParentLocationId" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" @bind="_create.Status">
+                        <option value="Active">Active</option>
+                        <option value="Blocked">Blocked</option>
+                        <option value="Maintenance">Maintenance</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Max Weight</label>
+                    <input class="form-control" type="number" step="0.001" @bind="_create.MaxWeight" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Max Volume</label>
+                    <input class="form-control" type="number" step="0.001" @bind="_create.MaxVolume" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Zone Type</label>
+                    <input class="form-control" @bind="_create.ZoneType" />
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" @bind="_create.IsVirtual" />
+                        <label class="form-check-label">Virtual</label>
+                    </div>
+                </div>
+                <div class="col-md-3 d-grid">
+                    <button class="btn btn-primary" @onclick="CreateAsync">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (_editing is not null)
+{
+    <div class="card shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span>Edit Location: @_editing.Code</span>
+            <button class="btn btn-sm btn-outline-secondary" @onclick="@(() => _editing = null)">Close</button>
+        </div>
+        <div class="card-body">
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <label class="form-label">Code</label>
+                    <input class="form-control" @bind="_editing.Code" disabled="@_editing.IsVirtual" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Barcode</label>
+                    <input class="form-control" @bind="_editing.Barcode" disabled="@_editing.IsVirtual" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Type</label>
+                    <input class="form-control" @bind="_editing.Type" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Parent Id</label>
+                    <input class="form-control" type="number" @bind="_editing.ParentLocationId" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" @bind="_editing.Status">
+                        <option value="Active">Active</option>
+                        <option value="Blocked">Blocked</option>
+                        <option value="Maintenance">Maintenance</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Max Weight</label>
+                    <input class="form-control" type="number" step="0.001" @bind="_editing.MaxWeight" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Max Volume</label>
+                    <input class="form-control" type="number" step="0.001" @bind="_editing.MaxVolume" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Zone Type</label>
+                    <input class="form-control" @bind="_editing.ZoneType" />
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" @bind="_editing.IsVirtual" disabled />
+                        <label class="form-check-label">Virtual</label>
+                    </div>
+                </div>
+                <div class="col-md-3 d-grid">
+                    <button class="btn btn-primary" @onclick="UpdateAsync">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private readonly List<AdminLocationDto> _locations = [];
+
+    private string? _search;
+    private string? _status;
+    private bool _includeVirtual = true;
+    private int _pageNumber = 1;
+    private int _pageSize = 50;
+    private int _totalCount;
+    private bool _isLoading;
+    private bool _showCreate;
+    private ApiException? _apiError;
+
+    private LocationFormModel _create = new();
+    private LocationEditFormModel? _editing;
+
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling(_totalCount / (double)Math.Max(1, _pageSize)));
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            await LoadLocationsAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task ApplyFiltersAsync()
+    {
+        _pageNumber = 1;
+        await LoadLocationsAsync();
+    }
+
+    private async Task LoadLocationsAsync()
+    {
+        var result = await AdminClient.GetLocationsAsync(
+            _search,
+            _status,
+            _includeVirtual,
+            _pageNumber,
+            _pageSize);
+
+        _locations.Clear();
+        _locations.AddRange(result.Items);
+        _totalCount = result.TotalCount;
+
+        if (_create.ParentLocationId is null && _locations.Count > 0)
+        {
+            _create.ParentLocationId = _locations[0].Id;
+        }
+    }
+
+    private string ResolveParentCode(int? parentId)
+    {
+        if (!parentId.HasValue)
+        {
+            return "-";
+        }
+
+        return _locations.FirstOrDefault(x => x.Id == parentId.Value)?.Code ?? parentId.Value.ToString();
+    }
+
+    private async Task OnPageChangedAsync(int page)
+    {
+        _pageNumber = Math.Max(1, page);
+        await LoadLocationsAsync();
+    }
+
+    private async Task OnPageSizeChangedAsync(int size)
+    {
+        _pageSize = Math.Clamp(size, 1, 500);
+        _pageNumber = 1;
+        await LoadLocationsAsync();
+    }
+
+    private async Task CreateAsync()
+    {
+        try
+        {
+            _apiError = null;
+            await AdminClient.CreateLocationAsync(_create.ToRequest());
+            ToastService.ShowSuccess("Location created.");
+            _create = new LocationFormModel();
+            await LoadLocationsAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+    }
+
+    private void BeginEdit(AdminLocationDto row)
+    {
+        _editing = new LocationEditFormModel
+        {
+            Id = row.Id,
+            Code = row.Code,
+            Barcode = row.Barcode,
+            Type = row.Type,
+            ParentLocationId = row.ParentLocationId,
+            IsVirtual = row.IsVirtual,
+            MaxWeight = row.MaxWeight,
+            MaxVolume = row.MaxVolume,
+            Status = row.Status,
+            ZoneType = row.ZoneType
+        };
+    }
+
+    private async Task UpdateAsync()
+    {
+        if (_editing is null)
+        {
+            return;
+        }
+
+        try
+        {
+            _apiError = null;
+            await AdminClient.UpdateLocationAsync(_editing.Id, _editing.ToRequest());
+            ToastService.ShowSuccess("Location updated.");
+            _editing = null;
+            await LoadLocationsAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+    }
+
+    private static string BuildErrorMessage(ApiException error)
+    {
+        if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
+        {
+            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+        }
+
+        return error.UserMessage;
+    }
+
+    private class LocationFormModel
+    {
+        public string Code { get; set; } = string.Empty;
+        public string Barcode { get; set; } = string.Empty;
+        public string Type { get; set; } = "Bin";
+        public int? ParentLocationId { get; set; }
+        public bool IsVirtual { get; set; }
+        public decimal? MaxWeight { get; set; }
+        public decimal? MaxVolume { get; set; }
+        public string Status { get; set; } = "Active";
+        public string? ZoneType { get; set; }
+
+        public CreateOrUpdateLocationRequest ToRequest() => new(
+            Code,
+            Barcode,
+            Type,
+            ParentLocationId,
+            IsVirtual,
+            MaxWeight,
+            MaxVolume,
+            Status,
+            ZoneType);
+    }
+
+    private sealed class LocationEditFormModel : LocationFormModel
+    {
+        public int Id { get; set; }
+    }
+}

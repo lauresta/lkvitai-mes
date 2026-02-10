@@ -1,0 +1,269 @@
+@page "/admin/import"
+@inject MasterDataAdminClient AdminClient
+@inject IJSRuntime JavaScript
+@inject ToastService ToastService
+
+<PageTitle>Admin Import - LKvitai.MES</PageTitle>
+
+<h3>Import Master Data</h3>
+
+@if (_apiError is not null)
+{
+    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                 TraceId="@_apiError.TraceId"
+                 OnRetry="RetryAsync"
+                 OnDismiss="@(() => _apiError = null)" />
+}
+
+<div class="alert alert-info">
+    Dry-run is recommended before commit.
+</div>
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <div class="d-flex flex-wrap gap-2 mb-3">
+            @foreach (var tab in _tabs)
+            {
+                <button class="btn @(tab == _selectedTab ? "btn-primary" : "btn-outline-primary")"
+                        @onclick="@(() => SelectTab(tab))">
+                    @tab.DisplayName
+                </button>
+            }
+        </div>
+
+        <div class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <button class="btn btn-outline-secondary" @onclick="DownloadTemplateAsync">
+                    Download Template
+                </button>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">File</label>
+                <InputFile OnChange="OnFileSelectedAsync" />
+                @if (!string.IsNullOrWhiteSpace(_fileName))
+                {
+                    <small class="text-muted d-block mt-1">@_fileName</small>
+                }
+            </div>
+            <div class="col-md-2 d-flex align-items-center">
+                <div class="form-check mt-4">
+                    <input class="form-check-input" type="checkbox" @bind="_dryRun" />
+                    <label class="form-check-label">Dry run</label>
+                </div>
+            </div>
+            <div class="col-md-2 d-grid">
+                <button class="btn btn-primary" disabled="@(_fileBytes is null || _isBusy)" @onclick="RunImportAsync">
+                    @(_isBusy ? "Running..." : "Run Import")
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (_lastResult is not null)
+{
+    <div class="card shadow-sm">
+        <div class="card-header">Import Result</div>
+        <div class="card-body">
+            <div class="row g-2 mb-3">
+                <div class="col-md-2"><strong>Inserted:</strong> @_lastResult.Inserted</div>
+                <div class="col-md-2"><strong>Updated:</strong> @_lastResult.Updated</div>
+                <div class="col-md-2"><strong>Skipped:</strong> @_lastResult.Skipped</div>
+                <div class="col-md-2"><strong>Errors:</strong> @_lastResult.Errors.Count</div>
+                <div class="col-md-2"><strong>Dry run:</strong> @_lastResult.DryRun</div>
+                <div class="col-md-2"><strong>Bulk:</strong> @_lastResult.UsedBulk</div>
+            </div>
+
+            @if (_lastResult.Errors.Count > 0)
+            {
+                <div class="table-responsive mb-3">
+                    <table class="table table-sm table-striped">
+                        <thead>
+                        <tr>
+                            <th>Row</th>
+                            <th>Column</th>
+                            <th>Value</th>
+                            <th>Message</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var error in _lastResult.Errors)
+                        {
+                            <tr>
+                                <td>@error.Row</td>
+                                <td>@error.Column</td>
+                                <td>@error.Value</td>
+                                <td>@error.Message</td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            }
+
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-secondary"
+                        disabled="@(_lastResult.Errors.Count == 0)"
+                        @onclick="DownloadErrorReportAsync">
+                    Download Error Report
+                </button>
+                <button class="btn btn-success"
+                        disabled="@(!CanCommit)"
+                        @onclick="CommitAsync">
+                    Commit Changes
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private sealed record ImportTab(string EntityType, string DisplayName);
+
+    private static readonly ImportTab[] _tabs =
+    [
+        new("items", "Items"),
+        new("suppliers", "Suppliers"),
+        new("mappings", "Supplier Mappings"),
+        new("barcodes", "Item Barcodes"),
+        new("locations", "Locations")
+    ];
+
+    private ImportTab _selectedTab = _tabs[0];
+    private string? _fileName;
+    private byte[]? _fileBytes;
+    private bool _dryRun = true;
+    private bool _isBusy;
+    private ImportExecutionResultDto? _lastResult;
+    private ApiException? _apiError;
+
+    private bool CanCommit =>
+        _lastResult is { DryRun: true } &&
+        _lastResult.Errors.Count == 0 &&
+        _fileBytes is { Length: > 0 };
+
+    private void SelectTab(ImportTab tab)
+    {
+        _selectedTab = tab;
+        _lastResult = null;
+        _apiError = null;
+    }
+
+    private async Task OnFileSelectedAsync(InputFileChangeEventArgs args)
+    {
+        _apiError = null;
+
+        var file = args.File;
+        _fileName = file.Name;
+        await using var stream = file.OpenReadStream(50_000_000);
+        using var ms = new MemoryStream();
+        await stream.CopyToAsync(ms);
+        _fileBytes = ms.ToArray();
+    }
+
+    private async Task DownloadTemplateAsync()
+    {
+        try
+        {
+            _apiError = null;
+            var bytes = await AdminClient.DownloadTemplateAsync(_selectedTab.EntityType);
+            var base64 = Convert.ToBase64String(bytes);
+            await JavaScript.InvokeVoidAsync(
+                "csvExport.downloadBytes",
+                $"{_selectedTab.EntityType}-template.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                base64);
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+    }
+
+    private async Task RunImportAsync()
+    {
+        if (_fileBytes is null || string.IsNullOrWhiteSpace(_fileName))
+        {
+            return;
+        }
+
+        try
+        {
+            _isBusy = true;
+            _apiError = null;
+            _lastResult = await AdminClient.ImportAsync(
+                _selectedTab.EntityType,
+                _fileName,
+                _fileBytes,
+                _dryRun);
+            ToastService.ShowSuccess("Import request completed.");
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isBusy = false;
+        }
+    }
+
+    private async Task CommitAsync()
+    {
+        if (!CanCommit || _fileBytes is null || string.IsNullOrWhiteSpace(_fileName))
+        {
+            return;
+        }
+
+        _dryRun = false;
+        await RunImportAsync();
+    }
+
+    private async Task DownloadErrorReportAsync()
+    {
+        if (_lastResult is null || _lastResult.Errors.Count == 0)
+        {
+            return;
+        }
+
+        try
+        {
+            _apiError = null;
+            var bytes = await AdminClient.DownloadErrorReportAsync(_lastResult.Errors);
+            var base64 = Convert.ToBase64String(bytes);
+            await JavaScript.InvokeVoidAsync(
+                "csvExport.downloadBytes",
+                $"{_selectedTab.EntityType}-import-errors.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                base64);
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+    }
+
+    private async Task RetryAsync()
+    {
+        if (_fileBytes is null)
+        {
+            await DownloadTemplateAsync();
+            return;
+        }
+
+        await RunImportAsync();
+    }
+
+    private static string BuildErrorMessage(ApiException error)
+    {
+        if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
+        {
+            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+        }
+
+        return error.UserMessage;
+    }
+}
