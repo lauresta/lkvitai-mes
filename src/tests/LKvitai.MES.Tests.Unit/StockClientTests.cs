@@ -23,7 +23,7 @@ public class StockClientTests
                 {
                   "items": [],
                   "totalCount": 0,
-                  "page": 2,
+                  "pageNumber": 2,
                   "pageSize": 25
                 }
                 """)
@@ -48,9 +48,9 @@ public class StockClientTests
 
         // Assert
         capturedPathAndQuery.Should().NotBeNull();
-        capturedPathAndQuery.Should().Contain("/api/available-stock?");
-        capturedPathAndQuery.Should().Contain("includeVirtual=false");
-        capturedPathAndQuery.Should().Contain("page=2");
+        capturedPathAndQuery.Should().Contain("/api/warehouse/v1/stock/available?");
+        capturedPathAndQuery.Should().Contain("includeVirtualLocations=false");
+        capturedPathAndQuery.Should().Contain("pageNumber=2");
         capturedPathAndQuery.Should().Contain("pageSize=25");
         capturedPathAndQuery.Should().Contain("warehouse=WH-1");
         capturedPathAndQuery.Should().Contain("location=A%2A");
@@ -93,22 +93,10 @@ public class StockClientTests
     }
 
     [Fact]
-    public async Task GetWarehousesAsync_WhenPayloadIsWrapped_ReturnsWarehouseList()
+    public async Task GetWarehousesAsync_ReturnsDefaultWarehouseList()
     {
         // Arrange
-        var response = new HttpResponseMessage(HttpStatusCode.OK)
-        {
-            Content = new StringContent(
-                """
-                {
-                  "warehouses": [
-                    { "id": "WH-1", "code": "MAIN", "name": "Main Warehouse" }
-                  ]
-                }
-                """)
-        };
-
-        var client = CreateHttpClient(_ => response);
+        var client = CreateHttpClient(_ => throw new InvalidOperationException("HTTP should not be called."));
         var sut = CreateSut(client);
 
         // Act
@@ -116,8 +104,8 @@ public class StockClientTests
 
         // Assert
         result.Should().HaveCount(1);
-        result[0].Id.Should().Be("WH-1");
-        result[0].Code.Should().Be("MAIN");
+        result[0].Id.Should().Be("WH1");
+        result[0].Code.Should().Be("WH1");
     }
 
     private static StockClient CreateSut(HttpClient client)

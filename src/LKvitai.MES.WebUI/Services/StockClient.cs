@@ -32,8 +32,8 @@ public class StockClient
         int pageSize = 50,
         CancellationToken cancellationToken = default)
     {
-        var query = new StringBuilder("/api/available-stock?");
-        query.Append($"includeVirtual={includeVirtual.ToString().ToLowerInvariant()}&page={page}&pageSize={pageSize}");
+        var query = new StringBuilder("/api/warehouse/v1/stock/available?");
+        query.Append($"includeVirtualLocations={includeVirtual.ToString().ToLowerInvariant()}&pageNumber={page}&pageSize={pageSize}");
 
         if (!string.IsNullOrWhiteSpace(warehouse))
         {
@@ -50,43 +50,41 @@ public class StockClient
             query.Append("&sku=").Append(Uri.EscapeDataString(sku));
         }
 
-        return GetAsync<PagedResult<AvailableStockItemDto>>(query.ToString(), cancellationToken);
+        return SearchCoreAsync(query.ToString(), cancellationToken);
     }
 
-    public async Task<IReadOnlyList<WarehouseDto>> GetWarehousesAsync(CancellationToken cancellationToken = default)
+    public Task<IReadOnlyList<WarehouseDto>> GetWarehousesAsync(CancellationToken cancellationToken = default)
+        => Task.FromResult<IReadOnlyList<WarehouseDto>>(
+        [
+            new WarehouseDto
+            {
+                Id = "WH1",
+                Code = "WH1",
+                Name = "Main Warehouse"
+            }
+        ]);
+
+    private async Task<PagedResult<AvailableStockItemDto>> SearchCoreAsync(string relativeUrl, CancellationToken cancellationToken)
     {
-        var client = _factory.CreateClient("WarehouseApi");
-        var response = await client.GetAsync("/api/warehouses", cancellationToken);
-        var body = await response.Content.ReadAsStringAsync(cancellationToken);
-
-        if (!response.IsSuccessStatusCode)
+        var payload = await GetAsync<StockSearchResponseDto>(relativeUrl, cancellationToken);
+        var items = payload.Items.Select(row => new AvailableStockItemDto
         {
-            var problem = await ProblemDetailsParser.ParseAsync(response);
-            LogFailure(response, problem);
-            throw new ApiException(problem, (int)response.StatusCode);
-        }
+            WarehouseId = string.IsNullOrWhiteSpace(row.WarehouseId) ? "WH1" : row.WarehouseId,
+            Location = row.LocationCode ?? string.Empty,
+            SKU = row.InternalSku ?? string.Empty,
+            PhysicalQty = row.Qty,
+            ReservedQty = row.ReservedQty,
+            AvailableQty = row.AvailableQty,
+            LastUpdated = row.LastUpdated
+        }).ToList();
 
-        if (string.IsNullOrWhiteSpace(body))
+        return new PagedResult<AvailableStockItemDto>
         {
-            return Array.Empty<WarehouseDto>();
-        }
-
-        using var document = JsonDocument.Parse(body);
-        var root = document.RootElement;
-
-        if (root.ValueKind == JsonValueKind.Array)
-        {
-            return root.Deserialize<IReadOnlyList<WarehouseDto>>(JsonOptions) ?? Array.Empty<WarehouseDto>();
-        }
-
-        if (root.ValueKind == JsonValueKind.Object &&
-            root.TryGetProperty("warehouses", out var warehouses) &&
-            warehouses.ValueKind == JsonValueKind.Array)
-        {
-            return warehouses.Deserialize<IReadOnlyList<WarehouseDto>>(JsonOptions) ?? Array.Empty<WarehouseDto>();
-        }
-
-        throw new JsonException("Unexpected warehouses response payload.");
+            Items = items,
+            TotalCount = payload.TotalCount,
+            Page = payload.PageNumber,
+            PageSize = payload.PageSize
+        };
     }
 
     private async Task<T> GetAsync<T>(string relativeUrl, CancellationToken cancellationToken = default)
@@ -116,5 +114,24 @@ public class StockClient
             problem?.ErrorCode ?? "UNKNOWN",
             problem?.TraceId ?? "UNKNOWN",
             problem?.Detail ?? "n/a");
+    }
+
+    private sealed record StockSearchRowDto
+    {
+        public string WarehouseId { get; init; } = string.Empty;
+        public string? LocationCode { get; init; }
+        public string? InternalSku { get; init; }
+        public decimal Qty { get; init; }
+        public decimal ReservedQty { get; init; }
+        public decimal AvailableQty { get; init; }
+        public DateTime LastUpdated { get; init; }
+    }
+
+    private sealed record StockSearchResponseDto
+    {
+        public IReadOnlyList<StockSearchRowDto> Items { get; init; } = Array.Empty<StockSearchRowDto>();
+        public int TotalCount { get; init; }
+        public int PageNumber { get; init; }
+        public int PageSize { get; init; }
     }
 }

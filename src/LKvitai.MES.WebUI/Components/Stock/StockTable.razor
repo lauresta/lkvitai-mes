@@ -12,7 +12,7 @@
     [Parameter]
     public int TotalCount { get; set; }
 
-    private RenderFragment Columns => @<>
+    private RenderFragment Columns => @<text>
         <th scope="col">Warehouse</th>
         <th scope="col">Location</th>
         <th scope="col">SKU</th>
@@ -20,9 +20,9 @@
         <th scope="col" class="text-end">Reserved Qty</th>
         <th scope="col" class="text-end">Available Qty</th>
         <th scope="col">Last Updated</th>
-    </>;
+    </text>;
 
-    private RenderFragment<AvailableStockItemDto> RowTemplate => item => @<>
+    private RenderFragment<AvailableStockItemDto> RowTemplate => item => @<text>
         <td>@item.WarehouseId</td>
         <td>@item.Location</td>
         <td>@item.SKU</td>
@@ -33,5 +33,5 @@
             @item.LastUpdated.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")
             <span class="ms-2"><StaleBadge LastUpdated="item.LastUpdated" /></span>
         </td>
-    </>;
+    </text>;
 }

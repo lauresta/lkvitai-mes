@@ -12,16 +12,29 @@ using LKvitai.MES.Projections;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Serilog;
+using Serilog.Events;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Configure Serilog per blueprint
-Log.Logger = new LoggerConfiguration()
+var loggerConfiguration = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
     .Enrich.FromLogContext()
     .WriteTo.Console()
-    .WriteTo.File("logs/warehouse-.log", rollingInterval: RollingInterval.Day)
-    .CreateLogger();
+    .WriteTo.File("logs/warehouse-.log", rollingInterval: RollingInterval.Day);
+
+if (builder.Environment.IsDevelopment())
+{
+    loggerConfiguration.MinimumLevel.Warning();
+    loggerConfiguration.MinimumLevel.Override("Microsoft", LogEventLevel.Warning);
+    loggerConfiguration.MinimumLevel.Override("System", LogEventLevel.Warning);
+    loggerConfiguration.MinimumLevel.Override("Marten", LogEventLevel.Error);
+    loggerConfiguration.MinimumLevel.Override("Npgsql", LogEventLevel.Error);
+    loggerConfiguration.MinimumLevel.Override("MassTransit", LogEventLevel.Error);
+    loggerConfiguration.MinimumLevel.Override("JasperFx", LogEventLevel.Error);
+}
+
+Log.Logger = loggerConfiguration.CreateLogger();
 
 builder.Host.UseSerilog();
 

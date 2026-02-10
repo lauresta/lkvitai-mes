@@ -28,24 +28,41 @@ public sealed class StockController : ControllerBase
 
     [HttpGet("available")]
     public async Task<IActionResult> GetAvailableAsync(
+        [FromQuery] string? warehouse = null,
+        [FromQuery] string? location = null,
+        [FromQuery] string? sku = null,
         [FromQuery] int? itemId = null,
         [FromQuery] int? locationId = null,
         [FromQuery] int? categoryId = null,
         [FromQuery] bool includeReserved = false,
+        [FromQuery] bool? includeVirtual = null,
         [FromQuery] bool includeVirtualLocations = false,
         [FromQuery] DateOnly? expiringBefore = null,
+        [FromQuery] int? page = null,
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 50,
         [FromQuery] bool exportCsv = false,
         CancellationToken cancellationToken = default)
     {
+        pageNumber = page ?? pageNumber;
         pageNumber = Math.Max(1, pageNumber);
         pageSize = Math.Clamp(pageSize, 1, 1000);
+        includeVirtualLocations = includeVirtual ?? includeVirtualLocations;
 
         await using var querySession = _documentStore.QuerySession();
         IQueryable<AvailableStockView> query = querySession
             .Query<AvailableStockView>()
-            .Where(x => x.WarehouseId == DefaultWarehouseId && x.OnHandQty != 0m);
+            .Where(x => x.OnHandQty != 0m);
+
+        if (string.IsNullOrWhiteSpace(warehouse))
+        {
+            query = query.Where(x => x.WarehouseId == DefaultWarehouseId);
+        }
+        else
+        {
+            var normalizedWarehouse = warehouse.Trim();
+            query = query.Where(x => x.WarehouseId == normalizedWarehouse);
+        }
 
         if (expiringBefore.HasValue)
         {
@@ -115,6 +132,22 @@ public sealed class StockController : ControllerBase
             .ThenBy(x => x.LocationCode)
             .ThenBy(x => x.LotNumber)
             .ToList();
+
+        if (!string.IsNullOrWhiteSpace(location))
+        {
+            var normalizedLocation = location.Trim();
+            filtered = filtered
+                .Where(x => MatchesPattern(x.LocationCode, normalizedLocation))
+                .ToList();
+        }
+
+        if (!string.IsNullOrWhiteSpace(sku))
+        {
+            var normalizedSku = sku.Trim();
+            filtered = filtered
+                .Where(x => MatchesPattern(x.InternalSku, normalizedSku))
+                .ToList();
+        }
 
         if (exportCsv)
         {
@@ -314,6 +347,46 @@ public sealed class StockController : ControllerBase
         }
 
         return '"' + value.Replace("\"", "\"\"") + '"';
+    }
+
+    private static bool MatchesPattern(string value, string pattern)
+    {
+        if (string.IsNullOrWhiteSpace(pattern))
+        {
+            return true;
+        }
+
+        var normalizedPattern = pattern.Trim();
+        if (normalizedPattern == "*")
+        {
+            return true;
+        }
+
+        var isPrefix = normalizedPattern.EndsWith('*');
+        var isSuffix = normalizedPattern.StartsWith('*');
+        var token = normalizedPattern.Trim('*');
+        if (string.IsNullOrEmpty(token))
+        {
+            return true;
+        }
+
+        var comparison = StringComparison.OrdinalIgnoreCase;
+        if (isPrefix && isSuffix)
+        {
+            return value.Contains(token, comparison);
+        }
+
+        if (isPrefix)
+        {
+            return value.StartsWith(token, comparison);
+        }
+
+        if (isSuffix)
+        {
+            return value.EndsWith(token, comparison);
+        }
+
+        return value.Contains(token, comparison);
     }
 
     private sealed record AvailableStockRow(

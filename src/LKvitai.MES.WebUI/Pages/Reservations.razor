@@ -259,7 +259,7 @@
         await LoadReservationsAsync();
     }
 
-    private RenderFragment Columns => @<>
+    private RenderFragment Columns => @<text>
         <th>Reservation</th>
         <th>Purpose</th>
         <th>Priority</th>
@@ -267,9 +267,9 @@
         <th>Lock</th>
         <th>Created</th>
         <th>Actions</th>
-    </>;
+    </text>;
 
-    private RenderFragment<ReservationDto> RowTemplate => reservation => @<>
+    private RenderFragment<ReservationDto> RowTemplate => reservation => @<text>
         <td><code>@ShortId(reservation.ReservationId)</code></td>
         <td>@reservation.Purpose</td>
         <td>@reservation.Priority</td>
@@ -296,7 +296,7 @@
                 </button>
             }
         </td>
-    </>;
+    </text>;
 
     private async Task LoadReservationsAsync()
     {
