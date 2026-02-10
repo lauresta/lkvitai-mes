@@ -1,0 +1,236 @@
+@page "/reports/stock-level"
+@inject ReportsClient ReportsClient
+@inject IJSRuntime JavaScript
+@inject ToastService ToastService
+
+<PageTitle>Stock Level Report - LKvitai.MES</PageTitle>
+
+<h3>Stock Level Report</h3>
+
+@if (_apiError is not null)
+{
+    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                 TraceId="@_apiError.TraceId"
+                 OnRetry="LoadAsync"
+                 OnDismiss="@(() => _apiError = null)" />
+}
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-2">
+                <label class="form-label">Item Id</label>
+                <input class="form-control" type="number" @bind="_itemId" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Location Id</label>
+                <input class="form-control" type="number" @bind="_locationId" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Category Id</label>
+                <input class="form-control" type="number" @bind="_categoryId" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Expiring Before</label>
+                <input class="form-control" type="date" @bind="_expiringBefore" />
+            </div>
+            <div class="col-md-3 d-flex gap-3 align-items-center">
+                <div class="form-check mt-4">
+                    <input class="form-check-input" type="checkbox" @bind="_includeReserved" />
+                    <label class="form-check-label">Include reserved</label>
+                </div>
+                <div class="form-check mt-4">
+                    <input class="form-check-input" type="checkbox" @bind="_includeVirtualLocations" />
+                    <label class="form-check-label">Include virtual</label>
+                </div>
+            </div>
+            <div class="col-md-2 d-grid">
+                <button class="btn btn-primary" @onclick="ApplyFiltersAsync">Apply</button>
+            </div>
+            <div class="col-md-2 d-grid">
+                <button class="btn btn-outline-secondary" @onclick="ExportCsvAsync">Export CSV</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm position-relative">
+    <LoadingSpinner IsLoading="@_isLoading" />
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <strong>Total: @_totalCount</strong>
+            <div>
+                Stock as of @_projectionTimestamp.ToString("HH:mm:ss")
+                <span class="ms-2"><StaleBadge LastUpdated="_projectionTimestamp" /></span>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle">
+                <thead>
+                <tr>
+                    <th>SKU</th>
+                    <th>Item</th>
+                    <th>Location</th>
+                    <th>Lot</th>
+                    <th>Expiry</th>
+                    <th>Qty</th>
+                    <th>Reserved</th>
+                    <th>Available</th>
+                </tr>
+                </thead>
+                <tbody>
+                @if (_items.Count == 0)
+                {
+                    <tr>
+                        <td colspan="8" class="text-muted">No rows found.</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var row in _items)
+                    {
+                        <tr>
+                            <td>@row.InternalSku</td>
+                            <td>@row.ItemName</td>
+                            <td>@row.LocationCode</td>
+                            <td>@row.LotNumber</td>
+                            <td>@row.ExpiryDate?.ToString("yyyy-MM-dd")</td>
+                            <td>@row.Qty</td>
+                            <td>@row.ReservedQty</td>
+                            <td>@row.AvailableQty</td>
+                        </tr>
+                    }
+                }
+                </tbody>
+            </table>
+        </div>
+
+        @if (_totalCount > 0)
+        {
+            <Pagination CurrentPage="@_pageNumber"
+                        TotalPages="@TotalPages"
+                        PageSize="@_pageSize"
+                        OnPageChanged="OnPageChangedAsync"
+                        OnPageSizeChanged="OnPageSizeChangedAsync" />
+        }
+    </div>
+</div>
+
+@code {
+    private readonly List<StockLevelRowDto> _items = [];
+    private ApiException? _apiError;
+    private bool _isLoading;
+    private int _pageNumber = 1;
+    private int _pageSize = 50;
+    private int _totalCount;
+    private DateTime _projectionTimestamp = DateTime.UtcNow;
+
+    private int? _itemId;
+    private int? _locationId;
+    private int? _categoryId;
+    private DateTime? _expiringBefore;
+    private bool _includeReserved;
+    private bool _includeVirtualLocations;
+
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling(_totalCount / (double)Math.Max(1, _pageSize)));
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task ApplyFiltersAsync()
+    {
+        _pageNumber = 1;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            DateOnly? expiringBefore = _expiringBefore.HasValue
+                ? DateOnly.FromDateTime(_expiringBefore.Value.Date)
+                : null;
+
+            var response = await ReportsClient.GetStockLevelAsync(
+                _itemId,
+                _locationId,
+                _categoryId,
+                _includeReserved,
+                _includeVirtualLocations,
+                expiringBefore,
+                _pageNumber,
+                _pageSize);
+
+            _items.Clear();
+            _items.AddRange(response.Items);
+            _totalCount = response.TotalCount;
+            _projectionTimestamp = response.ProjectionTimestamp;
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task OnPageChangedAsync(int page)
+    {
+        _pageNumber = Math.Max(1, page);
+        await LoadAsync();
+    }
+
+    private async Task OnPageSizeChangedAsync(int size)
+    {
+        _pageSize = Math.Clamp(size, 1, 1000);
+        _pageNumber = 1;
+        await LoadAsync();
+    }
+
+    private async Task ExportCsvAsync()
+    {
+        try
+        {
+            DateOnly? expiringBefore = _expiringBefore.HasValue
+                ? DateOnly.FromDateTime(_expiringBefore.Value.Date)
+                : null;
+
+            var bytes = await ReportsClient.DownloadStockLevelCsvAsync(
+                _itemId,
+                _locationId,
+                _categoryId,
+                _includeReserved,
+                _includeVirtualLocations,
+                expiringBefore);
+
+            await JavaScript.InvokeVoidAsync(
+                "csvExport.downloadBytes",
+                "stock-level-report.csv",
+                "text/csv",
+                Convert.ToBase64String(bytes));
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+    }
+
+    private static string BuildErrorMessage(ApiException error)
+    {
+        if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
+        {
+            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+        }
+
+        return error.UserMessage;
+    }
+}

@@ -1,0 +1,214 @@
+@page "/reports/pick-history"
+@inject ReportsClient ReportsClient
+@inject IJSRuntime JavaScript
+@inject ToastService ToastService
+
+<PageTitle>Pick History - LKvitai.MES</PageTitle>
+
+<h3>Pick History Report</h3>
+
+@if (_apiError is not null)
+{
+    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                 TraceId="@_apiError.TraceId"
+                 OnRetry="LoadAsync"
+                 OnDismiss="@(() => _apiError = null)" />
+}
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label">Order Id</label>
+                <input class="form-control" @bind="_orderId" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Operator/User</label>
+                <input class="form-control" @bind="_userId" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Completed From</label>
+                <input class="form-control" type="datetime-local" @bind="_dateFrom" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Completed To</label>
+                <input class="form-control" type="datetime-local" @bind="_dateTo" />
+            </div>
+            <div class="col-md-2 d-grid">
+                <button class="btn btn-primary" @onclick="ApplyFiltersAsync">Apply</button>
+            </div>
+            <div class="col-md-2 d-grid">
+                <button class="btn btn-outline-secondary" @onclick="ExportCsvAsync">Export CSV</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm position-relative">
+    <LoadingSpinner IsLoading="@_isLoading" />
+    <div class="card-body">
+        <div class="mb-2"><strong>Total: @_totalCount</strong></div>
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle">
+                <thead>
+                <tr>
+                    <th>Task</th>
+                    <th>Order</th>
+                    <th>SKU</th>
+                    <th>Item</th>
+                    <th>Qty</th>
+                    <th>Picked</th>
+                    <th>Operator</th>
+                    <th>Completed</th>
+                </tr>
+                </thead>
+                <tbody>
+                @if (_items.Count == 0)
+                {
+                    <tr>
+                        <td colspan="8" class="text-muted">No rows found.</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var row in _items)
+                    {
+                        <tr>
+                            <td>@row.TaskId</td>
+                            <td>@row.OrderId</td>
+                            <td>@row.InternalSku</td>
+                            <td>@row.ItemName</td>
+                            <td>@row.Qty</td>
+                            <td>@row.PickedQty</td>
+                            <td>@(row.CompletedBy ?? row.AssignedToUserId)</td>
+                            <td>@row.CompletedAt?.ToString("yyyy-MM-dd HH:mm")</td>
+                        </tr>
+                    }
+                }
+                </tbody>
+            </table>
+        </div>
+
+        @if (_totalCount > 0)
+        {
+            <Pagination CurrentPage="@_pageNumber"
+                        TotalPages="@TotalPages"
+                        PageSize="@_pageSize"
+                        OnPageChanged="OnPageChangedAsync"
+                        OnPageSizeChanged="OnPageSizeChangedAsync" />
+        }
+    </div>
+</div>
+
+@code {
+    private readonly List<PickHistoryRowDto> _items = [];
+    private ApiException? _apiError;
+    private bool _isLoading;
+    private int _pageNumber = 1;
+    private int _pageSize = 50;
+    private int _totalCount;
+
+    private string? _orderId;
+    private string? _userId;
+    private DateTime? _dateFrom;
+    private DateTime? _dateTo;
+
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling(_totalCount / (double)Math.Max(1, _pageSize)));
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task ApplyFiltersAsync()
+    {
+        _pageNumber = 1;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            var response = await ReportsClient.GetPickHistoryAsync(
+                _orderId,
+                _userId,
+                ParseDateTime(_dateFrom),
+                ParseDateTime(_dateTo),
+                _pageNumber,
+                _pageSize);
+
+            _items.Clear();
+            _items.AddRange(response.Items);
+            _totalCount = response.TotalCount;
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task OnPageChangedAsync(int page)
+    {
+        _pageNumber = Math.Max(1, page);
+        await LoadAsync();
+    }
+
+    private async Task OnPageSizeChangedAsync(int size)
+    {
+        _pageSize = Math.Clamp(size, 1, 1000);
+        _pageNumber = 1;
+        await LoadAsync();
+    }
+
+    private async Task ExportCsvAsync()
+    {
+        try
+        {
+            var bytes = await ReportsClient.DownloadPickHistoryCsvAsync(
+                _orderId,
+                _userId,
+                ParseDateTime(_dateFrom),
+                ParseDateTime(_dateTo));
+
+            await JavaScript.InvokeVoidAsync(
+                "csvExport.downloadBytes",
+                "pick-history-report.csv",
+                "text/csv",
+                Convert.ToBase64String(bytes));
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+    }
+
+    private static DateTimeOffset? ParseDateTime(DateTime? raw)
+    {
+        if (!raw.HasValue)
+        {
+            return null;
+        }
+
+        var value = raw.Value;
+        return new DateTimeOffset(value, TimeZoneInfo.Local.GetUtcOffset(value));
+    }
+
+    private static string BuildErrorMessage(ApiException error)
+    {
+        if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
+        {
+            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+        }
+
+        return error.UserMessage;
+    }
+}

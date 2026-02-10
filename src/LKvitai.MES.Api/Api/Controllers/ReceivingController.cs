@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using System.Globalization;
+using System.Text;
 using LKvitai.MES.Api.ErrorHandling;
 using LKvitai.MES.Api.Security;
 using LKvitai.MES.Application.Services;
@@ -43,6 +45,7 @@ public sealed class ReceivingController : ControllerBase
         [FromQuery] DateOnly? expectedDateTo,
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 50,
+        [FromQuery] bool exportCsv = false,
         CancellationToken cancellationToken = default)
     {
         pageNumber = Math.Max(1, pageNumber);
@@ -75,11 +78,24 @@ public sealed class ReceivingController : ControllerBase
             query = query.Where(x => x.ExpectedDate != null && x.ExpectedDate <= to);
         }
 
+        if (exportCsv)
+        {
+            var csvRows = await Marten.QueryableExtensions.ToListAsync(
+                query.OrderByDescending(x => x.LastUpdated),
+                cancellationToken);
+
+            return File(
+                Encoding.UTF8.GetBytes(BuildShipmentsCsv(csvRows)),
+                "text/csv",
+                "receiving-history.csv");
+        }
+
         var totalCount = await Marten.QueryableExtensions.CountAsync(query, cancellationToken);
-        var items = await Marten.QueryableExtensions.ToListAsync(query
-            .OrderByDescending(x => x.LastUpdated)
-            .Skip((pageNumber - 1) * pageSize)
-            .Take(pageSize), cancellationToken);
+        var items = await Marten.QueryableExtensions.ToListAsync(
+            query.OrderByDescending(x => x.LastUpdated)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize),
+            cancellationToken);
 
         return Ok(new PagedResponse<InboundShipmentSummaryDto>(
             items.Select(x => new InboundShipmentSummaryDto(
@@ -379,6 +395,45 @@ public sealed class ReceivingController : ControllerBase
 
     private static string ShipmentStreamId(int shipmentId)
         => $"inbound-shipment:{shipmentId}";
+
+    private static string BuildShipmentsCsv(IReadOnlyCollection<InboundShipmentSummaryView> rows)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("ShipmentId,ReferenceNumber,SupplierId,SupplierName,ExpectedDate,Status,TotalLines,TotalExpectedQty,TotalReceivedQty,CreatedAt,LastUpdated");
+
+        foreach (var row in rows)
+        {
+            sb.Append(row.ShipmentId.ToString(CultureInfo.InvariantCulture)).Append(',');
+            sb.Append(EscapeCsv(row.ReferenceNumber)).Append(',');
+            sb.Append(row.SupplierId.ToString(CultureInfo.InvariantCulture)).Append(',');
+            sb.Append(EscapeCsv(row.SupplierName)).Append(',');
+            sb.Append(row.ExpectedDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? string.Empty).Append(',');
+            sb.Append(EscapeCsv(row.Status)).Append(',');
+            sb.Append(row.TotalLines.ToString(CultureInfo.InvariantCulture)).Append(',');
+            sb.Append(row.TotalExpectedQty.ToString(CultureInfo.InvariantCulture)).Append(',');
+            sb.Append(row.TotalReceivedQty.ToString(CultureInfo.InvariantCulture)).Append(',');
+            sb.Append(row.CreatedAt.ToString("O", CultureInfo.InvariantCulture)).Append(',');
+            sb.Append(row.LastUpdated.ToString("O", CultureInfo.InvariantCulture));
+            sb.AppendLine();
+        }
+
+        return sb.ToString();
+    }
+
+    private static string EscapeCsv(string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return string.Empty;
+        }
+
+        if (!value.Contains(',') && !value.Contains('"') && !value.Contains('\n') && !value.Contains('\r'))
+        {
+            return value;
+        }
+
+        return '"' + value.Replace("\"", "\"\"") + '"';
+    }
 
     public sealed record CreateInboundShipmentRequest(
         string ReferenceNumber,

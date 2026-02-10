@@ -28,6 +28,7 @@ builder.Services.AddScoped<StockClient>();
 builder.Services.AddScoped<ReservationsClient>();
 builder.Services.AddScoped<ProjectionsClient>();
 builder.Services.AddScoped<MasterDataAdminClient>();
+builder.Services.AddScoped<ReportsClient>();
 builder.Services.AddScoped<ToastService>();
 
 var app = builder.Build();

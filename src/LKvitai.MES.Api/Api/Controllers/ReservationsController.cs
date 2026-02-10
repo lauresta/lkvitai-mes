@@ -13,6 +13,7 @@ namespace LKvitai.MES.Api.Controllers;
 [ApiController]
 [Authorize(Policy = WarehousePolicies.OperatorOrAbove)]
 [Route("api/reservations")]
+[Route("api/warehouse/v1/reservations")]
 public sealed class ReservationsController : ControllerBase
 {
     private readonly IMediator _mediator;

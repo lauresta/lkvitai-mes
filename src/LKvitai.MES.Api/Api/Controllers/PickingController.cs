@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using System.Globalization;
+using System.Text;
 using LKvitai.MES.Api.ErrorHandling;
 using LKvitai.MES.Api.Security;
 using LKvitai.MES.Application.Services;
@@ -288,6 +290,7 @@ public sealed class PickingController : ControllerBase
         [FromQuery] DateTimeOffset? dateTo = null,
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 50,
+        [FromQuery] bool exportCsv = false,
         CancellationToken cancellationToken = default)
     {
         pageNumber = Math.Max(1, pageNumber);
@@ -324,15 +327,16 @@ public sealed class PickingController : ControllerBase
             query = query.Where(x => x.CompletedAt != null && x.CompletedAt <= dateTo.Value);
         }
 
-        var totalCount = await query.CountAsync(cancellationToken);
-        var page = await query
-            .OrderByDescending(x => x.CompletedAt)
-            .Skip((pageNumber - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync(cancellationToken);
+        var sourceRows = exportCsv
+            ? await query.OrderByDescending(x => x.CompletedAt).ToListAsync(cancellationToken)
+            : await query
+                .OrderByDescending(x => x.CompletedAt)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync(cancellationToken);
 
-        var itemIds = page.Select(x => x.ItemId).Distinct().ToList();
-        var locationIds = page
+        var itemIds = sourceRows.Select(x => x.ItemId).Distinct().ToList();
+        var locationIds = sourceRows
             .SelectMany(x => new[] { x.FromLocationId, x.ToLocationId })
             .Where(x => x.HasValue)
             .Select(x => x!.Value)
@@ -349,7 +353,7 @@ public sealed class PickingController : ControllerBase
             .Where(x => locationIds.Contains(x.Id))
             .ToDictionaryAsync(x => x.Id, cancellationToken);
 
-        var resultItems = page.Select(x =>
+        var resultItems = sourceRows.Select(x =>
         {
             items.TryGetValue(x.ItemId, out var item);
             var fromCode = x.FromLocationId.HasValue && locations.TryGetValue(x.FromLocationId.Value, out var fromLocation)
@@ -374,7 +378,56 @@ public sealed class PickingController : ControllerBase
                 x.CompletedAt);
         }).ToList();
 
+        if (exportCsv)
+        {
+            return File(
+                Encoding.UTF8.GetBytes(BuildPickHistoryCsv(resultItems)),
+                "text/csv",
+                "pick-history.csv");
+        }
+
+        var totalCount = await query.CountAsync(cancellationToken);
         return Ok(new PagedResponse<PickHistoryItemDto>(resultItems, totalCount, pageNumber, pageSize));
+    }
+
+    private static string BuildPickHistoryCsv(IReadOnlyCollection<PickHistoryItemDto> rows)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("TaskId,OrderId,ItemId,ItemSku,ItemName,RequestedQty,PickedQty,AssignedToUserId,CompletedByUserId,FromLocation,ToLocation,CompletedAt");
+
+        foreach (var row in rows)
+        {
+            sb.Append(row.TaskId).Append(',');
+            sb.Append(EscapeCsv(row.OrderId)).Append(',');
+            sb.Append(row.ItemId.ToString(CultureInfo.InvariantCulture)).Append(',');
+            sb.Append(EscapeCsv(row.InternalSku)).Append(',');
+            sb.Append(EscapeCsv(row.ItemName)).Append(',');
+            sb.Append(row.Qty.ToString(CultureInfo.InvariantCulture)).Append(',');
+            sb.Append(row.PickedQty?.ToString(CultureInfo.InvariantCulture) ?? string.Empty).Append(',');
+            sb.Append(EscapeCsv(row.AssignedToUserId)).Append(',');
+            sb.Append(EscapeCsv(row.CompletedBy)).Append(',');
+            sb.Append(EscapeCsv(row.FromLocationCode)).Append(',');
+            sb.Append(EscapeCsv(row.ToLocationCode)).Append(',');
+            sb.Append(row.CompletedAt?.ToString("O", CultureInfo.InvariantCulture) ?? string.Empty);
+            sb.AppendLine();
+        }
+
+        return sb.ToString();
+    }
+
+    private static string EscapeCsv(string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            return string.Empty;
+        }
+
+        if (!value.Contains(',') && !value.Contains('"') && !value.Contains('\n') && !value.Contains('\r'))
+        {
+            return value;
+        }
+
+        return '"' + value.Replace("\"", "\"\"") + '"';
     }
 
     private ObjectResult ValidationFailure(string detail)
