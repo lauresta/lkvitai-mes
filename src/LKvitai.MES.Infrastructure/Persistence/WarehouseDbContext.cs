@@ -46,6 +46,7 @@ public class WarehouseDbContext : DbContext
     public DbSet<AdjustmentReasonCode> AdjustmentReasonCodes => Set<AdjustmentReasonCode>();
     public DbSet<SerialNumber> SerialNumbers => Set<SerialNumber>();
     public DbSet<SKUSequence> SKUSequences => Set<SKUSequence>();
+    public DbSet<PickTask> PickTasks => Set<PickTask>();
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -304,6 +305,25 @@ public class WarehouseDbContext : DbContext
             entity.Property(e => e.Prefix).HasMaxLength(20);
             entity.Property(e => e.NextValue).IsRequired();
             entity.Property(e => e.RowVersion).IsRowVersion();
+        });
+
+        modelBuilder.Entity<PickTask>(entity =>
+        {
+            entity.ToTable("pick_tasks");
+            entity.HasKey(e => e.TaskId);
+            entity.Property(e => e.OrderId).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.Qty).HasPrecision(18, 3);
+            entity.Property(e => e.PickedQty).HasPrecision(18, 3);
+            entity.Property(e => e.Status).HasMaxLength(20).IsRequired().HasDefaultValue("Pending");
+            entity.Property(e => e.AssignedToUserId).HasMaxLength(100);
+            entity.HasIndex(e => e.OrderId);
+            entity.HasIndex(e => e.ItemId);
+            entity.HasIndex(e => e.Status);
+            entity.HasOne<Item>().WithMany().HasForeignKey(e => e.ItemId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<Location>().WithMany().HasForeignKey(e => e.FromLocationId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<Location>().WithMany().HasForeignKey(e => e.ToLocationId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<Lot>().WithMany().HasForeignKey(e => e.LotId).OnDelete(DeleteBehavior.Restrict);
+            entity.ToTable(t => t.HasCheckConstraint("ck_pick_tasks_status", "\"Status\" IN ('Pending','Completed','Cancelled')"));
         });
     }
 

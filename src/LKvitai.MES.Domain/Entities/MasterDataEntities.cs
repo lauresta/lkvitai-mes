@@ -173,3 +173,18 @@ public sealed class SKUSequence
     public int NextValue { get; set; }
     public byte[] RowVersion { get; set; } = Array.Empty<byte>();
 }
+
+public sealed class PickTask : AuditableEntity
+{
+    public Guid TaskId { get; set; } = Guid.NewGuid();
+    public string OrderId { get; set; } = string.Empty;
+    public int ItemId { get; set; }
+    public decimal Qty { get; set; }
+    public decimal? PickedQty { get; set; }
+    public int? FromLocationId { get; set; }
+    public int? ToLocationId { get; set; }
+    public int? LotId { get; set; }
+    public string Status { get; set; } = "Pending";
+    public string? AssignedToUserId { get; set; }
+    public DateTimeOffset? CompletedAt { get; set; }
+}
