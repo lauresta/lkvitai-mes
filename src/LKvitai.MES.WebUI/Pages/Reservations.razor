@@ -38,10 +38,45 @@
         <DataTable TItem="ReservationDto"
                    Items="@_reservations"
                    TotalCount="@_totalCount"
-                   Columns="@Columns"
-                   RowTemplate="@RowTemplate"
                    EmptyMessage="No reservations found."
                    OnRowClick="OpenDetails">
+            <Columns>
+                <th>Reservation</th>
+                <th>Purpose</th>
+                <th>Priority</th>
+                <th>Status</th>
+                <th>Lock</th>
+                <th>Created</th>
+                <th>Actions</th>
+            </Columns>
+            <RowTemplate Context="reservation">
+                <td><code>@ShortId(reservation.ReservationId)</code></td>
+                <td>@reservation.Purpose</td>
+                <td>@reservation.Priority</td>
+                <td>@reservation.Status</td>
+                <td>@reservation.LockType</td>
+                <td>@reservation.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                <td class="d-flex gap-2">
+                    @if (reservation.Status == "ALLOCATED")
+                    {
+                        <button class="btn btn-sm btn-outline-primary"
+                                @onclick="() => OpenStartPickingConfirmation(reservation)"
+                                @onclick:stopPropagation="true"
+                                disabled="@_isSubmitting">
+                            Start Picking
+                        </button>
+                    }
+                    @if (reservation.Status == "PICKING")
+                    {
+                        <button class="btn btn-sm btn-outline-primary"
+                                @onclick="() => OpenPickModal(reservation)"
+                                @onclick:stopPropagation="true"
+                                disabled="@_isSubmitting">
+                            Pick
+                        </button>
+                    }
+                </td>
+            </RowTemplate>
         </DataTable>
 
         @if (_totalPages > 1)
@@ -258,45 +293,6 @@
     {
         await LoadReservationsAsync();
     }
-
-    private RenderFragment Columns => @<text>
-        <th>Reservation</th>
-        <th>Purpose</th>
-        <th>Priority</th>
-        <th>Status</th>
-        <th>Lock</th>
-        <th>Created</th>
-        <th>Actions</th>
-    </text>;
-
-    private RenderFragment<ReservationDto> RowTemplate => reservation => @<text>
-        <td><code>@ShortId(reservation.ReservationId)</code></td>
-        <td>@reservation.Purpose</td>
-        <td>@reservation.Priority</td>
-        <td>@reservation.Status</td>
-        <td>@reservation.LockType</td>
-        <td>@reservation.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
-        <td class="d-flex gap-2">
-            @if (reservation.Status == "ALLOCATED")
-            {
-                <button class="btn btn-sm btn-outline-primary"
-                        @onclick="() => OpenStartPickingConfirmation(reservation)"
-                        @onclick:stopPropagation="true"
-                        disabled="@_isSubmitting">
-                    Start Picking
-                </button>
-            }
-            @if (reservation.Status == "PICKING")
-            {
-                <button class="btn btn-sm btn-outline-primary"
-                        @onclick="() => OpenPickModal(reservation)"
-                        @onclick:stopPropagation="true"
-                        disabled="@_isSubmitting">
-                    Pick
-                </button>
-            }
-        </td>
-    </text>;
 
     private async Task LoadReservationsAsync()
     {

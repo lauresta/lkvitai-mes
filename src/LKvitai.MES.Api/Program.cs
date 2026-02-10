@@ -19,20 +19,17 @@ var builder = WebApplication.CreateBuilder(args);
 // Configure Serilog per blueprint
 var loggerConfiguration = new LoggerConfiguration()
     .ReadFrom.Configuration(builder.Configuration)
+    .MinimumLevel.Information()
+    .Filter.ByExcluding(logEvent => logEvent.Level is LogEventLevel.Debug or LogEventLevel.Verbose)
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+    .MinimumLevel.Override("System", LogEventLevel.Warning)
+    .MinimumLevel.Override("Marten", LogEventLevel.Error)
+    .MinimumLevel.Override("Npgsql", LogEventLevel.Error)
+    .MinimumLevel.Override("MassTransit", LogEventLevel.Error)
+    .MinimumLevel.Override("JasperFx", LogEventLevel.Error)
     .Enrich.FromLogContext()
     .WriteTo.Console()
     .WriteTo.File("logs/warehouse-.log", rollingInterval: RollingInterval.Day);
-
-if (builder.Environment.IsDevelopment())
-{
-    loggerConfiguration.MinimumLevel.Warning();
-    loggerConfiguration.MinimumLevel.Override("Microsoft", LogEventLevel.Warning);
-    loggerConfiguration.MinimumLevel.Override("System", LogEventLevel.Warning);
-    loggerConfiguration.MinimumLevel.Override("Marten", LogEventLevel.Error);
-    loggerConfiguration.MinimumLevel.Override("Npgsql", LogEventLevel.Error);
-    loggerConfiguration.MinimumLevel.Override("MassTransit", LogEventLevel.Error);
-    loggerConfiguration.MinimumLevel.Override("JasperFx", LogEventLevel.Error);
-}
 
 Log.Logger = loggerConfiguration.CreateLogger();
 
