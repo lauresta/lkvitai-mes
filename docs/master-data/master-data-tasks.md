@@ -1230,3 +1230,149 @@
 **Question**: Should import fail entirely on any error, or allow partial import (skip error rows)?
 **Impact**: Fail-fast prevents partial data, skip-errors allows bulk import with manual fixes
 **Recommendation**: Fail-fast by default, add `skipErrors` flag for advanced users
+
+
+ADDITIONAL IMPORTANT APPEND
+## Epic 1 (additions): Cross-cutting infrastructure
+
+### Task 1.6 - Authorization / RBAC enforcement
+- Goal: enforce role-based access for Admin vs Operator vs Manager screens and APIs.
+- Scope:
+  - Define roles: WarehouseAdmin, WarehouseManager, Operator, QCInspector (align with baseline).
+  - Add authorization attributes/policies for API endpoints:
+    - /api/admin/* -> WarehouseAdmin
+    - adjustments endpoints -> WarehouseManager (or Admin)
+    - receiving/qc actions -> QCInspector or Manager
+    - read-only stock queries -> Operator+
+  - Ensure WebUI routes/pages are protected consistently.
+- Done when:
+  - Unauthorized access returns 401/403 with ProblemDetails (traceId preserved).
+  - Integration tests cover at least 2 roles and 2 endpoints.
+- Estimate: 1.0d
+
+### Task 1.7 - ProblemDetails + traceId standardization (server + clients)
+- Goal: all APIs return consistent ProblemDetails + traceId; all typed clients parse and surface traceId; UI shows Error ID.
+- Scope:
+  - Ensure middleware/filters always include traceId in ProblemDetails extensions.
+  - Normalize error codes where applicable (errorCode + traceId contract for WebUI).
+  - Add/extend typed client tests for traceId parsing (pattern already used in UI scope).
+- Done when:
+  - Every failing API call in WebUI shows ErrorBanner with Error ID.
+  - Unit tests cover ProblemDetails parsing for at least: admin import, adjustments, receiving.
+- Estimate: 0.5d
+
+
+## Epic 8 - Admin UI (Master Data CRUD + Import Wizard)
+
+### Task 8.1 - Admin navigation + layout for master data
+- Add Admin section in nav, routes:
+  - /admin/items
+  - /admin/suppliers
+  - /admin/locations
+  - /admin/categories
+  - /admin/import
+- Reuse existing patterns: loading/error banners, pagination, CSV export where relevant.
+- Estimate: 1.0d
+
+### Task 8.2 - Items management UI (list/search/create/edit/deactivate)
+- List with filters: SKU/Name/Category/Status
+- Create/Edit modal (minimal fields per spec)
+- Deactivate sets Status=Discontinued (no delete)
+- Estimate: 2.0d
+
+### Task 8.3 - Suppliers management UI (list/search/create/edit)
+- List with filters, CRUD modal
+- Link to Supplier-Item mappings page
+- Estimate: 1.0d
+
+### Task 8.4 - Locations management UI (list/hierarchy + create/edit)
+- Flat list with parent indicator (tree can be Phase 2)
+- Virtual locations visible but protected from editing critical fields (barcode/code)
+- Estimate: 1.5d
+
+### Task 8.5 - Categories management UI (basic hierarchy CRUD)
+- Minimal: create/edit, prevent delete if referenced/has children
+- Estimate: 1.0d
+
+### Task 8.6 - Import wizard UI (dry-run + commit + error report)
+- Tabs: Items, Suppliers, Supplier mappings, Item barcodes, Locations
+- Upload file, dryRun toggle, show validation results table (row/column/message)
+- “Download template” buttons (static templates or generated)
+- Estimate: 1.5d
+
+
+## Epic 9 - Reports UI (Phase 1 minimal)
+
+### Task 9.1 - Stock Level report page
+- Reuse AvailableStock projection/table patterns
+- Filters: Item, Location, Category, Include virtual, Include reserved
+- Export CSV
+- Estimate: 1.5d
+
+### Task 9.2 - Receiving history report page
+- Date range + supplier + status
+- Export CSV
+- Estimate: 1.0d
+
+### Task 9.3 - Pick history report page
+- Date range + orderId + operator
+- Export CSV
+- Estimate: 1.0d
+
+
+## Epic 10 - Operational UI (Phase 1 minimal ops)
+
+### Task 10.1 - Projections admin UX hardening
+- Improve Projections page:
+  - show friendly hint when rebuild fails (DB schema mismatch)
+  - add “copy error” action (traceId + message)
+- Estimate: 0.5d
+
+### Task 10.2 - Projection rebuild/verify runbook surfaced in UI
+- Add small “Runbook” link/section on Projections page (markdown block) with steps:
+  - when to rebuild, what to check, where logs are, how to validate
+- Estimate: 0.5d
+
+### Task 10.3 - Health / projection lag visibility (UI)
+- Extend dashboard or projections page with:
+  - projection lag/staleness signal (reuse StaleBadge logic)
+- Estimate: 1.0d
+
+### Task 10.4 - Import operational safeguards
+- On import wizard:
+  - show “dry-run recommended” note
+  - prevent commit if dry-run has errors
+  - display traceId for server-side failures
+- Estimate: 1.0d
+
+### Task 10.5 - Operational smoke checklist + scripts
+- Add docs/checklist in repo:
+  - “seed + import + receive + putaway + pick + adjust” quick verification
+- Estimate: 1.0d
+
+
+## Epic 11 - Testing (coverage for missing areas)
+
+### Task 11.1 - Unit tests: master data typed clients + ProblemDetails/traceId
+- Items/Suppliers/Locations/Import clients parse ProblemDetails + traceId
+- Estimate: 1.0d
+
+### Task 11.2 - Integration tests: Admin imports (dry-run + commit)
+- Items import happy path + duplicate barcode + FK missing
+- Estimate: 1.5d
+
+### Task 11.3 - Integration tests: RBAC
+- Verify 401/403 for at least 2 endpoints across roles
+- Estimate: 1.0d
+
+### Task 11.4 - Integration tests: receiving/QC minimal flow
+- Receive -> QC_HOLD -> pass/fail -> stock moves
+- Estimate: 1.5d
+
+### Task 11.5 - Integration tests: adjustments + audit
+- Adjust stock, verify projection updated and record visible in history query
+- Estimate: 1.0d
+
+### Task 11.6 - CI wiring for docker-gated integration scope
+- Ensure new integration tests run in the existing docker-gated pattern
+- Estimate: 0.5d

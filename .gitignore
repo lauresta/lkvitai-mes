@@ -1,0 +1,5 @@
+# local dotnet tools cache
+.tools/
+**/project.assets.json
+**/*.nupkg
+**/*.sha512
