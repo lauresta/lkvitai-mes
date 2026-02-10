@@ -15,6 +15,8 @@ namespace LKvitai.MES.Api.Controllers;
 [Route("api/warehouse/v1/items")]
 public sealed class ItemsController : ControllerBase
 {
+    private const string GetItemByIdRouteName = "GetItemById";
+
     private readonly WarehouseDbContext _dbContext;
     private readonly ISkuGenerationService _skuGenerationService;
 
@@ -142,13 +144,13 @@ public sealed class ItemsController : ControllerBase
                 $"Item with SKU '{sku}' already exists."));
         }
 
-        return CreatedAtAction(
-            nameof(GetByIdAsync),
+        return CreatedAtRoute(
+            GetItemByIdRouteName,
             new { id = item.Id },
             new ItemCreatedDto(item.Id, item.InternalSKU, item.Name, item.CreatedAt));
     }
 
-    [HttpGet("{id:int}")]
+    [HttpGet("{id:int}", Name = GetItemByIdRouteName)]
     [Authorize(Policy = WarehousePolicies.OperatorOrAbove)]
     public async Task<IActionResult> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
