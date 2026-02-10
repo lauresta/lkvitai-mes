@@ -2,8 +2,11 @@
 @inject NavigationManager Nav
 
 @code {
-    protected override void OnInitialized()
+    protected override void OnAfterRender(bool firstRender)
     {
-        Nav.NavigateTo("/dashboard", replace: true);
+        if (firstRender)
+        {
+            Nav.NavigateTo("/dashboard", replace: true);
+        }
     }
 }
