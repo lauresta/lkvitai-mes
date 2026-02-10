@@ -113,6 +113,13 @@
                     Commit Changes
                 </button>
             </div>
+
+            @if (_lastResult.DryRun && _lastResult.Errors.Count > 0)
+            {
+                <div class="alert alert-warning mt-3 mb-0">
+                    Commit is disabled until dry-run errors are resolved.
+                </div>
+            }
         </div>
     </div>
 }

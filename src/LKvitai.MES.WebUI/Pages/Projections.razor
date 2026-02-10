@@ -1,6 +1,7 @@
 @page "/projections"
 @inject ProjectionsClient ProjectionsClient
 @inject ToastService ToastService
+@inject IJSRuntime JavaScript
 @using System.Diagnostics
 
 <PageTitle>Projections - LKvitai.MES</PageTitle>
@@ -13,11 +14,68 @@
                  TraceId="@_apiError.TraceId"
                  OnRetry="RetryAsync"
                  OnDismiss="DismissError" />
+
+    <div class="alert alert-warning">
+        <div class="d-flex justify-content-between align-items-center">
+            <span>@BuildFriendlyHint(_apiError)</span>
+            <button class="btn btn-sm btn-outline-secondary" @onclick="CopyErrorAsync">Copy Error</button>
+        </div>
+    </div>
 }
 
-<div class="card shadow-sm position-relative">
-    <LoadingSpinner IsLoading="@_isBusy" />
+<div class="card shadow-sm mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Projection Lag</span>
+        <button class="btn btn-sm btn-outline-secondary" @onclick="RefreshLagAsync">Refresh</button>
+    </div>
+    <div class="card-body">
+        @if (_projectionLag.Count == 0)
+        {
+            <span class="text-muted">No projection lag data available.</span>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                    <tr>
+                        <th>Projection</th>
+                        <th>Status</th>
+                        <th>Lag (s)</th>
+                        <th>Lag (events)</th>
+                        <th>Last Updated</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var row in _projectionLag)
+                    {
+                        <tr>
+                            <td>@row.ProjectionName</td>
+                            <td>@row.Status</td>
+                            <td>@(row.LagSeconds?.ToString("0.##") ?? "-")</td>
+                            <td>@(row.LagEvents?.ToString() ?? "-")</td>
+                            <td>
+                                @if (row.LastUpdated.HasValue)
+                                {
+                                    @row.LastUpdated.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")
+                                    <span class="ms-2"><StaleBadge LastUpdated="@row.LastUpdated.Value.UtcDateTime" /></span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">Unknown</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
 
+<div class="card shadow-sm mb-3">
+    <div class="card-header">Rebuild / Verify</div>
     <div class="card-body">
         <div class="mb-3">
             <label class="form-label">Projection</label>
@@ -82,6 +140,22 @@
     </div>
 </div>
 
+<div class="card shadow-sm">
+    <div class="card-header">Runbook</div>
+    <div class="card-body">
+        <p class="mb-2">Use this quick checklist before and after projection rebuilds.</p>
+        <ol class="mb-2">
+            <li>Check lag table above and confirm projection status.</li>
+            <li>Run `Verify` first; use `Rebuild` only when mismatch or corruption is confirmed.</li>
+            <li>After rebuild, verify `ChecksumMatch=true` and lag returns to healthy.</li>
+            <li>Capture traceId for failed operations and share with support.</li>
+        </ol>
+        <a href="docs/master-data/master-data-06-ops-runbook-projections.md" target="_blank" rel="noopener noreferrer">
+            Open Projection Runbook
+        </a>
+    </div>
+</div>
+
 <ConfirmDialog Title="Rebuild projection?"
                Message="Are you sure? This will rebuild the projection from scratch."
                ConfirmText="Rebuild"
@@ -90,7 +164,7 @@
                OnCancel="CancelRebuildConfirm" />
 
 @code {
-    private static readonly string[] _projections = ["LocationBalance", "AvailableStock"];
+    private static readonly string[] _projections = ["LocationBalance", "AvailableStock", "ActiveReservations", "InboundShipmentSummary", "AdjustmentHistory"];
 
     private string _selectedProjection = "LocationBalance";
     private bool _isBusy;
@@ -98,6 +172,12 @@
     private ApiException? _apiError;
     private RebuildResultDto? _rebuildResult;
     private VerifyResultDto? _verifyResult;
+    private List<ProjectionLagStatusDto> _projectionLag = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshLagAsync();
+    }
 
     private void OnProjectionChanged(ChangeEventArgs args)
     {
@@ -155,6 +235,7 @@
         finally
         {
             _isBusy = false;
+            await RefreshLagAsync();
         }
     }
 
@@ -196,6 +277,20 @@
         finally
         {
             _isBusy = false;
+            await RefreshLagAsync();
+        }
+    }
+
+    private async Task RefreshLagAsync()
+    {
+        try
+        {
+            var rows = await ProjectionsClient.GetProjectionLagAsync();
+            _projectionLag = rows.ToList();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
         }
     }
 
@@ -210,7 +305,32 @@
         await VerifyAsync();
     }
 
+    private async Task CopyErrorAsync()
+    {
+        if (_apiError is null)
+        {
+            return;
+        }
+
+        var payload = $"traceId={_apiError.TraceId}; message={BuildErrorMessage(_apiError)}";
+        await JavaScript.InvokeVoidAsync("navigator.clipboard.writeText", payload);
+        ToastService.ShowSuccess("Error details copied.");
+    }
+
     private void DismissError() => _apiError = null;
+
+    private static string BuildFriendlyHint(ApiException error)
+    {
+        var text = BuildErrorMessage(error);
+        if (text.Contains("42P01", StringComparison.OrdinalIgnoreCase) ||
+            text.Contains("schema", StringComparison.OrdinalIgnoreCase) ||
+            text.Contains("shadow", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Projection rebuild failed due to database schema mismatch. Run shadow cleanup and schema validation, then retry.";
+        }
+
+        return "Projection operation failed. Use the runbook below and copy the error details for investigation.";
+    }
 
     private static string BuildErrorMessage(ApiException error)
     {
