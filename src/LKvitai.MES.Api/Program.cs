@@ -1,11 +1,15 @@
 using LKvitai.MES.Api.Configuration;
 using LKvitai.MES.Api.ErrorHandling;
+using LKvitai.MES.Api.Security;
 using LKvitai.MES.Api.Services;
 using LKvitai.MES.Application.Ports;
+using LKvitai.MES.Application.Services;
 using LKvitai.MES.Infrastructure;
 using LKvitai.MES.Infrastructure.Persistence;
 using LKvitai.MES.Infrastructure.Projections;
 using LKvitai.MES.Projections;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,6 +27,38 @@ builder.Host.UseSerilog();
 // Add services per blueprint
 builder.Services.AddControllers();
 builder.Services.AddProblemDetails();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUserService, HttpContextCurrentUserService>();
+builder.Services
+    .AddAuthentication(WarehouseAuthenticationDefaults.Scheme)
+    .AddScheme<AuthenticationSchemeOptions, WarehouseAuthenticationHandler>(
+        WarehouseAuthenticationDefaults.Scheme,
+        _ => { });
+builder.Services.AddAuthorization(options =>
+{
+    options.DefaultPolicy = new AuthorizationPolicyBuilder(WarehouseAuthenticationDefaults.Scheme)
+        .RequireAuthenticatedUser()
+        .Build();
+
+    options.AddPolicy(WarehousePolicies.AdminOnly, policy =>
+        policy.RequireRole(WarehouseRoles.WarehouseAdmin));
+
+    options.AddPolicy(WarehousePolicies.ManagerOrAdmin, policy =>
+        policy.RequireRole(WarehouseRoles.WarehouseManager, WarehouseRoles.WarehouseAdmin));
+
+    options.AddPolicy(WarehousePolicies.QcOrManager, policy =>
+        policy.RequireRole(
+            WarehouseRoles.QCInspector,
+            WarehouseRoles.WarehouseManager,
+            WarehouseRoles.WarehouseAdmin));
+
+    options.AddPolicy(WarehousePolicies.OperatorOrAbove, policy =>
+        policy.RequireRole(
+            WarehouseRoles.Operator,
+            WarehouseRoles.QCInspector,
+            WarehouseRoles.WarehouseManager,
+            WarehouseRoles.WarehouseAdmin));
+});
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -67,6 +103,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseMiddleware<ProblemDetailsExceptionMiddleware>();
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 

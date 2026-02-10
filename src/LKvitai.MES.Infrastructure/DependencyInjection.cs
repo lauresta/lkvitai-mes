@@ -2,6 +2,7 @@ using LKvitai.MES.Application.ConsistencyChecks;
 using LKvitai.MES.Application.Orchestration;
 using LKvitai.MES.Application.Ports;
 using LKvitai.MES.Application.Projections;
+using LKvitai.MES.Application.Services;
 using LKvitai.MES.Infrastructure.Locking;
 using LKvitai.MES.Infrastructure.Persistence;
 using LKvitai.MES.Infrastructure.Projections;
@@ -25,6 +26,7 @@ public static class DependencyInjection
         // Register projection rebuild service (MITIGATION V-5)
         services.AddScoped<IProjectionRebuildService, ProjectionRebuildService>();
         services.AddScoped<IProjectionCleanupService, ProjectionCleanupService>();
+        services.AddScoped<ISkuGenerationService, SkuGenerationService>();
 
         // Repository implementations (Application ports)
         services.AddScoped<IReservationRepository, MartenReservationRepository>();

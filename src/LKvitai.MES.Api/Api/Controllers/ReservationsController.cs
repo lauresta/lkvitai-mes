@@ -1,14 +1,17 @@
 using LKvitai.MES.Api.ErrorHandling;
+using LKvitai.MES.Api.Security;
 using LKvitai.MES.Application.Commands;
 using LKvitai.MES.Application.Ports;
 using LKvitai.MES.Application.Queries;
 using LKvitai.MES.SharedKernel;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LKvitai.MES.Api.Controllers;
 
 [ApiController]
+[Authorize(Policy = WarehousePolicies.OperatorOrAbove)]
 [Route("api/reservations")]
 public sealed class ReservationsController : ControllerBase
 {

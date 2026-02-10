@@ -2,15 +2,17 @@ using LKvitai.MES.Api.ErrorHandling;
 using LKvitai.MES.Application.Commands;
 using LKvitai.MES.Application.Projections;
 using LKvitai.MES.Application.Queries;
+using LKvitai.MES.Api.Security;
 using LKvitai.MES.Infrastructure.Projections;
 using LKvitai.MES.SharedKernel;
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace LKvitai.MES.Api.Controllers;
 
 [ApiController]
+[Authorize(Policy = WarehousePolicies.AdminOnly)]
 [Route("api/projections")]
 [Route("api/warehouse/v1/admin/projections")]
 public sealed class ProjectionsController : ControllerBase
@@ -93,12 +95,6 @@ public sealed class ProjectionsController : ControllerBase
     [HttpPost("cleanup-shadows")]
     public async Task<IActionResult> CleanupShadowsAsync(CancellationToken cancellationToken = default)
     {
-        var authFailure = RequireWarehouseAdmin();
-        if (authFailure is not null)
-        {
-            return authFailure;
-        }
-
         if (_projectionCleanupService is null)
         {
             return Failure(Result.Fail(
@@ -115,12 +111,6 @@ public sealed class ProjectionsController : ControllerBase
         [FromQuery] string projectionName,
         CancellationToken cancellationToken = default)
     {
-        var authFailure = RequireWarehouseAdmin();
-        if (authFailure is not null)
-        {
-            return authFailure;
-        }
-
         if (string.IsNullOrWhiteSpace(projectionName))
         {
             return ValidationFailure("Query parameter 'projectionName' is required.");
@@ -151,28 +141,6 @@ public sealed class ProjectionsController : ControllerBase
         {
             StatusCode = problemDetails.Status
         };
-    }
-
-    private ObjectResult? RequireWarehouseAdmin()
-    {
-        var roleClaim = User.Claims.FirstOrDefault(c =>
-            c.Type == ClaimTypes.Role || c.Type == "role")?.Value;
-        var headerRole = HttpContext.Request.Headers["X-Warehouse-Role"].FirstOrDefault();
-
-        var isAdmin = string.Equals(roleClaim, "WarehouseAdmin", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(headerRole, "WarehouseAdmin", StringComparison.OrdinalIgnoreCase);
-
-        if (isAdmin)
-        {
-            return null;
-        }
-
-        var unauthorized = string.IsNullOrWhiteSpace(roleClaim) && string.IsNullOrWhiteSpace(headerRole);
-        return Failure(Result.Fail(
-            unauthorized ? DomainErrorCodes.Unauthorized : DomainErrorCodes.Forbidden,
-            unauthorized
-                ? "WarehouseAdmin role is required. Authenticate first."
-                : "WarehouseAdmin role is required for this operation."));
     }
 
     public sealed record RebuildProjectionRequestDto(string ProjectionName, bool ResetProgress = false);

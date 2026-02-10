@@ -1,10 +1,13 @@
 using System.Reflection;
+using LKvitai.MES.Api.Security;
 using Marten;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LKvitai.MES.Api.Controllers;
 
 [ApiController]
+[Authorize(Policy = WarehousePolicies.OperatorOrAbove)]
 [Route("api/dashboard")]
 public sealed class DashboardController : ControllerBase
 {
