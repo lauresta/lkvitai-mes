@@ -207,3 +207,23 @@
   Evidence: psql validation commands for mt_events failed with 'command not found: psql'
   Impact: Direct SQL verification of valuation stream rows and schema-version payloads could not be performed in this environment.
   Proposed resolution: Re-run mt_events SQL checks in a DB-enabled shell/container with PostgreSQL client tools installed.
+- Timestamp: 2026-02-11T06:45:06Z
+  TaskId: PRD-1512
+  Type: INCONSISTENCY
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S2.md:361, docs/prod-ready/prod-ready-tasks-PHASE15-S2.md:465
+  Impact: Approval rule text says CFO approval is required for impact > $10,000, but acceptance scenario expects CFO approval at exactly $10,000.
+  Proposed resolution: Clarify threshold boundary in the task (either "> $10,000" or ">= $10,000") and align validation and scenario text.
+
+- Timestamp: 2026-02-11T06:45:06Z
+  TaskId: PRD-1512
+  Type: RISK
+  Evidence: src/LKvitai.MES.Api/Services/ValuationCommandHandlers.cs:94, src/LKvitai.MES.Api/Services/ValuationCommandHandlers.cs:102
+  Impact: Approval authorization is derived from the current authenticated user roles, while ApproverId is treated as a required marker only; this can diverge from a strict "approver identity must hold role" workflow.
+  Proposed resolution: Resolve ApproverId via identity/user-role lookup and enforce approval role on that principal (not just current caller).
+
+- Timestamp: 2026-02-11T06:45:06Z
+  TaskId: PRD-1512
+  Type: TEST-GAP
+  Evidence: psql --version failed with "command not found: psql"; curl POST http://localhost:5000/api/warehouse/v1/valuation/1/adjust-cost returned 403
+  Impact: Task-specified SQL event verification and full authenticated API workflow validation were not completed end-to-end in this environment.
+  Proposed resolution: Re-run documented curl + mt_events SQL checks in an environment with PostgreSQL client tools and authenticated API access.

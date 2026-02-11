@@ -28,6 +28,23 @@ public class Valuation
         return $"valuation-{itemId:D}".ToLowerInvariant();
     }
 
+    public static string StreamIdFor(int itemId)
+    {
+        return StreamIdFor(ToValuationItemId(itemId));
+    }
+
+    public static Guid ToValuationItemId(int itemId)
+    {
+        if (itemId <= 0)
+        {
+            throw new DomainException(DomainErrorCodes.ValidationError, "ItemId must be greater than zero.");
+        }
+
+        Span<byte> bytes = stackalloc byte[16];
+        BitConverter.TryWriteBytes(bytes, itemId);
+        return new Guid(bytes);
+    }
+
     public ValuationInitialized Initialize(
         Guid itemId,
         decimal initialUnitCost,
