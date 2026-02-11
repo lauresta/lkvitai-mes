@@ -33,26 +33,25 @@ a, .btn-link {
     color: #ffffff !important;
     border-radius: 0.375rem;
     text-decoration: none;
-    transition: color 0.15s ease, text-decoration-color 0.15s ease;
+    transition: color 0.15s ease, background-color 0.15s ease;
 }
 
 .sidebar .nav-link:hover,
 .sidebar .nav-link:focus {
     color: #ffffff !important;
     text-decoration: none;
+    background-color: rgba(255, 255, 255, 0.08);
 }
 
 .sidebar .nav-link.active {
-    color: #ffffff !important;
+    color: #facc15 !important;
     background-color: transparent !important;
-    font-weight: 700;
-    text-decoration: underline;
-    text-decoration-thickness: 2px;
-    text-underline-offset: 3px;
+    font-weight: 500;
+    text-decoration: none;
 }
 
 .sidebar .nav-link.active i {
-    color: #ffffff !important;
+    color: #facc15 !important;
 }
 
 .valid.modified:not([type=checkbox]) {

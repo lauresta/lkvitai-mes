@@ -131,7 +131,7 @@ public sealed class WarehouseVisualizationController : ControllerBase
 
         var layout = await LoadLayoutAsync(warehouseCode, cancellationToken);
 
-        var locations = await EfAsync.ToListAsync(
+        var locationsWithCoordinates = await EfAsync.ToListAsync(
             _dbContext.Locations
                 .AsNoTracking()
                 .Where(x =>
@@ -142,7 +142,49 @@ public sealed class WarehouseVisualizationController : ControllerBase
                 .OrderBy(x => x.Code),
             cancellationToken);
 
-        var locationCodes = locations.Select(x => x.Code).ToArray();
+        var visualizationLocations = locationsWithCoordinates
+            .Select(location => new VisualizationLocationSeed(
+                location,
+                location.CoordinateX!.Value,
+                location.CoordinateY!.Value,
+                location.CoordinateZ!.Value))
+            .ToList();
+
+        if (visualizationLocations.Count == 0)
+        {
+            var fallbackLocations = await EfAsync.ToListAsync(
+                _dbContext.Locations
+                    .AsNoTracking()
+                    .Where(x => !x.IsVirtual)
+                    .OrderBy(x => x.Code),
+                cancellationToken);
+
+            if (fallbackLocations.Count == 0)
+            {
+                fallbackLocations = await EfAsync.ToListAsync(
+                    _dbContext.Locations
+                        .AsNoTracking()
+                        .OrderBy(x => x.Code),
+                    cancellationToken);
+            }
+
+            visualizationLocations = fallbackLocations
+                .Select((location, index) => new VisualizationLocationSeed(
+                    location,
+                    location.CoordinateX ?? (index % 12) + 1,
+                    location.CoordinateY ?? ((index / 12) % 12) + 1,
+                    location.CoordinateZ ?? (index / 144) + 1))
+                .ToList();
+
+            if (visualizationLocations.Count > 0)
+            {
+                _logger.LogWarning(
+                    "3D API fallback enabled: no locations with coordinates; generated auto-layout for {LocationCount} locations",
+                    visualizationLocations.Count);
+            }
+        }
+
+        var locationCodes = visualizationLocations.Select(x => x.Location.Code).ToArray();
 
         await using var session = _documentStore.QuerySession();
         var stockCandidates = await MartenAsync.ToListAsync(
@@ -181,8 +223,9 @@ public sealed class WarehouseVisualizationController : ControllerBase
                 x => x.ToList(),
                 StringComparer.OrdinalIgnoreCase);
 
-        var bins = locations.Select(location =>
+        var bins = visualizationLocations.Select(node =>
         {
+            var location = node.Location;
             var hasHardLock = hardLockByLocation.TryGetValue(location.Code, out var hardLockedQty) &&
                               hardLockedQty > 0m;
             var onHandQty = qtyByLocation.GetValueOrDefault(location.Code, 0m);
@@ -193,9 +236,9 @@ public sealed class WarehouseVisualizationController : ControllerBase
             return new VisualizationBinResponse(
                 location.Code,
                 new VisualizationCoordinateResponse(
-                    location.CoordinateX!.Value,
-                    location.CoordinateY!.Value,
-                    location.CoordinateZ!.Value),
+                    node.X,
+                    node.Y,
+                    node.Z),
                 new VisualizationCapacityResponse(location.CapacityWeight, location.CapacityVolume),
                 status,
                 color,
@@ -331,6 +374,12 @@ public sealed class WarehouseVisualizationController : ControllerBase
                 .ToList(),
             layout.UpdatedAt);
     }
+
+    private sealed record VisualizationLocationSeed(
+        Location Location,
+        decimal X,
+        decimal Y,
+        decimal Z);
 
     private ObjectResult ValidationFailure(string detail)
     {

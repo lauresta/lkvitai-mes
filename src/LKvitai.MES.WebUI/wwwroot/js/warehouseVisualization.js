@@ -34,7 +34,7 @@
         }
 
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x0b1220);
+        scene.background = new THREE.Color(0xf8f9fa);
 
         const width = Math.max(container.clientWidth, 300);
         const height = Math.max(container.clientHeight, 300);
@@ -53,12 +53,12 @@
         controls.target.set(0, 0, 0);
         controls.update();
 
-        scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+        scene.add(new THREE.AmbientLight(0xffffff, 0.95));
         const keyLight = new THREE.DirectionalLight(0xffffff, 0.8);
         keyLight.position.set(30, 60, 20);
         scene.add(keyLight);
 
-        const gridHelper = new THREE.GridHelper(240, 40, 0x334155, 0x1f2937);
+        const gridHelper = new THREE.GridHelper(240, 40, 0xbfc5cd, 0xe4e7eb);
         scene.add(gridHelper);
 
         const raycaster = new THREE.Raycaster();
