@@ -25,6 +25,31 @@
         return Number.isNaN(parsed) ? 0x999999 : parsed;
     }
 
+    function clamp(value, min, max) {
+        return Math.min(max, Math.max(min, value));
+    }
+
+    function computeMinDistance(points) {
+        if (!points || points.length < 2) {
+            return Number.POSITIVE_INFINITY;
+        }
+
+        let minDistance = Number.POSITIVE_INFINITY;
+        for (let i = 0; i < points.length - 1; i += 1) {
+            for (let j = i + 1; j < points.length; j += 1) {
+                const dx = points[i].x - points[j].x;
+                const dy = points[i].y - points[j].y;
+                const dz = points[i].z - points[j].z;
+                const distance = Math.sqrt((dx * dx) + (dy * dy) + (dz * dz));
+                if (distance > 0 && distance < minDistance) {
+                    minDistance = distance;
+                }
+            }
+        }
+
+        return minDistance;
+    }
+
     function dispose(containerId) {
         const context = contexts[containerId];
         if (!context) {
@@ -108,7 +133,9 @@
                 bin,
                 x: Number(bin.coordinates?.x || 0),
                 y: Number(bin.coordinates?.z || 0),
-                z: Number(bin.coordinates?.y || 0)
+                z: Number(bin.coordinates?.y || 0),
+                capacityVolume: Number(bin.capacity?.volume || 0),
+                capacityWeight: Number(bin.capacity?.weight || 0)
             }));
 
             const xs = normalizedBins.map((x) => x.x);
@@ -127,10 +154,26 @@
             const centerZ = (minZ + maxZ) / 2;
             const maxSpan = Math.max(maxX - minX, maxY - minY, maxZ - minZ, 1);
             const cameraDistance = Math.max(12, maxSpan * 2.4);
-            const cubeSize = maxSpan <= 1 ? 1.8 : maxSpan < 4 ? 1.2 : 0.95;
+            const minDistance = computeMinDistance(normalizedBins);
+
+            // Base footprint is limited by nearest-neighbor distance to avoid overlap.
+            const overlapSafeFootprint = Number.isFinite(minDistance)
+                ? clamp(minDistance * 0.45, 0.28, 1.4)
+                : 0.9;
+            const baseFootprint = maxSpan <= 1
+                ? Math.min(overlapSafeFootprint, 0.8)
+                : maxSpan < 4
+                    ? Math.min(overlapSafeFootprint, 0.9)
+                    : Math.min(overlapSafeFootprint, 1.0);
+
+            const volumeValues = normalizedBins
+                .map((x) => x.capacityVolume)
+                .filter((x) => Number.isFinite(x) && x > 0);
+            const maxVolume = volumeValues.length > 0 ? Math.max(...volumeValues) : 0;
 
             log("render: scene extents computed", {
-                minX, minY, minZ, maxX, maxY, maxZ, centerX, centerY, centerZ, maxSpan, cameraDistance, cubeSize
+                minX, minY, minZ, maxX, maxY, maxZ, centerX, centerY, centerZ, maxSpan, minDistance,
+                cameraDistance, baseFootprint, maxVolume
             });
 
             controls.target.set(centerX, centerY, centerZ);
@@ -150,18 +193,31 @@
             const meshesByCode = {};
             const interactiveMeshes = [];
 
-            normalizedBins.forEach(({ bin, x, y, z }) => {
-                const geometry = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
+            normalizedBins.forEach(({ bin, x, y, z, capacityVolume }) => {
+                // Width/depth stay collision-safe; height reflects volume when available.
+                const footprint = baseFootprint;
+                const volumeRatio = maxVolume > 0 && capacityVolume > 0
+                    ? clamp(capacityVolume / maxVolume, 0.2, 1)
+                    : 0.5;
+                const height = clamp(
+                    footprint * (0.7 + (1.8 * volumeRatio)),
+                    0.25,
+                    2.4);
+
+                const geometry = new THREE.BoxGeometry(footprint, height, footprint);
                 const material = new THREE.MeshStandardMaterial({
                     color: toHexColor(bin.color),
                     metalness: 0.15,
                     roughness: 0.55
                 });
                 const cube = new THREE.Mesh(geometry, material);
-                cube.position.set(x, y, z);
+                cube.position.set(x, y + (height / 2), z);
                 cube.userData = {
                     code: bin.code,
-                    baseColor: toHexColor(bin.color)
+                    baseColor: toHexColor(bin.color),
+                    footprint,
+                    height,
+                    capacityVolume
                 };
                 scene.add(cube);
                 interactiveMeshes.push(cube);
@@ -171,7 +227,13 @@
             log("render: meshes created", {
                 interactiveMeshCount: interactiveMeshes.length,
                 cameraPosition: { x: camera.position.x, y: camera.position.y, z: camera.position.z },
-                target: { x: controls.target.x, y: controls.target.y, z: controls.target.z }
+                target: { x: controls.target.x, y: controls.target.y, z: controls.target.z },
+                sample: interactiveMeshes.slice(0, 5).map((x) => ({
+                    code: x.userData.code,
+                    footprint: x.userData.footprint,
+                    height: x.userData.height,
+                    capacityVolume: x.userData.capacityVolume
+                }))
             });
 
             let selectedCode = null;

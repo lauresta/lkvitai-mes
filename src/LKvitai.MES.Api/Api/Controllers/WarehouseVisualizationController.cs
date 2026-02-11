@@ -270,7 +270,9 @@ public sealed class WarehouseVisualizationController : ControllerBase
                     node.X,
                     node.Y,
                     node.Z),
-                new VisualizationCapacityResponse(location.CapacityWeight, location.CapacityVolume),
+                new VisualizationCapacityResponse(
+                    location.CapacityWeight ?? location.MaxWeight,
+                    location.CapacityVolume ?? location.MaxVolume),
                 status,
                 color,
                 handlingUnitsForLocation.Select(x =>
