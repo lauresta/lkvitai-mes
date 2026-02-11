@@ -1,5 +1,10 @@
+using System.Diagnostics;
+using System.Diagnostics.Metrics;
+using System.Globalization;
+using System.IO.Compression;
 using System.Text;
 using System.Text.Json;
+using CsvHelper;
 using Hangfire;
 using LKvitai.MES.Application.Ports;
 using LKvitai.MES.Contracts.Events;
@@ -8,6 +13,8 @@ using LKvitai.MES.Domain.Entities;
 using LKvitai.MES.Infrastructure.Persistence;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
+using Polly;
+using Polly.Retry;
 
 namespace LKvitai.MES.Api.Services;
 
@@ -81,6 +88,21 @@ public interface IAgnumExportOrchestrator
 
 public sealed class AgnumExportOrchestrator : IAgnumExportOrchestrator
 {
+    private static readonly Meter AgnumMeter = new("LKvitai.MES.Integration.Agnum");
+    private static readonly Histogram<double> CsvGenerationDurationMs =
+        AgnumMeter.CreateHistogram<double>("agnum_csv_generation_duration_ms");
+    private static readonly Counter<long> ApiCallsTotal =
+        AgnumMeter.CreateCounter<long>("agnum_api_calls_total");
+    private static readonly Histogram<double> ApiLatencyMs =
+        AgnumMeter.CreateHistogram<double>("agnum_api_latency_ms");
+    private static readonly JsonSerializerOptions ApiJsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    };
+
+    private const string ApiImportPath = "api/v1/inventory/import";
+    private const int MaxPayloadBytesBeforeCompression = 10 * 1024 * 1024;
+
     private readonly WarehouseDbContext _dbContext;
     private readonly IEventBus _eventBus;
     private readonly IHttpClientFactory _httpClientFactory;
@@ -181,17 +203,22 @@ public sealed class AgnumExportOrchestrator : IAgnumExportOrchestrator
                 x.TotalValue))
                 .ToList();
 
-            var payload = config.Format switch
-            {
-                AgnumExportFormat.JsonApi => BuildJson(exportRows, history.ExportNumber),
-                _ => BuildCsv(exportRows)
-            };
+            var csvPayload = BuildCsv(exportRows);
 
             var filePath = await WritePayloadAsync(
                 history.ExportNumber,
-                config.Format,
-                payload,
+                AgnumExportFormat.Csv,
+                csvPayload,
                 cancellationToken);
+
+            history.RowCount = exportRows.Count;
+            history.FilePath = filePath;
+            history.ErrorMessage = null;
+
+            _logger.LogInformation(
+                "CSV generated: {RowCount} rows, FilePath {FilePath}",
+                exportRows.Count,
+                filePath);
 
             if (config.Format == AgnumExportFormat.JsonApi &&
                 !string.IsNullOrWhiteSpace(config.ApiEndpoint))
@@ -199,14 +226,11 @@ public sealed class AgnumExportOrchestrator : IAgnumExportOrchestrator
                 await SendToAgnumApiAsync(
                     config,
                     history.ExportNumber,
-                    payload,
+                    exportRows,
                     cancellationToken);
             }
 
             history.Status = AgnumExportStatus.Success;
-            history.RowCount = exportRows.Count;
-            history.FilePath = filePath;
-            history.ErrorMessage = null;
 
             await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -300,28 +324,80 @@ public sealed class AgnumExportOrchestrator : IAgnumExportOrchestrator
     private async Task SendToAgnumApiAsync(
         AgnumExportConfig config,
         string exportNumber,
-        string payload,
+        IReadOnlyCollection<AgnumExportRow> rows,
         CancellationToken cancellationToken)
     {
         var client = _httpClientFactory.CreateClient("AgnumExportApi");
-        using var request = new HttpRequestMessage(HttpMethod.Post, config.ApiEndpoint)
-        {
-            Content = new StringContent(payload, Encoding.UTF8, "application/json")
-        };
-        request.Headers.Add("X-Export-ID", exportNumber);
-
         var apiKey = _secretProtector.Unprotect(config.ApiKey);
-        if (!string.IsNullOrWhiteSpace(apiKey))
-        {
-            request.Headers.Add("Authorization", $"Bearer {apiKey}");
-        }
 
-        using var response = await client.SendAsync(request, cancellationToken);
-        if (!response.IsSuccessStatusCode)
+        var endpoint = BuildImportEndpoint(config.ApiEndpoint!);
+        var payloads = BuildApiPayloads(rows).ToList();
+
+        var retryPipeline = new ResiliencePipelineBuilder()
+            .AddRetry(new RetryStrategyOptions
+            {
+                ShouldHandle = new PredicateBuilder()
+                    .Handle<HttpRequestException>()
+                    .Handle<InvalidOperationException>(),
+                MaxRetryAttempts = 3,
+                Delay = TimeSpan.FromSeconds(1),
+                BackoffType = DelayBackoffType.Exponential,
+                UseJitter = false,
+                OnRetry = args =>
+                {
+                    _logger.LogWarning(
+                        args.Outcome.Exception,
+                        "Agnum API call retry {Attempt}/3 after {DelaySeconds}s",
+                        args.AttemptNumber + 1,
+                        args.RetryDelay.TotalSeconds);
+                    return ValueTask.CompletedTask;
+                }
+            })
+            .Build();
+
+        foreach (var payload in payloads)
         {
-            var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
-            throw new InvalidOperationException(
-                $"Agnum API request failed with status {(int)response.StatusCode}: {responseBody}");
+            var payloadJson = JsonSerializer.Serialize(payload, ApiJsonOptions);
+            var startedAt = Stopwatch.GetTimestamp();
+
+            try
+            {
+                await retryPipeline.ExecuteAsync(async token =>
+                {
+                    using var request = new HttpRequestMessage(HttpMethod.Post, endpoint)
+                    {
+                        Content = new StringContent(payloadJson, Encoding.UTF8, "application/json")
+                    };
+                    request.Headers.Add("X-Export-ID", exportNumber);
+
+                    if (!string.IsNullOrWhiteSpace(apiKey))
+                    {
+                        request.Headers.Add("Authorization", $"Bearer {apiKey}");
+                    }
+
+                    using var response = await client.SendAsync(request, token);
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        var responseBody = await response.Content.ReadAsStringAsync(token);
+                        throw new InvalidOperationException(
+                            $"Agnum API request failed with status {(int)response.StatusCode}: {responseBody}");
+                    }
+                }, cancellationToken);
+
+                ApiCallsTotal.Add(1, new KeyValuePair<string, object?>("status", "success"));
+                ApiLatencyMs.Record(Stopwatch.GetElapsedTime(startedAt).TotalMilliseconds);
+
+                _logger.LogInformation(
+                    "Agnum API call succeeded: ExportId {ExportId}, AccountCode {AccountCode}",
+                    exportNumber,
+                    payload.AccountCode);
+            }
+            catch (Exception)
+            {
+                ApiCallsTotal.Add(1, new KeyValuePair<string, object?>("status", "error"));
+                ApiLatencyMs.Record(Stopwatch.GetElapsedTime(startedAt).TotalMilliseconds);
+                throw;
+            }
         }
     }
 
@@ -336,50 +412,69 @@ public sealed class AgnumExportOrchestrator : IAgnumExportOrchestrator
         var directory = Path.Combine(_exportRootPath, dateFolder);
         Directory.CreateDirectory(directory);
 
+        var payloadBytes = Encoding.UTF8.GetBytes(payload);
+        if (payloadBytes.Length > MaxPayloadBytesBeforeCompression)
+        {
+            var compressedFileName = $"{exportNumber}.{extension}.gz";
+            var compressedPath = Path.Combine(directory, compressedFileName);
+
+            await using var fileStream = File.Create(compressedPath);
+            await using var gzipStream = new GZipStream(fileStream, CompressionLevel.SmallestSize);
+            await gzipStream.WriteAsync(payloadBytes, cancellationToken);
+
+            _logger.LogInformation(
+                "Agnum payload compressed: ExportNumber {ExportNumber}, OriginalBytes {OriginalBytes}, FilePath {FilePath}",
+                exportNumber,
+                payloadBytes.Length,
+                compressedPath);
+
+            return compressedPath;
+        }
+
         var fileName = $"{exportNumber}.{extension}";
         var filePath = Path.Combine(directory, fileName);
-        await File.WriteAllTextAsync(filePath, payload, cancellationToken);
+        await File.WriteAllBytesAsync(filePath, payloadBytes, cancellationToken);
         return filePath;
     }
 
     private static string BuildCsv(IReadOnlyCollection<AgnumExportRow> rows)
     {
-        var sb = new StringBuilder();
-        sb.AppendLine("ExportDate,AccountCode,SKU,ItemName,Quantity,UnitCost,OnHandValue");
-        foreach (var row in rows)
-        {
-            sb.Append(row.ExportDate.ToString("yyyy-MM-dd")).Append(',');
-            sb.Append(EscapeCsv(row.AccountCode)).Append(',');
-            sb.Append(EscapeCsv(row.Sku)).Append(',');
-            sb.Append(EscapeCsv(row.ItemName)).Append(',');
-            sb.Append(row.Quantity.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture)).Append(',');
-            sb.Append(row.UnitCost.ToString("0.####", System.Globalization.CultureInfo.InvariantCulture)).Append(',');
-            sb.Append(row.OnHandValue.ToString("0.####", System.Globalization.CultureInfo.InvariantCulture));
-            sb.AppendLine();
-        }
-
-        return sb.ToString();
+        var startedAt = Stopwatch.GetTimestamp();
+        using var writer = new StringWriter(CultureInfo.InvariantCulture);
+        using var csv = new CsvWriter(writer, CultureInfo.InvariantCulture);
+        csv.WriteRecords(rows.Select(x => new AgnumCsvRow(
+            x.ExportDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+            x.AccountCode,
+            x.Sku,
+            x.ItemName,
+            x.Quantity,
+            x.UnitCost,
+            x.OnHandValue)));
+        CsvGenerationDurationMs.Record(Stopwatch.GetElapsedTime(startedAt).TotalMilliseconds);
+        return writer.ToString();
     }
 
-    private static string BuildJson(IReadOnlyCollection<AgnumExportRow> rows, string exportNumber)
+    private static string BuildImportEndpoint(string apiEndpoint)
     {
-        var payload = new
-        {
-            exportNumber,
-            exportedAt = DateTime.UtcNow,
-            rows
-        };
-        return JsonSerializer.Serialize(payload);
+        var baseUri = new Uri(apiEndpoint.EndsWith("/", StringComparison.Ordinal)
+            ? apiEndpoint
+            : $"{apiEndpoint}/");
+        return new Uri(baseUri, ApiImportPath).ToString();
     }
 
-    private static string EscapeCsv(string value)
+    private static IEnumerable<AgnumApiPayload> BuildApiPayloads(IReadOnlyCollection<AgnumExportRow> rows)
     {
-        if (value.Contains(',') || value.Contains('"') || value.Contains('\n'))
-        {
-            return $"\"{value.Replace("\"", "\"\"")}\"";
-        }
-
-        return value;
+        return rows
+            .GroupBy(x => x.AccountCode, StringComparer.OrdinalIgnoreCase)
+            .Select(group => new AgnumApiPayload(
+                group.First().ExportDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                group.Key,
+                group.Select(x => new AgnumApiItemPayload(
+                    x.Sku,
+                    x.ItemName,
+                    x.Quantity,
+                    x.UnitCost,
+                    x.OnHandValue)).ToList()));
     }
 
     private static AgnumExportHistory CreateHistory(Guid configId, string trigger)
@@ -405,6 +500,27 @@ public sealed class AgnumExportOrchestrator : IAgnumExportOrchestrator
         decimal Quantity,
         decimal UnitCost,
         decimal OnHandValue);
+
+    private sealed record AgnumCsvRow(
+        string ExportDate,
+        string AccountCode,
+        string SKU,
+        string ItemName,
+        decimal Quantity,
+        decimal UnitCost,
+        decimal OnHandValue);
+
+    private sealed record AgnumApiPayload(
+        string ExportDate,
+        string AccountCode,
+        IReadOnlyCollection<AgnumApiItemPayload> Items);
+
+    private sealed record AgnumApiItemPayload(
+        string Sku,
+        string Name,
+        decimal Qty,
+        decimal Cost,
+        decimal Value);
 }
 
 public sealed class AgnumExportRecurringJob

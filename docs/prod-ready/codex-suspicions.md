@@ -267,3 +267,23 @@
   Evidence: curl PUT/POST/GET /api/warehouse/v1/agnum/* returned 403; curl http://localhost:5000/hangfire returned 403
   Impact: Task-specified authenticated API and Hangfire dashboard validation could not be completed end-to-end in this environment.
   Proposed resolution: Re-run Agnum API + dashboard checks with valid auth context and a running local API profile.
+- Timestamp: 2026-02-11T07:13:04Z
+  TaskId: PRD-1515
+  Type: INCONSISTENCY
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S2.md:1136, src/LKvitai.MES.Api/LKvitai.MES.Api.csproj:25, dotnet build output (NU1605 downgrade when Polly 7.2.4 was introduced)
+  Impact: Task notes require Polly retry, but this solution already depends on Polly 8.x transitively (via Marten); adding Polly 7.x causes restore failure.
+  Proposed resolution: Keep Polly usage on v8 APIs (ResiliencePipeline) and pin direct package reference to 8.2.1.
+
+- Timestamp: 2026-02-11T07:13:04Z
+  TaskId: PRD-1515
+  Type: TEST-GAP
+  Evidence: curl -X POST http://localhost:5000/api/warehouse/v1/agnum/export returned HTTP 403
+  Impact: Task-specified manual API export validation could not be verified without authenticated API context.
+  Proposed resolution: Re-run export trigger validation with Inventory Accountant/Manager auth credentials.
+
+- Timestamp: 2026-02-11T07:13:04Z
+  TaskId: PRD-1515
+  Type: INCONSISTENCY
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S2.md:1151, src/LKvitai.MES.Api/Services/AgnumExportServices.cs:117, ls /agnum-exports/2026-02-10/ failed (path missing)
+  Impact: Validation path in task doc assumes absolute `/agnum-exports/...`, while implementation default root is configured via `Agnum:ExportRootPath` (defaults under app base `exports/agnum`).
+  Proposed resolution: Validate file existence using configured export root path (or set `Agnum:ExportRootPath=/agnum-exports` in runtime config).

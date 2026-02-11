@@ -11,6 +11,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using System.Net;
 using Xunit;
 
 namespace LKvitai.MES.Tests.Unit;
@@ -19,6 +20,7 @@ public class AgnumExportServicesTests
 {
     [Fact]
     [Trait("Category", "AgnumExport")]
+    [Trait("Category", "AgnumCSV")]
     public async Task ExecuteAsync_WhenConfigMissing_ShouldFail()
     {
         await using var db = CreateDbContext();
@@ -32,6 +34,7 @@ public class AgnumExportServicesTests
 
     [Fact]
     [Trait("Category", "AgnumExport")]
+    [Trait("Category", "AgnumCSV")]
     public async Task ExecuteAsync_WhenCsvExport_ShouldPersistHistoryAndFile()
     {
         var exportRoot = Path.Combine(Path.GetTempPath(), $"agnum-export-tests-{Guid.NewGuid():N}");
@@ -61,8 +64,10 @@ public class AgnumExportServicesTests
 
     [Fact]
     [Trait("Category", "AgnumExport")]
+    [Trait("Category", "AgnumCSV")]
     public async Task ExecuteAsync_WhenJsonApiFails_ShouldReturnRetrying()
     {
+        var exportRoot = Path.Combine(Path.GetTempPath(), $"agnum-export-tests-{Guid.NewGuid():N}");
         await using var db = CreateDbContext();
         SeedJsonApiExportData(db);
 
@@ -73,13 +78,80 @@ public class AgnumExportServicesTests
         var sut = CreateOrchestrator(
             db,
             new StubEventBus(),
-            new StubHttpClientFactory(failingClient));
+            new StubHttpClientFactory(failingClient),
+            exportRoot);
 
         var result = await sut.ExecuteAsync("MANUAL", retryAttempt: 0);
 
         result.IsSuccess.Should().BeFalse();
         result.Status.Should().Be(AgnumExportStatus.Retrying);
         result.HistoryId.Should().NotBeNull();
+        result.FilePath.Should().NotBeNullOrWhiteSpace();
+        File.Exists(result.FilePath!).Should().BeTrue();
+    }
+
+    [Fact]
+    [Trait("Category", "AgnumExport")]
+    [Trait("Category", "AgnumCSV")]
+    public async Task ExecuteAsync_WhenJsonApiSucceeds_ShouldSendGroupedPayloadWithHeaders()
+    {
+        await using var db = CreateDbContext();
+        SeedJsonApiGroupedData(db);
+
+        var handler = new RecordingSuccessHandler();
+        var client = new HttpClient(handler)
+        {
+            BaseAddress = new Uri("http://localhost")
+        };
+        var sut = CreateOrchestrator(
+            db,
+            new StubEventBus(),
+            new StubHttpClientFactory(client));
+
+        var result = await sut.ExecuteAsync("MANUAL", retryAttempt: 0);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Status.Should().Be(AgnumExportStatus.Success);
+        handler.Requests.Should().HaveCount(2);
+
+        foreach (var request in handler.Requests)
+        {
+            request.RequestUri!.AbsoluteUri.EndsWith("/api/v1/inventory/import", StringComparison.Ordinal)
+                .Should().BeTrue();
+
+            request.Headers.TryGetValues("X-Export-ID", out var values).Should().BeTrue();
+            values!.Single().Should().Be(result.ExportNumber);
+
+            request.Headers.Authorization.Should().NotBeNull();
+            request.Headers.Authorization!.Scheme.Should().Be("Bearer");
+            request.Headers.Authorization.Parameter.Should().Be("token");
+        }
+
+        handler.Bodies.Should().Contain(x => x.Contains("\"accountCode\":\"1500-RAW\"", StringComparison.Ordinal));
+        handler.Bodies.Should().Contain(x => x.Contains("\"accountCode\":\"1510-FG\"", StringComparison.Ordinal));
+        handler.Bodies.Should().OnlyContain(x => x.Contains("\"items\":[", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    [Trait("Category", "AgnumExport")]
+    [Trait("Category", "AgnumCSV")]
+    public async Task ExecuteAsync_WhenCsvPayloadExceedsLimit_ShouldWriteCompressedCsv()
+    {
+        var exportRoot = Path.Combine(Path.GetTempPath(), $"agnum-export-tests-{Guid.NewGuid():N}");
+        await using var db = CreateDbContext();
+        SeedCsvExportData(db, new string('X', 10 * 1024 * 1024));
+
+        var sut = CreateOrchestrator(
+            db,
+            new StubEventBus(),
+            new StubHttpClientFactory(new HttpClient()),
+            exportRoot);
+
+        var result = await sut.ExecuteAsync("MANUAL", retryAttempt: 0);
+
+        result.IsSuccess.Should().BeTrue();
+        result.FilePath.Should().EndWith(".csv.gz");
+        File.Exists(result.FilePath!).Should().BeTrue();
     }
 
     [Fact]
@@ -159,7 +231,7 @@ public class AgnumExportServicesTests
         return NullLoggerFactory.Instance.CreateLogger<T>();
     }
 
-    private static void SeedCsvExportData(WarehouseDbContext db)
+    private static void SeedCsvExportData(WarehouseDbContext db, string? itemName = null)
     {
         db.AgnumExportConfigs.Add(new AgnumExportConfig
         {
@@ -185,7 +257,7 @@ public class AgnumExportServicesTests
             Id = Guid.NewGuid(),
             ItemId = 5001,
             ItemSku = "RM-0500",
-            ItemName = "Raw Material 500",
+            ItemName = itemName ?? "Raw Material 500",
             CategoryName = "Raw Materials",
             Qty = 10m,
             UnitCost = 2.5m,
@@ -235,6 +307,64 @@ public class AgnumExportServicesTests
         db.SaveChanges();
     }
 
+    private static void SeedJsonApiGroupedData(WarehouseDbContext db)
+    {
+        db.AgnumExportConfigs.Add(new AgnumExportConfig
+        {
+            Id = Guid.NewGuid(),
+            Scope = AgnumExportScope.ByCategory,
+            Schedule = "0 23 * * *",
+            Format = AgnumExportFormat.JsonApi,
+            ApiEndpoint = "http://localhost/agnum-api/",
+            ApiKey = "token",
+            IsActive = true,
+            UpdatedAt = DateTimeOffset.UtcNow,
+            Mappings =
+            [
+                new AgnumMapping
+                {
+                    SourceType = "CATEGORY",
+                    SourceValue = "Raw Materials",
+                    AgnumAccountCode = "1500-RAW"
+                },
+                new AgnumMapping
+                {
+                    SourceType = "CATEGORY",
+                    SourceValue = "Finished Goods",
+                    AgnumAccountCode = "1510-FG"
+                }
+            ]
+        });
+
+        db.OnHandValues.AddRange(
+            new OnHandValue
+            {
+                Id = Guid.NewGuid(),
+                ItemId = 5101,
+                ItemSku = "RM-1001",
+                ItemName = "Raw Material 1001",
+                CategoryName = "Raw Materials",
+                Qty = 5m,
+                UnitCost = 2m,
+                TotalValue = 10m,
+                LastUpdated = DateTimeOffset.UtcNow
+            },
+            new OnHandValue
+            {
+                Id = Guid.NewGuid(),
+                ItemId = 5102,
+                ItemSku = "FG-2001",
+                ItemName = "Finished Good 2001",
+                CategoryName = "Finished Goods",
+                Qty = 7m,
+                UnitCost = 3m,
+                TotalValue = 21m,
+                LastUpdated = DateTimeOffset.UtcNow
+            });
+
+        db.SaveChanges();
+    }
+
     private sealed class StubEventBus : IEventBus
     {
         public Task PublishAsync<T>(T message, CancellationToken ct = default)
@@ -273,6 +403,41 @@ public class AgnumExportServicesTests
             {
                 Content = new StringContent("service unavailable")
             });
+        }
+    }
+
+    private sealed class RecordingSuccessHandler : HttpMessageHandler
+    {
+        public List<HttpRequestMessage> Requests { get; } = [];
+
+        public List<string> Bodies { get; } = [];
+
+        protected override async Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            var body = request.Content is null
+                ? string.Empty
+                : await request.Content.ReadAsStringAsync(cancellationToken);
+
+            Requests.Add(CloneRequest(request));
+            Bodies.Add(body);
+
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("{\"status\":\"ok\"}")
+            };
+        }
+
+        private static HttpRequestMessage CloneRequest(HttpRequestMessage source)
+        {
+            var clone = new HttpRequestMessage(source.Method, source.RequestUri);
+            foreach (var header in source.Headers)
+            {
+                clone.Headers.TryAddWithoutValidation(header.Key, header.Value);
+            }
+
+            return clone;
         }
     }
 }
