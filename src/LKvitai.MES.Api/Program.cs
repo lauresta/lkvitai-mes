@@ -88,6 +88,7 @@ builder.Services.AddWarehouseDbContext(builder.Configuration);
 builder.Services.AddHostedService<LKvitai.MES.Infrastructure.Outbox.OutboxProcessor>();
 builder.Services.AddHostedService<SchemaValidationService>();
 builder.Services.AddHostedService<ReservationExpiryJob>();
+builder.Services.AddHostedService<IdempotencyCleanupHostedService>();
 
 // Infrastructure services (projection rebuild, etc.)
 builder.Services.AddInfrastructureServices();
@@ -115,6 +116,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseMiddleware<ProblemDetailsExceptionMiddleware>();
+app.UseMiddleware<IdempotencyReplayHeaderMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

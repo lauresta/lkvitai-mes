@@ -39,6 +39,8 @@ public class IdempotencyBehavior<TRequest, TResponse> : IPipelineBehavior<TReque
         RequestHandlerDelegate<TResponse> next,
         CancellationToken cancellationToken)
     {
+        IdempotencyExecutionContext.Clear();
+
         var commandId = request.CommandId;
         var commandType = typeof(TRequest).Name;
 
@@ -51,6 +53,7 @@ public class IdempotencyBehavior<TRequest, TResponse> : IPipelineBehavior<TReque
                 _logger.LogInformation(
                     "Command {CommandId} ({CommandType}) already completed; returning cached OK",
                     commandId, commandType);
+                IdempotencyExecutionContext.MarkReplay();
                 return (TResponse)(object)Result.Ok();
 
             case CommandClaimResult.InProgress:

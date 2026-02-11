@@ -174,6 +174,14 @@ public sealed class SKUSequence
     public byte[] RowVersion { get; set; } = Array.Empty<byte>();
 }
 
+public sealed class EventProcessingCheckpoint
+{
+    public string HandlerName { get; set; } = string.Empty;
+    public string StreamId { get; set; } = string.Empty;
+    public long LastEventNumber { get; set; }
+    public DateTimeOffset ProcessedAt { get; set; } = DateTimeOffset.UtcNow;
+}
+
 public sealed class PickTask : AuditableEntity
 {
     public Guid TaskId { get; set; } = Guid.NewGuid();

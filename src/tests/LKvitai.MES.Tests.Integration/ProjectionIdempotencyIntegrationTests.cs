@@ -9,6 +9,7 @@ using Xunit;
 
 namespace LKvitai.MES.Tests.Integration;
 
+[Trait("Category", "Idempotency")]
 public class ProjectionIdempotencyIntegrationTests : IAsyncLifetime
 {
     private PostgreSqlContainer? _postgres;

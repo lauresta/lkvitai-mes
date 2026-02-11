@@ -29,6 +29,7 @@ namespace LKvitai.MES.Tests.Integration;
 ///
 /// Opt-in: TESTCONTAINERS_ENABLED=1
 /// </summary>
+[Trait("Category", "Idempotency")]
 public class ReceiveGoodsIntegrationTests : IAsyncLifetime
 {
     private PostgreSqlContainer? _postgres;

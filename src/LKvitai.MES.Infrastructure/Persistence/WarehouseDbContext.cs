@@ -46,6 +46,7 @@ public class WarehouseDbContext : DbContext
     public DbSet<AdjustmentReasonCode> AdjustmentReasonCodes => Set<AdjustmentReasonCode>();
     public DbSet<SerialNumber> SerialNumbers => Set<SerialNumber>();
     public DbSet<SKUSequence> SKUSequences => Set<SKUSequence>();
+    public DbSet<EventProcessingCheckpoint> EventProcessingCheckpoints => Set<EventProcessingCheckpoint>();
     public DbSet<PickTask> PickTasks => Set<PickTask>();
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -324,6 +325,17 @@ public class WarehouseDbContext : DbContext
             entity.HasOne<Location>().WithMany().HasForeignKey(e => e.ToLocationId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne<Lot>().WithMany().HasForeignKey(e => e.LotId).OnDelete(DeleteBehavior.Restrict);
             entity.ToTable(t => t.HasCheckConstraint("ck_pick_tasks_status", "\"Status\" IN ('Pending','Completed','Cancelled')"));
+        });
+
+        modelBuilder.Entity<EventProcessingCheckpoint>(entity =>
+        {
+            entity.ToTable("event_processing_checkpoints");
+            entity.HasKey(e => new { e.HandlerName, e.StreamId });
+            entity.Property(e => e.HandlerName).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.StreamId).HasMaxLength(500).IsRequired();
+            entity.Property(e => e.LastEventNumber).IsRequired();
+            entity.Property(e => e.ProcessedAt).IsRequired();
+            entity.HasIndex(e => e.ProcessedAt);
         });
     }
 

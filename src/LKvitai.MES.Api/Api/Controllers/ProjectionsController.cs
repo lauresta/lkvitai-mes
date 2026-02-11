@@ -43,6 +43,7 @@ public sealed class ProjectionsController : ControllerBase
 
         var result = await _mediator.Send(new RebuildProjectionCommand
         {
+            CommandId = request.CommandId ?? Guid.NewGuid(),
             ProjectionName = request.ProjectionName.Trim(),
             Verify = true,
             ResetProgress = request.ResetProgress
@@ -143,6 +144,6 @@ public sealed class ProjectionsController : ControllerBase
         };
     }
 
-    public sealed record RebuildProjectionRequestDto(string ProjectionName, bool ResetProgress = false);
+    public sealed record RebuildProjectionRequestDto(string ProjectionName, bool ResetProgress = false, Guid? CommandId = null);
     public sealed record VerifyProjectionRequestDto(string ProjectionName);
 }

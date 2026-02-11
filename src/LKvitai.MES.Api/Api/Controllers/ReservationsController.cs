@@ -75,6 +75,9 @@ public sealed class ReservationsController : ControllerBase
 
         var result = await _mediator.Send(new StartPickingCommand
         {
+            CommandId = request?.CommandId is { } commandId && commandId != Guid.Empty
+                ? commandId
+                : Guid.NewGuid(),
             ReservationId = id,
             OperatorId = Guid.Empty
         }, cancellationToken);
@@ -144,6 +147,7 @@ public sealed class ReservationsController : ControllerBase
 
         var result = await _mediator.Send(new PickStockCommand
         {
+            CommandId = request.CommandId != Guid.Empty ? request.CommandId : Guid.NewGuid(),
             ReservationId = id,
             HandlingUnitId = request.HuId,
             SKU = request.Sku.Trim(),
@@ -183,8 +187,8 @@ public sealed class ReservationsController : ControllerBase
         };
     }
 
-    public sealed record StartPickingRequestDto(Guid ReservationId);
-    public sealed record PickRequestDto(Guid ReservationId, Guid HuId, string Sku, decimal Quantity);
+    public sealed record StartPickingRequestDto(Guid ReservationId, Guid? CommandId = null);
+    public sealed record PickRequestDto(Guid ReservationId, Guid HuId, string Sku, decimal Quantity, Guid CommandId = default);
     public sealed record StartPickingResponseDto(bool Success, string Message);
     public sealed record PickResponseDto(bool Success, string Message);
 }

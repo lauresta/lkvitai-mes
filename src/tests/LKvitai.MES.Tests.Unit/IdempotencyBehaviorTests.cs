@@ -13,6 +13,7 @@ namespace LKvitai.MES.Tests.Unit;
 /// Unit tests for <see cref="IdempotencyBehavior{TRequest, TResponse}"/>.
 /// Uses mock <see cref="IProcessedCommandStore"/> to verify behavior logic in isolation.
 /// </summary>
+[Trait("Category", "Idempotency")]
 public class IdempotencyBehaviorTests
 {
     private readonly Mock<IProcessedCommandStore> _store;
