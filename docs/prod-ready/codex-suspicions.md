@@ -287,3 +287,16 @@
   Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S2.md:1151, src/LKvitai.MES.Api/Services/AgnumExportServices.cs:117, ls /agnum-exports/2026-02-10/ failed (path missing)
   Impact: Validation path in task doc assumes absolute `/agnum-exports/...`, while implementation default root is configured via `Agnum:ExportRootPath` (defaults under app base `exports/agnum`).
   Proposed resolution: Validate file existence using configured export root path (or set `Agnum:ExportRootPath=/agnum-exports` in runtime config).
+- Timestamp: 2026-02-11T07:19:20Z
+  TaskId: PRD-1516
+  Type: TEST-GAP
+  Evidence: curl POST http://localhost:5000/api/warehouse/v1/labels/print returned HTTP 403; curl GET /api/warehouse/v1/labels/preview returned HTTP 403
+  Impact: Task-specified manual API validation for live print/preview flow could not be verified without authenticated API context.
+  Proposed resolution: Re-run label print/preview checks with Operator-or-above auth credentials against a running API instance.
+
+- Timestamp: 2026-02-11T07:19:20Z
+  TaskId: PRD-1516
+  Type: TEST-GAP
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S2.md:1322 (requires Zebra printer or simulator), current environment has no printer/simulator bound on TCP 9100
+  Impact: End-to-end hardware validation of TCP 9100 print latency/retry behavior cannot be fully executed in this environment.
+  Proposed resolution: Run integration checks with a Zebra printer or TCP 9100 simulator and inspect queue/retry/fallback logs.
