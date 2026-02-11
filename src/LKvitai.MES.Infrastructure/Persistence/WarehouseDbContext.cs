@@ -40,6 +40,10 @@ public class WarehouseDbContext : DbContext
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<SalesOrder> SalesOrders => Set<SalesOrder>();
     public DbSet<SalesOrderLine> SalesOrderLines => Set<SalesOrderLine>();
+    public DbSet<OutboundOrder> OutboundOrders => Set<OutboundOrder>();
+    public DbSet<OutboundOrderLine> OutboundOrderLines => Set<OutboundOrderLine>();
+    public DbSet<Shipment> Shipments => Set<Shipment>();
+    public DbSet<ShipmentLine> ShipmentLines => Set<ShipmentLine>();
     public DbSet<SupplierItemMapping> SupplierItemMappings => Set<SupplierItemMapping>();
     public DbSet<Location> Locations => Set<Location>();
     public DbSet<HandlingUnitTypeEntity> HandlingUnitTypes => Set<HandlingUnitTypeEntity>();
@@ -66,6 +70,14 @@ public class WarehouseDbContext : DbContext
             .IncrementsBy(1);
 
         modelBuilder.HasSequence<long>("sales_order_number_seq")
+            .StartsAt(1)
+            .IncrementsBy(1);
+
+        modelBuilder.HasSequence<long>("outbound_order_number_seq")
+            .StartsAt(1)
+            .IncrementsBy(1);
+
+        modelBuilder.HasSequence<long>("shipment_number_seq")
             .StartsAt(1)
             .IncrementsBy(1);
         
@@ -314,6 +326,100 @@ public class WarehouseDbContext : DbContext
                 t.HasCheckConstraint("ck_sales_order_lines_unit_price", "\"UnitPrice\" >= 0");
                 t.HasCheckConstraint("ck_sales_order_lines_line_amount", "\"LineAmount\" >= 0");
             });
+        });
+
+        modelBuilder.Entity<OutboundOrder>(entity =>
+        {
+            entity.ToTable("outbound_orders");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.OrderNumber)
+                .HasMaxLength(50)
+                .IsRequired()
+                .HasDefaultValueSql("'OUT-' || LPAD(nextval('outbound_order_number_seq')::text, 4, '0')");
+            entity.Property(e => e.Type).HasConversion<string>().HasMaxLength(50).IsRequired();
+            entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(50).IsRequired();
+            entity.Property(e => e.OrderDate).IsRequired();
+            entity.Property(e => e.RowVersion).IsRowVersion();
+            entity.Property(e => e.IsDeleted).HasDefaultValue(false);
+            entity.HasIndex(e => e.OrderNumber).IsUnique();
+            entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => e.OrderDate);
+            entity.HasIndex(e => e.ReservationId);
+            entity.HasIndex(e => e.SalesOrderId);
+            entity.HasQueryFilter(e => !e.IsDeleted);
+            entity.HasOne(e => e.SalesOrder)
+                .WithMany()
+                .HasForeignKey(e => e.SalesOrderId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(e => e.Shipment)
+                .WithOne(e => e.OutboundOrder)
+                .HasForeignKey<Shipment>(e => e.OutboundOrderId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<OutboundOrderLine>(entity =>
+        {
+            entity.ToTable("outbound_order_lines");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Qty).HasPrecision(18, 3).IsRequired();
+            entity.Property(e => e.PickedQty).HasPrecision(18, 3).HasDefaultValue(0m);
+            entity.Property(e => e.ShippedQty).HasPrecision(18, 3).HasDefaultValue(0m);
+            entity.HasIndex(e => e.OutboundOrderId);
+            entity.HasOne(e => e.OutboundOrder)
+                .WithMany(e => e.Lines)
+                .HasForeignKey(e => e.OutboundOrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Item)
+                .WithMany()
+                .HasForeignKey(e => e.ItemId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasQueryFilter(e => !e.OutboundOrder!.IsDeleted);
+            entity.ToTable(t =>
+            {
+                t.HasCheckConstraint("ck_outbound_order_lines_qty", "\"Qty\" > 0");
+                t.HasCheckConstraint("ck_outbound_order_lines_picked_qty", "\"PickedQty\" >= 0");
+                t.HasCheckConstraint("ck_outbound_order_lines_shipped_qty", "\"ShippedQty\" >= 0");
+            });
+        });
+
+        modelBuilder.Entity<Shipment>(entity =>
+        {
+            entity.ToTable("shipments");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ShipmentNumber)
+                .HasMaxLength(50)
+                .IsRequired()
+                .HasDefaultValueSql("'SHIP-' || LPAD(nextval('shipment_number_seq')::text, 4, '0')");
+            entity.Property(e => e.Carrier).HasConversion<string>().HasMaxLength(50).IsRequired();
+            entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(50).IsRequired();
+            entity.Property(e => e.TrackingNumber).HasMaxLength(200);
+            entity.Property(e => e.DeliverySignature).HasMaxLength(500);
+            entity.Property(e => e.DeliveryPhotoUrl).HasMaxLength(1000);
+            entity.Property(e => e.RowVersion).IsRowVersion();
+            entity.Property(e => e.IsDeleted).HasDefaultValue(false);
+            entity.HasIndex(e => e.ShipmentNumber).IsUnique();
+            entity.HasIndex(e => e.OutboundOrderId).IsUnique();
+            entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => e.TrackingNumber);
+            entity.HasQueryFilter(e => !e.IsDeleted);
+        });
+
+        modelBuilder.Entity<ShipmentLine>(entity =>
+        {
+            entity.ToTable("shipment_lines");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Qty).HasPrecision(18, 3).IsRequired();
+            entity.HasIndex(e => e.ShipmentId);
+            entity.HasOne(e => e.Shipment)
+                .WithMany(e => e.Lines)
+                .HasForeignKey(e => e.ShipmentId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Item)
+                .WithMany()
+                .HasForeignKey(e => e.ItemId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasQueryFilter(e => !e.Shipment!.IsDeleted);
+            entity.ToTable(t => t.HasCheckConstraint("ck_shipment_lines_qty", "\"Qty\" > 0"));
         });
 
         modelBuilder.Entity<SupplierItemMapping>(entity =>

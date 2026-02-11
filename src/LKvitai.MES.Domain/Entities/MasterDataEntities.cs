@@ -339,6 +339,309 @@ public sealed class SalesOrderLine
     public Item? Item { get; set; }
 }
 
+public enum OutboundOrderType
+{
+    Sales,
+    Transfer,
+    ProductionReturn
+}
+
+public enum OutboundOrderStatus
+{
+    Draft,
+    Allocated,
+    Picking,
+    Picked,
+    Packed,
+    Shipped,
+    Delivered,
+    Cancelled
+}
+
+public enum ShipmentStatus
+{
+    Packing,
+    Packed,
+    Dispatched,
+    InTransit,
+    Delivered,
+    Cancelled
+}
+
+public enum Carrier
+{
+    FedEx,
+    Ups,
+    Dhl,
+    Usps,
+    Other
+}
+
+public sealed class OutboundOrder : AuditableEntity
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public string OrderNumber { get; set; } = string.Empty;
+    public OutboundOrderType Type { get; set; } = OutboundOrderType.Sales;
+    public OutboundOrderStatus Status { get; private set; } = OutboundOrderStatus.Draft;
+    public DateTimeOffset OrderDate { get; set; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset? RequestedShipDate { get; set; }
+    public DateTimeOffset? PickedAt { get; private set; }
+    public DateTimeOffset? PackedAt { get; private set; }
+    public DateTimeOffset? ShippedAt { get; private set; }
+    public DateTimeOffset? DeliveredAt { get; private set; }
+    public Guid ReservationId { get; set; }
+    public Guid? ShipmentId { get; private set; }
+    public Guid? SalesOrderId { get; set; }
+    public bool IsDeleted { get; set; }
+    public byte[] RowVersion { get; set; } = Array.Empty<byte>();
+
+    public Shipment? Shipment { get; set; }
+    public SalesOrder? SalesOrder { get; set; }
+    public ICollection<OutboundOrderLine> Lines { get; set; } = new List<OutboundOrderLine>();
+
+    public Result MarkAllocated(Guid reservationId)
+    {
+        if (reservationId == Guid.Empty)
+        {
+            return Result.Fail(DomainErrorCodes.ValidationError, "ReservationId is required.");
+        }
+
+        if (Status != OutboundOrderStatus.Draft)
+        {
+            return Result.Fail(
+                DomainErrorCodes.ValidationError,
+                $"Invalid status transition: {Status} -> {OutboundOrderStatus.Allocated}");
+        }
+
+        ReservationId = reservationId;
+        Status = OutboundOrderStatus.Allocated;
+        return Result.Ok();
+    }
+
+    public Result StartPicking()
+    {
+        if (Status == OutboundOrderStatus.Cancelled)
+        {
+            return Result.Fail(DomainErrorCodes.ValidationError, "Cannot start picking cancelled order.");
+        }
+
+        if (Status != OutboundOrderStatus.Allocated)
+        {
+            return Result.Fail(
+                DomainErrorCodes.ValidationError,
+                $"Invalid status transition: {Status} -> {OutboundOrderStatus.Picking}");
+        }
+
+        Status = OutboundOrderStatus.Picking;
+        return Result.Ok();
+    }
+
+    public Result CompletePicking(DateTimeOffset pickedAt)
+    {
+        if (Status != OutboundOrderStatus.Picking)
+        {
+            return Result.Fail(
+                DomainErrorCodes.ValidationError,
+                $"Invalid status transition: {Status} -> {OutboundOrderStatus.Picked}");
+        }
+
+        Status = OutboundOrderStatus.Picked;
+        PickedAt = pickedAt;
+        return Result.Ok();
+    }
+
+    public Result Pack(Guid shipmentId, DateTimeOffset packedAt)
+    {
+        if (Status != OutboundOrderStatus.Picked)
+        {
+            return Result.Fail(
+                DomainErrorCodes.ValidationError,
+                $"Invalid status transition: {Status} -> {OutboundOrderStatus.Packed}");
+        }
+
+        ShipmentId = shipmentId;
+        PackedAt = packedAt;
+        Status = OutboundOrderStatus.Packed;
+        return Result.Ok();
+    }
+
+    public Result Ship(DateTimeOffset shippedAt)
+    {
+        if (Status != OutboundOrderStatus.Packed)
+        {
+            return Result.Fail(
+                DomainErrorCodes.ValidationError,
+                $"Invalid status transition: {Status} -> {OutboundOrderStatus.Shipped}");
+        }
+
+        Status = OutboundOrderStatus.Shipped;
+        ShippedAt = shippedAt;
+        return Result.Ok();
+    }
+
+    public Result ConfirmDelivery(DateTimeOffset deliveredAt)
+    {
+        if (Status != OutboundOrderStatus.Shipped)
+        {
+            return Result.Fail(
+                DomainErrorCodes.ValidationError,
+                $"Invalid status transition: {Status} -> {OutboundOrderStatus.Delivered}");
+        }
+
+        Status = OutboundOrderStatus.Delivered;
+        DeliveredAt = deliveredAt;
+        return Result.Ok();
+    }
+
+    public Result Cancel(string reason)
+    {
+        if (string.IsNullOrWhiteSpace(reason))
+        {
+            return Result.Fail(DomainErrorCodes.ValidationError, "Cancellation reason is required.");
+        }
+
+        if (Status is OutboundOrderStatus.Delivered or OutboundOrderStatus.Cancelled)
+        {
+            return Result.Fail(
+                DomainErrorCodes.ValidationError,
+                $"Invalid status transition: {Status} -> {OutboundOrderStatus.Cancelled}");
+        }
+
+        Status = OutboundOrderStatus.Cancelled;
+        return Result.Ok();
+    }
+}
+
+public sealed class OutboundOrderLine
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid OutboundOrderId { get; set; }
+    public int ItemId { get; set; }
+    public decimal Qty { get; set; }
+    public decimal PickedQty { get; set; }
+    public decimal ShippedQty { get; set; }
+
+    public OutboundOrder? OutboundOrder { get; set; }
+    public Item? Item { get; set; }
+}
+
+public sealed class Shipment : AuditableEntity
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public string ShipmentNumber { get; set; } = string.Empty;
+    public Guid OutboundOrderId { get; set; }
+    public Carrier Carrier { get; private set; } = Carrier.Other;
+    public string? TrackingNumber { get; private set; }
+    public ShipmentStatus Status { get; private set; } = ShipmentStatus.Packing;
+    public DateTimeOffset? PackedAt { get; private set; }
+    public DateTimeOffset? DispatchedAt { get; private set; }
+    public DateTimeOffset? InTransitAt { get; private set; }
+    public DateTimeOffset? DeliveredAt { get; private set; }
+    public string? DeliverySignature { get; private set; }
+    public string? DeliveryPhotoUrl { get; private set; }
+    public Guid? ShippingHandlingUnitId { get; set; }
+    public bool IsDeleted { get; set; }
+    public byte[] RowVersion { get; set; } = Array.Empty<byte>();
+
+    public OutboundOrder? OutboundOrder { get; set; }
+    public ICollection<ShipmentLine> Lines { get; set; } = new List<ShipmentLine>();
+
+    public Result Pack(DateTimeOffset packedAt)
+    {
+        if (Status != ShipmentStatus.Packing)
+        {
+            return Result.Fail(
+                DomainErrorCodes.ValidationError,
+                $"Invalid status transition: {Status} -> {ShipmentStatus.Packed}");
+        }
+
+        Status = ShipmentStatus.Packed;
+        PackedAt = packedAt;
+        return Result.Ok();
+    }
+
+    public Result Dispatch(Carrier carrier, string trackingNumber, DateTimeOffset dispatchedAt)
+    {
+        if (Status != ShipmentStatus.Packed)
+        {
+            return Result.Fail(
+                DomainErrorCodes.ValidationError,
+                $"Invalid status transition: {Status} -> {ShipmentStatus.Dispatched}");
+        }
+
+        Carrier = carrier;
+        TrackingNumber = trackingNumber;
+        DispatchedAt = dispatchedAt;
+        Status = ShipmentStatus.Dispatched;
+        return Result.Ok();
+    }
+
+    public Result MarkInTransit(DateTimeOffset inTransitAt)
+    {
+        if (Status != ShipmentStatus.Dispatched)
+        {
+            return Result.Fail(
+                DomainErrorCodes.ValidationError,
+                $"Invalid status transition: {Status} -> {ShipmentStatus.InTransit}");
+        }
+
+        InTransitAt = inTransitAt;
+        Status = ShipmentStatus.InTransit;
+        return Result.Ok();
+    }
+
+    public Result ConfirmDelivery(string signature, string? photoUrl, DateTimeOffset deliveredAt)
+    {
+        if (Status != ShipmentStatus.InTransit)
+        {
+            return Result.Fail(
+                DomainErrorCodes.ValidationError,
+                $"Invalid status transition: {Status} -> {ShipmentStatus.Delivered}");
+        }
+
+        if (string.IsNullOrWhiteSpace(signature))
+        {
+            return Result.Fail(DomainErrorCodes.ValidationError, "Delivery signature is required.");
+        }
+
+        DeliverySignature = signature;
+        DeliveryPhotoUrl = photoUrl;
+        DeliveredAt = deliveredAt;
+        Status = ShipmentStatus.Delivered;
+        return Result.Ok();
+    }
+
+    public Result Cancel(string reason)
+    {
+        if (string.IsNullOrWhiteSpace(reason))
+        {
+            return Result.Fail(DomainErrorCodes.ValidationError, "Cancellation reason is required.");
+        }
+
+        if (Status is ShipmentStatus.Delivered or ShipmentStatus.Cancelled)
+        {
+            return Result.Fail(
+                DomainErrorCodes.ValidationError,
+                $"Invalid status transition: {Status} -> {ShipmentStatus.Cancelled}");
+        }
+
+        Status = ShipmentStatus.Cancelled;
+        return Result.Ok();
+    }
+}
+
+public sealed class ShipmentLine
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid ShipmentId { get; set; }
+    public int ItemId { get; set; }
+    public decimal Qty { get; set; }
+    public Guid? HandlingUnitId { get; set; }
+
+    public Shipment? Shipment { get; set; }
+    public Item? Item { get; set; }
+}
+
 public sealed class SupplierItemMapping
 {
     public int Id { get; set; }

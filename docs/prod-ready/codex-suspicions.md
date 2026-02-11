@@ -130,3 +130,15 @@
   Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S1.md:1290, environment DB connection failures to 10.211.55.2:5432 from dotnet ef database update
   Impact: Task-specified curl API workflow checks (create/submit/list sales orders) could not be executed end-to-end in this environment.
   Proposed resolution: Run API with reachable PostgreSQL (or test container profile) and execute the documented curl/Postman scenarios.
+- Timestamp: 2026-02-11T06:04:18Z
+  TaskId: PRD-1506
+  Type: INCONSISTENCY
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S1.md:1456, src/LKvitai.MES.Domain/Entities/MasterDataEntities.cs:506
+  Impact: Task model specifies OutboundOrderLine/ShipmentLine ItemId as Guid, while repository item key is int; direct Guid FK would break existing schema.
+  Proposed resolution: Keep ItemId as int in outbound/shipment lines for compatibility and document conversion boundary at API layer.
+- Timestamp: 2026-02-11T06:04:43Z
+  TaskId: PRD-1506
+  Type: TEST-GAP
+  Evidence: dotnet ef database update failed with Npgsql timeout to 10.211.55.2:5432; psql checks for outbound_orders/shipments failed with 'command not found: psql'
+  Impact: Migration application and SQL-level schema verification for outbound/shipment tables could not be completed locally.
+  Proposed resolution: Re-run migration apply and schema inspection in environment with reachable PostgreSQL and installed psql client.
