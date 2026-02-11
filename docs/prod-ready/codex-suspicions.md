@@ -142,3 +142,16 @@
   Evidence: dotnet ef database update failed with Npgsql timeout to 10.211.55.2:5432; psql checks for outbound_orders/shipments failed with 'command not found: psql'
   Impact: Migration application and SQL-level schema verification for outbound/shipment tables could not be completed locally.
   Proposed resolution: Re-run migration apply and schema inspection in environment with reachable PostgreSQL and installed psql client.
+- Timestamp: 2026-02-11T06:06:01Z
+  TaskId: PRD-1507
+  Type: RISK
+  Evidence: src/LKvitai.MES.Api/Services/OutboundOrderCommandHandlers.cs:64-72, docs/prod-ready/prod-ready-tasks-PHASE15-S1.md:1904
+  Impact: Packing barcode validation currently maps only Item.PrimaryBarcode; alternate barcodes from item_barcodes are not considered, which can reject valid scans.
+  Proposed resolution: Extend lookup to include ItemBarcode rows (all active barcodes per item) and aggregate scans across barcode aliases.
+
+- Timestamp: 2026-02-11T06:06:01Z
+  TaskId: PRD-1507
+  Type: TEST-GAP
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S1.md:1916, environment lacks runnable local API+DB/psql verification
+  Impact: Manual pack endpoint validation and SQL checks for shipment/HU creation were not executed end-to-end.
+  Proposed resolution: Run documented curl + SQL checks against an environment with reachable PostgreSQL and API instance.

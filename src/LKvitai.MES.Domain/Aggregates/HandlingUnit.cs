@@ -21,6 +21,30 @@ public class HandlingUnit
     public int Version { get; private set; }
     
     public List<HandlingUnitLine> Lines { get; private set; } = new();
+
+    public static HandlingUnit CreateShippingUnit(string lpn, HandlingUnitType type, string location)
+    {
+        if (string.IsNullOrWhiteSpace(lpn))
+        {
+            throw new DomainException("LPN is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(location))
+        {
+            throw new DomainException("Location is required.");
+        }
+
+        return new HandlingUnit
+        {
+            HUId = Guid.NewGuid(),
+            LPN = lpn.Trim(),
+            Type = type,
+            Status = HandlingUnitStatus.OPEN,
+            Location = location.Trim(),
+            CreatedAt = DateTime.UtcNow,
+            Version = 1
+        };
+    }
 }
 
 public enum HandlingUnitType
