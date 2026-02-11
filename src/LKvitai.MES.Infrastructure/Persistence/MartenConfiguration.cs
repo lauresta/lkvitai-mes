@@ -1,9 +1,11 @@
 using Marten;
+using Marten.Events.Projections;
 using Marten.Events.Daemon.Resiliency;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using LKvitai.MES.Contracts.Events;
+using LKvitai.MES.Domain.Aggregates;
 using LKvitai.MES.Infrastructure.EventVersioning;
 
 namespace LKvitai.MES.Infrastructure.Persistence;
@@ -18,7 +20,7 @@ public static class MartenConfiguration
         IConfiguration configuration,
         Action<StoreOptions>? configureProjections = null)
     {
-        services.AddMarten(options =>
+        services.AddMarten((StoreOptions options) =>
         {
             var connectionString = configuration.GetConnectionString("WarehouseDb")
                 ?? throw new InvalidOperationException("WarehouseDb connection string not found");
@@ -34,6 +36,13 @@ public static class MartenConfiguration
             // ADR-001: Use string stream identity for named streams (stock-ledger-{warehouseId}, etc.)
             options.Events.StreamIdentity = Marten.Events.StreamIdentity.AsString;
             options.Events.DatabaseSchemaName = "warehouse_events";
+
+            options.Events.AddEventType<ValuationInitialized>();
+            options.Events.AddEventType<CostAdjusted>();
+            options.Events.AddEventType<LandedCostAllocated>();
+            options.Events.AddEventType<StockWrittenDown>();
+
+            options.Projections.Snapshot<Valuation>(SnapshotLifecycle.Inline);
             
             // Performance tuning
             options.Events.MetadataConfig.HeadersEnabled = true;

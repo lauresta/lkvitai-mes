@@ -194,3 +194,16 @@
   Evidence: "cd src/LKvitai.MES.UI && npm run dev" failed (directory missing); manual browser navigation/scan workflow not executable in this CLI-only run
   Impact: Task-specified interactive UI validation (page navigation, barcode scan UX, modal dispatch flow) could not be completed end-to-end.
   Proposed resolution: Run the Blazor WebUI locally and execute manual route/workflow checks with an authenticated API endpoint.
+- Timestamp: 2026-02-11T06:34:35Z
+  TaskId: PRD-1511
+  Type: INCONSISTENCY
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S2.md:89, src/LKvitai.MES.Domain/Entities/MasterDataEntities.cs:17
+  Impact: Valuation stream model uses Guid ItemId while operational master-data item key is int; direct cross-module joins will require an explicit mapping policy in command handlers.
+  Proposed resolution: Define deterministic key translation (int item id -> Guid valuation stream id) in PRD-1512 handlers and document it in valuation ADR.
+
+- Timestamp: 2026-02-11T06:34:35Z
+  TaskId: PRD-1511
+  Type: TEST-GAP
+  Evidence: psql validation commands for mt_events failed with 'command not found: psql'
+  Impact: Direct SQL verification of valuation stream rows and schema-version payloads could not be performed in this environment.
+  Proposed resolution: Re-run mt_events SQL checks in a DB-enabled shell/container with PostgreSQL client tools installed.
