@@ -37,6 +37,9 @@ public class WarehouseDbContext : DbContext
     public DbSet<ItemUoMConversion> ItemUoMConversions => Set<ItemUoMConversion>();
     public DbSet<ItemBarcode> ItemBarcodes => Set<ItemBarcode>();
     public DbSet<Supplier> Suppliers => Set<Supplier>();
+    public DbSet<Customer> Customers => Set<Customer>();
+    public DbSet<SalesOrder> SalesOrders => Set<SalesOrder>();
+    public DbSet<SalesOrderLine> SalesOrderLines => Set<SalesOrderLine>();
     public DbSet<SupplierItemMapping> SupplierItemMappings => Set<SupplierItemMapping>();
     public DbSet<Location> Locations => Set<Location>();
     public DbSet<HandlingUnitTypeEntity> HandlingUnitTypes => Set<HandlingUnitTypeEntity>();
@@ -57,6 +60,14 @@ public class WarehouseDbContext : DbContext
         // - EF Core state tables in `public`
         // - Marten event/projection tables in `warehouse_events`
         modelBuilder.HasDefaultSchema("public");
+
+        modelBuilder.HasSequence<long>("customer_code_seq")
+            .StartsAt(1)
+            .IncrementsBy(1);
+
+        modelBuilder.HasSequence<long>("sales_order_number_seq")
+            .StartsAt(1)
+            .IncrementsBy(1);
         
         // HandlingUnit configuration per blueprint
         modelBuilder.Entity<HandlingUnitAggregate>(entity =>
@@ -186,6 +197,122 @@ public class WarehouseDbContext : DbContext
             entity.Property(e => e.Name).HasMaxLength(200).IsRequired();
             entity.Property(e => e.ContactInfo).HasColumnType("text");
             entity.HasIndex(e => e.Code).IsUnique();
+        });
+
+        modelBuilder.Entity<Customer>(entity =>
+        {
+            entity.ToTable("customers");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.CustomerCode)
+                .HasMaxLength(50)
+                .IsRequired()
+                .HasDefaultValueSql("'CUST-' || LPAD(nextval('customer_code_seq')::text, 4, '0')");
+            entity.Property(e => e.Name).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.Email).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.Phone).HasMaxLength(50);
+            entity.Property(e => e.PaymentTerms).HasConversion<string>().HasMaxLength(50).IsRequired();
+            entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(50).IsRequired();
+            entity.Property(e => e.CreditLimit).HasPrecision(18, 2);
+            entity.Property(e => e.IsDeleted).HasDefaultValue(false);
+            entity.HasIndex(e => e.CustomerCode).IsUnique();
+            entity.HasIndex(e => e.Name);
+            entity.HasIndex(e => e.Status);
+            entity.HasQueryFilter(e => !e.IsDeleted);
+
+            entity.OwnsOne(e => e.BillingAddress, owned =>
+            {
+                owned.Property(p => p.Street).HasColumnName("billing_address_street").HasMaxLength(200);
+                owned.Property(p => p.City).HasColumnName("billing_address_city").HasMaxLength(100);
+                owned.Property(p => p.State).HasColumnName("billing_address_state").HasMaxLength(50);
+                owned.Property(p => p.ZipCode).HasColumnName("billing_address_zip_code").HasMaxLength(20);
+                owned.Property(p => p.Country).HasColumnName("billing_address_country").HasMaxLength(100);
+            });
+
+            entity.OwnsOne(e => e.DefaultShippingAddress, owned =>
+            {
+                owned.Property(p => p.Street).HasColumnName("default_shipping_address_street").HasMaxLength(200);
+                owned.Property(p => p.City).HasColumnName("default_shipping_address_city").HasMaxLength(100);
+                owned.Property(p => p.State).HasColumnName("default_shipping_address_state").HasMaxLength(50);
+                owned.Property(p => p.ZipCode).HasColumnName("default_shipping_address_zip_code").HasMaxLength(20);
+                owned.Property(p => p.Country).HasColumnName("default_shipping_address_country").HasMaxLength(100);
+            });
+
+            entity.ToTable(t =>
+            {
+                t.HasCheckConstraint("ck_customers_credit_limit", "\"CreditLimit\" IS NULL OR \"CreditLimit\" >= 0");
+            });
+        });
+
+        modelBuilder.Entity<SalesOrder>(entity =>
+        {
+            entity.ToTable("sales_orders");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.OrderNumber)
+                .HasMaxLength(50)
+                .IsRequired()
+                .HasDefaultValueSql("'SO-' || LPAD(nextval('sales_order_number_seq')::text, 4, '0')");
+            entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(50).IsRequired();
+            entity.Property(e => e.OrderDate).IsRequired();
+            entity.Property(e => e.TotalAmount).HasPrecision(18, 2).HasDefaultValue(0m);
+            entity.Property(e => e.IsDeleted).HasDefaultValue(false);
+            entity.Property(e => e.ReservationId);
+            entity.Property(e => e.OutboundOrderId);
+            entity.HasIndex(e => e.OrderNumber).IsUnique();
+            entity.HasIndex(e => e.CustomerId);
+            entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => e.OrderDate);
+            entity.HasQueryFilter(e => !e.IsDeleted);
+            entity.HasOne(e => e.Customer)
+                .WithMany(c => c.SalesOrders)
+                .HasForeignKey(e => e.CustomerId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.OwnsOne(e => e.ShippingAddress, owned =>
+            {
+                owned.Property(p => p.Street).HasColumnName("shipping_address_street").HasMaxLength(200);
+                owned.Property(p => p.City).HasColumnName("shipping_address_city").HasMaxLength(100);
+                owned.Property(p => p.State).HasColumnName("shipping_address_state").HasMaxLength(50);
+                owned.Property(p => p.ZipCode).HasColumnName("shipping_address_zip_code").HasMaxLength(20);
+                owned.Property(p => p.Country).HasColumnName("shipping_address_country").HasMaxLength(100);
+            });
+
+            entity.ToTable(t =>
+            {
+                t.HasCheckConstraint("ck_sales_orders_total_amount", "\"TotalAmount\" >= 0");
+            });
+        });
+
+        modelBuilder.Entity<SalesOrderLine>(entity =>
+        {
+            entity.ToTable("sales_order_lines");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.OrderedQty).HasPrecision(18, 4).IsRequired();
+            entity.Property(e => e.AllocatedQty).HasPrecision(18, 4).HasDefaultValue(0m);
+            entity.Property(e => e.PickedQty).HasPrecision(18, 4).HasDefaultValue(0m);
+            entity.Property(e => e.ShippedQty).HasPrecision(18, 4).HasDefaultValue(0m);
+            entity.Property(e => e.UnitPrice).HasPrecision(18, 2).HasDefaultValue(0m);
+            entity.Property(e => e.LineAmount).HasPrecision(18, 2).HasDefaultValue(0m);
+            entity.HasIndex(e => e.SalesOrderId);
+            entity.HasIndex(e => e.ItemId);
+            entity.HasQueryFilter(e => !e.SalesOrder!.IsDeleted);
+            entity.HasOne(e => e.SalesOrder)
+                .WithMany(e => e.Lines)
+                .HasForeignKey(e => e.SalesOrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Item)
+                .WithMany()
+                .HasForeignKey(e => e.ItemId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.ToTable(t =>
+            {
+                t.HasCheckConstraint("ck_sales_order_lines_ordered_qty", "\"OrderedQty\" > 0");
+                t.HasCheckConstraint("ck_sales_order_lines_allocated_qty", "\"AllocatedQty\" >= 0");
+                t.HasCheckConstraint("ck_sales_order_lines_picked_qty", "\"PickedQty\" >= 0");
+                t.HasCheckConstraint("ck_sales_order_lines_shipped_qty", "\"ShippedQty\" >= 0");
+                t.HasCheckConstraint("ck_sales_order_lines_unit_price", "\"UnitPrice\" >= 0");
+                t.HasCheckConstraint("ck_sales_order_lines_line_amount", "\"LineAmount\" >= 0");
+            });
         });
 
         modelBuilder.Entity<SupplierItemMapping>(entity =>

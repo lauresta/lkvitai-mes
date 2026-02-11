@@ -1,4 +1,5 @@
 using LKvitai.MES.Domain.Common;
+using LKvitai.MES.SharedKernel;
 
 namespace LKvitai.MES.Domain.Entities;
 
@@ -79,6 +80,244 @@ public sealed class Supplier : AuditableEntity
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string? ContactInfo { get; set; }
+}
+
+public enum CustomerStatus
+{
+    Active,
+    OnHold,
+    Inactive
+}
+
+public enum PaymentTerms
+{
+    Net30,
+    Net60,
+    Cod,
+    Prepaid,
+    CreditCard
+}
+
+public enum SalesOrderStatus
+{
+    Draft,
+    PendingApproval,
+    PendingStock,
+    Allocated,
+    Picking,
+    Packed,
+    Shipped,
+    Delivered,
+    Invoiced,
+    Cancelled
+}
+
+public sealed class Address
+{
+    public string Street { get; set; } = string.Empty;
+    public string City { get; set; } = string.Empty;
+    public string State { get; set; } = string.Empty;
+    public string ZipCode { get; set; } = string.Empty;
+    public string Country { get; set; } = string.Empty;
+}
+
+public sealed class Customer : AuditableEntity
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public string CustomerCode { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string? Phone { get; set; }
+    public Address BillingAddress { get; set; } = new();
+    public Address? DefaultShippingAddress { get; set; }
+    public PaymentTerms PaymentTerms { get; set; } = PaymentTerms.Net30;
+    public CustomerStatus Status { get; set; } = CustomerStatus.Active;
+    public decimal? CreditLimit { get; set; }
+    public bool IsDeleted { get; set; }
+
+    public ICollection<SalesOrder> SalesOrders { get; set; } = new List<SalesOrder>();
+}
+
+public sealed class SalesOrder : AuditableEntity
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public string OrderNumber { get; set; } = string.Empty;
+    public Guid CustomerId { get; set; }
+    public Address? ShippingAddress { get; set; }
+    public SalesOrderStatus Status { get; private set; } = SalesOrderStatus.Draft;
+    public DateOnly OrderDate { get; set; } = DateOnly.FromDateTime(DateTime.UtcNow);
+    public DateOnly? RequestedDeliveryDate { get; set; }
+    public DateTimeOffset? AllocatedAt { get; private set; }
+    public DateTimeOffset? ShippedAt { get; private set; }
+    public DateTimeOffset? DeliveredAt { get; private set; }
+    public DateTimeOffset? InvoicedAt { get; private set; }
+    public Guid? ReservationId { get; private set; }
+    public Guid? OutboundOrderId { get; private set; }
+    public decimal TotalAmount { get; private set; }
+    public bool IsDeleted { get; set; }
+
+    public Customer? Customer { get; set; }
+    public ICollection<SalesOrderLine> Lines { get; set; } = new List<SalesOrderLine>();
+
+    public void RecalculateTotals()
+    {
+        foreach (var line in Lines)
+        {
+            line.LineAmount = line.OrderedQty * line.UnitPrice;
+        }
+
+        TotalAmount = Lines.Sum(x => x.LineAmount);
+    }
+
+    public Result Submit(bool requiresApproval)
+    {
+        if (Status != SalesOrderStatus.Draft)
+        {
+            return Result.Fail(
+                DomainErrorCodes.ValidationError,
+                $"Invalid status transition: {Status} -> {SalesOrderStatus.Allocated}");
+        }
+
+        Status = requiresApproval ? SalesOrderStatus.PendingApproval : SalesOrderStatus.Allocated;
+        if (!requiresApproval)
+        {
+            AllocatedAt = DateTimeOffset.UtcNow;
+        }
+
+        return Result.Ok();
+    }
+
+    public Result Approve()
+    {
+        if (Status != SalesOrderStatus.PendingApproval)
+        {
+            return Result.Fail(
+                DomainErrorCodes.ValidationError,
+                $"Invalid status transition: {Status} -> {SalesOrderStatus.Allocated}");
+        }
+
+        Status = SalesOrderStatus.Allocated;
+        AllocatedAt = DateTimeOffset.UtcNow;
+        return Result.Ok();
+    }
+
+    public Result Allocate(Guid reservationId)
+    {
+        if (Status is not (SalesOrderStatus.Draft or SalesOrderStatus.PendingStock))
+        {
+            return Result.Fail(
+                DomainErrorCodes.ValidationError,
+                $"Invalid status transition: {Status} -> {SalesOrderStatus.Allocated}");
+        }
+
+        ReservationId = reservationId;
+        Status = SalesOrderStatus.Allocated;
+        AllocatedAt = DateTimeOffset.UtcNow;
+        return Result.Ok();
+    }
+
+    public Result Release()
+    {
+        if (Status != SalesOrderStatus.Allocated)
+        {
+            return Result.Fail(
+                DomainErrorCodes.ValidationError,
+                $"Invalid status transition: {Status} -> {SalesOrderStatus.Picking}");
+        }
+
+        Status = SalesOrderStatus.Picking;
+        return Result.Ok();
+    }
+
+    public Result Pack(Guid outboundOrderId)
+    {
+        if (Status != SalesOrderStatus.Picking)
+        {
+            return Result.Fail(
+                DomainErrorCodes.ValidationError,
+                $"Invalid status transition: {Status} -> {SalesOrderStatus.Packed}");
+        }
+
+        OutboundOrderId = outboundOrderId;
+        Status = SalesOrderStatus.Packed;
+        return Result.Ok();
+    }
+
+    public Result Ship(DateTimeOffset shippedAt)
+    {
+        if (Status != SalesOrderStatus.Packed)
+        {
+            return Result.Fail(
+                DomainErrorCodes.ValidationError,
+                $"Invalid status transition: {Status} -> {SalesOrderStatus.Shipped}");
+        }
+
+        Status = SalesOrderStatus.Shipped;
+        ShippedAt = shippedAt;
+        return Result.Ok();
+    }
+
+    public Result ConfirmDelivery(DateTimeOffset deliveredAt)
+    {
+        if (Status != SalesOrderStatus.Shipped)
+        {
+            return Result.Fail(
+                DomainErrorCodes.ValidationError,
+                $"Invalid status transition: {Status} -> {SalesOrderStatus.Delivered}");
+        }
+
+        Status = SalesOrderStatus.Delivered;
+        DeliveredAt = deliveredAt;
+        return Result.Ok();
+    }
+
+    public Result Invoice(DateTimeOffset invoicedAt)
+    {
+        if (Status != SalesOrderStatus.Delivered)
+        {
+            return Result.Fail(
+                DomainErrorCodes.ValidationError,
+                $"Invalid status transition: {Status} -> {SalesOrderStatus.Invoiced}");
+        }
+
+        Status = SalesOrderStatus.Invoiced;
+        InvoicedAt = invoicedAt;
+        return Result.Ok();
+    }
+
+    public Result Cancel(string reason)
+    {
+        if (string.IsNullOrWhiteSpace(reason))
+        {
+            return Result.Fail(DomainErrorCodes.ValidationError, "Cancellation reason is required.");
+        }
+
+        if (Status is SalesOrderStatus.Invoiced or SalesOrderStatus.Cancelled)
+        {
+            return Result.Fail(
+                DomainErrorCodes.ValidationError,
+                $"Invalid status transition: {Status} -> {SalesOrderStatus.Cancelled}");
+        }
+
+        Status = SalesOrderStatus.Cancelled;
+        return Result.Ok();
+    }
+}
+
+public sealed class SalesOrderLine
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid SalesOrderId { get; set; }
+    public int ItemId { get; set; }
+    public decimal OrderedQty { get; set; }
+    public decimal AllocatedQty { get; set; }
+    public decimal PickedQty { get; set; }
+    public decimal ShippedQty { get; set; }
+    public decimal UnitPrice { get; set; }
+    public decimal LineAmount { get; set; }
+
+    public SalesOrder? SalesOrder { get; set; }
+    public Item? Item { get; set; }
 }
 
 public sealed class SupplierItemMapping

@@ -86,3 +86,22 @@
   Evidence: curl http://localhost:5000/api/warehouse/v1/items returned headers from non-project service (Server: AirTunes)
   Impact: Validation target port in task doc does not map to this local API process, so direct header checks are unreliable.
   Proposed resolution: Use configured API URL from launch settings or explicit Kestrel URLs during run command.
+- Timestamp: 2026-02-11T05:45:53Z
+  TaskId: PRD-1504
+  Type: INCONSISTENCY
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S1.md:754, src/LKvitai.MES.Domain/Entities/MasterDataEntities.cs:18
+  Impact: Task model specifies SalesOrderLine.ItemId as GUID, but existing Item primary key is int across the codebase and database.
+  Proposed resolution: Implement SalesOrderLine.ItemId as int for compatibility, keep foreign key to existing items table.
+- Timestamp: 2026-02-11T05:50:13Z
+  TaskId: PRD-1504
+  Type: TEST-GAP
+  Evidence: dotnet ef database update ... failed with Npgsql timeout to 10.211.55.2:5432
+  Impact: Migration application and live schema verification could not be completed against database in this environment.
+  Proposed resolution: Re-run migration apply in environment with reachable warehouse PostgreSQL.
+
+- Timestamp: 2026-02-11T05:50:13Z
+  TaskId: PRD-1504
+  Type: TEST-GAP
+  Evidence: psql -d warehouse -c "\d customers" failed: command not found: psql
+  Impact: SQL schema/index manual checks from task validation cannot be executed locally.
+  Proposed resolution: Install psql client or run checks inside DB container shell.
