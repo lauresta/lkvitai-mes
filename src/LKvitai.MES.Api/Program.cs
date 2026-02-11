@@ -146,6 +146,7 @@ builder.Services.AddScoped<ILabelPrinterClient, TcpLabelPrinterClient>();
 builder.Services.AddScoped<ILabelPrintOrchestrator, LabelPrintOrchestrator>();
 builder.Services.AddScoped<LabelPrintOrchestrator>();
 builder.Services.AddScoped<ITransferStockAvailabilityService, MartenTransferStockAvailabilityService>();
+builder.Services.AddScoped<ICycleCountQuantityResolver, MartenCycleCountQuantityResolver>();
 
 var warehouseConnectionString =
     builder.Configuration.GetConnectionString("WarehouseDb")

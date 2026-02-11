@@ -398,6 +398,22 @@ public enum TransferStatus
     Cancelled
 }
 
+public enum CycleCountStatus
+{
+    Scheduled,
+    InProgress,
+    Completed,
+    Cancelled
+}
+
+public enum CycleCountLineStatus
+{
+    Pending,
+    Approved,
+    Rejected,
+    Recount
+}
+
 public sealed class OutboundOrder : AuditableEntity
 {
     public Guid Id { get; set; } = Guid.NewGuid();
@@ -631,6 +647,72 @@ public sealed class TransferLine
     public Item? Item { get; set; }
     public Location? FromLocation { get; set; }
     public Location? ToLocation { get; set; }
+}
+
+public sealed class CycleCount : AuditableEntity
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public string CountNumber { get; set; } = string.Empty;
+    public CycleCountStatus Status { get; private set; } = CycleCountStatus.Scheduled;
+    public DateTimeOffset ScheduledDate { get; set; }
+    public DateTimeOffset? StartedAt { get; private set; }
+    public DateTimeOffset? CompletedAt { get; private set; }
+    public string? CountedBy { get; private set; }
+    public string? ApprovedBy { get; private set; }
+    public Guid ScheduleCommandId { get; set; }
+    public Guid? RecordCommandId { get; private set; }
+    public Guid? ApplyAdjustmentCommandId { get; private set; }
+
+    public ICollection<CycleCountLine> Lines { get; set; } = new List<CycleCountLine>();
+
+    public Result Start(string countedBy, Guid commandId, DateTimeOffset startedAt)
+    {
+        if (Status is CycleCountStatus.Completed or CycleCountStatus.Cancelled)
+        {
+            return Result.Fail(
+                DomainErrorCodes.ValidationError,
+                $"Invalid status transition: {Status} -> {CycleCountStatus.InProgress}");
+        }
+
+        Status = CycleCountStatus.InProgress;
+        CountedBy = countedBy;
+        StartedAt = startedAt;
+        RecordCommandId = commandId;
+        return Result.Ok();
+    }
+
+    public Result Complete(string approvedBy, Guid commandId, DateTimeOffset completedAt)
+    {
+        if (Status == CycleCountStatus.Cancelled)
+        {
+            return Result.Fail(
+                DomainErrorCodes.ValidationError,
+                $"Invalid status transition: {Status} -> {CycleCountStatus.Completed}");
+        }
+
+        Status = CycleCountStatus.Completed;
+        CompletedAt = completedAt;
+        ApprovedBy = approvedBy;
+        ApplyAdjustmentCommandId = commandId;
+        return Result.Ok();
+    }
+}
+
+public sealed class CycleCountLine
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid CycleCountId { get; set; }
+    public int LocationId { get; set; }
+    public int ItemId { get; set; }
+    public decimal SystemQty { get; set; }
+    public decimal PhysicalQty { get; set; }
+    public decimal Delta { get; set; }
+    public CycleCountLineStatus Status { get; set; } = CycleCountLineStatus.Pending;
+    public string? Reason { get; set; }
+
+    public CycleCount? CycleCount { get; set; }
+    public Location? Location { get; set; }
+    public Item? Item { get; set; }
 }
 
 public sealed class OutboundOrderLine

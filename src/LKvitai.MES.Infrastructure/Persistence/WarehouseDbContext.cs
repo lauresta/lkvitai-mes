@@ -47,6 +47,8 @@ public class WarehouseDbContext : DbContext
     public DbSet<ShipmentLine> ShipmentLines => Set<ShipmentLine>();
     public DbSet<Transfer> Transfers => Set<Transfer>();
     public DbSet<TransferLine> TransferLines => Set<TransferLine>();
+    public DbSet<CycleCount> CycleCounts => Set<CycleCount>();
+    public DbSet<CycleCountLine> CycleCountLines => Set<CycleCountLine>();
     public DbSet<OutboundOrderSummary> OutboundOrderSummaries => Set<OutboundOrderSummary>();
     public DbSet<ShipmentSummary> ShipmentSummaries => Set<ShipmentSummary>();
     public DbSet<DispatchHistory> DispatchHistories => Set<DispatchHistory>();
@@ -94,6 +96,10 @@ public class WarehouseDbContext : DbContext
             .IncrementsBy(1);
 
         modelBuilder.HasSequence<long>("transfer_number_seq")
+            .StartsAt(1)
+            .IncrementsBy(1);
+
+        modelBuilder.HasSequence<long>("cycle_count_number_seq")
             .StartsAt(1)
             .IncrementsBy(1);
         
@@ -494,6 +500,53 @@ public class WarehouseDbContext : DbContext
             {
                 t.HasCheckConstraint("ck_transfer_lines_qty", "\"Qty\" > 0");
                 t.HasCheckConstraint("ck_transfer_lines_locations", "\"FromLocationId\" <> \"ToLocationId\"");
+            });
+        });
+
+        modelBuilder.Entity<CycleCount>(entity =>
+        {
+            entity.ToTable("cycle_counts");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.CountNumber)
+                .HasMaxLength(50)
+                .IsRequired()
+                .HasDefaultValueSql("'CC-' || LPAD(nextval('cycle_count_number_seq')::text, 4, '0')");
+            entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(30).IsRequired();
+            entity.Property(e => e.CountedBy).HasMaxLength(100);
+            entity.Property(e => e.ApprovedBy).HasMaxLength(100);
+            entity.HasIndex(e => e.CountNumber).IsUnique();
+            entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => e.ScheduledDate);
+            entity.HasMany(e => e.Lines)
+                .WithOne(e => e.CycleCount)
+                .HasForeignKey(e => e.CycleCountId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<CycleCountLine>(entity =>
+        {
+            entity.ToTable("cycle_count_lines");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.SystemQty).HasPrecision(18, 3).IsRequired();
+            entity.Property(e => e.PhysicalQty).HasPrecision(18, 3).IsRequired();
+            entity.Property(e => e.Delta).HasPrecision(18, 3).IsRequired();
+            entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(20).IsRequired();
+            entity.Property(e => e.Reason).HasMaxLength(500);
+            entity.HasIndex(e => e.CycleCountId);
+            entity.HasIndex(e => e.LocationId);
+            entity.HasIndex(e => e.ItemId);
+            entity.HasOne(e => e.Location)
+                .WithMany()
+                .HasForeignKey(e => e.LocationId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(e => e.Item)
+                .WithMany()
+                .HasForeignKey(e => e.ItemId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.ToTable(t =>
+            {
+                t.HasCheckConstraint("ck_cycle_count_lines_system_qty", "\"SystemQty\" >= 0");
+                t.HasCheckConstraint("ck_cycle_count_lines_physical_qty", "\"PhysicalQty\" >= 0");
             });
         });
 

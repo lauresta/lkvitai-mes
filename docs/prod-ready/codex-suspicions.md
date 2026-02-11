@@ -344,3 +344,27 @@
   Evidence: curl POST http://localhost:5000/api/warehouse/v1/transfers, /approve, /execute returned HTTP 403
   Impact: Task-specified manual API workflow validation could not be completed without authenticated API context.
   Proposed resolution: Re-run transfer create/approve/execute checks with Operator/Manager credentials against a running API instance.
+- Timestamp: 2026-02-11T07:49:26Z
+  TaskId: PRD-1520
+  Type: AMBIGUITY
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S2.md:2014, src/LKvitai.MES.Domain/Entities/MasterDataEntities.cs:17
+  Impact: Task requires ABC classification by item value bands, but existing item master model has no explicit ABC class/value tier fields.
+  Proposed resolution: Use category-code prefix heuristic (A/B/C) as Phase 1.5 default and introduce explicit ABC/value configuration in a follow-up task.
+- Timestamp: 2026-02-11T07:49:26Z
+  TaskId: PRD-1520
+  Type: TEST-GAP
+  Evidence: curl POST http://localhost:5000/api/warehouse/v1/cycle-counts/schedule, /record-count, /apply-adjustment returned HTTP 403
+  Impact: Task-specified manual API cycle-count workflow validation could not be completed without authenticated API context.
+  Proposed resolution: Re-run cycle count schedule/record/apply checks with Operator/Manager credentials against a running API instance.
+- Timestamp: 2026-02-11T07:49:47Z
+  TaskId: PRD-1520
+  Type: INCONSISTENCY
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S2.md:2037, docs/prod-ready/prod-ready-tasks-PHASE15-S2.md:2046, src/LKvitai.MES.Domain/Entities/MasterDataEntities.cs:709
+  Impact: Task model expresses cycle-count line / as GUIDs, while repository identity keys for locations/items are .
+  Proposed resolution: Keep cycle count foreign keys as  for schema compatibility and map API contracts to existing key types.
+- Timestamp: 2026-02-11T07:49:55Z
+  TaskId: PRD-1520
+  Type: INCONSISTENCY
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S2.md:2037, docs/prod-ready/prod-ready-tasks-PHASE15-S2.md:2046, src/LKvitai.MES.Domain/Entities/MasterDataEntities.cs:709
+  Impact: Task model expresses cycle-count line LocationId and ItemId as GUIDs, while repository identity keys for locations and items are int.
+  Proposed resolution: Keep cycle count foreign keys as int for schema compatibility and map API contracts to existing key types.
