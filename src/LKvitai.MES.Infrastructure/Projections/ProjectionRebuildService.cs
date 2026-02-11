@@ -49,6 +49,9 @@ public class ProjectionRebuildService : IProjectionRebuildService
     // ── Table name constants ────────────────────────────────────────────
     private const string LocationBalanceTable = "mt_doc_locationbalanceview";
     private const string AvailableStockTable = "mt_doc_availablestockview";
+    private const string OutboundOrderSummaryTable = "outbound_order_summary";
+    private const string ShipmentSummaryTable = "shipment_summary";
+    private const string DispatchHistoryTable = "dispatch_history";
 
     public ProjectionRebuildService(
         IDocumentStore documentStore,
@@ -113,6 +116,9 @@ public class ProjectionRebuildService : IProjectionRebuildService
             {
                 "LocationBalance" => LocationBalanceTable,
                 "AvailableStock" => AvailableStockTable,
+                "OutboundOrderSummary" => OutboundOrderSummaryTable,
+                "ShipmentSummary" => ShipmentSummaryTable,
+                "DispatchHistory" => DispatchHistoryTable,
                 _ => null
             };
 
@@ -141,13 +147,16 @@ public class ProjectionRebuildService : IProjectionRebuildService
             {
                 "LocationBalance" => await ReplayLocationBalanceEventsAsync(shadowTable, cancellationToken),
                 "AvailableStock" => await ReplayAvailableStockEventsAsync(shadowTable, cancellationToken),
+                "OutboundOrderSummary" => await ReplayOutboundOrderSummaryAsync(shadowTable, cancellationToken),
+                "ShipmentSummary" => await ReplayShipmentSummaryAsync(shadowTable, cancellationToken),
+                "DispatchHistory" => await ReplayDispatchHistoryAsync(shadowTable, cancellationToken),
                 _ => 0
             };
 
             // Step 3: Compute field-based checksums (MED-01 fix)
             var checksumSql = GetFieldBasedChecksumSql(projectionName);
-            var productionChecksum = await ComputeFieldChecksumAsync(productionTable, checksumSql, cancellationToken);
-            var shadowChecksum = await ComputeFieldChecksumAsync(shadowTable, checksumSql, cancellationToken);
+            var productionChecksum = await ComputeFieldChecksumAsync(productionTable, projectionName, checksumSql, cancellationToken);
+            var shadowChecksum = await ComputeFieldChecksumAsync(shadowTable, projectionName, checksumSql, cancellationToken);
 
             var checksumMatch = productionChecksum == shadowChecksum;
 
@@ -391,11 +400,44 @@ public class ProjectionRebuildService : IProjectionRebuildService
             "COALESCE(data->>'hardLockedQty','0') || ':' || " +
             "COALESCE(data->>'availableQty','0')",
 
+        "OutboundOrderSummary" =>
+            "\"Id\"::text || ':' || COALESCE(\"OrderNumber\",'') || ':' || " +
+            "COALESCE(\"Type\",'') || ':' || COALESCE(\"Status\",'') || ':' || " +
+            "COALESCE(\"CustomerName\",'') || ':' || COALESCE(\"ItemCount\"::text,'0') || ':' || " +
+            "COALESCE(\"OrderDate\"::text,'') || ':' || COALESCE(\"RequestedShipDate\"::text,'') || ':' || " +
+            "COALESCE(\"PackedAt\"::text,'') || ':' || COALESCE(\"ShippedAt\"::text,'') || ':' || " +
+            "COALESCE(\"ShipmentId\"::text,'') || ':' || COALESCE(\"ShipmentNumber\",'') || ':' || " +
+            "COALESCE(\"TrackingNumber\",'')",
+
+        "ShipmentSummary" =>
+            "\"Id\"::text || ':' || COALESCE(\"ShipmentNumber\",'') || ':' || " +
+            "COALESCE(\"OutboundOrderId\"::text,'') || ':' || COALESCE(\"OutboundOrderNumber\",'') || ':' || " +
+            "COALESCE(\"CustomerName\",'') || ':' || COALESCE(\"Carrier\",'') || ':' || " +
+            "COALESCE(\"TrackingNumber\",'') || ':' || COALESCE(\"Status\",'') || ':' || " +
+            "COALESCE(\"PackedAt\"::text,'') || ':' || COALESCE(\"DispatchedAt\"::text,'') || ':' || " +
+            "COALESCE(\"DeliveredAt\"::text,'') || ':' || COALESCE(\"PackedBy\",'') || ':' || " +
+            "COALESCE(\"DispatchedBy\",'')",
+
+        "DispatchHistory" =>
+            "\"Id\"::text || ':' || COALESCE(\"ShipmentId\"::text,'') || ':' || " +
+            "COALESCE(\"ShipmentNumber\",'') || ':' || COALESCE(\"OutboundOrderNumber\",'') || ':' || " +
+            "COALESCE(\"Carrier\",'') || ':' || COALESCE(\"TrackingNumber\",'') || ':' || " +
+            "COALESCE(\"VehicleId\",'') || ':' || COALESCE(\"DispatchedAt\"::text,'') || ':' || " +
+            "COALESCE(\"DispatchedBy\",'') || ':' || COALESCE(\"ManualTracking\"::text,'')",
+
         _ => "id || data::text"
     };
 
+    private static string GetFieldBasedOrderSql(string projectionName) => projectionName switch
+    {
+        "OutboundOrderSummary" => "\"Id\"",
+        "ShipmentSummary" => "\"Id\"",
+        "DispatchHistory" => "\"Id\"",
+        _ => "id"
+    };
+
     private async Task<string> ComputeFieldChecksumAsync(
-        string tableName, string fieldExpression, CancellationToken ct)
+        string tableName, string projectionName, string fieldExpression, CancellationToken ct)
     {
         _logger.LogInformation("Computing field-based checksum for {TableName}", tableName);
 
@@ -403,9 +445,10 @@ public class ProjectionRebuildService : IProjectionRebuildService
         var conn = (NpgsqlConnection)session.Connection!;
 
         await using var cmd = conn.CreateCommand();
+        var orderSql = GetFieldBasedOrderSql(projectionName);
         cmd.CommandText = $@"
             SELECT COALESCE(
-                MD5(STRING_AGG({fieldExpression}, '|' ORDER BY id)),
+                MD5(STRING_AGG({fieldExpression}, '|' ORDER BY {orderSql})),
                 'empty'
             ) as checksum
             FROM {tableName}";
@@ -414,6 +457,130 @@ public class ProjectionRebuildService : IProjectionRebuildService
 
         _logger.LogInformation("Checksum for {TableName}: {Checksum}", tableName, checksum);
         return checksum;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // Outbound summary table rebuilds
+    // ═══════════════════════════════════════════════════════════════════
+
+    private async Task<int> ReplayOutboundOrderSummaryAsync(
+        string shadowTable,
+        CancellationToken ct)
+    {
+        _logger.LogInformation("Rebuilding outbound order summary into {ShadowTable}", shadowTable);
+
+        await using var session = _documentStore.LightweightSession();
+        var conn = (NpgsqlConnection)session.Connection!;
+
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = $@"
+            INSERT INTO {shadowTable}
+            (
+                ""Id"", ""OrderNumber"", ""Type"", ""Status"", ""CustomerName"", ""ItemCount"",
+                ""OrderDate"", ""RequestedShipDate"", ""PackedAt"", ""ShippedAt"",
+                ""ShipmentId"", ""ShipmentNumber"", ""TrackingNumber""
+            )
+            SELECT
+                o.""Id"",
+                o.""OrderNumber"",
+                o.""Type"",
+                o.""Status"",
+                c.""Name"" AS ""CustomerName"",
+                COALESCE(ol.""ItemCount"", 0) AS ""ItemCount"",
+                o.""OrderDate"",
+                o.""RequestedShipDate"",
+                o.""PackedAt"",
+                o.""ShippedAt"",
+                o.""ShipmentId"",
+                s.""ShipmentNumber"",
+                s.""TrackingNumber""
+            FROM public.outbound_orders o
+            LEFT JOIN public.sales_orders so ON so.""Id"" = o.""SalesOrderId""
+            LEFT JOIN public.customers c ON c.""Id"" = so.""CustomerId""
+            LEFT JOIN public.shipments s ON s.""Id"" = o.""ShipmentId""
+            LEFT JOIN
+            (
+                SELECT ""OutboundOrderId"", COUNT(1)::int AS ""ItemCount""
+                FROM public.outbound_order_lines
+                GROUP BY ""OutboundOrderId""
+            ) ol ON ol.""OutboundOrderId"" = o.""Id""
+            WHERE o.""IsDeleted"" = false;";
+
+        return await cmd.ExecuteNonQueryAsync(ct);
+    }
+
+    private async Task<int> ReplayShipmentSummaryAsync(
+        string shadowTable,
+        CancellationToken ct)
+    {
+        _logger.LogInformation("Rebuilding shipment summary into {ShadowTable}", shadowTable);
+
+        await using var session = _documentStore.LightweightSession();
+        var conn = (NpgsqlConnection)session.Connection!;
+
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = $@"
+            INSERT INTO {shadowTable}
+            (
+                ""Id"", ""ShipmentNumber"", ""OutboundOrderId"", ""OutboundOrderNumber"",
+                ""CustomerName"", ""Carrier"", ""TrackingNumber"", ""Status"",
+                ""PackedAt"", ""DispatchedAt"", ""DeliveredAt"", ""PackedBy"", ""DispatchedBy""
+            )
+            SELECT
+                s.""Id"",
+                s.""ShipmentNumber"",
+                s.""OutboundOrderId"",
+                o.""OrderNumber"" AS ""OutboundOrderNumber"",
+                c.""Name"" AS ""CustomerName"",
+                s.""Carrier"",
+                s.""TrackingNumber"",
+                s.""Status"",
+                s.""PackedAt"",
+                s.""DispatchedAt"",
+                s.""DeliveredAt"",
+                NULL::text AS ""PackedBy"",
+                dh.""DispatchedBy""
+            FROM public.shipments s
+            INNER JOIN public.outbound_orders o ON o.""Id"" = s.""OutboundOrderId""
+            LEFT JOIN public.sales_orders so ON so.""Id"" = o.""SalesOrderId""
+            LEFT JOIN public.customers c ON c.""Id"" = so.""CustomerId""
+            LEFT JOIN LATERAL
+            (
+                SELECT d.""DispatchedBy""
+                FROM public.dispatch_history d
+                WHERE d.""ShipmentId"" = s.""Id""
+                ORDER BY d.""DispatchedAt"" DESC
+                LIMIT 1
+            ) dh ON TRUE
+            WHERE s.""IsDeleted"" = false;";
+
+        return await cmd.ExecuteNonQueryAsync(ct);
+    }
+
+    private async Task<int> ReplayDispatchHistoryAsync(
+        string shadowTable,
+        CancellationToken ct)
+    {
+        _logger.LogInformation("Rebuilding dispatch history into {ShadowTable}", shadowTable);
+
+        await using var session = _documentStore.LightweightSession();
+        var conn = (NpgsqlConnection)session.Connection!;
+
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = $@"
+            INSERT INTO {shadowTable}
+            (
+                ""Id"", ""ShipmentId"", ""ShipmentNumber"", ""OutboundOrderNumber"",
+                ""Carrier"", ""TrackingNumber"", ""VehicleId"", ""DispatchedAt"",
+                ""DispatchedBy"", ""ManualTracking""
+            )
+            SELECT
+                ""Id"", ""ShipmentId"", ""ShipmentNumber"", ""OutboundOrderNumber"",
+                ""Carrier"", ""TrackingNumber"", ""VehicleId"", ""DispatchedAt"",
+                ""DispatchedBy"", ""ManualTracking""
+            FROM public.dispatch_history;";
+
+        return await cmd.ExecuteNonQueryAsync(ct);
     }
 
     // ═══════════════════════════════════════════════════════════════════

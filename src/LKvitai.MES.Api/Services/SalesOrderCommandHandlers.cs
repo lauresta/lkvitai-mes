@@ -269,6 +269,9 @@ public sealed class ReleaseSalesOrderCommandHandler : IRequestHandler<ReleaseSal
     public async Task<Result> Handle(ReleaseSalesOrderCommand request, CancellationToken cancellationToken)
     {
         var order = await _dbContext.SalesOrders
+            .Include(x => x.Customer)
+            .Include(x => x.Lines)
+                .ThenInclude(x => x.Item)
             .FirstOrDefaultAsync(x => x.Id == request.SalesOrderId, cancellationToken);
 
         if (order is null)
@@ -282,7 +285,68 @@ public sealed class ReleaseSalesOrderCommandHandler : IRequestHandler<ReleaseSal
             return releaseResult;
         }
 
+        OutboundOrder? outboundOrder = null;
+        if (!order.OutboundOrderId.HasValue)
+        {
+            outboundOrder = new OutboundOrder
+            {
+                ReservationId = order.ReservationId ?? Guid.NewGuid(),
+                Type = OutboundOrderType.Sales,
+                SalesOrderId = order.Id
+            };
+
+            var markAllocatedResult = outboundOrder.MarkAllocated(outboundOrder.ReservationId);
+            if (!markAllocatedResult.IsSuccess)
+            {
+                return markAllocatedResult;
+            }
+
+            var startPickingResult = outboundOrder.StartPicking();
+            if (!startPickingResult.IsSuccess)
+            {
+                return startPickingResult;
+            }
+
+            foreach (var line in order.Lines)
+            {
+                outboundOrder.Lines.Add(new OutboundOrderLine
+                {
+                    ItemId = line.ItemId,
+                    Qty = line.OrderedQty,
+                    PickedQty = 0m,
+                    ShippedQty = 0m
+                });
+            }
+
+            _dbContext.OutboundOrders.Add(outboundOrder);
+            var linkResult = order.LinkOutboundOrder(outboundOrder.Id);
+            if (!linkResult.IsSuccess)
+            {
+                return linkResult;
+            }
+        }
+
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        if (outboundOrder is not null)
+        {
+            await _eventBus.PublishAsync(new OutboundOrderCreatedEvent
+            {
+                Id = outboundOrder.Id,
+                OrderNumber = outboundOrder.OrderNumber,
+                Type = outboundOrder.Type.ToString().ToUpperInvariant(),
+                Status = outboundOrder.Status.ToString().ToUpperInvariant(),
+                CustomerName = order.Customer?.Name ?? string.Empty,
+                OrderDate = outboundOrder.OrderDate.UtcDateTime,
+                RequestedShipDate = outboundOrder.RequestedShipDate?.UtcDateTime,
+                Lines = outboundOrder.Lines.Select(x => new ShipmentLineSnapshot
+                {
+                    ItemId = x.ItemId,
+                    ItemSku = order.Lines.FirstOrDefault(l => l.ItemId == x.ItemId)?.Item?.InternalSKU ?? string.Empty,
+                    Qty = x.Qty
+                }).ToList()
+            }, cancellationToken);
+        }
 
         if (order.ReservationId.HasValue)
         {

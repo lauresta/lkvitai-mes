@@ -44,6 +44,9 @@ public class WarehouseDbContext : DbContext
     public DbSet<OutboundOrderLine> OutboundOrderLines => Set<OutboundOrderLine>();
     public DbSet<Shipment> Shipments => Set<Shipment>();
     public DbSet<ShipmentLine> ShipmentLines => Set<ShipmentLine>();
+    public DbSet<OutboundOrderSummary> OutboundOrderSummaries => Set<OutboundOrderSummary>();
+    public DbSet<ShipmentSummary> ShipmentSummaries => Set<ShipmentSummary>();
+    public DbSet<DispatchHistory> DispatchHistories => Set<DispatchHistory>();
     public DbSet<SupplierItemMapping> SupplierItemMappings => Set<SupplierItemMapping>();
     public DbSet<Location> Locations => Set<Location>();
     public DbSet<HandlingUnitTypeEntity> HandlingUnitTypes => Set<HandlingUnitTypeEntity>();
@@ -420,6 +423,52 @@ public class WarehouseDbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict);
             entity.HasQueryFilter(e => !e.Shipment!.IsDeleted);
             entity.ToTable(t => t.HasCheckConstraint("ck_shipment_lines_qty", "\"Qty\" > 0"));
+        });
+
+        modelBuilder.Entity<OutboundOrderSummary>(entity =>
+        {
+            entity.ToTable("outbound_order_summary");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.OrderNumber).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.Type).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.Status).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.CustomerName).HasMaxLength(200);
+            entity.Property(e => e.ShipmentNumber).HasMaxLength(50);
+            entity.Property(e => e.TrackingNumber).HasMaxLength(200);
+            entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => e.OrderDate);
+            entity.HasIndex(e => e.CustomerName);
+        });
+
+        modelBuilder.Entity<ShipmentSummary>(entity =>
+        {
+            entity.ToTable("shipment_summary");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ShipmentNumber).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.OutboundOrderNumber).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.CustomerName).HasMaxLength(200);
+            entity.Property(e => e.Carrier).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.TrackingNumber).HasMaxLength(200);
+            entity.Property(e => e.Status).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.PackedBy).HasMaxLength(200);
+            entity.Property(e => e.DispatchedBy).HasMaxLength(200);
+            entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => e.DispatchedAt);
+            entity.HasIndex(e => e.TrackingNumber);
+        });
+
+        modelBuilder.Entity<DispatchHistory>(entity =>
+        {
+            entity.ToTable("dispatch_history");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ShipmentNumber).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.OutboundOrderNumber).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.Carrier).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.TrackingNumber).HasMaxLength(200);
+            entity.Property(e => e.VehicleId).HasMaxLength(100);
+            entity.Property(e => e.DispatchedBy).HasMaxLength(200).IsRequired();
+            entity.HasIndex(e => e.DispatchedAt);
+            entity.HasIndex(e => e.ShipmentId);
         });
 
         modelBuilder.Entity<SupplierItemMapping>(entity =>

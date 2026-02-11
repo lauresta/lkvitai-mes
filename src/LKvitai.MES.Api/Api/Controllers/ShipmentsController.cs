@@ -70,6 +70,58 @@ public sealed class ShipmentsController : ControllerBase
             User.Identity?.Name ?? "system"));
     }
 
+    [HttpGet("summary")]
+    [Authorize(Policy = WarehousePolicies.OperatorOrAbove)]
+    public async Task<IActionResult> GetSummaryAsync(
+        [FromQuery] string? status,
+        [FromQuery] string? customer,
+        [FromQuery] DateTimeOffset? dateFrom,
+        [FromQuery] DateTimeOffset? dateTo,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _dbContext.ShipmentSummaries.AsNoTracking().AsQueryable();
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            query = query.Where(x => x.Status == status.ToUpperInvariant());
+        }
+
+        if (!string.IsNullOrWhiteSpace(customer))
+        {
+            var customerFilter = customer.Trim();
+            query = query.Where(x => x.CustomerName != null && x.CustomerName.Contains(customerFilter));
+        }
+
+        if (dateFrom.HasValue)
+        {
+            query = query.Where(x => x.DispatchedAt == null || x.DispatchedAt >= dateFrom.Value);
+        }
+
+        if (dateTo.HasValue)
+        {
+            query = query.Where(x => x.DispatchedAt == null || x.DispatchedAt <= dateTo.Value);
+        }
+
+        var rows = await query
+            .OrderByDescending(x => x.PackedAt)
+            .Select(x => new ShipmentSummaryResponse(
+                x.Id,
+                x.ShipmentNumber,
+                x.OutboundOrderId,
+                x.OutboundOrderNumber,
+                x.CustomerName,
+                x.Carrier,
+                x.TrackingNumber,
+                x.Status,
+                x.PackedAt,
+                x.DispatchedAt,
+                x.DeliveredAt,
+                x.PackedBy,
+                x.DispatchedBy))
+            .ToListAsync(cancellationToken);
+
+        return Ok(rows);
+    }
+
     private ObjectResult Failure(Result result)
     {
         var problemDetails = ResultProblemDetailsMapper.ToProblemDetails(result, HttpContext);
@@ -112,4 +164,19 @@ public sealed class ShipmentsController : ControllerBase
         string TrackingNumber,
         DateTime DispatchedAt,
         string DispatchedBy);
+
+    public sealed record ShipmentSummaryResponse(
+        Guid Id,
+        string ShipmentNumber,
+        Guid OutboundOrderId,
+        string OutboundOrderNumber,
+        string? CustomerName,
+        string Carrier,
+        string? TrackingNumber,
+        string Status,
+        DateTimeOffset? PackedAt,
+        DateTimeOffset? DispatchedAt,
+        DateTimeOffset? DeliveredAt,
+        string? PackedBy,
+        string? DispatchedBy);
 }

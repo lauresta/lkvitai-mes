@@ -28,6 +28,9 @@ public class VerifyProjectionQueryHandler
 {
     private const string LocationBalanceTable = "mt_doc_locationbalanceview";
     private const string AvailableStockTable = "mt_doc_availablestockview";
+    private const string OutboundOrderSummaryTable = "outbound_order_summary";
+    private const string ShipmentSummaryTable = "shipment_summary";
+    private const string DispatchHistoryTable = "dispatch_history";
 
     private readonly IDocumentStore _store;
 
@@ -52,6 +55,9 @@ public class VerifyProjectionQueryHandler
         {
             "LocationBalance" => LocationBalanceTable,
             "AvailableStock" => AvailableStockTable,
+            "OutboundOrderSummary" => OutboundOrderSummaryTable,
+            "ShipmentSummary" => ShipmentSummaryTable,
+            "DispatchHistory" => DispatchHistoryTable,
             _ => null
         };
 
@@ -96,13 +102,43 @@ public class VerifyProjectionQueryHandler
                 "COALESCE(data->>'onHandQty','0') || ':' || " +
                 "COALESCE(data->>'hardLockedQty','0') || ':' || " +
                 "COALESCE(data->>'availableQty','0')",
+            "OutboundOrderSummary" =>
+                "\"Id\"::text || ':' || COALESCE(\"OrderNumber\",'') || ':' || " +
+                "COALESCE(\"Type\",'') || ':' || COALESCE(\"Status\",'') || ':' || " +
+                "COALESCE(\"CustomerName\",'') || ':' || COALESCE(\"ItemCount\"::text,'0') || ':' || " +
+                "COALESCE(\"OrderDate\"::text,'') || ':' || COALESCE(\"RequestedShipDate\"::text,'') || ':' || " +
+                "COALESCE(\"PackedAt\"::text,'') || ':' || COALESCE(\"ShippedAt\"::text,'') || ':' || " +
+                "COALESCE(\"ShipmentId\"::text,'') || ':' || COALESCE(\"ShipmentNumber\",'') || ':' || " +
+                "COALESCE(\"TrackingNumber\",'')",
+            "ShipmentSummary" =>
+                "\"Id\"::text || ':' || COALESCE(\"ShipmentNumber\",'') || ':' || " +
+                "COALESCE(\"OutboundOrderId\"::text,'') || ':' || COALESCE(\"OutboundOrderNumber\",'') || ':' || " +
+                "COALESCE(\"CustomerName\",'') || ':' || COALESCE(\"Carrier\",'') || ':' || " +
+                "COALESCE(\"TrackingNumber\",'') || ':' || COALESCE(\"Status\",'') || ':' || " +
+                "COALESCE(\"PackedAt\"::text,'') || ':' || COALESCE(\"DispatchedAt\"::text,'') || ':' || " +
+                "COALESCE(\"DeliveredAt\"::text,'') || ':' || COALESCE(\"PackedBy\",'') || ':' || " +
+                "COALESCE(\"DispatchedBy\",'')",
+            "DispatchHistory" =>
+                "\"Id\"::text || ':' || COALESCE(\"ShipmentId\"::text,'') || ':' || " +
+                "COALESCE(\"ShipmentNumber\",'') || ':' || COALESCE(\"OutboundOrderNumber\",'') || ':' || " +
+                "COALESCE(\"Carrier\",'') || ':' || COALESCE(\"TrackingNumber\",'') || ':' || " +
+                "COALESCE(\"VehicleId\",'') || ':' || COALESCE(\"DispatchedAt\"::text,'') || ':' || " +
+                "COALESCE(\"DispatchedBy\",'') || ':' || COALESCE(\"ManualTracking\"::text,'')",
             _ => "id || data::text"
         };
 
+        var sortExpression = projectionName switch
+        {
+            "OutboundOrderSummary" => "\"Id\"",
+            "ShipmentSummary" => "\"Id\"",
+            "DispatchHistory" => "\"Id\"",
+            _ => "id"
+        };
+
         var productionChecksum = await ComputeChecksumAsync(
-            connection, productionTable, fieldExpression, cancellationToken);
+            connection, productionTable, fieldExpression, sortExpression, cancellationToken);
         var shadowChecksum = await ComputeChecksumAsync(
-            connection, shadowTable, fieldExpression, cancellationToken);
+            connection, shadowTable, fieldExpression, sortExpression, cancellationToken);
 
         var productionRowCount = await CountRowsAsync(connection, productionTable, cancellationToken);
         var shadowRowCount = await CountRowsAsync(connection, shadowTable, cancellationToken);
@@ -154,12 +190,13 @@ public class VerifyProjectionQueryHandler
         DbConnection connection,
         string tableName,
         string fieldExpression,
+        string sortExpression,
         CancellationToken cancellationToken)
     {
         await using var cmd = connection.CreateCommand();
         cmd.CommandText = $@"
             SELECT COALESCE(
-                MD5(STRING_AGG({fieldExpression}, '|' ORDER BY id)),
+                MD5(STRING_AGG({fieldExpression}, '|' ORDER BY {sortExpression})),
                 'empty'
             )
             FROM {tableName}";

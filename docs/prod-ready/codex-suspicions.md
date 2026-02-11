@@ -168,3 +168,16 @@
   Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S1.md:2192, local environment lacks running API workflow validation against reachable DB
   Impact: Dispatch curl scenarios and shipment/outbound SQL checks were not executed end-to-end.
   Proposed resolution: Run documented dispatch API flow in environment with reachable PostgreSQL and authenticated API instance.
+- Timestamp: 2026-02-11T06:21:52Z
+  TaskId: PRD-1509
+  Type: RISK
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S1.md:2295, src/LKvitai.MES.Infrastructure/Projections/ProjectionRebuildService.cs:559
+  Impact: Task requests projection rebuild via event-store replay, but outbound/dispatch projections are rebuilt from persisted relational state because outbound operational events are not currently stored in Marten event streams.
+  Proposed resolution: Persist outbound operational events to event store (or dedicated append-only log) and switch rebuild methods to sequence-ordered replay from that source.
+
+- Timestamp: 2026-02-11T06:21:52Z
+  TaskId: PRD-1509
+  Type: TEST-GAP
+  Evidence: dotnet ef database update failed with timeout to 10.211.55.2:5432; psql command unavailable; curl http://localhost:5000/api/warehouse/v1/outbound/orders/summary returned 403
+  Impact: Task-specified SQL verification and end-to-end projection endpoint validation could not be fully executed in this environment.
+  Proposed resolution: Re-run migration/API validation in an environment with reachable warehouse PostgreSQL, installed psql, and authenticated API access.

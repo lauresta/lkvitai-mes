@@ -75,6 +75,59 @@ public sealed class OutboundOrdersController : ControllerBase
             $"/labels/preview?labelType=HU&lpn={Uri.EscapeDataString(handlingUnit?.LPN ?? string.Empty)}"));
     }
 
+    [HttpGet("summary")]
+    [Authorize(Policy = WarehousePolicies.OperatorOrAbove)]
+    public async Task<IActionResult> GetSummaryAsync(
+        [FromQuery] string? status,
+        [FromQuery] string? customer,
+        [FromQuery] DateTimeOffset? dateFrom,
+        [FromQuery] DateTimeOffset? dateTo,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _dbContext.OutboundOrderSummaries.AsNoTracking().AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            query = query.Where(x => x.Status == status.ToUpperInvariant());
+        }
+
+        if (!string.IsNullOrWhiteSpace(customer))
+        {
+            var customerFilter = customer.Trim();
+            query = query.Where(x => x.CustomerName != null && x.CustomerName.Contains(customerFilter));
+        }
+
+        if (dateFrom.HasValue)
+        {
+            query = query.Where(x => x.OrderDate >= dateFrom.Value);
+        }
+
+        if (dateTo.HasValue)
+        {
+            query = query.Where(x => x.OrderDate <= dateTo.Value);
+        }
+
+        var rows = await query
+            .OrderByDescending(x => x.OrderDate)
+            .Select(x => new OutboundOrderSummaryResponse(
+                x.Id,
+                x.OrderNumber,
+                x.Type,
+                x.Status,
+                x.CustomerName,
+                x.ItemCount,
+                x.OrderDate,
+                x.RequestedShipDate,
+                x.PackedAt,
+                x.ShippedAt,
+                x.ShipmentId,
+                x.ShipmentNumber,
+                x.TrackingNumber))
+            .ToListAsync(cancellationToken);
+
+        return Ok(rows);
+    }
+
     private ObjectResult Failure(Result result)
     {
         var problemDetails = ResultProblemDetailsMapper.ToProblemDetails(result, HttpContext);
@@ -116,4 +169,19 @@ public sealed class OutboundOrdersController : ControllerBase
         Guid HandlingUnitId,
         string HandlingUnitCode,
         string LabelPreviewUrl);
+
+    public sealed record OutboundOrderSummaryResponse(
+        Guid Id,
+        string OrderNumber,
+        string Type,
+        string Status,
+        string? CustomerName,
+        int ItemCount,
+        DateTimeOffset OrderDate,
+        DateTimeOffset? RequestedShipDate,
+        DateTimeOffset? PackedAt,
+        DateTimeOffset? ShippedAt,
+        Guid? ShipmentId,
+        string? ShipmentNumber,
+        string? TrackingNumber);
 }

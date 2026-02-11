@@ -262,6 +262,17 @@ public sealed class SalesOrder : AuditableEntity
         return Result.Ok();
     }
 
+    public Result LinkOutboundOrder(Guid outboundOrderId)
+    {
+        if (outboundOrderId == Guid.Empty)
+        {
+            return Result.Fail(DomainErrorCodes.ValidationError, "OutboundOrderId is required.");
+        }
+
+        OutboundOrderId = outboundOrderId;
+        return Result.Ok();
+    }
+
     public Result Ship(DateTimeOffset shippedAt)
     {
         if (Status != SalesOrderStatus.Packed)
@@ -640,6 +651,54 @@ public sealed class ShipmentLine
 
     public Shipment? Shipment { get; set; }
     public Item? Item { get; set; }
+}
+
+public sealed class OutboundOrderSummary
+{
+    public Guid Id { get; set; }
+    public string OrderNumber { get; set; } = string.Empty;
+    public string Type { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public string? CustomerName { get; set; }
+    public int ItemCount { get; set; }
+    public DateTimeOffset OrderDate { get; set; }
+    public DateTimeOffset? RequestedShipDate { get; set; }
+    public DateTimeOffset? PackedAt { get; set; }
+    public DateTimeOffset? ShippedAt { get; set; }
+    public Guid? ShipmentId { get; set; }
+    public string? ShipmentNumber { get; set; }
+    public string? TrackingNumber { get; set; }
+}
+
+public sealed class ShipmentSummary
+{
+    public Guid Id { get; set; }
+    public string ShipmentNumber { get; set; } = string.Empty;
+    public Guid OutboundOrderId { get; set; }
+    public string OutboundOrderNumber { get; set; } = string.Empty;
+    public string? CustomerName { get; set; }
+    public string Carrier { get; set; } = string.Empty;
+    public string? TrackingNumber { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public DateTimeOffset? PackedAt { get; set; }
+    public DateTimeOffset? DispatchedAt { get; set; }
+    public DateTimeOffset? DeliveredAt { get; set; }
+    public string? PackedBy { get; set; }
+    public string? DispatchedBy { get; set; }
+}
+
+public sealed class DispatchHistory
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid ShipmentId { get; set; }
+    public string ShipmentNumber { get; set; } = string.Empty;
+    public string OutboundOrderNumber { get; set; } = string.Empty;
+    public string Carrier { get; set; } = string.Empty;
+    public string? TrackingNumber { get; set; }
+    public string? VehicleId { get; set; }
+    public DateTimeOffset DispatchedAt { get; set; }
+    public string DispatchedBy { get; set; } = string.Empty;
+    public bool ManualTracking { get; set; }
 }
 
 public sealed class SupplierItemMapping

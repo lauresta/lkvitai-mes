@@ -1,5 +1,6 @@
 using MassTransit;
 using LKvitai.MES.Sagas;
+using LKvitai.MES.Api.Services;
 
 namespace LKvitai.MES.Api.Configuration;
 
@@ -18,6 +19,10 @@ public static class MassTransitConfiguration
 
         services.AddMassTransit(x =>
         {
+            x.AddConsumer<OutboundOrderSummaryConsumer>();
+            x.AddConsumer<ShipmentSummaryConsumer>();
+            x.AddConsumer<DispatchHistoryConsumer>();
+
             // Register sagas per blueprint with Marten persistence
             // Saga persistence ENABLED per compliance requirement
             x.AddSagaStateMachine<PickStockSaga, PickStockSagaState>()
