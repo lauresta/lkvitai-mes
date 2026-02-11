@@ -313,7 +313,7 @@ public sealed class LocationsController : ControllerBase
             entity.UpdatedAt));
     }
 
-    [HttpPut("{code:regex(^[^0-9].*$)}")]
+    [HttpPut("{code:regex(^\\D.*$)}")]
     [Authorize(Policy = WarehousePolicies.ManagerOrAdmin)]
     public async Task<IActionResult> UpdateByCodeAsync(
         string code,
