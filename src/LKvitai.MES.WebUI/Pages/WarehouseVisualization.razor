@@ -1,6 +1,7 @@
 @page "/warehouse/visualization/3d"
 @page "/warehouse/visualization/2d"
 @implements IAsyncDisposable
+@using System.Globalization
 @using LKvitai.MES.WebUI.Infrastructure
 @using LKvitai.MES.WebUI.Models
 @inject VisualizationClient VisualizationClient
@@ -68,7 +69,7 @@
                 {
                     <div class="viz-2d-wrap">
                         <svg class="viz-2d-canvas"
-                             viewBox="0 0 @SvgWidth @SvgHeight"
+                             viewBox="@SvgViewBox"
                              preserveAspectRatio="xMidYMid meet">
                             @foreach (var zone in _model.Zones)
                             {
@@ -149,6 +150,8 @@
     private const decimal SvgScale = 12m;
     private const decimal SvgHeight = 640m;
     private const decimal SvgWidth = 1000m;
+    private static readonly string SvgViewBox =
+        FormattableString.Invariant($"0 0 {SvgWidth} {SvgHeight}");
 
     private Visualization3dDto? _model;
     private VisualizationBinDto? _selectedBin;
@@ -294,13 +297,15 @@
             : "viz-2d-bin";
     }
 
-    private static decimal ToSvgX(decimal x) => SvgPadding + (x * SvgScale);
+    private static string ToSvgX(decimal x) => ToSvgNumber(SvgPadding + (x * SvgScale));
 
-    private static decimal ToSvgY(decimal y) => SvgHeight - SvgPadding - (y * SvgScale);
+    private static string ToSvgY(decimal y) => ToSvgNumber(SvgHeight - SvgPadding - (y * SvgScale));
 
-    private static decimal ToSvgWidth(decimal width) => width * SvgScale;
+    private static string ToSvgWidth(decimal width) => ToSvgNumber(width * SvgScale);
 
-    private static decimal ToSvgHeight(decimal height) => height * SvgScale;
+    private static string ToSvgHeight(decimal height) => ToSvgNumber(height * SvgScale);
+
+    private static string ToSvgNumber(decimal value) => value.ToString("0.###", CultureInfo.InvariantCulture);
 
     public async ValueTask DisposeAsync()
     {
