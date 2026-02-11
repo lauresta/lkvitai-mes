@@ -227,3 +227,23 @@
   Evidence: psql --version failed with "command not found: psql"; curl POST http://localhost:5000/api/warehouse/v1/valuation/1/adjust-cost returned 403
   Impact: Task-specified SQL event verification and full authenticated API workflow validation were not completed end-to-end in this environment.
   Proposed resolution: Re-run documented curl + mt_events SQL checks in an environment with PostgreSQL client tools and authenticated API access.
+- Timestamp: 2026-02-11T06:56:27Z
+  TaskId: PRD-1513
+  Type: INCONSISTENCY
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S2.md:618, docs/prod-ready/prod-ready-tasks-PHASE15-S2.md:624, docs/prod-ready/prod-ready-tasks-PHASE15-S2.md:712
+  Impact: Task contracts model `ItemId/CategoryId/locationId` as GUID values, while repository master-data keys for item/category/location are `int`.
+  Proposed resolution: Keep projection/query filters aligned to existing `int` keys and document GUID↔int translation boundary in valuation API docs.
+
+- Timestamp: 2026-02-11T06:56:27Z
+  TaskId: PRD-1513
+  Type: RISK
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S2.md:605, src/LKvitai.MES.Infrastructure/Projections/ProjectionRebuildService.cs:635, src/LKvitai.MES.Infrastructure/Projections/ProjectionRebuildService.cs:650
+  Impact: OnHandValue rebuild derives quantities from the current `AvailableStockView` snapshot plus valuation event replay; it does not replay `StockMoved` deltas directly into quantity state, so rebuild correctness depends on `AvailableStockView` integrity.
+  Proposed resolution: Add dedicated on-hand quantity replay path from stock movement/reservation events (or assert/rebuild AvailableStock first in the same command).
+
+- Timestamp: 2026-02-11T06:56:27Z
+  TaskId: PRD-1513
+  Type: TEST-GAP
+  Evidence: psql command failed (`command not found: psql`); curl POST/GET valuation endpoints returned 403 against localhost:5000
+  Impact: Task-specified SQL verification (`on_hand_value` table) and authenticated manual API workflow checks were not completed in this environment.
+  Proposed resolution: Re-run documented curl + SQL validation in an environment with PostgreSQL client tools and valid API auth context.

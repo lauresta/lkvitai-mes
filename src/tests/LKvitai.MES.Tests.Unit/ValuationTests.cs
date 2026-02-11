@@ -22,6 +22,18 @@ public class ValuationTests
     }
 
     [Fact]
+    public void ToValuationItemId_ShouldRoundTripInventoryItemId()
+    {
+        const int inventoryItemId = 101;
+
+        var valuationItemId = Valuation.ToValuationItemId(inventoryItemId);
+        var success = Valuation.TryToInventoryItemId(valuationItemId, out var restoredInventoryItemId);
+
+        success.Should().BeTrue();
+        restoredInventoryItemId.Should().Be(inventoryItemId);
+    }
+
+    [Fact]
     public void Initialize_ShouldCreateValuationInitializedEvent()
     {
         var valuation = new Valuation();

@@ -31,6 +31,7 @@ public class VerifyProjectionQueryHandler
     private const string OutboundOrderSummaryTable = "outbound_order_summary";
     private const string ShipmentSummaryTable = "shipment_summary";
     private const string DispatchHistoryTable = "dispatch_history";
+    private const string OnHandValueTable = "on_hand_value";
 
     private readonly IDocumentStore _store;
 
@@ -58,6 +59,7 @@ public class VerifyProjectionQueryHandler
             "OutboundOrderSummary" => OutboundOrderSummaryTable,
             "ShipmentSummary" => ShipmentSummaryTable,
             "DispatchHistory" => DispatchHistoryTable,
+            "OnHandValue" => OnHandValueTable,
             _ => null
         };
 
@@ -124,6 +126,12 @@ public class VerifyProjectionQueryHandler
                 "COALESCE(\"Carrier\",'') || ':' || COALESCE(\"TrackingNumber\",'') || ':' || " +
                 "COALESCE(\"VehicleId\",'') || ':' || COALESCE(\"DispatchedAt\"::text,'') || ':' || " +
                 "COALESCE(\"DispatchedBy\",'') || ':' || COALESCE(\"ManualTracking\"::text,'')",
+            "OnHandValue" =>
+                "\"Id\"::text || ':' || COALESCE(\"ItemId\"::text,'') || ':' || " +
+                "COALESCE(\"ItemSku\",'') || ':' || COALESCE(\"ItemName\",'') || ':' || " +
+                "COALESCE(\"CategoryId\"::text,'') || ':' || COALESCE(\"CategoryName\",'') || ':' || " +
+                "COALESCE(\"Qty\"::text,'0') || ':' || COALESCE(\"UnitCost\"::text,'0') || ':' || " +
+                "COALESCE(\"TotalValue\"::text,'0') || ':' || COALESCE(\"LastUpdated\"::text,'')",
             _ => "id || data::text"
         };
 
@@ -132,6 +140,7 @@ public class VerifyProjectionQueryHandler
             "OutboundOrderSummary" => "\"Id\"",
             "ShipmentSummary" => "\"Id\"",
             "DispatchHistory" => "\"Id\"",
+            "OnHandValue" => "\"Id\"",
             _ => "id"
         };
 

@@ -47,6 +47,7 @@ public class WarehouseDbContext : DbContext
     public DbSet<OutboundOrderSummary> OutboundOrderSummaries => Set<OutboundOrderSummary>();
     public DbSet<ShipmentSummary> ShipmentSummaries => Set<ShipmentSummary>();
     public DbSet<DispatchHistory> DispatchHistories => Set<DispatchHistory>();
+    public DbSet<OnHandValue> OnHandValues => Set<OnHandValue>();
     public DbSet<SupplierItemMapping> SupplierItemMappings => Set<SupplierItemMapping>();
     public DbSet<Location> Locations => Set<Location>();
     public DbSet<HandlingUnitTypeEntity> HandlingUnitTypes => Set<HandlingUnitTypeEntity>();
@@ -469,6 +470,31 @@ public class WarehouseDbContext : DbContext
             entity.Property(e => e.DispatchedBy).HasMaxLength(200).IsRequired();
             entity.HasIndex(e => e.DispatchedAt);
             entity.HasIndex(e => e.ShipmentId);
+        });
+
+        modelBuilder.Entity<OnHandValue>(entity =>
+        {
+            entity.ToTable("on_hand_value");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ItemSku).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.ItemName).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.CategoryName).HasMaxLength(200);
+            entity.Property(e => e.Qty).HasPrecision(18, 3).IsRequired();
+            entity.Property(e => e.UnitCost).HasPrecision(18, 4).IsRequired();
+            entity.Property(e => e.TotalValue).HasPrecision(18, 4).IsRequired();
+            entity.Property(e => e.LastUpdated).IsRequired();
+            entity.HasIndex(e => e.ItemId).IsUnique();
+            entity.HasIndex(e => e.CategoryId);
+            entity.HasIndex(e => e.TotalValue);
+            entity.HasIndex(e => e.LastUpdated);
+            entity.HasOne<Item>()
+                .WithMany()
+                .HasForeignKey(e => e.ItemId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne<ItemCategory>()
+                .WithMany()
+                .HasForeignKey(e => e.CategoryId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         modelBuilder.Entity<SupplierItemMapping>(entity =>

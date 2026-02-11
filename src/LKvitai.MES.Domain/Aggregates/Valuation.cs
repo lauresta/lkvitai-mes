@@ -45,6 +45,22 @@ public class Valuation
         return new Guid(bytes);
     }
 
+    public static bool TryToInventoryItemId(Guid valuationItemId, out int itemId)
+    {
+        itemId = BitConverter.ToInt32(valuationItemId.ToByteArray(), 0);
+        return itemId > 0;
+    }
+
+    public static int ToInventoryItemId(Guid valuationItemId)
+    {
+        if (!TryToInventoryItemId(valuationItemId, out var itemId))
+        {
+            throw new DomainException(DomainErrorCodes.ValidationError, "Valuation ItemId is invalid.");
+        }
+
+        return itemId;
+    }
+
     public ValuationInitialized Initialize(
         Guid itemId,
         decimal initialUnitCost,

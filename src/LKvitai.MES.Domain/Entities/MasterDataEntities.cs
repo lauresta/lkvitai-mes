@@ -701,6 +701,20 @@ public sealed class DispatchHistory
     public bool ManualTracking { get; set; }
 }
 
+public sealed class OnHandValue
+{
+    public Guid Id { get; set; }
+    public int ItemId { get; set; }
+    public string ItemSku { get; set; } = string.Empty;
+    public string ItemName { get; set; } = string.Empty;
+    public int? CategoryId { get; set; }
+    public string? CategoryName { get; set; }
+    public decimal Qty { get; set; }
+    public decimal UnitCost { get; set; }
+    public decimal TotalValue { get; set; }
+    public DateTimeOffset LastUpdated { get; set; }
+}
+
 public sealed class SupplierItemMapping
 {
     public int Id { get; set; }

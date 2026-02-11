@@ -22,6 +22,7 @@ public static class MassTransitConfiguration
             x.AddConsumer<OutboundOrderSummaryConsumer>();
             x.AddConsumer<ShipmentSummaryConsumer>();
             x.AddConsumer<DispatchHistoryConsumer>();
+            x.AddConsumer<OnHandValueProjectionConsumer>();
 
             // Register sagas per blueprint with Marten persistence
             // Saga persistence ENABLED per compliance requirement

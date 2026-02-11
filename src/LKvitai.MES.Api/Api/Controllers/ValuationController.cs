@@ -1,5 +1,6 @@
 using LKvitai.MES.Api.ErrorHandling;
 using LKvitai.MES.Api.Security;
+using LKvitai.MES.Api.Services;
 using LKvitai.MES.Application.Commands;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Contracts.ReadModels;
@@ -21,15 +22,18 @@ public sealed class ValuationController : ControllerBase
     private readonly IMediator _mediator;
     private readonly WarehouseDbContext _dbContext;
     private readonly IDocumentStore _documentStore;
+    private readonly IAvailableStockQuantityResolver _quantityResolver;
 
     public ValuationController(
         IMediator mediator,
         WarehouseDbContext dbContext,
-        IDocumentStore documentStore)
+        IDocumentStore documentStore,
+        IAvailableStockQuantityResolver quantityResolver)
     {
         _mediator = mediator;
         _dbContext = dbContext;
         _documentStore = documentStore;
+        _quantityResolver = quantityResolver;
     }
 
     [HttpPost("{itemId:int}/adjust-cost")]
@@ -99,6 +103,96 @@ public sealed class ValuationController : ControllerBase
             costAdjustedEvent.Reason,
             costAdjustedEvent.ApproverId?.ToString() ?? costAdjustedEvent.AdjustedBy,
             costAdjustedEvent.AdjustedAt));
+    }
+
+    [HttpGet("on-hand-value")]
+    [Authorize(Policy = WarehousePolicies.InventoryAccountantOrManager)]
+    public async Task<IActionResult> GetOnHandValueAsync(
+        [FromQuery] int? categoryId,
+        [FromQuery] string? categoryName,
+        [FromQuery] int? locationId,
+        [FromQuery] DateTimeOffset? dateFrom,
+        [FromQuery] DateTimeOffset? dateTo,
+        CancellationToken cancellationToken = default)
+    {
+        var query = _dbContext.OnHandValues.AsNoTracking().AsQueryable();
+
+        if (categoryId.HasValue)
+        {
+            query = query.Where(x => x.CategoryId == categoryId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(categoryName))
+        {
+            var categoryFilter = categoryName.Trim();
+            query = query.Where(x => x.CategoryName != null && x.CategoryName.Contains(categoryFilter));
+        }
+
+        if (dateFrom.HasValue)
+        {
+            query = query.Where(x => x.LastUpdated >= dateFrom.Value);
+        }
+
+        if (dateTo.HasValue)
+        {
+            query = query.Where(x => x.LastUpdated <= dateTo.Value);
+        }
+
+        var orderedRows = query
+            .OrderByDescending(x => x.TotalValue);
+        var rows = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync(
+            orderedRows,
+            cancellationToken);
+
+        if (!locationId.HasValue)
+        {
+            return Ok(rows.Select(x => new OnHandValueResponse(
+                x.Id,
+                x.ItemId,
+                x.ItemSku,
+                x.ItemName,
+                x.CategoryId,
+                x.CategoryName,
+                x.Qty,
+                x.UnitCost,
+                x.TotalValue,
+                x.LastUpdated)));
+        }
+
+        var locationQuery = _dbContext.Locations
+            .AsNoTracking();
+        var location = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
+            locationQuery,
+            x => x.Id == locationId.Value,
+            cancellationToken);
+
+        if (location is null)
+        {
+            return Failure(Result.Fail(DomainErrorCodes.NotFound, $"Location {locationId.Value} not found."));
+        }
+
+        var qtyBySku = await _quantityResolver.ResolveQtyBySkuForLocationAsync(location.Code, cancellationToken);
+
+        var filteredRows = rows
+            .Where(x => qtyBySku.TryGetValue(x.ItemSku, out var qty) && qty > 0m)
+            .Select(x =>
+            {
+                var qty = qtyBySku[x.ItemSku];
+                var totalValue = decimal.Round(qty * x.UnitCost, 4, MidpointRounding.AwayFromZero);
+                return new OnHandValueResponse(
+                    x.Id,
+                    x.ItemId,
+                    x.ItemSku,
+                    x.ItemName,
+                    x.CategoryId,
+                    x.CategoryName,
+                    qty,
+                    x.UnitCost,
+                    totalValue,
+                    x.LastUpdated);
+            });
+
+        return Ok(filteredRows);
     }
 
     private static async Task<CostAdjusted?> LoadCostAdjustedEventAsync(
@@ -181,4 +275,16 @@ public sealed class ValuationController : ControllerBase
         string Reason,
         string ApprovedBy,
         DateTime AdjustedAt);
+
+    public sealed record OnHandValueResponse(
+        Guid Id,
+        int ItemId,
+        string ItemSku,
+        string ItemName,
+        int? CategoryId,
+        string? CategoryName,
+        decimal Qty,
+        decimal UnitCost,
+        decimal TotalValue,
+        DateTimeOffset LastUpdated);
 }

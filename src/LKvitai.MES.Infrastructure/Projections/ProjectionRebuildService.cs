@@ -52,6 +52,7 @@ public class ProjectionRebuildService : IProjectionRebuildService
     private const string OutboundOrderSummaryTable = "outbound_order_summary";
     private const string ShipmentSummaryTable = "shipment_summary";
     private const string DispatchHistoryTable = "dispatch_history";
+    private const string OnHandValueTable = "on_hand_value";
 
     public ProjectionRebuildService(
         IDocumentStore documentStore,
@@ -119,6 +120,7 @@ public class ProjectionRebuildService : IProjectionRebuildService
                 "OutboundOrderSummary" => OutboundOrderSummaryTable,
                 "ShipmentSummary" => ShipmentSummaryTable,
                 "DispatchHistory" => DispatchHistoryTable,
+                "OnHandValue" => OnHandValueTable,
                 _ => null
             };
 
@@ -150,6 +152,7 @@ public class ProjectionRebuildService : IProjectionRebuildService
                 "OutboundOrderSummary" => await ReplayOutboundOrderSummaryAsync(shadowTable, cancellationToken),
                 "ShipmentSummary" => await ReplayShipmentSummaryAsync(shadowTable, cancellationToken),
                 "DispatchHistory" => await ReplayDispatchHistoryAsync(shadowTable, cancellationToken),
+                "OnHandValue" => await ReplayOnHandValueAsync(shadowTable, cancellationToken),
                 _ => 0
             };
 
@@ -425,6 +428,13 @@ public class ProjectionRebuildService : IProjectionRebuildService
             "COALESCE(\"VehicleId\",'') || ':' || COALESCE(\"DispatchedAt\"::text,'') || ':' || " +
             "COALESCE(\"DispatchedBy\",'') || ':' || COALESCE(\"ManualTracking\"::text,'')",
 
+        "OnHandValue" =>
+            "\"Id\"::text || ':' || COALESCE(\"ItemId\"::text,'') || ':' || " +
+            "COALESCE(\"ItemSku\",'') || ':' || COALESCE(\"ItemName\",'') || ':' || " +
+            "COALESCE(\"CategoryId\"::text,'') || ':' || COALESCE(\"CategoryName\",'') || ':' || " +
+            "COALESCE(\"Qty\"::text,'0') || ':' || COALESCE(\"UnitCost\"::text,'0') || ':' || " +
+            "COALESCE(\"TotalValue\"::text,'0') || ':' || COALESCE(\"LastUpdated\"::text,'')",
+
         _ => "id || data::text"
     };
 
@@ -433,6 +443,7 @@ public class ProjectionRebuildService : IProjectionRebuildService
         "OutboundOrderSummary" => "\"Id\"",
         "ShipmentSummary" => "\"Id\"",
         "DispatchHistory" => "\"Id\"",
+        "OnHandValue" => "\"Id\"",
         _ => "id"
     };
 
@@ -581,6 +592,182 @@ public class ProjectionRebuildService : IProjectionRebuildService
             FROM public.dispatch_history;";
 
         return await cmd.ExecuteNonQueryAsync(ct);
+    }
+
+    private async Task<int> ReplayOnHandValueAsync(
+        string shadowTable,
+        CancellationToken ct)
+    {
+        _logger.LogInformation("Rebuilding on-hand value projection into {ShadowTable}", shadowTable);
+
+        await using var querySession = _documentStore.QuerySession();
+        var allEvents = await querySession.Events
+            .QueryAllRawEvents()
+            .OrderBy(e => e.Sequence)
+            .ToListAsync(ct);
+
+        var unitCostByItemId = new Dictionary<int, decimal>();
+        var valuationUpdatedAtByItemId = new Dictionary<int, DateTime>();
+        var processedEvents = 0;
+
+        foreach (var rawEvent in allEvents)
+        {
+            switch (rawEvent.Data)
+            {
+                case ValuationInitialized initialized when Domain.Aggregates.Valuation.TryToInventoryItemId(initialized.ItemId, out var initializedItemId):
+                    unitCostByItemId[initializedItemId] = decimal.Round(initialized.InitialUnitCost, 4, MidpointRounding.AwayFromZero);
+                    valuationUpdatedAtByItemId[initializedItemId] = DateTime.SpecifyKind(initialized.Timestamp, DateTimeKind.Utc);
+                    processedEvents++;
+                    break;
+                case CostAdjusted adjusted when Domain.Aggregates.Valuation.TryToInventoryItemId(adjusted.ItemId, out var adjustedItemId):
+                    unitCostByItemId[adjustedItemId] = decimal.Round(adjusted.NewUnitCost, 4, MidpointRounding.AwayFromZero);
+                    valuationUpdatedAtByItemId[adjustedItemId] = DateTime.SpecifyKind(adjusted.Timestamp, DateTimeKind.Utc);
+                    processedEvents++;
+                    break;
+                case LandedCostAllocated landed when Domain.Aggregates.Valuation.TryToInventoryItemId(landed.ItemId, out var landedItemId):
+                    unitCostByItemId[landedItemId] = decimal.Round(landed.NewUnitCost, 4, MidpointRounding.AwayFromZero);
+                    valuationUpdatedAtByItemId[landedItemId] = DateTime.SpecifyKind(landed.Timestamp, DateTimeKind.Utc);
+                    processedEvents++;
+                    break;
+                case StockWrittenDown writtenDown when Domain.Aggregates.Valuation.TryToInventoryItemId(writtenDown.ItemId, out var writtenDownItemId):
+                    unitCostByItemId[writtenDownItemId] = decimal.Round(writtenDown.NewUnitCost, 4, MidpointRounding.AwayFromZero);
+                    valuationUpdatedAtByItemId[writtenDownItemId] = DateTime.SpecifyKind(writtenDown.Timestamp, DateTimeKind.Utc);
+                    processedEvents++;
+                    break;
+            }
+        }
+
+        var availableRows = await querySession.Query<AvailableStockView>()
+            .ToListAsync(ct);
+        var qtyByItemId = availableRows
+            .Where(x => x.ItemId.HasValue)
+            .GroupBy(x => x.ItemId!.Value)
+            .ToDictionary(g => g.Key, g => g.Sum(x => x.AvailableQty));
+        var stockUpdatedAtByItemId = availableRows
+            .Where(x => x.ItemId.HasValue)
+            .GroupBy(x => x.ItemId!.Value)
+            .ToDictionary(g => g.Key, g => g.Max(x => DateTime.SpecifyKind(x.LastUpdated, DateTimeKind.Utc)));
+        var qtyBySku = availableRows
+            .Where(x => !string.IsNullOrWhiteSpace(x.SKU))
+            .GroupBy(x => x.SKU, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.Sum(x => x.AvailableQty), StringComparer.OrdinalIgnoreCase);
+        var stockUpdatedAtBySku = availableRows
+            .Where(x => !string.IsNullOrWhiteSpace(x.SKU))
+            .GroupBy(x => x.SKU, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(
+                g => g.Key,
+                g => g.Max(x => DateTime.SpecifyKind(x.LastUpdated, DateTimeKind.Utc)),
+                StringComparer.OrdinalIgnoreCase);
+
+        await using var writeSession = _documentStore.LightweightSession();
+        var conn = (NpgsqlConnection)(writeSession.Connection
+            ?? throw new InvalidOperationException("Marten write session connection is unavailable."));
+
+        await using var itemsCmd = conn.CreateCommand();
+        itemsCmd.CommandText = @"
+            SELECT i.""Id"", i.""InternalSKU"", i.""Name"", i.""CategoryId"", c.""Name""
+            FROM public.items i
+            LEFT JOIN public.item_categories c ON c.""Id"" = i.""CategoryId""
+            ORDER BY i.""Id""";
+
+        await using var reader = await itemsCmd.ExecuteReaderAsync(ct);
+        var rows = new List<(int ItemId, string Sku, string ItemName, int? CategoryId, string? CategoryName)>();
+        while (await reader.ReadAsync(ct))
+        {
+            rows.Add((
+                reader.GetInt32(0),
+                reader.GetString(1),
+                reader.GetString(2),
+                reader.IsDBNull(3) ? null : reader.GetInt32(3),
+                reader.IsDBNull(4) ? null : reader.GetString(4)));
+        }
+        await reader.CloseAsync();
+
+        var inserted = 0;
+        foreach (var item in rows)
+        {
+            if (!unitCostByItemId.TryGetValue(item.ItemId, out var unitCost))
+            {
+                continue;
+            }
+
+            var qty = qtyByItemId.TryGetValue(item.ItemId, out var qtyById)
+                ? qtyById
+                : qtyBySku.TryGetValue(item.Sku, out var qtyBySkuValue)
+                    ? qtyBySkuValue
+                    : 0m;
+
+            var totalValue = decimal.Round(qty * unitCost, 4, MidpointRounding.AwayFromZero);
+            var id = Domain.Aggregates.Valuation.ToValuationItemId(item.ItemId);
+            var updatedAt = ResolveUpdatedAt(
+                item.ItemId,
+                item.Sku,
+                valuationUpdatedAtByItemId,
+                stockUpdatedAtByItemId,
+                stockUpdatedAtBySku);
+
+            await using var insertCmd = conn.CreateCommand();
+            insertCmd.CommandText = $@"
+                INSERT INTO {shadowTable}
+                (
+                    ""Id"", ""ItemId"", ""ItemSku"", ""ItemName"", ""CategoryId"",
+                    ""CategoryName"", ""Qty"", ""UnitCost"", ""TotalValue"", ""LastUpdated""
+                )
+                VALUES
+                (
+                    @id, @itemId, @itemSku, @itemName, @categoryId,
+                    @categoryName, @qty, @unitCost, @totalValue, @lastUpdated
+                )";
+            insertCmd.Parameters.AddWithValue("id", id);
+            insertCmd.Parameters.AddWithValue("itemId", item.ItemId);
+            insertCmd.Parameters.AddWithValue("itemSku", item.Sku);
+            insertCmd.Parameters.AddWithValue("itemName", item.ItemName);
+            insertCmd.Parameters.AddWithValue("categoryId", item.CategoryId.HasValue ? item.CategoryId.Value : DBNull.Value);
+            insertCmd.Parameters.AddWithValue("categoryName", item.CategoryName ?? (object)DBNull.Value);
+            insertCmd.Parameters.AddWithValue("qty", qty);
+            insertCmd.Parameters.AddWithValue("unitCost", unitCost);
+            insertCmd.Parameters.AddWithValue("totalValue", totalValue);
+            insertCmd.Parameters.AddWithValue("lastUpdated", updatedAt);
+            await insertCmd.ExecuteNonQueryAsync(ct);
+            inserted++;
+        }
+
+        _logger.LogInformation(
+            "OnHandValue: replayed {EventCount} valuation events and inserted {RecordCount} rows",
+            processedEvents,
+            inserted);
+
+        return processedEvents;
+    }
+
+    private static DateTime ResolveUpdatedAt(
+        int itemId,
+        string sku,
+        IReadOnlyDictionary<int, DateTime> valuationUpdatedAtByItemId,
+        IReadOnlyDictionary<int, DateTime> stockUpdatedAtByItemId,
+        IReadOnlyDictionary<string, DateTime> stockUpdatedAtBySku)
+    {
+        valuationUpdatedAtByItemId.TryGetValue(itemId, out var valuationUpdatedAt);
+        stockUpdatedAtByItemId.TryGetValue(itemId, out var stockUpdatedAtByItem);
+        stockUpdatedAtBySku.TryGetValue(sku, out var stockUpdatedAtBySkuValue);
+
+        var updatedAt = valuationUpdatedAt;
+        if (stockUpdatedAtByItem > updatedAt)
+        {
+            updatedAt = stockUpdatedAtByItem;
+        }
+
+        if (stockUpdatedAtBySkuValue > updatedAt)
+        {
+            updatedAt = stockUpdatedAtBySkuValue;
+        }
+
+        if (updatedAt == default)
+        {
+            updatedAt = DateTime.UnixEpoch;
+        }
+
+        return DateTime.SpecifyKind(updatedAt, DateTimeKind.Utc);
     }
 
     // ═══════════════════════════════════════════════════════════════════

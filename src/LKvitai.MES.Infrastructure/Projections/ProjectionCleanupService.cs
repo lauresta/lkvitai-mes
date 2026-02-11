@@ -89,5 +89,5 @@ public sealed class ProjectionCleanupService : IProjectionCleanupService
         return tables;
     }
 
-    private static readonly string[] KnownProjectionNames = ["LocationBalance", "AvailableStock"];
+    private static readonly string[] KnownProjectionNames = ["LocationBalance", "AvailableStock", "OnHandValue"];
 }

@@ -133,6 +133,7 @@ builder.Services.AddMassTransitConfiguration(builder.Configuration);
 // IEventBus — MassTransit implementation (composition root wires this)
 builder.Services.AddScoped<IEventBus, MassTransitEventBus>();
 builder.Services.AddScoped<ICarrierApiService, FedExApiService>();
+builder.Services.AddScoped<IAvailableStockQuantityResolver, MartenAvailableStockQuantityResolver>();
 
 // OpenTelemetry observability
 builder.Services.AddOpenTelemetryConfiguration(builder.Configuration);
