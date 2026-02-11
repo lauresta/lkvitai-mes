@@ -388,6 +388,16 @@ public enum Carrier
     Other
 }
 
+public enum TransferStatus
+{
+    Draft,
+    PendingApproval,
+    Approved,
+    InTransit,
+    Completed,
+    Cancelled
+}
+
 public sealed class OutboundOrder : AuditableEntity
 {
     public Guid Id { get; set; } = Guid.NewGuid();
@@ -521,6 +531,106 @@ public sealed class OutboundOrder : AuditableEntity
         Status = OutboundOrderStatus.Cancelled;
         return Result.Ok();
     }
+}
+
+public sealed class Transfer : AuditableEntity
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public string TransferNumber { get; set; } = string.Empty;
+    public string FromWarehouse { get; set; } = string.Empty;
+    public string ToWarehouse { get; set; } = string.Empty;
+    public TransferStatus Status { get; private set; } = TransferStatus.Draft;
+    public string RequestedBy { get; set; } = string.Empty;
+    public string? ApprovedBy { get; private set; }
+    public DateTimeOffset RequestedAt { get; set; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset? ApprovedAt { get; private set; }
+    public DateTimeOffset? ExecutedAt { get; private set; }
+    public DateTimeOffset? CompletedAt { get; private set; }
+    public Guid CreateCommandId { get; set; }
+    public Guid? ApproveCommandId { get; private set; }
+    public Guid? ExecuteCommandId { get; private set; }
+
+    public ICollection<TransferLine> Lines { get; set; } = new List<TransferLine>();
+
+    public bool RequiresApproval() => string.Equals(ToWarehouse, "SCRAP", StringComparison.OrdinalIgnoreCase);
+
+    public Result EnsureRequestedState()
+    {
+        Status = RequiresApproval()
+            ? TransferStatus.PendingApproval
+            : TransferStatus.Draft;
+        return Result.Ok();
+    }
+
+    public Result Approve(string approvedBy, Guid commandId, DateTimeOffset approvedAt)
+    {
+        if (Status != TransferStatus.PendingApproval)
+        {
+            return Result.Fail(
+                DomainErrorCodes.ValidationError,
+                $"Invalid status transition: {Status} -> {TransferStatus.Approved}");
+        }
+
+        if (string.IsNullOrWhiteSpace(approvedBy))
+        {
+            return Result.Fail(DomainErrorCodes.ValidationError, "ApprovedBy is required.");
+        }
+
+        Status = TransferStatus.Approved;
+        ApprovedBy = approvedBy;
+        ApprovedAt = approvedAt;
+        ApproveCommandId = commandId;
+        return Result.Ok();
+    }
+
+    public Result StartExecution(Guid commandId, DateTimeOffset executedAt)
+    {
+        if (Status == TransferStatus.Draft && !RequiresApproval())
+        {
+            Status = TransferStatus.Approved;
+        }
+
+        if (Status != TransferStatus.Approved)
+        {
+            return Result.Fail(
+                DomainErrorCodes.ValidationError,
+                $"Invalid status transition: {Status} -> {TransferStatus.InTransit}");
+        }
+
+        Status = TransferStatus.InTransit;
+        ExecutedAt = executedAt;
+        ExecuteCommandId = commandId;
+        return Result.Ok();
+    }
+
+    public Result Complete(DateTimeOffset completedAt)
+    {
+        if (Status != TransferStatus.InTransit)
+        {
+            return Result.Fail(
+                DomainErrorCodes.ValidationError,
+                $"Invalid status transition: {Status} -> {TransferStatus.Completed}");
+        }
+
+        Status = TransferStatus.Completed;
+        CompletedAt = completedAt;
+        return Result.Ok();
+    }
+}
+
+public sealed class TransferLine
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid TransferId { get; set; }
+    public int ItemId { get; set; }
+    public decimal Qty { get; set; }
+    public int FromLocationId { get; set; }
+    public int ToLocationId { get; set; }
+
+    public Transfer? Transfer { get; set; }
+    public Item? Item { get; set; }
+    public Location? FromLocation { get; set; }
+    public Location? ToLocation { get; set; }
 }
 
 public sealed class OutboundOrderLine

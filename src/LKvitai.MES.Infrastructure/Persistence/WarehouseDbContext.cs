@@ -45,6 +45,8 @@ public class WarehouseDbContext : DbContext
     public DbSet<OutboundOrderLine> OutboundOrderLines => Set<OutboundOrderLine>();
     public DbSet<Shipment> Shipments => Set<Shipment>();
     public DbSet<ShipmentLine> ShipmentLines => Set<ShipmentLine>();
+    public DbSet<Transfer> Transfers => Set<Transfer>();
+    public DbSet<TransferLine> TransferLines => Set<TransferLine>();
     public DbSet<OutboundOrderSummary> OutboundOrderSummaries => Set<OutboundOrderSummary>();
     public DbSet<ShipmentSummary> ShipmentSummaries => Set<ShipmentSummary>();
     public DbSet<DispatchHistory> DispatchHistories => Set<DispatchHistory>();
@@ -88,6 +90,10 @@ public class WarehouseDbContext : DbContext
             .IncrementsBy(1);
 
         modelBuilder.HasSequence<long>("shipment_number_seq")
+            .StartsAt(1)
+            .IncrementsBy(1);
+
+        modelBuilder.HasSequence<long>("transfer_number_seq")
             .StartsAt(1)
             .IncrementsBy(1);
         
@@ -432,6 +438,65 @@ public class WarehouseDbContext : DbContext
             entity.ToTable(t => t.HasCheckConstraint("ck_shipment_lines_qty", "\"Qty\" > 0"));
         });
 
+        modelBuilder.Entity<Transfer>(entity =>
+        {
+            entity.ToTable("transfers");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.TransferNumber)
+                .HasMaxLength(50)
+                .IsRequired()
+                .HasDefaultValueSql("'TRF-' || LPAD(nextval('transfer_number_seq')::text, 4, '0')");
+            entity.Property(e => e.FromWarehouse).HasMaxLength(30).IsRequired();
+            entity.Property(e => e.ToWarehouse).HasMaxLength(30).IsRequired();
+            entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(30).IsRequired();
+            entity.Property(e => e.RequestedBy).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.ApprovedBy).HasMaxLength(100);
+            entity.Property(e => e.CreateCommandId).IsRequired();
+            entity.HasIndex(e => e.TransferNumber).IsUnique();
+            entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => e.FromWarehouse);
+            entity.HasIndex(e => e.ToWarehouse);
+            entity.HasIndex(e => e.RequestedAt);
+            entity.HasMany(e => e.Lines)
+                .WithOne(e => e.Transfer)
+                .HasForeignKey(e => e.TransferId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.ToTable(t =>
+            {
+                t.HasCheckConstraint("ck_transfers_from_warehouse", "\"FromWarehouse\" <> ''");
+                t.HasCheckConstraint("ck_transfers_to_warehouse", "\"ToWarehouse\" <> ''");
+                t.HasCheckConstraint("ck_transfers_from_to_not_equal", "\"FromWarehouse\" <> \"ToWarehouse\"");
+            });
+        });
+
+        modelBuilder.Entity<TransferLine>(entity =>
+        {
+            entity.ToTable("transfer_lines");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Qty).HasPrecision(18, 3).IsRequired();
+            entity.HasIndex(e => e.TransferId);
+            entity.HasIndex(e => e.ItemId);
+            entity.HasIndex(e => e.FromLocationId);
+            entity.HasIndex(e => e.ToLocationId);
+            entity.HasOne(e => e.Item)
+                .WithMany()
+                .HasForeignKey(e => e.ItemId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(e => e.FromLocation)
+                .WithMany()
+                .HasForeignKey(e => e.FromLocationId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(e => e.ToLocation)
+                .WithMany()
+                .HasForeignKey(e => e.ToLocationId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.ToTable(t =>
+            {
+                t.HasCheckConstraint("ck_transfer_lines_qty", "\"Qty\" > 0");
+                t.HasCheckConstraint("ck_transfer_lines_locations", "\"FromLocationId\" <> \"ToLocationId\"");
+            });
+        });
+
         modelBuilder.Entity<OutboundOrderSummary>(entity =>
         {
             entity.ToTable("outbound_order_summary");
@@ -596,7 +661,7 @@ public class WarehouseDbContext : DbContext
             entity.HasOne(e => e.ParentLocation).WithMany(e => e.Children).HasForeignKey(e => e.ParentLocationId).OnDelete(DeleteBehavior.Restrict);
             entity.ToTable(t =>
             {
-                t.HasCheckConstraint("ck_locations_type", "\"Type\" IN ('Warehouse','Zone','Aisle','Rack','Shelf','Bin')");
+                t.HasCheckConstraint("ck_locations_type", "\"Type\" IN ('Warehouse','Zone','Aisle','Rack','Shelf','Bin','Virtual')");
                 t.HasCheckConstraint("ck_locations_status", "\"Status\" IN ('Active','Blocked','Maintenance')");
                 t.HasCheckConstraint("ck_locations_zone_type", "\"ZoneType\" IS NULL OR \"ZoneType\" IN ('General','Refrigerated','Hazmat','Quarantine')");
                 t.HasCheckConstraint("ck_locations_max_weight", "\"MaxWeight\" IS NULL OR \"MaxWeight\" > 0");

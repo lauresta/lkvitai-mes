@@ -326,3 +326,21 @@
   Evidence: `cd src/LKvitai.MES.UI && npm run dev` failed with "no such file or directory"
   Impact: Task-specified manual browser interaction checks tied to the React dev server could not be executed as written.
   Proposed resolution: Run manual interaction checks against Blazor route `/warehouse/visualization/3d` in `src/LKvitai.MES.WebUI`.
+- Timestamp: 2026-02-11T07:41:00Z
+  TaskId: PRD-1519
+  Type: INCONSISTENCY
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S2.md:1847, docs/prod-ready/prod-ready-tasks-PHASE15-S2.md:1858, src/LKvitai.MES.Domain/Entities/MasterDataEntities.cs:624
+  Impact: Task data model describes , , and  as GUIDs, while repository master-data keys for Item and Location are .
+  Proposed resolution: Implement transfer line foreign keys as  to match existing schema and keep API contract aligned with repository identity types.
+- Timestamp: 2026-02-11T07:41:11Z
+  TaskId: PRD-1519
+  Type: INCONSISTENCY
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S2.md:1847, docs/prod-ready/prod-ready-tasks-PHASE15-S2.md:1858, src/LKvitai.MES.Domain/Entities/MasterDataEntities.cs:624
+  Impact: Task data model describes `TransferLine.ItemId`, `FromLocationId`, and `ToLocationId` as GUIDs, while repository master-data keys for Item and Location are `int`.
+  Proposed resolution: Implement transfer line foreign keys as `int` to match existing schema and keep API contract aligned with repository identity types.
+- Timestamp: 2026-02-11T07:43:52Z
+  TaskId: PRD-1519
+  Type: TEST-GAP
+  Evidence: curl POST http://localhost:5000/api/warehouse/v1/transfers, /approve, /execute returned HTTP 403
+  Impact: Task-specified manual API workflow validation could not be completed without authenticated API context.
+  Proposed resolution: Re-run transfer create/approve/execute checks with Operator/Manager credentials against a running API instance.
