@@ -184,12 +184,43 @@ public sealed class WarehouseVisualizationController : ControllerBase
             }
         }
 
-        var locationCodes = visualizationLocations.Select(x => x.Location.Code).ToArray();
-
         await using var session = _documentStore.QuerySession();
         var stockCandidates = await MartenAsync.ToListAsync(
             session.Query<AvailableStockView>(),
             cancellationToken);
+
+        if (visualizationLocations.Count == 0)
+        {
+            var stockLocationCodes = stockCandidates
+                .Select(x => x.Location)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            visualizationLocations = stockLocationCodes
+                .Select((code, index) => new VisualizationLocationSeed(
+                    new Location
+                    {
+                        Code = code,
+                        Barcode = code,
+                        Type = "Bin",
+                        Status = "Active"
+                    },
+                    (index % 12) + 1,
+                    ((index / 12) % 12) + 1,
+                    (index / 144) + 1))
+                .ToList();
+
+            if (visualizationLocations.Count > 0)
+            {
+                _logger.LogWarning(
+                    "3D API fallback enabled: generated auto-layout from AvailableStockView for {LocationCount} locations",
+                    visualizationLocations.Count);
+            }
+        }
+
+        var locationCodes = visualizationLocations.Select(x => x.Location.Code).ToArray();
         var locationSet = new HashSet<string>(locationCodes, StringComparer.OrdinalIgnoreCase);
         var stockRows = stockCandidates
             .Where(x => locationSet.Contains(x.Location))
