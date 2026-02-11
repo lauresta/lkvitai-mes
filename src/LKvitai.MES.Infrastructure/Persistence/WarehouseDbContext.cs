@@ -48,6 +48,9 @@ public class WarehouseDbContext : DbContext
     public DbSet<ShipmentSummary> ShipmentSummaries => Set<ShipmentSummary>();
     public DbSet<DispatchHistory> DispatchHistories => Set<DispatchHistory>();
     public DbSet<OnHandValue> OnHandValues => Set<OnHandValue>();
+    public DbSet<AgnumExportConfig> AgnumExportConfigs => Set<AgnumExportConfig>();
+    public DbSet<AgnumMapping> AgnumMappings => Set<AgnumMapping>();
+    public DbSet<AgnumExportHistory> AgnumExportHistories => Set<AgnumExportHistory>();
     public DbSet<SupplierItemMapping> SupplierItemMappings => Set<SupplierItemMapping>();
     public DbSet<Location> Locations => Set<Location>();
     public DbSet<HandlingUnitTypeEntity> HandlingUnitTypes => Set<HandlingUnitTypeEntity>();
@@ -495,6 +498,51 @@ public class WarehouseDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.CategoryId)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+
+        modelBuilder.Entity<AgnumExportConfig>(entity =>
+        {
+            entity.ToTable("agnum_export_configs");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Scope).HasConversion<string>().HasMaxLength(30).IsRequired();
+            entity.Property(e => e.Schedule).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.Format).HasConversion<string>().HasMaxLength(20).IsRequired();
+            entity.Property(e => e.ApiEndpoint).HasMaxLength(500);
+            entity.Property(e => e.ApiKey).HasMaxLength(1000);
+            entity.Property(e => e.UpdatedAt).IsRequired();
+            entity.HasIndex(e => e.IsActive);
+            entity.HasMany(e => e.Mappings)
+                .WithOne(e => e.Config)
+                .HasForeignKey(e => e.AgnumExportConfigId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<AgnumMapping>(entity =>
+        {
+            entity.ToTable("agnum_mappings");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.SourceType).HasMaxLength(30).IsRequired();
+            entity.Property(e => e.SourceValue).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.AgnumAccountCode).HasMaxLength(100).IsRequired();
+            entity.HasIndex(e => new { e.AgnumExportConfigId, e.SourceType, e.SourceValue }).IsUnique();
+        });
+
+        modelBuilder.Entity<AgnumExportHistory>(entity =>
+        {
+            entity.ToTable("agnum_export_history");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ExportNumber).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(20).IsRequired();
+            entity.Property(e => e.FilePath).HasMaxLength(1000);
+            entity.Property(e => e.ErrorMessage).HasColumnType("text");
+            entity.Property(e => e.Trigger).HasMaxLength(30).IsRequired();
+            entity.HasIndex(e => e.ExportedAt);
+            entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => e.ExportNumber).IsUnique();
+            entity.HasOne(e => e.ExportConfig)
+                .WithMany()
+                .HasForeignKey(e => e.ExportConfigId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<SupplierItemMapping>(entity =>

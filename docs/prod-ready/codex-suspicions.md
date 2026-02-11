@@ -247,3 +247,23 @@
   Evidence: psql command failed (`command not found: psql`); curl POST/GET valuation endpoints returned 403 against localhost:5000
   Impact: Task-specified SQL verification (`on_hand_value` table) and authenticated manual API workflow checks were not completed in this environment.
   Proposed resolution: Re-run documented curl + SQL validation in an environment with PostgreSQL client tools and valid API auth context.
+- Timestamp: 2026-02-11T07:05:45Z
+  TaskId: PRD-1514
+  Type: RISK
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S2.md:861, docs/prod-ready/prod-ready-tasks-PHASE15-S2.md:865, src/LKvitai.MES.Api/Services/AgnumExportServices.cs:170
+  Impact: Export scopes `BY_WAREHOUSE` and `BY_LOGICAL_WH` are configured, but current export data source (`on_hand_value`) does not carry warehouse/logical warehouse dimensions; those scopes currently resolve via DEFAULT mappings only.
+  Proposed resolution: Extend projection source for export to include warehouse/logical warehouse dimensions (or constrain allowed scope until that data is available).
+
+- Timestamp: 2026-02-11T07:05:45Z
+  TaskId: PRD-1514
+  Type: RISK
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S2.md:873, src/LKvitai.MES.Api/Program.cs:154, src/LKvitai.MES.Api/Program.cs:161
+  Impact: Scheduler persistence falls back to in-memory storage when no DB connection string is resolved, which does not meet the 99.9% reliability expectation for durable recurring jobs.
+  Proposed resolution: Require PostgreSQL-backed Hangfire storage in non-dev environments and fail startup when persistent storage is not configured.
+
+- Timestamp: 2026-02-11T07:05:45Z
+  TaskId: PRD-1514
+  Type: TEST-GAP
+  Evidence: curl PUT/POST/GET /api/warehouse/v1/agnum/* returned 403; curl http://localhost:5000/hangfire returned 403
+  Impact: Task-specified authenticated API and Hangfire dashboard validation could not be completed end-to-end in this environment.
+  Proposed resolution: Re-run Agnum API + dashboard checks with valid auth context and a running local API profile.

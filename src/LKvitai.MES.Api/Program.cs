@@ -11,6 +11,9 @@ using LKvitai.MES.Infrastructure.Persistence;
 using LKvitai.MES.Infrastructure.Projections;
 using LKvitai.MES.Integration.Carrier;
 using LKvitai.MES.Projections;
+using Hangfire;
+using Hangfire.MemoryStorage;
+using Hangfire.PostgreSql;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Serilog;
@@ -41,6 +44,8 @@ builder.Host.UseSerilog();
 builder.Services.AddControllers();
 builder.Services.AddProblemDetails();
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddDataProtection();
+builder.Services.AddHttpClient("AgnumExportApi");
 builder.Services.AddScoped<ICurrentUserService, HttpContextCurrentUserService>();
 builder.Services
     .AddAuthentication(WarehouseAuthenticationDefaults.Scheme)
@@ -134,6 +139,28 @@ builder.Services.AddMassTransitConfiguration(builder.Configuration);
 builder.Services.AddScoped<IEventBus, MassTransitEventBus>();
 builder.Services.AddScoped<ICarrierApiService, FedExApiService>();
 builder.Services.AddScoped<IAvailableStockQuantityResolver, MartenAvailableStockQuantityResolver>();
+builder.Services.AddScoped<IAgnumSecretProtector, AgnumDataProtector>();
+builder.Services.AddScoped<IAgnumExportOrchestrator, AgnumExportOrchestrator>();
+builder.Services.AddScoped<AgnumExportRecurringJob>();
+
+var warehouseConnectionString =
+    builder.Configuration.GetConnectionString("WarehouseDb")
+    ?? builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? builder.Configuration.GetConnectionString("Warehouse")
+    ?? builder.Configuration["ConnectionStrings:WarehouseDb"];
+
+builder.Services.AddHangfire(configuration =>
+{
+    if (!string.IsNullOrWhiteSpace(warehouseConnectionString))
+    {
+        configuration.UsePostgreSqlStorage(options =>
+            options.UseNpgsqlConnection(warehouseConnectionString));
+        return;
+    }
+
+    configuration.UseMemoryStorage();
+});
+builder.Services.AddHangfireServer();
 
 // OpenTelemetry observability
 builder.Services.AddOpenTelemetryConfiguration(builder.Configuration);
@@ -156,7 +183,17 @@ app.UseMiddleware<ProblemDetailsExceptionMiddleware>();
 app.UseMiddleware<IdempotencyReplayHeaderMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseHangfireDashboard("/hangfire");
 app.MapControllers();
+
+RecurringJob.AddOrUpdate<AgnumExportRecurringJob>(
+    AgnumRecurringJobs.DailyExportJobId,
+    job => job.ExecuteAsync("SCHEDULED", null, 0),
+    "0 23 * * *",
+    new RecurringJobOptions
+    {
+        TimeZone = TimeZoneInfo.Utc
+    });
 
 Log.Information("Starting LKvitai.MES Warehouse API");
 

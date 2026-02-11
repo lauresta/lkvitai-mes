@@ -31,6 +31,9 @@ public static class MassTransitConfiguration
             
             x.AddSagaStateMachine<ReceiveGoodsSaga, ReceiveGoodsSagaState>()
                 .MartenRepository();
+
+            x.AddSagaStateMachine<AgnumExportSaga, AgnumExportSagaState>()
+                .MartenRepository();
             
             // Additional sagas to be registered:
             // x.AddSagaStateMachine<TransferStockSaga, TransferStockSagaState>()

@@ -715,6 +715,68 @@ public sealed class OnHandValue
     public DateTimeOffset LastUpdated { get; set; }
 }
 
+public enum AgnumExportScope
+{
+    ByWarehouse,
+    ByCategory,
+    ByLogicalWh,
+    TotalOnly
+}
+
+public enum AgnumExportFormat
+{
+    Csv,
+    JsonApi
+}
+
+public enum AgnumExportStatus
+{
+    Success,
+    Failed,
+    Retrying
+}
+
+public sealed class AgnumExportConfig
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public AgnumExportScope Scope { get; set; } = AgnumExportScope.ByCategory;
+    public string Schedule { get; set; } = "0 23 * * *";
+    public AgnumExportFormat Format { get; set; } = AgnumExportFormat.Csv;
+    public string? ApiEndpoint { get; set; }
+    public string? ApiKey { get; set; }
+    public bool IsActive { get; set; } = true;
+    public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
+
+    public ICollection<AgnumMapping> Mappings { get; set; } = new List<AgnumMapping>();
+}
+
+public sealed class AgnumMapping
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid AgnumExportConfigId { get; set; }
+    public string SourceType { get; set; } = string.Empty;
+    public string SourceValue { get; set; } = string.Empty;
+    public string AgnumAccountCode { get; set; } = string.Empty;
+
+    public AgnumExportConfig? Config { get; set; }
+}
+
+public sealed class AgnumExportHistory
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid ExportConfigId { get; set; }
+    public string ExportNumber { get; set; } = string.Empty;
+    public DateTimeOffset ExportedAt { get; set; } = DateTimeOffset.UtcNow;
+    public AgnumExportStatus Status { get; set; } = AgnumExportStatus.Retrying;
+    public int RowCount { get; set; }
+    public string? FilePath { get; set; }
+    public string? ErrorMessage { get; set; }
+    public int RetryCount { get; set; }
+    public string Trigger { get; set; } = "SCHEDULED";
+
+    public AgnumExportConfig? ExportConfig { get; set; }
+}
+
 public sealed class SupplierItemMapping
 {
     public int Id { get; set; }
