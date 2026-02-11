@@ -257,6 +257,7 @@ public class WarehouseDbContext : DbContext
             entity.Property(e => e.IsDeleted).HasDefaultValue(false);
             entity.Property(e => e.ReservationId);
             entity.Property(e => e.OutboundOrderId);
+            entity.Property(e => e.RowVersion).IsRowVersion();
             entity.HasIndex(e => e.OrderNumber).IsUnique();
             entity.HasIndex(e => e.CustomerId);
             entity.HasIndex(e => e.Status);

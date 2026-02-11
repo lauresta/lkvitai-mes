@@ -155,6 +155,7 @@ public sealed class SalesOrder : AuditableEntity
     public Guid? OutboundOrderId { get; private set; }
     public decimal TotalAmount { get; private set; }
     public bool IsDeleted { get; set; }
+    public byte[] RowVersion { get; set; } = Array.Empty<byte>();
 
     public Customer? Customer { get; set; }
     public ICollection<SalesOrderLine> Lines { get; set; } = new List<SalesOrderLine>();
@@ -198,6 +199,24 @@ public sealed class SalesOrder : AuditableEntity
 
         Status = SalesOrderStatus.Allocated;
         AllocatedAt = DateTimeOffset.UtcNow;
+        return Result.Ok();
+    }
+
+    public Result AssignReservation(Guid reservationId)
+    {
+        if (reservationId == Guid.Empty)
+        {
+            return Result.Fail(DomainErrorCodes.ValidationError, "ReservationId is required.");
+        }
+
+        if (Status != SalesOrderStatus.Allocated)
+        {
+            return Result.Fail(
+                DomainErrorCodes.ValidationError,
+                $"Invalid status transition: {Status} -> {SalesOrderStatus.Allocated}");
+        }
+
+        ReservationId = reservationId;
         return Result.Ok();
     }
 

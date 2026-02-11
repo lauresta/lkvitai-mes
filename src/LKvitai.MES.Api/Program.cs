@@ -70,6 +70,35 @@ builder.Services.AddAuthorization(options =>
             WarehouseRoles.QCInspector,
             WarehouseRoles.WarehouseManager,
             WarehouseRoles.WarehouseAdmin));
+
+    options.AddPolicy(WarehousePolicies.SalesAdminOrManager, policy =>
+        policy.RequireRole(
+            WarehouseRoles.SalesAdmin,
+            WarehouseRoles.WarehouseManager,
+            WarehouseRoles.WarehouseAdmin));
+
+    options.AddPolicy(WarehousePolicies.PackingOperatorOrManager, policy =>
+        policy.RequireRole(
+            WarehouseRoles.PackingOperator,
+            WarehouseRoles.WarehouseManager,
+            WarehouseRoles.WarehouseAdmin));
+
+    options.AddPolicy(WarehousePolicies.DispatchClerkOrManager, policy =>
+        policy.RequireRole(
+            WarehouseRoles.DispatchClerk,
+            WarehouseRoles.WarehouseManager,
+            WarehouseRoles.WarehouseAdmin));
+
+    options.AddPolicy(WarehousePolicies.InventoryAccountantOrManager, policy =>
+        policy.RequireRole(
+            WarehouseRoles.InventoryAccountant,
+            WarehouseRoles.WarehouseManager,
+            WarehouseRoles.WarehouseAdmin));
+
+    options.AddPolicy(WarehousePolicies.CfoOrAdmin, policy =>
+        policy.RequireRole(
+            WarehouseRoles.CFO,
+            WarehouseRoles.WarehouseAdmin));
 });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

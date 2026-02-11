@@ -5,6 +5,7 @@ using Xunit;
 
 namespace LKvitai.MES.Tests.Unit;
 
+[Trait("Category", "SalesOrders")]
 public sealed class SalesOrderTests
 {
     [Fact]

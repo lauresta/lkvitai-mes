@@ -105,3 +105,28 @@
   Evidence: psql -d warehouse -c "\d customers" failed: command not found: psql
   Impact: SQL schema/index manual checks from task validation cannot be executed locally.
   Proposed resolution: Install psql client or run checks inside DB container shell.
+- Timestamp: 2026-02-11T06:00:53Z
+  TaskId: PRD-1505
+  Type: RISK
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S1.md:1264, src/LKvitai.MES.Api/Services/SalesOrderCommandHandlers.cs:131
+  Impact: Submit/approve/allocate handlers do not validate available stock before allocation, so the documented 409 insufficient-stock path is not enforced yet.
+  Proposed resolution: Add available-stock projection check per order line before status transition to ALLOCATED and return validation/conflict when requested qty exceeds availability.
+
+- Timestamp: 2026-02-11T06:00:53Z
+  TaskId: PRD-1505
+  Type: RISK
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S1.md:1062, src/LKvitai.MES.Domain/Entities/MasterDataEntities.cs:141
+  Impact: Optimistic locking with RowVersion for sales orders is required by task but not implemented, which can allow lost updates under concurrent writes.
+  Proposed resolution: Add byte[] RowVersion concurrency token to SalesOrder EF mapping and generate migration to enforce update conflicts.
+- Timestamp: 2026-02-11T06:01:31Z
+  TaskId: PRD-1505
+  Type: RISK
+  Evidence: src/LKvitai.MES.Api/LKvitai.MES.Api.csproj (OpenTelemetry.Instrumentation.AspNetCore 1.7.0, OpenTelemetry.Instrumentation.Http 1.7.0), dotnet build output warning NU1902
+  Impact: Known moderate package vulnerabilities are present during build/test, which can affect production readiness criteria.
+  Proposed resolution: Upgrade affected OpenTelemetry instrumentation packages to patched versions and re-run full regression tests.
+- Timestamp: 2026-02-11T06:01:31Z
+  TaskId: PRD-1505
+  Type: TEST-GAP
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S1.md:1290, environment DB connection failures to 10.211.55.2:5432 from dotnet ef database update
+  Impact: Task-specified curl API workflow checks (create/submit/list sales orders) could not be executed end-to-end in this environment.
+  Proposed resolution: Run API with reachable PostgreSQL (or test container profile) and execute the documented curl/Postman scenarios.
