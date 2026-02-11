@@ -78,6 +78,7 @@ public sealed class ReservationsController : ControllerBase
             CommandId = request?.CommandId is { } commandId && commandId != Guid.Empty
                 ? commandId
                 : Guid.NewGuid(),
+            CorrelationId = ResolveCorrelationId(),
             ReservationId = id,
             OperatorId = Guid.Empty
         }, cancellationToken);
@@ -148,6 +149,7 @@ public sealed class ReservationsController : ControllerBase
         var result = await _mediator.Send(new PickStockCommand
         {
             CommandId = request.CommandId != Guid.Empty ? request.CommandId : Guid.NewGuid(),
+            CorrelationId = ResolveCorrelationId(),
             ReservationId = id,
             HandlingUnitId = request.HuId,
             SKU = request.Sku.Trim(),
@@ -185,6 +187,12 @@ public sealed class ReservationsController : ControllerBase
         {
             StatusCode = StatusCodes.Status400BadRequest
         };
+    }
+
+    private Guid ResolveCorrelationId()
+    {
+        var raw = HttpContext.Items[CorrelationIdMiddleware.HeaderName]?.ToString();
+        return Guid.TryParse(raw, out var parsed) ? parsed : Guid.NewGuid();
     }
 
     public sealed record StartPickingRequestDto(Guid ReservationId, Guid? CommandId = null);

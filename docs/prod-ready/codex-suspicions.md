@@ -73,3 +73,16 @@
   Evidence: dotnet test --filter FullyQualifiedName~EventUpcastingTests and ~EventUpcastingPerformanceTests completed without matching dedicated test classes
   Impact: Task-specific validation command names from spec do not map 1:1 to existing test class names, reducing observability of intended checks.
   Proposed resolution: Add explicit EventUpcastingTests and EventUpcastingPerformanceTests class names or update validation script to match actual test filters.
+- Timestamp: 2026-02-11T05:44:59Z
+  TaskId: PRD-1503
+  Type: TEST-GAP
+  Evidence: dotnet run src/LKvitai.MES.Api failed at startup with Npgsql timeout to 10.211.55.2:5432
+  Impact: End-to-end runtime verification of response headers, logs, and trace propagation could not be executed in this environment.
+  Proposed resolution: Run API validation with reachable PostgreSQL instance (or test container profile) and re-run curl/log checks.
+
+- Timestamp: 2026-02-11T05:44:59Z
+  TaskId: PRD-1503
+  Type: TEST-GAP
+  Evidence: curl http://localhost:5000/api/warehouse/v1/items returned headers from non-project service (Server: AirTunes)
+  Impact: Validation target port in task doc does not map to this local API process, so direct header checks are unreliable.
+  Proposed resolution: Use configured API URL from launch settings or explicit Kestrel URLs during run command.

@@ -1,6 +1,7 @@
 using LKvitai.MES.Application.Ports;
 using LKvitai.MES.Application.EventVersioning;
 using LKvitai.MES.SharedKernel;
+using LKvitai.MES.Api.ErrorHandling;
 using MassTransit;
 
 namespace LKvitai.MES.Api.Services;
@@ -31,9 +32,27 @@ public class MassTransitEventBus : IEventBus
         {
             _schemaVersionRegistry.EnsureKnownVersion(domainEvent.GetType(), domainEvent.SchemaVersion);
             var upcasted = _schemaVersionRegistry.UpcastToLatest(domainEvent);
-            return _bus.Publish(upcasted, ct);
+            return PublishWithCorrelationAsync(upcasted, ct);
         }
 
-        return _bus.Publish(message, ct);
+        return PublishWithCorrelationAsync(message, ct);
+    }
+
+    private Task PublishWithCorrelationAsync<T>(T message, CancellationToken ct) where T : class
+    {
+        var correlationId = CorrelationContext.Current;
+        if (string.IsNullOrWhiteSpace(correlationId))
+        {
+            return _bus.Publish(message, ct);
+        }
+
+        return _bus.Publish(message, context =>
+        {
+            context.Headers.Set(CorrelationIdMiddleware.HeaderName, correlationId);
+            if (Guid.TryParse(correlationId, out var guid))
+            {
+                context.CorrelationId = guid;
+            }
+        }, ct);
     }
 }

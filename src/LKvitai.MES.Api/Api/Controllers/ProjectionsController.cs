@@ -44,6 +44,7 @@ public sealed class ProjectionsController : ControllerBase
         var result = await _mediator.Send(new RebuildProjectionCommand
         {
             CommandId = request.CommandId ?? Guid.NewGuid(),
+            CorrelationId = ResolveCorrelationId(),
             ProjectionName = request.ProjectionName.Trim(),
             Verify = true,
             ResetProgress = request.ResetProgress
@@ -142,6 +143,12 @@ public sealed class ProjectionsController : ControllerBase
         {
             StatusCode = problemDetails.Status
         };
+    }
+
+    private Guid ResolveCorrelationId()
+    {
+        var raw = HttpContext.Items[CorrelationIdMiddleware.HeaderName]?.ToString();
+        return Guid.TryParse(raw, out var parsed) ? parsed : Guid.NewGuid();
     }
 
     public sealed record RebuildProjectionRequestDto(string ProjectionName, bool ResetProgress = false, Guid? CommandId = null);
