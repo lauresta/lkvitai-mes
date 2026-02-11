@@ -13,6 +13,10 @@ namespace LKvitai.MES.Api.Controllers;
 [Route("api/warehouse/v1/locations")]
 public sealed class LocationsController : ControllerBase
 {
+    private static readonly string[] AllowedZoneTypes = ["General", "Refrigerated", "Hazmat", "Quarantine"];
+    private static readonly Dictionary<string, string> CanonicalZoneTypes = AllowedZoneTypes
+        .ToDictionary(static value => value, static value => value, StringComparer.OrdinalIgnoreCase);
+
     private readonly WarehouseDbContext _dbContext;
 
     public LocationsController(WarehouseDbContext dbContext)
@@ -120,6 +124,11 @@ public sealed class LocationsController : ControllerBase
             }
         }
 
+        if (!TryNormalizeZoneType(request.ZoneType, out var normalizedZoneType, out var zoneTypeValidationError))
+        {
+            return ValidationFailure(zoneTypeValidationError!);
+        }
+
         var normalizedCode = request.Code.Trim();
         var normalizedBarcode = request.Barcode.Trim();
 
@@ -149,7 +158,7 @@ public sealed class LocationsController : ControllerBase
             MaxWeight = request.MaxWeight,
             MaxVolume = request.MaxVolume,
             Status = string.IsNullOrWhiteSpace(request.Status) ? "Active" : request.Status.Trim(),
-            ZoneType = request.ZoneType?.Trim(),
+            ZoneType = normalizedZoneType,
             CoordinateX = request.CoordinateX,
             CoordinateY = request.CoordinateY,
             CoordinateZ = request.CoordinateZ,
@@ -238,6 +247,11 @@ public sealed class LocationsController : ControllerBase
             }
         }
 
+        if (!TryNormalizeZoneType(request.ZoneType, out var normalizedZoneType, out var zoneTypeValidationError))
+        {
+            return ValidationFailure(zoneTypeValidationError!);
+        }
+
         var normalizedCode = request.Code.Trim();
         var normalizedBarcode = request.Barcode.Trim();
 
@@ -271,7 +285,7 @@ public sealed class LocationsController : ControllerBase
         entity.MaxWeight = request.MaxWeight;
         entity.MaxVolume = request.MaxVolume;
         entity.Status = string.IsNullOrWhiteSpace(request.Status) ? entity.Status : request.Status.Trim();
-        entity.ZoneType = request.ZoneType?.Trim();
+        entity.ZoneType = normalizedZoneType;
         entity.CoordinateX = request.CoordinateX;
         entity.CoordinateY = request.CoordinateY;
         entity.CoordinateZ = request.CoordinateZ;
@@ -430,6 +444,30 @@ public sealed class LocationsController : ControllerBase
         return conflict is null
             ? null
             : $"Location coordinate overlap detected with '{conflict.Code}'.";
+    }
+
+    private static bool TryNormalizeZoneType(
+        string? rawZoneType,
+        out string? normalizedZoneType,
+        out string? validationError)
+    {
+        validationError = null;
+        normalizedZoneType = null;
+
+        if (string.IsNullOrWhiteSpace(rawZoneType))
+        {
+            return true;
+        }
+
+        var trimmed = rawZoneType.Trim();
+        if (!CanonicalZoneTypes.TryGetValue(trimmed, out var canonical))
+        {
+            validationError = $"Field 'zoneType' must be one of: {string.Join(", ", AllowedZoneTypes)}.";
+            return false;
+        }
+
+        normalizedZoneType = canonical;
+        return true;
     }
 
     public sealed record UpsertLocationRequest(

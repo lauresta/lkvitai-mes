@@ -61,7 +61,16 @@ public class MasterDataAdminClientTests
                 MaxWeight: 100m,
                 MaxVolume: 10m,
                 Status: "Active",
-                ZoneType: "General"));
+                ZoneType: "General",
+                CoordinateX: null,
+                CoordinateY: null,
+                CoordinateZ: null,
+                Aisle: null,
+                Rack: null,
+                Level: null,
+                Bin: null,
+                CapacityWeight: null,
+                CapacityVolume: null));
 
         var exception = await act.Should().ThrowAsync<ApiException>();
         exception.Which.StatusCode.Should().Be(400);

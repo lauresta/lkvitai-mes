@@ -17,6 +17,83 @@ public class Visualization3dTests
 {
     [Fact]
     [Trait("Category", "3DVisualization")]
+    public async Task CreateAsync_WithInvalidZoneType_ShouldReturnBadRequest()
+    {
+        await using var db = CreateDbContext();
+        var controller = new LocationsController(db)
+        {
+            ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext()
+            }
+        };
+
+        var response = await controller.CreateAsync(
+            new LocationsController.UpsertLocationRequest(
+                "R1-C1-L1",
+                "LOC-101",
+                "Bin",
+                null,
+                false,
+                null,
+                null,
+                "Active",
+                "InvalidZone",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null));
+
+        response.Should().BeOfType<ObjectResult>();
+        ((ObjectResult)response).StatusCode.Should().Be(StatusCodes.Status400BadRequest);
+    }
+
+    [Fact]
+    [Trait("Category", "3DVisualization")]
+    public async Task CreateAsync_WithLowercaseZoneType_ShouldNormalizeToCanonicalValue()
+    {
+        await using var db = CreateDbContext();
+        var controller = new LocationsController(db)
+        {
+            ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext()
+            }
+        };
+
+        var response = await controller.CreateAsync(
+            new LocationsController.UpsertLocationRequest(
+                "R1-C1-L2",
+                "LOC-102",
+                "Bin",
+                null,
+                false,
+                null,
+                null,
+                "Active",
+                "general",
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null));
+
+        response.Should().BeOfType<CreatedResult>();
+        var created = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.SingleAsync(db.Locations);
+        created.ZoneType.Should().Be("General");
+    }
+
+    [Fact]
+    [Trait("Category", "3DVisualization")]
     public async Task PutLayoutAsync_ShouldPersistLayoutAndZones()
     {
         await using var db = CreateDbContext();

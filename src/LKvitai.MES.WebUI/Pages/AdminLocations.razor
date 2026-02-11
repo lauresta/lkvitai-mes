@@ -151,7 +151,13 @@
                 </div>
                 <div class="col-md-2">
                     <label class="form-label">Zone Type</label>
-                    <input class="form-control" @bind="_create.ZoneType" />
+                    <select class="form-select" @bind="_create.ZoneType">
+                        <option value="">-</option>
+                        <option value="General">General</option>
+                        <option value="Refrigerated">Refrigerated</option>
+                        <option value="Hazmat">Hazmat</option>
+                        <option value="Quarantine">Quarantine</option>
+                    </select>
                 </div>
                 <div class="col-md-2">
                     <label class="form-label">Coordinate X</label>
@@ -246,7 +252,13 @@
                 </div>
                 <div class="col-md-2">
                     <label class="form-label">Zone Type</label>
-                    <input class="form-control" @bind="_editing.ZoneType" />
+                    <select class="form-select" @bind="_editing.ZoneType">
+                        <option value="">-</option>
+                        <option value="General">General</option>
+                        <option value="Refrigerated">Refrigerated</option>
+                        <option value="Hazmat">Hazmat</option>
+                        <option value="Quarantine">Quarantine</option>
+                    </select>
                 </div>
                 <div class="col-md-2">
                     <label class="form-label">Coordinate X</label>
