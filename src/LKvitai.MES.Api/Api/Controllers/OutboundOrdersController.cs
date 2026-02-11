@@ -128,6 +128,63 @@ public sealed class OutboundOrdersController : ControllerBase
         return Ok(rows);
     }
 
+    [HttpGet("{id:guid}")]
+    [Authorize(Policy = WarehousePolicies.OperatorOrAbove)]
+    public async Task<IActionResult> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var order = await _dbContext.OutboundOrders
+            .AsNoTracking()
+            .Include(x => x.Lines)
+                .ThenInclude(x => x.Item)
+            .Include(x => x.SalesOrder)
+                .ThenInclude(x => x!.Customer)
+            .Include(x => x.Shipment)
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+        if (order is null)
+        {
+            return Failure(Result.Fail(DomainErrorCodes.NotFound, "Outbound order not found."));
+        }
+
+        var response = new OutboundOrderDetailResponse(
+            order.Id,
+            order.OrderNumber,
+            order.Type.ToString().ToUpperInvariant(),
+            order.Status.ToString().ToUpperInvariant(),
+            order.SalesOrder?.Customer?.Name,
+            order.OrderDate,
+            order.RequestedShipDate,
+            order.PickedAt,
+            order.PackedAt,
+            order.ShippedAt,
+            order.ReservationId,
+            order.SalesOrderId,
+            order.Shipment is null
+                ? null
+                : new OutboundShipmentInfoResponse(
+                    order.Shipment.Id,
+                    order.Shipment.ShipmentNumber,
+                    order.Shipment.Status.ToString().ToUpperInvariant(),
+                    order.Shipment.Carrier.ToString().ToUpperInvariant(),
+                    order.Shipment.TrackingNumber,
+                    order.Shipment.PackedAt,
+                    order.Shipment.DispatchedAt),
+            order.Lines
+                .OrderBy(x => x.ItemId)
+                .Select(x => new OutboundOrderDetailLineResponse(
+                    x.Id,
+                    x.ItemId,
+                    x.Item?.InternalSKU ?? string.Empty,
+                    x.Item?.Name ?? string.Empty,
+                    x.Item?.PrimaryBarcode,
+                    x.Qty,
+                    x.PickedQty,
+                    x.ShippedQty))
+                .ToList());
+
+        return Ok(response);
+    }
+
     private ObjectResult Failure(Result result)
     {
         var problemDetails = ResultProblemDetailsMapper.ToProblemDetails(result, HttpContext);
@@ -184,4 +241,39 @@ public sealed class OutboundOrdersController : ControllerBase
         Guid? ShipmentId,
         string? ShipmentNumber,
         string? TrackingNumber);
+
+    public sealed record OutboundOrderDetailResponse(
+        Guid Id,
+        string OrderNumber,
+        string Type,
+        string Status,
+        string? CustomerName,
+        DateTimeOffset OrderDate,
+        DateTimeOffset? RequestedShipDate,
+        DateTimeOffset? PickedAt,
+        DateTimeOffset? PackedAt,
+        DateTimeOffset? ShippedAt,
+        Guid ReservationId,
+        Guid? SalesOrderId,
+        OutboundShipmentInfoResponse? Shipment,
+        IReadOnlyList<OutboundOrderDetailLineResponse> Lines);
+
+    public sealed record OutboundOrderDetailLineResponse(
+        Guid Id,
+        int ItemId,
+        string ItemSku,
+        string ItemName,
+        string? PrimaryBarcode,
+        decimal Qty,
+        decimal PickedQty,
+        decimal ShippedQty);
+
+    public sealed record OutboundShipmentInfoResponse(
+        Guid ShipmentId,
+        string ShipmentNumber,
+        string Status,
+        string Carrier,
+        string? TrackingNumber,
+        DateTimeOffset? PackedAt,
+        DateTimeOffset? DispatchedAt);
 }

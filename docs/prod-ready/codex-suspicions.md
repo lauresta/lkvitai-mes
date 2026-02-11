@@ -181,3 +181,16 @@
   Evidence: dotnet ef database update failed with timeout to 10.211.55.2:5432; psql command unavailable; curl http://localhost:5000/api/warehouse/v1/outbound/orders/summary returned 403
   Impact: Task-specified SQL verification and end-to-end projection endpoint validation could not be fully executed in this environment.
   Proposed resolution: Re-run migration/API validation in an environment with reachable warehouse PostgreSQL, installed psql, and authenticated API access.
+- Timestamp: 2026-02-11T06:29:10Z
+  TaskId: PRD-1510
+  Type: INCONSISTENCY
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S1.md:2690, docs/prod-ready/prod-ready-tasks-PHASE15-S1.md:3048, src/LKvitai.MES.WebUI:1
+  Impact: Task requires React pages under src/LKvitai.MES.UI, but repository only contains Blazor Server UI under src/LKvitai.MES.WebUI.
+  Proposed resolution: Deliver equivalent routes/components in Blazor WebUI and treat npm/React validation steps as non-applicable for this repository baseline.
+
+- Timestamp: 2026-02-11T06:29:10Z
+  TaskId: PRD-1510
+  Type: TEST-GAP
+  Evidence: "cd src/LKvitai.MES.UI && npm run dev" failed (directory missing); manual browser navigation/scan workflow not executable in this CLI-only run
+  Impact: Task-specified interactive UI validation (page navigation, barcode scan UX, modal dispatch flow) could not be completed end-to-end.
+  Proposed resolution: Run the Blazor WebUI locally and execute manual route/workflow checks with an authenticated API endpoint.

@@ -1,0 +1,298 @@
+@page "/warehouse/outbound/orders"
+@implements IDisposable
+@inject OutboundClient OutboundClient
+@inject NavigationManager NavigationManager
+@inject ToastService ToastService
+@using LKvitai.MES.WebUI.Infrastructure
+
+<PageTitle>Outbound Orders - LKvitai.MES</PageTitle>
+
+<h1>Outbound Orders</h1>
+
+@if (_apiError is not null)
+{
+    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                 TraceId="@_apiError.TraceId"
+                 OnRetry="RetryAsync"
+                 OnDismiss="DismissError" />
+}
+
+<div class="card shadow-sm position-relative">
+    <LoadingSpinner IsLoading="_isLoading" />
+
+    <div class="card-body">
+        <div class="row g-2 align-items-end mb-3">
+            <div class="col-md-2">
+                <label class="form-label" for="status-filter">Status</label>
+                <select id="status-filter" class="form-select" @bind="_statusFilter">
+                    <option value="">All</option>
+                    <option value="ALLOCATED">ALLOCATED</option>
+                    <option value="PICKING">PICKING</option>
+                    <option value="PICKED">PICKED</option>
+                    <option value="PACKED">PACKED</option>
+                    <option value="SHIPPED">SHIPPED</option>
+                    <option value="DELIVERED">DELIVERED</option>
+                    <option value="CANCELLED">CANCELLED</option>
+                </select>
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label" for="customer-filter">Customer</label>
+                <input id="customer-filter"
+                       class="form-control"
+                       type="text"
+                       placeholder="Customer name"
+                       @bind="_customerFilter" />
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label" for="date-from">Date from</label>
+                <input id="date-from" class="form-control" type="date" @bind="_dateFrom" />
+            </div>
+
+            <div class="col-md-2">
+                <label class="form-label" for="date-to">Date to</label>
+                <input id="date-to" class="form-control" type="date" @bind="_dateTo" />
+            </div>
+
+            <div class="col-md-3 d-flex gap-2">
+                <button class="btn btn-primary" @onclick="ApplyFiltersAsync" disabled="_isLoading">Apply</button>
+                <button class="btn btn-outline-secondary" @onclick="ResetFiltersAsync" disabled="_isLoading">Reset</button>
+                <button class="btn btn-outline-secondary" @onclick="RetryAsync" disabled="_isLoading">Refresh</button>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Order Number</th>
+                        <th>Customer</th>
+                        <th>Status</th>
+                        <th>Items</th>
+                        <th>Requested Ship Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (_orders.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">No outbound orders found.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var order in CurrentPageRows)
+                        {
+                            <tr>
+                                <td>
+                                    <a href="@($"/warehouse/outbound/orders/{order.Id}")">@order.OrderNumber</a>
+                                </td>
+                                <td>@(order.CustomerName ?? "-")</td>
+                                <td>
+                                    <span class="badge @GetStatusBadgeClass(order.Status)">@order.Status</span>
+                                </td>
+                                <td>@order.ItemCount</td>
+                                <td>@FormatDate(order.RequestedShipDate)</td>
+                                <td class="d-flex gap-2">
+                                    <button class="btn btn-sm btn-outline-primary"
+                                            @onclick="() => OpenOrder(order.Id)">
+                                        View
+                                    </button>
+                                    @if (string.Equals(order.Status, "PICKED", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        <button class="btn btn-sm btn-primary"
+                                                @onclick="() => OpenPacking(order.Id)">
+                                            Pack
+                                        </button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (TotalPages > 1)
+        {
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <small class="text-muted">Page @_page of @TotalPages</small>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-secondary" @onclick="PreviousPage" disabled="@(_page <= 1)">Previous</button>
+                    <button class="btn btn-sm btn-outline-secondary" @onclick="NextPage" disabled="@(_page >= TotalPages)">Next</button>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private readonly List<OutboundOrderSummaryDto> _orders = [];
+    private bool _isLoading;
+    private ApiException? _apiError;
+    private string _statusFilter = string.Empty;
+    private string _customerFilter = string.Empty;
+    private DateTime? _dateFrom;
+    private DateTime? _dateTo;
+    private Timer? _pollTimer;
+    private int _page = 1;
+    private const int PageSize = 20;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _pollTimer = new Timer(async _ => await InvokeAsync(PollAsync), null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
+        await ReloadAsync();
+    }
+
+    public void Dispose()
+    {
+        _pollTimer?.Dispose();
+    }
+
+    private async Task PollAsync()
+    {
+        if (_isLoading)
+        {
+            return;
+        }
+
+        await ReloadAsync(showToastOnError: false);
+    }
+
+    private async Task ApplyFiltersAsync()
+    {
+        _page = 1;
+        await ReloadAsync();
+    }
+
+    private async Task ResetFiltersAsync()
+    {
+        _statusFilter = string.Empty;
+        _customerFilter = string.Empty;
+        _dateFrom = null;
+        _dateTo = null;
+        _page = 1;
+        await ReloadAsync();
+    }
+
+    private Task RetryAsync()
+    {
+        return ReloadAsync();
+    }
+
+    private async Task ReloadAsync(bool showToastOnError = true)
+    {
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            var dateFrom = ParseDate(_dateFrom, startOfDay: true);
+            var dateTo = ParseDate(_dateTo, startOfDay: false);
+
+            var rows = await OutboundClient.GetOutboundOrderSummariesAsync(
+                _statusFilter,
+                _customerFilter,
+                dateFrom,
+                dateTo);
+
+            _orders.Clear();
+            _orders.AddRange(rows.OrderByDescending(x => x.OrderDate));
+            _page = Math.Min(Math.Max(1, _page), TotalPages);
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            if (showToastOnError)
+            {
+                ToastService.ShowError(BuildErrorMessage(ex));
+            }
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void DismissError()
+    {
+        _apiError = null;
+    }
+
+    private void OpenOrder(Guid orderId)
+    {
+        NavigationManager.NavigateTo($"/warehouse/outbound/orders/{orderId}");
+    }
+
+    private void OpenPacking(Guid orderId)
+    {
+        NavigationManager.NavigateTo($"/warehouse/outbound/pack/{orderId}");
+    }
+
+    private static DateTimeOffset? ParseDate(DateTime? value, bool startOfDay)
+    {
+        if (!value.HasValue)
+        {
+            return null;
+        }
+
+        var date = DateOnly.FromDateTime(value.Value);
+        var time = startOfDay ? TimeOnly.MinValue : TimeOnly.MaxValue;
+        return new DateTimeOffset(date.ToDateTime(time, DateTimeKind.Utc));
+    }
+
+    private static string FormatDate(DateTimeOffset? value)
+        => value.HasValue ? value.Value.ToLocalTime().ToString("yyyy-MM-dd") : "-";
+
+    private static string BuildErrorMessage(ApiException ex)
+    {
+        if (!string.IsNullOrWhiteSpace(ex.UserMessage))
+        {
+            return ex.UserMessage;
+        }
+
+        return ex.StatusCode switch
+        {
+            500 => "Failed to load orders. Please try again.",
+            _ => "Failed to load orders."
+        };
+    }
+
+    private static string GetStatusBadgeClass(string status)
+        => status.ToUpperInvariant() switch
+        {
+            "ALLOCATED" => "bg-info text-dark",
+            "PICKING" => "bg-primary",
+            "PICKED" => "bg-secondary",
+            "PACKED" => "bg-warning text-dark",
+            "SHIPPED" => "bg-success",
+            "DELIVERED" => "bg-success",
+            "CANCELLED" => "bg-danger",
+            _ => "bg-light text-dark"
+        };
+
+    private IEnumerable<OutboundOrderSummaryDto> CurrentPageRows
+        => _orders
+            .Skip((_page - 1) * PageSize)
+            .Take(PageSize);
+
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling(_orders.Count / (double)PageSize));
+
+    private void PreviousPage()
+    {
+        if (_page > 1)
+        {
+            _page--;
+        }
+    }
+
+    private void NextPage()
+    {
+        if (_page < TotalPages)
+        {
+            _page++;
+        }
+    }
+}
