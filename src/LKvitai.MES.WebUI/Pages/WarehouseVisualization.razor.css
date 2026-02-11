@@ -105,15 +105,15 @@
 
 .viz-empty-selection {
     min-height: 220px;
-    display: grid;
-    place-content: center;
-    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     gap: 0.5rem;
     color: rgba(255, 255, 255, 0.7);
 }
 
 .viz-empty-selection i {
-    font-size: 1.4rem;
+    font-size: 1.2rem;
 }
 
 .viz-details .list-group-item {
