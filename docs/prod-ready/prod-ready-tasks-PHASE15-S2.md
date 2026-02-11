@@ -1343,3 +1343,845 @@ dotnet test --filter "Category=LabelPrinting"
 - [ ] Manual testing: print to real printer or simulator
 
 ---
+## Task PRD-1517: 3D Visualization - Location Coordinates + Static 3D Model
+
+**Epic:** E - 3D Visualization  
+**Phase:** 1.5  
+**Sprint:** 2  
+**Estimate:** L (2 days)  
+**OwnerType:** Backend/API  
+**Dependencies:** None  
+**SourceRefs:** Universe §4.Epic E (3D Visualization)
+
+### Context
+
+- Phase 1 has no visual warehouse map
+- Need 3D coordinates for locations (X, Y, Z in meters)
+- WarehouseLayout entity to define warehouse dimensions and zones
+- 3D API endpoint to provide data for frontend rendering
+- Foundation for 3D UI (PRD-1518)
+
+### Scope
+
+**In Scope:**
+- Update Location entity: add CoordinateX, CoordinateY, CoordinateZ, Aisle, Rack, Level, Bin, CapacityWeight, CapacityVolume
+- WarehouseLayout entity: WarehouseCode, Dimensions, Zones
+- ZoneDefinition: ZoneType, Bounds (X1, Y1, X2, Y2), Color
+- Database migration: add columns to locations table, create warehouse_layout table
+- API endpoints: GET /layout, PUT /layout, GET /visualization/3d
+- 3D API response: warehouse dimensions, bins (code, coords, capacity, status, color, HUs), zones
+
+**Out of Scope:**
+- 3D UI rendering (PRD-1518)
+- Real-time updates (manual refresh only)
+
+### Requirements
+
+**Functional:**
+1. Location entity updates: CoordinateX, CoordinateY, CoordinateZ (nullable, meters from origin)
+2. Location entity: Aisle, Rack, Level, Bin (for structured naming)
+3. WarehouseLayout: WarehouseCode, WidthMeters, LengthMeters, HeightMeters, Zones
+4. ZoneDefinition: ZoneType (RECEIVING, STORAGE, SHIPPING, QUARANTINE), Bounds, Color
+5. API: GET /layout (returns warehouse config), PUT /layout (admin only)
+6. API: GET /visualization/3d (returns bins with coords, status, HUs for rendering)
+7. Bin status calculation: EMPTY (no HUs), LOW (<50% capacity), FULL (>80%), RESERVED (has HARD locks)
+
+**Non-Functional:**
+1. 3D API latency: < 2 seconds for 1000 bins
+2. Coordinate precision: 2 decimal places (centimeters)
+3. Validation: no overlapping bins (check 3D bounding boxes)
+
+**Data Model:**
+```csharp
+public class Location
+{
+  // Existing fields...
+  public decimal? CoordinateX { get; set; }
+  public decimal? CoordinateY { get; set; }
+  public decimal? CoordinateZ { get; set; }
+  public string Aisle { get; set; }
+  public string Rack { get; set; }
+  public string Level { get; set; }
+  public string Bin { get; set; }
+  public decimal? CapacityWeight { get; set; }
+  public decimal? CapacityVolume { get; set; }
+}
+
+public class WarehouseLayout
+{
+  public Guid Id { get; set; }
+  public string WarehouseCode { get; set; }
+  public decimal WidthMeters { get; set; }
+  public decimal LengthMeters { get; set; }
+  public decimal HeightMeters { get; set; }
+  public List<ZoneDefinition> Zones { get; set; }
+}
+
+public class ZoneDefinition
+{
+  public string ZoneType { get; set; }
+  public decimal X1 { get; set; }
+  public decimal Y1 { get; set; }
+  public decimal X2 { get; set; }
+  public decimal Y2 { get; set; }
+  public string Color { get; set; }
+}
+```
+
+**3D API Response:**
+```json
+{
+  "warehouse": {
+    "code": "Main",
+    "dimensions": { "width": 50, "length": 100, "height": 10 }
+  },
+  "bins": [
+    {
+      "code": "R3-C6-L3B3",
+      "coordinates": { "x": 15.5, "y": 32.0, "z": 6.0 },
+      "capacity": { "weight": 1000, "volume": 2.0 },
+      "status": "FULL",
+      "color": "#FFA500",
+      "handlingUnits": [
+        { "id": "HU-001", "sku": "RM-0001", "qty": 50 }
+      ]
+    }
+  ],
+  "zones": [
+    { "type": "RECEIVING", "bounds": { "x1": 0, "y1": 0, "x2": 10, "y2": 100 }, "color": "#ADD8E6" }
+  ]
+}
+```
+
+### Acceptance Criteria
+
+```gherkin
+Scenario: Update location with 3D coordinates
+  Given Location "R3-C6-L3" exists
+  When admin updates coordinates: X=15.5, Y=32.0, Z=6.0
+  Then location saved with coordinates
+  And coordinates visible in 3D API response
+
+Scenario: Configure warehouse layout
+  Given admin navigates to /warehouse/admin/layout
+  When admin sets dimensions: Width=50m, Length=100m, Height=10m
+  And adds zone: RECEIVING (X1=0, Y1=0, X2=10, Y2=100, Color=#ADD8E6)
+  And saves layout
+  Then warehouse_layout table updated
+  And layout visible in GET /layout API
+
+Scenario: 3D API returns bins with status
+  Given 3 locations with coordinates and HUs:
+    | Code | X | Y | Z | HUs | Capacity | Utilization |
+    | R1-C1-L1 | 5 | 10 | 2 | 0 | 1000kg | 0% |
+    | R2-C2-L2 | 10 | 20 | 4 | 1 | 1000kg | 40% |
+    | R3-C3-L3 | 15 | 30 | 6 | 2 | 1000kg | 85% |
+  When GET /visualization/3d
+  Then response includes 3 bins
+  And R1-C1-L1 status=EMPTY, color=gray
+  And R2-C2-L2 status=LOW, color=yellow
+  And R3-C3-L3 status=FULL, color=orange
+```
+
+### Implementation Notes
+
+- Migration: ALTER TABLE locations ADD COLUMN coordinate_x, coordinate_y, coordinate_z
+- Status calculation: query HandlingUnits, sum weight/volume, compare to capacity
+- Color mapping: EMPTY=gray, LOW=yellow, FULL=orange, RESERVED=blue
+- Validation: check no overlapping bins (3D bounding box collision detection)
+
+### Validation / Checks
+
+**Local Testing:**
+```bash
+# Update location coordinates
+curl -X PUT http://localhost:5000/api/warehouse/v1/locations/R3-C6-L3 \
+  -d '{ "coordinateX": 15.5, "coordinateY": 32.0, "coordinateZ": 6.0 }'
+
+# Get 3D data
+curl http://localhost:5000/api/warehouse/v1/visualization/3d
+
+# Run tests
+dotnet test --filter "Category=3DVisualization"
+```
+
+**Metrics:**
+- `visualization_3d_api_calls_total` (counter)
+- `visualization_3d_api_duration_ms` (histogram)
+
+**Logs:**
+- INFO: "Location coordinates updated: {LocationCode}, X={X}, Y={Y}, Z={Z}"
+- INFO: "3D API called: {BinCount} bins returned"
+
+### Definition of Done
+
+- [ ] Location entity updated with coordinate fields
+- [ ] WarehouseLayout entity created
+- [ ] ZoneDefinition entity created
+- [ ] Database migration created
+- [ ] API endpoints implemented (GET/PUT /layout, GET /visualization/3d)
+- [ ] Bin status calculation implemented
+- [ ] Unit tests: 10+ scenarios
+- [ ] Integration tests: end-to-end 3D API
+- [ ] Metrics exposed
+- [ ] Logs added
+- [ ] Code review completed
+- [ ] Manual testing: configure layout, query 3D API
+
+---
+## Task PRD-1518: 3D Visualization - UI Implementation
+
+**Epic:** E - 3D Visualization  
+**Phase:** 1.5  
+**Sprint:** 2  
+**Estimate:** L (2 days)  
+**OwnerType:** Frontend/UI  
+**Dependencies:** PRD-1517 (3D Location Coordinates)  
+**SourceRefs:** Universe §4.Epic E (UI/UX Pages)
+
+### Context
+
+- PRD-1517 created 3D API endpoint with bin coordinates and status
+- Need interactive 3D warehouse view using Three.js
+- Features: rotate/zoom/pan, click bin for details, search location, color-coded status
+- 2D floor plan toggle for alternative view
+- Manual refresh (no real-time updates in Phase 1.5)
+
+### Scope
+
+**In Scope:**
+- 3D view: Three.js rendering with OrbitControls
+- Color-coded bins: empty=gray, low=yellow, full=orange, reserved=blue
+- Click bin: highlight + show details panel (location, capacity, HUs, items)
+- Search: location code → fly to location + highlight
+- 2D view: top-down SVG/Canvas floor plan
+- Toggle button: switch between 2D/3D
+- Refresh button: reload data from API
+- UI routes: /warehouse/visualization/3d, /warehouse/visualization/2d
+
+**Out of Scope:**
+- Real-time updates (WebSockets, deferred to Phase 2)
+- Operator location tracking (RTLS)
+- Path optimization
+
+### Requirements
+
+**Functional:**
+1. 3D view: render warehouse with bins as 3D boxes
+2. OrbitControls: rotate (drag), zoom (scroll), pan (shift+drag)
+3. Color coding: bins colored by status (from API)
+4. Click bin: highlight in gold, show details panel
+5. Details panel: location code, capacity utilization, HUs list, items list, "View Details" link
+6. Search: input location code, fly camera to location, highlight bin
+7. 2D view: top-down floor plan (SVG or Canvas)
+8. Toggle button: switch between 2D/3D views
+9. Refresh button: reload data from API (polling every 30 seconds optional)
+
+**Non-Functional:**
+1. Initial load time: < 3 seconds for 1000 bins
+2. Frame rate: 60 FPS (smooth rotation/zoom)
+3. Browser support: Chrome, Firefox, Safari, Edge (latest 2 versions)
+4. Responsive: desktop and tablet (not phone)
+
+**UI Components (React + Three.js):**
+```tsx
+// 3DWarehouseView.tsx
+export const 3DWarehouseView = () => {
+  const [warehouseData, setWarehouseData] = useState(null);
+  const [selectedBin, setSelectedBin] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    fetchWarehouseData();
+  }, []);
+
+  const fetchWarehouseData = async () => {
+    const response = await api.get('/visualization/3d');
+    setWarehouseData(response.data);
+  };
+
+  const handleBinClick = (bin) => {
+    setSelectedBin(bin);
+    // Highlight bin in 3D scene
+  };
+
+  const handleSearch = (locationCode) => {
+    const bin = warehouseData.bins.find(b => b.code === locationCode);
+    if (bin) {
+      // Fly camera to bin
+      // Highlight bin
+      setSelectedBin(bin);
+    }
+  };
+
+  return (
+    <div style={{ display: 'flex', height: '100vh' }}>
+      <div style={{ flex: 1 }}>
+        <SearchBar onSearch={handleSearch} />
+        <ThreeJSCanvas data={warehouseData} onBinClick={handleBinClick} />
+      </div>
+      {selectedBin && (
+        <DetailsPanel bin={selectedBin} onClose={() => setSelectedBin(null)} />
+      )}
+    </div>
+  );
+};
+
+// ThreeJSCanvas.tsx
+const ThreeJSCanvas = ({ data, onBinClick }) => {
+  const mountRef = useRef(null);
+
+  useEffect(() => {
+    if (!data) return;
+
+    // Initialize Three.js scene
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    mountRef.current.appendChild(renderer.domElement);
+
+    // Add OrbitControls
+    const controls = new OrbitControls(camera, renderer.domElement);
+
+    // Render bins
+    data.bins.forEach(bin => {
+      const geometry = new THREE.BoxGeometry(1, 1, 1);
+      const material = new THREE.MeshBasicMaterial({ color: bin.color });
+      const cube = new THREE.Mesh(geometry, material);
+      cube.position.set(bin.coordinates.x, bin.coordinates.y, bin.coordinates.z);
+      cube.userData = bin; // Store bin data for click handling
+      scene.add(cube);
+    });
+
+    // Raycaster for click detection
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+
+    const onMouseClick = (event) => {
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(scene.children);
+      if (intersects.length > 0) {
+        const clickedBin = intersects[0].object.userData;
+        onBinClick(clickedBin);
+      }
+    };
+
+    renderer.domElement.addEventListener('click', onMouseClick);
+
+    // Animation loop
+    const animate = () => {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    };
+    animate();
+
+    return () => {
+      mountRef.current.removeChild(renderer.domElement);
+    };
+  }, [data]);
+
+  return <div ref={mountRef} />;
+};
+```
+
+### Acceptance Criteria
+
+```gherkin
+Scenario: View 3D warehouse model
+  Given warehouse has 200 bins configured with coordinates
+  When user navigates to /warehouse/visualization/3d
+  Then 3D model renders showing all bins
+  And bins colored by status (empty=gray, low=yellow, full=orange)
+  And user can rotate camera with mouse drag
+  And user can zoom with scroll wheel
+
+Scenario: Click bin to view details
+  Given 3D warehouse view loaded
+  When user clicks bin "R3-C6-L3B3"
+  Then bin highlights in gold
+  And right panel shows:
+    - Location code: R3-C6-L3B3
+    - Capacity utilization: 85%
+    - Handling units: 2 HUs (HU-001, HU-002)
+    - Items: RM-0001 (50 units), RM-0002 (30 units)
+  And "View Details" button links to /warehouse/locations/{id}
+
+Scenario: Search location and fly to it
+  Given 3D warehouse view loaded
+  When user types "R5-C2" in search box
+  And presses Enter
+  Then camera flies to bin R5-C2 (animated)
+  And bin highlights
+  And details panel opens
+
+Scenario: Toggle 2D view
+  Given 3D warehouse view loaded
+  When user clicks "2D View" button
+  Then view switches to top-down floor plan (SVG)
+  And bins displayed as rectangles with same color coding
+  And click bin still shows details panel
+
+Scenario: Refresh data
+  Given 3D warehouse view loaded
+  When user clicks "Refresh" button
+  Then API called: GET /visualization/3d
+  And 3D model updates with new data
+  And bin colors update based on new status
+```
+
+### Implementation Notes
+
+- Use Three.js for 3D rendering (MIT license, ~600KB)
+- Use OrbitControls for camera manipulation
+- Use Raycaster for click detection (bin selection)
+- Use React hooks (useState, useEffect, useRef) for state management
+- 2D view: use SVG or Canvas for top-down rendering
+- Camera fly-to animation: use TWEEN.js or custom interpolation
+
+### Validation / Checks
+
+**Local Testing:**
+```bash
+# Start frontend dev server
+cd src/LKvitai.MES.UI
+npm run dev
+
+# Navigate to 3D view
+http://localhost:3000/warehouse/visualization/3d
+
+# Test interactions:
+# - Rotate camera (drag)
+# - Zoom (scroll)
+# - Click bin (details panel)
+# - Search location (fly-to)
+# - Toggle 2D view
+# - Refresh data
+```
+
+**Metrics:**
+- N/A (frontend, no backend metrics)
+
+**Logs:**
+- Browser console logs for errors
+
+### Definition of Done
+
+- [ ] 3DWarehouseView component created
+- [ ] ThreeJSCanvas component created (Three.js rendering)
+- [ ] OrbitControls integrated
+- [ ] Click detection implemented (Raycaster)
+- [ ] Details panel component created
+- [ ] Search functionality implemented (fly-to animation)
+- [ ] 2D floor plan view implemented (SVG/Canvas)
+- [ ] Toggle button implemented (2D/3D switch)
+- [ ] Refresh button implemented
+- [ ] React Router routes configured
+- [ ] Unit tests: 5+ scenarios (component rendering, interactions)
+- [ ] Manual testing: all interactions, all browsers
+- [ ] Code review completed
+- [ ] Documentation: UI screenshots added to docs/
+
+---
+## Task PRD-1519: Inter-Warehouse Transfers - Transfer Request Workflow
+
+**Epic:** F - Inter-Warehouse Transfers  
+**Phase:** 1.5  
+**Sprint:** 2  
+**Estimate:** M (1 day)  
+**OwnerType:** Backend/API  
+**Dependencies:** None  
+**SourceRefs:** Universe §4.Epic F (Inter-Warehouse Transfers)
+
+### Context
+
+- Need to move stock between logical warehouses (RES → PROD, NLQ → SCRAP)
+- Transfer workflow: request → approve → execute
+- In-transit virtual location: IN_TRANSIT_{transferId}
+- Approval rules: Manager approval for SCRAP transfers (write-off)
+- Use case: release reserved stock, quarantine to scrap, production return
+
+### Scope
+
+**In Scope:**
+- Transfer entity: TransferNumber, FromWarehouse, ToWarehouse, Status, Lines
+- TransferLine entity: ItemId, Qty, FromLocationId, ToLocationId
+- Commands: CreateTransferCommand, ApproveTransferCommand, ExecuteTransferCommand
+- State machine: DRAFT → PENDING_APPROVAL → APPROVED → IN_TRANSIT → COMPLETED
+- Virtual location: IN_TRANSIT_{transferId} (during transfer)
+- API endpoints: POST /transfers, POST /transfers/{id}/approve, POST /transfers/{id}/execute
+- Events: TransferCreated, TransferApproved, TransferExecuted, TransferCompleted
+
+**Out of Scope:**
+- Physical inter-building transfers (single warehouse assumption for Phase 1.5)
+- Multi-step transfers (direct transfer only)
+
+### Requirements
+
+**Functional:**
+1. Transfer entity: TransferNumber, FromWarehouse, ToWarehouse, Status, RequestedBy, ApprovedBy, Lines
+2. TransferLine: ItemId, Qty, FromLocationId, ToLocationId
+3. CreateTransferCommand: validate from/to warehouses, create transfer (status=DRAFT)
+4. ApproveTransferCommand: Manager approval required if ToWarehouse=SCRAP
+5. ExecuteTransferCommand: move stock (StockMoved events), update status=IN_TRANSIT, then COMPLETED
+6. State machine: DRAFT → PENDING_APPROVAL (if SCRAP) → APPROVED → IN_TRANSIT → COMPLETED
+7. Virtual location: create IN_TRANSIT_{transferId} location during transfer
+
+**Non-Functional:**
+1. API latency: < 2 seconds for execute (includes stock moves)
+2. Idempotency: all commands include CommandId
+3. Authorization: Warehouse Operator can create, Manager can approve
+4. Transactional: all stock moves in single transaction
+
+**Data Model:**
+```csharp
+public class Transfer
+{
+  public Guid Id { get; set; }
+  public string TransferNumber { get; set; }
+  public string FromWarehouse { get; set; }
+  public string ToWarehouse { get; set; }
+  public TransferStatus Status { get; set; }
+  public string RequestedBy { get; set; }
+  public string ApprovedBy { get; set; }
+  public DateTime RequestedAt { get; set; }
+  public DateTime? ApprovedAt { get; set; }
+  public DateTime? ExecutedAt { get; set; }
+  public DateTime? CompletedAt { get; set; }
+  public List<TransferLine> Lines { get; set; }
+}
+
+public class TransferLine
+{
+  public Guid Id { get; set; }
+  public Guid TransferId { get; set; }
+  public Guid ItemId { get; set; }
+  public decimal Qty { get; set; }
+  public Guid FromLocationId { get; set; }
+  public Guid ToLocationId { get; set; }
+}
+
+public enum TransferStatus
+{
+  DRAFT,
+  PENDING_APPROVAL,
+  APPROVED,
+  IN_TRANSIT,
+  COMPLETED,
+  CANCELLED
+}
+```
+
+### Acceptance Criteria
+
+```gherkin
+Scenario: Create transfer request (no approval required)
+  Given FromWarehouse "RES", ToWarehouse "PROD"
+  When POST /transfers with lines: [{ itemId: ITEM-001, qty: 10, fromLocationId: LOC-RES-001, toLocationId: LOC-PROD-001 }]
+  Then Transfer created with status DRAFT
+  And TransferCreated event emitted
+
+Scenario: Create transfer requires approval (SCRAP)
+  Given FromWarehouse "NLQ", ToWarehouse "SCRAP"
+  When POST /transfers
+  Then Transfer created with status PENDING_APPROVAL
+  And approval required before execution
+
+Scenario: Approve transfer
+  Given Transfer "TRF-001" with status PENDING_APPROVAL
+  And user has Manager role
+  When POST /transfers/TRF-001/approve
+  Then Transfer status updated to APPROVED
+  And TransferApproved event emitted
+
+Scenario: Execute transfer
+  Given Transfer "TRF-001" with status APPROVED
+  When POST /transfers/TRF-001/execute
+  Then virtual location IN_TRANSIT_TRF-001 created
+  And StockMoved events emitted (from LOC-RES-001 → IN_TRANSIT_TRF-001)
+  And Transfer status updated to IN_TRANSIT
+  And StockMoved events emitted (IN_TRANSIT_TRF-001 → LOC-PROD-001)
+  And Transfer status updated to COMPLETED
+  And TransferCompleted event emitted
+
+Scenario: Validation failure - insufficient stock
+  Given Transfer with qty 10
+  And FromLocation has qty 5
+  When POST /transfers/{id}/execute
+  Then error: "Insufficient stock at location LOC-RES-001"
+  And Transfer status remains APPROVED
+```
+
+### Implementation Notes
+
+- Use MediatR for command handlers
+- State machine validation: use Transfer.Approve(), Transfer.Execute() methods
+- Virtual location: create Location with code IN_TRANSIT_{transferId}, type VIRTUAL
+- Stock moves: emit StockMoved events (from → in-transit → to)
+- Approval validation: check user role (Manager) and ToWarehouse (SCRAP)
+- Transactional: wrap all stock moves in single EF Core transaction
+
+### Validation / Checks
+
+**Local Testing:**
+```bash
+# Create transfer
+curl -X POST http://localhost:5000/api/warehouse/v1/transfers \
+  -d '{ "commandId": "test-001", "fromWarehouse": "RES", "toWarehouse": "PROD", "lines": [...] }'
+
+# Approve transfer
+curl -X POST http://localhost:5000/api/warehouse/v1/transfers/<id>/approve
+
+# Execute transfer
+curl -X POST http://localhost:5000/api/warehouse/v1/transfers/<id>/execute
+
+# Run tests
+dotnet test --filter "Category=Transfers"
+```
+
+**Metrics:**
+- `transfers_created_total` (counter)
+- `transfers_executed_total` (counter)
+- `transfer_execution_duration_ms` (histogram)
+
+**Logs:**
+- INFO: "Transfer created: {TransferNumber}, From {FromWarehouse} To {ToWarehouse}"
+- INFO: "Transfer executed: {TransferNumber}, {LineCount} lines"
+
+### Definition of Done
+
+- [ ] Transfer entity created
+- [ ] TransferLine entity created
+- [ ] CreateTransferCommand + handler implemented
+- [ ] ApproveTransferCommand + handler implemented
+- [ ] ExecuteTransferCommand + handler implemented
+- [ ] State machine methods implemented
+- [ ] Virtual location creation implemented
+- [ ] Stock move events emitted
+- [ ] API endpoints implemented
+- [ ] Events defined and published
+- [ ] Unit tests: 10+ scenarios
+- [ ] Integration tests: end-to-end transfer workflow
+- [ ] Metrics exposed
+- [ ] Logs added
+- [ ] Code review completed
+- [ ] Manual testing: create, approve, execute transfer
+
+---
+## Task PRD-1520: Cycle Counting - Scheduled Counts + Discrepancy Resolution
+
+**Epic:** Operational Excellence  
+**Phase:** 1.5  
+**Sprint:** 2  
+**Estimate:** M (2 days)  
+**OwnerType:** Backend/API  
+**Dependencies:** None  
+**SourceRefs:** Universe §4 (Cycle Counting)
+
+### Context
+
+- Need periodic physical counts to verify system accuracy
+- ABC classification: A-items monthly, B-items quarterly, C-items annually
+- Cycle count workflow: schedule → count → compare → approve discrepancy → adjust stock
+- Approval required for discrepancies > 5% or $1000
+- Use case: detect shrinkage, damage, data entry errors
+
+### Scope
+
+**In Scope:**
+- CycleCount entity: CountNumber, Status, Locations, Lines, ScheduledDate
+- CycleCountLine entity: LocationId, ItemId, SystemQty, PhysicalQty, Delta, Status
+- Commands: ScheduleCycleCountCommand, RecordCountCommand, ApplyAdjustmentCommand
+- ABC classification: configurable (A=monthly, B=quarterly, C=annual)
+- Approval workflow: Manager approval for discrepancies > 5% or $1000
+- API endpoints: POST /cycle-counts/schedule, POST /cycle-counts/{id}/record-count, POST /cycle-counts/{id}/apply-adjustment
+- Events: CycleCountScheduled, CountRecorded, CycleCountCompleted, StockAdjusted
+
+**Out of Scope:**
+- Blind counts (operator doesn't see system qty, deferred to Phase 2)
+- Mobile app for counting (use web UI)
+
+### Requirements
+
+**Functional:**
+1. CycleCount entity: CountNumber, Status (SCHEDULED, IN_PROGRESS, COMPLETED), Locations, Lines, ScheduledDate
+2. CycleCountLine: LocationId, ItemId, SystemQty, PhysicalQty, Delta, Status (PENDING, APPROVED, REJECTED)
+3. ScheduleCycleCountCommand: select locations based on ABC classification, create cycle count
+4. RecordCountCommand: operator scans location, counts items, records physical qty
+5. Compare: Delta = PhysicalQty - SystemQty
+6. ApplyAdjustmentCommand: if approved, emit StockAdjusted event (adjust system qty)
+7. Approval rules: Manager approval if |Delta| > 5% OR |Delta × UnitCost| > $1000
+8. ABC classification: A-items (high value) monthly, B-items quarterly, C-items annually
+
+**Non-Functional:**
+1. API latency: < 1 second for record count
+2. Approval latency: < 5 seconds for apply adjustment
+3. Idempotency: all commands include CommandId
+4. Authorization: Warehouse Operator can count, Manager can approve
+
+**Data Model:**
+```csharp
+public class CycleCount
+{
+  public Guid Id { get; set; }
+  public string CountNumber { get; set; }
+  public CycleCountStatus Status { get; set; }
+  public DateTime ScheduledDate { get; set; }
+  public DateTime? StartedAt { get; set; }
+  public DateTime? CompletedAt { get; set; }
+  public List<CycleCountLine> Lines { get; set; }
+  public string CountedBy { get; set; }
+  public string ApprovedBy { get; set; }
+}
+
+public class CycleCountLine
+{
+  public Guid Id { get; set; }
+  public Guid CycleCountId { get; set; }
+  public Guid LocationId { get; set; }
+  public Guid ItemId { get; set; }
+  public decimal SystemQty { get; set; }
+  public decimal PhysicalQty { get; set; }
+  public decimal Delta { get; set; }
+  public CycleCountLineStatus Status { get; set; }
+  public string Reason { get; set; }
+}
+
+public enum CycleCountStatus { SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED }
+public enum CycleCountLineStatus { PENDING, APPROVED, REJECTED, RECOUNT }
+```
+
+### Acceptance Criteria
+
+```gherkin
+Scenario: Schedule cycle count (ABC classification)
+  Given 100 A-items (high value), 500 B-items, 1000 C-items
+  And ABC config: A=monthly, B=quarterly, C=annual
+  When POST /cycle-counts/schedule with date 2026-02-15
+  Then CycleCount created with 100 A-items
+  And status SCHEDULED
+  And CycleCountScheduled event emitted
+
+Scenario: Record physical count
+  Given CycleCount "CC-001" with status SCHEDULED
+  And line: Location LOC-001, Item ITEM-001, SystemQty 100
+  When operator scans location LOC-001
+  And counts physical qty: 95
+  And POST /cycle-counts/CC-001/record-count with physicalQty 95
+  Then CycleCountLine updated: PhysicalQty=95, Delta=-5
+  And CountRecorded event emitted
+
+Scenario: Apply adjustment (no approval required)
+  Given CycleCountLine with Delta=-5 (5% discrepancy, low value)
+  When POST /cycle-counts/CC-001/apply-adjustment
+  Then StockAdjusted event emitted (adjust system qty from 100 to 95)
+  And CycleCountLine status=APPROVED
+  And CycleCount status=COMPLETED
+
+Scenario: Discrepancy requires approval
+  Given CycleCountLine with Delta=-20 (20% discrepancy)
+  When POST /cycle-counts/CC-001/apply-adjustment without approval
+  Then error: "Manager approval required for discrepancy > 5%"
+  And CycleCountLine status=PENDING
+
+Scenario: Manager approves discrepancy
+  Given CycleCountLine with Delta=-20, status PENDING
+  And user has Manager role
+  When POST /cycle-counts/CC-001/apply-adjustment with approverId
+  Then StockAdjusted event emitted
+  And CycleCountLine status=APPROVED
+
+Scenario: Recount requested
+  Given CycleCountLine with large discrepancy
+  When manager requests recount
+  Then CycleCountLine status=RECOUNT
+  And operator must count again
+```
+
+### Implementation Notes
+
+- Use MediatR for command handlers
+- ABC classification: query Item.Category or Item.Value, classify as A/B/C
+- Scheduled job: Hangfire recurring job (daily, check for scheduled counts)
+- Approval validation: calculate |Delta| / SystemQty (percentage), |Delta × UnitCost| (dollar impact)
+- Stock adjustment: emit StockAdjusted event (consumed by StockLedger aggregate)
+
+### Validation / Checks
+
+**Local Testing:**
+```bash
+# Schedule cycle count
+curl -X POST http://localhost:5000/api/warehouse/v1/cycle-counts/schedule \
+  -d '{ "commandId": "test-001", "scheduledDate": "2026-02-15" }'
+
+# Record count
+curl -X POST http://localhost:5000/api/warehouse/v1/cycle-counts/<id>/record-count \
+  -d '{ "commandId": "test-002", "locationId": "<guid>", "itemId": "<guid>", "physicalQty": 95 }'
+
+# Apply adjustment
+curl -X POST http://localhost:5000/api/warehouse/v1/cycle-counts/<id>/apply-adjustment
+
+# Run tests
+dotnet test --filter "Category=CycleCounting"
+```
+
+**Metrics:**
+- `cycle_counts_scheduled_total` (counter)
+- `cycle_counts_completed_total` (counter)
+- `cycle_count_discrepancies_total` (counter, labels: approval_required)
+- `cycle_count_accuracy_percentage` (gauge)
+
+**Logs:**
+- INFO: "Cycle count scheduled: {CountNumber}, {LineCount} lines"
+- INFO: "Count recorded: {LocationCode}, {ItemSku}, Delta {Delta}"
+- WARN: "Discrepancy requires approval: Delta {Delta}, Impact ${Impact}"
+
+### Definition of Done
+
+- [ ] CycleCount entity created
+- [ ] CycleCountLine entity created
+- [ ] ScheduleCycleCountCommand + handler implemented
+- [ ] RecordCountCommand + handler implemented
+- [ ] ApplyAdjustmentCommand + handler implemented
+- [ ] ABC classification logic implemented
+- [ ] Approval validation implemented
+- [ ] Stock adjustment events emitted
+- [ ] API endpoints implemented
+- [ ] Events defined and published
+- [ ] Unit tests: 15+ scenarios
+- [ ] Integration tests: end-to-end cycle count workflow
+- [ ] Metrics exposed
+- [ ] Logs added
+- [ ] Code review completed
+- [ ] Manual testing: schedule, count, approve, adjust
+
+---
+
+## Sprint 2 Summary
+
+**Total Tasks:** 10  
+**Total Effort:** 12 days  
+**Status:** ✅ All tasks fully elaborated and ready for execution
+
+**Task Breakdown:**
+- Valuation (3 tasks, 3 days): Aggregate, Cost Adjustment, OnHandValue Projection
+- Agnum Integration (2 tasks, 3 days): Export Config, CSV/API Integration
+- Label Printing (1 task, 1 day): ZPL Templates + TCP 9100
+- 3D Visualization (2 tasks, 4 days): Location Coordinates, UI Implementation
+- Inter-Warehouse Transfers (1 task, 1 day): Transfer Workflow
+- Cycle Counting (1 task, 2 days): Scheduled Counts + Discrepancy Resolution
+
+**Next Steps:**
+1. Review this execution pack with team
+2. Begin Sprint 2 execution with PRD-1511 (Valuation Aggregate)
+3. Follow task order: PRD-1511 → PRD-1512 → PRD-1513 → PRD-1514 → PRD-1515 → PRD-1516 → PRD-1517 → PRD-1518 → PRD-1519 → PRD-1520
+4. Update progress ledger after each task completion
+5. Conduct sprint review after all tasks complete
+
+**Files:**
+- Main file: `prod-ready-tasks-PHASE15-S2.md` (this file)
+- Summary file: `prod-ready-tasks-PHASE15-S2-summary.md`
+- Progress ledger: `prod-ready-tasks-progress.md`
