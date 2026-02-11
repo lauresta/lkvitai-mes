@@ -1,5 +1,19 @@
 (function () {
     const contexts = {};
+    const debugEnabled = true;
+
+    function log(message, payload) {
+        if (!debugEnabled) {
+            return;
+        }
+
+        if (typeof payload === "undefined") {
+            console.log(`[warehouse-3d] ${message}`);
+            return;
+        }
+
+        console.log(`[warehouse-3d] ${message}`, payload);
+    }
 
     function toHexColor(value) {
         if (!value || typeof value !== "string") {
@@ -14,207 +28,294 @@
     function dispose(containerId) {
         const context = contexts[containerId];
         if (!context) {
+            log("dispose: no context", { containerId });
             return;
         }
 
         window.removeEventListener("resize", context.onResize);
         context.renderer.domElement.removeEventListener("click", context.onClick);
+        context.renderer.domElement.removeEventListener("wheel", context.onWheel);
         context.controls.dispose();
         context.renderer.dispose();
         context.container.innerHTML = "";
         delete contexts[containerId];
+        log("dispose: completed", { containerId });
     }
 
     function render(containerId, bins, dotNetRef) {
-        dispose(containerId);
+        try {
+            dispose(containerId);
 
-        const container = document.getElementById(containerId);
-        if (!container || !window.THREE || !window.THREE.OrbitControls) {
-            return;
-        }
+            const container = document.getElementById(containerId);
+            if (!container || !window.THREE || !window.THREE.OrbitControls) {
+                log("render: prerequisites missing", {
+                    containerId,
+                    hasContainer: !!container,
+                    hasThree: !!window.THREE,
+                    hasOrbitControls: !!(window.THREE && window.THREE.OrbitControls)
+                });
+                return;
+            }
 
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0xf8f9fa);
-
-        const width = Math.max(container.clientWidth, 300);
-        const height = Math.max(container.clientHeight, 300);
-
-        const camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 2000);
-        camera.position.set(40, 40, 40);
-
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setPixelRatio(window.devicePixelRatio || 1);
-        renderer.setSize(width, height);
-        container.appendChild(renderer.domElement);
-
-        const controls = new THREE.OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
-        controls.dampingFactor = 0.07;
-        controls.target.set(0, 0, 0);
-
-        scene.add(new THREE.AmbientLight(0xffffff, 0.95));
-        const keyLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        keyLight.position.set(30, 60, 20);
-        scene.add(keyLight);
-
-        const normalizedBins = (bins || []).map((bin) => ({
-            bin,
-            x: Number(bin.coordinates?.x || 0),
-            y: Number(bin.coordinates?.z || 0),
-            z: Number(bin.coordinates?.y || 0)
-        }));
-
-        const xs = normalizedBins.map((x) => x.x);
-        const ys = normalizedBins.map((x) => x.y);
-        const zs = normalizedBins.map((x) => x.z);
-
-        const minX = xs.length ? Math.min(...xs) : 0;
-        const minY = ys.length ? Math.min(...ys) : 0;
-        const minZ = zs.length ? Math.min(...zs) : 0;
-        const maxX = xs.length ? Math.max(...xs) : 1;
-        const maxY = ys.length ? Math.max(...ys) : 1;
-        const maxZ = zs.length ? Math.max(...zs) : 1;
-
-        const centerX = (minX + maxX) / 2;
-        const centerY = (minY + maxY) / 2;
-        const centerZ = (minZ + maxZ) / 2;
-        const maxSpan = Math.max(maxX - minX, maxY - minY, maxZ - minZ, 1);
-        const cameraDistance = Math.max(12, maxSpan * 2.4);
-        const cubeSize = maxSpan <= 1 ? 1.8 : maxSpan < 4 ? 1.2 : 0.95;
-
-        controls.target.set(centerX, centerY, centerZ);
-        camera.position.set(
-            centerX + cameraDistance,
-            centerY + cameraDistance * 0.9,
-            centerZ + cameraDistance);
-        controls.update();
-
-        const gridSize = Math.max(30, Math.ceil(maxSpan * 4));
-        const gridDivisions = Math.max(10, Math.min(80, Math.round(gridSize / 2)));
-        const gridHelper = new THREE.GridHelper(gridSize, gridDivisions, 0xbfc5cd, 0xe4e7eb);
-        scene.add(gridHelper);
-
-        const raycaster = new THREE.Raycaster();
-        const mouse = new THREE.Vector2();
-        const meshesByCode = {};
-        const interactiveMeshes = [];
-
-        normalizedBins.forEach(({ bin, x, y, z }) => {
-            const geometry = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
-            const material = new THREE.MeshStandardMaterial({
-                color: toHexColor(bin.color),
-                metalness: 0.15,
-                roughness: 0.55
+            log("render: start", {
+                containerId,
+                binCount: Array.isArray(bins) ? bins.length : 0,
+                binsSample: Array.isArray(bins)
+                    ? bins.slice(0, 5).map((x) => x.code)
+                    : []
             });
-            const cube = new THREE.Mesh(geometry, material);
-            cube.position.set(x, y, z);
-            cube.userData = {
-                code: bin.code,
-                baseColor: toHexColor(bin.color)
-            };
-            scene.add(cube);
-            interactiveMeshes.push(cube);
-            meshesByCode[bin.code] = cube;
-        });
 
-        let selectedCode = null;
-        function applySelection(code) {
-            selectedCode = code || null;
-            interactiveMeshes.forEach((mesh) => {
-                const material = mesh.material;
-                if (!material || !material.color) {
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf8f9fa);
+
+            const width = Math.max(container.clientWidth, 300);
+            const height = Math.max(container.clientHeight, 300);
+
+            const camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 2000);
+            camera.position.set(40, 40, 40);
+
+            const renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setPixelRatio(window.devicePixelRatio || 1);
+            renderer.setSize(width, height);
+            renderer.domElement.style.touchAction = "none";
+            container.appendChild(renderer.domElement);
+
+            const controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableRotate = true;
+            controls.enableZoom = true;
+            controls.enablePan = true;
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.07;
+            controls.zoomSpeed = 1.1;
+            controls.rotateSpeed = 0.9;
+            controls.panSpeed = 0.9;
+            controls.minDistance = 1;
+            controls.maxDistance = 5000;
+            controls.screenSpacePanning = true;
+            controls.mouseButtons = {
+                LEFT: THREE.MOUSE.ROTATE,
+                MIDDLE: THREE.MOUSE.DOLLY,
+                RIGHT: THREE.MOUSE.PAN
+            };
+            controls.target.set(0, 0, 0);
+
+            scene.add(new THREE.AmbientLight(0xffffff, 0.95));
+            const keyLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            keyLight.position.set(30, 60, 20);
+            scene.add(keyLight);
+
+            const normalizedBins = (bins || []).map((bin) => ({
+                bin,
+                x: Number(bin.coordinates?.x || 0),
+                y: Number(bin.coordinates?.z || 0),
+                z: Number(bin.coordinates?.y || 0)
+            }));
+
+            const xs = normalizedBins.map((x) => x.x);
+            const ys = normalizedBins.map((x) => x.y);
+            const zs = normalizedBins.map((x) => x.z);
+
+            const minX = xs.length ? Math.min(...xs) : 0;
+            const minY = ys.length ? Math.min(...ys) : 0;
+            const minZ = zs.length ? Math.min(...zs) : 0;
+            const maxX = xs.length ? Math.max(...xs) : 1;
+            const maxY = ys.length ? Math.max(...ys) : 1;
+            const maxZ = zs.length ? Math.max(...zs) : 1;
+
+            const centerX = (minX + maxX) / 2;
+            const centerY = (minY + maxY) / 2;
+            const centerZ = (minZ + maxZ) / 2;
+            const maxSpan = Math.max(maxX - minX, maxY - minY, maxZ - minZ, 1);
+            const cameraDistance = Math.max(12, maxSpan * 2.4);
+            const cubeSize = maxSpan <= 1 ? 1.8 : maxSpan < 4 ? 1.2 : 0.95;
+
+            log("render: scene extents computed", {
+                minX, minY, minZ, maxX, maxY, maxZ, centerX, centerY, centerZ, maxSpan, cameraDistance, cubeSize
+            });
+
+            controls.target.set(centerX, centerY, centerZ);
+            camera.position.set(
+                centerX + cameraDistance,
+                centerY + cameraDistance * 0.9,
+                centerZ + cameraDistance);
+            controls.update();
+
+            const gridSize = Math.max(30, Math.ceil(maxSpan * 4));
+            const gridDivisions = Math.max(10, Math.min(80, Math.round(gridSize / 2)));
+            const gridHelper = new THREE.GridHelper(gridSize, gridDivisions, 0xbfc5cd, 0xe4e7eb);
+            scene.add(gridHelper);
+
+            const raycaster = new THREE.Raycaster();
+            const mouse = new THREE.Vector2();
+            const meshesByCode = {};
+            const interactiveMeshes = [];
+
+            normalizedBins.forEach(({ bin, x, y, z }) => {
+                const geometry = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
+                const material = new THREE.MeshStandardMaterial({
+                    color: toHexColor(bin.color),
+                    metalness: 0.15,
+                    roughness: 0.55
+                });
+                const cube = new THREE.Mesh(geometry, material);
+                cube.position.set(x, y, z);
+                cube.userData = {
+                    code: bin.code,
+                    baseColor: toHexColor(bin.color)
+                };
+                scene.add(cube);
+                interactiveMeshes.push(cube);
+                meshesByCode[bin.code] = cube;
+            });
+
+            log("render: meshes created", {
+                interactiveMeshCount: interactiveMeshes.length,
+                cameraPosition: { x: camera.position.x, y: camera.position.y, z: camera.position.z },
+                target: { x: controls.target.x, y: controls.target.y, z: controls.target.z }
+            });
+
+            let selectedCode = null;
+            function applySelection(code) {
+                selectedCode = code || null;
+                interactiveMeshes.forEach((mesh) => {
+                    const material = mesh.material;
+                    if (!material || !material.color) {
+                        return;
+                    }
+
+                    if (selectedCode && mesh.userData.code === selectedCode) {
+                        material.color.setHex(0xffd166);
+                        material.emissive.setHex(0x222200);
+                    } else {
+                        material.color.setHex(mesh.userData.baseColor);
+                        material.emissive.setHex(0x000000);
+                    }
+                });
+            }
+
+            function focusBin(code) {
+                const mesh = meshesByCode[code];
+                if (!mesh) {
+                    log("focusBin: code not found", { code });
                     return;
                 }
 
-                if (selectedCode && mesh.userData.code === selectedCode) {
-                    material.color.setHex(0xffd166);
-                    material.emissive.setHex(0x222200);
-                } else {
-                    material.color.setHex(mesh.userData.baseColor);
-                    material.emissive.setHex(0x000000);
+                const target = mesh.position;
+                const focusDistance = Math.max(8, cameraDistance * 0.45);
+                controls.target.set(target.x, target.y, target.z);
+                camera.position.set(
+                    target.x + focusDistance,
+                    target.y + focusDistance * 0.85,
+                    target.z + focusDistance);
+                controls.update();
+                applySelection(code);
+                log("focusBin: success", {
+                    code,
+                    target: { x: target.x, y: target.y, z: target.z },
+                    camera: { x: camera.position.x, y: camera.position.y, z: camera.position.z }
+                });
+            }
+
+            function onClick(event) {
+                const bounds = renderer.domElement.getBoundingClientRect();
+                mouse.x = ((event.clientX - bounds.left) / bounds.width) * 2 - 1;
+                mouse.y = -((event.clientY - bounds.top) / bounds.height) * 2 + 1;
+
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObjects(interactiveMeshes);
+                if (intersects.length === 0) {
+                    log("click: no intersection");
+                    return;
                 }
+
+                const code = intersects[0].object?.userData?.code;
+                if (!code) {
+                    log("click: intersection without code");
+                    return;
+                }
+
+                log("click: selected", { code });
+                applySelection(code);
+                if (dotNetRef) {
+                    dotNetRef.invokeMethodAsync("OnBinSelectedFromJs", code);
+                }
+            }
+
+            const onResize = () => {
+                const nextWidth = Math.max(container.clientWidth, 300);
+                const nextHeight = Math.max(container.clientHeight, 300);
+                camera.aspect = nextWidth / nextHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(nextWidth, nextHeight);
+                log("resize", { nextWidth, nextHeight });
+            };
+
+            const onWheel = (event) => {
+                log("wheel: zoom intent", {
+                    deltaY: event.deltaY,
+                    cameraDistanceToTarget: camera.position.distanceTo(controls.target)
+                });
+            };
+
+            controls.addEventListener("start", () => {
+                renderer.domElement.style.cursor = "grabbing";
+                log("controls:start", {
+                    camera: { x: camera.position.x, y: camera.position.y, z: camera.position.z },
+                    target: { x: controls.target.x, y: controls.target.y, z: controls.target.z }
+                });
             });
-        }
 
-        function focusBin(code) {
-            const mesh = meshesByCode[code];
-            if (!mesh) {
-                return;
+            controls.addEventListener("end", () => {
+                renderer.domElement.style.cursor = "grab";
+                log("controls:end", {
+                    camera: { x: camera.position.x, y: camera.position.y, z: camera.position.z },
+                    target: { x: controls.target.x, y: controls.target.y, z: controls.target.z },
+                    cameraDistanceToTarget: camera.position.distanceTo(controls.target)
+                });
+            });
+
+            renderer.domElement.style.cursor = "grab";
+            renderer.domElement.addEventListener("click", onClick);
+            renderer.domElement.addEventListener("wheel", onWheel, { passive: true });
+            window.addEventListener("resize", onResize);
+
+            let animationFrameHandle = null;
+            function animate() {
+                animationFrameHandle = window.requestAnimationFrame(animate);
+                controls.update();
+                renderer.render(scene, camera);
             }
 
-            const target = mesh.position;
-            const focusDistance = Math.max(8, cameraDistance * 0.45);
-            controls.target.set(target.x, target.y, target.z);
-            camera.position.set(
-                target.x + focusDistance,
-                target.y + focusDistance * 0.85,
-                target.z + focusDistance);
-            controls.update();
-            applySelection(code);
+            animate();
+
+            contexts[containerId] = {
+                container,
+                scene,
+                camera,
+                renderer,
+                controls,
+                onResize,
+                onClick,
+                onWheel,
+                focusBin,
+                applySelection,
+                stop: () => window.cancelAnimationFrame(animationFrameHandle)
+            };
+
+            log("render: completed", { containerId });
+        } catch (error) {
+            console.error("[warehouse-3d] render error", error);
         }
-
-        function onClick(event) {
-            const bounds = renderer.domElement.getBoundingClientRect();
-            mouse.x = ((event.clientX - bounds.left) / bounds.width) * 2 - 1;
-            mouse.y = -((event.clientY - bounds.top) / bounds.height) * 2 + 1;
-
-            raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects(interactiveMeshes);
-            if (intersects.length === 0) {
-                return;
-            }
-
-            const code = intersects[0].object?.userData?.code;
-            if (!code) {
-                return;
-            }
-
-            applySelection(code);
-            if (dotNetRef) {
-                dotNetRef.invokeMethodAsync("OnBinSelectedFromJs", code);
-            }
-        }
-
-        const onResize = () => {
-            const nextWidth = Math.max(container.clientWidth, 300);
-            const nextHeight = Math.max(container.clientHeight, 300);
-            camera.aspect = nextWidth / nextHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(nextWidth, nextHeight);
-        };
-
-        renderer.domElement.addEventListener("click", onClick);
-        window.addEventListener("resize", onResize);
-
-        let animationFrameHandle = null;
-        function animate() {
-            animationFrameHandle = window.requestAnimationFrame(animate);
-            controls.update();
-            renderer.render(scene, camera);
-        }
-
-        animate();
-
-        contexts[containerId] = {
-            container,
-            scene,
-            camera,
-            renderer,
-            controls,
-            onResize,
-            onClick,
-            focusBin,
-            applySelection,
-            stop: () => window.cancelAnimationFrame(animationFrameHandle)
-        };
     }
 
     function focusBin(containerId, code) {
         const context = contexts[containerId];
         if (!context) {
+            log("focusBin(api): context not found", { containerId, code });
             return;
         }
 
+        log("focusBin(api): requested", { containerId, code });
         context.focusBin(code);
     }
 
@@ -227,6 +328,7 @@
                 context.stop();
             }
 
+            log("dispose(api): requested", { containerId });
             dispose(containerId);
         }
     };
