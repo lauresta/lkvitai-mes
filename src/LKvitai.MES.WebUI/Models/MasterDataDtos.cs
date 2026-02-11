@@ -83,6 +83,15 @@ public record AdminLocationDto
     public decimal? MaxVolume { get; init; }
     public string Status { get; init; } = string.Empty;
     public string? ZoneType { get; init; }
+    public decimal? CoordinateX { get; init; }
+    public decimal? CoordinateY { get; init; }
+    public decimal? CoordinateZ { get; init; }
+    public string? Aisle { get; init; }
+    public string? Rack { get; init; }
+    public string? Level { get; init; }
+    public string? Bin { get; init; }
+    public decimal? CapacityWeight { get; init; }
+    public decimal? CapacityVolume { get; init; }
 }
 
 public record CreateOrUpdateLocationRequest(
@@ -94,7 +103,16 @@ public record CreateOrUpdateLocationRequest(
     decimal? MaxWeight,
     decimal? MaxVolume,
     string? Status,
-    string? ZoneType);
+    string? ZoneType,
+    decimal? CoordinateX,
+    decimal? CoordinateY,
+    decimal? CoordinateZ,
+    string? Aisle,
+    string? Rack,
+    string? Level,
+    string? Bin,
+    decimal? CapacityWeight,
+    decimal? CapacityVolume);
 
 public record AdminCategoryDto
 {
