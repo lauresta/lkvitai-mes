@@ -23,11 +23,11 @@
                        @bind="_searchQuery"
                        @bind:event="oninput"
                        @onkeydown="HandleSearchKeyAsync" />
-                <button class="btn btn-outline-light" @onclick="SearchAsync">
+                <button class="btn btn-outline-secondary" @onclick="SearchAsync">
                     <i class="bi bi-search"></i>
                 </button>
             </div>
-            <button class="btn btn-outline-light" @onclick="RefreshAsync">
+            <button class="btn btn-outline-secondary" @onclick="RefreshAsync">
                 <i class="bi bi-arrow-clockwise"></i> Refresh
             </button>
             <button class="btn btn-warning" @onclick="ToggleViewAsync">
@@ -49,6 +49,15 @@
     }
     else if (_model is not null)
     {
+        if (_model.Bins.Count == 0)
+        {
+            <div class="alert alert-warning mt-3">
+                No bins with coordinates found.
+                Go to <a href="/admin/locations" class="alert-link">Admin -> Locations</a> and set
+                <code>Coordinate X/Y/Z</code> for non-virtual bin locations.
+            </div>
+        }
+
         <div class="viz-content">
             <div class="viz-canvas-wrap">
                 @if (_is3dView)
@@ -124,7 +133,7 @@
                         </ul>
                     }
 
-                    <a class="btn btn-sm btn-outline-light mt-3"
+                    <a class="btn btn-sm btn-outline-secondary mt-3"
                        href="@($"/admin/locations?search={Uri.EscapeDataString(_selectedBin.Code)}")">
                         View Details
                     </a>
