@@ -145,10 +145,13 @@ public sealed class WarehouseVisualizationController : ControllerBase
         var locationCodes = locations.Select(x => x.Code).ToArray();
 
         await using var session = _documentStore.QuerySession();
-        var stockRows = await MartenAsync.ToListAsync(
-            session.Query<AvailableStockView>()
-                .Where(x => locationCodes.Contains(x.Location)),
+        var stockCandidates = await MartenAsync.ToListAsync(
+            session.Query<AvailableStockView>(),
             cancellationToken);
+        var locationSet = new HashSet<string>(locationCodes, StringComparer.OrdinalIgnoreCase);
+        var stockRows = stockCandidates
+            .Where(x => locationSet.Contains(x.Location))
+            .ToList();
 
         var qtyByLocation = stockRows
             .GroupBy(x => x.Location, StringComparer.OrdinalIgnoreCase)
