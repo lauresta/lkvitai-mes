@@ -1,9 +1,11 @@
 using LKvitai.MES.Application.ConsistencyChecks;
+using LKvitai.MES.Application.EventVersioning;
 using LKvitai.MES.Application.Orchestration;
 using LKvitai.MES.Application.Ports;
 using LKvitai.MES.Application.Projections;
 using LKvitai.MES.Application.Services;
 using LKvitai.MES.Infrastructure.BackgroundJobs;
+using LKvitai.MES.Infrastructure.EventVersioning;
 using LKvitai.MES.Infrastructure.Imports;
 using LKvitai.MES.Infrastructure.Locking;
 using LKvitai.MES.Infrastructure.Persistence;
@@ -52,6 +54,8 @@ public static class DependencyInjection
         // Command idempotency store (Marten document — application port impl)
         services.AddScoped<IProcessedCommandStore, MartenProcessedCommandStore>();
         services.AddSingleton<IIdempotencyCleanupService, IdempotencyCleanupService>();
+        services.AddSingleton<IEventUpcaster, StockMovedV1ToStockMovedEventUpcaster>();
+        services.AddSingleton<IEventSchemaVersionRegistry, EventSchemaVersionRegistry>();
 
         // Consistency checks
         services.AddScoped<IConsistencyCheck, StuckReservationCheck>();

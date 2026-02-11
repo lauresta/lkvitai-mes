@@ -60,3 +60,16 @@
   Evidence: curl POST http://localhost:5000/api/admin/idempotency/cleanup returned HTTP 403 without auth token
   Impact: Manual endpoint validation for cleanup execution and replay behavior could not be completed anonymously.
   Proposed resolution: Re-run with Warehouse Admin credentials in Authorization header.
+- Timestamp: 2026-02-11T05:40:20Z
+  TaskId: PRD-1502
+  Type: RISK
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S1.md:278-283, src/LKvitai.MES.Infrastructure/Persistence/MartenConfiguration.cs:45-47
+  Impact: Only the sample StockMoved v1->v2 upcaster is wired into Marten; additional event-type/version chains still require explicit registration to satisfy full coverage.
+  Proposed resolution: Register all future upcasters through a centralized composition step and add integration tests that read old events through projections.
+
+- Timestamp: 2026-02-11T05:40:20Z
+  TaskId: PRD-1502
+  Type: TEST-GAP
+  Evidence: dotnet test --filter FullyQualifiedName~EventUpcastingTests and ~EventUpcastingPerformanceTests completed without matching dedicated test classes
+  Impact: Task-specific validation command names from spec do not map 1:1 to existing test class names, reducing observability of intended checks.
+  Proposed resolution: Add explicit EventUpcastingTests and EventUpcastingPerformanceTests class names or update validation script to match actual test filters.

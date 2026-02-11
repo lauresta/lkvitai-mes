@@ -13,6 +13,7 @@ public class MasterDataOperationalEventsSerializationTests
     };
 
     [Fact]
+    [Trait("Category", "EventVersioning")]
     public void AllMasterDataOperationalEvents_ShouldRoundTripJson()
     {
         var now = DateTime.UtcNow;
@@ -130,6 +131,7 @@ public class MasterDataOperationalEventsSerializationTests
         foreach (var evt in events)
         {
             var json = JsonSerializer.Serialize(evt, evt.GetType(), JsonOptions);
+            json.Should().Contain("\"schemaVersion\":\"v1\"");
             var clone = JsonSerializer.Deserialize(json, evt.GetType(), JsonOptions);
             clone.Should().NotBeNull();
 

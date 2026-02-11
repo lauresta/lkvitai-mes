@@ -3,6 +3,8 @@ using Marten.Events.Daemon.Resiliency;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using LKvitai.MES.Contracts.Events;
+using LKvitai.MES.Infrastructure.EventVersioning;
 
 namespace LKvitai.MES.Infrastructure.Persistence;
 
@@ -41,6 +43,10 @@ public static class MartenConfiguration
             // Allow composition root (API layer) to register projections
             // This avoids Infrastructure referencing Projections directly
             configureProjections?.Invoke(options);
+
+            // Event schema evolution example: StockMoved v1 -> v2.
+            options.Events.Upcast<StockMovedV1Event, StockMovedEvent>(
+                oldEvent => new StockMovedV1ToStockMovedEventUpcaster().Upcast(oldEvent));
         })
         .AddAsyncDaemon(DaemonMode.Solo);
         

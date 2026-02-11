@@ -6,6 +6,7 @@ namespace LKvitai.MES.SharedKernel;
 public abstract class DomainEvent
 {
     public int Version { get; set; } = 1;
+    public string SchemaVersion { get; set; } = "v1";
     public Guid EventId { get; set; } = Guid.NewGuid();
     public DateTime Timestamp { get; set; } = DateTime.UtcNow;
 }

@@ -2,6 +2,7 @@ using LKvitai.MES.Api.Configuration;
 using LKvitai.MES.Api.ErrorHandling;
 using LKvitai.MES.Api.Security;
 using LKvitai.MES.Api.Services;
+using LKvitai.MES.Application.EventVersioning;
 using LKvitai.MES.Application.Ports;
 using LKvitai.MES.Application.Services;
 using LKvitai.MES.Infrastructure;
@@ -106,6 +107,9 @@ builder.Services.AddScoped<IEventBus, MassTransitEventBus>();
 builder.Services.AddOpenTelemetryConfiguration(builder.Configuration);
 
 var app = builder.Build();
+
+// Validate and initialize event schema version registry at startup.
+_ = app.Services.GetService<IEventSchemaVersionRegistry>();
 
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())

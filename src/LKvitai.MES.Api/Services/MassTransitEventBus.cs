@@ -1,4 +1,6 @@
 using LKvitai.MES.Application.Ports;
+using LKvitai.MES.Application.EventVersioning;
+using LKvitai.MES.SharedKernel;
 using MassTransit;
 
 namespace LKvitai.MES.Api.Services;
@@ -13,14 +15,25 @@ namespace LKvitai.MES.Api.Services;
 public class MassTransitEventBus : IEventBus
 {
     private readonly IBus _bus;
+    private readonly IEventSchemaVersionRegistry? _schemaVersionRegistry;
 
-    public MassTransitEventBus(IBus bus)
+    public MassTransitEventBus(
+        IBus bus,
+        IEventSchemaVersionRegistry? schemaVersionRegistry = null)
     {
         _bus = bus;
+        _schemaVersionRegistry = schemaVersionRegistry;
     }
 
     public Task PublishAsync<T>(T message, CancellationToken ct = default) where T : class
     {
+        if (message is DomainEvent domainEvent && _schemaVersionRegistry is not null)
+        {
+            _schemaVersionRegistry.EnsureKnownVersion(domainEvent.GetType(), domainEvent.SchemaVersion);
+            var upcasted = _schemaVersionRegistry.UpcastToLatest(domainEvent);
+            return _bus.Publish(upcasted, ct);
+        }
+
         return _bus.Publish(message, ct);
     }
 }
