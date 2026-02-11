@@ -72,6 +72,15 @@ public sealed class LocationsController : ControllerBase
                 x.MaxVolume,
                 x.Status,
                 x.ZoneType,
+                x.CoordinateX,
+                x.CoordinateY,
+                x.CoordinateZ,
+                x.Aisle,
+                x.Rack,
+                x.Level,
+                x.Bin,
+                x.CapacityWeight,
+                x.CapacityVolume,
                 x.CreatedAt,
                 x.UpdatedAt))
             .ToListAsync(cancellationToken);
@@ -140,8 +149,23 @@ public sealed class LocationsController : ControllerBase
             MaxWeight = request.MaxWeight,
             MaxVolume = request.MaxVolume,
             Status = string.IsNullOrWhiteSpace(request.Status) ? "Active" : request.Status.Trim(),
-            ZoneType = request.ZoneType?.Trim()
+            ZoneType = request.ZoneType?.Trim(),
+            CoordinateX = request.CoordinateX,
+            CoordinateY = request.CoordinateY,
+            CoordinateZ = request.CoordinateZ,
+            Aisle = request.Aisle?.Trim(),
+            Rack = request.Rack?.Trim(),
+            Level = request.Level?.Trim(),
+            Bin = request.Bin?.Trim(),
+            CapacityWeight = request.CapacityWeight,
+            CapacityVolume = request.CapacityVolume
         };
+
+        var overlapError = await ValidateCoordinateOverlapAsync(entity, null, cancellationToken);
+        if (overlapError is not null)
+        {
+            return ValidationFailure(overlapError);
+        }
 
         _dbContext.Locations.Add(entity);
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -157,6 +181,15 @@ public sealed class LocationsController : ControllerBase
             entity.MaxVolume,
             entity.Status,
             entity.ZoneType,
+            entity.CoordinateX,
+            entity.CoordinateY,
+            entity.CoordinateZ,
+            entity.Aisle,
+            entity.Rack,
+            entity.Level,
+            entity.Bin,
+            entity.CapacityWeight,
+            entity.CapacityVolume,
             entity.CreatedAt,
             entity.UpdatedAt));
     }
@@ -239,6 +272,21 @@ public sealed class LocationsController : ControllerBase
         entity.MaxVolume = request.MaxVolume;
         entity.Status = string.IsNullOrWhiteSpace(request.Status) ? entity.Status : request.Status.Trim();
         entity.ZoneType = request.ZoneType?.Trim();
+        entity.CoordinateX = request.CoordinateX;
+        entity.CoordinateY = request.CoordinateY;
+        entity.CoordinateZ = request.CoordinateZ;
+        entity.Aisle = request.Aisle?.Trim();
+        entity.Rack = request.Rack?.Trim();
+        entity.Level = request.Level?.Trim();
+        entity.Bin = request.Bin?.Trim();
+        entity.CapacityWeight = request.CapacityWeight;
+        entity.CapacityVolume = request.CapacityVolume;
+
+        var overlapError = await ValidateCoordinateOverlapAsync(entity, entity.Id, cancellationToken);
+        if (overlapError is not null)
+        {
+            return ValidationFailure(overlapError);
+        }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
         return Ok(new LocationListItemDto(
@@ -252,8 +300,70 @@ public sealed class LocationsController : ControllerBase
             entity.MaxVolume,
             entity.Status,
             entity.ZoneType,
+            entity.CoordinateX,
+            entity.CoordinateY,
+            entity.CoordinateZ,
+            entity.Aisle,
+            entity.Rack,
+            entity.Level,
+            entity.Bin,
+            entity.CapacityWeight,
+            entity.CapacityVolume,
             entity.CreatedAt,
             entity.UpdatedAt));
+    }
+
+    [HttpPut("{code:regex(^[^0-9].*$)}")]
+    [Authorize(Policy = WarehousePolicies.ManagerOrAdmin)]
+    public async Task<IActionResult> UpdateByCodeAsync(
+        string code,
+        [FromBody] UpdateCoordinatesRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var normalizedCode = code.Trim();
+        if (string.IsNullOrWhiteSpace(normalizedCode))
+        {
+            return ValidationFailure("Location code is required.");
+        }
+
+        var entity = await _dbContext.Locations.FirstOrDefaultAsync(
+            x => x.Code == normalizedCode,
+            cancellationToken);
+        if (entity is null)
+        {
+            return Failure(Result.Fail(DomainErrorCodes.NotFound, $"Location '{normalizedCode}' does not exist."));
+        }
+
+        entity.CoordinateX = request.CoordinateX;
+        entity.CoordinateY = request.CoordinateY;
+        entity.CoordinateZ = request.CoordinateZ;
+        entity.Aisle = request.Aisle?.Trim();
+        entity.Rack = request.Rack?.Trim();
+        entity.Level = request.Level?.Trim();
+        entity.Bin = request.Bin?.Trim();
+        entity.CapacityWeight = request.CapacityWeight ?? entity.CapacityWeight;
+        entity.CapacityVolume = request.CapacityVolume ?? entity.CapacityVolume;
+
+        var overlapError = await ValidateCoordinateOverlapAsync(entity, entity.Id, cancellationToken);
+        if (overlapError is not null)
+        {
+            return ValidationFailure(overlapError);
+        }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return Ok(new LocationCoordinateResponse(
+            entity.Id,
+            entity.Code,
+            entity.CoordinateX,
+            entity.CoordinateY,
+            entity.CoordinateZ,
+            entity.Aisle,
+            entity.Rack,
+            entity.Level,
+            entity.Bin,
+            entity.CapacityWeight,
+            entity.CapacityVolume));
     }
 
     private ObjectResult ValidationFailure(string detail)
@@ -291,6 +401,37 @@ public sealed class LocationsController : ControllerBase
         };
     }
 
+    private async Task<string?> ValidateCoordinateOverlapAsync(
+        Location location,
+        int? currentLocationId,
+        CancellationToken cancellationToken)
+    {
+        if (!location.CoordinateX.HasValue ||
+            !location.CoordinateY.HasValue ||
+            !location.CoordinateZ.HasValue)
+        {
+            return null;
+        }
+
+        var x = location.CoordinateX.Value;
+        var y = location.CoordinateY.Value;
+        var z = location.CoordinateZ.Value;
+
+        var conflict = await _dbContext.Locations
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                candidate =>
+                    (!currentLocationId.HasValue || candidate.Id != currentLocationId.Value) &&
+                    candidate.CoordinateX == x &&
+                    candidate.CoordinateY == y &&
+                    candidate.CoordinateZ == z,
+                cancellationToken);
+
+        return conflict is null
+            ? null
+            : $"Location coordinate overlap detected with '{conflict.Code}'.";
+    }
+
     public sealed record UpsertLocationRequest(
         string Code,
         string Barcode,
@@ -300,7 +441,27 @@ public sealed class LocationsController : ControllerBase
         decimal? MaxWeight,
         decimal? MaxVolume,
         string? Status,
-        string? ZoneType);
+        string? ZoneType,
+        decimal? CoordinateX,
+        decimal? CoordinateY,
+        decimal? CoordinateZ,
+        string? Aisle,
+        string? Rack,
+        string? Level,
+        string? Bin,
+        decimal? CapacityWeight,
+        decimal? CapacityVolume);
+
+    public sealed record UpdateCoordinatesRequest(
+        decimal? CoordinateX,
+        decimal? CoordinateY,
+        decimal? CoordinateZ,
+        string? Aisle,
+        string? Rack,
+        string? Level,
+        string? Bin,
+        decimal? CapacityWeight,
+        decimal? CapacityVolume);
 
     public sealed record LocationListItemDto(
         int Id,
@@ -313,8 +474,30 @@ public sealed class LocationsController : ControllerBase
         decimal? MaxVolume,
         string Status,
         string? ZoneType,
+        decimal? CoordinateX,
+        decimal? CoordinateY,
+        decimal? CoordinateZ,
+        string? Aisle,
+        string? Rack,
+        string? Level,
+        string? Bin,
+        decimal? CapacityWeight,
+        decimal? CapacityVolume,
         DateTimeOffset CreatedAt,
         DateTimeOffset? UpdatedAt);
+
+    public sealed record LocationCoordinateResponse(
+        int Id,
+        string Code,
+        decimal? CoordinateX,
+        decimal? CoordinateY,
+        decimal? CoordinateZ,
+        string? Aisle,
+        string? Rack,
+        string? Level,
+        string? Bin,
+        decimal? CapacityWeight,
+        decimal? CapacityVolume);
 
     public sealed record PagedResponse<T>(
         IReadOnlyList<T> Items,

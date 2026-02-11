@@ -803,9 +803,44 @@ public sealed class Location : AuditableEntity
     public decimal? MaxVolume { get; set; }
     public string Status { get; set; } = "Active";
     public string? ZoneType { get; set; }
+    public decimal? CoordinateX { get; set; }
+    public decimal? CoordinateY { get; set; }
+    public decimal? CoordinateZ { get; set; }
+    public string? Aisle { get; set; }
+    public string? Rack { get; set; }
+    public string? Level { get; set; }
+    public string? Bin { get; set; }
+    public decimal? CapacityWeight { get; set; }
+    public decimal? CapacityVolume { get; set; }
 
     public Location? ParentLocation { get; set; }
     public ICollection<Location> Children { get; set; } = new List<Location>();
+}
+
+public sealed class WarehouseLayout
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public string WarehouseCode { get; set; } = string.Empty;
+    public decimal WidthMeters { get; set; }
+    public decimal LengthMeters { get; set; }
+    public decimal HeightMeters { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
+
+    public ICollection<ZoneDefinition> Zones { get; set; } = new List<ZoneDefinition>();
+}
+
+public sealed class ZoneDefinition
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid WarehouseLayoutId { get; set; }
+    public string ZoneType { get; set; } = string.Empty;
+    public decimal X1 { get; set; }
+    public decimal Y1 { get; set; }
+    public decimal X2 { get; set; }
+    public decimal Y2 { get; set; }
+    public string Color { get; set; } = "#CCCCCC";
+
+    public WarehouseLayout? WarehouseLayout { get; set; }
 }
 
 public sealed class HandlingUnitType

@@ -300,3 +300,16 @@
   Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S2.md:1322 (requires Zebra printer or simulator), current environment has no printer/simulator bound on TCP 9100
   Impact: End-to-end hardware validation of TCP 9100 print latency/retry behavior cannot be fully executed in this environment.
   Proposed resolution: Run integration checks with a Zebra printer or TCP 9100 simulator and inspect queue/retry/fallback logs.
+- Timestamp: 2026-02-11T07:25:36Z
+  TaskId: PRD-1517
+  Type: TEST-GAP
+  Evidence: curl PUT http://localhost:5000/api/warehouse/v1/locations/R3-C6-L3 returned HTTP 403; curl GET /api/warehouse/v1/visualization/3d returned HTTP 403
+  Impact: Task-specified manual endpoint validation for coordinate updates and 3D payload could not be verified without authenticated API context.
+  Proposed resolution: Re-run both API checks with Operator/Manager credentials against running service.
+
+- Timestamp: 2026-02-11T07:25:36Z
+  TaskId: PRD-1517
+  Type: RISK
+  Evidence: src/LKvitai.MES.Api/Api/Controllers/WarehouseVisualizationController.cs:265-275
+  Impact: Bin utilization is inferred from `AvailableStockView.OnHandQty` versus configured weight/volume capacities; if quantities are not weight/volume-normalized, LOW/FULL thresholds can be approximate.
+  Proposed resolution: Normalize utilization using item master weight/volume conversions before threshold evaluation.

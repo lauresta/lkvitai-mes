@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using HandlingUnitAggregate = LKvitai.MES.Domain.Aggregates.HandlingUnit;
 using WarehouseLayoutAggregate = LKvitai.MES.Domain.Aggregates.WarehouseLayout;
 using HandlingUnitTypeEntity = LKvitai.MES.Domain.Entities.HandlingUnitType;
+using WarehouseLayoutEntity = LKvitai.MES.Domain.Entities.WarehouseLayout;
 
 namespace LKvitai.MES.Infrastructure.Persistence;
 
@@ -53,6 +54,8 @@ public class WarehouseDbContext : DbContext
     public DbSet<AgnumExportHistory> AgnumExportHistories => Set<AgnumExportHistory>();
     public DbSet<SupplierItemMapping> SupplierItemMappings => Set<SupplierItemMapping>();
     public DbSet<Location> Locations => Set<Location>();
+    public DbSet<WarehouseLayoutEntity> WarehouseLayouts => Set<WarehouseLayoutEntity>();
+    public DbSet<ZoneDefinition> ZoneDefinitions => Set<ZoneDefinition>();
     public DbSet<HandlingUnitTypeEntity> HandlingUnitTypes => Set<HandlingUnitTypeEntity>();
     public DbSet<Lot> Lots => Set<Lot>();
     public DbSet<InboundShipment> InboundShipments => Set<InboundShipment>();
@@ -575,6 +578,15 @@ public class WarehouseDbContext : DbContext
             entity.Property(e => e.ZoneType).HasMaxLength(20);
             entity.Property(e => e.MaxWeight).HasPrecision(18, 3);
             entity.Property(e => e.MaxVolume).HasPrecision(18, 3);
+            entity.Property(e => e.CoordinateX).HasPrecision(9, 2);
+            entity.Property(e => e.CoordinateY).HasPrecision(9, 2);
+            entity.Property(e => e.CoordinateZ).HasPrecision(9, 2);
+            entity.Property(e => e.Aisle).HasMaxLength(30);
+            entity.Property(e => e.Rack).HasMaxLength(30);
+            entity.Property(e => e.Level).HasMaxLength(30);
+            entity.Property(e => e.Bin).HasMaxLength(30);
+            entity.Property(e => e.CapacityWeight).HasPrecision(18, 3);
+            entity.Property(e => e.CapacityVolume).HasPrecision(18, 3);
             entity.HasIndex(e => e.Code).IsUnique();
             entity.HasIndex(e => e.Barcode).IsUnique();
             entity.HasIndex(e => e.ParentLocationId);
@@ -589,6 +601,49 @@ public class WarehouseDbContext : DbContext
                 t.HasCheckConstraint("ck_locations_zone_type", "\"ZoneType\" IS NULL OR \"ZoneType\" IN ('General','Refrigerated','Hazmat','Quarantine')");
                 t.HasCheckConstraint("ck_locations_max_weight", "\"MaxWeight\" IS NULL OR \"MaxWeight\" > 0");
                 t.HasCheckConstraint("ck_locations_max_volume", "\"MaxVolume\" IS NULL OR \"MaxVolume\" > 0");
+                t.HasCheckConstraint("ck_locations_capacity_weight", "\"CapacityWeight\" IS NULL OR \"CapacityWeight\" > 0");
+                t.HasCheckConstraint("ck_locations_capacity_volume", "\"CapacityVolume\" IS NULL OR \"CapacityVolume\" > 0");
+            });
+        });
+
+        modelBuilder.Entity<WarehouseLayoutEntity>(entity =>
+        {
+            entity.ToTable("warehouse_layouts");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.WarehouseCode).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.WidthMeters).HasPrecision(9, 2);
+            entity.Property(e => e.LengthMeters).HasPrecision(9, 2);
+            entity.Property(e => e.HeightMeters).HasPrecision(9, 2);
+            entity.Property(e => e.UpdatedAt).IsRequired();
+            entity.HasIndex(e => e.WarehouseCode).IsUnique();
+            entity.ToTable(t =>
+            {
+                t.HasCheckConstraint("ck_warehouse_layouts_width", "\"WidthMeters\" > 0");
+                t.HasCheckConstraint("ck_warehouse_layouts_length", "\"LengthMeters\" > 0");
+                t.HasCheckConstraint("ck_warehouse_layouts_height", "\"HeightMeters\" > 0");
+            });
+        });
+
+        modelBuilder.Entity<ZoneDefinition>(entity =>
+        {
+            entity.ToTable("zone_definitions");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ZoneType).HasMaxLength(30).IsRequired();
+            entity.Property(e => e.Color).HasMaxLength(16).IsRequired();
+            entity.Property(e => e.X1).HasPrecision(9, 2);
+            entity.Property(e => e.Y1).HasPrecision(9, 2);
+            entity.Property(e => e.X2).HasPrecision(9, 2);
+            entity.Property(e => e.Y2).HasPrecision(9, 2);
+            entity.HasIndex(e => e.WarehouseLayoutId);
+            entity.HasOne(e => e.WarehouseLayout)
+                .WithMany(e => e.Zones)
+                .HasForeignKey(e => e.WarehouseLayoutId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.ToTable(t =>
+            {
+                t.HasCheckConstraint("ck_zone_definitions_bounds_x", "\"X2\" > \"X1\"");
+                t.HasCheckConstraint("ck_zone_definitions_bounds_y", "\"Y2\" > \"Y1\"");
+                t.HasCheckConstraint("ck_zone_definitions_type", "\"ZoneType\" IN ('RECEIVING','STORAGE','SHIPPING','QUARANTINE')");
             });
         });
 
