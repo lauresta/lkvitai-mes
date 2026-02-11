@@ -270,6 +270,10 @@ public sealed class WarehouseVisualizationController : ControllerBase
                     node.X,
                     node.Y,
                     node.Z),
+                new VisualizationBinDimensionsResponse(
+                    location.WidthMeters,
+                    location.LengthMeters,
+                    location.HeightMeters),
                 new VisualizationCapacityResponse(
                     location.CapacityWeight ?? location.MaxWeight,
                     location.CapacityVolume ?? location.MaxVolume),
@@ -477,6 +481,7 @@ public sealed class WarehouseVisualizationController : ControllerBase
     public sealed record VisualizationBinResponse(
         string Code,
         VisualizationCoordinateResponse Coordinates,
+        VisualizationBinDimensionsResponse Dimensions,
         VisualizationCapacityResponse Capacity,
         string Status,
         string Color,
@@ -490,6 +495,11 @@ public sealed class WarehouseVisualizationController : ControllerBase
     public sealed record VisualizationCapacityResponse(
         decimal? Weight,
         decimal? Volume);
+
+    public sealed record VisualizationBinDimensionsResponse(
+        decimal? Width,
+        decimal? Length,
+        decimal? Height);
 
     public sealed record VisualizationHandlingUnitResponse(
         Guid Id,

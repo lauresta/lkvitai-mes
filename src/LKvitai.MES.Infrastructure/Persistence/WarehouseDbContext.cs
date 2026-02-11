@@ -699,6 +699,9 @@ public class WarehouseDbContext : DbContext
             entity.Property(e => e.CoordinateX).HasPrecision(9, 2);
             entity.Property(e => e.CoordinateY).HasPrecision(9, 2);
             entity.Property(e => e.CoordinateZ).HasPrecision(9, 2);
+            entity.Property(e => e.WidthMeters).HasPrecision(9, 3);
+            entity.Property(e => e.LengthMeters).HasPrecision(9, 3);
+            entity.Property(e => e.HeightMeters).HasPrecision(9, 3);
             entity.Property(e => e.Aisle).HasMaxLength(30);
             entity.Property(e => e.Rack).HasMaxLength(30);
             entity.Property(e => e.Level).HasMaxLength(30);
@@ -721,6 +724,9 @@ public class WarehouseDbContext : DbContext
                 t.HasCheckConstraint("ck_locations_max_volume", "\"MaxVolume\" IS NULL OR \"MaxVolume\" > 0");
                 t.HasCheckConstraint("ck_locations_capacity_weight", "\"CapacityWeight\" IS NULL OR \"CapacityWeight\" > 0");
                 t.HasCheckConstraint("ck_locations_capacity_volume", "\"CapacityVolume\" IS NULL OR \"CapacityVolume\" > 0");
+                t.HasCheckConstraint("ck_locations_width_meters", "\"WidthMeters\" IS NULL OR \"WidthMeters\" > 0");
+                t.HasCheckConstraint("ck_locations_length_meters", "\"LengthMeters\" IS NULL OR \"LengthMeters\" > 0");
+                t.HasCheckConstraint("ck_locations_height_meters", "\"HeightMeters\" IS NULL OR \"HeightMeters\" > 0");
             });
         });
 

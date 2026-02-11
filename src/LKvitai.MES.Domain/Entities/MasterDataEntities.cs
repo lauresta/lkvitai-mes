@@ -998,6 +998,9 @@ public sealed class Location : AuditableEntity
     public decimal? CoordinateX { get; set; }
     public decimal? CoordinateY { get; set; }
     public decimal? CoordinateZ { get; set; }
+    public decimal? WidthMeters { get; set; }
+    public decimal? LengthMeters { get; set; }
+    public decimal? HeightMeters { get; set; }
     public string? Aisle { get; set; }
     public string? Rack { get; set; }
     public string? Level { get; set; }

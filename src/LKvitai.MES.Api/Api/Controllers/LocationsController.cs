@@ -79,6 +79,9 @@ public sealed class LocationsController : ControllerBase
                 x.CoordinateX,
                 x.CoordinateY,
                 x.CoordinateZ,
+                x.WidthMeters,
+                x.LengthMeters,
+                x.HeightMeters,
                 x.Aisle,
                 x.Rack,
                 x.Level,
@@ -129,6 +132,18 @@ public sealed class LocationsController : ControllerBase
             return ValidationFailure(zoneTypeValidationError!);
         }
 
+        if (!TryNormalizeBinDimensions(
+                request.WidthMeters,
+                request.LengthMeters,
+                request.HeightMeters,
+                out var normalizedWidthMeters,
+                out var normalizedLengthMeters,
+                out var normalizedHeightMeters,
+                out var dimensionsValidationError))
+        {
+            return ValidationFailure(dimensionsValidationError!);
+        }
+
         var normalizedCode = request.Code.Trim();
         var normalizedBarcode = request.Barcode.Trim();
 
@@ -162,6 +177,9 @@ public sealed class LocationsController : ControllerBase
             CoordinateX = request.CoordinateX,
             CoordinateY = request.CoordinateY,
             CoordinateZ = request.CoordinateZ,
+            WidthMeters = normalizedWidthMeters,
+            LengthMeters = normalizedLengthMeters,
+            HeightMeters = normalizedHeightMeters,
             Aisle = request.Aisle?.Trim(),
             Rack = request.Rack?.Trim(),
             Level = request.Level?.Trim(),
@@ -193,6 +211,9 @@ public sealed class LocationsController : ControllerBase
             entity.CoordinateX,
             entity.CoordinateY,
             entity.CoordinateZ,
+            entity.WidthMeters,
+            entity.LengthMeters,
+            entity.HeightMeters,
             entity.Aisle,
             entity.Rack,
             entity.Level,
@@ -252,6 +273,18 @@ public sealed class LocationsController : ControllerBase
             return ValidationFailure(zoneTypeValidationError!);
         }
 
+        if (!TryNormalizeBinDimensions(
+                request.WidthMeters,
+                request.LengthMeters,
+                request.HeightMeters,
+                out var normalizedWidthMeters,
+                out var normalizedLengthMeters,
+                out var normalizedHeightMeters,
+                out var dimensionsValidationError))
+        {
+            return ValidationFailure(dimensionsValidationError!);
+        }
+
         var normalizedCode = request.Code.Trim();
         var normalizedBarcode = request.Barcode.Trim();
 
@@ -289,6 +322,9 @@ public sealed class LocationsController : ControllerBase
         entity.CoordinateX = request.CoordinateX;
         entity.CoordinateY = request.CoordinateY;
         entity.CoordinateZ = request.CoordinateZ;
+        entity.WidthMeters = normalizedWidthMeters;
+        entity.LengthMeters = normalizedLengthMeters;
+        entity.HeightMeters = normalizedHeightMeters;
         entity.Aisle = request.Aisle?.Trim();
         entity.Rack = request.Rack?.Trim();
         entity.Level = request.Level?.Trim();
@@ -317,6 +353,9 @@ public sealed class LocationsController : ControllerBase
             entity.CoordinateX,
             entity.CoordinateY,
             entity.CoordinateZ,
+            entity.WidthMeters,
+            entity.LengthMeters,
+            entity.HeightMeters,
             entity.Aisle,
             entity.Rack,
             entity.Level,
@@ -348,9 +387,24 @@ public sealed class LocationsController : ControllerBase
             return Failure(Result.Fail(DomainErrorCodes.NotFound, $"Location '{normalizedCode}' does not exist."));
         }
 
+        if (!TryNormalizeBinDimensions(
+                request.WidthMeters,
+                request.LengthMeters,
+                request.HeightMeters,
+                out var normalizedWidthMeters,
+                out var normalizedLengthMeters,
+                out var normalizedHeightMeters,
+                out var dimensionsValidationError))
+        {
+            return ValidationFailure(dimensionsValidationError!);
+        }
+
         entity.CoordinateX = request.CoordinateX;
         entity.CoordinateY = request.CoordinateY;
         entity.CoordinateZ = request.CoordinateZ;
+        entity.WidthMeters = normalizedWidthMeters ?? entity.WidthMeters;
+        entity.LengthMeters = normalizedLengthMeters ?? entity.LengthMeters;
+        entity.HeightMeters = normalizedHeightMeters ?? entity.HeightMeters;
         entity.Aisle = request.Aisle?.Trim();
         entity.Rack = request.Rack?.Trim();
         entity.Level = request.Level?.Trim();
@@ -372,6 +426,9 @@ public sealed class LocationsController : ControllerBase
             entity.CoordinateX,
             entity.CoordinateY,
             entity.CoordinateZ,
+            entity.WidthMeters,
+            entity.LengthMeters,
+            entity.HeightMeters,
             entity.Aisle,
             entity.Rack,
             entity.Level,
@@ -470,6 +527,47 @@ public sealed class LocationsController : ControllerBase
         return true;
     }
 
+    private static bool TryNormalizeBinDimensions(
+        decimal? rawWidthMeters,
+        decimal? rawLengthMeters,
+        decimal? rawHeightMeters,
+        out decimal? normalizedWidthMeters,
+        out decimal? normalizedLengthMeters,
+        out decimal? normalizedHeightMeters,
+        out string? validationError)
+    {
+        normalizedWidthMeters = null;
+        normalizedLengthMeters = null;
+        normalizedHeightMeters = null;
+        validationError = null;
+
+        var hasWidth = rawWidthMeters.HasValue;
+        var hasLength = rawLengthMeters.HasValue;
+        var hasHeight = rawHeightMeters.HasValue;
+
+        if (!hasWidth && !hasLength && !hasHeight)
+        {
+            return true;
+        }
+
+        if (!hasWidth || !hasLength || !hasHeight)
+        {
+            validationError = "widthMeters, lengthMeters, and heightMeters must be provided together.";
+            return false;
+        }
+
+        if (rawWidthMeters <= 0m || rawLengthMeters <= 0m || rawHeightMeters <= 0m)
+        {
+            validationError = "widthMeters, lengthMeters, and heightMeters must be greater than zero.";
+            return false;
+        }
+
+        normalizedWidthMeters = decimal.Round(rawWidthMeters!.Value, 3, MidpointRounding.AwayFromZero);
+        normalizedLengthMeters = decimal.Round(rawLengthMeters!.Value, 3, MidpointRounding.AwayFromZero);
+        normalizedHeightMeters = decimal.Round(rawHeightMeters!.Value, 3, MidpointRounding.AwayFromZero);
+        return true;
+    }
+
     public sealed record UpsertLocationRequest(
         string Code,
         string Barcode,
@@ -483,6 +581,9 @@ public sealed class LocationsController : ControllerBase
         decimal? CoordinateX,
         decimal? CoordinateY,
         decimal? CoordinateZ,
+        decimal? WidthMeters,
+        decimal? LengthMeters,
+        decimal? HeightMeters,
         string? Aisle,
         string? Rack,
         string? Level,
@@ -494,6 +595,9 @@ public sealed class LocationsController : ControllerBase
         decimal? CoordinateX,
         decimal? CoordinateY,
         decimal? CoordinateZ,
+        decimal? WidthMeters,
+        decimal? LengthMeters,
+        decimal? HeightMeters,
         string? Aisle,
         string? Rack,
         string? Level,
@@ -515,6 +619,9 @@ public sealed class LocationsController : ControllerBase
         decimal? CoordinateX,
         decimal? CoordinateY,
         decimal? CoordinateZ,
+        decimal? WidthMeters,
+        decimal? LengthMeters,
+        decimal? HeightMeters,
         string? Aisle,
         string? Rack,
         string? Level,
@@ -530,6 +637,9 @@ public sealed class LocationsController : ControllerBase
         decimal? CoordinateX,
         decimal? CoordinateY,
         decimal? CoordinateZ,
+        decimal? WidthMeters,
+        decimal? LengthMeters,
+        decimal? HeightMeters,
         string? Aisle,
         string? Rack,
         string? Level,

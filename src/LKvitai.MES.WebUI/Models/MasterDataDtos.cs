@@ -86,6 +86,9 @@ public record AdminLocationDto
     public decimal? CoordinateX { get; init; }
     public decimal? CoordinateY { get; init; }
     public decimal? CoordinateZ { get; init; }
+    public decimal? WidthMeters { get; init; }
+    public decimal? LengthMeters { get; init; }
+    public decimal? HeightMeters { get; init; }
     public string? Aisle { get; init; }
     public string? Rack { get; init; }
     public string? Level { get; init; }
@@ -107,6 +110,9 @@ public record CreateOrUpdateLocationRequest(
     decimal? CoordinateX,
     decimal? CoordinateY,
     decimal? CoordinateZ,
+    decimal? WidthMeters,
+    decimal? LengthMeters,
+    decimal? HeightMeters,
     string? Aisle,
     string? Rack,
     string? Level,

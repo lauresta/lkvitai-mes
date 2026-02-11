@@ -17,6 +17,7 @@ public sealed record VisualizationDimensionsDto(
 public sealed record VisualizationBinDto(
     string Code,
     VisualizationCoordinateDto Coordinates,
+    VisualizationBinDimensionsDto Dimensions,
     VisualizationCapacityDto Capacity,
     string Status,
     string Color,
@@ -30,6 +31,11 @@ public sealed record VisualizationCoordinateDto(
 public sealed record VisualizationCapacityDto(
     decimal? Weight,
     decimal? Volume);
+
+public sealed record VisualizationBinDimensionsDto(
+    decimal? Width,
+    decimal? Length,
+    decimal? Height);
 
 public sealed record VisualizationHandlingUnitDto(
     Guid Id,

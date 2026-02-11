@@ -134,35 +134,30 @@
                 x: Number(bin.coordinates?.x || 0),
                 y: Number(bin.coordinates?.z || 0),
                 z: Number(bin.coordinates?.y || 0),
+                width: Number(bin.dimensions?.width || 0),
+                length: Number(bin.dimensions?.length || 0),
+                height: Number(bin.dimensions?.height || 0),
                 capacityVolume: Number(bin.capacity?.volume || 0),
                 capacityWeight: Number(bin.capacity?.weight || 0)
             }));
 
-            const xs = normalizedBins.map((x) => x.x);
-            const ys = normalizedBins.map((x) => x.y);
-            const zs = normalizedBins.map((x) => x.z);
-
-            const minX = xs.length ? Math.min(...xs) : 0;
-            const minY = ys.length ? Math.min(...ys) : 0;
-            const minZ = zs.length ? Math.min(...zs) : 0;
-            const maxX = xs.length ? Math.max(...xs) : 1;
-            const maxY = ys.length ? Math.max(...ys) : 1;
-            const maxZ = zs.length ? Math.max(...zs) : 1;
-
-            const centerX = (minX + maxX) / 2;
-            const centerY = (minY + maxY) / 2;
-            const centerZ = (minZ + maxZ) / 2;
-            const maxSpan = Math.max(maxX - minX, maxY - minY, maxZ - minZ, 1);
-            const cameraDistance = Math.max(12, maxSpan * 2.4);
             const minDistance = computeMinDistance(normalizedBins);
 
             // Base footprint is limited by nearest-neighbor distance to avoid overlap.
             const overlapSafeFootprint = Number.isFinite(minDistance)
                 ? clamp(minDistance * 0.45, 0.28, 1.4)
                 : 0.9;
-            const baseFootprint = maxSpan <= 1
+            const pointsX = normalizedBins.map((x) => x.x);
+            const pointsY = normalizedBins.map((x) => x.y);
+            const pointsZ = normalizedBins.map((x) => x.z);
+            const pointsSpan = Math.max(
+                (pointsX.length ? Math.max(...pointsX) - Math.min(...pointsX) : 0),
+                (pointsY.length ? Math.max(...pointsY) - Math.min(...pointsY) : 0),
+                (pointsZ.length ? Math.max(...pointsZ) - Math.min(...pointsZ) : 0),
+                1);
+            const baseFootprint = pointsSpan <= 1
                 ? Math.min(overlapSafeFootprint, 0.8)
-                : maxSpan < 4
+                : pointsSpan < 4
                     ? Math.min(overlapSafeFootprint, 0.9)
                     : Math.min(overlapSafeFootprint, 1.0);
 
@@ -171,9 +166,77 @@
                 .filter((x) => Number.isFinite(x) && x > 0);
             const maxVolume = volumeValues.length > 0 ? Math.max(...volumeValues) : 0;
 
+            const resolvedBins = normalizedBins.map(({ bin, x, y, z, width, length, height, capacityVolume }) => {
+                const hasExplicitDimensions =
+                    Number.isFinite(width) && width > 0 &&
+                    Number.isFinite(length) && length > 0 &&
+                    Number.isFinite(height) && height > 0;
+
+                if (hasExplicitDimensions) {
+                    return {
+                        bin,
+                        width,
+                        depth: length,
+                        height,
+                        centerX: x + (width / 2),
+                        centerY: y + (height / 2),
+                        centerZ: z + (length / 2),
+                        hasExplicitDimensions: true,
+                        capacityVolume
+                    };
+                }
+
+                // Fallback for locations where dimensions are still not provided.
+                const footprint = baseFootprint;
+                const volumeRatio = maxVolume > 0 && capacityVolume > 0
+                    ? clamp(capacityVolume / maxVolume, 0.2, 1)
+                    : 0.5;
+                const fallbackHeight = clamp(
+                    footprint * (0.7 + (1.8 * volumeRatio)),
+                    0.25,
+                    2.4);
+
+                return {
+                    bin,
+                    width: footprint,
+                    depth: footprint,
+                    height: fallbackHeight,
+                    centerX: x,
+                    centerY: y + (fallbackHeight / 2),
+                    centerZ: z,
+                    hasExplicitDimensions: false,
+                    capacityVolume
+                };
+            });
+
+            const minX = resolvedBins.length
+                ? Math.min(...resolvedBins.map((x) => x.centerX - (x.width / 2)))
+                : 0;
+            const minY = resolvedBins.length
+                ? Math.min(...resolvedBins.map((x) => x.centerY - (x.height / 2)))
+                : 0;
+            const minZ = resolvedBins.length
+                ? Math.min(...resolvedBins.map((x) => x.centerZ - (x.depth / 2)))
+                : 0;
+            const maxX = resolvedBins.length
+                ? Math.max(...resolvedBins.map((x) => x.centerX + (x.width / 2)))
+                : 1;
+            const maxY = resolvedBins.length
+                ? Math.max(...resolvedBins.map((x) => x.centerY + (x.height / 2)))
+                : 1;
+            const maxZ = resolvedBins.length
+                ? Math.max(...resolvedBins.map((x) => x.centerZ + (x.depth / 2)))
+                : 1;
+            const centerX = (minX + maxX) / 2;
+            const centerY = (minY + maxY) / 2;
+            const centerZ = (minZ + maxZ) / 2;
+            const maxSpan = Math.max(maxX - minX, maxY - minY, maxZ - minZ, 1);
+            const cameraDistance = Math.max(12, maxSpan * 2.4);
+            const explicitDimensionCount = resolvedBins.filter((x) => x.hasExplicitDimensions).length;
+
             log("render: scene extents computed", {
                 minX, minY, minZ, maxX, maxY, maxZ, centerX, centerY, centerZ, maxSpan, minDistance,
-                cameraDistance, baseFootprint, maxVolume
+                cameraDistance, baseFootprint, maxVolume, explicitDimensionCount
             });
 
             controls.target.set(centerX, centerY, centerZ);
@@ -193,30 +256,22 @@
             const meshesByCode = {};
             const interactiveMeshes = [];
 
-            normalizedBins.forEach(({ bin, x, y, z, capacityVolume }) => {
-                // Width/depth stay collision-safe; height reflects volume when available.
-                const footprint = baseFootprint;
-                const volumeRatio = maxVolume > 0 && capacityVolume > 0
-                    ? clamp(capacityVolume / maxVolume, 0.2, 1)
-                    : 0.5;
-                const height = clamp(
-                    footprint * (0.7 + (1.8 * volumeRatio)),
-                    0.25,
-                    2.4);
-
-                const geometry = new THREE.BoxGeometry(footprint, height, footprint);
+            resolvedBins.forEach(({ bin, width, depth, height, centerX: meshX, centerY: meshY, centerZ: meshZ, hasExplicitDimensions, capacityVolume }) => {
+                const geometry = new THREE.BoxGeometry(width, height, depth);
                 const material = new THREE.MeshStandardMaterial({
                     color: toHexColor(bin.color),
                     metalness: 0.15,
                     roughness: 0.55
                 });
                 const cube = new THREE.Mesh(geometry, material);
-                cube.position.set(x, y + (height / 2), z);
+                cube.position.set(meshX, meshY, meshZ);
                 cube.userData = {
                     code: bin.code,
                     baseColor: toHexColor(bin.color),
-                    footprint,
+                    width,
+                    depth,
                     height,
+                    hasExplicitDimensions,
                     capacityVolume
                 };
                 scene.add(cube);
@@ -230,8 +285,10 @@
                 target: { x: controls.target.x, y: controls.target.y, z: controls.target.z },
                 sample: interactiveMeshes.slice(0, 5).map((x) => ({
                     code: x.userData.code,
-                    footprint: x.userData.footprint,
+                    width: x.userData.width,
+                    depth: x.userData.depth,
                     height: x.userData.height,
+                    hasExplicitDimensions: x.userData.hasExplicitDimensions,
                     capacityVolume: x.userData.capacityVolume
                 }))
             });

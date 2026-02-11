@@ -63,6 +63,7 @@
                     <th>Parent</th>
                     <th>Status</th>
                     <th>Coordinates</th>
+                    <th>Dimensions (m)</th>
                     <th>Address</th>
                     <th>Capacity</th>
                     <th>Virtual</th>
@@ -73,7 +74,7 @@
                 @if (_locations.Count == 0)
                 {
                     <tr>
-                        <td colspan="10" class="text-muted">No locations found.</td>
+                        <td colspan="11" class="text-muted">No locations found.</td>
                     </tr>
                 }
                 else
@@ -87,6 +88,7 @@
                             <td>@ResolveParentCode(row.ParentLocationId)</td>
                             <td>@row.Status</td>
                             <td>@FormatCoordinates(row)</td>
+                            <td>@FormatDimensions(row)</td>
                             <td>@FormatAddress(row)</td>
                             <td>@FormatCapacity(row)</td>
                             <td>@(row.IsVirtual ? "Yes" : "No")</td>
@@ -170,6 +172,18 @@
                 <div class="col-md-2">
                     <label class="form-label">Coordinate Z</label>
                     <input class="form-control" type="number" step="0.01" @bind="_create.CoordinateZ" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Width (m)</label>
+                    <input class="form-control" type="number" step="0.001" @bind="_create.WidthMeters" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Length (m)</label>
+                    <input class="form-control" type="number" step="0.001" @bind="_create.LengthMeters" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Height (m)</label>
+                    <input class="form-control" type="number" step="0.001" @bind="_create.HeightMeters" />
                 </div>
                 <div class="col-md-2">
                     <label class="form-label">Aisle</label>
@@ -271,6 +285,18 @@
                 <div class="col-md-2">
                     <label class="form-label">Coordinate Z</label>
                     <input class="form-control" type="number" step="0.01" @bind="_editing.CoordinateZ" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Width (m)</label>
+                    <input class="form-control" type="number" step="0.001" @bind="_editing.WidthMeters" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Length (m)</label>
+                    <input class="form-control" type="number" step="0.001" @bind="_editing.LengthMeters" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Height (m)</label>
+                    <input class="form-control" type="number" step="0.001" @bind="_editing.HeightMeters" />
                 </div>
                 <div class="col-md-2">
                     <label class="form-label">Aisle</label>
@@ -397,6 +423,16 @@
         return $"{row.CoordinateX.Value:0.##}, {row.CoordinateY.Value:0.##}, {row.CoordinateZ.Value:0.##}";
     }
 
+    private static string FormatDimensions(AdminLocationDto row)
+    {
+        if (!row.WidthMeters.HasValue || !row.LengthMeters.HasValue || !row.HeightMeters.HasValue)
+        {
+            return "-";
+        }
+
+        return $"{row.WidthMeters.Value:0.###} x {row.LengthMeters.Value:0.###} x {row.HeightMeters.Value:0.###}";
+    }
+
     private static string FormatAddress(AdminLocationDto row)
     {
         var parts = new[] { row.Aisle, row.Rack, row.Level, row.Bin }
@@ -465,6 +501,9 @@
             CoordinateX = row.CoordinateX,
             CoordinateY = row.CoordinateY,
             CoordinateZ = row.CoordinateZ,
+            WidthMeters = row.WidthMeters,
+            LengthMeters = row.LengthMeters,
+            HeightMeters = row.HeightMeters,
             Aisle = row.Aisle,
             Rack = row.Rack,
             Level = row.Level,
@@ -520,6 +559,9 @@
         public decimal? CoordinateX { get; set; }
         public decimal? CoordinateY { get; set; }
         public decimal? CoordinateZ { get; set; }
+        public decimal? WidthMeters { get; set; }
+        public decimal? LengthMeters { get; set; }
+        public decimal? HeightMeters { get; set; }
         public string? Aisle { get; set; }
         public string? Rack { get; set; }
         public string? Level { get; set; }
@@ -540,6 +582,9 @@
             CoordinateX,
             CoordinateY,
             CoordinateZ,
+            WidthMeters,
+            LengthMeters,
+            HeightMeters,
             Aisle,
             Rack,
             Level,

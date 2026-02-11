@@ -112,6 +112,8 @@
                         <dd class="col-7">@_selectedBin.Status</dd>
                         <dt class="col-5">Coordinates</dt>
                         <dd class="col-7">@_selectedBin.Coordinates.X, @_selectedBin.Coordinates.Y, @_selectedBin.Coordinates.Z</dd>
+                        <dt class="col-5">Dimensions</dt>
+                        <dd class="col-7">@FormatDimensions(_selectedBin.Dimensions)</dd>
                         <dt class="col-5">Capacity</dt>
                         <dd class="col-7">@FormatCapacity(_selectedBin.Capacity)</dd>
                     </dl>
@@ -287,6 +289,16 @@
         var weight = capacity.Weight.HasValue ? $"{capacity.Weight.Value} kg" : "n/a";
         var volume = capacity.Volume.HasValue ? $"{capacity.Volume.Value} m3" : "n/a";
         return $"{weight} / {volume}";
+    }
+
+    private static string FormatDimensions(VisualizationBinDimensionsDto dimensions)
+    {
+        if (!dimensions.Width.HasValue || !dimensions.Length.HasValue || !dimensions.Height.HasValue)
+        {
+            return "n/a";
+        }
+
+        return $"{dimensions.Width.Value:0.###} x {dimensions.Length.Value:0.###} x {dimensions.Height.Value:0.###} m";
     }
 
     private string GetBinClass(VisualizationBinDto bin)
