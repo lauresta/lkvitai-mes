@@ -1,6 +1,7 @@
 using LKvitai.MES.Application.Commands;
 using LKvitai.MES.Application.Ports;
 using LKvitai.MES.Application.Services;
+using LKvitai.MES.Contracts.ReadModels;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Domain.Entities;
 using LKvitai.MES.Infrastructure.Persistence;
@@ -8,6 +9,7 @@ using LKvitai.MES.SharedKernel;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using IDocumentStore = Marten.IDocumentStore;
 
 namespace LKvitai.MES.Api.Services;
 
@@ -121,17 +123,24 @@ public sealed class SubmitSalesOrderCommandHandler : IRequestHandler<SubmitSales
 {
     private readonly WarehouseDbContext _dbContext;
     private readonly IEventBus _eventBus;
+    private readonly IDocumentStore _documentStore;
 
-    public SubmitSalesOrderCommandHandler(WarehouseDbContext dbContext, IEventBus eventBus)
+    public SubmitSalesOrderCommandHandler(
+        WarehouseDbContext dbContext,
+        IEventBus eventBus,
+        IDocumentStore documentStore)
     {
         _dbContext = dbContext;
         _eventBus = eventBus;
+        _documentStore = documentStore;
     }
 
     public async Task<Result> Handle(SubmitSalesOrderCommand request, CancellationToken cancellationToken)
     {
         var order = await _dbContext.SalesOrders
             .Include(x => x.Customer)
+            .Include(x => x.Lines)
+                .ThenInclude(x => x.Item)
             .FirstOrDefaultAsync(x => x.Id == request.SalesOrderId, cancellationToken);
 
         if (order is null)
@@ -141,6 +150,18 @@ public sealed class SubmitSalesOrderCommandHandler : IRequestHandler<SubmitSales
 
         var requiresApproval = order.Customer?.CreditLimit.HasValue == true &&
                                order.TotalAmount > order.Customer.CreditLimit.Value;
+
+        if (!requiresApproval)
+        {
+            var stockValidationResult = await SalesOrderStockValidation.EnsureSufficientAvailableStockAsync(
+                order,
+                _documentStore,
+                cancellationToken);
+            if (!stockValidationResult.IsSuccess)
+            {
+                return stockValidationResult;
+            }
+        }
 
         var submitResult = order.Submit(requiresApproval);
         if (!submitResult.IsSuccess)
@@ -173,21 +194,37 @@ public sealed class ApproveSalesOrderCommandHandler : IRequestHandler<ApproveSal
 {
     private readonly WarehouseDbContext _dbContext;
     private readonly IEventBus _eventBus;
+    private readonly IDocumentStore _documentStore;
 
-    public ApproveSalesOrderCommandHandler(WarehouseDbContext dbContext, IEventBus eventBus)
+    public ApproveSalesOrderCommandHandler(
+        WarehouseDbContext dbContext,
+        IEventBus eventBus,
+        IDocumentStore documentStore)
     {
         _dbContext = dbContext;
         _eventBus = eventBus;
+        _documentStore = documentStore;
     }
 
     public async Task<Result> Handle(ApproveSalesOrderCommand request, CancellationToken cancellationToken)
     {
         var order = await _dbContext.SalesOrders
+            .Include(x => x.Lines)
+                .ThenInclude(x => x.Item)
             .FirstOrDefaultAsync(x => x.Id == request.SalesOrderId, cancellationToken);
 
         if (order is null)
         {
             return Result.Fail(DomainErrorCodes.NotFound, "Sales order not found.");
+        }
+
+        var stockValidationResult = await SalesOrderStockValidation.EnsureSufficientAvailableStockAsync(
+            order,
+            _documentStore,
+            cancellationToken);
+        if (!stockValidationResult.IsSuccess)
+        {
+            return stockValidationResult;
         }
 
         var approveResult = order.Approve();
@@ -219,21 +256,37 @@ public sealed class AllocateSalesOrderCommandHandler : IRequestHandler<AllocateS
 {
     private readonly WarehouseDbContext _dbContext;
     private readonly IEventBus _eventBus;
+    private readonly IDocumentStore _documentStore;
 
-    public AllocateSalesOrderCommandHandler(WarehouseDbContext dbContext, IEventBus eventBus)
+    public AllocateSalesOrderCommandHandler(
+        WarehouseDbContext dbContext,
+        IEventBus eventBus,
+        IDocumentStore documentStore)
     {
         _dbContext = dbContext;
         _eventBus = eventBus;
+        _documentStore = documentStore;
     }
 
     public async Task<Result> Handle(AllocateSalesOrderCommand request, CancellationToken cancellationToken)
     {
         var order = await _dbContext.SalesOrders
+            .Include(x => x.Lines)
+                .ThenInclude(x => x.Item)
             .FirstOrDefaultAsync(x => x.Id == request.SalesOrderId, cancellationToken);
 
         if (order is null)
         {
             return Result.Fail(DomainErrorCodes.NotFound, "Sales order not found.");
+        }
+
+        var stockValidationResult = await SalesOrderStockValidation.EnsureSufficientAvailableStockAsync(
+            order,
+            _documentStore,
+            cancellationToken);
+        if (!stockValidationResult.IsSuccess)
+        {
+            return stockValidationResult;
         }
 
         var allocationResult = order.Allocate(Guid.NewGuid());
@@ -403,6 +456,67 @@ public sealed class CancelSalesOrderCommandHandler : IRequestHandler<CancelSales
             CancelledAt = DateTime.UtcNow,
             CancelledBy = _currentUserService.GetCurrentUserId()
         }, cancellationToken);
+
+        return Result.Ok();
+    }
+}
+
+internal static class SalesOrderStockValidation
+{
+    public static async Task<Result> EnsureSufficientAvailableStockAsync(
+        SalesOrder order,
+        IDocumentStore documentStore,
+        CancellationToken cancellationToken)
+    {
+        if (order.Lines.Count == 0)
+        {
+            return Result.Fail(DomainErrorCodes.ValidationError, "Sales order must contain at least one line.");
+        }
+
+        var requiredBySku = new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase);
+        foreach (var line in order.Lines)
+        {
+            if (line.OrderedQty <= 0m)
+            {
+                continue;
+            }
+
+            var sku = line.Item?.InternalSKU;
+            if (string.IsNullOrWhiteSpace(sku))
+            {
+                return Result.Fail(
+                    DomainErrorCodes.ValidationError,
+                    $"Sales order line '{line.Id}' cannot be allocated because SKU is missing.");
+            }
+
+            requiredBySku[sku] = requiredBySku.GetValueOrDefault(sku) + line.OrderedQty;
+        }
+
+        if (requiredBySku.Count == 0)
+        {
+            return Result.Fail(DomainErrorCodes.ValidationError, "Sales order has no allocatable quantity.");
+        }
+
+        var skus = requiredBySku.Keys.ToArray();
+        await using var querySession = documentStore.QuerySession();
+        var stockRows = await Marten.QueryableExtensions.ToListAsync(
+            querySession.Query<AvailableStockView>().Where(x => skus.Contains(x.SKU)),
+            cancellationToken);
+
+        var availableBySku = stockRows
+            .GroupBy(x => x.SKU, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(x => x.Key, x => x.Sum(y => y.AvailableQty), StringComparer.OrdinalIgnoreCase);
+
+        foreach (var requirement in requiredBySku)
+        {
+            var availableQty = availableBySku.GetValueOrDefault(requirement.Key, 0m);
+            if (availableQty < requirement.Value)
+            {
+                return Result.Fail(
+                    DomainErrorCodes.InsufficientAvailableStock,
+                    $"Insufficient stock for SKU '{requirement.Key}': requested {requirement.Value}, available {availableQty}.");
+            }
+        }
 
         return Result.Ok();
     }

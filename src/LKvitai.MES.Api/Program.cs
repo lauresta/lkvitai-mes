@@ -46,6 +46,7 @@ builder.Services.AddProblemDetails();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddDataProtection();
 builder.Services.AddHttpClient("AgnumExportApi");
+builder.Services.AddHttpClient("FedExApi");
 builder.Services.AddScoped<ICurrentUserService, HttpContextCurrentUserService>();
 builder.Services
     .AddAuthentication(WarehouseAuthenticationDefaults.Scheme)

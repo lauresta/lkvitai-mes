@@ -54,6 +54,7 @@ public sealed class PackOrderCommandHandler : IRequestHandler<PackOrderCommand, 
 
         var itemIds = order.Lines.Select(x => x.ItemId).Distinct().ToArray();
         var itemBarcodes = await _dbContext.Items
+            .AsNoTracking()
             .Where(x => itemIds.Contains(x.Id))
             .Select(x => new
             {
@@ -63,21 +64,70 @@ public sealed class PackOrderCommandHandler : IRequestHandler<PackOrderCommand, 
             })
             .ToListAsync(cancellationToken);
 
-        var barcodeLookup = itemBarcodes
-            .Where(x => !string.IsNullOrWhiteSpace(x.PrimaryBarcode))
-            .ToDictionary(x => x.PrimaryBarcode!, x => x, StringComparer.OrdinalIgnoreCase);
+        var alternateBarcodes = await _dbContext.ItemBarcodes
+            .AsNoTracking()
+            .Where(x => itemIds.Contains(x.ItemId))
+            .Select(x => new
+            {
+                x.ItemId,
+                x.Barcode
+            })
+            .ToListAsync(cancellationToken);
+
+        var barcodeToItemId = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        var ambiguousBarcodes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        static void AddBarcodeAlias(
+            IDictionary<string, int> lookup,
+            ISet<string> ambiguous,
+            string? rawBarcode,
+            int itemId)
+        {
+            if (string.IsNullOrWhiteSpace(rawBarcode))
+            {
+                return;
+            }
+
+            var barcode = rawBarcode.Trim();
+            if (lookup.TryGetValue(barcode, out var existingItemId) &&
+                existingItemId != itemId)
+            {
+                ambiguous.Add(barcode);
+                return;
+            }
+
+            lookup[barcode] = itemId;
+        }
+
+        foreach (var item in itemBarcodes)
+        {
+            AddBarcodeAlias(barcodeToItemId, ambiguousBarcodes, item.PrimaryBarcode, item.Id);
+        }
+
+        foreach (var barcode in alternateBarcodes)
+        {
+            AddBarcodeAlias(barcodeToItemId, ambiguousBarcodes, barcode.Barcode, barcode.ItemId);
+        }
 
         var scannedByItem = new Dictionary<int, decimal>();
         foreach (var scanned in request.ScannedItems)
         {
-            if (!barcodeLookup.TryGetValue(scanned.Barcode.Trim(), out var mapped))
+            var scannedBarcode = scanned.Barcode.Trim();
+            if (ambiguousBarcodes.Contains(scannedBarcode))
+            {
+                return Result.Fail(
+                    DomainErrorCodes.ValidationError,
+                    $"Barcode {scanned.Barcode} is mapped to multiple items.");
+            }
+
+            if (!barcodeToItemId.TryGetValue(scannedBarcode, out var itemId))
             {
                 return Result.Fail(
                     DomainErrorCodes.ValidationError,
                     $"Barcode {scanned.Barcode} does not match any order item");
             }
 
-            scannedByItem[mapped.Id] = scannedByItem.GetValueOrDefault(mapped.Id) + scanned.Qty;
+            scannedByItem[itemId] = scannedByItem.GetValueOrDefault(itemId) + scanned.Qty;
         }
 
         var missingSkus = order.Lines

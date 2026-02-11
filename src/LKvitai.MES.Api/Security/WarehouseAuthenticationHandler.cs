@@ -20,6 +20,15 @@ public static class WarehouseAuthenticationDefaults
 /// </summary>
 public sealed class WarehouseAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
 {
+    private const string DevUserId = "dev-user";
+    private const string DevRoles =
+        $"{WarehouseRoles.Operator}," +
+        $"{WarehouseRoles.QCInspector}," +
+        $"{WarehouseRoles.WarehouseManager}," +
+        $"{WarehouseRoles.WarehouseAdmin}," +
+        $"{WarehouseRoles.InventoryAccountant}," +
+        $"{WarehouseRoles.CFO}";
+
     public WarehouseAuthenticationHandler(
         IOptionsMonitor<AuthenticationSchemeOptions> options,
         ILoggerFactory logger,
@@ -52,7 +61,16 @@ public sealed class WarehouseAuthenticationHandler : AuthenticationHandler<Authe
 
         if (string.IsNullOrWhiteSpace(userId))
         {
-            return Task.FromResult(AuthenticateResult.NoResult());
+            var hostEnvironment = Context.RequestServices.GetService<IHostEnvironment>();
+            if (hostEnvironment?.IsDevelopment() == true)
+            {
+                userId = DevUserId;
+                rolesValue = DevRoles;
+            }
+            else
+            {
+                return Task.FromResult(AuthenticateResult.NoResult());
+            }
         }
 
         var claims = new List<Claim>
