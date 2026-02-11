@@ -51,14 +51,47 @@
         controls.enableDamping = true;
         controls.dampingFactor = 0.07;
         controls.target.set(0, 0, 0);
-        controls.update();
 
         scene.add(new THREE.AmbientLight(0xffffff, 0.95));
         const keyLight = new THREE.DirectionalLight(0xffffff, 0.8);
         keyLight.position.set(30, 60, 20);
         scene.add(keyLight);
 
-        const gridHelper = new THREE.GridHelper(240, 40, 0xbfc5cd, 0xe4e7eb);
+        const normalizedBins = (bins || []).map((bin) => ({
+            bin,
+            x: Number(bin.coordinates?.x || 0),
+            y: Number(bin.coordinates?.z || 0),
+            z: Number(bin.coordinates?.y || 0)
+        }));
+
+        const xs = normalizedBins.map((x) => x.x);
+        const ys = normalizedBins.map((x) => x.y);
+        const zs = normalizedBins.map((x) => x.z);
+
+        const minX = xs.length ? Math.min(...xs) : 0;
+        const minY = ys.length ? Math.min(...ys) : 0;
+        const minZ = zs.length ? Math.min(...zs) : 0;
+        const maxX = xs.length ? Math.max(...xs) : 1;
+        const maxY = ys.length ? Math.max(...ys) : 1;
+        const maxZ = zs.length ? Math.max(...zs) : 1;
+
+        const centerX = (minX + maxX) / 2;
+        const centerY = (minY + maxY) / 2;
+        const centerZ = (minZ + maxZ) / 2;
+        const maxSpan = Math.max(maxX - minX, maxY - minY, maxZ - minZ, 1);
+        const cameraDistance = Math.max(12, maxSpan * 2.4);
+        const cubeSize = maxSpan <= 1 ? 1.8 : maxSpan < 4 ? 1.2 : 0.95;
+
+        controls.target.set(centerX, centerY, centerZ);
+        camera.position.set(
+            centerX + cameraDistance,
+            centerY + cameraDistance * 0.9,
+            centerZ + cameraDistance);
+        controls.update();
+
+        const gridSize = Math.max(30, Math.ceil(maxSpan * 4));
+        const gridDivisions = Math.max(10, Math.min(80, Math.round(gridSize / 2)));
+        const gridHelper = new THREE.GridHelper(gridSize, gridDivisions, 0xbfc5cd, 0xe4e7eb);
         scene.add(gridHelper);
 
         const raycaster = new THREE.Raycaster();
@@ -66,17 +99,14 @@
         const meshesByCode = {};
         const interactiveMeshes = [];
 
-        (bins || []).forEach((bin) => {
-            const geometry = new THREE.BoxGeometry(0.95, 0.95, 0.95);
+        normalizedBins.forEach(({ bin, x, y, z }) => {
+            const geometry = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
             const material = new THREE.MeshStandardMaterial({
                 color: toHexColor(bin.color),
                 metalness: 0.15,
                 roughness: 0.55
             });
             const cube = new THREE.Mesh(geometry, material);
-            const x = Number(bin.coordinates?.x || 0);
-            const y = Number(bin.coordinates?.z || 0);
-            const z = Number(bin.coordinates?.y || 0);
             cube.position.set(x, y, z);
             cube.userData = {
                 code: bin.code,
@@ -113,8 +143,12 @@
             }
 
             const target = mesh.position;
+            const focusDistance = Math.max(8, cameraDistance * 0.45);
             controls.target.set(target.x, target.y, target.z);
-            camera.position.set(target.x + 12, target.y + 12, target.z + 12);
+            camera.position.set(
+                target.x + focusDistance,
+                target.y + focusDistance * 0.85,
+                target.z + focusDistance);
             controls.update();
             applySelection(code);
         }
