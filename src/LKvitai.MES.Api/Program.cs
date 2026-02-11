@@ -9,6 +9,7 @@ using LKvitai.MES.Infrastructure;
 using LKvitai.MES.Infrastructure.BackgroundJobs;
 using LKvitai.MES.Infrastructure.Persistence;
 using LKvitai.MES.Infrastructure.Projections;
+using LKvitai.MES.Integration.Carrier;
 using LKvitai.MES.Projections;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
@@ -131,6 +132,7 @@ builder.Services.AddMassTransitConfiguration(builder.Configuration);
 
 // IEventBus — MassTransit implementation (composition root wires this)
 builder.Services.AddScoped<IEventBus, MassTransitEventBus>();
+builder.Services.AddScoped<ICarrierApiService, FedExApiService>();
 
 // OpenTelemetry observability
 builder.Services.AddOpenTelemetryConfiguration(builder.Configuration);

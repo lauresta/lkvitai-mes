@@ -155,3 +155,16 @@
   Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S1.md:1916, environment lacks runnable local API+DB/psql verification
   Impact: Manual pack endpoint validation and SQL checks for shipment/HU creation were not executed end-to-end.
   Proposed resolution: Run documented curl + SQL checks against an environment with reachable PostgreSQL and API instance.
+- Timestamp: 2026-02-11T06:08:04Z
+  TaskId: PRD-1508
+  Type: RISK
+  Evidence: src/LKvitai.MES.Api/Services/FedExApiService.cs:9-43, docs/prod-ready/prod-ready-tasks-PHASE15-S1.md:2090
+  Impact: Carrier API adapter currently generates local tracking numbers and does not call an external FedEx endpoint, so real integration behavior (HTTP failures/auth/payload contract) is unverified.
+  Proposed resolution: Replace stub with HttpClient-based FedEx API client and integration tests against a mock/staging endpoint.
+
+- Timestamp: 2026-02-11T06:08:04Z
+  TaskId: PRD-1508
+  Type: TEST-GAP
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S1.md:2192, local environment lacks running API workflow validation against reachable DB
+  Impact: Dispatch curl scenarios and shipment/outbound SQL checks were not executed end-to-end.
+  Proposed resolution: Run documented dispatch API flow in environment with reachable PostgreSQL and authenticated API instance.
