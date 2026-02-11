@@ -1,0 +1,309 @@
+@page "/warehouse/visualization/3d"
+@page "/warehouse/visualization/2d"
+@implements IAsyncDisposable
+@using LKvitai.MES.WebUI.Infrastructure
+@using LKvitai.MES.WebUI.Models
+@inject VisualizationClient VisualizationClient
+@inject ToastService ToastService
+@inject IJSRuntime JS
+@inject NavigationManager NavigationManager
+
+<PageTitle>Warehouse Visualization</PageTitle>
+
+<div class="viz-page">
+    <div class="viz-toolbar">
+        <div class="viz-toolbar-left">
+            <h1 class="viz-title">Warehouse Visualization</h1>
+            <p class="viz-subtitle">Explore bins, capacity, and handling units in 3D or 2D.</p>
+        </div>
+        <div class="viz-toolbar-right">
+            <div class="input-group">
+                <input class="form-control"
+                       placeholder="Search location (e.g. R3-C6-L3)"
+                       @bind="_searchQuery"
+                       @bind:event="oninput"
+                       @onkeydown="HandleSearchKeyAsync" />
+                <button class="btn btn-outline-light" @onclick="SearchAsync">
+                    <i class="bi bi-search"></i>
+                </button>
+            </div>
+            <button class="btn btn-outline-light" @onclick="RefreshAsync">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+            </button>
+            <button class="btn btn-warning" @onclick="ToggleViewAsync">
+                @(_is3dView ? "2D View" : "3D View")
+            </button>
+        </div>
+    </div>
+
+    @if (_isLoading)
+    {
+        <div class="viz-loading">
+            <div class="spinner-border text-light" role="status"></div>
+            <span>Loading warehouse model...</span>
+        </div>
+    }
+    else if (!string.IsNullOrWhiteSpace(_error))
+    {
+        <div class="alert alert-danger mt-3">@_error</div>
+    }
+    else if (_model is not null)
+    {
+        <div class="viz-content">
+            <div class="viz-canvas-wrap">
+                @if (_is3dView)
+                {
+                    <div id="@CanvasId" class="viz-canvas"></div>
+                }
+                else
+                {
+                    <div class="viz-2d-wrap">
+                        <svg class="viz-2d-canvas"
+                             viewBox="0 0 @SvgWidth @SvgHeight"
+                             preserveAspectRatio="xMidYMid meet">
+                            @foreach (var zone in _model.Zones)
+                            {
+                                <rect x="@ToSvgX(zone.Bounds.X1)"
+                                      y="@ToSvgY(zone.Bounds.Y2)"
+                                      width="@ToSvgWidth(zone.Bounds.X2 - zone.Bounds.X1)"
+                                      height="@ToSvgHeight(zone.Bounds.Y2 - zone.Bounds.Y1)"
+                                      fill="@zone.Color"
+                                      opacity="0.2"
+                                      stroke="@zone.Color"
+                                      stroke-width="1" />
+                            }
+                            @foreach (var bin in _model.Bins)
+                            {
+                                <rect class="@GetBinClass(bin)"
+                                      x="@ToSvgX(bin.Coordinates.X)"
+                                      y="@ToSvgY(bin.Coordinates.Y)"
+                                      width="6"
+                                      height="6"
+                                      fill="@bin.Color"
+                                      @onclick="@(() => SelectBin(bin.Code))" />
+                            }
+                        </svg>
+                    </div>
+                }
+            </div>
+            <div class="viz-details">
+                @if (_selectedBin is null)
+                {
+                    <div class="viz-empty-selection">
+                        <i class="bi bi-cursor"></i>
+                        <p>Select a bin to view details.</p>
+                    </div>
+                }
+                else
+                {
+                    <h2>@_selectedBin.Code</h2>
+                    <dl class="row">
+                        <dt class="col-5">Status</dt>
+                        <dd class="col-7">@_selectedBin.Status</dd>
+                        <dt class="col-5">Coordinates</dt>
+                        <dd class="col-7">@_selectedBin.Coordinates.X, @_selectedBin.Coordinates.Y, @_selectedBin.Coordinates.Z</dd>
+                        <dt class="col-5">Capacity</dt>
+                        <dd class="col-7">@FormatCapacity(_selectedBin.Capacity)</dd>
+                    </dl>
+
+                    <h3>Handling Units</h3>
+                    @if (_selectedBin.HandlingUnits.Count == 0)
+                    {
+                        <p class="text-muted">No handling units.</p>
+                    }
+                    else
+                    {
+                        <ul class="list-group list-group-flush">
+                            @foreach (var hu in _selectedBin.HandlingUnits)
+                            {
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span>@hu.Lpn (@hu.Sku)</span>
+                                    <strong>@hu.Qty</strong>
+                                </li>
+                            }
+                        </ul>
+                    }
+
+                    <a class="btn btn-sm btn-outline-light mt-3"
+                       href="@($"/admin/locations?search={Uri.EscapeDataString(_selectedBin.Code)}")">
+                        View Details
+                    </a>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private const string CanvasId = "warehouse-visualization-canvas";
+    private const decimal SvgPadding = 20m;
+    private const decimal SvgScale = 12m;
+    private const decimal SvgHeight = 640m;
+    private const decimal SvgWidth = 1000m;
+
+    private Visualization3dDto? _model;
+    private VisualizationBinDto? _selectedBin;
+    private DotNetObjectReference<WarehouseVisualization>? _selfReference;
+    private bool _isLoading;
+    private bool _renderRequested;
+    private string? _error;
+    private string _searchQuery = string.Empty;
+
+    private bool _is3dView =>
+        NavigationManager.Uri.Contains("/warehouse/visualization/3d", StringComparison.OrdinalIgnoreCase);
+
+    protected override async Task OnInitializedAsync()
+    {
+        _selfReference = DotNetObjectReference.Create(this);
+        await LoadAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_is3dView || !_renderRequested || _model is null)
+        {
+            return;
+        }
+
+        _renderRequested = false;
+        await JS.InvokeVoidAsync("warehouseVisualization.render", CanvasId, _model.Bins, _selfReference);
+    }
+
+    [JSInvokable]
+    public Task OnBinSelectedFromJs(string binCode)
+    {
+        SelectBin(binCode);
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private async Task RefreshAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task ToggleViewAsync()
+    {
+        var targetRoute = _is3dView
+            ? "/warehouse/visualization/2d"
+            : "/warehouse/visualization/3d";
+
+        if (_is3dView)
+        {
+            await JS.InvokeVoidAsync("warehouseVisualization.dispose", CanvasId);
+        }
+
+        NavigationManager.NavigateTo(targetRoute);
+        _renderRequested = _model is not null;
+    }
+
+    private async Task HandleSearchKeyAsync(KeyboardEventArgs args)
+    {
+        if (args.Key == "Enter")
+        {
+            await SearchAsync();
+        }
+    }
+
+    private async Task SearchAsync()
+    {
+        if (_model is null || string.IsNullOrWhiteSpace(_searchQuery))
+        {
+            return;
+        }
+
+        var match = _model.Bins.FirstOrDefault(x =>
+            string.Equals(x.Code, _searchQuery.Trim(), StringComparison.OrdinalIgnoreCase));
+
+        if (match is null)
+        {
+            ToastService.ShowError($"Location '{_searchQuery}' not found.");
+            return;
+        }
+
+        SelectBin(match.Code);
+
+        if (_is3dView)
+        {
+            await JS.InvokeVoidAsync("warehouseVisualization.focusBin", CanvasId, match.Code);
+        }
+    }
+
+    private void SelectBin(string code)
+    {
+        if (_model is null)
+        {
+            _selectedBin = null;
+            return;
+        }
+
+        _selectedBin = _model.Bins.FirstOrDefault(x =>
+            string.Equals(x.Code, code, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _error = null;
+
+        try
+        {
+            _model = await VisualizationClient.GetVisualization3dAsync();
+            if (_selectedBin is not null)
+            {
+                SelectBin(_selectedBin.Code);
+            }
+
+            _renderRequested = _is3dView;
+        }
+        catch (ApiException ex)
+        {
+            _error = ex.ProblemDetails?.Detail ?? ex.UserMessage;
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private static string FormatCapacity(VisualizationCapacityDto capacity)
+    {
+        var weight = capacity.Weight.HasValue ? $"{capacity.Weight.Value} kg" : "n/a";
+        var volume = capacity.Volume.HasValue ? $"{capacity.Volume.Value} m3" : "n/a";
+        return $"{weight} / {volume}";
+    }
+
+    private string GetBinClass(VisualizationBinDto bin)
+    {
+        return _selectedBin is not null &&
+               string.Equals(bin.Code, _selectedBin.Code, StringComparison.OrdinalIgnoreCase)
+            ? "viz-2d-bin viz-2d-bin-selected"
+            : "viz-2d-bin";
+    }
+
+    private static decimal ToSvgX(decimal x) => SvgPadding + (x * SvgScale);
+
+    private static decimal ToSvgY(decimal y) => SvgHeight - SvgPadding - (y * SvgScale);
+
+    private static decimal ToSvgWidth(decimal width) => width * SvgScale;
+
+    private static decimal ToSvgHeight(decimal height) => height * SvgScale;
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("warehouseVisualization.dispose", CanvasId);
+        }
+        catch
+        {
+            // Ignore JS disposal issues when circuit is disconnected.
+        }
+
+        _selfReference?.Dispose();
+    }
+}

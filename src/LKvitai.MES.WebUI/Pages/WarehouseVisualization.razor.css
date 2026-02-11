@@ -1,0 +1,134 @@
+.viz-page {
+    min-height: calc(100vh - 120px);
+    padding: 1rem;
+    color: #f7f8fb;
+    background:
+        radial-gradient(circle at 20% 20%, rgba(59, 130, 246, 0.25), transparent 45%),
+        radial-gradient(circle at 80% 10%, rgba(245, 158, 11, 0.2), transparent 40%),
+        linear-gradient(135deg, #0f172a, #111827 65%, #1f2937);
+}
+
+.viz-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    padding: 1rem;
+    background: rgba(17, 24, 39, 0.75);
+}
+
+.viz-title {
+    margin: 0;
+    font-size: 1.5rem;
+    letter-spacing: 0.02em;
+}
+
+.viz-subtitle {
+    margin: 0.25rem 0 0;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.viz-toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.viz-loading {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.viz-content {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.viz-canvas-wrap,
+.viz-details {
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    background: rgba(17, 24, 39, 0.75);
+}
+
+.viz-canvas {
+    width: 100%;
+    height: 72vh;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.viz-2d-wrap {
+    padding: 1rem;
+}
+
+.viz-2d-canvas {
+    width: 100%;
+    height: 72vh;
+    border-radius: 8px;
+    background: rgba(15, 23, 42, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.viz-2d-bin {
+    cursor: pointer;
+    stroke: rgba(0, 0, 0, 0.55);
+    stroke-width: 0.7;
+}
+
+.viz-2d-bin-selected {
+    stroke: #ffd166;
+    stroke-width: 1.6;
+}
+
+.viz-details {
+    padding: 1rem;
+}
+
+.viz-details h2 {
+    margin-top: 0;
+    margin-bottom: 0.75rem;
+}
+
+.viz-details h3 {
+    font-size: 1rem;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.viz-empty-selection {
+    min-height: 220px;
+    display: grid;
+    place-content: center;
+    text-align: center;
+    gap: 0.5rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.viz-empty-selection i {
+    font-size: 1.4rem;
+}
+
+.viz-details .list-group-item {
+    background: rgba(31, 41, 55, 0.9);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #f7f8fb;
+}
+
+@media (max-width: 1200px) {
+    .viz-content {
+        grid-template-columns: 1fr;
+    }
+
+    .viz-canvas,
+    .viz-2d-canvas {
+        height: 60vh;
+    }
+}

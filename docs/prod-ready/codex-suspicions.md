@@ -313,3 +313,16 @@
   Evidence: src/LKvitai.MES.Api/Api/Controllers/WarehouseVisualizationController.cs:265-275
   Impact: Bin utilization is inferred from `AvailableStockView.OnHandQty` versus configured weight/volume capacities; if quantities are not weight/volume-normalized, LOW/FULL thresholds can be approximate.
   Proposed resolution: Normalize utilization using item master weight/volume conversions before threshold evaluation.
+- Timestamp: 2026-02-11T07:30:09Z
+  TaskId: PRD-1518
+  Type: INCONSISTENCY
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S2.md:1580-1660, repository contains src/LKvitai.MES.WebUI (Blazor) and does not contain src/LKvitai.MES.UI (React)
+  Impact: Task implementation snippets/validation steps target a React frontend that does not exist in this codebase.
+  Proposed resolution: Implement equivalent 2D/3D visualization UX in Blazor WebUI and validate via dotnet build plus manual route checks.
+
+- Timestamp: 2026-02-11T07:30:09Z
+  TaskId: PRD-1518
+  Type: TEST-GAP
+  Evidence: `cd src/LKvitai.MES.UI && npm run dev` failed with "no such file or directory"
+  Impact: Task-specified manual browser interaction checks tied to the React dev server could not be executed as written.
+  Proposed resolution: Run manual interaction checks against Blazor route `/warehouse/visualization/3d` in `src/LKvitai.MES.WebUI`.
