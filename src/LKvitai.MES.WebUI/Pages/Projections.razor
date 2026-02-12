@@ -164,7 +164,15 @@
                OnCancel="CancelRebuildConfirm" />
 
 @code {
-    private static readonly string[] _projections = ["LocationBalance", "AvailableStock", "ActiveReservations", "InboundShipmentSummary", "AdjustmentHistory"];
+    private static readonly string[] _projections =
+    [
+        "LocationBalance",
+        "AvailableStock",
+        "OutboundOrderSummary",
+        "ShipmentSummary",
+        "DispatchHistory",
+        "OnHandValue"
+    ];
 
     private string _selectedProjection = "LocationBalance";
     private bool _isBusy;
@@ -348,6 +356,12 @@
         }
 
         var text = BuildErrorMessage(error);
+        if (text.Contains("not implemented", StringComparison.OrdinalIgnoreCase) ||
+            text.Contains("not supported", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Selected projection is not supported for rebuild. Choose one of the supported projections in the selector.";
+        }
+
         if (text.Contains("42P01", StringComparison.OrdinalIgnoreCase) ||
             text.Contains("schema", StringComparison.OrdinalIgnoreCase) ||
             text.Contains("shadow", StringComparison.OrdinalIgnoreCase))

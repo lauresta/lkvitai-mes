@@ -109,9 +109,9 @@ public class ProjectionRebuildService : IProjectionRebuildService
                     message);
             }
 
-            await using var writeSession = _documentStore.LightweightSession();
-            var writeConnection = (NpgsqlConnection)(writeSession.Connection
-                ?? throw new InvalidOperationException("Marten write session connection is unavailable."));
+            await using var querySession = _documentStore.QuerySession();
+            var writeConnection = (NpgsqlConnection)(querySession.Connection
+                ?? throw new InvalidOperationException("Marten query session connection is unavailable."));
 
             var tableName = projectionName switch
             {
