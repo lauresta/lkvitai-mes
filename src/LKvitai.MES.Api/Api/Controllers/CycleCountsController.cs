@@ -1,6 +1,9 @@
 using LKvitai.MES.Api.ErrorHandling;
 using LKvitai.MES.Api.Security;
 using LKvitai.MES.Application.Commands;
+using LKvitai.MES.Application.Ports;
+using LKvitai.MES.Application.Services;
+using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Domain.Entities;
 using LKvitai.MES.Infrastructure.Persistence;
 using LKvitai.MES.SharedKernel;
@@ -15,13 +18,25 @@ namespace LKvitai.MES.Api.Controllers;
 [Route("api/warehouse/v1/cycle-counts")]
 public sealed class CycleCountsController : ControllerBase
 {
+    private const string DefaultWarehouseId = "WH1";
     private readonly IMediator _mediator;
     private readonly WarehouseDbContext _dbContext;
+    private readonly IEventBus _eventBus;
+    private readonly ICurrentUserService _currentUserService;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public CycleCountsController(IMediator mediator, WarehouseDbContext dbContext)
+    public CycleCountsController(
+        IMediator mediator,
+        WarehouseDbContext dbContext,
+        IEventBus eventBus,
+        ICurrentUserService currentUserService,
+        IHttpContextAccessor httpContextAccessor)
     {
         _mediator = mediator;
         _dbContext = dbContext;
+        _eventBus = eventBus;
+        _currentUserService = currentUserService;
+        _httpContextAccessor = httpContextAccessor;
     }
 
     [HttpGet]
@@ -193,6 +208,144 @@ public sealed class CycleCountsController : ControllerBase
             .ToList());
     }
 
+    [HttpGet("{id:guid}/discrepancies")]
+    [Authorize(Policy = WarehousePolicies.OperatorOrAbove)]
+    public async Task<IActionResult> GetDiscrepanciesAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var cycleCount = await _dbContext.CycleCounts
+            .AsNoTracking()
+            .Include(x => x.Lines)
+            .ThenInclude(x => x.Location)
+            .Include(x => x.Lines)
+            .ThenInclude(x => x.Item)
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        if (cycleCount is null)
+        {
+            return Failure(Result.Fail(DomainErrorCodes.NotFound, "Cycle count not found."));
+        }
+
+        var unitCostLookup = await _dbContext.OnHandValues
+            .AsNoTracking()
+            .GroupBy(x => x.ItemId)
+            .Select(x => new { ItemId = x.Key, UnitCost = x.OrderBy(y => y.LastUpdated).Select(y => y.UnitCost).LastOrDefault() })
+            .ToDictionaryAsync(x => x.ItemId, x => x.UnitCost, cancellationToken);
+
+        var rows = cycleCount.Lines
+            .Select(line =>
+            {
+                unitCostLookup.TryGetValue(line.ItemId, out var unitCost);
+                var variancePercent = line.SystemQty == 0m
+                    ? (line.Delta == 0m ? 0m : 100m)
+                    : decimal.Round((line.Delta / line.SystemQty) * 100m, 2, MidpointRounding.AwayFromZero);
+                var valueImpact = decimal.Round(line.Delta * unitCost, 2, MidpointRounding.AwayFromZero);
+                return new DiscrepancyLineResponse(
+                    line.Id,
+                    line.LocationId,
+                    line.Location?.Code ?? line.LocationId.ToString(),
+                    line.ItemId,
+                    line.Item?.InternalSKU ?? line.ItemId.ToString(),
+                    line.SystemQty,
+                    line.PhysicalQty,
+                    line.Delta,
+                    variancePercent,
+                    valueImpact,
+                    line.AdjustmentApprovedBy,
+                    line.AdjustmentApprovedAt);
+            })
+            .Where(x => Math.Abs(x.VariancePercent) > 5m || Math.Abs(x.Variance) > 10m)
+            .OrderBy(x => x.LocationCode)
+            .ThenBy(x => x.ItemCode)
+            .ToList();
+
+        return Ok(rows);
+    }
+
+    [HttpPost("{id:guid}/approve-adjustment")]
+    [Authorize(Policy = WarehousePolicies.OperatorOrAbove)]
+    public async Task<IActionResult> ApproveAdjustmentAsync(
+        Guid id,
+        [FromBody] ApproveAdjustmentRequest? request,
+        CancellationToken cancellationToken = default)
+    {
+        if (request is null || request.LineIds is null || request.LineIds.Count == 0)
+        {
+            return ValidationFailure("LineIds are required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Reason))
+        {
+            return ValidationFailure("Reason is required.");
+        }
+
+        var cycleCount = await _dbContext.CycleCounts
+            .Include(x => x.Lines)
+            .ThenInclude(x => x.Location)
+            .Include(x => x.Lines)
+            .ThenInclude(x => x.Item)
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        if (cycleCount is null)
+        {
+            return Failure(Result.Fail(DomainErrorCodes.NotFound, "Cycle count not found."));
+        }
+
+        var targetLineIds = request.LineIds.Distinct().ToHashSet();
+        var lines = cycleCount.Lines
+            .Where(x => targetLineIds.Contains(x.Id))
+            .ToList();
+        if (lines.Count == 0)
+        {
+            return ValidationFailure("No matching discrepancy lines found.");
+        }
+
+        var unitCostLookup = await _dbContext.OnHandValues
+            .AsNoTracking()
+            .GroupBy(x => x.ItemId)
+            .Select(x => new { ItemId = x.Key, UnitCost = x.OrderBy(y => y.LastUpdated).Select(y => y.UnitCost).LastOrDefault() })
+            .ToDictionaryAsync(x => x.ItemId, x => x.UnitCost, cancellationToken);
+
+        var approvedBy = string.IsNullOrWhiteSpace(request.ApprovedBy)
+            ? _currentUserService.GetCurrentUserId()
+            : request.ApprovedBy.Trim();
+        var isCfo = _httpContextAccessor.HttpContext?.User.IsInRole(WarehouseRoles.CFO) == true;
+        foreach (var line in lines)
+        {
+            unitCostLookup.TryGetValue(line.ItemId, out var unitCost);
+            var valueImpact = Math.Abs(decimal.Round(line.Delta * unitCost, 2, MidpointRounding.AwayFromZero));
+            if (valueImpact > 1000m && !isCfo)
+            {
+                return ValidationFailure("CFO approval required for adjustments > $1000.");
+            }
+        }
+
+        var operatorId = _currentUserService.GetCurrentUserId();
+        foreach (var line in lines)
+        {
+            await _eventBus.PublishAsync(new StockAdjustedEvent
+            {
+                AggregateId = cycleCount.Id,
+                UserId = operatorId,
+                WarehouseId = DefaultWarehouseId,
+                AdjustmentId = Guid.NewGuid(),
+                ItemId = line.ItemId,
+                SKU = line.Item?.InternalSKU ?? string.Empty,
+                LocationId = line.LocationId,
+                Location = line.Location?.Code ?? line.LocationId.ToString(),
+                QtyDelta = line.Delta,
+                ReasonCode = "CYCLE_COUNT",
+                Notes = request.Reason,
+                Timestamp = DateTime.UtcNow
+            }, cancellationToken);
+
+            line.AdjustmentApprovedBy = approvedBy;
+            line.AdjustmentApprovedAt = DateTimeOffset.UtcNow;
+            line.Status = CycleCountLineStatus.Approved;
+        }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return Ok(new ApproveAdjustmentResponse(lines.Count, approvedBy, DateTimeOffset.UtcNow));
+    }
+
     [HttpPost("{id:guid}/apply-adjustment")]
     [Authorize(Policy = WarehousePolicies.OperatorOrAbove)]
     public async Task<IActionResult> ApplyAdjustmentAsync(
@@ -250,7 +403,9 @@ public sealed class CycleCountsController : ControllerBase
                 x.CountedAt,
                 x.CountedBy,
                 x.Status.ToString().ToUpperInvariant(),
-                x.Reason)).ToList());
+                x.Reason,
+                x.AdjustmentApprovedBy,
+                x.AdjustmentApprovedAt)).ToList());
     }
 
     private async Task<Location?> ResolveLocationAsync(RecordCountRequest request, CancellationToken cancellationToken)
@@ -348,6 +503,31 @@ public sealed class CycleCountsController : ControllerBase
         bool HasDiscrepancy,
         string? Warning);
 
+    public sealed record ApproveAdjustmentRequest(
+        Guid CommandId,
+        IReadOnlyList<Guid> LineIds,
+        string? ApprovedBy,
+        string Reason);
+
+    public sealed record ApproveAdjustmentResponse(
+        int ApprovedLineCount,
+        string ApprovedBy,
+        DateTimeOffset ApprovedAt);
+
+    public sealed record DiscrepancyLineResponse(
+        Guid LineId,
+        int LocationId,
+        string LocationCode,
+        int ItemId,
+        string ItemCode,
+        decimal SystemQty,
+        decimal PhysicalQty,
+        decimal Variance,
+        decimal VariancePercent,
+        decimal ValueImpact,
+        string? AdjustmentApprovedBy,
+        DateTimeOffset? AdjustmentApprovedAt);
+
     public sealed record ApplyAdjustmentRequest(Guid CommandId, string? ApproverId);
 
     public sealed record CycleCountLineDetailResponse(
@@ -362,7 +542,9 @@ public sealed class CycleCountsController : ControllerBase
         DateTimeOffset? CountedAt,
         string? CountedBy,
         string Status,
-        string? Reason);
+        string? Reason,
+        string? AdjustmentApprovedBy = null,
+        DateTimeOffset? AdjustmentApprovedAt = null);
 
     public sealed record CycleCountLineResponse(
         int LocationId,
@@ -373,7 +555,9 @@ public sealed class CycleCountsController : ControllerBase
         DateTimeOffset? CountedAt,
         string? CountedBy,
         string Status,
-        string? Reason);
+        string? Reason,
+        string? AdjustmentApprovedBy = null,
+        DateTimeOffset? AdjustmentApprovedAt = null);
 
     public sealed record CycleCountResponse(
         Guid Id,

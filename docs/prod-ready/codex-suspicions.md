@@ -659,3 +659,9 @@
   Evidence: Record-count validation call `POST /api/warehouse/v1/cycle-counts/{id}/record-count` returned HTTP 403 on localhost (`/tmp/prd1613-record.status`), and project API startup remains blocked by missing database (`dotnet run --no-launch-profile --project src/LKvitai.MES.Api /p:UseAppHost=false` -> `database "lkvitai_warehouse" does not exist`).
   Impact: Could not execute authenticated end-to-end cycle count execution workflow against the intended runtime.
   Proposed minimal fix: Create/configure the expected PostgreSQL database for API startup and rerun the exact token + record-count curl sequence.
+- Timestamp: 2026-02-12T21:50:32Z
+  TaskId: PRD-1614
+  Type: TEST-GAP
+  Evidence: Validation calls `GET /api/warehouse/v1/cycle-counts/{id}/discrepancies` and `POST /api/warehouse/v1/cycle-counts/{id}/approve-adjustment` both returned HTTP 403 on localhost (`/tmp/prd1614-discrepancies.status`, `/tmp/prd1614-approve.status`), while project API runtime remains blocked by missing DB.
+  Impact: Could not verify runtime authorization and end-to-end discrepancy approval flow with real auth tokens/data.
+  Proposed minimal fix: Start the project API against the expected PostgreSQL database and rerun discrepancy/approval curl validations using a valid manager/CFO token.
