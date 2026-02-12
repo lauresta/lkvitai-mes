@@ -54,8 +54,8 @@ public class DashboardClientTests
             Content = new StringContent(
                 """
                 [
-                  { "projectionName": "LocationBalanceProjection", "lagSeconds": 4.2 },
-                  { "projectionName": "AvailableStockProjection", "lagSeconds": 11.6 }
+                  { "projectionName": "LocationBalanceProjection", "lagSeconds": 4.2, "lastUpdated": "2026-02-12T21:40:01Z" },
+                  { "projectionName": "AvailableStockProjection", "lagSeconds": 11.6, "lastUpdated": "2026-02-12T21:40:02Z" }
                 ]
                 """)
         };
@@ -69,6 +69,8 @@ public class DashboardClientTests
         // Assert
         result.LocationBalanceLag.Should().Be(4.2);
         result.AvailableStockLag.Should().Be(11.6);
+        result.LastRebuildLB.Should().Be(new DateTime(2026, 2, 12, 21, 40, 1, DateTimeKind.Utc));
+        result.LastRebuildAS.Should().Be(new DateTime(2026, 2, 12, 21, 40, 2, DateTimeKind.Utc));
     }
 
     [Fact]

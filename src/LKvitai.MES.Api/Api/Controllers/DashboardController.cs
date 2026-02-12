@@ -1,4 +1,5 @@
 using System.Reflection;
+using LKvitai.MES.Application.Services;
 using LKvitai.MES.Api.Security;
 using LKvitai.MES.Contracts.ReadModels;
 using LKvitai.MES.Infrastructure.Persistence;
@@ -18,26 +19,42 @@ public sealed class DashboardController : ControllerBase
 
     private readonly IDocumentStore _documentStore;
     private readonly WarehouseDbContext _dbContext;
+    private readonly IProjectionHealthService _projectionHealthService;
 
-    public DashboardController(IDocumentStore documentStore, WarehouseDbContext dbContext)
+    public DashboardController(
+        IDocumentStore documentStore,
+        WarehouseDbContext dbContext,
+        IProjectionHealthService projectionHealthService)
     {
         _documentStore = documentStore;
         _dbContext = dbContext;
+        _projectionHealthService = projectionHealthService;
     }
 
     [HttpGet("health")]
-    public ActionResult<HealthStatusDto> GetHealth()
+    public async Task<ActionResult<HealthStatusDto>> GetHealthAsync(CancellationToken cancellationToken)
     {
         var version = Assembly.GetExecutingAssembly()
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
             .InformationalVersion ?? "dev";
+        var snapshot = await _projectionHealthService.GetHealthAsync(cancellationToken);
+        var projectionLag = snapshot.ProjectionStatus
+            .Values
+            .Where(x => x.LagSeconds.HasValue)
+            .Select(x => x.LagSeconds!.Value)
+            .DefaultIfEmpty()
+            .Max();
+        var hasLag = snapshot.ProjectionStatus.Values.Any(x => x.LagSeconds.HasValue);
 
         var response = new HealthStatusDto
         {
-            Ok = true,
+            Ok = !string.Equals(snapshot.Status, "Unhealthy", StringComparison.OrdinalIgnoreCase),
             Service = "LKvitai.MES.Api",
             Version = version,
-            UtcNow = DateTime.UtcNow
+            UtcNow = DateTime.UtcNow,
+            Status = snapshot.Status,
+            ProjectionLag = hasLag ? projectionLag : null,
+            LastCheck = snapshot.CheckedAt.UtcDateTime
         };
 
         return Ok(response);
@@ -46,28 +63,18 @@ public sealed class DashboardController : ControllerBase
     [HttpGet("projection-health")]
     public async Task<ActionResult<IReadOnlyList<ProjectionHealthDto>>> GetProjectionHealthAsync(CancellationToken cancellationToken)
     {
-        var allProgress = await _documentStore.Advanced.AllProjectionProgress(token: cancellationToken);
-        var eventStoreStatistics = await _documentStore.Advanced.FetchEventStoreStatistics(token: cancellationToken);
-        var highWaterMark = (long?)eventStoreStatistics.EventSequenceNumber;
-
-        var projections = allProgress
-            .Select(progress => new
+        var snapshot = await _projectionHealthService.GetHealthAsync(cancellationToken);
+        var projections = snapshot.ProjectionStatus
+            .Values
+            .Select(x => new ProjectionHealthDto
             {
-                ProjectionName = ResolveProjectionName(progress.ShardName),
-                LastProcessed = (long?)progress.Sequence
-            })
-            .Where(progress => !string.IsNullOrWhiteSpace(progress.ProjectionName))
-            .GroupBy(progress => progress.ProjectionName, StringComparer.OrdinalIgnoreCase)
-            .Select(group =>
-            {
-                var lastProcessed = group.Max(progress => progress.LastProcessed);
-                return new ProjectionHealthDto
-                {
-                    ProjectionName = group.Key,
-                    HighWaterMark = highWaterMark,
-                    LastProcessed = lastProcessed,
-                    LagSeconds = null
-                };
+                ProjectionName = x.ProjectionName,
+                HighWaterMark = x.HighWaterMark,
+                LastProcessed = x.LastProcessed,
+                LagSeconds = x.LagSeconds,
+                LagEvents = x.LagEvents,
+                LastUpdated = x.LastUpdated,
+                Status = x.Status
             })
             .OrderBy(projection => projection.ProjectionName, StringComparer.OrdinalIgnoreCase)
             .ToList();
@@ -177,15 +184,50 @@ public sealed class DashboardController : ControllerBase
         CancellationToken cancellationToken = default)
     {
         var normalizedLimit = Math.Clamp(limit, 1, 100);
+        var queryLimit = normalizedLimit * 3;
+
+        var transferRows = await EntityFrameworkQueryableExtensions.ToListAsync(
+            _dbContext.TransferLines
+                .AsNoTracking()
+                .Where(x => x.Transfer != null && (x.Transfer.ExecutedAt != null || x.Transfer.CompletedAt != null))
+                .OrderByDescending(x => x.Transfer!.CompletedAt ?? x.Transfer.ExecutedAt ?? x.Transfer.RequestedAt)
+                .Select(x => new
+                {
+                    x.Id,
+                    x.ItemId,
+                    Sku = x.Item != null ? x.Item.InternalSKU : null,
+                    x.Qty,
+                    x.FromLocationId,
+                    FromLocationCode = x.FromLocation != null ? x.FromLocation.Code : null,
+                    x.ToLocationId,
+                    ToLocationCode = x.ToLocation != null ? x.ToLocation.Code : null,
+                    Timestamp = x.Transfer!.CompletedAt ?? x.Transfer.ExecutedAt ?? x.Transfer.RequestedAt
+                })
+                .Take(queryLimit),
+            cancellationToken);
+
+        var transferMovements = transferRows.Select(x => new RecentMovementDto
+        {
+            MovementId = x.Id,
+            SKU = string.IsNullOrWhiteSpace(x.Sku) ? $"ITEM-{x.ItemId}" : x.Sku!,
+            Quantity = x.Qty,
+            FromLocation = string.IsNullOrWhiteSpace(x.FromLocationCode)
+                ? x.FromLocationId.ToString()
+                : x.FromLocationCode!,
+            ToLocation = string.IsNullOrWhiteSpace(x.ToLocationCode)
+                ? x.ToLocationId.ToString()
+                : x.ToLocationCode!,
+            Timestamp = x.Timestamp.UtcDateTime
+        });
 
         await using var querySession = _documentStore.QuerySession();
         var rows = await Marten.QueryableExtensions.ToListAsync(
             querySession.Query<AdjustmentHistoryView>()
                 .OrderByDescending(x => x.Timestamp)
-                .Take(normalizedLimit),
+                .Take(queryLimit),
             cancellationToken);
 
-        var items = rows.Select(x =>
+        var adjustmentMovements = rows.Select(x =>
         {
             var location = x.LocationCode ?? x.Location;
             return new RecentMovementDto
@@ -197,25 +239,15 @@ public sealed class DashboardController : ControllerBase
                 ToLocation = x.QtyDelta > 0m ? location : "-",
                 Timestamp = x.Timestamp.UtcDateTime
             };
-        }).ToList();
+        });
+
+        var items = transferMovements
+            .Concat(adjustmentMovements)
+            .OrderByDescending(x => x.Timestamp)
+            .Take(normalizedLimit)
+            .ToList();
 
         return Ok(items);
-    }
-
-    private static string ResolveProjectionName(string? shardName)
-    {
-        if (string.IsNullOrWhiteSpace(shardName))
-        {
-            return string.Empty;
-        }
-
-        var separatorIndex = shardName.IndexOf(':');
-        if (separatorIndex <= 0)
-        {
-            return shardName;
-        }
-
-        return shardName[..separatorIndex];
     }
 }
 
@@ -225,6 +257,9 @@ public sealed record HealthStatusDto
     public string Service { get; init; } = string.Empty;
     public string Version { get; init; } = "dev";
     public DateTime UtcNow { get; init; }
+    public string Status { get; init; } = "Healthy";
+    public double? ProjectionLag { get; init; }
+    public DateTime? LastCheck { get; init; }
 }
 
 public sealed record ProjectionHealthDto
@@ -233,6 +268,9 @@ public sealed record ProjectionHealthDto
     public long? HighWaterMark { get; init; }
     public long? LastProcessed { get; init; }
     public double? LagSeconds { get; init; }
+    public long? LagEvents { get; init; }
+    public DateTimeOffset? LastUpdated { get; init; }
+    public string Status { get; init; } = "Unknown";
 }
 
 public sealed record StockSummaryDto

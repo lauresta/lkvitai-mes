@@ -77,18 +77,27 @@ public class DashboardClient
 
             var projectionName = TryGetString(item, "projectionName");
             var lag = TryGetDouble(item, "lagSeconds");
-            if (string.IsNullOrWhiteSpace(projectionName) || !lag.HasValue)
+            var lastUpdated = TryGetDateTime(item, "lastUpdated");
+            if (string.IsNullOrWhiteSpace(projectionName))
             {
                 continue;
             }
 
             if (projectionName.Contains("location", StringComparison.OrdinalIgnoreCase))
             {
-                mapped = mapped with { LocationBalanceLag = lag };
+                mapped = mapped with
+                {
+                    LocationBalanceLag = lag,
+                    LastRebuildLB = lastUpdated
+                };
             }
             else if (projectionName.Contains("available", StringComparison.OrdinalIgnoreCase))
             {
-                mapped = mapped with { AvailableStockLag = lag };
+                mapped = mapped with
+                {
+                    AvailableStockLag = lag,
+                    LastRebuildAS = lastUpdated
+                };
             }
         }
 
@@ -171,6 +180,22 @@ public class DashboardClient
             JsonValueKind.String when double.TryParse(value.GetString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed) => parsed,
             _ => null
         };
+    }
+
+    private static DateTime? TryGetDateTime(JsonElement element, string name)
+    {
+        if (!element.TryGetProperty(name, out var value))
+        {
+            return null;
+        }
+
+        if (value.ValueKind == JsonValueKind.String &&
+            DateTimeOffset.TryParse(value.GetString(), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var dto))
+        {
+            return dto.UtcDateTime;
+        }
+
+        return null;
     }
 
     private void LogFailure(HttpResponseMessage response, ProblemDetailsModel? problem)
