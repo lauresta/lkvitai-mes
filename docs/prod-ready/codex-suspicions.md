@@ -695,3 +695,9 @@
   Evidence: Validation calls for token and print returned HTTP 403 on localhost (`/tmp/prd1617-dev-token.status`, `/tmp/prd1617-print.status`), preventing end-to-end verification of TCP printer/fallback response behavior against the project API runtime.
   Impact: Runtime confirmation of `POST /api/warehouse/v1/labels/print` printer retry/fallback flow is pending.
   Proposed minimal fix: Start project API with valid auth/database and run print validation against a TCP 9100 simulator or reachable Zebra printer endpoint.
+- Timestamp: 2026-02-12T22:14:13Z
+  TaskId: PRD-1618
+  Type: TEST-GAP
+  Evidence: Queue validation endpoints returned HTTP 403 on localhost (`/tmp/prd1618-queue.status`, `/tmp/prd1618-retry.status`), so runtime verification of queued job listing and manual retry could not be executed against the project API instance.
+  Impact: End-to-end confirmation of `GET /api/warehouse/v1/labels/queue` and `POST /api/warehouse/v1/labels/queue/{id}/retry` remains pending.
+  Proposed minimal fix: Run the project API with valid auth/database and execute queue list + retry validation against that runtime (ideally with seeded failed print jobs).

@@ -186,6 +186,7 @@ public sealed class LabelPrintOrchestrator : ILabelPrintOrchestrator
 
     private readonly ILabelPrinterClient _printerClient;
     private readonly IBackgroundJobClient _backgroundJobs;
+    private readonly ILabelPrintQueueStore _printQueueStore;
     private readonly LabelTemplateEngine _templateEngine;
     private readonly ILogger<LabelPrintOrchestrator> _logger;
     private readonly string _outputRootPath;
@@ -193,12 +194,14 @@ public sealed class LabelPrintOrchestrator : ILabelPrintOrchestrator
     public LabelPrintOrchestrator(
         ILabelPrinterClient printerClient,
         IBackgroundJobClient backgroundJobs,
+        ILabelPrintQueueStore printQueueStore,
         LabelTemplateEngine templateEngine,
         IConfiguration configuration,
         ILogger<LabelPrintOrchestrator> logger)
     {
         _printerClient = printerClient;
         _backgroundJobs = backgroundJobs;
+        _printQueueStore = printQueueStore;
         _templateEngine = templateEngine;
         _logger = logger;
         _outputRootPath = configuration["Labels:OutputRootPath"] ??
@@ -238,23 +241,21 @@ public sealed class LabelPrintOrchestrator : ILabelPrintOrchestrator
             PrinterOfflineTotal.Add(1);
             _logger.LogWarning(
                 ex,
-                "Printer offline, generating PDF fallback for type {LabelType}",
+                "Printer offline, queueing print for retry for type {LabelType}",
                 normalizedLabelType);
 
-            var payload = new LabelPrintJobPayload(
-                Guid.NewGuid(),
+            var queueItem = _printQueueStore.Enqueue(
                 normalizedLabelType,
-                new Dictionary<string, string>(normalizedData, StringComparer.OrdinalIgnoreCase));
-            var pdfUrl = await CreatePdfFallbackAsync(payload, zpl, cancellationToken);
-
+                normalizedData,
+                ex.Message);
             LabelPrintsTotal.Add(
                 1,
                 new KeyValuePair<string, object?>("label_type", normalizedLabelType),
-                new KeyValuePair<string, object?>("status", "PDF_FALLBACK"));
+                new KeyValuePair<string, object?>("status", "QUEUED"));
             LabelPrintDurationMs.Record(Stopwatch.GetElapsedTime(startedAt).TotalMilliseconds);
 
-            var message = $"Printer offline after {ex.Attempts} retries. Download PDF: {pdfUrl}";
-            return new LabelPrintResult("PDF_FALLBACK", pdfUrl, message);
+            var message = $"Print failed. Job queued for retry. Queue ID: {queueItem.Id}";
+            return new LabelPrintResult("QUEUED", null, message);
         }
     }
 

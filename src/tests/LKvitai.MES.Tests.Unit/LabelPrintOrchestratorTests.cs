@@ -28,7 +28,7 @@ public class LabelPrintOrchestratorTests
 
     [Fact]
     [Trait("Category", "LabelPrinting")]
-    public async Task PrintAsync_WhenPrinterOffline_ShouldReturnPdfFallback()
+    public async Task PrintAsync_WhenPrinterOffline_ShouldQueueJobForRetry()
     {
         var backgroundJobs = CreateBackgroundJobs();
 
@@ -36,9 +36,9 @@ public class LabelPrintOrchestratorTests
 
         var result = await sut.PrintAsync("LOCATION", CreateLocationData());
 
-        result.Status.Should().Be("PDF_FALLBACK");
-        result.PdfUrl.Should().NotBeNullOrWhiteSpace();
-        result.Message.Should().Contain("Printer offline after 3 retries");
+        result.Status.Should().Be("QUEUED");
+        result.PdfUrl.Should().BeNull();
+        result.Message.Should().Contain("Queue ID:");
         backgroundJobs.Verify(x => x.Create(It.IsAny<Job>(), It.IsAny<IState>()), Times.Never);
     }
 
@@ -140,10 +140,12 @@ public class LabelPrintOrchestratorTests
             .Build();
 
         var templateEngine = new LabelTemplateEngine(configuration);
+        var queueStore = new InMemoryLabelPrintQueueStore();
 
         return new LabelPrintOrchestrator(
             printerClient,
             backgroundJobs,
+            queueStore,
             templateEngine,
             configuration,
             new Mock<ILogger<LabelPrintOrchestrator>>().Object);

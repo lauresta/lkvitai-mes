@@ -15,13 +15,16 @@ public sealed class LabelsController : ControllerBase
 {
     private readonly ILabelPrintOrchestrator _labelPrintOrchestrator;
     private readonly LabelTemplateEngine _labelTemplateEngine;
+    private readonly ILabelPrintQueueProcessor _labelPrintQueueProcessor;
 
     public LabelsController(
         ILabelPrintOrchestrator labelPrintOrchestrator,
-        LabelTemplateEngine labelTemplateEngine)
+        LabelTemplateEngine labelTemplateEngine,
+        ILabelPrintQueueProcessor labelPrintQueueProcessor)
     {
         _labelPrintOrchestrator = labelPrintOrchestrator;
         _labelTemplateEngine = labelTemplateEngine;
+        _labelPrintQueueProcessor = labelPrintQueueProcessor;
     }
 
     [HttpPost("print")]
@@ -49,6 +52,14 @@ public sealed class LabelsController : ControllerBase
                 return StatusCode(StatusCodes.Status500InternalServerError, new PrintLabelResponse(
                     "FAILED",
                     result.PdfUrl,
+                    result.Message));
+            }
+
+            if (string.Equals(result.Status, "QUEUED", StringComparison.OrdinalIgnoreCase))
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new PrintLabelResponse(
+                    "QUEUED",
+                    null,
                     result.Message));
             }
 
@@ -122,6 +133,29 @@ public sealed class LabelsController : ControllerBase
         {
             return ValidationFailure(ex.Message);
         }
+    }
+
+    [HttpGet("queue")]
+    public IActionResult GetQueue()
+    {
+        var items = _labelPrintQueueProcessor
+            .GetPendingAndFailed()
+            .Select(ToQueueResponse)
+            .ToList();
+
+        return Ok(items);
+    }
+
+    [HttpPost("queue/{id:guid}/retry")]
+    public async Task<IActionResult> RetryQueueItemAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var result = await _labelPrintQueueProcessor.RetryNowAsync(id, cancellationToken);
+        if (!result.Found || result.Item is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(ToQueueResponse(result.Item));
     }
 
     [HttpGet("pdf/{fileName}")]
@@ -213,4 +247,27 @@ public sealed class LabelsController : ControllerBase
     public sealed record LabelTemplateResponse(
         string TemplateType,
         string ZplTemplate);
+
+    public sealed record PrintQueueItemResponse(
+        Guid Id,
+        string TemplateType,
+        string DataJson,
+        string Status,
+        int RetryCount,
+        DateTimeOffset CreatedAt,
+        DateTimeOffset? LastAttemptAt,
+        string ErrorMessage);
+
+    private static PrintQueueItemResponse ToQueueResponse(PrintQueueItem item)
+    {
+        return new PrintQueueItemResponse(
+            item.Id,
+            item.TemplateType,
+            item.DataJson,
+            item.Status.ToString().ToUpperInvariant(),
+            item.RetryCount,
+            item.CreatedAt,
+            item.LastAttemptAt,
+            item.ErrorMessage);
+    }
 }

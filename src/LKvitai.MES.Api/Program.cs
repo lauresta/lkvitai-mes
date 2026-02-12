@@ -152,9 +152,12 @@ builder.Services.AddSingleton<IAgnumReconciliationReportStore, InMemoryAgnumReco
 builder.Services.AddScoped<IAgnumReconciliationService, AgnumReconciliationService>();
 builder.Services.AddSingleton<LabelTemplateEngine>();
 builder.Services.AddSingleton<ILabelPrinterTransport, TcpLabelPrinterTransport>();
+builder.Services.AddSingleton<ILabelPrintQueueStore, InMemoryLabelPrintQueueStore>();
 builder.Services.AddScoped<ILabelPrinterClient, TcpLabelPrinterClient>();
 builder.Services.AddScoped<ILabelPrintOrchestrator, LabelPrintOrchestrator>();
 builder.Services.AddScoped<LabelPrintOrchestrator>();
+builder.Services.AddScoped<ILabelPrintQueueProcessor, LabelPrintQueueProcessor>();
+builder.Services.AddScoped<LabelPrintQueueRecurringJob>();
 builder.Services.AddScoped<ITransferStockAvailabilityService, MartenTransferStockAvailabilityService>();
 builder.Services.AddScoped<ICycleCountQuantityResolver, MartenCycleCountQuantityResolver>();
 builder.Services.AddSingleton<IAdvancedWarehouseStore, AdvancedWarehouseStore>();
@@ -220,6 +223,15 @@ RecurringJob.AddOrUpdate<AgnumExportRecurringJob>(
     AgnumRecurringJobs.DailyExportJobId,
     job => job.ExecuteAsync("SCHEDULED", null, 0),
     "0 23 * * *",
+    new RecurringJobOptions
+    {
+        TimeZone = TimeZoneInfo.Utc
+    });
+
+RecurringJob.AddOrUpdate<LabelPrintQueueRecurringJob>(
+    "labels-print-queue-retry-5m",
+    job => job.ExecuteAsync(),
+    "*/5 * * * *",
     new RecurringJobOptions
     {
         TimeZone = TimeZoneInfo.Utc
