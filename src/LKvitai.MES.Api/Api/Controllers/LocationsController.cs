@@ -3,9 +3,11 @@ using LKvitai.MES.Api.Security;
 using LKvitai.MES.Domain.Entities;
 using LKvitai.MES.Infrastructure.Persistence;
 using LKvitai.MES.SharedKernel;
+using CsvHelper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 
 namespace LKvitai.MES.Api.Controllers;
 
@@ -130,6 +132,15 @@ public sealed class LocationsController : ControllerBase
         if (!TryNormalizeZoneType(request.ZoneType, out var normalizedZoneType, out var zoneTypeValidationError))
         {
             return ValidationFailure(zoneTypeValidationError!);
+        }
+
+        if (!TryValidateCoordinates(
+                request.CoordinateX,
+                request.CoordinateY,
+                request.CoordinateZ,
+                out var coordinateValidationError))
+        {
+            return ValidationFailure(coordinateValidationError!);
         }
 
         if (!TryNormalizeBinDimensions(
@@ -273,6 +284,15 @@ public sealed class LocationsController : ControllerBase
             return ValidationFailure(zoneTypeValidationError!);
         }
 
+        if (!TryValidateCoordinates(
+                request.CoordinateX,
+                request.CoordinateY,
+                request.CoordinateZ,
+                out var coordinateValidationError))
+        {
+            return ValidationFailure(coordinateValidationError!);
+        }
+
         if (!TryNormalizeBinDimensions(
                 request.WidthMeters,
                 request.LengthMeters,
@@ -399,6 +419,15 @@ public sealed class LocationsController : ControllerBase
             return ValidationFailure(dimensionsValidationError!);
         }
 
+        if (!TryValidateCoordinates(
+                request.CoordinateX,
+                request.CoordinateY,
+                request.CoordinateZ,
+                out var coordinateValidationError))
+        {
+            return ValidationFailure(coordinateValidationError!);
+        }
+
         entity.CoordinateX = request.CoordinateX;
         entity.CoordinateY = request.CoordinateY;
         entity.CoordinateZ = request.CoordinateZ;
@@ -435,6 +464,124 @@ public sealed class LocationsController : ControllerBase
             entity.Bin,
             entity.CapacityWeight,
             entity.CapacityVolume));
+    }
+
+    [HttpPost("bulk-coordinates")]
+    [Authorize(Policy = WarehousePolicies.ManagerOrAdmin)]
+    [RequestSizeLimit(10_000_000)]
+    public async Task<IActionResult> BulkCoordinatesAsync(
+        [FromForm] IFormFile? file,
+        CancellationToken cancellationToken = default)
+    {
+        if (file is null || file.Length == 0)
+        {
+            return ValidationFailure("CSV file is required.");
+        }
+
+        var rows = new List<BulkCoordinateCsvRow>();
+        await using (var stream = file.OpenReadStream())
+        using (var reader = new StreamReader(stream))
+        using (var csv = new CsvReader(reader, CultureInfo.InvariantCulture))
+        {
+            if (!await csv.ReadAsync())
+            {
+                return ValidationFailure("CSV is empty.");
+            }
+
+            csv.ReadHeader();
+            while (await csv.ReadAsync())
+            {
+                rows.Add(new BulkCoordinateCsvRow(
+                    csv.GetField("LocationCode") ?? string.Empty,
+                    csv.GetField("X"),
+                    csv.GetField("Y"),
+                    csv.GetField("Z"),
+                    csv.GetField("CapacityWeight"),
+                    csv.GetField("CapacityVolume")));
+            }
+        }
+
+        if (rows.Count == 0)
+        {
+            return ValidationFailure("CSV does not contain data rows.");
+        }
+
+        var codes = rows
+            .Select(x => x.LocationCode.Trim())
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var locations = await _dbContext.Locations
+            .Where(x => codes.Contains(x.Code))
+            .ToDictionaryAsync(x => x.Code, x => x, StringComparer.OrdinalIgnoreCase, cancellationToken);
+
+        var errors = new List<string>();
+        var successCount = 0;
+        var coordinateSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var row in rows)
+        {
+            var locationCode = row.LocationCode.Trim();
+            if (string.IsNullOrWhiteSpace(locationCode))
+            {
+                errors.Add("LocationCode is required.");
+                continue;
+            }
+
+            if (!locations.TryGetValue(locationCode, out var location))
+            {
+                errors.Add($"Location '{locationCode}' not found.");
+                continue;
+            }
+
+            if (!TryParseRequiredDecimal(row.X, out var x) ||
+                !TryParseRequiredDecimal(row.Y, out var y) ||
+                !TryParseRequiredDecimal(row.Z, out var z))
+            {
+                errors.Add($"Location '{locationCode}': invalid X/Y/Z values.");
+                continue;
+            }
+
+            if (!TryValidateCoordinates(x, y, z, out var coordinateValidationError))
+            {
+                errors.Add($"Location '{locationCode}': {coordinateValidationError}");
+                continue;
+            }
+
+            if (!TryParseOptionalDecimal(row.CapacityWeight, out var capacityWeight) ||
+                !TryParseOptionalDecimal(row.CapacityVolume, out var capacityVolume))
+            {
+                errors.Add($"Location '{locationCode}': invalid CapacityWeight or CapacityVolume.");
+                continue;
+            }
+
+            var coordinateKey = BuildCoordinateKey(x, y, z);
+            if (!coordinateSet.Add(coordinateKey))
+            {
+                errors.Add($"Location '{locationCode}': coordinate overlap detected in upload batch.");
+                continue;
+            }
+
+            location.CoordinateX = x;
+            location.CoordinateY = y;
+            location.CoordinateZ = z;
+            location.CapacityWeight = capacityWeight ?? location.CapacityWeight;
+            location.CapacityVolume = capacityVolume ?? location.CapacityVolume;
+
+            var overlapError = await ValidateCoordinateOverlapAsync(location, location.Id, cancellationToken);
+            if (overlapError is not null)
+            {
+                errors.Add($"Location '{locationCode}': {overlapError}");
+                continue;
+            }
+
+            successCount++;
+        }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return Ok(new BulkCoordinatesResponse(successCount, errors.Count, errors));
     }
 
     private ObjectResult ValidationFailure(string detail)
@@ -525,6 +672,63 @@ public sealed class LocationsController : ControllerBase
 
         normalizedZoneType = canonical;
         return true;
+    }
+
+    private static bool TryValidateCoordinates(
+        decimal? x,
+        decimal? y,
+        decimal? z,
+        out string? validationError)
+    {
+        validationError = null;
+
+        if ((x.HasValue && x.Value < 0m) ||
+            (y.HasValue && y.Value < 0m) ||
+            (z.HasValue && z.Value < 0m))
+        {
+            validationError = "Coordinates must be >= 0.";
+            return false;
+        }
+
+        return true;
+    }
+
+    private static bool TryParseRequiredDecimal(string? raw, out decimal value)
+    {
+        value = 0m;
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return false;
+        }
+
+        return decimal.TryParse(raw.Trim(), NumberStyles.Any, CultureInfo.InvariantCulture, out value);
+    }
+
+    private static bool TryParseOptionalDecimal(string? raw, out decimal? value)
+    {
+        value = null;
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return true;
+        }
+
+        if (!decimal.TryParse(raw.Trim(), NumberStyles.Any, CultureInfo.InvariantCulture, out var parsed))
+        {
+            return false;
+        }
+
+        value = parsed;
+        return true;
+    }
+
+    private static string BuildCoordinateKey(decimal x, decimal y, decimal z)
+    {
+        return string.Format(
+            CultureInfo.InvariantCulture,
+            "{0:0.##}|{1:0.##}|{2:0.##}",
+            x,
+            y,
+            z);
     }
 
     private static bool TryNormalizeBinDimensions(
@@ -646,6 +850,19 @@ public sealed class LocationsController : ControllerBase
         string? Bin,
         decimal? CapacityWeight,
         decimal? CapacityVolume);
+
+    public sealed record BulkCoordinatesResponse(
+        int SuccessCount,
+        int ErrorCount,
+        IReadOnlyList<string> Errors);
+
+    private sealed record BulkCoordinateCsvRow(
+        string LocationCode,
+        string? X,
+        string? Y,
+        string? Z,
+        string? CapacityWeight,
+        string? CapacityVolume);
 
     public sealed record PagedResponse<T>(
         IReadOnlyList<T> Items,

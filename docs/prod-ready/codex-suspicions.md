@@ -629,3 +629,9 @@
   Evidence: WebUI startup verified via `DOTNET_ENVIRONMENT=Development ASPNETCORE_URLS=http://127.0.0.1:5001 dotnet run --no-launch-profile --project src/LKvitai.MES.WebUI /p:UseAppHost=false`, but API runtime required for reconciliation upload (`POST /api/warehouse/v1/agnum/reconcile`) failed to start due `Marten.Exceptions.InvalidDocumentException` for `LKvitai.MES.Domain.Aggregates.ItemValuation` (`src/LKvitai.MES.Api/Program.cs:227`).
   Impact: End-to-end reconciliation UI/API workflow (upload CSV, generate report, verify variance numbers in browser) could not be fully executed in this environment.
   Proposed minimal fix: Resolve Marten document identity mapping for `ItemValuation`, start API successfully, then run manual reconciliation scenario on `/warehouse/agnum/reconcile`.
+- Timestamp: 2026-02-12T21:27:34Z
+  TaskId: PRD-1609
+  Type: TEST-GAP
+  Evidence: Task validation requiring runtime API calls (`POST /api/auth/dev-token`, `PUT /api/warehouse/v1/locations/{code}`) is blocked because API startup fails with `Marten.Exceptions.InvalidDocumentException` for `ItemValuation`; additionally `dotnet ef database update --project src/LKvitai.MES.Infrastructure` failed at design-time DbContext creation (`Unable to resolve service for type DbContextOptions<WarehouseDbContext>`).
+  Impact: Full environment validation for migration application and curl-based coordinate update could not be completed end-to-end.
+  Proposed minimal fix: Add a design-time `IDesignTimeDbContextFactory<WarehouseDbContext>` for EF tooling and fix Marten identity mapping so API can start, then re-run the exact PRD-1609 validation commands.

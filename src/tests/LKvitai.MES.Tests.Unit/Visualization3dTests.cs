@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System.Text;
 using Xunit;
 
 namespace LKvitai.MES.Tests.Unit;
@@ -259,6 +260,85 @@ public class Visualization3dTests
         updated.CapacityVolume.Should().Be(2m);
     }
 
+    [Fact]
+    [Trait("Category", "3DVisualization")]
+    public async Task BulkCoordinatesAsync_ShouldUpdateLocations()
+    {
+        await using var db = CreateDbContext();
+        db.Locations.AddRange(
+            new Location { Code = "R1-C1-L1", Barcode = "LOC-001", Type = "Bin", Status = "Active" },
+            new Location { Code = "R2-C2-L2", Barcode = "LOC-002", Type = "Bin", Status = "Active" });
+        await db.SaveChangesAsync();
+
+        var controller = new LocationsController(db)
+        {
+            ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext()
+            }
+        };
+
+        var csv =
+            "LocationCode,X,Y,Z,CapacityWeight,CapacityVolume\n" +
+            "R1-C1-L1,10,20,2,1000,1.5\n" +
+            "R2-C2-L2,15,30,3,800,1.2\n";
+        var file = BuildCsvFormFile(csv);
+
+        var response = await controller.BulkCoordinatesAsync(file);
+
+        response.Should().BeOfType<OkObjectResult>();
+        var payload = ((OkObjectResult)response).Value.Should()
+            .BeOfType<LocationsController.BulkCoordinatesResponse>().Subject;
+        payload.SuccessCount.Should().Be(2);
+        payload.ErrorCount.Should().Be(0);
+
+        var locations = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync(
+            db.Locations.OrderBy(x => x.Code));
+        locations[0].CoordinateX.Should().Be(10m);
+        locations[0].CoordinateY.Should().Be(20m);
+        locations[0].CoordinateZ.Should().Be(2m);
+        locations[1].CoordinateX.Should().Be(15m);
+        locations[1].CoordinateY.Should().Be(30m);
+        locations[1].CoordinateZ.Should().Be(3m);
+    }
+
+    [Fact]
+    [Trait("Category", "3DVisualization")]
+    public async Task BulkCoordinatesAsync_WhenNegativeCoordinate_ShouldReturnError()
+    {
+        await using var db = CreateDbContext();
+        db.Locations.Add(new Location
+        {
+            Code = "R1-C1-L1",
+            Barcode = "LOC-001",
+            Type = "Bin",
+            Status = "Active"
+        });
+        await db.SaveChangesAsync();
+
+        var controller = new LocationsController(db)
+        {
+            ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext()
+            }
+        };
+
+        var csv =
+            "LocationCode,X,Y,Z,CapacityWeight,CapacityVolume\n" +
+            "R1-C1-L1,-1,20,2,1000,1.5\n";
+        var file = BuildCsvFormFile(csv);
+
+        var response = await controller.BulkCoordinatesAsync(file);
+
+        response.Should().BeOfType<OkObjectResult>();
+        var payload = ((OkObjectResult)response).Value.Should()
+            .BeOfType<LocationsController.BulkCoordinatesResponse>().Subject;
+        payload.SuccessCount.Should().Be(0);
+        payload.ErrorCount.Should().Be(1);
+        payload.Errors.Single().Should().Contain("Coordinates must be >= 0");
+    }
+
     private static WarehouseDbContext CreateDbContext()
     {
         var options = new DbContextOptionsBuilder<WarehouseDbContext>()
@@ -283,6 +363,17 @@ public class Visualization3dTests
             {
                 HttpContext = new DefaultHttpContext()
             }
+        };
+    }
+
+    private static IFormFile BuildCsvFormFile(string content)
+    {
+        var bytes = Encoding.UTF8.GetBytes(content);
+        var stream = new MemoryStream(bytes);
+        return new FormFile(stream, 0, bytes.Length, "file", "coordinates.csv")
+        {
+            Headers = new HeaderDictionary(),
+            ContentType = "text/csv"
         };
     }
 }
