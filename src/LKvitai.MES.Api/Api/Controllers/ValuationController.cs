@@ -36,6 +36,125 @@ public sealed class ValuationController : ControllerBase
         _quantityResolver = quantityResolver;
     }
 
+    [HttpPost("initialize")]
+    [Authorize(Policy = WarehousePolicies.InventoryAccountantOrManager)]
+    public async Task<IActionResult> InitializeAsync(
+        [FromBody] InitializeValuationRequest? request,
+        CancellationToken cancellationToken = default)
+    {
+        if (request is null)
+        {
+            return ValidationFailure("Request body is required.");
+        }
+
+        var commandId = request.CommandId == Guid.Empty ? Guid.NewGuid() : request.CommandId;
+        var result = await _mediator.Send(new InitializeValuationCommand
+        {
+            CommandId = commandId,
+            CorrelationId = ResolveCorrelationId(),
+            ItemId = request.ItemId,
+            InitialCost = request.InitialCost,
+            Reason = request.Reason
+        }, cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            return Failure(result);
+        }
+
+        return Ok(new ValuationCommandAcceptedResponse(commandId, request.ItemId, "INITIALIZED"));
+    }
+
+    [HttpPost("adjust-cost")]
+    [Authorize(Policy = WarehousePolicies.InventoryAccountantOrManager)]
+    public async Task<IActionResult> AdjustCostV2Async(
+        [FromBody] AdjustValuationCostRequest? request,
+        CancellationToken cancellationToken = default)
+    {
+        if (request is null)
+        {
+            return ValidationFailure("Request body is required.");
+        }
+
+        var commandId = request.CommandId == Guid.Empty ? Guid.NewGuid() : request.CommandId;
+        var result = await _mediator.Send(new AdjustValuationCostCommand
+        {
+            CommandId = commandId,
+            CorrelationId = ResolveCorrelationId(),
+            ItemId = request.ItemId,
+            NewCost = request.NewCost,
+            Reason = request.Reason,
+            ApprovedBy = request.ApprovedBy
+        }, cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            return Failure(result);
+        }
+
+        return Ok(new ValuationCommandAcceptedResponse(commandId, request.ItemId, "COST_ADJUSTED"));
+    }
+
+    [HttpPost("apply-landed-cost")]
+    [Authorize(Policy = WarehousePolicies.InventoryAccountantOrManager)]
+    public async Task<IActionResult> ApplyLandedCostAsync(
+        [FromBody] ApplyLandedCostRequest? request,
+        CancellationToken cancellationToken = default)
+    {
+        if (request is null)
+        {
+            return ValidationFailure("Request body is required.");
+        }
+
+        var commandId = request.CommandId == Guid.Empty ? Guid.NewGuid() : request.CommandId;
+        var result = await _mediator.Send(new ApplyLandedCostCommand
+        {
+            CommandId = commandId,
+            CorrelationId = ResolveCorrelationId(),
+            ShipmentId = request.ShipmentId,
+            FreightCost = request.FreightCost,
+            DutyCost = request.DutyCost,
+            InsuranceCost = request.InsuranceCost
+        }, cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            return Failure(result);
+        }
+
+        return Ok(new LandedCostCommandAcceptedResponse(commandId, request.ShipmentId));
+    }
+
+    [HttpPost("write-down")]
+    [Authorize(Policy = WarehousePolicies.InventoryAccountantOrManager)]
+    public async Task<IActionResult> WriteDownAsync(
+        [FromBody] WriteDownRequest? request,
+        CancellationToken cancellationToken = default)
+    {
+        if (request is null)
+        {
+            return ValidationFailure("Request body is required.");
+        }
+
+        var commandId = request.CommandId == Guid.Empty ? Guid.NewGuid() : request.CommandId;
+        var result = await _mediator.Send(new WriteDownCommand
+        {
+            CommandId = commandId,
+            CorrelationId = ResolveCorrelationId(),
+            ItemId = request.ItemId,
+            NewValue = request.NewValue,
+            Reason = request.Reason,
+            ApprovedBy = request.ApprovedBy
+        }, cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            return Failure(result);
+        }
+
+        return Ok(new ValuationCommandAcceptedResponse(commandId, request.ItemId, "WRITTEN_DOWN"));
+    }
+
     [HttpPost("{itemId:int}/adjust-cost")]
     [Authorize(Policy = WarehousePolicies.InventoryAccountantOrManager)]
     public async Task<IActionResult> AdjustCostAsync(
@@ -263,6 +382,42 @@ public sealed class ValuationController : ControllerBase
         decimal NewUnitCost,
         string Reason,
         Guid? ApproverId);
+
+    public sealed record InitializeValuationRequest(
+        Guid CommandId,
+        int ItemId,
+        decimal InitialCost,
+        string Reason);
+
+    public sealed record AdjustValuationCostRequest(
+        Guid CommandId,
+        int ItemId,
+        decimal NewCost,
+        string Reason,
+        string? ApprovedBy);
+
+    public sealed record ApplyLandedCostRequest(
+        Guid CommandId,
+        Guid ShipmentId,
+        decimal FreightCost,
+        decimal DutyCost,
+        decimal InsuranceCost);
+
+    public sealed record WriteDownRequest(
+        Guid CommandId,
+        int ItemId,
+        decimal NewValue,
+        string Reason,
+        string? ApprovedBy);
+
+    public sealed record ValuationCommandAcceptedResponse(
+        Guid CommandId,
+        int ItemId,
+        string Status);
+
+    public sealed record LandedCostCommandAcceptedResponse(
+        Guid CommandId,
+        Guid ShipmentId);
 
     public sealed record AdjustCostResponse(
         int ItemId,

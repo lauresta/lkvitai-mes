@@ -75,6 +75,8 @@ public sealed class OnHandValueProjectionConsumer :
     IConsumer<CostAdjusted>,
     IConsumer<LandedCostAllocated>,
     IConsumer<StockWrittenDown>,
+    IConsumer<LandedCostApplied>,
+    IConsumer<WrittenDown>,
     IConsumer<StockMovedEvent>
 {
     private const string ProjectionName = "OnHandValue";
@@ -137,6 +139,30 @@ public sealed class OnHandValueProjectionConsumer :
             context.Message.ItemId,
             context.Message.NewUnitCost,
             nameof(StockWrittenDown),
+            context.CancellationToken);
+    }
+
+    public Task Consume(ConsumeContext<LandedCostApplied> context)
+    {
+        return UpsertLandedCostByInventoryIdAsync(
+            context.Message.EventId,
+            context.Message.Timestamp,
+            context.Message.CorrelationId,
+            context.Message.ItemId,
+            context.Message.TotalLandedCost,
+            nameof(LandedCostApplied),
+            context.CancellationToken);
+    }
+
+    public Task Consume(ConsumeContext<WrittenDown> context)
+    {
+        return UpsertFromValuationByInventoryIdAsync(
+            context.Message.EventId,
+            context.Message.Timestamp,
+            context.Message.CorrelationId,
+            context.Message.ItemId,
+            context.Message.NewValue,
+            nameof(WrittenDown),
             context.CancellationToken);
     }
 
@@ -306,6 +332,92 @@ public sealed class OnHandValueProjectionConsumer :
             projection.Id,
             eventTimestampUtc,
             correlationId,
+            cancellationToken);
+    }
+
+    private async Task UpsertFromValuationByInventoryIdAsync(
+        Guid eventId,
+        DateTime eventTimestampUtc,
+        string? correlationId,
+        int itemId,
+        decimal unitCost,
+        string eventType,
+        CancellationToken cancellationToken)
+    {
+        if (itemId <= 0)
+        {
+            await OnHandValueProjectionMetrics.SaveProjectionAsync(
+                _dbContext,
+                _logger,
+                ProjectionName,
+                eventType,
+                Guid.Empty,
+                eventTimestampUtc,
+                correlationId,
+                cancellationToken);
+            return;
+        }
+
+        var valuationItemId = Valuation.ToValuationItemId(itemId);
+        await UpsertFromValuationAsync(
+            eventId,
+            eventTimestampUtc,
+            correlationId,
+            valuationItemId,
+            unitCost,
+            eventType,
+            cancellationToken);
+    }
+
+    private async Task UpsertLandedCostByInventoryIdAsync(
+        Guid eventId,
+        DateTime eventTimestampUtc,
+        string? correlationId,
+        int itemId,
+        decimal landedCostDelta,
+        string eventType,
+        CancellationToken cancellationToken)
+    {
+        if (itemId <= 0)
+        {
+            await OnHandValueProjectionMetrics.SaveProjectionAsync(
+                _dbContext,
+                _logger,
+                ProjectionName,
+                eventType,
+                Guid.Empty,
+                eventTimestampUtc,
+                correlationId,
+                cancellationToken);
+            return;
+        }
+
+        var row = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
+            _dbContext.OnHandValues,
+            x => x.ItemId == itemId,
+            cancellationToken);
+
+        if (row is not null)
+        {
+            var adjustedCost = decimal.Round(row.UnitCost + landedCostDelta, 4, MidpointRounding.AwayFromZero);
+            await UpsertFromValuationByInventoryIdAsync(
+                eventId,
+                eventTimestampUtc,
+                correlationId,
+                itemId,
+                adjustedCost,
+                eventType,
+                cancellationToken);
+            return;
+        }
+
+        await UpsertFromValuationByInventoryIdAsync(
+            eventId,
+            eventTimestampUtc,
+            correlationId,
+            itemId,
+            decimal.Round(landedCostDelta, 4, MidpointRounding.AwayFromZero),
+            eventType,
             cancellationToken);
     }
 }

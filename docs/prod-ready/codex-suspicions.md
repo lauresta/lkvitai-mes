@@ -581,3 +581,9 @@
   Evidence: Allocation dashboard page compiled and action wiring validated by build only; no manual browser workflow run.
   Impact: Operator/manager interaction flow for approve/release remains unverified in runtime UI.
   Proposed resolution: Manually validate `/warehouse/sales/allocations` for pending approval and release-to-picking scenarios.
+- Timestamp: 2026-02-12T20:45:20Z
+  TaskId: PRD-1601
+  Type: TEST-GAP
+  Evidence: Validation command `curl -X POST http://localhost:5000/api/auth/dev-token ...` returned HTTP 403 and no token (`/tmp/prd1601-dev-token.out`), follow-up `POST /api/warehouse/v1/valuation/initialize` also returned HTTP 403 (`/tmp/prd1601-init.out`).
+  Impact: Task-specified API validation could not confirm valuation initialization/event append behavior in this environment.
+  Proposed resolution: Re-run validation against the project API instance with valid Warehouse auth roles (WarehouseAdmin/InventoryAccountant) and reachable DB-backed runtime.

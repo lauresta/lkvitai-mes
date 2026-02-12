@@ -41,8 +41,11 @@ public static class MartenConfiguration
             options.Events.AddEventType<CostAdjusted>();
             options.Events.AddEventType<LandedCostAllocated>();
             options.Events.AddEventType<StockWrittenDown>();
+            options.Events.AddEventType<LandedCostApplied>();
+            options.Events.AddEventType<WrittenDown>();
 
             options.Projections.Snapshot<Valuation>(SnapshotLifecycle.Inline);
+            options.Projections.Snapshot<ItemValuation>(SnapshotLifecycle.Inline);
             
             // Performance tuning
             options.Events.MetadataConfig.HeadersEnabled = true;

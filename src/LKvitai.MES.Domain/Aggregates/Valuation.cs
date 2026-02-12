@@ -103,7 +103,9 @@ public class Valuation
         return new ValuationInitialized
         {
             ItemId = itemId,
+            InventoryItemId = TryToInventoryItemId(itemId, out var inventoryItemId) ? inventoryItemId : 0,
             InitialUnitCost = NormalizeCost(initialUnitCost),
+            Reason = source.Trim(),
             Source = source.Trim(),
             InboundShipmentId = inboundShipmentId,
             InitializedBy = initializedBy.Trim(),
@@ -145,10 +147,12 @@ public class Valuation
         return new CostAdjusted
         {
             ItemId = ItemId,
+            InventoryItemId = TryToInventoryItemId(ItemId, out var inventoryItemId) ? inventoryItemId : 0,
             OldUnitCost = UnitCost,
             NewUnitCost = NormalizeCost(newUnitCost),
             Reason = reason.Trim(),
             AdjustedBy = adjustedBy.Trim(),
+            ApprovedBy = approverId?.ToString(),
             AdjustedAt = EnsureUtc(adjustedAt ?? DateTime.UtcNow),
             ApproverId = approverId,
             CommandId = commandId
@@ -251,6 +255,7 @@ public class Valuation
         return new StockWrittenDown
         {
             ItemId = ItemId,
+            InventoryItemId = TryToInventoryItemId(ItemId, out var inventoryItemId) ? inventoryItemId : 0,
             OldUnitCost = UnitCost,
             WriteDownPercentage = normalizedPercentage,
             NewUnitCost = newUnitCost,
