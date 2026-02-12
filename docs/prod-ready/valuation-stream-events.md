@@ -29,6 +29,12 @@ All valuation events inherit from `DomainEvent` and carry schema metadata (`Vers
 - Rounding: each component (`Freight`, `Duty`, `Insurance`) is rounded to 2 decimals with deterministic remainder assignment to the last row.
 - Invariant: sum of allocated values per component equals the input total.
 
+## Write-Down Rules
+- `NewValue >= 0`
+- `NewValue < CurrentValue`
+- `Reason` is required
+- For write-down impact above `$1000`, `ApprovedBy` is required and caller must be `WarehouseManager` or `WarehouseAdmin`
+
 ## Audit Fields
 Audit data is persisted in valuation events:
 - actor (`InitializedBy`, `AdjustedBy`, `AppliedBy`, `ApprovedBy`)

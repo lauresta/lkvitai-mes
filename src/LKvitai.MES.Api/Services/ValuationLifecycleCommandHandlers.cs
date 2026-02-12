@@ -1,5 +1,6 @@
 using LKvitai.MES.Application.Commands;
 using LKvitai.MES.Application.Services;
+using LKvitai.MES.Api.Security;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Domain.Aggregates;
 using LKvitai.MES.Domain.Entities;
@@ -324,6 +325,7 @@ public sealed class WriteDownCommandHandler : IRequestHandler<WriteDownCommand, 
     private readonly IDocumentStore _documentStore;
     private readonly ICurrentUserService _currentUserService;
     private readonly IAvailableStockQuantityResolver _quantityResolver;
+    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ILogger<WriteDownCommandHandler> _logger;
 
     public WriteDownCommandHandler(
@@ -331,12 +333,14 @@ public sealed class WriteDownCommandHandler : IRequestHandler<WriteDownCommand, 
         IDocumentStore documentStore,
         ICurrentUserService currentUserService,
         IAvailableStockQuantityResolver quantityResolver,
+        IHttpContextAccessor httpContextAccessor,
         ILogger<WriteDownCommandHandler> logger)
     {
         _dbContext = dbContext;
         _documentStore = documentStore;
         _currentUserService = currentUserService;
         _quantityResolver = quantityResolver;
+        _httpContextAccessor = httpContextAccessor;
         _logger = logger;
     }
 
@@ -371,6 +375,26 @@ public sealed class WriteDownCommandHandler : IRequestHandler<WriteDownCommand, 
 
         try
         {
+            var requestValidation = ValuationWriteDownPolicy.ValidateRequest(request, aggregate.CurrentCost);
+            if (!requestValidation.IsSuccess)
+            {
+                return requestValidation;
+            }
+
+            var currentUser = _httpContextAccessor.HttpContext?.User;
+            var canApproveLargeWriteDown = currentUser?.IsInRole(WarehouseRoles.WarehouseManager) == true ||
+                                           currentUser?.IsInRole(WarehouseRoles.WarehouseAdmin) == true;
+
+            var approvalValidation = ValuationWriteDownPolicy.ValidateApproval(
+                aggregate.CurrentCost,
+                request.NewValue,
+                request.ApprovedBy,
+                canApproveLargeWriteDown);
+            if (!approvalValidation.IsSuccess)
+            {
+                return approvalValidation;
+            }
+
             var writer = _currentUserService.GetCurrentUserId();
             var writtenDown = aggregate.WriteDown(
                 request.NewValue,

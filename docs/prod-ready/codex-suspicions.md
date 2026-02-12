@@ -599,3 +599,9 @@
   Evidence: Validation command `POST /api/warehouse/v1/valuation/apply-landed-cost` returned HTTP 403 (`/tmp/prd1603-landed.out`).
   Impact: Runtime verification of proportional landed-cost allocation API behavior could not be completed in this environment.
   Proposed resolution: Re-run endpoint validation on the project API instance with valid auth and seeded on-hand valuation data.
+- Timestamp: 2026-02-12T20:52:10Z
+  TaskId: PRD-1604
+  Type: TEST-GAP
+  Evidence: Validation command `POST /api/warehouse/v1/valuation/write-down` returned HTTP 403 (`/tmp/prd1604-write-down.out`).
+  Impact: Could not validate runtime approval workflow and write-down API behavior end-to-end in this environment.
+  Proposed resolution: Re-run write-down API validation with a valid Warehouse auth token against the project API runtime.
