@@ -683,3 +683,15 @@
   Evidence: Task validation curl calls returned HTTP 403 on localhost (`/tmp/prd1616-dev-token.status`, `/tmp/prd1616-preview.status`), so the required runtime token+preview flow could not be verified against the project API instance.
   Impact: End-to-end API validation for `POST /api/warehouse/v1/labels/preview` remains unconfirmed in this environment.
   Proposed minimal fix: Start the project API on an isolated port with valid auth/database connectivity and rerun the exact PRD-1616 curl sequence to produce a PDF artifact.
+- Timestamp: 2026-02-12T22:09:29Z
+  TaskId: PRD-1617
+  Type: INCONSISTENCY
+  Evidence: Task `Requirements` specify retry delay of 1 second between attempts (`RetryDelayMs`), while `Definition of Done` for the same task states "Retry logic with exponential backoff."
+  Impact: Different retry policy interpretations may lead to nondeterministic operational behavior and mismatched tests.
+  Proposed minimal fix: Normalize the task to one policy (fixed delay or exponential) and explicitly define expected delays per retry attempt.
+- Timestamp: 2026-02-12T22:09:29Z
+  TaskId: PRD-1617
+  Type: TEST-GAP
+  Evidence: Validation calls for token and print returned HTTP 403 on localhost (`/tmp/prd1617-dev-token.status`, `/tmp/prd1617-print.status`), preventing end-to-end verification of TCP printer/fallback response behavior against the project API runtime.
+  Impact: Runtime confirmation of `POST /api/warehouse/v1/labels/print` printer retry/fallback flow is pending.
+  Proposed minimal fix: Start project API with valid auth/database and run print validation against a TCP 9100 simulator or reachable Zebra printer endpoint.

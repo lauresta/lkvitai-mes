@@ -28,19 +28,18 @@ public class LabelPrintOrchestratorTests
 
     [Fact]
     [Trait("Category", "LabelPrinting")]
-    public async Task PrintAsync_WhenPrinterOffline_ShouldQueueJob()
+    public async Task PrintAsync_WhenPrinterOffline_ShouldReturnPdfFallback()
     {
         var backgroundJobs = CreateBackgroundJobs();
-        backgroundJobs
-            .Setup(x => x.Create(It.IsAny<Job>(), It.IsAny<IState>()))
-            .Returns("job-1");
 
         var sut = CreateSut(new FailingPrinterClient(), backgroundJobs.Object);
 
         var result = await sut.PrintAsync("LOCATION", CreateLocationData());
 
-        result.Status.Should().Be("QUEUED");
-        backgroundJobs.Verify(x => x.Create(It.IsAny<Job>(), It.IsAny<IState>()), Times.Once);
+        result.Status.Should().Be("PDF_FALLBACK");
+        result.PdfUrl.Should().NotBeNullOrWhiteSpace();
+        result.Message.Should().Contain("Printer offline after 3 retries");
+        backgroundJobs.Verify(x => x.Create(It.IsAny<Job>(), It.IsAny<IState>()), Times.Never);
     }
 
     [Fact]
@@ -172,7 +171,7 @@ public class LabelPrintOrchestratorTests
     {
         public Task SendAsync(string zplPayload, CancellationToken cancellationToken = default)
         {
-            throw new InvalidOperationException("Printer unavailable");
+            throw new LabelPrinterUnavailableException(3, new InvalidOperationException("Printer unavailable"));
         }
     }
 }

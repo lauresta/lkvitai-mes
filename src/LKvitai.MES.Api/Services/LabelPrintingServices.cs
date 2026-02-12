@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Net.Sockets;
 using System.Text;
 using Hangfire;
+using Microsoft.Extensions.Options;
 
 namespace LKvitai.MES.Api.Services;
 
@@ -28,7 +29,8 @@ public interface ILabelPrintOrchestrator
 
 public sealed record LabelPrintResult(
     string Status,
-    string? PdfUrl = null);
+    string? PdfUrl = null,
+    string? Message = null);
 
 public sealed record LabelPreviewResult(
     byte[] Content,
@@ -45,26 +47,52 @@ public sealed record LabelPrintJobPayload(
     string LabelType,
     Dictionary<string, string> Data);
 
+public sealed class LabelPrintingConfig
+{
+    public string PrinterIP { get; set; } = "127.0.0.1";
+    public int PrinterPort { get; set; } = 9100;
+    public int RetryCount { get; set; } = 3;
+    public int RetryDelayMs { get; set; } = 1000;
+    public int SocketTimeoutMs { get; set; } = 5000;
+}
+
+public sealed class LabelPrinterUnavailableException : Exception
+{
+    public LabelPrinterUnavailableException(int attempts, Exception innerException)
+        : base($"Printer offline after {attempts} retries.", innerException)
+    {
+        Attempts = attempts;
+    }
+
+    public int Attempts { get; }
+}
+
 public interface ILabelPrinterClient
 {
     Task SendAsync(string zplPayload, CancellationToken cancellationToken = default);
 }
 
-public sealed class TcpLabelPrinterClient : ILabelPrinterClient
+public interface ILabelPrinterTransport
 {
-    private readonly IConfiguration _configuration;
+    Task SendAsync(
+        string host,
+        int port,
+        string zplPayload,
+        TimeSpan timeout,
+        CancellationToken cancellationToken = default);
+}
 
-    public TcpLabelPrinterClient(IConfiguration configuration)
+public sealed class TcpLabelPrinterTransport : ILabelPrinterTransport
+{
+    public async Task SendAsync(
+        string host,
+        int port,
+        string zplPayload,
+        TimeSpan timeout,
+        CancellationToken cancellationToken = default)
     {
-        _configuration = configuration;
-    }
-
-    public async Task SendAsync(string zplPayload, CancellationToken cancellationToken = default)
-    {
-        var host = _configuration["Labels:PrinterHost"] ?? "127.0.0.1";
-        var port = ParsePort(_configuration["Labels:PrinterPort"]);
         using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeoutCts.CancelAfter(TimeSpan.FromSeconds(5));
+        timeoutCts.CancelAfter(timeout);
 
         using var client = new TcpClient();
         await client.ConnectAsync(host, port, timeoutCts.Token);
@@ -74,12 +102,75 @@ public sealed class TcpLabelPrinterClient : ILabelPrinterClient
         await stream.WriteAsync(bytes, timeoutCts.Token);
         await stream.FlushAsync(timeoutCts.Token);
     }
+}
 
-    private static int ParsePort(string? value)
+public sealed class TcpLabelPrinterClient : ILabelPrinterClient
+{
+    private readonly LabelPrintingConfig _config;
+    private readonly ILabelPrinterTransport _transport;
+    private readonly ILogger<TcpLabelPrinterClient> _logger;
+    private readonly Func<TimeSpan, CancellationToken, Task> _delayAsync;
+
+    public TcpLabelPrinterClient(
+        IOptions<LabelPrintingConfig> options,
+        ILabelPrinterTransport transport,
+        ILogger<TcpLabelPrinterClient> logger)
+        : this(options, transport, logger, static (delay, ct) => Task.Delay(delay, ct))
     {
-        return int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var port)
-            ? port
-            : 9100;
+    }
+
+    internal TcpLabelPrinterClient(
+        IOptions<LabelPrintingConfig> options,
+        ILabelPrinterTransport transport,
+        ILogger<TcpLabelPrinterClient> logger,
+        Func<TimeSpan, CancellationToken, Task> delayAsync)
+    {
+        _config = options.Value;
+        _transport = transport;
+        _logger = logger;
+        _delayAsync = delayAsync;
+    }
+
+    public async Task SendAsync(string zplPayload, CancellationToken cancellationToken = default)
+    {
+        var host = string.IsNullOrWhiteSpace(_config.PrinterIP) ? "127.0.0.1" : _config.PrinterIP.Trim();
+        var port = _config.PrinterPort > 0 ? _config.PrinterPort : 9100;
+        var timeout = TimeSpan.FromMilliseconds(_config.SocketTimeoutMs <= 0 ? 5000 : _config.SocketTimeoutMs);
+        var retryCount = Math.Max(1, _config.RetryCount);
+        var retryDelay = TimeSpan.FromMilliseconds(_config.RetryDelayMs < 0 ? 0 : _config.RetryDelayMs);
+
+        Exception? lastException = null;
+        for (var attempt = 1; attempt <= retryCount; attempt++)
+        {
+            try
+            {
+                await _transport.SendAsync(host, port, zplPayload, timeout, cancellationToken);
+                return;
+            }
+            catch (Exception ex) when (attempt < retryCount)
+            {
+                lastException = ex;
+                _logger.LogWarning(
+                    ex,
+                    "Label printer attempt {Attempt}/{RetryCount} failed for {Host}:{Port}. Retrying in {DelayMs}ms.",
+                    attempt,
+                    retryCount,
+                    host,
+                    port,
+                    retryDelay.TotalMilliseconds);
+
+                await _delayAsync(retryDelay, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                lastException = ex;
+                break;
+            }
+        }
+
+        throw new LabelPrinterUnavailableException(
+            retryCount,
+            lastException ?? new InvalidOperationException("Unknown printer error."));
     }
 }
 
@@ -142,46 +233,28 @@ public sealed class LabelPrintOrchestrator : ILabelPrintOrchestrator
 
             return new LabelPrintResult("PRINTED");
         }
-        catch (Exception ex)
+        catch (LabelPrinterUnavailableException ex)
         {
             PrinterOfflineTotal.Add(1);
             _logger.LogWarning(
                 ex,
-                "Printer offline, queuing print job for type {LabelType}",
+                "Printer offline, generating PDF fallback for type {LabelType}",
                 normalizedLabelType);
 
             var payload = new LabelPrintJobPayload(
                 Guid.NewGuid(),
                 normalizedLabelType,
                 new Dictionary<string, string>(normalizedData, StringComparer.OrdinalIgnoreCase));
+            var pdfUrl = await CreatePdfFallbackAsync(payload, zpl, cancellationToken);
 
-            try
-            {
-                _backgroundJobs.Schedule<LabelPrintOrchestrator>(
-                    x => x.ProcessQueuedAsync(payload, 1),
-                    TimeSpan.FromMinutes(1));
+            LabelPrintsTotal.Add(
+                1,
+                new KeyValuePair<string, object?>("label_type", normalizedLabelType),
+                new KeyValuePair<string, object?>("status", "PDF_FALLBACK"));
+            LabelPrintDurationMs.Record(Stopwatch.GetElapsedTime(startedAt).TotalMilliseconds);
 
-                LabelPrintsTotal.Add(
-                    1,
-                    new KeyValuePair<string, object?>("label_type", normalizedLabelType),
-                    new KeyValuePair<string, object?>("status", "QUEUED"));
-                LabelPrintDurationMs.Record(Stopwatch.GetElapsedTime(startedAt).TotalMilliseconds);
-
-                return new LabelPrintResult("QUEUED");
-            }
-            catch (Exception queueEx)
-            {
-                _logger.LogError(queueEx, "Failed to enqueue print job; generating PDF fallback.");
-                var pdfUrl = await CreatePdfFallbackAsync(payload, zpl, cancellationToken);
-
-                LabelPrintsTotal.Add(
-                    1,
-                    new KeyValuePair<string, object?>("label_type", normalizedLabelType),
-                    new KeyValuePair<string, object?>("status", "PDF_FALLBACK"));
-                LabelPrintDurationMs.Record(Stopwatch.GetElapsedTime(startedAt).TotalMilliseconds);
-
-                return new LabelPrintResult("PDF_FALLBACK", pdfUrl);
-            }
+            var message = $"Printer offline after {ex.Attempts} retries. Download PDF: {pdfUrl}";
+            return new LabelPrintResult("PDF_FALLBACK", pdfUrl, message);
         }
     }
 

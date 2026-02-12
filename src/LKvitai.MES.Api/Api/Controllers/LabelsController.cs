@@ -44,6 +44,14 @@ public sealed class LabelsController : ControllerBase
                 data,
                 cancellationToken);
 
+            if (string.Equals(result.Status, "PDF_FALLBACK", StringComparison.OrdinalIgnoreCase))
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, new PrintLabelResponse(
+                    "FAILED",
+                    result.PdfUrl,
+                    result.Message));
+            }
+
             return Ok(new PrintLabelResponse(result.Status, result.PdfUrl));
         }
         catch (InvalidOperationException ex)
@@ -199,7 +207,8 @@ public sealed class LabelsController : ControllerBase
 
     public sealed record PrintLabelResponse(
         string Status,
-        string? PdfUrl);
+        string? PdfUrl,
+        string? Message = null);
 
     public sealed record LabelTemplateResponse(
         string TemplateType,
