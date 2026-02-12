@@ -59,3 +59,33 @@ public sealed record TestAgnumConnectionResponseDto
     public bool Success { get; init; }
     public string Message { get; init; } = string.Empty;
 }
+
+public sealed record AgnumReconciliationLineDto
+{
+    public string AccountCode { get; init; } = string.Empty;
+    public string Sku { get; init; } = string.Empty;
+    public string ItemName { get; init; } = string.Empty;
+    public decimal WarehouseQty { get; init; }
+    public decimal WarehouseCost { get; init; }
+    public decimal WarehouseValue { get; init; }
+    public decimal AgnumBalance { get; init; }
+    public decimal Variance { get; init; }
+    public decimal VariancePercent { get; init; }
+}
+
+public sealed record AgnumReconciliationSummaryDto
+{
+    public decimal TotalVariance { get; init; }
+    public int ItemsWithVariance { get; init; }
+    public string? LargestVarianceSku { get; init; }
+    public decimal LargestVarianceAmount { get; init; }
+}
+
+public sealed record AgnumReconciliationReportDto
+{
+    public Guid ReportId { get; init; }
+    public string Date { get; init; } = string.Empty;
+    public DateTimeOffset GeneratedAt { get; init; }
+    public IReadOnlyList<AgnumReconciliationLineDto> Lines { get; init; } = Array.Empty<AgnumReconciliationLineDto>();
+    public AgnumReconciliationSummaryDto Summary { get; init; } = new();
+}

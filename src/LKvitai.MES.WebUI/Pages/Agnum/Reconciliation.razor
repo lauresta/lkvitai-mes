@@ -1,0 +1,286 @@
+@page "/warehouse/agnum/reconcile"
+@using System.Globalization
+@using System.Text
+@using LKvitai.MES.WebUI.Infrastructure
+@using LKvitai.MES.WebUI.Models
+@inject AgnumClient AgnumClient
+@inject IJSRuntime JS
+@inject ToastService ToastService
+
+<PageTitle>Agnum Reconciliation</PageTitle>
+
+<h1>Agnum Reconciliation Report</h1>
+
+<div class="card shadow-sm position-relative">
+    <div class="card-body">
+        <div class="row g-3 align-items-end">
+            <div class="col-12 col-md-3">
+                <label class="form-label">Date</label>
+                <InputDate class="form-control" @bind-Value="_reportDate" />
+            </div>
+            <div class="col-12 col-md-5">
+                <label class="form-label">Agnum Balance CSV</label>
+                <InputFile OnChange="HandleFileChange" accept=".csv,text/csv" />
+            </div>
+            <div class="col-12 col-md-4 d-flex gap-2">
+                <button class="btn btn-primary" @onclick="GenerateAsync" disabled="@(_isLoading || _selectedFile is null)">
+                    Generate Report
+                </button>
+                <button class="btn btn-outline-secondary" @onclick="ApplyFiltersAsync" disabled="@(_isLoading || _report is null)">
+                    Apply Filters
+                </button>
+                <button class="btn btn-outline-success ms-auto" @onclick="ExportCsvAsync" disabled="@(_report is null || _report.Lines.Count == 0)">
+                    Export CSV
+                </button>
+            </div>
+        </div>
+
+        <div class="row g-3 mt-1">
+            <div class="col-12 col-md-4">
+                <label class="form-label">Account Code</label>
+                <InputText class="form-control" @bind-Value="_accountCodeFilter" />
+            </div>
+            <div class="col-12 col-md-4">
+                <label class="form-label">Variance Threshold Amount ($)</label>
+                <InputNumber class="form-control" @bind-Value="_varianceThresholdAmount" />
+            </div>
+            <div class="col-12 col-md-4">
+                <label class="form-label">Variance Threshold Percent (%)</label>
+                <InputNumber class="form-control" @bind-Value="_varianceThresholdPercent" />
+            </div>
+        </div>
+
+        @if (_apiError is not null)
+        {
+            <div class="alert alert-danger mt-3">@BuildErrorMessage(_apiError!)</div>
+        }
+    </div>
+</div>
+
+@if (_isLoading)
+{
+    <div class="mt-3">
+        <LoadingSpinner IsLoading="true" />
+    </div>
+}
+else if (_report is null)
+{
+    <div class="alert alert-light border mt-3">
+        No reconciliation report generated. Upload Agnum balance and click Generate.
+    </div>
+}
+else
+{
+    <div class="row g-3 mt-1">
+        <div class="col-12 col-md-4">
+            <div class="card border-0 bg-light">
+                <div class="card-body">
+                    <h6 class="text-muted mb-1">Total Variance</h6>
+                    <div class="fs-4 fw-semibold">@_report.Summary.TotalVariance.ToString("0.00", CultureInfo.InvariantCulture)</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-4">
+            <div class="card border-0 bg-light">
+                <div class="card-body">
+                    <h6 class="text-muted mb-1">Items With Variance</h6>
+                    <div class="fs-4 fw-semibold">@_report.Summary.ItemsWithVariance</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-4">
+            <div class="card border-0 bg-light">
+                <div class="card-body">
+                    <h6 class="text-muted mb-1">Largest Variance</h6>
+                    <div class="fw-semibold">
+                        @(_report.Summary.LargestVarianceSku ?? "-")
+                        (@_report.Summary.LargestVarianceAmount.ToString("0.00", CultureInfo.InvariantCulture))
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (_report.Lines.Count == 0)
+    {
+        <div class="alert alert-info mt-3">No rows match current filters.</div>
+    }
+    else
+    {
+        <div class="table-responsive mt-3">
+            <table class="table table-sm table-striped align-middle">
+                <thead>
+                <tr>
+                    <th>Account</th>
+                    <th>SKU</th>
+                    <th>Item Name</th>
+                    <th class="text-end">Warehouse Qty</th>
+                    <th class="text-end">Warehouse Cost</th>
+                    <th class="text-end">Warehouse Value</th>
+                    <th class="text-end">Agnum Balance</th>
+                    <th class="text-end">Variance</th>
+                    <th class="text-end">Variance %</th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (var row in _report.Lines)
+                {
+                    <tr>
+                        <td>@row.AccountCode</td>
+                        <td>@row.Sku</td>
+                        <td>@row.ItemName</td>
+                        <td class="text-end">@row.WarehouseQty.ToString("0.###", CultureInfo.InvariantCulture)</td>
+                        <td class="text-end">@row.WarehouseCost.ToString("0.####", CultureInfo.InvariantCulture)</td>
+                        <td class="text-end">@row.WarehouseValue.ToString("0.00", CultureInfo.InvariantCulture)</td>
+                        <td class="text-end">@row.AgnumBalance.ToString("0.00", CultureInfo.InvariantCulture)</td>
+                        <td class="@GetVarianceClass(row.Variance)">@row.Variance.ToString("0.00", CultureInfo.InvariantCulture)</td>
+                        <td class="text-end">@row.VariancePercent.ToString("0.00", CultureInfo.InvariantCulture)</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    }
+}
+
+@code {
+    private const long MaxCsvBytes = 10 * 1024 * 1024;
+
+    private DateOnly _reportDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-1));
+    private IBrowserFile? _selectedFile;
+    private AgnumReconciliationReportDto? _report;
+    private ApiException? _apiError;
+    private bool _isLoading;
+    private string? _accountCodeFilter;
+    private decimal? _varianceThresholdAmount;
+    private decimal? _varianceThresholdPercent;
+
+    private void HandleFileChange(InputFileChangeEventArgs args)
+    {
+        _selectedFile = args.File;
+    }
+
+    private async Task GenerateAsync()
+    {
+        if (_selectedFile is null)
+        {
+            ToastService.ShowError("Agnum balance CSV file is required.");
+            return;
+        }
+
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            await using var stream = _selectedFile.OpenReadStream(MaxCsvBytes);
+            _report = await AgnumClient.GenerateReconciliationAsync(
+                _reportDate,
+                _selectedFile.Name,
+                stream,
+                _accountCodeFilter,
+                _varianceThresholdAmount,
+                _varianceThresholdPercent);
+
+            ToastService.ShowSuccess($"Reconciliation report generated: {_report.Lines.Count} rows.");
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError(ex.Message);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task ApplyFiltersAsync()
+    {
+        if (_report is null)
+        {
+            return;
+        }
+
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            _report = await AgnumClient.GetReconciliationReportAsync(
+                _report.ReportId,
+                _accountCodeFilter,
+                _varianceThresholdAmount,
+                _varianceThresholdPercent);
+
+            ToastService.ShowSuccess("Reconciliation filters applied.");
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task ExportCsvAsync()
+    {
+        if (_report is null || _report.Lines.Count == 0)
+        {
+            return;
+        }
+
+        var builder = new StringBuilder();
+        builder.AppendLine("AccountCode,SKU,ItemName,WarehouseQty,WarehouseCost,WarehouseValue,AgnumBalance,Variance,VariancePercent");
+        foreach (var row in _report.Lines)
+        {
+            builder.AppendLine(string.Join(",",
+                Csv(row.AccountCode),
+                Csv(row.Sku),
+                Csv(row.ItemName),
+                Csv(row.WarehouseQty.ToString("0.###", CultureInfo.InvariantCulture)),
+                Csv(row.WarehouseCost.ToString("0.####", CultureInfo.InvariantCulture)),
+                Csv(row.WarehouseValue.ToString("0.00", CultureInfo.InvariantCulture)),
+                Csv(row.AgnumBalance.ToString("0.00", CultureInfo.InvariantCulture)),
+                Csv(row.Variance.ToString("0.00", CultureInfo.InvariantCulture)),
+                Csv(row.VariancePercent.ToString("0.00", CultureInfo.InvariantCulture))));
+        }
+
+        await JS.InvokeVoidAsync(
+            "csvExport.download",
+            $"agnum-reconciliation-{_reportDate:yyyyMMdd}.csv",
+            builder.ToString());
+    }
+
+    private static string Csv(string? value)
+    {
+        var normalized = value ?? string.Empty;
+        if (!normalized.Contains(',') && !normalized.Contains('"') && !normalized.Contains('\n'))
+        {
+            return normalized;
+        }
+
+        return string.Concat("\"", normalized.Replace("\"", "\"\"", StringComparison.Ordinal), "\"");
+    }
+
+    private static string GetVarianceClass(decimal variance)
+    {
+        return variance >= 0m
+            ? "text-end text-success"
+            : "text-end text-danger";
+    }
+
+    private static string BuildErrorMessage(ApiException ex)
+    {
+        return ex.ProblemDetails?.Detail
+               ?? ex.ProblemDetails?.Title
+               ?? ex.Message;
+    }
+}

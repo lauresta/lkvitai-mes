@@ -147,6 +147,8 @@ builder.Services.AddScoped<IAvailableStockQuantityResolver, MartenAvailableStock
 builder.Services.AddScoped<IAgnumSecretProtector, AgnumDataProtector>();
 builder.Services.AddScoped<IAgnumExportOrchestrator, AgnumExportOrchestrator>();
 builder.Services.AddScoped<AgnumExportRecurringJob>();
+builder.Services.AddSingleton<IAgnumReconciliationReportStore, InMemoryAgnumReconciliationReportStore>();
+builder.Services.AddScoped<IAgnumReconciliationService, AgnumReconciliationService>();
 builder.Services.AddScoped<ILabelPrinterClient, TcpLabelPrinterClient>();
 builder.Services.AddScoped<ILabelPrintOrchestrator, LabelPrintOrchestrator>();
 builder.Services.AddScoped<LabelPrintOrchestrator>();

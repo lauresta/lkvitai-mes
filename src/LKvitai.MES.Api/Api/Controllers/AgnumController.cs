@@ -20,19 +20,25 @@ public sealed class AgnumController : ControllerBase
     private readonly IRecurringJobManager _recurringJobManager;
     private readonly IAgnumSecretProtector _secretProtector;
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly IAgnumReconciliationService _agnumReconciliationService;
+    private readonly IAgnumReconciliationReportStore _agnumReconciliationReportStore;
 
     public AgnumController(
         WarehouseDbContext dbContext,
         AgnumExportRecurringJob agnumExportRecurringJob,
         IRecurringJobManager recurringJobManager,
         IAgnumSecretProtector secretProtector,
-        IHttpClientFactory httpClientFactory)
+        IHttpClientFactory httpClientFactory,
+        IAgnumReconciliationService agnumReconciliationService,
+        IAgnumReconciliationReportStore agnumReconciliationReportStore)
     {
         _dbContext = dbContext;
         _agnumExportRecurringJob = agnumExportRecurringJob;
         _recurringJobManager = recurringJobManager;
         _secretProtector = secretProtector;
         _httpClientFactory = httpClientFactory;
+        _agnumReconciliationService = agnumReconciliationService;
+        _agnumReconciliationReportStore = agnumReconciliationReportStore;
     }
 
     [HttpGet("config")]
@@ -338,6 +344,94 @@ public sealed class AgnumController : ControllerBase
             history.Trigger));
     }
 
+    [HttpPost("reconcile")]
+    [Authorize(Policy = WarehousePolicies.InventoryAccountantOrManager)]
+    [RequestSizeLimit(10_000_000)]
+    public async Task<IActionResult> ReconcileAsync(
+        [FromForm] ReconcileAgnumRequest? request,
+        CancellationToken cancellationToken = default)
+    {
+        if (request is null)
+        {
+            return ValidationFailure("Request body is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Date) ||
+            !DateOnly.TryParse(request.Date, out var reportDate))
+        {
+            return ValidationFailure("Date is required and must be in yyyy-MM-dd format.");
+        }
+
+        if (request.AgnumBalanceCsv is null || request.AgnumBalanceCsv.Length == 0)
+        {
+            return ValidationFailure("Agnum balance CSV upload is required.");
+        }
+
+        try
+        {
+            await using var stream = request.AgnumBalanceCsv.OpenReadStream();
+            var report = await _agnumReconciliationService.GenerateAsync(reportDate, stream, cancellationToken);
+            var filtered = _agnumReconciliationService.ApplyFilters(
+                report,
+                request.AccountCode,
+                request.VarianceThresholdAmount,
+                request.VarianceThresholdPercent);
+
+            _agnumReconciliationReportStore.Save(report);
+
+            return Ok(ToReconciliationResponse(filtered));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return ValidationFailure(ex.Message);
+        }
+    }
+
+    [HttpGet("reconcile/{reportId:guid}")]
+    [Authorize(Policy = WarehousePolicies.InventoryAccountantOrManager)]
+    public IActionResult GetReconcileReportAsync(
+        Guid reportId,
+        [FromQuery] string? accountCode,
+        [FromQuery] decimal? varianceThresholdAmount,
+        [FromQuery] decimal? varianceThresholdPercent)
+    {
+        if (!_agnumReconciliationReportStore.TryGet(reportId, out var report) || report is null)
+        {
+            return Failure(Result.Fail(DomainErrorCodes.NotFound, $"Reconciliation report '{reportId}' not found."));
+        }
+
+        var filtered = _agnumReconciliationService.ApplyFilters(
+            report,
+            accountCode,
+            varianceThresholdAmount,
+            varianceThresholdPercent);
+
+        return Ok(ToReconciliationResponse(filtered));
+    }
+
+    private static AgnumReconciliationResponse ToReconciliationResponse(AgnumReconciliationReport report)
+    {
+        return new AgnumReconciliationResponse(
+            report.ReportId,
+            report.ReportDate.ToString("yyyy-MM-dd"),
+            report.GeneratedAt,
+            report.Lines.Select(x => new AgnumReconciliationLineResponse(
+                x.AccountCode,
+                x.Sku,
+                x.ItemName,
+                x.WarehouseQty,
+                x.WarehouseCost,
+                x.WarehouseValue,
+                x.AgnumBalance,
+                x.Variance,
+                x.VariancePercent)).ToList(),
+            new AgnumReconciliationSummaryResponse(
+                report.Summary.TotalVariance,
+                report.Summary.ItemsWithVariance,
+                report.Summary.LargestVarianceSku,
+                report.Summary.LargestVarianceAmount));
+    }
+
     private ObjectResult Failure(Result result)
     {
         var problemDetails = ResultProblemDetailsMapper.ToProblemDetails(result, HttpContext);
@@ -425,4 +519,35 @@ public sealed class AgnumController : ControllerBase
         string? ErrorMessage,
         int RetryCount,
         string Trigger);
+
+    public sealed record ReconcileAgnumRequest(
+        string Date,
+        IFormFile? AgnumBalanceCsv,
+        string? AccountCode,
+        decimal? VarianceThresholdAmount,
+        decimal? VarianceThresholdPercent);
+
+    public sealed record AgnumReconciliationLineResponse(
+        string AccountCode,
+        string Sku,
+        string ItemName,
+        decimal WarehouseQty,
+        decimal WarehouseCost,
+        decimal WarehouseValue,
+        decimal AgnumBalance,
+        decimal Variance,
+        decimal VariancePercent);
+
+    public sealed record AgnumReconciliationSummaryResponse(
+        decimal TotalVariance,
+        int ItemsWithVariance,
+        string? LargestVarianceSku,
+        decimal LargestVarianceAmount);
+
+    public sealed record AgnumReconciliationResponse(
+        Guid ReportId,
+        string Date,
+        DateTimeOffset GeneratedAt,
+        IReadOnlyList<AgnumReconciliationLineResponse> Lines,
+        AgnumReconciliationSummaryResponse Summary);
 }

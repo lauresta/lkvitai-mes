@@ -623,3 +623,9 @@
   Evidence: Task validation commands requiring runtime API (`POST /api/auth/dev-token`, `POST /api/warehouse/v1/agnum/export`, `GET /api/warehouse/v1/agnum/history`) could not run because `dotnet run --no-launch-profile --project src/LKvitai.MES.Api /p:UseAppHost=false` crashed at startup with `Marten.Exceptions.InvalidDocumentException` for `LKvitai.MES.Domain.Aggregates.ItemValuation` (stack points to `src/LKvitai.MES.Api/Program.cs:225`).
   Impact: End-to-end manual validation for export trigger/history endpoints is blocked in this environment.
   Proposed minimal fix: Fix Marten document mapping for `ItemValuation` so API can start, then re-run the exact PRD-1607 curl validation sequence.
+- Timestamp: 2026-02-12T21:24:02Z
+  TaskId: PRD-1608
+  Type: TEST-GAP
+  Evidence: WebUI startup verified via `DOTNET_ENVIRONMENT=Development ASPNETCORE_URLS=http://127.0.0.1:5001 dotnet run --no-launch-profile --project src/LKvitai.MES.WebUI /p:UseAppHost=false`, but API runtime required for reconciliation upload (`POST /api/warehouse/v1/agnum/reconcile`) failed to start due `Marten.Exceptions.InvalidDocumentException` for `LKvitai.MES.Domain.Aggregates.ItemValuation` (`src/LKvitai.MES.Api/Program.cs:227`).
+  Impact: End-to-end reconciliation UI/API workflow (upload CSV, generate report, verify variance numbers in browser) could not be fully executed in this environment.
+  Proposed minimal fix: Resolve Marten document identity mapping for `ItemValuation`, start API successfully, then run manual reconciliation scenario on `/warehouse/agnum/reconcile`.
