@@ -3,6 +3,7 @@
 @inject OutboundClient OutboundClient
 @inject NavigationManager NavigationManager
 @inject ToastService ToastService
+@inject IJSRuntime JS
 @using LKvitai.MES.WebUI.Infrastructure
 
 <PageTitle>Outbound Orders - LKvitai.MES</PageTitle>
@@ -66,6 +67,11 @@
             <table class="table table-hover align-middle">
                 <thead>
                     <tr>
+                        <th style="width: 40px;">
+                            <input type="checkbox"
+                                   checked="@AreAllCurrentRowsSelected"
+                                   @onchange="ToggleSelectAllCurrentPage" />
+                        </th>
                         <th>Order Number</th>
                         <th>Customer</th>
                         <th>Status</th>
@@ -78,7 +84,7 @@
                     @if (_orders.Count == 0)
                     {
                         <tr>
-                            <td colspan="6" class="text-center text-muted py-4">No outbound orders found.</td>
+                            <td colspan="7" class="text-center text-muted py-4">No outbound orders found.</td>
                         </tr>
                     }
                     else
@@ -86,6 +92,11 @@
                         @foreach (var order in CurrentPageRows)
                         {
                             <tr>
+                                <td>
+                                    <input type="checkbox"
+                                           checked="@_selectedOrderIds.Contains(order.Id)"
+                                           @onchange="(args) => ToggleOrderSelection(order.Id, args)" />
+                                </td>
                                 <td>
                                     <a href="@($"/warehouse/outbound/orders/{order.Id}")">@order.OrderNumber</a>
                                 </td>
@@ -115,6 +126,18 @@
             </table>
         </div>
 
+        @if (_selectedOrderIds.Count > 0)
+        {
+            <div class="d-flex align-items-center justify-content-between border rounded px-3 py-2 mb-2">
+                <small class="text-muted">@_selectedOrderIds.Count order(s) selected</small>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-danger" @onclick="BulkCancelAsync" disabled="_isLoading">Bulk Cancel</button>
+                    <button class="btn btn-sm btn-outline-secondary" @onclick="ExportSelectionCsvAsync">Export CSV</button>
+                    <button class="btn btn-sm btn-light" @onclick="ClearSelection">Clear</button>
+                </div>
+            </div>
+        }
+
         @if (TotalPages > 1)
         {
             <div class="d-flex justify-content-between align-items-center mt-3">
@@ -132,6 +155,7 @@
     private readonly List<OutboundOrderSummaryDto> _orders = [];
     private bool _isLoading;
     private ApiException? _apiError;
+    private readonly HashSet<Guid> _selectedOrderIds = [];
     private string _statusFilter = string.Empty;
     private string _customerFilter = string.Empty;
     private DateTime? _dateFrom;
@@ -201,6 +225,7 @@
             _orders.Clear();
             _orders.AddRange(rows.OrderByDescending(x => x.OrderDate));
             _page = Math.Min(Math.Max(1, _page), TotalPages);
+            _selectedOrderIds.RemoveWhere(x => _orders.All(order => order.Id != x));
         }
         catch (ApiException ex)
         {
@@ -229,6 +254,102 @@
     private void OpenPacking(Guid orderId)
     {
         NavigationManager.NavigateTo($"/warehouse/outbound/pack/{orderId}");
+    }
+
+    private bool AreAllCurrentRowsSelected =>
+        CurrentPageRows.Any() && CurrentPageRows.All(x => _selectedOrderIds.Contains(x.Id));
+
+    private void ToggleSelectAllCurrentPage(ChangeEventArgs args)
+    {
+        var shouldSelect = ParseCheckboxValue(args.Value);
+        foreach (var order in CurrentPageRows)
+        {
+            if (shouldSelect)
+            {
+                _selectedOrderIds.Add(order.Id);
+            }
+            else
+            {
+                _selectedOrderIds.Remove(order.Id);
+            }
+        }
+    }
+
+    private void ToggleOrderSelection(Guid orderId, ChangeEventArgs args)
+    {
+        var shouldSelect = ParseCheckboxValue(args.Value);
+        if (shouldSelect)
+        {
+            _selectedOrderIds.Add(orderId);
+        }
+        else
+        {
+            _selectedOrderIds.Remove(orderId);
+        }
+    }
+
+    private async Task BulkCancelAsync()
+    {
+        if (_selectedOrderIds.Count == 0)
+        {
+            return;
+        }
+
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            var ids = _selectedOrderIds.ToArray();
+            foreach (var id in ids)
+            {
+                await OutboundClient.CancelSalesOrderAsync(id, "Bulk cancel");
+            }
+
+            ToastService.ShowSuccess($"Cancelled {ids.Length} order(s).");
+            _selectedOrderIds.Clear();
+            await ReloadAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task ExportSelectionCsvAsync()
+    {
+        var rows = _orders.Where(x => _selectedOrderIds.Contains(x.Id)).ToList();
+        if (rows.Count == 0)
+        {
+            return;
+        }
+
+        var builder = new System.Text.StringBuilder();
+        builder.AppendLine("OrderNumber,Customer,Status,ItemCount,RequestedShipDate");
+        foreach (var row in rows)
+        {
+            builder.AppendLine(string.Join(',',
+                EscapeCsv(row.OrderNumber),
+                EscapeCsv(row.CustomerName ?? string.Empty),
+                EscapeCsv(row.Status),
+                row.ItemCount,
+                EscapeCsv(FormatDate(row.RequestedShipDate))));
+        }
+
+        await JS.InvokeVoidAsync(
+            "csvExport.download",
+            $"outbound-orders-selected-{DateTime.UtcNow:yyyyMMddHHmmss}.csv",
+            builder.ToString());
+    }
+
+    private void ClearSelection()
+    {
+        _selectedOrderIds.Clear();
     }
 
     private static DateTimeOffset? ParseDate(DateTime? value, bool startOfDay)
@@ -272,6 +393,27 @@
             "CANCELLED" => "bg-danger",
             _ => "bg-light text-dark"
         };
+
+    private static string EscapeCsv(string value)
+    {
+        if (value.Contains(',') || value.Contains('\"') || value.Contains('\n'))
+        {
+            var escaped = value.Replace("\"", "\"\"");
+            return "\"" + escaped + "\"";
+        }
+
+        return value;
+    }
+
+    private static bool ParseCheckboxValue(object? value)
+    {
+        return value switch
+        {
+            bool boolValue => boolValue,
+            string stringValue when bool.TryParse(stringValue, out var parsed) => parsed,
+            _ => false
+        };
+    }
 
     private IEnumerable<OutboundOrderSummaryDto> CurrentPageRows
         => _orders

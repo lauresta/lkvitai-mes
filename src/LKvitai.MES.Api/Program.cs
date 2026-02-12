@@ -1,5 +1,6 @@
 using LKvitai.MES.Api.Configuration;
 using LKvitai.MES.Api.ErrorHandling;
+using LKvitai.MES.Api.Middleware;
 using LKvitai.MES.Api.Security;
 using LKvitai.MES.Api.Services;
 using LKvitai.MES.Application.EventVersioning;
@@ -47,6 +48,8 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddDataProtection();
 builder.Services.AddHttpClient("AgnumExportApi");
 builder.Services.AddHttpClient("FedExApi");
+builder.Services.Configure<DevAuthOptions>(builder.Configuration.GetSection(DevAuthOptions.SectionName));
+builder.Services.AddSingleton<IDevAuthService, DevAuthService>();
 builder.Services.AddScoped<ICurrentUserService, HttpContextCurrentUserService>();
 builder.Services
     .AddAuthentication(WarehouseAuthenticationDefaults.Scheme)
@@ -148,6 +151,7 @@ builder.Services.AddScoped<ILabelPrintOrchestrator, LabelPrintOrchestrator>();
 builder.Services.AddScoped<LabelPrintOrchestrator>();
 builder.Services.AddScoped<ITransferStockAvailabilityService, MartenTransferStockAvailabilityService>();
 builder.Services.AddScoped<ICycleCountQuantityResolver, MartenCycleCountQuantityResolver>();
+builder.Services.AddSingleton<IAdvancedWarehouseStore, AdvancedWarehouseStore>();
 
 var warehouseConnectionString =
     builder.Configuration.GetConnectionString("WarehouseDb")
@@ -181,10 +185,24 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+
+    app.MapPost(
+            "/api/auth/dev-token",
+            (DevTokenRequest request, IDevAuthService authService) =>
+            {
+                var response = authService.GenerateToken(request);
+                return response is null
+                    ? Results.Unauthorized()
+                    : Results.Ok(response);
+            })
+        .AllowAnonymous();
+
+    app.Logger.LogWarning("Dev auth enabled - DO NOT USE IN PRODUCTION");
 }
 
 app.UseHttpsRedirection();
 app.UseMiddleware<CorrelationIdMiddleware>();
+app.UseMiddleware<ApiRateLimitingMiddleware>();
 app.UseMiddleware<ProblemDetailsExceptionMiddleware>();
 app.UseMiddleware<IdempotencyReplayHeaderMiddleware>();
 app.UseAuthentication();

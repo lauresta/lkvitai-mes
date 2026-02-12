@@ -45,6 +45,24 @@ public class HealthControllerIntegrationTests
     }
 
     [Fact]
+    public async Task RootHealthEndpoint_Anonymous_Returns200()
+    {
+        using var server = BuildServer(new ProjectionHealthSnapshot(
+            "Healthy",
+            "Healthy",
+            "Healthy",
+            "Healthy",
+            DateTimeOffset.UtcNow,
+            new Dictionary<string, ProjectionHealthItem>()));
+
+        var client = server.CreateClient();
+
+        var response = await client.GetAsync("/health");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
     public async Task HealthEndpoint_WhenProjectionLagUnhealthy_Returns503()
     {
         using var server = BuildServer(new ProjectionHealthSnapshot(

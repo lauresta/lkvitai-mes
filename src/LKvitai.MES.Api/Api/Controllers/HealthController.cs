@@ -1,4 +1,3 @@
-using LKvitai.MES.Api.Security;
 using LKvitai.MES.Application.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -6,7 +5,6 @@ using Microsoft.AspNetCore.Mvc;
 namespace LKvitai.MES.Api.Controllers;
 
 [ApiController]
-[Authorize(Policy = WarehousePolicies.OperatorOrAbove)]
 [Route("api/warehouse/v1/health")]
 public sealed class HealthController : ControllerBase
 {
@@ -17,8 +15,21 @@ public sealed class HealthController : ControllerBase
         _projectionHealthService = projectionHealthService;
     }
 
+    [AllowAnonymous]
     [HttpGet]
     public async Task<IActionResult> GetAsync(CancellationToken cancellationToken = default)
+    {
+        return await BuildHealthResponseAsync(cancellationToken);
+    }
+
+    [AllowAnonymous]
+    [HttpGet("/health")]
+    public Task<IActionResult> GetRootHealthAsync(CancellationToken cancellationToken = default)
+    {
+        return BuildHealthResponseAsync(cancellationToken);
+    }
+
+    private async Task<IActionResult> BuildHealthResponseAsync(CancellationToken cancellationToken)
     {
         var snapshot = await _projectionHealthService.GetHealthAsync(cancellationToken);
 

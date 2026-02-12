@@ -1,0 +1,199 @@
+@page "/warehouse/rmas"
+@inject AdvancedWarehouseClient AdvancedClient
+@inject ToastService ToastService
+@using LKvitai.MES.WebUI.Infrastructure
+
+<PageTitle>RMAs - LKvitai.MES</PageTitle>
+
+<h3>Returns / RMA</h3>
+
+@if (_error is not null)
+{
+    <ErrorBanner Message="@_error.UserMessage"
+                 TraceId="@_error.TraceId"
+                 OnRetry="LoadAsync"
+                 OnDismiss="DismissError" />
+}
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <h5>Create RMA</h5>
+        <div class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">Sales Order Id</label>
+                <input class="form-control" @bind="_salesOrderIdInput" placeholder="GUID" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Item Id</label>
+                <input class="form-control" type="number" @bind="_itemId" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Qty</label>
+                <input class="form-control" type="number" step="0.01" @bind="_qty" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Reason</label>
+                <input class="form-control" @bind="_reason" placeholder="Damaged" />
+            </div>
+            <div class="col-md-12 mt-2">
+                <button class="btn btn-primary" @onclick="CreateAsync" disabled="_isBusy">Create RMA</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">RMA Queue</h5>
+            <button class="btn btn-outline-secondary btn-sm" @onclick="LoadAsync" disabled="_isBusy">Refresh</button>
+        </div>
+
+        @if (_rows.Count == 0)
+        {
+            <EmptyState Title="No RMAs"
+                        Message="Create an RMA for customer returns and disposition workflow."
+                        IconCss="bi bi-arrow-counterclockwise"
+                        OnAction="LoadAsync" />
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-sm align-middle">
+                    <thead>
+                        <tr>
+                            <th>RMA</th>
+                            <th>Status</th>
+                            <th>Reason</th>
+                            <th>Credit</th>
+                            <th>Updated By</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in _rows)
+                        {
+                            <tr>
+                                <td>@row.RmaNumber</td>
+                                <td><span class="badge @GetStatusClass(row.Status)">@row.Status</span></td>
+                                <td>@row.Reason</td>
+                                <td>@(row.CreditAmount?.ToString("0.00") ?? "-")</td>
+                                <td>@(row.UpdatedBy ?? row.CreatedBy)</td>
+                                <td class="d-flex gap-1">
+                                    @if (row.Status == "PendingReceipt")
+                                    {
+                                        <button class="btn btn-sm btn-outline-primary" @onclick="() => ReceiveAsync(row.Id)">Receive</button>
+                                    }
+                                    @if (row.Status is "Received" or "Inspected")
+                                    {
+                                        <button class="btn btn-sm btn-outline-success" @onclick='() => InspectAsync(row.Id, "RESTOCK")'>Restock</button>
+                                        <button class="btn btn-sm btn-outline-danger" @onclick='() => InspectAsync(row.Id, "SCRAP")'>Scrap</button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private readonly List<RmaDto> _rows = [];
+    private string _salesOrderIdInput = string.Empty;
+    private int _itemId = 1;
+    private decimal _qty = 1;
+    private string _reason = "Damaged";
+    private ApiException? _error;
+    private bool _isBusy;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        await ExecuteAsync(async () =>
+        {
+            var rows = await AdvancedClient.GetRmasAsync();
+            _rows.Clear();
+            _rows.AddRange(rows.OrderByDescending(x => x.CreatedAt));
+        });
+    }
+
+    private async Task CreateAsync()
+    {
+        if (!Guid.TryParse(_salesOrderIdInput, out var salesOrderId))
+        {
+            ToastService.ShowError("SalesOrderId must be a valid GUID.");
+            return;
+        }
+
+        await ExecuteAsync(async () =>
+        {
+            var payload = new RmaCreateDto(
+                salesOrderId,
+                _reason,
+                [new RmaLineCreateDto(_itemId, _qty, _reason.ToUpperInvariant())]);
+
+            await AdvancedClient.CreateRmaAsync(payload);
+            ToastService.ShowSuccess("RMA created.");
+            _salesOrderIdInput = string.Empty;
+            await LoadAsync();
+        });
+    }
+
+    private async Task ReceiveAsync(Guid id)
+    {
+        await ExecuteAsync(async () =>
+        {
+            await AdvancedClient.ReceiveRmaAsync(id);
+            await LoadAsync();
+        });
+    }
+
+    private async Task InspectAsync(Guid id, string disposition)
+    {
+        await ExecuteAsync(async () =>
+        {
+            await AdvancedClient.InspectRmaAsync(id, disposition, disposition == "RESTOCK" ? 0m : null);
+            await LoadAsync();
+        });
+    }
+
+    private async Task ExecuteAsync(Func<Task> action)
+    {
+        _isBusy = true;
+        _error = null;
+
+        try
+        {
+            await action();
+        }
+        catch (ApiException ex)
+        {
+            _error = ex;
+            ToastService.ShowError(ex.UserMessage);
+        }
+        finally
+        {
+            _isBusy = false;
+        }
+    }
+
+    private void DismissError()
+    {
+        _error = null;
+    }
+
+    private static string GetStatusClass(string status) => status switch
+    {
+        "Restocked" => "bg-success",
+        "Scrapped" => "bg-danger",
+        "Received" => "bg-info text-dark",
+        "Inspected" => "bg-primary",
+        _ => "bg-secondary"
+    };
+}

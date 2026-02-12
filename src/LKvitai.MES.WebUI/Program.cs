@@ -31,6 +31,7 @@ builder.Services.AddScoped<MasterDataAdminClient>();
 builder.Services.AddScoped<ReportsClient>();
 builder.Services.AddScoped<OutboundClient>();
 builder.Services.AddScoped<VisualizationClient>();
+builder.Services.AddScoped<AdvancedWarehouseClient>();
 builder.Services.AddScoped<ToastService>();
 
 var app = builder.Build();

@@ -47,7 +47,7 @@ public sealed class WarehouseAuthenticationHandler : AuthenticationHandler<Authe
             authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
         {
             var token = authHeader["Bearer ".Length..].Trim();
-            var segments = token.Split('|', 2, StringSplitOptions.TrimEntries);
+            var segments = token.Split('|', 3, StringSplitOptions.TrimEntries);
             if (segments.Length > 0)
             {
                 userId = segments[0];
@@ -56,6 +56,13 @@ public sealed class WarehouseAuthenticationHandler : AuthenticationHandler<Authe
             if (segments.Length > 1)
             {
                 rolesValue = segments[1];
+            }
+
+            if (segments.Length > 2 &&
+                long.TryParse(segments[2], out var expUnix) &&
+                DateTimeOffset.UtcNow > DateTimeOffset.FromUnixTimeSeconds(expUnix))
+            {
+                return Task.FromResult(AuthenticateResult.Fail("Token has expired."));
             }
         }
 

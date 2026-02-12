@@ -1,0 +1,128 @@
+@page "/analytics/fulfillment"
+@inject AdvancedWarehouseClient AdvancedClient
+@inject ToastService ToastService
+@using LKvitai.MES.WebUI.Infrastructure
+
+<PageTitle>Fulfillment KPIs - LKvitai.MES</PageTitle>
+
+<h3>Fulfillment KPIs</h3>
+
+@if (_error is not null)
+{
+    <ErrorBanner Message="@_error.UserMessage"
+                 TraceId="@_error.TraceId"
+                 OnRetry="LoadAsync"
+                 OnDismiss="DismissError" />
+}
+
+<div class="row g-3 mb-3">
+    <div class="col-md-3">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted">Total Orders</div>
+                <div class="display-6">@_kpi?.TotalOrders</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted">Shipped Orders</div>
+                <div class="display-6">@_kpi?.ShippedOrders</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted">On-Time Delivery</div>
+                <div class="display-6">@(_kpi?.OnTimePercent ?? 0)%</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted">Avg Pick Minutes</div>
+                <div class="display-6">@(_kpi?.AveragePickMinutes ?? 0)</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">14-Day Trend</h5>
+            <button class="btn btn-outline-secondary btn-sm" @onclick="LoadAsync" disabled="_isBusy">Refresh</button>
+        </div>
+
+        @if (_kpi is null || _kpi.Trend.Count == 0)
+        {
+            <EmptyState Title="No KPI trend"
+                        Message="No sales order trend data is available yet."
+                        IconCss="bi bi-graph-up"
+                        OnAction="LoadAsync" />
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Orders</th>
+                            <th>Shipped</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in _kpi.Trend)
+                        {
+                            <tr>
+                                <td>@row.Date.ToString("yyyy-MM-dd")</td>
+                                <td>@row.Orders</td>
+                                <td>@row.Shipped</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private FulfillmentKpiDto? _kpi;
+    private ApiException? _error;
+    private bool _isBusy;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _isBusy = true;
+        _error = null;
+
+        try
+        {
+            _kpi = await AdvancedClient.GetFulfillmentKpisAsync();
+        }
+        catch (ApiException ex)
+        {
+            _error = ex;
+            ToastService.ShowError(ex.UserMessage);
+        }
+        finally
+        {
+            _isBusy = false;
+        }
+    }
+
+    private void DismissError()
+    {
+        _error = null;
+    }
+}

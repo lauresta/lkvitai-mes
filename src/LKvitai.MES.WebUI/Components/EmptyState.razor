@@ -1,0 +1,21 @@
+<div class="text-center py-4">
+    <div class="mb-2">
+        <i class="@IconCss fs-2 text-muted"></i>
+    </div>
+    <h5 class="mb-2">@Title</h5>
+    <p class="text-muted mb-3">@Message</p>
+    @if (ShowAction)
+    {
+        <button class="btn btn-outline-primary" @onclick="OnAction">@ActionLabel</button>
+    }
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = "No data";
+    [Parameter] public string Message { get; set; } = "No records available.";
+    [Parameter] public string IconCss { get; set; } = "bi bi-inbox";
+    [Parameter] public string ActionLabel { get; set; } = "Refresh";
+    [Parameter] public EventCallback OnAction { get; set; }
+
+    private bool ShowAction => OnAction.HasDelegate;
+}

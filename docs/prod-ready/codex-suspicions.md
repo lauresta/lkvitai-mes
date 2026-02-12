@@ -368,3 +368,57 @@
   Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S2.md:2037, docs/prod-ready/prod-ready-tasks-PHASE15-S2.md:2046, src/LKvitai.MES.Domain/Entities/MasterDataEntities.cs:709
   Impact: Task model expresses cycle-count line LocationId and ItemId as GUIDs, while repository identity keys for locations and items are int.
   Proposed resolution: Keep cycle count foreign keys as int for schema compatibility and map API contracts to existing key types.
+- Timestamp: 2026-02-12T05:48:10Z
+  TaskId: PRD-1521
+  Type: INCONSISTENCY
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S3.md:86-124, src/LKvitai.MES.Api/Security/WarehouseAuthenticationHandler.cs:14-74
+  Impact: Spec mandates JWT issuance/validation, but the running API auth scheme is a custom header/bearer parser (`user|roles`) without JWT middleware. Replacing auth stack would risk broad RBAC regressions mid-sprint.
+  Proposed resolution: Implement `/api/auth/dev-token` on top of the existing auth scheme (dev-only token format with expiry) and document that it is compatibility token, not JWT.
+
+- Timestamp: 2026-02-12T05:48:10Z
+  TaskId: PRD-1581
+  Type: AMBIGUITY
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S6.md:170-214
+  Impact: Wave API examples use order IDs like `"order-001"` while existing sales-order identity type in codebase is `Guid`; strict contract is underspecified for real integration.
+  Proposed resolution: Keep API contract aligned to existing Guid identifiers and accept only Guid order IDs for wave operations.
+
+- Timestamp: 2026-02-12T05:48:10Z
+  TaskId: PRD-1588
+  Type: MISSING-INFO
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S6.md (QC attachments section), src has no configured blob provider
+  Impact: Photo upload requirement references Azure Blob/S3 but no storage provider/configuration contract is defined for Phase 1.5 runtime environments.
+  Proposed resolution: Implement local filesystem-backed attachment storage with stable file URLs and mark cloud blob adapter as follow-up.
+- Timestamp: 2026-02-12T06:06:02Z
+  TaskId: PRD-1521
+  Type: TEST-GAP
+  Evidence: Manual curl flow for `/api/auth/dev-token` + protected API endpoints was not executed against a live local API process in this run.
+  Impact: End-to-end runtime validation of token issuance and authenticated request flow remains unverified in this environment.
+  Proposed resolution: Start API in Development mode with reachable DB config and run documented curl checks from `docs/dev-auth-guide.md`.
+
+- Timestamp: 2026-02-12T06:06:02Z
+  TaskId: PRD-1541
+  Type: TEST-GAP
+  Evidence: `dotnet vstest` integration suite reports many tests skipped due environment prerequisites (dockerized infra/DB dependencies).
+  Impact: Full E2E inbound/outbound/stock workflow regression was not fully executed in this environment.
+  Proposed resolution: Run integration test suite in CI/local environment with Docker and required services enabled.
+
+- Timestamp: 2026-02-12T06:06:02Z
+  TaskId: PRD-1580
+  Type: TEST-GAP
+  Evidence: `k6 version` failed with `command not found: k6`.
+  Impact: Load/stress smoke script (`scripts/load/warehouse-load-smoke.js`) could not be executed in this environment.
+  Proposed resolution: Install k6 and run documented load command with `BASE_URL` and `TOKEN` variables.
+
+- Timestamp: 2026-02-12T06:06:02Z
+  TaskId: PRD-1583
+  Type: TEST-GAP
+  Evidence: Wave/cross-dock/RMA/analytics Blazor routes were implemented but no browser session is available in this CLI run for interactive verification.
+  Impact: Manual UX and operator interaction validation remains pending.
+  Proposed resolution: Launch `src/LKvitai.MES.WebUI` and execute route walkthrough for `/warehouse/waves`, `/warehouse/cross-dock`, `/warehouse/rmas`, `/analytics/fulfillment`, `/analytics/quality`.
+
+- Timestamp: 2026-02-12T06:06:02Z
+  TaskId: PRD-1598
+  Type: TEST-GAP
+  Evidence: Contract tests run against mocked/stubbed HTTP handlers only.
+  Impact: Real external endpoint compatibility (FedEx/Agnum live sandboxes) is not validated by this run.
+  Proposed resolution: Execute contract suite against sandbox endpoints with non-production credentials.

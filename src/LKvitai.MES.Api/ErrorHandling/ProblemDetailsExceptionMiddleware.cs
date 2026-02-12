@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using LKvitai.MES.Api.Security;
 
 namespace LKvitai.MES.Api.ErrorHandling;
 
@@ -23,7 +24,11 @@ public sealed class ProblemDetailsExceptionMiddleware
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unhandled exception while processing request {Path}", context.Request.Path);
+            _logger.LogError(
+                ex,
+                "Unhandled exception while processing request {Path}{Query}",
+                context.Request.Path,
+                SensitiveDataMasker.MaskText(context.Request.QueryString.Value));
 
             if (context.Response.HasStarted)
             {
