@@ -115,13 +115,7 @@ public class ProjectionRebuildService : IProjectionRebuildService
             await using var bootstrapSession = _documentStore.QuerySession();
             var bootstrapConnection = (NpgsqlConnection)(bootstrapSession.Connection
                 ?? throw new InvalidOperationException("Marten query session connection is unavailable."));
-            var connectionString = bootstrapConnection.ConnectionString;
-            if (string.IsNullOrWhiteSpace(connectionString))
-            {
-                throw new InvalidOperationException("Warehouse connection string is unavailable.");
-            }
-
-            await using var writeConnection = new NpgsqlConnection(connectionString);
+            await using var writeConnection = bootstrapConnection.CloneWith(bootstrapConnection.ConnectionString);
             await writeConnection.OpenAsync(cancellationToken);
 
             var tableName = projectionName switch
