@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using LKvitai.MES.WebUI.Infrastructure;
@@ -41,47 +42,30 @@ public class ProjectionsClient
 
         if (!response.IsSuccessStatusCode)
         {
+            if (response.StatusCode == HttpStatusCode.ServiceUnavailable)
+            {
+                try
+                {
+                    var degradedRows = ParseProjectionLagRows(body);
+                    if (degradedRows.Count > 0)
+                    {
+                        _logger?.LogWarning(
+                            "Warehouse health endpoint returned 503 with projection payload. Using lag details from response body.");
+                        return degradedRows;
+                    }
+                }
+                catch (JsonException)
+                {
+                    // Fall through to standard API error handling for malformed payloads.
+                }
+            }
+
             var problem = await ProblemDetailsParser.ParseAsync(response);
             LogFailure(response, problem);
             throw new ApiException(problem, (int)response.StatusCode);
         }
 
-        if (string.IsNullOrWhiteSpace(body))
-        {
-            return Array.Empty<ProjectionLagStatusDto>();
-        }
-
-        using var document = JsonDocument.Parse(body);
-        if (!document.RootElement.TryGetProperty("projectionStatus", out var projectionStatus) ||
-            projectionStatus.ValueKind != JsonValueKind.Object)
-        {
-            return Array.Empty<ProjectionLagStatusDto>();
-        }
-
-        var rows = new List<ProjectionLagStatusDto>();
-        foreach (var property in projectionStatus.EnumerateObject())
-        {
-            var row = property.Value;
-            rows.Add(new ProjectionLagStatusDto
-            {
-                ProjectionName = property.Name,
-                Status = row.TryGetProperty("status", out var statusValue) ? statusValue.GetString() ?? "Unknown" : "Unknown",
-                LagSeconds = row.TryGetProperty("lagSeconds", out var lagValue) && lagValue.ValueKind == JsonValueKind.Number
-                    ? lagValue.GetDouble()
-                    : null,
-                LagEvents = row.TryGetProperty("lagEvents", out var lagEventsValue) && lagEventsValue.ValueKind == JsonValueKind.Number
-                    ? lagEventsValue.GetInt64()
-                    : null,
-                LastUpdated = row.TryGetProperty("lastUpdated", out var lastUpdatedValue) && lastUpdatedValue.ValueKind == JsonValueKind.String
-                              && DateTimeOffset.TryParse(lastUpdatedValue.GetString(), out var parsed)
-                    ? parsed
-                    : null
-            });
-        }
-
-        return rows
-            .OrderBy(x => x.ProjectionName, StringComparer.OrdinalIgnoreCase)
-            .ToList();
+        return ParseProjectionLagRows(body);
     }
 
     private async Task<T> PostAsync<T>(string relativeUrl, object payload)
@@ -111,5 +95,75 @@ public class ProjectionsClient
             problem?.ErrorCode ?? "UNKNOWN",
             problem?.TraceId ?? "UNKNOWN",
             problem?.Detail ?? "n/a");
+    }
+
+    private static IReadOnlyList<ProjectionLagStatusDto> ParseProjectionLagRows(string body)
+    {
+        if (string.IsNullOrWhiteSpace(body))
+        {
+            return Array.Empty<ProjectionLagStatusDto>();
+        }
+
+        using var document = JsonDocument.Parse(body);
+        if (!TryGetPropertyIgnoreCase(document.RootElement, "projectionStatus", out var projectionStatus) ||
+            projectionStatus.ValueKind != JsonValueKind.Object)
+        {
+            return Array.Empty<ProjectionLagStatusDto>();
+        }
+
+        var rows = new List<ProjectionLagStatusDto>();
+        foreach (var property in projectionStatus.EnumerateObject())
+        {
+            var row = property.Value;
+            rows.Add(new ProjectionLagStatusDto
+            {
+                ProjectionName = property.Name,
+                Status = TryGetPropertyIgnoreCase(row, "status", out var statusValue)
+                         && statusValue.ValueKind == JsonValueKind.String
+                    ? statusValue.GetString() ?? "Unknown"
+                    : "Unknown",
+                LagSeconds = TryGetPropertyIgnoreCase(row, "lagSeconds", out var lagValue) && lagValue.ValueKind == JsonValueKind.Number
+                    ? lagValue.GetDouble()
+                    : null,
+                LagEvents = TryGetPropertyIgnoreCase(row, "lagEvents", out var lagEventsValue) && lagEventsValue.ValueKind == JsonValueKind.Number
+                    ? lagEventsValue.GetInt64()
+                    : null,
+                LastUpdated = TryGetPropertyIgnoreCase(row, "lastUpdated", out var lastUpdatedValue)
+                              && lastUpdatedValue.ValueKind == JsonValueKind.String
+                              && DateTimeOffset.TryParse(lastUpdatedValue.GetString(), out var parsed)
+                    ? parsed
+                    : null
+            });
+        }
+
+        return rows
+            .OrderBy(x => x.ProjectionName, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static bool TryGetPropertyIgnoreCase(JsonElement element, string propertyName, out JsonElement value)
+    {
+        if (element.ValueKind != JsonValueKind.Object)
+        {
+            value = default;
+            return false;
+        }
+
+        if (element.TryGetProperty(propertyName, out value))
+        {
+            return true;
+        }
+
+        foreach (var property in element.EnumerateObject())
+        {
+            if (string.Equals(property.Name, propertyName, StringComparison.OrdinalIgnoreCase))
+            {
+                value = property.Value;
+                return true;
+            }
+        }
+
+        value = default;
+        return false;
     }
 }

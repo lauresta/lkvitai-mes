@@ -17,7 +17,7 @@
 
     <div class="alert alert-warning">
         <div class="d-flex justify-content-between align-items-center">
-            <span>@BuildFriendlyHint(_apiError)</span>
+            <span>@BuildFriendlyHint(_apiError, _lastFailedOperation)</span>
             <button class="btn btn-sm btn-outline-secondary" @onclick="CopyErrorAsync">Copy Error</button>
         </div>
     </div>
@@ -26,7 +26,7 @@
 <div class="card shadow-sm mb-3">
     <div class="card-header d-flex justify-content-between align-items-center">
         <span>Projection Lag</span>
-        <button class="btn btn-sm btn-outline-secondary" @onclick="RefreshLagAsync">Refresh</button>
+        <button class="btn btn-sm btn-outline-secondary" @onclick="RefreshLagFromToolbarAsync">Refresh</button>
     </div>
     <div class="card-body">
         @if (_projectionLag.Count == 0)
@@ -170,13 +170,14 @@
     private bool _isBusy;
     private bool _showRebuildConfirm;
     private ApiException? _apiError;
+    private FailedOperation _lastFailedOperation = FailedOperation.RefreshLag;
     private RebuildResultDto? _rebuildResult;
     private VerifyResultDto? _verifyResult;
     private List<ProjectionLagStatusDto> _projectionLag = [];
 
     protected override async Task OnInitializedAsync()
     {
-        await RefreshLagAsync();
+        await RefreshLagAsync(clearErrorOnSuccess: true);
     }
 
     private void OnProjectionChanged(ChangeEventArgs args)
@@ -217,6 +218,7 @@
         catch (ApiException ex)
         {
             _apiError = ex;
+            _lastFailedOperation = FailedOperation.Rebuild;
             ToastService.ShowError(BuildErrorMessage(ex));
         }
         catch (Exception ex)
@@ -230,6 +232,7 @@
                     TraceId = Activity.Current?.Id
                 },
                 500);
+            _lastFailedOperation = FailedOperation.Rebuild;
             ToastService.ShowError(_apiError.UserMessage);
         }
         finally
@@ -259,6 +262,7 @@
         catch (ApiException ex)
         {
             _apiError = ex;
+            _lastFailedOperation = FailedOperation.Verify;
             ToastService.ShowError(BuildErrorMessage(ex));
         }
         catch (Exception ex)
@@ -272,6 +276,7 @@
                     TraceId = Activity.Current?.Id
                 },
                 500);
+            _lastFailedOperation = FailedOperation.Verify;
             ToastService.ShowError(_apiError.UserMessage);
         }
         finally
@@ -281,28 +286,44 @@
         }
     }
 
-    private async Task RefreshLagAsync()
+    private async Task RefreshLagFromToolbarAsync()
+    {
+        await RefreshLagAsync(clearErrorOnSuccess: true);
+    }
+
+    private async Task RefreshLagAsync(bool clearErrorOnSuccess = false)
     {
         try
         {
             var rows = await ProjectionsClient.GetProjectionLagAsync();
             _projectionLag = rows.ToList();
+
+            if (clearErrorOnSuccess && _lastFailedOperation == FailedOperation.RefreshLag)
+            {
+                _apiError = null;
+            }
         }
         catch (ApiException ex)
         {
             _apiError = ex;
+            _lastFailedOperation = FailedOperation.RefreshLag;
         }
     }
 
     private async Task RetryAsync()
     {
-        if (_rebuildResult is not null)
+        switch (_lastFailedOperation)
         {
-            await ConfirmRebuildAsync();
-            return;
+            case FailedOperation.Rebuild:
+                await ConfirmRebuildAsync();
+                return;
+            case FailedOperation.Verify:
+                await VerifyAsync();
+                return;
+            default:
+                await RefreshLagAsync(clearErrorOnSuccess: true);
+                return;
         }
-
-        await VerifyAsync();
     }
 
     private async Task CopyErrorAsync()
@@ -319,8 +340,13 @@
 
     private void DismissError() => _apiError = null;
 
-    private static string BuildFriendlyHint(ApiException error)
+    private static string BuildFriendlyHint(ApiException error, FailedOperation operation)
     {
+        if (operation == FailedOperation.RefreshLag)
+        {
+            return "Projection lag status could not be refreshed. Retry and check health endpoint availability.";
+        }
+
         var text = BuildErrorMessage(error);
         if (text.Contains("42P01", StringComparison.OrdinalIgnoreCase) ||
             text.Contains("schema", StringComparison.OrdinalIgnoreCase) ||
@@ -348,5 +374,12 @@
         }
 
         return error.UserMessage;
+    }
+
+    private enum FailedOperation
+    {
+        RefreshLag,
+        Rebuild,
+        Verify
     }
 }

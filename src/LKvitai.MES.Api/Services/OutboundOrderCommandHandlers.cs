@@ -52,7 +52,7 @@ public sealed class PackOrderCommandHandler : IRequestHandler<PackOrderCommand, 
             return Result.Fail(DomainErrorCodes.ValidationError, "At least one scanned item is required.");
         }
 
-        var itemIds = order.Lines.Select(x => x.ItemId).Distinct().ToArray();
+        var itemIds = order.Lines.Select(x => x.ItemId).Distinct().ToList();
         var itemBarcodes = await _dbContext.Items
             .AsNoTracking()
             .Where(x => itemIds.Contains(x.Id))

@@ -52,7 +52,7 @@ public sealed class CreateSalesOrderCommandHandler : IRequestHandler<CreateSales
             return Result.Fail(DomainErrorCodes.ValidationError, "At least one order line is required.");
         }
 
-        var itemIds = request.Lines.Select(x => x.ItemId).Distinct().ToArray();
+        var itemIds = request.Lines.Select(x => x.ItemId).Distinct().ToList();
         var existingItemIds = await _dbContext.Items
             .Where(x => itemIds.Contains(x.Id))
             .Select(x => x.Id)
@@ -497,7 +497,7 @@ internal static class SalesOrderStockValidation
             return Result.Fail(DomainErrorCodes.ValidationError, "Sales order has no allocatable quantity.");
         }
 
-        var skus = requiredBySku.Keys.ToArray();
+        var skus = requiredBySku.Keys.ToList();
         await using var querySession = documentStore.QuerySession();
         var stockRows = await Marten.QueryableExtensions.ToListAsync(
             querySession.Query<AvailableStockView>().Where(x => skus.Contains(x.SKU)),

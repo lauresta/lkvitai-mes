@@ -106,9 +106,9 @@ public class SearchReservationsQueryHandler
             .SelectMany(x => x.Lines)
             .SelectMany(x => x.AllocatedHUs)
             .Distinct()
-            .ToArray();
+            .ToList();
 
-        var huLookup = huIds.Length == 0
+        var huLookup = huIds.Count == 0
             ? new Dictionary<Guid, HandlingUnitView>()
             : (await querySession.Query<HandlingUnitView>()
                 .Where(x => huIds.Contains(x.HuId))

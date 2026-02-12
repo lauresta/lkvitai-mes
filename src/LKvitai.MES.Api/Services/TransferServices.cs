@@ -118,12 +118,12 @@ public sealed class CreateTransferCommandHandler : IRequestHandler<CreateTransfe
             }
         }
 
-        var distinctItemIds = request.Lines.Select(x => x.ItemId).Distinct().ToArray();
+        var distinctItemIds = request.Lines.Select(x => x.ItemId).Distinct().ToList();
         var itemCount = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.CountAsync(
             _dbContext.Items.AsNoTracking(),
             x => distinctItemIds.Contains(x.Id),
             cancellationToken);
-        if (itemCount != distinctItemIds.Length)
+        if (itemCount != distinctItemIds.Count)
         {
             return Result.Fail(DomainErrorCodes.NotFound, "One or more transfer line items were not found.");
         }
@@ -131,12 +131,12 @@ public sealed class CreateTransferCommandHandler : IRequestHandler<CreateTransfe
         var distinctLocationIds = request.Lines
             .SelectMany(x => new[] { x.FromLocationId, x.ToLocationId })
             .Distinct()
-            .ToArray();
+            .ToList();
         var locationCount = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.CountAsync(
             _dbContext.Locations.AsNoTracking(),
             x => distinctLocationIds.Contains(x.Id),
             cancellationToken);
-        if (locationCount != distinctLocationIds.Length)
+        if (locationCount != distinctLocationIds.Count)
         {
             return Result.Fail(DomainErrorCodes.NotFound, "One or more transfer line locations were not found.");
         }
