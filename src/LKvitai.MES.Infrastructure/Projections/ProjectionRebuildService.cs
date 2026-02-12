@@ -109,9 +109,20 @@ public class ProjectionRebuildService : IProjectionRebuildService
                     message);
             }
 
-            await using var querySession = _documentStore.QuerySession();
-            var writeConnection = (NpgsqlConnection)(querySession.Connection
+            // Use a dedicated SQL connection for rebuild DDL/checksum/swap operations.
+            // Marten session connections may already have an active transaction, which
+            // would break local BeginTransactionAsync calls with nested transaction errors.
+            await using var bootstrapSession = _documentStore.QuerySession();
+            var bootstrapConnection = (NpgsqlConnection)(bootstrapSession.Connection
                 ?? throw new InvalidOperationException("Marten query session connection is unavailable."));
+            var connectionString = bootstrapConnection.ConnectionString;
+            if (string.IsNullOrWhiteSpace(connectionString))
+            {
+                throw new InvalidOperationException("Warehouse connection string is unavailable.");
+            }
+
+            await using var writeConnection = new NpgsqlConnection(connectionString);
+            await writeConnection.OpenAsync(cancellationToken);
 
             var tableName = projectionName switch
             {
