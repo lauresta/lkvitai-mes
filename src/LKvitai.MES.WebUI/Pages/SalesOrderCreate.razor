@@ -1,0 +1,330 @@
+@page "/warehouse/sales/orders/create"
+@inject SalesOrdersClient SalesOrdersClient
+@inject NavigationManager NavigationManager
+@inject ToastService ToastService
+
+<PageTitle>Create Sales Order - LKvitai.MES</PageTitle>
+
+<h1>Create Sales Order</h1>
+
+@if (_apiError is not null)
+{
+    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                 TraceId="@_apiError.TraceId"
+                 OnRetry="LoadLookupDataAsync"
+                 OnDismiss="DismissError" />
+}
+
+<div class="card shadow-sm position-relative">
+    <LoadingSpinner IsLoading="_isLoading || _isSubmitting" />
+
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label" for="customer">Customer</label>
+                <select id="customer"
+                        class="form-select"
+                        @bind="_selectedCustomerId"
+                        @bind:after="OnCustomerChangedAsync">
+                    <option value="">Select customer</option>
+                    @foreach (var customer in _customers)
+                    {
+                        <option value="@customer.Id">@customer.CustomerCode - @customer.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label" for="delivery-date">Requested Delivery Date</label>
+                <input id="delivery-date" type="date" class="form-control" @bind="_requestedDeliveryDate" />
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button class="btn btn-outline-secondary" @onclick="BackToList" disabled="_isSubmitting">Back to List</button>
+            </div>
+        </div>
+
+        <hr />
+
+        <h5>Shipping Address</h5>
+        <div class="row g-2">
+            <div class="col-md-6">
+                <label class="form-label">Street</label>
+                <input class="form-control" @bind="_shippingStreet" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">City</label>
+                <input class="form-control" @bind="_shippingCity" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">State</label>
+                <input class="form-control" @bind="_shippingState" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Zip</label>
+                <input class="form-control" @bind="_shippingZipCode" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Country</label>
+                <input class="form-control" @bind="_shippingCountry" />
+            </div>
+        </div>
+
+        <hr />
+
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h5 class="mb-0">Order Lines</h5>
+            <button class="btn btn-sm btn-outline-primary" @onclick="AddLine" disabled="_isSubmitting">+ Add Line</button>
+        </div>
+
+        @if (_lines.Count == 0)
+        {
+            <EmptyState Title="No lines added"
+                        Message="Add at least one line item."
+                        IconCss="bi bi-list-ul"
+                        OnAction="AddLineAsync" />
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th style="width: 50%;">Item</th>
+                            <th style="width: 15%;">Qty</th>
+                            <th style="width: 20%;">Unit Price</th>
+                            <th style="width: 15%;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (var i = 0; i < _lines.Count; i++)
+                        {
+                            var line = _lines[i];
+                            <tr>
+                                <td>
+                                    <select class="form-select" @bind="line.ItemId">
+                                        <option value="">Select item</option>
+                                        @foreach (var item in _items)
+                                        {
+                                            <option value="@item.Id">@item.InternalSKU - @item.Name</option>
+                                        }
+                                    </select>
+                                </td>
+                                <td>
+                                    <input class="form-control" type="number" min="0.01" step="0.01" @bind="line.Qty" />
+                                </td>
+                                <td>
+                                    <input class="form-control" type="number" min="0" step="0.01" @bind="line.UnitPrice" />
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-danger"
+                                            @onclick="() => RemoveLine(i)"
+                                            disabled="_isSubmitting || _lines.Count == 1">
+                                        Remove
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+        <div class="d-flex justify-content-end mt-3">
+            <button class="btn btn-primary" @onclick="CreateAsync" disabled="_isSubmitting">Create Sales Order</button>
+        </div>
+    </div>
+</div>
+
+@code {
+    private readonly List<SalesOrderCustomerLookupDto> _customers = [];
+    private readonly List<AdminItemDto> _items = [];
+    private readonly List<LineFormModel> _lines = [];
+    private bool _isLoading;
+    private bool _isSubmitting;
+    private ApiException? _apiError;
+
+    private string _selectedCustomerId = string.Empty;
+    private DateTime? _requestedDeliveryDate;
+
+    private string _shippingStreet = string.Empty;
+    private string _shippingCity = string.Empty;
+    private string _shippingState = string.Empty;
+    private string _shippingZipCode = string.Empty;
+    private string _shippingCountry = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _lines.Add(new LineFormModel());
+        await LoadLookupDataAsync();
+    }
+
+    private async Task LoadLookupDataAsync()
+    {
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            var customers = await SalesOrdersClient.GetCustomersAsync();
+            _customers.Clear();
+            _customers.AddRange(customers);
+
+            var items = await SalesOrdersClient.GetItemsAsync();
+            _items.Clear();
+            _items.AddRange(items.Items);
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private Task OnCustomerChangedAsync()
+    {
+        if (!Guid.TryParse(_selectedCustomerId, out var customerId))
+        {
+            return Task.CompletedTask;
+        }
+
+        var customer = _customers.FirstOrDefault(x => x.Id == customerId);
+        if (customer?.DefaultShippingAddress is null)
+        {
+            return Task.CompletedTask;
+        }
+
+        _shippingStreet = customer.DefaultShippingAddress.Street;
+        _shippingCity = customer.DefaultShippingAddress.City;
+        _shippingState = customer.DefaultShippingAddress.State;
+        _shippingZipCode = customer.DefaultShippingAddress.ZipCode;
+        _shippingCountry = customer.DefaultShippingAddress.Country;
+        return Task.CompletedTask;
+    }
+
+    private void AddLine()
+    {
+        _lines.Add(new LineFormModel());
+    }
+
+    private Task AddLineAsync()
+    {
+        AddLine();
+        return Task.CompletedTask;
+    }
+
+    private void RemoveLine(int index)
+    {
+        if (index < 0 || index >= _lines.Count || _lines.Count == 1)
+        {
+            return;
+        }
+
+        _lines.RemoveAt(index);
+    }
+
+    private async Task CreateAsync()
+    {
+        if (!Guid.TryParse(_selectedCustomerId, out var customerId))
+        {
+            ToastService.ShowError("Select a customer.");
+            return;
+        }
+
+        var normalizedLines = _lines
+            .Where(x => x.ItemId.HasValue && x.Qty > 0 && x.UnitPrice >= 0)
+            .Select(x => new SalesOrderLineCreateRequestDto
+            {
+                ItemId = x.ItemId!.Value,
+                Qty = x.Qty,
+                UnitPrice = x.UnitPrice
+            })
+            .ToList();
+
+        if (normalizedLines.Count == 0)
+        {
+            ToastService.ShowError("Add at least one valid line (item, qty > 0).");
+            return;
+        }
+
+        _isSubmitting = true;
+        _apiError = null;
+
+        try
+        {
+            var request = new SalesOrderCreateRequestDto
+            {
+                CommandId = Guid.NewGuid(),
+                CustomerId = customerId,
+                RequestedDeliveryDate = _requestedDeliveryDate,
+                ShippingAddress = BuildShippingAddress(),
+                Lines = normalizedLines
+            };
+
+            var created = await SalesOrdersClient.CreateSalesOrderAsync(request);
+            ToastService.ShowSuccess($"Sales order {created.OrderNumber} created.");
+            NavigationManager.NavigateTo($"/warehouse/sales/orders/{created.Id}");
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private SalesOrderAddressDto? BuildShippingAddress()
+    {
+        if (string.IsNullOrWhiteSpace(_shippingStreet) &&
+            string.IsNullOrWhiteSpace(_shippingCity) &&
+            string.IsNullOrWhiteSpace(_shippingState) &&
+            string.IsNullOrWhiteSpace(_shippingZipCode) &&
+            string.IsNullOrWhiteSpace(_shippingCountry))
+        {
+            return null;
+        }
+
+        return new SalesOrderAddressDto
+        {
+            Street = _shippingStreet.Trim(),
+            City = _shippingCity.Trim(),
+            State = _shippingState.Trim(),
+            ZipCode = _shippingZipCode.Trim(),
+            Country = _shippingCountry.Trim()
+        };
+    }
+
+    private void BackToList()
+    {
+        NavigationManager.NavigateTo("/warehouse/sales/orders");
+    }
+
+    private void DismissError()
+    {
+        _apiError = null;
+    }
+
+    private static string BuildErrorMessage(ApiException ex)
+    {
+        if (!string.IsNullOrWhiteSpace(ex.UserMessage))
+        {
+            return ex.UserMessage;
+        }
+
+        return ex.ProblemDetails?.Detail
+               ?? ex.ProblemDetails?.Title
+               ?? "Sales order request failed.";
+    }
+
+    private sealed class LineFormModel
+    {
+        public int? ItemId { get; set; }
+        public decimal Qty { get; set; } = 1m;
+        public decimal UnitPrice { get; set; }
+    }
+}

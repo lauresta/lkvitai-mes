@@ -1,0 +1,304 @@
+@page "/warehouse/sales/orders/{Id:guid}"
+@inject SalesOrdersClient SalesOrdersClient
+@inject NavigationManager NavigationManager
+@inject ToastService ToastService
+
+<PageTitle>Sales Order Detail - LKvitai.MES</PageTitle>
+
+<h1>Sales Order Detail</h1>
+
+@if (_apiError is not null)
+{
+    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                 TraceId="@_apiError.TraceId"
+                 OnRetry="ReloadAsync"
+                 OnDismiss="DismissError" />
+}
+
+<div class="card shadow-sm position-relative">
+    <LoadingSpinner IsLoading="_isLoading || _isBusy" />
+
+    <div class="card-body">
+        @if (_order is null)
+        {
+            <EmptyState Title="Order not found"
+                        Message="The sales order does not exist or is not accessible."
+                        IconCss="bi bi-file-earmark-x"
+                        OnAction="BackToListAsync" />
+        }
+        else
+        {
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+                <div>
+                    <h4 class="mb-1">@_order.OrderNumber</h4>
+                    <div class="text-muted">@_order.CustomerName</div>
+                    <div class="small text-muted">Order date: @FormatDate(_order.OrderDate)</div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge @GetStatusBadgeClass(_order.Status)">@_order.Status</span>
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="BackToList">Back</button>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-4">
+                    <div class="border rounded p-2 h-100">
+                        <div class="small text-muted">Requested delivery</div>
+                        <div>@FormatDate(_order.RequestedDeliveryDate)</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="border rounded p-2 h-100">
+                        <div class="small text-muted">Reservation</div>
+                        <div>@(_order.ReservationId?.ToString() ?? "-")</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="border rounded p-2 h-100">
+                        <div class="small text-muted">Outbound Order</div>
+                        <div>@(_order.OutboundOrderId?.ToString() ?? "-")</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex flex-wrap gap-2 mb-3">
+                @if (CanSubmit)
+                {
+                    <button class="btn btn-sm btn-outline-primary" @onclick="SubmitAsync" disabled="_isBusy">Submit</button>
+                }
+                @if (CanApprove)
+                {
+                    <button class="btn btn-sm btn-outline-info" @onclick="ApproveAsync" disabled="_isBusy">Approve</button>
+                }
+                @if (CanAllocate)
+                {
+                    <button class="btn btn-sm btn-outline-primary" @onclick="AllocateAsync" disabled="_isBusy">Allocate</button>
+                }
+                @if (CanRelease)
+                {
+                    <button class="btn btn-sm btn-primary" @onclick="ReleaseAsync" disabled="_isBusy">Release to Picking</button>
+                }
+            </div>
+
+            @if (CanCancel)
+            {
+                <div class="row g-2 align-items-end mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Cancel reason</label>
+                        <input class="form-control" @bind="_cancelReason" maxlength="250" />
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-sm btn-outline-danger" @onclick="CancelAsync" disabled="_isBusy">Cancel Order</button>
+                    </div>
+                </div>
+            }
+
+            <div class="table-responsive">
+                <table class="table table-sm align-middle">
+                    <thead>
+                        <tr>
+                            <th>SKU</th>
+                            <th>Description</th>
+                            <th>Ordered</th>
+                            <th>Allocated</th>
+                            <th>Picked</th>
+                            <th>Shipped</th>
+                            <th>Price</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var line in _order.Lines)
+                        {
+                            <tr>
+                                <td>@line.ItemSku</td>
+                                <td>@line.ItemDescription</td>
+                                <td>@line.OrderedQty.ToString("0.##")</td>
+                                <td>@line.AllocatedQty.ToString("0.##")</td>
+                                <td>@line.PickedQty.ToString("0.##")</td>
+                                <td>@line.ShippedQty.ToString("0.##")</td>
+                                <td>@line.UnitPrice.ToString("0.00")</td>
+                                <td>@line.LineAmount.ToString("0.00")</td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="7" class="text-end"><strong>Total</strong></td>
+                            <td><strong>@_order.TotalAmount.ToString("0.00")</strong></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public Guid Id { get; set; }
+
+    private SalesOrderDto? _order;
+    private bool _isLoading;
+    private bool _isBusy;
+    private ApiException? _apiError;
+    private string _cancelReason = "Cancelled by operator";
+
+    private bool CanSubmit => string.Equals(_order?.Status, "DRAFT", StringComparison.OrdinalIgnoreCase);
+    private bool CanApprove => string.Equals(_order?.Status, "PENDING_APPROVAL", StringComparison.OrdinalIgnoreCase);
+    private bool CanAllocate => string.Equals(_order?.Status, "DRAFT", StringComparison.OrdinalIgnoreCase) ||
+                                string.Equals(_order?.Status, "PENDING_STOCK", StringComparison.OrdinalIgnoreCase);
+    private bool CanRelease => string.Equals(_order?.Status, "ALLOCATED", StringComparison.OrdinalIgnoreCase);
+    private bool CanCancel => _order is not null &&
+                              !string.Equals(_order.Status, "CANCELLED", StringComparison.OrdinalIgnoreCase) &&
+                              !string.Equals(_order.Status, "SHIPPED", StringComparison.OrdinalIgnoreCase) &&
+                              !string.Equals(_order.Status, "DELIVERED", StringComparison.OrdinalIgnoreCase) &&
+                              !string.Equals(_order.Status, "INVOICED", StringComparison.OrdinalIgnoreCase);
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            _order = await SalesOrdersClient.GetSalesOrderAsync(Id);
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+            _order = null;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task SubmitAsync()
+    {
+        await ExecuteActionAsync(() => SalesOrdersClient.SubmitSalesOrderAsync(Id), "Sales order submitted.");
+    }
+
+    private async Task ApproveAsync()
+    {
+        await ExecuteActionAsync(() => SalesOrdersClient.ApproveSalesOrderAsync(Id), "Sales order approved.");
+    }
+
+    private async Task AllocateAsync()
+    {
+        _isBusy = true;
+        _apiError = null;
+
+        try
+        {
+            var result = await SalesOrdersClient.AllocateSalesOrderAsync(Id);
+            var message = result.ReservationId.HasValue
+                ? $"Sales order allocated. Reservation: {result.ReservationId.Value}"
+                : "Sales order allocated.";
+            ToastService.ShowSuccess(message);
+            await ReloadAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isBusy = false;
+        }
+    }
+
+    private async Task ReleaseAsync()
+    {
+        await ExecuteActionAsync(() => SalesOrdersClient.ReleaseSalesOrderAsync(Id), "Sales order released to picking.");
+    }
+
+    private async Task CancelAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_cancelReason))
+        {
+            ToastService.ShowError("Cancel reason is required.");
+            return;
+        }
+
+        await ExecuteActionAsync(() => SalesOrdersClient.CancelSalesOrderAsync(Id, _cancelReason.Trim()), "Sales order cancelled.");
+    }
+
+    private async Task ExecuteActionAsync(Func<Task<SalesOrderDto>> action, string successMessage)
+    {
+        _isBusy = true;
+        _apiError = null;
+
+        try
+        {
+            await action();
+            ToastService.ShowSuccess(successMessage);
+            await ReloadAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isBusy = false;
+        }
+    }
+
+    private void DismissError()
+    {
+        _apiError = null;
+    }
+
+    private void BackToList()
+    {
+        NavigationManager.NavigateTo("/warehouse/sales/orders");
+    }
+
+    private Task BackToListAsync()
+    {
+        BackToList();
+        return Task.CompletedTask;
+    }
+
+    private static string FormatDate(DateTime? value)
+    {
+        return value?.ToString("yyyy-MM-dd HH:mm") ?? "-";
+    }
+
+    private static string GetStatusBadgeClass(string status) => status.ToUpperInvariant() switch
+    {
+        "DRAFT" => "bg-secondary",
+        "PENDING_APPROVAL" => "bg-warning text-dark",
+        "ALLOCATED" => "bg-info text-dark",
+        "PENDING_STOCK" => "bg-warning text-dark",
+        "PICKING" => "bg-primary",
+        "PACKED" => "bg-primary",
+        "SHIPPED" => "bg-success",
+        "DELIVERED" => "bg-success",
+        "INVOICED" => "bg-dark",
+        "CANCELLED" => "bg-danger",
+        _ => "bg-secondary"
+    };
+
+    private static string BuildErrorMessage(ApiException ex)
+    {
+        if (!string.IsNullOrWhiteSpace(ex.UserMessage))
+        {
+            return ex.UserMessage;
+        }
+
+        return ex.ProblemDetails?.Detail
+               ?? ex.ProblemDetails?.Title
+               ?? "Sales order request failed.";
+    }
+}

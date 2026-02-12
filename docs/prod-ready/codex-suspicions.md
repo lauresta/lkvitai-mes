@@ -422,3 +422,59 @@
   Evidence: Contract tests run against mocked/stubbed HTTP handlers only.
   Impact: Real external endpoint compatibility (FedEx/Agnum live sandboxes) is not validated by this run.
   Proposed resolution: Execute contract suite against sandbox endpoints with non-production credentials.
+
+- Timestamp: 2026-02-12T15:16:26Z
+  TaskId: PRD-1523
+  Type: IMPLEMENTATION-GAP
+  Evidence: No Blazor inbound shipment create page route found (expected scope mentions receiving invoice entry UI).
+  Impact: Operators cannot create inbound receiving documents from WebUI as specified.
+  Proposed resolution: Implement inbound shipments list/create pages and wire to receiving API endpoints.
+
+- Timestamp: 2026-02-12T15:16:26Z
+  TaskId: PRD-1524
+  Type: IMPLEMENTATION-GAP
+  Evidence: No Blazor receiving scan/QC execution route found in `src/LKvitai.MES.WebUI/Pages`.
+  Impact: Inbound scan/QC workflow remains API-only, reducing operator usability and acceptance coverage.
+  Proposed resolution: Add receiving execution UI with scan actions, QC outcomes, and putaway transitions.
+
+- Timestamp: 2026-02-12T15:16:26Z
+  TaskId: PRD-1526
+  Type: IMPLEMENTATION-GAP
+  Evidence: No transfer/stock-movement create/approval pages exist in WebUI routes.
+  Impact: Stock movement workflow cannot be run end-to-end from UI.
+  Proposed resolution: Implement transfer list/create/detail pages and approval/execute actions.
+
+- Timestamp: 2026-02-12T15:16:26Z
+  TaskId: PRD-1534
+  Type: IMPLEMENTATION-GAP
+  Evidence: Dispatch history report API exists (`DispatchController.GetHistoryAsync`) but no corresponding Blazor report page.
+  Impact: Dispatch history visibility requested by UI task remains unavailable to operators.
+  Proposed resolution: Add dispatch history report page with filters and CSV export.
+
+- Timestamp: 2026-02-12T15:16:26Z
+  TaskId: PRD-1548
+  Type: IMPLEMENTATION-GAP
+  Evidence: No admin user management route/page (`/admin/users` equivalent) exists in WebUI.
+  Impact: RBAC user lifecycle remains unmanaged from UI.
+  Proposed resolution: Implement user list/create/edit/role-assignment admin pages.
+
+- Timestamp: 2026-02-12T15:16:26Z
+  TaskId: PRD-1549
+  Type: IMPLEMENTATION-GAP
+  Evidence: No stock movement history report page route found in WebUI.
+  Impact: Operators/managers cannot review movement history report via UI as specified.
+  Proposed resolution: Add movement history report page and integrate report API/filter/export flow.
+
+- Timestamp: 2026-02-12T15:16:26Z
+  TaskId: PRD-1551
+  Type: IMPLEMENTATION-GAP
+  Evidence: No lot traceability report UI route found in WebUI pages.
+  Impact: Traceability workflow remains unavailable from the operator-facing interface.
+  Proposed resolution: Implement lot->order traceability report page with search and drill-down.
+
+- Timestamp: 2026-02-12T15:16:26Z
+  TaskId: PRD-1552
+  Type: IMPLEMENTATION-GAP
+  Evidence: No compliance audit report page found in WebUI pages.
+  Impact: Compliance reporting requirements are not met at UI level.
+  Proposed resolution: Implement compliance report dashboard/export page and connect to backend query endpoints.

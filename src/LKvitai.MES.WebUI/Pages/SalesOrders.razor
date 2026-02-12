@@ -1,0 +1,294 @@
+@page "/warehouse/sales/orders"
+@inject SalesOrdersClient SalesOrdersClient
+@inject NavigationManager NavigationManager
+@inject ToastService ToastService
+
+<PageTitle>Sales Orders - LKvitai.MES</PageTitle>
+
+<h1>Sales Orders</h1>
+
+@if (_apiError is not null)
+{
+    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                 TraceId="@_apiError.TraceId"
+                 OnRetry="RetryAsync"
+                 OnDismiss="DismissError" />
+}
+
+<div class="card shadow-sm position-relative">
+    <LoadingSpinner IsLoading="_isLoading" />
+
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <strong>Total: @_totalCount</strong>
+            <button class="btn btn-primary" @onclick="OpenCreate">+ Create</button>
+        </div>
+
+        <div class="row g-2 align-items-end mb-3">
+            <div class="col-md-3">
+                <label class="form-label" for="status-filter">Status</label>
+                <select id="status-filter" class="form-select" @bind="_statusFilter">
+                    <option value="">All</option>
+                    <option value="DRAFT">DRAFT</option>
+                    <option value="PENDING_APPROVAL">PENDING_APPROVAL</option>
+                    <option value="ALLOCATED">ALLOCATED</option>
+                    <option value="PENDING_STOCK">PENDING_STOCK</option>
+                    <option value="PICKING">PICKING</option>
+                    <option value="PACKED">PACKED</option>
+                    <option value="SHIPPED">SHIPPED</option>
+                    <option value="DELIVERED">DELIVERED</option>
+                    <option value="INVOICED">INVOICED</option>
+                    <option value="CANCELLED">CANCELLED</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label" for="customer-filter">Customer</label>
+                <select id="customer-filter" class="form-select" @bind="_customerFilter">
+                    <option value="">All</option>
+                    @foreach (var customer in _customers)
+                    {
+                        <option value="@customer.Id">@customer.CustomerCode - @customer.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label" for="date-from">Date from</label>
+                <input id="date-from" type="date" class="form-control" @bind="_dateFrom" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label" for="date-to">Date to</label>
+                <input id="date-to" type="date" class="form-control" @bind="_dateTo" />
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button class="btn btn-primary" @onclick="ApplyFiltersAsync" disabled="_isLoading">Apply</button>
+                <button class="btn btn-outline-secondary" @onclick="ResetFiltersAsync" disabled="_isLoading">Reset</button>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Order Number</th>
+                        <th>Customer</th>
+                        <th>Status</th>
+                        <th>Lines</th>
+                        <th>Total</th>
+                        <th>Order Date</th>
+                        <th>Requested Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (_orders.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="8">
+                                <EmptyState Title="No sales orders found"
+                                            Message="Create a sales order to start outbound workflow."
+                                            IconCss="bi bi-file-earmark-plus"
+                                            OnAction="OpenCreateAsync" />
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var order in _orders)
+                        {
+                            <tr>
+                                <td>@order.OrderNumber</td>
+                                <td>@order.CustomerName</td>
+                                <td><span class="badge @GetStatusBadgeClass(order.Status)">@order.Status</span></td>
+                                <td>@order.Lines.Count</td>
+                                <td>@order.TotalAmount.ToString("0.00")</td>
+                                <td>@FormatDate(order.OrderDate)</td>
+                                <td>@FormatDate(order.RequestedDeliveryDate)</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary" @onclick="() => OpenDetails(order.Id)">View</button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (TotalPages > 1)
+        {
+            <div class="d-flex justify-content-between align-items-center mt-3">
+                <small class="text-muted">Page @_page of @TotalPages</small>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-secondary" @onclick="PreviousPage" disabled="@(_page <= 1)">Previous</button>
+                    <button class="btn btn-sm btn-outline-secondary" @onclick="NextPage" disabled="@(_page >= TotalPages)">Next</button>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private readonly List<SalesOrderDto> _orders = [];
+    private readonly List<SalesOrderCustomerLookupDto> _customers = [];
+    private bool _isLoading;
+    private ApiException? _apiError;
+    private string _statusFilter = string.Empty;
+    private string _customerFilter = string.Empty;
+    private DateTime? _dateFrom;
+    private DateTime? _dateTo;
+    private int _page = 1;
+    private const int PageSize = 20;
+    private int _totalCount;
+
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling(_totalCount / (double)Math.Max(1, PageSize)));
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCustomersAsync();
+        await ReloadAsync();
+    }
+
+    private async Task LoadCustomersAsync()
+    {
+        try
+        {
+            var rows = await SalesOrdersClient.GetCustomersAsync();
+            _customers.Clear();
+            _customers.AddRange(rows);
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+    }
+
+    private async Task ApplyFiltersAsync()
+    {
+        _page = 1;
+        await ReloadAsync();
+    }
+
+    private async Task ResetFiltersAsync()
+    {
+        _statusFilter = string.Empty;
+        _customerFilter = string.Empty;
+        _dateFrom = null;
+        _dateTo = null;
+        _page = 1;
+        await ReloadAsync();
+    }
+
+    private Task RetryAsync() => ReloadAsync();
+
+    private async Task ReloadAsync()
+    {
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            Guid? customerId = null;
+            if (!string.IsNullOrWhiteSpace(_customerFilter) && Guid.TryParse(_customerFilter, out var parsed))
+            {
+                customerId = parsed;
+            }
+
+            var response = await SalesOrdersClient.GetSalesOrdersAsync(
+                _statusFilter,
+                customerId,
+                _dateFrom,
+                _dateTo,
+                _page,
+                PageSize);
+
+            _orders.Clear();
+            _orders.AddRange(response.Items);
+            _totalCount = response.TotalCount;
+            _page = Math.Min(Math.Max(1, _page), TotalPages);
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void DismissError()
+    {
+        _apiError = null;
+    }
+
+    private void OpenCreate()
+    {
+        NavigationManager.NavigateTo("/warehouse/sales/orders/create");
+    }
+
+    private Task OpenCreateAsync()
+    {
+        OpenCreate();
+        return Task.CompletedTask;
+    }
+
+    private void OpenDetails(Guid id)
+    {
+        NavigationManager.NavigateTo($"/warehouse/sales/orders/{id}");
+    }
+
+    private async Task PreviousPage()
+    {
+        if (_page <= 1)
+        {
+            return;
+        }
+
+        _page--;
+        await ReloadAsync();
+    }
+
+    private async Task NextPage()
+    {
+        if (_page >= TotalPages)
+        {
+            return;
+        }
+
+        _page++;
+        await ReloadAsync();
+    }
+
+    private static string FormatDate(DateTime? date)
+    {
+        return date?.ToString("yyyy-MM-dd") ?? "-";
+    }
+
+    private static string GetStatusBadgeClass(string status) => status.ToUpperInvariant() switch
+    {
+        "DRAFT" => "bg-secondary",
+        "PENDING_APPROVAL" => "bg-warning text-dark",
+        "ALLOCATED" => "bg-info text-dark",
+        "PENDING_STOCK" => "bg-warning text-dark",
+        "PICKING" => "bg-primary",
+        "PACKED" => "bg-primary",
+        "SHIPPED" => "bg-success",
+        "DELIVERED" => "bg-success",
+        "INVOICED" => "bg-dark",
+        "CANCELLED" => "bg-danger",
+        _ => "bg-secondary"
+    };
+
+    private static string BuildErrorMessage(ApiException ex)
+    {
+        if (!string.IsNullOrWhiteSpace(ex.UserMessage))
+        {
+            return ex.UserMessage;
+        }
+
+        return ex.ProblemDetails?.Detail
+               ?? ex.ProblemDetails?.Title
+               ?? "Sales order request failed.";
+    }
+}
