@@ -18,4 +18,11 @@ public class ProjectionHealthServiceTests
         var status = ProjectionHealthService.ClassifyStatus(lagSeconds);
         status.Should().Be(expected);
     }
+
+    [Fact]
+    public void CaughtUpProjection_ShouldBeHealthy_WhenLagEventsIsZero()
+    {
+        var status = ProjectionHealthService.ClassifyStatus(0d);
+        status.Should().Be("Healthy");
+    }
 }

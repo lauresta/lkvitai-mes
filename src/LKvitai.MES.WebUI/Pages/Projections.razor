@@ -58,7 +58,7 @@
                                 @if (row.LastUpdated.HasValue)
                                 {
                                     @row.LastUpdated.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")
-                                    <span class="ms-2"><StaleBadge LastUpdated="@row.LastUpdated.Value.UtcDateTime" /></span>
+                                    <span class="ms-2"><StaleBadge LagSeconds="@row.LagSeconds" LastUpdated="@row.LastUpdated.Value.UtcDateTime" /></span>
                                 }
                                 else
                                 {

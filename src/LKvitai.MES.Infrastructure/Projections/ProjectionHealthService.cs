@@ -72,9 +72,13 @@ public sealed class ProjectionHealthService : IProjectionHealthService
                 ? await GetEventTimestampAsync(conn, row.LastProcessed.Value, cancellationToken)
                 : null;
 
-            double? lagSeconds = lastUpdated.HasValue
-                ? Math.Max(0d, (checkedAt - lastUpdated.Value).TotalSeconds)
-                : null;
+            // If projection has caught up to high-water mark, logical lag is zero
+            // even if no new events were produced for a long time.
+            double? lagSeconds = lagEvents == 0
+                ? 0d
+                : lastUpdated.HasValue
+                    ? Math.Max(0d, (checkedAt - lastUpdated.Value).TotalSeconds)
+                    : null;
 
             var status = ClassifyStatus(lagSeconds);
 
