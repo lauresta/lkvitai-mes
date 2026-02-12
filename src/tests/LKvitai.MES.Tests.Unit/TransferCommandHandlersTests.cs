@@ -22,7 +22,7 @@ public class TransferCommandHandlersTests
 {
     [Fact]
     [Trait("Category", "Transfers")]
-    public async Task CreateTransfer_WhenScrapTarget_ShouldSetPendingApproval()
+    public async Task CreateTransfer_WhenScrapTarget_ShouldSetDraft()
     {
         await using var db = CreateDbContext();
         await SeedItemsAndLocationsAsync(db);
@@ -54,7 +54,8 @@ public class TransferCommandHandlersTests
 
         result.IsSuccess.Should().BeTrue();
         var transfer = await db.Transfers.Include(x => x.Lines).SingleAsync();
-        transfer.Status.Should().Be(TransferStatus.PendingApproval);
+        transfer.Status.Should().Be(TransferStatus.Draft);
+        transfer.TransferNumber.Should().MatchRegex(@"^TRF-\d{8}-\d{3}$");
         transfer.Lines.Should().ContainSingle();
         bus.Published.OfType<TransferCreatedEvent>().Should().ContainSingle();
     }
@@ -98,6 +99,96 @@ public class TransferCommandHandlersTests
 
     [Fact]
     [Trait("Category", "Transfers")]
+    public async Task SubmitTransfer_WhenScrapTarget_ShouldSetPendingApproval()
+    {
+        await using var db = CreateDbContext();
+        var transfer = new Transfer
+        {
+            TransferNumber = "TRF-0004",
+            FromWarehouse = "NLQ",
+            ToWarehouse = "SCRAP",
+            RequestedBy = "operator-1",
+            RequestedAt = DateTimeOffset.UtcNow,
+            CreateCommandId = Guid.NewGuid()
+        };
+        transfer.EnsureRequestedState();
+        db.Transfers.Add(transfer);
+        await db.SaveChangesAsync();
+
+        var handler = new SubmitTransferCommandHandler(db);
+        var result = await handler.Handle(new SubmitTransferCommand
+        {
+            CommandId = Guid.NewGuid(),
+            TransferId = transfer.Id
+        }, CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        var persisted = await db.Transfers.SingleAsync();
+        persisted.Status.Should().Be(TransferStatus.PendingApproval);
+    }
+
+    [Fact]
+    [Trait("Category", "Transfers")]
+    public async Task SubmitTransfer_WhenNonScrapTarget_ShouldSetApproved()
+    {
+        await using var db = CreateDbContext();
+        var transfer = new Transfer
+        {
+            TransferNumber = "TRF-0005",
+            FromWarehouse = "RES",
+            ToWarehouse = "PROD",
+            RequestedBy = "operator-1",
+            RequestedAt = DateTimeOffset.UtcNow,
+            CreateCommandId = Guid.NewGuid()
+        };
+        transfer.EnsureRequestedState();
+        db.Transfers.Add(transfer);
+        await db.SaveChangesAsync();
+
+        var handler = new SubmitTransferCommandHandler(db);
+        var result = await handler.Handle(new SubmitTransferCommand
+        {
+            CommandId = Guid.NewGuid(),
+            TransferId = transfer.Id
+        }, CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        var persisted = await db.Transfers.SingleAsync();
+        persisted.Status.Should().Be(TransferStatus.Approved);
+    }
+
+    [Fact]
+    [Trait("Category", "Transfers")]
+    public async Task SubmitTransfer_WhenNotDraft_ShouldFail()
+    {
+        await using var db = CreateDbContext();
+        var transfer = new Transfer
+        {
+            TransferNumber = "TRF-0006",
+            FromWarehouse = "RES",
+            ToWarehouse = "PROD",
+            RequestedBy = "operator-1",
+            RequestedAt = DateTimeOffset.UtcNow,
+            CreateCommandId = Guid.NewGuid()
+        };
+        transfer.EnsureRequestedState();
+        transfer.Submit(Guid.NewGuid(), DateTimeOffset.UtcNow);
+        db.Transfers.Add(transfer);
+        await db.SaveChangesAsync();
+
+        var handler = new SubmitTransferCommandHandler(db);
+        var result = await handler.Handle(new SubmitTransferCommand
+        {
+            CommandId = Guid.NewGuid(),
+            TransferId = transfer.Id
+        }, CancellationToken.None);
+
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorCode.Should().Be(DomainErrorCodes.ValidationError);
+    }
+
+    [Fact]
+    [Trait("Category", "Transfers")]
     public async Task ApproveTransfer_WhenUserNotManager_ShouldReturnForbidden()
     {
         await using var db = CreateDbContext();
@@ -111,6 +202,7 @@ public class TransferCommandHandlersTests
             CreateCommandId = Guid.NewGuid()
         };
         transfer.EnsureRequestedState();
+        transfer.Submit(Guid.NewGuid(), DateTimeOffset.UtcNow);
         db.Transfers.Add(transfer);
         await db.SaveChangesAsync();
 
@@ -150,6 +242,7 @@ public class TransferCommandHandlersTests
             CreateCommandId = Guid.NewGuid()
         };
         transfer.EnsureRequestedState();
+        transfer.Submit(Guid.NewGuid(), DateTimeOffset.UtcNow);
         db.Transfers.Add(transfer);
         await db.SaveChangesAsync();
 
@@ -195,6 +288,7 @@ public class TransferCommandHandlersTests
             CreateCommandId = Guid.NewGuid()
         };
         transfer.EnsureRequestedState();
+        transfer.Submit(Guid.NewGuid(), DateTimeOffset.UtcNow);
         transfer.Lines.Add(new TransferLine
         {
             ItemId = 1,
@@ -272,6 +366,7 @@ public class TransferCommandHandlersTests
             CreateCommandId = Guid.NewGuid()
         };
         transfer.EnsureRequestedState();
+        transfer.Submit(Guid.NewGuid(), DateTimeOffset.UtcNow);
         transfer.Approve("manager-1", Guid.NewGuid(), DateTimeOffset.UtcNow);
         transfer.Lines.Add(new TransferLine
         {

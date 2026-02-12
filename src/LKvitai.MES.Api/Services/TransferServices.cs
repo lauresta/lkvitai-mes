@@ -143,7 +143,7 @@ public sealed class CreateTransferCommandHandler : IRequestHandler<CreateTransfe
 
         var transfer = new Transfer
         {
-            TransferNumber = $"TRF-{Guid.NewGuid():N}"[..12].ToUpperInvariant(),
+            TransferNumber = await GenerateTransferNumberAsync(cancellationToken),
             FromWarehouse = request.FromWarehouse.Trim().ToUpperInvariant(),
             ToWarehouse = request.ToWarehouse.Trim().ToUpperInvariant(),
             RequestedBy = string.IsNullOrWhiteSpace(request.RequestedBy)
@@ -160,7 +160,8 @@ public sealed class CreateTransferCommandHandler : IRequestHandler<CreateTransfe
                 ItemId = line.ItemId,
                 Qty = line.Qty,
                 FromLocationId = line.FromLocationId,
-                ToLocationId = line.ToLocationId
+                ToLocationId = line.ToLocationId,
+                LotId = line.LotId
             });
         }
 
@@ -198,6 +199,50 @@ public sealed class CreateTransferCommandHandler : IRequestHandler<CreateTransfe
             transfer.FromWarehouse,
             transfer.ToWarehouse);
 
+        return Result.Ok();
+    }
+
+    private async Task<string> GenerateTransferNumberAsync(CancellationToken cancellationToken)
+    {
+        var utcNow = DateTimeOffset.UtcNow;
+        var date = new DateTimeOffset(utcNow.UtcDateTime.Date, TimeSpan.Zero);
+        var nextDate = date.AddDays(1);
+        var existingCount = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.CountAsync(
+            _dbContext.Transfers.AsNoTracking(),
+            x => x.RequestedAt >= date && x.RequestedAt < nextDate,
+            cancellationToken);
+
+        return $"TRF-{utcNow:yyyyMMdd}-{existingCount + 1:000}";
+    }
+}
+
+public sealed class SubmitTransferCommandHandler : IRequestHandler<SubmitTransferCommand, Result>
+{
+    private readonly WarehouseDbContext _dbContext;
+
+    public SubmitTransferCommandHandler(WarehouseDbContext dbContext)
+    {
+        _dbContext = dbContext;
+    }
+
+    public async Task<Result> Handle(SubmitTransferCommand request, CancellationToken cancellationToken)
+    {
+        var transfer = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
+            _dbContext.Transfers,
+            x => x.Id == request.TransferId,
+            cancellationToken);
+        if (transfer is null)
+        {
+            return Result.Fail(DomainErrorCodes.NotFound, "Transfer not found.");
+        }
+
+        var submitResult = transfer.Submit(request.CommandId, DateTimeOffset.UtcNow);
+        if (!submitResult.IsSuccess)
+        {
+            return submitResult;
+        }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
         return Result.Ok();
     }
 }
@@ -364,7 +409,10 @@ public sealed class ExecuteTransferCommandHandler : IRequestHandler<ExecuteTrans
                     transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
                 }
 
-                var startResult = transfer.StartExecution(request.CommandId, DateTimeOffset.UtcNow);
+                var startResult = transfer.StartExecution(
+                    _currentUserService.GetCurrentUserId(),
+                    request.CommandId,
+                    DateTimeOffset.UtcNow);
                 if (!startResult.IsSuccess)
                 {
                     return startResult;

@@ -43,7 +43,8 @@ public sealed class TransfersController : ControllerBase
 
         if (!string.IsNullOrWhiteSpace(status))
         {
-            if (!Enum.TryParse<LKvitai.MES.Domain.Entities.TransferStatus>(status, true, out var parsedStatus))
+            var normalizedStatus = status.Replace("_", string.Empty, StringComparison.OrdinalIgnoreCase);
+            if (!Enum.TryParse<LKvitai.MES.Domain.Entities.TransferStatus>(normalizedStatus, true, out var parsedStatus))
             {
                 return ValidationFailure("Invalid status value.");
             }
@@ -92,6 +93,39 @@ public sealed class TransfersController : ControllerBase
         return Ok(ToResponse(transfer));
     }
 
+    [HttpPost("{id:guid}/submit")]
+    [Authorize(Policy = WarehousePolicies.OperatorOrAbove)]
+    public async Task<IActionResult> SubmitAsync(
+        Guid id,
+        [FromBody] SubmitTransferRequest? request,
+        CancellationToken cancellationToken = default)
+    {
+        var commandId = request?.CommandId == Guid.Empty ? Guid.NewGuid() : request?.CommandId ?? Guid.NewGuid();
+
+        var result = await _mediator.Send(new SubmitTransferCommand
+        {
+            CommandId = commandId,
+            CorrelationId = ResolveCorrelationId(),
+            TransferId = id
+        }, cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            return Failure(result);
+        }
+
+        var transfer = await _dbContext.Transfers
+            .AsNoTracking()
+            .Include(x => x.Lines)
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        if (transfer is null)
+        {
+            return Failure(Result.Fail(DomainErrorCodes.NotFound, "Transfer not found."));
+        }
+
+        return Ok(ToResponse(transfer));
+    }
+
     [HttpPost]
     [Authorize(Policy = WarehousePolicies.OperatorOrAbove)]
     public async Task<IActionResult> CreateAsync(
@@ -121,7 +155,8 @@ public sealed class TransfersController : ControllerBase
                 ItemId = x.ItemId,
                 Qty = x.Qty,
                 FromLocationId = x.FromLocationId,
-                ToLocationId = x.ToLocationId
+                ToLocationId = x.ToLocationId,
+                LotId = x.LotId
             }).ToList()
         }, cancellationToken);
 
@@ -217,9 +252,10 @@ public sealed class TransfersController : ControllerBase
             transfer.TransferNumber,
             transfer.FromWarehouse,
             transfer.ToWarehouse,
-            transfer.Status.ToString().ToUpperInvariant(),
+            ToApiStatus(transfer.Status),
             transfer.RequestedBy,
             transfer.ApprovedBy,
+            transfer.ExecutedBy,
             transfer.RequestedAt,
             transfer.ApprovedAt,
             transfer.ExecutedAt,
@@ -228,7 +264,8 @@ public sealed class TransfersController : ControllerBase
                 x.ItemId,
                 x.Qty,
                 x.FromLocationId,
-                x.ToLocationId)).ToList());
+                x.ToLocationId,
+                x.LotId)).ToList());
     }
 
     private ObjectResult Failure(Result result)
@@ -259,7 +296,7 @@ public sealed class TransfersController : ControllerBase
         return Guid.TryParse(raw, out var parsed) ? parsed : Guid.NewGuid();
     }
 
-    public sealed record TransferLineRequest(int ItemId, decimal Qty, int FromLocationId, int ToLocationId);
+    public sealed record TransferLineRequest(int ItemId, decimal Qty, int FromLocationId, int ToLocationId, Guid? LotId = null);
 
     public sealed record CreateTransferRequest(
         Guid CommandId,
@@ -268,11 +305,13 @@ public sealed class TransfersController : ControllerBase
         IReadOnlyList<TransferLineRequest> Lines,
         string? RequestedBy = null);
 
+    public sealed record SubmitTransferRequest(Guid CommandId);
+
     public sealed record ApproveTransferRequest(Guid CommandId, string? ApprovedBy = null);
 
     public sealed record ExecuteTransferRequest(Guid CommandId);
 
-    public sealed record TransferLineResponse(int ItemId, decimal Qty, int FromLocationId, int ToLocationId);
+    public sealed record TransferLineResponse(int ItemId, decimal Qty, int FromLocationId, int ToLocationId, Guid? LotId);
 
     public sealed record TransferResponse(
         Guid Id,
@@ -282,6 +321,7 @@ public sealed class TransfersController : ControllerBase
         string Status,
         string RequestedBy,
         string? ApprovedBy,
+        string? ExecutedBy,
         DateTimeOffset RequestedAt,
         DateTimeOffset? ApprovedAt,
         DateTimeOffset? ExecutedAt,
@@ -293,4 +333,14 @@ public sealed class TransfersController : ControllerBase
         int TotalCount,
         int PageNumber,
         int PageSize);
+
+    private static string ToApiStatus(LKvitai.MES.Domain.Entities.TransferStatus status)
+    {
+        return status switch
+        {
+            LKvitai.MES.Domain.Entities.TransferStatus.PendingApproval => "PENDING_APPROVAL",
+            LKvitai.MES.Domain.Entities.TransferStatus.InTransit => "IN_TRANSIT",
+            _ => status.ToString().ToUpperInvariant()
+        };
+    }
 }

@@ -701,3 +701,9 @@
   Evidence: Queue validation endpoints returned HTTP 403 on localhost (`/tmp/prd1618-queue.status`, `/tmp/prd1618-retry.status`), so runtime verification of queued job listing and manual retry could not be executed against the project API instance.
   Impact: End-to-end confirmation of `GET /api/warehouse/v1/labels/queue` and `POST /api/warehouse/v1/labels/queue/{id}/retry` remains pending.
   Proposed minimal fix: Run the project API with valid auth/database and execute queue list + retry validation against that runtime (ideally with seeded failed print jobs).
+- Timestamp: 2026-02-12T22:20:00Z
+  TaskId: PRD-1619
+  Type: TEST-GAP
+  Evidence: Full curl workflow for token/create/submit/approve/execute returned HTTP 403 on localhost (`/tmp/prd1619-token.status`, `/tmp/prd1619-create.status`, `/tmp/prd1619-submit.status`, `/tmp/prd1619-manager-token.status`, `/tmp/prd1619-approve.status`, `/tmp/prd1619-execute.status`), so runtime API flow could not be verified against the intended project service.
+  Impact: End-to-end transfer workflow validation with real auth/runtime data remains pending.
+  Proposed minimal fix: Start project API on known isolated port with valid auth/database and rerun the exact PRD-1619 curl sequence for create->submit->approve->execute.

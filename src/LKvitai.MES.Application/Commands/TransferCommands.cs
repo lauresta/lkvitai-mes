@@ -8,6 +8,7 @@ public sealed record TransferLineCommand
     public decimal Qty { get; init; }
     public int FromLocationId { get; init; }
     public int ToLocationId { get; init; }
+    public Guid? LotId { get; init; }
 }
 
 public sealed record CreateTransferCommand : ICommand
@@ -30,6 +31,15 @@ public sealed record ApproveTransferCommand : ICommand
 
     public Guid TransferId { get; init; }
     public string ApprovedBy { get; init; } = string.Empty;
+}
+
+public sealed record SubmitTransferCommand : ICommand
+{
+    public Guid CommandId { get; init; } = Guid.NewGuid();
+    public Guid CorrelationId { get; init; }
+    public Guid CausationId { get; init; }
+
+    public Guid TransferId { get; init; }
 }
 
 public sealed record ExecuteTransferCommand : ICommand

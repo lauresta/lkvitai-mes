@@ -558,11 +558,14 @@ public sealed class Transfer : AuditableEntity
     public TransferStatus Status { get; private set; } = TransferStatus.Draft;
     public string RequestedBy { get; set; } = string.Empty;
     public string? ApprovedBy { get; private set; }
+    public string? ExecutedBy { get; private set; }
     public DateTimeOffset RequestedAt { get; set; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset? SubmittedAt { get; private set; }
     public DateTimeOffset? ApprovedAt { get; private set; }
     public DateTimeOffset? ExecutedAt { get; private set; }
     public DateTimeOffset? CompletedAt { get; private set; }
     public Guid CreateCommandId { get; set; }
+    public Guid? SubmitCommandId { get; private set; }
     public Guid? ApproveCommandId { get; private set; }
     public Guid? ExecuteCommandId { get; private set; }
 
@@ -572,9 +575,24 @@ public sealed class Transfer : AuditableEntity
 
     public Result EnsureRequestedState()
     {
+        Status = TransferStatus.Draft;
+        return Result.Ok();
+    }
+
+    public Result Submit(Guid commandId, DateTimeOffset submittedAt)
+    {
+        if (Status != TransferStatus.Draft)
+        {
+            return Result.Fail(
+                DomainErrorCodes.ValidationError,
+                $"Invalid status transition: {Status} -> {TransferStatus.PendingApproval}");
+        }
+
         Status = RequiresApproval()
             ? TransferStatus.PendingApproval
-            : TransferStatus.Draft;
+            : TransferStatus.Approved;
+        SubmitCommandId = commandId;
+        SubmittedAt = submittedAt;
         return Result.Ok();
     }
 
@@ -599,13 +617,8 @@ public sealed class Transfer : AuditableEntity
         return Result.Ok();
     }
 
-    public Result StartExecution(Guid commandId, DateTimeOffset executedAt)
+    public Result StartExecution(string executedBy, Guid commandId, DateTimeOffset executedAt)
     {
-        if (Status == TransferStatus.Draft && !RequiresApproval())
-        {
-            Status = TransferStatus.Approved;
-        }
-
         if (Status != TransferStatus.Approved)
         {
             return Result.Fail(
@@ -613,7 +626,13 @@ public sealed class Transfer : AuditableEntity
                 $"Invalid status transition: {Status} -> {TransferStatus.InTransit}");
         }
 
+        if (string.IsNullOrWhiteSpace(executedBy))
+        {
+            return Result.Fail(DomainErrorCodes.ValidationError, "ExecutedBy is required.");
+        }
+
         Status = TransferStatus.InTransit;
+        ExecutedBy = executedBy;
         ExecutedAt = executedAt;
         ExecuteCommandId = commandId;
         return Result.Ok();
@@ -642,6 +661,7 @@ public sealed class TransferLine
     public decimal Qty { get; set; }
     public int FromLocationId { get; set; }
     public int ToLocationId { get; set; }
+    public Guid? LotId { get; set; }
 
     public Transfer? Transfer { get; set; }
     public Item? Item { get; set; }

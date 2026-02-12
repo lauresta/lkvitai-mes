@@ -457,7 +457,9 @@ public class WarehouseDbContext : DbContext
             entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(30).IsRequired();
             entity.Property(e => e.RequestedBy).HasMaxLength(100).IsRequired();
             entity.Property(e => e.ApprovedBy).HasMaxLength(100);
+            entity.Property(e => e.ExecutedBy).HasMaxLength(100);
             entity.Property(e => e.CreateCommandId).IsRequired();
+            entity.Property(e => e.SubmitCommandId);
             entity.HasIndex(e => e.TransferNumber).IsUnique();
             entity.HasIndex(e => e.Status);
             entity.HasIndex(e => e.FromWarehouse);
@@ -484,6 +486,7 @@ public class WarehouseDbContext : DbContext
             entity.HasIndex(e => e.ItemId);
             entity.HasIndex(e => e.FromLocationId);
             entity.HasIndex(e => e.ToLocationId);
+            entity.HasIndex(e => e.LotId);
             entity.HasOne(e => e.Item)
                 .WithMany()
                 .HasForeignKey(e => e.ItemId)
