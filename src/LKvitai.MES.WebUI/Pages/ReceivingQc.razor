@@ -26,7 +26,7 @@
                 <input class="form-control" @bind="_reasonCode" placeholder="DAMAGED" />
             </div>
             <div class="col-md-2 d-grid">
-                <button class="btn btn-outline-secondary" @onclick="LoadAsync" disabled="_isLoading || _isSubmitting">Refresh</button>
+                <button class="btn btn-outline-secondary" @onclick="LoadAsync" disabled="isLoading || _isSubmitting">Refresh</button>
             </div>
         </div>
     </div>
@@ -80,12 +80,12 @@
                                 <td class="d-flex gap-1">
                                     <button class="btn btn-sm btn-success"
                                             @onclick="() => PassAsync(row)"
-                                            disabled="_isSubmitting">
+                                            disabled="isSubmitting">
                                         Pass
                                     </button>
                                     <button class="btn btn-sm btn-danger"
                                             @onclick="() => FailAsync(row)"
-                                            disabled="_isSubmitting">
+                                            disabled="isSubmitting">
                                         Fail
                                     </button>
                                 </td>

@@ -40,7 +40,7 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <h5 class="mb-0">Top Defect Types</h5>
-                    <button class="btn btn-outline-secondary btn-sm" @onclick="LoadAsync" disabled="_isBusy">Refresh</button>
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="LoadAsync" disabled="isBusy">Refresh</button>
                 </div>
 
                 @if (_analytics is null || _analytics.DefectsByType.Count == 0)

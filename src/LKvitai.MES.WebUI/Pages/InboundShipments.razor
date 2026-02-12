@@ -40,9 +40,9 @@
                 <input type="date" class="form-control" @bind="_expectedTo" />
             </div>
             <div class="col-md-4 d-flex gap-2">
-                <button class="btn btn-primary" @onclick="ApplyFiltersAsync" disabled="_isLoading">Apply</button>
-                <button class="btn btn-outline-secondary" @onclick="ResetFiltersAsync" disabled="_isLoading">Reset</button>
-                <button class="btn btn-outline-secondary" @onclick="LoadAsync" disabled="_isLoading">Refresh</button>
+                <button class="btn btn-primary" @onclick="ApplyFiltersAsync" disabled="isLoading">Apply</button>
+                <button class="btn btn-outline-secondary" @onclick="ResetFiltersAsync" disabled="isLoading">Reset</button>
+                <button class="btn btn-outline-secondary" @onclick="LoadAsync" disabled="isLoading">Refresh</button>
                 <button class="btn btn-success ms-auto" @onclick="OpenCreate">+ Create Inbound</button>
             </div>
         </div>

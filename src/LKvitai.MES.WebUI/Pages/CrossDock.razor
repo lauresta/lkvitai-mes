@@ -36,7 +36,7 @@
                 <input class="form-control" type="number" step="0.01" @bind="_qty" />
             </div>
             <div class="col-md-2">
-                <button class="btn btn-primary w-100" @onclick="CreateAsync" disabled="_isBusy">Create</button>
+                <button class="btn btn-primary w-100" @onclick="CreateAsync" disabled="isBusy">Create</button>
             </div>
         </div>
     </div>
@@ -46,7 +46,7 @@
     <div class="card-body">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h5 class="mb-0">Cross-Dock Queue</h5>
-            <button class="btn btn-outline-secondary btn-sm" @onclick="LoadAsync" disabled="_isBusy">Refresh</button>
+            <button class="btn btn-outline-secondary btn-sm" @onclick="LoadAsync" disabled="isBusy">Refresh</button>
         </div>
 
         @if (_rows.Count == 0)

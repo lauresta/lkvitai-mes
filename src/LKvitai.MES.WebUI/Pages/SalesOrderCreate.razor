@@ -38,7 +38,7 @@
                 <input id="delivery-date" type="date" class="form-control" @bind="_requestedDeliveryDate" />
             </div>
             <div class="col-md-3 d-flex align-items-end">
-                <button class="btn btn-outline-secondary" @onclick="BackToList" disabled="_isSubmitting">Back to List</button>
+                <button class="btn btn-outline-secondary" @onclick="BackToList" disabled="isSubmitting">Back to List</button>
             </div>
         </div>
 
@@ -72,7 +72,7 @@
 
         <div class="d-flex justify-content-between align-items-center mb-2">
             <h5 class="mb-0">Order Lines</h5>
-            <button class="btn btn-sm btn-outline-primary" @onclick="AddLine" disabled="_isSubmitting">+ Add Line</button>
+            <button class="btn btn-sm btn-outline-primary" @onclick="AddLine" disabled="isSubmitting">+ Add Line</button>
         </div>
 
         @if (_lines.Count == 0)
@@ -117,7 +117,7 @@
                                 <td>
                                     <button class="btn btn-sm btn-outline-danger"
                                             @onclick="() => RemoveLine(i)"
-                                            disabled="_isSubmitting || _lines.Count == 1">
+                                            disabled="isSubmitting || _lines.Count == 1">
                                         Remove
                                     </button>
                                 </td>
@@ -129,7 +129,7 @@
         }
 
         <div class="d-flex justify-content-end mt-3">
-            <button class="btn btn-primary" @onclick="CreateAsync" disabled="_isSubmitting">Create Sales Order</button>
+            <button class="btn btn-primary" @onclick="CreateAsync" disabled="isSubmitting">Create Sales Order</button>
         </div>
     </div>
 </div>

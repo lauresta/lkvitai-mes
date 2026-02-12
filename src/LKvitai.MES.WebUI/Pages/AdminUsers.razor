@@ -52,7 +52,7 @@
                         </div>
                     }
                 </div>
-                <button class="btn btn-primary w-100" @onclick="CreateAsync" disabled="_isSubmittingCreate">Create User</button>
+                <button class="btn btn-primary w-100" @onclick="CreateAsync" disabled="isSubmittingCreate">Create User</button>
             </div>
         </div>
     </div>
@@ -63,7 +63,7 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <h5 class="mb-0">Users (@_users.Count)</h5>
-                    <button class="btn btn-sm btn-outline-secondary" @onclick="LoadAsync" disabled="_isLoading">Refresh</button>
+                    <button class="btn btn-sm btn-outline-secondary" @onclick="LoadAsync" disabled="isLoading">Refresh</button>
                 </div>
 
                 <div class="table-responsive">
@@ -151,8 +151,8 @@
                         </div>
 
                         <div class="d-flex gap-2 mt-3">
-                            <button class="btn btn-primary" @onclick="SaveEditAsync" disabled="_isSubmittingUpdate">Save</button>
-                            <button class="btn btn-outline-secondary" @onclick="CancelEdit" disabled="_isSubmittingUpdate">Cancel</button>
+                            <button class="btn btn-primary" @onclick="SaveEditAsync" disabled="isSubmittingUpdate">Save</button>
+                            <button class="btn btn-outline-secondary" @onclick="CancelEdit" disabled="isSubmittingUpdate">Cancel</button>
                         </div>
                     </div>
                 }
