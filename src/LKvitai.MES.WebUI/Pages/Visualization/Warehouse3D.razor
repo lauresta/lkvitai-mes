@@ -2,6 +2,7 @@
 @page "/warehouse/visualization/2d"
 @implements IAsyncDisposable
 @using System.Globalization
+@using Microsoft.AspNetCore.Components.Web
 @using LKvitai.MES.WebUI.Infrastructure
 @using LKvitai.MES.WebUI.Models
 @inject VisualizationClient VisualizationClient
@@ -28,6 +29,27 @@
                     <i class="bi bi-search"></i>
                 </button>
             </div>
+            <select class="form-select"
+                    value="@_zoneFilter"
+                    @onchange="OnZoneFilterChangedAsync"
+                    style="min-width: 160px;">
+                <option value="ALL">All Zones</option>
+                @foreach (var zone in ZoneOptions)
+                {
+                    <option value="@zone">@zone</option>
+                }
+            </select>
+            <select class="form-select"
+                    value="@_statusFilter"
+                    @onchange="OnStatusFilterChangedAsync"
+                    style="min-width: 170px;">
+                <option value="ALL">All Statuses</option>
+                <option value="EMPTY">EMPTY</option>
+                <option value="LOW">LOW</option>
+                <option value="FULL">FULL</option>
+                <option value="RESERVED">RESERVED</option>
+                <option value="OVER_CAPACITY">OVER_CAPACITY</option>
+            </select>
             <button class="btn btn-outline-secondary" @onclick="RefreshAsync">
                 <i class="bi bi-arrow-clockwise"></i> Refresh
             </button>
@@ -50,12 +72,17 @@
     }
     else if (_model is not null)
     {
+        var visibleBins = GetFilteredBins();
         if (_model.Bins.Count == 0)
         {
             <div class="alert alert-warning mt-3">
-                No bins with coordinates found.
-                Go to <a href="/admin/locations" class="alert-link">Admin -> Locations</a> and set
-                <code>Coordinate X/Y/Z</code> for non-virtual bin locations.
+                No bins configured with coordinates. Configure layout first.
+            </div>
+        }
+        else if (visibleBins.Count == 0)
+        {
+            <div class="alert alert-warning mt-3">
+                No bins match the selected zone/status filters.
             </div>
         }
 
@@ -82,7 +109,7 @@
                                       stroke="@zone.Color"
                                       stroke-width="1" />
                             }
-                            @foreach (var bin in _model.Bins)
+                            @foreach (var bin in visibleBins)
                             {
                                 <rect class="@GetBinClass(bin)"
                                       x="@ToSvgX(bin.Coordinates.X)"
@@ -110,6 +137,8 @@
                     <dl class="row">
                         <dt class="col-5">Status</dt>
                         <dd class="col-7">@_selectedBin.Status</dd>
+                        <dt class="col-5">Utilization</dt>
+                        <dd class="col-7">@_selectedBin.UtilizationPercent.ToString("0.##", CultureInfo.InvariantCulture)%</dd>
                         <dt class="col-5">Coordinates</dt>
                         <dd class="col-7">@_selectedBin.Coordinates.X, @_selectedBin.Coordinates.Y, @_selectedBin.Coordinates.Z</dd>
                         <dt class="col-5">Dimensions</dt>
@@ -137,7 +166,7 @@
                     }
 
                     <a class="btn btn-sm btn-outline-secondary mt-3"
-                       href="@($"/admin/locations?search={Uri.EscapeDataString(_selectedBin.Code)}")">
+                       href="@($"/warehouse/locations/{_selectedBin.LocationId}")">
                         View Details
                     </a>
                 }
@@ -157,14 +186,25 @@
 
     private Visualization3dDto? _model;
     private VisualizationBinDto? _selectedBin;
-    private DotNetObjectReference<WarehouseVisualization>? _selfReference;
+    private DotNetObjectReference<Warehouse3D>? _selfReference;
     private bool _isLoading;
     private bool _renderRequested;
     private string? _error;
     private string _searchQuery = string.Empty;
+    private string _zoneFilter = "ALL";
+    private string _statusFilter = "ALL";
 
     private bool _is3dView =>
         NavigationManager.Uri.Contains("/warehouse/visualization/3d", StringComparison.OrdinalIgnoreCase);
+
+    private IReadOnlyList<string> ZoneOptions =>
+        _model?.Zones
+            .Select(x => x.Type)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+            .ToList()
+        ?? [];
 
     protected override async Task OnInitializedAsync()
     {
@@ -180,7 +220,7 @@
         }
 
         _renderRequested = false;
-        await JS.InvokeVoidAsync("warehouseVisualization.render", CanvasId, _model.Bins, _selfReference);
+        await JS.InvokeVoidAsync("warehouseVisualization.render", CanvasId, GetFilteredBins(), _selfReference);
     }
 
     [JSInvokable]
@@ -226,12 +266,12 @@
             return;
         }
 
-        var match = _model.Bins.FirstOrDefault(x =>
+        var match = GetFilteredBins().FirstOrDefault(x =>
             string.Equals(x.Code, _searchQuery.Trim(), StringComparison.OrdinalIgnoreCase));
 
         if (match is null)
         {
-            ToastService.ShowError($"Location '{_searchQuery}' not found.");
+            ToastService.ShowError("No bins found matching search.");
             return;
         }
 
@@ -253,6 +293,36 @@
 
         _selectedBin = _model.Bins.FirstOrDefault(x =>
             string.Equals(x.Code, code, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private async Task OnZoneFilterChangedAsync(ChangeEventArgs args)
+    {
+        _zoneFilter = (args.Value?.ToString() ?? "ALL").Trim();
+        if (string.IsNullOrWhiteSpace(_zoneFilter))
+        {
+            _zoneFilter = "ALL";
+        }
+
+        if (_is3dView)
+        {
+            _renderRequested = true;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task OnStatusFilterChangedAsync(ChangeEventArgs args)
+    {
+        _statusFilter = (args.Value?.ToString() ?? "ALL").Trim().ToUpperInvariant();
+        if (string.IsNullOrWhiteSpace(_statusFilter))
+        {
+            _statusFilter = "ALL";
+        }
+
+        if (_is3dView)
+        {
+            _renderRequested = true;
+            await InvokeAsync(StateHasChanged);
+        }
     }
 
     private async Task LoadAsync()
@@ -299,6 +369,54 @@
         }
 
         return $"{dimensions.Width.Value:0.###} x {dimensions.Length.Value:0.###} x {dimensions.Height.Value:0.###} m";
+    }
+
+    private List<VisualizationBinDto> GetFilteredBins()
+    {
+        if (_model is null)
+        {
+            return [];
+        }
+
+        return _model.Bins
+            .Where(BinMatchesFilters)
+            .ToList();
+    }
+
+    private bool BinMatchesFilters(VisualizationBinDto bin)
+    {
+        if (!string.Equals(_statusFilter, "ALL", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(bin.Status, _statusFilter, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        if (!string.Equals(_zoneFilter, "ALL", StringComparison.OrdinalIgnoreCase))
+        {
+            var zone = ResolveZoneType(bin);
+            if (!string.Equals(zone, _zoneFilter, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private string ResolveZoneType(VisualizationBinDto bin)
+    {
+        if (_model is null)
+        {
+            return "UNASSIGNED";
+        }
+
+        var zone = _model.Zones.FirstOrDefault(z =>
+            bin.Coordinates.X >= z.Bounds.X1 &&
+            bin.Coordinates.X <= z.Bounds.X2 &&
+            bin.Coordinates.Y >= z.Bounds.Y1 &&
+            bin.Coordinates.Y <= z.Bounds.Y2);
+
+        return zone?.Type ?? "UNASSIGNED";
     }
 
     private string GetBinClass(VisualizationBinDto bin)

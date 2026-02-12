@@ -303,7 +303,7 @@
                     }
 
                     if (selectedCode && mesh.userData.code === selectedCode) {
-                        material.color.setHex(0xffd166);
+                        material.color.setHex(0xffd700);
                         material.emissive.setHex(0x222200);
                     } else {
                         material.color.setHex(mesh.userData.baseColor);

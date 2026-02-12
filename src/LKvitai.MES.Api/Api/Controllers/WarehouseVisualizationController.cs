@@ -261,10 +261,12 @@ public sealed class WarehouseVisualizationController : ControllerBase
                               hardLockedQty > 0m;
             var onHandQty = qtyByLocation.GetValueOrDefault(location.Code, 0m);
             var utilization = ComputeUtilization(location, onHandQty);
+            var utilizationPercent = decimal.Round(utilization * 100m, 2, MidpointRounding.AwayFromZero);
             var handlingUnitsForLocation = husByLocation.GetValueOrDefault(location.Code, new List<Domain.Aggregates.HandlingUnit>());
             var (status, color) = ResolveStatusAndColor(hasHardLock, handlingUnitsForLocation.Count, utilization);
 
             return new VisualizationBinResponse(
+                location.Id,
                 location.Code,
                 new VisualizationCoordinateResponse(
                     node.X,
@@ -277,6 +279,7 @@ public sealed class WarehouseVisualizationController : ControllerBase
                 new VisualizationCapacityResponse(
                     location.CapacityWeight ?? location.MaxWeight,
                     location.CapacityVolume ?? location.MaxVolume),
+                utilizationPercent,
                 status,
                 color,
                 handlingUnitsForLocation.Select(x =>
@@ -356,12 +359,12 @@ public sealed class WarehouseVisualizationController : ControllerBase
     {
         if (location.CapacityWeight.HasValue && location.CapacityWeight.Value > 0m)
         {
-            return Math.Clamp(onHandQty / location.CapacityWeight.Value, 0m, 1m);
+            return onHandQty / location.CapacityWeight.Value;
         }
 
         if (location.CapacityVolume.HasValue && location.CapacityVolume.Value > 0m)
         {
-            return Math.Clamp(onHandQty / location.CapacityVolume.Value, 0m, 1m);
+            return onHandQty / location.CapacityVolume.Value;
         }
 
         return onHandQty > 0m ? 0.6m : 0m;
@@ -374,12 +377,17 @@ public sealed class WarehouseVisualizationController : ControllerBase
     {
         if (hasHardLock)
         {
-            return ("RESERVED", "#1E90FF");
+            return ("RESERVED", "#0000FF");
         }
 
         if (huCount == 0)
         {
             return ("EMPTY", "#808080");
+        }
+
+        if (utilization > 1m)
+        {
+            return ("OVER_CAPACITY", "#FF0000");
         }
 
         if (utilization > 0.80m)
@@ -479,10 +487,12 @@ public sealed class WarehouseVisualizationController : ControllerBase
         decimal Height);
 
     public sealed record VisualizationBinResponse(
+        int LocationId,
         string Code,
         VisualizationCoordinateResponse Coordinates,
         VisualizationBinDimensionsResponse Dimensions,
         VisualizationCapacityResponse Capacity,
+        decimal UtilizationPercent,
         string Status,
         string Color,
         IReadOnlyList<VisualizationHandlingUnitResponse> HandlingUnits);

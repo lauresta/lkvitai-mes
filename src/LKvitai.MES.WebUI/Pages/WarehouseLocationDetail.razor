@@ -1,0 +1,15 @@
+@page "/warehouse/locations/{Id:int}"
+
+<PageTitle>Location Details</PageTitle>
+
+<h1>Location Details</h1>
+<p class="text-muted">Location ID: @Id</p>
+<p>
+    Manage location metadata in the admin location workspace.
+</p>
+<a class="btn btn-outline-secondary" href="/admin/locations">Open Admin Locations</a>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+}

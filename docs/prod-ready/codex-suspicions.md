@@ -635,3 +635,9 @@
   Evidence: Task validation requiring runtime API calls (`POST /api/auth/dev-token`, `PUT /api/warehouse/v1/locations/{code}`) is blocked because API startup fails with `Marten.Exceptions.InvalidDocumentException` for `ItemValuation`; additionally `dotnet ef database update --project src/LKvitai.MES.Infrastructure` failed at design-time DbContext creation (`Unable to resolve service for type DbContextOptions<WarehouseDbContext>`).
   Impact: Full environment validation for migration application and curl-based coordinate update could not be completed end-to-end.
   Proposed minimal fix: Add a design-time `IDesignTimeDbContextFactory<WarehouseDbContext>` for EF tooling and fix Marten identity mapping so API can start, then re-run the exact PRD-1609 validation commands.
+- Timestamp: 2026-02-12T21:35:24Z
+  TaskId: PRD-1610
+  Type: TEST-GAP
+  Evidence: `dotnet run --project src/LKvitai.MES.WebUI` failed with HTTPS developer certificate error (`src/LKvitai.MES.WebUI/Program.cs:58`); fallback startup succeeded via `DOTNET_ENVIRONMENT=Development ASPNETCORE_URLS=http://127.0.0.1:5001 dotnet run --no-launch-profile --project src/LKvitai.MES.WebUI /p:UseAppHost=false`, but browser interaction checks (render timing, click latency, camera controls) were not executable in this terminal-only run.
+  Impact: Full manual acceptance validation for `/warehouse/visualization/3d` could not be completed end-to-end.
+  Proposed minimal fix: Install/trust local HTTPS dev certificate and execute the documented browser walkthrough for 3D rendering, interaction, and refresh behavior.

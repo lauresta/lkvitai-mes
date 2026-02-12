@@ -15,10 +15,12 @@ public sealed record VisualizationDimensionsDto(
     decimal Height);
 
 public sealed record VisualizationBinDto(
+    int LocationId,
     string Code,
     VisualizationCoordinateDto Coordinates,
     VisualizationBinDimensionsDto Dimensions,
     VisualizationCapacityDto Capacity,
+    decimal UtilizationPercent,
     string Status,
     string Color,
     IReadOnlyList<VisualizationHandlingUnitDto> HandlingUnits);
