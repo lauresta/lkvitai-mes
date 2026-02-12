@@ -113,6 +113,24 @@ public class ProjectionsControllerIntegrationTests : IAsyncLifetime
     }
 
     [SkippableFact]
+    public async Task Rebuild_AvailableStock_NoEvents_ReturnsSynchronousReport()
+    {
+        DockerRequirement.EnsureEnabled();
+
+        using var scope = _provider!.CreateScope();
+        var controller = CreateController(scope.ServiceProvider);
+
+        var result = await controller.RebuildAsync(
+            new ProjectionsController.RebuildProjectionRequestDto("AvailableStock"),
+            CancellationToken.None);
+
+        var ok = result.Should().BeOfType<OkObjectResult>().Subject;
+        var payload = ok.Value.Should().BeOfType<ProjectionRebuildReport>().Subject;
+        payload.ProjectionName.Should().Be("AvailableStock");
+        payload.ChecksumMatch.Should().BeTrue();
+    }
+
+    [SkippableFact]
     public async Task Verify_HappyPath_ReturnsChecksumsAndRowCounts()
     {
         DockerRequirement.EnsureEnabled();

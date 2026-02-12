@@ -109,9 +109,9 @@ public class ProjectionRebuildService : IProjectionRebuildService
                     message);
             }
 
-            await using var querySession = _documentStore.QuerySession();
-            var lockConnection = (NpgsqlConnection)(querySession.Connection
-                ?? throw new InvalidOperationException("Marten query session connection is unavailable."));
+            await using var writeSession = _documentStore.LightweightSession();
+            var writeConnection = (NpgsqlConnection)(writeSession.Connection
+                ?? throw new InvalidOperationException("Marten write session connection is unavailable."));
 
             var tableName = projectionName switch
             {
@@ -131,7 +131,7 @@ public class ProjectionRebuildService : IProjectionRebuildService
                     $"Projection '{projectionName}' rebuild not implemented");
             }
 
-            var productionTable = await ResolveQualifiedTableNameAsync(lockConnection, tableName, cancellationToken);
+            var productionTable = await ResolveQualifiedTableNameAsync(writeConnection, tableName, cancellationToken);
             if (string.IsNullOrWhiteSpace(productionTable))
             {
                 return Result<ProjectionRebuildReport>.Fail(
@@ -142,7 +142,7 @@ public class ProjectionRebuildService : IProjectionRebuildService
             var shadowTable = BuildShadowTableName(productionTable);
 
             // Step 1: Create shadow table
-            await CreateShadowTableAsync(productionTable, shadowTable, cancellationToken);
+            await CreateShadowTableAsync(writeConnection, productionTable, shadowTable, cancellationToken);
 
             // Step 2: Replay events to shadow table in GLOBAL sequence order (V-5 Rule A)
             var eventsProcessed = projectionName switch
@@ -158,8 +158,18 @@ public class ProjectionRebuildService : IProjectionRebuildService
 
             // Step 3: Compute field-based checksums (MED-01 fix)
             var checksumSql = GetFieldBasedChecksumSql(projectionName);
-            var productionChecksum = await ComputeFieldChecksumAsync(productionTable, projectionName, checksumSql, cancellationToken);
-            var shadowChecksum = await ComputeFieldChecksumAsync(shadowTable, projectionName, checksumSql, cancellationToken);
+            var productionChecksum = await ComputeFieldChecksumAsync(
+                writeConnection,
+                productionTable,
+                projectionName,
+                checksumSql,
+                cancellationToken);
+            var shadowChecksum = await ComputeFieldChecksumAsync(
+                writeConnection,
+                shadowTable,
+                projectionName,
+                checksumSql,
+                cancellationToken);
 
             var checksumMatch = productionChecksum == shadowChecksum;
 
@@ -188,7 +198,7 @@ public class ProjectionRebuildService : IProjectionRebuildService
                         $"Production: {productionChecksum}, Shadow: {shadowChecksum}");
                 }
 
-                await SwapTablesAsync(productionTable, shadowTable, cancellationToken);
+                await SwapTablesAsync(writeConnection, productionTable, shadowTable, cancellationToken);
                 swapped = true;
 
                 _logger.LogInformation(
@@ -318,33 +328,38 @@ public class ProjectionRebuildService : IProjectionRebuildService
     // ═══════════════════════════════════════════════════════════════════
 
     private async Task CreateShadowTableAsync(
-        string productionTable, string shadowTable, CancellationToken ct)
+        NpgsqlConnection connection,
+        string productionTable,
+        string shadowTable,
+        CancellationToken ct)
     {
         _logger.LogInformation("Creating shadow table {ShadowTable}", shadowTable);
 
-        await using var session = _documentStore.LightweightSession();
-        var conn = (NpgsqlConnection)session.Connection!;
+        await using var transaction = await connection.BeginTransactionAsync(ct);
 
-        await using var dropCmd = conn.CreateCommand();
+        await using var dropCmd = connection.CreateCommand();
+        dropCmd.Transaction = transaction;
         dropCmd.CommandText = $"DROP TABLE IF EXISTS {shadowTable} CASCADE";
         await dropCmd.ExecuteNonQueryAsync(ct);
 
-        await using var createCmd = conn.CreateCommand();
+        await using var createCmd = connection.CreateCommand();
+        createCmd.Transaction = transaction;
         createCmd.CommandText = $"CREATE TABLE {shadowTable} (LIKE {productionTable} INCLUDING ALL)";
         await createCmd.ExecuteNonQueryAsync(ct);
 
+        await transaction.CommitAsync(ct);
         _logger.LogInformation("Shadow table {ShadowTable} created", shadowTable);
     }
 
     private async Task SwapTablesAsync(
-        string productionTable, string shadowTable, CancellationToken ct)
+        NpgsqlConnection connection,
+        string productionTable,
+        string shadowTable,
+        CancellationToken ct)
     {
         _logger.LogInformation("Swapping {ShadowTable} to {ProductionTable}", shadowTable, productionTable);
 
-        await using var session = _documentStore.LightweightSession();
-        var conn = (NpgsqlConnection)session.Connection!;
-
-        await using var transaction = await conn.BeginTransactionAsync(ct);
+        await using var transaction = await connection.BeginTransactionAsync(ct);
 
         try
         {
@@ -353,12 +368,12 @@ public class ProjectionRebuildService : IProjectionRebuildService
             var oldTable = $"{productionName}_old";
             var qualifiedOldTable = $"{productionSchema}.{oldTable}";
 
-            await using var renameOldCmd = conn.CreateCommand();
+            await using var renameOldCmd = connection.CreateCommand();
             renameOldCmd.Transaction = transaction;
             renameOldCmd.CommandText = $"ALTER TABLE {productionTable} RENAME TO {oldTable}";
             await renameOldCmd.ExecuteNonQueryAsync(ct);
 
-            await using var renameShadowCmd = conn.CreateCommand();
+            await using var renameShadowCmd = connection.CreateCommand();
             renameShadowCmd.Transaction = transaction;
             renameShadowCmd.CommandText = $"ALTER TABLE {shadowTable} RENAME TO {productionName}";
             await renameShadowCmd.ExecuteNonQueryAsync(ct);
@@ -367,7 +382,7 @@ public class ProjectionRebuildService : IProjectionRebuildService
 
             _logger.LogInformation("Tables swapped successfully");
 
-            await using var dropCmd = conn.CreateCommand();
+            await using var dropCmd = connection.CreateCommand();
             dropCmd.CommandText = $"DROP TABLE IF EXISTS {qualifiedOldTable} CASCADE";
             await dropCmd.ExecuteNonQueryAsync(ct);
         }
@@ -448,14 +463,15 @@ public class ProjectionRebuildService : IProjectionRebuildService
     };
 
     private async Task<string> ComputeFieldChecksumAsync(
-        string tableName, string projectionName, string fieldExpression, CancellationToken ct)
+        NpgsqlConnection connection,
+        string tableName,
+        string projectionName,
+        string fieldExpression,
+        CancellationToken ct)
     {
         _logger.LogInformation("Computing field-based checksum for {TableName}", tableName);
 
-        await using var session = _documentStore.QuerySession();
-        var conn = (NpgsqlConnection)session.Connection!;
-
-        await using var cmd = conn.CreateCommand();
+        await using var cmd = connection.CreateCommand();
         var orderSql = GetFieldBasedOrderSql(projectionName);
         cmd.CommandText = $@"
             SELECT COALESCE(
