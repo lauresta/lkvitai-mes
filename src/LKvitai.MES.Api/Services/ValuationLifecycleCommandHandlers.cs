@@ -113,6 +113,12 @@ public sealed class AdjustValuationCostCommandHandler : IRequestHandler<AdjustVa
 
     public async Task<Result> Handle(AdjustValuationCostCommand request, CancellationToken cancellationToken)
     {
+        var requestValidation = ValuationCostAdjustmentPolicy.ValidateRequest(request);
+        if (!requestValidation.IsSuccess)
+        {
+            return requestValidation;
+        }
+
         var item = await ValuationHandlerUtilities.LoadItemAsync(_dbContext, request.ItemId, cancellationToken);
         if (item is null)
         {
@@ -137,6 +143,15 @@ public sealed class AdjustValuationCostCommandHandler : IRequestHandler<AdjustVa
 
         try
         {
+            var approvalValidation = ValuationCostAdjustmentPolicy.ValidateApproval(
+                aggregate.CurrentCost,
+                request.NewCost,
+                request.ApprovedBy);
+            if (!approvalValidation.IsSuccess)
+            {
+                return approvalValidation;
+            }
+
             var actor = _currentUserService.GetCurrentUserId();
             var adjusted = aggregate.AdjustCost(
                 request.NewCost,

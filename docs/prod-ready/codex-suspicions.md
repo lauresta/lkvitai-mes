@@ -587,3 +587,9 @@
   Evidence: Validation command `curl -X POST http://localhost:5000/api/auth/dev-token ...` returned HTTP 403 and no token (`/tmp/prd1601-dev-token.out`), follow-up `POST /api/warehouse/v1/valuation/initialize` also returned HTTP 403 (`/tmp/prd1601-init.out`).
   Impact: Task-specified API validation could not confirm valuation initialization/event append behavior in this environment.
   Proposed resolution: Re-run validation against the project API instance with valid Warehouse auth roles (WarehouseAdmin/InventoryAccountant) and reachable DB-backed runtime.
+- Timestamp: 2026-02-12T20:47:42Z
+  TaskId: PRD-1602
+  Type: TEST-GAP
+  Evidence: Validation command `POST /api/warehouse/v1/valuation/adjust-cost` returned HTTP 403 with empty response (`/tmp/prd1602-adjust.out`).
+  Impact: Could not confirm runtime API behavior for delta-based approval/idempotent adjust-cost flow in this environment.
+  Proposed resolution: Execute validation against the project API runtime with valid Warehouse auth token and database connectivity.

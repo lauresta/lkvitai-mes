@@ -18,6 +18,11 @@ All valuation events inherit from `DomainEvent` and carry schema metadata (`Vers
 - `POST /api/warehouse/v1/valuation/apply-landed-cost`
 - `POST /api/warehouse/v1/valuation/write-down`
 
+## Cost Adjustment Rules
+- `NewCost >= 0`
+- `Reason` minimum length: 10 characters
+- `ApprovedBy` required when absolute cost delta is greater than 20%
+
 ## Audit Fields
 Audit data is persisted in valuation events:
 - actor (`InitializedBy`, `AdjustedBy`, `AppliedBy`, `ApprovedBy`)
