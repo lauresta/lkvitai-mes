@@ -653,3 +653,9 @@
   Evidence: Task validation API flow could not run end-to-end because `dotnet run --no-launch-profile --project src/LKvitai.MES.Api /p:UseAppHost=false` failed at startup with `Npgsql.PostgresException: 3D000 database "lkvitai_warehouse" does not exist` (`src/LKvitai.MES.Api/Program.cs:169`, `src/LKvitai.MES.Api/Program.cs:213`); direct curl on `http://localhost:5000/api/warehouse/v1/cycle-counts/schedule` returned HTTP 403 from another local service.
   Impact: Could not verify authenticated schedule API behavior in the intended project runtime.
   Proposed minimal fix: Provision the expected PostgreSQL database and run API on an isolated known port, then execute the exact PRD-1612 curl sequence with a valid dev token.
+- Timestamp: 2026-02-12T21:47:08Z
+  TaskId: PRD-1613
+  Type: TEST-GAP
+  Evidence: Record-count validation call `POST /api/warehouse/v1/cycle-counts/{id}/record-count` returned HTTP 403 on localhost (`/tmp/prd1613-record.status`), and project API startup remains blocked by missing database (`dotnet run --no-launch-profile --project src/LKvitai.MES.Api /p:UseAppHost=false` -> `database "lkvitai_warehouse" does not exist`).
+  Impact: Could not execute authenticated end-to-end cycle count execution workflow against the intended runtime.
+  Proposed minimal fix: Create/configure the expected PostgreSQL database for API startup and rerun the exact token + record-count curl sequence.

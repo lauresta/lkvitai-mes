@@ -533,6 +533,8 @@ public class WarehouseDbContext : DbContext
             entity.Property(e => e.SystemQty).HasPrecision(18, 3).IsRequired();
             entity.Property(e => e.PhysicalQty).HasPrecision(18, 3).IsRequired();
             entity.Property(e => e.Delta).HasPrecision(18, 3).IsRequired();
+            entity.Property(e => e.CountedBy).HasMaxLength(100);
+            entity.Property(e => e.AdjustmentApprovedBy).HasMaxLength(100);
             entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(20).IsRequired();
             entity.Property(e => e.Reason).HasMaxLength(500);
             entity.HasIndex(e => e.CycleCountId);

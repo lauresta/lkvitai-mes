@@ -105,13 +105,25 @@ public sealed class CycleCountsController : ControllerBase
             return ValidationFailure("Request body is required.");
         }
 
+        var location = await ResolveLocationAsync(request, cancellationToken);
+        if (location is null)
+        {
+            return ValidationFailure("LocationCode or valid LocationId is required.");
+        }
+
+        var item = await ResolveItemAsync(request, cancellationToken);
+        if (item is null)
+        {
+            return ValidationFailure("ItemBarcode or valid ItemId is required.");
+        }
+
         var result = await _mediator.Send(new RecordCountCommand
         {
             CommandId = request.CommandId == Guid.Empty ? Guid.NewGuid() : request.CommandId,
             CorrelationId = ResolveCorrelationId(),
             CycleCountId = id,
-            LocationId = request.LocationId,
-            ItemId = request.ItemId,
+            LocationId = location.Id,
+            ItemId = item.Id,
             PhysicalQty = request.PhysicalQty,
             Reason = request.Reason,
             CountedBy = request.CountedBy ?? string.Empty
@@ -125,13 +137,60 @@ public sealed class CycleCountsController : ControllerBase
         var cycleCount = await _dbContext.CycleCounts
             .AsNoTracking()
             .Include(x => x.Lines)
+            .ThenInclude(x => x.Location)
+            .Include(x => x.Lines)
+            .ThenInclude(x => x.Item)
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
         if (cycleCount is null)
         {
             return Failure(Result.Fail(DomainErrorCodes.NotFound, "Cycle count not found."));
         }
 
-        return Ok(ToResponse(cycleCount));
+        var line = cycleCount.Lines.First(x => x.LocationId == location.Id && x.ItemId == item.Id);
+        var signedPercent = line.SystemQty == 0m
+            ? 0m
+            : decimal.Round((line.Delta / line.SystemQty) * 100m, 2, MidpointRounding.AwayFromZero);
+        var hasDiscrepancy = Math.Abs(line.Delta) > 10m || Math.Abs(signedPercent) > 5m;
+        var warning = hasDiscrepancy
+            ? $"Discrepancy detected: {line.Delta:0.###} units ({signedPercent:0.##}%)"
+            : null;
+
+        return Ok(new RecordCountResponse(ToResponse(cycleCount), hasDiscrepancy, warning));
+    }
+
+    [HttpGet("{id:guid}/lines")]
+    [Authorize(Policy = WarehousePolicies.OperatorOrAbove)]
+    public async Task<IActionResult> GetLinesAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var cycleCount = await _dbContext.CycleCounts
+            .AsNoTracking()
+            .Include(x => x.Lines)
+            .ThenInclude(x => x.Location)
+            .Include(x => x.Lines)
+            .ThenInclude(x => x.Item)
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        if (cycleCount is null)
+        {
+            return Failure(Result.Fail(DomainErrorCodes.NotFound, "Cycle count not found."));
+        }
+
+        return Ok(cycleCount.Lines
+            .OrderBy(x => x.LocationId)
+            .ThenBy(x => x.ItemId)
+            .Select(x => new CycleCountLineDetailResponse(
+                x.Id,
+                x.LocationId,
+                x.Location?.Code ?? x.LocationId.ToString(),
+                x.ItemId,
+                x.Item?.InternalSKU ?? x.ItemId.ToString(),
+                x.SystemQty,
+                x.PhysicalQty,
+                x.Delta,
+                x.CountedAt,
+                x.CountedBy,
+                x.Status.ToString().ToUpperInvariant(),
+                x.Reason))
+            .ToList());
     }
 
     [HttpPost("{id:guid}/apply-adjustment")]
@@ -188,8 +247,55 @@ public sealed class CycleCountsController : ControllerBase
                 x.SystemQty,
                 x.PhysicalQty,
                 x.Delta,
+                x.CountedAt,
+                x.CountedBy,
                 x.Status.ToString().ToUpperInvariant(),
                 x.Reason)).ToList());
+    }
+
+    private async Task<Location?> ResolveLocationAsync(RecordCountRequest request, CancellationToken cancellationToken)
+    {
+        if (!string.IsNullOrWhiteSpace(request.LocationCode))
+        {
+            var locationCode = request.LocationCode.Trim();
+            return await _dbContext.Locations
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Code == locationCode, cancellationToken);
+        }
+
+        if (request.LocationId is not null)
+        {
+            return await _dbContext.Locations
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == request.LocationId.Value, cancellationToken);
+        }
+
+        return null;
+    }
+
+    private async Task<Item?> ResolveItemAsync(RecordCountRequest request, CancellationToken cancellationToken)
+    {
+        if (!string.IsNullOrWhiteSpace(request.ItemBarcode))
+        {
+            var barcode = request.ItemBarcode.Trim();
+            return await _dbContext.Items
+                .AsNoTracking()
+                .Include(x => x.Barcodes)
+                .FirstOrDefaultAsync(
+                    x => x.InternalSKU == barcode ||
+                         x.PrimaryBarcode == barcode ||
+                         x.Barcodes.Any(b => b.Barcode == barcode),
+                    cancellationToken);
+        }
+
+        if (request.ItemId is not null)
+        {
+            return await _dbContext.Items
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == request.ItemId.Value, cancellationToken);
+        }
+
+        return null;
     }
 
     private ObjectResult Failure(Result result)
@@ -229,13 +335,34 @@ public sealed class CycleCountsController : ControllerBase
 
     public sealed record RecordCountRequest(
         Guid CommandId,
-        int LocationId,
-        int ItemId,
         decimal PhysicalQty,
-        string? Reason,
-        string? CountedBy);
+        string? LocationCode = null,
+        string? ItemBarcode = null,
+        int? LocationId = null,
+        int? ItemId = null,
+        string? Reason = null,
+        string? CountedBy = null);
+
+    public sealed record RecordCountResponse(
+        CycleCountResponse CycleCount,
+        bool HasDiscrepancy,
+        string? Warning);
 
     public sealed record ApplyAdjustmentRequest(Guid CommandId, string? ApproverId);
+
+    public sealed record CycleCountLineDetailResponse(
+        Guid Id,
+        int LocationId,
+        string LocationCode,
+        int ItemId,
+        string ItemBarcode,
+        decimal SystemQty,
+        decimal PhysicalQty,
+        decimal Delta,
+        DateTimeOffset? CountedAt,
+        string? CountedBy,
+        string Status,
+        string? Reason);
 
     public sealed record CycleCountLineResponse(
         int LocationId,
@@ -243,6 +370,8 @@ public sealed class CycleCountsController : ControllerBase
         decimal SystemQty,
         decimal PhysicalQty,
         decimal Delta,
+        DateTimeOffset? CountedAt,
+        string? CountedBy,
         string Status,
         string? Reason);
 

@@ -264,7 +264,18 @@ public sealed class RecordCountCommandHandler : IRequestHandler<RecordCountComma
         line.PhysicalQty = request.PhysicalQty;
         line.Delta = decimal.Round(line.PhysicalQty - line.SystemQty, 3, MidpointRounding.AwayFromZero);
         line.Status = CycleCountLineStatus.Pending;
+        line.CountedAt = DateTimeOffset.UtcNow;
+        line.CountedBy = countedBy;
         line.Reason = request.Reason;
+
+        if (cycleCount.Lines.All(x => x.CountedAt.HasValue))
+        {
+            var completeResult = cycleCount.MarkCompleted(DateTimeOffset.UtcNow);
+            if (!completeResult.IsSuccess)
+            {
+                return completeResult;
+            }
+        }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 

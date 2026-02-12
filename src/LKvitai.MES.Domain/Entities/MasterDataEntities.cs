@@ -723,6 +723,10 @@ public sealed class CycleCountLine
     public decimal SystemQty { get; set; }
     public decimal PhysicalQty { get; set; }
     public decimal Delta { get; set; }
+    public DateTimeOffset? CountedAt { get; set; }
+    public string? CountedBy { get; set; }
+    public string? AdjustmentApprovedBy { get; set; }
+    public DateTimeOffset? AdjustmentApprovedAt { get; set; }
     public CycleCountLineStatus Status { get; set; } = CycleCountLineStatus.Pending;
     public string? Reason { get; set; }
 

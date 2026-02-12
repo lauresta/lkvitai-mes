@@ -57,7 +57,7 @@ public class CycleCountCommandHandlersTests
 
     [Fact]
     [Trait("Category", "CycleCounting")]
-    public async Task RecordCount_ShouldUpdateLineAndMoveCycleCountToInProgress()
+    public async Task RecordCount_ShouldUpdateLineAndCompleteCycleCountWhenAllLinesCounted()
     {
         await using var db = CreateDbContext();
         var cycleCountId = await SeedScheduledCycleCountAsync(db, 100m, 0m);
@@ -81,9 +81,11 @@ public class CycleCountCommandHandlersTests
 
         result.IsSuccess.Should().BeTrue();
         var cycleCount = await db.CycleCounts.Include(x => x.Lines).SingleAsync();
-        cycleCount.Status.Should().Be(CycleCountStatus.InProgress);
+        cycleCount.Status.Should().Be(CycleCountStatus.Completed);
         cycleCount.Lines.Single().PhysicalQty.Should().Be(95m);
         cycleCount.Lines.Single().Delta.Should().Be(-5m);
+        cycleCount.Lines.Single().CountedBy.Should().Be("operator-1");
+        cycleCount.Lines.Single().CountedAt.Should().NotBeNull();
         bus.Published.OfType<CountRecordedEvent>().Should().ContainSingle();
     }
 
