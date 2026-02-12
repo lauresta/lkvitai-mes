@@ -23,6 +23,12 @@ All valuation events inherit from `DomainEvent` and carry schema metadata (`Vers
 - `Reason` minimum length: 10 characters
 - `ApprovedBy` required when absolute cost delta is greater than 20%
 
+## Landed Cost Allocation
+- Allocation basis: item value (`Qty * UnitCost`) per on-hand row.
+- Fallback basis: quantity, then equal weights if values and quantities are zero.
+- Rounding: each component (`Freight`, `Duty`, `Insurance`) is rounded to 2 decimals with deterministic remainder assignment to the last row.
+- Invariant: sum of allocated values per component equals the input total.
+
 ## Audit Fields
 Audit data is persisted in valuation events:
 - actor (`InitializedBy`, `AdjustedBy`, `AppliedBy`, `ApprovedBy`)

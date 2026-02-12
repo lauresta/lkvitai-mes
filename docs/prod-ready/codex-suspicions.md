@@ -593,3 +593,9 @@
   Evidence: Validation command `POST /api/warehouse/v1/valuation/adjust-cost` returned HTTP 403 with empty response (`/tmp/prd1602-adjust.out`).
   Impact: Could not confirm runtime API behavior for delta-based approval/idempotent adjust-cost flow in this environment.
   Proposed resolution: Execute validation against the project API runtime with valid Warehouse auth token and database connectivity.
+- Timestamp: 2026-02-12T20:50:07Z
+  TaskId: PRD-1603
+  Type: TEST-GAP
+  Evidence: Validation command `POST /api/warehouse/v1/valuation/apply-landed-cost` returned HTTP 403 (`/tmp/prd1603-landed.out`).
+  Impact: Runtime verification of proportional landed-cost allocation API behavior could not be completed in this environment.
+  Proposed resolution: Re-run endpoint validation on the project API instance with valid auth and seeded on-hand valuation data.

@@ -230,15 +230,19 @@ public sealed class ApplyLandedCostCommandHandler : IRequestHandler<ApplyLandedC
         }
 
         var actor = _currentUserService.GetCurrentUserId();
-        var basis = rows.Select(x => decimal.Round(x.Qty * x.UnitCost, 4, MidpointRounding.AwayFromZero)).ToList();
-        if (basis.All(x => x <= 0m))
+        IReadOnlyList<LandedCostAllocation> allocations;
+        try
         {
-            basis = rows.Select(x => x.Qty <= 0m ? 0m : x.Qty).ToList();
+            allocations = LandedCostAllocationService.Allocate(
+                rows,
+                request.FreightCost,
+                request.DutyCost,
+                request.InsuranceCost);
         }
-
-        var freightAlloc = Allocate(request.FreightCost, basis);
-        var dutyAlloc = Allocate(request.DutyCost, basis);
-        var insuranceAlloc = Allocate(request.InsuranceCost, basis);
+        catch (DomainException ex)
+        {
+            return Result.Fail(ex.ErrorCode, ex.Message);
+        }
 
         await using var session = _documentStore.LightweightSession();
         var updatedRows = new List<OnHandValue>(rows.Count);
@@ -269,9 +273,9 @@ public sealed class ApplyLandedCostCommandHandler : IRequestHandler<ApplyLandedC
             }
 
             var landedEvent = aggregate.ApplyLandedCost(
-                freightAlloc[i],
-                dutyAlloc[i],
-                insuranceAlloc[i],
+                allocations[i].FreightCost,
+                allocations[i].DutyCost,
+                allocations[i].InsuranceCost,
                 request.ShipmentId,
                 actor,
                 request.CommandId);
@@ -311,33 +315,6 @@ public sealed class ApplyLandedCostCommandHandler : IRequestHandler<ApplyLandedC
             request.InsuranceCost);
 
         return Result.Ok();
-    }
-
-    private static decimal[] Allocate(decimal total, IReadOnlyList<decimal> basis)
-    {
-        var allocations = new decimal[basis.Count];
-        if (basis.Count == 0 || total == 0m)
-        {
-            return allocations;
-        }
-
-        var totalBasis = basis.Sum();
-        if (totalBasis <= 0m)
-        {
-            allocations[basis.Count - 1] = decimal.Round(total, 2, MidpointRounding.AwayFromZero);
-            return allocations;
-        }
-
-        var assigned = 0m;
-        for (var i = 0; i < basis.Count - 1; i++)
-        {
-            var value = decimal.Round(total * (basis[i] / totalBasis), 2, MidpointRounding.AwayFromZero);
-            allocations[i] = value;
-            assigned += value;
-        }
-
-        allocations[basis.Count - 1] = decimal.Round(total - assigned, 2, MidpointRounding.AwayFromZero);
-        return allocations;
     }
 }
 
