@@ -1,0 +1,257 @@
+@page "/reports/dispatch-history"
+@inject ReportsClient ReportsClient
+@inject IJSRuntime JavaScript
+@inject ToastService ToastService
+
+<PageTitle>Dispatch History - LKvitai.MES</PageTitle>
+
+<h1>Dispatch History Report</h1>
+
+@if (_apiError is not null)
+{
+    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                 TraceId="@_apiError.TraceId"
+                 OnRetry="LoadAsync"
+                 OnDismiss="DismissError" />
+}
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-2">
+                <label class="form-label">Date From</label>
+                <input type="date" class="form-control" @bind="_from" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Date To</label>
+                <input type="date" class="form-control" @bind="_to" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Carrier</label>
+                <input class="form-control" @bind="_carrier" placeholder="FedEx" />
+            </div>
+            <div class="col-md-5 d-flex gap-2">
+                <button class="btn btn-primary" @onclick="ApplyFiltersAsync" disabled="_isLoading">Apply</button>
+                <button class="btn btn-outline-secondary" @onclick="ResetFiltersAsync" disabled="_isLoading">Reset</button>
+                <button class="btn btn-outline-secondary" @onclick="LoadAsync" disabled="_isLoading">Refresh</button>
+                <button class="btn btn-outline-success ms-auto" @onclick="ExportCsvAsync" disabled="_isLoading">Export CSV</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (_summary is not null)
+{
+    <div class="row g-2 mb-3">
+        <div class="col-md-4">
+            <div class="card border h-100">
+                <div class="card-body">
+                    <div class="small text-muted">Total Shipments</div>
+                    <div class="fs-4">@_summary.TotalShipments</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border h-100">
+                <div class="card-body">
+                    <div class="small text-muted">Total Orders</div>
+                    <div class="fs-4">@_summary.TotalOrders</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border h-100">
+                <div class="card-body">
+                    <div class="small text-muted">On-Time Delivery</div>
+                    <div class="fs-4">@_summary.OnTimeDeliveryPercent.ToString("0.0")%</div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="card shadow-sm position-relative">
+    <LoadingSpinner IsLoading="_isLoading" />
+
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Shipment</th>
+                        <th>Order</th>
+                        <th>Customer</th>
+                        <th>Carrier</th>
+                        <th>Tracking</th>
+                        <th>Dispatch Date</th>
+                        <th>Delivery Date</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (_rows.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="8" class="text-muted">No dispatch history rows found.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var row in _rows)
+                        {
+                            <tr>
+                                <td>@row.ShipmentNumber</td>
+                                <td>@row.OrderNumber</td>
+                                <td>@(row.CustomerName ?? "-")</td>
+                                <td>@row.Carrier</td>
+                                <td>@(row.TrackingNumber ?? "-")</td>
+                                <td>@row.DispatchDate.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                                <td>@(row.DeliveryDate?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "-")</td>
+                                <td><span class="badge @GetStatusBadge(row.Status)">@row.Status</span></td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (_totalCount > 0)
+        {
+            <Pagination CurrentPage="_page"
+                        TotalPages="TotalPages"
+                        PageSize="_pageSize"
+                        OnPageChanged="OnPageChangedAsync"
+                        OnPageSizeChanged="OnPageSizeChangedAsync" />
+        }
+    </div>
+</div>
+
+@code {
+    private readonly List<DispatchHistoryReportRowDto> _rows = [];
+    private DispatchHistorySummaryDto? _summary;
+    private ApiException? _apiError;
+    private bool _isLoading;
+
+    private DateTime? _from;
+    private DateTime? _to;
+    private string _carrier = string.Empty;
+    private int _page = 1;
+    private int _pageSize = 50;
+    private int _totalCount;
+
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling(_totalCount / (double)Math.Max(1, _pageSize)));
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task ApplyFiltersAsync()
+    {
+        _page = 1;
+        await LoadAsync();
+    }
+
+    private async Task ResetFiltersAsync()
+    {
+        _from = null;
+        _to = null;
+        _carrier = string.Empty;
+        _page = 1;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            var result = await ReportsClient.GetDispatchHistoryAsync(
+                ParseDate(_from),
+                ParseDate(_to),
+                _carrier,
+                _page,
+                _pageSize);
+
+            _rows.Clear();
+            _rows.AddRange(result.Shipments);
+            _summary = result.Summary;
+            _totalCount = result.TotalCount;
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task ExportCsvAsync()
+    {
+        try
+        {
+            var bytes = await ReportsClient.DownloadDispatchHistoryCsvAsync(
+                ParseDate(_from),
+                ParseDate(_to),
+                _carrier);
+
+            await JavaScript.InvokeVoidAsync(
+                "csvExport.downloadBytes",
+                $"dispatch-history-{DateTime.UtcNow:yyyyMMdd}.csv",
+                "text/csv",
+                Convert.ToBase64String(bytes));
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+    }
+
+    private async Task OnPageChangedAsync(int page)
+    {
+        _page = Math.Max(1, page);
+        await LoadAsync();
+    }
+
+    private async Task OnPageSizeChangedAsync(int size)
+    {
+        _pageSize = Math.Clamp(size, 1, 500);
+        _page = 1;
+        await LoadAsync();
+    }
+
+    private static DateOnly? ParseDate(DateTime? value)
+    {
+        return value.HasValue ? DateOnly.FromDateTime(value.Value.Date) : null;
+    }
+
+    private static string GetStatusBadge(string status) => status.ToUpperInvariant() switch
+    {
+        "DISPATCHED" => "bg-primary",
+        "DELIVERED" => "bg-success",
+        _ => "bg-secondary"
+    };
+
+    private void DismissError()
+    {
+        _apiError = null;
+    }
+
+    private static string BuildErrorMessage(ApiException ex)
+    {
+        if (!string.IsNullOrWhiteSpace(ex.UserMessage))
+        {
+            return ex.UserMessage;
+        }
+
+        return ex.ProblemDetails?.Detail
+               ?? ex.ProblemDetails?.Title
+               ?? "Dispatch history request failed.";
+    }
+}

@@ -34,6 +34,67 @@ public sealed class QCController : ControllerBase
         _currentUserService = currentUserService;
     }
 
+    [HttpGet("pending")]
+    public async Task<IActionResult> GetPendingAsync(CancellationToken cancellationToken = default)
+    {
+        await using var querySession = _documentStore.QuerySession();
+
+        var rows = await Marten.QueryableExtensions.ToListAsync(
+            querySession.Query<AvailableStockView>()
+                .Where(x => x.WarehouseId == DefaultWarehouseId &&
+                            x.Location == "QC_HOLD" &&
+                            x.AvailableQty > 0m),
+            cancellationToken);
+
+        var skus = rows.Select(x => x.SKU).Distinct().ToList();
+        var items = await _dbContext.Items
+            .AsNoTracking()
+            .Where(x => skus.Contains(x.InternalSKU))
+            .ToDictionaryAsync(x => x.InternalSKU, cancellationToken);
+
+        var lotNumbers = rows
+            .Select(x => x.LotNumber)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct()
+            .ToList();
+
+        var lots = await _dbContext.Lots
+            .AsNoTracking()
+            .Where(x => lotNumbers.Contains(x.LotNumber))
+            .ToListAsync(cancellationToken);
+
+        var pending = rows
+            .OrderBy(x => x.SKU)
+            .ThenBy(x => x.LotNumber)
+            .Select(row =>
+            {
+                items.TryGetValue(row.SKU, out var item);
+                var resolvedItemId = item?.Id ?? row.ItemId ?? 0;
+                if (resolvedItemId <= 0)
+                {
+                    return null;
+                }
+
+                var lot = row.LotNumber is null
+                    ? null
+                    : lots.FirstOrDefault(x => x.ItemId == resolvedItemId && x.LotNumber == row.LotNumber);
+
+                return new QcPendingRowResponse(
+                    resolvedItemId,
+                    row.SKU,
+                    item?.Name ?? row.ItemName ?? row.SKU,
+                    lot?.Id,
+                    row.LotNumber,
+                    row.AvailableQty,
+                    row.BaseUoM ?? item?.BaseUoM ?? string.Empty);
+            })
+            .Where(x => x is not null)
+            .Select(x => x!)
+            .ToList();
+
+        return Ok(pending);
+    }
+
     [HttpPost("pass")]
     public Task<IActionResult> PassAsync([FromBody] QcActionRequest request, CancellationToken cancellationToken = default)
         => ProcessQcAsync(request, true, cancellationToken);
@@ -201,4 +262,13 @@ public sealed class QCController : ControllerBase
         decimal Qty,
         string DestinationLocationCode,
         DateTime Timestamp);
+
+    public sealed record QcPendingRowResponse(
+        int ItemId,
+        string ItemSku,
+        string ItemName,
+        int? LotId,
+        string? LotNumber,
+        decimal Qty,
+        string BaseUoM);
 }

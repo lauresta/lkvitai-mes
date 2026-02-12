@@ -1,0 +1,184 @@
+@page "/reports/traceability"
+@inject ReportsClient ReportsClient
+@inject ToastService ToastService
+
+<PageTitle>Traceability - LKvitai.MES</PageTitle>
+
+<h1>Traceability Report (Lot -> Order)</h1>
+
+@if (_apiError is not null)
+{
+    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                 TraceId="@_apiError.TraceId"
+                 OnRetry="SearchAsync"
+                 OnDismiss="DismissError" />
+}
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label">Lot Number</label>
+                <input class="form-control" @bind="_lotNumber" placeholder="LOT-2026-001" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Item SKU</label>
+                <input class="form-control" @bind="_itemSku" placeholder="FG-0001" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Sales Order</label>
+                <input class="form-control" @bind="_salesOrder" placeholder="SO-0001" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Supplier</label>
+                <input class="form-control" @bind="_supplier" placeholder="ACME" />
+            </div>
+            <div class="col-md-12 d-flex gap-2 mt-2">
+                <button class="btn btn-primary" @onclick="SearchAsync" disabled="_isLoading">Search</button>
+                <button class="btn btn-outline-secondary" @onclick="ResetAsync" disabled="_isLoading">Reset</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm position-relative">
+    <LoadingSpinner IsLoading="_isLoading" />
+
+    <div class="card-body">
+        @if (_entries.Count == 0)
+        {
+            <EmptyState Title="No traceability entries"
+                        Message="Set at least one filter and run search."
+                        IconCss="bi bi-diagram-3"
+                        OnAction="SearchAsync" />
+        }
+        else
+        {
+            @foreach (var entry in _entries)
+            {
+                <div class="border rounded p-3 mb-3">
+                    <div class="d-flex justify-content-between flex-wrap gap-2 mb-2">
+                        <div>
+                            <div class="fw-semibold">Lot: @entry.Lot.LotNumber</div>
+                            <div class="small text-muted">@entry.Lot.ItemSku - @entry.Lot.ItemName</div>
+                        </div>
+                        @if (entry.IsApproximate)
+                        {
+                            <span class="badge bg-warning text-dark">Approximate Linkage</span>
+                        }
+                    </div>
+
+                    <div class="row g-2">
+                        <div class="col-md-4">
+                            <div class="border rounded p-2 h-100">
+                                <div class="small text-muted mb-1">Upstream</div>
+                                @if (entry.Upstream is null)
+                                {
+                                    <div class="text-muted">No receiving source found.</div>
+                                }
+                                else
+                                {
+                                    <div>Supplier: @entry.Upstream.Supplier</div>
+                                    <div>Shipment: @entry.Upstream.InboundShipment</div>
+                                    <div>Receipt: @entry.Upstream.ReceiptDate.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</div>
+                                    <div>Qty: @entry.Upstream.QtyReceived.ToString("0.##")</div>
+                                }
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="border rounded p-2 h-100">
+                                <div class="small text-muted mb-1">Current</div>
+                                <div>Location: @(entry.Current.Location ?? "-")</div>
+                                <div>Available Qty: @entry.Current.AvailableQty.ToString("0.##")</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="border rounded p-2 h-100">
+                                <div class="small text-muted mb-1">Downstream Sales</div>
+                                @if (entry.Downstream.SalesOrders.Count == 0)
+                                {
+                                    <div class="text-muted">No shipped sales orders found.</div>
+                                }
+                                else
+                                {
+                                    @foreach (var so in entry.Downstream.SalesOrders)
+                                    {
+                                        <div class="mb-1">
+                                            <div class="fw-semibold">@so.OrderNumber (@so.Customer)</div>
+                                            <div class="small text-muted">Qty: @so.QtyShipped.ToString("0.##") | Shipped: @(so.ShippedDate?.ToLocalTime().ToString("yyyy-MM-dd") ?? "-")</div>
+                                            <div class="small text-muted">Tracking: @(so.TrackingNumber ?? "-")</div>
+                                        </div>
+                                    }
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    private readonly List<TraceabilityEntryResponseDto> _entries = [];
+    private ApiException? _apiError;
+    private bool _isLoading;
+
+    private string _lotNumber = string.Empty;
+    private string _itemSku = string.Empty;
+    private string _salesOrder = string.Empty;
+    private string _supplier = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await SearchAsync();
+    }
+
+    private async Task SearchAsync()
+    {
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            var result = await ReportsClient.GetTraceabilityAsync(_lotNumber, _itemSku, _salesOrder, _supplier);
+            _entries.Clear();
+            _entries.AddRange(result.Entries);
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task ResetAsync()
+    {
+        _lotNumber = string.Empty;
+        _itemSku = string.Empty;
+        _salesOrder = string.Empty;
+        _supplier = string.Empty;
+        await SearchAsync();
+    }
+
+    private void DismissError()
+    {
+        _apiError = null;
+    }
+
+    private static string BuildErrorMessage(ApiException ex)
+    {
+        if (!string.IsNullOrWhiteSpace(ex.UserMessage))
+        {
+            return ex.UserMessage;
+        }
+
+        return ex.ProblemDetails?.Detail
+               ?? ex.ProblemDetails?.Title
+               ?? "Traceability report request failed.";
+    }
+}

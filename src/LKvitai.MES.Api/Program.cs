@@ -50,6 +50,7 @@ builder.Services.AddHttpClient("AgnumExportApi");
 builder.Services.AddHttpClient("FedExApi");
 builder.Services.Configure<DevAuthOptions>(builder.Configuration.GetSection(DevAuthOptions.SectionName));
 builder.Services.AddSingleton<IDevAuthService, DevAuthService>();
+builder.Services.AddSingleton<IAdminUserStore, InMemoryAdminUserStore>();
 builder.Services.AddScoped<ICurrentUserService, HttpContextCurrentUserService>();
 builder.Services
     .AddAuthentication(WarehouseAuthenticationDefaults.Scheme)

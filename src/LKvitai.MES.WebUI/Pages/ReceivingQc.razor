@@ -1,0 +1,243 @@
+@page "/warehouse/inbound/qc"
+@inject ReceivingClient ReceivingClient
+@inject ToastService ToastService
+
+<PageTitle>Receiving QC - LKvitai.MES</PageTitle>
+
+<h1>Receiving QC Queue</h1>
+
+@if (_apiError is not null)
+{
+    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                 TraceId="@_apiError.TraceId"
+                 OnRetry="LoadAsync"
+                 OnDismiss="DismissError" />
+}
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">Scan SKU / Lot</label>
+                <input class="form-control" @bind="_search" placeholder="FG-0001 or LOT-2026-01" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Reason Code (for Fail)</label>
+                <input class="form-control" @bind="_reasonCode" placeholder="DAMAGED" />
+            </div>
+            <div class="col-md-2 d-grid">
+                <button class="btn btn-outline-secondary" @onclick="LoadAsync" disabled="_isLoading || _isSubmitting">Refresh</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm position-relative">
+    <LoadingSpinner IsLoading="_isLoading || _isSubmitting" />
+
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>SKU</th>
+                        <th>Item</th>
+                        <th>Lot</th>
+                        <th>Qty</th>
+                        <th>UoM</th>
+                        <th>Inspector Notes</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (FilteredRows.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="7">
+                                <EmptyState Title="No QC pending rows"
+                                            Message="Receiving QC queue is empty for current filters."
+                                            IconCss="bi bi-shield-check"
+                                            ActionLabel="Refresh"
+                                            OnAction="LoadAsync" />
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var row in FilteredRows)
+                        {
+                            <tr>
+                                <td>@row.ItemSku</td>
+                                <td>@row.ItemName</td>
+                                <td>@(row.LotNumber ?? "-")</td>
+                                <td>@row.Qty.ToString("0.##")</td>
+                                <td>@row.BaseUoM</td>
+                                <td>
+                                    <input class="form-control form-control-sm"
+                                           value="@GetNotes(row)"
+                                           @onchange="args => SetNotes(row, args.Value?.ToString())" />
+                                </td>
+                                <td class="d-flex gap-1">
+                                    <button class="btn btn-sm btn-success"
+                                            @onclick="() => PassAsync(row)"
+                                            disabled="_isSubmitting">
+                                        Pass
+                                    </button>
+                                    <button class="btn btn-sm btn-danger"
+                                            @onclick="() => FailAsync(row)"
+                                            disabled="_isSubmitting">
+                                        Fail
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@code {
+    private readonly List<QcPendingRowDto> _rows = [];
+    private readonly Dictionary<string, string> _notesByKey = new(StringComparer.OrdinalIgnoreCase);
+    private ApiException? _apiError;
+    private bool _isLoading;
+    private bool _isSubmitting;
+
+    private string _search = string.Empty;
+    private string _reasonCode = string.Empty;
+
+    private IReadOnlyList<QcPendingRowDto> FilteredRows =>
+        _rows.Where(MatchesSearch).ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            var rows = await ReceivingClient.GetPendingQcAsync();
+            _rows.Clear();
+            _rows.AddRange(rows);
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task PassAsync(QcPendingRowDto row)
+    {
+        await SubmitQcAsync(row, isPass: true);
+    }
+
+    private async Task FailAsync(QcPendingRowDto row)
+    {
+        if (string.IsNullOrWhiteSpace(_reasonCode))
+        {
+            ToastService.ShowError("Reason code is required for QC fail.");
+            return;
+        }
+
+        await SubmitQcAsync(row, isPass: false);
+    }
+
+    private async Task SubmitQcAsync(QcPendingRowDto row, bool isPass)
+    {
+        _isSubmitting = true;
+        _apiError = null;
+
+        try
+        {
+            var request = new QcActionRequestDto
+            {
+                ItemId = row.ItemId,
+                LotId = row.LotId,
+                Qty = row.Qty,
+                ReasonCode = isPass ? null : _reasonCode.Trim(),
+                InspectorNotes = GetNotes(row)
+            };
+
+            var result = isPass
+                ? await ReceivingClient.PassQcAsync(request)
+                : await ReceivingClient.FailQcAsync(request);
+
+            ToastService.ShowSuccess($"QC {(isPass ? "pass" : "fail")} completed. Moved to {result.DestinationLocationCode}.");
+            await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private bool MatchesSearch(QcPendingRowDto row)
+    {
+        if (string.IsNullOrWhiteSpace(_search))
+        {
+            return true;
+        }
+
+        var filter = _search.Trim();
+        return row.ItemSku.Contains(filter, StringComparison.OrdinalIgnoreCase)
+               || row.ItemName.Contains(filter, StringComparison.OrdinalIgnoreCase)
+               || (row.LotNumber?.Contains(filter, StringComparison.OrdinalIgnoreCase) ?? false);
+    }
+
+    private string BuildKey(QcPendingRowDto row)
+    {
+        return $"{row.ItemId}:{row.LotId?.ToString() ?? "-"}";
+    }
+
+    private string GetNotes(QcPendingRowDto row)
+    {
+        var key = BuildKey(row);
+        return _notesByKey.TryGetValue(key, out var value) ? value : string.Empty;
+    }
+
+    private void SetNotes(QcPendingRowDto row, string? value)
+    {
+        var key = BuildKey(row);
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            _notesByKey.Remove(key);
+            return;
+        }
+
+        _notesByKey[key] = value.Trim();
+    }
+
+    private void DismissError()
+    {
+        _apiError = null;
+    }
+
+    private static string BuildErrorMessage(ApiException ex)
+    {
+        if (!string.IsNullOrWhiteSpace(ex.UserMessage))
+        {
+            return ex.UserMessage;
+        }
+
+        return ex.ProblemDetails?.Detail
+               ?? ex.ProblemDetails?.Title
+               ?? "QC request failed.";
+    }
+}

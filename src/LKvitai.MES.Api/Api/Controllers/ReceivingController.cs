@@ -18,6 +18,7 @@ namespace LKvitai.MES.Api.Controllers;
 
 [ApiController]
 [Route("api/warehouse/v1/receiving/shipments")]
+[Route("api/warehouse/v1/inbound-shipments")]
 public sealed class ReceivingController : ControllerBase
 {
     private const string DefaultWarehouseId = "WH1";
@@ -113,6 +114,49 @@ public sealed class ReceivingController : ControllerBase
             totalCount,
             pageNumber,
             pageSize));
+    }
+
+    [HttpGet("{id:int}")]
+    [Authorize(Policy = WarehousePolicies.OperatorOrAbove)]
+    public async Task<IActionResult> GetShipmentByIdAsync(
+        int id,
+        CancellationToken cancellationToken = default)
+    {
+        var shipment = await _dbContext.InboundShipments
+            .AsNoTracking()
+            .Include(x => x.Supplier)
+            .Include(x => x.Lines)
+                .ThenInclude(x => x.Item)
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+        if (shipment is null)
+        {
+            return Failure(Result.Fail(DomainErrorCodes.NotFound, $"Shipment '{id}' does not exist."));
+        }
+
+        return Ok(new InboundShipmentDetailDto(
+            shipment.Id,
+            shipment.ReferenceNumber,
+            shipment.SupplierId,
+            shipment.Supplier?.Name ?? string.Empty,
+            shipment.ExpectedDate,
+            shipment.Status,
+            shipment.CreatedAt,
+            shipment.UpdatedAt,
+            shipment.Lines
+                .OrderBy(x => x.Id)
+                .Select(x => new InboundShipmentLineDetailDto(
+                    x.Id,
+                    x.ItemId,
+                    x.Item?.InternalSKU ?? string.Empty,
+                    x.Item?.Name ?? string.Empty,
+                    x.Item?.PrimaryBarcode,
+                    x.Item?.RequiresLotTracking ?? false,
+                    x.Item?.RequiresQC ?? false,
+                    x.ExpectedQty,
+                    x.ReceivedQty,
+                    x.BaseUoM))
+                .ToList()));
     }
 
     [HttpPost]
@@ -216,6 +260,7 @@ public sealed class ReceivingController : ControllerBase
     }
 
     [HttpPost("{id:int}/receive")]
+    [HttpPost("{id:int}/receive-items")]
     [Authorize(Policy = WarehousePolicies.QcOrManager)]
     public async Task<IActionResult> ReceiveGoodsAsync(
         int id,
@@ -476,6 +521,29 @@ public sealed class ReceivingController : ControllerBase
         decimal TotalReceivedQty,
         DateTimeOffset CreatedAt,
         DateTimeOffset LastUpdated);
+
+    public sealed record InboundShipmentDetailDto(
+        int Id,
+        string ReferenceNumber,
+        int SupplierId,
+        string SupplierName,
+        DateOnly? ExpectedDate,
+        string Status,
+        DateTimeOffset CreatedAt,
+        DateTimeOffset? UpdatedAt,
+        IReadOnlyList<InboundShipmentLineDetailDto> Lines);
+
+    public sealed record InboundShipmentLineDetailDto(
+        int LineId,
+        int ItemId,
+        string ItemSku,
+        string ItemName,
+        string? PrimaryBarcode,
+        bool RequiresLotTracking,
+        bool RequiresQC,
+        decimal ExpectedQty,
+        decimal ReceivedQty,
+        string BaseUoM);
 
     public sealed record PagedResponse<T>(
         IReadOnlyList<T> Items,

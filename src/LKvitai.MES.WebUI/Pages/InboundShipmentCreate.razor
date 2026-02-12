@@ -1,0 +1,260 @@
+@page "/warehouse/inbound/shipments/create"
+@inject ReceivingClient ReceivingClient
+@inject MasterDataAdminClient MasterDataAdminClient
+@inject NavigationManager NavigationManager
+@inject ToastService ToastService
+
+<PageTitle>Create Inbound Shipment - LKvitai.MES</PageTitle>
+
+<h1>Create Inbound Shipment</h1>
+
+@if (_apiError is not null)
+{
+    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                 TraceId="@_apiError.TraceId"
+                 OnRetry="LoadLookupDataAsync"
+                 OnDismiss="DismissError" />
+}
+
+<div class="card shadow-sm position-relative">
+    <LoadingSpinner IsLoading="_isLoading || _isSubmitting" />
+
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Reference Number</label>
+                <input class="form-control" @bind="_referenceNumber" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Supplier</label>
+                <select class="form-select" @bind="_supplierId">
+                    <option value="">Select supplier</option>
+                    @foreach (var supplier in _suppliers)
+                    {
+                        <option value="@supplier.Id">@supplier.Code - @supplier.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Expected Date</label>
+                <input type="date" class="form-control" @bind="_expectedDate" />
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button class="btn btn-outline-secondary" @onclick="BackToList">Back</button>
+            </div>
+        </div>
+
+        <hr />
+
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h5 class="mb-0">Lines</h5>
+            <button class="btn btn-sm btn-outline-primary" @onclick="AddLine" disabled="_isSubmitting">+ Add Line</button>
+        </div>
+
+        @if (_lines.Count == 0)
+        {
+            <EmptyState Title="No lines"
+                        Message="Add at least one item line."
+                        IconCss="bi bi-list-ul"
+                        OnAction="AddLineAsync" />
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th style="width: 65%;">Item</th>
+                            <th style="width: 20%;">Expected Qty</th>
+                            <th style="width: 15%;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (var i = 0; i < _lines.Count; i++)
+                        {
+                            var line = _lines[i];
+                            <tr>
+                                <td>
+                                    <select class="form-select" @bind="line.ItemId">
+                                        <option value="">Select item</option>
+                                        @foreach (var item in _items)
+                                        {
+                                            <option value="@item.Id">@item.InternalSKU - @item.Name</option>
+                                        }
+                                    </select>
+                                </td>
+                                <td>
+                                    <input type="number" min="0.01" step="0.01" class="form-control" @bind="line.ExpectedQty" />
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-danger"
+                                            disabled="_isSubmitting || _lines.Count == 1"
+                                            @onclick="() => RemoveLine(i)">
+                                        Remove
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+        <div class="d-flex justify-content-end mt-3">
+            <button class="btn btn-primary" @onclick="CreateAsync" disabled="_isSubmitting">Create Shipment</button>
+        </div>
+    </div>
+</div>
+
+@code {
+    private readonly List<AdminSupplierDto> _suppliers = [];
+    private readonly List<AdminItemDto> _items = [];
+    private readonly List<InboundLineModel> _lines = [];
+
+    private bool _isLoading;
+    private bool _isSubmitting;
+    private ApiException? _apiError;
+
+    private string _referenceNumber = $"IN-{DateTime.UtcNow:yyyyMMdd-HHmmss}";
+    private string _supplierId = string.Empty;
+    private DateTime? _expectedDate;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _lines.Add(new InboundLineModel());
+        await LoadLookupDataAsync();
+    }
+
+    private async Task LoadLookupDataAsync()
+    {
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            var suppliers = await MasterDataAdminClient.GetSuppliersAsync(null, 1, 300);
+            _suppliers.Clear();
+            _suppliers.AddRange(suppliers.Items);
+
+            var items = await MasterDataAdminClient.GetItemsAsync(null, null, "Active", 1, 500);
+            _items.Clear();
+            _items.AddRange(items.Items);
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void AddLine()
+    {
+        _lines.Add(new InboundLineModel());
+    }
+
+    private Task AddLineAsync()
+    {
+        AddLine();
+        return Task.CompletedTask;
+    }
+
+    private void RemoveLine(int index)
+    {
+        if (index < 0 || index >= _lines.Count || _lines.Count == 1)
+        {
+            return;
+        }
+
+        _lines.RemoveAt(index);
+    }
+
+    private async Task CreateAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_referenceNumber))
+        {
+            ToastService.ShowError("Reference number is required.");
+            return;
+        }
+
+        if (!int.TryParse(_supplierId, out var supplierId) || supplierId <= 0)
+        {
+            ToastService.ShowError("Supplier is required.");
+            return;
+        }
+
+        var lines = _lines
+            .Where(x => x.ItemId.HasValue && x.ExpectedQty > 0m)
+            .Select(x => new CreateInboundShipmentLineRequestDto
+            {
+                ItemId = x.ItemId!.Value,
+                ExpectedQty = x.ExpectedQty
+            })
+            .ToList();
+
+        if (lines.Count == 0)
+        {
+            ToastService.ShowError("Add at least one valid line.");
+            return;
+        }
+
+        _isSubmitting = true;
+        _apiError = null;
+
+        try
+        {
+            var request = new CreateInboundShipmentRequestDto
+            {
+                ReferenceNumber = _referenceNumber.Trim(),
+                SupplierId = supplierId,
+                Type = "PO",
+                ExpectedDate = _expectedDate.HasValue ? DateOnly.FromDateTime(_expectedDate.Value.Date) : null,
+                Lines = lines
+            };
+
+            var created = await ReceivingClient.CreateShipmentAsync(request);
+            ToastService.ShowSuccess($"Inbound shipment ISH-{created.Id} created.");
+            NavigationManager.NavigateTo($"/warehouse/inbound/shipments/{created.Id}");
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private void BackToList()
+    {
+        NavigationManager.NavigateTo("/warehouse/inbound/shipments");
+    }
+
+    private void DismissError()
+    {
+        _apiError = null;
+    }
+
+    private static string BuildErrorMessage(ApiException ex)
+    {
+        if (!string.IsNullOrWhiteSpace(ex.UserMessage))
+        {
+            return ex.UserMessage;
+        }
+
+        return ex.ProblemDetails?.Detail
+               ?? ex.ProblemDetails?.Title
+               ?? "Inbound shipment request failed.";
+    }
+
+    private sealed class InboundLineModel
+    {
+        public int? ItemId { get; set; }
+        public decimal ExpectedQty { get; set; } = 1m;
+    }
+}

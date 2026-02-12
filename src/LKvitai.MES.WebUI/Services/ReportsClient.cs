@@ -145,6 +145,148 @@ public sealed class ReportsClient
         return DownloadAsync($"/api/warehouse/v1/picking/history{query}", cancellationToken);
     }
 
+    public Task<DispatchHistoryReportResponseDto> GetDispatchHistoryAsync(
+        DateOnly? from,
+        DateOnly? to,
+        string? carrier,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var query = BuildQuery(
+            ("from", from?.ToString("yyyy-MM-dd")),
+            ("to", to?.ToString("yyyy-MM-dd")),
+            ("carrier", carrier),
+            ("page", page.ToString()),
+            ("pageSize", pageSize.ToString()));
+
+        return GetAsync<DispatchHistoryReportResponseDto>($"/api/warehouse/v1/reports/dispatch-history{query}", cancellationToken);
+    }
+
+    public Task<byte[]> DownloadDispatchHistoryCsvAsync(
+        DateOnly? from,
+        DateOnly? to,
+        string? carrier,
+        CancellationToken cancellationToken = default)
+    {
+        var query = BuildQuery(
+            ("from", from?.ToString("yyyy-MM-dd")),
+            ("to", to?.ToString("yyyy-MM-dd")),
+            ("carrier", carrier),
+            ("exportCsv", "true"));
+
+        return DownloadAsync($"/api/warehouse/v1/reports/dispatch-history{query}", cancellationToken);
+    }
+
+    public Task<StockMovementsResponseDto> GetStockMovementsAsync(
+        DateTimeOffset? startDate,
+        DateTimeOffset? endDate,
+        int? itemId,
+        int? locationId,
+        string? operatorId,
+        string? movementType,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var query = BuildQuery(
+            ("startDate", startDate?.ToString("O")),
+            ("endDate", endDate?.ToString("O")),
+            ("itemId", itemId?.ToString()),
+            ("locationId", locationId?.ToString()),
+            ("operatorId", operatorId),
+            ("movementType", movementType),
+            ("page", page.ToString()),
+            ("pageSize", pageSize.ToString()));
+
+        return GetAsync<StockMovementsResponseDto>($"/api/warehouse/v1/reports/stock-movements{query}", cancellationToken);
+    }
+
+    public Task<byte[]> DownloadStockMovementsCsvAsync(
+        DateTimeOffset? startDate,
+        DateTimeOffset? endDate,
+        int? itemId,
+        int? locationId,
+        string? operatorId,
+        string? movementType,
+        CancellationToken cancellationToken = default)
+    {
+        var query = BuildQuery(
+            ("startDate", startDate?.ToString("O")),
+            ("endDate", endDate?.ToString("O")),
+            ("itemId", itemId?.ToString()),
+            ("locationId", locationId?.ToString()),
+            ("operatorId", operatorId),
+            ("movementType", movementType),
+            ("exportCsv", "true"));
+
+        return DownloadAsync($"/api/warehouse/v1/reports/stock-movements{query}", cancellationToken);
+    }
+
+    public Task<TraceabilityResponseDto> GetTraceabilityAsync(
+        string? lotNumber,
+        string? itemSku,
+        string? salesOrder,
+        string? supplier,
+        CancellationToken cancellationToken = default)
+    {
+        var query = BuildQuery(
+            ("lotNumber", lotNumber),
+            ("itemSku", itemSku),
+            ("salesOrder", salesOrder),
+            ("supplier", supplier));
+
+        return GetAsync<TraceabilityResponseDto>($"/api/warehouse/v1/reports/traceability{query}", cancellationToken);
+    }
+
+    public Task<ComplianceAuditResponseDto> GetComplianceAuditAsync(
+        DateTimeOffset? startDate,
+        DateTimeOffset? endDate,
+        string? reportType,
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var query = BuildQuery(
+            ("startDate", startDate?.ToString("O")),
+            ("endDate", endDate?.ToString("O")),
+            ("reportType", reportType),
+            ("page", page.ToString()),
+            ("pageSize", pageSize.ToString()));
+
+        return GetAsync<ComplianceAuditResponseDto>($"/api/warehouse/v1/reports/compliance-audit{query}", cancellationToken);
+    }
+
+    public Task<byte[]> DownloadComplianceAuditCsvAsync(
+        DateTimeOffset? startDate,
+        DateTimeOffset? endDate,
+        string? reportType,
+        CancellationToken cancellationToken = default)
+    {
+        var query = BuildQuery(
+            ("startDate", startDate?.ToString("O")),
+            ("endDate", endDate?.ToString("O")),
+            ("reportType", reportType),
+            ("exportCsv", "true"));
+
+        return DownloadAsync($"/api/warehouse/v1/reports/compliance-audit{query}", cancellationToken);
+    }
+
+    public Task<byte[]> DownloadComplianceAuditPdfAsync(
+        DateTimeOffset? startDate,
+        DateTimeOffset? endDate,
+        string? reportType,
+        CancellationToken cancellationToken = default)
+    {
+        var query = BuildQuery(
+            ("startDate", startDate?.ToString("O")),
+            ("endDate", endDate?.ToString("O")),
+            ("reportType", reportType),
+            ("exportPdf", "true"));
+
+        return DownloadAsync($"/api/warehouse/v1/reports/compliance-audit{query}", cancellationToken);
+    }
+
     private async Task<T> GetAsync<T>(string relativeUrl, CancellationToken cancellationToken)
     {
         var client = _factory.CreateClient("WarehouseApi");

@@ -1,0 +1,366 @@
+@page "/admin/users"
+@inject AdminUsersClient AdminUsersClient
+@inject ToastService ToastService
+
+<PageTitle>Admin Users - LKvitai.MES</PageTitle>
+
+<h1>Admin Users</h1>
+
+@if (_apiError is not null)
+{
+    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                 TraceId="@_apiError.TraceId"
+                 OnRetry="LoadAsync"
+                 OnDismiss="DismissError" />
+}
+
+<div class="row g-3">
+    <div class="col-lg-4">
+        <div class="card shadow-sm position-relative">
+            <LoadingSpinner IsLoading="_isLoading || _isSubmittingCreate" />
+            <div class="card-body">
+                <h5>Create User</h5>
+                <div class="mb-2">
+                    <label class="form-label">Username</label>
+                    <input class="form-control" @bind="_createUsername" />
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Email</label>
+                    <input class="form-control" @bind="_createEmail" />
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Password</label>
+                    <input class="form-control" type="password" @bind="_createPassword" />
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" @bind="_createStatus">
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Roles</label>
+                    @foreach (var role in AllRoles)
+                    {
+                        <div class="form-check">
+                            <input class="form-check-input"
+                                   type="checkbox"
+                                   checked="@_createRoles.Contains(role)"
+                                   @onchange="(e) => ToggleCreateRole(role, e.Value is true)" />
+                            <label class="form-check-label">@role</label>
+                        </div>
+                    }
+                </div>
+                <button class="btn btn-primary w-100" @onclick="CreateAsync" disabled="_isSubmittingCreate">Create User</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card shadow-sm position-relative">
+            <LoadingSpinner IsLoading="_isLoading || _isSubmittingUpdate" />
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h5 class="mb-0">Users (@_users.Count)</h5>
+                    <button class="btn btn-sm btn-outline-secondary" @onclick="LoadAsync" disabled="_isLoading">Refresh</button>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Roles</th>
+                                <th>Status</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (_users.Count == 0)
+                            {
+                                <tr>
+                                    <td colspan="6" class="text-muted">No users found.</td>
+                                </tr>
+                            }
+                            else
+                            {
+                                @foreach (var user in _users)
+                                {
+                                    <tr>
+                                        <td>@user.Username</td>
+                                        <td>@user.Email</td>
+                                        <td>
+                                            @foreach (var role in user.Roles)
+                                            {
+                                                <span class="badge bg-light text-dark border me-1">@role</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <span class="badge @(user.Status.Equals("Active", StringComparison.OrdinalIgnoreCase) ? "bg-success" : "bg-secondary")">
+                                                @user.Status
+                                            </span>
+                                        </td>
+                                        <td>@user.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary" @onclick="() => StartEdit(user)">Edit</button>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                @if (_editUser is not null)
+                {
+                    <div class="border rounded p-3 mt-3">
+                        <h6>Edit @_editUser.Username</h6>
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <label class="form-label">Email</label>
+                                <input class="form-control" @bind="_editEmail" />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Status</label>
+                                <select class="form-select" @bind="_editStatus">
+                                    <option value="Active">Active</option>
+                                    <option value="Inactive">Inactive</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mt-2">
+                            <label class="form-label">Roles</label>
+                            <div class="row g-1">
+                                @foreach (var role in AllRoles)
+                                {
+                                    <div class="col-md-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input"
+                                                   type="checkbox"
+                                                   checked="@_editRoles.Contains(role)"
+                                                   @onchange="(e) => ToggleEditRole(role, e.Value is true)" />
+                                            <label class="form-check-label">@role</label>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2 mt-3">
+                            <button class="btn btn-primary" @onclick="SaveEditAsync" disabled="_isSubmittingUpdate">Save</button>
+                            <button class="btn btn-outline-secondary" @onclick="CancelEdit" disabled="_isSubmittingUpdate">Cancel</button>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private static readonly string[] AllRoles =
+    [
+        "WarehouseAdmin",
+        "WarehouseManager",
+        "Operator",
+        "QCInspector",
+        "SalesAdmin",
+        "PackingOperator",
+        "DispatchClerk",
+        "InventoryAccountant",
+        "CFO"
+    ];
+
+    private readonly List<AdminUserDto> _users = [];
+    private ApiException? _apiError;
+    private bool _isLoading;
+    private bool _isSubmittingCreate;
+    private bool _isSubmittingUpdate;
+
+    private string _createUsername = string.Empty;
+    private string _createEmail = string.Empty;
+    private string _createPassword = string.Empty;
+    private string _createStatus = "Active";
+    private readonly HashSet<string> _createRoles = ["WarehouseAdmin"];
+
+    private AdminUserDto? _editUser;
+    private string _editEmail = string.Empty;
+    private string _editStatus = "Active";
+    private HashSet<string> _editRoles = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            var users = await AdminUsersClient.GetUsersAsync();
+            _users.Clear();
+            _users.AddRange(users.OrderBy(x => x.Username, StringComparer.OrdinalIgnoreCase));
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task CreateAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_createUsername) || string.IsNullOrWhiteSpace(_createEmail) || string.IsNullOrWhiteSpace(_createPassword))
+        {
+            ToastService.ShowError("Username, email, and password are required.");
+            return;
+        }
+
+        if (_createRoles.Count == 0)
+        {
+            ToastService.ShowError("Select at least one role.");
+            return;
+        }
+
+        _isSubmittingCreate = true;
+        _apiError = null;
+
+        try
+        {
+            var created = await AdminUsersClient.CreateUserAsync(new CreateAdminUserRequestDto
+            {
+                Username = _createUsername.Trim(),
+                Email = _createEmail.Trim(),
+                Password = _createPassword,
+                Status = _createStatus,
+                Roles = _createRoles.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList()
+            });
+
+            ToastService.ShowSuccess($"User {created.Username} created.");
+            _createUsername = string.Empty;
+            _createEmail = string.Empty;
+            _createPassword = string.Empty;
+            _createStatus = "Active";
+            _createRoles.Clear();
+            _createRoles.Add("WarehouseAdmin");
+            await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isSubmittingCreate = false;
+        }
+    }
+
+    private void StartEdit(AdminUserDto user)
+    {
+        _editUser = user;
+        _editEmail = user.Email;
+        _editStatus = user.Status;
+        _editRoles = user.Roles.ToHashSet(StringComparer.OrdinalIgnoreCase);
+    }
+
+    private void CancelEdit()
+    {
+        _editUser = null;
+        _editEmail = string.Empty;
+        _editStatus = "Active";
+        _editRoles = [];
+    }
+
+    private async Task SaveEditAsync()
+    {
+        if (_editUser is null)
+        {
+            return;
+        }
+
+        if (_editRoles.Count == 0)
+        {
+            ToastService.ShowError("Select at least one role.");
+            return;
+        }
+
+        _isSubmittingUpdate = true;
+        _apiError = null;
+
+        try
+        {
+            var updated = await AdminUsersClient.UpdateUserAsync(_editUser.Id, new UpdateAdminUserRequestDto
+            {
+                Email = _editEmail.Trim(),
+                Status = _editStatus,
+                Roles = _editRoles.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList()
+            });
+
+            ToastService.ShowSuccess($"User {updated.Username} updated.");
+            CancelEdit();
+            await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isSubmittingUpdate = false;
+        }
+    }
+
+    private void ToggleCreateRole(string role, bool enabled)
+    {
+        if (enabled)
+        {
+            _createRoles.Add(role);
+        }
+        else
+        {
+            _createRoles.Remove(role);
+        }
+    }
+
+    private void ToggleEditRole(string role, bool enabled)
+    {
+        if (enabled)
+        {
+            _editRoles.Add(role);
+        }
+        else
+        {
+            _editRoles.Remove(role);
+        }
+    }
+
+    private void DismissError()
+    {
+        _apiError = null;
+    }
+
+    private static string BuildErrorMessage(ApiException ex)
+    {
+        if (!string.IsNullOrWhiteSpace(ex.UserMessage))
+        {
+            return ex.UserMessage;
+        }
+
+        return ex.ProblemDetails?.Detail
+               ?? ex.ProblemDetails?.Title
+               ?? "Admin user request failed.";
+    }
+}

@@ -1,0 +1,318 @@
+@page "/warehouse/inbound/shipments/{Id:int}"
+@inject ReceivingClient ReceivingClient
+@inject NavigationManager NavigationManager
+@inject ToastService ToastService
+
+<PageTitle>Inbound Shipment Detail - LKvitai.MES</PageTitle>
+
+<h1>Inbound Shipment Detail</h1>
+
+@if (_apiError is not null)
+{
+    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                 TraceId="@_apiError.TraceId"
+                 OnRetry="LoadAsync"
+                 OnDismiss="DismissError" />
+}
+
+<div class="card shadow-sm position-relative mb-3">
+    <LoadingSpinner IsLoading="_isLoading || _isSubmitting" />
+
+    <div class="card-body">
+        @if (_shipment is null)
+        {
+            <EmptyState Title="Shipment not found"
+                        Message="Inbound shipment does not exist or is unavailable."
+                        IconCss="bi bi-box-arrow-in-down"
+                        OnAction="BackToListAsync" />
+        }
+        else
+        {
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+                <div>
+                    <h4 class="mb-1">ISH-@_shipment.Id</h4>
+                    <div class="text-muted">@_shipment.ReferenceNumber</div>
+                    <div class="small text-muted">Supplier: @_shipment.SupplierName (@_shipment.SupplierId)</div>
+                    <div class="small text-muted">Expected: @_shipment.ExpectedDate?.ToString("yyyy-MM-dd")</div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge @GetStatusBadge(_shipment.Status)">@_shipment.Status</span>
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="BackToList">Back</button>
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="LoadAsync">Refresh</button>
+                </div>
+            </div>
+
+            <div class="alert alert-light border d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                    <strong>Received:</strong> @TotalReceived.ToString("0.##") / @TotalExpected.ToString("0.##")
+                    (<span>@CompletionPercent.ToString("0.0")%</span>)
+                </div>
+                <button class="btn btn-sm btn-outline-primary" @onclick="OpenQcQueue">Open QC Queue</button>
+            </div>
+
+            <div class="card border mb-3">
+                <div class="card-body">
+                    <div class="row g-2 align-items-end">
+                        <div class="col-md-3">
+                            <label class="form-label">Scan Barcode</label>
+                            <input class="form-control" @bind="_scanBarcode" placeholder="Scan item barcode" />
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-outline-secondary" @onclick="ResolveByBarcode">Resolve</button>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Line</label>
+                            <select class="form-select" @bind="_selectedLineId">
+                                <option value="">Select line</option>
+                                @foreach (var line in _shipment.Lines)
+                                {
+                                    <option value="@line.LineId">@line.ItemSku - @line.ItemName (Line @line.LineId)</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Receive Qty</label>
+                            <input type="number" min="0.01" step="0.01" class="form-control" @bind="_receivedQty" />
+                        </div>
+                        <div class="col-md-2 d-flex">
+                            <button class="btn btn-primary mt-auto" @onclick="ReceiveAsync" disabled="_isSubmitting">Receive</button>
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mt-1">
+                        <div class="col-md-3">
+                            <label class="form-label">Lot Number</label>
+                            <input class="form-control" @bind="_lotNumber" />
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Production Date</label>
+                            <input type="date" class="form-control" @bind="_productionDate" />
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Expiry Date</label>
+                            <input type="date" class="form-control" @bind="_expiryDate" />
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label">Notes</label>
+                            <input class="form-control" @bind="_notes" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Line</th>
+                            <th>Item</th>
+                            <th>Barcode</th>
+                            <th>Expected</th>
+                            <th>Received</th>
+                            <th>Remaining</th>
+                            <th>Flags</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var line in _shipment.Lines.OrderBy(x => x.LineId))
+                        {
+                            <tr class="@(line.LineId == SelectedLineId ? "table-primary" : null)">
+                                <td>@line.LineId</td>
+                                <td>
+                                    <div>@line.ItemSku</div>
+                                    <div class="small text-muted">@line.ItemName</div>
+                                </td>
+                                <td>@(line.PrimaryBarcode ?? "-")</td>
+                                <td>@line.ExpectedQty.ToString("0.##") @line.BaseUoM</td>
+                                <td>@line.ReceivedQty.ToString("0.##") @line.BaseUoM</td>
+                                <td>@Math.Max(0m, line.ExpectedQty - line.ReceivedQty).ToString("0.##") @line.BaseUoM</td>
+                                <td>
+                                    @if (line.RequiresLotTracking)
+                                    {
+                                        <span class="badge bg-warning text-dark me-1">LOT</span>
+                                    }
+                                    @if (line.RequiresQC)
+                                    {
+                                        <span class="badge bg-info text-dark">QC</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private InboundShipmentDetailDto? _shipment;
+    private ApiException? _apiError;
+    private bool _isLoading;
+    private bool _isSubmitting;
+
+    private string _scanBarcode = string.Empty;
+    private string _selectedLineId = string.Empty;
+    private decimal _receivedQty = 1m;
+    private string _lotNumber = string.Empty;
+    private DateTime? _productionDate;
+    private DateTime? _expiryDate;
+    private string _notes = string.Empty;
+
+    private int? SelectedLineId => int.TryParse(_selectedLineId, out var lineId) ? lineId : null;
+
+    private decimal TotalExpected => _shipment?.Lines.Sum(x => x.ExpectedQty) ?? 0m;
+    private decimal TotalReceived => _shipment?.Lines.Sum(x => x.ReceivedQty) ?? 0m;
+    private decimal CompletionPercent => TotalExpected <= 0m ? 0m : (TotalReceived / TotalExpected) * 100m;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            _shipment = await ReceivingClient.GetShipmentByIdAsync(Id);
+
+            if (_shipment.Lines.Count > 0 && !SelectedLineId.HasValue)
+            {
+                _selectedLineId = _shipment.Lines.OrderBy(x => x.LineId).First().LineId.ToString();
+            }
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            _shipment = null;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void ResolveByBarcode()
+    {
+        if (_shipment is null || string.IsNullOrWhiteSpace(_scanBarcode))
+        {
+            return;
+        }
+
+        var barcode = _scanBarcode.Trim();
+        var matched = _shipment.Lines.FirstOrDefault(x =>
+            string.Equals(x.PrimaryBarcode, barcode, StringComparison.OrdinalIgnoreCase));
+
+        if (matched is null)
+        {
+            ToastService.ShowWarning("Barcode not found in this shipment lines.");
+            return;
+        }
+
+        _selectedLineId = matched.LineId.ToString();
+        ToastService.ShowSuccess($"Selected line {matched.LineId} ({matched.ItemSku}).");
+    }
+
+    private async Task ReceiveAsync()
+    {
+        if (_shipment is null)
+        {
+            return;
+        }
+
+        if (!SelectedLineId.HasValue)
+        {
+            ToastService.ShowError("Select line to receive.");
+            return;
+        }
+
+        if (_receivedQty <= 0m)
+        {
+            ToastService.ShowError("Received qty must be greater than zero.");
+            return;
+        }
+
+        _isSubmitting = true;
+        _apiError = null;
+
+        try
+        {
+            var request = new ReceiveShipmentLineRequestDto
+            {
+                LineId = SelectedLineId.Value,
+                ReceivedQty = _receivedQty,
+                LotNumber = string.IsNullOrWhiteSpace(_lotNumber) ? null : _lotNumber.Trim(),
+                ProductionDate = _productionDate.HasValue ? DateOnly.FromDateTime(_productionDate.Value.Date) : null,
+                ExpiryDate = _expiryDate.HasValue ? DateOnly.FromDateTime(_expiryDate.Value.Date) : null,
+                Notes = string.IsNullOrWhiteSpace(_notes) ? null : _notes.Trim()
+            };
+
+            var response = await ReceivingClient.ReceiveItemsAsync(_shipment.Id, request);
+            ToastService.ShowSuccess($"Received {response.ReceivedQty:0.##} units to {response.DestinationLocationCode}.");
+
+            _lotNumber = string.Empty;
+            _notes = string.Empty;
+            _receivedQty = 1m;
+            _scanBarcode = string.Empty;
+
+            await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private void OpenQcQueue()
+    {
+        NavigationManager.NavigateTo("/warehouse/inbound/qc");
+    }
+
+    private void BackToList()
+    {
+        NavigationManager.NavigateTo("/warehouse/inbound/shipments");
+    }
+
+    private Task BackToListAsync()
+    {
+        BackToList();
+        return Task.CompletedTask;
+    }
+
+    private void DismissError()
+    {
+        _apiError = null;
+    }
+
+    private static string GetStatusBadge(string status) => status.ToUpperInvariant() switch
+    {
+        "DRAFT" => "bg-secondary",
+        "PARTIAL" => "bg-warning text-dark",
+        "COMPLETE" => "bg-success",
+        _ => "bg-secondary"
+    };
+
+    private static string BuildErrorMessage(ApiException ex)
+    {
+        if (!string.IsNullOrWhiteSpace(ex.UserMessage))
+        {
+            return ex.UserMessage;
+        }
+
+        return ex.ProblemDetails?.Detail
+               ?? ex.ProblemDetails?.Title
+               ?? "Inbound shipment request failed.";
+    }
+}

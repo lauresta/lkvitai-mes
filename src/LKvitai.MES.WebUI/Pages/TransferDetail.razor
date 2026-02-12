@@ -1,0 +1,232 @@
+@page "/warehouse/transfers/{Id:guid}"
+@inject TransfersClient TransfersClient
+@inject NavigationManager NavigationManager
+@inject ToastService ToastService
+
+<PageTitle>Transfer Detail - LKvitai.MES</PageTitle>
+
+<h1>Transfer Detail</h1>
+
+@if (_apiError is not null)
+{
+    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                 TraceId="@_apiError.TraceId"
+                 OnRetry="LoadAsync"
+                 OnDismiss="DismissError" />
+}
+
+<div class="card shadow-sm position-relative">
+    <LoadingSpinner IsLoading="_isLoading || _isSubmitting" />
+
+    <div class="card-body">
+        @if (_transfer is null)
+        {
+            <EmptyState Title="Transfer not found"
+                        Message="Transfer does not exist or is unavailable."
+                        IconCss="bi bi-arrow-left-right"
+                        OnAction="BackToListAsync" />
+        }
+        else
+        {
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+                <div>
+                    <h4 class="mb-1">@_transfer.TransferNumber</h4>
+                    <div class="text-muted">@_transfer.FromWarehouse -> @_transfer.ToWarehouse</div>
+                    <div class="small text-muted">Requested by @_transfer.RequestedBy on @_transfer.RequestedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge @GetStatusBadge(_transfer.Status)">@_transfer.Status</span>
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="BackToList">Back</button>
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="LoadAsync">Refresh</button>
+                </div>
+            </div>
+
+            <div class="row g-2 mb-3">
+                <div class="col-md-3">
+                    <div class="border rounded p-2 h-100">
+                        <div class="small text-muted">Approved By</div>
+                        <div>@(_transfer.ApprovedBy ?? "-")</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="border rounded p-2 h-100">
+                        <div class="small text-muted">Approved At</div>
+                        <div>@(_transfer.ApprovedAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "-")</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="border rounded p-2 h-100">
+                        <div class="small text-muted">Executed At</div>
+                        <div>@(_transfer.ExecutedAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "-")</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="border rounded p-2 h-100">
+                        <div class="small text-muted">Completed At</div>
+                        <div>@(_transfer.CompletedAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "-")</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 mb-3">
+                @if (CanApprove)
+                {
+                    <button class="btn btn-warning" @onclick="ApproveAsync" disabled="_isSubmitting">Approve</button>
+                }
+                @if (CanExecute)
+                {
+                    <button class="btn btn-primary" @onclick="ExecuteAsync" disabled="_isSubmitting">Execute</button>
+                }
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Item Id</th>
+                            <th>Qty</th>
+                            <th>From Location</th>
+                            <th>To Location</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var line in _transfer.Lines)
+                        {
+                            <tr>
+                                <td>@line.ItemId</td>
+                                <td>@line.Qty.ToString("0.##")</td>
+                                <td>@line.FromLocationId</td>
+                                <td>@line.ToLocationId</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public Guid Id { get; set; }
+
+    private TransferDto? _transfer;
+    private ApiException? _apiError;
+    private bool _isLoading;
+    private bool _isSubmitting;
+
+    private bool CanApprove => string.Equals(_transfer?.Status, "PENDINGAPPROVAL", StringComparison.OrdinalIgnoreCase);
+
+    private bool CanExecute =>
+        string.Equals(_transfer?.Status, "DRAFT", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(_transfer?.Status, "APPROVED", StringComparison.OrdinalIgnoreCase);
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            _transfer = await TransfersClient.GetTransferByIdAsync(Id);
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            _transfer = null;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task ApproveAsync()
+    {
+        await RunActionAsync(() => TransfersClient.ApproveTransferAsync(
+            Id,
+            new ApproveTransferRequestDto
+            {
+                CommandId = Guid.NewGuid()
+            }),
+            "Transfer approved.");
+    }
+
+    private async Task ExecuteAsync()
+    {
+        await RunActionAsync(() => TransfersClient.ExecuteTransferAsync(
+            Id,
+            new ExecuteTransferRequestDto
+            {
+                CommandId = Guid.NewGuid()
+            }),
+            "Transfer executed.");
+    }
+
+    private async Task RunActionAsync(Func<Task<TransferDto>> action, string successMessage)
+    {
+        _isSubmitting = true;
+        _apiError = null;
+
+        try
+        {
+            _transfer = await action();
+            ToastService.ShowSuccess(successMessage);
+            await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private void BackToList()
+    {
+        NavigationManager.NavigateTo("/warehouse/transfers");
+    }
+
+    private Task BackToListAsync()
+    {
+        BackToList();
+        return Task.CompletedTask;
+    }
+
+    private void DismissError()
+    {
+        _apiError = null;
+    }
+
+    private static string GetStatusBadge(string status) => status.ToUpperInvariant() switch
+    {
+        "DRAFT" => "bg-secondary",
+        "PENDINGAPPROVAL" => "bg-warning text-dark",
+        "APPROVED" => "bg-info text-dark",
+        "INTRANSIT" => "bg-primary",
+        "COMPLETED" => "bg-success",
+        "CANCELLED" => "bg-danger",
+        _ => "bg-secondary"
+    };
+
+    private static string BuildErrorMessage(ApiException ex)
+    {
+        if (!string.IsNullOrWhiteSpace(ex.UserMessage))
+        {
+            return ex.UserMessage;
+        }
+
+        return ex.ProblemDetails?.Detail
+               ?? ex.ProblemDetails?.Title
+               ?? "Transfer request failed.";
+    }
+}

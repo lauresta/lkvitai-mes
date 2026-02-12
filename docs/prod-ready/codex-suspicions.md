@@ -478,3 +478,106 @@
   Evidence: No compliance audit report page found in WebUI pages.
   Impact: Compliance reporting requirements are not met at UI level.
   Proposed resolution: Implement compliance report dashboard/export page and connect to backend query endpoints.
+- Timestamp: 2026-02-12T16:09:38Z
+  TaskId: PRD-1524
+  Type: AMBIGUITY
+  Evidence: `POST /api/warehouse/v1/qc/fail` validates `reasonCode`, but no dedicated endpoint exists to enumerate allowed adjustment reason codes for UI dropdown.
+  Impact: QC fail UX requires operators to know reason codes out-of-band, increasing input errors.
+  Proposed resolution: Add `GET /api/warehouse/v1/adjustments/reason-codes` (or similar) and bind QC UI to server-provided values.
+
+- Timestamp: 2026-02-12T16:09:38Z
+  TaskId: PRD-1548
+  Type: INCONSISTENCY
+  Evidence: Admin user management backend uses `InMemoryAdminUserStore` without database persistence.
+  Impact: Created/updated users are lost on API restart; production-grade RBAC lifecycle is incomplete.
+  Proposed resolution: Replace in-memory store with persistent table-backed implementation and audited password reset flow.
+
+- Timestamp: 2026-02-12T16:09:38Z
+  TaskId: PRD-1551
+  Type: RISK
+  Evidence: Traceability endpoint returns `IsApproximate=true`; downstream linkage inferred via item-level shipped quantities, not strict lot-level shipment lines.
+  Impact: Lot-to-order traceability may over-include related sales orders for the same item.
+  Proposed resolution: Persist lot identifiers through pick/pack/shipment line flow and query exact lot lineage.
+
+- Timestamp: 2026-02-12T16:09:38Z
+  TaskId: PRD-1523
+  Type: TEST-GAP
+  Evidence: No browser runtime available in this CLI session for manual walkthrough of inbound create/list/detail pages.
+  Impact: Interactive UX validation (form behavior, navigation, operator workflow) was not executed end-to-end.
+  Proposed resolution: Run `src/LKvitai.MES.WebUI` locally and execute manual scenario for `/warehouse/inbound/shipments` and `/warehouse/inbound/shipments/create`.
+
+- Timestamp: 2026-02-12T16:09:38Z
+  TaskId: PRD-1524
+  Type: TEST-GAP
+  Evidence: No browser runtime available for scan/QC panel interaction tests.
+  Impact: Manual validation of barcode-driven line resolution and QC pass/fail UX remains pending.
+  Proposed resolution: Execute manual flow on `/warehouse/inbound/shipments/{id}` and `/warehouse/inbound/qc` with authenticated API data.
+
+- Timestamp: 2026-02-12T16:09:38Z
+  TaskId: PRD-1526
+  Type: TEST-GAP
+  Evidence: Transfer UI pages were build-validated only; no interactive create->approve->execute run performed in browser.
+  Impact: End-user operational flow confirmation is pending.
+  Proposed resolution: Manually validate `/warehouse/transfers`, `/warehouse/transfers/create`, `/warehouse/transfers/{id}` with real stock/location data.
+
+- Timestamp: 2026-02-12T16:09:38Z
+  TaskId: PRD-1534
+  Type: TEST-GAP
+  Evidence: Dispatch history page added but not manually verified in browser session.
+  Impact: Filter interactions and CSV UX behavior remain unconfirmed by manual test.
+  Proposed resolution: Run manual checks on `/reports/dispatch-history` including date filter and CSV export.
+
+- Timestamp: 2026-02-12T16:09:38Z
+  TaskId: PRD-1548
+  Type: TEST-GAP
+  Evidence: Admin users UI compiled and API-tested via build only; no browser interaction run.
+  Impact: Role checkbox UX and edit/create behavior are not manually validated.
+  Proposed resolution: Validate `/admin/users` manually with create/edit role/status scenarios.
+
+- Timestamp: 2026-02-12T16:09:38Z
+  TaskId: PRD-1549
+  Type: TEST-GAP
+  Evidence: Stock movements report UI integrated but not manually exercised in browser.
+  Impact: Filter composition and CSV export interactions remain unverified at UX level.
+  Proposed resolution: Manually validate `/reports/stock-movements` workflow.
+
+- Timestamp: 2026-02-12T16:09:38Z
+  TaskId: PRD-1551
+  Type: TEST-GAP
+  Evidence: Traceability page rendering validated by compile only; no manual report walkthrough.
+  Impact: Drill-down readability and search combinations were not interactively tested.
+  Proposed resolution: Manually validate `/reports/traceability` for lot/item/order/supplier filters.
+
+- Timestamp: 2026-02-12T16:09:38Z
+  TaskId: PRD-1552
+  Type: TEST-GAP
+  Evidence: Compliance report UI compiled, but manual export (CSV/PDF) flow not executed in browser.
+  Impact: Document download UX and type/date filter behavior remain unverified.
+  Proposed resolution: Manually validate `/reports/compliance-audit` including CSV and PDF exports.
+- Timestamp: 2026-02-12T16:14:20Z
+  TaskId: PRD-1525
+  Type: AMBIGUITY
+  Evidence: Spec requires `MinStockLevel`-based alerts and dedicated dashboard endpoints (`/stock/dashboard-summary`, `/stock/by-location`, `/stock/low-stock`, `/stock/expiring-soon`), but current API surface exposes only stock-level style queries.
+  Impact: Low-stock logic in UI uses a heuristic threshold instead of item-configured min level.
+  Proposed resolution: Add first-class stock dashboard endpoints and persist per-item min-stock thresholds for deterministic alerts.
+
+- Timestamp: 2026-02-12T16:14:20Z
+  TaskId: PRD-1529
+  Type: INCONSISTENCY
+  Evidence: Spec references endpoints `/sales-orders/pending-approvals`, `/pending-stock`, `/allocated`, and `/reallocate`; current API exposes generic list-by-status plus approve/release actions, no reallocate endpoint.
+  Impact: Allocation dashboard cannot perform API-backed manual reallocation in current backend contract.
+  Proposed resolution: Implement explicit reallocate API contract and dedicated allocation query endpoints, then enable reallocation UI action.
+
+- Timestamp: 2026-02-12T16:14:20Z
+  TaskId: PRD-1525
+  Type: TEST-GAP
+  Evidence: Stock dashboard page compiled and integrated, but no browser-driven validation executed for summary cards/sections/CSV workflow.
+  Impact: Interactive UX coverage for dashboard scenarios remains pending.
+  Proposed resolution: Manually validate `/warehouse/stock/dashboard` with seeded low-stock and expiring-lot data.
+
+- Timestamp: 2026-02-12T16:14:20Z
+  TaskId: PRD-1529
+  Type: TEST-GAP
+  Evidence: Allocation dashboard page compiled and action wiring validated by build only; no manual browser workflow run.
+  Impact: Operator/manager interaction flow for approve/release remains unverified in runtime UI.
+  Proposed resolution: Manually validate `/warehouse/sales/allocations` for pending approval and release-to-picking scenarios.

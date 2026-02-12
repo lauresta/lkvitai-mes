@@ -1,0 +1,246 @@
+@page "/reports/compliance-audit"
+@inject ReportsClient ReportsClient
+@inject IJSRuntime JavaScript
+@inject ToastService ToastService
+
+<PageTitle>Compliance Audit - LKvitai.MES</PageTitle>
+
+<h1>Compliance Audit Report</h1>
+
+@if (_apiError is not null)
+{
+    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                 TraceId="@_apiError.TraceId"
+                 OnRetry="LoadAsync"
+                 OnDismiss="DismissError" />
+}
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-2">
+                <label class="form-label">Start</label>
+                <input type="date" class="form-control" @bind="_startDate" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">End</label>
+                <input type="date" class="form-control" @bind="_endDate" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Report Type</label>
+                <select class="form-select" @bind="_reportType">
+                    <option value="STOCK_MOVEMENTS">STOCK_MOVEMENTS</option>
+                    <option value="ADJUSTMENTS">ADJUSTMENTS</option>
+                    <option value="VALUATIONS">VALUATIONS</option>
+                    <option value="USER_ACTIONS">USER_ACTIONS</option>
+                </select>
+            </div>
+            <div class="col-md-5 d-flex gap-2">
+                <button class="btn btn-primary" @onclick="ApplyFiltersAsync" disabled="_isLoading">Apply</button>
+                <button class="btn btn-outline-secondary" @onclick="LoadAsync" disabled="_isLoading">Refresh</button>
+                <button class="btn btn-outline-success ms-auto" @onclick="ExportCsvAsync" disabled="_isLoading">Export CSV</button>
+                <button class="btn btn-outline-danger" @onclick="ExportPdfAsync" disabled="_isLoading">Export PDF</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm position-relative">
+    <LoadingSpinner IsLoading="_isLoading" />
+
+    <div class="card-body">
+        <div class="mb-2"><strong>Total: @_totalCount</strong></div>
+
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Type</th>
+                        <th>Actor</th>
+                        <th>Reference</th>
+                        <th>Category</th>
+                        <th>Details</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (_rows.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="7" class="text-muted">No compliance rows found.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var row in _rows)
+                        {
+                            <tr>
+                                <td>@row.Timestamp.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                                <td>@row.ReportType</td>
+                                <td>@row.Actor</td>
+                                <td>@row.Reference</td>
+                                <td>@row.Category</td>
+                                <td>@row.Details</td>
+                                <td>@(row.Notes ?? "-")</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (_totalCount > 0)
+        {
+            <Pagination CurrentPage="_page"
+                        TotalPages="TotalPages"
+                        PageSize="_pageSize"
+                        OnPageChanged="OnPageChangedAsync"
+                        OnPageSizeChanged="OnPageSizeChangedAsync" />
+        }
+    </div>
+</div>
+
+@code {
+    private readonly List<ComplianceAuditRowDto> _rows = [];
+    private ApiException? _apiError;
+    private bool _isLoading;
+
+    private DateTime? _startDate = DateTime.UtcNow.AddDays(-30);
+    private DateTime? _endDate = DateTime.UtcNow;
+    private string _reportType = "STOCK_MOVEMENTS";
+    private int _page = 1;
+    private int _pageSize = 50;
+    private int _totalCount;
+
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling(_totalCount / (double)Math.Max(1, _pageSize)));
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task ApplyFiltersAsync()
+    {
+        _page = 1;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            var result = await ReportsClient.GetComplianceAuditAsync(
+                ParseDateOffset(_startDate, true),
+                ParseDateOffset(_endDate, false),
+                _reportType,
+                _page,
+                _pageSize);
+
+            _rows.Clear();
+            _rows.AddRange(result.Rows);
+            _totalCount = result.TotalCount;
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task ExportCsvAsync()
+    {
+        try
+        {
+            var bytes = await ReportsClient.DownloadComplianceAuditCsvAsync(
+                ParseDateOffset(_startDate, true),
+                ParseDateOffset(_endDate, false),
+                _reportType);
+
+            await JavaScript.InvokeVoidAsync(
+                "csvExport.downloadBytes",
+                $"compliance-audit-{DateTime.UtcNow:yyyyMMdd}.csv",
+                "text/csv",
+                Convert.ToBase64String(bytes));
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+    }
+
+    private async Task ExportPdfAsync()
+    {
+        try
+        {
+            var bytes = await ReportsClient.DownloadComplianceAuditPdfAsync(
+                ParseDateOffset(_startDate, true),
+                ParseDateOffset(_endDate, false),
+                _reportType);
+
+            await JavaScript.InvokeVoidAsync(
+                "csvExport.downloadBytes",
+                $"compliance-audit-{DateTime.UtcNow:yyyyMMdd}.pdf",
+                "application/pdf",
+                Convert.ToBase64String(bytes));
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+    }
+
+    private async Task OnPageChangedAsync(int page)
+    {
+        _page = Math.Max(1, page);
+        await LoadAsync();
+    }
+
+    private async Task OnPageSizeChangedAsync(int size)
+    {
+        _pageSize = Math.Clamp(size, 1, 500);
+        _page = 1;
+        await LoadAsync();
+    }
+
+    private static DateTimeOffset? ParseDateOffset(DateTime? input, bool startOfDay)
+    {
+        if (!input.HasValue)
+        {
+            return null;
+        }
+
+        var date = input.Value.Date;
+        var value = startOfDay
+            ? new DateTimeOffset(date, TimeSpan.Zero)
+            : new DateTimeOffset(date.AddDays(1).AddTicks(-1), TimeSpan.Zero);
+
+        return value;
+    }
+
+    private void DismissError()
+    {
+        _apiError = null;
+    }
+
+    private static string BuildErrorMessage(ApiException ex)
+    {
+        if (!string.IsNullOrWhiteSpace(ex.UserMessage))
+        {
+            return ex.UserMessage;
+        }
+
+        return ex.ProblemDetails?.Detail
+               ?? ex.ProblemDetails?.Title
+               ?? "Compliance report request failed.";
+    }
+}

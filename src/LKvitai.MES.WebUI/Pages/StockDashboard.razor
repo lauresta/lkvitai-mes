@@ -1,0 +1,372 @@
+@page "/warehouse/stock/dashboard"
+@inject ReportsClient ReportsClient
+@inject IJSRuntime JavaScript
+@inject ToastService ToastService
+
+<PageTitle>Stock Dashboard - LKvitai.MES</PageTitle>
+
+<h1>Stock Dashboard</h1>
+
+@if (_apiError is not null)
+{
+    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                 TraceId="@_apiError.TraceId"
+                 OnRetry="LoadAsync"
+                 OnDismiss="DismissError" />
+}
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-2">
+                <label class="form-label">Location Id</label>
+                <input type="number" class="form-control" @bind="_locationId" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Category Id</label>
+                <input type="number" class="form-control" @bind="_categoryId" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Item Id</label>
+                <input type="number" class="form-control" @bind="_itemId" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Search Item</label>
+                <input class="form-control" @bind="_itemSearch" placeholder="SKU or name" />
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button class="btn btn-primary" @onclick="ApplyFiltersAsync" disabled="_isLoading">Apply</button>
+                <button class="btn btn-outline-secondary" @onclick="ResetFiltersAsync" disabled="_isLoading">Reset</button>
+                <button class="btn btn-outline-secondary" @onclick="LoadAsync" disabled="_isLoading">Refresh</button>
+                <button class="btn btn-outline-success ms-auto" @onclick="ExportCsvAsync" disabled="_isLoading">Export CSV</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-2 mb-3">
+    <div class="col-md-3">
+        <div class="card border h-100">
+            <div class="card-body">
+                <div class="small text-muted">Total Items</div>
+                <div class="fs-4">@TotalItems</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border h-100">
+            <div class="card-body">
+                <div class="small text-muted">Total Qty</div>
+                <div class="fs-4">@TotalQty.ToString("0.##")</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border h-100">
+            <div class="card-body">
+                <div class="small text-muted">Low Stock</div>
+                <div class="fs-4 text-warning">@LowStockRows.Count</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border h-100">
+            <div class="card-body">
+                <div class="small text-muted">Expiring Soon (30d)</div>
+                <div class="fs-4 text-danger">@ExpiringRows.Count</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm position-relative mb-3">
+    <LoadingSpinner IsLoading="_isLoading" />
+
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h5 class="mb-0">Stock by Location</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Location</th>
+                        <th>Items</th>
+                        <th>Total Qty</th>
+                        <th>Utilization</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (LocationSummaries.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="4" class="text-muted">No location aggregates.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var row in LocationSummaries)
+                        {
+                            <tr>
+                                <td>@row.LocationCode</td>
+                                <td>@row.ItemCount</td>
+                                <td>@row.TotalQty.ToString("0.##")</td>
+                                <td>@row.UtilizationPercent.ToString("0")%</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="row g-2">
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h5>Low Stock Alerts (threshold: @_lowStockThreshold)</h5>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle">
+                        <thead>
+                            <tr>
+                                <th>SKU</th>
+                                <th>Location</th>
+                                <th>Available</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (LowStockRows.Count == 0)
+                            {
+                                <tr>
+                                    <td colspan="4" class="text-muted">No low stock alerts.</td>
+                                </tr>
+                            }
+                            else
+                            {
+                                @foreach (var row in LowStockRows)
+                                {
+                                    <tr>
+                                        <td>@row.InternalSku</td>
+                                        <td>@row.LocationCode</td>
+                                        <td>@row.AvailableQty.ToString("0.##")</td>
+                                        <td>
+                                            <span class="badge @(row.AvailableQty <= _lowStockThreshold / 2m ? "bg-danger" : "bg-warning text-dark")">
+                                                @(row.AvailableQty <= _lowStockThreshold / 2m ? "CRITICAL" : "LOW")
+                                            </span>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h5>Expiring Soon</h5>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle">
+                        <thead>
+                            <tr>
+                                <th>SKU</th>
+                                <th>Lot</th>
+                                <th>Expiry</th>
+                                <th>Qty</th>
+                                <th>Location</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (ExpiringRows.Count == 0)
+                            {
+                                <tr>
+                                    <td colspan="5" class="text-muted">No lots expiring in next 30 days.</td>
+                                </tr>
+                            }
+                            else
+                            {
+                                @foreach (var row in ExpiringRows)
+                                {
+                                    <tr>
+                                        <td>@row.InternalSku</td>
+                                        <td>@(row.LotNumber ?? "-")</td>
+                                        <td>@row.ExpiryDate?.ToString("yyyy-MM-dd")</td>
+                                        <td>@row.AvailableQty.ToString("0.##")</td>
+                                        <td>@row.LocationCode</td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private readonly List<StockLevelRowDto> _rows = [];
+    private ApiException? _apiError;
+    private bool _isLoading;
+
+    private int? _locationId;
+    private int? _categoryId;
+    private int? _itemId;
+    private string _itemSearch = string.Empty;
+    private const decimal _lowStockThreshold = 20m;
+
+    private IReadOnlyList<StockLevelRowDto> FilteredRows =>
+        _rows.Where(x =>
+                string.IsNullOrWhiteSpace(_itemSearch)
+                || x.InternalSku.Contains(_itemSearch, StringComparison.OrdinalIgnoreCase)
+                || x.ItemName.Contains(_itemSearch, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+    private IReadOnlyList<LocationSummary> LocationSummaries
+    {
+        get
+        {
+            var grouped = FilteredRows
+                .GroupBy(x => x.LocationCode, StringComparer.OrdinalIgnoreCase)
+                .Select(g => new
+                {
+                    LocationCode = g.Key,
+                    ItemCount = g.Select(x => x.ItemId).Distinct().Count(),
+                    TotalQty = g.Sum(x => x.AvailableQty)
+                })
+                .OrderByDescending(x => x.TotalQty)
+                .ToList();
+
+            var maxQty = grouped.Count == 0 ? 0m : grouped.Max(x => x.TotalQty);
+
+            return grouped
+                .Select(x => new LocationSummary(
+                    x.LocationCode,
+                    x.ItemCount,
+                    x.TotalQty,
+                    maxQty <= 0m ? 0m : (x.TotalQty / maxQty) * 100m))
+                .ToList();
+        }
+    }
+
+    private IReadOnlyList<StockLevelRowDto> LowStockRows =>
+        FilteredRows
+            .Where(x => x.AvailableQty > 0m && x.AvailableQty < _lowStockThreshold)
+            .OrderBy(x => x.AvailableQty)
+            .Take(20)
+            .ToList();
+
+    private IReadOnlyList<StockLevelRowDto> ExpiringRows =>
+        FilteredRows
+            .Where(x => x.ExpiryDate.HasValue)
+            .Where(x => x.ExpiryDate!.Value <= DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(30)))
+            .OrderBy(x => x.ExpiryDate)
+            .Take(20)
+            .ToList();
+
+    private int TotalItems => FilteredRows.Select(x => x.ItemId).Distinct().Count();
+    private decimal TotalQty => FilteredRows.Sum(x => x.AvailableQty);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task ApplyFiltersAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task ResetFiltersAsync()
+    {
+        _locationId = null;
+        _categoryId = null;
+        _itemId = null;
+        _itemSearch = string.Empty;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            var response = await ReportsClient.GetStockLevelAsync(
+                _itemId,
+                _locationId,
+                _categoryId,
+                includeReserved: true,
+                includeVirtualLocations: true,
+                expiringBefore: DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(30)),
+                pageNumber: 1,
+                pageSize: 500);
+
+            _rows.Clear();
+            _rows.AddRange(response.Items);
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task ExportCsvAsync()
+    {
+        try
+        {
+            var bytes = await ReportsClient.DownloadStockLevelCsvAsync(
+                _itemId,
+                _locationId,
+                _categoryId,
+                includeReserved: true,
+                includeVirtualLocations: true,
+                expiringBefore: DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(30)));
+
+            await JavaScript.InvokeVoidAsync(
+                "csvExport.downloadBytes",
+                $"stock-dashboard-{DateTime.UtcNow:yyyyMMdd}.csv",
+                "text/csv",
+                Convert.ToBase64String(bytes));
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+    }
+
+    private void DismissError()
+    {
+        _apiError = null;
+    }
+
+    private static string BuildErrorMessage(ApiException ex)
+    {
+        if (!string.IsNullOrWhiteSpace(ex.UserMessage))
+        {
+            return ex.UserMessage;
+        }
+
+        return ex.ProblemDetails?.Detail
+               ?? ex.ProblemDetails?.Title
+               ?? "Stock dashboard request failed.";
+    }
+
+    private sealed record LocationSummary(
+        string LocationCode,
+        int ItemCount,
+        decimal TotalQty,
+        decimal UtilizationPercent);
+}

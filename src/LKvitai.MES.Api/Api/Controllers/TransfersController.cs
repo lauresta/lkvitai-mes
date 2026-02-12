@@ -23,6 +23,75 @@ public sealed class TransfersController : ControllerBase
         _dbContext = dbContext;
     }
 
+    [HttpGet]
+    [Authorize(Policy = WarehousePolicies.OperatorOrAbove)]
+    public async Task<IActionResult> GetListAsync(
+        [FromQuery] string? status,
+        [FromQuery] DateTimeOffset? dateFrom,
+        [FromQuery] DateTimeOffset? dateTo,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 50,
+        CancellationToken cancellationToken = default)
+    {
+        pageNumber = Math.Max(1, pageNumber);
+        pageSize = Math.Clamp(pageSize, 1, 500);
+
+        var query = _dbContext.Transfers
+            .AsNoTracking()
+            .Include(x => x.Lines)
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            if (!Enum.TryParse<LKvitai.MES.Domain.Entities.TransferStatus>(status, true, out var parsedStatus))
+            {
+                return ValidationFailure("Invalid status value.");
+            }
+
+            query = query.Where(x => x.Status == parsedStatus);
+        }
+
+        if (dateFrom.HasValue)
+        {
+            query = query.Where(x => x.RequestedAt >= dateFrom.Value);
+        }
+
+        if (dateTo.HasValue)
+        {
+            query = query.Where(x => x.RequestedAt <= dateTo.Value);
+        }
+
+        var totalCount = await query.CountAsync(cancellationToken);
+        var rows = await query
+            .OrderByDescending(x => x.RequestedAt)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return Ok(new PagedResponse<TransferResponse>(
+            rows.Select(ToResponse).ToList(),
+            totalCount,
+            pageNumber,
+            pageSize));
+    }
+
+    [HttpGet("{id:guid}")]
+    [Authorize(Policy = WarehousePolicies.OperatorOrAbove)]
+    public async Task<IActionResult> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var transfer = await _dbContext.Transfers
+            .AsNoTracking()
+            .Include(x => x.Lines)
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+        if (transfer is null)
+        {
+            return Failure(Result.Fail(DomainErrorCodes.NotFound, "Transfer not found."));
+        }
+
+        return Ok(ToResponse(transfer));
+    }
+
     [HttpPost]
     [Authorize(Policy = WarehousePolicies.OperatorOrAbove)]
     public async Task<IActionResult> CreateAsync(
@@ -218,4 +287,10 @@ public sealed class TransfersController : ControllerBase
         DateTimeOffset? ExecutedAt,
         DateTimeOffset? CompletedAt,
         IReadOnlyList<TransferLineResponse> Lines);
+
+    public sealed record PagedResponse<T>(
+        IReadOnlyList<T> Items,
+        int TotalCount,
+        int PageNumber,
+        int PageSize);
 }

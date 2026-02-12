@@ -2,91 +2,81 @@
 
 ## Scope
 
-Implemented Phase 1.5 Sprint 3-6 execution pack from `PRD-1521` through `PRD-1600` in TaskId order, with all ambiguities/test-gaps logged in `docs/prod-ready/codex-suspicions.md`.
+Completed remaining implementation gaps for Phase 1.5 Sprint 3-6 UI/report/admin tasks and stabilized related backend controllers required by those pages.
 
-## Task Order Status
+## Task Completion (this run)
 
-- `PRD-1521`: Implemented (dev token endpoint, dev auth config, auth handler expiry support, docs, tests, anonymous `/health`).
-- `PRD-1522..PRD-1575`: Existing implementation retained; validated by successful full solution build and test runs.
-- `PRD-1576`: Implemented (Blazor outbound bulk multi-select + bulk cancel + CSV export).
-- `PRD-1577`: Existing advanced filters retained (`OutboundOrders`, `AvailableStock`).
-- `PRD-1578`: Implemented (API rate limiting middleware with 429 + rate headers).
-- `PRD-1579`: Implemented (sensitive-data masking utility + masked exception query logging + masked auth log paths).
-- `PRD-1580`: Implemented (load/stress smoke suite scaffold in `scripts/load/warehouse-load-smoke.js` + perf doc).
-- `PRD-1581..PRD-1597`: Implemented backend + UI slices:
-  - Wave creation/assignment/execution + route-ordered pick list
-  - Cross-dock workflow/tracking
-  - QC template/defect/attachment APIs
-  - RMA creation/receive/inspect workflow
-  - HU split/merge/hierarchy APIs
-  - Serial registration/lifecycle/search APIs
-  - Fulfillment KPI and QC/late-shipment analytics endpoints + Blazor dashboards
-- `PRD-1598`: Implemented contract tests (`FedExApiContractTests`, `ErpEventContractTests`) and contract doc.
-- `PRD-1599`: Implemented regression baseline tests (`PerformanceRegressionTests`).
-- `PRD-1600`: Implemented operator training guide artifact (`docs/prod-ready/operator-training-guide.md`).
+- `PRD-1523` Receiving Invoice Entry UI: implemented Blazor inbound shipment list/create/detail flows.
+- `PRD-1524` Receiving Scan & QC UI: implemented barcode-assisted receiving panel and QC pending/pass/fail page.
+- `PRD-1525` Stock Visibility Dashboard UI: implemented `/warehouse/stock/dashboard` summary cards, location aggregates, low-stock and expiring sections with CSV export.
+- `PRD-1526` Stock Movement/Transfer UI: implemented transfers list/create/detail with approve/execute actions.
+- `PRD-1527` Create Sales Order UI visibility: retained existing `/warehouse/sales/orders/create` and added quick `+ Sales Order` action from outbound list.
+- `PRD-1529` Allocation & Release UI: implemented `/warehouse/sales/allocations` with pending-approval, pending-stock, allocated sections and approve/release actions.
+- `PRD-1534` Dispatch History Report UI: implemented report page with filters, summary cards, pagination, CSV export.
+- `PRD-1548` Admin User Management UI: implemented `/admin/users` list/create/edit roles/status/email.
+- `PRD-1549` Stock Movement History Report UI: implemented page with filters, pagination, CSV export.
+- `PRD-1551` Traceability Report UI: implemented lot/item/order/supplier search with upstream/current/downstream sections.
+- `PRD-1552` Compliance Audit Report UI: implemented report type/date filters, pagination, CSV and PDF export.
 
-## Key Artifacts Added/Updated
+## Supporting Backend/Integration Work in Workspace
 
-- API security/foundation:
-  - `src/LKvitai.MES.Api/Program.cs`
-  - `src/LKvitai.MES.Api/Security/IDevAuthService.cs`
-  - `src/LKvitai.MES.Api/Security/DevAuthService.cs`
-  - `src/LKvitai.MES.Api/Security/DevAuthOptions.cs`
-  - `src/LKvitai.MES.Api/Security/WarehouseAuthenticationHandler.cs`
-  - `src/LKvitai.MES.Api/Middleware/ApiRateLimitingMiddleware.cs`
-  - `src/LKvitai.MES.Api/Security/SensitiveDataMasker.cs`
-  - `src/LKvitai.MES.Api/Api/Controllers/HealthController.cs`
-- Advanced Sprint 6 backend:
-  - `src/LKvitai.MES.Api/Services/AdvancedWarehouseStore.cs`
-  - `src/LKvitai.MES.Api/Api/Controllers/AdvancedWarehouseController.cs`
-- Blazor UI:
-  - `src/LKvitai.MES.WebUI/Services/AdvancedWarehouseClient.cs`
-  - `src/LKvitai.MES.WebUI/Models/AdvancedWarehouseDtos.cs`
-  - `src/LKvitai.MES.WebUI/Pages/WavePicking.razor`
-  - `src/LKvitai.MES.WebUI/Pages/CrossDock.razor`
-  - `src/LKvitai.MES.WebUI/Pages/Rmas.razor`
-  - `src/LKvitai.MES.WebUI/Pages/AnalyticsFulfillment.razor`
-  - `src/LKvitai.MES.WebUI/Pages/AnalyticsQuality.razor`
-  - `src/LKvitai.MES.WebUI/Pages/OutboundOrders.razor`
-  - `src/LKvitai.MES.WebUI/Shared/NavMenu.razor`
-  - `src/LKvitai.MES.WebUI/Components/EmptyState.razor`
-- Tests:
-  - `src/tests/LKvitai.MES.Tests.Unit/DevAuthServiceTests.cs`
-  - `src/tests/LKvitai.MES.Tests.Unit/AdvancedWarehouseStoreTests.cs`
-  - `src/tests/LKvitai.MES.Tests.Unit/FedExApiContractTests.cs`
-  - `src/tests/LKvitai.MES.Tests.Unit/ErpEventContractTests.cs`
-  - `src/tests/LKvitai.MES.Tests.Unit/PerformanceRegressionTests.cs`
-  - `src/tests/LKvitai.MES.Tests.Integration/HealthControllerIntegrationTests.cs`
-- Documentation:
-  - `docs/dev-auth-guide.md`
-  - `docs/prod-ready/deployment-guide.md`
-  - `docs/prod-ready/operator-runbook.md`
-  - `docs/prod-ready/production-readiness-checklist.md`
-  - `docs/prod-ready/alerting-runbook.md`
-  - `docs/prod-ready/api-documentation.md`
-  - `docs/prod-ready/external-contract-tests.md`
-  - `docs/prod-ready/performance-regression-suite.md`
-  - `docs/prod-ready/operator-training-guide.md`
+- Fixed compile/runtime contract issues in newly added API controllers:
+  - `QCController` async query ambiguity + nullable item id handling.
+  - `ReportsController` async query ambiguity + count usage fixes.
+  - `AdminUsersController` null-safe not-found error mapping.
+- Existing workspace backend additions retained and wired:
+  - inbound shipment aliases/detail/receive-items, transfer list/detail APIs,
+  - QC pending endpoint,
+  - admin users API + in-memory store,
+  - reports API for dispatch/stock movements/traceability/compliance.
+
+## Files Added
+
+- `src/LKvitai.MES.WebUI/Models/InboundDtos.cs`
+- `src/LKvitai.MES.WebUI/Models/TransferDtos.cs`
+- `src/LKvitai.MES.WebUI/Models/AdminUserDtos.cs`
+- `src/LKvitai.MES.WebUI/Services/ReceivingClient.cs`
+- `src/LKvitai.MES.WebUI/Services/TransfersClient.cs`
+- `src/LKvitai.MES.WebUI/Services/AdminUsersClient.cs`
+- `src/LKvitai.MES.WebUI/Pages/InboundShipments.razor`
+- `src/LKvitai.MES.WebUI/Pages/InboundShipmentCreate.razor`
+- `src/LKvitai.MES.WebUI/Pages/InboundShipmentDetail.razor`
+- `src/LKvitai.MES.WebUI/Pages/ReceivingQc.razor`
+- `src/LKvitai.MES.WebUI/Pages/QCPanel.razor`
+- `src/LKvitai.MES.WebUI/Pages/StockDashboard.razor`
+- `src/LKvitai.MES.WebUI/Pages/Transfers.razor`
+- `src/LKvitai.MES.WebUI/Pages/TransferCreate.razor`
+- `src/LKvitai.MES.WebUI/Pages/TransferDetail.razor`
+- `src/LKvitai.MES.WebUI/Pages/AllocationDashboard.razor`
+- `src/LKvitai.MES.WebUI/Pages/ReportsDispatchHistory.razor`
+- `src/LKvitai.MES.WebUI/Pages/ReportsStockMovements.razor`
+- `src/LKvitai.MES.WebUI/Pages/ReportsTraceability.razor`
+- `src/LKvitai.MES.WebUI/Pages/ReportsComplianceAudit.razor`
+- `src/LKvitai.MES.WebUI/Pages/AdminUsers.razor`
+
+## Files Updated (key)
+
+- `src/LKvitai.MES.WebUI/Program.cs`
+- `src/LKvitai.MES.WebUI/Shared/NavMenu.razor`
+- `src/LKvitai.MES.WebUI/Services/ReportsClient.cs`
+- `src/LKvitai.MES.WebUI/Models/ReportDtos.cs`
+- `src/LKvitai.MES.WebUI/Pages/OutboundOrders.razor`
+- `src/LKvitai.MES.Api/Api/Controllers/QCController.cs`
+- `src/LKvitai.MES.Api/Api/Controllers/ReportsController.cs`
+- `src/LKvitai.MES.Api/Api/Controllers/AdminUsersController.cs`
 
 ## Validation Results
 
 - `dotnet build src/LKvitai.MES.sln` ✅ pass
 - `dotnet test src/LKvitai.MES.sln` ✅ pass (exit code 0)
-- Additional verification:
-  - `dotnet vstest src/tests/LKvitai.MES.Tests.Unit/bin/Debug/net8.0/LKvitai.MES.Tests.Unit.dll` ✅ Passed 299/299
-  - `dotnet vstest src/tests/LKvitai.MES.Tests.Integration/bin/Debug/net8.0/LKvitai.MES.Tests.Integration.dll` ✅ Passed 10, Skipped 70, Failed 0
-  - `dotnet vstest src/tests/LKvitai.MES.Tests.Property/bin/Debug/net8.0/LKvitai.MES.Tests.Property.dll` ✅ Passed 6/6
+- UI artifact audit: all page files explicitly referenced in S3-S6 DoD (`Pages/*.razor`) now exist in `src/LKvitai.MES.WebUI` (missing count: 0).
 
-## Remaining Test Gaps
+## Logged Gaps / Risks
 
-Manual/auth/env blocked checks were logged as `TEST-GAP` entries in `docs/prod-ready/codex-suspicions.md` for:
-
-- `PRD-1521` (manual live auth flow not executed in this run)
-- `PRD-1541` (full integration matrix requires infra prerequisites)
-- `PRD-1580` (`k6` not installed in environment)
-- `PRD-1583` (interactive browser UI walkthrough pending)
-- `PRD-1598` (live sandbox contract validation pending)
-
-## Overall Status
-
-Phase 1.5 Sprints 3-6 implementation completed in code and docs with successful build/test gates, and explicit environment-dependent test gaps recorded for follow-up execution.
+Updated `docs/prod-ready/codex-suspicions.md` with:
+- ambiguity: missing reason-code lookup endpoint for QC fail UI,
+- ambiguity: missing dedicated stock-dashboard/min-stock API contract for PRD-1525,
+- inconsistency: PRD-1529 reallocate/pending endpoints absent in current API surface,
+- inconsistency: admin users currently in-memory (non-persistent),
+- risk: traceability is approximate (lot linkage model gap),
+- TEST-GAP entries for manual browser UX validation pending on PRD-1523/1524/1525/1526/1529/1534/1548/1549/1551/1552.

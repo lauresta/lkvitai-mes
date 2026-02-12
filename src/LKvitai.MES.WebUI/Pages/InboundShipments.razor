@@ -1,0 +1,239 @@
+@page "/warehouse/inbound/shipments"
+@inject ReceivingClient ReceivingClient
+@inject NavigationManager NavigationManager
+@inject ToastService ToastService
+
+<PageTitle>Inbound Shipments - LKvitai.MES</PageTitle>
+
+<h1>Inbound Shipments</h1>
+
+@if (_apiError is not null)
+{
+    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                 TraceId="@_apiError.TraceId"
+                 OnRetry="LoadAsync"
+                 OnDismiss="DismissError" />
+}
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-2">
+                <label class="form-label">Supplier Id</label>
+                <input type="number" class="form-control" @bind="_supplierId" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Status</label>
+                <select class="form-select" @bind="_status">
+                    <option value="">All</option>
+                    <option value="Draft">Draft</option>
+                    <option value="Partial">Partial</option>
+                    <option value="Complete">Complete</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Expected From</label>
+                <input type="date" class="form-control" @bind="_expectedFrom" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Expected To</label>
+                <input type="date" class="form-control" @bind="_expectedTo" />
+            </div>
+            <div class="col-md-4 d-flex gap-2">
+                <button class="btn btn-primary" @onclick="ApplyFiltersAsync" disabled="_isLoading">Apply</button>
+                <button class="btn btn-outline-secondary" @onclick="ResetFiltersAsync" disabled="_isLoading">Reset</button>
+                <button class="btn btn-outline-secondary" @onclick="LoadAsync" disabled="_isLoading">Refresh</button>
+                <button class="btn btn-success ms-auto" @onclick="OpenCreate">+ Create Inbound</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm position-relative">
+    <LoadingSpinner IsLoading="_isLoading" />
+    <div class="card-body">
+        <div class="mb-2"><strong>Total: @_totalCount</strong></div>
+
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Shipment</th>
+                        <th>Reference</th>
+                        <th>Supplier</th>
+                        <th>Status</th>
+                        <th>Expected Date</th>
+                        <th>Lines</th>
+                        <th>Received / Expected</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (_rows.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="8">
+                                <EmptyState Title="No inbound shipments"
+                                            Message="Create inbound shipment to start receiving workflow."
+                                            IconCss="bi bi-box-arrow-in-down"
+                                            OnAction="OpenCreateAsync" />
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var row in _rows)
+                        {
+                            <tr>
+                                <td>ISH-@row.Id</td>
+                                <td>@row.ReferenceNumber</td>
+                                <td>@row.SupplierName (@row.SupplierId)</td>
+                                <td><span class="badge @GetStatusBadge(row.Status)">@row.Status</span></td>
+                                <td>@row.ExpectedDate?.ToString("yyyy-MM-dd")</td>
+                                <td>@row.TotalLines</td>
+                                <td>@row.TotalReceivedQty.ToString("0.##") / @row.TotalExpectedQty.ToString("0.##")</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary" @onclick="() => OpenDetails(row.Id)">View</button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (_totalCount > 0)
+        {
+            <Pagination CurrentPage="_pageNumber"
+                        TotalPages="TotalPages"
+                        PageSize="_pageSize"
+                        OnPageChanged="OnPageChangedAsync"
+                        OnPageSizeChanged="OnPageSizeChangedAsync" />
+        }
+    </div>
+</div>
+
+@code {
+    private readonly List<InboundShipmentSummaryDto> _rows = [];
+    private ApiException? _apiError;
+    private bool _isLoading;
+    private int? _supplierId;
+    private string _status = string.Empty;
+    private DateTime? _expectedFrom;
+    private DateTime? _expectedTo;
+    private int _pageNumber = 1;
+    private int _pageSize = 50;
+    private int _totalCount;
+
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling(_totalCount / (double)Math.Max(1, _pageSize)));
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task ApplyFiltersAsync()
+    {
+        _pageNumber = 1;
+        await LoadAsync();
+    }
+
+    private async Task ResetFiltersAsync()
+    {
+        _supplierId = null;
+        _status = string.Empty;
+        _expectedFrom = null;
+        _expectedTo = null;
+        _pageNumber = 1;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            var response = await ReceivingClient.GetShipmentsAsync(
+                _supplierId,
+                _status,
+                ParseDate(_expectedFrom),
+                ParseDate(_expectedTo),
+                _pageNumber,
+                _pageSize);
+
+            _rows.Clear();
+            _rows.AddRange(response.Items);
+            _totalCount = response.TotalCount;
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task OnPageChangedAsync(int page)
+    {
+        _pageNumber = Math.Max(1, page);
+        await LoadAsync();
+    }
+
+    private async Task OnPageSizeChangedAsync(int size)
+    {
+        _pageSize = Math.Clamp(size, 1, 500);
+        _pageNumber = 1;
+        await LoadAsync();
+    }
+
+    private void OpenDetails(int id)
+    {
+        NavigationManager.NavigateTo($"/warehouse/inbound/shipments/{id}");
+    }
+
+    private void OpenCreate()
+    {
+        NavigationManager.NavigateTo("/warehouse/inbound/shipments/create");
+    }
+
+    private Task OpenCreateAsync()
+    {
+        OpenCreate();
+        return Task.CompletedTask;
+    }
+
+    private void DismissError()
+    {
+        _apiError = null;
+    }
+
+    private static DateOnly? ParseDate(DateTime? date)
+    {
+        return date.HasValue ? DateOnly.FromDateTime(date.Value.Date) : null;
+    }
+
+    private static string GetStatusBadge(string status) => status.ToUpperInvariant() switch
+    {
+        "DRAFT" => "bg-secondary",
+        "PARTIAL" => "bg-warning text-dark",
+        "COMPLETE" => "bg-success",
+        _ => "bg-secondary"
+    };
+
+    private static string BuildErrorMessage(ApiException ex)
+    {
+        if (!string.IsNullOrWhiteSpace(ex.UserMessage))
+        {
+            return ex.UserMessage;
+        }
+
+        return ex.ProblemDetails?.Detail
+               ?? ex.ProblemDetails?.Title
+               ?? "Inbound shipment request failed.";
+    }
+}

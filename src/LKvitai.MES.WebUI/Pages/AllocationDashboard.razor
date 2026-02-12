@@ -1,0 +1,287 @@
+@page "/warehouse/sales/allocations"
+@inject SalesOrdersClient SalesOrdersClient
+@inject NavigationManager NavigationManager
+@inject ToastService ToastService
+
+<PageTitle>Allocation Dashboard - LKvitai.MES</PageTitle>
+
+<h1>Allocation & Release Dashboard</h1>
+
+@if (_apiError is not null)
+{
+    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                 TraceId="@_apiError.TraceId"
+                 OnRetry="LoadAsync"
+                 OnDismiss="DismissError" />
+}
+
+<div class="d-flex justify-content-end mb-2">
+    <button class="btn btn-outline-secondary" @onclick="LoadAsync" disabled="_isLoading || _isBusy">Refresh</button>
+</div>
+
+<div class="card shadow-sm mb-3 position-relative">
+    <LoadingSpinner IsLoading="_isLoading || _isBusy" />
+    <div class="card-body">
+        <h5>Pending Approvals</h5>
+        <div class="table-responsive">
+            <table class="table table-sm align-middle">
+                <thead>
+                    <tr>
+                        <th>Order</th>
+                        <th>Customer</th>
+                        <th>Total Amount</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (_pendingApprovals.Count == 0)
+                    {
+                        <tr><td colspan="5" class="text-muted">No orders pending approval.</td></tr>
+                    }
+                    else
+                    {
+                        @foreach (var order in _pendingApprovals)
+                        {
+                            <tr>
+                                <td><a href="@($"/warehouse/sales/orders/{order.Id}")">@order.OrderNumber</a></td>
+                                <td>@order.CustomerName</td>
+                                <td>@order.TotalAmount.ToString("0.00")</td>
+                                <td>@order.OrderDate.ToString("yyyy-MM-dd HH:mm")</td>
+                                <td>
+                                    <button class="btn btn-sm btn-warning"
+                                            @onclick="() => ApproveAsync(order.Id, order.OrderNumber)"
+                                            disabled="_isBusy">
+                                        Approve
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-3 position-relative">
+    <LoadingSpinner IsLoading="_isLoading || _isBusy" />
+    <div class="card-body">
+        <h5>Pending Stock</h5>
+        <div class="table-responsive">
+            <table class="table table-sm align-middle">
+                <thead>
+                    <tr>
+                        <th>Order</th>
+                        <th>Customer</th>
+                        <th>Lines</th>
+                        <th>Total Amount</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (_pendingStock.Count == 0)
+                    {
+                        <tr><td colspan="5" class="text-muted">No orders pending stock.</td></tr>
+                    }
+                    else
+                    {
+                        @foreach (var order in _pendingStock)
+                        {
+                            <tr>
+                                <td><a href="@($"/warehouse/sales/orders/{order.Id}")">@order.OrderNumber</a></td>
+                                <td>@order.CustomerName</td>
+                                <td>@order.Lines.Count</td>
+                                <td>@order.TotalAmount.ToString("0.00")</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-secondary" @onclick="() => OpenOrder(order.Id)">
+                                        View
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-warning ms-1" disabled title="Manual reallocate endpoint is not available in current API surface.">
+                                        Reallocate
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm position-relative">
+    <LoadingSpinner IsLoading="_isLoading || _isBusy" />
+    <div class="card-body">
+        <h5>Allocated Orders</h5>
+        <div class="table-responsive">
+            <table class="table table-sm align-middle">
+                <thead>
+                    <tr>
+                        <th>Order</th>
+                        <th>Customer</th>
+                        <th>Reservation</th>
+                        <th>Total Amount</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (_allocated.Count == 0)
+                    {
+                        <tr><td colspan="5" class="text-muted">No allocated orders.</td></tr>
+                    }
+                    else
+                    {
+                        @foreach (var order in _allocated)
+                        {
+                            <tr>
+                                <td><a href="@($"/warehouse/sales/orders/{order.Id}")">@order.OrderNumber</a></td>
+                                <td>@order.CustomerName</td>
+                                <td>@(order.ReservationId?.ToString() ?? "-")</td>
+                                <td>@order.TotalAmount.ToString("0.00")</td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary"
+                                            @onclick="() => ReleaseAsync(order.Id, order.OrderNumber)"
+                                            disabled="_isBusy">
+                                        Release to Picking
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@code {
+    private readonly List<SalesOrderDto> _pendingApprovals = [];
+    private readonly List<SalesOrderDto> _pendingStock = [];
+    private readonly List<SalesOrderDto> _allocated = [];
+    private ApiException? _apiError;
+    private bool _isLoading;
+    private bool _isBusy;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            var pendingApprovals = await SalesOrdersClient.GetSalesOrdersAsync(
+                "PENDING_APPROVAL",
+                null,
+                null,
+                null,
+                1,
+                100);
+
+            var pendingStock = await SalesOrdersClient.GetSalesOrdersAsync(
+                "PENDING_STOCK",
+                null,
+                null,
+                null,
+                1,
+                100);
+
+            var allocated = await SalesOrdersClient.GetSalesOrdersAsync(
+                "ALLOCATED",
+                null,
+                null,
+                null,
+                1,
+                100);
+
+            _pendingApprovals.Clear();
+            _pendingApprovals.AddRange(pendingApprovals.Items.OrderByDescending(x => x.OrderDate));
+
+            _pendingStock.Clear();
+            _pendingStock.AddRange(pendingStock.Items.OrderByDescending(x => x.OrderDate));
+
+            _allocated.Clear();
+            _allocated.AddRange(allocated.Items.OrderByDescending(x => x.OrderDate));
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task ApproveAsync(Guid id, string orderNumber)
+    {
+        _isBusy = true;
+        _apiError = null;
+
+        try
+        {
+            await SalesOrdersClient.ApproveSalesOrderAsync(id);
+            ToastService.ShowSuccess($"Order {orderNumber} approved.");
+            await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isBusy = false;
+        }
+    }
+
+    private async Task ReleaseAsync(Guid id, string orderNumber)
+    {
+        _isBusy = true;
+        _apiError = null;
+
+        try
+        {
+            await SalesOrdersClient.ReleaseSalesOrderAsync(id);
+            ToastService.ShowSuccess($"Order {orderNumber} released to picking.");
+            await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isBusy = false;
+        }
+    }
+
+    private void OpenOrder(Guid id)
+    {
+        NavigationManager.NavigateTo($"/warehouse/sales/orders/{id}");
+    }
+
+    private void DismissError()
+    {
+        _apiError = null;
+    }
+
+    private static string BuildErrorMessage(ApiException ex)
+    {
+        if (!string.IsNullOrWhiteSpace(ex.UserMessage))
+        {
+            return ex.UserMessage;
+        }
+
+        return ex.ProblemDetails?.Detail
+               ?? ex.ProblemDetails?.Title
+               ?? "Allocation dashboard request failed.";
+    }
+}
