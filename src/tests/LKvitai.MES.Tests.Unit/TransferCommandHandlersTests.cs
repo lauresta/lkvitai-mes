@@ -6,6 +6,7 @@ using LKvitai.MES.Application.Commands;
 using LKvitai.MES.Application.Ports;
 using LKvitai.MES.Application.Services;
 using LKvitai.MES.Contracts.Events;
+using LKvitai.MES.Domain.Aggregates;
 using LKvitai.MES.Domain.Entities;
 using LKvitai.MES.Infrastructure.Persistence;
 using LKvitai.MES.SharedKernel;
@@ -210,10 +211,23 @@ public class TransferCommandHandlersTests
             .ReturnsAsync(20m);
 
         var bus = new RecordingEventBus();
+        var stockLedger = new Mock<IStockLedgerRepository>(MockBehavior.Strict);
+        stockLedger
+            .Setup(x => x.LoadAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((new StockLedger(), 0L));
+        stockLedger
+            .Setup(x => x.AppendEventAsync(
+                It.IsAny<string>(),
+                It.IsAny<StockMovedEvent>(),
+                It.IsAny<long>(),
+                It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
         var handler = new ExecuteTransferCommandHandler(
             db,
             bus,
             availability.Object,
+            stockLedger.Object,
             MockCurrentUser("operator-1"),
             Mock.Of<ILogger<ExecuteTransferCommandHandler>>());
 
@@ -232,6 +246,13 @@ public class TransferCommandHandlersTests
         bus.Published.OfType<TransferExecutedEvent>().Should().ContainSingle();
         bus.Published.OfType<TransferCompletedEvent>().Should().ContainSingle();
         bus.Published.OfType<StockMovedEvent>().Should().HaveCount(2);
+        stockLedger.Verify(
+            x => x.AppendEventAsync(
+                It.IsAny<string>(),
+                It.IsAny<StockMovedEvent>(),
+                It.IsAny<long>(),
+                It.IsAny<CancellationToken>()),
+            Times.Exactly(2));
     }
 
     [Fact]
@@ -268,10 +289,12 @@ public class TransferCommandHandlersTests
             .ReturnsAsync(5m);
 
         var bus = new RecordingEventBus();
+        var stockLedger = new Mock<IStockLedgerRepository>(MockBehavior.Strict);
         var handler = new ExecuteTransferCommandHandler(
             db,
             bus,
             availability.Object,
+            stockLedger.Object,
             MockCurrentUser("operator-1"),
             Mock.Of<ILogger<ExecuteTransferCommandHandler>>());
 
@@ -286,6 +309,13 @@ public class TransferCommandHandlersTests
         var persisted = await db.Transfers.SingleAsync();
         persisted.Status.Should().Be(TransferStatus.Approved);
         bus.Published.Should().BeEmpty();
+        stockLedger.Verify(
+            x => x.AppendEventAsync(
+                It.IsAny<string>(),
+                It.IsAny<StockMovedEvent>(),
+                It.IsAny<long>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 
     private static WarehouseDbContext CreateDbContext()

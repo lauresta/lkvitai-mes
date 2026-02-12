@@ -32,6 +32,7 @@ public class VerifyProjectionQueryHandler
     private const string ShipmentSummaryTable = "shipment_summary";
     private const string DispatchHistoryTable = "dispatch_history";
     private const string OnHandValueTable = "on_hand_value";
+    private const string InboundShipmentSummaryTable = "mt_doc_inboundshipmentsummaryview";
 
     private readonly IDocumentStore _store;
 
@@ -60,6 +61,7 @@ public class VerifyProjectionQueryHandler
             "ShipmentSummary" => ShipmentSummaryTable,
             "DispatchHistory" => DispatchHistoryTable,
             "OnHandValue" => OnHandValueTable,
+            "InboundShipmentSummary" => InboundShipmentSummaryTable,
             _ => null
         };
 
@@ -132,6 +134,19 @@ public class VerifyProjectionQueryHandler
                 "COALESCE(\"CategoryId\"::text,'') || ':' || COALESCE(\"CategoryName\",'') || ':' || " +
                 "COALESCE(\"Qty\"::text,'0') || ':' || COALESCE(\"UnitCost\"::text,'0') || ':' || " +
                 "COALESCE(\"TotalValue\"::text,'0') || ':' || COALESCE(\"LastUpdated\"::text,'')",
+            "InboundShipmentSummary" =>
+                "id || ':' || COALESCE(data->>'shipmentId','0') || ':' || " +
+                "COALESCE(data->>'referenceNumber','') || ':' || " +
+                "COALESCE(data->>'supplierId','0') || ':' || " +
+                "COALESCE(data->>'supplierName','') || ':' || " +
+                "COALESCE(data->>'totalExpectedQty','0') || ':' || " +
+                "COALESCE(data->>'totalReceivedQty','0') || ':' || " +
+                "COALESCE(data->>'completionPercent','0') || ':' || " +
+                "COALESCE(data->>'totalLines','0') || ':' || " +
+                "COALESCE(data->>'status','') || ':' || " +
+                "COALESCE(data->>'expectedDate','') || ':' || " +
+                "COALESCE(data->>'createdAt','') || ':' || " +
+                "COALESCE(data->>'lastUpdated','')",
             _ => "id || data::text"
         };
 

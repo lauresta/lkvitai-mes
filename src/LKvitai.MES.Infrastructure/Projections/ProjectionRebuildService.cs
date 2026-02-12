@@ -5,6 +5,7 @@ using LKvitai.MES.Contracts.ReadModels;
 using LKvitai.MES.Infrastructure.Locking;
 using LKvitai.MES.SharedKernel;
 using Marten;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 using System.Diagnostics;
@@ -36,6 +37,7 @@ public class ProjectionRebuildService : IProjectionRebuildService
     private readonly IDocumentStore _documentStore;
     private readonly ILogger<ProjectionRebuildService> _logger;
     private readonly IDistributedLock _distributedLock;
+    private readonly string? _warehouseDbConnectionString;
 
     /// <summary>
     /// JSON serializer options matching Marten's default (camelCase property names).
@@ -53,11 +55,12 @@ public class ProjectionRebuildService : IProjectionRebuildService
     private const string ShipmentSummaryTable = "shipment_summary";
     private const string DispatchHistoryTable = "dispatch_history";
     private const string OnHandValueTable = "on_hand_value";
+    private const string InboundShipmentSummaryTable = "mt_doc_inboundshipmentsummaryview";
 
     public ProjectionRebuildService(
         IDocumentStore documentStore,
         ILogger<ProjectionRebuildService> logger)
-        : this(documentStore, logger, new NoOpDistributedLock())
+        : this(documentStore, logger, new NoOpDistributedLock(), null)
     {
     }
 
@@ -65,10 +68,20 @@ public class ProjectionRebuildService : IProjectionRebuildService
         IDocumentStore documentStore,
         ILogger<ProjectionRebuildService> logger,
         IDistributedLock distributedLock)
+        : this(documentStore, logger, distributedLock, null)
+    {
+    }
+
+    public ProjectionRebuildService(
+        IDocumentStore documentStore,
+        ILogger<ProjectionRebuildService> logger,
+        IDistributedLock distributedLock,
+        IConfiguration? configuration)
     {
         _documentStore = documentStore;
         _logger = logger;
         _distributedLock = distributedLock;
+        _warehouseDbConnectionString = configuration?.GetConnectionString("WarehouseDb");
     }
 
     public async Task<Result<ProjectionRebuildReport>> RebuildProjectionAsync(
@@ -112,10 +125,17 @@ public class ProjectionRebuildService : IProjectionRebuildService
             // Use a dedicated SQL connection for rebuild DDL/checksum/swap operations.
             // Marten session connections may already have an active transaction, which
             // would break local BeginTransactionAsync calls with nested transaction errors.
-            await using var bootstrapSession = _documentStore.QuerySession();
-            var bootstrapConnection = (NpgsqlConnection)(bootstrapSession.Connection
-                ?? throw new InvalidOperationException("Marten query session connection is unavailable."));
-            await using var writeConnection = bootstrapConnection.CloneWith(bootstrapConnection.ConnectionString);
+            // Prefer configured connection string so credentials (password) are preserved.
+            var connectionString = _warehouseDbConnectionString;
+            if (string.IsNullOrWhiteSpace(connectionString))
+            {
+                await using var bootstrapSession = _documentStore.QuerySession();
+                var bootstrapConnection = (NpgsqlConnection)(bootstrapSession.Connection
+                    ?? throw new InvalidOperationException("Marten query session connection is unavailable."));
+                connectionString = bootstrapConnection.ConnectionString;
+            }
+
+            await using var writeConnection = new NpgsqlConnection(connectionString);
             await writeConnection.OpenAsync(cancellationToken);
 
             var tableName = projectionName switch
@@ -126,6 +146,7 @@ public class ProjectionRebuildService : IProjectionRebuildService
                 "ShipmentSummary" => ShipmentSummaryTable,
                 "DispatchHistory" => DispatchHistoryTable,
                 "OnHandValue" => OnHandValueTable,
+                "InboundShipmentSummary" => InboundShipmentSummaryTable,
                 _ => null
             };
 
@@ -158,6 +179,7 @@ public class ProjectionRebuildService : IProjectionRebuildService
                 "ShipmentSummary" => await ReplayShipmentSummaryAsync(shadowTable, cancellationToken),
                 "DispatchHistory" => await ReplayDispatchHistoryAsync(shadowTable, cancellationToken),
                 "OnHandValue" => await ReplayOnHandValueAsync(shadowTable, cancellationToken),
+                "InboundShipmentSummary" => await ReplayInboundShipmentSummaryAsync(shadowTable, cancellationToken),
                 _ => 0
             };
 
@@ -455,6 +477,20 @@ public class ProjectionRebuildService : IProjectionRebuildService
             "COALESCE(\"Qty\"::text,'0') || ':' || COALESCE(\"UnitCost\"::text,'0') || ':' || " +
             "COALESCE(\"TotalValue\"::text,'0') || ':' || COALESCE(\"LastUpdated\"::text,'')",
 
+        "InboundShipmentSummary" =>
+            "id || ':' || COALESCE(data->>'shipmentId','0') || ':' || " +
+            "COALESCE(data->>'referenceNumber','') || ':' || " +
+            "COALESCE(data->>'supplierId','0') || ':' || " +
+            "COALESCE(data->>'supplierName','') || ':' || " +
+            "COALESCE(data->>'totalExpectedQty','0') || ':' || " +
+            "COALESCE(data->>'totalReceivedQty','0') || ':' || " +
+            "COALESCE(data->>'completionPercent','0') || ':' || " +
+            "COALESCE(data->>'totalLines','0') || ':' || " +
+            "COALESCE(data->>'status','') || ':' || " +
+            "COALESCE(data->>'expectedDate','') || ':' || " +
+            "COALESCE(data->>'createdAt','') || ':' || " +
+            "COALESCE(data->>'lastUpdated','')",
+
         _ => "id || data::text"
     };
 
@@ -489,6 +525,102 @@ public class ProjectionRebuildService : IProjectionRebuildService
 
         _logger.LogInformation("Checksum for {TableName}: {Checksum}", tableName, checksum);
         return checksum;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // Inbound shipment summary rebuild
+    // ═══════════════════════════════════════════════════════════════════
+
+    private async Task<int> ReplayInboundShipmentSummaryAsync(
+        string shadowTable,
+        CancellationToken ct)
+    {
+        _logger.LogInformation(
+            "Replaying InboundShipmentSummary events in GLOBAL sequence order (V-5 Rule A)");
+
+        await using var session = _documentStore.QuerySession();
+        var allEvents = await session.Events
+            .QueryAllRawEvents()
+            .OrderBy(e => e.Sequence)
+            .ToListAsync(ct);
+
+        var views = new Dictionary<string, InboundShipmentSummaryView>();
+        var processed = 0;
+
+        foreach (var rawEvent in allEvents)
+        {
+            switch (rawEvent.Data)
+            {
+                case InboundShipmentCreatedEvent created:
+                {
+                    var id = InboundShipmentSummaryView.ComputeId(created.ShipmentId);
+                    var timestamp = DateTime.SpecifyKind(created.Timestamp, DateTimeKind.Utc);
+                    views[id] = new InboundShipmentSummaryView
+                    {
+                        Id = id,
+                        ShipmentId = created.ShipmentId,
+                        ReferenceNumber = created.ReferenceNumber,
+                        SupplierId = created.SupplierId,
+                        SupplierName = created.SupplierName,
+                        TotalExpectedQty = created.TotalExpectedQty,
+                        TotalReceivedQty = 0m,
+                        CompletionPercent = 0m,
+                        TotalLines = created.TotalLines,
+                        Status = "Draft",
+                        ExpectedDate = created.ExpectedDate,
+                        CreatedAt = new DateTimeOffset(timestamp),
+                        LastUpdated = new DateTimeOffset(timestamp)
+                    };
+
+                    processed++;
+                    break;
+                }
+
+                case GoodsReceivedEvent received:
+                {
+                    var id = InboundShipmentSummaryView.ComputeId(received.ShipmentId);
+                    if (!views.TryGetValue(id, out var view))
+                    {
+                        var fallbackTimestamp = DateTime.SpecifyKind(received.Timestamp, DateTimeKind.Utc);
+                        view = new InboundShipmentSummaryView
+                        {
+                            Id = id,
+                            ShipmentId = received.ShipmentId,
+                            SupplierId = received.SupplierId ?? 0,
+                            CreatedAt = new DateTimeOffset(fallbackTimestamp),
+                            LastUpdated = new DateTimeOffset(fallbackTimestamp)
+                        };
+                        views[id] = view;
+                    }
+
+                    view.TotalReceivedQty += received.ReceivedQty;
+                    view.CompletionPercent = view.TotalExpectedQty <= 0m
+                        ? 0m
+                        : Math.Min(1m, view.TotalReceivedQty / view.TotalExpectedQty);
+                    view.Status = view.TotalReceivedQty switch
+                    {
+                        <= 0m => "Draft",
+                        _ when view.TotalReceivedQty >= view.TotalExpectedQty => "Complete",
+                        _ => "Partial"
+                    };
+
+                    var timestamp = DateTime.SpecifyKind(received.Timestamp, DateTimeKind.Utc);
+                    view.LastUpdated = new DateTimeOffset(timestamp);
+
+                    processed++;
+                    break;
+                }
+            }
+        }
+
+        await InsertDocumentsToShadowAsync(shadowTable, views.Values, ct);
+
+        _logger.LogInformation(
+            "InboundShipmentSummary: replayed {EventCount} events → {RecordCount} records",
+            processed,
+            views.Count);
+
+        return processed;
     }
 
     // ═══════════════════════════════════════════════════════════════════

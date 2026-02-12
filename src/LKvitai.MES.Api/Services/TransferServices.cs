@@ -121,7 +121,7 @@ public sealed class CreateTransferCommandHandler : IRequestHandler<CreateTransfe
         var distinctItemIds = request.Lines.Select(x => x.ItemId).Distinct().ToList();
         var itemCount = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.CountAsync(
             _dbContext.Items.AsNoTracking(),
-            x => Enumerable.Contains(distinctItemIds, x.Id),
+            x => distinctItemIds.Contains(x.Id),
             cancellationToken);
         if (itemCount != distinctItemIds.Count)
         {
@@ -134,7 +134,7 @@ public sealed class CreateTransferCommandHandler : IRequestHandler<CreateTransfe
             .ToList();
         var locationCount = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.CountAsync(
             _dbContext.Locations.AsNoTracking(),
-            x => Enumerable.Contains(distinctLocationIds, x.Id),
+            x => distinctLocationIds.Contains(x.Id),
             cancellationToken);
         if (locationCount != distinctLocationIds.Count)
         {
@@ -277,10 +277,12 @@ public sealed class ExecuteTransferCommandHandler : IRequestHandler<ExecuteTrans
         TransferMeter.CreateCounter<long>("transfers_executed_total");
     private static readonly Histogram<double> TransferExecutionDurationMs =
         TransferMeter.CreateHistogram<double>("transfer_execution_duration_ms");
+    private const int StockLedgerAppendMaxRetries = 3;
 
     private readonly WarehouseDbContext _dbContext;
     private readonly IEventBus _eventBus;
     private readonly ITransferStockAvailabilityService _stockAvailabilityService;
+    private readonly IStockLedgerRepository _stockLedgerRepository;
     private readonly ICurrentUserService _currentUserService;
     private readonly ILogger<ExecuteTransferCommandHandler> _logger;
 
@@ -288,12 +290,14 @@ public sealed class ExecuteTransferCommandHandler : IRequestHandler<ExecuteTrans
         WarehouseDbContext dbContext,
         IEventBus eventBus,
         ITransferStockAvailabilityService stockAvailabilityService,
+        IStockLedgerRepository stockLedgerRepository,
         ICurrentUserService currentUserService,
         ILogger<ExecuteTransferCommandHandler> logger)
     {
         _dbContext = dbContext;
         _eventBus = eventBus;
         _stockAvailabilityService = stockAvailabilityService;
+        _stockLedgerRepository = stockLedgerRepository;
         _currentUserService = currentUserService;
         _logger = logger;
     }
@@ -385,7 +389,7 @@ public sealed class ExecuteTransferCommandHandler : IRequestHandler<ExecuteTrans
                     var fromLocationCode = line.FromLocation!.Code;
                     var toLocationCode = line.ToLocation!.Code;
 
-                    await _eventBus.PublishAsync(new StockMovedEvent
+                    var toTransitMovement = new StockMovedEvent
                     {
                         MovementId = Guid.NewGuid(),
                         SKU = itemSku,
@@ -395,9 +399,21 @@ public sealed class ExecuteTransferCommandHandler : IRequestHandler<ExecuteTrans
                         MovementType = MovementType.Transfer,
                         OperatorId = operatorId,
                         Reason = $"Transfer {transfer.TransferNumber}"
-                    }, cancellationToken);
+                    };
 
-                    await _eventBus.PublishAsync(new StockMovedEvent
+                    var appendToTransitResult = await AppendStockMovementAsync(
+                        transfer.FromWarehouse,
+                        toTransitMovement.FromLocation,
+                        toTransitMovement,
+                        cancellationToken);
+                    if (!appendToTransitResult.IsSuccess)
+                    {
+                        return appendToTransitResult;
+                    }
+
+                    await _eventBus.PublishAsync(toTransitMovement, cancellationToken);
+
+                    var fromTransitMovement = new StockMovedEvent
                     {
                         MovementId = Guid.NewGuid(),
                         SKU = itemSku,
@@ -407,7 +423,19 @@ public sealed class ExecuteTransferCommandHandler : IRequestHandler<ExecuteTrans
                         MovementType = MovementType.Transfer,
                         OperatorId = operatorId,
                         Reason = $"Transfer {transfer.TransferNumber}"
-                    }, cancellationToken);
+                    };
+
+                    var appendFromTransitResult = await AppendStockMovementAsync(
+                        transfer.ToWarehouse,
+                        fromTransitMovement.FromLocation,
+                        fromTransitMovement,
+                        cancellationToken);
+                    if (!appendFromTransitResult.IsSuccess)
+                    {
+                        return appendFromTransitResult;
+                    }
+
+                    await _eventBus.PublishAsync(fromTransitMovement, cancellationToken);
                 }
 
                 var completeResult = transfer.Complete(DateTimeOffset.UtcNow);
@@ -472,6 +500,70 @@ public sealed class ExecuteTransferCommandHandler : IRequestHandler<ExecuteTrans
 
         _dbContext.Locations.Add(location);
         return location;
+    }
+
+    private async Task<Result> AppendStockMovementAsync(
+        string warehouseId,
+        string streamLocation,
+        StockMovedEvent movementEvent,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(warehouseId))
+        {
+            return Result.Fail(DomainErrorCodes.ValidationError, "Transfer warehouse is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(streamLocation))
+        {
+            return Result.Fail(DomainErrorCodes.ValidationError, "Transfer location is required.");
+        }
+
+        var streamId = StockLedgerStreamId.For(
+            warehouseId.Trim().ToUpperInvariant(),
+            streamLocation.Trim(),
+            movementEvent.SKU);
+
+        for (var attempt = 1; attempt <= StockLedgerAppendMaxRetries; attempt++)
+        {
+            var (_, version) = await _stockLedgerRepository.LoadAsync(streamId, cancellationToken);
+
+            try
+            {
+                await _stockLedgerRepository.AppendEventAsync(
+                    streamId,
+                    movementEvent,
+                    version,
+                    cancellationToken);
+
+                return Result.Ok();
+            }
+            catch (ConcurrencyException ex) when (attempt < StockLedgerAppendMaxRetries)
+            {
+                _logger.LogWarning(
+                    ex,
+                    "Stock ledger concurrency conflict for stream {StreamId}, attempt {Attempt}/{MaxAttempts}",
+                    streamId,
+                    attempt,
+                    StockLedgerAppendMaxRetries);
+
+                await Task.Delay(50 * attempt, cancellationToken);
+            }
+            catch (ConcurrencyException ex)
+            {
+                _logger.LogError(
+                    ex,
+                    "Stock ledger append failed after retries for stream {StreamId}",
+                    streamId);
+
+                return Result.Fail(
+                    DomainErrorCodes.ConcurrencyConflict,
+                    $"Stock movement append failed for stream '{streamId}'.");
+            }
+        }
+
+        return Result.Fail(
+            DomainErrorCodes.ConcurrencyConflict,
+            $"Stock movement append failed for stream '{streamId}'.");
     }
 
     private static Guid ResolveOperatorId(string userId)

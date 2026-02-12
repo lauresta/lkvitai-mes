@@ -115,6 +115,15 @@ public class ProjectionsClient
         foreach (var property in projectionStatus.EnumerateObject())
         {
             var row = property.Value;
+            var lagEvents = TryGetPropertyIgnoreCase(row, "lagEvents", out var lagEventsValue) &&
+                            lagEventsValue.ValueKind == JsonValueKind.Number
+                ? lagEventsValue.GetInt64()
+                : (long?)null;
+            var lagSeconds = TryGetPropertyIgnoreCase(row, "lagSeconds", out var lagValue) &&
+                             lagValue.ValueKind == JsonValueKind.Number
+                ? lagValue.GetDouble()
+                : (double?)null;
+
             rows.Add(new ProjectionLagStatusDto
             {
                 ProjectionName = property.Name,
@@ -122,12 +131,8 @@ public class ProjectionsClient
                          && statusValue.ValueKind == JsonValueKind.String
                     ? statusValue.GetString() ?? "Unknown"
                     : "Unknown",
-                LagSeconds = TryGetPropertyIgnoreCase(row, "lagSeconds", out var lagValue) && lagValue.ValueKind == JsonValueKind.Number
-                    ? lagValue.GetDouble()
-                    : null,
-                LagEvents = TryGetPropertyIgnoreCase(row, "lagEvents", out var lagEventsValue) && lagEventsValue.ValueKind == JsonValueKind.Number
-                    ? lagEventsValue.GetInt64()
-                    : null,
+                LagSeconds = lagEvents == 0 ? 0d : lagSeconds,
+                LagEvents = lagEvents,
                 LastUpdated = TryGetPropertyIgnoreCase(row, "lastUpdated", out var lastUpdatedValue)
                               && lastUpdatedValue.ValueKind == JsonValueKind.String
                               && DateTimeOffset.TryParse(lastUpdatedValue.GetString(), out var parsed)
