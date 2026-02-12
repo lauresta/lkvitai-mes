@@ -53,7 +53,7 @@
                                 <td>
                                     <button class="btn btn-sm btn-primary"
                                             @onclick="() => OpenDispatchModal(shipment)"
-                                            disabled="isSubmitting">
+                                            disabled="@_isSubmitting">
                                         Dispatch
                                     </button>
                                 </td>
@@ -93,8 +93,8 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="CloseModal" disabled="isSubmitting">Cancel</button>
-                    <button type="button" class="btn btn-primary" @onclick="ConfirmDispatchAsync" disabled="isSubmitting">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseModal" disabled="@_isSubmitting">Cancel</button>
+                    <button type="button" class="btn btn-primary" @onclick="ConfirmDispatchAsync" disabled="@_isSubmitting">
                         Confirm Dispatch
                     </button>
                 </div>

@@ -57,9 +57,9 @@
             </div>
 
             <div class="col-md-3 d-flex gap-2">
-                <button class="btn btn-primary" @onclick="ApplyFiltersAsync" disabled="isLoading">Apply</button>
-                <button class="btn btn-outline-secondary" @onclick="ResetFiltersAsync" disabled="isLoading">Reset</button>
-                <button class="btn btn-outline-secondary" @onclick="RetryAsync" disabled="isLoading">Refresh</button>
+                <button class="btn btn-primary" @onclick="ApplyFiltersAsync" disabled="@_isLoading">Apply</button>
+                <button class="btn btn-outline-secondary" @onclick="ResetFiltersAsync" disabled="@_isLoading">Reset</button>
+                <button class="btn btn-outline-secondary" @onclick="RetryAsync" disabled="@_isLoading">Refresh</button>
                 <button class="btn btn-success ms-auto" @onclick="OpenSalesOrderCreate">+ Sales Order</button>
             </div>
         </div>
@@ -132,7 +132,7 @@
             <div class="d-flex align-items-center justify-content-between border rounded px-3 py-2 mb-2">
                 <small class="text-muted">@_selectedOrderIds.Count order(s) selected</small>
                 <div class="d-flex gap-2">
-                    <button class="btn btn-sm btn-outline-danger" @onclick="BulkCancelAsync" disabled="isLoading">Bulk Cancel</button>
+                    <button class="btn btn-sm btn-outline-danger" @onclick="BulkCancelAsync" disabled="@_isLoading">Bulk Cancel</button>
                     <button class="btn btn-sm btn-outline-secondary" @onclick="ExportSelectionCsvAsync">Export CSV</button>
                     <button class="btn btn-sm btn-light" @onclick="ClearSelection">Clear</button>
                 </div>

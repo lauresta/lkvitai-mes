@@ -64,19 +64,19 @@
             <div class="d-flex flex-wrap gap-2 mb-3">
                 @if (CanSubmit)
                 {
-                    <button class="btn btn-sm btn-outline-primary" @onclick="SubmitAsync" disabled="isBusy">Submit</button>
+                    <button class="btn btn-sm btn-outline-primary" @onclick="SubmitAsync" disabled="@_isBusy">Submit</button>
                 }
                 @if (CanApprove)
                 {
-                    <button class="btn btn-sm btn-outline-info" @onclick="ApproveAsync" disabled="isBusy">Approve</button>
+                    <button class="btn btn-sm btn-outline-info" @onclick="ApproveAsync" disabled="@_isBusy">Approve</button>
                 }
                 @if (CanAllocate)
                 {
-                    <button class="btn btn-sm btn-outline-primary" @onclick="AllocateAsync" disabled="isBusy">Allocate</button>
+                    <button class="btn btn-sm btn-outline-primary" @onclick="AllocateAsync" disabled="@_isBusy">Allocate</button>
                 }
                 @if (CanRelease)
                 {
-                    <button class="btn btn-sm btn-primary" @onclick="ReleaseAsync" disabled="isBusy">Release to Picking</button>
+                    <button class="btn btn-sm btn-primary" @onclick="ReleaseAsync" disabled="@_isBusy">Release to Picking</button>
                 }
             </div>
 
@@ -88,7 +88,7 @@
                         <input class="form-control" @bind="_cancelReason" maxlength="250" />
                     </div>
                     <div class="col-md-2">
-                        <button class="btn btn-sm btn-outline-danger" @onclick="CancelAsync" disabled="isBusy">Cancel Order</button>
+                        <button class="btn btn-sm btn-outline-danger" @onclick="CancelAsync" disabled="@_isBusy">Cancel Order</button>
                     </div>
                 </div>
             }

@@ -71,11 +71,11 @@
             <div class="d-flex gap-2 mb-3">
                 @if (CanApprove)
                 {
-                    <button class="btn btn-warning" @onclick="ApproveAsync" disabled="isSubmitting">Approve</button>
+                    <button class="btn btn-warning" @onclick="ApproveAsync" disabled="@_isSubmitting">Approve</button>
                 }
                 @if (CanExecute)
                 {
-                    <button class="btn btn-primary" @onclick="ExecuteAsync" disabled="isSubmitting">Execute</button>
+                    <button class="btn btn-primary" @onclick="ExecuteAsync" disabled="@_isSubmitting">Execute</button>
                 }
             </div>
 

@@ -108,8 +108,8 @@
                                 disabled="@(!CanPack || _isSubmitting)">
                             Pack
                         </button>
-                        <button class="btn btn-outline-secondary" @onclick="ClearScans" disabled="isSubmitting">Clear Scans</button>
-                        <button class="btn btn-outline-secondary" @onclick="BackToOrder" disabled="isSubmitting">Back</button>
+                        <button class="btn btn-outline-secondary" @onclick="ClearScans" disabled="@_isSubmitting">Clear Scans</button>
+                        <button class="btn btn-outline-secondary" @onclick="BackToOrder" disabled="@_isSubmitting">Back</button>
                     </div>
                 </div>
             </div>

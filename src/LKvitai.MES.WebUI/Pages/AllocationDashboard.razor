@@ -16,7 +16,7 @@
 }
 
 <div class="d-flex justify-content-end mb-2">
-    <button class="btn btn-outline-secondary" @onclick="LoadAsync" disabled="isLoading || _isBusy">Refresh</button>
+    <button class="btn btn-outline-secondary" @onclick="LoadAsync" disabled="@(_isLoading || _isBusy)">Refresh</button>
 </div>
 
 <div class="card shadow-sm mb-3 position-relative">
@@ -51,7 +51,7 @@
                                 <td>
                                     <button class="btn btn-sm btn-warning"
                                             @onclick="() => ApproveAsync(order.Id, order.OrderNumber)"
-                                            disabled="isBusy">
+                                            disabled="@_isBusy">
                                         Approve
                                     </button>
                                 </td>
@@ -142,7 +142,7 @@
                                 <td>
                                     <button class="btn btn-sm btn-primary"
                                             @onclick="() => ReleaseAsync(order.Id, order.OrderNumber)"
-                                            disabled="isBusy">
+                                            disabled="@_isBusy">
                                         Release to Picking
                                     </button>
                                 </td>

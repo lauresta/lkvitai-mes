@@ -103,12 +103,12 @@
                     <div class="d-flex flex-wrap gap-2 mb-2">
                         @if (CanRelease)
                         {
-                            <button class="btn btn-outline-primary" @onclick="ReleaseAsync" disabled="isSubmitting">Release</button>
+                            <button class="btn btn-outline-primary" @onclick="ReleaseAsync" disabled="@_isSubmitting">Release</button>
                         }
 
                         @if (CanCancel)
                         {
-                            <button class="btn btn-outline-danger" @onclick="CancelAsync" disabled="isSubmitting">Cancel</button>
+                            <button class="btn btn-outline-danger" @onclick="CancelAsync" disabled="@_isSubmitting">Cancel</button>
                         }
                     </div>
 

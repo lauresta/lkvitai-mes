@@ -28,7 +28,7 @@
                 <input class="form-control" @bind="_assignedOperator" placeholder="picker-01" />
             </div>
             <div class="col-md-3">
-                <button class="btn btn-primary w-100" @onclick="CreateWaveAsync" disabled="isBusy">Create Wave</button>
+                <button class="btn btn-primary w-100" @onclick="CreateWaveAsync" disabled="@_isBusy">Create Wave</button>
             </div>
         </div>
     </div>
@@ -46,7 +46,7 @@
                     <option value="PICKING">PICKING</option>
                     <option value="COMPLETED">COMPLETED</option>
                 </select>
-                <button class="btn btn-outline-secondary btn-sm" @onclick="LoadAsync" disabled="isBusy">Refresh</button>
+                <button class="btn btn-outline-secondary btn-sm" @onclick="LoadAsync" disabled="@_isBusy">Refresh</button>
             </div>
         </div>
 

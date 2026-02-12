@@ -34,8 +34,8 @@
                 <input class="form-control" @bind="_supplier" placeholder="ACME" />
             </div>
             <div class="col-md-12 d-flex gap-2 mt-2">
-                <button class="btn btn-primary" @onclick="SearchAsync" disabled="isLoading">Search</button>
-                <button class="btn btn-outline-secondary" @onclick="ResetAsync" disabled="isLoading">Reset</button>
+                <button class="btn btn-primary" @onclick="SearchAsync" disabled="@_isLoading">Search</button>
+                <button class="btn btn-outline-secondary" @onclick="ResetAsync" disabled="@_isLoading">Reset</button>
             </div>
         </div>
     </div>
