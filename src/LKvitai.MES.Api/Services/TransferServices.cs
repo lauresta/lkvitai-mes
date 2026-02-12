@@ -121,7 +121,7 @@ public sealed class CreateTransferCommandHandler : IRequestHandler<CreateTransfe
         var distinctItemIds = request.Lines.Select(x => x.ItemId).Distinct().ToList();
         var itemCount = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.CountAsync(
             _dbContext.Items.AsNoTracking(),
-            x => distinctItemIds.Contains(x.Id),
+            x => Enumerable.Contains(distinctItemIds, x.Id),
             cancellationToken);
         if (itemCount != distinctItemIds.Count)
         {
@@ -134,7 +134,7 @@ public sealed class CreateTransferCommandHandler : IRequestHandler<CreateTransfe
             .ToList();
         var locationCount = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.CountAsync(
             _dbContext.Locations.AsNoTracking(),
-            x => distinctLocationIds.Contains(x.Id),
+            x => Enumerable.Contains(distinctLocationIds, x.Id),
             cancellationToken);
         if (locationCount != distinctLocationIds.Count)
         {
