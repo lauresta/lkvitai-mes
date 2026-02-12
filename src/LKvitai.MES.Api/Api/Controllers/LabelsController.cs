@@ -14,10 +14,14 @@ namespace LKvitai.MES.Api.Controllers;
 public sealed class LabelsController : ControllerBase
 {
     private readonly ILabelPrintOrchestrator _labelPrintOrchestrator;
+    private readonly LabelTemplateEngine _labelTemplateEngine;
 
-    public LabelsController(ILabelPrintOrchestrator labelPrintOrchestrator)
+    public LabelsController(
+        ILabelPrintOrchestrator labelPrintOrchestrator,
+        LabelTemplateEngine labelTemplateEngine)
     {
         _labelPrintOrchestrator = labelPrintOrchestrator;
+        _labelTemplateEngine = labelTemplateEngine;
     }
 
     [HttpPost("print")]
@@ -25,9 +29,10 @@ public sealed class LabelsController : ControllerBase
         [FromBody] PrintLabelRequest? request,
         CancellationToken cancellationToken = default)
     {
-        if (request is null || string.IsNullOrWhiteSpace(request.LabelType))
+        var templateType = request?.ResolveTemplateType();
+        if (request is null || string.IsNullOrWhiteSpace(templateType))
         {
-            return ValidationFailure("labelType is required.");
+            return ValidationFailure("templateType is required.");
         }
 
         var data = MapRequestData(request.Data);
@@ -35,7 +40,7 @@ public sealed class LabelsController : ControllerBase
         try
         {
             var result = await _labelPrintOrchestrator.PrintAsync(
-                request.LabelType,
+                templateType!,
                 data,
                 cancellationToken);
 
@@ -47,9 +52,49 @@ public sealed class LabelsController : ControllerBase
         }
     }
 
-    [HttpGet("preview")]
+    [HttpPost("preview")]
     public async Task<IActionResult> PreviewAsync(
-        [FromQuery] string labelType,
+        [FromBody] PreviewLabelRequest? request,
+        CancellationToken cancellationToken = default)
+    {
+        var templateType = request?.ResolveTemplateType();
+        if (request is null || string.IsNullOrWhiteSpace(templateType))
+        {
+            return ValidationFailure("templateType is required.");
+        }
+
+        var data = MapRequestData(request.Data);
+
+        try
+        {
+            var preview = await _labelPrintOrchestrator.GeneratePreviewAsync(
+                templateType!,
+                data,
+                cancellationToken);
+
+            return File(preview.Content, preview.ContentType, preview.FileName);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return ValidationFailure(ex.Message);
+        }
+    }
+
+    [HttpGet("templates")]
+    public IActionResult GetTemplates()
+    {
+        var templates = _labelTemplateEngine.GetTemplates()
+            .Select(x => new LabelTemplateResponse(
+                _labelTemplateEngine.ToApiTemplateType(x.Type),
+                x.ZplTemplate))
+            .ToList();
+
+        return Ok(templates);
+    }
+
+    [HttpGet("preview")]
+    public async Task<IActionResult> PreviewLegacyAsync(
+        [FromQuery] string? labelType,
         CancellationToken cancellationToken = default)
     {
         var data = Request.Query
@@ -59,7 +104,7 @@ public sealed class LabelsController : ControllerBase
         try
         {
             var preview = await _labelPrintOrchestrator.GeneratePreviewAsync(
-                labelType,
+                labelType ?? string.Empty,
                 data,
                 cancellationToken);
 
@@ -121,10 +166,42 @@ public sealed class LabelsController : ControllerBase
     }
 
     public sealed record PrintLabelRequest(
-        string LabelType,
-        IDictionary<string, JsonElement>? Data);
+        string? TemplateType,
+        IDictionary<string, JsonElement>? Data,
+        string? LabelType = null)
+    {
+        public string? ResolveTemplateType()
+        {
+            if (!string.IsNullOrWhiteSpace(TemplateType))
+            {
+                return TemplateType;
+            }
+
+            return LabelType;
+        }
+    }
+
+    public sealed record PreviewLabelRequest(
+        string? TemplateType,
+        IDictionary<string, JsonElement>? Data,
+        string? LabelType = null)
+    {
+        public string? ResolveTemplateType()
+        {
+            if (!string.IsNullOrWhiteSpace(TemplateType))
+            {
+                return TemplateType;
+            }
+
+            return LabelType;
+        }
+    }
 
     public sealed record PrintLabelResponse(
         string Status,
         string? PdfUrl);
+
+    public sealed record LabelTemplateResponse(
+        string TemplateType,
+        string ZplTemplate);
 }

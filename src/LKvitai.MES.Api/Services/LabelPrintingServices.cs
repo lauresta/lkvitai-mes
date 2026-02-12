@@ -3,7 +3,6 @@ using System.Diagnostics.Metrics;
 using System.Globalization;
 using System.Net.Sockets;
 using System.Text;
-using System.Text.RegularExpressions;
 using Hangfire;
 
 namespace LKvitai.MES.Api.Services;
@@ -93,32 +92,26 @@ public sealed class LabelPrintOrchestrator : ILabelPrintOrchestrator
         Meter.CreateHistogram<double>("label_print_duration_ms");
     private static readonly Counter<long> PrinterOfflineTotal =
         Meter.CreateCounter<long>("printer_offline_total");
-    private static readonly Regex PlaceholderPattern =
-        new("{{\\s*(?<key>[A-Za-z0-9_]+)\\s*}}", RegexOptions.Compiled);
 
     private readonly ILabelPrinterClient _printerClient;
     private readonly IBackgroundJobClient _backgroundJobs;
+    private readonly LabelTemplateEngine _templateEngine;
     private readonly ILogger<LabelPrintOrchestrator> _logger;
-    private readonly IReadOnlyDictionary<string, string> _templates;
     private readonly string _outputRootPath;
 
     public LabelPrintOrchestrator(
         ILabelPrinterClient printerClient,
         IBackgroundJobClient backgroundJobs,
+        LabelTemplateEngine templateEngine,
         IConfiguration configuration,
         ILogger<LabelPrintOrchestrator> logger)
     {
         _printerClient = printerClient;
         _backgroundJobs = backgroundJobs;
+        _templateEngine = templateEngine;
         _logger = logger;
         _outputRootPath = configuration["Labels:OutputRootPath"] ??
                           Path.Combine(AppContext.BaseDirectory, "labels");
-        _templates = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["LOCATION"] = configuration["Labels:Templates:Location"] ?? DefaultLocationTemplate,
-            ["HU"] = configuration["Labels:Templates:Hu"] ?? DefaultHuTemplate,
-            ["ITEM"] = configuration["Labels:Templates:Item"] ?? DefaultItemTemplate
-        };
     }
 
     public async Task<LabelPrintResult> PrintAsync(
@@ -127,9 +120,10 @@ public sealed class LabelPrintOrchestrator : ILabelPrintOrchestrator
         CancellationToken cancellationToken = default)
     {
         var startedAt = Stopwatch.GetTimestamp();
-        var normalizedLabelType = NormalizeLabelType(labelType);
+        var parsedTemplateType = _templateEngine.ParseTemplateType(labelType);
+        var normalizedLabelType = _templateEngine.ToApiTemplateType(parsedTemplateType);
         var normalizedData = NormalizeData(data);
-        var zpl = RenderTemplate(normalizedLabelType, normalizedData);
+        var zpl = _templateEngine.Render(parsedTemplateType, normalizedData);
 
         try
         {
@@ -194,7 +188,7 @@ public sealed class LabelPrintOrchestrator : ILabelPrintOrchestrator
     public async Task ProcessQueuedAsync(LabelPrintJobPayload payload, int attempt)
     {
         var normalizedData = NormalizeData(payload.Data);
-        var zpl = RenderTemplate(payload.LabelType, normalizedData);
+        var zpl = _templateEngine.Render(payload.LabelType, normalizedData);
 
         try
         {
@@ -256,15 +250,8 @@ public sealed class LabelPrintOrchestrator : ILabelPrintOrchestrator
         IReadOnlyDictionary<string, string> data,
         CancellationToken cancellationToken = default)
     {
-        var normalizedLabelType = NormalizeLabelType(labelType);
-        var zpl = RenderTemplate(normalizedLabelType, NormalizeData(data));
-        var pdf = BuildSimplePdfBytes(zpl);
-
         await Task.CompletedTask;
-        return new LabelPreviewResult(
-            pdf,
-            "application/pdf",
-            $"{normalizedLabelType.ToLowerInvariant()}-preview.pdf");
+        return _templateEngine.BuildPreview(labelType, NormalizeData(data));
     }
 
     public async Task<LabelPdfFileResult?> GetPdfAsync(
@@ -307,37 +294,6 @@ public sealed class LabelPrintOrchestrator : ILabelPrintOrchestrator
     private static Dictionary<string, string> NormalizeData(IReadOnlyDictionary<string, string> data)
     {
         return new Dictionary<string, string>(data, StringComparer.OrdinalIgnoreCase);
-    }
-
-    private static string NormalizeLabelType(string labelType)
-    {
-        if (string.IsNullOrWhiteSpace(labelType))
-        {
-            throw new InvalidOperationException("Label type is required.");
-        }
-
-        return labelType.Trim().ToUpperInvariant() switch
-        {
-            "LOCATION" => "LOCATION",
-            "HU" => "HU",
-            "HANDLING_UNIT" => "HU",
-            "ITEM" => "ITEM",
-            _ => throw new InvalidOperationException($"Unsupported label type '{labelType}'.")
-        };
-    }
-
-    private string RenderTemplate(string labelType, IReadOnlyDictionary<string, string> data)
-    {
-        if (!_templates.TryGetValue(labelType, out var template))
-        {
-            throw new InvalidOperationException($"Unsupported label type '{labelType}'.");
-        }
-
-        return PlaceholderPattern.Replace(template, match =>
-        {
-            var key = match.Groups["key"].Value;
-            return data.TryGetValue(key, out var value) ? value : string.Empty;
-        });
     }
 
     private static string ResolveIdentifier(IReadOnlyDictionary<string, string> data)
@@ -431,29 +387,4 @@ public sealed class LabelPrintOrchestrator : ILabelPrintOrchestrator
             .Replace("(", "\\(", StringComparison.Ordinal)
             .Replace(")", "\\)", StringComparison.Ordinal);
     }
-
-    private const string DefaultLocationTemplate = """
-                                                    ^XA
-                                                    ^FO50,50^A0N,50,50^FD{{LocationCode}}^FS
-                                                    ^FO50,120^BY3^BCN,100,Y,N,N^FD{{Barcode}}^FS
-                                                    ^FO50,240^A0N,30,30^FDCapacity: {{Capacity}} kg^FS
-                                                    ^XZ
-                                                    """;
-
-    private const string DefaultHuTemplate = """
-                                              ^XA
-                                              ^FO50,40^A0N,40,40^FDHU {{Lpn}}^FS
-                                              ^FO50,95^BY3^BCN,90,Y,N,N^FD{{Lpn}}^FS
-                                              ^FO50,210^A0N,28,28^FDSKU: {{Sku}}^FS
-                                              ^FO50,250^A0N,28,28^FDQTY: {{Quantity}}^FS
-                                              ^XZ
-                                              """;
-
-    private const string DefaultItemTemplate = """
-                                                ^XA
-                                                ^FO50,40^A0N,40,40^FD{{ItemCode}}^FS
-                                                ^FO50,95^BY3^BCN,90,Y,N,N^FD{{Barcode}}^FS
-                                                ^FO50,210^A0N,28,28^FDName: {{ItemName}}^FS
-                                                ^XZ
-                                                """;
 }

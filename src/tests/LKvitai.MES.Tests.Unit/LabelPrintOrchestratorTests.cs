@@ -135,13 +135,17 @@ public class LabelPrintOrchestratorTests
             {
                 ["Labels:OutputRootPath"] = outputRootPath ?? Path.Combine(Path.GetTempPath(), "labels-default"),
                 ["Labels:PrinterHost"] = "127.0.0.1",
-                ["Labels:PrinterPort"] = "9100"
+                ["Labels:PrinterPort"] = "9100",
+                ["Labels:Templates:HandlingUnit"] = null
             })
             .Build();
+
+        var templateEngine = new LabelTemplateEngine(configuration);
 
         return new LabelPrintOrchestrator(
             printerClient,
             backgroundJobs,
+            templateEngine,
             configuration,
             new Mock<ILogger<LabelPrintOrchestrator>>().Object);
     }

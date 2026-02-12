@@ -671,3 +671,15 @@
   Evidence: Validation command `dotnet run --project src/LKvitai.MES.WebUI` failed with missing HTTPS developer certificate (`/tmp/prd1615-webui-run.log`), with stack ending at `src/LKvitai.MES.WebUI/Program.cs:59`; HTTP fallback startup succeeded via `DOTNET_ENVIRONMENT=Development ASPNETCORE_URLS=http://127.0.0.1:5001 dotnet run --no-launch-profile --project src/LKvitai.MES.WebUI /p:UseAppHost=false`, but browser scenario walkthroughs could not be executed in this terminal-only run.
   Impact: Full manual acceptance verification for schedule, execute, and discrepancy approval pages remains pending.
   Proposed minimal fix: Install/trust local dev HTTPS certificate and run the documented browser validation on `/warehouse/cycle-counts`, `/warehouse/cycle-counts/schedule`, `/warehouse/cycle-counts/{id}/execute`, and `/warehouse/cycle-counts/{id}/discrepancies`.
+- Timestamp: 2026-02-12T22:04:21Z
+  TaskId: PRD-1616
+  Type: INCONSISTENCY
+  Evidence: `docs/prod-ready/prod-ready-tasks-PHASE15-S7.md` specifies preview endpoint `POST /api/warehouse/v1/labels/preview`, while Universe Epic G in `docs/prod-ready/prod-ready-universe.md` lists preview as `GET /api/warehouse/v1/labels/preview`.
+  Impact: Implementers may wire incompatible client/server methods for label preview.
+  Proposed minimal fix: Align universe/API catalog to POST for preview payload-based rendering (or formally document both POST and legacy GET compatibility).
+- Timestamp: 2026-02-12T22:04:21Z
+  TaskId: PRD-1616
+  Type: TEST-GAP
+  Evidence: Task validation curl calls returned HTTP 403 on localhost (`/tmp/prd1616-dev-token.status`, `/tmp/prd1616-preview.status`), so the required runtime token+preview flow could not be verified against the project API instance.
+  Impact: End-to-end API validation for `POST /api/warehouse/v1/labels/preview` remains unconfirmed in this environment.
+  Proposed minimal fix: Start the project API on an isolated port with valid auth/database connectivity and rerun the exact PRD-1616 curl sequence to produce a PDF artifact.
