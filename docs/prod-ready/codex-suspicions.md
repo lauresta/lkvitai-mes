@@ -617,3 +617,9 @@
   Evidence: `dotnet run --project src/LKvitai.MES.WebUI` failed due missing HTTPS developer certificate; service startup verified via `DOTNET_ENVIRONMENT=Development ASPNETCORE_URLS=http://127.0.0.1:5001 dotnet run --no-launch-profile --project src/LKvitai.MES.WebUI /p:UseAppHost=false`, but browser-based manual checks (field interactions, mapping add/remove UX, toasts) were not executed in this terminal session.
   Impact: Full manual UI validation for `/warehouse/agnum/config` scenarios is incomplete in this environment.
   Proposed minimal fix: Install/trust local dev HTTPS certificate and run the documented browser walkthrough for save/test-connection/mapping validation flows.
+- Timestamp: 2026-02-12T21:15:17Z
+  TaskId: PRD-1607
+  Type: TEST-GAP
+  Evidence: Task validation commands requiring runtime API (`POST /api/auth/dev-token`, `POST /api/warehouse/v1/agnum/export`, `GET /api/warehouse/v1/agnum/history`) could not run because `dotnet run --no-launch-profile --project src/LKvitai.MES.Api /p:UseAppHost=false` crashed at startup with `Marten.Exceptions.InvalidDocumentException` for `LKvitai.MES.Domain.Aggregates.ItemValuation` (stack points to `src/LKvitai.MES.Api/Program.cs:225`).
+  Impact: End-to-end manual validation for export trigger/history endpoints is blocked in this environment.
+  Proposed minimal fix: Fix Marten document mapping for `ItemValuation` so API can start, then re-run the exact PRD-1607 curl validation sequence.

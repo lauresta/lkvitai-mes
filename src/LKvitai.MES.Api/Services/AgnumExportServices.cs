@@ -9,8 +9,10 @@ using Hangfire;
 using LKvitai.MES.Application.Ports;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Contracts.Messages;
+using LKvitai.MES.Contracts.ReadModels;
 using LKvitai.MES.Domain.Entities;
 using LKvitai.MES.Infrastructure.Persistence;
+using Marten;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Polly;
@@ -109,6 +111,7 @@ public sealed class AgnumExportOrchestrator : IAgnumExportOrchestrator
     private readonly IAgnumSecretProtector _secretProtector;
     private readonly ILogger<AgnumExportOrchestrator> _logger;
     private readonly string _exportRootPath;
+    private readonly IDocumentStore? _documentStore;
 
     public AgnumExportOrchestrator(
         WarehouseDbContext dbContext,
@@ -116,13 +119,15 @@ public sealed class AgnumExportOrchestrator : IAgnumExportOrchestrator
         IHttpClientFactory httpClientFactory,
         IAgnumSecretProtector secretProtector,
         IConfiguration configuration,
-        ILogger<AgnumExportOrchestrator> logger)
+        ILogger<AgnumExportOrchestrator> logger,
+        IDocumentStore? documentStore = null)
     {
         _dbContext = dbContext;
         _eventBus = eventBus;
         _httpClientFactory = httpClientFactory;
         _secretProtector = secretProtector;
         _logger = logger;
+        _documentStore = documentStore;
         _exportRootPath = configuration["Agnum:ExportRootPath"] ??
                           Path.Combine(AppContext.BaseDirectory, "exports", "agnum");
     }
@@ -189,19 +194,7 @@ public sealed class AgnumExportOrchestrator : IAgnumExportOrchestrator
                 "Agnum export started: ExportNumber {ExportNumber}",
                 history.ExportNumber);
 
-            var onHandRows = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync(
-                _dbContext.OnHandValues.AsNoTracking().OrderBy(x => x.ItemSku),
-                cancellationToken);
-
-            var exportRows = onHandRows.Select(x => new AgnumExportRow(
-                DateOnly.FromDateTime(DateTime.UtcNow),
-                ResolveAccountCode(config, x),
-                x.ItemSku,
-                x.ItemName,
-                x.Qty,
-                x.UnitCost,
-                x.TotalValue))
-                .ToList();
+            var exportRows = await LoadExportRowsAsync(config, cancellationToken);
 
             var csvPayload = BuildCsv(exportRows);
 
@@ -319,6 +312,124 @@ public sealed class AgnumExportOrchestrator : IAgnumExportOrchestrator
                 "UNMAPPED",
             _ => "UNMAPPED"
         };
+    }
+
+    private async Task<IReadOnlyList<AgnumExportRow>> LoadExportRowsAsync(
+        AgnumExportConfig config,
+        CancellationToken cancellationToken)
+    {
+        var utcDate = DateOnly.FromDateTime(DateTime.UtcNow);
+        var onHandRows = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync(
+            _dbContext.OnHandValues.AsNoTracking().OrderBy(x => x.ItemSku),
+            cancellationToken);
+
+        if (_documentStore is null)
+        {
+            return onHandRows.Select(x => new AgnumExportRow(
+                    utcDate,
+                    ResolveAccountCode(config, x),
+                    x.ItemSku,
+                    x.ItemName,
+                    x.Qty,
+                    x.UnitCost,
+                    x.TotalValue))
+                .ToList();
+        }
+
+        try
+        {
+            await using var session = _documentStore.QuerySession();
+            var stockRows = await Marten.QueryableExtensions.ToListAsync(
+                session.Query<AvailableStockView>().Where(x => x.OnHandQty > 0m),
+                cancellationToken);
+
+            if (stockRows.Count == 0)
+            {
+                return onHandRows.Select(x => new AgnumExportRow(
+                        utcDate,
+                        ResolveAccountCode(config, x),
+                        x.ItemSku,
+                        x.ItemName,
+                        x.Qty,
+                        x.UnitCost,
+                        x.TotalValue))
+                    .ToList();
+            }
+
+            var itemSkus = stockRows
+                .Select(x => x.SKU)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            var itemMap = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToDictionaryAsync(
+                _dbContext.Items
+                    .AsNoTracking()
+                    .Include(x => x.Category)
+                    .Where(x => itemSkus.Contains(x.InternalSKU))
+                    .OrderBy(x => x.InternalSKU),
+                x => x.InternalSKU,
+                x => x,
+                StringComparer.OrdinalIgnoreCase,
+                cancellationToken);
+
+            var onHandBySku = onHandRows.ToDictionary(
+                x => x.ItemSku,
+                x => x,
+                StringComparer.OrdinalIgnoreCase);
+
+            return stockRows
+                .GroupBy(x => x.SKU, StringComparer.OrdinalIgnoreCase)
+                .Select(group =>
+                {
+                    var sku = group.Key;
+                    var qty = group.Sum(x => x.OnHandQty);
+
+                    onHandBySku.TryGetValue(sku, out var valuation);
+                    itemMap.TryGetValue(sku, out var item);
+
+                    var unitCost = valuation?.UnitCost ?? 0m;
+                    var totalValue = decimal.Round(qty * unitCost, 4, MidpointRounding.AwayFromZero);
+                    var categoryId = item?.CategoryId ?? valuation?.CategoryId;
+                    var categoryName = item?.Category?.Name ?? valuation?.CategoryName;
+
+                    var mappingSource = new OnHandValue
+                    {
+                        ItemId = item?.Id ?? valuation?.ItemId ?? 0,
+                        ItemSku = sku,
+                        ItemName = item?.Name ?? valuation?.ItemName ?? sku,
+                        CategoryId = categoryId,
+                        CategoryName = categoryName,
+                        Qty = qty,
+                        UnitCost = unitCost,
+                        TotalValue = totalValue
+                    };
+
+                    return new AgnumExportRow(
+                        utcDate,
+                        ResolveAccountCode(config, mappingSource),
+                        sku,
+                        mappingSource.ItemName,
+                        qty,
+                        unitCost,
+                        totalValue);
+                })
+                .OrderBy(x => x.Sku, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Falling back to on_hand_value export source after AvailableStock query failure.");
+            return onHandRows.Select(x => new AgnumExportRow(
+                    utcDate,
+                    ResolveAccountCode(config, x),
+                    x.ItemSku,
+                    x.ItemName,
+                    x.Qty,
+                    x.UnitCost,
+                    x.TotalValue))
+                .ToList();
+        }
     }
 
     private async Task SendToAgnumApiAsync(

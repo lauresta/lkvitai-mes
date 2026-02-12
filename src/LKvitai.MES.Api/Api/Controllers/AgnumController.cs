@@ -309,6 +309,35 @@ public sealed class AgnumController : ControllerBase
             x.Trigger)));
     }
 
+    [HttpGet("history/{exportId:guid}")]
+    [Authorize(Policy = WarehousePolicies.InventoryAccountantOrManager)]
+    public async Task<IActionResult> GetHistoryByIdAsync(
+        Guid exportId,
+        CancellationToken cancellationToken = default)
+    {
+        var history = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
+            _dbContext.AgnumExportHistories.AsNoTracking(),
+            x => x.Id == exportId,
+            cancellationToken);
+
+        if (history is null)
+        {
+            return Failure(Result.Fail(DomainErrorCodes.NotFound, $"Agnum export history '{exportId}' not found."));
+        }
+
+        return Ok(new AgnumExportHistoryResponse(
+            history.Id,
+            history.ExportConfigId,
+            history.ExportNumber,
+            history.ExportedAt,
+            history.Status.ToString().ToUpperInvariant(),
+            history.RowCount,
+            history.FilePath,
+            history.ErrorMessage,
+            history.RetryCount,
+            history.Trigger));
+    }
+
     private ObjectResult Failure(Result result)
     {
         var problemDetails = ResultProblemDetailsMapper.ToProblemDetails(result, HttpContext);
