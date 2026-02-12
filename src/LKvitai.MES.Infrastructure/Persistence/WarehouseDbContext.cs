@@ -512,11 +512,14 @@ public class WarehouseDbContext : DbContext
                 .IsRequired()
                 .HasDefaultValueSql("'CC-' || LPAD(nextval('cycle_count_number_seq')::text, 4, '0')");
             entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(30).IsRequired();
+            entity.Property(e => e.AbcClass).HasMaxLength(10).IsRequired().HasDefaultValue("ALL");
+            entity.Property(e => e.AssignedOperator).HasMaxLength(100).IsRequired().HasDefaultValue(string.Empty);
             entity.Property(e => e.CountedBy).HasMaxLength(100);
             entity.Property(e => e.ApprovedBy).HasMaxLength(100);
             entity.HasIndex(e => e.CountNumber).IsUnique();
             entity.HasIndex(e => e.Status);
             entity.HasIndex(e => e.ScheduledDate);
+            entity.HasIndex(e => e.AssignedOperator);
             entity.HasMany(e => e.Lines)
                 .WithOne(e => e.CycleCount)
                 .HasForeignKey(e => e.CycleCountId)

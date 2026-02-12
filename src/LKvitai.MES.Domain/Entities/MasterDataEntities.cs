@@ -655,6 +655,8 @@ public sealed class CycleCount : AuditableEntity
     public string CountNumber { get; set; } = string.Empty;
     public CycleCountStatus Status { get; private set; } = CycleCountStatus.Scheduled;
     public DateTimeOffset ScheduledDate { get; set; }
+    public string AbcClass { get; set; } = "ALL";
+    public string AssignedOperator { get; set; } = string.Empty;
     public DateTimeOffset? StartedAt { get; private set; }
     public DateTimeOffset? CompletedAt { get; private set; }
     public string? CountedBy { get; private set; }
@@ -694,6 +696,20 @@ public sealed class CycleCount : AuditableEntity
         CompletedAt = completedAt;
         ApprovedBy = approvedBy;
         ApplyAdjustmentCommandId = commandId;
+        return Result.Ok();
+    }
+
+    public Result MarkCompleted(DateTimeOffset completedAt)
+    {
+        if (Status == CycleCountStatus.Cancelled)
+        {
+            return Result.Fail(
+                DomainErrorCodes.ValidationError,
+                $"Invalid status transition: {Status} -> {CycleCountStatus.Completed}");
+        }
+
+        Status = CycleCountStatus.Completed;
+        CompletedAt = completedAt;
         return Result.Ok();
     }
 }

@@ -24,6 +24,36 @@ public sealed class CycleCountsController : ControllerBase
         _dbContext = dbContext;
     }
 
+    [HttpGet]
+    [Authorize(Policy = WarehousePolicies.OperatorOrAbove)]
+    public async Task<IActionResult> GetListAsync(CancellationToken cancellationToken = default)
+    {
+        var cycleCounts = await _dbContext.CycleCounts
+            .AsNoTracking()
+            .Include(x => x.Lines)
+            .OrderByDescending(x => x.ScheduledDate)
+            .ThenByDescending(x => x.CreatedAt)
+            .ToListAsync(cancellationToken);
+
+        return Ok(cycleCounts.Select(ToResponse).ToList());
+    }
+
+    [HttpGet("{id:guid}")]
+    [Authorize(Policy = WarehousePolicies.OperatorOrAbove)]
+    public async Task<IActionResult> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var cycleCount = await _dbContext.CycleCounts
+            .AsNoTracking()
+            .Include(x => x.Lines)
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        if (cycleCount is null)
+        {
+            return Failure(Result.Fail(DomainErrorCodes.NotFound, "Cycle count not found."));
+        }
+
+        return Ok(ToResponse(cycleCount));
+    }
+
     [HttpPost("schedule")]
     [Authorize(Policy = WarehousePolicies.OperatorOrAbove)]
     public async Task<IActionResult> ScheduleAsync(
@@ -40,7 +70,10 @@ public sealed class CycleCountsController : ControllerBase
         {
             CommandId = commandId,
             CorrelationId = ResolveCorrelationId(),
-            ScheduledDate = request.ScheduledDate
+            ScheduledDate = request.ScheduledDate,
+            AbcClass = request.AbcClass,
+            LocationIds = request.LocationIds ?? Array.Empty<int>(),
+            AssignedOperator = request.AssignedOperator
         }, cancellationToken);
 
         if (!result.IsSuccess)
@@ -140,10 +173,15 @@ public sealed class CycleCountsController : ControllerBase
             cycleCount.CountNumber,
             cycleCount.Status.ToString().ToUpperInvariant(),
             cycleCount.ScheduledDate,
+            cycleCount.AbcClass,
+            cycleCount.AssignedOperator,
             cycleCount.StartedAt,
             cycleCount.CompletedAt,
+            cycleCount.CreatedBy,
+            cycleCount.CreatedAt,
             cycleCount.CountedBy,
             cycleCount.ApprovedBy,
+            cycleCount.Lines.Select(x => x.LocationId).Distinct().OrderBy(x => x).ToList(),
             cycleCount.Lines.Select(x => new CycleCountLineResponse(
                 x.LocationId,
                 x.ItemId,
@@ -182,7 +220,12 @@ public sealed class CycleCountsController : ControllerBase
         return Guid.TryParse(raw, out var parsed) ? parsed : Guid.NewGuid();
     }
 
-    public sealed record ScheduleCycleCountRequest(Guid CommandId, DateTimeOffset ScheduledDate);
+    public sealed record ScheduleCycleCountRequest(
+        Guid CommandId,
+        DateTimeOffset ScheduledDate,
+        string AbcClass,
+        string AssignedOperator,
+        IReadOnlyList<int>? LocationIds = null);
 
     public sealed record RecordCountRequest(
         Guid CommandId,
@@ -208,9 +251,14 @@ public sealed class CycleCountsController : ControllerBase
         string CountNumber,
         string Status,
         DateTimeOffset ScheduledDate,
+        string AbcClass,
+        string AssignedOperator,
         DateTimeOffset? StartedAt,
         DateTimeOffset? CompletedAt,
+        string? CreatedBy,
+        DateTimeOffset CreatedAt,
         string? CountedBy,
         string? ApprovedBy,
+        IReadOnlyList<int> LocationIds,
         IReadOnlyList<CycleCountLineResponse> Lines);
 }

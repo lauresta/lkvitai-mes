@@ -647,3 +647,9 @@
   Evidence: Task validation command `dotnet run --project src/LKvitai.MES.WebUI` failed with missing HTTPS developer certificate (`src/LKvitai.MES.WebUI/Program.cs:58`); HTTP fallback startup succeeded via `DOTNET_ENVIRONMENT=Development ASPNETCORE_URLS=http://127.0.0.1:5001 dotnet run --no-launch-profile --project src/LKvitai.MES.WebUI /p:UseAppHost=false`, but interactive browser checks (toggle UX, autocomplete dropdown behavior, fly-to animation timing, 2D zoom clicks) were not executable in this terminal-only run.
   Impact: Full manual acceptance verification for 2D/3D interaction scenarios is pending.
   Proposed minimal fix: Install/trust local HTTPS dev certificate and execute browser validation on `/warehouse/visualization/3d` and `/warehouse/visualization/2d`.
+- Timestamp: 2026-02-12T21:43:59Z
+  TaskId: PRD-1612
+  Type: TEST-GAP
+  Evidence: Task validation API flow could not run end-to-end because `dotnet run --no-launch-profile --project src/LKvitai.MES.Api /p:UseAppHost=false` failed at startup with `Npgsql.PostgresException: 3D000 database "lkvitai_warehouse" does not exist` (`src/LKvitai.MES.Api/Program.cs:169`, `src/LKvitai.MES.Api/Program.cs:213`); direct curl on `http://localhost:5000/api/warehouse/v1/cycle-counts/schedule` returned HTTP 403 from another local service.
+  Impact: Could not verify authenticated schedule API behavior in the intended project runtime.
+  Proposed minimal fix: Provision the expected PostgreSQL database and run API on an isolated known port, then execute the exact PRD-1612 curl sequence with a valid dev token.

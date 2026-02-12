@@ -41,7 +41,10 @@ public class CycleCountCommandHandlersTests
         var result = await handler.Handle(new ScheduleCycleCountCommand
         {
             CommandId = Guid.NewGuid(),
-            ScheduledDate = DateTimeOffset.UtcNow.Date.AddDays(1)
+            ScheduledDate = DateTimeOffset.UtcNow.Date.AddDays(1),
+            AbcClass = "A",
+            AssignedOperator = "operator-1",
+            LocationIds = [11]
         }, CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
@@ -197,11 +200,101 @@ public class CycleCountCommandHandlersTests
         var result = await handler.Handle(new ScheduleCycleCountCommand
         {
             CommandId = Guid.NewGuid(),
-            ScheduledDate = DateTimeOffset.UtcNow
+            ScheduledDate = DateTimeOffset.UtcNow,
+            AbcClass = "ALL",
+            AssignedOperator = "operator-1",
+            LocationIds = [11]
         }, CancellationToken.None);
 
         result.IsSuccess.Should().BeFalse();
         result.ErrorCode.Should().Be(DomainErrorCodes.ValidationError);
+    }
+
+    [Fact]
+    [Trait("Category", "CycleCounting")]
+    public async Task ScheduleCycleCount_WhenPastDate_ShouldFail()
+    {
+        await using var db = CreateDbContext();
+        await SeedItemsAndLocationsAsync(db);
+
+        var handler = new ScheduleCycleCountCommandHandler(
+            db,
+            new RecordingEventBus(),
+            Mock.Of<ICycleCountQuantityResolver>(),
+            Mock.Of<ILogger<ScheduleCycleCountCommandHandler>>());
+
+        var result = await handler.Handle(new ScheduleCycleCountCommand
+        {
+            CommandId = Guid.NewGuid(),
+            ScheduledDate = DateTimeOffset.UtcNow.Date.AddDays(-1),
+            AbcClass = "ALL",
+            AssignedOperator = "operator-1",
+            LocationIds = [11]
+        }, CancellationToken.None);
+
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorCode.Should().Be(DomainErrorCodes.ValidationError);
+        result.Error.Should().Contain("Scheduled date");
+    }
+
+    [Fact]
+    [Trait("Category", "CycleCounting")]
+    public async Task ScheduleCycleCount_WhenAssignedOperatorMissing_ShouldFail()
+    {
+        await using var db = CreateDbContext();
+        await SeedItemsAndLocationsAsync(db);
+
+        var handler = new ScheduleCycleCountCommandHandler(
+            db,
+            new RecordingEventBus(),
+            Mock.Of<ICycleCountQuantityResolver>(),
+            Mock.Of<ILogger<ScheduleCycleCountCommandHandler>>());
+
+        var result = await handler.Handle(new ScheduleCycleCountCommand
+        {
+            CommandId = Guid.NewGuid(),
+            ScheduledDate = DateTimeOffset.UtcNow.Date.AddDays(1),
+            AbcClass = "ALL",
+            AssignedOperator = " ",
+            LocationIds = [11]
+        }, CancellationToken.None);
+
+        result.IsSuccess.Should().BeFalse();
+        result.ErrorCode.Should().Be(DomainErrorCodes.ValidationError);
+        result.Error.Should().Contain("AssignedOperator");
+    }
+
+    [Fact]
+    [Trait("Category", "CycleCounting")]
+    public async Task ScheduleCycleCount_ShouldPersistAbcClassAndAssignedOperator()
+    {
+        await using var db = CreateDbContext();
+        await SeedItemsAndLocationsAsync(db);
+
+        var resolver = new Mock<ICycleCountQuantityResolver>(MockBehavior.Strict);
+        resolver
+            .Setup(x => x.ResolveSystemQtyAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(0m);
+
+        var handler = new ScheduleCycleCountCommandHandler(
+            db,
+            new RecordingEventBus(),
+            resolver.Object,
+            Mock.Of<ILogger<ScheduleCycleCountCommandHandler>>());
+
+        var result = await handler.Handle(new ScheduleCycleCountCommand
+        {
+            CommandId = Guid.NewGuid(),
+            ScheduledDate = DateTimeOffset.UtcNow.Date.AddDays(1),
+            AbcClass = "ALL",
+            AssignedOperator = "operator-42",
+            LocationIds = [11]
+        }, CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        var cycleCount = await db.CycleCounts.SingleAsync();
+        cycleCount.AbcClass.Should().Be("ALL");
+        cycleCount.AssignedOperator.Should().Be("operator-42");
     }
 
     private static WarehouseDbContext CreateDbContext()

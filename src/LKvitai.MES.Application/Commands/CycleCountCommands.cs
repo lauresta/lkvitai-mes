@@ -9,6 +9,9 @@ public sealed record ScheduleCycleCountCommand : ICommand
     public Guid CausationId { get; init; }
 
     public DateTimeOffset ScheduledDate { get; init; }
+    public string AbcClass { get; init; } = "ALL";
+    public IReadOnlyList<int> LocationIds { get; init; } = Array.Empty<int>();
+    public string AssignedOperator { get; init; } = string.Empty;
 }
 
 public sealed record RecordCountCommand : ICommand

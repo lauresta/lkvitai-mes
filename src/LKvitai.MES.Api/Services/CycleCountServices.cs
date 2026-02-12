@@ -87,6 +87,25 @@ public sealed class ScheduleCycleCountCommandHandler : IRequestHandler<ScheduleC
 
     public async Task<Result> Handle(ScheduleCycleCountCommand request, CancellationToken cancellationToken)
     {
+        var scheduledDate = request.ScheduledDate.Date;
+        if (scheduledDate < DateTimeOffset.UtcNow.Date)
+        {
+            return Result.Fail(DomainErrorCodes.ValidationError, "Scheduled date must be >= today.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.AssignedOperator))
+        {
+            return Result.Fail(DomainErrorCodes.ValidationError, "AssignedOperator is required.");
+        }
+
+        var normalizedAbcClass = string.IsNullOrWhiteSpace(request.AbcClass)
+            ? "ALL"
+            : request.AbcClass.Trim().ToUpperInvariant();
+        if (normalizedAbcClass is not ("A" or "B" or "C" or "ALL"))
+        {
+            return Result.Fail(DomainErrorCodes.ValidationError, "ABCClass must be one of: A, B, C, ALL.");
+        }
+
         var items = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync(
             _dbContext.Items
                 .AsNoTracking()
@@ -100,37 +119,58 @@ public sealed class ScheduleCycleCountCommandHandler : IRequestHandler<ScheduleC
             return Result.Fail(DomainErrorCodes.ValidationError, "No active items found for cycle count scheduling.");
         }
 
-        var aItems = items
-            .Where(x => x.Category?.Code.StartsWith("A", StringComparison.OrdinalIgnoreCase) == true)
-            .ToList();
-        if (aItems.Count == 0)
+        var filteredItems = normalizedAbcClass == "ALL"
+            ? items
+            : items.Where(x =>
+                    x.Category?.Code.StartsWith(normalizedAbcClass, StringComparison.OrdinalIgnoreCase) == true)
+                .ToList();
+        if (filteredItems.Count == 0)
         {
-            aItems = items;
+            return Result.Fail(
+                DomainErrorCodes.ValidationError,
+                $"No active items found for ABC class '{normalizedAbcClass}'.");
+        }
+
+        var locationQuery = _dbContext.Locations
+            .AsNoTracking()
+            .Where(x => x.Status == "Active" && !x.IsVirtual);
+        if (request.LocationIds.Count > 0)
+        {
+            var locationIdSet = request.LocationIds.Distinct().ToArray();
+            locationQuery = locationQuery.Where(x => locationIdSet.Contains(x.Id));
         }
 
         var locations = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync(
-            _dbContext.Locations
-                .AsNoTracking()
-                .Where(x => x.Status == "Active" && !x.IsVirtual)
+            locationQuery
                 .OrderBy(x => x.Id),
             cancellationToken);
 
         if (locations.Count == 0)
         {
-            return Result.Fail(DomainErrorCodes.ValidationError, "No active physical locations found.");
+            return Result.Fail(DomainErrorCodes.ValidationError, "At least one active location is required.");
         }
+
+        var dayStart = new DateTimeOffset(scheduledDate, TimeSpan.Zero);
+        var dayEnd = dayStart.AddDays(1);
+        var existingForDay = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.CountAsync(
+            _dbContext.CycleCounts
+                .AsNoTracking()
+                .Where(x => x.ScheduledDate >= dayStart && x.ScheduledDate < dayEnd),
+            cancellationToken);
 
         var cycleCount = new CycleCount
         {
-            CountNumber = $"CC-{Guid.NewGuid():N}"[..11].ToUpperInvariant(),
+            CountNumber = $"CC-{scheduledDate:yyyyMMdd}-{existingForDay + 1:000}",
             ScheduledDate = request.ScheduledDate,
+            AbcClass = normalizedAbcClass,
+            AssignedOperator = request.AssignedOperator.Trim(),
             ScheduleCommandId = request.CommandId
         };
 
-        for (var i = 0; i < aItems.Count; i++)
+        for (var i = 0; i < locations.Count; i++)
         {
-            var item = aItems[i];
-            var location = locations[i % locations.Count];
+            var location = locations[i];
+            var item = filteredItems[i % filteredItems.Count];
             var systemQty = await _quantityResolver.ResolveSystemQtyAsync(location.Code, item.InternalSKU, cancellationToken);
 
             cycleCount.Lines.Add(new CycleCountLine
