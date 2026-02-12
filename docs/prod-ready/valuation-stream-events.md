@@ -17,6 +17,14 @@ All valuation events inherit from `DomainEvent` and carry schema metadata (`Vers
 - `POST /api/warehouse/v1/valuation/adjust-cost`
 - `POST /api/warehouse/v1/valuation/apply-landed-cost`
 - `POST /api/warehouse/v1/valuation/write-down`
+- `GET /api/warehouse/v1/valuation/on-hand-value`
+- `GET /api/warehouse/v1/valuation/cost-history`
+
+## UI Routes
+- `/warehouse/valuation/dashboard`
+- `/warehouse/valuation/adjust-cost`
+- `/warehouse/valuation/apply-landed-cost`
+- `/warehouse/valuation/write-down`
 
 ## Cost Adjustment Rules
 - `NewCost >= 0`

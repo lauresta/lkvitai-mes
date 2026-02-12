@@ -8,6 +8,7 @@ using LKvitai.MES.Domain.Aggregates;
 using LKvitai.MES.Infrastructure.Persistence;
 using LKvitai.MES.SharedKernel;
 using Marten;
+using Marten.Events;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -314,6 +315,171 @@ public sealed class ValuationController : ControllerBase
         return Ok(filteredRows);
     }
 
+    [HttpGet("cost-history")]
+    [Authorize(Policy = WarehousePolicies.InventoryAccountantOrManager)]
+    public async Task<IActionResult> GetCostHistoryAsync(
+        [FromQuery] int? itemId,
+        [FromQuery] DateTimeOffset? dateFrom,
+        [FromQuery] DateTimeOffset? dateTo,
+        [FromQuery] string? reason,
+        [FromQuery] string? approvedBy,
+        CancellationToken cancellationToken = default)
+    {
+        var itemQuery = _dbContext.Items
+            .AsNoTracking()
+            .AsQueryable();
+
+        if (itemId.HasValue)
+        {
+            itemQuery = itemQuery.Where(x => x.Id == itemId.Value);
+        }
+
+        var items = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync(
+            itemQuery
+                .OrderBy(x => x.InternalSKU)
+                .Select(x => new ItemLookup(x.Id, x.InternalSKU, x.Name)),
+            cancellationToken);
+
+        if (items.Count == 0)
+        {
+            return Ok(Array.Empty<CostHistoryResponse>());
+        }
+
+        await using var session = _documentStore.QuerySession();
+        var rows = new List<CostHistoryResponse>();
+
+        foreach (var item in items)
+        {
+            var streamId = ItemValuation.StreamIdFor(item.Id);
+            IReadOnlyList<IEvent> streamEvents;
+            try
+            {
+                streamEvents = await session.Events.FetchStreamAsync(streamId, token: cancellationToken);
+            }
+            catch
+            {
+                continue;
+            }
+
+            decimal? runningCost = null;
+
+            foreach (var streamEvent in streamEvents)
+            {
+                switch (streamEvent.Data)
+                {
+                    case ValuationInitialized initialized:
+                    {
+                        var changedAt = NormalizeTimestamp(initialized.InitializedAt, initialized.Timestamp);
+                        rows.Add(new CostHistoryResponse(
+                            initialized.EventId,
+                            item.Id,
+                            item.ItemSku,
+                            item.ItemName,
+                            changedAt,
+                            runningCost,
+                            initialized.InitialUnitCost,
+                            initialized.Reason,
+                            initialized.InitializedBy,
+                            "INITIALIZED"));
+
+                        runningCost = initialized.InitialUnitCost;
+                        break;
+                    }
+
+                    case CostAdjusted adjusted:
+                    {
+                        var changedAt = NormalizeTimestamp(adjusted.AdjustedAt, adjusted.Timestamp);
+                        rows.Add(new CostHistoryResponse(
+                            adjusted.EventId,
+                            item.Id,
+                            item.ItemSku,
+                            item.ItemName,
+                            changedAt,
+                            adjusted.OldUnitCost,
+                            adjusted.NewUnitCost,
+                            adjusted.Reason,
+                            string.IsNullOrWhiteSpace(adjusted.ApprovedBy) ? adjusted.AdjustedBy : adjusted.ApprovedBy,
+                            "COST_ADJUSTED"));
+
+                        runningCost = adjusted.NewUnitCost;
+                        break;
+                    }
+
+                    case LandedCostApplied landed:
+                    {
+                        var previous = runningCost;
+                        var next = decimal.Round((previous ?? 0m) + landed.TotalLandedCost, 4, MidpointRounding.AwayFromZero);
+                        rows.Add(new CostHistoryResponse(
+                            landed.EventId,
+                            item.Id,
+                            item.ItemSku,
+                            item.ItemName,
+                            NormalizeTimestamp(landed.Timestamp, landed.Timestamp),
+                            previous,
+                            next,
+                            $"Landed cost applied for shipment {landed.ShipmentId}",
+                            landed.AppliedBy,
+                            "LANDED_COST_APPLIED"));
+
+                        runningCost = next;
+                        break;
+                    }
+
+                    case WrittenDown writtenDown:
+                    {
+                        rows.Add(new CostHistoryResponse(
+                            writtenDown.EventId,
+                            item.Id,
+                            item.ItemSku,
+                            item.ItemName,
+                            NormalizeTimestamp(writtenDown.Timestamp, writtenDown.Timestamp),
+                            writtenDown.OldValue,
+                            writtenDown.NewValue,
+                            writtenDown.Reason,
+                            writtenDown.ApprovedBy,
+                            "WRITTEN_DOWN"));
+
+                        runningCost = writtenDown.NewValue;
+                        break;
+                    }
+                }
+            }
+        }
+
+        var filtered = rows.AsEnumerable();
+        if (dateFrom.HasValue)
+        {
+            filtered = filtered.Where(x => x.ChangedAt >= dateFrom.Value);
+        }
+
+        if (dateTo.HasValue)
+        {
+            filtered = filtered.Where(x => x.ChangedAt <= dateTo.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(reason))
+        {
+            var reasonFilter = reason.Trim();
+            filtered = filtered.Where(x =>
+                !string.IsNullOrWhiteSpace(x.Reason) &&
+                x.Reason.Contains(reasonFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (!string.IsNullOrWhiteSpace(approvedBy))
+        {
+            var approvedByFilter = approvedBy.Trim();
+            filtered = filtered.Where(x =>
+                !string.IsNullOrWhiteSpace(x.ApprovedBy) &&
+                x.ApprovedBy.Contains(approvedByFilter, StringComparison.OrdinalIgnoreCase));
+        }
+
+        return Ok(filtered
+            .OrderByDescending(x => x.ChangedAt)
+            .ThenBy(x => x.ItemSku)
+            .Take(2000)
+            .ToList());
+    }
+
     private static async Task<CostAdjusted?> LoadCostAdjustedEventAsync(
         IQuerySession session,
         string streamId,
@@ -375,6 +541,26 @@ public sealed class ValuationController : ControllerBase
     {
         var raw = HttpContext.Items[CorrelationIdMiddleware.HeaderName]?.ToString();
         return Guid.TryParse(raw, out var parsed) ? parsed : Guid.NewGuid();
+    }
+
+    private static DateTimeOffset NormalizeTimestamp(DateTime primary, DateTime fallback)
+    {
+        var candidate = primary == default ? fallback : primary;
+        if (candidate == default)
+        {
+            candidate = DateTime.UtcNow;
+        }
+
+        if (candidate.Kind == DateTimeKind.Unspecified)
+        {
+            candidate = DateTime.SpecifyKind(candidate, DateTimeKind.Utc);
+        }
+        else if (candidate.Kind == DateTimeKind.Local)
+        {
+            candidate = candidate.ToUniversalTime();
+        }
+
+        return new DateTimeOffset(candidate, TimeSpan.Zero);
     }
 
     public sealed record AdjustCostRequest(
@@ -442,4 +628,21 @@ public sealed class ValuationController : ControllerBase
         decimal UnitCost,
         decimal TotalValue,
         DateTimeOffset LastUpdated);
+
+    public sealed record CostHistoryResponse(
+        Guid EventId,
+        int ItemId,
+        string ItemSku,
+        string ItemName,
+        DateTimeOffset ChangedAt,
+        decimal? OldCost,
+        decimal? NewCost,
+        string Reason,
+        string? ApprovedBy,
+        string ActionType);
+
+    private sealed record ItemLookup(
+        int Id,
+        string ItemSku,
+        string ItemName);
 }

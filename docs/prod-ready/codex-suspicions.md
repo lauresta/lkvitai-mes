@@ -605,3 +605,9 @@
   Evidence: Validation command `POST /api/warehouse/v1/valuation/write-down` returned HTTP 403 (`/tmp/prd1604-write-down.out`).
   Impact: Could not validate runtime approval workflow and write-down API behavior end-to-end in this environment.
   Proposed resolution: Re-run write-down API validation with a valid Warehouse auth token against the project API runtime.
+- Timestamp: 2026-02-12T21:04:07Z
+  TaskId: PRD-1605
+  Type: TEST-GAP
+  Evidence: `dotnet run --project src/LKvitai.MES.WebUI` failed with HTTPS developer certificate error; `DOTNET_ENVIRONMENT=Development ASPNETCORE_URLS=http://127.0.0.1:5001 dotnet run --no-launch-profile --project src/LKvitai.MES.WebUI /p:UseAppHost=false` started successfully, but browser/manual form/report verification was not executable in this terminal run.
+  Impact: Full task-required manual validation for valuation dashboard/forms/reports (navigation, toasts, CSV download behavior) could not be completed end-to-end.
+  Proposed minimal fix: Install/trust local dev certificate (`dotnet dev-certs https --trust`) and execute the documented UI walkthrough in a browser against `http://127.0.0.1:5001` or the HTTPS profile.
