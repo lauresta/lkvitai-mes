@@ -1,82 +1,56 @@
-# Codex Run Summary
+# Codex Run Summary (Sprint 7)
 
-## Scope
+## Completed tasks
+- PRD-1601
+- PRD-1602
+- PRD-1603
+- PRD-1604
+- PRD-1605
+- PRD-1606
+- PRD-1607
+- PRD-1608
+- PRD-1609
+- PRD-1610
+- PRD-1611
+- PRD-1612
+- PRD-1613
+- PRD-1614
+- PRD-1615
+- PRD-1616
+- PRD-1617
+- PRD-1618
+- PRD-1619
+- PRD-1620
 
-Completed remaining implementation gaps for Phase 1.5 Sprint 3-6 UI/report/admin tasks and stabilized related backend controllers required by those pages.
+## Partially completed tasks + remaining
+- None.
 
-## Task Completion (this run)
+## Blockers + pointers
+- No hard BLOCKER stopped execution.
+- Validation and spec inconsistencies were logged as TEST-GAP / INCONSISTENCY / MISSING-REF in `docs/prod-ready/codex-suspicions.md` (latest entries include PRD-1615..PRD-1620).
 
-- `PRD-1523` Receiving Invoice Entry UI: implemented Blazor inbound shipment list/create/detail flows.
-- `PRD-1524` Receiving Scan & QC UI: implemented barcode-assisted receiving panel and QC pending/pass/fail page.
-- `PRD-1525` Stock Visibility Dashboard UI: implemented `/warehouse/stock/dashboard` summary cards, location aggregates, low-stock and expiring sections with CSV export.
-- `PRD-1526` Stock Movement/Transfer UI: implemented transfers list/create/detail with approve/execute actions.
-- `PRD-1527` Create Sales Order UI visibility: retained existing `/warehouse/sales/orders/create` and added quick `+ Sales Order` action from outbound list.
-- `PRD-1529` Allocation & Release UI: implemented `/warehouse/sales/allocations` with pending-approval, pending-stock, allocated sections and approve/release actions.
-- `PRD-1534` Dispatch History Report UI: implemented report page with filters, summary cards, pagination, CSV export.
-- `PRD-1548` Admin User Management UI: implemented `/admin/users` list/create/edit roles/status/email.
-- `PRD-1549` Stock Movement History Report UI: implemented page with filters, pagination, CSV export.
-- `PRD-1551` Traceability Report UI: implemented lot/item/order/supplier search with upstream/current/downstream sections.
-- `PRD-1552` Compliance Audit Report UI: implemented report type/date filters, pagination, CSV and PDF export.
+## Commands/tests executed + pass/fail
+- Preflight (executed at run start):
+  - `grep -c "^## Task PRD-" docs/prod-ready/prod-ready-tasks-PHASE15-S7.md` PASS (20)
+  - placeholder grep check PASS (no output)
+  - `dotnet build src/LKvitai.MES.sln` PASS
+  - `dotnet test src/LKvitai.MES.sln` PASS
+- Per-task build/test validations:
+  - `dotnet build` for API/WebUI projects: PASS across all Sprint 7 tasks.
+  - PRD-1615 cycle-count support tests: PASS (`prd1615-cyclecount-ui-support-tests.trx`, 12/12).
+  - PRD-1616 label template/preview tests: PASS (`prd1616-label-template-tests.trx`, 29/29).
+  - PRD-1617 printer integration tests: PASS (`prd1617-label-printer-tests.trx`, 45/45).
+  - PRD-1618 print queue/retry tests: PASS (`prd1618-print-queue-tests.trx`, 63/63).
+  - PRD-1619 transfer workflow/state-machine tests: PASS (`prd1619-transfer-tests.trx`, 21/21).
+- Runtime/manual validation commands:
+  - Several localhost curl validation flows for API tasks returned HTTP 403 in this environment.
+  - `dotnet run --project src/LKvitai.MES.WebUI` failed on HTTPS dev certificate.
+  - HTTP fallback startup commands succeeded when using an available local port.
+  - Resulting TEST-GAP evidence was appended to `docs/prod-ready/codex-suspicions.md`.
 
-## Supporting Backend/Integration Work in Workspace
+## Overall status
+- Sprint 7 implementation scope complete: **PRD-1601 through PRD-1620 DONE** with per-task commits.
+- Remaining work is environment/runtime validation cleanup from logged TEST-GAP items.
 
-- Fixed compile/runtime contract issues in newly added API controllers:
-  - `QCController` async query ambiguity + nullable item id handling.
-  - `ReportsController` async query ambiguity + count usage fixes.
-  - `AdminUsersController` null-safe not-found error mapping.
-- Existing workspace backend additions retained and wired:
-  - inbound shipment aliases/detail/receive-items, transfer list/detail APIs,
-  - QC pending endpoint,
-  - admin users API + in-memory store,
-  - reports API for dispatch/stock movements/traceability/compliance.
-
-## Files Added
-
-- `src/LKvitai.MES.WebUI/Models/InboundDtos.cs`
-- `src/LKvitai.MES.WebUI/Models/TransferDtos.cs`
-- `src/LKvitai.MES.WebUI/Models/AdminUserDtos.cs`
-- `src/LKvitai.MES.WebUI/Services/ReceivingClient.cs`
-- `src/LKvitai.MES.WebUI/Services/TransfersClient.cs`
-- `src/LKvitai.MES.WebUI/Services/AdminUsersClient.cs`
-- `src/LKvitai.MES.WebUI/Pages/InboundShipments.razor`
-- `src/LKvitai.MES.WebUI/Pages/InboundShipmentCreate.razor`
-- `src/LKvitai.MES.WebUI/Pages/InboundShipmentDetail.razor`
-- `src/LKvitai.MES.WebUI/Pages/ReceivingQc.razor`
-- `src/LKvitai.MES.WebUI/Pages/QCPanel.razor`
-- `src/LKvitai.MES.WebUI/Pages/StockDashboard.razor`
-- `src/LKvitai.MES.WebUI/Pages/Transfers.razor`
-- `src/LKvitai.MES.WebUI/Pages/TransferCreate.razor`
-- `src/LKvitai.MES.WebUI/Pages/TransferDetail.razor`
-- `src/LKvitai.MES.WebUI/Pages/AllocationDashboard.razor`
-- `src/LKvitai.MES.WebUI/Pages/ReportsDispatchHistory.razor`
-- `src/LKvitai.MES.WebUI/Pages/ReportsStockMovements.razor`
-- `src/LKvitai.MES.WebUI/Pages/ReportsTraceability.razor`
-- `src/LKvitai.MES.WebUI/Pages/ReportsComplianceAudit.razor`
-- `src/LKvitai.MES.WebUI/Pages/AdminUsers.razor`
-
-## Files Updated (key)
-
-- `src/LKvitai.MES.WebUI/Program.cs`
-- `src/LKvitai.MES.WebUI/Shared/NavMenu.razor`
-- `src/LKvitai.MES.WebUI/Services/ReportsClient.cs`
-- `src/LKvitai.MES.WebUI/Models/ReportDtos.cs`
-- `src/LKvitai.MES.WebUI/Pages/OutboundOrders.razor`
-- `src/LKvitai.MES.Api/Api/Controllers/QCController.cs`
-- `src/LKvitai.MES.Api/Api/Controllers/ReportsController.cs`
-- `src/LKvitai.MES.Api/Api/Controllers/AdminUsersController.cs`
-
-## Validation Results
-
-- `dotnet build src/LKvitai.MES.sln` ✅ pass
-- `dotnet test src/LKvitai.MES.sln` ✅ pass (exit code 0)
-- UI artifact audit: all page files explicitly referenced in S3-S6 DoD (`Pages/*.razor`) now exist in `src/LKvitai.MES.WebUI` (missing count: 0).
-
-## Logged Gaps / Risks
-
-Updated `docs/prod-ready/codex-suspicions.md` with:
-- ambiguity: missing reason-code lookup endpoint for QC fail UI,
-- ambiguity: missing dedicated stock-dashboard/min-stock API contract for PRD-1525,
-- inconsistency: PRD-1529 reallocate/pending endpoints absent in current API surface,
-- inconsistency: admin users currently in-memory (non-persistent),
-- risk: traceability is approximate (lot linkage model gap),
-- TEST-GAP entries for manual browser UX validation pending on PRD-1523/1524/1525/1526/1529/1534/1548/1549/1551/1552.
+## Next recommended TaskId
+- PRD-1621 (start Sprint 8 only when explicitly authorized).
