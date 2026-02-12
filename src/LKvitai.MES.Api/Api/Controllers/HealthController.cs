@@ -38,24 +38,38 @@ public sealed class HealthController : ControllerBase
                 x => x.Key,
                 x => new ProjectionStatusDto(
                     x.Value.LastUpdated,
-                    x.Value.LagSeconds,
-                    x.Value.Status,
+                    x.Value.LagEvents == 0 ? 0d : x.Value.LagSeconds,
+                    x.Value.LagEvents == 0 ? "Healthy" : x.Value.Status,
                     x.Value.HighWaterMark,
                     x.Value.LastProcessed,
                     x.Value.LagEvents),
                 StringComparer.OrdinalIgnoreCase);
 
+        var projectionLagStatus = projectionStatus.Count == 0
+            ? "Healthy"
+            : projectionStatus.Values.Any(x => x.Status == "Unhealthy")
+                ? "Unhealthy"
+                : projectionStatus.Values.Any(x => x.Status == "Degraded")
+                    ? "Degraded"
+                    : "Healthy";
+
+        var overallStatus = snapshot.DatabaseStatus == "Unhealthy" || snapshot.EventStoreStatus == "Unhealthy" || projectionLagStatus == "Unhealthy"
+            ? "Degraded"
+            : projectionLagStatus == "Degraded"
+                ? "Degraded"
+                : "Healthy";
+
         var response = new WarehouseHealthResponse(
-            snapshot.Status,
+            overallStatus,
             new HealthChecksDto(
                 snapshot.DatabaseStatus,
                 snapshot.EventStoreStatus,
-                snapshot.ProjectionLagStatus,
+                projectionLagStatus,
                 "Healthy"),
             projectionStatus,
             snapshot.CheckedAt);
 
-        if (snapshot.ProjectionLagStatus == "Unhealthy" ||
+        if (projectionLagStatus == "Unhealthy" ||
             snapshot.DatabaseStatus == "Unhealthy" ||
             snapshot.EventStoreStatus == "Unhealthy")
         {

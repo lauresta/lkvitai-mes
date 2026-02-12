@@ -38,21 +38,43 @@ public sealed class DashboardController : ControllerBase
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
             .InformationalVersion ?? "dev";
         var snapshot = await _projectionHealthService.GetHealthAsync(cancellationToken);
-        var projectionLag = snapshot.ProjectionStatus
+
+        var normalizedProjectionRows = snapshot.ProjectionStatus
             .Values
+            .Select(x => new
+            {
+                LagEvents = x.LagEvents,
+                LagSeconds = x.LagEvents == 0 ? 0d : x.LagSeconds,
+                Status = x.LagEvents == 0 ? "Healthy" : x.Status
+            })
+            .ToList();
+
+        var projectionLag = normalizedProjectionRows
             .Where(x => x.LagSeconds.HasValue)
             .Select(x => x.LagSeconds!.Value)
             .DefaultIfEmpty()
             .Max();
-        var hasLag = snapshot.ProjectionStatus.Values.Any(x => x.LagSeconds.HasValue);
+        var hasLag = normalizedProjectionRows.Any(x => x.LagSeconds.HasValue);
+        var projectionLagStatus = normalizedProjectionRows.Count == 0
+            ? "Healthy"
+            : normalizedProjectionRows.Any(x => x.Status == "Unhealthy")
+                ? "Unhealthy"
+                : normalizedProjectionRows.Any(x => x.Status == "Degraded")
+                    ? "Degraded"
+                    : "Healthy";
+        var overallStatus = snapshot.DatabaseStatus == "Unhealthy" || snapshot.EventStoreStatus == "Unhealthy" || projectionLagStatus == "Unhealthy"
+            ? "Degraded"
+            : projectionLagStatus == "Degraded"
+                ? "Degraded"
+                : "Healthy";
 
         var response = new HealthStatusDto
         {
-            Ok = !string.Equals(snapshot.Status, "Unhealthy", StringComparison.OrdinalIgnoreCase),
+            Ok = !string.Equals(overallStatus, "Unhealthy", StringComparison.OrdinalIgnoreCase),
             Service = "LKvitai.MES.Api",
             Version = version,
             UtcNow = DateTime.UtcNow,
-            Status = snapshot.Status,
+            Status = overallStatus,
             ProjectionLag = hasLag ? projectionLag : null,
             LastCheck = snapshot.CheckedAt.UtcDateTime
         };
@@ -71,10 +93,10 @@ public sealed class DashboardController : ControllerBase
                 ProjectionName = x.ProjectionName,
                 HighWaterMark = x.HighWaterMark,
                 LastProcessed = x.LastProcessed,
-                LagSeconds = x.LagSeconds,
+                LagSeconds = x.LagEvents == 0 ? 0d : x.LagSeconds,
                 LagEvents = x.LagEvents,
                 LastUpdated = x.LastUpdated,
-                Status = x.Status
+                Status = x.LagEvents == 0 ? "Healthy" : x.Status
             })
             .OrderBy(projection => projection.ProjectionName, StringComparer.OrdinalIgnoreCase)
             .ToList();
