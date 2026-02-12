@@ -19,21 +19,24 @@ public sealed class AgnumController : ControllerBase
     private readonly AgnumExportRecurringJob _agnumExportRecurringJob;
     private readonly IRecurringJobManager _recurringJobManager;
     private readonly IAgnumSecretProtector _secretProtector;
+    private readonly IHttpClientFactory _httpClientFactory;
 
     public AgnumController(
         WarehouseDbContext dbContext,
         AgnumExportRecurringJob agnumExportRecurringJob,
         IRecurringJobManager recurringJobManager,
-        IAgnumSecretProtector secretProtector)
+        IAgnumSecretProtector secretProtector,
+        IHttpClientFactory httpClientFactory)
     {
         _dbContext = dbContext;
         _agnumExportRecurringJob = agnumExportRecurringJob;
         _recurringJobManager = recurringJobManager;
         _secretProtector = secretProtector;
+        _httpClientFactory = httpClientFactory;
     }
 
     [HttpGet("config")]
-    [Authorize(Policy = WarehousePolicies.AdminOnly)]
+    [Authorize(Policy = WarehousePolicies.InventoryAccountantOrManager)]
     public async Task<IActionResult> GetConfigAsync(CancellationToken cancellationToken = default)
     {
         var query = _dbContext.AgnumExportConfigs
@@ -67,7 +70,7 @@ public sealed class AgnumController : ControllerBase
     }
 
     [HttpPut("config")]
-    [Authorize(Policy = WarehousePolicies.AdminOnly)]
+    [Authorize(Policy = WarehousePolicies.InventoryAccountantOrManager)]
     public async Task<IActionResult> PutConfigAsync(
         [FromBody] PutAgnumConfigRequest? request,
         CancellationToken cancellationToken = default)
@@ -140,6 +143,11 @@ public sealed class AgnumController : ControllerBase
             });
         }
 
+        if (scope != AgnumExportScope.TotalOnly && config.Mappings.Count == 0)
+        {
+            return ValidationFailure($"At least 1 mapping required for scope {scope.ToString().ToUpperInvariant()}.");
+        }
+
         try
         {
             _recurringJobManager.AddOrUpdate<AgnumExportRecurringJob>(
@@ -159,6 +167,87 @@ public sealed class AgnumController : ControllerBase
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return Ok(new AgnumConfigSavedResponse(config.Id, config.Schedule, config.Format.ToString(), config.Mappings.Count));
+    }
+
+    [HttpPost("test-connection")]
+    [Authorize(Policy = WarehousePolicies.InventoryAccountantOrManager)]
+    public async Task<IActionResult> TestConnectionAsync(
+        [FromBody] TestAgnumConnectionRequest? request,
+        CancellationToken cancellationToken = default)
+    {
+        var activeConfig = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
+            _dbContext.AgnumExportConfigs
+                .AsNoTracking()
+                .Where(x => x.IsActive)
+                .OrderByDescending(x => x.UpdatedAt),
+            cancellationToken);
+
+        var endpoint = request?.ApiEndpoint;
+        if (string.IsNullOrWhiteSpace(endpoint))
+        {
+            endpoint = activeConfig?.ApiEndpoint;
+        }
+
+        if (string.IsNullOrWhiteSpace(endpoint))
+        {
+            return ValidationFailure("ApiEndpoint is required for connection test.");
+        }
+
+        endpoint = endpoint.Trim();
+        if (!Uri.TryCreate(endpoint, UriKind.Absolute, out var endpointUri))
+        {
+            return ValidationFailure("ApiEndpoint must be a valid absolute URL.");
+        }
+
+        var apiKey = request?.ApiKey;
+        if (string.IsNullOrWhiteSpace(apiKey))
+        {
+            apiKey = _secretProtector.Unprotect(activeConfig?.ApiKey);
+        }
+
+        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutCts.CancelAfter(TimeSpan.FromSeconds(5));
+
+        try
+        {
+            var client = _httpClientFactory.CreateClient("AgnumExportApi");
+            using var httpRequest = new HttpRequestMessage(HttpMethod.Get, endpointUri);
+            if (!string.IsNullOrWhiteSpace(apiKey))
+            {
+                httpRequest.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue(
+                    "Bearer",
+                    apiKey.Trim());
+            }
+
+            using var response = await client.SendAsync(httpRequest, timeoutCts.Token);
+            if (response.IsSuccessStatusCode)
+            {
+                return Ok(new AgnumTestConnectionResponse(true, "Connection successful"));
+            }
+
+            if (response.StatusCode is System.Net.HttpStatusCode.Unauthorized or System.Net.HttpStatusCode.Forbidden)
+            {
+                return StatusCode(StatusCodes.Status400BadRequest, new AgnumTestConnectionResponse(
+                    false,
+                    "Connection failed: Invalid API key"));
+            }
+
+            return StatusCode(StatusCodes.Status400BadRequest, new AgnumTestConnectionResponse(
+                false,
+                $"Connection failed: HTTP {(int)response.StatusCode} {response.ReasonPhrase}"));
+        }
+        catch (OperationCanceledException)
+        {
+            return StatusCode(StatusCodes.Status504GatewayTimeout, new AgnumTestConnectionResponse(
+                false,
+                "Connection failed: request timed out"));
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(StatusCodes.Status502BadGateway, new AgnumTestConnectionResponse(
+                false,
+                $"Connection failed: {ex.Message}"));
+        }
     }
 
     [HttpPost("export")]
@@ -257,6 +346,10 @@ public sealed class AgnumController : ControllerBase
         string SourceValue,
         string AgnumAccountCode);
 
+    public sealed record TestAgnumConnectionRequest(
+        string? ApiEndpoint,
+        string? ApiKey);
+
     public sealed record AgnumMappingResponse(
         Guid Id,
         string SourceType,
@@ -279,6 +372,10 @@ public sealed class AgnumController : ControllerBase
         string Schedule,
         string Format,
         int MappingCount);
+
+    public sealed record AgnumTestConnectionResponse(
+        bool Success,
+        string Message);
 
     public sealed record AgnumExportTriggerResponse(
         Guid? HistoryId,

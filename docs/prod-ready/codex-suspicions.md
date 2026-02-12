@@ -611,3 +611,9 @@
   Evidence: `dotnet run --project src/LKvitai.MES.WebUI` failed with HTTPS developer certificate error; `DOTNET_ENVIRONMENT=Development ASPNETCORE_URLS=http://127.0.0.1:5001 dotnet run --no-launch-profile --project src/LKvitai.MES.WebUI /p:UseAppHost=false` started successfully, but browser/manual form/report verification was not executable in this terminal run.
   Impact: Full task-required manual validation for valuation dashboard/forms/reports (navigation, toasts, CSV download behavior) could not be completed end-to-end.
   Proposed minimal fix: Install/trust local dev certificate (`dotnet dev-certs https --trust`) and execute the documented UI walkthrough in a browser against `http://127.0.0.1:5001` or the HTTPS profile.
+- Timestamp: 2026-02-12T21:08:26Z
+  TaskId: PRD-1606
+  Type: TEST-GAP
+  Evidence: `dotnet run --project src/LKvitai.MES.WebUI` failed due missing HTTPS developer certificate; service startup verified via `DOTNET_ENVIRONMENT=Development ASPNETCORE_URLS=http://127.0.0.1:5001 dotnet run --no-launch-profile --project src/LKvitai.MES.WebUI /p:UseAppHost=false`, but browser-based manual checks (field interactions, mapping add/remove UX, toasts) were not executed in this terminal session.
+  Impact: Full manual UI validation for `/warehouse/agnum/config` scenarios is incomplete in this environment.
+  Proposed minimal fix: Install/trust local dev HTTPS certificate and run the documented browser walkthrough for save/test-connection/mapping validation flows.
