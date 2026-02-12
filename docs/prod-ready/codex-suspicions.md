@@ -665,3 +665,9 @@
   Evidence: Validation calls `GET /api/warehouse/v1/cycle-counts/{id}/discrepancies` and `POST /api/warehouse/v1/cycle-counts/{id}/approve-adjustment` both returned HTTP 403 on localhost (`/tmp/prd1614-discrepancies.status`, `/tmp/prd1614-approve.status`), while project API runtime remains blocked by missing DB.
   Impact: Could not verify runtime authorization and end-to-end discrepancy approval flow with real auth tokens/data.
   Proposed minimal fix: Start the project API against the expected PostgreSQL database and rerun discrepancy/approval curl validations using a valid manager/CFO token.
+- Timestamp: 2026-02-12T21:59:50Z
+  TaskId: PRD-1615
+  Type: TEST-GAP
+  Evidence: Validation command `dotnet run --project src/LKvitai.MES.WebUI` failed with missing HTTPS developer certificate (`/tmp/prd1615-webui-run.log`), with stack ending at `src/LKvitai.MES.WebUI/Program.cs:59`; HTTP fallback startup succeeded via `DOTNET_ENVIRONMENT=Development ASPNETCORE_URLS=http://127.0.0.1:5001 dotnet run --no-launch-profile --project src/LKvitai.MES.WebUI /p:UseAppHost=false`, but browser scenario walkthroughs could not be executed in this terminal-only run.
+  Impact: Full manual acceptance verification for schedule, execute, and discrepancy approval pages remains pending.
+  Proposed minimal fix: Install/trust local dev HTTPS certificate and run the documented browser validation on `/warehouse/cycle-counts`, `/warehouse/cycle-counts/schedule`, `/warehouse/cycle-counts/{id}/execute`, and `/warehouse/cycle-counts/{id}/discrepancies`.

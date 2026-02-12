@@ -1,0 +1,182 @@
+@page "/warehouse/cycle-counts/{Id:guid}/discrepancies"
+@inject CycleCountsClient CycleCountsClient
+@inject NavigationManager NavigationManager
+@inject ToastService ToastService
+@inject IConfiguration Configuration
+
+<PageTitle>Cycle Count Discrepancies - LKvitai.MES</PageTitle>
+
+<h1>Cycle Count Discrepancies</h1>
+
+<div class="card shadow-sm position-relative">
+    <LoadingSpinner IsLoading="_isLoading || _isSubmitting" />
+    <div class="card-body">
+        <div class="d-flex justify-content-end mb-3">
+            <button class="btn btn-outline-secondary" @onclick="BackAsync">Back</button>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Location</th>
+                        <th>Item</th>
+                        <th>System Qty</th>
+                        <th>Physical Qty</th>
+                        <th>Variance</th>
+                        <th>Variance %</th>
+                        <th>Value Impact</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (_rows.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="8">
+                                <EmptyState Title="No discrepancies found."
+                                            Message="No variance lines require approval."
+                                            IconCss="bi bi-check2-circle"
+                                            OnAction="BackAsync" />
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var row in _rows)
+                        {
+                            <tr>
+                                <td>@row.LocationCode</td>
+                                <td>@row.ItemCode</td>
+                                <td>@row.SystemQty</td>
+                                <td>@row.PhysicalQty</td>
+                                <td>@row.Variance</td>
+                                <td>@row.VariancePercent%</td>
+                                <td>@row.ValueImpact.ToString("0.##")</td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary" @onclick="() => OpenApprove(row)">Approve</button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@if (_pendingApproval is not null)
+{
+    <div class="modal show d-block" tabindex="-1" style="background: rgba(0, 0, 0, 0.45);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Approve Adjustment</h5>
+                    <button type="button" class="btn-close" @onclick="CloseApprove"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label">Approved By</label>
+                    <input class="form-control mb-3" value="@_approvedBy" readonly />
+                    <label class="form-label">Reason</label>
+                    <textarea class="form-control" rows="3" @bind="_approvalReason"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline-secondary" @onclick="CloseApprove">Cancel</button>
+                    <button class="btn btn-primary" @onclick="ConfirmApproveAsync" disabled="@_isSubmitting">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public Guid Id { get; set; }
+
+    private readonly List<DiscrepancyLineDto> _rows = [];
+    private bool _isLoading;
+    private bool _isSubmitting;
+    private DiscrepancyLineDto? _pendingApproval;
+    private string _approvalReason = "Cycle count correction";
+    private string _approvedBy = "webui-admin";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _approvedBy = Configuration["WarehouseApi:UserId"]?.Trim() ?? "webui-admin";
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            var rows = await CycleCountsClient.GetDiscrepanciesAsync(Id);
+            _rows.Clear();
+            _rows.AddRange(rows);
+        }
+        catch (ApiException ex)
+        {
+            ToastService.ShowError(ex.UserMessage);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void OpenApprove(DiscrepancyLineDto row)
+    {
+        _pendingApproval = row;
+        _approvalReason = "Cycle count correction";
+    }
+
+    private void CloseApprove()
+    {
+        _pendingApproval = null;
+    }
+
+    private async Task ConfirmApproveAsync()
+    {
+        if (_pendingApproval is null)
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_approvalReason))
+        {
+            ToastService.ShowError("Reason is required.");
+            return;
+        }
+
+        _isSubmitting = true;
+        try
+        {
+            await CycleCountsClient.ApproveAdjustmentAsync(Id, new ApproveAdjustmentRequestDto
+            {
+                CommandId = Guid.NewGuid(),
+                LineIds = [_pendingApproval.LineId],
+                ApprovedBy = _approvedBy,
+                Reason = _approvalReason.Trim()
+            });
+
+            ToastService.ShowSuccess("Adjustment approved.");
+            _rows.RemoveAll(x => x.LineId == _pendingApproval.LineId);
+            _pendingApproval = null;
+        }
+        catch (ApiException ex)
+        {
+            ToastService.ShowError(ex.UserMessage);
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private Task BackAsync()
+    {
+        NavigationManager.NavigateTo("/warehouse/cycle-counts");
+        return Task.CompletedTask;
+    }
+}

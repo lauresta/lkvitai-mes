@@ -1,0 +1,137 @@
+@page "/warehouse/cycle-counts"
+@inject CycleCountsClient CycleCountsClient
+@inject NavigationManager NavigationManager
+@inject ToastService ToastService
+
+<PageTitle>Cycle Counts - LKvitai.MES</PageTitle>
+
+<h1>Cycle Counts</h1>
+
+@if (_apiError is not null)
+{
+    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                 TraceId="@_apiError.TraceId"
+                 OnRetry="LoadAsync"
+                 OnDismiss="@(() => _apiError = null)" />
+}
+
+<div class="card shadow-sm position-relative">
+    <LoadingSpinner IsLoading="_isLoading" />
+    <div class="card-body">
+        <div class="d-flex justify-content-end mb-3">
+            <a class="btn btn-primary" href="/warehouse/cycle-counts/schedule">Schedule Cycle Count</a>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Count Number</th>
+                        <th>Scheduled Date</th>
+                        <th>Status</th>
+                        <th>ABC</th>
+                        <th>Assigned Operator</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (_rows.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="6">
+                                <EmptyState Title="No cycle counts scheduled."
+                                            Message="Create a schedule to start counting."
+                                            IconCss="bi bi-clipboard-check"
+                                            OnAction="OpenScheduleAsync" />
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var row in _rows)
+                        {
+                            <tr>
+                                <td>@row.CountNumber</td>
+                                <td>@row.ScheduledDate.ToLocalTime().ToString("yyyy-MM-dd")</td>
+                                <td><span class="badge @GetStatusBadge(row.Status)">@row.Status</span></td>
+                                <td>@row.AbcClass</td>
+                                <td>@row.AssignedOperator</td>
+                                <td class="d-flex gap-2">
+                                    <button class="btn btn-sm btn-outline-dark" @onclick="() => OpenView(row.Id)">View</button>
+                                    <button class="btn btn-sm btn-outline-secondary" @onclick="() => OpenExecute(row.Id)">Execute</button>
+                                    <button class="btn btn-sm btn-outline-primary" @onclick="() => OpenDiscrepancies(row.Id)">Review Discrepancies</button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@code {
+    private readonly List<CycleCountDto> _rows = [];
+    private bool _isLoading;
+    private ApiException? _apiError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            var rows = await CycleCountsClient.GetCycleCountsAsync();
+            _rows.Clear();
+            _rows.AddRange(rows);
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private Task OpenScheduleAsync()
+    {
+        NavigationManager.NavigateTo("/warehouse/cycle-counts/schedule");
+        return Task.CompletedTask;
+    }
+
+    private void OpenView(Guid id) => NavigationManager.NavigateTo($"/warehouse/cycle-counts/{id}/execute");
+
+    private void OpenExecute(Guid id) => NavigationManager.NavigateTo($"/warehouse/cycle-counts/{id}/execute");
+
+    private void OpenDiscrepancies(Guid id) => NavigationManager.NavigateTo($"/warehouse/cycle-counts/{id}/discrepancies");
+
+    private static string GetStatusBadge(string status) => status.ToUpperInvariant() switch
+    {
+        "SCHEDULED" => "bg-warning text-dark",
+        "IN_PROGRESS" => "bg-primary",
+        "COMPLETED" => "bg-success",
+        "CANCELLED" => "bg-danger",
+        _ => "bg-secondary"
+    };
+
+    private static string BuildErrorMessage(ApiException ex)
+    {
+        if (!string.IsNullOrWhiteSpace(ex.UserMessage))
+        {
+            return ex.UserMessage;
+        }
+
+        return ex.ProblemDetails?.Detail
+               ?? ex.ProblemDetails?.Title
+               ?? "Cycle count request failed.";
+    }
+}

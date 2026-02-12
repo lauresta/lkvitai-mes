@@ -1,0 +1,196 @@
+@page "/warehouse/cycle-counts/schedule"
+@inject CycleCountsClient CycleCountsClient
+@inject MasterDataAdminClient MasterDataAdminClient
+@inject NavigationManager NavigationManager
+@inject ToastService ToastService
+@inject IConfiguration Configuration
+
+<PageTitle>Schedule Cycle Count - LKvitai.MES</PageTitle>
+
+<h1>Schedule Cycle Count</h1>
+
+<div class="card shadow-sm position-relative">
+    <LoadingSpinner IsLoading="_isLoading || _isSubmitting" />
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Scheduled Date</label>
+                <input type="date" class="form-control" @bind="_scheduledDate" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">ABC Class</label>
+                <select class="form-select" @bind="_abcClass">
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="C">C</option>
+                    <option value="ALL">ALL</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Assigned Operator</label>
+                <select class="form-select" @bind="_assignedOperator">
+                    @foreach (var operatorId in _operatorOptions)
+                    {
+                        <option value="@operatorId">@operatorId</option>
+                    }
+                </select>
+            </div>
+        </div>
+
+        <hr />
+
+        <h5>Locations</h5>
+        @if (_locations.Count == 0)
+        {
+            <p class="text-muted">No locations loaded.</p>
+        }
+        else
+        {
+            <div class="row row-cols-1 row-cols-md-3 g-2">
+                @foreach (var location in _locations)
+                {
+                    <div class="col">
+                        <label class="form-check">
+                            <input class="form-check-input"
+                                   type="checkbox"
+                                   checked="@_selectedLocationIds.Contains(location.Id)"
+                                   @onchange="args => ToggleLocation(location.Id, args)" />
+                            <span class="form-check-label">@location.Code (@location.Type)</span>
+                        </label>
+                    </div>
+                }
+            </div>
+        }
+
+        <div class="d-flex justify-content-end gap-2 mt-3">
+            <button class="btn btn-outline-secondary" @onclick="BackAsync">Back</button>
+            <button class="btn btn-primary" @onclick="SubmitAsync" disabled="@_isSubmitting">Submit</button>
+        </div>
+    </div>
+</div>
+
+@code {
+    private readonly List<AdminLocationDto> _locations = [];
+    private readonly List<string> _operatorOptions = [];
+    private readonly HashSet<int> _selectedLocationIds = [];
+    private bool _isLoading;
+    private bool _isSubmitting;
+
+    private DateTime _scheduledDate = DateTime.Today.AddDays(1);
+    private string _abcClass = "A";
+    private string _assignedOperator = "operator1";
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isLoading = true;
+        try
+        {
+            var result = await MasterDataAdminClient.GetLocationsAsync(null, "Active", false, 1, 500);
+            _locations.Clear();
+            _locations.AddRange(result.Items);
+
+            var cycleCounts = await CycleCountsClient.GetCycleCountsAsync();
+            _operatorOptions.Clear();
+            _operatorOptions.AddRange(cycleCounts
+                .Select(x => x.AssignedOperator?.Trim())
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => x!)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(x => x, StringComparer.OrdinalIgnoreCase));
+
+            if (_operatorOptions.Count == 0)
+            {
+                _operatorOptions.Add("operator1");
+                _operatorOptions.Add("operator2");
+            }
+
+            var configuredUser = Configuration["WarehouseApi:UserId"]?.Trim();
+            if (!string.IsNullOrWhiteSpace(configuredUser) &&
+                !_operatorOptions.Contains(configuredUser, StringComparer.OrdinalIgnoreCase))
+            {
+                _operatorOptions.Insert(0, configuredUser);
+            }
+
+            if (!_operatorOptions.Contains(_assignedOperator, StringComparer.OrdinalIgnoreCase))
+            {
+                _assignedOperator = _operatorOptions[0];
+            }
+        }
+        catch (ApiException ex)
+        {
+            ToastService.ShowError(ex.UserMessage);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void ToggleLocation(int id, ChangeEventArgs args)
+    {
+        var isChecked = args.Value switch
+        {
+            bool value => value,
+            string text => string.Equals(text, "true", StringComparison.OrdinalIgnoreCase) || text == "on",
+            _ => false
+        };
+        if (isChecked)
+        {
+            _selectedLocationIds.Add(id);
+            return;
+        }
+
+        _selectedLocationIds.Remove(id);
+    }
+
+    private async Task SubmitAsync()
+    {
+        if (_scheduledDate.Date < DateTime.Today)
+        {
+            ToastService.ShowError("Scheduled date must be today or later.");
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_assignedOperator))
+        {
+            ToastService.ShowError("Assigned operator is required.");
+            return;
+        }
+
+        if (_selectedLocationIds.Count == 0)
+        {
+            ToastService.ShowError("Select at least one location.");
+            return;
+        }
+
+        _isSubmitting = true;
+        try
+        {
+            var response = await CycleCountsClient.ScheduleAsync(new ScheduleCycleCountRequestDto
+            {
+                CommandId = Guid.NewGuid(),
+                ScheduledDate = new DateTimeOffset(_scheduledDate.Date, TimeSpan.Zero),
+                AbcClass = _abcClass,
+                AssignedOperator = _assignedOperator.Trim(),
+                LocationIds = _selectedLocationIds.ToList()
+            });
+
+            ToastService.ShowSuccess($"Cycle count {response.CountNumber} scheduled.");
+            NavigationManager.NavigateTo("/warehouse/cycle-counts");
+        }
+        catch (ApiException ex)
+        {
+            ToastService.ShowError(ex.UserMessage);
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private Task BackAsync()
+    {
+        NavigationManager.NavigateTo("/warehouse/cycle-counts");
+        return Task.CompletedTask;
+    }
+}
