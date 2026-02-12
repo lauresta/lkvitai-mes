@@ -23,11 +23,21 @@
         <div class="row g-3">
             <div class="col-md-3">
                 <label class="form-label">From Warehouse</label>
-                <input class="form-control" @bind="_fromWarehouse" placeholder="WH1" />
+                <select class="form-select" @bind="_fromWarehouse">
+                    @foreach (var warehouse in _warehouseOptions)
+                    {
+                        <option value="@warehouse">@warehouse</option>
+                    }
+                </select>
             </div>
             <div class="col-md-3">
                 <label class="form-label">To Warehouse</label>
-                <input class="form-control" @bind="_toWarehouse" placeholder="WH2 or SCRAP" />
+                <select class="form-select" @bind="_toWarehouse">
+                    @foreach (var warehouse in _warehouseOptions)
+                    {
+                        <option value="@warehouse">@warehouse</option>
+                    }
+                </select>
             </div>
             <div class="col-md-3 d-flex align-items-end">
                 <button class="btn btn-outline-secondary" @onclick="BackToList">Back</button>
@@ -43,8 +53,8 @@
 
         @if (_lines.Count == 0)
         {
-            <EmptyState Title="No lines"
-                        Message="Add at least one transfer line."
+            <EmptyState Title="No lines added."
+                        Message="No lines added. Add your first line."
                         IconCss="bi bi-list-ul"
                         OnAction="AddLineAsync" />
         }
@@ -111,7 +121,7 @@
         }
 
         <div class="d-flex justify-content-end mt-3">
-            <button class="btn btn-primary" @onclick="CreateAsync" disabled="@_isSubmitting">Create Transfer</button>
+            <button class="btn btn-primary" @onclick="CreateAsync" disabled="@_isSubmitting">Submit</button>
         </div>
     </div>
 </div>
@@ -120,13 +130,14 @@
     private readonly List<AdminItemDto> _items = [];
     private readonly List<AdminLocationDto> _locations = [];
     private readonly List<TransferLineModel> _lines = [];
+    private readonly IReadOnlyList<string> _warehouseOptions = ["RES", "PROD", "NLQ", "SCRAP"];
 
     private bool _isLoading;
     private bool _isSubmitting;
     private ApiException? _apiError;
 
-    private string _fromWarehouse = "WH1";
-    private string _toWarehouse = "WH2";
+    private string _fromWarehouse = "RES";
+    private string _toWarehouse = "PROD";
 
     protected override async Task OnInitializedAsync()
     {
@@ -233,7 +244,7 @@
 
             var created = await TransfersClient.CreateTransferAsync(request);
             ToastService.ShowSuccess($"Transfer {created.TransferNumber} created.");
-            NavigationManager.NavigateTo($"/warehouse/transfers/{created.Id}");
+            NavigationManager.NavigateTo("/warehouse/transfers");
         }
         catch (ApiException ex)
         {

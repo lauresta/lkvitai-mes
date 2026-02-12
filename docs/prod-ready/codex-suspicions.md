@@ -707,3 +707,15 @@
   Evidence: Full curl workflow for token/create/submit/approve/execute returned HTTP 403 on localhost (`/tmp/prd1619-token.status`, `/tmp/prd1619-create.status`, `/tmp/prd1619-submit.status`, `/tmp/prd1619-manager-token.status`, `/tmp/prd1619-approve.status`, `/tmp/prd1619-execute.status`), so runtime API flow could not be verified against the intended project service.
   Impact: End-to-end transfer workflow validation with real auth/runtime data remains pending.
   Proposed minimal fix: Start project API on known isolated port with valid auth/database and rerun the exact PRD-1619 curl sequence for create->submit->approve->execute.
+- Timestamp: 2026-02-12T22:24:03Z
+  TaskId: PRD-1620
+  Type: MISSING-REF
+  Evidence: UI requirement includes `Cancel` action in transfer list, but Sprint 7 transfer API contract for PRD-1619 does not define a cancel endpoint (`POST /api/warehouse/v1/transfers/{id}/cancel` absent in `src/LKvitai.MES.Api/Api/Controllers/TransfersController.cs`).
+  Impact: Cancel action cannot be API-backed; UI can only provide placeholder behavior.
+  Proposed minimal fix: Add transfer cancel endpoint/command/state transition (`DRAFT|PENDING_APPROVAL -> CANCELLED`) or remove cancel action from UI acceptance criteria.
+- Timestamp: 2026-02-12T22:24:03Z
+  TaskId: PRD-1620
+  Type: TEST-GAP
+  Evidence: Required validation command `dotnet run --project src/LKvitai.MES.WebUI` failed due missing HTTPS dev certificate (`/tmp/prd1620-webui-run.log`); fallback on `http://127.0.0.1:5001` failed with address in use, while alternate-port startup succeeded (`http://127.0.0.1:5010`), but browser/manual workflow checks were not executable in this terminal-only run.
+  Impact: End-to-end manual verification of create/submit/approve/execute transfer UI scenarios remains pending.
+  Proposed minimal fix: Free standard UI port or choose explicit available port, install/trust dev HTTPS cert, then run browser walkthrough for `/warehouse/transfers`, `/warehouse/transfers/create`, and `/warehouse/transfers/{id}/execute`.

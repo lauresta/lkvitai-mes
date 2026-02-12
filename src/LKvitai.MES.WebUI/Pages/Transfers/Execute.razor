@@ -1,11 +1,11 @@
-@page "/warehouse/transfers/{Id:guid}"
+@page "/warehouse/transfers/{Id:guid}/execute"
 @inject TransfersClient TransfersClient
 @inject NavigationManager NavigationManager
 @inject ToastService ToastService
 
-<PageTitle>Transfer Detail - LKvitai.MES</PageTitle>
+<PageTitle>Execute Transfer - LKvitai.MES</PageTitle>
 
-<h1>Transfer Detail</h1>
+<h1>Execute Transfer</h1>
 
 @if (_apiError is not null)
 {
@@ -32,51 +32,13 @@
                 <div>
                     <h4 class="mb-1">@_transfer.TransferNumber</h4>
                     <div class="text-muted">@_transfer.FromWarehouse -> @_transfer.ToWarehouse</div>
-                    <div class="small text-muted">Requested by @_transfer.RequestedBy on @_transfer.RequestedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</div>
+                    <div class="small text-muted">Status: @_transfer.Status</div>
                 </div>
                 <div class="d-flex align-items-center gap-2">
-                    <span class="badge @GetStatusBadge(_transfer.Status)">@_transfer.Status</span>
                     <button class="btn btn-outline-secondary btn-sm" @onclick="BackToList">Back</button>
                     <button class="btn btn-outline-secondary btn-sm" @onclick="LoadAsync">Refresh</button>
+                    <button class="btn btn-primary btn-sm" @onclick="OpenConfirm" disabled="@(!CanExecute || _isSubmitting)">Execute</button>
                 </div>
-            </div>
-
-            <div class="row g-2 mb-3">
-                <div class="col-md-3">
-                    <div class="border rounded p-2 h-100">
-                        <div class="small text-muted">Approved By</div>
-                        <div>@(_transfer.ApprovedBy ?? "-")</div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="border rounded p-2 h-100">
-                        <div class="small text-muted">Approved At</div>
-                        <div>@(_transfer.ApprovedAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "-")</div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="border rounded p-2 h-100">
-                        <div class="small text-muted">Executed At</div>
-                        <div>@(_transfer.ExecutedAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "-")</div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="border rounded p-2 h-100">
-                        <div class="small text-muted">Completed At</div>
-                        <div>@(_transfer.CompletedAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "-")</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="d-flex gap-2 mb-3">
-                @if (CanApprove)
-                {
-                    <button class="btn btn-warning" @onclick="ApproveAsync" disabled="@_isSubmitting">Approve</button>
-                }
-                @if (CanExecute)
-                {
-                    <button class="btn btn-primary" @onclick="ExecuteAsync" disabled="@_isSubmitting">Execute</button>
-                }
             </div>
 
             <div class="table-responsive">
@@ -106,6 +68,27 @@
     </div>
 </div>
 
+@if (_confirmExecute)
+{
+    <div class="modal show d-block" tabindex="-1" style="background: rgba(0, 0, 0, 0.45);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirm Execution</h5>
+                    <button type="button" class="btn-close" @onclick="CloseConfirm"></button>
+                </div>
+                <div class="modal-body">
+                    Execute transfer? Stock will be moved.
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline-secondary" @onclick="CloseConfirm">Cancel</button>
+                    <button class="btn btn-primary" @onclick="ConfirmExecuteAsync" disabled="@_isSubmitting">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     [Parameter]
     public Guid Id { get; set; }
@@ -114,12 +97,9 @@
     private ApiException? _apiError;
     private bool _isLoading;
     private bool _isSubmitting;
+    private bool _confirmExecute;
 
-    private bool CanApprove => string.Equals(_transfer?.Status, "PENDINGAPPROVAL", StringComparison.OrdinalIgnoreCase);
-
-    private bool CanExecute =>
-        string.Equals(_transfer?.Status, "DRAFT", StringComparison.OrdinalIgnoreCase)
-        || string.Equals(_transfer?.Status, "APPROVED", StringComparison.OrdinalIgnoreCase);
+    private bool CanExecute => string.Equals(_transfer?.Status, "APPROVED", StringComparison.OrdinalIgnoreCase);
 
     protected override async Task OnParametersSetAsync()
     {
@@ -147,37 +127,32 @@
         }
     }
 
-    private async Task ApproveAsync()
+    private void OpenConfirm()
     {
-        await RunActionAsync(() => TransfersClient.ApproveTransferAsync(
-            Id,
-            new ApproveTransferRequestDto
-            {
-                CommandId = Guid.NewGuid()
-            }),
-            "Transfer approved.");
+        _confirmExecute = true;
     }
 
-    private async Task ExecuteAsync()
+    private void CloseConfirm()
     {
-        await RunActionAsync(() => TransfersClient.ExecuteTransferAsync(
-            Id,
-            new ExecuteTransferRequestDto
-            {
-                CommandId = Guid.NewGuid()
-            }),
-            "Transfer executed.");
+        _confirmExecute = false;
     }
 
-    private async Task RunActionAsync(Func<Task<TransferDto>> action, string successMessage)
+    private async Task ConfirmExecuteAsync()
     {
         _isSubmitting = true;
         _apiError = null;
 
         try
         {
-            _transfer = await action();
-            ToastService.ShowSuccess(successMessage);
+            await TransfersClient.ExecuteTransferAsync(
+                Id,
+                new ExecuteTransferRequestDto
+                {
+                    CommandId = Guid.NewGuid()
+                });
+
+            _confirmExecute = false;
+            ToastService.ShowSuccess("Transfer executed successfully.");
             await LoadAsync();
         }
         catch (ApiException ex)
@@ -206,17 +181,6 @@
     {
         _apiError = null;
     }
-
-    private static string GetStatusBadge(string status) => status.ToUpperInvariant() switch
-    {
-        "DRAFT" => "bg-secondary",
-        "PENDINGAPPROVAL" => "bg-warning text-dark",
-        "APPROVED" => "bg-info text-dark",
-        "INTRANSIT" => "bg-primary",
-        "COMPLETED" => "bg-success",
-        "CANCELLED" => "bg-danger",
-        _ => "bg-secondary"
-    };
 
     private static string BuildErrorMessage(ApiException ex)
     {

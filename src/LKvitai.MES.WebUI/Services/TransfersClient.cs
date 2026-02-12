@@ -45,6 +45,9 @@ public sealed class TransfersClient
     public Task<TransferDto> CreateTransferAsync(CreateTransferRequestDto request, CancellationToken cancellationToken = default)
         => PostAsync<TransferDto>("/api/warehouse/v1/transfers", request, cancellationToken);
 
+    public Task<TransferDto> SubmitTransferAsync(Guid id, SubmitTransferRequestDto request, CancellationToken cancellationToken = default)
+        => PostAsync<TransferDto>($"/api/warehouse/v1/transfers/{id}/submit", request, cancellationToken);
+
     public Task<TransferDto> ApproveTransferAsync(Guid id, ApproveTransferRequestDto request, CancellationToken cancellationToken = default)
         => PostAsync<TransferDto>($"/api/warehouse/v1/transfers/{id}/approve", request, cancellationToken);
 

@@ -6,6 +6,7 @@ public record TransferLineDto
     public decimal Qty { get; init; }
     public int FromLocationId { get; init; }
     public int ToLocationId { get; init; }
+    public Guid? LotId { get; init; }
 }
 
 public record TransferDto
@@ -17,6 +18,7 @@ public record TransferDto
     public string Status { get; init; } = string.Empty;
     public string RequestedBy { get; init; } = string.Empty;
     public string? ApprovedBy { get; init; }
+    public string? ExecutedBy { get; init; }
     public DateTimeOffset RequestedAt { get; init; }
     public DateTimeOffset? ApprovedAt { get; init; }
     public DateTimeOffset? ExecutedAt { get; init; }
@@ -37,6 +39,12 @@ public record ApproveTransferRequestDto
 {
     public Guid CommandId { get; init; } = Guid.NewGuid();
     public string? ApprovedBy { get; init; }
+    public string? Reason { get; init; }
+}
+
+public record SubmitTransferRequestDto
+{
+    public Guid CommandId { get; init; } = Guid.NewGuid();
 }
 
 public record ExecuteTransferRequestDto

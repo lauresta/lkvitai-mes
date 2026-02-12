@@ -1,0 +1,285 @@
+@page "/warehouse/transfers"
+@inject TransfersClient TransfersClient
+@inject NavigationManager NavigationManager
+@inject ToastService ToastService
+
+<PageTitle>Transfers - LKvitai.MES</PageTitle>
+
+<h1>Stock Transfers</h1>
+
+@if (_apiError is not null)
+{
+    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                 TraceId="@_apiError.TraceId"
+                 OnRetry="LoadAsync"
+                 OnDismiss="DismissError" />
+}
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body d-flex justify-content-between align-items-end flex-wrap gap-2">
+        <div>
+            <label class="form-label">Status</label>
+            <select class="form-select" @bind="_status" style="min-width: 220px;">
+                <option value="">All</option>
+                <option value="DRAFT">DRAFT</option>
+                <option value="PENDING_APPROVAL">PENDING_APPROVAL</option>
+                <option value="APPROVED">APPROVED</option>
+                <option value="IN_TRANSIT">IN_TRANSIT</option>
+                <option value="COMPLETED">COMPLETED</option>
+                <option value="CANCELLED">CANCELLED</option>
+            </select>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-primary" @onclick="ApplyFilterAsync" disabled="@_isLoading">Apply</button>
+            <button class="btn btn-outline-secondary" @onclick="ResetFilterAsync" disabled="@_isLoading">Reset</button>
+            <button class="btn btn-success" @onclick="OpenCreate">+ Create Transfer</button>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm position-relative">
+    <LoadingSpinner IsLoading="_isLoading || _isSubmitting" />
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Transfer</th>
+                        <th>From</th>
+                        <th>To</th>
+                        <th>Status</th>
+                        <th>Requested By</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (_rows.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="6">
+                                <EmptyState Title="No transfers found."
+                                            Message="Create your first transfer request."
+                                            IconCss="bi bi-arrow-left-right"
+                                            OnAction="OpenCreateAsync" />
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var row in _rows)
+                        {
+                            <tr>
+                                <td>@row.TransferNumber</td>
+                                <td>@row.FromWarehouse</td>
+                                <td>@row.ToWarehouse</td>
+                                <td><span class="badge @GetStatusBadge(row.Status)">@row.Status</span></td>
+                                <td>@row.RequestedBy</td>
+                                <td class="d-flex flex-wrap gap-1">
+                                    <button class="btn btn-sm btn-outline-secondary" @onclick="() => OpenExecute(row.Id)">View</button>
+                                    <button class="btn btn-sm btn-outline-primary" disabled="@(!CanSubmit(row))" @onclick="() => SubmitAsync(row.Id)">Submit</button>
+                                    <button class="btn btn-sm btn-warning" disabled="@(!CanApprove(row))" @onclick="() => OpenApprove(row)">Approve</button>
+                                    <button class="btn btn-sm btn-success" disabled="@(!CanExecute(row))" @onclick="() => OpenExecute(row.Id)">Execute</button>
+                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => CancelAsync(row.TransferNumber)">Cancel</button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@if (_approveModalTarget is not null)
+{
+    <div class="modal show d-block" tabindex="-1" style="background: rgba(0, 0, 0, 0.45);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Approve Transfer</h5>
+                    <button type="button" class="btn-close" @onclick="CloseApprove"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-2">Transfer: <strong>@_approveModalTarget.TransferNumber</strong></div>
+                    <label class="form-label">Reason (optional)</label>
+                    <textarea class="form-control" rows="3" @bind="_approveReason"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline-secondary" @onclick="CloseApprove">Cancel</button>
+                    <button class="btn btn-primary" @onclick="ApproveAsync" disabled="@_isSubmitting">Approve</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private readonly List<TransferDto> _rows = [];
+    private ApiException? _apiError;
+    private bool _isLoading;
+    private bool _isSubmitting;
+    private string _status = string.Empty;
+    private TransferDto? _approveModalTarget;
+    private string _approveReason = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task ApplyFilterAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task ResetFilterAsync()
+    {
+        _status = string.Empty;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            var response = await TransfersClient.GetTransfersAsync(
+                _status,
+                null,
+                null,
+                1,
+                200);
+
+            _rows.Clear();
+            _rows.AddRange(response.Items);
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private bool CanSubmit(TransferDto row) => string.Equals(row.Status, "DRAFT", StringComparison.OrdinalIgnoreCase);
+
+    private bool CanApprove(TransferDto row) => string.Equals(row.Status, "PENDING_APPROVAL", StringComparison.OrdinalIgnoreCase);
+
+    private bool CanExecute(TransferDto row) => string.Equals(row.Status, "APPROVED", StringComparison.OrdinalIgnoreCase);
+
+    private async Task SubmitAsync(Guid id)
+    {
+        _isSubmitting = true;
+        try
+        {
+            await TransfersClient.SubmitTransferAsync(id, new SubmitTransferRequestDto { CommandId = Guid.NewGuid() });
+            ToastService.ShowSuccess("Transfer submitted for approval.");
+            await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private void OpenApprove(TransferDto row)
+    {
+        _approveModalTarget = row;
+        _approveReason = string.Empty;
+    }
+
+    private void CloseApprove()
+    {
+        _approveModalTarget = null;
+        _approveReason = string.Empty;
+    }
+
+    private async Task ApproveAsync()
+    {
+        if (_approveModalTarget is null)
+        {
+            return;
+        }
+
+        _isSubmitting = true;
+        try
+        {
+            await TransfersClient.ApproveTransferAsync(_approveModalTarget.Id, new ApproveTransferRequestDto
+            {
+                CommandId = Guid.NewGuid(),
+                Reason = string.IsNullOrWhiteSpace(_approveReason) ? null : _approveReason.Trim()
+            });
+
+            ToastService.ShowSuccess("Transfer approved.");
+            CloseApprove();
+            await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private Task CancelAsync(string transferNumber)
+    {
+        ToastService.ShowError($"Cancel action is not available for {transferNumber}.");
+        return Task.CompletedTask;
+    }
+
+    private void OpenCreate()
+    {
+        NavigationManager.NavigateTo("/warehouse/transfers/create");
+    }
+
+    private Task OpenCreateAsync()
+    {
+        OpenCreate();
+        return Task.CompletedTask;
+    }
+
+    private void OpenExecute(Guid id)
+    {
+        NavigationManager.NavigateTo($"/warehouse/transfers/{id}/execute");
+    }
+
+    private void DismissError()
+    {
+        _apiError = null;
+    }
+
+    private static string GetStatusBadge(string status) => status.ToUpperInvariant() switch
+    {
+        "DRAFT" => "bg-secondary",
+        "PENDING_APPROVAL" => "bg-warning text-dark",
+        "APPROVED" => "bg-info text-dark",
+        "IN_TRANSIT" => "bg-primary",
+        "COMPLETED" => "bg-success",
+        "CANCELLED" => "bg-danger",
+        _ => "bg-secondary"
+    };
+
+    private static string BuildErrorMessage(ApiException ex)
+    {
+        if (!string.IsNullOrWhiteSpace(ex.UserMessage))
+        {
+            return ex.UserMessage;
+        }
+
+        return ex.ProblemDetails?.Detail
+               ?? ex.ProblemDetails?.Title
+               ?? "Transfer request failed.";
+    }
+}
