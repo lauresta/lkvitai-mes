@@ -3,8 +3,10 @@
 @implements IAsyncDisposable
 @using System.Globalization
 @using Microsoft.AspNetCore.Components.Web
+@using Microsoft.AspNetCore.WebUtilities
 @using LKvitai.MES.WebUI.Infrastructure
 @using LKvitai.MES.WebUI.Models
+@using LKvitai.MES.WebUI.Services
 @inject VisualizationClient VisualizationClient
 @inject ToastService ToastService
 @inject IJSRuntime JS
@@ -19,15 +21,30 @@
             <p class="viz-subtitle">Explore bins, capacity, and handling units in 3D or 2D.</p>
         </div>
         <div class="viz-toolbar-right">
-            <div class="input-group">
-                <input class="form-control"
-                       placeholder="Search location (e.g. R3-C6-L3)"
-                       @bind="_searchQuery"
-                       @bind:event="oninput"
-                       @onkeydown="HandleSearchKeyAsync" />
-                <button class="btn btn-outline-secondary" @onclick="SearchAsync">
-                    <i class="bi bi-search"></i>
-                </button>
+            <div class="viz-search-wrap">
+                <div class="input-group">
+                    <input class="form-control"
+                           placeholder="Search location (e.g. R3-C6-L3)"
+                           value="@_searchQuery"
+                           @oninput="OnSearchInput"
+                           @onkeydown="HandleSearchKeyAsync" />
+                    <button class="btn btn-outline-secondary" @onclick="SearchAsync">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+                @if (_showSuggestions && _autocompleteSuggestions.Count > 0)
+                {
+                    <div class="list-group viz-suggestions">
+                        @foreach (var suggestion in _autocompleteSuggestions)
+                        {
+                            <button type="button"
+                                    class="list-group-item list-group-item-action"
+                                    @onclick="() => SelectSuggestionAsync(suggestion)">
+                                @suggestion
+                            </button>
+                        }
+                    </div>
+                }
             </div>
             <select class="form-select"
                     value="@_zoneFilter"
@@ -94,9 +111,13 @@
                 }
                 else
                 {
+                    <div class="viz-2d-controls">
+                        <button class="btn btn-sm btn-outline-secondary" @onclick="ZoomOut2dAsync" title="Zoom out">-</button>
+                        <button class="btn btn-sm btn-outline-secondary" @onclick="ZoomIn2dAsync" title="Zoom in">+</button>
+                    </div>
                     <div class="viz-2d-wrap">
                         <svg class="viz-2d-canvas"
-                             viewBox="@SvgViewBox"
+                             viewBox="@CurrentSvgViewBox"
                              preserveAspectRatio="xMidYMid meet">
                             @foreach (var zone in _model.Zones)
                             {
@@ -117,11 +138,18 @@
                                       width="6"
                                       height="6"
                                       fill="@bin.Color"
-                                      @onclick="@(() => SelectBin(bin.Code))" />
+                                      @onclick="@(() => SelectBinAsync(bin.Code))" />
                             }
                         </svg>
                     </div>
                 }
+                <div class="viz-legend">
+                    <div class="viz-legend-item"><span class="viz-legend-color" style="background:#808080;"></span>Empty</div>
+                    <div class="viz-legend-item"><span class="viz-legend-color" style="background:#FFFF00;"></span>Low</div>
+                    <div class="viz-legend-item"><span class="viz-legend-color" style="background:#FFA500;"></span>Full</div>
+                    <div class="viz-legend-item"><span class="viz-legend-color" style="background:#0000FF;"></span>Reserved</div>
+                    <div class="viz-legend-item"><span class="viz-legend-color" style="background:#FF0000;"></span>Over capacity</div>
+                </div>
             </div>
             <div class="viz-details">
                 @if (_selectedBin is null)
@@ -181,8 +209,6 @@
     private const decimal SvgScale = 12m;
     private const decimal SvgHeight = 640m;
     private const decimal SvgWidth = 1000m;
-    private static readonly string SvgViewBox =
-        FormattableString.Invariant($"0 0 {SvgWidth} {SvgHeight}");
 
     private Visualization3dDto? _model;
     private VisualizationBinDto? _selectedBin;
@@ -193,9 +219,24 @@
     private string _searchQuery = string.Empty;
     private string _zoneFilter = "ALL";
     private string _statusFilter = "ALL";
+    private decimal _zoom2d = 1m;
+    private bool _showSuggestions;
+    private List<string> _autocompleteSuggestions = [];
 
     private bool _is3dView =>
         NavigationManager.Uri.Contains("/warehouse/visualization/3d", StringComparison.OrdinalIgnoreCase);
+
+    private string CurrentSvgViewBox
+    {
+        get
+        {
+            var width = SvgWidth / _zoom2d;
+            var height = SvgHeight / _zoom2d;
+            var originX = (SvgWidth - width) / 2m;
+            var originY = (SvgHeight - height) / 2m;
+            return FormattableString.Invariant($"{originX:0.###} {originY:0.###} {width:0.###} {height:0.###}");
+        }
+    }
 
     private IReadOnlyList<string> ZoneOptions =>
         _model?.Zones
@@ -247,7 +288,10 @@
             await JS.InvokeVoidAsync("warehouseVisualization.dispose", CanvasId);
         }
 
-        NavigationManager.NavigateTo(targetRoute);
+        var suffix = _selectedBin is null
+            ? string.Empty
+            : $"?selected={Uri.EscapeDataString(_selectedBin.Code)}";
+        NavigationManager.NavigateTo($"{targetRoute}{suffix}");
         _renderRequested = _model is not null;
     }
 
@@ -256,7 +300,23 @@
         if (args.Key == "Enter")
         {
             await SearchAsync();
+            _showSuggestions = false;
         }
+        else if (args.Key == "Escape")
+        {
+            _showSuggestions = false;
+        }
+    }
+
+    private Task OnSearchInput(ChangeEventArgs args)
+    {
+        _searchQuery = args.Value?.ToString() ?? string.Empty;
+        _autocompleteSuggestions = WarehouseVisualizationSearch.GetSuggestions(
+            _model?.Bins ?? [],
+            _searchQuery,
+            maxResults: 8);
+        _showSuggestions = _autocompleteSuggestions.Count > 0;
+        return Task.CompletedTask;
     }
 
     private async Task SearchAsync()
@@ -266,8 +326,7 @@
             return;
         }
 
-        var match = GetFilteredBins().FirstOrDefault(x =>
-            string.Equals(x.Code, _searchQuery.Trim(), StringComparison.OrdinalIgnoreCase));
+        var match = WarehouseVisualizationSearch.FindBestMatch(_model.Bins, _searchQuery.Trim());
 
         if (match is null)
         {
@@ -275,12 +334,20 @@
             return;
         }
 
-        SelectBin(match.Code);
+        _showSuggestions = false;
+        await FocusBinAsync(match.Code);
+    }
 
-        if (_is3dView)
-        {
-            await JS.InvokeVoidAsync("warehouseVisualization.focusBin", CanvasId, match.Code);
-        }
+    private async Task SelectSuggestionAsync(string code)
+    {
+        _searchQuery = code;
+        _showSuggestions = false;
+        await FocusBinAsync(code);
+    }
+
+    private async Task SelectBinAsync(string code)
+    {
+        await FocusBinAsync(code);
     }
 
     private void SelectBin(string code)
@@ -293,6 +360,20 @@
 
         _selectedBin = _model.Bins.FirstOrDefault(x =>
             string.Equals(x.Code, code, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private async Task FocusBinAsync(string code)
+    {
+        SelectBin(code);
+        if (_selectedBin is null)
+        {
+            return;
+        }
+
+        if (_is3dView)
+        {
+            await JS.InvokeVoidAsync("warehouseVisualization.focusBin", CanvasId, code);
+        }
     }
 
     private async Task OnZoneFilterChangedAsync(ChangeEventArgs args)
@@ -325,6 +406,18 @@
         }
     }
 
+    private Task ZoomIn2dAsync()
+    {
+        _zoom2d = Math.Clamp(_zoom2d + 0.25m, 0.5m, 3m);
+        return Task.CompletedTask;
+    }
+
+    private Task ZoomOut2dAsync()
+    {
+        _zoom2d = Math.Clamp(_zoom2d - 0.25m, 0.5m, 3m);
+        return Task.CompletedTask;
+    }
+
     private async Task LoadAsync()
     {
         _isLoading = true;
@@ -333,6 +426,19 @@
         try
         {
             _model = await VisualizationClient.GetVisualization3dAsync();
+            _autocompleteSuggestions = WarehouseVisualizationSearch.GetSuggestions(
+                _model.Bins,
+                _searchQuery,
+                maxResults: 8);
+            _showSuggestions = false;
+
+            var selectedFromQuery = GetSelectedQueryValue();
+            if (!string.IsNullOrWhiteSpace(selectedFromQuery))
+            {
+                SelectBin(selectedFromQuery);
+                _searchQuery = selectedFromQuery;
+            }
+
             if (_selectedBin is not null)
             {
                 SelectBin(_selectedBin.Code);
@@ -352,6 +458,19 @@
         {
             _isLoading = false;
         }
+    }
+
+    private string? GetSelectedQueryValue()
+    {
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        var query = QueryHelpers.ParseQuery(uri.Query);
+        if (!query.TryGetValue("selected", out var selected))
+        {
+            return null;
+        }
+
+        var value = selected.ToString();
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
 
     private static string FormatCapacity(VisualizationCapacityDto capacity)

@@ -641,3 +641,9 @@
   Evidence: `dotnet run --project src/LKvitai.MES.WebUI` failed with HTTPS developer certificate error (`src/LKvitai.MES.WebUI/Program.cs:58`); fallback startup succeeded via `DOTNET_ENVIRONMENT=Development ASPNETCORE_URLS=http://127.0.0.1:5001 dotnet run --no-launch-profile --project src/LKvitai.MES.WebUI /p:UseAppHost=false`, but browser interaction checks (render timing, click latency, camera controls) were not executable in this terminal-only run.
   Impact: Full manual acceptance validation for `/warehouse/visualization/3d` could not be completed end-to-end.
   Proposed minimal fix: Install/trust local HTTPS dev certificate and execute the documented browser walkthrough for 3D rendering, interaction, and refresh behavior.
+- Timestamp: 2026-02-12T21:39:06Z
+  TaskId: PRD-1611
+  Type: TEST-GAP
+  Evidence: Task validation command `dotnet run --project src/LKvitai.MES.WebUI` failed with missing HTTPS developer certificate (`src/LKvitai.MES.WebUI/Program.cs:58`); HTTP fallback startup succeeded via `DOTNET_ENVIRONMENT=Development ASPNETCORE_URLS=http://127.0.0.1:5001 dotnet run --no-launch-profile --project src/LKvitai.MES.WebUI /p:UseAppHost=false`, but interactive browser checks (toggle UX, autocomplete dropdown behavior, fly-to animation timing, 2D zoom clicks) were not executable in this terminal-only run.
+  Impact: Full manual acceptance verification for 2D/3D interaction scenarios is pending.
+  Proposed minimal fix: Install/trust local HTTPS dev certificate and execute browser validation on `/warehouse/visualization/3d` and `/warehouse/visualization/2d`.

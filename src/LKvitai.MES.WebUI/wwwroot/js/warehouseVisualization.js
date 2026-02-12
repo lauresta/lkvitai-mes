@@ -294,6 +294,7 @@
             });
 
             let selectedCode = null;
+            let cameraFlightHandle = null;
             function applySelection(code) {
                 selectedCode = code || null;
                 interactiveMeshes.forEach((mesh) => {
@@ -321,17 +322,47 @@
 
                 const target = mesh.position;
                 const focusDistance = Math.max(8, cameraDistance * 0.45);
-                controls.target.set(target.x, target.y, target.z);
-                camera.position.set(
+                const desiredTarget = new THREE.Vector3(target.x, target.y, target.z);
+                const desiredCamera = new THREE.Vector3(
                     target.x + focusDistance,
                     target.y + focusDistance * 0.85,
                     target.z + focusDistance);
-                controls.update();
+
+                const startTarget = controls.target.clone();
+                const startCamera = camera.position.clone();
+                const durationMs = 1000;
+                const startedAt = performance.now();
+
+                if (cameraFlightHandle) {
+                    window.cancelAnimationFrame(cameraFlightHandle);
+                    cameraFlightHandle = null;
+                }
+
+                const animateFlight = (timestamp) => {
+                    const elapsed = timestamp - startedAt;
+                    const progress = Math.min(1, elapsed / durationMs);
+                    const eased = progress < 0.5
+                        ? 2 * progress * progress
+                        : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+
+                    camera.position.lerpVectors(startCamera, desiredCamera, eased);
+                    controls.target.lerpVectors(startTarget, desiredTarget, eased);
+                    controls.update();
+
+                    if (progress < 1) {
+                        cameraFlightHandle = window.requestAnimationFrame(animateFlight);
+                    } else {
+                        cameraFlightHandle = null;
+                    }
+                };
+
+                cameraFlightHandle = window.requestAnimationFrame(animateFlight);
                 applySelection(code);
                 log("focusBin: success", {
                     code,
-                    target: { x: target.x, y: target.y, z: target.z },
-                    camera: { x: camera.position.x, y: camera.position.y, z: camera.position.z }
+                    target: { x: desiredTarget.x, y: desiredTarget.y, z: desiredTarget.z },
+                    camera: { x: desiredCamera.x, y: desiredCamera.y, z: desiredCamera.z },
+                    durationMs
                 });
             }
 
@@ -418,7 +449,14 @@
                 onWheel,
                 focusBin,
                 applySelection,
-                stop: () => window.cancelAnimationFrame(animationFrameHandle)
+                stop: () => {
+                    if (animationFrameHandle) {
+                        window.cancelAnimationFrame(animationFrameHandle);
+                    }
+                    if (cameraFlightHandle) {
+                        window.cancelAnimationFrame(cameraFlightHandle);
+                    }
+                }
             };
 
             log("render: completed", { containerId });
