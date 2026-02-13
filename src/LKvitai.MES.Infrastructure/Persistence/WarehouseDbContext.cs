@@ -66,6 +66,10 @@ public class WarehouseDbContext : DbContext
     public DbSet<InboundShipmentLine> InboundShipmentLines => Set<InboundShipmentLine>();
     public DbSet<AdjustmentReasonCode> AdjustmentReasonCodes => Set<AdjustmentReasonCode>();
     public DbSet<ApprovalRule> ApprovalRules => Set<ApprovalRule>();
+    public DbSet<Role> Roles => Set<Role>();
+    public DbSet<Permission> Permissions => Set<Permission>();
+    public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
+    public DbSet<UserRoleAssignment> UserRoleAssignments => Set<UserRoleAssignment>();
     public DbSet<WarehouseSettings> WarehouseSettings => Set<WarehouseSettings>();
     public DbSet<SerialNumber> SerialNumbers => Set<SerialNumber>();
     public DbSet<SKUSequence> SKUSequences => Set<SKUSequence>();
@@ -909,6 +913,95 @@ public class WarehouseDbContext : DbContext
                     "\"ThresholdType\" IN ('AMOUNT','PERCENTAGE')");
             });
         });
+
+        modelBuilder.Entity<Role>(entity =>
+        {
+            entity.ToTable("roles");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.Description).HasMaxLength(500);
+            entity.Property(e => e.IsSystemRole).HasDefaultValue(false).IsRequired();
+            entity.HasIndex(e => e.Name).IsUnique();
+            entity.HasIndex(e => e.IsSystemRole);
+        });
+
+        modelBuilder.Entity<Permission>(entity =>
+        {
+            entity.ToTable("permissions");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Resource).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.Action).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.Scope).HasMaxLength(50).IsRequired();
+            entity.HasIndex(e => new { e.Resource, e.Action, e.Scope }).IsUnique();
+            entity.ToTable(t => t.HasCheckConstraint("ck_permissions_scope", "\"Scope\" IN ('ALL','OWN')"));
+        });
+
+        modelBuilder.Entity<RolePermission>(entity =>
+        {
+            entity.ToTable("role_permissions");
+            entity.HasKey(e => new { e.RoleId, e.PermissionId });
+            entity.HasOne(e => e.Role)
+                .WithMany(e => e.RolePermissions)
+                .HasForeignKey(e => e.RoleId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.Permission)
+                .WithMany(e => e.RolePermissions)
+                .HasForeignKey(e => e.PermissionId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<UserRoleAssignment>(entity =>
+        {
+            entity.ToTable("user_role_assignments");
+            entity.HasKey(e => new { e.UserId, e.RoleId });
+            entity.Property(e => e.AssignedAt).IsRequired();
+            entity.Property(e => e.AssignedBy).HasMaxLength(200).IsRequired();
+            entity.HasOne(e => e.Role)
+                .WithMany()
+                .HasForeignKey(e => e.RoleId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        var systemCreatedAt = new DateTimeOffset(2026, 2, 13, 0, 0, 0, TimeSpan.Zero);
+
+        modelBuilder.Entity<Permission>().HasData(
+            new Permission { Id = 1, Resource = "ITEM", Action = "READ", Scope = "ALL" },
+            new Permission { Id = 2, Resource = "ITEM", Action = "UPDATE", Scope = "ALL" },
+            new Permission { Id = 3, Resource = "LOCATION", Action = "READ", Scope = "ALL" },
+            new Permission { Id = 4, Resource = "LOCATION", Action = "UPDATE", Scope = "ALL" },
+            new Permission { Id = 5, Resource = "ORDER", Action = "READ", Scope = "ALL" },
+            new Permission { Id = 6, Resource = "ORDER", Action = "UPDATE", Scope = "ALL" },
+            new Permission { Id = 7, Resource = "QC", Action = "READ", Scope = "ALL" },
+            new Permission { Id = 8, Resource = "QC", Action = "UPDATE", Scope = "ALL" });
+
+        modelBuilder.Entity<Role>().HasData(
+            new Role { Id = 1, Name = "Admin", Description = "System administrator role", IsSystemRole = true, CreatedAt = systemCreatedAt, CreatedBy = "system" },
+            new Role { Id = 2, Name = "Manager", Description = "Warehouse manager role", IsSystemRole = true, CreatedAt = systemCreatedAt, CreatedBy = "system" },
+            new Role { Id = 3, Name = "Operator", Description = "Warehouse operator role", IsSystemRole = true, CreatedAt = systemCreatedAt, CreatedBy = "system" },
+            new Role { Id = 4, Name = "QCInspector", Description = "QC inspector role", IsSystemRole = true, CreatedAt = systemCreatedAt, CreatedBy = "system" });
+
+        modelBuilder.Entity<RolePermission>().HasData(
+            new RolePermission { RoleId = 1, PermissionId = 1 },
+            new RolePermission { RoleId = 1, PermissionId = 2 },
+            new RolePermission { RoleId = 1, PermissionId = 3 },
+            new RolePermission { RoleId = 1, PermissionId = 4 },
+            new RolePermission { RoleId = 1, PermissionId = 5 },
+            new RolePermission { RoleId = 1, PermissionId = 6 },
+            new RolePermission { RoleId = 1, PermissionId = 7 },
+            new RolePermission { RoleId = 1, PermissionId = 8 },
+            new RolePermission { RoleId = 2, PermissionId = 1 },
+            new RolePermission { RoleId = 2, PermissionId = 2 },
+            new RolePermission { RoleId = 2, PermissionId = 3 },
+            new RolePermission { RoleId = 2, PermissionId = 4 },
+            new RolePermission { RoleId = 2, PermissionId = 5 },
+            new RolePermission { RoleId = 2, PermissionId = 6 },
+            new RolePermission { RoleId = 2, PermissionId = 7 },
+            new RolePermission { RoleId = 2, PermissionId = 8 },
+            new RolePermission { RoleId = 3, PermissionId = 1 },
+            new RolePermission { RoleId = 3, PermissionId = 3 },
+            new RolePermission { RoleId = 3, PermissionId = 5 },
+            new RolePermission { RoleId = 4, PermissionId = 7 },
+            new RolePermission { RoleId = 4, PermissionId = 8 });
 
         modelBuilder.Entity<SerialNumber>(entity =>
         {

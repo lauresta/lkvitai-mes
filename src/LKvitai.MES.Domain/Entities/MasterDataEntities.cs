@@ -1190,6 +1190,45 @@ public sealed class ApprovalRule : AuditableEntity
     public int Priority { get; set; } = 1;
 }
 
+public sealed class Role : AuditableEntity
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public bool IsSystemRole { get; set; }
+
+    public ICollection<RolePermission> RolePermissions { get; set; } = new List<RolePermission>();
+}
+
+public sealed class Permission
+{
+    public int Id { get; set; }
+    public string Resource { get; set; } = string.Empty;
+    public string Action { get; set; } = string.Empty;
+    public string Scope { get; set; } = "ALL";
+
+    public ICollection<RolePermission> RolePermissions { get; set; } = new List<RolePermission>();
+}
+
+public sealed class RolePermission
+{
+    public int RoleId { get; set; }
+    public int PermissionId { get; set; }
+
+    public Role? Role { get; set; }
+    public Permission? Permission { get; set; }
+}
+
+public sealed class UserRoleAssignment
+{
+    public Guid UserId { get; set; }
+    public int RoleId { get; set; }
+    public DateTimeOffset AssignedAt { get; set; } = DateTimeOffset.UtcNow;
+    public string AssignedBy { get; set; } = string.Empty;
+
+    public Role? Role { get; set; }
+}
+
 public sealed class SerialNumber
 {
     public int Id { get; set; }

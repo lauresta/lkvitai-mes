@@ -755,3 +755,16 @@
   Evidence: Required validation calls for `POST /api/warehouse/v1/admin/approval-rules` and `/evaluate` returned `HTTP/1.1 403` from `Server: AirTunes/925.5.1` (`/tmp/prd1623-post-rule.out:1-4`, `/tmp/prd1623-evaluate.out:1-4`) instead of the project API runtime.
   Impact: Could not execute task curl acceptance checks against the implemented approval-rules endpoints in this environment.
   Proposed minimal fix: Run project API on a known isolated port and rerun the exact PRD-1623 curl sequence with a valid token.
+- Timestamp: 2026-02-13T05:36:24Z
+  TaskId: PRD-1624
+  Type: INCONSISTENCY
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S8.md:408, docs/prod-ready/prod-ready-tasks-PHASE15-S8.md:426, src/LKvitai.MES.Api/Api/Controllers/AdminUsersController.cs:11
+  Impact: Task examples/documentation assume integer user IDs and a single `AdminController.cs`, while the codebase uses GUID user IDs and split admin controllers; implementing literal examples would break compatibility with existing admin user model.
+  Proposed minimal fix: Keep GUID-based `/api/warehouse/v1/admin/users/{userId}/roles` and implement role CRUD in `AdminRolesController`, then update task text to reference GUID IDs and controller split.
+
+- Timestamp: 2026-02-13T05:36:24Z
+  TaskId: PRD-1624
+  Type: TEST-GAP
+  Evidence: Validation curl commands to http://localhost:5000/api/warehouse/v1/admin/roles returned `HTTP/1.1 403 Forbidden` with `Server: AirTunes/925.5.1` (see `/tmp/prd1624_roles_get.headers`, `/tmp/prd1624_roles_post.headers`).
+  Impact: Task-mandated API validation could not verify PRD-1624 endpoints because localhost:5000 is occupied by a non-project service in this environment.
+  Proposed minimal fix: Run validation against a started LKvitai.MES.Api instance on its bound port (or rebind project to 5000) and replay the same curl commands.

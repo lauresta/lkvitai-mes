@@ -165,6 +165,7 @@ builder.Services.AddSingleton<IAdvancedWarehouseStore, AdvancedWarehouseStore>()
 builder.Services.AddScoped<IWarehouseSettingsService, WarehouseSettingsService>();
 builder.Services.AddScoped<IReasonCodeService, ReasonCodeService>();
 builder.Services.AddScoped<IApprovalRuleService, ApprovalRuleService>();
+builder.Services.AddScoped<IRoleManagementService, RoleManagementService>();
 
 var warehouseConnectionString =
     builder.Configuration.GetConnectionString("WarehouseDb")
