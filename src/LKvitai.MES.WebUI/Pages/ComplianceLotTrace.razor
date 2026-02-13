@@ -1,0 +1,140 @@
+@page "/warehouse/compliance/lot-trace"
+@inject ReportsClient ReportsClient
+@inject ToastService ToastService
+@inject IJSRuntime JavaScript
+
+<PageTitle>Lot Traceability - LKvitai.MES</PageTitle>
+
+<h1>Lot Traceability</h1>
+
+@if (_apiError is not null)
+{
+    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                 TraceId="@_apiError.TraceId"
+                 OnRetry="BuildTraceAsync"
+                 OnDismiss="() => _apiError = null" />
+}
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">Lot Number</label>
+                <input class="form-control" @bind="_lotNumber" placeholder="LOT-2026-001" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Direction</label>
+                <select class="form-select" @bind="_direction">
+                    <option value="BACKWARD">Backward (Supplier)</option>
+                    <option value="FORWARD">Forward (Customer)</option>
+                </select>
+            </div>
+            <div class="col-md-4 d-flex gap-2">
+                <button class="btn btn-primary" @onclick="BuildTraceAsync" disabled="@_isLoading">Build Trace</button>
+                <button class="btn btn-outline-secondary" @onclick="ExportCsvAsync" disabled="@(!_canExport || _isLoading)">Export CSV</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm position-relative">
+    <LoadingSpinner IsLoading="_isLoading" />
+
+    <div class="card-body">
+        @if (_trace is null)
+        {
+            <EmptyState Title="No trace generated"
+                        Message="Enter a lot number and run Build Trace."
+                        IconCss="bi bi-diagram-3" />
+        }
+        else
+        {
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                <div class="d-flex flex-column">
+                    <span class="fw-semibold">Trace ID: @_trace.TraceId</span>
+                    <span class="text-muted small">Generated: @_trace.GeneratedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</span>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-info text-dark text-uppercase">@_trace.Direction</span>
+                    @if (_trace.IsApproximate)
+                    {
+                        <span class="badge bg-warning text-dark">Approximate</span>
+                    }
+                </div>
+            </div>
+
+            <LotTraceNodeView Node="_trace.Root" />
+        }
+    </div>
+</div>
+
+@code {
+    private string _lotNumber = string.Empty;
+    private string _direction = "BACKWARD";
+    private bool _isLoading;
+    private LotTraceResponseDto? _trace;
+    private ApiException? _apiError;
+
+    private bool _canExport => !string.IsNullOrWhiteSpace(_lotNumber) && _trace is not null;
+
+    private async Task BuildTraceAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_lotNumber))
+        {
+            ToastService.ShowError("Lot number is required.");
+            return;
+        }
+
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            _trace = await ReportsClient.BuildLotTraceAsync(_lotNumber.Trim(), _direction);
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task ExportCsvAsync()
+    {
+        if (!_canExport)
+        {
+            return;
+        }
+
+        try
+        {
+            var bytes = await ReportsClient.DownloadLotTraceCsvAsync(_lotNumber.Trim(), _direction);
+            await JavaScript.InvokeVoidAsync(
+                "csvExport.downloadBytes",
+                $"lot-trace-{_lotNumber.Trim()}.csv",
+                "text/csv",
+                Convert.ToBase64String(bytes));
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+    }
+
+    private static string BuildErrorMessage(ApiException ex)
+    {
+        if (!string.IsNullOrWhiteSpace(ex.UserMessage))
+        {
+            return ex.UserMessage;
+        }
+
+        return ex.ProblemDetails?.Detail
+               ?? ex.ProblemDetails?.Title
+               ?? "Lot trace request failed.";
+    }
+}

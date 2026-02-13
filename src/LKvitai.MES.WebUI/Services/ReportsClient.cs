@@ -1,3 +1,4 @@
+using System.Net.Http.Json;
 using System.Text.Json;
 using LKvitai.MES.WebUI.Infrastructure;
 using LKvitai.MES.WebUI.Models;
@@ -287,6 +288,43 @@ public sealed class ReportsClient
         return DownloadAsync($"/api/warehouse/v1/reports/compliance-audit{query}", cancellationToken);
     }
 
+    public async Task<LotTraceResponseDto> BuildLotTraceAsync(
+        string lotNumber,
+        string direction,
+        CancellationToken cancellationToken = default)
+    {
+        var client = _factory.CreateClient("WarehouseApi");
+        var body = new { lotNumber, direction };
+        var response = await client.PostAsJsonAsync(
+            "/api/warehouse/v1/admin/compliance/lot-trace",
+            body,
+            cancellationToken);
+        await EnsureSuccessAsync(response);
+        var json = await response.Content.ReadAsStringAsync(cancellationToken);
+        var model = JsonSerializer.Deserialize<LotTraceResponseDto>(json, JsonOptions);
+        return model ?? throw new JsonException("Unable to deserialize lot trace response.");
+    }
+
+    public async Task<LotTraceResponseDto> GetLotTraceAsync(Guid traceId, CancellationToken cancellationToken = default)
+    {
+        var client = _factory.CreateClient("WarehouseApi");
+        var response = await client.GetAsync($"/api/warehouse/v1/admin/compliance/lot-trace/{traceId}", cancellationToken);
+        await EnsureSuccessAsync(response);
+        var json = await response.Content.ReadAsStringAsync(cancellationToken);
+        var model = JsonSerializer.Deserialize<LotTraceResponseDto>(json, JsonOptions);
+        return model ?? throw new JsonException("Unable to deserialize lot trace response.");
+    }
+
+    public Task<byte[]> DownloadLotTraceCsvAsync(
+        string lotNumber,
+        string direction,
+        CancellationToken cancellationToken = default)
+    {
+        var client = _factory.CreateClient("WarehouseApi");
+        var body = new { lotNumber, direction, format = "CSV" };
+        return PostDownloadAsync("/api/warehouse/v1/admin/compliance/lot-trace", body, cancellationToken);
+    }
+
     private async Task<T> GetAsync<T>(string relativeUrl, CancellationToken cancellationToken)
     {
         var client = _factory.CreateClient("WarehouseApi");
@@ -301,6 +339,17 @@ public sealed class ReportsClient
     {
         var client = _factory.CreateClient("WarehouseApi");
         var response = await client.GetAsync(relativeUrl, cancellationToken);
+        await EnsureSuccessAsync(response);
+        return await response.Content.ReadAsByteArrayAsync(cancellationToken);
+    }
+
+    private async Task<byte[]> PostDownloadAsync(
+        string relativeUrl,
+        object body,
+        CancellationToken cancellationToken)
+    {
+        var client = _factory.CreateClient("WarehouseApi");
+        var response = await client.PostAsJsonAsync(relativeUrl, body, cancellationToken);
         await EnsureSuccessAsync(response);
         return await response.Content.ReadAsByteArrayAsync(cancellationToken);
     }

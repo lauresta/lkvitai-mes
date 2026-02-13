@@ -15,7 +15,10 @@ public class AdminComplianceControllerTests
     public async Task ExportTransactionsAsync_WhenFormatInvalid_ShouldReturnBadRequest()
     {
         var service = new Mock<ITransactionExportService>(MockBehavior.Strict);
-        var controller = new AdminComplianceController(service.Object);
+        var controller = new AdminComplianceController(
+            service.Object,
+            Mock.Of<ILotTraceabilityService>(),
+            Mock.Of<ILotTraceStore>());
 
         var result = await controller.ExportTransactionsAsync(new AdminComplianceController.ExportTransactionsRequest(
             DateTimeOffset.UtcNow.AddDays(-1),
@@ -45,10 +48,83 @@ public class AdminComplianceControllerTests
                     DateTimeOffset.UtcNow)
             ]);
 
-        var controller = new AdminComplianceController(service.Object);
+        var controller = new AdminComplianceController(
+            service.Object,
+            Mock.Of<ILotTraceabilityService>(),
+            new InMemoryLotTraceStore());
 
         var result = await controller.GetExportsAsync();
 
         result.Should().BeOfType<OkObjectResult>();
+    }
+
+    [Fact]
+    public async Task BuildLotTraceAsync_WhenDirectionInvalid_ShouldReturnBadRequest()
+    {
+        var controller = new AdminComplianceController(
+            Mock.Of<ITransactionExportService>(),
+            Mock.Of<ILotTraceabilityService>(),
+            new InMemoryLotTraceStore());
+
+        var result = await controller.BuildLotTraceAsync(new AdminComplianceController.LotTraceRequest("LOT-1", "SIDEWAYS"));
+
+        result.Should().BeOfType<BadRequestObjectResult>();
+    }
+
+    [Fact]
+    public async Task BuildLotTraceAsync_WhenServiceReturnsNotFound_ShouldReturnNotFound()
+    {
+        var traceService = new Mock<ILotTraceabilityService>(MockBehavior.Strict);
+        traceService.Setup(x => x.BuildAsync("LOT-404", LotTraceDirection.Backward, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new LotTraceResult(false, null, "not found", 404));
+
+        var controller = new AdminComplianceController(
+            Mock.Of<ITransactionExportService>(),
+            traceService.Object,
+            new InMemoryLotTraceStore());
+
+        var result = await controller.BuildLotTraceAsync(new AdminComplianceController.LotTraceRequest("LOT-404", "BACKWARD"));
+
+        result.Should().BeOfType<NotFoundObjectResult>();
+    }
+
+    [Fact]
+    public void GetLotTraceAsync_WhenMissing_ShouldReturnNotFound()
+    {
+        var controller = new AdminComplianceController(
+            Mock.Of<ITransactionExportService>(),
+            Mock.Of<ILotTraceabilityService>(),
+            new InMemoryLotTraceStore());
+
+        var result = controller.GetLotTraceAsync(Guid.NewGuid());
+
+        result.Should().BeOfType<NotFoundObjectResult>();
+    }
+
+    [Fact]
+    public async Task BuildLotTraceAsync_WhenCsvRequested_ShouldReturnFile()
+    {
+        var report = new LotTraceReport(
+            Guid.NewGuid(),
+            "LOT-CSV",
+            LotTraceDirection.Backward,
+            new LotTraceNode("LOT", "LOT-CSV", "Sample", DateTimeOffset.UtcNow, []),
+            false,
+            DateTimeOffset.UtcNow);
+
+        var traceService = new Mock<ILotTraceabilityService>(MockBehavior.Strict);
+        traceService.Setup(x => x.BuildAsync("LOT-CSV", LotTraceDirection.Backward, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new LotTraceResult(true, report, null, 200));
+        traceService.Setup(x => x.BuildCsv(report)).Returns("csv-content");
+
+        var controller = new AdminComplianceController(
+            Mock.Of<ITransactionExportService>(),
+            traceService.Object,
+            new InMemoryLotTraceStore());
+
+        var result = await controller.BuildLotTraceAsync(new AdminComplianceController.LotTraceRequest("LOT-CSV", "BACKWARD", "CSV"));
+
+        var file = result.Should().BeOfType<FileContentResult>().Subject;
+        file.ContentType.Should().Be("text/csv");
     }
 }

@@ -127,6 +127,11 @@ builder.Services.AddAuthorization(options =>
         policy.RequireRole(
             WarehouseRoles.WarehouseAdmin,
             WarehouseRoles.Auditor));
+
+    options.AddPolicy(WarehousePolicies.ManagerOrAuditor, policy =>
+        policy.RequireRole(
+            WarehouseRoles.WarehouseManager,
+            WarehouseRoles.Auditor));
 });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -167,6 +172,8 @@ builder.Services.AddScoped<AgnumExportRecurringJob>();
 builder.Services.AddSingleton<IAgnumReconciliationReportStore, InMemoryAgnumReconciliationReportStore>();
 builder.Services.AddScoped<IAgnumReconciliationService, AgnumReconciliationService>();
 builder.Services.AddSingleton<LabelTemplateEngine>();
+builder.Services.AddScoped<ILotTraceabilityService, LotTraceabilityService>();
+builder.Services.AddSingleton<ILotTraceStore, InMemoryLotTraceStore>();
 builder.Services.AddSingleton<ILabelPrinterTransport, TcpLabelPrinterTransport>();
 builder.Services.AddSingleton<ILabelPrintQueueStore, InMemoryLabelPrintQueueStore>();
 builder.Services.AddScoped<ILabelPrinterClient, TcpLabelPrinterClient>();

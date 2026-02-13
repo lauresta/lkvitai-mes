@@ -12,4 +12,5 @@ public static class WarehousePolicies
     public const string InventoryAccountantOrManager = "Warehouse.InventoryAccountantOrManager";
     public const string CfoOrAdmin = "Warehouse.CfoOrAdmin";
     public const string AdminOrAuditor = "Warehouse.AdminOrAuditor";
+    public const string ManagerOrAuditor = "Warehouse.ManagerOrAuditor";
 }

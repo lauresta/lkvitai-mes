@@ -187,3 +187,22 @@ public record ComplianceAuditResponseDto
     public int Page { get; init; }
     public int PageSize { get; init; }
 }
+
+public record LotTraceNodeDto
+{
+    public string NodeType { get; init; } = string.Empty;
+    public string NodeId { get; init; } = string.Empty;
+    public string NodeName { get; init; } = string.Empty;
+    public DateTimeOffset Timestamp { get; init; }
+    public IReadOnlyList<LotTraceNodeDto> Children { get; init; } = Array.Empty<LotTraceNodeDto>();
+}
+
+public record LotTraceResponseDto
+{
+    public Guid TraceId { get; init; }
+    public string LotNumber { get; init; } = string.Empty;
+    public string Direction { get; init; } = string.Empty;
+    public bool IsApproximate { get; init; }
+    public DateTimeOffset GeneratedAt { get; init; }
+    public LotTraceNodeDto Root { get; init; } = new();
+}

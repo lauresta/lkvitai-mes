@@ -3,3 +3,6 @@
 **/project.assets.json
 **/*.nupkg
 **/*.sha512
+# macOS
+.DS_Store
+**/.DS_Store

@@ -859,3 +859,15 @@
   Evidence: /tmp/prd1631-export.headers:1, /tmp/prd1631-history.headers:1 (HTTP/1.1 403, Server: AirTunes), /tmp/token.txt missing
   Impact: Task curl validation against `localhost:5000` could not hit LKvitai API, so live endpoint validation for export/history remained unverified in this environment.
   Proposed resolution: Run validation against a reachable API host and generate token via `/api/auth/dev-token` before invoking compliance export endpoints.
+- Timestamp: 2026-02-13T07:15:00Z
+  TaskId: PRD-1632
+  Type: TEST-GAP
+  Evidence: `dotnet build src/LKvitai.MES.sln -v minimal` and repeated `dotnet restore` (with --disable-parallel, --ignore-failed-sources, NUGET_CERT_REVOCATION_MODE=offline) hung without emitting progress for several minutes and required manual Ctrl+C.
+  Impact: Unable to complete required `dotnet build` / `dotnet test` validations for PRD-1632 during this session; build status remains unverified.
+  Proposed resolution: Re-run restore/build in an environment with NuGet feed access or warmed package cache; if offline, configure local package source/credentials and retry validations.
+- Timestamp: 2026-02-13T19:05:00Z
+  TaskId: PRD-1632
+  Type: AMBIGUITY
+  Evidence: Full `dotnet restore`, `dotnet build`, and `dotnet test` succeeded after network access was available; previous TEST-GAP entry for PRD-1632 no longer reproduces.
+  Impact: Validation for PRD-1632 is now confirmed; prior gap can be treated as resolved for this environment.
+  Proposed resolution: None. Leave historical TEST-GAP entry for traceability; no further action required.

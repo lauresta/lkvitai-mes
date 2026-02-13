@@ -1,0 +1,28 @@
+@using LKvitai.MES.WebUI.Models
+@inherits ComponentBase
+
+@if (Node is not null)
+{
+    <div class="lot-trace-node ps-2">
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-secondary text-uppercase">@Node.NodeType</span>
+            <span class="fw-semibold">@Node.NodeName</span>
+            <span class="text-muted small">(@Node.NodeId)</span>
+            <span class="text-muted small">@Node.Timestamp.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</span>
+        </div>
+
+        @if (Node.Children?.Count > 0)
+        {
+            <div class="ps-3 border-start mt-2">
+                @foreach (var child in Node.Children)
+                {
+                    <LotTraceNodeView Node="child" />
+                }
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public LotTraceNodeDto Node { get; set; } = new();
+}
