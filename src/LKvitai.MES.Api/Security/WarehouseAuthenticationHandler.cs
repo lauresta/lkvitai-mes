@@ -41,6 +41,8 @@ public sealed class WarehouseAuthenticationHandler : AuthenticationHandler<Authe
     {
         var userId = Request.Headers["X-User-Id"].FirstOrDefault();
         var rolesValue = Request.Headers["X-User-Roles"].FirstOrDefault();
+        string? authSource = null;
+        bool? mfaVerified = null;
 
         if (string.IsNullOrWhiteSpace(userId) &&
             Request.Headers.Authorization.FirstOrDefault() is { } authHeader &&
@@ -61,26 +63,39 @@ public sealed class WarehouseAuthenticationHandler : AuthenticationHandler<Authe
                     return AuthenticateResult.Fail(validation.ErrorMessage);
                 }
 
-                var jwtTicket = new AuthenticationTicket(validation.Principal, WarehouseAuthenticationDefaults.Scheme);
+                var jwtClaims = validation.Principal.Claims.ToList();
+                if (!jwtClaims.Any(x => x.Type == "auth_source"))
+                {
+                    jwtClaims.Add(new Claim("auth_source", "oauth"));
+                }
+
+                if (!jwtClaims.Any(x => x.Type == "mfa_verified"))
+                {
+                    jwtClaims.Add(new Claim("mfa_verified", "false"));
+                }
+
+                var jwtPrincipal = new ClaimsPrincipal(
+                    new ClaimsIdentity(
+                        jwtClaims,
+                        WarehouseAuthenticationDefaults.Scheme,
+                        ClaimTypes.Name,
+                        ClaimTypes.Role));
+
+                var jwtTicket = new AuthenticationTicket(jwtPrincipal, WarehouseAuthenticationDefaults.Scheme);
                 return AuthenticateResult.Success(jwtTicket);
             }
 
-            var segments = token.Split('|', 3, StringSplitOptions.TrimEntries);
-            if (segments.Length > 0)
+            if (TryParseStructuredToken(token, out var parsed))
             {
-                userId = segments[0];
-            }
+                userId = parsed.UserId;
+                rolesValue = string.Join(',', parsed.Roles);
+                authSource = parsed.AuthSource;
+                mfaVerified = parsed.MfaVerified;
 
-            if (segments.Length > 1)
-            {
-                rolesValue = segments[1];
-            }
-
-            if (segments.Length > 2 &&
-                long.TryParse(segments[2], out var expUnix) &&
-                DateTimeOffset.UtcNow > DateTimeOffset.FromUnixTimeSeconds(expUnix))
-            {
-                return AuthenticateResult.Fail("Token expired");
+                if (parsed.ExpiresAt.HasValue && DateTimeOffset.UtcNow > parsed.ExpiresAt.Value)
+                {
+                    return AuthenticateResult.Fail("Token expired");
+                }
             }
         }
 
@@ -113,6 +128,16 @@ public sealed class WarehouseAuthenticationHandler : AuthenticationHandler<Authe
             }
         }
 
+        if (!string.IsNullOrWhiteSpace(authSource))
+        {
+            claims.Add(new Claim("auth_source", authSource));
+        }
+
+        if (mfaVerified.HasValue)
+        {
+            claims.Add(new Claim("mfa_verified", mfaVerified.Value ? "true" : "false"));
+        }
+
         var identity = new ClaimsIdentity(claims, WarehouseAuthenticationDefaults.Scheme);
         var principal = new ClaimsPrincipal(identity);
         var ticket = new AuthenticationTicket(principal, WarehouseAuthenticationDefaults.Scheme);
@@ -122,6 +147,52 @@ public sealed class WarehouseAuthenticationHandler : AuthenticationHandler<Authe
     private static bool LooksLikeJwt(string token)
     {
         return token.Count(x => x == '.') == 2;
+    }
+
+    private static bool TryParseStructuredToken(string token, out ParsedToken parsedToken)
+    {
+        parsedToken = ParsedToken.Empty;
+
+        var segments = token.Split('|', StringSplitOptions.TrimEntries);
+        if (segments.Length == 0 || string.IsNullOrWhiteSpace(segments[0]))
+        {
+            return false;
+        }
+
+        var roles = Array.Empty<string>();
+        if (segments.Length > 1 && !string.IsNullOrWhiteSpace(segments[1]))
+        {
+            roles = segments[1]
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+        }
+
+        DateTimeOffset? expiresAt = null;
+        if (segments.Length > 2 && long.TryParse(segments[2], out var expUnix))
+        {
+            expiresAt = DateTimeOffset.FromUnixTimeSeconds(expUnix);
+        }
+
+        var authSource = segments.Length > 3 && !string.IsNullOrWhiteSpace(segments[3])
+            ? segments[3]
+            : null;
+
+        var mfaVerified = segments.Length > 4 &&
+                          string.Equals(segments[4], "mfa", StringComparison.OrdinalIgnoreCase);
+
+        parsedToken = new ParsedToken(segments[0], roles, expiresAt, authSource, mfaVerified);
+        return true;
+    }
+
+    private sealed record ParsedToken(
+        string UserId,
+        IReadOnlyList<string> Roles,
+        DateTimeOffset? ExpiresAt,
+        string? AuthSource,
+        bool MfaVerified)
+    {
+        public static ParsedToken Empty { get; } = new(string.Empty, [], null, null, false);
     }
 
     protected override Task HandleChallengeAsync(AuthenticationProperties properties)

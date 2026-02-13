@@ -794,3 +794,16 @@
   Evidence: Validation calls to `http://localhost:5000/api/auth/oauth/login` and `http://localhost:5000/api/warehouse/v1/items` returned `HTTP/1.1 403 Forbidden` with `Server: AirTunes/925.5.1`.
   Impact: Task-specified manual OAuth browser flow and expired-token curl verification could not be executed against LKvitai.MES.Api in this environment.
   Proposed minimal fix: Run validation against a live LKvitai.MES.Api instance with configured OAuth provider credentials (Azure AD/Okta) on the expected port.
+- Timestamp: 2026-02-13T06:12:17Z
+  TaskId: PRD-1627
+  Type: AMBIGUITY
+  Evidence: `docs/prod-ready/prod-ready-tasks-PHASE15-S8.md:1104` states MFA reset "requires approval", but API contract only declares `POST /api/auth/mfa/reset/{userId}` as admin-only (`docs/prod-ready/prod-ready-tasks-PHASE15-S8.md:1130`) with no approval payload schema.
+  Impact: Implementations can diverge on how approval is captured/audited, causing incompatible clients.
+  Proposed minimal fix: Extend task API contract with explicit approval fields (for example `approved`, `reason`, `approvedBy`) and expected failure behavior when missing.
+
+- Timestamp: 2026-02-13T06:12:17Z
+  TaskId: PRD-1627
+  Type: TEST-GAP
+  Evidence: Task validation curl calls to `http://localhost:5000/api/auth/mfa/*` returned `HTTP/1.1 403 Forbidden` from `Server: AirTunes/925.5.1` (see `/tmp/prd1627-enroll.headers`, `/tmp/prd1627-verify-enrollment.headers`, `/tmp/prd1627-backup-codes.headers`).
+  Impact: Task-mandated runtime validation could not be executed against LKvitai.MES.Api in this environment.
+  Proposed minimal fix: Run LKvitai.MES.Api on an isolated known port and rerun the PRD-1627 curl validation sequence with a valid bearer token.

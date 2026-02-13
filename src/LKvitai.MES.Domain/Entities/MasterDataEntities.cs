@@ -1229,6 +1229,19 @@ public sealed class UserRoleAssignment
     public Role? Role { get; set; }
 }
 
+public sealed class UserMfa
+{
+    public Guid UserId { get; set; }
+    public string TotpSecret { get; set; } = string.Empty;
+    public bool MfaEnabled { get; set; }
+    public DateTimeOffset? MfaEnrolledAt { get; set; }
+    public string BackupCodes { get; set; } = string.Empty;
+    public int FailedAttempts { get; set; }
+    public DateTimeOffset? LockedUntil { get; set; }
+    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset? UpdatedAt { get; set; }
+}
+
 public sealed class SerialNumber
 {
     public int Id { get; set; }

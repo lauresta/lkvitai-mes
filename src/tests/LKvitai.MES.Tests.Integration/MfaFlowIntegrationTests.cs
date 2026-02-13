@@ -6,28 +6,31 @@ using FluentAssertions;
 using LKvitai.MES.Api.Controllers;
 using LKvitai.MES.Api.Security;
 using LKvitai.MES.Api.Services;
+using LKvitai.MES.Infrastructure.Persistence;
 using LKvitai.MES.SharedKernel;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
+using OtpNet;
 using Xunit;
 
 namespace LKvitai.MES.Tests.Integration;
 
-public class OAuthFlowIntegrationTests
+public class MfaFlowIntegrationTests
 {
     [Fact]
-    [Trait("Category", "OAuth")]
-    public async Task LoginThenCallback_WithMockProvider_ShouldProvisionUserAndReturnToken()
+    [Trait("Category", "MFA")]
+    public async Task OAuthCallbackThenEnrollAndVerifyMfa_ShouldIssueMfaAccessToken()
     {
         using var rsa = RSA.Create(2048);
-        var signingKey = new RsaSecurityKey(rsa) { KeyId = "oauth-test-key" };
+        var signingKey = new RsaSecurityKey(rsa) { KeyId = "oauth-mfa-test-key" };
 
         var openIdConfig = new OpenIdConnectConfiguration
         {
@@ -54,45 +57,63 @@ public class OAuthFlowIntegrationTests
             }
         };
 
-        var token = CreateJwt(signingKey, openIdConfig.Issuer, options.ClientId, new[]
+        var jwt = CreateJwt(signingKey, openIdConfig.Issuer, options.ClientId, new[]
         {
-            new Claim("sub", "oauth-user-42"),
-            new Claim("preferred_username", "oauth.user"),
-            new Claim("email", "oauth.user@example.com"),
+            new Claim("sub", "oauth-user-mfa"),
+            new Claim("preferred_username", "oauth.user.mfa"),
+            new Claim("email", "oauth.user.mfa@example.com"),
             new Claim("groups", "Warehouse-Managers")
         });
 
-        var configProvider = new StubConfigurationProvider(openIdConfig);
+        var configurationProvider = new StubConfigurationProvider(openIdConfig);
         using var stateCache = new MemoryCache(new MemoryCacheOptions());
         var stateStore = new OAuthLoginStateStore(stateCache);
 
         var validator = new OAuthTokenValidator(
-            configProvider,
+            configurationProvider,
             new OAuthRoleMapper(),
             new StaticOptionsMonitor<OAuthOptions>(options),
-            NullLoggerFactory.Instance.CreateLogger<OAuthTokenValidator>());
+            NullLogger<OAuthTokenValidator>.Instance);
 
         var adminUserStore = new InMemoryAdminUserStore();
         var provisioning = new OAuthUserProvisioningService(
             adminUserStore,
-            NullLoggerFactory.Instance.CreateLogger<OAuthUserProvisioningService>());
+            NullLogger<OAuthUserProvisioningService>.Instance);
+
+        await using var dbContext = CreateDbContext();
+        var mfaOptions = new MfaOptions
+        {
+            RequiredRoles = [WarehouseRoles.WarehouseManager],
+            ChallengeTimeoutMinutes = 10,
+            SessionTimeoutHours = 8,
+            MaxFailedAttempts = 5,
+            LockoutMinutes = 15
+        };
+        var sessionTokenService = new MfaSessionTokenService();
+        var mfaService = new MfaService(
+            dbContext,
+            adminUserStore,
+            new EphemeralDataProtectionProvider(),
+            sessionTokenService,
+            new StaticOptionsMonitor<MfaOptions>(mfaOptions),
+            NullLogger<MfaService>.Instance);
 
         var httpFactory = new StubHttpClientFactory(new HttpClient(new StubHttpMessageHandler(_ =>
             new HttpResponseMessage(HttpStatusCode.OK)
             {
-                Content = new StringContent($"{{\"access_token\":\"{token}\",\"id_token\":\"{token}\",\"token_type\":\"Bearer\",\"expires_in\":3600}}")
+                Content = new StringContent($"{{\"access_token\":\"{jwt}\",\"id_token\":\"{jwt}\",\"token_type\":\"Bearer\",\"expires_in\":3600}}")
             })));
 
         var controller = new OAuthController(
-            configProvider,
+            configurationProvider,
             stateStore,
             validator,
             provisioning,
-            new DisabledMfaService(),
-            new MfaSessionTokenService(),
+            mfaService,
+            sessionTokenService,
             new StaticOptionsMonitor<OAuthOptions>(options),
             httpFactory,
-            NullLoggerFactory.Instance.CreateLogger<OAuthController>())
+            NullLogger<OAuthController>.Instance)
         {
             ControllerContext = new ControllerContext
             {
@@ -107,17 +128,43 @@ public class OAuthFlowIntegrationTests
         var redirect = login.Should().BeOfType<RedirectResult>().Subject;
 
         var uri = new Uri(redirect.Url!);
-        var parsed = QueryHelpers.ParseQuery(uri.Query);
-        var state = parsed["state"].ToString();
+        var query = QueryHelpers.ParseQuery(uri.Query);
+        var state = query["state"].ToString();
 
         var callback = await controller.CallbackAsync("auth-code", state);
 
         var ok = callback.Should().BeOfType<OkObjectResult>().Subject;
         var payload = ok.Value.Should().BeOfType<OAuthController.OAuthCallbackResponse>().Subject;
-        payload.UserId.Should().NotBeNullOrWhiteSpace();
-        payload.Roles.Should().Contain(WarehouseRoles.WarehouseManager);
+        payload.MfaRequired.Should().BeTrue();
+        payload.MfaEnrollmentRequired.Should().BeTrue();
+        payload.ChallengeToken.Should().NotBeNullOrWhiteSpace();
 
-        adminUserStore.GetAll().Should().Contain(x => x.Username == "oauth.user");
+        Guid.TryParse(payload.UserId, out var userId).Should().BeTrue();
+        var enroll = await mfaService.EnrollAsync(userId, "oauth.user.mfa@example.com");
+        enroll.IsSuccess.Should().BeTrue();
+
+        var enrollmentCode = CreateTotp(enroll.Value.ManualSecret);
+        var verifyEnrollment = await mfaService.VerifyEnrollmentAsync(userId, enrollmentCode);
+        verifyEnrollment.IsSuccess.Should().BeTrue();
+
+        var verify = await mfaService.VerifyChallengeAsync(new MfaVerifyRequest(
+            payload.ChallengeToken!,
+            CreateTotp(enroll.Value.ManualSecret),
+            null));
+
+        verify.IsSuccess.Should().BeTrue();
+        sessionTokenService.TryParseToken(verify.Value.AccessToken, out var parsed).Should().BeTrue();
+        parsed.MfaVerified.Should().BeTrue();
+        parsed.AuthSource.Should().Be("oauth");
+    }
+
+    private static WarehouseDbContext CreateDbContext()
+    {
+        var options = new DbContextOptionsBuilder<WarehouseDbContext>()
+            .UseInMemoryDatabase($"mfa-flow-{Guid.NewGuid():N}")
+            .Options;
+
+        return new WarehouseDbContext(options);
     }
 
     private static string CreateJwt(SecurityKey signingKey, string issuer, string audience, IEnumerable<Claim> claims)
@@ -133,6 +180,12 @@ public class OAuthFlowIntegrationTests
         });
 
         return handler.WriteToken(token);
+    }
+
+    private static string CreateTotp(string manualSecret)
+    {
+        var totp = new Totp(Base32Encoding.ToBytes(manualSecret));
+        return totp.ComputeTotp(DateTime.UtcNow);
     }
 
     private sealed class StubConfigurationProvider : IOAuthOpenIdConfigurationProvider
@@ -185,32 +238,5 @@ public class OAuthFlowIntegrationTests
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
             => Task.FromResult(_handler(request));
-    }
-
-    private sealed class DisabledMfaService : IMfaService
-    {
-        public Task<Result<MfaEnrollmentDto>> EnrollAsync(Guid userId, string userLabel, CancellationToken cancellationToken = default)
-            => throw new NotSupportedException();
-
-        public Task<Result> VerifyEnrollmentAsync(Guid userId, string code, CancellationToken cancellationToken = default)
-            => throw new NotSupportedException();
-
-        public Task<Result<MfaVerifyResultDto>> VerifyChallengeAsync(MfaVerifyRequest request, CancellationToken cancellationToken = default)
-            => throw new NotSupportedException();
-
-        public Task<Result<IReadOnlyList<string>>> RegenerateBackupCodesAsync(Guid userId, CancellationToken cancellationToken = default)
-            => throw new NotSupportedException();
-
-        public Task<Result> ResetAsync(Guid userId, CancellationToken cancellationToken = default)
-            => throw new NotSupportedException();
-
-        public Task<MfaUserStatusDto> GetStatusAsync(Guid userId, CancellationToken cancellationToken = default)
-            => Task.FromResult(new MfaUserStatusDto(false, false, null, 0));
-
-        public bool IsMfaRequired(IReadOnlyList<string> roles) => false;
-
-        public int GetChallengeTimeoutMinutes() => 10;
-
-        public int GetSessionTimeoutHours() => 8;
     }
 }

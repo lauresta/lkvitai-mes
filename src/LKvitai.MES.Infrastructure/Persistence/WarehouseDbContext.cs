@@ -70,6 +70,7 @@ public class WarehouseDbContext : DbContext
     public DbSet<Permission> Permissions => Set<Permission>();
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
     public DbSet<UserRoleAssignment> UserRoleAssignments => Set<UserRoleAssignment>();
+    public DbSet<UserMfa> UserMfas => Set<UserMfa>();
     public DbSet<WarehouseSettings> WarehouseSettings => Set<WarehouseSettings>();
     public DbSet<SerialNumber> SerialNumbers => Set<SerialNumber>();
     public DbSet<SKUSequence> SKUSequences => Set<SKUSequence>();
@@ -960,6 +961,22 @@ public class WarehouseDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.RoleId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<UserMfa>(entity =>
+        {
+            entity.ToTable("user_mfa");
+            entity.HasKey(e => e.UserId);
+            entity.Property(e => e.TotpSecret).HasColumnType("text").IsRequired();
+            entity.Property(e => e.MfaEnabled).HasDefaultValue(false).IsRequired();
+            entity.Property(e => e.MfaEnrolledAt);
+            entity.Property(e => e.BackupCodes).HasColumnType("text").IsRequired();
+            entity.Property(e => e.FailedAttempts).HasDefaultValue(0).IsRequired();
+            entity.Property(e => e.LockedUntil);
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.Property(e => e.UpdatedAt);
+            entity.HasIndex(e => e.MfaEnabled);
+            entity.HasIndex(e => e.LockedUntil);
         });
 
         var systemCreatedAt = new DateTimeOffset(2026, 2, 13, 0, 0, 0, TimeSpan.Zero);

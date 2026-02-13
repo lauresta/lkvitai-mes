@@ -4,6 +4,7 @@ using System.Security.Claims;
 using FluentAssertions;
 using LKvitai.MES.Api.Controllers;
 using LKvitai.MES.Api.Security;
+using LKvitai.MES.Api.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -165,6 +166,8 @@ public class OAuthControllerTests
         OAuthLoginStateStore? stateStore = null,
         IOAuthTokenValidator? tokenValidator = null,
         IOAuthUserProvisioningService? userProvisioningService = null,
+        IMfaService? mfaService = null,
+        IMfaSessionTokenService? mfaSessionTokenService = null,
         Func<HttpRequestMessage, HttpResponseMessage>? tokenEndpointHandler = null)
     {
         var configuration = new OpenIdConnectConfiguration
@@ -183,6 +186,8 @@ public class OAuthControllerTests
 
         var validator = tokenValidator ?? new Mock<IOAuthTokenValidator>(MockBehavior.Strict).Object;
         var provisioning = userProvisioningService ?? new Mock<IOAuthUserProvisioningService>(MockBehavior.Strict).Object;
+        var mfa = mfaService ?? BuildDefaultMfaService();
+        var sessionTokenService = mfaSessionTokenService ?? new MfaSessionTokenService();
 
         var httpFactory = new Mock<IHttpClientFactory>(MockBehavior.Strict);
         if (tokenEndpointHandler is not null)
@@ -200,6 +205,8 @@ public class OAuthControllerTests
             state,
             validator,
             provisioning,
+            mfa,
+            sessionTokenService,
             new StaticOptionsMonitor<OAuthOptions>(options),
             httpFactory.Object,
             NullLoggerFactory.Instance.CreateLogger<OAuthController>())
@@ -214,6 +221,13 @@ public class OAuthControllerTests
         controller.ControllerContext.HttpContext.Request.Host = new HostString("localhost", 5000);
 
         return controller;
+    }
+
+    private static IMfaService BuildDefaultMfaService()
+    {
+        var mock = new Mock<IMfaService>(MockBehavior.Strict);
+        mock.Setup(x => x.IsMfaRequired(It.IsAny<IReadOnlyList<string>>())).Returns(false);
+        return mock.Object;
     }
 
     private static OAuthOptions CreateOptions()

@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using LKvitai.MES.Api.ErrorHandling;
 using LKvitai.MES.Api.Security;
+using LKvitai.MES.Api.Services;
 using LKvitai.MES.SharedKernel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -18,6 +19,8 @@ public sealed class OAuthController : ControllerBase
     private readonly IOAuthLoginStateStore _stateStore;
     private readonly IOAuthTokenValidator _tokenValidator;
     private readonly IOAuthUserProvisioningService _userProvisioningService;
+    private readonly IMfaService _mfaService;
+    private readonly IMfaSessionTokenService _mfaSessionTokenService;
     private readonly IOptionsMonitor<OAuthOptions> _optionsMonitor;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<OAuthController> _logger;
@@ -27,6 +30,8 @@ public sealed class OAuthController : ControllerBase
         IOAuthLoginStateStore stateStore,
         IOAuthTokenValidator tokenValidator,
         IOAuthUserProvisioningService userProvisioningService,
+        IMfaService mfaService,
+        IMfaSessionTokenService mfaSessionTokenService,
         IOptionsMonitor<OAuthOptions> optionsMonitor,
         IHttpClientFactory httpClientFactory,
         ILogger<OAuthController> logger)
@@ -35,6 +40,8 @@ public sealed class OAuthController : ControllerBase
         _stateStore = stateStore;
         _tokenValidator = tokenValidator;
         _userProvisioningService = userProvisioningService;
+        _mfaService = mfaService;
+        _mfaSessionTokenService = mfaSessionTokenService;
         _optionsMonitor = optionsMonitor;
         _httpClientFactory = httpClientFactory;
         _logger = logger;
@@ -144,11 +151,32 @@ public sealed class OAuthController : ControllerBase
                 string.Join(",", provisioning.Roles),
                 options.Provider);
 
-            return Ok(new OAuthCallbackResponse(
-                jwtToken,
-                validation.ExpiresAt ?? DateTimeOffset.UtcNow.AddHours(Math.Max(1, options.SessionTimeoutHours)),
-                provisioning.UserId,
-                provisioning.Roles));
+            var expiresAt = validation.ExpiresAt ?? DateTimeOffset.UtcNow.AddHours(Math.Max(1, options.SessionTimeoutHours));
+            if (Guid.TryParse(provisioning.UserId, out var userId) && _mfaService.IsMfaRequired(provisioning.Roles))
+            {
+                var mfaStatus = await _mfaService.GetStatusAsync(userId, cancellationToken);
+                var challengeTimeout = _mfaService.GetChallengeTimeoutMinutes();
+                var challengeToken = _mfaSessionTokenService.IssueChallengeToken(
+                    provisioning.UserId,
+                    provisioning.Roles,
+                    challengeTimeout);
+
+                _logger.LogInformation(
+                    "OAuth login requires MFA. UserId={UserId}, EnrollmentRequired={EnrollmentRequired}",
+                    provisioning.UserId,
+                    !mfaStatus.MfaEnabled);
+
+                return Ok(new OAuthCallbackResponse(
+                    string.Empty,
+                    DateTimeOffset.UtcNow.AddMinutes(challengeTimeout),
+                    provisioning.UserId,
+                    provisioning.Roles,
+                    true,
+                    !mfaStatus.MfaEnabled,
+                    challengeToken));
+            }
+
+            return Ok(new OAuthCallbackResponse(jwtToken, expiresAt, provisioning.UserId, provisioning.Roles));
         }
         catch (HttpRequestException ex)
         {
@@ -287,7 +315,10 @@ public sealed class OAuthController : ControllerBase
         string Token,
         DateTimeOffset ExpiresAt,
         string UserId,
-        IReadOnlyList<string> Roles);
+        IReadOnlyList<string> Roles,
+        bool MfaRequired = false,
+        bool MfaEnrollmentRequired = false,
+        string? ChallengeToken = null);
 
     private sealed class OAuthTokenEndpointResponse
     {

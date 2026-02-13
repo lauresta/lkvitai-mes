@@ -52,14 +52,17 @@ builder.Services.AddHttpClient("FedExApi");
 builder.Services.AddHttpClient("OAuthProvider");
 builder.Services.Configure<DevAuthOptions>(builder.Configuration.GetSection(DevAuthOptions.SectionName));
 builder.Services.Configure<OAuthOptions>(builder.Configuration.GetSection(OAuthOptions.SectionName));
+builder.Services.Configure<MfaOptions>(builder.Configuration.GetSection(MfaOptions.SectionName));
 builder.Services.Configure<LabelPrintingConfig>(builder.Configuration.GetSection("LabelPrinting"));
 builder.Services.AddSingleton<IDevAuthService, DevAuthService>();
 builder.Services.AddSingleton<IAdminUserStore, InMemoryAdminUserStore>();
 builder.Services.AddSingleton<IOAuthRoleMapper, OAuthRoleMapper>();
 builder.Services.AddSingleton<IOAuthOpenIdConfigurationProvider, OAuthOpenIdConfigurationProvider>();
 builder.Services.AddSingleton<IOAuthLoginStateStore, OAuthLoginStateStore>();
+builder.Services.AddSingleton<IMfaSessionTokenService, MfaSessionTokenService>();
 builder.Services.AddScoped<IOAuthTokenValidator, OAuthTokenValidator>();
 builder.Services.AddScoped<IOAuthUserProvisioningService, OAuthUserProvisioningService>();
+builder.Services.AddScoped<IMfaService, MfaService>();
 builder.Services.AddScoped<ICurrentUserService, HttpContextCurrentUserService>();
 builder.Services
     .AddAuthentication(WarehouseAuthenticationDefaults.Scheme)
@@ -227,6 +230,7 @@ app.UseMiddleware<ApiRateLimitingMiddleware>();
 app.UseMiddleware<ProblemDetailsExceptionMiddleware>();
 app.UseMiddleware<IdempotencyReplayHeaderMiddleware>();
 app.UseAuthentication();
+app.UseMiddleware<MfaEnforcementMiddleware>();
 app.UseAuthorization();
 app.UseHangfireDashboard("/hangfire");
 app.MapControllers();
