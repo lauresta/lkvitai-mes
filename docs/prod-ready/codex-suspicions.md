@@ -743,3 +743,15 @@
   Evidence: Required validation calls for `GET/POST /api/warehouse/v1/admin/reason-codes` returned `HTTP/1.1 403` from `Server: AirTunes/925.5.1` (`/tmp/prd1622-get.out:1-4`, `/tmp/prd1622-post.out:1-4`) instead of the project API.
   Impact: Could not execute task curl acceptance checks against the implemented endpoint in this environment.
   Proposed minimal fix: Start the project API on a known isolated port and rerun the exact PRD-1622 curl sequence with a valid token.
+- Timestamp: 2026-02-13T05:25:52Z
+  TaskId: PRD-1623
+  Type: INCONSISTENCY
+  Evidence: Task examples require `approverRole="Manager"` (`docs/prod-ready/prod-ready-tasks-PHASE15-S8.md:278,297,304`), while runtime RBAC roles are defined as `WarehouseManager` (`src/LKvitai.MES.Api/Security/WarehouseRoles.cs:5-7`).
+  Impact: Approval-rule role values may not align with actual authorization claims unless alias mapping is applied.
+  Proposed minimal fix: Standardize task/API role values to `WarehouseManager` (or formally define accepted aliases such as `Manager -> WarehouseManager`).
+- Timestamp: 2026-02-13T05:25:52Z
+  TaskId: PRD-1623
+  Type: TEST-GAP
+  Evidence: Required validation calls for `POST /api/warehouse/v1/admin/approval-rules` and `/evaluate` returned `HTTP/1.1 403` from `Server: AirTunes/925.5.1` (`/tmp/prd1623-post-rule.out:1-4`, `/tmp/prd1623-evaluate.out:1-4`) instead of the project API runtime.
+  Impact: Could not execute task curl acceptance checks against the implemented approval-rules endpoints in this environment.
+  Proposed minimal fix: Run project API on a known isolated port and rerun the exact PRD-1623 curl sequence with a valid token.

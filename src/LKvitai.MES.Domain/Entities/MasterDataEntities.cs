@@ -1166,6 +1166,30 @@ public sealed class WarehouseSettings : AuditableEntity
     public bool AutoAllocateOrders { get; set; } = true;
 }
 
+public enum ApprovalRuleType
+{
+    COST_ADJUSTMENT = 0,
+    WRITEDOWN = 1,
+    TRANSFER = 2
+}
+
+public enum ApprovalThresholdType
+{
+    AMOUNT = 0,
+    PERCENTAGE = 1
+}
+
+public sealed class ApprovalRule : AuditableEntity
+{
+    public int Id { get; set; }
+    public ApprovalRuleType RuleType { get; set; }
+    public ApprovalThresholdType ThresholdType { get; set; }
+    public decimal ThresholdValue { get; set; }
+    public string ApproverRole { get; set; } = string.Empty;
+    public bool Active { get; set; } = true;
+    public int Priority { get; set; } = 1;
+}
+
 public sealed class SerialNumber
 {
     public int Id { get; set; }

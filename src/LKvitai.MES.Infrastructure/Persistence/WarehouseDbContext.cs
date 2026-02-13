@@ -65,6 +65,7 @@ public class WarehouseDbContext : DbContext
     public DbSet<InboundShipment> InboundShipments => Set<InboundShipment>();
     public DbSet<InboundShipmentLine> InboundShipmentLines => Set<InboundShipmentLine>();
     public DbSet<AdjustmentReasonCode> AdjustmentReasonCodes => Set<AdjustmentReasonCode>();
+    public DbSet<ApprovalRule> ApprovalRules => Set<ApprovalRule>();
     public DbSet<WarehouseSettings> WarehouseSettings => Set<WarehouseSettings>();
     public DbSet<SerialNumber> SerialNumbers => Set<SerialNumber>();
     public DbSet<SKUSequence> SKUSequences => Set<SKUSequence>();
@@ -874,6 +875,38 @@ public class WarehouseDbContext : DbContext
                 t.HasCheckConstraint("ck_warehouse_settings_capacity", "\"CapacityThresholdPercent\" >= 0 AND \"CapacityThresholdPercent\" <= 100");
                 t.HasCheckConstraint("ck_warehouse_settings_low_stock", "\"LowStockThreshold\" >= 0");
                 t.HasCheckConstraint("ck_warehouse_settings_reorder_point", "\"ReorderPoint\" >= 0");
+            });
+        });
+
+        modelBuilder.Entity<ApprovalRule>(entity =>
+        {
+            entity.ToTable("approval_rules");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.RuleType)
+                .HasConversion<string>()
+                .HasMaxLength(30)
+                .IsRequired();
+            entity.Property(e => e.ThresholdType)
+                .HasConversion<string>()
+                .HasMaxLength(20)
+                .IsRequired();
+            entity.Property(e => e.ThresholdValue).HasPrecision(18, 4).IsRequired();
+            entity.Property(e => e.ApproverRole).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.Active).HasDefaultValue(true).IsRequired();
+            entity.Property(e => e.Priority).IsRequired();
+            entity.HasIndex(e => e.RuleType);
+            entity.HasIndex(e => e.Active);
+            entity.HasIndex(e => e.Priority);
+            entity.ToTable(t =>
+            {
+                t.HasCheckConstraint("ck_approval_rules_threshold", "\"ThresholdValue\" >= 0");
+                t.HasCheckConstraint("ck_approval_rules_priority", "\"Priority\" > 0");
+                t.HasCheckConstraint(
+                    "ck_approval_rules_rule_type",
+                    "\"RuleType\" IN ('COST_ADJUSTMENT','WRITEDOWN','TRANSFER')");
+                t.HasCheckConstraint(
+                    "ck_approval_rules_threshold_type",
+                    "\"ThresholdType\" IN ('AMOUNT','PERCENTAGE')");
             });
         });
 
