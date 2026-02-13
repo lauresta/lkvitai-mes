@@ -10,6 +10,11 @@ public sealed class ItemValuation
 {
     private const int Scale = 4;
 
+    /// <summary>
+    /// Marten snapshot identity — matches the event stream id.
+    /// </summary>
+    public string Id { get; private set; } = string.Empty;
+
     public int ItemId { get; private set; }
     public decimal CurrentCost { get; private set; }
     public bool IsInitialized { get; private set; }
@@ -223,6 +228,7 @@ public sealed class ItemValuation
         ItemId = evt.InventoryItemId > 0
             ? evt.InventoryItemId
             : Valuation.ToInventoryItemId(evt.ItemId);
+        Id = StreamIdFor(ItemId);
         CurrentCost = Normalize(evt.InitialUnitCost);
         IsInitialized = true;
         Version++;
