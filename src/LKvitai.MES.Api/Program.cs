@@ -49,10 +49,17 @@ builder.Services.AddMemoryCache();
 builder.Services.AddDataProtection();
 builder.Services.AddHttpClient("AgnumExportApi");
 builder.Services.AddHttpClient("FedExApi");
+builder.Services.AddHttpClient("OAuthProvider");
 builder.Services.Configure<DevAuthOptions>(builder.Configuration.GetSection(DevAuthOptions.SectionName));
+builder.Services.Configure<OAuthOptions>(builder.Configuration.GetSection(OAuthOptions.SectionName));
 builder.Services.Configure<LabelPrintingConfig>(builder.Configuration.GetSection("LabelPrinting"));
 builder.Services.AddSingleton<IDevAuthService, DevAuthService>();
 builder.Services.AddSingleton<IAdminUserStore, InMemoryAdminUserStore>();
+builder.Services.AddSingleton<IOAuthRoleMapper, OAuthRoleMapper>();
+builder.Services.AddSingleton<IOAuthOpenIdConfigurationProvider, OAuthOpenIdConfigurationProvider>();
+builder.Services.AddSingleton<IOAuthLoginStateStore, OAuthLoginStateStore>();
+builder.Services.AddScoped<IOAuthTokenValidator, OAuthTokenValidator>();
+builder.Services.AddScoped<IOAuthUserProvisioningService, OAuthUserProvisioningService>();
 builder.Services.AddScoped<ICurrentUserService, HttpContextCurrentUserService>();
 builder.Services
     .AddAuthentication(WarehouseAuthenticationDefaults.Scheme)

@@ -781,3 +781,16 @@
   Evidence: Running WebUI with `ASPNETCORE_ENVIRONMENT=Development ASPNETCORE_URLS=http://localhost:5001 dotnet run --no-launch-profile ...` starts, but page requests to `/warehouse/admin/*` return HTTP 500 because server-side rendering calls `https://localhost:5001/api/warehouse/v1/admin/*` and fails SSL handshake (see `/tmp/prd1625__warehouse_admin_settings.html` and runtime logs).
   Impact: Manual CRUD scenario validation for settings/reason-codes/approval-rules/roles is blocked in this environment due API connectivity/profile mismatch.
   Proposed minimal fix: Run WebUI against a reachable Warehouse API base URL and matching scheme/port, then execute the manual scenarios.
+- Timestamp: 2026-02-13T05:56:36Z
+  TaskId: PRD-1626
+  Type: INCONSISTENCY
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S8.md:1046-1050, src/LKvitai.MES.Api/Security/WarehousePolicies.cs:6
+  Impact: Task scenario maps OAuth claim to role `Manager`, but runtime authorization policies protect manager endpoints with `WarehouseManager`; direct `Manager` mapping would not satisfy existing policy checks.
+  Proposed minimal fix: Normalize OAuth role aliases (`Manager` -> `WarehouseManager`, `Admin` -> `WarehouseAdmin`) while preserving original mapped role claim.
+
+- Timestamp: 2026-02-13T05:56:36Z
+  TaskId: PRD-1626
+  Type: TEST-GAP
+  Evidence: Validation calls to `http://localhost:5000/api/auth/oauth/login` and `http://localhost:5000/api/warehouse/v1/items` returned `HTTP/1.1 403 Forbidden` with `Server: AirTunes/925.5.1`.
+  Impact: Task-specified manual OAuth browser flow and expired-token curl verification could not be executed against LKvitai.MES.Api in this environment.
+  Proposed minimal fix: Run validation against a live LKvitai.MES.Api instance with configured OAuth provider credentials (Azure AD/Okta) on the expected port.

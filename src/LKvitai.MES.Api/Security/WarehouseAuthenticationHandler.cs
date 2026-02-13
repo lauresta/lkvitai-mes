@@ -37,7 +37,7 @@ public sealed class WarehouseAuthenticationHandler : AuthenticationHandler<Authe
     {
     }
 
-    protected override Task<AuthenticateResult> HandleAuthenticateAsync()
+    protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
         var userId = Request.Headers["X-User-Id"].FirstOrDefault();
         var rolesValue = Request.Headers["X-User-Roles"].FirstOrDefault();
@@ -47,6 +47,24 @@ public sealed class WarehouseAuthenticationHandler : AuthenticationHandler<Authe
             authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
         {
             var token = authHeader["Bearer ".Length..].Trim();
+            if (LooksLikeJwt(token))
+            {
+                var tokenValidator = Context.RequestServices.GetService<IOAuthTokenValidator>();
+                if (tokenValidator is null)
+                {
+                    return AuthenticateResult.Fail("OAuth token validation service is not configured.");
+                }
+
+                var validation = await tokenValidator.ValidateAsync(token, Context.RequestAborted);
+                if (!validation.IsSuccess || validation.Principal is null)
+                {
+                    return AuthenticateResult.Fail(validation.ErrorMessage);
+                }
+
+                var jwtTicket = new AuthenticationTicket(validation.Principal, WarehouseAuthenticationDefaults.Scheme);
+                return AuthenticateResult.Success(jwtTicket);
+            }
+
             var segments = token.Split('|', 3, StringSplitOptions.TrimEntries);
             if (segments.Length > 0)
             {
@@ -62,7 +80,7 @@ public sealed class WarehouseAuthenticationHandler : AuthenticationHandler<Authe
                 long.TryParse(segments[2], out var expUnix) &&
                 DateTimeOffset.UtcNow > DateTimeOffset.FromUnixTimeSeconds(expUnix))
             {
-                return Task.FromResult(AuthenticateResult.Fail("Token has expired."));
+                return AuthenticateResult.Fail("Token expired");
             }
         }
 
@@ -76,7 +94,7 @@ public sealed class WarehouseAuthenticationHandler : AuthenticationHandler<Authe
             }
             else
             {
-                return Task.FromResult(AuthenticateResult.NoResult());
+                return AuthenticateResult.NoResult();
             }
         }
 
@@ -98,7 +116,12 @@ public sealed class WarehouseAuthenticationHandler : AuthenticationHandler<Authe
         var identity = new ClaimsIdentity(claims, WarehouseAuthenticationDefaults.Scheme);
         var principal = new ClaimsPrincipal(identity);
         var ticket = new AuthenticationTicket(principal, WarehouseAuthenticationDefaults.Scheme);
-        return Task.FromResult(AuthenticateResult.Success(ticket));
+        return AuthenticateResult.Success(ticket);
+    }
+
+    private static bool LooksLikeJwt(string token)
+    {
+        return token.Count(x => x == '.') == 2;
     }
 
     protected override Task HandleChallengeAsync(AuthenticationProperties properties)
