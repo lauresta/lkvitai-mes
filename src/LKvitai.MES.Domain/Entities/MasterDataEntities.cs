@@ -1009,6 +1009,33 @@ public sealed class AgnumExportHistory
     public AgnumExportConfig? ExportConfig { get; set; }
 }
 
+public enum TransactionExportFormat
+{
+    Csv,
+    Json
+}
+
+public enum TransactionExportStatus
+{
+    Pending,
+    Completed,
+    Failed
+}
+
+public sealed class TransactionExport
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public DateTimeOffset StartDate { get; set; }
+    public DateTimeOffset EndDate { get; set; }
+    public TransactionExportFormat Format { get; set; } = TransactionExportFormat.Csv;
+    public int RowCount { get; set; }
+    public string? FilePath { get; set; }
+    public TransactionExportStatus Status { get; set; } = TransactionExportStatus.Pending;
+    public string? ErrorMessage { get; set; }
+    public string ExportedBy { get; set; } = string.Empty;
+    public DateTimeOffset ExportedAt { get; set; } = DateTimeOffset.UtcNow;
+}
+
 public sealed class SupplierItemMapping
 {
     public int Id { get; set; }

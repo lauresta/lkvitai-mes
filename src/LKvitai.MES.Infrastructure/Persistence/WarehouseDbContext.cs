@@ -58,6 +58,7 @@ public class WarehouseDbContext : DbContext
     public DbSet<AgnumExportConfig> AgnumExportConfigs => Set<AgnumExportConfig>();
     public DbSet<AgnumMapping> AgnumMappings => Set<AgnumMapping>();
     public DbSet<AgnumExportHistory> AgnumExportHistories => Set<AgnumExportHistory>();
+    public DbSet<TransactionExport> TransactionExports => Set<TransactionExport>();
     public DbSet<SupplierItemMapping> SupplierItemMappings => Set<SupplierItemMapping>();
     public DbSet<Location> Locations => Set<Location>();
     public DbSet<WarehouseLayoutEntity> WarehouseLayouts => Set<WarehouseLayoutEntity>();
@@ -683,6 +684,23 @@ public class WarehouseDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.ExportConfigId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<TransactionExport>(entity =>
+        {
+            entity.ToTable("transaction_exports");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.StartDate).IsRequired();
+            entity.Property(e => e.EndDate).IsRequired();
+            entity.Property(e => e.Format).HasConversion<string>().HasMaxLength(20).IsRequired();
+            entity.Property(e => e.RowCount).IsRequired();
+            entity.Property(e => e.FilePath).HasMaxLength(4000);
+            entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(20).IsRequired();
+            entity.Property(e => e.ErrorMessage).HasColumnType("text");
+            entity.Property(e => e.ExportedBy).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.ExportedAt).IsRequired();
+            entity.HasIndex(e => e.ExportedAt);
+            entity.HasIndex(e => e.Status);
         });
 
         modelBuilder.Entity<SupplierItemMapping>(entity =>

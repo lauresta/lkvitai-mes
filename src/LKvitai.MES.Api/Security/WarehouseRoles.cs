@@ -11,4 +11,5 @@ public static class WarehouseRoles
     public const string DispatchClerk = "DispatchClerk";
     public const string InventoryAccountant = "InventoryAccountant";
     public const string CFO = "CFO";
+    public const string Auditor = "Auditor";
 }

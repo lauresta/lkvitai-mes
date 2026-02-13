@@ -846,3 +846,16 @@
   Evidence: /tmp/prd1630-create.headers:1, /tmp/prd1630-query.headers:1 (HTTP/1.1 403, Server: AirTunes), /tmp/token.txt missing
   Impact: Task-specified localhost API curl validation for audit log creation/query could not be executed against project API in this environment.
   Proposed resolution: Run validations against a reachable LKvitai API host/port with generated dev token (`/api/auth/dev-token`) and valid bearer token.
+- Timestamp: 2026-02-13T06:42:48Z
+  TaskId: PRD-1631
+  Type: AMBIGUITY
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S8.md:532, src/LKvitai.MES.Api/Services/TransactionExportService.cs:120, src/LKvitai.MES.Api/Services/TransactionExportService.cs:124
+  Impact: Spec requires `UserId` in exported event rows, but Marten raw events do not guarantee a normalized user-id field; exports may contain null `UserId` for events without `X-User-Id` header metadata.
+  Proposed resolution: Define canonical event metadata contract for actor identity (required header key) and backfill strategy for historical events.
+
+- Timestamp: 2026-02-13T06:42:48Z
+  TaskId: PRD-1631
+  Type: TEST-GAP
+  Evidence: /tmp/prd1631-export.headers:1, /tmp/prd1631-history.headers:1 (HTTP/1.1 403, Server: AirTunes), /tmp/token.txt missing
+  Impact: Task curl validation against `localhost:5000` could not hit LKvitai API, so live endpoint validation for export/history remained unverified in this environment.
+  Proposed resolution: Run validation against a reachable API host and generate token via `/api/auth/dev-token` before invoking compliance export endpoints.

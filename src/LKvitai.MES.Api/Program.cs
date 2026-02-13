@@ -122,6 +122,11 @@ builder.Services.AddAuthorization(options =>
         policy.RequireRole(
             WarehouseRoles.CFO,
             WarehouseRoles.WarehouseAdmin));
+
+    options.AddPolicy(WarehousePolicies.AdminOrAuditor, policy =>
+        policy.RequireRole(
+            WarehouseRoles.WarehouseAdmin,
+            WarehouseRoles.Auditor));
 });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -178,6 +183,10 @@ builder.Services.AddScoped<IApprovalRuleService, ApprovalRuleService>();
 builder.Services.AddScoped<IRoleManagementService, RoleManagementService>();
 builder.Services.AddScoped<IApiKeyService, ApiKeyService>();
 builder.Services.AddScoped<ISecurityAuditLogService, SecurityAuditLogService>();
+builder.Services.Configure<TransactionExportOptions>(builder.Configuration.GetSection("Compliance:TransactionExport"));
+builder.Services.AddScoped<ITransactionEventReader, MartenTransactionEventReader>();
+builder.Services.AddSingleton<ITransactionExportSftpClient, SshNetTransactionExportSftpClient>();
+builder.Services.AddScoped<ITransactionExportService, TransactionExportService>();
 
 var warehouseConnectionString =
     builder.Configuration.GetConnectionString("WarehouseDb")
