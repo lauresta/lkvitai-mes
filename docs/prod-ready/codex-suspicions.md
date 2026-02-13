@@ -833,3 +833,16 @@
   Evidence: Validation curl call to `http://localhost:5000/api/warehouse/v1/admin/permissions/check` returned `HTTP/1.1 403 Forbidden` from `Server: AirTunes/925.5.1` (`/tmp/prd1629-check.headers`).
   Impact: Task-specified runtime permission-check validation could not be executed against LKvitai.MES.Api in this environment.
   Proposed minimal fix: Run LKvitai.MES.Api on an isolated known port and rerun the PRD-1629 curl command with a valid admin token.
+- Timestamp: 2026-02-13T06:33:42Z
+  TaskId: PRD-1630
+  Type: INCONSISTENCY
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S8.md:1420, src/LKvitai.MES.Domain/Entities/MasterDataEntities.cs:1265
+  Impact: Task data model specifies `AuditLog.UserId` as nullable int, but system identity uses string subject/user ids across auth flows; forcing int would break OAuth/API-key actor identifiers.
+  Proposed resolution: Keep `UserId` as nullable string in audit log schema and clarify spec model to identity-subject string.
+
+- Timestamp: 2026-02-13T06:33:42Z
+  TaskId: PRD-1630
+  Type: TEST-GAP
+  Evidence: /tmp/prd1630-create.headers:1, /tmp/prd1630-query.headers:1 (HTTP/1.1 403, Server: AirTunes), /tmp/token.txt missing
+  Impact: Task-specified localhost API curl validation for audit log creation/query could not be executed against project API in this environment.
+  Proposed resolution: Run validations against a reachable LKvitai API host/port with generated dev token (`/api/auth/dev-token`) and valid bearer token.

@@ -74,6 +74,7 @@ public class WarehouseDbContext : DbContext
     public DbSet<UserRoleAssignment> UserRoleAssignments => Set<UserRoleAssignment>();
     public DbSet<UserMfa> UserMfas => Set<UserMfa>();
     public DbSet<ApiKey> ApiKeys => Set<ApiKey>();
+    public DbSet<SecurityAuditLog> SecurityAuditLogs => Set<SecurityAuditLog>();
     public DbSet<WarehouseSettings> WarehouseSettings => Set<WarehouseSettings>();
     public DbSet<SerialNumber> SerialNumbers => Set<SerialNumber>();
     public DbSet<SKUSequence> SKUSequences => Set<SKUSequence>();
@@ -1014,6 +1015,25 @@ public class WarehouseDbContext : DbContext
             entity.HasIndex(e => e.KeyHash).IsUnique();
             entity.HasIndex(e => e.Active);
             entity.HasIndex(e => e.ExpiresAt);
+        });
+
+        modelBuilder.Entity<SecurityAuditLog>(entity =>
+        {
+            entity.ToTable("security_audit_logs");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
+            entity.Property(e => e.UserId).HasMaxLength(200);
+            entity.Property(e => e.Action).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.Resource).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.ResourceId).HasMaxLength(200);
+            entity.Property(e => e.IpAddress).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.UserAgent).HasMaxLength(1000).IsRequired();
+            entity.Property(e => e.Timestamp).IsRequired();
+            entity.Property(e => e.Details).HasColumnType("text").IsRequired();
+
+            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => e.Timestamp);
+            entity.HasIndex(e => new { e.Action, e.Resource });
         });
 
         var systemCreatedAt = new DateTimeOffset(2026, 2, 13, 0, 0, 0, TimeSpan.Zero);

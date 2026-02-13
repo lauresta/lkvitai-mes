@@ -32,17 +32,20 @@ public sealed class RoleManagementService : IRoleManagementService
     private readonly WarehouseDbContext _dbContext;
     private readonly IAdminUserStore _adminUserStore;
     private readonly IMemoryCache _memoryCache;
+    private readonly ISecurityAuditLogService? _auditLogService;
     private readonly ILogger<RoleManagementService> _logger;
 
     public RoleManagementService(
         WarehouseDbContext dbContext,
         IAdminUserStore adminUserStore,
         IMemoryCache memoryCache,
-        ILogger<RoleManagementService> logger)
+        ILogger<RoleManagementService> logger,
+        ISecurityAuditLogService? auditLogService = null)
     {
         _dbContext = dbContext;
         _adminUserStore = adminUserStore;
         _memoryCache = memoryCache;
+        _auditLogService = auditLogService;
         _logger = logger;
     }
 
@@ -106,6 +109,12 @@ public sealed class RoleManagementService : IRoleManagementService
         InvalidatePermissionCache();
 
         _logger.LogInformation("Role created: Id={RoleId}, Name={RoleName}, Permissions={PermissionCount}", role.Id, role.Name, permissionIds.Value.Count);
+        await WriteAuditAsync(
+            "ROLE_CREATE",
+            "ROLE",
+            role.Id.ToString(),
+            $"{{\"name\":\"{role.Name}\",\"permissions\":{permissionIds.Value.Count}}}",
+            cancellationToken);
 
         var created = await LoadRoleAsync(role.Id, cancellationToken);
         return Result<RoleDto>.Ok(Map(created!));
@@ -153,6 +162,12 @@ public sealed class RoleManagementService : IRoleManagementService
         InvalidatePermissionCache();
 
         _logger.LogInformation("Role updated: Id={RoleId}, Name={RoleName}, Permissions={PermissionCount}", role.Id, role.Name, permissionIds.Value.Count);
+        await WriteAuditAsync(
+            "ROLE_UPDATE",
+            "ROLE",
+            role.Id.ToString(),
+            $"{{\"name\":\"{role.Name}\",\"permissions\":{permissionIds.Value.Count}}}",
+            cancellationToken);
 
         var updated = await LoadRoleAsync(role.Id, cancellationToken);
         return Result<RoleDto>.Ok(Map(updated!));
@@ -176,6 +191,12 @@ public sealed class RoleManagementService : IRoleManagementService
         InvalidatePermissionCache();
 
         _logger.LogInformation("Role deleted: Id={RoleId}, Name={RoleName}", role.Id, role.Name);
+        await WriteAuditAsync(
+            "ROLE_DELETE",
+            "ROLE",
+            role.Id.ToString(),
+            "{}",
+            cancellationToken);
         return Result.Ok();
     }
 
@@ -221,6 +242,12 @@ public sealed class RoleManagementService : IRoleManagementService
             .FirstAsync(x => x.UserId == userId && x.RoleId == roleId, cancellationToken);
 
         _logger.LogInformation("Role assigned: UserId={UserId}, RoleId={RoleId}", userId, roleId);
+        await WriteAuditAsync(
+            "ROLE_ASSIGN",
+            "USER_ROLE",
+            $"{userId}:{roleId}",
+            $"{{\"userId\":\"{userId}\",\"roleId\":{roleId}}}",
+            cancellationToken);
 
         return Result<UserRoleAssignmentDto>.Ok(new UserRoleAssignmentDto(
             assignment.UserId,
@@ -407,6 +434,31 @@ public sealed class RoleManagementService : IRoleManagementService
     private void InvalidatePermissionCache()
     {
         Interlocked.Increment(ref _permissionCacheGeneration);
+    }
+
+    private async Task WriteAuditAsync(
+        string action,
+        string resource,
+        string? resourceId,
+        string detailsJson,
+        CancellationToken cancellationToken)
+    {
+        if (_auditLogService is null)
+        {
+            return;
+        }
+
+        await _auditLogService.WriteAsync(
+            new SecurityAuditLogWriteRequest(
+                null,
+                action,
+                resource,
+                resourceId,
+                "system",
+                "role-management-service",
+                DateTimeOffset.UtcNow,
+                detailsJson),
+            cancellationToken);
     }
 
     private static RoleDto Map(Role role)

@@ -33,6 +33,7 @@ public sealed class MfaService : IMfaService
     private readonly IDataProtector _backupProtector;
     private readonly IMfaSessionTokenService _sessionTokenService;
     private readonly IOptionsMonitor<MfaOptions> _mfaOptionsMonitor;
+    private readonly ISecurityAuditLogService? _auditLogService;
     private readonly ILogger<MfaService> _logger;
 
     public MfaService(
@@ -41,7 +42,8 @@ public sealed class MfaService : IMfaService
         IDataProtectionProvider dataProtectionProvider,
         IMfaSessionTokenService sessionTokenService,
         IOptionsMonitor<MfaOptions> mfaOptionsMonitor,
-        ILogger<MfaService> logger)
+        ILogger<MfaService> logger,
+        ISecurityAuditLogService? auditLogService = null)
     {
         _dbContext = dbContext;
         _adminUserStore = adminUserStore;
@@ -49,6 +51,7 @@ public sealed class MfaService : IMfaService
         _backupProtector = dataProtectionProvider.CreateProtector("mfa:backup-codes:v1");
         _sessionTokenService = sessionTokenService;
         _mfaOptionsMonitor = mfaOptionsMonitor;
+        _auditLogService = auditLogService;
         _logger = logger;
     }
 
@@ -90,6 +93,13 @@ public sealed class MfaService : IMfaService
         var qrCodeDataUri = GenerateQrCodeDataUri(keyUri);
 
         _logger.LogInformation("MFA enrollment initiated for UserId={UserId}", userId);
+        await WriteAuditAsync(
+            userId.ToString(),
+            "MFA_ENROLL_START",
+            "USER",
+            userId.ToString(),
+            cancellationToken,
+            "{\"mfaEnabled\":false}");
 
         return Result<MfaEnrollmentDto>.Ok(new MfaEnrollmentDto(secretBase32, qrCodeDataUri, backupCodes, false));
     }
@@ -123,6 +133,13 @@ public sealed class MfaService : IMfaService
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("MFA enrollment verified for UserId={UserId}", userId);
+        await WriteAuditAsync(
+            userId.ToString(),
+            "MFA_ENROLL_VERIFY",
+            "USER",
+            userId.ToString(),
+            cancellationToken,
+            "{\"mfaEnabled\":true}");
         return Result.Ok();
     }
 
@@ -196,6 +213,13 @@ public sealed class MfaService : IMfaService
         var expiresAt = DateTimeOffset.UtcNow.AddHours(sessionHours);
 
         _logger.LogInformation("MFA challenge verified for UserId={UserId}", userId);
+        await WriteAuditAsync(
+            userId.ToString(),
+            "MFA_VERIFY",
+            "USER",
+            userId.ToString(),
+            cancellationToken,
+            $"{{\"remainingBackupCodes\":{backupHashes.Count}}}");
 
         return Result<MfaVerifyResultDto>.Ok(new MfaVerifyResultDto(
             accessToken,
@@ -243,6 +267,13 @@ public sealed class MfaService : IMfaService
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("MFA reset for UserId={UserId}", userId);
+        await WriteAuditAsync(
+            userId.ToString(),
+            "MFA_RESET",
+            "USER",
+            userId.ToString(),
+            cancellationToken,
+            "{\"mfaEnabled\":false}");
         return Result.Ok();
     }
 
@@ -340,6 +371,32 @@ public sealed class MfaService : IMfaService
 
         var json = _backupProtector.Unprotect(protectedBackupCodes);
         return JsonSerializer.Deserialize<List<string>>(json) ?? [];
+    }
+
+    private async Task WriteAuditAsync(
+        string? userId,
+        string action,
+        string resource,
+        string? resourceId,
+        CancellationToken cancellationToken,
+        string detailsJson)
+    {
+        if (_auditLogService is null)
+        {
+            return;
+        }
+
+        await _auditLogService.WriteAsync(
+            new SecurityAuditLogWriteRequest(
+                userId,
+                action,
+                resource,
+                resourceId,
+                "system",
+                "mfa-service",
+                DateTimeOffset.UtcNow,
+                detailsJson),
+            cancellationToken);
     }
 }
 

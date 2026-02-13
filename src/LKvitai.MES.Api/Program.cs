@@ -177,6 +177,7 @@ builder.Services.AddScoped<IReasonCodeService, ReasonCodeService>();
 builder.Services.AddScoped<IApprovalRuleService, ApprovalRuleService>();
 builder.Services.AddScoped<IRoleManagementService, RoleManagementService>();
 builder.Services.AddScoped<IApiKeyService, ApiKeyService>();
+builder.Services.AddScoped<ISecurityAuditLogService, SecurityAuditLogService>();
 
 var warehouseConnectionString =
     builder.Configuration.GetConnectionString("WarehouseDb")
@@ -231,6 +232,7 @@ app.UseMiddleware<ApiRateLimitingMiddleware>();
 app.UseMiddleware<ProblemDetailsExceptionMiddleware>();
 app.UseMiddleware<IdempotencyReplayHeaderMiddleware>();
 app.UseAuthentication();
+app.UseMiddleware<SecurityAuditLoggingMiddleware>();
 app.UseMiddleware<MfaEnforcementMiddleware>();
 app.UseMiddleware<ApiKeyScopeMiddleware>();
 app.UseMiddleware<PermissionPolicyMiddleware>();

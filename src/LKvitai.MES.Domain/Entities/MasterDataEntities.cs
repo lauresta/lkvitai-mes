@@ -1259,6 +1259,19 @@ public sealed class ApiKey
     public DateTimeOffset? UpdatedAt { get; set; }
 }
 
+public sealed class SecurityAuditLog
+{
+    public long Id { get; set; }
+    public string? UserId { get; set; }
+    public string Action { get; set; } = string.Empty;
+    public string Resource { get; set; } = string.Empty;
+    public string? ResourceId { get; set; }
+    public string IpAddress { get; set; } = string.Empty;
+    public string UserAgent { get; set; } = string.Empty;
+    public DateTimeOffset Timestamp { get; set; } = DateTimeOffset.UtcNow;
+    public string Details { get; set; } = "{}";
+}
+
 public sealed class SerialNumber
 {
     public int Id { get; set; }
