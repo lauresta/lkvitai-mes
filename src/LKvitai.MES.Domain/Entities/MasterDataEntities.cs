@@ -1242,6 +1242,23 @@ public sealed class UserMfa
     public DateTimeOffset? UpdatedAt { get; set; }
 }
 
+public sealed class ApiKey
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string KeyHash { get; set; } = string.Empty;
+    public List<string> Scopes { get; set; } = [];
+    public DateTimeOffset? ExpiresAt { get; set; }
+    public bool Active { get; set; } = true;
+    public int RateLimitPerMinute { get; set; } = 100;
+    public DateTimeOffset? LastUsedAt { get; set; }
+    public string CreatedBy { get; set; } = string.Empty;
+    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
+    public string? PreviousKeyHash { get; set; }
+    public DateTimeOffset? PreviousKeyGraceUntil { get; set; }
+    public DateTimeOffset? UpdatedAt { get; set; }
+}
+
 public sealed class SerialNumber
 {
     public int Id { get; set; }

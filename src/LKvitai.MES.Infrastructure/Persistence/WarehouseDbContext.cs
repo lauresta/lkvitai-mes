@@ -3,7 +3,9 @@ using LKvitai.MES.Application.Services;
 using LKvitai.MES.Contracts.Messages;
 using LKvitai.MES.Domain.Common;
 using LKvitai.MES.Domain.Entities;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 using HandlingUnitAggregate = LKvitai.MES.Domain.Aggregates.HandlingUnit;
 using WarehouseLayoutAggregate = LKvitai.MES.Domain.Aggregates.WarehouseLayout;
 using HandlingUnitTypeEntity = LKvitai.MES.Domain.Entities.HandlingUnitType;
@@ -71,6 +73,7 @@ public class WarehouseDbContext : DbContext
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
     public DbSet<UserRoleAssignment> UserRoleAssignments => Set<UserRoleAssignment>();
     public DbSet<UserMfa> UserMfas => Set<UserMfa>();
+    public DbSet<ApiKey> ApiKeys => Set<ApiKey>();
     public DbSet<WarehouseSettings> WarehouseSettings => Set<WarehouseSettings>();
     public DbSet<SerialNumber> SerialNumbers => Set<SerialNumber>();
     public DbSet<SKUSequence> SKUSequences => Set<SKUSequence>();
@@ -977,6 +980,40 @@ public class WarehouseDbContext : DbContext
             entity.Property(e => e.UpdatedAt);
             entity.HasIndex(e => e.MfaEnabled);
             entity.HasIndex(e => e.LockedUntil);
+        });
+
+        modelBuilder.Entity<ApiKey>(entity =>
+        {
+            entity.ToTable("api_keys");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.KeyHash).HasMaxLength(256).IsRequired();
+            entity.Property(e => e.ExpiresAt);
+            entity.Property(e => e.Active).HasDefaultValue(true).IsRequired();
+            entity.Property(e => e.RateLimitPerMinute).HasDefaultValue(100).IsRequired();
+            entity.Property(e => e.LastUsedAt);
+            entity.Property(e => e.CreatedBy).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.Property(e => e.PreviousKeyHash).HasMaxLength(256);
+            entity.Property(e => e.PreviousKeyGraceUntil);
+            entity.Property(e => e.UpdatedAt);
+
+            var scopesComparer = new ValueComparer<List<string>>(
+                (left, right) => left!.SequenceEqual(right!),
+                value => value.Aggregate(0, (hash, item) => HashCode.Combine(hash, StringComparer.OrdinalIgnoreCase.GetHashCode(item))),
+                value => value.ToList());
+
+            entity.Property(e => e.Scopes)
+                .HasColumnType("text")
+                .HasConversion(
+                    value => JsonSerializer.Serialize(value, (JsonSerializerOptions?)null),
+                    value => JsonSerializer.Deserialize<List<string>>(value, (JsonSerializerOptions?)null) ?? new List<string>())
+                .Metadata.SetValueComparer(scopesComparer);
+
+            entity.HasIndex(e => e.Name).IsUnique();
+            entity.HasIndex(e => e.KeyHash).IsUnique();
+            entity.HasIndex(e => e.Active);
+            entity.HasIndex(e => e.ExpiresAt);
         });
 
         var systemCreatedAt = new DateTimeOffset(2026, 2, 13, 0, 0, 0, TimeSpan.Zero);

@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Security.Claims;
 using System.Text.Json;
 
 namespace LKvitai.MES.Api.Middleware;
@@ -25,6 +26,7 @@ public sealed class ApiRateLimitingMiddleware
         }
 
         var key = ResolveKey(context);
+        var limit = ResolveLimit(context);
         var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         var windowStart = now - (now % WindowSeconds);
         var counter = _counters.GetOrAdd(key, _ => new CounterState(windowStart));
@@ -45,13 +47,13 @@ public sealed class ApiRateLimitingMiddleware
             resetAt = counter.WindowStartUnix + WindowSeconds;
         }
 
-        var remaining = Math.Max(0, LimitPerMinute - used);
+        var remaining = Math.Max(0, limit - used);
 
-        context.Response.Headers["X-RateLimit-Limit"] = LimitPerMinute.ToString();
+        context.Response.Headers["X-RateLimit-Limit"] = limit.ToString();
         context.Response.Headers["X-RateLimit-Remaining"] = remaining.ToString();
         context.Response.Headers["X-RateLimit-Reset"] = resetAt.ToString();
 
-        if (used <= LimitPerMinute)
+        if (used <= limit)
         {
             await _next(context);
             return;
@@ -94,6 +96,12 @@ public sealed class ApiRateLimitingMiddleware
 
     private static string ResolveKey(HttpContext context)
     {
+        var apiKeyId = context.User.FindFirstValue("api_key_id");
+        if (!string.IsNullOrWhiteSpace(apiKeyId))
+        {
+            return $"api-key:{apiKeyId}";
+        }
+
         var userId = context.User.Identity?.Name;
         if (!string.IsNullOrWhiteSpace(userId))
         {
@@ -108,6 +116,14 @@ public sealed class ApiRateLimitingMiddleware
 
         var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
         return $"ip:{ip}";
+    }
+
+    private static int ResolveLimit(HttpContext context)
+    {
+        var value = context.User.FindFirstValue("api_key_rate_limit");
+        return int.TryParse(value, out var parsed) && parsed > 0
+            ? parsed
+            : LimitPerMinute;
     }
 
     private sealed class CounterState

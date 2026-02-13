@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using System.Text.Encodings.Web;
 using LKvitai.MES.Api.ErrorHandling;
+using LKvitai.MES.Api.Services;
 using LKvitai.MES.SharedKernel;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
@@ -39,6 +40,43 @@ public sealed class WarehouseAuthenticationHandler : AuthenticationHandler<Authe
 
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
+        var apiKeyValue = Request.Headers["X-API-Key"].FirstOrDefault();
+        if (!string.IsNullOrWhiteSpace(apiKeyValue))
+        {
+            var apiKeyService = Context.RequestServices.GetService<IApiKeyService>();
+            if (apiKeyService is null)
+            {
+                return AuthenticateResult.Fail("API key service is not configured.");
+            }
+
+            var validation = await apiKeyService.ValidateAsync(apiKeyValue, Context.RequestAborted);
+            if (!validation.IsSuccess)
+            {
+                return AuthenticateResult.Fail(validation.ErrorMessage ?? "Invalid API key.");
+            }
+
+            var apiKeyClaims = new List<Claim>
+            {
+                new(ClaimTypes.NameIdentifier, $"api-key:{validation.ApiKeyId}"),
+                new(ClaimTypes.Name, $"api-key:{validation.ApiKeyId}"),
+                new("auth_source", "api_key"),
+                new("api_key_id", validation.ApiKeyId.ToString()),
+                new("api_key_name", validation.Name),
+                new("api_key_rate_limit", validation.RateLimitPerMinute.ToString()),
+                new("mfa_verified", "true")
+            };
+
+            foreach (var scope in validation.Scopes)
+            {
+                apiKeyClaims.Add(new Claim("api_scope", scope));
+            }
+
+            var apiKeyIdentity = new ClaimsIdentity(apiKeyClaims, WarehouseAuthenticationDefaults.Scheme);
+            var apiKeyPrincipal = new ClaimsPrincipal(apiKeyIdentity);
+            var apiKeyTicket = new AuthenticationTicket(apiKeyPrincipal, WarehouseAuthenticationDefaults.Scheme);
+            return AuthenticateResult.Success(apiKeyTicket);
+        }
+
         var userId = Request.Headers["X-User-Id"].FirstOrDefault();
         var rolesValue = Request.Headers["X-User-Roles"].FirstOrDefault();
         string? authSource = null;

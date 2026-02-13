@@ -807,3 +807,16 @@
   Evidence: Task validation curl calls to `http://localhost:5000/api/auth/mfa/*` returned `HTTP/1.1 403 Forbidden` from `Server: AirTunes/925.5.1` (see `/tmp/prd1627-enroll.headers`, `/tmp/prd1627-verify-enrollment.headers`, `/tmp/prd1627-backup-codes.headers`).
   Impact: Task-mandated runtime validation could not be executed against LKvitai.MES.Api in this environment.
   Proposed minimal fix: Run LKvitai.MES.Api on an isolated known port and rerun the PRD-1627 curl validation sequence with a valid bearer token.
+- Timestamp: 2026-02-13T06:19:42Z
+  TaskId: PRD-1628
+  Type: INCONSISTENCY
+  Evidence: Task acceptance/validation references `POST /api/warehouse/v1/orders` (`docs/prod-ready/prod-ready-tasks-PHASE15-S8.md:1265`), while repository order write endpoint is `src/LKvitai.MES.Api/Api/Controllers/SalesOrdersController.cs:16` (`/api/warehouse/v1/sales-orders`).
+  Impact: Scope-validation scenarios can target a non-existent route if implemented literally.
+  Proposed minimal fix: Align task text to repository route (`/api/warehouse/v1/sales-orders`) or explicitly require alias route support.
+
+- Timestamp: 2026-02-13T06:19:42Z
+  TaskId: PRD-1628
+  Type: TEST-GAP
+  Evidence: Validation curl calls to `http://localhost:5000/api/warehouse/v1/admin/api-keys` and `/api/warehouse/v1/items` returned `HTTP/1.1 403 Forbidden` from `Server: AirTunes/925.5.1` (see `/tmp/prd1628-generate.headers`, `/tmp/prd1628-use.headers`).
+  Impact: Task-specified runtime API-key generation and usage checks were not executable against LKvitai.MES.Api in this environment.
+  Proposed minimal fix: Run LKvitai.MES.Api on an isolated known port and rerun PRD-1628 curl validation with a valid admin token and generated API key.

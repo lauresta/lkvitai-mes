@@ -176,6 +176,7 @@ builder.Services.AddScoped<IWarehouseSettingsService, WarehouseSettingsService>(
 builder.Services.AddScoped<IReasonCodeService, ReasonCodeService>();
 builder.Services.AddScoped<IApprovalRuleService, ApprovalRuleService>();
 builder.Services.AddScoped<IRoleManagementService, RoleManagementService>();
+builder.Services.AddScoped<IApiKeyService, ApiKeyService>();
 
 var warehouseConnectionString =
     builder.Configuration.GetConnectionString("WarehouseDb")
@@ -231,6 +232,7 @@ app.UseMiddleware<ProblemDetailsExceptionMiddleware>();
 app.UseMiddleware<IdempotencyReplayHeaderMiddleware>();
 app.UseAuthentication();
 app.UseMiddleware<MfaEnforcementMiddleware>();
+app.UseMiddleware<ApiKeyScopeMiddleware>();
 app.UseAuthorization();
 app.UseHangfireDashboard("/hangfire");
 app.MapControllers();
