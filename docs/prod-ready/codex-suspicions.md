@@ -719,3 +719,15 @@
   Evidence: Required validation command `dotnet run --project src/LKvitai.MES.WebUI` failed due missing HTTPS dev certificate (`/tmp/prd1620-webui-run.log`); fallback on `http://127.0.0.1:5001` failed with address in use, while alternate-port startup succeeded (`http://127.0.0.1:5010`), but browser/manual workflow checks were not executable in this terminal-only run.
   Impact: End-to-end manual verification of create/submit/approve/execute transfer UI scenarios remains pending.
   Proposed minimal fix: Free standard UI port or choose explicit available port, install/trust dev HTTPS cert, then run browser walkthrough for `/warehouse/transfers`, `/warehouse/transfers/create`, and `/warehouse/transfers/{id}/execute`.
+- Timestamp: 2026-02-13T05:07:10Z
+  TaskId: PRD-1621
+  Type: INCONSISTENCY
+  Evidence: `docs/prod-ready/prod-ready-tasks-PHASE15-S8.md:126-127` posts `{"username":"admin","roles":["Admin"]}` to `/api/auth/dev-token`, but API contract requires `DevTokenRequest(string Username, string Password)` in `src/LKvitai.MES.Api/Security/IDevAuthService.cs:3`.
+  Impact: Task validation token command cannot produce a valid bearer token for this repository contract.
+  Proposed minimal fix: Align Sprint 8 validation payload to include `password` (or update dev-token endpoint contract to accept role override payload).
+- Timestamp: 2026-02-13T05:07:10Z
+  TaskId: PRD-1621
+  Type: TEST-GAP
+  Evidence: Task validation calls to `http://localhost:5000/api/warehouse/v1/admin/settings` returned `HTTP/1.1 403` from `Server: AirTunes/925.5.1` (`/tmp/prd1621-get.out:1-4`, `/tmp/prd1621-put.out:1-4`) instead of the project API.
+  Impact: Could not execute required curl acceptance checks against the implemented endpoint in this environment.
+  Proposed minimal fix: Run project API on an isolated known port and rerun the exact PRD-1621 curl sequence against that host/port.

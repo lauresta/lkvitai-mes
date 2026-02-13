@@ -1125,6 +1125,24 @@ public sealed class AdjustmentReasonCode
     public bool IsActive { get; set; } = true;
 }
 
+public enum PickStrategy
+{
+    FEFO = 0,
+    FIFO = 1
+}
+
+public sealed class WarehouseSettings : AuditableEntity
+{
+    public const int SingletonId = 1;
+
+    public int Id { get; set; } = SingletonId;
+    public int CapacityThresholdPercent { get; set; } = 80;
+    public PickStrategy DefaultPickStrategy { get; set; } = PickStrategy.FEFO;
+    public int LowStockThreshold { get; set; } = 10;
+    public int ReorderPoint { get; set; } = 50;
+    public bool AutoAllocateOrders { get; set; } = true;
+}
+
 public sealed class SerialNumber
 {
     public int Id { get; set; }

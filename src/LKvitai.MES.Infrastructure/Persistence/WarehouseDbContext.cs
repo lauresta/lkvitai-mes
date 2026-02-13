@@ -65,6 +65,7 @@ public class WarehouseDbContext : DbContext
     public DbSet<InboundShipment> InboundShipments => Set<InboundShipment>();
     public DbSet<InboundShipmentLine> InboundShipmentLines => Set<InboundShipmentLine>();
     public DbSet<AdjustmentReasonCode> AdjustmentReasonCodes => Set<AdjustmentReasonCode>();
+    public DbSet<WarehouseSettings> WarehouseSettings => Set<WarehouseSettings>();
     public DbSet<SerialNumber> SerialNumbers => Set<SerialNumber>();
     public DbSet<SKUSequence> SKUSequences => Set<SKUSequence>();
     public DbSet<EventProcessingCheckpoint> EventProcessingCheckpoints => Set<EventProcessingCheckpoint>();
@@ -831,6 +832,28 @@ public class WarehouseDbContext : DbContext
             entity.HasKey(e => e.Code);
             entity.Property(e => e.Code).HasMaxLength(50);
             entity.Property(e => e.Name).HasMaxLength(200).IsRequired();
+        });
+
+        modelBuilder.Entity<WarehouseSettings>(entity =>
+        {
+            entity.ToTable("warehouse_settings");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.CapacityThresholdPercent).IsRequired();
+            entity.Property(e => e.DefaultPickStrategy)
+                .HasConversion<string>()
+                .HasMaxLength(10)
+                .IsRequired();
+            entity.Property(e => e.LowStockThreshold).IsRequired();
+            entity.Property(e => e.ReorderPoint).IsRequired();
+            entity.Property(e => e.AutoAllocateOrders).HasDefaultValue(true).IsRequired();
+            entity.ToTable(t =>
+            {
+                t.HasCheckConstraint("ck_warehouse_settings_singleton", "\"Id\" = 1");
+                t.HasCheckConstraint("ck_warehouse_settings_capacity", "\"CapacityThresholdPercent\" >= 0 AND \"CapacityThresholdPercent\" <= 100");
+                t.HasCheckConstraint("ck_warehouse_settings_low_stock", "\"LowStockThreshold\" >= 0");
+                t.HasCheckConstraint("ck_warehouse_settings_reorder_point", "\"ReorderPoint\" >= 0");
+            });
         });
 
         modelBuilder.Entity<SerialNumber>(entity =>

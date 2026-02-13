@@ -45,6 +45,7 @@ builder.Host.UseSerilog();
 builder.Services.AddControllers();
 builder.Services.AddProblemDetails();
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddMemoryCache();
 builder.Services.AddDataProtection();
 builder.Services.AddHttpClient("AgnumExportApi");
 builder.Services.AddHttpClient("FedExApi");
@@ -161,6 +162,7 @@ builder.Services.AddScoped<LabelPrintQueueRecurringJob>();
 builder.Services.AddScoped<ITransferStockAvailabilityService, MartenTransferStockAvailabilityService>();
 builder.Services.AddScoped<ICycleCountQuantityResolver, MartenCycleCountQuantityResolver>();
 builder.Services.AddSingleton<IAdvancedWarehouseStore, AdvancedWarehouseStore>();
+builder.Services.AddScoped<IWarehouseSettingsService, WarehouseSettingsService>();
 
 var warehouseConnectionString =
     builder.Configuration.GetConnectionString("WarehouseDb")
