@@ -233,6 +233,7 @@ app.UseMiddleware<IdempotencyReplayHeaderMiddleware>();
 app.UseAuthentication();
 app.UseMiddleware<MfaEnforcementMiddleware>();
 app.UseMiddleware<ApiKeyScopeMiddleware>();
+app.UseMiddleware<PermissionPolicyMiddleware>();
 app.UseAuthorization();
 app.UseHangfireDashboard("/hangfire");
 app.MapControllers();

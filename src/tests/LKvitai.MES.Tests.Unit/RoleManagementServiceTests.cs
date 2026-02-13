@@ -353,6 +353,142 @@ public class RoleManagementServiceTests
         after.Should().BeTrue();
     }
 
+    [Fact]
+    [Trait("Category", "Permission")]
+    public async Task GetPermissionsAsync_ShouldReturnAllAndOwnScopes()
+    {
+        var fixture = new TestFixture();
+        await using var db = fixture.CreateDbContext();
+        var service = fixture.CreateService(db);
+
+        var permissions = await service.GetPermissionsAsync();
+
+        permissions.Should().Contain(x => x.Resource == "ITEM" && x.Action == "READ" && x.Scope == "ALL");
+        permissions.Should().Contain(x => x.Resource == "ITEM" && x.Action == "READ" && x.Scope == "OWN");
+    }
+
+    [Fact]
+    [Trait("Category", "Permission")]
+    public async Task CheckPermissionAsync_WhenOwnerMatchesAndOwnPermissionAssigned_ShouldReturnTrue()
+    {
+        var fixture = new TestFixture();
+        await using var db = fixture.CreateDbContext();
+        var service = fixture.CreateService(db);
+
+        var role = await service.CreateRoleAsync(new CreateRoleRequest("OwnOrderUpdater", null, [new RolePermissionRequest("ORDER", "UPDATE", "OWN")]));
+        _ = await service.AssignRoleAsync(fixture.KnownUserId, role.Value.Id, "admin");
+
+        var allowed = await service.CheckPermissionAsync(
+            fixture.KnownUserId,
+            "ORDER",
+            "UPDATE",
+            fixture.KnownUserId);
+
+        allowed.Should().BeTrue();
+    }
+
+    [Fact]
+    [Trait("Category", "Permission")]
+    public async Task CheckPermissionAsync_WhenOwnerDifferentAndOnlyOwnPermissionAssigned_ShouldReturnFalse()
+    {
+        var fixture = new TestFixture();
+        await using var db = fixture.CreateDbContext();
+        var service = fixture.CreateService(db);
+
+        var role = await service.CreateRoleAsync(new CreateRoleRequest("OwnOrderUpdater", null, [new RolePermissionRequest("ORDER", "UPDATE", "OWN")]));
+        _ = await service.AssignRoleAsync(fixture.KnownUserId, role.Value.Id, "admin");
+
+        var allowed = await service.CheckPermissionAsync(
+            fixture.KnownUserId,
+            "ORDER",
+            "UPDATE",
+            Guid.NewGuid());
+
+        allowed.Should().BeFalse();
+    }
+
+    [Fact]
+    [Trait("Category", "Permission")]
+    public async Task CheckPermissionAsync_WhenOwnerDifferentAndAllPermissionAssigned_ShouldReturnTrue()
+    {
+        var fixture = new TestFixture();
+        await using var db = fixture.CreateDbContext();
+        var service = fixture.CreateService(db);
+
+        var role = await service.CreateRoleAsync(new CreateRoleRequest("AllOrderUpdater", null, [new RolePermissionRequest("ORDER", "UPDATE", "ALL")]));
+        _ = await service.AssignRoleAsync(fixture.KnownUserId, role.Value.Id, "admin");
+
+        var allowed = await service.CheckPermissionAsync(
+            fixture.KnownUserId,
+            "ORDER",
+            "UPDATE",
+            Guid.NewGuid());
+
+        allowed.Should().BeTrue();
+    }
+
+    [Fact]
+    [Trait("Category", "Permission")]
+    public async Task CheckPermissionAsync_WhenResourceMissing_ShouldReturnFalse()
+    {
+        var fixture = new TestFixture();
+        await using var db = fixture.CreateDbContext();
+        var service = fixture.CreateService(db);
+
+        var allowed = await service.CheckPermissionAsync(fixture.KnownUserId, string.Empty, "READ");
+
+        allowed.Should().BeFalse();
+    }
+
+    [Fact]
+    [Trait("Category", "Permission")]
+    public async Task HasAnyRoleAssignmentsAsync_WhenNone_ShouldReturnFalse()
+    {
+        var fixture = new TestFixture();
+        await using var db = fixture.CreateDbContext();
+        var service = fixture.CreateService(db);
+
+        var hasAssignments = await service.HasAnyRoleAssignmentsAsync(fixture.KnownUserId);
+
+        hasAssignments.Should().BeFalse();
+    }
+
+    [Fact]
+    [Trait("Category", "Permission")]
+    public async Task HasAnyRoleAssignmentsAsync_WhenAssigned_ShouldReturnTrue()
+    {
+        var fixture = new TestFixture();
+        await using var db = fixture.CreateDbContext();
+        var service = fixture.CreateService(db);
+
+        var role = await service.CreateRoleAsync(new CreateRoleRequest("Reader", null, [new RolePermissionRequest("ITEM", "READ", "ALL")]));
+        _ = await service.AssignRoleAsync(fixture.KnownUserId, role.Value.Id, "admin");
+
+        var hasAssignments = await service.HasAnyRoleAssignmentsAsync(fixture.KnownUserId);
+
+        hasAssignments.Should().BeTrue();
+    }
+
+    [Fact]
+    [Trait("Category", "Permission")]
+    public async Task HasPermissionAsync_WhenPermissionsAcrossMultipleRoles_ShouldAggregate()
+    {
+        var fixture = new TestFixture();
+        await using var db = fixture.CreateDbContext();
+        var service = fixture.CreateService(db);
+
+        var roleA = await service.CreateRoleAsync(new CreateRoleRequest("ItemReader", null, [new RolePermissionRequest("ITEM", "READ", "ALL")]));
+        var roleB = await service.CreateRoleAsync(new CreateRoleRequest("QcUpdater", null, [new RolePermissionRequest("QC", "UPDATE", "ALL")]));
+        _ = await service.AssignRoleAsync(fixture.KnownUserId, roleA.Value.Id, "admin");
+        _ = await service.AssignRoleAsync(fixture.KnownUserId, roleB.Value.Id, "admin");
+
+        var canReadItem = await service.HasPermissionAsync(fixture.KnownUserId, "ITEM", "READ");
+        var canUpdateQc = await service.HasPermissionAsync(fixture.KnownUserId, "QC", "UPDATE");
+
+        canReadItem.Should().BeTrue();
+        canUpdateQc.Should().BeTrue();
+    }
+
     private sealed class TestFixture
     {
         private readonly string _databaseName = $"role-management-tests-{Guid.NewGuid():N}";

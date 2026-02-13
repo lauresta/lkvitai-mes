@@ -10,6 +10,7 @@ namespace LKvitai.MES.Api.Services;
 public interface IRoleManagementService
 {
     Task<IReadOnlyList<RoleDto>> GetRolesAsync(CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<PermissionCatalogDto>> GetPermissionsAsync(CancellationToken cancellationToken = default);
 
     Task<Result<RoleDto>> CreateRoleAsync(CreateRoleRequest request, CancellationToken cancellationToken = default);
 
@@ -20,6 +21,8 @@ public interface IRoleManagementService
     Task<Result<UserRoleAssignmentDto>> AssignRoleAsync(Guid userId, int roleId, string assignedBy, CancellationToken cancellationToken = default);
 
     Task<bool> HasPermissionAsync(Guid userId, string resource, string action, string scope = "ALL", CancellationToken cancellationToken = default);
+    Task<bool> CheckPermissionAsync(Guid userId, string resource, string action, Guid? ownerUserId = null, CancellationToken cancellationToken = default);
+    Task<bool> HasAnyRoleAssignmentsAsync(Guid userId, CancellationToken cancellationToken = default);
 }
 
 public sealed class RoleManagementService : IRoleManagementService
@@ -53,6 +56,17 @@ public sealed class RoleManagementService : IRoleManagementService
             .ToListAsync(cancellationToken);
 
         return roles.Select(Map).ToList();
+    }
+
+    public async Task<IReadOnlyList<PermissionCatalogDto>> GetPermissionsAsync(CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.Permissions
+            .AsNoTracking()
+            .OrderBy(x => x.Resource)
+            .ThenBy(x => x.Action)
+            .ThenBy(x => x.Scope)
+            .Select(x => new PermissionCatalogDto(x.Id, x.Resource, x.Action, x.Scope))
+            .ToListAsync(cancellationToken);
     }
 
     public async Task<Result<RoleDto>> CreateRoleAsync(CreateRoleRequest request, CancellationToken cancellationToken = default)
@@ -249,6 +263,33 @@ public sealed class RoleManagementService : IRoleManagementService
                permissions.Contains(BuildPermissionToken(resource, action, "ALL"));
     }
 
+    public async Task<bool> CheckPermissionAsync(
+        Guid userId,
+        string resource,
+        string action,
+        Guid? ownerUserId = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(resource) || string.IsNullOrWhiteSpace(action))
+        {
+            return false;
+        }
+
+        if (ownerUserId.HasValue && ownerUserId.Value != userId)
+        {
+            return await HasPermissionAsync(userId, resource, action, "ALL", cancellationToken);
+        }
+
+        return await HasPermissionAsync(userId, resource, action, "OWN", cancellationToken);
+    }
+
+    public async Task<bool> HasAnyRoleAssignmentsAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        return await _dbContext.UserRoleAssignments
+            .AsNoTracking()
+            .AnyAsync(x => x.UserId == userId, cancellationToken);
+    }
+
     private async Task<Result> ValidateRoleRequestAsync(
         string name,
         IReadOnlyList<RolePermissionRequest> permissions,
@@ -410,6 +451,7 @@ public sealed record RoleDto(
     DateTimeOffset? UpdatedAt);
 
 public sealed record RolePermissionDto(int Id, string Resource, string Action, string Scope);
+public sealed record PermissionCatalogDto(int Id, string Resource, string Action, string Scope);
 
 public sealed record RolePermissionRequest(string Resource, string Action, string Scope = "ALL");
 

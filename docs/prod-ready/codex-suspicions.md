@@ -820,3 +820,16 @@
   Evidence: Validation curl calls to `http://localhost:5000/api/warehouse/v1/admin/api-keys` and `/api/warehouse/v1/items` returned `HTTP/1.1 403 Forbidden` from `Server: AirTunes/925.5.1` (see `/tmp/prd1628-generate.headers`, `/tmp/prd1628-use.headers`).
   Impact: Task-specified runtime API-key generation and usage checks were not executable against LKvitai.MES.Api in this environment.
   Proposed minimal fix: Run LKvitai.MES.Api on an isolated known port and rerun PRD-1628 curl validation with a valid admin token and generated API key.
+- Timestamp: 2026-02-13T06:25:21Z
+  TaskId: PRD-1629
+  Type: INCONSISTENCY
+  Evidence: Permission-check API examples use numeric `UserId=5` and `OwnerId=10` (`docs/prod-ready/prod-ready-tasks-PHASE15-S8.md:1349,1355`), while repository user identifiers are GUIDs (`src/LKvitai.MES.Api/Security/AdminUserStore.cs:8` and role assignment model in `src/LKvitai.MES.Domain/Entities/MasterDataEntities.cs:1222`).
+  Impact: Literal task payloads do not match runtime contracts and can produce invalid-request behavior.
+  Proposed minimal fix: Update task examples/contracts to GUID user IDs (or introduce explicit numeric-to-GUID mapping layer).
+
+- Timestamp: 2026-02-13T06:25:21Z
+  TaskId: PRD-1629
+  Type: TEST-GAP
+  Evidence: Validation curl call to `http://localhost:5000/api/warehouse/v1/admin/permissions/check` returned `HTTP/1.1 403 Forbidden` from `Server: AirTunes/925.5.1` (`/tmp/prd1629-check.headers`).
+  Impact: Task-specified runtime permission-check validation could not be executed against LKvitai.MES.Api in this environment.
+  Proposed minimal fix: Run LKvitai.MES.Api on an isolated known port and rerun the PRD-1629 curl command with a valid admin token.

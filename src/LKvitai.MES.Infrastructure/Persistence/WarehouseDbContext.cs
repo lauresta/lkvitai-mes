@@ -1026,7 +1026,15 @@ public class WarehouseDbContext : DbContext
             new Permission { Id = 5, Resource = "ORDER", Action = "READ", Scope = "ALL" },
             new Permission { Id = 6, Resource = "ORDER", Action = "UPDATE", Scope = "ALL" },
             new Permission { Id = 7, Resource = "QC", Action = "READ", Scope = "ALL" },
-            new Permission { Id = 8, Resource = "QC", Action = "UPDATE", Scope = "ALL" });
+            new Permission { Id = 8, Resource = "QC", Action = "UPDATE", Scope = "ALL" },
+            new Permission { Id = 9, Resource = "ITEM", Action = "READ", Scope = "OWN" },
+            new Permission { Id = 10, Resource = "ITEM", Action = "UPDATE", Scope = "OWN" },
+            new Permission { Id = 11, Resource = "LOCATION", Action = "READ", Scope = "OWN" },
+            new Permission { Id = 12, Resource = "LOCATION", Action = "UPDATE", Scope = "OWN" },
+            new Permission { Id = 13, Resource = "ORDER", Action = "READ", Scope = "OWN" },
+            new Permission { Id = 14, Resource = "ORDER", Action = "UPDATE", Scope = "OWN" },
+            new Permission { Id = 15, Resource = "QC", Action = "READ", Scope = "OWN" },
+            new Permission { Id = 16, Resource = "QC", Action = "UPDATE", Scope = "OWN" });
 
         modelBuilder.Entity<Role>().HasData(
             new Role { Id = 1, Name = "Admin", Description = "System administrator role", IsSystemRole = true, CreatedAt = systemCreatedAt, CreatedBy = "system" },
