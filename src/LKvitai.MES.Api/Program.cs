@@ -163,6 +163,7 @@ builder.Services.AddScoped<ITransferStockAvailabilityService, MartenTransferStoc
 builder.Services.AddScoped<ICycleCountQuantityResolver, MartenCycleCountQuantityResolver>();
 builder.Services.AddSingleton<IAdvancedWarehouseStore, AdvancedWarehouseStore>();
 builder.Services.AddScoped<IWarehouseSettingsService, WarehouseSettingsService>();
+builder.Services.AddScoped<IReasonCodeService, ReasonCodeService>();
 
 var warehouseConnectionString =
     builder.Configuration.GetConnectionString("WarehouseDb")

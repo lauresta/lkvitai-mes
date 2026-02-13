@@ -1,6 +1,7 @@
 using System.Text;
 using FluentAssertions;
 using LKvitai.MES.Api.Controllers;
+using LKvitai.MES.Api.Services;
 using LKvitai.MES.Application.Services;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Contracts.ReadModels;
@@ -11,6 +12,7 @@ using Marten;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Testcontainers.PostgreSql;
 using Xunit;
 
@@ -267,7 +269,11 @@ public class AdjustmentsWorkflowIntegrationTests : IAsyncLifetime
         => new(_dbOptions!, new StaticCurrentUserService("manager-1"));
 
     private AdjustmentsController CreateController(WarehouseDbContext db)
-        => new(db, _store!, new StaticCurrentUserService("manager-1"))
+        => new(
+            db,
+            _store!,
+            new StaticCurrentUserService("manager-1"),
+            new ReasonCodeService(db, Microsoft.Extensions.Logging.Abstractions.NullLoggerFactory.Instance.CreateLogger<ReasonCodeService>()))
         {
             ControllerContext = new ControllerContext
             {

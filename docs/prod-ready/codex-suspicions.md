@@ -731,3 +731,15 @@
   Evidence: Task validation calls to `http://localhost:5000/api/warehouse/v1/admin/settings` returned `HTTP/1.1 403` from `Server: AirTunes/925.5.1` (`/tmp/prd1621-get.out:1-4`, `/tmp/prd1621-put.out:1-4`) instead of the project API.
   Impact: Could not execute required curl acceptance checks against the implemented endpoint in this environment.
   Proposed minimal fix: Run project API on an isolated known port and rerun the exact PRD-1621 curl sequence against that host/port.
+- Timestamp: 2026-02-13T05:20:24Z
+  TaskId: PRD-1622
+  Type: AMBIGUITY
+  Evidence: Task requires usage tracking for reason codes in adjustment and revaluation (`docs/prod-ready/prod-ready-tasks-PHASE15-S8.md:168`), but valuation API contracts expose only free-text `Reason` fields and no structured `ReasonCode` (`src/LKvitai.MES.Api/Api/Controllers/ValuationController.cs:585-615`).
+  Impact: Deterministic usage counting for revaluation reason codes is not guaranteed unless reason text equals a configured code.
+  Proposed minimal fix: Add optional `reasonCode` to valuation write-down/revaluation requests and increment usage from that field; keep `reason` as descriptive text.
+- Timestamp: 2026-02-13T05:20:24Z
+  TaskId: PRD-1622
+  Type: TEST-GAP
+  Evidence: Required validation calls for `GET/POST /api/warehouse/v1/admin/reason-codes` returned `HTTP/1.1 403` from `Server: AirTunes/925.5.1` (`/tmp/prd1622-get.out:1-4`, `/tmp/prd1622-post.out:1-4`) instead of the project API.
+  Impact: Could not execute task curl acceptance checks against the implemented endpoint in this environment.
+  Proposed minimal fix: Start the project API on a known isolated port and rerun the exact PRD-1622 curl sequence with a valid token.

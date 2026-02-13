@@ -3,9 +3,11 @@ using System.Globalization;
 using System.Text;
 using LKvitai.MES.Api.ErrorHandling;
 using LKvitai.MES.Api.Security;
+using LKvitai.MES.Api.Services;
 using LKvitai.MES.Application.Services;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Contracts.ReadModels;
+using LKvitai.MES.Domain.Entities;
 using LKvitai.MES.Infrastructure.Persistence;
 using LKvitai.MES.SharedKernel;
 using IDocumentStore = Marten.IDocumentStore;
@@ -25,15 +27,18 @@ public sealed class AdjustmentsController : ControllerBase
     private readonly WarehouseDbContext _dbContext;
     private readonly IDocumentStore _documentStore;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IReasonCodeService _reasonCodeService;
 
     public AdjustmentsController(
         WarehouseDbContext dbContext,
         IDocumentStore documentStore,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IReasonCodeService reasonCodeService)
     {
         _dbContext = dbContext;
         _documentStore = documentStore;
         _currentUserService = currentUserService;
+        _reasonCodeService = reasonCodeService;
     }
 
     [HttpPost]
@@ -77,9 +82,14 @@ public sealed class AdjustmentsController : ControllerBase
             return Failure(Result.Fail(DomainErrorCodes.NotFound, $"Location '{request.LocationId}' does not exist."));
         }
 
+        var normalizedReasonCode = request.ReasonCode.Trim().ToUpperInvariant();
         var reasonExists = await _dbContext.AdjustmentReasonCodes
             .AsNoTracking()
-            .AnyAsync(x => x.Code == request.ReasonCode && x.IsActive, cancellationToken);
+            .AnyAsync(
+                x => x.Code == normalizedReasonCode &&
+                     x.Active &&
+                     x.Category == ReasonCategory.ADJUSTMENT,
+                cancellationToken);
         if (!reasonExists)
         {
             return ValidationFailure($"ReasonCode '{request.ReasonCode}' does not exist or is inactive.");
@@ -132,7 +142,7 @@ public sealed class AdjustmentsController : ControllerBase
                     .FirstOrDefaultAsync(cancellationToken)
                 : null,
             QtyDelta = request.QtyDelta,
-            ReasonCode = request.ReasonCode.Trim(),
+            ReasonCode = normalizedReasonCode,
             Notes = request.Notes,
             Timestamp = now
         };
@@ -143,13 +153,22 @@ public sealed class AdjustmentsController : ControllerBase
             await session.SaveChangesAsync(cancellationToken);
         }
 
+        var usageResult = await _reasonCodeService.IncrementUsageAsync(
+            normalizedReasonCode,
+            ReasonCategory.ADJUSTMENT,
+            cancellationToken);
+        if (!usageResult.IsSuccess)
+        {
+            return ValidationFailure(usageResult.ErrorDetail ?? usageResult.Error);
+        }
+
         return Ok(new CreateAdjustmentResponse(
             adjustmentId,
             evt.EventId,
             item.Id,
             location.Id,
             request.QtyDelta,
-            request.ReasonCode.Trim(),
+            normalizedReasonCode,
             evt.UserId,
             now,
             warning));

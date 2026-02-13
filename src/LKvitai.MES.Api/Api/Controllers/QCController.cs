@@ -144,9 +144,10 @@ public sealed class QCController : ControllerBase
 
         if (!isPass)
         {
+            var normalizedReasonCode = request.ReasonCode!.Trim().ToUpperInvariant();
             var reasonExists = await _dbContext.AdjustmentReasonCodes
                 .AsNoTracking()
-                .AnyAsync(x => x.Code == request.ReasonCode, cancellationToken);
+                .AnyAsync(x => x.Code == normalizedReasonCode && x.Active, cancellationToken);
             if (!reasonExists)
             {
                 return ValidationFailure($"ReasonCode '{request.ReasonCode}' does not exist.");
@@ -195,7 +196,7 @@ public sealed class QCController : ControllerBase
                 FromLocation = "QC_HOLD",
                 ToLocation = "QUARANTINE",
                 LotId = request.LotId,
-                ReasonCode = request.ReasonCode!.Trim(),
+                ReasonCode = request.ReasonCode!.Trim().ToUpperInvariant(),
                 InspectorNotes = request.InspectorNotes,
                 Timestamp = now
             };

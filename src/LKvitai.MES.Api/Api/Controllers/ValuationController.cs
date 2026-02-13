@@ -5,6 +5,7 @@ using LKvitai.MES.Application.Commands;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Contracts.ReadModels;
 using LKvitai.MES.Domain.Aggregates;
+using LKvitai.MES.Domain.Entities;
 using LKvitai.MES.Infrastructure.Persistence;
 using LKvitai.MES.SharedKernel;
 using Marten;
@@ -24,17 +25,20 @@ public sealed class ValuationController : ControllerBase
     private readonly WarehouseDbContext _dbContext;
     private readonly IDocumentStore _documentStore;
     private readonly IAvailableStockQuantityResolver _quantityResolver;
+    private readonly IReasonCodeService _reasonCodeService;
 
     public ValuationController(
         IMediator mediator,
         WarehouseDbContext dbContext,
         IDocumentStore documentStore,
-        IAvailableStockQuantityResolver quantityResolver)
+        IAvailableStockQuantityResolver quantityResolver,
+        IReasonCodeService reasonCodeService)
     {
         _mediator = mediator;
         _dbContext = dbContext;
         _documentStore = documentStore;
         _quantityResolver = quantityResolver;
+        _reasonCodeService = reasonCodeService;
     }
 
     [HttpPost("initialize")]
@@ -92,6 +96,11 @@ public sealed class ValuationController : ControllerBase
         {
             return Failure(result);
         }
+
+        await _reasonCodeService.IncrementUsageIfCodeMatchesAsync(
+            request.Reason,
+            ReasonCategory.REVALUATION,
+            cancellationToken);
 
         return Ok(new ValuationCommandAcceptedResponse(commandId, request.ItemId, "COST_ADJUSTED"));
     }
@@ -153,6 +162,11 @@ public sealed class ValuationController : ControllerBase
             return Failure(result);
         }
 
+        await _reasonCodeService.IncrementUsageIfCodeMatchesAsync(
+            request.Reason,
+            ReasonCategory.WRITEDOWN,
+            cancellationToken);
+
         return Ok(new ValuationCommandAcceptedResponse(commandId, request.ItemId, "WRITTEN_DOWN"));
     }
 
@@ -184,6 +198,11 @@ public sealed class ValuationController : ControllerBase
         {
             return Failure(result);
         }
+
+        await _reasonCodeService.IncrementUsageIfCodeMatchesAsync(
+            request.Reason,
+            ReasonCategory.REVALUATION,
+            cancellationToken);
 
         var itemQuery = _dbContext.Items.AsNoTracking();
         var item = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(

@@ -829,9 +829,30 @@ public class WarehouseDbContext : DbContext
         modelBuilder.Entity<AdjustmentReasonCode>(entity =>
         {
             entity.ToTable("adjustment_reason_codes");
-            entity.HasKey(e => e.Code);
-            entity.Property(e => e.Code).HasMaxLength(50);
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Code).HasMaxLength(80).IsRequired();
             entity.Property(e => e.Name).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.Description).HasMaxLength(500);
+            entity.Property(e => e.Category)
+                .HasConversion<string>()
+                .HasMaxLength(20)
+                .IsRequired();
+            entity.Property(e => e.Active).HasDefaultValue(true).IsRequired();
+            entity.Property(e => e.UsageCount).HasDefaultValue(0).IsRequired();
+            entity.HasIndex(e => e.Code).IsUnique();
+            entity.HasIndex(e => e.Category);
+            entity.HasIndex(e => e.Active);
+            entity.HasOne(e => e.Parent)
+                .WithMany(e => e.Children)
+                .HasForeignKey(e => e.ParentId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.ToTable(t =>
+            {
+                t.HasCheckConstraint("ck_adjustment_reason_codes_usage_count", "\"UsageCount\" >= 0");
+                t.HasCheckConstraint(
+                    "ck_adjustment_reason_codes_category",
+                    "\"Category\" IN ('ADJUSTMENT','REVALUATION','WRITEDOWN','RETURN')");
+            });
         });
 
         modelBuilder.Entity<WarehouseSettings>(entity =>

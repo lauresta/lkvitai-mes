@@ -1118,11 +1118,34 @@ public sealed class InboundShipmentLine
     public Item? Item { get; set; }
 }
 
-public sealed class AdjustmentReasonCode
+public enum ReasonCategory
 {
+    ADJUSTMENT = 0,
+    REVALUATION = 1,
+    WRITEDOWN = 2,
+    RETURN = 3
+}
+
+public sealed class AdjustmentReasonCode : AuditableEntity
+{
+    public int Id { get; set; }
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
-    public bool IsActive { get; set; } = true;
+    public string? Description { get; set; }
+    public int? ParentId { get; set; }
+    public ReasonCategory Category { get; set; } = ReasonCategory.ADJUSTMENT;
+    public bool Active { get; set; } = true;
+    public int UsageCount { get; set; }
+
+    [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+    public bool IsActive
+    {
+        get => Active;
+        set => Active = value;
+    }
+
+    public AdjustmentReasonCode? Parent { get; set; }
+    public ICollection<AdjustmentReasonCode> Children { get; set; } = new List<AdjustmentReasonCode>();
 }
 
 public enum PickStrategy
