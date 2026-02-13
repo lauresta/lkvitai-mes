@@ -1,0 +1,199 @@
+@page "/warehouse/admin/settings"
+@inject AdminConfigurationClient AdminConfigurationClient
+@inject ToastService ToastService
+@inject IConfiguration Configuration
+
+<PageTitle>Admin Settings - LKvitai.MES</PageTitle>
+
+<h1>Warehouse Settings</h1>
+
+@if (!_hasAdminAccess)
+{
+    <div class="alert alert-warning" role="alert">
+        Admin role required.
+    </div>
+}
+else
+{
+    @if (_apiError is not null)
+    {
+        <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                     TraceId="@_apiError.TraceId"
+                     OnRetry="LoadAsync"
+                     OnDismiss="DismissError" />
+    }
+
+    <div class="card shadow-sm position-relative">
+        <LoadingSpinner IsLoading="@(_isLoading || _isSaving)" />
+        <div class="card-body">
+            <EditForm Model="_form" OnValidSubmit="SaveAsync">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Capacity Threshold (%)</label>
+                        <InputNumber class="form-control" @bind-Value="_form.CapacityThresholdPercent" />
+                        <ValidationMessage For="() => _form.CapacityThresholdPercent" />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Default Pick Strategy</label>
+                        <InputSelect class="form-select" @bind-Value="_form.DefaultPickStrategy">
+                            <option value="FEFO">FEFO</option>
+                            <option value="FIFO">FIFO</option>
+                        </InputSelect>
+                        <ValidationMessage For="() => _form.DefaultPickStrategy" />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Low Stock Threshold</label>
+                        <InputNumber class="form-control" @bind-Value="_form.LowStockThreshold" />
+                        <ValidationMessage For="() => _form.LowStockThreshold" />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Reorder Point</label>
+                        <InputNumber class="form-control" @bind-Value="_form.ReorderPoint" />
+                        <ValidationMessage For="() => _form.ReorderPoint" />
+                    </div>
+
+                    <div class="col-12">
+                        <div class="form-check mt-2">
+                            <InputCheckbox class="form-check-input" @bind-Value="_form.AutoAllocateOrders" />
+                            <label class="form-check-label">Auto allocate orders</label>
+                        </div>
+                    </div>
+
+                    <div class="col-12 d-flex align-items-center gap-3">
+                        <button class="btn btn-primary" type="submit" disabled="@(_isLoading || _isSaving)">Save</button>
+                        @if (_updatedAt is not null)
+                        {
+                            <span class="text-muted small">Last updated by @_updatedBy at @_updatedAt.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</span>
+                        }
+                    </div>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
+@code {
+    private SettingsForm _form = new();
+    private ApiException? _apiError;
+    private bool _isLoading;
+    private bool _isSaving;
+    private bool _hasAdminAccess;
+    private string? _updatedBy;
+    private DateTimeOffset? _updatedAt;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _hasAdminAccess = HasAdminRole();
+        if (_hasAdminAccess)
+        {
+            await LoadAsync();
+        }
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            var settings = await AdminConfigurationClient.GetSettingsAsync();
+            _form = new SettingsForm
+            {
+                CapacityThresholdPercent = settings.CapacityThresholdPercent,
+                DefaultPickStrategy = settings.DefaultPickStrategy,
+                LowStockThreshold = settings.LowStockThreshold,
+                ReorderPoint = settings.ReorderPoint,
+                AutoAllocateOrders = settings.AutoAllocateOrders
+            };
+            _updatedBy = settings.UpdatedBy;
+            _updatedAt = settings.UpdatedAt;
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        _isSaving = true;
+        _apiError = null;
+
+        try
+        {
+            var updated = await AdminConfigurationClient.UpdateSettingsAsync(new UpdateWarehouseSettingsRequestDto
+            {
+                CapacityThresholdPercent = _form.CapacityThresholdPercent,
+                DefaultPickStrategy = _form.DefaultPickStrategy,
+                LowStockThreshold = _form.LowStockThreshold,
+                ReorderPoint = _form.ReorderPoint,
+                AutoAllocateOrders = _form.AutoAllocateOrders
+            });
+
+            _updatedBy = updated.UpdatedBy;
+            _updatedAt = updated.UpdatedAt;
+            ToastService.ShowSuccess("Settings saved successfully");
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private bool HasAdminRole()
+    {
+        var roles = Configuration["WarehouseApi:Roles"] ?? string.Empty;
+        return roles.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Any(x => string.Equals(x, "WarehouseAdmin", StringComparison.OrdinalIgnoreCase) ||
+                      string.Equals(x, "Admin", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static string BuildErrorMessage(ApiException error)
+    {
+        if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
+        {
+            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+        }
+
+        return error.UserMessage;
+    }
+
+    private void DismissError()
+    {
+        _apiError = null;
+    }
+
+    private sealed class SettingsForm
+    {
+        [System.ComponentModel.DataAnnotations.Range(0, 100)]
+        public int CapacityThresholdPercent { get; set; } = 80;
+
+        [System.ComponentModel.DataAnnotations.Required]
+        public string DefaultPickStrategy { get; set; } = "FEFO";
+
+        [System.ComponentModel.DataAnnotations.Range(0, int.MaxValue)]
+        public int LowStockThreshold { get; set; } = 10;
+
+        [System.ComponentModel.DataAnnotations.Range(0, int.MaxValue)]
+        public int ReorderPoint { get; set; } = 50;
+
+        public bool AutoAllocateOrders { get; set; } = true;
+    }
+}

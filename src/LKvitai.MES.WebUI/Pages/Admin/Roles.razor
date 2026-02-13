@@ -1,0 +1,577 @@
+@page "/warehouse/admin/roles"
+@inject AdminConfigurationClient AdminConfigurationClient
+@inject AdminUsersClient AdminUsersClient
+@inject ToastService ToastService
+@inject IConfiguration Configuration
+
+<PageTitle>Roles - LKvitai.MES</PageTitle>
+
+<h1>Roles</h1>
+
+@if (!_hasAdminAccess)
+{
+    <div class="alert alert-warning" role="alert">
+        Admin role required.
+    </div>
+}
+else
+{
+    @if (_apiError is not null)
+    {
+        <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                     TraceId="@_apiError.TraceId"
+                     OnRetry="LoadAsync"
+                     OnDismiss="DismissError" />
+    }
+
+    <div class="card shadow-sm mb-3">
+        <div class="card-body">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-3 d-grid">
+                    <button class="btn btn-primary" @onclick="ToggleCreateForm">@(_showCreate ? "Hide Form" : "Add Role")</button>
+                </div>
+                <div class="col-md-3 d-grid">
+                    <button class="btn btn-outline-secondary" @onclick="LoadAsync">Refresh</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (_showCreate)
+    {
+        <div class="card shadow-sm mb-3">
+            <div class="card-header">Create Role</div>
+            <div class="card-body">
+                <EditForm Model="_createForm" OnValidSubmit="CreateAsync">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Name</label>
+                            <InputText class="form-control" @bind-Value="_createForm.Name" />
+                            <ValidationMessage For="() => _createForm.Name" />
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label">Description</label>
+                            <InputText class="form-control" @bind-Value="_createForm.Description" />
+                        </div>
+                    </div>
+
+                    <label class="form-label">Permissions</label>
+                    <div class="row g-1 mb-2">
+                        @foreach (var option in PermissionOptions)
+                        {
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input"
+                                           type="checkbox"
+                                           checked="@_createForm.PermissionKeys.Contains(option.Key)"
+                                           @onchange="(e) => ToggleCreatePermission(option.Key, e.Value is true)" />
+                                    <label class="form-check-label">@option.Resource @option.Action (@option.Scope)</label>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(_createPermissionError))
+                    {
+                        <div class="text-danger mb-2">@_createPermissionError</div>
+                    }
+
+                    <button class="btn btn-primary" type="submit" disabled="@_isSubmitting">Save</button>
+                </EditForm>
+            </div>
+        </div>
+    }
+
+    <div class="card shadow-sm position-relative mb-3">
+        <LoadingSpinner IsLoading="@(_isLoading || _isSubmitting || _isDeleting || _isAssigning)" />
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Description</th>
+                            <th>System</th>
+                            <th>Permissions</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (_roles.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="5" class="text-muted">No roles configured.</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var role in _roles)
+                            {
+                                <tr>
+                                    <td>@role.Name</td>
+                                    <td>@role.Description</td>
+                                    <td>@(role.IsSystemRole ? "Yes" : "No")</td>
+                                    <td>
+                                        @foreach (var permission in role.Permissions.OrderBy(x => x.Resource).ThenBy(x => x.Action))
+                                        {
+                                            <span class="badge bg-light text-dark border me-1">@permission.Resource:@permission.Action</span>
+                                        }
+                                    </td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-outline-secondary me-2" @onclick="() => BeginEdit(role)">Edit</button>
+                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmDelete(role)" disabled="@role.IsSystemRole">Delete</button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    @if (_editing is not null)
+    {
+        <div class="card shadow-sm mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Edit Role @_editing.Name</span>
+                <button class="btn btn-sm btn-outline-secondary" @onclick="CancelEdit">Close</button>
+            </div>
+            <div class="card-body">
+                <EditForm Model="_editing" OnValidSubmit="UpdateAsync">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Name</label>
+                            <InputText class="form-control" @bind-Value="_editing.Name" />
+                            <ValidationMessage For="() => _editing.Name" />
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label">Description</label>
+                            <InputText class="form-control" @bind-Value="_editing.Description" />
+                        </div>
+                    </div>
+
+                    <label class="form-label">Permissions</label>
+                    <div class="row g-1 mb-2">
+                        @foreach (var option in PermissionOptions)
+                        {
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input"
+                                           type="checkbox"
+                                           checked="@_editing.PermissionKeys.Contains(option.Key)"
+                                           @onchange="(e) => ToggleEditPermission(option.Key, e.Value is true)" />
+                                    <label class="form-check-label">@option.Resource @option.Action (@option.Scope)</label>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(_editPermissionError))
+                    {
+                        <div class="text-danger mb-2">@_editPermissionError</div>
+                    }
+
+                    <button class="btn btn-primary" type="submit" disabled="@_isSubmitting">Save</button>
+                </EditForm>
+            </div>
+        </div>
+    }
+
+    <div class="card shadow-sm">
+        <div class="card-header">Assign Role To User</div>
+        <div class="card-body">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-5">
+                    <label class="form-label">User</label>
+                    <InputSelect class="form-select" @bind-Value="_selectedUserId">
+                        <option value="">Select user</option>
+                        @foreach (var user in _users.OrderBy(x => x.Username, StringComparer.OrdinalIgnoreCase))
+                        {
+                            <option value="@user.Id">@user.Username (@user.Email)</option>
+                        }
+                    </InputSelect>
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label">Role</label>
+                    <InputSelect class="form-select" @bind-Value="_selectedRoleId">
+                        <option value="0">Select role</option>
+                        @foreach (var role in _roles.OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase))
+                        {
+                            <option value="@role.Id">@role.Name</option>
+                        }
+                    </InputSelect>
+                </div>
+                <div class="col-md-2 d-grid">
+                    <button class="btn btn-outline-primary" @onclick="AssignRoleAsync" disabled="@_isAssigning">Assign Role</button>
+                </div>
+            </div>
+
+            @if (_lastAssignment is not null)
+            {
+                <div class="alert alert-info mt-3 mb-0" role="alert">
+                    Assigned role @_lastAssignment.RoleId to user @_lastAssignment.UserId at @_lastAssignment.AssignedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm").
+                </div>
+            }
+        </div>
+    </div>
+
+    <ConfirmDialog Title="Delete Role"
+                   Message="@_deleteMessage"
+                   ConfirmText="Delete"
+                   IsVisible="@(_pendingDelete is not null)"
+                   OnConfirm="DeleteAsync"
+                   OnCancel="CancelDelete" />
+}
+
+@code {
+    private static readonly PermissionOption[] PermissionOptions =
+    [
+        new("ITEM", "READ", "ALL"),
+        new("ITEM", "UPDATE", "ALL"),
+        new("LOCATION", "READ", "ALL"),
+        new("LOCATION", "UPDATE", "ALL"),
+        new("ORDER", "READ", "ALL"),
+        new("ORDER", "UPDATE", "ALL"),
+        new("QC", "READ", "ALL"),
+        new("QC", "UPDATE", "ALL")
+    ];
+
+    private readonly List<RoleDto> _roles = [];
+    private readonly List<AdminUserDto> _users = [];
+
+    private ApiException? _apiError;
+    private bool _isLoading;
+    private bool _isSubmitting;
+    private bool _isDeleting;
+    private bool _isAssigning;
+    private bool _showCreate;
+    private bool _hasAdminAccess;
+
+    private RoleForm _createForm = new();
+    private RoleForm? _editing;
+    private string _createPermissionError = string.Empty;
+    private string _editPermissionError = string.Empty;
+
+    private Guid? _selectedUserId;
+    private int _selectedRoleId;
+    private UserRoleAssignmentDto? _lastAssignment;
+
+    private RoleDto? _pendingDelete;
+    private string _deleteMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _hasAdminAccess = HasAdminRole();
+        if (_hasAdminAccess)
+        {
+            await LoadAsync();
+        }
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            var rolesTask = AdminConfigurationClient.GetRolesAsync();
+            var usersTask = AdminUsersClient.GetUsersAsync();
+            await Task.WhenAll(rolesTask, usersTask);
+
+            _roles.Clear();
+            _roles.AddRange(rolesTask.Result.OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase));
+
+            _users.Clear();
+            _users.AddRange(usersTask.Result.OrderBy(x => x.Username, StringComparer.OrdinalIgnoreCase));
+
+            if (_selectedRoleId == 0 && _roles.Count > 0)
+            {
+                _selectedRoleId = _roles[0].Id;
+            }
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void ToggleCreateForm()
+    {
+        _showCreate = !_showCreate;
+        _createPermissionError = string.Empty;
+        if (_showCreate)
+        {
+            _createForm = new RoleForm();
+        }
+    }
+
+    private async Task CreateAsync()
+    {
+        _createPermissionError = string.Empty;
+
+        if (_createForm.PermissionKeys.Count == 0)
+        {
+            _createPermissionError = "At least one permission is required.";
+            return;
+        }
+
+        _isSubmitting = true;
+        _apiError = null;
+
+        try
+        {
+            var created = await AdminConfigurationClient.CreateRoleAsync(ToRequest(_createForm));
+            ToastService.ShowSuccess($"Role {created.Name} created.");
+            _showCreate = false;
+            _createForm = new RoleForm();
+            await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private void BeginEdit(RoleDto role)
+    {
+        _editPermissionError = string.Empty;
+        _editing = new RoleForm
+        {
+            Id = role.Id,
+            Name = role.Name,
+            Description = role.Description,
+            PermissionKeys = role.Permissions
+                .Select(x => PermissionOption.BuildKey(x.Resource, x.Action, x.Scope))
+                .ToHashSet(StringComparer.OrdinalIgnoreCase)
+        };
+    }
+
+    private async Task UpdateAsync()
+    {
+        if (_editing is null || !_editing.Id.HasValue)
+        {
+            return;
+        }
+
+        _editPermissionError = string.Empty;
+        if (_editing.PermissionKeys.Count == 0)
+        {
+            _editPermissionError = "At least one permission is required.";
+            return;
+        }
+
+        _isSubmitting = true;
+        _apiError = null;
+
+        try
+        {
+            var updated = await AdminConfigurationClient.UpdateRoleAsync(_editing.Id.Value, ToRequest(_editing));
+            ToastService.ShowSuccess($"Role {updated.Name} updated.");
+            _editing = null;
+            await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private async Task AssignRoleAsync()
+    {
+        if (!_selectedUserId.HasValue)
+        {
+            ToastService.ShowError("Select a user.");
+            return;
+        }
+
+        if (_selectedRoleId <= 0)
+        {
+            ToastService.ShowError("Select a role.");
+            return;
+        }
+
+        _isAssigning = true;
+        _apiError = null;
+
+        try
+        {
+            _lastAssignment = await AdminConfigurationClient.AssignRoleAsync(_selectedUserId.Value, new AssignUserRoleRequestDto
+            {
+                RoleId = _selectedRoleId
+            });
+
+            ToastService.ShowSuccess("Role assigned successfully.");
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isAssigning = false;
+        }
+    }
+
+    private void ConfirmDelete(RoleDto role)
+    {
+        _pendingDelete = role;
+        _deleteMessage = $"Delete role {role.Name}?";
+    }
+
+    private async Task DeleteAsync()
+    {
+        if (_pendingDelete is null)
+        {
+            return;
+        }
+
+        _isDeleting = true;
+        _apiError = null;
+
+        try
+        {
+            await AdminConfigurationClient.DeleteRoleAsync(_pendingDelete.Id);
+            ToastService.ShowSuccess($"Role {_pendingDelete.Name} deleted.");
+            _pendingDelete = null;
+            _deleteMessage = string.Empty;
+            await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isDeleting = false;
+        }
+    }
+
+    private void CancelDelete()
+    {
+        _pendingDelete = null;
+        _deleteMessage = string.Empty;
+    }
+
+    private void CancelEdit()
+    {
+        _editing = null;
+        _editPermissionError = string.Empty;
+    }
+
+    private void ToggleCreatePermission(string key, bool enabled)
+    {
+        if (enabled)
+        {
+            _createForm.PermissionKeys.Add(key);
+        }
+        else
+        {
+            _createForm.PermissionKeys.Remove(key);
+        }
+    }
+
+    private void ToggleEditPermission(string key, bool enabled)
+    {
+        if (_editing is null)
+        {
+            return;
+        }
+
+        if (enabled)
+        {
+            _editing.PermissionKeys.Add(key);
+        }
+        else
+        {
+            _editing.PermissionKeys.Remove(key);
+        }
+    }
+
+    private static UpsertRoleRequestDto ToRequest(RoleForm form)
+    {
+        var selected = PermissionOptions
+            .Where(x => form.PermissionKeys.Contains(x.Key))
+            .Select(x => new RolePermissionRequestDto
+            {
+                Resource = x.Resource,
+                Action = x.Action,
+                Scope = x.Scope
+            })
+            .ToList();
+
+        return new UpsertRoleRequestDto
+        {
+            Name = form.Name.Trim(),
+            Description = string.IsNullOrWhiteSpace(form.Description) ? null : form.Description.Trim(),
+            Permissions = selected
+        };
+    }
+
+    private bool HasAdminRole()
+    {
+        var roles = Configuration["WarehouseApi:Roles"] ?? string.Empty;
+        return roles.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Any(x => string.Equals(x, "WarehouseAdmin", StringComparison.OrdinalIgnoreCase) ||
+                      string.Equals(x, "Admin", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static string BuildErrorMessage(ApiException error)
+    {
+        if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
+        {
+            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+        }
+
+        return error.UserMessage;
+    }
+
+    private void DismissError()
+    {
+        _apiError = null;
+    }
+
+    private sealed class RoleForm
+    {
+        public int? Id { get; set; }
+
+        [System.ComponentModel.DataAnnotations.Required]
+        public string Name { get; set; } = string.Empty;
+
+        public string? Description { get; set; }
+
+        public HashSet<string> PermissionKeys { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+    }
+
+    private sealed record PermissionOption(string Resource, string Action, string Scope)
+    {
+        public string Key { get; } = BuildKey(Resource, Action, Scope);
+
+        public static string BuildKey(string resource, string action, string scope)
+            => $"{resource}|{action}|{scope}";
+    }
+}

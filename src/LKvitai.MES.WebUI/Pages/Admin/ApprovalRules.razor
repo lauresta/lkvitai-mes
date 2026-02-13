@@ -1,0 +1,532 @@
+@page "/warehouse/admin/approval-rules"
+@inject AdminConfigurationClient AdminConfigurationClient
+@inject ToastService ToastService
+@inject IConfiguration Configuration
+
+<PageTitle>Approval Rules - LKvitai.MES</PageTitle>
+
+<h1>Approval Rules</h1>
+
+@if (!_hasAdminAccess)
+{
+    <div class="alert alert-warning" role="alert">
+        Admin role required.
+    </div>
+}
+else
+{
+    @if (_apiError is not null)
+    {
+        <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                     TraceId="@_apiError.TraceId"
+                     OnRetry="LoadAsync"
+                     OnDismiss="DismissError" />
+    }
+
+    <div class="card shadow-sm mb-3">
+        <div class="card-body">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-3 d-grid">
+                    <button class="btn btn-primary" @onclick="ToggleCreateForm">@(_showCreate ? "Hide Form" : "Add Approval Rule")</button>
+                </div>
+                <div class="col-md-3 d-grid">
+                    <button class="btn btn-outline-secondary" @onclick="LoadAsync">Refresh</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (_showCreate)
+    {
+        <div class="card shadow-sm mb-3">
+            <div class="card-header">Create Approval Rule</div>
+            <div class="card-body">
+                <EditForm Model="_createForm" OnValidSubmit="CreateAsync">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+                    <div class="row g-2">
+                        <div class="col-md-2">
+                            <label class="form-label">Rule Type</label>
+                            <InputSelect class="form-select" @bind-Value="_createForm.RuleType">
+                                @foreach (var type in RuleTypes)
+                                {
+                                    <option value="@type">@type</option>
+                                }
+                            </InputSelect>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Threshold Type</label>
+                            <InputSelect class="form-select" @bind-Value="_createForm.ThresholdType">
+                                @foreach (var type in ThresholdTypes)
+                                {
+                                    <option value="@type">@type</option>
+                                }
+                            </InputSelect>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Threshold Value</label>
+                            <InputNumber class="form-control" @bind-Value="_createForm.ThresholdValue" />
+                            <ValidationMessage For="() => _createForm.ThresholdValue" />
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Priority</label>
+                            <InputNumber class="form-control" @bind-Value="_createForm.Priority" />
+                            <ValidationMessage For="() => _createForm.Priority" />
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Approver Role</label>
+                            <InputSelect class="form-select" @bind-Value="_createForm.ApproverRole">
+                                @foreach (var role in ApproverRoles)
+                                {
+                                    <option value="@role">@role</option>
+                                }
+                            </InputSelect>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <div class="form-check mb-2">
+                                <InputCheckbox class="form-check-input" @bind-Value="_createForm.Active" />
+                                <label class="form-check-label">Active</label>
+                            </div>
+                        </div>
+                        <div class="col-md-2 d-grid">
+                            <button class="btn btn-primary" type="submit" disabled="@_isSubmitting">Save</button>
+                        </div>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    }
+
+    <div class="card shadow-sm position-relative mb-3">
+        <LoadingSpinner IsLoading="@(_isLoading || _isSubmitting || _isDeleting)" />
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Rule Type</th>
+                            <th>Threshold</th>
+                            <th>Approver Role</th>
+                            <th>Priority</th>
+                            <th>Active</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (_rules.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="6" class="text-muted">No approval rules configured.</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var rule in _rules)
+                            {
+                                <tr>
+                                    <td>@rule.RuleType</td>
+                                    <td>@rule.ThresholdType @rule.ThresholdValue</td>
+                                    <td>@rule.ApproverRole</td>
+                                    <td>@rule.Priority</td>
+                                    <td>@(rule.Active ? "Yes" : "No")</td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-outline-secondary me-2" @onclick="() => BeginEdit(rule)">Edit</button>
+                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmDelete(rule)">Delete</button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    @if (_editing is not null)
+    {
+        <div class="card shadow-sm mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Edit Rule #@_editing.Id</span>
+                <button class="btn btn-sm btn-outline-secondary" @onclick="CancelEdit">Close</button>
+            </div>
+            <div class="card-body">
+                <EditForm Model="_editing" OnValidSubmit="UpdateAsync">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+                    <div class="row g-2">
+                        <div class="col-md-2">
+                            <label class="form-label">Rule Type</label>
+                            <InputSelect class="form-select" @bind-Value="_editing.RuleType">
+                                @foreach (var type in RuleTypes)
+                                {
+                                    <option value="@type">@type</option>
+                                }
+                            </InputSelect>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Threshold Type</label>
+                            <InputSelect class="form-select" @bind-Value="_editing.ThresholdType">
+                                @foreach (var type in ThresholdTypes)
+                                {
+                                    <option value="@type">@type</option>
+                                }
+                            </InputSelect>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Threshold Value</label>
+                            <InputNumber class="form-control" @bind-Value="_editing.ThresholdValue" />
+                            <ValidationMessage For="() => _editing.ThresholdValue" />
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Priority</label>
+                            <InputNumber class="form-control" @bind-Value="_editing.Priority" />
+                            <ValidationMessage For="() => _editing.Priority" />
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Approver Role</label>
+                            <InputSelect class="form-select" @bind-Value="_editing.ApproverRole">
+                                @foreach (var role in ApproverRoles)
+                                {
+                                    <option value="@role">@role</option>
+                                }
+                            </InputSelect>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <div class="form-check mb-2">
+                                <InputCheckbox class="form-check-input" @bind-Value="_editing.Active" />
+                                <label class="form-check-label">Active</label>
+                            </div>
+                        </div>
+                        <div class="col-md-2 d-grid">
+                            <button class="btn btn-primary" type="submit" disabled="@_isSubmitting">Save</button>
+                        </div>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    }
+
+    <div class="card shadow-sm">
+        <div class="card-header">Test Rule Evaluation</div>
+        <div class="card-body">
+            <EditForm Model="_testForm" OnValidSubmit="TestRuleAsync">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label">Rule Type</label>
+                        <InputSelect class="form-select" @bind-Value="_testForm.RuleType">
+                            @foreach (var type in RuleTypes)
+                            {
+                                <option value="@type">@type</option>
+                            }
+                        </InputSelect>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Test Value</label>
+                        <InputNumber class="form-control" @bind-Value="_testForm.Value" />
+                        <ValidationMessage For="() => _testForm.Value" />
+                    </div>
+                    <div class="col-md-2 d-grid">
+                        <button class="btn btn-outline-primary" type="submit">Test Rule</button>
+                    </div>
+                    <div class="col-md-12">
+                        @if (_testResult is not null)
+                        {
+                            <div class="alert alert-info mt-2 mb-0" role="alert">
+                                @if (_testResult.RequiresApproval)
+                                {
+                                    <span>Requires approval: @_testResult.ApproverRole</span>
+                                }
+                                else
+                                {
+                                    <span>No approval required.</span>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+
+    <ConfirmDialog Title="Delete Approval Rule"
+                   Message="@_deleteMessage"
+                   ConfirmText="Delete"
+                   IsVisible="@(_pendingDelete is not null)"
+                   OnConfirm="DeleteAsync"
+                   OnCancel="CancelDelete" />
+}
+
+@code {
+    private static readonly string[] RuleTypes = ["COST_ADJUSTMENT", "WRITEDOWN", "TRANSFER"];
+    private static readonly string[] ThresholdTypes = ["AMOUNT", "PERCENTAGE"];
+    private static readonly string[] ApproverRoles =
+    [
+        "WarehouseAdmin",
+        "WarehouseManager",
+        "Operator",
+        "QCInspector",
+        "SalesAdmin",
+        "PackingOperator",
+        "DispatchClerk",
+        "InventoryAccountant",
+        "CFO",
+        "Admin",
+        "Manager"
+    ];
+
+    private readonly List<ApprovalRuleDto> _rules = [];
+
+    private ApiException? _apiError;
+    private bool _isLoading;
+    private bool _isSubmitting;
+    private bool _isDeleting;
+    private bool _showCreate;
+    private bool _hasAdminAccess;
+
+    private ApprovalRuleForm _createForm = new();
+    private ApprovalRuleForm? _editing;
+    private RuleTestForm _testForm = new();
+    private EvaluateApprovalRuleResponseDto? _testResult;
+
+    private ApprovalRuleDto? _pendingDelete;
+    private string _deleteMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _hasAdminAccess = HasAdminRole();
+        if (_hasAdminAccess)
+        {
+            await LoadAsync();
+        }
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            var rows = await AdminConfigurationClient.GetApprovalRulesAsync();
+            _rules.Clear();
+            _rules.AddRange(rows.OrderBy(x => x.Priority).ThenBy(x => x.RuleType).ThenByDescending(x => x.ThresholdValue));
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void ToggleCreateForm()
+    {
+        _showCreate = !_showCreate;
+        if (_showCreate)
+        {
+            _createForm = new ApprovalRuleForm();
+        }
+    }
+
+    private async Task CreateAsync()
+    {
+        _isSubmitting = true;
+        _apiError = null;
+
+        try
+        {
+            var created = await AdminConfigurationClient.CreateApprovalRuleAsync(ToRequest(_createForm));
+            ToastService.ShowSuccess($"Approval rule #{created.Id} created.");
+            _showCreate = false;
+            _createForm = new ApprovalRuleForm();
+            await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private void BeginEdit(ApprovalRuleDto rule)
+    {
+        _editing = new ApprovalRuleForm
+        {
+            Id = rule.Id,
+            RuleType = rule.RuleType,
+            ThresholdType = rule.ThresholdType,
+            ThresholdValue = rule.ThresholdValue,
+            ApproverRole = rule.ApproverRole,
+            Active = rule.Active,
+            Priority = rule.Priority
+        };
+    }
+
+    private async Task UpdateAsync()
+    {
+        if (_editing is null || !_editing.Id.HasValue)
+        {
+            return;
+        }
+
+        _isSubmitting = true;
+        _apiError = null;
+
+        try
+        {
+            var updated = await AdminConfigurationClient.UpdateApprovalRuleAsync(_editing.Id.Value, ToRequest(_editing));
+            ToastService.ShowSuccess($"Approval rule #{updated.Id} updated.");
+            _editing = null;
+            await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private async Task TestRuleAsync()
+    {
+        _apiError = null;
+
+        try
+        {
+            _testResult = await AdminConfigurationClient.EvaluateApprovalRuleAsync(new EvaluateApprovalRuleRequestDto
+            {
+                RuleType = _testForm.RuleType,
+                Value = _testForm.Value
+            });
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            _testResult = null;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+    }
+
+    private void ConfirmDelete(ApprovalRuleDto rule)
+    {
+        _pendingDelete = rule;
+        _deleteMessage = $"Delete approval rule #{rule.Id}?";
+    }
+
+    private async Task DeleteAsync()
+    {
+        if (_pendingDelete is null)
+        {
+            return;
+        }
+
+        _isDeleting = true;
+        _apiError = null;
+
+        try
+        {
+            await AdminConfigurationClient.DeleteApprovalRuleAsync(_pendingDelete.Id);
+            ToastService.ShowSuccess($"Approval rule #{_pendingDelete.Id} deleted.");
+            _pendingDelete = null;
+            _deleteMessage = string.Empty;
+            await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isDeleting = false;
+        }
+    }
+
+    private void CancelDelete()
+    {
+        _pendingDelete = null;
+        _deleteMessage = string.Empty;
+    }
+
+    private void CancelEdit()
+    {
+        _editing = null;
+    }
+
+    private static UpsertApprovalRuleRequestDto ToRequest(ApprovalRuleForm form)
+        => new()
+        {
+            RuleType = form.RuleType,
+            ThresholdType = form.ThresholdType,
+            ThresholdValue = form.ThresholdValue,
+            ApproverRole = form.ApproverRole,
+            Active = form.Active,
+            Priority = form.Priority
+        };
+
+    private bool HasAdminRole()
+    {
+        var roles = Configuration["WarehouseApi:Roles"] ?? string.Empty;
+        return roles.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Any(x => string.Equals(x, "WarehouseAdmin", StringComparison.OrdinalIgnoreCase) ||
+                      string.Equals(x, "Admin", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static string BuildErrorMessage(ApiException error)
+    {
+        if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
+        {
+            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+        }
+
+        return error.UserMessage;
+    }
+
+    private void DismissError()
+    {
+        _apiError = null;
+    }
+
+    private sealed class ApprovalRuleForm
+    {
+        public int? Id { get; set; }
+
+        [System.ComponentModel.DataAnnotations.Required]
+        public string RuleType { get; set; } = "COST_ADJUSTMENT";
+
+        [System.ComponentModel.DataAnnotations.Required]
+        public string ThresholdType { get; set; } = "AMOUNT";
+
+        [System.ComponentModel.DataAnnotations.Range(typeof(decimal), "0", "79228162514264337593543950335")]
+        public decimal ThresholdValue { get; set; }
+
+        [System.ComponentModel.DataAnnotations.Required]
+        public string ApproverRole { get; set; } = "WarehouseManager";
+
+        [System.ComponentModel.DataAnnotations.Range(1, int.MaxValue)]
+        public int Priority { get; set; } = 1;
+
+        public bool Active { get; set; } = true;
+    }
+
+    private sealed class RuleTestForm
+    {
+        [System.ComponentModel.DataAnnotations.Required]
+        public string RuleType { get; set; } = "COST_ADJUSTMENT";
+
+        [System.ComponentModel.DataAnnotations.Range(typeof(decimal), "0", "79228162514264337593543950335")]
+        public decimal Value { get; set; }
+    }
+}

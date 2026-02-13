@@ -768,3 +768,16 @@
   Evidence: Validation curl commands to http://localhost:5000/api/warehouse/v1/admin/roles returned `HTTP/1.1 403 Forbidden` with `Server: AirTunes/925.5.1` (see `/tmp/prd1624_roles_get.headers`, `/tmp/prd1624_roles_post.headers`).
   Impact: Task-mandated API validation could not verify PRD-1624 endpoints because localhost:5000 is occupied by a non-project service in this environment.
   Proposed minimal fix: Run validation against a started LKvitai.MES.Api instance on its bound port (or rebind project to 5000) and replay the same curl commands.
+- Timestamp: 2026-02-13T05:46:21Z
+  TaskId: PRD-1625
+  Type: TEST-GAP
+  Evidence: `dotnet run --project src/LKvitai.MES.WebUI/LKvitai.MES.WebUI.csproj` fails at startup with `Unable to configure HTTPS endpoint... default developer certificate could not be found`.
+  Impact: Task validation command cannot launch WebUI as documented, so manual navigation/form validation could not be executed with the default run profile.
+  Proposed minimal fix: Install/trust a local dev certificate (`dotnet dev-certs https --trust`) or run with a non-HTTPS development profile.
+
+- Timestamp: 2026-02-13T05:46:21Z
+  TaskId: PRD-1625
+  Type: TEST-GAP
+  Evidence: Running WebUI with `ASPNETCORE_ENVIRONMENT=Development ASPNETCORE_URLS=http://localhost:5001 dotnet run --no-launch-profile ...` starts, but page requests to `/warehouse/admin/*` return HTTP 500 because server-side rendering calls `https://localhost:5001/api/warehouse/v1/admin/*` and fails SSL handshake (see `/tmp/prd1625__warehouse_admin_settings.html` and runtime logs).
+  Impact: Manual CRUD scenario validation for settings/reason-codes/approval-rules/roles is blocked in this environment due API connectivity/profile mismatch.
+  Proposed minimal fix: Run WebUI against a reachable Warehouse API base URL and matching scheme/port, then execute the manual scenarios.

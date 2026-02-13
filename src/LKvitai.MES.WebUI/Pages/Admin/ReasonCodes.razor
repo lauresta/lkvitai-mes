@@ -1,0 +1,520 @@
+@page "/warehouse/admin/reason-codes"
+@inject AdminConfigurationClient AdminConfigurationClient
+@inject ToastService ToastService
+@inject IConfiguration Configuration
+
+<PageTitle>Reason Codes - LKvitai.MES</PageTitle>
+
+<h1>Reason Codes</h1>
+
+@if (!_hasAdminAccess)
+{
+    <div class="alert alert-warning" role="alert">
+        Admin role required.
+    </div>
+}
+else
+{
+    @if (_apiError is not null)
+    {
+        <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                     TraceId="@_apiError.TraceId"
+                     OnRetry="LoadAsync"
+                     OnDismiss="DismissError" />
+    }
+
+    <div class="card shadow-sm mb-3">
+        <div class="card-body">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label">Category</label>
+                    <InputSelect class="form-select" @bind-Value="_filterCategory">
+                        <option value="">All</option>
+                        @foreach (var category in Categories)
+                        {
+                            <option value="@category">@category</option>
+                        }
+                    </InputSelect>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Active</label>
+                    <InputSelect class="form-select" @bind-Value="_filterActive">
+                        <option value="">All</option>
+                        <option value="true">Active</option>
+                        <option value="false">Inactive</option>
+                    </InputSelect>
+                </div>
+                <div class="col-md-2 d-grid">
+                    <button class="btn btn-outline-secondary" @onclick="ApplyFiltersAsync">Filter</button>
+                </div>
+                <div class="col-md-2 d-grid">
+                    <button class="btn btn-primary" @onclick="ToggleCreateForm">@(_showCreate ? "Hide Form" : "Add Reason Code")</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (_showCreate)
+    {
+        <div class="card shadow-sm mb-3">
+            <div class="card-header">Create Reason Code</div>
+            <div class="card-body">
+                <EditForm Model="_createForm" OnValidSubmit="CreateAsync">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+                    <div class="row g-2">
+                        <div class="col-md-3">
+                            <label class="form-label">Code</label>
+                            <InputText class="form-control" @bind-Value="_createForm.Code" />
+                            <ValidationMessage For="() => _createForm.Code" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Name</label>
+                            <InputText class="form-control" @bind-Value="_createForm.Name" />
+                            <ValidationMessage For="() => _createForm.Name" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Category</label>
+                            <InputSelect class="form-select" @bind-Value="_createForm.Category">
+                                @foreach (var category in Categories)
+                                {
+                                    <option value="@category">@category</option>
+                                }
+                            </InputSelect>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Parent</label>
+                            <InputSelect class="form-select" @bind-Value="_createForm.ParentId">
+                                <option value="">(None)</option>
+                                @foreach (var parent in RootReasonCodes)
+                                {
+                                    <option value="@parent.Id">@parent.Code - @parent.Name</option>
+                                }
+                            </InputSelect>
+                        </div>
+                        <div class="col-md-9">
+                            <label class="form-label">Description</label>
+                            <InputText class="form-control" @bind-Value="_createForm.Description" />
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <div class="form-check mb-2">
+                                <InputCheckbox class="form-check-input" @bind-Value="_createForm.Active" />
+                                <label class="form-check-label">Active</label>
+                            </div>
+                        </div>
+                        <div class="col-md-2 d-grid">
+                            <button class="btn btn-primary" type="submit" disabled="@_isSubmitting">Save</button>
+                        </div>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    }
+
+    <div class="card shadow-sm position-relative">
+        <LoadingSpinner IsLoading="@(_isLoading || _isSubmitting || _isDeleting)" />
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Name</th>
+                            <th>Category</th>
+                            <th>Active</th>
+                            <th>Usage</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (_rows.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="6" class="text-muted">No reason codes configured. Add your first reason code.</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var row in _rows)
+                            {
+                                <tr>
+                                    <td style="padding-left:@($"{row.Level * 1.5}rem")">@row.ReasonCode.Code</td>
+                                    <td>@row.ReasonCode.Name</td>
+                                    <td>@row.ReasonCode.Category</td>
+                                    <td>@(row.ReasonCode.Active ? "Yes" : "No")</td>
+                                    <td>@row.ReasonCode.UsageCount</td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-outline-secondary me-2" @onclick="() => BeginEdit(row.ReasonCode)">Edit</button>
+                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmDelete(row.ReasonCode)">Delete</button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    @if (_editing is not null)
+    {
+        <div class="card shadow-sm mt-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Edit @_editing.Code</span>
+                <button class="btn btn-sm btn-outline-secondary" @onclick="CancelEdit">Close</button>
+            </div>
+            <div class="card-body">
+                <EditForm Model="_editing" OnValidSubmit="UpdateAsync">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+                    <div class="row g-2">
+                        <div class="col-md-3">
+                            <label class="form-label">Code</label>
+                            <InputText class="form-control" @bind-Value="_editing.Code" />
+                            <ValidationMessage For="() => _editing.Code" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Name</label>
+                            <InputText class="form-control" @bind-Value="_editing.Name" />
+                            <ValidationMessage For="() => _editing.Name" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Category</label>
+                            <InputSelect class="form-select" @bind-Value="_editing.Category">
+                                @foreach (var category in Categories)
+                                {
+                                    <option value="@category">@category</option>
+                                }
+                            </InputSelect>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Parent</label>
+                            <InputSelect class="form-select" @bind-Value="_editing.ParentId">
+                                <option value="">(None)</option>
+                                @foreach (var parent in RootReasonCodes.Where(x => x.Id != _editing.Id))
+                                {
+                                    <option value="@parent.Id">@parent.Code - @parent.Name</option>
+                                }
+                            </InputSelect>
+                        </div>
+                        <div class="col-md-9">
+                            <label class="form-label">Description</label>
+                            <InputText class="form-control" @bind-Value="_editing.Description" />
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <div class="form-check mb-2">
+                                <InputCheckbox class="form-check-input" @bind-Value="_editing.Active" />
+                                <label class="form-check-label">Active</label>
+                            </div>
+                        </div>
+                        <div class="col-md-2 d-grid">
+                            <button class="btn btn-primary" type="submit" disabled="@_isSubmitting">Save</button>
+                        </div>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    }
+
+    <ConfirmDialog Title="Delete Reason Code"
+                   Message="@_deleteMessage"
+                   ConfirmText="Delete"
+                   IsVisible="@(_pendingDelete is not null)"
+                   OnConfirm="DeleteAsync"
+                   OnCancel="CancelDelete" />
+}
+
+@code {
+    private static readonly string[] Categories = ["ADJUSTMENT", "REVALUATION", "WRITEDOWN", "RETURN"];
+
+    private readonly List<ReasonCodeDto> _reasonCodes = [];
+    private readonly List<ReasonCodeRow> _rows = [];
+
+    private ApiException? _apiError;
+    private bool _isLoading;
+    private bool _isSubmitting;
+    private bool _isDeleting;
+    private bool _showCreate;
+    private bool _hasAdminAccess;
+
+    private string _filterCategory = string.Empty;
+    private string _filterActive = string.Empty;
+
+    private ReasonCodeForm _createForm = new();
+    private ReasonCodeForm? _editing;
+    private ReasonCodeDto? _pendingDelete;
+    private string _deleteMessage = string.Empty;
+
+    private IReadOnlyList<ReasonCodeDto> RootReasonCodes => _reasonCodes.Where(x => x.ParentId is null).OrderBy(x => x.Code).ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _hasAdminAccess = HasAdminRole();
+        if (_hasAdminAccess)
+        {
+            await LoadAsync();
+        }
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            var active = ParseActiveFilter(_filterActive);
+            var rows = await AdminConfigurationClient.GetReasonCodesAsync(_filterCategory, active);
+            _reasonCodes.Clear();
+            _reasonCodes.AddRange(rows.OrderBy(x => x.Code, StringComparer.OrdinalIgnoreCase));
+            RebuildHierarchy();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task ApplyFiltersAsync()
+    {
+        await LoadAsync();
+    }
+
+    private void ToggleCreateForm()
+    {
+        _showCreate = !_showCreate;
+        if (_showCreate)
+        {
+            _createForm = new ReasonCodeForm();
+        }
+    }
+
+    private async Task CreateAsync()
+    {
+        _isSubmitting = true;
+        _apiError = null;
+
+        try
+        {
+            var created = await AdminConfigurationClient.CreateReasonCodeAsync(ToRequest(_createForm));
+            ToastService.ShowSuccess($"Reason code {created.Code} created.");
+            _showCreate = false;
+            _createForm = new ReasonCodeForm();
+            await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private void BeginEdit(ReasonCodeDto reasonCode)
+    {
+        _editing = new ReasonCodeForm
+        {
+            Id = reasonCode.Id,
+            Code = reasonCode.Code,
+            Name = reasonCode.Name,
+            Description = reasonCode.Description,
+            ParentId = reasonCode.ParentId,
+            Category = reasonCode.Category,
+            Active = reasonCode.Active
+        };
+    }
+
+    private async Task UpdateAsync()
+    {
+        if (_editing is null || !_editing.Id.HasValue)
+        {
+            return;
+        }
+
+        _isSubmitting = true;
+        _apiError = null;
+
+        try
+        {
+            var updated = await AdminConfigurationClient.UpdateReasonCodeAsync(_editing.Id.Value, ToRequest(_editing));
+            ToastService.ShowSuccess($"Reason code {updated.Code} updated.");
+            _editing = null;
+            await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private void ConfirmDelete(ReasonCodeDto reasonCode)
+    {
+        _pendingDelete = reasonCode;
+        _deleteMessage = $"Delete reason code {reasonCode.Code}?";
+    }
+
+    private async Task DeleteAsync()
+    {
+        if (_pendingDelete is null)
+        {
+            return;
+        }
+
+        _isDeleting = true;
+        _apiError = null;
+
+        try
+        {
+            await AdminConfigurationClient.DeleteReasonCodeAsync(_pendingDelete.Id);
+            ToastService.ShowSuccess($"Reason code {_pendingDelete.Code} deleted.");
+            _pendingDelete = null;
+            _deleteMessage = string.Empty;
+            await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isDeleting = false;
+        }
+    }
+
+    private void CancelDelete()
+    {
+        _pendingDelete = null;
+        _deleteMessage = string.Empty;
+    }
+
+    private void CancelEdit()
+    {
+        _editing = null;
+    }
+
+    private void RebuildHierarchy()
+    {
+        _rows.Clear();
+
+        var byParent = _reasonCodes
+            .GroupBy(x => ParentKey(x.ParentId))
+            .ToDictionary(
+                x => x.Key,
+                x => x.OrderBy(y => y.Code, StringComparer.OrdinalIgnoreCase).ToList());
+
+        var visited = new HashSet<int>();
+        AppendChildren(ParentKey(null), 0, byParent, visited);
+
+        foreach (var orphan in _reasonCodes.Where(x => !visited.Contains(x.Id)).OrderBy(x => x.Code, StringComparer.OrdinalIgnoreCase))
+        {
+            _rows.Add(new ReasonCodeRow(orphan, 0));
+        }
+    }
+
+    private void AppendChildren(
+        string parentKey,
+        int level,
+        IReadOnlyDictionary<string, List<ReasonCodeDto>> byParent,
+        ISet<int> visited)
+    {
+        if (!byParent.TryGetValue(parentKey, out var children))
+        {
+            return;
+        }
+
+        foreach (var child in children)
+        {
+            if (!visited.Add(child.Id))
+            {
+                continue;
+            }
+
+            _rows.Add(new ReasonCodeRow(child, level));
+            AppendChildren(ParentKey(child.Id), level + 1, byParent, visited);
+        }
+    }
+
+    private static string ParentKey(int? parentId)
+        => parentId.HasValue ? parentId.Value.ToString() : "ROOT";
+
+    private static UpsertReasonCodeRequestDto ToRequest(ReasonCodeForm form)
+        => new()
+        {
+            Code = form.Code.Trim(),
+            Name = form.Name.Trim(),
+            Description = string.IsNullOrWhiteSpace(form.Description) ? null : form.Description.Trim(),
+            ParentId = form.ParentId,
+            Category = form.Category,
+            Active = form.Active
+        };
+
+    private bool HasAdminRole()
+    {
+        var roles = Configuration["WarehouseApi:Roles"] ?? string.Empty;
+        return roles.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Any(x => string.Equals(x, "WarehouseAdmin", StringComparison.OrdinalIgnoreCase) ||
+                      string.Equals(x, "Admin", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static bool? ParseActiveFilter(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        return bool.TryParse(value, out var parsed) ? parsed : null;
+    }
+
+    private static string BuildErrorMessage(ApiException error)
+    {
+        if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
+        {
+            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+        }
+
+        return error.UserMessage;
+    }
+
+    private void DismissError()
+    {
+        _apiError = null;
+    }
+
+    private sealed class ReasonCodeForm
+    {
+        public int? Id { get; set; }
+
+        [System.ComponentModel.DataAnnotations.Required]
+        public string Code { get; set; } = string.Empty;
+
+        [System.ComponentModel.DataAnnotations.Required]
+        [System.ComponentModel.DataAnnotations.MinLength(3)]
+        public string Name { get; set; } = string.Empty;
+
+        public string? Description { get; set; }
+
+        public int? ParentId { get; set; }
+
+        [System.ComponentModel.DataAnnotations.Required]
+        public string Category { get; set; } = "ADJUSTMENT";
+
+        public bool Active { get; set; } = true;
+    }
+
+    private sealed record ReasonCodeRow(ReasonCodeDto ReasonCode, int Level);
+}
