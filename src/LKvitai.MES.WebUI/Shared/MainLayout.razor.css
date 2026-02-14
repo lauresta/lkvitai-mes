@@ -1,5 +1,9 @@
 .sidebar {
     flex-shrink: 0;
+    overflow-y: auto;
+    max-height: 100vh;
+    position: sticky;
+    top: 0;
 }
 
 @media (max-width: 768px) {
