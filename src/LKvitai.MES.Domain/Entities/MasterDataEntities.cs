@@ -1087,6 +1087,20 @@ public sealed class GeneratedReportHistory
     public ScheduledReport? ScheduledReport { get; set; }
 }
 
+public sealed class ElectronicSignature
+{
+    public long Id { get; set; }
+    public string UserId { get; set; } = string.Empty;
+    public string Action { get; set; } = string.Empty;
+    public string ResourceId { get; set; } = string.Empty;
+    public string SignatureText { get; set; } = string.Empty;
+    public string Meaning { get; set; } = string.Empty;
+    public DateTimeOffset Timestamp { get; set; } = DateTimeOffset.UtcNow;
+    public string IpAddress { get; set; } = string.Empty;
+    public string PreviousHash { get; set; } = string.Empty;
+    public string CurrentHash { get; set; } = string.Empty;
+}
+
 public sealed class SupplierItemMapping
 {
     public int Id { get; set; }

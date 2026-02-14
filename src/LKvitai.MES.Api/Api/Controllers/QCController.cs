@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using LKvitai.MES.Api.ErrorHandling;
 using LKvitai.MES.Api.Security;
+using LKvitai.MES.Api.Services;
 using LKvitai.MES.Application.Services;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Contracts.ReadModels;
@@ -10,6 +11,8 @@ using IDocumentStore = Marten.IDocumentStore;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace LKvitai.MES.Api.Controllers;
 
@@ -23,15 +26,18 @@ public sealed class QCController : ControllerBase
     private readonly WarehouseDbContext _dbContext;
     private readonly IDocumentStore _documentStore;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IElectronicSignatureService _signatureService;
 
     public QCController(
         WarehouseDbContext dbContext,
         IDocumentStore documentStore,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IElectronicSignatureService signatureService)
     {
         _dbContext = dbContext;
         _documentStore = documentStore;
         _currentUserService = currentUserService;
+        _signatureService = signatureService;
     }
 
     [HttpGet("pending")]
@@ -207,6 +213,8 @@ public sealed class QCController : ControllerBase
             await session.SaveChangesAsync(cancellationToken);
         }
 
+        await TryCaptureSignatureAsync(request, item.InternalSKU, isPass, cancellationToken);
+
         return Ok(new QcActionResponse(
             evt.EventId,
             item.Id,
@@ -255,7 +263,10 @@ public sealed class QCController : ControllerBase
         int? LotId,
         decimal Qty,
         string? ReasonCode,
-        string? InspectorNotes);
+        string? InspectorNotes,
+        string? SignatureText = null,
+        string? SignaturePassword = null,
+        string? SignatureMeaning = null);
 
     public sealed record QcActionResponse(
         Guid EventId,
@@ -272,4 +283,34 @@ public sealed class QCController : ControllerBase
         string? LotNumber,
         decimal Qty,
         string BaseUoM);
+
+    private async Task TryCaptureSignatureAsync(
+        QcActionRequest request,
+        string itemSku,
+        bool isPass,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(request.SignatureText) ||
+            string.IsNullOrWhiteSpace(request.SignaturePassword))
+        {
+            return;
+        }
+
+        try
+        {
+            await _signatureService.CaptureAsync(new CaptureSignatureCommand(
+                isPass ? "QC_APPROVAL" : "QC_REJECT",
+                request.LotId?.ToString() ?? itemSku,
+                request.SignatureText!,
+                request.SignatureMeaning ?? (isPass ? "APPROVED" : "REJECTED"),
+                _currentUserService.GetCurrentUserId() ?? "unknown",
+                HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                request.SignaturePassword), cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            HttpContext?.RequestServices.GetRequiredService<ILogger<QCController>>()
+                .LogWarning(ex, "Electronic signature capture failed for QC action");
+        }
+    }
 }

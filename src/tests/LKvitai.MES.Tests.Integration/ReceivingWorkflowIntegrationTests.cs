@@ -1,5 +1,6 @@
 using FluentAssertions;
 using LKvitai.MES.Api.Controllers;
+using LKvitai.MES.Api.Services;
 using LKvitai.MES.Application.Services;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Contracts.ReadModels;
@@ -325,7 +326,7 @@ public class ReceivingWorkflowIntegrationTests : IAsyncLifetime
         };
 
     private QCController CreateQcController(WarehouseDbContext db)
-        => new(db, _store!, new StaticCurrentUserService("qc-tester"))
+        => new(db, _store!, new StaticCurrentUserService("qc-tester"), new StubSignatureService())
         {
             ControllerContext = new ControllerContext
             {
@@ -409,5 +410,31 @@ public class ReceivingWorkflowIntegrationTests : IAsyncLifetime
         }
 
         public string GetCurrentUserId() => _user;
+    }
+
+    private sealed class StubSignatureService : IElectronicSignatureService
+    {
+        public Task<ElectronicSignature> CaptureAsync(CaptureSignatureCommand command, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(new ElectronicSignature
+            {
+                Id = 1,
+                Action = command.Action,
+                ResourceId = command.ResourceId,
+                SignatureText = command.SignatureText,
+                Meaning = command.Meaning,
+                UserId = command.UserId,
+                Timestamp = DateTimeOffset.UtcNow,
+                IpAddress = command.IpAddress,
+                PreviousHash = "GENESIS",
+                CurrentHash = "HASH"
+            });
+        }
+
+        public Task<IReadOnlyList<ElectronicSignature>> GetByResourceAsync(string resourceId, CancellationToken cancellationToken = default)
+            => Task.FromResult<IReadOnlyList<ElectronicSignature>>(Array.Empty<ElectronicSignature>());
+
+        public Task<VerifyHashChainResponse> VerifyHashChainAsync(CancellationToken cancellationToken = default)
+            => Task.FromResult(new VerifyHashChainResponse(true, 0));
     }
 }

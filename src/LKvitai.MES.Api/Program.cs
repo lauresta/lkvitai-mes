@@ -197,6 +197,7 @@ builder.Services.AddScoped<ITransactionExportService, TransactionExportService>(
 builder.Services.Configure<ComplianceReportOptions>(builder.Configuration.GetSection("Compliance:Reports"));
 builder.Services.AddScoped<IComplianceReportService, ComplianceReportService>();
 builder.Services.AddScoped<ScheduledReportsRecurringJob>();
+builder.Services.AddScoped<IElectronicSignatureService, ElectronicSignatureService>();
 
 var warehouseConnectionString =
     builder.Configuration.GetConnectionString("WarehouseDb")

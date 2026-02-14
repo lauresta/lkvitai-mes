@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using LKvitai.MES.Api.ErrorHandling;
 using LKvitai.MES.Api.Security;
 using LKvitai.MES.Api.Services;
@@ -26,19 +27,22 @@ public sealed class ValuationController : ControllerBase
     private readonly IDocumentStore _documentStore;
     private readonly IAvailableStockQuantityResolver _quantityResolver;
     private readonly IReasonCodeService _reasonCodeService;
+    private readonly IElectronicSignatureService _signatureService;
 
     public ValuationController(
         IMediator mediator,
         WarehouseDbContext dbContext,
         IDocumentStore documentStore,
         IAvailableStockQuantityResolver quantityResolver,
-        IReasonCodeService reasonCodeService)
+        IReasonCodeService reasonCodeService,
+        IElectronicSignatureService signatureService)
     {
         _mediator = mediator;
         _dbContext = dbContext;
         _documentStore = documentStore;
         _quantityResolver = quantityResolver;
         _reasonCodeService = reasonCodeService;
+        _signatureService = signatureService;
     }
 
     [HttpPost("initialize")]
@@ -230,6 +234,8 @@ public sealed class ValuationController : ControllerBase
         var availableQty = await ResolveAvailableQtyAsync(session, item, cancellationToken);
         var costDelta = decimal.Round(costAdjustedEvent.NewUnitCost - costAdjustedEvent.OldUnitCost, 4, MidpointRounding.AwayFromZero);
         var impact = decimal.Round(costDelta * availableQty, 4, MidpointRounding.AwayFromZero);
+
+        await TryCaptureSignatureAsync(request, item.InternalSKU, impact, cancellationToken);
 
         return Ok(new AdjustCostResponse(
             itemId,
@@ -582,11 +588,38 @@ public sealed class ValuationController : ControllerBase
         return new DateTimeOffset(candidate, TimeSpan.Zero);
     }
 
+    private Task TryCaptureSignatureAsync(
+        AdjustCostRequest request,
+        string itemSku,
+        decimal impact,
+        CancellationToken cancellationToken)
+    {
+        var requiresSignature = Math.Abs(impact) >= 10000m;
+        if (!requiresSignature ||
+            string.IsNullOrWhiteSpace(request.SignatureText) ||
+            string.IsNullOrWhiteSpace(request.SignaturePassword))
+        {
+            return Task.CompletedTask;
+        }
+
+        return _signatureService.CaptureAsync(new CaptureSignatureCommand(
+            "COST_ADJUSTMENT",
+            itemSku,
+            request.SignatureText!,
+            request.SignatureMeaning ?? "APPROVED",
+            User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown",
+            HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+            request.SignaturePassword), cancellationToken);
+    }
+
     public sealed record AdjustCostRequest(
         Guid CommandId,
         decimal NewUnitCost,
         string Reason,
-        Guid? ApproverId);
+        Guid? ApproverId,
+        string? SignatureText = null,
+        string? SignaturePassword = null,
+        string? SignatureMeaning = null);
 
     public sealed record InitializeValuationRequest(
         Guid CommandId,

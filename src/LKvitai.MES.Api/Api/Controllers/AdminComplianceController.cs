@@ -1,4 +1,6 @@
+using System.Linq;
 using System.Security.Claims;
+using System.Text;
 using LKvitai.MES.Api.Security;
 using LKvitai.MES.Api.Services;
 using LKvitai.MES.Domain.Entities;
@@ -15,17 +17,20 @@ public sealed class AdminComplianceController : ControllerBase
     private readonly ILotTraceabilityService _lotTraceabilityService;
     private readonly ILotTraceStore _lotTraceStore;
     private readonly IComplianceReportService _complianceReportService;
+    private readonly IElectronicSignatureService _signatureService;
 
     public AdminComplianceController(
         ITransactionExportService transactionExportService,
         ILotTraceabilityService lotTraceabilityService,
         ILotTraceStore lotTraceStore,
-        IComplianceReportService complianceReportService)
+        IComplianceReportService complianceReportService,
+        IElectronicSignatureService signatureService)
     {
         _transactionExportService = transactionExportService;
         _lotTraceabilityService = lotTraceabilityService;
         _lotTraceStore = lotTraceStore;
         _complianceReportService = complianceReportService;
+        _signatureService = signatureService;
     }
 
     [HttpGet("dashboard")]
@@ -141,6 +146,99 @@ public sealed class AdminComplianceController : ControllerBase
     {
         var history = await _complianceReportService.GetHistoryAsync(limit, cancellationToken);
         return Ok(history.Select(MapHistory));
+    }
+
+    [HttpPost("sign")]
+    [Authorize]
+    public async Task<IActionResult> CaptureSignatureAsync([FromBody] CaptureSignatureRequest request, CancellationToken cancellationToken = default)
+    {
+        if (request is null)
+        {
+            return BadRequest(new { message = "Request body is required." });
+        }
+
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown";
+        var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+        try
+        {
+            var signature = await _signatureService.CaptureAsync(
+                new CaptureSignatureCommand(
+                    request.Action,
+                    request.ResourceId,
+                    request.SignatureText,
+                    request.Meaning,
+                    userId,
+                    ip,
+                    request.Password),
+                cancellationToken);
+
+            return CreatedAtAction(nameof(GetSignaturesForResourceAsync), new { resourceId = signature.ResourceId }, new SignatureResponse(
+                signature.Id,
+                signature.UserId,
+                signature.Action,
+                signature.ResourceId,
+                signature.SignatureText,
+                signature.Meaning,
+                signature.Timestamp,
+                signature.IpAddress,
+                signature.PreviousHash,
+                signature.CurrentHash));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpGet("signatures/{resourceId}")]
+    [Authorize]
+    public async Task<IActionResult> GetSignaturesForResourceAsync(string resourceId, CancellationToken cancellationToken = default)
+    {
+        var rows = await _signatureService.GetByResourceAsync(resourceId, cancellationToken);
+        return Ok(rows.Select(x => new SignatureResponse(
+            x.Id,
+            x.UserId,
+            x.Action,
+            x.ResourceId,
+            x.SignatureText,
+            x.Meaning,
+            x.Timestamp,
+            x.IpAddress,
+            x.PreviousHash,
+            x.CurrentHash)));
+    }
+
+    [HttpPost("verify-hash-chain")]
+    [Authorize]
+    public async Task<IActionResult> VerifyHashChainAsync(CancellationToken cancellationToken = default)
+    {
+        var result = await _signatureService.VerifyHashChainAsync(cancellationToken);
+        return Ok(new
+        {
+            valid = result.Valid,
+            signatureCount = result.SignatureCount,
+            error = result.ErrorMessage
+        });
+    }
+
+    [HttpGet("validation-report")]
+    [Authorize(Policy = WarehousePolicies.AdminOnly)]
+    public async Task<IActionResult> GenerateValidationReportAsync(CancellationToken cancellationToken = default)
+    {
+        var verify = await _signatureService.VerifyHashChainAsync(cancellationToken);
+
+        var lines = new List<string>
+        {
+            "FDA 21 CFR Part 11 Validation Report",
+            $"GeneratedAt: {DateTimeOffset.UtcNow:O}",
+            $"HashChainValid: {verify.Valid}",
+            $"SignatureCount: {verify.SignatureCount}",
+            $"Error: {verify.ErrorMessage ?? "none"}"
+        };
+
+        var content = SimplePdfBuilder.BuildSinglePage("FDA 21 CFR Part 11", lines);
+        return File(content, "application/pdf", "validation-report.pdf");
     }
 
     [HttpPost("export-transactions")]
@@ -388,4 +486,101 @@ public sealed class AdminComplianceController : ControllerBase
             history.FilePath,
             history.ErrorMessage,
             history.GeneratedAt);
+
+    public sealed record CaptureSignatureRequest(
+        string Action,
+        string ResourceId,
+        string SignatureText,
+        string Meaning,
+        string Password);
+
+    public sealed record SignatureResponse(
+        long Id,
+        string UserId,
+        string Action,
+        string ResourceId,
+        string SignatureText,
+        string Meaning,
+        DateTimeOffset Timestamp,
+        string IpAddress,
+        string PreviousHash,
+        string CurrentHash);
+
+    private static class SimplePdfBuilder
+    {
+        public static byte[] BuildSinglePage(string title, IReadOnlyList<string> lines)
+        {
+            using var stream = new MemoryStream();
+
+            static void WriteLine(MemoryStream ms, string text)
+            {
+                var bytes = Encoding.ASCII.GetBytes(text + "\n");
+                ms.Write(bytes, 0, bytes.Length);
+            }
+
+            static string Escape(string value)
+                => value.Replace("\\", "\\\\").Replace("(", "\\(").Replace(")", "\\)");
+
+            var contentBuilder = new StringBuilder();
+            contentBuilder.Append("BT /F1 11 Tf 40 800 Td ");
+            contentBuilder.Append($"({Escape(title)}) Tj 0 -18 Td ");
+            foreach (var line in lines.Take(42))
+            {
+                contentBuilder.Append($"({Escape(line)}) Tj 0 -14 Td ");
+            }
+
+            contentBuilder.Append("ET");
+            var content = Encoding.ASCII.GetBytes(contentBuilder.ToString());
+
+            WriteLine(stream, "%PDF-1.4");
+
+            var offsets = new Dictionary<int, long>();
+
+            offsets[1] = stream.Position;
+            WriteLine(stream, "1 0 obj");
+            WriteLine(stream, "<< /Type /Catalog /Pages 2 0 R >>");
+            WriteLine(stream, "endobj");
+
+            offsets[2] = stream.Position;
+            WriteLine(stream, "2 0 obj");
+            WriteLine(stream, "<< /Type /Pages /Kids [3 0 R] /Count 1 >>");
+            WriteLine(stream, "endobj");
+
+            offsets[3] = stream.Position;
+            WriteLine(stream, "3 0 obj");
+            WriteLine(stream, "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>");
+            WriteLine(stream, "endobj");
+
+            offsets[4] = stream.Position;
+            WriteLine(stream, "4 0 obj");
+            WriteLine(stream, $"<< /Length {content.Length} >>");
+            WriteLine(stream, "stream");
+            stream.Write(content, 0, content.Length);
+            WriteLine(stream, string.Empty);
+            WriteLine(stream, "endstream");
+            WriteLine(stream, "endobj");
+
+            offsets[5] = stream.Position;
+            WriteLine(stream, "5 0 obj");
+            WriteLine(stream, "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
+            WriteLine(stream, "endobj");
+
+            var xrefPosition = stream.Position;
+            WriteLine(stream, "xref");
+            WriteLine(stream, "0 6");
+            WriteLine(stream, "0000000000 65535 f ");
+            for (var i = 1; i <= 5; i++)
+            {
+                WriteLine(stream, $"{offsets[i]:D10} 00000 n ");
+            }
+
+            WriteLine(stream, "trailer");
+            WriteLine(stream, "<< /Size 6 /Root 1 0 R >>");
+            WriteLine(stream, "startxref");
+            WriteLine(stream, xrefPosition.ToString());
+            WriteLine(stream, "%%EOF");
+
+            return stream.ToArray();
+        }
+    }
 }

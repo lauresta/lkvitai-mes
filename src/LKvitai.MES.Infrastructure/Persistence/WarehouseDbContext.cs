@@ -83,6 +83,7 @@ public class WarehouseDbContext : DbContext
     public DbSet<PickTask> PickTasks => Set<PickTask>();
     public DbSet<ScheduledReport> ScheduledReports => Set<ScheduledReport>();
     public DbSet<GeneratedReportHistory> GeneratedReportHistories => Set<GeneratedReportHistory>();
+    public DbSet<ElectronicSignature> ElectronicSignatures => Set<ElectronicSignature>();
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -739,6 +740,24 @@ public class WarehouseDbContext : DbContext
                 .OnDelete(DeleteBehavior.SetNull);
             entity.HasIndex(e => e.GeneratedAt);
             entity.HasIndex(e => e.ReportType);
+        });
+
+        modelBuilder.Entity<ElectronicSignature>(entity =>
+        {
+            entity.ToTable("electronic_signatures");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
+            entity.Property(e => e.UserId).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.Action).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.ResourceId).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.SignatureText).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.Meaning).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.Timestamp).IsRequired();
+            entity.Property(e => e.IpAddress).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.PreviousHash).HasMaxLength(128).IsRequired();
+            entity.Property(e => e.CurrentHash).HasMaxLength(128).IsRequired();
+            entity.HasIndex(e => e.ResourceId);
+            entity.HasIndex(e => e.Timestamp);
         });
 
         modelBuilder.Entity<SupplierItemMapping>(entity =>

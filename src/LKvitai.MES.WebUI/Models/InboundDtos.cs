@@ -106,6 +106,9 @@ public record QcActionRequestDto
     public decimal Qty { get; init; }
     public string? ReasonCode { get; init; }
     public string? InspectorNotes { get; init; }
+    public string? SignatureText { get; init; }
+    public string? SignaturePassword { get; init; }
+    public string? SignatureMeaning { get; init; }
 }
 
 public record QcActionResponseDto
