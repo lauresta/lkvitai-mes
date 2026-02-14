@@ -6,6 +6,7 @@ public static class ErrorCodeMessages
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
             ["INSUFFICIENT_BALANCE"] = "Insufficient balance. Cannot complete operation.",
+            ["INSUFFICIENT_AVAILABLE_STOCK"] = "Insufficient stock at source location. Check available quantities before transferring.",
             ["RESERVATION_NOT_ALLOCATED"] = "Reservation is not in ALLOCATED state. Cannot start picking.",
             ["HARD_LOCK_CONFLICT"] = "HARD lock conflict detected. Another reservation is already picking this stock.",
             ["INVALID_PROJECTION_NAME"] = "Invalid projection name. Must be LocationBalance or AvailableStock.",

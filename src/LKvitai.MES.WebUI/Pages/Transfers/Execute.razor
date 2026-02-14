@@ -157,6 +157,7 @@
         }
         catch (ApiException ex)
         {
+            _confirmExecute = false;
             _apiError = ex;
             ToastService.ShowError(BuildErrorMessage(ex));
         }

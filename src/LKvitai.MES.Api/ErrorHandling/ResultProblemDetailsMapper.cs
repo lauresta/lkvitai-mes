@@ -14,6 +14,7 @@ public static class ResultProblemDetailsMapper
         [DomainErrorCodes.IdempotencyAlreadyProcessed] = StatusCodes.Status409Conflict,
         [DomainErrorCodes.HardLockConflict] = StatusCodes.Status409Conflict,
         [DomainErrorCodes.InsufficientBalance] = StatusCodes.Status422UnprocessableEntity,
+        [DomainErrorCodes.InsufficientAvailableStock] = StatusCodes.Status422UnprocessableEntity,
         [DomainErrorCodes.ReservationNotAllocated] = StatusCodes.Status400BadRequest,
         [DomainErrorCodes.InvalidProjectionName] = StatusCodes.Status400BadRequest,
         [DomainErrorCodes.ValidationError] = StatusCodes.Status400BadRequest,
