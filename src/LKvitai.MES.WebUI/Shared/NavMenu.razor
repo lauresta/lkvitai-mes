@@ -1,229 +1,153 @@
-<div class="pt-3">
-    <ul class="nav flex-column p-3">
+@inject NavigationManager Navigation
+
+<div class="pt-3 px-2">
+    <ul class="nav flex-column mb-2">
         <li class="nav-item">
             <NavLink class="nav-link" href="/dashboard" Match="NavLinkMatch.All">
                 <i class="bi bi-speedometer2 me-2"></i>Dashboard
             </NavLink>
         </li>
-        <li class="nav-item">
-            <NavLink class="nav-link" href="/available-stock" Match="NavLinkMatch.Prefix">
-                <i class="bi bi-box-seam me-2"></i>Available Stock
-            </NavLink>
-        </li>
-        <li class="nav-item">
-            <NavLink class="nav-link" href="/warehouse/stock/dashboard" Match="NavLinkMatch.Prefix">
-                <i class="bi bi-grid me-2"></i>Stock Dashboard
-            </NavLink>
-        </li>
-        <li class="nav-item">
-            <NavLink class="nav-link" href="/reservations" Match="NavLinkMatch.Prefix">
-                <i class="bi bi-clipboard-check me-2"></i>Reservations
-            </NavLink>
-        </li>
-        <li class="nav-item mt-3 text-uppercase small text-secondary ps-2">
-            Inbound
-        </li>
-        <li class="nav-item">
-            <NavLink class="nav-link" href="/warehouse/inbound/shipments" Match="NavLinkMatch.Prefix">
-                <i class="bi bi-box-arrow-in-down me-2"></i>Inbound Shipments
-            </NavLink>
-        </li>
-        <li class="nav-item">
-            <NavLink class="nav-link" href="/warehouse/inbound/qc" Match="NavLinkMatch.Prefix">
-                <i class="bi bi-clipboard2-pulse me-2"></i>Receiving QC
-            </NavLink>
-        </li>
-        <li class="nav-item mt-3 text-uppercase small text-secondary ps-2">
-            Outbound
-        </li>
-        <li class="nav-item">
-            <NavLink class="nav-link" href="/warehouse/sales/orders" Match="NavLinkMatch.Prefix">
-                <i class="bi bi-file-earmark-text me-2"></i>Sales Orders
-            </NavLink>
-        </li>
-        <li class="nav-item">
-            <NavLink class="nav-link" href="/warehouse/sales/allocations" Match="NavLinkMatch.Prefix">
-                <i class="bi bi-sliders me-2"></i>Allocations
-            </NavLink>
-        </li>
-        <li class="nav-item">
-            <NavLink class="nav-link" href="/warehouse/outbound/orders" Match="NavLinkMatch.Prefix">
-                <i class="bi bi-box-arrow-right me-2"></i>Outbound Orders
-            </NavLink>
-        </li>
-        <li class="nav-item">
-            <NavLink class="nav-link" href="/warehouse/outbound/dispatch" Match="NavLinkMatch.Prefix">
-                <i class="bi bi-truck me-2"></i>Dispatch
-            </NavLink>
-        </li>
-        <li class="nav-item">
-            <NavLink class="nav-link" href="/warehouse/waves" Match="NavLinkMatch.Prefix">
-                <i class="bi bi-layers me-2"></i>Wave Picking
-            </NavLink>
-        </li>
-        <li class="nav-item">
-            <NavLink class="nav-link" href="/warehouse/cross-dock" Match="NavLinkMatch.Prefix">
-                <i class="bi bi-arrow-left-right me-2"></i>Cross-Dock
-            </NavLink>
-        </li>
-        <li class="nav-item">
-            <NavLink class="nav-link" href="/warehouse/rmas" Match="NavLinkMatch.Prefix">
-                <i class="bi bi-arrow-counterclockwise me-2"></i>RMAs
-            </NavLink>
-        </li>
-        <li class="nav-item">
-            <NavLink class="nav-link" href="/warehouse/transfers" Match="NavLinkMatch.Prefix">
-                <i class="bi bi-arrow-left-right me-2"></i>Transfers
-            </NavLink>
-        </li>
-        <li class="nav-item">
-            <NavLink class="nav-link" href="/warehouse/cycle-counts" Match="NavLinkMatch.Prefix">
-                <i class="bi bi-clipboard-check me-2"></i>Cycle Counts
-            </NavLink>
-        </li>
-        <li class="nav-item">
-            <NavLink class="nav-link" href="/warehouse/valuation/dashboard" Match="NavLinkMatch.Prefix">
-                <i class="bi bi-cash-stack me-2"></i>Valuation
-            </NavLink>
-        </li>
-        <li class="nav-item">
-            <NavLink class="nav-link" href="/warehouse/agnum/config" Match="NavLinkMatch.Prefix">
-                <i class="bi bi-journal-text me-2"></i>Agnum Config
-            </NavLink>
-        </li>
-        <li class="nav-item">
-            <NavLink class="nav-link" href="/warehouse/agnum/reconcile" Match="NavLinkMatch.Prefix">
-                <i class="bi bi-calculator me-2"></i>Agnum Reconcile
-            </NavLink>
-        </li>
-        <li class="nav-item">
-            <NavLink class="nav-link" href="/warehouse/visualization/3d" Match="NavLinkMatch.Prefix">
-                <i class="bi bi-bounding-box-circles me-2"></i>Warehouse Map
-            </NavLink>
-        </li>
-        <li class="nav-item">
-            <NavLink class="nav-link" href="/projections" Match="NavLinkMatch.Prefix">
-                <i class="bi bi-database-gear me-2"></i>Projections
-            </NavLink>
-        </li>
-        <li class="nav-item mt-3 text-uppercase small text-secondary ps-2">
-            Admin
-        </li>
-        <li class="nav-item">
-            <NavLink class="nav-link" href="/admin/users" Match="NavLinkMatch.Prefix">
-                <i class="bi bi-people me-2"></i>Users
-            </NavLink>
-        </li>
-        <li class="nav-item">
-            <NavLink class="nav-link" href="/warehouse/admin/settings" Match="NavLinkMatch.Prefix">
-                <i class="bi bi-sliders me-2"></i>Admin Settings
-            </NavLink>
-        </li>
-        <li class="nav-item">
-            <NavLink class="nav-link" href="/warehouse/admin/reason-codes" Match="NavLinkMatch.Prefix">
-                <i class="bi bi-list-check me-2"></i>Reason Codes
-            </NavLink>
-        </li>
-        <li class="nav-item">
-            <NavLink class="nav-link" href="/warehouse/admin/approval-rules" Match="NavLinkMatch.Prefix">
-                <i class="bi bi-ui-checks-grid me-2"></i>Approval Rules
-            </NavLink>
-        </li>
-        <li class="nav-item">
-            <NavLink class="nav-link" href="/warehouse/admin/roles" Match="NavLinkMatch.Prefix">
-                <i class="bi bi-person-gear me-2"></i>Roles
-            </NavLink>
-        </li>
-        <li class="nav-item">
-            <NavLink class="nav-link" href="/admin/items" Match="NavLinkMatch.Prefix">
-                <i class="bi bi-boxes me-2"></i>Items
-            </NavLink>
-        </li>
-        <li class="nav-item">
-            <NavLink class="nav-link" href="/admin/suppliers" Match="NavLinkMatch.Prefix">
-                <i class="bi bi-truck me-2"></i>Suppliers
-            </NavLink>
-        </li>
-        <li class="nav-item">
-            <NavLink class="nav-link" href="/admin/supplier-mappings" Match="NavLinkMatch.Prefix">
-                <i class="bi bi-link-45deg me-2"></i>Supplier Mappings
-            </NavLink>
-        </li>
-        <li class="nav-item">
-            <NavLink class="nav-link" href="/admin/locations" Match="NavLinkMatch.Prefix">
-                <i class="bi bi-geo-alt me-2"></i>Locations
-            </NavLink>
-        </li>
-        <li class="nav-item">
-            <NavLink class="nav-link" href="/admin/categories" Match="NavLinkMatch.Prefix">
-                <i class="bi bi-diagram-3 me-2"></i>Categories
-            </NavLink>
-        </li>
-        <li class="nav-item">
-            <NavLink class="nav-link" href="/admin/import" Match="NavLinkMatch.Prefix">
-                <i class="bi bi-upload me-2"></i>Import Wizard
-            </NavLink>
-        </li>
-        <li class="nav-item mt-3 text-uppercase small text-secondary ps-2">
-            Reports
-        </li>
-        <li class="nav-item">
-            <NavLink class="nav-link" href="/reports/stock-level" Match="NavLinkMatch.Prefix">
-                <i class="bi bi-clipboard-data me-2"></i>Stock Level
-            </NavLink>
-        </li>
-        <li class="nav-item">
-            <NavLink class="nav-link" href="/reports/receiving-history" Match="NavLinkMatch.Prefix">
-                <i class="bi bi-box-arrow-in-down me-2"></i>Receiving History
-            </NavLink>
-        </li>
-        <li class="nav-item">
-            <NavLink class="nav-link" href="/reports/pick-history" Match="NavLinkMatch.Prefix">
-                <i class="bi bi-list-check me-2"></i>Pick History
-            </NavLink>
-        </li>
-        <li class="nav-item">
-            <NavLink class="nav-link" href="/reports/dispatch-history" Match="NavLinkMatch.Prefix">
-                <i class="bi bi-truck-flatbed me-2"></i>Dispatch History
-            </NavLink>
-        </li>
-        <li class="nav-item">
-            <NavLink class="nav-link" href="/reports/stock-movements" Match="NavLinkMatch.Prefix">
-                <i class="bi bi-arrow-repeat me-2"></i>Stock Movements
-            </NavLink>
-        </li>
-        <li class="nav-item">
-            <NavLink class="nav-link" href="/reports/traceability" Match="NavLinkMatch.Prefix">
-                <i class="bi bi-diagram-3 me-2"></i>Traceability
-            </NavLink>
-        </li>
-        <li class="nav-item">
-            <NavLink class="nav-link" href="/warehouse/compliance/lot-trace" Match="NavLinkMatch.Prefix">
-                <i class="bi bi-diagram-3-fill me-2"></i>Lot Traceability
-            </NavLink>
-        </li>
-        <li class="nav-item">
-            <NavLink class="nav-link" href="/reports/compliance-audit" Match="NavLinkMatch.Prefix">
-                <i class="bi bi-shield-check me-2"></i>Compliance Audit
-            </NavLink>
-        </li>
-        <li class="nav-item">
-            <NavLink class="nav-link" href="/warehouse/compliance/dashboard" Match="NavLinkMatch.Prefix">
-                <i class="bi bi-clock-history me-2"></i>Compliance Dashboard
-            </NavLink>
-        </li>
-        <li class="nav-item mt-3 text-uppercase small text-secondary ps-2">
-            Analytics
-        </li>
-        <li class="nav-item">
-            <NavLink class="nav-link" href="/analytics/fulfillment" Match="NavLinkMatch.Prefix">
-                <i class="bi bi-graph-up-arrow me-2"></i>Fulfillment KPIs
-            </NavLink>
-        </li>
-        <li class="nav-item">
-            <NavLink class="nav-link" href="/analytics/quality" Match="NavLinkMatch.Prefix">
-                <i class="bi bi-shield-exclamation me-2"></i>Quality Analytics
-            </NavLink>
-        </li>
     </ul>
+
+    @foreach (var grp in _sections)
+    {
+        var isOpen = _openSection == grp.Key;
+        var hasActive = grp.Items.Any(i => _currentUri.Contains(i.Href, StringComparison.OrdinalIgnoreCase));
+
+        <div class="nav-section">
+            <button class="nav-section-toggle @(isOpen ? "open" : "") @(hasActive && !isOpen ? "has-active" : "")"
+                    @onclick="() => Toggle(grp.Key)">
+                <span>
+                    <i class="bi @grp.Icon me-2"></i>@grp.Label
+                </span>
+                <i class="bi bi-chevron-down nav-chevron"></i>
+            </button>
+
+            @if (isOpen)
+            {
+                <ul class="nav flex-column nav-section-items">
+                    @foreach (var item in grp.Items)
+                    {
+                        <li class="nav-item">
+                            <NavLink class="nav-link" href="@item.Href" Match="NavLinkMatch.Prefix">
+                                <i class="bi @item.Icon me-2"></i>@item.Label
+                            </NavLink>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    }
 </div>
+
+@code {
+    private string? _openSection;
+    private string _currentUri = "";
+
+    private record NavItem(string Href, string Icon, string Label);
+    private record NavSection(string Key, string Label, string Icon, NavItem[] Items);
+
+    protected override void OnInitialized()
+    {
+        _currentUri = Navigation.Uri;
+        Navigation.LocationChanged += OnLocationChanged;
+        _openSection = FindSectionForUri(_currentUri);
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        _currentUri = e.Location;
+        var active = FindSectionForUri(_currentUri);
+        if (active is not null)
+            _openSection = active;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private string? FindSectionForUri(string uri)
+    {
+        foreach (var s in _sections)
+        {
+            if (s.Items.Any(i => uri.Contains(i.Href, StringComparison.OrdinalIgnoreCase)))
+                return s.Key;
+        }
+        return null;
+    }
+
+    private void Toggle(string key)
+    {
+        _openSection = _openSection == key ? null : key;
+    }
+
+    public void Dispose()
+    {
+        Navigation.LocationChanged -= OnLocationChanged;
+    }
+
+    private static readonly NavSection[] _sections =
+    [
+        new("stock", "Stock", "bi-box-seam", [
+            new("/available-stock", "bi-box-seam", "Available Stock"),
+            new("/warehouse/stock/dashboard", "bi-grid", "Stock Dashboard"),
+            new("/reservations", "bi-clipboard-check", "Reservations"),
+        ]),
+
+        new("inbound", "Inbound", "bi-box-arrow-in-down", [
+            new("/warehouse/inbound/shipments", "bi-box-arrow-in-down", "Inbound Shipments"),
+            new("/warehouse/inbound/qc", "bi-clipboard2-pulse", "Receiving QC"),
+        ]),
+
+        new("outbound", "Outbound", "bi-box-arrow-right", [
+            new("/warehouse/sales/orders", "bi-file-earmark-text", "Sales Orders"),
+            new("/warehouse/sales/allocations", "bi-sliders", "Allocations"),
+            new("/warehouse/outbound/orders", "bi-box-arrow-right", "Outbound Orders"),
+            new("/warehouse/outbound/dispatch", "bi-truck", "Dispatch"),
+            new("/warehouse/waves", "bi-layers", "Wave Picking"),
+            new("/warehouse/cross-dock", "bi-arrow-left-right", "Cross-Dock"),
+            new("/warehouse/rmas", "bi-arrow-counterclockwise", "RMAs"),
+        ]),
+
+        new("operations", "Operations", "bi-gear", [
+            new("/warehouse/transfers", "bi-arrow-left-right", "Transfers"),
+            new("/warehouse/cycle-counts", "bi-clipboard-check", "Cycle Counts"),
+            new("/warehouse/visualization/3d", "bi-bounding-box-circles", "Warehouse Map"),
+            new("/projections", "bi-database-gear", "Projections"),
+        ]),
+
+        new("finance", "Finance", "bi-cash-stack", [
+            new("/warehouse/valuation/dashboard", "bi-cash-stack", "Valuation"),
+            new("/warehouse/agnum/config", "bi-journal-text", "Agnum Config"),
+            new("/warehouse/agnum/reconcile", "bi-calculator", "Agnum Reconcile"),
+        ]),
+
+        new("admin", "Admin", "bi-shield-lock", [
+            new("/admin/users", "bi-people", "Users"),
+            new("/warehouse/admin/settings", "bi-sliders", "Admin Settings"),
+            new("/warehouse/admin/reason-codes", "bi-list-check", "Reason Codes"),
+            new("/warehouse/admin/approval-rules", "bi-ui-checks-grid", "Approval Rules"),
+            new("/warehouse/admin/roles", "bi-person-gear", "Roles"),
+            new("/admin/items", "bi-boxes", "Items"),
+            new("/admin/suppliers", "bi-truck", "Suppliers"),
+            new("/admin/supplier-mappings", "bi-link-45deg", "Supplier Mappings"),
+            new("/admin/locations", "bi-geo-alt", "Locations"),
+            new("/admin/categories", "bi-diagram-3", "Categories"),
+            new("/admin/import", "bi-upload", "Import Wizard"),
+        ]),
+
+        new("reports", "Reports", "bi-clipboard-data", [
+            new("/reports/stock-level", "bi-clipboard-data", "Stock Level"),
+            new("/reports/receiving-history", "bi-box-arrow-in-down", "Receiving History"),
+            new("/reports/pick-history", "bi-list-check", "Pick History"),
+            new("/reports/dispatch-history", "bi-truck-flatbed", "Dispatch History"),
+            new("/reports/stock-movements", "bi-arrow-repeat", "Stock Movements"),
+            new("/reports/traceability", "bi-diagram-3", "Traceability"),
+            new("/warehouse/compliance/lot-trace", "bi-diagram-3-fill", "Lot Traceability"),
+            new("/reports/compliance-audit", "bi-shield-check", "Compliance Audit"),
+            new("/warehouse/compliance/dashboard", "bi-clock-history", "Compliance Dashboard"),
+        ]),
+
+        new("analytics", "Analytics", "bi-graph-up-arrow", [
+            new("/analytics/fulfillment", "bi-graph-up-arrow", "Fulfillment KPIs"),
+            new("/analytics/quality", "bi-shield-exclamation", "Quality Analytics"),
+        ]),
+    ];
+}

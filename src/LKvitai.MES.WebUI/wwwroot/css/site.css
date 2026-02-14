@@ -54,6 +54,60 @@ a, .btn-link {
     color: #facc15 !important;
 }
 
+/* Accordion nav sections */
+.nav-section {
+    margin-bottom: 2px;
+}
+
+.nav-section-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: none;
+    border-radius: 0.375rem;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.65);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.nav-section-toggle:hover {
+    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.06);
+}
+
+.nav-section-toggle.open {
+    color: #ffffff;
+}
+
+.nav-section-toggle.has-active {
+    color: #facc15;
+}
+
+.nav-section-toggle .nav-chevron {
+    font-size: 0.65rem;
+    transition: transform 0.2s ease;
+}
+
+.nav-section-toggle.open .nav-chevron {
+    transform: rotate(180deg);
+}
+
+.nav-section-items {
+    padding-left: 0.5rem;
+}
+
+.nav-section-items .nav-link {
+    padding: 0.3rem 0.75rem;
+    font-size: 0.875rem;
+}
+
 .valid.modified:not([type=checkbox]) {
     outline: 1px solid #26b050;
 }
