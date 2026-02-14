@@ -1,0 +1,96 @@
+# Build output
+**/bin/
+**/obj/
+**/out/
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# GitHub
+.github/
+
+# CI/CD
+*.yml
+*.yaml
+
+# Tests
+tests/
+**/tests/
+**/*Tests/
+**/*Test/
+**/*.Tests/
+**/*.Test/
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Documentation
+*.md
+docs/
+.kiro/
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose.yml
+docker-compose.*.yml
+**/docker-compose.yml
+Dockerfile
+**/.dockerignore
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*~
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+
+# Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+
+# User-specific files
+*.rsuser
+*.user
+*.userosscache
+*.sln.docstates
+
+# Coverage
+coverage/
+*.coverage
+*.coveragexml
+
+# Database
+*.db
+*.sqlite
+*.sqlite3

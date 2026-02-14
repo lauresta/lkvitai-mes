@@ -149,7 +149,7 @@ public class MartenPickStockOrchestration : IPickStockOrchestration
 
                 // Get stream version for optimistic concurrency
                 var streamState = await session.Events.FetchStreamStateAsync(streamId, ct);
-                var expectedVersion = streamState?.Version ?? 0;
+                var expectedVersion = streamState?.Version ?? -1;
 
                 // Build released hard lock lines from reservation state
                 var releasedLines = reservation.Lines.Select(l => new HardLockLineDto
@@ -232,7 +232,7 @@ public class MartenPickStockOrchestration : IPickStockOrchestration
 
                     // Get current stream version for optimistic concurrency
                     var streamState = await session.Events.FetchStreamStateAsync(ledgerStreamId, ct);
-                    var expectedVersion = streamState?.Version ?? 0;
+                    var expectedVersion = streamState?.Version ?? -1;
 
                     // Produce the event (validates balance invariant)
                     var stockMovedEvent = ledger.RecordMovement(

@@ -30,7 +30,7 @@ public class MartenReservationRepository : IReservationRepository
             streamId, token: ct);
 
         var state = await session.Events.FetchStreamStateAsync(streamId, ct);
-        var version = state?.Version ?? 0;
+        var version = state?.Version ?? -1;
 
         return (reservation, version);
     }

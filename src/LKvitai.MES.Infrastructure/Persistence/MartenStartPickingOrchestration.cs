@@ -182,7 +182,7 @@ public class MartenStartPickingOrchestration : IStartPickingOrchestration
                 // ─── Step 5: Get stream version for optimistic concurrency ───
                 var streamState = await session.Events.FetchStreamStateAsync(
                     streamId, cancellationToken);
-                var expectedVersion = streamState?.Version ?? 0;
+                var expectedVersion = streamState?.Version ?? -1;
 
                 // ─── Step 6: Append PickingStartedEvent ───
                 var pickingStartedEvent = new PickingStartedEvent
