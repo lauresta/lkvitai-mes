@@ -3,9 +3,12 @@
 ## Issue Summary
 
 **Stream:** `stock-ledger:RES:RECEIVING:RM-0001`
-**Error:** Version conflict - expected version 0, but Marten expected -1
+**Error:** Version conflict - expected version -1, but Marten expected -2
 **Impact:** Transfer commands fail after 3 retry attempts
-**Root Cause:** Incorrect version initialization for existing streams
+**Root Cause:** Incorrect version initialization - didn't understand Marten V-2 versioning scheme
+
+⚠️ **IMPORTANT:** This document describes the FIRST (failed) fix attempt.
+See `MARTEN_V2_VERSIONING_FIX.md` for the CORRECT fix using V-2 scheme.
 
 ---
 
