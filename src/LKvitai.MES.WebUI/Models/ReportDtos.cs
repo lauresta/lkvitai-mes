@@ -206,3 +206,38 @@ public record LotTraceResponseDto
     public DateTimeOffset GeneratedAt { get; init; }
     public LotTraceNodeDto Root { get; init; } = new();
 }
+
+public record ComplianceDashboardDto
+{
+    public int PendingExports { get; init; }
+    public int RecentTraces { get; init; }
+    public int VarianceAlerts { get; init; }
+    public IReadOnlyList<ReportHistoryDto> RecentReports { get; init; } = Array.Empty<ReportHistoryDto>();
+}
+
+public record ScheduledReportDto
+{
+    public int Id { get; init; }
+    public string ReportType { get; init; } = string.Empty;
+    public string Schedule { get; init; } = string.Empty;
+    public string EmailRecipients { get; init; } = string.Empty;
+    public string Format { get; init; } = string.Empty;
+    public bool Active { get; init; }
+    public DateTimeOffset CreatedAt { get; init; }
+    public DateTimeOffset? LastRunAt { get; init; }
+    public string LastStatus { get; init; } = string.Empty;
+    public string? LastError { get; init; }
+}
+
+public record ReportHistoryDto
+{
+    public Guid Id { get; init; }
+    public int? ScheduledReportId { get; init; }
+    public string ReportType { get; init; } = string.Empty;
+    public string Format { get; init; } = string.Empty;
+    public string Status { get; init; } = string.Empty;
+    public string Trigger { get; init; } = string.Empty;
+    public string FilePath { get; init; } = string.Empty;
+    public string? ErrorMessage { get; init; }
+    public DateTimeOffset GeneratedAt { get; init; }
+}

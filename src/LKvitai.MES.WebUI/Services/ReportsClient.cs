@@ -325,6 +325,77 @@ public sealed class ReportsClient
         return PostDownloadAsync("/api/warehouse/v1/admin/compliance/lot-trace", body, cancellationToken);
     }
 
+    public Task<ComplianceDashboardDto> GetComplianceDashboardAsync(CancellationToken cancellationToken = default)
+    {
+        return GetAsync<ComplianceDashboardDto>("/api/warehouse/v1/admin/compliance/dashboard", cancellationToken);
+    }
+
+    public Task<IReadOnlyList<ScheduledReportDto>> GetScheduledReportsAsync(CancellationToken cancellationToken = default)
+    {
+        return GetAsync<IReadOnlyList<ScheduledReportDto>>("/api/warehouse/v1/admin/compliance/scheduled-reports", cancellationToken);
+    }
+
+    public Task<ScheduledReportDto> CreateScheduledReportAsync(
+        string reportType,
+        string schedule,
+        IEnumerable<string> emailRecipients,
+        string format,
+        bool active,
+        CancellationToken cancellationToken = default)
+    {
+        var body = new
+        {
+            reportType,
+            schedule,
+            emailRecipients = emailRecipients.ToList(),
+            format,
+            active
+        };
+        return PostJsonAsync<ScheduledReportDto>("/api/warehouse/v1/admin/compliance/scheduled-reports", body, cancellationToken);
+    }
+
+    public Task<ScheduledReportDto> UpdateScheduledReportAsync(
+        int id,
+        string reportType,
+        string schedule,
+        IEnumerable<string> emailRecipients,
+        string format,
+        bool active,
+        CancellationToken cancellationToken = default)
+    {
+        var body = new
+        {
+            reportType,
+            schedule,
+            emailRecipients = emailRecipients.ToList(),
+            format,
+            active
+        };
+
+        return PutJsonAsync<ScheduledReportDto>($"/api/warehouse/v1/admin/compliance/scheduled-reports/{id}", body, cancellationToken);
+    }
+
+    public async Task DeleteScheduledReportAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var client = _factory.CreateClient("WarehouseApi");
+        var response = await client.DeleteAsync($"/api/warehouse/v1/admin/compliance/scheduled-reports/{id}", cancellationToken);
+        await EnsureSuccessAsync(response);
+    }
+
+    public Task<ReportHistoryDto> RunScheduledReportAsync(int id, CancellationToken cancellationToken = default)
+    {
+        return PostJsonAsync<ReportHistoryDto>(
+            $"/api/warehouse/v1/admin/compliance/scheduled-reports/{id}/run",
+            new { },
+            cancellationToken);
+    }
+
+    public Task<IReadOnlyList<ReportHistoryDto>> GetReportHistoryAsync(int? limit, CancellationToken cancellationToken = default)
+    {
+        var query = BuildQuery(("limit", limit?.ToString()));
+        return GetAsync<IReadOnlyList<ReportHistoryDto>>($"/api/warehouse/v1/admin/compliance/scheduled-reports/history{query}", cancellationToken);
+    }
+
     private async Task<T> GetAsync<T>(string relativeUrl, CancellationToken cancellationToken)
     {
         var client = _factory.CreateClient("WarehouseApi");
@@ -332,6 +403,32 @@ public sealed class ReportsClient
         await EnsureSuccessAsync(response);
         var body = await response.Content.ReadAsStringAsync(cancellationToken);
         var model = JsonSerializer.Deserialize<T>(body, JsonOptions);
+        return model ?? throw new JsonException($"Unable to deserialize response to {typeof(T).Name}.");
+    }
+
+    private async Task<T> PostJsonAsync<T>(
+        string relativeUrl,
+        object body,
+        CancellationToken cancellationToken)
+    {
+        var client = _factory.CreateClient("WarehouseApi");
+        var response = await client.PostAsJsonAsync(relativeUrl, body, cancellationToken);
+        await EnsureSuccessAsync(response);
+        var json = await response.Content.ReadAsStringAsync(cancellationToken);
+        var model = JsonSerializer.Deserialize<T>(json, JsonOptions);
+        return model ?? throw new JsonException($"Unable to deserialize response to {typeof(T).Name}.");
+    }
+
+    private async Task<T> PutJsonAsync<T>(
+        string relativeUrl,
+        object body,
+        CancellationToken cancellationToken)
+    {
+        var client = _factory.CreateClient("WarehouseApi");
+        var response = await client.PutAsJsonAsync(relativeUrl, body, cancellationToken);
+        await EnsureSuccessAsync(response);
+        var json = await response.Content.ReadAsStringAsync(cancellationToken);
+        var model = JsonSerializer.Deserialize<T>(json, JsonOptions);
         return model ?? throw new JsonException($"Unable to deserialize response to {typeof(T).Name}.");
     }
 

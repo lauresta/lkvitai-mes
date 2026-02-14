@@ -2506,6 +2506,116 @@ namespace LKvitai.MES.Infrastructure.Persistence.Migrations
                     b.ToTable("transaction_exports", "public");
                 });
 
+            modelBuilder.Entity("LKvitai.MES.Domain.Entities.ScheduledReport", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Active")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset?>("LastRunAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LastStatus")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("ReportType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("Schedule")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("EmailRecipients")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("Format")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LastError")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Active");
+
+                    b.HasIndex("ReportType");
+
+                    b.ToTable("scheduled_reports", "public");
+                });
+
+            modelBuilder.Entity("LKvitai.MES.Domain.Entities.GeneratedReportHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasColumnType("text");
+
+                    b.Property<string>("FilePath")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<string>("Format")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<DateTimeOffset>("GeneratedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("ScheduledReportId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Trigger")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("ReportType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GeneratedAt");
+
+                    b.HasIndex("ReportType");
+
+                    b.HasIndex("ScheduledReportId");
+
+                    b.ToTable("generated_report_history", "public");
+                });
+
             modelBuilder.Entity("LKvitai.MES.Domain.Entities.Transfer", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3255,6 +3365,16 @@ namespace LKvitai.MES.Infrastructure.Persistence.Migrations
                         .WithMany()
                         .HasForeignKey("ToLocationId")
                         .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("LKvitai.MES.Domain.Entities.GeneratedReportHistory", b =>
+                {
+                    b.HasOne("LKvitai.MES.Domain.Entities.ScheduledReport", "ScheduledReport")
+                        .WithMany()
+                        .HasForeignKey("ScheduledReportId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("ScheduledReport");
                 });
 
             modelBuilder.Entity("LKvitai.MES.Domain.Entities.RolePermission", b =>

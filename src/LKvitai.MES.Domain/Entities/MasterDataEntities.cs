@@ -1036,6 +1036,57 @@ public sealed class TransactionExport
     public DateTimeOffset ExportedAt { get; set; } = DateTimeOffset.UtcNow;
 }
 
+public enum ComplianceReportType
+{
+    TransactionExport,
+    LotTrace,
+    VarianceAnalysis
+}
+
+public enum ComplianceReportFormat
+{
+    Csv,
+    Pdf
+}
+
+public enum ComplianceReportStatus
+{
+    Pending,
+    InProgress,
+    Completed,
+    Failed
+}
+
+public sealed class ScheduledReport
+{
+    public int Id { get; set; }
+    public ComplianceReportType ReportType { get; set; } = ComplianceReportType.TransactionExport;
+    public string Schedule { get; set; } = "0 8 * * 1"; // Cron (UTC)
+    public string EmailRecipients { get; set; } = string.Empty; // comma-separated
+    public ComplianceReportFormat Format { get; set; } = ComplianceReportFormat.Pdf;
+    public bool Active { get; set; } = true;
+    public string CreatedBy { get; set; } = string.Empty;
+    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset? LastRunAt { get; set; }
+    public ComplianceReportStatus LastStatus { get; set; } = ComplianceReportStatus.Pending;
+    public string? LastError { get; set; }
+}
+
+public sealed class GeneratedReportHistory
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public int? ScheduledReportId { get; set; }
+    public ComplianceReportType ReportType { get; set; } = ComplianceReportType.TransactionExport;
+    public ComplianceReportFormat Format { get; set; } = ComplianceReportFormat.Pdf;
+    public ComplianceReportStatus Status { get; set; } = ComplianceReportStatus.Pending;
+    public string Trigger { get; set; } = "MANUAL";
+    public string FilePath { get; set; } = string.Empty;
+    public string? ErrorMessage { get; set; }
+    public DateTimeOffset GeneratedAt { get; set; } = DateTimeOffset.UtcNow;
+
+    public ScheduledReport? ScheduledReport { get; set; }
+}
+
 public sealed class SupplierItemMapping
 {
     public int Id { get; set; }

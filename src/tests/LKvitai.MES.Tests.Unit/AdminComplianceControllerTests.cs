@@ -18,7 +18,8 @@ public class AdminComplianceControllerTests
         var controller = new AdminComplianceController(
             service.Object,
             Mock.Of<ILotTraceabilityService>(),
-            Mock.Of<ILotTraceStore>());
+            Mock.Of<ILotTraceStore>(),
+            Mock.Of<IComplianceReportService>());
 
         var result = await controller.ExportTransactionsAsync(new AdminComplianceController.ExportTransactionsRequest(
             DateTimeOffset.UtcNow.AddDays(-1),
@@ -51,7 +52,8 @@ public class AdminComplianceControllerTests
         var controller = new AdminComplianceController(
             service.Object,
             Mock.Of<ILotTraceabilityService>(),
-            new InMemoryLotTraceStore());
+            new InMemoryLotTraceStore(),
+            Mock.Of<IComplianceReportService>());
 
         var result = await controller.GetExportsAsync();
 
@@ -64,7 +66,8 @@ public class AdminComplianceControllerTests
         var controller = new AdminComplianceController(
             Mock.Of<ITransactionExportService>(),
             Mock.Of<ILotTraceabilityService>(),
-            new InMemoryLotTraceStore());
+            new InMemoryLotTraceStore(),
+            Mock.Of<IComplianceReportService>());
 
         var result = await controller.BuildLotTraceAsync(new AdminComplianceController.LotTraceRequest("LOT-1", "SIDEWAYS"));
 
@@ -81,7 +84,8 @@ public class AdminComplianceControllerTests
         var controller = new AdminComplianceController(
             Mock.Of<ITransactionExportService>(),
             traceService.Object,
-            new InMemoryLotTraceStore());
+            new InMemoryLotTraceStore(),
+            Mock.Of<IComplianceReportService>());
 
         var result = await controller.BuildLotTraceAsync(new AdminComplianceController.LotTraceRequest("LOT-404", "BACKWARD"));
 
@@ -94,7 +98,8 @@ public class AdminComplianceControllerTests
         var controller = new AdminComplianceController(
             Mock.Of<ITransactionExportService>(),
             Mock.Of<ILotTraceabilityService>(),
-            new InMemoryLotTraceStore());
+            new InMemoryLotTraceStore(),
+            Mock.Of<IComplianceReportService>());
 
         var result = controller.GetLotTraceAsync(Guid.NewGuid());
 
@@ -120,7 +125,8 @@ public class AdminComplianceControllerTests
         var controller = new AdminComplianceController(
             Mock.Of<ITransactionExportService>(),
             traceService.Object,
-            new InMemoryLotTraceStore());
+            new InMemoryLotTraceStore(),
+            Mock.Of<IComplianceReportService>());
 
         var result = await controller.BuildLotTraceAsync(new AdminComplianceController.LotTraceRequest("LOT-CSV", "BACKWARD", "CSV"));
 

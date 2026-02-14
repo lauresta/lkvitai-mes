@@ -1,0 +1,312 @@
+@page "/warehouse/compliance/dashboard"
+@inject ReportsClient ReportsClient
+@inject ToastService Toast
+
+<PageTitle>Compliance Dashboard</PageTitle>
+
+<h1 class="mb-3">Compliance Dashboard</h1>
+
+@if (_apiError is not null)
+{
+    <ErrorBanner Message="@_apiError.UserMessage" TraceId="@_apiError.TraceId" OnRetry="LoadAsync" OnDismiss="DismissError" />
+}
+
+<div class="row g-3 mb-3">
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="text-muted">Pending Exports</h6>
+                <div class="display-6">@_summary.PendingExports</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="text-muted">Recent Lot Traces</h6>
+                <div class="display-6">@_summary.RecentTraces</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h6 class="text-muted">Variance Alerts</h6>
+                <div class="display-6 text-danger">@_summary.VarianceAlerts</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <h5 class="mb-0">Schedule Report</h5>
+                    <button class="btn btn-outline-primary btn-sm ms-auto" @onclick="ResetForm">Reset</button>
+                </div>
+
+                <EditForm Model="@_form" OnValidSubmit="SaveAsync">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+                    <div class="mb-2">
+                        <label class="form-label">Report Type</label>
+                        <select class="form-select" @bind="_form.ReportType">
+                            <option value="VARIANCEANALYSIS">VARIANCE_ANALYSIS</option>
+                            <option value="TRANSACTIONEXPORT">TRANSACTION_EXPORT</option>
+                            <option value="LOTTRACE">LOT_TRACE</option>
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Cron (UTC)</label>
+                        <input class="form-control" @bind="_form.Schedule" />
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Email Recipients (comma)</label>
+                        <input class="form-control" @bind="_form.EmailRecipients" />
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Format</label>
+                        <select class="form-select" @bind="_form.Format">
+                            <option value="PDF">PDF</option>
+                            <option value="CSV">CSV</option>
+                        </select>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="activeCheck" @bind="_form.Active" />
+                        <label class="form-check-label" for="activeCheck">Active</label>
+                    </div>
+                    <button class="btn btn-primary" type="submit" disabled="@_isSaving">Save</button>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <h5 class="mb-0">Recent Scheduled Reports</h5>
+                    <button class="btn btn-outline-secondary btn-sm ms-auto" @onclick="LoadAsync" disabled="@_isLoading">Refresh</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Status</th>
+                                <th>Generated</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (_summary.RecentReports.Count == 0)
+                            {
+                                <tr><td colspan="4" class="text-muted">No reports yet.</td></tr>
+                            }
+                            else
+                            {
+                                @foreach (var row in _summary.RecentReports)
+                                {
+                                    <tr>
+                                        <td>@row.ReportType</td>
+                                        <td>@row.Status</td>
+                                        <td>@row.GeneratedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                                        <td>
+                                            <a class="btn btn-outline-secondary btn-sm" href="@row.FilePath" target="_blank">Download</a>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm mt-3">
+    <div class="card-body">
+        <div class="d-flex align-items-center mb-2">
+            <h5 class="mb-0">Scheduled Jobs</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Type</th>
+                        <th>Cron</th>
+                        <th>Format</th>
+                        <th>Status</th>
+                        <th>Last Run</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (_schedules.Count == 0)
+                    {
+                        <tr><td colspan="7" class="text-muted">No schedules configured.</td></tr>
+                    }
+                    else
+                    {
+                        @foreach (var s in _schedules)
+                        {
+                            <tr>
+                                <td>@s.Id</td>
+                                <td>@s.ReportType</td>
+                                <td><code>@s.Schedule</code></td>
+                                <td>@s.Format</td>
+                                <td>@s.LastStatus</td>
+                                <td>@(s.LastRunAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "-")</td>
+                                <td class="text-end">
+                                    <button class="btn btn-outline-primary btn-sm me-1" @onclick="() => RunAsync(s.Id)" disabled="@_isLoading">Run</button>
+                                    <button class="btn btn-outline-danger btn-sm" @onclick="() => DeleteAsync(s.Id)" disabled="@_isLoading">Delete</button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@code {
+    private ComplianceDashboardDto _summary = new();
+    private List<ScheduledReportDto> _schedules = new();
+    private bool _isLoading;
+    private bool _isSaving;
+    private ApiException? _apiError;
+
+    private ScheduledReportForm _form = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            _summary = await ReportsClient.GetComplianceDashboardAsync();
+            _schedules = (await ReportsClient.GetScheduledReportsAsync()).ToList();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            Toast.ShowError(ex.UserMessage);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        _isSaving = true;
+        try
+        {
+            var recipients = _form.EmailRecipients.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            if (_form.Id == null)
+            {
+                await ReportsClient.CreateScheduledReportAsync(
+                    _form.ReportType,
+                    _form.Schedule,
+                    recipients,
+                    _form.Format,
+                    _form.Active);
+            }
+            else
+            {
+                await ReportsClient.UpdateScheduledReportAsync(
+                    _form.Id.Value,
+                    _form.ReportType,
+                    _form.Schedule,
+                    recipients,
+                    _form.Format,
+                    _form.Active);
+            }
+
+            Toast.ShowSuccess("Scheduled report saved.");
+            ResetForm();
+            await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            Toast.ShowError(ex.UserMessage);
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private async Task RunAsync(int id)
+    {
+        _isLoading = true;
+        try
+        {
+            await ReportsClient.RunScheduledReportAsync(id);
+            Toast.ShowSuccess("Report triggered.");
+            await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            Toast.ShowError(ex.UserMessage);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task DeleteAsync(int id)
+    {
+        _isLoading = true;
+        try
+        {
+            await ReportsClient.DeleteScheduledReportAsync(id);
+            Toast.ShowSuccess("Deleted.");
+            await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            Toast.ShowError(ex.UserMessage);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void ResetForm()
+    {
+        _form = new ScheduledReportForm();
+    }
+
+    private void DismissError()
+    {
+        _apiError = null;
+    }
+
+    private sealed class ScheduledReportForm
+    {
+        public int? Id { get; set; }
+        public string ReportType { get; set; } = "VARIANCEANALYSIS";
+        public string Schedule { get; set; } = "0 8 * * 1";
+        public string EmailRecipients { get; set; } = string.Empty;
+        public string Format { get; set; } = "PDF";
+        public bool Active { get; set; } = true;
+    }
+}

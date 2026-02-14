@@ -14,15 +14,133 @@ public sealed class AdminComplianceController : ControllerBase
     private readonly ITransactionExportService _transactionExportService;
     private readonly ILotTraceabilityService _lotTraceabilityService;
     private readonly ILotTraceStore _lotTraceStore;
+    private readonly IComplianceReportService _complianceReportService;
 
     public AdminComplianceController(
         ITransactionExportService transactionExportService,
         ILotTraceabilityService lotTraceabilityService,
-        ILotTraceStore lotTraceStore)
+        ILotTraceStore lotTraceStore,
+        IComplianceReportService complianceReportService)
     {
         _transactionExportService = transactionExportService;
         _lotTraceabilityService = lotTraceabilityService;
         _lotTraceStore = lotTraceStore;
+        _complianceReportService = complianceReportService;
+    }
+
+    [HttpGet("dashboard")]
+    [Authorize(Policy = WarehousePolicies.ManagerOrAuditor)]
+    public async Task<IActionResult> GetDashboardAsync(CancellationToken cancellationToken = default)
+    {
+        var result = await _complianceReportService.GetDashboardAsync(cancellationToken);
+        return Ok(new ComplianceDashboardResponse(
+            result.PendingExports,
+            result.RecentTraces,
+            result.VarianceAlerts,
+            result.RecentReports.Select(MapHistory).ToList()));
+    }
+
+    [HttpGet("scheduled-reports")]
+    [Authorize(Policy = WarehousePolicies.ManagerOrAuditor)]
+    public async Task<IActionResult> GetScheduledReportsAsync(CancellationToken cancellationToken = default)
+    {
+        var rows = await _complianceReportService.GetScheduledReportsAsync(cancellationToken);
+        return Ok(rows);
+    }
+
+    [HttpPost("scheduled-reports")]
+    [Authorize(Policy = WarehousePolicies.ManagerOrAuditor)]
+    public async Task<IActionResult> CreateScheduledReportAsync(
+        [FromBody] ScheduledReportRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (request is null)
+        {
+            return BadRequest(new { message = "Request body is required." });
+        }
+
+        if (!Enum.TryParse<ComplianceReportType>(request.ReportType, true, out var reportType))
+        {
+            return BadRequest(new { message = $"Unsupported reportType '{request.ReportType}'." });
+        }
+
+        if (!Enum.TryParse<ComplianceReportFormat>(request.Format, true, out var format))
+        {
+            return BadRequest(new { message = $"Unsupported format '{request.Format}'." });
+        }
+
+        var created = await _complianceReportService.CreateAsync(new ScheduledReport
+        {
+            ReportType = reportType,
+            Schedule = request.Schedule,
+            EmailRecipients = string.Join(",", request.EmailRecipients ?? new List<string>()),
+            Format = format,
+            Active = request.Active
+        }, User.Identity?.Name ?? "system", cancellationToken);
+
+        return CreatedAtAction(nameof(GetScheduledReportsAsync), created);
+    }
+
+    [HttpPut("scheduled-reports/{id:int}")]
+    [Authorize(Policy = WarehousePolicies.ManagerOrAuditor)]
+    public async Task<IActionResult> UpdateScheduledReportAsync(
+        int id,
+        [FromBody] ScheduledReportRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (!Enum.TryParse<ComplianceReportType>(request.ReportType, true, out var reportType) ||
+            !Enum.TryParse<ComplianceReportFormat>(request.Format, true, out var format))
+        {
+            return BadRequest(new { message = "Invalid reportType or format." });
+        }
+
+        var updated = await _complianceReportService.UpdateAsync(id, new ScheduledReport
+        {
+            ReportType = reportType,
+            Schedule = request.Schedule,
+            EmailRecipients = string.Join(",", request.EmailRecipients ?? new List<string>()),
+            Format = format,
+            Active = request.Active
+        }, cancellationToken);
+
+        return updated is null ? NotFound() : Ok(updated);
+    }
+
+    [HttpDelete("scheduled-reports/{id:int}")]
+    [Authorize(Policy = WarehousePolicies.ManagerOrAuditor)]
+    public async Task<IActionResult> DeleteScheduledReportAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var deleted = await _complianceReportService.DeleteAsync(id, cancellationToken);
+        return deleted ? NoContent() : NotFound();
+    }
+
+    [HttpPost("scheduled-reports/{id:int}/run")]
+    [Authorize(Policy = WarehousePolicies.ManagerOrAuditor)]
+    public async Task<IActionResult> RunScheduledReportAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var existing = await _complianceReportService.GetScheduledReportsAsync(cancellationToken);
+        var schedule = existing.FirstOrDefault(x => x.Id == id);
+        if (schedule is null)
+        {
+            return NotFound();
+        }
+
+        var history = await _complianceReportService.TriggerAsync(
+            schedule.ReportType,
+            schedule.Format,
+            "MANUAL",
+            schedule.Id,
+            cancellationToken);
+
+        return Ok(MapHistory(history));
+    }
+
+    [HttpGet("scheduled-reports/history")]
+    [Authorize(Policy = WarehousePolicies.ManagerOrAuditor)]
+    public async Task<IActionResult> GetReportHistoryAsync([FromQuery] int? limit = null, CancellationToken cancellationToken = default)
+    {
+        var history = await _complianceReportService.GetHistoryAsync(limit, cancellationToken);
+        return Ok(history.Select(MapHistory));
     }
 
     [HttpPost("export-transactions")]
@@ -234,4 +352,40 @@ public sealed class AdminComplianceController : ControllerBase
         string NodeName,
         DateTimeOffset Timestamp,
         IReadOnlyList<LotTraceNodeResponse> Children);
+
+    public sealed record ScheduledReportRequest(
+        string ReportType,
+        string Schedule,
+        List<string>? EmailRecipients,
+        string Format,
+        bool Active = true);
+
+    public sealed record ComplianceDashboardResponse(
+        int PendingExports,
+        int RecentTraces,
+        int VarianceAlerts,
+        IReadOnlyList<ReportHistoryResponse> RecentReports);
+
+    public sealed record ReportHistoryResponse(
+        Guid Id,
+        int? ScheduledReportId,
+        string ReportType,
+        string Format,
+        string Status,
+        string Trigger,
+        string FilePath,
+        string? ErrorMessage,
+        DateTimeOffset GeneratedAt);
+
+    private static ReportHistoryResponse MapHistory(GeneratedReportHistory history) =>
+        new ReportHistoryResponse(
+            history.Id,
+            history.ScheduledReportId,
+            history.ReportType.ToString().ToUpperInvariant(),
+            history.Format.ToString().ToUpperInvariant(),
+            history.Status.ToString().ToUpperInvariant(),
+            history.Trigger,
+            history.FilePath,
+            history.ErrorMessage,
+            history.GeneratedAt);
 }

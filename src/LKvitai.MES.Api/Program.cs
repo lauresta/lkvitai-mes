@@ -194,6 +194,9 @@ builder.Services.Configure<TransactionExportOptions>(builder.Configuration.GetSe
 builder.Services.AddScoped<ITransactionEventReader, MartenTransactionEventReader>();
 builder.Services.AddSingleton<ITransactionExportSftpClient, SshNetTransactionExportSftpClient>();
 builder.Services.AddScoped<ITransactionExportService, TransactionExportService>();
+builder.Services.Configure<ComplianceReportOptions>(builder.Configuration.GetSection("Compliance:Reports"));
+builder.Services.AddScoped<IComplianceReportService, ComplianceReportService>();
+builder.Services.AddScoped<ScheduledReportsRecurringJob>();
 
 var warehouseConnectionString =
     builder.Configuration.GetConnectionString("WarehouseDb")
@@ -269,6 +272,15 @@ RecurringJob.AddOrUpdate<LabelPrintQueueRecurringJob>(
     "labels-print-queue-retry-5m",
     job => job.ExecuteAsync(),
     "*/5 * * * *",
+    new RecurringJobOptions
+    {
+        TimeZone = TimeZoneInfo.Utc
+    });
+
+RecurringJob.AddOrUpdate<ScheduledReportsRecurringJob>(
+    "compliance-scheduled-reports",
+    job => job.ExecuteAsync(),
+    "*/10 * * * *",
     new RecurringJobOptions
     {
         TimeZone = TimeZoneInfo.Utc

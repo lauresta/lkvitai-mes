@@ -1,18 +1,17 @@
-## Run Summary (2026-02-13)
+## Run Summary (2026-02-14)
 
 ### Completed
-- PRD-1632 Lot traceability report (API + DI + unit tests, WebUI page with CSV export, nav link)
+- PRD-1634 Compliance Reports Dashboard (API scheduler + PDF/CSV generation, Hangfire job, WebUI dashboard, unit tests)
 
 ### Partially Completed
 - None
 
 ### Blockers / TEST-GAP
-- None (build/test succeeded)
+- PRD-1634: SMTP email delivery not validated (no SMTP config in env); reports generated to filesystem only.
 
 ### Commands Executed
-- dotnet restore src/LKvitai.MES.sln -v minimal
 - dotnet build src/LKvitai.MES.sln -v minimal
 - dotnet test src/LKvitai.MES.sln -v minimal
 
 ### Next Recommended TaskId
-- PRD-1633
+- PRD-1635

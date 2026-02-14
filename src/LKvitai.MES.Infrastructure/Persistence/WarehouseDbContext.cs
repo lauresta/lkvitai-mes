@@ -81,6 +81,8 @@ public class WarehouseDbContext : DbContext
     public DbSet<SKUSequence> SKUSequences => Set<SKUSequence>();
     public DbSet<EventProcessingCheckpoint> EventProcessingCheckpoints => Set<EventProcessingCheckpoint>();
     public DbSet<PickTask> PickTasks => Set<PickTask>();
+    public DbSet<ScheduledReport> ScheduledReports => Set<ScheduledReport>();
+    public DbSet<GeneratedReportHistory> GeneratedReportHistories => Set<GeneratedReportHistory>();
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -701,6 +703,42 @@ public class WarehouseDbContext : DbContext
             entity.Property(e => e.ExportedAt).IsRequired();
             entity.HasIndex(e => e.ExportedAt);
             entity.HasIndex(e => e.Status);
+        });
+
+        modelBuilder.Entity<ScheduledReport>(entity =>
+        {
+            entity.ToTable("scheduled_reports");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ReportType).HasConversion<string>().HasMaxLength(30).IsRequired();
+            entity.Property(e => e.Schedule).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.EmailRecipients).HasMaxLength(1000).IsRequired();
+            entity.Property(e => e.Format).HasConversion<string>().HasMaxLength(10).IsRequired();
+            entity.Property(e => e.Active).IsRequired();
+            entity.Property(e => e.CreatedBy).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.Property(e => e.LastStatus).HasConversion<string>().HasMaxLength(20).IsRequired();
+            entity.Property(e => e.LastError).HasColumnType("text");
+            entity.HasIndex(e => e.Active);
+            entity.HasIndex(e => e.ReportType);
+        });
+
+        modelBuilder.Entity<GeneratedReportHistory>(entity =>
+        {
+            entity.ToTable("generated_report_history");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ReportType).HasConversion<string>().HasMaxLength(30).IsRequired();
+            entity.Property(e => e.Format).HasConversion<string>().HasMaxLength(10).IsRequired();
+            entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(20).IsRequired();
+            entity.Property(e => e.Trigger).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.FilePath).HasMaxLength(4000).IsRequired();
+            entity.Property(e => e.ErrorMessage).HasColumnType("text");
+            entity.Property(e => e.GeneratedAt).IsRequired();
+            entity.HasOne(e => e.ScheduledReport)
+                .WithMany()
+                .HasForeignKey(e => e.ScheduledReportId)
+                .OnDelete(DeleteBehavior.SetNull);
+            entity.HasIndex(e => e.GeneratedAt);
+            entity.HasIndex(e => e.ReportType);
         });
 
         modelBuilder.Entity<SupplierItemMapping>(entity =>

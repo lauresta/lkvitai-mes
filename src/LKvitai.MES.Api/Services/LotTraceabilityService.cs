@@ -37,6 +37,8 @@ public interface ILotTraceStore
 {
     void Save(LotTraceReport report);
     bool TryGet(Guid traceId, out LotTraceReport? report);
+    bool TryGetAny(out LotTraceReport? report);
+    int Count { get; }
 }
 
 public sealed class InMemoryLotTraceStore : ILotTraceStore
@@ -59,6 +61,20 @@ public sealed class InMemoryLotTraceStore : ILotTraceStore
         report = null;
         return false;
     }
+
+    public bool TryGetAny(out LotTraceReport? report)
+    {
+        if (_reports.IsEmpty)
+        {
+            report = null;
+            return false;
+        }
+
+        report = _reports.Values.First();
+        return true;
+    }
+
+    public int Count => _reports.Count;
 }
 
 public interface ILotTraceabilityService

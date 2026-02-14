@@ -807,6 +807,12 @@
   Evidence: Task validation curl calls to `http://localhost:5000/api/auth/mfa/*` returned `HTTP/1.1 403 Forbidden` from `Server: AirTunes/925.5.1` (see `/tmp/prd1627-enroll.headers`, `/tmp/prd1627-verify-enrollment.headers`, `/tmp/prd1627-backup-codes.headers`).
   Impact: Task-mandated runtime validation could not be executed against LKvitai.MES.Api in this environment.
   Proposed minimal fix: Run LKvitai.MES.Api on an isolated known port and rerun the PRD-1627 curl validation sequence with a valid bearer token.
+- Timestamp: 2026-02-14T00:00:00Z
+  TaskId: PRD-1634
+  Type: TEST-GAP
+  Evidence: SMTP delivery for scheduled compliance reports is configurable but not validated in this environment (no SMTP host/credentials provided). See src/LKvitai.MES.Api/Services/ComplianceReportService.cs.
+  Impact: Automated email delivery of scheduled PDF/CSV reports remains unverified; reports are generated and stored locally only.
+  Proposed minimal fix: Configure `Compliance:Reports:Smtp` settings with reachable SMTP server and rerun scheduled report trigger to confirm email dispatch, or add integration test with mock SMTP server.
 - Timestamp: 2026-02-13T06:19:42Z
   TaskId: PRD-1628
   Type: INCONSISTENCY
