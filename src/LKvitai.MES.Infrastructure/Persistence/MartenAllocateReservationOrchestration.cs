@@ -110,7 +110,8 @@ public class MartenAllocateReservationOrchestration : IAllocateReservationOrches
 
                 // ── Step 3: Get stream version for optimistic concurrency ──────
                 var streamState = await session.Events.FetchStreamStateAsync(streamId, ct);
-                var expectedVersion = streamState?.Version ?? -1;
+                // Marten uses -2 for new streams (V-2 versioning scheme)
+                var expectedVersion = streamState?.Version ?? -2;
 
                 // ── Step 4: Append StockAllocatedEvent (SOFT lock) ─────────────
                 var allocatedEvent = new StockAllocatedEvent

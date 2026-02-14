@@ -33,7 +33,9 @@ public class MartenStockLedgerRepository : IStockLedgerRepository
             streamId, token: ct) ?? new StockLedger();
 
         var state = await session.Events.FetchStreamStateAsync(streamId, ct);
-        var version = state?.Version ?? -1;
+        // Marten uses -2 for new streams (V-2 versioning scheme)
+        // New stream: -2, After 1 event: -1, After 2 events: 0, etc.
+        var version = state?.Version ?? -2;
 
         return (ledger, version);
     }

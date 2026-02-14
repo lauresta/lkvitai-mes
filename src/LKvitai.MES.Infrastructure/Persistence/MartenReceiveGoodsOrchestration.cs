@@ -72,7 +72,8 @@ public class MartenReceiveGoodsOrchestration : IReceiveGoodsOrchestration
                     if (!stockStreamVersions.ContainsKey(stockStreamId))
                     {
                         var state = await session.Events.FetchStreamStateAsync(stockStreamId, ct);
-                        stockStreamVersions[stockStreamId] = state?.Version ?? -1;
+                        // Marten uses -2 for new streams (V-2 versioning scheme)
+                        stockStreamVersions[stockStreamId] = state?.Version ?? -2;
                     }
                 }
 
