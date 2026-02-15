@@ -1,6 +1,24 @@
 name: lkvitai-mes
 
 services:
+  pg:
+    image: postgres:16
+    container_name: lkvitai-mes-db-test
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   api:
     image: ghcr.io/lauresta/lkvitai-mes-warehouse-api:${IMAGE_TAG:-latest}
     container_name: lkvitai-mes-warehouse-api
@@ -10,8 +28,9 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Test
       ConnectionStrings__WarehouseDb: "Host=pg;Port=5432;Database=lkvitai_warehouse_test;Username=postgres;Password=postgres"
-    networks:
-      - lkvitai-mes_default
+    depends_on:
+      pg:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 15s
@@ -28,12 +47,9 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Test
       WarehouseApi__BaseUrl: "http://lkvitai-mes-warehouse-api:8080"
-    networks:
-      - lkvitai-mes_default
     depends_on:
       api:
         condition: service_healthy
 
-networks:
-  lkvitai-mes_default:
-    external: true
+volumes:
+  pg-data:

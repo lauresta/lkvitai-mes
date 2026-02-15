@@ -25,7 +25,10 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Pull new images
-        run: docker compose -f docker-compose.test.yml pull
+        run: docker compose -f docker-compose.test.yml pull api webui
+
+      - name: Ensure database is running
+        run: docker compose -f docker-compose.test.yml up -d pg
 
       - name: Apply EF Core migrations to test DB
         run: |
@@ -47,10 +50,7 @@ jobs:
                 --configuration Release
             '
 
-      - name: Stop old containers
-        run: docker compose -f docker-compose.test.yml down --remove-orphans || true
-
-      - name: Start new containers
+      - name: Deploy containers
         run: IMAGE_TAG=${{ env.IMAGE_TAG }} docker compose -f docker-compose.test.yml up -d
 
       - name: Wait for API health
