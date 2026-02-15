@@ -1,0 +1,81 @@
+name: Deploy to Test
+
+on:
+  workflow_run:
+    workflows: ["Build and Push Docker Images"]
+    types: [completed]
+    branches: [main]
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: [self-hosted, Linux, X64]
+    env:
+      IMAGE_TAG: ${{ github.event.workflow_run.head_sha }}
+      MIGRATION_CONN: "Host=localhost;Port=5432;Database=lkvitai_warehouse_test;Username=postgres;Password=postgres"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Install dotnet-ef
+        run: dotnet tool update --global dotnet-ef
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull new images
+        run: docker compose -f docker-compose.test.yml pull
+
+      - name: Apply EF Core migrations to test DB
+        run: |
+          dotnet build src/LKvitai.MES.Api/LKvitai.MES.Api.csproj -c Release -q
+          ConnectionStrings__WarehouseDb="$MIGRATION_CONN" \
+            dotnet ef database update \
+              --project src/LKvitai.MES.Infrastructure \
+              --startup-project src/LKvitai.MES.Api \
+              --no-build \
+              --configuration Release
+
+      - name: Stop old containers
+        run: docker compose -f docker-compose.test.yml down --remove-orphans || true
+
+      - name: Start new containers
+        run: IMAGE_TAG=${{ env.IMAGE_TAG }} docker compose -f docker-compose.test.yml up -d
+
+      - name: Wait for API health
+        run: |
+          echo "Waiting for API to become healthy..."
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:5001/health > /dev/null 2>&1; then
+              echo "API is healthy!"
+              exit 0
+            fi
+            echo "  attempt $i/30 — not ready yet"
+            sleep 5
+          done
+          echo "API failed to become healthy within 150s"
+          docker compose -f docker-compose.test.yml logs api --tail 50
+          exit 1
+
+      - name: Seed master data
+        run: |
+          PGPASSWORD=postgres psql -h localhost -U postgres -d lkvitai_warehouse_test \
+            -f scripts/seed-master-data.sql
+
+      - name: Deployment summary
+        run: |
+          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Image tag:** ${{ env.IMAGE_TAG }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **API:** http://lkvitai-test:5001" >> $GITHUB_STEP_SUMMARY
+          echo "- **WebUI:** http://lkvitai-test:5000" >> $GITHUB_STEP_SUMMARY
+          docker compose -f docker-compose.test.yml ps >> $GITHUB_STEP_SUMMARY
