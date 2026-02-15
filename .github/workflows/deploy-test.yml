@@ -69,7 +69,7 @@ jobs:
         run: |
           echo "Waiting for API to become healthy..."
           for i in $(seq 1 30); do
-            if curl -sf http://localhost:5001/health > /dev/null 2>&1; then
+            if docker exec lkvitai-mes-warehouse-api curl -sf http://localhost:8080/health > /dev/null 2>&1; then
               echo "API is healthy!"
               exit 0
             fi
@@ -82,8 +82,9 @@ jobs:
 
       - name: Seed master data
         run: |
-          PGPASSWORD=postgres psql -h localhost -U postgres -d lkvitai_warehouse_test \
-            -f scripts/seed-master-data.sql
+          docker exec -i lkvitai-mes-db-test \
+            psql -U postgres -d lkvitai_warehouse_test \
+            < scripts/seed-master-data.sql
 
       - name: Deployment summary
         run: |
