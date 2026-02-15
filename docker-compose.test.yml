@@ -32,8 +32,7 @@ services:
     networks:
       - lkvitai-mes_default
     depends_on:
-      api:
-        condition: service_healthy
+      - api
 
 networks:
   lkvitai-mes_default:
