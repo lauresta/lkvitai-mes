@@ -25,10 +25,19 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Pull new images
-        run: docker compose -f docker-compose.test.yml pull api webui
+        run: docker compose -f docker-compose.test.yml pull
 
-      - name: Ensure database is running
-        run: docker compose -f docker-compose.test.yml up -d pg
+      - name: Check database connection
+        run: |
+          echo "Checking PostgreSQL connectivity..."
+          for i in $(seq 1 5); do
+            if docker exec lkvitai-mes-db-test pg_isready -U postgres > /dev/null 2>&1; then
+              echo "PostgreSQL is ready!"
+              break
+            fi
+            echo "  attempt $i/5 — not ready yet"
+            sleep 3
+          done
 
       - name: Apply EF Core migrations to test DB
         run: |
