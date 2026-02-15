@@ -39,9 +39,12 @@ jobs:
             sleep 3
           done
 
+      - name: Clean up leftover migration container
+        run: docker rm -f lkvitai-mes-migration 2>/dev/null || true
+
       - name: Apply EF Core migrations to test DB
         run: |
-          docker run --rm \
+          docker run --rm --name lkvitai-mes-migration \
             --network lkvitai-mes_default \
             -v "${{ github.workspace }}:/src" \
             -w /src \
