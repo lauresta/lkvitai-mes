@@ -2,11 +2,13 @@ using LKvitai.MES.Api.ErrorHandling;
 using LKvitai.MES.Api.Security;
 using LKvitai.MES.Application.Services;
 using LKvitai.MES.Domain.Entities;
+using LKvitai.MES.Infrastructure.Caching;
 using LKvitai.MES.Infrastructure.Persistence;
 using LKvitai.MES.SharedKernel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 
 namespace LKvitai.MES.Api.Controllers;
@@ -144,6 +146,8 @@ public sealed class ItemsController : ControllerBase
                 $"Item with SKU '{sku}' already exists."));
         }
 
+        await Cache.RemoveAsync($"item:{item.Id}", cancellationToken);
+
         return CreatedAtRoute(
             GetItemByIdRouteName,
             new { id = item.Id },
@@ -154,6 +158,13 @@ public sealed class ItemsController : ControllerBase
     [Authorize(Policy = WarehousePolicies.OperatorOrAbove)]
     public async Task<IActionResult> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
+        var cacheKey = $"item:{id}";
+        var cached = await Cache.GetAsync<Item>(cacheKey, cancellationToken);
+        if (cached is not null)
+        {
+            return Ok(cached);
+        }
+
         var item = await _dbContext.Items
             .AsNoTracking()
             .Include(i => i.Barcodes)
@@ -164,6 +175,7 @@ public sealed class ItemsController : ControllerBase
             return Failure(Result.Fail(DomainErrorCodes.NotFound, $"Item with ID {id} does not exist."));
         }
 
+        await Cache.SetAsync(cacheKey, item, TimeSpan.FromHours(1), cancellationToken);
         return Ok(item);
     }
 
@@ -212,6 +224,7 @@ public sealed class ItemsController : ControllerBase
         item.ProductConfigId = request.ProductConfigId?.Trim();
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+        await Cache.RemoveAsync($"item:{id}", cancellationToken);
 
         return Ok(new ItemUpdatedDto(item.Id, item.InternalSKU, item.Name, item.Status, item.UpdatedAt));
     }
@@ -228,6 +241,7 @@ public sealed class ItemsController : ControllerBase
 
         item.Status = "Discontinued";
         await _dbContext.SaveChangesAsync(cancellationToken);
+        await Cache.RemoveAsync($"item:{id}", cancellationToken);
 
         return Ok(new ItemUpdatedDto(item.Id, item.InternalSKU, item.Name, item.Status, item.UpdatedAt));
     }
@@ -307,9 +321,12 @@ public sealed class ItemsController : ControllerBase
 
         _dbContext.ItemBarcodes.Add(entity);
         await _dbContext.SaveChangesAsync(cancellationToken);
+        await Cache.RemoveAsync($"item:{id}", cancellationToken);
 
         return Ok(new ItemBarcodeDto(entity.Id, entity.Barcode, entity.BarcodeType, entity.IsPrimary));
     }
+
+    private ICacheService Cache => HttpContext?.RequestServices?.GetService<ICacheService>() ?? new LKvitai.MES.Infrastructure.Caching.NoOpCacheService();
 
     private ObjectResult ValidationFailure(string detail)
     {

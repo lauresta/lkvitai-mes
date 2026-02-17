@@ -1,9 +1,11 @@
 using LKvitai.MES.Api.Security;
 using LKvitai.MES.Domain.Entities;
+using LKvitai.MES.Infrastructure.Caching;
 using LKvitai.MES.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace LKvitai.MES.Api.Controllers;
 
@@ -67,6 +69,13 @@ public sealed class CustomersController : ControllerBase
     [Authorize(Policy = WarehousePolicies.SalesAdminOrManager)]
     public async Task<IActionResult> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
+        var cacheKey = $"customer:{id:N}";
+        var cached = await Cache.GetAsync<CustomerDetailResponse>(cacheKey, cancellationToken);
+        if (cached is not null)
+        {
+            return Ok(cached);
+        }
+
         var row = await _dbContext.Customers
             .AsNoTracking()
             .Where(x => x.Id == id)
@@ -93,7 +102,13 @@ public sealed class CustomersController : ControllerBase
                         x.DefaultShippingAddress.Country)))
             .FirstOrDefaultAsync(cancellationToken);
 
-        return row is null ? NotFound() : Ok(row);
+        if (row is null)
+        {
+            return NotFound();
+        }
+
+        await Cache.SetAsync(cacheKey, row, TimeSpan.FromMinutes(30), cancellationToken);
+        return Ok(row);
     }
 
     [HttpPost]
@@ -136,9 +151,12 @@ public sealed class CustomersController : ControllerBase
 
         _dbContext.Customers.Add(row);
         await _dbContext.SaveChangesAsync(cancellationToken);
+        await Cache.RemoveAsync($"customer:{row.Id:N}", cancellationToken);
 
         return Created($"/api/warehouse/v1/customers/{row.Id}", new { row.Id, row.CustomerCode });
     }
+
+    private ICacheService Cache => HttpContext?.RequestServices?.GetService<ICacheService>() ?? new LKvitai.MES.Infrastructure.Caching.NoOpCacheService();
 
     public sealed record AddressResponse(
         string Street,

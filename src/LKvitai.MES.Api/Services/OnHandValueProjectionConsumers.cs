@@ -4,6 +4,7 @@ using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Contracts.ReadModels;
 using LKvitai.MES.Domain.Aggregates;
 using LKvitai.MES.Domain.Entities;
+using LKvitai.MES.Infrastructure.Caching;
 using LKvitai.MES.Infrastructure.Persistence;
 using MassTransit;
 using Marten;
@@ -82,16 +83,27 @@ public sealed class OnHandValueProjectionConsumer :
     private const string ProjectionName = "OnHandValue";
     private readonly WarehouseDbContext _dbContext;
     private readonly IAvailableStockQuantityResolver _quantityResolver;
+    private readonly ICacheService _cacheService;
     private readonly ILogger<OnHandValueProjectionConsumer> _logger;
 
     public OnHandValueProjectionConsumer(
         WarehouseDbContext dbContext,
         IAvailableStockQuantityResolver quantityResolver,
+        ICacheService cacheService,
         ILogger<OnHandValueProjectionConsumer> logger)
     {
         _dbContext = dbContext;
         _quantityResolver = quantityResolver;
+        _cacheService = cacheService;
         _logger = logger;
+    }
+
+    public OnHandValueProjectionConsumer(
+        WarehouseDbContext dbContext,
+        IAvailableStockQuantityResolver quantityResolver,
+        ILogger<OnHandValueProjectionConsumer> logger)
+        : this(dbContext, quantityResolver, new NoOpCacheService(), logger)
+    {
     }
 
     public Task Consume(ConsumeContext<ValuationInitialized> context)
@@ -239,6 +251,9 @@ public sealed class OnHandValueProjectionConsumer :
             message.Timestamp,
             message.CorrelationId,
             context.CancellationToken);
+
+        await _cacheService.RemoveByPrefixAsync("stock:", context.CancellationToken);
+        await _cacheService.RemoveAsync($"value:{projection.ItemId}", context.CancellationToken);
     }
 
     private async Task UpsertFromValuationAsync(
@@ -333,6 +348,8 @@ public sealed class OnHandValueProjectionConsumer :
             eventTimestampUtc,
             correlationId,
             cancellationToken);
+
+        await _cacheService.RemoveAsync($"value:{projection.ItemId}", cancellationToken);
     }
 
     private async Task UpsertFromValuationByInventoryIdAsync(
@@ -420,6 +437,15 @@ public sealed class OnHandValueProjectionConsumer :
             eventType,
             cancellationToken);
     }
+}
+
+internal sealed class NoOpCacheService : ICacheService
+{
+    public Task<T?> GetAsync<T>(string key, CancellationToken cancellationToken = default) => Task.FromResult<T?>(default);
+    public Task SetAsync<T>(string key, T value, TimeSpan ttl, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public Task RemoveAsync(string key, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public Task RemoveByPrefixAsync(string prefix, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public CacheMetricsSnapshot GetMetrics() => new(0, 0, 0, 0d, 0d, 0, 0, 0);
 }
 
 internal static class OnHandValueProjectionMetrics

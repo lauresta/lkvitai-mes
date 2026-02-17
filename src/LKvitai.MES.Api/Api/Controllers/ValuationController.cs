@@ -7,6 +7,7 @@ using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Contracts.ReadModels;
 using LKvitai.MES.Domain.Aggregates;
 using LKvitai.MES.Domain.Entities;
+using LKvitai.MES.Infrastructure.Caching;
 using LKvitai.MES.Infrastructure.Persistence;
 using LKvitai.MES.SharedKernel;
 using Marten;
@@ -15,6 +16,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace LKvitai.MES.Api.Controllers;
 
@@ -288,6 +290,25 @@ public sealed class ValuationController : ControllerBase
         var rows = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync(
             orderedRows,
             cancellationToken);
+
+        foreach (var row in rows)
+        {
+            await Cache.SetAsync(
+                $"value:{row.ItemId}",
+                new OnHandValueResponse(
+                    row.Id,
+                    row.ItemId,
+                    row.ItemSku,
+                    row.ItemName,
+                    row.CategoryId,
+                    row.CategoryName,
+                    row.Qty,
+                    row.UnitCost,
+                    row.TotalValue,
+                    row.LastUpdated),
+                TimeSpan.FromMinutes(5),
+                cancellationToken);
+        }
 
         if (!locationId.HasValue)
         {
@@ -611,6 +632,8 @@ public sealed class ValuationController : ControllerBase
             HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
             request.SignaturePassword), cancellationToken);
     }
+
+    private ICacheService Cache => HttpContext?.RequestServices?.GetService<ICacheService>() ?? new LKvitai.MES.Infrastructure.Caching.NoOpCacheService();
 
     public sealed record AdjustCostRequest(
         Guid CommandId,

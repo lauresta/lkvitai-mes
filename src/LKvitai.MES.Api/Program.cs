@@ -8,6 +8,7 @@ using LKvitai.MES.Application.Ports;
 using LKvitai.MES.Application.Services;
 using LKvitai.MES.Infrastructure;
 using LKvitai.MES.Infrastructure.BackgroundJobs;
+using LKvitai.MES.Infrastructure.Caching;
 using LKvitai.MES.Infrastructure.Persistence;
 using LKvitai.MES.Infrastructure.Projections;
 using LKvitai.MES.Integration.Carrier;
@@ -209,6 +210,12 @@ builder.Services.AddScoped<DailyBackupRecurringJob>();
 builder.Services.AddScoped<MonthlyRestoreTestRecurringJob>();
 builder.Services.AddScoped<IDisasterRecoveryService, DisasterRecoveryService>();
 builder.Services.AddScoped<QuarterlyDisasterRecoveryDrillJob>();
+builder.Services.AddSingleton<ICacheService>(sp =>
+{
+    var logger = sp.GetRequiredService<ILogger<RedisCacheService>>();
+    var redisConnectionString = builder.Configuration["Caching:RedisConnectionString"];
+    return new RedisCacheService(logger, redisConnectionString);
+});
 
 var warehouseConnectionString =
     builder.Configuration.GetConnectionString("WarehouseDb")

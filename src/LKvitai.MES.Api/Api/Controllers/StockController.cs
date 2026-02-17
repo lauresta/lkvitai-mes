@@ -2,11 +2,14 @@ using System.Globalization;
 using System.Text;
 using LKvitai.MES.Api.Security;
 using LKvitai.MES.Contracts.ReadModels;
+using LKvitai.MES.Domain.Entities;
+using LKvitai.MES.Infrastructure.Caching;
 using LKvitai.MES.Infrastructure.Persistence;
 using Marten;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace LKvitai.MES.Api.Controllers;
 
@@ -44,6 +47,27 @@ public sealed class StockController : ControllerBase
         [FromQuery] bool exportCsv = false,
         CancellationToken cancellationToken = default)
     {
+        var canUseCache = itemId.HasValue &&
+                          locationId.HasValue &&
+                          !exportCsv &&
+                          string.IsNullOrWhiteSpace(location) &&
+                          string.IsNullOrWhiteSpace(sku) &&
+                          !categoryId.HasValue &&
+                          !expiringBefore.HasValue &&
+                          pageNumber == 1 &&
+                          pageSize == 50;
+        var cacheKey = canUseCache
+            ? $"stock:{itemId!.Value}:{locationId!.Value}"
+            : string.Empty;
+        if (canUseCache)
+        {
+            var cached = await Cache.GetAsync<PagedStockResponse<AvailableStockItemDto>>(cacheKey, cancellationToken);
+            if (cached is not null)
+            {
+                return Ok(cached);
+            }
+        }
+
         pageNumber = page ?? pageNumber;
         pageNumber = Math.Max(1, pageNumber);
         pageSize = Math.Clamp(pageSize, 1, 1000);
@@ -79,10 +103,7 @@ public sealed class StockController : ControllerBase
             .Where(x => skus.Contains(x.InternalSKU))
             .ToDictionaryAsync(x => x.InternalSKU, cancellationToken);
 
-        var locationMap = await _dbContext.Locations
-            .AsNoTracking()
-            .Where(x => locationCodes.Contains(x.Code))
-            .ToDictionaryAsync(x => x.Code, cancellationToken);
+        var locationMap = await LoadLocationsByCodeAsync(locationCodes, cancellationToken);
 
         var mapped = rows.Select(row =>
         {
@@ -167,7 +188,7 @@ public sealed class StockController : ControllerBase
             ? filtered.Max(x => x.LastUpdated)
             : DateTime.UtcNow;
 
-        return Ok(new PagedStockResponse<AvailableStockItemDto>(
+        var response = new PagedStockResponse<AvailableStockItemDto>(
             items.Select(x => new AvailableStockItemDto(
                 x.ItemId,
                 x.InternalSku,
@@ -184,7 +205,14 @@ public sealed class StockController : ControllerBase
             totalCount,
             pageNumber,
             pageSize,
-            projectionTimestamp));
+            projectionTimestamp);
+
+        if (canUseCache)
+        {
+            await Cache.SetAsync(cacheKey, response, TimeSpan.FromSeconds(30), cancellationToken);
+        }
+
+        return Ok(response);
     }
 
     [HttpGet("location-balance")]
@@ -208,10 +236,7 @@ public sealed class StockController : ControllerBase
         var locationCodes = rows.Select(x => x.Location).Distinct().ToList();
         var skus = rows.Select(x => x.SKU).Distinct().ToList();
 
-        var locations = await _dbContext.Locations
-            .AsNoTracking()
-            .Where(x => locationCodes.Contains(x.Code))
-            .ToDictionaryAsync(x => x.Code, cancellationToken);
+        var locations = await LoadLocationsByCodeAsync(locationCodes, cancellationToken);
 
         var items = await _dbContext.Items
             .AsNoTracking()
@@ -388,6 +413,48 @@ public sealed class StockController : ControllerBase
 
         return value.Contains(token, comparison);
     }
+
+    private async Task<Dictionary<string, Location>> LoadLocationsByCodeAsync(
+        IReadOnlyCollection<string> codes,
+        CancellationToken cancellationToken)
+    {
+        var result = new Dictionary<string, Location>(StringComparer.OrdinalIgnoreCase);
+        var misses = new List<string>();
+
+        foreach (var code in codes)
+        {
+            var cached = await Cache.GetAsync<Location>($"location:{code}", cancellationToken);
+            if (cached is not Location cachedLocation)
+            {
+                misses.Add(code);
+            }
+            else
+            {
+                result[code] = cachedLocation;
+            }
+        }
+
+        if (misses.Count == 0)
+        {
+            return result;
+        }
+
+        var loaded = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync(
+            _dbContext.Locations
+                .AsNoTracking()
+                .Where(x => misses.Contains(x.Code)),
+            cancellationToken);
+
+        foreach (var row in loaded)
+        {
+            result[row.Code] = row;
+            await Cache.SetAsync($"location:{row.Code}", row, TimeSpan.FromHours(2), cancellationToken);
+        }
+
+        return result;
+    }
+
+    private ICacheService Cache => HttpContext?.RequestServices?.GetService<ICacheService>() ?? new LKvitai.MES.Infrastructure.Caching.NoOpCacheService();
 
     private sealed record AvailableStockRow(
         int? ItemId,

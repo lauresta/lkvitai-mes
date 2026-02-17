@@ -997,3 +997,30 @@
   Evidence: dotnet test src/LKvitai.MES.sln failed in pre-existing tests under src/LKvitai.MES.Infrastructure/Persistence/PiiEncryption.cs:63 (Destination is too short).
   Impact: Full-solution regression remains red from unrelated tests.
   Proposed resolution: Stabilize existing PII encryption tests, then rerun full solution tests.
+- Timestamp: 2026-02-17T22:48:30Z
+  TaskId: PRD-1642
+  Type: INCONSISTENCY
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S9.md:233-239, repository root contains `docker-compose.test.yml` but not baseline `docker-compose.yml` before this task.
+  Impact: Spec assumes an existing compose stack to extend with Redis; repository required creation of a new compose file with Redis-only service.
+  Proposed resolution: Treat `docker-compose.yml` as cache-dev runtime baseline and merge with environment-specific compose overlays as needed.
+
+- Timestamp: 2026-02-17T22:48:30Z
+  TaskId: PRD-1642
+  Type: INCONSISTENCY
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S9.md:263-268, src/LKvitai.MES.Api/Api/Controllers/ValuationController.cs:253
+  Impact: Spec key pattern `value:{itemId}` implies direct item-id query path, but current on-hand-value endpoint has no itemId filter parameter.
+  Proposed resolution: Populate/invalidate `value:{itemId}` keys during projection/query flows and add explicit itemId query support in a follow-up API refinement.
+
+- Timestamp: 2026-02-17T22:48:30Z
+  TaskId: PRD-1642
+  Type: TEST-GAP
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S9.md:342-387 requires live Redis/API load validation (`redis-cli`, k6, end-to-end latency checks), not fully executable in this run.
+  Impact: Cache hit-rate and latency SLA targets (>80% hit, <5ms p95) were not empirically verified under load.
+  Proposed resolution: Run documented Redis + k6 workflow in a perf environment and capture results in dashboard/metrics artifacts.
+
+- Timestamp: 2026-02-17T22:48:30Z
+  TaskId: PRD-1642
+  Type: TEST-GAP
+  Evidence: dotnet test src/LKvitai.MES.sln failed in pre-existing tests under src/LKvitai.MES.Infrastructure/Persistence/PiiEncryption.cs:63 (Destination is too short).
+  Impact: Full-solution regression remains red from unrelated tests.
+  Proposed resolution: Stabilize existing PII encryption tests, then rerun full solution tests.

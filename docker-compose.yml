@@ -1,0 +1,9 @@
+services:
+  redis:
+    image: redis:7.2
+    container_name: lkvitai-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    mem_limit: 2g
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "2gb", "--maxmemory-policy", "allkeys-lru"]

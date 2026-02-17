@@ -1,12 +1,14 @@
 using LKvitai.MES.Api.ErrorHandling;
 using LKvitai.MES.Api.Security;
 using LKvitai.MES.Domain.Entities;
+using LKvitai.MES.Infrastructure.Caching;
 using LKvitai.MES.Infrastructure.Persistence;
 using LKvitai.MES.SharedKernel;
 using CsvHelper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using System.Globalization;
 
 namespace LKvitai.MES.Api.Controllers;
@@ -207,6 +209,7 @@ public sealed class LocationsController : ControllerBase
 
         _dbContext.Locations.Add(entity);
         await _dbContext.SaveChangesAsync(cancellationToken);
+        await Cache.RemoveAsync($"location:{entity.Code}", cancellationToken);
 
         return Created($"/api/warehouse/v1/locations/{entity.Id}", new LocationListItemDto(
             entity.Id,
@@ -331,6 +334,7 @@ public sealed class LocationsController : ControllerBase
             return ValidationFailure($"Location barcode '{normalizedBarcode}' already exists.");
         }
 
+        var previousCode = entity.Code;
         entity.Code = normalizedCode;
         entity.Barcode = normalizedBarcode;
         entity.Type = request.Type.Trim();
@@ -359,6 +363,8 @@ public sealed class LocationsController : ControllerBase
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
+        await Cache.RemoveAsync($"location:{previousCode}", cancellationToken);
+        await Cache.RemoveAsync($"location:{entity.Code}", cancellationToken);
         return Ok(new LocationListItemDto(
             entity.Id,
             entity.Code,
@@ -771,6 +777,8 @@ public sealed class LocationsController : ControllerBase
         normalizedHeightMeters = decimal.Round(rawHeightMeters!.Value, 3, MidpointRounding.AwayFromZero);
         return true;
     }
+
+    private ICacheService Cache => HttpContext?.RequestServices?.GetService<ICacheService>() ?? new LKvitai.MES.Infrastructure.Caching.NoOpCacheService();
 
     public sealed record UpsertLocationRequest(
         string Code,
