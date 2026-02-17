@@ -77,6 +77,7 @@ public class WarehouseDbContext : DbContext
     public DbSet<ApiKey> ApiKeys => Set<ApiKey>();
     public DbSet<SecurityAuditLog> SecurityAuditLogs => Set<SecurityAuditLog>();
     public DbSet<PiiEncryptionKeyRecord> PiiEncryptionKeyRecords => Set<PiiEncryptionKeyRecord>();
+    public DbSet<ErasureRequest> ErasureRequests => Set<ErasureRequest>();
     public DbSet<RetentionPolicy> RetentionPolicies => Set<RetentionPolicy>();
     public DbSet<RetentionExecution> RetentionExecutions => Set<RetentionExecution>();
     public DbSet<AuditLogArchive> AuditLogArchives => Set<AuditLogArchive>();
@@ -1129,6 +1130,24 @@ public class WarehouseDbContext : DbContext
             entity.Property(e => e.CreatedAt).IsRequired();
             entity.HasIndex(e => e.KeyId).IsUnique();
             entity.HasIndex(e => e.Active);
+        });
+
+        modelBuilder.Entity<ErasureRequest>(entity =>
+        {
+            entity.ToTable("gdpr_erasure_requests");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.CustomerId).IsRequired();
+            entity.Property(e => e.Reason).HasMaxLength(1000).IsRequired();
+            entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(20).IsRequired();
+            entity.Property(e => e.RequestedAt).IsRequired();
+            entity.Property(e => e.RequestedBy).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.ApprovedAt);
+            entity.Property(e => e.ApprovedBy).HasMaxLength(200);
+            entity.Property(e => e.CompletedAt);
+            entity.Property(e => e.RejectionReason).HasMaxLength(1000);
+            entity.HasIndex(e => e.CustomerId);
+            entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => e.RequestedAt);
         });
 
         modelBuilder.Entity<RetentionPolicy>(entity =>

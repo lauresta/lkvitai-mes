@@ -202,6 +202,8 @@ builder.Services.AddScoped<IRetentionPolicyService, RetentionPolicyService>();
 builder.Services.AddScoped<RetentionPolicyRecurringJob>();
 builder.Services.AddScoped<IPiiEncryptionService, PiiEncryptionService>();
 builder.Services.AddScoped<PiiReencryptionJob>();
+builder.Services.AddScoped<IGdprErasureService, GdprErasureService>();
+builder.Services.AddScoped<GdprErasureJob>();
 
 var warehouseConnectionString =
     builder.Configuration.GetConnectionString("WarehouseDb")

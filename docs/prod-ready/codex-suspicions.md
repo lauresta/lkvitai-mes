@@ -917,3 +917,23 @@
   Evidence: Spec validation requires SQL inspection of ciphertext and authenticated POST /api/warehouse/v1/admin/encryption/rotate-key against running API.
   Impact: End-to-end runtime/key-rotation verification was not executed in this CLI-only session.
   Proposed resolution: Run API with DB connectivity, create customer via API, inspect ciphertext in DB, then trigger rotation endpoint and verify re-encryption completion.
+- Timestamp: 2026-02-17T21:25:48Z
+  TaskId: PRD-1638
+  Type: AMBIGUITY
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S8.md:1694-1696
+  Impact: Data discovery/anonymization scope mentions SalesOrders, Shipments, AuditLogs, but current domain model stores customer-facing names mainly in customer/sales-order addresses and summary read models; shipment entities do not directly reference customer IDs.
+  Proposed resolution: Minimal safe implementation anonymizes customer PII, sales-order shipping addresses, and customer-name summary projections (outbound/shipment summaries), with immutable audit records for workflow execution.
+
+- Timestamp: 2026-02-17T21:25:48Z
+  TaskId: PRD-1638
+  Type: TEST-GAP
+  Evidence: dotnet test and dotnet vstest fail in sandbox with System.Net.Sockets.SocketException (13) Permission denied while test platform opens local socket
+  Impact: Automated test execution for erasure workflow cannot run in this environment.
+  Proposed resolution: Execute dotnet test in CI or local environment that permits loopback socket bind.
+
+- Timestamp: 2026-02-17T21:25:48Z
+  TaskId: PRD-1638
+  Type: TEST-GAP
+  Evidence: Spec validation requires authenticated POST/PUT calls for erasure request/approval plus email confirmation checks against running API.
+  Impact: End-to-end workflow and notification validation were not executed in this CLI-only session.
+  Proposed resolution: Run API with admin/customer tokens, execute request→approve flow, and verify anonymized persisted data + confirmation channel in runtime environment.

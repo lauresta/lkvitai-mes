@@ -1387,6 +1387,28 @@ public sealed class PiiEncryptionKeyRecord
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 }
 
+public enum ErasureRequestStatus
+{
+    Pending = 0,
+    Approved = 1,
+    Completed = 2,
+    Rejected = 3
+}
+
+public sealed class ErasureRequest
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid CustomerId { get; set; }
+    public string Reason { get; set; } = string.Empty;
+    public ErasureRequestStatus Status { get; set; } = ErasureRequestStatus.Pending;
+    public DateTimeOffset RequestedAt { get; set; } = DateTimeOffset.UtcNow;
+    public string RequestedBy { get; set; } = string.Empty;
+    public DateTimeOffset? ApprovedAt { get; set; }
+    public string? ApprovedBy { get; set; }
+    public DateTimeOffset? CompletedAt { get; set; }
+    public string? RejectionReason { get; set; }
+}
+
 public enum RetentionDataType
 {
     Events = 0,
