@@ -15,17 +15,19 @@
 - PRD-1647 Custom Dashboards
 - PRD-1648 Alert Escalation
 - PRD-1649 SLA Monitoring
+- PRD-1650 Capacity Planning
 
 ### Partially Completed
 - None
 
 ### Blockers / TEST-GAP
-- `dotnet test src/LKvitai.MES.sln --no-build` fails due pre-existing unrelated tests in `src/LKvitai.MES.Infrastructure/Persistence/PiiEncryption.cs:63` (`System.ArgumentException: Destination is too short`).
+- `dotnet test src/LKvitai.MES.sln` fails due pre-existing unrelated tests in `src/LKvitai.MES.Infrastructure/Persistence/PiiEncryption.cs:63` (`System.ArgumentException: Destination is too short`).
 - PRD-1645 runtime load/failover validations requiring live docker stack + `k6` were not fully executed in this run.
 - PRD-1646 Azure portal/alerting/load-overhead validation requires a live Application Insights environment and was not fully executed in this run.
 - PRD-1647 dockerized Grafana runtime validation could not run because Docker daemon is unavailable in this session.
 - PRD-1648 live PagerDuty/Prometheus incident lifecycle validation was not executable in this environment.
 - PRD-1649 sustained-load SLA validation (`k6`, live metrics and breach alerts) was not executed in this environment.
+- PRD-1650 Prometheus alert-firing validation for capacity checks was not executed in this environment.
 
 ### Commands Executed
 - git status --short --branch
@@ -35,14 +37,15 @@
 - git diff | grep -Eo "PRD-[0-9]{4}" | sort -u
 - find . -name ".DS_Store" -print -delete
 - dotnet build src/LKvitai.MES.sln
-- dotnet test src/LKvitai.MES.sln --no-build
-- dotnet test src/tests/LKvitai.MES.Tests.Integration/LKvitai.MES.Tests.Integration.csproj --no-build --filter "FullyQualifiedName~LoadBalancingTests"
-- dotnet test src/tests/LKvitai.MES.Tests.Integration/LKvitai.MES.Tests.Integration.csproj --no-build --filter "FullyQualifiedName~APMIntegrationTests"
-- dotnet test src/tests/LKvitai.MES.Tests.Integration/LKvitai.MES.Tests.Integration.csproj --no-build --filter "FullyQualifiedName~GrafanaDashboardTests"
-- dotnet test src/tests/LKvitai.MES.Tests.Integration/LKvitai.MES.Tests.Integration.csproj --no-build --filter "FullyQualifiedName~AlertEscalationTests"
-- dotnet test src/tests/LKvitai.MES.Tests.Integration/LKvitai.MES.Tests.Integration.csproj --no-build --filter "FullyQualifiedName~SLAMonitoringTests"
+- dotnet test src/LKvitai.MES.sln
+- dotnet test src/tests/LKvitai.MES.Tests.Integration/LKvitai.MES.Tests.Integration.csproj --filter "FullyQualifiedName~LoadBalancingTests"
+- dotnet test src/tests/LKvitai.MES.Tests.Integration/LKvitai.MES.Tests.Integration.csproj --filter "FullyQualifiedName~APMIntegrationTests"
+- dotnet test src/tests/LKvitai.MES.Tests.Integration/LKvitai.MES.Tests.Integration.csproj --filter "FullyQualifiedName~GrafanaDashboardTests"
+- dotnet test src/tests/LKvitai.MES.Tests.Integration/LKvitai.MES.Tests.Integration.csproj --filter "FullyQualifiedName~AlertEscalationTests"
+- dotnet test src/tests/LKvitai.MES.Tests.Integration/LKvitai.MES.Tests.Integration.csproj --filter "FullyQualifiedName~SLAMonitoringTests"
+- dotnet test src/tests/LKvitai.MES.Tests.Integration/LKvitai.MES.Tests.Integration.csproj --filter "FullyQualifiedName~CapacityPlanningTests"
 - docker compose config
 - docker compose up -d grafana
 
 ### Next Recommended TaskId
-- PRD-1650
+- PRD-1651

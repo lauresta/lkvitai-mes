@@ -1157,3 +1157,23 @@
   Evidence: dotnet test src/LKvitai.MES.sln --no-build failed in pre-existing tests under src/LKvitai.MES.Infrastructure/Persistence/PiiEncryption.cs:63 (`System.ArgumentException: Destination is too short`).
   Impact: Full-solution regression suite is red from unrelated failures, so green baseline cannot be confirmed from this run.
   Proposed resolution: Stabilize/fix existing PII encryption tests, then rerun full solution tests.
+- Timestamp: 2026-02-17T23:22:04Z
+  TaskId: PRD-1650
+  Type: AMBIGUITY
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S9.md:1326-1332 requests capacity metrics (DB size, event store growth, location utilization), but repository has no unified historical telemetry store for true 30-day trend regression in this API process.
+  Impact: Exact forecast values depend on unavailable historical data and can diverge across environments.
+  Proposed resolution: Implement deterministic linear projection using configurable growth assumptions + current snapshot metrics; replace with persisted historical series when telemetry warehouse is available.
+
+- Timestamp: 2026-02-17T23:22:04Z
+  TaskId: PRD-1650
+  Type: TEST-GAP
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S9.md:1389-1402 requires live Prometheus alert verification and runtime API simulation flow against running services.
+  Impact: Alert firing latency/behavior in external monitoring stack was not validated end-to-end in this CLI run.
+  Proposed resolution: Execute `/api/test/simulate-capacity-alert` and Prometheus alert queries in an environment with running API + Prometheus.
+
+- Timestamp: 2026-02-17T23:22:04Z
+  TaskId: PRD-1650
+  Type: TEST-GAP
+  Evidence: dotnet test src/LKvitai.MES.sln failed in pre-existing tests under src/LKvitai.MES.Infrastructure/Persistence/PiiEncryption.cs:63 (`System.ArgumentException: Destination is too short`).
+  Impact: Full-solution regression suite is red from unrelated failures, so green baseline cannot be confirmed from this run.
+  Proposed resolution: Stabilize/fix existing PII encryption tests, then rerun full solution tests.

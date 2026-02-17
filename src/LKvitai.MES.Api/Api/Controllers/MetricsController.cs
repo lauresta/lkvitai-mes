@@ -16,16 +16,19 @@ public sealed class MetricsController : ControllerBase
 {
     private readonly ICacheService _cacheService;
     private readonly ISlaMonitoringService _slaMonitoringService;
+    private readonly ICapacityPlanningService _capacityPlanningService;
     private readonly int _minPoolSize;
     private readonly int _maxPoolSize;
 
     public MetricsController(
         ICacheService cacheService,
         ISlaMonitoringService slaMonitoringService,
+        ICapacityPlanningService capacityPlanningService,
         IConfiguration configuration)
     {
         _cacheService = cacheService;
         _slaMonitoringService = slaMonitoringService;
+        _capacityPlanningService = capacityPlanningService;
         var connectionString = configuration.GetConnectionString("WarehouseDb") ?? string.Empty;
         var builder = new NpgsqlConnectionStringBuilder(connectionString);
         _minPoolSize = builder.MinPoolSize <= 0 ? 10 : builder.MinPoolSize;
@@ -37,6 +40,7 @@ public sealed class MetricsController : ControllerBase
     {
         var m = _cacheService.GetMetrics();
         var sla = await _slaMonitoringService.GetSnapshotAsync(cancellationToken);
+        var capacity = await _capacityPlanningService.GetSnapshotAsync(cancellationToken);
 
         var builder = new StringBuilder();
         builder.AppendLine("# TYPE cache_hit_rate gauge");
@@ -71,6 +75,14 @@ public sealed class MetricsController : ControllerBase
         builder.AppendLine($"sla_projection_lag_seconds {sla.ProjectionLagSeconds.ToString("F4", CultureInfo.InvariantCulture)}");
         builder.AppendLine("# TYPE sla_order_fulfillment_rate gauge");
         builder.AppendLine($"sla_order_fulfillment_rate {sla.OrderFulfillmentRate.ToString("F4", CultureInfo.InvariantCulture)}");
+        builder.AppendLine("# TYPE capacity_database_size_gb gauge");
+        builder.AppendLine($"capacity_database_size_gb {capacity.DatabaseSizeGb.ToString("F4", CultureInfo.InvariantCulture)}");
+        builder.AppendLine("# TYPE capacity_event_count gauge");
+        builder.AppendLine($"capacity_event_count {capacity.EventsPerDay.ToString("F4", CultureInfo.InvariantCulture)}");
+        builder.AppendLine("# TYPE capacity_api_request_volume_per_hour gauge");
+        builder.AppendLine($"capacity_api_request_volume_per_hour {capacity.ApiRequestsPerHour.ToString("F4", CultureInfo.InvariantCulture)}");
+        builder.AppendLine("# TYPE capacity_location_utilization_percent gauge");
+        builder.AppendLine($"capacity_location_utilization_percent {capacity.LocationUtilizationPercent.ToString("F4", CultureInfo.InvariantCulture)}");
 
         return Content(builder.ToString(), "text/plain; version=0.0.4");
     }

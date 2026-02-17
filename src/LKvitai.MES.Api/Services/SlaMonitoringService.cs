@@ -146,6 +146,7 @@ public sealed class SlaRequestMetricsStore
 {
     private readonly object _lock = new();
     private readonly Queue<double> _requestDurationsMs;
+    private long _totalRequestCount;
 
     public SlaRequestMetricsStore(IOptions<SlaMonitoringOptions> options)
     {
@@ -174,6 +175,7 @@ public sealed class SlaRequestMetricsStore
             }
 
             _requestDurationsMs.Enqueue(milliseconds);
+            _totalRequestCount++;
         }
     }
 
@@ -194,6 +196,14 @@ public sealed class SlaRequestMetricsStore
         var index = (int)Math.Ceiling(snapshot.Length * 0.95) - 1;
         index = Math.Clamp(index, 0, snapshot.Length - 1);
         return snapshot[index];
+    }
+
+    public long GetTotalRequestCount()
+    {
+        lock (_lock)
+        {
+            return _totalRequestCount;
+        }
     }
 }
 
