@@ -1024,3 +1024,16 @@
   Evidence: dotnet test src/LKvitai.MES.sln failed in pre-existing tests under src/LKvitai.MES.Infrastructure/Persistence/PiiEncryption.cs:63 (Destination is too short).
   Impact: Full-solution regression remains red from unrelated tests.
   Proposed resolution: Stabilize existing PII encryption tests, then rerun full solution tests.
+- Timestamp: 2026-02-17T22:52:59Z
+  TaskId: PRD-1643
+  Type: TEST-GAP
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S9.md:508-535 requires live `k6`/`psql`/running API validation for 1000 VUs and pool behavior; not executable in this run.
+  Impact: Pool exhaustion and p95 acquisition SLA (<10ms) were not empirically validated under load.
+  Proposed resolution: Run the documented load workflow in a DB-backed perf environment and capture metrics snapshots during test.
+
+- Timestamp: 2026-02-17T22:52:59Z
+  TaskId: PRD-1643
+  Type: TEST-GAP
+  Evidence: dotnet test src/LKvitai.MES.sln failed in pre-existing tests under src/LKvitai.MES.Infrastructure/Persistence/PiiEncryption.cs:63 (Destination is too short).
+  Impact: Full-solution regression remains red from unrelated tests.
+  Proposed resolution: Stabilize existing PII encryption tests, then rerun full solution tests.

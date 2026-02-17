@@ -56,6 +56,7 @@ builder.Services.Configure<OAuthOptions>(builder.Configuration.GetSection(OAuthO
 builder.Services.Configure<MfaOptions>(builder.Configuration.GetSection(MfaOptions.SectionName));
 builder.Services.Configure<LabelPrintingConfig>(builder.Configuration.GetSection("LabelPrinting"));
 builder.Services.AddSingleton<IDevAuthService, DevAuthService>();
+builder.Services.AddSingleton<ConnectionPoolMonitoringInterceptor>();
 builder.Services.AddSingleton<IAdminUserStore, InMemoryAdminUserStore>();
 builder.Services.AddSingleton<IOAuthRoleMapper, OAuthRoleMapper>();
 builder.Services.AddSingleton<IOAuthOpenIdConfigurationProvider, OAuthOpenIdConfigurationProvider>();

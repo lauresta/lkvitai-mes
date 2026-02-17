@@ -8,6 +8,7 @@
 - PRD-1640 Disaster Recovery Plan (DR drill entity + API, quarterly Hangfire drill, failover scripts, DR runbook/communication template, EF migration, unit tests)
 - PRD-1641 Query Optimization (performance index migration for EF + Marten tables, index naming alignment, query-plan documentation, integration tests for index topology)
 - PRD-1642 Caching Strategy (Redis cache service + metrics endpoint, appsettings/compose wiring, cache-aside + invalidation hooks on item/customer/location/stock/value flows, caching tests, caching architecture doc)
+- PRD-1643 Connection Pooling (Npgsql pooling defaults, DbConnection pool monitoring interceptor with leak detection warning, `/metrics` pool gauges/counters, pooling tests, connection pooling guide)
 
 ### Partially Completed
 - None
@@ -17,6 +18,7 @@
 - PRD-1640 manual curl validation for DR endpoints was not executed end-to-end (no authenticated running API in this CLI run).
 - PRD-1641 psql/k6/pg_stat_statements validation steps were not executable in this environment.
 - PRD-1642 load/latency validation steps for Redis cache hit-rate were not fully executable in this environment.
+- PRD-1643 1000-VU connection pooling validation (`k6` + live DB telemetry) was not fully executable in this environment.
 
 ### Commands Executed
 - git status --short --branch
@@ -31,10 +33,11 @@
 - dotnet test src/tests/LKvitai.MES.Tests.Unit/LKvitai.MES.Tests.Unit.csproj --no-build --filter FullyQualifiedName~DisasterRecoveryServiceTests
 - dotnet test src/tests/LKvitai.MES.Tests.Integration/LKvitai.MES.Tests.Integration.csproj --no-build --filter FullyQualifiedName~QueryPerformanceTests
 - dotnet test src/tests/LKvitai.MES.Tests.Integration/LKvitai.MES.Tests.Integration.csproj --no-build --filter FullyQualifiedName~CachingTests
+- dotnet test src/tests/LKvitai.MES.Tests.Integration/LKvitai.MES.Tests.Integration.csproj -m:1 /nodeReuse:false -v minimal --filter FullyQualifiedName~ConnectionPoolingTests
 - scripts/disaster-recovery/restore_failover.sh artifacts/backups/sample.sql.gz warehouse_dr
 - scripts/disaster-recovery/switch_dns_failover.sh api.warehouse.example.com api-dr.warehouse.example.com
 - scripts/disaster-recovery/verify_services.sh http://localhost:5000
 - docker compose config
 
 ### Next Recommended TaskId
-- PRD-1643
+- PRD-1644

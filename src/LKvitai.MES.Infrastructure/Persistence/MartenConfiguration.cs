@@ -1,6 +1,7 @@
 using Marten;
 using Marten.Events.Projections;
 using Marten.Events.Daemon.Resiliency;
+using Npgsql;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -72,17 +73,28 @@ public static class MartenConfiguration
         this IServiceCollection services,
         IConfiguration configuration)
     {
-        var connectionString = configuration.GetConnectionString("WarehouseDb")
+        var rawConnectionString = configuration.GetConnectionString("WarehouseDb")
             ?? throw new InvalidOperationException("WarehouseDb connection string not found");
-        
-        services.AddDbContext<WarehouseDbContext>(options =>
+
+        var builder = new NpgsqlConnectionStringBuilder(rawConnectionString)
         {
-            options.UseNpgsql(connectionString, npgsqlOptions =>
+            MinPoolSize = 10,
+            MaxPoolSize = 100,
+            ConnectionLifetime = 300,
+            ConnectionIdleLifetime = 60,
+            Timeout = 30
+        };
+
+        services.AddDbContext<WarehouseDbContext>((sp, options) =>
+        {
+            var poolMonitoringInterceptor = sp.GetRequiredService<ConnectionPoolMonitoringInterceptor>();
+            options.UseNpgsql(builder.ConnectionString, npgsqlOptions =>
             {
                 // Keep EF migration metadata in `public` to match EF schema placement.
                 npgsqlOptions.MigrationsHistoryTable("__EFMigrationsHistory", "public");
                 npgsqlOptions.EnableRetryOnFailure(maxRetryCount: 3);
             });
+            options.AddInterceptors(poolMonitoringInterceptor);
             
             // Enable sensitive data logging in development only
             var enableSensitiveDataLogging = configuration["EnableSensitiveDataLogging"] == "true";
