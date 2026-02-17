@@ -200,9 +200,10 @@ public class WarehouseDbContext : DbContext
             entity.Property(e => e.PrimaryBarcode).HasMaxLength(100);
             entity.Property(e => e.ProductConfigId).HasMaxLength(50);
             entity.HasIndex(e => e.InternalSKU).IsUnique();
-            entity.HasIndex(e => e.CategoryId);
+            entity.HasIndex(e => e.CategoryId).HasDatabaseName("idx_items_category_id");
             entity.HasIndex(e => e.BaseUoM);
             entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => e.PrimaryBarcode).HasDatabaseName("idx_items_barcode");
             entity.HasOne(e => e.Category).WithMany().HasForeignKey(e => e.CategoryId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(e => e.BaseUnit).WithMany().HasForeignKey(e => e.BaseUoM).OnDelete(DeleteBehavior.Restrict);
             entity.ToTable(t =>
@@ -318,7 +319,8 @@ public class WarehouseDbContext : DbContext
             entity.HasIndex(e => e.OrderNumber).IsUnique();
             entity.HasIndex(e => e.CustomerId);
             entity.HasIndex(e => e.Status);
-            entity.HasIndex(e => e.OrderDate);
+            entity.HasIndex(e => e.OrderDate).HasDatabaseName("idx_sales_orders_order_date");
+            entity.HasIndex(e => new { e.CustomerId, e.Status }).HasDatabaseName("idx_sales_orders_customer_id_status");
             entity.HasQueryFilter(e => !e.IsDeleted);
             entity.HasOne(e => e.Customer)
                 .WithMany(c => c.SalesOrders)
@@ -389,6 +391,7 @@ public class WarehouseDbContext : DbContext
             entity.HasIndex(e => e.OrderNumber).IsUnique();
             entity.HasIndex(e => e.Status);
             entity.HasIndex(e => e.OrderDate);
+            entity.HasIndex(e => new { e.Status, e.RequestedShipDate }).HasDatabaseName("idx_outbound_orders_status_requested_ship_date");
             entity.HasIndex(e => e.ReservationId);
             entity.HasIndex(e => e.SalesOrderId);
             entity.HasQueryFilter(e => !e.IsDeleted);
@@ -445,7 +448,8 @@ public class WarehouseDbContext : DbContext
             entity.HasIndex(e => e.ShipmentNumber).IsUnique();
             entity.HasIndex(e => e.OutboundOrderId).IsUnique();
             entity.HasIndex(e => e.Status);
-            entity.HasIndex(e => e.TrackingNumber);
+            entity.HasIndex(e => e.TrackingNumber).HasDatabaseName("idx_shipments_tracking_number");
+            entity.HasIndex(e => e.DispatchedAt).HasDatabaseName("idx_shipments_dispatched_at");
             entity.HasQueryFilter(e => !e.IsDeleted);
         });
 
@@ -639,7 +643,7 @@ public class WarehouseDbContext : DbContext
             entity.Property(e => e.TotalValue).HasPrecision(18, 4).IsRequired();
             entity.Property(e => e.LastUpdated).IsRequired();
             entity.HasIndex(e => e.ItemId).IsUnique();
-            entity.HasIndex(e => e.CategoryId);
+            entity.HasIndex(e => e.CategoryId).HasDatabaseName("idx_on_hand_value_category_id");
             entity.HasIndex(e => e.TotalValue);
             entity.HasIndex(e => e.LastUpdated);
             entity.HasOne<Item>()
@@ -776,6 +780,7 @@ public class WarehouseDbContext : DbContext
             entity.Property(e => e.MinOrderQty).HasPrecision(18, 3);
             entity.Property(e => e.PricePerUnit).HasPrecision(18, 2);
             entity.HasIndex(e => new { e.SupplierId, e.SupplierSKU }).IsUnique();
+            entity.HasIndex(e => e.SupplierId).HasDatabaseName("idx_items_supplier_id");
             entity.HasIndex(e => e.ItemId);
             entity.HasOne(e => e.Supplier).WithMany().HasForeignKey(e => e.SupplierId).OnDelete(DeleteBehavior.Cascade);
             entity.HasOne(e => e.Item).WithMany().HasForeignKey(e => e.ItemId).OnDelete(DeleteBehavior.Restrict);

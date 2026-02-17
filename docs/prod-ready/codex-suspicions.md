@@ -977,3 +977,23 @@
   Evidence: dotnet test src/LKvitai.MES.sln failed in pre-existing tests under src/LKvitai.MES.Infrastructure/Persistence/PiiEncryption.cs:63 (Destination is too short).
   Impact: Full-solution regression suite is red from unrelated failures, so green baseline cannot be confirmed from this run.
   Proposed resolution: Fix/stabilize existing PII encryption tests, then rerun full solution tests.
+- Timestamp: 2026-02-17T22:38:25Z
+  TaskId: PRD-1641
+  Type: INCONSISTENCY
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S9.md:84-90, src/LKvitai.MES.Domain/Entities/MasterDataEntities.cs:14-33
+  Impact: PRD requires `items.supplier_id` index, but `items` entity/table has no supplier FK column in this repository.
+  Proposed resolution: Use `supplier_item_mappings.SupplierId` as the supplier lookup index surface (`idx_items_supplier_id`) and add a direct `items.supplier_id` only if data model is redesigned.
+
+- Timestamp: 2026-02-17T22:38:25Z
+  TaskId: PRD-1641
+  Type: TEST-GAP
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S9.md:173-208 validation commands require `psql`, `k6`, and live DB telemetry (`pg_stat_statements`), which are not available in this run.
+  Impact: Slow-query-log analysis, EXPLAIN ANALYZE timing baselines, and load-test SLA verification were not executed end-to-end.
+  Proposed resolution: Run the documented psql/k6 workflow in a DB-enabled perf environment and capture before/after metrics into `docs/performance/query-plans.md`.
+
+- Timestamp: 2026-02-17T22:38:25Z
+  TaskId: PRD-1641
+  Type: TEST-GAP
+  Evidence: dotnet test src/LKvitai.MES.sln failed in pre-existing tests under src/LKvitai.MES.Infrastructure/Persistence/PiiEncryption.cs:63 (Destination is too short).
+  Impact: Full-solution regression remains red from unrelated tests.
+  Proposed resolution: Stabilize existing PII encryption tests, then rerun full solution tests.
