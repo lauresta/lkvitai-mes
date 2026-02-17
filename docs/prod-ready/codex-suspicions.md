@@ -1137,3 +1137,23 @@
   Evidence: dotnet test src/LKvitai.MES.sln --no-build failed in pre-existing tests under src/LKvitai.MES.Infrastructure/Persistence/PiiEncryption.cs:63 (`System.ArgumentException: Destination is too short`).
   Impact: Full-solution regression suite is red from unrelated failures, so green baseline cannot be confirmed from this run.
   Proposed resolution: Stabilize/fix existing PII encryption tests, then rerun full solution tests.
+- Timestamp: 2026-02-17T23:17:09Z
+  TaskId: PRD-1649
+  Type: AMBIGUITY
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S9.md:1230 requires monthly PDF report, but repository has no existing PDF rendering engine dependency/pipeline for SLA reports.
+  Impact: Strict PDF formatting expectations are underspecified and could introduce heavy dependency changes.
+  Proposed resolution: Provide SLA report endpoint returning generated report payload as PDF media type with deterministic SLA summary content; upgrade to full PDF rendering template in a dedicated reporting enhancement if required.
+
+- Timestamp: 2026-02-17T23:17:09Z
+  TaskId: PRD-1649
+  Type: TEST-GAP
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S9.md:1275-1292 requires 1-hour k6 load run and live `/metrics` verification against running API.
+  Impact: Runtime SLA behavior under sustained load and real breach alerts were not empirically validated in this CLI run.
+  Proposed resolution: Run the documented k6 + live endpoint workflow in a perf environment and capture `sla_*` metric trajectories.
+
+- Timestamp: 2026-02-17T23:17:09Z
+  TaskId: PRD-1649
+  Type: TEST-GAP
+  Evidence: dotnet test src/LKvitai.MES.sln --no-build failed in pre-existing tests under src/LKvitai.MES.Infrastructure/Persistence/PiiEncryption.cs:63 (`System.ArgumentException: Destination is too short`).
+  Impact: Full-solution regression suite is red from unrelated failures, so green baseline cannot be confirmed from this run.
+  Proposed resolution: Stabilize/fix existing PII encryption tests, then rerun full solution tests.

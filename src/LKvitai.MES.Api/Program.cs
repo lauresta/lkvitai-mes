@@ -57,6 +57,7 @@ builder.Services.AddHttpClient("PagerDuty");
 builder.Services.Configure<ApmOptions>(builder.Configuration.GetSection(ApmOptions.SectionName));
 builder.Services.Configure<PagerDutyOptions>(builder.Configuration.GetSection(PagerDutyOptions.SectionName));
 builder.Services.Configure<AlertEscalationOptions>(builder.Configuration.GetSection(AlertEscalationOptions.SectionName));
+builder.Services.Configure<SlaMonitoringOptions>(builder.Configuration.GetSection(SlaMonitoringOptions.SectionName));
 builder.Services.Configure<DevAuthOptions>(builder.Configuration.GetSection(DevAuthOptions.SectionName));
 builder.Services.Configure<OAuthOptions>(builder.Configuration.GetSection(OAuthOptions.SectionName));
 builder.Services.Configure<MfaOptions>(builder.Configuration.GetSection(MfaOptions.SectionName));
@@ -214,6 +215,8 @@ builder.Services.AddScoped<IGdprErasureService, GdprErasureService>();
 builder.Services.AddScoped<GdprErasureJob>();
 builder.Services.AddScoped<IBusinessTelemetryService, BusinessTelemetryService>();
 builder.Services.AddScoped<IAlertEscalationService, PagerDutyAlertEscalationService>();
+builder.Services.AddSingleton<SlaRequestMetricsStore>();
+builder.Services.AddScoped<ISlaMonitoringService, SlaMonitoringService>();
 builder.Services.AddScoped<IBackupService, BackupService>();
 builder.Services.AddScoped<DailyBackupRecurringJob>();
 builder.Services.AddScoped<MonthlyRestoreTestRecurringJob>();
@@ -288,6 +291,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseMiddleware<CorrelationIdMiddleware>();
+app.UseMiddleware<SlaMetricsMiddleware>();
 app.UseMiddleware<ApiRateLimitingMiddleware>();
 app.UseMiddleware<ProblemDetailsExceptionMiddleware>();
 app.UseMiddleware<IdempotencyReplayHeaderMiddleware>();

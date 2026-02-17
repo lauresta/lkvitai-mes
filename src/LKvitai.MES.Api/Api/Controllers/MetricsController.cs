@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text;
 using LKvitai.MES.Infrastructure.Persistence;
 using LKvitai.MES.Infrastructure.Caching;
+using LKvitai.MES.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Npgsql;
@@ -14,12 +15,17 @@ namespace LKvitai.MES.Api.Controllers;
 public sealed class MetricsController : ControllerBase
 {
     private readonly ICacheService _cacheService;
+    private readonly ISlaMonitoringService _slaMonitoringService;
     private readonly int _minPoolSize;
     private readonly int _maxPoolSize;
 
-    public MetricsController(ICacheService cacheService, IConfiguration configuration)
+    public MetricsController(
+        ICacheService cacheService,
+        ISlaMonitoringService slaMonitoringService,
+        IConfiguration configuration)
     {
         _cacheService = cacheService;
+        _slaMonitoringService = slaMonitoringService;
         var connectionString = configuration.GetConnectionString("WarehouseDb") ?? string.Empty;
         var builder = new NpgsqlConnectionStringBuilder(connectionString);
         _minPoolSize = builder.MinPoolSize <= 0 ? 10 : builder.MinPoolSize;
@@ -27,9 +33,10 @@ public sealed class MetricsController : ControllerBase
     }
 
     [HttpGet]
-    public IActionResult Get()
+    public async Task<IActionResult> Get(CancellationToken cancellationToken)
     {
         var m = _cacheService.GetMetrics();
+        var sla = await _slaMonitoringService.GetSnapshotAsync(cancellationToken);
 
         var builder = new StringBuilder();
         builder.AppendLine("# TYPE cache_hit_rate gauge");
@@ -56,6 +63,14 @@ public sealed class MetricsController : ControllerBase
         builder.AppendLine($"npgsql_connection_pool_min {pool.MinimumPoolSize}");
         builder.AppendLine("# TYPE npgsql_connection_pool_max gauge");
         builder.AppendLine($"npgsql_connection_pool_max {pool.MaximumPoolSize}");
+        builder.AppendLine("# TYPE sla_uptime_percentage gauge");
+        builder.AppendLine($"sla_uptime_percentage {sla.UptimePercentage.ToString("F4", CultureInfo.InvariantCulture)}");
+        builder.AppendLine("# TYPE sla_api_response_time_p95 gauge");
+        builder.AppendLine($"sla_api_response_time_p95 {sla.ApiResponseTimeP95Ms.ToString("F4", CultureInfo.InvariantCulture)}");
+        builder.AppendLine("# TYPE sla_projection_lag_seconds gauge");
+        builder.AppendLine($"sla_projection_lag_seconds {sla.ProjectionLagSeconds.ToString("F4", CultureInfo.InvariantCulture)}");
+        builder.AppendLine("# TYPE sla_order_fulfillment_rate gauge");
+        builder.AppendLine($"sla_order_fulfillment_rate {sla.OrderFulfillmentRate.ToString("F4", CultureInfo.InvariantCulture)}");
 
         return Content(builder.ToString(), "text/plain; version=0.0.4");
     }
