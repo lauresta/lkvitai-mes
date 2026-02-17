@@ -937,3 +937,23 @@
   Evidence: Spec validation requires authenticated POST/PUT calls for erasure request/approval plus email confirmation checks against running API.
   Impact: End-to-end workflow and notification validation were not executed in this CLI-only session.
   Proposed resolution: Run API with admin/customer tokens, execute request→approve flow, and verify anonymized persisted data + confirmation channel in runtime environment.
+- Timestamp: 2026-02-17T22:06:45Z
+  TaskId: PRD-1639
+  Type: AMBIGUITY
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S8.md:1795-1798, docs/prod-ready/prod-ready-tasks-PHASE15-S8.md:1802-1805
+  Impact: Spec requires blob storage (Azure/S3), PITR WAL workflow, and monthly automated restore validation, but deployment/storage provider contracts are not defined in repository configuration.
+  Proposed resolution: Implemented provider-agnostic backup execution tracking + local artifact generation scripts/runbook, scheduled backup/restore-test jobs, and endpoint contracts; external storage/wal destinations can be wired through environment-specific scripts.
+
+- Timestamp: 2026-02-17T22:06:45Z
+  TaskId: PRD-1639
+  Type: TEST-GAP
+  Evidence: dotnet test and dotnet vstest fail in sandbox with System.Net.Sockets.SocketException (13) Permission denied while test platform opens local socket
+  Impact: Automated backup service tests cannot run in this environment.
+  Proposed resolution: Execute dotnet test in CI or local environment that permits loopback socket bind.
+
+- Timestamp: 2026-02-17T22:06:45Z
+  TaskId: PRD-1639
+  Type: TEST-GAP
+  Evidence: scripts/backup/restore_from_backup.sh output: "psql unavailable; restore dry-run only"; API curl validations for backup endpoints not executed (no running API/token).
+  Impact: Real pg_dump/restore and authenticated API backup workflow were not validated end-to-end.
+  Proposed resolution: Run backup/restore scripts in DB-enabled environment with pg_dump/psql and execute the endpoint flow against running API.

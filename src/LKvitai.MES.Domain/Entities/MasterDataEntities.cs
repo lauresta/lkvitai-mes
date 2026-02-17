@@ -1409,6 +1409,32 @@ public sealed class ErasureRequest
     public string? RejectionReason { get; set; }
 }
 
+public enum BackupType
+{
+    Full = 0,
+    Incremental = 1
+}
+
+public enum BackupExecutionStatus
+{
+    Completed = 0,
+    Failed = 1,
+    Pending = 2
+}
+
+public sealed class BackupExecution
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public DateTimeOffset BackupStartedAt { get; set; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset? BackupCompletedAt { get; set; }
+    public BackupType Type { get; set; } = BackupType.Full;
+    public long BackupSizeBytes { get; set; }
+    public string BlobPath { get; set; } = string.Empty;
+    public BackupExecutionStatus Status { get; set; } = BackupExecutionStatus.Pending;
+    public string? ErrorMessage { get; set; }
+    public string Trigger { get; set; } = "MANUAL";
+}
+
 public enum RetentionDataType
 {
     Events = 0,

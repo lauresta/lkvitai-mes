@@ -78,6 +78,7 @@ public class WarehouseDbContext : DbContext
     public DbSet<SecurityAuditLog> SecurityAuditLogs => Set<SecurityAuditLog>();
     public DbSet<PiiEncryptionKeyRecord> PiiEncryptionKeyRecords => Set<PiiEncryptionKeyRecord>();
     public DbSet<ErasureRequest> ErasureRequests => Set<ErasureRequest>();
+    public DbSet<BackupExecution> BackupExecutions => Set<BackupExecution>();
     public DbSet<RetentionPolicy> RetentionPolicies => Set<RetentionPolicy>();
     public DbSet<RetentionExecution> RetentionExecutions => Set<RetentionExecution>();
     public DbSet<AuditLogArchive> AuditLogArchives => Set<AuditLogArchive>();
@@ -1148,6 +1149,22 @@ public class WarehouseDbContext : DbContext
             entity.HasIndex(e => e.CustomerId);
             entity.HasIndex(e => e.Status);
             entity.HasIndex(e => e.RequestedAt);
+        });
+
+        modelBuilder.Entity<BackupExecution>(entity =>
+        {
+            entity.ToTable("backup_executions");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.BackupStartedAt).IsRequired();
+            entity.Property(e => e.BackupCompletedAt);
+            entity.Property(e => e.Type).HasConversion<string>().HasMaxLength(20).IsRequired();
+            entity.Property(e => e.BackupSizeBytes).IsRequired();
+            entity.Property(e => e.BlobPath).HasMaxLength(2000).IsRequired();
+            entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(20).IsRequired();
+            entity.Property(e => e.ErrorMessage).HasColumnType("text");
+            entity.Property(e => e.Trigger).HasMaxLength(50).IsRequired();
+            entity.HasIndex(e => e.BackupStartedAt);
+            entity.HasIndex(e => e.Status);
         });
 
         modelBuilder.Entity<RetentionPolicy>(entity =>

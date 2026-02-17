@@ -204,6 +204,9 @@ builder.Services.AddScoped<IPiiEncryptionService, PiiEncryptionService>();
 builder.Services.AddScoped<PiiReencryptionJob>();
 builder.Services.AddScoped<IGdprErasureService, GdprErasureService>();
 builder.Services.AddScoped<GdprErasureJob>();
+builder.Services.AddScoped<IBackupService, BackupService>();
+builder.Services.AddScoped<DailyBackupRecurringJob>();
+builder.Services.AddScoped<MonthlyRestoreTestRecurringJob>();
 
 var warehouseConnectionString =
     builder.Configuration.GetConnectionString("WarehouseDb")
@@ -297,6 +300,24 @@ RecurringJob.AddOrUpdate<RetentionPolicyRecurringJob>(
     "retention-policy-daily",
     job => job.ExecuteAsync(CancellationToken.None),
     "0 2 * * *",
+    new RecurringJobOptions
+    {
+        TimeZone = TimeZoneInfo.Utc
+    });
+
+RecurringJob.AddOrUpdate<DailyBackupRecurringJob>(
+    "backup-daily-2am",
+    job => job.ExecuteAsync(CancellationToken.None),
+    "0 2 * * *",
+    new RecurringJobOptions
+    {
+        TimeZone = TimeZoneInfo.Utc
+    });
+
+RecurringJob.AddOrUpdate<MonthlyRestoreTestRecurringJob>(
+    "backup-monthly-restore-test",
+    job => job.ExecuteAsync(CancellationToken.None),
+    "0 3 1 * *",
     new RecurringJobOptions
     {
         TimeZone = TimeZoneInfo.Utc
