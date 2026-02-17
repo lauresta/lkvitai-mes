@@ -15,7 +15,11 @@ jobs:
 
     steps:
       - name: Clean workspace (fix root-owned files from Docker)
-        run: sudo rm -rf "$GITHUB_WORKSPACE"/*
+        run: |
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE":/workspace \
+            alpine:3 \
+            sh -c "rm -rf /workspace/*"
 
       - name: Checkout code
         uses: actions/checkout@v4
@@ -49,14 +53,17 @@ jobs:
         run: |
           docker run --rm --name lkvitai-mes-migration \
             --network lkvitai-mes_default \
+            --user "$(id -u):$(id -g)" \
             -v "${{ github.workspace }}:/src" \
             -w /src \
+            -e HOME=/tmp \
+            -e DOTNET_CLI_HOME=/tmp/.dotnet \
             -e "ConnectionStrings__WarehouseDb=Host=pg;Port=5432;Database=lkvitai_warehouse_test;Username=postgres;Password=postgres" \
             mcr.microsoft.com/dotnet/sdk:8.0 \
             bash -c '
               set -e
               dotnet tool install --global dotnet-ef
-              export PATH="$PATH:/root/.dotnet/tools"
+              export PATH="$PATH:/tmp/.dotnet/tools"
               dotnet build src/LKvitai.MES.Api/LKvitai.MES.Api.csproj -c Release
               dotnet ef database update \
                 --project src/LKvitai.MES.Infrastructure \
