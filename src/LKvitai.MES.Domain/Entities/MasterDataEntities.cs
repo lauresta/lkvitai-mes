@@ -114,10 +114,15 @@ public enum SalesOrderStatus
 
 public sealed class Address
 {
+    [Encrypted]
     public string Street { get; set; } = string.Empty;
+    [Encrypted]
     public string City { get; set; } = string.Empty;
+    [Encrypted]
     public string State { get; set; } = string.Empty;
+    [Encrypted]
     public string ZipCode { get; set; } = string.Empty;
+    [Encrypted]
     public string Country { get; set; } = string.Empty;
 }
 
@@ -125,7 +130,9 @@ public sealed class Customer : AuditableEntity
 {
     public Guid Id { get; set; } = Guid.NewGuid();
     public string CustomerCode { get; set; } = string.Empty;
+    [Encrypted]
     public string Name { get; set; } = string.Empty;
+    [Encrypted]
     public string Email { get; set; } = string.Empty;
     public string? Phone { get; set; }
     public Address BillingAddress { get; set; } = new();
@@ -1363,6 +1370,21 @@ public sealed class SecurityAuditLog
     public DateTimeOffset Timestamp { get; set; } = DateTimeOffset.UtcNow;
     public bool LegalHold { get; set; }
     public string Details { get; set; } = "{}";
+}
+
+[AttributeUsage(AttributeTargets.Property)]
+public sealed class EncryptedAttribute : Attribute
+{
+}
+
+public sealed class PiiEncryptionKeyRecord
+{
+    public int Id { get; set; }
+    public string KeyId { get; set; } = string.Empty;
+    public bool Active { get; set; }
+    public DateTimeOffset ActivatedAt { get; set; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset? GraceUntil { get; set; }
+    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 }
 
 public enum RetentionDataType

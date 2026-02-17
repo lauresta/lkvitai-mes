@@ -200,6 +200,8 @@ builder.Services.AddScoped<ScheduledReportsRecurringJob>();
 builder.Services.AddScoped<IElectronicSignatureService, ElectronicSignatureService>();
 builder.Services.AddScoped<IRetentionPolicyService, RetentionPolicyService>();
 builder.Services.AddScoped<RetentionPolicyRecurringJob>();
+builder.Services.AddScoped<IPiiEncryptionService, PiiEncryptionService>();
+builder.Services.AddScoped<PiiReencryptionJob>();
 
 var warehouseConnectionString =
     builder.Configuration.GetConnectionString("WarehouseDb")

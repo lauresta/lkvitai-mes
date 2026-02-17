@@ -897,3 +897,23 @@
   Evidence: Spec validation requires authenticated curl calls to /api/warehouse/v1/admin/retention-policies and /execute; no running API/token in current CLI session.
   Impact: Endpoint-level manual validation scenarios were not executed.
   Proposed resolution: Start API with reachable DB and execute the documented curl flow with admin token.
+- Timestamp: 2026-02-17T21:07:02Z
+  TaskId: PRD-1637
+  Type: AMBIGUITY
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S8.md:1595-1600
+  Impact: Spec requires key storage in Azure Key Vault or environment variable and key rotation with 30-day grace, but no Key Vault integration contract/config exists in repository.
+  Proposed resolution: Implemented environment-variable keyring plus runtime-generated key rotation metadata (`pii_encryption_keys` table) and 30-day grace tracking; external vault integration can replace runtime key provider without schema changes.
+
+- Timestamp: 2026-02-17T21:07:02Z
+  TaskId: PRD-1637
+  Type: TEST-GAP
+  Evidence: dotnet test and dotnet vstest fail in sandbox with System.Net.Sockets.SocketException (13) Permission denied while test platform opens local socket
+  Impact: Automated test execution for encryption/rotation scenarios cannot run in this environment.
+  Proposed resolution: Execute dotnet test in CI or local environment that permits loopback socket bind.
+
+- Timestamp: 2026-02-17T21:07:02Z
+  TaskId: PRD-1637
+  Type: TEST-GAP
+  Evidence: Spec validation requires SQL inspection of ciphertext and authenticated POST /api/warehouse/v1/admin/encryption/rotate-key against running API.
+  Impact: End-to-end runtime/key-rotation verification was not executed in this CLI-only session.
+  Proposed resolution: Run API with DB connectivity, create customer via API, inspect ciphertext in DB, then trigger rotation endpoint and verify re-encryption completion.

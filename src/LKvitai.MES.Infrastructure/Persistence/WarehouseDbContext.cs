@@ -76,6 +76,7 @@ public class WarehouseDbContext : DbContext
     public DbSet<UserMfa> UserMfas => Set<UserMfa>();
     public DbSet<ApiKey> ApiKeys => Set<ApiKey>();
     public DbSet<SecurityAuditLog> SecurityAuditLogs => Set<SecurityAuditLog>();
+    public DbSet<PiiEncryptionKeyRecord> PiiEncryptionKeyRecords => Set<PiiEncryptionKeyRecord>();
     public DbSet<RetentionPolicy> RetentionPolicies => Set<RetentionPolicy>();
     public DbSet<RetentionExecution> RetentionExecutions => Set<RetentionExecution>();
     public DbSet<AuditLogArchive> AuditLogArchives => Set<AuditLogArchive>();
@@ -260,8 +261,8 @@ public class WarehouseDbContext : DbContext
                 .HasMaxLength(50)
                 .IsRequired()
                 .HasDefaultValueSql("'CUST-' || LPAD(nextval('customer_code_seq')::text, 4, '0')");
-            entity.Property(e => e.Name).HasMaxLength(200).IsRequired();
-            entity.Property(e => e.Email).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.Name).HasColumnType("text").HasConversion(PiiEncryption.StringConverter).IsRequired();
+            entity.Property(e => e.Email).HasColumnType("text").HasConversion(PiiEncryption.StringConverter).IsRequired();
             entity.Property(e => e.Phone).HasMaxLength(50);
             entity.Property(e => e.PaymentTerms).HasConversion<string>().HasMaxLength(50).IsRequired();
             entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(50).IsRequired();
@@ -274,20 +275,20 @@ public class WarehouseDbContext : DbContext
 
             entity.OwnsOne(e => e.BillingAddress, owned =>
             {
-                owned.Property(p => p.Street).HasColumnName("billing_address_street").HasMaxLength(200);
-                owned.Property(p => p.City).HasColumnName("billing_address_city").HasMaxLength(100);
-                owned.Property(p => p.State).HasColumnName("billing_address_state").HasMaxLength(50);
-                owned.Property(p => p.ZipCode).HasColumnName("billing_address_zip_code").HasMaxLength(20);
-                owned.Property(p => p.Country).HasColumnName("billing_address_country").HasMaxLength(100);
+                owned.Property(p => p.Street).HasColumnName("billing_address_street").HasColumnType("text").HasConversion(PiiEncryption.StringConverter);
+                owned.Property(p => p.City).HasColumnName("billing_address_city").HasColumnType("text").HasConversion(PiiEncryption.StringConverter);
+                owned.Property(p => p.State).HasColumnName("billing_address_state").HasColumnType("text").HasConversion(PiiEncryption.StringConverter);
+                owned.Property(p => p.ZipCode).HasColumnName("billing_address_zip_code").HasColumnType("text").HasConversion(PiiEncryption.StringConverter);
+                owned.Property(p => p.Country).HasColumnName("billing_address_country").HasColumnType("text").HasConversion(PiiEncryption.StringConverter);
             });
 
             entity.OwnsOne(e => e.DefaultShippingAddress, owned =>
             {
-                owned.Property(p => p.Street).HasColumnName("default_shipping_address_street").HasMaxLength(200);
-                owned.Property(p => p.City).HasColumnName("default_shipping_address_city").HasMaxLength(100);
-                owned.Property(p => p.State).HasColumnName("default_shipping_address_state").HasMaxLength(50);
-                owned.Property(p => p.ZipCode).HasColumnName("default_shipping_address_zip_code").HasMaxLength(20);
-                owned.Property(p => p.Country).HasColumnName("default_shipping_address_country").HasMaxLength(100);
+                owned.Property(p => p.Street).HasColumnName("default_shipping_address_street").HasColumnType("text").HasConversion(PiiEncryption.StringConverter);
+                owned.Property(p => p.City).HasColumnName("default_shipping_address_city").HasColumnType("text").HasConversion(PiiEncryption.StringConverter);
+                owned.Property(p => p.State).HasColumnName("default_shipping_address_state").HasColumnType("text").HasConversion(PiiEncryption.StringConverter);
+                owned.Property(p => p.ZipCode).HasColumnName("default_shipping_address_zip_code").HasColumnType("text").HasConversion(PiiEncryption.StringConverter);
+                owned.Property(p => p.Country).HasColumnName("default_shipping_address_country").HasColumnType("text").HasConversion(PiiEncryption.StringConverter);
             });
 
             entity.ToTable(t =>
@@ -1115,6 +1116,19 @@ public class WarehouseDbContext : DbContext
             entity.HasIndex(e => e.Timestamp);
             entity.HasIndex(e => new { e.Action, e.Resource });
             entity.HasIndex(e => e.LegalHold);
+        });
+
+        modelBuilder.Entity<PiiEncryptionKeyRecord>(entity =>
+        {
+            entity.ToTable("pii_encryption_keys");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.KeyId).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.Active).HasDefaultValue(false).IsRequired();
+            entity.Property(e => e.ActivatedAt).IsRequired();
+            entity.Property(e => e.GraceUntil);
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.HasIndex(e => e.KeyId).IsUnique();
+            entity.HasIndex(e => e.Active);
         });
 
         modelBuilder.Entity<RetentionPolicy>(entity =>

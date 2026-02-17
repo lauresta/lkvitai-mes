@@ -63,6 +63,83 @@ public sealed class CustomersController : ControllerBase
         return Ok(rows);
     }
 
+    [HttpGet("{id:guid}")]
+    [Authorize(Policy = WarehousePolicies.SalesAdminOrManager)]
+    public async Task<IActionResult> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        var row = await _dbContext.Customers
+            .AsNoTracking()
+            .Where(x => x.Id == id)
+            .Select(x => new CustomerDetailResponse(
+                x.Id,
+                x.CustomerCode,
+                x.Name,
+                x.Email,
+                x.Phone,
+                x.Status.ToString().ToUpperInvariant(),
+                new AddressResponse(
+                    x.BillingAddress.Street,
+                    x.BillingAddress.City,
+                    x.BillingAddress.State,
+                    x.BillingAddress.ZipCode,
+                    x.BillingAddress.Country),
+                x.DefaultShippingAddress == null
+                    ? null
+                    : new AddressResponse(
+                        x.DefaultShippingAddress.Street,
+                        x.DefaultShippingAddress.City,
+                        x.DefaultShippingAddress.State,
+                        x.DefaultShippingAddress.ZipCode,
+                        x.DefaultShippingAddress.Country)))
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return row is null ? NotFound() : Ok(row);
+    }
+
+    [HttpPost]
+    [Authorize(Policy = WarehousePolicies.SalesAdminOrManager)]
+    public async Task<IActionResult> CreateAsync([FromBody] CreateCustomerRequest? request, CancellationToken cancellationToken = default)
+    {
+        if (request is null || string.IsNullOrWhiteSpace(request.Name) || string.IsNullOrWhiteSpace(request.Email))
+        {
+            return BadRequest("Name and Email are required.");
+        }
+
+        var row = new Customer
+        {
+            Name = request.Name.Trim(),
+            Email = request.Email.Trim(),
+            Phone = string.IsNullOrWhiteSpace(request.Phone) ? null : request.Phone.Trim(),
+            BillingAddress = request.BillingAddress is null
+                ? new Address()
+                : new Address
+                {
+                    Street = request.BillingAddress.Street,
+                    City = request.BillingAddress.City,
+                    State = request.BillingAddress.State,
+                    ZipCode = request.BillingAddress.ZipCode,
+                    Country = request.BillingAddress.Country
+                },
+            DefaultShippingAddress = request.ShippingAddress is null
+                ? null
+                : new Address
+                {
+                    Street = request.ShippingAddress.Street,
+                    City = request.ShippingAddress.City,
+                    State = request.ShippingAddress.State,
+                    ZipCode = request.ShippingAddress.ZipCode,
+                    Country = request.ShippingAddress.Country
+                },
+            Status = CustomerStatus.Active,
+            PaymentTerms = PaymentTerms.Net30
+        };
+
+        _dbContext.Customers.Add(row);
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return Created($"/api/warehouse/v1/customers/{row.Id}", new { row.Id, row.CustomerCode });
+    }
+
     public sealed record AddressResponse(
         string Street,
         string City,
@@ -76,4 +153,21 @@ public sealed class CustomersController : ControllerBase
         string Name,
         string Status,
         AddressResponse? DefaultShippingAddress);
+
+    public sealed record CustomerDetailResponse(
+        Guid Id,
+        string CustomerCode,
+        string Name,
+        string Email,
+        string? Phone,
+        string Status,
+        AddressResponse BillingAddress,
+        AddressResponse? DefaultShippingAddress);
+
+    public sealed record CreateCustomerRequest(
+        string Name,
+        string Email,
+        string? Phone,
+        AddressResponse? BillingAddress,
+        AddressResponse? ShippingAddress);
 }
