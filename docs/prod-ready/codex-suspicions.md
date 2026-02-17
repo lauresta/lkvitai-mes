@@ -957,3 +957,23 @@
   Evidence: scripts/backup/restore_from_backup.sh output: "psql unavailable; restore dry-run only"; API curl validations for backup endpoints not executed (no running API/token).
   Impact: Real pg_dump/restore and authenticated API backup workflow were not validated end-to-end.
   Proposed resolution: Run backup/restore scripts in DB-enabled environment with pg_dump/psql and execute the endpoint flow against running API.
+- Timestamp: 2026-02-17T22:34:01Z
+  TaskId: PRD-1640
+  Type: AMBIGUITY
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S8.md:1912, src/LKvitai.MES.Api/Security/WarehouseRoles.cs:1
+  Impact: Spec requires DevOps/Admin RBAC, but repository role/policy catalog has no DevOps role constant or policy.
+  Proposed resolution: Enforce existing Admin policy for DR endpoints now and introduce an explicit DevOps role/policy in a dedicated RBAC extension task.
+
+- Timestamp: 2026-02-17T22:34:01Z
+  TaskId: PRD-1640
+  Type: TEST-GAP
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S8.md:1952, local run had no authenticated running API for curl drill endpoints.
+  Impact: Manual endpoint validation for POST /api/warehouse/v1/admin/dr/drill and GET /api/warehouse/v1/admin/dr/drills was not executed end-to-end.
+  Proposed resolution: Run API with dev token auth and execute documented curl flow in a DB-enabled environment.
+
+- Timestamp: 2026-02-17T22:34:01Z
+  TaskId: PRD-1640
+  Type: TEST-GAP
+  Evidence: dotnet test src/LKvitai.MES.sln failed in pre-existing tests under src/LKvitai.MES.Infrastructure/Persistence/PiiEncryption.cs:63 (Destination is too short).
+  Impact: Full-solution regression suite is red from unrelated failures, so green baseline cannot be confirmed from this run.
+  Proposed resolution: Fix/stabilize existing PII encryption tests, then rerun full solution tests.

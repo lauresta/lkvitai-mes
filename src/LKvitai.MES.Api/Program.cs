@@ -207,6 +207,8 @@ builder.Services.AddScoped<GdprErasureJob>();
 builder.Services.AddScoped<IBackupService, BackupService>();
 builder.Services.AddScoped<DailyBackupRecurringJob>();
 builder.Services.AddScoped<MonthlyRestoreTestRecurringJob>();
+builder.Services.AddScoped<IDisasterRecoveryService, DisasterRecoveryService>();
+builder.Services.AddScoped<QuarterlyDisasterRecoveryDrillJob>();
 
 var warehouseConnectionString =
     builder.Configuration.GetConnectionString("WarehouseDb")
@@ -318,6 +320,15 @@ RecurringJob.AddOrUpdate<MonthlyRestoreTestRecurringJob>(
     "backup-monthly-restore-test",
     job => job.ExecuteAsync(CancellationToken.None),
     "0 3 1 * *",
+    new RecurringJobOptions
+    {
+        TimeZone = TimeZoneInfo.Utc
+    });
+
+RecurringJob.AddOrUpdate<QuarterlyDisasterRecoveryDrillJob>(
+    "dr-quarterly-drill",
+    job => job.ExecuteAsync(CancellationToken.None),
+    "0 4 1 1,4,7,10 *",
     new RecurringJobOptions
     {
         TimeZone = TimeZoneInfo.Utc

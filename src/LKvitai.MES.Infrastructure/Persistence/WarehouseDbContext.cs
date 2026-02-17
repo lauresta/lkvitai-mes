@@ -79,6 +79,7 @@ public class WarehouseDbContext : DbContext
     public DbSet<PiiEncryptionKeyRecord> PiiEncryptionKeyRecords => Set<PiiEncryptionKeyRecord>();
     public DbSet<ErasureRequest> ErasureRequests => Set<ErasureRequest>();
     public DbSet<BackupExecution> BackupExecutions => Set<BackupExecution>();
+    public DbSet<DRDrill> DRDrills => Set<DRDrill>();
     public DbSet<RetentionPolicy> RetentionPolicies => Set<RetentionPolicy>();
     public DbSet<RetentionExecution> RetentionExecutions => Set<RetentionExecution>();
     public DbSet<AuditLogArchive> AuditLogArchives => Set<AuditLogArchive>();
@@ -1165,6 +1166,22 @@ public class WarehouseDbContext : DbContext
             entity.Property(e => e.Trigger).HasMaxLength(50).IsRequired();
             entity.HasIndex(e => e.BackupStartedAt);
             entity.HasIndex(e => e.Status);
+        });
+
+        modelBuilder.Entity<DRDrill>(entity =>
+        {
+            entity.ToTable("dr_drills");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.DrillStartedAt).IsRequired();
+            entity.Property(e => e.DrillCompletedAt);
+            entity.Property(e => e.Scenario).HasConversion<string>().HasMaxLength(50).IsRequired();
+            entity.Property(e => e.ActualRTO).IsRequired();
+            entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(20).IsRequired();
+            entity.Property(e => e.Notes).HasMaxLength(4000).IsRequired();
+            entity.Property(e => e.IssuesIdentifiedJson).HasColumnType("text").IsRequired();
+            entity.HasIndex(e => e.DrillStartedAt);
+            entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => e.Scenario);
         });
 
         modelBuilder.Entity<RetentionPolicy>(entity =>

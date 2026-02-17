@@ -1435,6 +1435,32 @@ public sealed class BackupExecution
     public string Trigger { get; set; } = "MANUAL";
 }
 
+public enum DisasterScenario
+{
+    DataCenterOutage = 0,
+    DatabaseCorruption = 1,
+    Ransomware = 2
+}
+
+public enum DrillStatus
+{
+    Completed = 0,
+    Failed = 1,
+    InProgress = 2
+}
+
+public sealed class DRDrill
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public DateTimeOffset DrillStartedAt { get; set; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset? DrillCompletedAt { get; set; }
+    public DisasterScenario Scenario { get; set; } = DisasterScenario.DataCenterOutage;
+    public TimeSpan ActualRTO { get; set; } = TimeSpan.Zero;
+    public DrillStatus Status { get; set; } = DrillStatus.InProgress;
+    public string Notes { get; set; } = string.Empty;
+    public string IssuesIdentifiedJson { get; set; } = "[]";
+}
+
 public enum RetentionDataType
 {
     Events = 0,
