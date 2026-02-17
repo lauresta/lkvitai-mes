@@ -63,7 +63,7 @@ jobs:
             bash -c '
               set -e
               dotnet tool install --global dotnet-ef
-              export PATH="$PATH:/tmp/.dotnet/tools"
+              export PATH="$PATH:/tmp/.dotnet/.dotnet/tools"
               dotnet build src/LKvitai.MES.Api/LKvitai.MES.Api.csproj -c Release
               dotnet ef database update \
                 --project src/LKvitai.MES.Infrastructure \
