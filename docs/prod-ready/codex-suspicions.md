@@ -1037,3 +1037,23 @@
   Evidence: dotnet test src/LKvitai.MES.sln failed in pre-existing tests under src/LKvitai.MES.Infrastructure/Persistence/PiiEncryption.cs:63 (Destination is too short).
   Impact: Full-solution regression remains red from unrelated tests.
   Proposed resolution: Stabilize existing PII encryption tests, then rerun full solution tests.
+- Timestamp: 2026-02-17T22:56:50Z
+  TaskId: PRD-1644
+  Type: INCONSISTENCY
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S9.md:583-591, repository currently has multiple non-async HTTP action signatures in existing controllers (legacy baseline beyond this PRD patch scope).
+  Impact: Full "all endpoints async" criterion cannot be fully proven in a single safe patch without broad behavior risk.
+  Proposed resolution: Enforce async anti-pattern rules and iteratively convert remaining sync actions/controller surfaces in subsequent PRDs with focused regression coverage.
+
+- Timestamp: 2026-02-17T22:56:50Z
+  TaskId: PRD-1644
+  Type: TEST-GAP
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S9.md:652-681 requires live `k6`, `dotnet-counters`, and cancellation/load observation against running API.
+  Impact: Throughput uplift and thread-pool utilization targets were not empirically validated in this run.
+  Proposed resolution: Execute the documented load/counters workflow in a perf environment and capture before/after metrics.
+
+- Timestamp: 2026-02-17T22:56:50Z
+  TaskId: PRD-1644
+  Type: TEST-GAP
+  Evidence: dotnet test src/LKvitai.MES.sln failed in pre-existing tests under src/LKvitai.MES.Infrastructure/Persistence/PiiEncryption.cs:63 (Destination is too short).
+  Impact: Full-solution regression remains red from unrelated tests.
+  Proposed resolution: Stabilize existing PII encryption tests, then rerun full solution tests.

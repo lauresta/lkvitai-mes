@@ -1360,7 +1360,10 @@ public class WarehouseDbContext : DbContext
     {
         var notifications = ApplyAuditFields();
         var result = base.SaveChanges(acceptAllChangesOnSuccess);
-        PublishMasterDataChangesAsync(notifications, CancellationToken.None).GetAwaiter().GetResult();
+        if (notifications.Count > 0)
+        {
+            _ = PublishMasterDataChangesAsync(notifications, CancellationToken.None);
+        }
         return result;
     }
 
