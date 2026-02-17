@@ -1097,3 +1097,23 @@
   Evidence: dotnet test src/LKvitai.MES.sln --no-build failed in pre-existing tests under src/LKvitai.MES.Infrastructure/Persistence/PiiEncryption.cs:63 (`System.ArgumentException: Destination is too short`).
   Impact: Full-solution regression suite is red from unrelated failures, so green baseline cannot be confirmed from this run.
   Proposed resolution: Stabilize/fix existing PII encryption tests, then rerun full solution tests.
+- Timestamp: 2026-02-17T23:10:07Z
+  TaskId: PRD-1647
+  Type: AMBIGUITY
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S9.md:1042-1047 requires Prometheus-backed panels, but current compose baseline does not include a Prometheus server service.
+  Impact: Dashboards can be provisioned/imported, but live panel data depends on environment-level Prometheus availability.
+  Proposed resolution: Provision dashboards + datasource templates now (pointing to `http://prometheus:9090`) and wire a concrete Prometheus deployment in monitoring environment/next monitoring PRDs.
+
+- Timestamp: 2026-02-17T23:10:07Z
+  TaskId: PRD-1647
+  Type: TEST-GAP
+  Evidence: `docker compose up -d grafana` failed with `Cannot connect to the Docker daemon at unix:///Users/bykovas/.docker/run/docker.sock`.
+  Impact: Runtime Grafana startup/import verification and screenshot-based checks could not be executed in this environment.
+  Proposed resolution: Start Docker daemon (or run in CI runner with Docker service) and execute compose + dashboard import/browser validation flow.
+
+- Timestamp: 2026-02-17T23:10:07Z
+  TaskId: PRD-1647
+  Type: TEST-GAP
+  Evidence: dotnet test src/LKvitai.MES.sln --no-build failed in pre-existing tests under src/LKvitai.MES.Infrastructure/Persistence/PiiEncryption.cs:63 (`System.ArgumentException: Destination is too short`).
+  Impact: Full-solution regression suite is red from unrelated failures, so green baseline cannot be confirmed from this run.
+  Proposed resolution: Stabilize/fix existing PII encryption tests, then rerun full solution tests.
