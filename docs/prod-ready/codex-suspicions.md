@@ -877,3 +877,23 @@
   Evidence: Full `dotnet restore`, `dotnet build`, and `dotnet test` succeeded after network access was available; previous TEST-GAP entry for PRD-1632 no longer reproduces.
   Impact: Validation for PRD-1632 is now confirmed; prior gap can be treated as resolved for this environment.
   Proposed resolution: None. Leave historical TEST-GAP entry for traceability; no further action required.
+- Timestamp: 2026-02-17T20:54:01Z
+  TaskId: PRD-1636
+  Type: AMBIGUITY
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S8.md:1489-1493
+  Impact: Retention requirements list multiple data types (EVENTS, PROJECTIONS, AUDIT_LOGS, CUSTOMER_DATA) but archival/deletion mechanics are only concretely defined for events/audit logs; project has no existing generalized retention substrate for projections/customer data.
+  Proposed resolution: Minimal safe implementation processes AUDIT_LOGS end-to-end (policy CRUD, archive, delete, legal hold) and provisions events archive schema; extend execution handlers per data type in follow-up PRDs.
+
+- Timestamp: 2026-02-17T20:54:01Z
+  TaskId: PRD-1636
+  Type: TEST-GAP
+  Evidence: dotnet test and dotnet vstest fail in sandbox with System.Net.Sockets.SocketException (13) Permission denied while test platform opens local socket
+  Impact: Full automated test execution cannot run in this environment despite successful compile.
+  Proposed resolution: Run dotnet test in CI or local environment permitting loopback socket bind for testhost.
+
+- Timestamp: 2026-02-17T20:54:01Z
+  TaskId: PRD-1636
+  Type: TEST-GAP
+  Evidence: Spec validation requires authenticated curl calls to /api/warehouse/v1/admin/retention-policies and /execute; no running API/token in current CLI session.
+  Impact: Endpoint-level manual validation scenarios were not executed.
+  Proposed resolution: Start API with reachable DB and execute the documented curl flow with admin token.

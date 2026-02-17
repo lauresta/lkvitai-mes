@@ -1361,7 +1361,72 @@ public sealed class SecurityAuditLog
     public string IpAddress { get; set; } = string.Empty;
     public string UserAgent { get; set; } = string.Empty;
     public DateTimeOffset Timestamp { get; set; } = DateTimeOffset.UtcNow;
+    public bool LegalHold { get; set; }
     public string Details { get; set; } = "{}";
+}
+
+public enum RetentionDataType
+{
+    Events = 0,
+    Projections = 1,
+    AuditLogs = 2,
+    CustomerData = 3
+}
+
+public enum RetentionExecutionStatus
+{
+    Completed = 0,
+    Failed = 1
+}
+
+public sealed class RetentionPolicy
+{
+    public int Id { get; set; }
+    public RetentionDataType DataType { get; set; } = RetentionDataType.AuditLogs;
+    public int RetentionPeriodDays { get; set; } = 2555;
+    public int? ArchiveAfterDays { get; set; }
+    public int? DeleteAfterDays { get; set; }
+    public bool Active { get; set; } = true;
+    public string CreatedBy { get; set; } = string.Empty;
+    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset? UpdatedAt { get; set; }
+}
+
+public sealed class RetentionExecution
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public DateTimeOffset ExecutedAt { get; set; } = DateTimeOffset.UtcNow;
+    public int RecordsArchived { get; set; }
+    public int RecordsDeleted { get; set; }
+    public RetentionExecutionStatus Status { get; set; } = RetentionExecutionStatus.Completed;
+    public string? ErrorMessage { get; set; }
+}
+
+public sealed class AuditLogArchive
+{
+    public long Id { get; set; }
+    public string? UserId { get; set; }
+    public string Action { get; set; } = string.Empty;
+    public string Resource { get; set; } = string.Empty;
+    public string? ResourceId { get; set; }
+    public string IpAddress { get; set; } = string.Empty;
+    public string UserAgent { get; set; } = string.Empty;
+    public DateTimeOffset Timestamp { get; set; } = DateTimeOffset.UtcNow;
+    public bool LegalHold { get; set; }
+    public string Details { get; set; } = "{}";
+    public DateTimeOffset ArchivedAt { get; set; } = DateTimeOffset.UtcNow;
+}
+
+public sealed class EventArchive
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public string StreamId { get; set; } = string.Empty;
+    public string EventType { get; set; } = string.Empty;
+    public long EventVersion { get; set; }
+    public DateTimeOffset EventTimestamp { get; set; }
+    public string Payload { get; set; } = "{}";
+    public bool LegalHold { get; set; }
+    public DateTimeOffset ArchivedAt { get; set; } = DateTimeOffset.UtcNow;
 }
 
 public sealed class SerialNumber

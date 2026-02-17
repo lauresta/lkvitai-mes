@@ -198,6 +198,8 @@ builder.Services.Configure<ComplianceReportOptions>(builder.Configuration.GetSec
 builder.Services.AddScoped<IComplianceReportService, ComplianceReportService>();
 builder.Services.AddScoped<ScheduledReportsRecurringJob>();
 builder.Services.AddScoped<IElectronicSignatureService, ElectronicSignatureService>();
+builder.Services.AddScoped<IRetentionPolicyService, RetentionPolicyService>();
+builder.Services.AddScoped<RetentionPolicyRecurringJob>();
 
 var warehouseConnectionString =
     builder.Configuration.GetConnectionString("WarehouseDb")
@@ -282,6 +284,15 @@ RecurringJob.AddOrUpdate<ScheduledReportsRecurringJob>(
     "compliance-scheduled-reports",
     job => job.ExecuteAsync(),
     "*/10 * * * *",
+    new RecurringJobOptions
+    {
+        TimeZone = TimeZoneInfo.Utc
+    });
+
+RecurringJob.AddOrUpdate<RetentionPolicyRecurringJob>(
+    "retention-policy-daily",
+    job => job.ExecuteAsync(CancellationToken.None),
+    "0 2 * * *",
     new RecurringJobOptions
     {
         TimeZone = TimeZoneInfo.Utc

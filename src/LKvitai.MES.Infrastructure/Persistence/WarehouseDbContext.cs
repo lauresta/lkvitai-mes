@@ -76,6 +76,10 @@ public class WarehouseDbContext : DbContext
     public DbSet<UserMfa> UserMfas => Set<UserMfa>();
     public DbSet<ApiKey> ApiKeys => Set<ApiKey>();
     public DbSet<SecurityAuditLog> SecurityAuditLogs => Set<SecurityAuditLog>();
+    public DbSet<RetentionPolicy> RetentionPolicies => Set<RetentionPolicy>();
+    public DbSet<RetentionExecution> RetentionExecutions => Set<RetentionExecution>();
+    public DbSet<AuditLogArchive> AuditLogArchives => Set<AuditLogArchive>();
+    public DbSet<EventArchive> EventArchives => Set<EventArchive>();
     public DbSet<WarehouseSettings> WarehouseSettings => Set<WarehouseSettings>();
     public DbSet<SerialNumber> SerialNumbers => Set<SerialNumber>();
     public DbSet<SKUSequence> SKUSequences => Set<SKUSequence>();
@@ -1104,11 +1108,81 @@ public class WarehouseDbContext : DbContext
             entity.Property(e => e.IpAddress).HasMaxLength(100).IsRequired();
             entity.Property(e => e.UserAgent).HasMaxLength(1000).IsRequired();
             entity.Property(e => e.Timestamp).IsRequired();
+            entity.Property(e => e.LegalHold).HasDefaultValue(false).IsRequired();
             entity.Property(e => e.Details).HasColumnType("text").IsRequired();
 
             entity.HasIndex(e => e.UserId);
             entity.HasIndex(e => e.Timestamp);
             entity.HasIndex(e => new { e.Action, e.Resource });
+            entity.HasIndex(e => e.LegalHold);
+        });
+
+        modelBuilder.Entity<RetentionPolicy>(entity =>
+        {
+            entity.ToTable("retention_policies");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.DataType).HasConversion<string>().HasMaxLength(30).IsRequired();
+            entity.Property(e => e.RetentionPeriodDays).IsRequired();
+            entity.Property(e => e.ArchiveAfterDays);
+            entity.Property(e => e.DeleteAfterDays);
+            entity.Property(e => e.Active).HasDefaultValue(true).IsRequired();
+            entity.Property(e => e.CreatedBy).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.Property(e => e.UpdatedAt);
+            entity.HasIndex(e => e.DataType).IsUnique();
+            entity.HasIndex(e => e.Active);
+            entity.ToTable(t =>
+            {
+                t.HasCheckConstraint("ck_retention_policies_retention_days", "\"RetentionPeriodDays\" > 0");
+                t.HasCheckConstraint("ck_retention_policies_archive_days", "\"ArchiveAfterDays\" IS NULL OR \"ArchiveAfterDays\" >= 0");
+                t.HasCheckConstraint("ck_retention_policies_delete_days", "\"DeleteAfterDays\" IS NULL OR \"DeleteAfterDays\" >= 0");
+            });
+        });
+
+        modelBuilder.Entity<RetentionExecution>(entity =>
+        {
+            entity.ToTable("retention_executions");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ExecutedAt).IsRequired();
+            entity.Property(e => e.RecordsArchived).IsRequired();
+            entity.Property(e => e.RecordsDeleted).IsRequired();
+            entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(20).IsRequired();
+            entity.Property(e => e.ErrorMessage).HasColumnType("text");
+            entity.HasIndex(e => e.ExecutedAt);
+        });
+
+        modelBuilder.Entity<AuditLogArchive>(entity =>
+        {
+            entity.ToTable("audit_logs_archive");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.UserId).HasMaxLength(200);
+            entity.Property(e => e.Action).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.Resource).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.ResourceId).HasMaxLength(200);
+            entity.Property(e => e.IpAddress).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.UserAgent).HasMaxLength(1000).IsRequired();
+            entity.Property(e => e.Timestamp).IsRequired();
+            entity.Property(e => e.LegalHold).HasDefaultValue(false).IsRequired();
+            entity.Property(e => e.Details).HasColumnType("text").IsRequired();
+            entity.Property(e => e.ArchivedAt).IsRequired();
+            entity.HasIndex(e => e.Timestamp);
+            entity.HasIndex(e => e.LegalHold);
+        });
+
+        modelBuilder.Entity<EventArchive>(entity =>
+        {
+            entity.ToTable("events_archive");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.StreamId).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.EventType).HasMaxLength(300).IsRequired();
+            entity.Property(e => e.EventVersion).IsRequired();
+            entity.Property(e => e.EventTimestamp).IsRequired();
+            entity.Property(e => e.Payload).HasColumnType("text").IsRequired();
+            entity.Property(e => e.LegalHold).HasDefaultValue(false).IsRequired();
+            entity.Property(e => e.ArchivedAt).IsRequired();
+            entity.HasIndex(e => e.StreamId);
+            entity.HasIndex(e => e.EventTimestamp);
+            entity.HasIndex(e => e.LegalHold);
         });
 
         var systemCreatedAt = new DateTimeOffset(2026, 2, 13, 0, 0, 0, TimeSpan.Zero);
