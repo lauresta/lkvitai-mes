@@ -103,6 +103,7 @@ public class CycleCountCommandHandlersTests
             bus,
             MockCurrentUser("operator-1"),
             new HttpContextAccessor { HttpContext = BuildHttpContextWithRoles() },
+            Mock.Of<IBusinessTelemetryService>(),
             Mock.Of<ILogger<ApplyAdjustmentCommandHandler>>());
 
         var result = await handler.Handle(new ApplyAdjustmentCommand
@@ -132,6 +133,7 @@ public class CycleCountCommandHandlersTests
             new RecordingEventBus(),
             MockCurrentUser("operator-1"),
             new HttpContextAccessor { HttpContext = BuildHttpContextWithRoles() },
+            Mock.Of<IBusinessTelemetryService>(),
             Mock.Of<ILogger<ApplyAdjustmentCommandHandler>>());
 
         var result = await handler.Handle(new ApplyAdjustmentCommand
@@ -162,6 +164,7 @@ public class CycleCountCommandHandlersTests
             {
                 HttpContext = BuildHttpContextWithRoles(WarehouseRoles.WarehouseManager)
             },
+            Mock.Of<IBusinessTelemetryService>(),
             Mock.Of<ILogger<ApplyAdjustmentCommandHandler>>());
 
         var result = await handler.Handle(new ApplyAdjustmentCommand

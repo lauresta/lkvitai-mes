@@ -18,17 +18,20 @@ public sealed class CreateSalesOrderCommandHandler : IRequestHandler<CreateSales
     private readonly WarehouseDbContext _dbContext;
     private readonly IEventBus _eventBus;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IBusinessTelemetryService _businessTelemetryService;
     private readonly ILogger<CreateSalesOrderCommandHandler> _logger;
 
     public CreateSalesOrderCommandHandler(
         WarehouseDbContext dbContext,
         IEventBus eventBus,
         ICurrentUserService currentUserService,
+        IBusinessTelemetryService businessTelemetryService,
         ILogger<CreateSalesOrderCommandHandler> logger)
     {
         _dbContext = dbContext;
         _eventBus = eventBus;
         _currentUserService = currentUserService;
+        _businessTelemetryService = businessTelemetryService;
         _logger = logger;
     }
 
@@ -114,6 +117,12 @@ public sealed class CreateSalesOrderCommandHandler : IRequestHandler<CreateSales
             order.OrderNumber,
             _currentUserService.GetCurrentUserId(),
             order.TotalAmount);
+        _businessTelemetryService.TrackOrderCreated(
+            order.Id,
+            order.CustomerId,
+            order.TotalAmount,
+            order.CreatedAt,
+            "Sales");
 
         return Result.Ok();
     }

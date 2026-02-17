@@ -3,6 +3,7 @@ using LKvitai.MES.Application.EventVersioning;
 using LKvitai.MES.SharedKernel;
 using LKvitai.MES.Api.ErrorHandling;
 using MassTransit;
+using System.Diagnostics;
 
 namespace LKvitai.MES.Api.Services;
 
@@ -15,6 +16,7 @@ namespace LKvitai.MES.Api.Services;
 /// </summary>
 public class MassTransitEventBus : IEventBus
 {
+    private static readonly ActivitySource ActivitySource = new("Warehouse.MassTransit");
     private readonly IBus _bus;
     private readonly IEventSchemaVersionRegistry? _schemaVersionRegistry;
 
@@ -41,6 +43,12 @@ public class MassTransitEventBus : IEventBus
     private Task PublishWithCorrelationAsync<T>(T message, CancellationToken ct) where T : class
     {
         var correlationId = CorrelationContext.Current;
+        using var activity = ActivitySource.StartActivity("MassTransit.Publish", ActivityKind.Producer);
+        activity?.SetTag("messaging.system", "rabbitmq");
+        activity?.SetTag("messaging.destination_kind", "topic");
+        activity?.SetTag("messaging.message_type", typeof(T).Name);
+        activity?.SetTag("correlation.id", correlationId);
+
         if (string.IsNullOrWhiteSpace(correlationId))
         {
             return _bus.Publish(message, ct);

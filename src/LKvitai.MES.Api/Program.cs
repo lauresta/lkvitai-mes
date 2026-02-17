@@ -1,6 +1,7 @@
 using LKvitai.MES.Api.Configuration;
 using LKvitai.MES.Api.ErrorHandling;
 using LKvitai.MES.Api.Middleware;
+using LKvitai.MES.Api.Observability;
 using LKvitai.MES.Api.Security;
 using LKvitai.MES.Api.Services;
 using LKvitai.MES.Application.EventVersioning;
@@ -16,6 +17,7 @@ using LKvitai.MES.Projections;
 using Hangfire;
 using Hangfire.MemoryStorage;
 using Hangfire.PostgreSql;
+using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Serilog;
@@ -51,6 +53,7 @@ builder.Services.AddDataProtection();
 builder.Services.AddHttpClient("AgnumExportApi");
 builder.Services.AddHttpClient("FedExApi");
 builder.Services.AddHttpClient("OAuthProvider");
+builder.Services.Configure<ApmOptions>(builder.Configuration.GetSection(ApmOptions.SectionName));
 builder.Services.Configure<DevAuthOptions>(builder.Configuration.GetSection(DevAuthOptions.SectionName));
 builder.Services.Configure<OAuthOptions>(builder.Configuration.GetSection(OAuthOptions.SectionName));
 builder.Services.Configure<MfaOptions>(builder.Configuration.GetSection(MfaOptions.SectionName));
@@ -206,11 +209,25 @@ builder.Services.AddScoped<IPiiEncryptionService, PiiEncryptionService>();
 builder.Services.AddScoped<PiiReencryptionJob>();
 builder.Services.AddScoped<IGdprErasureService, GdprErasureService>();
 builder.Services.AddScoped<GdprErasureJob>();
+builder.Services.AddScoped<IBusinessTelemetryService, BusinessTelemetryService>();
 builder.Services.AddScoped<IBackupService, BackupService>();
 builder.Services.AddScoped<DailyBackupRecurringJob>();
 builder.Services.AddScoped<MonthlyRestoreTestRecurringJob>();
 builder.Services.AddScoped<IDisasterRecoveryService, DisasterRecoveryService>();
 builder.Services.AddScoped<QuarterlyDisasterRecoveryDrillJob>();
+
+var applicationInsightsConnectionString = builder.Configuration["ApplicationInsights:ConnectionString"];
+if (!string.IsNullOrWhiteSpace(applicationInsightsConnectionString))
+{
+    builder.Services.AddApplicationInsightsTelemetry(options =>
+    {
+        options.ConnectionString = applicationInsightsConnectionString;
+        options.EnableAdaptiveSampling = false;
+    });
+    builder.Services.AddSingleton<ITelemetryInitializer, ApplicationInsightsEnrichmentTelemetryInitializer>();
+    builder.Services.AddApplicationInsightsTelemetryProcessor<SuccessfulRequestSamplingTelemetryProcessor>();
+}
+
 builder.Services.AddSingleton<ICacheService>(sp =>
 {
     var logger = sp.GetRequiredService<ILogger<RedisCacheService>>();

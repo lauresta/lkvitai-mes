@@ -11,6 +11,7 @@
 - PRD-1643 Connection Pooling
 - PRD-1644 Async Operations
 - PRD-1645 Load Balancing
+- PRD-1646 APM Integration
 
 ### Partially Completed
 - None
@@ -18,6 +19,7 @@
 ### Blockers / TEST-GAP
 - `dotnet test src/LKvitai.MES.sln --no-build` fails due pre-existing unrelated tests in `src/LKvitai.MES.Infrastructure/Persistence/PiiEncryption.cs:63` (`System.ArgumentException: Destination is too short`).
 - PRD-1645 runtime load/failover validations requiring live docker stack + `k6` were not fully executed in this run.
+- PRD-1646 Azure portal/alerting/load-overhead validation requires a live Application Insights environment and was not fully executed in this run.
 
 ### Commands Executed
 - git status --short --branch
@@ -29,7 +31,8 @@
 - dotnet build src/LKvitai.MES.sln
 - dotnet test src/LKvitai.MES.sln --no-build
 - dotnet test src/tests/LKvitai.MES.Tests.Integration/LKvitai.MES.Tests.Integration.csproj --no-build --filter "FullyQualifiedName~LoadBalancingTests"
+- dotnet test src/tests/LKvitai.MES.Tests.Integration/LKvitai.MES.Tests.Integration.csproj --no-build --filter "FullyQualifiedName~APMIntegrationTests"
 - docker compose config
 
 ### Next Recommended TaskId
-- PRD-1646
+- PRD-1647

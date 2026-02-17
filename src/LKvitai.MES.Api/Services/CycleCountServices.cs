@@ -310,6 +310,7 @@ public sealed class ApplyAdjustmentCommandHandler : IRequestHandler<ApplyAdjustm
     private readonly IEventBus _eventBus;
     private readonly ICurrentUserService _currentUserService;
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IBusinessTelemetryService _businessTelemetryService;
     private readonly ILogger<ApplyAdjustmentCommandHandler> _logger;
 
     public ApplyAdjustmentCommandHandler(
@@ -317,12 +318,14 @@ public sealed class ApplyAdjustmentCommandHandler : IRequestHandler<ApplyAdjustm
         IEventBus eventBus,
         ICurrentUserService currentUserService,
         IHttpContextAccessor httpContextAccessor,
+        IBusinessTelemetryService businessTelemetryService,
         ILogger<ApplyAdjustmentCommandHandler> logger)
     {
         _dbContext = dbContext;
         _eventBus = eventBus;
         _currentUserService = currentUserService;
         _httpContextAccessor = httpContextAccessor;
+        _businessTelemetryService = businessTelemetryService;
         _logger = logger;
     }
 
@@ -388,12 +391,13 @@ public sealed class ApplyAdjustmentCommandHandler : IRequestHandler<ApplyAdjustm
                     impact);
             }
 
+            var adjustmentId = Guid.NewGuid();
             await _eventBus.PublishAsync(new StockAdjustedEvent
             {
                 AggregateId = cycleCount.Id,
                 UserId = currentUserId,
                 WarehouseId = DefaultWarehouseId,
-                AdjustmentId = Guid.NewGuid(),
+                AdjustmentId = adjustmentId,
                 ItemId = line.ItemId,
                 SKU = line.Item?.InternalSKU ?? string.Empty,
                 LocationId = line.LocationId,
@@ -403,6 +407,11 @@ public sealed class ApplyAdjustmentCommandHandler : IRequestHandler<ApplyAdjustm
                 Notes = line.Reason,
                 Timestamp = DateTime.UtcNow
             }, cancellationToken);
+            _businessTelemetryService.TrackStockAdjusted(
+                adjustmentId,
+                line.ItemId,
+                line.Delta,
+                "CYCLE_COUNT");
 
             line.Status = CycleCountLineStatus.Approved;
             approvedLines++;

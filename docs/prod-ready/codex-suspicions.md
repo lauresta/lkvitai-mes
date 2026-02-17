@@ -1077,3 +1077,23 @@
   Evidence: dotnet test src/LKvitai.MES.sln --no-build failed in pre-existing tests under src/LKvitai.MES.Infrastructure/Persistence/PiiEncryption.cs:63 (`System.ArgumentException: Destination is too short`).
   Impact: Full-solution regression suite is red from unrelated failures, so green baseline cannot be confirmed from this run.
   Proposed resolution: Stabilize/fix existing PII encryption tests, then rerun full solution tests.
+- Timestamp: 2026-02-17T23:07:15Z
+  TaskId: PRD-1646
+  Type: AMBIGUITY
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S9.md:903-907 permits Application Insights or New Relic, but repository already has OpenTelemetry pipeline and no New Relic baseline.
+  Impact: Full dual-provider integration would introduce additional dependency/config complexity beyond minimal-safe scope.
+  Proposed resolution: Implement Application Insights as opt-in provider alongside existing OpenTelemetry and keep provider choice configurable via connection string.
+
+- Timestamp: 2026-02-17T23:07:15Z
+  TaskId: PRD-1646
+  Type: TEST-GAP
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S9.md:984-1003 requires Azure portal verification, live exception endpoint checks, and k6 overhead measurement with APM enabled.
+  Impact: Runtime portal visibility, alert latency, and <5% overhead claims were not empirically validated in this CLI run.
+  Proposed resolution: Run API with valid Application Insights connection string, execute documented curl/k6 scenarios, and record portal traces and overhead metrics.
+
+- Timestamp: 2026-02-17T23:07:15Z
+  TaskId: PRD-1646
+  Type: TEST-GAP
+  Evidence: dotnet test src/LKvitai.MES.sln --no-build failed in pre-existing tests under src/LKvitai.MES.Infrastructure/Persistence/PiiEncryption.cs:63 (`System.ArgumentException: Destination is too short`).
+  Impact: Full-solution regression suite is red from unrelated failures, so green baseline cannot be confirmed from this run.
+  Proposed resolution: Stabilize/fix existing PII encryption tests, then rerun full solution tests.

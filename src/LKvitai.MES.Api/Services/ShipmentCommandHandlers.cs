@@ -24,6 +24,7 @@ public sealed class DispatchShipmentCommandHandler : IRequestHandler<DispatchShi
     private readonly ICarrierApiService _carrierApiService;
     private readonly IEventBus _eventBus;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IBusinessTelemetryService _businessTelemetryService;
     private readonly ILogger<DispatchShipmentCommandHandler> _logger;
 
     public DispatchShipmentCommandHandler(
@@ -31,12 +32,14 @@ public sealed class DispatchShipmentCommandHandler : IRequestHandler<DispatchShi
         ICarrierApiService carrierApiService,
         IEventBus eventBus,
         ICurrentUserService currentUserService,
+        IBusinessTelemetryService businessTelemetryService,
         ILogger<DispatchShipmentCommandHandler> logger)
     {
         _dbContext = dbContext;
         _carrierApiService = carrierApiService;
         _eventBus = eventBus;
         _currentUserService = currentUserService;
+        _businessTelemetryService = businessTelemetryService;
         _logger = logger;
     }
 
@@ -133,6 +136,12 @@ public sealed class DispatchShipmentCommandHandler : IRequestHandler<DispatchShi
             DispatchedBy = _currentUserService.GetCurrentUserId(),
             ManualTracking = manualTracking
         }, cancellationToken);
+        _businessTelemetryService.TrackShipmentDispatched(
+            shipment.Id,
+            outboundOrder.Id,
+            carrier,
+            dispatchAt,
+            shipment.PackedAt.HasValue ? dispatchAt - shipment.PackedAt.Value : null);
 
         return Result.Ok();
     }
