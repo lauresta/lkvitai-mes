@@ -1057,3 +1057,23 @@
   Evidence: dotnet test src/LKvitai.MES.sln failed in pre-existing tests under src/LKvitai.MES.Infrastructure/Persistence/PiiEncryption.cs:63 (Destination is too short).
   Impact: Full-solution regression remains red from unrelated tests.
   Proposed resolution: Stabilize existing PII encryption tests, then rerun full solution tests.
+- Timestamp: 2026-02-17T23:01:38Z
+  TaskId: PRD-1645
+  Type: AMBIGUITY
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S9.md:726, nginx.conf:9
+  Impact: Spec upstream examples use localhost ports (5001/5002/5003), while dockerized deployment routes through service DNS names (api-1:8080/api-2:8080/api-3:8080).
+  Proposed resolution: Use service DNS targets in containerized topology (current implementation) and treat localhost ports as non-container example values.
+
+- Timestamp: 2026-02-17T23:01:38Z
+  TaskId: PRD-1645
+  Type: TEST-GAP
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S9.md:809-833 requires live failover/recovery/load runs (`docker compose stop api-2`, `k6 run ... --vus 500 --duration 5m`) and nginx upstream log observation.
+  Impact: Full runtime SLO validation (±10% distribution, <30s failover, zero dropped requests during rolling update) was not executed end-to-end in this run.
+  Proposed resolution: Execute the documented docker+k6 workflow against a running stack and capture distribution/failover evidence in deployment docs.
+
+- Timestamp: 2026-02-17T23:01:38Z
+  TaskId: PRD-1645
+  Type: TEST-GAP
+  Evidence: dotnet test src/LKvitai.MES.sln --no-build failed in pre-existing tests under src/LKvitai.MES.Infrastructure/Persistence/PiiEncryption.cs:63 (`System.ArgumentException: Destination is too short`).
+  Impact: Full-solution regression suite is red from unrelated failures, so green baseline cannot be confirmed from this run.
+  Proposed resolution: Stabilize/fix existing PII encryption tests, then rerun full solution tests.

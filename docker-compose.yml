@@ -1,4 +1,17 @@
 services:
+  pg:
+    image: postgres:16
+    container_name: lkvitai-pg
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: lkvitai_warehouse_test
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+
   redis:
     image: redis:7.2
     container_name: lkvitai-redis
@@ -7,3 +20,82 @@ services:
       - "6379:6379"
     mem_limit: 2g
     command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "2gb", "--maxmemory-policy", "allkeys-lru"]
+
+  api-1:
+    build:
+      context: .
+      dockerfile: src/LKvitai.MES.Api/Dockerfile
+    container_name: lkvitai-api-1
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Test
+      ConnectionStrings__WarehouseDb: "Host=pg;Port=5432;Database=lkvitai_warehouse_test;Username=postgres;Password=postgres;Minimum Pool Size=10;Maximum Pool Size=100;Connection Lifetime=300;Connection Idle Lifetime=60;Timeout=30"
+      Caching__RedisConnectionString: "redis:6379,abortConnect=false,connectRetry=3,connectTimeout=1000,syncTimeout=1000"
+      SkipSchemaValidation: "true"
+    depends_on:
+      - pg
+      - redis
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  api-2:
+    build:
+      context: .
+      dockerfile: src/LKvitai.MES.Api/Dockerfile
+    container_name: lkvitai-api-2
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Test
+      ConnectionStrings__WarehouseDb: "Host=pg;Port=5432;Database=lkvitai_warehouse_test;Username=postgres;Password=postgres;Minimum Pool Size=10;Maximum Pool Size=100;Connection Lifetime=300;Connection Idle Lifetime=60;Timeout=30"
+      Caching__RedisConnectionString: "redis:6379,abortConnect=false,connectRetry=3,connectTimeout=1000,syncTimeout=1000"
+      SkipSchemaValidation: "true"
+    depends_on:
+      - pg
+      - redis
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  api-3:
+    build:
+      context: .
+      dockerfile: src/LKvitai.MES.Api/Dockerfile
+    container_name: lkvitai-api-3
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Test
+      ConnectionStrings__WarehouseDb: "Host=pg;Port=5432;Database=lkvitai_warehouse_test;Username=postgres;Password=postgres;Minimum Pool Size=10;Maximum Pool Size=100;Connection Lifetime=300;Connection Idle Lifetime=60;Timeout=30"
+      Caching__RedisConnectionString: "redis:6379,abortConnect=false,connectRetry=3,connectTimeout=1000,syncTimeout=1000"
+      SkipSchemaValidation: "true"
+    depends_on:
+      - pg
+      - redis
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  nginx:
+    image: nginx:1.27
+    container_name: lkvitai-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api-1
+      - api-2
+      - api-3
+
+volumes:
+  pg-data:
