@@ -13,6 +13,7 @@
 - PRD-1645 Load Balancing
 - PRD-1646 APM Integration
 - PRD-1647 Custom Dashboards
+- PRD-1648 Alert Escalation
 
 ### Partially Completed
 - None
@@ -22,6 +23,7 @@
 - PRD-1645 runtime load/failover validations requiring live docker stack + `k6` were not fully executed in this run.
 - PRD-1646 Azure portal/alerting/load-overhead validation requires a live Application Insights environment and was not fully executed in this run.
 - PRD-1647 dockerized Grafana runtime validation could not run because Docker daemon is unavailable in this session.
+- PRD-1648 live PagerDuty/Prometheus incident lifecycle validation was not executable in this environment.
 
 ### Commands Executed
 - git status --short --branch
@@ -35,8 +37,9 @@
 - dotnet test src/tests/LKvitai.MES.Tests.Integration/LKvitai.MES.Tests.Integration.csproj --no-build --filter "FullyQualifiedName~LoadBalancingTests"
 - dotnet test src/tests/LKvitai.MES.Tests.Integration/LKvitai.MES.Tests.Integration.csproj --no-build --filter "FullyQualifiedName~APMIntegrationTests"
 - dotnet test src/tests/LKvitai.MES.Tests.Integration/LKvitai.MES.Tests.Integration.csproj --no-build --filter "FullyQualifiedName~GrafanaDashboardTests"
+- dotnet test src/tests/LKvitai.MES.Tests.Integration/LKvitai.MES.Tests.Integration.csproj --no-build --filter "FullyQualifiedName~AlertEscalationTests"
 - docker compose config
 - docker compose up -d grafana
 
 ### Next Recommended TaskId
-- PRD-1648
+- PRD-1649

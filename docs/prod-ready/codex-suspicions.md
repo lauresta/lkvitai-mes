@@ -1117,3 +1117,23 @@
   Evidence: dotnet test src/LKvitai.MES.sln --no-build failed in pre-existing tests under src/LKvitai.MES.Infrastructure/Persistence/PiiEncryption.cs:63 (`System.ArgumentException: Destination is too short`).
   Impact: Full-solution regression suite is red from unrelated failures, so green baseline cannot be confirmed from this run.
   Proposed resolution: Stabilize/fix existing PII encryption tests, then rerun full solution tests.
+- Timestamp: 2026-02-17T23:13:54Z
+  TaskId: PRD-1648
+  Type: AMBIGUITY
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S9.md:1124 references PagerDuty API key in appsettings, while PagerDuty Events API formally uses routing/integration keys.
+  Impact: Misinterpreting key type can produce non-deliverable event submissions.
+  Proposed resolution: Treat configured `PagerDuty:ApiKey` as the Events API routing key and document this expectation in the escalation service/docs.
+
+- Timestamp: 2026-02-17T23:13:54Z
+  TaskId: PRD-1648
+  Type: TEST-GAP
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S9.md:1169-1184 requires live Prometheus->PagerDuty incident lifecycle verification; external PagerDuty/Prometheus endpoints were not connected in this run.
+  Impact: End-to-end incident creation/escalation/resolve behavior could not be validated against a real PagerDuty account.
+  Proposed resolution: Configure real PagerDuty routing key + Prometheus alert source and execute the documented trigger/resolve flow.
+
+- Timestamp: 2026-02-17T23:13:54Z
+  TaskId: PRD-1648
+  Type: TEST-GAP
+  Evidence: dotnet test src/LKvitai.MES.sln --no-build failed in pre-existing tests under src/LKvitai.MES.Infrastructure/Persistence/PiiEncryption.cs:63 (`System.ArgumentException: Destination is too short`).
+  Impact: Full-solution regression suite is red from unrelated failures, so green baseline cannot be confirmed from this run.
+  Proposed resolution: Stabilize/fix existing PII encryption tests, then rerun full solution tests.
