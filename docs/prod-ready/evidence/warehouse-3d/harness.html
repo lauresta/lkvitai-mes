@@ -65,7 +65,9 @@
       { code: "A5", status: "OVER_CAPACITY", isReserved: false, coordinates: { x: 12.8, y: 0, z: 0 }, dimensions: { width: 2.8, length: 2.8, height: 3.7 } }
     ];
 
-    const state = new URLSearchParams(window.location.search).get("state") || "normal";
+    const params = new URLSearchParams(window.location.search);
+    const state = params.get("state") || "normal";
+    const shouldFocus = params.get("focus") === "1";
     const caption = document.getElementById("caption");
 
     const bins = baseBins.map((x) => ({
@@ -96,6 +98,12 @@
     }
 
     window.warehouseVisualization.render("canvas", bins, null, selectedCode);
+
+    if (shouldFocus && selectedCode) {
+      setTimeout(() => {
+        window.warehouseVisualization.focusBin("canvas", selectedCode);
+      }, 220);
+    }
 
   </script>
 </body>
