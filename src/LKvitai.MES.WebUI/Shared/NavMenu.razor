@@ -88,12 +88,14 @@
         new("stock", "Stock", "bi-box-seam", [
             new("/available-stock", "bi-box-seam", "Available Stock"),
             new("/warehouse/stock/dashboard", "bi-grid", "Stock Dashboard"),
+            new("/warehouse/stock/adjustments", "bi-journal-minus", "Adjustments"),
             new("/reservations", "bi-clipboard-check", "Reservations"),
         ]),
 
         new("inbound", "Inbound", "bi-box-arrow-in-down", [
             new("/warehouse/inbound/shipments", "bi-box-arrow-in-down", "Inbound Shipments"),
             new("/warehouse/inbound/qc", "bi-clipboard2-pulse", "Receiving QC"),
+            new("/warehouse/putaway", "bi-box-arrow-up-right", "Putaway"),
         ]),
 
         new("outbound", "Outbound", "bi-box-arrow-right", [
@@ -102,6 +104,8 @@
             new("/warehouse/outbound/orders", "bi-box-arrow-right", "Outbound Orders"),
             new("/warehouse/outbound/dispatch", "bi-truck", "Dispatch"),
             new("/warehouse/waves", "bi-layers", "Wave Picking"),
+            new("/warehouse/picking/tasks", "bi-list-task", "Picking Tasks"),
+            new("/warehouse/labels", "bi-upc-scan", "Labels"),
             new("/warehouse/cross-dock", "bi-arrow-left-right", "Cross-Dock"),
             new("/warehouse/rmas", "bi-arrow-counterclockwise", "RMAs"),
         ]),

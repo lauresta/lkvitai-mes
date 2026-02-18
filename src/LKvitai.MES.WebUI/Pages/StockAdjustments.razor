@@ -1,0 +1,234 @@
+@page "/warehouse/stock/adjustments"
+@using LKvitai.MES.WebUI.Infrastructure
+@using LKvitai.MES.WebUI.Models
+@inject AdjustmentsClient AdjustmentsClient
+@inject MasterDataAdminClient MasterDataAdminClient
+@inject AdminConfigurationClient AdminConfigurationClient
+@inject ToastService ToastService
+
+<PageTitle>Stock Adjustments</PageTitle>
+
+<h1>Stock Adjustments</h1>
+
+@if (_apiError is not null)
+{
+    <ErrorBanner Message="@BuildErrorMessage(_apiError)" TraceId="@_apiError.TraceId" OnRetry="LoadHistoryAsync" OnDismiss="DismissError" />
+}
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <h5>Create Adjustment</h5>
+        <div class="row g-2">
+            <div class="col-md-3">
+                <label class="form-label">Item</label>
+                <select class="form-select" @bind="_itemId">
+                    <option value="0">Select item</option>
+                    @foreach (var item in _items)
+                    {
+                        <option value="@item.Id">@item.InternalSKU - @item.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Location</label>
+                <select class="form-select" @bind="_locationId">
+                    <option value="0">Select location</option>
+                    @foreach (var loc in _locations)
+                    {
+                        <option value="@loc.Id">@loc.Code</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Qty Delta</label>
+                <input type="number" step="0.01" class="form-control" @bind="_qtyDelta" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Reason</label>
+                <select class="form-select" @bind="_reasonCode">
+                    <option value="">Select reason</option>
+                    @foreach (var reason in _reasons)
+                    {
+                        <option value="@reason.Code">@reason.Code</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Lot Id (optional)</label>
+                <input type="number" min="1" class="form-control" @bind="_lotId" />
+            </div>
+            <div class="col-12">
+                <label class="form-label">Notes</label>
+                <input class="form-control" @bind="_notes" />
+            </div>
+        </div>
+        <div class="mt-3 d-flex gap-2">
+            <button class="btn btn-primary" @onclick="CreateAsync" disabled="@_isSubmitting">Create</button>
+            <button class="btn btn-outline-secondary" @onclick="LoadHistoryAsync" disabled="@_isLoading">Refresh History</button>
+        </div>
+        @if (!string.IsNullOrWhiteSpace(_warning))
+        {
+            <div class="alert alert-warning mt-3 mb-0">@_warning</div>
+        }
+    </div>
+</div>
+
+<div class="card shadow-sm position-relative">
+    <LoadingSpinner IsLoading="_isLoading" />
+    <div class="card-body">
+        <h5>Adjustment History</h5>
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>SKU</th>
+                        <th>Location</th>
+                        <th class="text-end">Qty Delta</th>
+                        <th>Reason</th>
+                        <th>User</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (_history.Count == 0)
+                    {
+                        <tr><td colspan="7">No adjustment records.</td></tr>
+                    }
+                    else
+                    {
+                        @foreach (var row in _history)
+                        {
+                            <tr>
+                                <td>@row.Timestamp.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                                <td>@row.ItemSku</td>
+                                <td>@row.LocationCode</td>
+                                <td class="text-end @(row.QtyDelta < 0 ? "text-danger" : "text-success")">@row.QtyDelta</td>
+                                <td>@row.ReasonCode</td>
+                                <td>@(row.UserName ?? row.UserId)</td>
+                                <td>@(row.Notes ?? "-")</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@code {
+    private readonly List<AdminItemDto> _items = [];
+    private readonly List<AdminLocationDto> _locations = [];
+    private readonly List<ReasonCodeDto> _reasons = [];
+    private readonly List<AdjustmentHistoryItemDto> _history = [];
+
+    private ApiException? _apiError;
+    private bool _isLoading;
+    private bool _isSubmitting;
+
+    private int _itemId;
+    private int _locationId;
+    private decimal _qtyDelta;
+    private string _reasonCode = string.Empty;
+    private int? _lotId;
+    private string? _notes;
+    private string? _warning;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadLookupsAsync();
+        await LoadHistoryAsync();
+    }
+
+    private async Task LoadLookupsAsync()
+    {
+        try
+        {
+            var items = await MasterDataAdminClient.GetItemsAsync(null, null, "Active", 1, 300);
+            _items.Clear();
+            _items.AddRange(items.Items.OrderBy(x => x.InternalSKU, StringComparer.OrdinalIgnoreCase));
+
+            var locations = await MasterDataAdminClient.GetLocationsAsync(null, "Active", true, 1, 500);
+            _locations.Clear();
+            _locations.AddRange(locations.Items.OrderBy(x => x.Code, StringComparer.OrdinalIgnoreCase));
+
+            var reasons = await AdminConfigurationClient.GetReasonCodesAsync("ADJUSTMENT", true);
+            _reasons.Clear();
+            _reasons.AddRange(reasons.OrderBy(x => x.Code, StringComparer.OrdinalIgnoreCase));
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+    }
+
+    private async Task LoadHistoryAsync()
+    {
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            var response = await AdjustmentsClient.GetHistoryAsync(null, null, null, null, null, null, 1, 200);
+            _history.Clear();
+            _history.AddRange(response.Items);
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task CreateAsync()
+    {
+        if (_itemId <= 0 || _locationId <= 0 || string.IsNullOrWhiteSpace(_reasonCode) || _qtyDelta == 0)
+        {
+            ToastService.ShowError("Item, location, qty delta and reason are required.");
+            return;
+        }
+
+        _isSubmitting = true;
+        _warning = null;
+
+        try
+        {
+            var response = await AdjustmentsClient.CreateAsync(new CreateAdjustmentRequestDto(
+                _itemId,
+                _locationId,
+                _qtyDelta,
+                _reasonCode.Trim(),
+                string.IsNullOrWhiteSpace(_notes) ? null : _notes.Trim(),
+                _lotId));
+
+            _warning = response.Warning;
+            ToastService.ShowSuccess($"Adjustment created: {response.AdjustmentId}");
+            _qtyDelta = 0;
+            _notes = null;
+            _lotId = null;
+            await LoadHistoryAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private void DismissError() => _apiError = null;
+
+    private static string BuildErrorMessage(ApiException ex)
+        => ex.UserMessage
+           ?? ex.ProblemDetails?.Detail
+           ?? ex.ProblemDetails?.Title
+           ?? "Adjustment request failed.";
+}

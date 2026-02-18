@@ -1,0 +1,251 @@
+@page "/warehouse/picking/tasks"
+@using LKvitai.MES.WebUI.Infrastructure
+@using LKvitai.MES.WebUI.Models
+@inject PickingTasksClient PickingTasksClient
+@inject MasterDataAdminClient MasterDataAdminClient
+@inject ToastService ToastService
+
+<PageTitle>Picking Tasks</PageTitle>
+
+<h1>Picking Tasks</h1>
+
+@if (_apiError is not null)
+{
+    <ErrorBanner Message="@BuildErrorMessage(_apiError)" TraceId="@_apiError.TraceId" OnRetry="NoopAsync" OnDismiss="DismissError" />
+}
+
+<div class="row g-3">
+    <div class="col-12 col-xl-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h5>Create Task</h5>
+                <div class="row g-2">
+                    <div class="col-md-6">
+                        <label class="form-label">Order Id</label>
+                        <input class="form-control" @bind="_createOrderId" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Item</label>
+                        <select class="form-select" @bind="_createItemId">
+                            <option value="0">Select item</option>
+                            @foreach (var item in _items)
+                            {
+                                <option value="@item.Id">@item.InternalSKU - @item.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Qty</label>
+                        <input type="number" step="0.01" min="0.01" class="form-control" @bind="_createQty" />
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label">Assign To (optional)</label>
+                        <input class="form-control" @bind="_createAssignedTo" />
+                    </div>
+                </div>
+                <button class="btn btn-primary mt-3" @onclick="CreateTaskAsync" disabled="@_isSubmitting">Create</button>
+
+                @if (_createdTask is not null)
+                {
+                    <div class="alert alert-success mt-3 mb-0">
+                        Task created: <strong>@_createdTask.TaskId</strong>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-xl-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h5>Locations + Complete Task</h5>
+                <div class="row g-2">
+                    <div class="col-md-8">
+                        <label class="form-label">Task Id</label>
+                        <input class="form-control" @bind="_taskIdInput" placeholder="guid" />
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button class="btn btn-outline-secondary w-100" @onclick="LoadSuggestionsAsync">Load Locations</button>
+                    </div>
+                </div>
+
+                @if (_suggestions.Count > 0)
+                {
+                    <div class="table-responsive mt-3">
+                        <table class="table table-sm align-middle">
+                            <thead>
+                                <tr><th>Location</th><th class="text-end">Available</th><th>Lot</th></tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var row in _suggestions)
+                                {
+                                    <tr>
+                                        <td>@row.LocationCode</td>
+                                        <td class="text-end">@row.AvailableQty</td>
+                                        <td>@(row.LotNumber ?? "-")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+
+                <div class="row g-2 mt-1">
+                    <div class="col-md-4">
+                        <label class="form-label">From Location Id</label>
+                        <input type="number" min="1" class="form-control" @bind="_completeFromLocationId" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Picked Qty</label>
+                        <input type="number" step="0.01" min="0.01" class="form-control" @bind="_completeQty" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Lot Id (optional)</label>
+                        <input type="number" min="1" class="form-control" @bind="_completeLotId" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Scanned Barcode</label>
+                        <input class="form-control" @bind="_completeBarcode" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Scanned Location Barcode</label>
+                        <input class="form-control" @bind="_completeLocationBarcode" />
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Notes</label>
+                        <input class="form-control" @bind="_completeNotes" />
+                    </div>
+                </div>
+                <button class="btn btn-success mt-3" @onclick="CompleteTaskAsync" disabled="@_isSubmitting">Complete Task</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private readonly List<AdminItemDto> _items = [];
+    private readonly List<PickLocationSuggestionDto> _suggestions = [];
+    private ApiException? _apiError;
+    private bool _isSubmitting;
+
+    private string _createOrderId = string.Empty;
+    private int _createItemId;
+    private decimal _createQty = 1m;
+    private string? _createAssignedTo;
+    private PickTaskCreatedResponseDto? _createdTask;
+
+    private string _taskIdInput = string.Empty;
+    private int _completeFromLocationId;
+    private decimal _completeQty = 1m;
+    private int? _completeLotId;
+    private string? _completeBarcode;
+    private string? _completeLocationBarcode;
+    private string? _completeNotes;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var items = await MasterDataAdminClient.GetItemsAsync(null, null, "Active", 1, 300);
+            _items.AddRange(items.Items.OrderBy(x => x.InternalSKU, StringComparer.OrdinalIgnoreCase));
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+    }
+
+    private async Task CreateTaskAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_createOrderId) || _createItemId <= 0 || _createQty <= 0m)
+        {
+            ToastService.ShowError("Order Id, item and qty are required.");
+            return;
+        }
+
+        _isSubmitting = true;
+        try
+        {
+            _createdTask = await PickingTasksClient.CreateTaskAsync(new CreatePickTaskRequestDto(
+                _createOrderId.Trim(),
+                _createItemId,
+                _createQty,
+                string.IsNullOrWhiteSpace(_createAssignedTo) ? null : _createAssignedTo.Trim()));
+
+            _taskIdInput = _createdTask.TaskId.ToString();
+            ToastService.ShowSuccess($"Pick task created: {_createdTask.TaskId}");
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private async Task LoadSuggestionsAsync()
+    {
+        if (!Guid.TryParse(_taskIdInput, out var taskId))
+        {
+            ToastService.ShowError("Valid task id is required.");
+            return;
+        }
+
+        try
+        {
+            var response = await PickingTasksClient.GetLocationSuggestionsAsync(taskId);
+            _suggestions.Clear();
+            _suggestions.AddRange(response.Locations);
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+    }
+
+    private async Task CompleteTaskAsync()
+    {
+        if (!Guid.TryParse(_taskIdInput, out var taskId) || _completeFromLocationId <= 0 || _completeQty <= 0m)
+        {
+            ToastService.ShowError("Task id, from location id and picked qty are required.");
+            return;
+        }
+
+        _isSubmitting = true;
+        try
+        {
+            await PickingTasksClient.CompleteTaskAsync(taskId, new CompletePickTaskRequestDto(
+                _completeFromLocationId,
+                _completeQty,
+                _completeLotId,
+                string.IsNullOrWhiteSpace(_completeBarcode) ? null : _completeBarcode.Trim(),
+                string.IsNullOrWhiteSpace(_completeLocationBarcode) ? null : _completeLocationBarcode.Trim(),
+                string.IsNullOrWhiteSpace(_completeNotes) ? null : _completeNotes.Trim()));
+
+            ToastService.ShowSuccess("Pick task completed.");
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private void DismissError() => _apiError = null;
+    private Task NoopAsync() => Task.CompletedTask;
+
+    private static string BuildErrorMessage(ApiException ex)
+        => ex.UserMessage
+           ?? ex.ProblemDetails?.Detail
+           ?? ex.ProblemDetails?.Title
+           ?? "Picking task request failed.";
+}
