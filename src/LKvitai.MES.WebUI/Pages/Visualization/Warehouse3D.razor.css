@@ -111,8 +111,13 @@
 }
 
 .viz-2d-bin-selected {
-    stroke: #ffd166;
-    stroke-width: 1.6;
+    stroke: #22d3ee;
+    stroke-width: 1.8;
+}
+
+.viz-2d-bin-reserved-overlay {
+    pointer-events: none;
+    opacity: 0.58;
 }
 
 .viz-details {
@@ -165,11 +170,61 @@
     color: #343a40;
 }
 
+.viz-legend-title {
+    margin-top: 0.1rem;
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: #495057;
+}
+
+.viz-legend-divider {
+    border-top: 1px solid rgba(33, 37, 41, 0.14);
+    margin: 0.1rem 0;
+}
+
 .viz-legend-color {
     width: 12px;
     height: 12px;
     border: 1px solid rgba(0, 0, 0, 0.3);
     border-radius: 2px;
+}
+
+.viz-status-empty {
+    background: #d1d5db;
+}
+
+.viz-status-low {
+    background: #fde68a;
+}
+
+.viz-status-medium {
+    background: #fbbf24;
+}
+
+.viz-status-full {
+    background: #f97316;
+}
+
+.viz-status-over {
+    background: #dc2626;
+}
+
+.viz-status-reserved {
+    background:
+        repeating-linear-gradient(
+            135deg,
+            rgba(67, 56, 202, 0.18) 0,
+            rgba(67, 56, 202, 0.18) 3px,
+            rgba(67, 56, 202, 0.85) 3px,
+            rgba(67, 56, 202, 0.85) 6px);
+}
+
+.viz-selected-hint {
+    background: #22d3ee;
+    border-color: rgba(8, 145, 178, 0.8);
+    border-radius: 999px;
 }
 
 .viz-details .list-group-item {

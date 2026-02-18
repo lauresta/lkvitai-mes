@@ -63,6 +63,7 @@
                 <option value="ALL">All Statuses</option>
                 <option value="EMPTY">EMPTY</option>
                 <option value="LOW">LOW</option>
+                <option value="MEDIUM">MEDIUM</option>
                 <option value="FULL">FULL</option>
                 <option value="RESERVED">RESERVED</option>
                 <option value="OVER_CAPACITY">OVER_CAPACITY</option>
@@ -119,6 +120,15 @@
                         <svg class="viz-2d-canvas"
                              viewBox="@CurrentSvgViewBox"
                              preserveAspectRatio="xMidYMid meet">
+                            <defs>
+                                <pattern id="viz-reserved-pattern-2d"
+                                         patternUnits="userSpaceOnUse"
+                                         width="4"
+                                         height="4"
+                                         patternTransform="rotate(45)">
+                                    <line x1="0" y1="0" x2="0" y2="4" stroke="#4338CA" stroke-width="1.2" />
+                                </pattern>
+                            </defs>
                             @foreach (var zone in _model.Zones)
                             {
                                 <rect x="@ToSvgX(zone.Bounds.X1)"
@@ -139,16 +149,30 @@
                                       height="6"
                                       fill="@bin.Color"
                                       @onclick="@(() => SelectBinAsync(bin.Code))" />
+                                @if (bin.IsReserved)
+                                {
+                                    <rect class="viz-2d-bin-reserved-overlay"
+                                          x="@ToSvgX(bin.Coordinates.X)"
+                                          y="@ToSvgY(bin.Coordinates.Y)"
+                                          width="6"
+                                          height="6"
+                                          fill="url(#viz-reserved-pattern-2d)" />
+                                }
                             }
                         </svg>
                     </div>
                 }
                 <div class="viz-legend">
-                    <div class="viz-legend-item"><span class="viz-legend-color" style="background:#808080;"></span>Empty</div>
-                    <div class="viz-legend-item"><span class="viz-legend-color" style="background:#FFFF00;"></span>Low</div>
-                    <div class="viz-legend-item"><span class="viz-legend-color" style="background:#FFA500;"></span>Full</div>
-                    <div class="viz-legend-item"><span class="viz-legend-color" style="background:#0000FF;"></span>Reserved</div>
-                    <div class="viz-legend-item"><span class="viz-legend-color" style="background:#FF0000;"></span>Over capacity</div>
+                    <div class="viz-legend-title">Status</div>
+                    <div class="viz-legend-item"><span class="viz-legend-color viz-status-empty"></span>Empty</div>
+                    <div class="viz-legend-item"><span class="viz-legend-color viz-status-low"></span>Low</div>
+                    <div class="viz-legend-item"><span class="viz-legend-color viz-status-medium"></span>Medium</div>
+                    <div class="viz-legend-item"><span class="viz-legend-color viz-status-full"></span>Full</div>
+                    <div class="viz-legend-item"><span class="viz-legend-color viz-status-over"></span>Over capacity</div>
+                    <div class="viz-legend-item"><span class="viz-legend-color viz-status-reserved"></span>Reserved (pattern)</div>
+                    <div class="viz-legend-divider"></div>
+                    <div class="viz-legend-title">Indicator</div>
+                    <div class="viz-legend-item"><span class="viz-legend-color viz-selected-hint"></span>Selected (pin + ring + pulse)</div>
                 </div>
             </div>
             <div class="viz-details">
@@ -261,7 +285,7 @@
         }
 
         _renderRequested = false;
-        await JS.InvokeVoidAsync("warehouseVisualization.render", CanvasId, GetFilteredBins(), _selfReference);
+        await JS.InvokeVoidAsync("warehouseVisualization.render", CanvasId, GetFilteredBins(), _selfReference, _selectedBin?.Code);
     }
 
     [JSInvokable]
@@ -504,12 +528,22 @@
 
     private bool BinMatchesFilters(VisualizationBinDto bin)
     {
+        if (string.Equals(_statusFilter, "RESERVED", StringComparison.OrdinalIgnoreCase))
+        {
+            return bin.IsReserved && ZoneMatchesFilter(bin);
+        }
+
         if (!string.Equals(_statusFilter, "ALL", StringComparison.OrdinalIgnoreCase) &&
             !string.Equals(bin.Status, _statusFilter, StringComparison.OrdinalIgnoreCase))
         {
             return false;
         }
 
+        return ZoneMatchesFilter(bin);
+    }
+
+    private bool ZoneMatchesFilter(VisualizationBinDto bin)
+    {
         if (!string.Equals(_zoneFilter, "ALL", StringComparison.OrdinalIgnoreCase))
         {
             var zone = ResolveZoneType(bin);

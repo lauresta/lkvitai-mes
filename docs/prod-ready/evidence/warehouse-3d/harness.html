@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Warehouse 3D Overlay Evidence</title>
+  <style>
+    body {
+      margin: 0;
+      background: #eef2f7;
+      font-family: Arial, sans-serif;
+      display: grid;
+      place-items: center;
+      min-height: 100vh;
+    }
+
+    #wrap {
+      width: 1200px;
+      max-width: calc(100vw - 24px);
+      margin: 12px;
+      border: 1px solid #d7dce4;
+      border-radius: 12px;
+      background: #fff;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+    }
+
+    #caption {
+      padding: 10px 14px;
+      font-size: 14px;
+      color: #1f2937;
+      border-bottom: 1px solid #e5e7eb;
+      background: #f8fafc;
+    }
+
+    #canvas {
+      width: 100%;
+      height: 700px;
+    }
+  </style>
+</head>
+<body>
+  <div id="wrap">
+    <div id="caption"></div>
+    <div id="canvas"></div>
+  </div>
+
+  <script src="/src/LKvitai.MES.WebUI/wwwroot/js/vendor/three.min.js"></script>
+  <script src="/src/LKvitai.MES.WebUI/wwwroot/js/vendor/OrbitControls.js"></script>
+  <script src="/src/LKvitai.MES.WebUI/wwwroot/js/warehouseVisualization.js"></script>
+  <script>
+    const statusColors = {
+      EMPTY: "#D1D5DB",
+      LOW: "#FDE68A",
+      MEDIUM: "#FBBF24",
+      FULL: "#F97316",
+      OVER_CAPACITY: "#DC2626"
+    };
+
+    const baseBins = [
+      { code: "A1", status: "EMPTY", isReserved: false, coordinates: { x: 0, y: 0, z: 0 }, dimensions: { width: 2.8, length: 2.8, height: 2.2 } },
+      { code: "A2", status: "LOW", isReserved: false, coordinates: { x: 3.2, y: 0, z: 0 }, dimensions: { width: 2.8, length: 2.8, height: 2.5 } },
+      { code: "A3", status: "MEDIUM", isReserved: false, coordinates: { x: 6.4, y: 0, z: 0 }, dimensions: { width: 2.8, length: 2.8, height: 2.9 } },
+      { code: "A4", status: "FULL", isReserved: false, coordinates: { x: 9.6, y: 0, z: 0 }, dimensions: { width: 2.8, length: 2.8, height: 3.3 } },
+      { code: "A5", status: "OVER_CAPACITY", isReserved: false, coordinates: { x: 12.8, y: 0, z: 0 }, dimensions: { width: 2.8, length: 2.8, height: 3.7 } }
+    ];
+
+    const state = new URLSearchParams(window.location.search).get("state") || "normal";
+    const caption = document.getElementById("caption");
+
+    const bins = baseBins.map((x) => ({
+      locationId: Number(x.code.replace(/\D/g, "")) || 1,
+      code: x.code,
+      coordinates: x.coordinates,
+      dimensions: x.dimensions,
+      capacity: { weight: 1000, volume: 1 },
+      utilizationPercent: 50,
+      status: x.status,
+      color: statusColors[x.status],
+      isReserved: false,
+      handlingUnits: []
+    }));
+
+    let selectedCode = null;
+
+    if (state === "reserved") {
+      bins.find((x) => x.code === "A3").isReserved = true;
+      bins.find((x) => x.code === "A4").isReserved = true;
+      caption.textContent = "Reserved pattern overlay evidence (capacity fill remains visible).";
+    } else if (state === "selected") {
+      bins.find((x) => x.code === "A3").isReserved = true;
+      selectedCode = "A3";
+      caption.textContent = "Selected overlay evidence (cyan pin + rotating ring + pulse).";
+    } else {
+      caption.textContent = "Normal state evidence (always-on borders and new status palette).";
+    }
+
+    window.warehouseVisualization.render("canvas", bins, null, selectedCode);
+
+  </script>
+</body>
+</html>

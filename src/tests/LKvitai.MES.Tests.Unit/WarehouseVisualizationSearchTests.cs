@@ -101,6 +101,7 @@ public class WarehouseVisualizationSearchTests
                 25m,
                 "LOW",
                 "#FFFF00",
+                false,
                 []))
             .ToList();
     }

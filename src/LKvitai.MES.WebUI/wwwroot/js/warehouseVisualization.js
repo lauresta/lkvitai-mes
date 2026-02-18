@@ -2,6 +2,23 @@
     const contexts = {};
     const debugEnabled = true;
 
+    const VISUAL_CONFIG = {
+        fallbackColor: 0x999999,
+        borderColor: 0x1f2937,
+        borderOpacity: 0.48,
+        selectionColor: 0x22d3ee,
+        selectionPulseMin: 0.7,
+        selectionPulseMax: 1.0,
+        selectionPulseMs: 1500,
+        selectionRingRotationSeconds: 8,
+        selectionRingFloorOffset: 0.04,
+        pinHeightFactor: 0.2,
+        pinMinOffset: 0.2,
+        pinScaleFactor: 0.95,
+        reservedPatternColor: "#4338CA",
+        reservedOverlayOpacity: 0.42
+    };
+
     function log(message, payload) {
         if (!debugEnabled) {
             return;
@@ -17,12 +34,12 @@
 
     function toHexColor(value) {
         if (!value || typeof value !== "string") {
-            return 0x999999;
+            return VISUAL_CONFIG.fallbackColor;
         }
 
         const normalized = value.trim().replace("#", "");
         const parsed = Number.parseInt(normalized, 16);
-        return Number.isNaN(parsed) ? 0x999999 : parsed;
+        return Number.isNaN(parsed) ? VISUAL_CONFIG.fallbackColor : parsed;
     }
 
     function clamp(value, min, max) {
@@ -50,6 +67,71 @@
         return minDistance;
     }
 
+    function createReservedHatchTexture() {
+        const canvas = document.createElement("canvas");
+        canvas.width = 64;
+        canvas.height = 64;
+        const ctx = canvas.getContext("2d");
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = VISUAL_CONFIG.reservedPatternColor;
+        ctx.lineWidth = 6;
+        ctx.globalAlpha = 1;
+
+        for (let offset = -canvas.width; offset <= canvas.width * 2; offset += 16) {
+            ctx.beginPath();
+            ctx.moveTo(offset, 0);
+            ctx.lineTo(offset - canvas.width, canvas.height);
+            ctx.stroke();
+        }
+
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.wrapS = THREE.RepeatWrapping;
+        texture.wrapT = THREE.RepeatWrapping;
+        texture.repeat.set(0.65, 0.65);
+        texture.needsUpdate = true;
+        return texture;
+    }
+
+    function createPinTexture() {
+        const canvas = document.createElement("canvas");
+        canvas.width = 96;
+        canvas.height = 128;
+        const ctx = canvas.getContext("2d");
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const centerX = canvas.width / 2;
+        const centerY = 46;
+        const radius = 30;
+
+        ctx.fillStyle = "#22D3EE";
+        ctx.strokeStyle = "#0891B2";
+        ctx.lineWidth = 6;
+
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(centerX - 16, centerY + 22);
+        ctx.lineTo(centerX, canvas.height - 10);
+        ctx.lineTo(centerX + 16, centerY + 22);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = "#ECFEFF";
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, 10, 0, Math.PI * 2);
+        ctx.fill();
+
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+        return texture;
+    }
+
     function dispose(containerId) {
         const context = contexts[containerId];
         if (!context) {
@@ -57,9 +139,22 @@
             return;
         }
 
+        if (context.stop) {
+            context.stop();
+        }
+
         window.removeEventListener("resize", context.onResize);
         context.renderer.domElement.removeEventListener("click", context.onClick);
         context.renderer.domElement.removeEventListener("wheel", context.onWheel);
+
+        if (context.reservedTexture) {
+            context.reservedTexture.dispose();
+        }
+
+        if (context.pinTexture) {
+            context.pinTexture.dispose();
+        }
+
         context.controls.dispose();
         context.renderer.dispose();
         context.container.innerHTML = "";
@@ -67,7 +162,7 @@
         log("dispose: completed", { containerId });
     }
 
-    function render(containerId, bins, dotNetRef) {
+    function render(containerId, bins, dotNetRef, initialSelectedCode) {
         try {
             dispose(containerId);
 
@@ -137,13 +232,11 @@
                 width: Number(bin.dimensions?.width || 0),
                 length: Number(bin.dimensions?.length || 0),
                 height: Number(bin.dimensions?.height || 0),
-                capacityVolume: Number(bin.capacity?.volume || 0),
-                capacityWeight: Number(bin.capacity?.weight || 0)
+                capacityVolume: Number(bin.capacity?.volume || 0)
             }));
 
             const minDistance = computeMinDistance(normalizedBins);
 
-            // Base footprint is limited by nearest-neighbor distance to avoid overlap.
             const overlapSafeFootprint = Number.isFinite(minDistance)
                 ? clamp(minDistance * 0.45, 0.28, 1.4)
                 : 0.9;
@@ -186,7 +279,6 @@
                     };
                 }
 
-                // Fallback for locations where dimensions are still not provided.
                 const footprint = baseFootprint;
                 const volumeRatio = maxVolume > 0 && capacityVolume > 0
                     ? clamp(capacityVolume / maxVolume, 0.2, 1)
@@ -255,8 +347,67 @@
             const mouse = new THREE.Vector2();
             const meshesByCode = {};
             const interactiveMeshes = [];
-            const defaultBorderColor = 0x1f2937;
-            const selectedBorderColor = 0xffffff;
+
+            const reservedTexture = createReservedHatchTexture();
+            const reservedOverlayMaterial = new THREE.MeshBasicMaterial({
+                map: reservedTexture,
+                transparent: true,
+                opacity: VISUAL_CONFIG.reservedOverlayOpacity,
+                depthWrite: false,
+                side: THREE.DoubleSide,
+                toneMapped: false,
+                polygonOffset: true,
+                polygonOffsetFactor: -1,
+                polygonOffsetUnits: -1
+            });
+
+            const pinTexture = createPinTexture();
+            const selectionPin = new THREE.Sprite(new THREE.SpriteMaterial({
+                map: pinTexture,
+                transparent: true,
+                depthWrite: false,
+                toneMapped: false
+            }));
+            selectionPin.renderOrder = 6;
+            selectionPin.visible = false;
+            scene.add(selectionPin);
+
+            const selectionRingGroup = new THREE.Group();
+            selectionRingGroup.visible = false;
+            selectionRingGroup.position.set(0, minY + VISUAL_CONFIG.selectionRingFloorOffset, 0);
+
+            const selectionRingOuterMaterial = new THREE.MeshBasicMaterial({
+                color: VISUAL_CONFIG.selectionColor,
+                transparent: true,
+                opacity: 0.75,
+                depthWrite: false,
+                toneMapped: false,
+                side: THREE.DoubleSide
+            });
+
+            const selectionRingInnerMaterial = new THREE.MeshBasicMaterial({
+                color: VISUAL_CONFIG.selectionColor,
+                transparent: true,
+                opacity: 0.45,
+                depthWrite: false,
+                toneMapped: false,
+                side: THREE.DoubleSide
+            });
+
+            const selectionRingOuter = new THREE.Mesh(
+                new THREE.RingGeometry(0.82, 1.0, 80),
+                selectionRingOuterMaterial);
+            selectionRingOuter.rotation.x = -Math.PI / 2;
+            selectionRingOuter.renderOrder = 5;
+            selectionRingGroup.add(selectionRingOuter);
+
+            const selectionRingInner = new THREE.Mesh(
+                new THREE.RingGeometry(0.56, 0.68, 80),
+                selectionRingInnerMaterial);
+            selectionRingInner.rotation.x = -Math.PI / 2;
+            selectionRingInner.renderOrder = 5;
+            selectionRingGroup.add(selectionRingInner);
+            scene.add(selectionRingGroup);
 
             resolvedBins.forEach(({ bin, width, depth, height, centerX: meshX, centerY: meshY, centerZ: meshZ, hasExplicitDimensions, capacityVolume }) => {
                 const geometry = new THREE.BoxGeometry(width, height, depth);
@@ -269,22 +420,45 @@
                     polygonOffsetUnits: 1
                 });
                 const cube = new THREE.Mesh(geometry, material);
-                const borderGeometry = new THREE.EdgesGeometry(geometry);
-                const borderMaterial = new THREE.LineBasicMaterial({
-                    color: defaultBorderColor,
+
+                const baseBorderMaterial = new THREE.LineBasicMaterial({
+                    color: VISUAL_CONFIG.borderColor,
                     transparent: true,
-                    opacity: 0.9,
+                    opacity: VISUAL_CONFIG.borderOpacity,
                     depthWrite: false,
                     toneMapped: false
                 });
-                const border = new THREE.LineSegments(borderGeometry, borderMaterial);
-                border.renderOrder = 2;
-                cube.add(border);
+                const borderGeometry = new THREE.EdgesGeometry(geometry);
+                const baseBorder = new THREE.LineSegments(borderGeometry, baseBorderMaterial);
+                baseBorder.renderOrder = 2;
+                cube.add(baseBorder);
+
+                const selectionBorderMaterial = new THREE.LineBasicMaterial({
+                    color: VISUAL_CONFIG.selectionColor,
+                    transparent: true,
+                    opacity: VISUAL_CONFIG.selectionPulseMin,
+                    depthWrite: false,
+                    toneMapped: false
+                });
+                const selectionBorder = new THREE.LineSegments(borderGeometry, selectionBorderMaterial);
+                selectionBorder.renderOrder = 4;
+                selectionBorder.visible = false;
+                cube.add(selectionBorder);
+
+                if (bin.isReserved) {
+                    const reservedOverlay = new THREE.Mesh(geometry, reservedOverlayMaterial);
+                    reservedOverlay.renderOrder = 3;
+                    reservedOverlay.scale.set(1.003, 1.003, 1.003);
+                    cube.add(reservedOverlay);
+                }
+
                 cube.position.set(meshX, meshY, meshZ);
                 cube.userData = {
                     code: bin.code,
                     baseColor: toHexColor(bin.color),
-                    borderMaterial,
+                    baseBorderMaterial,
+                    selectionBorder,
+                    selectionBorderMaterial,
                     width,
                     depth,
                     height,
@@ -311,25 +485,49 @@
             });
 
             let selectedCode = null;
+            let selectedMesh = null;
             let cameraFlightHandle = null;
+
+            function updateSelectionAnchors(mesh) {
+                const topY = mesh.position.y + (mesh.userData.height / 2);
+                const pinOffset = Math.max(VISUAL_CONFIG.pinMinOffset, mesh.userData.height * VISUAL_CONFIG.pinHeightFactor);
+                const pinScale = clamp(
+                    Math.max(mesh.userData.width, mesh.userData.depth, mesh.userData.height) * VISUAL_CONFIG.pinScaleFactor,
+                    0.65,
+                    2.4);
+
+                selectionPin.position.set(mesh.position.x, topY + pinOffset, mesh.position.z);
+                selectionPin.scale.set(pinScale * 0.7, pinScale, 1);
+
+                const footprintRadius = Math.max(mesh.userData.width, mesh.userData.depth) * 0.68;
+                const ringScale = clamp(footprintRadius, 0.55, 3.5);
+                selectionRingGroup.position.set(
+                    mesh.position.x,
+                    minY + VISUAL_CONFIG.selectionRingFloorOffset,
+                    mesh.position.z);
+                selectionRingGroup.scale.set(ringScale, ringScale, ringScale);
+            }
+
             function applySelection(code) {
                 selectedCode = code || null;
-                interactiveMeshes.forEach((mesh) => {
-                    const material = mesh.material;
-                    if (!material || !material.color) {
-                        return;
-                    }
+                selectedMesh = selectedCode ? meshesByCode[selectedCode] || null : null;
 
-                    if (selectedCode && mesh.userData.code === selectedCode) {
-                        material.color.setHex(0xffd700);
-                        material.emissive.setHex(0x222200);
-                        mesh.userData.borderMaterial?.color?.setHex(selectedBorderColor);
-                    } else {
-                        material.color.setHex(mesh.userData.baseColor);
-                        material.emissive.setHex(0x000000);
-                        mesh.userData.borderMaterial?.color?.setHex(defaultBorderColor);
+                interactiveMeshes.forEach((mesh) => {
+                    const isSelected = !!selectedMesh && mesh === selectedMesh;
+                    if (mesh.userData.selectionBorder) {
+                        mesh.userData.selectionBorder.visible = isSelected;
                     }
                 });
+
+                if (!selectedMesh) {
+                    selectionPin.visible = false;
+                    selectionRingGroup.visible = false;
+                    return;
+                }
+
+                selectionPin.visible = true;
+                selectionRingGroup.visible = true;
+                updateSelectionAnchors(selectedMesh);
             }
 
             function focusBin(code) {
@@ -448,9 +646,30 @@
             renderer.domElement.addEventListener("wheel", onWheel, { passive: true });
             window.addEventListener("resize", onResize);
 
+            if (initialSelectedCode) {
+                applySelection(initialSelectedCode);
+            }
+
+            const ringRotationSpeed = (2 * Math.PI) / VISUAL_CONFIG.selectionRingRotationSeconds;
             let animationFrameHandle = null;
             function animate() {
                 animationFrameHandle = window.requestAnimationFrame(animate);
+
+                if (selectedMesh) {
+                    updateSelectionAnchors(selectedMesh);
+
+                    const pulsePhase = (performance.now() % VISUAL_CONFIG.selectionPulseMs) / VISUAL_CONFIG.selectionPulseMs;
+                    const pulse = 0.5 - (Math.cos(pulsePhase * Math.PI * 2) / 2);
+                    const pulseOpacity = VISUAL_CONFIG.selectionPulseMin +
+                        ((VISUAL_CONFIG.selectionPulseMax - VISUAL_CONFIG.selectionPulseMin) * pulse);
+
+                    selectedMesh.userData.selectionBorderMaterial.opacity = pulseOpacity;
+                    selectionRingOuterMaterial.opacity = 0.48 + (0.38 * pulse);
+                    selectionRingInnerMaterial.opacity = 0.3 + (0.2 * (1 - pulse));
+
+                    selectionRingGroup.rotation.y += ringRotationSpeed / 60;
+                }
+
                 controls.update();
                 renderer.render(scene, camera);
             }
@@ -468,6 +687,8 @@
                 onWheel,
                 focusBin,
                 applySelection,
+                reservedTexture,
+                pinTexture,
                 stop: () => {
                     if (animationFrameHandle) {
                         window.cancelAnimationFrame(animationFrameHandle);
@@ -499,11 +720,6 @@
         render,
         focusBin,
         dispose: (containerId) => {
-            const context = contexts[containerId];
-            if (context && context.stop) {
-                context.stop();
-            }
-
             log("dispose(api): requested", { containerId });
             dispose(containerId);
         }

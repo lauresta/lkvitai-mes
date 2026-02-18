@@ -23,6 +23,7 @@ public sealed record VisualizationBinDto(
     decimal UtilizationPercent,
     string Status,
     string Color,
+    bool IsReserved,
     IReadOnlyList<VisualizationHandlingUnitDto> HandlingUnits);
 
 public sealed record VisualizationCoordinateDto(

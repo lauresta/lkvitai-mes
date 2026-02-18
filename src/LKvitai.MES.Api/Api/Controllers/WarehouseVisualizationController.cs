@@ -20,6 +20,25 @@ namespace LKvitai.MES.Api.Controllers;
 [Route("api/warehouse/v1")]
 public sealed class WarehouseVisualizationController : ControllerBase
 {
+    private const decimal LowUpperBoundUtilization = 0.45m;
+    private const decimal MediumUpperBoundUtilization = 0.80m;
+
+    private const string EmptyStatus = "EMPTY";
+    private const string LowStatus = "LOW";
+    private const string MediumStatus = "MEDIUM";
+    private const string FullStatus = "FULL";
+    private const string OverCapacityStatus = "OVER_CAPACITY";
+
+    private static readonly IReadOnlyDictionary<string, string> StatusPalette =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            [EmptyStatus] = "#D1D5DB",
+            [LowStatus] = "#FDE68A",
+            [MediumStatus] = "#FBBF24",
+            [FullStatus] = "#F97316",
+            [OverCapacityStatus] = "#DC2626"
+        };
+
     private static readonly Meter Meter = new("LKvitai.MES.Visualization3D");
     private static readonly Counter<long> ApiCallsTotal =
         Meter.CreateCounter<long>("visualization_3d_api_calls_total");
@@ -263,7 +282,8 @@ public sealed class WarehouseVisualizationController : ControllerBase
             var utilization = ComputeUtilization(location, onHandQty);
             var utilizationPercent = decimal.Round(utilization * 100m, 2, MidpointRounding.AwayFromZero);
             var handlingUnitsForLocation = husByLocation.GetValueOrDefault(location.Code, new List<Domain.Aggregates.HandlingUnit>());
-            var (status, color) = ResolveStatusAndColor(hasHardLock, handlingUnitsForLocation.Count, utilization);
+            var status = ResolveCapacityStatus(handlingUnitsForLocation.Count, utilization);
+            var color = ResolveStatusColor(status);
 
             return new VisualizationBinResponse(
                 location.Id,
@@ -282,6 +302,7 @@ public sealed class WarehouseVisualizationController : ControllerBase
                 utilizationPercent,
                 status,
                 color,
+                hasHardLock,
                 handlingUnitsForLocation.Select(x =>
                 {
                     var firstLine = x.Lines.FirstOrDefault();
@@ -370,32 +391,36 @@ public sealed class WarehouseVisualizationController : ControllerBase
         return onHandQty > 0m ? 0.6m : 0m;
     }
 
-    private static (string Status, string Color) ResolveStatusAndColor(
-        bool hasHardLock,
+    private static string ResolveCapacityStatus(
         int huCount,
         decimal utilization)
     {
-        if (hasHardLock)
-        {
-            return ("RESERVED", "#0000FF");
-        }
-
         if (huCount == 0)
         {
-            return ("EMPTY", "#808080");
+            return EmptyStatus;
         }
 
         if (utilization > 1m)
         {
-            return ("OVER_CAPACITY", "#FF0000");
+            return OverCapacityStatus;
         }
 
-        if (utilization > 0.80m)
+        if (utilization > MediumUpperBoundUtilization)
         {
-            return ("FULL", "#FFA500");
+            return FullStatus;
         }
 
-        return ("LOW", "#FFFF00");
+        if (utilization > LowUpperBoundUtilization)
+        {
+            return MediumStatus;
+        }
+
+        return LowStatus;
+    }
+
+    private static string ResolveStatusColor(string status)
+    {
+        return StatusPalette.GetValueOrDefault(status, StatusPalette[LowStatus]);
     }
 
     private static LayoutResponse MapLayout(WarehouseLayout layout)
@@ -495,6 +520,7 @@ public sealed class WarehouseVisualizationController : ControllerBase
         decimal UtilizationPercent,
         string Status,
         string Color,
+        bool IsReserved,
         IReadOnlyList<VisualizationHandlingUnitResponse> HandlingUnits);
 
     public sealed record VisualizationCoordinateResponse(
