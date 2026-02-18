@@ -10,7 +10,6 @@ using Microsoft.Extensions.Logging;
 using Npgsql;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
-using System.Text.Json;
 
 namespace LKvitai.MES.Infrastructure.Projections;
 
@@ -38,15 +37,6 @@ public class ProjectionRebuildService : IProjectionRebuildService
     private readonly ILogger<ProjectionRebuildService> _logger;
     private readonly IDistributedLock _distributedLock;
     private readonly string? _warehouseDbConnectionString;
-
-    /// <summary>
-    /// JSON serializer options matching Marten's default (camelCase property names).
-    /// Shadow table data must be serialized identically to Marten's live data.
-    /// </summary>
-    private static readonly JsonSerializerOptions CamelCaseOptions = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-    };
 
     // ── Table name constants ────────────────────────────────────────────
     private const string LocationBalanceTable = "mt_doc_locationbalanceview";
@@ -173,13 +163,13 @@ public class ProjectionRebuildService : IProjectionRebuildService
             // Step 2: Replay events to shadow table in GLOBAL sequence order (V-5 Rule A)
             var eventsProcessed = projectionName switch
             {
-                "LocationBalance" => await ReplayLocationBalanceEventsAsync(shadowTable, cancellationToken),
-                "AvailableStock" => await ReplayAvailableStockEventsAsync(shadowTable, cancellationToken),
-                "OutboundOrderSummary" => await ReplayOutboundOrderSummaryAsync(shadowTable, cancellationToken),
-                "ShipmentSummary" => await ReplayShipmentSummaryAsync(shadowTable, cancellationToken),
-                "DispatchHistory" => await ReplayDispatchHistoryAsync(shadowTable, cancellationToken),
-                "OnHandValue" => await ReplayOnHandValueAsync(shadowTable, cancellationToken),
-                "InboundShipmentSummary" => await ReplayInboundShipmentSummaryAsync(shadowTable, cancellationToken),
+                "LocationBalance" => await ReplayLocationBalanceEventsAsync(shadowTable, writeConnection, cancellationToken),
+                "AvailableStock" => await ReplayAvailableStockEventsAsync(shadowTable, writeConnection, cancellationToken),
+                "OutboundOrderSummary" => await ReplayOutboundOrderSummaryAsync(shadowTable, writeConnection, cancellationToken),
+                "ShipmentSummary" => await ReplayShipmentSummaryAsync(shadowTable, writeConnection, cancellationToken),
+                "DispatchHistory" => await ReplayDispatchHistoryAsync(shadowTable, writeConnection, cancellationToken),
+                "OnHandValue" => await ReplayOnHandValueAsync(shadowTable, writeConnection, cancellationToken),
+                "InboundShipmentSummary" => await ReplayInboundShipmentSummaryAsync(shadowTable, writeConnection, cancellationToken),
                 _ => 0
             };
 
@@ -275,6 +265,22 @@ public class ProjectionRebuildService : IProjectionRebuildService
         }
         catch (Exception ex)
         {
+            if (TryGetRebuildConflict(ex, out var postgresException))
+            {
+                _logger.LogWarning(
+                    postgresException,
+                    "Projection rebuild for {ProjectionName} failed due to wrapped rebuild conflict ({SqlState})",
+                    projectionName,
+                    postgresException.SqlState);
+                stopwatch.Stop();
+                RebuildDurationSeconds.Record(
+                    stopwatch.Elapsed.TotalSeconds,
+                    new KeyValuePair<string, object?>("projection", projectionName));
+                return Result<ProjectionRebuildReport>.Fail(
+                    DomainErrorCodes.IdempotencyInProgress,
+                    "Projection rebuild conflict detected. Retry the operation.");
+            }
+
             _logger.LogError(ex, "Error rebuilding projection {ProjectionName}", projectionName);
             stopwatch.Stop();
             RebuildDurationSeconds.Record(
@@ -282,7 +288,7 @@ public class ProjectionRebuildService : IProjectionRebuildService
                 new KeyValuePair<string, object?>("projection", projectionName));
             return Result<ProjectionRebuildReport>.Fail(
                 DomainErrorCodes.InternalError,
-                "Rebuild failed due to an internal error.");
+                $"Rebuild failed: [{ex.GetType().Name}] {ex.Message}");
         }
         finally
         {
@@ -307,6 +313,21 @@ public class ProjectionRebuildService : IProjectionRebuildService
             or PostgresErrorCodes.DeadlockDetected
             or PostgresErrorCodes.DuplicateTable
             or PostgresErrorCodes.ObjectInUse;
+    }
+
+    private static bool TryGetRebuildConflict(Exception ex, out PostgresException postgresException)
+    {
+        for (var current = ex; current is not null; current = current.InnerException)
+        {
+            if (current is PostgresException pg && IsRebuildConflict(pg))
+            {
+                postgresException = pg;
+                return true;
+            }
+        }
+
+        postgresException = null!;
+        return false;
     }
 
     public async Task<ProjectionDiffReport> GenerateDiffReportAsync(
@@ -541,6 +562,7 @@ public class ProjectionRebuildService : IProjectionRebuildService
 
     private async Task<int> ReplayInboundShipmentSummaryAsync(
         string shadowTable,
+        NpgsqlConnection writeConnection,
         CancellationToken ct)
     {
         _logger.LogInformation(
@@ -621,7 +643,7 @@ public class ProjectionRebuildService : IProjectionRebuildService
             }
         }
 
-        await InsertDocumentsToShadowAsync(shadowTable, views.Values, ct);
+        await InsertDocumentsToShadowAsync(shadowTable, views.Values, writeConnection, ct);
 
         _logger.LogInformation(
             "InboundShipmentSummary: replayed {EventCount} events → {RecordCount} records",
@@ -637,14 +659,12 @@ public class ProjectionRebuildService : IProjectionRebuildService
 
     private async Task<int> ReplayOutboundOrderSummaryAsync(
         string shadowTable,
+        NpgsqlConnection writeConnection,
         CancellationToken ct)
     {
         _logger.LogInformation("Rebuilding outbound order summary into {ShadowTable}", shadowTable);
 
-        await using var session = _documentStore.LightweightSession();
-        var conn = (NpgsqlConnection)session.Connection!;
-
-        await using var cmd = conn.CreateCommand();
+        await using var cmd = writeConnection.CreateCommand();
         cmd.CommandText = $@"
             INSERT INTO {shadowTable}
             (
@@ -683,14 +703,12 @@ public class ProjectionRebuildService : IProjectionRebuildService
 
     private async Task<int> ReplayShipmentSummaryAsync(
         string shadowTable,
+        NpgsqlConnection writeConnection,
         CancellationToken ct)
     {
         _logger.LogInformation("Rebuilding shipment summary into {ShadowTable}", shadowTable);
 
-        await using var session = _documentStore.LightweightSession();
-        var conn = (NpgsqlConnection)session.Connection!;
-
-        await using var cmd = conn.CreateCommand();
+        await using var cmd = writeConnection.CreateCommand();
         cmd.CommandText = $@"
             INSERT INTO {shadowTable}
             (
@@ -731,14 +749,12 @@ public class ProjectionRebuildService : IProjectionRebuildService
 
     private async Task<int> ReplayDispatchHistoryAsync(
         string shadowTable,
+        NpgsqlConnection writeConnection,
         CancellationToken ct)
     {
         _logger.LogInformation("Rebuilding dispatch history into {ShadowTable}", shadowTable);
 
-        await using var session = _documentStore.LightweightSession();
-        var conn = (NpgsqlConnection)session.Connection!;
-
-        await using var cmd = conn.CreateCommand();
+        await using var cmd = writeConnection.CreateCommand();
         cmd.CommandText = $@"
             INSERT INTO {shadowTable}
             (
@@ -757,6 +773,7 @@ public class ProjectionRebuildService : IProjectionRebuildService
 
     private async Task<int> ReplayOnHandValueAsync(
         string shadowTable,
+        NpgsqlConnection writeConnection,
         CancellationToken ct)
     {
         _logger.LogInformation("Rebuilding on-hand value projection into {ShadowTable}", shadowTable);
@@ -820,11 +837,7 @@ public class ProjectionRebuildService : IProjectionRebuildService
                 g => g.Max(x => DateTime.SpecifyKind(x.LastUpdated, DateTimeKind.Utc)),
                 StringComparer.OrdinalIgnoreCase);
 
-        await using var writeSession = _documentStore.LightweightSession();
-        var conn = (NpgsqlConnection)(writeSession.Connection
-            ?? throw new InvalidOperationException("Marten write session connection is unavailable."));
-
-        await using var itemsCmd = conn.CreateCommand();
+        await using var itemsCmd = writeConnection.CreateCommand();
         itemsCmd.CommandText = @"
             SELECT i.""Id"", i.""InternalSKU"", i.""Name"", i.""CategoryId"", c.""Name""
             FROM public.items i
@@ -867,7 +880,7 @@ public class ProjectionRebuildService : IProjectionRebuildService
                 stockUpdatedAtByItemId,
                 stockUpdatedAtBySku);
 
-            await using var insertCmd = conn.CreateCommand();
+            await using var insertCmd = writeConnection.CreateCommand();
             insertCmd.CommandText = $@"
                 INSERT INTO {shadowTable}
                 (
@@ -936,7 +949,7 @@ public class ProjectionRebuildService : IProjectionRebuildService
     // ═══════════════════════════════════════════════════════════════════
 
     private async Task<int> ReplayLocationBalanceEventsAsync(
-        string shadowTable, CancellationToken ct)
+        string shadowTable, NpgsqlConnection writeConnection, CancellationToken ct)
     {
         _logger.LogInformation("Replaying LocationBalance events in global sequence order (V-5 Rule A)");
 
@@ -1004,7 +1017,7 @@ public class ProjectionRebuildService : IProjectionRebuildService
         }
 
         // Insert into shadow table
-        await InsertDocumentsToShadowAsync(shadowTable, balances.Values, ct);
+        await InsertDocumentsToShadowAsync(shadowTable, balances.Values, writeConnection, ct);
 
         _logger.LogInformation(
             "LocationBalance: replayed {EventCount} events → {RecordCount} records",
@@ -1031,7 +1044,7 @@ public class ProjectionRebuildService : IProjectionRebuildService
     ///   - ReservationCancelledEvent → decreases HardLockedQty
     /// </summary>
     private async Task<int> ReplayAvailableStockEventsAsync(
-        string shadowTable, CancellationToken ct)
+        string shadowTable, NpgsqlConnection writeConnection, CancellationToken ct)
     {
         _logger.LogInformation(
             "Replaying AvailableStock events in GLOBAL sequence order (V-5 Rule A)");
@@ -1100,7 +1113,7 @@ public class ProjectionRebuildService : IProjectionRebuildService
         }
 
         // Insert into shadow table
-        await InsertDocumentsToShadowAsync(shadowTable, views.Values, ct);
+        await InsertDocumentsToShadowAsync(shadowTable, views.Values, writeConnection, ct);
 
         _logger.LogInformation(
             "AvailableStock: replayed {EventCount} events → {RecordCount} records",
@@ -1206,11 +1219,14 @@ public class ProjectionRebuildService : IProjectionRebuildService
     /// to match Marten's default serializer format.
     /// </summary>
     private async Task InsertDocumentsToShadowAsync<T>(
-        string shadowTable, IEnumerable<T> documents, CancellationToken ct)
+        string shadowTable, IEnumerable<T> documents, NpgsqlConnection conn, CancellationToken ct)
         where T : class
     {
-        await using var insertSession = _documentStore.LightweightSession();
-        var conn = (NpgsqlConnection)insertSession.Connection!;
+        // [MED-01] Use Marten's own serializer so shadow data is byte-identical
+        // to production data. This avoids checksum mismatches caused by
+        // different DateTime/decimal formatting between System.Text.Json defaults
+        // and Marten's SystemTextJsonSerializer configuration.
+        var martenSerializer = _documentStore.Options.Serializer();
 
         foreach (var doc in documents)
         {
@@ -1218,13 +1234,14 @@ public class ProjectionRebuildService : IProjectionRebuildService
             var idProp = typeof(T).GetProperty("Id");
             var id = idProp?.GetValue(doc)?.ToString() ?? string.Empty;
 
+            var json = martenSerializer.ToJson(doc);
+
             await using var cmd = conn.CreateCommand();
             cmd.CommandText = $@"
                 INSERT INTO {shadowTable} (id, data)
                 VALUES (@id, @data::jsonb)";
             cmd.Parameters.AddWithValue("id", id);
-            // [MED-01] Use camelCase serialization to match Marten's default serializer
-            cmd.Parameters.AddWithValue("data", JsonSerializer.Serialize(doc, CamelCaseOptions));
+            cmd.Parameters.AddWithValue("data", json);
             await cmd.ExecuteNonQueryAsync(ct);
         }
     }

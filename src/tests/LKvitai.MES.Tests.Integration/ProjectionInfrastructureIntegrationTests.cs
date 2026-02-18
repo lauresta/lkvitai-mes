@@ -199,9 +199,17 @@ public class ProjectionInfrastructureIntegrationTests : IAsyncLifetime
         await SeedLocationBalanceEventAsync();
         await BootstrapProjectionTablesAsync();
 
+        var config = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["ConnectionStrings:WarehouseDb"] = _postgres!.GetConnectionString()
+            })
+            .Build();
         var sut = new ProjectionRebuildService(
             _store!,
-            NullLogger<ProjectionRebuildService>.Instance);
+            NullLogger<ProjectionRebuildService>.Instance,
+            CreateLockService(),
+            config);
 
         var result = await sut.RebuildProjectionAsync("LocationBalance", verify: true);
         if (result.IsSuccess)
@@ -212,7 +220,9 @@ public class ProjectionInfrastructureIntegrationTests : IAsyncLifetime
             return;
         }
 
-        result.ErrorCode.Should().Be(DomainErrorCodes.IdempotencyInProgress);
+        result.ErrorCode.Should().Be(
+            DomainErrorCodes.IdempotencyInProgress,
+            because: $"unexpected error: {result.Error}");
         result.Error.Should().NotContain("42P01");
     }
 
