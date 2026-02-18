@@ -10,7 +10,6 @@ using Microsoft.Extensions.Logging;
 using Npgsql;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
-using System.Text.Json;
 
 namespace LKvitai.MES.Infrastructure.Projections;
 
@@ -38,15 +37,6 @@ public class ProjectionRebuildService : IProjectionRebuildService
     private readonly ILogger<ProjectionRebuildService> _logger;
     private readonly IDistributedLock _distributedLock;
     private readonly string? _warehouseDbConnectionString;
-
-    /// <summary>
-    /// JSON serializer options matching Marten's default (camelCase property names).
-    /// Shadow table data must be serialized identically to Marten's live data.
-    /// </summary>
-    private static readonly JsonSerializerOptions CamelCaseOptions = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-    };
 
     // ── Table name constants ────────────────────────────────────────────
     private const string LocationBalanceTable = "mt_doc_locationbalanceview";
@@ -1228,23 +1218,30 @@ public class ProjectionRebuildService : IProjectionRebuildService
     /// Inserts documents into the shadow table using camelCase JSON serialization
     /// to match Marten's default serializer format.
     /// </summary>
-    private static async Task InsertDocumentsToShadowAsync<T>(
+    private async Task InsertDocumentsToShadowAsync<T>(
         string shadowTable, IEnumerable<T> documents, NpgsqlConnection conn, CancellationToken ct)
         where T : class
     {
+        // [MED-01] Use Marten's own serializer so shadow data is byte-identical
+        // to production data. This avoids checksum mismatches caused by
+        // different DateTime/decimal formatting between System.Text.Json defaults
+        // and Marten's SystemTextJsonSerializer configuration.
+        var martenSerializer = _documentStore.Options.Serializer();
+
         foreach (var doc in documents)
         {
             // Get the Id property via reflection (all view models have string Id)
             var idProp = typeof(T).GetProperty("Id");
             var id = idProp?.GetValue(doc)?.ToString() ?? string.Empty;
 
+            var json = martenSerializer.ToJson(doc);
+
             await using var cmd = conn.CreateCommand();
             cmd.CommandText = $@"
                 INSERT INTO {shadowTable} (id, data)
                 VALUES (@id, @data::jsonb)";
             cmd.Parameters.AddWithValue("id", id);
-            // [MED-01] Use camelCase serialization to match Marten's default serializer
-            cmd.Parameters.AddWithValue("data", JsonSerializer.Serialize(doc, CamelCaseOptions));
+            cmd.Parameters.AddWithValue("data", json);
             await cmd.ExecuteNonQueryAsync(ct);
         }
     }
