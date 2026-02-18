@@ -59,11 +59,13 @@ builder.Services.Configure<PagerDutyOptions>(builder.Configuration.GetSection(Pa
 builder.Services.Configure<AlertEscalationOptions>(builder.Configuration.GetSection(AlertEscalationOptions.SectionName));
 builder.Services.Configure<SlaMonitoringOptions>(builder.Configuration.GetSection(SlaMonitoringOptions.SectionName));
 builder.Services.Configure<CapacityPlanningOptions>(builder.Configuration.GetSection(CapacityPlanningOptions.SectionName));
+builder.Services.Configure<FeatureFlagsOptions>(builder.Configuration.GetSection(FeatureFlagsOptions.SectionName));
 builder.Services.Configure<DevAuthOptions>(builder.Configuration.GetSection(DevAuthOptions.SectionName));
 builder.Services.Configure<OAuthOptions>(builder.Configuration.GetSection(OAuthOptions.SectionName));
 builder.Services.Configure<MfaOptions>(builder.Configuration.GetSection(MfaOptions.SectionName));
 builder.Services.Configure<LabelPrintingConfig>(builder.Configuration.GetSection("LabelPrinting"));
 builder.Services.AddSingleton<IDevAuthService, DevAuthService>();
+builder.Services.AddSingleton<IFeatureFlagService, FeatureFlagService>();
 builder.Services.AddSingleton<ConnectionPoolMonitoringInterceptor>();
 builder.Services.AddSingleton<IAdminUserStore, InMemoryAdminUserStore>();
 builder.Services.AddSingleton<IOAuthRoleMapper, OAuthRoleMapper>();

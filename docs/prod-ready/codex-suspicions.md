@@ -1289,3 +1289,16 @@
   Evidence: dotnet build src/LKvitai.MES.sln and dotnet test src/LKvitai.MES.sln fail in pre-existing src/tests/LKvitai.MES.Tests.Unit/AdvancedWarehouseStoreTests.cs:16 (CS0023).
   Impact: Full-solution validation baseline remains red from unrelated unit-test compile failure.
   Proposed resolution: Fix AdvancedWarehouseStoreTests compile error and rerun full solution build/test.
+- Timestamp: 2026-02-18T07:09:44Z
+  TaskId: PRD-1658
+  Type: AMBIGUITY
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S9.md:2251-2258 requires LaunchDarkly/Unleash-managed targeting and rollout UI, while repository/local validation baseline has no provisioned external feature-flag service credentials.
+  Impact: Runtime dashboard-managed targeting and kill-switch propagation cannot be fully demonstrated end-to-end from this environment.
+  Proposed resolution: Keep current deterministic in-app evaluation as safe default and wire LaunchDarkly/Unleash provider + environment credentials in staging/production for live rollout governance.
+
+- Timestamp: 2026-02-18T07:09:44Z
+  TaskId: PRD-1658
+  Type: TEST-GAP
+  Evidence: dotnet build src/LKvitai.MES.sln and dotnet test src/LKvitai.MES.sln fail in pre-existing src/tests/LKvitai.MES.Tests.Unit/AdvancedWarehouseStoreTests.cs:16 (CS0023).
+  Impact: Full-solution validation baseline remains red from unrelated unit-test compile failure.
+  Proposed resolution: Fix AdvancedWarehouseStoreTests compile error and rerun full solution build/test.

@@ -23,18 +23,19 @@
 - PRD-1655 Rollback Procedures
 - PRD-1656 Blue-Green Deployment
 - PRD-1657 Canary Releases
+- PRD-1658 Feature Flags
 
 ### Partially Completed
 - None
 
 ### Blockers / TEST-GAP
 - `dotnet build src/LKvitai.MES.sln` and `dotnet test src/LKvitai.MES.sln` fail on pre-existing compile error at `src/tests/LKvitai.MES.Tests.Unit/AdvancedWarehouseStoreTests.cs:16` (CS0023).
-- PRD-1657 live canary traffic and auto-rollback validation were not executed end-to-end in this environment.
+- PRD-1658 LaunchDarkly/Unleash dashboard-driven rollout and kill-switch propagation were not validated end-to-end in this environment.
 
 ### Commands Executed
-- dotnet test src/tests/LKvitai.MES.Tests.Integration/LKvitai.MES.Tests.Integration.csproj --filter "FullyQualifiedName~CanaryDeploymentTests"
+- dotnet test src/tests/LKvitai.MES.Tests.Integration/LKvitai.MES.Tests.Integration.csproj --filter "FullyQualifiedName~FeatureFlagTests"
 - dotnet build src/LKvitai.MES.sln
 - dotnet test src/LKvitai.MES.sln
 
 ### Next Recommended TaskId
-- PRD-1658
+- PRD-1659
