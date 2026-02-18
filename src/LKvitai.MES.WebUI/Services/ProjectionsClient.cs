@@ -26,12 +26,12 @@ public class ProjectionsClient
 
     public Task<RebuildResultDto> RebuildAsync(string projectionName)
     {
-        return PostAsync<RebuildResultDto>("/api/projections/rebuild", new { projectionName });
+        return PostAsync<RebuildResultDto>("/api/warehouse/v1/admin/projections/rebuild", new { projectionName });
     }
 
     public Task<VerifyResultDto> VerifyAsync(string projectionName)
     {
-        return PostAsync<VerifyResultDto>("/api/projections/verify", new { projectionName });
+        return PostAsync<VerifyResultDto>("/api/warehouse/v1/admin/projections/verify", new { projectionName });
     }
 
     public async Task<IReadOnlyList<ProjectionLagStatusDto>> GetProjectionLagAsync()

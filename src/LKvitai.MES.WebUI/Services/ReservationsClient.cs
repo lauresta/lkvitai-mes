@@ -25,7 +25,7 @@ public class ReservationsClient
 
     public Task<PagedResult<ReservationDto>> GetReservationsAsync(string? status, int page = 1, int pageSize = 50)
     {
-        var url = $"/api/reservations?page={page}&pageSize={pageSize}";
+        var url = $"/api/warehouse/v1/reservations?page={page}&pageSize={pageSize}";
         if (!string.IsNullOrWhiteSpace(status))
         {
             url += $"&status={Uri.EscapeDataString(status)}";
@@ -39,7 +39,7 @@ public class ReservationsClient
 
     public Task<StartPickingResponseDto> StartPickingAsync(Guid reservationId)
     {
-        return PostAsync<StartPickingResponseDto>($"/api/reservations/{reservationId}/start-picking", new { reservationId });
+        return PostAsync<StartPickingResponseDto>($"/api/warehouse/v1/reservations/{reservationId}/start-picking", new { reservationId });
     }
 
     public Task<PickResponseDto> PickAsync(Guid reservationId, PickRequestDto requestDto)
@@ -48,7 +48,7 @@ public class ReservationsClient
             ? requestDto with { ReservationId = reservationId }
             : requestDto;
 
-        return PostAsync<PickResponseDto>($"/api/reservations/{reservationId}/pick", payload);
+        return PostAsync<PickResponseDto>($"/api/warehouse/v1/reservations/{reservationId}/pick", payload);
     }
 
     private async Task<T> GetAsync<T>(string relativeUrl)
