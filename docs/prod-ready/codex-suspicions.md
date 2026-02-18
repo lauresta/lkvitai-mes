@@ -1177,3 +1177,23 @@
   Evidence: dotnet test src/LKvitai.MES.sln failed in pre-existing tests under src/LKvitai.MES.Infrastructure/Persistence/PiiEncryption.cs:63 (`System.ArgumentException: Destination is too short`).
   Impact: Full-solution regression suite is red from unrelated failures, so green baseline cannot be confirmed from this run.
   Proposed resolution: Stabilize/fix existing PII encryption tests, then rerun full solution tests.
+- Timestamp: 2026-02-18T00:00:00Z
+  TaskId: PRD-1651
+  Type: AMBIGUITY
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S9.md:1425-1449
+  Impact: Spec requires end-to-end workflow coverage with isolated test databases, but repository has no dedicated always-on E2E environment or seeded runtime stack contract for all workflows in this task.
+  Proposed resolution: Implement deterministic data-driven workflow E2E suite in a dedicated test project with thread-isolated database aliases and CI execution; extend to full live-stack E2E when environment contract is defined.
+
+- Timestamp: 2026-02-18T00:00:00Z
+  TaskId: PRD-1651
+  Type: TEST-GAP
+  Evidence: dotnet build src/LKvitai.MES.sln and dotnet test src/LKvitai.MES.sln fail in pre-existing src/tests/LKvitai.MES.Tests.Unit/AdvancedWarehouseStoreTests.cs:16 (CS0023)
+  Impact: Full-solution validation remains red due unrelated baseline unit-test compile failure, so green whole-solution baseline cannot be confirmed in this run.
+  Proposed resolution: Fix baseline unit test compile issue in AdvancedWarehouseStoreTests and rerun full solution build/test.
+
+- Timestamp: 2026-02-18T00:00:00Z
+  TaskId: PRD-1651
+  Type: TEST-GAP
+  Evidence: reportgenerator command failed with CommandNotFoundException in local environment.
+  Impact: Coverage HTML report generation step from task validation could not be executed locally.
+  Proposed resolution: Install ReportGenerator tool in CI/dev environment and rerun opencover report generation.

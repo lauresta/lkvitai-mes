@@ -1,0 +1,12 @@
+[
+  { "id": "INB-001", "description": "Standard pallet receipt", "steps": ["CreateShipment", "Receive", "QC", "Putaway"], "quantity": 10 },
+  { "id": "INB-002", "description": "Batch-controlled item receipt", "steps": ["CreateShipment", "Receive", "QC", "Putaway"], "quantity": 25 },
+  { "id": "INB-003", "description": "Serial-tracked item receipt", "steps": ["CreateShipment", "Receive", "QC", "Putaway"], "quantity": 5 },
+  { "id": "INB-004", "description": "Damaged item rejection path", "steps": ["CreateShipment", "Receive", "QC", "Putaway"], "quantity": 4 },
+  { "id": "INB-005", "description": "Overshipment handling", "steps": ["CreateShipment", "Receive", "QC", "Putaway"], "quantity": 30 },
+  { "id": "INB-006", "description": "Cold-chain SKU intake", "steps": ["CreateShipment", "Receive", "QC", "Putaway"], "quantity": 12 },
+  { "id": "INB-007", "description": "Hazmat compliant intake", "steps": ["CreateShipment", "Receive", "QC", "Putaway"], "quantity": 8 },
+  { "id": "INB-008", "description": "Cross-dock immediate putaway", "steps": ["CreateShipment", "Receive", "QC", "Putaway"], "quantity": 18 },
+  { "id": "INB-009", "description": "Partial ASN receipt", "steps": ["CreateShipment", "Receive", "QC", "Putaway"], "quantity": 9 },
+  { "id": "INB-010", "description": "High-value item with strict QC", "steps": ["CreateShipment", "Receive", "QC", "Putaway"], "quantity": 2 }
+]

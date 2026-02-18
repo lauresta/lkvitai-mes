@@ -1,0 +1,10 @@
+[
+  { "id": "CC-001", "description": "Aisle-level scheduled count", "steps": ["Schedule", "Execute", "ResolveDiscrepancy"], "quantity": 30 },
+  { "id": "CC-002", "description": "High-value bin recount", "steps": ["Schedule", "Execute", "ResolveDiscrepancy"], "quantity": 6 },
+  { "id": "CC-003", "description": "Zero-stock verification", "steps": ["Schedule", "Execute", "ResolveDiscrepancy"], "quantity": 1 },
+  { "id": "CC-004", "description": "Blind count discrepancy", "steps": ["Schedule", "Execute", "ResolveDiscrepancy"], "quantity": 15 },
+  { "id": "CC-005", "description": "Damage-related count adjustment", "steps": ["Schedule", "Execute", "ResolveDiscrepancy"], "quantity": 12 },
+  { "id": "CC-006", "description": "Rapid cycle recount", "steps": ["Schedule", "Execute", "ResolveDiscrepancy"], "quantity": 9 },
+  { "id": "CC-007", "description": "Mixed-UoM reconciliation", "steps": ["Schedule", "Execute", "ResolveDiscrepancy"], "quantity": 24 },
+  { "id": "CC-008", "description": "Night-shift cycle count", "steps": ["Schedule", "Execute", "ResolveDiscrepancy"], "quantity": 17 }
+]

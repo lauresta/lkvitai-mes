@@ -1,0 +1,16 @@
+[
+  { "id": "TRN-001", "description": "Inter-warehouse replenishment", "steps": ["CreateTransfer", "ApproveTransfer", "ExecuteTransfer"], "quantity": 14 },
+  { "id": "TRN-002", "description": "Urgent line-stop transfer", "steps": ["CreateTransfer", "ApproveTransfer", "ExecuteTransfer"], "quantity": 6 },
+  { "id": "TRN-003", "description": "Cold-storage relocation", "steps": ["CreateTransfer", "ApproveTransfer", "ExecuteTransfer"], "quantity": 5 },
+  { "id": "TRN-004", "description": "Quarantine stock move", "steps": ["CreateTransfer", "ApproveTransfer", "ExecuteTransfer"], "quantity": 8 },
+  { "id": "TRN-005", "description": "Cross-dock balancing move", "steps": ["CreateTransfer", "ApproveTransfer", "ExecuteTransfer"], "quantity": 19 },
+  { "id": "TRN-006", "description": "Bin consolidation transfer", "steps": ["CreateTransfer", "ApproveTransfer", "ExecuteTransfer"], "quantity": 11 },
+  { "id": "TRN-007", "description": "Wave release support transfer", "steps": ["CreateTransfer", "ApproveTransfer", "ExecuteTransfer"], "quantity": 9 },
+  { "id": "TRN-008", "description": "Inventory freeze mitigation", "steps": ["CreateTransfer", "ApproveTransfer", "ExecuteTransfer"], "quantity": 4 },
+  { "id": "TRN-009", "description": "Outbound surge balancing transfer", "steps": ["CreateTransfer", "ApproveTransfer", "ExecuteTransfer"], "quantity": 16 },
+  { "id": "TRN-010", "description": "Receiving overflow transfer", "steps": ["CreateTransfer", "ApproveTransfer", "ExecuteTransfer"], "quantity": 13 },
+  { "id": "TRN-011", "description": "Shelf-life controlled relocation", "steps": ["CreateTransfer", "ApproveTransfer", "ExecuteTransfer"], "quantity": 7 },
+  { "id": "TRN-012", "description": "Hazmat zone transfer", "steps": ["CreateTransfer", "ApproveTransfer", "ExecuteTransfer"], "quantity": 3 },
+  { "id": "TRN-013", "description": "Inter-site maintenance move", "steps": ["CreateTransfer", "ApproveTransfer", "ExecuteTransfer"], "quantity": 10 },
+  { "id": "TRN-014", "description": "Seasonal stock repositioning", "steps": ["CreateTransfer", "ApproveTransfer", "ExecuteTransfer"], "quantity": 21 }
+]

@@ -1,0 +1,12 @@
+[
+  { "id": "VAL-001", "description": "Supplier invoice variance adjustment", "steps": ["AdjustCost", "AllocateLandedCost", "WriteDown"], "quantity": 40 },
+  { "id": "VAL-002", "description": "Freight landed-cost allocation", "steps": ["AdjustCost", "AllocateLandedCost", "WriteDown"], "quantity": 28 },
+  { "id": "VAL-003", "description": "Currency fluctuation update", "steps": ["AdjustCost", "AllocateLandedCost", "WriteDown"], "quantity": 16 },
+  { "id": "VAL-004", "description": "Obsolete inventory write-down", "steps": ["AdjustCost", "AllocateLandedCost", "WriteDown"], "quantity": 12 },
+  { "id": "VAL-005", "description": "Batch-level cost correction", "steps": ["AdjustCost", "AllocateLandedCost", "WriteDown"], "quantity": 19 },
+  { "id": "VAL-006", "description": "Quarter-end revaluation", "steps": ["AdjustCost", "AllocateLandedCost", "WriteDown"], "quantity": 33 },
+  { "id": "VAL-007", "description": "Duty and customs landed cost", "steps": ["AdjustCost", "AllocateLandedCost", "WriteDown"], "quantity": 14 },
+  { "id": "VAL-008", "description": "Intercompany transfer valuation", "steps": ["AdjustCost", "AllocateLandedCost", "WriteDown"], "quantity": 22 },
+  { "id": "VAL-009", "description": "Supplier rebate true-up", "steps": ["AdjustCost", "AllocateLandedCost", "WriteDown"], "quantity": 18 },
+  { "id": "VAL-010", "description": "Damaged stock impairment", "steps": ["AdjustCost", "AllocateLandedCost", "WriteDown"], "quantity": 7 }
+]

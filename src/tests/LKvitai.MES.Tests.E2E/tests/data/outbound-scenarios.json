@@ -1,0 +1,14 @@
+[
+  { "id": "OUT-001", "description": "Standard single-line order", "steps": ["CreateOrder", "Allocate", "Pick", "Pack", "Dispatch"], "quantity": 5 },
+  { "id": "OUT-002", "description": "Multi-line order with mixed bins", "steps": ["CreateOrder", "Allocate", "Pick", "Pack", "Dispatch"], "quantity": 9 },
+  { "id": "OUT-003", "description": "Priority order with wave picking", "steps": ["CreateOrder", "Allocate", "Pick", "Pack", "Dispatch"], "quantity": 6 },
+  { "id": "OUT-004", "description": "Backorder reallocation flow", "steps": ["CreateOrder", "Allocate", "Pick", "Pack", "Dispatch"], "quantity": 7 },
+  { "id": "OUT-005", "description": "Fragile goods packing profile", "steps": ["CreateOrder", "Allocate", "Pick", "Pack", "Dispatch"], "quantity": 3 },
+  { "id": "OUT-006", "description": "Carrier SLA constrained order", "steps": ["CreateOrder", "Allocate", "Pick", "Pack", "Dispatch"], "quantity": 8 },
+  { "id": "OUT-007", "description": "International shipment paperwork path", "steps": ["CreateOrder", "Allocate", "Pick", "Pack", "Dispatch"], "quantity": 11 },
+  { "id": "OUT-008", "description": "Zone-picking consolidation", "steps": ["CreateOrder", "Allocate", "Pick", "Pack", "Dispatch"], "quantity": 13 },
+  { "id": "OUT-009", "description": "Rush-order cut-off handling", "steps": ["CreateOrder", "Allocate", "Pick", "Pack", "Dispatch"], "quantity": 4 },
+  { "id": "OUT-010", "description": "High-volume cartonization", "steps": ["CreateOrder", "Allocate", "Pick", "Pack", "Dispatch"], "quantity": 20 },
+  { "id": "OUT-011", "description": "Dangerous goods dispatch route", "steps": ["CreateOrder", "Allocate", "Pick", "Pack", "Dispatch"], "quantity": 2 },
+  { "id": "OUT-012", "description": "Late allocation inventory swap", "steps": ["CreateOrder", "Allocate", "Pick", "Pack", "Dispatch"], "quantity": 10 }
+]

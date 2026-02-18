@@ -1,0 +1,27 @@
+name: E2E Tests
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  e2e-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore E2E project
+        run: dotnet restore src/tests/LKvitai.MES.Tests.E2E/LKvitai.MES.Tests.E2E.csproj
+
+      - name: Run E2E tests
+        run: dotnet test src/tests/LKvitai.MES.Tests.E2E/LKvitai.MES.Tests.E2E.csproj --configuration Release --logger "console;verbosity=detailed"
