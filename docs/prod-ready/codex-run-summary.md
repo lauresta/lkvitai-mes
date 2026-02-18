@@ -24,18 +24,20 @@
 - PRD-1656 Blue-Green Deployment
 - PRD-1657 Canary Releases
 - PRD-1658 Feature Flags
+- PRD-1659 Production Runbook
 
 ### Partially Completed
 - None
 
 ### Blockers / TEST-GAP
 - `dotnet build src/LKvitai.MES.sln` and `dotnet test src/LKvitai.MES.sln` fail on pre-existing compile error at `src/tests/LKvitai.MES.Tests.Unit/AdvancedWarehouseStoreTests.cs:16` (CS0023).
-- PRD-1658 LaunchDarkly/Unleash dashboard-driven rollout and kill-switch propagation were not validated end-to-end in this environment.
+- PRD-1659 requires staging execution of runbook procedures; this run validated runbook coverage and repository script alignment only.
 
 ### Commands Executed
-- dotnet test src/tests/LKvitai.MES.Tests.Integration/LKvitai.MES.Tests.Integration.csproj --filter "FullyQualifiedName~FeatureFlagTests"
+- Get-ChildItem docs/operations/runbook -Recurse | Select-Object FullName
+- rg -n "^## Procedure" docs/operations/runbook -g "*.md"
 - dotnet build src/LKvitai.MES.sln
 - dotnet test src/LKvitai.MES.sln
 
 ### Next Recommended TaskId
-- PRD-1659
+- PRD-1660

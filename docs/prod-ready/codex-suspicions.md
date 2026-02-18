@@ -1302,3 +1302,16 @@
   Evidence: dotnet build src/LKvitai.MES.sln and dotnet test src/LKvitai.MES.sln fail in pre-existing src/tests/LKvitai.MES.Tests.Unit/AdvancedWarehouseStoreTests.cs:16 (CS0023).
   Impact: Full-solution validation baseline remains red from unrelated unit-test compile failure.
   Proposed resolution: Fix AdvancedWarehouseStoreTests compile error and rerun full solution build/test.
+- Timestamp: 2026-02-18T07:12:46Z
+  TaskId: PRD-1659
+  Type: TEST-GAP
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S9.md:2432-2460 requires staging execution of deployment/troubleshooting/incident/DR procedures; this run validated documentation structure and script presence but not live environment execution.
+  Impact: End-to-end timing/accuracy claims for operational procedures cannot be fully proven from this local CLI environment.
+  Proposed resolution: Execute runbook drill in staging and attach evidence (timestamps, command outputs, screenshots) per section.
+
+- Timestamp: 2026-02-18T07:12:46Z
+  TaskId: PRD-1659
+  Type: TEST-GAP
+  Evidence: dotnet build src/LKvitai.MES.sln and dotnet test src/LKvitai.MES.sln fail in pre-existing src/tests/LKvitai.MES.Tests.Unit/AdvancedWarehouseStoreTests.cs:16 (CS0023).
+  Impact: Full-solution validation baseline remains red from unrelated unit-test compile failure.
+  Proposed resolution: Fix AdvancedWarehouseStoreTests compile error and rerun full solution build/test.
