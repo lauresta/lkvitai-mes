@@ -19,6 +19,7 @@
 - PRD-1651 E2E Test Suite Expansion
 - PRD-1652 Chaos Engineering
 - PRD-1653 Failover Testing
+- PRD-1654 Data Migration Tests
 
 ### Partially Completed
 - None
@@ -28,6 +29,7 @@
 - `reportgenerator` is not installed in this environment, so coverage HTML generation could not be executed.
 - PRD-1652 live docker chaos validation (`docker-compose stop/start`, authenticated API checks, `psql` data verification) was not executable in this session.
 - PRD-1653 live failover drill (`postgres-primary`/`postgres-standby`, load balancer routing, `k6` dropped-request check) was not executable end-to-end in this session.
+- PRD-1654 live migration drill (`dotnet ef database update`, `psql`, `k6`) was not executable end-to-end in this session.
 
 ### Commands Executed
 - git status --short --branch
@@ -51,6 +53,7 @@
 - dotnet build src/LKvitai.MES.sln
 - dotnet test src/LKvitai.MES.sln
 - dotnet test src/tests/LKvitai.MES.Tests.Integration/LKvitai.MES.Tests.Integration.csproj --filter "FullyQualifiedName~FailoverTests"
+- dotnet test src/tests/LKvitai.MES.Tests.Integration/LKvitai.MES.Tests.Integration.csproj --filter "FullyQualifiedName~MigrationTests"
 
 ### Next Recommended TaskId
-- PRD-1654
+- PRD-1655

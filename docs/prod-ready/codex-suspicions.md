@@ -1230,3 +1230,23 @@
   Evidence: dotnet build src/LKvitai.MES.sln and dotnet test src/LKvitai.MES.sln still fail in pre-existing src/tests/LKvitai.MES.Tests.Unit/AdvancedWarehouseStoreTests.cs:16 (CS0023).
   Impact: Full-solution validation baseline remains red from unrelated unit-test compile failure.
   Proposed resolution: Fix AdvancedWarehouseStoreTests compile error and rerun full solution build/test.
+- Timestamp: 2026-02-18T00:00:00Z
+  TaskId: PRD-1654
+  Type: TEST-GAP
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S9.md:1829-1861 requires live `dotnet ef database update`, `psql` schema checks, and `k6` zero-downtime validation during migration.
+  Impact: Runtime migration duration, lock behavior, and live API availability during schema change were not validated end-to-end in this environment.
+  Proposed resolution: Run migration drill in DB-enabled staging with load traffic and measure migration duration/error rate.
+
+- Timestamp: 2026-02-18T00:00:00Z
+  TaskId: PRD-1654
+  Type: TEST-GAP
+  Evidence: dotnet build src/LKvitai.MES.sln and dotnet test src/LKvitai.MES.sln fail in pre-existing src/tests/LKvitai.MES.Tests.Unit/AdvancedWarehouseStoreTests.cs:16 (CS0023).
+  Impact: Full-solution validation baseline remains red from unrelated unit-test compile failure.
+  Proposed resolution: Fix AdvancedWarehouseStoreTests compile error and rerun full solution build/test.
+
+- Timestamp: 2026-02-18T00:00:00Z
+  TaskId: PRD-1654
+  Type: AMBIGUITY
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S9.md:1774-1791 defines migration scenarios and zero-downtime behavior but repository test environment has no dedicated migration test database/load harness contract.
+  Impact: Automated checks are constrained to migration-operation coverage and rollback metadata verification instead of full live migration execution.
+  Proposed resolution: Use integration tests to verify migration-operation coverage and execute the live migration runbook in staging for zero-downtime evidence.
