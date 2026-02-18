@@ -275,6 +275,22 @@ public class ProjectionRebuildService : IProjectionRebuildService
         }
         catch (Exception ex)
         {
+            if (TryGetRebuildConflict(ex, out var postgresException))
+            {
+                _logger.LogWarning(
+                    postgresException,
+                    "Projection rebuild for {ProjectionName} failed due to wrapped rebuild conflict ({SqlState})",
+                    projectionName,
+                    postgresException.SqlState);
+                stopwatch.Stop();
+                RebuildDurationSeconds.Record(
+                    stopwatch.Elapsed.TotalSeconds,
+                    new KeyValuePair<string, object?>("projection", projectionName));
+                return Result<ProjectionRebuildReport>.Fail(
+                    DomainErrorCodes.IdempotencyInProgress,
+                    "Projection rebuild conflict detected. Retry the operation.");
+            }
+
             _logger.LogError(ex, "Error rebuilding projection {ProjectionName}", projectionName);
             stopwatch.Stop();
             RebuildDurationSeconds.Record(
@@ -307,6 +323,21 @@ public class ProjectionRebuildService : IProjectionRebuildService
             or PostgresErrorCodes.DeadlockDetected
             or PostgresErrorCodes.DuplicateTable
             or PostgresErrorCodes.ObjectInUse;
+    }
+
+    private static bool TryGetRebuildConflict(Exception ex, out PostgresException postgresException)
+    {
+        for (var current = ex; current is not null; current = current.InnerException)
+        {
+            if (current is PostgresException pg && IsRebuildConflict(pg))
+            {
+                postgresException = pg;
+                return true;
+            }
+        }
+
+        postgresException = null!;
+        return false;
     }
 
     public async Task<ProjectionDiffReport> GenerateDiffReportAsync(
