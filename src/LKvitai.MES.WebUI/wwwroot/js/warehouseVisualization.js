@@ -391,7 +391,7 @@
                 mouse.y = -((event.clientY - bounds.top) / bounds.height) * 2 + 1;
 
                 raycaster.setFromCamera(mouse, camera);
-                const intersects = raycaster.intersectObjects(interactiveMeshes);
+                const intersects = raycaster.intersectObjects(interactiveMeshes, false);
                 if (intersects.length === 0) {
                     log("click: no intersection");
                     return;
