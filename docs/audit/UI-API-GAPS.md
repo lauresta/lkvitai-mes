@@ -1,9 +1,9 @@
-﻿# UI-API Gaps
+# UI-API Gaps
 
-All previously listed `GAP_NO_UI` endpoints are now exposed through UI surfaces.
+`GAP_NO_UI` endpoints: **0**.
 
-Primary closure surfaces:
-- `/warehouse/admin/gap-workbench` (explicit endpoint actions for all formerly-gapped endpoints).
-- Canonical route alignments in existing pages: `/projections` and `/reservations`.
+All previously open operational gaps are now either:
+- Covered by dedicated workflow UI pages (`/warehouse/stock/adjustments`, `/warehouse/putaway`, `/warehouse/picking/tasks`, `/warehouse/labels`) and existing workflow pages (`/reservations`, `/projections`).
+- Reclassified as `INTENTIONAL_NO_UI` with explicit Phase 1.5 justification in `docs/audit/UI-FINAL-STATUS.md`.
 
-Current open GAP count: **0**
+No endpoint-caller/workbench surface is used.
