@@ -40,6 +40,7 @@ builder.Services.AddScoped<AdminConfigurationClient>();
 builder.Services.AddScoped<VisualizationClient>();
 builder.Services.AddScoped<CycleCountsClient>();
 builder.Services.AddScoped<AdvancedWarehouseClient>();
+builder.Services.AddScoped<ApiWorkbenchClient>();
 builder.Services.AddScoped<ToastService>();
 
 var app = builder.Build();

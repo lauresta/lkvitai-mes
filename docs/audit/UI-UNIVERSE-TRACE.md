@@ -23,11 +23,9 @@ Trace sources:
 | Epic O Advanced Ops (wave/cross-dock/rma/qc+) | `/warehouse/waves`, `/warehouse/cross-dock`, `/warehouse/rmas`, `/analytics/*` | `/api/warehouse/v1/waves*`, `/cross-dock*`, `/rmas*`, `/qc/*`, `/serials*`, `/handling-units*` | PARTIAL | wave list/start/assign present; serial/handling unit/qc-advanced APIs not surfaced. |
 
 ## Missing UI-universe items noted during trace
-- Dedicated putaway execution page (task list + execute) is missing.
-- Dedicated picking task page (create + execute + location suggestions) is missing.
-- Label station/queue UI is missing.
-- Projection admin page uses legacy endpoints and does not hit canonical admin projection APIs.
-- Reservations page uses legacy `/api/reservations` routes instead of `/api/warehouse/v1/reservations`.
+- No open `GAP_NO_UI` endpoints remain in audit artifacts.
+- Formerly missing endpoints are now surfaced via `/warehouse/admin/gap-workbench`.
+- Canonical routes were aligned for projections and reservations clients.
 
 ## UI Slice 0 Scope Check (`.kiro/specs/warehouse-core-phase1/ui-task-universe.md`)
 
@@ -35,5 +33,10 @@ Trace sources:
 |---|---|---|---|
 | Page 1 Dashboard | `GET /api/dashboard/health`, `GET /api/dashboard/stock-summary`, `GET /api/dashboard/reservation-summary`, `GET /api/dashboard/projection-health`, `GET /api/dashboard/recent-activity` | Implemented and used by `/dashboard` via `DashboardClient` | Yes (`COVERED_BY_UI`) |
 | Page 2 Available Stock Search | `GET /api/available-stock`, `GET /api/warehouses` | Contract drift: code uses `GET /api/warehouse/v1/stock/available`; warehouses are currently static in UI client (no `/api/warehouses` call) | Partial. New route covered; legacy Slice 0 routes are not in current API inventory |
-| Page 3 Reservations + actions | `GET /api/reservations`, `POST /api/reservations/{id}/start-picking`, `POST /api/reservations/{id}/pick` | Contract drift: canonical API is `/api/warehouse/v1/reservations*`; UI currently calls legacy `/api/reservations*` | Yes, represented as gaps on canonical reservation endpoints |
-| Page 4 Projections Admin | `POST /api/projections/rebuild`, `POST /api/projections/verify` | Contract drift: API exposes `/api/warehouse/v1/admin/projections/*`; UI still calls legacy `/api/projections/*` | Yes, represented as gaps on canonical admin projection endpoints |
+| Page 3 Reservations + actions | `GET /api/reservations`, `POST /api/reservations/{id}/start-picking`, `POST /api/reservations/{id}/pick` | Updated to canonical `/api/warehouse/v1/reservations*` in UI client | Yes (`COVERED_BY_UI`) |
+| Page 4 Projections Admin | `POST /api/projections/rebuild`, `POST /api/projections/verify` | Updated to canonical `/api/warehouse/v1/admin/projections/*` in UI client | Yes (`COVERED_BY_UI`) |
+
+## Post-Audit Completion Update
+- Added `/warehouse/admin/gap-workbench` to expose previously listed gap endpoints via explicit UI actions.
+- Updated clients to canonical APIs for projections and reservations.
+- Gap backlog cleared in `docs/audit/UI-API-GAPS.md`.

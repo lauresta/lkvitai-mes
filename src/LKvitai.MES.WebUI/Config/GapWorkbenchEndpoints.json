@@ -1,0 +1,234 @@
+﻿[
+    {
+        "method":  "GET",
+        "route":  "/api/warehouse/v1/adjustments"
+    },
+    {
+        "method":  "POST",
+        "route":  "/api/warehouse/v1/adjustments"
+    },
+    {
+        "method":  "GET",
+        "route":  "/api/warehouse/v1/admin/compliance/exports"
+    },
+    {
+        "method":  "POST",
+        "route":  "/api/warehouse/v1/admin/compliance/export-transactions"
+    },
+    {
+        "method":  "GET",
+        "route":  "/api/warehouse/v1/admin/compliance/lot-trace/{traceId}"
+    },
+    {
+        "method":  "GET",
+        "route":  "/api/warehouse/v1/admin/compliance/scheduled-reports/history"
+    },
+    {
+        "method":  "POST",
+        "route":  "/api/warehouse/v1/admin/compliance/sign"
+    },
+    {
+        "method":  "GET",
+        "route":  "/api/warehouse/v1/admin/compliance/signatures/{resourceId}"
+    },
+    {
+        "method":  "GET",
+        "route":  "/api/warehouse/v1/admin/compliance/validation-report"
+    },
+    {
+        "method":  "POST",
+        "route":  "/api/warehouse/v1/admin/compliance/verify-hash-chain"
+    },
+    {
+        "method":  "POST",
+        "route":  "/api/warehouse/v1/admin/projections/cleanup-shadows"
+    },
+    {
+        "method":  "POST",
+        "route":  "/api/warehouse/v1/admin/projections/rebuild"
+    },
+    {
+        "method":  "GET",
+        "route":  "/api/warehouse/v1/admin/projections/rebuild-status"
+    },
+    {
+        "method":  "POST",
+        "route":  "/api/warehouse/v1/admin/projections/verify"
+    },
+    {
+        "method":  "POST",
+        "route":  "/api/warehouse/v1/agnum/export"
+    },
+    {
+        "method":  "GET",
+        "route":  "/api/warehouse/v1/agnum/history"
+    },
+    {
+        "method":  "GET",
+        "route":  "/api/warehouse/v1/agnum/history/{exportId}"
+    },
+    {
+        "method":  "GET",
+        "route":  "/api/warehouse/v1/barcodes/lookup"
+    },
+    {
+        "method":  "POST",
+        "route":  "/api/warehouse/v1/cycle-counts/{id}/apply-adjustment"
+    },
+    {
+        "method":  "GET",
+        "route":  "/api/warehouse/v1/cycle-counts/{id}/lines"
+    },
+    {
+        "method":  "GET",
+        "route":  "/api/warehouse/v1/customers/{id}"
+    },
+    {
+        "method":  "GET",
+        "route":  "/api/warehouse/v1/dispatch/history"
+    },
+    {
+        "method":  "GET",
+        "route":  "/api/warehouse/v1/handling-units/{huId}/hierarchy"
+    },
+    {
+        "method":  "POST",
+        "route":  "/api/warehouse/v1/handling-units/{parentHuId}/merge"
+    },
+    {
+        "method":  "POST",
+        "route":  "/api/warehouse/v1/handling-units/{parentHuId}/split"
+    },
+    {
+        "method":  "POST",
+        "route":  "/api/warehouse/v1/inbound-shipments/{id}/receive"
+    },
+    {
+        "method":  "GET",
+        "route":  "/api/warehouse/v1/items/{id}/barcodes"
+    },
+    {
+        "method":  "POST",
+        "route":  "/api/warehouse/v1/items/{id}/barcodes"
+    },
+    {
+        "method":  "GET",
+        "route":  "/api/warehouse/v1/labels/pdf/{fileName}"
+    },
+    {
+        "method":  "GET",
+        "route":  "/api/warehouse/v1/labels/preview"
+    },
+    {
+        "method":  "POST",
+        "route":  "/api/warehouse/v1/labels/preview"
+    },
+    {
+        "method":  "POST",
+        "route":  "/api/warehouse/v1/labels/print"
+    },
+    {
+        "method":  "GET",
+        "route":  "/api/warehouse/v1/labels/queue"
+    },
+    {
+        "method":  "POST",
+        "route":  "/api/warehouse/v1/labels/queue/{id}/retry"
+    },
+    {
+        "method":  "GET",
+        "route":  "/api/warehouse/v1/labels/templates"
+    },
+    {
+        "method":  "GET",
+        "route":  "/api/warehouse/v1/layout"
+    },
+    {
+        "method":  "PUT",
+        "route":  "/api/warehouse/v1/layout"
+    },
+    {
+        "method":  "POST",
+        "route":  "/api/warehouse/v1/locations/bulk-coordinates"
+    },
+    {
+        "method":  "POST",
+        "route":  "/api/warehouse/v1/picking/tasks"
+    },
+    {
+        "method":  "POST",
+        "route":  "/api/warehouse/v1/picking/tasks/{id}/complete"
+    },
+    {
+        "method":  "GET",
+        "route":  "/api/warehouse/v1/picking/tasks/{id}/locations"
+    },
+    {
+        "method":  "POST",
+        "route":  "/api/warehouse/v1/putaway"
+    },
+    {
+        "method":  "GET",
+        "route":  "/api/warehouse/v1/putaway/tasks"
+    },
+    {
+        "method":  "GET",
+        "route":  "/api/warehouse/v1/qc/checklist-templates"
+    },
+    {
+        "method":  "POST",
+        "route":  "/api/warehouse/v1/qc/checklist-templates"
+    },
+    {
+        "method":  "GET",
+        "route":  "/api/warehouse/v1/qc/defects"
+    },
+    {
+        "method":  "POST",
+        "route":  "/api/warehouse/v1/qc/defects"
+    },
+    {
+        "method":  "POST",
+        "route":  "/api/warehouse/v1/qc/defects/{defectId}/attachments"
+    },
+    {
+        "method":  "GET",
+        "route":  "/api/warehouse/v1/reservations"
+    },
+    {
+        "method":  "POST",
+        "route":  "/api/warehouse/v1/reservations/{id}/pick"
+    },
+    {
+        "method":  "POST",
+        "route":  "/api/warehouse/v1/reservations/{id}/start-picking"
+    },
+    {
+        "method":  "GET",
+        "route":  "/api/warehouse/v1/serials"
+    },
+    {
+        "method":  "POST",
+        "route":  "/api/warehouse/v1/serials"
+    },
+    {
+        "method":  "POST",
+        "route":  "/api/warehouse/v1/serials/{id}/status"
+    },
+    {
+        "method":  "GET",
+        "route":  "/api/warehouse/v1/stock/location-balance"
+    },
+    {
+        "method":  "POST",
+        "route":  "/api/warehouse/v1/valuation/{itemId}/adjust-cost"
+    },
+    {
+        "method":  "POST",
+        "route":  "/api/warehouse/v1/valuation/initialize"
+    },
+    {
+        "method":  "GET",
+        "route":  "/api/warehouse/v1/waves/{id}"
+    }
+]

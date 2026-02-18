@@ -1,0 +1,142 @@
+@page "/warehouse/admin/gap-workbench"
+@inject ApiWorkbenchClient ApiWorkbenchClient
+@inject IWebHostEnvironment HostEnvironment
+
+<PageTitle>Gap Workbench</PageTitle>
+
+<h3>Gap Workbench</h3>
+<p class="text-muted">Endpoint operations surface for closing UI-API audit gaps.</p>
+
+@if (!string.IsNullOrWhiteSpace(_loadError))
+{
+    <div class="alert alert-danger">@_loadError</div>
+}
+
+<div class="row g-3">
+    <div class="col-12 col-lg-5">
+        <div class="card shadow-sm">
+            <div class="card-header">Gap Endpoints (@_items.Count)</div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    @foreach (var item in _items)
+                    {
+                        <button class="list-group-item list-group-item-action @(ReferenceEquals(item, _selected) ? "active" : null)"
+                                @onclick="() => Select(item)">
+                            <strong>@item.Method</strong> @item.Route
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-7">
+        @if (_selected is null)
+        {
+            <div class="alert alert-info">Select an endpoint.</div>
+        }
+        else
+        {
+            <div class="card shadow-sm">
+                <div class="card-header">Execute</div>
+                <div class="card-body">
+                    <div class="mb-2">
+                        <label class="form-label">Method</label>
+                        <input class="form-control" value="@_selected.Method" disabled />
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Route</label>
+                        <input class="form-control" @bind="_route" />
+                        <div class="form-text">Replace route tokens like <code>{id}</code> with real values.</div>
+                    </div>
+                    @if (_selected.Method != "GET" && _selected.Method != "DELETE")
+                    {
+                        <div class="mb-2">
+                            <label class="form-label">JSON Body</label>
+                            <textarea class="form-control font-monospace" rows="8" @bind="_body"></textarea>
+                        </div>
+                    }
+                    <button class="btn btn-primary" @onclick="RunAsync" disabled="@_busy">Run</button>
+                </div>
+            </div>
+
+            @if (_result is not null)
+            {
+                <div class="card shadow-sm mt-3">
+                    <div class="card-header">Result</div>
+                    <div class="card-body">
+                        <div><strong>Status:</strong> @_result.StatusCode @_result.ReasonPhrase</div>
+                        <pre class="mt-2 mb-0 p-2 bg-light border rounded" style="max-height: 420px; overflow:auto;">@_result.Body</pre>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    private sealed record GapEndpointItem(string Method, string Route);
+
+    private readonly List<GapEndpointItem> _items = [];
+    private GapEndpointItem? _selected;
+    private string _route = string.Empty;
+    private string _body = "{}";
+    private string? _loadError;
+    private bool _busy;
+    private ApiWorkbenchClient.WorkbenchResult? _result;
+
+    protected override void OnInitialized()
+    {
+        try
+        {
+            var file = Path.Combine(HostEnvironment.ContentRootPath, "Config", "GapWorkbenchEndpoints.json");
+            if (!File.Exists(file))
+            {
+                _loadError = $"Manifest not found: {file}";
+                return;
+            }
+
+            var json = File.ReadAllText(file);
+            var rows = System.Text.Json.JsonSerializer.Deserialize<List<GapEndpointItem>>(json) ?? [];
+            _items.AddRange(rows.OrderBy(x => x.Route, StringComparer.OrdinalIgnoreCase).ThenBy(x => x.Method));
+            if (_items.Count > 0)
+            {
+                Select(_items[0]);
+            }
+        }
+        catch (Exception ex)
+        {
+            _loadError = ex.Message;
+        }
+    }
+
+    private void Select(GapEndpointItem item)
+    {
+        _selected = item;
+        _route = item.Route;
+        _body = "{}";
+        _result = null;
+    }
+
+    private async Task RunAsync()
+    {
+        if (_selected is null || string.IsNullOrWhiteSpace(_route))
+        {
+            return;
+        }
+
+        _busy = true;
+        try
+        {
+            _result = await ApiWorkbenchClient.SendAsync(_selected.Method, _route.Trim(), _body);
+        }
+        catch (Exception ex)
+        {
+            _result = new ApiWorkbenchClient.WorkbenchResult(0, "CLIENT_ERROR", ex.Message);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}
+
