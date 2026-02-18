@@ -136,7 +136,7 @@ public sealed class ScheduleCycleCountCommandHandler : IRequestHandler<ScheduleC
             .Where(x => x.Status == "Active" && !x.IsVirtual);
         if (request.LocationIds.Count > 0)
         {
-            var locationIdSet = request.LocationIds.Distinct().ToArray();
+            var locationIdSet = request.LocationIds.Distinct().ToList();
             locationQuery = locationQuery.Where(x => locationIdSet.Contains(x.Id));
         }
 

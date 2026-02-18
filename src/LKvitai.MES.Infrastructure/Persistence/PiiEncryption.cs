@@ -52,7 +52,7 @@ public static class PiiEncryption
         aes.Encrypt(nonce, input, cipher, tag);
 
         return string.Create(
-            keyId.Length + 6 + Convert.ToBase64String(nonce).Length + Convert.ToBase64String(tag).Length + Convert.ToBase64String(cipher).Length,
+            keyId.Length + 7 + Convert.ToBase64String(nonce).Length + Convert.ToBase64String(tag).Length + Convert.ToBase64String(cipher).Length,
             (keyId, nonce, tag, cipher),
             static (span, state) =>
             {
