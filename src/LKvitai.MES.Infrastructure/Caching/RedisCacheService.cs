@@ -81,7 +81,8 @@ public sealed class RedisCacheService : ICacheService, IDisposable
 
             Interlocked.Increment(ref _hits);
             TrackLatency(started);
-            return JsonSerializer.Deserialize<T>(value!, JsonOptions);
+            var json = value.ToString();
+            return JsonSerializer.Deserialize<T>(json, JsonOptions);
         }
         catch (Exception ex)
         {
