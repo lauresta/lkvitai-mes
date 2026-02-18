@@ -212,7 +212,9 @@ public class ProjectionInfrastructureIntegrationTests : IAsyncLifetime
             return;
         }
 
-        result.ErrorCode.Should().Be(DomainErrorCodes.IdempotencyInProgress);
+        result.ErrorCode.Should().Be(
+            DomainErrorCodes.IdempotencyInProgress,
+            because: $"unexpected error: {result.Error}");
         result.Error.Should().NotContain("42P01");
     }
 

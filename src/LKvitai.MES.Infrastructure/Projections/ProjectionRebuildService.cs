@@ -298,7 +298,7 @@ public class ProjectionRebuildService : IProjectionRebuildService
                 new KeyValuePair<string, object?>("projection", projectionName));
             return Result<ProjectionRebuildReport>.Fail(
                 DomainErrorCodes.InternalError,
-                "Rebuild failed due to an internal error.");
+                $"Rebuild failed: [{ex.GetType().Name}] {ex.Message}");
         }
         finally
         {
