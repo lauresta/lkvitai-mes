@@ -1276,3 +1276,16 @@
   Evidence: dotnet build src/LKvitai.MES.sln and dotnet test src/LKvitai.MES.sln fail in pre-existing src/tests/LKvitai.MES.Tests.Unit/AdvancedWarehouseStoreTests.cs:16 (CS0023).
   Impact: Full-solution validation baseline remains red from unrelated unit-test compile failure.
   Proposed resolution: Fix AdvancedWarehouseStoreTests compile error and rerun full solution build/test.
+- Timestamp: 2026-02-18T00:00:00Z
+  TaskId: PRD-1657
+  Type: TEST-GAP
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S9.md:2185-2215 requires live traffic split validation, Prometheus metric checks, and auto-rollback observation under injected failures.
+  Impact: Runtime canary traffic distribution variance and auto-rollback timing (<1 minute) were not validated end-to-end in this environment.
+  Proposed resolution: Execute canary scripts against live Nginx/Prometheus stack and capture traffic/latency/error metrics through each rollout phase.
+
+- Timestamp: 2026-02-18T00:00:00Z
+  TaskId: PRD-1657
+  Type: TEST-GAP
+  Evidence: dotnet build src/LKvitai.MES.sln and dotnet test src/LKvitai.MES.sln fail in pre-existing src/tests/LKvitai.MES.Tests.Unit/AdvancedWarehouseStoreTests.cs:16 (CS0023).
+  Impact: Full-solution validation baseline remains red from unrelated unit-test compile failure.
+  Proposed resolution: Fix AdvancedWarehouseStoreTests compile error and rerun full solution build/test.
