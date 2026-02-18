@@ -258,14 +258,13 @@ public class ProjectionRebuildService : IProjectionRebuildService
 
             return Result<ProjectionRebuildReport>.Ok(report);
         }
-        catch (PostgresException ex) when (
-            ex.SqlState == PostgresErrorCodes.UndefinedTable &&
-            ex.MessageText.Contains("_shadow", StringComparison.OrdinalIgnoreCase))
+        catch (PostgresException ex) when (IsRebuildConflict(ex))
         {
             _logger.LogWarning(
                 ex,
-                "Projection rebuild for {ProjectionName} failed due to shadow-table race/conflict",
-                projectionName);
+                "Projection rebuild for {ProjectionName} failed due to rebuild conflict ({SqlState})",
+                projectionName,
+                ex.SqlState);
             stopwatch.Stop();
             RebuildDurationSeconds.Record(
                 stopwatch.Elapsed.TotalSeconds,
@@ -299,6 +298,15 @@ public class ProjectionRebuildService : IProjectionRebuildService
                 }
             }
         }
+    }
+
+    private static bool IsRebuildConflict(PostgresException ex)
+    {
+        return ex.SqlState is PostgresErrorCodes.UndefinedTable
+            or PostgresErrorCodes.LockNotAvailable
+            or PostgresErrorCodes.DeadlockDetected
+            or PostgresErrorCodes.DuplicateTable
+            or PostgresErrorCodes.ObjectInUse;
     }
 
     public async Task<ProjectionDiffReport> GenerateDiffReportAsync(
