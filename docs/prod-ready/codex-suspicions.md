@@ -1197,3 +1197,23 @@
   Evidence: reportgenerator command failed with CommandNotFoundException in local environment.
   Impact: Coverage HTML report generation step from task validation could not be executed locally.
   Proposed resolution: Install ReportGenerator tool in CI/dev environment and rerun opencover report generation.
+- Timestamp: 2026-02-18T00:00:00Z
+  TaskId: PRD-1652
+  Type: TEST-GAP
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S9.md:1606-1631 manual validation requires docker-compose kill/restart, authenticated curl calls, and psql verification against live stack.
+  Impact: Live chaos validation (kill PostgreSQL/Redis/RabbitMQ, runtime API 503/200 transitions, SQL data-loss checks) was not executed in this CLI run.
+  Proposed resolution: Run documented docker chaos scenarios in staging with auth token and PostgreSQL client tools.
+
+- Timestamp: 2026-02-18T00:00:00Z
+  TaskId: PRD-1652
+  Type: TEST-GAP
+  Evidence: dotnet build src/LKvitai.MES.sln and dotnet test src/LKvitai.MES.sln fail in pre-existing src/tests/LKvitai.MES.Tests.Unit/AdvancedWarehouseStoreTests.cs:16 (CS0023).
+  Impact: Full-solution validation remains red from unrelated baseline unit-test compile failure.
+  Proposed resolution: Fix AdvancedWarehouseStoreTests compile error and rerun full solution build/test.
+
+- Timestamp: 2026-02-18T00:00:00Z
+  TaskId: PRD-1652
+  Type: AMBIGUITY
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S9.md:1549-1551 requests Simmy-based chaos framework, while repository resilience baseline is Polly v8 services and no existing live chaos host.
+  Impact: Direct production-grade chaos orchestration semantics are underspecified for this codebase baseline.
+  Proposed resolution: Install Simmy package for framework alignment and implement deterministic fault/latency injection service with retry/circuit/fallback behavior validated by integration tests.

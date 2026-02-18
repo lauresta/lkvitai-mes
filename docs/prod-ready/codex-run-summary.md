@@ -17,6 +17,7 @@
 - PRD-1649 SLA Monitoring
 - PRD-1650 Capacity Planning
 - PRD-1651 E2E Test Suite Expansion
+- PRD-1652 Chaos Engineering
 
 ### Partially Completed
 - None
@@ -24,6 +25,7 @@
 ### Blockers / TEST-GAP
 - `dotnet build src/LKvitai.MES.sln` and `dotnet test src/LKvitai.MES.sln` fail on pre-existing compile error at `src/tests/LKvitai.MES.Tests.Unit/AdvancedWarehouseStoreTests.cs:16` (CS0023).
 - `reportgenerator` is not installed in this environment, so coverage HTML generation could not be executed.
+- PRD-1652 live docker chaos validation (`docker-compose stop/start`, authenticated API checks, `psql` data verification) was not executable in this session.
 
 ### Commands Executed
 - git status --short --branch
@@ -42,6 +44,10 @@
 - dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
 - Measure-Command { dotnet test }
 - reportgenerator -reports:TestResults/**/coverage.opencover.xml -targetdir:coverage-report
+- dotnet add src/LKvitai.MES.Api/LKvitai.MES.Api.csproj package Polly.Contrib.Simmy
+- dotnet test src/tests/LKvitai.MES.Tests.Integration/LKvitai.MES.Tests.Integration.csproj --filter "FullyQualifiedName~ChaosTests"
+- dotnet build src/LKvitai.MES.sln
+- dotnet test src/LKvitai.MES.sln
 
 ### Next Recommended TaskId
-- PRD-1652
+- PRD-1653

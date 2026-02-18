@@ -219,6 +219,7 @@ builder.Services.AddScoped<IAlertEscalationService, PagerDutyAlertEscalationServ
 builder.Services.AddSingleton<SlaRequestMetricsStore>();
 builder.Services.AddScoped<ISlaMonitoringService, SlaMonitoringService>();
 builder.Services.AddScoped<ICapacityPlanningService, CapacityPlanningService>();
+builder.Services.AddSingleton<IChaosResilienceService, ChaosResilienceService>();
 builder.Services.AddScoped<IBackupService, BackupService>();
 builder.Services.AddScoped<DailyBackupRecurringJob>();
 builder.Services.AddScoped<MonthlyRestoreTestRecurringJob>();
