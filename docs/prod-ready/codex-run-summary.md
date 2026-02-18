@@ -18,6 +18,7 @@
 - PRD-1650 Capacity Planning
 - PRD-1651 E2E Test Suite Expansion
 - PRD-1652 Chaos Engineering
+- PRD-1653 Failover Testing
 
 ### Partially Completed
 - None
@@ -26,6 +27,7 @@
 - `dotnet build src/LKvitai.MES.sln` and `dotnet test src/LKvitai.MES.sln` fail on pre-existing compile error at `src/tests/LKvitai.MES.Tests.Unit/AdvancedWarehouseStoreTests.cs:16` (CS0023).
 - `reportgenerator` is not installed in this environment, so coverage HTML generation could not be executed.
 - PRD-1652 live docker chaos validation (`docker-compose stop/start`, authenticated API checks, `psql` data verification) was not executable in this session.
+- PRD-1653 live failover drill (`postgres-primary`/`postgres-standby`, load balancer routing, `k6` dropped-request check) was not executable end-to-end in this session.
 
 ### Commands Executed
 - git status --short --branch
@@ -48,6 +50,7 @@
 - dotnet test src/tests/LKvitai.MES.Tests.Integration/LKvitai.MES.Tests.Integration.csproj --filter "FullyQualifiedName~ChaosTests"
 - dotnet build src/LKvitai.MES.sln
 - dotnet test src/LKvitai.MES.sln
+- dotnet test src/tests/LKvitai.MES.Tests.Integration/LKvitai.MES.Tests.Integration.csproj --filter "FullyQualifiedName~FailoverTests"
 
 ### Next Recommended TaskId
-- PRD-1653
+- PRD-1654
