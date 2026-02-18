@@ -20,6 +20,7 @@
 - PRD-1652 Chaos Engineering
 - PRD-1653 Failover Testing
 - PRD-1654 Data Migration Tests
+- PRD-1655 Rollback Procedures
 
 ### Partially Completed
 - None
@@ -30,6 +31,7 @@
 - PRD-1652 live docker chaos validation (`docker-compose stop/start`, authenticated API checks, `psql` data verification) was not executable in this session.
 - PRD-1653 live failover drill (`postgres-primary`/`postgres-standby`, load balancer routing, `k6` dropped-request check) was not executable end-to-end in this session.
 - PRD-1654 live migration drill (`dotnet ef database update`, `psql`, `k6`) was not executable end-to-end in this session.
+- PRD-1655 live rollback drill (versioned deploy/rollback and migration rollback) was not executed end-to-end in this session.
 
 ### Commands Executed
 - git status --short --branch
@@ -54,6 +56,7 @@
 - dotnet test src/LKvitai.MES.sln
 - dotnet test src/tests/LKvitai.MES.Tests.Integration/LKvitai.MES.Tests.Integration.csproj --filter "FullyQualifiedName~FailoverTests"
 - dotnet test src/tests/LKvitai.MES.Tests.Integration/LKvitai.MES.Tests.Integration.csproj --filter "FullyQualifiedName~MigrationTests"
+- dotnet test src/tests/LKvitai.MES.Tests.Integration/LKvitai.MES.Tests.Integration.csproj --filter "FullyQualifiedName~RollbackTests"
 
 ### Next Recommended TaskId
-- PRD-1655
+- PRD-1656

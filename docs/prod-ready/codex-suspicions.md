@@ -1250,3 +1250,16 @@
   Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S9.md:1774-1791 defines migration scenarios and zero-downtime behavior but repository test environment has no dedicated migration test database/load harness contract.
   Impact: Automated checks are constrained to migration-operation coverage and rollback metadata verification instead of full live migration execution.
   Proposed resolution: Use integration tests to verify migration-operation coverage and execute the live migration runbook in staging for zero-downtime evidence.
+- Timestamp: 2026-02-18T00:00:00Z
+  TaskId: PRD-1655
+  Type: TEST-GAP
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S9.md:1945-1973 requires executing rollback scripts against live containers, checking version headers, and validating migration rollback state.
+  Impact: Live rollback timing (<10 min), runtime version headers, and production-like smoke workflow behavior were not executed end-to-end in this environment.
+  Proposed resolution: Run rollback scripts in staging with deployed version tags and DB migration history, then capture timings and validation output.
+
+- Timestamp: 2026-02-18T00:00:00Z
+  TaskId: PRD-1655
+  Type: TEST-GAP
+  Evidence: dotnet build src/LKvitai.MES.sln and dotnet test src/LKvitai.MES.sln fail in pre-existing src/tests/LKvitai.MES.Tests.Unit/AdvancedWarehouseStoreTests.cs:16 (CS0023).
+  Impact: Full-solution validation baseline remains red from unrelated unit-test compile failure.
+  Proposed resolution: Fix AdvancedWarehouseStoreTests compile error and rerun full solution build/test.
