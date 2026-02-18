@@ -255,19 +255,36 @@
             const mouse = new THREE.Vector2();
             const meshesByCode = {};
             const interactiveMeshes = [];
+            const defaultBorderColor = 0x1f2937;
+            const selectedBorderColor = 0xffffff;
 
             resolvedBins.forEach(({ bin, width, depth, height, centerX: meshX, centerY: meshY, centerZ: meshZ, hasExplicitDimensions, capacityVolume }) => {
                 const geometry = new THREE.BoxGeometry(width, height, depth);
                 const material = new THREE.MeshStandardMaterial({
                     color: toHexColor(bin.color),
                     metalness: 0.15,
-                    roughness: 0.55
+                    roughness: 0.55,
+                    polygonOffset: true,
+                    polygonOffsetFactor: 1,
+                    polygonOffsetUnits: 1
                 });
                 const cube = new THREE.Mesh(geometry, material);
+                const borderGeometry = new THREE.EdgesGeometry(geometry);
+                const borderMaterial = new THREE.LineBasicMaterial({
+                    color: defaultBorderColor,
+                    transparent: true,
+                    opacity: 0.9,
+                    depthWrite: false,
+                    toneMapped: false
+                });
+                const border = new THREE.LineSegments(borderGeometry, borderMaterial);
+                border.renderOrder = 2;
+                cube.add(border);
                 cube.position.set(meshX, meshY, meshZ);
                 cube.userData = {
                     code: bin.code,
                     baseColor: toHexColor(bin.color),
+                    borderMaterial,
                     width,
                     depth,
                     height,
@@ -306,9 +323,11 @@
                     if (selectedCode && mesh.userData.code === selectedCode) {
                         material.color.setHex(0xffd700);
                         material.emissive.setHex(0x222200);
+                        mesh.userData.borderMaterial?.color?.setHex(selectedBorderColor);
                     } else {
                         material.color.setHex(mesh.userData.baseColor);
                         material.emissive.setHex(0x000000);
+                        mesh.userData.borderMaterial?.color?.setHex(defaultBorderColor);
                     }
                 });
             }
