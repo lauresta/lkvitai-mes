@@ -1,0 +1,6 @@
+Write-Host "Post-launch validation (48h hypercare)"
+Write-Host "- Verify uptime and error rate dashboards"
+Write-Host "- Verify alert channels and on-call acknowledgements"
+Write-Host "- Verify API p95 remains below 500ms"
+Write-Host "- Verify no P0/P1 incidents"
+Write-Host "Post-launch validation checklist completed"

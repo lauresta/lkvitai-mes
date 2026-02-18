@@ -25,19 +25,25 @@
 - PRD-1657 Canary Releases
 - PRD-1658 Feature Flags
 - PRD-1659 Production Runbook
+- PRD-1660 Go-Live Checklist
 
 ### Partially Completed
 - None
 
 ### Blockers / TEST-GAP
 - `dotnet build src/LKvitai.MES.sln` and `dotnet test src/LKvitai.MES.sln` fail on pre-existing compile error at `src/tests/LKvitai.MES.Tests.Unit/AdvancedWarehouseStoreTests.cs:16` (CS0023).
-- PRD-1659 requires staging execution of runbook procedures; this run validated runbook coverage and repository script alignment only.
+- PRD-1659/1660 staging/live operational execution remains pending; this run validated docs, checklist completeness, and script logic only.
+- `.sh` go-live validation commands require `bash`, not available in this host environment.
 
 ### Commands Executed
-- Get-ChildItem docs/operations/runbook -Recurse | Select-Object FullName
-- rg -n "^## Procedure" docs/operations/runbook -g "*.md"
+- Get-Content docs/operations/go-live-checklist.md
+- (Get-Content docs/operations/go-live-checklist.md | Select-String -Pattern "\[x\]" | Measure-Object).Count
+- (Get-Content docs/operations/go-live-checklist.md | Select-String -Pattern "Sign-off:" | Measure-Object).Count
+- powershell -ExecutionPolicy Bypass -File scripts/go-live/check-criteria.ps1
+- powershell -ExecutionPolicy Bypass -File scripts/go-live/launch.ps1 -Version v1.2.4
+- powershell -ExecutionPolicy Bypass -File scripts/go-live/post-launch-validation.ps1
 - dotnet build src/LKvitai.MES.sln
 - dotnet test src/LKvitai.MES.sln
 
 ### Next Recommended TaskId
-- PRD-1660
+- None (Sprint 9 complete through PRD-1660)

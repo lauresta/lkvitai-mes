@@ -1315,3 +1315,16 @@
   Evidence: dotnet build src/LKvitai.MES.sln and dotnet test src/LKvitai.MES.sln fail in pre-existing src/tests/LKvitai.MES.Tests.Unit/AdvancedWarehouseStoreTests.cs:16 (CS0023).
   Impact: Full-solution validation baseline remains red from unrelated unit-test compile failure.
   Proposed resolution: Fix AdvancedWarehouseStoreTests compile error and rerun full solution build/test.
+- Timestamp: 2026-02-18T07:15:48Z
+  TaskId: PRD-1660
+  Type: TEST-GAP
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S9.md:2557-2575 validation specifies ./scripts/go-live/*.sh; local environment has no ash, so .sh commands could not run directly.
+  Impact: Linux-shell validation flow is not directly executable in this host environment.
+  Proposed resolution: Use added PowerShell equivalents (scripts/go-live/*.ps1) locally and execute .sh scripts in CI/Linux staging runner.
+
+- Timestamp: 2026-02-18T07:15:48Z
+  TaskId: PRD-1660
+  Type: TEST-GAP
+  Evidence: dotnet build src/LKvitai.MES.sln and dotnet test src/LKvitai.MES.sln fail in pre-existing src/tests/LKvitai.MES.Tests.Unit/AdvancedWarehouseStoreTests.cs:16 (CS0023).
+  Impact: Full-solution validation baseline remains red from unrelated unit-test compile failure.
+  Proposed resolution: Fix AdvancedWarehouseStoreTests compile error and rerun full solution build/test.
