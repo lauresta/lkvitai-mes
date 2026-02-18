@@ -1263,3 +1263,16 @@
   Evidence: dotnet build src/LKvitai.MES.sln and dotnet test src/LKvitai.MES.sln fail in pre-existing src/tests/LKvitai.MES.Tests.Unit/AdvancedWarehouseStoreTests.cs:16 (CS0023).
   Impact: Full-solution validation baseline remains red from unrelated unit-test compile failure.
   Proposed resolution: Fix AdvancedWarehouseStoreTests compile error and rerun full solution build/test.
+- Timestamp: 2026-02-18T00:00:00Z
+  TaskId: PRD-1656
+  Type: TEST-GAP
+  Evidence: docs/prod-ready/prod-ready-tasks-PHASE15-S9.md:2062-2093 requires live blue-green docker stack, traffic switch timing measurements, and runtime version-header verification.
+  Impact: Runtime switchover duration (<1 minute), live request continuity, and production-like rollback behavior were not validated end-to-end in this environment.
+  Proposed resolution: Execute the blue-green scripts against a running stack and capture timing + request-failure metrics.
+
+- Timestamp: 2026-02-18T00:00:00Z
+  TaskId: PRD-1656
+  Type: TEST-GAP
+  Evidence: dotnet build src/LKvitai.MES.sln and dotnet test src/LKvitai.MES.sln fail in pre-existing src/tests/LKvitai.MES.Tests.Unit/AdvancedWarehouseStoreTests.cs:16 (CS0023).
+  Impact: Full-solution validation baseline remains red from unrelated unit-test compile failure.
+  Proposed resolution: Fix AdvancedWarehouseStoreTests compile error and rerun full solution build/test.
