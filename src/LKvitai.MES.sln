@@ -37,6 +37,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LKvitai.MES.Tests.E2E", "..
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LKvitai.MES.ArchitectureTests", "..\tests\ArchitectureTests\LKvitai.MES.ArchitectureTests\LKvitai.MES.ArchitectureTests.csproj", "{D1280BF0-1F6F-47B5-9C00-9BB86F970AB8}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "BuildingBlocks", "BuildingBlocks", "{12C1EE8E-A2E0-45AF-BB0B-AE1B9FE15B43}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LKvitai.MES.BuildingBlocks.Cqrs.Abstractions", "BuildingBlocks\LKvitai.MES.BuildingBlocks.Cqrs.Abstractions\LKvitai.MES.BuildingBlocks.Cqrs.Abstractions.csproj", "{EE1658B9-3B9E-4ECC-84DB-59791BFE3711}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -227,6 +231,18 @@ Global
 		{D1280BF0-1F6F-47B5-9C00-9BB86F970AB8}.Release|x64.Build.0 = Release|Any CPU
 		{D1280BF0-1F6F-47B5-9C00-9BB86F970AB8}.Release|x86.ActiveCfg = Release|Any CPU
 		{D1280BF0-1F6F-47B5-9C00-9BB86F970AB8}.Release|x86.Build.0 = Release|Any CPU
+		{EE1658B9-3B9E-4ECC-84DB-59791BFE3711}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EE1658B9-3B9E-4ECC-84DB-59791BFE3711}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EE1658B9-3B9E-4ECC-84DB-59791BFE3711}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{EE1658B9-3B9E-4ECC-84DB-59791BFE3711}.Debug|x64.Build.0 = Debug|Any CPU
+		{EE1658B9-3B9E-4ECC-84DB-59791BFE3711}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{EE1658B9-3B9E-4ECC-84DB-59791BFE3711}.Debug|x86.Build.0 = Debug|Any CPU
+		{EE1658B9-3B9E-4ECC-84DB-59791BFE3711}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EE1658B9-3B9E-4ECC-84DB-59791BFE3711}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EE1658B9-3B9E-4ECC-84DB-59791BFE3711}.Release|x64.ActiveCfg = Release|Any CPU
+		{EE1658B9-3B9E-4ECC-84DB-59791BFE3711}.Release|x64.Build.0 = Release|Any CPU
+		{EE1658B9-3B9E-4ECC-84DB-59791BFE3711}.Release|x86.ActiveCfg = Release|Any CPU
+		{EE1658B9-3B9E-4ECC-84DB-59791BFE3711}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -246,5 +262,6 @@ Global
 		{CCCCCCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC} = {B2C3D4E5-F6A7-8901-BCDE-F12345678901}
 		{F6AD0540-0462-44BF-A8DA-2891B764F847} = {A1B2C3D4-E5F6-7890-ABCD-EF1234567890}
 		{BA16D7E1-0F7D-4972-8CD1-4F6B3415B42B} = {B2C3D4E5-F6A7-8901-BCDE-F12345678901}
+		{EE1658B9-3B9E-4ECC-84DB-59791BFE3711} = {12C1EE8E-A2E0-45AF-BB0B-AE1B9FE15B43}
 	EndGlobalSection
 EndGlobal
