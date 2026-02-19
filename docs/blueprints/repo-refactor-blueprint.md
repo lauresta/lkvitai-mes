@@ -208,25 +208,28 @@ LKvitai.MES/
 - **DoD:** All tests skipped (not failed), test run succeeds
 - **Rollback:** Delete test files
 
-#### Stage 0.2: Dependency Validation Script
+#### Stage 0.2: Dependency Validation Tool
 
-**P0.S2.T1: Create validate-module-dependencies.sh**
+**P0.S2.T1: Create DependencyValidator tool**
 
-- **Purpose:** Script to parse csproj and validate ProjectReference paths
-- **Scope:** `scripts/`
+- **Purpose:** Cross-platform tool to parse csproj files and validate basic dependency rules
+- **Scope:** `tools/DependencyValidator/`
 - **Operations:**
-  - Create `scripts/validate-module-dependencies.sh`
-  - Parse all `.csproj` files for `<ProjectReference>` elements
-  - Check: BuildingBlocks projects must not reference Modules projects
-  - Check: Cross-module references only via Contracts
+  - Create `tools/DependencyValidator/DependencyValidator.csproj`
+  - Create `tools/DependencyValidator/Program.cs`
+  - Parse `.csproj` files for `<ProjectReference>` and `<PackageReference>`
+  - Validate:
+    - Contracts projects must not reference SharedKernel projects
+    - SharedKernel projects must not reference MediatR packages
+    - Application projects must not reference Marten packages
   - Exit 0 if valid, exit 1 with error message if invalid
+  - Note: Cross-platform; do not use chmod/bash.
 - **Commands:**
   ```bash
-  chmod +x scripts/validate-module-dependencies.sh
-  ./scripts/validate-module-dependencies.sh
+  dotnet run --project tools/DependencyValidator/DependencyValidator.csproj
   ```
-- **DoD:** Script runs, exits 0 (current structure has no BuildingBlocks yet, so passes trivially)
-- **Rollback:** Delete script
+- **DoD:** Tool runs, exits 0 for current baseline
+- **Rollback:** Delete `tools/DependencyValidator/`
 
 #### Stage 0.3: CI Gate
 
