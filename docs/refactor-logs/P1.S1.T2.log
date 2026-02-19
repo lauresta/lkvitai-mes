@@ -1,0 +1,14 @@
+Command:
+grep -r "docker-compose.test.yml" .github/workflows/deploy-test.yml
+
+Output:
+.github/workflows/deploy-test.yml:        run: docker compose -f docker-compose.test.yml pull
+.github/workflows/deploy-test.yml:        run: IMAGE_TAG=${{ env.IMAGE_TAG }} docker compose -f docker-compose.test.yml up -d
+.github/workflows/deploy-test.yml:          docker compose -f docker-compose.test.yml logs api --tail 50
+.github/workflows/deploy-test.yml:          docker compose -f docker-compose.test.yml ps >> $GITHUB_STEP_SUMMARY
+
+Command:
+ls -la docker-compose.test.yml
+
+Output:
+-rw-r--r--@ 1 bykovas  staff  1071 Feb 15 17:01 docker-compose.test.yml
