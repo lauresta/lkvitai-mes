@@ -7,10 +7,10 @@
         borderColor: 0x1f2937,
         borderOpacity: 0.48,
         selectionColor: 0x00c8e8,
-        selectionEdgeOpacityMin: 0.82,
+        selectionEdgeOpacityMin: 0.9,
         selectionEdgeOpacityMax: 1.0,
-        selectionGlowCoreOpacity: 0.2,
-        selectionGlowCoreScaleBase: 1.018,
+        selectionGlowCoreOpacity: 0.24,
+        selectionGlowCoreScaleBase: 1.014,
         outlineEdgeStrength: 7.2,
         outlineEdgeThickness: 2.8,
         outlineEdgeGlow: 0.9,
@@ -33,8 +33,8 @@
         selectionRingGlowPulseMin: 0.0,
         selectionRingGlowPulseMax: 0.0,
         selectionRingFloorOffset: 0.01,
-        pinHeightFactor: 0.45,
-        pinMinOffset: 0.55,
+        pinHeightFactor: 0.48,
+        pinMinOffset: 0.62,
         pinBounceIdleMs: 3000,
         pinBounceOneUpMs: 200,
         pinBounceOneDownMs: 190,
@@ -408,17 +408,17 @@
 
             const selectionPinMaterial = new THREE.MeshStandardMaterial({
                 color: VISUAL_CONFIG.selectionColor,
-                roughness: 0.44,
-                metalness: 0.1,
+                roughness: 0.4,
+                metalness: 0.08,
                 emissive: VISUAL_CONFIG.selectionColor,
-                emissiveIntensity: 0.28
+                emissiveIntensity: 0.22
             });
             const selectionPinHighlightMaterial = new THREE.MeshStandardMaterial({
                 color: 0xeaffff,
-                roughness: 0.28,
+                roughness: 0.24,
                 metalness: 0.05,
                 emissive: 0xaef6ff,
-                emissiveIntensity: 0.2
+                emissiveIntensity: 0.14
             });
             const selectionPin = new THREE.Group();
             const selectionPinBody = new THREE.Mesh(new THREE.ConeGeometry(1, 1, 20), selectionPinMaterial);
@@ -427,15 +427,21 @@
             selectionPinBody.renderOrder = 7;
             selectionPin.add(selectionPinBody);
 
+            const selectionPinCollar = new THREE.Mesh(new THREE.TorusGeometry(1, 0.2, 10, 28), selectionPinMaterial);
+            selectionPinCollar.rotation.x = Math.PI / 2;
+            selectionPinCollar.position.y = 1.0;
+            selectionPinCollar.renderOrder = 7;
+            selectionPin.add(selectionPinCollar);
+
             const selectionPinHead = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 20), selectionPinMaterial);
             selectionPinHead.position.y = 1.32;
             selectionPinHead.renderOrder = 7;
             selectionPin.add(selectionPinHead);
 
-                const selectionPinHighlight = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 16), selectionPinHighlightMaterial);
-                selectionPinHighlight.position.set(0, 1.56, 0);
-                selectionPinHighlight.renderOrder = 8;
-                selectionPin.add(selectionPinHighlight);
+            const selectionPinHighlight = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 16), selectionPinHighlightMaterial);
+            selectionPinHighlight.position.set(0, 1.56, 0);
+            selectionPinHighlight.renderOrder = 8;
+            selectionPin.add(selectionPinHighlight);
 
             selectionPin.visible = false;
             markAsOverlay(selectionPin);
@@ -581,7 +587,7 @@
                 const selectionEdges = new THREE.LineSegments(borderGeometry, selectionEdgesMaterial);
                 selectionEdges.renderOrder = 11;
                 selectionEdges.visible = false;
-                selectionEdges.scale.set(1.003, 1.003, 1.003);
+                selectionEdges.scale.set(1.007, 1.007, 1.007);
                 markAsOverlay(selectionEdges);
                 cube.add(selectionEdges);
 
@@ -780,20 +786,24 @@
                 const pinBounceOffset = computePinBounceOffset(mesh, timestampMs);
                 const pinBaseY = selectionBoundsBox.max.y + pinOffset;
                 const maxFootprint = Math.max(selectionBoundsSize.x, selectionBoundsSize.z);
-                const pinHeadRadius = clamp(maxFootprint * 0.14, 0.15, 0.5);
-                const pinConeRadius = clamp(maxFootprint * 0.09, 0.1, 0.34);
-                const pinConeHeight = clamp(selectionBoundsSize.y * 0.4, 0.24, 1.2);
-                const pinHighlightRadius = pinHeadRadius * 0.36;
+                const pinHeadRadius = clamp(maxFootprint * 0.11, 0.12, 0.36);
+                const pinConeRadius = clamp(maxFootprint * 0.065, 0.08, 0.24);
+                const pinConeHeight = clamp(selectionBoundsSize.y * 0.34, 0.22, 0.92);
+                const pinCollarRadius = pinConeRadius * 0.92;
+                const pinCollarTube = Math.max(0.026, pinConeRadius * 0.24);
+                const pinHighlightRadius = pinHeadRadius * 0.29;
 
                 selectionPinBody.scale.set(pinConeRadius, pinConeHeight, pinConeRadius);
                 selectionPinBody.position.y = pinConeHeight * 0.5;
+                selectionPinCollar.scale.set(pinCollarRadius, pinCollarTube, pinCollarRadius);
+                selectionPinCollar.position.y = pinConeHeight + (pinHeadRadius * 0.04);
                 selectionPinHead.scale.set(pinHeadRadius, pinHeadRadius, pinHeadRadius);
-                selectionPinHead.position.y = pinConeHeight + (pinHeadRadius * 0.78);
+                selectionPinHead.position.y = pinConeHeight + (pinHeadRadius * 0.84);
                 selectionPinHighlight.scale.set(pinHighlightRadius, pinHighlightRadius, pinHighlightRadius);
                 selectionPinHighlight.position.set(
-                    -pinHeadRadius * 0.34,
-                    pinConeHeight + (pinHeadRadius * 1.12),
-                    pinHeadRadius * 0.38);
+                    0,
+                    pinConeHeight + (pinHeadRadius * 1.22),
+                    0);
 
                 selectionPin.position.set(
                     selectionBoundsCenter.x,
@@ -817,7 +827,7 @@
                     if (mesh.userData.baseBorderMaterial) {
                         mesh.userData.baseBorderMaterial.color.setHex(VISUAL_CONFIG.borderColor);
                         mesh.userData.baseBorderMaterial.opacity = isSelected && !useOutlinePass
-                            ? 0.2
+                            ? 0.14
                             : VISUAL_CONFIG.borderOpacity;
                     }
                     if (mesh.userData.selectionEdges) {
