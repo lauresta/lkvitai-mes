@@ -1,0 +1,23 @@
+name: Architecture Checks
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  architecture:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Dependency baseline validator
+        run: dotnet run --project tools/DependencyValidator/DependencyValidator.csproj
+
+      - name: Architecture tests
+        run: dotnet test tests/ArchitectureTests/LKvitai.MES.ArchitectureTests/LKvitai.MES.ArchitectureTests.csproj
