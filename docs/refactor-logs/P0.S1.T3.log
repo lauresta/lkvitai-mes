@@ -1,0 +1,17 @@
+COMMAND: dotnet test tests/ArchitectureTests/LKvitai.MES.ArchitectureTests/LKvitai.MES.ArchitectureTests.csproj 
+  Determining projects to restore...
+  Restored C:\Sources\clients\lauresta\lkvitai-mes\tests\ArchitectureTests\LKvitai.MES.ArchitectureTests\LKvitai.MES.ArchitectureTests.csproj (in 537 ms).
+  LKvitai.MES.ArchitectureTests -> C:\Sources\clients\lauresta\lkvitai-mes\tests\ArchitectureTests\LKvitai.MES.ArchitectureTests\bin\Debug\net8.0\LKvitai.MES.ArchitectureTests.dll
+Test run for C:\Sources\clients\lauresta\lkvitai-mes\tests\ArchitectureTests\LKvitai.MES.ArchitectureTests\bin\Debug\net8.0\LKvitai.MES.ArchitectureTests.dll (.NETCoreApp,Version=v8.0)
+VSTest version 18.0.1 (x64)
+
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.62]     LKvitai.MES.ArchitectureTests.ContractsLayerTests.Contracts_Must_Have_Zero_Dependencies [SKIP]
+[xUnit.net 00:00:00.62]     LKvitai.MES.ArchitectureTests.DomainLayerTests.Domain_Must_Not_Reference_Infrastructure [SKIP]
+[xUnit.net 00:00:00.62]     LKvitai.MES.ArchitectureTests.ApplicationLayerTests.Application_Must_Not_Reference_Marten [SKIP]
+  Skipped LKvitai.MES.ArchitectureTests.ContractsLayerTests.Contracts_Must_Have_Zero_Dependencies [1 ms]
+  Skipped LKvitai.MES.ArchitectureTests.DomainLayerTests.Domain_Must_Not_Reference_Infrastructure [1 ms]
+  Skipped LKvitai.MES.ArchitectureTests.ApplicationLayerTests.Application_Must_Not_Reference_Marten [1 ms]
+
+Skipped! - Failed:     0, Passed:     0, Skipped:     3, Total:     3, Duration: 4 ms - LKvitai.MES.ArchitectureTests.dll (net8.0)
