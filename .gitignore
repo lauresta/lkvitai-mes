@@ -9,3 +9,17 @@
 # Claude Code local settings
 .claude/settings.local.json
 **/.claude/settings.local.json
+
+# build and IDE artifacts
+**/bin/
+**/obj/
+**/TestResults/
+**/*.user
+**/*.suo
+**/.vs/
+**/*.cache
+**/*.nupkg
+**/artifacts/
+coverage/**
+**/coverage.*
+**/packages.lock.json
