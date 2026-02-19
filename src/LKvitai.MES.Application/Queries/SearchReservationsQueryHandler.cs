@@ -2,7 +2,6 @@ using LKvitai.MES.Application.Ports;
 using LKvitai.MES.Contracts.ReadModels;
 using LKvitai.MES.Domain.Aggregates;
 using LKvitai.MES.SharedKernel;
-using Marten;
 using MediatR;
 
 namespace LKvitai.MES.Application.Queries;
@@ -10,17 +9,14 @@ namespace LKvitai.MES.Application.Queries;
 public class SearchReservationsQueryHandler
     : IRequestHandler<SearchReservationsQuery, Result<PagedResult<ReservationDto>>>
 {
-    private static readonly string AllocatedStatus = ReservationStatus.ALLOCATED.ToString();
-    private static readonly string PickingStatus = ReservationStatus.PICKING.ToString();
-
-    private readonly IDocumentStore _store;
+    private readonly IReservationReadModelQueryService _readModelQueryService;
     private readonly IReservationRepository _reservationRepository;
 
     public SearchReservationsQueryHandler(
-        IDocumentStore store,
+        IReservationReadModelQueryService readModelQueryService,
         IReservationRepository reservationRepository)
     {
-        _store = store;
+        _readModelQueryService = readModelQueryService;
         _reservationRepository = reservationRepository;
     }
 
@@ -54,27 +50,13 @@ public class SearchReservationsQueryHandler
                 "Status must be one of: ALLOCATED, PICKING.");
         }
 
-        await using var querySession = _store.QuerySession();
-        IQueryable<ReservationSummaryView> summaryQuery = querySession.Query<ReservationSummaryView>();
-
-        if (normalizedStatus is null)
-        {
-            summaryQuery = summaryQuery.Where(x => x.Status == AllocatedStatus || x.Status == PickingStatus);
-        }
-        else
-        {
-            summaryQuery = summaryQuery.Where(x => x.Status == normalizedStatus);
-        }
-
-        var totalCount = await summaryQuery.CountAsync(cancellationToken);
+        var totalCount = await _readModelQueryService.CountReservationsAsync(normalizedStatus, cancellationToken);
         var skip = (request.Page - 1) * request.PageSize;
-
-        var summaries = await summaryQuery
-            .OrderByDescending(x => x.CreatedAt)
-            .ThenBy(x => x.ReservationId)
-            .Skip(skip)
-            .Take(request.PageSize)
-            .ToListAsync(cancellationToken);
+        var summaries = await _readModelQueryService.GetReservationPageAsync(
+            normalizedStatus,
+            skip,
+            request.PageSize,
+            cancellationToken);
 
         if (summaries.Count == 0)
         {
@@ -110,11 +92,8 @@ public class SearchReservationsQueryHandler
 
         var huLookup = huIds.Count == 0
             ? new Dictionary<Guid, HandlingUnitView>()
-            : (await querySession.Query<HandlingUnitView>()
-                .Where(x => huIds.Contains(x.HuId))
-                .ToListAsync(cancellationToken))
-                .GroupBy(x => x.HuId)
-                .ToDictionary(x => x.Key, x => x.First());
+            : new Dictionary<Guid, HandlingUnitView>(
+                await _readModelQueryService.GetHandlingUnitsAsync(huIds, cancellationToken));
 
         var items = new List<ReservationDto>(summaries.Count);
 

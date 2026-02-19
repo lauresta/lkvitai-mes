@@ -37,10 +37,12 @@ public static class DependencyInjection
 
         // Repository implementations (Application ports)
         services.AddScoped<IReservationRepository, MartenReservationRepository>();
+        services.AddScoped<IReservationReadModelQueryService, MartenReservationReadModelQueryService>();
         services.AddScoped<IActiveHardLocksRepository, MartenActiveHardLocksRepository>();
         services.AddScoped<ILocationBalanceRepository, MartenLocationBalanceRepository>();
         services.AddScoped<IAvailableStockRepository, MartenAvailableStockRepository>();
         services.AddScoped<IStockLedgerRepository, MartenStockLedgerRepository>();
+        services.AddScoped<IProjectionVerificationDataAccess, MartenProjectionVerificationDataAccess>();
 
         // Orchestration implementations
         services.AddScoped<IStartPickingOrchestration, MartenStartPickingOrchestration>();
