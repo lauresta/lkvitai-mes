@@ -1,4 +1,4 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
@@ -25,15 +25,15 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LKvitai.MES.Contracts", "LK
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LKvitai.MES.SharedKernel", "LKvitai.MES.SharedKernel\LKvitai.MES.SharedKernel.csproj", "{99999999-9999-9999-9999-999999999999}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LKvitai.MES.Tests.Unit", "tests\LKvitai.MES.Tests.Unit\LKvitai.MES.Tests.Unit.csproj", "{AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LKvitai.MES.Tests.Unit", "..\tests\LKvitai.MES.Tests.Unit\LKvitai.MES.Tests.Unit.csproj", "{AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LKvitai.MES.Tests.Property", "tests\LKvitai.MES.Tests.Property\LKvitai.MES.Tests.Property.csproj", "{BBBBBBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LKvitai.MES.Tests.Property", "..\tests\LKvitai.MES.Tests.Property\LKvitai.MES.Tests.Property.csproj", "{BBBBBBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LKvitai.MES.Tests.Integration", "tests\LKvitai.MES.Tests.Integration\LKvitai.MES.Tests.Integration.csproj", "{CCCCCCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LKvitai.MES.Tests.Integration", "..\tests\LKvitai.MES.Tests.Integration\LKvitai.MES.Tests.Integration.csproj", "{CCCCCCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LKvitai.MES.WebUI", "LKvitai.MES.WebUI\LKvitai.MES.WebUI.csproj", "{F6AD0540-0462-44BF-A8DA-2891B764F847}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LKvitai.MES.Tests.E2E", "tests\LKvitai.MES.Tests.E2E\LKvitai.MES.Tests.E2E.csproj", "{BA16D7E1-0F7D-4972-8CD1-4F6B3415B42B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LKvitai.MES.Tests.E2E", "..\tests\LKvitai.MES.Tests.E2E\LKvitai.MES.Tests.E2E.csproj", "{BA16D7E1-0F7D-4972-8CD1-4F6B3415B42B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -234,3 +234,5 @@ Global
 		{BA16D7E1-0F7D-4972-8CD1-4F6B3415B42B} = {B2C3D4E5-F6A7-8901-BCDE-F12345678901}
 	EndGlobalSection
 EndGlobal
+
+
