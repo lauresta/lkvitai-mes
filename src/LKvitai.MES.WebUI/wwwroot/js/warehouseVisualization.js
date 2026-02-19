@@ -15,16 +15,18 @@
         outlinePulsePeriodSeconds: 1.5,
         selectionPulseMs: 1500,
         selectionRingRotationSeconds: 8.2,
-        selectionRingInnerOffsetFactor: 0.07,
-        selectionRingBandThicknessFactor: 0.03,
+        selectionRingInnerOffsetFactor: 0.09,
+        selectionRingBandThicknessFactor: 0.055,
         selectionRingMinInnerRadius: 0.42,
         selectionRingMaxInnerRadius: 4.2,
-        selectionRingMinBandThickness: 0.028,
-        selectionRingMaxBandThickness: 0.12,
-        selectionRingDashGapRatio: 0.72,
+        selectionRingMinBandThickness: 0.05,
+        selectionRingMaxBandThickness: 0.2,
+        selectionRingDashGapRatio: 0.68,
         selectionRingDashArcLength: 0.12,
-        selectionRingOpacity: 0.33,
+        selectionRingOpacity: 0.42,
         selectionRingFloorOffset: 0.01,
+        selectionFillOverlayOpacityMin: 0.09,
+        selectionFillOverlayOpacityMax: 0.15,
         pinScaleFactor: 0.64,
         pinBounceIdleMs: 3000,
         pinBounceOneUpMs: 200,
@@ -567,6 +569,21 @@
                 markAsOverlay(selectionEdges);
                 cube.add(selectionEdges);
 
+                const selectionFillOverlayMaterial = new THREE.MeshBasicMaterial({
+                    color: VISUAL_CONFIG.selectionColor,
+                    transparent: true,
+                    opacity: VISUAL_CONFIG.selectionFillOverlayOpacityMin,
+                    depthWrite: false,
+                    toneMapped: false,
+                    side: THREE.DoubleSide
+                });
+                const selectionFillOverlay = new THREE.Mesh(geometry, selectionFillOverlayMaterial);
+                selectionFillOverlay.renderOrder = 6;
+                selectionFillOverlay.visible = false;
+                selectionFillOverlay.scale.set(1.001, 1.001, 1.001);
+                markAsOverlay(selectionFillOverlay);
+                cube.add(selectionFillOverlay);
+
                 if (bin.isReserved) {
                     const reservedOverlay = new THREE.Mesh(geometry, reservedOverlayMaterial);
                     reservedOverlay.renderOrder = 3;
@@ -582,6 +599,8 @@
                     baseBorderMaterial,
                     selectionEdges,
                     selectionEdgesMaterial,
+                    selectionFillOverlay,
+                    selectionFillOverlayMaterial,
                     width,
                     depth,
                     height,
@@ -736,6 +755,9 @@
                     }
                     if (mesh.userData.selectionEdges) {
                         mesh.userData.selectionEdges.visible = isSelected && !useOutlinePass;
+                    }
+                    if (mesh.userData.selectionFillOverlay) {
+                        mesh.userData.selectionFillOverlay.visible = isSelected;
                     }
                 });
                 if (outlinePass) {
@@ -900,6 +922,11 @@
                         const edgeOpacity = VISUAL_CONFIG.selectionEdgeOpacityMin +
                             ((VISUAL_CONFIG.selectionEdgeOpacityMax - VISUAL_CONFIG.selectionEdgeOpacityMin) * pulse);
                         selectedMesh.userData.selectionEdgesMaterial.opacity = edgeOpacity;
+                    }
+                    if (selectedMesh.userData.selectionFillOverlayMaterial) {
+                        selectedMesh.userData.selectionFillOverlayMaterial.opacity =
+                            VISUAL_CONFIG.selectionFillOverlayOpacityMin +
+                            ((VISUAL_CONFIG.selectionFillOverlayOpacityMax - VISUAL_CONFIG.selectionFillOverlayOpacityMin) * pulse);
                     }
 
                     selectionRingMaterial.opacity = VISUAL_CONFIG.selectionRingOpacity * (0.9 + (0.2 * pulse));
