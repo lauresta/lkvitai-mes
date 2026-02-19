@@ -290,20 +290,18 @@ LKvitai.MES/
 
 **P0.S4.T2: Create Directory.Packages.props (minimal)**
 
-- **Purpose:** Enable central package version management
+- **Purpose:** Prepare central package versions file without enabling central package management yet
 - **Scope:** Repo root (NOT src/)
 - **Operations:**
   - Create `Directory.Packages.props` at **repo root** (covers both `src/` and `tests/` directories)
-  - Add `<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>`
   - List all packages with versions from inventory in `<ItemGroup>`
 - **Commands:**
   ```bash
   dotnet restore src/LKvitai.MES.sln
-  dotnet build src/LKvitai.MES.sln
   ```
-- **DoD:** Build succeeds with central props file present at repo root
+- **DoD:** Restore succeeds with central versions file present and CPM still disabled
 - **Rollback:** Delete `Directory.Packages.props`
-- **STOP Condition:** If build fails, STOP and report
+- **STOP Condition:** If restore fails, STOP and report
 
 **P0.S4.T3: Remove versions from src csproj files**
 
@@ -316,28 +314,26 @@ LKvitai.MES/
 - **Commands:**
   ```bash
   dotnet restore src/LKvitai.MES.sln
-  dotnet build src/LKvitai.MES.sln
   ```
-- **DoD:** Build succeeds, packages resolve from central props
+- **DoD:** Restore succeeds after removing versions from `src/` projects
 - **Rollback:** `git checkout -- src/**/*.csproj`
-- **STOP Condition:** If build fails, STOP and report
+- **STOP Condition:** If restore fails, STOP and report
 
-**P0.S4.T4: Remove versions from tests csproj files**
+**P0.S4.T4: Remove versions from tests csproj files and enable CPM**
 
-- **Purpose:** Complete migration of test projects to central package management
-- **Scope:** All `.csproj` files in `tests/`
+- **Purpose:** Complete migration by removing test versions, then enable central package management
+- **Scope:** All `.csproj` files in `tests/`, repo root
 - **Operations:**
   - For each `<PackageReference Include="X" Version="Y" />` in `tests/`, change to `<PackageReference Include="X" />`
   - Keep all other attributes (PrivateAssets, etc.)
+  - Enable CPM by adding `<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>` in `Directory.Build.props` (or `NuGet.props`) at repo root
 - **Commands:**
   ```bash
   dotnet restore src/LKvitai.MES.sln
-  dotnet build src/LKvitai.MES.sln
-  dotnet test src/LKvitai.MES.sln --no-build
   ```
-- **DoD:** All tests pass, packages resolve from central props
+- **DoD:** Restore succeeds with CPM enabled and versions centralized
 - **Rollback:** `git checkout -- tests/**/*.csproj`
-- **STOP Condition:** If tests fail that passed in baseline, STOP and report
+- **STOP Condition:** If restore fails, STOP and report
 
 #### Stage 0.5: Root File Cleanup
 
