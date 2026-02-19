@@ -8,7 +8,6 @@
 
   <ItemGroup>
     <PackageReference Include="MediatR" />
-    <PackageReference Include="Marten" />
     <PackageReference Include="FluentValidation" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
