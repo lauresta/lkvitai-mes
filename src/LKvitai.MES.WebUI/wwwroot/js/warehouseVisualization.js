@@ -7,14 +7,14 @@
         borderColor: 0x1f2937,
         borderOpacity: 0.48,
         selectionColor: 0x22d3ee,
-        selectionPulseMin: 0.82,
-        selectionPulseMax: 1.0,
-        selectionGlowPulseMin: 0.42,
-        selectionGlowPulseMax: 0.82,
-        selectionGlowShellOpacityMin: 0.22,
-        selectionGlowShellOpacityMax: 0.42,
-        selectionGlowShellScaleBase: 1.026,
-        selectionGlowShellScalePulse: 0.012,
+        selectionGlowCoreOpacityMin: 0.64,
+        selectionGlowCoreOpacityMax: 0.9,
+        selectionGlowSoftOpacityMin: 0.24,
+        selectionGlowSoftOpacityMax: 0.44,
+        selectionGlowCoreScaleBase: 1.03,
+        selectionGlowCoreScalePulse: 0.012,
+        selectionGlowSoftScaleBase: 1.055,
+        selectionGlowSoftScalePulse: 0.018,
         selectionPulseMs: 1500,
         selectionRingOuterRotationSeconds: 7.0,
         selectionRingInnerRotationSeconds: 12.0,
@@ -556,52 +556,47 @@
                 baseBorder.renderOrder = 2;
                 cube.add(baseBorder);
 
-                const selectionBorderMaterial = new THREE.LineBasicMaterial({
+                const selectionGlowCoreMaterial = new THREE.MeshBasicMaterial({
                     color: VISUAL_CONFIG.selectionColor,
                     transparent: true,
-                    opacity: VISUAL_CONFIG.selectionPulseMin,
+                    opacity: VISUAL_CONFIG.selectionGlowCoreOpacityMin,
                     depthWrite: false,
-                    toneMapped: false
-                });
-                const selectionBorder = new THREE.LineSegments(borderGeometry, selectionBorderMaterial);
-                selectionBorder.renderOrder = 5;
-                selectionBorder.visible = false;
-                selectionBorder.scale.set(1.004, 1.004, 1.004);
-                markAsOverlay(selectionBorder);
-                cube.add(selectionBorder);
-
-                const selectionBorderGlowMaterial = new THREE.LineBasicMaterial({
-                    color: VISUAL_CONFIG.selectionColor,
-                    transparent: true,
-                    opacity: VISUAL_CONFIG.selectionGlowPulseMin,
-                    depthWrite: false,
-                    toneMapped: false
-                });
-                const selectionBorderGlow = new THREE.LineSegments(borderGeometry, selectionBorderGlowMaterial);
-                selectionBorderGlow.renderOrder = 4;
-                selectionBorderGlow.visible = false;
-                selectionBorderGlow.scale.set(1.016, 1.016, 1.016);
-                markAsOverlay(selectionBorderGlow);
-                cube.add(selectionBorderGlow);
-
-                const selectionGlowShellMaterial = new THREE.MeshBasicMaterial({
-                    color: VISUAL_CONFIG.selectionColor,
-                    transparent: true,
-                    opacity: VISUAL_CONFIG.selectionGlowShellOpacityMin,
-                    depthWrite: false,
+                    depthTest: true,
                     toneMapped: false,
                     side: THREE.BackSide,
                     blending: THREE.AdditiveBlending
                 });
-                const selectionGlowShell = new THREE.Mesh(geometry, selectionGlowShellMaterial);
-                selectionGlowShell.renderOrder = 3;
-                selectionGlowShell.visible = false;
-                selectionGlowShell.scale.set(
-                    VISUAL_CONFIG.selectionGlowShellScaleBase,
-                    VISUAL_CONFIG.selectionGlowShellScaleBase,
-                    VISUAL_CONFIG.selectionGlowShellScaleBase);
-                markAsOverlay(selectionGlowShell);
-                cube.add(selectionGlowShell);
+                const selectionGlowCore = new THREE.Mesh(geometry, selectionGlowCoreMaterial);
+                selectionGlowCore.renderOrder = 4;
+                selectionGlowCore.visible = false;
+                selectionGlowCore.position.set(0, 0, 0);
+                selectionGlowCore.scale.set(
+                    VISUAL_CONFIG.selectionGlowCoreScaleBase,
+                    VISUAL_CONFIG.selectionGlowCoreScaleBase,
+                    VISUAL_CONFIG.selectionGlowCoreScaleBase);
+                markAsOverlay(selectionGlowCore);
+                cube.add(selectionGlowCore);
+
+                const selectionGlowSoftMaterial = new THREE.MeshBasicMaterial({
+                    color: VISUAL_CONFIG.selectionColor,
+                    transparent: true,
+                    opacity: VISUAL_CONFIG.selectionGlowSoftOpacityMin,
+                    depthWrite: false,
+                    depthTest: true,
+                    toneMapped: false,
+                    side: THREE.BackSide,
+                    blending: THREE.AdditiveBlending
+                });
+                const selectionGlowSoft = new THREE.Mesh(geometry, selectionGlowSoftMaterial);
+                selectionGlowSoft.renderOrder = 3;
+                selectionGlowSoft.visible = false;
+                selectionGlowSoft.position.set(0, 0, 0);
+                selectionGlowSoft.scale.set(
+                    VISUAL_CONFIG.selectionGlowSoftScaleBase,
+                    VISUAL_CONFIG.selectionGlowSoftScaleBase,
+                    VISUAL_CONFIG.selectionGlowSoftScaleBase);
+                markAsOverlay(selectionGlowSoft);
+                cube.add(selectionGlowSoft);
 
                 if (bin.isReserved) {
                     const reservedOverlay = new THREE.Mesh(geometry, reservedOverlayMaterial);
@@ -616,12 +611,10 @@
                     code: bin.code,
                     baseColor: toHexColor(bin.color),
                     baseBorderMaterial,
-                    selectionBorder,
-                    selectionBorderMaterial,
-                    selectionBorderGlow,
-                    selectionBorderGlowMaterial,
-                    selectionGlowShell,
-                    selectionGlowShellMaterial,
+                    selectionGlowCore,
+                    selectionGlowCoreMaterial,
+                    selectionGlowSoft,
+                    selectionGlowSoftMaterial,
                     width,
                     depth,
                     height,
@@ -792,14 +785,11 @@
 
                 interactiveMeshes.forEach((mesh) => {
                     const isSelected = !!selectedMesh && mesh === selectedMesh;
-                    if (mesh.userData.selectionBorder) {
-                        mesh.userData.selectionBorder.visible = isSelected;
+                    if (mesh.userData.selectionGlowCore) {
+                        mesh.userData.selectionGlowCore.visible = isSelected;
                     }
-                    if (mesh.userData.selectionBorderGlow) {
-                        mesh.userData.selectionBorderGlow.visible = isSelected;
-                    }
-                    if (mesh.userData.selectionGlowShell) {
-                        mesh.userData.selectionGlowShell.visible = isSelected;
+                    if (mesh.userData.selectionGlowSoft) {
+                        mesh.userData.selectionGlowSoft.visible = isSelected;
                     }
                 });
 
@@ -813,6 +803,7 @@
                 selectionRingGroup.visible = true;
                 selectionRingOuter.rotation.y = 0;
                 selectionRingInner.rotation.y = 0;
+                selectedMesh.updateWorldMatrix(true, true);
                 updateSelectionRingProfile(selectedMesh);
                 updateSelectionAnchors(selectedMesh, performance.now());
             }
@@ -952,19 +943,19 @@
 
                     const pulsePhase = (now % VISUAL_CONFIG.selectionPulseMs) / VISUAL_CONFIG.selectionPulseMs;
                     const pulse = easeInOutSine(pulsePhase);
-                    const pulseOpacity = VISUAL_CONFIG.selectionPulseMin +
-                        ((VISUAL_CONFIG.selectionPulseMax - VISUAL_CONFIG.selectionPulseMin) * pulse);
-                    const glowOpacity = VISUAL_CONFIG.selectionGlowPulseMin +
-                        ((VISUAL_CONFIG.selectionGlowPulseMax - VISUAL_CONFIG.selectionGlowPulseMin) * pulse);
+                    const coreOpacity = VISUAL_CONFIG.selectionGlowCoreOpacityMin +
+                        ((VISUAL_CONFIG.selectionGlowCoreOpacityMax - VISUAL_CONFIG.selectionGlowCoreOpacityMin) * pulse);
+                    const softOpacity = VISUAL_CONFIG.selectionGlowSoftOpacityMin +
+                        ((VISUAL_CONFIG.selectionGlowSoftOpacityMax - VISUAL_CONFIG.selectionGlowSoftOpacityMin) * pulse);
+                    const coreScale = VISUAL_CONFIG.selectionGlowCoreScaleBase +
+                        (VISUAL_CONFIG.selectionGlowCoreScalePulse * pulse);
+                    const softScale = VISUAL_CONFIG.selectionGlowSoftScaleBase +
+                        (VISUAL_CONFIG.selectionGlowSoftScalePulse * pulse);
 
-                    selectedMesh.userData.selectionBorderMaterial.opacity = pulseOpacity;
-                    selectedMesh.userData.selectionBorderGlowMaterial.opacity = glowOpacity;
-                    selectedMesh.userData.selectionGlowShellMaterial.opacity = VISUAL_CONFIG.selectionGlowShellOpacityMin +
-                        ((VISUAL_CONFIG.selectionGlowShellOpacityMax - VISUAL_CONFIG.selectionGlowShellOpacityMin) * pulse);
-                    const borderGlowScale = 1.014 + (0.014 * pulse);
-                    selectedMesh.userData.selectionBorderGlow.scale.set(borderGlowScale, borderGlowScale, borderGlowScale);
-                    const shellScale = VISUAL_CONFIG.selectionGlowShellScaleBase + (VISUAL_CONFIG.selectionGlowShellScalePulse * pulse);
-                    selectedMesh.userData.selectionGlowShell.scale.set(shellScale, shellScale, shellScale);
+                    selectedMesh.userData.selectionGlowCoreMaterial.opacity = coreOpacity;
+                    selectedMesh.userData.selectionGlowSoftMaterial.opacity = softOpacity;
+                    selectedMesh.userData.selectionGlowCore.scale.set(coreScale, coreScale, coreScale);
+                    selectedMesh.userData.selectionGlowSoft.scale.set(softScale, softScale, softScale);
 
                     selectionRingOuterMaterial.opacity = 0.78 + (0.18 * pulse);
                     selectionRingInnerMaterial.opacity = 0.58 + (0.16 * (1 - pulse));
