@@ -203,7 +203,7 @@ LKvitai.MES/
   - Create `ContractsLayerTests.cs` with test: Contracts must have zero deps (Skip="Known violation")
 - **Commands:**
   ```bash
-  dotnet test tests/ArchitectureTests/
+  dotnet test tests/ArchitectureTests/LKvitai.MES.ArchitectureTests/LKvitai.MES.ArchitectureTests.csproj
   ```
 - **DoD:** All tests skipped (not failed), test run succeeds
 - **Rollback:** Delete test files
@@ -238,11 +238,11 @@ LKvitai.MES/
   - Create `.github/workflows/architecture-checks.yml`
   - Trigger on PR to main
   - Run `scripts/validate-module-dependencies.sh`
-  - Run `dotnet test tests/ArchitectureTests/`
+  - Run `dotnet test tests/ArchitectureTests/LKvitai.MES.ArchitectureTests/LKvitai.MES.ArchitectureTests.csproj`
 - **Commands:**
   ```bash
   ./scripts/validate-module-dependencies.sh
-  dotnet test tests/ArchitectureTests/
+  dotnet test tests/ArchitectureTests/LKvitai.MES.ArchitectureTests/LKvitai.MES.ArchitectureTests.csproj
   ```
 - **DoD:** Workflow file valid, can be triggered manually
 - **Rollback:** Delete workflow file
@@ -565,7 +565,7 @@ LKvitai.MES/
   - Run test, verify it passes
 - **Commands:**
   ```bash
-  dotnet test tests/ArchitectureTests/
+  dotnet test tests/ArchitectureTests/LKvitai.MES.ArchitectureTests/LKvitai.MES.ArchitectureTests.csproj
   ```
 - **DoD:** Test passes (not skipped)
 - **Rollback:** Re-add Skip attribute
@@ -1294,7 +1294,7 @@ LKvitai.MES/
   - Update `scripts/validate-module-dependencies.sh` to check BuildingBlocks isolation
 - **Commands:**
   ```bash
-  dotnet test tests/ArchitectureTests/
+  dotnet test tests/ArchitectureTests/LKvitai.MES.ArchitectureTests/LKvitai.MES.ArchitectureTests.csproj
   ./scripts/validate-module-dependencies.sh
   ```
 - **DoD:** Tests pass, script validates correctly
@@ -1819,3 +1819,4 @@ Once this blueprint is complete:
 **Execution Start:** After human approval  
 **Executor:** Codex (automated task agent)  
 **Reviewer:** Human (PR review after each task or phase)
+
