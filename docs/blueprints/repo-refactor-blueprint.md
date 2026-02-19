@@ -170,8 +170,8 @@ LKvitai.MES/
   - Note: .sln is in `src/`, tests moved to repo root, so relative path is `..` (up one level)
 - **Commands:**
   ```bash
-  dotnet restore
-  dotnet build
+  dotnet restore src/LKvitai.MES.sln
+  dotnet build src/LKvitai.MES.sln
   ```
 - **DoD:** Solution builds, test projects load in IDE
 - **Rollback:** `git mv tests src/tests`, revert sln
@@ -187,8 +187,8 @@ LKvitai.MES/
   - Add to solution: `dotnet sln src/LKvitai.MES.sln add tests/ArchitectureTests/LKvitai.MES.ArchitectureTests/LKvitai.MES.ArchitectureTests.csproj`
 - **Commands:**
   ```bash
-  dotnet restore
-  dotnet build
+  dotnet restore src/LKvitai.MES.sln
+  dotnet build src/LKvitai.MES.sln
   ```
 - **DoD:** Project builds, appears in solution
 - **Rollback:** Remove directory, remove from sln
@@ -298,8 +298,8 @@ LKvitai.MES/
   - List all packages with versions from inventory in `<ItemGroup>`
 - **Commands:**
   ```bash
-  dotnet restore
-  dotnet build
+  dotnet restore src/LKvitai.MES.sln
+  dotnet build src/LKvitai.MES.sln
   ```
 - **DoD:** Build succeeds with central props file present at repo root
 - **Rollback:** Delete `Directory.Packages.props`
@@ -315,8 +315,8 @@ LKvitai.MES/
   - Do NOT touch test projects yet
 - **Commands:**
   ```bash
-  dotnet restore
-  dotnet build
+  dotnet restore src/LKvitai.MES.sln
+  dotnet build src/LKvitai.MES.sln
   ```
 - **DoD:** Build succeeds, packages resolve from central props
 - **Rollback:** `git checkout -- src/**/*.csproj`
@@ -331,9 +331,9 @@ LKvitai.MES/
   - Keep all other attributes (PrivateAssets, etc.)
 - **Commands:**
   ```bash
-  dotnet restore
-  dotnet build
-  dotnet test --no-build
+  dotnet restore src/LKvitai.MES.sln
+  dotnet build src/LKvitai.MES.sln
+  dotnet test src/LKvitai.MES.sln --no-build
   ```
 - **DoD:** All tests pass, packages resolve from central props
 - **Rollback:** `git checkout -- tests/**/*.csproj`
@@ -410,8 +410,8 @@ LKvitai.MES/
   - Update all ProjectReferences in other projects
 - **Commands:**
   ```bash
-  dotnet restore
-  dotnet build
+  dotnet restore src/LKvitai.MES.sln
+  dotnet build src/LKvitai.MES.sln
   ```
 - **DoD:** Solution builds
 - **Rollback:** `git mv` back, revert sln and csproj changes
@@ -440,7 +440,7 @@ LKvitai.MES/
   - No code changes, validation only
 - **Commands:**
   ```bash
-  dotnet test
+  dotnet test src/LKvitai.MES.sln
   ```
 - **DoD:** All tests pass (same as baseline)
 - **Rollback:** N/A (validation only)
@@ -1824,4 +1824,3 @@ Once this blueprint is complete:
 **Execution Start:** After human approval  
 **Executor:** Codex (automated task agent)  
 **Reviewer:** Human (PR review after each task or phase)
-
