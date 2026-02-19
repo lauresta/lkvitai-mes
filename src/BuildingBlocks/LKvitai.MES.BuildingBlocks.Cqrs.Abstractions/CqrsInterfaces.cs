@@ -1,3 +1,5 @@
+using MediatR;
+
 namespace LKvitai.MES.BuildingBlocks.Cqrs.Abstractions;
 
 public interface ICommand
@@ -7,18 +9,17 @@ public interface ICommand
     Guid CausationId { get; }
 }
 
-public interface ICommand<out TResult> : ICommand
+public interface ICommand<out TResult> : IRequest<TResult>, ICommand
 {
 }
 
-public interface IQuery<out TResult>
+public interface IQuery<out TResult> : IRequest<TResult>
 {
 }
 
-public interface ICommandHandler<in TCommand>
-    where TCommand : ICommand
+public interface ICommandHandler<in TCommand> : IRequestHandler<TCommand, Unit>
+    where TCommand : ICommand<Unit>
 {
-    Task Handle(TCommand command, CancellationToken cancellationToken);
 }
 
 public interface IQueryHandler<in TQuery, TResult>
