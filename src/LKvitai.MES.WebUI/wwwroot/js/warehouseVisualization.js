@@ -7,10 +7,10 @@
         borderColor: 0x1f2937,
         borderOpacity: 0.48,
         selectionColor: 0x00c8e8,
-        selectionEdgeOpacityMin: 0.72,
-        selectionEdgeOpacityMax: 0.94,
-        selectionGlowCoreOpacity: 0.16,
-        selectionGlowCoreScaleBase: 1.02,
+        selectionEdgeOpacityMin: 0.82,
+        selectionEdgeOpacityMax: 1.0,
+        selectionGlowCoreOpacity: 0.2,
+        selectionGlowCoreScaleBase: 1.018,
         outlineEdgeStrength: 7.2,
         outlineEdgeThickness: 2.8,
         outlineEdgeGlow: 0.9,
@@ -18,23 +18,23 @@
         selectionPulseMs: 1500,
         selectionRingOuterRotationSeconds: 7.0,
         selectionRingInnerRotationSeconds: 12.0,
-        selectionRingInnerOffsetFactor: 0.02,
-        selectionRingBandThicknessFactor: 0.05,
-        selectionRingGapFactor: 0.065,
+        selectionRingInnerOffsetFactor: 0.03,
+        selectionRingBandThicknessFactor: 0.045,
+        selectionRingGapFactor: 0.09,
         selectionRingMinInnerRadius: 0.42,
         selectionRingMaxInnerRadius: 4.2,
         selectionRingMinBandThickness: 0.035,
         selectionRingMaxBandThickness: 0.16,
         selectionRingMinGap: 0.04,
         selectionRingMaxGap: 0.26,
-        selectionRingOuterDashGapRatio: 0.64,
-        selectionRingInnerDashGapRatio: 0.67,
-        selectionRingDashArcLength: 0.17,
-        selectionRingGlowPulseMin: 0.01,
-        selectionRingGlowPulseMax: 0.08,
+        selectionRingOuterDashGapRatio: 0.72,
+        selectionRingInnerDashGapRatio: 0.75,
+        selectionRingDashArcLength: 0.14,
+        selectionRingGlowPulseMin: 0.0,
+        selectionRingGlowPulseMax: 0.0,
         selectionRingFloorOffset: 0.01,
-        pinHeightFactor: 0.42,
-        pinMinOffset: 0.42,
+        pinHeightFactor: 0.45,
+        pinMinOffset: 0.55,
         pinBounceIdleMs: 3000,
         pinBounceOneUpMs: 200,
         pinBounceOneDownMs: 190,
@@ -432,10 +432,10 @@
             selectionPinHead.renderOrder = 7;
             selectionPin.add(selectionPinHead);
 
-            const selectionPinHighlight = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 16), selectionPinHighlightMaterial);
-            selectionPinHighlight.position.set(-0.17, 1.56, 0.2);
-            selectionPinHighlight.renderOrder = 8;
-            selectionPin.add(selectionPinHighlight);
+                const selectionPinHighlight = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 16), selectionPinHighlightMaterial);
+                selectionPinHighlight.position.set(0, 1.56, 0);
+                selectionPinHighlight.renderOrder = 8;
+                selectionPin.add(selectionPinHighlight);
 
             selectionPin.visible = false;
             markAsOverlay(selectionPin);
@@ -581,6 +581,7 @@
                 const selectionEdges = new THREE.LineSegments(borderGeometry, selectionEdgesMaterial);
                 selectionEdges.renderOrder = 11;
                 selectionEdges.visible = false;
+                selectionEdges.scale.set(1.003, 1.003, 1.003);
                 markAsOverlay(selectionEdges);
                 cube.add(selectionEdges);
 
@@ -798,10 +799,7 @@
                     selectionBoundsCenter.x,
                     pinBaseY + pinBounceOffset,
                     selectionBoundsCenter.z);
-                const pinYaw = Math.atan2(
-                    camera.position.x - selectionBoundsCenter.x,
-                    camera.position.z - selectionBoundsCenter.z);
-                selectionPin.rotation.set(0, pinYaw, 0);
+                selectionPin.rotation.set(0, 0, 0);
 
                 selectionRingGroup.position.set(
                     selectionBoundsCenter.x,
@@ -818,7 +816,9 @@
                     const isSelected = !!selectedMesh && mesh === selectedMesh;
                     if (mesh.userData.baseBorderMaterial) {
                         mesh.userData.baseBorderMaterial.color.setHex(VISUAL_CONFIG.borderColor);
-                        mesh.userData.baseBorderMaterial.opacity = VISUAL_CONFIG.borderOpacity;
+                        mesh.userData.baseBorderMaterial.opacity = isSelected && !useOutlinePass
+                            ? 0.2
+                            : VISUAL_CONFIG.borderOpacity;
                     }
                     if (mesh.userData.selectionEdges) {
                         mesh.userData.selectionEdges.visible = isSelected && !useOutlinePass;
