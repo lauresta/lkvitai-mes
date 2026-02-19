@@ -290,34 +290,25 @@ LKvitai.MES/
 
 **P0.S4.T2: Create Directory.Packages.props (minimal)**
 
-- **Purpose:** Prepare central package versions file without enabling central package management yet
-- **Scope:** Repo root (NOT src/)
+- **Purpose:** Add central package versions and remove inline package versions in one pass to avoid NU1008
+- **Scope:** Repo root, all `.csproj` files in `src/` and `tests/`
 - **Operations:**
   - Create `Directory.Packages.props` at **repo root** (covers both `src/` and `tests/` directories)
   - List all packages with versions from inventory in `<ItemGroup>`
+  - Remove `Version="..."` from all `<PackageReference ...>` items in `src/**/*.csproj` and `tests/**/*.csproj`
+  - Keep all other attributes (PrivateAssets, IncludeAssets, etc.)
 - **Commands:**
   ```bash
   dotnet restore src/LKvitai.MES.sln
   ```
-- **DoD:** Restore succeeds with central versions file present and CPM still disabled
-- **Rollback:** Delete `Directory.Packages.props`
+- **DoD:** Restore succeeds with central versions file and no inline `PackageReference Version` attributes
+- **Rollback:** Delete `Directory.Packages.props`, revert changed csproj files
 - **STOP Condition:** If restore fails, STOP and report
 
-**P0.S4.T3: Remove versions from src csproj files**
+**P0.S4.T3: Remove versions from src csproj files (absorbed into P0.S4.T2)**
 
-- **Purpose:** Migrate product projects to central package management
-- **Scope:** All `.csproj` files in `src/`
-- **Operations:**
-  - For each `<PackageReference Include="X" Version="Y" />` in `src/`, change to `<PackageReference Include="X" />`
-  - Keep all other attributes (PrivateAssets, etc.)
-  - Do NOT touch test projects yet
-- **Commands:**
-  ```bash
-  dotnet restore src/LKvitai.MES.sln
-  ```
-- **DoD:** Restore succeeds after removing versions from `src/` projects
-- **Rollback:** `git checkout -- src/**/*.csproj`
-- **STOP Condition:** If restore fails, STOP and report
+- **Status:** No execution. This task is absorbed into `P0.S4.T2`.
+- **Reason:** Running central versions file creation separately from `Version` removal causes NU1008 in this repo.
 
 **P0.S4.T4: Remove versions from tests csproj files and enable CPM**
 
