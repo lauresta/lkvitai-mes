@@ -242,11 +242,12 @@ LKvitai.MES/
 - **Operations:**
   - Create `.github/workflows/architecture-checks.yml`
   - Trigger on PR to main
-  - Run `scripts/validate-module-dependencies.sh`
+  - Run `dotnet run --project tools/DependencyValidator/DependencyValidator.csproj`
   - Run `dotnet test tests/ArchitectureTests/LKvitai.MES.ArchitectureTests/LKvitai.MES.ArchitectureTests.csproj`
+  - Note: Phase 0 uses non-blocking dependency reporting; strict mode will be enabled later in Phase 5.
 - **Commands:**
   ```bash
-  ./scripts/validate-module-dependencies.sh
+  dotnet run --project tools/DependencyValidator/DependencyValidator.csproj
   dotnet test tests/ArchitectureTests/LKvitai.MES.ArchitectureTests/LKvitai.MES.ArchitectureTests.csproj
   ```
 - **DoD:** Workflow file valid, can be triggered manually
