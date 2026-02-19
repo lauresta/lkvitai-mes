@@ -6,15 +6,16 @@
         fallbackColor: 0x999999,
         borderColor: 0x1f2937,
         borderOpacity: 0.48,
-        selectionColor: 0x22d3ee,
-        selectionGlowCoreOpacityMin: 0.34,
-        selectionGlowCoreOpacityMax: 0.55,
-        selectionGlowSoftOpacityMin: 0.12,
-        selectionGlowSoftOpacityMax: 0.24,
-        selectionGlowCoreScaleBase: 1.04,
-        selectionGlowCoreScalePulse: 0.01,
-        selectionGlowSoftScaleBase: 1.085,
-        selectionGlowSoftScalePulse: 0.015,
+        selectionColor: 0x00c8e8,
+        selectionBorderOpacitySelected: 0.86,
+        selectionGlowCoreOpacityMin: 0.18,
+        selectionGlowCoreOpacityMax: 0.3,
+        selectionGlowCoreScaleBase: 1.022,
+        selectionGlowCoreScalePulse: 0,
+        outlineEdgeStrength: 7.2,
+        outlineEdgeThickness: 2.8,
+        outlineEdgeGlow: 0.9,
+        outlinePulsePeriodSeconds: 1.5,
         selectionPulseMs: 1500,
         selectionRingOuterRotationSeconds: 7.0,
         selectionRingInnerRotationSeconds: 12.0,
@@ -257,6 +258,31 @@
             renderer.setSize(width, height);
             renderer.domElement.style.touchAction = "none";
             container.appendChild(renderer.domElement);
+
+            const supportsOutlinePass =
+                typeof THREE.EffectComposer === "function" &&
+                typeof THREE.RenderPass === "function" &&
+                typeof THREE.OutlinePass === "function";
+            let composer = null;
+            let outlinePass = null;
+            if (supportsOutlinePass) {
+                composer = new THREE.EffectComposer(renderer);
+                const renderPass = new THREE.RenderPass(scene, camera);
+                composer.addPass(renderPass);
+
+                outlinePass = new THREE.OutlinePass(new THREE.Vector2(width, height), scene, camera);
+                outlinePass.edgeStrength = VISUAL_CONFIG.outlineEdgeStrength;
+                outlinePass.edgeThickness = VISUAL_CONFIG.outlineEdgeThickness;
+                outlinePass.edgeGlow = VISUAL_CONFIG.outlineEdgeGlow;
+                outlinePass.pulsePeriod = VISUAL_CONFIG.outlinePulsePeriodSeconds;
+                outlinePass.visibleEdgeColor.setHex(VISUAL_CONFIG.selectionColor);
+                outlinePass.hiddenEdgeColor.setHex(VISUAL_CONFIG.selectionColor);
+                outlinePass.selectedObjects = [];
+                composer.addPass(outlinePass);
+            }
+            log("render: selection outline mode", {
+                outlinePassActive: !!outlinePass
+            });
 
             const controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.enableRotate = true;
@@ -564,7 +590,10 @@
                     depthTest: true,
                     toneMapped: false,
                     side: THREE.BackSide,
-                    blending: THREE.NormalBlending
+                    blending: THREE.NormalBlending,
+                    polygonOffset: true,
+                    polygonOffsetFactor: -1,
+                    polygonOffsetUnits: -1
                 });
                 const selectionGlowCore = new THREE.Mesh(geometry, selectionGlowCoreMaterial);
                 selectionGlowCore.renderOrder = 10;
@@ -576,27 +605,6 @@
                     VISUAL_CONFIG.selectionGlowCoreScaleBase);
                 markAsOverlay(selectionGlowCore);
                 cube.add(selectionGlowCore);
-
-                const selectionGlowSoftMaterial = new THREE.MeshBasicMaterial({
-                    color: VISUAL_CONFIG.selectionColor,
-                    transparent: true,
-                    opacity: VISUAL_CONFIG.selectionGlowSoftOpacityMin,
-                    depthWrite: false,
-                    depthTest: false,
-                    toneMapped: false,
-                    side: THREE.BackSide,
-                    blending: THREE.NormalBlending
-                });
-                const selectionGlowSoft = new THREE.Mesh(geometry, selectionGlowSoftMaterial);
-                selectionGlowSoft.renderOrder = 9;
-                selectionGlowSoft.visible = false;
-                selectionGlowSoft.position.set(0, 0, 0);
-                selectionGlowSoft.scale.set(
-                    VISUAL_CONFIG.selectionGlowSoftScaleBase,
-                    VISUAL_CONFIG.selectionGlowSoftScaleBase,
-                    VISUAL_CONFIG.selectionGlowSoftScaleBase);
-                markAsOverlay(selectionGlowSoft);
-                cube.add(selectionGlowSoft);
 
                 if (bin.isReserved) {
                     const reservedOverlay = new THREE.Mesh(geometry, reservedOverlayMaterial);
@@ -613,8 +621,6 @@
                     baseBorderMaterial,
                     selectionGlowCore,
                     selectionGlowCoreMaterial,
-                    selectionGlowSoft,
-                    selectionGlowSoftMaterial,
                     width,
                     depth,
                     height,
@@ -782,16 +788,24 @@
             function applySelection(code) {
                 selectedCode = code || null;
                 selectedMesh = selectedCode ? meshesByCode[selectedCode] || null : null;
+                const useOutlinePass = !!outlinePass;
 
                 interactiveMeshes.forEach((mesh) => {
                     const isSelected = !!selectedMesh && mesh === selectedMesh;
-                    if (mesh.userData.selectionGlowCore) {
-                        mesh.userData.selectionGlowCore.visible = isSelected;
+                    if (mesh.userData.baseBorderMaterial) {
+                        mesh.userData.baseBorderMaterial.color.setHex(
+                            isSelected && !useOutlinePass ? VISUAL_CONFIG.selectionColor : VISUAL_CONFIG.borderColor);
+                        mesh.userData.baseBorderMaterial.opacity = isSelected
+                            ? (useOutlinePass ? VISUAL_CONFIG.borderOpacity : VISUAL_CONFIG.selectionBorderOpacitySelected)
+                            : VISUAL_CONFIG.borderOpacity;
                     }
-                    if (mesh.userData.selectionGlowSoft) {
-                        mesh.userData.selectionGlowSoft.visible = isSelected;
+                    if (mesh.userData.selectionGlowCore) {
+                        mesh.userData.selectionGlowCore.visible = isSelected && !useOutlinePass;
                     }
                 });
+                if (outlinePass) {
+                    outlinePass.selectedObjects = selectedMesh ? [selectedMesh] : [];
+                }
 
                 if (!selectedMesh) {
                     selectionPin.visible = false;
@@ -892,6 +906,12 @@
                 camera.aspect = nextWidth / nextHeight;
                 camera.updateProjectionMatrix();
                 renderer.setSize(nextWidth, nextHeight);
+                if (composer) {
+                    composer.setSize(nextWidth, nextHeight);
+                }
+                if (outlinePass && typeof outlinePass.setSize === "function") {
+                    outlinePass.setSize(nextWidth, nextHeight);
+                }
                 log("resize", { nextWidth, nextHeight });
             };
 
@@ -943,19 +963,14 @@
 
                     const pulsePhase = (now % VISUAL_CONFIG.selectionPulseMs) / VISUAL_CONFIG.selectionPulseMs;
                     const pulse = easeInOutSine(pulsePhase);
-                    const coreOpacity = VISUAL_CONFIG.selectionGlowCoreOpacityMin +
-                        ((VISUAL_CONFIG.selectionGlowCoreOpacityMax - VISUAL_CONFIG.selectionGlowCoreOpacityMin) * pulse);
-                    const softOpacity = VISUAL_CONFIG.selectionGlowSoftOpacityMin +
-                        ((VISUAL_CONFIG.selectionGlowSoftOpacityMax - VISUAL_CONFIG.selectionGlowSoftOpacityMin) * pulse);
-                    const coreScale = VISUAL_CONFIG.selectionGlowCoreScaleBase +
-                        (VISUAL_CONFIG.selectionGlowCoreScalePulse * pulse);
-                    const softScale = VISUAL_CONFIG.selectionGlowSoftScaleBase +
-                        (VISUAL_CONFIG.selectionGlowSoftScalePulse * pulse);
-
-                    selectedMesh.userData.selectionGlowCoreMaterial.opacity = coreOpacity;
-                    selectedMesh.userData.selectionGlowSoftMaterial.opacity = softOpacity;
-                    selectedMesh.userData.selectionGlowCore.scale.set(coreScale, coreScale, coreScale);
-                    selectedMesh.userData.selectionGlowSoft.scale.set(softScale, softScale, softScale);
+                    if (!outlinePass) {
+                        const coreOpacity = VISUAL_CONFIG.selectionGlowCoreOpacityMin +
+                            ((VISUAL_CONFIG.selectionGlowCoreOpacityMax - VISUAL_CONFIG.selectionGlowCoreOpacityMin) * pulse);
+                        selectedMesh.userData.selectionGlowCoreMaterial.opacity = coreOpacity;
+                        const coreScale = VISUAL_CONFIG.selectionGlowCoreScaleBase +
+                            (VISUAL_CONFIG.selectionGlowCoreScalePulse * pulse);
+                        selectedMesh.userData.selectionGlowCore.scale.set(coreScale, coreScale, coreScale);
+                    }
 
                     selectionRingOuterMaterial.opacity = 0.78 + (0.18 * pulse);
                     selectionRingInnerMaterial.opacity = 0.58 + (0.16 * (1 - pulse));
@@ -967,7 +982,11 @@
                 }
 
                 controls.update();
-                renderer.render(scene, camera);
+                if (composer) {
+                    composer.render();
+                } else {
+                    renderer.render(scene, camera);
+                }
             }
 
             animate(previousFrameTimestamp);
