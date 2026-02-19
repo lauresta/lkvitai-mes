@@ -1,0 +1,11 @@
+Command:
+dotnet restore src/LKvitai.MES.sln
+
+Output:
+  Determining projects to restore...
+  Restored /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/tests/LKvitai.MES.Tests.E2E/LKvitai.MES.Tests.E2E.csproj (in 195 ms).
+  Restored /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/tests/ArchitectureTests/LKvitai.MES.ArchitectureTests/LKvitai.MES.ArchitectureTests.csproj (in 151 ms).
+  Restored /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/tests/LKvitai.MES.Tests.Integration/LKvitai.MES.Tests.Integration.csproj (in 423 ms).
+  Restored /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/tests/LKvitai.MES.Tests.Unit/LKvitai.MES.Tests.Unit.csproj (in 423 ms).
+  Restored /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/tests/LKvitai.MES.Tests.Property/LKvitai.MES.Tests.Property.csproj (in 393 ms).
+  10 of 15 projects are up-to-date for restore.
