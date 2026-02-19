@@ -391,7 +391,7 @@ LKvitai.MES/
 - **Purpose:** Validate move + build + Docker in one slice
 - **Scope:** `src/LKvitai.MES.Domain/`, `src/Modules/Warehouse/`
 - **Operations:**
-  - **STOP and verify first:** Review Domain project for cross-module concerns (Sales, Production entities). If found, STOP and ask human whether to proceed or extract first.
+  - Review Domain project for cross-module concerns (Sales, Production entities). Allowed at this stage; boundaries will be handled in Phase 4.4/Phase 5.
   - `git mv src/LKvitai.MES.Domain src/Modules/Warehouse/LKvitai.MES.Domain`
   - Update solution file path
   - Update all ProjectReferences in other projects
@@ -402,7 +402,7 @@ LKvitai.MES/
   ```
 - **DoD:** Solution builds
 - **Rollback:** `git mv` back, revert sln and csproj changes
-- **STOP Condition:** If Domain contains non-Warehouse entities (SalesOrder, Customer, etc.), STOP and report to human before proceeding
+- **STOP Condition:** If move/build fails with issues beyond path/reference updates, STOP and report
 
 **P1.S2.T2: Update Api Dockerfile for Domain move**
 
