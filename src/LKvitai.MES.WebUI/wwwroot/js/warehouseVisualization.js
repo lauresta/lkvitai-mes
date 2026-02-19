@@ -7,14 +7,14 @@
         borderColor: 0x1f2937,
         borderOpacity: 0.48,
         selectionColor: 0x22d3ee,
-        selectionGlowCoreOpacityMin: 0.64,
-        selectionGlowCoreOpacityMax: 0.9,
-        selectionGlowSoftOpacityMin: 0.24,
-        selectionGlowSoftOpacityMax: 0.44,
-        selectionGlowCoreScaleBase: 1.03,
-        selectionGlowCoreScalePulse: 0.012,
-        selectionGlowSoftScaleBase: 1.055,
-        selectionGlowSoftScalePulse: 0.018,
+        selectionGlowCoreOpacityMin: 0.34,
+        selectionGlowCoreOpacityMax: 0.55,
+        selectionGlowSoftOpacityMin: 0.12,
+        selectionGlowSoftOpacityMax: 0.24,
+        selectionGlowCoreScaleBase: 1.04,
+        selectionGlowCoreScalePulse: 0.01,
+        selectionGlowSoftScaleBase: 1.085,
+        selectionGlowSoftScalePulse: 0.015,
         selectionPulseMs: 1500,
         selectionRingOuterRotationSeconds: 7.0,
         selectionRingInnerRotationSeconds: 12.0,
@@ -564,10 +564,10 @@
                     depthTest: true,
                     toneMapped: false,
                     side: THREE.BackSide,
-                    blending: THREE.AdditiveBlending
+                    blending: THREE.NormalBlending
                 });
                 const selectionGlowCore = new THREE.Mesh(geometry, selectionGlowCoreMaterial);
-                selectionGlowCore.renderOrder = 4;
+                selectionGlowCore.renderOrder = 10;
                 selectionGlowCore.visible = false;
                 selectionGlowCore.position.set(0, 0, 0);
                 selectionGlowCore.scale.set(
@@ -582,13 +582,13 @@
                     transparent: true,
                     opacity: VISUAL_CONFIG.selectionGlowSoftOpacityMin,
                     depthWrite: false,
-                    depthTest: true,
+                    depthTest: false,
                     toneMapped: false,
                     side: THREE.BackSide,
-                    blending: THREE.AdditiveBlending
+                    blending: THREE.NormalBlending
                 });
                 const selectionGlowSoft = new THREE.Mesh(geometry, selectionGlowSoftMaterial);
-                selectionGlowSoft.renderOrder = 3;
+                selectionGlowSoft.renderOrder = 9;
                 selectionGlowSoft.visible = false;
                 selectionGlowSoft.position.set(0, 0, 0);
                 selectionGlowSoft.scale.set(
