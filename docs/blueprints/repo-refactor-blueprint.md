@@ -264,12 +264,11 @@ LKvitai.MES/
   - Change any other `src/tests/` references to `tests/` in `deploy-test.yml`
 - **Commands:**
   ```bash
-  grep -R "src/tests" .github/workflows/
-  grep -R "src\\\\tests" .github/workflows/
+  Select-String -Path .github/workflows/* -Pattern 'src/tests','src\\tests' -SimpleMatch
   ```
-- **DoD:** Workflows reference correct paths, grep returns no matches for old paths
+- **DoD:** Workflows reference correct paths, Select-String returns no matches for old paths
 - **Rollback:** Revert workflow files
-- **STOP Condition:** If grep still finds old paths after changes, STOP and report
+- **STOP Condition:** If Select-String still finds old paths after changes, STOP and report
 
 #### Stage 0.4: Central Package Management (Incremental)
 
