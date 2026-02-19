@@ -21,7 +21,7 @@
 10. Fixed PackageReference inventory command: use `find` instead of bash globstar
 11. Made RabbitMQ optional via docker-compose profile instead of removing
 12. Added STOP condition for cross-module entities in Domain before move
-13. Updated task counts: Phase 0: 10 tasks, Total: 72 tasks (was 69)
+13. Updated task counts: Phase 0: 10 tasks, Total: 73 tasks (was 69)
 
 **Validation Report Fixes (v1.1):**
 14. Added Phase 4 Stage 4.0 with P4.S0.T1: Register Marten event type aliases BEFORE any namespace rename (BLOCKER #1 fix)
@@ -35,8 +35,15 @@
 22. Fixed P1.S1.T2: Keep docker-compose.test.yml at repo root (validation only, no move) to match CI expectations (Issue #9)
 23. Updated P4.S6.T3 to include build-and-push.yml matrix path updates after final renames (Issue #10)
 24. Updated Phase 2 counts: 4 stages, 7 tasks (was 3 stages, 6 tasks)
-25. Updated Phase 4 counts: 7 stages, 20 tasks (was 6 stages, 19 tasks)
-26. Updated total counts: 28 stages, 72 tasks (was 26 stages, 70 tasks)
+25. Updated Phase 4 counts: 7 stages, 21 tasks (was 6 stages, 19 tasks)
+26. Updated total counts: 28 stages, 73 tasks (was 26 stages, 70 tasks)
+
+**Validation Report Recheck Fixes (v1.1):**
+27. Expanded P4.S0.T1 to include 13 Marten document types (saga states, snapshots, projection docs) in addition to 46 event types (New Issue #1)
+28. Added explicit guidance in P4.S0.T1: expected event count ~46, skip abstract base class, verify StockMovedV1Event upcaster chain (New Issue #2)
+29. Added P4.S5.T4: Validate Marten document types after Projections/Sagas/Integration renames with STOP condition (New Issue #3)
+30. Updated Phase 4 counts: 7 stages, 21 tasks (was 7 stages, 20 tasks)
+31. Updated total counts: 28 stages, 73 tasks (was 28 stages, 72 tasks)
 
 **Note:** Token Budget lines remain in Phase 4-8 tasks from v1.0 but should be ignored by Codex.
 
@@ -726,31 +733,36 @@ LKvitai.MES/
 
 ---
 
-### Phase 4: Project + Namespace Rename (7 stages, 20 tasks)
+### Phase 4: Project + Namespace Rename (7 stages, 21 tasks)
 
 **Goal:** Rename projects and namespaces to target conventions.
 
-**CRITICAL PRE-REQUISITE:** Before ANY namespace rename, Marten event type aliases must be registered to prevent event store corruption.
+**CRITICAL PRE-REQUISITE:** Before ANY namespace rename, Marten event type aliases AND document type aliases must be registered to prevent event store corruption.
 
 #### Stage 4.0: Marten Event Type Alias Registration (BLOCKER FIX)
 
-**P4.S0.T1: Register Marten event type aliases**
+**P4.S0.T1: Register Marten type aliases (events + documents)**
 
-- **Purpose:** Preserve backward compatibility for existing events in warehouse_events schema
+- **Purpose:** Preserve backward compatibility for existing events and documents in warehouse_events schema
 - **Scope:** `src/LKvitai.MES.Infrastructure/Persistence/MartenConfiguration.cs`
 - **Operations:**
-  - Before `AddEventType<T>()` calls, add `MapEventType<T>("old.qualified.name")` for every event type
+  - **Event types (46 total):** List all event types from `src/LKvitai.MES.Contracts/Events/` directory. Expected: ~46 event types across 10 files. Skip abstract base class `WarehouseOperationalEvent`. For `StockMovedV1Event`, verify existing upcaster chain works with new namespace.
+  - Add `MapEventType<T>("old.qualified.name")` for each event type before `AddEventType<T>()` calls
   - Example: `options.Events.MapEventType<ValuationInitialized>("LKvitai.MES.Contracts.Events.ValuationInitialized, LKvitai.MES.Contracts");`
-  - List all event types from `src/LKvitai.MES.Contracts/Events/` directory
-  - Add mapping for each: old FQ name → new type
+  - **Document types (13 total):** Register type aliases for Marten-persisted documents:
+    - 3 saga state classes: `PickStockSagaState`, `ReceiveGoodsSagaState`, `AgnumExportSagaState` (namespace `LKvitai.MES.Sagas`)
+    - 2 inline snapshot aggregates: `Valuation`, `ItemValuation` (namespace `LKvitai.MES.Domain.Aggregates`)
+    - 8 projection read models from `ProjectionRegistration.cs` (namespace `LKvitai.MES.Projections`)
+  - Use Marten's document type aliasing API (e.g., `options.Schema.For<T>().DocumentAlias("old.qualified.name")`) OR prepare SQL migration to update `mt_doc_type` column in `mt_doc_*` tables after namespace rename
 - **Commands:**
   ```bash
   dotnet build src/LKvitai.MES.Infrastructure/
   dotnet test --filter "FullyQualifiedName~Marten"
+  dotnet test --filter "FullyQualifiedName~Saga"
   ```
-- **DoD:** Integration tests pass, events can round-trip with old type names
-- **Rollback:** Remove MapEventType calls
-- **STOP Condition:** If integration tests fail, STOP and report. Do NOT proceed to namespace renames without green tests.
+- **DoD:** Integration tests pass, events and documents can round-trip with old type names, saga tests pass
+- **Rollback:** Remove MapEventType and document alias calls
+- **STOP Condition:** If integration tests or saga tests fail, STOP and report. Do NOT proceed to namespace renames without green tests.
 
 #### Stage 4.1: Rename Domain
 
@@ -1018,6 +1030,23 @@ LKvitai.MES/
 - **DoD:** Full build + test pass
 - **Rollback:** Revert all changes
 - **Token Budget:** 250 tokens
+
+**P4.S5.T4: Validate Marten document types after namespace renames**
+
+- **Purpose:** Verify saga states, snapshots, and projection documents still deserialize correctly
+- **Scope:** All Marten integration tests
+- **Operations:**
+  - No code changes, validation only
+  - Run Marten integration tests to verify event store still works
+  - Run saga tests to verify saga state persistence works
+  - Run projection tests to verify projection documents work
+- **Commands:**
+  ```bash
+  dotnet test --filter "FullyQualifiedName~Marten OR FullyQualifiedName~Saga OR FullyQualifiedName~Projection"
+  ```
+- **DoD:** All Marten, saga, and projection tests pass
+- **Rollback:** N/A (validation only)
+- **STOP Condition:** If saga or projection integration tests fail, STOP and report. Document type aliasing from P4.S0.T1 may need adjustment.
 
 #### Stage 4.6: Rename Entrypoints
 
@@ -1710,12 +1739,12 @@ Each task follows this structure:
 | 1 | 3 | 6 | Directory structure + pilot slice validation | MEDIUM |
 | 2 | 4 | 7 | Dependency cleanup (Marten, MediatR, Contracts) | MEDIUM |
 | 3 | 2 | 9 | Move remaining projects to Modules/Warehouse/ | HIGH |
-| 4 | 7 | 20 | Rename projects + namespaces to target conventions | HIGH |
+| 4 | 7 | 21 | Rename projects + namespaces to target conventions | HIGH |
 | 5 | 2 | 8 | Rename test projects | MEDIUM |
 | 6 | 2 | 3 | Convert SharedKernel to BuildingBlock | LOW |
 | 7 | 2 | 5 | Update CI/CD workflows | MEDIUM |
 | 8 | 1 | 4 | Update documentation | LOW |
-| **Total** | **28** | **72** | **Complete refactor to modular structure** | **MANAGED** |
+| **Total** | **28** | **73** | **Complete refactor to modular structure** | **MANAGED** |
 
 ---
 
