@@ -98,7 +98,7 @@ public class ProjectionsClientTests
         rows.Should().HaveCount(1);
         rows[0].ProjectionName.Should().Be("LocationBalanceProjection");
         rows[0].Status.Should().Be("Healthy");
-        rows[0].LagSeconds.Should().BeGreaterOrEqualTo(0);
+        rows[0].LagSeconds.Should().BeGreaterThanOrEqualTo(0);
         rows[0].LagEvents.Should().Be(0);
     }
 

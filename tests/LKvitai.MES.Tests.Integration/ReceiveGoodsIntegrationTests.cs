@@ -141,7 +141,7 @@ public class ReceiveGoodsIntegrationTests : IAsyncLifetime
         await using var eventSession = _store.LightweightSession();
         var huStreamId = $"handling-unit:{huView.HuId}";
         var huEvents = await eventSession.Events.FetchStreamAsync(huStreamId);
-        huEvents.Should().HaveCountGreaterOrEqualTo(2,
+        huEvents.Should().HaveCountGreaterThanOrEqualTo(2,
             "Should have at least HandlingUnitCreated + HandlingUnitSealed");
 
         // ── Assert: idempotency record persisted ──
@@ -323,7 +323,7 @@ public class ReceiveGoodsIntegrationTests : IAsyncLifetime
         var inProgressErrors = results.Count(r =>
             !r.IsSuccess && r.Error == DomainErrorCodes.IdempotencyInProgress);
 
-        successes.Should().BeGreaterOrEqualTo(1,
+        successes.Should().BeGreaterThanOrEqualTo(1,
             "At least one concurrent execution must succeed");
         (successes + inProgressErrors).Should().Be(2,
             "Every result must be either success or IDEMPOTENCY_IN_PROGRESS");
