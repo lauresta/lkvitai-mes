@@ -11,17 +11,29 @@
         selectionPulseMax: 1.0,
         selectionGlowPulseMin: 0.42,
         selectionGlowPulseMax: 0.82,
+        selectionGlowShellOpacityMin: 0.22,
+        selectionGlowShellOpacityMax: 0.42,
+        selectionGlowShellScaleBase: 1.026,
+        selectionGlowShellScalePulse: 0.012,
         selectionPulseMs: 1500,
-        selectionRingRotationSeconds: 2.9,
-        selectionRingRadiusFactor: 1.38,
-        selectionRingMinRadius: 1.05,
-        selectionRingMaxRadius: 7.2,
+        selectionRingOuterRotationSeconds: 7.0,
+        selectionRingInnerRotationSeconds: 12.0,
+        selectionRingInnerPaddingFactor: 0.03,
+        selectionRingBandThicknessFactor: 0.11,
+        selectionRingBandGapFactor: 0.04,
+        selectionRingMinInnerRadius: 0.42,
+        selectionRingMaxInnerRadius: 4.2,
+        selectionRingMinBandThickness: 0.06,
+        selectionRingMaxBandThickness: 0.28,
+        selectionRingOuterDashGapRatio: 0.45,
+        selectionRingInnerDashGapRatio: 0.48,
+        selectionRingDashArcLength: 0.24,
         selectionRingGlowPulseMin: 0.22,
         selectionRingGlowPulseMax: 0.4,
         selectionRingFloorOffset: 0.07,
-        pinHeightFactor: 0.32,
-        pinMinOffset: 0.34,
-        pinScaleFactor: 0.95,
+        pinHeightFactor: 0.42,
+        pinMinOffset: 0.58,
+        pinScaleFactor: 0.86,
         pinBounceIdleMs: 3000,
         pinBounceOneUpMs: 200,
         pinBounceOneDownMs: 190,
@@ -122,41 +134,60 @@
 
     function createPinTexture() {
         const canvas = document.createElement("canvas");
-        canvas.width = 96;
-        canvas.height = 128;
+        canvas.width = 192;
+        canvas.height = 192;
         const ctx = canvas.getContext("2d");
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const centerX = 96;
+        const topY = 22;
+        const tipY = 170;
+        const shoulderY = 78;
+        const halfWidth = 36;
+        const neckWidth = 14;
 
-        const centerX = canvas.width / 2;
-        const centerY = 46;
-        const radius = 30;
+        ctx.shadowColor = "rgba(34, 211, 238, 0.28)";
+        ctx.shadowBlur = 7;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
 
-        ctx.fillStyle = "#22D3EE";
-        ctx.strokeStyle = "#0891B2";
-        ctx.lineWidth = 6;
-
+        ctx.fillStyle = "rgba(34, 211, 238, 0.86)";
+        ctx.strokeStyle = "rgba(8, 79, 98, 0.42)";
+        ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-
-        ctx.beginPath();
-        ctx.moveTo(centerX - 16, centerY + 22);
-        ctx.lineTo(centerX, canvas.height - 10);
-        ctx.lineTo(centerX + 16, centerY + 22);
+        ctx.moveTo(centerX, topY);
+        ctx.bezierCurveTo(centerX - halfWidth, topY + 2, centerX - 48, 48, centerX - 48, shoulderY);
+        ctx.bezierCurveTo(centerX - 48, 112, centerX - neckWidth, 132, centerX, tipY);
+        ctx.bezierCurveTo(centerX + neckWidth, 132, centerX + 48, 112, centerX + 48, shoulderY);
+        ctx.bezierCurveTo(centerX + 48, 48, centerX + halfWidth, topY + 2, centerX, topY);
         ctx.closePath();
         ctx.fill();
         ctx.stroke();
 
-        ctx.fillStyle = "#ECFEFF";
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = "rgba(241, 252, 255, 0.9)";
         ctx.beginPath();
-        ctx.arc(centerX, centerY, 10, 0, Math.PI * 2);
+        ctx.arc(centerX, 66, 11, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "rgba(255, 255, 255, 0.38)";
+        ctx.beginPath();
+        ctx.ellipse(centerX - 13, 54, 6, 11, 0.34, 0, Math.PI * 2);
         ctx.fill();
 
         const texture = new THREE.CanvasTexture(canvas);
+        texture.minFilter = THREE.LinearFilter;
+        texture.magFilter = THREE.LinearFilter;
         texture.needsUpdate = true;
         return texture;
+    }
+
+    function markAsOverlay(object3d) {
+        object3d.traverse((part) => {
+            part.userData = part.userData || {};
+            part.userData.isOverlay = true;
+            part.raycast = () => null;
+        });
     }
 
     function dispose(containerId) {
@@ -397,7 +428,7 @@
             }));
             selectionPin.renderOrder = 6;
             selectionPin.visible = false;
-            selectionPin.raycast = () => {};
+            markAsOverlay(selectionPin);
             scene.add(selectionPin);
 
             function createDashedRingSegments(innerRadius, outerRadius, dashCount, gapRatio, material) {
@@ -418,11 +449,27 @@
                     const dash = new THREE.Mesh(dashGeometry, material);
                     dash.rotation.x = -Math.PI / 2;
                     dash.renderOrder = 5;
-                    dash.raycast = () => {};
+                    markAsOverlay(dash);
                     group.add(dash);
                 }
 
+                markAsOverlay(group);
                 return group;
+            }
+
+            function replaceRingBand(targetGroup, innerRadius, outerRadius, dashCount, gapRatio, material) {
+                while (targetGroup.children.length > 0) {
+                    const child = targetGroup.children[0];
+                    targetGroup.remove(child);
+                    if (child.geometry) {
+                        child.geometry.dispose();
+                    }
+                }
+
+                const next = createDashedRingSegments(innerRadius, outerRadius, dashCount, gapRatio, material);
+                while (next.children.length > 0) {
+                    targetGroup.add(next.children[0]);
+                }
             }
 
             const selectionRingGroup = new THREE.Group();
@@ -448,21 +495,23 @@
             });
 
             const selectionRingOuter = createDashedRingSegments(
-                1.02,
-                1.18,
-                28,
-                0.42,
+                1.0,
+                1.12,
+                32,
+                0.43,
                 selectionRingOuterMaterial);
             selectionRingOuter.renderOrder = 5;
+            markAsOverlay(selectionRingOuter);
             selectionRingGroup.add(selectionRingOuter);
 
             const selectionRingInner = createDashedRingSegments(
                 0.84,
-                0.96,
-                22,
+                0.95,
+                24,
                 0.46,
                 selectionRingInnerMaterial);
             selectionRingInner.renderOrder = 5;
+            markAsOverlay(selectionRingInner);
             selectionRingGroup.add(selectionRingInner);
 
             const selectionRingGlowMaterial = new THREE.MeshBasicMaterial({
@@ -478,8 +527,9 @@
                 selectionRingGlowMaterial);
             selectionRingGlow.rotation.x = -Math.PI / 2;
             selectionRingGlow.renderOrder = 4;
-            selectionRingGlow.raycast = () => {};
+            markAsOverlay(selectionRingGlow);
             selectionRingGroup.add(selectionRingGlow);
+            markAsOverlay(selectionRingGroup);
             scene.add(selectionRingGroup);
 
             resolvedBins.forEach(({ bin, width, depth, height, centerX: meshX, centerY: meshY, centerZ: meshZ, hasExplicitDimensions, capacityVolume }) => {
@@ -516,7 +566,8 @@
                 const selectionBorder = new THREE.LineSegments(borderGeometry, selectionBorderMaterial);
                 selectionBorder.renderOrder = 5;
                 selectionBorder.visible = false;
-                selectionBorder.raycast = () => {};
+                selectionBorder.scale.set(1.004, 1.004, 1.004);
+                markAsOverlay(selectionBorder);
                 cube.add(selectionBorder);
 
                 const selectionBorderGlowMaterial = new THREE.LineBasicMaterial({
@@ -529,15 +580,34 @@
                 const selectionBorderGlow = new THREE.LineSegments(borderGeometry, selectionBorderGlowMaterial);
                 selectionBorderGlow.renderOrder = 4;
                 selectionBorderGlow.visible = false;
-                selectionBorderGlow.scale.set(1.012, 1.012, 1.012);
-                selectionBorderGlow.raycast = () => {};
+                selectionBorderGlow.scale.set(1.016, 1.016, 1.016);
+                markAsOverlay(selectionBorderGlow);
                 cube.add(selectionBorderGlow);
+
+                const selectionGlowShellMaterial = new THREE.MeshBasicMaterial({
+                    color: VISUAL_CONFIG.selectionColor,
+                    transparent: true,
+                    opacity: VISUAL_CONFIG.selectionGlowShellOpacityMin,
+                    depthWrite: false,
+                    toneMapped: false,
+                    side: THREE.BackSide,
+                    blending: THREE.AdditiveBlending
+                });
+                const selectionGlowShell = new THREE.Mesh(geometry, selectionGlowShellMaterial);
+                selectionGlowShell.renderOrder = 3;
+                selectionGlowShell.visible = false;
+                selectionGlowShell.scale.set(
+                    VISUAL_CONFIG.selectionGlowShellScaleBase,
+                    VISUAL_CONFIG.selectionGlowShellScaleBase,
+                    VISUAL_CONFIG.selectionGlowShellScaleBase);
+                markAsOverlay(selectionGlowShell);
+                cube.add(selectionGlowShell);
 
                 if (bin.isReserved) {
                     const reservedOverlay = new THREE.Mesh(geometry, reservedOverlayMaterial);
                     reservedOverlay.renderOrder = 3;
                     reservedOverlay.scale.set(1.003, 1.003, 1.003);
-                    reservedOverlay.raycast = () => {};
+                    markAsOverlay(reservedOverlay);
                     cube.add(reservedOverlay);
                 }
 
@@ -550,6 +620,8 @@
                     selectionBorderMaterial,
                     selectionBorderGlow,
                     selectionBorderGlowMaterial,
+                    selectionGlowShell,
+                    selectionGlowShellMaterial,
                     width,
                     depth,
                     height,
@@ -634,6 +706,66 @@
                 return 0;
             }
 
+            function buildSelectionRingProfile(mesh) {
+                const width = mesh.userData.width;
+                const depth = mesh.userData.depth;
+                const diagonal = Math.sqrt((width * width) + (depth * depth));
+                const innerRadius = clamp(
+                    (diagonal * 0.5) + (diagonal * VISUAL_CONFIG.selectionRingInnerPaddingFactor),
+                    VISUAL_CONFIG.selectionRingMinInnerRadius,
+                    VISUAL_CONFIG.selectionRingMaxInnerRadius);
+                const bandThickness = clamp(
+                    diagonal * VISUAL_CONFIG.selectionRingBandThicknessFactor,
+                    VISUAL_CONFIG.selectionRingMinBandThickness,
+                    VISUAL_CONFIG.selectionRingMaxBandThickness);
+                const bandGap = clamp(diagonal * VISUAL_CONFIG.selectionRingBandGapFactor, 0.03, 0.14);
+
+                const innerBandOuter = innerRadius;
+                const innerBandInner = Math.max(0.05, innerBandOuter - bandThickness);
+                const outerBandInner = innerRadius + bandGap;
+                const outerBandOuter = outerBandInner + bandThickness;
+                const glowInner = Math.max(0.04, innerBandInner - (bandThickness * 0.45));
+                const glowOuter = outerBandOuter + (bandThickness * 0.45);
+                const dashCount = clamp(
+                    Math.round(((Math.PI * 2) * outerBandOuter) / VISUAL_CONFIG.selectionRingDashArcLength),
+                    16,
+                    84);
+
+                return {
+                    innerBandInner,
+                    innerBandOuter,
+                    outerBandInner,
+                    outerBandOuter,
+                    glowInner,
+                    glowOuter,
+                    dashCount
+                };
+            }
+
+            function updateSelectionRingProfile(mesh) {
+                const profile = buildSelectionRingProfile(mesh);
+                replaceRingBand(
+                    selectionRingOuter,
+                    profile.outerBandInner,
+                    profile.outerBandOuter,
+                    profile.dashCount,
+                    VISUAL_CONFIG.selectionRingOuterDashGapRatio,
+                    selectionRingOuterMaterial);
+                replaceRingBand(
+                    selectionRingInner,
+                    profile.innerBandInner,
+                    profile.innerBandOuter,
+                    Math.max(14, profile.dashCount - 8),
+                    VISUAL_CONFIG.selectionRingInnerDashGapRatio,
+                    selectionRingInnerMaterial);
+
+                if (selectionRingGlow.geometry) {
+                    selectionRingGlow.geometry.dispose();
+                }
+                selectionRingGlow.geometry = new THREE.RingGeometry(profile.glowInner, profile.glowOuter, 120);
+                selectionRingGlow.rotation.x = -Math.PI / 2;
+            }
+
             function updateSelectionAnchors(mesh, timestampMs) {
                 const topY = mesh.position.y + (mesh.userData.height / 2);
                 const pinOffset = Math.max(VISUAL_CONFIG.pinMinOffset, mesh.userData.height * VISUAL_CONFIG.pinHeightFactor);
@@ -642,21 +774,16 @@
                     0.65,
                     2.4);
                 const pinBounceOffset = computePinBounceOffset(mesh, timestampMs);
+                const pinBaseY = Math.max(topY + pinOffset, topY + (mesh.userData.height * 0.3));
 
-                selectionPin.position.set(mesh.position.x, topY + pinOffset + pinBounceOffset, mesh.position.z);
-                selectionPin.scale.set(pinScale * 0.7, pinScale, 1);
-
-                const ringRadius = clamp(
-                    Math.max(mesh.userData.width, mesh.userData.depth) * VISUAL_CONFIG.selectionRingRadiusFactor,
-                    VISUAL_CONFIG.selectionRingMinRadius,
-                    VISUAL_CONFIG.selectionRingMaxRadius);
+                selectionPin.position.set(mesh.position.x, pinBaseY + pinBounceOffset, mesh.position.z);
+                selectionPin.scale.set(pinScale * 0.62, pinScale * 0.92, 1);
 
                 const meshBottomY = mesh.position.y - (mesh.userData.height / 2);
                 selectionRingGroup.position.set(
                     mesh.position.x,
                     meshBottomY + VISUAL_CONFIG.selectionRingFloorOffset,
                     mesh.position.z);
-                selectionRingGroup.scale.set(ringRadius, 1, ringRadius);
             }
 
             function applySelection(code) {
@@ -671,6 +798,9 @@
                     if (mesh.userData.selectionBorderGlow) {
                         mesh.userData.selectionBorderGlow.visible = isSelected;
                     }
+                    if (mesh.userData.selectionGlowShell) {
+                        mesh.userData.selectionGlowShell.visible = isSelected;
+                    }
                 });
 
                 if (!selectedMesh) {
@@ -681,7 +811,9 @@
 
                 selectionPin.visible = true;
                 selectionRingGroup.visible = true;
-                selectionRingGroup.rotation.y = 0;
+                selectionRingOuter.rotation.y = 0;
+                selectionRingInner.rotation.y = 0;
+                updateSelectionRingProfile(selectedMesh);
                 updateSelectionAnchors(selectedMesh, performance.now());
             }
 
@@ -805,7 +937,8 @@
                 applySelection(initialSelectedCode);
             }
 
-            const ringRotationSpeed = (2 * Math.PI) / VISUAL_CONFIG.selectionRingRotationSeconds;
+            const ringOuterRotationSpeed = (2 * Math.PI) / VISUAL_CONFIG.selectionRingOuterRotationSeconds;
+            const ringInnerRotationSpeed = (2 * Math.PI) / VISUAL_CONFIG.selectionRingInnerRotationSeconds;
             let animationFrameHandle = null;
             let previousFrameTimestamp = performance.now();
             function animate(timestamp) {
@@ -826,15 +959,20 @@
 
                     selectedMesh.userData.selectionBorderMaterial.opacity = pulseOpacity;
                     selectedMesh.userData.selectionBorderGlowMaterial.opacity = glowOpacity;
+                    selectedMesh.userData.selectionGlowShellMaterial.opacity = VISUAL_CONFIG.selectionGlowShellOpacityMin +
+                        ((VISUAL_CONFIG.selectionGlowShellOpacityMax - VISUAL_CONFIG.selectionGlowShellOpacityMin) * pulse);
                     const borderGlowScale = 1.014 + (0.014 * pulse);
                     selectedMesh.userData.selectionBorderGlow.scale.set(borderGlowScale, borderGlowScale, borderGlowScale);
+                    const shellScale = VISUAL_CONFIG.selectionGlowShellScaleBase + (VISUAL_CONFIG.selectionGlowShellScalePulse * pulse);
+                    selectedMesh.userData.selectionGlowShell.scale.set(shellScale, shellScale, shellScale);
 
                     selectionRingOuterMaterial.opacity = 0.78 + (0.18 * pulse);
                     selectionRingInnerMaterial.opacity = 0.58 + (0.16 * (1 - pulse));
                     selectionRingGlowMaterial.opacity = VISUAL_CONFIG.selectionRingGlowPulseMin +
                         ((VISUAL_CONFIG.selectionRingGlowPulseMax - VISUAL_CONFIG.selectionRingGlowPulseMin) * pulse);
 
-                    selectionRingGroup.rotation.y = (selectionRingGroup.rotation.y + (ringRotationSpeed * deltaSeconds)) % (Math.PI * 2);
+                    selectionRingOuter.rotation.y = (selectionRingOuter.rotation.y + (ringOuterRotationSpeed * deltaSeconds)) % (Math.PI * 2);
+                    selectionRingInner.rotation.y = (selectionRingInner.rotation.y - (ringInnerRotationSpeed * deltaSeconds)) % (Math.PI * 2);
                 }
 
                 controls.update();
