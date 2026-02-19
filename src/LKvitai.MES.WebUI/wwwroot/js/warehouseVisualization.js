@@ -7,11 +7,10 @@
         borderColor: 0x1f2937,
         borderOpacity: 0.48,
         selectionColor: 0x00c8e8,
-        selectionBorderOpacitySelected: 0.86,
-        selectionGlowCoreOpacityMin: 0.18,
-        selectionGlowCoreOpacityMax: 0.3,
-        selectionGlowCoreScaleBase: 1.022,
-        selectionGlowCoreScalePulse: 0,
+        selectionEdgeOpacityMin: 0.72,
+        selectionEdgeOpacityMax: 0.94,
+        selectionGlowCoreOpacity: 0.16,
+        selectionGlowCoreScaleBase: 1.02,
         outlineEdgeStrength: 7.2,
         outlineEdgeThickness: 2.8,
         outlineEdgeGlow: 0.9,
@@ -19,22 +18,23 @@
         selectionPulseMs: 1500,
         selectionRingOuterRotationSeconds: 7.0,
         selectionRingInnerRotationSeconds: 12.0,
-        selectionRingInnerPaddingFactor: 0.03,
-        selectionRingBandThicknessFactor: 0.11,
-        selectionRingBandGapFactor: 0.04,
+        selectionRingInnerOffsetFactor: 0.02,
+        selectionRingBandThicknessFactor: 0.05,
+        selectionRingGapFactor: 0.065,
         selectionRingMinInnerRadius: 0.42,
         selectionRingMaxInnerRadius: 4.2,
-        selectionRingMinBandThickness: 0.06,
-        selectionRingMaxBandThickness: 0.28,
-        selectionRingOuterDashGapRatio: 0.45,
-        selectionRingInnerDashGapRatio: 0.48,
-        selectionRingDashArcLength: 0.24,
-        selectionRingGlowPulseMin: 0.22,
-        selectionRingGlowPulseMax: 0.4,
-        selectionRingFloorOffset: 0.07,
+        selectionRingMinBandThickness: 0.035,
+        selectionRingMaxBandThickness: 0.16,
+        selectionRingMinGap: 0.04,
+        selectionRingMaxGap: 0.26,
+        selectionRingOuterDashGapRatio: 0.64,
+        selectionRingInnerDashGapRatio: 0.67,
+        selectionRingDashArcLength: 0.17,
+        selectionRingGlowPulseMin: 0.01,
+        selectionRingGlowPulseMax: 0.08,
+        selectionRingFloorOffset: 0.01,
         pinHeightFactor: 0.42,
-        pinMinOffset: 0.58,
-        pinScaleFactor: 0.86,
+        pinMinOffset: 0.42,
         pinBounceIdleMs: 3000,
         pinBounceOneUpMs: 200,
         pinBounceOneDownMs: 190,
@@ -133,54 +133,19 @@
         return texture;
     }
 
-    function createPinTexture() {
-        const canvas = document.createElement("canvas");
-        canvas.width = 192;
-        canvas.height = 192;
-        const ctx = canvas.getContext("2d");
+    function computeRootBounds(root, bbox, size, center) {
+        root.updateWorldMatrix(true, true);
+        if (root.geometry && root.geometry.boundingBox) {
+            bbox.copy(root.geometry.boundingBox).applyMatrix4(root.matrixWorld);
+        } else if (root.geometry) {
+            root.geometry.computeBoundingBox();
+            bbox.copy(root.geometry.boundingBox).applyMatrix4(root.matrixWorld);
+        } else {
+            bbox.setFromObject(root);
+        }
 
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        const centerX = 96;
-        const topY = 22;
-        const tipY = 170;
-        const shoulderY = 78;
-        const halfWidth = 36;
-        const neckWidth = 14;
-
-        ctx.shadowColor = "rgba(34, 211, 238, 0.28)";
-        ctx.shadowBlur = 7;
-        ctx.shadowOffsetX = 0;
-        ctx.shadowOffsetY = 0;
-
-        ctx.fillStyle = "rgba(34, 211, 238, 0.86)";
-        ctx.strokeStyle = "rgba(8, 79, 98, 0.42)";
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(centerX, topY);
-        ctx.bezierCurveTo(centerX - halfWidth, topY + 2, centerX - 48, 48, centerX - 48, shoulderY);
-        ctx.bezierCurveTo(centerX - 48, 112, centerX - neckWidth, 132, centerX, tipY);
-        ctx.bezierCurveTo(centerX + neckWidth, 132, centerX + 48, 112, centerX + 48, shoulderY);
-        ctx.bezierCurveTo(centerX + 48, 48, centerX + halfWidth, topY + 2, centerX, topY);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
-        ctx.shadowBlur = 0;
-        ctx.fillStyle = "rgba(241, 252, 255, 0.9)";
-        ctx.beginPath();
-        ctx.arc(centerX, 66, 11, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.fillStyle = "rgba(255, 255, 255, 0.38)";
-        ctx.beginPath();
-        ctx.ellipse(centerX - 13, 54, 6, 11, 0.34, 0, Math.PI * 2);
-        ctx.fill();
-
-        const texture = new THREE.CanvasTexture(canvas);
-        texture.minFilter = THREE.LinearFilter;
-        texture.magFilter = THREE.LinearFilter;
-        texture.needsUpdate = true;
-        return texture;
+        bbox.getSize(size);
+        bbox.getCenter(center);
     }
 
     function markAsOverlay(object3d) {
@@ -208,10 +173,6 @@
 
         if (context.reservedTexture) {
             context.reservedTexture.dispose();
-        }
-
-        if (context.pinTexture) {
-            context.pinTexture.dispose();
         }
 
         context.controls.dispose();
@@ -445,17 +406,44 @@
                 polygonOffsetUnits: -1
             });
 
-            const pinTexture = createPinTexture();
-            const selectionPin = new THREE.Sprite(new THREE.SpriteMaterial({
-                map: pinTexture,
-                transparent: true,
-                depthWrite: false,
-                toneMapped: false
-            }));
-            selectionPin.renderOrder = 6;
+            const selectionPinMaterial = new THREE.MeshStandardMaterial({
+                color: VISUAL_CONFIG.selectionColor,
+                roughness: 0.44,
+                metalness: 0.1,
+                emissive: VISUAL_CONFIG.selectionColor,
+                emissiveIntensity: 0.28
+            });
+            const selectionPinHighlightMaterial = new THREE.MeshStandardMaterial({
+                color: 0xeaffff,
+                roughness: 0.28,
+                metalness: 0.05,
+                emissive: 0xaef6ff,
+                emissiveIntensity: 0.2
+            });
+            const selectionPin = new THREE.Group();
+            const selectionPinBody = new THREE.Mesh(new THREE.ConeGeometry(1, 1, 20), selectionPinMaterial);
+            selectionPinBody.rotation.x = Math.PI;
+            selectionPinBody.position.y = 0.5;
+            selectionPinBody.renderOrder = 7;
+            selectionPin.add(selectionPinBody);
+
+            const selectionPinHead = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 20), selectionPinMaterial);
+            selectionPinHead.position.y = 1.32;
+            selectionPinHead.renderOrder = 7;
+            selectionPin.add(selectionPinHead);
+
+            const selectionPinHighlight = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 16), selectionPinHighlightMaterial);
+            selectionPinHighlight.position.set(-0.17, 1.56, 0.2);
+            selectionPinHighlight.renderOrder = 8;
+            selectionPin.add(selectionPinHighlight);
+
             selectionPin.visible = false;
             markAsOverlay(selectionPin);
             scene.add(selectionPin);
+
+            const selectionBoundsBox = new THREE.Box3();
+            const selectionBoundsSize = new THREE.Vector3();
+            const selectionBoundsCenter = new THREE.Vector3();
 
             function createDashedRingSegments(innerRadius, outerRadius, dashCount, gapRatio, material) {
                 const group = new THREE.Group();
@@ -505,7 +493,7 @@
             const selectionRingOuterMaterial = new THREE.MeshBasicMaterial({
                 color: VISUAL_CONFIG.selectionColor,
                 transparent: true,
-                opacity: 0.92,
+                opacity: 0.38,
                 depthWrite: false,
                 toneMapped: false,
                 side: THREE.DoubleSide
@@ -514,7 +502,7 @@
             const selectionRingInnerMaterial = new THREE.MeshBasicMaterial({
                 color: VISUAL_CONFIG.selectionColor,
                 transparent: true,
-                opacity: 0.74,
+                opacity: 0.3,
                 depthWrite: false,
                 toneMapped: false,
                 side: THREE.DoubleSide
@@ -545,6 +533,7 @@
                 transparent: true,
                 opacity: VISUAL_CONFIG.selectionRingGlowPulseMin,
                 depthWrite: false,
+                depthTest: false,
                 toneMapped: false,
                 side: THREE.DoubleSide
             });
@@ -582,10 +571,23 @@
                 baseBorder.renderOrder = 2;
                 cube.add(baseBorder);
 
+                const selectionEdgesMaterial = new THREE.LineBasicMaterial({
+                    color: VISUAL_CONFIG.selectionColor,
+                    transparent: true,
+                    opacity: VISUAL_CONFIG.selectionEdgeOpacityMax,
+                    depthWrite: false,
+                    toneMapped: false
+                });
+                const selectionEdges = new THREE.LineSegments(borderGeometry, selectionEdgesMaterial);
+                selectionEdges.renderOrder = 11;
+                selectionEdges.visible = false;
+                markAsOverlay(selectionEdges);
+                cube.add(selectionEdges);
+
                 const selectionGlowCoreMaterial = new THREE.MeshBasicMaterial({
                     color: VISUAL_CONFIG.selectionColor,
                     transparent: true,
-                    opacity: VISUAL_CONFIG.selectionGlowCoreOpacityMin,
+                    opacity: VISUAL_CONFIG.selectionGlowCoreOpacity,
                     depthWrite: false,
                     depthTest: true,
                     toneMapped: false,
@@ -619,6 +621,8 @@
                     code: bin.code,
                     baseColor: toHexColor(bin.color),
                     baseBorderMaterial,
+                    selectionEdges,
+                    selectionEdgesMaterial,
                     selectionGlowCore,
                     selectionGlowCoreMaterial,
                     width,
@@ -706,29 +710,33 @@
             }
 
             function buildSelectionRingProfile(mesh) {
-                const width = mesh.userData.width;
-                const depth = mesh.userData.depth;
+                computeRootBounds(mesh, selectionBoundsBox, selectionBoundsSize, selectionBoundsCenter);
+                const width = selectionBoundsSize.x;
+                const depth = selectionBoundsSize.z;
                 const diagonal = Math.sqrt((width * width) + (depth * depth));
                 const innerRadius = clamp(
-                    (diagonal * 0.5) + (diagonal * VISUAL_CONFIG.selectionRingInnerPaddingFactor),
+                    (diagonal * 0.5) + (diagonal * VISUAL_CONFIG.selectionRingInnerOffsetFactor),
                     VISUAL_CONFIG.selectionRingMinInnerRadius,
                     VISUAL_CONFIG.selectionRingMaxInnerRadius);
                 const bandThickness = clamp(
                     diagonal * VISUAL_CONFIG.selectionRingBandThicknessFactor,
                     VISUAL_CONFIG.selectionRingMinBandThickness,
                     VISUAL_CONFIG.selectionRingMaxBandThickness);
-                const bandGap = clamp(diagonal * VISUAL_CONFIG.selectionRingBandGapFactor, 0.03, 0.14);
+                const bandGap = clamp(
+                    diagonal * VISUAL_CONFIG.selectionRingGapFactor,
+                    VISUAL_CONFIG.selectionRingMinGap,
+                    VISUAL_CONFIG.selectionRingMaxGap);
 
-                const innerBandOuter = innerRadius;
-                const innerBandInner = Math.max(0.05, innerBandOuter - bandThickness);
-                const outerBandInner = innerRadius + bandGap;
+                const innerBandInner = Math.max(0.05, innerRadius);
+                const innerBandOuter = innerBandInner + bandThickness;
+                const outerBandInner = innerBandOuter + bandGap;
                 const outerBandOuter = outerBandInner + bandThickness;
-                const glowInner = Math.max(0.04, innerBandInner - (bandThickness * 0.45));
-                const glowOuter = outerBandOuter + (bandThickness * 0.45);
+                const glowInner = innerBandInner + (bandThickness * 0.2);
+                const glowOuter = outerBandOuter - (bandThickness * 0.2);
                 const dashCount = clamp(
                     Math.round(((Math.PI * 2) * outerBandOuter) / VISUAL_CONFIG.selectionRingDashArcLength),
-                    16,
-                    84);
+                    18,
+                    120);
 
                 return {
                     innerBandInner,
@@ -766,23 +774,39 @@
             }
 
             function updateSelectionAnchors(mesh, timestampMs) {
-                const topY = mesh.position.y + (mesh.userData.height / 2);
-                const pinOffset = Math.max(VISUAL_CONFIG.pinMinOffset, mesh.userData.height * VISUAL_CONFIG.pinHeightFactor);
-                const pinScale = clamp(
-                    Math.max(mesh.userData.width, mesh.userData.depth, mesh.userData.height) * VISUAL_CONFIG.pinScaleFactor,
-                    0.65,
-                    2.4);
+                computeRootBounds(mesh, selectionBoundsBox, selectionBoundsSize, selectionBoundsCenter);
+                const pinOffset = Math.max(VISUAL_CONFIG.pinMinOffset, selectionBoundsSize.y * VISUAL_CONFIG.pinHeightFactor);
                 const pinBounceOffset = computePinBounceOffset(mesh, timestampMs);
-                const pinBaseY = Math.max(topY + pinOffset, topY + (mesh.userData.height * 0.3));
+                const pinBaseY = selectionBoundsBox.max.y + pinOffset;
+                const maxFootprint = Math.max(selectionBoundsSize.x, selectionBoundsSize.z);
+                const pinHeadRadius = clamp(maxFootprint * 0.14, 0.15, 0.5);
+                const pinConeRadius = clamp(maxFootprint * 0.09, 0.1, 0.34);
+                const pinConeHeight = clamp(selectionBoundsSize.y * 0.4, 0.24, 1.2);
+                const pinHighlightRadius = pinHeadRadius * 0.36;
 
-                selectionPin.position.set(mesh.position.x, pinBaseY + pinBounceOffset, mesh.position.z);
-                selectionPin.scale.set(pinScale * 0.62, pinScale * 0.92, 1);
+                selectionPinBody.scale.set(pinConeRadius, pinConeHeight, pinConeRadius);
+                selectionPinBody.position.y = pinConeHeight * 0.5;
+                selectionPinHead.scale.set(pinHeadRadius, pinHeadRadius, pinHeadRadius);
+                selectionPinHead.position.y = pinConeHeight + (pinHeadRadius * 0.78);
+                selectionPinHighlight.scale.set(pinHighlightRadius, pinHighlightRadius, pinHighlightRadius);
+                selectionPinHighlight.position.set(
+                    -pinHeadRadius * 0.34,
+                    pinConeHeight + (pinHeadRadius * 1.12),
+                    pinHeadRadius * 0.38);
 
-                const meshBottomY = mesh.position.y - (mesh.userData.height / 2);
+                selectionPin.position.set(
+                    selectionBoundsCenter.x,
+                    pinBaseY + pinBounceOffset,
+                    selectionBoundsCenter.z);
+                const pinYaw = Math.atan2(
+                    camera.position.x - selectionBoundsCenter.x,
+                    camera.position.z - selectionBoundsCenter.z);
+                selectionPin.rotation.set(0, pinYaw, 0);
+
                 selectionRingGroup.position.set(
-                    mesh.position.x,
-                    meshBottomY + VISUAL_CONFIG.selectionRingFloorOffset,
-                    mesh.position.z);
+                    selectionBoundsCenter.x,
+                    selectionBoundsBox.min.y + VISUAL_CONFIG.selectionRingFloorOffset,
+                    selectionBoundsCenter.z);
             }
 
             function applySelection(code) {
@@ -793,11 +817,11 @@
                 interactiveMeshes.forEach((mesh) => {
                     const isSelected = !!selectedMesh && mesh === selectedMesh;
                     if (mesh.userData.baseBorderMaterial) {
-                        mesh.userData.baseBorderMaterial.color.setHex(
-                            isSelected && !useOutlinePass ? VISUAL_CONFIG.selectionColor : VISUAL_CONFIG.borderColor);
-                        mesh.userData.baseBorderMaterial.opacity = isSelected
-                            ? (useOutlinePass ? VISUAL_CONFIG.borderOpacity : VISUAL_CONFIG.selectionBorderOpacitySelected)
-                            : VISUAL_CONFIG.borderOpacity;
+                        mesh.userData.baseBorderMaterial.color.setHex(VISUAL_CONFIG.borderColor);
+                        mesh.userData.baseBorderMaterial.opacity = VISUAL_CONFIG.borderOpacity;
+                    }
+                    if (mesh.userData.selectionEdges) {
+                        mesh.userData.selectionEdges.visible = isSelected && !useOutlinePass;
                     }
                     if (mesh.userData.selectionGlowCore) {
                         mesh.userData.selectionGlowCore.visible = isSelected && !useOutlinePass;
@@ -964,16 +988,17 @@
                     const pulsePhase = (now % VISUAL_CONFIG.selectionPulseMs) / VISUAL_CONFIG.selectionPulseMs;
                     const pulse = easeInOutSine(pulsePhase);
                     if (!outlinePass) {
-                        const coreOpacity = VISUAL_CONFIG.selectionGlowCoreOpacityMin +
-                            ((VISUAL_CONFIG.selectionGlowCoreOpacityMax - VISUAL_CONFIG.selectionGlowCoreOpacityMin) * pulse);
-                        selectedMesh.userData.selectionGlowCoreMaterial.opacity = coreOpacity;
+                        const edgeOpacity = VISUAL_CONFIG.selectionEdgeOpacityMin +
+                            ((VISUAL_CONFIG.selectionEdgeOpacityMax - VISUAL_CONFIG.selectionEdgeOpacityMin) * pulse);
+                        selectedMesh.userData.selectionEdgesMaterial.opacity = edgeOpacity;
+                        selectedMesh.userData.selectionGlowCoreMaterial.opacity = VISUAL_CONFIG.selectionGlowCoreOpacity;
                         const coreScale = VISUAL_CONFIG.selectionGlowCoreScaleBase +
                             (VISUAL_CONFIG.selectionGlowCoreScalePulse * pulse);
                         selectedMesh.userData.selectionGlowCore.scale.set(coreScale, coreScale, coreScale);
                     }
 
-                    selectionRingOuterMaterial.opacity = 0.78 + (0.18 * pulse);
-                    selectionRingInnerMaterial.opacity = 0.58 + (0.16 * (1 - pulse));
+                    selectionRingOuterMaterial.opacity = 0.3 + (0.11 * pulse);
+                    selectionRingInnerMaterial.opacity = 0.24 + (0.1 * (1 - pulse));
                     selectionRingGlowMaterial.opacity = VISUAL_CONFIG.selectionRingGlowPulseMin +
                         ((VISUAL_CONFIG.selectionRingGlowPulseMax - VISUAL_CONFIG.selectionRingGlowPulseMin) * pulse);
 
@@ -1003,7 +1028,6 @@
                 focusBin,
                 applySelection,
                 reservedTexture,
-                pinTexture,
                 stop: () => {
                     if (animationFrameHandle) {
                         window.cancelAnimationFrame(animationFrameHandle);
