@@ -19,9 +19,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\\..\\src\\LKvitai.MES.Domain\LKvitai.MES.Domain.csproj" />
+    <ProjectReference Include="..\\..\\src\\Modules\\Warehouse\\LKvitai.MES.Domain\\LKvitai.MES.Domain.csproj" />
     <ProjectReference Include="..\\..\\src\\LKvitai.MES.Application\LKvitai.MES.Application.csproj" />
   </ItemGroup>
 
 </Project>
-
