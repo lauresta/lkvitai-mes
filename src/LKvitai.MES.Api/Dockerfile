@@ -4,6 +4,8 @@ WORKDIR /src
 
 # Copy solution file
 COPY src/LKvitai.MES.sln .
+COPY Directory.Build.props .
+COPY Directory.Packages.props .
 
 # Copy all project files for restore (optimize layer caching)
 COPY src/LKvitai.MES.Api/LKvitai.MES.Api.csproj LKvitai.MES.Api/
@@ -12,7 +14,7 @@ COPY src/LKvitai.MES.Infrastructure/LKvitai.MES.Infrastructure.csproj LKvitai.ME
 COPY src/LKvitai.MES.Projections/LKvitai.MES.Projections.csproj LKvitai.MES.Projections/
 COPY src/LKvitai.MES.Sagas/LKvitai.MES.Sagas.csproj LKvitai.MES.Sagas/
 COPY src/LKvitai.MES.Integration/LKvitai.MES.Integration.csproj LKvitai.MES.Integration/
-COPY src/LKvitai.MES.Domain/LKvitai.MES.Domain.csproj LKvitai.MES.Domain/
+COPY src/Modules/Warehouse/LKvitai.MES.Domain/LKvitai.MES.Domain.csproj Modules/Warehouse/LKvitai.MES.Domain/
 COPY src/LKvitai.MES.Contracts/LKvitai.MES.Contracts.csproj LKvitai.MES.Contracts/
 COPY src/LKvitai.MES.SharedKernel/LKvitai.MES.SharedKernel.csproj LKvitai.MES.SharedKernel/
 
@@ -26,7 +28,7 @@ COPY src/LKvitai.MES.Infrastructure/ LKvitai.MES.Infrastructure/
 COPY src/LKvitai.MES.Projections/ LKvitai.MES.Projections/
 COPY src/LKvitai.MES.Sagas/ LKvitai.MES.Sagas/
 COPY src/LKvitai.MES.Integration/ LKvitai.MES.Integration/
-COPY src/LKvitai.MES.Domain/ LKvitai.MES.Domain/
+COPY src/Modules/Warehouse/LKvitai.MES.Domain/ Modules/Warehouse/LKvitai.MES.Domain/
 COPY src/LKvitai.MES.Contracts/ LKvitai.MES.Contracts/
 COPY src/LKvitai.MES.SharedKernel/ LKvitai.MES.SharedKernel/
 
