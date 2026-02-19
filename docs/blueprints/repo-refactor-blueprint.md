@@ -210,26 +210,28 @@ LKvitai.MES/
 
 #### Stage 0.2: Dependency Validation Tool
 
-**P0.S2.T1: Create DependencyValidator tool**
+**P0.S2.T1: Baseline dependency report (non-blocking)**
 
-- **Purpose:** Cross-platform tool to parse csproj files and validate basic dependency rules
+- **Purpose:** Generate cross-platform baseline dependency report from csproj references
 - **Scope:** `tools/DependencyValidator/`
 - **Operations:**
   - Create `tools/DependencyValidator/DependencyValidator.csproj`
   - Create `tools/DependencyValidator/Program.cs`
   - Parse `.csproj` files for `<ProjectReference>` and `<PackageReference>`
-  - Validate:
+  - Detect:
     - Contracts projects must not reference SharedKernel projects
     - SharedKernel projects must not reference MediatR packages
     - Application projects must not reference Marten packages
-  - Exit 0 if valid, exit 1 with error message if invalid
+  - Write report to `docs/refactor-status/dependency-baseline.md`
+  - Known baseline violations are expected; record them. Strict mode will be enabled later in Phase 5.
   - Note: Cross-platform; do not use chmod/bash.
 - **Commands:**
   ```bash
   dotnet run --project tools/DependencyValidator/DependencyValidator.csproj
   ```
-- **DoD:** Tool runs, exits 0 for current baseline
+- **DoD:** Tool runs and writes baseline report
 - **Rollback:** Delete `tools/DependencyValidator/`
+- **STOP Condition:** STOP only if tool crashes/cannot run (runtime failure). Do not stop if violations are detected in baseline report.
 
 #### Stage 0.3: CI Gate
 
