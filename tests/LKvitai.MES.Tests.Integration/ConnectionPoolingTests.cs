@@ -9,7 +9,7 @@ public sealed class ConnectionPoolingTests
     [Fact]
     public void DevelopmentConnectionString_ShouldContainPoolingParameters()
     {
-        var configPath = ResolveFromRepositoryRoot("src/LKvitai.MES.Api/appsettings.Development.json");
+        var configPath = ResolveFromRepositoryRoot("src/Modules/Warehouse/LKvitai.MES.Api/appsettings.Development.json");
         var json = File.ReadAllText(configPath);
         using var doc = JsonDocument.Parse(json);
         var connectionString = doc.RootElement

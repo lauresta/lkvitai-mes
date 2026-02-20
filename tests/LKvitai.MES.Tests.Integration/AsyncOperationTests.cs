@@ -42,9 +42,9 @@ public sealed class AsyncOperationTests
     private static List<string> GetSourceFiles()
     {
         var root = ResolveFromRepositoryRoot("src");
-        return Directory.GetFiles(Path.Combine(root, "LKvitai.MES.Api"), "*.cs", SearchOption.AllDirectories)
-            .Concat(Directory.GetFiles(Path.Combine(root, "LKvitai.MES.Infrastructure"), "*.cs", SearchOption.AllDirectories))
-            .Concat(Directory.GetFiles(Path.Combine(root, "LKvitai.MES.Sagas"), "*.cs", SearchOption.AllDirectories))
+        return Directory.GetFiles(Path.Combine(root, "Modules", "Warehouse", "LKvitai.MES.Api"), "*.cs", SearchOption.AllDirectories)
+            .Concat(Directory.GetFiles(Path.Combine(root, "Modules", "Warehouse", "LKvitai.MES.Infrastructure"), "*.cs", SearchOption.AllDirectories))
+            .Concat(Directory.GetFiles(Path.Combine(root, "Modules", "Warehouse", "LKvitai.MES.Sagas"), "*.cs", SearchOption.AllDirectories))
             .ToList();
     }
 

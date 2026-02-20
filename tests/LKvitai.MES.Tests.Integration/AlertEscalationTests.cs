@@ -14,7 +14,7 @@ public sealed class AlertEscalationTests
     [Fact]
     public void AppSettings_ShouldDefinePagerDutyAndAlertEscalationSections()
     {
-        var appsettings = File.ReadAllText(ResolvePathFromRepoRoot("src/LKvitai.MES.Api/appsettings.json"));
+        var appsettings = File.ReadAllText(ResolvePathFromRepoRoot("src/Modules/Warehouse/LKvitai.MES.Api/appsettings.json"));
 
         Assert.Contains("\"PagerDuty\"", appsettings, StringComparison.Ordinal);
         Assert.Contains("\"ApiKey\"", appsettings, StringComparison.Ordinal);

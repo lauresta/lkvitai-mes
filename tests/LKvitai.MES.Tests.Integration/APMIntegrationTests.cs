@@ -15,7 +15,7 @@ public sealed class APMIntegrationTests
     [Fact]
     public void ApiProject_ShouldIncludeApplicationInsightsPackage()
     {
-        var csproj = ReadFileFromRepo("src/LKvitai.MES.Api/LKvitai.MES.Api.csproj");
+        var csproj = ReadFileFromRepo("src/Modules/Warehouse/LKvitai.MES.Api/LKvitai.MES.Api.csproj");
 
         Assert.Contains("Microsoft.ApplicationInsights.AspNetCore", csproj, StringComparison.Ordinal);
     }
@@ -23,7 +23,7 @@ public sealed class APMIntegrationTests
     [Fact]
     public void Program_ShouldWireApplicationInsightsAndBusinessTelemetry()
     {
-        var program = ReadFileFromRepo("src/LKvitai.MES.Api/Program.cs");
+        var program = ReadFileFromRepo("src/Modules/Warehouse/LKvitai.MES.Api/Program.cs");
 
         Assert.Contains("AddApplicationInsightsTelemetry", program, StringComparison.Ordinal);
         Assert.Contains("AddApplicationInsightsTelemetryProcessor<SuccessfulRequestSamplingTelemetryProcessor>", program, StringComparison.Ordinal);
@@ -33,7 +33,7 @@ public sealed class APMIntegrationTests
     [Fact]
     public void AppSettings_ShouldDefineApmAndApplicationInsightsSections()
     {
-        var appsettings = ReadFileFromRepo("src/LKvitai.MES.Api/appsettings.json");
+        var appsettings = ReadFileFromRepo("src/Modules/Warehouse/LKvitai.MES.Api/appsettings.json");
 
         Assert.Contains("\"ApplicationInsights\"", appsettings, StringComparison.Ordinal);
         Assert.Contains("\"ConnectionString\"", appsettings, StringComparison.Ordinal);

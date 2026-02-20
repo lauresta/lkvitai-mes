@@ -13,7 +13,7 @@ public sealed class CapacityPlanningTests
     [Fact]
     public void AppSettings_ShouldContainCapacityPlanningConfiguration()
     {
-        var appsettings = File.ReadAllText(ResolvePathFromRepoRoot("src/LKvitai.MES.Api/appsettings.json"));
+        var appsettings = File.ReadAllText(ResolvePathFromRepoRoot("src/Modules/Warehouse/LKvitai.MES.Api/appsettings.json"));
 
         Assert.Contains("\"CapacityPlanning\"", appsettings, StringComparison.Ordinal);
         Assert.Contains("\"AllocatedDatabaseStorageGb\"", appsettings, StringComparison.Ordinal);
@@ -23,7 +23,7 @@ public sealed class CapacityPlanningTests
     [Fact]
     public void MetricsController_ShouldExposeCapacityMetrics()
     {
-        var controller = File.ReadAllText(ResolvePathFromRepoRoot("src/LKvitai.MES.Api/Api/Controllers/MetricsController.cs"));
+        var controller = File.ReadAllText(ResolvePathFromRepoRoot("src/Modules/Warehouse/LKvitai.MES.Api/Api/Controllers/MetricsController.cs"));
 
         Assert.Contains("capacity_database_size_gb", controller, StringComparison.Ordinal);
         Assert.Contains("capacity_event_count", controller, StringComparison.Ordinal);
