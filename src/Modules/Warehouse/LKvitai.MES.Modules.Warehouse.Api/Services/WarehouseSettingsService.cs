@@ -5,7 +5,7 @@ using LKvitai.MES.SharedKernel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 
-namespace LKvitai.MES.Api.Services;
+namespace LKvitai.MES.Modules.Warehouse.Api.Services;
 
 public interface IWarehouseSettingsService
 {

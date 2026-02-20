@@ -1,7 +1,7 @@
 using System.Security.Claims;
 using FluentAssertions;
-using LKvitai.MES.Api.Security;
-using LKvitai.MES.Api.Services;
+using LKvitai.MES.Modules.Warehouse.Api.Security;
+using LKvitai.MES.Modules.Warehouse.Api.Services;
 using LKvitai.MES.Modules.Warehouse.Application.Commands;
 using LKvitai.MES.Modules.Warehouse.Application.Ports;
 using LKvitai.MES.Modules.Warehouse.Application.Services;

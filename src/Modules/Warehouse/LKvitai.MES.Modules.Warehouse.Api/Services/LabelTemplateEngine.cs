@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace LKvitai.MES.Api.Services;
+namespace LKvitai.MES.Modules.Warehouse.Api.Services;
 
 public enum LabelTemplateType
 {

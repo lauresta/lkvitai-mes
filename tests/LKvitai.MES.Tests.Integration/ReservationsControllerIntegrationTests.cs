@@ -1,5 +1,5 @@
 using FluentAssertions;
-using LKvitai.MES.Api.Controllers;
+using LKvitai.MES.Modules.Warehouse.Api.Controllers;
 using LKvitai.MES.Modules.Warehouse.Application.Ports;
 using LKvitai.MES.Modules.Warehouse.Application.Queries;
 using LKvitai.MES.Contracts.Events;

@@ -1,7 +1,7 @@
 using LKvitai.MES.SharedKernel;
 using Serilog.Context;
 
-namespace LKvitai.MES.Api.ErrorHandling;
+namespace LKvitai.MES.Modules.Warehouse.Api.ErrorHandling;
 
 /// <summary>
 /// Propagates correlation id across request, logs, and downstream components.

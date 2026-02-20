@@ -1,5 +1,5 @@
 using FluentAssertions;
-using LKvitai.MES.Api.Services;
+using LKvitai.MES.Modules.Warehouse.Api.Services;
 using LKvitai.MES.Modules.Warehouse.Application.Services;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;

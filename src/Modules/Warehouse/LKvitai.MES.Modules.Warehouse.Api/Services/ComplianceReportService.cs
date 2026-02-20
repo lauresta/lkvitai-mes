@@ -8,7 +8,7 @@ using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
-namespace LKvitai.MES.Api.Services;
+namespace LKvitai.MES.Modules.Warehouse.Api.Services;
 
 public sealed class ComplianceReportOptions
 {

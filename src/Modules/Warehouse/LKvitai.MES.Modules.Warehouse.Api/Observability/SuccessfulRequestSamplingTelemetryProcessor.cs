@@ -3,7 +3,7 @@ using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Extensions.Options;
 
-namespace LKvitai.MES.Api.Observability;
+namespace LKvitai.MES.Modules.Warehouse.Api.Observability;
 
 public sealed class SuccessfulRequestSamplingTelemetryProcessor : ITelemetryProcessor
 {

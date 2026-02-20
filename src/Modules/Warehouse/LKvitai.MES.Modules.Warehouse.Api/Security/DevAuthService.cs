@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Options;
 
-namespace LKvitai.MES.Api.Security;
+namespace LKvitai.MES.Modules.Warehouse.Api.Security;
 
 public sealed class DevAuthService : IDevAuthService
 {

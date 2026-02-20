@@ -8,8 +8,8 @@ internal static class ApiPathResolver
         var candidates = new[]
         {
             Path.Combine(repoRoot, "src", "Modules", "Warehouse", "LKvitai.MES.Modules.Warehouse.Api"),
-            Path.Combine(repoRoot, "src", "Modules", "Warehouse", "LKvitai.MES.Api"),
-            Path.Combine(repoRoot, "src", "LKvitai.MES.Api")
+            Path.Combine(repoRoot, "src", "Modules", "Warehouse", "LKvitai.MES.Modules.Warehouse.Api"),
+            Path.Combine(repoRoot, "src", "LKvitai.MES.Modules.Warehouse.Api")
         };
 
         foreach (var candidate in candidates)

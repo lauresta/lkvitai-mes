@@ -2,7 +2,7 @@ using FluentAssertions;
 using Hangfire;
 using Hangfire.Common;
 using Hangfire.States;
-using LKvitai.MES.Api.Services;
+using LKvitai.MES.Modules.Warehouse.Api.Services;
 using LKvitai.MES.Modules.Warehouse.Application.Ports;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;

@@ -1,6 +1,6 @@
 using System.Security.Claims;
 using FluentAssertions;
-using LKvitai.MES.Api.Security;
+using LKvitai.MES.Modules.Warehouse.Api.Security;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;

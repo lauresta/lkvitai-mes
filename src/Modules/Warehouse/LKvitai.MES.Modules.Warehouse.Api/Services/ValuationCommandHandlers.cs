@@ -1,6 +1,6 @@
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
-using LKvitai.MES.Api.Security;
+using LKvitai.MES.Modules.Warehouse.Api.Security;
 using LKvitai.MES.Modules.Warehouse.Application.Commands;
 using LKvitai.MES.Modules.Warehouse.Application.Services;
 using LKvitai.MES.Contracts.Events;
@@ -13,7 +13,7 @@ using Marten.Exceptions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
-namespace LKvitai.MES.Api.Services;
+namespace LKvitai.MES.Modules.Warehouse.Api.Services;
 
 public sealed class AdjustCostCommandHandler : IRequestHandler<AdjustCostCommand, Result>
 {

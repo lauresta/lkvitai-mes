@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 
-namespace LKvitai.MES.Api.Services;
+namespace LKvitai.MES.Modules.Warehouse.Api.Services;
 
 public sealed class OutboundOrderSummaryConsumer :
     IConsumer<OutboundOrderCreatedEvent>,

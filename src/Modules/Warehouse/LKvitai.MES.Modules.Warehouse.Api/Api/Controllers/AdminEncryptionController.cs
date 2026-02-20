@@ -1,9 +1,9 @@
-using LKvitai.MES.Api.Security;
-using LKvitai.MES.Api.Services;
+using LKvitai.MES.Modules.Warehouse.Api.Security;
+using LKvitai.MES.Modules.Warehouse.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace LKvitai.MES.Api.Controllers;
+namespace LKvitai.MES.Modules.Warehouse.Api.Controllers;
 
 [ApiController]
 [Route("api/warehouse/v1/admin/encryption")]

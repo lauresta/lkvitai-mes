@@ -1,8 +1,8 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.Text;
-using LKvitai.MES.Api.ErrorHandling;
-using LKvitai.MES.Api.Security;
+using LKvitai.MES.Modules.Warehouse.Api.ErrorHandling;
+using LKvitai.MES.Modules.Warehouse.Api.Security;
 using LKvitai.MES.Modules.Warehouse.Application.Services;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Contracts.ReadModels;
@@ -14,7 +14,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace LKvitai.MES.Api.Controllers;
+namespace LKvitai.MES.Modules.Warehouse.Api.Controllers;
 
 [ApiController]
 [Route("api/warehouse/v1/receiving/shipments")]

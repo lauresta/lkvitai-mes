@@ -1,9 +1,9 @@
 using System.Net.Http.Json;
-using LKvitai.MES.Api.Observability;
+using LKvitai.MES.Modules.Warehouse.Api.Observability;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 
-namespace LKvitai.MES.Api.Services;
+namespace LKvitai.MES.Modules.Warehouse.Api.Services;
 
 public interface IAlertEscalationService
 {

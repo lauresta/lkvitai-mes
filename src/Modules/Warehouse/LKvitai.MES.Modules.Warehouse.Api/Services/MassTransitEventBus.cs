@@ -1,12 +1,12 @@
 using LKvitai.MES.Modules.Warehouse.Application.Ports;
 using LKvitai.MES.Modules.Warehouse.Application.EventVersioning;
 using LKvitai.MES.SharedKernel;
-using LKvitai.MES.Api.ErrorHandling;
+using LKvitai.MES.Modules.Warehouse.Api.ErrorHandling;
 using MassTransit;
 using System.Diagnostics;
 using ContractsDomainEvent = LKvitai.MES.Contracts.Events.DomainEvent;
 
-namespace LKvitai.MES.Api.Services;
+namespace LKvitai.MES.Modules.Warehouse.Api.Services;
 
 /// <summary>
 /// MassTransit implementation of <see cref="IEventBus"/>.

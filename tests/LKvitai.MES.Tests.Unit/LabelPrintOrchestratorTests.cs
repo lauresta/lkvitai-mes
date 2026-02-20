@@ -2,7 +2,7 @@ using FluentAssertions;
 using Hangfire;
 using Hangfire.Common;
 using Hangfire.States;
-using LKvitai.MES.Api.Services;
+using LKvitai.MES.Modules.Warehouse.Api.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;

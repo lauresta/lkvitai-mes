@@ -1,7 +1,7 @@
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 
-namespace LKvitai.MES.Api.Configuration;
+namespace LKvitai.MES.Modules.Warehouse.Api.Configuration;
 
 /// <summary>
 /// OpenTelemetry observability configuration per blueprint

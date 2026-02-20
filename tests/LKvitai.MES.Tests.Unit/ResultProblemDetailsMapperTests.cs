@@ -1,5 +1,5 @@
 using FluentAssertions;
-using LKvitai.MES.Api.ErrorHandling;
+using LKvitai.MES.Modules.Warehouse.Api.ErrorHandling;
 using LKvitai.MES.SharedKernel;
 using Microsoft.AspNetCore.Http;
 using Xunit;

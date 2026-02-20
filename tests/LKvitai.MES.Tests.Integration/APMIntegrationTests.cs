@@ -1,6 +1,6 @@
 using System.Security.Claims;
-using LKvitai.MES.Api.Observability;
-using LKvitai.MES.Api.Services;
+using LKvitai.MES.Modules.Warehouse.Api.Observability;
+using LKvitai.MES.Modules.Warehouse.Api.Services;
 using Microsoft.ApplicationInsights.Channel;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;

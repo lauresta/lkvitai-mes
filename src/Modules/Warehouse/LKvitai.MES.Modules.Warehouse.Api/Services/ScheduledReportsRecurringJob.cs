@@ -1,4 +1,4 @@
-namespace LKvitai.MES.Api.Services;
+namespace LKvitai.MES.Modules.Warehouse.Api.Services;
 
 public sealed class ScheduledReportsRecurringJob
 {

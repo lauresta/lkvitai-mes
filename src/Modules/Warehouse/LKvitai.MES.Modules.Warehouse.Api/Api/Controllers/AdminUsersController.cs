@@ -1,11 +1,11 @@
-using LKvitai.MES.Api.ErrorHandling;
-using LKvitai.MES.Api.Security;
+using LKvitai.MES.Modules.Warehouse.Api.ErrorHandling;
+using LKvitai.MES.Modules.Warehouse.Api.Security;
 using LKvitai.MES.Modules.Warehouse.Application.Services;
 using LKvitai.MES.SharedKernel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace LKvitai.MES.Api.Controllers;
+namespace LKvitai.MES.Modules.Warehouse.Api.Controllers;
 
 [ApiController]
 [Route("api/admin/users")]

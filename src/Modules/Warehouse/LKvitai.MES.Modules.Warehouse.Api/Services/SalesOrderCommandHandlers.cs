@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using IDocumentStore = Marten.IDocumentStore;
 
-namespace LKvitai.MES.Api.Services;
+namespace LKvitai.MES.Modules.Warehouse.Api.Services;
 
 public sealed class CreateSalesOrderCommandHandler : IRequestHandler<CreateSalesOrderCommand, Result>
 {

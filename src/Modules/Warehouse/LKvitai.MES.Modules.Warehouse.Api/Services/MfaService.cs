@@ -1,6 +1,6 @@
 using System.Security.Cryptography;
 using System.Text.Json;
-using LKvitai.MES.Api.Security;
+using LKvitai.MES.Modules.Warehouse.Api.Security;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 using LKvitai.MES.SharedKernel;
@@ -10,7 +10,7 @@ using Microsoft.Extensions.Options;
 using OtpNet;
 using QRCoder;
 
-namespace LKvitai.MES.Api.Services;
+namespace LKvitai.MES.Modules.Warehouse.Api.Services;
 
 public interface IMfaService
 {

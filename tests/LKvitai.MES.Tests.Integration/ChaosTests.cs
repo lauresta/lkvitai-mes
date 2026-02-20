@@ -1,4 +1,4 @@
-using LKvitai.MES.Api.Services;
+using LKvitai.MES.Modules.Warehouse.Api.Services;
 using Microsoft.AspNetCore.Http;
 using Xunit;
 

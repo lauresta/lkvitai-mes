@@ -2,7 +2,7 @@ using System.Collections.Concurrent;
 using System.Security.Claims;
 using System.Text.Json;
 
-namespace LKvitai.MES.Api.Middleware;
+namespace LKvitai.MES.Modules.Warehouse.Api.Middleware;
 
 public sealed class ApiRateLimitingMiddleware
 {

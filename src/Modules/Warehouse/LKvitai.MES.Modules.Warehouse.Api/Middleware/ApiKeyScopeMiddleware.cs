@@ -1,8 +1,8 @@
 using System.Security.Claims;
-using LKvitai.MES.Api.ErrorHandling;
+using LKvitai.MES.Modules.Warehouse.Api.ErrorHandling;
 using LKvitai.MES.SharedKernel;
 
-namespace LKvitai.MES.Api.Middleware;
+namespace LKvitai.MES.Modules.Warehouse.Api.Middleware;
 
 public sealed class ApiKeyScopeMiddleware
 {

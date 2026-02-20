@@ -9,7 +9,7 @@ using LKvitai.MES.SharedKernel;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
-namespace LKvitai.MES.Api.Services;
+namespace LKvitai.MES.Modules.Warehouse.Api.Services;
 
 public sealed class DispatchShipmentCommandHandler : IRequestHandler<DispatchShipmentCommand, Result>
 {

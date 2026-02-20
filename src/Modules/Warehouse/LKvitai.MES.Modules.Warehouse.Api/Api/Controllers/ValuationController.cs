@@ -1,7 +1,7 @@
 using System.Security.Claims;
-using LKvitai.MES.Api.ErrorHandling;
-using LKvitai.MES.Api.Security;
-using LKvitai.MES.Api.Services;
+using LKvitai.MES.Modules.Warehouse.Api.ErrorHandling;
+using LKvitai.MES.Modules.Warehouse.Api.Security;
+using LKvitai.MES.Modules.Warehouse.Api.Services;
 using LKvitai.MES.Modules.Warehouse.Application.Commands;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Contracts.ReadModels;
@@ -18,7 +18,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace LKvitai.MES.Api.Controllers;
+namespace LKvitai.MES.Modules.Warehouse.Api.Controllers;
 
 [ApiController]
 [Route("api/warehouse/v1/valuation")]

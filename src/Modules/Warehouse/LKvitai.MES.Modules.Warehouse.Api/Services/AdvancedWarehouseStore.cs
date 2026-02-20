@@ -1,6 +1,6 @@
-using LKvitai.MES.Api.Security;
+using LKvitai.MES.Modules.Warehouse.Api.Security;
 
-namespace LKvitai.MES.Api.Services;
+namespace LKvitai.MES.Modules.Warehouse.Api.Services;
 
 public interface IAdvancedWarehouseStore
 {

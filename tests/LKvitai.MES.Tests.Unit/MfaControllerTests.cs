@@ -1,7 +1,7 @@
 using System.Security.Claims;
 using FluentAssertions;
-using LKvitai.MES.Api.Controllers;
-using LKvitai.MES.Api.Services;
+using LKvitai.MES.Modules.Warehouse.Api.Controllers;
+using LKvitai.MES.Modules.Warehouse.Api.Services;
 using LKvitai.MES.SharedKernel;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;

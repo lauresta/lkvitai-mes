@@ -1,5 +1,5 @@
-using LKvitai.MES.Api.ErrorHandling;
-using LKvitai.MES.Api.Security;
+using LKvitai.MES.Modules.Warehouse.Api.ErrorHandling;
+using LKvitai.MES.Modules.Warehouse.Api.Security;
 using LKvitai.MES.Modules.Warehouse.Application.Commands;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace LKvitai.MES.Api.Controllers;
+namespace LKvitai.MES.Modules.Warehouse.Api.Controllers;
 
 [ApiController]
 [Route("api/sales-orders")]

@@ -2,12 +2,12 @@ using System.Globalization;
 using System.Text;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Caching;
-using LKvitai.MES.Api.Services;
+using LKvitai.MES.Modules.Warehouse.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Npgsql;
 
-namespace LKvitai.MES.Api.Controllers;
+namespace LKvitai.MES.Modules.Warehouse.Api.Controllers;
 
 [ApiController]
 [Route("metrics")]

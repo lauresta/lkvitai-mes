@@ -1,5 +1,5 @@
-using LKvitai.MES.Api.Observability;
-using LKvitai.MES.Api.Services;
+using LKvitai.MES.Modules.Warehouse.Api.Observability;
+using LKvitai.MES.Modules.Warehouse.Api.Services;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;

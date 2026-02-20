@@ -1,7 +1,7 @@
 using System.Security.Claims;
 using FluentAssertions;
-using LKvitai.MES.Api.Middleware;
-using LKvitai.MES.Api.Services;
+using LKvitai.MES.Modules.Warehouse.Api.Middleware;
+using LKvitai.MES.Modules.Warehouse.Api.Services;
 using Moq;
 using Microsoft.AspNetCore.Http;
 using Xunit;

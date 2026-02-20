@@ -1,7 +1,7 @@
 using LKvitai.MES.Modules.Warehouse.Application.Commands;
 using LKvitai.MES.SharedKernel;
 
-namespace LKvitai.MES.Api.Services;
+namespace LKvitai.MES.Modules.Warehouse.Api.Services;
 
 public static class ValuationCostAdjustmentPolicy
 {

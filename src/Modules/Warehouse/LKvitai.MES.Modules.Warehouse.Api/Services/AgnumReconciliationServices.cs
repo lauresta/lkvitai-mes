@@ -5,7 +5,7 @@ using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
-namespace LKvitai.MES.Api.Services;
+namespace LKvitai.MES.Modules.Warehouse.Api.Services;
 
 public sealed record AgnumReconciliationLine(
     string AccountCode,

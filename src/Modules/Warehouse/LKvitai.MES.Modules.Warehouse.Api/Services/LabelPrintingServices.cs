@@ -6,7 +6,7 @@ using System.Text;
 using Hangfire;
 using Microsoft.Extensions.Options;
 
-namespace LKvitai.MES.Api.Services;
+namespace LKvitai.MES.Modules.Warehouse.Api.Services;
 
 public interface ILabelPrintOrchestrator
 {

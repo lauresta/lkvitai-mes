@@ -3,7 +3,7 @@ using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 using LKvitai.MES.SharedKernel;
 using Microsoft.EntityFrameworkCore;
 
-namespace LKvitai.MES.Api.Services;
+namespace LKvitai.MES.Modules.Warehouse.Api.Services;
 
 public interface IReasonCodeService
 {

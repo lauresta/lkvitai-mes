@@ -1,8 +1,8 @@
 using MassTransit;
 using LKvitai.MES.Modules.Warehouse.Sagas;
-using LKvitai.MES.Api.Services;
+using LKvitai.MES.Modules.Warehouse.Api.Services;
 
-namespace LKvitai.MES.Api.Configuration;
+namespace LKvitai.MES.Modules.Warehouse.Api.Configuration;
 
 /// <summary>
 /// MassTransit configuration per blueprint

@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
-using LKvitai.MES.Api.Security;
+using LKvitai.MES.Modules.Warehouse.Api.Security;
 
-namespace LKvitai.MES.Api.ErrorHandling;
+namespace LKvitai.MES.Modules.Warehouse.Api.ErrorHandling;
 
 public sealed class ProblemDetailsExceptionMiddleware
 {

@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace LKvitai.MES.Api.Security;
+namespace LKvitai.MES.Modules.Warehouse.Api.Security;
 
 public static partial class SensitiveDataMasker
 {

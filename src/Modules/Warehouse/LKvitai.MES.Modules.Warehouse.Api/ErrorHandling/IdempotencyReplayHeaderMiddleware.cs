@@ -1,6 +1,6 @@
 using LKvitai.MES.SharedKernel;
 
-namespace LKvitai.MES.Api.ErrorHandling;
+namespace LKvitai.MES.Modules.Warehouse.Api.ErrorHandling;
 
 /// <summary>
 /// Adds replay marker header when a command is served from idempotency cache.

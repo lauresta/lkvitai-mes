@@ -1,7 +1,7 @@
 using System.Net;
 using System.Text;
-using LKvitai.MES.Api.Observability;
-using LKvitai.MES.Api.Services;
+using LKvitai.MES.Modules.Warehouse.Api.Observability;
+using LKvitai.MES.Modules.Warehouse.Api.Services;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;

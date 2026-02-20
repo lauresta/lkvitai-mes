@@ -18,7 +18,7 @@ using Microsoft.EntityFrameworkCore;
 using Polly;
 using Polly.Retry;
 
-namespace LKvitai.MES.Api.Services;
+namespace LKvitai.MES.Modules.Warehouse.Api.Services;
 
 public static class AgnumRecurringJobs
 {

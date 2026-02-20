@@ -1,6 +1,6 @@
 using System.Reflection;
 using LKvitai.MES.Modules.Warehouse.Application.Services;
-using LKvitai.MES.Api.Security;
+using LKvitai.MES.Modules.Warehouse.Api.Security;
 using LKvitai.MES.Contracts.ReadModels;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 using Marten;
@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
-namespace LKvitai.MES.Api.Controllers;
+namespace LKvitai.MES.Modules.Warehouse.Api.Controllers;
 
 [ApiController]
 [Authorize(Policy = WarehousePolicies.OperatorOrAbove)]
@@ -71,7 +71,7 @@ public sealed class DashboardController : ControllerBase
         var response = new HealthStatusDto
         {
             Ok = !string.Equals(overallStatus, "Unhealthy", StringComparison.OrdinalIgnoreCase),
-            Service = "LKvitai.MES.Api",
+            Service = "LKvitai.MES.Modules.Warehouse.Api",
             Version = version,
             UtcNow = DateTime.UtcNow,
             Status = overallStatus,

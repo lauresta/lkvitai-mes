@@ -1,4 +1,4 @@
-namespace LKvitai.MES.Api.Security;
+namespace LKvitai.MES.Modules.Warehouse.Api.Security;
 
 public static class WarehousePolicies
 {

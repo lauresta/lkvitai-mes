@@ -1,7 +1,7 @@
 using System.Diagnostics;
-using LKvitai.MES.Api.Services;
+using LKvitai.MES.Modules.Warehouse.Api.Services;
 
-namespace LKvitai.MES.Api.Middleware;
+namespace LKvitai.MES.Modules.Warehouse.Api.Middleware;
 
 public sealed class SlaMetricsMiddleware
 {

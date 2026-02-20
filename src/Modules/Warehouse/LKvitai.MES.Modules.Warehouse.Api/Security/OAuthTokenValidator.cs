@@ -4,7 +4,7 @@ using LKvitai.MES.SharedKernel;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
-namespace LKvitai.MES.Api.Security;
+namespace LKvitai.MES.Modules.Warehouse.Api.Security;
 
 public interface IOAuthTokenValidator
 {

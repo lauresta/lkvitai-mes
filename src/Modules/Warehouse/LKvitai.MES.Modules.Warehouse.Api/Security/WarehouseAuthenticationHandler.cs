@@ -1,12 +1,12 @@
 using System.Security.Claims;
 using System.Text.Encodings.Web;
-using LKvitai.MES.Api.ErrorHandling;
-using LKvitai.MES.Api.Services;
+using LKvitai.MES.Modules.Warehouse.Api.ErrorHandling;
+using LKvitai.MES.Modules.Warehouse.Api.Services;
 using LKvitai.MES.SharedKernel;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
 
-namespace LKvitai.MES.Api.Security;
+namespace LKvitai.MES.Modules.Warehouse.Api.Security;
 
 public static class WarehouseAuthenticationDefaults
 {

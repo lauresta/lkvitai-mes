@@ -3,7 +3,7 @@ using LKvitai.MES.SharedKernel;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 
-namespace LKvitai.MES.Api.ErrorHandling;
+namespace LKvitai.MES.Modules.Warehouse.Api.ErrorHandling;
 
 public static class ResultProblemDetailsMapper
 {

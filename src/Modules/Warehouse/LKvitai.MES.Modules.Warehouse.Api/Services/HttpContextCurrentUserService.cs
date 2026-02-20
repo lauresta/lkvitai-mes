@@ -1,7 +1,7 @@
 using LKvitai.MES.Modules.Warehouse.Application.Services;
 using System.Security.Claims;
 
-namespace LKvitai.MES.Api.Services;
+namespace LKvitai.MES.Modules.Warehouse.Api.Services;
 
 public sealed class HttpContextCurrentUserService : ICurrentUserService
 {

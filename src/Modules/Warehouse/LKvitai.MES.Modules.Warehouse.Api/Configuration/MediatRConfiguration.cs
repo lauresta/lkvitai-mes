@@ -2,7 +2,7 @@ using LKvitai.MES.Modules.Warehouse.Application.Behaviors;
 using LKvitai.MES.Modules.Warehouse.Application.Commands;
 using MediatR;
 
-namespace LKvitai.MES.Api.Configuration;
+namespace LKvitai.MES.Modules.Warehouse.Api.Configuration;
 
 /// <summary>
 /// MediatR command pipeline configuration per blueprint

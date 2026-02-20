@@ -1,6 +1,6 @@
 using System.Security.Claims;
 using FluentAssertions;
-using LKvitai.MES.Api.Security;
+using LKvitai.MES.Modules.Warehouse.Api.Security;
 using Xunit;
 
 namespace LKvitai.MES.Tests.Unit;

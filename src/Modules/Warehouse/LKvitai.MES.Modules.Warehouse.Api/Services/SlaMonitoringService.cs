@@ -1,10 +1,10 @@
-using LKvitai.MES.Api.Observability;
+using LKvitai.MES.Modules.Warehouse.Api.Observability;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
-namespace LKvitai.MES.Api.Services;
+namespace LKvitai.MES.Modules.Warehouse.Api.Services;
 
 public interface ISlaMonitoringService
 {

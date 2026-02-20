@@ -2,7 +2,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 
-namespace LKvitai.MES.Api.Security;
+namespace LKvitai.MES.Modules.Warehouse.Api.Security;
 
 public interface IOAuthOpenIdConfigurationProvider
 {

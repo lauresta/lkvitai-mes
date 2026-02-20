@@ -1,6 +1,6 @@
 using Microsoft.ApplicationInsights;
 
-namespace LKvitai.MES.Api.Services;
+namespace LKvitai.MES.Modules.Warehouse.Api.Services;
 
 public interface IBusinessTelemetryService
 {

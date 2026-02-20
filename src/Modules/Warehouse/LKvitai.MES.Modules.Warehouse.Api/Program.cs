@@ -1,9 +1,9 @@
-using LKvitai.MES.Api.Configuration;
-using LKvitai.MES.Api.ErrorHandling;
-using LKvitai.MES.Api.Middleware;
-using LKvitai.MES.Api.Observability;
-using LKvitai.MES.Api.Security;
-using LKvitai.MES.Api.Services;
+using LKvitai.MES.Modules.Warehouse.Api.Configuration;
+using LKvitai.MES.Modules.Warehouse.Api.ErrorHandling;
+using LKvitai.MES.Modules.Warehouse.Api.Middleware;
+using LKvitai.MES.Modules.Warehouse.Api.Observability;
+using LKvitai.MES.Modules.Warehouse.Api.Security;
+using LKvitai.MES.Modules.Warehouse.Api.Services;
 using LKvitai.MES.Modules.Warehouse.Application.EventVersioning;
 using LKvitai.MES.Modules.Warehouse.Application.Ports;
 using LKvitai.MES.Modules.Warehouse.Application.Services;

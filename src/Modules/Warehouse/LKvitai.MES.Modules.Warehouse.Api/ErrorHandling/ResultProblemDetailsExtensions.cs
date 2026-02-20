@@ -1,7 +1,7 @@
 using LKvitai.MES.SharedKernel;
 using Microsoft.AspNetCore.Mvc;
 
-namespace LKvitai.MES.Api.ErrorHandling;
+namespace LKvitai.MES.Modules.Warehouse.Api.ErrorHandling;
 
 public static class ResultProblemDetailsExtensions
 {

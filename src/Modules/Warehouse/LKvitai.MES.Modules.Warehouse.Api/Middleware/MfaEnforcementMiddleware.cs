@@ -1,10 +1,10 @@
 using System.Security.Claims;
-using LKvitai.MES.Api.ErrorHandling;
-using LKvitai.MES.Api.Security;
+using LKvitai.MES.Modules.Warehouse.Api.ErrorHandling;
+using LKvitai.MES.Modules.Warehouse.Api.Security;
 using LKvitai.MES.SharedKernel;
 using Microsoft.Extensions.Options;
 
-namespace LKvitai.MES.Api.Middleware;
+namespace LKvitai.MES.Modules.Warehouse.Api.Middleware;
 
 public sealed class MfaEnforcementMiddleware
 {

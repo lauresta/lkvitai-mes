@@ -1,4 +1,4 @@
-namespace LKvitai.MES.Api.Observability;
+namespace LKvitai.MES.Modules.Warehouse.Api.Observability;
 
 public sealed class CapacityPlanningOptions
 {

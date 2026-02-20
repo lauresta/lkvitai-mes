@@ -1,6 +1,6 @@
 using FluentAssertions;
-using LKvitai.MES.Api.Controllers;
-using LKvitai.MES.Api.Services;
+using LKvitai.MES.Modules.Warehouse.Api.Controllers;
+using LKvitai.MES.Modules.Warehouse.Api.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Moq;

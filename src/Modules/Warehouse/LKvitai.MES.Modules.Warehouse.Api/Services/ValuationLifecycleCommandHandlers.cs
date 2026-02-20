@@ -1,6 +1,6 @@
 using LKvitai.MES.Modules.Warehouse.Application.Commands;
 using LKvitai.MES.Modules.Warehouse.Application.Services;
-using LKvitai.MES.Api.Security;
+using LKvitai.MES.Modules.Warehouse.Api.Security;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Modules.Warehouse.Domain.Aggregates;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
@@ -13,7 +13,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using EfAsync = Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions;
 
-namespace LKvitai.MES.Api.Services;
+namespace LKvitai.MES.Modules.Warehouse.Api.Services;
 
 public sealed class InitializeValuationCommandHandler : IRequestHandler<InitializeValuationCommand, Result>
 {

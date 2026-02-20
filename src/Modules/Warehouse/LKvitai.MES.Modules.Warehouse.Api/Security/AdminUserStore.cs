@@ -2,7 +2,7 @@ using System.Collections.Concurrent;
 using System.Net.Mail;
 using Microsoft.AspNetCore.Identity;
 
-namespace LKvitai.MES.Api.Security;
+namespace LKvitai.MES.Modules.Warehouse.Api.Security;
 
 public sealed record AdminUserView(
     Guid Id,

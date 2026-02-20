@@ -1,6 +1,6 @@
 using System.Security.Claims;
 
-namespace LKvitai.MES.Api.Security;
+namespace LKvitai.MES.Modules.Warehouse.Api.Security;
 
 public interface IOAuthUserProvisioningService
 {
