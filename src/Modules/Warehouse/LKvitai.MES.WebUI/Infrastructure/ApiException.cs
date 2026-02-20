@@ -1,4 +1,4 @@
-namespace LKvitai.MES.WebUI.Infrastructure;
+namespace LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure;
 
 public class ApiException : Exception
 {

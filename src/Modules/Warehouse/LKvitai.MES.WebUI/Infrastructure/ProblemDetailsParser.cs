@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace LKvitai.MES.WebUI.Infrastructure;
+namespace LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure;
 
 public static class ProblemDetailsParser
 {

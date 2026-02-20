@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace LKvitai.MES.WebUI.Infrastructure;
+namespace LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure;
 
 public record ProblemDetailsModel
 {

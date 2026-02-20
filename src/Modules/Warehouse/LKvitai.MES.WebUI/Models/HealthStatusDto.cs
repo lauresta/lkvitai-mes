@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace LKvitai.MES.WebUI.Models;
+namespace LKvitai.MES.Modules.Warehouse.WebUI.Models;
 
 public record HealthStatusDto
 {

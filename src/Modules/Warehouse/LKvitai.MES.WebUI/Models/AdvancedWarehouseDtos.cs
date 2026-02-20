@@ -1,4 +1,4 @@
-namespace LKvitai.MES.WebUI.Models;
+namespace LKvitai.MES.Modules.Warehouse.WebUI.Models;
 
 public sealed record WaveCreateRequestDto(IReadOnlyList<Guid> OrderIds, string? AssignedOperator);
 public sealed record AssignWaveRequestDto(string AssignedOperator);

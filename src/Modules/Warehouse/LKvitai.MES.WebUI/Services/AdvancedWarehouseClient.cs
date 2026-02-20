@@ -1,10 +1,10 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
-using LKvitai.MES.WebUI.Infrastructure;
-using LKvitai.MES.WebUI.Models;
+using LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure;
+using LKvitai.MES.Modules.Warehouse.WebUI.Models;
 
-namespace LKvitai.MES.WebUI.Services;
+namespace LKvitai.MES.Modules.Warehouse.WebUI.Services;
 
 public sealed class AdvancedWarehouseClient
 {

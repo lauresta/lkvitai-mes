@@ -1,4 +1,4 @@
-namespace LKvitai.MES.WebUI.Models;
+namespace LKvitai.MES.Modules.Warehouse.WebUI.Models;
 
 public sealed record LabelPrintRequestDto(string TemplateType, IDictionary<string, string> Data);
 public sealed record LabelPreviewRequestDto(string TemplateType, IDictionary<string, string> Data);

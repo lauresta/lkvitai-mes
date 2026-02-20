@@ -1,6 +1,6 @@
-using LKvitai.MES.WebUI.Models;
+using LKvitai.MES.Modules.Warehouse.WebUI.Models;
 
-namespace LKvitai.MES.WebUI.Services;
+namespace LKvitai.MES.Modules.Warehouse.WebUI.Services;
 
 public static class WarehouseVisualizationSearch
 {

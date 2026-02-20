@@ -1,6 +1,6 @@
 using FluentAssertions;
-using LKvitai.MES.WebUI.Models;
-using LKvitai.MES.WebUI.Services;
+using LKvitai.MES.Modules.Warehouse.WebUI.Models;
+using LKvitai.MES.Modules.Warehouse.WebUI.Services;
 using Xunit;
 
 namespace LKvitai.MES.Tests.Unit;

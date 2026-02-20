@@ -1,5 +1,5 @@
 using System.Net.Http.Headers;
-using LKvitai.MES.WebUI.Services;
+using LKvitai.MES.Modules.Warehouse.WebUI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 

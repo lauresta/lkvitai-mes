@@ -1,9 +1,9 @@
 using System.Net;
 using System.Net.Http.Headers;
 using FluentAssertions;
-using LKvitai.MES.WebUI.Infrastructure;
-using LKvitai.MES.WebUI.Models;
-using LKvitai.MES.WebUI.Services;
+using LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure;
+using LKvitai.MES.Modules.Warehouse.WebUI.Models;
+using LKvitai.MES.Modules.Warehouse.WebUI.Services;
 using Moq;
 using Xunit;
 

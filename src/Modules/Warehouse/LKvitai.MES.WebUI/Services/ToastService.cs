@@ -1,4 +1,4 @@
-namespace LKvitai.MES.WebUI.Services;
+namespace LKvitai.MES.Modules.Warehouse.WebUI.Services;
 
 public class ToastService
 {
