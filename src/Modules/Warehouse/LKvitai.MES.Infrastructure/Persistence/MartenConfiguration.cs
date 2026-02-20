@@ -1,11 +1,13 @@
 using Marten;
 using Marten.Events.Projections;
 using Marten.Events.Daemon.Resiliency;
+using System.Reflection;
 using Npgsql;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using LKvitai.MES.Contracts.Events;
+using LKvitai.MES.Contracts.ReadModels;
 using LKvitai.MES.Domain.Aggregates;
 using LKvitai.MES.Infrastructure.EventVersioning;
 
@@ -38,12 +40,8 @@ public static class MartenConfiguration
             options.Events.StreamIdentity = Marten.Events.StreamIdentity.AsString;
             options.Events.DatabaseSchemaName = "warehouse_events";
 
-            options.Events.AddEventType<ValuationInitialized>();
-            options.Events.AddEventType<CostAdjusted>();
-            options.Events.AddEventType<LandedCostAllocated>();
-            options.Events.AddEventType<StockWrittenDown>();
-            options.Events.AddEventType<LandedCostApplied>();
-            options.Events.AddEventType<WrittenDown>();
+            RegisterMartenEventTypes(options);
+            RegisterMartenDocumentAliases(options);
 
             options.Projections.Snapshot<Valuation>(SnapshotLifecycle.Inline);
             options.Projections.Snapshot<ItemValuation>(SnapshotLifecycle.Inline);
@@ -64,6 +62,111 @@ public static class MartenConfiguration
         .AddAsyncDaemon(DaemonMode.Solo);
         
         return services;
+    }
+
+    private static void RegisterMartenEventTypes(StoreOptions options)
+    {
+        RegisterEventType<AgnumExportStartedEvent>(options);
+        RegisterEventType<AgnumExportCompletedEvent>(options);
+        RegisterEventType<AgnumExportFailedEvent>(options);
+        RegisterEventType<CycleCountScheduledEvent>(options);
+        RegisterEventType<CountRecordedEvent>(options);
+        RegisterEventType<CycleCountCompletedEvent>(options);
+        RegisterEventType<HandlingUnitCreatedEvent>(options);
+        RegisterEventType<LineAddedToHandlingUnitEvent>(options);
+        RegisterEventType<LineRemovedFromHandlingUnitEvent>(options);
+        RegisterEventType<HandlingUnitSealedEvent>(options);
+        RegisterEventType<HandlingUnitSplitEvent>(options);
+        RegisterEventType<HandlingUnitMergedEvent>(options);
+        RegisterEventType<InboundShipmentCreatedEvent>(options);
+        RegisterEventType<GoodsReceivedEvent>(options);
+        RegisterEventType<PickCompletedEvent>(options);
+        RegisterEventType<StockAdjustedEvent>(options);
+        RegisterEventType<ReservationCreatedMasterDataEvent>(options);
+        RegisterEventType<ReservationReleasedMasterDataEvent>(options);
+        RegisterEventType<QCPassedEvent>(options);
+        RegisterEventType<QCFailedEvent>(options);
+        RegisterEventType<OutboundOrderCreatedEvent>(options);
+        RegisterEventType<ShipmentPackedEvent>(options);
+        RegisterEventType<ShipmentDispatchedEvent>(options);
+        RegisterEventType<ReservationCreatedEvent>(options);
+        RegisterEventType<StockAllocatedEvent>(options);
+        RegisterEventType<PickingStartedEvent>(options);
+        RegisterEventType<ReservationConsumedEvent>(options);
+        RegisterEventType<ReservationCancelledEvent>(options);
+        RegisterEventType<ReservationBumpedEvent>(options);
+        RegisterEventType<SalesOrderCreatedEvent>(options);
+        RegisterEventType<SalesOrderAllocatedEvent>(options);
+        RegisterEventType<SalesOrderReleasedEvent>(options);
+        RegisterEventType<SalesOrderCancelledEvent>(options);
+        RegisterEventType<StockMovedV1Event>(options);
+        RegisterEventType<StockMovedEvent>(options);
+        RegisterEventType<TransferCreatedEvent>(options);
+        RegisterEventType<TransferApprovedEvent>(options);
+        RegisterEventType<TransferExecutedEvent>(options);
+        RegisterEventType<TransferCompletedEvent>(options);
+        RegisterEventType<ValuationInitialized>(options);
+        RegisterEventType<CostAdjusted>(options);
+        RegisterEventType<LandedCostAllocated>(options);
+        RegisterEventType<StockWrittenDown>(options);
+        RegisterEventType<LandedCostApplied>(options);
+        RegisterEventType<WrittenDown>(options);
+    }
+
+    private static void RegisterMartenDocumentAliases(StoreOptions options)
+    {
+        RegisterDocumentAlias<Valuation>(options, "LKvitai.MES.Domain.Aggregates", "LKvitai.MES.Domain");
+        RegisterDocumentAlias<ItemValuation>(options, "LKvitai.MES.Domain.Aggregates", "LKvitai.MES.Domain");
+        RegisterDocumentAlias<ActiveHardLockView>(options, "LKvitai.MES.Contracts.ReadModels", "LKvitai.MES.Contracts");
+        RegisterDocumentAlias<LocationBalanceView>(options, "LKvitai.MES.Contracts.ReadModels", "LKvitai.MES.Contracts");
+        RegisterDocumentAlias<AvailableStockView>(options, "LKvitai.MES.Contracts.ReadModels", "LKvitai.MES.Contracts");
+        RegisterDocumentAlias<HandlingUnitView>(options, "LKvitai.MES.Contracts.ReadModels", "LKvitai.MES.Contracts");
+        RegisterDocumentAlias<ReservationSummaryView>(options, "LKvitai.MES.Contracts.ReadModels", "LKvitai.MES.Contracts");
+        RegisterDocumentAlias<ActiveReservationView>(options, "LKvitai.MES.Contracts.ReadModels", "LKvitai.MES.Contracts");
+        RegisterDocumentAlias<InboundShipmentSummaryView>(options, "LKvitai.MES.Contracts.ReadModels", "LKvitai.MES.Contracts");
+        RegisterDocumentAlias<AdjustmentHistoryView>(options, "LKvitai.MES.Contracts.ReadModels", "LKvitai.MES.Contracts");
+
+        RegisterDocumentAliasByTypeName(options, "LKvitai.MES.Sagas.PickStockSagaState, LKvitai.MES.Sagas");
+        RegisterDocumentAliasByTypeName(options, "LKvitai.MES.Sagas.ReceiveGoodsSagaState, LKvitai.MES.Sagas");
+        RegisterDocumentAliasByTypeName(options, "LKvitai.MES.Sagas.AgnumExportSagaState, LKvitai.MES.Sagas");
+    }
+
+    private static void RegisterEventType<TEvent>(StoreOptions options)
+        where TEvent : class
+    {
+        var oldQualifiedName = $"LKvitai.MES.Contracts.Events.{typeof(TEvent).Name}, LKvitai.MES.Contracts";
+        options.Events.MapEventType<TEvent>(oldQualifiedName);
+        options.Events.AddEventType<TEvent>();
+    }
+
+    private static void RegisterDocumentAlias<TDocument>(
+        StoreOptions options,
+        string oldNamespace,
+        string oldAssembly)
+        where TDocument : class
+    {
+        var oldQualifiedName = $"{oldNamespace}.{typeof(TDocument).Name}, {oldAssembly}";
+        options.Schema.For<TDocument>().DocumentAlias(oldQualifiedName);
+    }
+
+    private static void RegisterDocumentAliasByTypeName(StoreOptions options, string oldQualifiedName)
+    {
+        var documentType = Type.GetType(oldQualifiedName, throwOnError: false);
+        if (documentType is null)
+        {
+            return;
+        }
+
+        var registerMethod = typeof(MartenConfiguration)
+            .GetMethod(nameof(RegisterDocumentAliasForResolvedType), BindingFlags.NonPublic | BindingFlags.Static)
+            ?.MakeGenericMethod(documentType);
+        registerMethod?.Invoke(null, new object[] { options, oldQualifiedName });
+    }
+
+    private static void RegisterDocumentAliasForResolvedType<TDocument>(StoreOptions options, string oldQualifiedName)
+        where TDocument : class
+    {
+        options.Schema.For<TDocument>().DocumentAlias(oldQualifiedName);
     }
     
     /// <summary>
