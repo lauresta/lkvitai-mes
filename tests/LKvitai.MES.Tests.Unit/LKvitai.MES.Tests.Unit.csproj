@@ -26,7 +26,7 @@
     <ProjectReference Include="..\\..\\src\\Modules\\Warehouse\\LKvitai.MES.Modules.Warehouse.Domain\\LKvitai.MES.Modules.Warehouse.Domain.csproj" />
     <ProjectReference Include="..\\..\\src\\Modules\\Warehouse\\LKvitai.MES.Modules.Warehouse.Application\\LKvitai.MES.Modules.Warehouse.Application.csproj" />
     <ProjectReference Include="..\\..\\src\\Modules\\Warehouse\\LKvitai.MES.Modules.Warehouse.Contracts\\LKvitai.MES.Modules.Warehouse.Contracts.csproj" />
-    <ProjectReference Include="..\\..\\src\\Modules\\Warehouse\\LKvitai.MES.Projections\\LKvitai.MES.Projections.csproj" />
+    <ProjectReference Include="..\\..\\src\\Modules\\Warehouse\\LKvitai.MES.Modules.Warehouse.Projections\\LKvitai.MES.Modules.Warehouse.Projections.csproj" />
     <ProjectReference Include="..\\..\\src\\Modules\\Warehouse\\LKvitai.MES.Modules.Warehouse.Infrastructure\\LKvitai.MES.Modules.Warehouse.Infrastructure.csproj" />
     <ProjectReference Include="..\\..\\src\\Modules\\Warehouse\\LKvitai.MES.Sagas\\LKvitai.MES.Sagas.csproj" />
     <ProjectReference Include="..\\..\\src\\Modules\\Warehouse\\LKvitai.MES.Api\\LKvitai.MES.Api.csproj" />
