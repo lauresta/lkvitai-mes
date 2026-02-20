@@ -6,16 +6,16 @@ WORKDIR /src
 COPY src/LKvitai.MES.sln .
 
 # Copy all project files for restore (optimize layer caching)
-COPY src/LKvitai.MES.WebUI/LKvitai.MES.WebUI.csproj LKvitai.MES.WebUI/
+COPY src/Modules/Warehouse/LKvitai.MES.WebUI/LKvitai.MES.WebUI.csproj Modules/Warehouse/LKvitai.MES.WebUI/
 
 # Restore dependencies
-RUN dotnet restore LKvitai.MES.WebUI/LKvitai.MES.WebUI.csproj
+RUN dotnet restore Modules/Warehouse/LKvitai.MES.WebUI/LKvitai.MES.WebUI.csproj
 
 # Copy source code
-COPY src/LKvitai.MES.WebUI/ LKvitai.MES.WebUI/
+COPY src/Modules/Warehouse/LKvitai.MES.WebUI/ Modules/Warehouse/LKvitai.MES.WebUI/
 
 # Build and publish
-WORKDIR /src/LKvitai.MES.WebUI
+WORKDIR /src/Modules/Warehouse/LKvitai.MES.WebUI
 RUN dotnet publish -c Release -o /app/publish /p:UseAppHost=false --no-restore
 
 # Runtime stage

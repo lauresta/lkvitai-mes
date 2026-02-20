@@ -1,0 +1,138 @@
+$ dotnet restore src/LKvitai.MES.sln -p:RestoreForce=true -p:RestoreIgnoreFailedSources=false
+  Determining projects to restore...
+  Restored /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Contracts/LKvitai.MES.Contracts.csproj (in 69 ms).
+  Restored /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/LKvitai.MES.SharedKernel/LKvitai.MES.SharedKernel.csproj (in 187 ms).
+  Restored /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Application/LKvitai.MES.Application.csproj (in 187 ms).
+  Restored /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Integration/LKvitai.MES.Integration.csproj (in 190 ms).
+  Restored /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/tests/ArchitectureTests/LKvitai.MES.ArchitectureTests/LKvitai.MES.ArchitectureTests.csproj (in 126 ms).
+  Restored /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Domain/LKvitai.MES.Domain.csproj (in 214 ms).
+  Restored /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/BuildingBlocks/LKvitai.MES.BuildingBlocks.Cqrs.Abstractions/LKvitai.MES.BuildingBlocks.Cqrs.Abstractions.csproj (in 215 ms).
+  Restored /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/tests/LKvitai.MES.Tests.E2E/LKvitai.MES.Tests.E2E.csproj (in 17 ms).
+  Restored /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.WebUI/LKvitai.MES.WebUI.csproj (in 0,8 ms).
+  Restored /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/tests/LKvitai.MES.Tests.Property/LKvitai.MES.Tests.Property.csproj (in 269 ms).
+  Restored /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Projections/LKvitai.MES.Projections.csproj (in 79 ms).
+  Restored /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Sagas/LKvitai.MES.Sagas.csproj (in 149 ms).
+  Restored /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Infrastructure/LKvitai.MES.Infrastructure.csproj (in 342 ms).
+  Restored /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Api/LKvitai.MES.Api.csproj (in 186 ms).
+  Restored /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/tests/LKvitai.MES.Tests.Integration/LKvitai.MES.Tests.Integration.csproj (in 385 ms).
+  Restored /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/tests/LKvitai.MES.Tests.Unit/LKvitai.MES.Tests.Unit.csproj (in 385 ms).
+
+$ dotnet build src/LKvitai.MES.sln -c Release
+MSBuild version 17.10.0-preview-24101-01+07fd5d51f for .NET
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+/usr/local/share/dotnet/sdk/9.0.100-preview.1.24101.2/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.RuntimeIdentifierInference.targets(313,5): message NETSDK1057: You are using a preview version of .NET. See: https://aka.ms/dotnet-support-policy [/Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/LKvitai.MES.SharedKernel/LKvitai.MES.SharedKernel.csproj]
+/usr/local/share/dotnet/sdk/9.0.100-preview.1.24101.2/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.RuntimeIdentifierInference.targets(313,5): message NETSDK1057: You are using a preview version of .NET. See: https://aka.ms/dotnet-support-policy [/Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Integration/LKvitai.MES.Integration.csproj]
+/usr/local/share/dotnet/sdk/9.0.100-preview.1.24101.2/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.RuntimeIdentifierInference.targets(313,5): message NETSDK1057: You are using a preview version of .NET. See: https://aka.ms/dotnet-support-policy [/Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Sagas/LKvitai.MES.Sagas.csproj]
+/usr/local/share/dotnet/sdk/9.0.100-preview.1.24101.2/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.RuntimeIdentifierInference.targets(313,5): message NETSDK1057: You are using a preview version of .NET. See: https://aka.ms/dotnet-support-policy [/Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Projections/LKvitai.MES.Projections.csproj]
+/usr/local/share/dotnet/sdk/9.0.100-preview.1.24101.2/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.RuntimeIdentifierInference.targets(313,5): message NETSDK1057: You are using a preview version of .NET. See: https://aka.ms/dotnet-support-policy [/Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/tests/LKvitai.MES.Tests.Unit/LKvitai.MES.Tests.Unit.csproj]
+/usr/local/share/dotnet/sdk/9.0.100-preview.1.24101.2/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.RuntimeIdentifierInference.targets(313,5): message NETSDK1057: You are using a preview version of .NET. See: https://aka.ms/dotnet-support-policy [/Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Infrastructure/LKvitai.MES.Infrastructure.csproj]
+/usr/local/share/dotnet/sdk/9.0.100-preview.1.24101.2/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.RuntimeIdentifierInference.targets(313,5): message NETSDK1057: You are using a preview version of .NET. See: https://aka.ms/dotnet-support-policy [/Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Contracts/LKvitai.MES.Contracts.csproj]
+/usr/local/share/dotnet/sdk/9.0.100-preview.1.24101.2/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.RuntimeIdentifierInference.targets(313,5): message NETSDK1057: You are using a preview version of .NET. See: https://aka.ms/dotnet-support-policy [/Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Domain/LKvitai.MES.Domain.csproj]
+/usr/local/share/dotnet/sdk/9.0.100-preview.1.24101.2/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.RuntimeIdentifierInference.targets(313,5): message NETSDK1057: You are using a preview version of .NET. See: https://aka.ms/dotnet-support-policy [/Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Application/LKvitai.MES.Application.csproj]
+/usr/local/share/dotnet/sdk/9.0.100-preview.1.24101.2/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.RuntimeIdentifierInference.targets(313,5): message NETSDK1057: You are using a preview version of .NET. See: https://aka.ms/dotnet-support-policy [/Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Api/LKvitai.MES.Api.csproj]
+  LKvitai.MES.BuildingBlocks.Cqrs.Abstractions -> /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/BuildingBlocks/LKvitai.MES.BuildingBlocks.Cqrs.Abstractions/bin/Release/net8.0/LKvitai.MES.BuildingBlocks.Cqrs.Abstractions.dll
+  LKvitai.MES.ArchitectureTests -> /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/tests/ArchitectureTests/LKvitai.MES.ArchitectureTests/bin/Release/net8.0/LKvitai.MES.ArchitectureTests.dll
+/Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Contracts/Messages/PickStockMessages.cs(5,1): warning CS1587: XML comment is not placed on a valid language element [/Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Contracts/LKvitai.MES.Contracts.csproj]
+  LKvitai.MES.Tests.E2E -> /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/tests/LKvitai.MES.Tests.E2E/bin/Release/net8.0/LKvitai.MES.Tests.E2E.dll
+  LKvitai.MES.Contracts -> /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Contracts/bin/Release/net8.0/LKvitai.MES.Contracts.dll
+  LKvitai.MES.SharedKernel -> /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/LKvitai.MES.SharedKernel/bin/Release/net8.0/LKvitai.MES.SharedKernel.dll
+/Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Integration/LabelPrinting/ILabelPrintingService.cs(7,31): warning CS1570: XML comment has badly formed XML -- 'An identifier was expected.' [/Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Integration/LKvitai.MES.Integration.csproj]
+/Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Integration/LabelPrinting/ILabelPrintingService.cs(7,31): warning CS1570: XML comment has badly formed XML -- 'The character(s) '5' cannot be used at this location.' [/Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Integration/LKvitai.MES.Integration.csproj]
+  LKvitai.MES.Integration -> /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Integration/bin/Release/net8.0/LKvitai.MES.Integration.dll
+  LKvitai.MES.Domain -> /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Domain/bin/Release/net8.0/LKvitai.MES.Domain.dll
+/Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Application/Projections/IProjectionRebuildService.cs(26,14): warning CS1573: Parameter 'resetProgress' has no matching param tag in the XML comment for 'IProjectionRebuildService.RebuildProjectionAsync(string, bool, bool, CancellationToken)' (but other parameters do) [/Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Application/LKvitai.MES.Application.csproj]
+  LKvitai.MES.Projections -> /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Projections/bin/Release/net8.0/LKvitai.MES.Projections.dll
+  LKvitai.MES.Application -> /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Application/bin/Release/net8.0/LKvitai.MES.Application.dll
+  LKvitai.MES.Tests.Property -> /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/tests/LKvitai.MES.Tests.Property/bin/Release/net8.0/LKvitai.MES.Tests.Property.dll
+  LKvitai.MES.Infrastructure -> /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Infrastructure/bin/Release/net8.0/LKvitai.MES.Infrastructure.dll
+  LKvitai.MES.WebUI -> /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.WebUI/bin/Release/net8.0/LKvitai.MES.WebUI.dll
+  LKvitai.MES.Sagas -> /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Sagas/bin/Release/net8.0/LKvitai.MES.Sagas.dll
+  LKvitai.MES.Api -> /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Api/bin/Release/net8.0/LKvitai.MES.Api.dll
+  LKvitai.MES.Tests.Integration -> /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/tests/LKvitai.MES.Tests.Integration/bin/Release/net8.0/LKvitai.MES.Tests.Integration.dll
+  LKvitai.MES.Tests.Unit -> /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/tests/LKvitai.MES.Tests.Unit/bin/Release/net8.0/LKvitai.MES.Tests.Unit.dll
+
+Build succeeded.
+
+/Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Contracts/Messages/PickStockMessages.cs(5,1): warning CS1587: XML comment is not placed on a valid language element [/Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Contracts/LKvitai.MES.Contracts.csproj]
+/Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Integration/LabelPrinting/ILabelPrintingService.cs(7,31): warning CS1570: XML comment has badly formed XML -- 'An identifier was expected.' [/Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Integration/LKvitai.MES.Integration.csproj]
+/Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Integration/LabelPrinting/ILabelPrintingService.cs(7,31): warning CS1570: XML comment has badly formed XML -- 'The character(s) '5' cannot be used at this location.' [/Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Integration/LKvitai.MES.Integration.csproj]
+/Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Application/Projections/IProjectionRebuildService.cs(26,14): warning CS1573: Parameter 'resetProgress' has no matching param tag in the XML comment for 'IProjectionRebuildService.RebuildProjectionAsync(string, bool, bool, CancellationToken)' (but other parameters do) [/Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Application/LKvitai.MES.Application.csproj]
+    4 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:13.38
+
+$ docker build -f src/Modules/Warehouse/LKvitai.MES.WebUI/Dockerfile .
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 1.20kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for mcr.microsoft.com/dotnet/sdk:8.0
+#2 ...
+
+#3 [internal] load metadata for mcr.microsoft.com/dotnet/aspnet:8.0
+#3 DONE 0.2s
+
+#2 [internal] load metadata for mcr.microsoft.com/dotnet/sdk:8.0
+#2 DONE 0.2s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 863B done
+#4 DONE 0.0s
+
+#5 [build 1/8] FROM mcr.microsoft.com/dotnet/sdk:8.0@sha256:58359d0b8fe8237be1d63ac335ca378e2857f976c7f92791f7c84b3c117037f5
+#5 DONE 0.0s
+
+#6 [runtime 1/5] FROM mcr.microsoft.com/dotnet/aspnet:8.0@sha256:0d6e2e245f180ef785f51aab639c8d5d29afc3b43b95c0ee6dfaf5b84895cd6a
+#6 DONE 0.0s
+
+#7 [runtime 2/5] WORKDIR /app
+#7 CACHED
+
+#8 [internal] load build context
+#8 transferring context: 2.33MB 0.1s done
+#8 DONE 0.1s
+
+#9 [build 2/8] WORKDIR /src
+#9 CACHED
+
+#10 [build 3/8] COPY src/LKvitai.MES.sln .
+#10 CACHED
+
+#11 [build 4/8] COPY src/Modules/Warehouse/LKvitai.MES.WebUI/LKvitai.MES.WebUI.csproj Modules/Warehouse/LKvitai.MES.WebUI/
+#11 DONE 0.0s
+
+#12 [runtime 3/5] RUN groupadd -r appuser && useradd -r -g appuser appuser
+#12 DONE 0.2s
+
+#13 [build 5/8] RUN dotnet restore Modules/Warehouse/LKvitai.MES.WebUI/LKvitai.MES.WebUI.csproj
+#13 0.573   Determining projects to restore...
+#13 0.795   Restored /src/Modules/Warehouse/LKvitai.MES.WebUI/LKvitai.MES.WebUI.csproj (in 34 ms).
+#13 DONE 0.8s
+
+#14 [build 6/8] COPY src/Modules/Warehouse/LKvitai.MES.WebUI/ Modules/Warehouse/LKvitai.MES.WebUI/
+#14 DONE 0.0s
+
+#15 [build 7/8] WORKDIR /src/Modules/Warehouse/LKvitai.MES.WebUI
+#15 DONE 0.0s
+
+#16 [build 8/8] RUN dotnet publish -c Release -o /app/publish /p:UseAppHost=false --no-restore
+#16 6.114   LKvitai.MES.WebUI -> /src/Modules/Warehouse/LKvitai.MES.WebUI/bin/Release/net8.0/LKvitai.MES.WebUI.dll
+#16 6.141   LKvitai.MES.WebUI -> /app/publish/
+#16 DONE 6.2s
+
+#17 [runtime 4/5] COPY --from=build /app/publish .
+#17 DONE 0.0s
+
+#18 [runtime 5/5] RUN chown -R appuser:appuser /app
+#18 DONE 0.2s
+
+#19 exporting to image
+#19 exporting layers 0.0s done
+#19 writing image sha256:599f3ea622911dd5f34d386fd5b9088ef89d1f73372841cdd3b93936e7191769 done
+#19 DONE 0.0s
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/ykrc0z1bphof9tq1qekx9bwxq
