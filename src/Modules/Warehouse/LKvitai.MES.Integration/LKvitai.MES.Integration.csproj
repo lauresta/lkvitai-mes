@@ -7,8 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Modules\Warehouse\LKvitai.MES.Contracts\LKvitai.MES.Contracts.csproj" />
-    <ProjectReference Include="..\LKvitai.MES.SharedKernel\LKvitai.MES.SharedKernel.csproj" />
+    <ProjectReference Include="..\LKvitai.MES.Contracts\LKvitai.MES.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\LKvitai.MES.SharedKernel\LKvitai.MES.SharedKernel.csproj" />
   </ItemGroup>
 
 </Project>

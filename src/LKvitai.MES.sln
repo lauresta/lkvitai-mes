@@ -15,11 +15,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LKvitai.MES.Domain", "Modul
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LKvitai.MES.Infrastructure", "Modules\Warehouse\LKvitai.MES.Infrastructure\LKvitai.MES.Infrastructure.csproj", "{44444444-4444-4444-4444-444444444444}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LKvitai.MES.Projections", "LKvitai.MES.Projections\LKvitai.MES.Projections.csproj", "{55555555-5555-5555-5555-555555555555}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LKvitai.MES.Projections", "Modules\Warehouse\LKvitai.MES.Projections\LKvitai.MES.Projections.csproj", "{55555555-5555-5555-5555-555555555555}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LKvitai.MES.Sagas", "LKvitai.MES.Sagas\LKvitai.MES.Sagas.csproj", "{66666666-6666-6666-6666-666666666666}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LKvitai.MES.Sagas", "Modules\Warehouse\LKvitai.MES.Sagas\LKvitai.MES.Sagas.csproj", "{66666666-6666-6666-6666-666666666666}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LKvitai.MES.Integration", "LKvitai.MES.Integration\LKvitai.MES.Integration.csproj", "{77777777-7777-7777-7777-777777777777}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LKvitai.MES.Integration", "Modules\Warehouse\LKvitai.MES.Integration\LKvitai.MES.Integration.csproj", "{77777777-7777-7777-7777-777777777777}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LKvitai.MES.Contracts", "Modules\Warehouse\LKvitai.MES.Contracts\LKvitai.MES.Contracts.csproj", "{88888888-8888-8888-8888-888888888888}"
 EndProject
