@@ -6,6 +6,8 @@
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <RootNamespace>LKvitai.MES.Tests.Warehouse.Property</RootNamespace>
+    <AssemblyName>LKvitai.MES.Tests.Warehouse.Property</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,8 +21,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\\..\\src\\Modules\\Warehouse\\LKvitai.MES.Modules.Warehouse.Domain\\LKvitai.MES.Modules.Warehouse.Domain.csproj" />
-    <ProjectReference Include="..\\..\\src\\Modules\\Warehouse\\LKvitai.MES.Modules.Warehouse.Application\\LKvitai.MES.Modules.Warehouse.Application.csproj" />
+    <ProjectReference Include="..\\..\\..\\..\\src\\Modules\\Warehouse\\LKvitai.MES.Modules.Warehouse.Domain\\LKvitai.MES.Modules.Warehouse.Domain.csproj" />
+    <ProjectReference Include="..\\..\\..\\..\\src\\Modules\\Warehouse\\LKvitai.MES.Modules.Warehouse.Application\\LKvitai.MES.Modules.Warehouse.Application.csproj" />
   </ItemGroup>
 
 </Project>

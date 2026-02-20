@@ -2,7 +2,7 @@ using FsCheck;
 using FsCheck.Xunit;
 using Xunit;
 
-namespace LKvitai.MES.Tests.Property;
+namespace LKvitai.MES.Tests.Warehouse.Property;
 
 /// <summary>
 /// Property-based test placeholder

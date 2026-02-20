@@ -7,7 +7,7 @@ using LKvitai.MES.Modules.Warehouse.Domain.Aggregates;
 using LKvitai.MES.SharedKernel;
 using Xunit;
 
-namespace LKvitai.MES.Tests.Property;
+namespace LKvitai.MES.Tests.Warehouse.Property;
 
 /// <summary>
 /// Property-based tests for StockLedger invariants.
