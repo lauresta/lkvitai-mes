@@ -17,7 +17,7 @@ jobs:
         env:
           TESTCONTAINERS_ENABLED: "1"
         run: >
-          dotnet test tests/LKvitai.MES.Tests.Integration/LKvitai.MES.Tests.Integration.csproj
+          dotnet test tests/Modules/Warehouse/LKvitai.MES.Tests.Warehouse.Integration/LKvitai.MES.Tests.Warehouse.Integration.csproj
           -v minimal
           --filter
           "FullyQualifiedName~ImportControllerIntegrationTests|FullyQualifiedName~ReceiveThenQcPass_ShouldMoveStockFromQcHoldToReceiving|FullyQualifiedName~ReceiveThenQcFail_ShouldMoveStockFromQcHoldToQuarantine|FullyQualifiedName~CreateAdjustment_ShouldUpdateProjectionAndBeVisibleInHistory|FullyQualifiedName~ProjectionInfrastructureIntegrationTests.Rebuild_OnFreshDatabase_ShouldSucceedWithoutShadowTableErrors|FullyQualifiedName~ProjectionIdempotencyIntegrationTests.ProjectionDaemon_ReprocessingWithoutNewEvents_ShouldNotDoubleStock"
@@ -35,4 +35,3 @@ jobs:
       - name: Validate Marten schema
         if: ${{ env.WAREHOUSE_DB_CONNECTION != '' }}
         run: scripts/validate-schema.sh
-
