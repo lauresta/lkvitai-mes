@@ -51,11 +51,14 @@ public sealed class FeatureFlagTests
             AgnumExportRolloutPercent = 50
         });
 
-        var enabledCount = Enumerable.Range(1, 100)
-            .Select(i => sut.Evaluate("enable_agnum_export", CreatePrincipal($"user-{i}", "Operator")).Enabled)
+        var random = new Random(12345);
+        var sampleSize = 10_000;
+
+        var enabledCount = Enumerable.Range(1, sampleSize)
+            .Select(_ => sut.Evaluate("enable_agnum_export", CreatePrincipal($"user-{random.Next(1, int.MaxValue)}", "Operator")).Enabled)
             .Count(x => x);
 
-        Assert.InRange(enabledCount, 40, 60);
+        Assert.InRange(enabledCount, 4_900, 5_100);
     }
 
     [Fact]
