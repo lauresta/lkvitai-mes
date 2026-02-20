@@ -20,9 +20,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Modules\Warehouse\LKvitai.MES.Domain\LKvitai.MES.Domain.csproj" />
-    <ProjectReference Include="..\Modules\Warehouse\LKvitai.MES.Contracts\LKvitai.MES.Contracts.csproj" />
-    <ProjectReference Include="..\Modules\Warehouse\LKvitai.MES.Application\LKvitai.MES.Application.csproj" />
+    <ProjectReference Include="..\LKvitai.MES.Domain\LKvitai.MES.Domain.csproj" />
+    <ProjectReference Include="..\LKvitai.MES.Contracts\LKvitai.MES.Contracts.csproj" />
+    <ProjectReference Include="..\LKvitai.MES.Application\LKvitai.MES.Application.csproj" />
   </ItemGroup>
 
 </Project>

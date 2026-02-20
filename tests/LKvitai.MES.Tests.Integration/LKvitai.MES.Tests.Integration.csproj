@@ -22,7 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\\..\\src\\LKvitai.MES.Api\LKvitai.MES.Api.csproj" />
-    <ProjectReference Include="..\\..\\src\\LKvitai.MES.Infrastructure\LKvitai.MES.Infrastructure.csproj" />
+    <ProjectReference Include="..\\..\\src\\Modules\\Warehouse\\LKvitai.MES.Infrastructure\\LKvitai.MES.Infrastructure.csproj" />
     <ProjectReference Include="..\\..\\src\\LKvitai.MES.Projections\LKvitai.MES.Projections.csproj" />
     <ProjectReference Include="..\\..\\src\\Modules\\Warehouse\\LKvitai.MES.Domain\\LKvitai.MES.Domain.csproj" />
     <ProjectReference Include="..\\..\\src\\Modules\\Warehouse\\LKvitai.MES.Application\\LKvitai.MES.Application.csproj" />
