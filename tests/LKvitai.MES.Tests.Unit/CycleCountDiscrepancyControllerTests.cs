@@ -1,8 +1,8 @@
 using System.Security.Claims;
 using FluentAssertions;
 using LKvitai.MES.Api.Controllers;
-using LKvitai.MES.Application.Ports;
-using LKvitai.MES.Application.Services;
+using LKvitai.MES.Modules.Warehouse.Application.Ports;
+using LKvitai.MES.Modules.Warehouse.Application.Services;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using LKvitai.MES.Infrastructure.Persistence;

@@ -1,6 +1,6 @@
 using LKvitai.MES.Contracts.ReadModels;
 
-namespace LKvitai.MES.Application.Ports;
+namespace LKvitai.MES.Modules.Warehouse.Application.Ports;
 
 public interface IReservationReadModelQueryService
 {

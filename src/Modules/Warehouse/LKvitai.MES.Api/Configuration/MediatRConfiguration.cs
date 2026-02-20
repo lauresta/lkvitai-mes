@@ -1,5 +1,5 @@
-using LKvitai.MES.Application.Behaviors;
-using LKvitai.MES.Application.Commands;
+using LKvitai.MES.Modules.Warehouse.Application.Behaviors;
+using LKvitai.MES.Modules.Warehouse.Application.Commands;
 using MediatR;
 
 namespace LKvitai.MES.Api.Configuration;

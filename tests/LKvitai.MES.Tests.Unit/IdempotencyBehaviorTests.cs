@@ -1,6 +1,6 @@
 using FluentAssertions;
-using LKvitai.MES.Application.Behaviors;
-using LKvitai.MES.Application.Ports;
+using LKvitai.MES.Modules.Warehouse.Application.Behaviors;
+using LKvitai.MES.Modules.Warehouse.Application.Ports;
 using LKvitai.MES.SharedKernel;
 using MediatR;
 using Microsoft.Extensions.Logging;

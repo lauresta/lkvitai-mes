@@ -1,6 +1,6 @@
 using LKvitai.MES.SharedKernel;
 
-namespace LKvitai.MES.Application.Orchestration;
+namespace LKvitai.MES.Modules.Warehouse.Application.Orchestration;
 
 /// <summary>
 /// StartPicking orchestration interface

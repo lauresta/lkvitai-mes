@@ -1,6 +1,6 @@
-using LKvitai.MES.Application.Queries;
+using LKvitai.MES.Modules.Warehouse.Application.Queries;
 
-namespace LKvitai.MES.Application.Ports;
+namespace LKvitai.MES.Modules.Warehouse.Application.Ports;
 
 /// <summary>
 /// Repository interface for querying LocationBalance projection

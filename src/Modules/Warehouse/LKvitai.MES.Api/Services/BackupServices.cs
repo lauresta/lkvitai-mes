@@ -1,7 +1,7 @@
 using System.IO.Compression;
 using System.Text;
 using System.Text.Json;
-using LKvitai.MES.Application.Services;
+using LKvitai.MES.Modules.Warehouse.Application.Services;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using LKvitai.MES.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;

@@ -1,6 +1,6 @@
 using LKvitai.MES.SharedKernel;
 
-namespace LKvitai.MES.Application.Queries;
+namespace LKvitai.MES.Modules.Warehouse.Application.Queries;
 
 /// <summary>
 /// Query to get location balance for a specific (warehouseId, location, SKU)

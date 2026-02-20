@@ -2,7 +2,7 @@ using System.Text;
 using FluentAssertions;
 using LKvitai.MES.Api.Controllers;
 using LKvitai.MES.Api.Services;
-using LKvitai.MES.Application.Services;
+using LKvitai.MES.Modules.Warehouse.Application.Services;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Contracts.ReadModels;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;

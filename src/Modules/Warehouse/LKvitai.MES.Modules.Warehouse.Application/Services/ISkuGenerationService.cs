@@ -1,4 +1,4 @@
-namespace LKvitai.MES.Application.Services;
+namespace LKvitai.MES.Modules.Warehouse.Application.Services;
 
 public interface ISkuGenerationService
 {

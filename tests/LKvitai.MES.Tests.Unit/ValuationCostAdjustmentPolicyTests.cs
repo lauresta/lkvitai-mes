@@ -1,6 +1,6 @@
 using FluentAssertions;
 using LKvitai.MES.Api.Services;
-using LKvitai.MES.Application.Commands;
+using LKvitai.MES.Modules.Warehouse.Application.Commands;
 using LKvitai.MES.SharedKernel;
 using Xunit;
 

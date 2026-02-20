@@ -6,7 +6,7 @@ using System.Text;
 using System.Text.Json;
 using CsvHelper;
 using Hangfire;
-using LKvitai.MES.Application.Ports;
+using LKvitai.MES.Modules.Warehouse.Application.Ports;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Contracts.Messages;
 using LKvitai.MES.Contracts.ReadModels;

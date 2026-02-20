@@ -1,4 +1,4 @@
-namespace LKvitai.MES.Application.Models;
+namespace LKvitai.MES.Modules.Warehouse.Application.Models;
 
 public sealed record ImportErrorReport(
     int Row,

@@ -1,9 +1,9 @@
-using LKvitai.MES.Application.Ports;
+using LKvitai.MES.Modules.Warehouse.Application.Ports;
 using LKvitai.MES.SharedKernel;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
-namespace LKvitai.MES.Application.Behaviors;
+namespace LKvitai.MES.Modules.Warehouse.Application.Behaviors;
 
 /// <summary>
 /// MediatR pipeline behavior that enforces command idempotency via atomic claim.

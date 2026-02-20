@@ -1,7 +1,7 @@
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Modules.Warehouse.Domain.Aggregates;
 
-namespace LKvitai.MES.Application.Ports;
+namespace LKvitai.MES.Modules.Warehouse.Application.Ports;
 
 /// <summary>
 /// Port for StockLedger event-stream persistence.

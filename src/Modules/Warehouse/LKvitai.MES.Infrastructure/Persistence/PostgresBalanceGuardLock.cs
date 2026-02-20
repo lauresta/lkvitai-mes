@@ -1,4 +1,4 @@
-using LKvitai.MES.Application.Ports;
+using LKvitai.MES.Modules.Warehouse.Application.Ports;
 using Microsoft.Extensions.Configuration;
 using Npgsql;
 

@@ -1,9 +1,9 @@
-using LKvitai.MES.Application.Orchestration;
+using LKvitai.MES.Modules.Warehouse.Application.Orchestration;
 using LKvitai.MES.SharedKernel;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
-namespace LKvitai.MES.Application.Commands;
+namespace LKvitai.MES.Modules.Warehouse.Application.Commands;
 
 /// <summary>
 /// StartPicking command handler — delegates to <see cref="IStartPickingOrchestration"/>

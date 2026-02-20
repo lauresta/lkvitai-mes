@@ -1,8 +1,8 @@
 using ClosedXML.Excel;
 using FluentAssertions;
 using LKvitai.MES.Api.Controllers;
-using LKvitai.MES.Application.Models;
-using LKvitai.MES.Application.Services;
+using LKvitai.MES.Modules.Warehouse.Application.Models;
+using LKvitai.MES.Modules.Warehouse.Application.Services;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using LKvitai.MES.Infrastructure.Imports;
 using LKvitai.MES.Infrastructure.Persistence;

@@ -1,8 +1,8 @@
-using LKvitai.MES.Application.Ports;
+using LKvitai.MES.Modules.Warehouse.Application.Ports;
 using LKvitai.MES.SharedKernel;
 using Microsoft.Extensions.Logging;
 
-namespace LKvitai.MES.Application.ConsistencyChecks;
+namespace LKvitai.MES.Modules.Warehouse.Application.ConsistencyChecks;
 
 /// <summary>
 /// Detects reservations stuck in PICKING state beyond the timeout threshold.

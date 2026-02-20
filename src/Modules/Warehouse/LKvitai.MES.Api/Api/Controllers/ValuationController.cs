@@ -2,7 +2,7 @@ using System.Security.Claims;
 using LKvitai.MES.Api.ErrorHandling;
 using LKvitai.MES.Api.Security;
 using LKvitai.MES.Api.Services;
-using LKvitai.MES.Application.Commands;
+using LKvitai.MES.Modules.Warehouse.Application.Commands;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Contracts.ReadModels;
 using LKvitai.MES.Modules.Warehouse.Domain.Aggregates;

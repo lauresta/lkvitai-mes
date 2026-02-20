@@ -1,4 +1,4 @@
-namespace LKvitai.MES.Application.Ports;
+namespace LKvitai.MES.Modules.Warehouse.Application.Ports;
 
 /// <summary>
 /// Port for querying the ActiveHardLocks read model.

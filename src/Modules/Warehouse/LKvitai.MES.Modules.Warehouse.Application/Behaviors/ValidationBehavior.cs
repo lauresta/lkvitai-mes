@@ -2,7 +2,7 @@ using FluentValidation;
 using LKvitai.MES.SharedKernel;
 using MediatR;
 
-namespace LKvitai.MES.Application.Behaviors;
+namespace LKvitai.MES.Modules.Warehouse.Application.Behaviors;
 
 /// <summary>
 /// Command validation behavior using FluentValidation

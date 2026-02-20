@@ -1,7 +1,7 @@
 using FluentAssertions;
 using LKvitai.MES.Api.Security;
 using LKvitai.MES.Api.Services;
-using LKvitai.MES.Application.Services;
+using LKvitai.MES.Modules.Warehouse.Application.Services;
 using LKvitai.MES.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;

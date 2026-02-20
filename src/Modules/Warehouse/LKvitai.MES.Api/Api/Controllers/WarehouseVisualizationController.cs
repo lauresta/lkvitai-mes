@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using LKvitai.MES.Api.ErrorHandling;
 using LKvitai.MES.Api.Security;
-using LKvitai.MES.Application.Ports;
+using LKvitai.MES.Modules.Warehouse.Application.Ports;
 using LKvitai.MES.Contracts.ReadModels;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using LKvitai.MES.Infrastructure.Persistence;

@@ -1,7 +1,7 @@
-using LKvitai.MES.Application.Commands;
+using LKvitai.MES.Modules.Warehouse.Application.Commands;
 using LKvitai.MES.SharedKernel;
 
-namespace LKvitai.MES.Application.Orchestration;
+namespace LKvitai.MES.Modules.Warehouse.Application.Orchestration;
 
 /// <summary>
 /// Port for the ReceiveGoods workflow orchestration.

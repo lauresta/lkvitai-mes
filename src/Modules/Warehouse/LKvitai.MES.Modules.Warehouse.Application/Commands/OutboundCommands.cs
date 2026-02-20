@@ -1,6 +1,6 @@
 using LKvitai.MES.SharedKernel;
 
-namespace LKvitai.MES.Application.Commands;
+namespace LKvitai.MES.Modules.Warehouse.Application.Commands;
 
 public sealed record ScannedItemCommand
 {

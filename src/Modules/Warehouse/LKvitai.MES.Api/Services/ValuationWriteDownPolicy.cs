@@ -1,4 +1,4 @@
-using LKvitai.MES.Application.Commands;
+using LKvitai.MES.Modules.Warehouse.Application.Commands;
 using LKvitai.MES.SharedKernel;
 
 namespace LKvitai.MES.Api.Services;

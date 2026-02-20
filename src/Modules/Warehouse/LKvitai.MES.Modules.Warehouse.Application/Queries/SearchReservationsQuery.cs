@@ -1,6 +1,6 @@
 using LKvitai.MES.SharedKernel;
 
-namespace LKvitai.MES.Application.Queries;
+namespace LKvitai.MES.Modules.Warehouse.Application.Queries;
 
 public record SearchReservationsQuery : ICommand<PagedResult<ReservationDto>>
 {

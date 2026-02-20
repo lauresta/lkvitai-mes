@@ -1,6 +1,6 @@
 using LKvitai.MES.Contracts.Events;
 
-namespace LKvitai.MES.Application.EventVersioning;
+namespace LKvitai.MES.Modules.Warehouse.Application.EventVersioning;
 
 public interface IEventUpcaster
 {

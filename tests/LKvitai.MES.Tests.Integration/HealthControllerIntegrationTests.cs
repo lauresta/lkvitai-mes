@@ -1,7 +1,7 @@
 using System.Net;
 using LKvitai.MES.Api.Controllers;
 using LKvitai.MES.Api.Security;
-using LKvitai.MES.Application.Services;
+using LKvitai.MES.Modules.Warehouse.Application.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;

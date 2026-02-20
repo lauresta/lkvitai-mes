@@ -1,7 +1,7 @@
 using FluentAssertions;
-using LKvitai.MES.Application.Commands;
-using LKvitai.MES.Application.Orchestration;
-using LKvitai.MES.Application.Ports;
+using LKvitai.MES.Modules.Warehouse.Application.Commands;
+using LKvitai.MES.Modules.Warehouse.Application.Orchestration;
+using LKvitai.MES.Modules.Warehouse.Application.Ports;
 using LKvitai.MES.Contracts.Messages;
 using LKvitai.MES.SharedKernel;
 using Microsoft.Extensions.Logging;

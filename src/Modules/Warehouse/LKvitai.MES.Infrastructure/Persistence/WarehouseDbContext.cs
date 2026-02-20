@@ -1,5 +1,5 @@
-using LKvitai.MES.Application.Ports;
-using LKvitai.MES.Application.Services;
+using LKvitai.MES.Modules.Warehouse.Application.Ports;
+using LKvitai.MES.Modules.Warehouse.Application.Services;
 using LKvitai.MES.Contracts.Messages;
 using LKvitai.MES.Modules.Warehouse.Domain.Common;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;

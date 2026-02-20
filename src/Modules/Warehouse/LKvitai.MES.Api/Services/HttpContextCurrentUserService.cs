@@ -1,4 +1,4 @@
-using LKvitai.MES.Application.Services;
+using LKvitai.MES.Modules.Warehouse.Application.Services;
 using System.Security.Claims;
 
 namespace LKvitai.MES.Api.Services;

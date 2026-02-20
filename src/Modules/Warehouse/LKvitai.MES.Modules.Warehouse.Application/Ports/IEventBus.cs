@@ -1,4 +1,4 @@
-namespace LKvitai.MES.Application.Ports;
+namespace LKvitai.MES.Modules.Warehouse.Application.Ports;
 
 /// <summary>
 /// Application port for publishing messages to the event/message bus.

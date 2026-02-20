@@ -1,4 +1,4 @@
-namespace LKvitai.MES.Application.ConsistencyChecks;
+namespace LKvitai.MES.Modules.Warehouse.Application.ConsistencyChecks;
 
 /// <summary>
 /// Interface for consistency check services.

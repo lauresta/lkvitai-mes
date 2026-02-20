@@ -1,6 +1,6 @@
 using FluentAssertions;
 using LKvitai.MES.Api.Controllers;
-using LKvitai.MES.Application.Ports;
+using LKvitai.MES.Modules.Warehouse.Application.Ports;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using LKvitai.MES.Infrastructure.Persistence;
 using Marten;

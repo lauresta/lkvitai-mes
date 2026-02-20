@@ -1,5 +1,5 @@
-using LKvitai.MES.Application.Ports;
-using LKvitai.MES.Application.EventVersioning;
+using LKvitai.MES.Modules.Warehouse.Application.Ports;
+using LKvitai.MES.Modules.Warehouse.Application.EventVersioning;
 using LKvitai.MES.SharedKernel;
 using LKvitai.MES.Api.ErrorHandling;
 using MassTransit;

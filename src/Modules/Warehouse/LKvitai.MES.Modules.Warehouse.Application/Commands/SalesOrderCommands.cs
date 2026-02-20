@@ -1,7 +1,7 @@
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using LKvitai.MES.SharedKernel;
 
-namespace LKvitai.MES.Application.Commands;
+namespace LKvitai.MES.Modules.Warehouse.Application.Commands;
 
 public sealed record SalesOrderLineCommand
 {

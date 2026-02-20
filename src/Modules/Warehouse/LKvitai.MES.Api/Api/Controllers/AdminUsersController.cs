@@ -1,6 +1,6 @@
 using LKvitai.MES.Api.ErrorHandling;
 using LKvitai.MES.Api.Security;
-using LKvitai.MES.Application.Services;
+using LKvitai.MES.Modules.Warehouse.Application.Services;
 using LKvitai.MES.SharedKernel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

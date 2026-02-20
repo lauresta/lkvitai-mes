@@ -1,6 +1,6 @@
 using FluentAssertions;
-using LKvitai.MES.Application.ConsistencyChecks;
-using LKvitai.MES.Application.Ports;
+using LKvitai.MES.Modules.Warehouse.Application.ConsistencyChecks;
+using LKvitai.MES.Modules.Warehouse.Application.Ports;
 using LKvitai.MES.SharedKernel;
 using Microsoft.Extensions.Logging;
 using Moq;

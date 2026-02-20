@@ -1,10 +1,10 @@
-using LKvitai.MES.Application.Ports;
+using LKvitai.MES.Modules.Warehouse.Application.Ports;
 using LKvitai.MES.Modules.Warehouse.Domain;
 using LKvitai.MES.SharedKernel;
 using MediatR;
 using Microsoft.Extensions.Logging;
 
-namespace LKvitai.MES.Application.Commands;
+namespace LKvitai.MES.Modules.Warehouse.Application.Commands;
 
 /// <summary>
 /// Handles <see cref="RecordStockMovementCommand"/> with expected-version append (V-2)

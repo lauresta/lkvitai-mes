@@ -3,7 +3,7 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 
-namespace LKvitai.MES.Application.Behaviors;
+namespace LKvitai.MES.Modules.Warehouse.Application.Behaviors;
 
 /// <summary>
 /// Logging behavior for command pipeline

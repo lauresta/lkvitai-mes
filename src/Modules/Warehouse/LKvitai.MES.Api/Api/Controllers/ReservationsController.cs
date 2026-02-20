@@ -1,8 +1,8 @@
 using LKvitai.MES.Api.ErrorHandling;
 using LKvitai.MES.Api.Security;
-using LKvitai.MES.Application.Commands;
-using LKvitai.MES.Application.Ports;
-using LKvitai.MES.Application.Queries;
+using LKvitai.MES.Modules.Warehouse.Application.Commands;
+using LKvitai.MES.Modules.Warehouse.Application.Ports;
+using LKvitai.MES.Modules.Warehouse.Application.Queries;
 using LKvitai.MES.SharedKernel;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;

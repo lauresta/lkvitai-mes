@@ -1,6 +1,6 @@
 using LKvitai.MES.Modules.Warehouse.Domain.Aggregates;
 
-namespace LKvitai.MES.Application.Ports;
+namespace LKvitai.MES.Modules.Warehouse.Application.Ports;
 
 /// <summary>
 /// Port for Reservation event-stream persistence.

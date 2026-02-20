@@ -1,5 +1,5 @@
 using System.Reflection;
-using LKvitai.MES.Application.Services;
+using LKvitai.MES.Modules.Warehouse.Application.Services;
 using LKvitai.MES.Api.Security;
 using LKvitai.MES.Contracts.ReadModels;
 using LKvitai.MES.Infrastructure.Persistence;

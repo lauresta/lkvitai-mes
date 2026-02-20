@@ -1,4 +1,4 @@
-using LKvitai.MES.Application.Services;
+using LKvitai.MES.Modules.Warehouse.Application.Services;
 using Marten;
 using Npgsql;
 using Microsoft.Extensions.Logging;

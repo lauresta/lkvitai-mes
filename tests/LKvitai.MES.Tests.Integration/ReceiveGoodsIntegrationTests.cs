@@ -1,8 +1,8 @@
 using FluentAssertions;
-using LKvitai.MES.Application.Behaviors;
-using LKvitai.MES.Application.Commands;
-using LKvitai.MES.Application.Orchestration;
-using LKvitai.MES.Application.Ports;
+using LKvitai.MES.Modules.Warehouse.Application.Behaviors;
+using LKvitai.MES.Modules.Warehouse.Application.Commands;
+using LKvitai.MES.Modules.Warehouse.Application.Orchestration;
+using LKvitai.MES.Modules.Warehouse.Application.Ports;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Contracts.ReadModels;
 using LKvitai.MES.Modules.Warehouse.Domain;

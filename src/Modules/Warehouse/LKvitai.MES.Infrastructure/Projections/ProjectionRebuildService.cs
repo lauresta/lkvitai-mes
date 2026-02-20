@@ -1,5 +1,5 @@
-using LKvitai.MES.Application.Commands;
-using LKvitai.MES.Application.Projections;
+using LKvitai.MES.Modules.Warehouse.Application.Commands;
+using LKvitai.MES.Modules.Warehouse.Application.Projections;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Contracts.ReadModels;
 using LKvitai.MES.Infrastructure.Locking;

@@ -1,5 +1,5 @@
-using LKvitai.MES.Application.Commands;
-using LKvitai.MES.Application.Services;
+using LKvitai.MES.Modules.Warehouse.Application.Commands;
+using LKvitai.MES.Modules.Warehouse.Application.Services;
 using LKvitai.MES.Api.Security;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Modules.Warehouse.Domain.Aggregates;

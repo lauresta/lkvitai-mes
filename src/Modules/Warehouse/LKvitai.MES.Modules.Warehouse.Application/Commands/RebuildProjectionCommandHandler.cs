@@ -1,8 +1,8 @@
-using LKvitai.MES.Application.Projections;
+using LKvitai.MES.Modules.Warehouse.Application.Projections;
 using LKvitai.MES.SharedKernel;
 using MediatR;
 
-namespace LKvitai.MES.Application.Commands;
+namespace LKvitai.MES.Modules.Warehouse.Application.Commands;
 
 public class RebuildProjectionCommandHandler
     : IRequestHandler<RebuildProjectionCommand, Result<ProjectionRebuildReport>>

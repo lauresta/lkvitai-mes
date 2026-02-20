@@ -1,6 +1,6 @@
 using LKvitai.MES.Api.ErrorHandling;
 using LKvitai.MES.Api.Security;
-using LKvitai.MES.Application.Commands;
+using LKvitai.MES.Modules.Warehouse.Application.Commands;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using LKvitai.MES.Infrastructure.Persistence;
 using LKvitai.MES.SharedKernel;

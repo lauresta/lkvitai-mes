@@ -1,5 +1,5 @@
-using LKvitai.MES.Application.Ports;
-using LKvitai.MES.Application.Queries;
+using LKvitai.MES.Modules.Warehouse.Application.Ports;
+using LKvitai.MES.Modules.Warehouse.Application.Queries;
 using LKvitai.MES.Contracts.ReadModels;
 using Marten;
 

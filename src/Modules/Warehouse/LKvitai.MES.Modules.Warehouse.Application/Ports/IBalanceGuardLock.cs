@@ -1,4 +1,4 @@
-namespace LKvitai.MES.Application.Ports;
+namespace LKvitai.MES.Modules.Warehouse.Application.Ports;
 
 /// <summary>
 /// Application port for acquiring advisory locks that serialize balance-affecting operations.

@@ -1,9 +1,9 @@
-using LKvitai.MES.Application.ConsistencyChecks;
-using LKvitai.MES.Application.EventVersioning;
-using LKvitai.MES.Application.Orchestration;
-using LKvitai.MES.Application.Ports;
-using LKvitai.MES.Application.Projections;
-using LKvitai.MES.Application.Services;
+using LKvitai.MES.Modules.Warehouse.Application.ConsistencyChecks;
+using LKvitai.MES.Modules.Warehouse.Application.EventVersioning;
+using LKvitai.MES.Modules.Warehouse.Application.Orchestration;
+using LKvitai.MES.Modules.Warehouse.Application.Ports;
+using LKvitai.MES.Modules.Warehouse.Application.Projections;
+using LKvitai.MES.Modules.Warehouse.Application.Services;
 using LKvitai.MES.Infrastructure.BackgroundJobs;
 using LKvitai.MES.Infrastructure.EventVersioning;
 using LKvitai.MES.Infrastructure.Imports;

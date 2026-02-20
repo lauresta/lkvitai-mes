@@ -1,4 +1,4 @@
-using LKvitai.MES.Application.EventVersioning;
+using LKvitai.MES.Modules.Warehouse.Application.EventVersioning;
 using LKvitai.MES.Contracts.Events;
 using Microsoft.Extensions.Logging;
 using System.Reflection;

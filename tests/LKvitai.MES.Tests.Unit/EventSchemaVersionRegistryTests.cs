@@ -1,5 +1,5 @@
 using FluentAssertions;
-using LKvitai.MES.Application.EventVersioning;
+using LKvitai.MES.Modules.Warehouse.Application.EventVersioning;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Infrastructure.EventVersioning;
 using Microsoft.Extensions.Logging;

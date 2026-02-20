@@ -1,6 +1,6 @@
 using LKvitai.MES.SharedKernel;
 
-namespace LKvitai.MES.Application.Projections;
+namespace LKvitai.MES.Modules.Warehouse.Application.Projections;
 
 /// <summary>
 /// Projection rebuild service interface

@@ -1,8 +1,8 @@
-using LKvitai.MES.Application.Ports;
+using LKvitai.MES.Modules.Warehouse.Application.Ports;
 using LKvitai.MES.SharedKernel;
 using MediatR;
 
-namespace LKvitai.MES.Application.Queries;
+namespace LKvitai.MES.Modules.Warehouse.Application.Queries;
 
 public record VerifyProjectionQuery : ICommand<VerifyProjectionResultDto>
 {

@@ -1,4 +1,4 @@
-using LKvitai.MES.Application.Orchestration;
+using LKvitai.MES.Modules.Warehouse.Application.Orchestration;
 using LKvitai.MES.Contracts.Messages;
 using MassTransit;
 using Microsoft.Extensions.Logging;
