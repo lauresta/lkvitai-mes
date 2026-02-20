@@ -51,14 +51,13 @@ public sealed class FeatureFlagTests
             AgnumExportRolloutPercent = 50
         });
 
-        var random = new Random(12345);
-        var sampleSize = 10_000;
+        var users = Enumerable.Range(1, 10_000).Select(i => $"user-{i}").ToArray();
 
-        var enabledCount = Enumerable.Range(1, sampleSize)
-            .Select(_ => sut.Evaluate("enable_agnum_export", CreatePrincipal($"user-{random.Next(1, int.MaxValue)}", "Operator")).Enabled)
-            .Count(x => x);
+        var enabledCount = users.Count(userId =>
+            sut.Evaluate("enable_agnum_export", CreatePrincipal(userId, "Operator")).Enabled);
 
-        Assert.InRange(enabledCount, 4_900, 5_100);
+        var expectedCount = users.Count(userId => IsInExpectedRollout(userId, 50));
+        Assert.Equal(expectedCount, enabledCount);
     }
 
     [Fact]
@@ -87,6 +86,13 @@ public sealed class FeatureFlagTests
         ], "test");
 
         return new ClaimsPrincipal(identity);
+    }
+
+    private static bool IsInExpectedRollout(string userId, int percentage)
+    {
+        var normalized = Math.Clamp(percentage, 0, 100);
+        var bucket = Math.Abs(userId.GetHashCode(StringComparison.Ordinal)) % 100;
+        return bucket < normalized;
     }
 
     private sealed class StaticOptionsMonitor<T> : IOptionsMonitor<T> where T : class, new()
