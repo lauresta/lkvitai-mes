@@ -8,32 +8,34 @@ COPY Directory.Build.props .
 COPY Directory.Packages.props .
 
 # Copy all project files for restore (optimize layer caching)
-COPY src/LKvitai.MES.Api/LKvitai.MES.Api.csproj LKvitai.MES.Api/
-COPY src/LKvitai.MES.Application/LKvitai.MES.Application.csproj LKvitai.MES.Application/
-COPY src/LKvitai.MES.Infrastructure/LKvitai.MES.Infrastructure.csproj LKvitai.MES.Infrastructure/
-COPY src/LKvitai.MES.Projections/LKvitai.MES.Projections.csproj LKvitai.MES.Projections/
-COPY src/LKvitai.MES.Sagas/LKvitai.MES.Sagas.csproj LKvitai.MES.Sagas/
-COPY src/LKvitai.MES.Integration/LKvitai.MES.Integration.csproj LKvitai.MES.Integration/
+COPY src/Modules/Warehouse/LKvitai.MES.Api/LKvitai.MES.Api.csproj Modules/Warehouse/LKvitai.MES.Api/
+COPY src/Modules/Warehouse/LKvitai.MES.Application/LKvitai.MES.Application.csproj Modules/Warehouse/LKvitai.MES.Application/
+COPY src/Modules/Warehouse/LKvitai.MES.Infrastructure/LKvitai.MES.Infrastructure.csproj Modules/Warehouse/LKvitai.MES.Infrastructure/
+COPY src/Modules/Warehouse/LKvitai.MES.Projections/LKvitai.MES.Projections.csproj Modules/Warehouse/LKvitai.MES.Projections/
+COPY src/Modules/Warehouse/LKvitai.MES.Sagas/LKvitai.MES.Sagas.csproj Modules/Warehouse/LKvitai.MES.Sagas/
+COPY src/Modules/Warehouse/LKvitai.MES.Integration/LKvitai.MES.Integration.csproj Modules/Warehouse/LKvitai.MES.Integration/
 COPY src/Modules/Warehouse/LKvitai.MES.Domain/LKvitai.MES.Domain.csproj Modules/Warehouse/LKvitai.MES.Domain/
-COPY src/LKvitai.MES.Contracts/LKvitai.MES.Contracts.csproj LKvitai.MES.Contracts/
+COPY src/Modules/Warehouse/LKvitai.MES.Contracts/LKvitai.MES.Contracts.csproj Modules/Warehouse/LKvitai.MES.Contracts/
 COPY src/LKvitai.MES.SharedKernel/LKvitai.MES.SharedKernel.csproj LKvitai.MES.SharedKernel/
+COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.Cqrs.Abstractions/LKvitai.MES.BuildingBlocks.Cqrs.Abstractions.csproj BuildingBlocks/LKvitai.MES.BuildingBlocks.Cqrs.Abstractions/
 
 # Restore dependencies
-RUN dotnet restore LKvitai.MES.Api/LKvitai.MES.Api.csproj
+RUN dotnet restore Modules/Warehouse/LKvitai.MES.Api/LKvitai.MES.Api.csproj
 
 # Copy source code
-COPY src/LKvitai.MES.Api/ LKvitai.MES.Api/
-COPY src/LKvitai.MES.Application/ LKvitai.MES.Application/
-COPY src/LKvitai.MES.Infrastructure/ LKvitai.MES.Infrastructure/
-COPY src/LKvitai.MES.Projections/ LKvitai.MES.Projections/
-COPY src/LKvitai.MES.Sagas/ LKvitai.MES.Sagas/
-COPY src/LKvitai.MES.Integration/ LKvitai.MES.Integration/
+COPY src/Modules/Warehouse/LKvitai.MES.Api/ Modules/Warehouse/LKvitai.MES.Api/
+COPY src/Modules/Warehouse/LKvitai.MES.Application/ Modules/Warehouse/LKvitai.MES.Application/
+COPY src/Modules/Warehouse/LKvitai.MES.Infrastructure/ Modules/Warehouse/LKvitai.MES.Infrastructure/
+COPY src/Modules/Warehouse/LKvitai.MES.Projections/ Modules/Warehouse/LKvitai.MES.Projections/
+COPY src/Modules/Warehouse/LKvitai.MES.Sagas/ Modules/Warehouse/LKvitai.MES.Sagas/
+COPY src/Modules/Warehouse/LKvitai.MES.Integration/ Modules/Warehouse/LKvitai.MES.Integration/
 COPY src/Modules/Warehouse/LKvitai.MES.Domain/ Modules/Warehouse/LKvitai.MES.Domain/
-COPY src/LKvitai.MES.Contracts/ LKvitai.MES.Contracts/
+COPY src/Modules/Warehouse/LKvitai.MES.Contracts/ Modules/Warehouse/LKvitai.MES.Contracts/
 COPY src/LKvitai.MES.SharedKernel/ LKvitai.MES.SharedKernel/
+COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.Cqrs.Abstractions/ BuildingBlocks/LKvitai.MES.BuildingBlocks.Cqrs.Abstractions/
 
 # Build and publish
-WORKDIR /src/LKvitai.MES.Api
+WORKDIR /src/Modules/Warehouse/LKvitai.MES.Api
 RUN dotnet publish -c Release -o /app/publish /p:UseAppHost=false --no-restore
 
 # Runtime stage
