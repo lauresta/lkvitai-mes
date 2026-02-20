@@ -41,27 +41,53 @@ public sealed class AsyncOperationTests
 
     private static List<string> GetSourceFiles()
     {
-        var root = ResolveFromRepositoryRoot("src");
-        return Directory.GetFiles(Path.Combine(root, "Modules", "Warehouse", "LKvitai.MES.Api"), "*.cs", SearchOption.AllDirectories)
-            .Concat(Directory.GetFiles(Path.Combine(root, "Modules", "Warehouse", "LKvitai.MES.Infrastructure"), "*.cs", SearchOption.AllDirectories))
-            .Concat(Directory.GetFiles(Path.Combine(root, "Modules", "Warehouse", "LKvitai.MES.Sagas"), "*.cs", SearchOption.AllDirectories))
+        var repoRoot = ResolveRepoRoot();
+        var srcRoot = Path.Combine(repoRoot, "src");
+        var infrastructureRoot = ResolveInfrastructureRoot(srcRoot);
+
+        return Directory.GetFiles(Path.Combine(srcRoot, "Modules", "Warehouse", "LKvitai.MES.Api"), "*.cs", SearchOption.AllDirectories)
+            .Concat(Directory.GetFiles(infrastructureRoot, "*.cs", SearchOption.AllDirectories))
+            .Concat(Directory.GetFiles(Path.Combine(srcRoot, "Modules", "Warehouse", "LKvitai.MES.Sagas"), "*.cs", SearchOption.AllDirectories))
             .ToList();
     }
 
-    private static string ResolveFromRepositoryRoot(string relativePath)
+    private static string ResolveRepoRoot()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
         while (directory is not null)
         {
-            var candidate = Path.Combine(directory.FullName, relativePath);
-            if (Directory.Exists(candidate))
+            var srcExists = Directory.Exists(Path.Combine(directory.FullName, "src"));
+            var hasSln = Directory.EnumerateFiles(directory.FullName, "*.sln", SearchOption.TopDirectoryOnly).Any();
+            var hasCentralPackages = File.Exists(Path.Combine(directory.FullName, "Directory.Packages.props"));
+            if (srcExists && (hasSln || hasCentralPackages))
             {
-                return candidate;
+                return directory.FullName;
             }
 
             directory = directory.Parent;
         }
 
-        throw new DirectoryNotFoundException($"Could not resolve repository path: {relativePath}");
+        throw new DirectoryNotFoundException("Could not resolve repository root for async operation tests.");
+    }
+
+    private static string ResolveInfrastructureRoot(string srcRoot)
+    {
+        var candidates = new[]
+        {
+            Path.Combine(srcRoot, "Modules", "Warehouse", "LKvitai.MES.Modules.Warehouse.Infrastructure"),
+            Path.Combine(srcRoot, "Modules", "Warehouse", "LKvitai.MES.Infrastructure"),
+            Path.Combine(srcRoot, "LKvitai.MES.Infrastructure")
+        };
+
+        foreach (var candidate in candidates)
+        {
+            if (Directory.Exists(candidate))
+            {
+                return candidate;
+            }
+        }
+
+        throw new DirectoryNotFoundException(
+            $"Could not locate Infrastructure source directory. Checked: {string.Join(", ", candidates)}");
     }
 }
