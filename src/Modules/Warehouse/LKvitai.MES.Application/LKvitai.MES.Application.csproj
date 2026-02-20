@@ -16,7 +16,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\BuildingBlocks\LKvitai.MES.BuildingBlocks.Cqrs.Abstractions\LKvitai.MES.BuildingBlocks.Cqrs.Abstractions.csproj" />
     <ProjectReference Include="..\LKvitai.MES.Modules.Warehouse.Domain\LKvitai.MES.Modules.Warehouse.Domain.csproj" />
-    <ProjectReference Include="..\LKvitai.MES.Modules.Warehouse.Contracts\LKvitai.MES.Contracts.csproj" />
+    <ProjectReference Include="..\LKvitai.MES.Modules.Warehouse.Contracts\LKvitai.MES.Modules.Warehouse.Contracts.csproj" />
     <ProjectReference Include="..\..\..\LKvitai.MES.SharedKernel\LKvitai.MES.SharedKernel.csproj" />
   </ItemGroup>
 
