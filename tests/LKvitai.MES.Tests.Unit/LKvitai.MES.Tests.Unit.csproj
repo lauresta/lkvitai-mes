@@ -30,7 +30,7 @@
     <ProjectReference Include="..\\..\\src\\Modules\\Warehouse\\LKvitai.MES.Infrastructure\\LKvitai.MES.Infrastructure.csproj" />
     <ProjectReference Include="..\\..\\src\\Modules\\Warehouse\\LKvitai.MES.Sagas\\LKvitai.MES.Sagas.csproj" />
     <ProjectReference Include="..\\..\\src\\Modules\\Warehouse\\LKvitai.MES.Api\\LKvitai.MES.Api.csproj" />
-    <ProjectReference Include="..\\..\\src\\LKvitai.MES.WebUI\LKvitai.MES.WebUI.csproj" />
+    <ProjectReference Include="..\\..\\src\\Modules\\Warehouse\\LKvitai.MES.WebUI\\LKvitai.MES.WebUI.csproj" />
   </ItemGroup>
 
 </Project>

@@ -31,7 +31,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LKvitai.MES.Tests.Property"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LKvitai.MES.Tests.Integration", "..\tests\LKvitai.MES.Tests.Integration\LKvitai.MES.Tests.Integration.csproj", "{CCCCCCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LKvitai.MES.WebUI", "LKvitai.MES.WebUI\LKvitai.MES.WebUI.csproj", "{F6AD0540-0462-44BF-A8DA-2891B764F847}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LKvitai.MES.WebUI", "Modules\Warehouse\LKvitai.MES.WebUI\LKvitai.MES.WebUI.csproj", "{F6AD0540-0462-44BF-A8DA-2891B764F847}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LKvitai.MES.Tests.E2E", "..\tests\LKvitai.MES.Tests.E2E\LKvitai.MES.Tests.E2E.csproj", "{BA16D7E1-0F7D-4972-8CD1-4F6B3415B42B}"
 EndProject
