@@ -313,7 +313,7 @@ public sealed class DispatchHistoryConsumer : IConsumer<ShipmentDispatchedEvent>
 
 internal static class ProjectionConsumerMetrics
 {
-    private static readonly Meter ProjectionMeter = new("LKvitai.MES.Projections.Outbound");
+    private static readonly Meter ProjectionMeter = new("LKvitai.MES.Modules.Warehouse.Projections.Outbound");
     private static readonly Counter<long> ProjectionUpdatesTotal =
         ProjectionMeter.CreateCounter<long>("projection_updates_total");
     private static readonly Histogram<double> ProjectionUpdateDurationMs =

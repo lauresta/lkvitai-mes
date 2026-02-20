@@ -2,7 +2,7 @@ using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Contracts.ReadModels;
 using Marten.Events.Aggregation;
 
-namespace LKvitai.MES.Projections;
+namespace LKvitai.MES.Modules.Warehouse.Projections;
 
 /// <summary>
 /// Append-only projection for stock adjustment audit history.

@@ -4,7 +4,7 @@ using LKvitai.MES.Modules.Warehouse.Domain;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Locking;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Projections;
-using LKvitai.MES.Projections;
+using LKvitai.MES.Modules.Warehouse.Projections;
 using LKvitai.MES.SharedKernel;
 using Marten;
 using Marten.Events.Projections;

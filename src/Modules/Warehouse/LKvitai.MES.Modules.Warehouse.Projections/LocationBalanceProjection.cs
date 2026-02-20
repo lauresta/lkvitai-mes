@@ -6,7 +6,7 @@ using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Contracts.ReadModels;
 using LKvitai.MES.Modules.Warehouse.Domain;
 
-namespace LKvitai.MES.Projections;
+namespace LKvitai.MES.Modules.Warehouse.Projections;
 
 /// <summary>
 /// Location balance projection per (warehouseId, location, SKU).

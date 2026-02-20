@@ -5,7 +5,7 @@ using LKvitai.MES.Modules.Warehouse.Application.Queries;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Modules.Warehouse.Domain.Aggregates;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
-using LKvitai.MES.Projections;
+using LKvitai.MES.Modules.Warehouse.Projections;
 using Marten;
 using Marten.Events.Projections;
 using MediatR;

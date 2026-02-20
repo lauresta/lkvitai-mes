@@ -30,7 +30,7 @@ namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Projections;
 /// </summary>
 public class ProjectionRebuildService : IProjectionRebuildService
 {
-    private static readonly Meter RebuildMeter = new("LKvitai.MES.Projections.Rebuild");
+    private static readonly Meter RebuildMeter = new("LKvitai.MES.Modules.Warehouse.Projections.Rebuild");
     private static readonly Histogram<double> RebuildDurationSeconds =
         RebuildMeter.CreateHistogram<double>("projection.rebuild.duration.seconds");
 

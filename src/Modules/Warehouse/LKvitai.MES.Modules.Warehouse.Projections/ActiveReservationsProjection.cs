@@ -5,7 +5,7 @@ using Marten.Events;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
 
-namespace LKvitai.MES.Projections;
+namespace LKvitai.MES.Modules.Warehouse.Projections;
 
 /// <summary>
 /// Projection that tracks active reservation rows for master-data workflows.

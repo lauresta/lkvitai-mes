@@ -4,7 +4,7 @@ using LKvitai.MES.Modules.Warehouse.Domain.Aggregates;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
 
-namespace LKvitai.MES.Projections;
+namespace LKvitai.MES.Modules.Warehouse.Projections;
 
 /// <summary>
 /// Reservation summary projection used for paginated reservation search.

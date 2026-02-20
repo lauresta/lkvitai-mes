@@ -1,7 +1,7 @@
 using Marten;
 using Marten.Events.Projections;
 
-namespace LKvitai.MES.Projections;
+namespace LKvitai.MES.Modules.Warehouse.Projections;
 
 /// <summary>
 /// Projection registration extension for Marten configuration.

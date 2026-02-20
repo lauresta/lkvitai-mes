@@ -3,7 +3,7 @@ using Marten.Events.Projections;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Contracts.ReadModels;
 
-namespace LKvitai.MES.Projections;
+namespace LKvitai.MES.Modules.Warehouse.Projections;
 
 /// <summary>
 /// ActiveHardLocks inline projection per blueprint [MITIGATION R-4].

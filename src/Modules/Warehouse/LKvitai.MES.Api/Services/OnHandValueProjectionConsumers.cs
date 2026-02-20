@@ -450,7 +450,7 @@ internal sealed class NoOpCacheService : ICacheService
 
 internal static class OnHandValueProjectionMetrics
 {
-    private static readonly Meter ProjectionMeter = new("LKvitai.MES.Projections.OnHandValue");
+    private static readonly Meter ProjectionMeter = new("LKvitai.MES.Modules.Warehouse.Projections.OnHandValue");
     private static readonly Counter<long> ProjectionUpdatesTotal =
         ProjectionMeter.CreateCounter<long>("on_hand_value_projection_updates_total");
     private static readonly Histogram<double> ProjectionUpdateDurationMs =

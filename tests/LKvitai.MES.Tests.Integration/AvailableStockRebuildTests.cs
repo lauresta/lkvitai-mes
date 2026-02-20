@@ -3,7 +3,7 @@ using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Contracts.ReadModels;
 using LKvitai.MES.Modules.Warehouse.Domain;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Projections;
-using LKvitai.MES.Projections;
+using LKvitai.MES.Modules.Warehouse.Projections;
 using Marten;
 using Marten.Events.Projections;
 using Microsoft.Extensions.Logging.Abstractions;

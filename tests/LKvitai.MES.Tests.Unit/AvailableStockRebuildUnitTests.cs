@@ -2,7 +2,7 @@ using FluentAssertions;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Contracts.ReadModels;
 using LKvitai.MES.Modules.Warehouse.Domain;
-using LKvitai.MES.Projections;
+using LKvitai.MES.Modules.Warehouse.Projections;
 using Xunit;
 
 namespace LKvitai.MES.Tests.Unit;
