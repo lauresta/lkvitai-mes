@@ -4,44 +4,30 @@ namespace LKvitai.MES.Tests.Integration;
 
 public sealed class MigrationTests
 {
-    private const string MigrationDirectoryRelativePath = "src/Modules/Warehouse/LKvitai.MES.Infrastructure/Persistence/Migrations";
-
-    [Fact]
+    [SkippableFact]
     public void MigrationScripts_ShouldContainAddColumnScenario()
     {
-        IntegrationTestAssets.SkipIfMissing(
-            "External assets missing: src/Modules/Warehouse/LKvitai.MES.Infrastructure/Persistence/Migrations",
-            MigrationDirectoryRelativePath);
         var files = GetMigrationFiles();
         Assert.Contains(files, file => File.ReadAllText(file).Contains(".AddColumn<", StringComparison.Ordinal));
     }
 
-    [Fact]
+    [SkippableFact]
     public void MigrationScripts_ShouldContainAddIndexScenario()
     {
-        IntegrationTestAssets.SkipIfMissing(
-            "External assets missing: src/Modules/Warehouse/LKvitai.MES.Infrastructure/Persistence/Migrations",
-            MigrationDirectoryRelativePath);
         var files = GetMigrationFiles();
         Assert.Contains(files, file => File.ReadAllText(file).Contains(".CreateIndex(", StringComparison.Ordinal));
     }
 
-    [Fact]
+    [SkippableFact]
     public void MigrationScripts_ShouldContainAddTableScenario()
     {
-        IntegrationTestAssets.SkipIfMissing(
-            "External assets missing: src/Modules/Warehouse/LKvitai.MES.Infrastructure/Persistence/Migrations",
-            MigrationDirectoryRelativePath);
         var files = GetMigrationFiles();
         Assert.Contains(files, file => File.ReadAllText(file).Contains(".CreateTable(", StringComparison.Ordinal));
     }
 
-    [Fact]
+    [SkippableFact]
     public void MigrationScripts_ShouldContainRenameOrDropColumnScenario()
     {
-        IntegrationTestAssets.SkipIfMissing(
-            "External assets missing: src/Modules/Warehouse/LKvitai.MES.Infrastructure/Persistence/Migrations",
-            MigrationDirectoryRelativePath);
         var files = GetMigrationFiles();
         Assert.Contains(files, file =>
         {
@@ -51,12 +37,9 @@ public sealed class MigrationTests
         });
     }
 
-    [Fact]
+    [SkippableFact]
     public void LastFiveMigrations_ShouldDefineDownRollbackLogic()
     {
-        IntegrationTestAssets.SkipIfMissing(
-            "External assets missing: src/Modules/Warehouse/LKvitai.MES.Infrastructure/Persistence/Migrations",
-            MigrationDirectoryRelativePath);
         var latestFive = GetMigrationFiles()
             .OrderByDescending(Path.GetFileName)
             .Take(5)
@@ -70,12 +53,9 @@ public sealed class MigrationTests
         });
     }
 
-    [Fact]
+    [SkippableFact]
     public void MigrationScripts_ShouldContainDataIntegrityOperations()
     {
-        IntegrationTestAssets.SkipIfMissing(
-            "External assets missing: src/Modules/Warehouse/LKvitai.MES.Infrastructure/Persistence/Migrations",
-            MigrationDirectoryRelativePath);
         var files = GetMigrationFiles();
         var merged = string.Join(Environment.NewLine, files.Select(File.ReadAllText));
 
@@ -88,7 +68,7 @@ public sealed class MigrationTests
 
     private static List<string> GetMigrationFiles()
     {
-        var migrationDirectory = IntegrationTestAssets.AssetPath(MigrationDirectoryRelativePath);
+        var migrationDirectory = IntegrationTestAssets.ResolveMigrationsDirectoryOrSkip();
         return Directory.GetFiles(migrationDirectory, "*.cs", SearchOption.TopDirectoryOnly)
             .Where(file => !file.EndsWith(".Designer.cs", StringComparison.OrdinalIgnoreCase))
             .Where(file => !file.EndsWith("WarehouseDbContextModelSnapshot.cs", StringComparison.OrdinalIgnoreCase))

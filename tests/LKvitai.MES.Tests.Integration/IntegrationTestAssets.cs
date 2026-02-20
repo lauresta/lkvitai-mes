@@ -4,6 +4,12 @@ namespace LKvitai.MES.Tests.Integration;
 
 internal static class IntegrationTestAssets
 {
+    private static readonly string[] MigrationDirectoryCandidates =
+    [
+        "src/Modules/Warehouse/LKvitai.MES.Infrastructure/Persistence/Migrations",
+        "src/LKvitai.MES.Infrastructure/Persistence/Migrations"
+    ];
+
     private static readonly string RepoRoot = ResolveRepoRoot();
 
     internal static bool AssetsPresent(params string[] relativePaths)
@@ -30,14 +36,31 @@ internal static class IntegrationTestAssets
         Skip.If(!AssetsPresent(relativePaths), reason);
     }
 
+    internal static string ResolveMigrationsDirectoryOrSkip()
+    {
+        foreach (var relativePath in MigrationDirectoryCandidates)
+        {
+            var fullPath = AssetPath(relativePath);
+            if (Directory.Exists(fullPath))
+            {
+                return fullPath;
+            }
+        }
+
+        Skip.If(true, $"External assets missing: {string.Join(" OR ", MigrationDirectoryCandidates)}");
+        return string.Empty;
+    }
+
     private static string ResolveRepoRoot()
     {
         var current = new DirectoryInfo(AppContext.BaseDirectory);
         while (current is not null)
         {
-            if (Directory.Exists(Path.Combine(current.FullName, ".git")) ||
-                File.Exists(Path.Combine(current.FullName, "Directory.Packages.props")) ||
-                File.Exists(Path.Combine(current.FullName, "src", "LKvitai.MES.sln")))
+            var hasSrcDirectory = Directory.Exists(Path.Combine(current.FullName, "src"));
+            var hasSolution = Directory.EnumerateFiles(current.FullName, "*.sln", SearchOption.TopDirectoryOnly).Any();
+            var hasCentralPackages = File.Exists(Path.Combine(current.FullName, "Directory.Packages.props"));
+
+            if (hasSrcDirectory && (hasSolution || hasCentralPackages))
             {
                 return current.FullName;
             }
