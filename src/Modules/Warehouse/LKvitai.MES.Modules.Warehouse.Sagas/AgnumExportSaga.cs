@@ -1,7 +1,7 @@
 using LKvitai.MES.Contracts.Messages;
 using MassTransit;
 
-namespace LKvitai.MES.Sagas;
+namespace LKvitai.MES.Modules.Warehouse.Sagas;
 
 public sealed class AgnumExportSaga : MassTransitStateMachine<AgnumExportSagaState>
 {

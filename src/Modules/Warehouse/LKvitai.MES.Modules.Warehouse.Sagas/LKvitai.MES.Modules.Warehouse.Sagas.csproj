@@ -4,6 +4,8 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <RootNamespace>LKvitai.MES.Modules.Warehouse.Sagas</RootNamespace>
+    <AssemblyName>LKvitai.MES.Modules.Warehouse.Sagas</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>

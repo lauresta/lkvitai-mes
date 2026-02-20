@@ -1,5 +1,5 @@
 using MassTransit;
-using LKvitai.MES.Sagas;
+using LKvitai.MES.Modules.Warehouse.Sagas;
 using LKvitai.MES.Api.Services;
 
 namespace LKvitai.MES.Api.Configuration;

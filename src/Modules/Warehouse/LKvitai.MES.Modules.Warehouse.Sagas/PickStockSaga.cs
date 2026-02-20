@@ -3,7 +3,7 @@ using LKvitai.MES.Contracts.Messages;
 using MassTransit;
 using Microsoft.Extensions.Logging;
 
-namespace LKvitai.MES.Sagas;
+namespace LKvitai.MES.Modules.Warehouse.Sagas;
 
 /// <summary>
 /// PickStock saga per blueprint [MITIGATION V-3]

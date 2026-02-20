@@ -17,7 +17,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LKvitai.MES.Infrastructure"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LKvitai.MES.Projections", "Modules\Warehouse\LKvitai.MES.Modules.Warehouse.Projections\LKvitai.MES.Modules.Warehouse.Projections.csproj", "{55555555-5555-5555-5555-555555555555}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LKvitai.MES.Sagas", "Modules\Warehouse\LKvitai.MES.Sagas\LKvitai.MES.Sagas.csproj", "{66666666-6666-6666-6666-666666666666}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LKvitai.MES.Modules.Warehouse.Sagas", "Modules\Warehouse\LKvitai.MES.Modules.Warehouse.Sagas\LKvitai.MES.Modules.Warehouse.Sagas.csproj", "{66666666-6666-6666-6666-666666666666}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LKvitai.MES.Integration", "Modules\Warehouse\LKvitai.MES.Integration\LKvitai.MES.Integration.csproj", "{77777777-7777-7777-7777-777777777777}"
 EndProject

@@ -1,6 +1,6 @@
 using MassTransit;
 
-namespace LKvitai.MES.Sagas;
+namespace LKvitai.MES.Modules.Warehouse.Sagas;
 
 /// <summary>
 /// ReceiveGoods saga per blueprint

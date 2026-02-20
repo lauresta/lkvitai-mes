@@ -47,7 +47,7 @@ public sealed class AsyncOperationTests
 
         return Directory.GetFiles(Path.Combine(srcRoot, "Modules", "Warehouse", "LKvitai.MES.Api"), "*.cs", SearchOption.AllDirectories)
             .Concat(Directory.GetFiles(infrastructureRoot, "*.cs", SearchOption.AllDirectories))
-            .Concat(Directory.GetFiles(Path.Combine(srcRoot, "Modules", "Warehouse", "LKvitai.MES.Sagas"), "*.cs", SearchOption.AllDirectories))
+            .Concat(Directory.GetFiles(Path.Combine(srcRoot, "Modules", "Warehouse", "LKvitai.MES.Modules.Warehouse.Sagas"), "*.cs", SearchOption.AllDirectories))
             .ToList();
     }
 

@@ -126,9 +126,9 @@ public static class MartenConfiguration
         RegisterDocumentAlias<InboundShipmentSummaryView>(options, "LKvitai.MES.Contracts.ReadModels", "LKvitai.MES.Contracts");
         RegisterDocumentAlias<AdjustmentHistoryView>(options, "LKvitai.MES.Contracts.ReadModels", "LKvitai.MES.Contracts");
 
-        RegisterDocumentAliasByTypeName(options, "LKvitai.MES.Sagas.PickStockSagaState, LKvitai.MES.Sagas");
-        RegisterDocumentAliasByTypeName(options, "LKvitai.MES.Sagas.ReceiveGoodsSagaState, LKvitai.MES.Sagas");
-        RegisterDocumentAliasByTypeName(options, "LKvitai.MES.Sagas.AgnumExportSagaState, LKvitai.MES.Sagas");
+        RegisterDocumentAliasByTypeName(options, "LKvitai.MES.Modules.Warehouse.Sagas.PickStockSagaState, LKvitai.MES.Modules.Warehouse.Sagas");
+        RegisterDocumentAliasByTypeName(options, "LKvitai.MES.Modules.Warehouse.Sagas.ReceiveGoodsSagaState, LKvitai.MES.Modules.Warehouse.Sagas");
+        RegisterDocumentAliasByTypeName(options, "LKvitai.MES.Modules.Warehouse.Sagas.AgnumExportSagaState, LKvitai.MES.Modules.Warehouse.Sagas");
     }
 
     private static void RegisterEventType<TEvent>(StoreOptions options)

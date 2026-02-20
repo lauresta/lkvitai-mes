@@ -1,7 +1,7 @@
 using FluentAssertions;
 using LKvitai.MES.Modules.Warehouse.Application.Orchestration;
 using LKvitai.MES.Contracts.Messages;
-using LKvitai.MES.Sagas;
+using LKvitai.MES.Modules.Warehouse.Sagas;
 using LKvitai.MES.SharedKernel;
 using MassTransit;
 using Microsoft.Extensions.Logging;
