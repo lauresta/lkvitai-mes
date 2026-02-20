@@ -1,4 +1,4 @@
-using LKvitai.MES.Domain.Aggregates;
+using LKvitai.MES.Modules.Warehouse.Domain.Aggregates;
 
 namespace LKvitai.MES.Application.Ports;
 

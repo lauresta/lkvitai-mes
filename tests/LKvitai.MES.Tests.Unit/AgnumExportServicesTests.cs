@@ -4,7 +4,7 @@ using Hangfire.Common;
 using Hangfire.States;
 using LKvitai.MES.Api.Services;
 using LKvitai.MES.Application.Ports;
-using LKvitai.MES.Domain.Entities;
+using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using LKvitai.MES.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;

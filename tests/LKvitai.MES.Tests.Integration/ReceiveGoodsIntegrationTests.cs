@@ -5,7 +5,7 @@ using LKvitai.MES.Application.Orchestration;
 using LKvitai.MES.Application.Ports;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Contracts.ReadModels;
-using LKvitai.MES.Domain;
+using LKvitai.MES.Modules.Warehouse.Domain;
 using LKvitai.MES.Infrastructure.Persistence;
 using LKvitai.MES.Projections;
 using LKvitai.MES.SharedKernel;

@@ -1,15 +1,15 @@
 using LKvitai.MES.Application.Ports;
 using LKvitai.MES.Application.Services;
 using LKvitai.MES.Contracts.Messages;
-using LKvitai.MES.Domain.Common;
-using LKvitai.MES.Domain.Entities;
+using LKvitai.MES.Modules.Warehouse.Domain.Common;
+using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
-using HandlingUnitAggregate = LKvitai.MES.Domain.Aggregates.HandlingUnit;
-using WarehouseLayoutAggregate = LKvitai.MES.Domain.Aggregates.WarehouseLayout;
-using HandlingUnitTypeEntity = LKvitai.MES.Domain.Entities.HandlingUnitType;
-using WarehouseLayoutEntity = LKvitai.MES.Domain.Entities.WarehouseLayout;
+using HandlingUnitAggregate = LKvitai.MES.Modules.Warehouse.Domain.Aggregates.HandlingUnit;
+using WarehouseLayoutAggregate = LKvitai.MES.Modules.Warehouse.Domain.Aggregates.WarehouseLayout;
+using HandlingUnitTypeEntity = LKvitai.MES.Modules.Warehouse.Domain.Entities.HandlingUnitType;
+using WarehouseLayoutEntity = LKvitai.MES.Modules.Warehouse.Domain.Entities.WarehouseLayout;
 
 namespace LKvitai.MES.Infrastructure.Persistence;
 

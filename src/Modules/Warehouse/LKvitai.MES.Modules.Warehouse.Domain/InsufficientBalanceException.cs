@@ -1,6 +1,6 @@
 using LKvitai.MES.SharedKernel;
 
-namespace LKvitai.MES.Domain;
+namespace LKvitai.MES.Modules.Warehouse.Domain;
 
 /// <summary>
 /// Thrown when a stock movement would result in negative balance at a location.

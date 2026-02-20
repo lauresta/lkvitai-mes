@@ -2,7 +2,7 @@ using LKvitai.MES.Application.Orchestration;
 using LKvitai.MES.Application.Ports;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Contracts.ReadModels;
-using LKvitai.MES.Domain.Aggregates;
+using LKvitai.MES.Modules.Warehouse.Domain.Aggregates;
 using LKvitai.MES.SharedKernel;
 using Marten;
 using Marten.Exceptions;

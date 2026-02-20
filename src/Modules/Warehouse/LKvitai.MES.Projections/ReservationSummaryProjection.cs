@@ -1,6 +1,6 @@
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Contracts.ReadModels;
-using LKvitai.MES.Domain.Aggregates;
+using LKvitai.MES.Modules.Warehouse.Domain.Aggregates;
 using Marten.Events.Aggregation;
 using Marten.Events.Projections;
 

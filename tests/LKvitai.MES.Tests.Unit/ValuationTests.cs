@@ -1,7 +1,7 @@
 using System.Text.Json;
 using FluentAssertions;
 using LKvitai.MES.Contracts.Events;
-using LKvitai.MES.Domain.Aggregates;
+using LKvitai.MES.Modules.Warehouse.Domain.Aggregates;
 using LKvitai.MES.SharedKernel;
 using Xunit;
 

@@ -3,7 +3,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using Hangfire;
 using LKvitai.MES.Application.Services;
-using LKvitai.MES.Domain.Entities;
+using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using LKvitai.MES.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 

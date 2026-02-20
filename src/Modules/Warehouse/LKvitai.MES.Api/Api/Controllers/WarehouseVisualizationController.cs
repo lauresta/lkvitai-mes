@@ -4,7 +4,7 @@ using LKvitai.MES.Api.ErrorHandling;
 using LKvitai.MES.Api.Security;
 using LKvitai.MES.Application.Ports;
 using LKvitai.MES.Contracts.ReadModels;
-using LKvitai.MES.Domain.Entities;
+using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using LKvitai.MES.Infrastructure.Persistence;
 using LKvitai.MES.SharedKernel;
 using Marten;
@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using EfAsync = Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions;
 using MartenAsync = Marten.QueryableExtensions;
+using Domain = LKvitai.MES.Modules.Warehouse.Domain;
 
 namespace LKvitai.MES.Api.Controllers;
 

@@ -4,7 +4,7 @@ using Marten.Events.Aggregation;
 using Marten.Events.Projections;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Contracts.ReadModels;
-using LKvitai.MES.Domain;
+using LKvitai.MES.Modules.Warehouse.Domain;
 
 namespace LKvitai.MES.Projections;
 

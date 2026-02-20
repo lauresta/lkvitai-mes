@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 
-namespace LKvitai.MES.Domain;
+namespace LKvitai.MES.Modules.Warehouse.Domain;
 
 /// <summary>
 /// Canonical derivation of the PostgreSQL advisory lock key for a stock location.

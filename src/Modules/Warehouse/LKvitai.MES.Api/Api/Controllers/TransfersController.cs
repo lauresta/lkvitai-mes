@@ -44,7 +44,7 @@ public sealed class TransfersController : ControllerBase
         if (!string.IsNullOrWhiteSpace(status))
         {
             var normalizedStatus = status.Replace("_", string.Empty, StringComparison.OrdinalIgnoreCase);
-            if (!Enum.TryParse<LKvitai.MES.Domain.Entities.TransferStatus>(normalizedStatus, true, out var parsedStatus))
+            if (!Enum.TryParse<LKvitai.MES.Modules.Warehouse.Domain.Entities.TransferStatus>(normalizedStatus, true, out var parsedStatus))
             {
                 return ValidationFailure("Invalid status value.");
             }
@@ -245,7 +245,7 @@ public sealed class TransfersController : ControllerBase
         return Ok(ToResponse(transfer));
     }
 
-    private static TransferResponse ToResponse(LKvitai.MES.Domain.Entities.Transfer transfer)
+    private static TransferResponse ToResponse(LKvitai.MES.Modules.Warehouse.Domain.Entities.Transfer transfer)
     {
         return new TransferResponse(
             transfer.Id,
@@ -334,12 +334,12 @@ public sealed class TransfersController : ControllerBase
         int PageNumber,
         int PageSize);
 
-    private static string ToApiStatus(LKvitai.MES.Domain.Entities.TransferStatus status)
+    private static string ToApiStatus(LKvitai.MES.Modules.Warehouse.Domain.Entities.TransferStatus status)
     {
         return status switch
         {
-            LKvitai.MES.Domain.Entities.TransferStatus.PendingApproval => "PENDING_APPROVAL",
-            LKvitai.MES.Domain.Entities.TransferStatus.InTransit => "IN_TRANSIT",
+            LKvitai.MES.Modules.Warehouse.Domain.Entities.TransferStatus.PendingApproval => "PENDING_APPROVAL",
+            LKvitai.MES.Modules.Warehouse.Domain.Entities.TransferStatus.InTransit => "IN_TRANSIT",
             _ => status.ToString().ToUpperInvariant()
         };
     }

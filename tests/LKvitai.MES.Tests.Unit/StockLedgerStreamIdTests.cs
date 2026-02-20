@@ -1,5 +1,5 @@
 using FluentAssertions;
-using LKvitai.MES.Domain;
+using LKvitai.MES.Modules.Warehouse.Domain;
 using Xunit;
 
 namespace LKvitai.MES.Tests.Unit;

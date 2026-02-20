@@ -2,13 +2,13 @@ using LKvitai.MES.Application.Commands;
 using LKvitai.MES.Application.Ports;
 using LKvitai.MES.Application.Services;
 using LKvitai.MES.Contracts.Events;
-using LKvitai.MES.Domain;
-using LKvitai.MES.Domain.Entities;
+using LKvitai.MES.Modules.Warehouse.Domain;
+using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using LKvitai.MES.Infrastructure.Persistence;
 using LKvitai.MES.SharedKernel;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using HandlingUnitAggregate = LKvitai.MES.Domain.Aggregates.HandlingUnit;
+using HandlingUnitAggregate = LKvitai.MES.Modules.Warehouse.Domain.Aggregates.HandlingUnit;
 
 namespace LKvitai.MES.Api.Services;
 
@@ -155,8 +155,8 @@ public sealed class PackOrderCommandHandler : IRequestHandler<PackOrderCommand, 
         }
 
         var huType = string.Equals(request.PackagingType, "PALLET", StringComparison.OrdinalIgnoreCase)
-            ? LKvitai.MES.Domain.Aggregates.HandlingUnitType.PALLET
-            : LKvitai.MES.Domain.Aggregates.HandlingUnitType.BOX;
+            ? LKvitai.MES.Modules.Warehouse.Domain.Aggregates.HandlingUnitType.PALLET
+            : LKvitai.MES.Modules.Warehouse.Domain.Aggregates.HandlingUnitType.BOX;
 
         var now = DateTimeOffset.UtcNow;
         var handlingUnit = HandlingUnitAggregate.CreateShippingUnit(

@@ -1,7 +1,7 @@
 using FluentAssertions;
 using LKvitai.MES.Api.Services;
 using LKvitai.MES.Contracts.Events;
-using LKvitai.MES.Domain.Entities;
+using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using LKvitai.MES.Infrastructure.Persistence;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;

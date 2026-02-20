@@ -1,6 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
-using LKvitai.MES.Domain.Entities;
+using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using LKvitai.MES.Infrastructure.Persistence;
 using LKvitai.MES.SharedKernel;
 using Microsoft.EntityFrameworkCore;

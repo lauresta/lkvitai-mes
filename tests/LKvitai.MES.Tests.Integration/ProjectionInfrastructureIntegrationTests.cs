@@ -1,6 +1,6 @@
 using FluentAssertions;
 using LKvitai.MES.Contracts.Events;
-using LKvitai.MES.Domain;
+using LKvitai.MES.Modules.Warehouse.Domain;
 using LKvitai.MES.Infrastructure.Locking;
 using LKvitai.MES.Infrastructure.Persistence;
 using LKvitai.MES.Infrastructure.Projections;

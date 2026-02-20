@@ -2,7 +2,7 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
-using LKvitai.MES.Domain.Entities;
+using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace LKvitai.MES.Infrastructure.Persistence;

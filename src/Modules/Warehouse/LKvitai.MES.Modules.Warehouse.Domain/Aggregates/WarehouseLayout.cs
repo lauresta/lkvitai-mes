@@ -1,6 +1,6 @@
 using LKvitai.MES.SharedKernel;
 
-namespace LKvitai.MES.Domain.Aggregates;
+namespace LKvitai.MES.Modules.Warehouse.Domain.Aggregates;
 
 /// <summary>
 /// WarehouseLayout aggregate - State-based, defines physical topology

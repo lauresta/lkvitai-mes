@@ -1,4 +1,4 @@
-namespace LKvitai.MES.Domain.Common;
+namespace LKvitai.MES.Modules.Warehouse.Domain.Common;
 
 public interface IAuditable
 {

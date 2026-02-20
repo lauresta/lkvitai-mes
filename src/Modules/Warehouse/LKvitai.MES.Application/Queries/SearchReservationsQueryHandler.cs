@@ -1,6 +1,6 @@
 using LKvitai.MES.Application.Ports;
 using LKvitai.MES.Contracts.ReadModels;
-using LKvitai.MES.Domain.Aggregates;
+using LKvitai.MES.Modules.Warehouse.Domain.Aggregates;
 using LKvitai.MES.SharedKernel;
 using MediatR;
 

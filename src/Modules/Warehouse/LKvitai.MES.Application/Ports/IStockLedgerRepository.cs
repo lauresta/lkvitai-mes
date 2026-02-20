@@ -1,5 +1,5 @@
 using LKvitai.MES.Contracts.Events;
-using LKvitai.MES.Domain.Aggregates;
+using LKvitai.MES.Modules.Warehouse.Domain.Aggregates;
 
 namespace LKvitai.MES.Application.Ports;
 
@@ -11,7 +11,7 @@ public interface IStockLedgerRepository
 {
     /// <summary>
     /// Loads the StockLedger aggregate from the event stream for the given stream ID.
-    /// The stream ID must be produced by <see cref="LKvitai.MES.Domain.StockLedgerStreamId.For"/>.
+    /// The stream ID must be produced by <see cref="LKvitai.MES.Modules.Warehouse.Domain.StockLedgerStreamId.For"/>.
     /// Returns the hydrated aggregate and the current stream version.
     /// For a non-existing stream, returns a fresh aggregate and version 0.
     /// </summary>
@@ -20,7 +20,7 @@ public interface IStockLedgerRepository
     /// <summary>
     /// Appends a StockMovedEvent to the stream with expected-version check.
     /// </summary>
-    /// <param name="streamId">Stream ID produced by <see cref="LKvitai.MES.Domain.StockLedgerStreamId.For"/>.</param>
+    /// <param name="streamId">Stream ID produced by <see cref="LKvitai.MES.Modules.Warehouse.Domain.StockLedgerStreamId.For"/>.</param>
     /// <param name="evt">The event to append.</param>
     /// <param name="expectedVersion">Expected stream version before the append (optimistic concurrency).</param>
     /// <param name="ct">Cancellation token.</param>

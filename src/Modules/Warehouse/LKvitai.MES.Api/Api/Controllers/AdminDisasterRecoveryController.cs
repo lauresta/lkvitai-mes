@@ -1,6 +1,6 @@
 using LKvitai.MES.Api.Security;
 using LKvitai.MES.Api.Services;
-using LKvitai.MES.Domain.Entities;
+using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

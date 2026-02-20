@@ -26,7 +26,7 @@ namespace LKvitai.MES.Infrastructure.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("LKvitai.MES.Domain.Aggregates.HandlingUnit", b =>
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Aggregates.HandlingUnit", b =>
                 {
                     b.Property<Guid>("HUId")
                         .ValueGeneratedOnAdd()
@@ -70,7 +70,7 @@ namespace LKvitai.MES.Infrastructure.Persistence.Migrations
                     b.ToTable("handling_units", "public");
                 });
 
-            modelBuilder.Entity("LKvitai.MES.Domain.Aggregates.WarehouseLayout", b =>
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Aggregates.WarehouseLayout", b =>
                 {
                     b.Property<Guid>("WarehouseId")
                         .ValueGeneratedOnAdd()
@@ -93,7 +93,7 @@ namespace LKvitai.MES.Infrastructure.Persistence.Migrations
                     b.ToTable("warehouses", "public");
                 });
 
-            modelBuilder.Entity("LKvitai.MES.Domain.Entities.AdjustmentReasonCode", b =>
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.AdjustmentReasonCode", b =>
                 {
                     b.Property<string>("Code")
                         .HasMaxLength(50)
@@ -112,7 +112,7 @@ namespace LKvitai.MES.Infrastructure.Persistence.Migrations
                     b.ToTable("adjustment_reason_codes", "public");
                 });
 
-            modelBuilder.Entity("LKvitai.MES.Domain.Entities.HandlingUnitType", b =>
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.HandlingUnitType", b =>
                 {
                     b.Property<string>("Code")
                         .HasMaxLength(20)
@@ -128,7 +128,7 @@ namespace LKvitai.MES.Infrastructure.Persistence.Migrations
                     b.ToTable("handling_unit_types", "public");
                 });
 
-            modelBuilder.Entity("LKvitai.MES.Domain.Entities.InboundShipment", b =>
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.InboundShipment", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -179,7 +179,7 @@ namespace LKvitai.MES.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("LKvitai.MES.Domain.Entities.InboundShipmentLine", b =>
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.InboundShipmentLine", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -223,7 +223,7 @@ namespace LKvitai.MES.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("LKvitai.MES.Domain.Entities.Item", b =>
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.Item", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -314,7 +314,7 @@ namespace LKvitai.MES.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("LKvitai.MES.Domain.Entities.ItemBarcode", b =>
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.ItemBarcode", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -354,7 +354,7 @@ namespace LKvitai.MES.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("LKvitai.MES.Domain.Entities.ItemCategory", b =>
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.ItemCategory", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -385,7 +385,7 @@ namespace LKvitai.MES.Infrastructure.Persistence.Migrations
                     b.ToTable("item_categories", "public");
                 });
 
-            modelBuilder.Entity("LKvitai.MES.Domain.Entities.ItemUoMConversion", b =>
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.ItemUoMConversion", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -434,7 +434,7 @@ namespace LKvitai.MES.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("LKvitai.MES.Domain.Entities.Location", b =>
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.Location", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -524,7 +524,7 @@ namespace LKvitai.MES.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("LKvitai.MES.Domain.Entities.Lot", b =>
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.Lot", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -554,7 +554,7 @@ namespace LKvitai.MES.Infrastructure.Persistence.Migrations
                     b.ToTable("lots", "public");
                 });
 
-            modelBuilder.Entity("LKvitai.MES.Domain.Entities.SKUSequence", b =>
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.SKUSequence", b =>
                 {
                     b.Property<string>("Prefix")
                         .HasMaxLength(20)
@@ -574,7 +574,7 @@ namespace LKvitai.MES.Infrastructure.Persistence.Migrations
                     b.ToTable("sku_sequences", "public");
                 });
 
-            modelBuilder.Entity("LKvitai.MES.Domain.Entities.SerialNumber", b =>
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.SerialNumber", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -607,7 +607,7 @@ namespace LKvitai.MES.Infrastructure.Persistence.Migrations
                     b.ToTable("serial_numbers", "public");
                 });
 
-            modelBuilder.Entity("LKvitai.MES.Domain.Entities.Supplier", b =>
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.Supplier", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -648,7 +648,7 @@ namespace LKvitai.MES.Infrastructure.Persistence.Migrations
                     b.ToTable("suppliers", "public");
                 });
 
-            modelBuilder.Entity("LKvitai.MES.Domain.Entities.SupplierItemMapping", b =>
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.SupplierItemMapping", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -695,7 +695,7 @@ namespace LKvitai.MES.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("LKvitai.MES.Domain.Entities.UnitOfMeasure", b =>
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.UnitOfMeasure", b =>
                 {
                     b.Property<string>("Code")
                         .HasMaxLength(10)
@@ -719,9 +719,9 @@ namespace LKvitai.MES.Infrastructure.Persistence.Migrations
                         });
                 });
 
-            modelBuilder.Entity("LKvitai.MES.Domain.Aggregates.HandlingUnit", b =>
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Aggregates.HandlingUnit", b =>
                 {
-                    b.OwnsMany("LKvitai.MES.Domain.Aggregates.HandlingUnitLine", "Lines", b1 =>
+                    b.OwnsMany("LKvitai.MES.Modules.Warehouse.Domain.Aggregates.HandlingUnitLine", "Lines", b1 =>
                         {
                             b1.Property<Guid>("HUId")
                                 .HasColumnType("uuid");
@@ -752,9 +752,9 @@ namespace LKvitai.MES.Infrastructure.Persistence.Migrations
                     b.Navigation("Lines");
                 });
 
-            modelBuilder.Entity("LKvitai.MES.Domain.Entities.InboundShipment", b =>
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.InboundShipment", b =>
                 {
-                    b.HasOne("LKvitai.MES.Domain.Entities.Supplier", "Supplier")
+                    b.HasOne("LKvitai.MES.Modules.Warehouse.Domain.Entities.Supplier", "Supplier")
                         .WithMany()
                         .HasForeignKey("SupplierId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -763,21 +763,21 @@ namespace LKvitai.MES.Infrastructure.Persistence.Migrations
                     b.Navigation("Supplier");
                 });
 
-            modelBuilder.Entity("LKvitai.MES.Domain.Entities.InboundShipmentLine", b =>
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.InboundShipmentLine", b =>
                 {
-                    b.HasOne("LKvitai.MES.Domain.Entities.UnitOfMeasure", null)
+                    b.HasOne("LKvitai.MES.Modules.Warehouse.Domain.Entities.UnitOfMeasure", null)
                         .WithMany()
                         .HasForeignKey("BaseUoM")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("LKvitai.MES.Domain.Entities.Item", "Item")
+                    b.HasOne("LKvitai.MES.Modules.Warehouse.Domain.Entities.Item", "Item")
                         .WithMany()
                         .HasForeignKey("ItemId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("LKvitai.MES.Domain.Entities.InboundShipment", "Shipment")
+                    b.HasOne("LKvitai.MES.Modules.Warehouse.Domain.Entities.InboundShipment", "Shipment")
                         .WithMany("Lines")
                         .HasForeignKey("ShipmentId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -788,15 +788,15 @@ namespace LKvitai.MES.Infrastructure.Persistence.Migrations
                     b.Navigation("Shipment");
                 });
 
-            modelBuilder.Entity("LKvitai.MES.Domain.Entities.Item", b =>
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.Item", b =>
                 {
-                    b.HasOne("LKvitai.MES.Domain.Entities.UnitOfMeasure", "BaseUnit")
+                    b.HasOne("LKvitai.MES.Modules.Warehouse.Domain.Entities.UnitOfMeasure", "BaseUnit")
                         .WithMany()
                         .HasForeignKey("BaseUoM")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("LKvitai.MES.Domain.Entities.ItemCategory", "Category")
+                    b.HasOne("LKvitai.MES.Modules.Warehouse.Domain.Entities.ItemCategory", "Category")
                         .WithMany()
                         .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -807,9 +807,9 @@ namespace LKvitai.MES.Infrastructure.Persistence.Migrations
                     b.Navigation("Category");
                 });
 
-            modelBuilder.Entity("LKvitai.MES.Domain.Entities.ItemBarcode", b =>
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.ItemBarcode", b =>
                 {
-                    b.HasOne("LKvitai.MES.Domain.Entities.Item", "Item")
+                    b.HasOne("LKvitai.MES.Modules.Warehouse.Domain.Entities.Item", "Item")
                         .WithMany("Barcodes")
                         .HasForeignKey("ItemId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -818,9 +818,9 @@ namespace LKvitai.MES.Infrastructure.Persistence.Migrations
                     b.Navigation("Item");
                 });
 
-            modelBuilder.Entity("LKvitai.MES.Domain.Entities.ItemCategory", b =>
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.ItemCategory", b =>
                 {
-                    b.HasOne("LKvitai.MES.Domain.Entities.ItemCategory", "ParentCategory")
+                    b.HasOne("LKvitai.MES.Modules.Warehouse.Domain.Entities.ItemCategory", "ParentCategory")
                         .WithMany("Children")
                         .HasForeignKey("ParentCategoryId")
                         .OnDelete(DeleteBehavior.Restrict);
@@ -828,21 +828,21 @@ namespace LKvitai.MES.Infrastructure.Persistence.Migrations
                     b.Navigation("ParentCategory");
                 });
 
-            modelBuilder.Entity("LKvitai.MES.Domain.Entities.ItemUoMConversion", b =>
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.ItemUoMConversion", b =>
                 {
-                    b.HasOne("LKvitai.MES.Domain.Entities.UnitOfMeasure", null)
+                    b.HasOne("LKvitai.MES.Modules.Warehouse.Domain.Entities.UnitOfMeasure", null)
                         .WithMany()
                         .HasForeignKey("FromUoM")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("LKvitai.MES.Domain.Entities.Item", "Item")
+                    b.HasOne("LKvitai.MES.Modules.Warehouse.Domain.Entities.Item", "Item")
                         .WithMany("UomConversions")
                         .HasForeignKey("ItemId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("LKvitai.MES.Domain.Entities.UnitOfMeasure", null)
+                    b.HasOne("LKvitai.MES.Modules.Warehouse.Domain.Entities.UnitOfMeasure", null)
                         .WithMany()
                         .HasForeignKey("ToUoM")
                         .OnDelete(DeleteBehavior.Restrict)
@@ -851,9 +851,9 @@ namespace LKvitai.MES.Infrastructure.Persistence.Migrations
                     b.Navigation("Item");
                 });
 
-            modelBuilder.Entity("LKvitai.MES.Domain.Entities.Location", b =>
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.Location", b =>
                 {
-                    b.HasOne("LKvitai.MES.Domain.Entities.Location", "ParentLocation")
+                    b.HasOne("LKvitai.MES.Modules.Warehouse.Domain.Entities.Location", "ParentLocation")
                         .WithMany("Children")
                         .HasForeignKey("ParentLocationId")
                         .OnDelete(DeleteBehavior.Restrict);
@@ -861,33 +861,33 @@ namespace LKvitai.MES.Infrastructure.Persistence.Migrations
                     b.Navigation("ParentLocation");
                 });
 
-            modelBuilder.Entity("LKvitai.MES.Domain.Entities.Lot", b =>
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.Lot", b =>
                 {
-                    b.HasOne("LKvitai.MES.Domain.Entities.Item", null)
+                    b.HasOne("LKvitai.MES.Modules.Warehouse.Domain.Entities.Item", null)
                         .WithMany()
                         .HasForeignKey("ItemId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("LKvitai.MES.Domain.Entities.SerialNumber", b =>
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.SerialNumber", b =>
                 {
-                    b.HasOne("LKvitai.MES.Domain.Entities.Item", null)
+                    b.HasOne("LKvitai.MES.Modules.Warehouse.Domain.Entities.Item", null)
                         .WithMany()
                         .HasForeignKey("ItemId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("LKvitai.MES.Domain.Entities.SupplierItemMapping", b =>
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.SupplierItemMapping", b =>
                 {
-                    b.HasOne("LKvitai.MES.Domain.Entities.Item", "Item")
+                    b.HasOne("LKvitai.MES.Modules.Warehouse.Domain.Entities.Item", "Item")
                         .WithMany()
                         .HasForeignKey("ItemId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("LKvitai.MES.Domain.Entities.Supplier", "Supplier")
+                    b.HasOne("LKvitai.MES.Modules.Warehouse.Domain.Entities.Supplier", "Supplier")
                         .WithMany()
                         .HasForeignKey("SupplierId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -898,24 +898,24 @@ namespace LKvitai.MES.Infrastructure.Persistence.Migrations
                     b.Navigation("Supplier");
                 });
 
-            modelBuilder.Entity("LKvitai.MES.Domain.Entities.InboundShipment", b =>
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.InboundShipment", b =>
                 {
                     b.Navigation("Lines");
                 });
 
-            modelBuilder.Entity("LKvitai.MES.Domain.Entities.Item", b =>
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.Item", b =>
                 {
                     b.Navigation("Barcodes");
 
                     b.Navigation("UomConversions");
                 });
 
-            modelBuilder.Entity("LKvitai.MES.Domain.Entities.ItemCategory", b =>
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.ItemCategory", b =>
                 {
                     b.Navigation("Children");
                 });
 
-            modelBuilder.Entity("LKvitai.MES.Domain.Entities.Location", b =>
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.Location", b =>
                 {
                     b.Navigation("Children");
                 });

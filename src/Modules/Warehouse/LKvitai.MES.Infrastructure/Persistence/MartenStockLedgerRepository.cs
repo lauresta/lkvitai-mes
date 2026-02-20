@@ -1,6 +1,6 @@
 using LKvitai.MES.Application.Ports;
 using LKvitai.MES.Contracts.Events;
-using LKvitai.MES.Domain.Aggregates;
+using LKvitai.MES.Modules.Warehouse.Domain.Aggregates;
 using LKvitai.MES.SharedKernel;
 using Marten;
 
@@ -11,7 +11,7 @@ namespace LKvitai.MES.Infrastructure.Persistence;
 /// Uses expected-version append (V-2) for optimistic concurrency.
 /// Creates a fresh lightweight session per operation to support retry loops.
 ///
-/// Stream IDs are produced by <see cref="LKvitai.MES.Domain.StockLedgerStreamId"/>
+/// Stream IDs are produced by <see cref="LKvitai.MES.Modules.Warehouse.Domain.StockLedgerStreamId"/>
 /// and passed in by the caller; this class does NOT compute stream IDs.
 /// </summary>
 public class MartenStockLedgerRepository : IStockLedgerRepository

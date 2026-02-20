@@ -1,7 +1,7 @@
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.SharedKernel;
 
-namespace LKvitai.MES.Domain.Aggregates;
+namespace LKvitai.MES.Modules.Warehouse.Domain.Aggregates;
 
 /// <summary>
 /// Valuation aggregate - Event sourced, manages stock cost adjustments

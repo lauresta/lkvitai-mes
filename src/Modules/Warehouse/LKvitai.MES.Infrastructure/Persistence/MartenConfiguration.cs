@@ -8,7 +8,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Contracts.ReadModels;
-using LKvitai.MES.Domain.Aggregates;
+using LKvitai.MES.Modules.Warehouse.Domain.Aggregates;
 using LKvitai.MES.Infrastructure.EventVersioning;
 
 namespace LKvitai.MES.Infrastructure.Persistence;
@@ -115,8 +115,8 @@ public static class MartenConfiguration
 
     private static void RegisterMartenDocumentAliases(StoreOptions options)
     {
-        RegisterDocumentAlias<Valuation>(options, "LKvitai.MES.Domain.Aggregates", "LKvitai.MES.Domain");
-        RegisterDocumentAlias<ItemValuation>(options, "LKvitai.MES.Domain.Aggregates", "LKvitai.MES.Domain");
+        RegisterDocumentAlias<Valuation>(options, "LKvitai.MES.Modules.Warehouse.Domain.Aggregates", "LKvitai.MES.Modules.Warehouse.Domain");
+        RegisterDocumentAlias<ItemValuation>(options, "LKvitai.MES.Modules.Warehouse.Domain.Aggregates", "LKvitai.MES.Modules.Warehouse.Domain");
         RegisterDocumentAlias<ActiveHardLockView>(options, "LKvitai.MES.Contracts.ReadModels", "LKvitai.MES.Contracts");
         RegisterDocumentAlias<LocationBalanceView>(options, "LKvitai.MES.Contracts.ReadModels", "LKvitai.MES.Contracts");
         RegisterDocumentAlias<AvailableStockView>(options, "LKvitai.MES.Contracts.ReadModels", "LKvitai.MES.Contracts");

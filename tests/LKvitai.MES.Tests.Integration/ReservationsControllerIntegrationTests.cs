@@ -3,7 +3,7 @@ using LKvitai.MES.Api.Controllers;
 using LKvitai.MES.Application.Ports;
 using LKvitai.MES.Application.Queries;
 using LKvitai.MES.Contracts.Events;
-using LKvitai.MES.Domain.Aggregates;
+using LKvitai.MES.Modules.Warehouse.Domain.Aggregates;
 using LKvitai.MES.Infrastructure.Persistence;
 using LKvitai.MES.Projections;
 using Marten;

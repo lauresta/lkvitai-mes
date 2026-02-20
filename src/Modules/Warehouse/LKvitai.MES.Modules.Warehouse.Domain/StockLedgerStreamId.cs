@@ -1,4 +1,4 @@
-namespace LKvitai.MES.Domain;
+namespace LKvitai.MES.Modules.Warehouse.Domain;
 
 /// <summary>
 /// Single source of truth for StockLedger event stream identity.

@@ -2,7 +2,7 @@ using DotNet.Testcontainers.Builders;
 using FluentAssertions;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Contracts.ReadModels;
-using LKvitai.MES.Domain;
+using LKvitai.MES.Modules.Warehouse.Domain;
 using LKvitai.MES.Infrastructure.Projections;
 using LKvitai.MES.Projections;
 using Marten;

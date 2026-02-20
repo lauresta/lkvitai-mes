@@ -4,13 +4,14 @@ using LKvitai.MES.Api.Security;
 using LKvitai.MES.Application.Services;
 using LKvitai.MES.Contracts.ReadModels;
 using LKvitai.MES.Contracts.Events;
-using LKvitai.MES.Domain;
+using LKvitai.MES.Modules.Warehouse.Domain;
 using LKvitai.MES.Infrastructure.Persistence;
 using LKvitai.MES.SharedKernel;
 using IDocumentStore = Marten.IDocumentStore;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Domain = LKvitai.MES.Modules.Warehouse.Domain;
 
 namespace LKvitai.MES.Api.Controllers;
 

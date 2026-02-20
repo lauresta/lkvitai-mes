@@ -3,8 +3,8 @@ using LKvitai.MES.Application.Commands;
 using LKvitai.MES.Application.Ports;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Contracts.ReadModels;
-using LKvitai.MES.Domain;
-using LKvitai.MES.Domain.Aggregates;
+using LKvitai.MES.Modules.Warehouse.Domain;
+using LKvitai.MES.Modules.Warehouse.Domain.Aggregates;
 using LKvitai.MES.Infrastructure.Persistence;
 using LKvitai.MES.Projections;
 using LKvitai.MES.SharedKernel;
@@ -356,7 +356,7 @@ public class StartPickingConcurrencyTests : IAsyncLifetime
     {
         await using var session = _store!.LightweightSession();
 
-        var streamId = LKvitai.MES.Domain.StockLedgerStreamId.For(warehouseId, location, sku);
+        var streamId = LKvitai.MES.Modules.Warehouse.Domain.StockLedgerStreamId.For(warehouseId, location, sku);
         session.Events.StartStream<StockLedger>(streamId, new StockMovedEvent
         {
             MovementId = Guid.NewGuid(),

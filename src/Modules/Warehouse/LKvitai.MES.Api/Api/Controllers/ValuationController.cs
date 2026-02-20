@@ -5,8 +5,8 @@ using LKvitai.MES.Api.Services;
 using LKvitai.MES.Application.Commands;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Contracts.ReadModels;
-using LKvitai.MES.Domain.Aggregates;
-using LKvitai.MES.Domain.Entities;
+using LKvitai.MES.Modules.Warehouse.Domain.Aggregates;
+using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using LKvitai.MES.Infrastructure.Caching;
 using LKvitai.MES.Infrastructure.Persistence;
 using LKvitai.MES.SharedKernel;
@@ -542,7 +542,7 @@ public sealed class ValuationController : ControllerBase
 
     private static async Task<decimal> ResolveAvailableQtyAsync(
         IQuerySession session,
-        LKvitai.MES.Domain.Entities.Item item,
+        LKvitai.MES.Modules.Warehouse.Domain.Entities.Item item,
         CancellationToken cancellationToken)
     {
         var rowsByItemIdQuery = session.Query<AvailableStockView>()

@@ -1,4 +1,4 @@
-namespace LKvitai.MES.Domain;
+namespace LKvitai.MES.Modules.Warehouse.Domain;
 
 /// <summary>
 /// Well-known stock movement types.

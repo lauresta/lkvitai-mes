@@ -5,7 +5,7 @@ using LKvitai.MES.Application.Commands;
 using LKvitai.MES.Application.Services;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Contracts.ReadModels;
-using LKvitai.MES.Domain.Aggregates;
+using LKvitai.MES.Modules.Warehouse.Domain.Aggregates;
 using LKvitai.MES.Infrastructure.Persistence;
 using LKvitai.MES.SharedKernel;
 using Marten;
@@ -176,7 +176,7 @@ public sealed class AdjustCostCommandHandler : IRequestHandler<AdjustCostCommand
 
     private static async Task<decimal> ResolveAvailableQtyAsync(
         IDocumentSession session,
-        LKvitai.MES.Domain.Entities.Item item,
+        LKvitai.MES.Modules.Warehouse.Domain.Entities.Item item,
         CancellationToken cancellationToken)
     {
         var rowsByItemIdQuery = session.Query<AvailableStockView>()

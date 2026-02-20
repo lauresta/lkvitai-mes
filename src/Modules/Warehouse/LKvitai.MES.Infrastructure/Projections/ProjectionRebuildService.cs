@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using Npgsql;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
+using Domain = LKvitai.MES.Modules.Warehouse.Domain;
 
 namespace LKvitai.MES.Infrastructure.Projections;
 

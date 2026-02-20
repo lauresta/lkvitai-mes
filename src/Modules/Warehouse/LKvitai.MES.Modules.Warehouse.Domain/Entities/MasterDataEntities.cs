@@ -1,7 +1,7 @@
-using LKvitai.MES.Domain.Common;
+using LKvitai.MES.Modules.Warehouse.Domain.Common;
 using LKvitai.MES.SharedKernel;
 
-namespace LKvitai.MES.Domain.Entities;
+namespace LKvitai.MES.Modules.Warehouse.Domain.Entities;
 
 public abstract class AuditableEntity : IAuditable
 {

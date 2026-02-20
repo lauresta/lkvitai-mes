@@ -4,7 +4,7 @@ using LKvitai.MES.Application.Commands;
 using LKvitai.MES.Application.Ports;
 using LKvitai.MES.Application.Services;
 using LKvitai.MES.Contracts.Events;
-using LKvitai.MES.Domain.Entities;
+using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using LKvitai.MES.Infrastructure.Persistence;
 using LKvitai.MES.SharedKernel;
 using MediatR;

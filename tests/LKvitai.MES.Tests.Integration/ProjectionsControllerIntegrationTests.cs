@@ -4,7 +4,7 @@ using LKvitai.MES.Application.Commands;
 using LKvitai.MES.Application.Projections;
 using LKvitai.MES.Application.Queries;
 using LKvitai.MES.Contracts.Events;
-using LKvitai.MES.Domain;
+using LKvitai.MES.Modules.Warehouse.Domain;
 using LKvitai.MES.Infrastructure.Projections;
 using LKvitai.MES.Projections;
 using LKvitai.MES.SharedKernel;

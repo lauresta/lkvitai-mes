@@ -1,5 +1,5 @@
 using LKvitai.MES.Application.Ports;
-using LKvitai.MES.Domain;
+using LKvitai.MES.Modules.Warehouse.Domain;
 using LKvitai.MES.SharedKernel;
 using MediatR;
 using Microsoft.Extensions.Logging;

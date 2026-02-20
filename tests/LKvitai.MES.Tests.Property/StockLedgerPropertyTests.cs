@@ -2,8 +2,8 @@ using FsCheck;
 using FsCheck.Xunit;
 using FluentAssertions;
 using LKvitai.MES.Contracts.Events;
-using LKvitai.MES.Domain;
-using LKvitai.MES.Domain.Aggregates;
+using LKvitai.MES.Modules.Warehouse.Domain;
+using LKvitai.MES.Modules.Warehouse.Domain.Aggregates;
 using LKvitai.MES.SharedKernel;
 using Xunit;
 

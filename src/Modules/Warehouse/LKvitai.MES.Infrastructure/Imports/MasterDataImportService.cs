@@ -2,7 +2,7 @@ using ClosedXML.Excel;
 using EFCore.BulkExtensions;
 using LKvitai.MES.Application.Models;
 using LKvitai.MES.Application.Services;
-using LKvitai.MES.Domain.Entities;
+using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using LKvitai.MES.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 

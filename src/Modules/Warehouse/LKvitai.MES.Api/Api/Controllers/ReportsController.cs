@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Text;
 using LKvitai.MES.Api.Security;
 using LKvitai.MES.Contracts.ReadModels;
-using LKvitai.MES.Domain.Entities;
+using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using LKvitai.MES.Infrastructure.Persistence;
 using IDocumentStore = Marten.IDocumentStore;
 using Microsoft.AspNetCore.Authorization;
@@ -556,7 +556,7 @@ public sealed class ReportsController : ControllerBase
     }
 
     private async Task<TraceabilityEntryResponse?> BuildTraceabilityEntryAsync(
-        LKvitai.MES.Domain.Entities.Lot lot,
+        LKvitai.MES.Modules.Warehouse.Domain.Entities.Lot lot,
         CancellationToken cancellationToken)
     {
         var item = await _dbContext.Items

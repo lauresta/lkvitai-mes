@@ -533,8 +533,8 @@ public sealed class AdvancedAnalyticsController : ControllerBase
                 x.OrderNumber,
                 x.RequestedShipDate,
                 x.ShippedAt,
-                rootCause = x.Status == LKvitai.MES.Domain.Entities.OutboundOrderStatus.Picking ? "Pick delay" :
-                    x.Status == LKvitai.MES.Domain.Entities.OutboundOrderStatus.Allocated ? "Stock shortage" :
+                rootCause = x.Status == LKvitai.MES.Modules.Warehouse.Domain.Entities.OutboundOrderStatus.Picking ? "Pick delay" :
+                    x.Status == LKvitai.MES.Modules.Warehouse.Domain.Entities.OutboundOrderStatus.Allocated ? "Stock shortage" :
                     "Carrier delay"
             })
             .OrderByDescending(x => x.ShippedAt)
