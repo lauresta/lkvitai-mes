@@ -15,7 +15,7 @@ public sealed class APMIntegrationTests
     [Fact]
     public void ApiProject_ShouldIncludeApplicationInsightsPackage()
     {
-        var csproj = ReadFileFromRepo("src/Modules/Warehouse/LKvitai.MES.Api/LKvitai.MES.Api.csproj");
+        var csproj = File.ReadAllText(ApiPathResolver.ResolveApiFileOrFail("LKvitai.MES.Modules.Warehouse.Api.csproj"));
 
         Assert.Contains("Microsoft.ApplicationInsights.AspNetCore", csproj, StringComparison.Ordinal);
     }
@@ -23,7 +23,7 @@ public sealed class APMIntegrationTests
     [Fact]
     public void Program_ShouldWireApplicationInsightsAndBusinessTelemetry()
     {
-        var program = ReadFileFromRepo("src/Modules/Warehouse/LKvitai.MES.Api/Program.cs");
+        var program = File.ReadAllText(ApiPathResolver.ResolveApiFileOrFail("Program.cs"));
 
         Assert.Contains("AddApplicationInsightsTelemetry", program, StringComparison.Ordinal);
         Assert.Contains("AddApplicationInsightsTelemetryProcessor<SuccessfulRequestSamplingTelemetryProcessor>", program, StringComparison.Ordinal);
@@ -33,7 +33,7 @@ public sealed class APMIntegrationTests
     [Fact]
     public void AppSettings_ShouldDefineApmAndApplicationInsightsSections()
     {
-        var appsettings = ReadFileFromRepo("src/Modules/Warehouse/LKvitai.MES.Api/appsettings.json");
+        var appsettings = File.ReadAllText(ApiPathResolver.ResolveApiFileOrFail("appsettings.json"));
 
         Assert.Contains("\"ApplicationInsights\"", appsettings, StringComparison.Ordinal);
         Assert.Contains("\"ConnectionString\"", appsettings, StringComparison.Ordinal);
@@ -104,28 +104,6 @@ public sealed class APMIntegrationTests
         sut.TrackOrderCreated(Guid.NewGuid(), Guid.NewGuid(), 100.5m, DateTimeOffset.UtcNow, "Sales");
         sut.TrackShipmentDispatched(Guid.NewGuid(), Guid.NewGuid(), "FEDEX", DateTimeOffset.UtcNow, TimeSpan.FromMinutes(3));
         sut.TrackStockAdjusted(Guid.NewGuid(), 7, 2m, "CYCLE_COUNT");
-    }
-
-    private static string ReadFileFromRepo(string relativePath)
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null)
-        {
-            if (Directory.Exists(Path.Combine(directory.FullName, ".git")))
-            {
-                var candidate = Path.Combine(directory.FullName, relativePath);
-                if (!File.Exists(candidate))
-                {
-                    throw new FileNotFoundException($"Unable to resolve {relativePath} from repository root {directory.FullName}.");
-                }
-
-                return File.ReadAllText(candidate);
-            }
-
-            directory = directory.Parent;
-        }
-
-        throw new DirectoryNotFoundException("Unable to locate repository root (.git) from test runtime directory.");
     }
 
     private sealed class CapturingTelemetryProcessor : ITelemetryProcessor

@@ -14,7 +14,7 @@ public sealed class AlertEscalationTests
     [Fact]
     public void AppSettings_ShouldDefinePagerDutyAndAlertEscalationSections()
     {
-        var appsettings = File.ReadAllText(ResolvePathFromRepoRoot("src/Modules/Warehouse/LKvitai.MES.Api/appsettings.json"));
+        var appsettings = File.ReadAllText(ApiPathResolver.ResolveApiFileOrFail("appsettings.json"));
 
         Assert.Contains("\"PagerDuty\"", appsettings, StringComparison.Ordinal);
         Assert.Contains("\"ApiKey\"", appsettings, StringComparison.Ordinal);
@@ -201,22 +201,6 @@ public sealed class AlertEscalationTests
                 RunbookBaseUrl = "https://runbooks.local/alerts"
             }),
             new NullLogger<PagerDutyAlertEscalationService>());
-    }
-
-    private static string ResolvePathFromRepoRoot(string relativePath)
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null)
-        {
-            if (Directory.Exists(Path.Combine(directory.FullName, ".git")))
-            {
-                return Path.Combine(directory.FullName, relativePath);
-            }
-
-            directory = directory.Parent;
-        }
-
-        throw new DirectoryNotFoundException("Unable to locate repository root (.git) from test runtime directory.");
     }
 
     private sealed class StubHttpClientFactory : IHttpClientFactory

@@ -9,7 +9,7 @@ public sealed class ConnectionPoolingTests
     [Fact]
     public void DevelopmentConnectionString_ShouldContainPoolingParameters()
     {
-        var configPath = ResolveFromRepositoryRoot("src/Modules/Warehouse/LKvitai.MES.Api/appsettings.Development.json");
+        var configPath = ApiPathResolver.ResolveApiFileOrFail("appsettings.Development.json");
         var json = File.ReadAllText(configPath);
         using var doc = JsonDocument.Parse(json);
         var connectionString = doc.RootElement
@@ -75,22 +75,5 @@ public sealed class ConnectionPoolingTests
 
         Assert.Equal(10, snapshot.MinimumPoolSize);
         Assert.Equal(100, snapshot.MaximumPoolSize);
-    }
-
-    private static string ResolveFromRepositoryRoot(string relativePath)
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null)
-        {
-            var candidate = Path.Combine(directory.FullName, relativePath);
-            if (File.Exists(candidate))
-            {
-                return candidate;
-            }
-
-            directory = directory.Parent;
-        }
-
-        throw new FileNotFoundException($"Could not resolve file from repository root: {relativePath}");
     }
 }

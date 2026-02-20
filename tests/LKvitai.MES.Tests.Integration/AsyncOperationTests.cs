@@ -45,7 +45,7 @@ public sealed class AsyncOperationTests
         var srcRoot = Path.Combine(repoRoot, "src");
         var infrastructureRoot = ResolveInfrastructureRoot(srcRoot);
 
-        return Directory.GetFiles(Path.Combine(srcRoot, "Modules", "Warehouse", "LKvitai.MES.Api"), "*.cs", SearchOption.AllDirectories)
+        return Directory.GetFiles(ApiPathResolver.ResolveApiDirectory(), "*.cs", SearchOption.AllDirectories)
             .Concat(Directory.GetFiles(infrastructureRoot, "*.cs", SearchOption.AllDirectories))
             .Concat(Directory.GetFiles(Path.Combine(srcRoot, "Modules", "Warehouse", "LKvitai.MES.Modules.Warehouse.Sagas"), "*.cs", SearchOption.AllDirectories))
             .ToList();

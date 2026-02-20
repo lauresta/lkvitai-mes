@@ -13,7 +13,7 @@ public sealed class SLAMonitoringTests
     [Fact]
     public void AppSettings_ShouldContainSlaMonitoringConfiguration()
     {
-        var appsettings = File.ReadAllText(ResolvePathFromRepoRoot("src/Modules/Warehouse/LKvitai.MES.Api/appsettings.json"));
+        var appsettings = File.ReadAllText(ApiPathResolver.ResolveApiFileOrFail("appsettings.json"));
 
         Assert.Contains("\"SlaMonitoring\"", appsettings, StringComparison.Ordinal);
         Assert.Contains("\"UptimeTargetPercent\"", appsettings, StringComparison.Ordinal);
@@ -24,7 +24,7 @@ public sealed class SLAMonitoringTests
     [Fact]
     public void MetricsController_ShouldExposeSlaMetricNames()
     {
-        var controller = File.ReadAllText(ResolvePathFromRepoRoot("src/Modules/Warehouse/LKvitai.MES.Api/Api/Controllers/MetricsController.cs"));
+        var controller = File.ReadAllText(ApiPathResolver.ResolveApiFileOrFail("Api", "Controllers", "MetricsController.cs"));
 
         Assert.Contains("sla_uptime_percentage", controller, StringComparison.Ordinal);
         Assert.Contains("sla_api_response_time_p95", controller, StringComparison.Ordinal);
@@ -126,19 +126,4 @@ public sealed class SLAMonitoringTests
         property!.SetValue(order, value);
     }
 
-    private static string ResolvePathFromRepoRoot(string relativePath)
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory is not null)
-        {
-            if (Directory.Exists(Path.Combine(directory.FullName, ".git")))
-            {
-                return Path.Combine(directory.FullName, relativePath);
-            }
-
-            directory = directory.Parent;
-        }
-
-        throw new DirectoryNotFoundException("Unable to locate repository root (.git) from test runtime directory.");
-    }
 }
