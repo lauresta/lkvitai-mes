@@ -13,7 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\LKvitai.MES.Modules.Warehouse.Contracts\LKvitai.MES.Modules.Warehouse.Contracts.csproj" />
-    <ProjectReference Include="..\LKvitai.MES.Application\LKvitai.MES.Application.csproj" />
+    <ProjectReference Include="..\LKvitai.MES.Modules.Warehouse.Application\LKvitai.MES.Application.csproj" />
   </ItemGroup>
 
 </Project>

@@ -25,7 +25,7 @@
     <ProjectReference Include="..\\..\\src\\Modules\\Warehouse\\LKvitai.MES.Infrastructure\\LKvitai.MES.Infrastructure.csproj" />
     <ProjectReference Include="..\\..\\src\\Modules\\Warehouse\\LKvitai.MES.Projections\\LKvitai.MES.Projections.csproj" />
     <ProjectReference Include="..\\..\\src\\Modules\\Warehouse\\LKvitai.MES.Modules.Warehouse.Domain\\LKvitai.MES.Modules.Warehouse.Domain.csproj" />
-    <ProjectReference Include="..\\..\\src\\Modules\\Warehouse\\LKvitai.MES.Application\\LKvitai.MES.Application.csproj" />
+    <ProjectReference Include="..\\..\\src\\Modules\\Warehouse\\LKvitai.MES.Modules.Warehouse.Application\\LKvitai.MES.Application.csproj" />
     <ProjectReference Include="..\\..\\src\\Modules\\Warehouse\\LKvitai.MES.Modules.Warehouse.Contracts\\LKvitai.MES.Modules.Warehouse.Contracts.csproj" />
   </ItemGroup>
 
