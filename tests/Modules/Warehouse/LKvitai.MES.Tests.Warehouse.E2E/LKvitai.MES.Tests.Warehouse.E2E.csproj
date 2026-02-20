@@ -6,6 +6,8 @@
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <RootNamespace>LKvitai.MES.Tests.Warehouse.E2E</RootNamespace>
+    <AssemblyName>LKvitai.MES.Tests.Warehouse.E2E</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>

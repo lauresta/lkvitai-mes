@@ -1,4 +1,4 @@
-namespace LKvitai.MES.Tests.E2E;
+namespace LKvitai.MES.Tests.Warehouse.E2E;
 
 public static class WorkflowSimulator
 {
