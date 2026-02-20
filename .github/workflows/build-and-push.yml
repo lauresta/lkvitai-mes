@@ -17,7 +17,7 @@ jobs:
       matrix:
         include:
           - name: api
-            dockerfile: src/Modules/Warehouse/LKvitai.MES.Api/Dockerfile
+            dockerfile: src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Api/Dockerfile
             image: ghcr.io/${{ github.repository_owner }}/lkvitai-mes-warehouse-api
           - name: webui
             dockerfile: src/Modules/Warehouse/LKvitai.MES.WebUI/Dockerfile
