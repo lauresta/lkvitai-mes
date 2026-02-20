@@ -2,10 +2,10 @@ using FluentAssertions;
 using LKvitai.MES.Application.EventVersioning;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Infrastructure.EventVersioning;
-using LKvitai.MES.SharedKernel;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
+using ContractsDomainEvent = LKvitai.MES.Contracts.Events.DomainEvent;
 
 namespace LKvitai.MES.Tests.Unit;
 
@@ -99,7 +99,7 @@ public sealed class EventSchemaVersionRegistryTests
             new Mock<ILogger<EventSchemaVersionRegistry>>().Object);
     }
 
-    private sealed class StockMovedV3Event : DomainEvent
+    private sealed class StockMovedV3Event : ContractsDomainEvent
     {
         public Guid MovementId { get; set; }
         public string SKU { get; set; } = string.Empty;

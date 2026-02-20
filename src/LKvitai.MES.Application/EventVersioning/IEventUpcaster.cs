@@ -1,4 +1,4 @@
-using LKvitai.MES.SharedKernel;
+using LKvitai.MES.Contracts.Events;
 
 namespace LKvitai.MES.Application.EventVersioning;
 

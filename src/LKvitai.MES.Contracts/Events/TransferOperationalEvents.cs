@@ -1,5 +1,3 @@
-using LKvitai.MES.SharedKernel;
-
 namespace LKvitai.MES.Contracts.Events;
 
 public sealed class TransferLineSnapshot

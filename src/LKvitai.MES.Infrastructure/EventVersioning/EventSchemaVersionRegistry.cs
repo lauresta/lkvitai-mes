@@ -1,6 +1,5 @@
 using LKvitai.MES.Application.EventVersioning;
 using LKvitai.MES.Contracts.Events;
-using LKvitai.MES.SharedKernel;
 using Microsoft.Extensions.Logging;
 using System.Reflection;
 

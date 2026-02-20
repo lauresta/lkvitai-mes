@@ -4,6 +4,7 @@ using LKvitai.MES.SharedKernel;
 using LKvitai.MES.Api.ErrorHandling;
 using MassTransit;
 using System.Diagnostics;
+using ContractsDomainEvent = LKvitai.MES.Contracts.Events.DomainEvent;
 
 namespace LKvitai.MES.Api.Services;
 
@@ -30,7 +31,7 @@ public class MassTransitEventBus : IEventBus
 
     public Task PublishAsync<T>(T message, CancellationToken ct = default) where T : class
     {
-        if (message is DomainEvent domainEvent && _schemaVersionRegistry is not null)
+        if (message is ContractsDomainEvent domainEvent && _schemaVersionRegistry is not null)
         {
             _schemaVersionRegistry.EnsureKnownVersion(domainEvent.GetType(), domainEvent.SchemaVersion);
             var upcasted = _schemaVersionRegistry.UpcastToLatest(domainEvent);
