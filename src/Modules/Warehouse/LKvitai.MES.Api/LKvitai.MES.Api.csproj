@@ -33,7 +33,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\LKvitai.MES.Modules.Warehouse.Application\LKvitai.MES.Application.csproj" />
+    <ProjectReference Include="..\LKvitai.MES.Modules.Warehouse.Application\LKvitai.MES.Modules.Warehouse.Application.csproj" />
     <ProjectReference Include="..\LKvitai.MES.Infrastructure\LKvitai.MES.Infrastructure.csproj" />
     <ProjectReference Include="..\LKvitai.MES.Projections\LKvitai.MES.Projections.csproj" />
     <ProjectReference Include="..\LKvitai.MES.Sagas\LKvitai.MES.Sagas.csproj" />

@@ -20,7 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\\..\\src\\Modules\\Warehouse\\LKvitai.MES.Modules.Warehouse.Domain\\LKvitai.MES.Modules.Warehouse.Domain.csproj" />
-    <ProjectReference Include="..\\..\\src\\Modules\\Warehouse\\LKvitai.MES.Modules.Warehouse.Application\\LKvitai.MES.Application.csproj" />
+    <ProjectReference Include="..\\..\\src\\Modules\\Warehouse\\LKvitai.MES.Modules.Warehouse.Application\\LKvitai.MES.Modules.Warehouse.Application.csproj" />
   </ItemGroup>
 
 </Project>
