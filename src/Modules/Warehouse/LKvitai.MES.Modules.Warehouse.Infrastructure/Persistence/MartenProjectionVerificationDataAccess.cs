@@ -1,7 +1,7 @@
 using LKvitai.MES.Modules.Warehouse.Application.Ports;
 using Marten;
 
-namespace LKvitai.MES.Infrastructure.Persistence;
+namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 
 public class MartenProjectionVerificationDataAccess : IProjectionVerificationDataAccess
 {

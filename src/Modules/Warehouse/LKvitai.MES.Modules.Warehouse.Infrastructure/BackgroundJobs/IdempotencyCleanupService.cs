@@ -1,7 +1,7 @@
 using LKvitai.MES.Modules.Warehouse.Application.Ports;
 using Marten;
 
-namespace LKvitai.MES.Infrastructure.BackgroundJobs;
+namespace LKvitai.MES.Modules.Warehouse.Infrastructure.BackgroundJobs;
 
 public sealed class IdempotencyCleanupService : IIdempotencyCleanupService
 {

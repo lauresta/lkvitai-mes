@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Npgsql;
 
-namespace LKvitai.MES.Infrastructure.Locking;
+namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Locking;
 
 /// <summary>
 /// PostgreSQL-backed distributed lock with TTL expiry.

@@ -5,7 +5,7 @@ using LKvitai.MES.Modules.Warehouse.Application.Projections;
 using LKvitai.MES.Modules.Warehouse.Application.Queries;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Modules.Warehouse.Domain;
-using LKvitai.MES.Infrastructure.Projections;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.Projections;
 using LKvitai.MES.Projections;
 using LKvitai.MES.SharedKernel;
 using Marten;

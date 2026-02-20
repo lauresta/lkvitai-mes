@@ -1,4 +1,4 @@
-using LKvitai.MES.Infrastructure.Caching;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.Caching;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 

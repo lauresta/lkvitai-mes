@@ -11,7 +11,7 @@ using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Contracts.Messages;
 using LKvitai.MES.Contracts.ReadModels;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
-using LKvitai.MES.Infrastructure.Persistence;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 using Marten;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;

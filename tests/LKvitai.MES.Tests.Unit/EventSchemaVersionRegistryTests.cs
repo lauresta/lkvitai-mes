@@ -1,7 +1,7 @@
 using FluentAssertions;
 using LKvitai.MES.Modules.Warehouse.Application.EventVersioning;
 using LKvitai.MES.Contracts.Events;
-using LKvitai.MES.Infrastructure.EventVersioning;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.EventVersioning;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;

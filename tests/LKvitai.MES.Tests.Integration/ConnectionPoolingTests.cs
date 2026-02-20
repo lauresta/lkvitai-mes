@@ -1,5 +1,5 @@
 using System.Text.Json;
-using LKvitai.MES.Infrastructure.Persistence;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 using Xunit;
 
 namespace LKvitai.MES.Tests.Integration;

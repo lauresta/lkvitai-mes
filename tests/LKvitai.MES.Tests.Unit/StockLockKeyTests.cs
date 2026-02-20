@@ -83,7 +83,7 @@ public class StockLockKeyTests
         // MartenStartPickingOrchestration.ComputeAdvisoryLockKey now delegates
         // to StockLockKey.ForLocation.
         var canonicalKey = StockLockKey.ForLocation("WH1", "LOC-A", "SKU-001");
-        var orchKey = LKvitai.MES.Infrastructure.Persistence.MartenStartPickingOrchestration
+        var orchKey = LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.MartenStartPickingOrchestration
             .ComputeAdvisoryLockKey("WH1", "LOC-A", "SKU-001");
 
         canonicalKey.Should().Be(orchKey,

@@ -4,7 +4,7 @@ using System.Text;
 using System.Text.Json;
 using CsvHelper;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
-using LKvitai.MES.Infrastructure.Persistence;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 using Marten;
 using Marten.Events;
 using Microsoft.EntityFrameworkCore;

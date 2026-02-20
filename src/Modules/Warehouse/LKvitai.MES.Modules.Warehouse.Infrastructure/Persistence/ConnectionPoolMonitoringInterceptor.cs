@@ -4,7 +4,7 @@ using System.Diagnostics;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging;
 
-namespace LKvitai.MES.Infrastructure.Persistence;
+namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 
 public sealed class ConnectionPoolMonitoringInterceptor : DbConnectionInterceptor
 {

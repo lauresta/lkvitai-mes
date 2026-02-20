@@ -1,6 +1,6 @@
 using LKvitai.MES.Api.Security;
 using LKvitai.MES.Api.Services;
-using LKvitai.MES.Infrastructure.Persistence;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;

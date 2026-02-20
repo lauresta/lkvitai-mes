@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Text;
-using LKvitai.MES.Infrastructure.Persistence;
-using LKvitai.MES.Infrastructure.Caching;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.Caching;
 using LKvitai.MES.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

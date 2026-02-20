@@ -1,4 +1,4 @@
-namespace LKvitai.MES.Infrastructure.Locking;
+namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Locking;
 
 public interface IDistributedLock
 {

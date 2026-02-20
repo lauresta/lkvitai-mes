@@ -1,8 +1,8 @@
 using LKvitai.MES.Api.ErrorHandling;
 using LKvitai.MES.Api.Security;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
-using LKvitai.MES.Infrastructure.Caching;
-using LKvitai.MES.Infrastructure.Persistence;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.Caching;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 using LKvitai.MES.SharedKernel;
 using CsvHelper;
 using Microsoft.AspNetCore.Authorization;
@@ -778,7 +778,7 @@ public sealed class LocationsController : ControllerBase
         return true;
     }
 
-    private ICacheService Cache => HttpContext?.RequestServices?.GetService<ICacheService>() ?? new LKvitai.MES.Infrastructure.Caching.NoOpCacheService();
+    private ICacheService Cache => HttpContext?.RequestServices?.GetService<ICacheService>() ?? new LKvitai.MES.Modules.Warehouse.Infrastructure.Caching.NoOpCacheService();
 
     public sealed record UpsertLocationRequest(
         string Code,

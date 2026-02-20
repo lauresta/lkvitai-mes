@@ -4,7 +4,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace LKvitai.MES.Infrastructure.Persistence.Migrations
+namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.Migrations
 {
     /// <inheritdoc />
     public partial class PRD1636_RetentionPolicyEngine : Migration

@@ -8,7 +8,7 @@ using LKvitai.MES.Contracts.Messages;
 using LKvitai.MES.Contracts.ReadModels;
 using LKvitai.MES.Modules.Warehouse.Domain;
 using LKvitai.MES.Modules.Warehouse.Domain.Aggregates;
-using LKvitai.MES.Infrastructure.Persistence;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 using LKvitai.MES.Projections;
 using LKvitai.MES.SharedKernel;
 using Marten;

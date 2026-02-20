@@ -3,7 +3,7 @@ using LKvitai.MES.Modules.Warehouse.Application.Commands;
 using LKvitai.MES.Modules.Warehouse.Application.Projections;
 using LKvitai.MES.Modules.Warehouse.Application.Queries;
 using LKvitai.MES.Api.Security;
-using LKvitai.MES.Infrastructure.Projections;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.Projections;
 using LKvitai.MES.SharedKernel;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;

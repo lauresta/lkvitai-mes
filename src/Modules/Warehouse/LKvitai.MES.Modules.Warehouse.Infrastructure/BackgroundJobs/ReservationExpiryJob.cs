@@ -3,7 +3,7 @@ using Marten;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace LKvitai.MES.Infrastructure.BackgroundJobs;
+namespace LKvitai.MES.Modules.Warehouse.Infrastructure.BackgroundJobs;
 
 /// <summary>
 /// Marks expired active reservations in projection storage.

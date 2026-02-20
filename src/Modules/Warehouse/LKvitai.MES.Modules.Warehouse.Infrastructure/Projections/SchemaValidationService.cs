@@ -3,7 +3,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 
-namespace LKvitai.MES.Infrastructure.Projections;
+namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Projections;
 
 /// <summary>
 /// Validates Marten schema at startup and fails fast when required objects are missing.

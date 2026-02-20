@@ -261,9 +261,9 @@ public class AdvisoryLockKeyTests
     [Fact]
     public void ComputeAdvisoryLockKey_SameInputs_ShouldReturnSameKey()
     {
-        var key1 = LKvitai.MES.Infrastructure.Persistence.MartenStartPickingOrchestration
+        var key1 = LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.MartenStartPickingOrchestration
             .ComputeAdvisoryLockKey("WH1", "LOC-A", "SKU-001");
-        var key2 = LKvitai.MES.Infrastructure.Persistence.MartenStartPickingOrchestration
+        var key2 = LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.MartenStartPickingOrchestration
             .ComputeAdvisoryLockKey("WH1", "LOC-A", "SKU-001");
 
         key1.Should().Be(key2);
@@ -272,11 +272,11 @@ public class AdvisoryLockKeyTests
     [Fact]
     public void ComputeAdvisoryLockKey_DifferentInputs_ShouldReturnDifferentKeys()
     {
-        var key1 = LKvitai.MES.Infrastructure.Persistence.MartenStartPickingOrchestration
+        var key1 = LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.MartenStartPickingOrchestration
             .ComputeAdvisoryLockKey("WH1", "LOC-A", "SKU-001");
-        var key2 = LKvitai.MES.Infrastructure.Persistence.MartenStartPickingOrchestration
+        var key2 = LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.MartenStartPickingOrchestration
             .ComputeAdvisoryLockKey("WH1", "LOC-A", "SKU-002");
-        var key3 = LKvitai.MES.Infrastructure.Persistence.MartenStartPickingOrchestration
+        var key3 = LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.MartenStartPickingOrchestration
             .ComputeAdvisoryLockKey("WH2", "LOC-A", "SKU-001");
 
         key1.Should().NotBe(key2);

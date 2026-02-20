@@ -5,7 +5,7 @@ using System.Text;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
-namespace LKvitai.MES.Infrastructure.Persistence;
+namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 
 public static class PiiEncryption
 {

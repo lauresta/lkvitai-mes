@@ -2,7 +2,7 @@ using System.Security.Claims;
 using FluentAssertions;
 using LKvitai.MES.Api.Middleware;
 using LKvitai.MES.Api.Services;
-using LKvitai.MES.Infrastructure.Persistence;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;

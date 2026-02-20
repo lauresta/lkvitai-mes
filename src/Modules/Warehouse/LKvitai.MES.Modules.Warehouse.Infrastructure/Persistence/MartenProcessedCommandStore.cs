@@ -3,7 +3,7 @@ using Marten;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 
-namespace LKvitai.MES.Infrastructure.Persistence;
+namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 
 /// <summary>
 /// Marten-backed implementation of <see cref="IProcessedCommandStore"/>.

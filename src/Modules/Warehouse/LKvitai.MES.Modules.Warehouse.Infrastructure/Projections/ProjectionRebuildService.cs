@@ -2,7 +2,7 @@ using LKvitai.MES.Modules.Warehouse.Application.Commands;
 using LKvitai.MES.Modules.Warehouse.Application.Projections;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Contracts.ReadModels;
-using LKvitai.MES.Infrastructure.Locking;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.Locking;
 using LKvitai.MES.SharedKernel;
 using Marten;
 using Microsoft.Extensions.Configuration;
@@ -12,7 +12,7 @@ using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using Domain = LKvitai.MES.Modules.Warehouse.Domain;
 
-namespace LKvitai.MES.Infrastructure.Projections;
+namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Projections;
 
 /// <summary>
 /// Projection rebuild service implementation

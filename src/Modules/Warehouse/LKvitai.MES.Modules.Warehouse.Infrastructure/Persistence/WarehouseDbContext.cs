@@ -11,7 +11,7 @@ using WarehouseLayoutAggregate = LKvitai.MES.Modules.Warehouse.Domain.Aggregates
 using HandlingUnitTypeEntity = LKvitai.MES.Modules.Warehouse.Domain.Entities.HandlingUnitType;
 using WarehouseLayoutEntity = LKvitai.MES.Modules.Warehouse.Domain.Entities.WarehouseLayout;
 
-namespace LKvitai.MES.Infrastructure.Persistence;
+namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 
 /// <summary>
 /// EF Core DbContext for state-based aggregates (HandlingUnit, WarehouseLayout)

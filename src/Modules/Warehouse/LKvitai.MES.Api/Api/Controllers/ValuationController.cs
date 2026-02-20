@@ -7,8 +7,8 @@ using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Contracts.ReadModels;
 using LKvitai.MES.Modules.Warehouse.Domain.Aggregates;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
-using LKvitai.MES.Infrastructure.Caching;
-using LKvitai.MES.Infrastructure.Persistence;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.Caching;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 using LKvitai.MES.SharedKernel;
 using Marten;
 using Marten.Events;
@@ -633,7 +633,7 @@ public sealed class ValuationController : ControllerBase
             request.SignaturePassword), cancellationToken);
     }
 
-    private ICacheService Cache => HttpContext?.RequestServices?.GetService<ICacheService>() ?? new LKvitai.MES.Infrastructure.Caching.NoOpCacheService();
+    private ICacheService Cache => HttpContext?.RequestServices?.GetService<ICacheService>() ?? new LKvitai.MES.Modules.Warehouse.Infrastructure.Caching.NoOpCacheService();
 
     public sealed record AdjustCostRequest(
         Guid CommandId,

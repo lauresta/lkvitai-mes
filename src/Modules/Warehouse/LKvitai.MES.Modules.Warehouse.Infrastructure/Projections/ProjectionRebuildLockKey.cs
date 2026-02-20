@@ -1,4 +1,4 @@
-namespace LKvitai.MES.Infrastructure.Projections;
+namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Projections;
 
 public static class ProjectionRebuildLockKey
 {

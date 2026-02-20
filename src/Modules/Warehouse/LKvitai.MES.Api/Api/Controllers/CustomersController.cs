@@ -1,7 +1,7 @@
 using LKvitai.MES.Api.Security;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
-using LKvitai.MES.Infrastructure.Caching;
-using LKvitai.MES.Infrastructure.Persistence;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.Caching;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -156,7 +156,7 @@ public sealed class CustomersController : ControllerBase
         return Created($"/api/warehouse/v1/customers/{row.Id}", new { row.Id, row.CustomerCode });
     }
 
-    private ICacheService Cache => HttpContext?.RequestServices?.GetService<ICacheService>() ?? new LKvitai.MES.Infrastructure.Caching.NoOpCacheService();
+    private ICacheService Cache => HttpContext?.RequestServices?.GetService<ICacheService>() ?? new LKvitai.MES.Modules.Warehouse.Infrastructure.Caching.NoOpCacheService();
 
     public sealed record AddressResponse(
         string Street,

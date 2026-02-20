@@ -1,4 +1,4 @@
-namespace LKvitai.MES.Infrastructure.BackgroundJobs;
+namespace LKvitai.MES.Modules.Warehouse.Infrastructure.BackgroundJobs;
 
 public interface IIdempotencyCleanupService
 {

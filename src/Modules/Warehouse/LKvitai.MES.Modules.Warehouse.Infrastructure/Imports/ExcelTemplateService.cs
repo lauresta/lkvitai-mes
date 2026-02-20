@@ -1,8 +1,8 @@
 using ClosedXML.Excel;
-using LKvitai.MES.Infrastructure.Persistence;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
-namespace LKvitai.MES.Infrastructure.Imports;
+namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Imports;
 
 public interface IExcelTemplateService
 {

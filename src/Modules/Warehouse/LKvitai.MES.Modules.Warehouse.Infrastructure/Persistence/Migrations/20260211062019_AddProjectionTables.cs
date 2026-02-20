@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace LKvitai.MES.Infrastructure.Persistence.Migrations
+namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.Migrations
 {
     /// <inheritdoc />
     public partial class AddProjectionTables : Migration

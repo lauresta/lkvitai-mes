@@ -2,7 +2,7 @@ using System.Reflection;
 using LKvitai.MES.Modules.Warehouse.Application.Services;
 using LKvitai.MES.Api.Security;
 using LKvitai.MES.Contracts.ReadModels;
-using LKvitai.MES.Infrastructure.Persistence;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 using Marten;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

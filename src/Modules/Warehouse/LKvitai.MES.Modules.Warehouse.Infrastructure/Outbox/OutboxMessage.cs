@@ -1,4 +1,4 @@
-namespace LKvitai.MES.Infrastructure.Outbox;
+namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Outbox;
 
 /// <summary>
 /// Transactional outbox message schema per blueprint

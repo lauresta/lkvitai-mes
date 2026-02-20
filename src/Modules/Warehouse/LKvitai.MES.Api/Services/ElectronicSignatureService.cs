@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
-using LKvitai.MES.Infrastructure.Persistence;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace LKvitai.MES.Api.Services;

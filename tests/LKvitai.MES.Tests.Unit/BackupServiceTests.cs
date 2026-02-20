@@ -1,6 +1,6 @@
 using LKvitai.MES.Api.Services;
 using LKvitai.MES.Modules.Warehouse.Application.Services;
-using LKvitai.MES.Infrastructure.Persistence;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;

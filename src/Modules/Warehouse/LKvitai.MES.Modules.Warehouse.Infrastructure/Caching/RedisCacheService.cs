@@ -4,7 +4,7 @@ using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 
-namespace LKvitai.MES.Infrastructure.Caching;
+namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Caching;
 
 public interface ICacheService
 {

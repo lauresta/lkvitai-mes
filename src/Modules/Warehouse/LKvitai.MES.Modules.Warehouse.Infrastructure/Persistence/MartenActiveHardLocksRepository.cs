@@ -2,7 +2,7 @@ using LKvitai.MES.Modules.Warehouse.Application.Ports;
 using LKvitai.MES.Contracts.ReadModels;
 using Marten;
 
-namespace LKvitai.MES.Infrastructure.Persistence;
+namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 
 /// <summary>
 /// Marten implementation of <see cref="IActiveHardLocksRepository"/>.

@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace LKvitai.MES.Infrastructure.BackgroundJobs;
+namespace LKvitai.MES.Modules.Warehouse.Infrastructure.BackgroundJobs;
 
 /// <summary>
 /// Daily idempotency cleanup at 02:00 UTC.

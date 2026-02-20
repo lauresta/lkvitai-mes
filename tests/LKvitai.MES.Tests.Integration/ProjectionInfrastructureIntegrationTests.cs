@@ -1,9 +1,9 @@
 using FluentAssertions;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Modules.Warehouse.Domain;
-using LKvitai.MES.Infrastructure.Locking;
-using LKvitai.MES.Infrastructure.Persistence;
-using LKvitai.MES.Infrastructure.Projections;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.Locking;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.Projections;
 using LKvitai.MES.Projections;
 using LKvitai.MES.SharedKernel;
 using Marten;

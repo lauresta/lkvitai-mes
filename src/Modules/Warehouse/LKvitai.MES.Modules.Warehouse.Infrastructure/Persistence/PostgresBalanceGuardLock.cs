@@ -2,7 +2,7 @@ using LKvitai.MES.Modules.Warehouse.Application.Ports;
 using Microsoft.Extensions.Configuration;
 using Npgsql;
 
-namespace LKvitai.MES.Infrastructure.Persistence;
+namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 
 /// <summary>
 /// PostgreSQL advisory lock implementation of <see cref="IBalanceGuardLock"/>.

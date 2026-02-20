@@ -6,7 +6,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
 
-namespace LKvitai.MES.Infrastructure.Persistence.Migrations
+namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.Migrations
 {
     /// <inheritdoc />
     public partial class PRD1624_UserRoleManagement : Migration

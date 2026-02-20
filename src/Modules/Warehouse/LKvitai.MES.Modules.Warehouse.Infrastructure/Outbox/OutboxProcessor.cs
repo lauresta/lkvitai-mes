@@ -2,7 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace LKvitai.MES.Infrastructure.Outbox;
+namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Outbox;
 
 /// <summary>
 /// Background service for processing transactional outbox per blueprint

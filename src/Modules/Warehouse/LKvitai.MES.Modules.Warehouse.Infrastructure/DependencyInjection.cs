@@ -4,15 +4,15 @@ using LKvitai.MES.Modules.Warehouse.Application.Orchestration;
 using LKvitai.MES.Modules.Warehouse.Application.Ports;
 using LKvitai.MES.Modules.Warehouse.Application.Projections;
 using LKvitai.MES.Modules.Warehouse.Application.Services;
-using LKvitai.MES.Infrastructure.BackgroundJobs;
-using LKvitai.MES.Infrastructure.EventVersioning;
-using LKvitai.MES.Infrastructure.Imports;
-using LKvitai.MES.Infrastructure.Locking;
-using LKvitai.MES.Infrastructure.Persistence;
-using LKvitai.MES.Infrastructure.Projections;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.BackgroundJobs;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.EventVersioning;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.Imports;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.Locking;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.Projections;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace LKvitai.MES.Infrastructure;
+namespace LKvitai.MES.Modules.Warehouse.Infrastructure;
 
 /// <summary>
 /// Infrastructure layer dependency injection configuration.

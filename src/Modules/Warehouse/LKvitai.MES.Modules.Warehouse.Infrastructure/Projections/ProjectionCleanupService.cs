@@ -1,8 +1,8 @@
-using LKvitai.MES.Infrastructure.Locking;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.Locking;
 using Marten;
 using Npgsql;
 
-namespace LKvitai.MES.Infrastructure.Projections;
+namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Projections;
 
 public interface IProjectionCleanupService
 {

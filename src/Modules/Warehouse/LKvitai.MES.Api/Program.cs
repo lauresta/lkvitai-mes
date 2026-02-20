@@ -7,11 +7,11 @@ using LKvitai.MES.Api.Services;
 using LKvitai.MES.Modules.Warehouse.Application.EventVersioning;
 using LKvitai.MES.Modules.Warehouse.Application.Ports;
 using LKvitai.MES.Modules.Warehouse.Application.Services;
-using LKvitai.MES.Infrastructure;
-using LKvitai.MES.Infrastructure.BackgroundJobs;
-using LKvitai.MES.Infrastructure.Caching;
-using LKvitai.MES.Infrastructure.Persistence;
-using LKvitai.MES.Infrastructure.Projections;
+using LKvitai.MES.Modules.Warehouse.Infrastructure;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.BackgroundJobs;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.Caching;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.Projections;
 using LKvitai.MES.Integration.Carrier;
 using LKvitai.MES.Projections;
 using Hangfire;
@@ -160,7 +160,7 @@ builder.Services.AddMartenEventStore(builder.Configuration, options =>
 builder.Services.AddWarehouseDbContext(builder.Configuration);
 
 // Outbox processor background service
-builder.Services.AddHostedService<LKvitai.MES.Infrastructure.Outbox.OutboxProcessor>();
+builder.Services.AddHostedService<LKvitai.MES.Modules.Warehouse.Infrastructure.Outbox.OutboxProcessor>();
 builder.Services.AddHostedService<SchemaValidationService>();
 builder.Services.AddHostedService<ReservationExpiryJob>();
 builder.Services.AddHostedService<IdempotencyCleanupHostedService>();

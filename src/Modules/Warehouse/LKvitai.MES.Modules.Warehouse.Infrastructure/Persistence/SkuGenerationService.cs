@@ -3,7 +3,7 @@ using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
-namespace LKvitai.MES.Infrastructure.Persistence;
+namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 
 public sealed class SkuGenerationService : ISkuGenerationService
 {

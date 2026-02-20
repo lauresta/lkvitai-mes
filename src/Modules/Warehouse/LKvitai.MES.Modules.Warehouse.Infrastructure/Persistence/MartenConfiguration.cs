@@ -9,9 +9,9 @@ using Microsoft.Extensions.DependencyInjection;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Contracts.ReadModels;
 using LKvitai.MES.Modules.Warehouse.Domain.Aggregates;
-using LKvitai.MES.Infrastructure.EventVersioning;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.EventVersioning;
 
-namespace LKvitai.MES.Infrastructure.Persistence;
+namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 
 /// <summary>
 /// Marten event store configuration per blueprint

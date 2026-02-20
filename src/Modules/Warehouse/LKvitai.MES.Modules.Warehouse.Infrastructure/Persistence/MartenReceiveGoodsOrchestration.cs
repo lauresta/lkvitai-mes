@@ -8,7 +8,7 @@ using Marten;
 using Marten.Exceptions;
 using Microsoft.Extensions.Logging;
 
-namespace LKvitai.MES.Infrastructure.Persistence;
+namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 
 /// <summary>
 /// Marten implementation of <see cref="IReceiveGoodsOrchestration"/>.

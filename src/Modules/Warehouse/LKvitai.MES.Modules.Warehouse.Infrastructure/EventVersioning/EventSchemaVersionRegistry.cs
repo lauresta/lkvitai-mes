@@ -3,7 +3,7 @@ using LKvitai.MES.Contracts.Events;
 using Microsoft.Extensions.Logging;
 using System.Reflection;
 
-namespace LKvitai.MES.Infrastructure.EventVersioning;
+namespace LKvitai.MES.Modules.Warehouse.Infrastructure.EventVersioning;
 
 public abstract class EventUpcaster<TSource, TTarget> : IEventUpcaster<TSource, TTarget>
     where TSource : DomainEvent

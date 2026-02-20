@@ -3,7 +3,7 @@ using Marten;
 using Npgsql;
 using Microsoft.Extensions.Logging;
 
-namespace LKvitai.MES.Infrastructure.Projections;
+namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Projections;
 
 public sealed class ProjectionHealthService : IProjectionHealthService
 {
