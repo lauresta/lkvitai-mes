@@ -21,7 +21,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LKvitai.MES.Sagas", "Module
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LKvitai.MES.Integration", "Modules\Warehouse\LKvitai.MES.Integration\LKvitai.MES.Integration.csproj", "{77777777-7777-7777-7777-777777777777}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LKvitai.MES.Contracts", "Modules\Warehouse\LKvitai.MES.Contracts\LKvitai.MES.Contracts.csproj", "{88888888-8888-8888-8888-888888888888}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LKvitai.MES.Contracts", "Modules\Warehouse\LKvitai.MES.Modules.Warehouse.Contracts\LKvitai.MES.Contracts.csproj", "{88888888-8888-8888-8888-888888888888}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LKvitai.MES.SharedKernel", "LKvitai.MES.SharedKernel\LKvitai.MES.SharedKernel.csproj", "{99999999-9999-9999-9999-999999999999}"
 EndProject
