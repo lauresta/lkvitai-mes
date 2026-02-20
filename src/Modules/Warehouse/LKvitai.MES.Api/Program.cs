@@ -12,7 +12,7 @@ using LKvitai.MES.Modules.Warehouse.Infrastructure.BackgroundJobs;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Caching;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Projections;
-using LKvitai.MES.Integration.Carrier;
+using LKvitai.MES.Modules.Warehouse.Integration.Carrier;
 using LKvitai.MES.Modules.Warehouse.Projections;
 using Hangfire;
 using Hangfire.MemoryStorage;

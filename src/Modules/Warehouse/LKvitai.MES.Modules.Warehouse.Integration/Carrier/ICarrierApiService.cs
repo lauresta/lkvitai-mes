@@ -1,6 +1,6 @@
 using LKvitai.MES.SharedKernel;
 
-namespace LKvitai.MES.Integration.Carrier;
+namespace LKvitai.MES.Modules.Warehouse.Integration.Carrier;
 
 public interface ICarrierApiService
 {

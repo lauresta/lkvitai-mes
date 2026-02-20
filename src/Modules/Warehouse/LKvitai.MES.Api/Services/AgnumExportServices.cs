@@ -90,7 +90,7 @@ public interface IAgnumExportOrchestrator
 
 public sealed class AgnumExportOrchestrator : IAgnumExportOrchestrator
 {
-    private static readonly Meter AgnumMeter = new("LKvitai.MES.Integration.Agnum");
+    private static readonly Meter AgnumMeter = new("LKvitai.MES.Modules.Warehouse.Integration.Agnum");
     private static readonly Histogram<double> CsvGenerationDurationMs =
         AgnumMeter.CreateHistogram<double>("agnum_csv_generation_duration_ms");
     private static readonly Counter<long> ApiCallsTotal =

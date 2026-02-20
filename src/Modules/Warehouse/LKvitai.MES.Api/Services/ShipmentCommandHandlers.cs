@@ -4,7 +4,7 @@ using LKvitai.MES.Modules.Warehouse.Application.Services;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
-using LKvitai.MES.Integration.Carrier;
+using LKvitai.MES.Modules.Warehouse.Integration.Carrier;
 using LKvitai.MES.SharedKernel;
 using MediatR;
 using Microsoft.EntityFrameworkCore;

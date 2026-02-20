@@ -1,6 +1,6 @@
 using LKvitai.MES.SharedKernel;
 
-namespace LKvitai.MES.Integration.Agnum;
+namespace LKvitai.MES.Modules.Warehouse.Integration.Agnum;
 
 /// <summary>
 /// Agnum export service interface per blueprint

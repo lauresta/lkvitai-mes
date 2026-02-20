@@ -37,7 +37,7 @@
     <ProjectReference Include="..\LKvitai.MES.Modules.Warehouse.Infrastructure\LKvitai.MES.Modules.Warehouse.Infrastructure.csproj" />
     <ProjectReference Include="..\LKvitai.MES.Modules.Warehouse.Projections\LKvitai.MES.Modules.Warehouse.Projections.csproj" />
     <ProjectReference Include="..\LKvitai.MES.Modules.Warehouse.Sagas\LKvitai.MES.Modules.Warehouse.Sagas.csproj" />
-    <ProjectReference Include="..\LKvitai.MES.Integration\LKvitai.MES.Integration.csproj" />
+    <ProjectReference Include="..\LKvitai.MES.Modules.Warehouse.Integration\LKvitai.MES.Modules.Warehouse.Integration.csproj" />
   </ItemGroup>
 
 </Project>

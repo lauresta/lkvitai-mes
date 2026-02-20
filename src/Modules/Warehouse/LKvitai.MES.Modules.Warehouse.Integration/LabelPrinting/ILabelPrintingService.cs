@@ -1,6 +1,6 @@
 using LKvitai.MES.SharedKernel;
 
-namespace LKvitai.MES.Integration.LabelPrinting;
+namespace LKvitai.MES.Modules.Warehouse.Integration.LabelPrinting;
 
 /// <summary>
 /// Label printing service interface per blueprint

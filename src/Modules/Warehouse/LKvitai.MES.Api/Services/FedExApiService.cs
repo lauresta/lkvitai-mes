@@ -1,4 +1,4 @@
-using LKvitai.MES.Integration.Carrier;
+using LKvitai.MES.Modules.Warehouse.Integration.Carrier;
 using LKvitai.MES.SharedKernel;
 using System.Net.Http.Headers;
 using System.Text;
