@@ -6,7 +6,7 @@ using LKvitai.MES.Modules.Warehouse.Application.Ports;
 using LKvitai.MES.Contracts.ReadModels;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
-using LKvitai.MES.SharedKernel;
+using LKvitai.MES.BuildingBlocks.SharedKernel;
 using Marten;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

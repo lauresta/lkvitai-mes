@@ -6,7 +6,7 @@ using LKvitai.MES.Contracts.ReadModels;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Modules.Warehouse.Domain;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
-using LKvitai.MES.SharedKernel;
+using LKvitai.MES.BuildingBlocks.SharedKernel;
 using IDocumentStore = Marten.IDocumentStore;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

@@ -1,6 +1,6 @@
 using LKvitai.MES.Modules.Warehouse.Application.Ports;
 using LKvitai.MES.Modules.Warehouse.Domain;
-using LKvitai.MES.SharedKernel;
+using LKvitai.MES.BuildingBlocks.SharedKernel;
 using MediatR;
 using Microsoft.Extensions.Logging;
 

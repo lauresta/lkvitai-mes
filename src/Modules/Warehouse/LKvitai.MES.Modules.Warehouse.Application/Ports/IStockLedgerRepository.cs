@@ -24,7 +24,7 @@ public interface IStockLedgerRepository
     /// <param name="evt">The event to append.</param>
     /// <param name="expectedVersion">Expected stream version before the append (optimistic concurrency).</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <exception cref="LKvitai.MES.SharedKernel.ConcurrencyException">
+    /// <exception cref="LKvitai.MES.BuildingBlocks.SharedKernel.ConcurrencyException">
     /// Thrown when the stream version does not match <paramref name="expectedVersion"/>.
     /// </exception>
     Task AppendEventAsync(string streamId, StockMovedEvent evt, long expectedVersion, CancellationToken ct);

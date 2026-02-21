@@ -1,4 +1,4 @@
-namespace LKvitai.MES.SharedKernel;
+namespace LKvitai.MES.BuildingBlocks.SharedKernel;
 
 /// <summary>
 /// Async-flow correlation context populated by API middleware.

@@ -1,7 +1,7 @@
 using LKvitai.MES.Modules.Warehouse.Application.Ports;
 using LKvitai.MES.Contracts.ReadModels;
 using LKvitai.MES.Modules.Warehouse.Domain.Aggregates;
-using LKvitai.MES.SharedKernel;
+using LKvitai.MES.BuildingBlocks.SharedKernel;
 using MediatR;
 
 namespace LKvitai.MES.Modules.Warehouse.Application.Queries;

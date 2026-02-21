@@ -1,4 +1,4 @@
-namespace LKvitai.MES.SharedKernel;
+namespace LKvitai.MES.BuildingBlocks.SharedKernel;
 
 /// <summary>
 /// Exception thrown when an optimistic concurrency conflict is detected

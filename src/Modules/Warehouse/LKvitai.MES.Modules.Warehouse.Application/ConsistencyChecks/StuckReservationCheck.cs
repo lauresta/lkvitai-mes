@@ -1,5 +1,5 @@
 using LKvitai.MES.Modules.Warehouse.Application.Ports;
-using LKvitai.MES.SharedKernel;
+using LKvitai.MES.BuildingBlocks.SharedKernel;
 using Microsoft.Extensions.Logging;
 
 namespace LKvitai.MES.Modules.Warehouse.Application.ConsistencyChecks;

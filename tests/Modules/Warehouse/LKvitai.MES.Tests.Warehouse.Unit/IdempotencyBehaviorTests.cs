@@ -1,7 +1,7 @@
 using FluentAssertions;
 using LKvitai.MES.Modules.Warehouse.Application.Behaviors;
 using LKvitai.MES.Modules.Warehouse.Application.Ports;
-using LKvitai.MES.SharedKernel;
+using LKvitai.MES.BuildingBlocks.SharedKernel;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Moq;

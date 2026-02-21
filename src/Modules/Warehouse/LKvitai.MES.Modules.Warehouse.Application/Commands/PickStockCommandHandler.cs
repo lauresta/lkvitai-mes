@@ -2,7 +2,7 @@ using LKvitai.MES.Modules.Warehouse.Application.Orchestration;
 using LKvitai.MES.Modules.Warehouse.Application.Ports;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Contracts.Messages;
-using LKvitai.MES.SharedKernel;
+using LKvitai.MES.BuildingBlocks.SharedKernel;
 using MediatR;
 using Microsoft.Extensions.Logging;
 

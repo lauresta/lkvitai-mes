@@ -1,4 +1,4 @@
-namespace LKvitai.MES.SharedKernel;
+namespace LKvitai.MES.BuildingBlocks.SharedKernel;
 
 /// <summary>
 /// Base class for all domain events

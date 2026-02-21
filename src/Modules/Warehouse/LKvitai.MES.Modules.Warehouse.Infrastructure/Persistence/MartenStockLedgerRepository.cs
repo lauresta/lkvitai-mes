@@ -1,7 +1,7 @@
 using LKvitai.MES.Modules.Warehouse.Application.Ports;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Modules.Warehouse.Domain.Aggregates;
-using LKvitai.MES.SharedKernel;
+using LKvitai.MES.BuildingBlocks.SharedKernel;
 using Marten;
 
 namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;

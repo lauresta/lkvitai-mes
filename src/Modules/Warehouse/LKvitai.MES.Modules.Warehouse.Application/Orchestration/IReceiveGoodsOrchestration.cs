@@ -1,5 +1,5 @@
 using LKvitai.MES.Modules.Warehouse.Application.Commands;
-using LKvitai.MES.SharedKernel;
+using LKvitai.MES.BuildingBlocks.SharedKernel;
 
 namespace LKvitai.MES.Modules.Warehouse.Application.Orchestration;
 

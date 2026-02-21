@@ -1,5 +1,5 @@
 using LKvitai.MES.Modules.Warehouse.Domain.Common;
-using LKvitai.MES.SharedKernel;
+using LKvitai.MES.BuildingBlocks.SharedKernel;
 
 namespace LKvitai.MES.Modules.Warehouse.Domain.Entities;
 

@@ -2,7 +2,7 @@ using FluentAssertions;
 using LKvitai.MES.Modules.Warehouse.Application.Orchestration;
 using LKvitai.MES.Contracts.Messages;
 using LKvitai.MES.Modules.Warehouse.Sagas;
-using LKvitai.MES.SharedKernel;
+using LKvitai.MES.BuildingBlocks.SharedKernel;
 using MassTransit;
 using Microsoft.Extensions.Logging;
 using Moq;

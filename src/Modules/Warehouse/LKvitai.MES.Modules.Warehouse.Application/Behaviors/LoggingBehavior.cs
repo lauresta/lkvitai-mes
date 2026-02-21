@@ -1,4 +1,4 @@
-using LKvitai.MES.SharedKernel;
+using LKvitai.MES.BuildingBlocks.SharedKernel;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;

@@ -2,7 +2,7 @@ using System.Security.Claims;
 using System.Text.Encodings.Web;
 using LKvitai.MES.Modules.Warehouse.Api.ErrorHandling;
 using LKvitai.MES.Modules.Warehouse.Api.Services;
-using LKvitai.MES.SharedKernel;
+using LKvitai.MES.BuildingBlocks.SharedKernel;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
 

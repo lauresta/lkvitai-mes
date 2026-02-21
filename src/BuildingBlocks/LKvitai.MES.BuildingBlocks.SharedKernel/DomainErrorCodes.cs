@@ -1,4 +1,4 @@
-namespace LKvitai.MES.SharedKernel;
+namespace LKvitai.MES.BuildingBlocks.SharedKernel;
 
 /// <summary>
 /// Stable, machine-readable error codes returned to callers.

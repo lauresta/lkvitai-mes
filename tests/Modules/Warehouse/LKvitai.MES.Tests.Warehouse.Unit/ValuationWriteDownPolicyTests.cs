@@ -1,7 +1,7 @@
 using FluentAssertions;
 using LKvitai.MES.Modules.Warehouse.Api.Services;
 using LKvitai.MES.Modules.Warehouse.Application.Commands;
-using LKvitai.MES.SharedKernel;
+using LKvitai.MES.BuildingBlocks.SharedKernel;
 using Xunit;
 
 namespace LKvitai.MES.Tests.Warehouse.Unit;

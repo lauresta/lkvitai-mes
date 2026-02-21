@@ -1,4 +1,4 @@
-using LKvitai.MES.SharedKernel;
+using LKvitai.MES.BuildingBlocks.SharedKernel;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LKvitai.MES.Modules.Warehouse.Api.ErrorHandling;

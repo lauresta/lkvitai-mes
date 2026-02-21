@@ -1,5 +1,5 @@
 using LKvitai.MES.Modules.Warehouse.Application.Projections;
-using LKvitai.MES.SharedKernel;
+using LKvitai.MES.BuildingBlocks.SharedKernel;
 using MediatR;
 
 namespace LKvitai.MES.Modules.Warehouse.Application.Commands;

@@ -9,7 +9,7 @@ using LKvitai.MES.Modules.Warehouse.Domain.Aggregates;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Caching;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
-using LKvitai.MES.SharedKernel;
+using LKvitai.MES.BuildingBlocks.SharedKernel;
 using Marten;
 using Marten.Events;
 using MediatR;

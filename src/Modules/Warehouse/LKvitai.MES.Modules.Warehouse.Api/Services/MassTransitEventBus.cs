@@ -1,6 +1,6 @@
 using LKvitai.MES.Modules.Warehouse.Application.Ports;
 using LKvitai.MES.Modules.Warehouse.Application.EventVersioning;
-using LKvitai.MES.SharedKernel;
+using LKvitai.MES.BuildingBlocks.SharedKernel;
 using LKvitai.MES.Modules.Warehouse.Api.ErrorHandling;
 using MassTransit;
 using System.Diagnostics;

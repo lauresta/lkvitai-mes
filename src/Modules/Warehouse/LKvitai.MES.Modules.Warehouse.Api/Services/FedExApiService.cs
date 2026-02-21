@@ -1,5 +1,5 @@
 using LKvitai.MES.Modules.Warehouse.Integration.Carrier;
-using LKvitai.MES.SharedKernel;
+using LKvitai.MES.BuildingBlocks.SharedKernel;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;

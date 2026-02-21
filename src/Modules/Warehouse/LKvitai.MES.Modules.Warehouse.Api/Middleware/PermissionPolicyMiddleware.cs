@@ -1,7 +1,7 @@
 using System.Security.Claims;
 using LKvitai.MES.Modules.Warehouse.Api.ErrorHandling;
 using LKvitai.MES.Modules.Warehouse.Api.Services;
-using LKvitai.MES.SharedKernel;
+using LKvitai.MES.BuildingBlocks.SharedKernel;
 
 namespace LKvitai.MES.Modules.Warehouse.Api.Middleware;
 

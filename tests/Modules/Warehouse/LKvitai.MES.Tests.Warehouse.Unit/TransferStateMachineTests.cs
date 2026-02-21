@@ -1,6 +1,6 @@
 using FluentAssertions;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
-using LKvitai.MES.SharedKernel;
+using LKvitai.MES.BuildingBlocks.SharedKernel;
 using Xunit;
 
 namespace LKvitai.MES.Tests.Warehouse.Unit;

@@ -2,7 +2,7 @@ using System.Text.Json;
 using FluentAssertions;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Modules.Warehouse.Domain.Aggregates;
-using LKvitai.MES.SharedKernel;
+using LKvitai.MES.BuildingBlocks.SharedKernel;
 using Xunit;
 
 namespace LKvitai.MES.Tests.Warehouse.Unit;
