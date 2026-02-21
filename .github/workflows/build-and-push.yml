@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - main
+    paths:
+      - src/Modules/Warehouse/**
+      - src/BuildingBlocks/**
+      - .github/workflows/build-and-push.yml
   workflow_dispatch:
 
 permissions:
