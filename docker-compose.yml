@@ -24,7 +24,7 @@ services:
   api-1:
     build:
       context: .
-      dockerfile: src/LKvitai.MES.Api/Dockerfile
+      dockerfile: src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Api/Dockerfile
     container_name: lkvitai-api-1
     restart: unless-stopped
     environment:
@@ -45,7 +45,7 @@ services:
   api-2:
     build:
       context: .
-      dockerfile: src/LKvitai.MES.Api/Dockerfile
+      dockerfile: src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Api/Dockerfile
     container_name: lkvitai-api-2
     restart: unless-stopped
     environment:
@@ -66,7 +66,7 @@ services:
   api-3:
     build:
       context: .
-      dockerfile: src/LKvitai.MES.Api/Dockerfile
+      dockerfile: src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Api/Dockerfile
     container_name: lkvitai-api-3
     restart: unless-stopped
     environment:
