@@ -36,8 +36,8 @@ src/
         │   └── LKvitai.MES.Modules.Warehouse.Projections.csproj
         ├── LKvitai.MES.Modules.Warehouse.Sagas/
         │   └── LKvitai.MES.Modules.Warehouse.Sagas.csproj
-        └── LKvitai.MES.WebUI/
-            ├── LKvitai.MES.WebUI.csproj
+        └── LKvitai.MES.Modules.Warehouse.WebUI/
+            ├── LKvitai.MES.Modules.Warehouse.WebUI.csproj
             └── Dockerfile
 ```
 
@@ -74,7 +74,7 @@ graph TD
     PRJ[Modules.Warehouse.Projections]
     SAG[Modules.Warehouse.Sagas]
     API[Modules.Warehouse.Api]
-    WEB[WebUI]
+    WEB[Modules.Warehouse.WebUI]
 
     SK --> CQRS
     C --> SK
