@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\\BuildingBlocks\\LKvitai.MES.BuildingBlocks.Cqrs.Abstractions\\LKvitai.MES.BuildingBlocks.Cqrs.Abstractions.csproj" />
+    <ProjectReference Include="..\\LKvitai.MES.BuildingBlocks.Cqrs.Abstractions\\LKvitai.MES.BuildingBlocks.Cqrs.Abstractions.csproj" />
   </ItemGroup>
 
 </Project>

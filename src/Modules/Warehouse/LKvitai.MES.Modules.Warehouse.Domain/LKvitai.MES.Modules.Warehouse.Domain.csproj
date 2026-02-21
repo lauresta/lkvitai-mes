@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\LKvitai.MES.SharedKernel\LKvitai.MES.SharedKernel.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\LKvitai.MES.BuildingBlocks.SharedKernel\LKvitai.MES.SharedKernel.csproj" />
     <ProjectReference Include="..\LKvitai.MES.Modules.Warehouse.Contracts\LKvitai.MES.Modules.Warehouse.Contracts.csproj" />
   </ItemGroup>
 
