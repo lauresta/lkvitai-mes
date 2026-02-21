@@ -2,6 +2,7 @@ using Marten;
 using Marten.Events.Projections;
 using Marten.Events.Daemon.Resiliency;
 using System.Reflection;
+using System.Text;
 using Npgsql;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -115,16 +116,16 @@ public static class MartenConfiguration
 
     private static void RegisterMartenDocumentAliases(StoreOptions options)
     {
-        RegisterDocumentAlias<Valuation>(options, "LKvitai.MES.Modules.Warehouse.Domain.Aggregates", "LKvitai.MES.Modules.Warehouse.Domain");
-        RegisterDocumentAlias<ItemValuation>(options, "LKvitai.MES.Modules.Warehouse.Domain.Aggregates", "LKvitai.MES.Modules.Warehouse.Domain");
-        RegisterDocumentAlias<ActiveHardLockView>(options, "LKvitai.MES.Contracts.ReadModels", "LKvitai.MES.Contracts");
-        RegisterDocumentAlias<LocationBalanceView>(options, "LKvitai.MES.Contracts.ReadModels", "LKvitai.MES.Contracts");
-        RegisterDocumentAlias<AvailableStockView>(options, "LKvitai.MES.Contracts.ReadModels", "LKvitai.MES.Contracts");
-        RegisterDocumentAlias<HandlingUnitView>(options, "LKvitai.MES.Contracts.ReadModels", "LKvitai.MES.Contracts");
-        RegisterDocumentAlias<ReservationSummaryView>(options, "LKvitai.MES.Contracts.ReadModels", "LKvitai.MES.Contracts");
-        RegisterDocumentAlias<ActiveReservationView>(options, "LKvitai.MES.Contracts.ReadModels", "LKvitai.MES.Contracts");
-        RegisterDocumentAlias<InboundShipmentSummaryView>(options, "LKvitai.MES.Contracts.ReadModels", "LKvitai.MES.Contracts");
-        RegisterDocumentAlias<AdjustmentHistoryView>(options, "LKvitai.MES.Contracts.ReadModels", "LKvitai.MES.Contracts");
+        RegisterDocumentAlias<Valuation>(options);
+        RegisterDocumentAlias<ItemValuation>(options);
+        RegisterDocumentAlias<ActiveHardLockView>(options);
+        RegisterDocumentAlias<LocationBalanceView>(options);
+        RegisterDocumentAlias<AvailableStockView>(options);
+        RegisterDocumentAlias<HandlingUnitView>(options);
+        RegisterDocumentAlias<ReservationSummaryView>(options);
+        RegisterDocumentAlias<ActiveReservationView>(options);
+        RegisterDocumentAlias<InboundShipmentSummaryView>(options);
+        RegisterDocumentAlias<AdjustmentHistoryView>(options);
 
         RegisterDocumentAliasByTypeName(options, "LKvitai.MES.Modules.Warehouse.Sagas.PickStockSagaState, LKvitai.MES.Modules.Warehouse.Sagas");
         RegisterDocumentAliasByTypeName(options, "LKvitai.MES.Modules.Warehouse.Sagas.ReceiveGoodsSagaState, LKvitai.MES.Modules.Warehouse.Sagas");
@@ -139,14 +140,10 @@ public static class MartenConfiguration
         options.Events.AddEventType<TEvent>();
     }
 
-    private static void RegisterDocumentAlias<TDocument>(
-        StoreOptions options,
-        string oldNamespace,
-        string oldAssembly)
+    private static void RegisterDocumentAlias<TDocument>(StoreOptions options)
         where TDocument : class
     {
-        var oldQualifiedName = $"{oldNamespace}.{typeof(TDocument).Name}, {oldAssembly}";
-        options.Schema.For<TDocument>().DocumentAlias(oldQualifiedName);
+        options.Schema.For<TDocument>().DocumentAlias(ToSnakeCase(typeof(TDocument).Name));
     }
 
     private static void RegisterDocumentAliasByTypeName(StoreOptions options, string oldQualifiedName)
@@ -166,7 +163,36 @@ public static class MartenConfiguration
     private static void RegisterDocumentAliasForResolvedType<TDocument>(StoreOptions options, string oldQualifiedName)
         where TDocument : class
     {
-        options.Schema.For<TDocument>().DocumentAlias(oldQualifiedName);
+        options.Schema.For<TDocument>().DocumentAlias(ToSnakeCase(typeof(TDocument).Name));
+    }
+
+    private static string ToSnakeCase(string typeName)
+    {
+        if (string.IsNullOrWhiteSpace(typeName))
+        {
+            return typeName;
+        }
+
+        var builder = new StringBuilder(typeName.Length + 8);
+        for (var i = 0; i < typeName.Length; i++)
+        {
+            var ch = typeName[i];
+            if (char.IsUpper(ch))
+            {
+                if (i > 0)
+                {
+                    builder.Append('_');
+                }
+
+                builder.Append(char.ToLowerInvariant(ch));
+            }
+            else
+            {
+                builder.Append(ch);
+            }
+        }
+
+        return builder.ToString();
     }
     
     /// <summary>
