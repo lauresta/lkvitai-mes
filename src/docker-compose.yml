@@ -18,9 +18,11 @@ services:
       timeout: 5s
       retries: 5
 
+  # DEV ONLY: RabbitMQ for local development. Production uses external broker.
   rabbitmq:
     image: rabbitmq:3-management
     container_name: warehouse-rabbitmq
+    profiles: ["dev-broker"]
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest

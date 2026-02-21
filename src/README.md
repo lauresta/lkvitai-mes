@@ -51,6 +51,12 @@ docker run --name warehouse-postgres \
   -d postgres:15
 ```
 
+For local broker-dependent scenarios, include RabbitMQ from dev compose:
+
+```bash
+docker compose -f src/docker-compose.yml --profile dev-broker up -d
+```
+
 ### 2. Build Solution
 
 ```bash
