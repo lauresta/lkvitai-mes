@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - src/Modules/Warehouse/**
+      - src/BuildingBlocks/**
       - tests/Modules/Warehouse/**
 
 permissions:
