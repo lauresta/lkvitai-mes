@@ -16,7 +16,7 @@ COPY src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Sagas/LKvitai.MES.Modul
 COPY src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Integration/LKvitai.MES.Modules.Warehouse.Integration.csproj Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Integration/
 COPY src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Domain/LKvitai.MES.Modules.Warehouse.Domain.csproj Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Domain/
 COPY src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Contracts/LKvitai.MES.Modules.Warehouse.Contracts.csproj Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Contracts/
-COPY src/LKvitai.MES.SharedKernel/LKvitai.MES.SharedKernel.csproj LKvitai.MES.SharedKernel/
+COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.SharedKernel/LKvitai.MES.BuildingBlocks.SharedKernel.csproj BuildingBlocks/LKvitai.MES.BuildingBlocks.SharedKernel/
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.Cqrs.Abstractions/LKvitai.MES.BuildingBlocks.Cqrs.Abstractions.csproj BuildingBlocks/LKvitai.MES.BuildingBlocks.Cqrs.Abstractions/
 
 # Restore dependencies
@@ -31,7 +31,7 @@ COPY src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Sagas/ Modules/Warehous
 COPY src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Integration/ Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Integration/
 COPY src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Domain/ Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Domain/
 COPY src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Contracts/ Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Contracts/
-COPY src/LKvitai.MES.SharedKernel/ LKvitai.MES.SharedKernel/
+COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.SharedKernel/ BuildingBlocks/LKvitai.MES.BuildingBlocks.SharedKernel/
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.Cqrs.Abstractions/ BuildingBlocks/LKvitai.MES.BuildingBlocks.Cqrs.Abstractions/
 
 # Build and publish
