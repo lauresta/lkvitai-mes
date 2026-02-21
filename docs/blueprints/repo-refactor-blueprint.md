@@ -1347,7 +1347,7 @@ LKvitai.MES/
   - Verify service names match Dockerfile locations
 - **Commands:**
   ```bash
-  docker-compose -f src/docker-compose.yml config
+  docker compose -f src/docker-compose.yml config
   ```
 - **DoD:** Compose file validates
 - **Rollback:** Revert compose files
@@ -1363,7 +1363,7 @@ LKvitai.MES/
   - Update README with instructions: use `--profile dev-broker` to include RabbitMQ, or connect to external broker
 - **Commands:**
   ```bash
-  docker-compose -f src/docker-compose.yml config
+  docker compose -f src/docker-compose.yml config
   ```
 - **DoD:** Compose file validates, RabbitMQ marked as optional dev-only service
 - **Rollback:** Revert compose file
