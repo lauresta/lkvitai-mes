@@ -19,5 +19,8 @@ jobs:
       - name: Dependency baseline validator
         run: dotnet run --project tools/DependencyValidator/DependencyValidator.csproj
 
+      - name: BuildingBlocks isolation script
+        run: ./scripts/validate-module-dependencies.sh
+
       - name: Architecture tests
         run: dotnet test tests/ArchitectureTests/LKvitai.MES.ArchitectureTests/LKvitai.MES.ArchitectureTests.csproj
