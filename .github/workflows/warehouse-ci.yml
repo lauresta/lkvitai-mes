@@ -1,0 +1,37 @@
+name: Warehouse CI
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - src/Modules/Warehouse/**
+      - tests/Modules/Warehouse/**
+
+permissions:
+  contents: read
+
+jobs:
+  warehouse-build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore src/LKvitai.MES.sln
+
+      - name: Build
+        run: dotnet build src/LKvitai.MES.sln -c Release --no-restore
+
+      - name: Unit tests
+        run: dotnet test tests/Modules/Warehouse/LKvitai.MES.Tests.Warehouse.Unit/LKvitai.MES.Tests.Warehouse.Unit.csproj -c Release --no-build
+
+      - name: Integration tests
+        run: dotnet test tests/Modules/Warehouse/LKvitai.MES.Tests.Warehouse.Integration/LKvitai.MES.Tests.Warehouse.Integration.csproj -c Release --no-build
