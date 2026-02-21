@@ -6,16 +6,16 @@ WORKDIR /src
 COPY src/LKvitai.MES.sln .
 
 # Copy all project files for restore (optimize layer caching)
-COPY src/Modules/Warehouse/LKvitai.MES.WebUI/LKvitai.MES.WebUI.csproj Modules/Warehouse/LKvitai.MES.WebUI/
+COPY src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.WebUI/LKvitai.MES.Modules.Warehouse.WebUI.csproj Modules/Warehouse/LKvitai.MES.Modules.Warehouse.WebUI/
 
 # Restore dependencies
-RUN dotnet restore Modules/Warehouse/LKvitai.MES.WebUI/LKvitai.MES.WebUI.csproj
+RUN dotnet restore Modules/Warehouse/LKvitai.MES.Modules.Warehouse.WebUI/LKvitai.MES.Modules.Warehouse.WebUI.csproj
 
 # Copy source code
-COPY src/Modules/Warehouse/LKvitai.MES.WebUI/ Modules/Warehouse/LKvitai.MES.WebUI/
+COPY src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.WebUI/ Modules/Warehouse/LKvitai.MES.Modules.Warehouse.WebUI/
 
 # Build and publish
-WORKDIR /src/Modules/Warehouse/LKvitai.MES.WebUI
+WORKDIR /src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.WebUI
 RUN dotnet publish -c Release -o /app/publish /p:UseAppHost=false --no-restore
 
 # Runtime stage
@@ -41,4 +41,4 @@ EXPOSE 8080
 ENV ASPNETCORE_URLS=http://+:8080
 ENV ASPNETCORE_ENVIRONMENT=Production
 
-ENTRYPOINT ["dotnet", "LKvitai.MES.WebUI.dll"]
+ENTRYPOINT ["dotnet", "LKvitai.MES.Modules.Warehouse.WebUI.dll"]
