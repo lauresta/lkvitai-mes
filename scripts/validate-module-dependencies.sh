@@ -9,7 +9,11 @@ if [[ ! -d "$BUILDING_BLOCKS_DIR" ]]; then
   exit 1
 fi
 
-violations="$(rg -n --glob '*.csproj' 'ProjectReference Include=.*Modules[\\/]' "$BUILDING_BLOCKS_DIR" || true)"
+if command -v rg >/dev/null 2>&1; then
+  violations="$(rg -n --glob '*.csproj' 'ProjectReference Include=.*Modules[\\/]' "$BUILDING_BLOCKS_DIR" || true)"
+else
+  violations="$(grep -RIn --include='*.csproj' -E 'ProjectReference Include=.*Modules[\\/]' "$BUILDING_BLOCKS_DIR" || true)"
+fi
 
 if [[ -n "$violations" ]]; then
   echo "BuildingBlocks must not reference Modules. Violations:"
