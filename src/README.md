@@ -18,19 +18,25 @@ This solution implements a **modular monolith** architecture with:
 
 ```
 LKvitai.MES.sln
-├── LKvitai.MES.Api              # ASP.NET Core Web API
-├── LKvitai.MES.Application      # Command handlers, behaviors
-├── LKvitai.MES.Domain           # Aggregates, domain logic
-├── LKvitai.MES.Infrastructure   # Marten, EF Core, outbox
-├── LKvitai.MES.Projections      # Read models
-├── LKvitai.MES.Sagas            # MassTransit sagas
-├── LKvitai.MES.Integration      # External system adapters
-├── LKvitai.MES.Contracts        # Events, DTOs
-├── LKvitai.MES.SharedKernel     # Common abstractions
-└── tests/
-    ├── LKvitai.MES.Tests.Unit
-    ├── LKvitai.MES.Tests.Property
-    └── LKvitai.MES.Tests.Integration
+├── src/
+│   ├── BuildingBlocks/
+│   │   ├── LKvitai.MES.BuildingBlocks.Cqrs.Abstractions
+│   │   └── LKvitai.MES.BuildingBlocks.SharedKernel
+│   └── Modules/Warehouse/
+│       ├── LKvitai.MES.Modules.Warehouse.Api
+│       ├── LKvitai.MES.Modules.Warehouse.Application
+│       ├── LKvitai.MES.Modules.Warehouse.Contracts
+│       ├── LKvitai.MES.Modules.Warehouse.Domain
+│       ├── LKvitai.MES.Modules.Warehouse.Infrastructure
+│       ├── LKvitai.MES.Modules.Warehouse.Integration
+│       ├── LKvitai.MES.Modules.Warehouse.Projections
+│       ├── LKvitai.MES.Modules.Warehouse.Sagas
+│       └── LKvitai.MES.WebUI
+└── tests/Modules/Warehouse/
+    ├── LKvitai.MES.Tests.Warehouse.Unit
+    ├── LKvitai.MES.Tests.Warehouse.Property
+    ├── LKvitai.MES.Tests.Warehouse.Integration
+    └── LKvitai.MES.Tests.Warehouse.E2E
 ```
 
 ## Prerequisites
@@ -51,19 +57,23 @@ docker run --name warehouse-postgres \
   -d postgres:15
 ```
 
+For local broker-dependent scenarios, include RabbitMQ from dev compose:
+
+```bash
+docker compose -f src/docker-compose.yml --profile dev-broker up -d
+```
+
 ### 2. Build Solution
 
 ```bash
-cd src
-dotnet restore
-dotnet build
+dotnet restore LKvitai.MES.sln
+dotnet build LKvitai.MES.sln -c Release
 ```
 
 ### 3. Run API
 
 ```bash
-cd LKvitai.MES.Api
-dotnet run
+dotnet run --project Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Api/LKvitai.MES.Modules.Warehouse.Api.csproj
 ```
 
 API will be available at: `https://localhost:5001`
@@ -77,13 +87,13 @@ Swagger UI: `https://localhost:5001/swagger`
 dotnet test LKvitai.MES.sln
 
 # Unit tests only
-dotnet test tests/LKvitai.MES.Tests.Unit
+dotnet test ../tests/Modules/Warehouse/LKvitai.MES.Tests.Warehouse.Unit/LKvitai.MES.Tests.Warehouse.Unit.csproj
 
 # Property-based tests only
-dotnet test tests/LKvitai.MES.Tests.Property
+dotnet test ../tests/Modules/Warehouse/LKvitai.MES.Tests.Warehouse.Property/LKvitai.MES.Tests.Warehouse.Property.csproj
 
 # Integration tests (requires Docker — uses Testcontainers)
-TESTCONTAINERS_ENABLED=1 dotnet test tests/LKvitai.MES.Tests.Integration
+TESTCONTAINERS_ENABLED=1 dotnet test ../tests/Modules/Warehouse/LKvitai.MES.Tests.Warehouse.Integration/LKvitai.MES.Tests.Warehouse.Integration.csproj
 ```
 
 > **Note:** Integration tests use [Testcontainers](https://dotnet.testcontainers.org/) to
@@ -125,6 +135,7 @@ This is a **skeleton/scaffold** with infrastructure baseline. Business logic to 
 
 ## Documentation
 
+- Refactor blueprint: `../docs/blueprints/repo-refactor-blueprint.md`
 - Requirements: `.kiro/specs/warehouse-core-phase1/requirements.md`
 - Design: `.kiro/specs/warehouse-core-phase1/design.md`
 - Implementation Blueprint: `.kiro/specs/warehouse-core-phase1/implementation-blueprint.md`

@@ -1,0 +1,192 @@
+@page "/warehouse/putaway"
+@using LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure
+@using LKvitai.MES.Modules.Warehouse.WebUI.Models
+@inject PutawayClient PutawayClient
+@inject MasterDataAdminClient MasterDataAdminClient
+@inject ToastService ToastService
+
+<PageTitle>Putaway</PageTitle>
+
+<h1>Putaway Tasks</h1>
+
+@if (_apiError is not null)
+{
+    <ErrorBanner Message="@BuildErrorMessage(_apiError)" TraceId="@_apiError.TraceId" OnRetry="LoadAsync" OnDismiss="DismissError" />
+}
+
+<div class="card shadow-sm position-relative">
+    <LoadingSpinner IsLoading="_isLoading || _isSubmitting" />
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h5 class="mb-0">Tasks from RECEIVING</h5>
+            <button class="btn btn-outline-secondary btn-sm" @onclick="LoadAsync">Refresh</button>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>SKU</th>
+                        <th>Item</th>
+                        <th class="text-end">Qty</th>
+                        <th>From</th>
+                        <th>To Location</th>
+                        <th>Notes</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (_tasks.Count == 0)
+                    {
+                        <tr><td colspan="7">No putaway tasks available.</td></tr>
+                    }
+                    else
+                    {
+                        @foreach (var task in _tasks)
+                        {
+                            <tr>
+                                <td>@task.InternalSKU</td>
+                                <td>@task.ItemName</td>
+                                <td class="text-end">@task.Qty</td>
+                                <td>@task.FromLocationCode</td>
+                                <td>
+                                    <select class="form-select form-select-sm" @bind="task.ToLocationId">
+                                        <option value="0">Select destination</option>
+                                        @foreach (var loc in _toLocations)
+                                        {
+                                            <option value="@loc.Id">@loc.Code</option>
+                                        }
+                                    </select>
+                                </td>
+                                <td>
+                                    <input class="form-control form-control-sm" @bind="task.Notes" />
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary" @onclick="() => ExecuteAsync(task)" disabled="@(task.ToLocationId <= 0 || _fromReceivingLocationId <= 0)">Putaway</button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(_lastWarning))
+        {
+            <div class="alert alert-warning mt-2 mb-0">@_lastWarning</div>
+        }
+    </div>
+</div>
+
+@code {
+    private readonly List<PutawayTaskRow> _tasks = [];
+    private readonly List<AdminLocationDto> _toLocations = [];
+
+    private ApiException? _apiError;
+    private bool _isLoading;
+    private bool _isSubmitting;
+    private int _fromReceivingLocationId;
+    private string? _lastWarning;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadLookupsAsync();
+        await LoadAsync();
+    }
+
+    private async Task LoadLookupsAsync()
+    {
+        try
+        {
+            var locations = await MasterDataAdminClient.GetLocationsAsync(null, "Active", true, 1, 500);
+            var rows = locations.Items.OrderBy(x => x.Code, StringComparer.OrdinalIgnoreCase).ToList();
+            _fromReceivingLocationId = rows.FirstOrDefault(x => string.Equals(x.Code, "RECEIVING", StringComparison.OrdinalIgnoreCase))?.Id ?? 0;
+
+            _toLocations.Clear();
+            _toLocations.AddRange(rows.Where(x => !string.Equals(x.Code, "RECEIVING", StringComparison.OrdinalIgnoreCase)));
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            var response = await PutawayClient.GetTasksAsync(1, 200);
+            _tasks.Clear();
+            _tasks.AddRange(response.Items.Select(x => new PutawayTaskRow
+            {
+                ItemId = x.ItemId,
+                InternalSKU = x.InternalSKU,
+                ItemName = x.ItemName,
+                Qty = x.Qty,
+                FromLocationCode = x.FromLocationCode
+            }));
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task ExecuteAsync(PutawayTaskRow row)
+    {
+        _isSubmitting = true;
+        _lastWarning = null;
+
+        try
+        {
+            var response = await PutawayClient.PutawayAsync(new PutawayRequestDto(
+                row.ItemId,
+                row.Qty,
+                _fromReceivingLocationId,
+                row.ToLocationId,
+                null,
+                string.IsNullOrWhiteSpace(row.Notes) ? null : row.Notes.Trim()));
+
+            _lastWarning = response.Warning;
+            ToastService.ShowSuccess($"Putaway completed for {row.InternalSKU} to {response.ToLocationCode}.");
+            await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private void DismissError() => _apiError = null;
+
+    private static string BuildErrorMessage(ApiException ex)
+        => ex.UserMessage
+           ?? ex.ProblemDetails?.Detail
+           ?? ex.ProblemDetails?.Title
+           ?? "Putaway request failed.";
+
+    private sealed class PutawayTaskRow
+    {
+        public int ItemId { get; init; }
+        public string InternalSKU { get; init; } = string.Empty;
+        public string ItemName { get; init; } = string.Empty;
+        public decimal Qty { get; init; }
+        public string FromLocationCode { get; init; } = string.Empty;
+        public int ToLocationId { get; set; }
+        public string? Notes { get; set; }
+    }
+}

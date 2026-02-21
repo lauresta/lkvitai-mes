@@ -1,0 +1,85 @@
+$ dotnet restore src/LKvitai.MES.sln -p:RestoreForce=true -p:RestoreIgnoreFailedSources=false
+  Determining projects to restore...
+  Restored /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Application/LKvitai.MES.Application.csproj (in 274 ms).
+  Restored /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Integration/LKvitai.MES.Integration.csproj (in 274 ms).
+  Restored /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/BuildingBlocks/LKvitai.MES.BuildingBlocks.Cqrs.Abstractions/LKvitai.MES.BuildingBlocks.Cqrs.Abstractions.csproj (in 274 ms).
+  Restored /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/LKvitai.MES.SharedKernel/LKvitai.MES.SharedKernel.csproj (in 274 ms).
+  Restored /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Contracts/LKvitai.MES.Contracts.csproj (in 1 ms).
+  Restored /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.WebUI/LKvitai.MES.WebUI.csproj (in 5 ms).
+  Restored /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/tests/LKvitai.MES.Tests.E2E/LKvitai.MES.Tests.E2E.csproj (in 13 ms).
+  Restored /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/tests/LKvitai.MES.Tests.Property/LKvitai.MES.Tests.Property.csproj (in 308 ms).
+  Restored /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Projections/LKvitai.MES.Projections.csproj (in 307 ms).
+  Restored /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/tests/ArchitectureTests/LKvitai.MES.ArchitectureTests/LKvitai.MES.ArchitectureTests.csproj (in 22 ms).
+  Restored /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Domain/LKvitai.MES.Domain.csproj (in 8 ms).
+  Restored /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Sagas/LKvitai.MES.Sagas.csproj (in 321 ms).
+  Restored /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Infrastructure/LKvitai.MES.Infrastructure.csproj (in 329 ms).
+  Restored /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Api/LKvitai.MES.Api.csproj (in 49 ms).
+  Restored /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/tests/LKvitai.MES.Tests.Unit/LKvitai.MES.Tests.Unit.csproj (in 344 ms).
+  Restored /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/tests/LKvitai.MES.Tests.Integration/LKvitai.MES.Tests.Integration.csproj (in 344 ms).
+
+$ dotnet build src/LKvitai.MES.sln -c Release
+MSBuild version 17.10.0-preview-24101-01+07fd5d51f for .NET
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+/usr/local/share/dotnet/sdk/9.0.100-preview.1.24101.2/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.RuntimeIdentifierInference.targets(313,5): message NETSDK1057: You are using a preview version of .NET. See: https://aka.ms/dotnet-support-policy [/Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Projections/LKvitai.MES.Projections.csproj]
+/usr/local/share/dotnet/sdk/9.0.100-preview.1.24101.2/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.RuntimeIdentifierInference.targets(313,5): message NETSDK1057: You are using a preview version of .NET. See: https://aka.ms/dotnet-support-policy [/Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Integration/LKvitai.MES.Integration.csproj]
+/usr/local/share/dotnet/sdk/9.0.100-preview.1.24101.2/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.RuntimeIdentifierInference.targets(313,5): message NETSDK1057: You are using a preview version of .NET. See: https://aka.ms/dotnet-support-policy [/Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Application/LKvitai.MES.Application.csproj]
+/usr/local/share/dotnet/sdk/9.0.100-preview.1.24101.2/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.RuntimeIdentifierInference.targets(313,5): message NETSDK1057: You are using a preview version of .NET. See: https://aka.ms/dotnet-support-policy [/Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/LKvitai.MES.SharedKernel/LKvitai.MES.SharedKernel.csproj]
+/usr/local/share/dotnet/sdk/9.0.100-preview.1.24101.2/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.RuntimeIdentifierInference.targets(313,5): message NETSDK1057: You are using a preview version of .NET. See: https://aka.ms/dotnet-support-policy [/Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Sagas/LKvitai.MES.Sagas.csproj]
+/usr/local/share/dotnet/sdk/9.0.100-preview.1.24101.2/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.RuntimeIdentifierInference.targets(313,5): message NETSDK1057: You are using a preview version of .NET. See: https://aka.ms/dotnet-support-policy [/Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Contracts/LKvitai.MES.Contracts.csproj]
+/usr/local/share/dotnet/sdk/9.0.100-preview.1.24101.2/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.RuntimeIdentifierInference.targets(313,5): message NETSDK1057: You are using a preview version of .NET. See: https://aka.ms/dotnet-support-policy [/Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Infrastructure/LKvitai.MES.Infrastructure.csproj]
+/usr/local/share/dotnet/sdk/9.0.100-preview.1.24101.2/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.RuntimeIdentifierInference.targets(313,5): message NETSDK1057: You are using a preview version of .NET. See: https://aka.ms/dotnet-support-policy [/Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Domain/LKvitai.MES.Domain.csproj]
+/usr/local/share/dotnet/sdk/9.0.100-preview.1.24101.2/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.RuntimeIdentifierInference.targets(313,5): message NETSDK1057: You are using a preview version of .NET. See: https://aka.ms/dotnet-support-policy [/Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/tests/LKvitai.MES.Tests.Unit/LKvitai.MES.Tests.Unit.csproj]
+/usr/local/share/dotnet/sdk/9.0.100-preview.1.24101.2/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.RuntimeIdentifierInference.targets(313,5): message NETSDK1057: You are using a preview version of .NET. See: https://aka.ms/dotnet-support-policy [/Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Api/LKvitai.MES.Api.csproj]
+  LKvitai.MES.Contracts -> /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Contracts/bin/Release/net8.0/LKvitai.MES.Contracts.dll
+  LKvitai.MES.BuildingBlocks.Cqrs.Abstractions -> /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/BuildingBlocks/LKvitai.MES.BuildingBlocks.Cqrs.Abstractions/bin/Release/net8.0/LKvitai.MES.BuildingBlocks.Cqrs.Abstractions.dll
+  LKvitai.MES.ArchitectureTests -> /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/tests/ArchitectureTests/LKvitai.MES.ArchitectureTests/bin/Release/net8.0/LKvitai.MES.ArchitectureTests.dll
+  LKvitai.MES.Tests.E2E -> /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/tests/LKvitai.MES.Tests.E2E/bin/Release/net8.0/LKvitai.MES.Tests.E2E.dll
+  LKvitai.MES.WebUI -> /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.WebUI/bin/Release/net8.0/LKvitai.MES.WebUI.dll
+  LKvitai.MES.SharedKernel -> /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/LKvitai.MES.SharedKernel/bin/Release/net8.0/LKvitai.MES.SharedKernel.dll
+  LKvitai.MES.Domain -> /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Domain/bin/Release/net8.0/LKvitai.MES.Domain.dll
+  LKvitai.MES.Integration -> /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Integration/bin/Release/net8.0/LKvitai.MES.Integration.dll
+  LKvitai.MES.Application -> /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Application/bin/Release/net8.0/LKvitai.MES.Application.dll
+  LKvitai.MES.Sagas -> /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Sagas/bin/Release/net8.0/LKvitai.MES.Sagas.dll
+  LKvitai.MES.Projections -> /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Projections/bin/Release/net8.0/LKvitai.MES.Projections.dll
+  LKvitai.MES.Tests.Property -> /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/tests/LKvitai.MES.Tests.Property/bin/Release/net8.0/LKvitai.MES.Tests.Property.dll
+  LKvitai.MES.Infrastructure -> /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Infrastructure/bin/Release/net8.0/LKvitai.MES.Infrastructure.dll
+  LKvitai.MES.Api -> /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Api/bin/Release/net8.0/LKvitai.MES.Api.dll
+  LKvitai.MES.Tests.Integration -> /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/tests/LKvitai.MES.Tests.Integration/bin/Release/net8.0/LKvitai.MES.Tests.Integration.dll
+  LKvitai.MES.Tests.Unit -> /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/tests/LKvitai.MES.Tests.Unit/bin/Release/net8.0/LKvitai.MES.Tests.Unit.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:03.48
+
+$ dotnet test src/LKvitai.MES.sln -c Release
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+/usr/local/share/dotnet/sdk/9.0.100-preview.1.24101.2/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.RuntimeIdentifierInference.targets(313,5): message NETSDK1057: You are using a preview version of .NET. See: https://aka.ms/dotnet-support-policy [/Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/tests/LKvitai.MES.Tests.Unit/LKvitai.MES.Tests.Unit.csproj]
+/usr/local/share/dotnet/sdk/9.0.100-preview.1.24101.2/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.RuntimeIdentifierInference.targets(313,5): message NETSDK1057: You are using a preview version of .NET. See: https://aka.ms/dotnet-support-policy [/Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/tests/LKvitai.MES.Tests.Integration/LKvitai.MES.Tests.Integration.csproj]
+/usr/local/share/dotnet/sdk/9.0.100-preview.1.24101.2/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.RuntimeIdentifierInference.targets(313,5): message NETSDK1057: You are using a preview version of .NET. See: https://aka.ms/dotnet-support-policy [/Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/tests/LKvitai.MES.Tests.Property/LKvitai.MES.Tests.Property.csproj]
+/usr/local/share/dotnet/sdk/9.0.100-preview.1.24101.2/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.RuntimeIdentifierInference.targets(313,5): message NETSDK1057: You are using a preview version of .NET. See: https://aka.ms/dotnet-support-policy [/Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/tests/ArchitectureTests/LKvitai.MES.ArchitectureTests/LKvitai.MES.ArchitectureTests.csproj]
+/usr/local/share/dotnet/sdk/9.0.100-preview.1.24101.2/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.RuntimeIdentifierInference.targets(313,5): message NETSDK1057: You are using a preview version of .NET. See: https://aka.ms/dotnet-support-policy [/Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/tests/LKvitai.MES.Tests.E2E/LKvitai.MES.Tests.E2E.csproj]
+  LKvitai.MES.Tests.E2E -> /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/tests/LKvitai.MES.Tests.E2E/bin/Release/net8.0/LKvitai.MES.Tests.E2E.dll
+  LKvitai.MES.ArchitectureTests -> /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/tests/ArchitectureTests/LKvitai.MES.ArchitectureTests/bin/Release/net8.0/LKvitai.MES.ArchitectureTests.dll
+/usr/local/share/dotnet/sdk/9.0.100-preview.1.24101.2/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.RuntimeIdentifierInference.targets(313,5): message NETSDK1057: You are using a preview version of .NET. See: https://aka.ms/dotnet-support-policy [/Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Application/LKvitai.MES.Application.csproj]
+/usr/local/share/dotnet/sdk/9.0.100-preview.1.24101.2/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.RuntimeIdentifierInference.targets(313,5): message NETSDK1057: You are using a preview version of .NET. See: https://aka.ms/dotnet-support-policy [/Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/BuildingBlocks/LKvitai.MES.BuildingBlocks.Cqrs.Abstractions/LKvitai.MES.BuildingBlocks.Cqrs.Abstractions.csproj]
+/usr/local/share/dotnet/sdk/9.0.100-preview.1.24101.2/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.RuntimeIdentifierInference.targets(313,5): message NETSDK1057: You are using a preview version of .NET. See: https://aka.ms/dotnet-support-policy [/Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Api/LKvitai.MES.Api.csproj]
+/usr/local/share/dotnet/sdk/9.0.100-preview.1.24101.2/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.RuntimeIdentifierInference.targets(313,5): message NETSDK1057: You are using a preview version of .NET. See: https://aka.ms/dotnet-support-policy [/Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Integration/LKvitai.MES.Integration.csproj]
+/usr/local/share/dotnet/sdk/9.0.100-preview.1.24101.2/Sdks/Microsoft.NET.Sdk/targets/Microsoft.NET.RuntimeIdentifierInference.targets(313,5): message NETSDK1057: You are using a preview version of .NET. See: https://aka.ms/dotnet-support-policy [/Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Infrastructure/LKvitai.MES.Infrastructure.csproj]
+  LKvitai.MES.Contracts -> /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Contracts/bin/Release/net8.0/LKvitai.MES.Contracts.dll
+  LKvitai.MES.BuildingBlocks.Cqrs.Abstractions -> /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/BuildingBlocks/LKvitai.MES.BuildingBlocks.Cqrs.Abstractions/bin/Release/net8.0/LKvitai.MES.BuildingBlocks.Cqrs.Abstractions.dll
+  LKvitai.MES.SharedKernel -> /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/LKvitai.MES.SharedKernel/bin/Release/net8.0/LKvitai.MES.SharedKernel.dll
+  LKvitai.MES.Domain -> /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Domain/bin/Release/net8.0/LKvitai.MES.Domain.dll
+  LKvitai.MES.WebUI -> /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.WebUI/bin/Release/net8.0/LKvitai.MES.WebUI.dll
+  LKvitai.MES.Application -> /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Application/bin/Release/net8.0/LKvitai.MES.Application.dll
+  LKvitai.MES.Projections -> /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Projections/bin/Release/net8.0/LKvitai.MES.Projections.dll
+  LKvitai.MES.Integration -> /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Integration/bin/Release/net8.0/LKvitai.MES.Integration.dll
+  LKvitai.MES.Sagas -> /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Sagas/bin/Release/net8.0/LKvitai.MES.Sagas.dll
+  LKvitai.MES.Tests.Property -> /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/tests/LKvitai.MES.Tests.Property/bin/Release/net8.0/LKvitai.MES.Tests.Property.dll
+  LKvitai.MES.Infrastructure -> /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Infrastructure/bin/Release/net8.0/LKvitai.MES.Infrastructure.dll
+  LKvitai.MES.Api -> /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/src/Modules/Warehouse/LKvitai.MES.Api/bin/Release/net8.0/LKvitai.MES.Api.dll
+  LKvitai.MES.Tests.Integration -> /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/tests/LKvitai.MES.Tests.Integration/bin/Release/net8.0/LKvitai.MES.Tests.Integration.dll
+  LKvitai.MES.Tests.Unit -> /Users/bykovas/CodeRepos/clients/lauresta/LKvitai.MES/tests/LKvitai.MES.Tests.Unit/bin/Release/net8.0/LKvitai.MES.Tests.Unit.dll

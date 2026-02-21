@@ -1,0 +1,606 @@
+@page "/warehouse/visualization/3d"
+@page "/warehouse/visualization/2d"
+@implements IAsyncDisposable
+@using System.Globalization
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.AspNetCore.WebUtilities
+@using LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure
+@using LKvitai.MES.Modules.Warehouse.WebUI.Models
+@using LKvitai.MES.Modules.Warehouse.WebUI.Services
+@inject VisualizationClient VisualizationClient
+@inject ToastService ToastService
+@inject IJSRuntime JS
+@inject NavigationManager NavigationManager
+
+<PageTitle>Warehouse Visualization</PageTitle>
+
+<div class="viz-page">
+    <div class="viz-toolbar">
+        <div class="viz-toolbar-left">
+            <h1 class="viz-title">Warehouse Visualization</h1>
+            <p class="viz-subtitle">Explore bins, capacity, and handling units in 3D or 2D.</p>
+        </div>
+        <div class="viz-toolbar-right">
+            <div class="viz-search-wrap">
+                <div class="input-group">
+                    <input class="form-control"
+                           placeholder="Search location (e.g. R3-C6-L3)"
+                           value="@_searchQuery"
+                           @oninput="OnSearchInput"
+                           @onkeydown="HandleSearchKeyAsync" />
+                    <button class="btn btn-outline-secondary" @onclick="SearchAsync">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+                @if (_showSuggestions && _autocompleteSuggestions.Count > 0)
+                {
+                    <div class="list-group viz-suggestions">
+                        @foreach (var suggestion in _autocompleteSuggestions)
+                        {
+                            <button type="button"
+                                    class="list-group-item list-group-item-action"
+                                    @onclick="() => SelectSuggestionAsync(suggestion)">
+                                @suggestion
+                            </button>
+                        }
+                    </div>
+                }
+            </div>
+            <select class="form-select"
+                    value="@_zoneFilter"
+                    @onchange="OnZoneFilterChangedAsync"
+                    style="min-width: 160px;">
+                <option value="ALL">All Zones</option>
+                @foreach (var zone in ZoneOptions)
+                {
+                    <option value="@zone">@zone</option>
+                }
+            </select>
+            <select class="form-select"
+                    value="@_statusFilter"
+                    @onchange="OnStatusFilterChangedAsync"
+                    style="min-width: 170px;">
+                <option value="ALL">All Statuses</option>
+                <option value="EMPTY">EMPTY</option>
+                <option value="LOW">LOW</option>
+                <option value="MEDIUM">MEDIUM</option>
+                <option value="FULL">FULL</option>
+                <option value="RESERVED">RESERVED</option>
+                <option value="OVER_CAPACITY">OVER_CAPACITY</option>
+            </select>
+            <button class="btn btn-outline-secondary" @onclick="RefreshAsync">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+            </button>
+            <button class="btn btn-warning" @onclick="ToggleViewAsync">
+                @(_is3dView ? "2D View" : "3D View")
+            </button>
+        </div>
+    </div>
+
+    @if (_isLoading)
+    {
+        <div class="viz-loading">
+            <div class="spinner-border text-primary" role="status"></div>
+            <span>Loading warehouse model...</span>
+        </div>
+    }
+    else if (!string.IsNullOrWhiteSpace(_error))
+    {
+        <div class="alert alert-danger mt-3">@_error</div>
+    }
+    else if (_model is not null)
+    {
+        var visibleBins = GetFilteredBins();
+        if (_model.Bins.Count == 0)
+        {
+            <div class="alert alert-warning mt-3">
+                No bins configured with coordinates. Configure layout first.
+            </div>
+        }
+        else if (visibleBins.Count == 0)
+        {
+            <div class="alert alert-warning mt-3">
+                No bins match the selected zone/status filters.
+            </div>
+        }
+
+        <div class="viz-content">
+            <div class="viz-canvas-wrap">
+                @if (_is3dView)
+                {
+                    <div id="@CanvasId" class="viz-canvas"></div>
+                }
+                else
+                {
+                    <div class="viz-2d-controls">
+                        <button class="btn btn-sm btn-outline-secondary" @onclick="ZoomOut2dAsync" title="Zoom out">-</button>
+                        <button class="btn btn-sm btn-outline-secondary" @onclick="ZoomIn2dAsync" title="Zoom in">+</button>
+                    </div>
+                    <div class="viz-2d-wrap">
+                        <svg class="viz-2d-canvas"
+                             viewBox="@CurrentSvgViewBox"
+                             preserveAspectRatio="xMidYMid meet">
+                            <defs>
+                                <pattern id="viz-reserved-pattern-2d"
+                                         patternUnits="userSpaceOnUse"
+                                         width="4"
+                                         height="4"
+                                         patternTransform="rotate(45)">
+                                    <line x1="0" y1="0" x2="0" y2="4" stroke="#4338CA" stroke-width="1.2" />
+                                </pattern>
+                            </defs>
+                            @foreach (var zone in _model.Zones)
+                            {
+                                <rect x="@ToSvgX(zone.Bounds.X1)"
+                                      y="@ToSvgY(zone.Bounds.Y2)"
+                                      width="@ToSvgWidth(zone.Bounds.X2 - zone.Bounds.X1)"
+                                      height="@ToSvgHeight(zone.Bounds.Y2 - zone.Bounds.Y1)"
+                                      fill="@zone.Color"
+                                      opacity="0.2"
+                                      stroke="@zone.Color"
+                                      stroke-width="1" />
+                            }
+                            @foreach (var bin in visibleBins)
+                            {
+                                <rect class="@GetBinClass(bin)"
+                                      x="@ToSvgX(bin.Coordinates.X)"
+                                      y="@ToSvgY(bin.Coordinates.Y)"
+                                      width="6"
+                                      height="6"
+                                      fill="@bin.Color"
+                                      @onclick="@(() => SelectBinAsync(bin.Code))" />
+                                @if (bin.IsReserved)
+                                {
+                                    <rect class="viz-2d-bin-reserved-overlay"
+                                          x="@ToSvgX(bin.Coordinates.X)"
+                                          y="@ToSvgY(bin.Coordinates.Y)"
+                                          width="6"
+                                          height="6"
+                                          fill="url(#viz-reserved-pattern-2d)" />
+                                }
+                            }
+                        </svg>
+                    </div>
+                }
+                <div class="viz-legend">
+                    <div class="viz-legend-title">Status</div>
+                    <div class="viz-legend-item"><span class="viz-legend-color viz-status-empty"></span>Empty</div>
+                    <div class="viz-legend-item"><span class="viz-legend-color viz-status-low"></span>Low</div>
+                    <div class="viz-legend-item"><span class="viz-legend-color viz-status-medium"></span>Medium</div>
+                    <div class="viz-legend-item"><span class="viz-legend-color viz-status-full"></span>Full</div>
+                    <div class="viz-legend-item"><span class="viz-legend-color viz-status-over"></span>Over capacity</div>
+                    <div class="viz-legend-item"><span class="viz-legend-color viz-status-reserved"></span>Reserved (pattern)</div>
+                    <div class="viz-legend-divider"></div>
+                    <div class="viz-legend-title">Indicator</div>
+                    <div class="viz-legend-item"><span class="viz-legend-color viz-selected-hint"></span>Selected (pin + ring + pulse)</div>
+                </div>
+            </div>
+            <div class="viz-details">
+                @if (_selectedBin is null)
+                {
+                    <div class="viz-empty-selection">
+                        <i class="bi bi-cursor"></i>
+                        <span>Select a bin to view details.</span>
+                    </div>
+                }
+                else
+                {
+                    <h2>@_selectedBin.Code</h2>
+                    <dl class="row">
+                        <dt class="col-5">Status</dt>
+                        <dd class="col-7">@_selectedBin.Status</dd>
+                        <dt class="col-5">Utilization</dt>
+                        <dd class="col-7">@_selectedBin.UtilizationPercent.ToString("0.##", CultureInfo.InvariantCulture)%</dd>
+                        <dt class="col-5">Coordinates</dt>
+                        <dd class="col-7">@_selectedBin.Coordinates.X, @_selectedBin.Coordinates.Y, @_selectedBin.Coordinates.Z</dd>
+                        <dt class="col-5">Dimensions</dt>
+                        <dd class="col-7">@FormatDimensions(_selectedBin.Dimensions)</dd>
+                        <dt class="col-5">Capacity</dt>
+                        <dd class="col-7">@FormatCapacity(_selectedBin.Capacity)</dd>
+                    </dl>
+
+                    <h3>Handling Units</h3>
+                    @if (_selectedBin.HandlingUnits.Count == 0)
+                    {
+                        <p class="text-muted">No handling units.</p>
+                    }
+                    else
+                    {
+                        <ul class="list-group list-group-flush">
+                            @foreach (var hu in _selectedBin.HandlingUnits)
+                            {
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span>@hu.Lpn (@hu.Sku)</span>
+                                    <strong>@hu.Qty</strong>
+                                </li>
+                            }
+                        </ul>
+                    }
+
+                    <a class="btn btn-sm btn-outline-secondary mt-3"
+                       href="@($"/warehouse/locations/{_selectedBin.LocationId}")">
+                        View Details
+                    </a>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private const string CanvasId = "warehouse-visualization-canvas";
+    private const decimal SvgPadding = 20m;
+    private const decimal SvgScale = 12m;
+    private const decimal SvgHeight = 640m;
+    private const decimal SvgWidth = 1000m;
+
+    private Visualization3dDto? _model;
+    private VisualizationBinDto? _selectedBin;
+    private DotNetObjectReference<Warehouse3D>? _selfReference;
+    private bool _isLoading;
+    private bool _renderRequested;
+    private string? _error;
+    private string _searchQuery = string.Empty;
+    private string _zoneFilter = "ALL";
+    private string _statusFilter = "ALL";
+    private decimal _zoom2d = 1m;
+    private bool _showSuggestions;
+    private List<string> _autocompleteSuggestions = [];
+
+    private bool _is3dView =>
+        NavigationManager.Uri.Contains("/warehouse/visualization/3d", StringComparison.OrdinalIgnoreCase);
+
+    private string CurrentSvgViewBox
+    {
+        get
+        {
+            var width = SvgWidth / _zoom2d;
+            var height = SvgHeight / _zoom2d;
+            var originX = (SvgWidth - width) / 2m;
+            var originY = (SvgHeight - height) / 2m;
+            return FormattableString.Invariant($"{originX:0.###} {originY:0.###} {width:0.###} {height:0.###}");
+        }
+    }
+
+    private IReadOnlyList<string> ZoneOptions =>
+        _model?.Zones
+            .Select(x => x.Type)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+            .ToList()
+        ?? [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _selfReference = DotNetObjectReference.Create(this);
+        await LoadAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_is3dView || !_renderRequested || _model is null)
+        {
+            return;
+        }
+
+        _renderRequested = false;
+        await JS.InvokeVoidAsync("warehouseVisualization.render", CanvasId, GetFilteredBins(), _selfReference, _selectedBin?.Code);
+    }
+
+    [JSInvokable]
+    public Task OnBinSelectedFromJs(string binCode)
+    {
+        SelectBin(binCode);
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private async Task RefreshAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task ToggleViewAsync()
+    {
+        var targetRoute = _is3dView
+            ? "/warehouse/visualization/2d"
+            : "/warehouse/visualization/3d";
+
+        if (_is3dView)
+        {
+            await JS.InvokeVoidAsync("warehouseVisualization.dispose", CanvasId);
+        }
+
+        var suffix = _selectedBin is null
+            ? string.Empty
+            : $"?selected={Uri.EscapeDataString(_selectedBin.Code)}";
+        NavigationManager.NavigateTo($"{targetRoute}{suffix}");
+        _renderRequested = _model is not null;
+    }
+
+    private async Task HandleSearchKeyAsync(KeyboardEventArgs args)
+    {
+        if (args.Key == "Enter")
+        {
+            await SearchAsync();
+            _showSuggestions = false;
+        }
+        else if (args.Key == "Escape")
+        {
+            _showSuggestions = false;
+        }
+    }
+
+    private Task OnSearchInput(ChangeEventArgs args)
+    {
+        _searchQuery = args.Value?.ToString() ?? string.Empty;
+        _autocompleteSuggestions = WarehouseVisualizationSearch.GetSuggestions(
+            _model?.Bins ?? [],
+            _searchQuery,
+            maxResults: 8);
+        _showSuggestions = _autocompleteSuggestions.Count > 0;
+        return Task.CompletedTask;
+    }
+
+    private async Task SearchAsync()
+    {
+        if (_model is null || string.IsNullOrWhiteSpace(_searchQuery))
+        {
+            return;
+        }
+
+        var match = WarehouseVisualizationSearch.FindBestMatch(_model.Bins, _searchQuery.Trim());
+
+        if (match is null)
+        {
+            ToastService.ShowError("No bins found matching search.");
+            return;
+        }
+
+        _showSuggestions = false;
+        await FocusBinAsync(match.Code);
+    }
+
+    private async Task SelectSuggestionAsync(string code)
+    {
+        _searchQuery = code;
+        _showSuggestions = false;
+        await FocusBinAsync(code);
+    }
+
+    private async Task SelectBinAsync(string code)
+    {
+        await FocusBinAsync(code);
+    }
+
+    private void SelectBin(string code)
+    {
+        if (_model is null)
+        {
+            _selectedBin = null;
+            return;
+        }
+
+        _selectedBin = _model.Bins.FirstOrDefault(x =>
+            string.Equals(x.Code, code, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private async Task FocusBinAsync(string code)
+    {
+        SelectBin(code);
+        if (_selectedBin is null)
+        {
+            return;
+        }
+
+        if (_is3dView)
+        {
+            await JS.InvokeVoidAsync("warehouseVisualization.focusBin", CanvasId, code);
+        }
+    }
+
+    private async Task OnZoneFilterChangedAsync(ChangeEventArgs args)
+    {
+        _zoneFilter = (args.Value?.ToString() ?? "ALL").Trim();
+        if (string.IsNullOrWhiteSpace(_zoneFilter))
+        {
+            _zoneFilter = "ALL";
+        }
+
+        if (_is3dView)
+        {
+            _renderRequested = true;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task OnStatusFilterChangedAsync(ChangeEventArgs args)
+    {
+        _statusFilter = (args.Value?.ToString() ?? "ALL").Trim().ToUpperInvariant();
+        if (string.IsNullOrWhiteSpace(_statusFilter))
+        {
+            _statusFilter = "ALL";
+        }
+
+        if (_is3dView)
+        {
+            _renderRequested = true;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private Task ZoomIn2dAsync()
+    {
+        _zoom2d = Math.Clamp(_zoom2d + 0.25m, 0.5m, 3m);
+        return Task.CompletedTask;
+    }
+
+    private Task ZoomOut2dAsync()
+    {
+        _zoom2d = Math.Clamp(_zoom2d - 0.25m, 0.5m, 3m);
+        return Task.CompletedTask;
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _error = null;
+
+        try
+        {
+            _model = await VisualizationClient.GetVisualization3dAsync();
+            _autocompleteSuggestions = WarehouseVisualizationSearch.GetSuggestions(
+                _model.Bins,
+                _searchQuery,
+                maxResults: 8);
+            _showSuggestions = false;
+
+            var selectedFromQuery = GetSelectedQueryValue();
+            if (!string.IsNullOrWhiteSpace(selectedFromQuery))
+            {
+                SelectBin(selectedFromQuery);
+                _searchQuery = selectedFromQuery;
+            }
+
+            if (_selectedBin is not null)
+            {
+                SelectBin(_selectedBin.Code);
+            }
+
+            _renderRequested = _is3dView;
+        }
+        catch (ApiException ex)
+        {
+            _error = ex.ProblemDetails?.Detail ?? ex.UserMessage;
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private string? GetSelectedQueryValue()
+    {
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        var query = QueryHelpers.ParseQuery(uri.Query);
+        if (!query.TryGetValue("selected", out var selected))
+        {
+            return null;
+        }
+
+        var value = selected.ToString();
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
+
+    private static string FormatCapacity(VisualizationCapacityDto capacity)
+    {
+        var weight = capacity.Weight.HasValue ? $"{capacity.Weight.Value} kg" : "n/a";
+        var volume = capacity.Volume.HasValue ? $"{capacity.Volume.Value} m3" : "n/a";
+        return $"{weight} / {volume}";
+    }
+
+    private static string FormatDimensions(VisualizationBinDimensionsDto dimensions)
+    {
+        if (!dimensions.Width.HasValue || !dimensions.Length.HasValue || !dimensions.Height.HasValue)
+        {
+            return "n/a";
+        }
+
+        return $"{dimensions.Width.Value:0.###} x {dimensions.Length.Value:0.###} x {dimensions.Height.Value:0.###} m";
+    }
+
+    private List<VisualizationBinDto> GetFilteredBins()
+    {
+        if (_model is null)
+        {
+            return [];
+        }
+
+        return _model.Bins
+            .Where(BinMatchesFilters)
+            .ToList();
+    }
+
+    private bool BinMatchesFilters(VisualizationBinDto bin)
+    {
+        if (string.Equals(_statusFilter, "RESERVED", StringComparison.OrdinalIgnoreCase))
+        {
+            return bin.IsReserved && ZoneMatchesFilter(bin);
+        }
+
+        if (!string.Equals(_statusFilter, "ALL", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(bin.Status, _statusFilter, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        return ZoneMatchesFilter(bin);
+    }
+
+    private bool ZoneMatchesFilter(VisualizationBinDto bin)
+    {
+        if (!string.Equals(_zoneFilter, "ALL", StringComparison.OrdinalIgnoreCase))
+        {
+            var zone = ResolveZoneType(bin);
+            if (!string.Equals(zone, _zoneFilter, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private string ResolveZoneType(VisualizationBinDto bin)
+    {
+        if (_model is null)
+        {
+            return "UNASSIGNED";
+        }
+
+        var zone = _model.Zones.FirstOrDefault(z =>
+            bin.Coordinates.X >= z.Bounds.X1 &&
+            bin.Coordinates.X <= z.Bounds.X2 &&
+            bin.Coordinates.Y >= z.Bounds.Y1 &&
+            bin.Coordinates.Y <= z.Bounds.Y2);
+
+        return zone?.Type ?? "UNASSIGNED";
+    }
+
+    private string GetBinClass(VisualizationBinDto bin)
+    {
+        return _selectedBin is not null &&
+               string.Equals(bin.Code, _selectedBin.Code, StringComparison.OrdinalIgnoreCase)
+            ? "viz-2d-bin viz-2d-bin-selected"
+            : "viz-2d-bin";
+    }
+
+    private static string ToSvgX(decimal x) => ToSvgNumber(SvgPadding + (x * SvgScale));
+
+    private static string ToSvgY(decimal y) => ToSvgNumber(SvgHeight - SvgPadding - (y * SvgScale));
+
+    private static string ToSvgWidth(decimal width) => ToSvgNumber(width * SvgScale);
+
+    private static string ToSvgHeight(decimal height) => ToSvgNumber(height * SvgScale);
+
+    private static string ToSvgNumber(decimal value) => value.ToString("0.###", CultureInfo.InvariantCulture);
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("warehouseVisualization.dispose", CanvasId);
+        }
+        catch
+        {
+            // Ignore JS disposal issues when circuit is disconnected.
+        }
+
+        _selfReference?.Dispose();
+    }
+}

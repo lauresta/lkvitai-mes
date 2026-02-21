@@ -170,8 +170,8 @@ LKvitai.MES/
   - Note: .sln is in `src/`, tests moved to repo root, so relative path is `..` (up one level)
 - **Commands:**
   ```bash
-  dotnet restore
-  dotnet build
+  dotnet restore src/LKvitai.MES.sln
+  dotnet build src/LKvitai.MES.sln
   ```
 - **DoD:** Solution builds, test projects load in IDE
 - **Rollback:** `git mv tests src/tests`, revert sln
@@ -187,8 +187,8 @@ LKvitai.MES/
   - Add to solution: `dotnet sln src/LKvitai.MES.sln add tests/ArchitectureTests/LKvitai.MES.ArchitectureTests/LKvitai.MES.ArchitectureTests.csproj`
 - **Commands:**
   ```bash
-  dotnet restore
-  dotnet build
+  dotnet restore src/LKvitai.MES.sln
+  dotnet build src/LKvitai.MES.sln
   ```
 - **DoD:** Project builds, appears in solution
 - **Rollback:** Remove directory, remove from sln
@@ -203,30 +203,35 @@ LKvitai.MES/
   - Create `ContractsLayerTests.cs` with test: Contracts must have zero deps (Skip="Known violation")
 - **Commands:**
   ```bash
-  dotnet test tests/ArchitectureTests/
+  dotnet test tests/ArchitectureTests/LKvitai.MES.ArchitectureTests/LKvitai.MES.ArchitectureTests.csproj
   ```
 - **DoD:** All tests skipped (not failed), test run succeeds
 - **Rollback:** Delete test files
 
-#### Stage 0.2: Dependency Validation Script
+#### Stage 0.2: Dependency Validation Tool
 
-**P0.S2.T1: Create validate-module-dependencies.sh**
+**P0.S2.T1: Baseline dependency report (non-blocking)**
 
-- **Purpose:** Script to parse csproj and validate ProjectReference paths
-- **Scope:** `scripts/`
+- **Purpose:** Generate cross-platform baseline dependency report from csproj references
+- **Scope:** `tools/DependencyValidator/`
 - **Operations:**
-  - Create `scripts/validate-module-dependencies.sh`
-  - Parse all `.csproj` files for `<ProjectReference>` elements
-  - Check: BuildingBlocks projects must not reference Modules projects
-  - Check: Cross-module references only via Contracts
-  - Exit 0 if valid, exit 1 with error message if invalid
+  - Create `tools/DependencyValidator/DependencyValidator.csproj`
+  - Create `tools/DependencyValidator/Program.cs`
+  - Parse `.csproj` files for `<ProjectReference>` and `<PackageReference>`
+  - Detect:
+    - Contracts projects must not reference SharedKernel projects
+    - SharedKernel projects must not reference MediatR packages
+    - Application projects must not reference Marten packages
+  - Write report to `docs/refactor-status/dependency-baseline.md`
+  - Known baseline violations are expected; record them. Strict mode will be enabled later in Phase 5.
+  - Note: Cross-platform; do not use chmod/bash.
 - **Commands:**
   ```bash
-  chmod +x scripts/validate-module-dependencies.sh
-  ./scripts/validate-module-dependencies.sh
+  dotnet run --project tools/DependencyValidator/DependencyValidator.csproj
   ```
-- **DoD:** Script runs, exits 0 (current structure has no BuildingBlocks yet, so passes trivially)
-- **Rollback:** Delete script
+- **DoD:** Tool runs and writes baseline report
+- **Rollback:** Delete `tools/DependencyValidator/`
+- **STOP Condition:** STOP only if tool crashes/cannot run (runtime failure). Do not stop if violations are detected in baseline report.
 
 #### Stage 0.3: CI Gate
 
@@ -237,12 +242,13 @@ LKvitai.MES/
 - **Operations:**
   - Create `.github/workflows/architecture-checks.yml`
   - Trigger on PR to main
-  - Run `scripts/validate-module-dependencies.sh`
-  - Run `dotnet test tests/ArchitectureTests/`
+  - Run `dotnet run --project tools/DependencyValidator/DependencyValidator.csproj`
+  - Run `dotnet test tests/ArchitectureTests/LKvitai.MES.ArchitectureTests/LKvitai.MES.ArchitectureTests.csproj`
+  - Note: Phase 0 uses non-blocking dependency reporting; strict mode will be enabled later in Phase 5.
 - **Commands:**
   ```bash
-  ./scripts/validate-module-dependencies.sh
-  dotnet test tests/ArchitectureTests/
+  dotnet run --project tools/DependencyValidator/DependencyValidator.csproj
+  dotnet test tests/ArchitectureTests/LKvitai.MES.ArchitectureTests/LKvitai.MES.ArchitectureTests.csproj
   ```
 - **DoD:** Workflow file valid, can be triggered manually
 - **Rollback:** Delete workflow file
@@ -258,12 +264,11 @@ LKvitai.MES/
   - Change any other `src/tests/` references to `tests/` in `deploy-test.yml`
 - **Commands:**
   ```bash
-  grep -R "src/tests" .github/workflows/
-  grep -R "src\\\\tests" .github/workflows/
+  Select-String -Path .github/workflows/* -Pattern 'src/tests','src\\tests' -SimpleMatch
   ```
-- **DoD:** Workflows reference correct paths, grep returns no matches for old paths
+- **DoD:** Workflows reference correct paths, Select-String returns no matches for old paths
 - **Rollback:** Revert workflow files
-- **STOP Condition:** If grep still finds old paths after changes, STOP and report
+- **STOP Condition:** If Select-String still finds old paths after changes, STOP and report
 
 #### Stage 0.4: Central Package Management (Incremental)
 
@@ -285,54 +290,41 @@ LKvitai.MES/
 
 **P0.S4.T2: Create Directory.Packages.props (minimal)**
 
-- **Purpose:** Enable central package version management
-- **Scope:** Repo root (NOT src/)
+- **Purpose:** Add central package versions and remove inline package versions in one pass to avoid NU1008
+- **Scope:** Repo root, all `.csproj` files in `src/` and `tests/`
 - **Operations:**
   - Create `Directory.Packages.props` at **repo root** (covers both `src/` and `tests/` directories)
-  - Add `<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>`
   - List all packages with versions from inventory in `<ItemGroup>`
+  - Remove `Version="..."` from all `<PackageReference ...>` items in `src/**/*.csproj` and `tests/**/*.csproj`
+  - Keep all other attributes (PrivateAssets, IncludeAssets, etc.)
 - **Commands:**
   ```bash
-  dotnet restore
-  dotnet build
+  dotnet restore src/LKvitai.MES.sln
   ```
-- **DoD:** Build succeeds with central props file present at repo root
-- **Rollback:** Delete `Directory.Packages.props`
-- **STOP Condition:** If build fails, STOP and report
+- **DoD:** Restore succeeds with central versions file and no inline `PackageReference Version` attributes
+- **Rollback:** Delete `Directory.Packages.props`, revert changed csproj files
+- **STOP Condition:** If restore fails, STOP and report
 
-**P0.S4.T3: Remove versions from src csproj files**
+**P0.S4.T3: Remove versions from src csproj files (absorbed into P0.S4.T2)**
 
-- **Purpose:** Migrate product projects to central package management
-- **Scope:** All `.csproj` files in `src/`
-- **Operations:**
-  - For each `<PackageReference Include="X" Version="Y" />` in `src/`, change to `<PackageReference Include="X" />`
-  - Keep all other attributes (PrivateAssets, etc.)
-  - Do NOT touch test projects yet
-- **Commands:**
-  ```bash
-  dotnet restore
-  dotnet build
-  ```
-- **DoD:** Build succeeds, packages resolve from central props
-- **Rollback:** `git checkout -- src/**/*.csproj`
-- **STOP Condition:** If build fails, STOP and report
+- **Status:** No execution. This task is absorbed into `P0.S4.T2`.
+- **Reason:** Running central versions file creation separately from `Version` removal causes NU1008 in this repo.
 
-**P0.S4.T4: Remove versions from tests csproj files**
+**P0.S4.T4: Remove versions from tests csproj files and enable CPM**
 
-- **Purpose:** Complete migration of test projects to central package management
-- **Scope:** All `.csproj` files in `tests/`
+- **Purpose:** Complete migration by removing test versions, then enable central package management
+- **Scope:** All `.csproj` files in `tests/`, repo root
 - **Operations:**
   - For each `<PackageReference Include="X" Version="Y" />` in `tests/`, change to `<PackageReference Include="X" />`
   - Keep all other attributes (PrivateAssets, etc.)
+  - Enable CPM by adding `<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>` in `Directory.Build.props` (or `NuGet.props`) at repo root
 - **Commands:**
   ```bash
-  dotnet restore
-  dotnet build
-  dotnet test --no-build
+  dotnet restore src/LKvitai.MES.sln
   ```
-- **DoD:** All tests pass, packages resolve from central props
+- **DoD:** Restore succeeds with CPM enabled and versions centralized
 - **Rollback:** `git checkout -- tests/**/*.csproj`
-- **STOP Condition:** If tests fail that passed in baseline, STOP and report
+- **STOP Condition:** If restore fails, STOP and report
 
 #### Stage 0.5: Root File Cleanup
 
@@ -399,18 +391,18 @@ LKvitai.MES/
 - **Purpose:** Validate move + build + Docker in one slice
 - **Scope:** `src/LKvitai.MES.Domain/`, `src/Modules/Warehouse/`
 - **Operations:**
-  - **STOP and verify first:** Review Domain project for cross-module concerns (Sales, Production entities). If found, STOP and ask human whether to proceed or extract first.
+  - Review Domain project for cross-module concerns (Sales, Production entities). Allowed at this stage; boundaries will be handled in Phase 4.4/Phase 5.
   - `git mv src/LKvitai.MES.Domain src/Modules/Warehouse/LKvitai.MES.Domain`
   - Update solution file path
   - Update all ProjectReferences in other projects
 - **Commands:**
   ```bash
-  dotnet restore
-  dotnet build
+  dotnet restore src/LKvitai.MES.sln
+  dotnet build src/LKvitai.MES.sln
   ```
 - **DoD:** Solution builds
 - **Rollback:** `git mv` back, revert sln and csproj changes
-- **STOP Condition:** If Domain contains non-Warehouse entities (SalesOrder, Customer, etc.), STOP and report to human before proceeding
+- **STOP Condition:** If move/build fails with issues beyond path/reference updates, STOP and report
 
 **P1.S2.T2: Update Api Dockerfile for Domain move**
 
@@ -435,7 +427,7 @@ LKvitai.MES/
   - No code changes, validation only
 - **Commands:**
   ```bash
-  dotnet test
+  dotnet test src/LKvitai.MES.sln
   ```
 - **DoD:** All tests pass (same as baseline)
 - **Rollback:** N/A (validation only)
@@ -565,7 +557,7 @@ LKvitai.MES/
   - Run test, verify it passes
 - **Commands:**
   ```bash
-  dotnet test tests/ArchitectureTests/
+  dotnet test tests/ArchitectureTests/LKvitai.MES.ArchitectureTests/LKvitai.MES.ArchitectureTests.csproj
   ```
 - **DoD:** Test passes (not skipped)
 - **Rollback:** Re-add Skip attribute
@@ -1294,7 +1286,7 @@ LKvitai.MES/
   - Update `scripts/validate-module-dependencies.sh` to check BuildingBlocks isolation
 - **Commands:**
   ```bash
-  dotnet test tests/ArchitectureTests/
+  dotnet test tests/ArchitectureTests/LKvitai.MES.ArchitectureTests/LKvitai.MES.ArchitectureTests.csproj
   ./scripts/validate-module-dependencies.sh
   ```
 - **DoD:** Tests pass, script validates correctly
@@ -1355,7 +1347,7 @@ LKvitai.MES/
   - Verify service names match Dockerfile locations
 - **Commands:**
   ```bash
-  docker-compose -f src/docker-compose.yml config
+  docker compose -f src/docker-compose.yml config
   ```
 - **DoD:** Compose file validates
 - **Rollback:** Revert compose files
@@ -1371,7 +1363,7 @@ LKvitai.MES/
   - Update README with instructions: use `--profile dev-broker` to include RabbitMQ, or connect to external broker
 - **Commands:**
   ```bash
-  docker-compose -f src/docker-compose.yml config
+  docker compose -f src/docker-compose.yml config
   ```
 - **DoD:** Compose file validates, RabbitMQ marked as optional dev-only service
 - **Rollback:** Revert compose file

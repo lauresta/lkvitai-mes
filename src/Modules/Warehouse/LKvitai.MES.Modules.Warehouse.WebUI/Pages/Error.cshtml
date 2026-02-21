@@ -1,0 +1,12 @@
+@page
+@model LKvitai.MES.Modules.Warehouse.WebUI.Pages.ErrorModel
+@{
+    ViewData["Title"] = "Error";
+}
+
+<h1>Error</h1>
+<p>An unexpected error occurred. Please try again later.</p>
+@if (Model.ShowRequestId)
+{
+    <p><strong>Request ID:</strong> <code>@Model.RequestId</code></p>
+}

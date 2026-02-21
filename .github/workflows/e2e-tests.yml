@@ -21,7 +21,7 @@ jobs:
           dotnet-version: 8.0.x
 
       - name: Restore E2E project
-        run: dotnet restore src/tests/LKvitai.MES.Tests.E2E/LKvitai.MES.Tests.E2E.csproj
+        run: dotnet restore tests/Modules/Warehouse/LKvitai.MES.Tests.Warehouse.E2E/LKvitai.MES.Tests.Warehouse.E2E.csproj
 
       - name: Run E2E tests
-        run: dotnet test src/tests/LKvitai.MES.Tests.E2E/LKvitai.MES.Tests.E2E.csproj --configuration Release --logger "console;verbosity=detailed"
+        run: dotnet test tests/Modules/Warehouse/LKvitai.MES.Tests.Warehouse.E2E/LKvitai.MES.Tests.Warehouse.E2E.csproj --configuration Release --logger "console;verbosity=detailed"

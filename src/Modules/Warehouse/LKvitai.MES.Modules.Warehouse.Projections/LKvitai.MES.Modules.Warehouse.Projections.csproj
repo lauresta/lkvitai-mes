@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>LKvitai.MES.Modules.Warehouse.Projections</RootNamespace>
+    <AssemblyName>LKvitai.MES.Modules.Warehouse.Projections</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Marten" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\LKvitai.MES.Modules.Warehouse.Contracts\LKvitai.MES.Modules.Warehouse.Contracts.csproj" />
+    <ProjectReference Include="..\LKvitai.MES.Modules.Warehouse.Domain\LKvitai.MES.Modules.Warehouse.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

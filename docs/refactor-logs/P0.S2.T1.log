@@ -1,0 +1,7 @@
+COMMAND: dotnet run --project tools/DependencyValidator/DependencyValidator.csproj 
+Dependency baseline report (non-blocking)
+Projects scanned: 15
+Violations found: 3
+- src/LKvitai.MES.Application/LKvitai.MES.Application.csproj | PackageReference | Marten | Application references Marten
+- src/LKvitai.MES.Contracts/LKvitai.MES.Contracts.csproj | ProjectReference | ..\LKvitai.MES.SharedKernel\LKvitai.MES.SharedKernel.csproj | Contracts references SharedKernel
+- src/LKvitai.MES.SharedKernel/LKvitai.MES.SharedKernel.csproj | PackageReference | MediatR | SharedKernel references MediatR

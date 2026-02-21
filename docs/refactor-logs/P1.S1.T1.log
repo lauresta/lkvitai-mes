@@ -1,0 +1,15 @@
+Command:
+ls -la src/Modules/Warehouse/
+
+Output:
+total 0
+drwxr-xr-x  2 bykovas  staff  64 Feb 19 20:44 .
+drwxr-xr-x  3 bykovas  staff  96 Feb 19 20:44 ..
+
+Command:
+ls -la src/BuildingBlocks/
+
+Output:
+total 0
+drwxr-xr-x   2 bykovas  staff   64 Feb 19 20:44 .
+drwxr-xr-x@ 23 bykovas  staff  736 Feb 19 20:44 ..

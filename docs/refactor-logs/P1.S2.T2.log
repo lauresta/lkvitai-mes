@@ -1,0 +1,144 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 2.48kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for mcr.microsoft.com/dotnet/aspnet:8.0
+#2 DONE 0.2s
+
+#3 [internal] load metadata for mcr.microsoft.com/dotnet/sdk:8.0
+#3 DONE 0.2s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 863B done
+#4 DONE 0.0s
+
+#5 [runtime 1/6] FROM mcr.microsoft.com/dotnet/aspnet:8.0@sha256:0d6e2e245f180ef785f51aab639c8d5d29afc3b43b95c0ee6dfaf5b84895cd6a
+#5 DONE 0.0s
+
+#6 [build  1/26] FROM mcr.microsoft.com/dotnet/sdk:8.0@sha256:58359d0b8fe8237be1d63ac335ca378e2857f976c7f92791f7c84b3c117037f5
+#6 DONE 0.0s
+
+#7 [runtime 3/6] RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+#7 CACHED
+
+#8 [runtime 2/6] WORKDIR /app
+#8 CACHED
+
+#9 [runtime 4/6] RUN groupadd -r appuser && useradd -r -g appuser appuser
+#9 CACHED
+
+#10 [internal] load build context
+#10 transferring context: 36.20kB 0.0s done
+#10 DONE 0.0s
+
+#11 [build  9/26] COPY src/LKvitai.MES.Projections/LKvitai.MES.Projections.csproj LKvitai.MES.Projections/
+#11 CACHED
+
+#12 [build  6/26] COPY src/LKvitai.MES.Api/LKvitai.MES.Api.csproj LKvitai.MES.Api/
+#12 CACHED
+
+#13 [build 10/26] COPY src/LKvitai.MES.Sagas/LKvitai.MES.Sagas.csproj LKvitai.MES.Sagas/
+#13 CACHED
+
+#14 [build  3/26] COPY src/LKvitai.MES.sln .
+#14 CACHED
+
+#15 [build  5/26] COPY Directory.Packages.props .
+#15 CACHED
+
+#16 [build  2/26] WORKDIR /src
+#16 CACHED
+
+#17 [build  8/26] COPY src/LKvitai.MES.Infrastructure/LKvitai.MES.Infrastructure.csproj LKvitai.MES.Infrastructure/
+#17 CACHED
+
+#18 [build  7/26] COPY src/LKvitai.MES.Application/LKvitai.MES.Application.csproj LKvitai.MES.Application/
+#18 CACHED
+
+#19 [build  4/26] COPY Directory.Build.props .
+#19 CACHED
+
+#20 [build 11/26] COPY src/LKvitai.MES.Integration/LKvitai.MES.Integration.csproj LKvitai.MES.Integration/
+#20 CACHED
+
+#21 [build 12/26] COPY src/Modules/Warehouse/LKvitai.MES.Domain/LKvitai.MES.Domain.csproj Modules/Warehouse/LKvitai.MES.Domain/
+#21 DONE 0.0s
+
+#22 [build 13/26] COPY src/LKvitai.MES.Contracts/LKvitai.MES.Contracts.csproj LKvitai.MES.Contracts/
+#22 DONE 0.0s
+
+#23 [build 14/26] COPY src/LKvitai.MES.SharedKernel/LKvitai.MES.SharedKernel.csproj LKvitai.MES.SharedKernel/
+#23 DONE 0.0s
+
+#24 [build 15/26] RUN dotnet restore LKvitai.MES.Api/LKvitai.MES.Api.csproj
+#24 0.486   Determining projects to restore...
+#24 3.229   Restored /src/LKvitai.MES.Contracts/LKvitai.MES.Contracts.csproj (in 2.1 sec).
+#24 3.229   Restored /src/LKvitai.MES.Integration/LKvitai.MES.Integration.csproj (in 2.1 sec).
+#24 3.229   Restored /src/Modules/Warehouse/LKvitai.MES.Domain/LKvitai.MES.Domain.csproj (in 2.1 sec).
+#24 3.229   Restored /src/LKvitai.MES.SharedKernel/LKvitai.MES.SharedKernel.csproj (in 2.1 sec).
+#24 13.52   Restored /src/LKvitai.MES.Projections/LKvitai.MES.Projections.csproj (in 12.42 sec).
+#24 13.52   Restored /src/LKvitai.MES.Application/LKvitai.MES.Application.csproj (in 12.42 sec).
+#24 16.10   Restored /src/LKvitai.MES.Sagas/LKvitai.MES.Sagas.csproj (in 14.93 sec).
+#24 20.54   Restored /src/LKvitai.MES.Infrastructure/LKvitai.MES.Infrastructure.csproj (in 19.37 sec).
+#24 32.62   Restored /src/LKvitai.MES.Api/LKvitai.MES.Api.csproj (in 31.34 sec).
+#24 DONE 33.1s
+
+#25 [build 16/26] COPY src/LKvitai.MES.Api/ LKvitai.MES.Api/
+#25 DONE 0.0s
+
+#26 [build 17/26] COPY src/LKvitai.MES.Application/ LKvitai.MES.Application/
+#26 DONE 0.0s
+
+#27 [build 18/26] COPY src/LKvitai.MES.Infrastructure/ LKvitai.MES.Infrastructure/
+#27 DONE 0.0s
+
+#28 [build 19/26] COPY src/LKvitai.MES.Projections/ LKvitai.MES.Projections/
+#28 DONE 0.0s
+
+#29 [build 20/26] COPY src/LKvitai.MES.Sagas/ LKvitai.MES.Sagas/
+#29 DONE 0.0s
+
+#30 [build 21/26] COPY src/LKvitai.MES.Integration/ LKvitai.MES.Integration/
+#30 DONE 0.0s
+
+#31 [build 22/26] COPY src/Modules/Warehouse/LKvitai.MES.Domain/ Modules/Warehouse/LKvitai.MES.Domain/
+#31 DONE 0.0s
+
+#32 [build 23/26] COPY src/LKvitai.MES.Contracts/ LKvitai.MES.Contracts/
+#32 DONE 0.0s
+
+#33 [build 24/26] COPY src/LKvitai.MES.SharedKernel/ LKvitai.MES.SharedKernel/
+#33 DONE 0.0s
+
+#34 [build 25/26] WORKDIR /src/LKvitai.MES.Api
+#34 DONE 0.0s
+
+#35 [build 26/26] RUN dotnet publish -c Release -o /app/publish /p:UseAppHost=false --no-restore
+#35 2.097   LKvitai.MES.SharedKernel -> /src/LKvitai.MES.SharedKernel/bin/Release/net8.0/LKvitai.MES.SharedKernel.dll
+#35 2.392   LKvitai.MES.Contracts -> /src/LKvitai.MES.Contracts/bin/Release/net8.0/LKvitai.MES.Contracts.dll
+#35 2.600   LKvitai.MES.Integration -> /src/LKvitai.MES.Integration/bin/Release/net8.0/LKvitai.MES.Integration.dll
+#35 2.739   LKvitai.MES.Domain -> /src/Modules/Warehouse/LKvitai.MES.Domain/bin/Release/net8.0/LKvitai.MES.Domain.dll
+#35 3.776   LKvitai.MES.Projections -> /src/LKvitai.MES.Projections/bin/Release/net8.0/LKvitai.MES.Projections.dll
+#35 4.111   LKvitai.MES.Application -> /src/LKvitai.MES.Application/bin/Release/net8.0/LKvitai.MES.Application.dll
+#35 4.606   LKvitai.MES.Sagas -> /src/LKvitai.MES.Sagas/bin/Release/net8.0/LKvitai.MES.Sagas.dll
+#35 8.719   LKvitai.MES.Infrastructure -> /src/LKvitai.MES.Infrastructure/bin/Release/net8.0/LKvitai.MES.Infrastructure.dll
+#35 12.94   LKvitai.MES.Api -> /src/LKvitai.MES.Api/bin/Release/net8.0/LKvitai.MES.Api.dll
+#35 13.14   LKvitai.MES.Api -> /app/publish/
+#35 DONE 13.5s
+
+#36 [runtime 5/6] COPY --from=build /app/publish .
+#36 DONE 0.3s
+
+#37 [runtime 6/6] RUN chown -R appuser:appuser /app
+#37 DONE 1.1s
+
+#38 exporting to image
+#38 exporting layers
+#38 exporting layers 0.2s done
+#38 writing image sha256:57d804b98af51059d7762a531dd1d3cefe45f44d751be25fbff0502902d2515f
+#38 writing image sha256:57d804b98af51059d7762a531dd1d3cefe45f44d751be25fbff0502902d2515f done
+#38 DONE 0.3s
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/vvwntyypoa4tiqec6iyqz6ydj

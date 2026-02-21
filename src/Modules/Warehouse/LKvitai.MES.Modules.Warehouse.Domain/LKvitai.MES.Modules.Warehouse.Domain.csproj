@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>LKvitai.MES.Modules.Warehouse.Domain</RootNamespace>
+    <AssemblyName>LKvitai.MES.Modules.Warehouse.Domain</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\BuildingBlocks\LKvitai.MES.BuildingBlocks.SharedKernel\LKvitai.MES.BuildingBlocks.SharedKernel.csproj" />
+    <ProjectReference Include="..\LKvitai.MES.Modules.Warehouse.Contracts\LKvitai.MES.Modules.Warehouse.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

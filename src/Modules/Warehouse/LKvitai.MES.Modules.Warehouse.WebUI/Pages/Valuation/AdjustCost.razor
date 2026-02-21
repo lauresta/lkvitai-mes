@@ -1,0 +1,170 @@
+@page "/warehouse/valuation/adjust-cost"
+@using System.ComponentModel.DataAnnotations
+@using LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure
+@using LKvitai.MES.Modules.Warehouse.WebUI.Models
+@inject ValuationClient ValuationClient
+@inject MasterDataAdminClient MasterDataAdminClient
+@inject NavigationManager NavigationManager
+@inject ToastService ToastService
+
+<PageTitle>Adjust Cost</PageTitle>
+
+<h1>Adjust Item Cost</h1>
+
+@if (_apiError is not null)
+{
+    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                 TraceId="@_apiError.TraceId"
+                 OnRetry="LoadItemsAsync"
+                 OnDismiss="DismissError" />
+}
+
+<div class="card shadow-sm position-relative">
+    <LoadingSpinner IsLoading="_isLoading || _isSubmitting" />
+    <div class="card-body">
+        <EditForm Model="_model" OnValidSubmit="SubmitAsync">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="row g-3">
+                <div class="col-12 col-md-6">
+                    <label class="form-label">Item</label>
+                    <InputSelect class="form-select" @bind-Value="_model.ItemId">
+                        <option value="">Select item</option>
+                        @foreach (var item in _items)
+                        {
+                            <option value="@item.Id">@item.InternalSKU - @item.Name</option>
+                        }
+                    </InputSelect>
+                </div>
+                <div class="col-12 col-md-3">
+                    <label class="form-label">New Cost</label>
+                    <InputNumber class="form-control" @bind-Value="_model.NewCost" />
+                </div>
+                <div class="col-12 col-md-3">
+                    <label class="form-label">Approved By (optional)</label>
+                    <InputText class="form-control" @bind-Value="_model.ApprovedBy" />
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Reason</label>
+                    <InputTextArea class="form-control" @bind-Value="_model.Reason" />
+                </div>
+            </div>
+
+            <div class="mt-3 d-flex gap-2">
+                <button class="btn btn-primary" type="submit" disabled="_isSubmitting">Adjust Cost</button>
+                <button class="btn btn-outline-secondary" type="button" @onclick="BackToDashboard">Back</button>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private readonly List<AdminItemDto> _items = [];
+    private readonly AdjustCostFormModel _model = new();
+
+    private bool _isLoading;
+    private bool _isSubmitting;
+    private ApiException? _apiError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadItemsAsync();
+    }
+
+    private async Task LoadItemsAsync()
+    {
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            var response = await MasterDataAdminClient.GetItemsAsync(null, null, "Active", 1, 500);
+            _items.Clear();
+            _items.AddRange(response.Items);
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task SubmitAsync()
+    {
+        if (!_model.ItemId.HasValue || !_model.NewCost.HasValue)
+        {
+            return;
+        }
+
+        _isSubmitting = true;
+        _apiError = null;
+
+        try
+        {
+            await ValuationClient.AdjustCostAsync(new AdjustValuationCostRequestDto
+            {
+                CommandId = Guid.NewGuid(),
+                ItemId = _model.ItemId.Value,
+                NewCost = _model.NewCost.Value,
+                Reason = _model.Reason.Trim(),
+                ApprovedBy = string.IsNullOrWhiteSpace(_model.ApprovedBy) ? null : _model.ApprovedBy.Trim()
+            });
+
+            ToastService.ShowSuccess("Cost adjusted successfully.");
+            NavigationManager.NavigateTo("/warehouse/valuation/dashboard");
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private void BackToDashboard()
+    {
+        NavigationManager.NavigateTo("/warehouse/valuation/dashboard");
+    }
+
+    private void DismissError()
+    {
+        _apiError = null;
+    }
+
+    private static string BuildErrorMessage(ApiException ex)
+    {
+        if (!string.IsNullOrWhiteSpace(ex.UserMessage))
+        {
+            return ex.UserMessage;
+        }
+
+        return ex.ProblemDetails?.Detail
+               ?? ex.ProblemDetails?.Title
+               ?? "Cost adjustment request failed.";
+    }
+
+    private sealed class AdjustCostFormModel
+    {
+        [Required]
+        public int? ItemId { get; set; }
+
+        [Required]
+        [Range(typeof(decimal), "0", "79228162514264337593543950335")]
+        public decimal? NewCost { get; set; }
+
+        [Required]
+        [MinLength(3)]
+        public string Reason { get; set; } = string.Empty;
+
+        [EmailAddress]
+        public string? ApprovedBy { get; set; }
+    }
+}

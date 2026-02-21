@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>LKvitai.MES.Modules.Warehouse.Infrastructure</RootNamespace>
+    <AssemblyName>LKvitai.MES.Modules.Warehouse.Infrastructure</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ClosedXML" />
+    <PackageReference Include="EFCore.BulkExtensions" />
+    <PackageReference Include="Marten" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" />
+    <PackageReference Include="StackExchange.Redis" />
+    <PackageReference Include="Serilog" />
+    <PackageReference Include="Serilog.Sinks.Console" />
+    <PackageReference Include="Serilog.Sinks.File" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\LKvitai.MES.Modules.Warehouse.Domain\LKvitai.MES.Modules.Warehouse.Domain.csproj" />
+    <ProjectReference Include="..\LKvitai.MES.Modules.Warehouse.Contracts\LKvitai.MES.Modules.Warehouse.Contracts.csproj" />
+    <ProjectReference Include="..\LKvitai.MES.Modules.Warehouse.Application\LKvitai.MES.Modules.Warehouse.Application.csproj" />
+  </ItemGroup>
+
+</Project>

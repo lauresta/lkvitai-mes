@@ -12,6 +12,17 @@
 
 This document hardens the architecture based on mandatory architectural decisions. It is the **FINAL BASELINE** for implementation. All decisions here are **MANDATORY** and must not be changed without architectural review board approval.
 
+## Current Codebase Structure (Refactor Branch)
+
+The implemented solution structure is now module-first:
+
+- `src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.*` for Warehouse module projects
+- `src/Modules/Warehouse/LKvitai.MES.WebUI` for UI
+- `src/BuildingBlocks/LKvitai.MES.BuildingBlocks.*` for cross-module building blocks
+- `tests/Modules/Warehouse/LKvitai.MES.Tests.Warehouse.*` for module-scoped tests
+
+Architectural boundaries in this document should be interpreted against this layout.
+
 **Key Changes from Previous Architecture:**
 1. Clarified StockLedger as sole owner of StockMovement events
 2. Hardened transaction boundaries and ordering

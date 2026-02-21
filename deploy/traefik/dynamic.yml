@@ -1,0 +1,10 @@
+http:
+  routers:
+    warehouse-api:
+      rule: "Host(`mes.local`)"
+      service: warehouse-api
+  services:
+    warehouse-api:
+      loadBalancer:
+        servers:
+          - url: "http://localhost:5000"

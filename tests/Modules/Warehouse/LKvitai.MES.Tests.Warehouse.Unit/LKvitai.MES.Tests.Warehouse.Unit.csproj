@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <RootNamespace>LKvitai.MES.Tests.Warehouse.Unit</RootNamespace>
+    <AssemblyName>LKvitai.MES.Tests.Warehouse.Unit</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="Moq" />
+    <PackageReference Include="coverlet.collector" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MassTransit" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\\..\\..\\..\\src\\Modules\\Warehouse\\LKvitai.MES.Modules.Warehouse.Domain\\LKvitai.MES.Modules.Warehouse.Domain.csproj" />
+    <ProjectReference Include="..\\..\\..\\..\\src\\Modules\\Warehouse\\LKvitai.MES.Modules.Warehouse.Application\\LKvitai.MES.Modules.Warehouse.Application.csproj" />
+    <ProjectReference Include="..\\..\\..\\..\\src\\Modules\\Warehouse\\LKvitai.MES.Modules.Warehouse.Contracts\\LKvitai.MES.Modules.Warehouse.Contracts.csproj" />
+    <ProjectReference Include="..\\..\\..\\..\\src\\Modules\\Warehouse\\LKvitai.MES.Modules.Warehouse.Projections\\LKvitai.MES.Modules.Warehouse.Projections.csproj" />
+    <ProjectReference Include="..\\..\\..\\..\\src\\Modules\\Warehouse\\LKvitai.MES.Modules.Warehouse.Infrastructure\\LKvitai.MES.Modules.Warehouse.Infrastructure.csproj" />
+    <ProjectReference Include="..\\..\\..\\..\\src\\Modules\\Warehouse\\LKvitai.MES.Modules.Warehouse.Sagas\\LKvitai.MES.Modules.Warehouse.Sagas.csproj" />
+    <ProjectReference Include="..\\..\\..\\..\\src\\Modules\\Warehouse\\LKvitai.MES.Modules.Warehouse.Api\\LKvitai.MES.Modules.Warehouse.Api.csproj" />
+    <ProjectReference Include="..\\..\\..\\..\\src\\Modules\\Warehouse\\LKvitai.MES.Modules.Warehouse.WebUI\\LKvitai.MES.Modules.Warehouse.WebUI.csproj" />
+  </ItemGroup>
+
+</Project>

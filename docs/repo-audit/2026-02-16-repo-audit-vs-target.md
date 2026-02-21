@@ -7,6 +7,8 @@
 
 ---
 
+> RESOLVED: See `docs/blueprints/repo-refactor-blueprint.md` and `docs/repo-audit/2026-02-19-refactor-completion.md` for executed refactor status on `refactor/modular-blueprint`.
+
 ## 1. Executive Summary
 
 - **Overall compliance: LOW.** The repo uses a flat clean-architecture layout (`LKvitai.MES.<Layer>`), not the target modular layout (`LKvitai.MES.Modules.<Module>.<Layer>`).

@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>LKvitai.MES.BuildingBlocks.SharedKernel</RootNamespace>
+    <AssemblyName>LKvitai.MES.BuildingBlocks.SharedKernel</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\\LKvitai.MES.BuildingBlocks.Cqrs.Abstractions\\LKvitai.MES.BuildingBlocks.Cqrs.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,5 @@
+Command:
+ls -la | grep ".md"
+
+Output:
+-rw-r--r--@  1 bykovas  staff   5008 Feb  7 08:56 CLAUDE.md

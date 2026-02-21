@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <RootNamespace>LKvitai.MES.Tests.Warehouse.Property</RootNamespace>
+    <AssemblyName>LKvitai.MES.Tests.Warehouse.Property</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="FsCheck" />
+    <PackageReference Include="FsCheck.Xunit" />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="coverlet.collector" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\\..\\..\\..\\src\\Modules\\Warehouse\\LKvitai.MES.Modules.Warehouse.Domain\\LKvitai.MES.Modules.Warehouse.Domain.csproj" />
+    <ProjectReference Include="..\\..\\..\\..\\src\\Modules\\Warehouse\\LKvitai.MES.Modules.Warehouse.Application\\LKvitai.MES.Modules.Warehouse.Application.csproj" />
+  </ItemGroup>
+
+</Project>

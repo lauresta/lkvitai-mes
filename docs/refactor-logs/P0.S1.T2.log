@@ -1,0 +1,33 @@
+COMMAND: dotnet restore 
+  Determining projects to restore...
+  Restored C:\Sources\clients\lauresta\lkvitai-mes\tests\ArchitectureTests\LKvitai.MES.ArchitectureTests\LKvitai.MES.ArchitectureTests.csproj (in 483 ms).
+  Restored C:\Sources\clients\lauresta\lkvitai-mes\tests\LKvitai.MES.Tests.Property\LKvitai.MES.Tests.Property.csproj (in 485 ms).
+  Restored C:\Sources\clients\lauresta\lkvitai-mes\tests\LKvitai.MES.Tests.E2E\LKvitai.MES.Tests.E2E.csproj (in 563 ms).
+  Restored C:\Sources\clients\lauresta\lkvitai-mes\tests\LKvitai.MES.Tests.Unit\LKvitai.MES.Tests.Unit.csproj (in 869 ms).
+  Restored C:\Sources\clients\lauresta\lkvitai-mes\tests\LKvitai.MES.Tests.Integration\LKvitai.MES.Tests.Integration.csproj (in 787 ms).
+  10 of 15 projects are up-to-date for restore.
+ 
+COMMAND: dotnet build 
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  LKvitai.MES.SharedKernel -> C:\Sources\clients\lauresta\lkvitai-mes\src\LKvitai.MES.SharedKernel\bin\Debug\net8.0\LKvitai.MES.SharedKernel.dll
+  LKvitai.MES.ArchitectureTests -> C:\Sources\clients\lauresta\lkvitai-mes\tests\ArchitectureTests\LKvitai.MES.ArchitectureTests\bin\Debug\net8.0\LKvitai.MES.ArchitectureTests.dll
+  LKvitai.MES.Tests.E2E -> C:\Sources\clients\lauresta\lkvitai-mes\tests\LKvitai.MES.Tests.E2E\bin\Debug\net8.0\LKvitai.MES.Tests.E2E.dll
+  LKvitai.MES.WebUI -> C:\Sources\clients\lauresta\lkvitai-mes\src\LKvitai.MES.WebUI\bin\Debug\net8.0\LKvitai.MES.WebUI.dll
+  LKvitai.MES.Contracts -> C:\Sources\clients\lauresta\lkvitai-mes\src\LKvitai.MES.Contracts\bin\Debug\net8.0\LKvitai.MES.Contracts.dll
+  LKvitai.MES.Integration -> C:\Sources\clients\lauresta\lkvitai-mes\src\LKvitai.MES.Integration\bin\Debug\net8.0\LKvitai.MES.Integration.dll
+  LKvitai.MES.Domain -> C:\Sources\clients\lauresta\lkvitai-mes\src\LKvitai.MES.Domain\bin\Debug\net8.0\LKvitai.MES.Domain.dll
+  LKvitai.MES.Projections -> C:\Sources\clients\lauresta\lkvitai-mes\src\LKvitai.MES.Projections\bin\Debug\net8.0\LKvitai.MES.Projections.dll
+  LKvitai.MES.Application -> C:\Sources\clients\lauresta\lkvitai-mes\src\LKvitai.MES.Application\bin\Debug\net8.0\LKvitai.MES.Application.dll
+  LKvitai.MES.Sagas -> C:\Sources\clients\lauresta\lkvitai-mes\src\LKvitai.MES.Sagas\bin\Debug\net8.0\LKvitai.MES.Sagas.dll
+  LKvitai.MES.Infrastructure -> C:\Sources\clients\lauresta\lkvitai-mes\src\LKvitai.MES.Infrastructure\bin\Debug\net8.0\LKvitai.MES.Infrastructure.dll
+  LKvitai.MES.Tests.Property -> C:\Sources\clients\lauresta\lkvitai-mes\tests\LKvitai.MES.Tests.Property\bin\Debug\net8.0\LKvitai.MES.Tests.Property.dll
+  LKvitai.MES.Api -> C:\Sources\clients\lauresta\lkvitai-mes\src\LKvitai.MES.Api\bin\Debug\net8.0\LKvitai.MES.Api.dll
+  LKvitai.MES.Tests.Integration -> C:\Sources\clients\lauresta\lkvitai-mes\tests\LKvitai.MES.Tests.Integration\bin\Debug\net8.0\LKvitai.MES.Tests.Integration.dll
+  LKvitai.MES.Tests.Unit -> C:\Sources\clients\lauresta\lkvitai-mes\tests\LKvitai.MES.Tests.Unit\bin\Debug\net8.0\LKvitai.MES.Tests.Unit.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:06.38

@@ -1,0 +1,374 @@
+@page "/warehouse/valuation/dashboard"
+@using System.Globalization
+@using System.Text
+@using LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure
+@using LKvitai.MES.Modules.Warehouse.WebUI.Models
+@inject ValuationClient ValuationClient
+@inject ToastService ToastService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+
+<PageTitle>Valuation Dashboard</PageTitle>
+
+<h1>Valuation Dashboard</h1>
+
+@if (_apiError is not null)
+{
+    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                 TraceId="@_apiError.TraceId"
+                 OnRetry="LoadAsync"
+                 OnDismiss="DismissError" />
+}
+
+<div class="row g-3 mb-3">
+    <div class="col-12 col-md-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <div class="text-muted small">Total On-Hand Value</div>
+                <div class="fs-4 fw-semibold">@TotalOnHandValue.ToString("C", CultureInfo.CurrentCulture)</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <div class="text-muted small">Recent Cost Changes (7d)</div>
+                <div class="fs-4 fw-semibold">@RecentChangesCount</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <div class="text-muted small">Pending Approvals</div>
+                <div class="fs-4 fw-semibold">@PendingApprovalsCount</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body d-flex flex-wrap gap-2">
+        <button class="btn btn-primary" @onclick="OpenAdjustCost">Adjust Cost</button>
+        <button class="btn btn-outline-primary" @onclick="OpenLandedCost">Apply Landed Cost</button>
+        <button class="btn btn-outline-danger" @onclick="OpenWriteDown">Write Down</button>
+        <button class="btn btn-outline-secondary ms-auto" @onclick="LoadAsync">Refresh</button>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body position-relative">
+        <LoadingSpinner IsLoading="_isLoading" />
+        <div class="d-flex align-items-center justify-content-between mb-2">
+            <h5 class="mb-0">On-Hand Value Report</h5>
+            <button class="btn btn-sm btn-outline-secondary"
+                    @onclick="ExportOnHandCsvAsync"
+                    disabled="@(_isLoading || _onHandRows.Count == 0)">
+                Export CSV
+            </button>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle">
+                <thead>
+                <tr>
+                    <th>Item</th>
+                    <th class="text-end">Qty</th>
+                    <th class="text-end">Unit Cost</th>
+                    <th class="text-end">Total Value</th>
+                </tr>
+                </thead>
+                <tbody>
+                @if (_onHandRows.Count == 0)
+                {
+                    <tr>
+                        <td colspan="4">
+                            <EmptyState Title="No on-hand value rows"
+                                        Message="No valuation rows were returned."
+                                        IconCss="bi bi-cash-stack" />
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var row in _onHandRows)
+                    {
+                        <tr>
+                            <td>@row.ItemSku - @row.ItemName</td>
+                            <td class="text-end">@row.Qty.ToString("0.###", CultureInfo.InvariantCulture)</td>
+                            <td class="text-end">@row.UnitCost.ToString("0.####", CultureInfo.InvariantCulture)</td>
+                            <td class="text-end">@row.TotalValue.ToString("0.####", CultureInfo.InvariantCulture)</td>
+                        </tr>
+                    }
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body position-relative">
+        <LoadingSpinner IsLoading="_isLoadingHistory" />
+        <div class="d-flex align-items-center justify-content-between mb-2">
+            <h5 class="mb-0">Cost History Report</h5>
+            <button class="btn btn-sm btn-outline-secondary"
+                    @onclick="ExportCostHistoryCsvAsync"
+                    disabled="@(_isLoadingHistory || _costHistoryRows.Count == 0)">
+                Export CSV
+            </button>
+        </div>
+
+        <div class="row g-2 mb-3">
+            <div class="col-12 col-md-2">
+                <label class="form-label">Item Id</label>
+                <input class="form-control" type="number" min="1" @bind="_filterItemId" />
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label">Reason</label>
+                <input class="form-control" @bind="_filterReason" />
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label">Approved By</label>
+                <input class="form-control" @bind="_filterApprovedBy" />
+            </div>
+            <div class="col-12 col-md-2">
+                <label class="form-label">Date From</label>
+                <input class="form-control" type="date" @bind="_filterDateFrom" />
+            </div>
+            <div class="col-12 col-md-2">
+                <label class="form-label">Date To</label>
+                <input class="form-control" type="date" @bind="_filterDateTo" />
+            </div>
+        </div>
+
+        <div class="d-flex gap-2 mb-3">
+            <button class="btn btn-primary" @onclick="ApplyHistoryFiltersAsync" disabled="_isLoadingHistory">Apply Filters</button>
+            <button class="btn btn-outline-secondary" @onclick="ResetHistoryFiltersAsync" disabled="_isLoadingHistory">Reset</button>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle">
+                <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Date</th>
+                    <th class="text-end">Old Cost</th>
+                    <th class="text-end">New Cost</th>
+                    <th>Reason</th>
+                    <th>Approved By</th>
+                </tr>
+                </thead>
+                <tbody>
+                @if (_costHistoryRows.Count == 0)
+                {
+                    <tr>
+                        <td colspan="6">
+                            <EmptyState Title="No history rows"
+                                        Message="Adjust valuation filters and try again."
+                                        IconCss="bi bi-clock-history" />
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var row in _costHistoryRows)
+                    {
+                        <tr>
+                            <td>@row.ItemSku</td>
+                            <td>@row.ChangedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                            <td class="text-end">@(row.OldCost.HasValue ? row.OldCost.Value.ToString("0.####", CultureInfo.InvariantCulture) : "-")</td>
+                            <td class="text-end">@(row.NewCost.HasValue ? row.NewCost.Value.ToString("0.####", CultureInfo.InvariantCulture) : "-")</td>
+                            <td>@row.Reason</td>
+                            <td>@(string.IsNullOrWhiteSpace(row.ApprovedBy) ? "-" : row.ApprovedBy)</td>
+                        </tr>
+                    }
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@code {
+    private readonly List<OnHandValueRowDto> _onHandRows = [];
+    private readonly List<CostHistoryRowDto> _costHistoryRows = [];
+    private ApiException? _apiError;
+    private bool _isLoading;
+    private bool _isLoadingHistory;
+
+    private int? _filterItemId;
+    private string? _filterReason;
+    private string? _filterApprovedBy;
+    private DateTime? _filterDateFrom;
+    private DateTime? _filterDateTo;
+
+    private decimal TotalOnHandValue => _onHandRows.Sum(x => x.TotalValue);
+    private int RecentChangesCount => _costHistoryRows.Count(x => x.ChangedAt >= DateTimeOffset.UtcNow.AddDays(-7));
+    private int PendingApprovalsCount => _costHistoryRows.Count(x =>
+        string.IsNullOrWhiteSpace(x.ApprovedBy) &&
+        x.OldCost.HasValue &&
+        x.NewCost.HasValue &&
+        Math.Abs(x.NewCost.Value - x.OldCost.Value) > 1000m);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _apiError = null;
+        try
+        {
+            var onHand = await ValuationClient.GetOnHandValueAsync();
+            _onHandRows.Clear();
+            _onHandRows.AddRange(onHand.OrderByDescending(x => x.TotalValue));
+            await LoadHistoryAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task ApplyHistoryFiltersAsync()
+    {
+        await LoadHistoryAsync();
+    }
+
+    private async Task ResetHistoryFiltersAsync()
+    {
+        _filterItemId = null;
+        _filterReason = null;
+        _filterApprovedBy = null;
+        _filterDateFrom = null;
+        _filterDateTo = null;
+        await LoadHistoryAsync();
+    }
+
+    private async Task LoadHistoryAsync()
+    {
+        _isLoadingHistory = true;
+        _apiError = null;
+        try
+        {
+            DateTimeOffset? from = _filterDateFrom.HasValue
+                ? new DateTimeOffset(_filterDateFrom.Value.Date, TimeSpan.Zero)
+                : null;
+            DateTimeOffset? to = _filterDateTo.HasValue
+                ? new DateTimeOffset(_filterDateTo.Value.Date.AddDays(1).AddTicks(-1), TimeSpan.Zero)
+                : null;
+
+            var rows = await ValuationClient.GetCostHistoryAsync(
+                _filterItemId,
+                from,
+                to,
+                _filterReason,
+                _filterApprovedBy);
+
+            _costHistoryRows.Clear();
+            _costHistoryRows.AddRange(rows.OrderByDescending(x => x.ChangedAt));
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isLoadingHistory = false;
+        }
+    }
+
+    private async Task ExportOnHandCsvAsync()
+    {
+        var builder = new StringBuilder();
+        builder.AppendLine("Item,Qty,UnitCost,TotalValue");
+        foreach (var row in _onHandRows)
+        {
+            builder.AppendLine(string.Join(",",
+                Csv(row.ItemSku),
+                Csv(row.Qty.ToString("0.###", CultureInfo.InvariantCulture)),
+                Csv(row.UnitCost.ToString("0.####", CultureInfo.InvariantCulture)),
+                Csv(row.TotalValue.ToString("0.####", CultureInfo.InvariantCulture))));
+        }
+
+        await JS.InvokeVoidAsync(
+            "csvExport.download",
+            $"on-hand-value-{DateTime.UtcNow:yyyyMMddHHmmss}.csv",
+            builder.ToString());
+    }
+
+    private async Task ExportCostHistoryCsvAsync()
+    {
+        var builder = new StringBuilder();
+        builder.AppendLine("Item,Date,OldCost,NewCost,Reason,ApprovedBy");
+        foreach (var row in _costHistoryRows)
+        {
+            builder.AppendLine(string.Join(",",
+                Csv(row.ItemSku),
+                Csv(row.ChangedAt.ToString("O")),
+                Csv(row.OldCost?.ToString("0.####", CultureInfo.InvariantCulture) ?? string.Empty),
+                Csv(row.NewCost?.ToString("0.####", CultureInfo.InvariantCulture) ?? string.Empty),
+                Csv(row.Reason),
+                Csv(row.ApprovedBy ?? string.Empty)));
+        }
+
+        await JS.InvokeVoidAsync(
+            "csvExport.download",
+            $"cost-history-{DateTime.UtcNow:yyyyMMddHHmmss}.csv",
+            builder.ToString());
+    }
+
+    private void OpenAdjustCost()
+    {
+        NavigationManager.NavigateTo("/warehouse/valuation/adjust-cost");
+    }
+
+    private void OpenLandedCost()
+    {
+        NavigationManager.NavigateTo("/warehouse/valuation/apply-landed-cost");
+    }
+
+    private void OpenWriteDown()
+    {
+        NavigationManager.NavigateTo("/warehouse/valuation/write-down");
+    }
+
+    private void DismissError()
+    {
+        _apiError = null;
+    }
+
+    private static string Csv(string? value)
+    {
+        var normalized = value ?? string.Empty;
+        if (!normalized.Contains(',', StringComparison.Ordinal) &&
+            !normalized.Contains('"', StringComparison.Ordinal) &&
+            !normalized.Contains('\n', StringComparison.Ordinal))
+        {
+            return normalized;
+        }
+
+        return "\"" + normalized.Replace("\"", "\"\"", StringComparison.Ordinal) + "\"";
+    }
+
+    private static string BuildErrorMessage(ApiException ex)
+    {
+        if (!string.IsNullOrWhiteSpace(ex.UserMessage))
+        {
+            return ex.UserMessage;
+        }
+
+        return ex.ProblemDetails?.Detail
+               ?? ex.ProblemDetails?.Title
+               ?? "Valuation request failed.";
+    }
+}

@@ -1,0 +1,277 @@
+@page "/warehouse/outbound/orders/{Id:guid}"
+@inject OutboundClient OutboundClient
+@inject NavigationManager NavigationManager
+@inject ToastService ToastService
+@using LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure
+
+<PageTitle>Outbound Order Detail - LKvitai.MES</PageTitle>
+
+<h1>Outbound Order Detail</h1>
+
+@if (_apiError is not null)
+{
+    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                 TraceId="@_apiError.TraceId"
+                 OnRetry="ReloadAsync"
+                 OnDismiss="DismissError" />
+}
+
+<div class="card shadow-sm position-relative">
+    <LoadingSpinner IsLoading="_isLoading" />
+
+    <div class="card-body">
+        @if (_order is null && !_isLoading)
+        {
+            <p class="text-muted mb-0">Order not found.</p>
+        }
+        else if (_order is not null)
+        {
+            <div class="d-flex justify-content-between flex-wrap gap-2 mb-3">
+                <div>
+                    <h4 class="mb-1">@_order.OrderNumber</h4>
+                    <div class="text-muted">Customer: @(_order.CustomerName ?? "-")</div>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-secondary" @onclick="BackToList">Back</button>
+                    @if (CanPack)
+                    {
+                        <button class="btn btn-primary" @onclick="OpenPackingStation">Open Packing Station</button>
+                    }
+                </div>
+            </div>
+
+            <dl class="row mb-3">
+                <dt class="col-sm-3">Status</dt>
+                <dd class="col-sm-9"><span class="badge @GetStatusBadgeClass(_order.Status)">@_order.Status</span></dd>
+
+                <dt class="col-sm-3">Order Date</dt>
+                <dd class="col-sm-9">@FormatDate(_order.OrderDate)</dd>
+
+                <dt class="col-sm-3">Requested Ship Date</dt>
+                <dd class="col-sm-9">@FormatDate(_order.RequestedShipDate)</dd>
+
+                <dt class="col-sm-3">Reservation Id</dt>
+                <dd class="col-sm-9"><code>@_order.ReservationId</code></dd>
+
+                @if (_order.Shipment is not null)
+                {
+                    <dt class="col-sm-3">Shipment</dt>
+                    <dd class="col-sm-9">
+                        @_order.Shipment.ShipmentNumber
+                        @if (!string.IsNullOrWhiteSpace(_order.Shipment.TrackingNumber))
+                        {
+                            <span class="ms-2 text-muted">Tracking: @_order.Shipment.TrackingNumber</span>
+                        }
+                    </dd>
+                }
+            </dl>
+
+            <div class="table-responsive mb-3">
+                <table class="table table-sm align-middle">
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Barcode</th>
+                            <th>Qty</th>
+                            <th>Picked</th>
+                            <th>Shipped</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var line in _order.Lines)
+                        {
+                            <tr>
+                                <td>
+                                    <strong>@line.ItemSku</strong><br />
+                                    <span class="text-muted">@line.ItemName</span>
+                                </td>
+                                <td>@(line.PrimaryBarcode ?? "-")</td>
+                                <td>@line.Qty</td>
+                                <td>@line.PickedQty</td>
+                                <td>@line.ShippedQty</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (_order.SalesOrderId.HasValue)
+            {
+                <div class="border rounded p-3 bg-light-subtle">
+                    <h5 class="mb-3">Order Actions</h5>
+
+                    <div class="d-flex flex-wrap gap-2 mb-2">
+                        @if (CanRelease)
+                        {
+                            <button class="btn btn-outline-primary" @onclick="ReleaseAsync" disabled="@_isSubmitting">Release</button>
+                        }
+
+                        @if (CanCancel)
+                        {
+                            <button class="btn btn-outline-danger" @onclick="CancelAsync" disabled="@_isSubmitting">Cancel</button>
+                        }
+                    </div>
+
+                    @if (CanCancel)
+                    {
+                        <label class="form-label" for="cancel-reason">Cancellation reason</label>
+                        <input id="cancel-reason" class="form-control" type="text" @bind="_cancelReason" />
+                    }
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public Guid Id { get; set; }
+
+    private OutboundOrderDetailDto? _order;
+    private bool _isLoading;
+    private bool _isSubmitting;
+    private ApiException? _apiError;
+    private string _cancelReason = "Customer requested cancellation";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            _order = await OutboundClient.GetOutboundOrderAsync(Id);
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            _order = null;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void DismissError()
+    {
+        _apiError = null;
+    }
+
+    private void BackToList()
+    {
+        NavigationManager.NavigateTo("/warehouse/outbound/orders");
+    }
+
+    private void OpenPackingStation()
+    {
+        NavigationManager.NavigateTo($"/warehouse/outbound/pack/{Id}");
+    }
+
+    private async Task ReleaseAsync()
+    {
+        if (_isSubmitting)
+        {
+            return;
+        }
+
+        if (_order?.SalesOrderId is null)
+        {
+            return;
+        }
+
+        _isSubmitting = true;
+
+        try
+        {
+            await OutboundClient.ReleaseSalesOrderAsync(_order.SalesOrderId.Value);
+            ToastService.ShowSuccess("Order released successfully.");
+            await ReloadAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private async Task CancelAsync()
+    {
+        if (_isSubmitting)
+        {
+            return;
+        }
+
+        if (_order?.SalesOrderId is null)
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_cancelReason))
+        {
+            ToastService.ShowError("Cancellation reason is required.");
+            return;
+        }
+
+        _isSubmitting = true;
+
+        try
+        {
+            await OutboundClient.CancelSalesOrderAsync(_order.SalesOrderId.Value, _cancelReason.Trim());
+            ToastService.ShowSuccess("Order cancelled successfully.");
+            await ReloadAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private bool CanPack => _order is not null &&
+                            string.Equals(_order.Status, "PICKED", StringComparison.OrdinalIgnoreCase);
+
+    private bool CanRelease => _order is not null &&
+                               _order.SalesOrderId.HasValue &&
+                               string.Equals(_order.Status, "ALLOCATED", StringComparison.OrdinalIgnoreCase);
+
+    private bool CanCancel => _order is not null &&
+                              _order.SalesOrderId.HasValue &&
+                              !string.Equals(_order.Status, "SHIPPED", StringComparison.OrdinalIgnoreCase) &&
+                              !string.Equals(_order.Status, "DELIVERED", StringComparison.OrdinalIgnoreCase) &&
+                              !string.Equals(_order.Status, "CANCELLED", StringComparison.OrdinalIgnoreCase);
+
+    private static string FormatDate(DateTimeOffset? value)
+        => value.HasValue ? value.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm") : "-";
+
+    private static string BuildErrorMessage(ApiException ex)
+        => !string.IsNullOrWhiteSpace(ex.UserMessage)
+            ? ex.UserMessage
+            : "Request failed.";
+
+    private static string GetStatusBadgeClass(string status)
+        => status.ToUpperInvariant() switch
+        {
+            "ALLOCATED" => "bg-info text-dark",
+            "PICKING" => "bg-primary",
+            "PICKED" => "bg-secondary",
+            "PACKED" => "bg-warning text-dark",
+            "SHIPPED" => "bg-success",
+            "DELIVERED" => "bg-success",
+            "CANCELLED" => "bg-danger",
+            _ => "bg-light text-dark"
+        };
+}

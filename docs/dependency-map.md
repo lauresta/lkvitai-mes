@@ -1,8 +1,8 @@
 # Dependency Map — LKvitai.MES
 
-> Generated: 2026-02-15
+> Generated: 2026-02-21
 > Method: csproj parsing, ripgrep namespace scan, manual CI/Docker inspection
-> Scope: 10 source projects, 3 test projects, 2 Dockerfiles, 2 GH Actions workflows
+> Scope: 11 source projects, 5 test projects, 2 Dockerfiles, 3 GH Actions workflows
 
 ---
 
@@ -12,43 +12,49 @@
 
 | # | Project | References | Incoming (depended on by) |
 |---|---------|------------|---------------------------|
-| 1 | **SharedKernel** | _(none — leaf)_ | Contracts, Domain, Application |
-| 2 | **Contracts** | SharedKernel | Domain, Application, Infrastructure, Integration, Projections, Sagas, Api |
-| 3 | **Domain** | SharedKernel, Contracts | Application, Infrastructure, Projections, Tests.* |
-| 4 | **Application** | Domain, Contracts, SharedKernel | Infrastructure, Sagas, Api, Tests.* |
-| 5 | **Infrastructure** | Domain, Contracts, Application | Api, Tests.Integration, Tests.Unit |
-| 6 | **Integration** | Contracts | Api |
-| 7 | **Projections** | Contracts, Domain | Api, Tests.Integration, Tests.Unit |
-| 8 | **Sagas** | Contracts, Application | Api, Tests.Unit |
-| 9 | **Api** | Application, Infrastructure, Projections, Sagas, Integration | Tests.Integration, Tests.Unit |
-| 10 | **WebUI** | _(none — standalone)_ | Tests.Unit |
+| 1 | **BuildingBlocks.Cqrs.Abstractions** | _(none — leaf)_ | BuildingBlocks.SharedKernel, Modules.Warehouse.Application |
+| 2 | **BuildingBlocks.SharedKernel** | BuildingBlocks.Cqrs.Abstractions | Modules.Warehouse.Contracts, Modules.Warehouse.Domain, Modules.Warehouse.Application, Modules.Warehouse.Integration |
+| 3 | **Modules.Warehouse.Contracts** | BuildingBlocks.SharedKernel | Modules.Warehouse.Domain, Modules.Warehouse.Application, Modules.Warehouse.Infrastructure, Modules.Warehouse.Integration, Modules.Warehouse.Projections, Modules.Warehouse.Sagas |
+| 4 | **Modules.Warehouse.Domain** | BuildingBlocks.SharedKernel, Modules.Warehouse.Contracts | Modules.Warehouse.Application, Modules.Warehouse.Infrastructure, Modules.Warehouse.Projections, Tests.Warehouse.* |
+| 5 | **Modules.Warehouse.Application** | BuildingBlocks.Cqrs.Abstractions, BuildingBlocks.SharedKernel, Modules.Warehouse.Domain, Modules.Warehouse.Contracts | Modules.Warehouse.Infrastructure, Modules.Warehouse.Sagas, Modules.Warehouse.Api, Tests.Warehouse.* |
+| 6 | **Modules.Warehouse.Infrastructure** | Modules.Warehouse.Domain, Modules.Warehouse.Contracts, Modules.Warehouse.Application | Modules.Warehouse.Api, Tests.Warehouse.Integration, Tests.Warehouse.Unit |
+| 7 | **Modules.Warehouse.Integration** | BuildingBlocks.SharedKernel, Modules.Warehouse.Contracts | Modules.Warehouse.Api |
+| 8 | **Modules.Warehouse.Projections** | Modules.Warehouse.Contracts, Modules.Warehouse.Domain | Modules.Warehouse.Api, Tests.Warehouse.Integration, Tests.Warehouse.Unit |
+| 9 | **Modules.Warehouse.Sagas** | Modules.Warehouse.Contracts, Modules.Warehouse.Application | Modules.Warehouse.Api, Tests.Warehouse.Unit |
+| 10 | **Modules.Warehouse.Api** | Modules.Warehouse.Application, Modules.Warehouse.Infrastructure, Modules.Warehouse.Projections, Modules.Warehouse.Sagas, Modules.Warehouse.Integration | Tests.Warehouse.Integration, Tests.Warehouse.Unit |
+| 11 | **WebUI** | _(none — standalone)_ | Tests.Warehouse.Unit |
 
 ### 1.2 Test Projects
 
 | Project | References |
 |---------|------------|
-| Tests.Integration | Api, Infrastructure, Projections, Domain, Application, Contracts |
-| Tests.Property | Domain, Application |
-| Tests.Unit | Domain, Application, Contracts, Projections, Infrastructure, Sagas, Api, WebUI |
+| Tests.Warehouse.Integration | Modules.Warehouse.Api, Modules.Warehouse.Infrastructure, Modules.Warehouse.Projections, Modules.Warehouse.Domain, Modules.Warehouse.Application, Modules.Warehouse.Contracts |
+| Tests.Warehouse.Property | Modules.Warehouse.Domain, Modules.Warehouse.Application |
+| Tests.Warehouse.Unit | Modules.Warehouse.Domain, Modules.Warehouse.Application, Modules.Warehouse.Contracts, Modules.Warehouse.Projections, Modules.Warehouse.Infrastructure, Modules.Warehouse.Sagas, Modules.Warehouse.Api, WebUI |
+| Tests.Warehouse.E2E | _(black-box, no direct project references)_ |
+| ArchitectureTests | _(rule-based static architecture checks)_ |
 
 ### 1.3 Mermaid Dependency Graph
 
 ```mermaid
 graph TD
-    SK[SharedKernel]
-    C[Contracts]
-    D[Domain]
-    APP[Application]
-    INF[Infrastructure]
-    INT[Integration]
-    PRJ[Projections]
-    SAG[Sagas]
-    API[Api]
+    CQRS[BuildingBlocks.Cqrs.Abstractions]
+    SK[BuildingBlocks.SharedKernel]
+    C[Modules.Warehouse.Contracts]
+    D[Modules.Warehouse.Domain]
+    APP[Modules.Warehouse.Application]
+    INF[Modules.Warehouse.Infrastructure]
+    INT[Modules.Warehouse.Integration]
+    PRJ[Modules.Warehouse.Projections]
+    SAG[Modules.Warehouse.Sagas]
+    API[Modules.Warehouse.Api]
     WEB[WebUI]
 
+    SK --> CQRS
     C --> SK
     D --> SK
     D --> C
+    APP --> CQRS
     APP --> D
     APP --> C
     APP --> SK
@@ -66,6 +72,7 @@ graph TD
     API --> SAG
     API --> INT
 
+    style CQRS fill:#e8f5e9,stroke:#2e7d32
     style SK fill:#e8f5e9,stroke:#2e7d32
     style C fill:#e8f5e9,stroke:#2e7d32
     style D fill:#fff3e0,stroke:#ef6c00
@@ -88,29 +95,29 @@ graph TD
 
 | Project | Marten | MassTransit | EF Core | ASP.NET / Web | Logging / Telemetry | Other Notable |
 |---------|--------|-------------|---------|---------------|---------------------|---------------|
-| **SharedKernel** | — | — | — | — | — | MediatR 12.2.0 |
-| **Contracts** | — | — | — | — | — | _(none)_ |
-| **Domain** | — | — | — | — | — | _(none)_ |
-| **Application** | **Marten 7.0.0** | — | — | — | Logging.Abstractions 8.0.0 | MediatR 12.2.0, FluentValidation 11.9.0 |
-| **Infrastructure** | **Marten 7.0.0** | — | **EF Core 8.0.13**, Npgsql.EFCore.PG 8.0.11, EFCore.BulkExtensions 8.1.3 | — | Serilog 3.1.1 + Console + File | ClosedXML 0.104.2 |
-| **Integration** | — | — | — | — | — | _(none)_ |
-| **Projections** | **Marten 7.0.0** | — | — | — | — | — |
-| **Sagas** | — | **MassTransit 8.1.3**, MassTransit.Marten 8.1.3 | — | — | — | — |
-| **Api** | — | **MassTransit 8.1.3**, MassTransit.RabbitMQ 8.1.3 | — | Swashbuckle 6.5.0, Sdk.Web | Serilog.AspNetCore 8.0.0, OpenTelemetry (4 pkgs) | Hangfire (3 pkgs), CsvHelper, SSH.NET, Polly, Otp.NET, QRCoder |
+| **BuildingBlocks.SharedKernel** | — | — | — | — | — | MediatR 12.2.0 |
+| **Modules.Warehouse.Contracts** | — | — | — | — | — | _(none)_ |
+| **Modules.Warehouse.Domain** | — | — | — | — | — | _(none)_ |
+| **Modules.Warehouse.Application** | **Marten 7.0.0** | — | — | — | Logging.Abstractions 8.0.0 | MediatR 12.2.0, FluentValidation 11.9.0 |
+| **Modules.Warehouse.Infrastructure** | **Marten 7.0.0** | — | **EF Core 8.0.13**, Npgsql.EFCore.PG 8.0.11, EFCore.BulkExtensions 8.1.3 | — | Serilog 3.1.1 + Console + File | ClosedXML 0.104.2 |
+| **Modules.Warehouse.Integration** | — | — | — | — | — | _(none)_ |
+| **Modules.Warehouse.Projections** | **Marten 7.0.0** | — | — | — | — | — |
+| **Modules.Warehouse.Sagas** | — | **MassTransit 8.1.3**, MassTransit.Marten 8.1.3 | — | — | — | — |
+| **Modules.Warehouse.Api** | — | **MassTransit 8.1.3**, MassTransit.RabbitMQ 8.1.3 | — | Swashbuckle 6.5.0, Sdk.Web | Serilog.AspNetCore 8.0.0, OpenTelemetry (4 pkgs) | Hangfire (3 pkgs), CsvHelper, SSH.NET, Polly, Otp.NET, QRCoder |
 | **WebUI** | — | — | — | Sdk.Web | — | _(none)_ |
 
 ### 2.2 BuildingBlocks Candidates (shared infra packages)
 
 | Package | Used In | Candidate For |
 |---------|---------|---------------|
-| **Marten 7.0.0** | Application, Infrastructure, Projections | `BuildingBlocks.EventSourcing` — event store abstraction |
-| **MassTransit 8.1.3** | Api, Sagas, Tests.Unit | `BuildingBlocks.Messaging` — bus + saga runtime |
-| **MediatR 12.2.0** | SharedKernel, Application | Already in SharedKernel; could stay there |
-| **FluentValidation 11.9.0** | Application | `BuildingBlocks.Validation` or keep in Application |
-| **Serilog** | Api, Infrastructure | `BuildingBlocks.Observability` |
-| **OpenTelemetry** | Api (4 packages) | `BuildingBlocks.Observability` |
-| **Hangfire** | Api (3 packages) | `BuildingBlocks.Jobs` or Infrastructure |
-| **EF Core 8.0.13** | Infrastructure only | Stays in Infrastructure (state-based persistence) |
+| **Marten 7.0.0** | Modules.Warehouse.Application, Modules.Warehouse.Infrastructure, Modules.Warehouse.Projections | `BuildingBlocks.EventSourcing` — event store abstraction |
+| **MassTransit 8.1.3** | Modules.Warehouse.Api, Modules.Warehouse.Sagas, Tests.Warehouse.Unit | `BuildingBlocks.Messaging` — bus + saga runtime |
+| **MediatR 12.2.0** | BuildingBlocks.SharedKernel, Modules.Warehouse.Application | Already in SharedKernel; could stay there |
+| **FluentValidation 11.9.0** | Modules.Warehouse.Application | `BuildingBlocks.Validation` or keep in Application |
+| **Serilog** | Modules.Warehouse.Api, Modules.Warehouse.Infrastructure | `BuildingBlocks.Observability` |
+| **OpenTelemetry** | Modules.Warehouse.Api (4 packages) | `BuildingBlocks.Observability` |
+| **Hangfire** | Modules.Warehouse.Api (3 packages) | `BuildingBlocks.Jobs` or Infrastructure |
+| **EF Core 8.0.13** | Modules.Warehouse.Infrastructure only | Stays in Infrastructure (state-based persistence) |
 
 ---
 
@@ -153,11 +160,11 @@ graph TD
 - No repository abstraction between Controllers and persistence
 
 **Issue 4: Type alias conflicts**
-- `Infrastructure/Persistence/WarehouseDbContext.cs` uses type aliases:
+- `Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Infrastructure/Persistence/WarehouseDbContext.cs` uses type aliases:
   ```csharp
-  using WarehouseLayoutAggregate = LKvitai.MES.Domain.Aggregates.WarehouseLayout;
-  using WarehouseLayoutEntity = LKvitai.MES.Domain.Entities.WarehouseLayout;
-  using HandlingUnitAggregate = LKvitai.MES.Domain.Aggregates.HandlingUnit;
+  using WarehouseLayoutAggregate = LKvitai.MES.Modules.Warehouse.Domain.Aggregates.WarehouseLayout;
+  using WarehouseLayoutEntity = LKvitai.MES.Modules.Warehouse.Domain.Entities.WarehouseLayout;
+  using HandlingUnitAggregate = LKvitai.MES.Modules.Warehouse.Domain.Aggregates.HandlingUnit;
   ```
 - Indicates naming collisions between Aggregates and Entities — will complicate module extraction
 
@@ -174,12 +181,13 @@ graph TD
 
 Dependency layers (topological order):
 ```
-Layer 0: SharedKernel, WebUI (leaves)
-Layer 1: Contracts
-Layer 2: Domain, Integration
-Layer 3: Application, Projections
-Layer 4: Infrastructure, Sagas
-Layer 5: Api
+Layer 0: BuildingBlocks.Cqrs.Abstractions, WebUI (leaves)
+Layer 1: BuildingBlocks.SharedKernel
+Layer 2: Modules.Warehouse.Contracts
+Layer 3: Modules.Warehouse.Domain, Modules.Warehouse.Integration
+Layer 4: Modules.Warehouse.Application, Modules.Warehouse.Projections
+Layer 5: Modules.Warehouse.Infrastructure, Modules.Warehouse.Sagas
+Layer 6: Modules.Warehouse.Api
 ```
 
 ### 4.2 Likely Cycles After Modularization
@@ -188,7 +196,7 @@ Layer 5: Api
 |------|---------|-----------------|
 | **HIGH** | Domain.Entities ↔ multiple BCs | `MasterDataEntities.cs` has SalesOrder referencing Item, OutboundOrder referencing Customer — splitting into modules would create circular entity refs |
 | **HIGH** | Api.Services ↔ Application | `SalesOrderCommandHandlers.cs` (Api) uses both `Application.Commands` types and `Infrastructure.WarehouseDbContext` — moving to Application would create Application → Infrastructure cycle |
-| **MEDIUM** | Infrastructure → Application | `Infrastructure.csproj` already depends on `Application.csproj` — if Application ever needs an Infrastructure interface impl, the cycle is immediate |
+| **MEDIUM** | Infrastructure → Application | `Modules.Warehouse.Infrastructure.csproj` depends on `Modules.Warehouse.Application.csproj` — if Application ever needs an Infrastructure interface impl, the cycle is immediate |
 | **MEDIUM** | Projections → Domain.Aggregates | Projections use `StockLedgerStreamId.Parse()` from Domain — if projections move per-module, each module's projections would need Domain access |
 | **LOW** | Sagas → Application | Sagas reference `Application.Orchestration` — clean if orchestration interfaces stay in Contracts |
 
@@ -203,31 +211,32 @@ Layer 5: Api
 
 ### 5.1 Dockerfiles
 
-**`src/LKvitai.MES.Api/Dockerfile`** — hardcodes paths to **9 projects** individually:
+**`src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Api/Dockerfile`** — hardcodes paths to module/building-block projects:
 ```dockerfile
-COPY src/LKvitai.MES.Api/LKvitai.MES.Api.csproj LKvitai.MES.Api/
-COPY src/LKvitai.MES.Application/LKvitai.MES.Application.csproj LKvitai.MES.Application/
-COPY src/LKvitai.MES.Infrastructure/LKvitai.MES.Infrastructure.csproj LKvitai.MES.Infrastructure/
-COPY src/LKvitai.MES.Projections/LKvitai.MES.Projections.csproj LKvitai.MES.Projections/
-COPY src/LKvitai.MES.Sagas/LKvitai.MES.Sagas.csproj LKvitai.MES.Sagas/
-COPY src/LKvitai.MES.Integration/LKvitai.MES.Integration.csproj LKvitai.MES.Integration/
-COPY src/LKvitai.MES.Domain/LKvitai.MES.Domain.csproj LKvitai.MES.Domain/
-COPY src/LKvitai.MES.Contracts/LKvitai.MES.Contracts.csproj LKvitai.MES.Contracts/
-COPY src/LKvitai.MES.SharedKernel/LKvitai.MES.SharedKernel.csproj LKvitai.MES.SharedKernel/
+COPY src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Api/LKvitai.MES.Modules.Warehouse.Api.csproj Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Api/
+COPY src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Application/LKvitai.MES.Modules.Warehouse.Application.csproj Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Application/
+COPY src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Infrastructure/LKvitai.MES.Modules.Warehouse.Infrastructure.csproj Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Infrastructure/
+COPY src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Projections/LKvitai.MES.Modules.Warehouse.Projections.csproj Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Projections/
+COPY src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Sagas/LKvitai.MES.Modules.Warehouse.Sagas.csproj Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Sagas/
+COPY src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Integration/LKvitai.MES.Modules.Warehouse.Integration.csproj Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Integration/
+COPY src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Domain/LKvitai.MES.Modules.Warehouse.Domain.csproj Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Domain/
+COPY src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Contracts/LKvitai.MES.Modules.Warehouse.Contracts.csproj Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Contracts/
+COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.SharedKernel/LKvitai.MES.BuildingBlocks.SharedKernel.csproj BuildingBlocks/LKvitai.MES.BuildingBlocks.SharedKernel/
+COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.Cqrs.Abstractions/LKvitai.MES.BuildingBlocks.Cqrs.Abstractions.csproj BuildingBlocks/LKvitai.MES.BuildingBlocks.Cqrs.Abstractions/
 ```
 - Uses `src/` prefix (repo-root context) — every new project requires Dockerfile update
 - Also copies the `.sln` file: `COPY src/LKvitai.MES.sln .`
 
-**`src/LKvitai.MES.WebUI/Dockerfile`** — standalone, only copies WebUI project. No coupling.
+**`src/Modules/Warehouse/LKvitai.MES.WebUI/Dockerfile`** — standalone, only copies WebUI project. No coupling.
 
 ### 5.2 GitHub Actions
 
 **`.github/workflows/build-and-push.yml`**
-- References Dockerfiles by path: `src/LKvitai.MES.Api/Dockerfile`, `src/LKvitai.MES.WebUI/Dockerfile`
+- References Dockerfiles by path: `src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Api/Dockerfile`, `src/Modules/Warehouse/LKvitai.MES.WebUI/Dockerfile`
 - Build context is repo root (`.`) — correct
 
 **`.github/workflows/deploy.yml`**
-- Hardcodes test project path: `src/tests/LKvitai.MES.Tests.Integration/LKvitai.MES.Tests.Integration.csproj`
+- Hardcodes test project path: `tests/Modules/Warehouse/LKvitai.MES.Tests.Warehouse.Integration/LKvitai.MES.Tests.Warehouse.Integration.csproj`
 - Hardcodes specific test filter by `FullyQualifiedName~` (6 test class names)
 - References script: `scripts/validate-schema.sh`
 
@@ -247,7 +256,7 @@ COPY src/LKvitai.MES.SharedKernel/LKvitai.MES.SharedKernel.csproj LKvitai.MES.Sh
 
 | File | Coupling Level | Notes |
 |------|---------------|-------|
-| Api/Dockerfile | **HIGH** — 9 hardcoded project paths | Must update on every project add/rename |
+| Modules.Warehouse.Api/Dockerfile | **HIGH** — hardcoded project paths | Must update on every project add/rename |
 | WebUI/Dockerfile | LOW — self-contained | No coupling |
 | build-and-push.yml | LOW — only Dockerfile paths | Stable |
 | deploy.yml | **MEDIUM** — hardcoded test csproj + test names | Fragile if tests move |
@@ -259,7 +268,7 @@ COPY src/LKvitai.MES.SharedKernel/LKvitai.MES.SharedKernel.csproj LKvitai.MES.Sh
 ## 6. Summary of Findings
 
 1. **No circular dependencies** exist at the csproj level — the graph is a clean DAG
-2. **SharedKernel and Contracts are true leaves** — good foundation for modularization
+2. **BuildingBlocks.SharedKernel and Contracts are shared roots** — good foundation for modularization
 3. **Infrastructure → Application dependency** inverts clean architecture (Application should define ports, Infrastructure implements them)
 4. **`MasterDataEntities.cs` is a god object** (~1400 LOC, 50+ entities, 8+ bounded contexts) — the #1 blocker for module extraction
 5. **Api.Services layer (34 files)** contains business logic that belongs in Application — this is the #2 structural issue
@@ -267,6 +276,6 @@ COPY src/LKvitai.MES.SharedKernel/LKvitai.MES.SharedKernel.csproj LKvitai.MES.Sh
 7. **MassTransit is used in 3 projects** (Api, Sagas, Tests.Unit) — candidate for `BuildingBlocks.Messaging`
 8. **WebUI is completely isolated** — zero project references, zero NuGet packages beyond Sdk.Web
 9. **Api Dockerfile hardcodes 9 project paths** — fragile, must be updated on every project change
-10. **Integration project is well-isolated** — only depends on Contracts, good anti-corruption layer pattern
+10. **Integration project is well-isolated** — depends on Contracts + SharedKernel, good anti-corruption layer pattern
 11. **Order/Delivery/Finance domain logic leaks into Api layer** — SalesOrderCommandHandlers (523 LOC), ValuationLifecycleCommandHandlers (505 LOC) live in Api.Services instead of Application
 12. **Type alias conflicts** (WarehouseLayout, HandlingUnit) between Aggregates and Entities signal naming collisions that will complicate splitting

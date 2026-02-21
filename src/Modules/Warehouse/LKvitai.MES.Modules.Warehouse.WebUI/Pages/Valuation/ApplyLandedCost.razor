@@ -1,0 +1,171 @@
+@page "/warehouse/valuation/apply-landed-cost"
+@using System.ComponentModel.DataAnnotations
+@using LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure
+@using LKvitai.MES.Modules.Warehouse.WebUI.Models
+@inject ValuationClient ValuationClient
+@inject OutboundClient OutboundClient
+@inject NavigationManager NavigationManager
+@inject ToastService ToastService
+
+<PageTitle>Apply Landed Cost</PageTitle>
+
+<h1>Apply Landed Cost</h1>
+
+@if (_apiError is not null)
+{
+    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                 TraceId="@_apiError.TraceId"
+                 OnRetry="LoadShipmentsAsync"
+                 OnDismiss="DismissError" />
+}
+
+<div class="card shadow-sm position-relative">
+    <LoadingSpinner IsLoading="_isLoading || _isSubmitting" />
+    <div class="card-body">
+        <EditForm Model="_model" OnValidSubmit="SubmitAsync">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <div class="row g-3">
+                <div class="col-12 col-md-6">
+                    <label class="form-label">Shipment</label>
+                    <InputSelect class="form-select" @bind-Value="_model.ShipmentId">
+                        <option value="">Select shipment</option>
+                        @foreach (var shipment in _shipments)
+                        {
+                            <option value="@shipment.Id">@shipment.ShipmentNumber (@shipment.Status)</option>
+                        }
+                    </InputSelect>
+                </div>
+                <div class="col-12 col-md-2">
+                    <label class="form-label">Freight Cost</label>
+                    <InputNumber class="form-control" @bind-Value="_model.FreightCost" />
+                </div>
+                <div class="col-12 col-md-2">
+                    <label class="form-label">Duty Cost</label>
+                    <InputNumber class="form-control" @bind-Value="_model.DutyCost" />
+                </div>
+                <div class="col-12 col-md-2">
+                    <label class="form-label">Insurance Cost</label>
+                    <InputNumber class="form-control" @bind-Value="_model.InsuranceCost" />
+                </div>
+            </div>
+
+            <div class="mt-3 d-flex gap-2">
+                <button class="btn btn-primary" type="submit" disabled="_isSubmitting">Apply Landed Cost</button>
+                <button class="btn btn-outline-secondary" type="button" @onclick="BackToDashboard">Back</button>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private readonly List<ShipmentSummaryDto> _shipments = [];
+    private readonly ApplyLandedCostFormModel _model = new();
+
+    private bool _isLoading;
+    private bool _isSubmitting;
+    private ApiException? _apiError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadShipmentsAsync();
+    }
+
+    private async Task LoadShipmentsAsync()
+    {
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            var shipments = await OutboundClient.GetShipmentSummariesAsync(null, null, null, null);
+            _shipments.Clear();
+            _shipments.AddRange(shipments.OrderByDescending(x => x.PackedAt ?? DateTimeOffset.MinValue).Take(500));
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task SubmitAsync()
+    {
+        if (!_model.ShipmentId.HasValue)
+        {
+            return;
+        }
+
+        _isSubmitting = true;
+        _apiError = null;
+
+        try
+        {
+            await ValuationClient.ApplyLandedCostAsync(new ApplyLandedCostRequestDto
+            {
+                CommandId = Guid.NewGuid(),
+                ShipmentId = _model.ShipmentId.Value,
+                FreightCost = _model.FreightCost ?? 0m,
+                DutyCost = _model.DutyCost ?? 0m,
+                InsuranceCost = _model.InsuranceCost ?? 0m
+            });
+
+            ToastService.ShowSuccess("Landed cost applied successfully.");
+            NavigationManager.NavigateTo("/warehouse/valuation/dashboard");
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private void BackToDashboard()
+    {
+        NavigationManager.NavigateTo("/warehouse/valuation/dashboard");
+    }
+
+    private void DismissError()
+    {
+        _apiError = null;
+    }
+
+    private static string BuildErrorMessage(ApiException ex)
+    {
+        if (!string.IsNullOrWhiteSpace(ex.UserMessage))
+        {
+            return ex.UserMessage;
+        }
+
+        return ex.ProblemDetails?.Detail
+               ?? ex.ProblemDetails?.Title
+               ?? "Landed cost request failed.";
+    }
+
+    private sealed class ApplyLandedCostFormModel
+    {
+        [Required]
+        public Guid? ShipmentId { get; set; }
+
+        [Required]
+        [Range(typeof(decimal), "0", "79228162514264337593543950335")]
+        public decimal? FreightCost { get; set; }
+
+        [Required]
+        [Range(typeof(decimal), "0", "79228162514264337593543950335")]
+        public decimal? DutyCost { get; set; }
+
+        [Required]
+        [Range(typeof(decimal), "0", "79228162514264337593543950335")]
+        public decimal? InsuranceCost { get; set; }
+    }
+}

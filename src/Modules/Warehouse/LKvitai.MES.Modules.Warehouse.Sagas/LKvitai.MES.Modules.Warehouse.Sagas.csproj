@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>LKvitai.MES.Modules.Warehouse.Sagas</RootNamespace>
+    <AssemblyName>LKvitai.MES.Modules.Warehouse.Sagas</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MassTransit" />
+    <PackageReference Include="MassTransit.Marten" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\LKvitai.MES.Modules.Warehouse.Contracts\LKvitai.MES.Modules.Warehouse.Contracts.csproj" />
+    <ProjectReference Include="..\LKvitai.MES.Modules.Warehouse.Application\LKvitai.MES.Modules.Warehouse.Application.csproj" />
+  </ItemGroup>
+
+</Project>
