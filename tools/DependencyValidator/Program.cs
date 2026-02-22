@@ -87,7 +87,8 @@ try
         }
     }
 
-    var reportPath = Path.Combine(repoRoot, "docs", "refactor-status", "dependency-baseline.md");
+    var reportPath = Path.Combine(repoRoot, "docs", "audit", "dependency-baseline.md");
+    Directory.CreateDirectory(Path.GetDirectoryName(reportPath)!);
     var sb = new StringBuilder();
     sb.AppendLine("# Dependency Baseline Report");
     sb.AppendLine();
