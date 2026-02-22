@@ -12,6 +12,12 @@ jobs:
     runs-on: self-hosted
     env:
       IMAGE_TAG: ${{ github.event.workflow_run.head_sha }}
+      DOCKER_NETWORK_NAME: ${{ vars.DOCKER_NETWORK_NAME || 'lkvitai-mes_default' }}
+      DB_CONTAINER_NAME: ${{ vars.DB_CONTAINER_NAME || 'lkvitai-mes-db-test' }}
+      DB_CONTAINER_IMAGE: ${{ vars.DB_CONTAINER_IMAGE || 'postgres:16' }}
+      TEST_DB_NAME: ${{ vars.TEST_DB_NAME || 'lkvitai_warehouse_test' }}
+      TEST_DB_USER: ${{ vars.TEST_DB_USER || 'postgres' }}
+      TEST_DB_PASSWORD: ${{ secrets.TEST_DB_PASSWORD || 'postgres' }}
 
     steps:
       - name: Clean workspace (fix root-owned files from Docker)
@@ -31,20 +37,48 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Ensure deploy Docker network exists
+        run: |
+          docker network inspect "$DOCKER_NETWORK_NAME" >/dev/null 2>&1 || \
+            docker network create "$DOCKER_NETWORK_NAME"
+
+      - name: Ensure test PostgreSQL container exists and is running
+        run: |
+          if docker ps -a --format '{{.Names}}' | grep -Fx "$DB_CONTAINER_NAME" >/dev/null; then
+            if [ "$(docker inspect -f '{{.State.Running}}' "$DB_CONTAINER_NAME")" != "true" ]; then
+              docker start "$DB_CONTAINER_NAME"
+            fi
+          else
+            docker run -d --name "$DB_CONTAINER_NAME" \
+              --restart unless-stopped \
+              --network "$DOCKER_NETWORK_NAME" \
+              --network-alias pg \
+              -e POSTGRES_DB="$TEST_DB_NAME" \
+              -e POSTGRES_USER="$TEST_DB_USER" \
+              -e POSTGRES_PASSWORD="$TEST_DB_PASSWORD" \
+              "$DB_CONTAINER_IMAGE"
+          fi
+
       - name: Pull new images
         run: docker compose -f docker-compose.test.yml pull
 
       - name: Check database connection
         run: |
           echo "Checking PostgreSQL connectivity..."
+          ready=0
           for i in $(seq 1 5); do
-            if docker exec lkvitai-mes-db-test pg_isready -U postgres > /dev/null 2>&1; then
+            if docker exec "$DB_CONTAINER_NAME" pg_isready -U "$TEST_DB_USER" > /dev/null 2>&1; then
               echo "PostgreSQL is ready!"
+              ready=1
               break
             fi
             echo "  attempt $i/5 — not ready yet"
             sleep 3
           done
+          if [ "$ready" -ne 1 ]; then
+            echo "PostgreSQL failed to become ready"
+            exit 1
+          fi
 
       - name: Clean up leftover migration container
         run: docker rm -f lkvitai-mes-migration 2>/dev/null || true
@@ -52,13 +86,13 @@ jobs:
       - name: Apply EF Core migrations to test DB
         run: |
           docker run --rm --name lkvitai-mes-migration \
-            --network lkvitai-mes_default \
+            --network "$DOCKER_NETWORK_NAME" \
             --user "$(id -u):$(id -g)" \
             -v "${{ github.workspace }}:/src" \
             -w /src \
             -e HOME=/tmp \
             -e DOTNET_CLI_HOME=/tmp/.dotnet \
-            -e "ConnectionStrings__WarehouseDb=Host=pg;Port=5432;Database=lkvitai_warehouse_test;Username=postgres;Password=postgres" \
+            -e "ConnectionStrings__WarehouseDb=Host=pg;Port=5432;Database=$TEST_DB_NAME;Username=$TEST_DB_USER;Password=$TEST_DB_PASSWORD" \
             mcr.microsoft.com/dotnet/sdk:8.0 \
             bash -c '
               set -e
@@ -92,8 +126,8 @@ jobs:
 
       - name: Seed master data
         run: |
-          docker exec -i lkvitai-mes-db-test \
-            psql -U postgres -d lkvitai_warehouse_test \
+          docker exec -i "$DB_CONTAINER_NAME" \
+            psql -U "$TEST_DB_USER" -d "$TEST_DB_NAME" \
             < scripts/seed-master-data.sql
 
       - name: Deployment summary

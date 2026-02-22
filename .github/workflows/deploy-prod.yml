@@ -1,0 +1,65 @@
+name: Deploy to Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Image tag to deploy (defaults to latest)"
+        required: false
+        default: "latest"
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    environment: prod
+    env:
+      IMAGE_TAG: ${{ github.event.inputs.image_tag || 'latest' }}
+      DOCKER_NETWORK_NAME: ${{ vars.DOCKER_NETWORK_NAME || 'lkvitai-mes_prod' }}
+      WAREHOUSE_DB_CONNECTION: ${{ secrets.WAREHOUSE_DB_CONNECTION }}
+      WAREHOUSE_API_BASE_URL: ${{ vars.WAREHOUSE_API_BASE_URL }}
+    steps:
+      # Required environment configuration:
+      # - secrets.WAREHOUSE_DB_CONNECTION
+      # - vars.WAREHOUSE_API_BASE_URL
+      # - optional vars.DOCKER_NETWORK_NAME
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Ensure deploy Docker network exists
+        run: |
+          docker network inspect "$DOCKER_NETWORK_NAME" >/dev/null 2>&1 || \
+            docker network create "$DOCKER_NETWORK_NAME"
+
+      - name: Pull production images
+        run: IMAGE_TAG=${{ env.IMAGE_TAG }} docker compose -f docker-compose.prod.yml pull
+
+      - name: Deploy production containers
+        run: IMAGE_TAG=${{ env.IMAGE_TAG }} docker compose -f docker-compose.prod.yml up -d
+
+      - name: Wait for API health
+        run: |
+          echo "Waiting for production API to become healthy..."
+          for i in $(seq 1 30); do
+            if docker exec lkvitai-mes-warehouse-api-prod curl -sf http://localhost:8080/health > /dev/null 2>&1; then
+              echo "API is healthy!"
+              exit 0
+            fi
+            echo "  attempt $i/30 — not ready yet"
+            sleep 5
+          done
+          echo "API failed to become healthy within 150s"
+          docker compose -f docker-compose.prod.yml logs api --tail 50
+          exit 1
+
+      - name: Deployment summary
+        run: |
+          echo "## Production Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Image tag:** ${{ env.IMAGE_TAG }}" >> $GITHUB_STEP_SUMMARY
+          docker compose -f docker-compose.prod.yml ps >> $GITHUB_STEP_SUMMARY
