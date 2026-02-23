@@ -37,6 +37,7 @@ builder.Services.AddScoped<ValuationClient>();
 builder.Services.AddScoped<AgnumClient>();
 builder.Services.AddScoped<AdminUsersClient>();
 builder.Services.AddScoped<AdminConfigurationClient>();
+builder.Services.AddScoped<LayoutEditorClient>();
 builder.Services.AddScoped<VisualizationClient>();
 builder.Services.AddScoped<CycleCountsClient>();
 builder.Services.AddScoped<AdvancedWarehouseClient>();

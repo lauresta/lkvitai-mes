@@ -1,0 +1,237 @@
+@page "/warehouse/admin/layout-editor"
+@using System.Text.Json
+@inject LayoutEditorClient LayoutEditorClient
+@inject ToastService ToastService
+@inject IConfiguration Configuration
+
+<PageTitle>Layout Editor - LKvitai.MES</PageTitle>
+
+<h1>Warehouse Layout Editor</h1>
+
+@if (!_hasAdminAccess)
+{
+    <div class="alert alert-warning" role="alert">
+        Admin role required.
+    </div>
+}
+else
+{
+    @if (_apiError is not null)
+    {
+        <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                     TraceId="@_apiError.TraceId"
+                     OnRetry="LoadAsync"
+                     OnDismiss="DismissError" />
+    }
+
+    @if (!string.IsNullOrWhiteSpace(_validationMessage))
+    {
+        <div class="alert alert-danger" role="alert">
+            @_validationMessage
+        </div>
+    }
+
+    <div class="card shadow-sm position-relative">
+        <LoadingSpinner IsLoading="@(_isLoading || _isSaving)" />
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Warehouse Code</label>
+                    <input class="form-control" @bind="_warehouseCode" />
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Layout JSON</label>
+                    <textarea class="form-control font-monospace"
+                              rows="20"
+                              @bind="_layoutJson"></textarea>
+                    <div class="form-text">
+                        Required fields: <code>warehouseCode</code>, <code>widthMeters</code>, <code>lengthMeters</code>, <code>heightMeters</code>, <code>zones</code>.
+                    </div>
+                </div>
+                <div class="col-12 d-flex align-items-center gap-3">
+                    <button class="btn btn-outline-secondary" type="button" @onclick="LoadAsync" disabled="@(_isLoading || _isSaving)">
+                        Reload
+                    </button>
+                    <button class="btn btn-primary" type="button" @onclick="SaveAsync" disabled="@(_isLoading || _isSaving)">
+                        Save Layout
+                    </button>
+                    @if (_updatedAt is not null)
+                    {
+                        <span class="text-muted small">Last updated at @_updatedAt.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</span>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        WriteIndented = true,
+        PropertyNameCaseInsensitive = true
+    };
+
+    private ApiException? _apiError;
+    private bool _isLoading;
+    private bool _isSaving;
+    private bool _hasAdminAccess;
+    private string _warehouseCode = "Main";
+    private string _layoutJson = string.Empty;
+    private string? _validationMessage;
+    private DateTimeOffset? _updatedAt;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _hasAdminAccess = HasAdminRole();
+        if (_hasAdminAccess)
+        {
+            await LoadAsync();
+        }
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _apiError = null;
+        _validationMessage = null;
+
+        try
+        {
+            var layout = await LayoutEditorClient.GetLayoutAsync(_warehouseCode);
+            _warehouseCode = layout.WarehouseCode;
+            _layoutJson = SerializeLayout(layout);
+            _updatedAt = layout.UpdatedAt;
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        _isSaving = true;
+        _apiError = null;
+        _validationMessage = null;
+
+        try
+        {
+            var parsed = ParseAndValidate(_layoutJson);
+            var updated = await LayoutEditorClient.UpdateLayoutAsync(parsed);
+            _warehouseCode = updated.WarehouseCode;
+            _layoutJson = SerializeLayout(updated);
+            _updatedAt = updated.UpdatedAt;
+            ToastService.ShowSuccess("Layout updated successfully.");
+        }
+        catch (InvalidOperationException ex)
+        {
+            _validationMessage = ex.Message;
+            ToastService.ShowError(ex.Message);
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private static string SerializeLayout(WarehouseLayoutDto layout)
+    {
+        var payload = new UpdateWarehouseLayoutRequestDto(
+            layout.WarehouseCode,
+            layout.WidthMeters,
+            layout.LengthMeters,
+            layout.HeightMeters,
+            layout.Zones.Select(zone => new UpdateWarehouseLayoutZoneRequestDto(
+                zone.Type,
+                zone.X1,
+                zone.Y1,
+                zone.X2,
+                zone.Y2,
+                zone.Color)).ToList());
+
+        return JsonSerializer.Serialize(payload, JsonOptions);
+    }
+
+    private static UpdateWarehouseLayoutRequestDto ParseAndValidate(string json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            throw new InvalidOperationException("Layout JSON is required.");
+        }
+
+        var model = JsonSerializer.Deserialize<UpdateWarehouseLayoutRequestDto>(json, JsonOptions);
+        if (model is null)
+        {
+            throw new InvalidOperationException("Layout JSON could not be parsed.");
+        }
+
+        if (string.IsNullOrWhiteSpace(model.WarehouseCode))
+        {
+            throw new InvalidOperationException("warehouseCode is required.");
+        }
+
+        if (model.WidthMeters <= 0 || model.LengthMeters <= 0 || model.HeightMeters <= 0)
+        {
+            throw new InvalidOperationException("widthMeters, lengthMeters, and heightMeters must be greater than zero.");
+        }
+
+        var zones = model.Zones ?? Array.Empty<UpdateWarehouseLayoutZoneRequestDto>();
+        foreach (var zone in zones)
+        {
+            if (string.IsNullOrWhiteSpace(zone.Type))
+            {
+                throw new InvalidOperationException("Each zone requires a non-empty type.");
+            }
+
+            if (string.IsNullOrWhiteSpace(zone.Color))
+            {
+                throw new InvalidOperationException("Each zone requires a non-empty color.");
+            }
+
+            if (zone.X2 <= zone.X1 || zone.Y2 <= zone.Y1)
+            {
+                throw new InvalidOperationException("Each zone must satisfy x2 > x1 and y2 > y1.");
+            }
+        }
+
+        return model with
+        {
+            WarehouseCode = model.WarehouseCode.Trim(),
+            Zones = zones
+        };
+    }
+
+    private bool HasAdminRole()
+    {
+        var roles = Configuration["WarehouseApi:Roles"] ?? string.Empty;
+        return roles.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Any(x => string.Equals(x, "WarehouseAdmin", StringComparison.OrdinalIgnoreCase) ||
+                      string.Equals(x, "Admin", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static string BuildErrorMessage(ApiException error)
+    {
+        if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
+        {
+            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+        }
+
+        return error.UserMessage;
+    }
+
+    private void DismissError()
+    {
+        _apiError = null;
+    }
+}
