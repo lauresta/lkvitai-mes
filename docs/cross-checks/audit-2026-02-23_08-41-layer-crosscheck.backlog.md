@@ -95,7 +95,7 @@
 **Type:** Gap  
 **Priority:** P0 (Owner Request - Execute First)  
 **Scope:** UI / Client / Nav  
-**Status:** `[ ] open`
+**Status:** `[x] done` (commits: `0ee363c`)
 
 ### Description
 No UI page/editor for warehouse layout management. The `warehouse_layouts` table exists, API endpoints `GET/PUT api/warehouse/v1/layout` exist in `WarehouseVisualizationController`, but there's no UI to view or edit layout definitions. The 3D visualization works but layout data is not editable from UI.
