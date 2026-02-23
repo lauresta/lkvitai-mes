@@ -179,7 +179,7 @@ No UI page/editor for warehouse layout management. The `warehouse_layouts` table
 **Type:** Bug  
 **Priority:** P0  
 **Scope:** UI / Cleanup  
-**Status:** `[ ] open`
+**Status:** `[x] done` (commits: `f48e61d`)
 
 ### Description
 `QCPanel.razor` at `/warehouse/qc/pending` is a redirect-only dead page. It contains no UI, just `NavigationManager.NavigateTo("/warehouse/inbound/qc")`. This is wasteful and confusing.
