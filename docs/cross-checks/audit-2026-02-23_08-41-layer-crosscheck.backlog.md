@@ -144,7 +144,7 @@ No UI page/editor for warehouse layout management. The `warehouse_layouts` table
 **Type:** Bug  
 **Priority:** P0  
 **Scope:** API / Cleanup  
-**Status:** `[x] done` (commits: `7f0445e`)
+**Status:** `[ ] open`
 
 ### Description
 `GET api/warehouse/v1/dispatch/history` in `DispatchController` is dead code. UI uses `/reports/dispatch-history` endpoint from `ReportsController` instead. This creates confusion and maintenance burden.
@@ -871,7 +871,7 @@ AdminItems, AdminSuppliers, AdminLocations, AdminCategories, AdminSupplierMappin
 **Type:** Gap  
 **Priority:** P2  
 **Scope:** API / UI  
-**Status:** `[ ] open`
+**Status:** `[x] done` (commits: `7f0445e`)
 
 ### Description
 `lots` table has no dedicated API endpoint and no UI page for lot listing/management. Lots are created via receiving but never listed.
