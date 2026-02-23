@@ -1,0 +1,220 @@
+@page "/warehouse/admin/backups"
+@inject BackupsClient BackupsClient
+@inject ToastService ToastService
+@inject IConfiguration Configuration
+
+<PageTitle>Backups - LKvitai.MES</PageTitle>
+
+<h1>Backup Management</h1>
+
+@if (!_hasAdminAccess)
+{
+    <div class="alert alert-warning" role="alert">
+        Admin role required.
+    </div>
+}
+else
+{
+    @if (_apiError is not null)
+    {
+        <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                     TraceId="@_apiError.TraceId"
+                     OnRetry="LoadAsync"
+                     OnDismiss="DismissError" />
+    }
+
+    <div class="card shadow-sm mb-3">
+        <div class="card-body">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-3 d-grid">
+                    <button class="btn btn-primary" @onclick="TriggerBackupAsync" disabled="@_isWorking">Trigger Backup</button>
+                </div>
+                <div class="col-md-3 d-grid">
+                    <button class="btn btn-outline-secondary" @onclick="LoadAsync" disabled="@_isWorking">Refresh</button>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Restore Target</label>
+                    <InputText class="form-control" @bind-Value="_targetEnvironment" />
+                </div>
+            </div>
+
+            @if (_lastRestoreResult is not null)
+            {
+                <div class="alert @(_lastRestoreResult.Success ? "alert-success" : "alert-danger") mt-3 mb-0" role="alert">
+                    @_lastRestoreResult.Message
+                    @if (!string.IsNullOrWhiteSpace(_lastRestoreResult.EvidencePath))
+                    {
+                        <div><small>Evidence: @_lastRestoreResult.EvidencePath</small></div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="card shadow-sm position-relative">
+        <LoadingSpinner IsLoading="_isWorking" />
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Started</th>
+                            <th>Completed</th>
+                            <th>Type</th>
+                            <th>Trigger</th>
+                            <th>Status</th>
+                            <th>Size (bytes)</th>
+                            <th>Artifact</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (_backups.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="8" class="text-muted">No backups found.</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var backup in _backups)
+                            {
+                                <tr>
+                                    <td>@backup.BackupStartedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                    <td>@(backup.BackupCompletedAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss") ?? "-")</td>
+                                    <td>@backup.Type</td>
+                                    <td>@backup.Trigger</td>
+                                    <td>@backup.Status</td>
+                                    <td>@backup.BackupSizeBytes</td>
+                                    <td class="text-truncate" style="max-width:300px;" title="@backup.BlobPath">@backup.BlobPath</td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-outline-warning"
+                                                @onclick="() => RestoreAsync(backup)"
+                                                disabled="@(_isWorking || !CanRestore(backup))">
+                                            Restore
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private readonly List<BackupExecutionDto> _backups = [];
+    private ApiException? _apiError;
+    private bool _isWorking;
+    private bool _hasAdminAccess;
+    private string _targetEnvironment = "test";
+    private BackupRestoreResultDto? _lastRestoreResult;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _hasAdminAccess = HasAdminRole();
+        if (_hasAdminAccess)
+        {
+            await LoadAsync();
+        }
+    }
+
+    private async Task LoadAsync()
+    {
+        _isWorking = true;
+        _apiError = null;
+
+        try
+        {
+            var rows = await BackupsClient.GetBackupsAsync();
+            _backups.Clear();
+            _backups.AddRange(rows.OrderByDescending(x => x.BackupStartedAt));
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isWorking = false;
+        }
+    }
+
+    private async Task TriggerBackupAsync()
+    {
+        _isWorking = true;
+        _apiError = null;
+
+        try
+        {
+            var backup = await BackupsClient.TriggerBackupAsync();
+            ToastService.ShowSuccess($"Backup {backup.Id} triggered.");
+            await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isWorking = false;
+        }
+    }
+
+    private async Task RestoreAsync(BackupExecutionDto backup)
+    {
+        if (string.IsNullOrWhiteSpace(_targetEnvironment))
+        {
+            ToastService.ShowError("Target environment is required.");
+            return;
+        }
+
+        _isWorking = true;
+        _apiError = null;
+
+        try
+        {
+            _lastRestoreResult = await BackupsClient.RestoreAsync(backup.Id, _targetEnvironment.Trim());
+            ToastService.ShowSuccess(_lastRestoreResult.Message);
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isWorking = false;
+        }
+    }
+
+    private static bool CanRestore(BackupExecutionDto backup)
+        => string.Equals(backup.Status, "COMPLETED", StringComparison.OrdinalIgnoreCase);
+
+    private bool HasAdminRole()
+    {
+        var roles = Configuration["WarehouseApi:Roles"] ?? string.Empty;
+        return roles.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Any(x => string.Equals(x, "WarehouseAdmin", StringComparison.OrdinalIgnoreCase) ||
+                      string.Equals(x, "Admin", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static string BuildErrorMessage(ApiException error)
+    {
+        if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
+        {
+            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+        }
+
+        return error.UserMessage;
+    }
+
+    private void DismissError()
+    {
+        _apiError = null;
+    }
+}
