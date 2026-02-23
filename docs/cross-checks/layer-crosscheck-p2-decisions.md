@@ -29,3 +29,10 @@
 - Reasoning:
   - Endpoint is suitable for hardware/mobile lookup flows that do not require a full desktop admin UI.
   - No safe, minimal placement in existing desktop workflows was identified without creating extra UI complexity.
+
+## G-15: Feature flags endpoint usage
+- Date: 2026-02-23
+- Decision: Keep `GET /api/warehouse/v1/features/{flagKey}` as internal/API-only.
+- Reasoning:
+  - Feature flag lifecycle is governed by LaunchDarkly and service-level toggles.
+  - Adding desktop management UI would duplicate existing operational controls and increase risk of accidental toggles.
