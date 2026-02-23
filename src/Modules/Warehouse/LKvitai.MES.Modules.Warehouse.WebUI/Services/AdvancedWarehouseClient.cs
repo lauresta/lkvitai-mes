@@ -73,7 +73,7 @@ public sealed class AdvancedWarehouseClient
         payload.Add(fileContent, "file", fileName);
 
         var client = _factory.CreateClient("WarehouseApi");
-        var response = await client.PostAsync($"/api/warehouse/v1/qc/defects/{defectId}/attachments", payload);
+        var response = await client.PostAsync($"/api/warehouse/v1/advanced/qc/defects/{defectId}/attachments", payload);
         return await DeserializeResponse<QcDefectDto>(response);
     }
 

@@ -159,7 +159,7 @@ public sealed class CrossDockController : ControllerBase
 }
 
 [ApiController]
-[Route("api/warehouse/v1/qc")]
+[Route("api/warehouse/v1/advanced/qc")]
 public sealed class QcAdvancedController : ControllerBase
 {
     private readonly IAdvancedWarehouseStore _store;
