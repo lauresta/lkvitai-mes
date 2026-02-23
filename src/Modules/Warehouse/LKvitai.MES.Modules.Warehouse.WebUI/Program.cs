@@ -41,6 +41,7 @@ builder.Services.AddScoped<ApiKeysClient>();
 builder.Services.AddScoped<GdprClient>();
 builder.Services.AddScoped<AuditLogsClient>();
 builder.Services.AddScoped<BackupsClient>();
+builder.Services.AddScoped<RetentionPoliciesClient>();
 builder.Services.AddScoped<LayoutEditorClient>();
 builder.Services.AddScoped<VisualizationClient>();
 builder.Services.AddScoped<CycleCountsClient>();
