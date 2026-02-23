@@ -44,3 +44,11 @@
   - Core receiving QC workflow is already exposed through `/warehouse/inbound/qc`.
   - Advanced template/defect management needs process ownership and validation rules before broad admin UI exposure.
   - Existing analytics and attachment flows can continue consuming these endpoints without new UI surface area.
+
+## G-17: Handling unit split/merge/hierarchy endpoint usage
+- Date: 2026-02-23
+- Decision: Keep handling-unit advanced endpoints API-only pending a dedicated HU workflow design.
+- Reasoning:
+  - Split/merge/hierarchy operations are high-impact inventory moves and require guarded UX and audit patterns.
+  - No existing WebUI flow currently owns HU lifecycle controls.
+  - Retaining endpoints for controlled API operations avoids accidental operational misuse while preserving capability.
