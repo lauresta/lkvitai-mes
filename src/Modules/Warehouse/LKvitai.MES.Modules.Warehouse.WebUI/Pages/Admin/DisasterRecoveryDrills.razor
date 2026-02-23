@@ -1,0 +1,194 @@
+@page "/warehouse/admin/dr-drills"
+@inject DisasterRecoveryClient DisasterRecoveryClient
+@inject ToastService ToastService
+@inject IConfiguration Configuration
+
+<PageTitle>DR Drills - LKvitai.MES</PageTitle>
+
+<h1>Disaster Recovery Drills</h1>
+
+@if (!_hasAdminAccess)
+{
+    <div class="alert alert-warning" role="alert">
+        Admin role required.
+    </div>
+}
+else
+{
+    @if (_apiError is not null)
+    {
+        <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                     TraceId="@_apiError.TraceId"
+                     OnRetry="LoadAsync"
+                     OnDismiss="DismissError" />
+    }
+
+    <div class="card shadow-sm mb-3">
+        <div class="card-body">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label">Scenario</label>
+                    <InputSelect class="form-select" @bind-Value="_selectedScenario">
+                        @foreach (var scenario in ScenarioOptions)
+                        {
+                            <option value="@scenario">@scenario</option>
+                        }
+                    </InputSelect>
+                </div>
+                <div class="col-md-3 d-grid">
+                    <button class="btn btn-primary" @onclick="TriggerDrillAsync" disabled="@_isWorking">Trigger Drill</button>
+                </div>
+                <div class="col-md-3 d-grid">
+                    <button class="btn btn-outline-secondary" @onclick="LoadAsync" disabled="@_isWorking">Refresh</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm position-relative">
+        <LoadingSpinner IsLoading="_isWorking" />
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Started</th>
+                            <th>Completed</th>
+                            <th>Scenario</th>
+                            <th>Status</th>
+                            <th>Actual RTO</th>
+                            <th>Issues</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (_drills.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="7" class="text-muted">No DR drills found.</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var drill in _drills)
+                            {
+                                <tr>
+                                    <td>@drill.DrillStartedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                    <td>@(drill.DrillCompletedAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss") ?? "-")</td>
+                                    <td>@drill.Scenario</td>
+                                    <td>@drill.Status</td>
+                                    <td>@drill.ActualRTO</td>
+                                    <td>
+                                        @if (drill.IssuesIdentified.Count == 0)
+                                        {
+                                            <span>-</span>
+                                        }
+                                        else
+                                        {
+                                            @foreach (var issue in drill.IssuesIdentified)
+                                            {
+                                                <span class="badge bg-warning text-dark me-1">@issue</span>
+                                            }
+                                        }
+                                    </td>
+                                    <td class="text-truncate" style="max-width:320px;" title="@drill.Notes">@drill.Notes</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private static readonly string[] ScenarioOptions =
+    [
+        "DATA_CENTER_OUTAGE",
+        "DATABASE_CORRUPTION",
+        "RANSOMWARE"
+    ];
+
+    private readonly List<DRDrillDto> _drills = [];
+    private ApiException? _apiError;
+    private bool _isWorking;
+    private bool _hasAdminAccess;
+    private string _selectedScenario = "DATA_CENTER_OUTAGE";
+
+    protected override async Task OnInitializedAsync()
+    {
+        _hasAdminAccess = HasAdminRole();
+        if (_hasAdminAccess)
+        {
+            await LoadAsync();
+        }
+    }
+
+    private async Task LoadAsync()
+    {
+        _isWorking = true;
+        _apiError = null;
+
+        try
+        {
+            var rows = await DisasterRecoveryClient.GetHistoryAsync();
+            _drills.Clear();
+            _drills.AddRange(rows.OrderByDescending(x => x.DrillStartedAt));
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isWorking = false;
+        }
+    }
+
+    private async Task TriggerDrillAsync()
+    {
+        _isWorking = true;
+        _apiError = null;
+
+        try
+        {
+            var drill = await DisasterRecoveryClient.TriggerDrillAsync(_selectedScenario);
+            ToastService.ShowSuccess($"DR drill started: {drill.Id}");
+            await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isWorking = false;
+        }
+    }
+
+    private bool HasAdminRole()
+    {
+        var roles = Configuration["WarehouseApi:Roles"] ?? string.Empty;
+        return roles.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Any(x => string.Equals(x, "WarehouseAdmin", StringComparison.OrdinalIgnoreCase) ||
+                      string.Equals(x, "Admin", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static string BuildErrorMessage(ApiException error)
+    {
+        if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
+        {
+            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+        }
+
+        return error.UserMessage;
+    }
+
+    private void DismissError()
+    {
+        _apiError = null;
+    }
+}
