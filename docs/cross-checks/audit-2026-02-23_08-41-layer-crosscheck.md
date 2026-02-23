@@ -2,7 +2,7 @@
 **Date:** 2026-02-23 08:41
 **Scope:** DB ↔ Service ↔ API ↔ WebUI ↔ Nav
 **Branch:** frosty-ardinghelli
-**Status:** Initial scan — awaiting fixes
+**Status:** In progress — see TODO table below
 
 ---
 
@@ -10,32 +10,32 @@
 
 | ID | Severity | Status | Description |
 |----|----------|--------|-------------|
-| **B-01** | 🔴 Bug | `[ ] open` | `GET api/warehouse/v1/dispatch/history` (DispatchController) is dead — UI uses `/reports/dispatch-history`. Remove or merge. |
-| **B-02** | 🔴 Bug | `[ ] open` | `QCPanel.razor` at `/warehouse/qc/pending` is a redirect-only dead page — contains no UI, just `NavigationManager.NavigateTo`. Delete or promote to real page. |
-| **B-03** | 🔴 Bug | `[ ] open` | `POST api/test/simulate-capacity-alert` (CapacitySimulationController, `[Route("api/test")]`) — test endpoint exposed in production build. Remove from prod or gate behind env flag. |
-| **B-04** | 🔴 Bug | `[ ] open` | Route conflict: `AdvancedWarehouseController` and `QCController` both declare `[Route("api/warehouse/v1/qc")]`. Overlapping actions will cause ambiguous route exceptions. Split routes. |
-| **G-01** | 🟠 Gap | `[ ] open` | No UI page for API Key management (`api_keys` table, `AdminApiKeysController` — full CRUD exists in API). |
-| **G-02** | 🟠 Gap | `[ ] open` | No UI page for GDPR erasure requests (`gdpr_erasure_requests`, `AdminGdprController`). |
-| **G-03** | 🟠 Gap | `[ ] open` | No UI page for audit log browsing (`security_audit_logs`, `AdminAuditLogsController GET`). |
-| **G-04** | 🟠 Gap | `[ ] open` | No UI page for backup management (`backup_executions`, `AdminBackupsController`). |
-| **G-05** | 🟠 Gap | `[ ] open` | No UI page for retention policy management (`retention_policies` / `retention_executions`, `AdminRetentionPoliciesController`). |
-| **G-06** | 🟠 Gap | `[ ] open` | No UI page for disaster recovery drills (`dr_drills`, `AdminDisasterRecoveryController`). |
-| **G-07** | 🟠 Gap | `[ ] open` | Agnum export history (`agnum_export_history`): API endpoint `GET api/warehouse/v1/agnum/history` exists but no WebUI client method and no UI page. `AgnumClient` missing `GetHistoryAsync`. |
-| **G-08** | 🟠 Gap | `[ ] open` | No UI page for serial number management (`serial_numbers`, `AdvancedWarehouseController /serials`). |
-| **G-09** | 🟠 Gap | `[ ] open` | No UI page / editor for warehouse layout (`warehouse_layouts`, `GET/PUT api/warehouse/v1/layout`). 3D view works but layout definition is not editable from UI. |
-| **G-10** | 🟠 Gap | `[ ] open` | AdminItems / Suppliers / Locations / Categories pages are **read-only** in UI. `MasterDataAdminClient` only calls GET. POST/PUT/DELETE endpoints exist in API but are never called from WebUI. Cannot create or update master data records from UI. |
-| **G-11** | 🟡 Gap | `[ ] open` | `GET api/warehouse/v1/stock/location-balance` endpoint (StockController) exists and is wired to `GetLocationBalanceQueryHandler` but no WebUI client calls it. Marten LocationBalance read model unused by UI. |
-| **G-12** | 🟡 Gap | `[ ] open` | `ValuationController POST(initialize)` and `POST({itemId}/adjust-cost)` exist but have no UI consumers. `ValuationClient` only calls base `adjust-cost`. |
-| **G-13** | 🟡 Gap | `[ ] open` | `AdminComplianceController`: endpoints `POST(sign)`, `GET(signatures/{id})`, `POST(verify-hash-chain)`, `GET(validation-report)`, `POST(export-transactions)`, `GET(exports)` — not called by any WebUI client. Compliance pages only use dashboard, lot-trace, scheduled-reports. |
-| **G-14** | 🟡 Gap | `[ ] open` | `BarcodesController GET api/warehouse/v1/barcodes/lookup` — not consumed by any WebUI client. |
-| **G-15** | 🟡 Gap | `[ ] open` | `FeatureFlagsController GET api/warehouse/v1/features/{flagKey}` — not consumed by any WebUI client (LaunchDarkly used internally in services only). |
-| **G-16** | 🟡 Gap | `[ ] open` | `AdvancedWarehouseController`: QC checklist-templates endpoints (POST/GET) and QC defects (GET all) have no WebUI consumer. |
-| **G-17** | 🟡 Gap | `[ ] open` | `AdvancedWarehouseController`: HU split/merge/hierarchy endpoints have no WebUI consumer. |
-| **G-18** | 🟡 Gap | `[ ] open` | `lots` table has no dedicated API endpoint and no UI page for lot listing/management. |
-| **G-19** | 🟡 Gap | `[ ] open` | `handling_unit_types`, `unit_of_measures`, `item_uom_conversions` tables have no dedicated API or UI. Items reference UoM but no management screen exists. |
+| **B-01** | 🔴 Bug | `[x] done` (`4ae8227`) | `GET api/warehouse/v1/dispatch/history` (DispatchController) is dead — UI uses `/reports/dispatch-history`. Remove or merge. |
+| **B-02** | 🔴 Bug | `[x] done` (`ac99a38`) | `QCPanel.razor` at `/warehouse/qc/pending` is a redirect-only dead page — contains no UI, just `NavigationManager.NavigateTo`. Delete or promote to real page. |
+| **B-03** | 🔴 Bug | `[x] done` (`9a8f946`) | `POST api/test/simulate-capacity-alert` (CapacitySimulationController, `[Route("api/test")]`) — test endpoint exposed in production build. Remove from prod or gate behind env flag. |
+| **B-04** | 🔴 Bug | `[x] done` (`95e99dd`) | Route conflict: `AdvancedWarehouseController` and `QCController` both declare `[Route("api/warehouse/v1/qc")]`. Overlapping actions will cause ambiguous route exceptions. Split routes. |
+| **G-01** | 🟠 Gap | `[x] done` (`c2293a2`) | No UI page for API Key management (`api_keys` table, `AdminApiKeysController` — full CRUD exists in API). |
+| **G-02** | 🟠 Gap | `[x] done` (`725d9ab`) | No UI page for GDPR erasure requests (`gdpr_erasure_requests`, `AdminGdprController`). |
+| **G-03** | 🟠 Gap | `[x] done` (`ac9662a`) | No UI page for audit log browsing (`security_audit_logs`, `AdminAuditLogsController GET`). |
+| **G-04** | 🟠 Gap | `[x] done` (`fe87e27`) | No UI page for backup management (`backup_executions`, `AdminBackupsController`). |
+| **G-05** | 🟠 Gap | `[x] done` (`bb435d8`) | No UI page for retention policy management (`retention_policies` / `retention_executions`, `AdminRetentionPoliciesController`). |
+| **G-06** | 🟠 Gap | `[x] done` (`deb1d1d`) | No UI page for disaster recovery drills (`dr_drills`, `AdminDisasterRecoveryController`). |
+| **G-07** | 🟠 Gap | `[x] done` (`b28bf8b`) | Agnum export history (`agnum_export_history`): API endpoint `GET api/warehouse/v1/agnum/history` exists but no WebUI client method and no UI page. `AgnumClient` missing `GetHistoryAsync`. |
+| **G-08** | 🟠 Gap | `[x] done` (`ef251dc`) | No UI page for serial number management (`serial_numbers`, `AdvancedWarehouseController /serials`). |
+| **G-09** | 🟠 Gap | `[x] done` (`789e0ab`) | No UI page / editor for warehouse layout (`warehouse_layouts`, `GET/PUT api/warehouse/v1/layout`). 3D view works but layout definition is not editable from UI. |
+| **G-10** | 🟠 Gap | `[x] done` (`1c55584`) | AdminItems / Suppliers / Locations / Categories pages are **read-only** in UI. `MasterDataAdminClient` only calls GET. POST/PUT/DELETE endpoints exist in API but are never called from WebUI. Cannot create or update master data records from UI. |
+| **G-11** | 🟡 Gap | `[x] done` (`049273f`) | `GET api/warehouse/v1/stock/location-balance` endpoint (StockController) exists and is wired to `GetLocationBalanceQueryHandler` but no WebUI client calls it. Marten LocationBalance read model unused by UI. |
+| **G-12** | 🟡 Gap | `[x] done` (`b60675e`) | `ValuationController POST(initialize)` and `POST({itemId}/adjust-cost)` exist but have no UI consumers. `ValuationClient` only calls base `adjust-cost`. |
+| **G-13** | 🟡 Gap | `[x] done` (`a52e10b`) | `AdminComplianceController`: endpoints `POST(sign)`, `GET(signatures/{id})`, `POST(verify-hash-chain)`, `GET(validation-report)`, `POST(export-transactions)`, `GET(exports)` — not called by any WebUI client. Compliance pages only use dashboard, lot-trace, scheduled-reports. |
+| **G-14** | 🟡 Gap | `[x] done` (`d9f4503`) | `BarcodesController GET api/warehouse/v1/barcodes/lookup` — not consumed by any WebUI client. |
+| **G-15** | 🟡 Gap | `[x] done` (`b01780d`) | `FeatureFlagsController GET api/warehouse/v1/features/{flagKey}` — not consumed by any WebUI client (LaunchDarkly used internally in services only). |
+| **G-16** | 🟡 Gap | `[x] done` (`37e1d2e`) | `AdvancedWarehouseController`: QC checklist-templates endpoints (POST/GET) and QC defects (GET all) have no WebUI consumer. |
+| **G-17** | 🟡 Gap | `[x] done` (`7e9264d`) | `AdvancedWarehouseController`: HU split/merge/hierarchy endpoints have no WebUI consumer. |
+| **G-18** | 🟡 Gap | `[x] done` (`7f0445e`) | `lots` table has no dedicated API endpoint and no UI page for lot listing/management. |
+| **G-19** | 🟡 Gap | `[x] done` (`f48e61d`) | `handling_unit_types`, `unit_of_measures`, `item_uom_conversions` tables have no dedicated API or UI. Items reference UoM but no management screen exists. |
 | **G-20** | 🟡 Gap | `[ ] open` | `permissions` table exposed via `AdminPermissionsController` (GET list + POST check) but no UI page. Roles page manages role-permission assignments but permission definitions are not manageable from UI. |
 | **A-01** | 🔵 Arch | `[ ] open` | ARCH-02 (known): 34 service files in `Api/Services/` contain business logic that belongs in Application layer. Controllers inject `DbContext` and `IDocumentStore` directly, bypassing MediatR pipeline. |
-| **A-02** | 🔵 Arch | `[ ] open` | `WarehouseLocationDetail.razor` at `/warehouse/locations/{Id:int}` — not reachable from nav, injected client unverified. Likely navigated from AdminLocations. Needs explicit nav path or deregistration. |
+| **A-02** | 🔵 Arch | `[x] done` (`0ee363c`) | `WarehouseLocationDetail.razor` at `/warehouse/locations/{Id:int}` — not reachable from nav, injected client unverified. Likely navigated from AdminLocations. Needs explicit nav path or deregistration. |
 
 ---
 
