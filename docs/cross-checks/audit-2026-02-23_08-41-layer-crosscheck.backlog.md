@@ -179,7 +179,7 @@ No UI page/editor for warehouse layout management. The `warehouse_layouts` table
 **Type:** Bug  
 **Priority:** P0  
 **Scope:** UI / Cleanup  
-**Status:** `[x] done` (commits: `f48e61d`)
+**Status:** `[ ] open`
 
 ### Description
 `QCPanel.razor` at `/warehouse/qc/pending` is a redirect-only dead page. It contains no UI, just `NavigationManager.NavigateTo("/warehouse/inbound/qc")`. This is wasteful and confusing.
@@ -903,7 +903,7 @@ AdminItems, AdminSuppliers, AdminLocations, AdminCategories, AdminSupplierMappin
 **Type:** Gap  
 **Priority:** P2  
 **Scope:** API / UI  
-**Status:** `[ ] open`
+**Status:** `[x] done` (commits: `f48e61d`)
 
 ### Description
 `handling_unit_types`, `unit_of_measures`, `item_uom_conversions` tables have no dedicated API or UI. Items reference UoM but no management screen exists.
