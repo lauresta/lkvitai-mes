@@ -1,0 +1,229 @@
+@page "/warehouse/admin/audit-logs"
+@inject AuditLogsClient AuditLogsClient
+@inject ToastService ToastService
+@inject IConfiguration Configuration
+
+<PageTitle>Audit Logs - LKvitai.MES</PageTitle>
+
+<h1>Security Audit Logs</h1>
+
+@if (!_hasAdminAccess)
+{
+    <div class="alert alert-warning" role="alert">
+        Admin role required.
+    </div>
+}
+else
+{
+    @if (_apiError is not null)
+    {
+        <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                     TraceId="@_apiError.TraceId"
+                     OnRetry="LoadAsync"
+                     OnDismiss="DismissError" />
+    }
+
+    <div class="card shadow-sm mb-3">
+        <div class="card-body">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-2">
+                    <label class="form-label">User</label>
+                    <InputText class="form-control" @bind-Value="_filters.UserId" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Action</label>
+                    <InputText class="form-control" @bind-Value="_filters.Action" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Resource</label>
+                    <InputText class="form-control" @bind-Value="_filters.Resource" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Start</label>
+                    <input type="date" class="form-control" @bind="_startDate" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">End</label>
+                    <input type="date" class="form-control" @bind="_endDate" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Fetch Limit</label>
+                    <InputNumber class="form-control" @bind-Value="_fetchLimit" />
+                </div>
+                <div class="col-12 d-flex gap-2">
+                    <button class="btn btn-primary" @onclick="ApplyFiltersAsync" disabled="@_isLoading">Apply</button>
+                    <button class="btn btn-outline-secondary" @onclick="LoadAsync" disabled="@_isLoading">Refresh</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm position-relative">
+        <LoadingSpinner IsLoading="_isLoading" />
+        <div class="card-body">
+            <div class="mb-2"><strong>Total: @_allRows.Count</strong></div>
+            <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>User</th>
+                            <th>Action</th>
+                            <th>Resource</th>
+                            <th>Resource ID</th>
+                            <th>IP</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (CurrentPageRows.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="7" class="text-muted">No audit log rows found.</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var row in CurrentPageRows)
+                            {
+                                <tr>
+                                    <td>@row.Timestamp.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                    <td>@(row.UserId ?? "anonymous")</td>
+                                    <td>@row.Action</td>
+                                    <td>@row.Resource</td>
+                                    <td>@(row.ResourceId ?? "-")</td>
+                                    <td>@row.IpAddress</td>
+                                    <td class="text-truncate" style="max-width:300px;" title="@row.DetailsJson">@row.DetailsJson</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (_allRows.Count > 0)
+            {
+                <Pagination CurrentPage="_page"
+                            TotalPages="TotalPages"
+                            PageSize="_pageSize"
+                            OnPageChanged="OnPageChangedAsync"
+                            OnPageSizeChanged="OnPageSizeChangedAsync" />
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private readonly List<SecurityAuditLogDto> _allRows = [];
+    private readonly SecurityAuditLogQueryDto _filters = new();
+    private ApiException? _apiError;
+    private bool _isLoading;
+    private bool _hasAdminAccess;
+    private DateTime? _startDate = DateTime.UtcNow.AddDays(-7);
+    private DateTime? _endDate = DateTime.UtcNow;
+    private int _fetchLimit = 500;
+    private int _page = 1;
+    private int _pageSize = 50;
+
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling(_allRows.Count / (double)Math.Max(1, _pageSize)));
+
+    private IReadOnlyList<SecurityAuditLogDto> CurrentPageRows =>
+        _allRows.Skip((_page - 1) * _pageSize).Take(_pageSize).ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _hasAdminAccess = HasAdminRole();
+        if (_hasAdminAccess)
+        {
+            await LoadAsync();
+        }
+    }
+
+    private async Task ApplyFiltersAsync()
+    {
+        _page = 1;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            _filters.StartDate = ParseDateOffset(_startDate, true);
+            _filters.EndDate = ParseDateOffset(_endDate, false);
+            _filters.Limit = Math.Clamp(_fetchLimit, 1, 5000);
+
+            var rows = await AuditLogsClient.GetLogsAsync(_filters);
+            _allRows.Clear();
+            _allRows.AddRange(rows.OrderByDescending(x => x.Timestamp));
+
+            if (_page > TotalPages)
+            {
+                _page = TotalPages;
+            }
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task OnPageChangedAsync(int page)
+    {
+        _page = Math.Max(1, page);
+        await Task.CompletedTask;
+    }
+
+    private async Task OnPageSizeChangedAsync(int size)
+    {
+        _pageSize = Math.Clamp(size, 1, 500);
+        _page = 1;
+        await Task.CompletedTask;
+    }
+
+    private bool HasAdminRole()
+    {
+        var roles = Configuration["WarehouseApi:Roles"] ?? string.Empty;
+        return roles.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Any(x => string.Equals(x, "WarehouseAdmin", StringComparison.OrdinalIgnoreCase) ||
+                      string.Equals(x, "Admin", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static DateTimeOffset? ParseDateOffset(DateTime? input, bool startOfDay)
+    {
+        if (!input.HasValue)
+        {
+            return null;
+        }
+
+        var date = input.Value.Date;
+        var value = startOfDay
+            ? new DateTimeOffset(date, TimeSpan.Zero)
+            : new DateTimeOffset(date.AddDays(1).AddTicks(-1), TimeSpan.Zero);
+
+        return value;
+    }
+
+    private static string BuildErrorMessage(ApiException error)
+    {
+        if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
+        {
+            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+        }
+
+        return error.UserMessage;
+    }
+
+    private void DismissError()
+    {
+        _apiError = null;
+    }
+}

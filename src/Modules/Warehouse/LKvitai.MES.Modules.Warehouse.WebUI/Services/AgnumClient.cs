@@ -83,6 +83,9 @@ public sealed class AgnumClient
         return GetAsync<AgnumReconciliationReportDto>($"/api/warehouse/v1/agnum/reconcile/{reportId}{query}", cancellationToken);
     }
 
+    public Task<IReadOnlyList<AgnumExportHistoryDto>> GetHistoryAsync(CancellationToken cancellationToken = default)
+        => GetAsync<IReadOnlyList<AgnumExportHistoryDto>>("/api/warehouse/v1/agnum/history", cancellationToken);
+
     private Task<T> GetAsync<T>(string relativeUrl, CancellationToken cancellationToken)
         => SendAndReadAsync<T>(() =>
         {

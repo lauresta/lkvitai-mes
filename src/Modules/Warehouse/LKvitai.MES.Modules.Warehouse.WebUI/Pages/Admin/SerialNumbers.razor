@@ -1,0 +1,330 @@
+@page "/warehouse/admin/serial-numbers"
+@inject SerialNumbersClient SerialNumbersClient
+@inject ToastService ToastService
+@inject IConfiguration Configuration
+
+<PageTitle>Serial Numbers - LKvitai.MES</PageTitle>
+
+<h1>Serial Numbers</h1>
+
+@if (!_hasAdminAccess)
+{
+    <div class="alert alert-warning" role="alert">
+        Admin role required.
+    </div>
+}
+else
+{
+    @if (_apiError is not null)
+    {
+        <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                     TraceId="@_apiError.TraceId"
+                     OnRetry="LoadAsync"
+                     OnDismiss="DismissError" />
+    }
+
+    <div class="card shadow-sm mb-3">
+        <div class="card-header">Register Serial</div>
+        <div class="card-body">
+            <EditForm Model="_createForm" OnValidSubmit="CreateAsync">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-2">
+                        <label class="form-label">Item ID</label>
+                        <InputNumber class="form-control" @bind-Value="_createForm.ItemId" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Serial</label>
+                        <InputText class="form-control" @bind-Value="_createForm.Value" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Location</label>
+                        <InputText class="form-control" @bind-Value="_createForm.Location" />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Warranty Date</label>
+                        <InputDate class="form-control" @bind-Value="_createForm.WarrantyExpiryDate" />
+                    </div>
+                    <div class="col-md-2 d-grid">
+                        <button class="btn btn-primary" type="submit" disabled="@_isWorking">Register</button>
+                    </div>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-3">
+        <div class="card-body">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label">Serial</label>
+                    <InputText class="form-control" @bind-Value="_searchSerial" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Item ID</label>
+                    <InputNumber class="form-control" @bind-Value="_searchItemId" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Status</label>
+                    <InputText class="form-control" @bind-Value="_searchStatus" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Location</label>
+                    <InputText class="form-control" @bind-Value="_searchLocation" />
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button class="btn btn-primary" @onclick="LoadAsync" disabled="@_isWorking">Search</button>
+                    <button class="btn btn-outline-secondary" @onclick="ResetFilters" disabled="@_isWorking">Reset</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm position-relative">
+        <LoadingSpinner IsLoading="_isWorking" />
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Serial</th>
+                            <th>Item ID</th>
+                            <th>Status</th>
+                            <th>Location</th>
+                            <th>Warranty Expiry</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (_serials.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="6" class="text-muted">No serials found.</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var serial in _serials)
+                            {
+                                <tr>
+                                    <td>@serial.Value</td>
+                                    <td>@serial.ItemId</td>
+                                    <td>@serial.Status</td>
+                                    <td>@(serial.Location ?? "-")</td>
+                                    <td>@(serial.WarrantyExpiryDate?.ToString("yyyy-MM-dd") ?? "-")</td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-outline-secondary" @onclick="() => BeginUpdate(serial)">Update Status</button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    @if (_updating is not null)
+    {
+        <div class="card shadow-sm mt-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Update Serial @_updating.Value</span>
+                <button class="btn btn-sm btn-outline-secondary" @onclick="CancelUpdate">Close</button>
+            </div>
+            <div class="card-body">
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label">Status</label>
+                        <InputSelect class="form-select" @bind-Value="_updateStatus">
+                            @foreach (var status in StatusOptions)
+                            {
+                                <option value="@status">@status</option>
+                            }
+                        </InputSelect>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Location</label>
+                        <InputText class="form-control" @bind-Value="_updateLocation" />
+                    </div>
+                    <div class="col-md-3 d-grid">
+                        <button class="btn btn-primary" @onclick="UpdateStatusAsync" disabled="@_isWorking">Save</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    private static readonly string[] StatusOptions = ["Received", "Available", "Issued", "Returned", "Scrapped"];
+
+    private readonly List<SerialDto> _serials = [];
+    private ApiException? _apiError;
+    private bool _isWorking;
+    private bool _hasAdminAccess;
+
+    private SerialCreateForm _createForm = new();
+    private string? _searchSerial;
+    private int? _searchItemId;
+    private string? _searchStatus;
+    private string? _searchLocation;
+
+    private SerialDto? _updating;
+    private string _updateStatus = "Available";
+    private string? _updateLocation;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _hasAdminAccess = HasAdminRole();
+        if (_hasAdminAccess)
+        {
+            await LoadAsync();
+        }
+    }
+
+    private async Task LoadAsync()
+    {
+        _isWorking = true;
+        _apiError = null;
+
+        try
+        {
+            var rows = await SerialNumbersClient.GetSerialsAsync(_searchSerial, _searchItemId, _searchStatus);
+            var filtered = rows.AsEnumerable();
+            if (!string.IsNullOrWhiteSpace(_searchLocation))
+            {
+                filtered = filtered.Where(x => !string.IsNullOrWhiteSpace(x.Location) &&
+                                               x.Location.Contains(_searchLocation, StringComparison.OrdinalIgnoreCase));
+            }
+
+            _serials.Clear();
+            _serials.AddRange(filtered.OrderBy(x => x.Value, StringComparer.OrdinalIgnoreCase));
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isWorking = false;
+        }
+    }
+
+    private async Task CreateAsync()
+    {
+        _isWorking = true;
+        _apiError = null;
+
+        try
+        {
+            await SerialNumbersClient.CreateSerialAsync(new SerialRegisterDto(
+                _createForm.ItemId,
+                _createForm.Value.Trim(),
+                string.IsNullOrWhiteSpace(_createForm.Location) ? null : _createForm.Location.Trim(),
+                _createForm.WarrantyExpiryDate));
+
+            _createForm = new SerialCreateForm();
+            ToastService.ShowSuccess("Serial registered.");
+            await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isWorking = false;
+        }
+    }
+
+    private void ResetFilters()
+    {
+        _searchSerial = null;
+        _searchItemId = null;
+        _searchStatus = null;
+        _searchLocation = null;
+    }
+
+    private void BeginUpdate(SerialDto serial)
+    {
+        _updating = serial;
+        _updateStatus = serial.Status;
+        _updateLocation = serial.Location;
+    }
+
+    private void CancelUpdate()
+    {
+        _updating = null;
+    }
+
+    private async Task UpdateStatusAsync()
+    {
+        if (_updating is null)
+        {
+            return;
+        }
+
+        _isWorking = true;
+        _apiError = null;
+
+        try
+        {
+            await SerialNumbersClient.UpdateStatusAsync(
+                _updating.Id,
+                _updateStatus,
+                string.IsNullOrWhiteSpace(_updateLocation) ? null : _updateLocation.Trim());
+
+            ToastService.ShowSuccess("Serial status updated.");
+            _updating = null;
+            await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isWorking = false;
+        }
+    }
+
+    private bool HasAdminRole()
+    {
+        var roles = Configuration["WarehouseApi:Roles"] ?? string.Empty;
+        return roles.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Any(x => string.Equals(x, "WarehouseAdmin", StringComparison.OrdinalIgnoreCase) ||
+                      string.Equals(x, "Admin", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static string BuildErrorMessage(ApiException error)
+    {
+        if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
+        {
+            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+        }
+
+        return error.UserMessage;
+    }
+
+    private void DismissError()
+    {
+        _apiError = null;
+    }
+
+    private sealed class SerialCreateForm
+    {
+        [System.ComponentModel.DataAnnotations.Range(1, int.MaxValue)]
+        public int ItemId { get; set; }
+
+        [System.ComponentModel.DataAnnotations.Required]
+        public string Value { get; set; } = string.Empty;
+
+        public string? Location { get; set; }
+        public DateOnly? WarrantyExpiryDate { get; set; }
+    }
+}

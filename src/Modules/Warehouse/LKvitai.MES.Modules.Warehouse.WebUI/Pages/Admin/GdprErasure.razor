@@ -1,0 +1,299 @@
+@page "/warehouse/admin/gdpr-erasure"
+@inject GdprClient GdprClient
+@inject ToastService ToastService
+@inject IConfiguration Configuration
+
+<PageTitle>GDPR Erasure - LKvitai.MES</PageTitle>
+
+<h1>GDPR Erasure Requests</h1>
+
+@if (!_hasAdminAccess)
+{
+    <div class="alert alert-warning" role="alert">
+        Admin role required.
+    </div>
+}
+else
+{
+    @if (_apiError is not null)
+    {
+        <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                     TraceId="@_apiError.TraceId"
+                     OnRetry="LoadAsync"
+                     OnDismiss="DismissError" />
+    }
+
+    <div class="card shadow-sm mb-3">
+        <div class="card-header">New Erasure Request</div>
+        <div class="card-body">
+            <EditForm Model="_createForm" OnValidSubmit="CreateAsync">
+                <DataAnnotationsValidator />
+                <ValidationSummary />
+
+                <div class="row g-2">
+                    <div class="col-md-4">
+                        <label class="form-label">Customer ID</label>
+                        <InputText class="form-control" @bind-Value="_createForm.CustomerId" />
+                        <ValidationMessage For="() => _createForm.CustomerId" />
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Reason</label>
+                        <InputText class="form-control" @bind-Value="_createForm.Reason" />
+                        <ValidationMessage For="() => _createForm.Reason" />
+                    </div>
+                    <div class="col-md-2 d-grid">
+                        <button class="btn btn-primary mt-md-4" type="submit" disabled="@_isSubmitting">Create</button>
+                    </div>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+
+    <div class="card shadow-sm position-relative">
+        <LoadingSpinner IsLoading="@(_isLoading || _isSubmitting || _isUpdating)" />
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Customer ID</th>
+                            <th>Status</th>
+                            <th>Requested</th>
+                            <th>Reviewed</th>
+                            <th>Reason</th>
+                            <th>Rejection</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (_requests.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="7" class="text-muted">No erasure requests found.</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var item in _requests)
+                            {
+                                <tr>
+                                    <td><code>@item.CustomerId</code></td>
+                                    <td>@item.Status</td>
+                                    <td>@item.RequestedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                                    <td>@(item.ApprovedAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? item.CompletedAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "-")</td>
+                                    <td>@item.Reason</td>
+                                    <td>@(string.IsNullOrWhiteSpace(item.RejectionReason) ? "-" : item.RejectionReason)</td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-outline-success me-2"
+                                                @onclick="() => ApproveAsync(item)"
+                                                disabled="@(_isUpdating || !IsPending(item))">
+                                            Approve
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger"
+                                                @onclick="() => BeginReject(item)"
+                                                disabled="@(_isUpdating || !IsPending(item))">
+                                            Reject
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    @if (_rejecting is not null)
+    {
+        <div class="card shadow-sm mt-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Reject Request @_rejecting.Id</span>
+                <button class="btn btn-sm btn-outline-secondary" @onclick="CancelReject">Close</button>
+            </div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <label class="form-label">Rejection Reason</label>
+                    <InputText class="form-control" @bind-Value="_rejectReason" />
+                </div>
+                <button class="btn btn-danger" @onclick="RejectAsync" disabled="@_isUpdating">Confirm Reject</button>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    private readonly List<ErasureRequestDto> _requests = [];
+    private ApiException? _apiError;
+    private bool _isLoading;
+    private bool _isSubmitting;
+    private bool _isUpdating;
+    private bool _hasAdminAccess;
+
+    private ErasureCreateForm _createForm = new();
+    private ErasureRequestDto? _rejecting;
+    private string _rejectReason = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _hasAdminAccess = HasAdminRole();
+        if (_hasAdminAccess)
+        {
+            await LoadAsync();
+        }
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            var items = await GdprClient.GetRequestsAsync();
+            _requests.Clear();
+            _requests.AddRange(items.OrderByDescending(x => x.RequestedAt));
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task CreateAsync()
+    {
+        if (!Guid.TryParse(_createForm.CustomerId, out var customerId))
+        {
+            ToastService.ShowError("Customer ID must be a valid GUID.");
+            return;
+        }
+
+        _isSubmitting = true;
+        _apiError = null;
+
+        try
+        {
+            await GdprClient.CreateRequestAsync(new CreateErasureRequestDto
+            {
+                CustomerId = customerId,
+                Reason = _createForm.Reason.Trim()
+            });
+
+            _createForm = new ErasureCreateForm();
+            ToastService.ShowSuccess("Erasure request created.");
+            await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private async Task ApproveAsync(ErasureRequestDto item)
+    {
+        _isUpdating = true;
+        _apiError = null;
+
+        try
+        {
+            await GdprClient.ApproveRequestAsync(item.Id);
+            ToastService.ShowSuccess("Erasure request approved.");
+            await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isUpdating = false;
+        }
+    }
+
+    private void BeginReject(ErasureRequestDto item)
+    {
+        _rejecting = item;
+        _rejectReason = string.Empty;
+    }
+
+    private async Task RejectAsync()
+    {
+        if (_rejecting is null)
+        {
+            return;
+        }
+
+        _isUpdating = true;
+        _apiError = null;
+
+        try
+        {
+            await GdprClient.RejectRequestAsync(_rejecting.Id, _rejectReason);
+            ToastService.ShowSuccess("Erasure request rejected.");
+            _rejecting = null;
+            _rejectReason = string.Empty;
+            await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isUpdating = false;
+        }
+    }
+
+    private void CancelReject()
+    {
+        _rejecting = null;
+        _rejectReason = string.Empty;
+    }
+
+    private static bool IsPending(ErasureRequestDto request)
+        => string.Equals(request.Status, "PENDING", StringComparison.OrdinalIgnoreCase);
+
+    private bool HasAdminRole()
+    {
+        var roles = Configuration["WarehouseApi:Roles"] ?? string.Empty;
+        return roles.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Any(x => string.Equals(x, "WarehouseAdmin", StringComparison.OrdinalIgnoreCase) ||
+                      string.Equals(x, "Admin", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static string BuildErrorMessage(ApiException error)
+    {
+        if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
+        {
+            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+        }
+
+        return error.UserMessage;
+    }
+
+    private void DismissError()
+    {
+        _apiError = null;
+    }
+
+    private sealed class ErasureCreateForm
+    {
+        [System.ComponentModel.DataAnnotations.Required]
+        public string CustomerId { get; set; } = string.Empty;
+
+        [System.ComponentModel.DataAnnotations.Required]
+        public string Reason { get; set; } = string.Empty;
+    }
+}

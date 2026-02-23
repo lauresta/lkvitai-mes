@@ -1,0 +1,171 @@
+@page "/warehouse/admin/lots"
+@inject LotsClient LotsClient
+
+<PageTitle>Lots - LKvitai.MES</PageTitle>
+
+<h3>Lots</h3>
+
+@if (_apiError is not null)
+{
+    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                 TraceId="@_apiError.TraceId"
+                 OnRetry="LoadAsync"
+                 OnDismiss="@(() => _apiError = null)" />
+}
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">Search</label>
+                <input class="form-control" @bind="_search" placeholder="Lot number, SKU, item name" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Status</label>
+                <select class="form-select" @bind="_status">
+                    <option value="">All</option>
+                    <option value="Active">Active</option>
+                    <option value="ExpiringSoon">Expiring soon</option>
+                    <option value="Expired">Expired</option>
+                    <option value="Depleted">Depleted</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-grid">
+                <button class="btn btn-primary" @onclick="ApplyFiltersAsync">Filter</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm position-relative">
+    <LoadingSpinner IsLoading="@_isLoading" />
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <strong>Total: @_totalCount</strong>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle">
+                <thead>
+                <tr>
+                    <th>Lot</th>
+                    <th>Item</th>
+                    <th>Qty</th>
+                    <th>Reserved</th>
+                    <th>Available</th>
+                    <th>UoM</th>
+                    <th>Production</th>
+                    <th>Expiry</th>
+                    <th>Status</th>
+                </tr>
+                </thead>
+                <tbody>
+                @if (_lots.Count == 0)
+                {
+                    <tr>
+                        <td colspan="9" class="text-muted">No lots found.</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var row in _lots)
+                    {
+                        <tr>
+                            <td>@row.LotNumber</td>
+                            <td>@row.ItemSku - @row.ItemName</td>
+                            <td>@row.Qty.ToString("0.###")</td>
+                            <td>@row.ReservedQty.ToString("0.###")</td>
+                            <td>@row.AvailableQty.ToString("0.###")</td>
+                            <td>@row.BaseUom</td>
+                            <td>@FormatDate(row.ProductionDate)</td>
+                            <td>@FormatDate(row.ExpiryDate)</td>
+                            <td>@row.Status</td>
+                        </tr>
+                    }
+                }
+                </tbody>
+            </table>
+        </div>
+
+        @if (_totalCount > 0)
+        {
+            <Pagination CurrentPage="@_pageNumber"
+                        TotalPages="@TotalPages"
+                        PageSize="@_pageSize"
+                        OnPageChanged="OnPageChangedAsync"
+                        OnPageSizeChanged="OnPageSizeChangedAsync" />
+        }
+    </div>
+</div>
+
+@code {
+    private readonly List<LotListItemDto> _lots = [];
+    private string? _search;
+    private string? _status;
+    private int _pageNumber = 1;
+    private int _pageSize = 50;
+    private int _totalCount;
+    private bool _isLoading;
+    private ApiException? _apiError;
+
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling(_totalCount / (double)Math.Max(1, _pageSize)));
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            var result = await LotsClient.GetLotsAsync(_search, _status, _pageNumber, _pageSize);
+            _lots.Clear();
+            _lots.AddRange(result.Items);
+            _totalCount = result.TotalCount;
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task ApplyFiltersAsync()
+    {
+        _pageNumber = 1;
+        await LoadAsync();
+    }
+
+    private async Task OnPageChangedAsync(int page)
+    {
+        _pageNumber = Math.Max(1, page);
+        await LoadAsync();
+    }
+
+    private async Task OnPageSizeChangedAsync(int size)
+    {
+        _pageSize = Math.Clamp(size, 1, 500);
+        _pageNumber = 1;
+        await LoadAsync();
+    }
+
+    private static string FormatDate(DateOnly? value)
+        => value?.ToString("yyyy-MM-dd") ?? "-";
+
+    private static string BuildErrorMessage(ApiException error)
+    {
+        if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
+        {
+            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+        }
+
+        return error.UserMessage;
+    }
+}

@@ -1,0 +1,459 @@
+@page "/warehouse/admin/retention-policies"
+@inject RetentionPoliciesClient RetentionPoliciesClient
+@inject ToastService ToastService
+@inject IConfiguration Configuration
+
+<PageTitle>Retention Policies - LKvitai.MES</PageTitle>
+
+<h1>Retention Policies</h1>
+
+@if (!_hasAdminAccess)
+{
+    <div class="alert alert-warning" role="alert">
+        Admin role required.
+    </div>
+}
+else
+{
+    @if (_apiError is not null)
+    {
+        <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                     TraceId="@_apiError.TraceId"
+                     OnRetry="LoadAsync"
+                     OnDismiss="DismissError" />
+    }
+
+    <div class="card shadow-sm mb-3">
+        <div class="card-body">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-3 d-grid">
+                    <button class="btn btn-primary" @onclick="ToggleCreateForm">@(_showCreate ? "Hide Form" : "Create Policy")</button>
+                </div>
+                <div class="col-md-3 d-grid">
+                    <button class="btn btn-outline-secondary" @onclick="LoadAsync">Refresh</button>
+                </div>
+                <div class="col-md-3 d-grid">
+                    <button class="btn btn-outline-warning" @onclick="ExecuteAsync" disabled="@_isWorking">Execute Now</button>
+                </div>
+            </div>
+
+            @if (_lastExecution is not null)
+            {
+                <div class="alert @(_lastExecution.Status == "COMPLETED" ? "alert-success" : "alert-danger") mt-3 mb-0" role="alert">
+                    Retention execution @_lastExecution.Status at @_lastExecution.ExecutedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss").
+                    Archived: @_lastExecution.RecordsArchived. Deleted: @_lastExecution.RecordsDeleted.
+                    @if (!string.IsNullOrWhiteSpace(_lastExecution.ErrorMessage))
+                    {
+                        <div><small>@_lastExecution.ErrorMessage</small></div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+    @if (_showCreate)
+    {
+        <div class="card shadow-sm mb-3">
+            <div class="card-header">Create Retention Policy</div>
+            <div class="card-body">
+                <EditForm Model="_createForm" OnValidSubmit="CreateAsync">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div class="row g-2">
+                        <div class="col-md-3">
+                            <label class="form-label">Data Type</label>
+                            <InputSelect class="form-select" @bind-Value="_createForm.DataType">
+                                @foreach (var dataType in DataTypeOptions)
+                                {
+                                    <option value="@dataType">@dataType</option>
+                                }
+                            </InputSelect>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Retention Days</label>
+                            <InputNumber class="form-control" @bind-Value="_createForm.RetentionPeriodDays" />
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Archive After</label>
+                            <InputNumber class="form-control" @bind-Value="_createForm.ArchiveAfterDays" />
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Delete After</label>
+                            <InputNumber class="form-control" @bind-Value="_createForm.DeleteAfterDays" />
+                        </div>
+                        <div class="col-md-1 d-flex align-items-center">
+                            <div class="form-check mt-4">
+                                <InputCheckbox class="form-check-input" @bind-Value="_createForm.Active" />
+                                <label class="form-check-label">Active</label>
+                            </div>
+                        </div>
+                        <div class="col-md-2 d-grid">
+                            <button class="btn btn-primary mt-md-4" type="submit" disabled="@_isWorking">Save</button>
+                        </div>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    }
+
+    <div class="card shadow-sm position-relative mb-3">
+        <LoadingSpinner IsLoading="_isWorking" />
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Data Type</th>
+                            <th>Retention</th>
+                            <th>Archive</th>
+                            <th>Delete</th>
+                            <th>Active</th>
+                            <th>Updated</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (_policies.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="7" class="text-muted">No retention policies configured.</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var item in _policies)
+                            {
+                                <tr>
+                                    <td>@item.DataType</td>
+                                    <td>@item.RetentionPeriodDays</td>
+                                    <td>@(item.ArchiveAfterDays?.ToString() ?? "-")</td>
+                                    <td>@(item.DeleteAfterDays?.ToString() ?? "-")</td>
+                                    <td>@(item.Active ? "Yes" : "No")</td>
+                                    <td>@((item.UpdatedAt ?? item.CreatedAt).ToLocalTime().ToString("yyyy-MM-dd HH:mm"))</td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-outline-secondary me-2" @onclick="() => BeginEdit(item)">Edit</button>
+                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteAsync(item)">Delete</button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    @if (_editing is not null)
+    {
+        <div class="card shadow-sm mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>Edit Policy @_editing.DataType</span>
+                <button class="btn btn-sm btn-outline-secondary" @onclick="CancelEdit">Close</button>
+            </div>
+            <div class="card-body">
+                <EditForm Model="_editing" OnValidSubmit="UpdateAsync">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div class="row g-2">
+                        <div class="col-md-3">
+                            <label class="form-label">Data Type</label>
+                            <InputSelect class="form-select" @bind-Value="_editing.DataType">
+                                @foreach (var dataType in DataTypeOptions)
+                                {
+                                    <option value="@dataType">@dataType</option>
+                                }
+                            </InputSelect>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Retention Days</label>
+                            <InputNumber class="form-control" @bind-Value="_editing.RetentionPeriodDays" />
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Archive After</label>
+                            <InputNumber class="form-control" @bind-Value="_editing.ArchiveAfterDays" />
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Delete After</label>
+                            <InputNumber class="form-control" @bind-Value="_editing.DeleteAfterDays" />
+                        </div>
+                        <div class="col-md-1 d-flex align-items-center">
+                            <div class="form-check mt-4">
+                                <InputCheckbox class="form-check-input" @bind-Value="_editing.Active" />
+                                <label class="form-check-label">Active</label>
+                            </div>
+                        </div>
+                        <div class="col-md-2 d-grid">
+                            <button class="btn btn-primary mt-md-4" type="submit" disabled="@_isWorking">Save</button>
+                        </div>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    }
+
+    <div class="card shadow-sm">
+        <div class="card-header">Audit Log Legal Hold</div>
+        <div class="card-body">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label">Audit Log ID</label>
+                    <InputNumber class="form-control" @bind-Value="_legalHoldAuditLogId" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Legal Hold</label>
+                    <InputSelect class="form-select" @bind-Value="_legalHoldEnabled">
+                        <option value="true">Enabled</option>
+                        <option value="false">Disabled</option>
+                    </InputSelect>
+                </div>
+                <div class="col-md-3 d-grid">
+                    <button class="btn btn-outline-primary" @onclick="SetLegalHoldAsync" disabled="@_isWorking">Apply Legal Hold</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private static readonly string[] DataTypeOptions = ["Events", "Projections", "AuditLogs", "CustomerData"];
+
+    private readonly List<RetentionPolicyDto> _policies = [];
+    private ApiException? _apiError;
+    private bool _isWorking;
+    private bool _hasAdminAccess;
+    private bool _showCreate;
+    private RetentionExecutionDto? _lastExecution;
+
+    private RetentionPolicyForm _createForm = new();
+    private RetentionPolicyForm? _editing;
+
+    private long? _legalHoldAuditLogId;
+    private bool _legalHoldEnabled = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _hasAdminAccess = HasAdminRole();
+        if (_hasAdminAccess)
+        {
+            await LoadAsync();
+        }
+    }
+
+    private async Task LoadAsync()
+    {
+        _isWorking = true;
+        _apiError = null;
+
+        try
+        {
+            var items = await RetentionPoliciesClient.GetPoliciesAsync();
+            _policies.Clear();
+            _policies.AddRange(items.OrderBy(x => x.DataType, StringComparer.OrdinalIgnoreCase));
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isWorking = false;
+        }
+    }
+
+    private void ToggleCreateForm()
+    {
+        _showCreate = !_showCreate;
+        if (_showCreate)
+        {
+            _createForm = new RetentionPolicyForm();
+        }
+    }
+
+    private async Task CreateAsync()
+    {
+        _isWorking = true;
+        _apiError = null;
+
+        try
+        {
+            await RetentionPoliciesClient.CreatePolicyAsync(ToRequest(_createForm));
+            _showCreate = false;
+            _createForm = new RetentionPolicyForm();
+            ToastService.ShowSuccess("Retention policy created.");
+            await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isWorking = false;
+        }
+    }
+
+    private void BeginEdit(RetentionPolicyDto item)
+    {
+        _editing = new RetentionPolicyForm
+        {
+            Id = item.Id,
+            DataType = item.DataType,
+            RetentionPeriodDays = item.RetentionPeriodDays,
+            ArchiveAfterDays = item.ArchiveAfterDays,
+            DeleteAfterDays = item.DeleteAfterDays,
+            Active = item.Active
+        };
+    }
+
+    private void CancelEdit()
+    {
+        _editing = null;
+    }
+
+    private async Task UpdateAsync()
+    {
+        if (_editing is null || !_editing.Id.HasValue)
+        {
+            return;
+        }
+
+        _isWorking = true;
+        _apiError = null;
+
+        try
+        {
+            await RetentionPoliciesClient.UpdatePolicyAsync(_editing.Id.Value, ToRequest(_editing));
+            ToastService.ShowSuccess("Retention policy updated.");
+            _editing = null;
+            await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isWorking = false;
+        }
+    }
+
+    private async Task DeleteAsync(RetentionPolicyDto item)
+    {
+        _isWorking = true;
+        _apiError = null;
+
+        try
+        {
+            await RetentionPoliciesClient.DeletePolicyAsync(item.Id);
+            ToastService.ShowSuccess("Retention policy deleted.");
+            await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isWorking = false;
+        }
+    }
+
+    private async Task ExecuteAsync()
+    {
+        _isWorking = true;
+        _apiError = null;
+
+        try
+        {
+            _lastExecution = await RetentionPoliciesClient.ExecuteAsync();
+            ToastService.ShowSuccess($"Retention execution {_lastExecution.Status}.");
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isWorking = false;
+        }
+    }
+
+    private async Task SetLegalHoldAsync()
+    {
+        if (!_legalHoldAuditLogId.HasValue || _legalHoldAuditLogId.Value <= 0)
+        {
+            ToastService.ShowError("Audit Log ID must be greater than zero.");
+            return;
+        }
+
+        _isWorking = true;
+        _apiError = null;
+
+        try
+        {
+            await RetentionPoliciesClient.SetLegalHoldAsync(_legalHoldAuditLogId.Value, _legalHoldEnabled);
+            ToastService.ShowSuccess("Legal hold updated.");
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isWorking = false;
+        }
+    }
+
+    private static UpsertRetentionPolicyRequestDto ToRequest(RetentionPolicyForm form)
+    {
+        return new UpsertRetentionPolicyRequestDto
+        {
+            DataType = form.DataType,
+            RetentionPeriodDays = form.RetentionPeriodDays,
+            ArchiveAfterDays = form.ArchiveAfterDays,
+            DeleteAfterDays = form.DeleteAfterDays,
+            Active = form.Active
+        };
+    }
+
+    private bool HasAdminRole()
+    {
+        var roles = Configuration["WarehouseApi:Roles"] ?? string.Empty;
+        return roles.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Any(x => string.Equals(x, "WarehouseAdmin", StringComparison.OrdinalIgnoreCase) ||
+                      string.Equals(x, "Admin", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static string BuildErrorMessage(ApiException error)
+    {
+        if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
+        {
+            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+        }
+
+        return error.UserMessage;
+    }
+
+    private void DismissError()
+    {
+        _apiError = null;
+    }
+
+    private sealed class RetentionPolicyForm
+    {
+        public int? Id { get; set; }
+        public string DataType { get; set; } = "AuditLogs";
+        public int RetentionPeriodDays { get; set; } = 2555;
+        public int? ArchiveAfterDays { get; set; } = 365;
+        public int? DeleteAfterDays { get; set; } = 2555;
+        public bool Active { get; set; } = true;
+    }
+}

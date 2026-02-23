@@ -64,6 +64,36 @@ public class StockClient
             }
         ]);
 
+    public async Task<PagedResult<LocationBalanceItemDto>> GetLocationBalanceAsync(
+        int? locationId = null,
+        string? status = null,
+        int page = 1,
+        int pageSize = 50,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new StringBuilder("/api/warehouse/v1/stock/location-balance?");
+        query.Append($"pageNumber={Math.Max(1, page)}&pageSize={Math.Clamp(pageSize, 1, 1000)}");
+
+        if (locationId.HasValue)
+        {
+            query.Append("&locationId=").Append(locationId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            query.Append("&status=").Append(Uri.EscapeDataString(status));
+        }
+
+        var payload = await GetAsync<LocationBalanceResponseDto>(query.ToString(), cancellationToken);
+        return new PagedResult<LocationBalanceItemDto>
+        {
+            Items = payload.Items,
+            TotalCount = payload.TotalCount,
+            Page = payload.PageNumber,
+            PageSize = payload.PageSize
+        };
+    }
+
     private async Task<PagedResult<AvailableStockItemDto>> SearchCoreAsync(string relativeUrl, CancellationToken cancellationToken)
     {
         var payload = await GetAsync<StockSearchResponseDto>(relativeUrl, cancellationToken);
@@ -130,6 +160,14 @@ public class StockClient
     private sealed record StockSearchResponseDto
     {
         public IReadOnlyList<StockSearchRowDto> Items { get; init; } = Array.Empty<StockSearchRowDto>();
+        public int TotalCount { get; init; }
+        public int PageNumber { get; init; }
+        public int PageSize { get; init; }
+    }
+
+    private sealed record LocationBalanceResponseDto
+    {
+        public IReadOnlyList<LocationBalanceItemDto> Items { get; init; } = Array.Empty<LocationBalanceItemDto>();
         public int TotalCount { get; init; }
         public int PageNumber { get; init; }
         public int PageSize { get; init; }

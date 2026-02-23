@@ -141,6 +141,54 @@
                 <button class="btn btn-primary" type="submit" disabled="@_isSaving">Save</button>
             </div>
         </EditForm>
+
+        <hr />
+
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h5 class="mb-0">Export History</h5>
+            <button class="btn btn-sm btn-outline-secondary" type="button" @onclick="LoadHistoryAsync" disabled="@_isLoading">Refresh History</button>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Exported</th>
+                        <th>Export #</th>
+                        <th>Status</th>
+                        <th>Rows</th>
+                        <th>Trigger</th>
+                        <th>Retry</th>
+                        <th>File Path</th>
+                        <th>Error</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (_history.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="8" class="text-muted">No export history found.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in _history)
+                        {
+                            <tr>
+                                <td>@item.ExportedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</td>
+                                <td>@item.ExportNumber</td>
+                                <td>@item.Status</td>
+                                <td>@item.RowCount</td>
+                                <td>@item.Trigger</td>
+                                <td>@item.RetryCount</td>
+                                <td class="text-truncate" style="max-width:260px;" title="@item.FilePath">@item.FilePath</td>
+                                <td class="text-truncate" style="max-width:240px;" title="@item.ErrorMessage">@item.ErrorMessage</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 
@@ -154,6 +202,7 @@
 
     private readonly AgnumConfigFormModel _model = new();
     private readonly List<MappingRowModel> _mappings = [];
+    private readonly List<AgnumExportHistoryDto> _history = [];
     private readonly List<AdminCategoryDto> _categories = [];
 
     private ApiException? _apiError;
@@ -172,10 +221,18 @@
         _apiError = null;
         try
         {
-            _categories.Clear();
-            _categories.AddRange(await MasterDataAdminClient.GetCategoriesAsync());
+            var categoriesTask = MasterDataAdminClient.GetCategoriesAsync();
+            var configTask = AgnumClient.GetConfigAsync();
+            var historyTask = AgnumClient.GetHistoryAsync();
+            await Task.WhenAll(categoriesTask, configTask, historyTask);
 
-            var config = await AgnumClient.GetConfigAsync();
+            _categories.Clear();
+            _categories.AddRange(categoriesTask.Result);
+
+            _history.Clear();
+            _history.AddRange(historyTask.Result.OrderByDescending(x => x.ExportedAt).Take(50));
+
+            var config = configTask.Result;
             if (config is null)
             {
                 _mappings.Clear();
@@ -268,6 +325,28 @@
         finally
         {
             _isSaving = false;
+        }
+    }
+
+    private async Task LoadHistoryAsync()
+    {
+        _apiError = null;
+        _isLoading = true;
+
+        try
+        {
+            var history = await AgnumClient.GetHistoryAsync();
+            _history.Clear();
+            _history.AddRange(history.OrderByDescending(x => x.ExportedAt).Take(50));
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isLoading = false;
         }
     }
 

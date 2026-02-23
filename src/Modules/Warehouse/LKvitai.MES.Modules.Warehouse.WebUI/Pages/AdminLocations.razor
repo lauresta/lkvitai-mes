@@ -93,6 +93,7 @@
                             <td>@FormatCapacity(row)</td>
                             <td>@(row.IsVirtual ? "Yes" : "No")</td>
                             <td class="text-end">
+                                <a class="btn btn-sm btn-outline-info me-1" href="@($"/warehouse/locations/{row.Id}")">View Details</a>
                                 <button class="btn btn-sm btn-outline-secondary" @onclick="@(() => BeginEdit(row))">Edit</button>
                             </td>
                         </tr>

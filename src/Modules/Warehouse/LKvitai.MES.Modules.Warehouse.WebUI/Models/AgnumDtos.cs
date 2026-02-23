@@ -89,3 +89,17 @@ public sealed record AgnumReconciliationReportDto
     public IReadOnlyList<AgnumReconciliationLineDto> Lines { get; init; } = Array.Empty<AgnumReconciliationLineDto>();
     public AgnumReconciliationSummaryDto Summary { get; init; } = new();
 }
+
+public sealed record AgnumExportHistoryDto
+{
+    public Guid Id { get; init; }
+    public Guid ExportConfigId { get; init; }
+    public string ExportNumber { get; init; } = string.Empty;
+    public DateTimeOffset ExportedAt { get; init; }
+    public string Status { get; init; } = string.Empty;
+    public int RowCount { get; init; }
+    public string? FilePath { get; init; }
+    public string? ErrorMessage { get; init; }
+    public int RetryCount { get; init; }
+    public string Trigger { get; init; } = string.Empty;
+}

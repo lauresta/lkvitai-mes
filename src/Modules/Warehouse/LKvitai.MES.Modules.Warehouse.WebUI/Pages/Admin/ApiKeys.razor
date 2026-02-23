@@ -1,0 +1,405 @@
+@page "/warehouse/admin/api-keys"
+@using System.Globalization
+@inject ApiKeysClient ApiKeysClient
+@inject ToastService ToastService
+@inject IConfiguration Configuration
+
+<PageTitle>API Keys - LKvitai.MES</PageTitle>
+
+<h1>API Keys</h1>
+
+@if (!_hasAdminAccess)
+{
+    <div class="alert alert-warning" role="alert">
+        Admin role required.
+    </div>
+}
+else
+{
+    @if (_apiError is not null)
+    {
+        <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                     TraceId="@_apiError.TraceId"
+                     OnRetry="LoadAsync"
+                     OnDismiss="DismissError" />
+    }
+
+    @if (_latestPlainKey is not null)
+    {
+        <div class="alert alert-info" role="alert">
+            <div><strong>One-time key value:</strong> store this now. It is not shown again.</div>
+            <code>@_latestPlainKey</code>
+        </div>
+    }
+
+    <div class="card shadow-sm mb-3">
+        <div class="card-body">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-3 d-grid">
+                    <button class="btn btn-primary" @onclick="ToggleCreateForm">@(_showCreate ? "Hide Form" : "Create New Key")</button>
+                </div>
+                <div class="col-md-3 d-grid">
+                    <button class="btn btn-outline-secondary" @onclick="LoadAsync">Refresh</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (_showCreate)
+    {
+        <div class="card shadow-sm mb-3">
+            <div class="card-header">Create API Key</div>
+            <div class="card-body">
+                <EditForm Model="_createForm" OnValidSubmit="CreateAsync">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Name</label>
+                            <InputText class="form-control" @bind-Value="_createForm.Name" />
+                            <ValidationMessage For="() => _createForm.Name" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Rate Limit / Minute</label>
+                            <InputNumber class="form-control" @bind-Value="_createForm.RateLimitPerMinute" />
+                            <ValidationMessage For="() => _createForm.RateLimitPerMinute" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Expires At (optional)</label>
+                            <InputText class="form-control"
+                                       @bind-Value="_createForm.ExpiresAtLocal"
+                                       placeholder="yyyy-MM-dd HH:mm" />
+                        </div>
+                    </div>
+
+                    <label class="form-label">Scopes</label>
+                    <div class="row g-1 mb-2">
+                        @foreach (var scope in ScopeOptions)
+                        {
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input"
+                                           type="checkbox"
+                                           checked="@_createForm.Scopes.Contains(scope)"
+                                           @onchange="(e) => ToggleScope(scope, e.Value is true)" />
+                                    <label class="form-check-label">@scope</label>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(_scopeError))
+                    {
+                        <div class="text-danger mb-2">@_scopeError</div>
+                    }
+
+                    <button class="btn btn-primary" type="submit" disabled="@_isSubmitting">Save</button>
+                </EditForm>
+            </div>
+        </div>
+    }
+
+    <div class="card shadow-sm position-relative">
+        <LoadingSpinner IsLoading="@(_isLoading || _isSubmitting || _isRotating || _isDeleting)" />
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Key</th>
+                            <th>Scopes</th>
+                            <th>Created</th>
+                            <th>Last Used</th>
+                            <th>Expiry</th>
+                            <th>Status</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (_keys.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="8" class="text-muted">No API keys configured.</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var key in _keys)
+                            {
+                                <tr>
+                                    <td>@key.Name</td>
+                                    <td><code>••••••••••••••••</code></td>
+                                    <td>
+                                        @foreach (var scope in key.Scopes.OrderBy(x => x, StringComparer.OrdinalIgnoreCase))
+                                        {
+                                            <span class="badge bg-light text-dark border me-1">@scope</span>
+                                        }
+                                    </td>
+                                    <td>@key.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                                    <td>@(key.LastUsedAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "-")</td>
+                                    <td>@(key.ExpiresAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "Never")</td>
+                                    <td>@(key.Active ? "Active" : "Inactive")</td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-outline-secondary me-2"
+                                                @onclick="() => RotateAsync(key)"
+                                                disabled="@_isRotating">
+                                            Rotate
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger"
+                                                @onclick="() => ConfirmDelete(key)"
+                                                disabled="@_isDeleting || !key.Active">
+                                            Delete
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <ConfirmDialog Title="Delete API Key"
+                   Message="@_deleteMessage"
+                   ConfirmText="Delete"
+                   IsVisible="@(_pendingDelete is not null)"
+                   OnConfirm="DeleteAsync"
+                   OnCancel="CancelDelete" />
+}
+
+@code {
+    private static readonly string[] ScopeOptions =
+    [
+        "read:items",
+        "write:orders",
+        "read:stock"
+    ];
+
+    private readonly List<ApiKeyViewDto> _keys = [];
+    private ApiException? _apiError;
+    private bool _isLoading;
+    private bool _isSubmitting;
+    private bool _isRotating;
+    private bool _isDeleting;
+    private bool _showCreate;
+    private bool _hasAdminAccess;
+    private string _scopeError = string.Empty;
+    private string? _latestPlainKey;
+    private CreateApiKeyForm _createForm = new();
+    private ApiKeyViewDto? _pendingDelete;
+    private string _deleteMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _hasAdminAccess = HasAdminRole();
+        if (_hasAdminAccess)
+        {
+            await LoadAsync();
+        }
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            var keys = await ApiKeysClient.GetKeysAsync();
+            _keys.Clear();
+            _keys.AddRange(keys.OrderByDescending(x => x.CreatedAt));
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void ToggleCreateForm()
+    {
+        _showCreate = !_showCreate;
+        _scopeError = string.Empty;
+        if (_showCreate)
+        {
+            _createForm = new CreateApiKeyForm();
+        }
+    }
+
+    private void ToggleScope(string scope, bool enabled)
+    {
+        if (enabled)
+        {
+            _createForm.Scopes.Add(scope);
+        }
+        else
+        {
+            _createForm.Scopes.Remove(scope);
+        }
+    }
+
+    private async Task CreateAsync()
+    {
+        _scopeError = string.Empty;
+        if (_createForm.Scopes.Count == 0)
+        {
+            _scopeError = "At least one scope is required.";
+            return;
+        }
+
+        _isSubmitting = true;
+        _apiError = null;
+
+        try
+        {
+            var created = await ApiKeysClient.CreateKeyAsync(new CreateApiKeyRequestDto
+            {
+                Name = _createForm.Name.Trim(),
+                Scopes = _createForm.Scopes.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToArray(),
+                RateLimitPerMinute = _createForm.RateLimitPerMinute,
+                ExpiresAt = ParseExpiresAt(_createForm.ExpiresAtLocal)
+            });
+
+            _latestPlainKey = created.PlainKey;
+            _showCreate = false;
+            _createForm = new CreateApiKeyForm();
+            ToastService.ShowSuccess($"API key {created.Name} created.");
+            await LoadAsync();
+        }
+        catch (FormatException ex)
+        {
+            ToastService.ShowError(ex.Message);
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private async Task RotateAsync(ApiKeyViewDto key)
+    {
+        _isRotating = true;
+        _apiError = null;
+
+        try
+        {
+            var rotated = await ApiKeysClient.RotateKeyAsync(key.Id);
+            _latestPlainKey = rotated.PlainKey;
+            ToastService.ShowSuccess($"API key {rotated.Name} rotated.");
+            await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isRotating = false;
+        }
+    }
+
+    private void ConfirmDelete(ApiKeyViewDto key)
+    {
+        _pendingDelete = key;
+        _deleteMessage = $"Delete API key {key.Name}?";
+    }
+
+    private async Task DeleteAsync()
+    {
+        if (_pendingDelete is null)
+        {
+            return;
+        }
+
+        _isDeleting = true;
+        _apiError = null;
+
+        try
+        {
+            await ApiKeysClient.DeleteKeyAsync(_pendingDelete.Id);
+            ToastService.ShowSuccess($"API key {_pendingDelete.Name} deleted.");
+            _pendingDelete = null;
+            _deleteMessage = string.Empty;
+            await LoadAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isDeleting = false;
+        }
+    }
+
+    private void CancelDelete()
+    {
+        _pendingDelete = null;
+        _deleteMessage = string.Empty;
+    }
+
+    private bool HasAdminRole()
+    {
+        var roles = Configuration["WarehouseApi:Roles"] ?? string.Empty;
+        return roles.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Any(x => string.Equals(x, "WarehouseAdmin", StringComparison.OrdinalIgnoreCase) ||
+                      string.Equals(x, "Admin", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static DateTimeOffset? ParseExpiresAt(string? expiresAtLocal)
+    {
+        if (string.IsNullOrWhiteSpace(expiresAtLocal))
+        {
+            return null;
+        }
+
+        if (!DateTime.TryParse(expiresAtLocal, CultureInfo.CurrentCulture, DateTimeStyles.AssumeLocal, out var parsed))
+        {
+            throw new FormatException("Invalid expiry date/time.");
+        }
+
+        return new DateTimeOffset(parsed);
+    }
+
+    private static string BuildErrorMessage(ApiException error)
+    {
+        if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
+        {
+            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+        }
+
+        return error.UserMessage;
+    }
+
+    private void DismissError()
+    {
+        _apiError = null;
+    }
+
+    private sealed class CreateApiKeyForm
+    {
+        [System.ComponentModel.DataAnnotations.Required]
+        public string Name { get; set; } = string.Empty;
+
+        [System.ComponentModel.DataAnnotations.Range(1, int.MaxValue)]
+        public int? RateLimitPerMinute { get; set; } = 100;
+
+        public HashSet<string> Scopes { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+        public string? ExpiresAtLocal { get; set; }
+    }
+}
