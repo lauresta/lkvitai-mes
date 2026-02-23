@@ -46,6 +46,7 @@ builder.Services.AddScoped<DisasterRecoveryClient>();
 builder.Services.AddScoped<SerialNumbersClient>();
 builder.Services.AddScoped<LayoutEditorClient>();
 builder.Services.AddScoped<LotsClient>();
+builder.Services.AddScoped<UomClient>();
 builder.Services.AddScoped<VisualizationClient>();
 builder.Services.AddScoped<CycleCountsClient>();
 builder.Services.AddScoped<AdvancedWarehouseClient>();

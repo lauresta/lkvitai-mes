@@ -1,0 +1,237 @@
+@page "/warehouse/admin/uom"
+@inject UomClient UomClient
+
+<PageTitle>Units of Measure - LKvitai.MES</PageTitle>
+
+<h3>Units of Measure</h3>
+
+@if (_apiError is not null)
+{
+    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                 TraceId="@_apiError.TraceId"
+                 OnRetry="ReloadAsync"
+                 OnDismiss="@(() => _apiError = null)" />
+}
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">Search</label>
+                <input class="form-control" @bind="_search" placeholder="Code, name, item SKU" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">UoM Type</label>
+                <select class="form-select" @bind="_uomType">
+                    <option value="">All</option>
+                    <option value="Weight">Weight</option>
+                    <option value="Volume">Volume</option>
+                    <option value="Piece">Piece</option>
+                    <option value="Length">Length</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-grid">
+                <button class="btn btn-primary" @onclick="ApplyFiltersAsync">Filter</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-3 position-relative">
+    <LoadingSpinner IsLoading="@_isLoading" />
+    <div class="card-header">Units</div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle">
+                <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Name</th>
+                    <th>Type</th>
+                </tr>
+                </thead>
+                <tbody>
+                @if (_units.Count == 0)
+                {
+                    <tr><td colspan="3" class="text-muted">No units found.</td></tr>
+                }
+                else
+                {
+                    @foreach (var unit in _units)
+                    {
+                        <tr>
+                            <td>@unit.Code</td>
+                            <td>@unit.Name</td>
+                            <td>@unit.Type</td>
+                        </tr>
+                    }
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-3">
+    <div class="card-header">Handling Unit Types</div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle">
+                <thead>
+                <tr>
+                    <th>Code</th>
+                    <th>Name</th>
+                </tr>
+                </thead>
+                <tbody>
+                @if (_handlingUnitTypes.Count == 0)
+                {
+                    <tr><td colspan="2" class="text-muted">No handling unit types found.</td></tr>
+                }
+                else
+                {
+                    @foreach (var row in _handlingUnitTypes)
+                    {
+                        <tr>
+                            <td>@row.Code</td>
+                            <td>@row.Name</td>
+                        </tr>
+                    }
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header">Item UoM Conversions</div>
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <strong>Total: @_totalCount</strong>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle">
+                <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>From</th>
+                    <th>To</th>
+                    <th>Factor</th>
+                    <th>Rounding</th>
+                </tr>
+                </thead>
+                <tbody>
+                @if (_conversions.Count == 0)
+                {
+                    <tr><td colspan="5" class="text-muted">No conversion rules found.</td></tr>
+                }
+                else
+                {
+                    @foreach (var row in _conversions)
+                    {
+                        <tr>
+                            <td>@row.ItemSku - @row.ItemName</td>
+                            <td>@row.FromUom</td>
+                            <td>@row.ToUom</td>
+                            <td>@row.Factor.ToString("0.######")</td>
+                            <td>@row.RoundingRule</td>
+                        </tr>
+                    }
+                }
+                </tbody>
+            </table>
+        </div>
+
+        @if (_totalCount > 0)
+        {
+            <Pagination CurrentPage="@_pageNumber"
+                        TotalPages="@TotalPages"
+                        PageSize="@_pageSize"
+                        OnPageChanged="OnPageChangedAsync"
+                        OnPageSizeChanged="OnPageSizeChangedAsync" />
+        }
+    </div>
+</div>
+
+@code {
+    private readonly List<UnitOfMeasureDto> _units = [];
+    private readonly List<HandlingUnitTypeDto> _handlingUnitTypes = [];
+    private readonly List<ItemUomConversionDto> _conversions = [];
+
+    private string? _search;
+    private string? _uomType;
+    private int _pageNumber = 1;
+    private int _pageSize = 50;
+    private int _totalCount;
+    private bool _isLoading;
+    private ApiException? _apiError;
+
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling(_totalCount / (double)Math.Max(1, _pageSize)));
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            var units = await UomClient.GetUnitsAsync(_search, _uomType);
+            var types = await UomClient.GetHandlingUnitTypesAsync(_search);
+            var conversions = await UomClient.GetConversionsAsync(_search, _pageNumber, _pageSize);
+
+            _units.Clear();
+            _units.AddRange(units);
+
+            _handlingUnitTypes.Clear();
+            _handlingUnitTypes.AddRange(types);
+
+            _conversions.Clear();
+            _conversions.AddRange(conversions.Items);
+            _totalCount = conversions.TotalCount;
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task ApplyFiltersAsync()
+    {
+        _pageNumber = 1;
+        await ReloadAsync();
+    }
+
+    private async Task OnPageChangedAsync(int page)
+    {
+        _pageNumber = Math.Max(1, page);
+        await ReloadAsync();
+    }
+
+    private async Task OnPageSizeChangedAsync(int size)
+    {
+        _pageSize = Math.Clamp(size, 1, 500);
+        _pageNumber = 1;
+        await ReloadAsync();
+    }
+
+    private static string BuildErrorMessage(ApiException error)
+    {
+        if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
+        {
+            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+        }
+
+        return error.UserMessage;
+    }
+}
