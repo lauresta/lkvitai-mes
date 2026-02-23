@@ -22,3 +22,10 @@
 - Reasoning:
   - Current WebUI already serves dashboard, lot-trace, and scheduled reporting.
   - The remaining operations are operational/compliance specialist workflows and are suitable for explicit API integrations.
+
+## G-14: Barcode lookup endpoint usage
+- Date: 2026-02-23
+- Decision: Keep `GET /api/warehouse/v1/barcodes/lookup` as API-only for scanner/mobile and external integration paths.
+- Reasoning:
+  - Endpoint is suitable for hardware/mobile lookup flows that do not require a full desktop admin UI.
+  - No safe, minimal placement in existing desktop workflows was identified without creating extra UI complexity.
