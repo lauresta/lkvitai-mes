@@ -36,3 +36,11 @@
 - Reasoning:
   - Feature flag lifecycle is governed by LaunchDarkly and service-level toggles.
   - Adding desktop management UI would duplicate existing operational controls and increase risk of accidental toggles.
+
+## G-16: QC checklist templates/defects endpoint usage
+- Date: 2026-02-23
+- Decision: Keep advanced QC template/defect endpoints API-only for now.
+- Reasoning:
+  - Core receiving QC workflow is already exposed through `/warehouse/inbound/qc`.
+  - Advanced template/defect management needs process ownership and validation rules before broad admin UI exposure.
+  - Existing analytics and attachment flows can continue consuming these endpoints without new UI surface area.
