@@ -6,5 +6,19 @@
 - Reasoning:
   - Existing UI flow uses `POST /api/warehouse/v1/valuation/adjust-cost` and already covers day-to-day cost updates.
   - `initialize` and item-scoped adjust endpoints are higher-risk operations and currently better suited for explicit operational/API invocation.
-  - Removing endpoints now may break external automation or maintenance scripts.
+- Removing endpoints now may break external automation or maintenance scripts.
 - Follow-up: Revisit after usage telemetry is collected to decide UI exposure vs. deprecation.
+
+## G-13: Compliance advanced endpoints usage
+- Date: 2026-02-23
+- Decision: Keep advanced compliance endpoints as API-only capabilities and document them as integration-facing operations.
+- Endpoints:
+  - `POST /api/warehouse/v1/admin/compliance/sign`
+  - `GET /api/warehouse/v1/admin/compliance/signatures/{id}`
+  - `POST /api/warehouse/v1/admin/compliance/verify-hash-chain`
+  - `GET /api/warehouse/v1/admin/compliance/validation-report`
+  - `POST /api/warehouse/v1/admin/compliance/export-transactions`
+  - `GET /api/warehouse/v1/admin/compliance/exports`
+- Reasoning:
+  - Current WebUI already serves dashboard, lot-trace, and scheduled reporting.
+  - The remaining operations are operational/compliance specialist workflows and are suitable for explicit API integrations.
