@@ -10,16 +10,24 @@ jobs:
   deploy:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: self-hosted
+    environment: test
     env:
       IMAGE_TAG: ${{ github.event.workflow_run.head_sha }}
-      DOCKER_NETWORK_NAME: ${{ vars.DOCKER_NETWORK_NAME || 'lkvitai-mes_default' }}
-      DB_CONTAINER_NAME: ${{ vars.DB_CONTAINER_NAME || 'lkvitai-mes-db-test' }}
-      DB_CONTAINER_IMAGE: ${{ vars.DB_CONTAINER_IMAGE || 'postgres:16' }}
-      TEST_DB_NAME: ${{ vars.TEST_DB_NAME || 'lkvitai_warehouse_test' }}
-      TEST_DB_USER: ${{ vars.TEST_DB_USER || 'postgres' }}
-      TEST_DB_PASSWORD: ${{ secrets.TEST_DB_PASSWORD || 'postgres' }}
+      DOCKER_NETWORK_NAME: ${{ vars.DOCKER_NETWORK_NAME }}
+      DB_CONTAINER_NAME: ${{ vars.DB_CONTAINER_NAME }}
+      DB_CONTAINER_IMAGE: ${{ vars.DB_CONTAINER_IMAGE }}
+      TEST_DB_NAME: ${{ vars.TEST_DB_NAME }}
+      TEST_DB_USER: ${{ vars.TEST_DB_USER }}
+      TEST_DB_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
 
     steps:
+      - name: Fail fast if TEST_DB_PASSWORD is missing
+        run: |
+          if [ -z "${TEST_DB_PASSWORD}" ]; then
+            echo "::error::TEST_DB_PASSWORD is missing. Set it in GitHub Environment 'test'."
+            exit 1
+          fi
+
       - name: Clean workspace (fix root-owned files from Docker)
         run: |
           docker run --rm \
