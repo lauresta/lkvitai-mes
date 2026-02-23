@@ -1,0 +1,181 @@
+@page "/warehouse/stock/location-balance"
+@inject StockClient StockClient
+@inject ToastService ToastService
+
+<PageTitle>Location Balance - LKvitai.MES</PageTitle>
+
+<h1>Location Balance</h1>
+
+@if (_apiError is not null)
+{
+    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                 TraceId="@_apiError.TraceId"
+                 OnRetry="LoadAsync"
+                 OnDismiss="@(() => _apiError = null)" />
+}
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label">Location Id</label>
+                <InputNumber class="form-control" @bind-Value="_locationId" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Status</label>
+                <InputText class="form-control" @bind-Value="_status" />
+            </div>
+            <div class="col-md-3 d-grid">
+                <button class="btn btn-primary" @onclick="ApplyFiltersAsync" disabled="@_isLoading">Apply</button>
+            </div>
+            <div class="col-md-3 d-grid">
+                <button class="btn btn-outline-secondary" @onclick="ResetFiltersAsync" disabled="@_isLoading">Reset</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm position-relative">
+    <LoadingSpinner IsLoading="_isLoading" />
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Location</th>
+                        <th>Item Count</th>
+                        <th>Total Weight</th>
+                        <th>Total Volume</th>
+                        <th>Max Weight</th>
+                        <th>Max Volume</th>
+                        <th>Utilization Weight</th>
+                        <th>Utilization Volume</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (_rows.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="9" class="text-muted">No rows found.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var row in _rows)
+                        {
+                            <tr>
+                                <td>@row.LocationCode</td>
+                                <td>@row.ItemCount</td>
+                                <td>@row.TotalWeight.ToString("0.###")</td>
+                                <td>@row.TotalVolume.ToString("0.###")</td>
+                                <td>@(row.MaxWeight?.ToString("0.###") ?? "-")</td>
+                                <td>@(row.MaxVolume?.ToString("0.###") ?? "-")</td>
+                                <td>@FormatPercent(row.UtilizationWeight)</td>
+                                <td>@FormatPercent(row.UtilizationVolume)</td>
+                                <td>@row.Status</td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (_totalCount > 0)
+        {
+            <Pagination CurrentPage="_pageNumber"
+                        TotalPages="TotalPages"
+                        PageSize="_pageSize"
+                        OnPageChanged="OnPageChangedAsync"
+                        OnPageSizeChanged="OnPageSizeChangedAsync" />
+        }
+    </div>
+</div>
+
+@code {
+    private readonly List<LocationBalanceItemDto> _rows = [];
+    private ApiException? _apiError;
+    private bool _isLoading;
+    private int? _locationId;
+    private string? _status;
+    private int _pageNumber = 1;
+    private int _pageSize = 50;
+    private int _totalCount;
+
+    private int TotalPages => Math.Max(1, (int)Math.Ceiling(_totalCount / (double)Math.Max(1, _pageSize)));
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task ApplyFiltersAsync()
+    {
+        _pageNumber = 1;
+        await LoadAsync();
+    }
+
+    private async Task ResetFiltersAsync()
+    {
+        _locationId = null;
+        _status = null;
+        _pageNumber = 1;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            var result = await StockClient.GetLocationBalanceAsync(_locationId, _status, _pageNumber, _pageSize);
+            _rows.Clear();
+            _rows.AddRange(result.Items);
+            _totalCount = result.TotalCount;
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task OnPageChangedAsync(int page)
+    {
+        _pageNumber = Math.Max(1, page);
+        await LoadAsync();
+    }
+
+    private async Task OnPageSizeChangedAsync(int size)
+    {
+        _pageSize = Math.Clamp(size, 1, 500);
+        _pageNumber = 1;
+        await LoadAsync();
+    }
+
+    private static string FormatPercent(decimal? value)
+    {
+        if (!value.HasValue)
+        {
+            return "-";
+        }
+
+        return $"{(value.Value * 100m):0.##}%";
+    }
+
+    private static string BuildErrorMessage(ApiException error)
+    {
+        if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
+        {
+            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+        }
+
+        return error.UserMessage;
+    }
+}
