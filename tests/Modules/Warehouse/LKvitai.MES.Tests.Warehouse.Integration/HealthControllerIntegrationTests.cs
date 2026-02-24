@@ -2,6 +2,7 @@ using System.Net;
 using LKvitai.MES.Modules.Warehouse.Api.Controllers;
 using LKvitai.MES.Modules.Warehouse.Api.Security;
 using LKvitai.MES.Modules.Warehouse.Application.Services;
+using LKvitai.MES.Modules.Warehouse.Api.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
@@ -92,7 +93,30 @@ public class HealthControllerIntegrationTests
         Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
     }
 
-    private static TestServer BuildServer(ProjectionHealthSnapshot snapshot)
+    [Fact]
+    public async Task HealthEndpoint_WhenSchemaUnhealthy_Returns503()
+    {
+        using var server = BuildServer(
+            new ProjectionHealthSnapshot(
+                "Healthy",
+                "Healthy",
+                "Healthy",
+                "Healthy",
+                DateTimeOffset.UtcNow,
+                new Dictionary<string, ProjectionHealthItem>()),
+            new StubSchemaDriftHealthService(new SchemaDriftHealthResult(
+                "Unhealthy",
+                new[] { "20260217204948_PRD1636_RetentionPolicyEngine" },
+                new[] { "public.backup_executions" },
+                "Pending migrations or missing tables.")));
+
+        var client = server.CreateClient();
+        var response = await client.GetAsync("/api/warehouse/v1/health");
+
+        Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+    }
+
+    private static TestServer BuildServer(ProjectionHealthSnapshot snapshot, ISchemaDriftHealthService? schemaDriftHealthService = null)
     {
         var webHostBuilder = new WebHostBuilder()
             .ConfigureServices(services =>
@@ -122,6 +146,7 @@ public class HealthControllerIntegrationTests
                 });
 
                 services.AddSingleton<IProjectionHealthService>(new StubProjectionHealthService(snapshot));
+                services.AddSingleton<ISchemaDriftHealthService>(schemaDriftHealthService ?? new StubSchemaDriftHealthService());
             })
             .Configure(app =>
             {
@@ -145,5 +170,22 @@ public class HealthControllerIntegrationTests
 
         public Task<ProjectionHealthSnapshot> GetHealthAsync(CancellationToken cancellationToken = default)
             => Task.FromResult(_snapshot);
+    }
+
+    private sealed class StubSchemaDriftHealthService : ISchemaDriftHealthService
+    {
+        private readonly SchemaDriftHealthResult _result;
+
+        public StubSchemaDriftHealthService(SchemaDriftHealthResult? result = null)
+        {
+            _result = result ?? new SchemaDriftHealthResult(
+                "Healthy",
+                Array.Empty<string>(),
+                Array.Empty<string>(),
+                "Schema is synchronized.");
+        }
+
+        public Task<SchemaDriftHealthResult> GetHealthAsync(CancellationToken cancellationToken = default)
+            => Task.FromResult(_result);
     }
 }

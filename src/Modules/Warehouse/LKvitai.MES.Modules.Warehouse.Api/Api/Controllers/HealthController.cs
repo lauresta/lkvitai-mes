@@ -1,4 +1,5 @@
 using LKvitai.MES.Modules.Warehouse.Application.Services;
+using LKvitai.MES.Modules.Warehouse.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,10 +10,14 @@ namespace LKvitai.MES.Modules.Warehouse.Api.Controllers;
 public sealed class HealthController : ControllerBase
 {
     private readonly IProjectionHealthService _projectionHealthService;
+    private readonly ISchemaDriftHealthService _schemaDriftHealthService;
 
-    public HealthController(IProjectionHealthService projectionHealthService)
+    public HealthController(
+        IProjectionHealthService projectionHealthService,
+        ISchemaDriftHealthService schemaDriftHealthService)
     {
         _projectionHealthService = projectionHealthService;
+        _schemaDriftHealthService = schemaDriftHealthService;
     }
 
     [AllowAnonymous]
@@ -32,6 +37,7 @@ public sealed class HealthController : ControllerBase
     private async Task<IActionResult> BuildHealthResponseAsync(CancellationToken cancellationToken)
     {
         var snapshot = await _projectionHealthService.GetHealthAsync(cancellationToken);
+        var schemaStatus = await _schemaDriftHealthService.GetHealthAsync(cancellationToken);
 
         var projectionStatus = snapshot.ProjectionStatus
             .ToDictionary(
@@ -53,7 +59,7 @@ public sealed class HealthController : ControllerBase
                     ? "Degraded"
                     : "Healthy";
 
-        var overallStatus = snapshot.DatabaseStatus == "Unhealthy" || snapshot.EventStoreStatus == "Unhealthy" || projectionLagStatus == "Unhealthy"
+        var overallStatus = snapshot.DatabaseStatus == "Unhealthy" || snapshot.EventStoreStatus == "Unhealthy" || projectionLagStatus == "Unhealthy" || schemaStatus.Status == "Unhealthy"
             ? "Degraded"
             : projectionLagStatus == "Degraded"
                 ? "Degraded"
@@ -65,13 +71,20 @@ public sealed class HealthController : ControllerBase
                 snapshot.DatabaseStatus,
                 snapshot.EventStoreStatus,
                 projectionLagStatus,
-                "Healthy"),
+                "Healthy",
+                schemaStatus.Status),
             projectionStatus,
+            new SchemaDriftDto(
+                schemaStatus.Status,
+                schemaStatus.PendingMigrations,
+                schemaStatus.MissingTables,
+                schemaStatus.Message),
             snapshot.CheckedAt);
 
         if (projectionLagStatus == "Unhealthy" ||
             snapshot.DatabaseStatus == "Unhealthy" ||
-            snapshot.EventStoreStatus == "Unhealthy")
+            snapshot.EventStoreStatus == "Unhealthy" ||
+            schemaStatus.Status == "Unhealthy")
         {
             return StatusCode(StatusCodes.Status503ServiceUnavailable, response);
         }
@@ -83,13 +96,21 @@ public sealed class HealthController : ControllerBase
         string Status,
         HealthChecksDto Checks,
         IReadOnlyDictionary<string, ProjectionStatusDto> ProjectionStatus,
+        SchemaDriftDto Schema,
         DateTimeOffset CheckedAt);
 
     public sealed record HealthChecksDto(
         string Database,
         string EventStore,
         string ProjectionLag,
-        string MessageQueue);
+        string MessageQueue,
+        string Schema);
+
+    public sealed record SchemaDriftDto(
+        string Status,
+        IReadOnlyList<string> PendingMigrations,
+        IReadOnlyList<string> MissingTables,
+        string Message);
 
     public sealed record ProjectionStatusDto(
         DateTimeOffset? LastUpdated,

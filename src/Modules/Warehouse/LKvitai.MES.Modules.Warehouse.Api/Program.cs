@@ -20,6 +20,7 @@ using Hangfire.PostgreSql;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Serilog.Events;
 
@@ -216,6 +217,7 @@ builder.Services.AddScoped<IPiiEncryptionService, PiiEncryptionService>();
 builder.Services.AddScoped<PiiReencryptionJob>();
 builder.Services.AddScoped<IGdprErasureService, GdprErasureService>();
 builder.Services.AddScoped<GdprErasureJob>();
+builder.Services.AddScoped<ISchemaDriftHealthService, SchemaDriftHealthService>();
 builder.Services.AddScoped<IBusinessTelemetryService, BusinessTelemetryService>();
 builder.Services.AddScoped<IAlertEscalationService, PagerDutyAlertEscalationService>();
 builder.Services.AddSingleton<SlaRequestMetricsStore>();
@@ -373,5 +375,12 @@ RecurringJob.AddOrUpdate<QuarterlyDisasterRecoveryDrillJob>(
     });
 
 Log.Information("Starting LKvitai.MES Warehouse API");
+
+if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("Test"))
+{
+    using var scope = app.Services.CreateScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<WarehouseDbContext>();
+    dbContext.Database.Migrate();
+}
 
 app.Run();
