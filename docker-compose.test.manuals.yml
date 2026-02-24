@@ -1,0 +1,9 @@
+services:
+  manuals:
+    image: ghcr.io/lauresta/lkvitai-mes-manuals:${IMAGE_TAG}
+    container_name: lkvitai-mes-manuals
+    restart: unless-stopped
+    ports:
+      - "5002:80"
+    networks:
+      - lkvitai-mes_default
