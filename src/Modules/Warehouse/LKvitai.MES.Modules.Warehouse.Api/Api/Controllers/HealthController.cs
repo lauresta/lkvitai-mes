@@ -1,4 +1,5 @@
 using LKvitai.MES.Modules.Warehouse.Application.Services;
+using LKvitai.MES.Modules.Warehouse.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
