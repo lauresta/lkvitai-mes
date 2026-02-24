@@ -1,7 +1,7 @@
 FROM python:3.12-alpine AS builder
 WORKDIR /src
 
-COPY docs/manuals/ /src/
+COPY . /src/
 
 RUN pip install --no-cache-dir mkdocs mkdocs-material
 RUN mkdocs build -f mkdocs.yml -d /out

@@ -85,3 +85,5 @@ Prieš pradedant, pasitikrink savo rolę sistemoje:
 - [Dažnos klaidos](trikciu-salinimas/daznos-klaidos.md)
 
 Test CI trigger: 2026-02-24.
+
+CI retrigger note: 2026-02-24.
