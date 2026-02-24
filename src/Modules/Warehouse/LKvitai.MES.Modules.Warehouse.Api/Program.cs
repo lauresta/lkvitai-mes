@@ -217,6 +217,7 @@ builder.Services.AddScoped<IPiiEncryptionService, PiiEncryptionService>();
 builder.Services.AddScoped<PiiReencryptionJob>();
 builder.Services.AddScoped<IGdprErasureService, GdprErasureService>();
 builder.Services.AddScoped<GdprErasureJob>();
+builder.Services.AddScoped<ISchemaDriftHealthService, SchemaDriftHealthService>();
 builder.Services.AddScoped<IBusinessTelemetryService, BusinessTelemetryService>();
 builder.Services.AddScoped<IAlertEscalationService, PagerDutyAlertEscalationService>();
 builder.Services.AddSingleton<SlaRequestMetricsStore>();
