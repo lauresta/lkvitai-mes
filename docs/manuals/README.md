@@ -52,3 +52,20 @@ mkdocs build
 - Kiekvienas UI mygtukas / meniu punktas pateikiamas **angliškai skliausteliuose**: pvz. `(UI: Create)`, `(UI: Admin > Lots)`
 - Nekurk žingsnių be pagrindo iš sistemos (neišgalvok)
 - Procesų numeriai `P-01..P-15` nekinta — jie atitinka `docs/process/processes/` katalogo struktūrą
+
+## CI/CD ir test aplinka
+
+### Lokalios komandos
+
+```bash
+cd docs/manuals
+mkdocs serve
+mkdocs build
+```
+
+- `mkdocs serve` paleidzia lokalu perziuros serveri.
+- `mkdocs build` sugeneruoja statini turini i `docs/manuals/site/`.
+
+### Test aplinka
+
+- Manuals svetaine test aplinkoje pasiekiama adresu: `http://<test-host>:5002/`.

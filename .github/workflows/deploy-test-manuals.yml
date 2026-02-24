@@ -1,0 +1,70 @@
+name: Deploy Manuals to Test
+
+on:
+  workflow_run:
+    workflows: ["Build and Push Manuals Docker Image"]
+    types: [completed]
+    branches: [main]
+
+jobs:
+  deploy-manuals:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: self-hosted
+    environment: test
+    env:
+      IMAGE_TAG: ${{ github.event.workflow_run.head_sha }}
+      DOCKER_NETWORK_NAME: ${{ vars.DOCKER_NETWORK_NAME }}
+      COMPOSE_PROJECT_NAME: lkvitai-mes
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Ensure deploy Docker network exists
+        run: |
+          docker network inspect "$DOCKER_NETWORK_NAME" >/dev/null 2>&1 || \
+            docker network create "$DOCKER_NETWORK_NAME"
+
+      - name: Pull manuals image
+        run: docker compose -f docker-compose.test.yml -f docker-compose.test.manuals.yml pull manuals
+
+      - name: Deploy manuals container
+        run: |
+          IMAGE_TAG=${IMAGE_TAG} docker compose -f docker-compose.test.yml -f docker-compose.test.manuals.yml up -d manuals
+
+      - name: Wait for manuals health
+        run: |
+          echo "Waiting for manuals site to become ready..."
+          for i in $(seq 1 30); do
+            if command -v curl >/dev/null 2>&1; then
+              body="$(curl -fsS http://localhost:5002/ || true)"
+            else
+              body="$(docker run --rm --network host curlimages/curl:8.10.1 -fsS http://localhost:5002/ || true)"
+            fi
+
+            if [ -n "$body" ] && echo "$body" | grep -qi "LKvitai MES"; then
+              echo "Manuals site is healthy."
+              exit 0
+            fi
+
+            echo "  attempt $i/30 - not ready yet"
+            sleep 5
+          done
+
+          echo "Manuals site failed to become healthy within 150s"
+          docker compose -f docker-compose.test.yml -f docker-compose.test.manuals.yml logs manuals --tail 50
+          exit 1
+
+      - name: Deployment summary
+        run: |
+          echo "## Manuals Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Image tag:** ${{ env.IMAGE_TAG }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Manuals:** http://lkvitai-test:5002" >> $GITHUB_STEP_SUMMARY
+          docker compose -f docker-compose.test.yml -f docker-compose.test.manuals.yml ps manuals >> $GITHUB_STEP_SUMMARY

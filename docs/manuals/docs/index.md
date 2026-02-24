@@ -83,3 +83,5 @@ Prieš pradedant, pasitikrink savo rolę sistemoje:
 
 - [Trikčių šalinimas](trikciu-salinimas/index.md)
 - [Dažnos klaidos](trikciu-salinimas/daznos-klaidos.md)
+
+Test CI trigger: 2026-02-24.
