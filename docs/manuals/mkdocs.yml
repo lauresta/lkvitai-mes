@@ -1,0 +1,53 @@
+site_name: "LKvitai MES - Naudotojo gidas"
+site_description: "LKvitai.MES sandėlio valdymo sistemos naudotojo vadovas (Warehouse Management System)"
+docs_dir: docs
+site_dir: site
+
+theme:
+  name: material
+  language: lt
+  palette:
+    primary: indigo
+    accent: indigo
+  features:
+    - navigation.sections
+    - navigation.expand
+    - toc.integrate
+    - search.highlight
+
+plugins:
+  - search:
+      lang: lt
+
+nav:
+  - Pagrindinis: index.md
+
+  - Rolės:
+    - Sandėlio operatorius: roles/sandelio-operatorius.md
+    - Kokybės inspektorius: roles/kokybes-inspektorius.md
+    - Gamybos vadovas: roles/gamybos-vadovas.md
+
+  - Procesai:
+    - P-01 Prekių priėmimas (Inbound): procesai/P-01-priemimas-inbound.md
+    - P-02 Padėjimas į vietą (Putaway): procesai/P-02-padeti-i-lokacija-putaway.md
+    - P-03 Išsiuntimas (Outbound): procesai/P-03-israsymas-isuntimas-outbound.md
+    - P-04 Perkėlimas (Transfer): procesai/P-04-perkelimas-transfer.md
+    - P-05 Inventorizacija (Cycle Count): procesai/P-05-inventorizacija-cycle-count.md
+    - P-06 Atsargų koregavimas (Adjustments): procesai/P-06-atsargu-koregavimas-adjustments.md
+    - P-07 Atsargų vertinimas (Valuation): procesai/P-07-atsargu-vertinimas-valuation.md
+    - P-08 Agnum integracija: procesai/P-08-agnum-integracija.md
+    - P-09 Grąžinimai (RMA): procesai/P-09-grazinimai-rma.md
+    - P-10 Kryžminis perkrovimas (Cross-Dock): procesai/P-10-krzyminis-perkrovimas-crossdock.md
+    - P-11 Partijų ir serijų sekimas: procesai/P-11-partiju-seriju-sekimas.md
+    - P-12 Sandėlio žemėlapis (Visualization): procesai/P-12-sandelio-zemelapis-visualization.md
+    - P-13 Ataskaitos ir analizė (Reports): procesai/P-13-ataskaitos-analize-reports.md
+    - P-14 Sistemos administravimas: procesai/P-14-sistemos-administravimas.md
+    - P-15 Pagrindinių duomenų valdymas: procesai/P-15-pagrindinis-duomenu-valdymas.md
+
+  - Trikčių šalinimas:
+    - Apžvalga: trikciu-salinimas/index.md
+    - Dažnos klaidos: trikciu-salinimas/daznos-klaidos.md
+
+extra:
+  version:
+    provider: mike
