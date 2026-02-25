@@ -1,0 +1,119 @@
+using Microsoft.Playwright;
+using static Microsoft.Playwright.Assertions;
+using Xunit;
+
+namespace LKvitai.MES.Tests.Warehouse.E2E.Ui;
+
+[Collection("ui-e2e")]
+public sealed class MudBlazorGridFullFlowTests : PlaywrightUiTestBase
+{
+    public MudBlazorGridFullFlowTests(PlaywrightFixture fixture)
+        : base(fixture)
+    {
+    }
+
+    [Fact]
+    public async Task Lots_FullFlow()
+    {
+        await RunUiAsync(nameof(Lots_FullFlow), async page =>
+        {
+            await NavigateAsync(page, "/warehouse/admin/lots");
+
+            await Expect(ByTestId(page, "lots-page")).ToBeVisibleAsync();
+            await Expect(ByTestId(page, "lots-grid")).ToBeVisibleAsync();
+
+            await ByTestId(page, "lots-search").FillAsync("LOT");
+            await ByTestId(page, "lots-search-btn").ClickAsync();
+            await Expect(ByTestId(page, "lots-current-page")).ToContainTextAsync("Page");
+
+            var lotHeader = ByTestId(page, "lots-grid").GetByRole(AriaRole.Columnheader, new() { Name = "Lot" });
+            await lotHeader.ClickAsync();
+            await Expect(ByTestId(page, "lots-grid")).ToBeVisibleAsync();
+
+            await ByTestId(page, "lots-page-size").ClickAsync();
+            await page.GetByRole(AriaRole.Option, new() { Name = "25" }).ClickAsync();
+            await Expect(ByTestId(page, "lots-page-size")).ToContainTextAsync("25");
+
+            await TryChangePageAsync(page, "lots-pager", "lots-current-page");
+            await ByTestId(page, "lots-refresh").ClickAsync();
+            await Expect(ByTestId(page, "lots-grid")).ToBeVisibleAsync();
+            Assert.Equal(0, await page.GetByTestId("lots-error").CountAsync());
+        });
+    }
+
+    [Fact]
+    public async Task AvailableStock_FullFlow()
+    {
+        await RunUiAsync(nameof(AvailableStock_FullFlow), async page =>
+        {
+            await NavigateAsync(page, "/available-stock");
+
+            await Expect(ByTestId(page, "stock-page")).ToBeVisibleAsync();
+            await Expect(ByTestId(page, "stock-before-search")).ToBeVisibleAsync();
+            Assert.Equal(0, await page.GetByTestId("stock-grid").CountAsync());
+
+            await ByTestId(page, "stock-search").FillAsync("SKU");
+            await ByTestId(page, "stock-search-btn").ClickAsync();
+
+            await Expect(ByTestId(page, "stock-summary")).ToContainTextAsync("page");
+            await Expect(ByTestId(page, "stock-grid")).ToBeVisibleAsync();
+
+            await ByTestId(page, "stock-include-virtual").CheckAsync();
+            await ByTestId(page, "stock-search-btn").ClickAsync();
+            await Expect(ByTestId(page, "stock-grid")).ToBeVisibleAsync();
+
+            var skuHeader = ByTestId(page, "stock-grid").GetByRole(AriaRole.Columnheader, new() { Name = "SKU" });
+            await skuHeader.ClickAsync();
+            await Expect(ByTestId(page, "stock-grid")).ToBeVisibleAsync();
+
+            await ByTestId(page, "stock-page-size").ClickAsync();
+            await page.GetByRole(AriaRole.Option, new() { Name = "25" }).ClickAsync();
+            await Expect(ByTestId(page, "stock-page-size")).ToContainTextAsync("25");
+
+            await TryChangePageAsync(page, "stock-pager", "stock-summary");
+
+            await ByTestId(page, "stock-refresh").ClickAsync();
+            await Expect(ByTestId(page, "stock-grid")).ToBeVisibleAsync();
+            Assert.Equal(0, await page.GetByTestId("stock-error").CountAsync());
+
+            var exportButton = ByTestId(page, "stock-export");
+            if (await exportButton.IsEnabledAsync())
+            {
+                var download = await page.RunAndWaitForDownloadAsync(() => exportButton.ClickAsync());
+                Assert.False(string.IsNullOrWhiteSpace(download.SuggestedFilename));
+            }
+        });
+    }
+
+    private static async Task TryChangePageAsync(IPage page, string pagerTestId, string pageIndicatorTestId)
+    {
+        var pager = ByTestId(page, pagerTestId);
+        if (await pager.CountAsync() == 0)
+        {
+            return;
+        }
+
+        var before = await ByTestId(page, pageIndicatorTestId).InnerTextAsync();
+        var buttons = pager.GetByRole(AriaRole.Button);
+        var count = await buttons.CountAsync();
+
+        for (var i = 0; i < count; i++)
+        {
+            var button = buttons.Nth(i);
+            if (await button.IsDisabledAsync())
+            {
+                continue;
+            }
+
+            await button.ClickAsync();
+            await page.WaitForTimeoutAsync(350);
+
+            var after = await ByTestId(page, pageIndicatorTestId).InnerTextAsync();
+            if (!string.Equals(before, after, StringComparison.Ordinal))
+            {
+                Assert.NotEqual(before, after);
+                return;
+            }
+        }
+    }
+}
