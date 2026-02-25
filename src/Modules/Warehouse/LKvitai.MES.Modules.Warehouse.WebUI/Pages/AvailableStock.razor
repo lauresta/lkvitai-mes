@@ -6,6 +6,7 @@
 
 <PageTitle>Available Stock - LKvitai.MES</PageTitle>
 
+<div data-testid="stock-page">
 <h3>Available Stock</h3>
 
 <StockFilters Warehouses="@_warehouses"
@@ -14,10 +15,12 @@
 
 @if (_apiError is not null)
 {
-    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
-                 TraceId="@_apiError.TraceId"
-                 OnRetry="RetryAsync"
-                 OnDismiss="DismissError" />
+    <div data-testid="stock-error">
+        <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                     TraceId="@_apiError.TraceId"
+                     OnRetry="RetryAsync"
+                     OnDismiss="DismissError" />
+    </div>
 }
 
 <div class="card shadow-sm position-relative">
@@ -25,19 +28,39 @@
 
     <div class="card-body">
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <div class="text-muted">
+            <div class="text-muted" data-testid="stock-summary">
                 @_summaryText
             </div>
-            <button class="btn btn-outline-secondary btn-sm"
-                    @onclick="ExportCsvAsync"
-                    disabled="@(_items.Count == 0)">
-                Export CSV
-            </button>
+            <div class="d-flex gap-2 align-items-center">
+                <MudSelect T="int"
+                           Label="Page size"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           Value="@_pageSize"
+                           ValueChanged="OnPageSizeChangedAsync"
+                           InputAttributes="@StockPageSizeAttributes">
+                    <MudSelectItem T="int" Value="25">25</MudSelectItem>
+                    <MudSelectItem T="int" Value="50">50</MudSelectItem>
+                    <MudSelectItem T="int" Value="100">100</MudSelectItem>
+                </MudSelect>
+                <button class="btn btn-outline-secondary btn-sm"
+                        data-testid="stock-refresh"
+                        @onclick="RefreshAsync"
+                        disabled="@(_isLoadingWarehouses || _isSearching)">
+                    Refresh
+                </button>
+                <button class="btn btn-outline-secondary btn-sm"
+                        data-testid="stock-export"
+                        @onclick="ExportCsvAsync"
+                        disabled="@(_items.Count == 0)">
+                    Export CSV
+                </button>
+            </div>
         </div>
 
         @if (!_hasSearched)
         {
-            <p class="text-muted mb-0">Enter at least one filter and click Search.</p>
+            <p class="text-muted mb-0" data-testid="stock-before-search">Enter at least one filter and click Search.</p>
         }
         else
         {
@@ -46,24 +69,19 @@
                          @key="_gridRenderKey"
                          ServerData="LoadServerDataAsync"
                          Filterable="false"
-                         SortMode="SortMode.None"
+                         SortMode="SortMode.Single"
                          Dense="true"
                          Hover="true"
                          RowsPerPage="@_pageSize"
-                         Loading="@_isSearching">
+                         Loading="@_isSearching"
+                         @attributes="@StockGridAttributes">
                 <Columns>
                     <PropertyColumn Property="x => x.WarehouseId" Title="Warehouse" />
                     <PropertyColumn Property="x => x.Location" Title="Location" />
                     <PropertyColumn Property="x => x.SKU" Title="SKU" />
-                    <TemplateColumn Title="Physical Qty">
-                        <CellTemplate>@context.Item.PhysicalQty.ToString("N2")</CellTemplate>
-                    </TemplateColumn>
-                    <TemplateColumn Title="Reserved Qty">
-                        <CellTemplate>@context.Item.ReservedQty.ToString("N2")</CellTemplate>
-                    </TemplateColumn>
-                    <TemplateColumn Title="Available Qty">
-                        <CellTemplate>@context.Item.AvailableQty.ToString("N2")</CellTemplate>
-                    </TemplateColumn>
+                    <PropertyColumn Property="x => x.PhysicalQty" Title="Physical Qty" />
+                    <PropertyColumn Property="x => x.ReservedQty" Title="Reserved Qty" />
+                    <PropertyColumn Property="x => x.AvailableQty" Title="Available Qty" />
                     <TemplateColumn Title="Last Updated">
                         <CellTemplate>
                             @context.Item.LastUpdated.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")
@@ -75,7 +93,9 @@
                     <MudText Typo="Typo.body2" Class="text-muted">No stock found matching filters.</MudText>
                 </NoRecordsContent>
                 <PagerContent>
-                    <MudDataGridPager T="AvailableStockItemDto" />
+                    <div data-testid="stock-pager">
+                        <MudDataGridPager T="AvailableStockItemDto" />
+                    </div>
                 </PagerContent>
             </MudDataGrid>
 
@@ -85,6 +105,7 @@
             }
         }
     </div>
+</div>
 </div>
 
 @code {
@@ -106,6 +127,8 @@
     private ApiException? _apiError;
     private bool _isDisposed;
     private readonly CancellationTokenSource _disposeCts = new();
+    private static readonly Dictionary<string, object> StockGridAttributes = new() { ["data-testid"] = "stock-grid" };
+    private static readonly Dictionary<string, object> StockPageSizeAttributes = new() { ["data-testid"] = "stock-page-size" };
 
     private int _totalPages => Math.Max(1, (int)Math.Ceiling(_totalCount / (double)Math.Max(1, _pageSize)));
 
@@ -334,6 +357,34 @@
     }
 
     private void DismissError() => _apiError = null;
+
+    private async Task OnPageSizeChangedAsync(int pageSize)
+    {
+        if (_isDisposed)
+        {
+            return;
+        }
+
+        _pageSize = Math.Clamp(pageSize, 1, 500);
+        _gridRenderKey++;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task RefreshAsync()
+    {
+        if (_isDisposed)
+        {
+            return;
+        }
+
+        if (_hasSearched && _grid is not null)
+        {
+            await _grid.ReloadServerData();
+            return;
+        }
+
+        await LoadWarehousesAsync();
+    }
 
     private async Task ExportCsvAsync()
     {
