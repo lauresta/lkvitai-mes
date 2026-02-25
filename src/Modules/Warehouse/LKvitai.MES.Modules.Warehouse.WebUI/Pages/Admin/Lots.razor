@@ -17,143 +17,189 @@
     <div class="card-body">
         <div class="row g-2 align-items-end">
             <div class="col-md-4">
-                <label class="form-label">Search</label>
-                <input class="form-control" @bind="_search" placeholder="Lot number, SKU, item name" />
+                <MudTextField T="string"
+                              Label="Search"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              @bind-Value="_search"
+                              Placeholder="Lot number, SKU, item name"
+                              InputAttributes="@LotsFilterSearchAttributes" />
             </div>
             <div class="col-md-3">
-                <label class="form-label">Status</label>
-                <select class="form-select" @bind="_status">
-                    <option value="">All</option>
-                    <option value="Active">Active</option>
-                    <option value="ExpiringSoon">Expiring soon</option>
-                    <option value="Expired">Expired</option>
-                    <option value="Depleted">Depleted</option>
-                </select>
+                <MudSelect T="string"
+                           Label="Status"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           @bind-Value="_status"
+                           InputAttributes="@LotsFilterStatusAttributes">
+                    <MudSelectItem T="string" Value="@string.Empty">All</MudSelectItem>
+                    <MudSelectItem T="string" Value="@("Active")">Active</MudSelectItem>
+                    <MudSelectItem T="string" Value="@("ExpiringSoon")">Expiring soon</MudSelectItem>
+                    <MudSelectItem T="string" Value="@("Expired")">Expired</MudSelectItem>
+                    <MudSelectItem T="string" Value="@("Depleted")">Depleted</MudSelectItem>
+                </MudSelect>
             </div>
-            <div class="col-md-2 d-grid">
-                <button class="btn btn-primary" @onclick="ApplyFiltersAsync">Filter</button>
+            <div class="col-md-2">
+                <MudSelect T="int"
+                           Label="Page size"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           Value="@_pageSize"
+                           ValueChanged="OnPageSizeChangedAsync"
+                           InputAttributes="@LotsPageSizeAttributes">
+                    <MudSelectItem T="int" Value="25">25</MudSelectItem>
+                    <MudSelectItem T="int" Value="50">50</MudSelectItem>
+                    <MudSelectItem T="int" Value="100">100</MudSelectItem>
+                </MudSelect>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           OnClick="ApplyFiltersAsync">
+                    Filter
+                </MudButton>
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Primary"
+                           OnClick="RefreshAsync"
+                           UserAttributes="@LotsRefreshAttributes">
+                    Refresh
+                </MudButton>
             </div>
         </div>
     </div>
 </div>
 
 <div class="card shadow-sm position-relative">
-    <LoadingSpinner IsLoading="@_isLoading" />
     <div class="card-body">
         <div class="d-flex justify-content-between align-items-center mb-2">
             <strong>Total: @_totalCount</strong>
         </div>
 
-        <div class="table-responsive">
-            <table class="table table-sm table-hover align-middle">
-                <thead>
-                <tr>
-                    <th>Lot</th>
-                    <th>Item</th>
-                    <th>Qty</th>
-                    <th>Reserved</th>
-                    <th>Available</th>
-                    <th>UoM</th>
-                    <th>Production</th>
-                    <th>Expiry</th>
-                    <th>Status</th>
-                </tr>
-                </thead>
-                <tbody>
-                @if (_lots.Count == 0)
-                {
-                    <tr>
-                        <td colspan="9" class="text-muted">No lots found.</td>
-                    </tr>
-                }
-                else
-                {
-                    @foreach (var row in _lots)
-                    {
-                        <tr>
-                            <td>@row.LotNumber</td>
-                            <td>@row.ItemSku - @row.ItemName</td>
-                            <td>@row.Qty.ToString("0.###")</td>
-                            <td>@row.ReservedQty.ToString("0.###")</td>
-                            <td>@row.AvailableQty.ToString("0.###")</td>
-                            <td>@row.BaseUom</td>
-                            <td>@FormatDate(row.ProductionDate)</td>
-                            <td>@FormatDate(row.ExpiryDate)</td>
-                            <td>@row.Status</td>
-                        </tr>
-                    }
-                }
-                </tbody>
-            </table>
-        </div>
-
-        @if (_totalCount > 0)
-        {
-            <Pagination CurrentPage="@_pageNumber"
-                        TotalPages="@TotalPages"
-                        PageSize="@_pageSize"
-                        OnPageChanged="OnPageChangedAsync"
-                        OnPageSizeChanged="OnPageSizeChangedAsync" />
-        }
+        <MudDataGrid T="LotListItemDto"
+                     @ref="_grid"
+                     @key="_gridRenderKey"
+                     ServerData="LoadServerDataAsync"
+                     Filterable="false"
+                     SortMode="SortMode.None"
+                     Dense="true"
+                     Hover="true"
+                     RowsPerPage="@_pageSize"
+                     Loading="@_isLoading"
+                     @attributes="@LotsGridAttributes">
+            <Columns>
+                <PropertyColumn Property="x => x.LotNumber" Title="Lot" />
+                <TemplateColumn Title="Item">
+                    <CellTemplate>
+                        @($"{context.Item.ItemSku} - {context.Item.ItemName}")
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Qty">
+                    <CellTemplate>@context.Item.Qty.ToString("0.###")</CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Reserved">
+                    <CellTemplate>@context.Item.ReservedQty.ToString("0.###")</CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Available">
+                    <CellTemplate>@context.Item.AvailableQty.ToString("0.###")</CellTemplate>
+                </TemplateColumn>
+                <PropertyColumn Property="x => x.BaseUom" Title="UoM" />
+                <TemplateColumn Title="Production">
+                    <CellTemplate>@FormatDate(context.Item.ProductionDate)</CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Expiry">
+                    <CellTemplate>@FormatDate(context.Item.ExpiryDate)</CellTemplate>
+                </TemplateColumn>
+                <PropertyColumn Property="x => x.Status" Title="Status" />
+            </Columns>
+            <NoRecordsContent>
+                <MudText Typo="Typo.body2" Class="text-muted">No lots found.</MudText>
+            </NoRecordsContent>
+            <PagerContent>
+                <MudDataGridPager T="LotListItemDto" />
+            </PagerContent>
+        </MudDataGrid>
     </div>
 </div>
 
 @code {
-    private readonly List<LotListItemDto> _lots = [];
-    private string? _search;
-    private string? _status;
-    private int _pageNumber = 1;
+    private MudDataGrid<LotListItemDto>? _grid;
+    private string _search = string.Empty;
+    private string _status = string.Empty;
+    private string? _appliedSearch;
+    private string? _appliedStatus;
     private int _pageSize = 50;
     private int _totalCount;
+    private int _gridRenderKey;
     private bool _isLoading;
     private ApiException? _apiError;
 
-    private int TotalPages => Math.Max(1, (int)Math.Ceiling(_totalCount / (double)Math.Max(1, _pageSize)));
+    private static readonly Dictionary<string, object> LotsGridAttributes = new() { ["data-testid"] = "lots-grid" };
+    private static readonly Dictionary<string, object> LotsFilterSearchAttributes = new() { ["data-testid"] = "lots-filter-search" };
+    private static readonly Dictionary<string, object> LotsFilterStatusAttributes = new() { ["data-testid"] = "lots-filter-status" };
+    private static readonly Dictionary<string, object> LotsPageSizeAttributes = new() { ["data-testid"] = "lots-page-size" };
+    private static readonly Dictionary<string, object> LotsRefreshAttributes = new() { ["data-testid"] = "lots-refresh" };
 
-    protected override async Task OnInitializedAsync()
+    private async Task ApplyFiltersAsync()
     {
-        await LoadAsync();
+        _appliedSearch = string.IsNullOrWhiteSpace(_search) ? null : _search.Trim();
+        _appliedStatus = string.IsNullOrWhiteSpace(_status) ? null : _status;
+        _gridRenderKey++;
+        await InvokeAsync(StateHasChanged);
     }
 
-    private async Task LoadAsync()
+    private async Task OnPageSizeChangedAsync(int pageSize)
+    {
+        _pageSize = Math.Clamp(pageSize, 1, 500);
+        _gridRenderKey++;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task RefreshAsync()
+    {
+        if (_grid is null)
+        {
+            return;
+        }
+
+        await _grid.ReloadServerData();
+    }
+
+    private Task LoadAsync() => RefreshAsync();
+
+    private async Task<GridData<LotListItemDto>> LoadServerDataAsync(GridState<LotListItemDto> state)
     {
         _isLoading = true;
         _apiError = null;
 
+        var requestedPageSize = state.PageSize > 0 ? state.PageSize : _pageSize;
+        _pageSize = requestedPageSize;
+
         try
         {
-            var result = await LotsClient.GetLotsAsync(_search, _status, _pageNumber, _pageSize);
-            _lots.Clear();
-            _lots.AddRange(result.Items);
+            var result = await LotsClient.GetLotsAsync(_appliedSearch, _appliedStatus, state.Page + 1, requestedPageSize);
             _totalCount = result.TotalCount;
+
+            return new GridData<LotListItemDto>
+            {
+                Items = result.Items,
+                TotalItems = result.TotalCount
+            };
         }
         catch (ApiException ex)
         {
             _apiError = ex;
+            _totalCount = 0;
+
+            return new GridData<LotListItemDto>
+            {
+                Items = Array.Empty<LotListItemDto>(),
+                TotalItems = 0
+            };
         }
         finally
         {
             _isLoading = false;
         }
-    }
-
-    private async Task ApplyFiltersAsync()
-    {
-        _pageNumber = 1;
-        await LoadAsync();
-    }
-
-    private async Task OnPageChangedAsync(int page)
-    {
-        _pageNumber = Math.Max(1, page);
-        await LoadAsync();
-    }
-
-    private async Task OnPageSizeChangedAsync(int size)
-    {
-        _pageSize = Math.Clamp(size, 1, 500);
-        _pageNumber = 1;
-        await LoadAsync();
     }
 
     private static string FormatDate(DateOnly? value)
