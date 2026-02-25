@@ -19,16 +19,16 @@ public sealed class P05CycleCountNavigationTests : PlaywrightUiTestBase
         {
             await NavigateAsync(page, "/warehouse/cycle-counts");
 
-            await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Cycle Counts" })).ToBeVisibleAsync();
+            await Expect(ByTestId(page, "cycle-counts-title")).ToBeVisibleAsync();
             await page.GetByRole(AriaRole.Link, new() { Name = "Schedule Cycle Count" }).ClickAsync();
 
-            await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Schedule Cycle Count" })).ToBeVisibleAsync();
+            await Expect(ByTestId(page, "cycle-counts-schedule-title")).ToBeVisibleAsync();
             await Expect(page.GetByLabel("Scheduled Date")).ToBeVisibleAsync();
             await Expect(page.GetByLabel("ABC Class")).ToBeVisibleAsync();
             await Expect(page.GetByLabel("Assigned Operator")).ToBeVisibleAsync();
 
             await page.GetByRole(AriaRole.Button, new() { Name = "Back" }).ClickAsync();
-            await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Cycle Counts" })).ToBeVisibleAsync();
+            await Expect(ByTestId(page, "cycle-counts-title")).ToBeVisibleAsync();
             Assert.Contains("/warehouse/cycle-counts", page.Url, StringComparison.OrdinalIgnoreCase);
         });
     }

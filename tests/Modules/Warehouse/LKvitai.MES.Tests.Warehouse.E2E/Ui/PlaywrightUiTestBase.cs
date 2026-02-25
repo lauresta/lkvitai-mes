@@ -31,7 +31,7 @@ public abstract class PlaywrightUiTestBase
         });
 
         var page = await context.NewPageAsync();
-        page.SetDefaultTimeout(15_000);
+        page.SetDefaultTimeout(Fixture.Settings.PwDebug ? 60_000 : 15_000);
 
         try
         {

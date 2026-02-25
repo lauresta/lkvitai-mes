@@ -18,7 +18,8 @@ public sealed class PlaywrightFixture : IAsyncLifetime
         _playwright = await Microsoft.Playwright.Playwright.CreateAsync();
         Browser = await _playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
         {
-            Headless = Settings.Headless
+            Headless = Settings.Headless,
+            SlowMo = Settings.SlowMoMs
         });
     }
 

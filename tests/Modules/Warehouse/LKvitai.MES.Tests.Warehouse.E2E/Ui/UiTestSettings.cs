@@ -2,16 +2,22 @@ namespace LKvitai.MES.Tests.Warehouse.E2E.Ui;
 
 public sealed class UiTestSettings
 {
-    private UiTestSettings(Uri baseUrl, bool headless, string artifactsDirectory)
+    private UiTestSettings(Uri baseUrl, bool headless, bool pwDebug, int slowMoMs, string artifactsDirectory)
     {
         BaseUrl = baseUrl;
         Headless = headless;
+        PwDebug = pwDebug;
+        SlowMoMs = slowMoMs;
         ArtifactsDirectory = artifactsDirectory;
     }
 
     public Uri BaseUrl { get; }
 
     public bool Headless { get; }
+
+    public bool PwDebug { get; }
+
+    public int SlowMoMs { get; }
 
     public string ArtifactsDirectory { get; }
 
@@ -23,9 +29,11 @@ public sealed class UiTestSettings
             baseUrl = new Uri("http://localhost:5124");
         }
 
-        var headless = ParseBooleanEnvironment("HEADLESS", fallback: true);
+        var pwDebug = ParseDebugEnvironment("PWDEBUG");
+        var headless = pwDebug ? false : ParseBooleanEnvironment("HEADLESS", fallback: true);
+        var slowMoMs = pwDebug ? 250 : 0;
         var artifactsDirectory = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "playwright-artifacts"));
-        return new UiTestSettings(baseUrl, headless, artifactsDirectory);
+        return new UiTestSettings(baseUrl, headless, pwDebug, slowMoMs, artifactsDirectory);
     }
 
     private static bool ParseBooleanEnvironment(string key, bool fallback)
@@ -43,5 +51,17 @@ public sealed class UiTestSettings
             "0" or "false" or "no" => false,
             _ => fallback
         };
+    }
+
+    private static bool ParseDebugEnvironment(string key)
+    {
+        var rawValue = Environment.GetEnvironmentVariable(key);
+        if (string.IsNullOrWhiteSpace(rawValue))
+        {
+            return false;
+        }
+
+        var normalized = rawValue.Trim().ToLowerInvariant();
+        return normalized is not ("0" or "false" or "no" or "off");
     }
 }

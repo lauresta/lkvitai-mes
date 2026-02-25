@@ -16,6 +16,7 @@ pwsh tests/Modules/Warehouse/LKvitai.MES.Tests.Warehouse.E2E/bin/Debug/net8.0/pl
 
 - `BASE_URL` (optional): Web UI base URL. Default: `http://localhost:5124`
 - `HEADLESS` (optional): `true`/`false`. Default: `true`
+- `PWDEBUG` (optional): if set to any value except `0|false|no|off`, forces headed mode and enables slow motion.
 
 ## Run tests
 

@@ -17,10 +17,13 @@ public sealed class MudBlazorGridFullFlowTests : PlaywrightUiTestBase
     {
         await RunUiAsync(nameof(Lots_FullFlow), async page =>
         {
-            await NavigateAsync(page, "/warehouse/admin/lots");
+            var lotsUrl = new Uri(Fixture.Settings.BaseUrl, "/warehouse/admin/lots");
+            await page.GotoAsync(lotsUrl.ToString(), new PageGotoOptions { WaitUntil = WaitUntilState.DOMContentLoaded });
+            await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
 
             await Expect(ByTestId(page, "lots-page")).ToBeVisibleAsync();
             await Expect(ByTestId(page, "lots-grid")).ToBeVisibleAsync();
+            await Expect(ByTestId(page, "lots-search")).ToBeVisibleAsync();
 
             await ByTestId(page, "lots-search").FillAsync("LOT");
             await ByTestId(page, "lots-search-btn").ClickAsync();
@@ -55,8 +58,9 @@ public sealed class MudBlazorGridFullFlowTests : PlaywrightUiTestBase
             await ByTestId(page, "stock-search").FillAsync("SKU");
             await ByTestId(page, "stock-search-btn").ClickAsync();
 
-            await Expect(ByTestId(page, "stock-summary")).ToContainTextAsync("page");
+            await Expect(ByTestId(page, "stock-before-search")).ToBeHiddenAsync();
             await Expect(ByTestId(page, "stock-grid")).ToBeVisibleAsync();
+            await Expect(ByTestId(page, "stock-summary")).ToContainTextAsync("Showing");
 
             await ByTestId(page, "stock-include-virtual").CheckAsync();
             await ByTestId(page, "stock-search-btn").ClickAsync();
