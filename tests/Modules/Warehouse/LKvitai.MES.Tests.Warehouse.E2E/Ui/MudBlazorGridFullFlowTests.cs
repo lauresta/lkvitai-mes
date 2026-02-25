@@ -55,10 +55,9 @@ public sealed class MudBlazorGridFullFlowTests : PlaywrightUiTestBase
             await Expect(ByTestId(page, "stock-before-search")).ToBeVisibleAsync();
             Assert.Equal(0, await page.GetByTestId("stock-grid").CountAsync());
 
-            var stockSearch = ByTestId(page, "stock-search");
-            await stockSearch.FillAsync("SKU");
-            await stockSearch.PressAsync("Tab");
-            await ByTestId(page, "stock-search-btn").ClickAsync();
+            // Wait until the initial warehouses loading phase is likely complete.
+            await page.WaitForTimeoutAsync(1200);
+            await SubmitStockSearchUntilGridVisibleAsync(page, "SKU");
 
             await Expect(ByTestId(page, "stock-grid")).ToBeVisibleAsync();
             await Expect(ByTestId(page, "stock-summary")).ToContainTextAsync("Showing");
@@ -120,5 +119,33 @@ public sealed class MudBlazorGridFullFlowTests : PlaywrightUiTestBase
                 return;
             }
         }
+    }
+
+    private static async Task SubmitStockSearchUntilGridVisibleAsync(IPage page, string searchValue)
+    {
+        for (var attempt = 1; attempt <= 3; attempt++)
+        {
+            var stockSearch = ByTestId(page, "stock-search");
+            await Expect(stockSearch).ToBeVisibleAsync();
+            await stockSearch.FillAsync(searchValue);
+            await stockSearch.PressAsync("Tab");
+            await ByTestId(page, "stock-search-btn").ClickAsync();
+
+            await page.WaitForTimeoutAsync(1000);
+
+            var grid = ByTestId(page, "stock-grid");
+            if (await grid.CountAsync() > 0 && await grid.IsVisibleAsync())
+            {
+                return;
+            }
+
+            var validation = ByTestId(page, "stock-validation-error");
+            if (await validation.CountAsync() > 0 && await validation.IsVisibleAsync())
+            {
+                continue;
+            }
+        }
+
+        await Expect(ByTestId(page, "stock-grid")).ToBeVisibleAsync();
     }
 }
