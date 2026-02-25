@@ -29,9 +29,11 @@ public sealed class UiTestSettings
             baseUrl = new Uri("http://localhost:5124");
         }
 
-        var pwDebug = ParseDebugEnvironment("PWDEBUG");
+        var pwDebug = string.Equals(Environment.GetEnvironmentVariable("PWDEBUG")?.Trim(), "1", StringComparison.Ordinal);
         var headless = pwDebug ? false : ParseBooleanEnvironment("HEADLESS", fallback: true);
-        var slowMoMs = pwDebug ? 250 : 0;
+        var hasSlowMo = int.TryParse(Environment.GetEnvironmentVariable("SLOWMO_MS")?.Trim(), out var configuredSlowMo) &&
+                        configuredSlowMo >= 0;
+        var slowMoMs = hasSlowMo ? configuredSlowMo : (pwDebug ? 250 : 0);
         var artifactsDirectory = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "playwright-artifacts"));
         return new UiTestSettings(baseUrl, headless, pwDebug, slowMoMs, artifactsDirectory);
     }
@@ -53,15 +55,4 @@ public sealed class UiTestSettings
         };
     }
 
-    private static bool ParseDebugEnvironment(string key)
-    {
-        var rawValue = Environment.GetEnvironmentVariable(key);
-        if (string.IsNullOrWhiteSpace(rawValue))
-        {
-            return false;
-        }
-
-        var normalized = rawValue.Trim().ToLowerInvariant();
-        return normalized is not ("0" or "false" or "no" or "off");
-    }
 }

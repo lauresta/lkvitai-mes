@@ -16,6 +16,22 @@ public abstract class PlaywrightUiTestBase
 
     protected static ILocator ByTestId(IPage page, string testId) => page.GetByTestId(testId);
 
+    internal static BrowserTypeLaunchOptions BuildLaunchOptionsFromEnvironment()
+    {
+        var pwDebug = string.Equals(Environment.GetEnvironmentVariable("PWDEBUG")?.Trim(), "1", StringComparison.Ordinal);
+        var headless = pwDebug ? false : ParseBooleanEnvironment("HEADLESS", fallback: true);
+
+        var hasSlowMo = int.TryParse(Environment.GetEnvironmentVariable("SLOWMO_MS")?.Trim(), out var configuredSlowMo) &&
+                        configuredSlowMo >= 0;
+        var slowMoMs = hasSlowMo ? configuredSlowMo : (pwDebug ? 250 : 0);
+
+        return new BrowserTypeLaunchOptions
+        {
+            Headless = headless,
+            SlowMo = slowMoMs
+        };
+    }
+
     protected async Task RunUiAsync(string testName, Func<IPage, Task> run)
     {
         await using var context = await Fixture.Browser.NewContextAsync(new BrowserNewContextOptions
@@ -71,5 +87,22 @@ public abstract class PlaywrightUiTestBase
     private static string Sanitize(string name)
     {
         return InvalidFileNameChars.Replace(name, "-");
+    }
+
+    private static bool ParseBooleanEnvironment(string key, bool fallback)
+    {
+        var rawValue = Environment.GetEnvironmentVariable(key);
+        if (string.IsNullOrWhiteSpace(rawValue))
+        {
+            return fallback;
+        }
+
+        var normalized = rawValue.Trim().ToLowerInvariant();
+        return normalized switch
+        {
+            "1" or "true" or "yes" => true,
+            "0" or "false" or "no" => false,
+            _ => fallback
+        };
     }
 }

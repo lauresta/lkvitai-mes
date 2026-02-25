@@ -16,11 +16,7 @@ public sealed class PlaywrightFixture : IAsyncLifetime
         Directory.CreateDirectory(Settings.ArtifactsDirectory);
 
         _playwright = await Microsoft.Playwright.Playwright.CreateAsync();
-        Browser = await _playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
-        {
-            Headless = Settings.Headless,
-            SlowMo = Settings.SlowMoMs
-        });
+        Browser = await _playwright.Chromium.LaunchAsync(PlaywrightUiTestBase.BuildLaunchOptionsFromEnvironment());
     }
 
     public async Task DisposeAsync()
