@@ -28,6 +28,16 @@ set PWDEBUG=1
 dotnet test tests\Modules\Warehouse\LKvitai.MES.Tests.Warehouse.E2E\LKvitai.MES.Tests.Warehouse.E2E.csproj
 ```
 
+### Headed debug example (PowerShell)
+
+```powershell
+$env:BASE_URL = "http://localhost:5124"
+$env:HEADLESS = "false"
+$env:SLOWMO_MS = "250"
+$env:PWDEBUG = "1"
+dotnet test tests\Modules\Warehouse\LKvitai.MES.Tests.Warehouse.E2E\LKvitai.MES.Tests.Warehouse.E2E.csproj
+```
+
 ## Run tests
 
 ```bash
