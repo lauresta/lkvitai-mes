@@ -1,10 +1,12 @@
 using System.Net.Http.Headers;
 using LKvitai.MES.Modules.Warehouse.WebUI.Services;
+using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
+builder.Services.AddMudServices();
 
 builder.Services.AddHttpClient("WarehouseApi", (sp, client) =>
 {
