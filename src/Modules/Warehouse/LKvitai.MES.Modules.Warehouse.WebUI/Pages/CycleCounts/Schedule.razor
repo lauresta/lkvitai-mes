@@ -15,11 +15,11 @@
         <div class="row g-3">
             <div class="col-md-3">
                 <label class="form-label">Scheduled Date</label>
-                <input type="date" class="form-control" @bind="_scheduledDate" />
+                <input type="date" class="form-control" @bind="_scheduledDate" data-testid="cycle-counts-schedule-date" />
             </div>
             <div class="col-md-3">
                 <label class="form-label">ABC Class</label>
-                <select class="form-select" @bind="_abcClass">
+                <select class="form-select" @bind="_abcClass" data-testid="cycle-counts-schedule-abc">
                     <option value="A">A</option>
                     <option value="B">B</option>
                     <option value="C">C</option>
@@ -28,7 +28,7 @@
             </div>
             <div class="col-md-3">
                 <label class="form-label">Assigned Operator</label>
-                <select class="form-select" @bind="_assignedOperator">
+                <select class="form-select" @bind="_assignedOperator" data-testid="cycle-counts-schedule-operator">
                     @foreach (var operatorId in _operatorOptions)
                     {
                         <option value="@operatorId">@operatorId</option>

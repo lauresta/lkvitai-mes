@@ -24,8 +24,9 @@ public sealed class MudBlazorGridFullFlowTests : PlaywrightUiTestBase
             await Expect(ByTestId(page, "lots-page")).ToBeVisibleAsync();
             await Expect(ByTestId(page, "lots-grid")).ToBeVisibleAsync();
             await Expect(ByTestId(page, "lots-search")).ToBeVisibleAsync();
+            await Expect(ByTestId(page, "lots-search-input")).ToBeVisibleAsync();
 
-            await ByTestId(page, "lots-search").FillAsync("LOT");
+            await ByTestId(page, "lots-search-input").FillAsync("LOT");
             await ByTestId(page, "lots-search-btn").ClickAsync();
             await Expect(ByTestId(page, "lots-current-page")).ToContainTextAsync("Page");
 

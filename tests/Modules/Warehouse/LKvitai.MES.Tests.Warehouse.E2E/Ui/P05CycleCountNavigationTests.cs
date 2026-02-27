@@ -23,9 +23,9 @@ public sealed class P05CycleCountNavigationTests : PlaywrightUiTestBase
             await page.GetByRole(AriaRole.Link, new() { Name = "Schedule Cycle Count" }).ClickAsync();
 
             await Expect(ByTestId(page, "cycle-counts-schedule-title")).ToBeVisibleAsync();
-            await Expect(page.GetByLabel("Scheduled Date")).ToBeVisibleAsync();
-            await Expect(page.GetByLabel("ABC Class")).ToBeVisibleAsync();
-            await Expect(page.GetByLabel("Assigned Operator")).ToBeVisibleAsync();
+            await Expect(ByTestId(page, "cycle-counts-schedule-date")).ToBeVisibleAsync();
+            await Expect(ByTestId(page, "cycle-counts-schedule-abc")).ToBeVisibleAsync();
+            await Expect(ByTestId(page, "cycle-counts-schedule-operator")).ToBeVisibleAsync();
 
             await page.GetByRole(AriaRole.Button, new() { Name = "Back" }).ClickAsync();
             await Expect(ByTestId(page, "cycle-counts-title")).ToBeVisibleAsync();
