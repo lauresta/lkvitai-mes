@@ -230,6 +230,7 @@
             return;
         }
 
+        _hasSearched = true;
         _page = 1;
         _gridRenderKey++;
         await InvokeAsync(StateHasChanged);
