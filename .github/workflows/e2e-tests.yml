@@ -10,18 +10,17 @@ jobs:
   e2e-tests:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    environment: test
     services:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_USER: ${{ vars.TEST_DB_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
-          POSTGRES_DB: ${{ vars.TEST_DB_NAME }}
+          POSTGRES_USER: ${{ vars.TEST_DB_USER || 'postgres' }}
+          POSTGRES_DB: ${{ vars.TEST_DB_NAME || 'lkvitai_warehouse_test' }}
+          POSTGRES_HOST_AUTH_METHOD: trust
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U ${{ vars.TEST_DB_USER }} -d ${{ vars.TEST_DB_NAME }}"
+          --health-cmd "pg_isready -U ${{ vars.TEST_DB_USER || 'postgres' }} -d ${{ vars.TEST_DB_NAME || 'lkvitai_warehouse_test' }}"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 20
@@ -72,7 +71,7 @@ jobs:
         env:
           ASPNETCORE_ENVIRONMENT: Test
           SkipSchemaValidation: "true"
-          ConnectionStrings__WarehouseDb: Host=127.0.0.1;Port=5432;Database=${{ vars.TEST_DB_NAME }};Username=${{ vars.TEST_DB_USER }};Password=${{ secrets.TEST_DB_PASSWORD }}
+          ConnectionStrings__WarehouseDb: Host=127.0.0.1;Port=5432;Database=${{ vars.TEST_DB_NAME || 'lkvitai_warehouse_test' }};Username=${{ vars.TEST_DB_USER || 'postgres' }}
 
       - name: Start WebUI
         run: |
