@@ -36,8 +36,10 @@ public sealed class MudBlazorGridFullFlowTests : PlaywrightUiTestBase
             await Expect(ByTestId(page, "lots-grid")).ToBeVisibleAsync();
 
             await TrySelectLotsPageSizeAsync(page, "25");
+            await EnsureMudOverlayClosedAsync(page);
 
             await TryChangePageAsync(page, "lots-pager", "lots-current-page");
+            await EnsureMudOverlayClosedAsync(page);
             await ByTestId(page, "lots-refresh").ClickAsync();
             await Expect(ByTestId(page, "lots-grid")).ToBeVisibleAsync();
             Assert.Equal(0, await page.GetByTestId("lots-error").CountAsync());
@@ -107,6 +109,7 @@ public sealed class MudBlazorGridFullFlowTests : PlaywrightUiTestBase
                 continue;
             }
 
+            await EnsureMudOverlayClosedAsync(page);
             await button.ClickAsync();
             await page.WaitForTimeoutAsync(350);
 
@@ -204,6 +207,7 @@ public sealed class MudBlazorGridFullFlowTests : PlaywrightUiTestBase
         if (await option.CountAsync() > 0)
         {
             await option.ClickAsync();
+            await EnsureMudOverlayClosedAsync(page);
             return;
         }
 
@@ -211,6 +215,25 @@ public sealed class MudBlazorGridFullFlowTests : PlaywrightUiTestBase
         if (await textOption.CountAsync() > 0)
         {
             await textOption.ClickAsync();
+            await EnsureMudOverlayClosedAsync(page);
+            return;
         }
+
+        await EnsureMudOverlayClosedAsync(page);
+    }
+
+    private static async Task EnsureMudOverlayClosedAsync(IPage page)
+    {
+        var visibleOverlay = page.Locator(".mud-overlay:visible");
+        if (await visibleOverlay.CountAsync() == 0)
+        {
+            return;
+        }
+
+        await page.Keyboard.PressAsync("Escape");
+        await Expect(visibleOverlay).ToHaveCountAsync(0, new LocatorAssertionsToHaveCountOptions
+        {
+            Timeout = 5_000
+        });
     }
 }

@@ -4,6 +4,9 @@ WORKDIR /src
 
 # Copy solution file
 COPY src/LKvitai.MES.sln .
+COPY Directory.Build.props .
+COPY Directory.Packages.props .
+COPY global.json .
 
 # Copy all project files for restore (optimize layer caching)
 COPY src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.WebUI/LKvitai.MES.Modules.Warehouse.WebUI.csproj Modules/Warehouse/LKvitai.MES.Modules.Warehouse.WebUI/
