@@ -1,21 +1,26 @@
 @inherits LayoutComponentBase
 @inject IWebHostEnvironment Environment
 
-<div class="d-flex">
-    <nav class="sidebar bg-dark text-white" style="width: 250px; min-height: 100vh;">
+<MudLayout>
+    <MudDrawer Class="sidebar bg-dark text-white"
+               Variant="DrawerVariant.Responsive"
+               Width="250px"
+               Elevation="1"
+               Open="true">
         <NavMenu />
-    </nav>
+    </MudDrawer>
 
-    <div class="flex-grow-1">
-        <header class="navbar navbar-light bg-light border-bottom px-3">
-            <span class="navbar-brand mb-0 h1">LKvitai.MES Warehouse</span>
-            <span class="text-muted small">@Environment.EnvironmentName</span>
-            <button class="btn btn-outline-secondary btn-sm" disabled>Login</button>
-        </header>
+    <MudMainContent>
+        <MudAppBar Fixed="false" Dense="true" Elevation="0" Class="bg-light border-bottom px-3">
+            <MudText Typo="Typo.h6" Class="mb-0">LKvitai.MES Warehouse</MudText>
+            <MudSpacer />
+            <MudText Typo="Typo.caption" Class="text-muted me-3">@Environment.EnvironmentName</MudText>
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" Disabled="true" Color="Color.Default">Login</MudButton>
+        </MudAppBar>
 
         <main class="container-fluid p-4 position-relative">
             <ToastContainer />
             @Body
         </main>
-    </div>
-</div>
+    </MudMainContent>
+</MudLayout>

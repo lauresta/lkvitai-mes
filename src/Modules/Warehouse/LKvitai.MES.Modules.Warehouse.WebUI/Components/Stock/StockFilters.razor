@@ -1,10 +1,10 @@
-<form @onsubmit="HandleSubmitAsync" @onsubmit:preventDefault="true">
+<form data-testid="stock-filters" @onsubmit="HandleSubmitAsync" @onsubmit:preventDefault="true">
     <div class="card shadow-sm mb-3">
         <div class="card-body">
             <div class="row g-3">
                 <div class="col-12 col-md-3">
                     <label class="form-label" for="warehouse">Warehouse</label>
-                    <select id="warehouse" class="form-select" @bind="_warehouse">
+                    <select id="warehouse" class="form-select" @bind="_warehouse" data-testid="stock-warehouse">
                         <option value="">All</option>
                         @foreach (var warehouse in Warehouses)
                         {
@@ -15,17 +15,17 @@
 
                 <div class="col-12 col-md-3">
                     <label class="form-label" for="location">Location</label>
-                    <input id="location" class="form-control" @bind="_location" placeholder="e.g. A01*" />
+                    <input id="location" class="form-control" @bind="_location" placeholder="e.g. A01*" data-testid="stock-location" />
                 </div>
 
                 <div class="col-12 col-md-3">
                     <label class="form-label" for="sku">SKU</label>
-                    <input id="sku" class="form-control" @bind="_sku" placeholder="e.g. SKU*" />
+                    <input id="sku" class="form-control" @bind="_sku" placeholder="e.g. SKU*" data-testid="stock-search" />
                 </div>
 
                 <div class="col-12 col-md-3 d-flex align-items-end">
                     <div class="form-check">
-                        <input id="include-virtual" class="form-check-input" type="checkbox" @bind="_includeVirtual" />
+                        <input id="include-virtual" class="form-check-input" type="checkbox" @bind="_includeVirtual" data-testid="stock-include-virtual" />
                         <label class="form-check-label" for="include-virtual">Show virtual locations</label>
                     </div>
                 </div>
@@ -33,12 +33,12 @@
 
             @if (!string.IsNullOrWhiteSpace(_validationError))
             {
-                <div class="text-danger mt-2">@_validationError</div>
+                <div class="text-danger mt-2" data-testid="stock-validation-error">@_validationError</div>
             }
 
             <div class="mt-3 d-flex gap-2">
-                <button type="submit" class="btn btn-primary">Search</button>
-                <button type="button" class="btn btn-outline-secondary" @onclick="ResetAsync">Reset</button>
+                <button type="submit" class="btn btn-primary" data-testid="stock-search-btn">Search</button>
+                <button type="button" class="btn btn-outline-secondary" @onclick="ResetAsync" data-testid="stock-clear">Reset</button>
             </div>
         </div>
     </div>

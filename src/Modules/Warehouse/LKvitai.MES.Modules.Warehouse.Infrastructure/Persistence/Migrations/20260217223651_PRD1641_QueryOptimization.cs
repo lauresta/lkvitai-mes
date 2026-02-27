@@ -66,26 +66,46 @@ namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.Migrations
 
             migrationBuilder.Sql(
                 """
-                CREATE INDEX IF NOT EXISTS idx_mt_events_stream_id
-                ON warehouse_events.mt_events (stream_id);
+                DO $$
+                BEGIN
+                    IF to_regclass('warehouse_events.mt_events') IS NOT NULL THEN
+                        EXECUTE 'CREATE INDEX IF NOT EXISTS idx_mt_events_stream_id ON warehouse_events.mt_events (stream_id);';
+                    END IF;
+                END
+                $$;
                 """);
 
             migrationBuilder.Sql(
                 """
-                CREATE INDEX IF NOT EXISTS idx_mt_events_type
-                ON warehouse_events.mt_events (type);
+                DO $$
+                BEGIN
+                    IF to_regclass('warehouse_events.mt_events') IS NOT NULL THEN
+                        EXECUTE 'CREATE INDEX IF NOT EXISTS idx_mt_events_type ON warehouse_events.mt_events (type);';
+                    END IF;
+                END
+                $$;
                 """);
 
             migrationBuilder.Sql(
                 """
-                CREATE INDEX IF NOT EXISTS idx_mt_events_timestamp
-                ON warehouse_events.mt_events ("timestamp");
+                DO $$
+                BEGIN
+                    IF to_regclass('warehouse_events.mt_events') IS NOT NULL THEN
+                        EXECUTE 'CREATE INDEX IF NOT EXISTS idx_mt_events_timestamp ON warehouse_events.mt_events ("timestamp");';
+                    END IF;
+                END
+                $$;
                 """);
 
             migrationBuilder.Sql(
                 """
-                CREATE INDEX IF NOT EXISTS idx_available_stock_item_location
-                ON warehouse_events.mt_doc_availablestockview ((data ->> 'itemId'), (data ->> 'location'));
+                DO $$
+                BEGIN
+                    IF to_regclass('warehouse_events.mt_doc_availablestockview') IS NOT NULL THEN
+                        EXECUTE 'CREATE INDEX IF NOT EXISTS idx_available_stock_item_location ON warehouse_events.mt_doc_availablestockview ((data ->> ''itemId''), (data ->> ''location''));';
+                    END IF;
+                END
+                $$;
                 """);
         }
 
