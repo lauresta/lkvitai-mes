@@ -4,6 +4,7 @@ WORKDIR /src
 
 # Copy solution file
 COPY src/LKvitai.MES.sln .
+COPY Directory.Build.props .
 COPY Directory.Packages.props .
 COPY global.json .
 
