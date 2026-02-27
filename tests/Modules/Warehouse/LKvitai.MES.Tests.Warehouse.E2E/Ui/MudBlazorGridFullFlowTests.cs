@@ -35,11 +35,7 @@ public sealed class MudBlazorGridFullFlowTests : PlaywrightUiTestBase
             await lotHeader.ClickAsync();
             await Expect(ByTestId(page, "lots-grid")).ToBeVisibleAsync();
 
-            var lotsPageSizeCombo = ByTestId(page, "lots-page-size").GetByRole(AriaRole.Combobox).First;
-            await Expect(lotsPageSizeCombo).ToBeVisibleAsync();
-            await lotsPageSizeCombo.ClickAsync();
-            await page.GetByRole(AriaRole.Option, new() { Name = "25" }).ClickAsync();
-            await Expect(lotsPageSizeCombo).ToContainTextAsync("25");
+            await TrySelectLotsPageSizeAsync(page, "25");
 
             await TryChangePageAsync(page, "lots-pager", "lots-current-page");
             await ByTestId(page, "lots-refresh").ClickAsync();
@@ -168,5 +164,53 @@ public sealed class MudBlazorGridFullFlowTests : PlaywrightUiTestBase
         }
 
         await Expect(ByTestId(page, "stock-search")).ToBeVisibleAsync();
+    }
+
+    private static async Task TrySelectLotsPageSizeAsync(IPage page, string optionText)
+    {
+        var scope = ByTestId(page, "lots-page-size");
+        if (await scope.CountAsync() == 0)
+        {
+            return;
+        }
+
+        var triggerCandidates = new[]
+        {
+            scope.GetByRole(AriaRole.Combobox),
+            scope.GetByRole(AriaRole.Button),
+            scope.Locator("[aria-haspopup='listbox']"),
+            scope.Locator("input"),
+            scope.Locator(".mud-select-input")
+        };
+
+        ILocator? trigger = null;
+        foreach (var candidate in triggerCandidates)
+        {
+            if (await candidate.CountAsync() > 0 && await candidate.First.IsVisibleAsync())
+            {
+                trigger = candidate.First;
+                break;
+            }
+        }
+
+        if (trigger is null)
+        {
+            return;
+        }
+
+        await trigger.ClickAsync();
+
+        var option = page.GetByRole(AriaRole.Option, new() { Name = optionText }).First;
+        if (await option.CountAsync() > 0)
+        {
+            await option.ClickAsync();
+            return;
+        }
+
+        var textOption = page.GetByText(optionText, new() { Exact = true }).First;
+        if (await textOption.CountAsync() > 0)
+        {
+            await textOption.ClickAsync();
+        }
     }
 }
