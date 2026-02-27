@@ -20,13 +20,15 @@ namespace LKvitai.MES.Modules.Warehouse.Api.Services;
 
 public interface ITransferStockAvailabilityService
 {
-    Task<decimal> GetAvailableQtyAsync(string locationCode, string sku, CancellationToken cancellationToken = default);
+    Task<decimal> GetAvailableQtyAsync(
+        string warehouseId,
+        string locationCode,
+        string sku,
+        CancellationToken cancellationToken = default);
 }
 
 public sealed class MartenTransferStockAvailabilityService : ITransferStockAvailabilityService
 {
-    private const string DefaultWarehouseId = "WH1";
-
     private readonly IDocumentStore _documentStore;
 
     public MartenTransferStockAvailabilityService(IDocumentStore documentStore)
@@ -35,16 +37,26 @@ public sealed class MartenTransferStockAvailabilityService : ITransferStockAvail
     }
 
     public async Task<decimal> GetAvailableQtyAsync(
+        string warehouseId,
         string locationCode,
         string sku,
         CancellationToken cancellationToken = default)
     {
         await using var querySession = _documentStore.QuerySession();
 
-        var query = querySession.Query<AvailableStockView>()
-            .Where(x => x.WarehouseId == DefaultWarehouseId && x.Location == locationCode && x.SKU == sku);
+        var normalizedWarehouseId = warehouseId.Trim();
+        var normalizedLocation = locationCode.Trim();
+        var normalizedSku = sku.Trim();
 
-        return await Marten.QueryableExtensions.SumAsync(query, x => x.AvailableQty, cancellationToken);
+        var rows = await Marten.QueryableExtensions.ToListAsync(
+            querySession.Query<AvailableStockView>()
+                .Where(x =>
+                    x.WarehouseId == normalizedWarehouseId &&
+                    x.Location == normalizedLocation &&
+                    x.SKU == normalizedSku),
+            cancellationToken);
+
+        return rows.Sum(x => x.AvailableQty);
     }
 }
 
@@ -389,6 +401,7 @@ public sealed class ExecuteTransferCommandHandler : IRequestHandler<ExecuteTrans
                 }
 
                 var available = await _stockAvailabilityService.GetAvailableQtyAsync(
+                    transfer.FromWarehouse,
                     line.FromLocation.Code,
                     line.Item.InternalSKU,
                     cancellationToken);
