@@ -35,9 +35,11 @@ public sealed class MudBlazorGridFullFlowTests : PlaywrightUiTestBase
             await lotHeader.ClickAsync();
             await Expect(ByTestId(page, "lots-grid")).ToBeVisibleAsync();
 
-            await ByTestId(page, "lots-page-size").ClickAsync();
+            var lotsPageSizeCombo = ByTestId(page, "lots-page-size").GetByRole(AriaRole.Combobox).First;
+            await Expect(lotsPageSizeCombo).ToBeVisibleAsync();
+            await lotsPageSizeCombo.ClickAsync();
             await page.GetByRole(AriaRole.Option, new() { Name = "25" }).ClickAsync();
-            await Expect(ByTestId(page, "lots-page-size")).ToContainTextAsync("25");
+            await Expect(lotsPageSizeCombo).ToContainTextAsync("25");
 
             await TryChangePageAsync(page, "lots-pager", "lots-current-page");
             await ByTestId(page, "lots-refresh").ClickAsync();

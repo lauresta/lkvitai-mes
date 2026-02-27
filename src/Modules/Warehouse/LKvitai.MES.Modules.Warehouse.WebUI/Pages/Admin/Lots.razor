@@ -44,17 +44,19 @@
                 </MudSelect>
             </div>
             <div class="col-md-2">
-                <MudSelect T="int"
-                           Label="Page size"
-                           Variant="Variant.Outlined"
-                           Margin="Margin.Dense"
-                           Value="@_pageSize"
-                           ValueChanged="OnPageSizeChangedAsync"
-                           InputAttributes="@LotsPageSizeAttributes">
-                    <MudSelectItem T="int" Value="25">25</MudSelectItem>
-                    <MudSelectItem T="int" Value="50">50</MudSelectItem>
-                    <MudSelectItem T="int" Value="100">100</MudSelectItem>
-                </MudSelect>
+                <div data-testid="lots-page-size">
+                    <MudSelect T="int"
+                               Label="Page size"
+                               Variant="Variant.Outlined"
+                               Margin="Margin.Dense"
+                               Value="@_pageSize"
+                               ValueChanged="OnPageSizeChangedAsync"
+                               InputAttributes="@LotsPageSizeAttributes">
+                        <MudSelectItem T="int" Value="25">25</MudSelectItem>
+                        <MudSelectItem T="int" Value="50">50</MudSelectItem>
+                        <MudSelectItem T="int" Value="100">100</MudSelectItem>
+                    </MudSelect>
+                </div>
             </div>
             <div class="col-md-3 d-flex gap-2">
                 <MudButton Variant="Variant.Filled"
