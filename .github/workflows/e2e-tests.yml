@@ -55,13 +55,31 @@ jobs:
       - name: Install Playwright browsers
         run: pwsh tests/Modules/Warehouse/LKvitai.MES.Tests.Warehouse.E2E/bin/Release/net8.0/playwright.ps1 install --with-deps
 
+      - name: Wait for Postgres port
+        run: |
+          for i in {1..60}; do
+            if (echo > /dev/tcp/127.0.0.1/5432) >/dev/null 2>&1; then
+              echo "Postgres port is ready"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Postgres port is not reachable"
+          exit 1
+
       - name: Start API
         run: |
           nohup dotnet run --project src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Api/LKvitai.MES.Modules.Warehouse.Api.csproj --configuration Release --no-build --urls http://127.0.0.1:5001 > api.log 2>&1 &
+          API_PID=$!
           for i in {1..90}; do
             if curl -sS http://127.0.0.1:5001/health > /dev/null; then
               echo "API is ready"
               exit 0
+            fi
+            if ! kill -0 "$API_PID" >/dev/null 2>&1; then
+              echo "API process exited before becoming ready"
+              tail -n 300 api.log || true
+              exit 1
             fi
             sleep 2
           done
