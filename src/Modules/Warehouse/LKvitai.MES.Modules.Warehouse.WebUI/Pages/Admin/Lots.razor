@@ -27,8 +27,7 @@
                               Margin="Margin.Dense"
                               @bind-Value="_search"
                               Placeholder="Lot number, SKU, item name"
-                              InputAttributes="@LotsFilterSearchAttributes"
-                              UserAttributes="@LotsFilterSearchContainerAttributes" />
+                              InputAttributes="@LotsFilterSearchAttributes" />
             </div>
             <div class="col-md-3">
                 <MudSelect T="string"
@@ -146,7 +145,6 @@
 
     private static readonly Dictionary<string, object> LotsGridAttributes = new() { ["data-testid"] = "lots-grid" };
     private static readonly Dictionary<string, object> LotsFilterSearchAttributes = new() { ["data-testid"] = "lots-search-input" };
-    private static readonly Dictionary<string, object> LotsFilterSearchContainerAttributes = new() { ["data-testid"] = "lots-search-field" };
     private static readonly Dictionary<string, object> LotsFilterStatusAttributes = new() { ["data-testid"] = "lots-status" };
     private static readonly Dictionary<string, object> LotsPageSizeAttributes = new() { ["data-testid"] = "lots-page-size" };
     private static readonly Dictionary<string, object> LotsRefreshAttributes = new() { ["data-testid"] = "lots-refresh" };
