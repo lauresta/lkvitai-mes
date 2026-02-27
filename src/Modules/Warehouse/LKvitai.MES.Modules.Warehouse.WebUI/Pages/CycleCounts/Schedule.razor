@@ -4,6 +4,7 @@
 @inject NavigationManager NavigationManager
 @inject ToastService ToastService
 @inject IConfiguration Configuration
+@using System.Diagnostics
 
 <PageTitle>Schedule Cycle Count - LKvitai.MES</PageTitle>
 
@@ -119,6 +120,26 @@
         catch (ApiException ex)
         {
             ToastService.ShowError(ex.UserMessage);
+        }
+        catch (Exception ex)
+        {
+            var userMessage = ex.Message;
+            if (ex is HttpRequestException)
+            {
+                userMessage = "Failed to load schedule lookups. Please verify API connectivity.";
+            }
+
+            var wrapped = new ApiException(
+                new ProblemDetailsModel
+                {
+                    Title = "Cycle count schedule lookup failed",
+                    Detail = ex.Message,
+                    Status = 500,
+                    TraceId = Activity.Current?.Id
+                },
+                500);
+
+            ToastService.ShowError(!string.IsNullOrWhiteSpace(wrapped.UserMessage) ? wrapped.UserMessage : userMessage);
         }
         finally
         {

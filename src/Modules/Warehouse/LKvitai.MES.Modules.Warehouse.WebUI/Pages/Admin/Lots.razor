@@ -1,5 +1,6 @@
 @page "/warehouse/admin/lots"
 @inject LotsClient LotsClient
+@using System.Diagnostics
 
 <PageTitle>Lots - LKvitai.MES</PageTitle>
 
@@ -201,6 +202,25 @@
         catch (ApiException ex)
         {
             _apiError = ex;
+            _totalCount = 0;
+
+            return new GridData<LotListItemDto>
+            {
+                Items = Array.Empty<LotListItemDto>(),
+                TotalItems = 0
+            };
+        }
+        catch (Exception ex)
+        {
+            _apiError = new ApiException(
+                new ProblemDetailsModel
+                {
+                    Title = "Lots query failed",
+                    Detail = ex.Message,
+                    Status = 500,
+                    TraceId = Activity.Current?.Id
+                },
+                500);
             _totalCount = 0;
 
             return new GridData<LotListItemDto>
