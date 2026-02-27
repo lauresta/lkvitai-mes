@@ -36,15 +36,17 @@ public sealed class LotsController : ControllerBase
         var lotQuery = from lot in _dbContext.Lots.AsNoTracking()
                        join item in _dbContext.Items.AsNoTracking() on lot.ItemId equals item.Id into itemGroup
                        from item in itemGroup.DefaultIfEmpty()
-                       select new LotProjection(
+                       select new
+                       {
                            lot.Id,
                            lot.ItemId,
                            lot.LotNumber,
                            lot.ProductionDate,
                            lot.ExpiryDate,
-                           item != null ? item.InternalSKU : string.Empty,
-                           item != null ? item.Name : string.Empty,
-                           item != null ? item.BaseUoM : string.Empty);
+                           ItemSku = item != null ? item.InternalSKU : string.Empty,
+                           ItemName = item != null ? item.Name : string.Empty,
+                           BaseUom = item != null ? item.BaseUoM : string.Empty
+                       };
 
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -56,7 +58,17 @@ public sealed class LotsController : ControllerBase
         }
 
         var lots = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync(
-            lotQuery.OrderBy(x => x.LotNumber),
+            lotQuery
+                .OrderBy(x => x.LotNumber)
+                .Select(x => new LotProjection(
+                    x.Id,
+                    x.ItemId,
+                    x.LotNumber,
+                    x.ProductionDate,
+                    x.ExpiryDate,
+                    x.ItemSku,
+                    x.ItemName,
+                    x.BaseUom)),
             cancellationToken);
 
         var lotNumbers = lots
