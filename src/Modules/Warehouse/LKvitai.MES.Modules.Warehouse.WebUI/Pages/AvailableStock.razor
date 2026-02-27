@@ -27,22 +27,22 @@
     <LoadingSpinner IsLoading="@(_isLoadingWarehouses || _isSearching)" />
 
     <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
             <div class="text-muted" data-testid="stock-summary">
                 @_summaryText
             </div>
-            <div class="d-flex gap-2 align-items-center">
-                <MudSelect T="int"
-                           Label="Page size"
-                           Variant="Variant.Outlined"
-                           Margin="Margin.Dense"
-                           Value="@_pageSize"
-                           ValueChanged="OnPageSizeChangedAsync"
-                           InputAttributes="@StockPageSizeAttributes">
-                    <MudSelectItem T="int" Value="25">25</MudSelectItem>
-                    <MudSelectItem T="int" Value="50">50</MudSelectItem>
-                    <MudSelectItem T="int" Value="100">100</MudSelectItem>
-                </MudSelect>
+            <div class="d-flex flex-wrap gap-2 align-items-center">
+                <label class="form-label mb-0 text-muted small" for="stock-page-size-select">Page size</label>
+                <select id="stock-page-size-select"
+                        class="form-select form-select-sm"
+                        style="width: 110px;"
+                        data-testid="stock-page-size"
+                        value="@_pageSize"
+                        @onchange="OnPageSizeChangedFromChangeEventAsync">
+                    <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
                 <button class="btn btn-outline-secondary btn-sm"
                         data-testid="stock-refresh"
                         @onclick="RefreshAsync"
@@ -128,7 +128,6 @@
     private bool _isDisposed;
     private readonly CancellationTokenSource _disposeCts = new();
     private static readonly Dictionary<string, object> StockGridAttributes = new() { ["data-testid"] = "stock-grid" };
-    private static readonly Dictionary<string, object> StockPageSizeAttributes = new() { ["data-testid"] = "stock-page-size" };
 
     private int _totalPages => Math.Max(1, (int)Math.Ceiling(_totalCount / (double)Math.Max(1, _pageSize)));
 
@@ -369,6 +368,16 @@
         _pageSize = Math.Clamp(pageSize, 1, 500);
         _gridRenderKey++;
         await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnPageSizeChangedFromChangeEventAsync(ChangeEventArgs args)
+    {
+        if (args.Value is null || !int.TryParse(args.Value.ToString(), out var pageSize))
+        {
+            return;
+        }
+
+        await OnPageSizeChangedAsync(pageSize);
     }
 
     private async Task RefreshAsync()

@@ -69,9 +69,8 @@ public sealed class MudBlazorGridFullFlowTests : PlaywrightUiTestBase
             await skuHeader.ClickAsync();
             await Expect(ByTestId(page, "stock-grid")).ToBeVisibleAsync();
 
-            await ByTestId(page, "stock-page-size").ClickAsync();
-            await page.GetByRole(AriaRole.Option, new() { Name = "25" }).ClickAsync();
-            await Expect(ByTestId(page, "stock-page-size")).ToContainTextAsync("25");
+            await ByTestId(page, "stock-page-size").SelectOptionAsync("25");
+            Assert.Equal("25", await ByTestId(page, "stock-page-size").InputValueAsync());
 
             await TryChangePageAsync(page, "stock-pager", "stock-summary");
 
