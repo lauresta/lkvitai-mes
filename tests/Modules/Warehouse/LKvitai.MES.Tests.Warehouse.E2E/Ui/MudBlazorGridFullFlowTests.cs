@@ -55,8 +55,7 @@ public sealed class MudBlazorGridFullFlowTests : PlaywrightUiTestBase
             await Expect(ByTestId(page, "stock-before-search")).ToBeVisibleAsync();
             Assert.Equal(0, await page.GetByTestId("stock-grid").CountAsync());
 
-            // Wait until the initial warehouses loading phase is likely complete.
-            await page.WaitForTimeoutAsync(1200);
+            await WaitForStockFiltersReadyAsync(page);
             await SubmitStockSearchUntilGridVisibleAsync(page, "SKU");
 
             await Expect(ByTestId(page, "stock-grid")).ToBeVisibleAsync();
@@ -123,29 +122,48 @@ public sealed class MudBlazorGridFullFlowTests : PlaywrightUiTestBase
 
     private static async Task SubmitStockSearchUntilGridVisibleAsync(IPage page, string searchValue)
     {
-        for (var attempt = 1; attempt <= 3; attempt++)
+        for (var attempt = 1; attempt <= 4; attempt++)
         {
+            await WaitForStockFiltersReadyAsync(page);
+
             var stockSearch = ByTestId(page, "stock-search");
             await Expect(stockSearch).ToBeVisibleAsync();
             await stockSearch.FillAsync(searchValue);
             await stockSearch.PressAsync("Tab");
             await ByTestId(page, "stock-search-btn").ClickAsync();
 
-            await page.WaitForTimeoutAsync(1000);
-
             var grid = ByTestId(page, "stock-grid");
-            if (await grid.CountAsync() > 0 && await grid.IsVisibleAsync())
+            for (var i = 0; i < 12; i++)
             {
-                return;
-            }
+                if (await grid.CountAsync() > 0 && await grid.IsVisibleAsync())
+                {
+                    return;
+                }
 
-            var validation = ByTestId(page, "stock-validation-error");
-            if (await validation.CountAsync() > 0 && await validation.IsVisibleAsync())
-            {
-                continue;
+                var validation = ByTestId(page, "stock-validation-error");
+                if (await validation.CountAsync() > 0 && await validation.IsVisibleAsync())
+                {
+                    break;
+                }
+
+                await page.WaitForTimeoutAsync(500);
             }
         }
 
         await Expect(ByTestId(page, "stock-grid")).ToBeVisibleAsync();
+    }
+
+    private static async Task WaitForStockFiltersReadyAsync(IPage page)
+    {
+        var loadingSpinner = page.Locator(".spinner-border");
+        if (await loadingSpinner.CountAsync() > 0)
+        {
+            await Expect(loadingSpinner).ToBeHiddenAsync(new LocatorAssertionsToBeHiddenOptions
+            {
+                Timeout = 15_000
+            });
+        }
+
+        await Expect(ByTestId(page, "stock-search")).ToBeVisibleAsync();
     }
 }
