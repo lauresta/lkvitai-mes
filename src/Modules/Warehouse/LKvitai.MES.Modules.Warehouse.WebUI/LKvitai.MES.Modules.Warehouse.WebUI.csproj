@@ -7,6 +7,6 @@
     <AssemblyName>LKvitai.MES.Modules.Warehouse.WebUI</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="MudBlazor" />
+    <PackageReference Include="MudBlazor" Version="6.20.0" />
   </ItemGroup>
 </Project>
