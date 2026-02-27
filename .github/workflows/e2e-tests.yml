@@ -26,8 +26,32 @@ jobs:
       - name: Build E2E project
         run: dotnet build tests/Modules/Warehouse/LKvitai.MES.Tests.Warehouse.E2E/LKvitai.MES.Tests.Warehouse.E2E.csproj --configuration Release --no-restore
 
+      - name: Build WebUI project
+        run: dotnet build src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.WebUI/LKvitai.MES.Modules.Warehouse.WebUI.csproj --configuration Release --no-restore
+
       - name: Install Playwright browsers
         run: pwsh tests/Modules/Warehouse/LKvitai.MES.Tests.Warehouse.E2E/bin/Release/net8.0/playwright.ps1 install --with-deps
 
+      - name: Start WebUI
+        run: |
+          nohup dotnet run --project src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.WebUI/LKvitai.MES.Modules.Warehouse.WebUI.csproj --configuration Release --no-build --urls http://127.0.0.1:5124 > webui.log 2>&1 &
+          for i in {1..60}; do
+            if curl -fsS http://127.0.0.1:5124/available-stock > /dev/null; then
+              echo "WebUI is ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "WebUI did not start in time"
+          tail -n 200 webui.log || true
+          exit 1
+
       - name: Run E2E tests
         run: dotnet test tests/Modules/Warehouse/LKvitai.MES.Tests.Warehouse.E2E/LKvitai.MES.Tests.Warehouse.E2E.csproj --configuration Release --no-build --logger "console;verbosity=detailed"
+        env:
+          BASE_URL: http://127.0.0.1:5124
+          HEADLESS: true
+
+      - name: Dump WebUI log on failure
+        if: failure()
+        run: tail -n 300 webui.log || true
