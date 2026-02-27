@@ -10,6 +10,20 @@ jobs:
   e2e-tests:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: lkvitai_warehouse_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d lkvitai_warehouse_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
 
     steps:
       - name: Checkout
@@ -26,14 +40,38 @@ jobs:
       - name: Restore WebUI project
         run: dotnet restore src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.WebUI/LKvitai.MES.Modules.Warehouse.WebUI.csproj
 
+      - name: Restore API project
+        run: dotnet restore src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Api/LKvitai.MES.Modules.Warehouse.Api.csproj
+
       - name: Build E2E project
         run: dotnet build tests/Modules/Warehouse/LKvitai.MES.Tests.Warehouse.E2E/LKvitai.MES.Tests.Warehouse.E2E.csproj --configuration Release --no-restore
 
       - name: Build WebUI project
         run: dotnet build src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.WebUI/LKvitai.MES.Modules.Warehouse.WebUI.csproj --configuration Release --no-restore
 
+      - name: Build API project
+        run: dotnet build src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Api/LKvitai.MES.Modules.Warehouse.Api.csproj --configuration Release --no-restore
+
       - name: Install Playwright browsers
         run: pwsh tests/Modules/Warehouse/LKvitai.MES.Tests.Warehouse.E2E/bin/Release/net8.0/playwright.ps1 install --with-deps
+
+      - name: Start API
+        run: |
+          nohup dotnet run --project src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Api/LKvitai.MES.Modules.Warehouse.Api.csproj --configuration Release --no-build --urls http://127.0.0.1:5001 > api.log 2>&1 &
+          for i in {1..90}; do
+            if curl -sS http://127.0.0.1:5001/health > /dev/null; then
+              echo "API is ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "API did not start in time"
+          tail -n 300 api.log || true
+          exit 1
+        env:
+          ASPNETCORE_ENVIRONMENT: Test
+          SkipSchemaValidation: "true"
+          ConnectionStrings__WarehouseDb: Host=127.0.0.1;Port=5432;Database=lkvitai_warehouse_test;Username=postgres;Password=postgres
 
       - name: Start WebUI
         run: |
@@ -48,6 +86,9 @@ jobs:
           echo "WebUI did not start in time"
           tail -n 200 webui.log || true
           exit 1
+        env:
+          ASPNETCORE_ENVIRONMENT: Development
+          WarehouseApi__BaseUrl: http://127.0.0.1:5001
 
       - name: Run E2E tests
         run: dotnet test tests/Modules/Warehouse/LKvitai.MES.Tests.Warehouse.E2E/LKvitai.MES.Tests.Warehouse.E2E.csproj --configuration Release --no-build --logger "console;verbosity=detailed"
@@ -58,3 +99,7 @@ jobs:
       - name: Dump WebUI log on failure
         if: failure()
         run: tail -n 300 webui.log || true
+
+      - name: Dump API log on failure
+        if: failure()
+        run: tail -n 400 api.log || true
