@@ -13,7 +13,7 @@
 .app-topbar {
     min-height: 56px;
     display: flex;
-    align-items: stretch;
+    align-items: center;
     justify-content: space-between;
     gap: 1rem;
     padding: 0 1rem;
@@ -24,7 +24,6 @@
 
 .app-topbar-left,
 .app-topbar-right {
-    min-height: 56px;
     display: inline-flex;
     align-items: center;
     gap: 0.625rem;
@@ -39,11 +38,10 @@
 }
 
 .app-topbar-mark {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #f6b21a 0%, #d98c00 100%);
-    box-shadow: 0 0 0 3px rgba(246, 178, 26, 0.2);
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    object-fit: contain;
 }
 
 .app-topbar-env {
@@ -66,9 +64,9 @@
         min-height: 52px;
     }
 
-    .app-topbar-left,
-    .app-topbar-right {
-        min-height: 52px;
+    .app-topbar-mark {
+        width: 24px;
+        height: 24px;
     }
 
     .app-topbar-title {

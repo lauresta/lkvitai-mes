@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "webui",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.WebUI/LKvitai.MES.Modules.Warehouse.WebUI.csproj", "--urls", "http://localhost:5124"],
+      "port": 5124
+    }
+  ]
+}
