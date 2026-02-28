@@ -26,44 +26,52 @@ public class LoggingBehavior<TRequest, TResponse> : IPipelineBehavior<TRequest, 
     {
         var commandName = typeof(TRequest).Name;
         var stopwatch = Stopwatch.StartNew();
-        
+
         _logger.LogInformation(
-            "Executing command {CommandName} with ID {CommandId}",
+            "Command started: {CommandName}. CommandId={CommandId}, CorrelationId={CorrelationId}, CausationId={CausationId}",
             commandName,
-            request.CommandId);
-        
+            request.CommandId,
+            request.CorrelationId,
+            request.CausationId);
+
         try
         {
             var response = await next();
-            
+
             stopwatch.Stop();
-            
+
             if (response.IsSuccess)
             {
                 _logger.LogInformation(
-                    "Command {CommandName} completed successfully in {ElapsedMs}ms",
+                    "Command succeeded: {CommandName}. CommandId={CommandId}, ElapsedMs={ElapsedMs}",
                     commandName,
+                    request.CommandId,
                     stopwatch.ElapsedMilliseconds);
             }
             else
             {
                 _logger.LogWarning(
-                    "Command {CommandName} failed: {Error}",
+                    "Command failed: {CommandName}. CommandId={CommandId}, ErrorCode={ErrorCode}, Error={Error}, ErrorDetail={ErrorDetail}, ElapsedMs={ElapsedMs}",
                     commandName,
-                    response.Error);
+                    request.CommandId,
+                    response.ErrorCode,
+                    response.Error,
+                    response.ErrorDetail,
+                    stopwatch.ElapsedMilliseconds);
             }
-            
+
             return response;
         }
         catch (Exception ex)
         {
             stopwatch.Stop();
-            
+
             _logger.LogError(ex,
-                "Command {CommandName} threw exception after {ElapsedMs}ms",
+                "Command threw exception: {CommandName}. CommandId={CommandId}, ElapsedMs={ElapsedMs}",
                 commandName,
+                request.CommandId,
                 stopwatch.ElapsedMilliseconds);
-            
+
             throw;
         }
     }

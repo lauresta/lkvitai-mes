@@ -408,6 +408,20 @@ public sealed class ExecuteTransferCommandHandler : IRequestHandler<ExecuteTrans
 
                 if (available < line.Qty)
                 {
+                    _logger.LogWarning(
+                        "Transfer execute blocked: insufficient available stock. TransferId={TransferId}, TransferNumber={TransferNumber}, FromWarehouse={FromWarehouse}, FromLocation={FromLocation}, ToWarehouse={ToWarehouse}, ToLocation={ToLocation}, ItemId={ItemId}, SKU={SKU}, RequestedQty={RequestedQty}, AvailableQty={AvailableQty}, Delta={MissingQty}",
+                        transfer.Id,
+                        transfer.TransferNumber,
+                        transfer.FromWarehouse,
+                        line.FromLocation.Code,
+                        transfer.ToWarehouse,
+                        line.ToLocation.Code,
+                        line.Item.Id,
+                        line.Item.InternalSKU,
+                        line.Qty,
+                        available,
+                        line.Qty - available);
+
                     return Result.Fail(
                         DomainErrorCodes.InsufficientAvailableStock,
                         $"Insufficient stock at location {line.FromLocation.Code}");
