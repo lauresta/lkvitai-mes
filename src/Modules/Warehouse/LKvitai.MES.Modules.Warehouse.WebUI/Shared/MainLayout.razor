@@ -11,11 +11,16 @@
     </MudDrawer>
 
     <MudMainContent>
-        <header class="app-topbar bg-light border-bottom px-3">
-            <h6 class="mb-0">LKvitai.MES Warehouse</h6>
-            <div class="flex-grow-1"></div>
-            <span class="text-muted small me-3">@Environment.EnvironmentName</span>
-            <button class="btn btn-outline-secondary btn-sm" type="button" disabled>Login</button>
+        <header class="app-topbar">
+            <div class="app-topbar-left">
+                <span class="app-topbar-mark" aria-hidden="true"></span>
+                <h6 class="app-topbar-title mb-0">LKvitai.MES Warehouse</h6>
+            </div>
+
+            <div class="app-topbar-right">
+                <span class="app-topbar-env text-muted small">@Environment.EnvironmentName</span>
+                <button class="btn btn-outline-secondary btn-sm app-topbar-login" type="button" disabled>Login</button>
+            </div>
         </header>
 
         <main class="container-fluid p-4 position-relative">
