@@ -11,12 +11,12 @@
     </MudDrawer>
 
     <MudMainContent>
-        <MudAppBar Fixed="false" Dense="true" Elevation="0" Class="bg-light border-bottom px-3">
-            <MudText Typo="Typo.h6" Class="mb-0">LKvitai.MES Warehouse</MudText>
-            <MudSpacer />
-            <MudText Typo="Typo.caption" Class="text-muted me-3">@Environment.EnvironmentName</MudText>
-            <MudButton Variant="Variant.Outlined" Size="Size.Small" Disabled="true" Color="Color.Default">Login</MudButton>
-        </MudAppBar>
+        <header class="app-topbar bg-light border-bottom px-3">
+            <h6 class="mb-0">LKvitai.MES Warehouse</h6>
+            <div class="flex-grow-1"></div>
+            <span class="text-muted small me-3">@Environment.EnvironmentName</span>
+            <button class="btn btn-outline-secondary btn-sm" type="button" disabled>Login</button>
+        </header>
 
         <main class="container-fluid p-4 position-relative">
             <ToastContainer />

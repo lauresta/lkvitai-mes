@@ -11,6 +11,7 @@
 {
     <ErrorBanner Message="@BuildErrorMessage(_apiError)"
                  TraceId="@_apiError.TraceId"
+                 ShowRetry="@_apiError.IsRetryable"
                  OnRetry="LoadAsync"
                  OnDismiss="DismissError" />
 }
@@ -70,7 +71,7 @@
 
 @if (_confirmExecute)
 {
-    <div class="modal show d-block" tabindex="-1" style="background: rgba(0, 0, 0, 0.45);">
+    <div class="modal show d-block transfer-execute-modal-backdrop" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -185,6 +186,11 @@
 
     private static string BuildErrorMessage(ApiException ex)
     {
+        if (ex.IsBusinessError && !string.IsNullOrWhiteSpace(ex.ProblemDetails?.Detail))
+        {
+            return ex.ProblemDetails.Detail;
+        }
+
         if (!string.IsNullOrWhiteSpace(ex.UserMessage))
         {
             return ex.UserMessage;
@@ -195,3 +201,12 @@
                ?? "Transfer request failed.";
     }
 }
+
+<style>
+    .transfer-execute-modal-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 2000;
+        background: rgba(0, 0, 0, 0.45);
+    }
+</style>

@@ -6,6 +6,14 @@
     top: 0;
 }
 
+.app-topbar {
+    min-height: 49px;
+    display: flex;
+    align-items: center;
+    position: relative;
+    z-index: 10;
+}
+
 @media (max-width: 768px) {
     .sidebar {
         display: none;

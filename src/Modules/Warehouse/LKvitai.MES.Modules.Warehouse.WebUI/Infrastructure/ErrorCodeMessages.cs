@@ -29,6 +29,13 @@ public static class ErrorCodeMessages
 
         return httpStatus switch
         {
+            400 => "Request data is invalid. Check entered values.",
+            401 => "Authentication required.",
+            403 => "You do not have permission to perform this action.",
+            404 => "The requested resource was not found.",
+            409 => "Operation cannot be completed due to a conflict. Refresh data and review current state.",
+            422 => "Operation cannot be completed due to business rules. Review details and adjust input.",
+            429 => "Too many requests. Please wait and try again.",
             500 => "Server error. Please try again later.",
             503 => "Backend unavailable. Please check system status.",
             _ => "An unexpected error occurred. Please try again."

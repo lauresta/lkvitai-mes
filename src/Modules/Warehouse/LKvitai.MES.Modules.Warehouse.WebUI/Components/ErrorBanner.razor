@@ -6,8 +6,11 @@
         {
             <small class="text-muted d-block">Error ID: @TraceId</small>
         }
-        <div class="mt-2 d-flex gap-2">
-            <button type="button" class="btn btn-outline-danger btn-sm" @onclick="OnRetry">Retry</button>
+        <div class="mt-2 d-flex gap-2 align-items-center">
+            @if (CanShowRetry)
+            {
+                <button type="button" class="btn btn-outline-danger btn-sm" @onclick="OnRetry">Retry</button>
+            }
             <button type="button" class="btn-close" aria-label="Close" @onclick="OnDismiss"></button>
         </div>
     </div>
@@ -25,4 +28,26 @@
 
     [Parameter]
     public EventCallback OnDismiss { get; set; }
+
+    [Parameter]
+    public bool? ShowRetry { get; set; }
+
+    private bool CanShowRetry => OnRetry.HasDelegate && (ShowRetry ?? InferRetryFromMessage(Message));
+
+    private static bool InferRetryFromMessage(string message)
+    {
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            return true;
+        }
+
+        var normalized = message.ToLowerInvariant();
+        return !(normalized.Contains("insufficient") ||
+                 normalized.Contains("validation") ||
+                 normalized.Contains("not found") ||
+                 normalized.Contains("do not have permission") ||
+                 normalized.Contains("authentication required") ||
+                 normalized.Contains("business rules") ||
+                 normalized.Contains("cannot be completed"));
+    }
 }
