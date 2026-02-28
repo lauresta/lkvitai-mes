@@ -11,12 +11,18 @@
     </MudDrawer>
 
     <MudMainContent>
-        <MudAppBar Fixed="false" Dense="true" Elevation="0" Class="bg-light border-bottom px-3">
-            <MudText Typo="Typo.h6" Class="mb-0">LKvitai.MES Warehouse</MudText>
-            <MudSpacer />
-            <MudText Typo="Typo.caption" Class="text-muted me-3">@Environment.EnvironmentName</MudText>
-            <MudButton Variant="Variant.Outlined" Size="Size.Small" Disabled="true" Color="Color.Default">Login</MudButton>
-        </MudAppBar>
+        <header class="app-topbar">
+            <div class="app-topbar-left">
+                <img src="https://avatars.githubusercontent.com/u/233164040?s=40&v=4"
+                     alt="LKvitai" class="app-topbar-mark" />
+                <h6 class="app-topbar-title mb-0">LKvitai.MES Warehouse</h6>
+            </div>
+
+            <div class="app-topbar-right">
+                <span class="app-topbar-env text-muted small">@Environment.EnvironmentName</span>
+                <button class="btn btn-outline-secondary btn-sm app-topbar-login" type="button" disabled>Login</button>
+            </div>
+        </header>
 
         <main class="container-fluid p-4 position-relative">
             <ToastContainer />

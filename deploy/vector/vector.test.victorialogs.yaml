@@ -16,8 +16,8 @@ transforms:
     type: filter
     inputs: [docker_logs]
     condition: |
-      contains!(to_string(.container_name) ?? "", "lkvitai-mes-warehouse-api") ||
-      contains!(to_string(.container_name) ?? "", "lkvitai-mes-warehouse-webui")
+      contains(to_string(.container_name) ?? "", "lkvitai-mes-warehouse-api") ||
+      contains(to_string(.container_name) ?? "", "lkvitai-mes-warehouse-webui")
 
   enrich_docker:
     type: remap
@@ -33,7 +33,7 @@ transforms:
         .trace_parent = traceparent.trace_parent
         .trace_id = traceparent.trace_parent
       } else {
-        tracecompact, tracecompact_err = parse_regex(._msg, r'(?:\\[TraceId:|TraceId=)(?P<trace_id_compact>[A-Fa-f0-9]{32})')
+        tracecompact, tracecompact_err = parse_regex(._msg, r'(?:\[TraceId:|TraceId=)(?P<trace_id_compact>[A-Fa-f0-9]{32})')
         if tracecompact_err == null { .trace_id = tracecompact.trace_id_compact }
       }
 
@@ -54,7 +54,7 @@ transforms:
         .trace_parent = traceparent.trace_parent
         .trace_id = traceparent.trace_parent
       } else {
-        tracecompact, tracecompact_err = parse_regex(._msg, r'(?:\\[TraceId:|TraceId=)(?P<trace_id_compact>[A-Fa-f0-9]{32})')
+        tracecompact, tracecompact_err = parse_regex(._msg, r'(?:\[TraceId:|TraceId=)(?P<trace_id_compact>[A-Fa-f0-9]{32})')
         if tracecompact_err == null { .trace_id = tracecompact.trace_id_compact }
       }
 
