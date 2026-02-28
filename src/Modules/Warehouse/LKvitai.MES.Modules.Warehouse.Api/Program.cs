@@ -26,7 +26,7 @@ using Serilog.Events;
 
 var builder = WebApplication.CreateBuilder(args);
 const string structuredLogTemplate =
-    "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] [TraceId:{TraceId}] [CorrelationId:{CorrelationId}] [Req:{RequestMethod} {RequestPath}] {Message:lj}{NewLine}{Exception}";
+    "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] [TraceParent:{TraceParent}] [TraceId:{TraceId}] [CorrelationId:{CorrelationId}] [Req:{RequestMethod} {RequestPath}] {Message:lj}{NewLine}{Exception}";
 
 // Configure Serilog per blueprint
 var loggerConfiguration = new LoggerConfiguration()
