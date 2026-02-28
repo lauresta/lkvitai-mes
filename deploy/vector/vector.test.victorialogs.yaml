@@ -8,7 +8,7 @@ sources:
   api_file_logs:
     type: file
     include:
-      - /var/log/lkvitai-mes/api/test/warehouse-*.log
+      - /var/log/lkvitai-mes/api/warehouse-*.log
     read_from: end
 
 transforms:

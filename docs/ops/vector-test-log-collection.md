@@ -7,7 +7,7 @@ This setup makes API file logs persistent and ships both docker stdout logs and 
 Already added in:
 
 - `docker-compose.test.yml`:
-  - `${API_LOGS_DIR:-/opt/lkvitai-mes/logs/api/test}:/app/logs`
+  - `${API_LOGS_DIR:-/opt/lkvitai-mes/logs/api}:/app/logs`
 - `docker-compose.prod.yml`:
   - `${API_LOGS_DIR:-/opt/lkvitai-mes/logs/api/prod}:/app/logs`
 
@@ -22,7 +22,7 @@ Use config template:
 It includes:
 
 - `docker_logs` source (API/WebUI)
-- `file` source for `/var/log/lkvitai-mes/api/test/warehouse-*.log`
+- `file` source for `/var/log/lkvitai-mes/api/warehouse-*.log`
 - parsed fields: `trace_id`, `error_id`
 - retry + disk buffer for delivery stability
 
@@ -34,14 +34,14 @@ Update vector service mounts to include:
 volumes:
   - /var/run/docker.sock:/var/run/docker.sock:ro
   - /opt/vector/vector.yaml:/etc/vector/vector.yaml:ro
-  - /opt/lkvitai-mes/logs/api/test:/var/log/lkvitai-mes/api/test:ro
+  - /opt/lkvitai-mes/logs/api:/var/log/lkvitai-mes/api:ro
   - /opt/vector/data:/var/lib/vector
 ```
 
 ## 4) Apply on test host
 
 ```bash
-sudo mkdir -p /opt/lkvitai-mes/logs/api/test /opt/vector/data
+sudo mkdir -p /opt/lkvitai-mes/logs/api /opt/vector/data
 sudo cp deploy/vector/vector.test.victorialogs.yaml /opt/vector/vector.yaml
 docker restart vector
 ```
