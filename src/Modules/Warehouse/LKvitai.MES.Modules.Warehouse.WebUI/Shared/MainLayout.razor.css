@@ -6,10 +6,6 @@
     top: 0;
 }
 
-::deep .mud-main-content {
-    padding-top: 0 !important;
-}
-
 .app-topbar {
     min-height: 56px;
     display: flex;
