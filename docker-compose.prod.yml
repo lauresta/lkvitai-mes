@@ -12,7 +12,7 @@ services:
       ConnectionStrings__WarehouseDb: ${WAREHOUSE_DB_CONNECTION}
       SkipSchemaValidation: "true"
     volumes:
-      - ${API_LOGS_DIR:-/opt/lkvitai-mes/logs/api/prod}:/app/logs
+      - ${API_LOGS_DIR:-/opt/lkvitai-mes/logs/api}:/app/logs
     networks:
       - lkvitai-mes_prod
     healthcheck:

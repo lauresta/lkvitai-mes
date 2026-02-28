@@ -9,7 +9,7 @@ Already added in:
 - `docker-compose.test.yml`:
   - `${API_LOGS_DIR:-/opt/lkvitai-mes/logs/api}:/app/logs`
 - `docker-compose.prod.yml`:
-  - `${API_LOGS_DIR:-/opt/lkvitai-mes/logs/api/prod}:/app/logs`
+  - `${API_LOGS_DIR:-/opt/lkvitai-mes/logs/api}:/app/logs`
 
 The API writes files like `warehouse-YYYYMMDD.log` under `/app/logs`.
 
