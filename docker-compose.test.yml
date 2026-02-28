@@ -11,6 +11,8 @@ services:
       ASPNETCORE_ENVIRONMENT: Test
       ConnectionStrings__WarehouseDb: "Host=pg;Port=5432;Database=lkvitai_warehouse_test;Username=postgres;Password=postgres"
       SkipSchemaValidation: "true"
+    volumes:
+      - ${API_LOGS_DIR:-/opt/lkvitai-mes/logs/api}:/app/logs
     networks:
       - lkvitai-mes_default
     healthcheck:
