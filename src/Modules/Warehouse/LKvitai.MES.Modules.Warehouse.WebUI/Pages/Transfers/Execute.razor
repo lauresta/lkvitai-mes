@@ -1,5 +1,6 @@
 @page "/warehouse/transfers/{Id:guid}/execute"
 @inject TransfersClient TransfersClient
+@inject MasterDataAdminClient MasterDataAdminClient
 @inject NavigationManager NavigationManager
 @inject ToastService ToastService
 
@@ -46,7 +47,7 @@
                 <table class="table table-sm table-hover align-middle">
                     <thead>
                         <tr>
-                            <th>Item Id</th>
+                            <th>Item</th>
                             <th>Qty</th>
                             <th>From Location</th>
                             <th>To Location</th>
@@ -56,10 +57,10 @@
                         @foreach (var line in _transfer.Lines)
                         {
                             <tr>
-                                <td>@line.ItemId</td>
+                                <td>@GetItemName(line.ItemId)</td>
                                 <td>@line.Qty.ToString("0.##")</td>
-                                <td>@line.FromLocationId</td>
-                                <td>@line.ToLocationId</td>
+                                <td>@GetLocationName(line.FromLocationId)</td>
+                                <td>@GetLocationName(line.ToLocationId)</td>
                             </tr>
                         }
                     </tbody>
@@ -99,6 +100,8 @@
     private bool _isLoading;
     private bool _isSubmitting;
     private bool _confirmExecute;
+    private readonly List<AdminItemDto> _items = new();
+    private readonly List<AdminLocationDto> _locations = new();
 
     private bool CanExecute => string.Equals(_transfer?.Status, "APPROVED", StringComparison.OrdinalIgnoreCase);
 
@@ -115,6 +118,14 @@
         try
         {
             _transfer = await TransfersClient.GetTransferByIdAsync(Id);
+
+            var items = await MasterDataAdminClient.GetItemsAsync(null, null, "Active", 1, 500);
+            _items.Clear();
+            _items.AddRange(items.Items);
+
+            var locations = await MasterDataAdminClient.GetLocationsAsync(null, "Active", true, 1, 500);
+            _locations.Clear();
+            _locations.AddRange(locations.Items);
         }
         catch (ApiException ex)
         {
@@ -183,6 +194,15 @@
     {
         _apiError = null;
     }
+
+    private string GetItemName(int itemId)
+        => _items.FirstOrDefault(i => i.Id == itemId) is { } item
+            ? $"{item.InternalSKU} - {item.Name}"
+            : $"#{itemId}";
+
+    private string GetLocationName(int locationId)
+        => _locations.FirstOrDefault(l => l.Id == locationId)?.Code
+            ?? $"#{locationId}";
 
     private static string BuildErrorMessage(ApiException ex)
     {
