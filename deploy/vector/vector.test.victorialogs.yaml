@@ -1,0 +1,72 @@
+data_dir: /var/lib/vector
+
+sources:
+  docker_logs:
+    type: docker_logs
+    docker_host: "unix:///var/run/docker.sock"
+
+  api_file_logs:
+    type: file
+    include:
+      - /var/log/lkvitai-mes/api/test/warehouse-*.log
+    read_from: end
+
+transforms:
+  keep_mes_docker:
+    type: filter
+    inputs: [docker_logs]
+    condition: |
+      contains!(to_string(.container_name) ?? "", "lkvitai-mes-warehouse-api") ||
+      contains!(to_string(.container_name) ?? "", "lkvitai-mes-warehouse-webui")
+
+  enrich_docker:
+    type: remap
+    inputs: [keep_mes_docker]
+    source: |
+      .host = get_env_var("HOSTNAME") ?? "lkvitai-test"
+      .log_kind = "docker"
+      .container = replace(to_string(.container_name) ?? "unknown", r'^/', "")
+      ._msg = to_string(.message) ?? ""
+
+      trace, trace_err = parse_regex(._msg, r'(?P<trace_id>00-[a-f0-9]{32}-[a-f0-9]{16}-[a-f0-9]{2})')
+      if trace_err == null { .trace_id = trace.trace_id }
+
+      errid, errid_err = parse_regex(._msg, r'Error ID:\s*(?P<error_id>[A-Za-z0-9:\-]+)')
+      if errid_err == null { .error_id = errid.error_id }
+
+  enrich_file:
+    type: remap
+    inputs: [api_file_logs]
+    source: |
+      .host = get_env_var("HOSTNAME") ?? "lkvitai-test"
+      .log_kind = "file"
+      .container = "lkvitai-mes-warehouse-api"
+      ._msg = to_string(.message) ?? ""
+
+      trace, trace_err = parse_regex(._msg, r'(?P<trace_id>00-[a-f0-9]{32}-[a-f0-9]{16}-[a-f0-9]{2})')
+      if trace_err == null { .trace_id = trace.trace_id }
+
+      errid, errid_err = parse_regex(._msg, r'Error ID:\s*(?P<error_id>[A-Za-z0-9:\-]+)')
+      if errid_err == null { .error_id = errid.error_id }
+
+sinks:
+  victorialogs:
+    type: http
+    inputs: [enrich_docker, enrich_file]
+    uri: "http://10.11.12.13:9428/insert/jsonline"
+    method: post
+    request:
+      headers:
+        Content-Type: "application/json"
+      retry_attempts: 10
+    encoding:
+      codec: json
+    framing:
+      method: newline_delimited
+    batch:
+      max_events: 200
+      timeout_secs: 2
+    buffer:
+      type: disk
+      max_size: 1073741824
+      when_full: block
