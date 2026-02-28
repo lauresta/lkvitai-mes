@@ -1,5 +1,6 @@
 using LKvitai.MES.BuildingBlocks.SharedKernel;
 using Serilog.Context;
+using System.Diagnostics;
 
 namespace LKvitai.MES.Modules.Warehouse.Api.ErrorHandling;
 
@@ -20,11 +21,15 @@ public sealed class CorrelationIdMiddleware
     public async Task InvokeAsync(HttpContext context)
     {
         var correlationId = ResolveCorrelationId(context);
+        var traceId = ResolveTraceId(context);
         context.Items[HeaderName] = correlationId;
         context.Response.Headers[HeaderName] = correlationId;
         CorrelationContext.Set(correlationId);
 
         using (LogContext.PushProperty("CorrelationId", correlationId))
+        using (LogContext.PushProperty("TraceId", traceId))
+        using (LogContext.PushProperty("RequestMethod", context.Request.Method))
+        using (LogContext.PushProperty("RequestPath", context.Request.Path.ToString()))
         {
             await _next(context);
         }
@@ -41,5 +46,16 @@ public sealed class CorrelationIdMiddleware
         }
 
         return Guid.NewGuid().ToString();
+    }
+
+    private static string ResolveTraceId(HttpContext context)
+    {
+        var activityTraceId = Activity.Current?.Id;
+        if (!string.IsNullOrWhiteSpace(activityTraceId))
+        {
+            return activityTraceId;
+        }
+
+        return context.TraceIdentifier;
     }
 }
