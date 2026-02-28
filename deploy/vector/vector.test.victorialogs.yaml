@@ -28,8 +28,14 @@ transforms:
       .container = replace(to_string(.container_name) ?? "unknown", r'^/', "")
       ._msg = to_string(.message) ?? ""
 
-      trace, trace_err = parse_regex(._msg, r'(?P<trace_id>00-[a-f0-9]{32}-[a-f0-9]{16}-[a-f0-9]{2})')
-      if trace_err == null { .trace_id = trace.trace_id }
+      traceparent, traceparent_err = parse_regex(._msg, r'(?P<trace_parent>00-[A-Fa-f0-9]{32}-[A-Fa-f0-9]{16}-[A-Fa-f0-9]{2})')
+      if traceparent_err == null {
+        .trace_parent = traceparent.trace_parent
+        .trace_id = traceparent.trace_parent
+      } else {
+        tracecompact, tracecompact_err = parse_regex(._msg, r'(?:\\[TraceId:|TraceId=)(?P<trace_id_compact>[A-Fa-f0-9]{32})')
+        if tracecompact_err == null { .trace_id = tracecompact.trace_id_compact }
+      }
 
       errid, errid_err = parse_regex(._msg, r'Error ID:\s*(?P<error_id>[A-Za-z0-9:\-]+)')
       if errid_err == null { .error_id = errid.error_id }
@@ -43,8 +49,14 @@ transforms:
       .container = "lkvitai-mes-warehouse-api"
       ._msg = to_string(.message) ?? ""
 
-      trace, trace_err = parse_regex(._msg, r'(?P<trace_id>00-[a-f0-9]{32}-[a-f0-9]{16}-[a-f0-9]{2})')
-      if trace_err == null { .trace_id = trace.trace_id }
+      traceparent, traceparent_err = parse_regex(._msg, r'(?P<trace_parent>00-[A-Fa-f0-9]{32}-[A-Fa-f0-9]{16}-[A-Fa-f0-9]{2})')
+      if traceparent_err == null {
+        .trace_parent = traceparent.trace_parent
+        .trace_id = traceparent.trace_parent
+      } else {
+        tracecompact, tracecompact_err = parse_regex(._msg, r'(?:\\[TraceId:|TraceId=)(?P<trace_id_compact>[A-Fa-f0-9]{32})')
+        if tracecompact_err == null { .trace_id = tracecompact.trace_id_compact }
+      }
 
       errid, errid_err = parse_regex(._msg, r'Error ID:\s*(?P<error_id>[A-Za-z0-9:\-]+)')
       if errid_err == null { .error_id = errid.error_id }

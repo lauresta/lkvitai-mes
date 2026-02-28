@@ -21,13 +21,15 @@ public sealed class CorrelationIdMiddleware
     public async Task InvokeAsync(HttpContext context)
     {
         var correlationId = ResolveCorrelationId(context);
-        var traceId = ResolveTraceId(context);
+        var traceParent = ResolveTraceParent(context);
+        var traceId = ResolveTraceId(traceParent, context);
         context.Items[HeaderName] = correlationId;
         context.Response.Headers[HeaderName] = correlationId;
         CorrelationContext.Set(correlationId);
 
         using (LogContext.PushProperty("CorrelationId", correlationId))
         using (LogContext.PushProperty("TraceId", traceId))
+        using (LogContext.PushProperty("TraceParent", traceParent))
         using (LogContext.PushProperty("RequestMethod", context.Request.Method))
         using (LogContext.PushProperty("RequestPath", context.Request.Path.ToString()))
         {
@@ -48,14 +50,53 @@ public sealed class CorrelationIdMiddleware
         return Guid.NewGuid().ToString();
     }
 
-    private static string ResolveTraceId(HttpContext context)
+    private static string ResolveTraceParent(HttpContext context)
     {
-        var activityTraceId = Activity.Current?.Id;
+        var activityId = Activity.Current?.Id;
+        if (!string.IsNullOrWhiteSpace(activityId))
+        {
+            return activityId;
+        }
+
+        var incomingTraceParent = context.Request.Headers["traceparent"].ToString().Trim();
+        if (!string.IsNullOrWhiteSpace(incomingTraceParent))
+        {
+            return incomingTraceParent;
+        }
+
+        return context.TraceIdentifier;
+    }
+
+    private static string ResolveTraceId(string traceParent, HttpContext context)
+    {
+        var activityTraceId = Activity.Current?.TraceId.ToHexString();
         if (!string.IsNullOrWhiteSpace(activityTraceId))
         {
             return activityTraceId;
         }
 
+        var extracted = ExtractTraceIdFromTraceParent(traceParent);
+        if (!string.IsNullOrWhiteSpace(extracted))
+        {
+            return extracted;
+        }
+
         return context.TraceIdentifier;
+    }
+
+    private static string? ExtractTraceIdFromTraceParent(string? traceParent)
+    {
+        if (string.IsNullOrWhiteSpace(traceParent))
+        {
+            return null;
+        }
+
+        var parts = traceParent.Split('-', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 4 && parts[0].Length == 2 && parts[1].Length == 32)
+        {
+            return parts[1];
+        }
+
+        return null;
     }
 }
