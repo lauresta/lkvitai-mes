@@ -301,7 +301,7 @@ public class TransferCommandHandlersTests
 
         var availability = new Mock<ITransferStockAvailabilityService>(MockBehavior.Strict);
         availability
-            .Setup(x => x.GetAvailableQtyAsync("LOC-RES-001", "ITEM-001", It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetAvailableQtyAsync("RES", "LOC-RES-001", "ITEM-001", It.IsAny<CancellationToken>()))
             .ReturnsAsync(20m);
 
         var bus = new RecordingEventBus();
@@ -380,7 +380,7 @@ public class TransferCommandHandlersTests
 
         var availability = new Mock<ITransferStockAvailabilityService>(MockBehavior.Strict);
         availability
-            .Setup(x => x.GetAvailableQtyAsync("LOC-RES-001", "ITEM-001", It.IsAny<CancellationToken>()))
+            .Setup(x => x.GetAvailableQtyAsync("NLQ", "LOC-RES-001", "ITEM-001", It.IsAny<CancellationToken>()))
             .ReturnsAsync(5m);
 
         var bus = new RecordingEventBus();
