@@ -5,6 +5,7 @@ using LKvitai.MES.Modules.Warehouse.Domain.Common;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 using System.Text.Json;
 using HandlingUnitAggregate = LKvitai.MES.Modules.Warehouse.Domain.Aggregates.HandlingUnit;
 using WarehouseLayoutAggregate = LKvitai.MES.Modules.Warehouse.Domain.Aggregates.WarehouseLayout;
@@ -236,7 +237,13 @@ public class WarehouseDbContext : DbContext
             entity.Property(e => e.CreatedAt).IsRequired();
             entity.Property(e => e.IsPrimary).IsRequired();
             entity.Property(e => e.Tags).HasMaxLength(500);
-            entity.Property(e => e.ImageEmbedding).HasColumnType("vector(512)");
+            // ImageEmbedding is written/updated exclusively via raw SQL (CAST(... AS vector)).
+            // EF Core must not include it in INSERT or UPDATE commands because the C# type is
+            // string? and Npgsql would send it as 'character varying', which PostgreSQL rejects
+            // with "column is of type vector but expression is of type character varying".
+            var embeddingProp = entity.Property(e => e.ImageEmbedding).HasColumnType("vector(512)");
+            embeddingProp.Metadata.SetBeforeSaveBehavior(PropertySaveBehavior.Ignore);
+            embeddingProp.Metadata.SetAfterSaveBehavior(PropertySaveBehavior.Ignore);
             entity.HasIndex(e => e.ItemId);
             entity.HasIndex(e => new { e.ItemId, e.IsPrimary })
                 .IsUnique()
