@@ -1,6 +1,7 @@
 using LKvitai.MES.Modules.Warehouse.Api.ErrorHandling;
 using LKvitai.MES.Modules.Warehouse.Api.Security;
 using LKvitai.MES.Modules.Warehouse.Application.Services;
+using LKvitai.MES.Modules.Warehouse.Api.Services;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Caching;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
@@ -9,6 +10,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Net.Http.Headers;
 using Npgsql;
 
 namespace LKvitai.MES.Modules.Warehouse.Api.Controllers;
@@ -21,13 +23,16 @@ public sealed class ItemsController : ControllerBase
 
     private readonly WarehouseDbContext _dbContext;
     private readonly ISkuGenerationService _skuGenerationService;
+    private readonly IItemPhotoService _itemPhotoService;
 
     public ItemsController(
         WarehouseDbContext dbContext,
-        ISkuGenerationService skuGenerationService)
+        ISkuGenerationService skuGenerationService,
+        IItemPhotoService itemPhotoService)
     {
         _dbContext = dbContext;
         _skuGenerationService = skuGenerationService;
+        _itemPhotoService = itemPhotoService;
     }
 
     [HttpGet]
@@ -326,6 +331,133 @@ public sealed class ItemsController : ControllerBase
         return Ok(new ItemBarcodeDto(entity.Id, entity.Barcode, entity.BarcodeType, entity.IsPrimary));
     }
 
+    [HttpPost("{id:int}/photos")]
+    [Authorize(Policy = WarehousePolicies.ManagerOrAdmin)]
+    [RequestSizeLimit(10 * 1024 * 1024)]
+    public async Task<IActionResult> UploadPhotoAsync(
+        int id,
+        [FromForm] IFormFile? file,
+        CancellationToken cancellationToken = default)
+    {
+        if (file is null || file.Length <= 0)
+        {
+            return ValidationFailure("Photo file is required.");
+        }
+
+        var availability = await _itemPhotoService.EnsureImagesAvailableAsync(cancellationToken);
+        if (!availability.IsAvailable)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new ProblemDetails
+            {
+                Title = "Item image storage unavailable",
+                Detail = availability.Reason ?? "Item image storage is unavailable.",
+                Status = StatusCodes.Status503ServiceUnavailable
+            });
+        }
+
+        try
+        {
+            await using var input = file.OpenReadStream();
+            var photo = await _itemPhotoService.UploadAsync(
+                id,
+                file.FileName,
+                file.ContentType,
+                input,
+                file.Length,
+                cancellationToken);
+            return Ok(photo);
+        }
+        catch (KeyNotFoundException)
+        {
+            return Failure(Result.Fail(DomainErrorCodes.NotFound, $"Item with ID {id} does not exist."));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return ValidationFailure(ex.Message);
+        }
+    }
+
+    [HttpGet("{id:int}/photos")]
+    [Authorize(Policy = WarehousePolicies.OperatorOrAbove)]
+    public async Task<IActionResult> ListPhotosAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var itemExists = await _dbContext.Items
+            .AsNoTracking()
+            .AnyAsync(x => x.Id == id, cancellationToken);
+        if (!itemExists)
+        {
+            return Failure(Result.Fail(DomainErrorCodes.NotFound, $"Item with ID {id} does not exist."));
+        }
+
+        var photos = await _itemPhotoService.ListAsync(id, cancellationToken);
+        return Ok(new ItemPhotosResponse(id, photos));
+    }
+
+    [HttpGet("{id:int}/photos/{photoId:guid}")]
+    [Authorize(Policy = WarehousePolicies.OperatorOrAbove)]
+    public async Task<IActionResult> GetPhotoAsync(
+        int id,
+        Guid photoId,
+        [FromQuery] string size = "thumb",
+        CancellationToken cancellationToken = default)
+    {
+        if (!string.Equals(size, "thumb", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(size, "original", StringComparison.OrdinalIgnoreCase))
+        {
+            return ValidationFailure("Query parameter 'size' must be 'thumb' or 'original'.");
+        }
+
+        var photo = await _itemPhotoService.GetPhotoAsync(id, photoId, size, cancellationToken);
+        if (photo is null)
+        {
+            return Failure(Result.Fail(DomainErrorCodes.NotFound, $"Photo '{photoId}' not found for item '{id}'."));
+        }
+
+        var normalizedEtag = photo.ETag.Trim('"');
+        Response.Headers[HeaderNames.CacheControl] = $"public, max-age={_itemPhotoService.CacheMaxAgeSeconds}";
+        Response.Headers[HeaderNames.ETag] = $"\"{normalizedEtag}\"";
+
+        if (Request.Headers.TryGetValue(HeaderNames.IfNoneMatch, out var ifNoneMatchValues))
+        {
+            var matches = ifNoneMatchValues.Any(x =>
+                string.Equals(x?.Trim('"'), normalizedEtag, StringComparison.OrdinalIgnoreCase));
+            if (matches)
+            {
+                return StatusCode(StatusCodes.Status304NotModified);
+            }
+        }
+
+        return File(photo.Stream, photo.ContentType);
+    }
+
+    [HttpPost("{id:int}/photos/{photoId:guid}/make-primary")]
+    [Authorize(Policy = WarehousePolicies.ManagerOrAdmin)]
+    public async Task<IActionResult> MakePrimaryPhotoAsync(int id, Guid photoId, CancellationToken cancellationToken = default)
+    {
+        var updated = await _itemPhotoService.MakePrimaryAsync(id, photoId, cancellationToken);
+        if (!updated)
+        {
+            return Failure(Result.Fail(DomainErrorCodes.NotFound, $"Photo '{photoId}' not found for item '{id}'."));
+        }
+
+        var photos = await _itemPhotoService.ListAsync(id, cancellationToken);
+        return Ok(new ItemPhotosResponse(id, photos));
+    }
+
+    [HttpDelete("{id:int}/photos/{photoId:guid}")]
+    [Authorize(Policy = WarehousePolicies.ManagerOrAdmin)]
+    public async Task<IActionResult> DeletePhotoAsync(int id, Guid photoId, CancellationToken cancellationToken = default)
+    {
+        var deleted = await _itemPhotoService.DeleteAsync(id, photoId, cancellationToken);
+        if (!deleted)
+        {
+            return Failure(Result.Fail(DomainErrorCodes.NotFound, $"Photo '{photoId}' not found for item '{id}'."));
+        }
+
+        var photos = await _itemPhotoService.ListAsync(id, cancellationToken);
+        return Ok(new ItemPhotosResponse(id, photos));
+    }
+
     private ICacheService Cache => HttpContext?.RequestServices?.GetService<ICacheService>() ?? new LKvitai.MES.Modules.Warehouse.Infrastructure.Caching.NoOpCacheService();
 
     private ObjectResult ValidationFailure(string detail)
@@ -397,6 +529,7 @@ public sealed class ItemsController : ControllerBase
     public sealed record AddBarcodeRequest(string Barcode, string BarcodeType, bool IsPrimary);
     public sealed record ItemBarcodeDto(int Id, string Barcode, string BarcodeType, bool IsPrimary);
     public sealed record ItemBarcodesResponse(int ItemId, string InternalSKU, IReadOnlyList<ItemBarcodeDto> Barcodes);
+    public sealed record ItemPhotosResponse(int ItemId, IReadOnlyList<ItemPhotoDto> Photos);
 
     public sealed record PagedResponse<T>(
         IReadOnlyList<T> Items,
