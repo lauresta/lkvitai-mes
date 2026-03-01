@@ -16,7 +16,6 @@ jobs:
       DOCKER_NETWORK_NAME: ${{ vars.DOCKER_NETWORK_NAME }}
       DB_CONTAINER_NAME: ${{ vars.DB_CONTAINER_NAME }}
       DB_CONTAINER_IMAGE: ${{ vars.DB_CONTAINER_IMAGE }}
-      REDIS_CONTAINER_NAME: ${{ vars.REDIS_CONTAINER_NAME }}
       TEST_DB_NAME: ${{ vars.TEST_DB_NAME }}
       TEST_DB_USER: ${{ vars.TEST_DB_USER }}
       TEST_DB_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
@@ -71,21 +70,6 @@ jobs:
               -e POSTGRES_USER="$TEST_DB_USER" \
               -e POSTGRES_PASSWORD="$TEST_DB_PASSWORD" \
               "$DB_CONTAINER_IMAGE"
-          fi
-
-      - name: Ensure Redis container exists and is running
-        run: |
-          if docker ps -a --format '{{.Names}}' | grep -Fx "$REDIS_CONTAINER_NAME" >/dev/null; then
-            if [ "$(docker inspect -f '{{.State.Running}}' "$REDIS_CONTAINER_NAME")" != "true" ]; then
-              docker start "$REDIS_CONTAINER_NAME"
-            fi
-          else
-            docker run -d --name "$REDIS_CONTAINER_NAME" \
-              --restart unless-stopped \
-              --network "$DOCKER_NETWORK_NAME" \
-              --network-alias redis \
-              redis:7.2-alpine \
-              redis-server --save "" --appendonly no --maxmemory 512mb --maxmemory-policy allkeys-lru
           fi
 
       - name: Pull new images
