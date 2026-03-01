@@ -175,6 +175,47 @@ public sealed class MasterDataAdminClient
     public Task UpdateLocationAsync(int id, CreateOrUpdateLocationRequest request, CancellationToken cancellationToken = default)
         => SendNoContentAsync(HttpMethod.Put, $"/api/warehouse/v1/locations/{id}", request, cancellationToken);
 
+    public Task<PagedApiResponse<AdminWarehouseDto>> GetWarehousesAsync(
+        string? search,
+        string? status,
+        bool includeVirtual,
+        int pageNumber,
+        int pageSize,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new List<string>
+        {
+            $"includeVirtual={includeVirtual.ToString().ToLowerInvariant()}",
+            $"pageNumber={pageNumber}",
+            $"pageSize={pageSize}"
+        };
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            query.Add($"search={Uri.EscapeDataString(search)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            query.Add($"status={Uri.EscapeDataString(status)}");
+        }
+
+        return GetAsync<PagedApiResponse<AdminWarehouseDto>>(
+            $"/api/warehouse/v1/warehouses?{string.Join("&", query)}",
+            cancellationToken);
+    }
+
+    public Task CreateWarehouseAsync(
+        CreateOrUpdateWarehouseRequest request,
+        CancellationToken cancellationToken = default)
+        => SendNoContentAsync(HttpMethod.Post, "/api/warehouse/v1/warehouses", request, cancellationToken);
+
+    public Task UpdateWarehouseAsync(
+        Guid id,
+        CreateOrUpdateWarehouseRequest request,
+        CancellationToken cancellationToken = default)
+        => SendNoContentAsync(HttpMethod.Put, $"/api/warehouse/v1/warehouses/{id}", request, cancellationToken);
+
     public Task<IReadOnlyList<AdminCategoryDto>> GetCategoriesAsync(CancellationToken cancellationToken = default)
         => GetAsync<IReadOnlyList<AdminCategoryDto>>("/api/warehouse/v1/categories", cancellationToken);
 

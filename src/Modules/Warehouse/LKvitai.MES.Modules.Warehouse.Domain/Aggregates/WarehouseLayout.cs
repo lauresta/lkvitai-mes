@@ -1,16 +1,17 @@
-using LKvitai.MES.BuildingBlocks.SharedKernel;
-
 namespace LKvitai.MES.Modules.Warehouse.Domain.Aggregates;
 
 /// <summary>
-/// WarehouseLayout aggregate - State-based, defines physical topology
+/// State-based aggregate persisted directly by EF Core.
+/// Public setters are intentional for this simple master-data entity.
 /// </summary>
 public class WarehouseLayout
 {
-    // Aggregate placeholder - business logic to be implemented
-    // Per blueprint: State-based with EF Core
-    
-    public Guid WarehouseId { get; private set; }
-    public string Code { get; private set; } = string.Empty;
-    public string Name { get; private set; } = string.Empty;
+    public Guid WarehouseId { get; set; }
+    public string Code { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public bool IsVirtual { get; set; }
+    public string Status { get; set; } = "Active";
+    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
+    public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
 }

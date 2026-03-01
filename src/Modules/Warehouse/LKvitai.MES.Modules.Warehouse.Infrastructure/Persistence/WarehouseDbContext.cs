@@ -160,7 +160,17 @@ public class WarehouseDbContext : DbContext
             entity.ToTable("warehouses");
             entity.HasKey(w => w.WarehouseId);
             entity.Property(w => w.Code).IsRequired().HasMaxLength(50);
+            entity.Property(w => w.Name).IsRequired().HasMaxLength(200);
+            entity.Property(w => w.Description).HasMaxLength(500);
+            entity.Property(w => w.Status).IsRequired().HasMaxLength(20).HasDefaultValue("Active");
+            entity.Property(w => w.IsVirtual).IsRequired();
+            entity.Property(w => w.CreatedAt).IsRequired();
+            entity.Property(w => w.UpdatedAt).IsRequired();
             entity.HasIndex(w => w.Code).IsUnique();
+            entity.ToTable(t =>
+            {
+                t.HasCheckConstraint("ck_warehouses_status", "\"Status\" IN ('Active','Inactive')");
+            });
         });
 
         modelBuilder.Entity<ItemCategory>(entity =>

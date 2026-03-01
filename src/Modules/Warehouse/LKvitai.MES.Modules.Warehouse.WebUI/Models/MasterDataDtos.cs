@@ -120,6 +120,25 @@ public record CreateOrUpdateLocationRequest(
     decimal? CapacityWeight,
     decimal? CapacityVolume);
 
+public record AdminWarehouseDto
+{
+    public Guid Id { get; init; }
+    public string Code { get; init; } = string.Empty;
+    public string Name { get; init; } = string.Empty;
+    public string? Description { get; init; }
+    public bool IsVirtual { get; init; }
+    public string Status { get; init; } = string.Empty;
+    public DateTimeOffset CreatedAt { get; init; }
+    public DateTimeOffset? UpdatedAt { get; init; }
+}
+
+public record CreateOrUpdateWarehouseRequest(
+    string Code,
+    string Name,
+    string? Description,
+    bool IsVirtual,
+    string Status);
+
 public record AdminCategoryDto
 {
     public int Id { get; init; }

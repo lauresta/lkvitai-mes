@@ -1,6 +1,7 @@
 @page "/warehouse/transfers/create"
 @inject TransfersClient TransfersClient
 @inject MasterDataAdminClient MasterDataAdminClient
+@inject StockClient StockApiClient
 @inject NavigationManager NavigationManager
 @inject ToastService ToastService
 
@@ -24,18 +25,18 @@
             <div class="col-md-3">
                 <label class="form-label">From Warehouse</label>
                 <select class="form-select" @bind="_fromWarehouse">
-                    @foreach (var warehouse in _warehouseOptions)
+                    @foreach (var warehouse in _warehouses)
                     {
-                        <option value="@warehouse">@warehouse</option>
+                        <option value="@warehouse.Code">@warehouse.Code - @warehouse.Name</option>
                     }
                 </select>
             </div>
             <div class="col-md-3">
                 <label class="form-label">To Warehouse</label>
                 <select class="form-select" @bind="_toWarehouse">
-                    @foreach (var warehouse in _warehouseOptions)
+                    @foreach (var warehouse in _warehouses)
                     {
-                        <option value="@warehouse">@warehouse</option>
+                        <option value="@warehouse.Code">@warehouse.Code - @warehouse.Name</option>
                     }
                 </select>
             </div>
@@ -130,14 +131,14 @@
     private readonly List<AdminItemDto> _items = [];
     private readonly List<AdminLocationDto> _locations = [];
     private readonly List<TransferLineModel> _lines = [];
-    private readonly IReadOnlyList<string> _warehouseOptions = ["RES", "PROD", "NLQ", "SCRAP"];
+    private IReadOnlyList<WarehouseDto> _warehouses = Array.Empty<WarehouseDto>();
 
     private bool _isLoading;
     private bool _isSubmitting;
     private ApiException? _apiError;
 
-    private string _fromWarehouse = "RES";
-    private string _toWarehouse = "PROD";
+    private string _fromWarehouse = string.Empty;
+    private string _toWarehouse = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
@@ -152,6 +153,13 @@
 
         try
         {
+            _warehouses = await StockApiClient.GetWarehousesAsync();
+            if (_warehouses.Count > 0)
+            {
+                _fromWarehouse = _warehouses[0].Code;
+                _toWarehouse = _warehouses.Count > 1 ? _warehouses[1].Code : _warehouses[0].Code;
+            }
+
             var items = await MasterDataAdminClient.GetItemsAsync(null, null, "Active", 1, 500);
             _items.Clear();
             _items.AddRange(items.Items);
