@@ -32,6 +32,7 @@ public interface IItemPhotoService
     Task<IReadOnlyList<ItemImageSearchResultDto>> SearchByImageAsync(
         Stream imageStream,
         CancellationToken cancellationToken = default);
+    Task<int> RecomputeEmbeddingsAsync(int itemId, CancellationToken cancellationToken = default);
 }
 
 public sealed record ItemPhotoDto(
@@ -367,6 +368,44 @@ public sealed class ItemPhotoService : IItemPhotoService
 
         results.AddRange(perItem.Values.OrderByDescending(x => x.Score).Take(20));
         return results;
+    }
+
+    public async Task<int> RecomputeEmbeddingsAsync(int itemId, CancellationToken cancellationToken = default)
+    {
+        var capability = await _capabilityService.GetCapabilityAsync(cancellationToken);
+        if (!capability.IsEnabled)
+        {
+            throw new InvalidOperationException(capability.DisabledReason ?? "Image search capability unavailable.");
+        }
+
+        var photos = await _dbContext.ItemPhotos
+            .AsNoTracking()
+            .Where(x => x.ItemId == itemId)
+            .Select(x => new { x.Id, x.OriginalKey })
+            .ToListAsync(cancellationToken);
+
+        var updated = 0;
+        foreach (var photo in photos)
+        {
+            try
+            {
+                await using var stream = await _storageService.GetObjectAsync(photo.OriginalKey, cancellationToken);
+                var embedding = await _embeddingService.ComputeEmbeddingAsync(stream, cancellationToken);
+                var literal = BuildQueryEmbeddingString(embedding);
+                await _dbContext.Database.ExecuteSqlInterpolatedAsync(
+                    $@"UPDATE public.item_photos
+                       SET ""ImageEmbedding"" = CAST({literal} AS vector)
+                       WHERE ""Id"" = {photo.Id}",
+                    cancellationToken);
+                updated++;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to recompute embedding for photo {PhotoId}.", photo.Id);
+            }
+        }
+
+        return updated;
     }
 
     public async Task<bool> DeleteAsync(int itemId, Guid photoId, CancellationToken cancellationToken = default)

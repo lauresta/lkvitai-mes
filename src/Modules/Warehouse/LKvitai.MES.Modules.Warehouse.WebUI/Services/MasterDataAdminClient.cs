@@ -103,6 +103,19 @@ public sealed class MasterDataAdminClient
         await EnsureSuccessAsync(response);
     }
 
+    public async Task<int> RecomputeEmbeddingsAsync(int itemId, CancellationToken cancellationToken = default)
+    {
+        var client = _factory.CreateClient("WarehouseApi");
+        var response = await client.PostAsync(
+            $"/api/warehouse/v1/items/{itemId}/photos/recompute-embeddings",
+            null,
+            cancellationToken);
+        await EnsureSuccessAsync(response);
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+        var result = JsonSerializer.Deserialize<JsonElement>(body, JsonOptions);
+        return result.TryGetProperty("updatedCount", out var prop) ? prop.GetInt32() : 0;
+    }
+
     public async Task<ImageSearchResponseDto> SearchByImageAsync(
         string fileName,
         byte[] fileBytes,

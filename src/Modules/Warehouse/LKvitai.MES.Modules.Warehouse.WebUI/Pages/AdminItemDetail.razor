@@ -46,8 +46,12 @@
     <div class="card-body">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <strong>Photos (@_photos.Count)</strong>
-            <div class="d-flex gap-2">
+            <div class="d-flex gap-2 align-items-center flex-wrap">
                 <InputFile OnChange="HandleFileSelectedAsync" accept="image/jpeg,image/png,image/webp" />
+                <button class="btn btn-sm btn-outline-warning" @onclick="RecomputeEmbeddingsAsync"
+                        title="Recompute image search embeddings for all photos of this item">
+                    ⟳ Recompute embeddings
+                </button>
                 <button class="btn btn-sm btn-outline-secondary" @onclick="BackToList">Back to list</button>
             </div>
         </div>
@@ -176,6 +180,26 @@
         {
             _apiError = ex;
             ToastService.ShowError(BuildErrorMessage(ex));
+        }
+    }
+
+    private async Task RecomputeEmbeddingsAsync()
+    {
+        _isLoading = true;
+        StateHasChanged();
+        try
+        {
+            var count = await AdminClient.RecomputeEmbeddingsAsync(Id);
+            ToastService.ShowSuccess($"Embeddings recomputed for {count} photo(s).");
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isLoading = false;
         }
     }
 

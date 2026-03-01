@@ -512,6 +512,26 @@ public sealed class ItemsController : ControllerBase
         return Ok(new ItemPhotosResponse(id, photos));
     }
 
+    [HttpPost("{id:int}/photos/recompute-embeddings")]
+    [Authorize(Policy = WarehousePolicies.ManagerOrAdmin)]
+    public async Task<IActionResult> RecomputeEmbeddingsAsync(int id, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var count = await _itemPhotoService.RecomputeEmbeddingsAsync(id, cancellationToken);
+            return Ok(new { UpdatedCount = count });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new ProblemDetails
+            {
+                Title = "Image search capability unavailable",
+                Detail = ex.Message,
+                Status = StatusCodes.Status503ServiceUnavailable
+            });
+        }
+    }
+
     [HttpPost("search-by-image")]
     [Authorize(Policy = WarehousePolicies.OperatorOrAbove)]
     [RequestSizeLimit(5 * 1024 * 1024)]
