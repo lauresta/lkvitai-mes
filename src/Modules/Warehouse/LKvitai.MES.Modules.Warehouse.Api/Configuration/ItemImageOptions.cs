@@ -17,10 +17,11 @@ public sealed class ItemImageOptions
     public static ItemImageOptions FromConfiguration(IConfiguration configuration)
     {
         var section = configuration.GetSection(SectionName);
+        var rawEndpoint = section["Endpoint"] ?? string.Empty;
 
         return new ItemImageOptions
         {
-            Endpoint = section["Endpoint"] ?? string.Empty,
+            Endpoint = NormalizeEndpoint(rawEndpoint),
             BucketName = section["BucketName"] ?? section["Bucket"] ?? string.Empty,
             UseSsl = bool.TryParse(section["UseSsl"], out var useSsl) && useSsl,
             AccessKey = section["AccessKey"] ?? string.Empty,
@@ -29,5 +30,36 @@ public sealed class ItemImageOptions
             CacheMaxAgeSeconds = int.TryParse(section["CacheMaxAgeSeconds"], out var cacheTtlSeconds) ? cacheTtlSeconds : 86400,
             ModelPath = section["ModelPath"]
         };
+    }
+
+    private static string NormalizeEndpoint(string raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return string.Empty;
+        }
+
+        var value = raw.Trim();
+
+        if (Uri.TryCreate(value, UriKind.Absolute, out var absolute))
+        {
+            return absolute.IsDefaultPort
+                ? absolute.Host
+                : $"{absolute.Host}:{absolute.Port}";
+        }
+
+        var schemeIndex = value.IndexOf("://", StringComparison.Ordinal);
+        if (schemeIndex >= 0)
+        {
+            value = value[(schemeIndex + 3)..];
+        }
+
+        var slashIndex = value.IndexOf('/');
+        if (slashIndex >= 0)
+        {
+            value = value[..slashIndex];
+        }
+
+        return value;
     }
 }
