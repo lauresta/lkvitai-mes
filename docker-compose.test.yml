@@ -11,10 +11,19 @@ services:
       ASPNETCORE_ENVIRONMENT: Test
       ConnectionStrings__WarehouseDb: "Host=pg;Port=5432;Database=lkvitai_warehouse_test;Username=postgres;Password=postgres"
       SkipSchemaValidation: "true"
+      Caching__RedisConnectionString: "lkvitai-mes-redis-test:6379,abortConnect=false,connectRetry=3,connectTimeout=1000,syncTimeout=1000"
+      ITEMIMAGES__ENDPOINT: "lkvitai-mes-minio-test:9000"
+      ITEMIMAGES__BUCKETNAME: "${TEST_MINIO_BUCKET:-lkvitai-test}"
+      ITEMIMAGES__USESSL: "false"
+      ITEMIMAGES__ACCESSKEY: "${TEST_MINIO_ACCESS_KEY}"
+      ITEMIMAGES__SECRETKEY: "${TEST_MINIO_SECRET_KEY}"
     volumes:
       - ${API_LOGS_DIR:-/opt/lkvitai-mes/logs/api}:/app/logs
     networks:
       - lkvitai-mes_default
+    depends_on:
+      - redis
+      - minio
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 15s
@@ -36,6 +45,43 @@ services:
     depends_on:
       - api
 
+  redis:
+    image: redis:7.2-alpine
+    container_name: lkvitai-mes-redis-test
+    restart: unless-stopped
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
+    networks:
+      - lkvitai-mes_default
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    container_name: lkvitai-mes-minio-test
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: "${TEST_MINIO_ACCESS_KEY:-minioadmin}"
+      MINIO_ROOT_PASSWORD: "${TEST_MINIO_SECRET_KEY:-minioadmin}"
+    volumes:
+      - minio_test_data:/data
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # MinIO Console
+    networks:
+      - lkvitai-mes_default
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
 networks:
   lkvitai-mes_default:
     external: true
+
+volumes:
+  minio_test_data:
