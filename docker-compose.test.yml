@@ -11,7 +11,7 @@ services:
       ASPNETCORE_ENVIRONMENT: Test
       ConnectionStrings__WarehouseDb: "Host=pg;Port=5432;Database=lkvitai_warehouse_test;Username=postgres;Password=postgres"
       SkipSchemaValidation: "true"
-      Caching__RedisConnectionString: "lkvitai-mes-redis-test:6379,abortConnect=false,connectRetry=3,connectTimeout=1000,syncTimeout=1000"
+      Caching__RedisConnectionString: "redis:6379,abortConnect=false,connectRetry=3,connectTimeout=1000,syncTimeout=1000"
       ITEMIMAGES__ENDPOINT: "${ITEMIMAGES__ENDPOINT}"
       ITEMIMAGES__BUCKET: "${ITEMIMAGES__BUCKET}"
       ITEMIMAGES__USESSL: "${ITEMIMAGES__USESSL:-false}"
@@ -23,8 +23,6 @@ services:
       - ${API_LOGS_DIR:-/opt/lkvitai-mes/logs/api}:/app/logs
     networks:
       - lkvitai-mes_default
-    depends_on:
-      - redis
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 15s
@@ -45,19 +43,6 @@ services:
       - lkvitai-mes_default
     depends_on:
       - api
-
-  redis:
-    image: redis:7.2-alpine
-    container_name: lkvitai-mes-redis-test
-    restart: unless-stopped
-    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
-    networks:
-      - lkvitai-mes_default
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
 networks:
   lkvitai-mes_default:
