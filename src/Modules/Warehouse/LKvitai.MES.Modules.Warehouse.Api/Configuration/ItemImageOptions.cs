@@ -17,19 +17,40 @@ public sealed class ItemImageOptions
     public static ItemImageOptions FromConfiguration(IConfiguration configuration)
     {
         var section = configuration.GetSection(SectionName);
-        var rawEndpoint = section["Endpoint"] ?? string.Empty;
+        var rawEndpoint = ReadValue(section, "Endpoint", "ITEMIMAGES__ENDPOINT");
 
         return new ItemImageOptions
         {
             Endpoint = NormalizeEndpoint(rawEndpoint),
-            BucketName = section["BucketName"] ?? section["Bucket"] ?? string.Empty,
-            UseSsl = bool.TryParse(section["UseSsl"], out var useSsl) && useSsl,
-            AccessKey = section["AccessKey"] ?? string.Empty,
-            SecretKey = section["SecretKey"] ?? string.Empty,
-            MaxUploadMb = int.TryParse(section["MaxUploadMb"], out var maxUploadMb) ? maxUploadMb : 5,
-            CacheMaxAgeSeconds = int.TryParse(section["CacheMaxAgeSeconds"], out var cacheTtlSeconds) ? cacheTtlSeconds : 86400,
-            ModelPath = section["ModelPath"]
+            BucketName = ReadValue(section, "BucketName", "ITEMIMAGES__BUCKET", section["Bucket"] ?? string.Empty),
+            UseSsl = bool.TryParse(ReadValue(section, "UseSsl", "ITEMIMAGES__USESSL"), out var useSsl) && useSsl,
+            AccessKey = ReadValue(section, "AccessKey", "ITEMIMAGES__ACCESSKEY"),
+            SecretKey = ReadValue(section, "SecretKey", "ITEMIMAGES__SECRETKEY"),
+            MaxUploadMb = int.TryParse(ReadValue(section, "MaxUploadMb", "ITEMIMAGES__MAXUPLOADMB"), out var maxUploadMb) ? maxUploadMb : 5,
+            CacheMaxAgeSeconds = int.TryParse(ReadValue(section, "CacheMaxAgeSeconds", "ITEMIMAGES__CACHEMAXAGESECONDS"), out var cacheTtlSeconds) ? cacheTtlSeconds : 86400,
+            ModelPath = ReadValue(section, "ModelPath", "ITEMIMAGES__MODEL_PATH")
         };
+    }
+
+    private static string ReadValue(
+        IConfigurationSection section,
+        string key,
+        string envKey,
+        string defaultValue = "")
+    {
+        var fromSection = section[key];
+        if (!string.IsNullOrWhiteSpace(fromSection))
+        {
+            return fromSection;
+        }
+
+        var fromEnv = Environment.GetEnvironmentVariable(envKey);
+        if (!string.IsNullOrWhiteSpace(fromEnv))
+        {
+            return fromEnv;
+        }
+
+        return defaultValue;
     }
 
     private static string NormalizeEndpoint(string raw)

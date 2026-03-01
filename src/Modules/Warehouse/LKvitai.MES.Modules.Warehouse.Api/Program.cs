@@ -76,8 +76,11 @@ builder.Services.AddSingleton(_ => ItemImageOptions.FromConfiguration(builder.Co
 builder.Services.AddSingleton<IMinioClient>(sp =>
 {
     var options = sp.GetRequiredService<ItemImageOptions>();
+    var endpoint = string.IsNullOrWhiteSpace(options.Endpoint)
+        ? "127.0.0.1:9000"
+        : options.Endpoint;
     return new MinioClient()
-        .WithEndpoint(options.Endpoint)
+        .WithEndpoint(endpoint)
         .WithCredentials(options.AccessKey, options.SecretKey)
         .WithSSL(options.UseSsl)
         .Build();

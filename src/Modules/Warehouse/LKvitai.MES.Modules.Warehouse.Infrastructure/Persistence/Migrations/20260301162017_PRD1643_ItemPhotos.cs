@@ -11,33 +11,40 @@ namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.CreateTable(
-                name: "item_photos",
-                schema: "public",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    ItemId = table.Column<int>(type: "integer", nullable: false),
-                    OriginalKey = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
-                    ThumbKey = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
-                    ContentType = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    SizeBytes = table.Column<long>(type: "bigint", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    IsPrimary = table.Column<bool>(type: "boolean", nullable: false),
-                    Tags = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
-                    ImageEmbedding = table.Column<string>(type: "vector(512)", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_item_photos", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_item_photos_items_ItemId",
-                        column: x => x.ItemId,
-                        principalSchema: "public",
-                        principalTable: "items",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
+            migrationBuilder.Sql(
+                """
+                CREATE TABLE IF NOT EXISTS public.item_photos
+                (
+                    "Id" uuid NOT NULL,
+                    "ItemId" integer NOT NULL,
+                    "OriginalKey" character varying(500) NOT NULL,
+                    "ThumbKey" character varying(500) NOT NULL,
+                    "ContentType" character varying(100) NOT NULL,
+                    "SizeBytes" bigint NOT NULL,
+                    "CreatedAt" timestamp with time zone NOT NULL,
+                    "IsPrimary" boolean NOT NULL,
+                    "Tags" character varying(500) NULL,
+                    "ImageEmbedding" text NULL,
+                    CONSTRAINT "PK_item_photos" PRIMARY KEY ("Id"),
+                    CONSTRAINT "FK_item_photos_items_ItemId" FOREIGN KEY ("ItemId")
+                        REFERENCES public.items ("Id") ON DELETE CASCADE
+                );
+                """);
+
+            migrationBuilder.Sql(
+                """
+                DO $$
+                BEGIN
+                    IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'vector') THEN
+                        ALTER TABLE public.item_photos
+                            ALTER COLUMN "ImageEmbedding" TYPE vector(512)
+                            USING "ImageEmbedding"::vector;
+                    END IF;
+                EXCEPTION
+                    WHEN undefined_object THEN
+                        NULL;
+                END $$;
+                """);
 
             migrationBuilder.CreateIndex(
                 name: "IX_item_photos_ItemId",
