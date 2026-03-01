@@ -19,6 +19,7 @@ jobs:
       TEST_DB_NAME: ${{ vars.TEST_DB_NAME }}
       TEST_DB_USER: ${{ vars.TEST_DB_USER }}
       TEST_DB_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
+      TEST_MINIO_ENDPOINT: ${{ vars.TEST_MINIO_ENDPOINT }}
       TEST_MINIO_BUCKET: ${{ vars.TEST_MINIO_BUCKET }}
       TEST_MINIO_ACCESS_KEY: ${{ secrets.TEST_MINIO_ACCESS_KEY }}
       TEST_MINIO_SECRET_KEY: ${{ secrets.TEST_MINIO_SECRET_KEY }}
@@ -119,24 +120,6 @@ jobs:
 
       - name: Deploy containers
         run: IMAGE_TAG=${{ env.IMAGE_TAG }} docker compose -f docker-compose.test.yml up -d
-
-      - name: Ensure MinIO bucket exists
-        run: |
-          BUCKET="${TEST_MINIO_BUCKET:-lkvitai-test}"
-          echo "Waiting for MinIO to be ready..."
-          for i in $(seq 1 10); do
-            if docker exec lkvitai-mes-minio-test mc ready local > /dev/null 2>&1; then
-              echo "MinIO is ready."
-              break
-            fi
-            echo "  attempt $i/10 — not ready yet"
-            sleep 3
-          done
-          docker exec lkvitai-mes-minio-test mc alias set local http://localhost:9000 \
-            "${TEST_MINIO_ACCESS_KEY:-minioadmin}" "${TEST_MINIO_SECRET_KEY:-minioadmin}"
-          docker exec lkvitai-mes-minio-test mc mb --ignore-existing "local/${BUCKET}"
-          docker exec lkvitai-mes-minio-test mc anonymous set download "local/${BUCKET}"
-          echo "MinIO bucket '${BUCKET}' is ready."
 
       - name: Wait for API health
         run: |
