@@ -88,8 +88,36 @@ public sealed class ItemsController : ControllerBase
                 i.RequiresQC,
                 i.PrimaryBarcode,
                 i.CreatedAt,
-                i.UpdatedAt))
+                i.UpdatedAt,
+                null,
+                null))
             .ToListAsync(cancellationToken);
+
+        if (items.Count > 0)
+        {
+            var itemIds = items.Select(x => x.Id).ToList();
+            var primaryPhotos = await _dbContext.ItemPhotos
+                .AsNoTracking()
+                .Where(x => itemIds.Contains(x.ItemId) && x.IsPrimary)
+                .Select(x => new { x.ItemId, x.Id })
+                .ToListAsync(cancellationToken);
+
+            var byItemId = primaryPhotos.ToDictionary(x => x.ItemId, x => x.Id);
+            for (var i = 0; i < items.Count; i++)
+            {
+                var row = items[i];
+                if (!byItemId.TryGetValue(row.Id, out var photoId))
+                {
+                    continue;
+                }
+
+                items[i] = row with
+                {
+                    PrimaryPhotoId = photoId,
+                    PrimaryThumbnailUrl = ItemPhotoService.BuildProxyUrl(row.Id, photoId, "thumb")
+                };
+            }
+        }
 
         return Ok(new PagedResponse<ItemListItemDto>(items, totalCount, pageNumber, pageSize));
     }
@@ -164,7 +192,7 @@ public sealed class ItemsController : ControllerBase
     public async Task<IActionResult> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         var cacheKey = $"item:{id}";
-        var cached = await Cache.GetAsync<Item>(cacheKey, cancellationToken);
+        var cached = await Cache.GetAsync<ItemDetailDto>(cacheKey, cancellationToken);
         if (cached is not null)
         {
             return Ok(cached);
@@ -180,8 +208,31 @@ public sealed class ItemsController : ControllerBase
             return Failure(Result.Fail(DomainErrorCodes.NotFound, $"Item with ID {id} does not exist."));
         }
 
-        await Cache.SetAsync(cacheKey, item, TimeSpan.FromHours(1), cancellationToken);
-        return Ok(item);
+        var photos = await _itemPhotoService.ListAsync(id, cancellationToken);
+        var primaryPhoto = photos.FirstOrDefault(x => x.IsPrimary);
+
+        var dto = new ItemDetailDto(
+            item.Id,
+            item.InternalSKU,
+            item.Name,
+            item.Description,
+            item.CategoryId,
+            item.BaseUoM,
+            item.Weight,
+            item.Volume,
+            item.RequiresLotTracking,
+            item.RequiresQC,
+            item.Status,
+            item.PrimaryBarcode,
+            item.ProductConfigId,
+            item.CreatedAt,
+            item.UpdatedAt,
+            primaryPhoto?.ThumbUrl,
+            primaryPhoto?.Id,
+            photos);
+
+        await Cache.SetAsync(cacheKey, dto, TimeSpan.FromHours(1), cancellationToken);
+        return Ok(dto);
     }
 
     [HttpPut("{id:int}")]
@@ -524,7 +575,29 @@ public sealed class ItemsController : ControllerBase
         bool RequiresQC,
         string? PrimaryBarcode,
         DateTimeOffset CreatedAt,
-        DateTimeOffset? UpdatedAt);
+        DateTimeOffset? UpdatedAt,
+        string? PrimaryThumbnailUrl,
+        Guid? PrimaryPhotoId);
+
+    public sealed record ItemDetailDto(
+        int Id,
+        string InternalSKU,
+        string Name,
+        string? Description,
+        int CategoryId,
+        string BaseUoM,
+        decimal? Weight,
+        decimal? Volume,
+        bool RequiresLotTracking,
+        bool RequiresQC,
+        string Status,
+        string? PrimaryBarcode,
+        string? ProductConfigId,
+        DateTimeOffset CreatedAt,
+        DateTimeOffset? UpdatedAt,
+        string? PrimaryThumbnailUrl,
+        Guid? PrimaryPhotoId,
+        IReadOnlyList<ItemPhotoDto> Photos);
 
     public sealed record AddBarcodeRequest(string Barcode, string BarcodeType, bool IsPrimary);
     public sealed record ItemBarcodeDto(int Id, string Barcode, string BarcodeType, bool IsPrimary);
