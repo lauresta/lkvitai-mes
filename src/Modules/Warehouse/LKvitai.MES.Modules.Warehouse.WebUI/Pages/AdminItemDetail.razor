@@ -126,13 +126,14 @@
             return;
         }
 
-        var maxBytes = 5L * 1024 * 1024;
-        await using var stream = file.OpenReadStream(maxBytes);
-        using var ms = new MemoryStream();
-        await stream.CopyToAsync(ms);
-
+        _isLoading = true;
+        StateHasChanged();
         try
         {
+            var maxBytes = 5L * 1024 * 1024;
+            await using var stream = file.OpenReadStream(maxBytes);
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms);
             await AdminClient.UploadPhotoAsync(Id, file.Name, ms.ToArray(), file.ContentType);
             ToastService.ShowSuccess("Photo uploaded.");
             await ReloadAsync();
@@ -141,6 +142,10 @@
         {
             _apiError = ex;
             ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isLoading = false;
         }
     }
 

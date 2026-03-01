@@ -62,7 +62,8 @@ public sealed class ItemImageOptions
 
         var value = raw.Trim();
 
-        if (Uri.TryCreate(value, UriKind.Absolute, out var absolute))
+        if (value.Contains("://", StringComparison.Ordinal) &&
+            Uri.TryCreate(value, UriKind.Absolute, out var absolute))
         {
             return absolute.IsDefaultPort
                 ? absolute.Host

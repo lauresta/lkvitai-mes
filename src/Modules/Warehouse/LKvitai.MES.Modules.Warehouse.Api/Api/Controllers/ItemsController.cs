@@ -387,7 +387,7 @@ public sealed class ItemsController : ControllerBase
 
     [HttpPost("{id:int}/photos")]
     [Authorize(Policy = WarehousePolicies.ManagerOrAdmin)]
-    [RequestSizeLimit(10 * 1024 * 1024)]
+    [RequestSizeLimit(5 * 1024 * 1024)]
     public async Task<IActionResult> UploadPhotoAsync(
         int id,
         [FromForm] IFormFile? file,
@@ -514,7 +514,7 @@ public sealed class ItemsController : ControllerBase
 
     [HttpPost("search-by-image")]
     [Authorize(Policy = WarehousePolicies.OperatorOrAbove)]
-    [RequestSizeLimit(10 * 1024 * 1024)]
+    [RequestSizeLimit(5 * 1024 * 1024)]
     public async Task<IActionResult> SearchByImageAsync(
         [FromForm] IFormFile? file,
         CancellationToken cancellationToken = default)
