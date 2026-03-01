@@ -26,3 +26,4 @@ coverage/**
 .task-logs/
 *.log
 sdk-pin-globaljson.log
+.env.manual
