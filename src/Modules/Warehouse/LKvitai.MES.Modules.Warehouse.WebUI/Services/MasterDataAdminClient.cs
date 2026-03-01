@@ -103,6 +103,26 @@ public sealed class MasterDataAdminClient
         await EnsureSuccessAsync(response);
     }
 
+    public async Task<ImageSearchResponseDto> SearchByImageAsync(
+        string fileName,
+        byte[] fileBytes,
+        string contentType,
+        CancellationToken cancellationToken = default)
+    {
+        var client = _factory.CreateClient("WarehouseApi");
+        using var content = new MultipartFormDataContent();
+        var fileContent = new ByteArrayContent(fileBytes);
+        fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(contentType);
+        content.Add(fileContent, "file", fileName);
+
+        var response = await client.PostAsync("/api/warehouse/v1/items/search-by-image", content, cancellationToken);
+        await EnsureSuccessAsync(response);
+
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+        return JsonSerializer.Deserialize<ImageSearchResponseDto>(body, JsonOptions)
+               ?? new ImageSearchResponseDto();
+    }
+
     public Task<PagedApiResponse<AdminSupplierDto>> GetSuppliersAsync(
         string? search,
         int pageNumber,

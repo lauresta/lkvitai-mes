@@ -65,6 +65,20 @@ public record ItemPhotosResponseDto
     public IReadOnlyList<ItemPhotoDto> Photos { get; init; } = Array.Empty<ItemPhotoDto>();
 }
 
+public record ImageSearchResultDto
+{
+    public int ItemId { get; init; }
+    public string SKU { get; init; } = string.Empty;
+    public string Name { get; init; } = string.Empty;
+    public string? PrimaryThumbnailUrl { get; init; }
+    public double Score { get; init; }
+}
+
+public record ImageSearchResponseDto
+{
+    public IReadOnlyList<ImageSearchResultDto> Results { get; init; } = Array.Empty<ImageSearchResultDto>();
+}
+
 public record CreateOrUpdateItemRequest
 {
     public string? InternalSKU { get; init; }

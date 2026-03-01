@@ -1,0 +1,121 @@
+@page "/search-by-image"
+@inject MasterDataAdminClient AdminClient
+@inject NavigationManager NavigationManager
+@inject ToastService ToastService
+
+<PageTitle>Search by Image - LKvitai.MES</PageTitle>
+
+<h3>Search by Image</h3>
+
+@if (_apiError is not null)
+{
+    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                 TraceId="@_apiError.TraceId"
+                 OnRetry="SearchAsync"
+                 OnDismiss="@(() => _apiError = null)" />
+}
+
+<div class="card shadow-sm position-relative mb-3">
+    <LoadingSpinner IsLoading="@_isLoading" />
+    <div class="card-body">
+        <p class="text-muted">Use camera or pick a photo to find similar items.</p>
+        <InputFile OnChange="HandleFileAsync"
+                   accept="image/*"
+                   @attributes="_captureAttributes" />
+    </div>
+</div>
+
+@if (_results.Count > 0)
+{
+    <div class="row g-3">
+        @foreach (var result in _results)
+        {
+            <div class="col-6 col-md-4 col-lg-3">
+                <div class="card h-100" style="cursor:pointer;" @onclick="@(() => OpenItem(result.ItemId))">
+                    @if (!string.IsNullOrWhiteSpace(result.PrimaryThumbnailUrl))
+                    {
+                        <img src="@result.PrimaryThumbnailUrl" alt="@result.SKU" loading="lazy" style="height:150px;object-fit:cover;" />
+                    }
+                    else
+                    {
+                        <div class="bg-light border text-muted d-flex align-items-center justify-content-center" style="height:150px;">No image</div>
+                    }
+                    <div class="card-body">
+                        <div><strong>@result.SKU</strong></div>
+                        <div class="small text-muted">@result.Name</div>
+                        <div class="small">Score: @result.Score.ToString("0.000")</div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private readonly List<ImageSearchResultDto> _results = [];
+    private bool _isLoading;
+    private ApiException? _apiError;
+    private IBrowserFile? _lastFile;
+    private readonly Dictionary<string, object> _captureAttributes = new()
+    {
+        ["capture"] = "environment"
+    };
+
+    private async Task HandleFileAsync(InputFileChangeEventArgs args)
+    {
+        _lastFile = args.File;
+        await SearchAsync();
+    }
+
+    private async Task SearchAsync()
+    {
+        if (_lastFile is null)
+        {
+            return;
+        }
+
+        _isLoading = true;
+        _apiError = null;
+        _results.Clear();
+
+        try
+        {
+            await using var stream = _lastFile.OpenReadStream(5L * 1024 * 1024);
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms);
+
+            var response = await AdminClient.SearchByImageAsync(_lastFile.Name, ms.ToArray(), _lastFile.ContentType);
+            _results.AddRange(response.Results.OrderByDescending(x => x.Score));
+
+            var best = _results.FirstOrDefault();
+            if (best is not null && best.Score >= 0.85d)
+            {
+                OpenItem(best.ItemId);
+            }
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void OpenItem(int itemId)
+    {
+        NavigationManager.NavigateTo($"/admin/items/{itemId}");
+    }
+
+    private static string BuildErrorMessage(ApiException error)
+    {
+        if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
+        {
+            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+        }
+
+        return error.UserMessage;
+    }
+}
