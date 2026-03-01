@@ -12,11 +12,13 @@ services:
       ConnectionStrings__WarehouseDb: "Host=pg;Port=5432;Database=lkvitai_warehouse_test;Username=postgres;Password=postgres"
       SkipSchemaValidation: "true"
       Caching__RedisConnectionString: "lkvitai-mes-redis-test:6379,abortConnect=false,connectRetry=3,connectTimeout=1000,syncTimeout=1000"
-      ITEMIMAGES__ENDPOINT: "${TEST_MINIO_ENDPOINT}"
-      ITEMIMAGES__BUCKETNAME: "${TEST_MINIO_BUCKET:-lkvitai-test}"
-      ITEMIMAGES__USESSL: "false"
-      ITEMIMAGES__ACCESSKEY: "${TEST_MINIO_ACCESS_KEY}"
-      ITEMIMAGES__SECRETKEY: "${TEST_MINIO_SECRET_KEY}"
+      ITEMIMAGES__ENDPOINT: "${ITEMIMAGES__ENDPOINT}"
+      ITEMIMAGES__BUCKET: "${ITEMIMAGES__BUCKET}"
+      ITEMIMAGES__USESSL: "${ITEMIMAGES__USESSL:-false}"
+      ITEMIMAGES__ACCESSKEY: "${ITEMIMAGES__ACCESSKEY}"
+      ITEMIMAGES__SECRETKEY: "${ITEMIMAGES__SECRETKEY}"
+      ITEMIMAGES__MAXUPLOADMB: "${ITEMIMAGES__MAXUPLOADMB:-5}"
+      ITEMIMAGES__CACHEMAXAGESECONDS: "${ITEMIMAGES__CACHEMAXAGESECONDS:-86400}"
     volumes:
       - ${API_LOGS_DIR:-/opt/lkvitai-mes/logs/api}:/app/logs
     networks:

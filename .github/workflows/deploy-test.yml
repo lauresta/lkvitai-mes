@@ -19,10 +19,11 @@ jobs:
       TEST_DB_NAME: ${{ vars.TEST_DB_NAME }}
       TEST_DB_USER: ${{ vars.TEST_DB_USER }}
       TEST_DB_PASSWORD: ${{ secrets.TEST_DB_PASSWORD }}
-      TEST_MINIO_ENDPOINT: ${{ vars.TEST_MINIO_ENDPOINT }}
-      TEST_MINIO_BUCKET: ${{ vars.TEST_MINIO_BUCKET }}
-      TEST_MINIO_ACCESS_KEY: ${{ secrets.TEST_MINIO_ACCESS_KEY }}
-      TEST_MINIO_SECRET_KEY: ${{ secrets.TEST_MINIO_SECRET_KEY }}
+      ITEMIMAGES__ENDPOINT: ${{ vars.ITEMIMAGES__ENDPOINT }}
+      ITEMIMAGES__BUCKET: ${{ vars.ITEMIMAGES__BUCKET }}
+      ITEMIMAGES__USESSL: ${{ vars.ITEMIMAGES__USESSL }}
+      ITEMIMAGES__ACCESSKEY: ${{ secrets.ITEMIMAGES__ACCESSKEY }}
+      ITEMIMAGES__SECRETKEY: ${{ secrets.ITEMIMAGES__SECRETKEY }}
 
     steps:
       - name: Fail fast if TEST_DB_PASSWORD is missing
