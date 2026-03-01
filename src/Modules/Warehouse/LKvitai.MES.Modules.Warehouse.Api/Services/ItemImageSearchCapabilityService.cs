@@ -47,7 +47,7 @@ public sealed class ItemImageSearchCapabilityService : IItemImageSearchCapabilit
         try
         {
             var result = await _dbContext.Database.SqlQueryRaw<bool>(
-                    "SELECT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'vector');")
+                    "SELECT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'vector')")
                 .FirstAsync(cancellationToken);
             hasPgvector = result;
         }
