@@ -62,9 +62,8 @@
             <table class="table table-sm table-hover align-middle">
                 <thead>
                 <tr>
-                    <th></th>
-                    <th>SKU</th>
                     <th>Name</th>
+                    <th>SKU</th>
                     <th>Category</th>
                     <th>Status</th>
                     <th>Lot</th>
@@ -76,7 +75,7 @@
                 @if (_items.Count == 0)
                 {
                     <tr>
-                        <td colspan="8" class="text-muted">No items found.</td>
+                        <td colspan="7" class="text-muted">No items found.</td>
                     </tr>
                 }
                 else
@@ -85,27 +84,29 @@
                     {
                         <tr>
                             <td>
-                                @if (!string.IsNullOrWhiteSpace(row.PrimaryThumbnailUrl))
-                                {
-                                    <img src="@row.PrimaryThumbnailUrl"
-                                         alt="@row.Name"
-                                         loading="lazy"
-                                         style="width:36px;height:36px;object-fit:cover;border-radius:4px;cursor:pointer;"
-                                         @onclick="@(() => OpenDetails(row.Id))" />
-                                }
-                                else
-                                {
-                                    <div class="bg-light border d-flex align-items-center justify-content-center text-muted"
-                                         style="width:36px;height:36px;border-radius:4px;cursor:pointer;"
-                                         @onclick="@(() => OpenDetails(row.Id))">-</div>
-                                }
+                                <div class="d-flex align-items-center gap-3">
+                                    @if (!string.IsNullOrWhiteSpace(row.PrimaryThumbnailUrl))
+                                    {
+                                        <img src="@row.PrimaryThumbnailUrl"
+                                             alt="@row.Name"
+                                             loading="lazy"
+                                             style="width:48px;height:48px;object-fit:cover;border-radius:6px;flex-shrink:0;cursor:pointer;"
+                                             @onclick="@(() => OpenDetails(row.Id))" />
+                                    }
+                                    else
+                                    {
+                                        <div class="bg-light border d-flex align-items-center justify-content-center text-muted flex-shrink-0"
+                                             style="width:48px;height:48px;border-radius:6px;font-size:10px;cursor:pointer;"
+                                             @onclick="@(() => OpenDetails(row.Id))">No img</div>
+                                    }
+                                    <span>@row.Name</span>
+                                </div>
                             </td>
                             <td>
                                 <a href="" @onclick="@((MouseEventArgs _) => OpenDetails(row.Id))" @onclick:preventDefault="true">
                                     @row.InternalSKU
                                 </a>
                             </td>
-                            <td>@row.Name</td>
                             <td>@row.CategoryName</td>
                             <td>@row.Status</td>
                             <td>@(row.RequiresLotTracking ? "Yes" : "No")</td>
