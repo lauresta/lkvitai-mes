@@ -47,35 +47,55 @@
     </div>
 </div>
 
-@if (_results.Count > 0)
+@if (_searched && !_isLoading)
 {
-    <div class="row g-3">
-        @foreach (var result in _results)
-        {
-            <div class="col-6 col-md-4 col-lg-3">
-                <div class="card h-100" style="cursor:pointer;" @onclick="@(() => OpenItem(result.ItemId))">
-                    @if (!string.IsNullOrWhiteSpace(result.PrimaryThumbnailUrl))
-                    {
-                        <img src="@result.PrimaryThumbnailUrl" alt="@result.SKU" loading="lazy" style="height:150px;object-fit:cover;" />
-                    }
-                    else
-                    {
-                        <div class="bg-light border text-muted d-flex align-items-center justify-content-center" style="height:150px;">No image</div>
-                    }
-                    <div class="card-body">
-                        <div><strong>@result.SKU</strong></div>
-                        <div class="small text-muted">@result.Name</div>
-                        <div class="small">Score: @result.Score.ToString("0.000")</div>
+    @if (_results.Count == 0)
+    {
+        <div class="text-center text-muted py-4">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" class="mb-3 opacity-50" viewBox="0 0 16 16">
+                <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0" />
+            </svg>
+            <p class="mb-0">No matching items found.</p>
+            <p class="small">Try uploading a clearer photo, or add photos to items first.</p>
+        </div>
+    }
+    else
+    {
+        <div class="row g-3">
+            @foreach (var result in _results)
+            {
+                <div class="col-6 col-md-4 col-lg-3">
+                    <div class="card h-100" style="cursor:pointer;" @onclick="@(() => OpenItem(result.ItemId))">
+                        @if (!string.IsNullOrWhiteSpace(result.PrimaryThumbnailUrl))
+                        {
+                            <img src="@result.PrimaryThumbnailUrl" alt="@result.SKU" loading="lazy" style="height:150px;object-fit:cover;" />
+                        }
+                        else
+                        {
+                            <div class="bg-light border text-muted d-flex align-items-center justify-content-center" style="height:150px;">No image</div>
+                        }
+                        <div class="card-body">
+                            <div><strong>@result.SKU</strong></div>
+                            <div class="small text-muted">@result.Name</div>
+                            <div class="small">
+                                @{
+                                    var pct = (int)(result.Score * 100);
+                                    var badgeClass = result.Score >= 0.85 ? "bg-success" : result.Score >= 0.65 ? "bg-warning text-dark" : "bg-secondary";
+                                }
+                                <span class="badge @badgeClass">@pct%</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
-        }
-    </div>
+            }
+        </div>
+    }
 }
 
 @code {
     private readonly List<ImageSearchResultDto> _results = [];
     private bool _isLoading;
+    private bool _searched;
     private ApiException? _apiError;
     private IBrowserFile? _lastFile;
     private readonly Dictionary<string, object> _captureAttributes = new()
@@ -99,6 +119,8 @@
         _isLoading = true;
         _apiError = null;
         _results.Clear();
+        _searched = false;
+        StateHasChanged();
 
         try
         {
@@ -108,6 +130,7 @@
 
             var response = await AdminClient.SearchByImageAsync(_lastFile.Name, ms.ToArray(), _lastFile.ContentType);
             _results.AddRange(response.Results.OrderByDescending(x => x.Score));
+            _searched = true;
 
             var best = _results.FirstOrDefault();
             if (best is not null && best.Score >= 0.85d)
