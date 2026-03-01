@@ -3,6 +3,7 @@ using LKvitai.MES.Modules.Warehouse.Api.Configuration;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Webp;
 using SixLabors.ImageSharp.Processing;
@@ -28,6 +29,9 @@ public interface IItemPhotoService
         CancellationToken cancellationToken = default);
     Task<bool> MakePrimaryAsync(int itemId, Guid photoId, CancellationToken cancellationToken = default);
     Task<bool> DeleteAsync(int itemId, Guid photoId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<ItemImageSearchResultDto>> SearchByImageAsync(
+        Stream imageStream,
+        CancellationToken cancellationToken = default);
 }
 
 public sealed record ItemPhotoDto(
@@ -47,6 +51,13 @@ public sealed record ItemPhotoStreamResult(
     string ETag,
     DateTimeOffset? LastModified);
 
+public sealed record ItemImageSearchResultDto(
+    int ItemId,
+    string SKU,
+    string Name,
+    string? PrimaryThumbnailUrl,
+    double Score);
+
 public sealed class ItemPhotoService : IItemPhotoService
 {
     private static readonly HashSet<string> AllowedContentTypes = new(StringComparer.OrdinalIgnoreCase)
@@ -58,15 +69,21 @@ public sealed class ItemPhotoService : IItemPhotoService
 
     private readonly WarehouseDbContext _dbContext;
     private readonly IItemImageStorageService _storageService;
+    private readonly IItemImageSearchCapabilityService _capabilityService;
+    private readonly IItemImageEmbeddingService _embeddingService;
     private readonly ILogger<ItemPhotoService> _logger;
 
     public ItemPhotoService(
         WarehouseDbContext dbContext,
         IItemImageStorageService storageService,
+        IItemImageSearchCapabilityService capabilityService,
+        IItemImageEmbeddingService embeddingService,
         ILogger<ItemPhotoService> logger)
     {
         _dbContext = dbContext;
         _storageService = storageService;
+        _capabilityService = capabilityService;
+        _embeddingService = embeddingService;
         _logger = logger;
     }
 
@@ -189,6 +206,19 @@ public sealed class ItemPhotoService : IItemPhotoService
         _dbContext.ItemPhotos.Add(entity);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
+        var capability = await _capabilityService.GetCapabilityAsync(cancellationToken);
+        if (capability.IsEnabled)
+        {
+            await using var forEmbedding = new MemoryStream(bytes, writable: false);
+            var embedding = await _embeddingService.ComputeEmbeddingAsync(forEmbedding, cancellationToken);
+            var embeddingLiteral = BuildQueryEmbeddingString(embedding);
+            await _dbContext.Database.ExecuteSqlInterpolatedAsync(
+                $@"UPDATE public.item_photos
+                   SET ""ImageEmbedding"" = CAST({embeddingLiteral} AS vector)
+                   WHERE ""Id"" = {entity.Id}",
+                cancellationToken);
+        }
+
         return new ItemPhotoDto(
             entity.Id,
             entity.ItemId,
@@ -255,6 +285,88 @@ public sealed class ItemPhotoService : IItemPhotoService
 
         await _dbContext.SaveChangesAsync(cancellationToken);
         return true;
+    }
+
+    public async Task<IReadOnlyList<ItemImageSearchResultDto>> SearchByImageAsync(
+        Stream imageStream,
+        CancellationToken cancellationToken = default)
+    {
+        var capability = await _capabilityService.GetCapabilityAsync(cancellationToken);
+        if (!capability.IsEnabled)
+        {
+            throw new InvalidOperationException(capability.DisabledReason ?? "Image search is unavailable.");
+        }
+
+        var embedding = await _embeddingService.ComputeEmbeddingAsync(imageStream, cancellationToken);
+        var embeddingLiteral = BuildQueryEmbeddingString(embedding);
+
+        var results = new List<ItemImageSearchResultDto>();
+        var connection = _dbContext.Database.GetDbConnection();
+        if (connection.State != System.Data.ConnectionState.Open)
+        {
+            await connection.OpenAsync(cancellationToken);
+        }
+
+        await using var command = connection.CreateCommand();
+        command.CommandText =
+            """
+            SELECT i."Id",
+                   i."InternalSKU",
+                   i."Name",
+                   pp."Id" AS "PrimaryPhotoId",
+                   1.0 - (p."ImageEmbedding" <=> CAST(@embedding AS vector)) AS "Score"
+            FROM public.item_photos p
+            JOIN public.items i ON i."Id" = p."ItemId"
+            LEFT JOIN public.item_photos pp ON pp."ItemId" = i."Id" AND pp."IsPrimary" = true
+            WHERE p."ImageEmbedding" IS NOT NULL
+            ORDER BY p."ImageEmbedding" <=> CAST(@embedding AS vector)
+            LIMIT 20;
+            """;
+
+        var embeddingParam = command.CreateParameter();
+        embeddingParam.ParameterName = "embedding";
+        embeddingParam.Value = embeddingLiteral;
+        if (embeddingParam is NpgsqlParameter npgsqlParameter)
+        {
+            npgsqlParameter.NpgsqlDbType = NpgsqlTypes.NpgsqlDbType.Text;
+        }
+
+        command.Parameters.Add(embeddingParam);
+
+        var perItem = new Dictionary<int, ItemImageSearchResultDto>();
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        while (await reader.ReadAsync(cancellationToken))
+        {
+            var itemId = reader.GetInt32(0);
+            var sku = reader.GetString(1);
+            var name = reader.GetString(2);
+            var primaryPhotoId = reader.IsDBNull(3) ? (Guid?)null : reader.GetGuid(3);
+            var score = reader.IsDBNull(4) ? 0d : reader.GetDouble(4);
+
+            var candidate = new ItemImageSearchResultDto(
+                itemId,
+                sku,
+                name,
+                primaryPhotoId.HasValue
+                    ? BuildProxyUrl(itemId, primaryPhotoId.Value, "thumb")
+                    : null,
+                score);
+
+            if (perItem.TryGetValue(itemId, out var existing))
+            {
+                if (candidate.Score > existing.Score)
+                {
+                    perItem[itemId] = candidate;
+                }
+            }
+            else
+            {
+                perItem[itemId] = candidate;
+            }
+        }
+
+        results.AddRange(perItem.Values.OrderByDescending(x => x.Score).Take(20));
+        return results;
     }
 
     public async Task<bool> DeleteAsync(int itemId, Guid photoId, CancellationToken cancellationToken = default)

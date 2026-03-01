@@ -85,6 +85,7 @@ builder.Services.AddSingleton<IMinioClient>(sp =>
 builder.Services.AddSingleton<IItemImageStorageService, ItemImageStorageService>();
 builder.Services.AddScoped<IItemPhotoService, ItemPhotoService>();
 builder.Services.AddScoped<IItemImageSearchCapabilityService, ItemImageSearchCapabilityService>();
+builder.Services.AddScoped<IItemImageEmbeddingService, ItemImageEmbeddingService>();
 builder.Services.AddSingleton<IDevAuthService, DevAuthService>();
 builder.Services.AddSingleton<IFeatureFlagService, FeatureFlagService>();
 builder.Services.AddSingleton<ConnectionPoolMonitoringInterceptor>();

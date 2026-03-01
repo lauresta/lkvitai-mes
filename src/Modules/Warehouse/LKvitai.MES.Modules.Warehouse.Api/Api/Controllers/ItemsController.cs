@@ -24,15 +24,18 @@ public sealed class ItemsController : ControllerBase
     private readonly WarehouseDbContext _dbContext;
     private readonly ISkuGenerationService _skuGenerationService;
     private readonly IItemPhotoService _itemPhotoService;
+    private readonly IItemImageSearchCapabilityService _searchCapabilityService;
 
     public ItemsController(
         WarehouseDbContext dbContext,
         ISkuGenerationService skuGenerationService,
-        IItemPhotoService itemPhotoService)
+        IItemPhotoService itemPhotoService,
+        IItemImageSearchCapabilityService searchCapabilityService)
     {
         _dbContext = dbContext;
         _skuGenerationService = skuGenerationService;
         _itemPhotoService = itemPhotoService;
+        _searchCapabilityService = searchCapabilityService;
     }
 
     [HttpGet]
@@ -509,6 +512,46 @@ public sealed class ItemsController : ControllerBase
         return Ok(new ItemPhotosResponse(id, photos));
     }
 
+    [HttpPost("search-by-image")]
+    [Authorize(Policy = WarehousePolicies.OperatorOrAbove)]
+    [RequestSizeLimit(10 * 1024 * 1024)]
+    public async Task<IActionResult> SearchByImageAsync(
+        [FromForm] IFormFile? file,
+        CancellationToken cancellationToken = default)
+    {
+        if (file is null || file.Length <= 0)
+        {
+            return ValidationFailure("Photo file is required.");
+        }
+
+        var capability = await _searchCapabilityService.GetCapabilityAsync(cancellationToken);
+        if (!capability.IsEnabled)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new ProblemDetails
+            {
+                Title = "Image similarity search unavailable",
+                Detail = capability.DisabledReason ?? "Image similarity search is unavailable.",
+                Status = StatusCodes.Status503ServiceUnavailable
+            });
+        }
+
+        try
+        {
+            await using var stream = file.OpenReadStream();
+            var results = await _itemPhotoService.SearchByImageAsync(stream, cancellationToken);
+            return Ok(new ImageSearchResponse(results));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new ProblemDetails
+            {
+                Title = "Image similarity search unavailable",
+                Detail = ex.Message,
+                Status = StatusCodes.Status503ServiceUnavailable
+            });
+        }
+    }
+
     private ICacheService Cache => HttpContext?.RequestServices?.GetService<ICacheService>() ?? new LKvitai.MES.Modules.Warehouse.Infrastructure.Caching.NoOpCacheService();
 
     private ObjectResult ValidationFailure(string detail)
@@ -603,6 +646,7 @@ public sealed class ItemsController : ControllerBase
     public sealed record ItemBarcodeDto(int Id, string Barcode, string BarcodeType, bool IsPrimary);
     public sealed record ItemBarcodesResponse(int ItemId, string InternalSKU, IReadOnlyList<ItemBarcodeDto> Barcodes);
     public sealed record ItemPhotosResponse(int ItemId, IReadOnlyList<ItemPhotoDto> Photos);
+    public sealed record ImageSearchResponse(IReadOnlyList<ItemImageSearchResultDto> Results);
 
     public sealed record PagedResponse<T>(
         IReadOnlyList<T> Items,
