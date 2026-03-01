@@ -8,6 +8,7 @@
 @using LKvitai.MES.Modules.Warehouse.WebUI.Models
 @using LKvitai.MES.Modules.Warehouse.WebUI.Services
 @inject VisualizationClient VisualizationClient
+@inject StockClient StockClient
 @inject ToastService ToastService
 @inject IJSRuntime JS
 @inject NavigationManager NavigationManager
@@ -21,6 +22,12 @@
             <p class="viz-subtitle">Explore bins, capacity, and handling units in 3D or 2D.</p>
         </div>
         <div class="viz-toolbar-right">
+            <select class="form-select" @bind="_warehouseCode" @bind:after="OnWarehouseChangedAsync" style="min-width: 220px;">
+                @foreach (var warehouse in _warehouses)
+                {
+                    <option value="@warehouse.Code">@warehouse.Code - @warehouse.Name</option>
+                }
+            </select>
             <div class="viz-search-wrap">
                 <div class="input-group">
                     <input class="form-control"
@@ -240,6 +247,8 @@
     private bool _isLoading;
     private bool _renderRequested;
     private string? _error;
+    private IReadOnlyList<WarehouseDto> _warehouses = Array.Empty<WarehouseDto>();
+    private string _warehouseCode = string.Empty;
     private string _searchQuery = string.Empty;
     private string _zoneFilter = "ALL";
     private string _statusFilter = "ALL";
@@ -274,7 +283,16 @@
     protected override async Task OnInitializedAsync()
     {
         _selfReference = DotNetObjectReference.Create(this);
-        await LoadAsync();
+        _warehouses = await StockClient.GetWarehousesAsync();
+        if (_warehouses.Count > 0)
+        {
+            _warehouseCode = _warehouses[0].Code;
+            await LoadVisualizationAsync();
+        }
+        else
+        {
+            _error = "No active non-virtual warehouses available.";
+        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -298,7 +316,7 @@
 
     private async Task RefreshAsync()
     {
-        await LoadAsync();
+        await LoadVisualizationAsync();
     }
 
     private async Task ToggleViewAsync()
@@ -442,14 +460,14 @@
         return Task.CompletedTask;
     }
 
-    private async Task LoadAsync()
+    private async Task LoadVisualizationAsync()
     {
         _isLoading = true;
         _error = null;
 
         try
         {
-            _model = await VisualizationClient.GetVisualization3dAsync();
+            _model = await VisualizationClient.GetVisualization3dAsync(_warehouseCode);
             _autocompleteSuggestions = WarehouseVisualizationSearch.GetSuggestions(
                 _model.Bins,
                 _searchQuery,
@@ -482,6 +500,22 @@
         {
             _isLoading = false;
         }
+    }
+
+    private async Task OnWarehouseChangedAsync()
+    {
+        if (_is3dView)
+        {
+            await JS.InvokeVoidAsync("warehouseVisualization.dispose", CanvasId);
+        }
+
+        _selectedBin = null;
+        _searchQuery = string.Empty;
+        _zoneFilter = "ALL";
+        _statusFilter = "ALL";
+        _autocompleteSuggestions = [];
+        _showSuggestions = false;
+        await LoadVisualizationAsync();
     }
 
     private string? GetSelectedQueryValue()

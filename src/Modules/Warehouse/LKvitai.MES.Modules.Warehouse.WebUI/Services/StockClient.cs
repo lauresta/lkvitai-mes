@@ -53,16 +53,14 @@ public class StockClient
         return SearchCoreAsync(query.ToString(), cancellationToken);
     }
 
-    public Task<IReadOnlyList<WarehouseDto>> GetWarehousesAsync(CancellationToken cancellationToken = default)
-        => Task.FromResult<IReadOnlyList<WarehouseDto>>(
-        [
-            new WarehouseDto
-            {
-                Id = "WH1",
-                Code = "WH1",
-                Name = "Main Warehouse"
-            }
-        ]);
+    public async Task<IReadOnlyList<WarehouseDto>> GetWarehousesAsync(CancellationToken cancellationToken = default)
+    {
+        var result = await GetAsync<PagedApiResponse<WarehouseDto>>(
+            "/api/warehouse/v1/warehouses?status=Active&includeVirtual=false&pageNumber=1&pageSize=200",
+            cancellationToken);
+
+        return result.Items;
+    }
 
     public async Task<PagedResult<LocationBalanceItemDto>> GetLocationBalanceAsync(
         int? locationId = null,

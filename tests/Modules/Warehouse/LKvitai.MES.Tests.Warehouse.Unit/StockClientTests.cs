@@ -93,19 +93,48 @@ public class StockClientTests
     }
 
     [Fact]
-    public async Task GetWarehousesAsync_ReturnsDefaultWarehouseList()
+    public async Task GetWarehousesAsync_CallsApiAndReturnsItems()
     {
         // Arrange
-        var client = CreateHttpClient(_ => throw new InvalidOperationException("HTTP should not be called."));
+        string? capturedPathAndQuery = null;
+        var response = new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(
+                """
+                {
+                  "items": [
+                    {
+                      "id": "7d6b9d0f-7d4f-4ca8-a3a8-ff064ef17f47",
+                      "code": "WH1",
+                      "name": "Main Warehouse",
+                      "description": "Primary",
+                      "isVirtual": false,
+                      "status": "Active"
+                    }
+                  ],
+                  "totalCount": 1,
+                  "pageNumber": 1,
+                  "pageSize": 200
+                }
+                """)
+        };
+
+        var client = CreateHttpClient(request =>
+        {
+            capturedPathAndQuery = request.RequestUri?.PathAndQuery;
+            return response;
+        });
         var sut = CreateSut(client);
 
         // Act
         var result = await sut.GetWarehousesAsync();
 
         // Assert
+        capturedPathAndQuery.Should().Be("/api/warehouse/v1/warehouses?status=Active&includeVirtual=false&pageNumber=1&pageSize=200");
         result.Should().HaveCount(1);
-        result[0].Id.Should().Be("WH1");
+        result[0].Id.Should().Be("7d6b9d0f-7d4f-4ca8-a3a8-ff064ef17f47");
         result[0].Code.Should().Be("WH1");
+        result[0].Name.Should().Be("Main Warehouse");
     }
 
     private static StockClient CreateSut(HttpClient client)

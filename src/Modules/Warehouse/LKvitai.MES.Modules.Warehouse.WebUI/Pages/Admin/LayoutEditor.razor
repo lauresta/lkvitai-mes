@@ -1,6 +1,7 @@
 @page "/warehouse/admin/layout-editor"
 @using System.Text.Json
 @inject LayoutEditorClient LayoutEditorClient
+@inject StockClient StockClient
 @inject ToastService ToastService
 @inject IConfiguration Configuration
 
@@ -37,7 +38,12 @@ else
             <div class="row g-3">
                 <div class="col-md-6">
                     <label class="form-label">Warehouse Code</label>
-                    <input class="form-control" @bind="_warehouseCode" />
+                    <select class="form-select" @bind="_warehouseCode">
+                        @foreach (var warehouse in _warehouses)
+                        {
+                            <option value="@warehouse.Code">@warehouse.Code - @warehouse.Name</option>
+                        }
+                    </select>
                 </div>
                 <div class="col-12">
                     <label class="form-label">Layout JSON</label>
@@ -76,7 +82,8 @@ else
     private bool _isLoading;
     private bool _isSaving;
     private bool _hasAdminAccess;
-    private string _warehouseCode = "Main";
+    private IReadOnlyList<WarehouseDto> _warehouses = Array.Empty<WarehouseDto>();
+    private string _warehouseCode = string.Empty;
     private string _layoutJson = string.Empty;
     private string? _validationMessage;
     private DateTimeOffset? _updatedAt;
@@ -86,7 +93,16 @@ else
         _hasAdminAccess = HasAdminRole();
         if (_hasAdminAccess)
         {
-            await LoadAsync();
+            _warehouses = await StockClient.GetWarehousesAsync();
+            if (_warehouses.Count > 0)
+            {
+                _warehouseCode = _warehouses[0].Code;
+                await LoadAsync();
+            }
+            else
+            {
+                _validationMessage = "No active non-virtual warehouses available.";
+            }
         }
     }
 
