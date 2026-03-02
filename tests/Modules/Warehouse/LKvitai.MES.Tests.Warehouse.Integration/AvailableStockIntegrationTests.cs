@@ -32,7 +32,7 @@ public class AvailableStockIntegrationTests : IAsyncLifetime
         DockerRequirement.EnsureEnabled();
 
         _postgres = new PostgreSqlBuilder()
-            .WithImage("postgres:15-alpine")
+            .WithImage("pgvector/pgvector:pg16")
             .Build();
 
         await _postgres.StartAsync();

@@ -37,6 +37,14 @@ public class ProjectionInfrastructureIntegrationTests : IAsyncLifetime
 
         await _postgres.StartAsync();
 
+        await using (var conn = new NpgsqlConnection(_postgres.GetConnectionString()))
+        {
+            await conn.OpenAsync();
+            await using var cmd = conn.CreateCommand();
+            cmd.CommandText = "CREATE EXTENSION IF NOT EXISTS vector;";
+            await cmd.ExecuteNonQueryAsync();
+        }
+
         _store = DocumentStore.For(opts =>
         {
             opts.Connection(_postgres.GetConnectionString());
