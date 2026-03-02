@@ -24,6 +24,8 @@ jobs:
       ITEMIMAGES__USESSL: ${{ vars.ITEMIMAGES__USESSL }}
       ITEMIMAGES__ACCESSKEY: ${{ secrets.ITEMIMAGES__ACCESSKEY }}
       ITEMIMAGES__SECRETKEY: ${{ secrets.ITEMIMAGES__SECRETKEY }}
+      ITEMIMAGES__MODEL_PATH: ${{ vars.ITEMIMAGES__MODEL_PATH }}
+      CLIP_MODEL_DIR: ${{ vars.CLIP_MODEL_DIR }}
 
     steps:
       - name: Fail fast if TEST_DB_PASSWORD is missing
