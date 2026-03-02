@@ -61,8 +61,6 @@ public sealed record ItemImageSearchResultDto(
 
 public sealed class ItemPhotoService : IItemPhotoService
 {
-    private const double MinimumSearchScore = 0.35d;
-
     private static readonly HashSet<string> AllowedContentTypes = new(StringComparer.OrdinalIgnoreCase)
     {
         "image/jpeg",
@@ -94,6 +92,20 @@ public sealed class ItemPhotoService : IItemPhotoService
         => _storageService.EnsureAvailableAsync(cancellationToken);
 
     public int CacheMaxAgeSeconds => Math.Max(1, _storageService.Options.CacheMaxAgeSeconds);
+
+    private double MinimumSearchScore
+    {
+        get
+        {
+            var configured = _storageService.Options.MinSearchScore;
+            if (double.IsNaN(configured) || double.IsInfinity(configured))
+            {
+                return 0.35d;
+            }
+
+            return Math.Clamp(configured, 0d, 1d);
+        }
+    }
 
     public async Task<IReadOnlyList<ItemPhotoDto>> ListAsync(int itemId, CancellationToken cancellationToken = default)
     {
