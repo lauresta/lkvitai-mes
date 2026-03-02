@@ -11,9 +11,9 @@ public class ItemImageEmbeddingServiceTests
     public async Task ComputeEmbeddingAsync_ForSimilarImages_ShouldProduceHigherCosineSimilarityThanDifferentImages()
     {
         var sut = new ItemImageEmbeddingService();
-        await using var baseImage = BuildSolidImage(new Rgba32(20, 180, 200));
-        await using var similarImage = BuildSolidImage(new Rgba32(25, 170, 205));
-        await using var differentImage = BuildSolidImage(new Rgba32(210, 30, 30));
+        using var baseImage = BuildSolidImage(new Rgba32(20, 180, 200));
+        using var similarImage = BuildSolidImage(new Rgba32(25, 170, 205));
+        using var differentImage = BuildSolidImage(new Rgba32(210, 30, 30));
 
         var baseEmbedding = await sut.ComputeEmbeddingAsync(baseImage);
         var similarEmbedding = await sut.ComputeEmbeddingAsync(similarImage);
@@ -29,9 +29,9 @@ public class ItemImageEmbeddingServiceTests
     public async Task ComputeEmbeddingAsync_WhenColorLayoutDiffers_ShouldLowerSimilarity()
     {
         var sut = new ItemImageEmbeddingService();
-        await using var reference = BuildSplitImage(left: new Rgba32(25, 25, 25), right: new Rgba32(220, 220, 220));
-        await using var sameLayout = BuildSplitImage(left: new Rgba32(30, 30, 30), right: new Rgba32(215, 215, 215));
-        await using var swappedLayout = BuildSplitImage(left: new Rgba32(220, 220, 220), right: new Rgba32(25, 25, 25));
+        using var reference = BuildSplitImage(left: new Rgba32(25, 25, 25), right: new Rgba32(220, 220, 220));
+        using var sameLayout = BuildSplitImage(left: new Rgba32(30, 30, 30), right: new Rgba32(215, 215, 215));
+        using var swappedLayout = BuildSplitImage(left: new Rgba32(220, 220, 220), right: new Rgba32(25, 25, 25));
 
         var referenceEmbedding = await sut.ComputeEmbeddingAsync(reference);
         var sameLayoutEmbedding = await sut.ComputeEmbeddingAsync(sameLayout);
@@ -45,11 +45,11 @@ public class ItemImageEmbeddingServiceTests
             $"Expected same layout ({sameLayoutScore}) > swapped layout ({swappedLayoutScore})");
     }
 
-    private static async Task<MemoryStream> BuildSolidImage(Rgba32 color)
+    private static MemoryStream BuildSolidImage(Rgba32 color)
     {
         using var image = new Image<Rgba32>(32, 32, color);
         var stream = new MemoryStream();
-        await image.SaveAsPngAsync(stream);
+        image.SaveAsPng(stream);
         stream.Position = 0;
         return stream;
     }
