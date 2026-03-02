@@ -11,8 +11,13 @@ public interface IItemImageEmbeddingService
 
 public sealed class ItemImageEmbeddingService : IItemImageEmbeddingService
 {
-    private const int HistogramBinsPerChannel = 8;
-    private const int EmbeddingLength = HistogramBinsPerChannel * HistogramBinsPerChannel * HistogramBinsPerChannel;
+    private const int HistogramBinsRed = 4;
+    private const int HistogramBinsGreen = 4;
+    private const int HistogramBinsBlue = 8;
+    private const int SpatialCellsX = 2;
+    private const int SpatialCellsY = 2;
+    private const int HistogramBinsPerCell = HistogramBinsRed * HistogramBinsGreen * HistogramBinsBlue;
+    private const int EmbeddingLength = SpatialCellsX * SpatialCellsY * HistogramBinsPerCell;
 
     public async Task<float[]> ComputeEmbeddingAsync(Stream imageStream, CancellationToken cancellationToken = default)
     {
@@ -26,28 +31,41 @@ public sealed class ItemImageEmbeddingService : IItemImageEmbeddingService
                     Position = AnchorPositionMode.Center
                 }));
 
-        var pixels = new Rgba32[32 * 32];
-        image.CopyPixelDataTo(pixels);
-
         var embedding = new float[EmbeddingLength];
-        foreach (var pixel in pixels)
+        var width = image.Width;
+        var height = image.Height;
+        var cellWidth = Math.Max(1, width / SpatialCellsX);
+        var cellHeight = Math.Max(1, height / SpatialCellsY);
+
+        for (var y = 0; y < height; y++)
         {
-            var alpha = pixel.A / 255f;
-            var redBin = ToHistogramBin(pixel.R);
-            var greenBin = ToHistogramBin(pixel.G);
-            var blueBin = ToHistogramBin(pixel.B);
-            var bucket = (redBin * HistogramBinsPerChannel * HistogramBinsPerChannel) +
-                         (greenBin * HistogramBinsPerChannel) +
-                         blueBin;
-            embedding[bucket] += MathF.Max(0.05f, alpha);
+            var cellY = Math.Min(SpatialCellsY - 1, y / cellHeight);
+            for (var x = 0; x < width; x++)
+            {
+                var cellX = Math.Min(SpatialCellsX - 1, x / cellWidth);
+                var pixel = image[x, y];
+                var alpha = pixel.A / 255f;
+
+                var redBin = ToHistogramBin(pixel.R, HistogramBinsRed);
+                var greenBin = ToHistogramBin(pixel.G, HistogramBinsGreen);
+                var blueBin = ToHistogramBin(pixel.B, HistogramBinsBlue);
+
+                var cellIndex = (cellY * SpatialCellsX) + cellX;
+                var localBucket = (redBin * HistogramBinsGreen * HistogramBinsBlue) +
+                                  (greenBin * HistogramBinsBlue) +
+                                  blueBin;
+                var globalBucket = (cellIndex * HistogramBinsPerCell) + localBucket;
+
+                embedding[globalBucket] += MathF.Max(0.05f, alpha);
+            }
         }
 
         NormalizeInPlace(embedding);
         return embedding;
     }
 
-    private static int ToHistogramBin(byte channel)
-        => Math.Min(HistogramBinsPerChannel - 1, channel * HistogramBinsPerChannel / 256);
+    private static int ToHistogramBin(byte channel, int bins)
+        => Math.Min(bins - 1, channel * bins / 256);
 
     private static void NormalizeInPlace(float[] values)
     {

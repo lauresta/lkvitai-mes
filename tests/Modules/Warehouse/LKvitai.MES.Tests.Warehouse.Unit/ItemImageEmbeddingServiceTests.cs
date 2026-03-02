@@ -25,11 +25,48 @@ public class ItemImageEmbeddingServiceTests
         Assert.True(similarScore > differentScore, $"Expected similar ({similarScore}) > different ({differentScore})");
     }
 
+    [Fact]
+    public async Task ComputeEmbeddingAsync_WhenColorLayoutDiffers_ShouldLowerSimilarity()
+    {
+        var sut = new ItemImageEmbeddingService();
+        await using var reference = BuildSplitImage(left: new Rgba32(25, 25, 25), right: new Rgba32(220, 220, 220));
+        await using var sameLayout = BuildSplitImage(left: new Rgba32(30, 30, 30), right: new Rgba32(215, 215, 215));
+        await using var swappedLayout = BuildSplitImage(left: new Rgba32(220, 220, 220), right: new Rgba32(25, 25, 25));
+
+        var referenceEmbedding = await sut.ComputeEmbeddingAsync(reference);
+        var sameLayoutEmbedding = await sut.ComputeEmbeddingAsync(sameLayout);
+        var swappedLayoutEmbedding = await sut.ComputeEmbeddingAsync(swappedLayout);
+
+        var sameLayoutScore = CosineSimilarity(referenceEmbedding, sameLayoutEmbedding);
+        var swappedLayoutScore = CosineSimilarity(referenceEmbedding, swappedLayoutEmbedding);
+
+        Assert.True(
+            sameLayoutScore > swappedLayoutScore,
+            $"Expected same layout ({sameLayoutScore}) > swapped layout ({swappedLayoutScore})");
+    }
+
     private static async Task<MemoryStream> BuildSolidImage(Rgba32 color)
     {
         using var image = new Image<Rgba32>(32, 32, color);
         var stream = new MemoryStream();
         await image.SaveAsPngAsync(stream);
+        stream.Position = 0;
+        return stream;
+    }
+
+    private static MemoryStream BuildSplitImage(Rgba32 left, Rgba32 right)
+    {
+        using var image = new Image<Rgba32>(32, 32);
+        for (var y = 0; y < image.Height; y++)
+        {
+            for (var x = 0; x < image.Width; x++)
+            {
+                image[x, y] = x < image.Width / 2 ? left : right;
+            }
+        }
+
+        var stream = new MemoryStream();
+        image.SaveAsPng(stream);
         stream.Position = 0;
         return stream;
     }
