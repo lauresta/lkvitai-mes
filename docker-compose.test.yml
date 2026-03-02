@@ -19,8 +19,10 @@ services:
       ITEMIMAGES__SECRETKEY: "${ITEMIMAGES__SECRETKEY}"
       ITEMIMAGES__MAXUPLOADMB: "${ITEMIMAGES__MAXUPLOADMB:-5}"
       ITEMIMAGES__CACHEMAXAGESECONDS: "${ITEMIMAGES__CACHEMAXAGESECONDS:-86400}"
+      ITEMIMAGES__MODEL_PATH: "/models/item-image-model.onnx"
     volumes:
       - ${API_LOGS_DIR:-/opt/lkvitai-mes/logs/api}:/app/logs
+      - ${CLIP_MODEL_DIR:-/tmp/models}:/models:ro
     networks:
       - lkvitai-mes_default
     healthcheck:
