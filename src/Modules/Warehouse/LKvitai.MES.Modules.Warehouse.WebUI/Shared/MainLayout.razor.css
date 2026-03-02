@@ -51,10 +51,6 @@
 }
 
 @media (max-width: 768px) {
-    .sidebar {
-        display: none;
-    }
-
     .app-topbar {
         padding: 0 0.75rem;
         min-height: 52px;
@@ -68,4 +64,12 @@
     .app-topbar-title {
         font-size: 0.95rem;
     }
+}
+
+.app-topbar-hamburger {
+    color: #1f2f46;
+    font-size: 1.5rem;
+    padding: 0.125rem 0.375rem;
+    line-height: 1;
+    text-decoration: none;
 }
