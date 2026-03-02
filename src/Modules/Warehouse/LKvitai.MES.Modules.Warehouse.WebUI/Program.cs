@@ -74,6 +74,34 @@ if (!app.Environment.IsDevelopment() && !string.Equals(app.Environment.Environme
 app.UseStaticFiles();
 app.UseRouting();
 
+// Photo proxy: in production nginx routes /api/* to the API directly.
+// In local dev the browser resolves relative /api/* URLs against the WebUI port,
+// so this endpoint forwards those requests to the backend API and streams the response.
+app.MapGet("/api/warehouse/v1/items/{itemId:int}/photos/{photoId:guid}",
+    async (int itemId, Guid photoId, string? size, IHttpClientFactory factory,
+           HttpContext httpCtx, CancellationToken cancellationToken) =>
+    {
+        var client = factory.CreateClient("WarehouseApi");
+        var sizeParam = string.IsNullOrWhiteSpace(size) ? "thumb" : size;
+        var upstream = await client.GetAsync(
+            $"/api/warehouse/v1/items/{itemId}/photos/{photoId}?size={sizeParam}",
+            cancellationToken);
+
+        httpCtx.Response.StatusCode = (int)upstream.StatusCode;
+
+        if (upstream.Content.Headers.ContentType is { } contentType)
+            httpCtx.Response.ContentType = contentType.ToString();
+
+        if (upstream.Headers.ETag is { } etag)
+            httpCtx.Response.Headers.ETag = etag.ToString();
+
+        if (upstream.Headers.CacheControl is { } cacheControl)
+            httpCtx.Response.Headers.CacheControl = cacheControl.ToString();
+
+        if (upstream.IsSuccessStatusCode)
+            await upstream.Content.CopyToAsync(httpCtx.Response.Body, cancellationToken);
+    });
+
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
 

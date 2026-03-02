@@ -5,6 +5,7 @@ using LKvitai.MES.Modules.Warehouse.Domain.Common;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 using System.Text.Json;
 using HandlingUnitAggregate = LKvitai.MES.Modules.Warehouse.Domain.Aggregates.HandlingUnit;
 using WarehouseLayoutAggregate = LKvitai.MES.Modules.Warehouse.Domain.Aggregates.WarehouseLayout;
@@ -35,6 +36,7 @@ public class WarehouseDbContext : DbContext
     public DbSet<WarehouseLayoutAggregate> Warehouses => Set<WarehouseLayoutAggregate>();
 
     public DbSet<Item> Items => Set<Item>();
+    public DbSet<ItemPhoto> ItemPhotos => Set<ItemPhoto>();
     public DbSet<ItemCategory> ItemCategories => Set<ItemCategory>();
     public DbSet<UnitOfMeasure> UnitOfMeasures => Set<UnitOfMeasure>();
     public DbSet<ItemUoMConversion> ItemUoMConversions => Set<ItemUoMConversion>();
@@ -222,6 +224,34 @@ public class WarehouseDbContext : DbContext
                 t.HasCheckConstraint("ck_items_weight", "\"Weight\" IS NULL OR \"Weight\" > 0");
                 t.HasCheckConstraint("ck_items_volume", "\"Volume\" IS NULL OR \"Volume\" > 0");
             });
+        });
+
+        modelBuilder.Entity<ItemPhoto>(entity =>
+        {
+            entity.ToTable("item_photos");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.OriginalKey).HasMaxLength(500).IsRequired();
+            entity.Property(e => e.ThumbKey).HasMaxLength(500).IsRequired();
+            entity.Property(e => e.ContentType).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.SizeBytes).IsRequired();
+            entity.Property(e => e.CreatedAt).IsRequired();
+            entity.Property(e => e.IsPrimary).IsRequired();
+            entity.Property(e => e.Tags).HasMaxLength(500);
+            // ImageEmbedding is written/updated exclusively via raw SQL (CAST(... AS vector)).
+            // EF Core must not include it in INSERT or UPDATE commands because the C# type is
+            // string? and Npgsql would send it as 'character varying', which PostgreSQL rejects
+            // with "column is of type vector but expression is of type character varying".
+            var embeddingProp = entity.Property(e => e.ImageEmbedding).HasColumnType("vector(512)");
+            embeddingProp.Metadata.SetBeforeSaveBehavior(PropertySaveBehavior.Ignore);
+            embeddingProp.Metadata.SetAfterSaveBehavior(PropertySaveBehavior.Ignore);
+            entity.HasIndex(e => e.ItemId);
+            entity.HasIndex(e => new { e.ItemId, e.IsPrimary })
+                .IsUnique()
+                .HasFilter("\"IsPrimary\" = true");
+            entity.HasOne(e => e.Item)
+                .WithMany(e => e.Photos)
+                .HasForeignKey(e => e.ItemId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<ItemUoMConversion>(entity =>

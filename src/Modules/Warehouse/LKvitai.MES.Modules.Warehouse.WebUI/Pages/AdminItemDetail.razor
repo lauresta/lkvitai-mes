@@ -1,0 +1,220 @@
+@page "/admin/items/{Id:int}"
+@inject MasterDataAdminClient AdminClient
+@inject ToastService ToastService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Item Details - LKvitai.MES</PageTitle>
+
+<h3>Item Details</h3>
+
+@if (_apiError is not null)
+{
+    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                 TraceId="@_apiError.TraceId"
+                 OnRetry="ReloadAsync"
+                 OnDismiss="@(() => _apiError = null)" />
+}
+
+<div class="card shadow-sm mb-3 position-relative">
+    <LoadingSpinner IsLoading="@_isLoading" />
+    <div class="card-body">
+        @if (_item is null)
+        {
+            <p class="text-muted mb-0">Item not found.</p>
+        }
+        else
+        {
+            <div class="row g-2">
+                <div class="col-md-3"><strong>SKU:</strong> @_item.InternalSKU</div>
+                <div class="col-md-5"><strong>Name:</strong> @_item.Name</div>
+                <div class="col-md-2"><strong>Status:</strong> @_item.Status</div>
+                <div class="col-md-2"><strong>Base UoM:</strong> @_item.BaseUoM</div>
+                <div class="col-md-6"><strong>Description:</strong> @(_item.Description ?? "-")</div>
+                <div class="col-md-3"><strong>Primary Barcode:</strong> @(_item.PrimaryBarcode ?? "-")</div>
+                <div class="col-md-3"><strong>Product Config:</strong> @(_item.ProductConfigId ?? "-")</div>
+                <div class="col-md-3"><strong>Lot Tracking:</strong> @(_item.RequiresLotTracking ? "Yes" : "No")</div>
+                <div class="col-md-3"><strong>Requires QC:</strong> @(_item.RequiresQC ? "Yes" : "No")</div>
+                <div class="col-md-3"><strong>Created:</strong> @_item.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</div>
+                <div class="col-md-3"><strong>Updated:</strong> @(_item.UpdatedAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "-")</div>
+            </div>
+        }
+    </div>
+</div>
+
+<div class="card shadow-sm mb-3 position-relative">
+    <LoadingSpinner IsLoading="@_isLoading" />
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <strong>Photos (@_photos.Count)</strong>
+            <div class="d-flex gap-2 align-items-center flex-wrap">
+                <InputFile OnChange="HandleFileSelectedAsync" accept="image/jpeg,image/png,image/webp" />
+                <button class="btn btn-sm btn-outline-warning" @onclick="RecomputeEmbeddingsAsync"
+                        title="Recompute image search embeddings for all photos of this item">
+                    ⟳ Recompute embeddings
+                </button>
+                <button class="btn btn-sm btn-outline-secondary" @onclick="BackToList">Back to list</button>
+            </div>
+        </div>
+
+        @if (_photos.Count == 0)
+        {
+            <p class="text-muted mb-0">No photos uploaded.</p>
+        }
+        else
+        {
+            <div class="row g-3">
+                @foreach (var photo in _photos)
+                {
+                    <div class="col-6 col-md-3 col-lg-2">
+                        <div class="card h-100">
+                            <img src="@photo.ThumbUrl" alt="photo" loading="lazy" style="height:140px;object-fit:cover;" />
+                            <div class="card-body p-2">
+                                @if (photo.IsPrimary)
+                                {
+                                    <div class="badge bg-primary mb-2">Primary</div>
+                                }
+                                <div class="d-grid gap-1">
+                                    <a href="@photo.OriginalUrl" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary">View original</a>
+                                    <button class="btn btn-sm btn-outline-primary" disabled="@photo.IsPrimary" @onclick="@(() => MakePrimaryAsync(photo.Id))">Set primary</button>
+                                    <button class="btn btn-sm btn-outline-danger" @onclick="@(() => DeletePhotoAsync(photo.Id))">Delete</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private ItemDetailsDto? _item;
+    private readonly List<ItemPhotoDto> _photos = [];
+    private bool _isLoading;
+    private ApiException? _apiError;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        _isLoading = true;
+        _apiError = null;
+        try
+        {
+            _item = await AdminClient.GetItemByIdAsync(Id);
+            _photos.Clear();
+            _photos.AddRange(_item.Photos.OrderByDescending(x => x.IsPrimary).ThenByDescending(x => x.CreatedAt));
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            _item = null;
+            _photos.Clear();
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task HandleFileSelectedAsync(InputFileChangeEventArgs args)
+    {
+        var file = args.File;
+        if (file is null)
+        {
+            return;
+        }
+
+        _isLoading = true;
+        StateHasChanged();
+        try
+        {
+            var maxBytes = 5L * 1024 * 1024;
+            await using var stream = file.OpenReadStream(maxBytes);
+            using var ms = new MemoryStream();
+            await stream.CopyToAsync(ms);
+            await AdminClient.UploadPhotoAsync(Id, file.Name, ms.ToArray(), file.ContentType);
+            ToastService.ShowSuccess("Photo uploaded.");
+            await ReloadAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task MakePrimaryAsync(Guid photoId)
+    {
+        try
+        {
+            await AdminClient.MakePrimaryPhotoAsync(Id, photoId);
+            ToastService.ShowSuccess("Primary photo updated.");
+            await ReloadAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+    }
+
+    private async Task DeletePhotoAsync(Guid photoId)
+    {
+        try
+        {
+            await AdminClient.DeletePhotoAsync(Id, photoId);
+            ToastService.ShowWarning("Photo deleted.");
+            await ReloadAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+    }
+
+    private async Task RecomputeEmbeddingsAsync()
+    {
+        _isLoading = true;
+        StateHasChanged();
+        try
+        {
+            var count = await AdminClient.RecomputeEmbeddingsAsync(Id);
+            ToastService.ShowSuccess($"Embeddings recomputed for {count} photo(s).");
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void BackToList()
+    {
+        NavigationManager.NavigateTo("/admin/items");
+    }
+
+    private static string BuildErrorMessage(ApiException error)
+    {
+        if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
+        {
+            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+        }
+
+        return error.UserMessage;
+    }
+}

@@ -21,6 +21,7 @@ using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Minio;
 using Serilog;
 using Serilog.Events;
 
@@ -71,6 +72,20 @@ builder.Services.Configure<DevAuthOptions>(builder.Configuration.GetSection(DevA
 builder.Services.Configure<OAuthOptions>(builder.Configuration.GetSection(OAuthOptions.SectionName));
 builder.Services.Configure<MfaOptions>(builder.Configuration.GetSection(MfaOptions.SectionName));
 builder.Services.Configure<LabelPrintingConfig>(builder.Configuration.GetSection("LabelPrinting"));
+builder.Services.AddSingleton(_ => ItemImageOptions.FromConfiguration(builder.Configuration));
+builder.Services.AddSingleton<IMinioClient>(sp =>
+{
+    var options = sp.GetRequiredService<ItemImageOptions>();
+    return new MinioClient()
+        .WithEndpoint(options.Endpoint)
+        .WithCredentials(options.AccessKey, options.SecretKey)
+        .WithSSL(options.UseSsl)
+        .Build();
+});
+builder.Services.AddSingleton<IItemImageStorageService, ItemImageStorageService>();
+builder.Services.AddScoped<IItemPhotoService, ItemPhotoService>();
+builder.Services.AddScoped<IItemImageSearchCapabilityService, ItemImageSearchCapabilityService>();
+builder.Services.AddScoped<IItemImageEmbeddingService, ItemImageEmbeddingService>();
 builder.Services.AddSingleton<IDevAuthService, DevAuthService>();
 builder.Services.AddSingleton<IFeatureFlagService, FeatureFlagService>();
 builder.Services.AddSingleton<ConnectionPoolMonitoringInterceptor>();

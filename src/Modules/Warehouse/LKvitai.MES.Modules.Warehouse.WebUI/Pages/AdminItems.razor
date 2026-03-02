@@ -1,6 +1,7 @@
 @page "/admin/items"
 @inject MasterDataAdminClient AdminClient
 @inject ToastService ToastService
+@inject NavigationManager NavigationManager
 
 <PageTitle>Admin Items - LKvitai.MES</PageTitle>
 
@@ -61,8 +62,8 @@
             <table class="table table-sm table-hover align-middle">
                 <thead>
                 <tr>
-                    <th>SKU</th>
                     <th>Name</th>
+                    <th>SKU</th>
                     <th>Category</th>
                     <th>Status</th>
                     <th>Lot</th>
@@ -82,8 +83,30 @@
                     @foreach (var row in _items)
                     {
                         <tr>
-                            <td>@row.InternalSKU</td>
-                            <td>@row.Name</td>
+                            <td>
+                                <div class="d-flex align-items-center gap-3">
+                                    @if (!string.IsNullOrWhiteSpace(row.PrimaryThumbnailUrl))
+                                    {
+                                        <img src="@row.PrimaryThumbnailUrl"
+                                             alt="@row.Name"
+                                             loading="lazy"
+                                             style="width:48px;height:48px;object-fit:cover;border-radius:6px;flex-shrink:0;cursor:pointer;"
+                                             @onclick="@(() => OpenDetails(row.Id))" />
+                                    }
+                                    else
+                                    {
+                                        <div class="bg-light border d-flex align-items-center justify-content-center text-muted flex-shrink-0"
+                                             style="width:48px;height:48px;border-radius:6px;font-size:10px;cursor:pointer;"
+                                             @onclick="@(() => OpenDetails(row.Id))">No img</div>
+                                    }
+                                    <span>@row.Name</span>
+                                </div>
+                            </td>
+                            <td>
+                                <a href="" @onclick="@((MouseEventArgs _) => OpenDetails(row.Id))" @onclick:preventDefault="true">
+                                    @row.InternalSKU
+                                </a>
+                            </td>
                             <td>@row.CategoryName</td>
                             <td>@row.Status</td>
                             <td>@(row.RequiresLotTracking ? "Yes" : "No")</td>
@@ -386,6 +409,11 @@
         }
 
         return error.UserMessage;
+    }
+
+    private void OpenDetails(int itemId)
+    {
+        NavigationManager.NavigateTo($"/admin/items/{itemId}");
     }
 
     private class ItemFormModel

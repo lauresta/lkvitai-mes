@@ -31,6 +31,23 @@ public sealed class Item : AuditableEntity
     public UnitOfMeasure? BaseUnit { get; set; }
     public ICollection<ItemUoMConversion> UomConversions { get; set; } = new List<ItemUoMConversion>();
     public ICollection<ItemBarcode> Barcodes { get; set; } = new List<ItemBarcode>();
+    public ICollection<ItemPhoto> Photos { get; set; } = new List<ItemPhoto>();
+}
+
+public sealed class ItemPhoto
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public int ItemId { get; set; }
+    public string OriginalKey { get; set; } = string.Empty;
+    public string ThumbKey { get; set; } = string.Empty;
+    public string ContentType { get; set; } = string.Empty;
+    public long SizeBytes { get; set; }
+    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
+    public bool IsPrimary { get; set; }
+    public string? Tags { get; set; }
+    public string? ImageEmbedding { get; set; }
+
+    public Item? Item { get; set; }
 }
 
 public sealed class ItemCategory

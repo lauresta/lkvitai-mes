@@ -22,6 +22,7 @@ public record InboundShipmentLineDetailDto
     public string ItemSku { get; init; } = string.Empty;
     public string ItemName { get; init; } = string.Empty;
     public string? PrimaryBarcode { get; init; }
+    public string? PrimaryThumbnailUrl { get; init; }
     public bool RequiresLotTracking { get; init; }
     public bool RequiresQC { get; init; }
     public decimal ExpectedQty { get; init; }

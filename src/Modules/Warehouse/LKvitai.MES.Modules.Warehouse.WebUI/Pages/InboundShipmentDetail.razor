@@ -105,6 +105,7 @@
                     <thead>
                         <tr>
                             <th>Line</th>
+                            <th></th>
                             <th>Item</th>
                             <th>Barcode</th>
                             <th>Expected</th>
@@ -118,6 +119,16 @@
                         {
                             <tr class="@(line.LineId == SelectedLineId ? "table-primary" : null)">
                                 <td>@line.LineId</td>
+                                <td>
+                                    @if (!string.IsNullOrWhiteSpace(line.PrimaryThumbnailUrl))
+                                    {
+                                        <img src="@line.PrimaryThumbnailUrl" alt="@line.ItemSku" loading="lazy" style="width:36px;height:36px;object-fit:cover;border-radius:4px;" />
+                                    }
+                                    else
+                                    {
+                                        <div class="bg-light border text-muted d-flex align-items-center justify-content-center" style="width:36px;height:36px;border-radius:4px;">-</div>
+                                    }
+                                </td>
                                 <td>
                                     <div>@line.ItemSku</div>
                                     <div class="small text-muted">@line.ItemName</div>

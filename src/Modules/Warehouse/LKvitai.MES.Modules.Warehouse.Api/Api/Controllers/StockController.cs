@@ -5,6 +5,7 @@ using LKvitai.MES.Contracts.ReadModels;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Caching;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
+using LKvitai.MES.Modules.Warehouse.Api.Services;
 using Marten;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -103,6 +104,16 @@ public sealed class StockController : ControllerBase
             .Where(x => skus.Contains(x.InternalSKU))
             .ToDictionaryAsync(x => x.InternalSKU, cancellationToken);
 
+        var itemIds = itemMap.Values.Select(x => x.Id).Distinct().ToList();
+        var primaryPhotoByItemId = await _dbContext.ItemPhotos
+            .AsNoTracking()
+            .Where(x => itemIds.Contains(x.ItemId) && x.IsPrimary)
+            .Select(x => new { x.ItemId, x.Id })
+            .ToDictionaryAsync(
+                x => x.ItemId,
+                x => ItemPhotoService.BuildProxyUrl(x.ItemId, x.Id, "thumb"),
+                cancellationToken);
+
         var locationMap = await LoadLocationsByCodeAsync(locationCodes, cancellationToken);
 
         var mapped = rows.Select(row =>
@@ -125,7 +136,10 @@ public sealed class StockController : ControllerBase
                 row.BaseUoM ?? item?.BaseUoM ?? string.Empty,
                 row.LastUpdated,
                 item?.CategoryId,
-                location?.IsVirtual ?? false);
+                location?.IsVirtual ?? false,
+                item is not null && primaryPhotoByItemId.TryGetValue(item.Id, out var photoUrl)
+                    ? photoUrl
+                    : null);
         });
 
         if (itemId.HasValue)
@@ -201,7 +215,8 @@ public sealed class StockController : ControllerBase
                 x.ReservedQty,
                 x.AvailableQty,
                 x.BaseUom,
-                x.LastUpdated)).ToList(),
+                x.LastUpdated,
+                x.PrimaryThumbnailUrl)).ToList(),
             totalCount,
             pageNumber,
             pageSize,
@@ -470,7 +485,8 @@ public sealed class StockController : ControllerBase
         string BaseUom,
         DateTime LastUpdated,
         int? CategoryId,
-        bool IsVirtualLocation);
+        bool IsVirtualLocation,
+        string? PrimaryThumbnailUrl);
 
     public sealed record AvailableStockItemDto(
         int? ItemId,
@@ -484,7 +500,8 @@ public sealed class StockController : ControllerBase
         decimal ReservedQty,
         decimal AvailableQty,
         string BaseUom,
-        DateTime LastUpdated);
+        DateTime LastUpdated,
+        string? PrimaryThumbnailUrl);
 
     public sealed record PagedStockResponse<T>(
         IReadOnlyList<T> Items,

@@ -32,6 +32,8 @@
     <PackageReference Include="Polly" />
     <PackageReference Include="Otp.NET" />
     <PackageReference Include="QRCoder" />
+    <PackageReference Include="Minio" />
+    <PackageReference Include="SixLabors.ImageSharp" />
   </ItemGroup>
 
   <ItemGroup>

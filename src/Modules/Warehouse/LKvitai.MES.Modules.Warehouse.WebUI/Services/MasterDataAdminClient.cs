@@ -60,11 +60,81 @@ public sealed class MasterDataAdminClient
     public Task CreateItemAsync(CreateOrUpdateItemRequest request, CancellationToken cancellationToken = default)
         => SendNoContentAsync(HttpMethod.Post, "/api/warehouse/v1/items", request, cancellationToken);
 
+    public Task<ItemDetailsDto> GetItemByIdAsync(int id, CancellationToken cancellationToken = default)
+        => GetAsync<ItemDetailsDto>($"/api/warehouse/v1/items/{id}", cancellationToken);
+
     public Task UpdateItemAsync(int id, CreateOrUpdateItemRequest request, CancellationToken cancellationToken = default)
         => SendNoContentAsync(HttpMethod.Put, $"/api/warehouse/v1/items/{id}", request, cancellationToken);
 
     public Task DeactivateItemAsync(int id, CancellationToken cancellationToken = default)
         => SendNoContentAsync(HttpMethod.Post, $"/api/warehouse/v1/items/{id}/deactivate", null, cancellationToken);
+
+    public Task<ItemPhotosResponseDto> GetItemPhotosAsync(int id, CancellationToken cancellationToken = default)
+        => GetAsync<ItemPhotosResponseDto>($"/api/warehouse/v1/items/{id}/photos", cancellationToken);
+
+    public Task MakePrimaryPhotoAsync(int itemId, Guid photoId, CancellationToken cancellationToken = default)
+        => SendNoContentAsync(
+            HttpMethod.Post,
+            $"/api/warehouse/v1/items/{itemId}/photos/{photoId}/make-primary",
+            null,
+            cancellationToken);
+
+    public Task DeletePhotoAsync(int itemId, Guid photoId, CancellationToken cancellationToken = default)
+        => SendNoContentAsync(
+            HttpMethod.Delete,
+            $"/api/warehouse/v1/items/{itemId}/photos/{photoId}",
+            null,
+            cancellationToken);
+
+    public async Task UploadPhotoAsync(
+        int itemId,
+        string fileName,
+        byte[] fileBytes,
+        string contentType,
+        CancellationToken cancellationToken = default)
+    {
+        var client = _factory.CreateClient("WarehouseApi");
+        using var content = new MultipartFormDataContent();
+        var fileContent = new ByteArrayContent(fileBytes);
+        fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(contentType);
+        content.Add(fileContent, "file", fileName);
+
+        var response = await client.PostAsync($"/api/warehouse/v1/items/{itemId}/photos", content, cancellationToken);
+        await EnsureSuccessAsync(response);
+    }
+
+    public async Task<int> RecomputeEmbeddingsAsync(int itemId, CancellationToken cancellationToken = default)
+    {
+        var client = _factory.CreateClient("WarehouseApi");
+        var response = await client.PostAsync(
+            $"/api/warehouse/v1/items/{itemId}/photos/recompute-embeddings",
+            null,
+            cancellationToken);
+        await EnsureSuccessAsync(response);
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+        var result = JsonSerializer.Deserialize<JsonElement>(body, JsonOptions);
+        return result.TryGetProperty("updatedCount", out var prop) ? prop.GetInt32() : 0;
+    }
+
+    public async Task<ImageSearchResponseDto> SearchByImageAsync(
+        string fileName,
+        byte[] fileBytes,
+        string contentType,
+        CancellationToken cancellationToken = default)
+    {
+        var client = _factory.CreateClient("WarehouseApi");
+        using var content = new MultipartFormDataContent();
+        var fileContent = new ByteArrayContent(fileBytes);
+        fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(contentType);
+        content.Add(fileContent, "file", fileName);
+
+        var response = await client.PostAsync("/api/warehouse/v1/items/search-by-image", content, cancellationToken);
+        await EnsureSuccessAsync(response);
+
+        var body = await response.Content.ReadAsStringAsync(cancellationToken);
+        return JsonSerializer.Deserialize<ImageSearchResponseDto>(body, JsonOptions)
+               ?? new ImageSearchResponseDto();
+    }
 
     public Task<PagedApiResponse<AdminSupplierDto>> GetSuppliersAsync(
         string? search,

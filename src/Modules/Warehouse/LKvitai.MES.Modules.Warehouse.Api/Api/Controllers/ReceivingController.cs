@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Text;
 using LKvitai.MES.Modules.Warehouse.Api.ErrorHandling;
 using LKvitai.MES.Modules.Warehouse.Api.Security;
+using LKvitai.MES.Modules.Warehouse.Api.Services;
 using LKvitai.MES.Modules.Warehouse.Application.Services;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Contracts.ReadModels;
@@ -134,6 +135,16 @@ public sealed class ReceivingController : ControllerBase
             return Failure(Result.Fail(DomainErrorCodes.NotFound, $"Shipment '{id}' does not exist."));
         }
 
+        var itemIds = shipment.Lines.Select(x => x.ItemId).Distinct().ToList();
+        var primaryPhotos = await _dbContext.ItemPhotos
+            .AsNoTracking()
+            .Where(x => itemIds.Contains(x.ItemId) && x.IsPrimary)
+            .Select(x => new { x.ItemId, x.Id })
+            .ToDictionaryAsync(
+                x => x.ItemId,
+                x => ItemPhotoService.BuildProxyUrl(x.ItemId, x.Id, "thumb"),
+                cancellationToken);
+
         return Ok(new InboundShipmentDetailDto(
             shipment.Id,
             shipment.ReferenceNumber,
@@ -151,6 +162,7 @@ public sealed class ReceivingController : ControllerBase
                     x.Item?.InternalSKU ?? string.Empty,
                     x.Item?.Name ?? string.Empty,
                     x.Item?.PrimaryBarcode,
+                    primaryPhotos.TryGetValue(x.ItemId, out var primaryThumbUrl) ? primaryThumbUrl : null,
                     x.Item?.RequiresLotTracking ?? false,
                     x.Item?.RequiresQC ?? false,
                     x.ExpectedQty,
@@ -539,6 +551,7 @@ public sealed class ReceivingController : ControllerBase
         string ItemSku,
         string ItemName,
         string? PrimaryBarcode,
+        string? PrimaryThumbnailUrl,
         bool RequiresLotTracking,
         bool RequiresQC,
         decimal ExpectedQty,

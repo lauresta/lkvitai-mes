@@ -20,6 +20,63 @@ public record AdminItemDto
     public bool RequiresLotTracking { get; init; }
     public bool RequiresQC { get; init; }
     public string? PrimaryBarcode { get; init; }
+    public string? PrimaryThumbnailUrl { get; init; }
+    public Guid? PrimaryPhotoId { get; init; }
+}
+
+public record ItemPhotoDto
+{
+    public Guid Id { get; init; }
+    public int ItemId { get; init; }
+    public string ContentType { get; init; } = string.Empty;
+    public long SizeBytes { get; init; }
+    public DateTimeOffset CreatedAt { get; init; }
+    public bool IsPrimary { get; init; }
+    public string? Tags { get; init; }
+    public string OriginalUrl { get; init; } = string.Empty;
+    public string ThumbUrl { get; init; } = string.Empty;
+}
+
+public record ItemDetailsDto
+{
+    public int Id { get; init; }
+    public string InternalSKU { get; init; } = string.Empty;
+    public string Name { get; init; } = string.Empty;
+    public string? Description { get; init; }
+    public int CategoryId { get; init; }
+    public string BaseUoM { get; init; } = string.Empty;
+    public decimal? Weight { get; init; }
+    public decimal? Volume { get; init; }
+    public bool RequiresLotTracking { get; init; }
+    public bool RequiresQC { get; init; }
+    public string Status { get; init; } = string.Empty;
+    public string? PrimaryBarcode { get; init; }
+    public string? ProductConfigId { get; init; }
+    public DateTimeOffset CreatedAt { get; init; }
+    public DateTimeOffset? UpdatedAt { get; init; }
+    public string? PrimaryThumbnailUrl { get; init; }
+    public Guid? PrimaryPhotoId { get; init; }
+    public IReadOnlyList<ItemPhotoDto> Photos { get; init; } = Array.Empty<ItemPhotoDto>();
+}
+
+public record ItemPhotosResponseDto
+{
+    public int ItemId { get; init; }
+    public IReadOnlyList<ItemPhotoDto> Photos { get; init; } = Array.Empty<ItemPhotoDto>();
+}
+
+public record ImageSearchResultDto
+{
+    public int ItemId { get; init; }
+    public string SKU { get; init; } = string.Empty;
+    public string Name { get; init; } = string.Empty;
+    public string? PrimaryThumbnailUrl { get; init; }
+    public double Score { get; init; }
+}
+
+public record ImageSearchResponseDto
+{
+    public IReadOnlyList<ImageSearchResultDto> Results { get; init; } = Array.Empty<ImageSearchResultDto>();
 }
 
 public record CreateOrUpdateItemRequest

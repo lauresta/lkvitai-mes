@@ -1,8 +1,6 @@
 @page "/available-stock"
 @implements IDisposable
 @inject StockClient StockApiClient
-@inject IJSRuntime JavaScript
-@using System.Diagnostics
 
 <PageTitle>Available Stock - LKvitai.MES</PageTitle>
 
@@ -32,6 +30,11 @@
                 @_summaryText
             </div>
             <div class="d-flex flex-wrap gap-2 align-items-center">
+                <div class="btn-group" role="group" aria-label="View mode">
+                    <button class="btn btn-sm @(GetModeClass(StockViewMode.Table))" @onclick="@(() => SetMode(StockViewMode.Table))">Table</button>
+                    <button class="btn btn-sm @(GetModeClass(StockViewMode.List))" @onclick="@(() => SetMode(StockViewMode.List))">List</button>
+                    <button class="btn btn-sm @(GetModeClass(StockViewMode.Gallery))" @onclick="@(() => SetMode(StockViewMode.Gallery))">Gallery</button>
+                </div>
                 <label class="form-label mb-0 text-muted small" for="stock-page-size-select">Page size</label>
                 <select id="stock-page-size-select"
                         class="form-select form-select-sm"
@@ -64,55 +67,117 @@
         }
         else
         {
-            <MudDataGrid T="AvailableStockItemDto"
-                         @ref="_grid"
-                         @key="_gridRenderKey"
-                         ServerData="LoadServerDataAsync"
-                         Filterable="false"
-                         SortMode="SortMode.Single"
-                         Dense="true"
-                         Hover="true"
-                         RowsPerPage="@_pageSize"
-                         Loading="@_isSearching"
-                         @attributes="@StockGridAttributes">
-                <Columns>
-                    <PropertyColumn Property="x => x.WarehouseId" Title="Warehouse" />
-                    <PropertyColumn Property="x => x.Location" Title="Location" />
-                    <PropertyColumn Property="x => x.SKU" Title="SKU" />
-                    <PropertyColumn Property="x => x.PhysicalQty" Title="Physical Qty" />
-                    <PropertyColumn Property="x => x.ReservedQty" Title="Reserved Qty" />
-                    <PropertyColumn Property="x => x.AvailableQty" Title="Available Qty" />
-                    <TemplateColumn Title="Last Updated">
-                        <CellTemplate>
-                            @context.Item.LastUpdated.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")
-                            <span class="ms-2"><StaleBadge LastUpdated="context.Item.LastUpdated" /></span>
-                        </CellTemplate>
-                    </TemplateColumn>
-                </Columns>
-                <NoRecordsContent>
-                    <MudText Typo="Typo.body2" Class="text-muted">No stock found matching filters.</MudText>
-                </NoRecordsContent>
-                <PagerContent>
-                    <div data-testid="stock-pager">
-                        <MudDataGridPager T="AvailableStockItemDto" />
-                    </div>
-                </PagerContent>
-            </MudDataGrid>
-
-            @if (_items.Count == 0 && _apiError is null && !_isSearching)
+            @if (_viewMode == StockViewMode.Table)
             {
-                <p class="text-muted mb-0">No stock found matching filters.</p>
+                <MudDataGrid T="AvailableStockItemDto"
+                             Items="_items"
+                             Filterable="false"
+                             SortMode="SortMode.None"
+                             Dense="true"
+                             Hover="true"
+                             Loading="@_isSearching"
+                             @attributes="@StockGridAttributes">
+                    <NoRecordsContent>
+                        <p class="text-muted mb-0 py-2">No stock found matching filters.</p>
+                    </NoRecordsContent>
+                    <Columns>
+                        <TemplateColumn Title="">
+                            <CellTemplate>
+                                @if (!string.IsNullOrWhiteSpace(context.Item.PrimaryThumbnailUrl))
+                                {
+                                    <img src="@context.Item.PrimaryThumbnailUrl" alt="@context.Item.SKU" loading="lazy" style="width:48px;height:48px;object-fit:cover;border-radius:4px;" />
+                                }
+                                else
+                                {
+                                    <div class="bg-light border text-muted d-flex align-items-center justify-content-center" style="width:48px;height:48px;border-radius:4px;">-</div>
+                                }
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <PropertyColumn Property="x => x.WarehouseId" Title="Warehouse" />
+                        <PropertyColumn Property="x => x.Location" Title="Location" />
+                        <PropertyColumn Property="x => x.SKU" Title="SKU" />
+                        <PropertyColumn Property="x => x.ItemName" Title="Name" />
+                        <PropertyColumn Property="x => x.PhysicalQty" Title="Physical Qty" />
+                        <PropertyColumn Property="x => x.ReservedQty" Title="Reserved Qty" />
+                        <PropertyColumn Property="x => x.AvailableQty" Title="Available Qty" />
+                        <TemplateColumn Title="Last Updated">
+                            <CellTemplate>
+                                @context.Item.LastUpdated.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")
+                                <span class="ms-2"><StaleBadge LastUpdated="context.Item.LastUpdated" /></span>
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                </MudDataGrid>
             }
+            else if (_viewMode == StockViewMode.List)
+            {
+                <div class="d-flex flex-column gap-2">
+                    @foreach (var row in _items)
+                    {
+                        <div class="border rounded p-2 d-flex align-items-center gap-3">
+                            @if (!string.IsNullOrWhiteSpace(row.PrimaryThumbnailUrl))
+                            {
+                                <img src="@row.PrimaryThumbnailUrl" alt="@row.SKU" loading="lazy" style="width:64px;height:64px;object-fit:cover;border-radius:4px;" />
+                            }
+                            else
+                            {
+                                <div class="bg-light border text-muted d-flex align-items-center justify-content-center" style="width:64px;height:64px;border-radius:4px;">-</div>
+                            }
+                            <div class="flex-grow-1">
+                                <div><strong>@row.SKU</strong> - @row.ItemName</div>
+                                <div class="small text-muted">@row.WarehouseId / @row.Location</div>
+                            </div>
+                            <div class="text-end">
+                                <div>On hand: @row.PhysicalQty</div>
+                                <div>Available: @row.AvailableQty</div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="row g-3">
+                    @foreach (var row in _items)
+                    {
+                        <div class="col-6 col-md-4 col-lg-3">
+                            <div class="card h-100">
+                                @if (!string.IsNullOrWhiteSpace(row.PrimaryThumbnailUrl))
+                                {
+                                    <img src="@row.PrimaryThumbnailUrl" alt="@row.SKU" loading="lazy" style="height:150px;object-fit:cover;" />
+                                }
+                                else
+                                {
+                                    <div class="bg-light border text-muted d-flex align-items-center justify-content-center" style="height:150px;">No image</div>
+                                }
+                                <div class="card-body">
+                                    <div><strong>@row.SKU</strong></div>
+                                    <div class="small text-muted mb-2">@row.ItemName</div>
+                                    <div class="small">@row.WarehouseId / @row.Location</div>
+                                    <div class="small">On hand: @row.PhysicalQty</div>
+                                    <div class="small">Available: @row.AvailableQty</div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+
+            <div class="mt-3">
+                <Pagination CurrentPage="@_page"
+                            TotalPages="@_totalPages"
+                            PageSize="@_pageSize"
+                            OnPageChanged="OnPageChangedAsync"
+                            OnPageSizeChanged="OnPageSizeChangedAsync" />
+            </div>
         }
     </div>
 </div>
 </div>
 
 @code {
-    private MudDataGrid<AvailableStockItemDto>? _grid;
     private IReadOnlyList<WarehouseDto> _warehouses = Array.Empty<WarehouseDto>();
     private IReadOnlyList<AvailableStockItemDto> _items = Array.Empty<AvailableStockItemDto>();
-
     private AvailableStockSearchFilters _filters = new();
 
     private bool _isLoadingWarehouses = true;
@@ -122,13 +187,13 @@
     private int _page = 1;
     private int _pageSize = 50;
     private int _totalCount;
-    private int _gridRenderKey;
 
     private ApiException? _apiError;
     private bool _isDisposed;
     private readonly CancellationTokenSource _disposeCts = new();
     private static readonly Dictionary<string, object> StockGridAttributes = new() { ["data-testid"] = "stock-grid" };
 
+    private StockViewMode _viewMode = StockViewMode.Table;
     private int _totalPages => Math.Max(1, (int)Math.Ceiling(_totalCount / (double)Math.Max(1, _pageSize)));
 
     private string _summaryText => _hasSearched
@@ -165,41 +230,10 @@
         try
         {
             _warehouses = await StockApiClient.GetWarehousesAsync(_disposeCts.Token);
-            if (_isDisposed)
-            {
-                return;
-            }
         }
         catch (ApiException ex)
         {
-            if (_isDisposed)
-            {
-                return;
-            }
-
             _apiError = ex;
-            _warehouses = Array.Empty<WarehouseDto>();
-        }
-        catch (OperationCanceledException) when (_disposeCts.IsCancellationRequested)
-        {
-            return;
-        }
-        catch (Exception ex)
-        {
-            if (_isDisposed)
-            {
-                return;
-            }
-
-            _apiError = new ApiException(
-                new ProblemDetailsModel
-                {
-                    Title = "Warehouse lookup failed",
-                    Detail = ex.Message,
-                    Status = 500,
-                    TraceId = Activity.Current?.Id
-                },
-                500);
             _warehouses = Array.Empty<WarehouseDto>();
         }
         finally
@@ -231,15 +265,14 @@
 
         _hasSearched = true;
         _page = 1;
-        _gridRenderKey++;
-        await InvokeAsync(StateHasChanged);
+        await LoadPageAsync(_page, _pageSize);
     }
 
-    private async Task<SearchResultState> SearchAsync(int page, int pageSize)
+    private async Task LoadPageAsync(int page, int pageSize)
     {
         if (_isDisposed || !_filters.HasAtLeastOneFilter)
         {
-            return SearchResultState.Empty;
+            return;
         }
 
         _isSearching = true;
@@ -257,53 +290,16 @@
                 pageSize,
                 _disposeCts.Token);
 
-            if (_isDisposed)
-            {
-                return SearchResultState.Empty;
-            }
-
             _items = result.Items;
             _totalCount = result.TotalCount;
             _page = page;
             _pageSize = pageSize;
-
-            return new SearchResultState(result.Items, result.TotalCount);
         }
         catch (ApiException ex)
         {
-            if (_isDisposed)
-            {
-                return SearchResultState.Empty;
-            }
-
             _apiError = ex;
             _items = Array.Empty<AvailableStockItemDto>();
             _totalCount = 0;
-            return SearchResultState.Empty;
-        }
-        catch (OperationCanceledException) when (_disposeCts.IsCancellationRequested)
-        {
-            return SearchResultState.Empty;
-        }
-        catch (Exception ex)
-        {
-            if (_isDisposed)
-            {
-                return SearchResultState.Empty;
-            }
-
-            _apiError = new ApiException(
-                new ProblemDetailsModel
-                {
-                    Title = "Stock search failed",
-                    Detail = ex.Message,
-                    Status = 500,
-                    TraceId = Activity.Current?.Id
-                },
-                500);
-            _items = Array.Empty<AvailableStockItemDto>();
-            _totalCount = 0;
-            return SearchResultState.Empty;
         }
         finally
         {
@@ -314,161 +310,101 @@
         }
     }
 
-    private async Task<GridData<AvailableStockItemDto>> LoadServerDataAsync(GridState<AvailableStockItemDto> state)
-    {
-        if (!_hasSearched || !_filters.HasAtLeastOneFilter)
-        {
-            _items = Array.Empty<AvailableStockItemDto>();
-            _totalCount = 0;
-            return new GridData<AvailableStockItemDto>
-            {
-                Items = Array.Empty<AvailableStockItemDto>(),
-                TotalItems = 0
-            };
-        }
-
-        var requestedPageSize = state.PageSize > 0 ? state.PageSize : _pageSize;
-        var result = await SearchAsync(state.Page + 1, requestedPageSize);
-
-        return new GridData<AvailableStockItemDto>
-        {
-            Items = result.Items,
-            TotalItems = result.TotalCount
-        };
-    }
-
     private async Task RetryAsync()
     {
-        if (_isDisposed)
+        if (_filters.HasAtLeastOneFilter)
         {
-            return;
-        }
-
-        if (_hasSearched)
-        {
-            if (_grid is not null)
-            {
-                await _grid.ReloadServerData();
-            }
+            await LoadPageAsync(_page, _pageSize);
             return;
         }
 
         await LoadWarehousesAsync();
-    }
-
-    private void DismissError() => _apiError = null;
-
-    private async Task OnPageSizeChangedAsync(int pageSize)
-    {
-        if (_isDisposed)
-        {
-            return;
-        }
-
-        _pageSize = Math.Clamp(pageSize, 1, 500);
-        _gridRenderKey++;
-        await InvokeAsync(StateHasChanged);
-    }
-
-    private async Task OnPageSizeChangedFromChangeEventAsync(ChangeEventArgs args)
-    {
-        if (args.Value is null || !int.TryParse(args.Value.ToString(), out var pageSize))
-        {
-            return;
-        }
-
-        await OnPageSizeChangedAsync(pageSize);
     }
 
     private async Task RefreshAsync()
     {
-        if (_isDisposed)
-        {
-            return;
-        }
-
-        if (_hasSearched && _grid is not null)
-        {
-            await _grid.ReloadServerData();
-            return;
-        }
-
         await LoadWarehousesAsync();
+        if (_filters.HasAtLeastOneFilter)
+        {
+            await LoadPageAsync(_page, _pageSize);
+        }
     }
 
     private async Task ExportCsvAsync()
     {
-        if (_isDisposed)
-        {
-            return;
-        }
-
         if (_items.Count == 0)
         {
             return;
         }
 
-        var csv = BuildCsv(_items);
-        var filename = $"available-stock-{DateTime.UtcNow:yyyyMMdd-HHmmss}.csv";
-        await JavaScript.InvokeVoidAsync("csvExport.download", _disposeCts.Token, filename, csv);
+        try
+        {
+            await StockApiClient.ExportAvailableStockCsvAsync(
+                _filters.Warehouse,
+                _filters.Location,
+                _filters.Sku,
+                _filters.IncludeVirtual,
+                _disposeCts.Token);
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+        }
     }
 
-    private static string BuildCsv(IReadOnlyList<AvailableStockItemDto> rows)
+    private async Task OnPageChangedAsync(int page)
     {
-        var builder = new System.Text.StringBuilder();
-        builder.AppendLine("Warehouse,Location,SKU,Physical Qty,Reserved Qty,Available Qty,Last Updated");
-
-        foreach (var row in rows)
-        {
-            builder.Append(EscapeCsv(row.WarehouseId)).Append(',')
-                .Append(EscapeCsv(row.Location)).Append(',')
-                .Append(EscapeCsv(row.SKU)).Append(',')
-                .Append(row.PhysicalQty.ToString("0.##")).Append(',')
-                .Append(row.ReservedQty.ToString("0.##")).Append(',')
-                .Append(row.AvailableQty.ToString("0.##")).Append(',')
-                .Append(EscapeCsv(row.LastUpdated.ToString("O")))
-                .AppendLine();
-        }
-
-        return builder.ToString();
+        var nextPage = Math.Clamp(page, 1, _totalPages);
+        await LoadPageAsync(nextPage, _pageSize);
     }
 
-    private static string EscapeCsv(string value)
+    private async Task OnPageSizeChangedAsync(int size)
     {
-        if (string.IsNullOrEmpty(value))
-        {
-            return string.Empty;
-        }
-
-        if (value.Contains(',') || value.Contains('"') || value.Contains('\n') || value.Contains('\r'))
-        {
-            return "\"" + value.Replace("\"", "\"\"") + "\"";
-        }
-
-        return value;
+        var normalized = Math.Clamp(size, 1, 1000);
+        _pageSize = normalized;
+        _page = 1;
+        await LoadPageAsync(_page, _pageSize);
     }
 
-    private static string BuildErrorMessage(ApiException error)
+    private async Task OnPageSizeChangedFromChangeEventAsync(ChangeEventArgs args)
     {
-        if (error.ProblemDetails?.Errors is { Count: > 0 } fieldErrors)
+        if (args.Value is null || !int.TryParse(args.Value.ToString(), out var parsed))
         {
-            var flattened = fieldErrors
-                .SelectMany(entry => entry.Value.Select(message => $"{entry.Key}: {message}"));
-
-            var details = string.Join("; ", flattened);
-            return string.IsNullOrWhiteSpace(details) ? error.UserMessage : $"{error.UserMessage} {details}";
+            return;
         }
 
-        if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
-        {
-            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
-        }
-
-        return error.UserMessage;
+        await OnPageSizeChangedAsync(parsed);
     }
 
-    private sealed record SearchResultState(IReadOnlyList<AvailableStockItemDto> Items, int TotalCount)
+    private void SetMode(StockViewMode mode)
     {
-        public static readonly SearchResultState Empty = new(Array.Empty<AvailableStockItemDto>(), 0);
+        _viewMode = mode;
+    }
+
+    private string GetModeClass(StockViewMode mode)
+        => _viewMode == mode ? "btn-primary" : "btn-outline-primary";
+
+    private static string BuildErrorMessage(ApiException ex)
+    {
+        if (!string.IsNullOrWhiteSpace(ex.UserMessage))
+        {
+            return ex.UserMessage;
+        }
+
+        return ex.ProblemDetails?.Detail
+               ?? ex.ProblemDetails?.Title
+               ?? "Stock request failed.";
+    }
+
+    private void DismissError()
+    {
+        _apiError = null;
+    }
+
+    private enum StockViewMode
+    {
+        Table,
+        List,
+        Gallery
     }
 }
