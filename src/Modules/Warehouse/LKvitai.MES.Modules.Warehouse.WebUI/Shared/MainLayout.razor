@@ -4,15 +4,21 @@
 <MudLayout>
     <MudDrawer Class="sidebar bg-dark text-white"
                Variant="DrawerVariant.Responsive"
+               Breakpoint="Breakpoint.Md"
                Width="250px"
                Elevation="1"
-               Open="true">
+               @bind-Open="_drawerOpen"
+               ClipMode="DrawerClipMode.Never">
         <NavMenu />
     </MudDrawer>
 
     <MudMainContent>
         <header class="app-topbar">
             <div class="app-topbar-left">
+                <button class="btn btn-link app-topbar-hamburger d-md-none"
+                        @onclick="ToggleDrawer" aria-label="Toggle menu">
+                    <i class="bi bi-list"></i>
+                </button>
                 <img src="https://avatars.githubusercontent.com/u/233164040?s=40&v=4"
                      alt="LKvitai" class="app-topbar-mark" />
                 <h6 class="app-topbar-title mb-0">LKvitai.MES Warehouse</h6>
@@ -30,3 +36,12 @@
         </main>
     </MudMainContent>
 </MudLayout>
+
+@code {
+    private bool _drawerOpen = true;
+
+    private void ToggleDrawer()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+}
