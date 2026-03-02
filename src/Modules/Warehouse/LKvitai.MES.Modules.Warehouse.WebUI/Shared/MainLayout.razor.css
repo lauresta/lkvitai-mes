@@ -1,9 +1,17 @@
 .sidebar {
     flex-shrink: 0;
     overflow-y: auto;
-    max-height: 100vh;
-    position: sticky;
-    top: 0;
+}
+
+/* Desktop only: sticky sidebar when MudBlazor renders persistent drawer.
+   MudBlazor Breakpoint.Md = 960px — below that the drawer is overlay,
+   and position:sticky would break overlay positioning (needs position:fixed). */
+@media (min-width: 960px) {
+    .sidebar {
+        max-height: 100vh;
+        position: sticky;
+        top: 0;
+    }
 }
 
 .app-topbar {
@@ -72,4 +80,13 @@
     padding: 0.125rem 0.375rem;
     line-height: 1;
     text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+}
+
+/* Hide hamburger on desktop — matches MudBlazor Breakpoint.Md (960px) */
+@media (min-width: 960px) {
+    .app-topbar-hamburger {
+        display: none;
+    }
 }
