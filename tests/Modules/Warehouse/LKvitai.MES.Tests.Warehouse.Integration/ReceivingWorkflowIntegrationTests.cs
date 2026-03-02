@@ -31,7 +31,7 @@ public class ReceivingWorkflowIntegrationTests : IAsyncLifetime
         }
 
         _postgres = new PostgreSqlBuilder()
-            .WithImage("postgres:16-alpine")
+            .WithImage("pgvector/pgvector:pg16")
             .Build();
 
         await _postgres.StartAsync();
