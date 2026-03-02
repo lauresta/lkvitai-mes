@@ -72,14 +72,15 @@ jobs:
               "$DB_CONTAINER_IMAGE"
           fi
 
-      - name: Ensure DB container is on deploy network
+      - name: Ensure DB container is on deploy network with 'pg' alias
         run: |
-          if ! docker network inspect "$DOCKER_NETWORK_NAME" \
-               --format '{{range .Containers}}{{.Name}} {{end}}' \
-               | grep -q "$DB_CONTAINER_NAME"; then
-            echo "Connecting $DB_CONTAINER_NAME to $DOCKER_NETWORK_NAME with alias pg..."
-            docker network connect --alias pg "$DOCKER_NETWORK_NAME" "$DB_CONTAINER_NAME"
-          fi
+          # Always disconnect + reconnect to guarantee the 'pg' alias is present.
+          # The alias can be lost after Docker daemon restarts or network recreation,
+          # and the previous logic skipped reconnection when the container was already
+          # on the network — even if the alias was missing.
+          docker network disconnect "$DOCKER_NETWORK_NAME" "$DB_CONTAINER_NAME" 2>/dev/null || true
+          echo "Connecting $DB_CONTAINER_NAME to $DOCKER_NETWORK_NAME with alias pg..."
+          docker network connect --alias pg "$DOCKER_NETWORK_NAME" "$DB_CONTAINER_NAME"
 
       - name: Pull new images
         run: docker compose -f docker-compose.test.yml pull
