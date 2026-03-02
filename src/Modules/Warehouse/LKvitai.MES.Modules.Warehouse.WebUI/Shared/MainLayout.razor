@@ -15,7 +15,7 @@
     <MudMainContent>
         <header class="app-topbar">
             <div class="app-topbar-left">
-                <button class="btn btn-link app-topbar-hamburger d-md-none"
+                <button class="btn btn-link app-topbar-hamburger"
                         @onclick="ToggleDrawer" aria-label="Toggle menu">
                     <i class="bi bi-list"></i>
                 </button>
@@ -38,7 +38,7 @@
 </MudLayout>
 
 @code {
-    private bool _drawerOpen = true;
+    private bool _drawerOpen;
 
     private void ToggleDrawer()
     {
