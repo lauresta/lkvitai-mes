@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
@@ -12,6 +11,9 @@ public interface IItemImageEmbeddingService
 
 public sealed class ItemImageEmbeddingService : IItemImageEmbeddingService
 {
+    private const int HistogramBinsPerChannel = 8;
+    private const int EmbeddingLength = HistogramBinsPerChannel * HistogramBinsPerChannel * HistogramBinsPerChannel;
+
     public async Task<float[]> ComputeEmbeddingAsync(Stream imageStream, CancellationToken cancellationToken = default)
     {
         using var image = await Image.LoadAsync<Rgba32>(imageStream, cancellationToken);
@@ -27,26 +29,25 @@ public sealed class ItemImageEmbeddingService : IItemImageEmbeddingService
         var pixels = new Rgba32[32 * 32];
         image.CopyPixelDataTo(pixels);
 
-        var bytes = new byte[pixels.Length * 4];
-        for (var i = 0; i < pixels.Length; i++)
+        var embedding = new float[EmbeddingLength];
+        foreach (var pixel in pixels)
         {
-            var offset = i * 4;
-            bytes[offset] = pixels[i].R;
-            bytes[offset + 1] = pixels[i].G;
-            bytes[offset + 2] = pixels[i].B;
-            bytes[offset + 3] = pixels[i].A;
-        }
-
-        var digest = SHA512.HashData(bytes);
-        var embedding = new float[512];
-        for (var i = 0; i < embedding.Length; i++)
-        {
-            embedding[i] = (digest[i % digest.Length] / 255f) * 2f - 1f;
+            var alpha = pixel.A / 255f;
+            var redBin = ToHistogramBin(pixel.R);
+            var greenBin = ToHistogramBin(pixel.G);
+            var blueBin = ToHistogramBin(pixel.B);
+            var bucket = (redBin * HistogramBinsPerChannel * HistogramBinsPerChannel) +
+                         (greenBin * HistogramBinsPerChannel) +
+                         blueBin;
+            embedding[bucket] += MathF.Max(0.05f, alpha);
         }
 
         NormalizeInPlace(embedding);
         return embedding;
     }
+
+    private static int ToHistogramBin(byte channel)
+        => Math.Min(HistogramBinsPerChannel - 1, channel * HistogramBinsPerChannel / 256);
 
     private static void NormalizeInPlace(float[] values)
     {

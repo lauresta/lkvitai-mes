@@ -61,6 +61,8 @@ public sealed record ItemImageSearchResultDto(
 
 public sealed class ItemPhotoService : IItemPhotoService
 {
+    private const double MinimumSearchScore = 0.35d;
+
     private static readonly HashSet<string> AllowedContentTypes = new(StringComparer.OrdinalIgnoreCase)
     {
         "image/jpeg",
@@ -366,7 +368,12 @@ public sealed class ItemPhotoService : IItemPhotoService
             }
         }
 
-        results.AddRange(perItem.Values.OrderByDescending(x => x.Score).Take(20));
+        results.AddRange(
+            perItem.Values
+                .Where(x => x.Score >= MinimumSearchScore)
+                .OrderByDescending(x => x.Score)
+                .Take(20));
+
         return results;
     }
 
