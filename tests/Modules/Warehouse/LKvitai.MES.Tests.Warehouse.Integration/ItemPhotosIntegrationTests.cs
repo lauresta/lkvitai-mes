@@ -119,6 +119,49 @@ public class ItemPhotosIntegrationTests
     }
 
     [Fact]
+    public async Task DeletePrimaryPhoto_ShouldPromoteOldestRemainingPhoto()
+    {
+        await using var db = CreateDbContext();
+        await SeedMinimalItemAsync(db, 1004);
+
+        var storage = new InMemoryItemImageStorageService();
+        var capability = new ItemImageSearchCapabilityService(
+            storage,
+            db,
+            new Microsoft.Extensions.Logging.Abstractions.NullLogger<ItemImageSearchCapabilityService>());
+        var photoService = new ItemPhotoService(
+            db,
+            storage,
+            capability,
+            new ItemImageEmbeddingService(),
+            new Microsoft.Extensions.Logging.Abstractions.NullLogger<ItemPhotoService>());
+
+        var controller = new ItemsController(db, new StubSkuGenerationService(), photoService, capability)
+        {
+            ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext()
+            }
+        };
+
+        var firstUpload = await controller.UploadPhotoAsync(1004, BuildFormFile("a.png", BuildPngBytes(), "image/png"));
+        var first = firstUpload.Should().BeOfType<OkObjectResult>().Subject.Value.Should().BeOfType<ItemPhotoDto>().Subject;
+
+        var secondUpload = await controller.UploadPhotoAsync(1004, BuildFormFile("b.png", BuildPngBytes(), "image/png"));
+        var second = secondUpload.Should().BeOfType<OkObjectResult>().Subject.Value.Should().BeOfType<ItemPhotoDto>().Subject;
+
+        first.IsPrimary.Should().BeTrue();
+        second.IsPrimary.Should().BeFalse();
+
+        var delete = await controller.DeletePhotoAsync(1004, first.Id);
+        var payload = delete.Should().BeOfType<OkObjectResult>().Subject.Value.Should().BeOfType<ItemsController.ItemPhotosResponse>().Subject;
+
+        payload.Photos.Should().ContainSingle();
+        payload.Photos[0].Id.Should().Be(second.Id);
+        payload.Photos[0].IsPrimary.Should().BeTrue();
+    }
+
+    [Fact]
     public async Task SearchByImage_WhenCapabilityMissing_ShouldReturn503()
     {
         await using var db = CreateDbContext();
