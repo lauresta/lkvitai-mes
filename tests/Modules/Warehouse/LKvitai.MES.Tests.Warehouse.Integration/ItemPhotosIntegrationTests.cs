@@ -255,7 +255,7 @@ public class ItemPhotosIntegrationTests
             return Task.FromResult<T?>(default);
         }
 
-        public Task SetAsync<T>(string key, T value, TimeSpan? ttl = null, CancellationToken cancellationToken = default)
+        public Task SetAsync<T>(string key, T value, TimeSpan ttl, CancellationToken cancellationToken = default)
         {
             _store[key] = value!;
             return Task.CompletedTask;
@@ -266,6 +266,19 @@ public class ItemPhotosIntegrationTests
             _store.Remove(key);
             return Task.CompletedTask;
         }
+
+        public Task RemoveByPrefixAsync(string prefix, CancellationToken cancellationToken = default)
+        {
+            var keys = _store.Keys.Where(k => k.StartsWith(prefix, StringComparison.Ordinal)).ToList();
+            foreach (var key in keys)
+            {
+                _store.Remove(key);
+            }
+
+            return Task.CompletedTask;
+        }
+
+        public CacheMetricsSnapshot GetMetrics() => new(0, 0, 0, 0d, 0d, 0, 0, _store.Count);
     }
 
     private sealed class InMemoryItemImageStorageService : IItemImageStorageService
