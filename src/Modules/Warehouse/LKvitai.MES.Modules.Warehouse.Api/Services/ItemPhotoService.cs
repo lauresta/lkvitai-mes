@@ -439,9 +439,24 @@ public sealed class ItemPhotoService : IItemPhotoService
             return false;
         }
 
-        await _dbContext.Database.ExecuteSqlInterpolatedAsync(
-            $@"DELETE FROM public.item_photos WHERE ""Id"" = {photo.Id}",
-            cancellationToken);
+        var isRelationalProvider = _dbContext.Database.IsRelational();
+
+        if (isRelationalProvider)
+        {
+            await _dbContext.Database.ExecuteSqlInterpolatedAsync(
+                $@"DELETE FROM public.item_photos WHERE ""Id"" = {photo.Id}",
+                cancellationToken);
+        }
+        else
+        {
+            var toDelete = await _dbContext.ItemPhotos
+                .FirstOrDefaultAsync(x => x.Id == photo.Id, cancellationToken);
+            if (toDelete is not null)
+            {
+                _dbContext.ItemPhotos.Remove(toDelete);
+                await _dbContext.SaveChangesAsync(cancellationToken);
+            }
+        }
 
         try
         {
@@ -464,9 +479,22 @@ public sealed class ItemPhotoService : IItemPhotoService
 
             if (fallbackId.HasValue)
             {
-                await _dbContext.Database.ExecuteSqlInterpolatedAsync(
-                    $@"UPDATE public.item_photos SET ""IsPrimary"" = true WHERE ""Id"" = {fallbackId.Value}",
-                    cancellationToken);
+                if (isRelationalProvider)
+                {
+                    await _dbContext.Database.ExecuteSqlInterpolatedAsync(
+                        $@"UPDATE public.item_photos SET ""IsPrimary"" = true WHERE ""Id"" = {fallbackId.Value}",
+                        cancellationToken);
+                }
+                else
+                {
+                    var fallback = await _dbContext.ItemPhotos
+                        .FirstOrDefaultAsync(x => x.Id == fallbackId.Value, cancellationToken);
+                    if (fallback is not null)
+                    {
+                        fallback.IsPrimary = true;
+                        await _dbContext.SaveChangesAsync(cancellationToken);
+                    }
+                }
             }
         }
 
