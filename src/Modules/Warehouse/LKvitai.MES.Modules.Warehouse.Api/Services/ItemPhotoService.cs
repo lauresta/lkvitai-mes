@@ -93,6 +93,20 @@ public sealed class ItemPhotoService : IItemPhotoService
 
     public int CacheMaxAgeSeconds => Math.Max(1, _storageService.Options.CacheMaxAgeSeconds);
 
+    private double MinimumSearchScore
+    {
+        get
+        {
+            var configured = _storageService.Options.MinSearchScore;
+            if (double.IsNaN(configured) || double.IsInfinity(configured))
+            {
+                return ItemImageOptions.DefaultMinSearchScore;
+            }
+
+            return Math.Clamp(configured, 0d, 1d);
+        }
+    }
+
     public async Task<IReadOnlyList<ItemPhotoDto>> ListAsync(int itemId, CancellationToken cancellationToken = default)
     {
         return await _dbContext.ItemPhotos
@@ -366,7 +380,12 @@ public sealed class ItemPhotoService : IItemPhotoService
             }
         }
 
-        results.AddRange(perItem.Values.OrderByDescending(x => x.Score).Take(20));
+        results.AddRange(
+            perItem.Values
+                .Where(x => x.Score >= MinimumSearchScore)
+                .OrderByDescending(x => x.Score)
+                .Take(20));
+
         return results;
     }
 
