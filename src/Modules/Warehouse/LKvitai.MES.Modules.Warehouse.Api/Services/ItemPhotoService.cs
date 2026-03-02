@@ -430,14 +430,33 @@ public sealed class ItemPhotoService : IItemPhotoService
     public async Task<bool> DeleteAsync(int itemId, Guid photoId, CancellationToken cancellationToken = default)
     {
         var photo = await _dbContext.ItemPhotos
-            .FirstOrDefaultAsync(x => x.ItemId == itemId && x.Id == photoId, cancellationToken);
+            .AsNoTracking()
+            .Where(x => x.ItemId == itemId && x.Id == photoId)
+            .Select(x => new { x.Id, x.IsPrimary, x.OriginalKey, x.ThumbKey })
+            .FirstOrDefaultAsync(cancellationToken);
         if (photo is null)
         {
             return false;
         }
 
-        _dbContext.ItemPhotos.Remove(photo);
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        var isRelationalProvider = _dbContext.Database.IsRelational();
+
+        if (isRelationalProvider)
+        {
+            await _dbContext.Database.ExecuteSqlInterpolatedAsync(
+                $@"DELETE FROM public.item_photos WHERE ""Id"" = {photo.Id}",
+                cancellationToken);
+        }
+        else
+        {
+            var toDelete = await _dbContext.ItemPhotos
+                .FirstOrDefaultAsync(x => x.Id == photo.Id, cancellationToken);
+            if (toDelete is not null)
+            {
+                _dbContext.ItemPhotos.Remove(toDelete);
+                await _dbContext.SaveChangesAsync(cancellationToken);
+            }
+        }
 
         try
         {
@@ -451,15 +470,31 @@ public sealed class ItemPhotoService : IItemPhotoService
 
         if (photo.IsPrimary)
         {
-            var fallback = await _dbContext.ItemPhotos
+            var fallbackId = await _dbContext.ItemPhotos
+                .AsNoTracking()
                 .Where(x => x.ItemId == itemId)
                 .OrderBy(x => x.CreatedAt)
+                .Select(x => (Guid?)x.Id)
                 .FirstOrDefaultAsync(cancellationToken);
 
-            if (fallback is not null)
+            if (fallbackId.HasValue)
             {
-                fallback.IsPrimary = true;
-                await _dbContext.SaveChangesAsync(cancellationToken);
+                if (isRelationalProvider)
+                {
+                    await _dbContext.Database.ExecuteSqlInterpolatedAsync(
+                        $@"UPDATE public.item_photos SET ""IsPrimary"" = true WHERE ""Id"" = {fallbackId.Value}",
+                        cancellationToken);
+                }
+                else
+                {
+                    var fallback = await _dbContext.ItemPhotos
+                        .FirstOrDefaultAsync(x => x.Id == fallbackId.Value, cancellationToken);
+                    if (fallback is not null)
+                    {
+                        fallback.IsPrimary = true;
+                        await _dbContext.SaveChangesAsync(cancellationToken);
+                    }
+                }
             }
         }
 
