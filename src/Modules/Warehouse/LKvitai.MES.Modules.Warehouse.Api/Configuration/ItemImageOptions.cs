@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace LKvitai.MES.Modules.Warehouse.Api.Configuration;
 
 public sealed class ItemImageOptions
@@ -13,7 +15,9 @@ public sealed class ItemImageOptions
     public int MaxUploadMb { get; init; } = 5;
     public int CacheMaxAgeSeconds { get; init; } = 86400;
     public string? ModelPath { get; init; }
-    public double MinSearchScore { get; init; } = 0.35d;
+    public double MinSearchScore { get; init; } = DefaultMinSearchScore;
+
+    public const double DefaultMinSearchScore = 0.35d;
 
     public static ItemImageOptions FromConfiguration(IConfiguration configuration)
     {
@@ -30,9 +34,16 @@ public sealed class ItemImageOptions
             MaxUploadMb = int.TryParse(ReadValue(section, "MaxUploadMb", "ITEMIMAGES__MAXUPLOADMB"), out var maxUploadMb) ? maxUploadMb : 5,
             CacheMaxAgeSeconds = int.TryParse(ReadValue(section, "CacheMaxAgeSeconds", "ITEMIMAGES__CACHEMAXAGESECONDS"), out var cacheTtlSeconds) ? cacheTtlSeconds : 86400,
             ModelPath = ReadValue(section, "ModelPath", "ITEMIMAGES__MODEL_PATH"),
-            MinSearchScore = double.TryParse(ReadValue(section, "MinSearchScore", "ITEMIMAGES__MIN_SEARCH_SCORE"), out var minSearchScore) ? minSearchScore : 0.35d
+            MinSearchScore = ParseDoubleOrDefault(
+                ReadValue(section, "MinSearchScore", "ITEMIMAGES__MIN_SEARCH_SCORE"),
+                DefaultMinSearchScore)
         };
     }
+
+    private static double ParseDoubleOrDefault(string raw, double fallback)
+        => double.TryParse(raw, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed)
+            ? parsed
+            : fallback;
 
     private static string ReadValue(
         IConfigurationSection section,

@@ -100,7 +100,7 @@ public sealed class ItemPhotoService : IItemPhotoService
             var configured = _storageService.Options.MinSearchScore;
             if (double.IsNaN(configured) || double.IsInfinity(configured))
             {
-                return 0.35d;
+                return ItemImageOptions.DefaultMinSearchScore;
             }
 
             return Math.Clamp(configured, 0d, 1d);
