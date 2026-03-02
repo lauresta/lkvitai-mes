@@ -37,6 +37,14 @@ public class AdjustmentsWorkflowIntegrationTests : IAsyncLifetime
 
         await _postgres.StartAsync();
 
+        await using (var conn = new Npgsql.NpgsqlConnection(_postgres.GetConnectionString()))
+        {
+            await conn.OpenAsync();
+            await using var cmd = conn.CreateCommand();
+            cmd.CommandText = "CREATE EXTENSION IF NOT EXISTS vector;";
+            await cmd.ExecuteNonQueryAsync();
+        }
+
         _dbOptions = new DbContextOptionsBuilder<WarehouseDbContext>()
             .UseNpgsql(_postgres.GetConnectionString())
             .Options;
