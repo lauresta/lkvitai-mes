@@ -419,6 +419,8 @@ public sealed class ItemsController : ControllerBase
                 input,
                 file.Length,
                 cancellationToken);
+
+            await Cache.RemoveAsync($"item:{id}", cancellationToken);
             return Ok(photo);
         }
         catch (KeyNotFoundException)
@@ -494,6 +496,7 @@ public sealed class ItemsController : ControllerBase
             return Failure(Result.Fail(DomainErrorCodes.NotFound, $"Photo '{photoId}' not found for item '{id}'."));
         }
 
+        await Cache.RemoveAsync($"item:{id}", cancellationToken);
         var photos = await _itemPhotoService.ListAsync(id, cancellationToken);
         return Ok(new ItemPhotosResponse(id, photos));
     }
@@ -508,6 +511,7 @@ public sealed class ItemsController : ControllerBase
             return Failure(Result.Fail(DomainErrorCodes.NotFound, $"Photo '{photoId}' not found for item '{id}'."));
         }
 
+        await Cache.RemoveAsync($"item:{id}", cancellationToken);
         var photos = await _itemPhotoService.ListAsync(id, cancellationToken);
         return Ok(new ItemPhotosResponse(id, photos));
     }

@@ -3,11 +3,13 @@ using LKvitai.MES.Modules.Warehouse.Api.Configuration;
 using LKvitai.MES.Modules.Warehouse.Api.Controllers;
 using LKvitai.MES.Modules.Warehouse.Api.Services;
 using LKvitai.MES.Modules.Warehouse.Application.Services;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.Caching;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using Xunit;
@@ -65,6 +67,55 @@ public class ItemPhotosIntegrationTests
 
         var delete = await controller.DeletePhotoAsync(1001, uploaded.Id);
         delete.Should().BeOfType<OkObjectResult>();
+    }
+
+
+    [Fact]
+    public async Task UploadPhoto_ShouldInvalidateItemDetailCache()
+    {
+        await using var db = CreateDbContext();
+        await SeedMinimalItemAsync(db, 1003);
+
+        var storage = new InMemoryItemImageStorageService();
+        var capability = new ItemImageSearchCapabilityService(
+            storage,
+            db,
+            new Microsoft.Extensions.Logging.Abstractions.NullLogger<ItemImageSearchCapabilityService>());
+        var photoService = new ItemPhotoService(
+            db,
+            storage,
+            capability,
+            new ItemImageEmbeddingService(),
+            new Microsoft.Extensions.Logging.Abstractions.NullLogger<ItemPhotoService>());
+
+        var cache = new TestCacheService();
+        var services = new ServiceCollection()
+            .AddSingleton<ICacheService>(cache)
+            .BuildServiceProvider();
+
+        var controller = new ItemsController(db, new StubSkuGenerationService(), photoService, capability)
+        {
+            ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext
+                {
+                    RequestServices = services
+                }
+            }
+        };
+
+        var firstGet = await controller.GetByIdAsync(1003);
+        var firstGetOk = firstGet.Should().BeOfType<OkObjectResult>().Subject;
+        var firstDto = firstGetOk.Value.Should().BeOfType<ItemsController.ItemDetailDto>().Subject;
+        firstDto.Photos.Should().BeEmpty();
+
+        var upload = await controller.UploadPhotoAsync(1003, BuildFormFile("a.png", BuildPngBytes(), "image/png"));
+        upload.Should().BeOfType<OkObjectResult>();
+
+        var secondGet = await controller.GetByIdAsync(1003);
+        var secondGetOk = secondGet.Should().BeOfType<OkObjectResult>().Subject;
+        var secondDto = secondGetOk.Value.Should().BeOfType<ItemsController.ItemDetailDto>().Subject;
+        secondDto.Photos.Should().ContainSingle();
     }
 
     [Fact]
@@ -144,6 +195,34 @@ public class ItemPhotosIntegrationTests
     {
         public Task<string> GenerateNextSkuAsync(int categoryId, CancellationToken cancellationToken = default)
             => Task.FromResult($"SKU-{categoryId:D4}");
+    }
+
+
+    private sealed class TestCacheService : ICacheService
+    {
+        private readonly Dictionary<string, object> _store = new(StringComparer.Ordinal);
+
+        public Task<T?> GetAsync<T>(string key, CancellationToken cancellationToken = default)
+        {
+            if (_store.TryGetValue(key, out var value) && value is T typed)
+            {
+                return Task.FromResult<T?>(typed);
+            }
+
+            return Task.FromResult<T?>(default);
+        }
+
+        public Task SetAsync<T>(string key, T value, TimeSpan? ttl = null, CancellationToken cancellationToken = default)
+        {
+            _store[key] = value!;
+            return Task.CompletedTask;
+        }
+
+        public Task RemoveAsync(string key, CancellationToken cancellationToken = default)
+        {
+            _store.Remove(key);
+            return Task.CompletedTask;
+        }
     }
 
     private sealed class InMemoryItemImageStorageService : IItemImageStorageService
