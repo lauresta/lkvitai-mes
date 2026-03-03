@@ -112,7 +112,7 @@
                             <td>@(row.RequiresLotTracking ? "Yes" : "No")</td>
                             <td>@(row.RequiresQC ? "Yes" : "No")</td>
                             <td class="text-end">
-                                <button class="btn btn-sm btn-outline-secondary me-1" @onclick="@(() => BeginEdit(row))">Edit</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary me-1" @onclick="@(() => BeginEdit(row))">Edit</button>
                                 <button class="btn btn-sm btn-outline-danger"
                                         disabled="@string.Equals(row.Status, "Discontinued", StringComparison.OrdinalIgnoreCase)"
                                         @onclick="@(() => DeactivateAsync(row.Id))">
@@ -349,6 +349,7 @@
 
     private void BeginEdit(AdminItemDto row)
     {
+        _showCreate = false;
         _editing = new ItemEditModel
         {
             Id = row.Id,
