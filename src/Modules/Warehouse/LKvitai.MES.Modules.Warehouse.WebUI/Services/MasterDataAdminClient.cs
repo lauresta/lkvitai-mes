@@ -349,7 +349,16 @@ public sealed class MasterDataAdminClient
     private async Task<T> GetAsync<T>(string relativeUrl, CancellationToken cancellationToken)
     {
         var client = _factory.CreateClient("WarehouseApi");
-        var response = await client.GetAsync(relativeUrl, cancellationToken);
+        HttpResponseMessage response;
+        try
+        {
+            response = await client.GetAsync(relativeUrl, cancellationToken);
+        }
+        catch (HttpRequestException ex)
+        {
+            throw CreateUnavailableApiException(ex);
+        }
+
         await EnsureSuccessAsync(response);
 
         var body = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -370,7 +379,16 @@ public sealed class MasterDataAdminClient
             request.Content = JsonContent.Create(payload);
         }
 
-        var response = await client.SendAsync(request, cancellationToken);
+        HttpResponseMessage response;
+        try
+        {
+            response = await client.SendAsync(request, cancellationToken);
+        }
+        catch (HttpRequestException ex)
+        {
+            throw CreateUnavailableApiException(ex);
+        }
+
         await EnsureSuccessAsync(response);
     }
 
@@ -392,5 +410,18 @@ public sealed class MasterDataAdminClient
             problem?.Detail ?? "n/a");
 
         throw new ApiException(problem, (int)response.StatusCode);
+    }
+
+    private static ApiException CreateUnavailableApiException(HttpRequestException ex)
+    {
+        var problem = new ProblemDetailsModel
+        {
+            Type = "WAREHOUSE_API_UNAVAILABLE",
+            Title = "Warehouse API unavailable",
+            Status = 503,
+            Detail = ex.Message
+        };
+
+        return new ApiException(problem, 503);
     }
 }

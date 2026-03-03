@@ -79,7 +79,16 @@ public class StockClient
         }
 
         var client = _factory.CreateClient("WarehouseApi");
-        var response = await client.GetAsync(query.ToString(), cancellationToken);
+        HttpResponseMessage response;
+        try
+        {
+            response = await client.GetAsync(query.ToString(), cancellationToken);
+        }
+        catch (HttpRequestException ex)
+        {
+            throw CreateUnavailableApiException(ex);
+        }
+
         if (!response.IsSuccessStatusCode)
         {
             var problem = await ProblemDetailsParser.ParseAsync(response);
@@ -158,7 +167,16 @@ public class StockClient
     private async Task<T> GetAsync<T>(string relativeUrl, CancellationToken cancellationToken = default)
     {
         var client = _factory.CreateClient("WarehouseApi");
-        var response = await client.GetAsync(relativeUrl, cancellationToken);
+        HttpResponseMessage response;
+        try
+        {
+            response = await client.GetAsync(relativeUrl, cancellationToken);
+        }
+        catch (HttpRequestException ex)
+        {
+            throw CreateUnavailableApiException(ex);
+        }
+
         var body = await response.Content.ReadAsStringAsync(cancellationToken);
 
         if (!response.IsSuccessStatusCode)
@@ -182,6 +200,19 @@ public class StockClient
             problem?.ErrorCode ?? "UNKNOWN",
             problem?.TraceId ?? "UNKNOWN",
             problem?.Detail ?? "n/a");
+    }
+
+    private static ApiException CreateUnavailableApiException(HttpRequestException ex)
+    {
+        var problem = new ProblemDetailsModel
+        {
+            Type = "WAREHOUSE_API_UNAVAILABLE",
+            Title = "Warehouse API unavailable",
+            Status = 503,
+            Detail = ex.Message
+        };
+
+        return new ApiException(problem, 503);
     }
 
     private sealed record StockSearchRowDto

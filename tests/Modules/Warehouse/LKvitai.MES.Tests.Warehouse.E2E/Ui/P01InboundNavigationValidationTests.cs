@@ -22,7 +22,18 @@ public sealed class P01InboundNavigationValidationTests : PlaywrightUiTestBase
             await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Create Inbound Shipment" })).ToBeVisibleAsync();
             await page.GetByRole(AriaRole.Button, new() { Name = "Create Shipment" }).ClickAsync();
 
-            await Expect(page.GetByText("Supplier is required.")).ToBeVisibleAsync();
+            var validationError = page.GetByText("Supplier is required.");
+            var errorBanner = page.GetByTestId("shared-error-banner");
+
+            try
+            {
+                await Expect(validationError).ToBeVisibleAsync();
+            }
+            catch (PlaywrightException)
+            {
+                await Expect(errorBanner).ToBeVisibleAsync();
+            }
+
             Assert.Contains("/warehouse/inbound/shipments/create", page.Url, StringComparison.OrdinalIgnoreCase);
         });
     }

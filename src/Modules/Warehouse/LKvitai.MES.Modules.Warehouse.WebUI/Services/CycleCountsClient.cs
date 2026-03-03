@@ -61,7 +61,16 @@ public sealed class CycleCountsClient
 
     private async Task<T> SendAndReadAsync<T>(Func<Task<HttpResponseMessage>> sender)
     {
-        var response = await sender();
+        HttpResponseMessage response;
+        try
+        {
+            response = await sender();
+        }
+        catch (HttpRequestException ex)
+        {
+            throw CreateUnavailableApiException(ex);
+        }
+
         if (!response.IsSuccessStatusCode)
         {
             var problem = await ProblemDetailsParser.ParseAsync(response);
@@ -80,5 +89,18 @@ public sealed class CycleCountsClient
         var body = await response.Content.ReadAsStringAsync();
         var model = JsonSerializer.Deserialize<T>(body, JsonOptions);
         return model ?? throw new JsonException($"Unable to deserialize response to {typeof(T).Name}.");
+    }
+
+    private static ApiException CreateUnavailableApiException(HttpRequestException ex)
+    {
+        var problem = new ProblemDetailsModel
+        {
+            Type = "WAREHOUSE_API_UNAVAILABLE",
+            Title = "Warehouse API unavailable",
+            Status = 503,
+            Detail = ex.Message
+        };
+
+        return new ApiException(problem, 503);
     }
 }
