@@ -47,6 +47,7 @@ Do not commit values for secrets or real production endpoints.
 - Application never downloads ONNX/model artifacts.
 - Ops must mount the model file inside the API container and set `ITEMIMAGES__MODEL_PATH`.
 - If `ModelPath` is unset or file not found, search endpoint returns `503` with clear message.
+- The API uses the ONNX model at `ITEMIMAGES__MODEL_PATH` to compute image embeddings for search.
 
 ## Caching
 - Proxy image endpoint sets:
