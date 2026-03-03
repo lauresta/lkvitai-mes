@@ -95,6 +95,25 @@ public sealed class MudBlazorGridFullFlowTests : PlaywrightUiTestBase
         });
     }
 
+    [Fact]
+    public async Task ReportsReceivingHistory_PageSmoke()
+    {
+        await RunUiAsync(nameof(ReportsReceivingHistory_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/reports/receiving-history");
+
+            await Expect(ByTestId(page, "reports-receiving-history-page")).ToBeVisibleAsync();
+
+            var grid = ByTestId(page, "reports-receiving-history-grid");
+            var error = page.GetByTestId("shared-error-banner");
+
+            var gridVisible = await grid.CountAsync() > 0 && await grid.IsVisibleAsync();
+            var errorVisible = await error.CountAsync() > 0 && await error.IsVisibleAsync();
+
+            Assert.True(gridVisible || errorVisible, "Expected receiving history grid or error banner to be visible.");
+        });
+    }
+
     private static async Task TryChangePageAsync(IPage page, string pagerTestId, string pageIndicatorTestId)
     {
         var pager = ByTestId(page, pagerTestId);

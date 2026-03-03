@@ -3,12 +3,11 @@
 
 <MudLayout>
     <MudDrawer Class="sidebar"
-               Variant="DrawerVariant.Responsive"
-               Breakpoint="Breakpoint.Md"
+               Variant="DrawerVariant.Persistent"
                Width="250px"
                Elevation="1"
-               @bind-Open="_drawerOpen"
-               ClipMode="DrawerClipMode.Never">
+               Open="_drawerOpen"
+               ClipMode="DrawerClipMode.Always">
         <NavMenu />
     </MudDrawer>
 

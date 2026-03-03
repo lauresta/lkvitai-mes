@@ -5,102 +5,103 @@
 
 <PageTitle>Receiving History - LKvitai.MES</PageTitle>
 
-<h3>Receiving History Report</h3>
+<div data-testid="reports-receiving-history-page">
+    <MudText Typo="Typo.h5" Class="mb-3">Receiving History Report</MudText>
 
-@if (_apiError is not null)
-{
-    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
-                 TraceId="@_apiError.TraceId"
-                 OnRetry="LoadAsync"
-                 OnDismiss="@(() => _apiError = null)" />
-}
+    @if (_apiError is not null)
+    {
+        <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                     TraceId="@_apiError.TraceId"
+                     OnRetry="LoadAsync"
+                     OnDismiss="@(() => _apiError = null)" />
+    }
 
-<div class="card shadow-sm mb-3">
-    <div class="card-body">
-        <div class="row g-2 align-items-end">
-            <div class="col-md-2">
-                <label class="form-label">Supplier Id</label>
-                <input class="form-control" type="number" @bind="_supplierId" />
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Status</label>
-                <select class="form-select" @bind="_status">
-                    <option value="">All</option>
-                    <option value="Draft">Draft</option>
-                    <option value="Partial">Partial</option>
-                    <option value="Complete">Complete</option>
-                </select>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Expected From</label>
-                <input class="form-control" type="date" @bind="_dateFrom" />
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Expected To</label>
-                <input class="form-control" type="date" @bind="_dateTo" />
-            </div>
-            <div class="col-md-2 d-grid">
-                <button class="btn btn-primary" @onclick="ApplyFiltersAsync">Apply</button>
-            </div>
-            <div class="col-md-2 d-grid">
-                <button class="btn btn-outline-secondary" @onclick="ExportCsvAsync">Export CSV</button>
-            </div>
-        </div>
-    </div>
-</div>
+    <MudPaper Class="pa-4 mb-3">
+        <MudGrid Spacing="2">
+            <MudItem xs="12" md="2">
+                <MudNumericField T="int?" Label="Supplier Id" @bind-Value="_supplierId" Variant="Variant.Outlined" Dense="true" />
+            </MudItem>
+            <MudItem xs="12" md="3">
+                <MudSelect T="string" Label="Status" @bind-Value="_status" Variant="Variant.Outlined" Dense="true">
+                    <MudSelectItem Value="@string.Empty">All</MudSelectItem>
+                    <MudSelectItem Value="@("Draft")">Draft</MudSelectItem>
+                    <MudSelectItem Value="@("Partial")">Partial</MudSelectItem>
+                    <MudSelectItem Value="@("Complete")">Complete</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="3">
+                <MudDatePicker Label="Expected From" @bind-Date="_dateFrom" DateFormat="yyyy-MM-dd" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12" md="3">
+                <MudDatePicker Label="Expected To" @bind-Date="_dateTo" DateFormat="yyyy-MM-dd" Variant="Variant.Outlined" />
+            </MudItem>
+            <MudItem xs="12" md="1">
+                <MudButton FullWidth="true" Variant="Variant.Filled" Color="Color.Primary" OnClick="ApplyFiltersAsync">Apply</MudButton>
+            </MudItem>
+            <MudItem xs="12" md="2">
+                <MudButton FullWidth="true" Variant="Variant.Outlined" Color="Color.Default" OnClick="ExportCsvAsync">Export CSV</MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
 
-<div class="card shadow-sm position-relative">
-    <LoadingSpinner IsLoading="@_isLoading" />
-    <div class="card-body">
-        <div class="mb-2"><strong>Total: @_totalCount</strong></div>
-        <div class="table-responsive">
-            <table class="table table-sm table-hover align-middle">
-                <thead>
-                <tr>
-                    <th>Shipment Id</th>
-                    <th>Reference</th>
-                    <th>Supplier</th>
-                    <th>Expected</th>
-                    <th>Status</th>
-                    <th>Expected Qty</th>
-                    <th>Received Qty</th>
-                </tr>
-                </thead>
-                <tbody>
-                @if (_items.Count == 0)
-                {
-                    <tr>
-                        <td colspan="7" class="text-muted">No rows found.</td>
-                    </tr>
-                }
-                else
-                {
-                    @foreach (var row in _items)
-                    {
-                        <tr>
-                            <td>@row.Id</td>
-                            <td>@row.ReferenceNumber</td>
-                            <td>@row.SupplierName</td>
-                            <td>@row.ExpectedDate?.ToString("yyyy-MM-dd")</td>
-                            <td>@row.Status</td>
-                            <td>@row.TotalExpectedQty</td>
-                            <td>@row.TotalReceivedQty</td>
-                        </tr>
-                    }
-                }
-                </tbody>
-            </table>
-        </div>
+    <MudPaper Class="pa-4 position-relative">
+        <LoadingSpinner IsLoading="@_isLoading" />
+
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-2">
+            <MudText Typo="Typo.subtitle2">Total: @_totalCount</MudText>
+            <MudText Typo="Typo.caption" Class="mud-secondary-text">Page @_pageNumber of @TotalPages</MudText>
+        </MudStack>
+
+        <MudDataGrid T="ReceivingHistoryRowDto"
+                     Items="_items"
+                     Dense="true"
+                     Hover="true"
+                     Loading="@_isLoading"
+                     SortMode="SortMode.None"
+                     Filterable="false"
+                     @attributes="ReceivingHistoryGridAttributes">
+            <NoRecordsContent>
+                <MudText Typo="Typo.body2" Class="mud-secondary-text">No rows found.</MudText>
+            </NoRecordsContent>
+            <Columns>
+                <PropertyColumn Property="x => x.Id" Title="Shipment Id" />
+                <PropertyColumn Property="x => x.ReferenceNumber" Title="Reference" />
+                <PropertyColumn Property="x => x.SupplierName" Title="Supplier" />
+                <TemplateColumn Title="Expected">
+                    <CellTemplate>
+                        @context.Item.ExpectedDate?.ToString("yyyy-MM-dd")
+                    </CellTemplate>
+                </TemplateColumn>
+                <PropertyColumn Property="x => x.Status" Title="Status" />
+                <PropertyColumn Property="x => x.TotalExpectedQty" Title="Expected Qty" />
+                <PropertyColumn Property="x => x.TotalReceivedQty" Title="Received Qty" />
+            </Columns>
+        </MudDataGrid>
 
         @if (_totalCount > 0)
         {
-            <Pagination CurrentPage="@_pageNumber"
-                        TotalPages="@TotalPages"
-                        PageSize="@_pageSize"
-                        OnPageChanged="OnPageChangedAsync"
-                        OnPageSizeChanged="OnPageSizeChangedAsync" />
+            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.FlexEnd" Class="mt-3">
+                <MudSelect T="int"
+                           Label="Page size"
+                           Value="_pageSize"
+                           ValueChanged="OnPageSizeChangedAsync"
+                           Variant="Variant.Outlined"
+                           Dense="true"
+                           Style="width: 120px;">
+                    <MudSelectItem Value="25">25</MudSelectItem>
+                    <MudSelectItem Value="50">50</MudSelectItem>
+                    <MudSelectItem Value="100">100</MudSelectItem>
+                </MudSelect>
+                <MudPagination Count="@TotalPages"
+                               Selected="@_pageNumber"
+                               SelectedChanged="OnPageChangedAsync"
+                               Variant="Variant.Outlined"
+                               Color="Color.Primary"
+                               Size="Size.Small"
+                               Class="ml-2" />
+            </MudStack>
         }
-    </div>
+    </MudPaper>
 </div>
 
 @code {
@@ -112,9 +113,12 @@
     private int _totalCount;
 
     private int? _supplierId;
-    private string? _status;
+    private string _status = string.Empty;
     private DateTime? _dateFrom;
     private DateTime? _dateTo;
+
+    private static readonly Dictionary<string, object> ReceivingHistoryGridAttributes =
+        new() { ["data-testid"] = "reports-receiving-history-grid" };
 
     private int TotalPages => Math.Max(1, (int)Math.Ceiling(_totalCount / (double)Math.Max(1, _pageSize)));
 
@@ -141,7 +145,7 @@
 
             var response = await ReportsClient.GetReceivingHistoryAsync(
                 _supplierId,
-                _status,
+                string.IsNullOrWhiteSpace(_status) ? null : _status,
                 dateFrom,
                 dateTo,
                 _pageNumber,
@@ -180,7 +184,7 @@
         {
             var bytes = await ReportsClient.DownloadReceivingHistoryCsvAsync(
                 _supplierId,
-                _status,
+                string.IsNullOrWhiteSpace(_status) ? null : _status,
                 ParseDate(_dateFrom),
                 ParseDate(_dateTo));
 
