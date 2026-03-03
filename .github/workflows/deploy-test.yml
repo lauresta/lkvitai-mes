@@ -28,10 +28,22 @@ jobs:
       CLIP_MODEL_DIR: ${{ vars.CLIP_MODEL_DIR }}
 
     steps:
-      - name: Fail fast if TEST_DB_PASSWORD is missing
+      - name: Fail fast if required env vars are missing or invalid
         run: |
           if [ -z "${TEST_DB_PASSWORD}" ]; then
             echo "::error::TEST_DB_PASSWORD is missing. Set it in GitHub Environment 'test'."
+            exit 1
+          fi
+          if [ -z "${ITEMIMAGES__MODEL_PATH}" ]; then
+            echo "::error::ITEMIMAGES__MODEL_PATH is missing. Set it in GitHub Environment 'test'."
+            exit 1
+          fi
+          if [ -z "${CLIP_MODEL_DIR}" ]; then
+            echo "::error::CLIP_MODEL_DIR is missing. Set it in GitHub Environment 'test'."
+            exit 1
+          fi
+          if [ "${CLIP_MODEL_DIR}" = "/tmp/models" ] || [[ "${CLIP_MODEL_DIR}" == /tmp/* ]]; then
+            echo "::error::CLIP_MODEL_DIR points to /tmp, which is ephemeral after reboot/cleanup. Use a persistent path, e.g. /opt/lkvitai-mes/models."
             exit 1
           fi
 
