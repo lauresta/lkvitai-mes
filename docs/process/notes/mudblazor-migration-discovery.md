@@ -201,3 +201,92 @@ Exit condition for deleting each legacy component:
 - Regression control:
   - Run smoke suite at least after each sub-phase commit.
   - If interaction latency regression exceeds acceptable threshold, stop and profile before continuing.
+
+## Block 5 - Phased Migration Plan (Execution Blueprint)
+
+Note: This is a 4-phase execution abstraction for discovery reporting; implementation still follows the approved detailed sequence in `docs/process/specs/mudblazor-migration-plan.md` (Phase 0 -> Phase 5).
+
+### Phase A - Foundation (shell + shared infrastructure)
+
+Targets:
+- `App.razor` theme binding with app-level `MudTheme` object.
+- `MainLayout` topbar -> full `MudAppBar` shell.
+- `ToastService` internals -> `ISnackbar` bridge.
+- `ConfirmDialog`, `LoadingSpinner`, `ErrorBanner` internals -> Mud equivalents.
+- Remove `ToastContainer` after snackbar bridge verification.
+
+Success criteria:
+- Existing `ToastService` call sites unchanged and functional.
+- Shared wrappers no longer use Bootstrap markup.
+- Lots + AvailableStock smoke tests remain green.
+
+Stop criteria:
+- Any shared wrapper change breaks >1 high-traffic page flow.
+
+Test strategy:
+- Keep `lots` + `available-stock` smoke green.
+- Add/retain stable shell test ids where needed (`layout`, `nav`, `error`).
+
+### Phase B - Grids-first (list/report/admin indexes)
+
+Targets:
+- Convert list/report/admin index pages to `MudDataGrid`/Mud table stack.
+- Replace `Pagination`/`DataTable` usages progressively.
+- Keep server paging/sorting parity.
+
+Success criteria:
+- Migrated list pages use Mud controls only.
+- `Pagination`/`DataTable` references trend to zero on migrated scope.
+- No bootstrap table/card/button classes on migrated pages.
+
+Stop criteria:
+- Observable UX/perf regression on critical list interactions.
+
+Test strategy:
+- Extend smoke assertions for each migrated list page root + grid testid.
+- Keep selectors role-based + testid anchored.
+
+### Phase C - Forms/workflows
+
+Targets:
+- Convert create/detail/execute pages to Mud form patterns.
+- Introduce `MudForm` + FluentValidation integration where applicable.
+- Move confirmation flows to dialog service pattern.
+
+Success criteria:
+- Client validation before submit.
+- Server/API errors consistently shown through Mud alert wrapper.
+- No bootstrap form classes on migrated forms.
+
+Stop criteria:
+- Validation parity regressions that risk data integrity/business-rule bypass.
+
+Test strategy:
+- Add smoke for at least inbound + two additional critical workflow forms.
+- Assert stable submit/error testids.
+
+### Phase D - Cleanup and hardening
+
+Targets:
+- Convert `NavMenu` to Mud nav components.
+- Remove Bootstrap CSS CDN.
+- Keep `bi-*` until final icon remap, then switch to `Icons.Material.*` and remove Bootstrap Icons CDN.
+- Delete retired legacy components and dead assets.
+- Add CI guard checks for forbidden bootstrap dependencies.
+
+Success criteria:
+- No Bootstrap CDN or icon CDN in layout.
+- No `bi-` usage and no bootstrap utility dependency in Razor.
+- Build + full UI smoke suite green.
+
+Stop criteria:
+- Critical visual regressions in navigation or blocked core paths.
+
+Test strategy:
+- Full smoke run after each cleanup sub-step.
+- Final pass validates no bootstrap links loaded and no selector regressions.
+
+---
+
+Discovery final recommendation:
+- Execute migrations incrementally with strict commit discipline, stable testids, and smoke green gates after every significant change set.
