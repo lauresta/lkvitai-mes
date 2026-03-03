@@ -88,3 +88,60 @@ Inventory total:
 
 Route inventory conclusion:
 - The route surface is broad and admin/report heavy; migration should continue with phased list-first conversion and shared wrapper retirement to avoid regression spread.
+
+## Block 3 - Shared Components (Legacy Overlap)
+
+### 1) Inventory of custom components overlapping MudBlazor
+
+Legacy/shared wrappers still used across pages:
+- `ErrorBanner` usages: **74**
+- `LoadingSpinner` usages: **71**
+- `Pagination` usages: **17**
+- `ConfirmDialog` usages: **6**
+- `DataTable` usages: **2**
+- `ToastContainer` usages: **1** (mounted in layout)
+
+Toast service footprint:
+- `ToastService` registered in DI (`Program.cs`)
+- `@inject ToastService ToastService` in pages/components: **70** usages
+- Current rendering path is custom `ToastContainer` (Bootstrap toast markup)
+
+### 2) Overlap details
+
+- `ToastService` + `ToastContainer`
+  - Overlaps Mud `ISnackbar`.
+  - Constraint: preserve `ToastService.ShowSuccess/ShowError/ShowWarning` call sites during migration.
+- `ConfirmDialog`
+  - Bootstrap modal markup + visibility flags.
+  - Overlaps Mud `IDialogService` and `MudDialog` patterns.
+- `LoadingSpinner`
+  - Bootstrap spinner overlay; widely used and often stacked in page containers.
+  - Overlaps Mud `MudOverlay` + `MudProgressCircular`.
+- `ErrorBanner`
+  - Bootstrap alert with retry/dismiss + trace id.
+  - Overlaps Mud `MudAlert` with action buttons and severity.
+- `Pagination`
+  - Bootstrap pager + page size selector.
+  - Overlaps `MudDataGridPager` / `MudTablePager` depending on page migration target.
+- `DataTable`
+  - Bootstrap table wrapper.
+  - Overlaps `MudDataGrid` / `MudTable`.
+
+### 3) Replacement strategy (safe sequence)
+
+- Step A: Toast bridge first
+  - Keep `ToastService` public API unchanged.
+  - Replace internals to call `ISnackbar`.
+  - Remove `<ToastContainer />` from layout only after snackbar bridge is verified.
+- Step B: Dialog bridge
+  - Replace `ConfirmDialog` call paths with a thin `IDialogService` wrapper retaining current inputs (`Title`, `Message`, `ConfirmText`).
+- Step C: Status wrappers
+  - Convert `LoadingSpinner` to Mud overlay implementation without changing external parameters.
+  - Convert `ErrorBanner` to Mud alert while preserving retry inference behavior and trace id display.
+- Step D: Data wrappers
+  - Migrate pages from `DataTable`/`Pagination` to `MudDataGrid` + pager; then remove wrappers when `rg` confirms zero references.
+
+Exit condition for deleting each legacy component:
+1. No references in code (`rg` clean).
+2. Functional replacement in Mud exists on all prior call paths.
+3. Build + UI smoke tests are green.
