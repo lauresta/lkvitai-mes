@@ -1,4 +1,6 @@
+using LKvitai.MES.Modules.Warehouse.Api.Configuration;
 using LKvitai.MES.Modules.Warehouse.Api.Services;
+using Moq;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using Xunit;
@@ -43,6 +45,34 @@ public class ItemImageEmbeddingServiceTests
         Assert.True(
             sameLayoutScore > swappedLayoutScore,
             $"Expected same layout ({sameLayoutScore}) > swapped layout ({swappedLayoutScore})");
+    }
+
+    [Fact]
+    public async Task ComputeEmbeddingAsync_WhenModelFileIsInvalid_ShouldFallbackToHistogram()
+    {
+        var modelPath = Path.GetTempFileName();
+        await File.WriteAllTextAsync(modelPath, "not-an-onnx-model");
+
+        try
+        {
+            var storage = new Mock<IItemImageStorageService>(MockBehavior.Strict);
+            storage.SetupGet(x => x.Options).Returns(new ItemImageOptions
+            {
+                ModelPath = modelPath
+            });
+
+            var sut = new ItemImageEmbeddingService(storage.Object);
+            using var image = BuildSolidImage(new Rgba32(10, 10, 10));
+
+            var embedding = await sut.ComputeEmbeddingAsync(image);
+
+            Assert.Equal(512, embedding.Length);
+            Assert.Contains(embedding, x => Math.Abs(x) > 0f);
+        }
+        finally
+        {
+            File.Delete(modelPath);
+        }
     }
 
     private static MemoryStream BuildSolidImage(Rgba32 color)
