@@ -1,23 +1,33 @@
 @if (IsVisible)
 {
-    <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true">
-        <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">@Title</h5>
-                    <button type="button" class="btn-close" aria-label="Close" @onclick="OnCancel"></button>
-                </div>
-                <div class="modal-body">
-                    <p class="mb-0">@Message</p>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="OnCancel">Cancel</button>
-                    <button type="button" class="btn btn-primary" @onclick="OnConfirm">@ConfirmText</button>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="modal-backdrop fade show"></div>
+    <MudOverlay Visible="true" DarkBackground="true" ZIndex="1400" data-testid="shared-confirm-dialog">
+        <MudPaper Class="pa-4 confirm-dialog-surface" Elevation="16">
+            <MudStack Spacing="2">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween">
+                    <MudText Typo="Typo.h6">@Title</MudText>
+                    <MudIconButton Icon="@Icons.Material.Filled.Close"
+                                   Color="Color.Default"
+                                   Size="Size.Small"
+                                   OnClick="OnCancel"
+                                   aria-label="Close"
+                                   data-testid="shared-confirm-close" />
+                </MudStack>
+
+                <MudText Typo="Typo.body2">@Message</MudText>
+
+                <MudStack Row="true" Spacing="1" Justify="Justify.FlexEnd">
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Default"
+                               OnClick="OnCancel"
+                               data-testid="shared-confirm-cancel">Cancel</MudButton>
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               OnClick="OnConfirm"
+                               data-testid="shared-confirm-submit">@ConfirmText</MudButton>
+                </MudStack>
+            </MudStack>
+        </MudPaper>
+    </MudOverlay>
 }
 
 @code {

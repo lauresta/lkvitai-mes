@@ -2,7 +2,7 @@
 @inject IWebHostEnvironment Environment
 
 <MudLayout>
-    <MudDrawer Class="sidebar bg-dark text-white"
+    <MudDrawer Class="sidebar"
                Variant="DrawerVariant.Responsive"
                Breakpoint="Breakpoint.Md"
                Width="250px"
@@ -13,25 +13,31 @@
     </MudDrawer>
 
     <MudMainContent>
-        <header class="app-topbar">
-            <div class="app-topbar-left">
-                <button class="btn btn-link app-topbar-hamburger"
-                        @onclick="ToggleDrawer" aria-label="Toggle menu">
-                    <i class="bi bi-list"></i>
-                </button>
-                <img src="https://avatars.githubusercontent.com/u/233164040?s=40&v=4"
-                     alt="LKvitai" class="app-topbar-mark" />
-                <h6 class="app-topbar-title mb-0">LKvitai.MES Warehouse</h6>
-            </div>
+        <MudAppBar Elevation="1" Dense="true" Class="app-shell-bar" data-testid="warehouse-shell-appbar">
+            <MudIconButton Icon="@Icons.Material.Filled.Menu"
+                           Color="Color.Inherit"
+                           Edge="Edge.Start"
+                           Class="app-shell-menu"
+                           OnClick="ToggleDrawer"
+                           aria-label="Toggle menu" />
 
-            <div class="app-topbar-right">
-                <span class="app-topbar-env text-muted small">@Environment.EnvironmentName</span>
-                <button class="btn btn-outline-secondary btn-sm app-topbar-login" type="button" disabled>Login</button>
-            </div>
-        </header>
+            <MudAvatar Image="https://avatars.githubusercontent.com/u/233164040?s=40&v=4"
+                       Alt="LKvitai"
+                       Rounded="true"
+                       Size="Size.Medium"
+                       Class="app-shell-mark" />
 
-        <main class="container-fluid p-4 position-relative">
-            <ToastContainer />
+            <MudText Typo="Typo.h6" Class="app-shell-title">LKvitai.MES Warehouse</MudText>
+            <MudSpacer />
+            <MudText Typo="Typo.caption" Class="app-shell-env">@Environment.EnvironmentName</MudText>
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Default"
+                       Size="Size.Small"
+                       Disabled="true"
+                       Class="app-shell-login">Login</MudButton>
+        </MudAppBar>
+
+        <main class="app-shell-main" data-testid="warehouse-shell-main">
             @Body
         </main>
     </MudMainContent>

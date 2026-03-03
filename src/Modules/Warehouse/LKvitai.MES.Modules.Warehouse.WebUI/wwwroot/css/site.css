@@ -4,11 +4,6 @@ html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
-/* MudBlazor reserves 64px padding for MudAppBar — we use a custom topbar instead */
-.mud-layout {
-    --mud-appbar-height: 0px;
-}
-
 h1:focus {
     outline: none;
 }
@@ -28,6 +23,10 @@ a, .btn-link {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+}
+
+.confirm-dialog-surface {
+    width: min(92vw, 520px);
 }
 
 .content {

@@ -1,19 +1,37 @@
 @if (!string.IsNullOrWhiteSpace(Message))
 {
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        <div>@Message</div>
-        @if (!string.IsNullOrWhiteSpace(TraceId))
-        {
-            <small class="text-muted d-block">Error ID: @TraceId</small>
-        }
-        <div class="mt-2 d-flex gap-2 align-items-center">
-            @if (CanShowRetry)
+    <MudAlert Severity="Severity.Error"
+              Variant="Variant.Filled"
+              Dense="true"
+              Class="mb-3"
+              data-testid="shared-error-banner">
+        <MudStack Spacing="1">
+            <MudText Typo="Typo.body2">@Message</MudText>
+
+            @if (!string.IsNullOrWhiteSpace(TraceId))
             {
-                <button type="button" class="btn btn-outline-danger btn-sm" @onclick="OnRetry">Retry</button>
+                <MudText Typo="Typo.caption" Class="mud-secondary-text">Error ID: @TraceId</MudText>
             }
-            <button type="button" class="btn-close" aria-label="Close" @onclick="OnDismiss"></button>
-        </div>
-    </div>
+
+            <MudStack Row="true" Spacing="1">
+                @if (CanShowRetry)
+                {
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Error"
+                               Size="Size.Small"
+                               OnClick="OnRetry"
+                               data-testid="shared-error-retry">Retry</MudButton>
+                }
+
+                <MudIconButton Icon="@Icons.Material.Filled.Close"
+                               Color="Color.Inherit"
+                               Size="Size.Small"
+                               OnClick="OnDismiss"
+                               aria-label="Close"
+                               data-testid="shared-error-close" />
+            </MudStack>
+        </MudStack>
+    </MudAlert>
 }
 
 @code {
