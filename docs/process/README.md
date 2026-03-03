@@ -12,6 +12,8 @@ It is intended for developers, architects, and business analysts.
 ```
 docs/process/
 ├── README.md                        ← this file
+├── specs/                           ← process-related specs and implementation plans
+├── testing/                         ← process-related testing plans
 ├── universe/                        ← process discovery artefacts
 │   ├── process-universe.md          ← pointer to authoritative universe doc
 │   ├── ui-route-index.md            ← all Blazor @page routes
