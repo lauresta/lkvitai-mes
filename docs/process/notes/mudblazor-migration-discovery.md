@@ -40,3 +40,51 @@ Current footprint:
 
 Baseline conclusion:
 - MudBlazor foundation is real and test-backed, but migration is partial and still mixed with Bootstrap + legacy wrappers.
+
+## Block 2 - Route Inventory
+
+Source of truth: `Shared/NavMenu.razor`.
+
+### 1) Navigation inventory by area
+
+- Standalone top item:
+  - `/dashboard`
+- Stock (6):
+  - `/available-stock`, `/search-by-image`, `/warehouse/stock/dashboard`, `/warehouse/stock/location-balance`, `/warehouse/stock/adjustments`, `/reservations`
+- Inbound (3):
+  - `/warehouse/inbound/shipments`, `/warehouse/inbound/qc`, `/warehouse/putaway`
+- Outbound (9):
+  - `/warehouse/sales/orders`, `/warehouse/sales/allocations`, `/warehouse/outbound/orders`, `/warehouse/outbound/dispatch`, `/warehouse/waves`, `/warehouse/picking/tasks`, `/warehouse/labels`, `/warehouse/cross-dock`, `/warehouse/rmas`
+- Operations (4):
+  - `/warehouse/transfers`, `/warehouse/cycle-counts`, `/warehouse/visualization/3d`, `/projections`
+- Finance (3):
+  - `/warehouse/valuation/dashboard`, `/warehouse/agnum/config`, `/warehouse/agnum/reconcile`
+- Admin (22):
+  - `/admin/users`, `/warehouse/admin/settings`, `/warehouse/admin/reason-codes`, `/warehouse/admin/approval-rules`, `/warehouse/admin/roles`, `/warehouse/admin/api-keys`, `/warehouse/admin/gdpr-erasure`, `/warehouse/admin/audit-logs`, `/warehouse/admin/backups`, `/warehouse/admin/retention-policies`, `/warehouse/admin/dr-drills`, `/warehouse/admin/serial-numbers`, `/warehouse/admin/lots`, `/warehouse/admin/uom`, `/admin/items`, `/admin/suppliers`, `/admin/supplier-mappings`, `/admin/locations`, `/admin/warehouses`, `/admin/categories`, `/admin/import`, `/warehouse/admin/layout-editor`
+- Reports (9):
+  - `/reports/stock-level`, `/reports/receiving-history`, `/reports/pick-history`, `/reports/dispatch-history`, `/reports/stock-movements`, `/reports/traceability`, `/warehouse/compliance/lot-trace`, `/reports/compliance-audit`, `/warehouse/compliance/dashboard`
+- Analytics (2):
+  - `/analytics/fulfillment`, `/analytics/quality`
+
+Inventory total:
+- Section items in `_sections`: **58**
+- With standalone `/dashboard`: **59** navigation links
+
+### 2) Page type classification (migration lens)
+
+- Grids / list-heavy pages:
+  - Already Mud grid based: `/available-stock`, `/warehouse/admin/lots`
+  - Remaining major list pages: inbound/outbound/sales order lists, reports lists, admin catalogs (`items`, `suppliers`, `locations`, `warehouses`, `categories`, `uom`, etc.), transfers list, cycle-count list, audit logs.
+- Forms / workflow pages:
+  - Create/detail/execute flows: inbound create/detail, sales create/detail, outbound detail/pack, transfers create/execute, putaway, stock adjustments, valuation action pages, admin forms (roles/api keys/reason codes/settings/retention/gdpr/etc.).
+- Dashboards / KPI cards:
+  - `/dashboard`, `/warehouse/stock/dashboard`, `/warehouse/sales/allocations`, `/warehouse/compliance/dashboard`, `/warehouse/valuation/dashboard`, analytics pages.
+- JS-heavy / interop sensitive pages:
+  - `/warehouse/visualization/3d` (`warehouseVisualization.js`)
+  - CSV export-dependent pages (`csvExport.js`) across reports, valuation, labels, agnum reconciliation.
+  - File upload/image flows: `/search-by-image`, `/admin/items/{id}`, `/admin/import`, `/warehouse/agnum/reconcile`.
+- Shared shell pages/components touching all routes:
+  - `MainLayout`, `NavMenu`, shared status/feedback components, and wrappers used across route groups.
+
+Route inventory conclusion:
+- The route surface is broad and admin/report heavy; migration should continue with phased list-first conversion and shared wrapper retirement to avoid regression spread.
