@@ -145,3 +145,59 @@ Exit condition for deleting each legacy component:
 1. No references in code (`rg` clean).
 2. Functional replacement in Mud exists on all prior call paths.
 3. Build + UI smoke tests are green.
+
+## Block 4 - Risks and Mitigation
+
+### 1) Identified migration risks
+
+1. Grid behavior parity risk (high)
+- Context: many list/report pages still depend on handcrafted table/paging/sort/filter behavior.
+- Risk: `MudDataGrid` may not match every existing interaction (especially server-side filtering edge cases and paging semantics expected by users/tests).
+
+2. JSInterop-sensitive page risk (high)
+- Context: visualization and file/export flows use JS interop (`warehouseVisualization.js`, `csvExport.js`, file upload flows).
+- Risk: refactoring surrounding UI shell can break lifecycle timing or DOM assumptions.
+
+3. Bootstrap coexistence conflict risk (high)
+- Context: Bootstrap CSS and Mud CSS are both active, with heavy bootstrap class usage remaining.
+- Risk: style bleed, spacing/overlay z-index collisions, responsive inconsistencies.
+
+4. Selector fragility risk in E2E (medium-high)
+- Context: Mud renders portals/overlays and dynamic internal DOM structure.
+- Risk: tests coupled to non-stable classes/structure become flaky during migration.
+
+5. Shared wrapper removal blast radius (medium-high)
+- Context: `ErrorBanner`/`LoadingSpinner`/`ToastService` are used across most pages.
+- Risk: a breaking change can impact dozens of routes simultaneously.
+
+6. Performance/regression risk on large datasets (medium)
+- Context: server-data grids and live filters on stock/orders/reports.
+- Risk: perceived latency regressions after template/component switch.
+
+### 2) Mitigation strategy
+
+- Grid capability matrix before mass migration:
+  - Validate required features (server sort/filter/page, column templates, actions, dense rows, export hooks) on representative pages.
+  - Use fallback page-specific wrappers where MudDataGrid alone is insufficient.
+
+- Keep JS logic unchanged; migrate only UI chrome around it:
+  - No rewrite of JS functions during UI component swap.
+  - Re-verify end-to-end for visualization/image upload/export after each relevant phase.
+
+- Controlled Bootstrap decommission:
+  - Keep Bootstrap Icons temporary until phase 5.
+  - Remove Bootstrap CSS only after shared wrappers and high-traffic pages are migrated.
+  - Add grep-based guard checks to detect reintroduced bootstrap classes/links.
+
+- Selector policy enforcement:
+  - Prefer `getByRole` first, `data-testid` for non-semantic controls.
+  - Do not target Mud internal classes.
+  - Ensure each migrated page has stable root/grid/error/submit test ids.
+
+- Wrapper-by-wrapper replacement with compatibility shims:
+  - Preserve method signatures and parameters while swapping internals to Mud implementations.
+  - Delete legacy components only when references are zero and smoke tests stay green.
+
+- Regression control:
+  - Run smoke suite at least after each sub-phase commit.
+  - If interaction latency regression exceeds acceptable threshold, stop and profile before continuing.
