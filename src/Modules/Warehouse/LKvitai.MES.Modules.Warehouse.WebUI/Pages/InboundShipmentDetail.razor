@@ -5,155 +5,168 @@
 
 <PageTitle>Inbound Shipment Detail - LKvitai.MES</PageTitle>
 
-<h1>Inbound Shipment Detail</h1>
+<div data-testid="inbound-shipment-detail-page">
+    <MudText Typo="Typo.h5" Class="mb-3">Inbound Shipment Detail</MudText>
 
-@if (_apiError is not null)
-{
-    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
-                 TraceId="@_apiError.TraceId"
-                 OnRetry="LoadAsync"
-                 OnDismiss="DismissError" />
-}
+    @if (_apiError is not null)
+    {
+        <div data-testid="inbound-shipment-detail-error" class="mb-3">
+            <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                         TraceId="@_apiError.TraceId"
+                         OnRetry="LoadAsync"
+                         OnDismiss="DismissError" />
+        </div>
+    }
 
-<div class="card shadow-sm position-relative mb-3">
-    <LoadingSpinner IsLoading="_isLoading || _isSubmitting" />
+    <MudPaper Class="pa-4 position-relative mb-3">
+        <LoadingSpinner IsLoading="_isLoading || _isSubmitting" />
 
-    <div class="card-body">
         @if (_shipment is null)
         {
-            <EmptyState Title="Shipment not found"
-                        Message="Inbound shipment does not exist or is unavailable."
-                        IconCss="bi bi-box-arrow-in-down"
-                        OnAction="BackToListAsync" />
+            <div data-testid="inbound-shipment-detail-empty">
+                <EmptyState Title="Shipment not found"
+                            Message="Inbound shipment does not exist or is unavailable."
+                            IconCss="bi bi-box-arrow-in-down"
+                            OnAction="BackToListAsync" />
+            </div>
         }
         else
         {
-            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-3 flex-wrap">
                 <div>
-                    <h4 class="mb-1">ISH-@_shipment.Id</h4>
-                    <div class="text-muted">@_shipment.ReferenceNumber</div>
-                    <div class="small text-muted">Supplier: @_shipment.SupplierName (@_shipment.SupplierId)</div>
-                    <div class="small text-muted">Expected: @_shipment.ExpectedDate?.ToString("yyyy-MM-dd")</div>
+                    <MudText Typo="Typo.h6">ISH-@_shipment.Id</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">@_shipment.ReferenceNumber</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Supplier: @_shipment.SupplierName (@_shipment.SupplierId)</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Expected: @_shipment.ExpectedDate?.ToString("yyyy-MM-dd")</MudText>
                 </div>
-                <div class="d-flex align-items-center gap-2">
-                    <span class="badge @GetStatusBadge(_shipment.Status)">@_shipment.Status</span>
-                    <button class="btn btn-outline-secondary btn-sm" @onclick="BackToList">Back</button>
-                    <button class="btn btn-outline-secondary btn-sm" @onclick="LoadAsync">Refresh</button>
-                </div>
-            </div>
+                <MudStack Row="true" Spacing="1">
+                    <MudChip Color="@GetStatusColor(_shipment.Status)" Variant="Variant.Filled" Size="Size.Small">@_shipment.Status</MudChip>
+                    <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="BackToList">Back</MudButton>
+                    <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="LoadAsync">Refresh</MudButton>
+                </MudStack>
+            </MudStack>
 
-            <div class="alert alert-light border d-flex justify-content-between align-items-center flex-wrap gap-2">
-                <div>
-                    <strong>Received:</strong> @TotalReceived.ToString("0.##") / @TotalExpected.ToString("0.##")
-                    (<span>@CompletionPercent.ToString("0.0")%</span>)
-                </div>
-                <button class="btn btn-sm btn-outline-primary" @onclick="OpenQcQueue">Open QC Queue</button>
-            </div>
+            <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Dense="true" Class="mb-3">
+                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                    <MudText Typo="Typo.body2">
+                        Received: @TotalReceived.ToString("0.##") / @TotalExpected.ToString("0.##")
+                        (@CompletionPercent.ToString("0.0")%)
+                    </MudText>
+                    <MudButton Variant="Variant.Text" Size="Size.Small" Color="Color.Primary" OnClick="OpenQcQueue">Open QC Queue</MudButton>
+                </MudStack>
+            </MudAlert>
 
-            <div class="card border mb-3">
-                <div class="card-body">
-                    <div class="row g-2 align-items-end">
-                        <div class="col-md-3">
-                            <label class="form-label">Scan Barcode</label>
-                            <input class="form-control" @bind="_scanBarcode" placeholder="Scan item barcode" />
-                        </div>
-                        <div class="col-md-2">
-                            <button class="btn btn-outline-secondary" @onclick="ResolveByBarcode">Resolve</button>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Line</label>
-                            <select class="form-select" @bind="_selectedLineId">
-                                <option value="">Select line</option>
-                                @foreach (var line in _shipment.Lines)
-                                {
-                                    <option value="@line.LineId">@line.ItemSku - @line.ItemName (Line @line.LineId)</option>
-                                }
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">Receive Qty</label>
-                            <input type="number" min="0.01" step="0.01" class="form-control" @bind="_receivedQty" />
-                        </div>
-                        <div class="col-md-2 d-flex">
-                            <button class="btn btn-primary mt-auto" @onclick="ReceiveAsync" disabled="@_isSubmitting">Receive</button>
-                        </div>
-                    </div>
+            <MudPaper Class="pa-3 mb-3" Outlined="true" data-testid="inbound-shipment-detail-form">
+                <MudGrid Spacing="2" AlignItems="AlignItems.End">
+                    <MudItem xs="12" md="3">
+                        <MudTextField T="string"
+                                      Label="Scan Barcode"
+                                      @bind-Value="_scanBarcode"
+                                      Placeholder="Scan item barcode"
+                                      Variant="Variant.Outlined"
+                                      Dense="true" />
+                    </MudItem>
+                    <MudItem xs="12" md="2">
+                        <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="ResolveByBarcode">Resolve</MudButton>
+                    </MudItem>
+                    <MudItem xs="12" md="3">
+                        <MudSelect T="int?"
+                                   Label="Line"
+                                   @bind-Value="_selectedLineId"
+                                   Variant="Variant.Outlined"
+                                   Dense="true">
+                            <MudSelectItem T="int?" Value="@((int?)null)">Select line</MudSelectItem>
+                            @foreach (var line in _shipment.Lines)
+                            {
+                                <MudSelectItem T="int?" Value="@((int?)line.LineId)">@line.ItemSku - @line.ItemName (Line @line.LineId)</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" md="2">
+                        <MudNumericField T="decimal"
+                                         Label="Receive Qty"
+                                         Min="0.01m"
+                                         Step="0.01m"
+                                         @bind-Value="_receivedQty"
+                                         Variant="Variant.Outlined"
+                                         Dense="true" />
+                    </MudItem>
+                    <MudItem xs="12" md="2">
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   OnClick="ReceiveAsync"
+                                   Disabled="@_isSubmitting"
+                                   data-testid="inbound-shipment-detail-receive">
+                            Receive
+                        </MudButton>
+                    </MudItem>
+                </MudGrid>
 
-                    <div class="row g-2 mt-1">
-                        <div class="col-md-3">
-                            <label class="form-label">Lot Number</label>
-                            <input class="form-control" @bind="_lotNumber" />
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">Production Date</label>
-                            <input type="date" class="form-control" @bind="_productionDate" />
-                        </div>
-                        <div class="col-md-2">
-                            <label class="form-label">Expiry Date</label>
-                            <input type="date" class="form-control" @bind="_expiryDate" />
-                        </div>
-                        <div class="col-md-5">
-                            <label class="form-label">Notes</label>
-                            <input class="form-control" @bind="_notes" />
-                        </div>
-                    </div>
-                </div>
-            </div>
+                <MudGrid Spacing="2" Class="mt-1">
+                    <MudItem xs="12" md="3">
+                        <MudTextField T="string" Label="Lot Number" @bind-Value="_lotNumber" Variant="Variant.Outlined" Dense="true" />
+                    </MudItem>
+                    <MudItem xs="12" md="2">
+                        <MudDatePicker Label="Production Date" @bind-Date="_productionDate" DateFormat="yyyy-MM-dd" Variant="Variant.Outlined" Dense="true" />
+                    </MudItem>
+                    <MudItem xs="12" md="2">
+                        <MudDatePicker Label="Expiry Date" @bind-Date="_expiryDate" DateFormat="yyyy-MM-dd" Variant="Variant.Outlined" Dense="true" />
+                    </MudItem>
+                    <MudItem xs="12" md="5">
+                        <MudTextField T="string" Label="Notes" @bind-Value="_notes" Variant="Variant.Outlined" Dense="true" />
+                    </MudItem>
+                </MudGrid>
+            </MudPaper>
 
-            <div class="table-responsive">
-                <table class="table table-sm table-hover align-middle">
-                    <thead>
-                        <tr>
-                            <th>Line</th>
-                            <th></th>
-                            <th>Item</th>
-                            <th>Barcode</th>
-                            <th>Expected</th>
-                            <th>Received</th>
-                            <th>Remaining</th>
-                            <th>Flags</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var line in _shipment.Lines.OrderBy(x => x.LineId))
+            <MudTable T="InboundShipmentLineDetailDto"
+                      Items="_shipment.Lines.OrderBy(x => x.LineId)"
+                      Dense="true"
+                      Hover="true"
+                      data-testid="inbound-shipment-detail-lines">
+                <HeaderContent>
+                    <MudTh>Line</MudTh>
+                    <MudTh></MudTh>
+                    <MudTh>Item</MudTh>
+                    <MudTh>Barcode</MudTh>
+                    <MudTh>Expected</MudTh>
+                    <MudTh>Received</MudTh>
+                    <MudTh>Remaining</MudTh>
+                    <MudTh>Flags</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Line">@context.LineId</MudTd>
+                    <MudTd DataLabel="Image">
+                        @if (!string.IsNullOrWhiteSpace(context.PrimaryThumbnailUrl))
                         {
-                            <tr class="@(line.LineId == SelectedLineId ? "table-primary" : null)">
-                                <td>@line.LineId</td>
-                                <td>
-                                    @if (!string.IsNullOrWhiteSpace(line.PrimaryThumbnailUrl))
-                                    {
-                                        <img src="@line.PrimaryThumbnailUrl" alt="@line.ItemSku" loading="lazy" style="width:36px;height:36px;object-fit:cover;border-radius:4px;" />
-                                    }
-                                    else
-                                    {
-                                        <div class="bg-light border text-muted d-flex align-items-center justify-content-center" style="width:36px;height:36px;border-radius:4px;">-</div>
-                                    }
-                                </td>
-                                <td>
-                                    <div>@line.ItemSku</div>
-                                    <div class="small text-muted">@line.ItemName</div>
-                                </td>
-                                <td>@(line.PrimaryBarcode ?? "-")</td>
-                                <td>@line.ExpectedQty.ToString("0.##") @line.BaseUoM</td>
-                                <td>@line.ReceivedQty.ToString("0.##") @line.BaseUoM</td>
-                                <td>@Math.Max(0m, line.ExpectedQty - line.ReceivedQty).ToString("0.##") @line.BaseUoM</td>
-                                <td>
-                                    @if (line.RequiresLotTracking)
-                                    {
-                                        <span class="badge bg-warning text-dark me-1">LOT</span>
-                                    }
-                                    @if (line.RequiresQC)
-                                    {
-                                        <span class="badge bg-info text-dark">QC</span>
-                                    }
-                                </td>
-                            </tr>
+                            <img src="@context.PrimaryThumbnailUrl" alt="@context.ItemSku" loading="lazy" style="width:36px;height:36px;object-fit:cover;border-radius:4px;" />
                         }
-                    </tbody>
-                </table>
-            </div>
+                        else
+                        {
+                            <MudPaper Class="d-flex align-center justify-center" style="width:36px;height:36px;">-</MudPaper>
+                        }
+                    </MudTd>
+                    <MudTd DataLabel="Item">
+                        <MudText Typo="Typo.body2">@context.ItemSku</MudText>
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">@context.ItemName</MudText>
+                    </MudTd>
+                    <MudTd DataLabel="Barcode">@(context.PrimaryBarcode ?? "-")</MudTd>
+                    <MudTd DataLabel="Expected">@context.ExpectedQty.ToString("0.##") @context.BaseUoM</MudTd>
+                    <MudTd DataLabel="Received">@context.ReceivedQty.ToString("0.##") @context.BaseUoM</MudTd>
+                    <MudTd DataLabel="Remaining">@Math.Max(0m, context.ExpectedQty - context.ReceivedQty).ToString("0.##") @context.BaseUoM</MudTd>
+                    <MudTd DataLabel="Flags">
+                        @if (context.RequiresLotTracking)
+                        {
+                            <MudChip Size="Size.Small" Color="Color.Warning" Variant="Variant.Outlined" Class="mr-1">LOT</MudChip>
+                        }
+                        @if (context.RequiresQC)
+                        {
+                            <MudChip Size="Size.Small" Color="Color.Info" Variant="Variant.Outlined">QC</MudChip>
+                        }
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
         }
-    </div>
+    </MudPaper>
 </div>
 
 @code {
@@ -166,14 +179,14 @@
     private bool _isSubmitting;
 
     private string _scanBarcode = string.Empty;
-    private string _selectedLineId = string.Empty;
+    private int? _selectedLineId;
     private decimal _receivedQty = 1m;
     private string _lotNumber = string.Empty;
     private DateTime? _productionDate;
     private DateTime? _expiryDate;
     private string _notes = string.Empty;
 
-    private int? SelectedLineId => int.TryParse(_selectedLineId, out var lineId) ? lineId : null;
+    private int? SelectedLineId => _selectedLineId;
 
     private decimal TotalExpected => _shipment?.Lines.Sum(x => x.ExpectedQty) ?? 0m;
     private decimal TotalReceived => _shipment?.Lines.Sum(x => x.ReceivedQty) ?? 0m;
@@ -195,7 +208,7 @@
 
             if (_shipment.Lines.Count > 0 && !SelectedLineId.HasValue)
             {
-                _selectedLineId = _shipment.Lines.OrderBy(x => x.LineId).First().LineId.ToString();
+                _selectedLineId = _shipment.Lines.OrderBy(x => x.LineId).First().LineId;
             }
         }
         catch (ApiException ex)
@@ -227,7 +240,7 @@
             return;
         }
 
-        _selectedLineId = matched.LineId.ToString();
+        _selectedLineId = matched.LineId;
         ToastService.ShowSuccess($"Selected line {matched.LineId} ({matched.ItemSku}).");
     }
 
@@ -307,12 +320,12 @@
         _apiError = null;
     }
 
-    private static string GetStatusBadge(string status) => status.ToUpperInvariant() switch
+    private static Color GetStatusColor(string status) => status.ToUpperInvariant() switch
     {
-        "DRAFT" => "bg-secondary",
-        "PARTIAL" => "bg-warning text-dark",
-        "COMPLETE" => "bg-success",
-        _ => "bg-secondary"
+        "DRAFT" => Color.Default,
+        "PARTIAL" => Color.Warning,
+        "COMPLETE" => Color.Success,
+        _ => Color.Default
     };
 
     private static string BuildErrorMessage(ApiException ex)

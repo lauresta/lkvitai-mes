@@ -263,6 +263,30 @@ public sealed class MudBlazorGridFullFlowTests : PlaywrightUiTestBase
     }
 
     [Fact]
+    public async Task InboundShipmentDetail_PageSmoke()
+    {
+        await RunUiAsync(nameof(InboundShipmentDetail_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/warehouse/inbound/shipments/1");
+
+            await Expect(ByTestId(page, "inbound-shipment-detail-page")).ToBeVisibleAsync();
+
+            var lines = ByTestId(page, "inbound-shipment-detail-lines");
+            var empty = ByTestId(page, "inbound-shipment-detail-empty");
+            var error = ByTestId(page, "inbound-shipment-detail-error");
+            var sharedError = page.GetByTestId("shared-error-banner");
+
+            var linesVisible = await lines.CountAsync() > 0 && await lines.IsVisibleAsync();
+            var emptyVisible = await empty.CountAsync() > 0 && await empty.IsVisibleAsync();
+            var errorVisible = await error.CountAsync() > 0 && await error.IsVisibleAsync();
+            var sharedErrorVisible = await sharedError.CountAsync() > 0 && await sharedError.IsVisibleAsync();
+
+            Assert.True(linesVisible || emptyVisible || errorVisible || sharedErrorVisible,
+                "Expected inbound shipment detail lines, empty state, or error banner to be visible.");
+        });
+    }
+
+    [Fact]
     public async Task StockLocationBalance_PageSmoke()
     {
         await RunUiAsync(nameof(StockLocationBalance_PageSmoke), async page =>
