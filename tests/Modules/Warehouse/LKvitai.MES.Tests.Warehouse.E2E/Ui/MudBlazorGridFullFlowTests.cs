@@ -159,6 +159,66 @@ public sealed class MudBlazorGridFullFlowTests : PlaywrightUiTestBase
         });
     }
 
+    [Fact]
+    public async Task ReportsPickHistory_PageSmoke()
+    {
+        await RunUiAsync(nameof(ReportsPickHistory_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/reports/pick-history");
+
+            await Expect(ByTestId(page, "reports-pick-history-page")).ToBeVisibleAsync();
+            await ByTestId(page, "reports-pick-history-apply").ClickAsync();
+
+            var grid = ByTestId(page, "reports-pick-history-grid");
+            var error = page.GetByTestId("shared-error-banner");
+
+            var gridVisible = await grid.CountAsync() > 0 && await grid.IsVisibleAsync();
+            var errorVisible = await error.CountAsync() > 0 && await error.IsVisibleAsync();
+
+            Assert.True(gridVisible || errorVisible, "Expected pick history grid or shared error banner to be visible.");
+        });
+    }
+
+    [Fact]
+    public async Task ReportsStockLevel_PageSmoke()
+    {
+        await RunUiAsync(nameof(ReportsStockLevel_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/reports/stock-level");
+
+            await Expect(ByTestId(page, "reports-stock-level-page")).ToBeVisibleAsync();
+            await ByTestId(page, "reports-stock-level-apply").ClickAsync();
+
+            var grid = ByTestId(page, "reports-stock-level-grid");
+            var error = page.GetByTestId("shared-error-banner");
+
+            var gridVisible = await grid.CountAsync() > 0 && await grid.IsVisibleAsync();
+            var errorVisible = await error.CountAsync() > 0 && await error.IsVisibleAsync();
+
+            Assert.True(gridVisible || errorVisible, "Expected stock level grid or shared error banner to be visible.");
+        });
+    }
+
+    [Fact]
+    public async Task ReportsComplianceAudit_PageSmoke()
+    {
+        await RunUiAsync(nameof(ReportsComplianceAudit_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/reports/compliance-audit");
+
+            await Expect(ByTestId(page, "reports-compliance-audit-page")).ToBeVisibleAsync();
+            await ByTestId(page, "reports-compliance-audit-apply").ClickAsync();
+
+            var grid = ByTestId(page, "reports-compliance-audit-grid");
+            var error = page.GetByTestId("shared-error-banner");
+
+            var gridVisible = await grid.CountAsync() > 0 && await grid.IsVisibleAsync();
+            var errorVisible = await error.CountAsync() > 0 && await error.IsVisibleAsync();
+
+            Assert.True(gridVisible || errorVisible, "Expected compliance audit grid or shared error banner to be visible.");
+        });
+    }
+
     private static async Task TryChangePageAsync(IPage page, string pagerTestId, string pageIndicatorTestId)
     {
         var pager = ByTestId(page, pagerTestId);

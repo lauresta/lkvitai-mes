@@ -5,99 +5,101 @@
 
 <PageTitle>Pick History - LKvitai.MES</PageTitle>
 
-<h3>Pick History Report</h3>
+<div data-testid="reports-pick-history-page">
+    <MudText Typo="Typo.h5" Class="mb-3">Pick History Report</MudText>
 
-@if (_apiError is not null)
-{
-    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
-                 TraceId="@_apiError.TraceId"
-                 OnRetry="LoadAsync"
-                 OnDismiss="@(() => _apiError = null)" />
-}
+    @if (_apiError is not null)
+    {
+        <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                     TraceId="@_apiError.TraceId"
+                     OnRetry="LoadAsync"
+                     OnDismiss="@(() => _apiError = null)" />
+    }
 
-<div class="card shadow-sm mb-3">
-    <div class="card-body">
-        <div class="row g-2 align-items-end">
-            <div class="col-md-3">
-                <label class="form-label">Order Id</label>
-                <input class="form-control" @bind="_orderId" />
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Operator/User</label>
-                <input class="form-control" @bind="_userId" />
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Completed From</label>
-                <input class="form-control" type="datetime-local" @bind="_dateFrom" />
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Completed To</label>
-                <input class="form-control" type="datetime-local" @bind="_dateTo" />
-            </div>
-            <div class="col-md-2 d-grid">
-                <button class="btn btn-primary" @onclick="ApplyFiltersAsync">Apply</button>
-            </div>
-            <div class="col-md-2 d-grid">
-                <button class="btn btn-outline-secondary" @onclick="ExportCsvAsync">Export CSV</button>
-            </div>
-        </div>
-    </div>
-</div>
+    <MudPaper Class="pa-4 mb-3">
+        <MudGrid Spacing="2" AlignItems="AlignItems.End">
+            <MudItem xs="12" md="3">
+                <MudTextField T="string" Label="Order Id" @bind-Value="_orderId" Variant="Variant.Outlined" Dense="true" />
+            </MudItem>
+            <MudItem xs="12" md="3">
+                <MudTextField T="string" Label="Operator/User" @bind-Value="_userId" Variant="Variant.Outlined" Dense="true" />
+            </MudItem>
+            <MudItem xs="12" md="3">
+                <MudDatePicker Label="Completed From" @bind-Date="_dateFrom" DateFormat="yyyy-MM-dd" Variant="Variant.Outlined" Dense="true" />
+            </MudItem>
+            <MudItem xs="12" md="3">
+                <MudDatePicker Label="Completed To" @bind-Date="_dateTo" DateFormat="yyyy-MM-dd" Variant="Variant.Outlined" Dense="true" />
+            </MudItem>
+            <MudItem xs="12" md="2">
+                <MudButton FullWidth="true" Variant="Variant.Filled" Color="Color.Primary" OnClick="ApplyFiltersAsync" @attributes="ApplyAttributes">Apply</MudButton>
+            </MudItem>
+            <MudItem xs="12" md="2">
+                <MudButton FullWidth="true" Variant="Variant.Outlined" Color="Color.Default" OnClick="ExportCsvAsync" @attributes="ExportAttributes">Export CSV</MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
 
-<div class="card shadow-sm position-relative">
-    <LoadingSpinner IsLoading="@_isLoading" />
-    <div class="card-body">
-        <div class="mb-2"><strong>Total: @_totalCount</strong></div>
-        <div class="table-responsive">
-            <table class="table table-sm table-hover align-middle">
-                <thead>
-                <tr>
-                    <th>Task</th>
-                    <th>Order</th>
-                    <th>SKU</th>
-                    <th>Item</th>
-                    <th>Qty</th>
-                    <th>Picked</th>
-                    <th>Operator</th>
-                    <th>Completed</th>
-                </tr>
-                </thead>
-                <tbody>
-                @if (_items.Count == 0)
-                {
-                    <tr>
-                        <td colspan="8" class="text-muted">No rows found.</td>
-                    </tr>
-                }
-                else
-                {
-                    @foreach (var row in _items)
-                    {
-                        <tr>
-                            <td>@row.TaskId</td>
-                            <td>@row.OrderId</td>
-                            <td>@row.InternalSku</td>
-                            <td>@row.ItemName</td>
-                            <td>@row.Qty</td>
-                            <td>@row.PickedQty</td>
-                            <td>@(row.CompletedBy ?? row.AssignedToUserId)</td>
-                            <td>@row.CompletedAt?.ToString("yyyy-MM-dd HH:mm")</td>
-                        </tr>
-                    }
-                }
-                </tbody>
-            </table>
-        </div>
+    <MudPaper Class="pa-4 position-relative">
+        <LoadingSpinner IsLoading="@_isLoading" />
+
+        <MudText Typo="Typo.subtitle2" Class="mb-2" data-testid="reports-pick-history-total">Total: @_totalCount</MudText>
+
+        <MudDataGrid T="PickHistoryRowDto"
+                     Items="_items"
+                     Dense="true"
+                     Hover="true"
+                     Loading="@_isLoading"
+                     SortMode="SortMode.None"
+                     Filterable="false"
+                     @attributes="GridAttributes">
+            <NoRecordsContent>
+                <MudText Typo="Typo.body2" Class="mud-secondary-text">No rows found.</MudText>
+            </NoRecordsContent>
+            <Columns>
+                <PropertyColumn Property="x => x.TaskId" Title="Task" />
+                <PropertyColumn Property="x => x.OrderId" Title="Order" />
+                <PropertyColumn Property="x => x.InternalSku" Title="SKU" />
+                <PropertyColumn Property="x => x.ItemName" Title="Item" />
+                <PropertyColumn Property="x => x.Qty" Title="Qty" />
+                <PropertyColumn Property="x => x.PickedQty" Title="Picked" />
+                <TemplateColumn Title="Operator">
+                    <CellTemplate>
+                        @(context.Item.CompletedBy ?? context.Item.AssignedToUserId)
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Completed">
+                    <CellTemplate>
+                        @context.Item.CompletedAt?.ToString("yyyy-MM-dd HH:mm")
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+        </MudDataGrid>
 
         @if (_totalCount > 0)
         {
-            <Pagination CurrentPage="@_pageNumber"
-                        TotalPages="@TotalPages"
-                        PageSize="@_pageSize"
-                        OnPageChanged="OnPageChangedAsync"
-                        OnPageSizeChanged="OnPageSizeChangedAsync" />
+            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.FlexEnd" Class="mt-3" data-testid="reports-pick-history-pager">
+                <MudSelect T="int"
+                           Label="Page size"
+                           Value="_pageSize"
+                           ValueChanged="OnPageSizeChangedAsync"
+                           Variant="Variant.Outlined"
+                           Dense="true"
+                           Style="width: 120px;"
+                           @attributes="PageSizeAttributes">
+                    <MudSelectItem Value="25">25</MudSelectItem>
+                    <MudSelectItem Value="50">50</MudSelectItem>
+                    <MudSelectItem Value="100">100</MudSelectItem>
+                </MudSelect>
+                <MudPagination Count="@TotalPages"
+                               Selected="@_pageNumber"
+                               SelectedChanged="OnPageChangedAsync"
+                               Variant="Variant.Outlined"
+                               Color="Color.Primary"
+                               Size="Size.Small"
+                               Class="ml-2" />
+            </MudStack>
         }
-    </div>
+    </MudPaper>
 </div>
 
 @code {
@@ -112,6 +114,11 @@
     private string? _userId;
     private DateTime? _dateFrom;
     private DateTime? _dateTo;
+
+    private static readonly Dictionary<string, object> GridAttributes = new() { ["data-testid"] = "reports-pick-history-grid" };
+    private static readonly Dictionary<string, object> ApplyAttributes = new() { ["data-testid"] = "reports-pick-history-apply" };
+    private static readonly Dictionary<string, object> ExportAttributes = new() { ["data-testid"] = "reports-pick-history-export" };
+    private static readonly Dictionary<string, object> PageSizeAttributes = new() { ["data-testid"] = "reports-pick-history-page-size" };
 
     private int TotalPages => Math.Max(1, (int)Math.Ceiling(_totalCount / (double)Math.Max(1, _pageSize)));
 
@@ -134,8 +141,8 @@
         try
         {
             var response = await ReportsClient.GetPickHistoryAsync(
-                _orderId,
-                _userId,
+                string.IsNullOrWhiteSpace(_orderId) ? null : _orderId,
+                string.IsNullOrWhiteSpace(_userId) ? null : _userId,
                 ParseDateTime(_dateFrom),
                 ParseDateTime(_dateTo),
                 _pageNumber,
@@ -173,8 +180,8 @@
         try
         {
             var bytes = await ReportsClient.DownloadPickHistoryCsvAsync(
-                _orderId,
-                _userId,
+                string.IsNullOrWhiteSpace(_orderId) ? null : _orderId,
+                string.IsNullOrWhiteSpace(_userId) ? null : _userId,
                 ParseDateTime(_dateFrom),
                 ParseDateTime(_dateTo));
 

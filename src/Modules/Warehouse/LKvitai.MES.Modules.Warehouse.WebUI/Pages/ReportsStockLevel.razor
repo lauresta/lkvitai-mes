@@ -5,116 +5,109 @@
 
 <PageTitle>Stock Level Report - LKvitai.MES</PageTitle>
 
-<h3>Stock Level Report</h3>
+<div data-testid="reports-stock-level-page">
+    <MudText Typo="Typo.h5" Class="mb-3">Stock Level Report</MudText>
 
-@if (_apiError is not null)
-{
-    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
-                 TraceId="@_apiError.TraceId"
-                 OnRetry="LoadAsync"
-                 OnDismiss="@(() => _apiError = null)" />
-}
+    @if (_apiError is not null)
+    {
+        <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                     TraceId="@_apiError.TraceId"
+                     OnRetry="LoadAsync"
+                     OnDismiss="@(() => _apiError = null)" />
+    }
 
-<div class="card shadow-sm mb-3">
-    <div class="card-body">
-        <div class="row g-2 align-items-end">
-            <div class="col-md-2">
-                <label class="form-label">Item Id</label>
-                <input class="form-control" type="number" @bind="_itemId" />
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">Location Id</label>
-                <input class="form-control" type="number" @bind="_locationId" />
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">Category Id</label>
-                <input class="form-control" type="number" @bind="_categoryId" />
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Expiring Before</label>
-                <input class="form-control" type="date" @bind="_expiringBefore" />
-            </div>
-            <div class="col-md-3 d-flex gap-3 align-items-center">
-                <div class="form-check mt-4">
-                    <input class="form-check-input" type="checkbox" @bind="_includeReserved" />
-                    <label class="form-check-label">Include reserved</label>
-                </div>
-                <div class="form-check mt-4">
-                    <input class="form-check-input" type="checkbox" @bind="_includeVirtualLocations" />
-                    <label class="form-check-label">Include virtual</label>
-                </div>
-            </div>
-            <div class="col-md-2 d-grid">
-                <button class="btn btn-primary" @onclick="ApplyFiltersAsync">Apply</button>
-            </div>
-            <div class="col-md-2 d-grid">
-                <button class="btn btn-outline-secondary" @onclick="ExportCsvAsync">Export CSV</button>
-            </div>
-        </div>
-    </div>
-</div>
+    <MudPaper Class="pa-4 mb-3">
+        <MudGrid Spacing="2" AlignItems="AlignItems.End">
+            <MudItem xs="12" md="2">
+                <MudNumericField T="int?" Label="Item Id" @bind-Value="_itemId" Variant="Variant.Outlined" Dense="true" />
+            </MudItem>
+            <MudItem xs="12" md="2">
+                <MudNumericField T="int?" Label="Location Id" @bind-Value="_locationId" Variant="Variant.Outlined" Dense="true" />
+            </MudItem>
+            <MudItem xs="12" md="2">
+                <MudNumericField T="int?" Label="Category Id" @bind-Value="_categoryId" Variant="Variant.Outlined" Dense="true" />
+            </MudItem>
+            <MudItem xs="12" md="3">
+                <MudDatePicker Label="Expiring Before" @bind-Date="_expiringBefore" DateFormat="yyyy-MM-dd" Variant="Variant.Outlined" Dense="true" />
+            </MudItem>
+            <MudItem xs="12" md="3">
+                <MudStack Spacing="1">
+                    <MudCheckBox T="bool" Label="Include reserved" @bind-Value="_includeReserved" Dense="true" />
+                    <MudCheckBox T="bool" Label="Include virtual" @bind-Value="_includeVirtualLocations" Dense="true" />
+                </MudStack>
+            </MudItem>
+            <MudItem xs="12" md="2">
+                <MudButton FullWidth="true" Variant="Variant.Filled" Color="Color.Primary" OnClick="ApplyFiltersAsync" @attributes="ApplyAttributes">Apply</MudButton>
+            </MudItem>
+            <MudItem xs="12" md="2">
+                <MudButton FullWidth="true" Variant="Variant.Outlined" Color="Color.Default" OnClick="ExportCsvAsync" @attributes="ExportAttributes">Export CSV</MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
 
-<div class="card shadow-sm position-relative">
-    <LoadingSpinner IsLoading="@_isLoading" />
-    <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <strong>Total: @_totalCount</strong>
-            <div>
-                Stock as of @_projectionTimestamp.ToString("HH:mm:ss")
-                <span class="ms-2"><StaleBadge LastUpdated="_projectionTimestamp" /></span>
-            </div>
-        </div>
+    <MudPaper Class="pa-4 position-relative">
+        <LoadingSpinner IsLoading="@_isLoading" />
 
-        <div class="table-responsive">
-            <table class="table table-sm table-hover align-middle">
-                <thead>
-                <tr>
-                    <th>SKU</th>
-                    <th>Item</th>
-                    <th>Location</th>
-                    <th>Lot</th>
-                    <th>Expiry</th>
-                    <th>Qty</th>
-                    <th>Reserved</th>
-                    <th>Available</th>
-                </tr>
-                </thead>
-                <tbody>
-                @if (_items.Count == 0)
-                {
-                    <tr>
-                        <td colspan="8" class="text-muted">No rows found.</td>
-                    </tr>
-                }
-                else
-                {
-                    @foreach (var row in _items)
-                    {
-                        <tr>
-                            <td>@row.InternalSku</td>
-                            <td>@row.ItemName</td>
-                            <td>@row.LocationCode</td>
-                            <td>@row.LotNumber</td>
-                            <td>@row.ExpiryDate?.ToString("yyyy-MM-dd")</td>
-                            <td>@row.Qty</td>
-                            <td>@row.ReservedQty</td>
-                            <td>@row.AvailableQty</td>
-                        </tr>
-                    }
-                }
-                </tbody>
-            </table>
-        </div>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-2">
+            <MudText Typo="Typo.subtitle2" data-testid="reports-stock-level-total">Total: @_totalCount</MudText>
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+                <MudText Typo="Typo.caption">Stock as of @_projectionTimestamp.ToString("HH:mm:ss")</MudText>
+                <StaleBadge LastUpdated="_projectionTimestamp" />
+            </MudStack>
+        </MudStack>
+
+        <MudDataGrid T="StockLevelRowDto"
+                     Items="_items"
+                     Dense="true"
+                     Hover="true"
+                     Loading="@_isLoading"
+                     SortMode="SortMode.None"
+                     Filterable="false"
+                     @attributes="GridAttributes">
+            <NoRecordsContent>
+                <MudText Typo="Typo.body2" Class="mud-secondary-text">No rows found.</MudText>
+            </NoRecordsContent>
+            <Columns>
+                <PropertyColumn Property="x => x.InternalSku" Title="SKU" />
+                <PropertyColumn Property="x => x.ItemName" Title="Item" />
+                <PropertyColumn Property="x => x.LocationCode" Title="Location" />
+                <PropertyColumn Property="x => x.LotNumber" Title="Lot" />
+                <TemplateColumn Title="Expiry">
+                    <CellTemplate>
+                        @context.Item.ExpiryDate?.ToString("yyyy-MM-dd")
+                    </CellTemplate>
+                </TemplateColumn>
+                <PropertyColumn Property="x => x.Qty" Title="Qty" />
+                <PropertyColumn Property="x => x.ReservedQty" Title="Reserved" />
+                <PropertyColumn Property="x => x.AvailableQty" Title="Available" />
+            </Columns>
+        </MudDataGrid>
 
         @if (_totalCount > 0)
         {
-            <Pagination CurrentPage="@_pageNumber"
-                        TotalPages="@TotalPages"
-                        PageSize="@_pageSize"
-                        OnPageChanged="OnPageChangedAsync"
-                        OnPageSizeChanged="OnPageSizeChangedAsync" />
+            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.FlexEnd" Class="mt-3" data-testid="reports-stock-level-pager">
+                <MudSelect T="int"
+                           Label="Page size"
+                           Value="_pageSize"
+                           ValueChanged="OnPageSizeChangedAsync"
+                           Variant="Variant.Outlined"
+                           Dense="true"
+                           Style="width: 120px;"
+                           @attributes="PageSizeAttributes">
+                    <MudSelectItem Value="25">25</MudSelectItem>
+                    <MudSelectItem Value="50">50</MudSelectItem>
+                    <MudSelectItem Value="100">100</MudSelectItem>
+                </MudSelect>
+                <MudPagination Count="@TotalPages"
+                               Selected="@_pageNumber"
+                               SelectedChanged="OnPageChangedAsync"
+                               Variant="Variant.Outlined"
+                               Color="Color.Primary"
+                               Size="Size.Small"
+                               Class="ml-2" />
+            </MudStack>
         }
-    </div>
+    </MudPaper>
 </div>
 
 @code {
@@ -132,6 +125,11 @@
     private DateTime? _expiringBefore;
     private bool _includeReserved;
     private bool _includeVirtualLocations;
+
+    private static readonly Dictionary<string, object> GridAttributes = new() { ["data-testid"] = "reports-stock-level-grid" };
+    private static readonly Dictionary<string, object> ApplyAttributes = new() { ["data-testid"] = "reports-stock-level-apply" };
+    private static readonly Dictionary<string, object> ExportAttributes = new() { ["data-testid"] = "reports-stock-level-export" };
+    private static readonly Dictionary<string, object> PageSizeAttributes = new() { ["data-testid"] = "reports-stock-level-page-size" };
 
     private int TotalPages => Math.Max(1, (int)Math.Ceiling(_totalCount / (double)Math.Max(1, _pageSize)));
 
