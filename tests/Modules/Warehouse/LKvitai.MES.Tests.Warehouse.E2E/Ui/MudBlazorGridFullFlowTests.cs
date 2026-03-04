@@ -340,6 +340,63 @@ public sealed class MudBlazorGridFullFlowTests : PlaywrightUiTestBase
         });
     }
 
+    [Fact]
+    public async Task AdminSupplierMappings_PageSmoke()
+    {
+        await RunUiAsync(nameof(AdminSupplierMappings_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/admin/supplier-mappings");
+
+            await Expect(ByTestId(page, "admin-supplier-mappings-page")).ToBeVisibleAsync();
+
+            var grid = ByTestId(page, "admin-supplier-mappings-grid");
+            var error = page.GetByTestId("shared-error-banner");
+
+            var gridVisible = await grid.CountAsync() > 0 && await grid.IsVisibleAsync();
+            var errorVisible = await error.CountAsync() > 0 && await error.IsVisibleAsync();
+
+            Assert.True(gridVisible || errorVisible, "Expected supplier mappings grid or shared error banner to be visible.");
+        });
+    }
+
+    [Fact]
+    public async Task AdminItems_PageSmoke()
+    {
+        await RunUiAsync(nameof(AdminItems_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/admin/items");
+
+            await Expect(ByTestId(page, "admin-items-page")).ToBeVisibleAsync();
+
+            var grid = ByTestId(page, "admin-items-grid");
+            var error = page.GetByTestId("shared-error-banner");
+
+            var gridVisible = await grid.CountAsync() > 0 && await grid.IsVisibleAsync();
+            var errorVisible = await error.CountAsync() > 0 && await error.IsVisibleAsync();
+
+            Assert.True(gridVisible || errorVisible, "Expected items grid or shared error banner to be visible.");
+        });
+    }
+
+    [Fact]
+    public async Task AdminLocations_PageSmoke()
+    {
+        await RunUiAsync(nameof(AdminLocations_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/admin/locations");
+
+            await Expect(ByTestId(page, "admin-locations-page")).ToBeVisibleAsync();
+
+            var grid = ByTestId(page, "admin-locations-grid");
+            var error = page.GetByTestId("shared-error-banner");
+
+            var gridVisible = await grid.CountAsync() > 0 && await grid.IsVisibleAsync();
+            var errorVisible = await error.CountAsync() > 0 && await error.IsVisibleAsync();
+
+            Assert.True(gridVisible || errorVisible, "Expected locations grid or shared error banner to be visible.");
+        });
+    }
+
     private static async Task TryChangePageAsync(IPage page, string pagerTestId, string pageIndicatorTestId)
     {
         var pager = ByTestId(page, pagerTestId);

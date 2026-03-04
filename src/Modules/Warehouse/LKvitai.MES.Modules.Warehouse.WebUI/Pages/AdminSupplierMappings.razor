@@ -4,6 +4,7 @@
 
 <PageTitle>Supplier Mappings - LKvitai.MES</PageTitle>
 
+<div data-testid="admin-supplier-mappings-page">
 <h3>Supplier Mappings</h3>
 
 @if (_apiError is not null)
@@ -58,7 +59,7 @@
             </button>
         </div>
 
-        <div class="table-responsive">
+        <div class="table-responsive" data-testid="admin-supplier-mappings-grid">
             <table class="table table-sm table-hover align-middle">
                 <thead>
                 <tr>
@@ -101,11 +102,27 @@
 
         @if (_totalCount > 0)
         {
-            <Pagination CurrentPage="@_pageNumber"
-                        TotalPages="@TotalPages"
-                        PageSize="@_pageSize"
-                        OnPageChanged="OnPageChangedAsync"
-                        OnPageSizeChanged="OnPageSizeChangedAsync" />
+            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.FlexEnd" Class="mt-3" data-testid="admin-supplier-mappings-pager">
+                <MudSelect T="int"
+                           Label="Page size"
+                           Value="_pageSize"
+                           ValueChanged="OnPageSizeChangedAsync"
+                           Variant="Variant.Outlined"
+                           Dense="true"
+                           Style="width: 120px;"
+                           @attributes="PageSizeAttributes">
+                    <MudSelectItem Value="25">25</MudSelectItem>
+                    <MudSelectItem Value="50">50</MudSelectItem>
+                    <MudSelectItem Value="100">100</MudSelectItem>
+                </MudSelect>
+                <MudPagination Count="@TotalPages"
+                               Selected="@_pageNumber"
+                               SelectedChanged="OnPageChangedAsync"
+                               Variant="Variant.Outlined"
+                               Color="Color.Primary"
+                               Size="Size.Small"
+                               Class="ml-2" />
+            </MudStack>
         }
     </div>
 </div>
@@ -157,6 +174,7 @@
         </div>
     </div>
 }
+</div>
 
 @if (_editing is not null)
 {
@@ -223,6 +241,7 @@
     private bool _isLoading;
     private bool _showCreate;
     private ApiException? _apiError;
+    private static readonly Dictionary<string, object> PageSizeAttributes = new() { ["data-testid"] = "admin-supplier-mappings-page-size" };
 
     private MappingFormModel _create = new();
     private MappingEditModel? _editing;
