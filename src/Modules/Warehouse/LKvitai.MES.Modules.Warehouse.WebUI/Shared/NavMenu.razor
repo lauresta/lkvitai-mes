@@ -1,48 +1,29 @@
 @inject NavigationManager Navigation
+@implements IDisposable
 
-<div class="pt-3 px-2" style="overflow-y:auto;">
-    <ul class="nav flex-column mb-2">
-        <li class="nav-item">
-            <NavLink class="nav-link" href="/dashboard" Match="NavLinkMatch.All">
-                <i class="bi bi-speedometer2 me-2"></i>Dashboard
-            </NavLink>
-        </li>
-    </ul>
+<MudNavMenu Class="pa-2" data-testid="warehouse-navmenu">
+    <MudNavLink Href="/dashboard" Match="NavLinkMatch.All">
+        <span><i class="bi bi-speedometer2 me-2"></i>Dashboard</span>
+    </MudNavLink>
 
     @foreach (var grp in _sections)
     {
-        var isOpen = _openSection == grp.Key;
-        var hasActive = grp.Items.Any(i => _currentUri.Contains(i.Href, StringComparison.OrdinalIgnoreCase));
-
-        <div class="nav-section">
-            <button class="nav-section-toggle @(isOpen ? "open" : "") @(hasActive && !isOpen ? "has-active" : "")"
-                    @onclick="() => Toggle(grp.Key)">
-                <span>
-                    <i class="bi @grp.Icon me-2"></i>@grp.Label
-                </span>
-                <i class="bi bi-chevron-down nav-chevron"></i>
-            </button>
-
-            @if (isOpen)
+        <MudNavGroup Title="@grp.Label"
+                     Expanded="@(_openSection == grp.Key)"
+                     ExpandedChanged="expanded => OnSectionExpandedChanged(grp.Key, expanded)">
+            @foreach (var item in grp.Items)
             {
-                <ul class="nav flex-column nav-section-items">
-                    @foreach (var item in grp.Items)
-                    {
-                        <li class="nav-item">
-                            <NavLink class="nav-link" href="@item.Href" Match="NavLinkMatch.Prefix">
-                                <i class="bi @item.Icon me-2"></i>@item.Label
-                            </NavLink>
-                        </li>
-                    }
-                </ul>
+                <MudNavLink Href="@item.Href" Match="NavLinkMatch.Prefix">
+                    <span><i class="bi @item.Icon me-2"></i>@item.Label</span>
+                </MudNavLink>
             }
-        </div>
+        </MudNavGroup>
     }
-</div>
+</MudNavMenu>
 
 @code {
     private string? _openSection;
-    private string _currentUri = "";
+    private string _currentUri = string.Empty;
 
     private record NavItem(string Href, string Icon, string Label);
     private record NavSection(string Key, string Label, string Icon, NavItem[] Items);
@@ -59,23 +40,29 @@
         _currentUri = e.Location;
         var active = FindSectionForUri(_currentUri);
         if (active is not null)
+        {
             _openSection = active;
+        }
+
         InvokeAsync(StateHasChanged);
+    }
+
+    private void OnSectionExpandedChanged(string key, bool expanded)
+    {
+        _openSection = expanded ? key : (_openSection == key ? null : _openSection);
     }
 
     private string? FindSectionForUri(string uri)
     {
-        foreach (var s in _sections)
+        foreach (var section in _sections)
         {
-            if (s.Items.Any(i => uri.Contains(i.Href, StringComparison.OrdinalIgnoreCase)))
-                return s.Key;
+            if (section.Items.Any(i => uri.Contains(i.Href, StringComparison.OrdinalIgnoreCase)))
+            {
+                return section.Key;
+            }
         }
-        return null;
-    }
 
-    private void Toggle(string key)
-    {
-        _openSection = _openSection == key ? null : key;
+        return null;
     }
 
     public void Dispose()
