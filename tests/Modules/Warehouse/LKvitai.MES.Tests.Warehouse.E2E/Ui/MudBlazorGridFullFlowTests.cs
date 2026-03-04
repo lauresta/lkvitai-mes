@@ -119,6 +119,26 @@ public sealed class MudBlazorGridFullFlowTests : PlaywrightUiTestBase
         });
     }
 
+    [Fact]
+    public async Task ReportsStockMovements_PageSmoke()
+    {
+        await RunUiAsync(nameof(ReportsStockMovements_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/reports/stock-movements");
+
+            await Expect(ByTestId(page, "reports-stock-movements-page")).ToBeVisibleAsync();
+            await ByTestId(page, "reports-stock-movements-apply").ClickAsync();
+
+            var grid = ByTestId(page, "reports-stock-movements-grid");
+            var error = page.GetByTestId("reports-stock-movements-error");
+
+            var gridVisible = await grid.CountAsync() > 0 && await grid.IsVisibleAsync();
+            var errorVisible = await error.CountAsync() > 0 && await error.IsVisibleAsync();
+
+            Assert.True(gridVisible || errorVisible, "Expected stock movements grid or route-level error to be visible.");
+        });
+    }
+
     private static async Task TryChangePageAsync(IPage page, string pagerTestId, string pageIndicatorTestId)
     {
         var pager = ByTestId(page, pagerTestId);

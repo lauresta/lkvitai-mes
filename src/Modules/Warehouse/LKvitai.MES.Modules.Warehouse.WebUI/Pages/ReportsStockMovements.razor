@@ -5,116 +5,174 @@
 
 <PageTitle>Stock Movements - LKvitai.MES</PageTitle>
 
-<h1>Stock Movement History</h1>
+<div data-testid="reports-stock-movements-page">
+    <MudText Typo="Typo.h5" Class="mb-3">Stock Movement History</MudText>
 
-@if (_apiError is not null)
-{
-    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
-                 TraceId="@_apiError.TraceId"
-                 OnRetry="LoadAsync"
-                 OnDismiss="DismissError" />
-}
-
-<div class="card shadow-sm mb-3">
-    <div class="card-body">
-        <div class="row g-2 align-items-end">
-            <div class="col-md-2">
-                <label class="form-label">Start</label>
-                <input type="date" class="form-control" @bind="_startDate" />
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">End</label>
-                <input type="date" class="form-control" @bind="_endDate" />
-            </div>
-            <div class="col-md-1">
-                <label class="form-label">Item Id</label>
-                <input type="number" class="form-control" @bind="_itemId" />
-            </div>
-            <div class="col-md-1">
-                <label class="form-label">Location Id</label>
-                <input type="number" class="form-control" @bind="_locationId" />
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">Operator</label>
-                <input class="form-control" @bind="_operatorId" />
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">Movement Type</label>
-                <select class="form-select" @bind="_movementType">
-                    <option value="">All</option>
-                    <option value="Receive">Receive</option>
-                    <option value="Transfer">Transfer</option>
-                    <option value="Pick">Pick</option>
-                    <option value="Adjust">Adjust</option>
-                    <option value="Dispatch">Dispatch</option>
-                </select>
-            </div>
-            <div class="col-md-2 d-flex gap-2">
-                <button class="btn btn-primary" @onclick="ApplyFiltersAsync" disabled="@_isLoading">Apply</button>
-                <button class="btn btn-outline-success" @onclick="ExportCsvAsync" disabled="@_isLoading">CSV</button>
-            </div>
+    @if (_apiError is not null)
+    {
+        <div data-testid="reports-stock-movements-error">
+            <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                         TraceId="@_apiError.TraceId"
+                         OnRetry="LoadAsync"
+                         OnDismiss="DismissError" />
         </div>
-    </div>
-</div>
+    }
 
-<div class="card shadow-sm position-relative">
-    <LoadingSpinner IsLoading="_isLoading" />
+    <MudPaper Class="pa-4 mb-3">
+        <MudGrid Spacing="2" AlignItems="AlignItems.End">
+            <MudItem xs="12" md="2">
+                <MudDatePicker Label="Start"
+                               @bind-Date="_startDate"
+                               DateFormat="yyyy-MM-dd"
+                               Variant="Variant.Outlined"
+                               Dense="true" />
+            </MudItem>
+            <MudItem xs="12" md="2">
+                <MudDatePicker Label="End"
+                               @bind-Date="_endDate"
+                               DateFormat="yyyy-MM-dd"
+                               Variant="Variant.Outlined"
+                               Dense="true" />
+            </MudItem>
+            <MudItem xs="12" md="2">
+                <MudNumericField T="int?"
+                                 Label="Item Id"
+                                 @bind-Value="_itemId"
+                                 Variant="Variant.Outlined"
+                                 Dense="true" />
+            </MudItem>
+            <MudItem xs="12" md="2">
+                <MudNumericField T="int?"
+                                 Label="Location Id"
+                                 @bind-Value="_locationId"
+                                 Variant="Variant.Outlined"
+                                 Dense="true" />
+            </MudItem>
+            <MudItem xs="12" md="2">
+                <MudTextField T="string"
+                              Label="Operator"
+                              @bind-Value="_operatorId"
+                              Variant="Variant.Outlined"
+                              Dense="true" />
+            </MudItem>
+            <MudItem xs="12" md="2">
+                <MudSelect T="string"
+                           Label="Movement Type"
+                           @bind-Value="_movementType"
+                           Variant="Variant.Outlined"
+                           Dense="true">
+                    <MudSelectItem Value="@string.Empty">All</MudSelectItem>
+                    <MudSelectItem Value="@("Receive")">Receive</MudSelectItem>
+                    <MudSelectItem Value="@("Transfer")">Transfer</MudSelectItem>
+                    <MudSelectItem Value="@("Pick")">Pick</MudSelectItem>
+                    <MudSelectItem Value="@("Adjust")">Adjust</MudSelectItem>
+                    <MudSelectItem Value="@("Dispatch")">Dispatch</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="2">
+                <MudButton FullWidth="true"
+                           Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           Disabled="@_isLoading"
+                           OnClick="ApplyFiltersAsync"
+                           @attributes="ApplyButtonAttributes">
+                    Apply
+                </MudButton>
+            </MudItem>
+            <MudItem xs="12" md="2">
+                <MudButton FullWidth="true"
+                           Variant="Variant.Outlined"
+                           Color="Color.Default"
+                           Disabled="@_isLoading"
+                           OnClick="ExportCsvAsync"
+                           @attributes="ExportButtonAttributes">
+                    CSV
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
 
-    <div class="card-body">
-        <div class="mb-2"><strong>Total: @_totalCount</strong></div>
+    <MudPaper Class="pa-4 position-relative">
+        <LoadingSpinner IsLoading="@_isLoading" />
 
-        <div class="table-responsive">
-            <table class="table table-sm table-hover align-middle">
-                <thead>
-                    <tr>
-                        <th>Timestamp</th>
-                        <th>Type</th>
-                        <th>SKU</th>
-                        <th>From</th>
-                        <th>To</th>
-                        <th>Qty</th>
-                        <th>Operator</th>
-                        <th>Reason</th>
-                        <th>Reference</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if (_rows.Count == 0)
-                    {
-                        <tr>
-                            <td colspan="9" class="text-muted">No stock movements found.</td>
-                        </tr>
-                    }
-                    else
-                    {
-                        @foreach (var row in _rows)
-                        {
-                            <tr>
-                                <td>@row.Timestamp.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
-                                <td>@row.MovementType</td>
-                                <td>@row.ItemSku</td>
-                                <td>@(row.FromLocationCode ?? "-")</td>
-                                <td>@(row.ToLocationCode ?? "-")</td>
-                                <td>@row.Qty.ToString("0.##") @row.BaseUoM</td>
-                                <td>@(row.Operator ?? "-")</td>
-                                <td>@(row.Reason ?? "-")</td>
-                                <td>@row.Reference</td>
-                            </tr>
-                        }
-                    }
-                </tbody>
-            </table>
-        </div>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-2">
+            <MudText Typo="Typo.subtitle2" data-testid="reports-stock-movements-total">Total: @_totalCount</MudText>
+            <MudText Typo="Typo.caption" Class="mud-secondary-text" data-testid="reports-stock-movements-page-indicator">Page @_page of @TotalPages</MudText>
+        </MudStack>
+
+        <MudDataGrid T="StockMovementRowDto"
+                     Items="_rows"
+                     Dense="true"
+                     Hover="true"
+                     Loading="@_isLoading"
+                     SortMode="SortMode.None"
+                     Filterable="false"
+                     @attributes="StockMovementsGridAttributes">
+            <NoRecordsContent>
+                <MudText Typo="Typo.body2" Class="mud-secondary-text">No stock movements found.</MudText>
+            </NoRecordsContent>
+            <Columns>
+                <TemplateColumn Title="Timestamp">
+                    <CellTemplate>
+                        @context.Item.Timestamp.ToLocalTime().ToString("yyyy-MM-dd HH:mm")
+                    </CellTemplate>
+                </TemplateColumn>
+                <PropertyColumn Property="x => x.MovementType" Title="Type" />
+                <PropertyColumn Property="x => x.ItemSku" Title="SKU" />
+                <TemplateColumn Title="From">
+                    <CellTemplate>
+                        @(context.Item.FromLocationCode ?? "-")
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="To">
+                    <CellTemplate>
+                        @(context.Item.ToLocationCode ?? "-")
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Qty">
+                    <CellTemplate>
+                        @context.Item.Qty.ToString("0.##") @context.Item.BaseUoM
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Operator">
+                    <CellTemplate>
+                        @(context.Item.Operator ?? "-")
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Reason">
+                    <CellTemplate>
+                        @(context.Item.Reason ?? "-")
+                    </CellTemplate>
+                </TemplateColumn>
+                <PropertyColumn Property="x => x.Reference" Title="Reference" />
+            </Columns>
+        </MudDataGrid>
 
         @if (_totalCount > 0)
         {
-            <Pagination CurrentPage="_page"
-                        TotalPages="TotalPages"
-                        PageSize="_pageSize"
-                        OnPageChanged="OnPageChangedAsync"
-                        OnPageSizeChanged="OnPageSizeChangedAsync" />
+            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.FlexEnd" Class="mt-3" data-testid="reports-stock-movements-pager">
+                <MudSelect T="int"
+                           Label="Page size"
+                           Value="_pageSize"
+                           ValueChanged="OnPageSizeChangedAsync"
+                           Variant="Variant.Outlined"
+                           Dense="true"
+                           Style="width: 120px;"
+                           @attributes="PageSizeAttributes">
+                    <MudSelectItem Value="25">25</MudSelectItem>
+                    <MudSelectItem Value="50">50</MudSelectItem>
+                    <MudSelectItem Value="100">100</MudSelectItem>
+                </MudSelect>
+                <MudPagination Count="@TotalPages"
+                               Selected="@_page"
+                               SelectedChanged="OnPageChangedAsync"
+                               Variant="Variant.Outlined"
+                               Color="Color.Primary"
+                               Size="Size.Small"
+                               Class="ml-2" />
+            </MudStack>
         }
-    </div>
+    </MudPaper>
 </div>
 
 @code {
@@ -131,6 +189,26 @@
     private int _page = 1;
     private int _pageSize = 50;
     private int _totalCount;
+
+    private static readonly Dictionary<string, object> StockMovementsGridAttributes = new()
+    {
+        ["data-testid"] = "reports-stock-movements-grid"
+    };
+
+    private static readonly Dictionary<string, object> ApplyButtonAttributes = new()
+    {
+        ["data-testid"] = "reports-stock-movements-apply"
+    };
+
+    private static readonly Dictionary<string, object> ExportButtonAttributes = new()
+    {
+        ["data-testid"] = "reports-stock-movements-export"
+    };
+
+    private static readonly Dictionary<string, object> PageSizeAttributes = new()
+    {
+        ["data-testid"] = "reports-stock-movements-page-size"
+    };
 
     private int TotalPages => Math.Max(1, (int)Math.Ceiling(_totalCount / (double)Math.Max(1, _pageSize)));
 
@@ -157,8 +235,8 @@
                 ParseDateOffset(_endDate, false),
                 _itemId,
                 _locationId,
-                _operatorId,
-                _movementType,
+                string.IsNullOrWhiteSpace(_operatorId) ? null : _operatorId,
+                string.IsNullOrWhiteSpace(_movementType) ? null : _movementType,
                 _page,
                 _pageSize);
 
@@ -186,8 +264,8 @@
                 ParseDateOffset(_endDate, false),
                 _itemId,
                 _locationId,
-                _operatorId,
-                _movementType);
+                string.IsNullOrWhiteSpace(_operatorId) ? null : _operatorId,
+                string.IsNullOrWhiteSpace(_movementType) ? null : _movementType);
 
             await JavaScript.InvokeVoidAsync(
                 "csvExport.downloadBytes",
