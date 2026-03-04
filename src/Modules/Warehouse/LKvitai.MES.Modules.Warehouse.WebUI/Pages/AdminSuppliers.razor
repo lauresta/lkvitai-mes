@@ -5,75 +5,67 @@
 <PageTitle>Admin Suppliers - LKvitai.MES</PageTitle>
 
 <div data-testid="admin-suppliers-page">
-<h3>Suppliers Management</h3>
+    <MudText Typo="Typo.h5" Class="mb-3">Suppliers Management</MudText>
 
-@if (_apiError is not null)
-{
-    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
-                 TraceId="@_apiError.TraceId"
-                 OnRetry="ReloadAsync"
-                 OnDismiss="@(() => _apiError = null)" />
-}
-
-<div class="card shadow-sm mb-3">
-    <div class="card-body">
-        <div class="row g-2 align-items-end">
-            <div class="col-md-6">
-                <label class="form-label">Search</label>
-                <input class="form-control" @bind="_search" placeholder="Code or name" />
-            </div>
-            <div class="col-md-2 d-grid">
-                <button class="btn btn-primary" @onclick="ApplyFiltersAsync">Filter</button>
-            </div>
-            <div class="col-md-2 d-grid">
-                <a class="btn btn-outline-secondary" href="/admin/supplier-mappings">View Mappings</a>
-            </div>
-            <div class="col-md-2 d-grid">
-                <button class="btn btn-outline-primary" @onclick="@(() => _showCreate = !_showCreate)">
-                    @(_showCreate ? "Hide Create Form" : "Create Supplier")
-                </button>
-            </div>
+    @if (_apiError is not null)
+    {
+        <div data-testid="admin-suppliers-error" class="mb-3">
+            <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                         TraceId="@_apiError.TraceId"
+                         OnRetry="ReloadAsync"
+                         OnDismiss="@(() => _apiError = null)" />
         </div>
-    </div>
-</div>
+    }
 
-<div class="card shadow-sm mb-3 position-relative">
-    <LoadingSpinner IsLoading="@_isLoading" />
-    <div class="card-body">
-        <div class="table-responsive" data-testid="admin-suppliers-grid">
-            <table class="table table-sm table-hover align-middle">
-                <thead>
-                <tr>
-                    <th>Code</th>
-                    <th>Name</th>
-                    <th>Contact Info</th>
-                    <th></th>
-                </tr>
-                </thead>
-                <tbody>
-                @if (_suppliers.Count == 0)
-                {
-                    <tr>
-                        <td colspan="4" class="text-muted">No suppliers found.</td>
-                    </tr>
-                }
-                else
-                {
-                    @foreach (var row in _suppliers)
-                    {
-                        <tr>
-                            <td>@row.Code</td>
-                            <td>@row.Name</td>
-                            <td>@row.ContactInfo</td>
-                            <td class="text-end">
-                                <button class="btn btn-sm btn-outline-secondary" @onclick="@(() => BeginEdit(row))">Edit</button>
-                            </td>
-                        </tr>
-                    }
-                }
-                </tbody>
-            </table>
-        </div>
+    <MudPaper Class="pa-4 mb-4">
+        <MudGrid Spacing="2" AlignItems="AlignItems.End">
+            <MudItem xs="12" md="6">
+                <MudTextField T="string"
+                              Label="Search"
+                              Placeholder="Code or name"
+                              @bind-Value="_search"
+                              Variant="Variant.Outlined"
+                              Dense="true"
+                              @attributes="SearchAttributes" />
+            </MudItem>
+            <MudItem xs="12" md="6">
+                <MudStack Row="true" Spacing="2" Justify="Justify.FlexEnd" Class="flex-wrap">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ApplyFiltersAsync" Disabled="@_isLoading">Filter</MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Default" Href="/admin/supplier-mappings">View Mappings</MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="ToggleCreate">
+                        @(_showCreate ? "Hide Create Form" : "Create Supplier")
+                    </MudButton>
+                </MudStack>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <MudPaper Class="pa-4 mb-4 position-relative">
+        <LoadingSpinner IsLoading="@(_isLoading || _isSubmitting)" />
+
+        <MudTable T="AdminSupplierDto"
+                  Items="_suppliers"
+                  Dense="true"
+                  Hover="true"
+                  data-testid="admin-suppliers-grid">
+            <HeaderContent>
+                <MudTh>Code</MudTh>
+                <MudTh>Name</MudTh>
+                <MudTh>Contact Info</MudTh>
+                <MudTh></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Code">@context.Code</MudTd>
+                <MudTd DataLabel="Name">@context.Name</MudTd>
+                <MudTd DataLabel="Contact Info">@context.ContactInfo</MudTd>
+                <MudTd DataLabel="Actions" Align="Align.Right">
+                    <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Default" OnClick="() => BeginEdit(context)">Edit</MudButton>
+                </MudTd>
+            </RowTemplate>
+            <NoRecordsContent>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">No suppliers found.</MudText>
+            </NoRecordsContent>
+        </MudTable>
 
         @if (_totalCount > 0)
         {
@@ -99,63 +91,67 @@
                                Class="ml-2" />
             </MudStack>
         }
-    </div>
-</div>
+    </MudPaper>
 
-@if (_showCreate)
-{
-    <div class="card shadow-sm mb-3">
-        <div class="card-header">Create Supplier</div>
-        <div class="card-body">
-            <div class="row g-2">
-                <div class="col-md-3">
-                    <label class="form-label">Code</label>
-                    <input class="form-control" @bind="_create.Code" />
-                </div>
-                <div class="col-md-5">
-                    <label class="form-label">Name</label>
-                    <input class="form-control" @bind="_create.Name" />
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label">Contact Info</label>
-                    <input class="form-control" @bind="_create.ContactInfo" />
-                </div>
-                <div class="col-md-3 d-grid">
-                    <button class="btn btn-primary" @onclick="CreateAsync">Save Supplier</button>
-                </div>
-            </div>
-        </div>
-    </div>
-}
+    @if (_showCreate)
+    {
+        <MudPaper Class="pa-4 mb-4" data-testid="admin-suppliers-create-form">
+            <MudText Typo="Typo.h6" Class="mb-3">Create Supplier</MudText>
+            <MudGrid Spacing="2" AlignItems="AlignItems.End">
+                <MudItem xs="12" md="3">
+                    <MudTextField T="string" Label="Code" @bind-Value="_create.Code" Variant="Variant.Outlined" Dense="true" />
+                </MudItem>
+                <MudItem xs="12" md="5">
+                    <MudTextField T="string" Label="Name" @bind-Value="_create.Name" Variant="Variant.Outlined" Dense="true" />
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudTextField T="string" Label="Contact Info" @bind-Value="_create.ContactInfo" Variant="Variant.Outlined" Dense="true" />
+                </MudItem>
+                <MudItem xs="12" md="3">
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               FullWidth="true"
+                               OnClick="CreateAsync"
+                               Disabled="@_isSubmitting"
+                               data-testid="admin-suppliers-submit">
+                        Save Supplier
+                    </MudButton>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+    }
 
-@if (_editing is not null)
-{
-    <div class="card shadow-sm">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <span>Edit Supplier: @_editing.Code</span>
-            <button class="btn btn-sm btn-outline-secondary" @onclick="@(() => _editing = null)">Close</button>
-        </div>
-        <div class="card-body">
-            <div class="row g-2">
-                <div class="col-md-3">
-                    <label class="form-label">Code</label>
-                    <input class="form-control" @bind="_editing.Code" />
-                </div>
-                <div class="col-md-5">
-                    <label class="form-label">Name</label>
-                    <input class="form-control" @bind="_editing.Name" />
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label">Contact Info</label>
-                    <input class="form-control" @bind="_editing.ContactInfo" />
-                </div>
-                <div class="col-md-3 d-grid">
-                    <button class="btn btn-primary" @onclick="UpdateAsync">Save Changes</button>
-                </div>
-            </div>
-        </div>
-    </div>
-}
+    @if (_editing is not null)
+    {
+        <MudPaper Class="pa-4" data-testid="admin-suppliers-edit-form">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-3">
+                <MudText Typo="Typo.h6">Edit Supplier: @_editing.Code</MudText>
+                <MudButton Variant="Variant.Text" Color="Color.Default" Size="Size.Small" OnClick="CloseEdit">Close</MudButton>
+            </MudStack>
+
+            <MudGrid Spacing="2" AlignItems="AlignItems.End">
+                <MudItem xs="12" md="3">
+                    <MudTextField T="string" Label="Code" @bind-Value="_editing.Code" Variant="Variant.Outlined" Dense="true" />
+                </MudItem>
+                <MudItem xs="12" md="5">
+                    <MudTextField T="string" Label="Name" @bind-Value="_editing.Name" Variant="Variant.Outlined" Dense="true" />
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudTextField T="string" Label="Contact Info" @bind-Value="_editing.ContactInfo" Variant="Variant.Outlined" Dense="true" />
+                </MudItem>
+                <MudItem xs="12" md="3">
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               FullWidth="true"
+                               OnClick="UpdateAsync"
+                               Disabled="@_isSubmitting"
+                               data-testid="admin-suppliers-update-submit">
+                        Save Changes
+                    </MudButton>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+    }
 </div>
 
 @code {
@@ -166,11 +162,14 @@
     private int _pageSize = 50;
     private int _totalCount;
     private bool _isLoading;
+    private bool _isSubmitting;
     private bool _showCreate;
     private ApiException? _apiError;
 
     private SupplierForm _create = new();
     private SupplierEditForm? _editing;
+
+    private static readonly Dictionary<string, object> SearchAttributes = new() { ["data-testid"] = "admin-suppliers-search" };
     private static readonly Dictionary<string, object> PageSizeAttributes = new() { ["data-testid"] = "admin-suppliers-page-size" };
 
     private int TotalPages => Math.Max(1, (int)Math.Ceiling(_totalCount / (double)Math.Max(1, _pageSize)));
@@ -197,6 +196,16 @@
         {
             _isLoading = false;
         }
+    }
+
+    private void ToggleCreate()
+    {
+        _showCreate = !_showCreate;
+    }
+
+    private void CloseEdit()
+    {
+        _editing = null;
     }
 
     private async Task ApplyFiltersAsync()
@@ -228,6 +237,8 @@
 
     private async Task CreateAsync()
     {
+        _isSubmitting = true;
+
         try
         {
             _apiError = null;
@@ -243,6 +254,10 @@
         {
             _apiError = ex;
             ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isSubmitting = false;
         }
     }
 
@@ -264,6 +279,8 @@
             return;
         }
 
+        _isSubmitting = true;
+
         try
         {
             _apiError = null;
@@ -278,6 +295,10 @@
         {
             _apiError = ex;
             ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isSubmitting = false;
         }
     }
 
