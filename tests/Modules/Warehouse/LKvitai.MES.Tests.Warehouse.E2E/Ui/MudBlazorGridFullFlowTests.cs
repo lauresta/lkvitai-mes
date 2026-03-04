@@ -219,6 +219,70 @@ public sealed class MudBlazorGridFullFlowTests : PlaywrightUiTestBase
         });
     }
 
+    [Fact]
+    public async Task InboundShipments_PageSmoke()
+    {
+        await RunUiAsync(nameof(InboundShipments_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/warehouse/inbound/shipments");
+
+            await Expect(ByTestId(page, "inbound-shipments-page")).ToBeVisibleAsync();
+
+            var grid = ByTestId(page, "inbound-shipments-grid");
+            var error = page.GetByTestId("shared-error-banner");
+
+            var gridVisible = await grid.CountAsync() > 0 && await grid.IsVisibleAsync();
+            var errorVisible = await error.CountAsync() > 0 && await error.IsVisibleAsync();
+
+            Assert.True(gridVisible || errorVisible, "Expected inbound shipments grid or shared error banner to be visible.");
+        });
+    }
+
+    [Fact]
+    public async Task StockLocationBalance_PageSmoke()
+    {
+        await RunUiAsync(nameof(StockLocationBalance_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/warehouse/stock/location-balance");
+
+            await Expect(ByTestId(page, "stock-location-balance-page")).ToBeVisibleAsync();
+            await ByTestId(page, "stock-location-balance-apply").ClickAsync();
+
+            var grid = ByTestId(page, "stock-location-balance-grid");
+            var error = page.GetByTestId("shared-error-banner");
+
+            var gridVisible = await grid.CountAsync() > 0 && await grid.IsVisibleAsync();
+            var errorVisible = await error.CountAsync() > 0 && await error.IsVisibleAsync();
+
+            Assert.True(gridVisible || errorVisible, "Expected location balance grid or shared error banner to be visible.");
+        });
+    }
+
+    [Fact]
+    public async Task AdminAuditLogs_PageSmoke()
+    {
+        await RunUiAsync(nameof(AdminAuditLogs_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/warehouse/admin/audit-logs");
+
+            await Expect(ByTestId(page, "admin-audit-logs-page")).ToBeVisibleAsync();
+
+            var noAccess = page.GetByTestId("admin-audit-logs-no-access");
+            if (await noAccess.CountAsync() > 0 && await noAccess.IsVisibleAsync())
+            {
+                return;
+            }
+
+            var grid = ByTestId(page, "admin-audit-logs-grid");
+            var error = page.GetByTestId("shared-error-banner");
+
+            var gridVisible = await grid.CountAsync() > 0 && await grid.IsVisibleAsync();
+            var errorVisible = await error.CountAsync() > 0 && await error.IsVisibleAsync();
+
+            Assert.True(gridVisible || errorVisible, "Expected audit logs grid or shared error banner to be visible.");
+        });
+    }
+
     private static async Task TryChangePageAsync(IPage page, string pagerTestId, string pageIndicatorTestId)
     {
         var pager = ByTestId(page, pagerTestId);
