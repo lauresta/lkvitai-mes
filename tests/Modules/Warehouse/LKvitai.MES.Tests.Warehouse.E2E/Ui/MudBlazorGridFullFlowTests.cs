@@ -311,6 +311,32 @@ public sealed class MudBlazorGridFullFlowTests : PlaywrightUiTestBase
     }
 
     [Fact]
+    public async Task OutboundOrderDetail_PageSmoke()
+    {
+        await RunUiAsync(nameof(OutboundOrderDetail_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/warehouse/outbound/orders/00000000-0000-0000-0000-000000000002");
+
+            await Expect(ByTestId(page, "outbound-order-detail-page")).ToBeVisibleAsync();
+
+            var lines = ByTestId(page, "outbound-order-detail-lines");
+            var empty = ByTestId(page, "outbound-order-detail-empty");
+            var error = ByTestId(page, "outbound-order-detail-error");
+            var sharedError = page.GetByTestId("shared-error-banner");
+            var loading = page.GetByTestId("shared-loading-overlay");
+
+            var linesVisible = await lines.CountAsync() > 0 && await lines.IsVisibleAsync();
+            var emptyVisible = await empty.CountAsync() > 0 && await empty.IsVisibleAsync();
+            var errorVisible = await error.CountAsync() > 0 && await error.IsVisibleAsync();
+            var sharedErrorVisible = await sharedError.CountAsync() > 0 && await sharedError.IsVisibleAsync();
+            var loadingVisible = await loading.CountAsync() > 0 && await loading.IsVisibleAsync();
+
+            Assert.True(linesVisible || emptyVisible || errorVisible || sharedErrorVisible || loadingVisible,
+                "Expected outbound order detail lines, empty state, loading, or error banner to be visible.");
+        });
+    }
+
+    [Fact]
     public async Task StockLocationBalance_PageSmoke()
     {
         await RunUiAsync(nameof(StockLocationBalance_PageSmoke), async page =>
