@@ -287,6 +287,30 @@ public sealed class MudBlazorGridFullFlowTests : PlaywrightUiTestBase
     }
 
     [Fact]
+    public async Task SalesOrderDetail_PageSmoke()
+    {
+        await RunUiAsync(nameof(SalesOrderDetail_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/warehouse/sales/orders/00000000-0000-0000-0000-000000000001");
+
+            await Expect(ByTestId(page, "sales-order-detail-page")).ToBeVisibleAsync();
+
+            var lines = ByTestId(page, "sales-order-detail-lines");
+            var empty = ByTestId(page, "sales-order-detail-empty");
+            var error = ByTestId(page, "sales-order-detail-error");
+            var sharedError = page.GetByTestId("shared-error-banner");
+
+            var linesVisible = await lines.CountAsync() > 0 && await lines.IsVisibleAsync();
+            var emptyVisible = await empty.CountAsync() > 0 && await empty.IsVisibleAsync();
+            var errorVisible = await error.CountAsync() > 0 && await error.IsVisibleAsync();
+            var sharedErrorVisible = await sharedError.CountAsync() > 0 && await sharedError.IsVisibleAsync();
+
+            Assert.True(linesVisible || emptyVisible || errorVisible || sharedErrorVisible,
+                "Expected sales order detail lines, empty state, or error banner to be visible.");
+        });
+    }
+
+    [Fact]
     public async Task StockLocationBalance_PageSmoke()
     {
         await RunUiAsync(nameof(StockLocationBalance_PageSmoke), async page =>

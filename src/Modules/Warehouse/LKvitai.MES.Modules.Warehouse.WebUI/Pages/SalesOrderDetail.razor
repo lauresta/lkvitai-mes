@@ -5,133 +5,141 @@
 
 <PageTitle>Sales Order Detail - LKvitai.MES</PageTitle>
 
-<h1>Sales Order Detail</h1>
+<div data-testid="sales-order-detail-page">
+    <MudText Typo="Typo.h5" Class="mb-3">Sales Order Detail</MudText>
 
-@if (_apiError is not null)
-{
-    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
-                 TraceId="@_apiError.TraceId"
-                 OnRetry="ReloadAsync"
-                 OnDismiss="DismissError" />
-}
+    @if (_apiError is not null)
+    {
+        <div data-testid="sales-order-detail-error" class="mb-3">
+            <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                         TraceId="@_apiError.TraceId"
+                         OnRetry="ReloadAsync"
+                         OnDismiss="DismissError" />
+        </div>
+    }
 
-<div class="card shadow-sm position-relative">
-    <LoadingSpinner IsLoading="_isLoading || _isBusy" />
+    <MudPaper Class="pa-4 position-relative">
+        <LoadingSpinner IsLoading="_isLoading || _isBusy" />
 
-    <div class="card-body">
         @if (_order is null)
         {
-            <EmptyState Title="Order not found"
-                        Message="The sales order does not exist or is not accessible."
-                        IconCss="bi bi-file-earmark-x"
-                        OnAction="BackToListAsync" />
+            <div data-testid="sales-order-detail-empty">
+                <EmptyState Title="Order not found"
+                            Message="The sales order does not exist or is not accessible."
+                            IconCss="bi bi-file-earmark-x"
+                            OnAction="BackToListAsync" />
+            </div>
         }
         else
         {
-            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-3 flex-wrap">
                 <div>
-                    <h4 class="mb-1">@_order.OrderNumber</h4>
-                    <div class="text-muted">@_order.CustomerName</div>
-                    <div class="small text-muted">Order date: @FormatDate(_order.OrderDate)</div>
+                    <MudText Typo="Typo.h6">@_order.OrderNumber</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">@_order.CustomerName</MudText>
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">Order date: @FormatDate(_order.OrderDate)</MudText>
                 </div>
-                <div class="d-flex align-items-center gap-2">
-                    <span class="badge @GetStatusBadgeClass(_order.Status)">@_order.Status</span>
-                    <button class="btn btn-outline-secondary btn-sm" @onclick="BackToList">Back</button>
-                </div>
-            </div>
+                <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
+                    <MudChip Color="@GetStatusColor(_order.Status)" Variant="Variant.Filled" Size="Size.Small">@_order.Status</MudChip>
+                    <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="BackToList">Back</MudButton>
+                </MudStack>
+            </MudStack>
 
-            <div class="row g-3 mb-3">
-                <div class="col-md-4">
-                    <div class="border rounded p-2 h-100">
-                        <div class="small text-muted">Requested delivery</div>
-                        <div>@FormatDate(_order.RequestedDeliveryDate)</div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="border rounded p-2 h-100">
-                        <div class="small text-muted">Reservation</div>
-                        <div>@(_order.ReservationId?.ToString() ?? "-")</div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="border rounded p-2 h-100">
-                        <div class="small text-muted">Outbound Order</div>
-                        <div>@(_order.OutboundOrderId?.ToString() ?? "-")</div>
-                    </div>
-                </div>
-            </div>
+            <MudGrid Spacing="2" Class="mb-3">
+                <MudItem xs="12" md="4">
+                    <MudPaper Class="pa-3" Outlined="true">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Requested delivery</MudText>
+                        <MudText Typo="Typo.body2">@FormatDate(_order.RequestedDeliveryDate)</MudText>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudPaper Class="pa-3" Outlined="true">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Reservation</MudText>
+                        <MudText Typo="Typo.body2">@(_order.ReservationId?.ToString() ?? "-")</MudText>
+                    </MudPaper>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudPaper Class="pa-3" Outlined="true">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary">Outbound Order</MudText>
+                        <MudText Typo="Typo.body2">@(_order.OutboundOrderId?.ToString() ?? "-")</MudText>
+                    </MudPaper>
+                </MudItem>
+            </MudGrid>
 
-            <div class="d-flex flex-wrap gap-2 mb-3">
+            <MudStack Row="true" Spacing="1" Class="mb-3 flex-wrap" data-testid="sales-order-detail-actions">
                 @if (CanSubmit)
                 {
-                    <button class="btn btn-sm btn-outline-primary" @onclick="SubmitAsync" disabled="@_isBusy">Submit</button>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="SubmitAsync" Disabled="@_isBusy">Submit</MudButton>
                 }
                 @if (CanApprove)
                 {
-                    <button class="btn btn-sm btn-outline-info" @onclick="ApproveAsync" disabled="@_isBusy">Approve</button>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Info" OnClick="ApproveAsync" Disabled="@_isBusy">Approve</MudButton>
                 }
                 @if (CanAllocate)
                 {
-                    <button class="btn btn-sm btn-outline-primary" @onclick="AllocateAsync" disabled="@_isBusy">Allocate</button>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="AllocateAsync" Disabled="@_isBusy">Allocate</MudButton>
                 }
                 @if (CanRelease)
                 {
-                    <button class="btn btn-sm btn-primary" @onclick="ReleaseAsync" disabled="@_isBusy">Release to Picking</button>
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ReleaseAsync" Disabled="@_isBusy">Release to Picking</MudButton>
                 }
-            </div>
+            </MudStack>
 
             @if (CanCancel)
             {
-                <div class="row g-2 align-items-end mb-3">
-                    <div class="col-md-6">
-                        <label class="form-label">Cancel reason</label>
-                        <input class="form-control" @bind="_cancelReason" maxlength="250" />
-                    </div>
-                    <div class="col-md-2">
-                        <button class="btn btn-sm btn-outline-danger" @onclick="CancelAsync" disabled="@_isBusy">Cancel Order</button>
-                    </div>
-                </div>
+                <MudGrid Spacing="2" AlignItems="AlignItems.End" Class="mb-3" data-testid="sales-order-detail-form">
+                    <MudItem xs="12" md="6">
+                        <MudTextField T="string"
+                                      Label="Cancel reason"
+                                      @bind-Value="_cancelReason"
+                                      MaxLength="250"
+                                      Variant="Variant.Outlined"
+                                      Dense="true"
+                                      data-testid="sales-order-detail-cancel-reason" />
+                    </MudItem>
+                    <MudItem xs="12" md="3">
+                        <MudButton Variant="Variant.Outlined"
+                                   Color="Color.Error"
+                                   OnClick="CancelAsync"
+                                   Disabled="@_isBusy"
+                                   data-testid="sales-order-detail-cancel">
+                            Cancel Order
+                        </MudButton>
+                    </MudItem>
+                </MudGrid>
             }
 
-            <div class="table-responsive">
-                <table class="table table-sm align-middle">
-                    <thead>
-                        <tr>
-                            <th>SKU</th>
-                            <th>Description</th>
-                            <th>Ordered</th>
-                            <th>Allocated</th>
-                            <th>Picked</th>
-                            <th>Shipped</th>
-                            <th>Price</th>
-                            <th>Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var line in _order.Lines)
-                        {
-                            <tr>
-                                <td>@line.ItemSku</td>
-                                <td>@line.ItemDescription</td>
-                                <td>@line.OrderedQty.ToString("0.##")</td>
-                                <td>@line.AllocatedQty.ToString("0.##")</td>
-                                <td>@line.PickedQty.ToString("0.##")</td>
-                                <td>@line.ShippedQty.ToString("0.##")</td>
-                                <td>@line.UnitPrice.ToString("0.00")</td>
-                                <td>@line.LineAmount.ToString("0.00")</td>
-                            </tr>
-                        }
-                    </tbody>
-                    <tfoot>
-                        <tr>
-                            <td colspan="7" class="text-end"><strong>Total</strong></td>
-                            <td><strong>@_order.TotalAmount.ToString("0.00")</strong></td>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
+            <MudTable T="SalesOrderLineDto"
+                      Items="_order.Lines"
+                      Dense="true"
+                      Hover="true"
+                      data-testid="sales-order-detail-lines">
+                <HeaderContent>
+                    <MudTh>SKU</MudTh>
+                    <MudTh>Description</MudTh>
+                    <MudTh>Ordered</MudTh>
+                    <MudTh>Allocated</MudTh>
+                    <MudTh>Picked</MudTh>
+                    <MudTh>Shipped</MudTh>
+                    <MudTh>Price</MudTh>
+                    <MudTh>Amount</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="SKU">@context.ItemSku</MudTd>
+                    <MudTd DataLabel="Description">@context.ItemDescription</MudTd>
+                    <MudTd DataLabel="Ordered">@context.OrderedQty.ToString("0.##")</MudTd>
+                    <MudTd DataLabel="Allocated">@context.AllocatedQty.ToString("0.##")</MudTd>
+                    <MudTd DataLabel="Picked">@context.PickedQty.ToString("0.##")</MudTd>
+                    <MudTd DataLabel="Shipped">@context.ShippedQty.ToString("0.##")</MudTd>
+                    <MudTd DataLabel="Price">@context.UnitPrice.ToString("0.00")</MudTd>
+                    <MudTd DataLabel="Amount">@context.LineAmount.ToString("0.00")</MudTd>
+                </RowTemplate>
+                <FooterContent>
+                    <MudTd ColSpan="7" Class="text-right"><strong>Total</strong></MudTd>
+                    <MudTd><strong>@_order.TotalAmount.ToString("0.00")</strong></MudTd>
+                </FooterContent>
+            </MudTable>
         }
-    </div>
+    </MudPaper>
 </div>
 
 @code {
@@ -275,19 +283,19 @@
         return value?.ToString("yyyy-MM-dd HH:mm") ?? "-";
     }
 
-    private static string GetStatusBadgeClass(string status) => status.ToUpperInvariant() switch
+    private static Color GetStatusColor(string status) => status.ToUpperInvariant() switch
     {
-        "DRAFT" => "bg-secondary",
-        "PENDING_APPROVAL" => "bg-warning text-dark",
-        "ALLOCATED" => "bg-info text-dark",
-        "PENDING_STOCK" => "bg-warning text-dark",
-        "PICKING" => "bg-primary",
-        "PACKED" => "bg-primary",
-        "SHIPPED" => "bg-success",
-        "DELIVERED" => "bg-success",
-        "INVOICED" => "bg-dark",
-        "CANCELLED" => "bg-danger",
-        _ => "bg-secondary"
+        "DRAFT" => Color.Default,
+        "PENDING_APPROVAL" => Color.Warning,
+        "ALLOCATED" => Color.Info,
+        "PENDING_STOCK" => Color.Warning,
+        "PICKING" => Color.Primary,
+        "PACKED" => Color.Primary,
+        "SHIPPED" => Color.Success,
+        "DELIVERED" => Color.Success,
+        "INVOICED" => Color.Dark,
+        "CANCELLED" => Color.Error,
+        _ => Color.Default
     };
 
     private static string BuildErrorMessage(ApiException ex)
