@@ -6,90 +6,109 @@
 
 <PageTitle>Execute Transfer - LKvitai.MES</PageTitle>
 
-<h1>Execute Transfer</h1>
+<div data-testid="transfers-execute-page">
+    <MudText Typo="Typo.h5" Class="mb-3">Execute Transfer</MudText>
 
-@if (_apiError is not null)
-{
-    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
-                 TraceId="@_apiError.TraceId"
-                 ShowRetry="@_apiError.IsRetryable"
-                 OnRetry="LoadAsync"
-                 OnDismiss="DismissError" />
-}
+    @if (_apiError is not null)
+    {
+        <div data-testid="transfers-execute-error" class="mb-3">
+            <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                         TraceId="@_apiError.TraceId"
+                         ShowRetry="@_apiError.IsRetryable"
+                         OnRetry="LoadAsync"
+                         OnDismiss="DismissError" />
+        </div>
+    }
 
-<div class="card shadow-sm position-relative">
-    <LoadingSpinner IsLoading="_isLoading || _isSubmitting" />
+    <MudPaper Class="pa-4 position-relative">
+        <LoadingSpinner IsLoading="_isLoading || _isSubmitting" />
 
-    <div class="card-body">
         @if (_transfer is null)
         {
-            <EmptyState Title="Transfer not found"
-                        Message="Transfer does not exist or is unavailable."
-                        IconCss="bi bi-arrow-left-right"
-                        OnAction="BackToListAsync" />
+            <div data-testid="transfers-execute-empty">
+                <EmptyState Title="Transfer not found"
+                            Message="Transfer does not exist or is unavailable."
+                            IconCss="bi bi-arrow-left-right"
+                            OnAction="BackToListAsync" />
+            </div>
         }
         else
         {
-            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
-                <div>
-                    <h4 class="mb-1">@_transfer.TransferNumber</h4>
-                    <div class="text-muted">@_transfer.FromWarehouse -> @_transfer.ToWarehouse</div>
-                    <div class="small text-muted">Status: @_transfer.Status</div>
-                </div>
-                <div class="d-flex align-items-center gap-2">
-                    <button class="btn btn-outline-secondary btn-sm" @onclick="BackToList">Back</button>
-                    <button class="btn btn-outline-secondary btn-sm" @onclick="LoadAsync">Refresh</button>
-                    <button class="btn btn-primary btn-sm" @onclick="OpenConfirm" disabled="@(!CanExecute || _isSubmitting)">Execute</button>
-                </div>
-            </div>
+            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-3 flex-wrap" data-testid="transfers-execute-details">
+                <MudStack Spacing="0">
+                    <MudText Typo="Typo.h6">@_transfer.TransferNumber</MudText>
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">@_transfer.FromWarehouse -> @_transfer.ToWarehouse</MudText>
+                    <MudChip Size="Size.Small" Class="mt-1" Color="@GetStatusColor(_transfer.Status)">@_transfer.Status</MudChip>
+                </MudStack>
 
-            <div class="table-responsive">
-                <table class="table table-sm table-hover align-middle">
-                    <thead>
-                        <tr>
-                            <th>Item</th>
-                            <th>Qty</th>
-                            <th>From Location</th>
-                            <th>To Location</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var line in _transfer.Lines)
-                        {
-                            <tr>
-                                <td>@GetItemName(line.ItemId)</td>
-                                <td>@line.Qty.ToString("0.##")</td>
-                                <td>@GetLocationName(line.FromLocationId)</td>
-                                <td>@GetLocationName(line.ToLocationId)</td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
+                <MudStack Row="true" Spacing="1" Class="flex-wrap">
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Default"
+                               Size="Size.Small"
+                               OnClick="BackToList"
+                               data-testid="transfers-execute-back">
+                        Back
+                    </MudButton>
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Default"
+                               Size="Size.Small"
+                               OnClick="LoadAsync"
+                               data-testid="transfers-execute-refresh">
+                        Refresh
+                    </MudButton>
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Size="Size.Small"
+                               OnClick="OpenConfirm"
+                               Disabled="@(!CanExecute || _isSubmitting)"
+                               data-testid="transfers-execute-submit">
+                        Execute
+                    </MudButton>
+                </MudStack>
+            </MudStack>
+
+            <MudTable T="TransferLineDto"
+                      Items="_transfer.Lines"
+                      Dense="true"
+                      Hover="true"
+                      data-testid="transfers-execute-grid">
+                <HeaderContent>
+                    <MudTh>Item</MudTh>
+                    <MudTh>Qty</MudTh>
+                    <MudTh>From Location</MudTh>
+                    <MudTh>To Location</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Item">@GetItemName(context.ItemId)</MudTd>
+                    <MudTd DataLabel="Qty">@context.Qty.ToString("0.##")</MudTd>
+                    <MudTd DataLabel="From Location">@GetLocationName(context.FromLocationId)</MudTd>
+                    <MudTd DataLabel="To Location">@GetLocationName(context.ToLocationId)</MudTd>
+                </RowTemplate>
+            </MudTable>
         }
-    </div>
-</div>
+    </MudPaper>
 
-@if (_confirmExecute)
-{
-    <div class="modal show d-block transfer-execute-modal-backdrop" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Confirm Execution</h5>
-                    <button type="button" class="btn-close" @onclick="CloseConfirm"></button>
-                </div>
-                <div class="modal-body">
-                    Execute transfer? Stock will be moved.
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-outline-secondary" @onclick="CloseConfirm">Cancel</button>
-                    <button class="btn btn-primary" @onclick="ConfirmExecuteAsync" disabled="@_isSubmitting">Confirm</button>
-                </div>
-            </div>
-        </div>
-    </div>
-}
+    @if (_confirmExecute)
+    {
+        <MudOverlay Visible="true" DarkBackground="true" AutoClose="false" Class="d-flex align-center justify-center">
+            <MudPaper Class="pa-4" Style="width: min(480px, 95vw);" data-testid="transfers-execute-confirm-dialog">
+                <MudText Typo="Typo.h6" Class="mb-2">Confirm Execution</MudText>
+                <MudText Typo="Typo.body2">Execute transfer? Stock will be moved.</MudText>
+
+                <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="2" Class="mt-4">
+                    <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="CloseConfirm" Disabled="@_isSubmitting">Cancel</MudButton>
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               OnClick="ConfirmExecuteAsync"
+                               Disabled="@_isSubmitting"
+                               data-testid="transfers-execute-confirm">
+                        Confirm
+                    </MudButton>
+                </MudStack>
+            </MudPaper>
+        </MudOverlay>
+    }
+</div>
 
 @code {
     [Parameter]
@@ -100,8 +119,8 @@
     private bool _isLoading;
     private bool _isSubmitting;
     private bool _confirmExecute;
-    private readonly List<AdminItemDto> _items = new();
-    private readonly List<AdminLocationDto> _locations = new();
+    private readonly List<AdminItemDto> _items = [];
+    private readonly List<AdminLocationDto> _locations = [];
 
     private bool CanExecute => string.Equals(_transfer?.Status, "APPROVED", StringComparison.OrdinalIgnoreCase);
 
@@ -204,6 +223,17 @@
         => _locations.FirstOrDefault(l => l.Id == locationId)?.Code
             ?? $"#{locationId}";
 
+    private static Color GetStatusColor(string status) => status.ToUpperInvariant() switch
+    {
+        "DRAFT" => Color.Default,
+        "PENDING_APPROVAL" => Color.Warning,
+        "APPROVED" => Color.Info,
+        "IN_TRANSIT" => Color.Primary,
+        "COMPLETED" => Color.Success,
+        "CANCELLED" => Color.Error,
+        _ => Color.Default
+    };
+
     private static string BuildErrorMessage(ApiException ex)
     {
         if (ex.IsBusinessError && !string.IsNullOrWhiteSpace(ex.ProblemDetails?.Detail))
@@ -221,12 +251,3 @@
                ?? "Transfer request failed.";
     }
 }
-
-<style>
-    .transfer-execute-modal-backdrop {
-        position: fixed;
-        inset: 0;
-        z-index: 2000;
-        background: rgba(0, 0, 0, 0.45);
-    }
-</style>

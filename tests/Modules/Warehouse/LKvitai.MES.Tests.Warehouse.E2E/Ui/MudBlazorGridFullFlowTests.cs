@@ -451,6 +451,54 @@ public sealed class MudBlazorGridFullFlowTests : PlaywrightUiTestBase
     }
 
     [Fact]
+    public async Task TransfersList_PageSmoke()
+    {
+        await RunUiAsync(nameof(TransfersList_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/warehouse/transfers");
+
+            await Expect(ByTestId(page, "transfers-list-page")).ToBeVisibleAsync();
+
+            var grid = ByTestId(page, "transfers-list-grid");
+            var empty = ByTestId(page, "transfers-list-empty");
+            var error = ByTestId(page, "transfers-list-error");
+            var sharedError = page.GetByTestId("shared-error-banner");
+
+            var gridVisible = await grid.CountAsync() > 0 && await grid.IsVisibleAsync();
+            var emptyVisible = await empty.CountAsync() > 0 && await empty.IsVisibleAsync();
+            var errorVisible = await error.CountAsync() > 0 && await error.IsVisibleAsync();
+            var sharedErrorVisible = await sharedError.CountAsync() > 0 && await sharedError.IsVisibleAsync();
+
+            Assert.True(gridVisible || emptyVisible || errorVisible || sharedErrorVisible,
+                "Expected transfers list grid, empty state, or error banner to be visible.");
+        });
+    }
+
+    [Fact]
+    public async Task TransfersExecute_PageSmoke()
+    {
+        await RunUiAsync(nameof(TransfersExecute_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/warehouse/transfers/00000000-0000-0000-0000-000000000001/execute");
+
+            await Expect(ByTestId(page, "transfers-execute-page")).ToBeVisibleAsync();
+
+            var grid = ByTestId(page, "transfers-execute-grid");
+            var empty = ByTestId(page, "transfers-execute-empty");
+            var error = ByTestId(page, "transfers-execute-error");
+            var sharedError = page.GetByTestId("shared-error-banner");
+
+            var gridVisible = await grid.CountAsync() > 0 && await grid.IsVisibleAsync();
+            var emptyVisible = await empty.CountAsync() > 0 && await empty.IsVisibleAsync();
+            var errorVisible = await error.CountAsync() > 0 && await error.IsVisibleAsync();
+            var sharedErrorVisible = await sharedError.CountAsync() > 0 && await sharedError.IsVisibleAsync();
+
+            Assert.True(gridVisible || emptyVisible || errorVisible || sharedErrorVisible,
+                "Expected transfer execute grid, empty state, or error banner to be visible.");
+        });
+    }
+
+    [Fact]
     public async Task StockLocationBalance_PageSmoke()
     {
         await RunUiAsync(nameof(StockLocationBalance_PageSmoke), async page =>

@@ -5,113 +5,141 @@
 
 <PageTitle>Transfers - LKvitai.MES</PageTitle>
 
-<h1>Stock Transfers</h1>
+<div data-testid="transfers-list-page">
+    <MudText Typo="Typo.h5" Class="mb-3">Stock Transfers</MudText>
 
-@if (_apiError is not null)
-{
-    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
-                 TraceId="@_apiError.TraceId"
-                 OnRetry="LoadAsync"
-                 OnDismiss="DismissError" />
-}
-
-<div class="card shadow-sm mb-3">
-    <div class="card-body d-flex justify-content-between align-items-end flex-wrap gap-2">
-        <div>
-            <label class="form-label">Status</label>
-            <select class="form-select" @bind="_status" style="min-width: 220px;">
-                <option value="">All</option>
-                <option value="DRAFT">DRAFT</option>
-                <option value="PENDING_APPROVAL">PENDING_APPROVAL</option>
-                <option value="APPROVED">APPROVED</option>
-                <option value="IN_TRANSIT">IN_TRANSIT</option>
-                <option value="COMPLETED">COMPLETED</option>
-                <option value="CANCELLED">CANCELLED</option>
-            </select>
+    @if (_apiError is not null)
+    {
+        <div data-testid="transfers-list-error" class="mb-3">
+            <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                         TraceId="@_apiError.TraceId"
+                         OnRetry="LoadAsync"
+                         OnDismiss="DismissError" />
         </div>
-        <div class="d-flex gap-2">
-            <button class="btn btn-primary" @onclick="ApplyFilterAsync" disabled="@_isLoading">Apply</button>
-            <button class="btn btn-outline-secondary" @onclick="ResetFilterAsync" disabled="@_isLoading">Reset</button>
-            <button class="btn btn-success" @onclick="OpenCreate">+ Create Transfer</button>
-        </div>
-    </div>
-</div>
+    }
 
-<div class="card shadow-sm position-relative">
-    <LoadingSpinner IsLoading="_isLoading || _isSubmitting" />
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-sm table-hover align-middle">
-                <thead>
-                    <tr>
-                        <th>Transfer</th>
-                        <th>From</th>
-                        <th>To</th>
-                        <th>Status</th>
-                        <th>Requested By</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if (_rows.Count == 0)
-                    {
-                        <tr>
-                            <td colspan="6">
-                                <EmptyState Title="No transfers found."
-                                            Message="Create your first transfer request."
-                                            IconCss="bi bi-arrow-left-right"
-                                            OnAction="OpenCreateAsync" />
-                            </td>
-                        </tr>
-                    }
-                    else
-                    {
-                        @foreach (var row in _rows)
-                        {
-                            <tr>
-                                <td>@row.TransferNumber</td>
-                                <td>@row.FromWarehouse</td>
-                                <td>@row.ToWarehouse</td>
-                                <td><span class="badge @GetStatusBadge(row.Status)">@row.Status</span></td>
-                                <td>@row.RequestedBy</td>
-                                <td class="d-flex flex-wrap gap-1">
-                                    <button class="btn btn-sm btn-outline-secondary" @onclick="() => OpenExecute(row.Id)">View</button>
-                                    <button class="btn btn-sm btn-outline-primary" disabled="@(!CanSubmit(row))" @onclick="() => SubmitAsync(row.Id)">Submit</button>
-                                    <button class="btn btn-sm btn-warning" disabled="@(!CanApprove(row))" @onclick="() => OpenApprove(row)">Approve</button>
-                                    <button class="btn btn-sm btn-success" disabled="@(!CanExecute(row))" @onclick="() => OpenExecute(row.Id)">Execute</button>
-                                    <button class="btn btn-sm btn-outline-danger" @onclick="() => CancelAsync(row.TransferNumber)">Cancel</button>
-                                </td>
-                            </tr>
-                        }
-                    }
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
+    <MudPaper Class="pa-4 mb-4">
+        <MudGrid Spacing="2" AlignItems="AlignItems.End">
+            <MudItem xs="12" md="4">
+                <MudSelect T="string"
+                           Label="Status"
+                           @bind-Value="_status"
+                           Dense="true"
+                           Variant="Variant.Outlined"
+                           @attributes="StatusAttributes">
+                    <MudSelectItem T="string" Value="@string.Empty">All</MudSelectItem>
+                    <MudSelectItem T="string" Value="@("DRAFT")">DRAFT</MudSelectItem>
+                    <MudSelectItem T="string" Value="@("PENDING_APPROVAL")">PENDING_APPROVAL</MudSelectItem>
+                    <MudSelectItem T="string" Value="@("APPROVED")">APPROVED</MudSelectItem>
+                    <MudSelectItem T="string" Value="@("IN_TRANSIT")">IN_TRANSIT</MudSelectItem>
+                    <MudSelectItem T="string" Value="@("COMPLETED")">COMPLETED</MudSelectItem>
+                    <MudSelectItem T="string" Value="@("CANCELLED")">CANCELLED</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="8">
+                <MudStack Row="true" Spacing="2" Justify="Justify.FlexEnd" Class="flex-wrap">
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Disabled="@_isLoading"
+                               OnClick="ApplyFilterAsync"
+                               data-testid="transfers-list-apply">
+                        Apply
+                    </MudButton>
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Default"
+                               Disabled="@_isLoading"
+                               OnClick="ResetFilterAsync"
+                               data-testid="transfers-list-reset">
+                        Reset
+                    </MudButton>
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Success"
+                               OnClick="OpenCreate"
+                               data-testid="transfers-list-create">
+                        + Create Transfer
+                    </MudButton>
+                </MudStack>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
 
-@if (_approveModalTarget is not null)
-{
-    <div class="modal show d-block" tabindex="-1" style="background: rgba(0, 0, 0, 0.45);">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Approve Transfer</h5>
-                    <button type="button" class="btn-close" @onclick="CloseApprove"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-2">Transfer: <strong>@_approveModalTarget.TransferNumber</strong></div>
-                    <label class="form-label">Reason (optional)</label>
-                    <textarea class="form-control" rows="3" @bind="_approveReason"></textarea>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-outline-secondary" @onclick="CloseApprove">Cancel</button>
-                    <button class="btn btn-primary" @onclick="ApproveAsync" disabled="@_isSubmitting">Approve</button>
-                </div>
+    <MudPaper Class="pa-4 position-relative">
+        <LoadingSpinner IsLoading="_isLoading || _isSubmitting" />
+
+        @if (_rows.Count == 0)
+        {
+            <div data-testid="transfers-list-empty">
+                <EmptyState Title="No transfers found."
+                            Message="Create your first transfer request."
+                            IconCss="bi bi-arrow-left-right"
+                            OnAction="OpenCreateAsync" />
             </div>
-        </div>
-    </div>
-}
+        }
+        else
+        {
+            <MudTable T="TransferDto"
+                      Items="_rows"
+                      Dense="true"
+                      Hover="true"
+                      data-testid="transfers-list-grid">
+                <HeaderContent>
+                    <MudTh>Transfer</MudTh>
+                    <MudTh>From</MudTh>
+                    <MudTh>To</MudTh>
+                    <MudTh>Status</MudTh>
+                    <MudTh>Requested By</MudTh>
+                    <MudTh>Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Transfer">@context.TransferNumber</MudTd>
+                    <MudTd DataLabel="From">@context.FromWarehouse</MudTd>
+                    <MudTd DataLabel="To">@context.ToWarehouse</MudTd>
+                    <MudTd DataLabel="Status">
+                        <MudChip Size="Size.Small" Color="@GetStatusColor(context.Status)">@context.Status</MudChip>
+                    </MudTd>
+                    <MudTd DataLabel="Requested By">@context.RequestedBy</MudTd>
+                    <MudTd DataLabel="Actions">
+                        <MudStack Row="true" Spacing="1" Class="flex-wrap">
+                            <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Default" OnClick="() => OpenExecute(context.Id)">View</MudButton>
+                            <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Primary" Disabled="@(!CanSubmit(context) || _isSubmitting)" OnClick="() => SubmitAsync(context.Id)">Submit</MudButton>
+                            <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Warning" Disabled="@(!CanApprove(context) || _isSubmitting)" OnClick="() => OpenApprove(context)">Approve</MudButton>
+                            <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Success" Disabled="@(!CanExecute(context) || _isSubmitting)" OnClick="() => OpenExecute(context.Id)">Execute</MudButton>
+                            <MudButton Variant="Variant.Text" Size="Size.Small" Color="Color.Error" Disabled="@_isSubmitting" OnClick="() => CancelAsync(context.TransferNumber)">Cancel</MudButton>
+                        </MudStack>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    </MudPaper>
+
+    @if (_approveModalTarget is not null)
+    {
+        <MudOverlay Visible="true" DarkBackground="true" AutoClose="false" Class="d-flex align-center justify-center">
+            <MudPaper Class="pa-4" Style="width: min(520px, 95vw);" data-testid="transfers-list-approve-dialog">
+                <MudText Typo="Typo.h6" Class="mb-2">Approve Transfer</MudText>
+                <MudText Typo="Typo.body2" Class="mb-3">Transfer: <strong>@_approveModalTarget.TransferNumber</strong></MudText>
+
+                <MudTextField T="string"
+                              Label="Reason (optional)"
+                              @bind-Value="_approveReason"
+                              Variant="Variant.Outlined"
+                              Lines="3"
+                              @attributes="ApproveReasonAttributes" />
+
+                <MudStack Row="true" Spacing="2" Justify="Justify.FlexEnd" Class="mt-4">
+                    <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="CloseApprove" Disabled="@_isSubmitting">Cancel</MudButton>
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               OnClick="ApproveAsync"
+                               Disabled="@_isSubmitting"
+                               data-testid="transfers-list-approve-confirm">
+                        Approve
+                    </MudButton>
+                </MudStack>
+            </MudPaper>
+        </MudOverlay>
+    }
+</div>
 
 @code {
     private readonly List<TransferDto> _rows = [];
@@ -121,6 +149,9 @@
     private string _status = string.Empty;
     private TransferDto? _approveModalTarget;
     private string _approveReason = string.Empty;
+
+    private static readonly Dictionary<string, object> StatusAttributes = new() { ["data-testid"] = "transfers-list-status" };
+    private static readonly Dictionary<string, object> ApproveReasonAttributes = new() { ["data-testid"] = "transfers-list-approve-reason" };
 
     protected override async Task OnInitializedAsync()
     {
@@ -260,15 +291,15 @@
         _apiError = null;
     }
 
-    private static string GetStatusBadge(string status) => status.ToUpperInvariant() switch
+    private static Color GetStatusColor(string status) => status.ToUpperInvariant() switch
     {
-        "DRAFT" => "bg-secondary",
-        "PENDING_APPROVAL" => "bg-warning text-dark",
-        "APPROVED" => "bg-info text-dark",
-        "IN_TRANSIT" => "bg-primary",
-        "COMPLETED" => "bg-success",
-        "CANCELLED" => "bg-danger",
-        _ => "bg-secondary"
+        "DRAFT" => Color.Default,
+        "PENDING_APPROVAL" => Color.Warning,
+        "APPROVED" => Color.Info,
+        "IN_TRANSIT" => Color.Primary,
+        "COMPLETED" => Color.Success,
+        "CANCELLED" => Color.Error,
+        _ => Color.Default
     };
 
     private static string BuildErrorMessage(ApiException ex)
