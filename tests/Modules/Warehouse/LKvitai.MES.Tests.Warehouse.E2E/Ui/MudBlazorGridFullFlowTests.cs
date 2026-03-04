@@ -429,6 +429,28 @@ public sealed class MudBlazorGridFullFlowTests : PlaywrightUiTestBase
     }
 
     [Fact]
+    public async Task TransfersCreate_PageSmoke()
+    {
+        await RunUiAsync(nameof(TransfersCreate_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/warehouse/transfers/create");
+
+            await Expect(ByTestId(page, "transfers-create-page")).ToBeVisibleAsync();
+
+            var form = ByTestId(page, "transfers-create-form");
+            var error = ByTestId(page, "transfers-create-error");
+            var sharedError = page.GetByTestId("shared-error-banner");
+
+            var formVisible = await form.CountAsync() > 0 && await form.IsVisibleAsync();
+            var errorVisible = await error.CountAsync() > 0 && await error.IsVisibleAsync();
+            var sharedErrorVisible = await sharedError.CountAsync() > 0 && await sharedError.IsVisibleAsync();
+
+            Assert.True(formVisible || errorVisible || sharedErrorVisible,
+                "Expected transfers create form or error banner to be visible.");
+        });
+    }
+
+    [Fact]
     public async Task StockLocationBalance_PageSmoke()
     {
         await RunUiAsync(nameof(StockLocationBalance_PageSmoke), async page =>

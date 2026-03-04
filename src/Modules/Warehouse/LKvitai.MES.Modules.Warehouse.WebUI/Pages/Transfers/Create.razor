@@ -7,50 +7,60 @@
 
 <PageTitle>Create Transfer - LKvitai.MES</PageTitle>
 
-<h1>Create Transfer</h1>
+<div data-testid="transfers-create-page">
+    <MudText Typo="Typo.h5" Class="mb-3">Create Transfer</MudText>
 
-@if (_apiError is not null)
-{
-    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
-                 TraceId="@_apiError.TraceId"
-                 OnRetry="LoadLookupDataAsync"
-                 OnDismiss="DismissError" />
-}
+    @if (_apiError is not null)
+    {
+        <div data-testid="transfers-create-error" class="mb-3">
+            <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                         TraceId="@_apiError.TraceId"
+                         OnRetry="LoadLookupDataAsync"
+                         OnDismiss="DismissError" />
+        </div>
+    }
 
-<div class="card shadow-sm position-relative">
-    <LoadingSpinner IsLoading="_isLoading || _isSubmitting" />
+    <MudPaper Class="pa-4 position-relative" data-testid="transfers-create-form">
+        <LoadingSpinner IsLoading="_isLoading || _isSubmitting" />
 
-    <div class="card-body">
-        <div class="row g-3">
-            <div class="col-md-3">
-                <label class="form-label">From Warehouse</label>
-                <select class="form-select" @bind="_fromWarehouse">
+        <MudGrid Spacing="2" AlignItems="AlignItems.End" Class="mb-3">
+            <MudItem xs="12" md="4">
+                <MudSelect T="string"
+                           Label="From Warehouse"
+                           @bind-Value="_fromWarehouse"
+                           Variant="Variant.Outlined"
+                           Dense="true"
+                           data-testid="transfers-create-from-warehouse">
                     @foreach (var warehouse in _warehouses)
                     {
-                        <option value="@warehouse.Code">@warehouse.Code - @warehouse.Name</option>
+                        <MudSelectItem T="string" Value="@warehouse.Code">@warehouse.Code - @warehouse.Name</MudSelectItem>
                     }
-                </select>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">To Warehouse</label>
-                <select class="form-select" @bind="_toWarehouse">
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudSelect T="string"
+                           Label="To Warehouse"
+                           @bind-Value="_toWarehouse"
+                           Variant="Variant.Outlined"
+                           Dense="true"
+                           data-testid="transfers-create-to-warehouse">
                     @foreach (var warehouse in _warehouses)
                     {
-                        <option value="@warehouse.Code">@warehouse.Code - @warehouse.Name</option>
+                        <MudSelectItem T="string" Value="@warehouse.Code">@warehouse.Code - @warehouse.Name</MudSelectItem>
                     }
-                </select>
-            </div>
-            <div class="col-md-3 d-flex align-items-end">
-                <button class="btn btn-outline-secondary" @onclick="BackToList">Back</button>
-            </div>
-        </div>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="BackToList">Back</MudButton>
+            </MudItem>
+        </MudGrid>
 
-        <hr />
+        <MudDivider Class="my-3" />
 
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <h5 class="mb-0">Transfer Lines</h5>
-            <button class="btn btn-sm btn-outline-primary" @onclick="AddLine" disabled="@_isSubmitting">+ Add Line</button>
-        </div>
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-2">
+            <MudText Typo="Typo.h6">Transfer Lines</MudText>
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Primary" OnClick="AddLine" Disabled="@_isSubmitting">+ Add Line</MudButton>
+        </MudStack>
 
         @if (_lines.Count == 0)
         {
@@ -61,70 +71,68 @@
         }
         else
         {
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead>
-                        <tr>
-                            <th style="width: 35%;">Item</th>
-                            <th style="width: 15%;">Qty</th>
-                            <th style="width: 20%;">From Location</th>
-                            <th style="width: 20%;">To Location</th>
-                            <th style="width: 10%;">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @for (var i = 0; i < _lines.Count; i++)
-                        {
-                            var line = _lines[i];
-                            <tr>
-                                <td>
-                                    <select class="form-select" @bind="line.ItemId">
-                                        <option value="">Select item</option>
-                                        @foreach (var item in _items)
-                                        {
-                                            <option value="@item.Id">@item.InternalSKU - @item.Name</option>
-                                        }
-                                    </select>
-                                </td>
-                                <td>
-                                    <input type="number" min="0.01" step="0.01" class="form-control" @bind="line.Qty" />
-                                </td>
-                                <td>
-                                    <select class="form-select" @bind="line.FromLocationId">
-                                        <option value="">From location</option>
-                                        @foreach (var location in _locations)
-                                        {
-                                            <option value="@location.Id">@location.Code (@location.Type)</option>
-                                        }
-                                    </select>
-                                </td>
-                                <td>
-                                    <select class="form-select" @bind="line.ToLocationId">
-                                        <option value="">To location</option>
-                                        @foreach (var location in _locations)
-                                        {
-                                            <option value="@location.Id">@location.Code (@location.Type)</option>
-                                        }
-                                    </select>
-                                </td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-danger"
-                                            disabled="@(_isSubmitting || _lines.Count == 1)"
-                                            @onclick="() => RemoveLine(i)">
-                                        Remove
-                                    </button>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
+            <MudTable T="TransferLineModel" Items="_lines" Dense="true" Hover="true" data-testid="transfers-create-lines">
+                <HeaderContent>
+                    <MudTh style="width: 35%;">Item</MudTh>
+                    <MudTh style="width: 15%;">Qty</MudTh>
+                    <MudTh style="width: 20%;">From Location</MudTh>
+                    <MudTh style="width: 20%;">To Location</MudTh>
+                    <MudTh style="width: 10%;">Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Item">
+                        <MudSelect T="int?" @bind-Value="context.ItemId" Variant="Variant.Outlined" Dense="true">
+                            <MudSelectItem T="int?" Value="@((int?)null)">Select item</MudSelectItem>
+                            @foreach (var item in _items)
+                            {
+                                <MudSelectItem T="int?" Value="@((int?)item.Id)">@item.InternalSKU - @item.Name</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudTd>
+                    <MudTd DataLabel="Qty">
+                        <MudNumericField T="decimal" Min="0.01m" Step="0.01m" @bind-Value="context.Qty" Variant="Variant.Outlined" Dense="true" />
+                    </MudTd>
+                    <MudTd DataLabel="From Location">
+                        <MudSelect T="int?" @bind-Value="context.FromLocationId" Variant="Variant.Outlined" Dense="true">
+                            <MudSelectItem T="int?" Value="@((int?)null)">From location</MudSelectItem>
+                            @foreach (var location in _locations)
+                            {
+                                <MudSelectItem T="int?" Value="@((int?)location.Id)">@location.Code (@location.Type)</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudTd>
+                    <MudTd DataLabel="To Location">
+                        <MudSelect T="int?" @bind-Value="context.ToLocationId" Variant="Variant.Outlined" Dense="true">
+                            <MudSelectItem T="int?" Value="@((int?)null)">To location</MudSelectItem>
+                            @foreach (var location in _locations)
+                            {
+                                <MudSelectItem T="int?" Value="@((int?)location.Id)">@location.Code (@location.Type)</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudTd>
+                    <MudTd DataLabel="Actions">
+                        <MudButton Variant="Variant.Outlined"
+                                   Size="Size.Small"
+                                   Color="Color.Error"
+                                   Disabled="@(_isSubmitting || _lines.Count == 1)"
+                                   OnClick="() => RemoveLine(_lines.IndexOf(context))">
+                            Remove
+                        </MudButton>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
         }
 
-        <div class="d-flex justify-content-end mt-3">
-            <button class="btn btn-primary" @onclick="CreateAsync" disabled="@_isSubmitting">Submit</button>
-        </div>
-    </div>
+        <MudStack Row="true" Justify="Justify.FlexEnd" Class="mt-3">
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       OnClick="CreateAsync"
+                       Disabled="@_isSubmitting"
+                       data-testid="transfers-create-submit">
+                Submit
+            </MudButton>
+        </MudStack>
+    </MudPaper>
 </div>
 
 @code {
