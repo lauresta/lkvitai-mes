@@ -36,7 +36,7 @@
                            @oninput="OnSearchInput"
                            @onkeydown="HandleSearchKeyAsync" />
                     <button class="btn btn-outline-secondary" @onclick="SearchAsync">
-                        <i class="bi bi-search"></i>
+                        <MudIcon Icon="@Icons.Material.Filled.Search" />
                     </button>
                 </div>
                 @if (_showSuggestions && _autocompleteSuggestions.Count > 0)
@@ -76,7 +76,7 @@
                 <option value="OVER_CAPACITY">OVER_CAPACITY</option>
             </select>
             <button class="btn btn-outline-secondary" @onclick="RefreshAsync">
-                <i class="bi bi-arrow-clockwise"></i> Refresh
+                <MudIcon Icon="@Icons.Material.Filled.Refresh" Class="mr-1" /> Refresh
             </button>
             <button class="btn btn-warning" @onclick="ToggleViewAsync">
                 @(_is3dView ? "2D View" : "3D View")
@@ -186,7 +186,7 @@
                 @if (_selectedBin is null)
                 {
                     <div class="viz-empty-selection">
-                        <i class="bi bi-cursor"></i>
+                        <MudIcon Icon="@Icons.Material.Filled.AdsClick" />
                         <span>Select a bin to view details.</span>
                     </div>
                 }
