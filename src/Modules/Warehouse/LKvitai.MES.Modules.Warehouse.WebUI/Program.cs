@@ -3,6 +3,7 @@ using LKvitai.MES.Modules.Warehouse.WebUI.Services;
 using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.WebHost.UseStaticWebAssets();
 
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();

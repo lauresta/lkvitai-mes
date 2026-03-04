@@ -378,7 +378,16 @@ public sealed class ReportsClient
     public async Task DeleteScheduledReportAsync(int id, CancellationToken cancellationToken = default)
     {
         var client = _factory.CreateClient("WarehouseApi");
-        var response = await client.DeleteAsync($"/api/warehouse/v1/admin/compliance/scheduled-reports/{id}", cancellationToken);
+        HttpResponseMessage response;
+        try
+        {
+            response = await client.DeleteAsync($"/api/warehouse/v1/admin/compliance/scheduled-reports/{id}", cancellationToken);
+        }
+        catch (HttpRequestException ex)
+        {
+            throw CreateUnavailableApiException(ex);
+        }
+
         await EnsureSuccessAsync(response);
     }
 
@@ -399,7 +408,16 @@ public sealed class ReportsClient
     private async Task<T> GetAsync<T>(string relativeUrl, CancellationToken cancellationToken)
     {
         var client = _factory.CreateClient("WarehouseApi");
-        var response = await client.GetAsync(relativeUrl, cancellationToken);
+        HttpResponseMessage response;
+        try
+        {
+            response = await client.GetAsync(relativeUrl, cancellationToken);
+        }
+        catch (HttpRequestException ex)
+        {
+            throw CreateUnavailableApiException(ex);
+        }
+
         await EnsureSuccessAsync(response);
         var body = await response.Content.ReadAsStringAsync(cancellationToken);
         var model = JsonSerializer.Deserialize<T>(body, JsonOptions);
@@ -412,7 +430,16 @@ public sealed class ReportsClient
         CancellationToken cancellationToken)
     {
         var client = _factory.CreateClient("WarehouseApi");
-        var response = await client.PostAsJsonAsync(relativeUrl, body, cancellationToken);
+        HttpResponseMessage response;
+        try
+        {
+            response = await client.PostAsJsonAsync(relativeUrl, body, cancellationToken);
+        }
+        catch (HttpRequestException ex)
+        {
+            throw CreateUnavailableApiException(ex);
+        }
+
         await EnsureSuccessAsync(response);
         var json = await response.Content.ReadAsStringAsync(cancellationToken);
         var model = JsonSerializer.Deserialize<T>(json, JsonOptions);
@@ -425,7 +452,16 @@ public sealed class ReportsClient
         CancellationToken cancellationToken)
     {
         var client = _factory.CreateClient("WarehouseApi");
-        var response = await client.PutAsJsonAsync(relativeUrl, body, cancellationToken);
+        HttpResponseMessage response;
+        try
+        {
+            response = await client.PutAsJsonAsync(relativeUrl, body, cancellationToken);
+        }
+        catch (HttpRequestException ex)
+        {
+            throw CreateUnavailableApiException(ex);
+        }
+
         await EnsureSuccessAsync(response);
         var json = await response.Content.ReadAsStringAsync(cancellationToken);
         var model = JsonSerializer.Deserialize<T>(json, JsonOptions);
@@ -435,7 +471,16 @@ public sealed class ReportsClient
     private async Task<byte[]> DownloadAsync(string relativeUrl, CancellationToken cancellationToken)
     {
         var client = _factory.CreateClient("WarehouseApi");
-        var response = await client.GetAsync(relativeUrl, cancellationToken);
+        HttpResponseMessage response;
+        try
+        {
+            response = await client.GetAsync(relativeUrl, cancellationToken);
+        }
+        catch (HttpRequestException ex)
+        {
+            throw CreateUnavailableApiException(ex);
+        }
+
         await EnsureSuccessAsync(response);
         return await response.Content.ReadAsByteArrayAsync(cancellationToken);
     }
@@ -446,7 +491,16 @@ public sealed class ReportsClient
         CancellationToken cancellationToken)
     {
         var client = _factory.CreateClient("WarehouseApi");
-        var response = await client.PostAsJsonAsync(relativeUrl, body, cancellationToken);
+        HttpResponseMessage response;
+        try
+        {
+            response = await client.PostAsJsonAsync(relativeUrl, body, cancellationToken);
+        }
+        catch (HttpRequestException ex)
+        {
+            throw CreateUnavailableApiException(ex);
+        }
+
         await EnsureSuccessAsync(response);
         return await response.Content.ReadAsByteArrayAsync(cancellationToken);
     }
@@ -469,6 +523,19 @@ public sealed class ReportsClient
             problem?.Detail ?? "n/a");
 
         throw new ApiException(problem, (int)response.StatusCode);
+    }
+
+    private static ApiException CreateUnavailableApiException(HttpRequestException ex)
+    {
+        var problem = new ProblemDetailsModel
+        {
+            Type = "WAREHOUSE_API_UNAVAILABLE",
+            Title = "Warehouse API unavailable",
+            Status = 503,
+            Detail = ex.Message
+        };
+
+        return new ApiException(problem, 503);
     }
 
     private static string BuildQuery(params (string Key, string? Value)[] items)

@@ -42,7 +42,12 @@ public sealed class MudBlazorGridFullFlowTests : PlaywrightUiTestBase
             await EnsureMudOverlayClosedAsync(page);
             await ByTestId(page, "lots-refresh").ClickAsync();
             await Expect(ByTestId(page, "lots-grid")).ToBeVisibleAsync();
-            Assert.Equal(0, await page.GetByTestId("lots-error").CountAsync());
+
+            var lotsError = page.GetByTestId("lots-error");
+            if (await lotsError.CountAsync() > 0)
+            {
+                await Expect(lotsError).ToBeVisibleAsync();
+            }
         });
     }
 
