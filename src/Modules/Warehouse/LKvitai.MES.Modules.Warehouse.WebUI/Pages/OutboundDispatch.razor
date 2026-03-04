@@ -5,104 +5,122 @@
 
 <PageTitle>Dispatch Confirmation - LKvitai.MES</PageTitle>
 
-<h1>Dispatch Confirmation</h1>
+<div data-testid="outbound-dispatch-page">
+    <MudText Typo="Typo.h5" Class="mb-3">Dispatch Confirmation</MudText>
 
-@if (_apiError is not null)
-{
-    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
-                 TraceId="@_apiError.TraceId"
-                 OnRetry="ReloadAsync"
-                 OnDismiss="DismissError" />
-}
-
-<div class="card shadow-sm position-relative">
-    <LoadingSpinner IsLoading="@(_isLoading || _isSubmitting)" />
-
-    <div class="card-body">
-        <div class="d-flex gap-2 mb-3">
-            <button class="btn btn-outline-secondary" @onclick="ReloadAsync" disabled="@(_isLoading || _isSubmitting)">Refresh</button>
+    @if (_apiError is not null)
+    {
+        <div data-testid="outbound-dispatch-error" class="mb-3">
+            <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                         TraceId="@_apiError.TraceId"
+                         OnRetry="ReloadAsync"
+                         OnDismiss="DismissError" />
         </div>
+    }
 
-        <div class="table-responsive">
-            <table class="table table-hover align-middle">
-                <thead>
-                    <tr>
-                        <th>Shipment Number</th>
-                        <th>Order Number</th>
-                        <th>Customer</th>
-                        <th>Packed At</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if (_shipments.Count == 0)
-                    {
-                        <tr>
-                            <td colspan="5" class="text-center text-muted py-4">No packed shipments available.</td>
-                        </tr>
-                    }
-                    else
-                    {
-                        @foreach (var shipment in _shipments)
-                        {
-                            <tr>
-                                <td>@shipment.ShipmentNumber</td>
-                                <td>@shipment.OutboundOrderNumber</td>
-                                <td>@(shipment.CustomerName ?? "-")</td>
-                                <td>@FormatDate(shipment.PackedAt)</td>
-                                <td>
-                                    <button class="btn btn-sm btn-primary"
-                                            @onclick="() => OpenDispatchModal(shipment)"
-                                            disabled="@_isSubmitting">
-                                        Dispatch
-                                    </button>
-                                </td>
-                            </tr>
-                        }
-                    }
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
+    <MudPaper Class="pa-4 position-relative mb-4">
+        <LoadingSpinner IsLoading="@(_isLoading || _isSubmitting)" />
 
-@if (_showModal && _selectedShipment is not null)
-{
-    <div class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true">
-        <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Dispatch @_selectedShipment.ShipmentNumber</h5>
-                    <button type="button" class="btn-close" aria-label="Close" @onclick="CloseModal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label" for="dispatch-carrier">Carrier</label>
-                        <select id="dispatch-carrier" class="form-select" @bind="_carrier">
-                            <option value="FEDEX">FEDEX</option>
-                            <option value="UPS">UPS</option>
-                            <option value="DHL">DHL</option>
-                            <option value="USPS">USPS</option>
-                            <option value="OTHER">OTHER</option>
-                        </select>
-                    </div>
+        <MudStack Row="true" Class="mb-3">
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Default"
+                       OnClick="ReloadAsync"
+                       Disabled="@(_isLoading || _isSubmitting)"
+                       data-testid="outbound-dispatch-refresh">
+                Refresh
+            </MudButton>
+        </MudStack>
 
-                    <div class="mb-3">
-                        <label class="form-label" for="vehicle-id">Vehicle ID</label>
-                        <input id="vehicle-id" class="form-control" type="text" @bind="_vehicleId" />
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="CloseModal" disabled="@_isSubmitting">Cancel</button>
-                    <button type="button" class="btn btn-primary" @onclick="ConfirmDispatchAsync" disabled="@_isSubmitting">
-                        Confirm Dispatch
-                    </button>
-                </div>
+        @if (_shipments.Count == 0)
+        {
+            <div data-testid="outbound-dispatch-empty">
+                <EmptyState Title="No packed shipments"
+                            Message="No packed shipments available."
+                            IconCss="bi bi-box-seam"
+                            OnAction="ReloadAsync" />
             </div>
-        </div>
-    </div>
-    <div class="modal-backdrop fade show"></div>
-}
+        }
+        else
+        {
+            <MudTable T="ShipmentSummaryDto"
+                      Items="_shipments"
+                      Dense="true"
+                      Hover="true"
+                      data-testid="outbound-dispatch-grid">
+                <HeaderContent>
+                    <MudTh>Shipment Number</MudTh>
+                    <MudTh>Order Number</MudTh>
+                    <MudTh>Customer</MudTh>
+                    <MudTh>Packed At</MudTh>
+                    <MudTh>Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Shipment Number">@context.ShipmentNumber</MudTd>
+                    <MudTd DataLabel="Order Number">@context.OutboundOrderNumber</MudTd>
+                    <MudTd DataLabel="Customer">@(context.CustomerName ?? "-")</MudTd>
+                    <MudTd DataLabel="Packed At">@FormatDate(context.PackedAt)</MudTd>
+                    <MudTd DataLabel="Actions">
+                        <MudButton Variant="Variant.Filled"
+                                   Size="Size.Small"
+                                   Color="Color.Primary"
+                                   OnClick="() => OpenDispatchModal(context)"
+                                   Disabled="@_isSubmitting">
+                            Dispatch
+                        </MudButton>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    </MudPaper>
+
+    @if (_showModal && _selectedShipment is not null)
+    {
+        <MudPaper Class="pa-4" data-testid="outbound-dispatch-form">
+            <MudText Typo="Typo.h6" Class="mb-3">Dispatch @_selectedShipment.ShipmentNumber</MudText>
+
+            <MudGrid Spacing="2" Class="mb-3">
+                <MudItem xs="12" md="4">
+                    <MudSelect T="string"
+                               Label="Carrier"
+                               @bind-Value="_carrier"
+                               Variant="Variant.Outlined"
+                               Dense="true"
+                               @attributes="CarrierAttributes">
+                        <MudSelectItem T="string" Value="@("FEDEX")">FEDEX</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("UPS")">UPS</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("DHL")">DHL</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("USPS")">USPS</MudSelectItem>
+                        <MudSelectItem T="string" Value="@("OTHER")">OTHER</MudSelectItem>
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" md="4">
+                    <MudTextField T="string"
+                                  Label="Vehicle ID"
+                                  @bind-Value="_vehicleId"
+                                  Variant="Variant.Outlined"
+                                  Dense="true"
+                                  @attributes="VehicleAttributes" />
+                </MudItem>
+            </MudGrid>
+
+            <MudStack Row="true" Spacing="2">
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Default"
+                           OnClick="CloseModal"
+                           Disabled="@_isSubmitting">
+                    Cancel
+                </MudButton>
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           OnClick="ConfirmDispatchAsync"
+                           Disabled="@_isSubmitting"
+                           @attributes="SubmitAttributes">
+                    Confirm Dispatch
+                </MudButton>
+            </MudStack>
+        </MudPaper>
+    }
+</div>
 
 @code {
     private readonly List<ShipmentSummaryDto> _shipments = [];
@@ -113,6 +131,10 @@
     private ShipmentSummaryDto? _selectedShipment;
     private string _carrier = "FEDEX";
     private string _vehicleId = string.Empty;
+
+    private static readonly Dictionary<string, object> CarrierAttributes = new() { ["data-testid"] = "outbound-dispatch-carrier" };
+    private static readonly Dictionary<string, object> VehicleAttributes = new() { ["data-testid"] = "outbound-dispatch-vehicle" };
+    private static readonly Dictionary<string, object> SubmitAttributes = new() { ["data-testid"] = "outbound-dispatch-submit" };
 
     protected override async Task OnInitializedAsync()
     {

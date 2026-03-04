@@ -239,6 +239,30 @@ public sealed class MudBlazorGridFullFlowTests : PlaywrightUiTestBase
     }
 
     [Fact]
+    public async Task OutboundDispatch_PageSmoke()
+    {
+        await RunUiAsync(nameof(OutboundDispatch_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/warehouse/outbound/dispatch");
+
+            await Expect(ByTestId(page, "outbound-dispatch-page")).ToBeVisibleAsync();
+
+            var grid = ByTestId(page, "outbound-dispatch-grid");
+            var pageError = ByTestId(page, "outbound-dispatch-error");
+            var sharedError = page.GetByTestId("shared-error-banner");
+            var emptyState = ByTestId(page, "outbound-dispatch-empty");
+
+            var gridVisible = await grid.CountAsync() > 0 && await grid.IsVisibleAsync();
+            var pageErrorVisible = await pageError.CountAsync() > 0 && await pageError.IsVisibleAsync();
+            var sharedErrorVisible = await sharedError.CountAsync() > 0 && await sharedError.IsVisibleAsync();
+            var emptyVisible = await emptyState.CountAsync() > 0 && await emptyState.IsVisibleAsync();
+
+            Assert.True(gridVisible || pageErrorVisible || sharedErrorVisible || emptyVisible,
+                "Expected outbound dispatch grid, empty state, or error banner to be visible.");
+        });
+    }
+
+    [Fact]
     public async Task StockLocationBalance_PageSmoke()
     {
         await RunUiAsync(nameof(StockLocationBalance_PageSmoke), async page =>
