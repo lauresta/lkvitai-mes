@@ -290,3 +290,57 @@ Test strategy:
 
 Discovery final recommendation:
 - Execute migrations incrementally with strict commit discipline, stable testids, and smoke green gates after every significant change set.
+
+## Post-Discovery Gate - MudDrawer Blocker Closure
+
+Date: 2026-03-04
+
+### Blocker statement
+- Blocker: intermittent circuit failures around `MudDrawer.UpdateHeight` and missing Mud JS globals (`mudElementRef`, `mudScrollManager`) during smoke runs.
+
+### What was changed
+- `MainLayout` no longer uses `MudDrawer`; replaced with deterministic shell:
+  - `MudAppBar` + static responsive `<aside>` sidebar.
+- `_Layout.cshtml` script order fixed to load Mud JS before `blazor.server.js`.
+- `Program.cs` now calls `builder.WebHost.UseStaticWebAssets();` to ensure static web assets are resolved in local `dotnet run` modes.
+- Render mode for app root remains `render-mode="Server"` (non-prerendered) in `_Host.cshtml`.
+
+### Stability outcome
+- Smoke gate (UI) passes: 5/5.
+- Verified no new `MudDrawer.UpdateHeight`-style intermittent circuit failures after drawer removal.
+- Decision and trade-offs are captured in ADR:
+  - `docs/adr/006-mudblazor-render-mode-server-and-shell-stability.md`.
+
+### Criteria to revisit
+- Re-introduce `MudDrawer` only if all are met:
+  1. `_content/MudBlazor/MudBlazor.min.js` is consistently served in target runtime profile(s).
+  2. No JS runtime/circuit errors over >= 20 consecutive smoke runs.
+  3. Mobile/desktop nav behavior parity is validated in E2E.
+
+## Capability Matrix - Heavy Page (Stock Movements)
+
+Page selected: `/reports/stock-movements`  
+Source: `Pages/ReportsStockMovements.razor`
+
+Reason selected:
+- Report/list page with multiple filters and CSV export.
+- Uses legacy Bootstrap controls + `Pagination` + `LoadingSpinner`; good representative for grid-phase risk.
+
+| Capability | Current implementation | Mud target | Migration complexity | Notes |
+| --- | --- | --- | --- | --- |
+| Date range filters | `<input type="date">` start/end | `MudDateRangePicker` or 2x `MudDatePicker` | Medium | Preserve UTC start/end-of-day conversion semantics. |
+| Numeric filters | ItemId/LocationId number inputs | `MudNumericField<int?>` | Low | Direct mapping with nullable values. |
+| Text filter | Operator text input | `MudTextField<string>` | Low | Keep trimming behavior before API call. |
+| Enum filter | Movement type `<select>` | `MudSelect<string>` | Low | Keep `All` empty-value semantics. |
+| Apply action | Primary button -> `ApplyFiltersAsync` | `MudButton` | Low | Add stable `data-testid` (`stock-movements-apply`). |
+| CSV export | JS interop `csvExport.downloadBytes` | Keep same JS interop, Mud button | Low | No JS rewrite required; only UI wrapper swap. |
+| Data grid/list | Bootstrap `<table>` manual rows | `MudDataGrid<StockMovementRowDto>` | Medium | Use server data or in-memory bind preserving columns/formatting. |
+| Paging | Legacy `<Pagination>` | `MudDataGridPager` or `MudPagination` | Medium | Maintain page size bounds `1..500` and total count display. |
+| Loading state | `<LoadingSpinner>` overlay | Mud-based spinner wrapper (already converted) | Low | Existing wrapper already migrated in phase 0. |
+| Error state | `<ErrorBanner>` | Mud-based alert wrapper (already converted) | Low | Existing wrapper already migrated in phase 0. |
+| Testability | No page-level testids currently | Add page/grid/filter/export testids | Medium | Required before/with migration to keep smoke stable. |
+
+Matrix verdict:
+- Page is fully migratable to MudBlazor without functional loss.
+- Main care points are pagination parity and preserving CSV/export + date filter semantics.
+- Recommended to migrate this page in early grid phase after receiving-history baseline.
