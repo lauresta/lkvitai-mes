@@ -321,6 +321,25 @@ public sealed class MudBlazorGridFullFlowTests : PlaywrightUiTestBase
         });
     }
 
+    [Fact]
+    public async Task AdminSuppliers_PageSmoke()
+    {
+        await RunUiAsync(nameof(AdminSuppliers_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/admin/suppliers");
+
+            await Expect(ByTestId(page, "admin-suppliers-page")).ToBeVisibleAsync();
+
+            var grid = ByTestId(page, "admin-suppliers-grid");
+            var error = page.GetByTestId("shared-error-banner");
+
+            var gridVisible = await grid.CountAsync() > 0 && await grid.IsVisibleAsync();
+            var errorVisible = await error.CountAsync() > 0 && await error.IsVisibleAsync();
+
+            Assert.True(gridVisible || errorVisible, "Expected suppliers grid or shared error banner to be visible.");
+        });
+    }
+
     private static async Task TryChangePageAsync(IPage page, string pagerTestId, string pageIndicatorTestId)
     {
         var pager = ByTestId(page, pagerTestId);
