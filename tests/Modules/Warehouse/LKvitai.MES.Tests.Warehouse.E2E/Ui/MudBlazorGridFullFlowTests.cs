@@ -407,6 +407,28 @@ public sealed class MudBlazorGridFullFlowTests : PlaywrightUiTestBase
     }
 
     [Fact]
+    public async Task ValuationWriteDown_PageSmoke()
+    {
+        await RunUiAsync(nameof(ValuationWriteDown_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/warehouse/valuation/write-down");
+
+            await Expect(ByTestId(page, "valuation-write-down-page")).ToBeVisibleAsync();
+
+            var form = ByTestId(page, "valuation-write-down-form");
+            var error = ByTestId(page, "valuation-write-down-error");
+            var sharedError = page.GetByTestId("shared-error-banner");
+
+            var formVisible = await form.CountAsync() > 0 && await form.IsVisibleAsync();
+            var errorVisible = await error.CountAsync() > 0 && await error.IsVisibleAsync();
+            var sharedErrorVisible = await sharedError.CountAsync() > 0 && await sharedError.IsVisibleAsync();
+
+            Assert.True(formVisible || errorVisible || sharedErrorVisible,
+                "Expected valuation write-down form or error banner to be visible.");
+        });
+    }
+
+    [Fact]
     public async Task StockLocationBalance_PageSmoke()
     {
         await RunUiAsync(nameof(StockLocationBalance_PageSmoke), async page =>

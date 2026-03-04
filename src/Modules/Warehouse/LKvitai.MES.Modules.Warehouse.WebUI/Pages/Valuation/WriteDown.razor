@@ -9,54 +9,86 @@
 
 <PageTitle>Write Down</PageTitle>
 
-<h1>Write Down Inventory Value</h1>
+<div data-testid="valuation-write-down-page">
+    <MudText Typo="Typo.h5" Class="mb-3">Write Down Inventory Value</MudText>
 
-@if (_apiError is not null)
-{
-    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
-                 TraceId="@_apiError.TraceId"
-                 OnRetry="LoadItemsAsync"
-                 OnDismiss="DismissError" />
-}
+    @if (_apiError is not null)
+    {
+        <div data-testid="valuation-write-down-error" class="mb-3">
+            <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                         TraceId="@_apiError.TraceId"
+                         OnRetry="LoadItemsAsync"
+                         OnDismiss="DismissError" />
+        </div>
+    }
 
-<div class="card shadow-sm position-relative">
-    <LoadingSpinner IsLoading="_isLoading || _isSubmitting" />
-    <div class="card-body">
+    <MudPaper Class="pa-4 position-relative" data-testid="valuation-write-down-form">
+        <LoadingSpinner IsLoading="_isLoading || _isSubmitting" />
+
         <EditForm Model="_model" OnValidSubmit="SubmitAsync">
             <DataAnnotationsValidator />
             <ValidationSummary />
 
-            <div class="row g-3">
-                <div class="col-12 col-md-6">
-                    <label class="form-label">Item</label>
-                    <InputSelect class="form-select" @bind-Value="_model.ItemId">
-                        <option value="">Select item</option>
+            <MudGrid Spacing="2">
+                <MudItem xs="12" md="6">
+                    <MudSelect T="int?"
+                               Label="Item"
+                               @bind-Value="_model.ItemId"
+                               Variant="Variant.Outlined"
+                               Dense="true"
+                               data-testid="valuation-write-down-item">
+                        <MudSelectItem T="int?" Value="@((int?)null)">Select item</MudSelectItem>
                         @foreach (var item in _items)
                         {
-                            <option value="@item.Id">@item.InternalSKU - @item.Name</option>
+                            <MudSelectItem T="int?" Value="@((int?)item.Id)">@item.InternalSKU - @item.Name</MudSelectItem>
                         }
-                    </InputSelect>
-                </div>
-                <div class="col-12 col-md-3">
-                    <label class="form-label">New Value</label>
-                    <InputNumber class="form-control" @bind-Value="_model.NewValue" />
-                </div>
-                <div class="col-12 col-md-3">
-                    <label class="form-label">Approved By</label>
-                    <InputText class="form-control" @bind-Value="_model.ApprovedBy" />
-                </div>
-                <div class="col-12">
-                    <label class="form-label">Reason</label>
-                    <InputTextArea class="form-control" @bind-Value="_model.Reason" />
-                </div>
-            </div>
+                    </MudSelect>
+                </MudItem>
+                <MudItem xs="12" md="3">
+                    <MudNumericField T="decimal?"
+                                     Label="New Value"
+                                     @bind-Value="_model.NewValue"
+                                     Min="0m"
+                                     Variant="Variant.Outlined"
+                                     Dense="true"
+                                     data-testid="valuation-write-down-value" />
+                </MudItem>
+                <MudItem xs="12" md="3">
+                    <MudTextField T="string"
+                                  Label="Approved By"
+                                  @bind-Value="_model.ApprovedBy"
+                                  Variant="Variant.Outlined"
+                                  Dense="true"
+                                  data-testid="valuation-write-down-approved-by" />
+                </MudItem>
+                <MudItem xs="12">
+                    <MudTextField T="string"
+                                  Label="Reason"
+                                  @bind-Value="_model.Reason"
+                                  Lines="3"
+                                  Variant="Variant.Outlined"
+                                  Dense="true"
+                                  data-testid="valuation-write-down-reason" />
+                </MudItem>
+            </MudGrid>
 
-            <div class="mt-3 d-flex gap-2">
-                <button class="btn btn-danger" type="submit" disabled="_isSubmitting">Write Down</button>
-                <button class="btn btn-outline-secondary" type="button" @onclick="BackToDashboard">Back</button>
-            </div>
+            <MudStack Row="true" Spacing="1" Class="mt-3">
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Error"
+                           ButtonType="ButtonType.Submit"
+                           Disabled="@_isSubmitting"
+                           data-testid="valuation-write-down-submit">
+                    Write Down
+                </MudButton>
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Default"
+                           OnClick="BackToDashboard"
+                           Disabled="@_isSubmitting">
+                    Back
+                </MudButton>
+            </MudStack>
         </EditForm>
-    </div>
+    </MudPaper>
 </div>
 
 @code {
