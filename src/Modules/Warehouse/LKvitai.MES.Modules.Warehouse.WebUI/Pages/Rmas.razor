@@ -5,98 +5,127 @@
 
 <PageTitle>RMAs - LKvitai.MES</PageTitle>
 
-<h3>Returns / RMA</h3>
+<div data-testid="rmas-page">
+    <MudText Typo="Typo.h5" Class="mb-3">Returns / RMA</MudText>
 
-@if (_error is not null)
-{
-    <ErrorBanner Message="@_error.UserMessage"
-                 TraceId="@_error.TraceId"
-                 OnRetry="LoadAsync"
-                 OnDismiss="DismissError" />
-}
-
-<div class="card shadow-sm mb-3">
-    <div class="card-body">
-        <h5>Create RMA</h5>
-        <div class="row g-2 align-items-end">
-            <div class="col-md-4">
-                <label class="form-label">Sales Order Id</label>
-                <input class="form-control" @bind="_salesOrderIdInput" placeholder="GUID" />
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Item Id</label>
-                <input class="form-control" type="number" @bind="_itemId" />
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">Qty</label>
-                <input class="form-control" type="number" step="0.01" @bind="_qty" />
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Reason</label>
-                <input class="form-control" @bind="_reason" placeholder="Damaged" />
-            </div>
-            <div class="col-md-12 mt-2">
-                <button class="btn btn-primary" @onclick="CreateAsync" disabled="@_isBusy">Create RMA</button>
-            </div>
+    @if (_error is not null)
+    {
+        <div data-testid="rmas-error" class="mb-3">
+            <ErrorBanner Message="@_error.UserMessage"
+                         TraceId="@_error.TraceId"
+                         OnRetry="LoadAsync"
+                         OnDismiss="DismissError" />
         </div>
-    </div>
-</div>
+    }
 
-<div class="card shadow-sm">
-    <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="mb-0">RMA Queue</h5>
-            <button class="btn btn-outline-secondary btn-sm" @onclick="LoadAsync" disabled="@_isBusy">Refresh</button>
-        </div>
+    <MudPaper Class="pa-4 mb-3" data-testid="rmas-form">
+        <MudText Typo="Typo.h6" Class="mb-2">Create RMA</MudText>
+
+        <MudGrid Spacing="2" AlignItems="AlignItems.End">
+            <MudItem xs="12" md="4">
+                <MudTextField T="string"
+                              Label="Sales Order Id"
+                              @bind-Value="_salesOrderIdInput"
+                              Placeholder="GUID"
+                              Variant="Variant.Outlined"
+                              Dense="true"
+                              data-testid="rmas-sales-order-id" />
+            </MudItem>
+            <MudItem xs="12" md="3">
+                <MudNumericField T="int"
+                                 Label="Item Id"
+                                 @bind-Value="_itemId"
+                                 Min="1"
+                                 Variant="Variant.Outlined"
+                                 Dense="true"
+                                 data-testid="rmas-item-id" />
+            </MudItem>
+            <MudItem xs="12" md="2">
+                <MudNumericField T="decimal"
+                                 Label="Qty"
+                                 @bind-Value="_qty"
+                                 Min="0.01m"
+                                 Step="0.01m"
+                                 Variant="Variant.Outlined"
+                                 Dense="true"
+                                 data-testid="rmas-qty" />
+            </MudItem>
+            <MudItem xs="12" md="3">
+                <MudTextField T="string"
+                              Label="Reason"
+                              @bind-Value="_reason"
+                              Placeholder="Damaged"
+                              Variant="Variant.Outlined"
+                              Dense="true"
+                              data-testid="rmas-reason" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           OnClick="CreateAsync"
+                           Disabled="@_isBusy"
+                           data-testid="rmas-submit">
+                    Create RMA
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <MudPaper Class="pa-4">
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-3">
+            <MudText Typo="Typo.h6">RMA Queue</MudText>
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="LoadAsync" Disabled="@_isBusy">Refresh</MudButton>
+        </MudStack>
 
         @if (_rows.Count == 0)
         {
-            <EmptyState Title="No RMAs"
-                        Message="Create an RMA for customer returns and disposition workflow."
-                        IconCss="bi bi-arrow-counterclockwise"
-                        OnAction="LoadAsync" />
+            <div data-testid="rmas-empty">
+                <EmptyState Title="No RMAs"
+                            Message="Create an RMA for customer returns and disposition workflow."
+                            IconCss="bi bi-arrow-counterclockwise"
+                            OnAction="LoadAsync" />
+            </div>
         }
         else
         {
-            <div class="table-responsive">
-                <table class="table table-sm align-middle">
-                    <thead>
-                        <tr>
-                            <th>RMA</th>
-                            <th>Status</th>
-                            <th>Reason</th>
-                            <th>Credit</th>
-                            <th>Updated By</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var row in _rows)
-                        {
-                            <tr>
-                                <td>@row.RmaNumber</td>
-                                <td><span class="badge @GetStatusClass(row.Status)">@row.Status</span></td>
-                                <td>@row.Reason</td>
-                                <td>@(row.CreditAmount?.ToString("0.00") ?? "-")</td>
-                                <td>@(row.UpdatedBy ?? row.CreatedBy)</td>
-                                <td class="d-flex gap-1">
-                                    @if (row.Status == "PendingReceipt")
-                                    {
-                                        <button class="btn btn-sm btn-outline-primary" @onclick="() => ReceiveAsync(row.Id)">Receive</button>
-                                    }
-                                    @if (row.Status is "Received" or "Inspected")
-                                    {
-                                        <button class="btn btn-sm btn-outline-success" @onclick='() => InspectAsync(row.Id, "RESTOCK")'>Restock</button>
-                                        <button class="btn btn-sm btn-outline-danger" @onclick='() => InspectAsync(row.Id, "SCRAP")'>Scrap</button>
-                                    }
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
+            <MudTable T="RmaDto"
+                      Items="_rows"
+                      Dense="true"
+                      Hover="true"
+                      data-testid="rmas-grid">
+                <HeaderContent>
+                    <MudTh>RMA</MudTh>
+                    <MudTh>Status</MudTh>
+                    <MudTh>Reason</MudTh>
+                    <MudTh>Credit</MudTh>
+                    <MudTh>Updated By</MudTh>
+                    <MudTh>Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="RMA">@context.RmaNumber</MudTd>
+                    <MudTd DataLabel="Status">
+                        <MudChip Size="Size.Small" Color="@GetStatusColor(context.Status)" Variant="Variant.Filled">@context.Status</MudChip>
+                    </MudTd>
+                    <MudTd DataLabel="Reason">@context.Reason</MudTd>
+                    <MudTd DataLabel="Credit">@(context.CreditAmount?.ToString("0.00") ?? "-")</MudTd>
+                    <MudTd DataLabel="Updated By">@(context.UpdatedBy ?? context.CreatedBy)</MudTd>
+                    <MudTd DataLabel="Actions">
+                        <MudStack Row="true" Spacing="1">
+                            @if (context.Status == "PendingReceipt")
+                            {
+                                <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="() => ReceiveAsync(context.Id)">Receive</MudButton>
+                            }
+                            @if (context.Status is "Received" or "Inspected")
+                            {
+                                <MudButton Variant="Variant.Outlined" Color="Color.Success" Size="Size.Small" OnClick='() => InspectAsync(context.Id, "RESTOCK")'>Restock</MudButton>
+                                <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" OnClick='() => InspectAsync(context.Id, "SCRAP")'>Scrap</MudButton>
+                            }
+                        </MudStack>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
         }
-    </div>
+    </MudPaper>
 </div>
 
 @code {
@@ -188,12 +217,12 @@
         _error = null;
     }
 
-    private static string GetStatusClass(string status) => status switch
+    private static Color GetStatusColor(string status) => status switch
     {
-        "Restocked" => "bg-success",
-        "Scrapped" => "bg-danger",
-        "Received" => "bg-info text-dark",
-        "Inspected" => "bg-primary",
-        _ => "bg-secondary"
+        "Restocked" => Color.Success,
+        "Scrapped" => Color.Error,
+        "Received" => Color.Info,
+        "Inspected" => Color.Primary,
+        _ => Color.Default
     };
 }

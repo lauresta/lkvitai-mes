@@ -337,6 +337,30 @@ public sealed class MudBlazorGridFullFlowTests : PlaywrightUiTestBase
     }
 
     [Fact]
+    public async Task Rmas_PageSmoke()
+    {
+        await RunUiAsync(nameof(Rmas_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/warehouse/rmas");
+
+            await Expect(ByTestId(page, "rmas-page")).ToBeVisibleAsync();
+
+            var grid = ByTestId(page, "rmas-grid");
+            var empty = ByTestId(page, "rmas-empty");
+            var error = ByTestId(page, "rmas-error");
+            var sharedError = page.GetByTestId("shared-error-banner");
+
+            var gridVisible = await grid.CountAsync() > 0 && await grid.IsVisibleAsync();
+            var emptyVisible = await empty.CountAsync() > 0 && await empty.IsVisibleAsync();
+            var errorVisible = await error.CountAsync() > 0 && await error.IsVisibleAsync();
+            var sharedErrorVisible = await sharedError.CountAsync() > 0 && await sharedError.IsVisibleAsync();
+
+            Assert.True(gridVisible || emptyVisible || errorVisible || sharedErrorVisible,
+                "Expected RMA grid, empty state, or error banner to be visible.");
+        });
+    }
+
+    [Fact]
     public async Task StockLocationBalance_PageSmoke()
     {
         await RunUiAsync(nameof(StockLocationBalance_PageSmoke), async page =>
