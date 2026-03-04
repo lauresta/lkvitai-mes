@@ -5,6 +5,7 @@
 
 <PageTitle>Reservations - LKvitai.MES</PageTitle>
 
+<div data-testid="reservations-page">
 <h3>Reservations</h3>
 
 @if (_apiError is not null)
@@ -35,59 +36,85 @@
             </div>
         </div>
 
-        <DataTable TItem="ReservationDto"
-                   Items="@_reservations"
-                   TotalCount="@_totalCount"
-                   EmptyMessage="No reservations found."
-                   OnRowClick="OpenDetails">
+        <MudDataGrid T="ReservationDto"
+                     Items="@_reservations"
+                     Dense="true"
+                     Hover="true"
+                     Loading="@(_isLoading || _isSubmitting)"
+                     SortMode="SortMode.None"
+                     Filterable="false"
+                     RowClick="@(args => OpenDetails(args.Item))"
+                     @attributes="GridAttributes">
+            <NoRecordsContent>
+                <MudText Typo="Typo.body2" Class="mud-secondary-text">No reservations found.</MudText>
+            </NoRecordsContent>
             <Columns>
-                <th>Reservation</th>
-                <th>Purpose</th>
-                <th>Priority</th>
-                <th>Status</th>
-                <th>Lock</th>
-                <th>Created</th>
-                <th>Actions</th>
+                <TemplateColumn Title="Reservation">
+                    <CellTemplate>
+                        <code>@ShortId(context.Item.ReservationId)</code>
+                    </CellTemplate>
+                </TemplateColumn>
+                <PropertyColumn Property="x => x.Purpose" Title="Purpose" />
+                <PropertyColumn Property="x => x.Priority" Title="Priority" />
+                <PropertyColumn Property="x => x.Status" Title="Status" />
+                <PropertyColumn Property="x => x.LockType" Title="Lock" />
+                <TemplateColumn Title="Created">
+                    <CellTemplate>
+                        @context.Item.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Actions">
+                    <CellTemplate>
+                        <MudStack Row="true" Spacing="1">
+                            @if (context.Item.Status == "ALLOCATED")
+                            {
+                                <MudButton Variant="Variant.Outlined"
+                                           Size="Size.Small"
+                                           Color="Color.Primary"
+                                           Disabled="@_isSubmitting"
+                                           OnClick="@(() => OpenStartPickingConfirmation(context.Item))">
+                                    Start Picking
+                                </MudButton>
+                            }
+                            @if (context.Item.Status == "PICKING")
+                            {
+                                <MudButton Variant="Variant.Outlined"
+                                           Size="Size.Small"
+                                           Color="Color.Primary"
+                                           Disabled="@_isSubmitting"
+                                           OnClick="@(() => OpenPickModal(context.Item))">
+                                    Pick
+                                </MudButton>
+                            }
+                        </MudStack>
+                    </CellTemplate>
+                </TemplateColumn>
             </Columns>
-            <RowTemplate Context="reservation">
-                <td><code>@ShortId(reservation.ReservationId)</code></td>
-                <td>@reservation.Purpose</td>
-                <td>@reservation.Priority</td>
-                <td>@reservation.Status</td>
-                <td>@reservation.LockType</td>
-                <td>@reservation.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
-                <td class="d-flex gap-2">
-                    @if (reservation.Status == "ALLOCATED")
-                    {
-                        <button class="btn btn-sm btn-outline-primary"
-                                @onclick="() => OpenStartPickingConfirmation(reservation)"
-                                @onclick:stopPropagation="true"
-                                disabled="@_isSubmitting">
-                            Start Picking
-                        </button>
-                    }
-                    @if (reservation.Status == "PICKING")
-                    {
-                        <button class="btn btn-sm btn-outline-primary"
-                                @onclick="() => OpenPickModal(reservation)"
-                                @onclick:stopPropagation="true"
-                                disabled="@_isSubmitting">
-                            Pick
-                        </button>
-                    }
-                </td>
-            </RowTemplate>
-        </DataTable>
+        </MudDataGrid>
 
         @if (_totalPages > 1)
         {
-            <div class="mt-3">
-                <Pagination CurrentPage="@_page"
-                            TotalPages="@_totalPages"
-                            PageSize="@_pageSize"
-                            OnPageChanged="OnPageChangedAsync"
-                            OnPageSizeChanged="OnPageSizeChangedAsync" />
-            </div>
+            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.FlexEnd" Class="mt-3" data-testid="reservations-pager">
+                <MudSelect T="int"
+                           Label="Page size"
+                           Value="_pageSize"
+                           ValueChanged="OnPageSizeChangedAsync"
+                           Variant="Variant.Outlined"
+                           Dense="true"
+                           Style="width: 120px;"
+                           @attributes="PageSizeAttributes">
+                    <MudSelectItem Value="25">25</MudSelectItem>
+                    <MudSelectItem Value="50">50</MudSelectItem>
+                    <MudSelectItem Value="100">100</MudSelectItem>
+                </MudSelect>
+                <MudPagination Count="@_totalPages"
+                               Selected="@_page"
+                               SelectedChanged="OnPageChangedAsync"
+                               Variant="Variant.Outlined"
+                               Color="Color.Primary"
+                               Size="Size.Small"
+                               Class="ml-2" />
+            </MudStack>
         }
     </div>
 </div>
@@ -244,6 +271,7 @@
                IsVisible="@_showStartPickingConfirm"
                OnConfirm="ConfirmStartPickingAsync"
                OnCancel="CancelStartPickingConfirm" />
+</div>
 
 @code {
     private IReadOnlyList<ReservationDto> _reservations = Array.Empty<ReservationDto>();
@@ -268,6 +296,8 @@
     private Guid _selectedPickHuId;
     private decimal _pickQuantity = 1m;
     private string? _pickValidationMessage;
+    private static readonly Dictionary<string, object> GridAttributes = new() { ["data-testid"] = "reservations-grid" };
+    private static readonly Dictionary<string, object> PageSizeAttributes = new() { ["data-testid"] = "reservations-page-size" };
 
     private int _totalPages => Math.Max(1, (int)Math.Ceiling(_totalCount / (double)Math.Max(1, _pageSize)));
 

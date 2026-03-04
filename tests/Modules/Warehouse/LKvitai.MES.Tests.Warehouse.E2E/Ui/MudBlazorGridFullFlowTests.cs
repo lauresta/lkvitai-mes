@@ -397,6 +397,25 @@ public sealed class MudBlazorGridFullFlowTests : PlaywrightUiTestBase
         });
     }
 
+    [Fact]
+    public async Task Reservations_PageSmoke()
+    {
+        await RunUiAsync(nameof(Reservations_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/reservations");
+
+            await Expect(ByTestId(page, "reservations-page")).ToBeVisibleAsync();
+
+            var grid = ByTestId(page, "reservations-grid");
+            var error = page.GetByTestId("shared-error-banner");
+
+            var gridVisible = await grid.CountAsync() > 0 && await grid.IsVisibleAsync();
+            var errorVisible = await error.CountAsync() > 0 && await error.IsVisibleAsync();
+
+            Assert.True(gridVisible || errorVisible, "Expected reservations grid or shared error banner to be visible.");
+        });
+    }
+
     private static async Task TryChangePageAsync(IPage page, string pagerTestId, string pageIndicatorTestId)
     {
         var pager = ByTestId(page, pagerTestId);
