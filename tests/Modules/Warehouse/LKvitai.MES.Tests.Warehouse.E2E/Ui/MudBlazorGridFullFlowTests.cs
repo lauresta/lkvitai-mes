@@ -139,6 +139,26 @@ public sealed class MudBlazorGridFullFlowTests : PlaywrightUiTestBase
         });
     }
 
+    [Fact]
+    public async Task ReportsDispatchHistory_PageSmoke()
+    {
+        await RunUiAsync(nameof(ReportsDispatchHistory_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/reports/dispatch-history");
+
+            await Expect(ByTestId(page, "reports-dispatch-history-page")).ToBeVisibleAsync();
+            await ByTestId(page, "reports-dispatch-history-apply").ClickAsync();
+
+            var grid = ByTestId(page, "reports-dispatch-history-grid");
+            var error = page.GetByTestId("reports-dispatch-history-error");
+
+            var gridVisible = await grid.CountAsync() > 0 && await grid.IsVisibleAsync();
+            var errorVisible = await error.CountAsync() > 0 && await error.IsVisibleAsync();
+
+            Assert.True(gridVisible || errorVisible, "Expected dispatch history grid or route-level error to be visible.");
+        });
+    }
+
     private static async Task TryChangePageAsync(IPage page, string pagerTestId, string pageIndicatorTestId)
     {
         var pager = ByTestId(page, pagerTestId);
