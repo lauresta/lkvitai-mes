@@ -283,6 +283,44 @@ public sealed class MudBlazorGridFullFlowTests : PlaywrightUiTestBase
         });
     }
 
+    [Fact]
+    public async Task AdminWarehouses_PageSmoke()
+    {
+        await RunUiAsync(nameof(AdminWarehouses_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/admin/warehouses");
+
+            await Expect(ByTestId(page, "admin-warehouses-page")).ToBeVisibleAsync();
+
+            var grid = ByTestId(page, "admin-warehouses-grid");
+            var error = page.GetByTestId("shared-error-banner");
+
+            var gridVisible = await grid.CountAsync() > 0 && await grid.IsVisibleAsync();
+            var errorVisible = await error.CountAsync() > 0 && await error.IsVisibleAsync();
+
+            Assert.True(gridVisible || errorVisible, "Expected warehouses grid or shared error banner to be visible.");
+        });
+    }
+
+    [Fact]
+    public async Task AdminUom_PageSmoke()
+    {
+        await RunUiAsync(nameof(AdminUom_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/warehouse/admin/uom");
+
+            await Expect(ByTestId(page, "admin-uom-page")).ToBeVisibleAsync();
+
+            var grid = ByTestId(page, "admin-uom-grid");
+            var error = page.GetByTestId("shared-error-banner");
+
+            var gridVisible = await grid.CountAsync() > 0 && await grid.IsVisibleAsync();
+            var errorVisible = await error.CountAsync() > 0 && await error.IsVisibleAsync();
+
+            Assert.True(gridVisible || errorVisible, "Expected UoM grid or shared error banner to be visible.");
+        });
+    }
+
     private static async Task TryChangePageAsync(IPage page, string pagerTestId, string pageIndicatorTestId)
     {
         var pager = ByTestId(page, pagerTestId);

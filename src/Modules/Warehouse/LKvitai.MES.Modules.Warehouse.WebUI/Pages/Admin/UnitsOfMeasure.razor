@@ -3,6 +3,7 @@
 
 <PageTitle>Units of Measure - LKvitai.MES</PageTitle>
 
+<div data-testid="admin-uom-page">
 <h3>Units of Measure</h3>
 
 @if (_apiError is not null)
@@ -104,7 +105,7 @@
     </div>
 </div>
 
-<div class="card shadow-sm">
+<div class="card shadow-sm" data-testid="admin-uom-grid">
     <div class="card-header">Item UoM Conversions</div>
     <div class="card-body">
         <div class="d-flex justify-content-between align-items-center mb-2">
@@ -146,13 +147,30 @@
 
         @if (_totalCount > 0)
         {
-            <Pagination CurrentPage="@_pageNumber"
-                        TotalPages="@TotalPages"
-                        PageSize="@_pageSize"
-                        OnPageChanged="OnPageChangedAsync"
-                        OnPageSizeChanged="OnPageSizeChangedAsync" />
+            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.FlexEnd" Class="mt-3" data-testid="admin-uom-pager">
+                <MudSelect T="int"
+                           Label="Page size"
+                           Value="_pageSize"
+                           ValueChanged="OnPageSizeChangedAsync"
+                           Variant="Variant.Outlined"
+                           Dense="true"
+                           Style="width: 120px;"
+                           @attributes="PageSizeAttributes">
+                    <MudSelectItem Value="25">25</MudSelectItem>
+                    <MudSelectItem Value="50">50</MudSelectItem>
+                    <MudSelectItem Value="100">100</MudSelectItem>
+                </MudSelect>
+                <MudPagination Count="@TotalPages"
+                               Selected="@_pageNumber"
+                               SelectedChanged="OnPageChangedAsync"
+                               Variant="Variant.Outlined"
+                               Color="Color.Primary"
+                               Size="Size.Small"
+                               Class="ml-2" />
+            </MudStack>
         }
     </div>
+</div>
 </div>
 
 @code {
@@ -167,6 +185,7 @@
     private int _totalCount;
     private bool _isLoading;
     private ApiException? _apiError;
+    private static readonly Dictionary<string, object> PageSizeAttributes = new() { ["data-testid"] = "admin-uom-page-size" };
 
     private int TotalPages => Math.Max(1, (int)Math.Ceiling(_totalCount / (double)Math.Max(1, _pageSize)));
 
