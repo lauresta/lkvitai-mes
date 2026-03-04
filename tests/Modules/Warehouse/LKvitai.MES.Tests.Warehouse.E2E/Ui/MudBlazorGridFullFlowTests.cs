@@ -361,6 +361,28 @@ public sealed class MudBlazorGridFullFlowTests : PlaywrightUiTestBase
     }
 
     [Fact]
+    public async Task Projections_PageSmoke()
+    {
+        await RunUiAsync(nameof(Projections_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/projections");
+
+            await Expect(ByTestId(page, "projections-page")).ToBeVisibleAsync();
+
+            var lagGrid = ByTestId(page, "projections-lag-grid");
+            var pageError = ByTestId(page, "projections-error");
+            var sharedError = page.GetByTestId("shared-error-banner");
+
+            var lagVisible = await lagGrid.CountAsync() > 0 && await lagGrid.IsVisibleAsync();
+            var pageErrorVisible = await pageError.CountAsync() > 0 && await pageError.IsVisibleAsync();
+            var sharedErrorVisible = await sharedError.CountAsync() > 0 && await sharedError.IsVisibleAsync();
+
+            Assert.True(lagVisible || pageErrorVisible || sharedErrorVisible,
+                "Expected projection lag content or error banner to be visible.");
+        });
+    }
+
+    [Fact]
     public async Task StockLocationBalance_PageSmoke()
     {
         await RunUiAsync(nameof(StockLocationBalance_PageSmoke), async page =>

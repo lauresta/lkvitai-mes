@@ -6,154 +6,128 @@
 
 <PageTitle>Projections - LKvitai.MES</PageTitle>
 
-<h3>Projections</h3>
+<div data-testid="projections-page">
+    <MudText Typo="Typo.h5" Class="mb-3">Projections</MudText>
 
-@if (_apiError is not null)
-{
-    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
-                 TraceId="@_apiError.TraceId"
-                 OnRetry="RetryAsync"
-                 OnDismiss="DismissError" />
-
-    <div class="alert alert-warning">
-        <div class="d-flex justify-content-between align-items-center">
-            <span>@BuildFriendlyHint(_apiError, _lastFailedOperation)</span>
-            <button class="btn btn-sm btn-outline-secondary" @onclick="CopyErrorAsync">Copy Error</button>
+    @if (_apiError is not null)
+    {
+        <div data-testid="projections-error" class="mb-3">
+            <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                         TraceId="@_apiError.TraceId"
+                         OnRetry="RetryAsync"
+                         OnDismiss="DismissError" />
         </div>
-    </div>
-}
 
-<div class="card shadow-sm mb-3">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <span>Projection Lag</span>
-        <button class="btn btn-sm btn-outline-secondary" @onclick="RefreshLagFromToolbarAsync">Refresh</button>
-    </div>
-    <div class="card-body">
+        <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Dense="true" Class="mb-3">
+            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                <MudText Typo="Typo.body2">@BuildFriendlyHint(_apiError, _lastFailedOperation)</MudText>
+                <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="CopyErrorAsync">Copy Error</MudButton>
+            </MudStack>
+        </MudAlert>
+    }
+
+    <MudPaper Class="pa-4 mb-3" data-testid="projections-lag-grid">
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-3">
+            <MudText Typo="Typo.h6">Projection Lag</MudText>
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="RefreshLagFromToolbarAsync">Refresh</MudButton>
+        </MudStack>
+
         @if (_projectionLag.Count == 0)
         {
-            <span class="text-muted">No projection lag data available.</span>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">No projection lag data available.</MudText>
         }
         else
         {
-            <div class="table-responsive">
-                <table class="table table-sm">
-                    <thead>
-                    <tr>
-                        <th>Projection</th>
-                        <th>Status</th>
-                        <th>Lag (s)</th>
-                        <th>Lag (events)</th>
-                        <th>Last Updated</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    @foreach (var row in _projectionLag)
-                    {
-                        <tr>
-                            <td>@row.ProjectionName</td>
-                            <td>@row.Status</td>
-                            <td>@(row.LagSeconds?.ToString("0.##") ?? "-")</td>
-                            <td>@(row.LagEvents?.ToString() ?? "-")</td>
-                            <td>
-                                @if (row.LastUpdated.HasValue)
-                                {
-                                    @row.LastUpdated.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")
-                                    <span class="ms-2"><StaleBadge LagSeconds="@row.LagSeconds" LastUpdated="@row.LastUpdated.Value.UtcDateTime" /></span>
-                                }
-                                else
-                                {
-                                    <span class="text-muted">Unknown</span>
-                                }
-                            </td>
-                        </tr>
-                    }
-                    </tbody>
-                </table>
-            </div>
+            <MudTable T="ProjectionLagStatusDto" Items="_projectionLag" Dense="true" Hover="true">
+                <HeaderContent>
+                    <MudTh>Projection</MudTh>
+                    <MudTh>Status</MudTh>
+                    <MudTh>Lag (s)</MudTh>
+                    <MudTh>Lag (events)</MudTh>
+                    <MudTh>Last Updated</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Projection">@context.ProjectionName</MudTd>
+                    <MudTd DataLabel="Status">@context.Status</MudTd>
+                    <MudTd DataLabel="Lag (s)">@(context.LagSeconds?.ToString("0.##") ?? "-")</MudTd>
+                    <MudTd DataLabel="Lag (events)">@(context.LagEvents?.ToString() ?? "-")</MudTd>
+                    <MudTd DataLabel="Last Updated">
+                        @if (context.LastUpdated.HasValue)
+                        {
+                            @context.LastUpdated.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")
+                            <span class="ml-2"><StaleBadge LagSeconds="@context.LagSeconds" LastUpdated="@context.LastUpdated.Value.UtcDateTime" /></span>
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Unknown</MudText>
+                        }
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
         }
-    </div>
-</div>
+    </MudPaper>
 
-<div class="card shadow-sm mb-3">
-    <div class="card-header">Rebuild / Verify</div>
-    <div class="card-body">
-        <div class="mb-3">
-            <label class="form-label">Projection</label>
-            <select class="form-select" value="@_selectedProjection" @onchange="OnProjectionChanged">
-                @foreach (var projection in _projections)
-                {
-                    <option value="@projection">@projection</option>
-                }
-            </select>
-        </div>
+    <MudPaper Class="pa-4 mb-3" data-testid="projections-form">
+        <MudText Typo="Typo.h6" Class="mb-2">Rebuild / Verify</MudText>
 
-        <div class="d-flex gap-2 mb-3">
-            <button class="btn btn-primary" @onclick="OpenRebuildConfirmation" disabled="@_isBusy">
+        <MudSelect T="string"
+                   Label="Projection"
+                   Value="@_selectedProjection"
+                   ValueChanged="OnProjectionChanged"
+                   Variant="Variant.Outlined"
+                   Dense="true"
+                   Class="mb-3">
+            @foreach (var projection in _projections)
+            {
+                <MudSelectItem T="string" Value="@projection">@projection</MudSelectItem>
+            }
+        </MudSelect>
+
+        <MudStack Row="true" Spacing="1" Class="mb-3">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenRebuildConfirmation" Disabled="@_isBusy">
                 Rebuild
-            </button>
-            <button class="btn btn-outline-primary" @onclick="VerifyAsync" disabled="@_isBusy">
+            </MudButton>
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="VerifyAsync" Disabled="@_isBusy">
                 Verify
-            </button>
-        </div>
+            </MudButton>
+        </MudStack>
 
         @if (_rebuildResult is not null)
         {
-            var resultClass = _rebuildResult.ChecksumMatch && _rebuildResult.Swapped
-                ? "border-success"
-                : "border-danger";
-
-            <div class="card mb-3 @resultClass">
-                <div class="card-header">Rebuild Result</div>
-                <div class="card-body">
-                    <dl class="row mb-0">
-                        <dt class="col-sm-4">Projection</dt>
-                        <dd class="col-sm-8">@_rebuildResult.ProjectionName</dd>
-
-                        <dt class="col-sm-4">Events Processed</dt>
-                        <dd class="col-sm-8">@_rebuildResult.EventsProcessed</dd>
-
-                        <dt class="col-sm-4">Checksum Match</dt>
-                        <dd class="col-sm-8">@_rebuildResult.ChecksumMatch</dd>
-
-                        <dt class="col-sm-4">Swapped</dt>
-                        <dd class="col-sm-8">@_rebuildResult.Swapped</dd>
-
-                        <dt class="col-sm-4">Duration</dt>
-                        <dd class="col-sm-8">@_rebuildResult.Duration</dd>
-                    </dl>
-                </div>
-            </div>
+            var success = _rebuildResult.ChecksumMatch && _rebuildResult.Swapped;
+            <MudAlert Severity="@(success ? Severity.Success : Severity.Error)" Variant="Variant.Outlined" Dense="true" Class="mb-3">
+                <MudText Typo="Typo.subtitle2">Rebuild Result</MudText>
+                <MudText Typo="Typo.body2">Projection: @_rebuildResult.ProjectionName</MudText>
+                <MudText Typo="Typo.body2">Events Processed: @_rebuildResult.EventsProcessed</MudText>
+                <MudText Typo="Typo.body2">Checksum Match: @_rebuildResult.ChecksumMatch</MudText>
+                <MudText Typo="Typo.body2">Swapped: @_rebuildResult.Swapped</MudText>
+                <MudText Typo="Typo.body2">Duration: @_rebuildResult.Duration</MudText>
+            </MudAlert>
         }
 
         @if (_verifyResult is not null)
         {
-            var verifyClass = _verifyResult.ChecksumMatch
-                ? "alert-success"
-                : "alert-danger";
-
-            <div class="alert @verifyClass mb-0" role="alert">
+            <MudAlert Severity="@(_verifyResult.ChecksumMatch ? Severity.Success : Severity.Error)" Variant="Variant.Outlined" Dense="true">
                 <strong>Verify:</strong> ChecksumMatch=@_verifyResult.ChecksumMatch,
                 ProductionRows=@_verifyResult.ProductionRowCount,
                 ShadowRows=@_verifyResult.ShadowRowCount
-            </div>
+            </MudAlert>
         }
-    </div>
-</div>
+    </MudPaper>
 
-<div class="card shadow-sm">
-    <div class="card-header">Runbook</div>
-    <div class="card-body">
-        <p class="mb-2">Use this quick checklist before and after projection rebuilds.</p>
+    <MudPaper Class="pa-4">
+        <MudText Typo="Typo.h6" Class="mb-2">Runbook</MudText>
+        <MudText Typo="Typo.body2" Class="mb-2">Use this quick checklist before and after projection rebuilds.</MudText>
         <ol class="mb-2">
             <li>Check lag table above and confirm projection status.</li>
             <li>Run `Verify` first; use `Rebuild` only when mismatch or corruption is confirmed.</li>
             <li>After rebuild, verify `ChecksumMatch=true` and lag returns to healthy.</li>
             <li>Capture traceId for failed operations and share with support.</li>
         </ol>
-        <a href="docs/master-data/master-data-06-ops-runbook-projections.md" target="_blank" rel="noopener noreferrer">
+        <MudLink Href="docs/master-data/master-data-06-ops-runbook-projections.md" Target="_blank" Rel="noopener noreferrer">
             Open Projection Runbook
-        </a>
-    </div>
+        </MudLink>
+    </MudPaper>
 </div>
 
 <ConfirmDialog Title="Rebuild projection?"
@@ -189,9 +163,10 @@
         await RefreshLagAsync(clearErrorOnSuccess: true);
     }
 
-    private void OnProjectionChanged(ChangeEventArgs args)
+    private Task OnProjectionChanged(string projection)
     {
-        _selectedProjection = args.Value?.ToString() ?? "LocationBalance";
+        _selectedProjection = string.IsNullOrWhiteSpace(projection) ? "LocationBalance" : projection;
+        return Task.CompletedTask;
     }
 
     private void OpenRebuildConfirmation()
