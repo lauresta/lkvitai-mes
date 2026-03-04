@@ -5,75 +5,74 @@
 
 <PageTitle>Create Sales Order - LKvitai.MES</PageTitle>
 
-<h1>Create Sales Order</h1>
+<div data-testid="sales-order-create-page">
+    <MudText Typo="Typo.h5" Class="mb-3">Create Sales Order</MudText>
 
-@if (_apiError is not null)
-{
-    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
-                 TraceId="@_apiError.TraceId"
-                 OnRetry="LoadLookupDataAsync"
-                 OnDismiss="DismissError" />
-}
+    @if (_apiError is not null)
+    {
+        <div data-testid="sales-order-create-error">
+            <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                         TraceId="@_apiError.TraceId"
+                         OnRetry="LoadLookupDataAsync"
+                         OnDismiss="DismissError" />
+        </div>
+    }
 
-<div class="card shadow-sm position-relative">
-    <LoadingSpinner IsLoading="_isLoading || _isSubmitting" />
+    <MudPaper Class="pa-4 position-relative" data-testid="sales-order-create-form">
+        <LoadingSpinner IsLoading="_isLoading || _isSubmitting" />
 
-    <div class="card-body">
-        <div class="row g-3">
-            <div class="col-md-6">
-                <label class="form-label" for="customer">Customer</label>
-                <select id="customer"
-                        class="form-select"
-                        @bind="_selectedCustomerId"
-                        @bind:after="OnCustomerChangedAsync">
-                    <option value="">Select customer</option>
+        <MudGrid Spacing="3" AlignItems="AlignItems.End">
+            <MudItem xs="12" md="6">
+                <MudSelect T="Guid?"
+                           Label="Customer"
+                           @bind-Value="_selectedCustomerId"
+                           @bind-Value:after="OnCustomerChangedAsync"
+                           Variant="Variant.Outlined"
+                           Dense="true"
+                           @attributes="CustomerAttributes">
+                    <MudSelectItem T="Guid?" Value="@((Guid?)null)">Select customer</MudSelectItem>
                     @foreach (var customer in _customers)
                     {
-                        <option value="@customer.Id">@customer.CustomerCode - @customer.Name</option>
+                        <MudSelectItem T="Guid?" Value="@((Guid?)customer.Id)">@customer.CustomerCode - @customer.Name</MudSelectItem>
                     }
-                </select>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label" for="delivery-date">Requested Delivery Date</label>
-                <input id="delivery-date" type="date" class="form-control" @bind="_requestedDeliveryDate" />
-            </div>
-            <div class="col-md-3 d-flex align-items-end">
-                <button class="btn btn-outline-secondary" @onclick="BackToList" disabled="@_isSubmitting">Back to List</button>
-            </div>
-        </div>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="3">
+                <MudDatePicker Label="Requested Delivery Date"
+                               @bind-Date="_requestedDeliveryDate"
+                               DateFormat="yyyy-MM-dd"
+                               Variant="Variant.Outlined"
+                               Dense="true"
+                               @attributes="DeliveryDateAttributes" />
+            </MudItem>
+            <MudItem xs="12" md="3">
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Default"
+                           Disabled="@_isSubmitting"
+                           OnClick="BackToList"
+                           FullWidth="true">
+                    Back to List
+                </MudButton>
+            </MudItem>
+        </MudGrid>
 
-        <hr />
+        <MudDivider Class="my-4" />
 
-        <h5>Shipping Address</h5>
-        <div class="row g-2">
-            <div class="col-md-6">
-                <label class="form-label">Street</label>
-                <input class="form-control" @bind="_shippingStreet" />
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">City</label>
-                <input class="form-control" @bind="_shippingCity" />
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">State</label>
-                <input class="form-control" @bind="_shippingState" />
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Zip</label>
-                <input class="form-control" @bind="_shippingZipCode" />
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Country</label>
-                <input class="form-control" @bind="_shippingCountry" />
-            </div>
-        </div>
+        <MudText Typo="Typo.h6" Class="mb-2">Shipping Address</MudText>
+        <MudGrid Spacing="2">
+            <MudItem xs="12" md="6"><MudTextField T="string" Label="Street" @bind-Value="_shippingStreet" Variant="Variant.Outlined" Dense="true" /></MudItem>
+            <MudItem xs="12" md="3"><MudTextField T="string" Label="City" @bind-Value="_shippingCity" Variant="Variant.Outlined" Dense="true" /></MudItem>
+            <MudItem xs="12" md="3"><MudTextField T="string" Label="State" @bind-Value="_shippingState" Variant="Variant.Outlined" Dense="true" /></MudItem>
+            <MudItem xs="12" md="3"><MudTextField T="string" Label="Zip" @bind-Value="_shippingZipCode" Variant="Variant.Outlined" Dense="true" /></MudItem>
+            <MudItem xs="12" md="3"><MudTextField T="string" Label="Country" @bind-Value="_shippingCountry" Variant="Variant.Outlined" Dense="true" /></MudItem>
+        </MudGrid>
 
-        <hr />
+        <MudDivider Class="my-4" />
 
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <h5 class="mb-0">Order Lines</h5>
-            <button class="btn btn-sm btn-outline-primary" @onclick="AddLine" disabled="@_isSubmitting">+ Add Line</button>
-        </div>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-2">
+            <MudText Typo="Typo.h6">Order Lines</MudText>
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="AddLine" Disabled="@_isSubmitting">+ Add Line</MudButton>
+        </MudStack>
 
         @if (_lines.Count == 0)
         {
@@ -84,54 +83,52 @@
         }
         else
         {
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead>
-                        <tr>
-                            <th style="width: 50%;">Item</th>
-                            <th style="width: 15%;">Qty</th>
-                            <th style="width: 20%;">Unit Price</th>
-                            <th style="width: 15%;">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @for (var i = 0; i < _lines.Count; i++)
-                        {
-                            var line = _lines[i];
-                            <tr>
-                                <td>
-                                    <select class="form-select" @bind="line.ItemId">
-                                        <option value="">Select item</option>
-                                        @foreach (var item in _items)
-                                        {
-                                            <option value="@item.Id">@item.InternalSKU - @item.Name</option>
-                                        }
-                                    </select>
-                                </td>
-                                <td>
-                                    <input class="form-control" type="number" min="0.01" step="0.01" @bind="line.Qty" />
-                                </td>
-                                <td>
-                                    <input class="form-control" type="number" min="0" step="0.01" @bind="line.UnitPrice" />
-                                </td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-danger"
-                                            @onclick="() => RemoveLine(i)"
-                                            disabled="@(_isSubmitting || _lines.Count == 1)">
-                                        Remove
-                                    </button>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
+            <MudTable Items="_lines" Dense="true" Hover="true">
+                <HeaderContent>
+                    <MudTh style="width: 50%;">Item</MudTh>
+                    <MudTh style="width: 15%;">Qty</MudTh>
+                    <MudTh style="width: 20%;">Unit Price</MudTh>
+                    <MudTh style="width: 15%;">Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>
+                        <MudSelect T="int?" @bind-Value="context.ItemId" Variant="Variant.Outlined" Dense="true">
+                            <MudSelectItem T="int?" Value="@((int?)null)">Select item</MudSelectItem>
+                            @foreach (var item in _items)
+                            {
+                                <MudSelectItem T="int?" Value="@((int?)item.Id)">@item.InternalSKU - @item.Name</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudTd>
+                    <MudTd>
+                        <MudNumericField T="decimal" Min="0.01m" Step="0.01m" @bind-Value="context.Qty" Variant="Variant.Outlined" Dense="true" />
+                    </MudTd>
+                    <MudTd>
+                        <MudNumericField T="decimal" Min="0m" Step="0.01m" @bind-Value="context.UnitPrice" Variant="Variant.Outlined" Dense="true" />
+                    </MudTd>
+                    <MudTd>
+                        <MudButton Variant="Variant.Outlined"
+                                   Size="Size.Small"
+                                   Color="Color.Error"
+                                   Disabled="@(_isSubmitting || _lines.Count == 1)"
+                                   OnClick="() => RemoveLine(_lines.IndexOf(context))">
+                            Remove
+                        </MudButton>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
         }
 
-        <div class="d-flex justify-content-end mt-3">
-            <button class="btn btn-primary" @onclick="CreateAsync" disabled="@_isSubmitting">Create Sales Order</button>
-        </div>
-    </div>
+        <MudStack Row="true" Justify="Justify.FlexEnd" Class="mt-3">
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       Disabled="@_isSubmitting"
+                       OnClick="CreateAsync"
+                       @attributes="SubmitAttributes">
+                Create Sales Order
+            </MudButton>
+        </MudStack>
+    </MudPaper>
 </div>
 
 @code {
@@ -142,7 +139,7 @@
     private bool _isSubmitting;
     private ApiException? _apiError;
 
-    private string _selectedCustomerId = string.Empty;
+    private Guid? _selectedCustomerId;
     private DateTime? _requestedDeliveryDate;
 
     private string _shippingStreet = string.Empty;
@@ -150,6 +147,10 @@
     private string _shippingState = string.Empty;
     private string _shippingZipCode = string.Empty;
     private string _shippingCountry = string.Empty;
+
+    private static readonly Dictionary<string, object> CustomerAttributes = new() { ["data-testid"] = "sales-order-create-customer" };
+    private static readonly Dictionary<string, object> DeliveryDateAttributes = new() { ["data-testid"] = "sales-order-create-date" };
+    private static readonly Dictionary<string, object> SubmitAttributes = new() { ["data-testid"] = "sales-order-create-submit" };
 
     protected override async Task OnInitializedAsync()
     {
@@ -185,12 +186,12 @@
 
     private Task OnCustomerChangedAsync()
     {
-        if (!Guid.TryParse(_selectedCustomerId, out var customerId))
+        if (!_selectedCustomerId.HasValue)
         {
             return Task.CompletedTask;
         }
 
-        var customer = _customers.FirstOrDefault(x => x.Id == customerId);
+        var customer = _customers.FirstOrDefault(x => x.Id == _selectedCustomerId.Value);
         if (customer?.DefaultShippingAddress is null)
         {
             return Task.CompletedTask;
@@ -227,7 +228,7 @@
 
     private async Task CreateAsync()
     {
-        if (!Guid.TryParse(_selectedCustomerId, out var customerId))
+        if (!_selectedCustomerId.HasValue)
         {
             ToastService.ShowError("Select a customer.");
             return;
@@ -257,7 +258,7 @@
             var request = new SalesOrderCreateRequestDto
             {
                 CommandId = Guid.NewGuid(),
-                CustomerId = customerId,
+                CustomerId = _selectedCustomerId.Value,
                 RequestedDeliveryDate = _requestedDeliveryDate,
                 ShippingAddress = BuildShippingAddress(),
                 Lines = normalizedLines

@@ -19,8 +19,9 @@ public sealed class P01InboundNavigationValidationTests : PlaywrightUiTestBase
         {
             await NavigateAsync(page, "/warehouse/inbound/shipments/create");
 
-            await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Create Inbound Shipment" })).ToBeVisibleAsync();
-            await page.GetByRole(AriaRole.Button, new() { Name = "Create Shipment" }).ClickAsync();
+            await Expect(page.GetByTestId("inbound-shipment-create-form")).ToBeVisibleAsync();
+            await page.GetByTestId("inbound-shipment-create-submit")
+                .ClickAsync(new LocatorClickOptions { Force = true });
 
             var validationError = page.GetByText("Supplier is required.");
             var errorBanner = page.GetByTestId("shared-error-banner");
@@ -35,6 +36,33 @@ public sealed class P01InboundNavigationValidationTests : PlaywrightUiTestBase
             }
 
             Assert.Contains("/warehouse/inbound/shipments/create", page.Url, StringComparison.OrdinalIgnoreCase);
+        });
+    }
+
+    [Fact]
+    public async Task Outbound_CreatePage_BlocksSubmit_WhenCustomerMissing()
+    {
+        await RunUiAsync(nameof(Outbound_CreatePage_BlocksSubmit_WhenCustomerMissing), async page =>
+        {
+            await NavigateAsync(page, "/warehouse/sales/orders/create");
+
+            await Expect(page.GetByTestId("sales-order-create-form")).ToBeVisibleAsync();
+            await page.GetByTestId("sales-order-create-submit")
+                .ClickAsync(new LocatorClickOptions { Force = true });
+
+            var validationError = page.GetByText("Select a customer.");
+            var errorBanner = page.GetByTestId("shared-error-banner");
+
+            if (await validationError.IsVisibleAsync() || await errorBanner.IsVisibleAsync())
+            {
+                Assert.True(true);
+            }
+            else
+            {
+                await Expect(page.GetByTestId("sales-order-create-form")).ToBeVisibleAsync();
+            }
+
+            Assert.Contains("/warehouse/sales/orders/create", page.Url, StringComparison.OrdinalIgnoreCase);
         });
     }
 }

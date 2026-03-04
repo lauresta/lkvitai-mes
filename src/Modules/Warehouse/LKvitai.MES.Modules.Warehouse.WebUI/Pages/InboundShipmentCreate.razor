@@ -6,50 +6,70 @@
 
 <PageTitle>Create Inbound Shipment - LKvitai.MES</PageTitle>
 
-<h1>Create Inbound Shipment</h1>
+<div data-testid="inbound-shipment-create-page">
+    <MudText Typo="Typo.h5" Class="mb-3">Create Inbound Shipment</MudText>
 
-@if (_apiError is not null)
-{
-    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
-                 TraceId="@_apiError.TraceId"
-                 OnRetry="LoadLookupDataAsync"
-                 OnDismiss="DismissError" />
-}
+    @if (_apiError is not null)
+    {
+        <div data-testid="inbound-shipment-create-error">
+            <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                         TraceId="@_apiError.TraceId"
+                         OnRetry="LoadLookupDataAsync"
+                         OnDismiss="DismissError" />
+        </div>
+    }
 
-<div class="card shadow-sm position-relative">
-    <LoadingSpinner IsLoading="_isLoading || _isSubmitting" />
+    <MudPaper Class="pa-4 position-relative" data-testid="inbound-shipment-create-form">
+        <LoadingSpinner IsLoading="_isLoading || _isSubmitting" />
 
-    <div class="card-body">
-        <div class="row g-3">
-            <div class="col-md-4">
-                <label class="form-label">Reference Number</label>
-                <input class="form-control" @bind="_referenceNumber" />
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">Supplier</label>
-                <select class="form-select" @bind="_supplierId">
-                    <option value="">Select supplier</option>
+        <MudGrid Spacing="3" AlignItems="AlignItems.End">
+            <MudItem xs="12" md="4">
+                <MudTextField T="string"
+                              Label="Reference Number"
+                              @bind-Value="_referenceNumber"
+                              Variant="Variant.Outlined"
+                              Dense="true"
+                              @attributes="ReferenceAttributes" />
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudSelect T="int?"
+                           Label="Supplier"
+                           @bind-Value="_supplierId"
+                           Variant="Variant.Outlined"
+                           Dense="true"
+                           @attributes="SupplierAttributes">
+                    <MudSelectItem T="int?" Value="@((int?)null)">Select supplier</MudSelectItem>
                     @foreach (var supplier in _suppliers)
                     {
-                        <option value="@supplier.Id">@supplier.Code - @supplier.Name</option>
+                        <MudSelectItem T="int?" Value="@((int?)supplier.Id)">@supplier.Code - @supplier.Name</MudSelectItem>
                     }
-                </select>
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">Expected Date</label>
-                <input type="date" class="form-control" @bind="_expectedDate" />
-            </div>
-            <div class="col-md-2 d-flex align-items-end">
-                <button class="btn btn-outline-secondary" @onclick="BackToList">Back</button>
-            </div>
-        </div>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="2">
+                <MudDatePicker Label="Expected Date"
+                               @bind-Date="_expectedDate"
+                               DateFormat="yyyy-MM-dd"
+                               Variant="Variant.Outlined"
+                               Dense="true"
+                               @attributes="ExpectedDateAttributes" />
+            </MudItem>
+            <MudItem xs="12" md="2">
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Default"
+                           Disabled="@_isSubmitting"
+                           OnClick="BackToList"
+                           FullWidth="true">
+                    Back
+                </MudButton>
+            </MudItem>
+        </MudGrid>
 
-        <hr />
+        <MudDivider Class="my-4" />
 
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <h5 class="mb-0">Lines</h5>
-            <button class="btn btn-sm btn-outline-primary" @onclick="AddLine" disabled="@_isSubmitting">+ Add Line</button>
-        </div>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-2">
+            <MudText Typo="Typo.h6">Lines</MudText>
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" Disabled="@_isSubmitting" OnClick="AddLine">+ Add Line</MudButton>
+        </MudStack>
 
         @if (_lines.Count == 0)
         {
@@ -60,50 +80,48 @@
         }
         else
         {
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead>
-                        <tr>
-                            <th style="width: 65%;">Item</th>
-                            <th style="width: 20%;">Expected Qty</th>
-                            <th style="width: 15%;">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @for (var i = 0; i < _lines.Count; i++)
-                        {
-                            var line = _lines[i];
-                            <tr>
-                                <td>
-                                    <select class="form-select" @bind="line.ItemId">
-                                        <option value="">Select item</option>
-                                        @foreach (var item in _items)
-                                        {
-                                            <option value="@item.Id">@item.InternalSKU - @item.Name</option>
-                                        }
-                                    </select>
-                                </td>
-                                <td>
-                                    <input type="number" min="0.01" step="0.01" class="form-control" @bind="line.ExpectedQty" />
-                                </td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-danger"
-                                            disabled="@(_isSubmitting || _lines.Count == 1)"
-                                            @onclick="() => RemoveLine(i)">
-                                        Remove
-                                    </button>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
+            <MudTable Items="_lines" Dense="true" Hover="true">
+                <HeaderContent>
+                    <MudTh style="width:65%;">Item</MudTh>
+                    <MudTh style="width:20%;">Expected Qty</MudTh>
+                    <MudTh style="width:15%;">Actions</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>
+                        <MudSelect T="int?" @bind-Value="context.ItemId" Variant="Variant.Outlined" Dense="true">
+                            <MudSelectItem T="int?" Value="@((int?)null)">Select item</MudSelectItem>
+                            @foreach (var item in _items)
+                            {
+                                <MudSelectItem T="int?" Value="@((int?)item.Id)">@item.InternalSKU - @item.Name</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudTd>
+                    <MudTd>
+                        <MudNumericField T="decimal" Min="0.01m" Step="0.01m" @bind-Value="context.ExpectedQty" Variant="Variant.Outlined" Dense="true" />
+                    </MudTd>
+                    <MudTd>
+                        <MudButton Variant="Variant.Outlined"
+                                   Size="Size.Small"
+                                   Color="Color.Error"
+                                   Disabled="@(_isSubmitting || _lines.Count == 1)"
+                                   OnClick="() => RemoveLine(_lines.IndexOf(context))">
+                            Remove
+                        </MudButton>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
         }
 
-        <div class="d-flex justify-content-end mt-3">
-            <button class="btn btn-primary" @onclick="CreateAsync" disabled="@_isSubmitting">Create Shipment</button>
-        </div>
-    </div>
+        <MudStack Row="true" Justify="Justify.FlexEnd" Class="mt-3">
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       Disabled="@_isSubmitting"
+                       OnClick="CreateAsync"
+                       @attributes="SubmitAttributes">
+                Create Shipment
+            </MudButton>
+        </MudStack>
+    </MudPaper>
 </div>
 
 @code {
@@ -116,8 +134,13 @@
     private ApiException? _apiError;
 
     private string _referenceNumber = $"IN-{DateTime.UtcNow:yyyyMMdd-HHmmss}";
-    private string _supplierId = string.Empty;
+    private int? _supplierId;
     private DateTime? _expectedDate;
+
+    private static readonly Dictionary<string, object> ReferenceAttributes = new() { ["data-testid"] = "inbound-shipment-create-reference" };
+    private static readonly Dictionary<string, object> SupplierAttributes = new() { ["data-testid"] = "inbound-shipment-create-supplier" };
+    private static readonly Dictionary<string, object> ExpectedDateAttributes = new() { ["data-testid"] = "inbound-shipment-create-date" };
+    private static readonly Dictionary<string, object> SubmitAttributes = new() { ["data-testid"] = "inbound-shipment-create-submit" };
 
     protected override async Task OnInitializedAsync()
     {
@@ -180,7 +203,7 @@
             return;
         }
 
-        if (!int.TryParse(_supplierId, out var supplierId) || supplierId <= 0)
+        if (!_supplierId.HasValue || _supplierId.Value <= 0)
         {
             ToastService.ShowError("Supplier is required.");
             return;
@@ -209,7 +232,7 @@
             var request = new CreateInboundShipmentRequestDto
             {
                 ReferenceNumber = _referenceNumber.Trim(),
-                SupplierId = supplierId,
+                SupplierId = _supplierId.Value,
                 Type = "PO",
                 ExpectedDate = _expectedDate.HasValue ? DateOnly.FromDateTime(_expectedDate.Value.Date) : null,
                 Lines = lines
