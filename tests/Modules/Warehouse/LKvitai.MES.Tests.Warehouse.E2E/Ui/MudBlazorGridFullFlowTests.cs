@@ -383,6 +383,30 @@ public sealed class MudBlazorGridFullFlowTests : PlaywrightUiTestBase
     }
 
     [Fact]
+    public async Task StockAdjustments_PageSmoke()
+    {
+        await RunUiAsync(nameof(StockAdjustments_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/warehouse/stock/adjustments");
+
+            await Expect(ByTestId(page, "stock-adjustments-page")).ToBeVisibleAsync();
+
+            var grid = ByTestId(page, "stock-adjustments-grid");
+            var empty = ByTestId(page, "stock-adjustments-empty");
+            var error = ByTestId(page, "stock-adjustments-error");
+            var sharedError = page.GetByTestId("shared-error-banner");
+
+            var gridVisible = await grid.CountAsync() > 0 && await grid.IsVisibleAsync();
+            var emptyVisible = await empty.CountAsync() > 0 && await empty.IsVisibleAsync();
+            var errorVisible = await error.CountAsync() > 0 && await error.IsVisibleAsync();
+            var sharedErrorVisible = await sharedError.CountAsync() > 0 && await sharedError.IsVisibleAsync();
+
+            Assert.True(gridVisible || emptyVisible || errorVisible || sharedErrorVisible,
+                "Expected stock adjustments grid, empty state, or error banner to be visible.");
+        });
+    }
+
+    [Fact]
     public async Task StockLocationBalance_PageSmoke()
     {
         await RunUiAsync(nameof(StockLocationBalance_PageSmoke), async page =>

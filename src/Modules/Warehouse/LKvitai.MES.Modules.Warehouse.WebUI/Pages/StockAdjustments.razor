@@ -8,112 +8,108 @@
 
 <PageTitle>Stock Adjustments</PageTitle>
 
-<h1>Stock Adjustments</h1>
+<div data-testid="stock-adjustments-page">
+    <MudText Typo="Typo.h5" Class="mb-3">Stock Adjustments</MudText>
 
-@if (_apiError is not null)
-{
-    <ErrorBanner Message="@BuildErrorMessage(_apiError)" TraceId="@_apiError.TraceId" OnRetry="LoadHistoryAsync" OnDismiss="DismissError" />
-}
+    @if (_apiError is not null)
+    {
+        <div data-testid="stock-adjustments-error" class="mb-3">
+            <ErrorBanner Message="@BuildErrorMessage(_apiError)" TraceId="@_apiError.TraceId" OnRetry="LoadHistoryAsync" OnDismiss="DismissError" />
+        </div>
+    }
 
-<div class="card shadow-sm mb-3">
-    <div class="card-body">
-        <h5>Create Adjustment</h5>
-        <div class="row g-2">
-            <div class="col-md-3">
-                <label class="form-label">Item</label>
-                <select class="form-select" @bind="_itemId">
-                    <option value="0">Select item</option>
+    <MudPaper Class="pa-4 mb-3" data-testid="stock-adjustments-form">
+        <MudText Typo="Typo.h6" Class="mb-2">Create Adjustment</MudText>
+
+        <MudGrid Spacing="2">
+            <MudItem xs="12" md="3">
+                <MudSelect T="int" Label="Item" @bind-Value="_itemId" Variant="Variant.Outlined" Dense="true" data-testid="stock-adjustments-item">
+                    <MudSelectItem T="int" Value="0">Select item</MudSelectItem>
                     @foreach (var item in _items)
                     {
-                        <option value="@item.Id">@item.InternalSKU - @item.Name</option>
+                        <MudSelectItem T="int" Value="@item.Id">@item.InternalSKU - @item.Name</MudSelectItem>
                     }
-                </select>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Location</label>
-                <select class="form-select" @bind="_locationId">
-                    <option value="0">Select location</option>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="3">
+                <MudSelect T="int" Label="Location" @bind-Value="_locationId" Variant="Variant.Outlined" Dense="true" data-testid="stock-adjustments-location">
+                    <MudSelectItem T="int" Value="0">Select location</MudSelectItem>
                     @foreach (var loc in _locations)
                     {
-                        <option value="@loc.Id">@loc.Code</option>
+                        <MudSelectItem T="int" Value="@loc.Id">@loc.Code</MudSelectItem>
                     }
-                </select>
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">Qty Delta</label>
-                <input type="number" step="0.01" class="form-control" @bind="_qtyDelta" />
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">Reason</label>
-                <select class="form-select" @bind="_reasonCode">
-                    <option value="">Select reason</option>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="2">
+                <MudNumericField T="decimal" Label="Qty Delta" @bind-Value="_qtyDelta" Step="0.01m" Variant="Variant.Outlined" Dense="true" data-testid="stock-adjustments-qty" />
+            </MudItem>
+            <MudItem xs="12" md="2">
+                <MudSelect T="string" Label="Reason" @bind-Value="_reasonCode" Variant="Variant.Outlined" Dense="true" data-testid="stock-adjustments-reason">
+                    <MudSelectItem T="string" Value="@string.Empty">Select reason</MudSelectItem>
                     @foreach (var reason in _reasons)
                     {
-                        <option value="@reason.Code">@reason.Code</option>
+                        <MudSelectItem T="string" Value="@reason.Code">@reason.Code</MudSelectItem>
                     }
-                </select>
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">Lot Id (optional)</label>
-                <input type="number" min="1" class="form-control" @bind="_lotId" />
-            </div>
-            <div class="col-12">
-                <label class="form-label">Notes</label>
-                <input class="form-control" @bind="_notes" />
-            </div>
-        </div>
-        <div class="mt-3 d-flex gap-2">
-            <button class="btn btn-primary" @onclick="CreateAsync" disabled="@_isSubmitting">Create</button>
-            <button class="btn btn-outline-secondary" @onclick="LoadHistoryAsync" disabled="@_isLoading">Refresh History</button>
-        </div>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="12" md="2">
+                <MudNumericField T="int?" Label="Lot Id (optional)" @bind-Value="_lotId" Min="1" Variant="Variant.Outlined" Dense="true" data-testid="stock-adjustments-lot" />
+            </MudItem>
+            <MudItem xs="12">
+                <MudTextField T="string" Label="Notes" @bind-Value="_notes" Variant="Variant.Outlined" Dense="true" data-testid="stock-adjustments-notes" />
+            </MudItem>
+        </MudGrid>
+
+        <MudStack Row="true" Spacing="1" Class="mt-3">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="CreateAsync" Disabled="@_isSubmitting" data-testid="stock-adjustments-submit">Create</MudButton>
+            <MudButton Variant="Variant.Outlined" OnClick="LoadHistoryAsync" Disabled="@_isLoading">Refresh History</MudButton>
+        </MudStack>
+
         @if (!string.IsNullOrWhiteSpace(_warning))
         {
-            <div class="alert alert-warning mt-3 mb-0">@_warning</div>
+            <MudAlert Severity="Severity.Warning" Variant="Variant.Outlined" Dense="true" Class="mt-3 mb-0">@_warning</MudAlert>
         }
-    </div>
-</div>
+    </MudPaper>
 
-<div class="card shadow-sm position-relative">
-    <LoadingSpinner IsLoading="_isLoading" />
-    <div class="card-body">
-        <h5>Adjustment History</h5>
-        <div class="table-responsive">
-            <table class="table table-sm table-hover align-middle">
-                <thead>
-                    <tr>
-                        <th>Timestamp</th>
-                        <th>SKU</th>
-                        <th>Location</th>
-                        <th class="text-end">Qty Delta</th>
-                        <th>Reason</th>
-                        <th>User</th>
-                        <th>Notes</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if (_history.Count == 0)
-                    {
-                        <tr><td colspan="7">No adjustment records.</td></tr>
-                    }
-                    else
-                    {
-                        @foreach (var row in _history)
-                        {
-                            <tr>
-                                <td>@row.Timestamp.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
-                                <td>@row.ItemSku</td>
-                                <td>@row.LocationCode</td>
-                                <td class="text-end @(row.QtyDelta < 0 ? "text-danger" : "text-success")">@row.QtyDelta</td>
-                                <td>@row.ReasonCode</td>
-                                <td>@(row.UserName ?? row.UserId)</td>
-                                <td>@(row.Notes ?? "-")</td>
-                            </tr>
-                        }
-                    }
-                </tbody>
-            </table>
-        </div>
-    </div>
+    <MudPaper Class="pa-4 position-relative">
+        <LoadingSpinner IsLoading="_isLoading" />
+        <MudText Typo="Typo.h6" Class="mb-2">Adjustment History</MudText>
+
+        @if (_history.Count == 0)
+        {
+            <div data-testid="stock-adjustments-empty">
+                <EmptyState Title="No adjustment records"
+                            Message="No adjustment records. Create the first stock adjustment."
+                            IconCss="bi bi-arrow-left-right"
+                            OnAction="LoadHistoryAsync" />
+            </div>
+        }
+        else
+        {
+            <MudTable T="AdjustmentHistoryItemDto" Items="_history" Dense="true" Hover="true" data-testid="stock-adjustments-grid">
+                <HeaderContent>
+                    <MudTh>Timestamp</MudTh>
+                    <MudTh>SKU</MudTh>
+                    <MudTh>Location</MudTh>
+                    <MudTh class="text-right">Qty Delta</MudTh>
+                    <MudTh>Reason</MudTh>
+                    <MudTh>User</MudTh>
+                    <MudTh>Notes</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Timestamp">@context.Timestamp.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</MudTd>
+                    <MudTd DataLabel="SKU">@context.ItemSku</MudTd>
+                    <MudTd DataLabel="Location">@context.LocationCode</MudTd>
+                    <MudTd DataLabel="Qty Delta" Class="text-right">
+                        <MudText Typo="Typo.body2" Color="@(context.QtyDelta < 0 ? Color.Error : Color.Success)">@context.QtyDelta</MudText>
+                    </MudTd>
+                    <MudTd DataLabel="Reason">@context.ReasonCode</MudTd>
+                    <MudTd DataLabel="User">@(context.UserName ?? context.UserId)</MudTd>
+                    <MudTd DataLabel="Notes">@(context.Notes ?? "-")</MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    </MudPaper>
 </div>
 
 @code {
