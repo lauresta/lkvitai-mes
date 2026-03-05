@@ -616,3 +616,22 @@ Matrix verdict:
 - Verification update:
   - `dotnet build src/LKvitai.MES.sln` ✅
   - `dotnet test tests/Modules/Warehouse/LKvitai.MES.Tests.Warehouse.E2E/LKvitai.MES.Tests.Warehouse.E2E.csproj --filter FullyQualifiedName~.Ui.` ✅ (37/37)
+
+## Step: Repair and migrate dashboard shared components to Mud-only markup
+- What I changed:
+  - Fixed broken loading rendering logic in dashboard shared cards (`@if (IsLoading)` had been corrupted by earlier bulk edit).
+  - Converted dashboard shared components to Mud-only primitives:
+    - `StockSummaryCard`
+    - `HealthStatusCard`
+    - `ProjectionHealthCard`
+    - `RecentActivityFeed`
+    - `ReservationSummaryCard`
+  - Replaced remaining bootstrap badges in `StaleBadge` with `MudChip`.
+  - Migrated `LotTraceNodeView` header row from bootstrap utility classes to `MudStack` + Mud text/chip styles.
+- Why:
+  - Prevent regressions from malformed loading blocks and continue Phase 5 cleanup of bootstrap utility dependency in shared components.
+- Result:
+  - Shared dashboard cards now render via Mud components and preserve existing data/error flows.
+- Smoke status:
+  - `dotnet build src/LKvitai.MES.sln` ✅
+  - `dotnet test tests/Modules/Warehouse/LKvitai.MES.Tests.Warehouse.E2E/LKvitai.MES.Tests.Warehouse.E2E.csproj --filter FullyQualifiedName~.Ui.` ✅ (37/37)

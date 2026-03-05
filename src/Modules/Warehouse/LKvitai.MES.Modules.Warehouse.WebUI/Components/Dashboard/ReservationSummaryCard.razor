@@ -1,42 +1,40 @@
-<div class="card shadow-sm h-100 position-relative">
-     (IsLoading)
-        {
-            <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
-        }
+<MudPaper Elevation="2" Class="pa-4 h-100 position-relative">
+    @if (IsLoading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
+    }
 
-    <div class="card-body">
-        <h5 class="card-title mb-3">Reservation Summary</h5>
+    <MudText Typo="Typo.h6" Class="mb-3">Reservation Summary</MudText>
 
-        @if (!string.IsNullOrWhiteSpace(ErrorMessage))
-        {
-            <SharedErrorAlert Message="@ErrorMessage"
-                         TraceId="@TraceId"
-                         OnRetry="OnRetry"
-                         OnDismiss="OnDismiss" />
-        }
-        else if (Data is null)
-        {
-            <p class="text-muted mb-0">No reservation summary available.</p>
-        }
-        else
-        {
-            <ul class="list-group list-group-flush">
-                <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                    <span>ALLOCATED</span>
-                    <span class="badge bg-primary rounded-pill">@Data.Allocated</span>
-                </li>
-                <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                    <span>PICKING</span>
-                    <span class="badge bg-warning text-dark rounded-pill">@Data.Picking</span>
-                </li>
-                <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                    <span>CONSUMED</span>
-                    <span class="badge bg-success rounded-pill">@Data.Consumed</span>
-                </li>
-            </ul>
-        }
-    </div>
-</div>
+    @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+    {
+        <SharedErrorAlert Message="@ErrorMessage"
+                          TraceId="@TraceId"
+                          OnRetry="OnRetry"
+                          OnDismiss="OnDismiss" />
+    }
+    else if (Data is null)
+    {
+        <MudText Typo="Typo.body2" Class="mud-secondary-text">No reservation summary available.</MudText>
+    }
+    else
+    {
+        <MudStack Spacing="1">
+            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                <MudText Typo="Typo.body2">ALLOCATED</MudText>
+                <MudChip Color="Color.Primary" Size="Size.Small">@Data.Allocated</MudChip>
+            </MudStack>
+            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                <MudText Typo="Typo.body2">PICKING</MudText>
+                <MudChip Color="Color.Warning" Size="Size.Small">@Data.Picking</MudChip>
+            </MudStack>
+            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                <MudText Typo="Typo.body2">CONSUMED</MudText>
+                <MudChip Color="Color.Success" Size="Size.Small">@Data.Consumed</MudChip>
+            </MudStack>
+        </MudStack>
+    }
+</MudPaper>
 
 @code {
     [Parameter]

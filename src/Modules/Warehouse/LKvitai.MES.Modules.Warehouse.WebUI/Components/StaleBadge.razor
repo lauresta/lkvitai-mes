@@ -1,6 +1,6 @@
 @if (!EffectiveLagSeconds.HasValue)
 {
-    <span class="badge bg-secondary">Unknown</span>
+    <MudChip Color="Color.Default" Size="Size.Small">Unknown</MudChip>
 }
 else if (EffectiveLagSeconds.Value < WarnSeconds)
 {
@@ -8,11 +8,11 @@ else if (EffectiveLagSeconds.Value < WarnSeconds)
 }
 else if (EffectiveLagSeconds.Value < AlertSeconds)
 {
-    <span class="badge bg-warning text-dark">Stale</span>
+    <MudChip Color="Color.Warning" Size="Size.Small">Stale</MudChip>
 }
 else
 {
-    <span class="badge bg-danger">Stale</span>
+    <MudChip Color="Color.Error" Size="Size.Small">Stale</MudChip>
 }
 
 @code {

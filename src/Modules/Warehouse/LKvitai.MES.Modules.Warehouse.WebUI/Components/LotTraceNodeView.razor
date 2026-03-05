@@ -3,17 +3,17 @@
 
 @if (Node is not null)
 {
-    <div class="lot-trace-node ps-2">
-        <div class="d-flex align-items-center gap-2">
-            <span class="badge bg-secondary text-uppercase">@Node.NodeType</span>
-            <span class="fw-semibold">@Node.NodeName</span>
-            <span class="text-muted small">(@Node.NodeId)</span>
-            <span class="text-muted small">@Node.Timestamp.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</span>
-        </div>
+    <div class="lot-trace-node pl-2">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1">
+            <MudChip Color="Color.Default" Size="Size.Small">@Node.NodeType.ToUpperInvariant()</MudChip>
+            <MudText Typo="Typo.subtitle2">@Node.NodeName</MudText>
+            <MudText Typo="Typo.caption" Class="mud-secondary-text">(@Node.NodeId)</MudText>
+            <MudText Typo="Typo.caption" Class="mud-secondary-text">@Node.Timestamp.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</MudText>
+        </MudStack>
 
         @if (Node.Children?.Count > 0)
         {
-            <div class="ps-3 border-start mt-2">
+            <div class="pl-3 mt-2 lot-trace-branch">
                 @foreach (var child in Node.Children)
                 {
                     <LotTraceNodeView Node="child" />

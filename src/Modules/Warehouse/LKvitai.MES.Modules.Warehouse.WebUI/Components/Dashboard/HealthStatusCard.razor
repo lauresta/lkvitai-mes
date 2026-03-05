@@ -1,40 +1,42 @@
-<div class="card shadow-sm h-100 position-relative">
-     (IsLoading)
-        {
-            <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
-        }
+<MudPaper Elevation="2" Class="pa-4 h-100 position-relative">
+    @if (IsLoading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
+    }
 
-    <div class="card-body">
-        <h5 class="card-title mb-3">Service Health</h5>
+    <MudText Typo="Typo.h6" Class="mb-3">Service Health</MudText>
 
-        @if (!string.IsNullOrWhiteSpace(ErrorMessage))
-        {
-            <SharedErrorAlert Message="@ErrorMessage"
-                         TraceId="@TraceId"
-                         OnRetry="OnRetry"
-                         OnDismiss="OnDismiss" />
-        }
-        else if (Data is null)
-        {
-            <p class="text-muted mb-0">No health data available.</p>
-        }
-        else
-        {
-            <dl class="row mb-0">
-                <dt class="col-5">Status</dt>
-                <dd class="col-7">
-                    <span class="badge @GetStatusClass(Data)">@Data.EffectiveStatus.ToUpperInvariant()</span>
-                </dd>
-
-                <dt class="col-5">Projection lag</dt>
-                <dd class="col-7">@FormatLag(Data.ProjectionLag)</dd>
-
-                <dt class="col-5">Last check</dt>
-                <dd class="col-7">@FormatTimestamp(Data.EffectiveLastCheck)</dd>
-            </dl>
-        }
-    </div>
-</div>
+    @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+    {
+        <SharedErrorAlert Message="@ErrorMessage"
+                          TraceId="@TraceId"
+                          OnRetry="OnRetry"
+                          OnDismiss="OnDismiss" />
+    }
+    else if (Data is null)
+    {
+        <MudText Typo="Typo.body2" Class="mud-secondary-text">No health data available.</MudText>
+    }
+    else
+    {
+        <MudStack Spacing="1">
+            <MudStack Row="true" Justify="Justify.SpaceBetween">
+                <MudText Typo="Typo.body2">Status</MudText>
+                <MudChip Color="@GetStatusColor(Data)" Size="Size.Small" Variant="Variant.Filled">
+                    @Data.EffectiveStatus.ToUpperInvariant()
+                </MudChip>
+            </MudStack>
+            <MudStack Row="true" Justify="Justify.SpaceBetween">
+                <MudText Typo="Typo.body2">Projection lag</MudText>
+                <MudText Typo="Typo.body2">@FormatLag(Data.ProjectionLag)</MudText>
+            </MudStack>
+            <MudStack Row="true" Justify="Justify.SpaceBetween">
+                <MudText Typo="Typo.body2">Last check</MudText>
+                <MudText Typo="Typo.body2">@FormatTimestamp(Data.EffectiveLastCheck)</MudText>
+            </MudStack>
+        </MudStack>
+    }
+</MudPaper>
 
 @code {
     [Parameter]
@@ -55,30 +57,30 @@
     [Parameter]
     public EventCallback OnDismiss { get; set; }
 
-    private static string GetStatusClass(HealthStatusDto dto)
+    private static Color GetStatusColor(HealthStatusDto dto)
     {
         var lag = dto.ProjectionLag;
         if (lag.HasValue)
         {
             if (lag.Value > 30)
             {
-                return "bg-danger";
+                return Color.Error;
             }
 
             if (lag.Value >= 5)
             {
-                return "bg-warning text-dark";
+                return Color.Warning;
             }
 
-            return "bg-success";
+            return Color.Success;
         }
 
         return dto.EffectiveStatus.ToLowerInvariant() switch
         {
-            "healthy" => "bg-success",
-            "degraded" => "bg-warning text-dark",
-            "unhealthy" => "bg-danger",
-            _ => "bg-secondary"
+            "healthy" => Color.Success,
+            "degraded" => Color.Warning,
+            "unhealthy" => Color.Error,
+            _ => Color.Default
         };
     }
 

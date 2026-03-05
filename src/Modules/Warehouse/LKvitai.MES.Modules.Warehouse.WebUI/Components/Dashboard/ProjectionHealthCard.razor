@@ -1,43 +1,39 @@
-<div class="card shadow-sm h-100 position-relative">
-     (IsLoading)
-        {
-            <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
-        }
+<MudPaper Elevation="2" Class="pa-4 h-100 position-relative">
+    @if (IsLoading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
+    }
 
-    <div class="card-body">
-        <h5 class="card-title mb-3">Projection Health</h5>
+    <MudText Typo="Typo.h6" Class="mb-3">Projection Health</MudText>
 
-        @if (!string.IsNullOrWhiteSpace(ErrorMessage))
-        {
-            <SharedErrorAlert Message="@ErrorMessage"
-                         TraceId="@TraceId"
-                         OnRetry="OnRetry"
-                         OnDismiss="OnDismiss" />
-        }
-        else if (Data is null)
-        {
-            <p class="text-muted mb-0">No projection health data available.</p>
-        }
-        else
-        {
-            <div class="table-responsive">
-                <table class="table table-sm align-middle mb-0">
-                    <thead>
-                        <tr>
-                            <th scope="col">Projection</th>
-                            <th scope="col">Lag</th>
-                            <th scope="col">Last Updated</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @RenderRow("LocationBalance", Data.LocationBalanceLag, Data.LastRebuildLB)
-                        @RenderRow("AvailableStock", Data.AvailableStockLag, Data.LastRebuildAS)
-                    </tbody>
-                </table>
-            </div>
-        }
-    </div>
-</div>
+    @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+    {
+        <SharedErrorAlert Message="@ErrorMessage"
+                          TraceId="@TraceId"
+                          OnRetry="OnRetry"
+                          OnDismiss="OnDismiss" />
+    }
+    else if (Data is null)
+    {
+        <MudText Typo="Typo.body2" Class="mud-secondary-text">No projection health data available.</MudText>
+    }
+    else
+    {
+        <MudSimpleTable Dense="true" Class="mud-width-full">
+            <thead>
+                <tr>
+                    <th>Projection</th>
+                    <th>Lag</th>
+                    <th>Last Updated</th>
+                </tr>
+            </thead>
+            <tbody>
+                @RenderRow("LocationBalance", Data.LocationBalanceLag, Data.LastRebuildLB)
+                @RenderRow("AvailableStock", Data.AvailableStockLag, Data.LastRebuildAS)
+            </tbody>
+        </MudSimpleTable>
+    }
+</MudPaper>
 
 @code {
     [Parameter]
@@ -61,8 +57,10 @@
     private RenderFragment RenderRow(string projectionName, double? lag, DateTime? rebuildAt) => @<tr>
         <td>@projectionName</td>
         <td>
-            @FormatLag(lag)
-            <span class="ms-2"><StaleBadge LagSeconds="lag" /></span>
+            <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
+                <MudText Typo="Typo.body2">@FormatLag(lag)</MudText>
+                <StaleBadge LagSeconds="lag" />
+            </MudStack>
         </td>
         <td>@FormatTimestamp(rebuildAt)</td>
     </tr>;

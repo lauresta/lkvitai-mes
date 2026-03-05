@@ -1,45 +1,45 @@
-<div class="card shadow-sm h-100 position-relative">
-     (IsLoading)
-        {
-            <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
-        }
+<MudPaper Elevation="2" Class="pa-4 h-100 position-relative">
+    @if (IsLoading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
+    }
 
-    <div class="card-body">
-        <h5 class="card-title mb-3">Recent Activity</h5>
+    <MudText Typo="Typo.h6" Class="mb-3">Recent Activity</MudText>
 
-        @if (!string.IsNullOrWhiteSpace(ErrorMessage))
-        {
-            <SharedErrorAlert Message="@ErrorMessage"
-                         TraceId="@TraceId"
-                         OnRetry="OnRetry"
-                         OnDismiss="OnDismiss" />
-        }
-        else if ((Items?.Count ?? 0) == 0)
-        {
-            <p class="text-muted mb-0">No recent movements available.</p>
-        }
-        else
-        {
-            <div class="list-group" style="max-height: 300px; overflow-y: auto;">
+    @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+    {
+        <SharedErrorAlert Message="@ErrorMessage"
+                          TraceId="@TraceId"
+                          OnRetry="OnRetry"
+                          OnDismiss="OnDismiss" />
+    }
+    else if ((Items?.Count ?? 0) == 0)
+    {
+        <MudText Typo="Typo.body2" Class="mud-secondary-text">No recent movements available.</MudText>
+    }
+    else
+    {
+        <div style="max-height: 300px; overflow-y: auto;">
+            <MudList Dense="true" Class="pa-0">
                 @foreach (var item in Items ?? Array.Empty<RecentMovementDto>())
                 {
-                    <div class="list-group-item">
-                        <div class="d-flex justify-content-between align-items-start gap-3">
-                            <div>
-                                <div class="fw-semibold">@item.SKU</div>
-                                <div class="text-muted small">@item.FromLocation -> @item.ToLocation</div>
-                            </div>
-                            <div class="text-end">
-                                <div class="fw-semibold">@item.Quantity.ToString("N2")</div>
-                                <div class="text-muted small">@item.Timestamp.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</div>
-                            </div>
-                        </div>
-                    </div>
+                    <MudListItem Class="px-0">
+                        <MudStack Row="true" Justify="Justify.SpaceBetween" Style="width:100%;">
+                            <MudStack Spacing="0">
+                                <MudText Typo="Typo.subtitle2">@item.SKU</MudText>
+                                <MudText Typo="Typo.caption" Class="mud-secondary-text">@item.FromLocation -> @item.ToLocation</MudText>
+                            </MudStack>
+                            <MudStack Spacing="0" AlignItems="AlignItems.End">
+                                <MudText Typo="Typo.subtitle2">@item.Quantity.ToString("N2")</MudText>
+                                <MudText Typo="Typo.caption" Class="mud-secondary-text">@item.Timestamp.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</MudText>
+                            </MudStack>
+                        </MudStack>
+                    </MudListItem>
                 }
-            </div>
-        }
-    </div>
-</div>
+            </MudList>
+        </div>
+    }
+</MudPaper>
 
 @code {
     [Parameter]
