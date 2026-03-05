@@ -4,161 +4,203 @@
 
 <PageTitle>Admin Users - LKvitai.MES</PageTitle>
 
-<h1>Admin Users</h1>
+<div data-testid="admin-users-page">
+    <MudText Typo="Typo.h5" Class="mb-3">Admin Users</MudText>
 
-@if (_apiError is not null)
-{
-    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
-                 TraceId="@_apiError.TraceId"
-                 OnRetry="LoadAsync"
-                 OnDismiss="DismissError" />
-}
+    @if (_apiError is not null)
+    {
+        <div data-testid="admin-users-error" class="mb-3">
+            <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                         TraceId="@_apiError.TraceId"
+                         OnRetry="LoadAsync"
+                         OnDismiss="DismissError" />
+        </div>
+    }
 
-<div class="row g-3">
-    <div class="col-lg-4">
-        <div class="card shadow-sm position-relative">
-            <LoadingSpinner IsLoading="_isLoading || _isSubmittingCreate" />
-            <div class="card-body">
-                <h5>Create User</h5>
-                <div class="mb-2">
-                    <label class="form-label">Username</label>
-                    <input class="form-control" @bind="_createUsername" />
-                </div>
-                <div class="mb-2">
-                    <label class="form-label">Email</label>
-                    <input class="form-control" @bind="_createEmail" />
-                </div>
-                <div class="mb-2">
-                    <label class="form-label">Password</label>
-                    <input class="form-control" type="password" @bind="_createPassword" />
-                </div>
-                <div class="mb-2">
-                    <label class="form-label">Status</label>
-                    <select class="form-select" @bind="_createStatus">
-                        <option value="Active">Active</option>
-                        <option value="Inactive">Inactive</option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Roles</label>
+    <MudGrid Spacing="3">
+        <MudItem xs="12" lg="4">
+            <MudPaper Class="pa-4 position-relative" data-testid="admin-users-form">
+                <LoadingSpinner IsLoading="_isLoading || _isSubmittingCreate" />
+
+                <MudText Typo="Typo.h6" Class="mb-3">Create User</MudText>
+
+                <MudTextField T="string"
+                              Label="Username"
+                              @bind-Value="_createUsername"
+                              Variant="Variant.Outlined"
+                              Dense="true"
+                              Class="mb-2"
+                              data-testid="admin-users-create-username" />
+                <MudTextField T="string"
+                              Label="Email"
+                              @bind-Value="_createEmail"
+                              Variant="Variant.Outlined"
+                              Dense="true"
+                              Class="mb-2"
+                              data-testid="admin-users-create-email" />
+                <MudTextField T="string"
+                              Label="Password"
+                              InputType="InputType.Password"
+                              @bind-Value="_createPassword"
+                              Variant="Variant.Outlined"
+                              Dense="true"
+                              Class="mb-2"
+                              data-testid="admin-users-create-password" />
+                <MudSelect T="string"
+                           Label="Status"
+                           @bind-Value="_createStatus"
+                           Variant="Variant.Outlined"
+                           Dense="true"
+                           Class="mb-2"
+                           data-testid="admin-users-create-status">
+                    <MudSelectItem T="string" Value="@("Active")">Active</MudSelectItem>
+                    <MudSelectItem T="string" Value="@("Inactive")">Inactive</MudSelectItem>
+                </MudSelect>
+
+                <MudText Typo="Typo.subtitle2" Class="mt-3 mb-1">Roles</MudText>
+                <MudStack Spacing="0" Class="mb-3">
                     @foreach (var role in AllRoles)
                     {
-                        <div class="form-check">
-                            <input class="form-check-input"
-                                   type="checkbox"
-                                   checked="@_createRoles.Contains(role)"
-                                   @onchange="(e) => ToggleCreateRole(role, e.Value is true)" />
-                            <label class="form-check-label">@role</label>
-                        </div>
+                        <MudCheckBox T="bool"
+                                     Label="@role"
+                                     Checked="@_createRoles.Contains(role)"
+                                     CheckedChanged="value => ToggleCreateRole(role, value)"
+                                     Dense="true" />
                     }
-                </div>
-                <button class="btn btn-primary w-100" @onclick="CreateAsync" disabled="@_isSubmittingCreate">Create User</button>
-            </div>
-        </div>
-    </div>
+                </MudStack>
 
-    <div class="col-lg-8">
-        <div class="card shadow-sm position-relative">
-            <LoadingSpinner IsLoading="_isLoading || _isSubmittingUpdate" />
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h5 class="mb-0">Users (@_users.Count)</h5>
-                    <button class="btn btn-sm btn-outline-secondary" @onclick="LoadAsync" disabled="@_isLoading">Refresh</button>
-                </div>
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           FullWidth="true"
+                           OnClick="CreateAsync"
+                           Disabled="@_isSubmittingCreate"
+                           data-testid="admin-users-create-submit">
+                    Create User
+                </MudButton>
+            </MudPaper>
+        </MudItem>
 
-                <div class="table-responsive">
-                    <table class="table table-sm table-hover align-middle">
-                        <thead>
-                            <tr>
-                                <th>Username</th>
-                                <th>Email</th>
-                                <th>Roles</th>
-                                <th>Status</th>
-                                <th>Created</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @if (_users.Count == 0)
-                            {
-                                <tr>
-                                    <td colspan="6" class="text-muted">No users found.</td>
-                                </tr>
-                            }
-                            else
-                            {
-                                @foreach (var user in _users)
+        <MudItem xs="12" lg="8">
+            <MudPaper Class="pa-4 position-relative">
+                <LoadingSpinner IsLoading="_isLoading || _isSubmittingUpdate" />
+
+                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-3">
+                    <MudText Typo="Typo.h6">Users (@_users.Count)</MudText>
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Default"
+                               Size="Size.Small"
+                               OnClick="LoadAsync"
+                               Disabled="@_isLoading"
+                               data-testid="admin-users-refresh">
+                        Refresh
+                    </MudButton>
+                </MudStack>
+
+                <MudTable T="AdminUserDto"
+                          Items="_users"
+                          Dense="true"
+                          Hover="true"
+                          data-testid="admin-users-grid">
+                    <HeaderContent>
+                        <MudTh>Username</MudTh>
+                        <MudTh>Email</MudTh>
+                        <MudTh>Roles</MudTh>
+                        <MudTh>Status</MudTh>
+                        <MudTh>Created</MudTh>
+                        <MudTh>Actions</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Username">@context.Username</MudTd>
+                        <MudTd DataLabel="Email">@context.Email</MudTd>
+                        <MudTd DataLabel="Roles">
+                            <MudStack Row="true" Spacing="1" Class="flex-wrap">
+                                @foreach (var role in context.Roles)
                                 {
-                                    <tr>
-                                        <td>@user.Username</td>
-                                        <td>@user.Email</td>
-                                        <td>
-                                            @foreach (var role in user.Roles)
-                                            {
-                                                <span class="badge bg-light text-dark border me-1">@role</span>
-                                            }
-                                        </td>
-                                        <td>
-                                            <span class="badge @(user.Status.Equals("Active", StringComparison.OrdinalIgnoreCase) ? "bg-success" : "bg-secondary")">
-                                                @user.Status
-                                            </span>
-                                        </td>
-                                        <td>@user.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
-                                        <td>
-                                            <button class="btn btn-sm btn-outline-primary" @onclick="() => StartEdit(user)">Edit</button>
-                                        </td>
-                                    </tr>
+                                    <MudChip Size="Size.Small" Variant="Variant.Outlined" Color="Color.Default">@role</MudChip>
                                 }
-                            }
-                        </tbody>
-                    </table>
-                </div>
+                            </MudStack>
+                        </MudTd>
+                        <MudTd DataLabel="Status">
+                            <MudChip Size="Size.Small" Color="@(context.Status.Equals("Active", StringComparison.OrdinalIgnoreCase) ? Color.Success : Color.Default)">
+                                @context.Status
+                            </MudChip>
+                        </MudTd>
+                        <MudTd DataLabel="Created">@context.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</MudTd>
+                        <MudTd DataLabel="Actions">
+                            <MudButton Variant="Variant.Outlined"
+                                       Size="Size.Small"
+                                       Color="Color.Primary"
+                                       OnClick="() => StartEdit(context)">
+                                Edit
+                            </MudButton>
+                        </MudTd>
+                    </RowTemplate>
+                    <NoRecordsContent>
+                        <MudText Typo="Typo.body2" Color="Color.Secondary">No users found.</MudText>
+                    </NoRecordsContent>
+                </MudTable>
 
                 @if (_editUser is not null)
                 {
-                    <div class="border rounded p-3 mt-3">
-                        <h6>Edit @_editUser.Username</h6>
-                        <div class="row g-2">
-                            <div class="col-md-6">
-                                <label class="form-label">Email</label>
-                                <input class="form-control" @bind="_editEmail" />
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">Status</label>
-                                <select class="form-select" @bind="_editStatus">
-                                    <option value="Active">Active</option>
-                                    <option value="Inactive">Inactive</option>
-                                </select>
-                            </div>
-                        </div>
+                    <MudPaper Class="pa-3 mt-4" Outlined="true" data-testid="admin-users-edit-form">
+                        <MudText Typo="Typo.subtitle1" Class="mb-2">Edit @_editUser.Username</MudText>
 
-                        <div class="mt-2">
-                            <label class="form-label">Roles</label>
-                            <div class="row g-1">
-                                @foreach (var role in AllRoles)
-                                {
-                                    <div class="col-md-6">
-                                        <div class="form-check">
-                                            <input class="form-check-input"
-                                                   type="checkbox"
-                                                   checked="@_editRoles.Contains(role)"
-                                                   @onchange="(e) => ToggleEditRole(role, e.Value is true)" />
-                                            <label class="form-check-label">@role</label>
-                                        </div>
-                                    </div>
-                                }
-                            </div>
-                        </div>
+                        <MudGrid Spacing="2">
+                            <MudItem xs="12" md="6">
+                                <MudTextField T="string"
+                                              Label="Email"
+                                              @bind-Value="_editEmail"
+                                              Variant="Variant.Outlined"
+                                              Dense="true"
+                                              data-testid="admin-users-edit-email" />
+                            </MudItem>
+                            <MudItem xs="12" md="3">
+                                <MudSelect T="string"
+                                           Label="Status"
+                                           @bind-Value="_editStatus"
+                                           Variant="Variant.Outlined"
+                                           Dense="true"
+                                           data-testid="admin-users-edit-status">
+                                    <MudSelectItem T="string" Value="@("Active")">Active</MudSelectItem>
+                                    <MudSelectItem T="string" Value="@("Inactive")">Inactive</MudSelectItem>
+                                </MudSelect>
+                            </MudItem>
+                        </MudGrid>
 
-                        <div class="d-flex gap-2 mt-3">
-                            <button class="btn btn-primary" @onclick="SaveEditAsync" disabled="@_isSubmittingUpdate">Save</button>
-                            <button class="btn btn-outline-secondary" @onclick="CancelEdit" disabled="@_isSubmittingUpdate">Cancel</button>
-                        </div>
-                    </div>
+                        <MudText Typo="Typo.subtitle2" Class="mt-3 mb-1">Roles</MudText>
+                        <MudGrid Spacing="1" Class="mb-2">
+                            @foreach (var role in AllRoles)
+                            {
+                                <MudItem xs="12" md="6">
+                                    <MudCheckBox T="bool"
+                                                 Label="@role"
+                                                 Checked="@_editRoles.Contains(role)"
+                                                 CheckedChanged="value => ToggleEditRole(role, value)"
+                                                 Dense="true" />
+                                </MudItem>
+                            }
+                        </MudGrid>
+
+                        <MudStack Row="true" Spacing="2" Class="mt-3">
+                            <MudButton Variant="Variant.Filled"
+                                       Color="Color.Primary"
+                                       OnClick="SaveEditAsync"
+                                       Disabled="@_isSubmittingUpdate"
+                                       data-testid="admin-users-edit-submit">
+                                Save
+                            </MudButton>
+                            <MudButton Variant="Variant.Outlined"
+                                       Color="Color.Default"
+                                       OnClick="CancelEdit"
+                                       Disabled="@_isSubmittingUpdate">
+                                Cancel
+                            </MudButton>
+                        </MudStack>
+                    </MudPaper>
                 }
-            </div>
-        </div>
-    </div>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
 </div>
 
 @code {

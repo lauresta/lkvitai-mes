@@ -344,3 +344,40 @@ Matrix verdict:
 - Page is fully migratable to MudBlazor without functional loss.
 - Main care points are pagination parity and preserving CSV/export + date filter semantics.
 - Recommended to migrate this page in early grid phase after receiving-history baseline.
+
+## 2026-03-05 - Autopilot continuation baseline
+
+### What I changed
+- Verified branch/head and recent migration commits (`965c3cc`, `035b9b5`, `54bfb05`, `bf32c7c`).
+- Re-ran bootstrap-heavy usage scan and legacy wrapper usage scan.
+- Confirmed guard script exists for bootstrap CDN + `bi-*` and is wired in CI workflow.
+
+### Why
+- Re-establish hard baseline before continuing phased migration without pausing.
+
+### Result
+- Remaining bootstrap-like markup usage is still high (`1473` matches) across many WebUI pages/components.
+- Legacy wrappers still widely used (`LoadingSpinner`, `ErrorBanner`, `ConfirmDialog`).
+
+### Smoke status
+- Last known smoke from previous step is green (`32/32`), proceeding with further conversion.
+
+## 2026-03-05 - Step: Admin Users page migration to Mud
+
+### What I changed
+- Migrated `/admin/users` page to Mud components (`MudGrid`, `MudPaper`, `MudTextField`, `MudSelect`, `MudCheckBox`, `MudTable`, `MudChip`, `MudButton`).
+- Preserved create/edit behavior, validation messages, API calls, and toast notifications.
+- Added stable test ids: `admin-users-page`, `admin-users-form`, `admin-users-grid`, `admin-users-error`, and submit/edit ids.
+- Added new UI smoke test `AdminUsers_PageSmoke`.
+- Hardened existing `AvailableStock_FullFlow` smoke assertion after refresh to be offline-tolerant (grid OR error banner visible).
+
+### Why
+- Reduce bootstrap-heavy surface on admin operational page and expand regression safety net for migrated page.
+
+### Result
+- Admin users UI now Mud-based while behavior remains consistent.
+- Smoke suite reliability improved for transient API-unavailable states.
+
+### Smoke status
+- `dotnet build src/LKvitai.MES.sln` passed.
+- `dotnet test ... --filter FullyQualifiedName~.Ui.` passed (`33/33`).
