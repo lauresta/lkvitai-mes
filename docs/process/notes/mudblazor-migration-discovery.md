@@ -635,3 +635,21 @@ Matrix verdict:
 - Smoke status:
   - `dotnet build src/LKvitai.MES.sln` ✅
   - `dotnet test tests/Modules/Warehouse/LKvitai.MES.Tests.Warehouse.E2E/LKvitai.MES.Tests.Warehouse.E2E.csproj --filter FullyQualifiedName~.Ui.` ✅ (37/37)
+
+## Step: Migrate smoke-critical pages (Available Stock, Admin Lots) away from bootstrap layout classes
+- What I changed:
+  - `Pages/AvailableStock.razor`:
+    - fixed broken loading condition back to `@if`.
+    - migrated toolbar controls to Mud controls (`MudButtonGroup`, `MudSelect`, `MudButton`) with stable `data-testid` attributes preserved.
+    - migrated list/gallery wrappers to `MudPaper`/`MudCard`/`MudGrid`/`MudStack` patterns.
+    - removed legacy helper methods bound to native `<select>`/bootstrap mode classes.
+  - `Pages/Admin/Lots.razor`:
+    - replaced bootstrap cards/row/col wrappers with `MudPaper + MudGrid + MudStack`.
+    - retained `MudDataGrid`/pager behavior and all existing testids.
+- Why:
+  - Required for Phase 1/2 parity and smoke-page hardening under Phase 5 cleanup.
+- Result:
+  - Core smoke pages now use Mud layout/components for the surrounding chrome.
+- Smoke status:
+  - `dotnet build src/LKvitai.MES.sln` ✅
+  - `dotnet test tests/Modules/Warehouse/LKvitai.MES.Tests.Warehouse.E2E/LKvitai.MES.Tests.Warehouse.E2E.csproj --filter FullyQualifiedName~.Ui.` ✅ (37/37)
