@@ -734,3 +734,17 @@ Matrix verdict:
 - Smoke status:
   - `dotnet build src/LKvitai.MES.sln` ✅
   - `dotnet test tests/Modules/Warehouse/LKvitai.MES.Tests.Warehouse.E2E/LKvitai.MES.Tests.Warehouse.E2E.csproj --filter FullyQualifiedName~.Ui.` ✅ (37/37)
+
+## Step: Final bootstrap-class token sweep on remaining 37 pages
+- What I changed:
+  - Removed remaining bootstrap class tokens from the last 37 Razor pages still matching `btn/table/form-control/form-select/card/alert/badge/row/col-*` scan.
+  - Kept page behavior and data contracts intact; changes are limited to markup class tokens and Mud-aligned naming.
+  - Added CI guard to `scripts/validate-webui-no-bootstrap.sh` to fail when bootstrap class tokens are reintroduced in `.razor`/`.cshtml`.
+- Why:
+  - This was the final blocker for “Mud-only UI surface” completion and prevention of regressions.
+- Result:
+  - Remaining bootstrap class scan in WebUI is now zero.
+  - Guard now enforces: no bootstrap CDN/icons, no `bi-*`, no legacy wrappers, no bootstrap class tokens.
+- Smoke status:
+  - `dotnet build src/LKvitai.MES.sln` ✅
+  - `dotnet test tests/Modules/Warehouse/LKvitai.MES.Tests.Warehouse.E2E/LKvitai.MES.Tests.Warehouse.E2E.csproj --filter FullyQualifiedName~.Ui.` ✅ (37/37)

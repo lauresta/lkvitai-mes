@@ -15,50 +15,50 @@
                  OnDismiss="@(() => _apiError = null)" />
 }
 
-<div class="card shadow-sm mb-3 position-relative">
+<div class="mud-surface shadow-sm mb-3 position-relative">
      (@_isLoading)
         {
             <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
         }
-    <div class="card-body">
+    <div class="mud-surface-body">
         @if (_item is null)
         {
             <p class="text-muted mb-0">Item not found.</p>
         }
         else
         {
-            <div class="row g-2">
-                <div class="col-md-3"><strong>SKU:</strong> @_item.InternalSKU</div>
-                <div class="col-md-5"><strong>Name:</strong> @_item.Name</div>
-                <div class="col-md-2"><strong>Status:</strong> @_item.Status</div>
-                <div class="col-md-2"><strong>Base UoM:</strong> @_item.BaseUoM</div>
-                <div class="col-md-6"><strong>Description:</strong> @(_item.Description ?? "-")</div>
-                <div class="col-md-3"><strong>Primary Barcode:</strong> @(_item.PrimaryBarcode ?? "-")</div>
-                <div class="col-md-3"><strong>Product Config:</strong> @(_item.ProductConfigId ?? "-")</div>
-                <div class="col-md-3"><strong>Lot Tracking:</strong> @(_item.RequiresLotTracking ? "Yes" : "No")</div>
-                <div class="col-md-3"><strong>Requires QC:</strong> @(_item.RequiresQC ? "Yes" : "No")</div>
-                <div class="col-md-3"><strong>Created:</strong> @_item.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</div>
-                <div class="col-md-3"><strong>Updated:</strong> @(_item.UpdatedAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "-")</div>
+            <div class="mud-grid-mrow g-2">
+                <div class="mud-grid-col"><strong>SKU:</strong> @_item.InternalSKU</div>
+                <div class="mud-grid-col"><strong>Name:</strong> @_item.Name</div>
+                <div class="mud-grid-col"><strong>Status:</strong> @_item.Status</div>
+                <div class="mud-grid-col"><strong>Base UoM:</strong> @_item.BaseUoM</div>
+                <div class="mud-grid-col"><strong>Description:</strong> @(_item.Description ?? "-")</div>
+                <div class="mud-grid-col"><strong>Primary Barcode:</strong> @(_item.PrimaryBarcode ?? "-")</div>
+                <div class="mud-grid-col"><strong>Product Config:</strong> @(_item.ProductConfigId ?? "-")</div>
+                <div class="mud-grid-col"><strong>Lot Tracking:</strong> @(_item.RequiresLotTracking ? "Yes" : "No")</div>
+                <div class="mud-grid-col"><strong>Requires QC:</strong> @(_item.RequiresQC ? "Yes" : "No")</div>
+                <div class="mud-grid-col"><strong>Created:</strong> @_item.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</div>
+                <div class="mud-grid-col"><strong>Updated:</strong> @(_item.UpdatedAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "-")</div>
             </div>
         }
     </div>
 </div>
 
-<div class="card shadow-sm mb-3 position-relative">
+<div class="mud-surface shadow-sm mb-3 position-relative">
      (@_isLoading)
         {
             <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
         }
-    <div class="card-body">
+    <div class="mud-surface-body">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <strong>Photos (@_photos.Count)</strong>
             <div class="d-flex gap-2 align-items-center flex-wrap">
                 <InputFile OnChange="HandleFileSelectedAsync" accept="image/jpeg,image/png,image/webp" />
-                <button class="btn btn-sm btn-outline-warning" @onclick="RecomputeEmbeddingsAsync"
+                <button class="mud-mbtn-base mud-mbtn-sm mbtn-outline-warning" @onclick="RecomputeEmbeddingsAsync"
                         title="Recompute image search embeddings for all photos of this item">
                     ⟳ Recompute embeddings
                 </button>
-                <button class="btn btn-sm btn-outline-secondary" @onclick="BackToList">Back to list</button>
+                <button class="mud-mbtn-base mud-mbtn-sm mud-mbtn-outline-secondary" @onclick="BackToList">Back to list</button>
             </div>
         </div>
 
@@ -68,21 +68,21 @@
         }
         else
         {
-            <div class="row g-3">
+            <div class="mud-grid-mrow g-3">
                 @foreach (var photo in _photos)
                 {
-                    <div class="col-6 col-md-3 col-lg-2">
-                        <div class="card h-100">
+                    <div class="mud-grid-col">
+                        <div class="mud-surface h-100">
                             <img src="@photo.ThumbUrl" alt="photo" loading="lazy" style="height:140px;object-fit:cover;" />
-                            <div class="card-body p-2">
+                            <div class="mud-surface-body p-2">
                                 @if (photo.IsPrimary)
                                 {
-                                    <div class="badge bg-primary mb-2">Primary</div>
+                                    <div class="mud-pill bg-primary mb-2">Primary</div>
                                 }
                                 <div class="d-grid gap-1">
-                                    <a href="@photo.OriginalUrl" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary">View original</a>
-                                    <button class="btn btn-sm btn-outline-primary" disabled="@photo.IsPrimary" @onclick="@(() => MakePrimaryAsync(photo.Id))">Set primary</button>
-                                    <button class="btn btn-sm btn-outline-danger" @onclick="@(() => DeletePhotoAsync(photo.Id))">Delete</button>
+                                    <a href="@photo.OriginalUrl" target="_blank" rel="noopener" class="mud-mbtn-base mud-mbtn-sm mud-mbtn-outline-secondary">View original</a>
+                                    <button class="mud-mbtn-base mud-mbtn-sm mud-mbtn-outline-primary" disabled="@photo.IsPrimary" @onclick="@(() => MakePrimaryAsync(photo.Id))">Set primary</button>
+                                    <button class="mud-mbtn-base mud-mbtn-sm mbtn-outline-danger" @onclick="@(() => DeletePhotoAsync(photo.Id))">Delete</button>
                                 </div>
                             </div>
                         </div>

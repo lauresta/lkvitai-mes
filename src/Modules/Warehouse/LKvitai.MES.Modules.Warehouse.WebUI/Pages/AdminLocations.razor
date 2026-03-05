@@ -15,50 +15,50 @@
                  OnDismiss="@(() => _apiError = null)" />
 }
 
-<div class="card shadow-sm mb-3">
-    <div class="card-body">
-        <div class="row g-2 align-items-end">
-            <div class="col-md-4">
+<div class="mud-surface shadow-sm mb-3">
+    <div class="mud-surface-body">
+        <div class="mud-grid-mrow g-2 align-items-end">
+            <div class="mud-grid-col">
                 <label class="form-label">Search</label>
-                <input class="form-control" @bind="_search" placeholder="Code or barcode" />
+                <input class="mud-input-base" @bind="_search" placeholder="Code or barcode" />
             </div>
-            <div class="col-md-3">
+            <div class="mud-grid-col">
                 <label class="form-label">Status</label>
-                <select class="form-select" @bind="_status">
+                <select class="mud-input-base" @bind="_status">
                     <option value="">All</option>
                     <option value="Active">Active</option>
                     <option value="Blocked">Blocked</option>
                     <option value="Maintenance">Maintenance</option>
                 </select>
             </div>
-            <div class="col-md-3 d-flex align-items-center">
+            <div class="mud-grid-col d-flex align-items-center">
                 <div class="form-check mt-4">
                     <input class="form-check-input" type="checkbox" @bind="_includeVirtual" />
                     <label class="form-check-label">Include virtual locations</label>
                 </div>
             </div>
-            <div class="col-md-2 d-grid">
-                <button class="btn btn-primary" @onclick="ApplyFiltersAsync">Filter</button>
+            <div class="mud-grid-col d-grid">
+                <button class="mud-mbtn-base mud-mbtn-primary" @onclick="ApplyFiltersAsync">Filter</button>
             </div>
         </div>
     </div>
 </div>
 
-<div class="card shadow-sm mb-3 position-relative">
+<div class="mud-surface shadow-sm mb-3 position-relative">
      (@_isLoading)
         {
             <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
         }
-    <div class="card-body">
+    <div class="mud-surface-body">
         <div class="d-flex justify-content-between align-items-center mb-2">
             <strong>Total: @_totalCount</strong>
-            <button class="btn btn-sm btn-outline-primary" @onclick="@(() => _showCreate = !_showCreate)">
+            <button class="mud-mbtn-base mud-mbtn-sm mud-mbtn-outline-primary" @onclick="@(() => _showCreate = !_showCreate)">
                 @(_showCreate ? "Hide Create Form" : "Create Location")
             </button>
         </div>
 
-        <div class="table-responsive" data-testid="admin-locations-grid">
-            <table class="table table-sm table-hover align-middle">
+        <div class="overflow-auto" data-testid="admin-locations-grid">
+            <table class="mud-mtbl-base mud-mtbl-dense mtbl-hover align-middle">
                 <thead>
                 <tr>
                     <th>Code</th>
@@ -83,22 +83,22 @@
                 }
                 else
                 {
-                    @foreach (var row in _locations)
+                    @foreach (var mrow in _locations)
                     {
                         <tr>
-                            <td>@row.Code</td>
-                            <td>@row.Barcode</td>
-                            <td>@row.Type</td>
-                            <td>@ResolveParentCode(row.ParentLocationId)</td>
-                            <td>@row.Status</td>
-                            <td>@FormatCoordinates(row)</td>
-                            <td>@FormatDimensions(row)</td>
-                            <td>@FormatAddress(row)</td>
-                            <td>@FormatCapacity(row)</td>
-                            <td>@(row.IsVirtual ? "Yes" : "No")</td>
+                            <td>@mrow.Code</td>
+                            <td>@mrow.Barcode</td>
+                            <td>@mrow.Type</td>
+                            <td>@ResolveParentCode(mrow.ParentLocationId)</td>
+                            <td>@mrow.Status</td>
+                            <td>@FormatCoordinates(mrow)</td>
+                            <td>@FormatDimensions(mrow)</td>
+                            <td>@FormatAddress(mrow)</td>
+                            <td>@FormatCapacity(mrow)</td>
+                            <td>@(mrow.IsVirtual ? "Yes" : "No")</td>
                             <td class="text-end">
-                                <a class="btn btn-sm btn-outline-info me-1" href="@($"/warehouse/locations/{row.Id}")">View Details</a>
-                                <button class="btn btn-sm btn-outline-secondary" @onclick="@(() => BeginEdit(row))">Edit</button>
+                                <a class="mud-mbtn-base mud-mbtn-sm mbtn-outline-info me-1" href="@($"/warehouse/locations/{mrow.Id}")">View Details</a>
+                                <button class="mud-mbtn-base mud-mbtn-sm mud-mbtn-outline-secondary" @onclick="@(() => BeginEdit(mrow))">Edit</button>
                             </td>
                         </tr>
                     }
@@ -136,45 +136,45 @@
 
 @if (_showCreate)
 {
-    <div class="card shadow-sm mb-3">
-        <div class="card-header">Create Location</div>
-        <div class="card-body">
-            <div class="row g-2">
-                <div class="col-md-3">
+    <div class="mud-surface shadow-sm mb-3">
+        <div class="mud-surface-header">Create Location</div>
+        <div class="mud-surface-body">
+            <div class="mud-grid-mrow g-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Code</label>
-                    <input class="form-control" @bind="_create.Code" />
+                    <input class="mud-input-base" @bind="_create.Code" />
                 </div>
-                <div class="col-md-3">
+                <div class="mud-grid-col">
                     <label class="form-label">Barcode</label>
-                    <input class="form-control" @bind="_create.Barcode" />
+                    <input class="mud-input-base" @bind="_create.Barcode" />
                 </div>
-                <div class="col-md-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Type</label>
-                    <input class="form-control" @bind="_create.Type" />
+                    <input class="mud-input-base" @bind="_create.Type" />
                 </div>
-                <div class="col-md-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Parent Id</label>
-                    <input class="form-control" type="number" @bind="_create.ParentLocationId" />
+                    <input class="mud-input-base" type="number" @bind="_create.ParentLocationId" />
                 </div>
-                <div class="col-md-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Status</label>
-                    <select class="form-select" @bind="_create.Status">
+                    <select class="mud-input-base" @bind="_create.Status">
                         <option value="Active">Active</option>
                         <option value="Blocked">Blocked</option>
                         <option value="Maintenance">Maintenance</option>
                     </select>
                 </div>
-                <div class="col-md-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Max Weight</label>
-                    <input class="form-control" type="number" step="0.001" @bind="_create.MaxWeight" />
+                    <input class="mud-input-base" type="number" step="0.001" @bind="_create.MaxWeight" />
                 </div>
-                <div class="col-md-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Max Volume</label>
-                    <input class="form-control" type="number" step="0.001" @bind="_create.MaxVolume" />
+                    <input class="mud-input-base" type="number" step="0.001" @bind="_create.MaxVolume" />
                 </div>
-                <div class="col-md-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Zone Type</label>
-                    <select class="form-select" @bind="_create.ZoneType">
+                    <select class="mud-input-base" @bind="_create.ZoneType">
                         <option value="">-</option>
                         <option value="General">General</option>
                         <option value="Refrigerated">Refrigerated</option>
@@ -182,62 +182,62 @@
                         <option value="Quarantine">Quarantine</option>
                     </select>
                 </div>
-                <div class="col-md-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Coordinate X</label>
-                    <input class="form-control" type="number" step="0.01" @bind="_create.CoordinateX" />
+                    <input class="mud-input-base" type="number" step="0.01" @bind="_create.CoordinateX" />
                 </div>
-                <div class="col-md-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Coordinate Y</label>
-                    <input class="form-control" type="number" step="0.01" @bind="_create.CoordinateY" />
+                    <input class="mud-input-base" type="number" step="0.01" @bind="_create.CoordinateY" />
                 </div>
-                <div class="col-md-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Coordinate Z</label>
-                    <input class="form-control" type="number" step="0.01" @bind="_create.CoordinateZ" />
+                    <input class="mud-input-base" type="number" step="0.01" @bind="_create.CoordinateZ" />
                 </div>
-                <div class="col-md-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Width (m)</label>
-                    <input class="form-control" type="number" step="0.001" @bind="_create.WidthMeters" />
+                    <input class="mud-input-base" type="number" step="0.001" @bind="_create.WidthMeters" />
                 </div>
-                <div class="col-md-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Length (m)</label>
-                    <input class="form-control" type="number" step="0.001" @bind="_create.LengthMeters" />
+                    <input class="mud-input-base" type="number" step="0.001" @bind="_create.LengthMeters" />
                 </div>
-                <div class="col-md-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Height (m)</label>
-                    <input class="form-control" type="number" step="0.001" @bind="_create.HeightMeters" />
+                    <input class="mud-input-base" type="number" step="0.001" @bind="_create.HeightMeters" />
                 </div>
-                <div class="col-md-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Aisle</label>
-                    <input class="form-control" @bind="_create.Aisle" />
+                    <input class="mud-input-base" @bind="_create.Aisle" />
                 </div>
-                <div class="col-md-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Rack</label>
-                    <input class="form-control" @bind="_create.Rack" />
+                    <input class="mud-input-base" @bind="_create.Rack" />
                 </div>
-                <div class="col-md-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Level</label>
-                    <input class="form-control" @bind="_create.Level" />
+                    <input class="mud-input-base" @bind="_create.Level" />
                 </div>
-                <div class="col-md-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Bin</label>
-                    <input class="form-control" @bind="_create.Bin" />
+                    <input class="mud-input-base" @bind="_create.Bin" />
                 </div>
-                <div class="col-md-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Capacity Weight</label>
-                    <input class="form-control" type="number" step="0.001" @bind="_create.CapacityWeight" />
+                    <input class="mud-input-base" type="number" step="0.001" @bind="_create.CapacityWeight" />
                 </div>
-                <div class="col-md-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Capacity Volume</label>
-                    <input class="form-control" type="number" step="0.001" @bind="_create.CapacityVolume" />
+                    <input class="mud-input-base" type="number" step="0.001" @bind="_create.CapacityVolume" />
                 </div>
-                <div class="col-md-2 d-flex align-items-end">
+                <div class="mud-grid-col d-flex align-items-end">
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" @bind="_create.IsVirtual" />
                         <label class="form-check-label">Virtual</label>
                     </div>
                 </div>
-                <div class="col-md-2 d-flex align-items-end">
-                    <button class="btn btn-primary px-4" @onclick="CreateAsync">Save</button>
+                <div class="mud-grid-col d-flex align-items-end">
+                    <button class="mud-mbtn-base mud-mbtn-primary px-4" @onclick="CreateAsync">Save</button>
                 </div>
             </div>
         </div>
@@ -247,48 +247,48 @@
 
 @if (_editing is not null)
 {
-    <div class="card shadow-sm">
-        <div class="card-header d-flex justify-content-between align-items-center">
+    <div class="mud-surface shadow-sm">
+        <div class="mud-surface-header d-flex justify-content-between align-items-center">
             <span>Edit Location: @_editing.Code</span>
-            <button class="btn btn-sm btn-outline-secondary" @onclick="@(() => _editing = null)">Close</button>
+            <button class="mud-mbtn-base mud-mbtn-sm mud-mbtn-outline-secondary" @onclick="@(() => _editing = null)">Close</button>
         </div>
-        <div class="card-body">
-            <div class="row g-2">
-                <div class="col-md-3">
+        <div class="mud-surface-body">
+            <div class="mud-grid-mrow g-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Code</label>
-                    <input class="form-control" @bind="_editing.Code" disabled="@_editing.IsVirtual" />
+                    <input class="mud-input-base" @bind="_editing.Code" disabled="@_editing.IsVirtual" />
                 </div>
-                <div class="col-md-3">
+                <div class="mud-grid-col">
                     <label class="form-label">Barcode</label>
-                    <input class="form-control" @bind="_editing.Barcode" disabled="@_editing.IsVirtual" />
+                    <input class="mud-input-base" @bind="_editing.Barcode" disabled="@_editing.IsVirtual" />
                 </div>
-                <div class="col-md-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Type</label>
-                    <input class="form-control" @bind="_editing.Type" />
+                    <input class="mud-input-base" @bind="_editing.Type" />
                 </div>
-                <div class="col-md-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Parent Id</label>
-                    <input class="form-control" type="number" @bind="_editing.ParentLocationId" />
+                    <input class="mud-input-base" type="number" @bind="_editing.ParentLocationId" />
                 </div>
-                <div class="col-md-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Status</label>
-                    <select class="form-select" @bind="_editing.Status">
+                    <select class="mud-input-base" @bind="_editing.Status">
                         <option value="Active">Active</option>
                         <option value="Blocked">Blocked</option>
                         <option value="Maintenance">Maintenance</option>
                     </select>
                 </div>
-                <div class="col-md-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Max Weight</label>
-                    <input class="form-control" type="number" step="0.001" @bind="_editing.MaxWeight" />
+                    <input class="mud-input-base" type="number" step="0.001" @bind="_editing.MaxWeight" />
                 </div>
-                <div class="col-md-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Max Volume</label>
-                    <input class="form-control" type="number" step="0.001" @bind="_editing.MaxVolume" />
+                    <input class="mud-input-base" type="number" step="0.001" @bind="_editing.MaxVolume" />
                 </div>
-                <div class="col-md-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Zone Type</label>
-                    <select class="form-select" @bind="_editing.ZoneType">
+                    <select class="mud-input-base" @bind="_editing.ZoneType">
                         <option value="">-</option>
                         <option value="General">General</option>
                         <option value="Refrigerated">Refrigerated</option>
@@ -296,62 +296,62 @@
                         <option value="Quarantine">Quarantine</option>
                     </select>
                 </div>
-                <div class="col-md-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Coordinate X</label>
-                    <input class="form-control" type="number" step="0.01" @bind="_editing.CoordinateX" />
+                    <input class="mud-input-base" type="number" step="0.01" @bind="_editing.CoordinateX" />
                 </div>
-                <div class="col-md-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Coordinate Y</label>
-                    <input class="form-control" type="number" step="0.01" @bind="_editing.CoordinateY" />
+                    <input class="mud-input-base" type="number" step="0.01" @bind="_editing.CoordinateY" />
                 </div>
-                <div class="col-md-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Coordinate Z</label>
-                    <input class="form-control" type="number" step="0.01" @bind="_editing.CoordinateZ" />
+                    <input class="mud-input-base" type="number" step="0.01" @bind="_editing.CoordinateZ" />
                 </div>
-                <div class="col-md-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Width (m)</label>
-                    <input class="form-control" type="number" step="0.001" @bind="_editing.WidthMeters" />
+                    <input class="mud-input-base" type="number" step="0.001" @bind="_editing.WidthMeters" />
                 </div>
-                <div class="col-md-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Length (m)</label>
-                    <input class="form-control" type="number" step="0.001" @bind="_editing.LengthMeters" />
+                    <input class="mud-input-base" type="number" step="0.001" @bind="_editing.LengthMeters" />
                 </div>
-                <div class="col-md-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Height (m)</label>
-                    <input class="form-control" type="number" step="0.001" @bind="_editing.HeightMeters" />
+                    <input class="mud-input-base" type="number" step="0.001" @bind="_editing.HeightMeters" />
                 </div>
-                <div class="col-md-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Aisle</label>
-                    <input class="form-control" @bind="_editing.Aisle" />
+                    <input class="mud-input-base" @bind="_editing.Aisle" />
                 </div>
-                <div class="col-md-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Rack</label>
-                    <input class="form-control" @bind="_editing.Rack" />
+                    <input class="mud-input-base" @bind="_editing.Rack" />
                 </div>
-                <div class="col-md-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Level</label>
-                    <input class="form-control" @bind="_editing.Level" />
+                    <input class="mud-input-base" @bind="_editing.Level" />
                 </div>
-                <div class="col-md-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Bin</label>
-                    <input class="form-control" @bind="_editing.Bin" />
+                    <input class="mud-input-base" @bind="_editing.Bin" />
                 </div>
-                <div class="col-md-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Capacity Weight</label>
-                    <input class="form-control" type="number" step="0.001" @bind="_editing.CapacityWeight" />
+                    <input class="mud-input-base" type="number" step="0.001" @bind="_editing.CapacityWeight" />
                 </div>
-                <div class="col-md-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Capacity Volume</label>
-                    <input class="form-control" type="number" step="0.001" @bind="_editing.CapacityVolume" />
+                    <input class="mud-input-base" type="number" step="0.001" @bind="_editing.CapacityVolume" />
                 </div>
-                <div class="col-md-2 d-flex align-items-end">
+                <div class="mud-grid-col d-flex align-items-end">
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" @bind="_editing.IsVirtual" disabled />
                         <label class="form-check-label">Virtual</label>
                     </div>
                 </div>
-                <div class="col-md-2 d-flex align-items-end">
-                    <button class="btn btn-primary px-4" @onclick="UpdateAsync">Save</button>
+                <div class="mud-grid-col d-flex align-items-end">
+                    <button class="mud-mbtn-base mud-mbtn-primary px-4" @onclick="UpdateAsync">Save</button>
                 </div>
             </div>
         </div>
@@ -436,44 +436,44 @@
         return _locations.FirstOrDefault(x => x.Id == parentId.Value)?.Code ?? parentId.Value.ToString();
     }
 
-    private static string FormatCoordinates(AdminLocationDto row)
+    private static string FormatCoordinates(AdminLocationDto mrow)
     {
-        if (!row.CoordinateX.HasValue || !row.CoordinateY.HasValue || !row.CoordinateZ.HasValue)
+        if (!mrow.CoordinateX.HasValue || !mrow.CoordinateY.HasValue || !mrow.CoordinateZ.HasValue)
         {
             return "-";
         }
 
-        return $"{row.CoordinateX.Value:0.##}, {row.CoordinateY.Value:0.##}, {row.CoordinateZ.Value:0.##}";
+        return $"{mrow.CoordinateX.Value:0.##}, {mrow.CoordinateY.Value:0.##}, {mrow.CoordinateZ.Value:0.##}";
     }
 
-    private static string FormatDimensions(AdminLocationDto row)
+    private static string FormatDimensions(AdminLocationDto mrow)
     {
-        if (!row.WidthMeters.HasValue || !row.LengthMeters.HasValue || !row.HeightMeters.HasValue)
+        if (!mrow.WidthMeters.HasValue || !mrow.LengthMeters.HasValue || !mrow.HeightMeters.HasValue)
         {
             return "-";
         }
 
-        return $"{row.WidthMeters.Value:0.###} x {row.LengthMeters.Value:0.###} x {row.HeightMeters.Value:0.###}";
+        return $"{mrow.WidthMeters.Value:0.###} x {mrow.LengthMeters.Value:0.###} x {mrow.HeightMeters.Value:0.###}";
     }
 
-    private static string FormatAddress(AdminLocationDto row)
+    private static string FormatAddress(AdminLocationDto mrow)
     {
-        var parts = new[] { row.Aisle, row.Rack, row.Level, row.Bin }
+        var parts = new[] { mrow.Aisle, mrow.Rack, mrow.Level, mrow.Bin }
             .Where(static x => !string.IsNullOrWhiteSpace(x))
             .ToArray();
 
         return parts.Length == 0 ? "-" : string.Join("-", parts);
     }
 
-    private static string FormatCapacity(AdminLocationDto row)
+    private static string FormatCapacity(AdminLocationDto mrow)
     {
-        if (!row.CapacityWeight.HasValue && !row.CapacityVolume.HasValue)
+        if (!mrow.CapacityWeight.HasValue && !mrow.CapacityVolume.HasValue)
         {
             return "-";
         }
 
-        var weight = row.CapacityWeight?.ToString("0.###") ?? "-";
-        var volume = row.CapacityVolume?.ToString("0.###") ?? "-";
+        var weight = mrow.CapacityWeight?.ToString("0.###") ?? "-";
+        var volume = mrow.CapacityVolume?.ToString("0.###") ?? "-";
         return $"W:{weight} / V:{volume}";
     }
 
@@ -507,32 +507,32 @@
         }
     }
 
-    private void BeginEdit(AdminLocationDto row)
+    private void BeginEdit(AdminLocationDto mrow)
     {
         _editing = new LocationEditFormModel
         {
-            Id = row.Id,
-            Code = row.Code,
-            Barcode = row.Barcode,
-            Type = row.Type,
-            ParentLocationId = row.ParentLocationId,
-            IsVirtual = row.IsVirtual,
-            MaxWeight = row.MaxWeight,
-            MaxVolume = row.MaxVolume,
-            Status = row.Status,
-            ZoneType = row.ZoneType,
-            CoordinateX = row.CoordinateX,
-            CoordinateY = row.CoordinateY,
-            CoordinateZ = row.CoordinateZ,
-            WidthMeters = row.WidthMeters,
-            LengthMeters = row.LengthMeters,
-            HeightMeters = row.HeightMeters,
-            Aisle = row.Aisle,
-            Rack = row.Rack,
-            Level = row.Level,
-            Bin = row.Bin,
-            CapacityWeight = row.CapacityWeight,
-            CapacityVolume = row.CapacityVolume
+            Id = mrow.Id,
+            Code = mrow.Code,
+            Barcode = mrow.Barcode,
+            Type = mrow.Type,
+            ParentLocationId = mrow.ParentLocationId,
+            IsVirtual = mrow.IsVirtual,
+            MaxWeight = mrow.MaxWeight,
+            MaxVolume = mrow.MaxVolume,
+            Status = mrow.Status,
+            ZoneType = mrow.ZoneType,
+            CoordinateX = mrow.CoordinateX,
+            CoordinateY = mrow.CoordinateY,
+            CoordinateZ = mrow.CoordinateZ,
+            WidthMeters = mrow.WidthMeters,
+            LengthMeters = mrow.LengthMeters,
+            HeightMeters = mrow.HeightMeters,
+            Aisle = mrow.Aisle,
+            Rack = mrow.Rack,
+            Level = mrow.Level,
+            Bin = mrow.Bin,
+            CapacityWeight = mrow.CapacityWeight,
+            CapacityVolume = mrow.CapacityVolume
         };
     }
 

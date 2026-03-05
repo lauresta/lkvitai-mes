@@ -9,7 +9,7 @@
 
 @if (!_hasAdminAccess)
 {
-    <div class="alert alert-warning" role="alert">
+    <div class="mud-message mud-message-warning" role="malert">
         Admin role required.
     </div>
 }
@@ -23,24 +23,24 @@ else
                      OnDismiss="DismissError" />
     }
 
-    <div class="card shadow-sm mb-3">
-        <div class="card-body">
-            <div class="row g-2 align-items-end">
-                <div class="col-md-3 d-grid">
-                    <button class="btn btn-primary" @onclick="TriggerBackupAsync" disabled="@_isWorking">Trigger Backup</button>
+    <div class="mud-surface shadow-sm mb-3">
+        <div class="mud-surface-body">
+            <div class="mud-grid-mrow g-2 align-items-end">
+                <div class="mud-grid-col d-grid">
+                    <button class="mud-mbtn-base mud-mbtn-primary" @onclick="TriggerBackupAsync" disabled="@_isWorking">Trigger Backup</button>
                 </div>
-                <div class="col-md-3 d-grid">
-                    <button class="btn btn-outline-secondary" @onclick="LoadAsync" disabled="@_isWorking">Refresh</button>
+                <div class="mud-grid-col d-grid">
+                    <button class="mud-mbtn-base mud-mbtn-outline-secondary" @onclick="LoadAsync" disabled="@_isWorking">Refresh</button>
                 </div>
-                <div class="col-md-3">
+                <div class="mud-grid-col">
                     <label class="form-label">Restore Target</label>
-                    <InputText class="form-control" @bind-Value="_targetEnvironment" />
+                    <InputText class="mud-input-base" @bind-Value="_targetEnvironment" />
                 </div>
             </div>
 
             @if (_lastRestoreResult is not null)
             {
-                <div class="alert @(_lastRestoreResult.Success ? "alert-success" : "alert-danger") mt-3 mb-0" role="alert">
+                <div class="mud-message @(_lastRestoreResult.Success ?"malert-success" : "malert-danger") mt-3 mb-0" role="malert">
                     @_lastRestoreResult.Message
                     @if (!string.IsNullOrWhiteSpace(_lastRestoreResult.EvidencePath))
                     {
@@ -51,14 +51,14 @@ else
         </div>
     </div>
 
-    <div class="card shadow-sm position-relative">
+    <div class="mud-surface shadow-sm position-relative">
          (_isWorking)
         {
             <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
         }
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-sm table-hover align-middle">
+        <div class="mud-surface-body">
+            <div class="overflow-auto">
+                <table class="mud-mtbl-base mud-mtbl-dense mtbl-hover align-middle">
                     <thead>
                         <tr>
                             <th>Started</th>
@@ -91,7 +91,7 @@ else
                                     <td>@backup.BackupSizeBytes</td>
                                     <td class="text-truncate" style="max-width:300px;" title="@backup.BlobPath">@backup.BlobPath</td>
                                     <td class="text-end">
-                                        <button class="btn btn-sm btn-outline-warning"
+                                        <button class="mud-mbtn-base mud-mbtn-sm mbtn-outline-warning"
                                                 @onclick="() => RestoreAsync(backup)"
                                                 disabled="@(_isWorking || !CanRestore(backup))">
                                             Restore

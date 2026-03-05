@@ -15,18 +15,18 @@
                  OnDismiss="DismissError" />
 }
 
-<div class="row g-3 mb-3">
-    <div class="col-md-6">
-        <div class="card shadow-sm h-100">
-            <div class="card-body">
+<div class="mud-grid-mrow g-3 mb-3">
+    <div class="mud-grid-col">
+        <div class="mud-surface shadow-sm h-100">
+            <div class="mud-surface-body">
                 <div class="text-muted">QC Defect Count</div>
                 <div class="display-6">@(_analytics?.DefectCount ?? 0)</div>
             </div>
         </div>
     </div>
-    <div class="col-md-6">
-        <div class="card shadow-sm h-100">
-            <div class="card-body">
+    <div class="mud-grid-col">
+        <div class="mud-surface shadow-sm h-100">
+            <div class="mud-surface-body">
                 <div class="text-muted">Late Shipments</div>
                 <div class="display-6">@(_analytics?.LateShipmentsCount ?? 0)</div>
             </div>
@@ -34,13 +34,13 @@
     </div>
 </div>
 
-<div class="row g-3">
-    <div class="col-lg-5">
-        <div class="card shadow-sm h-100">
-            <div class="card-body">
+<div class="mud-grid-mrow g-3">
+    <div class="mud-grid-col">
+        <div class="mud-surface shadow-sm h-100">
+            <div class="mud-surface-body">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <h5 class="mb-0">Top Defect Types</h5>
-                    <button class="btn btn-outline-secondary btn-sm" @onclick="LoadAsync" disabled="@_isBusy">Refresh</button>
+                    <button class="mud-mbtn-base mud-mbtn-outline-secondary mud-mbtn-sm" @onclick="LoadAsync" disabled="@_isBusy">Refresh</button>
                 </div>
 
                 @if (_analytics is null || _analytics.DefectsByType.Count == 0)
@@ -52,8 +52,8 @@
                 }
                 else
                 {
-                    <div class="table-responsive">
-                        <table class="table table-sm">
+                    <div class="overflow-auto">
+                        <table class="mud-mtbl-base mud-mtbl-dense">
                             <thead>
                                 <tr>
                                     <th>Type</th>
@@ -61,11 +61,11 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach (var row in _analytics.DefectsByType)
+                                @foreach (var mrow in _analytics.DefectsByType)
                                 {
                                     <tr>
-                                        <td>@row.DefectType</td>
-                                        <td>@row.Count</td>
+                                        <td>@mrow.DefectType</td>
+                                        <td>@mrow.Count</td>
                                     </tr>
                                 }
                             </tbody>
@@ -76,9 +76,9 @@
         </div>
     </div>
 
-    <div class="col-lg-7">
-        <div class="card shadow-sm h-100">
-            <div class="card-body">
+    <div class="mud-grid-col">
+        <div class="mud-surface shadow-sm h-100">
+            <div class="mud-surface-body">
                 <h5>Late Shipment Root Causes</h5>
                 @if (_analytics is null || _analytics.LateShipments.Count == 0)
                 {
@@ -89,8 +89,8 @@
                 }
                 else
                 {
-                    <div class="table-responsive">
-                        <table class="table table-sm">
+                    <div class="overflow-auto">
+                        <table class="mud-mtbl-base mud-mtbl-dense">
                             <thead>
                                 <tr>
                                     <th>Order</th>
@@ -100,13 +100,13 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach (var row in _analytics.LateShipments)
+                                @foreach (var mrow in _analytics.LateShipments)
                                 {
                                     <tr>
-                                        <td>@row.OrderNumber</td>
-                                        <td>@(row.RequestedShipDate?.ToLocalTime().ToString("yyyy-MM-dd") ?? "-")</td>
-                                        <td>@(row.ShippedAt?.ToLocalTime().ToString("yyyy-MM-dd") ?? "-")</td>
-                                        <td>@row.RootCause</td>
+                                        <td>@mrow.OrderNumber</td>
+                                        <td>@(mrow.RequestedShipDate?.ToLocalTime().ToString("yyyy-MM-dd") ?? "-")</td>
+                                        <td>@(mrow.ShippedAt?.ToLocalTime().ToString("yyyy-MM-dd") ?? "-")</td>
+                                        <td>@mrow.RootCause</td>
                                     </tr>
                                 }
                             </tbody>

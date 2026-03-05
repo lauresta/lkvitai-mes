@@ -15,35 +15,35 @@
                  OnDismiss="() => _apiError = null" />
 }
 
-<div class="card shadow-sm mb-3">
-    <div class="card-body">
-        <div class="row g-3 align-items-end">
-            <div class="col-md-4">
+<div class="mud-surface shadow-sm mb-3">
+    <div class="mud-surface-body">
+        <div class="mud-grid-mrow g-3 align-items-end">
+            <div class="mud-grid-col">
                 <label class="form-label">Lot Number</label>
-                <input class="form-control" @bind="_lotNumber" placeholder="LOT-2026-001" />
+                <input class="mud-input-base" @bind="_lotNumber" placeholder="LOT-2026-001" />
             </div>
-            <div class="col-md-4">
+            <div class="mud-grid-col">
                 <label class="form-label">Direction</label>
-                <select class="form-select" @bind="_direction">
+                <select class="mud-input-base" @bind="_direction">
                     <option value="BACKWARD">Backward (Supplier)</option>
                     <option value="FORWARD">Forward (Customer)</option>
                 </select>
             </div>
-            <div class="col-md-4 d-flex gap-2">
-                <button class="btn btn-primary" @onclick="BuildTraceAsync" disabled="@_isLoading">Build Trace</button>
-                <button class="btn btn-outline-secondary" @onclick="ExportCsvAsync" disabled="@(!_canExport || _isLoading)">Export CSV</button>
+            <div class="mud-grid-col d-flex gap-2">
+                <button class="mud-mbtn-base mud-mbtn-primary" @onclick="BuildTraceAsync" disabled="@_isLoading">Build Trace</button>
+                <button class="mud-mbtn-base mud-mbtn-outline-secondary" @onclick="ExportCsvAsync" disabled="@(!_canExport || _isLoading)">Export CSV</button>
             </div>
         </div>
     </div>
 </div>
 
-<div class="card shadow-sm position-relative">
+<div class="mud-surface shadow-sm position-relative">
      (_isLoading)
         {
             <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
         }
 
-    <div class="card-body">
+    <div class="mud-surface-body">
         @if (_trace is null)
         {
             <EmptyState Title="No trace generated"
@@ -58,10 +58,10 @@
                     <span class="text-muted small">Generated: @_trace.GeneratedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</span>
                 </div>
                 <div class="d-flex align-items-center gap-2">
-                    <span class="badge bg-info text-dark text-uppercase">@_trace.Direction</span>
+                    <span class="mud-pill bg-info text-dark text-uppercase">@_trace.Direction</span>
                     @if (_trace.IsApproximate)
                     {
-                        <span class="badge bg-warning text-dark">Approximate</span>
+                        <span class="mud-pill bg-warning text-dark">Approximate</span>
                     }
                 </div>
             </div>

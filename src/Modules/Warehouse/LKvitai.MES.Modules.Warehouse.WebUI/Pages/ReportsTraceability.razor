@@ -14,40 +14,40 @@
                  OnDismiss="DismissError" />
 }
 
-<div class="card shadow-sm mb-3">
-    <div class="card-body">
-        <div class="row g-2 align-items-end">
-            <div class="col-md-3">
+<div class="mud-surface shadow-sm mb-3">
+    <div class="mud-surface-body">
+        <div class="mud-grid-mrow g-2 align-items-end">
+            <div class="mud-grid-col">
                 <label class="form-label">Lot Number</label>
-                <input class="form-control" @bind="_lotNumber" placeholder="LOT-2026-001" />
+                <input class="mud-input-base" @bind="_lotNumber" placeholder="LOT-2026-001" />
             </div>
-            <div class="col-md-3">
+            <div class="mud-grid-col">
                 <label class="form-label">Item SKU</label>
-                <input class="form-control" @bind="_itemSku" placeholder="FG-0001" />
+                <input class="mud-input-base" @bind="_itemSku" placeholder="FG-0001" />
             </div>
-            <div class="col-md-3">
+            <div class="mud-grid-col">
                 <label class="form-label">Sales Order</label>
-                <input class="form-control" @bind="_salesOrder" placeholder="SO-0001" />
+                <input class="mud-input-base" @bind="_salesOrder" placeholder="SO-0001" />
             </div>
-            <div class="col-md-3">
+            <div class="mud-grid-col">
                 <label class="form-label">Supplier</label>
-                <input class="form-control" @bind="_supplier" placeholder="ACME" />
+                <input class="mud-input-base" @bind="_supplier" placeholder="ACME" />
             </div>
-            <div class="col-md-12 d-flex gap-2 mt-2">
-                <button class="btn btn-primary" @onclick="SearchAsync" disabled="@_isLoading">Search</button>
-                <button class="btn btn-outline-secondary" @onclick="ResetAsync" disabled="@_isLoading">Reset</button>
+            <div class="mud-grid-col d-flex gap-2 mt-2">
+                <button class="mud-mbtn-base mud-mbtn-primary" @onclick="SearchAsync" disabled="@_isLoading">Search</button>
+                <button class="mud-mbtn-base mud-mbtn-outline-secondary" @onclick="ResetAsync" disabled="@_isLoading">Reset</button>
             </div>
         </div>
     </div>
 </div>
 
-<div class="card shadow-sm position-relative">
+<div class="mud-surface shadow-sm position-relative">
      (_isLoading)
         {
             <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
         }
 
-    <div class="card-body">
+    <div class="mud-surface-body">
         @if (_entries.Count == 0)
         {
             <EmptyState Title="No traceability entries"
@@ -67,12 +67,12 @@
                         </div>
                         @if (entry.IsApproximate)
                         {
-                            <span class="badge bg-warning text-dark">Approximate Linkage</span>
+                            <span class="mud-pill bg-warning text-dark">Approximate Linkage</span>
                         }
                     </div>
 
-                    <div class="row g-2">
-                        <div class="col-md-4">
+                    <div class="mud-grid-mrow g-2">
+                        <div class="mud-grid-col">
                             <div class="border rounded p-2 h-100">
                                 <div class="small text-muted mb-1">Upstream</div>
                                 @if (entry.Upstream is null)
@@ -88,14 +88,14 @@
                                 }
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="mud-grid-col">
                             <div class="border rounded p-2 h-100">
                                 <div class="small text-muted mb-1">Current</div>
                                 <div>Location: @(entry.Current.Location ?? "-")</div>
                                 <div>Available Qty: @entry.Current.AvailableQty.ToString("0.##")</div>
                             </div>
                         </div>
-                        <div class="col-md-4">
+                        <div class="mud-grid-col">
                             <div class="border rounded p-2 h-100">
                                 <div class="small text-muted mb-1">Downstream Sales</div>
                                 @if (entry.Downstream.SalesOrders.Count == 0)

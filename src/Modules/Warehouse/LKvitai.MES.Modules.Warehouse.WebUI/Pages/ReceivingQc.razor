@@ -14,33 +14,33 @@
                  OnDismiss="DismissError" />
 }
 
-<div class="card shadow-sm mb-3">
-    <div class="card-body">
-        <div class="row g-2 align-items-end">
-            <div class="col-md-4">
+<div class="mud-surface shadow-sm mb-3">
+    <div class="mud-surface-body">
+        <div class="mud-grid-mrow g-2 align-items-end">
+            <div class="mud-grid-col">
                 <label class="form-label">Scan SKU / Lot</label>
-                <input class="form-control" @bind="_search" placeholder="FG-0001 or LOT-2026-01" />
+                <input class="mud-input-base" @bind="_search" placeholder="FG-0001 or LOT-2026-01" />
             </div>
-            <div class="col-md-4">
+            <div class="mud-grid-col">
                 <label class="form-label">Reason Code (for Fail)</label>
-                <input class="form-control" @bind="_reasonCode" placeholder="DAMAGED" />
+                <input class="mud-input-base" @bind="_reasonCode" placeholder="DAMAGED" />
             </div>
-            <div class="col-md-2 d-grid">
-                <button class="btn btn-outline-secondary" @onclick="LoadAsync" disabled="@(_isLoading || _isSubmitting)">Refresh</button>
+            <div class="mud-grid-col d-grid">
+                <button class="mud-mbtn-base mud-mbtn-outline-secondary" @onclick="LoadAsync" disabled="@(_isLoading || _isSubmitting)">Refresh</button>
             </div>
         </div>
     </div>
 </div>
 
-<div class="card shadow-sm position-relative">
+<div class="mud-surface shadow-sm position-relative">
      (_isLoading || _isSubmitting)
         {
             <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
         }
 
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-sm table-hover align-middle">
+    <div class="mud-surface-body">
+        <div class="overflow-auto">
+            <table class="mud-mtbl-base mud-mtbl-dense mtbl-hover align-middle">
                 <thead>
                     <tr>
                         <th>SKU</th>
@@ -67,27 +67,27 @@
                     }
                     else
                     {
-                        @foreach (var row in FilteredRows)
+                        @foreach (var mrow in FilteredRows)
                         {
                             <tr>
-                                <td>@row.ItemSku</td>
-                                <td>@row.ItemName</td>
-                                <td>@(row.LotNumber ?? "-")</td>
-                                <td>@row.Qty.ToString("0.##")</td>
-                                <td>@row.BaseUoM</td>
+                                <td>@mrow.ItemSku</td>
+                                <td>@mrow.ItemName</td>
+                                <td>@(mrow.LotNumber ?? "-")</td>
+                                <td>@mrow.Qty.ToString("0.##")</td>
+                                <td>@mrow.BaseUoM</td>
                                 <td>
-                                    <input class="form-control form-control-sm"
-                                           value="@GetNotes(row)"
-                                           @onchange="args => SetNotes(row, args.Value?.ToString())" />
+                                    <input class="mud-input-base minput-sm"
+                                           value="@GetNotes(mrow)"
+                                           @onchange="args => SetNotes(mrow, args.Value?.ToString())" />
                                 </td>
                                 <td class="d-flex gap-1">
-                                    <button class="btn btn-sm btn-success"
-                                            @onclick="() => PassAsync(row)"
+                                    <button class="mud-mbtn-base mud-mbtn-sm mud-mbtn-success"
+                                            @onclick="() => PassAsync(mrow)"
                                             disabled="@_isSubmitting">
                                         Pass
                                     </button>
-                                    <button class="btn btn-sm btn-danger"
-                                            @onclick="() => FailAsync(row)"
+                                    <button class="mud-mbtn-base mud-mbtn-sm mud-mbtn-danger"
+                                            @onclick="() => FailAsync(mrow)"
                                             disabled="@_isSubmitting">
                                         Fail
                                     </button>
@@ -141,12 +141,12 @@
         }
     }
 
-    private async Task PassAsync(QcPendingRowDto row)
+    private async Task PassAsync(QcPendingRowDto mrow)
     {
-        await SubmitQcAsync(row, isPass: true);
+        await SubmitQcAsync(mrow, isPass: true);
     }
 
-    private async Task FailAsync(QcPendingRowDto row)
+    private async Task FailAsync(QcPendingRowDto mrow)
     {
         if (string.IsNullOrWhiteSpace(_reasonCode))
         {
@@ -154,10 +154,10 @@
             return;
         }
 
-        await SubmitQcAsync(row, isPass: false);
+        await SubmitQcAsync(mrow, isPass: false);
     }
 
-    private async Task SubmitQcAsync(QcPendingRowDto row, bool isPass)
+    private async Task SubmitQcAsync(QcPendingRowDto mrow, bool isPass)
     {
         _isSubmitting = true;
         _apiError = null;
@@ -166,11 +166,11 @@
         {
             var request = new QcActionRequestDto
             {
-                ItemId = row.ItemId,
-                LotId = row.LotId,
-                Qty = row.Qty,
+                ItemId = mrow.ItemId,
+                LotId = mrow.LotId,
+                Qty = mrow.Qty,
                 ReasonCode = isPass ? null : _reasonCode.Trim(),
-                InspectorNotes = GetNotes(row)
+                InspectorNotes = GetNotes(mrow)
             };
 
             var result = isPass
@@ -191,7 +191,7 @@
         }
     }
 
-    private bool MatchesSearch(QcPendingRowDto row)
+    private bool MatchesSearch(QcPendingRowDto mrow)
     {
         if (string.IsNullOrWhiteSpace(_search))
         {
@@ -199,25 +199,25 @@
         }
 
         var filter = _search.Trim();
-        return row.ItemSku.Contains(filter, StringComparison.OrdinalIgnoreCase)
-               || row.ItemName.Contains(filter, StringComparison.OrdinalIgnoreCase)
-               || (row.LotNumber?.Contains(filter, StringComparison.OrdinalIgnoreCase) ?? false);
+        return mrow.ItemSku.Contains(filter, StringComparison.OrdinalIgnoreCase)
+               || mrow.ItemName.Contains(filter, StringComparison.OrdinalIgnoreCase)
+               || (mrow.LotNumber?.Contains(filter, StringComparison.OrdinalIgnoreCase) ?? false);
     }
 
-    private string BuildKey(QcPendingRowDto row)
+    private string BuildKey(QcPendingRowDto mrow)
     {
-        return $"{row.ItemId}:{row.LotId?.ToString() ?? "-"}";
+        return $"{mrow.ItemId}:{mrow.LotId?.ToString() ?? "-"}";
     }
 
-    private string GetNotes(QcPendingRowDto row)
+    private string GetNotes(QcPendingRowDto mrow)
     {
-        var key = BuildKey(row);
+        var key = BuildKey(mrow);
         return _notesByKey.TryGetValue(key, out var value) ? value : string.Empty;
     }
 
-    private void SetNotes(QcPendingRowDto row, string? value)
+    private void SetNotes(QcPendingRowDto mrow, string? value)
     {
-        var key = BuildKey(row);
+        var key = BuildKey(mrow);
         if (string.IsNullOrWhiteSpace(value))
         {
             _notesByKey.Remove(key);

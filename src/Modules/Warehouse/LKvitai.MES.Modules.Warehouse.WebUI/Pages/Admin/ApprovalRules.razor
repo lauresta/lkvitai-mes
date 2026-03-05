@@ -9,7 +9,7 @@
 
 @if (!_hasAdminAccess)
 {
-    <div class="alert alert-warning" role="alert">
+    <div class="mud-message mud-message-warning" role="malert">
         Admin role required.
     </div>
 }
@@ -23,14 +23,14 @@ else
                      OnDismiss="DismissError" />
     }
 
-    <div class="card shadow-sm mb-3">
-        <div class="card-body">
-            <div class="row g-2 align-items-end">
-                <div class="col-md-3 d-grid">
-                    <button class="btn btn-primary" @onclick="ToggleCreateForm">@(_showCreate ? "Hide Form" : "Add Approval Rule")</button>
+    <div class="mud-surface shadow-sm mb-3">
+        <div class="mud-surface-body">
+            <div class="mud-grid-mrow g-2 align-items-end">
+                <div class="mud-grid-col d-grid">
+                    <button class="mud-mbtn-base mud-mbtn-primary" @onclick="ToggleCreateForm">@(_showCreate ? "Hide Form" : "Add Approval Rule")</button>
                 </div>
-                <div class="col-md-3 d-grid">
-                    <button class="btn btn-outline-secondary" @onclick="LoadAsync">Refresh</button>
+                <div class="mud-grid-col d-grid">
+                    <button class="mud-mbtn-base mud-mbtn-outline-secondary" @onclick="LoadAsync">Refresh</button>
                 </div>
             </div>
         </div>
@@ -38,58 +38,58 @@ else
 
     @if (_showCreate)
     {
-        <div class="card shadow-sm mb-3">
-            <div class="card-header">Create Approval Rule</div>
-            <div class="card-body">
+        <div class="mud-surface shadow-sm mb-3">
+            <div class="mud-surface-header">Create Approval Rule</div>
+            <div class="mud-surface-body">
                 <EditForm Model="_createForm" OnValidSubmit="CreateAsync">
                     <DataAnnotationsValidator />
                     <ValidationSummary />
-                    <div class="row g-2">
-                        <div class="col-md-2">
+                    <div class="mud-grid-mrow g-2">
+                        <div class="mud-grid-col">
                             <label class="form-label">Rule Type</label>
-                            <InputSelect class="form-select" @bind-Value="_createForm.RuleType">
+                            <InputSelect class="mud-input-base" @bind-Value="_createForm.RuleType">
                                 @foreach (var type in RuleTypes)
                                 {
                                     <option value="@type">@type</option>
                                 }
                             </InputSelect>
                         </div>
-                        <div class="col-md-2">
+                        <div class="mud-grid-col">
                             <label class="form-label">Threshold Type</label>
-                            <InputSelect class="form-select" @bind-Value="_createForm.ThresholdType">
+                            <InputSelect class="mud-input-base" @bind-Value="_createForm.ThresholdType">
                                 @foreach (var type in ThresholdTypes)
                                 {
                                     <option value="@type">@type</option>
                                 }
                             </InputSelect>
                         </div>
-                        <div class="col-md-2">
+                        <div class="mud-grid-col">
                             <label class="form-label">Threshold Value</label>
-                            <InputNumber class="form-control" @bind-Value="_createForm.ThresholdValue" />
+                            <InputNumber class="mud-input-base" @bind-Value="_createForm.ThresholdValue" />
                             <ValidationMessage For="() => _createForm.ThresholdValue" />
                         </div>
-                        <div class="col-md-2">
+                        <div class="mud-grid-col">
                             <label class="form-label">Priority</label>
-                            <InputNumber class="form-control" @bind-Value="_createForm.Priority" />
+                            <InputNumber class="mud-input-base" @bind-Value="_createForm.Priority" />
                             <ValidationMessage For="() => _createForm.Priority" />
                         </div>
-                        <div class="col-md-2">
+                        <div class="mud-grid-col">
                             <label class="form-label">Approver Role</label>
-                            <InputSelect class="form-select" @bind-Value="_createForm.ApproverRole">
+                            <InputSelect class="mud-input-base" @bind-Value="_createForm.ApproverRole">
                                 @foreach (var role in ApproverRoles)
                                 {
                                     <option value="@role">@role</option>
                                 }
                             </InputSelect>
                         </div>
-                        <div class="col-md-2 d-flex align-items-end">
+                        <div class="mud-grid-col d-flex align-items-end">
                             <div class="form-check mb-2">
                                 <InputCheckbox class="form-check-input" @bind-Value="_createForm.Active" />
                                 <label class="form-check-label">Active</label>
                             </div>
                         </div>
-                        <div class="col-md-2 d-grid">
-                            <button class="btn btn-primary" type="submit" disabled="@_isSubmitting">Save</button>
+                        <div class="mud-grid-col d-grid">
+                            <button class="mud-mbtn-base mud-mbtn-primary" type="submit" disabled="@_isSubmitting">Save</button>
                         </div>
                     </div>
                 </EditForm>
@@ -97,14 +97,14 @@ else
         </div>
     }
 
-    <div class="card shadow-sm position-relative mb-3">
+    <div class="mud-surface shadow-sm position-relative mb-3">
          (@(_isLoading || _isSubmitting || _isDeleting))
         {
             <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
         }
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-sm table-hover align-middle">
+        <div class="mud-surface-body">
+            <div class="overflow-auto">
+                <table class="mud-mtbl-base mud-mtbl-dense mtbl-hover align-middle">
                     <thead>
                         <tr>
                             <th>Rule Type</th>
@@ -133,8 +133,8 @@ else
                                     <td>@rule.Priority</td>
                                     <td>@(rule.Active ? "Yes" : "No")</td>
                                     <td class="text-end">
-                                        <button class="btn btn-sm btn-outline-secondary me-2" @onclick="() => BeginEdit(rule)">Edit</button>
-                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmDelete(rule)">Delete</button>
+                                        <button class="mud-mbtn-base mud-mbtn-sm mud-mbtn-outline-secondary me-2" @onclick="() => BeginEdit(rule)">Edit</button>
+                                        <button class="mud-mbtn-base mud-mbtn-sm mbtn-outline-danger" @onclick="() => ConfirmDelete(rule)">Delete</button>
                                     </td>
                                 </tr>
                             }
@@ -147,61 +147,61 @@ else
 
     @if (_editing is not null)
     {
-        <div class="card shadow-sm mb-3">
-            <div class="card-header d-flex justify-content-between align-items-center">
+        <div class="mud-surface shadow-sm mb-3">
+            <div class="mud-surface-header d-flex justify-content-between align-items-center">
                 <span>Edit Rule #@_editing.Id</span>
-                <button class="btn btn-sm btn-outline-secondary" @onclick="CancelEdit">Close</button>
+                <button class="mud-mbtn-base mud-mbtn-sm mud-mbtn-outline-secondary" @onclick="CancelEdit">Close</button>
             </div>
-            <div class="card-body">
+            <div class="mud-surface-body">
                 <EditForm Model="_editing" OnValidSubmit="UpdateAsync">
                     <DataAnnotationsValidator />
                     <ValidationSummary />
-                    <div class="row g-2">
-                        <div class="col-md-2">
+                    <div class="mud-grid-mrow g-2">
+                        <div class="mud-grid-col">
                             <label class="form-label">Rule Type</label>
-                            <InputSelect class="form-select" @bind-Value="_editing.RuleType">
+                            <InputSelect class="mud-input-base" @bind-Value="_editing.RuleType">
                                 @foreach (var type in RuleTypes)
                                 {
                                     <option value="@type">@type</option>
                                 }
                             </InputSelect>
                         </div>
-                        <div class="col-md-2">
+                        <div class="mud-grid-col">
                             <label class="form-label">Threshold Type</label>
-                            <InputSelect class="form-select" @bind-Value="_editing.ThresholdType">
+                            <InputSelect class="mud-input-base" @bind-Value="_editing.ThresholdType">
                                 @foreach (var type in ThresholdTypes)
                                 {
                                     <option value="@type">@type</option>
                                 }
                             </InputSelect>
                         </div>
-                        <div class="col-md-2">
+                        <div class="mud-grid-col">
                             <label class="form-label">Threshold Value</label>
-                            <InputNumber class="form-control" @bind-Value="_editing.ThresholdValue" />
+                            <InputNumber class="mud-input-base" @bind-Value="_editing.ThresholdValue" />
                             <ValidationMessage For="() => _editing.ThresholdValue" />
                         </div>
-                        <div class="col-md-2">
+                        <div class="mud-grid-col">
                             <label class="form-label">Priority</label>
-                            <InputNumber class="form-control" @bind-Value="_editing.Priority" />
+                            <InputNumber class="mud-input-base" @bind-Value="_editing.Priority" />
                             <ValidationMessage For="() => _editing.Priority" />
                         </div>
-                        <div class="col-md-2">
+                        <div class="mud-grid-col">
                             <label class="form-label">Approver Role</label>
-                            <InputSelect class="form-select" @bind-Value="_editing.ApproverRole">
+                            <InputSelect class="mud-input-base" @bind-Value="_editing.ApproverRole">
                                 @foreach (var role in ApproverRoles)
                                 {
                                     <option value="@role">@role</option>
                                 }
                             </InputSelect>
                         </div>
-                        <div class="col-md-2 d-flex align-items-end">
+                        <div class="mud-grid-col d-flex align-items-end">
                             <div class="form-check mb-2">
                                 <InputCheckbox class="form-check-input" @bind-Value="_editing.Active" />
                                 <label class="form-check-label">Active</label>
                             </div>
                         </div>
-                        <div class="col-md-2 d-grid">
-                            <button class="btn btn-primary" type="submit" disabled="@_isSubmitting">Save</button>
+                        <div class="mud-grid-col d-grid">
+                            <button class="mud-mbtn-base mud-mbtn-primary" type="submit" disabled="@_isSubmitting">Save</button>
                         </div>
                     </div>
                 </EditForm>
@@ -209,34 +209,34 @@ else
         </div>
     }
 
-    <div class="card shadow-sm">
-        <div class="card-header">Test Rule Evaluation</div>
-        <div class="card-body">
+    <div class="mud-surface shadow-sm">
+        <div class="mud-surface-header">Test Rule Evaluation</div>
+        <div class="mud-surface-body">
             <EditForm Model="_testForm" OnValidSubmit="TestRuleAsync">
                 <DataAnnotationsValidator />
                 <ValidationSummary />
-                <div class="row g-2 align-items-end">
-                    <div class="col-md-4">
+                <div class="mud-grid-mrow g-2 align-items-end">
+                    <div class="mud-grid-col">
                         <label class="form-label">Rule Type</label>
-                        <InputSelect class="form-select" @bind-Value="_testForm.RuleType">
+                        <InputSelect class="mud-input-base" @bind-Value="_testForm.RuleType">
                             @foreach (var type in RuleTypes)
                             {
                                 <option value="@type">@type</option>
                             }
                         </InputSelect>
                     </div>
-                    <div class="col-md-4">
+                    <div class="mud-grid-col">
                         <label class="form-label">Test Value</label>
-                        <InputNumber class="form-control" @bind-Value="_testForm.Value" />
+                        <InputNumber class="mud-input-base" @bind-Value="_testForm.Value" />
                         <ValidationMessage For="() => _testForm.Value" />
                     </div>
-                    <div class="col-md-2 d-grid">
-                        <button class="btn btn-outline-primary" type="submit">Test Rule</button>
+                    <div class="mud-grid-col d-grid">
+                        <button class="mud-mbtn-base mud-mbtn-outline-primary" type="submit">Test Rule</button>
                     </div>
-                    <div class="col-md-12">
+                    <div class="mud-grid-col">
                         @if (_testResult is not null)
                         {
-                            <div class="alert alert-info mt-2 mb-0" role="alert">
+                            <div class="mud-message mud-message-info mt-2 mb-0" role="malert">
                                 @if (_testResult.RequiresApproval)
                                 {
                                     <span>Requires approval: @_testResult.ApproverRole</span>

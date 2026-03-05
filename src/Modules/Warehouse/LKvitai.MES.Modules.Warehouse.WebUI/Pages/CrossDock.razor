@@ -15,38 +15,38 @@
                  OnDismiss="DismissError" />
 }
 
-<div class="card shadow-sm mb-3">
-    <div class="card-body">
+<div class="mud-surface shadow-sm mb-3">
+    <div class="mud-surface-body">
         <h5>Create Cross-Dock Match</h5>
-        <div class="row g-2 align-items-end">
-            <div class="col-md-3">
+        <div class="mud-grid-mrow g-2 align-items-end">
+            <div class="mud-grid-col">
                 <label class="form-label">Inbound Shipment Id</label>
-                <input class="form-control" @bind="_inboundId" placeholder="GUID" />
+                <input class="mud-input-base" @bind="_inboundId" placeholder="GUID" />
             </div>
-            <div class="col-md-3">
+            <div class="mud-grid-col">
                 <label class="form-label">Outbound Order Id</label>
-                <input class="form-control" @bind="_outboundId" placeholder="GUID" />
+                <input class="mud-input-base" @bind="_outboundId" placeholder="GUID" />
             </div>
-            <div class="col-md-2">
+            <div class="mud-grid-col">
                 <label class="form-label">Item Id</label>
-                <input class="form-control" type="number" @bind="_itemId" />
+                <input class="mud-input-base" type="number" @bind="_itemId" />
             </div>
-            <div class="col-md-2">
+            <div class="mud-grid-col">
                 <label class="form-label">Qty</label>
-                <input class="form-control" type="number" step="0.01" @bind="_qty" />
+                <input class="mud-input-base" type="number" step="0.01" @bind="_qty" />
             </div>
-            <div class="col-md-2">
-                <button class="btn btn-primary w-100" @onclick="CreateAsync" disabled="@_isBusy">Create</button>
+            <div class="mud-grid-col">
+                <button class="mud-mbtn-base mud-mbtn-primary w-100" @onclick="CreateAsync" disabled="@_isBusy">Create</button>
             </div>
         </div>
     </div>
 </div>
 
-<div class="card shadow-sm">
-    <div class="card-body">
+<div class="mud-surface shadow-sm">
+    <div class="mud-surface-body">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h5 class="mb-0">Cross-Dock Queue</h5>
-            <button class="btn btn-outline-secondary btn-sm" @onclick="LoadAsync" disabled="@_isBusy">Refresh</button>
+            <button class="mud-mbtn-base mud-mbtn-outline-secondary mud-mbtn-sm" @onclick="LoadAsync" disabled="@_isBusy">Refresh</button>
         </div>
 
         @if (_rows.Count == 0)
@@ -58,8 +58,8 @@
         }
         else
         {
-            <div class="table-responsive">
-                <table class="table table-sm align-middle">
+            <div class="overflow-auto">
+                <table class="mud-mtbl-base mud-mtbl-dense align-middle">
                     <thead>
                         <tr>
                             <th>Number</th>
@@ -71,17 +71,17 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach (var row in _rows)
+                        @foreach (var mrow in _rows)
                         {
                             <tr>
-                                <td>@row.CrossDockNumber</td>
-                                <td>@row.ItemId</td>
-                                <td>@row.Qty</td>
-                                <td><span class="badge bg-secondary">@row.Status</span></td>
-                                <td>@row.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                                <td>@mrow.CrossDockNumber</td>
+                                <td>@mrow.ItemId</td>
+                                <td>@mrow.Qty</td>
+                                <td><span class="mud-pill bg-secondary">@mrow.Status</span></td>
+                                <td>@mrow.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
                                 <td class="d-flex gap-1">
-                                    <button class="btn btn-sm btn-outline-success" @onclick='() => SetStatusAsync(row.Id, "MATCHED")'>Match</button>
-                                    <button class="btn btn-sm btn-outline-primary" @onclick='() => SetStatusAsync(row.Id, "COMPLETED")'>Complete</button>
+                                    <button class="mud-mbtn-base mud-mbtn-sm mbtn-outline-success" @onclick='() => SetStatusAsync(mrow.Id, "MATCHED")'>Match</button>
+                                    <button class="mud-mbtn-base mud-mbtn-sm mud-mbtn-outline-primary" @onclick='() => SetStatusAsync(mrow.Id, "COMPLETED")'>Complete</button>
                                 </td>
                             </tr>
                         }

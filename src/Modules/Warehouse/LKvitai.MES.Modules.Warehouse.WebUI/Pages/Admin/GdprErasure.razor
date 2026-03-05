@@ -9,7 +9,7 @@
 
 @if (!_hasAdminAccess)
 {
-    <div class="alert alert-warning" role="alert">
+    <div class="mud-message mud-message-warning" role="malert">
         Admin role required.
     </div>
 }
@@ -23,40 +23,40 @@ else
                      OnDismiss="DismissError" />
     }
 
-    <div class="card shadow-sm mb-3">
-        <div class="card-header">New Erasure Request</div>
-        <div class="card-body">
+    <div class="mud-surface shadow-sm mb-3">
+        <div class="mud-surface-header">New Erasure Request</div>
+        <div class="mud-surface-body">
             <EditForm Model="_createForm" OnValidSubmit="CreateAsync">
                 <DataAnnotationsValidator />
                 <ValidationSummary />
 
-                <div class="row g-2">
-                    <div class="col-md-4">
+                <div class="mud-grid-mrow g-2">
+                    <div class="mud-grid-col">
                         <label class="form-label">Customer ID</label>
-                        <InputText class="form-control" @bind-Value="_createForm.CustomerId" />
+                        <InputText class="mud-input-base" @bind-Value="_createForm.CustomerId" />
                         <ValidationMessage For="() => _createForm.CustomerId" />
                     </div>
-                    <div class="col-md-6">
+                    <div class="mud-grid-col">
                         <label class="form-label">Reason</label>
-                        <InputText class="form-control" @bind-Value="_createForm.Reason" />
+                        <InputText class="mud-input-base" @bind-Value="_createForm.Reason" />
                         <ValidationMessage For="() => _createForm.Reason" />
                     </div>
-                    <div class="col-md-2 d-grid">
-                        <button class="btn btn-primary mt-md-4" type="submit" disabled="@_isSubmitting">Create</button>
+                    <div class="mud-grid-col d-grid">
+                        <button class="mud-mbtn-base mud-mbtn-primary mt-md-4" type="submit" disabled="@_isSubmitting">Create</button>
                     </div>
                 </div>
             </EditForm>
         </div>
     </div>
 
-    <div class="card shadow-sm position-relative">
+    <div class="mud-surface shadow-sm position-relative">
          (@(_isLoading || _isSubmitting || _isUpdating))
         {
             <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
         }
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-sm table-hover align-middle">
+        <div class="mud-surface-body">
+            <div class="overflow-auto">
+                <table class="mud-mtbl-base mud-mtbl-dense mtbl-hover align-middle">
                     <thead>
                         <tr>
                             <th>Customer ID</th>
@@ -87,12 +87,12 @@ else
                                     <td>@item.Reason</td>
                                     <td>@(string.IsNullOrWhiteSpace(item.RejectionReason) ? "-" : item.RejectionReason)</td>
                                     <td class="text-end">
-                                        <button class="btn btn-sm btn-outline-success me-2"
+                                        <button class="mud-mbtn-base mud-mbtn-sm mbtn-outline-success me-2"
                                                 @onclick="() => ApproveAsync(item)"
                                                 disabled="@(_isUpdating || !IsPending(item))">
                                             Approve
                                         </button>
-                                        <button class="btn btn-sm btn-outline-danger"
+                                        <button class="mud-mbtn-base mud-mbtn-sm mbtn-outline-danger"
                                                 @onclick="() => BeginReject(item)"
                                                 disabled="@(_isUpdating || !IsPending(item))">
                                             Reject
@@ -109,17 +109,17 @@ else
 
     @if (_rejecting is not null)
     {
-        <div class="card shadow-sm mt-3">
-            <div class="card-header d-flex justify-content-between align-items-center">
+        <div class="mud-surface shadow-sm mt-3">
+            <div class="mud-surface-header d-flex justify-content-between align-items-center">
                 <span>Reject Request @_rejecting.Id</span>
-                <button class="btn btn-sm btn-outline-secondary" @onclick="CancelReject">Close</button>
+                <button class="mud-mbtn-base mud-mbtn-sm mud-mbtn-outline-secondary" @onclick="CancelReject">Close</button>
             </div>
-            <div class="card-body">
+            <div class="mud-surface-body">
                 <div class="mb-2">
                     <label class="form-label">Rejection Reason</label>
-                    <InputText class="form-control" @bind-Value="_rejectReason" />
+                    <InputText class="mud-input-base" @bind-Value="_rejectReason" />
                 </div>
-                <button class="btn btn-danger" @onclick="RejectAsync" disabled="@_isUpdating">Confirm Reject</button>
+                <button class="mud-mbtn-base mud-mbtn-danger" @onclick="RejectAsync" disabled="@_isUpdating">Confirm Reject</button>
             </div>
         </div>
     }

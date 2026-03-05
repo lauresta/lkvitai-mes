@@ -15,16 +15,16 @@
                  OnDismiss="@(() => _apiError = null)" />
 }
 
-<div class="card shadow-sm mb-3">
-    <div class="card-body">
-        <div class="row g-2 align-items-end">
-            <div class="col-md-4">
+<div class="mud-surface shadow-sm mb-3">
+    <div class="mud-surface-body">
+        <div class="mud-grid-mrow g-2 align-items-end">
+            <div class="mud-grid-col">
                 <label class="form-label">Search</label>
-                <input class="form-control" @bind="_search" placeholder="Supplier SKU / supplier / item" />
+                <input class="mud-input-base" @bind="_search" placeholder="Supplier SKU / supplier / item" />
             </div>
-            <div class="col-md-3">
+            <div class="mud-grid-col">
                 <label class="form-label">Supplier</label>
-                <select class="form-select" @bind="_supplierFilter">
+                <select class="mud-input-base" @bind="_supplierFilter">
                     <option value="">All</option>
                     @foreach (var supplier in _suppliers)
                     {
@@ -32,9 +32,9 @@
                     }
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="mud-grid-col">
                 <label class="form-label">Item</label>
-                <select class="form-select" @bind="_itemFilter">
+                <select class="mud-input-base" @bind="_itemFilter">
                     <option value="">All</option>
                     @foreach (var item in _items)
                     {
@@ -42,28 +42,28 @@
                     }
                 </select>
             </div>
-            <div class="col-md-2 d-grid">
-                <button class="btn btn-primary" @onclick="ApplyFiltersAsync">Filter</button>
+            <div class="mud-grid-col d-grid">
+                <button class="mud-mbtn-base mud-mbtn-primary" @onclick="ApplyFiltersAsync">Filter</button>
             </div>
         </div>
     </div>
 </div>
 
-<div class="card shadow-sm mb-3 position-relative">
+<div class="mud-surface shadow-sm mb-3 position-relative">
      (@_isLoading)
         {
             <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
         }
-    <div class="card-body">
+    <div class="mud-surface-body">
         <div class="d-flex justify-content-between align-items-center mb-2">
             <strong>Total: @_totalCount</strong>
-            <button class="btn btn-sm btn-outline-primary" @onclick="@(() => _showCreate = !_showCreate)">
+            <button class="mud-mbtn-base mud-mbtn-sm mud-mbtn-outline-primary" @onclick="@(() => _showCreate = !_showCreate)">
                 @(_showCreate ? "Hide Create Form" : "Create Mapping")
             </button>
         </div>
 
-        <div class="table-responsive" data-testid="admin-supplier-mappings-grid">
-            <table class="table table-sm table-hover align-middle">
+        <div class="overflow-auto" data-testid="admin-supplier-mappings-grid">
+            <table class="mud-mtbl-base mud-mtbl-dense mtbl-hover align-middle">
                 <thead>
                 <tr>
                     <th>Supplier</th>
@@ -84,17 +84,17 @@
                 }
                 else
                 {
-                    @foreach (var row in _mappings)
+                    @foreach (var mrow in _mappings)
                     {
                         <tr>
-                            <td>@row.SupplierCode - @row.SupplierName</td>
-                            <td>@row.SupplierSKU</td>
-                            <td>@row.ItemSKU - @row.ItemName</td>
-                            <td>@(row.LeadTimeDays?.ToString() ?? "-")</td>
-                            <td>@(row.MinOrderQty?.ToString("0.###") ?? "-")</td>
-                            <td>@(row.PricePerUnit?.ToString("0.##") ?? "-")</td>
+                            <td>@mrow.SupplierCode - @mrow.SupplierName</td>
+                            <td>@mrow.SupplierSKU</td>
+                            <td>@mrow.ItemSKU - @mrow.ItemName</td>
+                            <td>@(mrow.LeadTimeDays?.ToString() ?? "-")</td>
+                            <td>@(mrow.MinOrderQty?.ToString("0.###") ?? "-")</td>
+                            <td>@(mrow.PricePerUnit?.ToString("0.##") ?? "-")</td>
                             <td class="text-end">
-                                <button class="btn btn-sm btn-outline-secondary" @onclick="@(() => BeginEdit(row))">Edit</button>
+                                <button class="mud-mbtn-base mud-mbtn-sm mud-mbtn-outline-secondary" @onclick="@(() => BeginEdit(mrow))">Edit</button>
                             </td>
                         </tr>
                     }
@@ -132,46 +132,46 @@
 
 @if (_showCreate)
 {
-    <div class="card shadow-sm mb-3">
-        <div class="card-header">Create Supplier Mapping</div>
-        <div class="card-body">
-            <div class="row g-2">
-                <div class="col-md-3">
+    <div class="mud-surface shadow-sm mb-3">
+        <div class="mud-surface-header">Create Supplier Mapping</div>
+        <div class="mud-surface-body">
+            <div class="mud-grid-mrow g-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Supplier</label>
-                    <select class="form-select" @bind="_create.SupplierId">
+                    <select class="mud-input-base" @bind="_create.SupplierId">
                         @foreach (var supplier in _suppliers)
                         {
                             <option value="@supplier.Id">@supplier.Code - @supplier.Name</option>
                         }
                     </select>
                 </div>
-                <div class="col-md-3">
+                <div class="mud-grid-col">
                     <label class="form-label">Supplier SKU</label>
-                    <input class="form-control" @bind="_create.SupplierSKU" />
+                    <input class="mud-input-base" @bind="_create.SupplierSKU" />
                 </div>
-                <div class="col-md-3">
+                <div class="mud-grid-col">
                     <label class="form-label">Item</label>
-                    <select class="form-select" @bind="_create.ItemId">
+                    <select class="mud-input-base" @bind="_create.ItemId">
                         @foreach (var item in _items)
                         {
                             <option value="@item.Id">@item.InternalSKU - @item.Name</option>
                         }
                     </select>
                 </div>
-                <div class="col-md-3">
+                <div class="mud-grid-col">
                     <label class="form-label">Lead Time (days)</label>
-                    <input class="form-control" type="number" min="0" @bind="_create.LeadTimeDays" />
+                    <input class="mud-input-base" type="number" min="0" @bind="_create.LeadTimeDays" />
                 </div>
-                <div class="col-md-3">
+                <div class="mud-grid-col">
                     <label class="form-label">MOQ</label>
-                    <input class="form-control" type="number" step="0.001" min="0" @bind="_create.MinOrderQty" />
+                    <input class="mud-input-base" type="number" step="0.001" min="0" @bind="_create.MinOrderQty" />
                 </div>
-                <div class="col-md-3">
+                <div class="mud-grid-col">
                     <label class="form-label">Price</label>
-                    <input class="form-control" type="number" step="0.01" min="0" @bind="_create.PricePerUnit" />
+                    <input class="mud-input-base" type="number" step="0.01" min="0" @bind="_create.PricePerUnit" />
                 </div>
-                <div class="col-md-3 d-flex align-items-end">
-                    <button class="btn btn-primary btn-fixed-height px-4" @onclick="CreateAsync">Save Mapping</button>
+                <div class="mud-grid-col d-flex align-items-end">
+                    <button class="mud-mbtn-base mud-mbtn-primary mbtn-fixed-height px-4" @onclick="CreateAsync">Save Mapping</button>
                 </div>
             </div>
         </div>
@@ -181,49 +181,49 @@
 
 @if (_editing is not null)
 {
-    <div class="card shadow-sm">
-        <div class="card-header d-flex justify-content-between align-items-center">
+    <div class="mud-surface shadow-sm">
+        <div class="mud-surface-header d-flex justify-content-between align-items-center">
             <span>Edit Mapping: @_editing.SupplierSKU</span>
-            <button class="btn btn-sm btn-outline-secondary" @onclick="@(() => _editing = null)">Close</button>
+            <button class="mud-mbtn-base mud-mbtn-sm mud-mbtn-outline-secondary" @onclick="@(() => _editing = null)">Close</button>
         </div>
-        <div class="card-body">
-            <div class="row g-2">
-                <div class="col-md-3">
+        <div class="mud-surface-body">
+            <div class="mud-grid-mrow g-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Supplier</label>
-                    <select class="form-select" @bind="_editing.SupplierId">
+                    <select class="mud-input-base" @bind="_editing.SupplierId">
                         @foreach (var supplier in _suppliers)
                         {
                             <option value="@supplier.Id">@supplier.Code - @supplier.Name</option>
                         }
                     </select>
                 </div>
-                <div class="col-md-3">
+                <div class="mud-grid-col">
                     <label class="form-label">Supplier SKU</label>
-                    <input class="form-control" @bind="_editing.SupplierSKU" />
+                    <input class="mud-input-base" @bind="_editing.SupplierSKU" />
                 </div>
-                <div class="col-md-3">
+                <div class="mud-grid-col">
                     <label class="form-label">Item</label>
-                    <select class="form-select" @bind="_editing.ItemId">
+                    <select class="mud-input-base" @bind="_editing.ItemId">
                         @foreach (var item in _items)
                         {
                             <option value="@item.Id">@item.InternalSKU - @item.Name</option>
                         }
                     </select>
                 </div>
-                <div class="col-md-3">
+                <div class="mud-grid-col">
                     <label class="form-label">Lead Time (days)</label>
-                    <input class="form-control" type="number" min="0" @bind="_editing.LeadTimeDays" />
+                    <input class="mud-input-base" type="number" min="0" @bind="_editing.LeadTimeDays" />
                 </div>
-                <div class="col-md-3">
+                <div class="mud-grid-col">
                     <label class="form-label">MOQ</label>
-                    <input class="form-control" type="number" step="0.001" min="0" @bind="_editing.MinOrderQty" />
+                    <input class="mud-input-base" type="number" step="0.001" min="0" @bind="_editing.MinOrderQty" />
                 </div>
-                <div class="col-md-3">
+                <div class="mud-grid-col">
                     <label class="form-label">Price</label>
-                    <input class="form-control" type="number" step="0.01" min="0" @bind="_editing.PricePerUnit" />
+                    <input class="mud-input-base" type="number" step="0.01" min="0" @bind="_editing.PricePerUnit" />
                 </div>
-                <div class="col-md-3 d-flex align-items-end">
-                    <button class="btn btn-primary btn-fixed-height px-4" @onclick="UpdateAsync">Save Changes</button>
+                <div class="mud-grid-col d-flex align-items-end">
+                    <button class="mud-mbtn-base mud-mbtn-primary mbtn-fixed-height px-4" @onclick="UpdateAsync">Save Changes</button>
                 </div>
             </div>
         </div>
@@ -356,17 +356,17 @@
         }
     }
 
-    private void BeginEdit(AdminSupplierMappingDto row)
+    private void BeginEdit(AdminSupplierMappingDto mrow)
     {
         _editing = new MappingEditModel
         {
-            Id = row.Id,
-            SupplierId = row.SupplierId,
-            SupplierSKU = row.SupplierSKU,
-            ItemId = row.ItemId,
-            LeadTimeDays = row.LeadTimeDays,
-            MinOrderQty = row.MinOrderQty,
-            PricePerUnit = row.PricePerUnit
+            Id = mrow.Id,
+            SupplierId = mrow.SupplierId,
+            SupplierSKU = mrow.SupplierSKU,
+            ItemId = mrow.ItemId,
+            LeadTimeDays = mrow.LeadTimeDays,
+            MinOrderQty = mrow.MinOrderQty,
+            PricePerUnit = mrow.PricePerUnit
         };
     }
 

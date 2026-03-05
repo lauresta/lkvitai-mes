@@ -16,13 +16,13 @@
                  OnDismiss="DismissError" />
 }
 
-<div class="card shadow-sm position-relative">
+<div class="mud-surface shadow-sm position-relative">
      (@(_isLoading || _isSubmitting))
         {
             <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
         }
 
-    <div class="card-body">
+    <div class="mud-surface-body">
         @if (_order is null && !_isLoading)
         {
             <p class="text-muted mb-0">Order not found.</p>
@@ -35,15 +35,15 @@
                     <div class="text-muted">Customer: @(_order.CustomerName ?? "-")</div>
                 </div>
                 <div>
-                    <span class="badge @GetStatusBadgeClass(_order.Status)">@_order.Status</span>
+                    <span class="mud-pill @GetStatusBadgeClass(_order.Status)">@_order.Status</span>
                 </div>
             </div>
 
-            <div class="row g-3">
-                <div class="col-lg-7">
+            <div class="mud-grid-mrow g-3">
+                <div class="mud-grid-col">
                     <h5>Order Items</h5>
-                    <div class="table-responsive">
-                        <table class="table table-sm align-middle">
+                    <div class="overflow-auto">
+                        <table class="mud-mtbl-base mud-mtbl-dense align-middle">
                             <thead>
                                 <tr>
                                     <th>Item</th>
@@ -65,11 +65,11 @@
                                         <td>
                                             @if (scannedQty >= line.Qty)
                                             {
-                                                <span class="badge bg-success">Ready</span>
+                                                <span class="mud-pill bg-success">Ready</span>
                                             }
                                             else
                                             {
-                                                <span class="badge bg-secondary">Pending</span>
+                                                <span class="mud-pill bg-secondary">Pending</span>
                                             }
                                         </td>
                                     </tr>
@@ -79,12 +79,12 @@
                     </div>
                 </div>
 
-                <div class="col-lg-5">
+                <div class="mud-grid-col">
                     <h5>Packing Progress</h5>
                     <div class="mb-3">
                         <label class="form-label" for="barcode-input">Scan barcode</label>
                         <input id="barcode-input"
-                               class="form-control"
+                               class="mud-input-base"
                                type="text"
                                @bind="_barcodeInput"
                                @onkeydown="HandleBarcodeKeyDown"
@@ -94,7 +94,7 @@
 
                     <div class="mb-3">
                         <label class="form-label" for="packaging-type">Packaging type</label>
-                        <select id="packaging-type" class="form-select" @bind="_packagingType">
+                        <select id="packaging-type" class="mud-input-base" @bind="_packagingType">
                             <option value="BOX">BOX</option>
                             <option value="PALLET">PALLET</option>
                         </select>
@@ -102,17 +102,17 @@
 
                     @if (!string.IsNullOrWhiteSpace(_scanError))
                     {
-                        <div class="alert alert-warning py-2" role="alert">@_scanError</div>
+                        <div class="mud-message mud-message-warning py-2" role="malert">@_scanError</div>
                     }
 
                     <div class="d-flex flex-wrap gap-2">
-                        <button class="btn btn-primary"
+                        <button class="mud-mbtn-base mud-mbtn-primary"
                                 @onclick="PackAsync"
                                 disabled="@(!CanPack || _isSubmitting)">
                             Pack
                         </button>
-                        <button class="btn btn-outline-secondary" @onclick="ClearScans" disabled="@_isSubmitting">Clear Scans</button>
-                        <button class="btn btn-outline-secondary" @onclick="BackToOrder" disabled="@_isSubmitting">Back</button>
+                        <button class="mud-mbtn-base mud-mbtn-outline-secondary" @onclick="ClearScans" disabled="@_isSubmitting">Clear Scans</button>
+                        <button class="mud-mbtn-base mud-mbtn-outline-secondary" @onclick="BackToOrder" disabled="@_isSubmitting">Back</button>
                     </div>
                 </div>
             </div>

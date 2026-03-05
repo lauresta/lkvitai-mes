@@ -9,7 +9,7 @@
 
 @if (!_hasAdminAccess)
 {
-    <div class="alert alert-warning" role="alert">
+    <div class="mud-message mud-message-warning" role="malert">
         Admin role required.
     </div>
 }
@@ -23,53 +23,53 @@ else
                      OnDismiss="DismissError" />
     }
 
-    <div class="card shadow-sm position-relative">
+    <div class="mud-surface shadow-sm position-relative">
          (@(_isLoading || _isSaving))
         {
             <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
         }
-        <div class="card-body">
+        <div class="mud-surface-body">
             <EditForm Model="_form" OnValidSubmit="SaveAsync">
                 <DataAnnotationsValidator />
                 <ValidationSummary />
 
-                <div class="row g-3">
-                    <div class="col-md-6">
+                <div class="mud-grid-mrow g-3">
+                    <div class="mud-grid-col">
                         <label class="form-label">Capacity Threshold (%)</label>
-                        <InputNumber class="form-control" @bind-Value="_form.CapacityThresholdPercent" />
+                        <InputNumber class="mud-input-base" @bind-Value="_form.CapacityThresholdPercent" />
                         <ValidationMessage For="() => _form.CapacityThresholdPercent" />
                     </div>
 
-                    <div class="col-md-6">
+                    <div class="mud-grid-col">
                         <label class="form-label">Default Pick Strategy</label>
-                        <InputSelect class="form-select" @bind-Value="_form.DefaultPickStrategy">
+                        <InputSelect class="mud-input-base" @bind-Value="_form.DefaultPickStrategy">
                             <option value="FEFO">FEFO</option>
                             <option value="FIFO">FIFO</option>
                         </InputSelect>
                         <ValidationMessage For="() => _form.DefaultPickStrategy" />
                     </div>
 
-                    <div class="col-md-6">
+                    <div class="mud-grid-col">
                         <label class="form-label">Low Stock Threshold</label>
-                        <InputNumber class="form-control" @bind-Value="_form.LowStockThreshold" />
+                        <InputNumber class="mud-input-base" @bind-Value="_form.LowStockThreshold" />
                         <ValidationMessage For="() => _form.LowStockThreshold" />
                     </div>
 
-                    <div class="col-md-6">
+                    <div class="mud-grid-col">
                         <label class="form-label">Reorder Point</label>
-                        <InputNumber class="form-control" @bind-Value="_form.ReorderPoint" />
+                        <InputNumber class="mud-input-base" @bind-Value="_form.ReorderPoint" />
                         <ValidationMessage For="() => _form.ReorderPoint" />
                     </div>
 
-                    <div class="col-12">
+                    <div class="mud-grid-col">
                         <div class="form-check mt-2">
                             <InputCheckbox class="form-check-input" @bind-Value="_form.AutoAllocateOrders" />
                             <label class="form-check-label">Auto allocate orders</label>
                         </div>
                     </div>
 
-                    <div class="col-12 d-flex align-items-center gap-3">
-                        <button class="btn btn-primary" type="submit" disabled="@(_isLoading || _isSaving)">Save</button>
+                    <div class="mud-grid-col d-flex align-items-center gap-3">
+                        <button class="mud-mbtn-base mud-mbtn-primary" type="submit" disabled="@(_isLoading || _isSaving)">Save</button>
                         @if (_updatedAt is not null)
                         {
                             <span class="text-muted small">Last updated by @_updatedBy at @_updatedAt.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</span>

@@ -19,20 +19,20 @@
                  OnDismiss="DismissError" />
 }
 
-<div class="card shadow-sm position-relative">
+<div class="mud-surface shadow-sm position-relative">
      (_isLoading || _isSubmitting)
         {
             <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
         }
-    <div class="card-body">
+    <div class="mud-surface-body">
         <EditForm Model="_model" OnValidSubmit="SubmitAsync">
             <DataAnnotationsValidator />
             <ValidationSummary />
 
-            <div class="row g-3">
-                <div class="col-12 col-md-6">
+            <div class="mud-grid-mrow g-3">
+                <div class="mud-grid-col">
                     <label class="form-label">Shipment</label>
-                    <InputSelect class="form-select" @bind-Value="_model.ShipmentId">
+                    <InputSelect class="mud-input-base" @bind-Value="_model.ShipmentId">
                         <option value="">Select shipment</option>
                         @foreach (var shipment in _shipments)
                         {
@@ -40,23 +40,23 @@
                         }
                     </InputSelect>
                 </div>
-                <div class="col-12 col-md-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Freight Cost</label>
-                    <InputNumber class="form-control" @bind-Value="_model.FreightCost" />
+                    <InputNumber class="mud-input-base" @bind-Value="_model.FreightCost" />
                 </div>
-                <div class="col-12 col-md-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Duty Cost</label>
-                    <InputNumber class="form-control" @bind-Value="_model.DutyCost" />
+                    <InputNumber class="mud-input-base" @bind-Value="_model.DutyCost" />
                 </div>
-                <div class="col-12 col-md-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Insurance Cost</label>
-                    <InputNumber class="form-control" @bind-Value="_model.InsuranceCost" />
+                    <InputNumber class="mud-input-base" @bind-Value="_model.InsuranceCost" />
                 </div>
             </div>
 
             <div class="mt-3 d-flex gap-2">
-                <button class="btn btn-primary" type="submit" disabled="_isSubmitting">Apply Landed Cost</button>
-                <button class="btn btn-outline-secondary" type="button" @onclick="BackToDashboard">Back</button>
+                <button class="mud-mbtn-base mud-mbtn-primary" type="submit" disabled="_isSubmitting">Apply Landed Cost</button>
+                <button class="mud-mbtn-base mud-mbtn-outline-secondary" type="button" @onclick="BackToDashboard">Back</button>
             </div>
         </EditForm>
     </div>

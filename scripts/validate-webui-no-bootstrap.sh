@@ -23,4 +23,9 @@ if rg -n "<(/)?(ErrorBanner|ConfirmDialog|LoadingSpinner|Pagination|DataTable|To
   exit 1
 fi
 
+if rg -n --glob "*.razor" --glob "*.cshtml" 'class="[^"]*\b(btn|table|form-control|form-select|card|alert|badge|row|col-)\b[^"]*"' "$ROOT"; then
+  echo "Bootstrap class token usage detected in Razor/CSHTML markup."
+  exit 1
+fi
+
 echo "No bootstrap CDN or bi-* icon usage detected in WebUI."

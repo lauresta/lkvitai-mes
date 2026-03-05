@@ -10,7 +10,7 @@
 
 @if (!_hasAdminAccess)
 {
-    <div class="alert alert-warning" role="alert">
+    <div class="mud-message mud-message-warning" role="malert">
         Admin role required.
     </div>
 }
@@ -26,20 +26,20 @@ else
 
     @if (_latestPlainKey is not null)
     {
-        <div class="alert alert-info" role="alert">
+        <div class="mud-message mud-message-info" role="malert">
             <div><strong>One-time key value:</strong> store this now. It is not shown again.</div>
             <code>@_latestPlainKey</code>
         </div>
     }
 
-    <div class="card shadow-sm mb-3">
-        <div class="card-body">
-            <div class="row g-2 align-items-end">
-                <div class="col-md-3 d-grid">
-                    <button class="btn btn-primary" @onclick="ToggleCreateForm">@(_showCreate ? "Hide Form" : "Create New Key")</button>
+    <div class="mud-surface shadow-sm mb-3">
+        <div class="mud-surface-body">
+            <div class="mud-grid-mrow g-2 align-items-end">
+                <div class="mud-grid-col d-grid">
+                    <button class="mud-mbtn-base mud-mbtn-primary" @onclick="ToggleCreateForm">@(_showCreate ? "Hide Form" : "Create New Key")</button>
                 </div>
-                <div class="col-md-3 d-grid">
-                    <button class="btn btn-outline-secondary" @onclick="LoadAsync">Refresh</button>
+                <div class="mud-grid-col d-grid">
+                    <button class="mud-mbtn-base mud-mbtn-outline-secondary" @onclick="LoadAsync">Refresh</button>
                 </div>
             </div>
         </div>
@@ -47,37 +47,37 @@ else
 
     @if (_showCreate)
     {
-        <div class="card shadow-sm mb-3">
-            <div class="card-header">Create API Key</div>
-            <div class="card-body">
+        <div class="mud-surface shadow-sm mb-3">
+            <div class="mud-surface-header">Create API Key</div>
+            <div class="mud-surface-body">
                 <EditForm Model="_createForm" OnValidSubmit="CreateAsync">
                     <DataAnnotationsValidator />
                     <ValidationSummary />
 
-                    <div class="row g-2 mb-3">
-                        <div class="col-md-4">
+                    <div class="mud-grid-mrow g-2 mb-3">
+                        <div class="mud-grid-col">
                             <label class="form-label">Name</label>
-                            <InputText class="form-control" @bind-Value="_createForm.Name" />
+                            <InputText class="mud-input-base" @bind-Value="_createForm.Name" />
                             <ValidationMessage For="() => _createForm.Name" />
                         </div>
-                        <div class="col-md-4">
+                        <div class="mud-grid-col">
                             <label class="form-label">Rate Limit / Minute</label>
-                            <InputNumber class="form-control" @bind-Value="_createForm.RateLimitPerMinute" />
+                            <InputNumber class="mud-input-base" @bind-Value="_createForm.RateLimitPerMinute" />
                             <ValidationMessage For="() => _createForm.RateLimitPerMinute" />
                         </div>
-                        <div class="col-md-4">
+                        <div class="mud-grid-col">
                             <label class="form-label">Expires At (optional)</label>
-                            <InputText class="form-control"
+                            <InputText class="mud-input-base"
                                        @bind-Value="_createForm.ExpiresAtLocal"
                                        placeholder="yyyy-MM-dd HH:mm" />
                         </div>
                     </div>
 
                     <label class="form-label">Scopes</label>
-                    <div class="row g-1 mb-2">
+                    <div class="mud-grid-mrow g-1 mb-2">
                         @foreach (var scope in ScopeOptions)
                         {
-                            <div class="col-md-4">
+                            <div class="mud-grid-col">
                                 <div class="form-check">
                                     <input class="form-check-input"
                                            type="checkbox"
@@ -94,20 +94,20 @@ else
                         <div class="text-danger mb-2">@_scopeError</div>
                     }
 
-                    <button class="btn btn-primary" type="submit" disabled="@_isSubmitting">Save</button>
+                    <button class="mud-mbtn-base mud-mbtn-primary" type="submit" disabled="@_isSubmitting">Save</button>
                 </EditForm>
             </div>
         </div>
     }
 
-    <div class="card shadow-sm position-relative">
+    <div class="mud-surface shadow-sm position-relative">
          (@(_isLoading || _isSubmitting || _isRotating || _isDeleting))
         {
             <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
         }
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-sm table-hover align-middle">
+        <div class="mud-surface-body">
+            <div class="overflow-auto">
+                <table class="mud-mtbl-base mud-mtbl-dense mtbl-hover align-middle">
                     <thead>
                         <tr>
                             <th>Name</th>
@@ -137,7 +137,7 @@ else
                                     <td>
                                         @foreach (var scope in key.Scopes.OrderBy(x => x, StringComparer.OrdinalIgnoreCase))
                                         {
-                                            <span class="badge bg-light text-dark border me-1">@scope</span>
+                                            <span class="mud-pill bg-light text-dark border me-1">@scope</span>
                                         }
                                     </td>
                                     <td>@key.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
@@ -145,12 +145,12 @@ else
                                     <td>@(key.ExpiresAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "Never")</td>
                                     <td>@(key.Active ? "Active" : "Inactive")</td>
                                     <td class="text-end">
-                                        <button class="btn btn-sm btn-outline-secondary me-2"
+                                        <button class="mud-mbtn-base mud-mbtn-sm mud-mbtn-outline-secondary me-2"
                                                 @onclick="() => RotateAsync(key)"
                                                 disabled="@_isRotating">
                                             Rotate
                                         </button>
-                                        <button class="btn btn-sm btn-outline-danger"
+                                        <button class="mud-mbtn-base mud-mbtn-sm mbtn-outline-danger"
                                                 @onclick="() => ConfirmDelete(key)"
                                                 disabled="@_isDeleting || !key.Active">
                                             Delete

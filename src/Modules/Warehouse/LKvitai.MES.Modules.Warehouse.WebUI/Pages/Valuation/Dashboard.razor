@@ -20,26 +20,26 @@
                  OnDismiss="DismissError" />
 }
 
-<div class="row g-3 mb-3">
-    <div class="col-12 col-md-4">
-        <div class="card h-100 shadow-sm">
-            <div class="card-body">
+<div class="mud-grid-mrow g-3 mb-3">
+    <div class="mud-grid-col">
+        <div class="mud-surface h-100 shadow-sm">
+            <div class="mud-surface-body">
                 <div class="text-muted small">Total On-Hand Value</div>
                 <div class="fs-4 fw-semibold">@TotalOnHandValue.ToString("C", CultureInfo.CurrentCulture)</div>
             </div>
         </div>
     </div>
-    <div class="col-12 col-md-4">
-        <div class="card h-100 shadow-sm">
-            <div class="card-body">
+    <div class="mud-grid-col">
+        <div class="mud-surface h-100 shadow-sm">
+            <div class="mud-surface-body">
                 <div class="text-muted small">Recent Cost Changes (7d)</div>
                 <div class="fs-4 fw-semibold">@RecentChangesCount</div>
             </div>
         </div>
     </div>
-    <div class="col-12 col-md-4">
-        <div class="card h-100 shadow-sm">
-            <div class="card-body">
+    <div class="mud-grid-col">
+        <div class="mud-surface h-100 shadow-sm">
+            <div class="mud-surface-body">
                 <div class="text-muted small">Pending Approvals</div>
                 <div class="fs-4 fw-semibold">@PendingApprovalsCount</div>
             </div>
@@ -47,32 +47,32 @@
     </div>
 </div>
 
-<div class="card shadow-sm mb-3">
-    <div class="card-body d-flex flex-wrap gap-2">
-        <button class="btn btn-primary" @onclick="OpenAdjustCost">Adjust Cost</button>
-        <button class="btn btn-outline-primary" @onclick="OpenLandedCost">Apply Landed Cost</button>
-        <button class="btn btn-outline-danger" @onclick="OpenWriteDown">Write Down</button>
-        <button class="btn btn-outline-secondary ms-auto" @onclick="LoadAsync">Refresh</button>
+<div class="mud-surface shadow-sm mb-3">
+    <div class="mud-surface-body d-flex flex-wrap gap-2">
+        <button class="mud-mbtn-base mud-mbtn-primary" @onclick="OpenAdjustCost">Adjust Cost</button>
+        <button class="mud-mbtn-base mud-mbtn-outline-primary" @onclick="OpenLandedCost">Apply Landed Cost</button>
+        <button class="mud-mbtn-base mbtn-outline-danger" @onclick="OpenWriteDown">Write Down</button>
+        <button class="mud-mbtn-base mud-mbtn-outline-secondary ms-auto" @onclick="LoadAsync">Refresh</button>
     </div>
 </div>
 
-<div class="card shadow-sm mb-3">
-    <div class="card-body position-relative">
+<div class="mud-surface shadow-sm mb-3">
+    <div class="mud-surface-body position-relative">
          (_isLoading)
         {
             <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
         }
         <div class="d-flex align-items-center justify-content-between mb-2">
             <h5 class="mb-0">On-Hand Value Report</h5>
-            <button class="btn btn-sm btn-outline-secondary"
+            <button class="mud-mbtn-base mud-mbtn-sm mud-mbtn-outline-secondary"
                     @onclick="ExportOnHandCsvAsync"
                     disabled="@(_isLoading || _onHandRows.Count == 0)">
                 Export CSV
             </button>
         </div>
 
-        <div class="table-responsive">
-            <table class="table table-sm table-hover align-middle">
+        <div class="overflow-auto">
+            <table class="mud-mtbl-base mud-mtbl-dense mtbl-hover align-middle">
                 <thead>
                 <tr>
                     <th>Item</th>
@@ -94,13 +94,13 @@
                 }
                 else
                 {
-                    @foreach (var row in _onHandRows)
+                    @foreach (var mrow in _onHandRows)
                     {
                         <tr>
-                            <td>@row.ItemSku - @row.ItemName</td>
-                            <td class="text-end">@row.Qty.ToString("0.###", CultureInfo.InvariantCulture)</td>
-                            <td class="text-end">@row.UnitCost.ToString("0.####", CultureInfo.InvariantCulture)</td>
-                            <td class="text-end">@row.TotalValue.ToString("0.####", CultureInfo.InvariantCulture)</td>
+                            <td>@mrow.ItemSku - @mrow.ItemName</td>
+                            <td class="text-end">@mrow.Qty.ToString("0.###", CultureInfo.InvariantCulture)</td>
+                            <td class="text-end">@mrow.UnitCost.ToString("0.####", CultureInfo.InvariantCulture)</td>
+                            <td class="text-end">@mrow.TotalValue.ToString("0.####", CultureInfo.InvariantCulture)</td>
                         </tr>
                     }
                 }
@@ -110,51 +110,51 @@
     </div>
 </div>
 
-<div class="card shadow-sm">
-    <div class="card-body position-relative">
+<div class="mud-surface shadow-sm">
+    <div class="mud-surface-body position-relative">
          (_isLoadingHistory)
         {
             <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
         }
         <div class="d-flex align-items-center justify-content-between mb-2">
             <h5 class="mb-0">Cost History Report</h5>
-            <button class="btn btn-sm btn-outline-secondary"
+            <button class="mud-mbtn-base mud-mbtn-sm mud-mbtn-outline-secondary"
                     @onclick="ExportCostHistoryCsvAsync"
                     disabled="@(_isLoadingHistory || _costHistoryRows.Count == 0)">
                 Export CSV
             </button>
         </div>
 
-        <div class="row g-2 mb-3">
-            <div class="col-12 col-md-2">
+        <div class="mud-grid-mrow g-2 mb-3">
+            <div class="mud-grid-col">
                 <label class="form-label">Item Id</label>
-                <input class="form-control" type="number" min="1" @bind="_filterItemId" />
+                <input class="mud-input-base" type="number" min="1" @bind="_filterItemId" />
             </div>
-            <div class="col-12 col-md-3">
+            <div class="mud-grid-col">
                 <label class="form-label">Reason</label>
-                <input class="form-control" @bind="_filterReason" />
+                <input class="mud-input-base" @bind="_filterReason" />
             </div>
-            <div class="col-12 col-md-3">
+            <div class="mud-grid-col">
                 <label class="form-label">Approved By</label>
-                <input class="form-control" @bind="_filterApprovedBy" />
+                <input class="mud-input-base" @bind="_filterApprovedBy" />
             </div>
-            <div class="col-12 col-md-2">
+            <div class="mud-grid-col">
                 <label class="form-label">Date From</label>
-                <input class="form-control" type="date" @bind="_filterDateFrom" />
+                <input class="mud-input-base" type="date" @bind="_filterDateFrom" />
             </div>
-            <div class="col-12 col-md-2">
+            <div class="mud-grid-col">
                 <label class="form-label">Date To</label>
-                <input class="form-control" type="date" @bind="_filterDateTo" />
+                <input class="mud-input-base" type="date" @bind="_filterDateTo" />
             </div>
         </div>
 
         <div class="d-flex gap-2 mb-3">
-            <button class="btn btn-primary" @onclick="ApplyHistoryFiltersAsync" disabled="_isLoadingHistory">Apply Filters</button>
-            <button class="btn btn-outline-secondary" @onclick="ResetHistoryFiltersAsync" disabled="_isLoadingHistory">Reset</button>
+            <button class="mud-mbtn-base mud-mbtn-primary" @onclick="ApplyHistoryFiltersAsync" disabled="_isLoadingHistory">Apply Filters</button>
+            <button class="mud-mbtn-base mud-mbtn-outline-secondary" @onclick="ResetHistoryFiltersAsync" disabled="_isLoadingHistory">Reset</button>
         </div>
 
-        <div class="table-responsive">
-            <table class="table table-sm table-hover align-middle">
+        <div class="overflow-auto">
+            <table class="mud-mtbl-base mud-mtbl-dense mtbl-hover align-middle">
                 <thead>
                 <tr>
                     <th>Item</th>
@@ -178,15 +178,15 @@
                 }
                 else
                 {
-                    @foreach (var row in _costHistoryRows)
+                    @foreach (var mrow in _costHistoryRows)
                     {
                         <tr>
-                            <td>@row.ItemSku</td>
-                            <td>@row.ChangedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
-                            <td class="text-end">@(row.OldCost.HasValue ? row.OldCost.Value.ToString("0.####", CultureInfo.InvariantCulture) : "-")</td>
-                            <td class="text-end">@(row.NewCost.HasValue ? row.NewCost.Value.ToString("0.####", CultureInfo.InvariantCulture) : "-")</td>
-                            <td>@row.Reason</td>
-                            <td>@(string.IsNullOrWhiteSpace(row.ApprovedBy) ? "-" : row.ApprovedBy)</td>
+                            <td>@mrow.ItemSku</td>
+                            <td>@mrow.ChangedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                            <td class="text-end">@(mrow.OldCost.HasValue ? mrow.OldCost.Value.ToString("0.####", CultureInfo.InvariantCulture) : "-")</td>
+                            <td class="text-end">@(mrow.NewCost.HasValue ? mrow.NewCost.Value.ToString("0.####", CultureInfo.InvariantCulture) : "-")</td>
+                            <td>@mrow.Reason</td>
+                            <td>@(string.IsNullOrWhiteSpace(mrow.ApprovedBy) ? "-" : mrow.ApprovedBy)</td>
                         </tr>
                     }
                 }
@@ -297,13 +297,13 @@
     {
         var builder = new StringBuilder();
         builder.AppendLine("Item,Qty,UnitCost,TotalValue");
-        foreach (var row in _onHandRows)
+        foreach (var mrow in _onHandRows)
         {
             builder.AppendLine(string.Join(",",
-                Csv(row.ItemSku),
-                Csv(row.Qty.ToString("0.###", CultureInfo.InvariantCulture)),
-                Csv(row.UnitCost.ToString("0.####", CultureInfo.InvariantCulture)),
-                Csv(row.TotalValue.ToString("0.####", CultureInfo.InvariantCulture))));
+                Csv(mrow.ItemSku),
+                Csv(mrow.Qty.ToString("0.###", CultureInfo.InvariantCulture)),
+                Csv(mrow.UnitCost.ToString("0.####", CultureInfo.InvariantCulture)),
+                Csv(mrow.TotalValue.ToString("0.####", CultureInfo.InvariantCulture))));
         }
 
         await JS.InvokeVoidAsync(
@@ -316,15 +316,15 @@
     {
         var builder = new StringBuilder();
         builder.AppendLine("Item,Date,OldCost,NewCost,Reason,ApprovedBy");
-        foreach (var row in _costHistoryRows)
+        foreach (var mrow in _costHistoryRows)
         {
             builder.AppendLine(string.Join(",",
-                Csv(row.ItemSku),
-                Csv(row.ChangedAt.ToString("O")),
-                Csv(row.OldCost?.ToString("0.####", CultureInfo.InvariantCulture) ?? string.Empty),
-                Csv(row.NewCost?.ToString("0.####", CultureInfo.InvariantCulture) ?? string.Empty),
-                Csv(row.Reason),
-                Csv(row.ApprovedBy ?? string.Empty)));
+                Csv(mrow.ItemSku),
+                Csv(mrow.ChangedAt.ToString("O")),
+                Csv(mrow.OldCost?.ToString("0.####", CultureInfo.InvariantCulture) ?? string.Empty),
+                Csv(mrow.NewCost?.ToString("0.####", CultureInfo.InvariantCulture) ?? string.Empty),
+                Csv(mrow.Reason),
+                Csv(mrow.ApprovedBy ?? string.Empty)));
         }
 
         await JS.InvokeVoidAsync(

@@ -9,7 +9,7 @@
 
 @if (!_hasAdminAccess)
 {
-    <div class="alert alert-warning" role="alert">
+    <div class="mud-message mud-message-warning" role="malert">
         Admin role required.
     </div>
 }
@@ -23,73 +23,73 @@ else
                      OnDismiss="DismissError" />
     }
 
-    <div class="card shadow-sm mb-3">
-        <div class="card-header">Register Serial</div>
-        <div class="card-body">
+    <div class="mud-surface shadow-sm mb-3">
+        <div class="mud-surface-header">Register Serial</div>
+        <div class="mud-surface-body">
             <EditForm Model="_createForm" OnValidSubmit="CreateAsync">
                 <DataAnnotationsValidator />
                 <ValidationSummary />
 
-                <div class="row g-2 align-items-end">
-                    <div class="col-md-2">
+                <div class="mud-grid-mrow g-2 align-items-end">
+                    <div class="mud-grid-col">
                         <label class="form-label">Item ID</label>
-                        <InputNumber class="form-control" @bind-Value="_createForm.ItemId" />
+                        <InputNumber class="mud-input-base" @bind-Value="_createForm.ItemId" />
                     </div>
-                    <div class="col-md-3">
+                    <div class="mud-grid-col">
                         <label class="form-label">Serial</label>
-                        <InputText class="form-control" @bind-Value="_createForm.Value" />
+                        <InputText class="mud-input-base" @bind-Value="_createForm.Value" />
                     </div>
-                    <div class="col-md-3">
+                    <div class="mud-grid-col">
                         <label class="form-label">Location</label>
-                        <InputText class="form-control" @bind-Value="_createForm.Location" />
+                        <InputText class="mud-input-base" @bind-Value="_createForm.Location" />
                     </div>
-                    <div class="col-md-2">
+                    <div class="mud-grid-col">
                         <label class="form-label">Warranty Date</label>
-                        <InputDate class="form-control" @bind-Value="_createForm.WarrantyExpiryDate" />
+                        <InputDate class="mud-input-base" @bind-Value="_createForm.WarrantyExpiryDate" />
                     </div>
-                    <div class="col-md-2 d-grid">
-                        <button class="btn btn-primary" type="submit" disabled="@_isWorking">Register</button>
+                    <div class="mud-grid-col d-grid">
+                        <button class="mud-mbtn-base mud-mbtn-primary" type="submit" disabled="@_isWorking">Register</button>
                     </div>
                 </div>
             </EditForm>
         </div>
     </div>
 
-    <div class="card shadow-sm mb-3">
-        <div class="card-body">
-            <div class="row g-2 align-items-end">
-                <div class="col-md-3">
+    <div class="mud-surface shadow-sm mb-3">
+        <div class="mud-surface-body">
+            <div class="mud-grid-mrow g-2 align-items-end">
+                <div class="mud-grid-col">
                     <label class="form-label">Serial</label>
-                    <InputText class="form-control" @bind-Value="_searchSerial" />
+                    <InputText class="mud-input-base" @bind-Value="_searchSerial" />
                 </div>
-                <div class="col-md-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Item ID</label>
-                    <InputNumber class="form-control" @bind-Value="_searchItemId" />
+                    <InputNumber class="mud-input-base" @bind-Value="_searchItemId" />
                 </div>
-                <div class="col-md-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Status</label>
-                    <InputText class="form-control" @bind-Value="_searchStatus" />
+                    <InputText class="mud-input-base" @bind-Value="_searchStatus" />
                 </div>
-                <div class="col-md-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Location</label>
-                    <InputText class="form-control" @bind-Value="_searchLocation" />
+                    <InputText class="mud-input-base" @bind-Value="_searchLocation" />
                 </div>
-                <div class="col-md-3 d-flex gap-2">
-                    <button class="btn btn-primary" @onclick="LoadAsync" disabled="@_isWorking">Search</button>
-                    <button class="btn btn-outline-secondary" @onclick="ResetFilters" disabled="@_isWorking">Reset</button>
+                <div class="mud-grid-col d-flex gap-2">
+                    <button class="mud-mbtn-base mud-mbtn-primary" @onclick="LoadAsync" disabled="@_isWorking">Search</button>
+                    <button class="mud-mbtn-base mud-mbtn-outline-secondary" @onclick="ResetFilters" disabled="@_isWorking">Reset</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="card shadow-sm position-relative">
+    <div class="mud-surface shadow-sm position-relative">
          (_isWorking)
         {
             <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
         }
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-sm table-hover align-middle">
+        <div class="mud-surface-body">
+            <div class="overflow-auto">
+                <table class="mud-mtbl-base mud-mtbl-dense mtbl-hover align-middle">
                     <thead>
                         <tr>
                             <th>Serial</th>
@@ -118,7 +118,7 @@ else
                                     <td>@(serial.Location ?? "-")</td>
                                     <td>@(serial.WarrantyExpiryDate?.ToString("yyyy-MM-dd") ?? "-")</td>
                                     <td class="text-end">
-                                        <button class="btn btn-sm btn-outline-secondary" @onclick="() => BeginUpdate(serial)">Update Status</button>
+                                        <button class="mud-mbtn-base mud-mbtn-sm mud-mbtn-outline-secondary" @onclick="() => BeginUpdate(serial)">Update Status</button>
                                     </td>
                                 </tr>
                             }
@@ -131,28 +131,28 @@ else
 
     @if (_updating is not null)
     {
-        <div class="card shadow-sm mt-3">
-            <div class="card-header d-flex justify-content-between align-items-center">
+        <div class="mud-surface shadow-sm mt-3">
+            <div class="mud-surface-header d-flex justify-content-between align-items-center">
                 <span>Update Serial @_updating.Value</span>
-                <button class="btn btn-sm btn-outline-secondary" @onclick="CancelUpdate">Close</button>
+                <button class="mud-mbtn-base mud-mbtn-sm mud-mbtn-outline-secondary" @onclick="CancelUpdate">Close</button>
             </div>
-            <div class="card-body">
-                <div class="row g-2 align-items-end">
-                    <div class="col-md-3">
+            <div class="mud-surface-body">
+                <div class="mud-grid-mrow g-2 align-items-end">
+                    <div class="mud-grid-col">
                         <label class="form-label">Status</label>
-                        <InputSelect class="form-select" @bind-Value="_updateStatus">
+                        <InputSelect class="mud-input-base" @bind-Value="_updateStatus">
                             @foreach (var status in StatusOptions)
                             {
                                 <option value="@status">@status</option>
                             }
                         </InputSelect>
                     </div>
-                    <div class="col-md-4">
+                    <div class="mud-grid-col">
                         <label class="form-label">Location</label>
-                        <InputText class="form-control" @bind-Value="_updateLocation" />
+                        <InputText class="mud-input-base" @bind-Value="_updateLocation" />
                     </div>
-                    <div class="col-md-3 d-grid">
-                        <button class="btn btn-primary" @onclick="UpdateStatusAsync" disabled="@_isWorking">Save</button>
+                    <div class="mud-grid-col d-grid">
+                        <button class="mud-mbtn-base mud-mbtn-primary" @onclick="UpdateStatusAsync" disabled="@_isWorking">Save</button>
                     </div>
                 </div>
             </div>

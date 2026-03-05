@@ -16,18 +16,18 @@
 }
 
 <div class="d-flex justify-content-end mb-2">
-    <button class="btn btn-outline-secondary" @onclick="LoadAsync" disabled="@(_isLoading || _isBusy)">Refresh</button>
+    <button class="mud-mbtn-base mud-mbtn-outline-secondary" @onclick="LoadAsync" disabled="@(_isLoading || _isBusy)">Refresh</button>
 </div>
 
-<div class="card shadow-sm mb-3 position-relative">
+<div class="mud-surface shadow-sm mb-3 position-relative">
      (_isLoading || _isBusy)
         {
             <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
         }
-    <div class="card-body">
+    <div class="mud-surface-body">
         <h5>Pending Approvals</h5>
-        <div class="table-responsive">
-            <table class="table table-sm align-middle">
+        <div class="overflow-auto">
+            <table class="mud-mtbl-base mud-mtbl-dense align-middle">
                 <thead>
                     <tr>
                         <th>Order</th>
@@ -52,7 +52,7 @@
                                 <td>@order.TotalAmount.ToString("0.00")</td>
                                 <td>@order.OrderDate.ToString("yyyy-MM-dd HH:mm")</td>
                                 <td>
-                                    <button class="btn btn-sm btn-warning"
+                                    <button class="mud-mbtn-base mud-mbtn-sm mud-mbtn-warning"
                                             @onclick="() => ApproveAsync(order.Id, order.OrderNumber)"
                                             disabled="@_isBusy">
                                         Approve
@@ -67,15 +67,15 @@
     </div>
 </div>
 
-<div class="card shadow-sm mb-3 position-relative">
+<div class="mud-surface shadow-sm mb-3 position-relative">
      (_isLoading || _isBusy)
         {
             <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
         }
-    <div class="card-body">
+    <div class="mud-surface-body">
         <h5>Pending Stock</h5>
-        <div class="table-responsive">
-            <table class="table table-sm align-middle">
+        <div class="overflow-auto">
+            <table class="mud-mtbl-base mud-mtbl-dense align-middle">
                 <thead>
                     <tr>
                         <th>Order</th>
@@ -100,10 +100,10 @@
                                 <td>@order.Lines.Count</td>
                                 <td>@order.TotalAmount.ToString("0.00")</td>
                                 <td>
-                                    <button class="btn btn-sm btn-outline-secondary" @onclick="() => OpenOrder(order.Id)">
+                                    <button class="mud-mbtn-base mud-mbtn-sm mud-mbtn-outline-secondary" @onclick="() => OpenOrder(order.Id)">
                                         View
                                     </button>
-                                    <button class="btn btn-sm btn-outline-warning ms-1" disabled title="Manual reallocate endpoint is not available in current API surface.">
+                                    <button class="mud-mbtn-base mud-mbtn-sm mbtn-outline-warning ms-1" disabled title="Manual reallocate endpoint is not available in current API surface.">
                                         Reallocate
                                     </button>
                                 </td>
@@ -116,15 +116,15 @@
     </div>
 </div>
 
-<div class="card shadow-sm position-relative">
+<div class="mud-surface shadow-sm position-relative">
      (_isLoading || _isBusy)
         {
             <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
         }
-    <div class="card-body">
+    <div class="mud-surface-body">
         <h5>Allocated Orders</h5>
-        <div class="table-responsive">
-            <table class="table table-sm align-middle">
+        <div class="overflow-auto">
+            <table class="mud-mtbl-base mud-mtbl-dense align-middle">
                 <thead>
                     <tr>
                         <th>Order</th>
@@ -149,7 +149,7 @@
                                 <td>@(order.ReservationId?.ToString() ?? "-")</td>
                                 <td>@order.TotalAmount.ToString("0.00")</td>
                                 <td>
-                                    <button class="btn btn-sm btn-primary"
+                                    <button class="mud-mbtn-base mud-mbtn-sm mud-mbtn-primary"
                                             @onclick="() => ReleaseAsync(order.Id, order.OrderNumber)"
                                             disabled="@_isBusy">
                                         Release to Picking

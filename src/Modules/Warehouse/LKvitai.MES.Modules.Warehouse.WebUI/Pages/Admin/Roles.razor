@@ -10,7 +10,7 @@
 
 @if (!_hasAdminAccess)
 {
-    <div class="alert alert-warning" role="alert">
+    <div class="mud-message mud-message-warning" role="malert">
         Admin role required.
     </div>
 }
@@ -24,14 +24,14 @@ else
                      OnDismiss="DismissError" />
     }
 
-    <div class="card shadow-sm mb-3">
-        <div class="card-body">
-            <div class="row g-2 align-items-end">
-                <div class="col-md-3 d-grid">
-                    <button class="btn btn-primary" @onclick="ToggleCreateForm">@(_showCreate ? "Hide Form" : "Add Role")</button>
+    <div class="mud-surface shadow-sm mb-3">
+        <div class="mud-surface-body">
+            <div class="mud-grid-mrow g-2 align-items-end">
+                <div class="mud-grid-col d-grid">
+                    <button class="mud-mbtn-base mud-mbtn-primary" @onclick="ToggleCreateForm">@(_showCreate ? "Hide Form" : "Add Role")</button>
                 </div>
-                <div class="col-md-3 d-grid">
-                    <button class="btn btn-outline-secondary" @onclick="LoadAsync">Refresh</button>
+                <div class="mud-grid-col d-grid">
+                    <button class="mud-mbtn-base mud-mbtn-outline-secondary" @onclick="LoadAsync">Refresh</button>
                 </div>
             </div>
         </div>
@@ -39,30 +39,30 @@ else
 
     @if (_showCreate)
     {
-        <div class="card shadow-sm mb-3">
-            <div class="card-header">Create Role</div>
-            <div class="card-body">
+        <div class="mud-surface shadow-sm mb-3">
+            <div class="mud-surface-header">Create Role</div>
+            <div class="mud-surface-body">
                 <EditForm Model="_createForm" OnValidSubmit="CreateAsync">
                     <DataAnnotationsValidator />
                     <ValidationSummary />
 
-                    <div class="row g-2 mb-3">
-                        <div class="col-md-4">
+                    <div class="mud-grid-mrow g-2 mb-3">
+                        <div class="mud-grid-col">
                             <label class="form-label">Name</label>
-                            <InputText class="form-control" @bind-Value="_createForm.Name" />
+                            <InputText class="mud-input-base" @bind-Value="_createForm.Name" />
                             <ValidationMessage For="() => _createForm.Name" />
                         </div>
-                        <div class="col-md-8">
+                        <div class="mud-grid-col">
                             <label class="form-label">Description</label>
-                            <InputText class="form-control" @bind-Value="_createForm.Description" />
+                            <InputText class="mud-input-base" @bind-Value="_createForm.Description" />
                         </div>
                     </div>
 
                     <label class="form-label">Permissions</label>
-                    <div class="row g-1 mb-2">
+                    <div class="mud-grid-mrow g-1 mb-2">
                         @foreach (var option in PermissionOptions)
                         {
-                            <div class="col-md-4">
+                            <div class="mud-grid-col">
                                 <div class="form-check">
                                     <input class="form-check-input"
                                            type="checkbox"
@@ -79,20 +79,20 @@ else
                         <div class="text-danger mb-2">@_createPermissionError</div>
                     }
 
-                    <button class="btn btn-primary" type="submit" disabled="@_isSubmitting">Save</button>
+                    <button class="mud-mbtn-base mud-mbtn-primary" type="submit" disabled="@_isSubmitting">Save</button>
                 </EditForm>
             </div>
         </div>
     }
 
-    <div class="card shadow-sm position-relative mb-3">
+    <div class="mud-surface shadow-sm position-relative mb-3">
          (@(_isLoading || _isSubmitting || _isDeleting || _isAssigning))
         {
             <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
         }
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-sm table-hover align-middle">
+        <div class="mud-surface-body">
+            <div class="overflow-auto">
+                <table class="mud-mtbl-base mud-mtbl-dense mtbl-hover align-middle">
                     <thead>
                         <tr>
                             <th>Name</th>
@@ -120,12 +120,12 @@ else
                                     <td>
                                         @foreach (var permission in role.Permissions.OrderBy(x => x.Resource).ThenBy(x => x.Action))
                                         {
-                                            <span class="badge bg-light text-dark border me-1">@permission.Resource:@permission.Action</span>
+                                            <span class="mud-pill bg-light text-dark border me-1">@permission.Resource:@permission.Action</span>
                                         }
                                     </td>
                                     <td class="text-end">
-                                        <button class="btn btn-sm btn-outline-secondary me-2" @onclick="() => BeginEdit(role)">Edit</button>
-                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmDelete(role)" disabled="@role.IsSystemRole">Delete</button>
+                                        <button class="mud-mbtn-base mud-mbtn-sm mud-mbtn-outline-secondary me-2" @onclick="() => BeginEdit(role)">Edit</button>
+                                        <button class="mud-mbtn-base mud-mbtn-sm mbtn-outline-danger" @onclick="() => ConfirmDelete(role)" disabled="@role.IsSystemRole">Delete</button>
                                     </td>
                                 </tr>
                             }
@@ -138,33 +138,33 @@ else
 
     @if (_editing is not null)
     {
-        <div class="card shadow-sm mb-3">
-            <div class="card-header d-flex justify-content-between align-items-center">
+        <div class="mud-surface shadow-sm mb-3">
+            <div class="mud-surface-header d-flex justify-content-between align-items-center">
                 <span>Edit Role @_editing.Name</span>
-                <button class="btn btn-sm btn-outline-secondary" @onclick="CancelEdit">Close</button>
+                <button class="mud-mbtn-base mud-mbtn-sm mud-mbtn-outline-secondary" @onclick="CancelEdit">Close</button>
             </div>
-            <div class="card-body">
+            <div class="mud-surface-body">
                 <EditForm Model="_editing" OnValidSubmit="UpdateAsync">
                     <DataAnnotationsValidator />
                     <ValidationSummary />
 
-                    <div class="row g-2 mb-3">
-                        <div class="col-md-4">
+                    <div class="mud-grid-mrow g-2 mb-3">
+                        <div class="mud-grid-col">
                             <label class="form-label">Name</label>
-                            <InputText class="form-control" @bind-Value="_editing.Name" />
+                            <InputText class="mud-input-base" @bind-Value="_editing.Name" />
                             <ValidationMessage For="() => _editing.Name" />
                         </div>
-                        <div class="col-md-8">
+                        <div class="mud-grid-col">
                             <label class="form-label">Description</label>
-                            <InputText class="form-control" @bind-Value="_editing.Description" />
+                            <InputText class="mud-input-base" @bind-Value="_editing.Description" />
                         </div>
                     </div>
 
                     <label class="form-label">Permissions</label>
-                    <div class="row g-1 mb-2">
+                    <div class="mud-grid-mrow g-1 mb-2">
                         @foreach (var option in PermissionOptions)
                         {
-                            <div class="col-md-4">
+                            <div class="mud-grid-col">
                                 <div class="form-check">
                                     <input class="form-check-input"
                                            type="checkbox"
@@ -181,19 +181,19 @@ else
                         <div class="text-danger mb-2">@_editPermissionError</div>
                     }
 
-                    <button class="btn btn-primary" type="submit" disabled="@_isSubmitting">Save</button>
+                    <button class="mud-mbtn-base mud-mbtn-primary" type="submit" disabled="@_isSubmitting">Save</button>
                 </EditForm>
             </div>
         </div>
     }
 
-    <div class="card shadow-sm">
-        <div class="card-header">Assign Role To User</div>
-        <div class="card-body">
-            <div class="row g-2 align-items-end">
-                <div class="col-md-5">
+    <div class="mud-surface shadow-sm">
+        <div class="mud-surface-header">Assign Role To User</div>
+        <div class="mud-surface-body">
+            <div class="mud-grid-mrow g-2 align-items-end">
+                <div class="mud-grid-col">
                     <label class="form-label">User</label>
-                    <InputSelect class="form-select" @bind-Value="_selectedUserId">
+                    <InputSelect class="mud-input-base" @bind-Value="_selectedUserId">
                         <option value="">Select user</option>
                         @foreach (var user in _users.OrderBy(x => x.Username, StringComparer.OrdinalIgnoreCase))
                         {
@@ -201,9 +201,9 @@ else
                         }
                     </InputSelect>
                 </div>
-                <div class="col-md-5">
+                <div class="mud-grid-col">
                     <label class="form-label">Role</label>
-                    <InputSelect class="form-select" @bind-Value="_selectedRoleId">
+                    <InputSelect class="mud-input-base" @bind-Value="_selectedRoleId">
                         <option value="0">Select role</option>
                         @foreach (var role in _roles.OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase))
                         {
@@ -211,14 +211,14 @@ else
                         }
                     </InputSelect>
                 </div>
-                <div class="col-md-2 d-grid">
-                    <button class="btn btn-outline-primary" @onclick="AssignRoleAsync" disabled="@_isAssigning">Assign Role</button>
+                <div class="mud-grid-col d-grid">
+                    <button class="mud-mbtn-base mud-mbtn-outline-primary" @onclick="AssignRoleAsync" disabled="@_isAssigning">Assign Role</button>
                 </div>
             </div>
 
             @if (_lastAssignment is not null)
             {
-                <div class="alert alert-info mt-3 mb-0" role="alert">
+                <div class="mud-message mud-message-info mt-3 mb-0" role="malert">
                     Assigned role @_lastAssignment.RoleId to user @_lastAssignment.UserId at @_lastAssignment.AssignedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm").
                 </div>
             }

@@ -11,7 +11,7 @@
 
 @if (!_hasAdminAccess)
 {
-    <div class="alert alert-warning" role="alert">
+    <div class="mud-message mud-message-warning" role="malert">
         Admin role required.
     </div>
 }
@@ -27,41 +27,41 @@ else
 
     @if (!string.IsNullOrWhiteSpace(_validationMessage))
     {
-        <div class="alert alert-danger" role="alert">
+        <div class="mud-message mud-message-error" role="malert">
             @_validationMessage
         </div>
     }
 
-    <div class="card shadow-sm position-relative">
+    <div class="mud-surface shadow-sm position-relative">
          (@(_isLoading || _isSaving))
         {
             <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
         }
-        <div class="card-body">
-            <div class="row g-3">
-                <div class="col-md-6">
+        <div class="mud-surface-body">
+            <div class="mud-grid-mrow g-3">
+                <div class="mud-grid-col">
                     <label class="form-label">Warehouse Code</label>
-                    <select class="form-select" @bind="_warehouseCode">
+                    <select class="mud-input-base" @bind="_warehouseCode">
                         @foreach (var warehouse in _warehouses)
                         {
                             <option value="@warehouse.Code">@warehouse.Code - @warehouse.Name</option>
                         }
                     </select>
                 </div>
-                <div class="col-12">
+                <div class="mud-grid-col">
                     <label class="form-label">Layout JSON</label>
-                    <textarea class="form-control font-monospace"
+                    <textarea class="mud-input-base font-monospace"
                               rows="20"
                               @bind="_layoutJson"></textarea>
                     <div class="form-text">
                         Required fields: <code>warehouseCode</code>, <code>widthMeters</code>, <code>lengthMeters</code>, <code>heightMeters</code>, <code>zones</code>.
                     </div>
                 </div>
-                <div class="col-12 d-flex align-items-center gap-3">
-                    <button class="btn btn-outline-secondary" type="button" @onclick="LoadAsync" disabled="@(_isLoading || _isSaving)">
+                <div class="mud-grid-col d-flex align-items-center gap-3">
+                    <button class="mud-mbtn-base mud-mbtn-outline-secondary" type="button" @onclick="LoadAsync" disabled="@(_isLoading || _isSaving)">
                         Reload
                     </button>
-                    <button class="btn btn-primary" type="button" @onclick="SaveAsync" disabled="@(_isLoading || _isSaving)">
+                    <button class="mud-mbtn-base mud-mbtn-primary" type="button" @onclick="SaveAsync" disabled="@(_isLoading || _isSaving)">
                         Save Layout
                     </button>
                     @if (_updatedAt is not null)

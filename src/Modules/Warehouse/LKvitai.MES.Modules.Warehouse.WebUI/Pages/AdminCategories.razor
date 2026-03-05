@@ -14,37 +14,37 @@
                  OnDismiss="@(() => _apiError = null)" />
 }
 
-<div class="card shadow-sm mb-3">
-    <div class="card-header">Create Category</div>
-    <div class="card-body">
-        <div class="row g-2">
-            <div class="col-md-3">
+<div class="mud-surface shadow-sm mb-3">
+    <div class="mud-surface-header">Create Category</div>
+    <div class="mud-surface-body">
+        <div class="mud-grid-mrow g-2">
+            <div class="mud-grid-col">
                 <label class="form-label">Code</label>
-                <input class="form-control" @bind="_create.Code" />
+                <input class="mud-input-base" @bind="_create.Code" />
             </div>
-            <div class="col-md-5">
+            <div class="mud-grid-col">
                 <label class="form-label">Name</label>
-                <input class="form-control" @bind="_create.Name" />
+                <input class="mud-input-base" @bind="_create.Name" />
             </div>
-            <div class="col-md-2">
+            <div class="mud-grid-col">
                 <label class="form-label">Parent Id</label>
-                <input class="form-control" type="number" @bind="_create.ParentCategoryId" />
+                <input class="mud-input-base" type="number" @bind="_create.ParentCategoryId" />
             </div>
-            <div class="col-md-2 d-grid">
-                <button class="btn btn-primary" @onclick="CreateAsync">Save</button>
+            <div class="mud-grid-col d-grid">
+                <button class="mud-mbtn-base mud-mbtn-primary" @onclick="CreateAsync">Save</button>
             </div>
         </div>
     </div>
 </div>
 
-<div class="card shadow-sm position-relative">
+<div class="mud-surface shadow-sm position-relative">
      (@_isLoading)
         {
             <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
         }
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-sm table-hover align-middle">
+    <div class="mud-surface-body">
+        <div class="overflow-auto">
+            <table class="mud-mtbl-base mud-mtbl-dense mtbl-hover align-middle">
                 <thead>
                 <tr>
                     <th>Code</th>
@@ -62,15 +62,15 @@
                 }
                 else
                 {
-                    @foreach (var row in _categories)
+                    @foreach (var mrow in _categories)
                     {
                         <tr>
-                            <td>@row.Code</td>
-                            <td>@row.Name</td>
-                            <td>@ResolveParent(row.ParentCategoryId)</td>
+                            <td>@mrow.Code</td>
+                            <td>@mrow.Name</td>
+                            <td>@ResolveParent(mrow.ParentCategoryId)</td>
                             <td class="text-end">
-                                <button class="btn btn-sm btn-outline-secondary me-1" @onclick="@(() => BeginEdit(row))">Edit</button>
-                                <button class="btn btn-sm btn-outline-danger" @onclick="@(() => DeleteAsync(row.Id))">Delete</button>
+                                <button class="mud-mbtn-base mud-mbtn-sm mud-mbtn-outline-secondary me-1" @onclick="@(() => BeginEdit(mrow))">Edit</button>
+                                <button class="mud-mbtn-base mud-mbtn-sm mbtn-outline-danger" @onclick="@(() => DeleteAsync(mrow.Id))">Delete</button>
                             </td>
                         </tr>
                     }
@@ -83,27 +83,27 @@
 
 @if (_editing is not null)
 {
-    <div class="card shadow-sm mt-3">
-        <div class="card-header d-flex justify-content-between align-items-center">
+    <div class="mud-surface shadow-sm mt-3">
+        <div class="mud-surface-header d-flex justify-content-between align-items-center">
             <span>Edit Category: @_editing.Code</span>
-            <button class="btn btn-sm btn-outline-secondary" @onclick="@(() => _editing = null)">Close</button>
+            <button class="mud-mbtn-base mud-mbtn-sm mud-mbtn-outline-secondary" @onclick="@(() => _editing = null)">Close</button>
         </div>
-        <div class="card-body">
-            <div class="row g-2">
-                <div class="col-md-3">
+        <div class="mud-surface-body">
+            <div class="mud-grid-mrow g-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Code</label>
-                    <input class="form-control" @bind="_editing.Code" />
+                    <input class="mud-input-base" @bind="_editing.Code" />
                 </div>
-                <div class="col-md-5">
+                <div class="mud-grid-col">
                     <label class="form-label">Name</label>
-                    <input class="form-control" @bind="_editing.Name" />
+                    <input class="mud-input-base" @bind="_editing.Name" />
                 </div>
-                <div class="col-md-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Parent Id</label>
-                    <input class="form-control" type="number" @bind="_editing.ParentCategoryId" />
+                    <input class="mud-input-base" type="number" @bind="_editing.ParentCategoryId" />
                 </div>
-                <div class="col-md-2 d-grid">
-                    <button class="btn btn-primary" @onclick="UpdateAsync">Save Changes</button>
+                <div class="mud-grid-col d-grid">
+                    <button class="mud-mbtn-base mud-mbtn-primary" @onclick="UpdateAsync">Save Changes</button>
                 </div>
             </div>
         </div>
@@ -173,14 +173,14 @@
         }
     }
 
-    private void BeginEdit(AdminCategoryDto row)
+    private void BeginEdit(AdminCategoryDto mrow)
     {
         _editing = new CategoryEditForm
         {
-            Id = row.Id,
-            Code = row.Code,
-            Name = row.Name,
-            ParentCategoryId = row.ParentCategoryId
+            Id = mrow.Id,
+            Code = mrow.Code,
+            Name = mrow.Name,
+            ParentCategoryId = mrow.ParentCategoryId
         };
     }
 

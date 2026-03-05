@@ -9,7 +9,7 @@
 
 @if (!_hasAdminAccess)
 {
-    <div class="alert alert-warning" role="alert">
+    <div class="mud-message mud-message-warning" role="malert">
         Admin role required.
     </div>
 }
@@ -23,23 +23,23 @@ else
                      OnDismiss="DismissError" />
     }
 
-    <div class="card shadow-sm mb-3">
-        <div class="card-body">
-            <div class="row g-2 align-items-end">
-                <div class="col-md-3 d-grid">
-                    <button class="btn btn-primary" @onclick="ToggleCreateForm">@(_showCreate ? "Hide Form" : "Create Policy")</button>
+    <div class="mud-surface shadow-sm mb-3">
+        <div class="mud-surface-body">
+            <div class="mud-grid-mrow g-2 align-items-end">
+                <div class="mud-grid-col d-grid">
+                    <button class="mud-mbtn-base mud-mbtn-primary" @onclick="ToggleCreateForm">@(_showCreate ? "Hide Form" : "Create Policy")</button>
                 </div>
-                <div class="col-md-3 d-grid">
-                    <button class="btn btn-outline-secondary" @onclick="LoadAsync">Refresh</button>
+                <div class="mud-grid-col d-grid">
+                    <button class="mud-mbtn-base mud-mbtn-outline-secondary" @onclick="LoadAsync">Refresh</button>
                 </div>
-                <div class="col-md-3 d-grid">
-                    <button class="btn btn-outline-warning" @onclick="ExecuteAsync" disabled="@_isWorking">Execute Now</button>
+                <div class="mud-grid-col d-grid">
+                    <button class="mud-mbtn-base mbtn-outline-warning" @onclick="ExecuteAsync" disabled="@_isWorking">Execute Now</button>
                 </div>
             </div>
 
             @if (_lastExecution is not null)
             {
-                <div class="alert @(_lastExecution.Status == "COMPLETED" ? "alert-success" : "alert-danger") mt-3 mb-0" role="alert">
+                <div class="mud-message @(_lastExecution.Status =="COMPLETED" ? "malert-success" : "malert-danger") mt-3 mb-0" role="malert">
                     Retention execution @_lastExecution.Status at @_lastExecution.ExecutedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss").
                     Archived: @_lastExecution.RecordsArchived. Deleted: @_lastExecution.RecordsDeleted.
                     @if (!string.IsNullOrWhiteSpace(_lastExecution.ErrorMessage))
@@ -53,43 +53,43 @@ else
 
     @if (_showCreate)
     {
-        <div class="card shadow-sm mb-3">
-            <div class="card-header">Create Retention Policy</div>
-            <div class="card-body">
+        <div class="mud-surface shadow-sm mb-3">
+            <div class="mud-surface-header">Create Retention Policy</div>
+            <div class="mud-surface-body">
                 <EditForm Model="_createForm" OnValidSubmit="CreateAsync">
                     <DataAnnotationsValidator />
                     <ValidationSummary />
 
-                    <div class="row g-2">
-                        <div class="col-md-3">
+                    <div class="mud-grid-mrow g-2">
+                        <div class="mud-grid-col">
                             <label class="form-label">Data Type</label>
-                            <InputSelect class="form-select" @bind-Value="_createForm.DataType">
+                            <InputSelect class="mud-input-base" @bind-Value="_createForm.DataType">
                                 @foreach (var dataType in DataTypeOptions)
                                 {
                                     <option value="@dataType">@dataType</option>
                                 }
                             </InputSelect>
                         </div>
-                        <div class="col-md-2">
+                        <div class="mud-grid-col">
                             <label class="form-label">Retention Days</label>
-                            <InputNumber class="form-control" @bind-Value="_createForm.RetentionPeriodDays" />
+                            <InputNumber class="mud-input-base" @bind-Value="_createForm.RetentionPeriodDays" />
                         </div>
-                        <div class="col-md-2">
+                        <div class="mud-grid-col">
                             <label class="form-label">Archive After</label>
-                            <InputNumber class="form-control" @bind-Value="_createForm.ArchiveAfterDays" />
+                            <InputNumber class="mud-input-base" @bind-Value="_createForm.ArchiveAfterDays" />
                         </div>
-                        <div class="col-md-2">
+                        <div class="mud-grid-col">
                             <label class="form-label">Delete After</label>
-                            <InputNumber class="form-control" @bind-Value="_createForm.DeleteAfterDays" />
+                            <InputNumber class="mud-input-base" @bind-Value="_createForm.DeleteAfterDays" />
                         </div>
-                        <div class="col-md-1 d-flex align-items-center">
+                        <div class="mud-grid-col d-flex align-items-center">
                             <div class="form-check mt-4">
                                 <InputCheckbox class="form-check-input" @bind-Value="_createForm.Active" />
                                 <label class="form-check-label">Active</label>
                             </div>
                         </div>
-                        <div class="col-md-2 d-grid">
-                            <button class="btn btn-primary mt-md-4" type="submit" disabled="@_isWorking">Save</button>
+                        <div class="mud-grid-col d-grid">
+                            <button class="mud-mbtn-base mud-mbtn-primary mt-md-4" type="submit" disabled="@_isWorking">Save</button>
                         </div>
                     </div>
                 </EditForm>
@@ -97,14 +97,14 @@ else
         </div>
     }
 
-    <div class="card shadow-sm position-relative mb-3">
+    <div class="mud-surface shadow-sm position-relative mb-3">
          (_isWorking)
         {
             <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
         }
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-sm table-hover align-middle">
+        <div class="mud-surface-body">
+            <div class="overflow-auto">
+                <table class="mud-mtbl-base mud-mtbl-dense mtbl-hover align-middle">
                     <thead>
                         <tr>
                             <th>Data Type</th>
@@ -135,8 +135,8 @@ else
                                     <td>@(item.Active ? "Yes" : "No")</td>
                                     <td>@((item.UpdatedAt ?? item.CreatedAt).ToLocalTime().ToString("yyyy-MM-dd HH:mm"))</td>
                                     <td class="text-end">
-                                        <button class="btn btn-sm btn-outline-secondary me-2" @onclick="() => BeginEdit(item)">Edit</button>
-                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteAsync(item)">Delete</button>
+                                        <button class="mud-mbtn-base mud-mbtn-sm mud-mbtn-outline-secondary me-2" @onclick="() => BeginEdit(item)">Edit</button>
+                                        <button class="mud-mbtn-base mud-mbtn-sm mbtn-outline-danger" @onclick="() => DeleteAsync(item)">Delete</button>
                                     </td>
                                 </tr>
                             }
@@ -149,46 +149,46 @@ else
 
     @if (_editing is not null)
     {
-        <div class="card shadow-sm mb-3">
-            <div class="card-header d-flex justify-content-between align-items-center">
+        <div class="mud-surface shadow-sm mb-3">
+            <div class="mud-surface-header d-flex justify-content-between align-items-center">
                 <span>Edit Policy @_editing.DataType</span>
-                <button class="btn btn-sm btn-outline-secondary" @onclick="CancelEdit">Close</button>
+                <button class="mud-mbtn-base mud-mbtn-sm mud-mbtn-outline-secondary" @onclick="CancelEdit">Close</button>
             </div>
-            <div class="card-body">
+            <div class="mud-surface-body">
                 <EditForm Model="_editing" OnValidSubmit="UpdateAsync">
                     <DataAnnotationsValidator />
                     <ValidationSummary />
 
-                    <div class="row g-2">
-                        <div class="col-md-3">
+                    <div class="mud-grid-mrow g-2">
+                        <div class="mud-grid-col">
                             <label class="form-label">Data Type</label>
-                            <InputSelect class="form-select" @bind-Value="_editing.DataType">
+                            <InputSelect class="mud-input-base" @bind-Value="_editing.DataType">
                                 @foreach (var dataType in DataTypeOptions)
                                 {
                                     <option value="@dataType">@dataType</option>
                                 }
                             </InputSelect>
                         </div>
-                        <div class="col-md-2">
+                        <div class="mud-grid-col">
                             <label class="form-label">Retention Days</label>
-                            <InputNumber class="form-control" @bind-Value="_editing.RetentionPeriodDays" />
+                            <InputNumber class="mud-input-base" @bind-Value="_editing.RetentionPeriodDays" />
                         </div>
-                        <div class="col-md-2">
+                        <div class="mud-grid-col">
                             <label class="form-label">Archive After</label>
-                            <InputNumber class="form-control" @bind-Value="_editing.ArchiveAfterDays" />
+                            <InputNumber class="mud-input-base" @bind-Value="_editing.ArchiveAfterDays" />
                         </div>
-                        <div class="col-md-2">
+                        <div class="mud-grid-col">
                             <label class="form-label">Delete After</label>
-                            <InputNumber class="form-control" @bind-Value="_editing.DeleteAfterDays" />
+                            <InputNumber class="mud-input-base" @bind-Value="_editing.DeleteAfterDays" />
                         </div>
-                        <div class="col-md-1 d-flex align-items-center">
+                        <div class="mud-grid-col d-flex align-items-center">
                             <div class="form-check mt-4">
                                 <InputCheckbox class="form-check-input" @bind-Value="_editing.Active" />
                                 <label class="form-check-label">Active</label>
                             </div>
                         </div>
-                        <div class="col-md-2 d-grid">
-                            <button class="btn btn-primary mt-md-4" type="submit" disabled="@_isWorking">Save</button>
+                        <div class="mud-grid-col d-grid">
+                            <button class="mud-mbtn-base mud-mbtn-primary mt-md-4" type="submit" disabled="@_isWorking">Save</button>
                         </div>
                     </div>
                 </EditForm>
@@ -196,23 +196,23 @@ else
         </div>
     }
 
-    <div class="card shadow-sm">
-        <div class="card-header">Audit Log Legal Hold</div>
-        <div class="card-body">
-            <div class="row g-2 align-items-end">
-                <div class="col-md-3">
+    <div class="mud-surface shadow-sm">
+        <div class="mud-surface-header">Audit Log Legal Hold</div>
+        <div class="mud-surface-body">
+            <div class="mud-grid-mrow g-2 align-items-end">
+                <div class="mud-grid-col">
                     <label class="form-label">Audit Log ID</label>
-                    <InputNumber class="form-control" @bind-Value="_legalHoldAuditLogId" />
+                    <InputNumber class="mud-input-base" @bind-Value="_legalHoldAuditLogId" />
                 </div>
-                <div class="col-md-3">
+                <div class="mud-grid-col">
                     <label class="form-label">Legal Hold</label>
-                    <InputSelect class="form-select" @bind-Value="_legalHoldEnabled">
+                    <InputSelect class="mud-input-base" @bind-Value="_legalHoldEnabled">
                         <option value="true">Enabled</option>
                         <option value="false">Disabled</option>
                     </InputSelect>
                 </div>
-                <div class="col-md-3 d-grid">
-                    <button class="btn btn-outline-primary" @onclick="SetLegalHoldAsync" disabled="@_isWorking">Apply Legal Hold</button>
+                <div class="mud-grid-col d-grid">
+                    <button class="mud-mbtn-base mud-mbtn-outline-primary" @onclick="SetLegalHoldAsync" disabled="@_isWorking">Apply Legal Hold</button>
                 </div>
             </div>
         </div>

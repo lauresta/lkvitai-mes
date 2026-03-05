@@ -16,16 +16,16 @@
                  OnDismiss="@(() => _apiError = null)" />
 }
 
-<div class="card shadow-sm mb-3">
-    <div class="card-body">
-        <div class="row g-2 align-items-end">
-            <div class="col-md-4">
+<div class="mud-surface shadow-sm mb-3">
+    <div class="mud-surface-body">
+        <div class="mud-grid-mrow g-2 align-items-end">
+            <div class="mud-grid-col">
                 <label class="form-label">Search</label>
-                <input class="form-control" @bind="_search" placeholder="SKU or name" />
+                <input class="mud-input-base" @bind="_search" placeholder="SKU or name" />
             </div>
-            <div class="col-md-3">
+            <div class="mud-grid-col">
                 <label class="form-label">Category</label>
-                <select class="form-select" @bind="_categoryFilter">
+                <select class="mud-input-base" @bind="_categoryFilter">
                     <option value="">All</option>
                     @foreach (var category in _categories)
                     {
@@ -33,37 +33,37 @@
                     }
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="mud-grid-col">
                 <label class="form-label">Status</label>
-                <select class="form-select" @bind="_status">
+                <select class="mud-input-base" @bind="_status">
                     <option value="">All</option>
                     <option value="Active">Active</option>
                     <option value="Discontinued">Discontinued</option>
                     <option value="Obsolete">Obsolete</option>
                 </select>
             </div>
-            <div class="col-md-2 d-grid">
-                <button class="btn btn-primary" @onclick="ApplyFiltersAsync">Filter</button>
+            <div class="mud-grid-col d-grid">
+                <button class="mud-mbtn-base mud-mbtn-primary" @onclick="ApplyFiltersAsync">Filter</button>
             </div>
         </div>
     </div>
 </div>
 
-<div class="card shadow-sm mb-3 position-relative">
+<div class="mud-surface shadow-sm mb-3 position-relative">
      (@_isLoading)
         {
             <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
         }
-    <div class="card-body">
+    <div class="mud-surface-body">
         <div class="d-flex justify-content-between align-items-center mb-2">
             <strong>Total: @_totalCount</strong>
-            <button class="btn btn-sm btn-outline-primary" @onclick="@(() => _showCreate = !_showCreate)">
+            <button class="mud-mbtn-base mud-mbtn-sm mud-mbtn-outline-primary" @onclick="@(() => _showCreate = !_showCreate)">
                 @(_showCreate ? "Hide Create Form" : "Create Item")
             </button>
         </div>
 
-        <div class="table-responsive" data-testid="admin-items-grid">
-            <table class="table table-sm table-hover align-middle">
+        <div class="overflow-auto" data-testid="admin-items-grid">
+            <table class="mud-mtbl-base mud-mtbl-dense mtbl-hover align-middle">
                 <thead>
                 <tr>
                     <th>Name</th>
@@ -84,42 +84,42 @@
                 }
                 else
                 {
-                    @foreach (var row in _items)
+                    @foreach (var mrow in _items)
                     {
                         <tr>
                             <td>
                                 <div class="d-flex align-items-center gap-3">
-                                    @if (!string.IsNullOrWhiteSpace(row.PrimaryThumbnailUrl))
+                                    @if (!string.IsNullOrWhiteSpace(mrow.PrimaryThumbnailUrl))
                                     {
-                                        <img src="@row.PrimaryThumbnailUrl"
-                                             alt="@row.Name"
+                                        <img src="@mrow.PrimaryThumbnailUrl"
+                                             alt="@mrow.Name"
                                              loading="lazy"
                                              style="width:48px;height:48px;object-fit:cover;border-radius:6px;flex-shrink:0;cursor:pointer;"
-                                             @onclick="@(() => OpenDetails(row.Id))" />
+                                             @onclick="@(() => OpenDetails(mrow.Id))" />
                                     }
                                     else
                                     {
                                         <div class="bg-light border d-flex align-items-center justify-content-center text-muted flex-shrink-0"
                                              style="width:48px;height:48px;border-radius:6px;font-size:10px;cursor:pointer;"
-                                             @onclick="@(() => OpenDetails(row.Id))">No img</div>
+                                             @onclick="@(() => OpenDetails(mrow.Id))">No img</div>
                                     }
-                                    <span>@row.Name</span>
+                                    <span>@mrow.Name</span>
                                 </div>
                             </td>
                             <td>
-                                <a href="" @onclick="@((MouseEventArgs _) => OpenDetails(row.Id))" @onclick:preventDefault="true">
-                                    @row.InternalSKU
+                                <a href="" @onclick="@((MouseEventArgs _) => OpenDetails(mrow.Id))" @onclick:preventDefault="true">
+                                    @mrow.InternalSKU
                                 </a>
                             </td>
-                            <td>@row.CategoryName</td>
-                            <td>@row.Status</td>
-                            <td>@(row.RequiresLotTracking ? "Yes" : "No")</td>
-                            <td>@(row.RequiresQC ? "Yes" : "No")</td>
+                            <td>@mrow.CategoryName</td>
+                            <td>@mrow.Status</td>
+                            <td>@(mrow.RequiresLotTracking ? "Yes" : "No")</td>
+                            <td>@(mrow.RequiresQC ? "Yes" : "No")</td>
                             <td class="text-end">
-                                <button type="button" class="btn btn-sm btn-outline-secondary me-1" @onclick="@(() => BeginEdit(row))">Edit</button>
-                                <button class="btn btn-sm btn-outline-danger"
-                                        disabled="@string.Equals(row.Status, "Discontinued", StringComparison.OrdinalIgnoreCase)"
-                                        @onclick="@(() => DeactivateAsync(row.Id))">
+                                <button type="button" class="mud-mbtn-base mud-mbtn-sm mud-mbtn-outline-secondary me-1" @onclick="@(() => BeginEdit(mrow))">Edit</button>
+                                <button class="mud-mbtn-base mud-mbtn-sm mbtn-outline-danger"
+                                        disabled="@string.Equals(mrow.Status, "Discontinued", StringComparison.OrdinalIgnoreCase)"
+                                        @onclick="@(() => DeactivateAsync(mrow.Id))">
                                     Deactivate
                                 </button>
                             </td>
@@ -159,40 +159,40 @@
 
 @if (_showCreate)
 {
-    <div class="card shadow-sm mb-3">
-        <div class="card-header">Create Item</div>
-        <div class="card-body">
-            <div class="row g-2">
-                <div class="col-md-4">
+    <div class="mud-surface shadow-sm mb-3">
+        <div class="mud-surface-header">Create Item</div>
+        <div class="mud-surface-body">
+            <div class="mud-grid-mrow g-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Name</label>
-                    <input class="form-control" @bind="_create.Name" />
+                    <input class="mud-input-base" @bind="_create.Name" />
                 </div>
-                <div class="col-md-3">
+                <div class="mud-grid-col">
                     <label class="form-label">Category</label>
-                    <select class="form-select" @bind="_create.CategoryId">
+                    <select class="mud-input-base" @bind="_create.CategoryId">
                         @foreach (var category in _categories)
                         {
                             <option value="@category.Id">@category.Code</option>
                         }
                     </select>
                 </div>
-                <div class="col-md-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Base UoM</label>
-                    <input class="form-control" @bind="_create.BaseUoM" />
+                    <input class="mud-input-base" @bind="_create.BaseUoM" />
                 </div>
-                <div class="col-md-3">
+                <div class="mud-grid-col">
                     <label class="form-label">Status</label>
-                    <select class="form-select" @bind="_create.Status">
+                    <select class="mud-input-base" @bind="_create.Status">
                         <option value="Active">Active</option>
                         <option value="Discontinued">Discontinued</option>
                         <option value="Obsolete">Obsolete</option>
                     </select>
                 </div>
-                <div class="col-md-4">
+                <div class="mud-grid-col">
                     <label class="form-label">Primary Barcode</label>
-                    <input class="form-control" @bind="_create.PrimaryBarcode" />
+                    <input class="mud-input-base" @bind="_create.PrimaryBarcode" />
                 </div>
-                <div class="col-md-4 d-flex align-items-end gap-3">
+                <div class="mud-grid-col d-flex align-items-end gap-3">
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" @bind="_create.RequiresLotTracking" />
                         <label class="form-check-label">Requires lot tracking</label>
@@ -202,8 +202,8 @@
                         <label class="form-check-label">Requires QC</label>
                     </div>
                 </div>
-                <div class="col-md-4 d-flex align-items-end">
-                    <button class="btn btn-primary btn-fixed-height px-4" @onclick="CreateAsync">Save Item</button>
+                <div class="mud-grid-col d-flex align-items-end">
+                    <button class="mud-mbtn-base mud-mbtn-primary mbtn-fixed-height px-4" @onclick="CreateAsync">Save Item</button>
                 </div>
             </div>
         </div>
@@ -213,43 +213,43 @@
 
 @if (_editing is not null)
 {
-    <div class="card shadow-sm">
-        <div class="card-header d-flex justify-content-between align-items-center">
+    <div class="mud-surface shadow-sm">
+        <div class="mud-surface-header d-flex justify-content-between align-items-center">
             <span>Edit Item: @_editing.InternalSKU</span>
-            <button class="btn btn-sm btn-outline-secondary" @onclick="@(() => _editing = null)">Close</button>
+            <button class="mud-mbtn-base mud-mbtn-sm mud-mbtn-outline-secondary" @onclick="@(() => _editing = null)">Close</button>
         </div>
-        <div class="card-body">
-            <div class="row g-2">
-                <div class="col-md-4">
+        <div class="mud-surface-body">
+            <div class="mud-grid-mrow g-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Name</label>
-                    <input class="form-control" @bind="_editing.Name" />
+                    <input class="mud-input-base" @bind="_editing.Name" />
                 </div>
-                <div class="col-md-3">
+                <div class="mud-grid-col">
                     <label class="form-label">Category</label>
-                    <select class="form-select" @bind="_editing.CategoryId">
+                    <select class="mud-input-base" @bind="_editing.CategoryId">
                         @foreach (var category in _categories)
                         {
                             <option value="@category.Id">@category.Code</option>
                         }
                     </select>
                 </div>
-                <div class="col-md-2">
+                <div class="mud-grid-col">
                     <label class="form-label">Base UoM</label>
-                    <input class="form-control" @bind="_editing.BaseUoM" />
+                    <input class="mud-input-base" @bind="_editing.BaseUoM" />
                 </div>
-                <div class="col-md-3">
+                <div class="mud-grid-col">
                     <label class="form-label">Status</label>
-                    <select class="form-select" @bind="_editing.Status">
+                    <select class="mud-input-base" @bind="_editing.Status">
                         <option value="Active">Active</option>
                         <option value="Discontinued">Discontinued</option>
                         <option value="Obsolete">Obsolete</option>
                     </select>
                 </div>
-                <div class="col-md-4">
+                <div class="mud-grid-col">
                     <label class="form-label">Primary Barcode</label>
-                    <input class="form-control" @bind="_editing.PrimaryBarcode" />
+                    <input class="mud-input-base" @bind="_editing.PrimaryBarcode" />
                 </div>
-                <div class="col-md-4 d-flex align-items-end gap-3">
+                <div class="mud-grid-col d-flex align-items-end gap-3">
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" @bind="_editing.RequiresLotTracking" />
                         <label class="form-check-label">Requires lot tracking</label>
@@ -259,8 +259,8 @@
                         <label class="form-check-label">Requires QC</label>
                     </div>
                 </div>
-                <div class="col-md-4 d-flex align-items-end">
-                    <button class="btn btn-primary btn-fixed-height px-4" @onclick="UpdateAsync">Save Changes</button>
+                <div class="mud-grid-col d-flex align-items-end">
+                    <button class="mud-mbtn-base mud-mbtn-primary mbtn-fixed-height px-4" @onclick="UpdateAsync">Save Changes</button>
                 </div>
             </div>
         </div>
@@ -369,20 +369,20 @@
         }
     }
 
-    private void BeginEdit(AdminItemDto row)
+    private void BeginEdit(AdminItemDto mrow)
     {
         _showCreate = false;
         _editing = new ItemEditModel
         {
-            Id = row.Id,
-            InternalSKU = row.InternalSKU,
-            Name = row.Name,
-            CategoryId = row.CategoryId,
-            BaseUoM = row.BaseUoM,
-            Status = row.Status,
-            PrimaryBarcode = row.PrimaryBarcode,
-            RequiresLotTracking = row.RequiresLotTracking,
-            RequiresQC = row.RequiresQC
+            Id = mrow.Id,
+            InternalSKU = mrow.InternalSKU,
+            Name = mrow.Name,
+            CategoryId = mrow.CategoryId,
+            BaseUoM = mrow.BaseUoM,
+            Status = mrow.Status,
+            PrimaryBarcode = mrow.PrimaryBarcode,
+            RequiresLotTracking = mrow.RequiresLotTracking,
+            RequiresQC = mrow.RequiresQC
         };
     }
 

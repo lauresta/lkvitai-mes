@@ -15,14 +15,14 @@
     <SharedErrorAlert Message="@BuildErrorMessage(_apiError)" TraceId="@_apiError.TraceId" OnRetry="LoadAsync" OnDismiss="DismissError" />
 }
 
-<div class="row g-3">
-    <div class="col-12 col-xl-5">
-        <div class="card shadow-sm h-100">
-            <div class="card-body">
+<div class="mud-grid-mrow g-3">
+    <div class="mud-grid-col">
+        <div class="mud-surface shadow-sm h-100">
+            <div class="mud-surface-body">
                 <h5>Print / Preview</h5>
                 <div class="mb-2">
                     <label class="form-label">Template</label>
-                    <select class="form-select" @bind="_templateType">
+                    <select class="mud-input-base" @bind="_templateType">
                         <option value="">Select template</option>
                         @foreach (var template in _templates)
                         {
@@ -32,41 +32,41 @@
                 </div>
                 <div class="mb-2">
                     <label class="form-label">Data (JSON object)</label>
-                    <textarea class="form-control" rows="8" @bind="_dataJson"></textarea>
+                    <textarea class="mud-input-base" rows="8" @bind="_dataJson"></textarea>
                 </div>
                 <div class="d-flex gap-2">
-                    <button class="btn btn-primary" @onclick="PrintAsync" disabled="@_isSubmitting">Print</button>
-                    <button class="btn btn-outline-secondary" @onclick="PreviewAsync" disabled="@_isSubmitting">Preview PDF</button>
+                    <button class="mud-mbtn-base mud-mbtn-primary" @onclick="PrintAsync" disabled="@_isSubmitting">Print</button>
+                    <button class="mud-mbtn-base mud-mbtn-outline-secondary" @onclick="PreviewAsync" disabled="@_isSubmitting">Preview PDF</button>
                 </div>
-                <div class="row g-2 mt-2">
-                    <div class="col-9">
-                        <input class="form-control form-control-sm" @bind="_pdfFileName" placeholder="PDF file name from print result" />
+                <div class="mud-grid-mrow g-2 mt-2">
+                    <div class="mud-grid-col">
+                        <input class="mud-input-base minput-sm" @bind="_pdfFileName" placeholder="PDF file name from print result" />
                     </div>
-                    <div class="col-3">
-                        <button class="btn btn-sm btn-outline-primary w-100" @onclick="DownloadPdfAsync" disabled="@_isSubmitting">Get PDF</button>
+                    <div class="mud-grid-col">
+                        <button class="mud-mbtn-base mud-mbtn-sm mud-mbtn-outline-primary w-100" @onclick="DownloadPdfAsync" disabled="@_isSubmitting">Get PDF</button>
                     </div>
                 </div>
                 @if (!string.IsNullOrWhiteSpace(_lastPrintStatus))
                 {
-                    <div class="alert alert-info mt-3 mb-0">@_lastPrintStatus</div>
+                    <div class="mud-message mud-message-info mt-3 mb-0">@_lastPrintStatus</div>
                 }
             </div>
         </div>
     </div>
 
-    <div class="col-12 col-xl-7">
-        <div class="card shadow-sm h-100 position-relative">
+    <div class="mud-grid-col">
+        <div class="mud-surface shadow-sm h-100 position-relative">
              (_isLoading)
         {
             <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
         }
-            <div class="card-body">
+            <div class="mud-surface-body">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <h5 class="mb-0">Queue</h5>
-                    <button class="btn btn-sm btn-outline-secondary" @onclick="LoadAsync">Refresh</button>
+                    <button class="mud-mbtn-base mud-mbtn-sm mud-mbtn-outline-secondary" @onclick="LoadAsync">Refresh</button>
                 </div>
-                <div class="table-responsive">
-                    <table class="table table-sm table-hover align-middle">
+                <div class="overflow-auto">
+                    <table class="mud-mtbl-base mud-mtbl-dense mtbl-hover align-middle">
                         <thead>
                             <tr>
                                 <th>Id</th>
@@ -83,15 +83,15 @@
                             }
                             else
                             {
-                                @foreach (var row in _queue)
+                                @foreach (var mrow in _queue)
                                 {
                                     <tr>
-                                        <td class="small">@row.Id</td>
-                                        <td>@row.TemplateType</td>
-                                        <td>@row.Status</td>
-                                        <td>@row.RetryCount</td>
+                                        <td class="small">@mrow.Id</td>
+                                        <td>@mrow.TemplateType</td>
+                                        <td>@mrow.Status</td>
+                                        <td>@mrow.RetryCount</td>
                                         <td>
-                                            <button class="btn btn-sm btn-outline-primary" @onclick="() => RetryAsync(row.Id)">Retry</button>
+                                            <button class="mud-mbtn-base mud-mbtn-sm mud-mbtn-outline-primary" @onclick="() => RetryAsync(mrow.Id)">Retry</button>
                                         </td>
                                     </tr>
                                 }

@@ -22,7 +22,7 @@
             <p class="viz-subtitle">Explore bins, capacity, and handling units in 3D or 2D.</p>
         </div>
         <div class="viz-toolbar-right">
-            <select class="form-select" @bind="_warehouseCode" @bind:after="OnWarehouseChangedAsync" style="min-width: 220px;">
+            <select class="mud-input-base" @bind="_warehouseCode" @bind:after="OnWarehouseChangedAsync" style="min-width: 220px;">
                 @foreach (var warehouse in _warehouses)
                 {
                     <option value="@warehouse.Code">@warehouse.Code - @warehouse.Name</option>
@@ -30,12 +30,12 @@
             </select>
             <div class="viz-search-wrap">
                 <div class="input-group">
-                    <input class="form-control"
+                    <input class="mud-input-base"
                            placeholder="Search location (e.g. R3-C6-L3)"
                            value="@_searchQuery"
                            @oninput="OnSearchInput"
                            @onkeydown="HandleSearchKeyAsync" />
-                    <button class="btn btn-outline-secondary" @onclick="SearchAsync">
+                    <button class="mud-mbtn-base mud-mbtn-outline-secondary" @onclick="SearchAsync">
                         <MudIcon Icon="@Icons.Material.Filled.Search" />
                     </button>
                 </div>
@@ -53,7 +53,7 @@
                     </div>
                 }
             </div>
-            <select class="form-select"
+            <select class="mud-input-base"
                     value="@_zoneFilter"
                     @onchange="OnZoneFilterChangedAsync"
                     style="min-width: 160px;">
@@ -63,7 +63,7 @@
                     <option value="@zone">@zone</option>
                 }
             </select>
-            <select class="form-select"
+            <select class="mud-input-base"
                     value="@_statusFilter"
                     @onchange="OnStatusFilterChangedAsync"
                     style="min-width: 170px;">
@@ -75,10 +75,10 @@
                 <option value="RESERVED">RESERVED</option>
                 <option value="OVER_CAPACITY">OVER_CAPACITY</option>
             </select>
-            <button class="btn btn-outline-secondary" @onclick="RefreshAsync">
+            <button class="mud-mbtn-base mud-mbtn-outline-secondary" @onclick="RefreshAsync">
                 <MudIcon Icon="@Icons.Material.Filled.Refresh" Class="mr-1" /> Refresh
             </button>
-            <button class="btn btn-warning" @onclick="ToggleViewAsync">
+            <button class="mud-mbtn-base mud-mbtn-warning" @onclick="ToggleViewAsync">
                 @(_is3dView ? "2D View" : "3D View")
             </button>
         </div>
@@ -93,20 +93,20 @@
     }
     else if (!string.IsNullOrWhiteSpace(_error))
     {
-        <div class="alert alert-danger mt-3">@_error</div>
+        <div class="mud-message mud-message-error mt-3">@_error</div>
     }
     else if (_model is not null)
     {
         var visibleBins = GetFilteredBins();
         if (_model.Bins.Count == 0)
         {
-            <div class="alert alert-warning mt-3">
+            <div class="mud-message mud-message-warning mt-3">
                 No bins configured with coordinates. Configure layout first.
             </div>
         }
         else if (visibleBins.Count == 0)
         {
-            <div class="alert alert-warning mt-3">
+            <div class="mud-message mud-message-warning mt-3">
                 No bins match the selected zone/status filters.
             </div>
         }
@@ -120,8 +120,8 @@
                 else
                 {
                     <div class="viz-2d-controls">
-                        <button class="btn btn-sm btn-outline-secondary" @onclick="ZoomOut2dAsync" title="Zoom out">-</button>
-                        <button class="btn btn-sm btn-outline-secondary" @onclick="ZoomIn2dAsync" title="Zoom in">+</button>
+                        <button class="mud-mbtn-base mud-mbtn-sm mud-mbtn-outline-secondary" @onclick="ZoomOut2dAsync" title="Zoom out">-</button>
+                        <button class="mud-mbtn-base mud-mbtn-sm mud-mbtn-outline-secondary" @onclick="ZoomIn2dAsync" title="Zoom in">+</button>
                     </div>
                     <div class="viz-2d-wrap">
                         <svg class="viz-2d-canvas"
@@ -193,17 +193,17 @@
                 else
                 {
                     <h2>@_selectedBin.Code</h2>
-                    <dl class="row">
-                        <dt class="col-5">Status</dt>
-                        <dd class="col-7">@_selectedBin.Status</dd>
-                        <dt class="col-5">Utilization</dt>
-                        <dd class="col-7">@_selectedBin.UtilizationPercent.ToString("0.##", CultureInfo.InvariantCulture)%</dd>
-                        <dt class="col-5">Coordinates</dt>
-                        <dd class="col-7">@_selectedBin.Coordinates.X, @_selectedBin.Coordinates.Y, @_selectedBin.Coordinates.Z</dd>
-                        <dt class="col-5">Dimensions</dt>
-                        <dd class="col-7">@FormatDimensions(_selectedBin.Dimensions)</dd>
-                        <dt class="col-5">Capacity</dt>
-                        <dd class="col-7">@FormatCapacity(_selectedBin.Capacity)</dd>
+                    <dl class="mud-grid-mrow">
+                        <dt class="mud-grid-col">Status</dt>
+                        <dd class="mud-grid-col">@_selectedBin.Status</dd>
+                        <dt class="mud-grid-col">Utilization</dt>
+                        <dd class="mud-grid-col">@_selectedBin.UtilizationPercent.ToString("0.##", CultureInfo.InvariantCulture)%</dd>
+                        <dt class="mud-grid-col">Coordinates</dt>
+                        <dd class="mud-grid-col">@_selectedBin.Coordinates.X, @_selectedBin.Coordinates.Y, @_selectedBin.Coordinates.Z</dd>
+                        <dt class="mud-grid-col">Dimensions</dt>
+                        <dd class="mud-grid-col">@FormatDimensions(_selectedBin.Dimensions)</dd>
+                        <dt class="mud-grid-col">Capacity</dt>
+                        <dd class="mud-grid-col">@FormatCapacity(_selectedBin.Capacity)</dd>
                     </dl>
 
                     <h3>Handling Units</h3>
@@ -224,7 +224,7 @@
                         </ul>
                     }
 
-                    <a class="btn btn-sm btn-outline-secondary mt-3"
+                    <a class="mud-mbtn-base mud-mbtn-sm mud-mbtn-outline-secondary mt-3"
                        href="@($"/warehouse/locations/{_selectedBin.LocationId}")">
                         View Details
                     </a>

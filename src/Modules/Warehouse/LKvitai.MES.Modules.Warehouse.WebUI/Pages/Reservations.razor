@@ -16,24 +16,24 @@
                  OnDismiss="DismissError" />
 }
 
-<div class="card shadow-sm position-relative">
+<div class="mud-surface shadow-sm position-relative">
      (@(_isLoading || _isSubmitting))
         {
             <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
         }
 
-    <div class="card-body">
-        <div class="row g-2 align-items-end mb-3">
-            <div class="col-sm-6 col-md-4">
+    <div class="mud-surface-body">
+        <div class="mud-grid-mrow g-2 align-items-end mb-3">
+            <div class="mud-grid-col">
                 <label class="form-label">Status</label>
-                <select class="form-select" value="@_statusFilter" @onchange="OnStatusChangedAsync">
+                <select class="mud-input-base" value="@_statusFilter" @onchange="OnStatusChangedAsync">
                     <option value="ALL">All</option>
                     <option value="ALLOCATED">ALLOCATED</option>
                     <option value="PICKING">PICKING</option>
                 </select>
             </div>
-            <div class="col-auto">
-                <button class="btn btn-outline-secondary" @onclick="ReloadAsync" disabled="@(_isLoading || _isSubmitting)">
+            <div class="mud-grid-col">
+                <button class="mud-mbtn-base mud-mbtn-outline-secondary" @onclick="ReloadAsync" disabled="@(_isLoading || _isSubmitting)">
                     Refresh
                 </button>
             </div>
@@ -129,25 +129,25 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Reservation @ShortId(_selectedReservation.ReservationId)</h5>
-                    <button type="button" class="btn-close" aria-label="Close" @onclick="CloseDetailModal"></button>
+                    <button type="button" class="mud-mbtn-close" aria-label="Close" @onclick="CloseDetailModal"></button>
                 </div>
                 <div class="modal-body">
-                    <dl class="row mb-3">
-                        <dt class="col-sm-4">Purpose</dt>
-                        <dd class="col-sm-8">@_selectedReservation.Purpose</dd>
+                    <dl class="mud-grid-mrow mb-3">
+                        <dt class="mud-grid-col">Purpose</dt>
+                        <dd class="mud-grid-col">@_selectedReservation.Purpose</dd>
 
-                        <dt class="col-sm-4">Priority</dt>
-                        <dd class="col-sm-8">@_selectedReservation.Priority</dd>
+                        <dt class="mud-grid-col">Priority</dt>
+                        <dd class="mud-grid-col">@_selectedReservation.Priority</dd>
 
-                        <dt class="col-sm-4">Status</dt>
-                        <dd class="col-sm-8">@_selectedReservation.Status</dd>
+                        <dt class="mud-grid-col">Status</dt>
+                        <dd class="mud-grid-col">@_selectedReservation.Status</dd>
 
-                        <dt class="col-sm-4">Lock</dt>
-                        <dd class="col-sm-8">@_selectedReservation.LockType</dd>
+                        <dt class="mud-grid-col">Lock</dt>
+                        <dd class="mud-grid-col">@_selectedReservation.LockType</dd>
                     </dl>
 
-                    <div class="table-responsive">
-                        <table class="table table-sm">
+                    <div class="overflow-auto">
+                        <table class="mud-mtbl-base mud-mtbl-dense">
                             <thead>
                                 <tr>
                                     <th>SKU</th>
@@ -187,7 +187,7 @@
                     @if (_selectedReservation.Status == "ALLOCATED")
                     {
                         <button type="button"
-                                class="btn btn-primary"
+                                class="mud-mbtn-base mud-mbtn-primary"
                                 @onclick="() => OpenStartPickingConfirmation(_selectedReservation)"
                                 disabled="@_isSubmitting">
                             Start Picking
@@ -196,13 +196,13 @@
                     @if (_selectedReservation.Status == "PICKING")
                     {
                         <button type="button"
-                                class="btn btn-primary"
+                                class="mud-mbtn-base mud-mbtn-primary"
                                 @onclick="() => OpenPickModal(_selectedReservation)"
                                 disabled="@_isSubmitting">
                             Pick
                         </button>
                     }
-                    <button type="button" class="btn btn-secondary" @onclick="CloseDetailModal">Close</button>
+                    <button type="button" class="mud-mbtn-base mbtn-secondary" @onclick="CloseDetailModal">Close</button>
                 </div>
             </div>
         </div>
@@ -217,12 +217,12 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Pick Reservation @ShortId(_pickReservation.ReservationId)</h5>
-                    <button type="button" class="btn-close" aria-label="Close" @onclick="ClosePickModal"></button>
+                    <button type="button" class="mud-mbtn-close" aria-label="Close" @onclick="ClosePickModal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="form-label">Line</label>
-                        <select class="form-select" value="@_selectedPickLineIndex" @onchange="OnPickLineChanged">
+                        <select class="mud-input-base" value="@_selectedPickLineIndex" @onchange="OnPickLineChanged">
                             @for (var i = 0; i < _pickReservation.Lines.Count; i++)
                             {
                                 var line = _pickReservation.Lines[i];
@@ -233,7 +233,7 @@
 
                     <div class="mb-3">
                         <label class="form-label">Handling Unit</label>
-                        <select class="form-select" value="@_selectedPickHuId" @onchange="OnPickHuChanged">
+                        <select class="mud-input-base" value="@_selectedPickHuId" @onchange="OnPickHuChanged">
                             @if (SelectedPickLine is not null)
                             {
                                 @foreach (var hu in SelectedPickLine.AllocatedHUs)
@@ -246,7 +246,7 @@
 
                     <div class="mb-1">
                         <label class="form-label">Quantity</label>
-                        <input type="number" min="0.01" step="0.01" class="form-control" @bind="_pickQuantity" />
+                        <input type="number" min="0.01" step="0.01" class="mud-input-base" @bind="_pickQuantity" />
                     </div>
                     @if (!string.IsNullOrWhiteSpace(_pickValidationMessage))
                     {
@@ -254,9 +254,9 @@
                     }
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="ClosePickModal">Cancel</button>
+                    <button type="button" class="mud-mbtn-base mbtn-secondary" @onclick="ClosePickModal">Cancel</button>
                     <button type="button"
-                            class="btn btn-primary"
+                            class="mud-mbtn-base mud-mbtn-primary"
                             @onclick="SubmitPickAsync"
                             disabled="@(_isSubmitting || !CanSubmitPick)">
                         Submit Pick

@@ -9,7 +9,7 @@
 
 @if (!_hasAdminAccess)
 {
-    <div class="alert alert-warning" role="alert">
+    <div class="mud-message mud-message-warning" role="malert">
         Admin role required.
     </div>
 }
@@ -23,36 +23,36 @@ else
                      OnDismiss="DismissError" />
     }
 
-    <div class="card shadow-sm mb-3">
-        <div class="card-body">
-            <div class="row g-2 align-items-end">
-                <div class="col-md-4">
+    <div class="mud-surface shadow-sm mb-3">
+        <div class="mud-surface-body">
+            <div class="mud-grid-mrow g-2 align-items-end">
+                <div class="mud-grid-col">
                     <label class="form-label">Scenario</label>
-                    <InputSelect class="form-select" @bind-Value="_selectedScenario">
+                    <InputSelect class="mud-input-base" @bind-Value="_selectedScenario">
                         @foreach (var scenario in ScenarioOptions)
                         {
                             <option value="@scenario">@scenario</option>
                         }
                     </InputSelect>
                 </div>
-                <div class="col-md-3 d-grid">
-                    <button class="btn btn-primary" @onclick="TriggerDrillAsync" disabled="@_isWorking">Trigger Drill</button>
+                <div class="mud-grid-col d-grid">
+                    <button class="mud-mbtn-base mud-mbtn-primary" @onclick="TriggerDrillAsync" disabled="@_isWorking">Trigger Drill</button>
                 </div>
-                <div class="col-md-3 d-grid">
-                    <button class="btn btn-outline-secondary" @onclick="LoadAsync" disabled="@_isWorking">Refresh</button>
+                <div class="mud-grid-col d-grid">
+                    <button class="mud-mbtn-base mud-mbtn-outline-secondary" @onclick="LoadAsync" disabled="@_isWorking">Refresh</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="card shadow-sm position-relative">
+    <div class="mud-surface shadow-sm position-relative">
          (_isWorking)
         {
             <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
         }
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-sm table-hover align-middle">
+        <div class="mud-surface-body">
+            <div class="overflow-auto">
+                <table class="mud-mtbl-base mud-mtbl-dense mtbl-hover align-middle">
                     <thead>
                         <tr>
                             <th>Started</th>
@@ -90,7 +90,7 @@ else
                                         {
                                             @foreach (var issue in drill.IssuesIdentified)
                                             {
-                                                <span class="badge bg-warning text-dark me-1">@issue</span>
+                                                <span class="mud-pill bg-warning text-dark me-1">@issue</span>
                                             }
                                         }
                                     </td>

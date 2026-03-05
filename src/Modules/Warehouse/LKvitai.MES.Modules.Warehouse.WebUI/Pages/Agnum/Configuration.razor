@@ -19,62 +19,62 @@
                  OnDismiss="DismissError" />
 }
 
-<div class="card shadow-sm position-relative">
+<div class="mud-surface shadow-sm position-relative">
      (_isLoading || _isSaving || _isTestingConnection)
         {
             <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
         }
 
-    <div class="card-body">
+    <div class="mud-surface-body">
         <EditForm Model="_model" OnValidSubmit="SaveAsync">
             <DataAnnotationsValidator />
             <ValidationSummary />
 
-            <div class="row g-3">
-                <div class="col-12 col-md-3">
+            <div class="mud-grid-mrow g-3">
+                <div class="mud-grid-col">
                     <label class="form-label">Export Scope</label>
-                    <InputSelect class="form-select" @bind-Value="_model.Scope">
+                    <InputSelect class="mud-input-base" @bind-Value="_model.Scope">
                         @foreach (var scope in ExportScopes)
                         {
                             <option value="@scope">@scope</option>
                         }
                     </InputSelect>
                 </div>
-                <div class="col-12 col-md-3">
+                <div class="mud-grid-col">
                     <label class="form-label">Schedule (Cron)</label>
-                    <InputText class="form-control" @bind-Value="_model.Schedule" />
+                    <InputText class="mud-input-base" @bind-Value="_model.Schedule" />
                     <div class="form-text">Example: 0 23 * * *</div>
                 </div>
-                <div class="col-12 col-md-3">
+                <div class="mud-grid-col">
                     <label class="form-label">Format</label>
-                    <InputSelect class="form-select" @bind-Value="_model.Format">
+                    <InputSelect class="mud-input-base" @bind-Value="_model.Format">
                         @foreach (var format in ExportFormats)
                         {
                             <option value="@format">@format</option>
                         }
                     </InputSelect>
                 </div>
-                <div class="col-12 col-md-3 d-flex align-items-end">
+                <div class="mud-grid-col d-flex align-items-end">
                     <div class="form-check">
                         <InputCheckbox class="form-check-input" @bind-Value="_model.IsActive" />
                         <label class="form-check-label">Active</label>
                     </div>
                 </div>
-                <div class="col-12 col-md-8">
+                <div class="mud-grid-col">
                     <label class="form-label">API Endpoint</label>
-                    <InputText class="form-control" @bind-Value="_model.ApiEndpoint" />
+                    <InputText class="mud-input-base" @bind-Value="_model.ApiEndpoint" />
                 </div>
-                <div class="col-12 col-md-4">
+                <div class="mud-grid-col">
                     <label class="form-label">API Key</label>
-                    <input class="form-control" type="password" @bind="_model.ApiKey" />
+                    <input class="mud-input-base" type="password" @bind="_model.ApiKey" />
                 </div>
             </div>
 
             <div class="d-flex flex-wrap gap-2 mt-3">
-                <button class="btn btn-outline-secondary" type="button" @onclick="UseDailyPreset">Daily 23:00</button>
-                <button class="btn btn-outline-secondary" type="button" @onclick="UseHourlyPreset">Hourly</button>
-                <button class="btn btn-outline-secondary" type="button" @onclick="UseWeekdayPreset">Weekdays 08:00</button>
-                <button class="btn btn-outline-primary ms-auto" type="button" @onclick="TestConnectionAsync" disabled="@_isTestingConnection">
+                <button class="mud-mbtn-base mud-mbtn-outline-secondary" type="button" @onclick="UseDailyPreset">Daily 23:00</button>
+                <button class="mud-mbtn-base mud-mbtn-outline-secondary" type="button" @onclick="UseHourlyPreset">Hourly</button>
+                <button class="mud-mbtn-base mud-mbtn-outline-secondary" type="button" @onclick="UseWeekdayPreset">Weekdays 08:00</button>
+                <button class="mud-mbtn-base mud-mbtn-outline-primary ms-auto" type="button" @onclick="TestConnectionAsync" disabled="@_isTestingConnection">
                     Test Connection
                 </button>
             </div>
@@ -83,19 +83,19 @@
 
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <h5 class="mb-0">Mappings</h5>
-                <button class="btn btn-sm btn-outline-primary" type="button" @onclick="AddMapping">+ Add Mapping</button>
+                <button class="mud-mbtn-base mud-mbtn-sm mud-mbtn-outline-primary" type="button" @onclick="AddMapping">+ Add Mapping</button>
             </div>
 
             @if (_mappings.Count == 0)
             {
-                <div class="alert alert-light border">
+                <div class="mud-message malert-light border">
                     No mappings configured. Add your first mapping.
                 </div>
             }
             else
             {
-                <div class="table-responsive">
-                    <table class="table table-sm align-middle">
+                <div class="overflow-auto">
+                    <table class="mud-mtbl-base mud-mtbl-dense align-middle">
                         <thead>
                         <tr>
                             <th style="width: 25%;">Source Type</th>
@@ -107,12 +107,12 @@
                         <tbody>
                         @for (var i = 0; i < _mappings.Count; i++)
                         {
-                            var row = _mappings[i];
+                            var mrow = _mappings[i];
                             <tr>
                                 <td>
-                                    <InputSelect class="form-select"
-                                                 @bind-Value="row.SourceType"
-                                                 @bind-Value:after="@(() => HandleSourceTypeChanged(row))">
+                                    <InputSelect class="mud-input-base"
+                                                 @bind-Value="mrow.SourceType"
+                                                 @bind-Value:after="@(() => HandleSourceTypeChanged(mrow))">
                                         @foreach (var sourceType in SourceTypes)
                                         {
                                             <option value="@sourceType">@sourceType</option>
@@ -120,18 +120,18 @@
                                     </InputSelect>
                                 </td>
                                 <td>
-                                    <InputSelect class="form-select" @bind-Value="row.SourceValue">
-                                        @foreach (var value in GetSourceValues(row.SourceType))
+                                    <InputSelect class="mud-input-base" @bind-Value="mrow.SourceValue">
+                                        @foreach (var value in GetSourceValues(mrow.SourceType))
                                         {
                                             <option value="@value">@value</option>
                                         }
                                     </InputSelect>
                                 </td>
                                 <td>
-                                    <InputText class="form-control" @bind-Value="row.AgnumAccountCode" />
+                                    <InputText class="mud-input-base" @bind-Value="mrow.AgnumAccountCode" />
                                 </td>
                                 <td>
-                                    <button class="btn btn-sm btn-outline-danger" type="button" @onclick="@(() => RemoveMapping(i))">Remove</button>
+                                    <button class="mud-mbtn-base mud-mbtn-sm mbtn-outline-danger" type="button" @onclick="@(() => RemoveMapping(i))">Remove</button>
                                 </td>
                             </tr>
                         }
@@ -141,7 +141,7 @@
             }
 
             <div class="d-flex justify-content-end mt-3">
-                <button class="btn btn-primary" type="submit" disabled="@_isSaving">Save</button>
+                <button class="mud-mbtn-base mud-mbtn-primary" type="submit" disabled="@_isSaving">Save</button>
             </div>
         </EditForm>
 
@@ -149,11 +149,11 @@
 
         <div class="d-flex justify-content-between align-items-center mb-2">
             <h5 class="mb-0">Export History</h5>
-            <button class="btn btn-sm btn-outline-secondary" type="button" @onclick="LoadHistoryAsync" disabled="@_isLoading">Refresh History</button>
+            <button class="mud-mbtn-base mud-mbtn-sm mud-mbtn-outline-secondary" type="button" @onclick="LoadHistoryAsync" disabled="@_isLoading">Refresh History</button>
         </div>
 
-        <div class="table-responsive">
-            <table class="table table-sm table-hover align-middle">
+        <div class="overflow-auto">
+            <table class="mud-mtbl-base mud-mtbl-dense mtbl-hover align-middle">
                 <thead>
                     <tr>
                         <th>Exported</th>
@@ -406,18 +406,18 @@
         _mappings.RemoveAt(index);
     }
 
-    private void HandleSourceTypeChanged(MappingRowModel row)
+    private void HandleSourceTypeChanged(MappingRowModel mrow)
     {
-        var sourceValues = GetSourceValues(row.SourceType).ToList();
+        var sourceValues = GetSourceValues(mrow.SourceType).ToList();
         if (sourceValues.Count == 0)
         {
-            row.SourceValue = string.Empty;
+            mrow.SourceValue = string.Empty;
             return;
         }
 
-        if (!sourceValues.Contains(row.SourceValue, StringComparer.OrdinalIgnoreCase))
+        if (!sourceValues.Contains(mrow.SourceValue, StringComparer.OrdinalIgnoreCase))
         {
-            row.SourceValue = sourceValues[0];
+            mrow.SourceValue = sourceValues[0];
         }
     }
 

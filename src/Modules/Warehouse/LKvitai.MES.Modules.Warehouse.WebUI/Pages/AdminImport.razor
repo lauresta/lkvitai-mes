@@ -15,29 +15,29 @@
                  OnDismiss="@(() => _apiError = null)" />
 }
 
-<div class="alert alert-info">
+<div class="mud-message mud-message-info">
     Dry-run is recommended before commit.
 </div>
 
-<div class="card shadow-sm mb-3">
-    <div class="card-body">
+<div class="mud-surface shadow-sm mb-3">
+    <div class="mud-surface-body">
         <div class="d-flex flex-wrap gap-2 mb-3">
             @foreach (var tab in _tabs)
             {
-                <button class="btn @(tab == _selectedTab ? "btn-primary" : "btn-outline-primary")"
+                <button class="mud-mbtn-base @(tab == _selectedTab ?"mbtn-primary" : "mbtn-outline-primary")"
                         @onclick="@(() => SelectTab(tab))">
                     @tab.DisplayName
                 </button>
             }
         </div>
 
-        <div class="row g-2 align-items-end">
-            <div class="col-md-4">
-                <button class="btn btn-outline-secondary" @onclick="DownloadTemplateAsync">
+        <div class="mud-grid-mrow g-2 align-items-end">
+            <div class="mud-grid-col">
+                <button class="mud-mbtn-base mud-mbtn-outline-secondary" @onclick="DownloadTemplateAsync">
                     Download Template
                 </button>
             </div>
-            <div class="col-md-4">
+            <div class="mud-grid-col">
                 <label class="form-label">File</label>
                 <InputFile OnChange="OnFileSelectedAsync" />
                 @if (!string.IsNullOrWhiteSpace(_fileName))
@@ -45,14 +45,14 @@
                     <small class="text-muted d-block mt-1">@_fileName</small>
                 }
             </div>
-            <div class="col-md-2 d-flex align-items-center">
+            <div class="mud-grid-col d-flex align-items-center">
                 <div class="form-check mt-4">
                     <input class="form-check-input" type="checkbox" @bind="_dryRun" />
                     <label class="form-check-label">Dry run</label>
                 </div>
             </div>
-            <div class="col-md-2 d-grid">
-                <button class="btn btn-primary" disabled="@(_fileBytes is null || _isBusy)" @onclick="RunImportAsync">
+            <div class="mud-grid-col d-grid">
+                <button class="mud-mbtn-base mud-mbtn-primary" disabled="@(_fileBytes is null || _isBusy)" @onclick="RunImportAsync">
                     @(_isBusy ? "Running..." : "Run Import")
                 </button>
             </div>
@@ -62,22 +62,22 @@
 
 @if (_lastResult is not null)
 {
-    <div class="card shadow-sm">
-        <div class="card-header">Import Result</div>
-        <div class="card-body">
-            <div class="row g-2 mb-3">
-                <div class="col-md-2"><strong>Inserted:</strong> @_lastResult.Inserted</div>
-                <div class="col-md-2"><strong>Updated:</strong> @_lastResult.Updated</div>
-                <div class="col-md-2"><strong>Skipped:</strong> @_lastResult.Skipped</div>
-                <div class="col-md-2"><strong>Errors:</strong> @_lastResult.Errors.Count</div>
-                <div class="col-md-2"><strong>Dry run:</strong> @_lastResult.DryRun</div>
-                <div class="col-md-2"><strong>Bulk:</strong> @_lastResult.UsedBulk</div>
+    <div class="mud-surface shadow-sm">
+        <div class="mud-surface-header">Import Result</div>
+        <div class="mud-surface-body">
+            <div class="mud-grid-mrow g-2 mb-3">
+                <div class="mud-grid-col"><strong>Inserted:</strong> @_lastResult.Inserted</div>
+                <div class="mud-grid-col"><strong>Updated:</strong> @_lastResult.Updated</div>
+                <div class="mud-grid-col"><strong>Skipped:</strong> @_lastResult.Skipped</div>
+                <div class="mud-grid-col"><strong>Errors:</strong> @_lastResult.Errors.Count</div>
+                <div class="mud-grid-col"><strong>Dry run:</strong> @_lastResult.DryRun</div>
+                <div class="mud-grid-col"><strong>Bulk:</strong> @_lastResult.UsedBulk</div>
             </div>
 
             @if (_lastResult.Errors.Count > 0)
             {
-                <div class="table-responsive mb-3">
-                    <table class="table table-sm table-striped">
+                <div class="overflow-auto mb-3">
+                    <table class="mud-mtbl-base mud-mtbl-dense mtbl-striped">
                         <thead>
                         <tr>
                             <th>Row</th>
@@ -102,12 +102,12 @@
             }
 
             <div class="d-flex gap-2">
-                <button class="btn btn-outline-secondary"
+                <button class="mud-mbtn-base mud-mbtn-outline-secondary"
                         disabled="@(_lastResult.Errors.Count == 0)"
                         @onclick="DownloadErrorReportAsync">
                     Download Error Report
                 </button>
-                <button class="btn btn-success"
+                <button class="mud-mbtn-base mud-mbtn-success"
                         disabled="@(!CanCommit)"
                         @onclick="CommitAsync">
                     Commit Changes
@@ -116,7 +116,7 @@
 
             @if (_lastResult.DryRun && _lastResult.Errors.Count > 0)
             {
-                <div class="alert alert-warning mt-3 mb-0">
+                <div class="mud-message mud-message-warning mt-3 mb-0">
                     Commit is disabled until dry-run errors are resolved.
                 </div>
             }

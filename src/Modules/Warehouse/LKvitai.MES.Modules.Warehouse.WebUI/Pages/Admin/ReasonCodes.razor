@@ -9,7 +9,7 @@
 
 @if (!_hasAdminAccess)
 {
-    <div class="alert alert-warning" role="alert">
+    <div class="mud-message mud-message-warning" role="malert">
         Admin role required.
     </div>
 }
@@ -23,12 +23,12 @@ else
                      OnDismiss="DismissError" />
     }
 
-    <div class="card shadow-sm mb-3">
-        <div class="card-body">
-            <div class="row g-2 align-items-end">
-                <div class="col-md-4">
+    <div class="mud-surface shadow-sm mb-3">
+        <div class="mud-surface-body">
+            <div class="mud-grid-mrow g-2 align-items-end">
+                <div class="mud-grid-col">
                     <label class="form-label">Category</label>
-                    <InputSelect class="form-select" @bind-Value="_filterCategory">
+                    <InputSelect class="mud-input-base" @bind-Value="_filterCategory">
                         <option value="">All</option>
                         @foreach (var category in Categories)
                         {
@@ -36,19 +36,19 @@ else
                         }
                     </InputSelect>
                 </div>
-                <div class="col-md-4">
+                <div class="mud-grid-col">
                     <label class="form-label">Active</label>
-                    <InputSelect class="form-select" @bind-Value="_filterActive">
+                    <InputSelect class="mud-input-base" @bind-Value="_filterActive">
                         <option value="">All</option>
                         <option value="true">Active</option>
                         <option value="false">Inactive</option>
                     </InputSelect>
                 </div>
-                <div class="col-md-2 d-grid">
-                    <button class="btn btn-outline-secondary" @onclick="ApplyFiltersAsync">Filter</button>
+                <div class="mud-grid-col d-grid">
+                    <button class="mud-mbtn-base mud-mbtn-outline-secondary" @onclick="ApplyFiltersAsync">Filter</button>
                 </div>
-                <div class="col-md-2 d-grid">
-                    <button class="btn btn-primary" @onclick="ToggleCreateForm">@(_showCreate ? "Hide Form" : "Add Reason Code")</button>
+                <div class="mud-grid-col d-grid">
+                    <button class="mud-mbtn-base mud-mbtn-primary" @onclick="ToggleCreateForm">@(_showCreate ? "Hide Form" : "Add Reason Code")</button>
                 </div>
             </div>
         </div>
@@ -56,35 +56,35 @@ else
 
     @if (_showCreate)
     {
-        <div class="card shadow-sm mb-3">
-            <div class="card-header">Create Reason Code</div>
-            <div class="card-body">
+        <div class="mud-surface shadow-sm mb-3">
+            <div class="mud-surface-header">Create Reason Code</div>
+            <div class="mud-surface-body">
                 <EditForm Model="_createForm" OnValidSubmit="CreateAsync">
                     <DataAnnotationsValidator />
                     <ValidationSummary />
-                    <div class="row g-2">
-                        <div class="col-md-3">
+                    <div class="mud-grid-mrow g-2">
+                        <div class="mud-grid-col">
                             <label class="form-label">Code</label>
-                            <InputText class="form-control" @bind-Value="_createForm.Code" />
+                            <InputText class="mud-input-base" @bind-Value="_createForm.Code" />
                             <ValidationMessage For="() => _createForm.Code" />
                         </div>
-                        <div class="col-md-3">
+                        <div class="mud-grid-col">
                             <label class="form-label">Name</label>
-                            <InputText class="form-control" @bind-Value="_createForm.Name" />
+                            <InputText class="mud-input-base" @bind-Value="_createForm.Name" />
                             <ValidationMessage For="() => _createForm.Name" />
                         </div>
-                        <div class="col-md-3">
+                        <div class="mud-grid-col">
                             <label class="form-label">Category</label>
-                            <InputSelect class="form-select" @bind-Value="_createForm.Category">
+                            <InputSelect class="mud-input-base" @bind-Value="_createForm.Category">
                                 @foreach (var category in Categories)
                                 {
                                     <option value="@category">@category</option>
                                 }
                             </InputSelect>
                         </div>
-                        <div class="col-md-3">
+                        <div class="mud-grid-col">
                             <label class="form-label">Parent</label>
-                            <InputSelect class="form-select" @bind-Value="_createForm.ParentId">
+                            <InputSelect class="mud-input-base" @bind-Value="_createForm.ParentId">
                                 <option value="">(None)</option>
                                 @foreach (var parent in RootReasonCodes)
                                 {
@@ -92,18 +92,18 @@ else
                                 }
                             </InputSelect>
                         </div>
-                        <div class="col-md-9">
+                        <div class="mud-grid-col">
                             <label class="form-label">Description</label>
-                            <InputText class="form-control" @bind-Value="_createForm.Description" />
+                            <InputText class="mud-input-base" @bind-Value="_createForm.Description" />
                         </div>
-                        <div class="col-md-3 d-flex align-items-end">
+                        <div class="mud-grid-col d-flex align-items-end">
                             <div class="form-check mb-2">
                                 <InputCheckbox class="form-check-input" @bind-Value="_createForm.Active" />
                                 <label class="form-check-label">Active</label>
                             </div>
                         </div>
-                        <div class="col-md-2 d-grid">
-                            <button class="btn btn-primary" type="submit" disabled="@_isSubmitting">Save</button>
+                        <div class="mud-grid-col d-grid">
+                            <button class="mud-mbtn-base mud-mbtn-primary" type="submit" disabled="@_isSubmitting">Save</button>
                         </div>
                     </div>
                 </EditForm>
@@ -111,14 +111,14 @@ else
         </div>
     }
 
-    <div class="card shadow-sm position-relative">
+    <div class="mud-surface shadow-sm position-relative">
          (@(_isLoading || _isSubmitting || _isDeleting))
         {
             <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
         }
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-sm table-hover align-middle">
+        <div class="mud-surface-body">
+            <div class="overflow-auto">
+                <table class="mud-mtbl-base mud-mtbl-dense mtbl-hover align-middle">
                     <thead>
                         <tr>
                             <th>Code</th>
@@ -138,17 +138,17 @@ else
                         }
                         else
                         {
-                            @foreach (var row in _rows)
+                            @foreach (var mrow in _rows)
                             {
                                 <tr>
-                                    <td style="padding-left:@($"{row.Level * 1.5}rem")">@row.ReasonCode.Code</td>
-                                    <td>@row.ReasonCode.Name</td>
-                                    <td>@row.ReasonCode.Category</td>
-                                    <td>@(row.ReasonCode.Active ? "Yes" : "No")</td>
-                                    <td>@row.ReasonCode.UsageCount</td>
+                                    <td style="padding-left:@($"{mrow.Level * 1.5}rem")">@mrow.ReasonCode.Code</td>
+                                    <td>@mrow.ReasonCode.Name</td>
+                                    <td>@mrow.ReasonCode.Category</td>
+                                    <td>@(mrow.ReasonCode.Active ? "Yes" : "No")</td>
+                                    <td>@mrow.ReasonCode.UsageCount</td>
                                     <td class="text-end">
-                                        <button class="btn btn-sm btn-outline-secondary me-2" @onclick="() => BeginEdit(row.ReasonCode)">Edit</button>
-                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmDelete(row.ReasonCode)">Delete</button>
+                                        <button class="mud-mbtn-base mud-mbtn-sm mud-mbtn-outline-secondary me-2" @onclick="() => BeginEdit(mrow.ReasonCode)">Edit</button>
+                                        <button class="mud-mbtn-base mud-mbtn-sm mbtn-outline-danger" @onclick="() => ConfirmDelete(mrow.ReasonCode)">Delete</button>
                                     </td>
                                 </tr>
                             }
@@ -161,38 +161,38 @@ else
 
     @if (_editing is not null)
     {
-        <div class="card shadow-sm mt-3">
-            <div class="card-header d-flex justify-content-between align-items-center">
+        <div class="mud-surface shadow-sm mt-3">
+            <div class="mud-surface-header d-flex justify-content-between align-items-center">
                 <span>Edit @_editing.Code</span>
-                <button class="btn btn-sm btn-outline-secondary" @onclick="CancelEdit">Close</button>
+                <button class="mud-mbtn-base mud-mbtn-sm mud-mbtn-outline-secondary" @onclick="CancelEdit">Close</button>
             </div>
-            <div class="card-body">
+            <div class="mud-surface-body">
                 <EditForm Model="_editing" OnValidSubmit="UpdateAsync">
                     <DataAnnotationsValidator />
                     <ValidationSummary />
-                    <div class="row g-2">
-                        <div class="col-md-3">
+                    <div class="mud-grid-mrow g-2">
+                        <div class="mud-grid-col">
                             <label class="form-label">Code</label>
-                            <InputText class="form-control" @bind-Value="_editing.Code" />
+                            <InputText class="mud-input-base" @bind-Value="_editing.Code" />
                             <ValidationMessage For="() => _editing.Code" />
                         </div>
-                        <div class="col-md-3">
+                        <div class="mud-grid-col">
                             <label class="form-label">Name</label>
-                            <InputText class="form-control" @bind-Value="_editing.Name" />
+                            <InputText class="mud-input-base" @bind-Value="_editing.Name" />
                             <ValidationMessage For="() => _editing.Name" />
                         </div>
-                        <div class="col-md-3">
+                        <div class="mud-grid-col">
                             <label class="form-label">Category</label>
-                            <InputSelect class="form-select" @bind-Value="_editing.Category">
+                            <InputSelect class="mud-input-base" @bind-Value="_editing.Category">
                                 @foreach (var category in Categories)
                                 {
                                     <option value="@category">@category</option>
                                 }
                             </InputSelect>
                         </div>
-                        <div class="col-md-3">
+                        <div class="mud-grid-col">
                             <label class="form-label">Parent</label>
-                            <InputSelect class="form-select" @bind-Value="_editing.ParentId">
+                            <InputSelect class="mud-input-base" @bind-Value="_editing.ParentId">
                                 <option value="">(None)</option>
                                 @foreach (var parent in RootReasonCodes.Where(x => x.Id != _editing.Id))
                                 {
@@ -200,18 +200,18 @@ else
                                 }
                             </InputSelect>
                         </div>
-                        <div class="col-md-9">
+                        <div class="mud-grid-col">
                             <label class="form-label">Description</label>
-                            <InputText class="form-control" @bind-Value="_editing.Description" />
+                            <InputText class="mud-input-base" @bind-Value="_editing.Description" />
                         </div>
-                        <div class="col-md-3 d-flex align-items-end">
+                        <div class="mud-grid-col d-flex align-items-end">
                             <div class="form-check mb-2">
                                 <InputCheckbox class="form-check-input" @bind-Value="_editing.Active" />
                                 <label class="form-check-label">Active</label>
                             </div>
                         </div>
-                        <div class="col-md-2 d-grid">
-                            <button class="btn btn-primary" type="submit" disabled="@_isSubmitting">Save</button>
+                        <div class="mud-grid-col d-grid">
+                            <button class="mud-mbtn-base mud-mbtn-primary" type="submit" disabled="@_isSubmitting">Save</button>
                         </div>
                     </div>
                 </EditForm>
