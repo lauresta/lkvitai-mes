@@ -457,3 +457,20 @@ Matrix verdict:
 - `dotnet build src/LKvitai.MES.sln` passed.
 - Initial smoke run failed due infra (`ERR_CONNECTION_REFUSED` on `http://localhost:5124`), fixed by restarting WebUI host.
 - Re-run smoke passed: `dotnet test ... --filter FullyQualifiedName~.Ui.` (`36/36`).
+
+## 2026-03-05 - Step: Shell stability hardening for outbound polling
+
+### What I changed
+- Hardened `/warehouse/outbound/orders` reload path to handle non-`ApiException` failures (e.g., transport `HttpRequestException` when backend is offline).
+- Added fallback conversion to synthetic `ApiException` (`503 upstream-unavailable`) so route-level `ErrorBanner` is shown instead of allowing unhandled exceptions to terminate the WebUI process.
+
+### Why
+- During smoke runs, WebUI process intermittently crashed due unhandled background polling exceptions; this broke all UI tests with `ERR_CONNECTION_REFUSED`.
+
+### Result
+- Outbound polling now degrades gracefully when API is unavailable.
+- WebUI host remains alive, and smoke can run to completion.
+
+### Smoke status
+- `dotnet build src/LKvitai.MES.sln` passed.
+- `dotnet test ... --filter FullyQualifiedName~.Ui.` passed (`36/36`) after stability fix.

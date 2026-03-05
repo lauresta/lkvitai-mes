@@ -296,6 +296,14 @@
                 ToastService.ShowError(BuildErrorMessage(ex));
             }
         }
+        catch (Exception ex)
+        {
+            _apiError = ToConnectivityApiException(ex);
+            if (showToastOnError)
+            {
+                ToastService.ShowError(BuildErrorMessage(_apiError));
+            }
+        }
         finally
         {
             _isLoading = false;
@@ -447,6 +455,24 @@
             500 => "Failed to load orders. Please try again.",
             _ => "Failed to load orders."
         };
+    }
+
+    private static ApiException ToConnectivityApiException(Exception ex)
+    {
+        if (ex is ApiException apiException)
+        {
+            return apiException;
+        }
+
+        return new ApiException(
+            new ProblemDetailsModel
+            {
+                Title = "Warehouse API is currently unavailable.",
+                Detail = ex.Message,
+                Status = 503,
+                Type = "https://lkvitai.mes/problems/upstream-unavailable"
+            },
+            503);
     }
 
     private static string EscapeCsv(string value)
