@@ -419,3 +419,22 @@ Matrix verdict:
 ### Smoke status
 - `dotnet build src/LKvitai.MES.sln` passed.
 - `dotnet test ... --filter FullyQualifiedName~.Ui.` passed (`35/35`).
+
+## 2026-03-05 - Step: Outbound order list migration to Mud
+
+### What I changed
+- Migrated `/warehouse/outbound/orders` to Mud components (`MudPaper`, `MudGrid`, `MudTable`, `MudSelect`, `MudDatePicker`, `MudCheckBox`, `MudChip`, `MudPagination`).
+- Preserved polling, filtering, row selection, bulk cancel, CSV export, and navigation behavior.
+- Added stable test ids: `outbound-orders-page`, `outbound-orders-grid`, `outbound-orders-error`, filter/action/pager/selection ids.
+- Added UI smoke test `OutboundOrders_PageSmoke`.
+
+### Why
+- Continue Phase 1 migration for operational list pages and keep regression coverage aligned with touched UI.
+
+### Result
+- Outbound orders list is Mud-based while retaining prior behavior.
+- Smoke flakiness from unavailable local host was resolved by restarting WebUI before re-run.
+
+### Smoke status
+- `dotnet build src/LKvitai.MES.sln` passed.
+- `dotnet test ... --filter FullyQualifiedName~.Ui.` passed (`35/35`).
