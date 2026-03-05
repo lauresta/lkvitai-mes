@@ -45,7 +45,10 @@
     </MudPaper>
 
     <MudPaper Class="pa-4 position-relative">
-        <LoadingSpinner IsLoading="@_isLoading" />
+        @if (_isLoading)
+        {
+            <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
+        }
 
         <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-2">
             <MudText Typo="Typo.subtitle2">Total: @_totalCount</MudText>

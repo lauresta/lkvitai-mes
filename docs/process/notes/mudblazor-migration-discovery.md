@@ -559,3 +559,23 @@ Matrix verdict:
 ### Smoke status
 - `dotnet build src/LKvitai.MES.sln` passed.
 - `dotnet test ... --filter FullyQualifiedName~.Ui.` passed (`37/37`).
+
+## 2026-03-05 - Step: Reduce legacy loading wrapper usage on transfers/report/detail pages
+
+### What I changed
+- Replaced `LoadingSpinner` with Mud-native loading (`MudProgressLinear`) on:
+  - `/reports/receiving-history`
+  - `/warehouse/inbound/shipments/{id}`
+  - `/warehouse/transfers/create`
+  - `/warehouse/transfers`
+  - `/warehouse/transfers/{id}/execute`
+
+### Why
+- Continue Phase 3 consistency pass and reduce remaining usage of legacy loading wrapper on core inbound/transfers workflows.
+
+### Result
+- These pages now use direct Mud loading components without behavior change.
+
+### Smoke status
+- `dotnet build src/LKvitai.MES.sln` passed.
+- `dotnet test ... --filter FullyQualifiedName~.Ui.` passed (`37/37`).

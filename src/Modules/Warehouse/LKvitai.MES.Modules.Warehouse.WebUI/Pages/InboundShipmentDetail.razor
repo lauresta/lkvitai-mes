@@ -19,7 +19,10 @@
     }
 
     <MudPaper Class="pa-4 position-relative mb-3">
-        <LoadingSpinner IsLoading="_isLoading || _isSubmitting" />
+        @if (_isLoading || _isSubmitting)
+        {
+            <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
+        }
 
         @if (_shipment is null)
         {

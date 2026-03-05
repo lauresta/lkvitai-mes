@@ -64,7 +64,10 @@
     </MudPaper>
 
     <MudPaper Class="pa-4 position-relative">
-        <LoadingSpinner IsLoading="_isLoading || _isSubmitting" />
+        @if (_isLoading || _isSubmitting)
+        {
+            <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
+        }
 
         @if (_rows.Count == 0)
         {
