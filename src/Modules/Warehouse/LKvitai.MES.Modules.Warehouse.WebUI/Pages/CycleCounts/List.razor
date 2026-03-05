@@ -15,63 +15,50 @@
                  OnDismiss="@(() => _apiError = null)" />
 }
 
-<div class="card shadow-sm position-relative">
-     (_isLoading)
-        {
-            <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
-        }
-    <div class="card-body">
-        <div class="d-flex justify-content-end mb-3">
-            <a class="btn btn-primary" href="/warehouse/cycle-counts/schedule">Schedule Cycle Count</a>
-        </div>
+<MudPaper Elevation="2" Class="pa-4 position-relative">
+    @if (_isLoading)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
+    }
+    <MudStack Row="true" Justify="Justify.FlexEnd" Class="mb-3">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/warehouse/cycle-counts/schedule">Schedule Cycle Count</MudButton>
+    </MudStack>
 
-        <div class="table-responsive">
-            <table class="table table-hover align-middle">
-                <thead>
-                    <tr>
-                        <th>Count Number</th>
-                        <th>Scheduled Date</th>
-                        <th>Status</th>
-                        <th>ABC</th>
-                        <th>Assigned Operator</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if (_rows.Count == 0)
-                    {
-                        <tr>
-                            <td colspan="6">
-                                <EmptyState Title="No cycle counts scheduled."
-                                            Message="Create a schedule to start counting."
-                                            Icon="@Icons.Material.Filled.AssignmentTurnedIn"
-                                            OnAction="OpenScheduleAsync" />
-                            </td>
-                        </tr>
-                    }
-                    else
-                    {
-                        @foreach (var row in _rows)
-                        {
-                            <tr>
-                                <td>@row.CountNumber</td>
-                                <td>@row.ScheduledDate.ToLocalTime().ToString("yyyy-MM-dd")</td>
-                                <td><span class="badge @GetStatusBadge(row.Status)">@row.Status</span></td>
-                                <td>@row.AbcClass</td>
-                                <td>@row.AssignedOperator</td>
-                                <td class="d-flex gap-2">
-                                    <button class="btn btn-sm btn-outline-dark" @onclick="() => OpenView(row.Id)">View</button>
-                                    <button class="btn btn-sm btn-outline-secondary" @onclick="() => OpenExecute(row.Id)">Execute</button>
-                                    <button class="btn btn-sm btn-outline-primary" @onclick="() => OpenDiscrepancies(row.Id)">Review Discrepancies</button>
-                                </td>
-                            </tr>
-                        }
-                    }
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
+    @if (_rows.Count == 0)
+    {
+        <EmptyState Title="No cycle counts scheduled."
+                    Message="Create a schedule to start counting."
+                    Icon="@Icons.Material.Filled.AssignmentTurnedIn"
+                    OnAction="OpenScheduleAsync" />
+    }
+    else
+    {
+        <MudTable Items="_rows" Hover="true" Dense="true">
+            <HeaderContent>
+                <MudTh>Count Number</MudTh>
+                <MudTh>Scheduled Date</MudTh>
+                <MudTh>Status</MudTh>
+                <MudTh>ABC</MudTh>
+                <MudTh>Assigned Operator</MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Count Number">@context.CountNumber</MudTd>
+                <MudTd DataLabel="Scheduled Date">@context.ScheduledDate.ToLocalTime().ToString("yyyy-MM-dd")</MudTd>
+                <MudTd DataLabel="Status"><MudChip Color="@GetStatusColor(context.Status)" Size="Size.Small">@context.Status</MudChip></MudTd>
+                <MudTd DataLabel="ABC">@context.AbcClass</MudTd>
+                <MudTd DataLabel="Assigned Operator">@context.AssignedOperator</MudTd>
+                <MudTd DataLabel="Actions">
+                    <MudStack Row="true" Spacing="1">
+                        <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Default" OnClick="() => OpenView(context.Id)">View</MudButton>
+                        <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Default" OnClick="() => OpenExecute(context.Id)">Execute</MudButton>
+                        <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Primary" OnClick="() => OpenDiscrepancies(context.Id)">Review Discrepancies</MudButton>
+                    </MudStack>
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    }
+</MudPaper>
 
 @code {
     private readonly List<CycleCountDto> _rows = [];
@@ -117,13 +104,13 @@
 
     private void OpenDiscrepancies(Guid id) => NavigationManager.NavigateTo($"/warehouse/cycle-counts/{id}/discrepancies");
 
-    private static string GetStatusBadge(string status) => status.ToUpperInvariant() switch
+    private static Color GetStatusColor(string status) => status.ToUpperInvariant() switch
     {
-        "SCHEDULED" => "bg-warning text-dark",
-        "IN_PROGRESS" => "bg-primary",
-        "COMPLETED" => "bg-success",
-        "CANCELLED" => "bg-danger",
-        _ => "bg-secondary"
+        "SCHEDULED" => Color.Warning,
+        "IN_PROGRESS" => Color.Primary,
+        "COMPLETED" => Color.Success,
+        "CANCELLED" => Color.Error,
+        _ => Color.Default
     };
 
     private static string BuildErrorMessage(ApiException ex)

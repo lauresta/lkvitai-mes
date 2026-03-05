@@ -14,72 +14,67 @@
     <SharedErrorAlert Message="@BuildErrorMessage(_apiError)" TraceId="@_apiError.TraceId" OnRetry="LoadAsync" OnDismiss="DismissError" />
 }
 
-<div class="card shadow-sm position-relative">
-     (_isLoading || _isSubmitting)
-        {
-            <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
-        }
-    <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <h5 class="mb-0">Tasks from RECEIVING</h5>
-            <button class="btn btn-outline-secondary btn-sm" @onclick="LoadAsync">Refresh</button>
-        </div>
+<MudPaper Elevation="2" Class="pa-4 position-relative">
+    @if (_isLoading || _isSubmitting)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
+    }
+    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mb-2">
+        <MudText Typo="Typo.h6">Tasks from RECEIVING</MudText>
+        <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Default" OnClick="LoadAsync">Refresh</MudButton>
+    </MudStack>
 
-        <div class="table-responsive">
-            <table class="table table-sm table-hover align-middle">
-                <thead>
-                    <tr>
-                        <th>SKU</th>
-                        <th>Item</th>
-                        <th class="text-end">Qty</th>
-                        <th>From</th>
-                        <th>To Location</th>
-                        <th>Notes</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if (_tasks.Count == 0)
-                    {
-                        <tr><td colspan="7">No putaway tasks available.</td></tr>
-                    }
-                    else
-                    {
-                        @foreach (var task in _tasks)
+    @if (_tasks.Count == 0)
+    {
+        <MudText Typo="Typo.body2" Class="mud-secondary-text">No putaway tasks available.</MudText>
+    }
+    else
+    {
+        <MudTable Items="_tasks" Dense="true" Hover="true">
+            <HeaderContent>
+                <MudTh>SKU</MudTh>
+                <MudTh>Item</MudTh>
+                <MudTh Align="Align.Right">Qty</MudTh>
+                <MudTh>From</MudTh>
+                <MudTh>To Location</MudTh>
+                <MudTh>Notes</MudTh>
+                <MudTh>Action</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="SKU">@context.InternalSKU</MudTd>
+                <MudTd DataLabel="Item">@context.ItemName</MudTd>
+                <MudTd DataLabel="Qty" Align="Align.Right">@context.Qty</MudTd>
+                <MudTd DataLabel="From">@context.FromLocationCode</MudTd>
+                <MudTd DataLabel="To Location">
+                    <MudSelect T="int" Dense="true" Variant="Variant.Outlined" @bind-Value="context.ToLocationId">
+                        <MudSelectItem T="int" Value="0">Select destination</MudSelectItem>
+                        @foreach (var loc in _toLocations)
                         {
-                            <tr>
-                                <td>@task.InternalSKU</td>
-                                <td>@task.ItemName</td>
-                                <td class="text-end">@task.Qty</td>
-                                <td>@task.FromLocationCode</td>
-                                <td>
-                                    <select class="form-select form-select-sm" @bind="task.ToLocationId">
-                                        <option value="0">Select destination</option>
-                                        @foreach (var loc in _toLocations)
-                                        {
-                                            <option value="@loc.Id">@loc.Code</option>
-                                        }
-                                    </select>
-                                </td>
-                                <td>
-                                    <input class="form-control form-control-sm" @bind="task.Notes" />
-                                </td>
-                                <td>
-                                    <button class="btn btn-sm btn-primary" @onclick="() => ExecuteAsync(task)" disabled="@(task.ToLocationId <= 0 || _fromReceivingLocationId <= 0)">Putaway</button>
-                                </td>
-                            </tr>
+                            <MudSelectItem T="int" Value="@loc.Id">@loc.Code</MudSelectItem>
                         }
-                    }
-                </tbody>
-            </table>
-        </div>
+                    </MudSelect>
+                </MudTd>
+                <MudTd DataLabel="Notes">
+                    <MudTextField T="string" Dense="true" Variant="Variant.Outlined" @bind-Value="context.Notes" />
+                </MudTd>
+                <MudTd DataLabel="Action">
+                    <MudButton Variant="Variant.Filled"
+                               Size="Size.Small"
+                               Color="Color.Primary"
+                               OnClick="() => ExecuteAsync(context)"
+                               Disabled="@(context.ToLocationId <= 0 || _fromReceivingLocationId <= 0)">
+                        Putaway
+                    </MudButton>
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    }
 
-        @if (!string.IsNullOrWhiteSpace(_lastWarning))
-        {
-            <div class="alert alert-warning mt-2 mb-0">@_lastWarning</div>
-        }
-    </div>
-</div>
+    @if (!string.IsNullOrWhiteSpace(_lastWarning))
+    {
+        <MudAlert Severity="Severity.Warning" Dense="true" Variant="Variant.Outlined" Class="mt-2 mb-0">@_lastWarning</MudAlert>
+    }
+</MudPaper>
 
 @code {
     private readonly List<PutawayTaskRow> _tasks = [];

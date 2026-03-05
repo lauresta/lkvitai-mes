@@ -692,3 +692,20 @@ Matrix verdict:
 - Smoke status:
   - `dotnet build src/LKvitai.MES.sln` ✅
   - `dotnet test tests/Modules/Warehouse/LKvitai.MES.Tests.Warehouse.E2E/LKvitai.MES.Tests.Warehouse.E2E.csproj --filter FullyQualifiedName~.Ui.` ✅ (37/37)
+
+## Step: Migrate Cycle Counts list + Putaway table workflows to Mud controls
+- What I changed:
+  - `Pages/CycleCounts/List.razor`:
+    - fixed broken loading block to proper `@if`.
+    - replaced bootstrap card/table/actions with `MudPaper`, `MudTable`, `MudButton`, `MudChip`, `MudStack`.
+  - `Pages/Putaway.razor`:
+    - fixed broken loading block to proper `@if`.
+    - migrated table workflow to `MudTable` + `MudSelect` + `MudTextField` + `MudButton`.
+    - replaced warning bootstrap alert with `MudAlert`.
+- Why:
+  - Continue Phase 2/3 migration of operational workflows and remove bootstrap table/form/button classes.
+- Result:
+  - Cycle count list and putaway task execution now render through Mud components.
+- Smoke status:
+  - `dotnet build src/LKvitai.MES.sln` ✅
+  - `dotnet test tests/Modules/Warehouse/LKvitai.MES.Tests.Warehouse.E2E/LKvitai.MES.Tests.Warehouse.E2E.csproj --filter FullyQualifiedName~.Ui.` ✅ (37/37)
