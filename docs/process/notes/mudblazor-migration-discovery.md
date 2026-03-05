@@ -679,3 +679,16 @@ Matrix verdict:
 - Smoke status:
   - `dotnet build src/LKvitai.MES.sln` ✅
   - `dotnet test tests/Modules/Warehouse/LKvitai.MES.Tests.Warehouse.E2E/LKvitai.MES.Tests.Warehouse.E2E.csproj --filter FullyQualifiedName~.Ui.` ✅ (37/37)
+
+## Step: Remove bootstrap footprint from dashboard shell pages and stock filter component
+- What I changed:
+  - Migrated `Components/Stock/StockFilters.razor` to Mud form controls (`MudSelect`, `MudTextField`, `MudCheckBox`, `MudButton`) with existing `data-testid` contract preserved.
+  - Migrated `Pages/Dashboard.razor` layout from bootstrap `row/col` grid to `MudGrid/MudItem`.
+  - Migrated `Pages/WarehouseLocationDetail.razor` action link/button to Mud typography + `MudButton`.
+- Why:
+  - Reduce remaining bootstrap-class footprint and keep critical dashboard/stock flows aligned with Mud-only UI.
+- Result:
+  - These screens/components no longer depend on bootstrap layout/button/form classes.
+- Smoke status:
+  - `dotnet build src/LKvitai.MES.sln` ✅
+  - `dotnet test tests/Modules/Warehouse/LKvitai.MES.Tests.Warehouse.E2E/LKvitai.MES.Tests.Warehouse.E2E.csproj --filter FullyQualifiedName~.Ui.` ✅ (37/37)

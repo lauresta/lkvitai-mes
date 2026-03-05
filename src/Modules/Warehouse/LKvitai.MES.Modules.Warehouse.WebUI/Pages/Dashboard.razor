@@ -16,52 +16,52 @@
                  OnDismiss="DismissPageError" />
 }
 
-<div class="row g-3">
-    <div class="col-12 col-xl-6">
+<MudGrid Spacing="3">
+    <MudItem xs="12" xl="6">
         <HealthStatusCard Data="@_health.Data"
                           IsLoading="@_health.IsLoading"
                           ErrorMessage="@BuildErrorMessage(_health.Error)"
                           TraceId="@_health.Error?.TraceId"
                           OnRetry="LoadHealthAsync"
                           OnDismiss="@(() => DismissCardError(_health))" />
-    </div>
+    </MudItem>
 
-    <div class="col-12 col-xl-6">
+    <MudItem xs="12" xl="6">
         <StockSummaryCard Data="@_stockSummary.Data"
                           IsLoading="@_stockSummary.IsLoading"
                           ErrorMessage="@BuildErrorMessage(_stockSummary.Error)"
                           TraceId="@_stockSummary.Error?.TraceId"
                           OnRetry="LoadStockSummaryAsync"
                           OnDismiss="@(() => DismissCardError(_stockSummary))" />
-    </div>
+    </MudItem>
 
-    <div class="col-12 col-xl-6">
+    <MudItem xs="12" xl="6">
         <ReservationSummaryCard Data="@_reservationSummary.Data"
                                 IsLoading="@_reservationSummary.IsLoading"
                                 ErrorMessage="@BuildErrorMessage(_reservationSummary.Error)"
                                 TraceId="@_reservationSummary.Error?.TraceId"
                                 OnRetry="LoadReservationSummaryAsync"
                                 OnDismiss="@(() => DismissCardError(_reservationSummary))" />
-    </div>
+    </MudItem>
 
-    <div class="col-12 col-xl-6">
+    <MudItem xs="12" xl="6">
         <ProjectionHealthCard Data="@_projectionHealth.Data"
                               IsLoading="@_projectionHealth.IsLoading"
                               ErrorMessage="@BuildErrorMessage(_projectionHealth.Error)"
                               TraceId="@_projectionHealth.Error?.TraceId"
                               OnRetry="LoadProjectionHealthAsync"
                               OnDismiss="@(() => DismissCardError(_projectionHealth))" />
-    </div>
+    </MudItem>
 
-    <div class="col-12">
+    <MudItem xs="12">
         <RecentActivityFeed Items="@(_recentActivity.Data ?? Array.Empty<RecentMovementDto>())"
                             IsLoading="@_recentActivity.IsLoading"
                             ErrorMessage="@BuildErrorMessage(_recentActivity.Error)"
                             TraceId="@_recentActivity.Error?.TraceId"
                             OnRetry="LoadRecentActivityAsync"
                             OnDismiss="@(() => DismissCardError(_recentActivity))" />
-    </div>
-</div>
+    </MudItem>
+</MudGrid>
 
 @code {
     private readonly CardState<HealthStatusDto> _health = new();
