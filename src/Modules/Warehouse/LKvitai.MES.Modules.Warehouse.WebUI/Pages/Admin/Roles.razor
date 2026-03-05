@@ -18,7 +18,7 @@ else
 {
     @if (_apiError is not null)
     {
-        <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+        <SharedErrorAlert Message="@BuildErrorMessage(_apiError)"
                      TraceId="@_apiError.TraceId"
                      OnRetry="LoadAsync"
                      OnDismiss="DismissError" />
@@ -225,7 +225,7 @@ else
         </div>
     </div>
 
-    <ConfirmDialog Title="Delete Role"
+    <SharedConfirmDialog Title="Delete Role"
                    Message="@_deleteMessage"
                    ConfirmText="Delete"
                    IsVisible="@(_pendingDelete is not null)"

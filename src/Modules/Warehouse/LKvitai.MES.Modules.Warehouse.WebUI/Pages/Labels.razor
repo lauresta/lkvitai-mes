@@ -12,7 +12,7 @@
 
 @if (_apiError is not null)
 {
-    <ErrorBanner Message="@BuildErrorMessage(_apiError)" TraceId="@_apiError.TraceId" OnRetry="LoadAsync" OnDismiss="DismissError" />
+    <SharedErrorAlert Message="@BuildErrorMessage(_apiError)" TraceId="@_apiError.TraceId" OnRetry="LoadAsync" OnDismiss="DismissError" />
 }
 
 <div class="row g-3">

@@ -11,7 +11,7 @@
 
 @if (_apiError is not null)
 {
-    <ErrorBanner Message="@BuildErrorMessage(_apiError)" TraceId="@_apiError.TraceId" OnRetry="NoopAsync" OnDismiss="DismissError" />
+    <SharedErrorAlert Message="@BuildErrorMessage(_apiError)" TraceId="@_apiError.TraceId" OnRetry="NoopAsync" OnDismiss="DismissError" />
 }
 
 <div class="row g-3">

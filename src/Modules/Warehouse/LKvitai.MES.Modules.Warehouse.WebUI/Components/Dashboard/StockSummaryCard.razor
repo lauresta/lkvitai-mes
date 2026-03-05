@@ -9,7 +9,7 @@
 
         @if (!string.IsNullOrWhiteSpace(ErrorMessage))
         {
-            <ErrorBanner Message="@ErrorMessage"
+            <SharedErrorAlert Message="@ErrorMessage"
                          TraceId="@TraceId"
                          OnRetry="OnRetry"
                          OnDismiss="OnDismiss" />

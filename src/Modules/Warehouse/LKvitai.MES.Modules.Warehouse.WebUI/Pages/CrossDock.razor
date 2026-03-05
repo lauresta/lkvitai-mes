@@ -9,7 +9,7 @@
 
 @if (_error is not null)
 {
-    <ErrorBanner Message="@_error.UserMessage"
+    <SharedErrorAlert Message="@_error.UserMessage"
                  TraceId="@_error.TraceId"
                  OnRetry="LoadAsync"
                  OnDismiss="DismissError" />

@@ -597,3 +597,22 @@ Matrix verdict:
 ### Smoke status
 - `dotnet build src/LKvitai.MES.sln` passed.
 - `dotnet test ... --filter FullyQualifiedName~.Ui.` passed (`37/37`).
+
+## Step: Retire legacy error/confirm wrappers and harden bootstrap guard
+- What I changed:
+  - Replaced legacy component tags across WebUI: `ErrorBanner` -> `SharedErrorAlert`, `ConfirmDialog` -> `SharedConfirmDialog`.
+  - Renamed component files to `Components/SharedErrorAlert.razor` and `Components/SharedConfirmDialog.razor`.
+  - Removed legacy static bootstrap files from `wwwroot/css/bootstrap`.
+  - Extended `scripts/validate-webui-no-bootstrap.sh` to fail on:
+    - bootstrap static asset directory reintroduction
+    - legacy wrapper tag usage (`ErrorBanner`, `ConfirmDialog`, `LoadingSpinner`, `Pagination`, `DataTable`, `ToastContainer`)
+- Why:
+  - Phase 3/5 cleanup required legacy wrapper retirement and stronger regression guard.
+- Result:
+  - Legacy wrapper names removed from page usage; shared components now use Mud-native naming.
+  - Bootstrap static assets deleted from WebUI.
+- Smoke status:
+  - Pending build + UI smoke run for this step.
+- Verification update:
+  - `dotnet build src/LKvitai.MES.sln` ✅
+  - `dotnet test tests/Modules/Warehouse/LKvitai.MES.Tests.Warehouse.E2E/LKvitai.MES.Tests.Warehouse.E2E.csproj --filter FullyQualifiedName~.Ui.` ✅ (37/37)

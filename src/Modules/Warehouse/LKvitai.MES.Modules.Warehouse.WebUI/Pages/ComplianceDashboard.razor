@@ -10,7 +10,7 @@
     @if (_apiError is not null)
     {
         <div data-testid="compliance-dashboard-error">
-            <ErrorBanner Message="@_apiError.UserMessage" TraceId="@_apiError.TraceId" OnRetry="LoadAsync" OnDismiss="DismissError" />
+            <SharedErrorAlert Message="@_apiError.UserMessage" TraceId="@_apiError.TraceId" OnRetry="LoadAsync" OnDismiss="DismissError" />
         </div>
     }
 

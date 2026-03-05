@@ -12,7 +12,7 @@
     @if (_apiError is not null)
     {
         <div data-testid="projections-error" class="mb-3">
-            <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+            <SharedErrorAlert Message="@BuildErrorMessage(_apiError)"
                          TraceId="@_apiError.TraceId"
                          OnRetry="RetryAsync"
                          OnDismiss="DismissError" />
@@ -130,7 +130,7 @@
     </MudPaper>
 </div>
 
-<ConfirmDialog Title="Rebuild projection?"
+<SharedConfirmDialog Title="Rebuild projection?"
                Message="Are you sure? This will rebuild the projection from scratch."
                ConfirmText="Rebuild"
                IsVisible="@_showRebuildConfirm"

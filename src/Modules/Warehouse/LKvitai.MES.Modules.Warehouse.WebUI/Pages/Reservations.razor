@@ -10,7 +10,7 @@
 
 @if (_apiError is not null)
 {
-    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+    <SharedErrorAlert Message="@BuildErrorMessage(_apiError)"
                  TraceId="@_apiError.TraceId"
                  OnRetry="RetryAsync"
                  OnDismiss="DismissError" />
@@ -268,7 +268,7 @@
     <div class="modal-backdrop fade show"></div>
 }
 
-<ConfirmDialog Title="Start picking?"
+<SharedConfirmDialog Title="Start picking?"
                Message="Start picking this reservation now?"
                ConfirmText="Start"
                IsVisible="@_showStartPickingConfirm"

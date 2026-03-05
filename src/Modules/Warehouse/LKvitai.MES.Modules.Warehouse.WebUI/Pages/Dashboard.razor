@@ -10,7 +10,7 @@
 
 @if (_pageError is not null)
 {
-    <ErrorBanner Message="@BuildErrorMessage(_pageError)"
+    <SharedErrorAlert Message="@BuildErrorMessage(_pageError)"
                  TraceId="@_pageError.TraceId"
                  OnRetry="RetryAllAsync"
                  OnDismiss="DismissPageError" />

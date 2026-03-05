@@ -13,4 +13,14 @@ if rg -n "bi-[a-z0-9-]+|\bbi\b" "$ROOT" -g "*.razor" -g "*.cs"; then
   exit 1
 fi
 
+if [ -d "$ROOT/wwwroot/css/bootstrap" ]; then
+  echo "Legacy bootstrap static assets directory detected: $ROOT/wwwroot/css/bootstrap"
+  exit 1
+fi
+
+if rg -n "<(/)?(ErrorBanner|ConfirmDialog|LoadingSpinner|Pagination|DataTable|ToastContainer)\b" "$ROOT" -g "*.razor"; then
+  echo "Legacy UI wrapper component usage detected in Razor pages/components."
+  exit 1
+fi
+
 echo "No bootstrap CDN or bi-* icon usage detected in WebUI."
