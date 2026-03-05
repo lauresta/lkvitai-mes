@@ -19,7 +19,10 @@
     }
 
     <MudPaper Class="pa-4 position-relative" data-testid="sales-order-create-form">
-        <LoadingSpinner IsLoading="_isLoading || _isSubmitting" />
+        @if (_isLoading || _isSubmitting)
+        {
+            <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" data-testid="sales-order-create-loading" />
+        }
 
         <MudGrid Spacing="3" AlignItems="AlignItems.End">
             <MudItem xs="12" md="6">
@@ -60,18 +63,18 @@
 
         <MudText Typo="Typo.h6" Class="mb-2">Shipping Address</MudText>
         <MudGrid Spacing="2">
-            <MudItem xs="12" md="6"><MudTextField T="string" Label="Street" @bind-Value="_shippingStreet" Variant="Variant.Outlined" Dense="true" /></MudItem>
-            <MudItem xs="12" md="3"><MudTextField T="string" Label="City" @bind-Value="_shippingCity" Variant="Variant.Outlined" Dense="true" /></MudItem>
-            <MudItem xs="12" md="3"><MudTextField T="string" Label="State" @bind-Value="_shippingState" Variant="Variant.Outlined" Dense="true" /></MudItem>
-            <MudItem xs="12" md="3"><MudTextField T="string" Label="Zip" @bind-Value="_shippingZipCode" Variant="Variant.Outlined" Dense="true" /></MudItem>
-            <MudItem xs="12" md="3"><MudTextField T="string" Label="Country" @bind-Value="_shippingCountry" Variant="Variant.Outlined" Dense="true" /></MudItem>
+            <MudItem xs="12" md="6"><MudTextField T="string" Label="Street" @bind-Value="_shippingStreet" Variant="Variant.Outlined" Dense="true" @attributes="ShippingStreetAttributes" /></MudItem>
+            <MudItem xs="12" md="3"><MudTextField T="string" Label="City" @bind-Value="_shippingCity" Variant="Variant.Outlined" Dense="true" @attributes="ShippingCityAttributes" /></MudItem>
+            <MudItem xs="12" md="3"><MudTextField T="string" Label="State" @bind-Value="_shippingState" Variant="Variant.Outlined" Dense="true" @attributes="ShippingStateAttributes" /></MudItem>
+            <MudItem xs="12" md="3"><MudTextField T="string" Label="Zip" @bind-Value="_shippingZipCode" Variant="Variant.Outlined" Dense="true" @attributes="ShippingZipAttributes" /></MudItem>
+            <MudItem xs="12" md="3"><MudTextField T="string" Label="Country" @bind-Value="_shippingCountry" Variant="Variant.Outlined" Dense="true" @attributes="ShippingCountryAttributes" /></MudItem>
         </MudGrid>
 
         <MudDivider Class="my-4" />
 
         <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="mb-2">
             <MudText Typo="Typo.h6">Order Lines</MudText>
-            <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="AddLine" Disabled="@_isSubmitting">+ Add Line</MudButton>
+            <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="AddLine" Disabled="@_isSubmitting" data-testid="sales-order-create-add-line">+ Add Line</MudButton>
         </MudStack>
 
         @if (_lines.Count == 0)
@@ -92,7 +95,7 @@
                 </HeaderContent>
                 <RowTemplate>
                     <MudTd>
-                        <MudSelect T="int?" @bind-Value="context.ItemId" Variant="Variant.Outlined" Dense="true">
+                        <MudSelect T="int?" @bind-Value="context.ItemId" Variant="Variant.Outlined" Dense="true" data-testid="sales-order-create-line-item">
                             <MudSelectItem T="int?" Value="@((int?)null)">Select item</MudSelectItem>
                             @foreach (var item in _items)
                             {
@@ -101,10 +104,10 @@
                         </MudSelect>
                     </MudTd>
                     <MudTd>
-                        <MudNumericField T="decimal" Min="0.01m" Step="0.01m" @bind-Value="context.Qty" Variant="Variant.Outlined" Dense="true" />
+                        <MudNumericField T="decimal" Min="0.01m" Step="0.01m" @bind-Value="context.Qty" Variant="Variant.Outlined" Dense="true" data-testid="sales-order-create-line-qty" />
                     </MudTd>
                     <MudTd>
-                        <MudNumericField T="decimal" Min="0m" Step="0.01m" @bind-Value="context.UnitPrice" Variant="Variant.Outlined" Dense="true" />
+                        <MudNumericField T="decimal" Min="0m" Step="0.01m" @bind-Value="context.UnitPrice" Variant="Variant.Outlined" Dense="true" data-testid="sales-order-create-line-price" />
                     </MudTd>
                     <MudTd>
                         <MudButton Variant="Variant.Outlined"
@@ -151,6 +154,11 @@
     private static readonly Dictionary<string, object> CustomerAttributes = new() { ["data-testid"] = "sales-order-create-customer" };
     private static readonly Dictionary<string, object> DeliveryDateAttributes = new() { ["data-testid"] = "sales-order-create-date" };
     private static readonly Dictionary<string, object> SubmitAttributes = new() { ["data-testid"] = "sales-order-create-submit" };
+    private static readonly Dictionary<string, object> ShippingStreetAttributes = new() { ["data-testid"] = "sales-order-create-shipping-street" };
+    private static readonly Dictionary<string, object> ShippingCityAttributes = new() { ["data-testid"] = "sales-order-create-shipping-city" };
+    private static readonly Dictionary<string, object> ShippingStateAttributes = new() { ["data-testid"] = "sales-order-create-shipping-state" };
+    private static readonly Dictionary<string, object> ShippingZipAttributes = new() { ["data-testid"] = "sales-order-create-shipping-zip" };
+    private static readonly Dictionary<string, object> ShippingCountryAttributes = new() { ["data-testid"] = "sales-order-create-shipping-country" };
 
     protected override async Task OnInitializedAsync()
     {

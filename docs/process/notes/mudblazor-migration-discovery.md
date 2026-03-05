@@ -474,3 +474,26 @@ Matrix verdict:
 ### Smoke status
 - `dotnet build src/LKvitai.MES.sln` passed.
 - `dotnet test ... --filter FullyQualifiedName~.Ui.` passed (`36/36`) after stability fix.
+
+## 2026-03-05 - Step: Sales order create workflow hardening (Mud + testid)
+
+### What I changed
+- Updated `/warehouse/sales/orders/create` workflow page to remove legacy `LoadingSpinner` usage and use Mud-native loading indicator (`MudProgressLinear`).
+- Added/extended stable key test ids for workflow fields and actions:
+  - `sales-order-create-loading`
+  - `sales-order-create-add-line`
+  - `sales-order-create-line-item`
+  - `sales-order-create-line-qty`
+  - `sales-order-create-line-price`
+  - shipping field ids (`sales-order-create-shipping-*`).
+- Updated `P01InboundNavigationValidationTests.Outbound_CreatePage_BlocksSubmit_WhenCustomerMissing` to validate key contracts (`form`, `customer`, `submit`) while remaining offline-tolerant.
+
+### Why
+- Continue Phase 2 form/workflow stabilization with explicit test-id contract and reduced legacy wrapper usage.
+
+### Result
+- Sales order create form is fully Mud-native for loading behavior and keeps validation/navigation behavior unchanged.
+
+### Smoke status
+- `dotnet build src/LKvitai.MES.sln` passed.
+- `dotnet test ... --filter FullyQualifiedName~.Ui.` passed (`36/36`).
