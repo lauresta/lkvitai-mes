@@ -541,3 +541,21 @@ Matrix verdict:
 ### Smoke status
 - `dotnet build src/LKvitai.MES.sln` passed.
 - `dotnet test ... --filter FullyQualifiedName~.Ui.` passed (`37/37`).
+
+## 2026-03-05 - Step: Reduce legacy loading wrapper usage on order list pages
+
+### What I changed
+- Replaced `LoadingSpinner` usage with Mud-native progress indicators on:
+  - `/warehouse/outbound/orders`
+  - `/warehouse/sales/orders`
+- Preserved page behavior and selectors; only loading visual implementation changed.
+
+### Why
+- Continue Phase 3 wrapper-retirement path and move shared loading UX to direct Mud primitives.
+
+### Result
+- Two high-traffic list pages no longer depend on `LoadingSpinner` wrapper.
+
+### Smoke status
+- `dotnet build src/LKvitai.MES.sln` passed.
+- `dotnet test ... --filter FullyQualifiedName~.Ui.` passed (`37/37`).
