@@ -10,68 +10,75 @@
 
 <h1 data-testid="cycle-counts-schedule-title">Schedule Cycle Count</h1>
 
-<div class="card shadow-sm position-relative">
-     (_isLoading || _isSubmitting)
-        {
-            <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
-        }
-    <div class="card-body">
-        <div class="row g-3">
-            <div class="col-md-3">
-                <label class="form-label">Scheduled Date</label>
-                <input type="date" class="form-control" @bind="_scheduledDate" data-testid="cycle-counts-schedule-date" />
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">ABC Class</label>
-                <select class="form-select" @bind="_abcClass" data-testid="cycle-counts-schedule-abc">
-                    <option value="A">A</option>
-                    <option value="B">B</option>
-                    <option value="C">C</option>
-                    <option value="ALL">ALL</option>
-                </select>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Assigned Operator</label>
-                <select class="form-select" @bind="_assignedOperator" data-testid="cycle-counts-schedule-operator">
-                    @foreach (var operatorId in _operatorOptions)
-                    {
-                        <option value="@operatorId">@operatorId</option>
-                    }
-                </select>
-            </div>
-        </div>
-
-        <hr />
-
-        <h5>Locations</h5>
-        @if (_locations.Count == 0)
-        {
-            <p class="text-muted">No locations loaded.</p>
-        }
-        else
-        {
-            <div class="row row-cols-1 row-cols-md-3 g-2">
-                @foreach (var location in _locations)
+<MudPaper Elevation="2" Class="pa-4 position-relative">
+    @if (_isLoading || _isSubmitting)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
+    }
+    <MudGrid Spacing="3">
+        <MudItem xs="12" md="3">
+            <MudDatePicker Label="Scheduled Date"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           Date="_scheduledDate"
+                           DateChanged="OnScheduledDateChanged"
+                           InputAttributes="@DateAttributes" />
+        </MudItem>
+        <MudItem xs="12" md="3">
+            <MudSelect T="string"
+                       Label="ABC Class"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       @bind-Value="_abcClass"
+                       InputAttributes="@AbcAttributes">
+                <MudSelectItem T="string" Value="@("A")">A</MudSelectItem>
+                <MudSelectItem T="string" Value="@("B")">B</MudSelectItem>
+                <MudSelectItem T="string" Value="@("C")">C</MudSelectItem>
+                <MudSelectItem T="string" Value="@("ALL")">ALL</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem xs="12" md="3">
+            <MudSelect T="string"
+                       Label="Assigned Operator"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       @bind-Value="_assignedOperator"
+                       InputAttributes="@OperatorAttributes">
+                @foreach (var operatorId in _operatorOptions)
                 {
-                    <div class="col">
-                        <label class="form-check">
-                            <input class="form-check-input"
-                                   type="checkbox"
-                                   checked="@_selectedLocationIds.Contains(location.Id)"
-                                   @onchange="args => ToggleLocation(location.Id, args)" />
-                            <span class="form-check-label">@location.Code (@location.Type)</span>
-                        </label>
-                    </div>
+                    <MudSelectItem T="string" Value="@operatorId">@operatorId</MudSelectItem>
                 }
-            </div>
-        }
+            </MudSelect>
+        </MudItem>
+    </MudGrid>
 
-        <div class="d-flex justify-content-end gap-2 mt-3">
-            <button class="btn btn-outline-secondary" @onclick="BackAsync">Back</button>
-            <button class="btn btn-primary" @onclick="SubmitAsync" disabled="@_isSubmitting">Submit</button>
-        </div>
-    </div>
-</div>
+    <MudDivider Class="my-4" />
+
+    <MudText Typo="Typo.h6">Locations</MudText>
+    @if (_locations.Count == 0)
+    {
+        <MudText Typo="Typo.body2" Class="mud-secondary-text">No locations loaded.</MudText>
+    }
+    else
+    {
+        <MudGrid Spacing="2">
+            @foreach (var location in _locations)
+            {
+                <MudItem xs="12" md="4">
+                    <MudCheckBox T="bool"
+                                 Checked="@_selectedLocationIds.Contains(location.Id)"
+                                 CheckedChanged="value => ToggleLocation(location.Id, value)"
+                                 Label="@($"{location.Code} ({location.Type})")" />
+                </MudItem>
+            }
+        </MudGrid>
+    }
+
+    <MudStack Row="true" Justify="Justify.FlexEnd" Spacing="1" Class="mt-3">
+        <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="BackAsync">Back</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SubmitAsync" Disabled="@_isSubmitting">Submit</MudButton>
+    </MudStack>
+</MudPaper>
 
 @code {
     private readonly List<AdminLocationDto> _locations = [];
@@ -83,6 +90,9 @@
     private DateTime _scheduledDate = DateTime.Today.AddDays(1);
     private string _abcClass = "A";
     private string _assignedOperator = "operator1";
+    private static readonly Dictionary<string, object> DateAttributes = new() { ["data-testid"] = "cycle-counts-schedule-date" };
+    private static readonly Dictionary<string, object> AbcAttributes = new() { ["data-testid"] = "cycle-counts-schedule-abc" };
+    private static readonly Dictionary<string, object> OperatorAttributes = new() { ["data-testid"] = "cycle-counts-schedule-operator" };
 
     protected override async Task OnInitializedAsync()
     {
@@ -150,14 +160,8 @@
         }
     }
 
-    private void ToggleLocation(int id, ChangeEventArgs args)
+    private void ToggleLocation(int id, bool isChecked)
     {
-        var isChecked = args.Value switch
-        {
-            bool value => value,
-            string text => string.Equals(text, "true", StringComparison.OrdinalIgnoreCase) || text == "on",
-            _ => false
-        };
         if (isChecked)
         {
             _selectedLocationIds.Add(id);
@@ -165,6 +169,14 @@
         }
 
         _selectedLocationIds.Remove(id);
+    }
+
+    private void OnScheduledDateChanged(DateTime? date)
+    {
+        if (date.HasValue)
+        {
+            _scheduledDate = date.Value;
+        }
     }
 
     private async Task SubmitAsync()

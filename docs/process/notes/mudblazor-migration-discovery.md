@@ -721,3 +721,16 @@ Matrix verdict:
 - Smoke status:
   - `dotnet build src/LKvitai.MES.sln` ✅
   - `dotnet test tests/Modules/Warehouse/LKvitai.MES.Tests.Warehouse.E2E/LKvitai.MES.Tests.Warehouse.E2E.csproj --filter FullyQualifiedName~.Ui.` ✅ (37/37)
+
+## Step: Migrate remaining Cycle Count workflow pages to Mud controls
+- What I changed:
+  - `CycleCounts/Schedule.razor`: migrated bootstrap date/select/checkbox/button layout to `MudDatePicker`, `MudSelect`, `MudCheckBox`, `MudButton`, `MudGrid`; fixed loading block to valid Razor `@if`.
+  - `CycleCounts/Execute.razor`: migrated workflow form to Mud inputs/buttons and Mud layout containers.
+  - `CycleCounts/Discrepancies.razor`: migrated bootstrap table to `MudTable` and bootstrap modal to `MudOverlay` + `MudPaper` action sheet.
+- Why:
+  - Phase 2/3 workflow migration and bootstrap footprint reduction across cycle count operational path.
+- Result:
+  - End-to-end cycle count scheduling/execution/discrepancy approval UI now uses Mud component stack.
+- Smoke status:
+  - `dotnet build src/LKvitai.MES.sln` ✅
+  - `dotnet test tests/Modules/Warehouse/LKvitai.MES.Tests.Warehouse.E2E/LKvitai.MES.Tests.Warehouse.E2E.csproj --filter FullyQualifiedName~.Ui.` ✅ (37/37)
