@@ -5,209 +5,184 @@
 
 <PageTitle>Stock Dashboard - LKvitai.MES</PageTitle>
 
-<h1>Stock Dashboard</h1>
+<MudStack Spacing="2" data-testid="stock-dashboard-page">
+    <MudText Typo="Typo.h4">Stock Dashboard</MudText>
 
-@if (_apiError is not null)
-{
-    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
-                 TraceId="@_apiError.TraceId"
-                 OnRetry="LoadAsync"
-                 OnDismiss="DismissError" />
-}
+    @if (_apiError is not null)
+    {
+        <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                     TraceId="@_apiError.TraceId"
+                     OnRetry="LoadAsync"
+                     OnDismiss="DismissError" />
+    }
 
-<div class="card shadow-sm mb-3">
-    <div class="card-body">
-        <div class="row g-2 align-items-end">
-            <div class="col-md-2">
-                <label class="form-label">Location Id</label>
-                <input type="number" class="form-control" @bind="_locationId" />
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">Category Id</label>
-                <input type="number" class="form-control" @bind="_categoryId" />
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">Item Id</label>
-                <input type="number" class="form-control" @bind="_itemId" />
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Search Item</label>
-                <input class="form-control" @bind="_itemSearch" placeholder="SKU or name" />
-            </div>
-            <div class="col-md-3 d-flex gap-2">
-                <button class="btn btn-primary" @onclick="ApplyFiltersAsync" disabled="@_isLoading">Apply</button>
-                <button class="btn btn-outline-secondary" @onclick="ResetFiltersAsync" disabled="@_isLoading">Reset</button>
-                <button class="btn btn-outline-secondary" @onclick="LoadAsync" disabled="@_isLoading">Refresh</button>
-                <button class="btn btn-outline-success ms-auto" @onclick="ExportCsvAsync" disabled="@_isLoading">Export CSV</button>
-            </div>
-        </div>
-    </div>
-</div>
+    <MudPaper Class="pa-4" Outlined="true" data-testid="stock-dashboard-form">
+        <MudGrid Spacing="2" AlignItems="AlignItems.End">
+            <MudItem xs="12" md="2">
+                <MudNumericField T="int?"
+                                 Label="Location Id"
+                                 Variant="Variant.Outlined"
+                                 @bind-Value="_locationId"
+                                 data-testid="stock-dashboard-location" />
+            </MudItem>
+            <MudItem xs="12" md="2">
+                <MudNumericField T="int?"
+                                 Label="Category Id"
+                                 Variant="Variant.Outlined"
+                                 @bind-Value="_categoryId"
+                                 data-testid="stock-dashboard-category" />
+            </MudItem>
+            <MudItem xs="12" md="2">
+                <MudNumericField T="int?"
+                                 Label="Item Id"
+                                 Variant="Variant.Outlined"
+                                 @bind-Value="_itemId"
+                                 data-testid="stock-dashboard-item-id" />
+            </MudItem>
+            <MudItem xs="12" md="3">
+                <MudTextField Label="Search Item"
+                              Variant="Variant.Outlined"
+                              Placeholder="SKU or name"
+                              @bind-Value="_itemSearch"
+                              data-testid="stock-dashboard-item-search" />
+            </MudItem>
+            <MudItem xs="12" md="3">
+                <MudStack Row="true" Spacing="1" Class="flex-wrap">
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               OnClick="ApplyFiltersAsync"
+                               Disabled="@_isLoading"
+                               data-testid="stock-dashboard-apply">Apply</MudButton>
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Secondary"
+                               OnClick="ResetFiltersAsync"
+                               Disabled="@_isLoading"
+                               data-testid="stock-dashboard-reset">Reset</MudButton>
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Secondary"
+                               OnClick="LoadAsync"
+                               Disabled="@_isLoading"
+                               data-testid="stock-dashboard-refresh">Refresh</MudButton>
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Success"
+                               OnClick="ExportCsvAsync"
+                               Disabled="@_isLoading"
+                               Class="ms-auto"
+                               data-testid="stock-dashboard-export">Export CSV</MudButton>
+                </MudStack>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
 
-<div class="row g-2 mb-3">
-    <div class="col-md-3">
-        <div class="card border h-100">
-            <div class="card-body">
-                <div class="small text-muted">Total Items</div>
-                <div class="fs-4">@TotalItems</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card border h-100">
-            <div class="card-body">
-                <div class="small text-muted">Total Qty</div>
-                <div class="fs-4">@TotalQty.ToString("0.##")</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card border h-100">
-            <div class="card-body">
-                <div class="small text-muted">Low Stock</div>
-                <div class="fs-4 text-warning">@LowStockRows.Count</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card border h-100">
-            <div class="card-body">
-                <div class="small text-muted">Expiring Soon (30d)</div>
-                <div class="fs-4 text-danger">@ExpiringRows.Count</div>
-            </div>
-        </div>
-    </div>
-</div>
+    <MudGrid Spacing="2">
+        <MudItem xs="12" md="3">
+            <MudPaper Outlined="true" Class="pa-4 h-100">
+                <MudText Typo="Typo.caption" Class="mud-secondary-text">Total Items</MudText>
+                <MudText Typo="Typo.h4">@TotalItems</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" md="3">
+            <MudPaper Outlined="true" Class="pa-4 h-100">
+                <MudText Typo="Typo.caption" Class="mud-secondary-text">Total Qty</MudText>
+                <MudText Typo="Typo.h4">@TotalQty.ToString("0.##")</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" md="3">
+            <MudPaper Outlined="true" Class="pa-4 h-100">
+                <MudText Typo="Typo.caption" Class="mud-secondary-text">Low Stock</MudText>
+                <MudText Typo="Typo.h4" Color="Color.Warning">@LowStockRows.Count</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" md="3">
+            <MudPaper Outlined="true" Class="pa-4 h-100">
+                <MudText Typo="Typo.caption" Class="mud-secondary-text">Expiring Soon (30d)</MudText>
+                <MudText Typo="Typo.h4" Color="Color.Error">@ExpiringRows.Count</MudText>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
 
-<div class="card shadow-sm position-relative mb-3">
-    <LoadingSpinner IsLoading="_isLoading" />
+    <MudPaper Outlined="true" Class="pa-4 position-relative" data-testid="stock-dashboard-grid">
+        @if (_isLoading)
+        {
+            <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
+        }
 
-    <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <h5 class="mb-0">Stock by Location</h5>
-        </div>
-        <div class="table-responsive">
-            <table class="table table-sm table-hover align-middle">
-                <thead>
-                    <tr>
-                        <th>Location</th>
-                        <th>Items</th>
-                        <th>Total Qty</th>
-                        <th>Utilization</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if (LocationSummaries.Count == 0)
-                    {
-                        <tr>
-                            <td colspan="4" class="text-muted">No location aggregates.</td>
-                        </tr>
-                    }
-                    else
-                    {
-                        @foreach (var row in LocationSummaries)
-                        {
-                            <tr>
-                                <td>@row.LocationCode</td>
-                                <td>@row.ItemCount</td>
-                                <td>@row.TotalQty.ToString("0.##")</td>
-                                <td>@row.UtilizationPercent.ToString("0")%</td>
-                            </tr>
-                        }
-                    }
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
+        <MudText Typo="Typo.h6" Class="mb-2">Stock by Location</MudText>
+        <MudTable Items="LocationSummaries" Dense="true" Hover="true" Elevation="0" data-testid="stock-dashboard-location-grid">
+            <HeaderContent>
+                <MudTh>Location</MudTh>
+                <MudTh>Items</MudTh>
+                <MudTh>Total Qty</MudTh>
+                <MudTh>Utilization</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Location">@context.LocationCode</MudTd>
+                <MudTd DataLabel="Items">@context.ItemCount</MudTd>
+                <MudTd DataLabel="Total Qty">@context.TotalQty.ToString("0.##")</MudTd>
+                <MudTd DataLabel="Utilization">@context.UtilizationPercent.ToString("0")%</MudTd>
+            </RowTemplate>
+            <NoRecordsContent>
+                <MudText Typo="Typo.body2" Class="pa-2 mud-secondary-text">No location aggregates.</MudText>
+            </NoRecordsContent>
+        </MudTable>
+    </MudPaper>
 
-<div class="row g-2">
-    <div class="col-lg-6">
-        <div class="card shadow-sm h-100">
-            <div class="card-body">
-                <h5>Low Stock Alerts (threshold: @_lowStockThreshold)</h5>
-                <div class="table-responsive">
-                    <table class="table table-sm align-middle">
-                        <thead>
-                            <tr>
-                                <th>SKU</th>
-                                <th>Location</th>
-                                <th>Available</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @if (LowStockRows.Count == 0)
-                            {
-                                <tr>
-                                    <td colspan="4" class="text-muted">No low stock alerts.</td>
-                                </tr>
-                            }
-                            else
-                            {
-                                @foreach (var row in LowStockRows)
-                                {
-                                    <tr>
-                                        <td>@row.InternalSku</td>
-                                        <td>@row.LocationCode</td>
-                                        <td>@row.AvailableQty.ToString("0.##")</td>
-                                        <td>
-                                            <span class="badge @(row.AvailableQty <= _lowStockThreshold / 2m ? "bg-danger" : "bg-warning text-dark")">
-                                                @(row.AvailableQty <= _lowStockThreshold / 2m ? "CRITICAL" : "LOW")
-                                            </span>
-                                        </td>
-                                    </tr>
-                                }
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
+    <MudGrid Spacing="2">
+        <MudItem xs="12" lg="6">
+            <MudPaper Outlined="true" Class="pa-4 h-100" data-testid="stock-dashboard-low-stock-grid">
+                <MudText Typo="Typo.h6" Class="mb-2">Low Stock Alerts (threshold: @_lowStockThreshold)</MudText>
+                <MudTable Items="LowStockRows" Dense="true" Hover="true" Elevation="0">
+                    <HeaderContent>
+                        <MudTh>SKU</MudTh>
+                        <MudTh>Location</MudTh>
+                        <MudTh>Available</MudTh>
+                        <MudTh>Status</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="SKU">@context.InternalSku</MudTd>
+                        <MudTd DataLabel="Location">@context.LocationCode</MudTd>
+                        <MudTd DataLabel="Available">@context.AvailableQty.ToString("0.##")</MudTd>
+                        <MudTd DataLabel="Status">
+                            <MudChip Color="@(context.AvailableQty <= _lowStockThreshold / 2m ? Color.Error : Color.Warning)"
+                                     Variant="Variant.Filled"
+                                     Size="Size.Small">
+                                @(context.AvailableQty <= _lowStockThreshold / 2m ? "CRITICAL" : "LOW")
+                            </MudChip>
+                        </MudTd>
+                    </RowTemplate>
+                    <NoRecordsContent>
+                        <MudText Typo="Typo.body2" Class="pa-2 mud-secondary-text">No low stock alerts.</MudText>
+                    </NoRecordsContent>
+                </MudTable>
+            </MudPaper>
+        </MudItem>
 
-    <div class="col-lg-6">
-        <div class="card shadow-sm h-100">
-            <div class="card-body">
-                <h5>Expiring Soon</h5>
-                <div class="table-responsive">
-                    <table class="table table-sm align-middle">
-                        <thead>
-                            <tr>
-                                <th>SKU</th>
-                                <th>Lot</th>
-                                <th>Expiry</th>
-                                <th>Qty</th>
-                                <th>Location</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @if (ExpiringRows.Count == 0)
-                            {
-                                <tr>
-                                    <td colspan="5" class="text-muted">No lots expiring in next 30 days.</td>
-                                </tr>
-                            }
-                            else
-                            {
-                                @foreach (var row in ExpiringRows)
-                                {
-                                    <tr>
-                                        <td>@row.InternalSku</td>
-                                        <td>@(row.LotNumber ?? "-")</td>
-                                        <td>@row.ExpiryDate?.ToString("yyyy-MM-dd")</td>
-                                        <td>@row.AvailableQty.ToString("0.##")</td>
-                                        <td>@row.LocationCode</td>
-                                    </tr>
-                                }
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+        <MudItem xs="12" lg="6">
+            <MudPaper Outlined="true" Class="pa-4 h-100" data-testid="stock-dashboard-expiring-grid">
+                <MudText Typo="Typo.h6" Class="mb-2">Expiring Soon</MudText>
+                <MudTable Items="ExpiringRows" Dense="true" Hover="true" Elevation="0">
+                    <HeaderContent>
+                        <MudTh>SKU</MudTh>
+                        <MudTh>Lot</MudTh>
+                        <MudTh>Expiry</MudTh>
+                        <MudTh>Qty</MudTh>
+                        <MudTh>Location</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="SKU">@context.InternalSku</MudTd>
+                        <MudTd DataLabel="Lot">@(context.LotNumber ?? "-")</MudTd>
+                        <MudTd DataLabel="Expiry">@context.ExpiryDate?.ToString("yyyy-MM-dd")</MudTd>
+                        <MudTd DataLabel="Qty">@context.AvailableQty.ToString("0.##")</MudTd>
+                        <MudTd DataLabel="Location">@context.LocationCode</MudTd>
+                    </RowTemplate>
+                    <NoRecordsContent>
+                        <MudText Typo="Typo.body2" Class="pa-2 mud-secondary-text">No lots expiring in next 30 days.</MudText>
+                    </NoRecordsContent>
+                </MudTable>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+</MudStack>
 
 @code {
     private readonly List<StockLevelRowDto> _rows = [];

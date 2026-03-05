@@ -438,3 +438,22 @@ Matrix verdict:
 ### Smoke status
 - `dotnet build src/LKvitai.MES.sln` passed.
 - `dotnet test ... --filter FullyQualifiedName~.Ui.` passed (`35/35`).
+
+## 2026-03-05 - Step: Stock dashboard migration to Mud
+
+### What I changed
+- Migrated `/warehouse/stock/dashboard` from bootstrap cards/tables/forms/buttons to Mud (`MudStack`, `MudPaper`, `MudGrid`, `MudTextField`, `MudNumericField`, `MudButton`, `MudTable`, `MudChip`, `MudProgressLinear`).
+- Preserved existing behavior: filter apply/reset/refresh, aggregate cards, low-stock/expiring sections, and CSV export.
+- Added stable test ids for the page and key regions: `stock-dashboard-page`, `stock-dashboard-form`, `stock-dashboard-grid`, `stock-dashboard-low-stock-grid`, `stock-dashboard-expiring-grid`, filter/action ids.
+- Added UI smoke test `StockDashboard_PageSmoke` with offline-tolerant assertion (grid OR shared error banner).
+
+### Why
+- Continue Phase 1/2 migration on a heavy operational report/list surface with filters + export while keeping smoke coverage in the same step.
+
+### Result
+- Stock dashboard now renders via Mud primitives, without bootstrap table/form/button markup.
+
+### Smoke status
+- `dotnet build src/LKvitai.MES.sln` passed.
+- Initial smoke run failed due infra (`ERR_CONNECTION_REFUSED` on `http://localhost:5124`), fixed by restarting WebUI host.
+- Re-run smoke passed: `dotnet test ... --filter FullyQualifiedName~.Ui.` (`36/36`).
