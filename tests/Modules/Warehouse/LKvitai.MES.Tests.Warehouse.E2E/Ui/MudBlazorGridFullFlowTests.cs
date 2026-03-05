@@ -316,6 +316,28 @@ public sealed class MudBlazorGridFullFlowTests : PlaywrightUiTestBase
     }
 
     [Fact]
+    public async Task SalesOrders_PageSmoke()
+    {
+        await RunUiAsync(nameof(SalesOrders_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/warehouse/sales/orders");
+
+            await Expect(ByTestId(page, "sales-orders-page")).ToBeVisibleAsync();
+
+            var grid = ByTestId(page, "sales-orders-grid");
+            var error = ByTestId(page, "sales-orders-error");
+            var sharedError = page.GetByTestId("shared-error-banner");
+
+            var gridVisible = await grid.CountAsync() > 0 && await grid.IsVisibleAsync();
+            var errorVisible = await error.CountAsync() > 0 && await error.IsVisibleAsync();
+            var sharedErrorVisible = await sharedError.CountAsync() > 0 && await sharedError.IsVisibleAsync();
+
+            Assert.True(gridVisible || errorVisible || sharedErrorVisible,
+                "Expected sales orders grid or error banner to be visible.");
+        });
+    }
+
+    [Fact]
     public async Task OutboundOrderDetail_PageSmoke()
     {
         await RunUiAsync(nameof(OutboundOrderDetail_PageSmoke), async page =>

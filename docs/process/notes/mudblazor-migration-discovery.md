@@ -381,3 +381,22 @@ Matrix verdict:
 ### Smoke status
 - `dotnet build src/LKvitai.MES.sln` passed.
 - `dotnet test ... --filter FullyQualifiedName~.Ui.` passed (`33/33`).
+
+## 2026-03-05 - Step: Sales orders list migration to Mud
+
+### What I changed
+- Migrated `/warehouse/sales/orders` list page to Mud UI (`MudPaper`, `MudGrid`, `MudTable`, `MudSelect`, `MudDatePicker`, `MudPagination`, `MudChip`, `MudButton`).
+- Preserved filters, server paging, navigation to create/detail, and API/error behavior.
+- Added test ids: `sales-orders-page`, `sales-orders-grid`, `sales-orders-error`, filter ids and action ids.
+- Added smoke test `SalesOrders_PageSmoke`.
+
+### Why
+- Continue Phase 1/2 conversion for operational list surfaces with stable selectors.
+
+### Result
+- Sales orders list no longer uses bootstrap card/form/table/button markup.
+- Smoke remained stable after app restart and full rerun.
+
+### Smoke status
+- `dotnet build src/LKvitai.MES.sln` passed.
+- `dotnet test ... --filter FullyQualifiedName~.Ui.` passed (`34/34`).
