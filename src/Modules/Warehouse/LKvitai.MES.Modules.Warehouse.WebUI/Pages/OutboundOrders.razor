@@ -8,148 +8,191 @@
 
 <PageTitle>Outbound Orders - LKvitai.MES</PageTitle>
 
-<h1>Outbound Orders</h1>
+<div data-testid="outbound-orders-page">
+    <MudText Typo="Typo.h5" Class="mb-3">Outbound Orders</MudText>
 
-@if (_apiError is not null)
-{
-    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
-                 TraceId="@_apiError.TraceId"
-                 OnRetry="RetryAsync"
-                 OnDismiss="DismissError" />
-}
-
-<div class="card shadow-sm position-relative">
-    <LoadingSpinner IsLoading="_isLoading" />
-
-    <div class="card-body">
-        <div class="row g-2 align-items-end mb-3">
-            <div class="col-md-2">
-                <label class="form-label" for="status-filter">Status</label>
-                <select id="status-filter" class="form-select" @bind="_statusFilter">
-                    <option value="">All</option>
-                    <option value="ALLOCATED">ALLOCATED</option>
-                    <option value="PICKING">PICKING</option>
-                    <option value="PICKED">PICKED</option>
-                    <option value="PACKED">PACKED</option>
-                    <option value="SHIPPED">SHIPPED</option>
-                    <option value="DELIVERED">DELIVERED</option>
-                    <option value="CANCELLED">CANCELLED</option>
-                </select>
-            </div>
-
-            <div class="col-md-3">
-                <label class="form-label" for="customer-filter">Customer</label>
-                <input id="customer-filter"
-                       class="form-control"
-                       type="text"
-                       placeholder="Customer name"
-                       @bind="_customerFilter" />
-            </div>
-
-            <div class="col-md-2">
-                <label class="form-label" for="date-from">Date from</label>
-                <input id="date-from" class="form-control" type="date" @bind="_dateFrom" />
-            </div>
-
-            <div class="col-md-2">
-                <label class="form-label" for="date-to">Date to</label>
-                <input id="date-to" class="form-control" type="date" @bind="_dateTo" />
-            </div>
-
-            <div class="col-md-3 d-flex gap-2">
-                <button class="btn btn-primary" @onclick="ApplyFiltersAsync" disabled="@_isLoading">Apply</button>
-                <button class="btn btn-outline-secondary" @onclick="ResetFiltersAsync" disabled="@_isLoading">Reset</button>
-                <button class="btn btn-outline-secondary" @onclick="RetryAsync" disabled="@_isLoading">Refresh</button>
-                <button class="btn btn-success ms-auto" @onclick="OpenSalesOrderCreate">+ Sales Order</button>
-            </div>
+    @if (_apiError is not null)
+    {
+        <div data-testid="outbound-orders-error" class="mb-3">
+            <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                         TraceId="@_apiError.TraceId"
+                         OnRetry="RetryAsync"
+                         OnDismiss="DismissError" />
         </div>
+    }
 
-        <div class="table-responsive">
-            <table class="table table-hover align-middle">
-                <thead>
-                    <tr>
-                        <th style="width: 40px;">
-                            <input type="checkbox"
-                                   checked="@AreAllCurrentRowsSelected"
-                                   @onchange="ToggleSelectAllCurrentPage" />
-                        </th>
-                        <th>Order Number</th>
-                        <th>Customer</th>
-                        <th>Status</th>
-                        <th>Items</th>
-                        <th>Requested Ship Date</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if (_orders.Count == 0)
-                    {
-                        <tr>
-                            <td colspan="7" class="text-center text-muted py-4">No outbound orders found.</td>
-                        </tr>
-                    }
-                    else
-                    {
-                        @foreach (var order in CurrentPageRows)
+    <MudPaper Class="pa-4 position-relative">
+        <LoadingSpinner IsLoading="_isLoading" />
+
+        <MudGrid Spacing="2" AlignItems="AlignItems.End" Class="mb-3" data-testid="outbound-orders-filters">
+            <MudItem xs="12" md="2">
+                <MudSelect T="string"
+                           Label="Status"
+                           @bind-Value="_statusFilter"
+                           Variant="Variant.Outlined"
+                           Dense="true"
+                           @attributes="StatusFilterAttributes">
+                    <MudSelectItem T="string" Value="@string.Empty">All</MudSelectItem>
+                    <MudSelectItem T="string" Value="@("ALLOCATED")">ALLOCATED</MudSelectItem>
+                    <MudSelectItem T="string" Value="@("PICKING")">PICKING</MudSelectItem>
+                    <MudSelectItem T="string" Value="@("PICKED")">PICKED</MudSelectItem>
+                    <MudSelectItem T="string" Value="@("PACKED")">PACKED</MudSelectItem>
+                    <MudSelectItem T="string" Value="@("SHIPPED")">SHIPPED</MudSelectItem>
+                    <MudSelectItem T="string" Value="@("DELIVERED")">DELIVERED</MudSelectItem>
+                    <MudSelectItem T="string" Value="@("CANCELLED")">CANCELLED</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+
+            <MudItem xs="12" md="3">
+                <MudTextField T="string"
+                              Label="Customer"
+                              Placeholder="Customer name"
+                              @bind-Value="_customerFilter"
+                              Variant="Variant.Outlined"
+                              Dense="true"
+                              @attributes="CustomerFilterAttributes" />
+            </MudItem>
+
+            <MudItem xs="12" md="2">
+                <MudDatePicker Label="Date from"
+                               Date="@_dateFrom"
+                               DateChanged="OnDateFromChanged"
+                               Variant="Variant.Outlined"
+                               PickerVariant="PickerVariant.Inline"
+                               Dense="true"
+                               @attributes="DateFromAttributes" />
+            </MudItem>
+
+            <MudItem xs="12" md="2">
+                <MudDatePicker Label="Date to"
+                               Date="@_dateTo"
+                               DateChanged="OnDateToChanged"
+                               Variant="Variant.Outlined"
+                               PickerVariant="PickerVariant.Inline"
+                               Dense="true"
+                               @attributes="DateToAttributes" />
+            </MudItem>
+
+            <MudItem xs="12" md="3">
+                <MudStack Row="true" Spacing="1" Class="flex-wrap">
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               OnClick="ApplyFiltersAsync"
+                               Disabled="@_isLoading"
+                               data-testid="outbound-orders-apply">
+                        Apply
+                    </MudButton>
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Default"
+                               OnClick="ResetFiltersAsync"
+                               Disabled="@_isLoading"
+                               data-testid="outbound-orders-reset">
+                        Reset
+                    </MudButton>
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Default"
+                               OnClick="RetryAsync"
+                               Disabled="@_isLoading"
+                               data-testid="outbound-orders-refresh">
+                        Refresh
+                    </MudButton>
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Success"
+                               OnClick="OpenSalesOrderCreate"
+                               data-testid="outbound-orders-create-sales">
+                        + Sales Order
+                    </MudButton>
+                </MudStack>
+            </MudItem>
+        </MudGrid>
+
+        <MudTable T="OutboundOrderSummaryDto"
+                  Items="CurrentPageRows"
+                  Dense="true"
+                  Hover="true"
+                  data-testid="outbound-orders-grid">
+            <HeaderContent>
+                <MudTh>
+                    <MudCheckBox T="bool"
+                                 Dense="true"
+                                 Checked="@AreAllCurrentRowsSelected"
+                                 CheckedChanged="ToggleSelectAllCurrentPageChecked" />
+                </MudTh>
+                <MudTh>Order Number</MudTh>
+                <MudTh>Customer</MudTh>
+                <MudTh>Status</MudTh>
+                <MudTh>Items</MudTh>
+                <MudTh>Requested Ship Date</MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Select">
+                    <MudCheckBox T="bool"
+                                 Dense="true"
+                                 Checked="@_selectedOrderIds.Contains(context.Id)"
+                                 CheckedChanged="value => ToggleOrderSelection(context.Id, value)" />
+                </MudTd>
+                <MudTd DataLabel="Order Number">
+                    <MudLink Href="@($"/warehouse/outbound/orders/{context.Id}")">@context.OrderNumber</MudLink>
+                </MudTd>
+                <MudTd DataLabel="Customer">@(context.CustomerName ?? "-")</MudTd>
+                <MudTd DataLabel="Status">
+                    <MudChip Size="Size.Small" Color="@GetStatusColor(context.Status)">@context.Status</MudChip>
+                </MudTd>
+                <MudTd DataLabel="Items">@context.ItemCount</MudTd>
+                <MudTd DataLabel="Requested Ship Date">@FormatDate(context.RequestedShipDate)</MudTd>
+                <MudTd DataLabel="Actions">
+                    <MudStack Row="true" Spacing="1" Class="flex-wrap">
+                        <MudButton Variant="Variant.Outlined"
+                                   Size="Size.Small"
+                                   Color="Color.Primary"
+                                   OnClick="() => OpenOrder(context.Id)">
+                            View
+                        </MudButton>
+                        @if (string.Equals(context.Status, "PICKED", StringComparison.OrdinalIgnoreCase))
                         {
-                            <tr>
-                                <td>
-                                    <input type="checkbox"
-                                           checked="@_selectedOrderIds.Contains(order.Id)"
-                                           @onchange="(args) => ToggleOrderSelection(order.Id, args)" />
-                                </td>
-                                <td>
-                                    <a href="@($"/warehouse/outbound/orders/{order.Id}")">@order.OrderNumber</a>
-                                </td>
-                                <td>@(order.CustomerName ?? "-")</td>
-                                <td>
-                                    <span class="badge @GetStatusBadgeClass(order.Status)">@order.Status</span>
-                                </td>
-                                <td>@order.ItemCount</td>
-                                <td>@FormatDate(order.RequestedShipDate)</td>
-                                <td class="d-flex gap-2">
-                                    <button class="btn btn-sm btn-outline-primary"
-                                            @onclick="() => OpenOrder(order.Id)">
-                                        View
-                                    </button>
-                                    @if (string.Equals(order.Status, "PICKED", StringComparison.OrdinalIgnoreCase))
-                                    {
-                                        <button class="btn btn-sm btn-primary"
-                                                @onclick="() => OpenPacking(order.Id)">
-                                            Pack
-                                        </button>
-                                    }
-                                </td>
-                            </tr>
+                            <MudButton Variant="Variant.Filled"
+                                       Size="Size.Small"
+                                       Color="Color.Primary"
+                                       OnClick="() => OpenPacking(context.Id)">
+                                Pack
+                            </MudButton>
                         }
-                    }
-                </tbody>
-            </table>
-        </div>
+                    </MudStack>
+                </MudTd>
+            </RowTemplate>
+            <NoRecordsContent>
+                <MudText Typo="Typo.body2" Color="Color.Secondary">No outbound orders found.</MudText>
+            </NoRecordsContent>
+        </MudTable>
 
         @if (_selectedOrderIds.Count > 0)
         {
-            <div class="d-flex align-items-center justify-content-between border rounded px-3 py-2 mb-2">
-                <small class="text-muted">@_selectedOrderIds.Count order(s) selected</small>
-                <div class="d-flex gap-2">
-                    <button class="btn btn-sm btn-outline-danger" @onclick="BulkCancelAsync" disabled="@_isLoading">Bulk Cancel</button>
-                    <button class="btn btn-sm btn-outline-secondary" @onclick="ExportSelectionCsvAsync">Export CSV</button>
-                    <button class="btn btn-sm btn-light" @onclick="ClearSelection">Clear</button>
-                </div>
-            </div>
+            <MudPaper Outlined="true" Class="pa-3 mt-3" data-testid="outbound-orders-selection-bar">
+                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="flex-wrap">
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">@_selectedOrderIds.Count order(s) selected</MudText>
+                    <MudStack Row="true" Spacing="1" Class="flex-wrap">
+                        <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Error" OnClick="BulkCancelAsync" Disabled="@_isLoading">Bulk Cancel</MudButton>
+                        <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Default" OnClick="ExportSelectionCsvAsync">Export CSV</MudButton>
+                        <MudButton Variant="Variant.Text" Size="Size.Small" Color="Color.Default" OnClick="ClearSelection">Clear</MudButton>
+                    </MudStack>
+                </MudStack>
+            </MudPaper>
         }
 
         @if (TotalPages > 1)
         {
-            <div class="d-flex justify-content-between align-items-center mt-3">
-                <small class="text-muted">Page @_page of @TotalPages</small>
-                <div class="d-flex gap-2">
-                    <button class="btn btn-sm btn-outline-secondary" @onclick="PreviousPage" disabled="@(_page <= 1)">Previous</button>
-                    <button class="btn btn-sm btn-outline-secondary" @onclick="NextPage" disabled="@(_page >= TotalPages)">Next</button>
-                </div>
-            </div>
+            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="mt-3" data-testid="outbound-orders-pager">
+                <MudText Typo="Typo.body2" Color="Color.Secondary">Page @_page of @TotalPages</MudText>
+                <MudPagination Count="@TotalPages"
+                               Selected="@_page"
+                               SelectedChanged="OnPageChangedAsync"
+                               Variant="Variant.Outlined"
+                               Color="Color.Primary"
+                               Size="Size.Small" />
+            </MudStack>
         }
-    </div>
+    </MudPaper>
 </div>
 
 @code {
@@ -165,6 +208,11 @@
     private int _page = 1;
     private const int PageSize = 20;
 
+    private static readonly Dictionary<string, object> StatusFilterAttributes = new() { ["data-testid"] = "outbound-orders-status" };
+    private static readonly Dictionary<string, object> CustomerFilterAttributes = new() { ["data-testid"] = "outbound-orders-customer" };
+    private static readonly Dictionary<string, object> DateFromAttributes = new() { ["data-testid"] = "outbound-orders-date-from" };
+    private static readonly Dictionary<string, object> DateToAttributes = new() { ["data-testid"] = "outbound-orders-date-to" };
+
     protected override async Task OnInitializedAsync()
     {
         _pollTimer = new Timer(async _ => await InvokeAsync(PollAsync), null, TimeSpan.FromSeconds(30), TimeSpan.FromSeconds(30));
@@ -174,6 +222,18 @@
     public void Dispose()
     {
         _pollTimer?.Dispose();
+    }
+
+    private Task OnDateFromChanged(DateTime? value)
+    {
+        _dateFrom = value;
+        return Task.CompletedTask;
+    }
+
+    private Task OnDateToChanged(DateTime? value)
+    {
+        _dateTo = value;
+        return Task.CompletedTask;
     }
 
     private async Task PollAsync()
@@ -265,9 +325,8 @@
     private bool AreAllCurrentRowsSelected =>
         CurrentPageRows.Any() && CurrentPageRows.All(x => _selectedOrderIds.Contains(x.Id));
 
-    private void ToggleSelectAllCurrentPage(ChangeEventArgs args)
+    private Task ToggleSelectAllCurrentPageChecked(bool shouldSelect)
     {
-        var shouldSelect = ParseCheckboxValue(args.Value);
         foreach (var order in CurrentPageRows)
         {
             if (shouldSelect)
@@ -279,11 +338,12 @@
                 _selectedOrderIds.Remove(order.Id);
             }
         }
+
+        return Task.CompletedTask;
     }
 
-    private void ToggleOrderSelection(Guid orderId, ChangeEventArgs args)
+    private Task ToggleOrderSelection(Guid orderId, bool shouldSelect)
     {
-        var shouldSelect = ParseCheckboxValue(args.Value);
         if (shouldSelect)
         {
             _selectedOrderIds.Add(orderId);
@@ -292,6 +352,8 @@
         {
             _selectedOrderIds.Remove(orderId);
         }
+
+        return Task.CompletedTask;
     }
 
     private async Task BulkCancelAsync()
@@ -387,38 +449,15 @@
         };
     }
 
-    private static string GetStatusBadgeClass(string status)
-        => status.ToUpperInvariant() switch
-        {
-            "ALLOCATED" => "bg-info text-dark",
-            "PICKING" => "bg-primary",
-            "PICKED" => "bg-secondary",
-            "PACKED" => "bg-warning text-dark",
-            "SHIPPED" => "bg-success",
-            "DELIVERED" => "bg-success",
-            "CANCELLED" => "bg-danger",
-            _ => "bg-light text-dark"
-        };
-
     private static string EscapeCsv(string value)
     {
-        if (value.Contains(',') || value.Contains('\"') || value.Contains('\n'))
+        if (value.Contains(',') || value.Contains('"') || value.Contains('\n'))
         {
             var escaped = value.Replace("\"", "\"\"");
             return "\"" + escaped + "\"";
         }
 
         return value;
-    }
-
-    private static bool ParseCheckboxValue(object? value)
-    {
-        return value switch
-        {
-            bool boolValue => boolValue,
-            string stringValue when bool.TryParse(stringValue, out var parsed) => parsed,
-            _ => false
-        };
     }
 
     private IEnumerable<OutboundOrderSummaryDto> CurrentPageRows
@@ -428,19 +467,22 @@
 
     private int TotalPages => Math.Max(1, (int)Math.Ceiling(_orders.Count / (double)PageSize));
 
-    private void PreviousPage()
+    private Task OnPageChangedAsync(int page)
     {
-        if (_page > 1)
-        {
-            _page--;
-        }
+        _page = Math.Max(1, page);
+        return Task.CompletedTask;
     }
 
-    private void NextPage()
-    {
-        if (_page < TotalPages)
+    private static Color GetStatusColor(string status)
+        => status.ToUpperInvariant() switch
         {
-            _page++;
-        }
-    }
+            "ALLOCATED" => Color.Info,
+            "PICKING" => Color.Primary,
+            "PICKED" => Color.Default,
+            "PACKED" => Color.Warning,
+            "SHIPPED" => Color.Success,
+            "DELIVERED" => Color.Success,
+            "CANCELLED" => Color.Error,
+            _ => Color.Default
+        };
 }
