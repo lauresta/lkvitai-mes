@@ -20,6 +20,7 @@ public sealed class P01InboundNavigationValidationTests : PlaywrightUiTestBase
             await NavigateAsync(page, "/warehouse/inbound/shipments/create");
 
             await Expect(page.GetByTestId("inbound-shipment-create-form")).ToBeVisibleAsync();
+            await Expect(page.GetByTestId("inbound-shipment-create-supplier")).ToBeVisibleAsync();
             await page.GetByTestId("inbound-shipment-create-submit")
                 .ClickAsync(new LocatorClickOptions { Force = true });
 

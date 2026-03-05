@@ -497,3 +497,24 @@ Matrix verdict:
 ### Smoke status
 - `dotnet build src/LKvitai.MES.sln` passed.
 - `dotnet test ... --filter FullyQualifiedName~.Ui.` passed (`36/36`).
+
+## 2026-03-05 - Step: Inbound shipment create workflow hardening (Mud + testid)
+
+### What I changed
+- Updated `/warehouse/inbound/shipments/create` to remove legacy `LoadingSpinner` usage and use `MudProgressLinear` for loading/submitting state.
+- Added/extended key workflow selectors:
+  - `inbound-shipment-create-loading`
+  - `inbound-shipment-create-add-line`
+  - `inbound-shipment-create-line-item`
+  - `inbound-shipment-create-line-qty`
+- Updated inbound workflow smoke assertion to explicitly validate `inbound-shipment-create-supplier` control visibility before submit.
+
+### Why
+- Continue Phase 2/3 migration with stable test-id contract and incremental retirement of legacy wrappers on workflow pages.
+
+### Result
+- Inbound create flow remains behavior-compatible with improved selector coverage and Mud-native loading UX.
+
+### Smoke status
+- `dotnet build src/LKvitai.MES.sln` passed.
+- `dotnet test ... --filter FullyQualifiedName~.Ui.` passed (`36/36`).
