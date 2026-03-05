@@ -22,7 +22,10 @@
 }
 
 <div class="card shadow-sm position-relative">
-    <LoadingSpinner IsLoading="@(_isLoadingWarehouses || _isSearching)" />
+     (@(_isLoadingWarehouses || _isSearching))
+        {
+            <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
+        }
 
     <div class="card-body">
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">

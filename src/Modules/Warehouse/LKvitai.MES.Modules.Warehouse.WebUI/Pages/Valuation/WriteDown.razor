@@ -23,7 +23,10 @@
     }
 
     <MudPaper Class="pa-4 position-relative" data-testid="valuation-write-down-form">
-        <LoadingSpinner IsLoading="_isLoading || _isSubmitting" />
+         (_isLoading || _isSubmitting)
+        {
+            <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
+        }
 
         <EditForm Model="_model" OnValidSubmit="SubmitAsync">
             <DataAnnotationsValidator />

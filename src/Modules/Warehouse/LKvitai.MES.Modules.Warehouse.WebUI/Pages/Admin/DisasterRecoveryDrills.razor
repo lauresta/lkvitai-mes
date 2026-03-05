@@ -46,7 +46,10 @@ else
     </div>
 
     <div class="card shadow-sm position-relative">
-        <LoadingSpinner IsLoading="_isWorking" />
+         (_isWorking)
+        {
+            <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
+        }
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-sm table-hover align-middle">

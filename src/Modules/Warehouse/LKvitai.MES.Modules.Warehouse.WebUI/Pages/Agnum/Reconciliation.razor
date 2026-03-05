@@ -60,7 +60,10 @@
 @if (_isLoading)
 {
     <div class="mt-3">
-        <LoadingSpinner IsLoading="true" />
+         (true)
+        {
+            <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
+        }
     </div>
 }
 else if (_report is null)

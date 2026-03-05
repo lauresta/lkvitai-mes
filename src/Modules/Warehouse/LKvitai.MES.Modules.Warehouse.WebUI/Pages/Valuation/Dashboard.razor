@@ -58,7 +58,10 @@
 
 <div class="card shadow-sm mb-3">
     <div class="card-body position-relative">
-        <LoadingSpinner IsLoading="_isLoading" />
+         (_isLoading)
+        {
+            <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
+        }
         <div class="d-flex align-items-center justify-content-between mb-2">
             <h5 class="mb-0">On-Hand Value Report</h5>
             <button class="btn btn-sm btn-outline-secondary"
@@ -109,7 +112,10 @@
 
 <div class="card shadow-sm">
     <div class="card-body position-relative">
-        <LoadingSpinner IsLoading="_isLoadingHistory" />
+         (_isLoadingHistory)
+        {
+            <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
+        }
         <div class="d-flex align-items-center justify-content-between mb-2">
             <h5 class="mb-0">Cost History Report</h5>
             <button class="btn btn-sm btn-outline-secondary"

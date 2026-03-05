@@ -20,7 +20,10 @@
 }
 
 <div class="card shadow-sm position-relative">
-    <LoadingSpinner IsLoading="_isLoading || _isSubmitting" />
+     (_isLoading || _isSubmitting)
+        {
+            <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
+        }
     <div class="card-body">
         <EditForm Model="_model" OnValidSubmit="SubmitAsync">
             <DataAnnotationsValidator />

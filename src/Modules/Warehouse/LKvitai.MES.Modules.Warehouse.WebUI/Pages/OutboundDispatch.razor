@@ -19,7 +19,10 @@
     }
 
     <MudPaper Class="pa-4 position-relative mb-4">
-        <LoadingSpinner IsLoading="@(_isLoading || _isSubmitting)" />
+         (@(_isLoading || _isSubmitting))
+        {
+            <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
+        }
 
         <MudStack Row="true" Class="mb-3">
             <MudButton Variant="Variant.Outlined"

@@ -8,7 +8,10 @@
 <h1>Execute Cycle Count</h1>
 
 <div class="card shadow-sm position-relative">
-    <LoadingSpinner IsLoading="_isLoading || _isSubmitting" />
+     (_isLoading || _isSubmitting)
+        {
+            <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
+        }
     <div class="card-body">
         @if (_cycleCount is null)
         {

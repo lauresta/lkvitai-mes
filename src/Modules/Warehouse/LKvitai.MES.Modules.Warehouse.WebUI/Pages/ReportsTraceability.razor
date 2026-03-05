@@ -42,7 +42,10 @@
 </div>
 
 <div class="card shadow-sm position-relative">
-    <LoadingSpinner IsLoading="_isLoading" />
+     (_isLoading)
+        {
+            <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
+        }
 
     <div class="card-body">
         @if (_entries.Count == 0)

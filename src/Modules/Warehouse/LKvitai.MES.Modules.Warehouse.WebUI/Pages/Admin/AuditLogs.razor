@@ -54,7 +54,10 @@
         </MudPaper>
 
         <MudPaper Class="pa-4 position-relative">
-            <LoadingSpinner IsLoading="_isLoading" />
+             (_isLoading)
+        {
+            <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
+        }
 
             <MudText Typo="Typo.subtitle2" Class="mb-2" data-testid="admin-audit-logs-total">Total: @_allRows.Count</MudText>
 

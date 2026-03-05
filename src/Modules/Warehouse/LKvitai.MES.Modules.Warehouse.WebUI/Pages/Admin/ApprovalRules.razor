@@ -98,7 +98,10 @@ else
     }
 
     <div class="card shadow-sm position-relative mb-3">
-        <LoadingSpinner IsLoading="@(_isLoading || _isSubmitting || _isDeleting)" />
+         (@(_isLoading || _isSubmitting || _isDeleting))
+        {
+            <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
+        }
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-sm table-hover align-middle">

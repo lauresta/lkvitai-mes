@@ -579,3 +579,21 @@ Matrix verdict:
 ### Smoke status
 - `dotnet build src/LKvitai.MES.sln` passed.
 - `dotnet test ... --filter FullyQualifiedName~.Ui.` passed (`37/37`).
+
+## 2026-03-05 - Step: Retire LoadingSpinner wrapper globally (Phase 3)
+
+### What I changed
+- Replaced all remaining `<LoadingSpinner IsLoading="..." />` usages across WebUI pages/components with Mud-native loading indicators (`MudProgressLinear`).
+- Removed legacy component file: `Components/LoadingSpinner.razor`.
+- Verified no `LoadingSpinner` references remain in WebUI source.
+
+### Why
+- Fulfill Phase 3 wrapper-retirement objective for loading state and reduce dependency on legacy wrapper layer.
+
+### Result
+- Loading behavior remains functional with direct Mud primitives.
+- `LoadingSpinner` is fully retired and deleted (zero refs).
+
+### Smoke status
+- `dotnet build src/LKvitai.MES.sln` passed.
+- `dotnet test ... --filter FullyQualifiedName~.Ui.` passed (`37/37`).

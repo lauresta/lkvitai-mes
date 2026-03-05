@@ -33,7 +33,10 @@
     </MudPaper>
 
     <MudPaper Class="pa-4 position-relative">
-        <LoadingSpinner IsLoading="_isLoading" />
+         (_isLoading)
+        {
+            <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
+        }
 
         <MudDataGrid T="LocationBalanceItemDto"
                      Items="_rows"

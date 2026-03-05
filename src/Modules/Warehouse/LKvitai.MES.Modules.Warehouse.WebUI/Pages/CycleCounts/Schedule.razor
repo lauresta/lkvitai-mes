@@ -11,7 +11,10 @@
 <h1 data-testid="cycle-counts-schedule-title">Schedule Cycle Count</h1>
 
 <div class="card shadow-sm position-relative">
-    <LoadingSpinner IsLoading="_isLoading || _isSubmitting" />
+     (_isLoading || _isSubmitting)
+        {
+            <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
+        }
     <div class="card-body">
         <div class="row g-3">
             <div class="col-md-3">

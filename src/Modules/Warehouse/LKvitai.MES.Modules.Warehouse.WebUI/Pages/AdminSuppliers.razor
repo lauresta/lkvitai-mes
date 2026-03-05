@@ -41,7 +41,10 @@
     </MudPaper>
 
     <MudPaper Class="pa-4 mb-4 position-relative">
-        <LoadingSpinner IsLoading="@(_isLoading || _isSubmitting)" />
+         (@(_isLoading || _isSubmitting))
+        {
+            <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
+        }
 
         <MudTable T="AdminSupplierDto"
                   Items="_suppliers"

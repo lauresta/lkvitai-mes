@@ -20,7 +20,10 @@
 </div>
 
 <div class="card shadow-sm mb-3 position-relative">
-    <LoadingSpinner IsLoading="_isLoading || _isBusy" />
+     (_isLoading || _isBusy)
+        {
+            <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
+        }
     <div class="card-body">
         <h5>Pending Approvals</h5>
         <div class="table-responsive">
@@ -65,7 +68,10 @@
 </div>
 
 <div class="card shadow-sm mb-3 position-relative">
-    <LoadingSpinner IsLoading="_isLoading || _isBusy" />
+     (_isLoading || _isBusy)
+        {
+            <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
+        }
     <div class="card-body">
         <h5>Pending Stock</h5>
         <div class="table-responsive">
@@ -111,7 +117,10 @@
 </div>
 
 <div class="card shadow-sm position-relative">
-    <LoadingSpinner IsLoading="_isLoading || _isBusy" />
+     (_isLoading || _isBusy)
+        {
+            <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
+        }
     <div class="card-body">
         <h5>Allocated Orders</h5>
         <div class="table-responsive">
