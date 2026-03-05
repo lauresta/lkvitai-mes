@@ -750,6 +750,49 @@ public sealed class MudBlazorGridFullFlowTests : PlaywrightUiTestBase
     }
 
     [Fact]
+    public async Task ComplianceDashboard_PageSmoke()
+    {
+        await RunUiAsync(nameof(ComplianceDashboard_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/warehouse/compliance/dashboard");
+
+            var pageRoot = ByTestId(page, "compliance-dashboard-page");
+            var pageError = ByTestId(page, "compliance-dashboard-error");
+            var sharedError = page.GetByTestId("shared-error-banner");
+
+            var rootVisible = false;
+            var pageErrorVisible = false;
+            var sharedErrorVisible = false;
+
+            for (var i = 0; i < 15; i++)
+            {
+                rootVisible = await pageRoot.CountAsync() > 0 && await pageRoot.IsVisibleAsync();
+                pageErrorVisible = await pageError.CountAsync() > 0 && await pageError.IsVisibleAsync();
+                sharedErrorVisible = await sharedError.CountAsync() > 0 && await sharedError.IsVisibleAsync();
+
+                if (rootVisible || pageErrorVisible || sharedErrorVisible)
+                {
+                    break;
+                }
+
+                await page.WaitForTimeoutAsync(500);
+            }
+
+            Assert.True(rootVisible || pageErrorVisible || sharedErrorVisible,
+                "Expected compliance dashboard page root or error banner to be visible.");
+
+            var grid = ByTestId(page, "compliance-dashboard-grid");
+            var error = pageError;
+
+            var gridVisible = await grid.CountAsync() > 0 && await grid.IsVisibleAsync();
+            var errorVisible = pageErrorVisible || (await error.CountAsync() > 0 && await error.IsVisibleAsync());
+
+            Assert.True(gridVisible || errorVisible || sharedErrorVisible,
+                "Expected compliance dashboard grid or error banner to be visible.");
+        });
+    }
+
+    [Fact]
     public async Task StockDashboard_PageSmoke()
     {
         await RunUiAsync(nameof(StockDashboard_PageSmoke), async page =>

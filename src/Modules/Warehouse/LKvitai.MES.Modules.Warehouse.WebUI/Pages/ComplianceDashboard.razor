@@ -4,175 +4,146 @@
 
 <PageTitle>Compliance Dashboard</PageTitle>
 
-<h1 class="mb-3">Compliance Dashboard</h1>
+<MudStack Spacing="2" data-testid="compliance-dashboard-page">
+    <MudText Typo="Typo.h4">Compliance Dashboard</MudText>
 
-@if (_apiError is not null)
-{
-    <ErrorBanner Message="@_apiError.UserMessage" TraceId="@_apiError.TraceId" OnRetry="LoadAsync" OnDismiss="DismissError" />
-}
+    @if (_apiError is not null)
+    {
+        <div data-testid="compliance-dashboard-error">
+            <ErrorBanner Message="@_apiError.UserMessage" TraceId="@_apiError.TraceId" OnRetry="LoadAsync" OnDismiss="DismissError" />
+        </div>
+    }
 
-<div class="row g-3 mb-3">
-    <div class="col-md-4">
-        <div class="card shadow-sm h-100">
-            <div class="card-body">
-                <h6 class="text-muted">Pending Exports</h6>
-                <div class="display-6">@_summary.PendingExports</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card shadow-sm h-100">
-            <div class="card-body">
-                <h6 class="text-muted">Recent Lot Traces</h6>
-                <div class="display-6">@_summary.RecentTraces</div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card shadow-sm h-100">
-            <div class="card-body">
-                <h6 class="text-muted">Variance Alerts</h6>
-                <div class="display-6 text-danger">@_summary.VarianceAlerts</div>
-            </div>
-        </div>
-    </div>
-</div>
+    <MudGrid Spacing="2">
+        <MudItem xs="12" md="4">
+            <MudPaper Outlined="true" Class="pa-4 h-100">
+                <MudText Typo="Typo.caption" Class="mud-secondary-text">Pending Exports</MudText>
+                <MudText Typo="Typo.h4">@_summary.PendingExports</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" md="4">
+            <MudPaper Outlined="true" Class="pa-4 h-100">
+                <MudText Typo="Typo.caption" Class="mud-secondary-text">Recent Lot Traces</MudText>
+                <MudText Typo="Typo.h4">@_summary.RecentTraces</MudText>
+            </MudPaper>
+        </MudItem>
+        <MudItem xs="12" md="4">
+            <MudPaper Outlined="true" Class="pa-4 h-100">
+                <MudText Typo="Typo.caption" Class="mud-secondary-text">Variance Alerts</MudText>
+                <MudText Typo="Typo.h4" Color="Color.Error">@_summary.VarianceAlerts</MudText>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
 
-<div class="row g-3">
-    <div class="col-lg-6">
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <div class="d-flex align-items-center mb-2">
-                    <h5 class="mb-0">Schedule Report</h5>
-                    <button class="btn btn-outline-primary btn-sm ms-auto" @onclick="ResetForm">Reset</button>
-                </div>
+    <MudGrid Spacing="2">
+        <MudItem xs="12" lg="6">
+            <MudPaper Outlined="true" Class="pa-4" data-testid="compliance-dashboard-form">
+                @if (_isSaving)
+                {
+                    <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
+                }
+
+                <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-2">
+                    <MudText Typo="Typo.h6">Schedule Report</MudText>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" Class="ms-auto" OnClick="ResetForm" data-testid="compliance-dashboard-reset">Reset</MudButton>
+                </MudStack>
 
                 <EditForm Model="@_form" OnValidSubmit="SaveAsync">
                     <DataAnnotationsValidator />
                     <ValidationSummary />
-                    <div class="mb-2">
-                        <label class="form-label">Report Type</label>
-                        <select class="form-select" @bind="_form.ReportType">
-                            <option value="VARIANCEANALYSIS">VARIANCE_ANALYSIS</option>
-                            <option value="TRANSACTIONEXPORT">TRANSACTION_EXPORT</option>
-                            <option value="LOTTRACE">LOT_TRACE</option>
-                        </select>
-                    </div>
-                    <div class="mb-2">
-                        <label class="form-label">Cron (UTC)</label>
-                        <input class="form-control" @bind="_form.Schedule" />
-                    </div>
-                    <div class="mb-2">
-                        <label class="form-label">Email Recipients (comma)</label>
-                        <input class="form-control" @bind="_form.EmailRecipients" />
-                    </div>
-                    <div class="mb-2">
-                        <label class="form-label">Format</label>
-                        <select class="form-select" @bind="_form.Format">
-                            <option value="PDF">PDF</option>
-                            <option value="CSV">CSV</option>
-                        </select>
-                    </div>
-                    <div class="form-check mb-3">
-                        <input class="form-check-input" type="checkbox" id="activeCheck" @bind="_form.Active" />
-                        <label class="form-check-label" for="activeCheck">Active</label>
-                    </div>
-                    <button class="btn btn-primary" type="submit" disabled="@_isSaving">Save</button>
+
+                    <MudStack Spacing="2">
+                        <MudSelect T="string" Label="Report Type" Variant="Variant.Outlined" @bind-Value="_form.ReportType" data-testid="compliance-dashboard-report-type">
+                            <MudSelectItem T="string" Value="@("VARIANCEANALYSIS")">VARIANCE_ANALYSIS</MudSelectItem>
+                            <MudSelectItem T="string" Value="@("TRANSACTIONEXPORT")">TRANSACTION_EXPORT</MudSelectItem>
+                            <MudSelectItem T="string" Value="@("LOTTRACE")">LOT_TRACE</MudSelectItem>
+                        </MudSelect>
+
+                        <MudTextField T="string" Label="Cron (UTC)" Variant="Variant.Outlined" @bind-Value="_form.Schedule" data-testid="compliance-dashboard-schedule" />
+
+                        <MudTextField T="string" Label="Email Recipients (comma)" Variant="Variant.Outlined" @bind-Value="_form.EmailRecipients" data-testid="compliance-dashboard-emails" />
+
+                        <MudSelect T="string" Label="Format" Variant="Variant.Outlined" @bind-Value="_form.Format" data-testid="compliance-dashboard-format">
+                            <MudSelectItem T="string" Value="@("PDF")">PDF</MudSelectItem>
+                            <MudSelectItem T="string" Value="@("CSV")">CSV</MudSelectItem>
+                        </MudSelect>
+
+                        <MudCheckBox T="bool" Label="Active" @bind-Value="_form.Active" data-testid="compliance-dashboard-active" />
+
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary" ButtonType="ButtonType.Submit" Disabled="@_isSaving" data-testid="compliance-dashboard-save">Save</MudButton>
+                    </MudStack>
                 </EditForm>
-            </div>
-        </div>
-    </div>
+            </MudPaper>
+        </MudItem>
 
-    <div class="col-lg-6">
-        <div class="card shadow-sm h-100">
-            <div class="card-body">
-                <div class="d-flex align-items-center mb-2">
-                    <h5 class="mb-0">Recent Scheduled Reports</h5>
-                    <button class="btn btn-outline-secondary btn-sm ms-auto" @onclick="LoadAsync" disabled="@_isLoading">Refresh</button>
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-sm table-hover align-middle">
-                        <thead>
-                            <tr>
-                                <th>Type</th>
-                                <th>Status</th>
-                                <th>Generated</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @if (_summary.RecentReports.Count == 0)
-                            {
-                                <tr><td colspan="4" class="text-muted">No reports yet.</td></tr>
-                            }
-                            else
-                            {
-                                @foreach (var row in _summary.RecentReports)
-                                {
-                                    <tr>
-                                        <td>@row.ReportType</td>
-                                        <td>@row.Status</td>
-                                        <td>@row.GeneratedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
-                                        <td>
-                                            <a class="btn btn-outline-secondary btn-sm" href="@row.FilePath" target="_blank">Download</a>
-                                        </td>
-                                    </tr>
-                                }
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+        <MudItem xs="12" lg="6">
+            <MudPaper Outlined="true" Class="pa-4 h-100" data-testid="compliance-dashboard-recent-grid">
+                @if (_isLoading)
+                {
+                    <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
+                }
 
-<div class="card shadow-sm mt-3">
-    <div class="card-body">
-        <div class="d-flex align-items-center mb-2">
-            <h5 class="mb-0">Scheduled Jobs</h5>
-        </div>
-        <div class="table-responsive">
-            <table class="table table-sm table-hover align-middle">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Type</th>
-                        <th>Cron</th>
-                        <th>Format</th>
-                        <th>Status</th>
-                        <th>Last Run</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if (_schedules.Count == 0)
-                    {
-                        <tr><td colspan="7" class="text-muted">No schedules configured.</td></tr>
-                    }
-                    else
-                    {
-                        @foreach (var s in _schedules)
-                        {
-                            <tr>
-                                <td>@s.Id</td>
-                                <td>@s.ReportType</td>
-                                <td><code>@s.Schedule</code></td>
-                                <td>@s.Format</td>
-                                <td>@s.LastStatus</td>
-                                <td>@(s.LastRunAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "-")</td>
-                                <td class="text-end">
-                                    <button class="btn btn-outline-primary btn-sm me-1" @onclick="() => RunAsync(s.Id)" disabled="@_isLoading">Run</button>
-                                    <button class="btn btn-outline-danger btn-sm" @onclick="() => DeleteAsync(s.Id)" disabled="@_isLoading">Delete</button>
-                                </td>
-                            </tr>
-                        }
-                    }
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
+                <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-2">
+                    <MudText Typo="Typo.h6">Recent Scheduled Reports</MudText>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Size="Size.Small" Class="ms-auto" OnClick="LoadAsync" Disabled="@_isLoading" data-testid="compliance-dashboard-refresh">Refresh</MudButton>
+                </MudStack>
+
+                <MudTable Items="_summary.RecentReports" Dense="true" Hover="true" Elevation="0">
+                    <HeaderContent>
+                        <MudTh>Type</MudTh>
+                        <MudTh>Status</MudTh>
+                        <MudTh>Generated</MudTh>
+                        <MudTh>Action</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="Type">@context.ReportType</MudTd>
+                        <MudTd DataLabel="Status">@context.Status</MudTd>
+                        <MudTd DataLabel="Generated">@context.GeneratedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</MudTd>
+                        <MudTd DataLabel="Action">
+                            <MudButton Variant="Variant.Outlined" Color="Color.Secondary" Size="Size.Small" Href="@context.FilePath" Target="_blank">Download</MudButton>
+                        </MudTd>
+                    </RowTemplate>
+                    <NoRecordsContent>
+                        <MudText Typo="Typo.body2" Class="pa-2 mud-secondary-text">No reports yet.</MudText>
+                    </NoRecordsContent>
+                </MudTable>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <MudPaper Outlined="true" Class="pa-4" data-testid="compliance-dashboard-grid">
+        <MudText Typo="Typo.h6" Class="mb-2">Scheduled Jobs</MudText>
+
+        <MudTable Items="_schedules" Dense="true" Hover="true" Elevation="0">
+            <HeaderContent>
+                <MudTh>ID</MudTh>
+                <MudTh>Type</MudTh>
+                <MudTh>Cron</MudTh>
+                <MudTh>Format</MudTh>
+                <MudTh>Status</MudTh>
+                <MudTh>Last Run</MudTh>
+                <MudTh></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="ID">@context.Id</MudTd>
+                <MudTd DataLabel="Type">@context.ReportType</MudTd>
+                <MudTd DataLabel="Cron"><code>@context.Schedule</code></MudTd>
+                <MudTd DataLabel="Format">@context.Format</MudTd>
+                <MudTd DataLabel="Status">@context.LastStatus</MudTd>
+                <MudTd DataLabel="Last Run">@(context.LastRunAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "-")</MudTd>
+                <MudTd DataLabel="Actions" Class="text-end">
+                    <MudStack Row="true" Spacing="1" Justify="Justify.FlexEnd">
+                        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Small" OnClick="() => RunAsync(context.Id)" Disabled="@_isLoading">Run</MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" OnClick="() => DeleteAsync(context.Id)" Disabled="@_isLoading">Delete</MudButton>
+                    </MudStack>
+                </MudTd>
+            </RowTemplate>
+            <NoRecordsContent>
+                <MudText Typo="Typo.body2" Class="pa-2 mud-secondary-text">No schedules configured.</MudText>
+            </NoRecordsContent>
+        </MudTable>
+    </MudPaper>
+</MudStack>
 
 @code {
     private ComplianceDashboardDto _summary = new();

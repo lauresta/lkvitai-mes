@@ -518,3 +518,26 @@ Matrix verdict:
 ### Smoke status
 - `dotnet build src/LKvitai.MES.sln` passed.
 - `dotnet test ... --filter FullyQualifiedName~.Ui.` passed (`36/36`).
+
+## 2026-03-05 - Step: Compliance dashboard migration to Mud
+
+### What I changed
+- Migrated `/warehouse/compliance/dashboard` from bootstrap layout/components to Mud (`MudStack`, `MudGrid`, `MudPaper`, `MudTable`, `MudSelect`, `MudTextField`, `MudCheckBox`, `MudButton`, `MudProgressLinear`).
+- Preserved existing behavior: summary cards, schedule form create/update, run/delete actions, refresh/reset, and API error handling.
+- Added stable test ids:
+  - root: `compliance-dashboard-page`
+  - form: `compliance-dashboard-form`
+  - grids: `compliance-dashboard-grid`, `compliance-dashboard-recent-grid`
+  - error: `compliance-dashboard-error`
+  - key controls (`report-type`, `schedule`, `emails`, `format`, `save`, `refresh`, `reset`).
+- Added smoke test `ComplianceDashboard_PageSmoke` with offline-tolerant assertions.
+
+### Why
+- Continue Phase 1/2 migration for heavy reporting/administrative pages and keep UI regression safety in same change set.
+
+### Result
+- Compliance dashboard no longer relies on bootstrap row/card/table/form/button markup.
+
+### Smoke status
+- `dotnet build src/LKvitai.MES.sln` passed.
+- `dotnet test ... --filter FullyQualifiedName~.Ui.` passed (`37/37`).
