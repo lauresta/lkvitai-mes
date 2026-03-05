@@ -666,3 +666,16 @@ Matrix verdict:
 - Smoke status:
   - `dotnet build src/LKvitai.MES.sln` ✅
   - `dotnet test tests/Modules/Warehouse/LKvitai.MES.Tests.Warehouse.E2E/LKvitai.MES.Tests.Warehouse.E2E.csproj --filter FullyQualifiedName~.Ui.` ✅ (37/37)
+
+## Step: Phase 4 JS-heavy page chrome migration (`/search-by-image`)
+- What I changed:
+  - Migrated `Pages/SearchByImage.razor` from bootstrap card/grid/badge/spinner markup to Mud components (`MudPaper`, `MudStack`, `MudGrid`, `MudCard`, `MudChip`, `MudProgressCircular`).
+  - Kept image-upload/InputFile DOM lifecycle intact to avoid known Blazor Server `NotifyChange` circuit failure.
+  - Preserved existing API flow and auto-open-on-high-score behavior.
+- Why:
+  - Required by Phase 4: keep JS/interop behavior while converting surrounding page chrome to Mud-only UI.
+- Result:
+  - Search page UI is now Mud-styled without bootstrap controls.
+- Smoke status:
+  - `dotnet build src/LKvitai.MES.sln` ✅
+  - `dotnet test tests/Modules/Warehouse/LKvitai.MES.Tests.Warehouse.E2E/LKvitai.MES.Tests.Warehouse.E2E.csproj --filter FullyQualifiedName~.Ui.` ✅ (37/37)

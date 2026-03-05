@@ -5,7 +5,7 @@
 
 <PageTitle>Search by Image - LKvitai.MES</PageTitle>
 
-<h3 class="text-center mb-4">Search by Image</h3>
+<MudText Typo="Typo.h5" Align="Align.Center" Class="mb-4">Search by Image</MudText>
 
 @if (_apiError is not null)
 {
@@ -15,9 +15,9 @@
                  OnDismiss="@(() => _apiError = null)" />
 }
 
-<div class="d-flex justify-content-center mb-3">
-    <div class="card shadow-sm position-relative" style="width:100%;max-width:480px;">
-        <div class="card-body d-flex flex-column align-items-center justify-content-center py-5">
+<MudStack AlignItems="AlignItems.Center" Class="mb-3">
+    <MudPaper Elevation="2" Class="pa-6 position-relative" Style="width:100%;max-width:480px;">
+        <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="2">
 
             @* Keep the InputFile ALWAYS in the DOM — never conditionally remove it.
                Removing it during its own OnChange event crashes the Blazor Server circuit
@@ -30,9 +30,7 @@
                             transition:background .2s;">
                     @if (_isLoading)
                     {
-                        <div class="spinner-border text-white" style="width:2.5rem;height:2.5rem;" role="status">
-                            <span class="visually-hidden">Identifying…</span>
-                        </div>
+                        <MudProgressCircular Indeterminate="true" Color="Color.Inherit" Size="Size.Large" />
                     }
                     else
                     {
@@ -49,56 +47,54 @@
                            @attributes="_captureAttributes" />
             </div>
 
-            <p class="text-muted mt-3 mb-0 text-center">
+            <MudText Typo="Typo.body2" Align="Align.Center" Class="mud-secondary-text mt-3 mb-0">
                 @(_isLoading ? "Identifying item…" : "Tap to take a photo or choose from gallery")
-            </p>
+            </MudText>
 
-        </div>
-    </div>
-</div>
+        </MudStack>
+    </MudPaper>
+</MudStack>
 
 @if (_searched && !_isLoading)
 {
     @if (_results.Count == 0)
     {
-        <div class="text-center text-muted py-4">
-            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" class="mb-3 opacity-50" viewBox="0 0 16 16">
-                <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0" />
-            </svg>
-            <p class="mb-0">No matching items found.</p>
-            <p class="small">Try uploading a clearer photo, or add photos to items first.</p>
-        </div>
+        <MudStack AlignItems="AlignItems.Center" Class="py-4">
+            <MudIcon Icon="@Icons.Material.Filled.SearchOff" Size="Size.Large" Color="Color.Default" Class="mb-2" />
+            <MudText Typo="Typo.body1">No matching items found.</MudText>
+            <MudText Typo="Typo.caption" Class="mud-secondary-text">Try uploading a clearer photo, or add photos to items first.</MudText>
+        </MudStack>
     }
     else
     {
-        <div class="row g-3">
+        <MudGrid Spacing="3">
             @foreach (var result in _results)
             {
-                <div class="col-6 col-md-4 col-lg-3">
-                    <div class="card h-100" style="cursor:pointer;" @onclick="@(() => OpenItem(result.ItemId))">
+                <MudItem xs="6" md="4" lg="3">
+                    <MudCard Class="h-100" Style="cursor:pointer;" @onclick="@(() => OpenItem(result.ItemId))">
                         @if (!string.IsNullOrWhiteSpace(result.PrimaryThumbnailUrl))
                         {
                             <img src="@result.PrimaryThumbnailUrl" alt="@result.SKU" loading="lazy" style="height:150px;object-fit:cover;" />
                         }
                         else
                         {
-                            <div class="bg-light border text-muted d-flex align-items-center justify-content-center" style="height:150px;">No image</div>
+                            <MudPaper Outlined="true" Class="mud-theme-surface" Style="height:150px;display:flex;align-items:center;justify-content:center;">No image</MudPaper>
                         }
-                        <div class="card-body">
-                            <div><strong>@result.SKU</strong></div>
-                            <div class="small text-muted">@result.Name</div>
-                            <div class="small">
+                        <MudCardContent>
+                            <MudText Typo="Typo.subtitle2">@result.SKU</MudText>
+                            <MudText Typo="Typo.caption" Class="mud-secondary-text">@result.Name</MudText>
+                            <div>
                                 @{
                                     var pct = (int)(result.Score * 100);
-                                    var badgeClass = result.Score >= 0.85 ? "bg-success" : result.Score >= 0.65 ? "bg-warning text-dark" : "bg-secondary";
+                                    var scoreColor = result.Score >= 0.85 ? Color.Success : result.Score >= 0.65 ? Color.Warning : Color.Default;
                                 }
-                                <span class="badge @badgeClass">@pct%</span>
+                                <MudChip Color="@scoreColor" Size="Size.Small">@pct%</MudChip>
                             </div>
-                        </div>
-                    </div>
-                </div>
+                        </MudCardContent>
+                    </MudCard>
+                </MudItem>
             }
-        </div>
+        </MudGrid>
     }
 }
 
