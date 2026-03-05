@@ -653,3 +653,16 @@ Matrix verdict:
 - Smoke status:
   - `dotnet build src/LKvitai.MES.sln` ✅
   - `dotnet test tests/Modules/Warehouse/LKvitai.MES.Tests.Warehouse.E2E/LKvitai.MES.Tests.Warehouse.E2E.csproj --filter FullyQualifiedName~.Ui.` ✅ (37/37)
+
+## Step: Phase 5 CSS cleanup (remove bootstrap-era global stylesheet dependencies)
+- What I changed:
+  - Removed `open-iconic-bootstrap` import from `wwwroot/css/site.css`.
+  - Removed obsolete bootstrap-era global selectors from `site.css` (legacy sidebar/nav accordion and `.btn-primary` overrides).
+  - Added explicit lot-trace branch styling (`.lot-trace-branch`) to preserve visual hierarchy without bootstrap utility classes.
+- Why:
+  - Final cleanup requirement for bootstrap dependency removal in shell-level styles.
+- Result:
+  - Global stylesheet no longer imports bootstrap-tied icon css and no longer contains legacy nav bootstrap styling.
+- Smoke status:
+  - `dotnet build src/LKvitai.MES.sln` ✅
+  - `dotnet test tests/Modules/Warehouse/LKvitai.MES.Tests.Warehouse.E2E/LKvitai.MES.Tests.Warehouse.E2E.csproj --filter FullyQualifiedName~.Ui.` ✅ (37/37)
