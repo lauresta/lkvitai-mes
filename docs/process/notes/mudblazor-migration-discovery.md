@@ -709,3 +709,15 @@ Matrix verdict:
 - Smoke status:
   - `dotnet build src/LKvitai.MES.sln` ✅
   - `dotnet test tests/Modules/Warehouse/LKvitai.MES.Tests.Warehouse.E2E/LKvitai.MES.Tests.Warehouse.E2E.csproj --filter FullyQualifiedName~.Ui.` ✅ (37/37)
+
+## Step: Continue operational page conversion (Cycle Counts List + Putaway)
+- What I changed:
+  - Converted `/warehouse/cycle-counts` page table/actions/status badges to `MudTable`/`MudButton`/`MudChip`/`MudStack` with loading flow fixed to valid Razor `@if`.
+  - Converted `/warehouse/putaway` workflow table to `MudTable` with `MudSelect`, `MudTextField`, and `MudButton`; warning alert migrated to `MudAlert`.
+- Why:
+  - Phase 2/3 scope requires list/workflow screens to run on Mud controls and remove bootstrap table/form/button classes.
+- Result:
+  - Both operational pages now use Mud components end-to-end for visible interactions.
+- Smoke status:
+  - `dotnet build src/LKvitai.MES.sln` ✅
+  - `dotnet test tests/Modules/Warehouse/LKvitai.MES.Tests.Warehouse.E2E/LKvitai.MES.Tests.Warehouse.E2E.csproj --filter FullyQualifiedName~.Ui.` ✅ (37/37)
