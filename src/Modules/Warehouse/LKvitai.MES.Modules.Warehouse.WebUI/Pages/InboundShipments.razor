@@ -48,7 +48,7 @@
     </MudPaper>
 
     <MudPaper Class="pa-4 position-relative">
-         (_isLoading)
+        @if (_isLoading)
         {
             <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
         }

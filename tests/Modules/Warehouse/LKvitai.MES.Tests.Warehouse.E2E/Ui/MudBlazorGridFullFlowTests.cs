@@ -372,14 +372,16 @@ public sealed class MudBlazorGridFullFlowTests : PlaywrightUiTestBase
             var error = ByTestId(page, "outbound-order-detail-error");
             var sharedError = page.GetByTestId("shared-error-banner");
             var loading = page.GetByTestId("shared-loading-overlay");
+            var progress = page.Locator(".mud-progress-linear").First;
 
             var linesVisible = await lines.CountAsync() > 0 && await lines.IsVisibleAsync();
             var emptyVisible = await empty.CountAsync() > 0 && await empty.IsVisibleAsync();
             var errorVisible = await error.CountAsync() > 0 && await error.IsVisibleAsync();
             var sharedErrorVisible = await sharedError.CountAsync() > 0 && await sharedError.IsVisibleAsync();
             var loadingVisible = await loading.CountAsync() > 0 && await loading.IsVisibleAsync();
+            var progressVisible = await progress.CountAsync() > 0 && await progress.IsVisibleAsync();
 
-            Assert.True(linesVisible || emptyVisible || errorVisible || sharedErrorVisible || loadingVisible,
+            Assert.True(linesVisible || emptyVisible || errorVisible || sharedErrorVisible || loadingVisible || progressVisible,
                 "Expected outbound order detail lines, empty state, loading, or error banner to be visible.");
         });
     }

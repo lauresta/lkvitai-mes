@@ -135,6 +135,7 @@ public sealed class AdditionalFormSmokeTests : PlaywrightUiTestBase
             await ExpectAnyVisibleAsync(
                 page.GetByText("Order not found.", new() { Exact = true }),
                 page.GetByText("Scan barcode", new() { Exact = true }),
+                page.Locator(".mud-progress-linear").First,
                 page.GetByTestId("shared-error-banner"));
         });
     }

@@ -17,10 +17,10 @@
 }
 
 <div class="mud-surface shadow-sm position-relative">
-     (@(_isLoading || _isSubmitting))
-        {
-            <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
-        }
+    @if (_isLoading || _isSubmitting)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
+    }
 
     <div class="mud-surface-body">
         @if (_order is null && !_isLoading)

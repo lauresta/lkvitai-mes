@@ -20,10 +20,10 @@
 }
 
 <div class="mud-surface shadow-sm position-relative">
-     (_isLoading || _isSaving || _isTestingConnection)
-        {
-            <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
-        }
+    @if (_isLoading || _isSaving || _isTestingConnection)
+    {
+        <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-3" />
+    }
 
     <div class="mud-surface-body">
         <EditForm Model="_model" OnValidSubmit="SaveAsync">
