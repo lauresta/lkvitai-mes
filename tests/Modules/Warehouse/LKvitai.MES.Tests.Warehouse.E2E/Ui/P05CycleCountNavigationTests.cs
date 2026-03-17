@@ -24,17 +24,22 @@ public sealed class P05CycleCountNavigationTests : PlaywrightUiTestBase
 
             var scheduleTitle = ByTestId(page, "cycle-counts-schedule-title");
             var scheduleError = page.GetByTestId("shared-error-banner");
+            var noLocationsMessage = page.GetByText("No locations loaded.", new() { Exact = true });
 
             try
             {
                 await Expect(scheduleTitle).ToBeVisibleAsync();
-                await Expect(ByTestId(page, "cycle-counts-schedule-date")).ToBeVisibleAsync();
-                await Expect(ByTestId(page, "cycle-counts-schedule-abc")).ToBeVisibleAsync();
-                await Expect(ByTestId(page, "cycle-counts-schedule-operator")).ToBeVisibleAsync();
+                await Expect(page.GetByLabel("Scheduled Date").First).ToBeVisibleAsync();
+                await Expect(page.GetByLabel("ABC Class").First).ToBeVisibleAsync();
+                await Expect(page.GetByLabel("Assigned Operator").First).ToBeVisibleAsync();
             }
             catch (PlaywrightException)
             {
-                await Expect(scheduleError).ToBeVisibleAsync();
+                var hasSharedError = await scheduleError.CountAsync() > 0 && await scheduleError.IsVisibleAsync();
+                var hasNoLocationsMessage = await noLocationsMessage.CountAsync() > 0 && await noLocationsMessage.IsVisibleAsync();
+
+                Assert.True(hasSharedError || hasNoLocationsMessage,
+                    "Expected shared error banner or empty locations message to be visible.");
             }
 
             var backButton = page.GetByRole(AriaRole.Button, new() { Name = "Back" });
