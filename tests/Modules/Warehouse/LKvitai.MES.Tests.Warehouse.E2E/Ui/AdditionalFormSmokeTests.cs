@@ -217,6 +217,127 @@ public sealed class AdditionalFormSmokeTests : PlaywrightUiTestBase
         });
     }
 
+    [Fact]
+    public async Task AdminApprovalRules_PageSmoke()
+    {
+        await RunUiAsync(nameof(AdminApprovalRules_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/warehouse/admin/approval-rules");
+
+            await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Approval Rules" })).ToBeVisibleAsync();
+            await ExpectAnyVisibleAsync(
+                page.GetByRole(AriaRole.Button, new() { Name = "Add Approval Rule" }),
+                page.GetByText("Admin role required.", new() { Exact = true }),
+                page.GetByTestId("shared-error-banner"));
+        });
+    }
+
+    [Fact]
+    public async Task AdminBackups_PageSmoke()
+    {
+        await RunUiAsync(nameof(AdminBackups_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/warehouse/admin/backups");
+
+            await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Backup Management" })).ToBeVisibleAsync();
+            await ExpectAnyVisibleAsync(
+                page.GetByRole(AriaRole.Button, new() { Name = "Trigger Backup" }),
+                page.GetByText("Admin role required.", new() { Exact = true }),
+                page.GetByTestId("shared-error-banner"));
+        });
+    }
+
+    [Fact]
+    public async Task AdminGdprErasure_PageSmoke()
+    {
+        await RunUiAsync(nameof(AdminGdprErasure_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/warehouse/admin/gdpr-erasure");
+
+            await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "GDPR Erasure Requests" })).ToBeVisibleAsync();
+            await ExpectAnyVisibleAsync(
+                page.GetByText("New Erasure Request", new() { Exact = true }),
+                page.GetByText("Admin role required.", new() { Exact = true }),
+                page.GetByTestId("shared-error-banner"));
+        });
+    }
+
+    [Fact]
+    public async Task AdminSerialNumbers_PageSmoke()
+    {
+        await RunUiAsync(nameof(AdminSerialNumbers_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/warehouse/admin/serial-numbers");
+
+            await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Serial Numbers" })).ToBeVisibleAsync();
+            await ExpectAnyVisibleAsync(
+                page.GetByText("Register Serial", new() { Exact = true }),
+                page.GetByText("Admin role required.", new() { Exact = true }),
+                page.GetByTestId("shared-error-banner"));
+        });
+    }
+
+    [Fact]
+    public async Task AdminRetentionPolicies_PageSmoke()
+    {
+        await RunUiAsync(nameof(AdminRetentionPolicies_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/warehouse/admin/retention-policies");
+
+            await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Retention Policies" })).ToBeVisibleAsync();
+            await ExpectAnyVisibleAsync(
+                page.GetByRole(AriaRole.Button, new() { Name = "Create Policy" }),
+                page.GetByRole(AriaRole.Button, new() { Name = "Hide Form" }),
+                page.GetByText("Admin role required.", new() { Exact = true }),
+                page.GetByTestId("shared-error-banner"));
+        });
+    }
+
+    [Fact]
+    public async Task AdminRoles_PageSmoke()
+    {
+        await RunUiAsync(nameof(AdminRoles_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/warehouse/admin/roles");
+
+            await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Roles" })).ToBeVisibleAsync();
+            await ExpectAnyVisibleAsync(
+                page.GetByRole(AriaRole.Button, new() { Name = "Add Role" }),
+                page.GetByText("Admin role required.", new() { Exact = true }),
+                page.GetByTestId("shared-error-banner"));
+        });
+    }
+
+    [Fact]
+    public async Task AdminReasonCodes_PageSmoke()
+    {
+        await RunUiAsync(nameof(AdminReasonCodes_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/warehouse/admin/reason-codes");
+
+            await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Reason Codes" })).ToBeVisibleAsync();
+            await ExpectAnyVisibleAsync(
+                page.GetByRole(AriaRole.Button, new() { Name = "Add Reason Code" }),
+                page.GetByText("Admin role required.", new() { Exact = true }),
+                page.GetByTestId("shared-error-banner"));
+        });
+    }
+
+    [Fact]
+    public async Task AdminDisasterRecoveryDrills_PageSmoke()
+    {
+        await RunUiAsync(nameof(AdminDisasterRecoveryDrills_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/warehouse/admin/dr-drills");
+
+            await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Disaster Recovery Drills" })).ToBeVisibleAsync();
+            await ExpectAnyVisibleAsync(
+                page.GetByRole(AriaRole.Button, new() { Name = "Trigger Drill" }),
+                page.GetByText("Admin role required.", new() { Exact = true }),
+                page.GetByTestId("shared-error-banner"));
+        });
+    }
+
     private static async Task ExpectAnyVisibleAsync(params ILocator[] locators)
     {
         for (var attempt = 0; attempt < 20; attempt++)
