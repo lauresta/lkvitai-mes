@@ -540,6 +540,123 @@ public sealed class AdditionalFormSmokeTests : PlaywrightUiTestBase
         });
     }
 
+    [Fact]
+    public async Task LayoutEditor_PageSmoke()
+    {
+        await RunUiAsync(nameof(LayoutEditor_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/warehouse/admin/layout-editor");
+
+            await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Warehouse Layout Editor" })).ToBeVisibleAsync();
+            await ExpectAnyVisibleAsync(
+                page.GetByText("Admin role required.", new() { Exact = true }),
+                page.GetByText("Warehouse Code", new() { Exact = true }),
+                page.GetByRole(AriaRole.Button, new() { Name = "Save Layout" }),
+                page.GetByTestId("shared-error-banner"));
+        });
+    }
+
+    [Fact]
+    public async Task Lots_PageSmoke()
+    {
+        await RunUiAsync(nameof(Lots_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/warehouse/admin/lots");
+
+            await Expect(page.GetByTestId("lots-page")).ToBeVisibleAsync();
+            await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Lots" })).ToBeVisibleAsync();
+            await ExpectAnyVisibleAsync(
+                page.GetByTestId("lots-search-input"),
+                page.GetByText("No lots found.", new() { Exact = true }),
+                page.GetByTestId("lots-error"),
+                page.GetByTestId("shared-error-banner"));
+        });
+    }
+
+    [Fact]
+    public async Task CycleCountsDiscrepancies_PageSmoke()
+    {
+        await RunUiAsync(nameof(CycleCountsDiscrepancies_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/warehouse/cycle-counts/00000000-0000-0000-0000-000000000001/discrepancies");
+
+            await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Cycle Count Discrepancies" })).ToBeVisibleAsync();
+            await ExpectAnyVisibleAsync(
+                page.GetByText("No discrepancies found.", new() { Exact = true }),
+                page.GetByRole(AriaRole.Button, new() { Name = "Approve" }),
+                page.GetByRole(AriaRole.Button, new() { Name = "Back" }));
+        });
+    }
+
+    [Fact]
+    public async Task CycleCountsSchedule_PageSmoke()
+    {
+        await RunUiAsync(nameof(CycleCountsSchedule_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/warehouse/cycle-counts/schedule");
+
+            await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Schedule Cycle Count" })).ToBeVisibleAsync();
+            await ExpectAnyVisibleAsync(
+                page.GetByTestId("cycle-counts-schedule-date"),
+                page.GetByText("No locations loaded.", new() { Exact = true }),
+                page.GetByRole(AriaRole.Button, new() { Name = "Submit" }),
+                page.GetByTestId("shared-error-banner"));
+        });
+    }
+
+    [Fact]
+    public async Task InboundShipmentCreate_PageSmoke()
+    {
+        await RunUiAsync(nameof(InboundShipmentCreate_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/warehouse/inbound/shipments/create");
+
+            await Expect(page.GetByTestId("inbound-shipment-create-page")).ToBeVisibleAsync();
+            await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Create Inbound Shipment" })).ToBeVisibleAsync();
+            await ExpectAnyVisibleAsync(
+                page.GetByTestId("inbound-shipment-create-reference"),
+                page.GetByTestId("inbound-shipment-create-add-line"),
+                page.GetByTestId("inbound-shipment-create-submit"),
+                page.GetByTestId("inbound-shipment-create-error"),
+                page.GetByTestId("shared-error-banner"));
+        });
+    }
+
+    [Fact]
+    public async Task SalesOrderCreate_PageSmoke()
+    {
+        await RunUiAsync(nameof(SalesOrderCreate_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/warehouse/sales/orders/create");
+
+            await Expect(page.GetByTestId("sales-order-create-page")).ToBeVisibleAsync();
+            await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Create Sales Order" })).ToBeVisibleAsync();
+            await ExpectAnyVisibleAsync(
+                page.GetByTestId("sales-order-create-customer"),
+                page.GetByTestId("sales-order-create-add-line"),
+                page.GetByTestId("sales-order-create-submit"),
+                page.GetByTestId("sales-order-create-error"),
+                page.GetByTestId("shared-error-banner"));
+        });
+    }
+
+    [Fact]
+    public async Task Visualization2d_PageSmoke()
+    {
+        await RunUiAsync(nameof(Visualization2d_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/warehouse/visualization/2d");
+
+            await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Warehouse Visualization" })).ToBeVisibleAsync();
+            await Expect(page.GetByText("Explore bins, capacity, and handling units in 3D or 2D.", new() { Exact = true })).ToBeVisibleAsync();
+            await ExpectAnyVisibleAsync(
+                page.GetByRole(AriaRole.Button, new() { Name = "3D View" }),
+                page.GetByText("Loading warehouse model...", new() { Exact = true }),
+                page.GetByText("No bins configured with coordinates. Configure layout first.", new() { Exact = true }),
+                page.GetByText("No bins match the selected zone/status filters.", new() { Exact = true }));
+        });
+    }
+
     private static async Task ExpectAnyVisibleAsync(params ILocator[] locators)
     {
         for (var attempt = 0; attempt < 20; attempt++)
