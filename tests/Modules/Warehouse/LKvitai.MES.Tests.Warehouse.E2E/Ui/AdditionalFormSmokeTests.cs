@@ -338,6 +338,123 @@ public sealed class AdditionalFormSmokeTests : PlaywrightUiTestBase
         });
     }
 
+    [Fact]
+    public async Task ReportsTraceability_PageSmoke()
+    {
+        await RunUiAsync(nameof(ReportsTraceability_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/reports/traceability");
+
+            await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Traceability Report (Lot -> Order)" })).ToBeVisibleAsync();
+            await Expect(page.GetByRole(AriaRole.Button, new() { Name = "Search" })).ToBeVisibleAsync();
+            await ExpectAnyVisibleAsync(
+                page.GetByText("No traceability entries", new() { Exact = true }),
+                page.GetByTestId("shared-error-banner"));
+        });
+    }
+
+    [Fact]
+    public async Task ComplianceLotTrace_PageSmoke()
+    {
+        await RunUiAsync(nameof(ComplianceLotTrace_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/warehouse/compliance/lot-trace");
+
+            await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Lot Traceability" })).ToBeVisibleAsync();
+            await Expect(page.GetByRole(AriaRole.Button, new() { Name = "Build Trace" })).ToBeVisibleAsync();
+            await Expect(page.GetByText("No trace generated", new() { Exact = true })).ToBeVisibleAsync();
+        });
+    }
+
+    [Fact]
+    public async Task AllocationDashboard_PageSmoke()
+    {
+        await RunUiAsync(nameof(AllocationDashboard_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/warehouse/sales/allocations");
+
+            await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Allocation & Release Dashboard" })).ToBeVisibleAsync();
+            await ExpectAnyVisibleAsync(
+                page.GetByText("Pending Approvals", new() { Exact = true }),
+                page.GetByText("No orders pending approval.", new() { Exact = true }),
+                page.GetByTestId("shared-error-banner"));
+        });
+    }
+
+    [Fact]
+    public async Task AnalyticsFulfillment_PageSmoke()
+    {
+        await RunUiAsync(nameof(AnalyticsFulfillment_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/analytics/fulfillment");
+
+            await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Fulfillment KPIs" })).ToBeVisibleAsync();
+            await ExpectAnyVisibleAsync(
+                page.GetByText("14-Day Trend", new() { Exact = true }),
+                page.GetByText("No KPI trend", new() { Exact = true }),
+                page.GetByTestId("shared-error-banner"));
+        });
+    }
+
+    [Fact]
+    public async Task AnalyticsQuality_PageSmoke()
+    {
+        await RunUiAsync(nameof(AnalyticsQuality_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/analytics/quality");
+
+            await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "QC Defects & Late Shipments" })).ToBeVisibleAsync();
+            await ExpectAnyVisibleAsync(
+                page.GetByText("Top Defect Types", new() { Exact = true }),
+                page.GetByText("No defects recorded", new() { Exact = true }),
+                page.GetByTestId("shared-error-banner"));
+        });
+    }
+
+    [Fact]
+    public async Task Visualization3d_PageSmoke()
+    {
+        await RunUiAsync(nameof(Visualization3d_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/warehouse/visualization/3d");
+
+            await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Warehouse Visualization" })).ToBeVisibleAsync();
+            await Expect(page.GetByText("Explore bins, capacity, and handling units in 3D or 2D.", new() { Exact = true })).ToBeVisibleAsync();
+            await ExpectAnyVisibleAsync(
+                page.GetByRole(AriaRole.Button, new() { Name = "2D View" }),
+                page.GetByText("Loading warehouse model...", new() { Exact = true }),
+                page.GetByText("No bins configured with coordinates. Configure layout first.", new() { Exact = true }));
+        });
+    }
+
+    [Fact]
+    public async Task WarehouseLocationDetail_PageSmoke()
+    {
+        await RunUiAsync(nameof(WarehouseLocationDetail_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/warehouse/locations/1");
+
+            await Expect(page.GetByText("Location Details", new() { Exact = true }).First).ToBeVisibleAsync();
+            await Expect(page.GetByText("Manage location metadata in the admin location workspace.", new() { Exact = true })).ToBeVisibleAsync();
+            await Expect(page.GetByRole(AriaRole.Link, new() { Name = "Open Admin Locations" })).ToBeVisibleAsync();
+        });
+    }
+
+    [Fact]
+    public async Task CycleCountsExecute_PageSmoke()
+    {
+        await RunUiAsync(nameof(CycleCountsExecute_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/warehouse/cycle-counts/00000000-0000-0000-0000-000000000001/execute");
+
+            await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Execute Cycle Count" })).ToBeVisibleAsync();
+            await ExpectAnyVisibleAsync(
+                page.GetByText("Cycle count not found.", new() { Exact = true }),
+                page.GetByLabel("Location Barcode").First,
+                page.GetByRole(AriaRole.Button, new() { Name = "Back" }));
+        });
+    }
+
     private static async Task ExpectAnyVisibleAsync(params ILocator[] locators)
     {
         for (var attempt = 0; attempt < 20; attempt++)
