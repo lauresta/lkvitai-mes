@@ -455,6 +455,91 @@ public sealed class AdditionalFormSmokeTests : PlaywrightUiTestBase
         });
     }
 
+    [Fact]
+    public async Task AdminImport_PageSmoke()
+    {
+        await RunUiAsync(nameof(AdminImport_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/admin/import");
+
+            await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Import Master Data" })).ToBeVisibleAsync();
+            await Expect(page.GetByText("Dry-run is recommended before commit.", new() { Exact = true })).ToBeVisibleAsync();
+            await ExpectAnyVisibleAsync(
+                page.GetByRole(AriaRole.Button, new() { Name = "Download Template" }),
+                page.GetByRole(AriaRole.Button, new() { Name = "Run Import" }),
+                page.GetByTestId("shared-error-banner"));
+        });
+    }
+
+    [Fact]
+    public async Task AdminItemDetail_PageSmoke()
+    {
+        await RunUiAsync(nameof(AdminItemDetail_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/admin/items/1");
+
+            await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Item Details" })).ToBeVisibleAsync();
+            await ExpectAnyVisibleAsync(
+                page.GetByText("Item not found.", new() { Exact = true }),
+                page.GetByRole(AriaRole.Button, new() { Name = "Back to list" }),
+                page.GetByTestId("shared-error-banner"));
+        });
+    }
+
+    [Fact]
+    public async Task AdminCategories_PageSmoke()
+    {
+        await RunUiAsync(nameof(AdminCategories_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/admin/categories");
+
+            await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Categories Management" })).ToBeVisibleAsync();
+            await Expect(page.GetByText("Create Category", new() { Exact = true })).ToBeVisibleAsync();
+            await ExpectAnyVisibleAsync(
+                page.GetByRole(AriaRole.Button, new() { Name = "Save" }),
+                page.GetByText("No categories found.", new() { Exact = true }),
+                page.GetByTestId("shared-error-banner"));
+        });
+    }
+
+    [Fact]
+    public async Task Dashboard_PageSmoke()
+    {
+        await RunUiAsync(nameof(Dashboard_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/dashboard");
+
+            await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Dashboard" })).ToBeVisibleAsync();
+            await ExpectAnyVisibleAsync(
+                page.GetByText("Health Status", new() { Exact = true }),
+                page.GetByText("Stock Summary", new() { Exact = true }),
+                page.GetByText("Recent Activity", new() { Exact = true }),
+                page.GetByTestId("shared-error-banner"));
+        });
+    }
+
+    [Fact]
+    public async Task ValuationDashboard_PageSmoke()
+    {
+        await RunUiAsync(nameof(ValuationDashboard_PageSmoke), async page =>
+        {
+            await NavigateAsync(page, "/warehouse/valuation/dashboard");
+
+            await Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Valuation Dashboard" })).ToBeVisibleAsync();
+            await ExpectAnyVisibleAsync(
+                page.GetByRole(AriaRole.Button, new() { Name = "Adjust Cost" }),
+                page.GetByRole(AriaRole.Button, new() { Name = "Apply Landed Cost" }),
+                page.GetByRole(AriaRole.Button, new() { Name = "Write Down" }),
+                page.GetByRole(AriaRole.Button, new() { Name = "Refresh" }));
+            await ExpectAnyVisibleAsync(
+                page.GetByRole(AriaRole.Heading, new() { Name = "On-Hand Value Report" }),
+                page.GetByRole(AriaRole.Heading, new() { Name = "Cost History Report" }),
+                page.GetByText("No on-hand value rows", new() { Exact = true }),
+                page.GetByText("No history rows", new() { Exact = true }),
+                page.GetByTestId("shared-error-banner"));
+        });
+    }
+
     private static async Task ExpectAnyVisibleAsync(params ILocator[] locators)
     {
         for (var attempt = 0; attempt < 20; attempt++)
