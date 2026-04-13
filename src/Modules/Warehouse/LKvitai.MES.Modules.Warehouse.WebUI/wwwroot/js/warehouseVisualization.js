@@ -217,6 +217,97 @@
         };
     }
 
+    function createFloorOutline(width, length, color, opacity, elevation) {
+        const outline = new THREE.LineSegments(
+            new THREE.EdgesGeometry(new THREE.PlaneGeometry(width, length)),
+            new THREE.LineBasicMaterial({
+                color,
+                transparent: true,
+                opacity,
+                depthWrite: false
+            }));
+        outline.rotation.x = -Math.PI / 2;
+        outline.position.set(width / 2, elevation, length / 2);
+        return outline;
+    }
+
+    function renderWarehouseFloor(scene, warehouse) {
+        const w = Number(warehouse?.dimensions?.width || 0);
+        const l = Number(warehouse?.dimensions?.length || 0);
+        const h = Number(warehouse?.dimensions?.height || 0);
+        if (w <= 0 || l <= 0) {
+            return;
+        }
+
+        const floorMat = new THREE.MeshStandardMaterial({ color: 0xd6dadd, roughness: 0.9, metalness: 0.03 });
+        const floor = new THREE.Mesh(new THREE.PlaneGeometry(w, l), floorMat);
+        floor.rotation.x = -Math.PI / 2;
+        floor.position.set(w / 2, 0, l / 2);
+        floor.receiveShadow = true;
+        scene.add(floor);
+        scene.add(createFloorOutline(w, l, 0x9ca3af, 0.55, 0.004));
+
+        if (h > 0) {
+            const wallMat = new THREE.MeshStandardMaterial({ color: 0xe8eaec, roughness: 0.92, metalness: 0.0, transparent: true, opacity: 0.42, side: THREE.DoubleSide });
+            const thickness = 0.15;
+            const walls = [
+                { w, dh: h, dd: thickness, x: w / 2, y: h / 2, z: 0 },
+                { w, dh: h, dd: thickness, x: w / 2, y: h / 2, z: l },
+                { w: thickness, dh: h, dd: l, x: 0, y: h / 2, z: l / 2 },
+                { w: thickness, dh: h, dd: l, x: w, y: h / 2, z: l / 2 }
+            ];
+            walls.forEach((wall) => {
+                const mesh = new THREE.Mesh(new THREE.BoxGeometry(wall.w, wall.dh, wall.dd), wallMat);
+                mesh.position.set(wall.x, wall.y, wall.z);
+                scene.add(mesh);
+            });
+
+            const roofOutline = createFloorOutline(w, l, 0xcbd5e1, 0.38, h + 0.002);
+            scene.add(roofOutline);
+        }
+    }
+
+    function renderZones(scene, zones) {
+        if (!Array.isArray(zones) || zones.length === 0) {
+            return;
+        }
+
+        zones.forEach((zone) => {
+            const x1 = Number(zone?.bounds?.x1 || 0);
+            const y1 = Number(zone?.bounds?.y1 || 0);
+            const x2 = Number(zone?.bounds?.x2 || 0);
+            const y2 = Number(zone?.bounds?.y2 || 0);
+            const zoneW = Math.abs(x2 - x1);
+            const zoneL = Math.abs(y2 - y1);
+            if (zoneW <= 0 || zoneL <= 0) {
+                return;
+            }
+
+            const color = toHexColor(zone?.color);
+            const fillMat = new THREE.MeshBasicMaterial({
+                color,
+                transparent: true,
+                opacity: 0.18,
+                depthWrite: false,
+                side: THREE.DoubleSide,
+                polygonOffset: true,
+                polygonOffsetFactor: -2,
+                polygonOffsetUnits: -2
+            });
+            const fill = new THREE.Mesh(new THREE.PlaneGeometry(zoneW, zoneL), fillMat);
+            fill.rotation.x = -Math.PI / 2;
+            fill.position.set((x1 + x2) / 2, 0.003, (y1 + y2) / 2);
+            scene.add(fill);
+
+            const border = new THREE.LineSegments(
+                new THREE.EdgesGeometry(new THREE.PlaneGeometry(zoneW, zoneL)),
+                new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.5, depthWrite: false }));
+            border.rotation.x = -Math.PI / 2;
+            border.position.set((x1 + x2) / 2, 0.005, (y1 + y2) / 2);
+            scene.add(border);
+        });
+    }
+
     function renderRackFrames(scene, racks) {
         if (!Array.isArray(racks) || racks.length === 0) {
             return;
@@ -234,6 +325,7 @@
             if (rack.type === "FloorStorage") {
                 const floor = new THREE.Mesh(new THREE.BoxGeometry(layout.width, 0.02, layout.length), floorMaterial);
                 floor.position.set(layout.centerX, layout.y + 0.01, layout.centerZ);
+                floor.receiveShadow = true;
                 group.add(floor);
 
                 const fenceHeight = 0.12;
@@ -246,6 +338,7 @@
                 ].forEach((fence) => {
                     const mesh = new THREE.Mesh(new THREE.BoxGeometry(fence.w, fence.h, fence.d), fenceMaterial);
                     mesh.position.set(fence.x, fence.y, fence.z);
+                    mesh.castShadow = true;
                     group.add(mesh);
                 });
 
@@ -268,10 +361,14 @@
 
                 const frontPost = new THREE.Mesh(new THREE.BoxGeometry(postSize, layout.height, postSize), postMaterial);
                 frontPost.position.set(postX, layout.centerY, layout.z + (postSize / 2));
+                frontPost.castShadow = true;
+                frontPost.receiveShadow = true;
                 group.add(frontPost);
 
                 const backPost = new THREE.Mesh(new THREE.BoxGeometry(postSize, layout.height, postSize), postMaterial);
                 backPost.position.set(postX, layout.centerY, layout.z + layout.length - (postSize / 2));
+                backPost.castShadow = true;
+                backPost.receiveShadow = true;
                 group.add(backPost);
             }
 
@@ -283,6 +380,8 @@
                     layout.centerX,
                     layout.y + Number(level.heightFromBase || 0) + (plankThickness / 2),
                     layout.centerZ);
+                plank.castShadow = true;
+                plank.receiveShadow = true;
                 group.add(plank);
             });
         });
@@ -389,6 +488,8 @@
             const renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setPixelRatio(window.devicePixelRatio || 1);
             renderer.setSize(width, height);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             renderer.domElement.style.touchAction = "none";
             container.appendChild(renderer.domElement);
 
@@ -436,14 +537,19 @@
             };
             controls.target.set(0, 0, 0);
 
-            scene.add(new THREE.AmbientLight(0xffffff, 0.95));
-            const keyLight = new THREE.DirectionalLight(0xffffff, 0.8);
-            keyLight.position.set(30, 60, 20);
+            scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+            const hemiLight = new THREE.HemisphereLight(0xf8fbff, 0xc7d2da, 0.7);
+            scene.add(hemiLight);
+            const keyLight = new THREE.DirectionalLight(0xffffff, 0.95);
             scene.add(keyLight);
+            const fillLight = new THREE.DirectionalLight(0xdbeafe, 0.35);
+            scene.add(fillLight);
 
             const bins = Array.isArray(data) ? data : (data?.bins || []);
             const racks = Array.isArray(data?.racks) ? data.racks : [];
             const slots = Array.isArray(data?.slots) ? data.slots : [];
+            const warehouse = !Array.isArray(data) ? (data?.warehouse ?? null) : null;
+            const zones = !Array.isArray(data) && Array.isArray(data?.zones) ? data.zones : [];
 
             const normalizedBins = (bins || []).map((bin) => ({
                 bin,
@@ -523,6 +629,13 @@
                 };
             });
 
+            const warehouseW = Number(warehouse?.dimensions?.width || 0);
+            const warehouseL = Number(warehouse?.dimensions?.length || 0);
+            const warehouseH = Number(warehouse?.dimensions?.height || 0);
+            const warehouseExtent = warehouseW > 0 && warehouseL > 0
+                ? [{ minX: 0, minY: 0, minZ: 0, maxX: warehouseW, maxY: Math.max(warehouseH, 0), maxZ: warehouseL }]
+                : [];
+
             const extents = [
                 ...resolvedBins.map((x) => ({
                     minX: x.centerX - (x.width / 2),
@@ -539,7 +652,8 @@
                     maxX: rack.x + rack.width,
                     maxY: rack.y + rack.height,
                     maxZ: rack.z + rack.length
-                }))
+                })),
+                ...warehouseExtent
             ];
             const minX = extents.length ? Math.min(...extents.map((x) => x.minX)) : 0;
             const minY = extents.length ? Math.min(...extents.map((x) => x.minY)) : 0;
@@ -554,6 +668,22 @@
             const cameraDistance = Math.max(12, maxSpan * 2.4);
             const explicitDimensionCount = resolvedBins.filter((x) => x.hasExplicitDimensions).length;
 
+            keyLight.position.set(centerX + (maxSpan * 0.7), maxY + Math.max(18, maxSpan * 1.35), centerZ + (maxSpan * 0.45));
+            keyLight.castShadow = true;
+            keyLight.shadow.mapSize.width = 2048;
+            keyLight.shadow.mapSize.height = 2048;
+            keyLight.shadow.bias = -0.0008;
+            keyLight.shadow.camera.near = 0.5;
+            keyLight.shadow.camera.far = Math.max(120, maxSpan * 6);
+            keyLight.shadow.camera.left = -Math.max(20, maxSpan * 1.1);
+            keyLight.shadow.camera.right = Math.max(20, maxSpan * 1.1);
+            keyLight.shadow.camera.top = Math.max(20, maxSpan * 1.1);
+            keyLight.shadow.camera.bottom = -Math.max(20, maxSpan * 1.1);
+            keyLight.target.position.set(centerX, minY, centerZ);
+            scene.add(keyLight.target);
+
+            fillLight.position.set(centerX - (maxSpan * 0.5), maxY + Math.max(12, maxSpan * 0.8), centerZ - (maxSpan * 0.55));
+
             log("render: scene extents computed", {
                 minX, minY, minZ, maxX, maxY, maxZ, centerX, centerY, centerZ, maxSpan, minDistance,
                 cameraDistance, baseFootprint, maxVolume, explicitDimensionCount
@@ -566,10 +696,20 @@
                 centerZ + cameraDistance);
             controls.update();
 
-            const gridSize = Math.max(30, Math.ceil(maxSpan * 4));
-            const gridDivisions = Math.max(10, Math.min(80, Math.round(gridSize / 2)));
-            const gridHelper = new THREE.GridHelper(gridSize, gridDivisions, 0xbfc5cd, 0xe4e7eb);
-            scene.add(gridHelper);
+            const hasWarehouseDims =
+                warehouse &&
+                Number(warehouse?.dimensions?.width) > 0 &&
+                Number(warehouse?.dimensions?.length) > 0;
+
+            if (hasWarehouseDims) {
+                renderWarehouseFloor(scene, warehouse);
+                renderZones(scene, zones);
+            } else {
+                const gridSize = Math.max(30, Math.ceil(maxSpan * 4));
+                const gridDivisions = Math.max(10, Math.min(80, Math.round(gridSize / 2)));
+                const gridHelper = new THREE.GridHelper(gridSize, gridDivisions, 0xbfc5cd, 0xe4e7eb);
+                scene.add(gridHelper);
+            }
 
             const raycaster = new THREE.Raycaster();
             raycaster.params.Line.threshold = 0.12;
@@ -687,6 +827,8 @@
                     polygonOffsetUnits: 1
                 });
                 const cube = new THREE.Mesh(geometry, material);
+                cube.castShadow = true;
+                cube.receiveShadow = true;
 
                 const baseBorderMaterial = new THREE.LineBasicMaterial({
                     color: VISUAL_CONFIG.borderColor,
