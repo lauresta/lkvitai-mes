@@ -195,6 +195,134 @@
         });
     }
 
+    function toSceneCoordinates(origin, dimensions) {
+        const width = Number(dimensions?.width || 0);
+        const depthOrLength = dimensions?.depth ?? dimensions?.length ?? 0;
+        const length = Number(depthOrLength);
+        const height = Number(dimensions?.height || 0);
+        const x = Number(origin?.x || 0);
+        const y = Number(origin?.z || 0);
+        const z = Number(origin?.y || 0);
+
+        return {
+            x,
+            y,
+            z,
+            width,
+            length,
+            height,
+            centerX: x + (width / 2),
+            centerY: y + (height / 2),
+            centerZ: z + (length / 2)
+        };
+    }
+
+    function renderRackFrames(scene, racks) {
+        if (!Array.isArray(racks) || racks.length === 0) {
+            return;
+        }
+
+        const group = new THREE.Group();
+        const postMaterial = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.35, roughness: 0.55 });
+        const plankMaterial = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.08, roughness: 0.72 });
+        const floorMaterial = new THREE.MeshBasicMaterial({ color: 0xd1fae5, transparent: true, opacity: 0.35, side: THREE.DoubleSide });
+        const fenceMaterial = new THREE.MeshStandardMaterial({ color: 0x6ee7b7, metalness: 0.1, roughness: 0.7 });
+
+        racks.forEach((rack) => {
+            const layout = toSceneCoordinates(rack.origin, rack.dimensions);
+
+            if (rack.type === "FloorStorage") {
+                const floor = new THREE.Mesh(new THREE.BoxGeometry(layout.width, 0.02, layout.length), floorMaterial);
+                floor.position.set(layout.centerX, layout.y + 0.01, layout.centerZ);
+                group.add(floor);
+
+                const fenceHeight = 0.12;
+                const fenceThickness = 0.04;
+                [
+                    { w: layout.width, h: fenceHeight, d: fenceThickness, x: layout.centerX, y: layout.y + (fenceHeight / 2), z: layout.z + (fenceThickness / 2) },
+                    { w: layout.width, h: fenceHeight, d: fenceThickness, x: layout.centerX, y: layout.y + (fenceHeight / 2), z: layout.z + layout.length - (fenceThickness / 2) },
+                    { w: fenceThickness, h: fenceHeight, d: layout.length, x: layout.x + (fenceThickness / 2), y: layout.y + (fenceHeight / 2), z: layout.centerZ },
+                    { w: fenceThickness, h: fenceHeight, d: layout.length, x: layout.x + layout.width - (fenceThickness / 2), y: layout.y + (fenceHeight / 2), z: layout.centerZ }
+                ].forEach((fence) => {
+                    const mesh = new THREE.Mesh(new THREE.BoxGeometry(fence.w, fence.h, fence.d), fenceMaterial);
+                    mesh.position.set(fence.x, fence.y, fence.z);
+                    group.add(mesh);
+                });
+
+                return;
+            }
+
+            if (rack.type !== "PalletRack" && rack.type !== "WallShelf") {
+                return;
+            }
+
+            const postSize = 0.06;
+            const plankThickness = 0.06;
+            const bayCount = Math.max(Number(rack.bayCount || 0), 0);
+            const uprightPairs = bayCount + 1;
+            const spacing = bayCount > 0 ? layout.width / bayCount : layout.width;
+
+            for (let i = 0; i < uprightPairs; i += 1) {
+                const postX = bayCount > 0
+                    ? layout.x + (i * spacing)
+                    : layout.centerX;
+
+                const frontPost = new THREE.Mesh(new THREE.BoxGeometry(postSize, layout.height, postSize), postMaterial);
+                frontPost.position.set(postX, layout.centerY, layout.z + (postSize / 2));
+                group.add(frontPost);
+
+                const backPost = new THREE.Mesh(new THREE.BoxGeometry(postSize, layout.height, postSize), postMaterial);
+                backPost.position.set(postX, layout.centerY, layout.z + layout.length - (postSize / 2));
+                group.add(backPost);
+            }
+
+            (rack.levels || []).forEach((level) => {
+                const plank = new THREE.Mesh(
+                    new THREE.BoxGeometry(layout.width, plankThickness, layout.length),
+                    plankMaterial);
+                plank.position.set(
+                    layout.centerX,
+                    layout.y + Number(level.heightFromBase || 0) + (plankThickness / 2),
+                    layout.centerZ);
+                group.add(plank);
+            });
+        });
+
+        scene.add(group);
+    }
+
+    function renderSlots(scene, slots, interactiveSlotMeshes) {
+        if (!Array.isArray(slots) || slots.length === 0) {
+            return;
+        }
+
+        const group = new THREE.Group();
+        slots.forEach((slot) => {
+            const layout = toSceneCoordinates(slot.origin, slot.dimensions);
+            const wireframe = new THREE.LineSegments(
+                new THREE.EdgesGeometry(new THREE.BoxGeometry(layout.width, layout.height, layout.length)),
+                new THREE.LineBasicMaterial({
+                    color: slot.occupied ? 0x94a3b8 : 0xcbd5e1,
+                    transparent: true,
+                    opacity: slot.occupied ? 0.12 : 0.3,
+                    depthWrite: false
+                }));
+            wireframe.position.set(layout.centerX, layout.centerY, layout.centerZ);
+            wireframe.userData = {
+                kind: "slot",
+                address: slot.address,
+                occupied: !!slot.occupied
+            };
+            group.add(wireframe);
+
+            if (!slot.occupied) {
+                interactiveSlotMeshes.push(wireframe);
+            }
+        });
+
+        scene.add(group);
+    }
+
     function dispose(containerId) {
         const context = contexts[containerId];
         if (!context) {
@@ -225,7 +353,7 @@
         log("dispose: completed", { containerId });
     }
 
-    function render(containerId, bins, dotNetRef, initialSelectedCode) {
+    function render(containerId, data, dotNetRef, initialSelectedCode) {
         try {
             dispose(containerId);
 
@@ -242,10 +370,12 @@
 
             log("render: start", {
                 containerId,
-                binCount: Array.isArray(bins) ? bins.length : 0,
-                binsSample: Array.isArray(bins)
-                    ? bins.slice(0, 5).map((x) => x.code)
-                    : []
+                binCount: Array.isArray(data) ? data.length : (Array.isArray(data?.bins) ? data.bins.length : 0),
+                binsSample: Array.isArray(data)
+                    ? data.slice(0, 5).map((x) => x.code)
+                    : Array.isArray(data?.bins)
+                        ? data.bins.slice(0, 5).map((x) => x.code)
+                        : []
             });
 
             const scene = new THREE.Scene();
@@ -312,6 +442,10 @@
             keyLight.position.set(30, 60, 20);
             scene.add(keyLight);
 
+            const bins = Array.isArray(data) ? data : (data?.bins || []);
+            const racks = Array.isArray(data?.racks) ? data.racks : [];
+            const slots = Array.isArray(data?.slots) ? data.slots : [];
+
             const normalizedBins = (bins || []).map((bin) => ({
                 bin,
                 x: Number(bin.coordinates?.x || 0),
@@ -322,6 +456,7 @@
                 height: Number(bin.dimensions?.height || 0),
                 capacityVolume: Number(bin.capacity?.volume || 0)
             }));
+            const rackExtents = racks.map((rack) => toSceneCoordinates(rack.origin, rack.dimensions));
 
             const minDistance = computeMinDistance(normalizedBins);
 
@@ -389,24 +524,30 @@
                 };
             });
 
-            const minX = resolvedBins.length
-                ? Math.min(...resolvedBins.map((x) => x.centerX - (x.width / 2)))
-                : 0;
-            const minY = resolvedBins.length
-                ? Math.min(...resolvedBins.map((x) => x.centerY - (x.height / 2)))
-                : 0;
-            const minZ = resolvedBins.length
-                ? Math.min(...resolvedBins.map((x) => x.centerZ - (x.depth / 2)))
-                : 0;
-            const maxX = resolvedBins.length
-                ? Math.max(...resolvedBins.map((x) => x.centerX + (x.width / 2)))
-                : 1;
-            const maxY = resolvedBins.length
-                ? Math.max(...resolvedBins.map((x) => x.centerY + (x.height / 2)))
-                : 1;
-            const maxZ = resolvedBins.length
-                ? Math.max(...resolvedBins.map((x) => x.centerZ + (x.depth / 2)))
-                : 1;
+            const extents = [
+                ...resolvedBins.map((x) => ({
+                    minX: x.centerX - (x.width / 2),
+                    minY: x.centerY - (x.height / 2),
+                    minZ: x.centerZ - (x.depth / 2),
+                    maxX: x.centerX + (x.width / 2),
+                    maxY: x.centerY + (x.height / 2),
+                    maxZ: x.centerZ + (x.depth / 2)
+                })),
+                ...rackExtents.map((rack) => ({
+                    minX: rack.x,
+                    minY: rack.y,
+                    minZ: rack.z,
+                    maxX: rack.x + rack.width,
+                    maxY: rack.y + rack.height,
+                    maxZ: rack.z + rack.length
+                }))
+            ];
+            const minX = extents.length ? Math.min(...extents.map((x) => x.minX)) : 0;
+            const minY = extents.length ? Math.min(...extents.map((x) => x.minY)) : 0;
+            const minZ = extents.length ? Math.min(...extents.map((x) => x.minZ)) : 0;
+            const maxX = extents.length ? Math.max(...extents.map((x) => x.maxX)) : 1;
+            const maxY = extents.length ? Math.max(...extents.map((x) => x.maxY)) : 1;
+            const maxZ = extents.length ? Math.max(...extents.map((x) => x.maxZ)) : 1;
             const centerX = (minX + maxX) / 2;
             const centerY = (minY + maxY) / 2;
             const centerZ = (minZ + maxZ) / 2;
@@ -432,9 +573,11 @@
             scene.add(gridHelper);
 
             const raycaster = new THREE.Raycaster();
+            raycaster.params.Line.threshold = 0.12;
             const mouse = new THREE.Vector2();
             const meshesByCode = {};
             const interactiveMeshes = [];
+            const interactiveSlotMeshes = [];
 
             const reservedTexture = createReservedHatchTexture();
             const reservedOverlayMaterial = new THREE.MeshBasicMaterial({
@@ -465,6 +608,9 @@
             const selectionBoundsBox = new THREE.Box3();
             const selectionBoundsSize = new THREE.Vector3();
             const selectionBoundsCenter = new THREE.Vector3();
+
+            renderRackFrames(scene, racks);
+            renderSlots(scene, slots, interactiveSlotMeshes);
 
             function createDashedRingSegments(innerRadius, outerRadius, dashCount, gapRatio, material) {
                 const group = new THREE.Group();
@@ -837,13 +983,23 @@
                 mouse.y = -((event.clientY - bounds.top) / bounds.height) * 2 + 1;
 
                 raycaster.setFromCamera(mouse, camera);
-                const intersects = raycaster.intersectObjects(interactiveMeshes, false);
+                const intersects = raycaster.intersectObjects([...interactiveMeshes, ...interactiveSlotMeshes], false);
                 if (intersects.length === 0) {
                     log("click: no intersection");
                     return;
                 }
 
-                const code = intersects[0].object?.userData?.code;
+                const target = intersects[0].object;
+                if (target?.userData?.kind === "slot") {
+                    log("click: selected empty slot", { address: target.userData.address });
+                    applySelection(null);
+                    if (dotNetRef) {
+                        dotNetRef.invokeMethodAsync("OnSlotSelectedFromJs", target.userData.address);
+                    }
+                    return;
+                }
+
+                const code = target?.userData?.code;
                 if (!code) {
                     log("click: intersection without code");
                     return;

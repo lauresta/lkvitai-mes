@@ -31,7 +31,7 @@
             <div class="viz-search-wrap">
                 <div class="input-group">
                     <input class="form-control"
-                           placeholder="Search location (e.g. R3-C6-L3)"
+                           placeholder="Search location or rack address (e.g. R3-C6-L3 or 2-C3-15)"
                            value="@_searchQuery"
                            @oninput="OnSearchInput"
                            @onkeydown="HandleSearchKeyAsync" />
@@ -185,10 +185,31 @@
             <div class="viz-details">
                 @if (_selectedBin is null)
                 {
-                    <div class="viz-empty-selection">
-                        <i class="bi bi-cursor"></i>
-                        <span>Select a bin to view details.</span>
-                    </div>
+                    @if (_selectedSlot is null)
+                    {
+                        <div class="viz-empty-selection">
+                            <i class="bi bi-cursor"></i>
+                            <span>Select a bin or slot to view details.</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <h2>@_selectedSlot.Address</h2>
+                        <dl class="row">
+                            <dt class="col-5">Status</dt>
+                            <dd class="col-7">Empty</dd>
+                            <dt class="col-5">Rack</dt>
+                            <dd class="col-7">@_selectedSlot.RackId</dd>
+                            <dt class="col-5">Level</dt>
+                            <dd class="col-7">@_selectedSlot.Level</dd>
+                            <dt class="col-5">Slot</dt>
+                            <dd class="col-7">@_selectedSlot.Slot</dd>
+                            <dt class="col-5">Coordinates</dt>
+                            <dd class="col-7">@_selectedSlot.Origin.X, @_selectedSlot.Origin.Y, @_selectedSlot.Origin.Z</dd>
+                            <dt class="col-5">Dimensions</dt>
+                            <dd class="col-7">@FormatRackDimensions(_selectedSlot.Dimensions)</dd>
+                        </dl>
+                    }
                 }
                 else
                 {
@@ -200,6 +221,16 @@
                         <dd class="col-7">@_selectedBin.UtilizationPercent.ToString("0.##", CultureInfo.InvariantCulture)%</dd>
                         <dt class="col-5">Coordinates</dt>
                         <dd class="col-7">@_selectedBin.Coordinates.X, @_selectedBin.Coordinates.Y, @_selectedBin.Coordinates.Z</dd>
+                        @if (!string.IsNullOrWhiteSpace(_selectedBin.Address))
+                        {
+                            <dt class="col-5">Address</dt>
+                            <dd class="col-7">@_selectedBin.Address</dd>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(_selectedBin.LocationRole))
+                        {
+                            <dt class="col-5">Role</dt>
+                            <dd class="col-7">@_selectedBin.LocationRole</dd>
+                        }
                         <dt class="col-5">Dimensions</dt>
                         <dd class="col-7">@FormatDimensions(_selectedBin.Dimensions)</dd>
                         <dt class="col-5">Capacity</dt>
@@ -243,6 +274,7 @@
 
     private Visualization3dDto? _model;
     private VisualizationBinDto? _selectedBin;
+    private VisualizationSlotDto? _selectedSlot;
     private DotNetObjectReference<Warehouse3D>? _selfReference;
     private bool _isLoading;
     private bool _renderRequested;
@@ -303,13 +335,21 @@
         }
 
         _renderRequested = false;
-        await JS.InvokeVoidAsync("warehouseVisualization.render", CanvasId, GetFilteredBins(), _selfReference, _selectedBin?.Code);
+        await JS.InvokeVoidAsync("warehouseVisualization.render", CanvasId, BuildRenderModel(), _selfReference, _selectedBin?.Code);
     }
 
     [JSInvokable]
     public Task OnBinSelectedFromJs(string binCode)
     {
         SelectBin(binCode);
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    [JSInvokable]
+    public Task OnSlotSelectedFromJs(string address)
+    {
+        SelectSlot(address);
         StateHasChanged();
         return Task.CompletedTask;
     }
@@ -397,11 +437,28 @@
         if (_model is null)
         {
             _selectedBin = null;
+            _selectedSlot = null;
             return;
         }
 
         _selectedBin = _model.Bins.FirstOrDefault(x =>
             string.Equals(x.Code, code, StringComparison.OrdinalIgnoreCase));
+        _selectedSlot = null;
+    }
+
+    private void SelectSlot(string address)
+    {
+        if (_model is null)
+        {
+            _selectedSlot = null;
+            _selectedBin = null;
+            return;
+        }
+
+        _selectedSlot = _model.Slots.FirstOrDefault(x =>
+            string.Equals(x.Address, address, StringComparison.OrdinalIgnoreCase) &&
+            !x.Occupied);
+        _selectedBin = null;
     }
 
     private async Task FocusBinAsync(string code)
@@ -411,6 +468,8 @@
         {
             return;
         }
+
+        _selectedSlot = null;
 
         if (_is3dView)
         {
@@ -485,6 +544,10 @@
             {
                 SelectBin(_selectedBin.Code);
             }
+            else if (_selectedSlot is not null)
+            {
+                SelectSlot(_selectedSlot.Address);
+            }
 
             _renderRequested = _is3dView;
         }
@@ -510,6 +573,7 @@
         }
 
         _selectedBin = null;
+        _selectedSlot = null;
         _searchQuery = string.Empty;
         _zoneFilter = "ALL";
         _statusFilter = "ALL";
@@ -548,6 +612,9 @@
         return $"{dimensions.Width.Value:0.###} x {dimensions.Length.Value:0.###} x {dimensions.Height.Value:0.###} m";
     }
 
+    private static string FormatRackDimensions(VisualizationRackDimensionsDto dimensions)
+        => $"{dimensions.Width:0.###} x {dimensions.Depth:0.###} x {dimensions.Height:0.###} m";
+
     private List<VisualizationBinDto> GetFilteredBins()
     {
         if (_model is null)
@@ -558,6 +625,18 @@
         return _model.Bins
             .Where(BinMatchesFilters)
             .ToList();
+    }
+
+    private object BuildRenderModel()
+    {
+        return new
+        {
+            warehouse = _model?.Warehouse,
+            bins = GetFilteredBins(),
+            racks = _model?.Racks ?? [],
+            slots = _model?.Slots ?? [],
+            zones = _model?.Zones ?? []
+        };
     }
 
     private bool BinMatchesFilters(VisualizationBinDto bin)
