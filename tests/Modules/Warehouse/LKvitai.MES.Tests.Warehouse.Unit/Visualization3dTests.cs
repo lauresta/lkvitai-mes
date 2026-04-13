@@ -3,6 +3,7 @@ using LKvitai.MES.Modules.Warehouse.Api.Controllers;
 using LKvitai.MES.Modules.Warehouse.Application.Ports;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.Visualization;
 using Marten;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -154,6 +155,63 @@ public class Visualization3dTests
         payload.WidthMeters.Should().Be(16.5m);
         payload.LengthMeters.Should().Be(33m);
         payload.HeightMeters.Should().Be(7m);
+    }
+
+    [Fact]
+    [Trait("Category", "3DVisualization")]
+    public async Task PutRackConfigAsync_WithDuplicateRackIds_ShouldReturnUnprocessableEntity()
+    {
+        await using var db = CreateDbContext();
+        db.WarehouseLayouts.Add(new WarehouseLayout
+        {
+            WarehouseCode = "Main",
+            WidthMeters = 50m,
+            LengthMeters = 100m,
+            HeightMeters = 10m,
+            UpdatedAt = DateTimeOffset.UtcNow
+        });
+        await db.SaveChangesAsync();
+
+        var controller = CreateVisualizationController(db);
+
+        var response = await controller.PutRackConfigAsync(
+            "Main",
+            new WarehouseVisualizationController.UpdateRackConfigRequest(
+                "Main",
+                """
+                {
+                  "warehouseCode": "Main",
+                  "racks": [
+                    {
+                      "id": "A",
+                      "type": "PalletRack",
+                      "origin": { "x": 1, "y": 1, "z": 0 },
+                      "dimensions": { "width": 6, "depth": 1, "height": 4 },
+                      "orientationDeg": 0,
+                      "slotsPerLevel": 3,
+                      "bayCount": 3,
+                      "backToBack": false,
+                      "pairedWithRackId": null,
+                      "levels": [ { "index": 1, "heightFromBase": 0.1 } ]
+                    },
+                    {
+                      "id": "A",
+                      "type": "PalletRack",
+                      "origin": { "x": 10, "y": 1, "z": 0 },
+                      "dimensions": { "width": 6, "depth": 1, "height": 4 },
+                      "orientationDeg": 0,
+                      "slotsPerLevel": 3,
+                      "bayCount": 3,
+                      "backToBack": false,
+                      "pairedWithRackId": null,
+                      "levels": [ { "index": 1, "heightFromBase": 0.1 } ]
+                    }
+                  ]
+                }
+                """));
+
+        response.Should().BeOfType<ObjectResult>();
+        ((ObjectResult)response).StatusCode.Should().Be(StatusCodes.Status422UnprocessableEntity);
     }
 
     [Fact]
@@ -351,12 +409,18 @@ public class Visualization3dTests
     {
         var documentStore = new Mock<IDocumentStore>(MockBehavior.Strict);
         var hardLocks = new Mock<IActiveHardLocksRepository>(MockBehavior.Strict);
+        var rackLayoutValidator = new RackLayoutValidator();
+        var warehouseGeometryCalculator = new WarehouseGeometryCalculator();
+        var binPlacementValidator = new BinPlacementValidator(db, rackLayoutValidator);
         var logger = new Mock<ILogger<WarehouseVisualizationController>>();
 
         return new WarehouseVisualizationController(
             db,
             documentStore.Object,
             hardLocks.Object,
+            rackLayoutValidator,
+            warehouseGeometryCalculator,
+            binPlacementValidator,
             logger.Object)
         {
             ControllerContext = new ControllerContext
