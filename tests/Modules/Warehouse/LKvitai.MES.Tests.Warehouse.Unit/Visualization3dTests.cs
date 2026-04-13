@@ -132,6 +132,63 @@ public class Visualization3dTests
 
     [Fact]
     [Trait("Category", "3DVisualization")]
+    public async Task PutLayoutAsync_WhenUpdatingExistingLayout_ShouldReplaceZones()
+    {
+        await using var db = CreateDbContext();
+        db.WarehouseLayouts.Add(new WarehouseLayout
+        {
+            WarehouseCode = "Main",
+            WidthMeters = 40m,
+            LengthMeters = 80m,
+            HeightMeters = 8m,
+            RacksJson = """{"racks":[{"id":"A1"}]}""",
+            UpdatedAt = DateTimeOffset.UtcNow,
+            Zones =
+            {
+                new ZoneDefinition
+                {
+                    ZoneType = "RECEIVING",
+                    X1 = 0m,
+                    Y1 = 0m,
+                    X2 = 10m,
+                    Y2 = 10m,
+                    Color = "#ADD8E6"
+                }
+            }
+        });
+        await db.SaveChangesAsync();
+
+        var controller = CreateVisualizationController(db);
+
+        var response = await controller.PutLayoutAsync(new WarehouseVisualizationController.UpsertWarehouseLayoutRequest(
+            "Main",
+            55m,
+            120m,
+            11m,
+            new[]
+            {
+                new WarehouseVisualizationController.UpsertZoneRequest("STORAGE", 10m, 0m, 40m, 80m, "#90EE90"),
+                new WarehouseVisualizationController.UpsertZoneRequest("SHIPPING", 40m, 0m, 55m, 30m, "#FFD580")
+            }));
+
+        response.Should().BeOfType<OkObjectResult>();
+        var payload = ((OkObjectResult)response).Value.Should().BeOfType<WarehouseVisualizationController.LayoutResponse>().Subject;
+        payload.Zones.Should().HaveCount(2);
+        payload.Zones.Select(x => x.Type).Should().BeEquivalentTo("SHIPPING", "STORAGE");
+        payload.RacksJson.Should().Be("""{"racks":[{"id":"A1"}]}""");
+
+        var layout = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.SingleAsync(
+            db.WarehouseLayouts.Include(x => x.Zones));
+        layout.WidthMeters.Should().Be(55m);
+        layout.LengthMeters.Should().Be(120m);
+        layout.HeightMeters.Should().Be(11m);
+        layout.RacksJson.Should().Be("""{"racks":[{"id":"A1"}]}""");
+        layout.Zones.Should().HaveCount(2);
+        layout.Zones.Select(x => x.ZoneType).Should().BeEquivalentTo("SHIPPING", "STORAGE");
+    }
+
+    [Fact]
+    [Trait("Category", "3DVisualization")]
     public async Task GetLayoutAsync_WhenMissing_ShouldDeriveDimensionsFromCoordinates()
     {
         await using var db = CreateDbContext();

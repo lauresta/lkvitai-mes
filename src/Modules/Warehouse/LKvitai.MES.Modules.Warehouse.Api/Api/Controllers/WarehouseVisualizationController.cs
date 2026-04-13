@@ -114,10 +114,11 @@ public sealed class WarehouseVisualizationController : ControllerBase
 
         var normalizedWarehouseCode = request.WarehouseCode.Trim();
         var layout = await EfAsync.FirstOrDefaultAsync(
-            _dbContext.WarehouseLayouts.Include(x => x.Zones),
+            _dbContext.WarehouseLayouts,
             x => x.WarehouseCode == normalizedWarehouseCode,
             cancellationToken);
 
+        var isExistingLayout = layout is not null;
         if (layout is null)
         {
             layout = new WarehouseLayout
@@ -132,11 +133,27 @@ public sealed class WarehouseVisualizationController : ControllerBase
         layout.HeightMeters = decimal.Round(request.HeightMeters, 2, MidpointRounding.AwayFromZero);
         layout.UpdatedAt = DateTimeOffset.UtcNow;
 
-        layout.Zones.Clear();
+        if (isExistingLayout)
+        {
+            var existingZonesQuery = _dbContext.ZoneDefinitions
+                .Where(x => x.WarehouseLayoutId == layout.Id);
+
+            if (_dbContext.Database.IsRelational())
+            {
+                await existingZonesQuery.ExecuteDeleteAsync(cancellationToken);
+            }
+            else
+            {
+                var existingZones = await EfAsync.ToListAsync(existingZonesQuery, cancellationToken);
+                _dbContext.ZoneDefinitions.RemoveRange(existingZones);
+            }
+        }
+
         foreach (var zone in request.Zones ?? Array.Empty<UpsertZoneRequest>())
         {
-            layout.Zones.Add(new ZoneDefinition
+            _dbContext.ZoneDefinitions.Add(new ZoneDefinition
             {
+                WarehouseLayoutId = layout.Id,
                 ZoneType = zone.Type.Trim().ToUpperInvariant(),
                 X1 = decimal.Round(zone.X1, 2, MidpointRounding.AwayFromZero),
                 Y1 = decimal.Round(zone.Y1, 2, MidpointRounding.AwayFromZero),
@@ -147,7 +164,8 @@ public sealed class WarehouseVisualizationController : ControllerBase
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
-        return Ok(MapLayout(layout));
+        var persistedLayout = await LoadLayoutAsync(normalizedWarehouseCode, cancellationToken);
+        return Ok(MapLayout(persistedLayout));
     }
 
     [HttpGet("warehouse-layouts/{warehouseCode}/rack-config")]
