@@ -73,6 +73,9 @@ These are fixed. No alternatives.
 | **D-11** | Click on bin → existing behavior unchanged. |
 | **D-12** | Click on empty slot → details panel shows canonical address + "Empty". |
 | **D-13** | Search highlights bins only (not empty slots) in v1. |
+| **D-14** | **Primary happy path for v1 is `PalletRack`.** `WallShelf` and `FloorStorage` are supported in config and rendering, but must not complicate or block delivery of the core rack-slot-bin scenario. |
+| **D-15** | Slot addressing, placement fields (`RackRowId/ShelfLevelIndex/SlotStart/SlotSpan`), slot grid, and slot validation apply **only to slot-based structures** (`PalletRack`, `WallShelf`). `FloorStorage` does not participate in slot addressing. |
+| **D-16** | `LocationRole` is an **optional low-cost extension** for v1. The first visual milestone (rack frames + slot grid + bins in slots) does NOT depend on it. It may be stubbed or deferred if it slows delivery. |
 
 ---
 
@@ -95,12 +98,16 @@ Contains array of `RackRow` objects (see §7 for JSON shape).
 
 **On `locations` table — 5 nullable columns:**
 ```sql
-RackRowId        varchar(30)  NULL
-ShelfLevelIndex  int          NULL
-SlotStart        int          NULL
-SlotSpan         int          NULL DEFAULT 1
-LocationRole     varchar(20)  NULL   -- 'Cell' | 'Bulk' | 'EndCap' | 'Overflow' | 'GroundSlot'
+RackRowId        varchar(30)  NULL   -- slot-based structures only (PalletRack, WallShelf)
+ShelfLevelIndex  int          NULL   -- slot-based structures only
+SlotStart        int          NULL   -- slot-based structures only
+SlotSpan         int          NULL DEFAULT 1  -- slot-based structures only
+LocationRole     varchar(20)  NULL   -- optional: 'Cell' | 'Bulk' | 'EndCap' | 'Overflow' | 'GroundSlot'
 ```
+
+> **Note:** `RackRowId/ShelfLevelIndex/SlotStart/SlotSpan` are meaningful only for slot-based rack types (`PalletRack`, `WallShelf`). A `Location` mapped to a `FloorStorage` zone does not use placement fields — it keeps `CoordinateX/Y/Z` as its position.
+>
+> **Note:** `LocationRole` is optional for the first visual milestone. The column should be added in the same migration (one-time low cost), but rendering logic does not depend on it in v1.
 
 **DB constraints:**
 ```sql
@@ -163,6 +170,8 @@ Location rows where `RackRowId IS NULL`:
 ---
 
 ## 6. Addressing Model
+
+> **Scope:** Canonical slot addressing applies **only to slot-based structures** (`PalletRack`, `WallShelf`). `FloorStorage` zones do not participate in slot addressing, do not produce slot grid, and do not use placement fields.
 
 ### Canonical Address
 
@@ -571,8 +580,11 @@ No change. Bins only. Address search: match `bin.code` OR `bin.address` field (n
 
 ### Bin Placement Validation (on add/update of rack placement fields)
 
+> Applies **only to slot-based structures** (`PalletRack`, `WallShelf`). `FloorStorage` racks do not have levels or slots — placement fields must NOT be set for locations in floor zones.
+
 | # | Rule | Check |
 |---|------|-------|
+| V-P-00 | Rack is slot-based | `rack.type` must be `PalletRack` or `WallShelf`; placement fields on `FloorStorage` are rejected |
 | V-P-01 | Rack exists | `RackRowId` in `layout.racks` |
 | V-P-02 | Level exists | `ShelfLevelIndex` in `rack.levels` |
 | V-P-03 | SlotStart in range | `SlotStart >= 1` AND `SlotStart <= rack.slotsPerLevel` |
@@ -716,9 +728,11 @@ Execute in this order. Each step is independently deployable.
 - Add `RacksJson` jsonb to `warehouse_layouts`
 - Add check constraints and partial index
 - EF Core migration file + `DbContext` update
+- *(All 5 columns in one migration — cheap. `LocationRole` is nullable and has no rendering effect in v1.)*
 
 **Step 2 — Domain / DTO Layer**
-- Add 5 nullable properties to `Location` entity (`RackRowId`, `ShelfLevelIndex`, `SlotStart`, `SlotSpan`, `LocationRole`)
+- Add 4 nullable placement properties to `Location` entity (`RackRowId`, `ShelfLevelIndex`, `SlotStart`, `SlotSpan`)
+- Add `LocationRole` nullable property — **can be stubbed as string passthrough, no business logic required in v1**
 - Add `RacksJson` property to `WarehouseLayout` entity
 - Create `RackRow`, `ShelfLevel` C# records (for JSON deserialization)
 - Create `VisualizationRackDto`, `VisualizationSlotDto`
@@ -750,12 +764,14 @@ Execute in this order. Each step is independently deployable.
 - Add `DELETE /locations/{id}/rack-placement` — clear placement fields
 - Add `GET/PUT /warehouse-layouts/{code}/rack-config` — manage `RacksJson` with layout validation
 
-**Step 6 — Frontend: Rack Rendering**
+**Step 6 — Frontend: Rack Rendering** *(primary milestone — PalletRack must work here)*
 - In `warehouseVisualization.js`:
-  - Add `renderRackFrames(scene, racks)` — posts + top/bottom horizontal beams
-  - Add `renderShelfPlanks(scene, racks)` — level plank for each level
-  - All inside `if (data.racks?.length > 0)` guard
+  - Add `renderRackFrames(scene, palletRacks)` — uprights + beams for `PalletRack`/`WallShelf`
+  - Add `renderShelfPlanks(scene, palletRacks)` — level plank for each level
+  - Add `renderFloorZones(scene, floorZones)` — footprint + fence for `FloorStorage`
+  - All inside `if (data.racks?.length > 0)` guard; split by type
 - Bin rendering stays unchanged (bins now have pre-computed coords from server)
+- **`FloorStorage` render support should not block merging Step 6 if it is incomplete — it can follow in a patch.**
 
 **Step 7 — Frontend: Slot Grid**
 - Add `renderEmptySlots(scene, slots)` — wireframe boxes for `occupied=false` slots
@@ -792,6 +808,8 @@ Execute in this order. Each step is independently deployable.
 - No 3D print or export of rack configuration
 - No automatic bin-to-slot assignment (always manual/import)
 - No mobile-optimized rendering path
+- No `LocationRole`-driven rendering logic (role is stored, not acted on — v2 scope)
+- No slot addressing or slot grid for `FloorStorage` zones (floor zones render footprint only)
 
 ---
 

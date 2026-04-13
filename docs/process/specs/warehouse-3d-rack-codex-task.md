@@ -13,11 +13,13 @@ Add physical rack structure (posts, shelf planks, slot grid) to the warehouse 3D
 
 ## 2. Scope
 
-- DB: 5 nullable columns on `locations` (4 placement + `LocationRole`) + `RacksJson` jsonb on `warehouse_layouts`
-- Backend: geometry calculator service (type-aware) + placement validator + API extensions
-- Frontend: rack frame rendering (type-aware) + slot grid + empty slot click + address search
+- DB: 5 nullable columns on `locations` (4 slot-placement + `LocationRole`) + `RacksJson` jsonb on `warehouse_layouts`
+- Backend: geometry calculator (type-aware) + placement validator + API extensions
+- Frontend: rack frame + slot grid rendering for `PalletRack` (primary); `FloorStorage` footprint (secondary); empty slot click; address search
 - Layout editor: rack JSON textarea on admin page
 - Seed: example warehouse config `"EXAMPLE"` (see blueprint §18)
+
+**Primary delivery target:** `PalletRack` rack frames + slot grid + bins in slots. `WallShelf` and `FloorStorage` support must not block this milestone.
 
 ---
 
@@ -87,7 +89,7 @@ record RackGeometryInput(WarehouseLayout Layout, IReadOnlyList<Location> Locatio
 // Output
 record WarehouseGeometryResult(
     VisualizationRackDto[] Racks,
-    VisualizationSlotDto[] Slots,        // ALL slots (occupied + empty) — only for PalletRack/WallShelf
+    VisualizationSlotDto[] Slots,        // ALL slots (occupied + empty) — PalletRack/WallShelf only
     VisualizationBinDto[] Bins           // enriched with rack fields where applicable
 );
 ```
@@ -98,8 +100,9 @@ Rules:
 - Slot `occupied = true` if ANY bin's `[startSlot, startSlot+span-1]` covers it
 - `slot.origin` = left-front-bottom corner of slot volume
 - `bin.origin` = left-front-bottom corner of bin box (= slot.origin + INSET vector)
-- Legacy bins (RackRowId IS NULL): pass through with `CoordinateX/Y/Z` as origin, no changes
-- `FloorStorage` racks: included in `racks[]` DTO but produce NO entries in `slots[]`
+- Legacy bins (`RackRowId IS NULL`): pass through with `CoordinateX/Y/Z` as origin, no changes
+- `FloorStorage` racks: included in `racks[]` DTO, produce **no entries** in `slots[]`
+- `LocationRole`: pass through as string on `VisualizationBinDto` — no geometry logic based on it in v1
 
 ### 5.3 Overlap Validation (MUST implement — unique index is NOT sufficient)
 
@@ -167,7 +170,7 @@ Existing fields (`Code`, `Status`, `Color`, `IsReserved`, `UtilizationPercent`, 
 - Duplicate `rack.id` within warehouse
 - `rack.type` not in `['PalletRack', 'FloorStorage', 'WallShelf', 'Custom']`
 - Any `rack.dimensions.width/depth/height <= 0`
-- `slotsPerLevel < 1` (for PalletRack/WallShelf; must be 0 for FloorStorage)
+- `slotsPerLevel < 1` for `PalletRack`/`WallShelf`; must be `0` for `FloorStorage`
 - `bayCount < 0`
 - `FloorStorage` rack has non-empty `levels` array
 - Level `index` not unique or not contiguous per rack
@@ -178,6 +181,9 @@ Existing fields (`Code`, `Status`, `Color`, `IsReserved`, `UtilizationPercent`, 
 - `pairedWithRackId` references non-existent rack
 
 ### Bin placement validation (reject with 422):
+> Slot placement fields apply **only to slot-based rack types** (`PalletRack`, `WallShelf`). Reject with 422 if placement fields are set for a `FloorStorage` rack.
+
+- Target rack `type` is not `PalletRack` or `WallShelf`
 - `RackRowId` not in layout racks
 - `ShelfLevelIndex` not in rack levels
 - `SlotStart < 1` or `SlotStart > slotsPerLevel`
@@ -200,20 +206,26 @@ Existing fields (`Code`, `Status`, `Color`, `IsReserved`, `UtilizationPercent`, 
 
 ## 8. Done Criteria
 
+**First milestone (must pass before anything else is merged):**
 - [ ] EF Core migration runs cleanly (`dotnet ef database update`)
 - [ ] `dotnet build src/LKvitai.MES.sln -c Release` — zero errors, zero warnings
 - [ ] `dotnet test` — all existing tests pass
 - [ ] `GET /visualization/3d` with no `RacksJson`: response identical to before (backward compat)
-- [ ] `GET /visualization/3d` with `RacksJson`: response includes `racks[]` and `slots[]` with correct geometry
-- [ ] 3D view renders rack frames and slot grid when rack config is present
+- [ ] `GET /visualization/3d` with `PalletRack` config: response includes `racks[]` and `slots[]` with correct geometry
+- [ ] 3D view renders `PalletRack` frames, shelf planks, and slot grid
 - [ ] 3D view renders normally (no JS errors) when rack config is absent
 - [ ] Click on bin: existing details panel, unchanged
 - [ ] Click on empty slot: shows `"{address} — Empty"`
 - [ ] `PUT /locations/{id}/rack-placement` with overlapping span: returns 422
+- [ ] `PUT /locations/{id}/rack-placement` targeting `FloorStorage` rack: returns 422
 - [ ] `PUT /warehouse-layouts/{code}/rack-config` with duplicate rack IDs: returns 422
+
+**Second milestone (can follow first in a patch):**
 - [ ] `FloorStorage` rack renders footprint + fence, no slot grid
 - [ ] `PalletRack` with `bayCount=4` renders 5 upright pairs
 - [ ] Example warehouse `"EXAMPLE"` (blueprint §18) can be seeded and renders correctly
+
+**Build gates (always required):**
 - [ ] Architecture tests pass (`dotnet test tests/ArchitectureTests/...`)
 - [ ] Dependency validator passes (`dotnet run --project tools/DependencyValidator/...`)
 
@@ -229,3 +241,6 @@ Existing fields (`Code`, `Status`, `Color`, `IsReserved`, `UtilizationPercent`, 
 - No back-to-back shared post optimization (render 8 posts per pair for v1, optimize later)
 - No mobile-specific rendering path
 - No automatic bin-to-slot assignment
+- No `LocationRole`-driven rendering logic — role is stored as string, not acted on in v1
+- No slot addressing or slot grid for `FloorStorage` — floor zones render footprint outline only
+- `WallShelf` and `FloorStorage` rendering must not block first milestone delivery
