@@ -13,10 +13,11 @@ Add physical rack structure (posts, shelf planks, slot grid) to the warehouse 3D
 
 ## 2. Scope
 
-- DB: 4 nullable columns on `locations` + `RacksJson` jsonb on `warehouse_layouts`
-- Backend: geometry calculator service + placement validator + API extensions
-- Frontend: rack frame rendering + slot grid rendering + empty slot click + address search
+- DB: 5 nullable columns on `locations` (4 placement + `LocationRole`) + `RacksJson` jsonb on `warehouse_layouts`
+- Backend: geometry calculator service (type-aware) + placement validator + API extensions
+- Frontend: rack frame rendering (type-aware) + slot grid + empty slot click + address search
 - Layout editor: rack JSON textarea on admin page
+- Seed: example warehouse config `"EXAMPLE"` (see blueprint §18)
 
 ---
 
@@ -34,17 +35,18 @@ Add physical rack structure (posts, shelf planks, slot grid) to the warehouse 3D
 
 | File / Module | Change type |
 |--------------|-------------|
-| `MasterDataEntities.cs` | Add 4 nullable properties to `Location`; add `RacksJson` to `WarehouseLayout` |
+| `MasterDataEntities.cs` | Add 5 nullable properties to `Location` (4 placement + `LocationRole`); add `RacksJson` to `WarehouseLayout` |
 | EF Core `DbContext` | Register new columns |
 | `Migrations/` | New migration `AddRackPlacementToLocations` + `AddRacksJsonToWarehouseLayouts` |
 | `VisualizationDtos.cs` | Add `VisualizationRackDto`, `VisualizationSlotDto`; extend `VisualizationBinDto` |
 | `WarehouseVisualizationController.cs` | Extend `GET /visualization/3d`; add 4 new endpoints |
-| `WarehouseGeometryCalculator.cs` | New service — slot computation, bin coordinate derivation |
+| `WarehouseGeometryCalculator.cs` | New service — type-aware slot computation, bin coordinate derivation |
 | `BinPlacementValidator.cs` | New service — range overlap validation, rack/level/slot range checks |
-| `RackLayoutDto.cs` | New records: `RackRow`, `ShelfLevel` |
-| `warehouseVisualization.js` | Add `renderRackFrames`, `renderShelfPlanks`, `renderEmptySlots`, slot click handler |
+| `RackLayoutDto.cs` | New records: `RackRow` (with `Type`, `BayCount`), `ShelfLevel` |
+| `warehouseVisualization.js` | Add `renderRackFrames`, `renderShelfPlanks`, `renderEmptySlots`, `renderFloorZones`, slot click handler |
 | `Warehouse3D.razor` | Extend details panel; add empty-slot state |
 | Admin layout editor page | Add `RacksJson` JSON textarea section |
+| Seed / data script | Create `EXAMPLE` warehouse from blueprint §18 |
 
 ---
 
@@ -57,13 +59,17 @@ ALTER TABLE locations
   ADD COLUMN "RackRowId"       varchar(30) NULL,
   ADD COLUMN "ShelfLevelIndex" int         NULL,
   ADD COLUMN "SlotStart"       int         NULL,
-  ADD COLUMN "SlotSpan"        int         NULL DEFAULT 1;
+  ADD COLUMN "SlotSpan"        int         NULL DEFAULT 1,
+  ADD COLUMN "LocationRole"    varchar(20) NULL;
 
 ALTER TABLE locations ADD CONSTRAINT ck_locations_rack_placement CHECK (
   ("RackRowId" IS NULL AND "ShelfLevelIndex" IS NULL AND "SlotStart" IS NULL)
   OR
   ("RackRowId" IS NOT NULL AND "ShelfLevelIndex" IS NOT NULL AND "SlotStart" IS NOT NULL)
 );
+
+ALTER TABLE locations ADD CONSTRAINT ck_locations_role
+  CHECK ("LocationRole" IN ('Cell', 'Bulk', 'EndCap', 'Overflow', 'GroundSlot') OR "LocationRole" IS NULL);
 
 CREATE INDEX "IX_Locations_RackPlacement"
   ON locations ("RackRowId", "ShelfLevelIndex", "SlotStart")
@@ -81,7 +87,7 @@ record RackGeometryInput(WarehouseLayout Layout, IReadOnlyList<Location> Locatio
 // Output
 record WarehouseGeometryResult(
     VisualizationRackDto[] Racks,
-    VisualizationSlotDto[] Slots,        // ALL slots (occupied + empty)
+    VisualizationSlotDto[] Slots,        // ALL slots (occupied + empty) — only for PalletRack/WallShelf
     VisualizationBinDto[] Bins           // enriched with rack fields where applicable
 );
 ```
@@ -93,6 +99,7 @@ Rules:
 - `slot.origin` = left-front-bottom corner of slot volume
 - `bin.origin` = left-front-bottom corner of bin box (= slot.origin + INSET vector)
 - Legacy bins (RackRowId IS NULL): pass through with `CoordinateX/Y/Z` as origin, no changes
+- `FloorStorage` racks: included in `racks[]` DTO but produce NO entries in `slots[]`
 
 ### 5.3 Overlap Validation (MUST implement — unique index is NOT sufficient)
 
@@ -111,8 +118,8 @@ Return 422 with error message if any row found.
 
 | Method | Path | Action |
 |--------|------|--------|
-| PUT | `/api/warehouse/v1/locations/{id}/rack-placement` | Set `RackRowId/ShelfLevelIndex/SlotStart/SlotSpan` — validate, save |
-| DELETE | `/api/warehouse/v1/locations/{id}/rack-placement` | Clear all 4 fields to null |
+| PUT | `/api/warehouse/v1/locations/{id}/rack-placement` | Set `RackRowId/ShelfLevelIndex/SlotStart/SlotSpan/LocationRole` — validate, save |
+| DELETE | `/api/warehouse/v1/locations/{id}/rack-placement` | Clear placement fields to null (keep `LocationRole`) |
 | GET | `/api/warehouse/v1/warehouse-layouts/{code}/rack-config` | Return `RacksJson` |
 | PUT | `/api/warehouse/v1/warehouse-layouts/{code}/rack-config` | Validate + save `RacksJson` |
 
@@ -121,12 +128,20 @@ Return 422 with error message if any row found.
 ```javascript
 // In render() — add AFTER existing floor/zone rendering:
 if (data.racks && data.racks.length > 0) {
-    renderRackFrames(scene, data.racks);     // posts + top/bottom beams
-    renderShelfPlanks(scene, data.racks);    // plank per level
+    const palletRacks = data.racks.filter(r => r.type === 'PalletRack' || r.type === 'WallShelf');
+    const floorZones  = data.racks.filter(r => r.type === 'FloorStorage');
+
+    renderRackFrames(scene, palletRacks);    // bayCount+1 upright pairs + top beam
+    renderShelfPlanks(scene, palletRacks);   // plank per level
+    renderFloorZones(scene, floorZones);     // footprint rectangle + low fence
     renderEmptySlots(scene, data.slots.filter(s => !s.occupied));
 }
 // Existing bin rendering unchanged — bins now have server-computed coords
 ```
+
+`renderRackFrames`: draws `rack.bayCount + 1` upright pairs (front post + back post) evenly spaced across `rack.width`. Each post: `BoxGeometry(0.06, rack.height, 0.06)`, color `#475569`.
+
+`renderFloorZones`: floor plane `PlaneGeometry(width, depth)`, color `#D1FAE5`, opacity 0.35 + perimeter fence boxes height 0.12m, color `#6EE7B7`.
 
 Empty slot mesh: `LineSegments(EdgesGeometry(BoxGeometry(...)))`, color `#CBD5E1`, opacity 0.3.
 
@@ -140,6 +155,7 @@ Add these optional fields (null for legacy bins):
 - `int? Level`
 - `int? StartSlot`
 - `int? Span`
+- `string? LocationRole` — `Cell` / `Bulk` / `EndCap` / `Overflow` / `GroundSlot`
 
 Existing fields (`Code`, `Status`, `Color`, `IsReserved`, `UtilizationPercent`, `HandlingUnits`, `Origin`, `Size`) unchanged.
 
@@ -149,8 +165,11 @@ Existing fields (`Code`, `Status`, `Color`, `IsReserved`, `UtilizationPercent`, 
 
 ### Layout JSON validation (reject with 422):
 - Duplicate `rack.id` within warehouse
+- `rack.type` not in `['PalletRack', 'FloorStorage', 'WallShelf', 'Custom']`
 - Any `rack.dimensions.width/depth/height <= 0`
-- `slotsPerLevel < 1`
+- `slotsPerLevel < 1` (for PalletRack/WallShelf; must be 0 for FloorStorage)
+- `bayCount < 0`
+- `FloorStorage` rack has non-empty `levels` array
 - Level `index` not unique or not contiguous per rack
 - Level `heightFromBase < 0` or `>= rack.height`
 - Levels not in ascending `heightFromBase` order
@@ -192,6 +211,9 @@ Existing fields (`Code`, `Status`, `Color`, `IsReserved`, `UtilizationPercent`, 
 - [ ] Click on empty slot: shows `"{address} — Empty"`
 - [ ] `PUT /locations/{id}/rack-placement` with overlapping span: returns 422
 - [ ] `PUT /warehouse-layouts/{code}/rack-config` with duplicate rack IDs: returns 422
+- [ ] `FloorStorage` rack renders footprint + fence, no slot grid
+- [ ] `PalletRack` with `bayCount=4` renders 5 upright pairs
+- [ ] Example warehouse `"EXAMPLE"` (blueprint §18) can be seeded and renders correctly
 - [ ] Architecture tests pass (`dotnet test tests/ArchitectureTests/...`)
 - [ ] Dependency validator passes (`dotnet run --project tools/DependencyValidator/...`)
 
