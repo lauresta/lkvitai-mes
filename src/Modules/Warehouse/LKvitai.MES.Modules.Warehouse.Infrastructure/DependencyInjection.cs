@@ -35,7 +35,7 @@ public static class DependencyInjection
         services.AddScoped<ISkuGenerationService, SkuGenerationService>();
         services.AddScoped<IExcelTemplateService, ExcelTemplateService>();
         services.AddScoped<IMasterDataImportService, MasterDataImportService>();
-        services.AddScoped<RackLayoutValidator>();
+        services.AddSingleton<RackLayoutValidator>();
         services.AddScoped<WarehouseGeometryCalculator>();
         services.AddScoped<BinPlacementValidator>();
 

@@ -86,7 +86,7 @@ public sealed class BinPlacementValidator
         var validationResult = _rackLayoutValidator.Validate(layout, rackLayout);
         if (!validationResult.IsValid)
         {
-            return (null, validationResult.Errors[0]);
+            return (null, JoinErrors(validationResult.Errors));
         }
 
         var rack = rackLayout.GetRacks()
@@ -143,4 +143,7 @@ public sealed class BinPlacementValidator
                 normalizedRole),
             null);
     }
+
+    private static string JoinErrors(IReadOnlyList<string> errors)
+        => string.Join("; ", errors.Where(x => !string.IsNullOrWhiteSpace(x)));
 }

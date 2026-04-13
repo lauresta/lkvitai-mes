@@ -32,7 +32,6 @@ public sealed record WarehouseRackConfigDto(
     DateTimeOffset UpdatedAt);
 
 public sealed record UpdateWarehouseRackConfigRequestDto(
-    string WarehouseCode,
     string? RacksJson);
 
 public sealed record UpdateWarehouseLayoutZoneRequestDto(

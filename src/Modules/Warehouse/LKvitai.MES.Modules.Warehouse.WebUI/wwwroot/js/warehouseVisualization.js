@@ -1,6 +1,6 @@
 (function () {
     const contexts = {};
-    const debugEnabled = true;
+    const debugEnabled = false;
 
     const VISUAL_CONFIG = {
         fallbackColor: 0x999999,
@@ -259,13 +259,12 @@
             const postSize = 0.06;
             const plankThickness = 0.06;
             const bayCount = Math.max(Number(rack.bayCount || 0), 0);
-            const uprightPairs = bayCount + 1;
-            const spacing = bayCount > 0 ? layout.width / bayCount : layout.width;
+            const effectiveBayCount = Math.max(bayCount, 1);
+            const uprightPairs = effectiveBayCount + 1;
+            const spacing = layout.width / effectiveBayCount;
 
             for (let i = 0; i < uprightPairs; i += 1) {
-                const postX = bayCount > 0
-                    ? layout.x + (i * spacing)
-                    : layout.centerX;
+                const postX = layout.x + (i * spacing);
 
                 const frontPost = new THREE.Mesh(new THREE.BoxGeometry(postSize, layout.height, postSize), postMaterial);
                 frontPost.position.set(postX, layout.centerY, layout.z + (postSize / 2));

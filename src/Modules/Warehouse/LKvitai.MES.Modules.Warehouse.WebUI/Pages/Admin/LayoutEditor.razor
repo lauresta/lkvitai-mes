@@ -154,7 +154,7 @@ else
             var updated = await LayoutEditorClient.UpdateLayoutAsync(parsed);
             var rackConfig = await LayoutEditorClient.UpdateRackConfigAsync(
                 _warehouseCode,
-                new UpdateWarehouseRackConfigRequestDto(_warehouseCode, NormalizeRackConfigJson(_rackConfigJson)));
+                new UpdateWarehouseRackConfigRequestDto(NormalizeRackConfigJson(_rackConfigJson)));
             _warehouseCode = updated.WarehouseCode;
             _layoutJson = SerializeLayout(updated);
             _rackConfigJson = rackConfig.RacksJson ?? string.Empty;

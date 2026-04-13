@@ -177,7 +177,6 @@ public class Visualization3dTests
         var response = await controller.PutRackConfigAsync(
             "Main",
             new WarehouseVisualizationController.UpdateRackConfigRequest(
-                "Main",
                 """
                 {
                   "warehouseCode": "Main",

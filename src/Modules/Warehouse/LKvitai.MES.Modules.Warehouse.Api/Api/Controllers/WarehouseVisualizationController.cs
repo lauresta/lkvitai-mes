@@ -172,13 +172,7 @@ public sealed class WarehouseVisualizationController : ControllerBase
             return ValidationFailure("Request body is required.", StatusCodes.Status422UnprocessableEntity);
         }
 
-        var normalizedWarehouseCode = string.IsNullOrWhiteSpace(warehouseCode)
-            ? request.WarehouseCode?.Trim()
-            : warehouseCode.Trim();
-        if (string.IsNullOrWhiteSpace(normalizedWarehouseCode))
-        {
-            return ValidationFailure("Warehouse code is required.", StatusCodes.Status422UnprocessableEntity);
-        }
+        var normalizedWarehouseCode = warehouseCode.Trim();
 
         var layout = await EfAsync.FirstOrDefaultAsync(
             _dbContext.WarehouseLayouts.Include(x => x.Zones),
@@ -203,7 +197,7 @@ public sealed class WarehouseVisualizationController : ControllerBase
         var validation = _rackLayoutValidator.Validate(layout, rackLayout);
         if (!validation.IsValid)
         {
-            return ValidationFailure(validation.Errors[0], StatusCodes.Status422UnprocessableEntity);
+            return ValidationFailure(JoinValidationErrors(validation.Errors), StatusCodes.Status422UnprocessableEntity);
         }
 
         layout.RacksJson = string.IsNullOrWhiteSpace(request.RacksJson) ? null : request.RacksJson.Trim();
@@ -828,7 +822,6 @@ public sealed class WarehouseVisualizationController : ControllerBase
         DateTimeOffset UpdatedAt);
 
     public sealed record UpdateRackConfigRequest(
-        string WarehouseCode,
         string? RacksJson);
 
     public sealed record UpdateRackPlacementRequest(
@@ -847,4 +840,7 @@ public sealed class WarehouseVisualizationController : ControllerBase
         int? SlotStart,
         int? SlotSpan,
         string? LocationRole);
+
+    private static string JoinValidationErrors(IReadOnlyList<string> errors)
+        => string.Join("; ", errors.Where(x => !string.IsNullOrWhiteSpace(x)));
 }
