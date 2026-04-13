@@ -54,6 +54,15 @@ else
                         Required fields: <code>warehouseCode</code>, <code>widthMeters</code>, <code>lengthMeters</code>, <code>heightMeters</code>, <code>zones</code>.
                     </div>
                 </div>
+                <div class="col-12">
+                    <label class="form-label">Rack Config JSON</label>
+                    <textarea class="form-control font-monospace"
+                              rows="18"
+                              @bind="_rackConfigJson"></textarea>
+                    <div class="form-text">
+                        Optional rack structure document stored in <code>warehouse_layouts.RacksJson</code>. Leave empty for legacy warehouses.
+                    </div>
+                </div>
                 <div class="col-12 d-flex align-items-center gap-3">
                     <button class="btn btn-outline-secondary" type="button" @onclick="LoadAsync" disabled="@(_isLoading || _isSaving)">
                         Reload
@@ -85,6 +94,7 @@ else
     private IReadOnlyList<WarehouseDto> _warehouses = Array.Empty<WarehouseDto>();
     private string _warehouseCode = string.Empty;
     private string _layoutJson = string.Empty;
+    private string _rackConfigJson = string.Empty;
     private string? _validationMessage;
     private DateTimeOffset? _updatedAt;
 
@@ -115,8 +125,10 @@ else
         try
         {
             var layout = await LayoutEditorClient.GetLayoutAsync(_warehouseCode);
+            var rackConfig = await LayoutEditorClient.GetRackConfigAsync(_warehouseCode);
             _warehouseCode = layout.WarehouseCode;
             _layoutJson = SerializeLayout(layout);
+            _rackConfigJson = rackConfig.RacksJson ?? string.Empty;
             _updatedAt = layout.UpdatedAt;
         }
         catch (ApiException ex)
@@ -140,9 +152,13 @@ else
         {
             var parsed = ParseAndValidate(_layoutJson);
             var updated = await LayoutEditorClient.UpdateLayoutAsync(parsed);
+            var rackConfig = await LayoutEditorClient.UpdateRackConfigAsync(
+                _warehouseCode,
+                new UpdateWarehouseRackConfigRequestDto(_warehouseCode, NormalizeRackConfigJson(_rackConfigJson)));
             _warehouseCode = updated.WarehouseCode;
             _layoutJson = SerializeLayout(updated);
-            _updatedAt = updated.UpdatedAt;
+            _rackConfigJson = rackConfig.RacksJson ?? string.Empty;
+            _updatedAt = updated.UpdatedAt > rackConfig.UpdatedAt ? updated.UpdatedAt : rackConfig.UpdatedAt;
             ToastService.ShowSuccess("Layout updated successfully.");
         }
         catch (InvalidOperationException ex)
@@ -226,6 +242,17 @@ else
             WarehouseCode = model.WarehouseCode.Trim(),
             Zones = zones
         };
+    }
+
+    private static string? NormalizeRackConfigJson(string json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            return null;
+        }
+
+        using var document = JsonDocument.Parse(json);
+        return JsonSerializer.Serialize(document.RootElement, JsonOptions);
     }
 
     private bool HasAdminRole()
