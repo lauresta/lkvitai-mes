@@ -93,12 +93,13 @@ RacksJson jsonb NULL
 
 Contains array of `RackRow` objects (see §7 for JSON shape).
 
-**On `locations` table — 4 nullable columns:**
+**On `locations` table — 5 nullable columns:**
 ```sql
 RackRowId        varchar(30)  NULL
 ShelfLevelIndex  int          NULL
 SlotStart        int          NULL
 SlotSpan         int          NULL DEFAULT 1
+LocationRole     varchar(20)  NULL   -- 'Cell' | 'Bulk' | 'EndCap' | 'Overflow' | 'GroundSlot'
 ```
 
 **DB constraints:**
@@ -109,6 +110,10 @@ ALTER TABLE locations ADD CONSTRAINT ck_locations_rack_placement CHECK (
   OR
   ("RackRowId" IS NOT NULL AND "ShelfLevelIndex" IS NOT NULL AND "SlotStart" IS NOT NULL)
 );
+
+-- LocationRole allowed values
+ALTER TABLE locations ADD CONSTRAINT ck_locations_role
+  CHECK ("LocationRole" IN ('Cell', 'Bulk', 'EndCap', 'Overflow', 'GroundSlot') OR "LocationRole" IS NULL);
 
 -- No unique index on SlotStart alone — overlap is enforced at application layer (range check)
 -- Partial index for lookup performance only:
@@ -207,10 +212,12 @@ Stored in `WarehouseLayout.RacksJson`. Two top-level arrays: `racks` (physical s
   "racks": [
     {
       "id": "C",
+      "type": "PalletRack",
       "origin": { "x": 5.0, "y": 8.0, "z": 0.0 },
       "dimensions": { "width": 12.0, "depth": 1.1, "height": 5.4 },
       "orientationDeg": 0,
       "slotsPerLevel": 6,
+      "bayCount": 6,
       "backToBack": false,
       "pairedWithRackId": null,
       "levels": [
@@ -221,10 +228,12 @@ Stored in `WarehouseLayout.RacksJson`. Two top-level arrays: `racks` (physical s
     },
     {
       "id": "D",
+      "type": "PalletRack",
       "origin": { "x": 5.0, "y": 9.2, "z": 0.0 },
       "dimensions": { "width": 12.0, "depth": 1.1, "height": 5.4 },
       "orientationDeg": 0,
       "slotsPerLevel": 6,
+      "bayCount": 6,
       "backToBack": true,
       "pairedWithRackId": "C",
       "levels": [
@@ -232,6 +241,18 @@ Stored in `WarehouseLayout.RacksJson`. Two top-level arrays: `racks` (physical s
         { "index": 2, "heightFromBase": 1.80 },
         { "index": 3, "heightFromBase": 3.50 }
       ]
+    },
+    {
+      "id": "FLOOR-A",
+      "type": "FloorStorage",
+      "origin": { "x": 40.0, "y": 2.0, "z": 0.0 },
+      "dimensions": { "width": 8.0, "depth": 6.0, "height": 2.0 },
+      "orientationDeg": 0,
+      "slotsPerLevel": 0,
+      "bayCount": 0,
+      "backToBack": false,
+      "pairedWithRackId": null,
+      "levels": []
     }
   ],
   "bins": [
@@ -254,6 +275,9 @@ Stored in `WarehouseLayout.RacksJson`. Two top-level arrays: `racks` (physical s
 ```
 
 Notes:
+- `type` values: `PalletRack` | `FloorStorage` | `WallShelf` | `Custom`. Renderer uses this to decide geometry (slot grid only for `PalletRack` and `WallShelf`).
+- `bayCount` = number of bays (sections between upright pairs). Renderer draws `bayCount + 1` upright frames evenly spaced along rack width. If `bayCount = 0` or omitted: only corner posts.
+- `FloorStorage` type: no levels, no slot grid. Renderer draws only a floor footprint rectangle + optional low fence outline.
 - `bins` section is used only for bulk import / admin configuration. At runtime, placement comes from `Location` DB columns.
 - `origin` is the left-front-bottom corner of the rack.
 - `orientationDeg` is `0` (along X axis) or `90` (along Y axis).
@@ -384,22 +408,40 @@ Rules:
 
 **Recommendation:** Server sends `origin` as the **left-front-bottom corner** of each object. Frontend computes mesh center as `origin + size/2` for Three.js positioning. This matches the editor JSON convention and is easier to verify by eye.
 
-### Rack Geometry
+### Rack Geometry (type = PalletRack | WallShelf)
 
 ```
-4 vertical posts at corners:
-  - BoxGeometry(0.06, rack.height, 0.06)
-  - Position: rack.origin + [0,0], [width,0], [0,depth], [width,depth] in XZ
+Upright frames (vertical post pairs):
+  - Total upright pairs = bayCount + 1
+  - Evenly spaced: uprightSpacing = rack.width / bayCount
+  - Each upright pair = 2 posts (front + back), same X position, offset Z by rack.depth
+  - Post geometry: BoxGeometry(0.06, rack.height, 0.06)
   - Color: #475569
 
+  If bayCount = 0: render only 2 corner upright pairs (4 posts total).
+  If bayCount > 0: render bayCount + 1 upright pairs at x = 0, x = spacing, ..., x = width.
+
 Horizontal beams per level:
-  - BoxGeometry(rack.width, 0.04, rack.depth)
+  - BoxGeometry(rack.width, 0.04, rack.depth)  ← spans full width (schematic, ±15cm ok)
   - Y position: rack.origin.y + level.heightFromBase
   - Color: #94A3B8
 
 For back-to-back pairs (rack.backToBack = true):
-  - Posts on the shared (inner) side are shared with paired rack → only 6 posts total, not 8
+  - Posts on the shared (inner) side are shared with paired rack → v1: render 8 posts per pair
+    (visual overlap acceptable — optimize in v2)
   - No back wall between paired racks
+```
+
+### Rack Geometry (type = FloorStorage)
+
+```
+No upright posts. No levels. No slot grid.
+Render:
+  - Floor footprint rectangle (PlaneGeometry at Y = 0.01 to float above floor)
+    size: rack.dimensions.width × rack.dimensions.depth
+    color: #D1FAE5 (soft green), opacity 0.35
+  - Low perimeter fence:
+    4 thin box outlines, height = 0.12m, color: #6EE7B7, opacity 0.7
 ```
 
 ### Level Geometry
@@ -515,6 +557,9 @@ No change. Bins only. Address search: match `bin.code` OR `bin.address` field (n
 |---|------|-------|
 | V-L-01 | Rack ID unique | `rack.id` unique within the warehouse |
 | V-L-02 | Rack geometry positive | `width > 0`, `depth > 0`, `height > 0` |
+| V-L-02b | Rack type valid | `type` in `['PalletRack', 'FloorStorage', 'WallShelf', 'Custom']` |
+| V-L-02c | FloorStorage has no levels | `type = 'FloorStorage'` → `levels` must be empty, `slotsPerLevel = 0` |
+| V-L-02d | bayCount non-negative | `bayCount >= 0` |
 | V-L-03 | Slots per level valid | `slotsPerLevel >= 1` |
 | V-L-04 | Level index valid | `>= 1`, unique per rack, contiguous (no gaps) |
 | V-L-05 | Level heightFromBase valid | `>= 0` AND `< rack.height` |
@@ -667,13 +712,13 @@ ALTER TABLE warehouse_layouts
 Execute in this order. Each step is independently deployable.
 
 **Step 1 — DB Migration**
-- Add 4 nullable columns to `locations`
+- Add 5 nullable columns to `locations` (4 placement + `LocationRole`)
 - Add `RacksJson` jsonb to `warehouse_layouts`
-- Add check constraint and partial index
+- Add check constraints and partial index
 - EF Core migration file + `DbContext` update
 
 **Step 2 — Domain / DTO Layer**
-- Add 4 nullable properties to `Location` entity
+- Add 5 nullable properties to `Location` entity (`RackRowId`, `ShelfLevelIndex`, `SlotStart`, `SlotSpan`, `LocationRole`)
 - Add `RacksJson` property to `WarehouseLayout` entity
 - Create `RackRow`, `ShelfLevel` C# records (for JSON deserialization)
 - Create `VisualizationRackDto`, `VisualizationSlotDto`
@@ -784,3 +829,210 @@ All criteria are testable and binary (pass/fail).
 | R-04 | Overlap check is application-layer only — concurrent requests could create overlap | Low | Single-threaded mutation (admin UI), no concurrent slot assignment expected in v1 |
 | R-05 | Admin-edited JSON can be malformed — silent failure if not validated | Medium | Always validate `RacksJson` on save with full `LayoutValidator` before storing |
 | R-06 | CoordinateX/Y/Z on legacy bins uses different axis convention than rack model | High | Document and enforce one convention; test legacy bins render in same scene as rack bins |
+
+---
+
+## 18. Example Warehouse Config (Reference / Seed)
+
+This is a **full example** demonstrating every feature the renderer supports in v1.
+Use it as:
+- a reference when creating real warehouse configs
+- a seed for development/demo environment
+- a test fixture for geometry calculator unit tests
+
+The example uses a fictional warehouse `"EXAMPLE"` with all rack types, back-to-back pairs, floor storage, span bins, and legacy (unplaced) bins.
+
+```json
+{
+  "warehouseCode": "EXAMPLE",
+  "room": { "width": 50.0, "length": 25.0, "height": 8.0 },
+  "zones": [
+    { "type": "RECEIVING",  "bounds": { "x1": 0,  "y1": 0,  "x2": 10, "y2": 25 }, "color": "#BFDBFE" },
+    { "type": "STORAGE",    "bounds": { "x1": 10, "y1": 0,  "x2": 40, "y2": 25 }, "color": "#D1FAE5" },
+    { "type": "SHIPPING",   "bounds": { "x1": 40, "y1": 0,  "x2": 50, "y2": 25 }, "color": "#FEF3C7" }
+  ],
+  "racks": [
+    {
+      "id": "A",
+      "type": "PalletRack",
+      "comment": "Single-sided rack, 4 bays, 3 levels, 8 slots per level",
+      "origin": { "x": 12.0, "y": 2.0, "z": 0.0 },
+      "dimensions": { "width": 8.0, "depth": 1.1, "height": 5.5 },
+      "orientationDeg": 0,
+      "slotsPerLevel": 8,
+      "bayCount": 4,
+      "backToBack": false,
+      "pairedWithRackId": null,
+      "levels": [
+        { "index": 1, "heightFromBase": 0.10 },
+        { "index": 2, "heightFromBase": 1.90 },
+        { "index": 3, "heightFromBase": 3.70 }
+      ]
+    },
+    {
+      "id": "B",
+      "type": "PalletRack",
+      "comment": "Back-to-back pair FRONT with rack C. 6 bays, 3 levels.",
+      "origin": { "x": 12.0, "y": 6.0, "z": 0.0 },
+      "dimensions": { "width": 12.0, "depth": 1.1, "height": 5.5 },
+      "orientationDeg": 0,
+      "slotsPerLevel": 6,
+      "bayCount": 6,
+      "backToBack": true,
+      "pairedWithRackId": "C",
+      "levels": [
+        { "index": 1, "heightFromBase": 0.10 },
+        { "index": 2, "heightFromBase": 1.90 },
+        { "index": 3, "heightFromBase": 3.70 }
+      ]
+    },
+    {
+      "id": "C",
+      "type": "PalletRack",
+      "comment": "Back-to-back pair BACK with rack B.",
+      "origin": { "x": 12.0, "y": 7.2, "z": 0.0 },
+      "dimensions": { "width": 12.0, "depth": 1.1, "height": 5.5 },
+      "orientationDeg": 0,
+      "slotsPerLevel": 6,
+      "bayCount": 6,
+      "backToBack": true,
+      "pairedWithRackId": "B",
+      "levels": [
+        { "index": 1, "heightFromBase": 0.10 },
+        { "index": 2, "heightFromBase": 1.90 },
+        { "index": 3, "heightFromBase": 3.70 }
+      ]
+    },
+    {
+      "id": "D",
+      "type": "WallShelf",
+      "comment": "Wall-mounted shelf along east wall, 2 levels, no bays (corner posts only)",
+      "origin": { "x": 12.0, "y": 22.0, "z": 0.0 },
+      "dimensions": { "width": 20.0, "depth": 0.6, "height": 2.4 },
+      "orientationDeg": 0,
+      "slotsPerLevel": 10,
+      "bayCount": 0,
+      "backToBack": false,
+      "pairedWithRackId": null,
+      "levels": [
+        { "index": 1, "heightFromBase": 0.05 },
+        { "index": 2, "heightFromBase": 1.10 }
+      ]
+    },
+    {
+      "id": "FLOOR-RCV",
+      "type": "FloorStorage",
+      "comment": "Receiving floor zone — no shelves, no slots. Shows footprint + fence only.",
+      "origin": { "x": 1.0, "y": 1.0, "z": 0.0 },
+      "dimensions": { "width": 8.0, "depth": 10.0, "height": 2.0 },
+      "orientationDeg": 0,
+      "slotsPerLevel": 0,
+      "bayCount": 0,
+      "backToBack": false,
+      "pairedWithRackId": null,
+      "levels": []
+    },
+    {
+      "id": "FLOOR-BULK",
+      "type": "FloorStorage",
+      "comment": "Bulk storage floor zone, rotated 90 degrees.",
+      "origin": { "x": 35.0, "y": 5.0, "z": 0.0 },
+      "dimensions": { "width": 10.0, "depth": 6.0, "height": 3.0 },
+      "orientationDeg": 90,
+      "slotsPerLevel": 0,
+      "bayCount": 0,
+      "backToBack": false,
+      "pairedWithRackId": null,
+      "levels": []
+    }
+  ],
+  "bins": [
+    {
+      "locationCode": "A-L1-S1",
+      "comment": "Normal single-slot bin, level 1, slot 1",
+      "rackId": "A",
+      "level": 1,
+      "slot": 1,
+      "span": 1,
+      "role": "Cell"
+    },
+    {
+      "locationCode": "A-L1-S2",
+      "comment": "Normal single-slot bin, level 1, slot 2",
+      "rackId": "A",
+      "level": 1,
+      "slot": 2,
+      "span": 1,
+      "role": "Cell"
+    },
+    {
+      "locationCode": "A-L2-S3-WIDE",
+      "comment": "SPAN BIN — occupies slots 3-4-5 on level 2 (span=3). Renders as one merged box.",
+      "rackId": "A",
+      "level": 2,
+      "slot": 3,
+      "span": 3,
+      "role": "Bulk"
+    },
+    {
+      "locationCode": "A-ENDCAP-L3",
+      "comment": "EndCap location — last slot on level 3, role=EndCap.",
+      "rackId": "A",
+      "level": 3,
+      "slot": 8,
+      "span": 1,
+      "role": "EndCap"
+    },
+    {
+      "locationCode": "B-L1-S1",
+      "comment": "Front rack of back-to-back pair",
+      "rackId": "B",
+      "level": 1,
+      "slot": 1,
+      "span": 1,
+      "role": "Cell"
+    },
+    {
+      "locationCode": "C-L1-S1",
+      "comment": "Back rack of back-to-back pair",
+      "rackId": "C",
+      "level": 1,
+      "slot": 1,
+      "span": 1,
+      "role": "Cell"
+    },
+    {
+      "locationCode": "D-SHELF-S5",
+      "comment": "Wall shelf bin, level 1",
+      "rackId": "D",
+      "level": 1,
+      "slot": 5,
+      "span": 1,
+      "role": "Cell"
+    },
+    {
+      "locationCode": "LEGACY-FLOAT-001",
+      "comment": "LEGACY BIN — no rack placement. Rendered from CoordinateX/Y/Z as before. Tests backward compat.",
+      "rackId": null,
+      "level": null,
+      "slot": null,
+      "span": null,
+      "role": "GroundSlot"
+    }
+  ]
+}
+```
+
+### How to use this example
+
+1. Create a `WarehouseLayout` row with `WarehouseCode = "EXAMPLE"` and paste this JSON into `RacksJson`.
+2. Create `Location` rows matching the `locationCode` values in `bins[]`, set their `RackRowId/ShelfLevelIndex/SlotStart/SlotSpan/LocationRole` from the example.
+3. For `LEGACY-FLOAT-001`: create a Location with no rack fields, set `CoordinateX/Y/Z` to e.g. `{45, 12, 0}`.
+4. Navigate to `/warehouse/3d?code=EXAMPLE` and verify:
+   - 6 distinct rack structures visible
+   - Back-to-back pair (B+C) rendered side-by-side
+   - Floor storage zones (FLOOR-RCV, FLOOR-BULK) show footprint outline only
+   - Slot grid visible on all `PalletRack` and `WallShelf` racks
+   - Span bin on rack A level 2 slots 3-5 renders as one continuous box
+   - Legacy bin LEGACY-FLOAT-001 floats at its coordinates without rack context
+   - All empty slots visible as wireframes
