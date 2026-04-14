@@ -31,6 +31,10 @@ public sealed class WarehouseVisualizationController : ControllerBase
     private const string FullStatus = "FULL";
     private const string OverCapacityStatus = "OVER_CAPACITY";
 
+    private static readonly string[] AllowedZoneTypes = ["RECEIVING", "STORAGE", "SHIPPING", "QUARANTINE"];
+    private static readonly HashSet<string> AllowedZoneTypeSet =
+        new(AllowedZoneTypes, StringComparer.OrdinalIgnoreCase);
+
     private static readonly IReadOnlyDictionary<string, string> StatusPalette =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
@@ -106,6 +110,22 @@ public sealed class WarehouseVisualizationController : ControllerBase
 
         foreach (var zone in request.Zones ?? Array.Empty<UpsertZoneRequest>())
         {
+            if (string.IsNullOrWhiteSpace(zone.Type))
+            {
+                return ValidationFailure("Each zone requires a non-empty type.");
+            }
+
+            var normalizedZoneType = zone.Type.Trim().ToUpperInvariant();
+            if (!AllowedZoneTypeSet.Contains(normalizedZoneType))
+            {
+                return ValidationFailure($"Each zone type must be one of: {string.Join(", ", AllowedZoneTypes)}.");
+            }
+
+            if (string.IsNullOrWhiteSpace(zone.Color))
+            {
+                return ValidationFailure("Each zone requires a non-empty color.");
+            }
+
             if (zone.X2 <= zone.X1 || zone.Y2 <= zone.Y1)
             {
                 return ValidationFailure("Each zone must satisfy x2 > x1 and y2 > y1.");

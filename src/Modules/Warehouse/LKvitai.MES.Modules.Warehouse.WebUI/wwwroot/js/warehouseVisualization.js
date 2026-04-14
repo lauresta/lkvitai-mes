@@ -172,6 +172,82 @@
         return texture;
     }
 
+    function createLabelSprite() {
+        const canvas = document.createElement("canvas");
+        canvas.width = 1024;
+        canvas.height = 256;
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.minFilter = THREE.LinearFilter;
+        texture.magFilter = THREE.LinearFilter;
+        texture.needsUpdate = true;
+
+        const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+            map: texture,
+            transparent: true,
+            depthWrite: false,
+            toneMapped: false
+        }));
+        sprite.visible = false;
+        sprite.renderOrder = 12;
+        markAsOverlay(sprite);
+
+        return { canvas, texture, sprite };
+    }
+
+    function drawLabel(canvas, texture, text) {
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        if (!text) {
+            texture.needsUpdate = true;
+            return;
+        }
+
+        const radius = 38;
+        ctx.fillStyle = "rgba(15, 23, 42, 0.84)";
+        ctx.strokeStyle = "rgba(34, 211, 238, 0.96)";
+        ctx.lineWidth = 8;
+
+        ctx.beginPath();
+        ctx.moveTo(radius, 24);
+        ctx.lineTo(canvas.width - radius, 24);
+        ctx.quadraticCurveTo(canvas.width - 24, 24, canvas.width - 24, radius);
+        ctx.lineTo(canvas.width - 24, canvas.height - radius);
+        ctx.quadraticCurveTo(canvas.width - 24, canvas.height - 24, canvas.width - radius, canvas.height - 24);
+        ctx.lineTo(radius, canvas.height - 24);
+        ctx.quadraticCurveTo(24, canvas.height - 24, 24, canvas.height - radius);
+        ctx.lineTo(24, radius);
+        ctx.quadraticCurveTo(24, 24, radius, 24);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = "#e6fbff";
+        ctx.font = "bold 84px Segoe UI, Arial, sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+        texture.needsUpdate = true;
+    }
+
+    function createRackFloorLabel(text) {
+        const label = createLabelSprite();
+        drawLabel(label.canvas, label.texture, text);
+        label.sprite.visible = true;
+        label.sprite.material.opacity = 0.88;
+        return label.sprite;
+    }
+
+    function rotateLocalPoint(localX, localY, rack) {
+        const radians = (Number(rack?.orientationDeg || 0) * Math.PI) / 180;
+        const cos = Math.cos(radians);
+        const sin = Math.sin(radians);
+        return {
+            x: Number(rack?.origin?.x || 0) + (localX * cos) - (localY * sin),
+            z: Number(rack?.origin?.y || 0) + (localX * sin) + (localY * cos)
+        };
+    }
+
     function computeRootBounds(root, bbox, size, center) {
         root.updateWorldMatrix(true, true);
         if (root.geometry && root.geometry.boundingBox) {
@@ -308,7 +384,7 @@
         });
     }
 
-    function renderRackFrames(scene, racks) {
+    function renderRackFrames(scene, racks, interactiveRackMeshes, showRackLabels) {
         if (!Array.isArray(racks) || racks.length === 0) {
             return;
         }
@@ -326,7 +402,12 @@
                 const floor = new THREE.Mesh(new THREE.BoxGeometry(layout.width, 0.02, layout.length), floorMaterial);
                 floor.position.set(layout.centerX, layout.y + 0.01, layout.centerZ);
                 floor.receiveShadow = true;
+                floor.userData = {
+                    kind: "rack",
+                    rackId: rack.id
+                };
                 group.add(floor);
+                interactiveRackMeshes.push(floor);
 
                 const fenceHeight = 0.12;
                 const fenceThickness = 0.04;
@@ -339,7 +420,12 @@
                     const mesh = new THREE.Mesh(new THREE.BoxGeometry(fence.w, fence.h, fence.d), fenceMaterial);
                     mesh.position.set(fence.x, fence.y, fence.z);
                     mesh.castShadow = true;
+                    mesh.userData = {
+                        kind: "rack",
+                        rackId: rack.id
+                    };
                     group.add(mesh);
+                    interactiveRackMeshes.push(mesh);
                 });
 
                 return;
@@ -363,13 +449,23 @@
                 frontPost.position.set(postX, layout.centerY, layout.z + (postSize / 2));
                 frontPost.castShadow = true;
                 frontPost.receiveShadow = true;
+                frontPost.userData = {
+                    kind: "rack",
+                    rackId: rack.id
+                };
                 group.add(frontPost);
+                interactiveRackMeshes.push(frontPost);
 
                 const backPost = new THREE.Mesh(new THREE.BoxGeometry(postSize, layout.height, postSize), postMaterial);
                 backPost.position.set(postX, layout.centerY, layout.z + layout.length - (postSize / 2));
                 backPost.castShadow = true;
                 backPost.receiveShadow = true;
+                backPost.userData = {
+                    kind: "rack",
+                    rackId: rack.id
+                };
                 group.add(backPost);
+                interactiveRackMeshes.push(backPost);
             }
 
             (rack.levels || []).forEach((level) => {
@@ -382,8 +478,29 @@
                     layout.centerZ);
                 plank.castShadow = true;
                 plank.receiveShadow = true;
+                plank.userData = {
+                    kind: "rack",
+                    rackId: rack.id
+                };
                 group.add(plank);
+                interactiveRackMeshes.push(plank);
             });
+
+            const labelText = String(rack.id || "").trim();
+            if (showRackLabels && labelText) {
+                const sideOffset = Math.max(0.85, layout.length * 0.5 + 0.55);
+                const localCenterX = layout.width / 2;
+                const nearSide = rotateLocalPoint(localCenterX, -sideOffset, rack);
+                const farSide = rotateLocalPoint(localCenterX, layout.length + 0.55, rack);
+
+                [nearSide, farSide].forEach((point) => {
+                    const labelSprite = createRackFloorLabel(labelText);
+                    const labelWidth = Math.max(1.5, Math.min(3.2, 1.1 + (labelText.length * 0.45)));
+                    labelSprite.position.set(point.x, 0.16, point.z);
+                    labelSprite.scale.set(labelWidth, 0.72, 1);
+                    group.add(labelSprite);
+                });
+            }
         });
 
         scene.add(group);
@@ -413,9 +530,7 @@
             };
             group.add(wireframe);
 
-            if (!slot.occupied) {
-                interactiveSlotMeshes.push(wireframe);
-            }
+            interactiveSlotMeshes.push(wireframe);
         });
 
         scene.add(group);
@@ -550,6 +665,11 @@
             const slots = Array.isArray(data?.slots) ? data.slots : [];
             const warehouse = !Array.isArray(data) ? (data?.warehouse ?? null) : null;
             const zones = !Array.isArray(data) && Array.isArray(data?.zones) ? data.zones : [];
+            const renderOptions = !Array.isArray(data) ? (data?.options ?? {}) : {};
+            const cameraMode = typeof renderOptions.cameraMode === "string"
+                ? renderOptions.cameraMode.toLowerCase()
+                : "overview";
+            const showRackLabels = renderOptions.showRackLabels !== false;
 
             const normalizedBins = (bins || []).map((bin) => ({
                 bin,
@@ -636,7 +756,7 @@
                 ? [{ minX: 0, minY: 0, minZ: 0, maxX: warehouseW, maxY: Math.max(warehouseH, 0), maxZ: warehouseL }]
                 : [];
 
-            const extents = [
+            const contentExtents = [
                 ...resolvedBins.map((x) => ({
                     minX: x.centerX - (x.width / 2),
                     minY: x.centerY - (x.height / 2),
@@ -652,7 +772,11 @@
                     maxX: rack.x + rack.width,
                     maxY: rack.y + rack.height,
                     maxZ: rack.z + rack.length
-                })),
+                }))
+            ];
+
+            const extents = [
+                ...contentExtents,
                 ...warehouseExtent
             ];
             const minX = extents.length ? Math.min(...extents.map((x) => x.minX)) : 0;
@@ -665,7 +789,17 @@
             const centerY = (minY + maxY) / 2;
             const centerZ = (minZ + maxZ) / 2;
             const maxSpan = Math.max(maxX - minX, maxY - minY, maxZ - minZ, 1);
-            const cameraDistance = Math.max(12, maxSpan * 2.4);
+            const contentMinX = contentExtents.length ? Math.min(...contentExtents.map((x) => x.minX)) : minX;
+            const contentMinY = contentExtents.length ? Math.min(...contentExtents.map((x) => x.minY)) : minY;
+            const contentMinZ = contentExtents.length ? Math.min(...contentExtents.map((x) => x.minZ)) : minZ;
+            const contentMaxX = contentExtents.length ? Math.max(...contentExtents.map((x) => x.maxX)) : maxX;
+            const contentMaxY = contentExtents.length ? Math.max(...contentExtents.map((x) => x.maxY)) : maxY;
+            const contentMaxZ = contentExtents.length ? Math.max(...contentExtents.map((x) => x.maxZ)) : maxZ;
+            const contentCenterX = (contentMinX + contentMaxX) / 2;
+            const contentCenterY = (contentMinY + contentMaxY) / 2;
+            const contentCenterZ = (contentMinZ + contentMaxZ) / 2;
+            const contentSpan = Math.max(contentMaxX - contentMinX, contentMaxY - contentMinY, contentMaxZ - contentMinZ, 1);
+            const cameraDistance = Math.max(7, contentSpan * 1.18);
             const explicitDimensionCount = resolvedBins.filter((x) => x.hasExplicitDimensions).length;
 
             keyLight.position.set(centerX + (maxSpan * 0.7), maxY + Math.max(18, maxSpan * 1.35), centerZ + (maxSpan * 0.45));
@@ -686,14 +820,23 @@
 
             log("render: scene extents computed", {
                 minX, minY, minZ, maxX, maxY, maxZ, centerX, centerY, centerZ, maxSpan, minDistance,
-                cameraDistance, baseFootprint, maxVolume, explicitDimensionCount
+                contentMinX, contentMinY, contentMinZ, contentMaxX, contentMaxY, contentMaxZ,
+                contentCenterX, contentCenterY, contentCenterZ, contentSpan, cameraDistance,
+                baseFootprint, maxVolume, explicitDimensionCount
             });
 
-            controls.target.set(centerX, centerY, centerZ);
-            camera.position.set(
-                centerX + cameraDistance,
-                centerY + cameraDistance * 0.9,
-                centerZ + cameraDistance);
+            controls.target.set(contentCenterX, contentCenterY, contentCenterZ);
+            if (cameraMode === "low") {
+                camera.position.set(
+                    contentCenterX + (cameraDistance * 0.76),
+                    contentCenterY + Math.max(2.4, contentSpan * 0.11),
+                    contentCenterZ + (cameraDistance * 0.28));
+            } else {
+                camera.position.set(
+                    contentCenterX + (cameraDistance * 0.9),
+                    contentCenterY + (cameraDistance * 0.48),
+                    contentCenterZ + (cameraDistance * 0.72));
+            }
             controls.update();
 
             const hasWarehouseDims =
@@ -717,6 +860,7 @@
             const meshesByCode = {};
             const interactiveMeshes = [];
             const interactiveSlotMeshes = [];
+            const interactiveRackMeshes = [];
 
             const reservedTexture = createReservedHatchTexture();
             const reservedOverlayMaterial = new THREE.MeshBasicMaterial({
@@ -744,11 +888,14 @@
             markAsOverlay(selectionPin);
             scene.add(selectionPin);
 
+            const selectionLabel = createLabelSprite();
+            scene.add(selectionLabel.sprite);
+
             const selectionBoundsBox = new THREE.Box3();
             const selectionBoundsSize = new THREE.Vector3();
             const selectionBoundsCenter = new THREE.Vector3();
 
-            renderRackFrames(scene, racks);
+            renderRackFrames(scene, racks, interactiveRackMeshes, showRackLabels);
             renderSlots(scene, slots, interactiveSlotMeshes);
 
             function createDashedRingSegments(innerRadius, outerRadius, dashCount, gapRatio, material) {
@@ -881,6 +1028,7 @@
 
                 cube.position.set(meshX, meshY, meshZ);
                 cube.userData = {
+                    kind: "bin",
                     code: bin.code,
                     baseColor: toHexColor(bin.color),
                     baseBorderMaterial,
@@ -914,7 +1062,7 @@
             });
 
             let selectedCode = null;
-            let selectedMesh = null;
+            let selectedObject = null;
             let cameraFlightHandle = null;
 
             function computePinBounceOffset(mesh, timestampMs) {
@@ -1027,15 +1175,45 @@
                     selectionBoundsCenter.x,
                     selectionBoundsBox.min.y + VISUAL_CONFIG.selectionRingFloorOffset,
                     selectionBoundsCenter.z);
+
+                selectionLabel.sprite.position.set(
+                    selectionBoundsCenter.x,
+                    selectionBoundsBox.max.y + pinScale + 0.55,
+                    selectionBoundsCenter.z);
+                const labelWidth = clamp(Math.max(selectionBoundsSize.x, selectionBoundsSize.z) * 1.45, 3.2, 9.5);
+                const labelHeight = clamp(labelWidth * 0.26, 0.9, 1.8);
+                selectionLabel.sprite.scale.set(labelWidth, labelHeight, 1);
             }
 
-            function applySelection(code) {
-                selectedCode = code || null;
-                selectedMesh = selectedCode ? meshesByCode[selectedCode] || null : null;
+            function getSelectionLabel(targetObject) {
+                if (!targetObject?.userData) {
+                    return "";
+                }
+
+                if (targetObject.userData.kind === "bin") {
+                    return targetObject.userData.code || "";
+                }
+
+                if (targetObject.userData.kind === "slot") {
+                    return targetObject.userData.address || "";
+                }
+
+                if (targetObject.userData.kind === "rack") {
+                    return targetObject.userData.rackId ? `Rack ${targetObject.userData.rackId}` : "Rack";
+                }
+
+                return "";
+            }
+
+            function applySelection(codeOrObject) {
+                selectedCode = typeof codeOrObject === "string" ? codeOrObject : null;
+                selectedObject = selectedCode
+                    ? meshesByCode[selectedCode] || null
+                    : (codeOrObject && typeof codeOrObject === "object" ? codeOrObject : null);
                 const useOutlinePass = !!outlinePass;
 
                 interactiveMeshes.forEach((mesh) => {
-                    const isSelected = !!selectedMesh && mesh === selectedMesh;
+                    const isSelected = !!selectedObject && mesh === selectedObject;
                     if (mesh.userData.baseBorderMaterial) {
                         mesh.userData.baseBorderMaterial.color.setHex(VISUAL_CONFIG.borderColor);
                         mesh.userData.baseBorderMaterial.opacity = VISUAL_CONFIG.borderOpacity;
@@ -1047,22 +1225,43 @@
                         mesh.userData.selectionFillOverlay.visible = isSelected;
                     }
                 });
+                interactiveSlotMeshes.forEach((slotMesh) => {
+                    const isSelected = !!selectedObject && slotMesh === selectedObject;
+                    if (slotMesh.material) {
+                        slotMesh.material.color.setHex(isSelected ? VISUAL_CONFIG.selectionColor : (slotMesh.userData.occupied ? 0x94a3b8 : 0xcbd5e1));
+                        slotMesh.material.opacity = isSelected ? 0.95 : (slotMesh.userData.occupied ? 0.12 : 0.3);
+                    }
+                });
+                interactiveRackMeshes.forEach((rackMesh) => {
+                    const isSelected = !!selectedObject && rackMesh === selectedObject;
+                    if (rackMesh.material?.emissive) {
+                        rackMesh.material.emissive.setHex(isSelected ? 0x0891b2 : 0x000000);
+                        rackMesh.material.emissiveIntensity = isSelected ? 0.7 : 0;
+                    }
+                });
                 if (outlinePass) {
-                    outlinePass.selectedObjects = selectedMesh ? [selectedMesh] : [];
+                    outlinePass.selectedObjects =
+                        selectedObject && selectedObject.userData?.kind === "bin"
+                            ? [selectedObject]
+                            : [];
                 }
 
-                if (!selectedMesh) {
+                if (!selectedObject) {
                     selectionPin.visible = false;
                     selectionRingGroup.visible = false;
+                    selectionLabel.sprite.visible = false;
+                    drawLabel(selectionLabel.canvas, selectionLabel.texture, "");
                     return;
                 }
 
                 selectionPin.visible = true;
                 selectionRingGroup.visible = true;
+                selectionLabel.sprite.visible = true;
                 selectionRing.rotation.y = 0;
-                selectedMesh.updateWorldMatrix(true, true);
-                updateSelectionRingProfile(selectedMesh);
-                updateSelectionAnchors(selectedMesh, performance.now());
+                selectedObject.updateWorldMatrix(true, true);
+                updateSelectionRingProfile(selectedObject);
+                updateSelectionAnchors(selectedObject, performance.now());
+                drawLabel(selectionLabel.canvas, selectionLabel.texture, getSelectionLabel(selectedObject));
             }
 
             function focusBin(code) {
@@ -1124,18 +1323,32 @@
                 mouse.y = -((event.clientY - bounds.top) / bounds.height) * 2 + 1;
 
                 raycaster.setFromCamera(mouse, camera);
-                const intersects = raycaster.intersectObjects([...interactiveMeshes, ...interactiveSlotMeshes], false);
+                const intersects = raycaster.intersectObjects([...interactiveMeshes, ...interactiveSlotMeshes, ...interactiveRackMeshes], false);
                 if (intersects.length === 0) {
                     log("click: no intersection");
                     return;
                 }
 
-                const target = intersects[0].object;
+                const target =
+                    intersects.find((entry) => entry.object?.userData?.kind === "bin")?.object ??
+                    intersects.find((entry) => entry.object?.userData?.kind === "slot")?.object ??
+                    intersects.find((entry) => entry.object?.userData?.kind === "rack")?.object ??
+                    intersects[0].object;
+
                 if (target?.userData?.kind === "slot") {
-                    log("click: selected empty slot", { address: target.userData.address });
-                    applySelection(null);
+                    log("click: selected slot", { address: target.userData.address, occupied: target.userData.occupied });
+                    applySelection(target);
                     if (dotNetRef) {
                         dotNetRef.invokeMethodAsync("OnSlotSelectedFromJs", target.userData.address);
+                    }
+                    return;
+                }
+
+                if (target?.userData?.kind === "rack") {
+                    log("click: selected rack", { rackId: target.userData.rackId });
+                    applySelection(target);
+                    if (dotNetRef) {
+                        dotNetRef.invokeMethodAsync("OnRackSelectedFromJs", target.userData.rackId);
                     }
                     return;
                 }
@@ -1210,18 +1423,18 @@
                 const deltaSeconds = clamp((now - previousFrameTimestamp) / 1000, 0, 0.05);
                 previousFrameTimestamp = now;
 
-                if (selectedMesh) {
-                    updateSelectionAnchors(selectedMesh, now);
+                if (selectedObject) {
+                    updateSelectionAnchors(selectedObject, now);
 
                     const pulsePhase = (now % VISUAL_CONFIG.selectionPulseMs) / VISUAL_CONFIG.selectionPulseMs;
                     const pulse = easeInOutSine(pulsePhase);
-                    if (!outlinePass) {
+                    if (!outlinePass && selectedObject.userData.selectionEdgesMaterial) {
                         const edgeOpacity = VISUAL_CONFIG.selectionEdgeOpacityMin +
                             ((VISUAL_CONFIG.selectionEdgeOpacityMax - VISUAL_CONFIG.selectionEdgeOpacityMin) * pulse);
-                        selectedMesh.userData.selectionEdgesMaterial.opacity = edgeOpacity;
+                        selectedObject.userData.selectionEdgesMaterial.opacity = edgeOpacity;
                     }
-                    if (selectedMesh.userData.selectionFillOverlayMaterial) {
-                        selectedMesh.userData.selectionFillOverlayMaterial.opacity =
+                    if (selectedObject.userData.selectionFillOverlayMaterial) {
+                        selectedObject.userData.selectionFillOverlayMaterial.opacity =
                             VISUAL_CONFIG.selectionFillOverlayOpacityMin +
                             ((VISUAL_CONFIG.selectionFillOverlayOpacityMax - VISUAL_CONFIG.selectionFillOverlayOpacityMin) * pulse);
                     }
