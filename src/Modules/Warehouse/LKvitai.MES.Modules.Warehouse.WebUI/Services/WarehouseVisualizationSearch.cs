@@ -17,19 +17,17 @@ public static class WarehouseVisualizationSearch
         var trimmed = query.Trim();
 
         return bins
-            .Select(x => x.Code)
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .Select(code => new
+            .SelectMany(x => GetSearchValues(x).Select(value => new
             {
-                Code = code,
-                Score = ComputeScore(code, trimmed)
-            })
+                Value = value,
+                Score = ComputeScore(value, trimmed)
+            }))
             .Where(x => x.Score >= 0)
+            .DistinctBy(x => x.Value, StringComparer.OrdinalIgnoreCase)
             .OrderBy(x => x.Score)
-            .ThenBy(x => x.Code, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(x => x.Value, StringComparer.OrdinalIgnoreCase)
             .Take(maxResults)
-            .Select(x => x.Code)
+            .Select(x => x.Value)
             .ToList();
     }
 
@@ -45,7 +43,11 @@ public static class WarehouseVisualizationSearch
             .Select(bin => new
             {
                 Bin = bin,
-                Score = ComputeScore(bin.Code, normalized)
+                Score = GetSearchValues(bin)
+                    .Select(value => ComputeScore(value, normalized))
+                    .Where(score => score >= 0)
+                    .DefaultIfEmpty(-1)
+                    .Min()
             })
             .Where(x => x.Score >= 0)
             .OrderBy(x => x.Score)
@@ -67,5 +69,15 @@ public static class WarehouseVisualizationSearch
         }
 
         return code.Contains(query, StringComparison.OrdinalIgnoreCase) ? 2 : -1;
+    }
+
+    private static IEnumerable<string> GetSearchValues(VisualizationBinDto bin)
+    {
+        yield return bin.Code;
+
+        if (!string.IsNullOrWhiteSpace(bin.Address))
+        {
+            yield return bin.Address;
+        }
     }
 }

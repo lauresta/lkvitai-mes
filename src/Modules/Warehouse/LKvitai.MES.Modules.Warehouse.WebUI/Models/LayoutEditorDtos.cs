@@ -7,6 +7,7 @@ public sealed record WarehouseLayoutDto(
     decimal LengthMeters,
     decimal HeightMeters,
     IReadOnlyList<WarehouseLayoutZoneDto> Zones,
+    string? RacksJson,
     DateTimeOffset UpdatedAt);
 
 public sealed record WarehouseLayoutZoneDto(
@@ -24,6 +25,14 @@ public sealed record UpdateWarehouseLayoutRequestDto(
     decimal LengthMeters,
     decimal HeightMeters,
     IReadOnlyList<UpdateWarehouseLayoutZoneRequestDto> Zones);
+
+public sealed record WarehouseRackConfigDto(
+    string WarehouseCode,
+    string? RacksJson,
+    DateTimeOffset UpdatedAt);
+
+public sealed record UpdateWarehouseRackConfigRequestDto(
+    string? RacksJson);
 
 public sealed record UpdateWarehouseLayoutZoneRequestDto(
     string Type,

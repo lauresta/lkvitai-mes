@@ -31,7 +31,7 @@
             <div class="viz-search-wrap">
                 <div class="input-group">
                     <input class="form-control"
-                           placeholder="Search location (e.g. R3-C6-L3)"
+                           placeholder="Search location or rack address (e.g. R3-C6-L3 or 2-C3-01)"
                            value="@_searchQuery"
                            @oninput="OnSearchInput"
                            @onkeydown="HandleSearchKeyAsync" />
@@ -78,6 +78,19 @@
             <button class="btn btn-outline-secondary" @onclick="RefreshAsync">
                 <i class="bi bi-arrow-clockwise"></i> Refresh
             </button>
+            @if (_is3dView)
+            {
+                <select class="form-select"
+                        value="@_cameraMode"
+                        @onchange="OnCameraModeChangedAsync"
+                        style="min-width: 170px;">
+                    <option value="overview">Camera: Overview</option>
+                    <option value="low">Camera: Low Angle</option>
+                </select>
+                <button class="btn btn-outline-secondary" @onclick="ToggleRackLabelsAsync">
+                    @(_showRackLabels ? "Hide Rack Labels" : "Show Rack Labels")
+                </button>
+            }
             <button class="btn btn-warning" @onclick="ToggleViewAsync">
                 @(_is3dView ? "2D View" : "3D View")
             </button>
@@ -185,10 +198,93 @@
             <div class="viz-details">
                 @if (_selectedBin is null)
                 {
-                    <div class="viz-empty-selection">
-                        <i class="bi bi-cursor"></i>
-                        <span>Select a bin to view details.</span>
-                    </div>
+                    @if (_selectedSlot is null)
+                    {
+                        @if (_selectedRack is null)
+                        {
+                            <div class="viz-empty-selection">
+                                <i class="bi bi-cursor"></i>
+                                <span>Select a bin, slot, or rack to view details.</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <h2>Rack @_selectedRack.Id</h2>
+                            <dl class="row">
+                                <dt class="col-5">Type</dt>
+                                <dd class="col-7">@_selectedRack.Type</dd>
+                                <dt class="col-5">Origin</dt>
+                                <dd class="col-7">@_selectedRack.Origin.X, @_selectedRack.Origin.Y, @_selectedRack.Origin.Z</dd>
+                                <dt class="col-5">Dimensions</dt>
+                                <dd class="col-7">@FormatRackDimensions(_selectedRack.Dimensions)</dd>
+                                <dt class="col-5">Levels</dt>
+                                <dd class="col-7">@_selectedRack.Levels.Count</dd>
+                                <dt class="col-5">Slots / level</dt>
+                                <dd class="col-7">@_selectedRack.SlotsPerLevel</dd>
+                                <dt class="col-5">Bay count</dt>
+                                <dd class="col-7">@_selectedRack.BayCount</dd>
+                                <dt class="col-5">Back-to-back</dt>
+                                <dd class="col-7">@(_selectedRack.BackToBack ? "Yes" : "No")</dd>
+                                @if (!string.IsNullOrWhiteSpace(_selectedRack.PairedWithRackId))
+                                {
+                                    <dt class="col-5">Paired rack</dt>
+                                    <dd class="col-7">@_selectedRack.PairedWithRackId</dd>
+                                }
+                            </dl>
+
+                            <a class="btn btn-sm btn-outline-secondary"
+                               href="@BuildSlotsLink(rackId: _selectedRack.Id)">
+                                Open In Slots
+                            </a>
+                        }
+                    }
+                    else
+                    {
+                        <h2>@_selectedSlot.Address</h2>
+                        <dl class="row">
+                            <dt class="col-5">Status</dt>
+                            <dd class="col-7">@(_selectedSlot.Occupied ? "Occupied" : "Empty")</dd>
+                            <dt class="col-5">Rack</dt>
+                            <dd class="col-7">@_selectedSlot.RackId</dd>
+                            <dt class="col-5">Level</dt>
+                            <dd class="col-7">@_selectedSlot.Level</dd>
+                            <dt class="col-5">Slot</dt>
+                            <dd class="col-7">@_selectedSlot.Slot</dd>
+                            @if (ResolveBinForSlot(_selectedSlot) is { } slotBin)
+                            {
+                                <dt class="col-5">Location</dt>
+                                <dd class="col-7">@slotBin.Code</dd>
+                                @if (!string.IsNullOrWhiteSpace(slotBin.Address))
+                                {
+                                    <dt class="col-5">Bin address</dt>
+                                    <dd class="col-7">@slotBin.Address</dd>
+                                }
+                                @if (slotBin.Span.HasValue && slotBin.Span.Value > 1)
+                                {
+                                    <dt class="col-5">Span</dt>
+                                    <dd class="col-7">@FormatSpan(slotBin)</dd>
+                                }
+                            }
+                            <dt class="col-5">Coordinates</dt>
+                            <dd class="col-7">@_selectedSlot.Origin.X, @_selectedSlot.Origin.Y, @_selectedSlot.Origin.Z</dd>
+                            <dt class="col-5">Dimensions</dt>
+                            <dd class="col-7">@FormatRackDimensions(_selectedSlot.Dimensions)</dd>
+                        </dl>
+
+                        <div class="d-flex gap-2 flex-wrap">
+                            <a class="btn btn-sm btn-outline-secondary"
+                               href="@BuildSlotsLink(rackId: _selectedSlot.RackId, level: _selectedSlot.Level, address: _selectedSlot.Address)">
+                                Open In Slots
+                            </a>
+                            @if (ResolveBinForSlot(_selectedSlot) is { } occupiedSlotBin)
+                            {
+                                <a class="btn btn-sm btn-outline-secondary"
+                                   href="@BuildLocationsLink(occupiedSlotBin.Code)">
+                                    Open In Locations
+                                </a>
+                            }
+                        </div>
+                    }
                 }
                 else
                 {
@@ -200,6 +296,16 @@
                         <dd class="col-7">@_selectedBin.UtilizationPercent.ToString("0.##", CultureInfo.InvariantCulture)%</dd>
                         <dt class="col-5">Coordinates</dt>
                         <dd class="col-7">@_selectedBin.Coordinates.X, @_selectedBin.Coordinates.Y, @_selectedBin.Coordinates.Z</dd>
+                        @if (!string.IsNullOrWhiteSpace(_selectedBin.Address))
+                        {
+                            <dt class="col-5">Address</dt>
+                            <dd class="col-7">@_selectedBin.Address</dd>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(_selectedBin.LocationRole))
+                        {
+                            <dt class="col-5">Role</dt>
+                            <dd class="col-7">@_selectedBin.LocationRole</dd>
+                        }
                         <dt class="col-5">Dimensions</dt>
                         <dd class="col-7">@FormatDimensions(_selectedBin.Dimensions)</dd>
                         <dt class="col-5">Capacity</dt>
@@ -228,6 +334,14 @@
                        href="@($"/warehouse/locations/{_selectedBin.LocationId}")">
                         View Details
                     </a>
+                    <a class="btn btn-sm btn-outline-secondary mt-3 ms-2"
+                       href="@BuildSlotsLink(rackId: _selectedBin.RackId, level: _selectedBin.Level, address: _selectedBin.Address)">
+                        Open In Slots
+                    </a>
+                    <a class="btn btn-sm btn-outline-secondary mt-3 ms-2"
+                       href="@BuildLocationsLink(_selectedBin.Code)">
+                        Open In Locations
+                    </a>
                 }
             </div>
         </div>
@@ -243,6 +357,8 @@
 
     private Visualization3dDto? _model;
     private VisualizationBinDto? _selectedBin;
+    private VisualizationSlotDto? _selectedSlot;
+    private VisualizationRackDto? _selectedRack;
     private DotNetObjectReference<Warehouse3D>? _selfReference;
     private bool _isLoading;
     private bool _renderRequested;
@@ -252,6 +368,8 @@
     private string _searchQuery = string.Empty;
     private string _zoneFilter = "ALL";
     private string _statusFilter = "ALL";
+    private string _cameraMode = "overview";
+    private bool _showRackLabels = true;
     private decimal _zoom2d = 1m;
     private bool _showSuggestions;
     private List<string> _autocompleteSuggestions = [];
@@ -303,13 +421,29 @@
         }
 
         _renderRequested = false;
-        await JS.InvokeVoidAsync("warehouseVisualization.render", CanvasId, GetFilteredBins(), _selfReference, _selectedBin?.Code);
+        await JS.InvokeVoidAsync("warehouseVisualization.render", CanvasId, BuildRenderModel(), _selfReference, _selectedBin?.Code);
     }
 
     [JSInvokable]
     public Task OnBinSelectedFromJs(string binCode)
     {
         SelectBin(binCode);
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    [JSInvokable]
+    public Task OnSlotSelectedFromJs(string address)
+    {
+        SelectSlot(address);
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    [JSInvokable]
+    public Task OnRackSelectedFromJs(string rackId)
+    {
+        SelectRack(rackId);
         StateHasChanged();
         return Task.CompletedTask;
     }
@@ -397,11 +531,47 @@
         if (_model is null)
         {
             _selectedBin = null;
+            _selectedSlot = null;
+            _selectedRack = null;
             return;
         }
 
         _selectedBin = _model.Bins.FirstOrDefault(x =>
             string.Equals(x.Code, code, StringComparison.OrdinalIgnoreCase));
+        _selectedSlot = null;
+        _selectedRack = null;
+    }
+
+    private void SelectSlot(string address)
+    {
+        if (_model is null)
+        {
+            _selectedSlot = null;
+            _selectedBin = null;
+            _selectedRack = null;
+            return;
+        }
+
+        _selectedSlot = _model.Slots.FirstOrDefault(x =>
+            string.Equals(x.Address, address, StringComparison.OrdinalIgnoreCase));
+        _selectedBin = null;
+        _selectedRack = null;
+    }
+
+    private void SelectRack(string rackId)
+    {
+        if (_model is null)
+        {
+            _selectedRack = null;
+            _selectedSlot = null;
+            _selectedBin = null;
+            return;
+        }
+
+        _selectedRack = _model.Racks.FirstOrDefault(x =>
+            string.Equals(x.Id, rackId, StringComparison.OrdinalIgnoreCase));
+        _selectedSlot = null;
+        _selectedBin = null;
     }
 
     private async Task FocusBinAsync(string code)
@@ -411,6 +581,9 @@
         {
             return;
         }
+
+        _selectedSlot = null;
+        _selectedRack = null;
 
         if (_is3dView)
         {
@@ -441,6 +614,31 @@
             _statusFilter = "ALL";
         }
 
+        if (_is3dView)
+        {
+            _renderRequested = true;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task OnCameraModeChangedAsync(ChangeEventArgs args)
+    {
+        _cameraMode = (args.Value?.ToString() ?? "overview").Trim().ToLowerInvariant();
+        if (_cameraMode is not ("overview" or "low"))
+        {
+            _cameraMode = "overview";
+        }
+
+        if (_is3dView)
+        {
+            _renderRequested = true;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task ToggleRackLabelsAsync()
+    {
+        _showRackLabels = !_showRackLabels;
         if (_is3dView)
         {
             _renderRequested = true;
@@ -485,6 +683,14 @@
             {
                 SelectBin(_selectedBin.Code);
             }
+            else if (_selectedSlot is not null)
+            {
+                SelectSlot(_selectedSlot.Address);
+            }
+            else if (_selectedRack is not null)
+            {
+                SelectRack(_selectedRack.Id);
+            }
 
             _renderRequested = _is3dView;
         }
@@ -510,6 +716,8 @@
         }
 
         _selectedBin = null;
+        _selectedSlot = null;
+        _selectedRack = null;
         _searchQuery = string.Empty;
         _zoneFilter = "ALL";
         _statusFilter = "ALL";
@@ -548,6 +756,36 @@
         return $"{dimensions.Width.Value:0.###} x {dimensions.Length.Value:0.###} x {dimensions.Height.Value:0.###} m";
     }
 
+    private static string FormatRackDimensions(VisualizationRackDimensionsDto dimensions)
+        => $"{dimensions.Width:0.###} x {dimensions.Depth:0.###} x {dimensions.Height:0.###} m";
+
+    private static string FormatSpan(VisualizationBinDto bin)
+    {
+        if (!bin.StartSlot.HasValue)
+        {
+            return "n/a";
+        }
+
+        var span = Math.Max(bin.Span ?? 1, 1);
+        var endSlot = bin.StartSlot.Value + span - 1;
+        return $"{bin.StartSlot.Value}-{endSlot}";
+    }
+
+    private VisualizationBinDto? ResolveBinForSlot(VisualizationSlotDto slot)
+    {
+        if (_model is null)
+        {
+            return null;
+        }
+
+        return _model.Bins.FirstOrDefault(bin =>
+            string.Equals(bin.RackId, slot.RackId, StringComparison.OrdinalIgnoreCase) &&
+            bin.Level == slot.Level &&
+            bin.StartSlot.HasValue &&
+            slot.Slot >= bin.StartSlot.Value &&
+            slot.Slot <= (bin.StartSlot.Value + Math.Max(bin.Span ?? 1, 1) - 1));
+    }
+
     private List<VisualizationBinDto> GetFilteredBins()
     {
         if (_model is null)
@@ -558,6 +796,23 @@
         return _model.Bins
             .Where(BinMatchesFilters)
             .ToList();
+    }
+
+    private object BuildRenderModel()
+    {
+        return new
+        {
+            warehouse = _model?.Warehouse,
+            bins = GetFilteredBins(),
+            racks = _model?.Racks ?? [],
+            slots = _model?.Slots ?? [],
+            zones = _model?.Zones ?? [],
+            options = new
+            {
+                cameraMode = _cameraMode,
+                showRackLabels = _showRackLabels
+            }
+        };
     }
 
     private bool BinMatchesFilters(VisualizationBinDto bin)
@@ -623,6 +878,37 @@
     private static string ToSvgHeight(decimal height) => ToSvgNumber(height * SvgScale);
 
     private static string ToSvgNumber(decimal value) => value.ToString("0.###", CultureInfo.InvariantCulture);
+
+    private string BuildSlotsLink(string? rackId = null, int? level = null, string? address = null)
+    {
+        var query = new Dictionary<string, string?>();
+        if (!string.IsNullOrWhiteSpace(_warehouseCode))
+        {
+            query["warehouse"] = _warehouseCode;
+        }
+
+        if (!string.IsNullOrWhiteSpace(rackId))
+        {
+            query["rack"] = rackId;
+        }
+
+        if (level.HasValue)
+        {
+            query["level"] = level.Value.ToString(CultureInfo.InvariantCulture);
+        }
+
+        if (!string.IsNullOrWhiteSpace(address))
+        {
+            query["address"] = address;
+        }
+
+        return QueryHelpers.AddQueryString("/warehouse/admin/slots", query);
+    }
+
+    private static string BuildLocationsLink(string code)
+        => QueryHelpers.AddQueryString(
+            "/admin/locations",
+            new Dictionary<string, string?> { ["search"] = code, ["edit"] = code });
 
     public async ValueTask DisposeAsync()
     {

@@ -1,6 +1,6 @@
 (function () {
     const contexts = {};
-    const debugEnabled = true;
+    const debugEnabled = false;
 
     const VISUAL_CONFIG = {
         fallbackColor: 0x999999,
@@ -172,6 +172,82 @@
         return texture;
     }
 
+    function createLabelSprite() {
+        const canvas = document.createElement("canvas");
+        canvas.width = 1024;
+        canvas.height = 256;
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.minFilter = THREE.LinearFilter;
+        texture.magFilter = THREE.LinearFilter;
+        texture.needsUpdate = true;
+
+        const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+            map: texture,
+            transparent: true,
+            depthWrite: false,
+            toneMapped: false
+        }));
+        sprite.visible = false;
+        sprite.renderOrder = 12;
+        markAsOverlay(sprite);
+
+        return { canvas, texture, sprite };
+    }
+
+    function drawLabel(canvas, texture, text) {
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        if (!text) {
+            texture.needsUpdate = true;
+            return;
+        }
+
+        const radius = 38;
+        ctx.fillStyle = "rgba(15, 23, 42, 0.84)";
+        ctx.strokeStyle = "rgba(34, 211, 238, 0.96)";
+        ctx.lineWidth = 8;
+
+        ctx.beginPath();
+        ctx.moveTo(radius, 24);
+        ctx.lineTo(canvas.width - radius, 24);
+        ctx.quadraticCurveTo(canvas.width - 24, 24, canvas.width - 24, radius);
+        ctx.lineTo(canvas.width - 24, canvas.height - radius);
+        ctx.quadraticCurveTo(canvas.width - 24, canvas.height - 24, canvas.width - radius, canvas.height - 24);
+        ctx.lineTo(radius, canvas.height - 24);
+        ctx.quadraticCurveTo(24, canvas.height - 24, 24, canvas.height - radius);
+        ctx.lineTo(24, radius);
+        ctx.quadraticCurveTo(24, 24, radius, 24);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = "#e6fbff";
+        ctx.font = "bold 84px Segoe UI, Arial, sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+        texture.needsUpdate = true;
+    }
+
+    function createRackFloorLabel(text) {
+        const label = createLabelSprite();
+        drawLabel(label.canvas, label.texture, text);
+        label.sprite.visible = true;
+        label.sprite.material.opacity = 0.88;
+        return label.sprite;
+    }
+
+    function rotateLocalPoint(localX, localY, rack) {
+        const radians = (Number(rack?.orientationDeg || 0) * Math.PI) / 180;
+        const cos = Math.cos(radians);
+        const sin = Math.sin(radians);
+        return {
+            x: Number(rack?.origin?.x || 0) + (localX * cos) - (localY * sin),
+            z: Number(rack?.origin?.y || 0) + (localX * sin) + (localY * cos)
+        };
+    }
+
     function computeRootBounds(root, bbox, size, center) {
         root.updateWorldMatrix(true, true);
         if (root.geometry && root.geometry.boundingBox) {
@@ -193,6 +269,271 @@
             part.userData.isOverlay = true;
             part.raycast = () => null;
         });
+    }
+
+    function toSceneCoordinates(origin, dimensions) {
+        const width = Number(dimensions?.width || 0);
+        const depthOrLength = dimensions?.depth ?? dimensions?.length ?? 0;
+        const length = Number(depthOrLength);
+        const height = Number(dimensions?.height || 0);
+        const x = Number(origin?.x || 0);
+        const y = Number(origin?.z || 0);
+        const z = Number(origin?.y || 0);
+
+        return {
+            x,
+            y,
+            z,
+            width,
+            length,
+            height,
+            centerX: x + (width / 2),
+            centerY: y + (height / 2),
+            centerZ: z + (length / 2)
+        };
+    }
+
+    function createFloorOutline(width, length, color, opacity, elevation) {
+        const outline = new THREE.LineSegments(
+            new THREE.EdgesGeometry(new THREE.PlaneGeometry(width, length)),
+            new THREE.LineBasicMaterial({
+                color,
+                transparent: true,
+                opacity,
+                depthWrite: false
+            }));
+        outline.rotation.x = -Math.PI / 2;
+        outline.position.set(width / 2, elevation, length / 2);
+        return outline;
+    }
+
+    function renderWarehouseFloor(scene, warehouse) {
+        const w = Number(warehouse?.dimensions?.width || 0);
+        const l = Number(warehouse?.dimensions?.length || 0);
+        const h = Number(warehouse?.dimensions?.height || 0);
+        if (w <= 0 || l <= 0) {
+            return;
+        }
+
+        const floorMat = new THREE.MeshStandardMaterial({ color: 0xd6dadd, roughness: 0.9, metalness: 0.03 });
+        const floor = new THREE.Mesh(new THREE.PlaneGeometry(w, l), floorMat);
+        floor.rotation.x = -Math.PI / 2;
+        floor.position.set(w / 2, 0, l / 2);
+        floor.receiveShadow = true;
+        scene.add(floor);
+        scene.add(createFloorOutline(w, l, 0x9ca3af, 0.55, 0.004));
+
+        if (h > 0) {
+            const wallMat = new THREE.MeshStandardMaterial({ color: 0xe8eaec, roughness: 0.92, metalness: 0.0, transparent: true, opacity: 0.42, side: THREE.DoubleSide });
+            const thickness = 0.15;
+            const walls = [
+                { w, dh: h, dd: thickness, x: w / 2, y: h / 2, z: 0 },
+                { w, dh: h, dd: thickness, x: w / 2, y: h / 2, z: l },
+                { w: thickness, dh: h, dd: l, x: 0, y: h / 2, z: l / 2 },
+                { w: thickness, dh: h, dd: l, x: w, y: h / 2, z: l / 2 }
+            ];
+            walls.forEach((wall) => {
+                const mesh = new THREE.Mesh(new THREE.BoxGeometry(wall.w, wall.dh, wall.dd), wallMat);
+                mesh.position.set(wall.x, wall.y, wall.z);
+                scene.add(mesh);
+            });
+
+            const roofOutline = createFloorOutline(w, l, 0xcbd5e1, 0.38, h + 0.002);
+            scene.add(roofOutline);
+        }
+    }
+
+    function renderZones(scene, zones) {
+        if (!Array.isArray(zones) || zones.length === 0) {
+            return;
+        }
+
+        zones.forEach((zone) => {
+            const x1 = Number(zone?.bounds?.x1 || 0);
+            const y1 = Number(zone?.bounds?.y1 || 0);
+            const x2 = Number(zone?.bounds?.x2 || 0);
+            const y2 = Number(zone?.bounds?.y2 || 0);
+            const zoneW = Math.abs(x2 - x1);
+            const zoneL = Math.abs(y2 - y1);
+            if (zoneW <= 0 || zoneL <= 0) {
+                return;
+            }
+
+            const color = toHexColor(zone?.color);
+            const fillMat = new THREE.MeshBasicMaterial({
+                color,
+                transparent: true,
+                opacity: 0.18,
+                depthWrite: false,
+                side: THREE.DoubleSide,
+                polygonOffset: true,
+                polygonOffsetFactor: -2,
+                polygonOffsetUnits: -2
+            });
+            const fill = new THREE.Mesh(new THREE.PlaneGeometry(zoneW, zoneL), fillMat);
+            fill.rotation.x = -Math.PI / 2;
+            fill.position.set((x1 + x2) / 2, 0.003, (y1 + y2) / 2);
+            scene.add(fill);
+
+            const border = new THREE.LineSegments(
+                new THREE.EdgesGeometry(new THREE.PlaneGeometry(zoneW, zoneL)),
+                new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.5, depthWrite: false }));
+            border.rotation.x = -Math.PI / 2;
+            border.position.set((x1 + x2) / 2, 0.005, (y1 + y2) / 2);
+            scene.add(border);
+        });
+    }
+
+    function renderRackFrames(scene, racks, interactiveRackMeshes, showRackLabels) {
+        if (!Array.isArray(racks) || racks.length === 0) {
+            return;
+        }
+
+        const group = new THREE.Group();
+        const postMaterial = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.35, roughness: 0.55 });
+        const plankMaterial = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.08, roughness: 0.72 });
+        const floorMaterial = new THREE.MeshBasicMaterial({ color: 0xd1fae5, transparent: true, opacity: 0.35, side: THREE.DoubleSide });
+        const fenceMaterial = new THREE.MeshStandardMaterial({ color: 0x6ee7b7, metalness: 0.1, roughness: 0.7 });
+
+        racks.forEach((rack) => {
+            const layout = toSceneCoordinates(rack.origin, rack.dimensions);
+
+            if (rack.type === "FloorStorage") {
+                const floor = new THREE.Mesh(new THREE.BoxGeometry(layout.width, 0.02, layout.length), floorMaterial);
+                floor.position.set(layout.centerX, layout.y + 0.01, layout.centerZ);
+                floor.receiveShadow = true;
+                floor.userData = {
+                    kind: "rack",
+                    rackId: rack.id
+                };
+                group.add(floor);
+                interactiveRackMeshes.push(floor);
+
+                const fenceHeight = 0.12;
+                const fenceThickness = 0.04;
+                [
+                    { w: layout.width, h: fenceHeight, d: fenceThickness, x: layout.centerX, y: layout.y + (fenceHeight / 2), z: layout.z + (fenceThickness / 2) },
+                    { w: layout.width, h: fenceHeight, d: fenceThickness, x: layout.centerX, y: layout.y + (fenceHeight / 2), z: layout.z + layout.length - (fenceThickness / 2) },
+                    { w: fenceThickness, h: fenceHeight, d: layout.length, x: layout.x + (fenceThickness / 2), y: layout.y + (fenceHeight / 2), z: layout.centerZ },
+                    { w: fenceThickness, h: fenceHeight, d: layout.length, x: layout.x + layout.width - (fenceThickness / 2), y: layout.y + (fenceHeight / 2), z: layout.centerZ }
+                ].forEach((fence) => {
+                    const mesh = new THREE.Mesh(new THREE.BoxGeometry(fence.w, fence.h, fence.d), fenceMaterial);
+                    mesh.position.set(fence.x, fence.y, fence.z);
+                    mesh.castShadow = true;
+                    mesh.userData = {
+                        kind: "rack",
+                        rackId: rack.id
+                    };
+                    group.add(mesh);
+                    interactiveRackMeshes.push(mesh);
+                });
+
+                return;
+            }
+
+            if (rack.type !== "PalletRack" && rack.type !== "WallShelf") {
+                return;
+            }
+
+            const postSize = 0.06;
+            const plankThickness = 0.06;
+            const bayCount = Math.max(Number(rack.bayCount || 0), 0);
+            const effectiveBayCount = Math.max(bayCount, 1);
+            const uprightPairs = effectiveBayCount + 1;
+            const spacing = layout.width / effectiveBayCount;
+
+            for (let i = 0; i < uprightPairs; i += 1) {
+                const postX = layout.x + (i * spacing);
+
+                const frontPost = new THREE.Mesh(new THREE.BoxGeometry(postSize, layout.height, postSize), postMaterial);
+                frontPost.position.set(postX, layout.centerY, layout.z + (postSize / 2));
+                frontPost.castShadow = true;
+                frontPost.receiveShadow = true;
+                frontPost.userData = {
+                    kind: "rack",
+                    rackId: rack.id
+                };
+                group.add(frontPost);
+                interactiveRackMeshes.push(frontPost);
+
+                const backPost = new THREE.Mesh(new THREE.BoxGeometry(postSize, layout.height, postSize), postMaterial);
+                backPost.position.set(postX, layout.centerY, layout.z + layout.length - (postSize / 2));
+                backPost.castShadow = true;
+                backPost.receiveShadow = true;
+                backPost.userData = {
+                    kind: "rack",
+                    rackId: rack.id
+                };
+                group.add(backPost);
+                interactiveRackMeshes.push(backPost);
+            }
+
+            (rack.levels || []).forEach((level) => {
+                const plank = new THREE.Mesh(
+                    new THREE.BoxGeometry(layout.width, plankThickness, layout.length),
+                    plankMaterial);
+                plank.position.set(
+                    layout.centerX,
+                    layout.y + Number(level.heightFromBase || 0) + (plankThickness / 2),
+                    layout.centerZ);
+                plank.castShadow = true;
+                plank.receiveShadow = true;
+                plank.userData = {
+                    kind: "rack",
+                    rackId: rack.id
+                };
+                group.add(plank);
+                interactiveRackMeshes.push(plank);
+            });
+
+            const labelText = String(rack.id || "").trim();
+            if (showRackLabels && labelText) {
+                const sideOffset = Math.max(0.85, layout.length * 0.5 + 0.55);
+                const localCenterX = layout.width / 2;
+                const nearSide = rotateLocalPoint(localCenterX, -sideOffset, rack);
+                const farSide = rotateLocalPoint(localCenterX, layout.length + 0.55, rack);
+
+                [nearSide, farSide].forEach((point) => {
+                    const labelSprite = createRackFloorLabel(labelText);
+                    const labelWidth = Math.max(1.5, Math.min(3.2, 1.1 + (labelText.length * 0.45)));
+                    labelSprite.position.set(point.x, 0.16, point.z);
+                    labelSprite.scale.set(labelWidth, 0.72, 1);
+                    group.add(labelSprite);
+                });
+            }
+        });
+
+        scene.add(group);
+    }
+
+    function renderSlots(scene, slots, interactiveSlotMeshes) {
+        if (!Array.isArray(slots) || slots.length === 0) {
+            return;
+        }
+
+        const group = new THREE.Group();
+        slots.forEach((slot) => {
+            const layout = toSceneCoordinates(slot.origin, slot.dimensions);
+            const wireframe = new THREE.LineSegments(
+                new THREE.EdgesGeometry(new THREE.BoxGeometry(layout.width, layout.height, layout.length)),
+                new THREE.LineBasicMaterial({
+                    color: slot.occupied ? 0x94a3b8 : 0xcbd5e1,
+                    transparent: true,
+                    opacity: slot.occupied ? 0.12 : 0.3,
+                    depthWrite: false
+                }));
+            wireframe.position.set(layout.centerX, layout.centerY, layout.centerZ);
+            wireframe.userData = {
+                kind: "slot",
+                address: slot.address,
+                occupied: !!slot.occupied
+            };
+            group.add(wireframe);
+
+            interactiveSlotMeshes.push(wireframe);
+        });
+
+        scene.add(group);
     }
 
     function dispose(containerId) {
@@ -225,7 +566,7 @@
         log("dispose: completed", { containerId });
     }
 
-    function render(containerId, bins, dotNetRef, initialSelectedCode) {
+    function render(containerId, data, dotNetRef, initialSelectedCode) {
         try {
             dispose(containerId);
 
@@ -242,10 +583,12 @@
 
             log("render: start", {
                 containerId,
-                binCount: Array.isArray(bins) ? bins.length : 0,
-                binsSample: Array.isArray(bins)
-                    ? bins.slice(0, 5).map((x) => x.code)
-                    : []
+                binCount: Array.isArray(data) ? data.length : (Array.isArray(data?.bins) ? data.bins.length : 0),
+                binsSample: Array.isArray(data)
+                    ? data.slice(0, 5).map((x) => x.code)
+                    : Array.isArray(data?.bins)
+                        ? data.bins.slice(0, 5).map((x) => x.code)
+                        : []
             });
 
             const scene = new THREE.Scene();
@@ -260,6 +603,8 @@
             const renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setPixelRatio(window.devicePixelRatio || 1);
             renderer.setSize(width, height);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             renderer.domElement.style.touchAction = "none";
             container.appendChild(renderer.domElement);
 
@@ -307,10 +652,24 @@
             };
             controls.target.set(0, 0, 0);
 
-            scene.add(new THREE.AmbientLight(0xffffff, 0.95));
-            const keyLight = new THREE.DirectionalLight(0xffffff, 0.8);
-            keyLight.position.set(30, 60, 20);
+            scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+            const hemiLight = new THREE.HemisphereLight(0xf8fbff, 0xc7d2da, 0.7);
+            scene.add(hemiLight);
+            const keyLight = new THREE.DirectionalLight(0xffffff, 0.95);
             scene.add(keyLight);
+            const fillLight = new THREE.DirectionalLight(0xdbeafe, 0.35);
+            scene.add(fillLight);
+
+            const bins = Array.isArray(data) ? data : (data?.bins || []);
+            const racks = Array.isArray(data?.racks) ? data.racks : [];
+            const slots = Array.isArray(data?.slots) ? data.slots : [];
+            const warehouse = !Array.isArray(data) ? (data?.warehouse ?? null) : null;
+            const zones = !Array.isArray(data) && Array.isArray(data?.zones) ? data.zones : [];
+            const renderOptions = !Array.isArray(data) ? (data?.options ?? {}) : {};
+            const cameraMode = typeof renderOptions.cameraMode === "string"
+                ? renderOptions.cameraMode.toLowerCase()
+                : "overview";
+            const showRackLabels = renderOptions.showRackLabels !== false;
 
             const normalizedBins = (bins || []).map((bin) => ({
                 bin,
@@ -322,6 +681,7 @@
                 height: Number(bin.dimensions?.height || 0),
                 capacityVolume: Number(bin.capacity?.volume || 0)
             }));
+            const rackExtents = racks.map((rack) => toSceneCoordinates(rack.origin, rack.dimensions));
 
             const minDistance = computeMinDistance(normalizedBins);
 
@@ -389,52 +749,118 @@
                 };
             });
 
-            const minX = resolvedBins.length
-                ? Math.min(...resolvedBins.map((x) => x.centerX - (x.width / 2)))
-                : 0;
-            const minY = resolvedBins.length
-                ? Math.min(...resolvedBins.map((x) => x.centerY - (x.height / 2)))
-                : 0;
-            const minZ = resolvedBins.length
-                ? Math.min(...resolvedBins.map((x) => x.centerZ - (x.depth / 2)))
-                : 0;
-            const maxX = resolvedBins.length
-                ? Math.max(...resolvedBins.map((x) => x.centerX + (x.width / 2)))
-                : 1;
-            const maxY = resolvedBins.length
-                ? Math.max(...resolvedBins.map((x) => x.centerY + (x.height / 2)))
-                : 1;
-            const maxZ = resolvedBins.length
-                ? Math.max(...resolvedBins.map((x) => x.centerZ + (x.depth / 2)))
-                : 1;
+            const warehouseW = Number(warehouse?.dimensions?.width || 0);
+            const warehouseL = Number(warehouse?.dimensions?.length || 0);
+            const warehouseH = Number(warehouse?.dimensions?.height || 0);
+            const warehouseExtent = warehouseW > 0 && warehouseL > 0
+                ? [{ minX: 0, minY: 0, minZ: 0, maxX: warehouseW, maxY: Math.max(warehouseH, 0), maxZ: warehouseL }]
+                : [];
+
+            const contentExtents = [
+                ...resolvedBins.map((x) => ({
+                    minX: x.centerX - (x.width / 2),
+                    minY: x.centerY - (x.height / 2),
+                    minZ: x.centerZ - (x.depth / 2),
+                    maxX: x.centerX + (x.width / 2),
+                    maxY: x.centerY + (x.height / 2),
+                    maxZ: x.centerZ + (x.depth / 2)
+                })),
+                ...rackExtents.map((rack) => ({
+                    minX: rack.x,
+                    minY: rack.y,
+                    minZ: rack.z,
+                    maxX: rack.x + rack.width,
+                    maxY: rack.y + rack.height,
+                    maxZ: rack.z + rack.length
+                }))
+            ];
+
+            const extents = [
+                ...contentExtents,
+                ...warehouseExtent
+            ];
+            const minX = extents.length ? Math.min(...extents.map((x) => x.minX)) : 0;
+            const minY = extents.length ? Math.min(...extents.map((x) => x.minY)) : 0;
+            const minZ = extents.length ? Math.min(...extents.map((x) => x.minZ)) : 0;
+            const maxX = extents.length ? Math.max(...extents.map((x) => x.maxX)) : 1;
+            const maxY = extents.length ? Math.max(...extents.map((x) => x.maxY)) : 1;
+            const maxZ = extents.length ? Math.max(...extents.map((x) => x.maxZ)) : 1;
             const centerX = (minX + maxX) / 2;
             const centerY = (minY + maxY) / 2;
             const centerZ = (minZ + maxZ) / 2;
             const maxSpan = Math.max(maxX - minX, maxY - minY, maxZ - minZ, 1);
-            const cameraDistance = Math.max(12, maxSpan * 2.4);
+            const contentMinX = contentExtents.length ? Math.min(...contentExtents.map((x) => x.minX)) : minX;
+            const contentMinY = contentExtents.length ? Math.min(...contentExtents.map((x) => x.minY)) : minY;
+            const contentMinZ = contentExtents.length ? Math.min(...contentExtents.map((x) => x.minZ)) : minZ;
+            const contentMaxX = contentExtents.length ? Math.max(...contentExtents.map((x) => x.maxX)) : maxX;
+            const contentMaxY = contentExtents.length ? Math.max(...contentExtents.map((x) => x.maxY)) : maxY;
+            const contentMaxZ = contentExtents.length ? Math.max(...contentExtents.map((x) => x.maxZ)) : maxZ;
+            const contentCenterX = (contentMinX + contentMaxX) / 2;
+            const contentCenterY = (contentMinY + contentMaxY) / 2;
+            const contentCenterZ = (contentMinZ + contentMaxZ) / 2;
+            const contentSpan = Math.max(contentMaxX - contentMinX, contentMaxY - contentMinY, contentMaxZ - contentMinZ, 1);
+            const cameraDistance = Math.max(7, contentSpan * 1.18);
             const explicitDimensionCount = resolvedBins.filter((x) => x.hasExplicitDimensions).length;
+
+            keyLight.position.set(centerX + (maxSpan * 0.7), maxY + Math.max(18, maxSpan * 1.35), centerZ + (maxSpan * 0.45));
+            keyLight.castShadow = true;
+            keyLight.shadow.mapSize.width = 2048;
+            keyLight.shadow.mapSize.height = 2048;
+            keyLight.shadow.bias = -0.0008;
+            keyLight.shadow.camera.near = 0.5;
+            keyLight.shadow.camera.far = Math.max(120, maxSpan * 6);
+            keyLight.shadow.camera.left = -Math.max(20, maxSpan * 1.1);
+            keyLight.shadow.camera.right = Math.max(20, maxSpan * 1.1);
+            keyLight.shadow.camera.top = Math.max(20, maxSpan * 1.1);
+            keyLight.shadow.camera.bottom = -Math.max(20, maxSpan * 1.1);
+            keyLight.target.position.set(centerX, minY, centerZ);
+            scene.add(keyLight.target);
+
+            fillLight.position.set(centerX - (maxSpan * 0.5), maxY + Math.max(12, maxSpan * 0.8), centerZ - (maxSpan * 0.55));
 
             log("render: scene extents computed", {
                 minX, minY, minZ, maxX, maxY, maxZ, centerX, centerY, centerZ, maxSpan, minDistance,
-                cameraDistance, baseFootprint, maxVolume, explicitDimensionCount
+                contentMinX, contentMinY, contentMinZ, contentMaxX, contentMaxY, contentMaxZ,
+                contentCenterX, contentCenterY, contentCenterZ, contentSpan, cameraDistance,
+                baseFootprint, maxVolume, explicitDimensionCount
             });
 
-            controls.target.set(centerX, centerY, centerZ);
-            camera.position.set(
-                centerX + cameraDistance,
-                centerY + cameraDistance * 0.9,
-                centerZ + cameraDistance);
+            controls.target.set(contentCenterX, contentCenterY, contentCenterZ);
+            if (cameraMode === "low") {
+                camera.position.set(
+                    contentCenterX + (cameraDistance * 0.76),
+                    contentCenterY + Math.max(2.4, contentSpan * 0.11),
+                    contentCenterZ + (cameraDistance * 0.28));
+            } else {
+                camera.position.set(
+                    contentCenterX + (cameraDistance * 0.9),
+                    contentCenterY + (cameraDistance * 0.48),
+                    contentCenterZ + (cameraDistance * 0.72));
+            }
             controls.update();
 
-            const gridSize = Math.max(30, Math.ceil(maxSpan * 4));
-            const gridDivisions = Math.max(10, Math.min(80, Math.round(gridSize / 2)));
-            const gridHelper = new THREE.GridHelper(gridSize, gridDivisions, 0xbfc5cd, 0xe4e7eb);
-            scene.add(gridHelper);
+            const hasWarehouseDims =
+                warehouse &&
+                Number(warehouse?.dimensions?.width) > 0 &&
+                Number(warehouse?.dimensions?.length) > 0;
+
+            if (hasWarehouseDims) {
+                renderWarehouseFloor(scene, warehouse);
+                renderZones(scene, zones);
+            } else {
+                const gridSize = Math.max(30, Math.ceil(maxSpan * 4));
+                const gridDivisions = Math.max(10, Math.min(80, Math.round(gridSize / 2)));
+                const gridHelper = new THREE.GridHelper(gridSize, gridDivisions, 0xbfc5cd, 0xe4e7eb);
+                scene.add(gridHelper);
+            }
 
             const raycaster = new THREE.Raycaster();
+            raycaster.params.Line.threshold = 0.12;
             const mouse = new THREE.Vector2();
             const meshesByCode = {};
             const interactiveMeshes = [];
+            const interactiveSlotMeshes = [];
+            const interactiveRackMeshes = [];
 
             const reservedTexture = createReservedHatchTexture();
             const reservedOverlayMaterial = new THREE.MeshBasicMaterial({
@@ -462,9 +888,15 @@
             markAsOverlay(selectionPin);
             scene.add(selectionPin);
 
+            const selectionLabel = createLabelSprite();
+            scene.add(selectionLabel.sprite);
+
             const selectionBoundsBox = new THREE.Box3();
             const selectionBoundsSize = new THREE.Vector3();
             const selectionBoundsCenter = new THREE.Vector3();
+
+            renderRackFrames(scene, racks, interactiveRackMeshes, showRackLabels);
+            renderSlots(scene, slots, interactiveSlotMeshes);
 
             function createDashedRingSegments(innerRadius, outerRadius, dashCount, gapRatio, material) {
                 const group = new THREE.Group();
@@ -542,6 +974,8 @@
                     polygonOffsetUnits: 1
                 });
                 const cube = new THREE.Mesh(geometry, material);
+                cube.castShadow = true;
+                cube.receiveShadow = true;
 
                 const baseBorderMaterial = new THREE.LineBasicMaterial({
                     color: VISUAL_CONFIG.borderColor,
@@ -594,6 +1028,7 @@
 
                 cube.position.set(meshX, meshY, meshZ);
                 cube.userData = {
+                    kind: "bin",
                     code: bin.code,
                     baseColor: toHexColor(bin.color),
                     baseBorderMaterial,
@@ -627,7 +1062,7 @@
             });
 
             let selectedCode = null;
-            let selectedMesh = null;
+            let selectedObject = null;
             let cameraFlightHandle = null;
 
             function computePinBounceOffset(mesh, timestampMs) {
@@ -740,15 +1175,45 @@
                     selectionBoundsCenter.x,
                     selectionBoundsBox.min.y + VISUAL_CONFIG.selectionRingFloorOffset,
                     selectionBoundsCenter.z);
+
+                selectionLabel.sprite.position.set(
+                    selectionBoundsCenter.x,
+                    selectionBoundsBox.max.y + pinScale + 0.55,
+                    selectionBoundsCenter.z);
+                const labelWidth = clamp(Math.max(selectionBoundsSize.x, selectionBoundsSize.z) * 1.45, 3.2, 9.5);
+                const labelHeight = clamp(labelWidth * 0.26, 0.9, 1.8);
+                selectionLabel.sprite.scale.set(labelWidth, labelHeight, 1);
             }
 
-            function applySelection(code) {
-                selectedCode = code || null;
-                selectedMesh = selectedCode ? meshesByCode[selectedCode] || null : null;
+            function getSelectionLabel(targetObject) {
+                if (!targetObject?.userData) {
+                    return "";
+                }
+
+                if (targetObject.userData.kind === "bin") {
+                    return targetObject.userData.code || "";
+                }
+
+                if (targetObject.userData.kind === "slot") {
+                    return targetObject.userData.address || "";
+                }
+
+                if (targetObject.userData.kind === "rack") {
+                    return targetObject.userData.rackId ? `Rack ${targetObject.userData.rackId}` : "Rack";
+                }
+
+                return "";
+            }
+
+            function applySelection(codeOrObject) {
+                selectedCode = typeof codeOrObject === "string" ? codeOrObject : null;
+                selectedObject = selectedCode
+                    ? meshesByCode[selectedCode] || null
+                    : (codeOrObject && typeof codeOrObject === "object" ? codeOrObject : null);
                 const useOutlinePass = !!outlinePass;
 
                 interactiveMeshes.forEach((mesh) => {
-                    const isSelected = !!selectedMesh && mesh === selectedMesh;
+                    const isSelected = !!selectedObject && mesh === selectedObject;
                     if (mesh.userData.baseBorderMaterial) {
                         mesh.userData.baseBorderMaterial.color.setHex(VISUAL_CONFIG.borderColor);
                         mesh.userData.baseBorderMaterial.opacity = VISUAL_CONFIG.borderOpacity;
@@ -760,22 +1225,43 @@
                         mesh.userData.selectionFillOverlay.visible = isSelected;
                     }
                 });
+                interactiveSlotMeshes.forEach((slotMesh) => {
+                    const isSelected = !!selectedObject && slotMesh === selectedObject;
+                    if (slotMesh.material) {
+                        slotMesh.material.color.setHex(isSelected ? VISUAL_CONFIG.selectionColor : (slotMesh.userData.occupied ? 0x94a3b8 : 0xcbd5e1));
+                        slotMesh.material.opacity = isSelected ? 0.95 : (slotMesh.userData.occupied ? 0.12 : 0.3);
+                    }
+                });
+                interactiveRackMeshes.forEach((rackMesh) => {
+                    const isSelected = !!selectedObject && rackMesh === selectedObject;
+                    if (rackMesh.material?.emissive) {
+                        rackMesh.material.emissive.setHex(isSelected ? 0x0891b2 : 0x000000);
+                        rackMesh.material.emissiveIntensity = isSelected ? 0.7 : 0;
+                    }
+                });
                 if (outlinePass) {
-                    outlinePass.selectedObjects = selectedMesh ? [selectedMesh] : [];
+                    outlinePass.selectedObjects =
+                        selectedObject && selectedObject.userData?.kind === "bin"
+                            ? [selectedObject]
+                            : [];
                 }
 
-                if (!selectedMesh) {
+                if (!selectedObject) {
                     selectionPin.visible = false;
                     selectionRingGroup.visible = false;
+                    selectionLabel.sprite.visible = false;
+                    drawLabel(selectionLabel.canvas, selectionLabel.texture, "");
                     return;
                 }
 
                 selectionPin.visible = true;
                 selectionRingGroup.visible = true;
+                selectionLabel.sprite.visible = true;
                 selectionRing.rotation.y = 0;
-                selectedMesh.updateWorldMatrix(true, true);
-                updateSelectionRingProfile(selectedMesh);
-                updateSelectionAnchors(selectedMesh, performance.now());
+                selectedObject.updateWorldMatrix(true, true);
+                updateSelectionRingProfile(selectedObject);
+                updateSelectionAnchors(selectedObject, performance.now());
+                drawLabel(selectionLabel.canvas, selectionLabel.texture, getSelectionLabel(selectedObject));
             }
 
             function focusBin(code) {
@@ -837,13 +1323,37 @@
                 mouse.y = -((event.clientY - bounds.top) / bounds.height) * 2 + 1;
 
                 raycaster.setFromCamera(mouse, camera);
-                const intersects = raycaster.intersectObjects(interactiveMeshes, false);
+                const intersects = raycaster.intersectObjects([...interactiveMeshes, ...interactiveSlotMeshes, ...interactiveRackMeshes], false);
                 if (intersects.length === 0) {
                     log("click: no intersection");
                     return;
                 }
 
-                const code = intersects[0].object?.userData?.code;
+                const target =
+                    intersects.find((entry) => entry.object?.userData?.kind === "bin")?.object ??
+                    intersects.find((entry) => entry.object?.userData?.kind === "slot")?.object ??
+                    intersects.find((entry) => entry.object?.userData?.kind === "rack")?.object ??
+                    intersects[0].object;
+
+                if (target?.userData?.kind === "slot") {
+                    log("click: selected slot", { address: target.userData.address, occupied: target.userData.occupied });
+                    applySelection(target);
+                    if (dotNetRef) {
+                        dotNetRef.invokeMethodAsync("OnSlotSelectedFromJs", target.userData.address);
+                    }
+                    return;
+                }
+
+                if (target?.userData?.kind === "rack") {
+                    log("click: selected rack", { rackId: target.userData.rackId });
+                    applySelection(target);
+                    if (dotNetRef) {
+                        dotNetRef.invokeMethodAsync("OnRackSelectedFromJs", target.userData.rackId);
+                    }
+                    return;
+                }
+
+                const code = target?.userData?.code;
                 if (!code) {
                     log("click: intersection without code");
                     return;
@@ -913,18 +1423,18 @@
                 const deltaSeconds = clamp((now - previousFrameTimestamp) / 1000, 0, 0.05);
                 previousFrameTimestamp = now;
 
-                if (selectedMesh) {
-                    updateSelectionAnchors(selectedMesh, now);
+                if (selectedObject) {
+                    updateSelectionAnchors(selectedObject, now);
 
                     const pulsePhase = (now % VISUAL_CONFIG.selectionPulseMs) / VISUAL_CONFIG.selectionPulseMs;
                     const pulse = easeInOutSine(pulsePhase);
-                    if (!outlinePass) {
+                    if (!outlinePass && selectedObject.userData.selectionEdgesMaterial) {
                         const edgeOpacity = VISUAL_CONFIG.selectionEdgeOpacityMin +
                             ((VISUAL_CONFIG.selectionEdgeOpacityMax - VISUAL_CONFIG.selectionEdgeOpacityMin) * pulse);
-                        selectedMesh.userData.selectionEdgesMaterial.opacity = edgeOpacity;
+                        selectedObject.userData.selectionEdgesMaterial.opacity = edgeOpacity;
                     }
-                    if (selectedMesh.userData.selectionFillOverlayMaterial) {
-                        selectedMesh.userData.selectionFillOverlayMaterial.opacity =
+                    if (selectedObject.userData.selectionFillOverlayMaterial) {
+                        selectedObject.userData.selectionFillOverlayMaterial.opacity =
                             VISUAL_CONFIG.selectionFillOverlayOpacityMin +
                             ((VISUAL_CONFIG.selectionFillOverlayOpacityMax - VISUAL_CONFIG.selectionFillOverlayOpacityMin) * pulse);
                     }

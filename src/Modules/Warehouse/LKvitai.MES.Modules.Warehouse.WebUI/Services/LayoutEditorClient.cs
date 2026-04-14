@@ -30,6 +30,18 @@ public sealed class LayoutEditorClient
     public Task<WarehouseLayoutDto> UpdateLayoutAsync(UpdateWarehouseLayoutRequestDto request, CancellationToken cancellationToken = default)
         => PutAsync<WarehouseLayoutDto>("/api/warehouse/v1/layout", request, cancellationToken);
 
+    public Task<WarehouseRackConfigDto> GetRackConfigAsync(string warehouseCode, CancellationToken cancellationToken = default)
+    {
+        var encodedWarehouseCode = Uri.EscapeDataString(warehouseCode);
+        return GetAsync<WarehouseRackConfigDto>($"/api/warehouse/v1/warehouse-layouts/{encodedWarehouseCode}/rack-config", cancellationToken);
+    }
+
+    public Task<WarehouseRackConfigDto> UpdateRackConfigAsync(string warehouseCode, UpdateWarehouseRackConfigRequestDto request, CancellationToken cancellationToken = default)
+    {
+        var encodedWarehouseCode = Uri.EscapeDataString(warehouseCode);
+        return PutAsync<WarehouseRackConfigDto>($"/api/warehouse/v1/warehouse-layouts/{encodedWarehouseCode}/rack-config", request, cancellationToken);
+    }
+
     private Task<T> GetAsync<T>(string relativeUrl, CancellationToken cancellationToken)
         => SendAndReadAsync<T>(() =>
         {

@@ -6,6 +6,7 @@ using LKvitai.MES.Modules.Warehouse.Application.Ports;
 using LKvitai.MES.Contracts.ReadModels;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.Visualization;
 using LKvitai.MES.BuildingBlocks.SharedKernel;
 using Marten;
 using Microsoft.AspNetCore.Authorization;
@@ -30,6 +31,10 @@ public sealed class WarehouseVisualizationController : ControllerBase
     private const string FullStatus = "FULL";
     private const string OverCapacityStatus = "OVER_CAPACITY";
 
+    private static readonly string[] AllowedZoneTypes = ["RECEIVING", "STORAGE", "SHIPPING", "QUARANTINE"];
+    private static readonly HashSet<string> AllowedZoneTypeSet =
+        new(AllowedZoneTypes, StringComparer.OrdinalIgnoreCase);
+
     private static readonly IReadOnlyDictionary<string, string> StatusPalette =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
@@ -49,17 +54,26 @@ public sealed class WarehouseVisualizationController : ControllerBase
     private readonly WarehouseDbContext _dbContext;
     private readonly IDocumentStore _documentStore;
     private readonly IActiveHardLocksRepository _hardLocksRepository;
+    private readonly RackLayoutValidator _rackLayoutValidator;
+    private readonly WarehouseGeometryCalculator _warehouseGeometryCalculator;
+    private readonly BinPlacementValidator _binPlacementValidator;
     private readonly ILogger<WarehouseVisualizationController> _logger;
 
     public WarehouseVisualizationController(
         WarehouseDbContext dbContext,
         IDocumentStore documentStore,
         IActiveHardLocksRepository hardLocksRepository,
+        RackLayoutValidator rackLayoutValidator,
+        WarehouseGeometryCalculator warehouseGeometryCalculator,
+        BinPlacementValidator binPlacementValidator,
         ILogger<WarehouseVisualizationController> logger)
     {
         _dbContext = dbContext;
         _documentStore = documentStore;
         _hardLocksRepository = hardLocksRepository;
+        _rackLayoutValidator = rackLayoutValidator;
+        _warehouseGeometryCalculator = warehouseGeometryCalculator;
+        _binPlacementValidator = binPlacementValidator;
         _logger = logger;
     }
 
@@ -96,6 +110,22 @@ public sealed class WarehouseVisualizationController : ControllerBase
 
         foreach (var zone in request.Zones ?? Array.Empty<UpsertZoneRequest>())
         {
+            if (string.IsNullOrWhiteSpace(zone.Type))
+            {
+                return ValidationFailure("Each zone requires a non-empty type.");
+            }
+
+            var normalizedZoneType = zone.Type.Trim().ToUpperInvariant();
+            if (!AllowedZoneTypeSet.Contains(normalizedZoneType))
+            {
+                return ValidationFailure($"Each zone type must be one of: {string.Join(", ", AllowedZoneTypes)}.");
+            }
+
+            if (string.IsNullOrWhiteSpace(zone.Color))
+            {
+                return ValidationFailure("Each zone requires a non-empty color.");
+            }
+
             if (zone.X2 <= zone.X1 || zone.Y2 <= zone.Y1)
             {
                 return ValidationFailure("Each zone must satisfy x2 > x1 and y2 > y1.");
@@ -104,10 +134,11 @@ public sealed class WarehouseVisualizationController : ControllerBase
 
         var normalizedWarehouseCode = request.WarehouseCode.Trim();
         var layout = await EfAsync.FirstOrDefaultAsync(
-            _dbContext.WarehouseLayouts.Include(x => x.Zones),
+            _dbContext.WarehouseLayouts,
             x => x.WarehouseCode == normalizedWarehouseCode,
             cancellationToken);
 
+        var isExistingLayout = layout is not null;
         if (layout is null)
         {
             layout = new WarehouseLayout
@@ -122,11 +153,27 @@ public sealed class WarehouseVisualizationController : ControllerBase
         layout.HeightMeters = decimal.Round(request.HeightMeters, 2, MidpointRounding.AwayFromZero);
         layout.UpdatedAt = DateTimeOffset.UtcNow;
 
-        layout.Zones.Clear();
+        if (isExistingLayout)
+        {
+            var existingZonesQuery = _dbContext.ZoneDefinitions
+                .Where(x => x.WarehouseLayoutId == layout.Id);
+
+            if (_dbContext.Database.IsRelational())
+            {
+                await existingZonesQuery.ExecuteDeleteAsync(cancellationToken);
+            }
+            else
+            {
+                var existingZones = await EfAsync.ToListAsync(existingZonesQuery, cancellationToken);
+                _dbContext.ZoneDefinitions.RemoveRange(existingZones);
+            }
+        }
+
         foreach (var zone in request.Zones ?? Array.Empty<UpsertZoneRequest>())
         {
-            layout.Zones.Add(new ZoneDefinition
+            _dbContext.ZoneDefinitions.Add(new ZoneDefinition
             {
+                WarehouseLayoutId = layout.Id,
                 ZoneType = zone.Type.Trim().ToUpperInvariant(),
                 X1 = decimal.Round(zone.X1, 2, MidpointRounding.AwayFromZero),
                 Y1 = decimal.Round(zone.Y1, 2, MidpointRounding.AwayFromZero),
@@ -137,7 +184,137 @@ public sealed class WarehouseVisualizationController : ControllerBase
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
-        return Ok(MapLayout(layout));
+        var persistedLayout = await LoadLayoutAsync(normalizedWarehouseCode, cancellationToken);
+        return Ok(MapLayout(persistedLayout));
+    }
+
+    [HttpGet("warehouse-layouts/{warehouseCode}/rack-config")]
+    [Authorize(Policy = WarehousePolicies.OperatorOrAbove)]
+    public async Task<IActionResult> GetRackConfigAsync(
+        string warehouseCode,
+        CancellationToken cancellationToken = default)
+    {
+        var layout = await LoadLayoutAsync(warehouseCode, cancellationToken);
+        return Ok(new RackConfigResponse(layout.WarehouseCode, layout.RacksJson, layout.UpdatedAt));
+    }
+
+    [HttpPut("warehouse-layouts/{warehouseCode}/rack-config")]
+    [Authorize(Policy = WarehousePolicies.AdminOnly)]
+    public async Task<IActionResult> PutRackConfigAsync(
+        string warehouseCode,
+        [FromBody] UpdateRackConfigRequest? request,
+        CancellationToken cancellationToken = default)
+    {
+        if (request is null)
+        {
+            return ValidationFailure("Request body is required.", StatusCodes.Status422UnprocessableEntity);
+        }
+
+        var normalizedWarehouseCode = warehouseCode.Trim();
+
+        var layout = await EfAsync.FirstOrDefaultAsync(
+            _dbContext.WarehouseLayouts.Include(x => x.Zones),
+            x => x.WarehouseCode == normalizedWarehouseCode,
+            cancellationToken);
+
+        if (layout is null)
+        {
+            return ValidationFailure($"Warehouse layout '{normalizedWarehouseCode}' was not found.", StatusCodes.Status422UnprocessableEntity);
+        }
+
+        RackLayoutDocument rackLayout;
+        try
+        {
+            rackLayout = _rackLayoutValidator.Parse(request.RacksJson);
+        }
+        catch (Exception ex)
+        {
+            return ValidationFailure($"Rack config JSON could not be parsed: {ex.Message}", StatusCodes.Status422UnprocessableEntity);
+        }
+
+        var validation = _rackLayoutValidator.Validate(layout, rackLayout);
+        if (!validation.IsValid)
+        {
+            return ValidationFailure(JoinValidationErrors(validation.Errors), StatusCodes.Status422UnprocessableEntity);
+        }
+
+        layout.RacksJson = string.IsNullOrWhiteSpace(request.RacksJson) ? null : request.RacksJson.Trim();
+        layout.UpdatedAt = DateTimeOffset.UtcNow;
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return Ok(new RackConfigResponse(layout.WarehouseCode, layout.RacksJson, layout.UpdatedAt));
+    }
+
+    [HttpPut("locations/{id:int}/rack-placement")]
+    [Authorize(Policy = WarehousePolicies.ManagerOrAdmin)]
+    public async Task<IActionResult> PutRackPlacementAsync(
+        int id,
+        [FromBody] UpdateRackPlacementRequest? request,
+        CancellationToken cancellationToken = default)
+    {
+        var location = await EfAsync.FirstOrDefaultAsync(_dbContext.Locations, x => x.Id == id, cancellationToken);
+        if (location is null)
+        {
+            return NotFound();
+        }
+
+        var (placement, error) = await _binPlacementValidator.ValidateAsync(
+            id,
+            request is null
+                ? null
+                : new RackPlacementRequest(
+                    request.WarehouseCode,
+                    request.RackRowId,
+                    request.ShelfLevelIndex,
+                    request.SlotStart,
+                    request.SlotSpan,
+                    request.LocationRole),
+            cancellationToken);
+
+        if (error is not null || placement is null)
+        {
+            return ValidationFailure(error ?? "Rack placement is invalid.", StatusCodes.Status422UnprocessableEntity);
+        }
+
+        location.RackRowId = placement.RackRowId;
+        location.ShelfLevelIndex = placement.ShelfLevelIndex;
+        location.SlotStart = placement.SlotStart;
+        location.SlotSpan = placement.SlotSpan;
+        location.LocationRole = placement.LocationRole;
+        location.UpdatedAt = DateTimeOffset.UtcNow;
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return Ok(new RackPlacementResponse(
+            location.Id,
+            request!.WarehouseCode.Trim(),
+            location.RackRowId,
+            location.ShelfLevelIndex,
+            location.SlotStart,
+            location.SlotSpan,
+            location.LocationRole));
+    }
+
+    [HttpDelete("locations/{id:int}/rack-placement")]
+    [Authorize(Policy = WarehousePolicies.ManagerOrAdmin)]
+    public async Task<IActionResult> DeleteRackPlacementAsync(
+        int id,
+        CancellationToken cancellationToken = default)
+    {
+        var location = await EfAsync.FirstOrDefaultAsync(_dbContext.Locations, x => x.Id == id, cancellationToken);
+        if (location is null)
+        {
+            return NotFound();
+        }
+
+        location.RackRowId = null;
+        location.ShelfLevelIndex = null;
+        location.SlotStart = null;
+        location.SlotSpan = null;
+        location.UpdatedAt = DateTimeOffset.UtcNow;
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        return NoContent();
     }
 
     [HttpGet("visualization/3d")]
@@ -151,57 +328,20 @@ public sealed class WarehouseVisualizationController : ControllerBase
 
         var layout = await LoadLayoutAsync(warehouseCode, cancellationToken);
 
-        var locationsWithCoordinates = await EfAsync.ToListAsync(
+        var locations = await EfAsync.ToListAsync(
             _dbContext.Locations
                 .AsNoTracking()
-                .Where(x =>
-                    !x.IsVirtual &&
-                    x.CoordinateX.HasValue &&
-                    x.CoordinateY.HasValue &&
-                    x.CoordinateZ.HasValue)
+                .Where(x => !x.IsVirtual)
                 .OrderBy(x => x.Code),
             cancellationToken);
 
-        var visualizationLocations = locationsWithCoordinates
-            .Select(location => new VisualizationLocationSeed(
-                location,
-                location.CoordinateX!.Value,
-                location.CoordinateY!.Value,
-                location.CoordinateZ!.Value))
-            .ToList();
-
-        if (visualizationLocations.Count == 0)
+        if (locations.Count == 0)
         {
-            var fallbackLocations = await EfAsync.ToListAsync(
+            locations = await EfAsync.ToListAsync(
                 _dbContext.Locations
                     .AsNoTracking()
-                    .Where(x => !x.IsVirtual)
                     .OrderBy(x => x.Code),
                 cancellationToken);
-
-            if (fallbackLocations.Count == 0)
-            {
-                fallbackLocations = await EfAsync.ToListAsync(
-                    _dbContext.Locations
-                        .AsNoTracking()
-                        .OrderBy(x => x.Code),
-                    cancellationToken);
-            }
-
-            visualizationLocations = fallbackLocations
-                .Select((location, index) => new VisualizationLocationSeed(
-                    location,
-                    location.CoordinateX ?? (index % 12) + 1,
-                    location.CoordinateY ?? ((index / 12) % 12) + 1,
-                    location.CoordinateZ ?? (index / 144) + 1))
-                .ToList();
-
-            if (visualizationLocations.Count > 0)
-            {
-                _logger.LogWarning(
-                    "3D API fallback enabled: no locations with coordinates; generated auto-layout for {LocationCount} locations",
-                    visualizationLocations.Count);
-            }
         }
 
         await using var session = _documentStore.QuerySession();
@@ -209,7 +349,7 @@ public sealed class WarehouseVisualizationController : ControllerBase
             session.Query<AvailableStockView>(),
             cancellationToken);
 
-        if (visualizationLocations.Count == 0)
+        if (locations.Count == 0)
         {
             var stockLocationCodes = stockCandidates
                 .Select(x => x.Location)
@@ -218,7 +358,7 @@ public sealed class WarehouseVisualizationController : ControllerBase
                 .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
-            visualizationLocations = stockLocationCodes
+            locations = stockLocationCodes
                 .Select((code, index) => new VisualizationLocationSeed(
                     new Location
                     {
@@ -230,17 +370,19 @@ public sealed class WarehouseVisualizationController : ControllerBase
                     (index % 12) + 1,
                     ((index / 12) % 12) + 1,
                     (index / 144) + 1))
+                .Select(x => CloneLocationWithCoordinates(x.Location, x.X, x.Y, x.Z))
                 .ToList();
 
-            if (visualizationLocations.Count > 0)
+            if (locations.Count > 0)
             {
                 _logger.LogWarning(
                     "3D API fallback enabled: generated auto-layout from AvailableStockView for {LocationCount} locations",
-                    visualizationLocations.Count);
+                    locations.Count);
             }
         }
 
-        var locationCodes = visualizationLocations.Select(x => x.Location.Code).ToArray();
+        var resolvedLocations = ResolveVisualizationLocations(locations);
+        var locationCodes = resolvedLocations.Select(x => x.Code).ToArray();
         var locationSet = new HashSet<string>(locationCodes, StringComparer.OrdinalIgnoreCase);
         var stockRows = stockCandidates
             .Where(x => locationSet.Contains(x.Location))
@@ -274,7 +416,32 @@ public sealed class WarehouseVisualizationController : ControllerBase
                 x => x.ToList(),
                 StringComparer.OrdinalIgnoreCase);
 
-        var bins = visualizationLocations.Select(node =>
+        RackLayoutDocument rackLayout;
+        try
+        {
+            rackLayout = _rackLayoutValidator.Parse(layout.RacksJson);
+            var rackLayoutValidation = _rackLayoutValidator.Validate(layout, rackLayout);
+            if (!rackLayoutValidation.IsValid)
+            {
+                _logger.LogWarning(
+                    "Ignoring invalid rack layout for warehouse {WarehouseCode}: {Error}",
+                    layout.WarehouseCode,
+                    rackLayoutValidation.Errors[0]);
+                rackLayout = RackLayoutDocument.Empty;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Ignoring invalid rack JSON for warehouse {WarehouseCode}", layout.WarehouseCode);
+            rackLayout = RackLayoutDocument.Empty;
+        }
+
+        var geometry = _warehouseGeometryCalculator.Calculate(
+            layout.WarehouseCode,
+            rackLayout,
+            resolvedLocations);
+
+        var bins = geometry.Bins.Select(node =>
         {
             var location = node.Location;
             var hasHardLock = hardLockByLocation.TryGetValue(location.Code, out var hardLockedQty) &&
@@ -294,9 +461,9 @@ public sealed class WarehouseVisualizationController : ControllerBase
                     node.Y,
                     node.Z),
                 new VisualizationBinDimensionsResponse(
-                    location.WidthMeters,
-                    location.LengthMeters,
-                    location.HeightMeters),
+                    node.Width,
+                    node.Length,
+                    node.Height),
                 new VisualizationCapacityResponse(
                     location.CapacityWeight ?? location.MaxWeight,
                     location.CapacityVolume ?? location.MaxVolume),
@@ -304,6 +471,12 @@ public sealed class WarehouseVisualizationController : ControllerBase
                 status,
                 color,
                 hasHardLock,
+                node.Address,
+                node.RackId,
+                node.Level,
+                node.StartSlot,
+                node.Span,
+                node.LocationRole,
                 handlingUnitsForLocation.Select(x =>
                 {
                     var firstLine = x.Lines.FirstOrDefault();
@@ -323,6 +496,29 @@ public sealed class WarehouseVisualizationController : ControllerBase
                 layout.WarehouseCode,
                 new VisualizationDimensionsResponse(layout.WidthMeters, layout.LengthMeters, layout.HeightMeters)),
             bins,
+            geometry.Racks
+                .Select(x => new VisualizationRackResponse(
+                    x.Id,
+                    x.Type,
+                    new VisualizationCoordinateResponse(x.X, x.Y, x.Z),
+                    new VisualizationRackDimensionsResponse(x.Width, x.Depth, x.Height),
+                    x.OrientationDeg,
+                    x.SlotsPerLevel,
+                    x.BayCount,
+                    x.BackToBack,
+                    x.PairedWithRackId,
+                    x.Levels.Select(level => new VisualizationRackLevelResponse(level.Index, level.HeightFromBase)).ToList()))
+                .ToList(),
+            geometry.Slots
+                .Select(x => new VisualizationSlotResponse(
+                    x.Address,
+                    x.RackId,
+                    x.Level,
+                    x.Slot,
+                    x.Occupied,
+                    new VisualizationCoordinateResponse(x.X, x.Y, x.Z),
+                    new VisualizationRackDimensionsResponse(x.Width, x.Length, x.Height)))
+                .ToList(),
             layout.Zones
                 .OrderBy(x => x.ZoneType)
                 .Select(x => new VisualizationZoneResponse(
@@ -443,7 +639,71 @@ public sealed class WarehouseVisualizationController : ControllerBase
                     x.Y2,
                     x.Color))
                 .ToList(),
+            layout.RacksJson,
             layout.UpdatedAt);
+    }
+
+    private static List<Location> ResolveVisualizationLocations(IReadOnlyList<Location> locations)
+    {
+        var resolved = new List<Location>(locations.Count);
+        var fallbackIndex = 0;
+
+        foreach (var location in locations)
+        {
+            if (!string.IsNullOrWhiteSpace(location.RackRowId) ||
+                (location.CoordinateX.HasValue && location.CoordinateY.HasValue && location.CoordinateZ.HasValue))
+            {
+                resolved.Add(location);
+                continue;
+            }
+
+            resolved.Add(CloneLocationWithCoordinates(
+                location,
+                (fallbackIndex % 12) + 1,
+                ((fallbackIndex / 12) % 12) + 1,
+                (fallbackIndex / 144) + 1));
+            fallbackIndex++;
+        }
+
+        return resolved;
+    }
+
+    private static Location CloneLocationWithCoordinates(Location location, decimal x, decimal y, decimal z)
+    {
+        return new Location
+        {
+            Id = location.Id,
+            Code = location.Code,
+            Barcode = location.Barcode,
+            Type = location.Type,
+            ParentLocationId = location.ParentLocationId,
+            IsVirtual = location.IsVirtual,
+            MaxWeight = location.MaxWeight,
+            MaxVolume = location.MaxVolume,
+            Status = location.Status,
+            ZoneType = location.ZoneType,
+            CoordinateX = x,
+            CoordinateY = y,
+            CoordinateZ = z,
+            WidthMeters = location.WidthMeters,
+            LengthMeters = location.LengthMeters,
+            HeightMeters = location.HeightMeters,
+            Aisle = location.Aisle,
+            Rack = location.Rack,
+            Level = location.Level,
+            Bin = location.Bin,
+            CapacityWeight = location.CapacityWeight,
+            CapacityVolume = location.CapacityVolume,
+            RackRowId = location.RackRowId,
+            ShelfLevelIndex = location.ShelfLevelIndex,
+            SlotStart = location.SlotStart,
+            SlotSpan = location.SlotSpan,
+            LocationRole = location.LocationRole,
+            CreatedAt = location.CreatedAt,
+            UpdatedAt = location.UpdatedAt,
+            CreatedBy = location.CreatedBy,
+            UpdatedBy = location.UpdatedBy
+        };
     }
 
     private sealed record VisualizationLocationSeed(
@@ -452,7 +712,7 @@ public sealed class WarehouseVisualizationController : ControllerBase
         decimal Y,
         decimal Z);
 
-    private ObjectResult ValidationFailure(string detail)
+    private ObjectResult ValidationFailure(string detail, int statusCode = StatusCodes.Status400BadRequest)
     {
         var problemDetails = ResultProblemDetailsMapper.ToProblemDetails(
             DomainErrorCodes.ValidationError,
@@ -461,7 +721,7 @@ public sealed class WarehouseVisualizationController : ControllerBase
 
         return new ObjectResult(problemDetails)
         {
-            StatusCode = StatusCodes.Status400BadRequest
+            StatusCode = statusCode
         };
     }
 
@@ -487,6 +747,7 @@ public sealed class WarehouseVisualizationController : ControllerBase
         decimal LengthMeters,
         decimal HeightMeters,
         IReadOnlyList<ZoneResponse> Zones,
+        string? RacksJson,
         DateTimeOffset UpdatedAt);
 
     public sealed record ZoneResponse(
@@ -501,6 +762,8 @@ public sealed class WarehouseVisualizationController : ControllerBase
     public sealed record Visualization3dResponse(
         VisualizationWarehouseResponse Warehouse,
         IReadOnlyList<VisualizationBinResponse> Bins,
+        IReadOnlyList<VisualizationRackResponse> Racks,
+        IReadOnlyList<VisualizationSlotResponse> Slots,
         IReadOnlyList<VisualizationZoneResponse> Zones);
 
     public sealed record VisualizationWarehouseResponse(
@@ -522,6 +785,12 @@ public sealed class WarehouseVisualizationController : ControllerBase
         string Status,
         string Color,
         bool IsReserved,
+        string? Address,
+        string? RackId,
+        int? Level,
+        int? StartSlot,
+        int? Span,
+        string? LocationRole,
         IReadOnlyList<VisualizationHandlingUnitResponse> HandlingUnits);
 
     public sealed record VisualizationCoordinateResponse(
@@ -537,6 +806,36 @@ public sealed class WarehouseVisualizationController : ControllerBase
         decimal? Width,
         decimal? Length,
         decimal? Height);
+
+    public sealed record VisualizationRackResponse(
+        string Id,
+        string Type,
+        VisualizationCoordinateResponse Origin,
+        VisualizationRackDimensionsResponse Dimensions,
+        decimal OrientationDeg,
+        int SlotsPerLevel,
+        int BayCount,
+        bool BackToBack,
+        string? PairedWithRackId,
+        IReadOnlyList<VisualizationRackLevelResponse> Levels);
+
+    public sealed record VisualizationRackLevelResponse(
+        int Index,
+        decimal HeightFromBase);
+
+    public sealed record VisualizationRackDimensionsResponse(
+        decimal Width,
+        decimal Depth,
+        decimal Height);
+
+    public sealed record VisualizationSlotResponse(
+        string Address,
+        string RackId,
+        int Level,
+        int Slot,
+        bool Occupied,
+        VisualizationCoordinateResponse Origin,
+        VisualizationRackDimensionsResponse Dimensions);
 
     public sealed record VisualizationHandlingUnitResponse(
         Guid Id,
@@ -554,4 +853,32 @@ public sealed class WarehouseVisualizationController : ControllerBase
         decimal Y1,
         decimal X2,
         decimal Y2);
+
+    public sealed record RackConfigResponse(
+        string WarehouseCode,
+        string? RacksJson,
+        DateTimeOffset UpdatedAt);
+
+    public sealed record UpdateRackConfigRequest(
+        string? RacksJson);
+
+    public sealed record UpdateRackPlacementRequest(
+        string WarehouseCode,
+        string RackRowId,
+        int ShelfLevelIndex,
+        int SlotStart,
+        int? SlotSpan,
+        string? LocationRole);
+
+    public sealed record RackPlacementResponse(
+        int LocationId,
+        string WarehouseCode,
+        string? RackRowId,
+        int? ShelfLevelIndex,
+        int? SlotStart,
+        int? SlotSpan,
+        string? LocationRole);
+
+    private static string JoinValidationErrors(IReadOnlyList<string> errors)
+        => string.Join("; ", errors.Where(x => !string.IsNullOrWhiteSpace(x)));
 }

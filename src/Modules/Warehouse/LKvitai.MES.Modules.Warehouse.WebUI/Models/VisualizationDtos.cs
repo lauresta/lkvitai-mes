@@ -3,6 +3,8 @@ namespace LKvitai.MES.Modules.Warehouse.WebUI.Models;
 public sealed record Visualization3dDto(
     VisualizationWarehouseDto Warehouse,
     IReadOnlyList<VisualizationBinDto> Bins,
+    IReadOnlyList<VisualizationRackDto> Racks,
+    IReadOnlyList<VisualizationSlotDto> Slots,
     IReadOnlyList<VisualizationZoneDto> Zones);
 
 public sealed record VisualizationWarehouseDto(
@@ -24,6 +26,12 @@ public sealed record VisualizationBinDto(
     string Status,
     string Color,
     bool IsReserved,
+    string? Address,
+    string? RackId,
+    int? Level,
+    int? StartSlot,
+    int? Span,
+    string? LocationRole,
     IReadOnlyList<VisualizationHandlingUnitDto> HandlingUnits);
 
 public sealed record VisualizationCoordinateDto(
@@ -39,6 +47,36 @@ public sealed record VisualizationBinDimensionsDto(
     decimal? Width,
     decimal? Length,
     decimal? Height);
+
+public sealed record VisualizationRackDto(
+    string Id,
+    string Type,
+    VisualizationCoordinateDto Origin,
+    VisualizationRackDimensionsDto Dimensions,
+    decimal OrientationDeg,
+    int SlotsPerLevel,
+    int BayCount,
+    bool BackToBack,
+    string? PairedWithRackId,
+    IReadOnlyList<VisualizationRackLevelDto> Levels);
+
+public sealed record VisualizationRackLevelDto(
+    int Index,
+    decimal HeightFromBase);
+
+public sealed record VisualizationRackDimensionsDto(
+    decimal Width,
+    decimal Depth,
+    decimal Height);
+
+public sealed record VisualizationSlotDto(
+    string Address,
+    string RackId,
+    int Level,
+    int Slot,
+    bool Occupied,
+    VisualizationCoordinateDto Origin,
+    VisualizationRackDimensionsDto Dimensions);
 
 public sealed record VisualizationHandlingUnitDto(
     Guid Id,

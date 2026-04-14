@@ -92,6 +92,11 @@ public sealed class LocationsController : ControllerBase
                 x.Bin,
                 x.CapacityWeight,
                 x.CapacityVolume,
+                x.RackRowId,
+                x.ShelfLevelIndex,
+                x.SlotStart,
+                x.SlotSpan,
+                x.LocationRole,
                 x.CreatedAt,
                 x.UpdatedAt))
             .ToListAsync(cancellationToken);
@@ -234,6 +239,11 @@ public sealed class LocationsController : ControllerBase
             entity.Bin,
             entity.CapacityWeight,
             entity.CapacityVolume,
+            entity.RackRowId,
+            entity.ShelfLevelIndex,
+            entity.SlotStart,
+            entity.SlotSpan,
+            entity.LocationRole,
             entity.CreatedAt,
             entity.UpdatedAt));
     }
@@ -388,6 +398,11 @@ public sealed class LocationsController : ControllerBase
             entity.Bin,
             entity.CapacityWeight,
             entity.CapacityVolume,
+            entity.RackRowId,
+            entity.ShelfLevelIndex,
+            entity.SlotStart,
+            entity.SlotSpan,
+            entity.LocationRole,
             entity.CreatedAt,
             entity.UpdatedAt));
     }
@@ -840,6 +855,11 @@ public sealed class LocationsController : ControllerBase
         string? Bin,
         decimal? CapacityWeight,
         decimal? CapacityVolume,
+        string? RackRowId,
+        int? ShelfLevelIndex,
+        int? SlotStart,
+        int? SlotSpan,
+        string? LocationRole,
         DateTimeOffset CreatedAt,
         DateTimeOffset? UpdatedAt);
 

@@ -10,6 +10,7 @@ using LKvitai.MES.Modules.Warehouse.Infrastructure.Imports;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Locking;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Projections;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.Visualization;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace LKvitai.MES.Modules.Warehouse.Infrastructure;
@@ -34,6 +35,9 @@ public static class DependencyInjection
         services.AddScoped<ISkuGenerationService, SkuGenerationService>();
         services.AddScoped<IExcelTemplateService, ExcelTemplateService>();
         services.AddScoped<IMasterDataImportService, MasterDataImportService>();
+        services.AddSingleton<RackLayoutValidator>();
+        services.AddScoped<WarehouseGeometryCalculator>();
+        services.AddScoped<BinPlacementValidator>();
 
         // Repository implementations (Application ports)
         services.AddScoped<IReservationRepository, MartenReservationRepository>();

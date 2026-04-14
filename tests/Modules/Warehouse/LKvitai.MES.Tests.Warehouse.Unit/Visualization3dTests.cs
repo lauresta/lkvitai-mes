@@ -3,6 +3,7 @@ using LKvitai.MES.Modules.Warehouse.Api.Controllers;
 using LKvitai.MES.Modules.Warehouse.Application.Ports;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.Visualization;
 using Marten;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -131,6 +132,84 @@ public class Visualization3dTests
 
     [Fact]
     [Trait("Category", "3DVisualization")]
+    public async Task PutLayoutAsync_WithInvalidZoneType_ShouldReturnBadRequest()
+    {
+        await using var db = CreateDbContext();
+        var controller = CreateVisualizationController(db);
+
+        var response = await controller.PutLayoutAsync(new WarehouseVisualizationController.UpsertWarehouseLayoutRequest(
+            "Main",
+            50m,
+            100m,
+            10m,
+            new[]
+            {
+                new WarehouseVisualizationController.UpsertZoneRequest("PICKING", 0m, 0m, 10m, 100m, "#FDE68A")
+            }));
+
+        response.Should().BeOfType<ObjectResult>();
+        ((ObjectResult)response).StatusCode.Should().Be(StatusCodes.Status400BadRequest);
+    }
+
+    [Fact]
+    [Trait("Category", "3DVisualization")]
+    public async Task PutLayoutAsync_WhenUpdatingExistingLayout_ShouldReplaceZones()
+    {
+        await using var db = CreateDbContext();
+        db.WarehouseLayouts.Add(new WarehouseLayout
+        {
+            WarehouseCode = "Main",
+            WidthMeters = 40m,
+            LengthMeters = 80m,
+            HeightMeters = 8m,
+            RacksJson = """{"racks":[{"id":"A1"}]}""",
+            UpdatedAt = DateTimeOffset.UtcNow,
+            Zones =
+            {
+                new ZoneDefinition
+                {
+                    ZoneType = "RECEIVING",
+                    X1 = 0m,
+                    Y1 = 0m,
+                    X2 = 10m,
+                    Y2 = 10m,
+                    Color = "#ADD8E6"
+                }
+            }
+        });
+        await db.SaveChangesAsync();
+
+        var controller = CreateVisualizationController(db);
+
+        var response = await controller.PutLayoutAsync(new WarehouseVisualizationController.UpsertWarehouseLayoutRequest(
+            "Main",
+            55m,
+            120m,
+            11m,
+            new[]
+            {
+                new WarehouseVisualizationController.UpsertZoneRequest("STORAGE", 10m, 0m, 40m, 80m, "#90EE90"),
+                new WarehouseVisualizationController.UpsertZoneRequest("SHIPPING", 40m, 0m, 55m, 30m, "#FFD580")
+            }));
+
+        response.Should().BeOfType<OkObjectResult>();
+        var payload = ((OkObjectResult)response).Value.Should().BeOfType<WarehouseVisualizationController.LayoutResponse>().Subject;
+        payload.Zones.Should().HaveCount(2);
+        payload.Zones.Select(x => x.Type).Should().BeEquivalentTo("SHIPPING", "STORAGE");
+        payload.RacksJson.Should().Be("""{"racks":[{"id":"A1"}]}""");
+
+        var layout = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.SingleAsync(
+            db.WarehouseLayouts.Include(x => x.Zones));
+        layout.WidthMeters.Should().Be(55m);
+        layout.LengthMeters.Should().Be(120m);
+        layout.HeightMeters.Should().Be(11m);
+        layout.RacksJson.Should().Be("""{"racks":[{"id":"A1"}]}""");
+        layout.Zones.Should().HaveCount(2);
+        layout.Zones.Select(x => x.ZoneType).Should().BeEquivalentTo("SHIPPING", "STORAGE");
+    }
+
+    [Fact]
+    [Trait("Category", "3DVisualization")]
     public async Task GetLayoutAsync_WhenMissing_ShouldDeriveDimensionsFromCoordinates()
     {
         await using var db = CreateDbContext();
@@ -154,6 +233,62 @@ public class Visualization3dTests
         payload.WidthMeters.Should().Be(16.5m);
         payload.LengthMeters.Should().Be(33m);
         payload.HeightMeters.Should().Be(7m);
+    }
+
+    [Fact]
+    [Trait("Category", "3DVisualization")]
+    public async Task PutRackConfigAsync_WithDuplicateRackIds_ShouldReturnUnprocessableEntity()
+    {
+        await using var db = CreateDbContext();
+        db.WarehouseLayouts.Add(new WarehouseLayout
+        {
+            WarehouseCode = "Main",
+            WidthMeters = 50m,
+            LengthMeters = 100m,
+            HeightMeters = 10m,
+            UpdatedAt = DateTimeOffset.UtcNow
+        });
+        await db.SaveChangesAsync();
+
+        var controller = CreateVisualizationController(db);
+
+        var response = await controller.PutRackConfigAsync(
+            "Main",
+            new WarehouseVisualizationController.UpdateRackConfigRequest(
+                """
+                {
+                  "warehouseCode": "Main",
+                  "racks": [
+                    {
+                      "id": "A",
+                      "type": "PalletRack",
+                      "origin": { "x": 1, "y": 1, "z": 0 },
+                      "dimensions": { "width": 6, "depth": 1, "height": 4 },
+                      "orientationDeg": 0,
+                      "slotsPerLevel": 3,
+                      "bayCount": 3,
+                      "backToBack": false,
+                      "pairedWithRackId": null,
+                      "levels": [ { "index": 1, "heightFromBase": 0.1 } ]
+                    },
+                    {
+                      "id": "A",
+                      "type": "PalletRack",
+                      "origin": { "x": 10, "y": 1, "z": 0 },
+                      "dimensions": { "width": 6, "depth": 1, "height": 4 },
+                      "orientationDeg": 0,
+                      "slotsPerLevel": 3,
+                      "bayCount": 3,
+                      "backToBack": false,
+                      "pairedWithRackId": null,
+                      "levels": [ { "index": 1, "heightFromBase": 0.1 } ]
+                    }
+                  ]
+                }
+                """));
+
+        response.Should().BeOfType<ObjectResult>();
+        ((ObjectResult)response).StatusCode.Should().Be(StatusCodes.Status422UnprocessableEntity);
     }
 
     [Fact]
@@ -351,12 +486,18 @@ public class Visualization3dTests
     {
         var documentStore = new Mock<IDocumentStore>(MockBehavior.Strict);
         var hardLocks = new Mock<IActiveHardLocksRepository>(MockBehavior.Strict);
+        var rackLayoutValidator = new RackLayoutValidator();
+        var warehouseGeometryCalculator = new WarehouseGeometryCalculator();
+        var binPlacementValidator = new BinPlacementValidator(db, rackLayoutValidator);
         var logger = new Mock<ILogger<WarehouseVisualizationController>>();
 
         return new WarehouseVisualizationController(
             db,
             documentStore.Object,
             hardLocks.Object,
+            rackLayoutValidator,
+            warehouseGeometryCalculator,
+            binPlacementValidator,
             logger.Object)
         {
             ControllerContext = new ControllerContext

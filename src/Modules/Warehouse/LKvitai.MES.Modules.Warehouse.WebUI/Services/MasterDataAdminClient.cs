@@ -245,6 +245,23 @@ public sealed class MasterDataAdminClient
     public Task UpdateLocationAsync(int id, CreateOrUpdateLocationRequest request, CancellationToken cancellationToken = default)
         => SendNoContentAsync(HttpMethod.Put, $"/api/warehouse/v1/locations/{id}", request, cancellationToken);
 
+    public Task UpdateLocationRackPlacementAsync(
+        int id,
+        UpdateLocationRackPlacementRequest request,
+        CancellationToken cancellationToken = default)
+        => SendNoContentAsync(
+            HttpMethod.Put,
+            $"/api/warehouse/v1/locations/{id}/rack-placement",
+            request,
+            cancellationToken);
+
+    public Task ClearLocationRackPlacementAsync(int id, CancellationToken cancellationToken = default)
+        => SendNoContentAsync(
+            HttpMethod.Delete,
+            $"/api/warehouse/v1/locations/{id}/rack-placement",
+            null,
+            cancellationToken);
+
     public Task<PagedApiResponse<AdminWarehouseDto>> GetWarehousesAsync(
         string? search,
         string? status,

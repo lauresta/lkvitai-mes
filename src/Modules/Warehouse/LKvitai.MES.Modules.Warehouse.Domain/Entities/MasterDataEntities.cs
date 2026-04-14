@@ -1163,6 +1163,11 @@ public sealed class Location : AuditableEntity
     public string? Bin { get; set; }
     public decimal? CapacityWeight { get; set; }
     public decimal? CapacityVolume { get; set; }
+    public string? RackRowId { get; set; }
+    public int? ShelfLevelIndex { get; set; }
+    public int? SlotStart { get; set; }
+    public int? SlotSpan { get; set; }
+    public string? LocationRole { get; set; }
 
     public Location? ParentLocation { get; set; }
     public ICollection<Location> Children { get; set; } = new List<Location>();
@@ -1175,6 +1180,7 @@ public sealed class WarehouseLayout
     public decimal WidthMeters { get; set; }
     public decimal LengthMeters { get; set; }
     public decimal HeightMeters { get; set; }
+    public string? RacksJson { get; set; }
     public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
 
     public ICollection<ZoneDefinition> Zones { get; set; } = new List<ZoneDefinition>();
