@@ -123,13 +123,13 @@
                                         Location
                                     </a>
                                     <button class="btn btn-sm btn-outline-danger"
-                                            @onclick="() => ClearPlacementAsync(row)">
+                                            @onclick="() => ClearPlacementFromSlotAsync(row)">
                                         Clear
                                     </button>
                                 }
                                 else if (_assigningSlotAddress == row.Address)
                                 {
-                                    <div class="d-flex gap-1 justify-content-end">
+                                    <div class="d-flex gap-1 justify-content-end align-items-center">
                                         <select class="form-select form-select-sm" style="min-width: 220px;" @bind="_selectedLocationIdText">
                                             <option value="">Select location</option>
                                             @foreach (var candidate in AssignableLocations)
@@ -137,7 +137,15 @@
                                                 <option value="@candidate.Id.ToString()">@candidate.Code</option>
                                             }
                                         </select>
-                                        <button class="btn btn-sm btn-primary" @onclick="() => AssignAsync(row)">Assign</button>
+                                        <input class="form-control form-control-sm"
+                                               style="width: 82px;"
+                                               type="number"
+                                               min="1"
+                                               max="@GetMaxAssignableSpan(row)"
+                                               title="Slot span"
+                                               @bind="_assignSlotSpan" />
+                                        <span class="text-muted small" style="white-space: nowrap;">@BuildAssignPreview(row)</span>
+                                        <button class="btn btn-sm btn-primary" @onclick="() => AssignWithSpanAsync(row)">Assign</button>
                                         <button class="btn btn-sm btn-outline-secondary" @onclick="CancelAssign">Cancel</button>
                                     </div>
                                 }
@@ -171,6 +179,7 @@
     private bool _freeOnly;
     private string? _assigningSlotAddress;
     private string? _selectedLocationIdText;
+    private int _assignSlotSpan = 1;
     private bool _initialized;
 
     private IReadOnlyList<string> _rackOptions = Array.Empty<string>();
@@ -313,12 +322,14 @@
     {
         _assigningSlotAddress = row.Address;
         _selectedLocationIdText = string.Empty;
+        _assignSlotSpan = 1;
     }
 
     private void CancelAssign()
     {
         _assigningSlotAddress = null;
         _selectedLocationIdText = null;
+        _assignSlotSpan = 1;
     }
 
     private async Task AssignAsync(SlotRow row)
@@ -375,6 +386,122 @@
         {
             ToastService.ShowError(BuildErrorMessage(ex));
         }
+    }
+
+    private async Task AssignWithSpanAsync(SlotRow row)
+    {
+        if (!int.TryParse(_selectedLocationIdText, out var locationId))
+        {
+            ToastService.ShowError("Select a location to assign.");
+            return;
+        }
+
+        var location = _locations.FirstOrDefault(x => x.Id == locationId);
+        if (location is null)
+        {
+            ToastService.ShowError("Selected location was not found.");
+            return;
+        }
+
+        var maxSpan = GetMaxAssignableSpan(row);
+        if (_assignSlotSpan < 1 || _assignSlotSpan > maxSpan)
+        {
+            ToastService.ShowError($"Span must be between 1 and {maxSpan} for this slot.");
+            return;
+        }
+
+        if (!IsSpanFree(row, _assignSlotSpan))
+        {
+            ToastService.ShowError("Selected span overlaps an occupied or missing slot.");
+            return;
+        }
+
+        try
+        {
+            await AdminClient.UpdateLocationRackPlacementAsync(
+                locationId,
+                new UpdateLocationRackPlacementRequest(
+                    _warehouseCode,
+                    row.RackId,
+                    row.Level,
+                    row.Slot,
+                    _assignSlotSpan,
+                    string.IsNullOrWhiteSpace(location.LocationRole) ? null : location.LocationRole));
+
+            ToastService.ShowSuccess($"Location {location.Code} assigned to {BuildAssignPreview(row)}.");
+            CancelAssign();
+            await ReloadAsync();
+        }
+        catch (ApiException ex)
+        {
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+    }
+
+    private async Task ClearPlacementFromSlotAsync(SlotRow row)
+    {
+        if (!row.LocationId.HasValue)
+        {
+            return;
+        }
+
+        try
+        {
+            await AdminClient.ClearLocationRackPlacementAsync(row.LocationId.Value);
+            ToastService.ShowWarning($"Placement for {row.LocationCode} was cleared.");
+            await ReloadAsync();
+        }
+        catch (ApiException ex)
+        {
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+    }
+
+    private int GetMaxAssignableSpan(SlotRow row)
+    {
+        var span = 0;
+        var currentSlot = row.Slot;
+
+        while (_allSlots.FirstOrDefault(slot =>
+                   string.Equals(slot.RackId, row.RackId, StringComparison.OrdinalIgnoreCase) &&
+                   slot.Level == row.Level &&
+                   slot.Slot == currentSlot) is { } candidate &&
+               !candidate.Occupied)
+        {
+            span++;
+            currentSlot++;
+        }
+
+        return Math.Max(span, 1);
+    }
+
+    private bool IsSpanFree(SlotRow row, int span)
+    {
+        if (span < 1)
+        {
+            return false;
+        }
+
+        for (var slotNumber = row.Slot; slotNumber < row.Slot + span; slotNumber++)
+        {
+            var candidate = _allSlots.FirstOrDefault(slot =>
+                string.Equals(slot.RackId, row.RackId, StringComparison.OrdinalIgnoreCase) &&
+                slot.Level == row.Level &&
+                slot.Slot == slotNumber);
+
+            if (candidate is null || candidate.Occupied)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private string BuildAssignPreview(SlotRow row)
+    {
+        var span = Math.Max(_assignSlotSpan, 1);
+        return span > 1 ? $"{row.Address}+{span}" : row.Address;
     }
 
     private void ApplyQueryParameters()
