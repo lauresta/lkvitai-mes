@@ -7,6 +7,10 @@
         borderColor: 0x1f2937,
         borderOpacity: 0.48,
         selectionColor: 0x00c8e8,
+        hoverColor: 0xffc400,
+        hoverRackEmissiveColor: 0xf59e0b,
+        hoverSlotOpacity: 0.78,
+        hoverBinBorderOpacity: 0.98,
         selectionEdgeOpacityMin: 0.9,
         selectionEdgeOpacityMax: 1.0,
         outlineEdgeStrength: 7.2,
@@ -65,6 +69,10 @@
 
     function clamp(value, min, max) {
         return Math.min(max, Math.max(min, value));
+    }
+
+    function stringEquals(left, right) {
+        return String(left || "").toLowerCase() === String(right || "").toLowerCase();
     }
 
     function easeInOutSine(value) {
@@ -514,8 +522,24 @@
         const group = new THREE.Group();
         slots.forEach((slot) => {
             const layout = toSceneCoordinates(slot.origin, slot.dimensions);
+            const slotGeometry = new THREE.BoxGeometry(layout.width, layout.height, layout.length);
+            const hoverFillMaterial = new THREE.MeshBasicMaterial({
+                color: VISUAL_CONFIG.hoverColor,
+                transparent: true,
+                opacity: 0.16,
+                depthWrite: false,
+                toneMapped: false,
+                side: THREE.DoubleSide
+            });
+            const hoverFill = new THREE.Mesh(slotGeometry, hoverFillMaterial);
+            hoverFill.position.set(layout.centerX, layout.centerY, layout.centerZ);
+            hoverFill.visible = false;
+            hoverFill.renderOrder = 4;
+            markAsOverlay(hoverFill);
+            group.add(hoverFill);
+
             const wireframe = new THREE.LineSegments(
-                new THREE.EdgesGeometry(new THREE.BoxGeometry(layout.width, layout.height, layout.length)),
+                new THREE.EdgesGeometry(slotGeometry),
                 new THREE.LineBasicMaterial({
                     color: slot.occupied ? 0x94a3b8 : 0xcbd5e1,
                     transparent: true,
@@ -526,7 +550,9 @@
             wireframe.userData = {
                 kind: "slot",
                 address: slot.address,
-                occupied: !!slot.occupied
+                occupied: !!slot.occupied,
+                hoverFill,
+                hoverFillMaterial
             };
             group.add(wireframe);
 
@@ -549,6 +575,8 @@
 
         window.removeEventListener("resize", context.onResize);
         context.renderer.domElement.removeEventListener("click", context.onClick);
+        context.renderer.domElement.removeEventListener("mousemove", context.onMouseMove);
+        context.renderer.domElement.removeEventListener("mouseleave", context.onMouseLeave);
         context.renderer.domElement.removeEventListener("wheel", context.onWheel);
 
         if (context.reservedTexture) {
@@ -1063,6 +1091,7 @@
 
             let selectedCode = null;
             let selectedObject = null;
+            let hoveredObject = null;
             let cameraFlightHandle = null;
 
             function computePinBounceOffset(mesh, timestampMs) {
@@ -1205,46 +1234,107 @@
                 return "";
             }
 
-            function applySelection(codeOrObject) {
-                selectedCode = typeof codeOrObject === "string" ? codeOrObject : null;
-                selectedObject = selectedCode
-                    ? meshesByCode[selectedCode] || null
-                    : (codeOrObject && typeof codeOrObject === "object" ? codeOrObject : null);
+            function pickInteractiveTarget(event) {
+                const bounds = renderer.domElement.getBoundingClientRect();
+                mouse.x = ((event.clientX - bounds.left) / bounds.width) * 2 - 1;
+                mouse.y = -((event.clientY - bounds.top) / bounds.height) * 2 + 1;
+
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObjects([...interactiveMeshes, ...interactiveSlotMeshes, ...interactiveRackMeshes], false);
+                if (intersects.length === 0) {
+                    return null;
+                }
+
+                return intersects.find((entry) => entry.object?.userData?.kind === "bin")?.object ??
+                    intersects.find((entry) => entry.object?.userData?.kind === "slot")?.object ??
+                    intersects.find((entry) => entry.object?.userData?.kind === "rack")?.object ??
+                    intersects[0].object;
+            }
+
+            function refreshInteractiveVisuals() {
                 const useOutlinePass = !!outlinePass;
 
                 interactiveMeshes.forEach((mesh) => {
                     const isSelected = !!selectedObject && mesh === selectedObject;
+                    const isHovered = !!hoveredObject && mesh === hoveredObject && !isSelected;
                     if (mesh.userData.baseBorderMaterial) {
-                        mesh.userData.baseBorderMaterial.color.setHex(VISUAL_CONFIG.borderColor);
-                        mesh.userData.baseBorderMaterial.opacity = VISUAL_CONFIG.borderOpacity;
+                        mesh.userData.baseBorderMaterial.color.setHex(isHovered ? VISUAL_CONFIG.hoverColor : VISUAL_CONFIG.borderColor);
+                        mesh.userData.baseBorderMaterial.opacity = isHovered ? VISUAL_CONFIG.hoverBinBorderOpacity : VISUAL_CONFIG.borderOpacity;
                     }
                     if (mesh.userData.selectionEdges) {
                         mesh.userData.selectionEdges.visible = isSelected && !useOutlinePass;
                     }
                     if (mesh.userData.selectionFillOverlay) {
-                        mesh.userData.selectionFillOverlay.visible = isSelected;
+                        mesh.userData.selectionFillOverlay.visible = isSelected || isHovered;
+                    }
+                    if (mesh.userData.selectionFillOverlayMaterial && isHovered) {
+                        mesh.userData.selectionFillOverlayMaterial.opacity = 0.08;
                     }
                 });
+
                 interactiveSlotMeshes.forEach((slotMesh) => {
                     const isSelected = !!selectedObject && slotMesh === selectedObject;
+                    const isHovered = !!hoveredObject && slotMesh === hoveredObject && !isSelected;
                     if (slotMesh.material) {
-                        slotMesh.material.color.setHex(isSelected ? VISUAL_CONFIG.selectionColor : (slotMesh.userData.occupied ? 0x94a3b8 : 0xcbd5e1));
-                        slotMesh.material.opacity = isSelected ? 0.95 : (slotMesh.userData.occupied ? 0.12 : 0.3);
+                        const baseColor = slotMesh.userData.occupied ? 0x94a3b8 : 0xcbd5e1;
+                        const baseOpacity = slotMesh.userData.occupied ? 0.12 : 0.3;
+                        slotMesh.material.color.setHex(isSelected ? VISUAL_CONFIG.selectionColor : (isHovered ? VISUAL_CONFIG.hoverColor : baseColor));
+                        slotMesh.material.opacity = isSelected ? 0.95 : (isHovered ? VISUAL_CONFIG.hoverSlotOpacity : baseOpacity);
+                    }
+                    if (slotMesh.userData.hoverFill) {
+                        slotMesh.userData.hoverFill.visible = isSelected || isHovered;
+                    }
+                    if (slotMesh.userData.hoverFillMaterial) {
+                        slotMesh.userData.hoverFillMaterial.color.setHex(isSelected ? VISUAL_CONFIG.selectionColor : VISUAL_CONFIG.hoverColor);
+                        slotMesh.userData.hoverFillMaterial.opacity = isSelected ? 0.2 : 0.16;
                     }
                 });
+
                 interactiveRackMeshes.forEach((rackMesh) => {
-                    const isSelected = !!selectedObject && rackMesh === selectedObject;
+                    const isSelected = !!selectedObject &&
+                        selectedObject.userData?.kind === "rack" &&
+                        rackMesh.userData?.rackId &&
+                        selectedObject.userData.rackId &&
+                        stringEquals(rackMesh.userData.rackId, selectedObject.userData.rackId);
+                    const isHovered = !!hoveredObject &&
+                        hoveredObject.userData?.kind === "rack" &&
+                        rackMesh.userData?.rackId &&
+                        hoveredObject.userData.rackId &&
+                        stringEquals(rackMesh.userData.rackId, hoveredObject.userData.rackId) &&
+                        !isSelected;
                     if (rackMesh.material?.emissive) {
-                        rackMesh.material.emissive.setHex(isSelected ? 0x0891b2 : 0x000000);
-                        rackMesh.material.emissiveIntensity = isSelected ? 0.7 : 0;
+                        rackMesh.material.emissive.setHex(
+                            isSelected
+                                ? 0x0891b2
+                                : (isHovered ? VISUAL_CONFIG.hoverRackEmissiveColor : 0x000000));
+                        rackMesh.material.emissiveIntensity = isSelected ? 0.7 : (isHovered ? 0.48 : 0);
                     }
                 });
+
                 if (outlinePass) {
                     outlinePass.selectedObjects =
                         selectedObject && selectedObject.userData?.kind === "bin"
                             ? [selectedObject]
                             : [];
                 }
+            }
+
+            function applyHover(targetObject) {
+                if (hoveredObject === targetObject) {
+                    return;
+                }
+
+                hoveredObject = targetObject;
+                refreshInteractiveVisuals();
+                renderer.domElement.style.cursor = targetObject ? "pointer" : "grab";
+            }
+
+            function applySelection(codeOrObject) {
+                selectedCode = typeof codeOrObject === "string" ? codeOrObject : null;
+                selectedObject = selectedCode
+                    ? meshesByCode[selectedCode] || null
+                    : (codeOrObject && typeof codeOrObject === "object" ? codeOrObject : null);
+                refreshInteractiveVisuals();
 
                 if (!selectedObject) {
                     selectionPin.visible = false;
@@ -1318,22 +1408,11 @@
             }
 
             function onClick(event) {
-                const bounds = renderer.domElement.getBoundingClientRect();
-                mouse.x = ((event.clientX - bounds.left) / bounds.width) * 2 - 1;
-                mouse.y = -((event.clientY - bounds.top) / bounds.height) * 2 + 1;
-
-                raycaster.setFromCamera(mouse, camera);
-                const intersects = raycaster.intersectObjects([...interactiveMeshes, ...interactiveSlotMeshes, ...interactiveRackMeshes], false);
-                if (intersects.length === 0) {
+                const target = pickInteractiveTarget(event);
+                if (!target) {
                     log("click: no intersection");
                     return;
                 }
-
-                const target =
-                    intersects.find((entry) => entry.object?.userData?.kind === "bin")?.object ??
-                    intersects.find((entry) => entry.object?.userData?.kind === "slot")?.object ??
-                    intersects.find((entry) => entry.object?.userData?.kind === "rack")?.object ??
-                    intersects[0].object;
 
                 if (target?.userData?.kind === "slot") {
                     log("click: selected slot", { address: target.userData.address, occupied: target.userData.occupied });
@@ -1364,6 +1443,14 @@
                 if (dotNetRef) {
                     dotNetRef.invokeMethodAsync("OnBinSelectedFromJs", code);
                 }
+            }
+
+            function onMouseMove(event) {
+                applyHover(pickInteractiveTarget(event));
+            }
+
+            function onMouseLeave() {
+                applyHover(null);
             }
 
             const onResize = () => {
@@ -1397,7 +1484,7 @@
             });
 
             controls.addEventListener("end", () => {
-                renderer.domElement.style.cursor = "grab";
+                renderer.domElement.style.cursor = hoveredObject ? "pointer" : "grab";
                 log("controls:end", {
                     camera: { x: camera.position.x, y: camera.position.y, z: camera.position.z },
                     target: { x: controls.target.x, y: controls.target.y, z: controls.target.z },
@@ -1407,6 +1494,8 @@
 
             renderer.domElement.style.cursor = "grab";
             renderer.domElement.addEventListener("click", onClick);
+            renderer.domElement.addEventListener("mousemove", onMouseMove);
+            renderer.domElement.addEventListener("mouseleave", onMouseLeave);
             renderer.domElement.addEventListener("wheel", onWheel, { passive: true });
             window.addEventListener("resize", onResize);
 
@@ -1461,6 +1550,8 @@
                 controls,
                 onResize,
                 onClick,
+                onMouseMove,
+                onMouseLeave,
                 onWheel,
                 focusBin,
                 applySelection,
