@@ -33,6 +33,7 @@ public sealed class LocationsController : ControllerBase
     public async Task<IActionResult> GetAsync(
         [FromQuery] string? search,
         [FromQuery] string? status,
+        [FromQuery] Guid? warehouseId,
         [FromQuery] bool includeVirtual = true,
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 50,
@@ -48,6 +49,11 @@ public sealed class LocationsController : ControllerBase
         if (!includeVirtual)
         {
             query = query.Where(x => !x.IsVirtual);
+        }
+
+        if (warehouseId.HasValue)
+        {
+            query = query.Where(x => x.WarehouseId == warehouseId.Value);
         }
 
         if (!string.IsNullOrWhiteSpace(search))
@@ -181,6 +187,25 @@ public sealed class LocationsController : ControllerBase
             return ValidationFailure($"Location barcode '{normalizedBarcode}' already exists.");
         }
 
+        Guid? resolvedWarehouseId = null;
+        if (!request.IsVirtual)
+        {
+            if (!request.WarehouseId.HasValue)
+            {
+                return UnprocessableFailure("Field 'warehouseId' is required for non-virtual locations.");
+            }
+
+            var warehouseExists = await _dbContext.Warehouses
+                .AsNoTracking()
+                .AnyAsync(x => x.WarehouseId == request.WarehouseId.Value, cancellationToken);
+            if (!warehouseExists)
+            {
+                return UnprocessableFailure($"Warehouse '{request.WarehouseId.Value}' was not found.");
+            }
+
+            resolvedWarehouseId = request.WarehouseId.Value;
+        }
+
         var entity = new Location
         {
             Code = normalizedCode,
@@ -203,7 +228,8 @@ public sealed class LocationsController : ControllerBase
             Level = request.Level?.Trim(),
             Bin = request.Bin?.Trim(),
             CapacityWeight = request.CapacityWeight,
-            CapacityVolume = request.CapacityVolume
+            CapacityVolume = request.CapacityVolume,
+            WarehouseId = resolvedWarehouseId
         };
 
         var overlapError = await ValidateCoordinateOverlapAsync(entity, null, cancellationToken);
@@ -344,6 +370,19 @@ public sealed class LocationsController : ControllerBase
             return ValidationFailure($"Location barcode '{normalizedBarcode}' already exists.");
         }
 
+        if (request.WarehouseId.HasValue)
+        {
+            var warehouseExists = await _dbContext.Warehouses
+                .AsNoTracking()
+                .AnyAsync(x => x.WarehouseId == request.WarehouseId.Value, cancellationToken);
+            if (!warehouseExists)
+            {
+                return UnprocessableFailure($"Warehouse '{request.WarehouseId.Value}' was not found.");
+            }
+
+            entity.WarehouseId = request.WarehouseId.Value;
+        }
+
         var previousCode = entity.Code;
         entity.Code = normalizedCode;
         entity.Barcode = normalizedBarcode;
@@ -426,6 +465,19 @@ public sealed class LocationsController : ControllerBase
         if (entity is null)
         {
             return Failure(Result.Fail(DomainErrorCodes.NotFound, $"Location '{normalizedCode}' does not exist."));
+        }
+
+        if (request.WarehouseId.HasValue)
+        {
+            var warehouseExists = await _dbContext.Warehouses
+                .AsNoTracking()
+                .AnyAsync(x => x.WarehouseId == request.WarehouseId.Value, cancellationToken);
+            if (!warehouseExists)
+            {
+                return UnprocessableFailure($"Warehouse '{request.WarehouseId.Value}' was not found.");
+            }
+
+            entity.WarehouseId = request.WarehouseId.Value;
         }
 
         if (!TryNormalizeBinDimensions(
@@ -816,7 +868,8 @@ public sealed class LocationsController : ControllerBase
         string? Level,
         string? Bin,
         decimal? CapacityWeight,
-        decimal? CapacityVolume);
+        decimal? CapacityVolume,
+        Guid? WarehouseId = null);
 
     public sealed record UpdateCoordinatesRequest(
         decimal? CoordinateX,
@@ -830,7 +883,8 @@ public sealed class LocationsController : ControllerBase
         string? Level,
         string? Bin,
         decimal? CapacityWeight,
-        decimal? CapacityVolume);
+        decimal? CapacityVolume,
+        Guid? WarehouseId = null);
 
     public sealed record LocationListItemDto(
         int Id,

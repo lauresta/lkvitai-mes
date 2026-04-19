@@ -858,7 +858,12 @@ public class WarehouseDbContext : DbContext
             entity.Property(e => e.RackRowId).HasMaxLength(30);
             entity.Property(e => e.SlotSpan).HasDefaultValue(1);
             entity.Property(e => e.LocationRole).HasMaxLength(20);
+            entity.Property(e => e.WarehouseId);
             entity.HasIndex(e => e.Code).IsUnique();
+            entity.HasIndex(e => e.WarehouseId)
+                .HasDatabaseName("IX_Locations_WarehouseId");
+            entity.HasIndex(e => new { e.WarehouseId, e.Code })
+                .HasDatabaseName("IX_Locations_WarehouseCode");
             entity.HasIndex(e => e.Barcode).IsUnique();
             entity.HasIndex(e => e.ParentLocationId);
             entity.HasIndex(e => e.Type);
@@ -868,6 +873,11 @@ public class WarehouseDbContext : DbContext
                 .HasDatabaseName("IX_Locations_RackPlacement")
                 .HasFilter("\"RackRowId\" IS NOT NULL");
             entity.HasOne(e => e.ParentLocation).WithMany(e => e.Children).HasForeignKey(e => e.ParentLocationId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<WarehouseLayoutAggregate>()
+                .WithMany()
+                .HasForeignKey(e => e.WarehouseId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .IsRequired(false);
             entity.ToTable(t =>
             {
                 t.HasCheckConstraint("ck_locations_type", "\"Type\" IN ('Warehouse','Zone','Aisle','Rack','Shelf','Bin','Virtual')");

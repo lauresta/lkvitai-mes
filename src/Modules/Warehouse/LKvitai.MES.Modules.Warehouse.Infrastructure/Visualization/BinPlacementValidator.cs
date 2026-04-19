@@ -73,6 +73,14 @@ public sealed class BinPlacementValidator
             return (null, $"Warehouse layout '{normalizedWarehouseCode}' was not found.");
         }
 
+        var warehouse = await _dbContext.Warehouses
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Code == normalizedWarehouseCode, cancellationToken);
+        if (warehouse is null)
+        {
+            return (null, $"Warehouse '{normalizedWarehouseCode}' was not found in warehouses table.");
+        }
+
         RackLayoutDocument rackLayout;
         try
         {
@@ -121,6 +129,7 @@ public sealed class BinPlacementValidator
         var overlaps = await _dbContext.Locations
             .AsNoTracking()
             .Where(x => x.Id != locationId &&
+                        x.WarehouseId == warehouse.WarehouseId &&
                         x.RackRowId == normalizedRackRowId &&
                         x.ShelfLevelIndex == request.ShelfLevelIndex &&
                         x.SlotStart.HasValue)
@@ -136,6 +145,7 @@ public sealed class BinPlacementValidator
 
         return (
             new RackPlacementValidationResult(
+                warehouse.WarehouseId,
                 normalizedRackRowId,
                 request.ShelfLevelIndex,
                 request.SlotStart,
