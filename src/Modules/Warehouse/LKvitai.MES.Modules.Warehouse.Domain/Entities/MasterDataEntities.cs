@@ -1168,6 +1168,7 @@ public sealed class Location : AuditableEntity
     public int? SlotStart { get; set; }
     public int? SlotSpan { get; set; }
     public string? LocationRole { get; set; }
+    public Guid? WarehouseId { get; set; }
 
     public Location? ParentLocation { get; set; }
     public ICollection<Location> Children { get; set; } = new List<Location>();

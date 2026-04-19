@@ -280,6 +280,7 @@ public sealed class WarehouseVisualizationController : ControllerBase
         location.ShelfLevelIndex = placement.ShelfLevelIndex;
         location.SlotStart = placement.SlotStart;
         location.SlotSpan = placement.SlotSpan;
+        location.WarehouseId = placement.WarehouseId;
         location.LocationRole = placement.LocationRole;
         location.UpdatedAt = DateTimeOffset.UtcNow;
 
@@ -328,18 +329,30 @@ public sealed class WarehouseVisualizationController : ControllerBase
 
         var layout = await LoadLayoutAsync(warehouseCode, cancellationToken);
 
-        var locations = await EfAsync.ToListAsync(
-            _dbContext.Locations
-                .AsNoTracking()
-                .Where(x => !x.IsVirtual)
-                .OrderBy(x => x.Code),
+        var warehouseEntity = await EfAsync.FirstOrDefaultAsync(
+            _dbContext.Warehouses.AsNoTracking(),
+            x => x.Code == layout.WarehouseCode,
             cancellationToken);
 
-        if (locations.Count == 0)
+        List<Location> locations;
+        if (warehouseEntity is not null)
         {
             locations = await EfAsync.ToListAsync(
                 _dbContext.Locations
                     .AsNoTracking()
+                    .Where(x => x.WarehouseId == warehouseEntity.WarehouseId && !x.IsVirtual)
+                    .OrderBy(x => x.Code),
+                cancellationToken);
+        }
+        else
+        {
+            _logger.LogWarning(
+                "Warehouse '{WarehouseCode}' not found in warehouses table; falling back to unowned locations",
+                layout.WarehouseCode);
+            locations = await EfAsync.ToListAsync(
+                _dbContext.Locations
+                    .AsNoTracking()
+                    .Where(x => !x.IsVirtual && x.WarehouseId == null)
                     .OrderBy(x => x.Code),
                 cancellationToken);
         }
@@ -546,17 +559,47 @@ public sealed class WarehouseVisualizationController : ControllerBase
             return layout;
         }
 
-        var maxCoordinate = await EfAsync.ToListAsync(
-            _dbContext.Locations
-                .AsNoTracking()
-                .Where(x => x.CoordinateX.HasValue && x.CoordinateY.HasValue && x.CoordinateZ.HasValue)
-                .Select(x => new
-                {
-                    X = x.CoordinateX!.Value,
-                    Y = x.CoordinateY!.Value,
-                    Z = x.CoordinateZ!.Value
-                }),
+        Guid? fallbackWarehouseId = null;
+        var fallbackWarehouse = await EfAsync.FirstOrDefaultAsync(
+            _dbContext.Warehouses.AsNoTracking(),
+            x => x.Code == normalizedWarehouseCode,
             cancellationToken);
+        fallbackWarehouseId = fallbackWarehouse?.WarehouseId;
+
+        IReadOnlyList<CoordinateSample> maxCoordinate;
+        if (fallbackWarehouseId.HasValue)
+        {
+            maxCoordinate = await EfAsync.ToListAsync(
+                _dbContext.Locations
+                    .AsNoTracking()
+                    .Where(x => x.WarehouseId == fallbackWarehouseId.Value
+                                && x.CoordinateX.HasValue
+                                && x.CoordinateY.HasValue
+                                && x.CoordinateZ.HasValue)
+                    .Select(x => new CoordinateSample(
+                        x.CoordinateX!.Value,
+                        x.CoordinateY!.Value,
+                        x.CoordinateZ!.Value)),
+                cancellationToken);
+        }
+        else
+        {
+            maxCoordinate = await EfAsync.ToListAsync(
+                _dbContext.Locations
+                    .AsNoTracking()
+                    .Where(x => x.WarehouseId == null
+                                && x.CoordinateX.HasValue
+                                && x.CoordinateY.HasValue
+                                && x.CoordinateZ.HasValue)
+                    .Select(x => new CoordinateSample(
+                        x.CoordinateX!.Value,
+                        x.CoordinateY!.Value,
+                        x.CoordinateZ!.Value)),
+                cancellationToken);
+            _logger.LogWarning(
+                "LoadLayoutAsync: warehouse '{WarehouseCode}' not found; deriving dimensions from unowned locations when available",
+                normalizedWarehouseCode);
+        }
 
         var width = maxCoordinate.Count == 0 ? 50m : maxCoordinate.Max(x => x.X) + 1m;
         var length = maxCoordinate.Count == 0 ? 100m : maxCoordinate.Max(x => x.Y) + 1m;
@@ -699,12 +742,15 @@ public sealed class WarehouseVisualizationController : ControllerBase
             SlotStart = location.SlotStart,
             SlotSpan = location.SlotSpan,
             LocationRole = location.LocationRole,
+            WarehouseId = location.WarehouseId,
             CreatedAt = location.CreatedAt,
             UpdatedAt = location.UpdatedAt,
             CreatedBy = location.CreatedBy,
             UpdatedBy = location.UpdatedBy
         };
     }
+
+    private sealed record CoordinateSample(decimal X, decimal Y, decimal Z);
 
     private sealed record VisualizationLocationSeed(
         Location Location,

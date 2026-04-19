@@ -107,6 +107,7 @@ public sealed record RackPlacementRequest(
     string? LocationRole);
 
 public sealed record RackPlacementValidationResult(
+    Guid WarehouseId,
     string RackRowId,
     int ShelfLevelIndex,
     int SlotStart,
