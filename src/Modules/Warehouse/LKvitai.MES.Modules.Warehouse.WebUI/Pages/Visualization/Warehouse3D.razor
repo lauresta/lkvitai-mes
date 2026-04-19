@@ -17,72 +17,179 @@
 
 <div class="viz-page">
     <div class="viz-toolbar">
-        <div class="viz-toolbar-left">
-            <h1 class="viz-title">Warehouse Visualization</h1>
-            <p class="viz-subtitle">Explore bins, capacity, and handling units in 3D or 2D.</p>
+        <div class="viz-toolbar-meta">
+            <div class="viz-heading-row">
+                <div>
+                    <h1 class="viz-title">Warehouse Visualization</h1>
+                    <p class="viz-subtitle">Bins, racks and slot occupancy in one screen.</p>
+                </div>
+                <div class="viz-meta-badges">
+                    <span class="viz-badge">@CurrentWarehouseLabel</span>
+                    <span class="viz-badge">@($"{_model?.Bins.Count ?? 0} bins")</span>
+                    <span class="viz-badge">@($"{_model?.Racks.Count ?? 0} racks")</span>
+                    <span class="viz-badge">@($"{_model?.Slots.Count ?? 0} slots")</span>
+                </div>
+            </div>
         </div>
-        <div class="viz-toolbar-right">
-            <select class="form-select" @bind="_warehouseCode" @bind:after="OnWarehouseChangedAsync" style="min-width: 220px;">
-                @foreach (var warehouse in _warehouses)
-                {
-                    <option value="@warehouse.Code">@warehouse.Code - @warehouse.Name</option>
-                }
-            </select>
-            <div class="viz-search-wrap">
-                <div class="input-group">
-                    <input class="form-control"
-                           placeholder="Search location or rack address (e.g. R3-C6-L3 or 2-C3-15)"
-                           value="@_searchQuery"
-                           @oninput="OnSearchInput"
-                           @onkeydown="HandleSearchKeyAsync" />
-                    <button class="btn btn-outline-secondary" @onclick="SearchAsync">
-                        <i class="bi bi-search"></i>
+        <div class="viz-toolbar-grid">
+            <div class="viz-field viz-field-warehouse">
+                <label class="viz-label">Warehouse</label>
+                <select class="form-select" @bind="_warehouseCode" @bind:after="OnWarehouseChangedAsync">
+                    @foreach (var warehouse in _warehouses)
+                    {
+                        <option value="@warehouse.Code">@warehouse.Code - @warehouse.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="viz-field viz-field-actions">
+                <label class="viz-label">View</label>
+                <div class="viz-action-row">
+                    <button class="btn btn-outline-secondary" @onclick="RefreshAsync">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh
+                    </button>
+                    @if (_is3dView)
+                    {
+                        <select class="form-select viz-inline-select"
+                                value="@_cameraMode"
+                                @onchange="OnCameraModeChangedAsync">
+                            <option value="overview">Overview</option>
+                            <option value="low">Low Angle</option>
+                        </select>
+                        <button class="btn btn-outline-secondary" @onclick="ToggleRackLabelsAsync">
+                            @(_showRackLabels ? "Hide Labels" : "Show Labels")
+                        </button>
+                    }
+                    <button class="btn btn-warning" @onclick="ToggleViewAsync">
+                        @(_is3dView ? "2D View" : "3D View")
                     </button>
                 </div>
-                @if (_showSuggestions && _autocompleteSuggestions.Count > 0)
-                {
-                    <div class="list-group viz-suggestions">
-                        @foreach (var suggestion in _autocompleteSuggestions)
+            </div>
+            <div class="viz-field viz-field-location">
+                <label class="viz-label">Location Or Address</label>
+                <div class="viz-search-wrap">
+                    <div class="input-group">
+                        <input class="form-control"
+                               placeholder="Bin, location or slot address"
+                               value="@_searchQuery"
+                               @oninput="OnSearchInput"
+                               @onkeydown="HandleSearchKeyAsync" />
+                        <button class="btn btn-outline-secondary" @onclick="SearchAsync">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
+                    @if (_showSuggestions && _autocompleteSuggestions.Count > 0)
+                    {
+                        <div class="list-group viz-suggestions">
+                            @foreach (var suggestion in _autocompleteSuggestions)
+                            {
+                                <button type="button"
+                                        class="list-group-item list-group-item-action"
+                                        @onclick="() => SelectSuggestionAsync(suggestion)">
+                                    @suggestion
+                                </button>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+            <div class="viz-field viz-field-item">
+                <label class="viz-label">Item Code Or Name</label>
+                <div class="input-group">
+                    <input class="form-control"
+                           placeholder="SKU or item name"
+                           @bind="_itemSearchQuery"
+                           @bind:event="oninput"
+                           @onkeydown="HandleItemSearchKeyAsync" />
+                    <button class="btn btn-primary" @onclick="SearchItemAsync" disabled="@_isItemSearchLoading">
+                        @if (_isItemSearchLoading)
                         {
-                            <button type="button"
-                                    class="list-group-item list-group-item-action"
-                                    @onclick="() => SelectSuggestionAsync(suggestion)">
-                                @suggestion
+                            <span class="spinner-border spinner-border-sm" role="status"></span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-box-seam"></i>
+                        }
+                    </button>
+                    <button class="btn btn-outline-secondary" @onclick="ClearItemSearchAsync" disabled="@(!_hasItemSearchResults && string.IsNullOrWhiteSpace(_itemSearchQuery))">
+                        Clear
+                    </button>
+                </div>
+            </div>
+            <div class="viz-field">
+                <label class="viz-label">Zone</label>
+                <select class="form-select"
+                        value="@_zoneFilter"
+                        @onchange="OnZoneFilterChangedAsync">
+                    <option value="ALL">All Zones</option>
+                    @foreach (var zone in ZoneOptions)
+                    {
+                        <option value="@zone">@zone</option>
+                    }
+                </select>
+            </div>
+            <div class="viz-field">
+                <label class="viz-label">Status</label>
+                <select class="form-select"
+                        value="@_statusFilter"
+                        @onchange="OnStatusFilterChangedAsync">
+                    <option value="ALL">All Statuses</option>
+                    <option value="EMPTY">EMPTY</option>
+                    <option value="LOW">LOW</option>
+                    <option value="MEDIUM">MEDIUM</option>
+                    <option value="FULL">FULL</option>
+                    <option value="RESERVED">RESERVED</option>
+                    <option value="OVER_CAPACITY">OVER_CAPACITY</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    @if (_hasItemSearchResults)
+    {
+        <div class="viz-item-panel">
+            <div class="viz-item-panel-main">
+                <div class="viz-item-summary">
+                    <div class="viz-item-heading">
+                        <strong>@_itemSearchResolvedLabel</strong>
+                        @if (!string.IsNullOrWhiteSpace(_itemSearchResolvedSku))
+                        {
+                            <span class="viz-badge">@_itemSearchResolvedSku</span>
+                        }
+                    </div>
+                    <div class="viz-item-subtitle">
+                        @if (_currentWarehouseItemHits.Count > 0)
+                        {
+                            <span>@($"{_currentWarehouseItemHits.Count} physical bin(s) in {CurrentWarehouseCode}")</span>
+                        }
+                        else
+                        {
+                            <span>No physical bins in @CurrentWarehouseCode.</span>
+                        }
+                    </div>
+                </div>
+                @if (_currentWarehouseItemHits.Count > 0)
+                {
+                    <div class="viz-hit-list">
+                        @foreach (var hit in _currentWarehouseItemHits)
+                        {
+                            <button class="btn btn-sm btn-outline-primary viz-hit-pill"
+                                    @onclick="() => FocusBinAsync(hit.LocationCode)">
+                                <span>@hit.LocationCode</span>
+                                <strong>@hit.PhysicalQty.ToString("0.###", CultureInfo.InvariantCulture)</strong>
                             </button>
                         }
                     </div>
                 }
             </div>
-            <select class="form-select"
-                    value="@_zoneFilter"
-                    @onchange="OnZoneFilterChangedAsync"
-                    style="min-width: 160px;">
-                <option value="ALL">All Zones</option>
-                @foreach (var zone in ZoneOptions)
-                {
-                    <option value="@zone">@zone</option>
-                }
-            </select>
-            <select class="form-select"
-                    value="@_statusFilter"
-                    @onchange="OnStatusFilterChangedAsync"
-                    style="min-width: 170px;">
-                <option value="ALL">All Statuses</option>
-                <option value="EMPTY">EMPTY</option>
-                <option value="LOW">LOW</option>
-                <option value="MEDIUM">MEDIUM</option>
-                <option value="FULL">FULL</option>
-                <option value="RESERVED">RESERVED</option>
-                <option value="OVER_CAPACITY">OVER_CAPACITY</option>
-            </select>
-            <button class="btn btn-outline-secondary" @onclick="RefreshAsync">
-                <i class="bi bi-arrow-clockwise"></i> Refresh
-            </button>
-            <button class="btn btn-warning" @onclick="ToggleViewAsync">
-                @(_is3dView ? "2D View" : "3D View")
-            </button>
+            @if (_otherWarehouseSummaries.Count > 0)
+            {
+                <div class="alert alert-warning viz-cross-warehouse-warning mb-0">
+                    <strong>Also found in other warehouses:</strong>
+                    @string.Join(", ", _otherWarehouseSummaries.Select(x => $"{x.WarehouseCode} ({x.BinCount} bins, {x.TotalQty.ToString("0.###", CultureInfo.InvariantCulture)})"))
+                </div>
+            }
         </div>
-    </div>
+    }
 
     @if (_isLoading)
     {
@@ -187,28 +294,90 @@
                 {
                     @if (_selectedSlot is null)
                     {
-                        <div class="viz-empty-selection">
-                            <i class="bi bi-cursor"></i>
-                            <span>Select a bin or slot to view details.</span>
-                        </div>
+                        @if (_selectedRack is null)
+                        {
+                            <div class="viz-empty-selection">
+                                <i class="bi bi-cursor"></i>
+                                <span>Select a bin, slot, or rack to view details.</span>
+                            </div>
+                        }
+                        else
+                        {
+                            <h2>Rack @_selectedRack.Id</h2>
+                            <dl class="row">
+                                <dt class="col-5">Type</dt>
+                                <dd class="col-7">@_selectedRack.Type</dd>
+                                <dt class="col-5">Origin</dt>
+                                <dd class="col-7">@_selectedRack.Origin.X, @_selectedRack.Origin.Y, @_selectedRack.Origin.Z</dd>
+                                <dt class="col-5">Dimensions</dt>
+                                <dd class="col-7">@FormatRackDimensions(_selectedRack.Dimensions)</dd>
+                                <dt class="col-5">Levels</dt>
+                                <dd class="col-7">@_selectedRack.Levels.Count</dd>
+                                <dt class="col-5">Slots / level</dt>
+                                <dd class="col-7">@_selectedRack.SlotsPerLevel</dd>
+                                <dt class="col-5">Bay count</dt>
+                                <dd class="col-7">@_selectedRack.BayCount</dd>
+                                <dt class="col-5">Back-to-back</dt>
+                                <dd class="col-7">@(_selectedRack.BackToBack ? "Yes" : "No")</dd>
+                                @if (!string.IsNullOrWhiteSpace(_selectedRack.PairedWithRackId))
+                                {
+                                    <dt class="col-5">Paired rack</dt>
+                                    <dd class="col-7">@_selectedRack.PairedWithRackId</dd>
+                                }
+                            </dl>
+
+                            <a class="btn btn-sm btn-outline-secondary"
+                               href="@BuildSlotsLink(rackId: _selectedRack.Id)">
+                                Open In Slots
+                            </a>
+                        }
                     }
                     else
                     {
                         <h2>@_selectedSlot.Address</h2>
                         <dl class="row">
                             <dt class="col-5">Status</dt>
-                            <dd class="col-7">Empty</dd>
+                            <dd class="col-7">@(_selectedSlot.Occupied ? "Occupied" : "Empty")</dd>
                             <dt class="col-5">Rack</dt>
                             <dd class="col-7">@_selectedSlot.RackId</dd>
                             <dt class="col-5">Level</dt>
                             <dd class="col-7">@_selectedSlot.Level</dd>
                             <dt class="col-5">Slot</dt>
                             <dd class="col-7">@_selectedSlot.Slot</dd>
+                            @if (ResolveBinForSlot(_selectedSlot) is { } slotBin)
+                            {
+                                <dt class="col-5">Location</dt>
+                                <dd class="col-7">@slotBin.Code</dd>
+                                @if (!string.IsNullOrWhiteSpace(slotBin.Address))
+                                {
+                                    <dt class="col-5">Bin address</dt>
+                                    <dd class="col-7">@slotBin.Address</dd>
+                                }
+                                @if (slotBin.Span.HasValue && slotBin.Span.Value > 1)
+                                {
+                                    <dt class="col-5">Span</dt>
+                                    <dd class="col-7">@FormatSpan(slotBin)</dd>
+                                }
+                            }
                             <dt class="col-5">Coordinates</dt>
                             <dd class="col-7">@_selectedSlot.Origin.X, @_selectedSlot.Origin.Y, @_selectedSlot.Origin.Z</dd>
                             <dt class="col-5">Dimensions</dt>
                             <dd class="col-7">@FormatRackDimensions(_selectedSlot.Dimensions)</dd>
                         </dl>
+
+                        <div class="d-flex gap-2 flex-wrap">
+                            <a class="btn btn-sm btn-outline-secondary"
+                               href="@BuildSlotsLink(rackId: _selectedSlot.RackId, level: _selectedSlot.Level, address: _selectedSlot.Address)">
+                                Open In Slots
+                            </a>
+                            @if (ResolveBinForSlot(_selectedSlot) is { } occupiedSlotBin)
+                            {
+                                <a class="btn btn-sm btn-outline-secondary"
+                                   href="@BuildLocationsLink(occupiedSlotBin.Code)">
+                                    Open In Locations
+                                </a>
+                            }
+                        </div>
                     }
                 }
                 else
@@ -259,6 +428,14 @@
                        href="@($"/warehouse/locations/{_selectedBin.LocationId}")">
                         View Details
                     </a>
+                    <a class="btn btn-sm btn-outline-secondary mt-3 ms-2"
+                       href="@BuildSlotsLink(rackId: _selectedBin.RackId, level: _selectedBin.Level, address: _selectedBin.Address)">
+                        Open In Slots
+                    </a>
+                    <a class="btn btn-sm btn-outline-secondary mt-3 ms-2"
+                       href="@BuildLocationsLink(_selectedBin.Code)">
+                        Open In Locations
+                    </a>
                 }
             </div>
         </div>
@@ -275,6 +452,7 @@
     private Visualization3dDto? _model;
     private VisualizationBinDto? _selectedBin;
     private VisualizationSlotDto? _selectedSlot;
+    private VisualizationRackDto? _selectedRack;
     private DotNetObjectReference<Warehouse3D>? _selfReference;
     private bool _isLoading;
     private bool _renderRequested;
@@ -284,12 +462,29 @@
     private string _searchQuery = string.Empty;
     private string _zoneFilter = "ALL";
     private string _statusFilter = "ALL";
+    private string _cameraMode = "overview";
+    private bool _showRackLabels = true;
     private decimal _zoom2d = 1m;
     private bool _showSuggestions;
     private List<string> _autocompleteSuggestions = [];
+    private string _itemSearchQuery = string.Empty;
+    private bool _isItemSearchLoading;
+    private bool _hasItemSearchResults;
+    private string? _itemSearchResolvedLabel;
+    private string? _itemSearchResolvedSku;
+    private List<ItemWarehouseHit> _currentWarehouseItemHits = [];
+    private List<OtherWarehouseSummary> _otherWarehouseSummaries = [];
 
     private bool _is3dView =>
         NavigationManager.Uri.Contains("/warehouse/visualization/3d", StringComparison.OrdinalIgnoreCase);
+
+    private string CurrentWarehouseCode =>
+        string.IsNullOrWhiteSpace(_warehouseCode) ? "n/a" : _warehouseCode;
+
+    private string CurrentWarehouseLabel =>
+        _warehouses.FirstOrDefault(x => string.Equals(x.Code, _warehouseCode, StringComparison.OrdinalIgnoreCase)) is { } warehouse
+            ? $"{warehouse.Code} - {warehouse.Name}"
+            : CurrentWarehouseCode;
 
     private string CurrentSvgViewBox
     {
@@ -354,6 +549,14 @@
         return Task.CompletedTask;
     }
 
+    [JSInvokable]
+    public Task OnRackSelectedFromJs(string rackId)
+    {
+        SelectRack(rackId);
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
     private async Task RefreshAsync()
     {
         await LoadVisualizationAsync();
@@ -387,6 +590,18 @@
         else if (args.Key == "Escape")
         {
             _showSuggestions = false;
+        }
+    }
+
+    private async Task HandleItemSearchKeyAsync(KeyboardEventArgs args)
+    {
+        if (args.Key == "Enter")
+        {
+            await SearchItemAsync();
+        }
+        else if (args.Key == "Escape")
+        {
+            await ClearItemSearchAsync();
         }
     }
 
@@ -438,12 +653,14 @@
         {
             _selectedBin = null;
             _selectedSlot = null;
+            _selectedRack = null;
             return;
         }
 
         _selectedBin = _model.Bins.FirstOrDefault(x =>
             string.Equals(x.Code, code, StringComparison.OrdinalIgnoreCase));
         _selectedSlot = null;
+        _selectedRack = null;
     }
 
     private void SelectSlot(string address)
@@ -452,12 +669,29 @@
         {
             _selectedSlot = null;
             _selectedBin = null;
+            _selectedRack = null;
             return;
         }
 
         _selectedSlot = _model.Slots.FirstOrDefault(x =>
-            string.Equals(x.Address, address, StringComparison.OrdinalIgnoreCase) &&
-            !x.Occupied);
+            string.Equals(x.Address, address, StringComparison.OrdinalIgnoreCase));
+        _selectedBin = null;
+        _selectedRack = null;
+    }
+
+    private void SelectRack(string rackId)
+    {
+        if (_model is null)
+        {
+            _selectedRack = null;
+            _selectedSlot = null;
+            _selectedBin = null;
+            return;
+        }
+
+        _selectedRack = _model.Racks.FirstOrDefault(x =>
+            string.Equals(x.Id, rackId, StringComparison.OrdinalIgnoreCase));
+        _selectedSlot = null;
         _selectedBin = null;
     }
 
@@ -470,11 +704,120 @@
         }
 
         _selectedSlot = null;
+        _selectedRack = null;
 
         if (_is3dView)
         {
             await JS.InvokeVoidAsync("warehouseVisualization.focusBin", CanvasId, code);
         }
+    }
+
+    private async Task SearchItemAsync()
+    {
+        var normalizedQuery = _itemSearchQuery.Trim();
+        if (string.IsNullOrWhiteSpace(normalizedQuery))
+        {
+            await ClearItemSearchAsync();
+            return;
+        }
+
+        _isItemSearchLoading = true;
+        _error = null;
+
+        try
+        {
+            var searchTasks = _warehouses
+                .Select(async warehouse =>
+                {
+                    var result = await StockClient.SearchAvailableStockAsync(
+                        warehouse.Code,
+                        null,
+                        normalizedQuery,
+                        includeVirtual: false,
+                        page: 1,
+                        pageSize: 500);
+
+                    return (warehouse.Code, Items: result.Items);
+                })
+                .ToList();
+
+            var searchResults = await Task.WhenAll(searchTasks);
+            var hits = searchResults
+                .SelectMany(result => result.Items.Select(item => new ItemWarehouseHit(
+                    result.Code,
+                    item.Location,
+                    item.SKU,
+                    item.ItemName,
+                    item.PhysicalQty,
+                    item.AvailableQty)))
+                .Where(hit => hit.PhysicalQty > 0)
+                .GroupBy(hit => $"{hit.WarehouseCode}::{hit.LocationCode}", StringComparer.OrdinalIgnoreCase)
+                .Select(group =>
+                {
+                    var first = group.First();
+                    return new ItemWarehouseHit(
+                        first.WarehouseCode,
+                        first.LocationCode,
+                        first.Sku,
+                        first.ItemName,
+                        group.Sum(static x => x.PhysicalQty),
+                        group.Sum(static x => x.AvailableQty));
+                })
+                .OrderBy(hit => hit.WarehouseCode, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(hit => hit.LocationCode, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            _currentWarehouseItemHits = hits
+                .Where(hit => string.Equals(hit.WarehouseCode, _warehouseCode, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            _otherWarehouseSummaries = hits
+                .Where(hit => !string.Equals(hit.WarehouseCode, _warehouseCode, StringComparison.OrdinalIgnoreCase))
+                .GroupBy(hit => hit.WarehouseCode, StringComparer.OrdinalIgnoreCase)
+                .Select(group => new OtherWarehouseSummary(
+                    group.Key,
+                    group.Count(),
+                    group.Sum(static x => x.PhysicalQty)))
+                .OrderBy(summary => summary.WarehouseCode, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            var resolvedHit = _currentWarehouseItemHits.FirstOrDefault() ?? hits.FirstOrDefault();
+            _itemSearchResolvedLabel = resolvedHit?.ItemName ?? normalizedQuery;
+            _itemSearchResolvedSku = resolvedHit?.Sku;
+            _hasItemSearchResults = true;
+
+            if (_currentWarehouseItemHits.Count > 0)
+            {
+                await FocusBinAsync(_currentWarehouseItemHits[0].LocationCode);
+            }
+            else if (_otherWarehouseSummaries.Count > 0)
+            {
+                ToastService.ShowWarning("Item exists in other warehouses, but not in the current warehouse.");
+            }
+            else
+            {
+                ToastService.ShowWarning("No physical bins found for this item.");
+            }
+        }
+        catch (ApiException ex)
+        {
+            _error = ex.ProblemDetails?.Detail ?? ex.UserMessage;
+        }
+        finally
+        {
+            _isItemSearchLoading = false;
+        }
+    }
+
+    private Task ClearItemSearchAsync()
+    {
+        _itemSearchQuery = string.Empty;
+        _itemSearchResolvedLabel = null;
+        _itemSearchResolvedSku = null;
+        _currentWarehouseItemHits = [];
+        _otherWarehouseSummaries = [];
+        _hasItemSearchResults = false;
+        return Task.CompletedTask;
     }
 
     private async Task OnZoneFilterChangedAsync(ChangeEventArgs args)
@@ -500,6 +843,31 @@
             _statusFilter = "ALL";
         }
 
+        if (_is3dView)
+        {
+            _renderRequested = true;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task OnCameraModeChangedAsync(ChangeEventArgs args)
+    {
+        _cameraMode = (args.Value?.ToString() ?? "overview").Trim().ToLowerInvariant();
+        if (_cameraMode is not ("overview" or "low"))
+        {
+            _cameraMode = "overview";
+        }
+
+        if (_is3dView)
+        {
+            _renderRequested = true;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task ToggleRackLabelsAsync()
+    {
+        _showRackLabels = !_showRackLabels;
         if (_is3dView)
         {
             _renderRequested = true;
@@ -548,6 +916,10 @@
             {
                 SelectSlot(_selectedSlot.Address);
             }
+            else if (_selectedRack is not null)
+            {
+                SelectRack(_selectedRack.Id);
+            }
 
             _renderRequested = _is3dView;
         }
@@ -574,11 +946,17 @@
 
         _selectedBin = null;
         _selectedSlot = null;
+        _selectedRack = null;
         _searchQuery = string.Empty;
         _zoneFilter = "ALL";
         _statusFilter = "ALL";
         _autocompleteSuggestions = [];
         _showSuggestions = false;
+        _currentWarehouseItemHits = [];
+        _otherWarehouseSummaries = [];
+        _hasItemSearchResults = false;
+        _itemSearchResolvedLabel = null;
+        _itemSearchResolvedSku = null;
         await LoadVisualizationAsync();
     }
 
@@ -615,6 +993,33 @@
     private static string FormatRackDimensions(VisualizationRackDimensionsDto dimensions)
         => $"{dimensions.Width:0.###} x {dimensions.Depth:0.###} x {dimensions.Height:0.###} m";
 
+    private static string FormatSpan(VisualizationBinDto bin)
+    {
+        if (!bin.StartSlot.HasValue)
+        {
+            return "n/a";
+        }
+
+        var span = Math.Max(bin.Span ?? 1, 1);
+        var endSlot = bin.StartSlot.Value + span - 1;
+        return $"{bin.StartSlot.Value}-{endSlot}";
+    }
+
+    private VisualizationBinDto? ResolveBinForSlot(VisualizationSlotDto slot)
+    {
+        if (_model is null)
+        {
+            return null;
+        }
+
+        return _model.Bins.FirstOrDefault(bin =>
+            string.Equals(bin.RackId, slot.RackId, StringComparison.OrdinalIgnoreCase) &&
+            bin.Level == slot.Level &&
+            bin.StartSlot.HasValue &&
+            slot.Slot >= bin.StartSlot.Value &&
+            slot.Slot <= (bin.StartSlot.Value + Math.Max(bin.Span ?? 1, 1) - 1));
+    }
+
     private List<VisualizationBinDto> GetFilteredBins()
     {
         if (_model is null)
@@ -635,7 +1040,12 @@
             bins = GetFilteredBins(),
             racks = _model?.Racks ?? [],
             slots = _model?.Slots ?? [],
-            zones = _model?.Zones ?? []
+            zones = _model?.Zones ?? [],
+            options = new
+            {
+                cameraMode = _cameraMode,
+                showRackLabels = _showRackLabels
+            }
         };
     }
 
@@ -702,6 +1112,50 @@
     private static string ToSvgHeight(decimal height) => ToSvgNumber(height * SvgScale);
 
     private static string ToSvgNumber(decimal value) => value.ToString("0.###", CultureInfo.InvariantCulture);
+
+    private string BuildSlotsLink(string? rackId = null, int? level = null, string? address = null)
+    {
+        var query = new Dictionary<string, string?>();
+        if (!string.IsNullOrWhiteSpace(_warehouseCode))
+        {
+            query["warehouse"] = _warehouseCode;
+        }
+
+        if (!string.IsNullOrWhiteSpace(rackId))
+        {
+            query["rack"] = rackId;
+        }
+
+        if (level.HasValue)
+        {
+            query["level"] = level.Value.ToString(CultureInfo.InvariantCulture);
+        }
+
+        if (!string.IsNullOrWhiteSpace(address))
+        {
+            query["address"] = address;
+        }
+
+        return QueryHelpers.AddQueryString("/warehouse/admin/slots", query);
+    }
+
+    private static string BuildLocationsLink(string code)
+        => QueryHelpers.AddQueryString(
+            "/admin/locations",
+            new Dictionary<string, string?> { ["search"] = code, ["edit"] = code });
+
+    private sealed record ItemWarehouseHit(
+        string WarehouseCode,
+        string LocationCode,
+        string Sku,
+        string ItemName,
+        decimal PhysicalQty,
+        decimal AvailableQty);
+
+    private sealed record OtherWarehouseSummary(
+        string WarehouseCode,
+        int BinCount,
+        decimal TotalQty);
 
     public async ValueTask DisposeAsync()
     {

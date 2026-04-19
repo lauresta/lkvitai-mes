@@ -61,11 +61,11 @@ public sealed class RackVisualizationGeometryTests
         result.Slots.Should().HaveCount(18);
         result.Slots.Count(x => x.Occupied).Should().Be(2);
 
-        var slot = result.Slots.Single(x => x.Address == "2-C2-2");
+        var slot = result.Slots.Single(x => x.Address == "2-C2-02");
         slot.Occupied.Should().BeTrue();
 
         var bin = result.Bins.Single();
-        bin.Address.Should().Be("2-C2-2+2");
+        bin.Address.Should().Be("2-C2-02+2");
         bin.RackId.Should().Be("C");
         bin.Level.Should().Be(2);
         bin.StartSlot.Should().Be(2);

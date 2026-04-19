@@ -180,7 +180,7 @@ public sealed class StockController : ControllerBase
         {
             var normalizedSku = sku.Trim();
             filtered = filtered
-                .Where(x => MatchesPattern(x.InternalSku, normalizedSku))
+                .Where(x => MatchesPattern(x.InternalSku, normalizedSku) || MatchesPattern(x.ItemName, normalizedSku))
                 .ToList();
         }
 

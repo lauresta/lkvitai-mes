@@ -152,6 +152,11 @@ public record AdminLocationDto
     public string? Bin { get; init; }
     public decimal? CapacityWeight { get; init; }
     public decimal? CapacityVolume { get; init; }
+    public string? RackRowId { get; init; }
+    public int? ShelfLevelIndex { get; init; }
+    public int? SlotStart { get; init; }
+    public int? SlotSpan { get; init; }
+    public string? LocationRole { get; init; }
 }
 
 public record CreateOrUpdateLocationRequest(
@@ -176,6 +181,14 @@ public record CreateOrUpdateLocationRequest(
     string? Bin,
     decimal? CapacityWeight,
     decimal? CapacityVolume);
+
+public record UpdateLocationRackPlacementRequest(
+    string WarehouseCode,
+    string RackRowId,
+    int ShelfLevelIndex,
+    int SlotStart,
+    int? SlotSpan,
+    string? LocationRole);
 
 public record AdminWarehouseDto
 {

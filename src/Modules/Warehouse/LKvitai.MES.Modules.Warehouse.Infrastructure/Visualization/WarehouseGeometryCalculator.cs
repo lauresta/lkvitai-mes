@@ -229,7 +229,7 @@ public sealed class WarehouseGeometryCalculator
 
     private static string BuildAddress(string warehouseCode, string rackId, int levelIndex, int slotStart, int slotSpan = 1)
     {
-        var baseAddress = $"{warehouseCode}-{rackId}{levelIndex}-{slotStart}";
+        var baseAddress = $"{warehouseCode}-{rackId}{levelIndex}-{slotStart:D2}";
         return slotSpan > 1 ? $"{baseAddress}+{slotSpan}" : baseAddress;
     }
 }

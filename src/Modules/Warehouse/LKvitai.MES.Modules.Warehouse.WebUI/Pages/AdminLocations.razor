@@ -1,6 +1,9 @@
 @page "/admin/locations"
+@using Microsoft.AspNetCore.WebUtilities
 @inject MasterDataAdminClient AdminClient
+@inject StockClient StockClient
 @inject ToastService ToastService
+@inject NavigationManager NavigationManager
 
 <PageTitle>Admin Locations - LKvitai.MES</PageTitle>
 
@@ -36,6 +39,15 @@
                     <label class="form-check-label">Include virtual locations</label>
                 </div>
             </div>
+            <div class="col-md-2">
+                <label class="form-label">Placement Warehouse</label>
+                <select class="form-select" @bind="_placementWarehouseCode">
+                    @foreach (var warehouse in _warehouses)
+                    {
+                        <option value="@warehouse.Code">@warehouse.Code</option>
+                    }
+                </select>
+            </div>
             <div class="col-md-2 d-grid">
                 <button class="btn btn-primary" @onclick="ApplyFiltersAsync">Filter</button>
             </div>
@@ -65,6 +77,8 @@
                     <th>Coordinates</th>
                     <th>Dimensions (m)</th>
                     <th>Address</th>
+                    <th>Placement</th>
+                    <th>Role</th>
                     <th>Capacity</th>
                     <th>Virtual</th>
                     <th></th>
@@ -74,7 +88,7 @@
                 @if (_locations.Count == 0)
                 {
                     <tr>
-                        <td colspan="11" class="text-muted">No locations found.</td>
+                        <td colspan="13" class="text-muted">No locations found.</td>
                     </tr>
                 }
                 else
@@ -90,6 +104,8 @@
                             <td>@FormatCoordinates(row)</td>
                             <td>@FormatDimensions(row)</td>
                             <td>@FormatAddress(row)</td>
+                            <td>@FormatPlacement(row)</td>
+                            <td>@(row.LocationRole ?? "-")</td>
                             <td>@FormatCapacity(row)</td>
                             <td>@(row.IsVirtual ? "Yes" : "No")</td>
                             <td class="text-end">
@@ -323,6 +339,51 @@
                     <label class="form-label">Capacity Volume</label>
                     <input class="form-control" type="number" step="0.001" @bind="_editing.CapacityVolume" />
                 </div>
+                <div class="col-md-12 mt-3">
+                    <h6 class="mb-2">Rack Placement</h6>
+                </div>
+                @if (CanEditRackPlacement(_editing))
+                {
+                    <div class="col-md-2">
+                        <label class="form-label">Rack Row Id</label>
+                        <input class="form-control" @bind="_editing.RackRowId" placeholder="C" />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Shelf Level</label>
+                        <input class="form-control" type="number" min="1" @bind="_editing.ShelfLevelIndex" />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Slot Start</label>
+                        <input class="form-control" type="number" min="1" @bind="_editing.SlotStart" />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Slot Span</label>
+                        <input class="form-control" type="number" min="1" @bind="_editing.SlotSpan" />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Location Role</label>
+                        <select class="form-select" @bind="_editing.LocationRole">
+                            <option value="">-</option>
+                            <option value="Cell">Cell</option>
+                            <option value="Bulk">Bulk</option>
+                            <option value="EndCap">EndCap</option>
+                            <option value="Overflow">Overflow</option>
+                            <option value="GroundSlot">GroundSlot</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Computed Address</label>
+                        <input class="form-control" value="@BuildPlacementAddress(_editing)" disabled />
+                    </div>
+                }
+                else
+                {
+                    <div class="col-md-12">
+                        <div class="alert alert-secondary mb-0">
+                            Rack placement доступен только для не-виртуальных локаций типа <code>Bin</code>.
+                        </div>
+                    </div>
+                }
                 <div class="col-md-2 d-flex align-items-end">
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" @bind="_editing.IsVirtual" disabled />
@@ -339,16 +400,19 @@
 
 @code {
     private readonly List<AdminLocationDto> _locations = [];
+    private IReadOnlyList<WarehouseDto> _warehouses = Array.Empty<WarehouseDto>();
 
     private string? _search;
     private string? _status;
     private bool _includeVirtual = true;
+    private string _placementWarehouseCode = string.Empty;
     private int _pageNumber = 1;
     private int _pageSize = 50;
     private int _totalCount;
     private bool _isLoading;
     private bool _showCreate;
     private ApiException? _apiError;
+    private string? _pendingEditCodeFromQuery;
 
     private LocationFormModel _create = new();
     private LocationEditFormModel? _editing;
@@ -357,6 +421,13 @@
 
     protected override async Task OnInitializedAsync()
     {
+        ApplyQueryParameters();
+        _warehouses = await StockClient.GetWarehousesAsync();
+        if (_warehouses.Count > 0)
+        {
+            _placementWarehouseCode = _warehouses[0].Code;
+        }
+
         await ReloadAsync();
     }
 
@@ -402,6 +473,35 @@
         {
             _create.ParentLocationId = _locations[0].Id;
         }
+
+        if (!string.IsNullOrWhiteSpace(_pendingEditCodeFromQuery))
+        {
+            var match = _locations.FirstOrDefault(x =>
+                string.Equals(x.Code, _pendingEditCodeFromQuery, StringComparison.OrdinalIgnoreCase));
+            if (match is not null)
+            {
+                BeginEdit(match);
+                _pendingEditCodeFromQuery = null;
+            }
+        }
+    }
+
+    private void ApplyQueryParameters()
+    {
+        var uri = new Uri(NavigationManager.Uri);
+        var query = QueryHelpers.ParseQuery(uri.Query);
+
+        if (query.TryGetValue("search", out var searchValue))
+        {
+            var search = searchValue.ToString().Trim();
+            _search = string.IsNullOrWhiteSpace(search) ? null : search;
+        }
+
+        if (query.TryGetValue("edit", out var editValue))
+        {
+            var editCode = editValue.ToString().Trim();
+            _pendingEditCodeFromQuery = string.IsNullOrWhiteSpace(editCode) ? null : editCode;
+        }
     }
 
     private string ResolveParentCode(int? parentId)
@@ -434,13 +534,32 @@
         return $"{row.WidthMeters.Value:0.###} x {row.LengthMeters.Value:0.###} x {row.HeightMeters.Value:0.###}";
     }
 
-    private static string FormatAddress(AdminLocationDto row)
+    private string FormatAddress(AdminLocationDto row)
     {
+        var placementAddress = BuildPlacementAddress(row);
+        if (!string.IsNullOrWhiteSpace(placementAddress))
+        {
+            return placementAddress;
+        }
+
         var parts = new[] { row.Aisle, row.Rack, row.Level, row.Bin }
             .Where(static x => !string.IsNullOrWhiteSpace(x))
             .ToArray();
 
         return parts.Length == 0 ? "-" : string.Join("-", parts);
+    }
+
+    private static string FormatPlacement(AdminLocationDto row)
+    {
+        if (string.IsNullOrWhiteSpace(row.RackRowId) || !row.ShelfLevelIndex.HasValue || !row.SlotStart.HasValue)
+        {
+            return "-";
+        }
+
+        var span = Math.Max(row.SlotSpan ?? 1, 1);
+        return span > 1
+            ? $"{row.RackRowId} / L{row.ShelfLevelIndex} / S{row.SlotStart}-{row.SlotStart + span - 1}"
+            : $"{row.RackRowId} / L{row.ShelfLevelIndex} / S{row.SlotStart}";
     }
 
     private static string FormatCapacity(AdminLocationDto row)
@@ -510,7 +629,12 @@
             Level = row.Level,
             Bin = row.Bin,
             CapacityWeight = row.CapacityWeight,
-            CapacityVolume = row.CapacityVolume
+            CapacityVolume = row.CapacityVolume,
+            RackRowId = row.RackRowId,
+            ShelfLevelIndex = row.ShelfLevelIndex,
+            SlotStart = row.SlotStart,
+            SlotSpan = row.SlotSpan,
+            LocationRole = row.LocationRole
         };
     }
 
@@ -525,9 +649,14 @@
         {
             _apiError = null;
             await AdminClient.UpdateLocationAsync(_editing.Id, _editing.ToRequest());
+            await SyncRackPlacementAsync(_editing);
             ToastService.ShowSuccess("Location updated.");
             _editing = null;
             await LoadLocationsAsync();
+        }
+        catch (InvalidOperationException ex)
+        {
+            ToastService.ShowError(ex.Message);
         }
         catch (ApiException ex)
         {
@@ -544,6 +673,73 @@
         }
 
         return error.UserMessage;
+    }
+
+    private async Task SyncRackPlacementAsync(LocationEditFormModel editing)
+    {
+        if (!CanEditRackPlacement(editing))
+        {
+            return;
+        }
+
+        var hasPlacementValues =
+            !string.IsNullOrWhiteSpace(editing.RackRowId) ||
+            editing.ShelfLevelIndex.HasValue ||
+            editing.SlotStart.HasValue ||
+            editing.SlotSpan.HasValue ||
+            !string.IsNullOrWhiteSpace(editing.LocationRole);
+
+        if (!hasPlacementValues)
+        {
+            await AdminClient.ClearLocationRackPlacementAsync(editing.Id);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_placementWarehouseCode))
+        {
+            throw new InvalidOperationException("Select a placement warehouse before saving rack placement.");
+        }
+
+        if (string.IsNullOrWhiteSpace(editing.RackRowId) ||
+            !editing.ShelfLevelIndex.HasValue ||
+            !editing.SlotStart.HasValue)
+        {
+            throw new InvalidOperationException("RackRowId, ShelfLevelIndex, and SlotStart are required for rack placement.");
+        }
+
+        await AdminClient.UpdateLocationRackPlacementAsync(
+            editing.Id,
+            new UpdateLocationRackPlacementRequest(
+                _placementWarehouseCode,
+                editing.RackRowId.Trim(),
+                editing.ShelfLevelIndex.Value,
+                editing.SlotStart.Value,
+                editing.SlotSpan,
+                string.IsNullOrWhiteSpace(editing.LocationRole) ? null : editing.LocationRole.Trim()));
+    }
+
+    private string BuildPlacementAddress(AdminLocationDto row)
+        => BuildPlacementAddress(row.RackRowId, row.ShelfLevelIndex, row.SlotStart, row.SlotSpan);
+
+    private string BuildPlacementAddress(LocationEditFormModel row)
+        => BuildPlacementAddress(row.RackRowId, row.ShelfLevelIndex, row.SlotStart, row.SlotSpan);
+
+    private static bool CanEditRackPlacement(LocationEditFormModel row)
+        => !row.IsVirtual && string.Equals(row.Type, "Bin", StringComparison.OrdinalIgnoreCase);
+
+    private string BuildPlacementAddress(string? rackRowId, int? shelfLevelIndex, int? slotStart, int? slotSpan)
+    {
+        if (string.IsNullOrWhiteSpace(_placementWarehouseCode) ||
+            string.IsNullOrWhiteSpace(rackRowId) ||
+            !shelfLevelIndex.HasValue ||
+            !slotStart.HasValue)
+        {
+            return "-";
+        }
+
+        var baseAddress = $"{_placementWarehouseCode}-{rackRowId.Trim()}{shelfLevelIndex.Value}-{slotStart.Value:D2}";
+        var span = Math.Max(slotSpan ?? 1, 1);
+        return span > 1 ? $"{baseAddress}+{span}" : baseAddress;
     }
 
     private class LocationFormModel
@@ -597,5 +793,10 @@
     private sealed class LocationEditFormModel : LocationFormModel
     {
         public int Id { get; set; }
+        public string? RackRowId { get; set; }
+        public int? ShelfLevelIndex { get; set; }
+        public int? SlotStart { get; set; }
+        public int? SlotSpan { get; set; }
+        public string? LocationRole { get; set; }
     }
 }

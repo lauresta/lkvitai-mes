@@ -132,6 +132,27 @@ public class Visualization3dTests
 
     [Fact]
     [Trait("Category", "3DVisualization")]
+    public async Task PutLayoutAsync_WithInvalidZoneType_ShouldReturnBadRequest()
+    {
+        await using var db = CreateDbContext();
+        var controller = CreateVisualizationController(db);
+
+        var response = await controller.PutLayoutAsync(new WarehouseVisualizationController.UpsertWarehouseLayoutRequest(
+            "Main",
+            50m,
+            100m,
+            10m,
+            new[]
+            {
+                new WarehouseVisualizationController.UpsertZoneRequest("PICKING", 0m, 0m, 10m, 100m, "#FDE68A")
+            }));
+
+        response.Should().BeOfType<ObjectResult>();
+        ((ObjectResult)response).StatusCode.Should().Be(StatusCodes.Status400BadRequest);
+    }
+
+    [Fact]
+    [Trait("Category", "3DVisualization")]
     public async Task PutLayoutAsync_WhenUpdatingExistingLayout_ShouldReplaceZones()
     {
         await using var db = CreateDbContext();

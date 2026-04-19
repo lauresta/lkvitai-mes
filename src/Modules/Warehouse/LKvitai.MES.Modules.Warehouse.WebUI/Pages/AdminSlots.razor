@@ -1,0 +1,584 @@
+@page "/warehouse/admin/slots"
+@using LKvitai.MES.Modules.Warehouse.WebUI.Models
+@using Microsoft.AspNetCore.WebUtilities
+@inject MasterDataAdminClient AdminClient
+@inject VisualizationClient VisualizationClient
+@inject StockClient StockClient
+@inject ToastService ToastService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Warehouse Slots - LKvitai.MES</PageTitle>
+
+<h3>Warehouse Slots</h3>
+
+@if (_apiError is not null)
+{
+    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                 TraceId="@_apiError.TraceId"
+                 OnRetry="ReloadAsync"
+                 OnDismiss="@(() => _apiError = null)" />
+}
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label">Warehouse</label>
+                <select class="form-select" @bind="_warehouseCode">
+                    @foreach (var warehouse in _warehouses)
+                    {
+                        <option value="@warehouse.Code">@warehouse.Code - @warehouse.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Address or location</label>
+                <input class="form-control" @bind="_search" placeholder="2-C3-01 or BIN-001" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Rack</label>
+                <select class="form-select" @bind="_rackFilter">
+                    <option value="">All racks</option>
+                    @foreach (var rackId in _rackOptions)
+                    {
+                        <option value="@rackId">@rackId</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Level</label>
+                <select class="form-select" @bind="_levelFilterText">
+                    <option value="">All levels</option>
+                    @foreach (var level in _levelOptions)
+                    {
+                        <option value="@level.ToString()">@level</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <div class="form-check mt-4">
+                    <input class="form-check-input" type="checkbox" @bind="_freeOnly" />
+                    <label class="form-check-label">Free only</label>
+                </div>
+            </div>
+            <div class="col-md-2 d-grid">
+                <button class="btn btn-primary" @onclick="ReloadAsync">Reload</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm position-relative">
+    <LoadingSpinner IsLoading="@_isLoading" />
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <strong>Visible slots: @FilteredSlots.Count</strong>
+            <span class="text-muted">Computed from rack layout and live occupancy.</span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-sm table-hover align-middle">
+                <thead>
+                <tr>
+                    <th>Address</th>
+                    <th>Rack</th>
+                    <th>Level</th>
+                    <th>Slot</th>
+                    <th>Status</th>
+                    <th>Location</th>
+                    <th>Role</th>
+                    <th>Span</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                @if (FilteredSlots.Count == 0)
+                {
+                    <tr>
+                        <td colspan="9" class="text-muted">No slots match the current filters.</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var row in FilteredSlots)
+                    {
+                        <tr>
+                            <td><code>@row.Address</code></td>
+                            <td>@row.RackId</td>
+                            <td>@row.Level</td>
+                            <td>@row.Slot</td>
+                            <td>
+                                <span class="badge @(row.Occupied ? "bg-warning text-dark" : "bg-success")">
+                                    @(row.Occupied ? "Occupied" : "Free")
+                                </span>
+                            </td>
+                            <td>@(row.LocationCode ?? "-")</td>
+                            <td>@(row.LocationRole ?? "-")</td>
+                            <td>@row.SpanText</td>
+                            <td class="text-end">
+                                @if (row.Occupied && row.LocationId.HasValue)
+                                {
+                                    <a class="btn btn-sm btn-outline-secondary me-1"
+                                       href="@BuildLocationsLink(row.LocationCode, row.LocationCode)">
+                                        Location
+                                    </a>
+                                    <button class="btn btn-sm btn-outline-danger"
+                                            @onclick="() => ClearPlacementFromSlotAsync(row)">
+                                        Clear
+                                    </button>
+                                }
+                                else if (_assigningSlotAddress == row.Address)
+                                {
+                                    <div class="d-flex gap-1 justify-content-end align-items-center">
+                                        <select class="form-select form-select-sm" style="min-width: 220px;" @bind="_selectedLocationIdText">
+                                            <option value="">Select location</option>
+                                            @foreach (var candidate in AssignableLocations)
+                                            {
+                                                <option value="@candidate.Id.ToString()">@candidate.Code</option>
+                                            }
+                                        </select>
+                                        <input class="form-control form-control-sm"
+                                               style="width: 82px;"
+                                               type="number"
+                                               min="1"
+                                               max="@GetMaxAssignableSpan(row)"
+                                               title="Slot span"
+                                               @bind="_assignSlotSpan" />
+                                        <span class="text-muted small" style="white-space: nowrap;">@BuildAssignPreview(row)</span>
+                                        <button class="btn btn-sm btn-primary" @onclick="() => AssignWithSpanAsync(row)">Assign</button>
+                                        <button class="btn btn-sm btn-outline-secondary" @onclick="CancelAssign">Cancel</button>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-sm btn-outline-primary"
+                                            @onclick="() => BeginAssign(row)">
+                                        Assign
+                                    </button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@code {
+    private IReadOnlyList<WarehouseDto> _warehouses = Array.Empty<WarehouseDto>();
+    private readonly List<SlotRow> _allSlots = [];
+    private List<AdminLocationDto> _locations = [];
+    private ApiException? _apiError;
+    private bool _isLoading;
+    private string _warehouseCode = string.Empty;
+    private string? _search;
+    private string? _rackFilter;
+    private string? _levelFilterText;
+    private bool _freeOnly;
+    private string? _assigningSlotAddress;
+    private string? _selectedLocationIdText;
+    private int _assignSlotSpan = 1;
+    private bool _initialized;
+
+    private IReadOnlyList<string> _rackOptions = Array.Empty<string>();
+    private IReadOnlyList<int> _levelOptions = Array.Empty<int>();
+
+    private IReadOnlyList<AdminLocationDto> AssignableLocations =>
+        _locations
+            .Where(static location => !location.IsVirtual)
+            .Where(location => string.Equals(location.Type, "Bin", StringComparison.OrdinalIgnoreCase))
+            .Where(location => !HasPlacement(location))
+            .OrderBy(static location => location.Code, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+    private List<SlotRow> FilteredSlots =>
+        _allSlots
+            .Where(static row => row is not null)
+            .Where(row => string.IsNullOrWhiteSpace(_rackFilter) || string.Equals(row.RackId, _rackFilter, StringComparison.OrdinalIgnoreCase))
+            .Where(row => string.IsNullOrWhiteSpace(_levelFilterText) || row.Level == ParseLevelFilter(_levelFilterText))
+            .Where(row => !_freeOnly || !row.Occupied)
+            .Where(row =>
+                string.IsNullOrWhiteSpace(_search) ||
+                row.Address.Contains(_search, StringComparison.OrdinalIgnoreCase) ||
+                (row.LocationCode?.Contains(_search, StringComparison.OrdinalIgnoreCase) ?? false))
+            .OrderBy(row => row.RackId, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(row => row.Level)
+            .ThenBy(row => row.Slot)
+            .ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        ApplyQueryParameters();
+        _warehouses = await StockClient.GetWarehousesAsync();
+        if (_warehouses.Count > 0 && string.IsNullOrWhiteSpace(_warehouseCode))
+        {
+            _warehouseCode = _warehouses[0].Code;
+        }
+
+        await ReloadAsync();
+        _initialized = true;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!_initialized)
+        {
+            return;
+        }
+
+        var previousWarehouse = _warehouseCode;
+        ApplyQueryParameters();
+        if (!string.Equals(previousWarehouse, _warehouseCode, StringComparison.OrdinalIgnoreCase))
+        {
+            await ReloadAsync();
+        }
+    }
+
+    private async Task ReloadAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_warehouseCode))
+        {
+            return;
+        }
+
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            var model = await VisualizationClient.GetVisualization3dAsync(_warehouseCode);
+            var locations = await AdminClient.GetLocationsAsync(null, "Active", false, 1, 500);
+            _locations = locations.Items.ToList();
+            RebuildSlotRows(model);
+            if (!string.IsNullOrWhiteSpace(_search) &&
+                _allSlots.All(row => !string.Equals(row.Address, _search, StringComparison.OrdinalIgnoreCase)))
+            {
+                _assigningSlotAddress = null;
+                _selectedLocationIdText = null;
+            }
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void RebuildSlotRows(Visualization3dDto model)
+    {
+        _allSlots.Clear();
+
+        foreach (var slot in model.Slots)
+        {
+            var occupant = model.Bins.FirstOrDefault(bin =>
+                string.Equals(bin.RackId, slot.RackId, StringComparison.OrdinalIgnoreCase) &&
+                bin.Level == slot.Level &&
+                bin.StartSlot.HasValue &&
+                slot.Slot >= bin.StartSlot.Value &&
+                slot.Slot <= bin.StartSlot.Value + Math.Max(bin.Span ?? 1, 1) - 1);
+
+            var span = occupant is null
+                ? 1
+                : Math.Max(occupant.Span ?? 1, 1);
+
+            _allSlots.Add(new SlotRow(
+                slot.Address,
+                slot.RackId,
+                slot.Level,
+                slot.Slot,
+                occupant is not null || slot.Occupied,
+                occupant?.LocationId,
+                occupant?.Code,
+                occupant?.LocationRole,
+                occupant is null
+                    ? "-"
+                    : span > 1
+                        ? $"{occupant.StartSlot:D2}-{occupant.StartSlot + span - 1:D2}"
+                        : $"{occupant.StartSlot:D2}"));
+        }
+
+        _rackOptions = _allSlots
+            .Select(static row => row.RackId)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(static rack => rack, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        _levelOptions = _allSlots
+            .Select(static row => row.Level)
+            .Distinct()
+            .OrderBy(static level => level)
+            .ToArray();
+    }
+
+    private static int? ParseLevelFilter(string? value)
+        => int.TryParse(value, out var level) ? level : null;
+
+    private void BeginAssign(SlotRow row)
+    {
+        _assigningSlotAddress = row.Address;
+        _selectedLocationIdText = string.Empty;
+        _assignSlotSpan = 1;
+    }
+
+    private void CancelAssign()
+    {
+        _assigningSlotAddress = null;
+        _selectedLocationIdText = null;
+        _assignSlotSpan = 1;
+    }
+
+    private async Task AssignAsync(SlotRow row)
+    {
+        if (!int.TryParse(_selectedLocationIdText, out var locationId))
+        {
+            ToastService.ShowError("Выбери location для назначения.");
+            return;
+        }
+
+        var location = _locations.FirstOrDefault(x => x.Id == locationId);
+        if (location is null)
+        {
+            ToastService.ShowError("Не удалось найти выбранную location.");
+            return;
+        }
+
+        try
+        {
+            await AdminClient.UpdateLocationRackPlacementAsync(
+                locationId,
+                new UpdateLocationRackPlacementRequest(
+                    _warehouseCode,
+                    row.RackId,
+                    row.Level,
+                    row.Slot,
+                    1,
+                    string.IsNullOrWhiteSpace(location.LocationRole) ? null : location.LocationRole));
+
+            ToastService.ShowSuccess($"Location {location.Code} назначена в {row.Address}.");
+            CancelAssign();
+            await ReloadAsync();
+        }
+        catch (ApiException ex)
+        {
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+    }
+
+    private async Task ClearPlacementAsync(SlotRow row)
+    {
+        if (!row.LocationId.HasValue)
+        {
+            return;
+        }
+
+        try
+        {
+            await AdminClient.ClearLocationRackPlacementAsync(row.LocationId.Value);
+            ToastService.ShowWarning($"Placement для {row.LocationCode} очищен.");
+            await ReloadAsync();
+        }
+        catch (ApiException ex)
+        {
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+    }
+
+    private async Task AssignWithSpanAsync(SlotRow row)
+    {
+        if (!int.TryParse(_selectedLocationIdText, out var locationId))
+        {
+            ToastService.ShowError("Select a location to assign.");
+            return;
+        }
+
+        var location = _locations.FirstOrDefault(x => x.Id == locationId);
+        if (location is null)
+        {
+            ToastService.ShowError("Selected location was not found.");
+            return;
+        }
+
+        var maxSpan = GetMaxAssignableSpan(row);
+        if (_assignSlotSpan < 1 || _assignSlotSpan > maxSpan)
+        {
+            ToastService.ShowError($"Span must be between 1 and {maxSpan} for this slot.");
+            return;
+        }
+
+        if (!IsSpanFree(row, _assignSlotSpan))
+        {
+            ToastService.ShowError("Selected span overlaps an occupied or missing slot.");
+            return;
+        }
+
+        try
+        {
+            await AdminClient.UpdateLocationRackPlacementAsync(
+                locationId,
+                new UpdateLocationRackPlacementRequest(
+                    _warehouseCode,
+                    row.RackId,
+                    row.Level,
+                    row.Slot,
+                    _assignSlotSpan,
+                    string.IsNullOrWhiteSpace(location.LocationRole) ? null : location.LocationRole));
+
+            ToastService.ShowSuccess($"Location {location.Code} assigned to {BuildAssignPreview(row)}.");
+            CancelAssign();
+            await ReloadAsync();
+        }
+        catch (ApiException ex)
+        {
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+    }
+
+    private async Task ClearPlacementFromSlotAsync(SlotRow row)
+    {
+        if (!row.LocationId.HasValue)
+        {
+            return;
+        }
+
+        try
+        {
+            await AdminClient.ClearLocationRackPlacementAsync(row.LocationId.Value);
+            ToastService.ShowWarning($"Placement for {row.LocationCode} was cleared.");
+            await ReloadAsync();
+        }
+        catch (ApiException ex)
+        {
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+    }
+
+    private int GetMaxAssignableSpan(SlotRow row)
+    {
+        var span = 0;
+        var currentSlot = row.Slot;
+
+        while (_allSlots.FirstOrDefault(slot =>
+                   string.Equals(slot.RackId, row.RackId, StringComparison.OrdinalIgnoreCase) &&
+                   slot.Level == row.Level &&
+                   slot.Slot == currentSlot) is { } candidate &&
+               !candidate.Occupied)
+        {
+            span++;
+            currentSlot++;
+        }
+
+        return Math.Max(span, 1);
+    }
+
+    private bool IsSpanFree(SlotRow row, int span)
+    {
+        if (span < 1)
+        {
+            return false;
+        }
+
+        for (var slotNumber = row.Slot; slotNumber < row.Slot + span; slotNumber++)
+        {
+            var candidate = _allSlots.FirstOrDefault(slot =>
+                string.Equals(slot.RackId, row.RackId, StringComparison.OrdinalIgnoreCase) &&
+                slot.Level == row.Level &&
+                slot.Slot == slotNumber);
+
+            if (candidate is null || candidate.Occupied)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private string BuildAssignPreview(SlotRow row)
+    {
+        var span = Math.Max(_assignSlotSpan, 1);
+        return span > 1 ? $"{row.Address}+{span}" : row.Address;
+    }
+
+    private void ApplyQueryParameters()
+    {
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        var query = QueryHelpers.ParseQuery(uri.Query);
+
+        if (query.TryGetValue("warehouse", out var warehouseValue))
+        {
+            var warehouse = warehouseValue.ToString().Trim();
+            if (!string.IsNullOrWhiteSpace(warehouse))
+            {
+                _warehouseCode = warehouse;
+            }
+        }
+
+        if (query.TryGetValue("rack", out var rackValue))
+        {
+            _rackFilter = NormalizeQueryValue(rackValue);
+        }
+
+        if (query.TryGetValue("level", out var levelValue))
+        {
+            _levelFilterText = NormalizeQueryValue(levelValue);
+        }
+
+        if (query.TryGetValue("address", out var addressValue))
+        {
+            _search = NormalizeQueryValue(addressValue);
+        }
+    }
+
+    private static string? NormalizeQueryValue(Microsoft.Extensions.Primitives.StringValues value)
+    {
+        var normalized = value.ToString().Trim();
+        return string.IsNullOrWhiteSpace(normalized) ? null : normalized;
+    }
+
+    private static bool HasPlacement(AdminLocationDto location) =>
+        !string.IsNullOrWhiteSpace(location.RackRowId) &&
+        location.ShelfLevelIndex.HasValue &&
+        location.SlotStart.HasValue;
+
+    private string BuildLocationsLink(string? search, string? editCode)
+    {
+        var query = new Dictionary<string, string?>();
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            query["search"] = search;
+        }
+
+        if (!string.IsNullOrWhiteSpace(editCode))
+        {
+            query["edit"] = editCode;
+        }
+
+        return QueryHelpers.AddQueryString("/admin/locations", query);
+    }
+
+    private static string BuildErrorMessage(ApiException error)
+    {
+        if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
+        {
+            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+        }
+
+        return error.UserMessage;
+    }
+
+    private sealed record SlotRow(
+        string Address,
+        string RackId,
+        int Level,
+        int Slot,
+        bool Occupied,
+        int? LocationId,
+        string? LocationCode,
+        string? LocationRole,
+        string SpanText);
+}

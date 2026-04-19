@@ -38,7 +38,7 @@ else
             <div class="row g-3">
                 <div class="col-md-6">
                     <label class="form-label">Warehouse Code</label>
-                    <select class="form-select" @bind="_warehouseCode">
+                    <select class="form-select" value="@_warehouseCode" @onchange="OnWarehouseChangedAsync">
                         @foreach (var warehouse in _warehouses)
                         {
                             <option value="@warehouse.Code">@warehouse.Code - @warehouse.Name</option>
@@ -124,12 +124,12 @@ else
 
         try
         {
-            var layout = await LayoutEditorClient.GetLayoutAsync(_warehouseCode);
-            var rackConfig = await LayoutEditorClient.GetRackConfigAsync(_warehouseCode);
-            _warehouseCode = layout.WarehouseCode;
-            _layoutJson = SerializeLayout(layout);
+            var selectedWarehouseCode = _warehouseCode;
+            var layout = await LayoutEditorClient.GetLayoutAsync(selectedWarehouseCode);
+            var rackConfig = await LayoutEditorClient.GetRackConfigAsync(selectedWarehouseCode);
+            _layoutJson = SerializeLayout(layout, selectedWarehouseCode);
             _rackConfigJson = rackConfig.RacksJson ?? string.Empty;
-            _updatedAt = layout.UpdatedAt;
+            _updatedAt = layout.UpdatedAt > rackConfig.UpdatedAt ? layout.UpdatedAt : rackConfig.UpdatedAt;
         }
         catch (ApiException ex)
         {
@@ -142,6 +142,19 @@ else
         }
     }
 
+    private async Task OnWarehouseChangedAsync(ChangeEventArgs args)
+    {
+        var selectedWarehouseCode = args.Value?.ToString()?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(selectedWarehouseCode) ||
+            string.Equals(selectedWarehouseCode, _warehouseCode, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        _warehouseCode = selectedWarehouseCode;
+        await LoadAsync();
+    }
+
     private async Task SaveAsync()
     {
         _isSaving = true;
@@ -150,13 +163,12 @@ else
 
         try
         {
-            var parsed = ParseAndValidate(_layoutJson);
+            var parsed = ParseAndValidate(_layoutJson, _warehouseCode);
             var updated = await LayoutEditorClient.UpdateLayoutAsync(parsed);
             var rackConfig = await LayoutEditorClient.UpdateRackConfigAsync(
                 _warehouseCode,
                 new UpdateWarehouseRackConfigRequestDto(NormalizeRackConfigJson(_rackConfigJson)));
-            _warehouseCode = updated.WarehouseCode;
-            _layoutJson = SerializeLayout(updated);
+            _layoutJson = SerializeLayout(updated, _warehouseCode);
             _rackConfigJson = rackConfig.RacksJson ?? string.Empty;
             _updatedAt = updated.UpdatedAt > rackConfig.UpdatedAt ? updated.UpdatedAt : rackConfig.UpdatedAt;
             ToastService.ShowSuccess("Layout updated successfully.");
@@ -177,10 +189,10 @@ else
         }
     }
 
-    private static string SerializeLayout(WarehouseLayoutDto layout)
+    private static string SerializeLayout(WarehouseLayoutDto layout, string warehouseCode)
     {
         var payload = new UpdateWarehouseLayoutRequestDto(
-            layout.WarehouseCode,
+            warehouseCode,
             layout.WidthMeters,
             layout.LengthMeters,
             layout.HeightMeters,
@@ -195,7 +207,7 @@ else
         return JsonSerializer.Serialize(payload, JsonOptions);
     }
 
-    private static UpdateWarehouseLayoutRequestDto ParseAndValidate(string json)
+    private static UpdateWarehouseLayoutRequestDto ParseAndValidate(string json, string selectedWarehouseCode)
     {
         if (string.IsNullOrWhiteSpace(json))
         {
@@ -208,9 +220,9 @@ else
             throw new InvalidOperationException("Layout JSON could not be parsed.");
         }
 
-        if (string.IsNullOrWhiteSpace(model.WarehouseCode))
+        if (string.IsNullOrWhiteSpace(selectedWarehouseCode))
         {
-            throw new InvalidOperationException("warehouseCode is required.");
+            throw new InvalidOperationException("Select a warehouse before saving.");
         }
 
         if (model.WidthMeters <= 0 || model.LengthMeters <= 0 || model.HeightMeters <= 0)
@@ -239,7 +251,7 @@ else
 
         return model with
         {
-            WarehouseCode = model.WarehouseCode.Trim(),
+            WarehouseCode = selectedWarehouseCode.Trim(),
             Zones = zones
         };
     }
