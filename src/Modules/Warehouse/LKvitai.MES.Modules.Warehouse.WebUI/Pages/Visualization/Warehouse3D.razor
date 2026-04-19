@@ -17,85 +17,179 @@
 
 <div class="viz-page">
     <div class="viz-toolbar">
-        <div class="viz-toolbar-left">
-            <h1 class="viz-title">Warehouse Visualization</h1>
-            <p class="viz-subtitle">Explore bins, capacity, and handling units in 3D or 2D.</p>
+        <div class="viz-toolbar-meta">
+            <div class="viz-heading-row">
+                <div>
+                    <h1 class="viz-title">Warehouse Visualization</h1>
+                    <p class="viz-subtitle">Bins, racks and slot occupancy in one screen.</p>
+                </div>
+                <div class="viz-meta-badges">
+                    <span class="viz-badge">@CurrentWarehouseLabel</span>
+                    <span class="viz-badge">@($"{_model?.Bins.Count ?? 0} bins")</span>
+                    <span class="viz-badge">@($"{_model?.Racks.Count ?? 0} racks")</span>
+                    <span class="viz-badge">@($"{_model?.Slots.Count ?? 0} slots")</span>
+                </div>
+            </div>
         </div>
-        <div class="viz-toolbar-right">
-            <select class="form-select" @bind="_warehouseCode" @bind:after="OnWarehouseChangedAsync" style="min-width: 220px;">
-                @foreach (var warehouse in _warehouses)
-                {
-                    <option value="@warehouse.Code">@warehouse.Code - @warehouse.Name</option>
-                }
-            </select>
-            <div class="viz-search-wrap">
-                <div class="input-group">
-                    <input class="form-control"
-                           placeholder="Search location or rack address (e.g. R3-C6-L3 or 2-C3-01)"
-                           value="@_searchQuery"
-                           @oninput="OnSearchInput"
-                           @onkeydown="HandleSearchKeyAsync" />
-                    <button class="btn btn-outline-secondary" @onclick="SearchAsync">
-                        <i class="bi bi-search"></i>
+        <div class="viz-toolbar-grid">
+            <div class="viz-field viz-field-warehouse">
+                <label class="viz-label">Warehouse</label>
+                <select class="form-select" @bind="_warehouseCode" @bind:after="OnWarehouseChangedAsync">
+                    @foreach (var warehouse in _warehouses)
+                    {
+                        <option value="@warehouse.Code">@warehouse.Code - @warehouse.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="viz-field viz-field-actions">
+                <label class="viz-label">View</label>
+                <div class="viz-action-row">
+                    <button class="btn btn-outline-secondary" @onclick="RefreshAsync">
+                        <i class="bi bi-arrow-clockwise"></i> Refresh
+                    </button>
+                    @if (_is3dView)
+                    {
+                        <select class="form-select viz-inline-select"
+                                value="@_cameraMode"
+                                @onchange="OnCameraModeChangedAsync">
+                            <option value="overview">Overview</option>
+                            <option value="low">Low Angle</option>
+                        </select>
+                        <button class="btn btn-outline-secondary" @onclick="ToggleRackLabelsAsync">
+                            @(_showRackLabels ? "Hide Labels" : "Show Labels")
+                        </button>
+                    }
+                    <button class="btn btn-warning" @onclick="ToggleViewAsync">
+                        @(_is3dView ? "2D View" : "3D View")
                     </button>
                 </div>
-                @if (_showSuggestions && _autocompleteSuggestions.Count > 0)
-                {
-                    <div class="list-group viz-suggestions">
-                        @foreach (var suggestion in _autocompleteSuggestions)
+            </div>
+            <div class="viz-field viz-field-location">
+                <label class="viz-label">Location Or Address</label>
+                <div class="viz-search-wrap">
+                    <div class="input-group">
+                        <input class="form-control"
+                               placeholder="Bin, location or slot address"
+                               value="@_searchQuery"
+                               @oninput="OnSearchInput"
+                               @onkeydown="HandleSearchKeyAsync" />
+                        <button class="btn btn-outline-secondary" @onclick="SearchAsync">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
+                    @if (_showSuggestions && _autocompleteSuggestions.Count > 0)
+                    {
+                        <div class="list-group viz-suggestions">
+                            @foreach (var suggestion in _autocompleteSuggestions)
+                            {
+                                <button type="button"
+                                        class="list-group-item list-group-item-action"
+                                        @onclick="() => SelectSuggestionAsync(suggestion)">
+                                    @suggestion
+                                </button>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+            <div class="viz-field viz-field-item">
+                <label class="viz-label">Item Code Or Name</label>
+                <div class="input-group">
+                    <input class="form-control"
+                           placeholder="SKU or item name"
+                           @bind="_itemSearchQuery"
+                           @bind:event="oninput"
+                           @onkeydown="HandleItemSearchKeyAsync" />
+                    <button class="btn btn-primary" @onclick="SearchItemAsync" disabled="@_isItemSearchLoading">
+                        @if (_isItemSearchLoading)
                         {
-                            <button type="button"
-                                    class="list-group-item list-group-item-action"
-                                    @onclick="() => SelectSuggestionAsync(suggestion)">
-                                @suggestion
+                            <span class="spinner-border spinner-border-sm" role="status"></span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-box-seam"></i>
+                        }
+                    </button>
+                    <button class="btn btn-outline-secondary" @onclick="ClearItemSearchAsync" disabled="@(!_hasItemSearchResults && string.IsNullOrWhiteSpace(_itemSearchQuery))">
+                        Clear
+                    </button>
+                </div>
+            </div>
+            <div class="viz-field">
+                <label class="viz-label">Zone</label>
+                <select class="form-select"
+                        value="@_zoneFilter"
+                        @onchange="OnZoneFilterChangedAsync">
+                    <option value="ALL">All Zones</option>
+                    @foreach (var zone in ZoneOptions)
+                    {
+                        <option value="@zone">@zone</option>
+                    }
+                </select>
+            </div>
+            <div class="viz-field">
+                <label class="viz-label">Status</label>
+                <select class="form-select"
+                        value="@_statusFilter"
+                        @onchange="OnStatusFilterChangedAsync">
+                    <option value="ALL">All Statuses</option>
+                    <option value="EMPTY">EMPTY</option>
+                    <option value="LOW">LOW</option>
+                    <option value="MEDIUM">MEDIUM</option>
+                    <option value="FULL">FULL</option>
+                    <option value="RESERVED">RESERVED</option>
+                    <option value="OVER_CAPACITY">OVER_CAPACITY</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    @if (_hasItemSearchResults)
+    {
+        <div class="viz-item-panel">
+            <div class="viz-item-panel-main">
+                <div class="viz-item-summary">
+                    <div class="viz-item-heading">
+                        <strong>@_itemSearchResolvedLabel</strong>
+                        @if (!string.IsNullOrWhiteSpace(_itemSearchResolvedSku))
+                        {
+                            <span class="viz-badge">@_itemSearchResolvedSku</span>
+                        }
+                    </div>
+                    <div class="viz-item-subtitle">
+                        @if (_currentWarehouseItemHits.Count > 0)
+                        {
+                            <span>@($"{_currentWarehouseItemHits.Count} physical bin(s) in {CurrentWarehouseCode}")</span>
+                        }
+                        else
+                        {
+                            <span>No physical bins in @CurrentWarehouseCode.</span>
+                        }
+                    </div>
+                </div>
+                @if (_currentWarehouseItemHits.Count > 0)
+                {
+                    <div class="viz-hit-list">
+                        @foreach (var hit in _currentWarehouseItemHits)
+                        {
+                            <button class="btn btn-sm btn-outline-primary viz-hit-pill"
+                                    @onclick="() => FocusBinAsync(hit.LocationCode)">
+                                <span>@hit.LocationCode</span>
+                                <strong>@hit.PhysicalQty.ToString("0.###", CultureInfo.InvariantCulture)</strong>
                             </button>
                         }
                     </div>
                 }
             </div>
-            <select class="form-select"
-                    value="@_zoneFilter"
-                    @onchange="OnZoneFilterChangedAsync"
-                    style="min-width: 160px;">
-                <option value="ALL">All Zones</option>
-                @foreach (var zone in ZoneOptions)
-                {
-                    <option value="@zone">@zone</option>
-                }
-            </select>
-            <select class="form-select"
-                    value="@_statusFilter"
-                    @onchange="OnStatusFilterChangedAsync"
-                    style="min-width: 170px;">
-                <option value="ALL">All Statuses</option>
-                <option value="EMPTY">EMPTY</option>
-                <option value="LOW">LOW</option>
-                <option value="MEDIUM">MEDIUM</option>
-                <option value="FULL">FULL</option>
-                <option value="RESERVED">RESERVED</option>
-                <option value="OVER_CAPACITY">OVER_CAPACITY</option>
-            </select>
-            <button class="btn btn-outline-secondary" @onclick="RefreshAsync">
-                <i class="bi bi-arrow-clockwise"></i> Refresh
-            </button>
-            @if (_is3dView)
+            @if (_otherWarehouseSummaries.Count > 0)
             {
-                <select class="form-select"
-                        value="@_cameraMode"
-                        @onchange="OnCameraModeChangedAsync"
-                        style="min-width: 170px;">
-                    <option value="overview">Camera: Overview</option>
-                    <option value="low">Camera: Low Angle</option>
-                </select>
-                <button class="btn btn-outline-secondary" @onclick="ToggleRackLabelsAsync">
-                    @(_showRackLabels ? "Hide Rack Labels" : "Show Rack Labels")
-                </button>
+                <div class="alert alert-warning viz-cross-warehouse-warning mb-0">
+                    <strong>Also found in other warehouses:</strong>
+                    @string.Join(", ", _otherWarehouseSummaries.Select(x => $"{x.WarehouseCode} ({x.BinCount} bins, {x.TotalQty.ToString("0.###", CultureInfo.InvariantCulture)})"))
+                </div>
             }
-            <button class="btn btn-warning" @onclick="ToggleViewAsync">
-                @(_is3dView ? "2D View" : "3D View")
-            </button>
         </div>
-    </div>
+    }
 
     @if (_isLoading)
     {
@@ -373,9 +467,24 @@
     private decimal _zoom2d = 1m;
     private bool _showSuggestions;
     private List<string> _autocompleteSuggestions = [];
+    private string _itemSearchQuery = string.Empty;
+    private bool _isItemSearchLoading;
+    private bool _hasItemSearchResults;
+    private string? _itemSearchResolvedLabel;
+    private string? _itemSearchResolvedSku;
+    private List<ItemWarehouseHit> _currentWarehouseItemHits = [];
+    private List<OtherWarehouseSummary> _otherWarehouseSummaries = [];
 
     private bool _is3dView =>
         NavigationManager.Uri.Contains("/warehouse/visualization/3d", StringComparison.OrdinalIgnoreCase);
+
+    private string CurrentWarehouseCode =>
+        string.IsNullOrWhiteSpace(_warehouseCode) ? "n/a" : _warehouseCode;
+
+    private string CurrentWarehouseLabel =>
+        _warehouses.FirstOrDefault(x => string.Equals(x.Code, _warehouseCode, StringComparison.OrdinalIgnoreCase)) is { } warehouse
+            ? $"{warehouse.Code} - {warehouse.Name}"
+            : CurrentWarehouseCode;
 
     private string CurrentSvgViewBox
     {
@@ -484,6 +593,18 @@
         }
     }
 
+    private async Task HandleItemSearchKeyAsync(KeyboardEventArgs args)
+    {
+        if (args.Key == "Enter")
+        {
+            await SearchItemAsync();
+        }
+        else if (args.Key == "Escape")
+        {
+            await ClearItemSearchAsync();
+        }
+    }
+
     private Task OnSearchInput(ChangeEventArgs args)
     {
         _searchQuery = args.Value?.ToString() ?? string.Empty;
@@ -589,6 +710,114 @@
         {
             await JS.InvokeVoidAsync("warehouseVisualization.focusBin", CanvasId, code);
         }
+    }
+
+    private async Task SearchItemAsync()
+    {
+        var normalizedQuery = _itemSearchQuery.Trim();
+        if (string.IsNullOrWhiteSpace(normalizedQuery))
+        {
+            await ClearItemSearchAsync();
+            return;
+        }
+
+        _isItemSearchLoading = true;
+        _error = null;
+
+        try
+        {
+            var searchTasks = _warehouses
+                .Select(async warehouse =>
+                {
+                    var result = await StockClient.SearchAvailableStockAsync(
+                        warehouse.Code,
+                        null,
+                        normalizedQuery,
+                        includeVirtual: false,
+                        page: 1,
+                        pageSize: 500);
+
+                    return (warehouse.Code, Items: result.Items);
+                })
+                .ToList();
+
+            var searchResults = await Task.WhenAll(searchTasks);
+            var hits = searchResults
+                .SelectMany(result => result.Items.Select(item => new ItemWarehouseHit(
+                    result.Code,
+                    item.Location,
+                    item.SKU,
+                    item.ItemName,
+                    item.PhysicalQty,
+                    item.AvailableQty)))
+                .Where(hit => hit.PhysicalQty > 0)
+                .GroupBy(hit => $"{hit.WarehouseCode}::{hit.LocationCode}", StringComparer.OrdinalIgnoreCase)
+                .Select(group =>
+                {
+                    var first = group.First();
+                    return new ItemWarehouseHit(
+                        first.WarehouseCode,
+                        first.LocationCode,
+                        first.Sku,
+                        first.ItemName,
+                        group.Sum(static x => x.PhysicalQty),
+                        group.Sum(static x => x.AvailableQty));
+                })
+                .OrderBy(hit => hit.WarehouseCode, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(hit => hit.LocationCode, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            _currentWarehouseItemHits = hits
+                .Where(hit => string.Equals(hit.WarehouseCode, _warehouseCode, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            _otherWarehouseSummaries = hits
+                .Where(hit => !string.Equals(hit.WarehouseCode, _warehouseCode, StringComparison.OrdinalIgnoreCase))
+                .GroupBy(hit => hit.WarehouseCode, StringComparer.OrdinalIgnoreCase)
+                .Select(group => new OtherWarehouseSummary(
+                    group.Key,
+                    group.Count(),
+                    group.Sum(static x => x.PhysicalQty)))
+                .OrderBy(summary => summary.WarehouseCode, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            var resolvedHit = _currentWarehouseItemHits.FirstOrDefault() ?? hits.FirstOrDefault();
+            _itemSearchResolvedLabel = resolvedHit?.ItemName ?? normalizedQuery;
+            _itemSearchResolvedSku = resolvedHit?.Sku;
+            _hasItemSearchResults = true;
+
+            if (_currentWarehouseItemHits.Count > 0)
+            {
+                await FocusBinAsync(_currentWarehouseItemHits[0].LocationCode);
+            }
+            else if (_otherWarehouseSummaries.Count > 0)
+            {
+                ToastService.ShowWarning("Item exists in other warehouses, but not in the current warehouse.");
+            }
+            else
+            {
+                ToastService.ShowWarning("No physical bins found for this item.");
+            }
+        }
+        catch (ApiException ex)
+        {
+            _error = ex.ProblemDetails?.Detail ?? ex.UserMessage;
+        }
+        finally
+        {
+            _isItemSearchLoading = false;
+        }
+    }
+
+    private Task ClearItemSearchAsync()
+    {
+        _itemSearchQuery = string.Empty;
+        _itemSearchResolvedLabel = null;
+        _itemSearchResolvedSku = null;
+        _currentWarehouseItemHits = [];
+        _otherWarehouseSummaries = [];
+        _hasItemSearchResults = false;
+        return Task.CompletedTask;
     }
 
     private async Task OnZoneFilterChangedAsync(ChangeEventArgs args)
@@ -723,6 +952,11 @@
         _statusFilter = "ALL";
         _autocompleteSuggestions = [];
         _showSuggestions = false;
+        _currentWarehouseItemHits = [];
+        _otherWarehouseSummaries = [];
+        _hasItemSearchResults = false;
+        _itemSearchResolvedLabel = null;
+        _itemSearchResolvedSku = null;
         await LoadVisualizationAsync();
     }
 
@@ -909,6 +1143,19 @@
         => QueryHelpers.AddQueryString(
             "/admin/locations",
             new Dictionary<string, string?> { ["search"] = code, ["edit"] = code });
+
+    private sealed record ItemWarehouseHit(
+        string WarehouseCode,
+        string LocationCode,
+        string Sku,
+        string ItemName,
+        decimal PhysicalQty,
+        decimal AvailableQty);
+
+    private sealed record OtherWarehouseSummary(
+        string WarehouseCode,
+        int BinCount,
+        decimal TotalQty);
 
     public async ValueTask DisposeAsync()
     {
