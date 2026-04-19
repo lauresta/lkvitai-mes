@@ -57,10 +57,12 @@ public sealed class BinPlacementValidator
         var normalizedRole = string.IsNullOrWhiteSpace(request.LocationRole) ? null : request.LocationRole.Trim();
         var slotSpan = Math.Max(request.SlotSpan ?? 1, 1);
 
-        var locationExists = await _dbContext.Locations
+        var locationWarehouseId = await _dbContext.Locations
             .AsNoTracking()
-            .AnyAsync(x => x.Id == locationId, cancellationToken);
-        if (!locationExists)
+            .Where(x => x.Id == locationId)
+            .Select(x => (Guid?)x.WarehouseId)
+            .FirstOrDefaultAsync(cancellationToken);
+        if (locationWarehouseId is null && !await _dbContext.Locations.AsNoTracking().AnyAsync(x => x.Id == locationId, cancellationToken))
         {
             return (null, $"Location '{locationId}' was not found.");
         }
@@ -76,10 +78,7 @@ public sealed class BinPlacementValidator
         var warehouse = await _dbContext.Warehouses
             .AsNoTracking()
             .FirstOrDefaultAsync(x => x.Code == normalizedWarehouseCode, cancellationToken);
-        if (warehouse is null)
-        {
-            return (null, $"Warehouse '{normalizedWarehouseCode}' was not found in warehouses table.");
-        }
+        var resolvedWarehouseId = warehouse?.WarehouseId ?? locationWarehouseId;
 
         RackLayoutDocument rackLayout;
         try
@@ -129,7 +128,7 @@ public sealed class BinPlacementValidator
         var overlaps = await _dbContext.Locations
             .AsNoTracking()
             .Where(x => x.Id != locationId &&
-                        x.WarehouseId == warehouse.WarehouseId &&
+                        x.WarehouseId == resolvedWarehouseId &&
                         x.RackRowId == normalizedRackRowId &&
                         x.ShelfLevelIndex == request.ShelfLevelIndex &&
                         x.SlotStart.HasValue)
@@ -145,7 +144,7 @@ public sealed class BinPlacementValidator
 
         return (
             new RackPlacementValidationResult(
-                warehouse.WarehouseId,
+                resolvedWarehouseId ?? Guid.Empty,
                 normalizedRackRowId,
                 request.ShelfLevelIndex,
                 request.SlotStart,

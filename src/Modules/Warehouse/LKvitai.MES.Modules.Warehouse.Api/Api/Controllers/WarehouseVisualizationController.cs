@@ -584,9 +584,20 @@ public sealed class WarehouseVisualizationController : ControllerBase
         }
         else
         {
-            maxCoordinate = [];
+            maxCoordinate = await EfAsync.ToListAsync(
+                _dbContext.Locations
+                    .AsNoTracking()
+                    .Where(x => x.WarehouseId == null
+                                && x.CoordinateX.HasValue
+                                && x.CoordinateY.HasValue
+                                && x.CoordinateZ.HasValue)
+                    .Select(x => new CoordinateSample(
+                        x.CoordinateX!.Value,
+                        x.CoordinateY!.Value,
+                        x.CoordinateZ!.Value)),
+                cancellationToken);
             _logger.LogWarning(
-                "LoadLayoutAsync: warehouse '{WarehouseCode}' not found; using default dimensions",
+                "LoadLayoutAsync: warehouse '{WarehouseCode}' not found; deriving dimensions from unowned locations when available",
                 normalizedWarehouseCode);
         }
 

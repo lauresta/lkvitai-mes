@@ -188,13 +188,8 @@ public sealed class LocationsController : ControllerBase
         }
 
         Guid? resolvedWarehouseId = null;
-        if (!request.IsVirtual)
+        if (request.WarehouseId.HasValue)
         {
-            if (!request.WarehouseId.HasValue)
-            {
-                return UnprocessableFailure("Field 'warehouseId' is required for non-virtual locations.");
-            }
-
             var warehouseExists = await _dbContext.Warehouses
                 .AsNoTracking()
                 .AnyAsync(x => x.WarehouseId == request.WarehouseId.Value, cancellationToken);
