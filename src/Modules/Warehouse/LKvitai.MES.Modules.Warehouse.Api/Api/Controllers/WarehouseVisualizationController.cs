@@ -365,6 +365,7 @@ public sealed class WarehouseVisualizationController : ControllerBase
         if (locations.Count == 0)
         {
             var stockLocationCodes = stockCandidates
+                .Where(x => x.WarehouseId == layout.WarehouseCode)
                 .Select(x => x.Location)
                 .Where(x => !string.IsNullOrWhiteSpace(x))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
@@ -398,7 +399,8 @@ public sealed class WarehouseVisualizationController : ControllerBase
         var locationCodes = resolvedLocations.Select(x => x.Code).ToArray();
         var locationSet = new HashSet<string>(locationCodes, StringComparer.OrdinalIgnoreCase);
         var stockRows = stockCandidates
-            .Where(x => locationSet.Contains(x.Location))
+            .Where(x => x.WarehouseId == layout.WarehouseCode &&
+                        locationSet.Contains(x.Location))
             .ToList();
 
         var qtyByLocation = stockRows
@@ -410,20 +412,22 @@ public sealed class WarehouseVisualizationController : ControllerBase
 
         var hardLockRows = await _hardLocksRepository.GetAllActiveLocksAsync(cancellationToken);
         var hardLockByLocation = hardLockRows
+            .Where(x => x.WarehouseId == layout.WarehouseCode)
             .GroupBy(x => x.Location, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(
                 x => x.Key,
                 x => x.Sum(y => y.HardLockedQty),
                 StringComparer.OrdinalIgnoreCase);
 
-        var handlingUnits = await EfAsync.ToListAsync(
-            _dbContext.HandlingUnits
-                .AsNoTracking()
+        var handlingUnitViews = await MartenAsync.ToListAsync(
+            session.Query<HandlingUnitView>()
+                .Where(x => x.WarehouseId == layout.WarehouseCode)
                 .OrderBy(x => x.LPN),
             cancellationToken);
 
-        var husByLocation = handlingUnits
-            .GroupBy(x => x.Location, StringComparer.OrdinalIgnoreCase)
+        var husByLocation = handlingUnitViews
+            .Where(x => !x.IsEmpty)
+            .GroupBy(x => x.CurrentLocation, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(
                 x => x.Key,
                 x => x.ToList(),
@@ -462,7 +466,7 @@ public sealed class WarehouseVisualizationController : ControllerBase
             var onHandQty = qtyByLocation.GetValueOrDefault(location.Code, 0m);
             var utilization = ComputeUtilization(location, onHandQty);
             var utilizationPercent = decimal.Round(utilization * 100m, 2, MidpointRounding.AwayFromZero);
-            var handlingUnitsForLocation = husByLocation.GetValueOrDefault(location.Code, new List<Domain.Aggregates.HandlingUnit>());
+            var handlingUnitsForLocation = husByLocation.GetValueOrDefault(location.Code, new List<HandlingUnitView>());
             var status = ResolveCapacityStatus(handlingUnitsForLocation.Count, utilization);
             var color = ResolveStatusColor(status);
 
@@ -494,7 +498,7 @@ public sealed class WarehouseVisualizationController : ControllerBase
                 {
                     var firstLine = x.Lines.FirstOrDefault();
                     return new VisualizationHandlingUnitResponse(
-                        x.HUId,
+                        x.HuId,
                         x.LPN,
                         firstLine?.SKU ?? string.Empty,
                         firstLine?.Quantity ?? 0m);

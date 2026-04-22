@@ -4,8 +4,13 @@
 
     const VISUAL_CONFIG = {
         fallbackColor: 0x999999,
-        borderColor: 0x1f2937,
-        borderOpacity: 0.48,
+        borderColor: 0x334155,
+        borderOpacity: 0.5,
+        emptyColor: 0xd1d5db,
+        lowColor: 0xfde68a,
+        mediumColor: 0xfbbf24,
+        fullColor: 0xf97316,
+        overCapacityColor: 0xdc2626,
         selectionColor: 0x00c8e8,
         hoverColor: 0xffc400,
         hoverRackEmissiveColor: 0xf59e0b,
@@ -65,6 +70,24 @@
         const normalized = value.trim().replace("#", "");
         const parsed = Number.parseInt(normalized, 16);
         return Number.isNaN(parsed) ? VISUAL_CONFIG.fallbackColor : parsed;
+    }
+
+    function resolveStatusColor(bin) {
+        const status = String(bin?.status || "").toUpperCase();
+        switch (status) {
+            case "EMPTY":
+                return VISUAL_CONFIG.emptyColor;
+            case "LOW":
+                return VISUAL_CONFIG.lowColor;
+            case "MEDIUM":
+                return VISUAL_CONFIG.mediumColor;
+            case "FULL":
+                return VISUAL_CONFIG.fullColor;
+            case "OVER_CAPACITY":
+                return VISUAL_CONFIG.overCapacityColor;
+            default:
+                return toHexColor(bin?.color);
+        }
     }
 
     function clamp(value, min, max) {
@@ -323,7 +346,7 @@
             return;
         }
 
-        const floorMat = new THREE.MeshStandardMaterial({ color: 0xd6dadd, roughness: 0.9, metalness: 0.03 });
+        const floorMat = new THREE.MeshStandardMaterial({ color: 0xcbd5df, roughness: 0.88, metalness: 0.02 });
         const floor = new THREE.Mesh(new THREE.PlaneGeometry(w, l), floorMat);
         floor.rotation.x = -Math.PI / 2;
         floor.position.set(w / 2, 0, l / 2);
@@ -332,7 +355,7 @@
         scene.add(createFloorOutline(w, l, 0x9ca3af, 0.55, 0.004));
 
         if (h > 0) {
-            const wallMat = new THREE.MeshStandardMaterial({ color: 0xe8eaec, roughness: 0.92, metalness: 0.0, transparent: true, opacity: 0.42, side: THREE.DoubleSide });
+            const wallMat = new THREE.MeshStandardMaterial({ color: 0xd7dee8, roughness: 0.92, metalness: 0.0, transparent: true, opacity: 0.68, side: THREE.DoubleSide });
             const thickness = 0.15;
             const walls = [
                 { w, dh: h, dd: thickness, x: w / 2, y: h / 2, z: 0 },
@@ -346,7 +369,7 @@
                 scene.add(mesh);
             });
 
-            const roofOutline = createFloorOutline(w, l, 0xcbd5e1, 0.38, h + 0.002);
+            const roofOutline = createFloorOutline(w, l, 0x94a3b8, 0.5, h + 0.002);
             scene.add(roofOutline);
         }
     }
@@ -398,10 +421,10 @@
         }
 
         const group = new THREE.Group();
-        const postMaterial = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.35, roughness: 0.55 });
-        const plankMaterial = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.08, roughness: 0.72 });
-        const floorMaterial = new THREE.MeshBasicMaterial({ color: 0xd1fae5, transparent: true, opacity: 0.35, side: THREE.DoubleSide });
-        const fenceMaterial = new THREE.MeshStandardMaterial({ color: 0x6ee7b7, metalness: 0.1, roughness: 0.7 });
+        const postMaterial = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.28, roughness: 0.58 });
+        const plankMaterial = new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.12, roughness: 0.68 });
+        const floorMaterial = new THREE.MeshBasicMaterial({ color: 0x86efac, transparent: true, opacity: 0.24, side: THREE.DoubleSide });
+        const fenceMaterial = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.12, roughness: 0.66 });
 
         racks.forEach((rack) => {
             const layout = toSceneCoordinates(rack.origin, rack.dimensions);
@@ -541,9 +564,9 @@
             const wireframe = new THREE.LineSegments(
                 new THREE.EdgesGeometry(slotGeometry),
                 new THREE.LineBasicMaterial({
-                    color: slot.occupied ? 0x94a3b8 : 0xcbd5e1,
+                    color: slot.occupied ? 0x475569 : 0x64748b,
                     transparent: true,
-                    opacity: slot.occupied ? 0.12 : 0.3,
+                    opacity: slot.occupied ? 0.16 : 0.07,
                     depthWrite: false
                 }));
             wireframe.position.set(layout.centerX, layout.centerY, layout.centerZ);
@@ -620,7 +643,7 @@
             });
 
             const scene = new THREE.Scene();
-            scene.background = new THREE.Color(0xf8f9fa);
+            scene.background = new THREE.Color(0eef2f6);
 
             const width = Math.max(container.clientWidth, 300);
             const height = Math.max(container.clientHeight, 300);
@@ -680,12 +703,12 @@
             };
             controls.target.set(0, 0, 0);
 
-            scene.add(new THREE.AmbientLight(0xffffff, 0.7));
-            const hemiLight = new THREE.HemisphereLight(0xf8fbff, 0xc7d2da, 0.7);
+            scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+            const hemiLight = new THREE.HemisphereLight(0xf8fbff, 0x94a3b8, 0.58);
             scene.add(hemiLight);
-            const keyLight = new THREE.DirectionalLight(0xffffff, 0.95);
+            const keyLight = new THREE.DirectionalLight(0xffffff, 0.82);
             scene.add(keyLight);
-            const fillLight = new THREE.DirectionalLight(0xdbeafe, 0.35);
+            const fillLight = new THREE.DirectionalLight(0xdbeafe, 0.24);
             scene.add(fillLight);
 
             const bins = Array.isArray(data) ? data : (data?.bins || []);
@@ -993,13 +1016,13 @@
 
             resolvedBins.forEach(({ bin, width, depth, height, centerX: meshX, centerY: meshY, centerZ: meshZ, hasExplicitDimensions, capacityVolume }) => {
                 const geometry = new THREE.BoxGeometry(width, height, depth);
-                const material = new THREE.MeshStandardMaterial({
-                    color: toHexColor(bin.color),
-                    metalness: 0.15,
-                    roughness: 0.55,
+                const baseColor = resolveStatusColor(bin);
+                const material = new THREE.MeshBasicMaterial({
+                    color: baseColor,
                     polygonOffset: true,
                     polygonOffsetFactor: 1,
-                    polygonOffsetUnits: 1
+                    polygonOffsetUnits: 1,
+                    toneMapped: false
                 });
                 const cube = new THREE.Mesh(geometry, material);
                 cube.castShadow = true;
@@ -1058,7 +1081,7 @@
                 cube.userData = {
                     kind: "bin",
                     code: bin.code,
-                    baseColor: toHexColor(bin.color),
+                    baseColor,
                     baseBorderMaterial,
                     selectionEdges,
                     selectionEdgesMaterial,
@@ -1276,8 +1299,8 @@
                     const isSelected = !!selectedObject && slotMesh === selectedObject;
                     const isHovered = !!hoveredObject && slotMesh === hoveredObject && !isSelected;
                     if (slotMesh.material) {
-                        const baseColor = slotMesh.userData.occupied ? 0x94a3b8 : 0xcbd5e1;
-                        const baseOpacity = slotMesh.userData.occupied ? 0.12 : 0.3;
+                        const baseColor = slotMesh.userData.occupied ? 0x475569 : 0x64748b;
+                        const baseOpacity = slotMesh.userData.occupied ? 0.16 : 0.07;
                         slotMesh.material.color.setHex(isSelected ? VISUAL_CONFIG.selectionColor : (isHovered ? VISUAL_CONFIG.hoverColor : baseColor));
                         slotMesh.material.opacity = isSelected ? 0.95 : (isHovered ? VISUAL_CONFIG.hoverSlotOpacity : baseOpacity);
                     }
