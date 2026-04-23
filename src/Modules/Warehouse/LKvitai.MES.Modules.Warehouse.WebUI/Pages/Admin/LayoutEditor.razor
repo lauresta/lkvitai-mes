@@ -165,9 +165,18 @@ else
         {
             var parsed = ParseAndValidate(_layoutJson, _warehouseCode);
             var updated = await LayoutEditorClient.UpdateLayoutAsync(parsed);
+            var normalizedRackConfigJson = NormalizeRackConfigJson(_rackConfigJson);
+            if (parsed.Doors is not null)
+            {
+                normalizedRackConfigJson = MergeDoorsIntoRackConfigJson(
+                    normalizedRackConfigJson,
+                    parsed.WarehouseCode,
+                    parsed.Doors);
+            }
+
             var rackConfig = await LayoutEditorClient.UpdateRackConfigAsync(
                 _warehouseCode,
-                new UpdateWarehouseRackConfigRequestDto(NormalizeRackConfigJson(_rackConfigJson)));
+                new UpdateWarehouseRackConfigRequestDto(normalizedRackConfigJson));
             _layoutJson = SerializeLayout(updated, _warehouseCode);
             _rackConfigJson = rackConfig.RacksJson ?? string.Empty;
             _updatedAt = updated.UpdatedAt > rackConfig.UpdatedAt ? updated.UpdatedAt : rackConfig.UpdatedAt;
@@ -202,7 +211,16 @@ else
                 zone.Y1,
                 zone.X2,
                 zone.Y2,
-                zone.Color)).ToList());
+                zone.Color)).ToList(),
+            layout.Doors.Select(door => new UpdateWarehouseLayoutDoorRequestDto(
+                door.Id,
+                door.Type,
+                door.Wall,
+                door.OffsetFromLeft,
+                door.Width,
+                door.Height,
+                door.Bottom,
+                door.Label)).ToList());
 
         return JsonSerializer.Serialize(payload, JsonOptions);
     }
@@ -231,6 +249,7 @@ else
         }
 
         var zones = model.Zones ?? Array.Empty<UpdateWarehouseLayoutZoneRequestDto>();
+        var doors = model.Doors;
         foreach (var zone in zones)
         {
             if (string.IsNullOrWhiteSpace(zone.Type))
@@ -252,7 +271,8 @@ else
         return model with
         {
             WarehouseCode = selectedWarehouseCode.Trim(),
-            Zones = zones
+            Zones = zones,
+            Doors = doors
         };
     }
 
@@ -265,6 +285,37 @@ else
 
         using var document = JsonDocument.Parse(json);
         return JsonSerializer.Serialize(document.RootElement, JsonOptions);
+    }
+
+    private static string? MergeDoorsIntoRackConfigJson(
+        string? rackConfigJson,
+        string warehouseCode,
+        IReadOnlyList<UpdateWarehouseLayoutDoorRequestDto> doors)
+    {
+        RackConfigDocument? existing = null;
+        if (!string.IsNullOrWhiteSpace(rackConfigJson))
+        {
+            existing = JsonSerializer.Deserialize<RackConfigDocument>(rackConfigJson, JsonOptions);
+        }
+
+        var merged = new RackConfigDocument(
+            string.IsNullOrWhiteSpace(existing?.WarehouseCode) ? warehouseCode : existing!.WarehouseCode,
+            existing?.Racks ?? Array.Empty<JsonElement>(),
+            doors.Select(door => new RackConfigDoorDocument(
+                door.Id,
+                door.Type,
+                door.Wall,
+                door.OffsetFromLeft,
+                door.Width,
+                door.Height,
+                door.Bottom,
+                door.Label)).ToList());
+
+        var hasRacks = merged.Racks.Count > 0;
+        var hasDoors = merged.Doors.Count > 0;
+        return hasRacks || hasDoors
+            ? JsonSerializer.Serialize(merged, JsonOptions)
+            : null;
     }
 
     private bool HasAdminRole()
@@ -289,4 +340,19 @@ else
     {
         _apiError = null;
     }
+
+    private sealed record RackConfigDocument(
+        string? WarehouseCode,
+        IReadOnlyList<JsonElement> Racks,
+        IReadOnlyList<RackConfigDoorDocument> Doors);
+
+    private sealed record RackConfigDoorDocument(
+        string Id,
+        string Type,
+        string Wall,
+        decimal OffsetFromLeft,
+        decimal Width,
+        decimal Height,
+        decimal Bottom,
+        string? Label);
 }

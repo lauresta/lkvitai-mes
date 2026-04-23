@@ -7,6 +7,7 @@ public sealed record WarehouseLayoutDto(
     decimal LengthMeters,
     decimal HeightMeters,
     IReadOnlyList<WarehouseLayoutZoneDto> Zones,
+    IReadOnlyList<WarehouseLayoutDoorDto> Doors,
     string? RacksJson,
     DateTimeOffset UpdatedAt);
 
@@ -19,12 +20,23 @@ public sealed record WarehouseLayoutZoneDto(
     decimal Y2,
     string Color);
 
+public sealed record WarehouseLayoutDoorDto(
+    string Id,
+    string Type,
+    string Wall,
+    decimal OffsetFromLeft,
+    decimal Width,
+    decimal Height,
+    decimal Bottom,
+    string? Label);
+
 public sealed record UpdateWarehouseLayoutRequestDto(
     string WarehouseCode,
     decimal WidthMeters,
     decimal LengthMeters,
     decimal HeightMeters,
-    IReadOnlyList<UpdateWarehouseLayoutZoneRequestDto> Zones);
+    IReadOnlyList<UpdateWarehouseLayoutZoneRequestDto> Zones,
+    IReadOnlyList<UpdateWarehouseLayoutDoorRequestDto>? Doors = null);
 
 public sealed record WarehouseRackConfigDto(
     string WarehouseCode,
@@ -41,3 +53,13 @@ public sealed record UpdateWarehouseLayoutZoneRequestDto(
     decimal X2,
     decimal Y2,
     string Color);
+
+public sealed record UpdateWarehouseLayoutDoorRequestDto(
+    string Id,
+    string Type,
+    string Wall,
+    decimal OffsetFromLeft,
+    decimal Width,
+    decimal Height,
+    decimal Bottom,
+    string? Label);

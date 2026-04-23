@@ -5,6 +5,7 @@ public sealed record Visualization3dDto(
     IReadOnlyList<VisualizationBinDto> Bins,
     IReadOnlyList<VisualizationRackDto> Racks,
     IReadOnlyList<VisualizationSlotDto> Slots,
+    IReadOnlyList<VisualizationDoorDto> Doors,
     IReadOnlyList<VisualizationZoneDto> Zones);
 
 public sealed record VisualizationWarehouseDto(
@@ -83,6 +84,16 @@ public sealed record VisualizationHandlingUnitDto(
     string Lpn,
     string Sku,
     decimal Qty);
+
+public sealed record VisualizationDoorDto(
+    string Id,
+    string Type,
+    string Wall,
+    decimal OffsetFromLeft,
+    decimal Width,
+    decimal Height,
+    decimal Bottom,
+    string? Label);
 
 public sealed record VisualizationZoneDto(
     string Type,

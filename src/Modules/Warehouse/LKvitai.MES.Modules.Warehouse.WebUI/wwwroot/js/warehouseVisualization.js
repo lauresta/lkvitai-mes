@@ -11,6 +11,10 @@
         mediumColor: 0xfbbf24,
         fullColor: 0xf97316,
         overCapacityColor: 0xdc2626,
+        dockDoorColor: 0x1d4ed8,
+        pedestrianDoorColor: 0x64748b,
+        emergencyDoorColor: 0xdc2626,
+        gateDoorColor: 0x0f766e,
         selectionColor: 0x00c8e8,
         hoverColor: 0xffc400,
         hoverRackEmissiveColor: 0xf59e0b,
@@ -269,6 +273,14 @@
         return label.sprite;
     }
 
+    function createSmallDoorLabel(text) {
+        const label = createLabelSprite();
+        drawLabel(label.canvas, label.texture, text);
+        label.sprite.visible = true;
+        label.sprite.material.opacity = 0.82;
+        return label.sprite;
+    }
+
     function rotateLocalPoint(localX, localY, rack) {
         const radians = (Number(rack?.orientationDeg || 0) * Math.PI) / 180;
         const cos = Math.cos(radians);
@@ -336,6 +348,71 @@
         outline.rotation.x = -Math.PI / 2;
         outline.position.set(width / 2, elevation, length / 2);
         return outline;
+    }
+
+    function resolveDoorColor(type) {
+        switch (String(type || "").toLowerCase()) {
+            case "dockdoor":
+                return VISUAL_CONFIG.dockDoorColor;
+            case "pedestriandoor":
+                return VISUAL_CONFIG.pedestrianDoorColor;
+            case "emergencyexit":
+                return VISUAL_CONFIG.emergencyDoorColor;
+            case "gate":
+                return VISUAL_CONFIG.gateDoorColor;
+            default:
+                return 0x334155;
+        }
+    }
+
+    function computeDoorPlacement(door, warehouse) {
+        const w = Number(warehouse?.dimensions?.width || 0);
+        const l = Number(warehouse?.dimensions?.length || 0);
+        const wall = String(door?.wall || "").toUpperCase();
+        const offset = Number(door?.offsetFromLeft || 0);
+        const width = Number(door?.width || 0);
+        const height = Number(door?.height || 0);
+        const bottom = Number(door?.bottom || 0);
+        const thickness = 0.08;
+        const outward = 0.045;
+
+        if (w <= 0 || l <= 0 || width <= 0 || height <= 0) {
+            return null;
+        }
+
+        if (wall === "N") {
+            return {
+                box: { width, height, depth: thickness },
+                position: { x: offset + (width / 2), y: bottom + (height / 2), z: l + outward },
+                label: { x: offset + (width / 2), y: bottom + height + 0.45, z: l + 0.18 }
+            };
+        }
+
+        if (wall === "S") {
+            return {
+                box: { width, height, depth: thickness },
+                position: { x: w - offset - (width / 2), y: bottom + (height / 2), z: -outward },
+                label: { x: w - offset - (width / 2), y: bottom + height + 0.45, z: -0.18 }
+            };
+        }
+
+        if (wall === "W") {
+            return {
+                box: { width: thickness, height, depth: width },
+                position: { x: -outward, y: bottom + (height / 2), z: offset + (width / 2) },
+                label: { x: -0.18, y: bottom + height + 0.45, z: offset + (width / 2) }
+            };
+        }
+
+        if (wall === "E") {
+            return {
+                box: { width: thickness, height, depth: width },
+                position: { x: w + outward, y: bottom + (height / 2), z: l - offset - (width / 2) },
+                label: { x: w + 0.18, y: bottom + height + 0.45, z: l - offset - (width / 2) }
+            };
+        }
+
+        return null;
     }
 
     function renderWarehouseFloor(scene, warehouse) {
@@ -413,6 +490,57 @@
             border.position.set((x1 + x2) / 2, 0.005, (y1 + y2) / 2);
             scene.add(border);
         });
+    }
+
+    function renderDoors(scene, warehouse, doors) {
+        if (!Array.isArray(doors) || doors.length === 0) {
+            return;
+        }
+
+        const group = new THREE.Group();
+        doors.forEach((door) => {
+            const placement = computeDoorPlacement(door, warehouse);
+            if (!placement) {
+                return;
+            }
+
+            const color = resolveDoorColor(door.type);
+            const doorMaterial = new THREE.MeshBasicMaterial({
+                color,
+                transparent: true,
+                opacity: 0.86,
+                depthWrite: false,
+                toneMapped: false
+            });
+            const doorMesh = new THREE.Mesh(
+                new THREE.BoxGeometry(placement.box.width, placement.box.height, placement.box.depth),
+                doorMaterial);
+            doorMesh.position.set(placement.position.x, placement.position.y, placement.position.z);
+            doorMesh.renderOrder = 3;
+            group.add(doorMesh);
+
+            const edge = new THREE.LineSegments(
+                new THREE.EdgesGeometry(doorMesh.geometry),
+                new THREE.LineBasicMaterial({
+                    color: 0x0f172a,
+                    transparent: true,
+                    opacity: 0.7,
+                    depthWrite: false,
+                    toneMapped: false
+                }));
+            doorMesh.add(edge);
+
+            const labelText = String(door.label || door.id || "").trim();
+            if (labelText) {
+                const label = createSmallDoorLabel(labelText);
+                const labelWidth = Math.max(1.8, Math.min(4.2, 1.1 + (labelText.length * 0.22)));
+                label.position.set(placement.label.x, placement.label.y, placement.label.z);
+                label.scale.set(labelWidth, 0.5, 1);
+                group.add(label);
+            }
+        });
+
+        scene.add(group);
     }
 
     function renderRackFrames(scene, racks, interactiveRackMeshes, showRackLabels) {
@@ -643,7 +771,7 @@
             });
 
             const scene = new THREE.Scene();
-            scene.background = new THREE.Color(0eef2f6);
+            scene.background = new THREE.Color(0xeef2f6);
 
             const width = Math.max(container.clientWidth, 300);
             const height = Math.max(container.clientHeight, 300);
@@ -714,6 +842,7 @@
             const bins = Array.isArray(data) ? data : (data?.bins || []);
             const racks = Array.isArray(data?.racks) ? data.racks : [];
             const slots = Array.isArray(data?.slots) ? data.slots : [];
+            const doors = Array.isArray(data?.doors) ? data.doors : [];
             const warehouse = !Array.isArray(data) ? (data?.warehouse ?? null) : null;
             const zones = !Array.isArray(data) && Array.isArray(data?.zones) ? data.zones : [];
             const renderOptions = !Array.isArray(data) ? (data?.options ?? {}) : {};
@@ -898,6 +1027,7 @@
             if (hasWarehouseDims) {
                 renderWarehouseFloor(scene, warehouse);
                 renderZones(scene, zones);
+                renderDoors(scene, warehouse, doors);
             } else {
                 const gridSize = Math.max(30, Math.ceil(maxSpan * 4));
                 const gridDivisions = Math.max(10, Math.min(80, Math.round(gridSize / 2)));

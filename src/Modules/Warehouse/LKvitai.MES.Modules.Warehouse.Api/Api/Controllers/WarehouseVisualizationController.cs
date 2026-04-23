@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
+using System.Text.Json;
 using LKvitai.MES.Modules.Warehouse.Api.ErrorHandling;
 using LKvitai.MES.Modules.Warehouse.Api.Security;
 using LKvitai.MES.Modules.Warehouse.Application.Ports;
@@ -34,6 +35,12 @@ public sealed class WarehouseVisualizationController : ControllerBase
     private static readonly string[] AllowedZoneTypes = ["RECEIVING", "STORAGE", "SHIPPING", "QUARANTINE"];
     private static readonly HashSet<string> AllowedZoneTypeSet =
         new(AllowedZoneTypes, StringComparer.OrdinalIgnoreCase);
+
+    private static readonly JsonSerializerOptions RackJsonOptions = new()
+    {
+        WriteIndented = true,
+        PropertyNameCaseInsensitive = true
+    };
 
     private static readonly IReadOnlyDictionary<string, string> StatusPalette =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -152,6 +159,45 @@ public sealed class WarehouseVisualizationController : ControllerBase
         layout.LengthMeters = decimal.Round(request.LengthMeters, 2, MidpointRounding.AwayFromZero);
         layout.HeightMeters = decimal.Round(request.HeightMeters, 2, MidpointRounding.AwayFromZero);
         layout.UpdatedAt = DateTimeOffset.UtcNow;
+
+        if (request.Doors is not null)
+        {
+            RackLayoutDocument existingRackLayout;
+            try
+            {
+                existingRackLayout = _rackLayoutValidator.Parse(layout.RacksJson);
+            }
+            catch (Exception ex)
+            {
+                return ValidationFailure($"Rack config JSON could not be parsed before updating doors: {ex.Message}");
+            }
+
+            var mergedRackLayout = existingRackLayout with
+            {
+                WarehouseCode = normalizedWarehouseCode,
+                Doors = request.Doors
+                    .Select(x => new WarehouseDoorDefinition(
+                        x.Id.Trim(),
+                        x.Type.Trim(),
+                        x.Wall.Trim().ToUpperInvariant(),
+                        x.OffsetFromLeft,
+                        x.Width,
+                        x.Height,
+                        x.Bottom,
+                        string.IsNullOrWhiteSpace(x.Label) ? null : x.Label.Trim()))
+                    .ToList()
+            };
+
+            var rackLayoutValidation = _rackLayoutValidator.Validate(layout, mergedRackLayout);
+            if (!rackLayoutValidation.IsValid)
+            {
+                return ValidationFailure(JoinValidationErrors(rackLayoutValidation.Errors));
+            }
+
+            layout.RacksJson = ShouldStoreRackLayout(mergedRackLayout)
+                ? JsonSerializer.Serialize(mergedRackLayout, RackJsonOptions)
+                : null;
+        }
 
         if (isExistingLayout)
         {
@@ -536,6 +582,17 @@ public sealed class WarehouseVisualizationController : ControllerBase
                     new VisualizationCoordinateResponse(x.X, x.Y, x.Z),
                     new VisualizationRackDimensionsResponse(x.Width, x.Length, x.Height)))
                 .ToList(),
+            rackLayout.GetDoors()
+                .Select(x => new VisualizationDoorResponse(
+                    x.Id,
+                    x.Type,
+                    x.Wall.Trim().ToUpperInvariant(),
+                    x.OffsetFromLeft,
+                    x.Width,
+                    x.Height,
+                    x.Bottom,
+                    x.Label))
+                .ToList(),
             layout.Zones
                 .OrderBy(x => x.ZoneType)
                 .Select(x => new VisualizationZoneResponse(
@@ -667,8 +724,10 @@ public sealed class WarehouseVisualizationController : ControllerBase
         return StatusPalette.GetValueOrDefault(status, StatusPalette[LowStatus]);
     }
 
-    private static LayoutResponse MapLayout(WarehouseLayout layout)
+    private LayoutResponse MapLayout(WarehouseLayout layout)
     {
+        var rackLayout = _rackLayoutValidator.Parse(layout.RacksJson);
+
         return new LayoutResponse(
             layout.Id,
             layout.WarehouseCode,
@@ -686,9 +745,23 @@ public sealed class WarehouseVisualizationController : ControllerBase
                     x.Y2,
                     x.Color))
                 .ToList(),
+            rackLayout.GetDoors()
+                .Select(x => new DoorResponse(
+                    x.Id,
+                    x.Type,
+                    x.Wall,
+                    x.OffsetFromLeft,
+                    x.Width,
+                    x.Height,
+                    x.Bottom,
+                    x.Label))
+                .ToList(),
             layout.RacksJson,
             layout.UpdatedAt);
     }
+
+    private static bool ShouldStoreRackLayout(RackLayoutDocument document)
+        => document.GetRacks().Count > 0 || document.GetDoors().Count > 0;
 
     private static List<Location> ResolveVisualizationLocations(IReadOnlyList<Location> locations)
     {
@@ -780,7 +853,8 @@ public sealed class WarehouseVisualizationController : ControllerBase
         decimal WidthMeters,
         decimal LengthMeters,
         decimal HeightMeters,
-        IReadOnlyList<UpsertZoneRequest> Zones);
+        IReadOnlyList<UpsertZoneRequest> Zones,
+        IReadOnlyList<UpsertDoorRequest>? Doors = null);
 
     public sealed record UpsertZoneRequest(
         string Type,
@@ -790,6 +864,16 @@ public sealed class WarehouseVisualizationController : ControllerBase
         decimal Y2,
         string Color);
 
+    public sealed record UpsertDoorRequest(
+        string Id,
+        string Type,
+        string Wall,
+        decimal OffsetFromLeft,
+        decimal Width,
+        decimal Height,
+        decimal Bottom,
+        string? Label);
+
     public sealed record LayoutResponse(
         Guid Id,
         string WarehouseCode,
@@ -797,6 +881,7 @@ public sealed class WarehouseVisualizationController : ControllerBase
         decimal LengthMeters,
         decimal HeightMeters,
         IReadOnlyList<ZoneResponse> Zones,
+        IReadOnlyList<DoorResponse> Doors,
         string? RacksJson,
         DateTimeOffset UpdatedAt);
 
@@ -809,11 +894,22 @@ public sealed class WarehouseVisualizationController : ControllerBase
         decimal Y2,
         string Color);
 
+    public sealed record DoorResponse(
+        string Id,
+        string Type,
+        string Wall,
+        decimal OffsetFromLeft,
+        decimal Width,
+        decimal Height,
+        decimal Bottom,
+        string? Label);
+
     public sealed record Visualization3dResponse(
         VisualizationWarehouseResponse Warehouse,
         IReadOnlyList<VisualizationBinResponse> Bins,
         IReadOnlyList<VisualizationRackResponse> Racks,
         IReadOnlyList<VisualizationSlotResponse> Slots,
+        IReadOnlyList<VisualizationDoorResponse> Doors,
         IReadOnlyList<VisualizationZoneResponse> Zones);
 
     public sealed record VisualizationWarehouseResponse(
@@ -886,6 +982,16 @@ public sealed class WarehouseVisualizationController : ControllerBase
         bool Occupied,
         VisualizationCoordinateResponse Origin,
         VisualizationRackDimensionsResponse Dimensions);
+
+    public sealed record VisualizationDoorResponse(
+        string Id,
+        string Type,
+        string Wall,
+        decimal OffsetFromLeft,
+        decimal Width,
+        decimal Height,
+        decimal Bottom,
+        string? Label);
 
     public sealed record VisualizationHandlingUnitResponse(
         Guid Id,
