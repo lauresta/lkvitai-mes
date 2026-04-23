@@ -18,6 +18,23 @@ public sealed class RackLayoutValidator
         "Custom"
     ];
 
+    private static readonly HashSet<string> AllowedDoorTypes =
+    [
+        "DockDoor",
+        "PedestrianDoor",
+        "Gate",
+        "EmergencyExit",
+        "Custom"
+    ];
+
+    private static readonly HashSet<string> AllowedWalls =
+    [
+        "N",
+        "S",
+        "E",
+        "W"
+    ];
+
     public RackLayoutDocument Parse(string? racksJson)
     {
         if (string.IsNullOrWhiteSpace(racksJson))
@@ -51,10 +68,81 @@ public sealed class RackLayoutValidator
             ValidateRack(layout, rack, errors);
         }
 
+        ValidateDoors(layout, document.GetDoors(), errors);
+
         ValidatePairings(racks, errors);
         ValidateOverlap(racks, errors);
 
         return new RackLayoutValidationResult(errors.Count == 0, errors);
+    }
+
+    private static void ValidateDoors(
+        WarehouseLayout layout,
+        IReadOnlyList<WarehouseDoorDefinition> doors,
+        ICollection<string> errors)
+    {
+        var duplicateDoorIds = doors
+            .GroupBy(x => x.Id, StringComparer.OrdinalIgnoreCase)
+            .Where(x => x.Count() > 1)
+            .Select(x => x.Key)
+            .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        foreach (var doorId in duplicateDoorIds)
+        {
+            errors.Add($"Door id '{doorId}' must be unique within the warehouse.");
+        }
+
+        foreach (var door in doors)
+        {
+            ValidateDoor(layout, door, errors);
+        }
+    }
+
+    private static void ValidateDoor(
+        WarehouseLayout layout,
+        WarehouseDoorDefinition door,
+        ICollection<string> errors)
+    {
+        if (string.IsNullOrWhiteSpace(door.Id))
+        {
+            errors.Add("Each door requires a non-empty id.");
+        }
+
+        if (!AllowedDoorTypes.Contains(door.Type))
+        {
+            errors.Add($"Door '{door.Id}' has unsupported type '{door.Type}'.");
+        }
+
+        var normalizedWall = door.Wall.Trim().ToUpperInvariant();
+        if (!AllowedWalls.Contains(normalizedWall))
+        {
+            errors.Add($"Door '{door.Id}' wall must be one of: N, S, E, W.");
+            return;
+        }
+
+        if (door.Width <= 0 || door.Height <= 0)
+        {
+            errors.Add($"Door '{door.Id}' width and height must be greater than zero.");
+        }
+
+        if (door.OffsetFromLeft < 0 || door.Bottom < 0)
+        {
+            errors.Add($"Door '{door.Id}' offsetFromLeft and bottom must be non-negative.");
+        }
+
+        var wallLength = normalizedWall is "N" or "S"
+            ? layout.WidthMeters
+            : layout.LengthMeters;
+        if (door.OffsetFromLeft + door.Width > wallLength)
+        {
+            errors.Add($"Door '{door.Id}' exceeds wall '{normalizedWall}' bounds.");
+        }
+
+        if (door.Bottom + door.Height > layout.HeightMeters)
+        {
+            errors.Add($"Door '{door.Id}' exceeds the warehouse height.");
+        }
     }
 
     private static void ValidateRack(WarehouseLayout layout, RackRowDefinition rack, ICollection<string> errors)

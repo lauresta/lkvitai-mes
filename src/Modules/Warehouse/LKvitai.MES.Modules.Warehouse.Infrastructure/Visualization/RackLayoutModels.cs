@@ -5,11 +5,13 @@ namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Visualization;
 
 public sealed record RackLayoutDocument(
     [property: JsonPropertyName("warehouseCode")] string? WarehouseCode,
-    [property: JsonPropertyName("racks")] IReadOnlyList<RackRowDefinition>? Racks)
+    [property: JsonPropertyName("racks")] IReadOnlyList<RackRowDefinition>? Racks,
+    [property: JsonPropertyName("doors")] IReadOnlyList<WarehouseDoorDefinition>? Doors)
 {
-    public static RackLayoutDocument Empty { get; } = new(null, Array.Empty<RackRowDefinition>());
+    public static RackLayoutDocument Empty { get; } = new(null, Array.Empty<RackRowDefinition>(), Array.Empty<WarehouseDoorDefinition>());
 
     public IReadOnlyList<RackRowDefinition> GetRacks() => Racks ?? Array.Empty<RackRowDefinition>();
+    public IReadOnlyList<WarehouseDoorDefinition> GetDoors() => Doors ?? Array.Empty<WarehouseDoorDefinition>();
 }
 
 public sealed record RackRowDefinition(
@@ -40,6 +42,16 @@ public sealed record RackDimensionsDefinition(
 public sealed record RackLevelDefinition(
     [property: JsonPropertyName("index")] int Index,
     [property: JsonPropertyName("heightFromBase")] decimal HeightFromBase);
+
+public sealed record WarehouseDoorDefinition(
+    [property: JsonPropertyName("id")] string Id,
+    [property: JsonPropertyName("type")] string Type,
+    [property: JsonPropertyName("wall")] string Wall,
+    [property: JsonPropertyName("offsetFromLeft")] decimal OffsetFromLeft,
+    [property: JsonPropertyName("width")] decimal Width,
+    [property: JsonPropertyName("height")] decimal Height,
+    [property: JsonPropertyName("bottom")] decimal Bottom,
+    [property: JsonPropertyName("label")] string? Label);
 
 public sealed record VisualizationRackModel(
     string Id,
