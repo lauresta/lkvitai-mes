@@ -1,0 +1,195 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$ROOT_DIR"
+
+API_PROJECT="src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Api/LKvitai.MES.Modules.Warehouse.Api.csproj"
+WEBUI_PROJECT="src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.WebUI/LKvitai.MES.Modules.Warehouse.WebUI.csproj"
+COMPOSE_FILE="src/docker-compose.yml"
+
+WITH_BROKER=0
+USE_WATCH=1
+
+for arg in "$@"; do
+  case "$arg" in
+    --with-broker)
+      WITH_BROKER=1
+      ;;
+    --no-watch)
+      USE_WATCH=0
+      ;;
+    --help|-h)
+      cat <<'EOF'
+Usage: ./run-dev [--with-broker] [--no-watch]
+
+Options:
+  --with-broker  Start RabbitMQ and disable in-memory transport.
+  --no-watch     Use dotnet run instead of dotnet watch run.
+EOF
+      exit 0
+      ;;
+    *)
+      echo "Unknown argument: $arg" >&2
+      exit 1
+      ;;
+  esac
+done
+
+require_command() {
+  if ! command -v "$1" >/dev/null 2>&1; then
+    echo "Missing required command: $1" >&2
+    exit 1
+  fi
+}
+
+require_command docker
+require_command dotnet
+require_command curl
+
+mkdir -p .task-logs
+
+export ASPNETCORE_ENVIRONMENT="${ASPNETCORE_ENVIRONMENT:-Development}"
+export DOTNET_ENVIRONMENT="${DOTNET_ENVIRONMENT:-Development}"
+
+export ConnectionStrings__WarehouseDb="${ConnectionStrings__WarehouseDb:-Host=localhost;Port=5432;Database=lkvitai_warehouse_dev;Username=postgres;Password=postgres;Minimum Pool Size=10;Maximum Pool Size=100;Connection Lifetime=300;Connection Idle Lifetime=60;Timeout=30}"
+export Caching__RedisConnectionString="${Caching__RedisConnectionString:-localhost:6379,abortConnect=false,connectRetry=3,connectTimeout=1000,syncTimeout=1000}"
+export UseJaegerExporter="${UseJaegerExporter:-true}"
+export Jaeger__AgentHost="${Jaeger__AgentHost:-localhost}"
+export WarehouseApi__BaseUrl="${WarehouseApi__BaseUrl:-https://localhost:5001}"
+export WarehouseApi__UserId="${WarehouseApi__UserId:-webui-admin}"
+export WarehouseApi__Roles="${WarehouseApi__Roles:-WarehouseAdmin,WarehouseManager,QCInspector,Operator}"
+export ASPNETCORE_DETAILEDERRORS="${ASPNETCORE_DETAILEDERRORS:-true}"
+export Serilog__MinimumLevel__Default="${Serilog__MinimumLevel__Default:-Debug}"
+export Serilog__MinimumLevel__Override__Microsoft="${Serilog__MinimumLevel__Override__Microsoft:-Information}"
+export Serilog__MinimumLevel__Override__System="${Serilog__MinimumLevel__Override__System:-Information}"
+export Serilog__MinimumLevel__Override__Marten="${Serilog__MinimumLevel__Override__Marten:-Information}"
+export Serilog__MinimumLevel__Override__Npgsql="${Serilog__MinimumLevel__Override__Npgsql:-Information}"
+export Serilog__MinimumLevel__Override__MassTransit="${Serilog__MinimumLevel__Override__MassTransit:-Information}"
+export Serilog__MinimumLevel__Override__JasperFx="${Serilog__MinimumLevel__Override__JasperFx:-Information}"
+
+if [[ "$WITH_BROKER" -eq 1 ]]; then
+  export UseInMemoryTransport="${UseInMemoryTransport:-false}"
+  COMPOSE_ARGS=(docker compose -f "$COMPOSE_FILE" --profile dev-broker up -d)
+else
+  export UseInMemoryTransport="${UseInMemoryTransport:-true}"
+  COMPOSE_ARGS=(docker compose -f "$COMPOSE_FILE" up -d)
+fi
+
+if [[ -z "${ITEMIMAGES__MODEL_PATH:-}" ]]; then
+  export ITEMIMAGES__MODEL_PATH="/tmp/models/item-image-model.onnx"
+fi
+
+API_LOG=".task-logs/run-dev-api.log"
+WEBUI_LOG=".task-logs/run-dev-webui.log"
+
+touch "$API_LOG" "$WEBUI_LOG"
+
+cleanup() {
+  local exit_code=$?
+  trap - EXIT INT TERM
+
+  if [[ -n "${WEBUI_PID:-}" ]] && kill -0 "$WEBUI_PID" >/dev/null 2>&1; then
+    kill "$WEBUI_PID" >/dev/null 2>&1 || true
+  fi
+
+  if [[ -n "${API_PID:-}" ]] && kill -0 "$API_PID" >/dev/null 2>&1; then
+    kill "$API_PID" >/dev/null 2>&1 || true
+  fi
+
+  wait "${WEBUI_PID:-}" >/dev/null 2>&1 || true
+  wait "${API_PID:-}" >/dev/null 2>&1 || true
+
+  exit "$exit_code"
+}
+
+trap cleanup EXIT INT TERM
+
+wait_for_url() {
+  local url="$1"
+  local label="$2"
+  local max_attempts="${3:-60}"
+  local attempt=1
+
+  while (( attempt <= max_attempts )); do
+    if curl -kfsS "$url" >/dev/null 2>&1; then
+      echo "$label is ready: $url"
+      return 0
+    fi
+
+    sleep 1
+    ((attempt++))
+  done
+
+  echo "Timed out waiting for $label: $url" >&2
+  return 1
+}
+
+start_process() {
+  local label="$1"
+  local log_file="$2"
+  shift 2
+
+  (
+    "$@" 2>&1 | tee "$log_file" | sed "s/^/[$label] /"
+  ) &
+
+  echo $!
+}
+
+echo "Starting dev infrastructure..."
+"${COMPOSE_ARGS[@]}"
+
+echo "Using settings:"
+echo "  ASPNETCORE_ENVIRONMENT=$ASPNETCORE_ENVIRONMENT"
+echo "  DOTNET_ENVIRONMENT=$DOTNET_ENVIRONMENT"
+echo "  UseInMemoryTransport=$UseInMemoryTransport"
+echo "  UseJaegerExporter=$UseJaegerExporter"
+echo "  ConnectionStrings__WarehouseDb=$ConnectionStrings__WarehouseDb"
+echo "  Caching__RedisConnectionString=$Caching__RedisConnectionString"
+echo "  WarehouseApi__BaseUrl=$WarehouseApi__BaseUrl"
+echo "  ITEMIMAGES__MODEL_PATH=$ITEMIMAGES__MODEL_PATH"
+echo
+
+if [[ "$USE_WATCH" -eq 1 ]]; then
+  API_CMD=(dotnet watch --project "$API_PROJECT" run --no-launch-profile)
+  WEBUI_CMD=(dotnet watch --project "$WEBUI_PROJECT" run --no-launch-profile)
+else
+  API_CMD=(dotnet run --project "$API_PROJECT" --no-launch-profile)
+  WEBUI_CMD=(dotnet run --project "$WEBUI_PROJECT" --no-launch-profile)
+fi
+
+echo "Starting API..."
+API_PID="$(start_process "api" "$API_LOG" env ASPNETCORE_URLS="https://localhost:5001;http://localhost:5000" "${API_CMD[@]}")"
+
+wait_for_url "https://localhost:5001/health" "API health endpoint"
+
+echo "Starting WebUI..."
+WEBUI_PID="$(start_process "webui" "$WEBUI_LOG" env ASPNETCORE_URLS="https://localhost:7229;http://localhost:5124" "${WEBUI_CMD[@]}")"
+
+wait_for_url "https://localhost:7229" "WebUI"
+
+cat <<'EOF'
+
+Development stack is running.
+
+  API:   https://localhost:5001
+  WebUI: https://localhost:7229
+  Jaeger: http://localhost:16686
+
+Useful dev token command:
+  export DEV_AUTH_USERNAME='<dev username>'
+  export DEV_AUTH_PASSWORD='<dev password>'
+  curl -k -X POST https://localhost:5001/api/auth/dev-token \
+    -H "Content-Type: application/json" \
+    -d "{\"username\":\"${DEV_AUTH_USERNAME}\",\"password\":\"${DEV_AUTH_PASSWORD}\"}"
+
+Logs:
+  .task-logs/run-dev-api.log
+  .task-logs/run-dev-webui.log
+
+Press Ctrl+C to stop API and WebUI.
+Docker infrastructure stays running.
+EOF
+
+wait "$API_PID" "$WEBUI_PID"
