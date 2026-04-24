@@ -1,0 +1,295 @@
+{
+  "warehouseCode": "2",
+  "room": {
+    "width": 18.9,
+    "length": 8.0,
+    "height": 6.0
+  },
+  "racks": [
+    {
+      "id": "A1",
+      "type": "PalletRack",
+      "comment": "Levyi nizhnij pallet rack po skheme.",
+      "origin": { "x": 0.7, "y": 1.7, "z": 0.0 },
+      "dimensions": { "width": 3.4, "depth": 0.9, "height": 5.4 },
+      "orientationDeg": 0,
+      "slotsPerLevel": 4,
+      "bayCount": 4,
+      "backToBack": false,
+      "pairedWithRackId": null,
+      "levels": [
+        { "index": 1, "heightFromBase": 0.68 },
+        { "index": 2, "heightFromBase": 1.33 },
+        { "index": 3, "heightFromBase": 1.98 },
+        { "index": 4, "heightFromBase": 2.63 },
+        { "index": 5, "heightFromBase": 3.28 },
+        { "index": 6, "heightFromBase": 3.93 },
+        { "index": 7, "heightFromBase": 4.58 }
+      ]
+    },
+    {
+      "id": "B1",
+      "type": "PalletRack",
+      "comment": "Levyi pallet rack B1.",
+      "origin": { "x": 0.7, "y": 2.6, "z": 0.0 },
+      "dimensions": { "width": 3.4, "depth": 0.55, "height": 5.4 },
+      "orientationDeg": 0,
+      "slotsPerLevel": 4,
+      "bayCount": 4,
+      "backToBack": false,
+      "pairedWithRackId": null,
+      "levels": [
+        { "index": 1, "heightFromBase": 0.68 },
+        { "index": 2, "heightFromBase": 1.33 },
+        { "index": 3, "heightFromBase": 1.98 },
+        { "index": 4, "heightFromBase": 2.63 },
+        { "index": 5, "heightFromBase": 3.28 },
+        { "index": 6, "heightFromBase": 3.93 },
+        { "index": 7, "heightFromBase": 4.58 }
+      ]
+    },
+    {
+      "id": "C1",
+      "type": "PalletRack",
+      "comment": "Levyi pallet rack C1.",
+      "origin": { "x": 0.7, "y": 3.15, "z": 0.0 },
+      "dimensions": { "width": 3.4, "depth": 0.55, "height": 5.4 },
+      "orientationDeg": 0,
+      "slotsPerLevel": 4,
+      "bayCount": 4,
+      "backToBack": false,
+      "pairedWithRackId": null,
+      "levels": [
+        { "index": 1, "heightFromBase": 0.68 },
+        { "index": 2, "heightFromBase": 1.33 },
+        { "index": 3, "heightFromBase": 1.98 },
+        { "index": 4, "heightFromBase": 2.63 },
+        { "index": 5, "heightFromBase": 3.28 },
+        { "index": 6, "heightFromBase": 3.93 },
+        { "index": 7, "heightFromBase": 4.58 }
+      ]
+    },
+    {
+      "id": "D1",
+      "type": "PalletRack",
+      "comment": "Levyi pallet rack D1.",
+      "origin": { "x": 0.7, "y": 4.45, "z": 0.0 },
+      "dimensions": { "width": 3.4, "depth": 0.45, "height": 5.4 },
+      "orientationDeg": 0,
+      "slotsPerLevel": 4,
+      "bayCount": 4,
+      "backToBack": false,
+      "pairedWithRackId": null,
+      "levels": [
+        { "index": 1, "heightFromBase": 0.68 },
+        { "index": 2, "heightFromBase": 1.33 },
+        { "index": 3, "heightFromBase": 1.98 },
+        { "index": 4, "heightFromBase": 2.63 },
+        { "index": 5, "heightFromBase": 3.28 },
+        { "index": 6, "heightFromBase": 3.93 },
+        { "index": 7, "heightFromBase": 4.58 }
+      ]
+    },
+    {
+      "id": "E1",
+      "type": "PalletRack",
+      "comment": "Levyi pallet rack E1.",
+      "origin": { "x": 0.7, "y": 4.95, "z": 0.0 },
+      "dimensions": { "width": 3.4, "depth": 0.45, "height": 5.4 },
+      "orientationDeg": 0,
+      "slotsPerLevel": 4,
+      "bayCount": 4,
+      "backToBack": false,
+      "pairedWithRackId": null,
+      "levels": [
+        { "index": 1, "heightFromBase": 0.68 },
+        { "index": 2, "heightFromBase": 1.33 },
+        { "index": 3, "heightFromBase": 1.98 },
+        { "index": 4, "heightFromBase": 2.63 },
+        { "index": 5, "heightFromBase": 3.28 },
+        { "index": 6, "heightFromBase": 3.93 },
+        { "index": 7, "heightFromBase": 4.58 }
+      ]
+    },
+    {
+      "id": "F1",
+      "type": "PalletRack",
+      "comment": "Verhnij levyj pallet rack, dlinnee ostalnyh.",
+      "origin": { "x": 0.7, "y": 6.25, "z": 0.0 },
+      "dimensions": { "width": 4.6, "depth": 0.7, "height": 5.4 },
+      "orientationDeg": 0,
+      "slotsPerLevel": 6,
+      "bayCount": 6,
+      "backToBack": false,
+      "pairedWithRackId": null,
+      "levels": [
+        { "index": 1, "heightFromBase": 0.68 },
+        { "index": 2, "heightFromBase": 1.33 },
+        { "index": 3, "heightFromBase": 1.98 },
+        { "index": 4, "heightFromBase": 2.63 },
+        { "index": 5, "heightFromBase": 3.28 },
+        { "index": 6, "heightFromBase": 3.93 },
+        { "index": 7, "heightFromBase": 4.58 }
+      ]
+    },
+    {
+      "id": "A2",
+      "type": "CantileverRack",
+      "comment": "Pravyj nizhnij cantilever rack po skheme.",
+      "origin": { "x": 8.9, "y": 1.1, "z": 0.0 },
+      "dimensions": { "width": 8.4, "depth": 0.9, "height": 5.012 },
+      "orientationDeg": 0,
+      "armSide": "Left",
+      "slotsPerLevel": 0,
+      "bayCount": 6,
+      "backToBack": false,
+      "pairedWithRackId": null,
+      "levels": [
+        { "index": 1, "heightFromBase": 1.14 },
+        { "index": 2, "heightFromBase": 1.94 },
+        { "index": 3, "heightFromBase": 2.74 },
+        { "index": 4, "heightFromBase": 3.54 },
+        { "index": 5, "heightFromBase": 4.34 }
+      ]
+    },
+    {
+      "id": "B2",
+      "type": "CantileverRack",
+      "comment": "Pravyj cantilever rack B2.",
+      "origin": { "x": 8.9, "y": 2.45, "z": 0.0 },
+      "dimensions": { "width": 8.4, "depth": 0.45, "height": 5.012 },
+      "orientationDeg": 0,
+      "armSide": "Left",
+      "slotsPerLevel": 0,
+      "bayCount": 6,
+      "backToBack": false,
+      "pairedWithRackId": null,
+      "levels": [
+        { "index": 1, "heightFromBase": 1.14 },
+        { "index": 2, "heightFromBase": 1.94 },
+        { "index": 3, "heightFromBase": 2.74 },
+        { "index": 4, "heightFromBase": 3.54 },
+        { "index": 5, "heightFromBase": 4.34 }
+      ]
+    },
+    {
+      "id": "C2",
+      "type": "CantileverRack",
+      "comment": "Pravyj cantilever rack C2.",
+      "origin": { "x": 8.9, "y": 2.95, "z": 0.0 },
+      "dimensions": { "width": 8.4, "depth": 0.45, "height": 5.012 },
+      "orientationDeg": 0,
+      "armSide": "Left",
+      "slotsPerLevel": 0,
+      "bayCount": 6,
+      "backToBack": false,
+      "pairedWithRackId": null,
+      "levels": [
+        { "index": 1, "heightFromBase": 1.14 },
+        { "index": 2, "heightFromBase": 1.94 },
+        { "index": 3, "heightFromBase": 2.74 },
+        { "index": 4, "heightFromBase": 3.54 },
+        { "index": 5, "heightFromBase": 4.34 }
+      ]
+    },
+    {
+      "id": "D2",
+      "type": "CantileverRack",
+      "comment": "Pravyj cantilever rack D2.",
+      "origin": { "x": 8.9, "y": 4.35, "z": 0.0 },
+      "dimensions": { "width": 8.4, "depth": 0.45, "height": 5.012 },
+      "orientationDeg": 0,
+      "armSide": "Left",
+      "slotsPerLevel": 0,
+      "bayCount": 6,
+      "backToBack": false,
+      "pairedWithRackId": null,
+      "levels": [
+        { "index": 1, "heightFromBase": 1.14 },
+        { "index": 2, "heightFromBase": 1.94 },
+        { "index": 3, "heightFromBase": 2.74 },
+        { "index": 4, "heightFromBase": 3.54 },
+        { "index": 5, "heightFromBase": 4.34 }
+      ]
+    },
+    {
+      "id": "E2",
+      "type": "CantileverRack",
+      "comment": "Pravyj cantilever rack E2.",
+      "origin": { "x": 8.9, "y": 4.85, "z": 0.0 },
+      "dimensions": { "width": 8.4, "depth": 0.45, "height": 5.012 },
+      "orientationDeg": 0,
+      "armSide": "Left",
+      "slotsPerLevel": 0,
+      "bayCount": 6,
+      "backToBack": false,
+      "pairedWithRackId": null,
+      "levels": [
+        { "index": 1, "heightFromBase": 1.14 },
+        { "index": 2, "heightFromBase": 1.94 },
+        { "index": 3, "heightFromBase": 2.74 },
+        { "index": 4, "heightFromBase": 3.54 },
+        { "index": 5, "heightFromBase": 4.34 }
+      ]
+    },
+    {
+      "id": "F2",
+      "type": "CantileverRack",
+      "comment": "Verhnij pravyj cantilever rack, samyi dlinnyi ryad.",
+      "origin": { "x": 5.6, "y": 6.2, "z": 0.0 },
+      "dimensions": { "width": 12.0, "depth": 0.7, "height": 5.012 },
+      "orientationDeg": 0,
+      "armSide": "Left",
+      "slotsPerLevel": 0,
+      "bayCount": 8,
+      "backToBack": false,
+      "pairedWithRackId": null,
+      "levels": [
+        { "index": 1, "heightFromBase": 1.14 },
+        { "index": 2, "heightFromBase": 1.94 },
+        { "index": 3, "heightFromBase": 2.74 },
+        { "index": 4, "heightFromBase": 3.54 },
+        { "index": 5, "heightFromBase": 4.34 }
+      ]
+    },
+    {
+      "id": "FLOOR-SORTING",
+      "type": "FloorStorage",
+      "comment": "Pakrovimo ir rusiavimo zona v tsentre.",
+      "origin": { "x": 4.7, "y": 1.0, "z": 0.0 },
+      "dimensions": { "width": 4.0, "depth": 4.9, "height": 2.2 },
+      "orientationDeg": 0,
+      "slotsPerLevel": 0,
+      "bayCount": 0,
+      "backToBack": false,
+      "pairedWithRackId": null,
+      "levels": []
+    },
+    {
+      "id": "FLOOR-STAGING",
+      "type": "FloorStorage",
+      "comment": "Nizhnyaya levaya zona pod vremennoe hranenie ili podgotovku.",
+      "origin": { "x": 0.7, "y": 0.45, "z": 0.0 },
+      "dimensions": { "width": 3.4, "depth": 0.95, "height": 2.0 },
+      "orientationDeg": 0,
+      "slotsPerLevel": 0,
+      "bayCount": 0,
+      "backToBack": false,
+      "pairedWithRackId": null,
+      "levels": []
+    }
+  ],
+  "doors": [
+    {
+      "id": "GATE-1",
+      "type": "Gate",
+      "wall": "S",
+      "offsetFromLeft": 4.2,
+      "width": 4.4,
+      "height": 3.4,
+      "bottom": 0.0,
+      "label": "Vartai"
+    }
+  ],
+  "bins": []
+}
