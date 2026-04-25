@@ -1,0 +1,143 @@
+name: Release to Production
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - name: warehouse-api
+            dockerfile: src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Api/Dockerfile
+            image: ghcr.io/${{ github.repository_owner }}/lkvitai-mes-warehouse-api
+          - name: warehouse-webui
+            dockerfile: src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.WebUI/Dockerfile
+            image: ghcr.io/${{ github.repository_owner }}/lkvitai-mes-warehouse-webui
+          - name: portal-api
+            dockerfile: src/Modules/Portal/LKvitai.MES.Modules.Portal.Api/Dockerfile
+            image: ghcr.io/${{ github.repository_owner }}/lkvitai-mes-portal-api
+          - name: portal-webui
+            dockerfile: src/Modules/Portal/LKvitai.MES.Modules.Portal.WebUI/Dockerfile
+            image: ghcr.io/${{ github.repository_owner }}/lkvitai-mes-portal-webui
+
+    steps:
+      - name: Validate release tag
+        run: |
+          if ! printf '%s' "${{ github.event.release.tag_name }}" | grep -Eq '^v?[0-9]+(\.[0-9]+){1,2}([.-][0-9A-Za-z.-]+)?$'; then
+            echo "::error::Release tag '${{ github.event.release.tag_name }}' is not a Docker-safe version tag. Use tags like v0.1.1 or 0.1.1."
+            exit 1
+          fi
+
+      - name: Checkout release code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ matrix.image }}
+          tags: |
+            type=raw,value=${{ github.event.release.tag_name }}
+            type=sha,prefix=,format=long
+
+      - name: Build and push ${{ matrix.name }} image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=release-${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=release-${{ matrix.name }}
+
+  deploy-prod:
+    needs: build-and-push
+    runs-on: [self-hosted, lkvitai-apps]
+    environment: prod
+    env:
+      IMAGE_TAG: ${{ github.event.release.tag_name }}
+      DOCKER_NETWORK_NAME: ${{ vars.DOCKER_NETWORK_NAME || 'lkvitai-mes_prod' }}
+      WAREHOUSE_DB_CONNECTION: ${{ secrets.WAREHOUSE_DB_CONNECTION }}
+      WAREHOUSE_API_BASE_URL: ${{ vars.WAREHOUSE_API_BASE_URL }}
+    steps:
+      - name: Checkout release code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Ensure deploy Docker network exists
+        run: |
+          docker network inspect "$DOCKER_NETWORK_NAME" >/dev/null 2>&1 || \
+            docker network create "$DOCKER_NETWORK_NAME"
+
+      - name: Pull production images
+        run: docker compose -f docker-compose.prod.yml pull
+
+      - name: Deploy production containers
+        run: docker compose -f docker-compose.prod.yml up -d
+
+      - name: Wait for Warehouse API health
+        run: |
+          echo "Waiting for production Warehouse API to become healthy..."
+          for i in $(seq 1 30); do
+            if docker exec lkvitai-mes-warehouse-api-prod curl -sf http://localhost:8080/health > /dev/null 2>&1; then
+              echo "Warehouse API is healthy!"
+              exit 0
+            fi
+            echo "  attempt $i/30 - not ready yet"
+            sleep 5
+          done
+          echo "Warehouse API failed to become healthy within 150s"
+          docker compose -f docker-compose.prod.yml logs api --tail 50
+          exit 1
+
+      - name: Wait for Portal API health
+        run: |
+          echo "Waiting for production Portal API to become healthy..."
+          for i in $(seq 1 30); do
+            if docker exec lkvitai-mes-portal-api-prod curl -sf http://localhost:8080/health > /dev/null 2>&1; then
+              echo "Portal API is healthy!"
+              exit 0
+            fi
+            echo "  attempt $i/30 - not ready yet"
+            sleep 5
+          done
+          echo "Portal API failed to become healthy within 150s"
+          docker compose -f docker-compose.prod.yml logs portal-api --tail 50
+          exit 1
+
+      - name: Deployment summary
+        run: |
+          echo "## Production Release Deployment" >> $GITHUB_STEP_SUMMARY
+          echo "- **Release:** ${{ github.event.release.tag_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Image tag:** $IMAGE_TAG" >> $GITHUB_STEP_SUMMARY
+          echo "- **Portal API:** lkvitai-apps:5011" >> $GITHUB_STEP_SUMMARY
+          echo "- **Portal WebUI:** lkvitai-apps:5010" >> $GITHUB_STEP_SUMMARY
+          docker compose -f docker-compose.prod.yml ps >> $GITHUB_STEP_SUMMARY
