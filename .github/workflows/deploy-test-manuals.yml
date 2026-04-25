@@ -9,7 +9,7 @@ on:
 jobs:
   deploy-manuals:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    runs-on: self-hosted
+    runs-on: [self-hosted, lkvitai-test]
     environment: test
     env:
       IMAGE_TAG: ${{ github.event.workflow_run.head_sha }}

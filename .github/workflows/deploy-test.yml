@@ -9,7 +9,7 @@ on:
 jobs:
   deploy:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    runs-on: self-hosted
+    runs-on: [self-hosted, lkvitai-test]
     environment: test
     env:
       IMAGE_TAG: ${{ github.event.workflow_run.head_sha }}
@@ -188,6 +188,21 @@ jobs:
           docker compose -f docker-compose.test.yml logs api --tail 50
           exit 1
 
+      - name: Wait for Portal API health
+        run: |
+          echo "Waiting for Portal API to become healthy..."
+          for i in $(seq 1 30); do
+            if docker exec lkvitai-mes-portal-api curl -sf http://localhost:8080/health > /dev/null 2>&1; then
+              echo "Portal API is healthy!"
+              exit 0
+            fi
+            echo "  attempt $i/30 — not ready yet"
+            sleep 5
+          done
+          echo "Portal API failed to become healthy within 150s"
+          docker compose -f docker-compose.test.yml logs portal-api --tail 50
+          exit 1
+
       - name: Seed master data
         run: |
           docker exec -i "$DB_CONTAINER_NAME" \
@@ -200,4 +215,6 @@ jobs:
           echo "- **Image tag:** ${{ env.IMAGE_TAG }}" >> $GITHUB_STEP_SUMMARY
           echo "- **API:** http://lkvitai-test:5001" >> $GITHUB_STEP_SUMMARY
           echo "- **WebUI:** http://lkvitai-test:5000" >> $GITHUB_STEP_SUMMARY
+          echo "- **Portal API:** lkvitai-test:5011" >> $GITHUB_STEP_SUMMARY
+          echo "- **Portal WebUI:** lkvitai-test:5010" >> $GITHUB_STEP_SUMMARY
           docker compose -f docker-compose.test.yml ps >> $GITHUB_STEP_SUMMARY
