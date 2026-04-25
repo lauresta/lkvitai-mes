@@ -77,6 +77,6 @@ jobs:
         run: |
           echo "## Production Deployment Summary" >> $GITHUB_STEP_SUMMARY
           echo "- **Image tag:** ${{ env.IMAGE_TAG }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Portal API:** http://lkvitai-apps:5011" >> $GITHUB_STEP_SUMMARY
-          echo "- **Portal WebUI:** http://lkvitai-apps:5010" >> $GITHUB_STEP_SUMMARY
+          echo "- **Portal API:** lkvitai-apps:5011" >> $GITHUB_STEP_SUMMARY
+          echo "- **Portal WebUI:** lkvitai-apps:5010" >> $GITHUB_STEP_SUMMARY
           docker compose -f docker-compose.prod.yml ps >> $GITHUB_STEP_SUMMARY

@@ -215,6 +215,6 @@ jobs:
           echo "- **Image tag:** ${{ env.IMAGE_TAG }}" >> $GITHUB_STEP_SUMMARY
           echo "- **API:** http://lkvitai-test:5001" >> $GITHUB_STEP_SUMMARY
           echo "- **WebUI:** http://lkvitai-test:5000" >> $GITHUB_STEP_SUMMARY
-          echo "- **Portal API:** http://lkvitai-test:5011" >> $GITHUB_STEP_SUMMARY
-          echo "- **Portal WebUI:** http://lkvitai-test:5010" >> $GITHUB_STEP_SUMMARY
+          echo "- **Portal API:** lkvitai-test:5011" >> $GITHUB_STEP_SUMMARY
+          echo "- **Portal WebUI:** lkvitai-test:5010" >> $GITHUB_STEP_SUMMARY
           docker compose -f docker-compose.test.yml ps >> $GITHUB_STEP_SUMMARY
