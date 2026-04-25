@@ -4,17 +4,17 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>LKvitai.MES - Portal</title>
-  <link rel="stylesheet" href="styles.css?v=0.1.1">
+  <link rel="stylesheet" href="styles.css?v=0.1.3">
 </head>
 <body>
   <div class="app-shell">
-    <div class="test-strip">
+    <div class="test-strip" id="test-strip">
       <div class="test-strip__main">
         <span class="icon-warning" aria-hidden="true"></span>
-        <strong>TEST ENVIRONMENT</strong>
-        <span class="test-strip__note">Data in this environment is not production data and may be reset without notice.</span>
+        <strong id="portal-banner-title">TEST ENVIRONMENT</strong>
+        <span class="test-strip__note" id="portal-banner-note">Data in this environment is not production data and may be reset without notice.</span>
       </div>
-      <span class="mono test-strip__host">lkvitai-test.vpn.lauresta.com</span>
+      <span class="mono test-strip__host" id="portal-host">lkvitai-test.vpn.lauresta.com</span>
     </div>
 
     <header class="topbar">
@@ -22,7 +22,7 @@
         <div class="brand__mark">LK</div>
         <div>
           <div class="brand__name">LKvitai<span>.MES</span></div>
-          <div class="brand__tagline mono">Manufacturing &middot; Operations &middot; Control</div>
+          <div class="brand__tagline mono">Manufacturing &middot; Execution &middot; Standards</div>
         </div>
       </div>
 
@@ -37,14 +37,14 @@
       <div class="topbar__spacer"></div>
 
       <div class="env-badge" aria-label="Environment and version">
-        <div><span class="mono">ENV</span><strong class="mono">TEST</strong></div>
+        <div><span class="mono">ENV</span><strong class="mono" id="portal-env">TEST</strong></div>
         <div><span class="mono">VER</span><strong class="mono">0.1.0</strong></div>
       </div>
 
       <div class="user-block">
         <div class="user-block__avatar">RM</div>
         <div>
-          <div class="user-block__name">Ricardas</div>
+          <div class="user-block__name">Lukas</div>
           <div class="user-block__role">Production Manager</div>
         </div>
       </div>
@@ -54,7 +54,7 @@
       <section class="hero">
         <div class="hero__copy">
           <div class="eyebrow mono">Portal &middot; Welcome</div>
-          <h1>Welcome back, Ricardas.</h1>
+          <h1>Welcome back, Lukas.</h1>
           <p>Warehouse is available. The remaining modules are listed on the implementation roadmap.</p>
           <div class="hero__actions">
             <a class="button button--primary" href="#">Open Warehouse <span aria-hidden="true">&rarr;</span></a>
@@ -130,11 +130,11 @@
               <h2>System status</h2>
               <span><i aria-hidden="true"></i> Online</span>
             </header>
-            <div class="status-row"><span>Environment</span><strong class="mono status-row__test">TEST</strong></div>
+            <div class="status-row"><span>Environment</span><strong class="mono status-row__test" id="portal-status-env">TEST</strong></div>
             <div class="status-row"><span>Version</span><strong class="mono">0.1.0</strong></div>
             <div class="status-row"><span>Modules</span><strong class="mono">1 active / 9 total</strong></div>
             <div class="status-row"><span>Current module</span><strong>Warehouse</strong></div>
-            <div class="status-row"><span>Channel</span><strong class="mono">test</strong></div>
+            <div class="status-row"><span>Channel</span><strong class="mono" id="portal-channel">test</strong></div>
           </section>
 
           <section class="panel">
@@ -148,7 +148,7 @@
           <section class="panel">
             <header class="panel__plain-head"><h2>Build</h2></header>
             <div class="status-row"><span>Version</span><strong class="mono">0.1.0</strong></div>
-            <div class="status-row"><span>Channel</span><strong class="mono">test</strong></div>
+            <div class="status-row"><span>Channel</span><strong class="mono" id="portal-build-channel">test</strong></div>
           </section>
         </aside>
       </div>
@@ -166,6 +166,6 @@
   </div>
 
   <output class="toast" id="toast" aria-live="polite" hidden></output>
-  <script src="script.js?v=0.1.1"></script>
+  <script src="script.js?v=0.1.3"></script>
 </body>
 </html>
