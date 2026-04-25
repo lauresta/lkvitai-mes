@@ -54,14 +54,29 @@ let activePeriod = "this";
 let toastTimer = null;
 
 const host = window.location.hostname.toLowerCase();
-const isTestEnvironment =
-  host === "localhost" ||
-  host === "127.0.0.1" ||
-  host === "10.11.12.15" ||
-  host.includes("mes-test") ||
-  host.includes("lkvitai-test");
-const portalEnvironment = isTestEnvironment ? "TEST" : "PROD";
-const portalChannel = isTestEnvironment ? "test" : "prod";
+const productionHost = "mes.lauresta.com";
+
+function isPrivateIpHost(hostname) {
+  const parts = hostname.split(".").map((part) => Number.parseInt(part, 10));
+  if (parts.length !== 4 || parts.some((part) => !Number.isInteger(part) || part < 0 || part > 255)) return false;
+
+  return (
+    parts[0] === 127 ||
+    parts[0] === 10 ||
+    (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) ||
+    (parts[0] === 192 && parts[1] === 168)
+  );
+}
+
+function getEnvironment(hostname) {
+  if (hostname === productionHost) return { name: "PROD", channel: "prod", type: "prod" };
+  if (hostname === "localhost" || hostname === "::1" || isPrivateIpHost(hostname)) {
+    return { name: "DEV", channel: "dev", type: "dev" };
+  }
+  return { name: "TEST", channel: "test", type: "test" };
+}
+
+const environment = getEnvironment(host);
 
 const moduleGrid = document.querySelector("#module-grid");
 const searchInput = document.querySelector("#module-search");
@@ -74,6 +89,8 @@ const branchGrid = document.querySelector("#branch-grid");
 const newsGrid = document.querySelector("#news-grid");
 const toast = document.querySelector("#toast");
 const testStrip = document.querySelector("#test-strip");
+const portalBannerTitle = document.querySelector("#portal-banner-title");
+const portalBannerNote = document.querySelector("#portal-banner-note");
 const portalHost = document.querySelector("#portal-host");
 const portalEnv = document.querySelector("#portal-env");
 const portalStatusEnv = document.querySelector("#portal-status-env");
@@ -81,13 +98,22 @@ const portalChannelElement = document.querySelector("#portal-channel");
 const portalBuildChannel = document.querySelector("#portal-build-channel");
 
 function renderEnvironment() {
-  testStrip.hidden = !isTestEnvironment;
+  const isProduction = environment.type === "prod";
+  const isDevelopment = environment.type === "dev";
+
+  testStrip.hidden = isProduction;
+  testStrip.classList.toggle("test-strip--dev", isDevelopment);
+  portalBannerTitle.textContent = isDevelopment ? "DEV ENVIRONMENT" : "TEST ENVIRONMENT";
+  portalBannerNote.textContent = isDevelopment
+    ? "Local or private-network environment. Data may be reset without notice."
+    : "Data in this environment is not production data and may be reset without notice.";
   portalHost.textContent = window.location.host;
-  portalEnv.textContent = portalEnvironment;
-  portalStatusEnv.textContent = portalEnvironment;
-  portalStatusEnv.classList.toggle("status-row__test", isTestEnvironment);
-  portalChannelElement.textContent = portalChannel;
-  portalBuildChannel.textContent = portalChannel;
+  portalEnv.textContent = environment.name;
+  portalStatusEnv.textContent = environment.name;
+  portalStatusEnv.classList.toggle("status-row__test", environment.type === "test");
+  portalStatusEnv.classList.toggle("status-row__dev", isDevelopment);
+  portalChannelElement.textContent = environment.channel;
+  portalBuildChannel.textContent = environment.channel;
 }
 
 function svgIcon(key) {
