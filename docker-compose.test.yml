@@ -46,6 +46,37 @@ services:
     depends_on:
       - api
 
+  portal-api:
+    image: ghcr.io/lauresta/lkvitai-mes-portal-api:${IMAGE_TAG:-latest}
+    container_name: lkvitai-mes-portal-api
+    restart: unless-stopped
+    ports:
+      - "5011:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Test
+    networks:
+      - lkvitai-mes_default
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  portal-webui:
+    image: ghcr.io/lauresta/lkvitai-mes-portal-webui:${IMAGE_TAG:-latest}
+    container_name: lkvitai-mes-portal-webui
+    restart: unless-stopped
+    ports:
+      - "5010:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Test
+      PortalApi__BaseUrl: "http://lkvitai-mes-portal-api:8080"
+    networks:
+      - lkvitai-mes_default
+    depends_on:
+      - portal-api
+
 networks:
   lkvitai-mes_default:
     external: true

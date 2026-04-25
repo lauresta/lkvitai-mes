@@ -1,0 +1,195 @@
+const modules = [
+  { key: "warehouse", title: "Warehouse", category: "Operations", desc: "Inventory locations, stock movements, reservations, handling units, 3D warehouse layout.", status: "active", url: "#" },
+  { key: "orders", title: "Orders", category: "Commercial", desc: "Order lifecycle, product composition, workflow planning.", status: "planned", quarter: "Q3 2026" },
+  { key: "shopfloor", title: "Shopfloor", category: "Operations", desc: "Workstation tasks, WIP routing, operator kiosk execution.", status: "planned", quarter: "Q3 2026" },
+  { key: "quality", title: "Quality", category: "Operations", desc: "Inspections, defect tracking, rework and returns.", status: "planned", quarter: "Q4 2026" },
+  { key: "delivery", title: "Delivery", category: "Logistics", desc: "Route planning, driver tasks, proof of delivery, tracking.", status: "planned", quarter: "Q4 2026" },
+  { key: "installation", title: "Installation", category: "Logistics", desc: "Installer visits, acceptance acts, customer sign-off.", status: "planned", quarter: "Q1 2027" },
+  { key: "reporting", title: "Reporting", category: "Intelligence", desc: "Dashboards, KPIs, production and warehouse analytics.", status: "planned", quarter: "Q1 2027" },
+  { key: "finance", title: "Finance", category: "Intelligence", desc: "Accounting exports, payments, posting events.", status: "planned", quarter: "Q2 2027" },
+  { key: "audit", title: "Audit", category: "Compliance", desc: "Immutable event log, traceability, compliance reports.", status: "planned", quarter: "Q2 2027" },
+];
+
+const stages = [
+  { key: "reg", label: "Registered", this: 248, last: 221 },
+  { key: "acc", label: "Accepted", this: 140, last: 132 },
+  { key: "mfg", label: "Manufacturing", this: 480, last: 455 },
+  { key: "ship", label: "Shipped", this: 56, last: 48 },
+  { key: "done", label: "Completed", this: 150, last: 142 },
+];
+
+const daily = {
+  this: [5, 6, 7, 6, 8, 2, 1, 6, 7, 8, 7, 9, 3, 2, 7, 9, 8, 7, 6, 3, 2, 8, 9, 7, 8, 6, 2, 1, 8, 9],
+  last: [4, 5, 6, 6, 7, 1, 1, 5, 6, 7, 6, 8, 2, 2, 6, 8, 7, 6, 5, 2, 1, 7, 8, 6, 7, 5, 1, 1, 7, 8],
+};
+
+const branches = [
+  { name: "Vilnius", value: 94 },
+  { name: "Kaunas", value: 89 },
+  { name: "Klaipeda", value: 91 },
+  { name: "Siauliai", value: 84 },
+];
+
+const news = [
+  { tag: "SHIPPED", tagColor: "oklch(42% 0.14 155)", tagBg: "oklch(94% 0.04 155)", title: "Warehouse 3D layout viewer", excerpt: "Rack-level zoom, stock density heatmap, keyboard navigation.", date: "Apr 22" },
+  { tag: "SHIPPED", tagColor: "oklch(42% 0.14 155)", tagBg: "oklch(94% 0.04 155)", title: "Stock movement audit trail", excerpt: "Every transfer now includes operator, reason code and timestamp.", date: "Apr 18" },
+  { tag: "IN PROG", tagColor: "var(--accent-700)", tagBg: "var(--accent-50)", title: "Orders module - alpha", excerpt: "Order lifecycle + product composition. Internal QA, Q3 rollout.", date: "ongoing" },
+  { tag: "PLANNED", tagColor: "oklch(50% 0.015 240)", tagBg: "var(--n-100)", title: "Shopfloor operator kiosk", excerpt: "Workstation task list, WIP routing. Design review next week.", date: "Q3 2026" },
+];
+
+const icons = {
+  warehouse: '<path d="M4 7l8-4 8 4v14H4z"/><path d="M9 21V11h6v10"/><path d="M4 10h16"/>',
+  orders: '<path d="M6 7h15M6 12h15M6 17h15"/><path d="M3.5 7h.01M3.5 12h.01M3.5 17h.01"/>',
+  shopfloor: '<path d="M3 21h18"/><path d="M7 21V8l5-3 5 3v13"/><path d="M9.5 11h5M9.5 14h5"/>',
+  quality: '<path d="M9 12l2 2 4-5"/><path d="M12 22c5.5-2 8-6 8-12V6l-8-3-8 3v4c0 6 2.5 10 8 12z"/>',
+  delivery: '<path d="M3 16V7h11v9"/><path d="M14 10h4l3 3v3h-7"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/>',
+  installation: '<path d="M14 7l3 3M7 14l3 3M13 8l-7 7"/><path d="M16 5l3 3-2 2-3-3zM5 16l3 3-2 2-3-3z"/>',
+  reporting: '<path d="M4 19V5M4 19h16M8 16v-5M12 16V8M16 16v-3"/>',
+  finance: '<path d="M14 6H9a3 3 0 0 0 0 6h4a3 3 0 0 1 0 6H8"/><path d="M12 4v16"/>',
+  audit: '<path d="M9 5h6M9 9h6M9 13h6"/><path d="M7 3h10a2 2 0 0 1 2 2v16H5V5a2 2 0 0 1 2-2z"/>',
+  lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+};
+
+let activePeriod = "this";
+let toastTimer = null;
+
+const moduleGrid = document.querySelector("#module-grid");
+const searchInput = document.querySelector("#module-search");
+const emptyState = document.querySelector("#empty-state");
+const emptyQuery = document.querySelector("#empty-query");
+const stageGrid = document.querySelector("#stage-grid");
+const dailyBars = document.querySelector("#daily-bars");
+const dailyTotal = document.querySelector("#daily-total");
+const branchGrid = document.querySelector("#branch-grid");
+const newsGrid = document.querySelector("#news-grid");
+const toast = document.querySelector("#toast");
+
+function svgIcon(key) {
+  return `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[key] || ""}</svg>`;
+}
+
+function showToast(message) {
+  clearTimeout(toastTimer);
+  toast.textContent = message;
+  toast.hidden = false;
+  toastTimer = setTimeout(() => {
+    toast.hidden = true;
+  }, 2600);
+}
+
+function renderModules(items) {
+  moduleGrid.innerHTML = "";
+  items.forEach((mod) => {
+    const element = document.createElement(mod.status === "active" ? "a" : "button");
+    element.className = `module-card${mod.status === "active" ? " is-active" : ""}`;
+    if (mod.status === "active") {
+      element.href = mod.url;
+    } else {
+      element.type = "button";
+      element.addEventListener("click", () => showToast(`${mod.title} - planned for ${mod.quarter}. Not available yet.`));
+    }
+
+    element.innerHTML = `
+      <div class="module-card__top">
+        <div class="module-card__icon">${svgIcon(mod.key)}</div>
+        <span class="module-card__category mono">${mod.category}</span>
+      </div>
+      <h3>${mod.title}</h3>
+      <p>${mod.desc}</p>
+      <div class="module-card__footer">
+        ${
+          mod.status === "active"
+            ? '<span class="module-card__status is-available">Available</span><span class="module-card__action">Open Warehouse &rarr;</span>'
+            : `<span class="module-card__status mono">Planned &middot; ${mod.quarter}</span><span class="module-card__lock" aria-hidden="true">${svgIcon("lock")}</span>`
+        }
+      </div>
+    `;
+    moduleGrid.append(element);
+  });
+
+  emptyState.hidden = items.length > 0;
+  moduleGrid.hidden = items.length === 0;
+}
+
+function filterModules() {
+  const query = searchInput.value.trim().toLowerCase();
+  const filtered = query
+    ? modules.filter((mod) => `${mod.title} ${mod.category} ${mod.desc}`.toLowerCase().includes(query))
+    : modules;
+
+  emptyQuery.textContent = `"${searchInput.value}"`;
+  renderModules(filtered);
+}
+
+function renderOperations() {
+  stageGrid.innerHTML = "";
+  stages.forEach((stage, index) => {
+    const isLast = index === stages.length - 1;
+    const stageEl = document.createElement("div");
+    stageEl.className = `stage${isLast ? " is-final" : ""}`;
+    stageEl.innerHTML = `<span>${stage.label}</span><strong class="mono">${stage[activePeriod]}</strong>`;
+    stageGrid.append(stageEl);
+  });
+
+  dailyBars.innerHTML = "";
+  const values = daily[activePeriod];
+  const max = Math.max(...values);
+  values.forEach((value, index) => {
+    const bar = document.createElement("i");
+    bar.style.setProperty("--bar-height", `${Math.max(4, Math.round((value / max) * 26))}px`);
+    if (index % 7 === 5 || index % 7 === 6) bar.className = "is-weekend";
+    dailyBars.append(bar);
+  });
+  dailyTotal.textContent = activePeriod === "this" ? "150" : "142";
+}
+
+function renderBranches() {
+  branchGrid.innerHTML = "";
+  branches.forEach((branch) => {
+    const item = document.createElement("div");
+    item.className = `branch${branch.value < 90 ? " is-warning" : ""}`;
+    item.innerHTML = `<span>${branch.name}</span><strong class="mono">${branch.value}%</strong>`;
+    branchGrid.append(item);
+  });
+}
+
+function renderNews() {
+  newsGrid.innerHTML = "";
+  news.forEach((item) => {
+    const article = document.createElement("article");
+    article.className = "news-item";
+    article.innerHTML = `
+      <div class="news-item__meta">
+        <span class="news-tag mono" style="color:${item.tagColor};background:${item.tagBg}">${item.tag}</span>
+        <span class="news-date mono">${item.date}</span>
+      </div>
+      <h3>${item.title}</h3>
+      <p>${item.excerpt}</p>
+    `;
+    newsGrid.append(article);
+  });
+}
+
+document.querySelectorAll("[data-planned]").forEach((button) => {
+  button.addEventListener("click", () => {
+    showToast(`${button.dataset.planned} - planned for ${button.dataset.quarter}. Not available yet.`);
+  });
+});
+
+document.querySelectorAll("[data-period]").forEach((button) => {
+  button.addEventListener("click", () => {
+    activePeriod = button.dataset.period;
+    document.querySelectorAll("[data-period]").forEach((item) => item.classList.toggle("is-active", item === button));
+    renderOperations();
+  });
+});
+
+searchInput.addEventListener("input", filterModules);
+
+document.querySelector("#available-count").textContent = modules.filter((mod) => mod.status === "active").length;
+document.querySelector("#planned-count").textContent = modules.filter((mod) => mod.status === "planned").length;
+
+renderModules(modules);
+renderOperations();
+renderBranches();
+renderNews();

@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - src/Modules/Warehouse/**
+      - src/Modules/Portal/**
       - src/BuildingBlocks/**
       - .github/workflows/build-and-push.yml
   workflow_dispatch:
@@ -26,6 +27,12 @@ jobs:
           - name: webui
             dockerfile: src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.WebUI/Dockerfile
             image: ghcr.io/${{ github.repository_owner }}/lkvitai-mes-warehouse-webui
+          - name: portal-api
+            dockerfile: src/Modules/Portal/LKvitai.MES.Modules.Portal.Api/Dockerfile
+            image: ghcr.io/${{ github.repository_owner }}/lkvitai-mes-portal-api
+          - name: portal-webui
+            dockerfile: src/Modules/Portal/LKvitai.MES.Modules.Portal.WebUI/Dockerfile
+            image: ghcr.io/${{ github.repository_owner }}/lkvitai-mes-portal-webui
 
     steps:
       - name: Checkout code

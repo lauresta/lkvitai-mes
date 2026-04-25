@@ -1,0 +1,41 @@
+name: Portal CI
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - src/Modules/Portal/**
+      - src/BuildingBlocks/**
+      - .github/workflows/portal-ci.yml
+
+permissions:
+  contents: read
+
+jobs:
+  portal-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore src/LKvitai.MES.sln
+
+      - name: Build Portal API
+        run: dotnet build src/Modules/Portal/LKvitai.MES.Modules.Portal.Api/LKvitai.MES.Modules.Portal.Api.csproj -c Release --no-restore
+
+      - name: Build Portal WebUI
+        run: dotnet build src/Modules/Portal/LKvitai.MES.Modules.Portal.WebUI/LKvitai.MES.Modules.Portal.WebUI.csproj -c Release --no-restore
+
+      - name: Docker build Portal API
+        run: docker build -f src/Modules/Portal/LKvitai.MES.Modules.Portal.Api/Dockerfile -t lkvitai-mes-portal-api:ci .
+
+      - name: Docker build Portal WebUI
+        run: docker build -f src/Modules/Portal/LKvitai.MES.Modules.Portal.WebUI/Dockerfile -t lkvitai-mes-portal-webui:ci .
