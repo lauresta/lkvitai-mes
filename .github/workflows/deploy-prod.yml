@@ -10,7 +10,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: self-hosted
+    runs-on: [self-hosted, lkvitai-apps]
     environment: prod
     env:
       IMAGE_TAG: ${{ github.event.inputs.image_tag || 'latest' }}
