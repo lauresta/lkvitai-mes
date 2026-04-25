@@ -21,4 +21,4 @@ portal.MapGet("/status", () => Results.Ok(new
     Version = "0.1.0"
 }));
 
-app.Run();
+await app.RunAsync();

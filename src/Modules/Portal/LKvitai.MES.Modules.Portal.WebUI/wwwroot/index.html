@@ -30,6 +30,7 @@
 
       <label class="search" for="module-search">
         <span class="search__icon" aria-hidden="true"></span>
+        <span class="sr-only">Find a module</span>
         <input id="module-search" type="search" placeholder="Find a module..." autocomplete="off">
       </label>
 
@@ -69,10 +70,11 @@
               <h2 id="operations-title" class="eyebrow mono">Operations preview</h2>
               <span class="operations__sample mono">Sample data</span>
             </div>
-            <div class="segmented" role="group" aria-label="Operations period">
+            <fieldset class="segmented" aria-label="Operations period">
+              <legend class="sr-only">Operations period</legend>
               <button class="segmented__button is-active" type="button" data-period="this">This month</button>
               <button class="segmented__button" type="button" data-period="last">Last month</button>
-            </div>
+            </fieldset>
           </div>
 
           <div class="stage-grid" id="stage-grid"></div>
@@ -163,7 +165,7 @@
     </footer>
   </div>
 
-  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+  <output class="toast" id="toast" aria-live="polite" hidden></output>
   <script src="script.js"></script>
 </body>
 </html>

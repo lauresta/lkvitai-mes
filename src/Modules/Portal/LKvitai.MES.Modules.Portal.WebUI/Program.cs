@@ -31,4 +31,4 @@ app.UseRouting();
 app.MapBlazorHub();
 app.MapFallbackToFile("index.html");
 
-app.Run();
+await app.RunAsync();

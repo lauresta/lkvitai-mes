@@ -57,6 +57,18 @@ input {
   font-feature-settings: "zero";
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .app-shell {
   max-width: 1440px;
   min-height: 100vh;
@@ -416,6 +428,8 @@ input {
 .segmented {
   display: inline-flex;
   overflow: hidden;
+  padding: 0;
+  margin: 0;
   border: 1px solid var(--n-200);
   border-radius: 5px;
   background: var(--n-0);
