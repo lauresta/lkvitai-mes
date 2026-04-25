@@ -53,6 +53,16 @@ const icons = {
 let activePeriod = "this";
 let toastTimer = null;
 
+const host = window.location.hostname.toLowerCase();
+const isTestEnvironment =
+  host === "localhost" ||
+  host === "127.0.0.1" ||
+  host === "10.11.12.15" ||
+  host.includes("mes-test") ||
+  host.includes("lkvitai-test");
+const portalEnvironment = isTestEnvironment ? "TEST" : "PROD";
+const portalChannel = isTestEnvironment ? "test" : "prod";
+
 const moduleGrid = document.querySelector("#module-grid");
 const searchInput = document.querySelector("#module-search");
 const emptyState = document.querySelector("#empty-state");
@@ -63,6 +73,22 @@ const dailyTotal = document.querySelector("#daily-total");
 const branchGrid = document.querySelector("#branch-grid");
 const newsGrid = document.querySelector("#news-grid");
 const toast = document.querySelector("#toast");
+const testStrip = document.querySelector("#test-strip");
+const portalHost = document.querySelector("#portal-host");
+const portalEnv = document.querySelector("#portal-env");
+const portalStatusEnv = document.querySelector("#portal-status-env");
+const portalChannelElement = document.querySelector("#portal-channel");
+const portalBuildChannel = document.querySelector("#portal-build-channel");
+
+function renderEnvironment() {
+  testStrip.hidden = !isTestEnvironment;
+  portalHost.textContent = window.location.host;
+  portalEnv.textContent = portalEnvironment;
+  portalStatusEnv.textContent = portalEnvironment;
+  portalStatusEnv.classList.toggle("status-row__test", isTestEnvironment);
+  portalChannelElement.textContent = portalChannel;
+  portalBuildChannel.textContent = portalChannel;
+}
 
 function svgIcon(key) {
   return `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icons[key] || ""}</svg>`;
@@ -189,6 +215,7 @@ searchInput.addEventListener("input", filterModules);
 document.querySelector("#available-count").textContent = modules.filter((mod) => mod.status === "active").length;
 document.querySelector("#planned-count").textContent = modules.filter((mod) => mod.status === "planned").length;
 
+renderEnvironment();
 renderModules(modules);
 renderOperations();
 renderBranches();
