@@ -17,6 +17,7 @@ builder.Services
         options.LoginPath = "/login.html";
         options.AccessDeniedPath = "/access-denied";
         options.Cookie.Name = "LKvitai.MES.Portal";
+        options.Cookie.Domain = ResolveCookieDomain(builder.Configuration);
         options.SlidingExpiration = true;
         options.ExpireTimeSpan = TimeSpan.FromHours(8);
     });
@@ -26,7 +27,7 @@ builder.Services.AddHttpClient("PortalApi", (sp, client) =>
     var configuration = sp.GetRequiredService<IConfiguration>();
     var baseUrl = configuration["PortalApi:BaseUrl"] ?? "https://localhost:5011";
 
-    client.BaseAddress = new Uri(baseUrl);
+    client.BaseAddress = EnsureTrailingSlash(new Uri(baseUrl));
     client.Timeout = TimeSpan.FromSeconds(30);
 });
 builder.Services.AddHttpClient("WarehouseApi", (sp, client) =>
@@ -76,8 +77,7 @@ app.Use(async (context, next) =>
         return;
     }
 
-    var warehouseBaseUrl = context.RequestServices
-        .GetRequiredService<IConfiguration>()["WarehouseWebUi:BaseUrl"] ?? "https://localhost:7229";
+    var warehouseBaseUrl = ResolveWarehouseWebUiBaseUrl(context);
     var target = BuildModuleRedirectUrl(warehouseBaseUrl, context.Request.Path, context.Request.QueryString);
     context.Response.Redirect(target);
 });
@@ -98,7 +98,7 @@ app.MapPost("/auth/login", async (
 
     var client = factory.CreateClient("WarehouseApi");
     var response = await client.PostAsJsonAsync(
-        "/api/auth/login",
+        "api/auth/login",
         new PortalLoginRequest(username, password),
         cancellationToken);
 
@@ -186,6 +186,69 @@ static string GetDataProtectionKeysPath(IHostEnvironment environment, IConfigura
     }
 
     return Path.GetFullPath(Path.Combine(environment.ContentRootPath, "../../../../.data-protection-keys"));
+}
+
+static string? ResolveCookieDomain(IConfiguration configuration)
+{
+    var configured = configuration["PortalAuth:CookieDomain"];
+    if (!string.IsNullOrWhiteSpace(configured))
+    {
+        return configured;
+    }
+
+    return null;
+}
+
+static Uri EnsureTrailingSlash(Uri uri)
+{
+    var builder = new UriBuilder(uri);
+    if (!builder.Path.EndsWith("/", StringComparison.Ordinal))
+    {
+        builder.Path += "/";
+    }
+
+    return builder.Uri;
+}
+
+static string ResolveWarehouseWebUiBaseUrl(HttpContext context)
+{
+    var configuration = context.RequestServices.GetRequiredService<IConfiguration>();
+    var configured = configuration["WarehouseWebUi:BaseUrl"];
+    if (!string.IsNullOrWhiteSpace(configured))
+    {
+        return configured;
+    }
+
+    var host = context.Request.Host.Host;
+    if (IsLocalHost(host))
+    {
+        return "https://localhost:7229";
+    }
+
+    var scheme = context.Request.Scheme;
+    if (host.StartsWith("portal.", StringComparison.OrdinalIgnoreCase))
+    {
+        return $"{scheme}://warehouse.{host["portal.".Length..]}";
+    }
+
+    if (host.Equals("mes.lauresta.com", StringComparison.OrdinalIgnoreCase))
+    {
+        return $"{scheme}://warehouse.mes.lauresta.com";
+    }
+
+    if (host.Equals("mes-test.lauresta.com", StringComparison.OrdinalIgnoreCase))
+    {
+        return $"{scheme}://warehouse.mes-test.lauresta.com";
+    }
+
+    return $"{scheme}://warehouse.{host}";
+}
+
+static bool IsLocalHost(string host)
+{
+    return host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
+           host.Equals("127.0.0.1", StringComparison.OrdinalIgnoreCase) ||
+           host.Equals("::1", StringComparison.OrdinalIgnoreCase);
 }
 
 static string BuildModuleRedirectUrl(string baseUrl, PathString path, QueryString query)

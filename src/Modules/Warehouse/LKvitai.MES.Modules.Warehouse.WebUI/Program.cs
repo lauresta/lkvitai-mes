@@ -21,6 +21,7 @@ builder.Services
         options.LoginPath = "/login.html";
         options.AccessDeniedPath = "/access-denied";
         options.Cookie.Name = "LKvitai.MES.Portal";
+        options.Cookie.Domain = ResolveCookieDomain(builder.Configuration);
         options.SlidingExpiration = true;
         options.ExpireTimeSpan = TimeSpan.FromHours(8);
     });
@@ -139,4 +140,15 @@ static string GetDataProtectionKeysPath(IHostEnvironment environment, IConfigura
     }
 
     return Path.GetFullPath(Path.Combine(environment.ContentRootPath, "../../../../.data-protection-keys"));
+}
+
+static string? ResolveCookieDomain(IConfiguration configuration)
+{
+    var configured = configuration["PortalAuth:CookieDomain"];
+    if (!string.IsNullOrWhiteSpace(configured))
+    {
+        return configured;
+    }
+
+    return null;
 }
