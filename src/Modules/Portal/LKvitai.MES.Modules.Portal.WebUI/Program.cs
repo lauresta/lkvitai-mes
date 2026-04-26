@@ -10,8 +10,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Configure Serilog — mirrors src/Modules/Warehouse/.../Warehouse.Api/Program.cs.
 // File sink writes daily-rolled portal-YYYYMMDD.log under /app/logs, which is
-// bind-mounted to /opt/lkvitai-mes/logs/portal-webui on the test/prod hosts so
-// logs survive container restarts and are pickable by Vector.
+// bind-mounted to a single shared /opt/lkvitai-mes/logs on the test/prod hosts.
+// Warehouse.Api writes warehouse-YYYYMMDD.log into the same host dir; the
+// filename prefix is the only thing distinguishing the two log streams.
 const string structuredLogTemplate =
     "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] [TraceParent:{TraceParent}] [TraceId:{TraceId}] [CorrelationId:{CorrelationId}] [Req:{RequestMethod} {RequestPath}] {Message:lj}{NewLine}{Exception}";
 

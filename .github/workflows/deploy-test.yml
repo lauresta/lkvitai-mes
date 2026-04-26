@@ -74,45 +74,46 @@ jobs:
           set -euo pipefail
           # All four containers (api / webui / portal-api / portal-webui)
           # run as the standard .NET 8 `app` user (uid 1654, gid 1654 — see
-          # their Dockerfiles). Every host bind-mount referenced by
+          # their Dockerfiles). The two host bind-mounts referenced by
           # docker-compose.test.yml must therefore be writable by that uid,
           # otherwise the runtime fails on first write:
-          #   * /app/auth-keys → DataProtection key ring (Portal+Warehouse
-          #     WebUI). Missing writability → CryptographicException →
-          #     login redirect loop on /Error.
-          #   * /app/logs (warehouse-api) → Serilog daily-rolled
-          #     warehouse-YYYYMMDD.log file sink.
-          #   * /app/logs (portal-webui) → Serilog daily-rolled
-          #     portal-YYYYMMDD.log file sink.
-          # Defaults below mirror the ${VAR:-default} fall-throughs in
+          #   * /app/auth-keys (WebUI) → DataProtection key ring. Missing
+          #     writability → CryptographicException → login redirect loop.
+          #   * /app/logs (warehouse-api + portal-webui share one host dir)
+          #     → Serilog daily-rolled warehouse-YYYYMMDD.log /
+          #     portal-YYYYMMDD.log file sinks; filename prefixes already
+          #     disambiguate so no per-service subdir is needed.
+          # Defaults mirror the ${VAR:-default} fall-throughs in
           # docker-compose.test.yml so a fresh self-hosted runner can come
           # up cold without any manual chmod/chown.
           AUTH_KEYS_DIR="${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}"
-          API_LOGS_DIR="${API_LOGS_DIR:-/opt/lkvitai-mes/logs/api}"
-          PORTAL_WEBUI_LOGS_DIR="${PORTAL_WEBUI_LOGS_DIR:-/opt/lkvitai-mes/logs/portal-webui}"
+          LOGS_DIR="${LOGS_DIR:-/opt/lkvitai-mes/logs}"
 
           # The runner user (`actions-runner`) does not have passwordless
-          # sudo, so we cannot `sudo chown` from the host shell. The Docker
-          # daemon already runs as root, so we use a throwaway pinned
-          # alpine container as the privileged delegate to chown/chmod the
-          # bind-mount directories. mkdir is fine from the runner user
-          # because /opt/lkvitai-mes/ is already writable by it (existing
-          # warehouse-api log files there are owned by actions-runner).
-          mkdir -p "$AUTH_KEYS_DIR" "$API_LOGS_DIR" "$PORTAL_WEBUI_LOGS_DIR"
+          # sudo, and may not have write access under /opt/lkvitai-mes/
+          # for every subdir. Try to mkdir best-effort (so a fully fresh
+          # host gets the dirs created when possible) but tolerate failures
+          # when the dirs already exist root-owned — the Docker chown right
+          # after is the real fixer. If the dirs neither exist nor can be
+          # created, `docker run -v` will fail loudly with a clear error.
+          mkdir -p "$AUTH_KEYS_DIR" 2>/dev/null || true
+          mkdir -p "$LOGS_DIR" 2>/dev/null || true
 
           # auth-keys → 0700 (private DataProtection material).
-          # log dirs  → 0755 so a future read-only Vector mount can tail.
+          # logs      → 0755 so a future read-only Vector mount can tail.
           docker run --rm \
             --user 0:0 \
             -v "$AUTH_KEYS_DIR:/mnt/auth-keys" \
-            -v "$API_LOGS_DIR:/mnt/api-logs" \
-            -v "$PORTAL_WEBUI_LOGS_DIR:/mnt/portal-logs" \
+            -v "$LOGS_DIR:/mnt/logs" \
             alpine:3.20 \
             sh -eu -c '
-              chown -R 1654:1654 /mnt/auth-keys /mnt/api-logs /mnt/portal-logs
+              chown -R 1654:1654 /mnt/auth-keys /mnt/logs
               chmod 700 /mnt/auth-keys
-              chmod 755 /mnt/api-logs /mnt/portal-logs
+              chmod 755 /mnt/logs
             '
+        env:
+          AUTH_KEYS_DIR: ${{ vars.AUTH_KEYS_DIR }}
+          LOGS_DIR: ${{ vars.LOGS_DIR }}
 
       - name: Ensure test PostgreSQL container exists and is running
         run: |
