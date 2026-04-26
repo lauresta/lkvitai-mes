@@ -109,6 +109,7 @@ wait_for_url() {
   local url="$1"
   local label="$2"
   local max_attempts="${3:-60}"
+  local log_file="${4:-}"
   local attempt=1
 
   while (( attempt <= max_attempts )); do
@@ -122,6 +123,10 @@ wait_for_url() {
   done
 
   echo "Timed out waiting for $label: $url" >&2
+  if [[ -n "$log_file" && -f "$log_file" ]]; then
+    echo "Last $label log lines:" >&2
+    tail -n 80 "$log_file" >&2 || true
+  fi
   return 1
 }
 
@@ -134,7 +139,7 @@ start_process() {
     "$@" 2>&1 | tee "$log_file" | sed "s/^/[$label] /"
   ) &
 
-  echo $!
+  STARTED_PID=$!
 }
 
 echo "Starting dev infrastructure..."
@@ -160,14 +165,16 @@ else
 fi
 
 echo "Starting API..."
-API_PID="$(start_process "api" "$API_LOG" env ASPNETCORE_URLS="https://localhost:5001;http://localhost:5000" "${API_CMD[@]}")"
+start_process "api" "$API_LOG" env ASPNETCORE_URLS="https://localhost:5001;http://localhost:5000" "${API_CMD[@]}"
+API_PID="$STARTED_PID"
 
-wait_for_url "https://localhost:5001/health" "API health endpoint"
+wait_for_url "https://localhost:5001/health" "API health endpoint" 60 "$API_LOG"
 
 echo "Starting WebUI..."
-WEBUI_PID="$(start_process "webui" "$WEBUI_LOG" env ASPNETCORE_URLS="https://localhost:7229;http://localhost:5124" "${WEBUI_CMD[@]}")"
+start_process "webui" "$WEBUI_LOG" env ASPNETCORE_URLS="https://localhost:7229;http://localhost:5124" "${WEBUI_CMD[@]}"
+WEBUI_PID="$STARTED_PID"
 
-wait_for_url "https://localhost:7229" "WebUI"
+wait_for_url "https://localhost:7229" "WebUI" 60 "$WEBUI_LOG"
 
 cat <<'EOF'
 
