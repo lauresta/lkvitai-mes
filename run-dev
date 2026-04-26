@@ -57,8 +57,8 @@ export ConnectionStrings__WarehouseDb="${ConnectionStrings__WarehouseDb:-Host=lo
 export Caching__RedisConnectionString="${Caching__RedisConnectionString:-localhost:6379,abortConnect=false,connectRetry=3,connectTimeout=1000,syncTimeout=1000}"
 export UseJaegerExporter="${UseJaegerExporter:-true}"
 export Jaeger__AgentHost="${Jaeger__AgentHost:-localhost}"
-export WarehouseApi__BaseUrl="${WarehouseApi__BaseUrl:-https://localhost:5001}"
-export WarehouseWebUi__BaseUrl="${WarehouseWebUi__BaseUrl:-https://localhost:7229}"
+export WarehouseApi__BaseUrl="${WarehouseApi__BaseUrl:-http://localhost:5000}"
+export WarehouseWebUi__BaseUrl="${WarehouseWebUi__BaseUrl:-http://localhost:5124}"
 export PortalApi__BaseUrl="${PortalApi__BaseUrl:-https://localhost:5011}"
 export WarehouseApi__UserId="${WarehouseApi__UserId:-webui-admin}"
 export WarehouseApi__Roles="${WarehouseApi__Roles:-WarehouseAdmin,WarehouseManager,QCInspector,Operator}"
@@ -178,36 +178,36 @@ else
 fi
 
 echo "Starting API..."
-start_process "api" "$API_LOG" env ASPNETCORE_URLS="https://localhost:5001;http://localhost:5000" "${API_CMD[@]}"
+start_process "api" "$API_LOG" env ASPNETCORE_URLS="http://localhost:5000" "${API_CMD[@]}"
 API_PID="$STARTED_PID"
 
-wait_for_url "https://localhost:5001/health" "API health endpoint" 60 "$API_LOG"
+wait_for_url "http://localhost:5000/health" "API health endpoint" 60 "$API_LOG"
 
 echo "Starting WebUI..."
-start_process "webui" "$WEBUI_LOG" env ASPNETCORE_URLS="https://localhost:7229;http://localhost:5124" "${WEBUI_CMD[@]}"
+start_process "webui" "$WEBUI_LOG" env ASPNETCORE_URLS="http://localhost:5124" "${WEBUI_CMD[@]}"
 WEBUI_PID="$STARTED_PID"
 
-wait_for_url "https://localhost:7229" "WebUI" 60 "$WEBUI_LOG"
+wait_for_url "http://localhost:5124" "WebUI" 60 "$WEBUI_LOG"
 
 echo "Starting Portal WebUI..."
-start_process "portal-webui" "$PORTAL_WEBUI_LOG" env ASPNETCORE_URLS="https://localhost:64071;http://localhost:64070" "${PORTAL_WEBUI_CMD[@]}"
+start_process "portal-webui" "$PORTAL_WEBUI_LOG" env ASPNETCORE_URLS="http://localhost:64070" "${PORTAL_WEBUI_CMD[@]}"
 PORTAL_WEBUI_PID="$STARTED_PID"
 
-wait_for_url "https://localhost:64071" "Portal WebUI" 60 "$PORTAL_WEBUI_LOG"
+wait_for_url "http://localhost:64070" "Portal WebUI" 60 "$PORTAL_WEBUI_LOG"
 
 cat <<'EOF'
 
 Development stack is running.
 
-  API:   https://localhost:5001
-  Warehouse WebUI: https://localhost:7229
-  Portal WebUI:    https://localhost:64071
+  API:   http://localhost:5000
+  Warehouse WebUI: http://localhost:5124
+  Portal WebUI:    http://localhost:64070
   Jaeger: http://localhost:16686
 
 Useful dev token command:
   export DEV_AUTH_USERNAME='<dev username>'
   export DEV_AUTH_PASSWORD='<dev password>'
-  curl -k -X POST https://localhost:5001/api/auth/dev-token \
+  curl -X POST http://localhost:5000/api/auth/dev-token \
     -H "Content-Type: application/json" \
     -d "{\"username\":\"${DEV_AUTH_USERNAME}\",\"password\":\"${DEV_AUTH_PASSWORD}\"}"
 
