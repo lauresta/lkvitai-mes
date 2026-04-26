@@ -69,30 +69,38 @@ jobs:
           docker network inspect "$DOCKER_NETWORK_NAME" >/dev/null 2>&1 || \
             docker network create "$DOCKER_NETWORK_NAME"
 
-      - name: Ensure auth-keys directory exists with correct ownership
+      - name: Ensure host bind-mount directories exist with correct ownership
         run: |
-          # The Portal/Warehouse WebUI containers run as the standard .NET 8
-          # `app` user (uid 1654, gid 1654 — see their Dockerfiles). The
-          # bind-mount target /app/auth-keys must be writable by that user so
-          # ASP.NET Core DataProtection can persist its key ring; otherwise
-          # cookie SignInAsync throws CryptographicException and login fails.
+          # All four containers (api / webui / portal-api / portal-webui)
+          # run as the standard .NET 8 `app` user (uid 1654, gid 1654 — see
+          # their Dockerfiles). Every host bind-mount referenced by
+          # docker-compose.test.yml must therefore be writable by that uid,
+          # otherwise the runtime fails on first write:
+          #   * /app/auth-keys → DataProtection key ring (Portal+Warehouse
+          #     WebUI). Missing writability → CryptographicException →
+          #     login redirect loop on /Error.
+          #   * /app/logs (warehouse-api) → Serilog daily-rolled
+          #     warehouse-YYYYMMDD.log file sink.
+          #   * /app/logs (portal-webui) → Serilog daily-rolled
+          #     portal-YYYYMMDD.log file sink.
+          # Defaults below mirror the ${VAR:-default} fall-throughs in
+          # docker-compose.test.yml so a fresh self-hosted runner can come
+          # up cold without any manual chmod/chown.
           AUTH_KEYS_DIR="${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}"
+          API_LOGS_DIR="${API_LOGS_DIR:-/opt/lkvitai-mes/logs/api}"
+          PORTAL_WEBUI_LOGS_DIR="${PORTAL_WEBUI_LOGS_DIR:-/opt/lkvitai-mes/logs/portal-webui}"
+
+          # auth-keys holds private DataProtection material → 0700.
           sudo mkdir -p "$AUTH_KEYS_DIR"
           sudo chown -R 1654:1654 "$AUTH_KEYS_DIR"
           sudo chmod 700 "$AUTH_KEYS_DIR"
 
-      - name: Ensure portal-webui logs directory exists with correct ownership
-        run: |
-          # Portal.WebUI mirrors the Warehouse.Api Serilog file sink and writes
-          # daily-rolled portal-YYYYMMDD.log files into /app/logs, which is
-          # bind-mounted to /opt/lkvitai-mes/logs/portal-webui by default.
-          # The container runs as `app` (uid 1654, gid 1654) so the host dir
-          # must be writable by that uid, otherwise the file sink silently
-          # fails on first write.
-          PORTAL_WEBUI_LOGS_DIR="${PORTAL_WEBUI_LOGS_DIR:-/opt/lkvitai-mes/logs/portal-webui}"
-          sudo mkdir -p "$PORTAL_WEBUI_LOGS_DIR"
-          sudo chown -R 1654:1654 "$PORTAL_WEBUI_LOGS_DIR"
-          sudo chmod 755 "$PORTAL_WEBUI_LOGS_DIR"
+          # log dirs are 0755 so a future read-only Vector mount can tail.
+          for dir in "$API_LOGS_DIR" "$PORTAL_WEBUI_LOGS_DIR"; do
+            sudo mkdir -p "$dir"
+            sudo chown -R 1654:1654 "$dir"
+            sudo chmod 755 "$dir"
+          done
 
       - name: Ensure test PostgreSQL container exists and is running
         run: |
