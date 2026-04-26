@@ -26,17 +26,14 @@ RUN dotnet publish -c Release -o /app/publish /p:UseAppHost=false --no-restore
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
 
-# Create non-root user
-RUN groupadd -r appuser && useradd -r -g appuser appuser
-
-# Copy published files
+# Use the base image's built-in non-root `app` user (uid 1654, gid 1654).
+# This is the standard .NET 8 convention; the host bind-mount for
+# /app/auth-keys must be chowned to 1654:1654 so DataProtection can
+# persist its key ring (see deploy-test.yml). Published binaries
+# deliberately stay root-owned (read-only for the runtime user,
+# Sonar docker:S6504).
 COPY --from=build /app/publish .
-
-# Change ownership to non-root user
-RUN chown -R appuser:appuser /app
-
-# Switch to non-root user
-USER appuser
+USER app
 
 # Expose port
 EXPOSE 8080

@@ -20,12 +20,14 @@ RUN dotnet publish -c Release -o /app/publish /p:UseAppHost=false --no-restore
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
 
-RUN groupadd -r appuser && useradd -r -g appuser appuser
-
+# Use the base image's built-in non-root `app` user (uid 1654, gid 1654).
+# This is the standard .NET 8 convention; the host bind-mounts for
+# /app/auth-keys and /app/logs must be chowned to 1654:1654 so
+# DataProtection can persist its key ring and Serilog can write log
+# files (see deploy-test.yml). Published binaries deliberately stay
+# root-owned (read-only for the runtime user, Sonar docker:S6504).
 COPY --from=build /app/publish .
-
-RUN chown -R appuser:appuser /app
-USER appuser
+USER app
 
 EXPOSE 8080
 
