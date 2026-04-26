@@ -9,6 +9,7 @@ services:
       - "5001:8080"
     environment:
       ASPNETCORE_ENVIRONMENT: Test
+      UseJaegerExporter: "false"
       ConnectionStrings__WarehouseDb: "Host=pg;Port=5432;Database=lkvitai_warehouse_test;Username=postgres;Password=postgres"
       SkipSchemaValidation: "true"
       Caching__RedisConnectionString: "redis:6379,abortConnect=false,connectRetry=3,connectTimeout=1000,syncTimeout=1000"
