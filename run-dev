@@ -6,6 +6,7 @@ cd "$ROOT_DIR"
 
 API_PROJECT="src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Api/LKvitai.MES.Modules.Warehouse.Api.csproj"
 WEBUI_PROJECT="src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.WebUI/LKvitai.MES.Modules.Warehouse.WebUI.csproj"
+PORTAL_WEBUI_PROJECT="src/Modules/Portal/LKvitai.MES.Modules.Portal.WebUI/LKvitai.MES.Modules.Portal.WebUI.csproj"
 COMPOSE_FILE="src/docker-compose.yml"
 
 WITH_BROKER=0
@@ -57,6 +58,8 @@ export Caching__RedisConnectionString="${Caching__RedisConnectionString:-localho
 export UseJaegerExporter="${UseJaegerExporter:-true}"
 export Jaeger__AgentHost="${Jaeger__AgentHost:-localhost}"
 export WarehouseApi__BaseUrl="${WarehouseApi__BaseUrl:-https://localhost:5001}"
+export WarehouseWebUi__BaseUrl="${WarehouseWebUi__BaseUrl:-https://localhost:7229}"
+export PortalApi__BaseUrl="${PortalApi__BaseUrl:-https://localhost:5011}"
 export WarehouseApi__UserId="${WarehouseApi__UserId:-webui-admin}"
 export WarehouseApi__Roles="${WarehouseApi__Roles:-WarehouseAdmin,WarehouseManager,QCInspector,Operator}"
 export ASPNETCORE_DETAILEDERRORS="${ASPNETCORE_DETAILEDERRORS:-true}"
@@ -82,12 +85,17 @@ fi
 
 API_LOG=".task-logs/run-dev-api.log"
 WEBUI_LOG=".task-logs/run-dev-webui.log"
+PORTAL_WEBUI_LOG=".task-logs/run-dev-portal-webui.log"
 
-touch "$API_LOG" "$WEBUI_LOG"
+touch "$API_LOG" "$WEBUI_LOG" "$PORTAL_WEBUI_LOG"
 
 cleanup() {
   local exit_code=$?
   trap - EXIT INT TERM
+
+  if [[ -n "${PORTAL_WEBUI_PID:-}" ]] && kill -0 "$PORTAL_WEBUI_PID" >/dev/null 2>&1; then
+    kill "$PORTAL_WEBUI_PID" >/dev/null 2>&1 || true
+  fi
 
   if [[ -n "${WEBUI_PID:-}" ]] && kill -0 "$WEBUI_PID" >/dev/null 2>&1; then
     kill "$WEBUI_PID" >/dev/null 2>&1 || true
@@ -97,6 +105,7 @@ cleanup() {
     kill "$API_PID" >/dev/null 2>&1 || true
   fi
 
+  wait "${PORTAL_WEBUI_PID:-}" >/dev/null 2>&1 || true
   wait "${WEBUI_PID:-}" >/dev/null 2>&1 || true
   wait "${API_PID:-}" >/dev/null 2>&1 || true
 
@@ -153,15 +162,19 @@ echo "  UseJaegerExporter=$UseJaegerExporter"
 echo "  ConnectionStrings__WarehouseDb=$ConnectionStrings__WarehouseDb"
 echo "  Caching__RedisConnectionString=$Caching__RedisConnectionString"
 echo "  WarehouseApi__BaseUrl=$WarehouseApi__BaseUrl"
+echo "  WarehouseWebUi__BaseUrl=$WarehouseWebUi__BaseUrl"
+echo "  PortalApi__BaseUrl=$PortalApi__BaseUrl"
 echo "  ITEMIMAGES__MODEL_PATH=$ITEMIMAGES__MODEL_PATH"
 echo
 
 if [[ "$USE_WATCH" -eq 1 ]]; then
   API_CMD=(dotnet watch --project "$API_PROJECT" run --no-launch-profile)
   WEBUI_CMD=(dotnet watch --project "$WEBUI_PROJECT" run --no-launch-profile)
+  PORTAL_WEBUI_CMD=(dotnet watch --project "$PORTAL_WEBUI_PROJECT" run --no-launch-profile)
 else
   API_CMD=(dotnet run --project "$API_PROJECT" --no-launch-profile)
   WEBUI_CMD=(dotnet run --project "$WEBUI_PROJECT" --no-launch-profile)
+  PORTAL_WEBUI_CMD=(dotnet run --project "$PORTAL_WEBUI_PROJECT" --no-launch-profile)
 fi
 
 echo "Starting API..."
@@ -176,12 +189,19 @@ WEBUI_PID="$STARTED_PID"
 
 wait_for_url "https://localhost:7229" "WebUI" 60 "$WEBUI_LOG"
 
+echo "Starting Portal WebUI..."
+start_process "portal-webui" "$PORTAL_WEBUI_LOG" env ASPNETCORE_URLS="https://localhost:64071;http://localhost:64070" "${PORTAL_WEBUI_CMD[@]}"
+PORTAL_WEBUI_PID="$STARTED_PID"
+
+wait_for_url "https://localhost:64071" "Portal WebUI" 60 "$PORTAL_WEBUI_LOG"
+
 cat <<'EOF'
 
 Development stack is running.
 
   API:   https://localhost:5001
-  WebUI: https://localhost:7229
+  Warehouse WebUI: https://localhost:7229
+  Portal WebUI:    https://localhost:64071
   Jaeger: http://localhost:16686
 
 Useful dev token command:
@@ -194,9 +214,10 @@ Useful dev token command:
 Logs:
   .task-logs/run-dev-api.log
   .task-logs/run-dev-webui.log
+  .task-logs/run-dev-portal-webui.log
 
-Press Ctrl+C to stop API and WebUI.
+Press Ctrl+C to stop API and WebUI processes.
 Docker infrastructure stays running.
 EOF
 
-wait "$API_PID" "$WEBUI_PID"
+wait "$API_PID" "$WEBUI_PID" "$PORTAL_WEBUI_PID"

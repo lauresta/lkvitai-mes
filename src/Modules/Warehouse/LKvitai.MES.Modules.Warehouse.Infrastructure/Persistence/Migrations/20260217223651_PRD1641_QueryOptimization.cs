@@ -10,29 +10,10 @@ namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.RenameIndex(
-                name: "IX_shipments_TrackingNumber",
-                schema: "public",
-                table: "shipments",
-                newName: "idx_shipments_tracking_number");
-
-            migrationBuilder.RenameIndex(
-                name: "IX_sales_orders_OrderDate",
-                schema: "public",
-                table: "sales_orders",
-                newName: "idx_sales_orders_order_date");
-
-            migrationBuilder.RenameIndex(
-                name: "IX_on_hand_value_CategoryId",
-                schema: "public",
-                table: "on_hand_value",
-                newName: "idx_on_hand_value_category_id");
-
-            migrationBuilder.RenameIndex(
-                name: "IX_items_CategoryId",
-                schema: "public",
-                table: "items",
-                newName: "idx_items_category_id");
+            RenameIndexIfNeeded(migrationBuilder, "IX_shipments_TrackingNumber", "idx_shipments_tracking_number");
+            RenameIndexIfNeeded(migrationBuilder, "IX_sales_orders_OrderDate", "idx_sales_orders_order_date");
+            RenameIndexIfNeeded(migrationBuilder, "IX_on_hand_value_CategoryId", "idx_on_hand_value_category_id");
+            RenameIndexIfNeeded(migrationBuilder, "IX_items_CategoryId", "idx_items_category_id");
 
             migrationBuilder.CreateIndex(
                 name: "idx_items_supplier_id",
@@ -142,29 +123,25 @@ namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.Migrations
             migrationBuilder.Sql("DROP INDEX IF EXISTS warehouse_events.idx_mt_events_type;");
             migrationBuilder.Sql("DROP INDEX IF EXISTS warehouse_events.idx_mt_events_stream_id;");
 
-            migrationBuilder.RenameIndex(
-                name: "idx_shipments_tracking_number",
-                schema: "public",
-                table: "shipments",
-                newName: "IX_shipments_TrackingNumber");
+            RenameIndexIfNeeded(migrationBuilder, "idx_shipments_tracking_number", "IX_shipments_TrackingNumber");
+            RenameIndexIfNeeded(migrationBuilder, "idx_sales_orders_order_date", "IX_sales_orders_OrderDate");
+            RenameIndexIfNeeded(migrationBuilder, "idx_on_hand_value_category_id", "IX_on_hand_value_CategoryId");
+            RenameIndexIfNeeded(migrationBuilder, "idx_items_category_id", "IX_items_CategoryId");
+        }
 
-            migrationBuilder.RenameIndex(
-                name: "idx_sales_orders_order_date",
-                schema: "public",
-                table: "sales_orders",
-                newName: "IX_sales_orders_OrderDate");
-
-            migrationBuilder.RenameIndex(
-                name: "idx_on_hand_value_category_id",
-                schema: "public",
-                table: "on_hand_value",
-                newName: "IX_on_hand_value_CategoryId");
-
-            migrationBuilder.RenameIndex(
-                name: "idx_items_category_id",
-                schema: "public",
-                table: "items",
-                newName: "IX_items_CategoryId");
+        private static void RenameIndexIfNeeded(MigrationBuilder migrationBuilder, string oldName, string newName)
+        {
+            migrationBuilder.Sql(
+                $$"""
+                DO $$
+                BEGIN
+                    IF to_regclass('public."{{oldName}}"') IS NOT NULL
+                       AND to_regclass('public."{{newName}}"') IS NULL THEN
+                        ALTER INDEX public."{{oldName}}" RENAME TO "{{newName}}";
+                    END IF;
+                END
+                $$;
+                """);
         }
     }
 }
