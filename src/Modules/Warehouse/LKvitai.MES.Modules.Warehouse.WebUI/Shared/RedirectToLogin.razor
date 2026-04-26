@@ -1,8 +1,13 @@
 @inject NavigationManager Navigation
 
 @code {
-    protected override void OnInitialized()
+    protected override void OnAfterRender(bool firstRender)
     {
+        if (!firstRender)
+        {
+            return;
+        }
+
         var relative = Navigation.ToBaseRelativePath(Navigation.Uri);
         var returnUrl = string.IsNullOrWhiteSpace(relative) ? "/dashboard" : $"/{relative}";
         Navigation.NavigateTo($"/login.html?returnUrl={Uri.EscapeDataString(returnUrl)}", replace: true);
