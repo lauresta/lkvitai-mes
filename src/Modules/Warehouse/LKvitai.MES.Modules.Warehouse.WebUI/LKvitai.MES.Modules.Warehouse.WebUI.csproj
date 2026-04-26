@@ -9,4 +9,7 @@
   <ItemGroup>
     <PackageReference Include="MudBlazor" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\BuildingBlocks\LKvitai.MES.BuildingBlocks.PortalAuth\LKvitai.MES.BuildingBlocks.PortalAuth.csproj" />
+  </ItemGroup>
 </Project>

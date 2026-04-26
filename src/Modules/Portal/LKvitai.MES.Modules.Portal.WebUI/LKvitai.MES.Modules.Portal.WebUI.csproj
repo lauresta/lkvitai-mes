@@ -6,4 +6,7 @@
     <RootNamespace>LKvitai.MES.Modules.Portal.WebUI</RootNamespace>
     <AssemblyName>LKvitai.MES.Modules.Portal.WebUI</AssemblyName>
   </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\BuildingBlocks\LKvitai.MES.BuildingBlocks.PortalAuth\LKvitai.MES.BuildingBlocks.PortalAuth.csproj" />
+  </ItemGroup>
 </Project>
