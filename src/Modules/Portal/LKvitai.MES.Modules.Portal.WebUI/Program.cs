@@ -85,28 +85,42 @@ app.MapPost("/auth/login", async (
             "api/auth/login",
             new PortalLoginRequest(username, password),
             cancellationToken);
+    }
+    catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+    {
+        logger.LogError(ex, "Portal login could not reach Warehouse API for {Username}", username);
+        return RedirectToLogin(returnUrl, "unreachable");
+    }
 
-        if (!response.IsSuccessStatusCode)
-        {
-            logger.LogWarning("Portal login rejected for {Username} (status {Status})", username, (int)response.StatusCode);
-            return Results.Redirect($"/login.html?error=invalid&returnUrl={Uri.EscapeDataString(returnUrl)}");
-        }
+    if ((int)response.StatusCode is 401 or 403)
+    {
+        logger.LogWarning("Portal login rejected for {Username} (status {Status})", username, (int)response.StatusCode);
+        return RedirectToLogin(returnUrl, "invalid");
+    }
 
+    if (!response.IsSuccessStatusCode)
+    {
+        logger.LogError(
+            "Portal login: Warehouse API returned unexpected status {Status} for {Username}",
+            (int)response.StatusCode,
+            username);
+        return RedirectToLogin(returnUrl, "server");
+    }
+
+    try
+    {
         login = await response.Content.ReadFromJsonAsync<PortalLoginResponse>(cancellationToken: cancellationToken);
     }
-    catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or System.Text.Json.JsonException)
+    catch (Exception ex) when (ex is System.Text.Json.JsonException or HttpRequestException or TaskCanceledException)
     {
-        // Don't let transport/serialization issues bubble up to UseExceptionHandler -
-        // that would surface as a generic /Error redirect and look like wrong creds.
-        // Surface a clean "invalid" page and keep the real reason in the logs.
-        logger.LogError(ex, "Portal login call to Warehouse API failed for {Username}", username);
-        return Results.Redirect($"/login.html?error=invalid&returnUrl={Uri.EscapeDataString(returnUrl)}");
+        logger.LogError(ex, "Portal login: failed to read Warehouse API response for {Username}", username);
+        return RedirectToLogin(returnUrl, "server");
     }
 
     if (login is null || string.IsNullOrWhiteSpace(login.Token))
     {
-        logger.LogWarning("Portal login failed because API returned an empty token for {Username}", username);
-        return Results.Redirect($"/login.html?error=invalid&returnUrl={Uri.EscapeDataString(returnUrl)}");
+        logger.LogError("Portal login: Warehouse API returned an empty token for {Username}", username);
+        return RedirectToLogin(returnUrl, "server");
     }
 
     var claims = new List<Claim>
@@ -141,6 +155,13 @@ app.MapBlazorHub();
 app.MapFallbackToFile("index.html");
 
 await app.RunAsync();
+
+static IResult RedirectToLogin(string returnUrl, string error)
+{
+    var encodedReturn = Uri.EscapeDataString(returnUrl);
+    var encodedError = Uri.EscapeDataString(error);
+    return Results.Redirect($"/login.html?error={encodedError}&returnUrl={encodedReturn}");
+}
 
 static bool IsAnonymousPortalPath(PathString path)
 {
