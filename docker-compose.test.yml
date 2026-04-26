@@ -22,7 +22,7 @@ services:
       ITEMIMAGES__CACHEMAXAGESECONDS: "${ITEMIMAGES__CACHEMAXAGESECONDS:-86400}"
       ITEMIMAGES__MODEL_PATH: "${ITEMIMAGES__MODEL_PATH:-/models/item-image-model.onnx}"
     volumes:
-      - ${API_LOGS_DIR:-/opt/lkvitai-mes/logs/api}:/app/logs
+      - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
       - ${CLIP_MODEL_DIR:-/opt/lkvitai-mes/models}:/models:ro
     networks:
       - lkvitai-mes_default
@@ -82,7 +82,7 @@ services:
       PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
     volumes:
       - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys
-      - ${PORTAL_WEBUI_LOGS_DIR:-/opt/lkvitai-mes/logs/portal-webui}:/app/logs
+      - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
     networks:
       - lkvitai-mes_default
     depends_on:
