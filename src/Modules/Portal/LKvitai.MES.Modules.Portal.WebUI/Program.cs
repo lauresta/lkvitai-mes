@@ -76,18 +76,33 @@ app.MapPost("/auth/login", async (
     var returnUrl = NormalizeReturnUrl(form["returnUrl"].ToString());
 
     var client = factory.CreateClient("WarehouseApi");
-    var response = await client.PostAsJsonAsync(
-        "api/auth/login",
-        new PortalLoginRequest(username, password),
-        cancellationToken);
 
-    if (!response.IsSuccessStatusCode)
+    HttpResponseMessage response;
+    PortalLoginResponse? login;
+    try
     {
-        logger.LogWarning("Portal login rejected for {Username}", username);
+        response = await client.PostAsJsonAsync(
+            "api/auth/login",
+            new PortalLoginRequest(username, password),
+            cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            logger.LogWarning("Portal login rejected for {Username} (status {Status})", username, (int)response.StatusCode);
+            return Results.Redirect($"/login.html?error=invalid&returnUrl={Uri.EscapeDataString(returnUrl)}");
+        }
+
+        login = await response.Content.ReadFromJsonAsync<PortalLoginResponse>(cancellationToken: cancellationToken);
+    }
+    catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or System.Text.Json.JsonException)
+    {
+        // Don't let transport/serialization issues bubble up to UseExceptionHandler -
+        // that would surface as a generic /Error redirect and look like wrong creds.
+        // Surface a clean "invalid" page and keep the real reason in the logs.
+        logger.LogError(ex, "Portal login call to Warehouse API failed for {Username}", username);
         return Results.Redirect($"/login.html?error=invalid&returnUrl={Uri.EscapeDataString(returnUrl)}");
     }
 
-    var login = await response.Content.ReadFromJsonAsync<PortalLoginResponse>(cancellationToken: cancellationToken);
     if (login is null || string.IsNullOrWhiteSpace(login.Token))
     {
         logger.LogWarning("Portal login failed because API returned an empty token for {Username}", username);
