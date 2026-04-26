@@ -136,14 +136,27 @@ app.MapPost("/auth/login", async (
         claims.Add(new Claim(ClaimTypes.Role, role));
     }
 
-    await httpContext.SignInAsync(
-        CookieAuthenticationDefaults.AuthenticationScheme,
-        new ClaimsPrincipal(new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme)),
-        new AuthenticationProperties
-        {
-            IsPersistent = false,
-            ExpiresUtc = login.ExpiresAt
-        });
+    try
+    {
+        await httpContext.SignInAsync(
+            CookieAuthenticationDefaults.AuthenticationScheme,
+            new ClaimsPrincipal(new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme)),
+            new AuthenticationProperties
+            {
+                IsPersistent = false,
+                ExpiresUtc = login.ExpiresAt
+            });
+    }
+    catch (Exception ex) when (ex is System.Security.Cryptography.CryptographicException or InvalidOperationException)
+    {
+        // DataProtection failure (e.g. unable to persist/read the key ring,
+        // missing/locked auth-keys directory). Surface a clear error code
+        // instead of letting the exception bubble into UseExceptionHandler,
+        // which would re-execute as /Error and trigger the cookie challenge
+        // → /login.html?returnUrl=%2FError redirect loop.
+        logger.LogError(ex, "Portal login: failed to issue auth cookie for {Username}", login.Username);
+        return RedirectToLogin(returnUrl, "server");
+    }
 
     logger.LogInformation("Portal login successful for {Username}", login.Username);
     return Results.Redirect(returnUrl);
