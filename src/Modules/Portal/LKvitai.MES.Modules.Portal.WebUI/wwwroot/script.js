@@ -1,5 +1,5 @@
 const modules = [
-  { key: "warehouse", title: "Warehouse", category: "Operations", desc: "Inventory locations, stock movements, reservations, handling units, 3D warehouse layout.", status: "active", url: "#" },
+  { key: "warehouse", title: "Warehouse", category: "Operations", desc: "Inventory locations, stock movements, reservations, handling units, 3D warehouse layout.", status: "active", url: "/warehouse/" },
   { key: "orders", title: "Orders", category: "Commercial", desc: "Order lifecycle, product composition, workflow planning.", status: "planned", quarter: "Q3 2026" },
   { key: "shopfloor", title: "Shopfloor", category: "Operations", desc: "Workstation tasks, WIP routing, operator kiosk execution.", status: "planned", quarter: "Q3 2026" },
   { key: "quality", title: "Quality", category: "Operations", desc: "Inspections, defect tracking, rework and returns.", status: "planned", quarter: "Q4 2026" },

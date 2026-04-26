@@ -8,7 +8,8 @@ COPY Directory.Build.props .
 COPY Directory.Packages.props .
 COPY global.json .
 
-# Copy all project files for restore (optimize layer caching)
+# Copy referenced BuildingBlock + all project files for restore (optimize layer caching)
+COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/ BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/
 COPY src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.WebUI/LKvitai.MES.Modules.Warehouse.WebUI.csproj Modules/Warehouse/LKvitai.MES.Modules.Warehouse.WebUI/
 
 # Restore dependencies

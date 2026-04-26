@@ -6,6 +6,7 @@ COPY src/LKvitai.MES.sln .
 COPY Directory.Build.props .
 COPY Directory.Packages.props .
 
+COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/ BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/
 COPY src/Modules/Portal/LKvitai.MES.Modules.Portal.WebUI/LKvitai.MES.Modules.Portal.WebUI.csproj Modules/Portal/LKvitai.MES.Modules.Portal.WebUI/
 
 RUN dotnet restore Modules/Portal/LKvitai.MES.Modules.Portal.WebUI/LKvitai.MES.Modules.Portal.WebUI.csproj

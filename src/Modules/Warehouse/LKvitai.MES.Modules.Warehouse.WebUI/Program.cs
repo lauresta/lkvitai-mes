@@ -1,4 +1,6 @@
 using System.Net.Http.Headers;
+using LKvitai.MES.BuildingBlocks.PortalAuth;
+using LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure;
 using LKvitai.MES.Modules.Warehouse.WebUI.Services;
 using MudBlazor.Services;
 
@@ -7,23 +9,23 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddMudServices();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddPortalCookieAuthentication(builder.Environment, builder.Configuration);
+builder.Services.AddAuthorization();
+builder.Services.AddCascadingAuthenticationState();
+builder.Services.AddTransient<WarehouseApiAuthHandler>();
 
 builder.Services.AddHttpClient("WarehouseApi", (sp, client) =>
 {
     var configuration = sp.GetRequiredService<IConfiguration>();
     var baseUrl = configuration["WarehouseApi:BaseUrl"] ?? "https://localhost:5001";
-    var userId = configuration["WarehouseApi:UserId"] ?? "webui-admin";
-    var roles = configuration["WarehouseApi:Roles"] ?? "WarehouseAdmin,WarehouseManager,QCInspector,Operator";
 
     client.BaseAddress = new Uri(baseUrl);
     client.Timeout = TimeSpan.FromSeconds(30);
     client.DefaultRequestHeaders.Accept.Clear();
     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-    client.DefaultRequestHeaders.Remove("X-User-Id");
-    client.DefaultRequestHeaders.Remove("X-User-Roles");
-    client.DefaultRequestHeaders.Add("X-User-Id", userId);
-    client.DefaultRequestHeaders.Add("X-User-Roles", roles);
-});
+})
+.AddHttpMessageHandler<WarehouseApiAuthHandler>();
 
 builder.Services.AddScoped<DashboardClient>();
 builder.Services.AddScoped<StockClient>();
@@ -60,19 +62,15 @@ builder.Services.AddScoped<ToastService>();
 
 var app = builder.Build();
 
-if (!app.Environment.IsDevelopment())
-{
-    app.UseExceptionHandler("/Error");
-    app.UseHsts();
-}
-
-if (!app.Environment.IsDevelopment() && !string.Equals(app.Environment.EnvironmentName, "Test", StringComparison.OrdinalIgnoreCase))
-{
-    app.UseHttpsRedirection();
-}
+app.UsePortalSecureHosting(app.Environment);
 
 app.UseStaticFiles();
 app.UseRouting();
+app.UseAuthentication();
+app.UseWarehouseDevAuth();
+app.UseAuthorization();
+
+app.MapPortalLogout();
 
 // Photo proxy: in production nginx routes /api/* to the API directly.
 // In local dev the browser resolves relative /api/* URLs against the WebUI port,

@@ -110,6 +110,12 @@ public class RoleManagementIntegrationTests
             error = "Not implemented";
             return false;
         }
+
+        public bool TryValidatePassword(string username, string password, out AdminUserView? user)
+        {
+            user = null;
+            return false;
+        }
     }
 
     private sealed class TestCurrentUserService : ICurrentUserService

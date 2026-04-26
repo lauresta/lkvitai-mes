@@ -114,6 +114,7 @@ jobs:
         env:
           ASPNETCORE_ENVIRONMENT: Development
           WarehouseApi__BaseUrl: http://127.0.0.1:5001
+          WarehouseWebUi__DevAuthEnabled: "true"
 
       - name: Run E2E tests
         run: dotnet test tests/Modules/Warehouse/LKvitai.MES.Tests.Warehouse.E2E/LKvitai.MES.Tests.Warehouse.E2E.csproj --configuration Release --no-build --logger "console;verbosity=detailed"

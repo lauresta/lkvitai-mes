@@ -24,5 +24,6 @@ coverage/**
 **/coverage.*
 **/packages.lock.json
 .task-logs/
+.data-protection-keys/
 *.log
 sdk-pin-globaljson.log

@@ -1,0 +1,17 @@
+@page "/access-denied"
+@layout LoginLayout
+@attribute [Microsoft.AspNetCore.Authorization.AllowAnonymous]
+
+<PageTitle>Access denied - LKvitai.MES</PageTitle>
+
+<section class="login-panel">
+    <div class="login-brand">
+        <img src="https://avatars.githubusercontent.com/u/233164040?s=80&v=4" alt="LKvitai" />
+        <div>
+            <h1>Access denied</h1>
+            <p>Your account does not have permission to open this page.</p>
+        </div>
+    </div>
+
+    <a class="btn btn-primary w-100" href="/dashboard">Back to dashboard</a>
+</section>

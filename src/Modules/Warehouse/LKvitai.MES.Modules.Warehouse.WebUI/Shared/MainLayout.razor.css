@@ -54,6 +54,15 @@
     font-weight: 500;
 }
 
+.app-topbar-user {
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #1f2f46;
+    font-weight: 600;
+}
+
 .app-topbar-login {
     white-space: nowrap;
 }

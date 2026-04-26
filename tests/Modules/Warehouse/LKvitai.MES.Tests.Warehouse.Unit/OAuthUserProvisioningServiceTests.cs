@@ -137,5 +137,11 @@ public class OAuthUserProvisioningServiceTests
             error = "Update failed";
             return false;
         }
+
+        public bool TryValidatePassword(string username, string password, out AdminUserView? user)
+        {
+            user = null;
+            return false;
+        }
     }
 }
