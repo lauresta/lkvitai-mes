@@ -81,6 +81,19 @@ jobs:
           sudo chown -R 1654:1654 "$AUTH_KEYS_DIR"
           sudo chmod 700 "$AUTH_KEYS_DIR"
 
+      - name: Ensure portal-webui logs directory exists with correct ownership
+        run: |
+          # Portal.WebUI mirrors the Warehouse.Api Serilog file sink and writes
+          # daily-rolled portal-YYYYMMDD.log files into /app/logs, which is
+          # bind-mounted to /opt/lkvitai-mes/logs/portal-webui by default.
+          # The container runs as `app` (uid 1654, gid 1654) so the host dir
+          # must be writable by that uid, otherwise the file sink silently
+          # fails on first write.
+          PORTAL_WEBUI_LOGS_DIR="${PORTAL_WEBUI_LOGS_DIR:-/opt/lkvitai-mes/logs/portal-webui}"
+          sudo mkdir -p "$PORTAL_WEBUI_LOGS_DIR"
+          sudo chown -R 1654:1654 "$PORTAL_WEBUI_LOGS_DIR"
+          sudo chmod 755 "$PORTAL_WEBUI_LOGS_DIR"
+
       - name: Ensure test PostgreSQL container exists and is running
         run: |
           if docker ps -a --format '{{.Names}}' | grep -Fx "$DB_CONTAINER_NAME" >/dev/null; then

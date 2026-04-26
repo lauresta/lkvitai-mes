@@ -82,6 +82,7 @@ services:
       PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
     volumes:
       - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys
+      - ${PORTAL_WEBUI_LOGS_DIR:-/opt/lkvitai-mes/logs/portal-webui}:/app/logs
     networks:
       - lkvitai-mes_default
     depends_on:

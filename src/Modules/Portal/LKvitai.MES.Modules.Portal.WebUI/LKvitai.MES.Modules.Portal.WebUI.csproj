@@ -7,6 +7,11 @@
     <AssemblyName>LKvitai.MES.Modules.Portal.WebUI</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Serilog.AspNetCore" />
+    <PackageReference Include="Serilog.Sinks.Console" />
+    <PackageReference Include="Serilog.Sinks.File" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\..\..\BuildingBlocks\LKvitai.MES.BuildingBlocks.PortalAuth\LKvitai.MES.BuildingBlocks.PortalAuth.csproj" />
   </ItemGroup>
 </Project>

@@ -3,8 +3,35 @@ using LKvitai.MES.BuildingBlocks.PortalAuth;
 using LKvitai.MES.Modules.Portal.WebUI.Auth;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Serilog;
+using Serilog.Events;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure Serilog — mirrors src/Modules/Warehouse/.../Warehouse.Api/Program.cs.
+// File sink writes daily-rolled portal-YYYYMMDD.log under /app/logs, which is
+// bind-mounted to /opt/lkvitai-mes/logs/portal-webui on the test/prod hosts so
+// logs survive container restarts and are pickable by Vector.
+const string structuredLogTemplate =
+    "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] [TraceParent:{TraceParent}] [TraceId:{TraceId}] [CorrelationId:{CorrelationId}] [Req:{RequestMethod} {RequestPath}] {Message:lj}{NewLine}{Exception}";
+
+var loggerConfiguration = new LoggerConfiguration()
+    .ReadFrom.Configuration(builder.Configuration)
+    .MinimumLevel.Information()
+    .Filter.ByExcluding(logEvent => logEvent.Level is LogEventLevel.Debug or LogEventLevel.Verbose)
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+    .MinimumLevel.Override("System", LogEventLevel.Warning)
+    .Enrich.FromLogContext()
+    .WriteTo.Console(outputTemplate: structuredLogTemplate)
+    .WriteTo.File(
+        "logs/portal-.log",
+        rollingInterval: RollingInterval.Day,
+        retainedFileCountLimit: 14,
+        outputTemplate: structuredLogTemplate);
+
+Log.Logger = loggerConfiguration.CreateLogger();
+
+builder.Host.UseSerilog();
 
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
@@ -30,6 +57,12 @@ builder.Services.AddHttpClient("WarehouseApi", (sp, client) =>
 var app = builder.Build();
 
 app.UsePortalSecureHosting(app.Environment);
+
+app.UseSerilogRequestLogging(options =>
+{
+    options.MessageTemplate =
+        "HTTP request completed. StatusCode={StatusCode}, ElapsedMs={Elapsed:0.0000}";
+});
 
 app.UseRouting();
 app.UseAuthentication();
