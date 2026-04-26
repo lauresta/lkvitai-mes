@@ -29,8 +29,10 @@ WORKDIR /app
 # Use the base image's built-in non-root `app` user (uid 1654, gid 1654).
 # This is the standard .NET 8 convention; the host bind-mount for
 # /app/auth-keys must be chowned to 1654:1654 so DataProtection can
-# persist its key ring (see deploy-test.yml).
-COPY --from=build --chown=app:app /app/publish .
+# persist its key ring (see deploy-test.yml). Published binaries
+# deliberately stay root-owned (read-only for the runtime user,
+# Sonar docker:S6504).
+COPY --from=build /app/publish .
 USER app
 
 # Expose port
