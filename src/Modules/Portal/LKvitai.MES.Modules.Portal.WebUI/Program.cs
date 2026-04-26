@@ -68,6 +68,20 @@ app.Use(async (context, next) =>
     context.Response.Redirect($"/login.html?returnUrl={Uri.EscapeDataString(returnUrl)}");
 });
 
+app.Use(async (context, next) =>
+{
+    if (!context.Request.Path.StartsWithSegments("/warehouse", StringComparison.OrdinalIgnoreCase))
+    {
+        await next();
+        return;
+    }
+
+    var warehouseBaseUrl = context.RequestServices
+        .GetRequiredService<IConfiguration>()["WarehouseWebUi:BaseUrl"] ?? "https://localhost:7229";
+    var target = BuildModuleRedirectUrl(warehouseBaseUrl, context.Request.Path, context.Request.QueryString);
+    context.Response.Redirect(target);
+});
+
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
@@ -172,6 +186,16 @@ static string GetDataProtectionKeysPath(IHostEnvironment environment, IConfigura
     }
 
     return Path.GetFullPath(Path.Combine(environment.ContentRootPath, "../../../../.data-protection-keys"));
+}
+
+static string BuildModuleRedirectUrl(string baseUrl, PathString path, QueryString query)
+{
+    var normalizedBase = baseUrl.TrimEnd('/');
+    var remainingPath = path.StartsWithSegments("/warehouse", out var remainder)
+        ? remainder.ToString()
+        : string.Empty;
+
+    return $"{normalizedBase}{remainingPath}{query}";
 }
 
 public sealed record PortalLoginRequest(string Username, string Password);
