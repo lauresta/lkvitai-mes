@@ -1,8 +1,8 @@
 using System.Net.Http.Headers;
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
+using LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure;
 using LKvitai.MES.Modules.Warehouse.WebUI.Services;
 using MudBlazor.Services;
 
@@ -91,16 +91,7 @@ if (!app.Environment.IsDevelopment() && !string.Equals(app.Environment.Environme
 app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication();
-app.Use(async (context, next) =>
-{
-    if (IsDevAuthEnabled(context) &&
-        context.User.Identity?.IsAuthenticated != true)
-    {
-        context.User = BuildDevPrincipal();
-    }
-
-    await next();
-});
+app.UseWarehouseDevAuth();
 app.UseAuthorization();
 
 app.MapPost("/auth/logout", async (HttpContext httpContext) =>
@@ -162,35 +153,4 @@ static string? ResolveCookieDomain(IConfiguration configuration)
     }
 
     return null;
-}
-
-static bool IsDevAuthEnabled(HttpContext context)
-{
-    var environment = context.RequestServices.GetRequiredService<IHostEnvironment>();
-    if (!environment.IsDevelopment() &&
-        !string.Equals(environment.EnvironmentName, "Test", StringComparison.OrdinalIgnoreCase))
-    {
-        return false;
-    }
-
-    var configuration = context.RequestServices.GetRequiredService<IConfiguration>();
-    return configuration.GetValue<bool>("WarehouseWebUi:DevAuthEnabled");
-}
-
-static ClaimsPrincipal BuildDevPrincipal()
-{
-    const string roles = "Operator,QCInspector,WarehouseManager,WarehouseAdmin,InventoryAccountant,CFO";
-    var claims = new List<Claim>
-    {
-        new(ClaimTypes.NameIdentifier, "dev-user"),
-        new(ClaimTypes.Name, "dev-user"),
-        new("warehouse_access_token", $"dev-user|{roles}")
-    };
-
-    foreach (var role in roles.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-    {
-        claims.Add(new Claim(ClaimTypes.Role, role));
-    }
-
-    return new ClaimsPrincipal(new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme));
 }
