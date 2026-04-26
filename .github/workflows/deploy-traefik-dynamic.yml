@@ -1,0 +1,74 @@
+name: Deploy Traefik Dynamic Config
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - deploy/traefik/dynamic/**
+      - .github/workflows/deploy-traefik-dynamic.yml
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, lauresta-vps]
+    env:
+      TRAEFIK_DYNAMIC_DIR: /opt/traefik/dynamic
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate dynamic config files
+        run: |
+          set -euo pipefail
+
+          test -f deploy/traefik/dynamic/mes.yml
+          test -f deploy/traefik/dynamic/mes-test.yml
+
+          if grep -R $'\t' deploy/traefik/dynamic/*.yml; then
+            echo "::error::Traefik YAML files must not contain tabs."
+            exit 1
+          fi
+
+          grep -q 'Host(`mes.lauresta.com`)' deploy/traefik/dynamic/mes.yml
+          grep -q 'Host(`api.mes.lauresta.com`)' deploy/traefik/dynamic/mes.yml
+          grep -q 'Host(`mes-test.lauresta.com`)' deploy/traefik/dynamic/mes-test.yml
+          grep -q 'Host(`api.mes-test.lauresta.com`)' deploy/traefik/dynamic/mes-test.yml
+
+      - name: Install dynamic config on Traefik VPS
+        run: |
+          set -euo pipefail
+
+          sudo_cmd=""
+          if [ -d "$TRAEFIK_DYNAMIC_DIR" ] && [ ! -w "$TRAEFIK_DYNAMIC_DIR" ]; then
+            sudo_cmd="sudo -n"
+          elif [ ! -d "$TRAEFIK_DYNAMIC_DIR" ] && [ ! -w "$(dirname "$TRAEFIK_DYNAMIC_DIR")" ]; then
+            sudo_cmd="sudo -n"
+          fi
+
+          $sudo_cmd mkdir -p "$TRAEFIK_DYNAMIC_DIR"
+
+          timestamp="$(date -u +%Y%m%d%H%M%S)"
+          for source_file in deploy/traefik/dynamic/*.yml; do
+            file_name="$(basename "$source_file")"
+            target_file="$TRAEFIK_DYNAMIC_DIR/$file_name"
+
+            if [ -f "$target_file" ]; then
+              $sudo_cmd cp "$target_file" "$target_file.$timestamp.bak"
+            fi
+
+            $sudo_cmd install -m 0644 "$source_file" "$target_file"
+          done
+
+          $sudo_cmd ls -lah "$TRAEFIK_DYNAMIC_DIR"
+
+      - name: Deployment summary
+        run: |
+          echo "## Traefik Dynamic Config" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Installed to: \`$TRAEFIK_DYNAMIC_DIR\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Production: \`mes.yml\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Test: \`mes-test.yml\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Traefik file provider should reload these files automatically." >> "$GITHUB_STEP_SUMMARY"

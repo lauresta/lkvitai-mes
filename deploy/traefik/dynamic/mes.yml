@@ -1,0 +1,74 @@
+http:
+  routers:
+    mes-portal-root:
+      rule: "Host(`mes.lauresta.com`)"
+      entryPoints: [websecure]
+      service: mes-portal-webui
+      tls:
+        certResolver: letsencrypt
+
+    mes-portal:
+      rule: "Host(`portal.mes.lauresta.com`)"
+      entryPoints: [websecure]
+      service: mes-portal-webui
+      tls:
+        certResolver: letsencrypt
+
+    mes-warehouse:
+      rule: "Host(`warehouse.mes.lauresta.com`)"
+      entryPoints: [websecure]
+      service: mes-warehouse-webui
+      tls:
+        certResolver: letsencrypt
+
+    mes-api-portal:
+      rule: "Host(`api.mes.lauresta.com`) && PathPrefix(`/portal`)"
+      entryPoints: [websecure]
+      middlewares: [mes-strip-api-portal]
+      service: mes-portal-api
+      priority: 100
+      tls:
+        certResolver: letsencrypt
+
+    mes-api-warehouse:
+      rule: "Host(`api.mes.lauresta.com`) && PathPrefix(`/warehouse`)"
+      entryPoints: [websecure]
+      middlewares: [mes-strip-api-warehouse]
+      service: mes-warehouse-api
+      priority: 100
+      tls:
+        certResolver: letsencrypt
+
+  middlewares:
+    mes-strip-api-portal:
+      stripPrefix:
+        prefixes: [/portal]
+
+    mes-strip-api-warehouse:
+      stripPrefix:
+        prefixes: [/warehouse]
+
+  services:
+    mes-portal-webui:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://10.11.12.9:5010"
+
+    mes-warehouse-webui:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://10.11.12.9:5000"
+
+    mes-portal-api:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://10.11.12.9:5011"
+
+    mes-warehouse-api:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://10.11.12.9:5001"
