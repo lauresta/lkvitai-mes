@@ -352,6 +352,35 @@ app.UseAuthorization();
 app.UseHangfireDashboard("/hangfire");
 app.MapControllers();
 
+app.MapPost(
+        "/api/auth/login",
+        (LocalLoginRequest request, IAdminUserStore userStore, ILogger<Program> logger) =>
+        {
+            if (!userStore.TryValidatePassword(request.Username, request.Password, out var user) || user is null)
+            {
+                logger.LogWarning(
+                    "Local login rejected for user {Username}",
+                    SensitiveDataMasker.MaskText(request.Username));
+                return Results.Unauthorized();
+            }
+
+            var expiresAt = DateTimeOffset.UtcNow.AddHours(8);
+            var token = $"{user.Id}|{string.Join(',', user.Roles)}|{expiresAt.ToUnixTimeSeconds()}|local";
+
+            logger.LogInformation(
+                "Local login successful for user {Username}",
+                SensitiveDataMasker.MaskText(user.Username));
+
+            return Results.Ok(new LocalLoginResponse(
+                token,
+                expiresAt,
+                user.Id,
+                user.Username,
+                user.Email,
+                user.Roles));
+        })
+    .AllowAnonymous();
+
 RecurringJob.AddOrUpdate<AgnumExportRecurringJob>(
     AgnumRecurringJobs.DailyExportJobId,
     job => job.ExecuteAsync("SCHEDULED", null, 0),

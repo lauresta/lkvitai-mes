@@ -4,6 +4,56 @@ html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
+.login-shell {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    background: #f4f7fb;
+}
+
+.login-panel {
+    width: min(100%, 390px);
+    padding: 1.5rem;
+    border: 1px solid #dbe3ef;
+    border-radius: 8px;
+    background: #ffffff;
+    box-shadow: 0 10px 30px rgba(31, 47, 70, 0.08);
+}
+
+.login-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    margin-bottom: 1.25rem;
+}
+
+.login-brand img {
+    width: 46px;
+    height: 46px;
+    border-radius: 8px;
+    object-fit: contain;
+}
+
+.login-brand h1 {
+    margin: 0;
+    color: #1f2f46;
+    font-size: 1.4rem;
+    line-height: 1.2;
+}
+
+.login-brand p {
+    margin: 0.2rem 0 0;
+    color: #5d6b7c;
+    font-size: 0.9rem;
+}
+
+.login-form {
+    display: grid;
+    gap: 1rem;
+}
+
 /* MudBlazor reserves 64px padding for MudAppBar — we use a custom topbar instead */
 .mud-layout {
     --mud-appbar-height: 0px;

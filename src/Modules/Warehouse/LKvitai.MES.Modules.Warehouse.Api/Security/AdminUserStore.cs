@@ -42,6 +42,7 @@ public interface IAdminUserStore
     IReadOnlyList<AdminUserView> GetAll();
     bool TryCreate(CreateAdminUserRequest request, out AdminUserView? user, out string? error);
     bool TryUpdate(Guid id, UpdateAdminUserRequest request, out AdminUserView? user, out string? error);
+    bool TryValidatePassword(string username, string password, out AdminUserView? user);
 }
 
 public sealed class InMemoryAdminUserStore : IAdminUserStore
@@ -146,6 +147,32 @@ public sealed class InMemoryAdminUserStore : IAdminUserStore
         }
 
         existing.UpdatedAt = DateTimeOffset.UtcNow;
+        user = MapView(existing);
+        return true;
+    }
+
+    public bool TryValidatePassword(string username, string password, out AdminUserView? user)
+    {
+        user = null;
+
+        if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+        {
+            return false;
+        }
+
+        var existing = _users.Values.FirstOrDefault(x =>
+            string.Equals(x.Username, username.Trim(), StringComparison.OrdinalIgnoreCase));
+        if (existing is null || !string.Equals(existing.Status, "Active", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        var result = _passwordHasher.VerifyHashedPassword(existing, existing.PasswordHash, password);
+        if (result == PasswordVerificationResult.Failed)
+        {
+            return false;
+        }
+
         user = MapView(existing);
         return true;
     }

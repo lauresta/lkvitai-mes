@@ -1,4 +1,7 @@
 using System.Net.Http.Headers;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.DataProtection;
 using LKvitai.MES.Modules.Warehouse.WebUI.Services;
 using MudBlazor.Services;
 
@@ -7,23 +10,35 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddMudServices();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddDataProtection()
+    .SetApplicationName("LKvitai.MES.PortalAuth")
+    .PersistKeysToFileSystem(new DirectoryInfo(GetDataProtectionKeysPath(builder.Environment, builder.Configuration)));
+builder.Services
+    .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/login.html";
+        options.AccessDeniedPath = "/access-denied";
+        options.Cookie.Name = "LKvitai.MES.Portal";
+        options.SlidingExpiration = true;
+        options.ExpireTimeSpan = TimeSpan.FromHours(8);
+    });
+builder.Services.AddAuthorization();
+builder.Services.AddCascadingAuthenticationState();
+builder.Services.AddTransient<WarehouseApiAuthHandler>();
 
 builder.Services.AddHttpClient("WarehouseApi", (sp, client) =>
 {
     var configuration = sp.GetRequiredService<IConfiguration>();
     var baseUrl = configuration["WarehouseApi:BaseUrl"] ?? "https://localhost:5001";
-    var userId = configuration["WarehouseApi:UserId"] ?? "webui-admin";
-    var roles = configuration["WarehouseApi:Roles"] ?? "WarehouseAdmin,WarehouseManager,QCInspector,Operator";
 
     client.BaseAddress = new Uri(baseUrl);
     client.Timeout = TimeSpan.FromSeconds(30);
     client.DefaultRequestHeaders.Accept.Clear();
     client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-    client.DefaultRequestHeaders.Remove("X-User-Id");
-    client.DefaultRequestHeaders.Remove("X-User-Roles");
-    client.DefaultRequestHeaders.Add("X-User-Id", userId);
-    client.DefaultRequestHeaders.Add("X-User-Roles", roles);
-});
+})
+.AddHttpMessageHandler<WarehouseApiAuthHandler>();
 
 builder.Services.AddScoped<DashboardClient>();
 builder.Services.AddScoped<StockClient>();
@@ -73,6 +88,14 @@ if (!app.Environment.IsDevelopment() && !string.Equals(app.Environment.Environme
 
 app.UseStaticFiles();
 app.UseRouting();
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapPost("/auth/logout", async (HttpContext httpContext) =>
+{
+    await httpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+    return Results.Redirect("/login.html");
+});
 
 // Photo proxy: in production nginx routes /api/* to the API directly.
 // In local dev the browser resolves relative /api/* URLs against the WebUI port,
@@ -106,3 +129,14 @@ app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
 
 app.Run();
+
+static string GetDataProtectionKeysPath(IHostEnvironment environment, IConfiguration configuration)
+{
+    var configured = configuration["PortalAuth:DataProtectionKeysPath"];
+    if (!string.IsNullOrWhiteSpace(configured))
+    {
+        return configured;
+    }
+
+    return Path.GetFullPath(Path.Combine(environment.ContentRootPath, "../../../../.data-protection-keys"));
+}
