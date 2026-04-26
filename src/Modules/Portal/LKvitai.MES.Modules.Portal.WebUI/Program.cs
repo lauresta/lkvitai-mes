@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using LKvitai.MES.Modules.Portal.WebUI.Auth;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.DataProtection;
@@ -260,13 +261,3 @@ static string BuildModuleRedirectUrl(string baseUrl, PathString path, QueryStrin
 
     return $"{normalizedBase}{remainingPath}{query}";
 }
-
-public sealed record PortalLoginRequest(string Username, string Password);
-
-public sealed record PortalLoginResponse(
-    string Token,
-    DateTimeOffset ExpiresAt,
-    Guid UserId,
-    string Username,
-    string Email,
-    IReadOnlyList<string> Roles);

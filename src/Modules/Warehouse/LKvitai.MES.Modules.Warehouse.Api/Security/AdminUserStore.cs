@@ -15,12 +15,14 @@ public sealed record AdminUserView(
 
 public sealed class AdminUserRecord
 {
+    public const string ActiveStatus = "Active";
+
     public Guid Id { get; init; } = Guid.NewGuid();
     public string Username { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string PasswordHash { get; set; } = string.Empty;
     public List<string> Roles { get; set; } = [];
-    public string Status { get; set; } = "Active";
+    public string Status { get; set; } = ActiveStatus;
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? UpdatedAt { get; set; }
 }
@@ -71,7 +73,7 @@ public sealed class InMemoryAdminUserStore : IAdminUserStore
             Username = "admin",
             Email = "admin@example.com",
             Roles = [WarehouseRoles.WarehouseAdmin, WarehouseRoles.WarehouseManager],
-            Status = "Active",
+            Status = AdminUserRecord.ActiveStatus,
             CreatedAt = DateTimeOffset.UtcNow
         };
         admin.PasswordHash = _passwordHasher.HashPassword(admin, "Admin123!");
@@ -162,7 +164,7 @@ public sealed class InMemoryAdminUserStore : IAdminUserStore
 
         var existing = _users.Values.FirstOrDefault(x =>
             string.Equals(x.Username, username.Trim(), StringComparison.OrdinalIgnoreCase));
-        if (existing is null || !string.Equals(existing.Status, "Active", StringComparison.OrdinalIgnoreCase))
+        if (existing is null || !string.Equals(existing.Status, AdminUserRecord.ActiveStatus, StringComparison.OrdinalIgnoreCase))
         {
             return false;
         }
@@ -211,7 +213,7 @@ public sealed class InMemoryAdminUserStore : IAdminUserStore
 
         if (!IsAllowedStatus(status))
         {
-            return "Status must be Active or Inactive.";
+            return $"Status must be {AdminUserRecord.ActiveStatus} or Inactive.";
         }
 
         if (password is null)
@@ -241,7 +243,7 @@ public sealed class InMemoryAdminUserStore : IAdminUserStore
 
         if (!IsAllowedStatus(status))
         {
-            return "Status must be Active or Inactive.";
+            return $"Status must be {AdminUserRecord.ActiveStatus} or Inactive.";
         }
 
         if (!string.IsNullOrWhiteSpace(email) && !IsValidEmail(email))
@@ -256,7 +258,7 @@ public sealed class InMemoryAdminUserStore : IAdminUserStore
         => AllowedRoles.Contains(role.Trim());
 
     private static bool IsAllowedStatus(string status)
-        => string.Equals(status.Trim(), "Active", StringComparison.OrdinalIgnoreCase) ||
+        => string.Equals(status.Trim(), AdminUserRecord.ActiveStatus, StringComparison.OrdinalIgnoreCase) ||
            string.Equals(status.Trim(), "Inactive", StringComparison.OrdinalIgnoreCase);
 
     private static bool IsValidEmail(string email)
@@ -285,7 +287,7 @@ public sealed class InMemoryAdminUserStore : IAdminUserStore
     private static string NormalizeStatus(string status)
         => string.Equals(status.Trim(), "Inactive", StringComparison.OrdinalIgnoreCase)
             ? "Inactive"
-            : "Active";
+            : AdminUserRecord.ActiveStatus;
 
     private static AdminUserView MapView(AdminUserRecord user)
         => new(

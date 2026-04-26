@@ -24,7 +24,7 @@
 
         <label>
           <span>Username</span>
-          <input name="username" autocomplete="username" autofocus required>
+          <input name="username" type="text" autocomplete="username" autofocus required>
         </label>
 
         <label>
@@ -38,7 +38,7 @@
   </main>
 
   <script>
-    const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams(globalThis.location.search);
     const returnUrl = params.get("returnUrl");
     if (returnUrl && returnUrl.startsWith("/") && !returnUrl.startsWith("//")) {
       document.querySelector("#return-url").value = returnUrl;
