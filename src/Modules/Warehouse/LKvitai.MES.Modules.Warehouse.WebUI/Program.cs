@@ -70,6 +70,8 @@ app.UseAuthentication();
 app.UseWarehouseDevAuth();
 app.UseAuthorization();
 
+app.MapGet("/health", () => Results.Ok());
+
 app.MapPortalLogout();
 
 // Photo proxy: in production nginx routes /api/* to the API directly.

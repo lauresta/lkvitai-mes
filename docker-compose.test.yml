@@ -50,6 +50,12 @@ services:
       - lkvitai-mes_default
     depends_on:
       - api
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   portal-api:
     image: ghcr.io/lauresta/lkvitai-mes-portal-api:${IMAGE_TAG:-latest}
