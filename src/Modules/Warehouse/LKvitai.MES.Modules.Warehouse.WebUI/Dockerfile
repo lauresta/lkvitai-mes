@@ -26,6 +26,9 @@ RUN dotnet publish -c Release -o /app/publish /p:UseAppHost=false --no-restore
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
 
+# curl is needed for the docker-compose healthcheck.
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
+
 # Use the base image's built-in non-root `app` user (uid 1654, gid 1654).
 # This is the standard .NET 8 convention; the host bind-mount for
 # /app/auth-keys must be chowned to 1654:1654 so DataProtection can
