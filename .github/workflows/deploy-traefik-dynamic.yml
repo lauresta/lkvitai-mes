@@ -34,8 +34,12 @@ jobs:
           fi
 
           grep -q 'Host(`mes.lauresta.com`)' deploy/traefik/dynamic/mes.yml
+          grep -q 'Host(`portal.mes.lauresta.com`)' deploy/traefik/dynamic/mes.yml
+          grep -q 'Host(`warehouse.mes.lauresta.com`)' deploy/traefik/dynamic/mes.yml
           grep -q 'Host(`api.mes.lauresta.com`)' deploy/traefik/dynamic/mes.yml
           grep -q 'Host(`mes-test.lauresta.com`)' deploy/traefik/dynamic/mes-test.yml
+          grep -q 'Host(`portal.mes-test.lauresta.com`)' deploy/traefik/dynamic/mes-test.yml
+          grep -q 'Host(`warehouse.mes-test.lauresta.com`)' deploy/traefik/dynamic/mes-test.yml
           grep -q 'Host(`api.mes-test.lauresta.com`)' deploy/traefik/dynamic/mes-test.yml
 
       - name: Install dynamic config on Traefik VPS

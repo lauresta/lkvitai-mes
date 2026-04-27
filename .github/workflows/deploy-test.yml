@@ -249,6 +249,21 @@ jobs:
           docker compose -f docker-compose.test.yml logs portal-api --tail 50
           exit 1
 
+      - name: Wait for Warehouse WebUI health
+        run: |
+          echo "Waiting for Warehouse WebUI to become healthy..."
+          for i in $(seq 1 30); do
+            if docker exec lkvitai-mes-warehouse-webui curl -sf http://localhost:8080/health > /dev/null 2>&1; then
+              echo "Warehouse WebUI is healthy!"
+              exit 0
+            fi
+            echo "  attempt $i/30 — not ready yet"
+            sleep 5
+          done
+          echo "Warehouse WebUI failed to become healthy within 150s"
+          docker compose -f docker-compose.test.yml logs webui --tail 50
+          exit 1
+
       - name: Seed master data
         run: |
           docker exec -i "$DB_CONTAINER_NAME" \
