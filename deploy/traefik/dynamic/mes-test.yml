@@ -3,6 +3,7 @@ http:
     mes-test-portal-root:
       rule: "Host(`mes-test.lauresta.com`) && Path(`/`)"
       entryPoints: [websecure]
+      middlewares: [mes-test-redirect-root-to-portal]
       service: mes-test-portal-webui
       priority: 10
       tls:
@@ -43,6 +44,12 @@ http:
         certResolver: letsencrypt
 
   middlewares:
+    mes-test-redirect-root-to-portal:
+      redirectRegex:
+        regex: "^https://mes-test\\.lauresta\\.com/$"
+        replacement: "https://mes-test.lauresta.com/portal/"
+        permanent: false
+
     mes-test-strip-api-portal:
       stripPrefix:
         prefixes: [/api/portal]
