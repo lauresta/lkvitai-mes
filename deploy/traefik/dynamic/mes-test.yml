@@ -1,3 +1,4 @@
+# Test environment — routers, middlewares, services for *.mes-test.lauresta.com
 http:
   routers:
     mes-test-portal-root:

@@ -69,6 +69,52 @@ jobs:
           docker network inspect "$DOCKER_NETWORK_NAME" >/dev/null 2>&1 || \
             docker network create "$DOCKER_NETWORK_NAME"
 
+      - name: Ensure host bind-mount directories exist with correct ownership
+        run: |
+          set -euo pipefail
+          # All four containers (api / webui / portal-api / portal-webui)
+          # run as the standard .NET 8 `app` user (uid 1654, gid 1654 — see
+          # their Dockerfiles). The two host bind-mounts referenced by
+          # docker-compose.test.yml must therefore be writable by that uid,
+          # otherwise the runtime fails on first write:
+          #   * /app/auth-keys (WebUI) → DataProtection key ring. Missing
+          #     writability → CryptographicException → login redirect loop.
+          #   * /app/logs (warehouse-api + portal-webui share one host dir)
+          #     → Serilog daily-rolled warehouse-YYYYMMDD.log /
+          #     portal-YYYYMMDD.log file sinks; filename prefixes already
+          #     disambiguate so no per-service subdir is needed.
+          # Defaults mirror the ${VAR:-default} fall-throughs in
+          # docker-compose.test.yml so a fresh self-hosted runner can come
+          # up cold without any manual chmod/chown.
+          AUTH_KEYS_DIR="${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}"
+          LOGS_DIR="${LOGS_DIR:-/opt/lkvitai-mes/logs}"
+
+          # The runner user (`actions-runner`) does not have passwordless
+          # sudo, and may not have write access under /opt/lkvitai-mes/
+          # for every subdir. Try to mkdir best-effort (so a fully fresh
+          # host gets the dirs created when possible) but tolerate failures
+          # when the dirs already exist root-owned — the Docker chown right
+          # after is the real fixer. If the dirs neither exist nor can be
+          # created, `docker run -v` will fail loudly with a clear error.
+          mkdir -p "$AUTH_KEYS_DIR" 2>/dev/null || true
+          mkdir -p "$LOGS_DIR" 2>/dev/null || true
+
+          # auth-keys → 0700 (private DataProtection material).
+          # logs      → 0755 so a future read-only Vector mount can tail.
+          docker run --rm \
+            --user 0:0 \
+            -v "$AUTH_KEYS_DIR:/mnt/auth-keys" \
+            -v "$LOGS_DIR:/mnt/logs" \
+            alpine:3.20 \
+            sh -eu -c '
+              chown -R 1654:1654 /mnt/auth-keys /mnt/logs
+              chmod 700 /mnt/auth-keys
+              chmod 755 /mnt/logs
+            '
+        env:
+          AUTH_KEYS_DIR: ${{ vars.AUTH_KEYS_DIR }}
+          LOGS_DIR: ${{ vars.LOGS_DIR }}
+
       - name: Ensure test PostgreSQL container exists and is running
         run: |
           if docker ps -a --format '{{.Names}}' | grep -Fx "$DB_CONTAINER_NAME" >/dev/null; then
@@ -201,6 +247,21 @@ jobs:
           done
           echo "Portal API failed to become healthy within 150s"
           docker compose -f docker-compose.test.yml logs portal-api --tail 50
+          exit 1
+
+      - name: Wait for Warehouse WebUI health
+        run: |
+          echo "Waiting for Warehouse WebUI to become healthy..."
+          for i in $(seq 1 30); do
+            if docker exec lkvitai-mes-warehouse-webui curl -sf http://localhost:8080/health > /dev/null 2>&1; then
+              echo "Warehouse WebUI is healthy!"
+              exit 0
+            fi
+            echo "  attempt $i/30 — not ready yet"
+            sleep 5
+          done
+          echo "Warehouse WebUI failed to become healthy within 150s"
+          docker compose -f docker-compose.test.yml logs webui --tail 50
           exit 1
 
       - name: Seed master data

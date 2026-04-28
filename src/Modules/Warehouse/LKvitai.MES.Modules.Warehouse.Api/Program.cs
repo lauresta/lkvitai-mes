@@ -317,7 +317,17 @@ if (app.Environment.IsDevelopment())
     app.Logger.LogWarning("Dev auth enabled - DO NOT USE IN PRODUCTION");
 }
 
-app.UseHttpsRedirection();
+// Skip HTTPS redirection in Development and Test: dev runs over plain HTTP, and
+// the Test compose stack reaches the API container over the internal http://...:8080
+// alias (Portal WebUI -> Warehouse API for /api/auth/login). With the redirect on,
+// internal callers hit a 307 to https on a port that does not exist and the
+// HttpClient throws, which is what surfaced as a generic /Error redirect on
+// mes-test.lauresta.com after deploy.
+if (!app.Environment.IsDevelopment()
+    && !app.Environment.IsEnvironment("Test"))
+{
+    app.UseHttpsRedirection();
+}
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseSerilogRequestLogging(options =>
 {

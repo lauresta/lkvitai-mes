@@ -22,7 +22,7 @@ services:
       ITEMIMAGES__CACHEMAXAGESECONDS: "${ITEMIMAGES__CACHEMAXAGESECONDS:-86400}"
       ITEMIMAGES__MODEL_PATH: "${ITEMIMAGES__MODEL_PATH:-/models/item-image-model.onnx}"
     volumes:
-      - ${API_LOGS_DIR:-/opt/lkvitai-mes/logs/api}:/app/logs
+      - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
       - ${CLIP_MODEL_DIR:-/opt/lkvitai-mes/models}:/models:ro
     networks:
       - lkvitai-mes_default
@@ -51,6 +51,12 @@ services:
       - lkvitai-mes_default
     depends_on:
       - api
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
   portal-api:
     image: ghcr.io/lauresta/lkvitai-mes-portal-api:${IMAGE_TAG:-latest}
@@ -84,6 +90,7 @@ services:
       PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
     volumes:
       - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys
+      - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
     networks:
       - lkvitai-mes_default
     depends_on:

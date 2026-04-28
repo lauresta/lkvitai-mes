@@ -3,8 +3,36 @@ using LKvitai.MES.BuildingBlocks.PortalAuth;
 using LKvitai.MES.Modules.Portal.WebUI.Auth;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Serilog;
+using Serilog.Events;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure Serilog — mirrors src/Modules/Warehouse/.../Warehouse.Api/Program.cs.
+// File sink writes daily-rolled portal-YYYYMMDD.log under /app/logs, which is
+// bind-mounted to a single shared /opt/lkvitai-mes/logs on the test/prod hosts.
+// Warehouse.Api writes warehouse-YYYYMMDD.log into the same host dir; the
+// filename prefix is the only thing distinguishing the two log streams.
+const string structuredLogTemplate =
+    "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] [TraceParent:{TraceParent}] [TraceId:{TraceId}] [CorrelationId:{CorrelationId}] [Req:{RequestMethod} {RequestPath}] {Message:lj}{NewLine}{Exception}";
+
+var loggerConfiguration = new LoggerConfiguration()
+    .ReadFrom.Configuration(builder.Configuration)
+    .MinimumLevel.Information()
+    .Filter.ByExcluding(logEvent => logEvent.Level is LogEventLevel.Debug or LogEventLevel.Verbose)
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+    .MinimumLevel.Override("System", LogEventLevel.Warning)
+    .Enrich.FromLogContext()
+    .WriteTo.Console(outputTemplate: structuredLogTemplate)
+    .WriteTo.File(
+        "logs/portal-.log",
+        rollingInterval: RollingInterval.Day,
+        retainedFileCountLimit: 14,
+        outputTemplate: structuredLogTemplate);
+
+Log.Logger = loggerConfiguration.CreateLogger();
+
+builder.Host.UseSerilog();
 
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
@@ -41,6 +69,12 @@ app.Use(async (context, next) =>
     }
 
     await next();
+});
+
+app.UseSerilogRequestLogging(options =>
+{
+    options.MessageTemplate =
+        "HTTP request completed. StatusCode={StatusCode}, ElapsedMs={Elapsed:0.0000}";
 });
 
 app.UseRouting();
@@ -88,22 +122,51 @@ app.MapPost("/auth/login", async (
     var returnUrl = NormalizeReturnUrl(form["returnUrl"].ToString());
 
     var client = factory.CreateClient("WarehouseApi");
-    var response = await client.PostAsJsonAsync(
-        "api/auth/login",
-        new PortalLoginRequest(username, password),
-        cancellationToken);
+
+    HttpResponseMessage response;
+    PortalLoginResponse? login;
+    try
+    {
+        response = await client.PostAsJsonAsync(
+            "api/auth/login",
+            new PortalLoginRequest(username, password),
+            cancellationToken);
+    }
+    catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+    {
+        logger.LogError(ex, "Portal login could not reach Warehouse API for {Username}", username);
+        return RedirectToLogin(httpContext, returnUrl, "unreachable");
+    }
+
+    if ((int)response.StatusCode is 401 or 403)
+    {
+        logger.LogWarning("Portal login rejected for {Username} (status {Status})", username, (int)response.StatusCode);
+        return RedirectToLogin(httpContext, returnUrl, "invalid");
+    }
 
     if (!response.IsSuccessStatusCode)
     {
-        logger.LogWarning("Portal login rejected for {Username}", username);
-        return Results.Redirect(BuildLocalUrl(httpContext, "/login.html", $"error=invalid&returnUrl={Uri.EscapeDataString(returnUrl)}"));
+        logger.LogError(
+            "Portal login: Warehouse API returned unexpected status {Status} for {Username}",
+            (int)response.StatusCode,
+            username);
+        return RedirectToLogin(httpContext, returnUrl, "server");
     }
 
-    var login = await response.Content.ReadFromJsonAsync<PortalLoginResponse>(cancellationToken: cancellationToken);
+    try
+    {
+        login = await response.Content.ReadFromJsonAsync<PortalLoginResponse>(cancellationToken: cancellationToken);
+    }
+    catch (Exception ex) when (ex is System.Text.Json.JsonException or HttpRequestException or TaskCanceledException)
+    {
+        logger.LogError(ex, "Portal login: failed to read Warehouse API response for {Username}", username);
+        return RedirectToLogin(httpContext, returnUrl, "server");
+    }
+
     if (login is null || string.IsNullOrWhiteSpace(login.Token))
     {
-        logger.LogWarning("Portal login failed because API returned an empty token for {Username}", username);
-        return Results.Redirect(BuildLocalUrl(httpContext, "/login.html", $"error=invalid&returnUrl={Uri.EscapeDataString(returnUrl)}"));
+        logger.LogError("Portal login: Warehouse API returned an empty token for {Username}", username);
+        return RedirectToLogin(httpContext, returnUrl, "server");
     }
 
     var claims = new List<Claim>
@@ -119,14 +182,27 @@ app.MapPost("/auth/login", async (
         claims.Add(new Claim(ClaimTypes.Role, role));
     }
 
-    await httpContext.SignInAsync(
-        CookieAuthenticationDefaults.AuthenticationScheme,
-        new ClaimsPrincipal(new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme)),
-        new AuthenticationProperties
-        {
-            IsPersistent = false,
-            ExpiresUtc = login.ExpiresAt
-        });
+    try
+    {
+        await httpContext.SignInAsync(
+            CookieAuthenticationDefaults.AuthenticationScheme,
+            new ClaimsPrincipal(new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme)),
+            new AuthenticationProperties
+            {
+                IsPersistent = false,
+                ExpiresUtc = login.ExpiresAt
+            });
+    }
+    catch (Exception ex) when (ex is System.Security.Cryptography.CryptographicException or InvalidOperationException)
+    {
+        // DataProtection failure (e.g. unable to persist/read the key ring,
+        // missing/locked auth-keys directory). Surface a clear error code
+        // instead of letting the exception bubble into UseExceptionHandler,
+        // which would re-execute as /Error and trigger the cookie challenge
+        // → /login.html?returnUrl=%2FError redirect loop.
+        logger.LogError(ex, "Portal login: failed to issue auth cookie for {Username}", login.Username);
+        return RedirectToLogin(httpContext, returnUrl, "server");
+    }
 
     logger.LogInformation("Portal login successful for {Username}", login.Username);
     return Results.Redirect(returnUrl);
@@ -138,6 +214,13 @@ app.MapBlazorHub();
 app.MapFallbackToFile("index.html");
 
 await app.RunAsync();
+
+static IResult RedirectToLogin(HttpContext context, string returnUrl, string error)
+{
+    var encodedReturn = Uri.EscapeDataString(returnUrl);
+    var encodedError = Uri.EscapeDataString(error);
+    return Results.Redirect(BuildLocalUrl(context, "/login.html", $"error={encodedError}&returnUrl={encodedReturn}"));
+}
 
 static bool IsAnonymousPortalPath(PathString path)
 {

@@ -17,7 +17,7 @@
         </div>
       </div>
 
-      <p class="login-error" id="login-error" hidden>Invalid username or password.</p>
+      <p class="login-error" id="login-error" role="alert" hidden></p>
 
       <form class="login-form" action="auth/login" method="post">
         <input id="return-url" type="hidden" name="returnUrl" value="/">
@@ -43,7 +43,20 @@
     if (returnUrl && returnUrl.startsWith("/") && !returnUrl.startsWith("//")) {
       document.querySelector("#return-url").value = returnUrl;
     }
-    document.querySelector("#login-error").hidden = params.get("error") !== "invalid";
+
+    const errorMessages = {
+      invalid: "Invalid username or password.",
+      unreachable: "Could not reach the authentication server. Please try again in a moment.",
+      server: "Authentication server returned an error. Contact an administrator if it keeps happening.",
+    };
+    const errorEl = document.querySelector("#login-error");
+    const errorCode = params.get("error");
+    if (errorCode && Object.prototype.hasOwnProperty.call(errorMessages, errorCode)) {
+      errorEl.textContent = errorMessages[errorCode];
+      errorEl.hidden = false;
+    } else {
+      errorEl.hidden = true;
+    }
   </script>
 </body>
 </html>

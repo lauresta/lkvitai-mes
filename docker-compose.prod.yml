@@ -12,7 +12,7 @@ services:
       ConnectionStrings__WarehouseDb: ${WAREHOUSE_DB_CONNECTION}
       SkipSchemaValidation: "true"
     volumes:
-      - ${API_LOGS_DIR:-/opt/lkvitai-mes/logs/api}:/app/logs
+      - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
     networks:
       - lkvitai-mes_prod
     healthcheck:
@@ -71,6 +71,7 @@ services:
       PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
     volumes:
       - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys
+      - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
     networks:
       - lkvitai-mes_prod
     depends_on:
