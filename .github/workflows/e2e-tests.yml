@@ -102,7 +102,7 @@ jobs:
         run: |
           nohup dotnet run --project src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.WebUI/LKvitai.MES.Modules.Warehouse.WebUI.csproj --configuration Release --no-build --urls http://127.0.0.1:5124 > webui.log 2>&1 &
           for i in {1..60}; do
-            if curl -fsS http://127.0.0.1:5124/available-stock > /dev/null; then
+            if curl -fsS http://127.0.0.1:5124/warehouse/available-stock > /dev/null; then
               echo "WebUI is ready"
               exit 0
             fi
@@ -115,6 +115,7 @@ jobs:
           ASPNETCORE_ENVIRONMENT: Development
           WarehouseApi__BaseUrl: http://127.0.0.1:5001
           WarehouseWebUi__DevAuthEnabled: "true"
+          PathBase: /warehouse
 
       - name: Run E2E tests
         run: dotnet test tests/Modules/Warehouse/LKvitai.MES.Tests.Warehouse.E2E/LKvitai.MES.Tests.Warehouse.E2E.csproj --configuration Release --no-build --logger "console;verbosity=detailed"
