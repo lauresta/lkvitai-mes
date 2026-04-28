@@ -3,7 +3,7 @@
 <div class="pt-3 px-2" style="overflow-y:auto;">
     <ul class="nav flex-column mb-2">
         <li class="nav-item">
-            <NavLink class="nav-link" href="/dashboard" Match="NavLinkMatch.All">
+            <NavLink class="nav-link" href="dashboard" Match="NavLinkMatch.All">
                 <i class="bi bi-speedometer2 me-2"></i>Dashboard
             </NavLink>
         </li>
@@ -12,7 +12,7 @@
     @foreach (var grp in _sections)
     {
         var isOpen = _openSection == grp.Key;
-        var hasActive = grp.Items.Any(i => _currentUri.Contains(i.Href, StringComparison.OrdinalIgnoreCase));
+        var hasActive = grp.Items.Any(i => _currentPath.StartsWith(i.Href, StringComparison.OrdinalIgnoreCase));
 
         <div class="nav-section">
             <button class="nav-section-toggle @(isOpen ? "open" : "") @(hasActive && !isOpen ? "has-active" : "")"
@@ -42,32 +42,32 @@
 
 @code {
     private string? _openSection;
-    private string _currentUri = "";
+    private string _currentPath = "";
 
     private record NavItem(string Href, string Icon, string Label);
     private record NavSection(string Key, string Label, string Icon, NavItem[] Items);
 
     protected override void OnInitialized()
     {
-        _currentUri = Navigation.Uri;
+        _currentPath = Navigation.ToBaseRelativePath(Navigation.Uri);
         Navigation.LocationChanged += OnLocationChanged;
-        _openSection = FindSectionForUri(_currentUri);
+        _openSection = FindSectionForPath(_currentPath);
     }
 
     private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
     {
-        _currentUri = e.Location;
-        var active = FindSectionForUri(_currentUri);
+        _currentPath = Navigation.ToBaseRelativePath(e.Location);
+        var active = FindSectionForPath(_currentPath);
         if (active is not null)
             _openSection = active;
         InvokeAsync(StateHasChanged);
     }
 
-    private string? FindSectionForUri(string uri)
+    private string? FindSectionForPath(string path)
     {
         foreach (var s in _sections)
         {
-            if (s.Items.Any(i => uri.Contains(i.Href, StringComparison.OrdinalIgnoreCase)))
+            if (s.Items.Any(i => path.StartsWith(i.Href, StringComparison.OrdinalIgnoreCase)))
                 return s.Key;
         }
         return null;
@@ -86,86 +86,86 @@
     private static readonly NavSection[] _sections =
     [
         new("stock", "Stock", "bi-box-seam", [
-            new("/available-stock", "bi-box-seam", "Available Stock"),
-            new("/search-by-image", "bi-camera", "Search by Image"),
-            new("/warehouse/stock/dashboard", "bi-grid", "Stock Dashboard"),
-            new("/warehouse/stock/location-balance", "bi-columns-gap", "Location Balance"),
-            new("/warehouse/stock/adjustments", "bi-journal-minus", "Adjustments"),
-            new("/reservations", "bi-clipboard-check", "Reservations"),
+            new("available-stock", "bi-box-seam", "Available Stock"),
+            new("search-by-image", "bi-camera", "Search by Image"),
+            new("stock/dashboard", "bi-grid", "Stock Dashboard"),
+            new("stock/location-balance", "bi-columns-gap", "Location Balance"),
+            new("stock/adjustments", "bi-journal-minus", "Adjustments"),
+            new("reservations", "bi-clipboard-check", "Reservations"),
         ]),
 
         new("inbound", "Inbound", "bi-box-arrow-in-down", [
-            new("/warehouse/inbound/shipments", "bi-box-arrow-in-down", "Inbound Shipments"),
-            new("/warehouse/inbound/qc", "bi-clipboard2-pulse", "Receiving QC"),
-            new("/warehouse/putaway", "bi-box-arrow-up-right", "Putaway"),
+            new("inbound/shipments", "bi-box-arrow-in-down", "Inbound Shipments"),
+            new("inbound/qc", "bi-clipboard2-pulse", "Receiving QC"),
+            new("putaway", "bi-box-arrow-up-right", "Putaway"),
         ]),
 
         new("outbound", "Outbound", "bi-box-arrow-right", [
-            new("/warehouse/sales/orders", "bi-file-earmark-text", "Sales Orders"),
-            new("/warehouse/sales/allocations", "bi-sliders", "Allocations"),
-            new("/warehouse/outbound/orders", "bi-box-arrow-right", "Outbound Orders"),
-            new("/warehouse/outbound/dispatch", "bi-truck", "Dispatch"),
-            new("/warehouse/waves", "bi-layers", "Wave Picking"),
-            new("/warehouse/picking/tasks", "bi-list-task", "Picking Tasks"),
-            new("/warehouse/labels", "bi-upc-scan", "Labels"),
-            new("/warehouse/cross-dock", "bi-arrow-left-right", "Cross-Dock"),
-            new("/warehouse/rmas", "bi-arrow-counterclockwise", "RMAs"),
+            new("sales/orders", "bi-file-earmark-text", "Sales Orders"),
+            new("sales/allocations", "bi-sliders", "Allocations"),
+            new("outbound/orders", "bi-box-arrow-right", "Outbound Orders"),
+            new("outbound/dispatch", "bi-truck", "Dispatch"),
+            new("waves", "bi-layers", "Wave Picking"),
+            new("picking/tasks", "bi-list-task", "Picking Tasks"),
+            new("labels", "bi-upc-scan", "Labels"),
+            new("cross-dock", "bi-arrow-left-right", "Cross-Dock"),
+            new("rmas", "bi-arrow-counterclockwise", "RMAs"),
         ]),
 
         new("operations", "Operations", "bi-gear", [
-            new("/warehouse/transfers", "bi-arrow-left-right", "Transfers"),
-            new("/warehouse/cycle-counts", "bi-clipboard-check", "Cycle Counts"),
-            new("/warehouse/visualization/3d", "bi-bounding-box-circles", "Warehouse Map"),
-            new("/projections", "bi-database-gear", "Projections"),
+            new("transfers", "bi-arrow-left-right", "Transfers"),
+            new("cycle-counts", "bi-clipboard-check", "Cycle Counts"),
+            new("visualization/3d", "bi-bounding-box-circles", "Warehouse Map"),
+            new("projections", "bi-database-gear", "Projections"),
         ]),
 
         new("finance", "Finance", "bi-cash-stack", [
-            new("/warehouse/valuation/dashboard", "bi-cash-stack", "Valuation"),
-            new("/warehouse/agnum/config", "bi-journal-text", "Agnum Config"),
-            new("/warehouse/agnum/reconcile", "bi-calculator", "Agnum Reconcile"),
+            new("valuation/dashboard", "bi-cash-stack", "Valuation"),
+            new("agnum/config", "bi-journal-text", "Agnum Config"),
+            new("agnum/reconcile", "bi-calculator", "Agnum Reconcile"),
         ]),
 
         new("admin", "Admin", "bi-shield-lock", [
-            new("/admin/users", "bi-people", "Users"),
-            new("/warehouse/admin/settings", "bi-sliders", "Admin Settings"),
-            new("/warehouse/admin/reason-codes", "bi-list-check", "Reason Codes"),
-            new("/warehouse/admin/approval-rules", "bi-ui-checks-grid", "Approval Rules"),
-            new("/warehouse/admin/roles", "bi-person-gear", "Roles"),
-            new("/warehouse/admin/api-keys", "bi-key", "API Keys"),
-            new("/warehouse/admin/gdpr-erasure", "bi-shield-exclamation", "GDPR Erasure"),
-            new("/warehouse/admin/audit-logs", "bi-journal-text", "Audit Logs"),
-            new("/warehouse/admin/backups", "bi-hdd-stack", "Backups"),
-            new("/warehouse/admin/retention-policies", "bi-hourglass-split", "Retention Policies"),
-            new("/warehouse/admin/dr-drills", "bi-life-preserver", "DR Drills"),
-            new("/warehouse/admin/serial-numbers", "bi-upc-scan", "Serial Numbers"),
-            new("/warehouse/admin/lots", "bi-box2", "Lots"),
-            new("/warehouse/admin/uom", "bi-rulers", "Units of Measure"),
-            new("/admin/items", "bi-boxes", "Items"),
-            new("/admin/suppliers", "bi-truck", "Suppliers"),
-            new("/admin/supplier-mappings", "bi-link-45deg", "Supplier Mappings"),
-            new("/admin/locations", "bi-geo-alt", "Locations"),
-            new("/warehouse/admin/slots", "bi-grid-3x3-gap", "Slots"),
-            new("/admin/warehouses", "bi-building", "Warehouses"),
-            new("/admin/categories", "bi-diagram-3", "Categories"),
-            new("/admin/import", "bi-upload", "Import Wizard"),
-            new("/warehouse/admin/layout-editor", "bi-layout-text-window-reverse", "Layout Editor"),
+            new("admin/users", "bi-people", "Users"),
+            new("admin/settings", "bi-sliders", "Admin Settings"),
+            new("admin/reason-codes", "bi-list-check", "Reason Codes"),
+            new("admin/approval-rules", "bi-ui-checks-grid", "Approval Rules"),
+            new("admin/roles", "bi-person-gear", "Roles"),
+            new("admin/api-keys", "bi-key", "API Keys"),
+            new("admin/gdpr-erasure", "bi-shield-exclamation", "GDPR Erasure"),
+            new("admin/audit-logs", "bi-journal-text", "Audit Logs"),
+            new("admin/backups", "bi-hdd-stack", "Backups"),
+            new("admin/retention-policies", "bi-hourglass-split", "Retention Policies"),
+            new("admin/dr-drills", "bi-life-preserver", "DR Drills"),
+            new("admin/serial-numbers", "bi-upc-scan", "Serial Numbers"),
+            new("admin/lots", "bi-box2", "Lots"),
+            new("admin/uom", "bi-rulers", "Units of Measure"),
+            new("admin/items", "bi-boxes", "Items"),
+            new("admin/suppliers", "bi-truck", "Suppliers"),
+            new("admin/supplier-mappings", "bi-link-45deg", "Supplier Mappings"),
+            new("admin/locations", "bi-geo-alt", "Locations"),
+            new("admin/slots", "bi-grid-3x3-gap", "Slots"),
+            new("admin/warehouses", "bi-building", "Warehouses"),
+            new("admin/categories", "bi-diagram-3", "Categories"),
+            new("admin/import", "bi-upload", "Import Wizard"),
+            new("admin/layout-editor", "bi-layout-text-window-reverse", "Layout Editor"),
         ]),
 
         new("reports", "Reports", "bi-clipboard-data", [
-            new("/reports/stock-level", "bi-clipboard-data", "Stock Level"),
-            new("/reports/receiving-history", "bi-box-arrow-in-down", "Receiving History"),
-            new("/reports/pick-history", "bi-list-check", "Pick History"),
-            new("/reports/dispatch-history", "bi-truck-flatbed", "Dispatch History"),
-            new("/reports/stock-movements", "bi-arrow-repeat", "Stock Movements"),
-            new("/reports/traceability", "bi-diagram-3", "Traceability"),
-            new("/warehouse/compliance/lot-trace", "bi-diagram-3-fill", "Lot Traceability"),
-            new("/reports/compliance-audit", "bi-shield-check", "Compliance Audit"),
-            new("/warehouse/compliance/dashboard", "bi-clock-history", "Compliance Dashboard"),
+            new("reports/stock-level", "bi-clipboard-data", "Stock Level"),
+            new("reports/receiving-history", "bi-box-arrow-in-down", "Receiving History"),
+            new("reports/pick-history", "bi-list-check", "Pick History"),
+            new("reports/dispatch-history", "bi-truck-flatbed", "Dispatch History"),
+            new("reports/stock-movements", "bi-arrow-repeat", "Stock Movements"),
+            new("reports/traceability", "bi-diagram-3", "Traceability"),
+            new("compliance/lot-trace", "bi-diagram-3-fill", "Lot Traceability"),
+            new("reports/compliance-audit", "bi-shield-check", "Compliance Audit"),
+            new("compliance/dashboard", "bi-clock-history", "Compliance Dashboard"),
         ]),
 
         new("analytics", "Analytics", "bi-graph-up-arrow", [
-            new("/analytics/fulfillment", "bi-graph-up-arrow", "Fulfillment KPIs"),
-            new("/analytics/quality", "bi-shield-exclamation", "Quality Analytics"),
+            new("analytics/fulfillment", "bi-graph-up-arrow", "Fulfillment KPIs"),
+            new("analytics/quality", "bi-shield-exclamation", "Quality Analytics"),
         ]),
     ];
 }
