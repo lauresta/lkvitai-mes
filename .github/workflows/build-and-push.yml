@@ -8,6 +8,7 @@ on:
       - src/Modules/Warehouse/**
       - src/Modules/Portal/**
       - src/BuildingBlocks/**
+      - docker-compose.test.yml
       - .github/workflows/build-and-push.yml
   workflow_dispatch:
 
