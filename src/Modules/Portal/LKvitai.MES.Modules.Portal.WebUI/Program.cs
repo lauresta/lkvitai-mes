@@ -226,6 +226,7 @@ static bool IsAnonymousPortalPath(PathString path)
 {
     return path.StartsWithSegments("/login.html", StringComparison.OrdinalIgnoreCase) ||
            path.StartsWithSegments("/auth/login", StringComparison.OrdinalIgnoreCase) ||
+           path.StartsWithSegments("/auth/logout", StringComparison.OrdinalIgnoreCase) ||
            path.StartsWithSegments("/styles.css", StringComparison.OrdinalIgnoreCase) ||
            path.StartsWithSegments("/script.js", StringComparison.OrdinalIgnoreCase) ||
            path.StartsWithSegments("/favicon.ico", StringComparison.OrdinalIgnoreCase) ||

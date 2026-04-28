@@ -52,6 +52,7 @@ public static class PortalAuthApplicationBuilderExtensions
         endpoints.MapPost(PortalAuthDefaults.LogoutPath, async (HttpContext httpContext) =>
         {
             await httpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            DeleteLegacyPathScopedCookies(httpContext);
             return Results.Redirect(ResolveLoginPath(httpContext));
         });
 
@@ -74,5 +75,27 @@ public static class PortalAuthApplicationBuilderExtensions
     {
         var normalized = path.Trim().TrimEnd('/');
         return normalized.StartsWith("/", StringComparison.Ordinal) ? normalized : $"/{normalized}";
+    }
+
+    private static void DeleteLegacyPathScopedCookies(HttpContext httpContext)
+    {
+        var configuration = httpContext.RequestServices.GetRequiredService<IConfiguration>();
+        var cookieDomain = configuration[PortalAuthDefaults.CookieDomainConfigKey];
+        var paths = new[] { "/portal", "/warehouse", httpContext.Request.PathBase.Value }
+            .Where(path => !string.IsNullOrWhiteSpace(path))
+            .Select(path => NormalizePath(path!))
+            .Distinct(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var path in paths)
+        {
+            httpContext.Response.Cookies.Delete(PortalAuthDefaults.CookieName, new CookieOptions
+            {
+                Domain = string.IsNullOrWhiteSpace(cookieDomain) ? null : cookieDomain,
+                Path = path,
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Lax
+            });
+        }
     }
 }
