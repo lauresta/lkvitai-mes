@@ -18,6 +18,7 @@ public static class PortalAuthDefaults
 
     public const string DataProtectionKeysPathConfigKey = "PortalAuth:DataProtectionKeysPath";
     public const string CookieDomainConfigKey = "PortalAuth:CookieDomain";
+    public const string LoginBasePathConfigKey = "PortalAuth:LoginBasePath";
 
     /// <summary>
     /// Default relative path for DataProtection keys. Resolved against

@@ -42,7 +42,8 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Test
       WarehouseApi__BaseUrl: "http://lkvitai-mes-warehouse-api:8080"
-      PortalAuth__CookieDomain: ".mes-test.lauresta.com"
+      PathBase: "/warehouse"
+      PortalAuth__LoginBasePath: "/portal"
       PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
     volumes:
       - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys
@@ -84,8 +85,8 @@ services:
       ASPNETCORE_ENVIRONMENT: Test
       PortalApi__BaseUrl: "http://lkvitai-mes-portal-api:8080"
       WarehouseApi__BaseUrl: "http://lkvitai-mes-warehouse-api:8080"
-      WarehouseWebUi__BaseUrl: "https://warehouse.mes-test.lauresta.com"
-      PortalAuth__CookieDomain: ".mes-test.lauresta.com"
+      WarehouseWebUi__BaseUrl: "https://mes-test.lauresta.com/warehouse"
+      PathBase: "/portal"
       PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
     volumes:
       - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys

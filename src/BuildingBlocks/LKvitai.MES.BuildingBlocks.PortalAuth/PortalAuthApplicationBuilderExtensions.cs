@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 namespace LKvitai.MES.BuildingBlocks.PortalAuth;
@@ -50,9 +52,27 @@ public static class PortalAuthApplicationBuilderExtensions
         endpoints.MapPost(PortalAuthDefaults.LogoutPath, async (HttpContext httpContext) =>
         {
             await httpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            return Results.Redirect(PortalAuthDefaults.LoginPath);
+            return Results.Redirect(ResolveLoginPath(httpContext));
         });
 
         return endpoints;
+    }
+
+    private static string ResolveLoginPath(HttpContext httpContext)
+    {
+        var configuration = httpContext.RequestServices.GetRequiredService<IConfiguration>();
+        var configuredBasePath = configuration[PortalAuthDefaults.LoginBasePathConfigKey];
+        if (!string.IsNullOrWhiteSpace(configuredBasePath))
+        {
+            return $"{NormalizePath(configuredBasePath)}{PortalAuthDefaults.LoginPath}";
+        }
+
+        return $"{httpContext.Request.PathBase}{PortalAuthDefaults.LoginPath}";
+    }
+
+    private static string NormalizePath(string path)
+    {
+        var normalized = path.Trim().TrimEnd('/');
+        return normalized.StartsWith("/", StringComparison.Ordinal) ? normalized : $"/{normalized}";
     }
 }

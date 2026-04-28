@@ -2,52 +2,62 @@
 http:
   routers:
     mes-test-portal-root:
-      rule: "Host(`mes-test.lauresta.com`)"
+      rule: "Host(`mes-test.lauresta.com`) && Path(`/`)"
       entryPoints: [websecure]
+      middlewares: [mes-test-redirect-root-to-portal]
       service: mes-test-portal-webui
+      priority: 10
       tls:
         certResolver: letsencrypt
 
     mes-test-portal:
-      rule: "Host(`portal.mes-test.lauresta.com`)"
+      rule: "Host(`mes-test.lauresta.com`) && PathPrefix(`/portal`)"
       entryPoints: [websecure]
       service: mes-test-portal-webui
+      priority: 100
       tls:
         certResolver: letsencrypt
 
     mes-test-warehouse:
-      rule: "Host(`warehouse.mes-test.lauresta.com`)"
+      rule: "Host(`mes-test.lauresta.com`) && PathPrefix(`/warehouse`)"
       entryPoints: [websecure]
       service: mes-test-warehouse-webui
+      priority: 100
       tls:
         certResolver: letsencrypt
 
     mes-test-api-portal:
-      rule: "Host(`api.mes-test.lauresta.com`) && PathPrefix(`/portal`)"
+      rule: "Host(`mes-test.lauresta.com`) && PathPrefix(`/api/portal`)"
       entryPoints: [websecure]
       middlewares: [mes-test-strip-api-portal]
       service: mes-test-portal-api
-      priority: 100
+      priority: 200
       tls:
         certResolver: letsencrypt
 
     mes-test-api-warehouse:
-      rule: "Host(`api.mes-test.lauresta.com`) && PathPrefix(`/warehouse`)"
+      rule: "Host(`mes-test.lauresta.com`) && PathPrefix(`/api/warehouse`)"
       entryPoints: [websecure]
       middlewares: [mes-test-strip-api-warehouse]
       service: mes-test-warehouse-api
-      priority: 100
+      priority: 200
       tls:
         certResolver: letsencrypt
 
   middlewares:
+    mes-test-redirect-root-to-portal:
+      redirectRegex:
+        regex: "^https://mes-test\\.lauresta\\.com/$"
+        replacement: "https://mes-test.lauresta.com/portal/"
+        permanent: false
+
     mes-test-strip-api-portal:
       stripPrefix:
-        prefixes: [/portal]
+        prefixes: [/api/portal]
 
     mes-test-strip-api-warehouse:
       stripPrefix:
-        prefixes: [/warehouse]
+        prefixes: [/api/warehouse]
 
   services:
     mes-test-portal-webui:

@@ -62,6 +62,7 @@ builder.Services.AddScoped<ToastService>();
 
 var app = builder.Build();
 
+app.UsePathBase(ResolvePathBase(app.Configuration));
 app.UsePortalSecureHosting(app.Environment);
 
 app.UseStaticFiles();
@@ -106,3 +107,9 @@ app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
 
 app.Run();
+
+static PathString ResolvePathBase(IConfiguration configuration)
+{
+    var configured = configuration["PathBase"];
+    return string.IsNullOrWhiteSpace(configured) ? PathString.Empty : new PathString(configured.TrimEnd('/'));
+}

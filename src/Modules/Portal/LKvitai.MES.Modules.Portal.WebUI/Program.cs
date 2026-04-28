@@ -57,7 +57,19 @@ builder.Services.AddHttpClient("WarehouseApi", (sp, client) =>
 
 var app = builder.Build();
 
+app.UsePathBase(ResolvePathBase(app.Configuration));
 app.UsePortalSecureHosting(app.Environment);
+
+app.Use(async (context, next) =>
+{
+    if (context.Request.PathBase.HasValue && !context.Request.Path.HasValue)
+    {
+        context.Response.Redirect($"{context.Request.PathBase}/");
+        return;
+    }
+
+    await next();
+});
 
 app.UseSerilogRequestLogging(options =>
 {
@@ -79,7 +91,7 @@ app.Use(async (context, next) =>
     }
 
     var returnUrl = context.Request.PathBase + context.Request.Path + context.Request.QueryString;
-    context.Response.Redirect($"/login.html?returnUrl={Uri.EscapeDataString(returnUrl)}");
+    context.Response.Redirect(BuildLocalUrl(context, "/login.html", $"returnUrl={Uri.EscapeDataString(returnUrl)}"));
 });
 
 app.Use(async (context, next) =>
@@ -123,13 +135,13 @@ app.MapPost("/auth/login", async (
     catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
     {
         logger.LogError(ex, "Portal login could not reach Warehouse API for {Username}", username);
-        return RedirectToLogin(returnUrl, "unreachable");
+        return RedirectToLogin(httpContext, returnUrl, "unreachable");
     }
 
     if ((int)response.StatusCode is 401 or 403)
     {
         logger.LogWarning("Portal login rejected for {Username} (status {Status})", username, (int)response.StatusCode);
-        return RedirectToLogin(returnUrl, "invalid");
+        return RedirectToLogin(httpContext, returnUrl, "invalid");
     }
 
     if (!response.IsSuccessStatusCode)
@@ -138,7 +150,7 @@ app.MapPost("/auth/login", async (
             "Portal login: Warehouse API returned unexpected status {Status} for {Username}",
             (int)response.StatusCode,
             username);
-        return RedirectToLogin(returnUrl, "server");
+        return RedirectToLogin(httpContext, returnUrl, "server");
     }
 
     try
@@ -148,13 +160,13 @@ app.MapPost("/auth/login", async (
     catch (Exception ex) when (ex is System.Text.Json.JsonException or HttpRequestException or TaskCanceledException)
     {
         logger.LogError(ex, "Portal login: failed to read Warehouse API response for {Username}", username);
-        return RedirectToLogin(returnUrl, "server");
+        return RedirectToLogin(httpContext, returnUrl, "server");
     }
 
     if (login is null || string.IsNullOrWhiteSpace(login.Token))
     {
         logger.LogError("Portal login: Warehouse API returned an empty token for {Username}", username);
-        return RedirectToLogin(returnUrl, "server");
+        return RedirectToLogin(httpContext, returnUrl, "server");
     }
 
     var claims = new List<Claim>
@@ -189,7 +201,7 @@ app.MapPost("/auth/login", async (
         // which would re-execute as /Error and trigger the cookie challenge
         // → /login.html?returnUrl=%2FError redirect loop.
         logger.LogError(ex, "Portal login: failed to issue auth cookie for {Username}", login.Username);
-        return RedirectToLogin(returnUrl, "server");
+        return RedirectToLogin(httpContext, returnUrl, "server");
     }
 
     logger.LogInformation("Portal login successful for {Username}", login.Username);
@@ -203,11 +215,11 @@ app.MapFallbackToFile("index.html");
 
 await app.RunAsync();
 
-static IResult RedirectToLogin(string returnUrl, string error)
+static IResult RedirectToLogin(HttpContext context, string returnUrl, string error)
 {
     var encodedReturn = Uri.EscapeDataString(returnUrl);
     var encodedError = Uri.EscapeDataString(error);
-    return Results.Redirect($"/login.html?error={encodedError}&returnUrl={encodedReturn}");
+    return Results.Redirect(BuildLocalUrl(context, "/login.html", $"error={encodedError}&returnUrl={encodedReturn}"));
 }
 
 static bool IsAnonymousPortalPath(PathString path)
@@ -233,6 +245,18 @@ static string NormalizeReturnUrl(string? returnUrl)
            !returnUrl.StartsWith("//", StringComparison.Ordinal)
         ? returnUrl
         : "/";
+}
+
+static PathString ResolvePathBase(IConfiguration configuration)
+{
+    var configured = configuration["PathBase"];
+    return string.IsNullOrWhiteSpace(configured) ? PathString.Empty : new PathString(configured.TrimEnd('/'));
+}
+
+static string BuildLocalUrl(HttpContext context, string path, string? query = null)
+{
+    var localPath = $"{context.Request.PathBase}{path}";
+    return string.IsNullOrWhiteSpace(query) ? localPath : $"{localPath}?{query}";
 }
 
 static Uri EnsureTrailingSlash(Uri uri)
@@ -274,7 +298,7 @@ static string ResolveWarehouseWebUiBaseUrl(HttpContext context)
 
     if (host.Equals("mes-test.lauresta.com", StringComparison.OrdinalIgnoreCase))
     {
-        return $"{scheme}://warehouse.mes-test.lauresta.com";
+        return $"{scheme}://mes-test.lauresta.com/warehouse";
     }
 
     return $"{scheme}://warehouse.{host}";
