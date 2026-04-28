@@ -24,6 +24,7 @@ api.mes.lauresta.com/warehouse   -> http://10.11.12.9:5001
 Test VM `lkvitai-test`:
 
 ```text
+mes-test.lauresta.com/                 -> redirects to /portal/
 mes-test.lauresta.com/portal          -> http://10.11.12.15:5010
 mes-test.lauresta.com/warehouse       -> http://10.11.12.15:5000
 mes-test.lauresta.com/api/portal      -> http://10.11.12.15:5011
