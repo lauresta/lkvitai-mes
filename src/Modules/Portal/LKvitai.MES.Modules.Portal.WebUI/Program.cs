@@ -29,7 +29,19 @@ builder.Services.AddHttpClient("WarehouseApi", (sp, client) =>
 
 var app = builder.Build();
 
+app.UsePathBase(ResolvePathBase(app.Configuration));
 app.UsePortalSecureHosting(app.Environment);
+
+app.Use(async (context, next) =>
+{
+    if (context.Request.PathBase.HasValue && !context.Request.Path.HasValue)
+    {
+        context.Response.Redirect($"{context.Request.PathBase}/");
+        return;
+    }
+
+    await next();
+});
 
 app.UseRouting();
 app.UseAuthentication();
@@ -45,7 +57,7 @@ app.Use(async (context, next) =>
     }
 
     var returnUrl = context.Request.PathBase + context.Request.Path + context.Request.QueryString;
-    context.Response.Redirect($"/login.html?returnUrl={Uri.EscapeDataString(returnUrl)}");
+    context.Response.Redirect(BuildLocalUrl(context, "/login.html", $"returnUrl={Uri.EscapeDataString(returnUrl)}"));
 });
 
 app.Use(async (context, next) =>
@@ -84,14 +96,14 @@ app.MapPost("/auth/login", async (
     if (!response.IsSuccessStatusCode)
     {
         logger.LogWarning("Portal login rejected for {Username}", username);
-        return Results.Redirect($"/login.html?error=invalid&returnUrl={Uri.EscapeDataString(returnUrl)}");
+        return Results.Redirect(BuildLocalUrl(httpContext, "/login.html", $"error=invalid&returnUrl={Uri.EscapeDataString(returnUrl)}"));
     }
 
     var login = await response.Content.ReadFromJsonAsync<PortalLoginResponse>(cancellationToken: cancellationToken);
     if (login is null || string.IsNullOrWhiteSpace(login.Token))
     {
         logger.LogWarning("Portal login failed because API returned an empty token for {Username}", username);
-        return Results.Redirect($"/login.html?error=invalid&returnUrl={Uri.EscapeDataString(returnUrl)}");
+        return Results.Redirect(BuildLocalUrl(httpContext, "/login.html", $"error=invalid&returnUrl={Uri.EscapeDataString(returnUrl)}"));
     }
 
     var claims = new List<Claim>
@@ -152,6 +164,18 @@ static string NormalizeReturnUrl(string? returnUrl)
         : "/";
 }
 
+static PathString ResolvePathBase(IConfiguration configuration)
+{
+    var configured = configuration["PathBase"];
+    return string.IsNullOrWhiteSpace(configured) ? PathString.Empty : new PathString(configured.TrimEnd('/'));
+}
+
+static string BuildLocalUrl(HttpContext context, string path, string? query = null)
+{
+    var localPath = $"{context.Request.PathBase}{path}";
+    return string.IsNullOrWhiteSpace(query) ? localPath : $"{localPath}?{query}";
+}
+
 static Uri EnsureTrailingSlash(Uri uri)
 {
     var builder = new UriBuilder(uri);
@@ -191,7 +215,7 @@ static string ResolveWarehouseWebUiBaseUrl(HttpContext context)
 
     if (host.Equals("mes-test.lauresta.com", StringComparison.OrdinalIgnoreCase))
     {
-        return $"{scheme}://warehouse.mes-test.lauresta.com";
+        return $"{scheme}://mes-test.lauresta.com/warehouse";
     }
 
     return $"{scheme}://warehouse.{host}";
