@@ -78,6 +78,7 @@ services:
       ASPNETCORE_ENVIRONMENT: Test
       PortalApi__BaseUrl: "http://lkvitai-mes-portal-api:8080"
       WarehouseApi__BaseUrl: "http://lkvitai-mes-warehouse-api:8080"
+      WarehouseWebUi__BaseUrl: "https://warehouse.mes-test.lauresta.com"
       PortalAuth__CookieDomain: ".mes-test.lauresta.com"
       PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
     volumes:
