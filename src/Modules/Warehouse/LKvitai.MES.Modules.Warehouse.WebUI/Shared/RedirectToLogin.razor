@@ -1,4 +1,5 @@
 @inject NavigationManager Navigation
+@inject IConfiguration Configuration
 
 @code {
     protected override void OnAfterRender(bool firstRender)
@@ -9,7 +10,23 @@
         }
 
         var relative = Navigation.ToBaseRelativePath(Navigation.Uri);
-        var returnUrl = string.IsNullOrWhiteSpace(relative) ? "/dashboard" : $"/{relative}";
-        Navigation.NavigateTo($"/login.html?returnUrl={Uri.EscapeDataString(returnUrl)}", replace: true);
+        var warehouseBasePath = NormalizePath(Configuration["PathBase"], "/warehouse");
+        var portalLoginBasePath = NormalizePath(Configuration["PortalAuth:LoginBasePath"], "/portal");
+        var returnUrl = string.IsNullOrWhiteSpace(relative)
+            ? $"{warehouseBasePath}/dashboard"
+            : $"{warehouseBasePath}/{relative.TrimStart('/')}";
+
+        Navigation.NavigateTo($"{portalLoginBasePath}/login.html?returnUrl={Uri.EscapeDataString(returnUrl)}", replace: true);
+    }
+
+    private static string NormalizePath(string? configured, string fallback)
+    {
+        if (string.IsNullOrWhiteSpace(configured))
+        {
+            return fallback;
+        }
+
+        var normalized = configured.Trim().TrimEnd('/');
+        return normalized.StartsWith("/", StringComparison.Ordinal) ? normalized : $"/{normalized}";
     }
 }
