@@ -24,13 +24,17 @@ api.mes.lauresta.com/warehouse   -> http://10.11.12.9:5001
 Test VM `lkvitai-test`:
 
 ```text
-mes-test.lauresta.com                 -> http://10.11.12.15:5010
-portal.mes-test.lauresta.com          -> http://10.11.12.15:5010
-warehouse.mes-test.lauresta.com       -> http://10.11.12.15:5000
-api.mes-test.lauresta.com/portal      -> http://10.11.12.15:5011
-api.mes-test.lauresta.com/warehouse   -> http://10.11.12.15:5001
+mes-test.lauresta.com/portal          -> http://10.11.12.15:5010
+mes-test.lauresta.com/warehouse       -> http://10.11.12.15:5000
+mes-test.lauresta.com/api/portal      -> http://10.11.12.15:5011
+mes-test.lauresta.com/api/warehouse   -> http://10.11.12.15:5001
 ```
 
-API routers strip the module prefix before forwarding. For example,
+Production API routers strip the module prefix before forwarding. For example,
 `https://api.mes.lauresta.com/warehouse/api/auth/login` reaches the Warehouse API
 as `/api/auth/login`.
+
+Test routing intentionally stays path-based under `https://mes-test.lauresta.com`
+because Cloudflare Universal SSL does not cover deep subdomains such as
+`*.mes-test.lauresta.com`. Test API routers strip `/api/portal` and
+`/api/warehouse` before forwarding.
