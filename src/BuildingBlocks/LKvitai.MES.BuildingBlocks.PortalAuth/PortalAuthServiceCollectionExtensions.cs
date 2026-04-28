@@ -34,6 +34,7 @@ public static class PortalAuthServiceCollectionExtensions
                 options.AccessDeniedPath = PortalAuthDefaults.AccessDeniedPath;
                 options.Cookie.Name = PortalAuthDefaults.CookieName;
                 options.Cookie.Domain = ResolveCookieDomain(configuration);
+                options.Cookie.Path = "/";
                 options.Cookie.HttpOnly = true;
                 options.Cookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Lax;
                 options.Cookie.SecurePolicy = environment.IsDevelopment()
