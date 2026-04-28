@@ -36,7 +36,13 @@ jobs:
           grep -q 'Host(`mes.lauresta.com`)' deploy/traefik/dynamic/mes.yml
           grep -q 'Host(`api.mes.lauresta.com`)' deploy/traefik/dynamic/mes.yml
           grep -q 'Host(`mes-test.lauresta.com`)' deploy/traefik/dynamic/mes-test.yml
-          grep -q 'Host(`api.mes-test.lauresta.com`)' deploy/traefik/dynamic/mes-test.yml
+          grep -q 'PathPrefix(`/api/portal`)' deploy/traefik/dynamic/mes-test.yml
+          grep -q 'PathPrefix(`/api/warehouse`)' deploy/traefik/dynamic/mes-test.yml
+
+          if grep -Eq 'Host\(`(portal|warehouse|api)\.mes-test\.lauresta\.com`\)' deploy/traefik/dynamic/mes-test.yml; then
+            echo "::error::Test routing must stay path-based under mes-test.lauresta.com."
+            exit 1
+          fi
 
       - name: Install dynamic config on Traefik VPS
         run: |
