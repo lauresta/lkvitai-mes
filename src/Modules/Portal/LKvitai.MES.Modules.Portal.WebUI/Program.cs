@@ -184,6 +184,8 @@ app.MapPost("/auth/login", async (
 
     try
     {
+        httpContext.DeleteLegacyPortalAuthCookies();
+
         await httpContext.SignInAsync(
             CookieAuthenticationDefaults.AuthenticationScheme,
             new ClaimsPrincipal(new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme)),
