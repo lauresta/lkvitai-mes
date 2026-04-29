@@ -52,11 +52,39 @@ public static class PortalAuthApplicationBuilderExtensions
         endpoints.MapPost(PortalAuthDefaults.LogoutPath, async (HttpContext httpContext) =>
         {
             await httpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            DeleteLegacyPathScopedCookies(httpContext);
+            httpContext.DeleteLegacyPortalAuthCookies();
             return Results.Redirect(ResolveLoginPath(httpContext));
         });
 
         return endpoints;
+    }
+
+    public static void DeleteLegacyPortalAuthCookies(this HttpContext httpContext)
+    {
+        ArgumentNullException.ThrowIfNull(httpContext);
+
+        var configuration = httpContext.RequestServices.GetRequiredService<IConfiguration>();
+        var configuredCookieDomain = configuration[PortalAuthDefaults.CookieDomainConfigKey];
+        var paths = new[] { "/portal", "/warehouse", httpContext.Request.PathBase.Value }
+            .Where(path => !string.IsNullOrWhiteSpace(path))
+            .Select(path => NormalizePath(path!))
+            .Distinct(StringComparer.OrdinalIgnoreCase);
+        var domains = ResolveLegacyCookieDomains(configuredCookieDomain);
+
+        foreach (var path in paths)
+        {
+            foreach (var domain in domains)
+            {
+                httpContext.Response.Cookies.Delete(PortalAuthDefaults.CookieName, new CookieOptions
+                {
+                    Domain = domain,
+                    Path = path,
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.Lax
+                });
+            }
+        }
     }
 
     private static string ResolveLoginPath(HttpContext httpContext)
@@ -77,25 +105,16 @@ public static class PortalAuthApplicationBuilderExtensions
         return normalized.StartsWith("/", StringComparison.Ordinal) ? normalized : $"/{normalized}";
     }
 
-    private static void DeleteLegacyPathScopedCookies(HttpContext httpContext)
+    private static IEnumerable<string?> ResolveLegacyCookieDomains(string? configuredCookieDomain)
     {
-        var configuration = httpContext.RequestServices.GetRequiredService<IConfiguration>();
-        var cookieDomain = configuration[PortalAuthDefaults.CookieDomainConfigKey];
-        var paths = new[] { "/portal", "/warehouse", httpContext.Request.PathBase.Value }
-            .Where(path => !string.IsNullOrWhiteSpace(path))
-            .Select(path => NormalizePath(path!))
-            .Distinct(StringComparer.OrdinalIgnoreCase);
+        yield return null;
 
-        foreach (var path in paths)
+        if (!string.IsNullOrWhiteSpace(configuredCookieDomain))
         {
-            httpContext.Response.Cookies.Delete(PortalAuthDefaults.CookieName, new CookieOptions
-            {
-                Domain = string.IsNullOrWhiteSpace(cookieDomain) ? null : cookieDomain,
-                Path = path,
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Lax
-            });
+            yield return configuredCookieDomain;
         }
+
+        yield return ".mes-test.lauresta.com";
+        yield return ".lauresta.com";
     }
 }
