@@ -65,7 +65,7 @@ public static class PortalAuthApplicationBuilderExtensions
 
         var configuration = httpContext.RequestServices.GetRequiredService<IConfiguration>();
         var configuredCookieDomain = configuration[PortalAuthDefaults.CookieDomainConfigKey];
-        var paths = new[] { "/portal", "/warehouse", httpContext.Request.PathBase.Value }
+        var paths = new[] { "/", "/portal", "/warehouse", httpContext.Request.PathBase.Value }
             .Where(path => !string.IsNullOrWhiteSpace(path))
             .Select(path => NormalizePath(path!))
             .Distinct(StringComparer.OrdinalIgnoreCase);
