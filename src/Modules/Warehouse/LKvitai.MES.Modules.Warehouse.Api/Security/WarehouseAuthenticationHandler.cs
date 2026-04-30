@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using System.Text.Encodings.Web;
+using LKvitai.MES.BuildingBlocks.PortalAuth;
 using LKvitai.MES.Modules.Warehouse.Api.ErrorHandling;
 using LKvitai.MES.Modules.Warehouse.Api.Services;
 using LKvitai.MES.BuildingBlocks.SharedKernel;
@@ -123,14 +124,14 @@ public sealed class WarehouseAuthenticationHandler : AuthenticationHandler<Authe
                 return AuthenticateResult.Success(jwtTicket);
             }
 
-            if (TryParseStructuredToken(token, out var parsed))
+            if (PortalStructuredBearerToken.TryParse(token, out var parsed))
             {
                 userId = parsed.UserId;
                 rolesValue = string.Join(',', parsed.Roles);
                 authSource = parsed.AuthSource;
                 mfaVerified = parsed.MfaVerified;
 
-                if (parsed.ExpiresAt.HasValue && DateTimeOffset.UtcNow > parsed.ExpiresAt.Value)
+                if (parsed.IsExpired(DateTimeOffset.UtcNow))
                 {
                     return AuthenticateResult.Fail("Token expired");
                 }
@@ -185,52 +186,6 @@ public sealed class WarehouseAuthenticationHandler : AuthenticationHandler<Authe
     private static bool LooksLikeJwt(string token)
     {
         return token.Count(x => x == '.') == 2;
-    }
-
-    private static bool TryParseStructuredToken(string token, out ParsedToken parsedToken)
-    {
-        parsedToken = ParsedToken.Empty;
-
-        var segments = token.Split('|', StringSplitOptions.TrimEntries);
-        if (segments.Length == 0 || string.IsNullOrWhiteSpace(segments[0]))
-        {
-            return false;
-        }
-
-        var roles = Array.Empty<string>();
-        if (segments.Length > 1 && !string.IsNullOrWhiteSpace(segments[1]))
-        {
-            roles = segments[1]
-                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToArray();
-        }
-
-        DateTimeOffset? expiresAt = null;
-        if (segments.Length > 2 && long.TryParse(segments[2], out var expUnix))
-        {
-            expiresAt = DateTimeOffset.FromUnixTimeSeconds(expUnix);
-        }
-
-        var authSource = segments.Length > 3 && !string.IsNullOrWhiteSpace(segments[3])
-            ? segments[3]
-            : null;
-
-        var mfaVerified = segments.Length > 4 &&
-                          string.Equals(segments[4], "mfa", StringComparison.OrdinalIgnoreCase);
-
-        parsedToken = new ParsedToken(segments[0], roles, expiresAt, authSource, mfaVerified);
-        return true;
-    }
-
-    private sealed record ParsedToken(
-        string UserId,
-        IReadOnlyList<string> Roles,
-        DateTimeOffset? ExpiresAt,
-        string? AuthSource,
-        bool MfaVerified)
-    {
-        public static ParsedToken Empty { get; } = new(string.Empty, [], null, null, false);
     }
 
     protected override Task HandleChallengeAsync(AuthenticationProperties properties)
