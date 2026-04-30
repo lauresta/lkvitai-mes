@@ -23,6 +23,7 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         include:
           - name: api
@@ -78,6 +79,29 @@ jobs:
           tags: |
             type=raw,value=latest
             type=sha,prefix=,format=long
+
+      # MCR occasionally returns 403 on anonymous HEAD /v2/.../manifests/... during
+      # BuildKit metadata resolution. Probe both .NET base images with retries before
+      # starting the expensive matrix build so transient registry failures do not
+      # immediately cancel every image publish job.
+      - name: Verify .NET 8 base images are reachable
+        shell: bash
+        run: |
+          set -u
+          for image in mcr.microsoft.com/dotnet/sdk:8.0 mcr.microsoft.com/dotnet/aspnet:8.0; do
+            echo "Checking ${image} ..."
+            attempts=0
+            until docker buildx imagetools inspect "${image}" >/dev/null; do
+              attempts=$((attempts + 1))
+              if [ ${attempts} -ge 5 ]; then
+                echo "::error::Failed to resolve ${image} after ${attempts} attempts"
+                exit 1
+              fi
+              wait=$((attempts * 10))
+              echo "resolve ${image} failed, retrying in ${wait}s..."
+              sleep ${wait}
+            done
+          done
 
       - name: Build and push ${{ matrix.name }} image
         uses: docker/build-push-action@v5

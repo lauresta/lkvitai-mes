@@ -89,6 +89,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LKvitai.MES.Modules.Scannin
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LKvitai.MES.Modules.Scanning.WebUI", "Modules\Scanning\LKvitai.MES.Modules.Scanning.WebUI\LKvitai.MES.Modules.Scanning.WebUI.csproj", "{C064108B-603E-44EC-9AF7-FE630A05AEEE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LKvitai.MES.BuildingBlocks.ModuleStartup", "BuildingBlocks\LKvitai.MES.BuildingBlocks.ModuleStartup\LKvitai.MES.BuildingBlocks.ModuleStartup.csproj", "{62AF2A2A-F474-4644-8EAA-43740A0D8994}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -507,6 +509,18 @@ Global
 		{C064108B-603E-44EC-9AF7-FE630A05AEEE}.Release|x64.Build.0 = Release|Any CPU
 		{C064108B-603E-44EC-9AF7-FE630A05AEEE}.Release|x86.ActiveCfg = Release|Any CPU
 		{C064108B-603E-44EC-9AF7-FE630A05AEEE}.Release|x86.Build.0 = Release|Any CPU
+		{62AF2A2A-F474-4644-8EAA-43740A0D8994}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{62AF2A2A-F474-4644-8EAA-43740A0D8994}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{62AF2A2A-F474-4644-8EAA-43740A0D8994}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{62AF2A2A-F474-4644-8EAA-43740A0D8994}.Debug|x64.Build.0 = Debug|Any CPU
+		{62AF2A2A-F474-4644-8EAA-43740A0D8994}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{62AF2A2A-F474-4644-8EAA-43740A0D8994}.Debug|x86.Build.0 = Debug|Any CPU
+		{62AF2A2A-F474-4644-8EAA-43740A0D8994}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{62AF2A2A-F474-4644-8EAA-43740A0D8994}.Release|Any CPU.Build.0 = Release|Any CPU
+		{62AF2A2A-F474-4644-8EAA-43740A0D8994}.Release|x64.ActiveCfg = Release|Any CPU
+		{62AF2A2A-F474-4644-8EAA-43740A0D8994}.Release|x64.Build.0 = Release|Any CPU
+		{62AF2A2A-F474-4644-8EAA-43740A0D8994}.Release|x86.ActiveCfg = Release|Any CPU
+		{62AF2A2A-F474-4644-8EAA-43740A0D8994}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -551,5 +565,6 @@ Global
 		{F9F66F47-B018-4689-B6E9-01C11D544122} = {E517C80E-57DC-40DC-B774-86FB3BB2E677}
 		{B7B7C22D-13E2-4504-9BEC-EF0F83AEC005} = {E517C80E-57DC-40DC-B774-86FB3BB2E677}
 		{C064108B-603E-44EC-9AF7-FE630A05AEEE} = {E517C80E-57DC-40DC-B774-86FB3BB2E677}
+		{62AF2A2A-F474-4644-8EAA-43740A0D8994} = {12C1EE8E-A2E0-45AF-BB0B-AE1B9FE15B43}
 	EndGlobalSection
 EndGlobal

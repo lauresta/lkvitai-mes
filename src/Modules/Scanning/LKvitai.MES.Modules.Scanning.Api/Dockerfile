@@ -9,6 +9,7 @@ COPY global.json .
 
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.Cqrs.Abstractions/LKvitai.MES.BuildingBlocks.Cqrs.Abstractions.csproj BuildingBlocks/LKvitai.MES.BuildingBlocks.Cqrs.Abstractions/
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.SharedKernel/LKvitai.MES.BuildingBlocks.SharedKernel.csproj BuildingBlocks/LKvitai.MES.BuildingBlocks.SharedKernel/
+COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.ModuleStartup/LKvitai.MES.BuildingBlocks.ModuleStartup.csproj BuildingBlocks/LKvitai.MES.BuildingBlocks.ModuleStartup/
 COPY src/Modules/Scanning/LKvitai.MES.Modules.Scanning.Contracts/LKvitai.MES.Modules.Scanning.Contracts.csproj Modules/Scanning/LKvitai.MES.Modules.Scanning.Contracts/
 COPY src/Modules/Scanning/LKvitai.MES.Modules.Scanning.Application/LKvitai.MES.Modules.Scanning.Application.csproj Modules/Scanning/LKvitai.MES.Modules.Scanning.Application/
 COPY src/Modules/Scanning/LKvitai.MES.Modules.Scanning.Api/LKvitai.MES.Modules.Scanning.Api.csproj Modules/Scanning/LKvitai.MES.Modules.Scanning.Api/
@@ -17,6 +18,7 @@ RUN dotnet restore Modules/Scanning/LKvitai.MES.Modules.Scanning.Api/LKvitai.MES
 
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.Cqrs.Abstractions/ BuildingBlocks/LKvitai.MES.BuildingBlocks.Cqrs.Abstractions/
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.SharedKernel/ BuildingBlocks/LKvitai.MES.BuildingBlocks.SharedKernel/
+COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.ModuleStartup/ BuildingBlocks/LKvitai.MES.BuildingBlocks.ModuleStartup/
 COPY src/Modules/Scanning/LKvitai.MES.Modules.Scanning.Contracts/ Modules/Scanning/LKvitai.MES.Modules.Scanning.Contracts/
 COPY src/Modules/Scanning/LKvitai.MES.Modules.Scanning.Application/ Modules/Scanning/LKvitai.MES.Modules.Scanning.Application/
 COPY src/Modules/Scanning/LKvitai.MES.Modules.Scanning.Api/ Modules/Scanning/LKvitai.MES.Modules.Scanning.Api/
