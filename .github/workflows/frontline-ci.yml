@@ -43,6 +43,28 @@ jobs:
       - name: Build Frontline WebUI
         run: dotnet build src/Modules/Frontline/LKvitai.MES.Modules.Frontline.WebUI/LKvitai.MES.Modules.Frontline.WebUI.csproj -c Release --no-restore
 
+      # MCR occasionally returns 403 on anonymous HEAD /v2/.../manifests/... during
+      # BuildKit metadata resolution. Pulling the base images with retries up front
+      # lets the subsequent `docker build` use the local cache instead of hitting MCR.
+      - name: Prefetch .NET 8 base images (retry on MCR 403)
+        shell: bash
+        run: |
+          set -u
+          for image in mcr.microsoft.com/dotnet/sdk:8.0 mcr.microsoft.com/dotnet/aspnet:8.0; do
+            echo "Pulling ${image} ..."
+            attempts=0
+            until docker pull "${image}"; do
+              attempts=$((attempts + 1))
+              if [ ${attempts} -ge 5 ]; then
+                echo "::error::Failed to pull ${image} after ${attempts} attempts"
+                exit 1
+              fi
+              wait=$((attempts * 10))
+              echo "pull ${image} failed, retrying in ${wait}s..."
+              sleep ${wait}
+            done
+          done
+
       - name: Docker build Frontline API
         run: docker build -f src/Modules/Frontline/LKvitai.MES.Modules.Frontline.Api/Dockerfile -t lkvitai-mes-frontline-api:ci .
 
