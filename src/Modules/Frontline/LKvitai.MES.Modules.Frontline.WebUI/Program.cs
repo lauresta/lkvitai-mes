@@ -31,7 +31,7 @@ builder.Services.AddMudServices();
 builder.Services.AddHttpClient("FrontlineApi", (sp, client) =>
 {
     var configuration = sp.GetRequiredService<IConfiguration>();
-    var baseUrl = configuration["FrontlineApi:BaseUrl"] ?? "https://localhost:5031";
+    var baseUrl = configuration["FrontlineApi:BaseUrl"] ?? "http://localhost:5031";
 
     client.BaseAddress = new Uri(baseUrl);
     client.Timeout = TimeSpan.FromSeconds(30);

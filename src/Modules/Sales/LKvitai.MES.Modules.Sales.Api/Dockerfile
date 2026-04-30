@@ -5,6 +5,7 @@ WORKDIR /src
 COPY src/LKvitai.MES.sln .
 COPY Directory.Build.props .
 COPY Directory.Packages.props .
+COPY global.json .
 
 # Project files first to maximize restore layer caching.
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.Cqrs.Abstractions/LKvitai.MES.BuildingBlocks.Cqrs.Abstractions.csproj BuildingBlocks/LKvitai.MES.BuildingBlocks.Cqrs.Abstractions/

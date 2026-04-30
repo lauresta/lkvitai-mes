@@ -58,6 +58,9 @@ http:
       rule: "Host(`mes.lauresta.com`)"
       entryPoints: [websecure]
       service: mes-portal-webui
+      # Explicit low priority so the scaffolded /sales, /frontline, /scan and
+      # /api/<module>/* routers above always win. Mirrors mes-test-portal-root.
+      priority: 10
       tls:
         certResolver: letsencrypt
 

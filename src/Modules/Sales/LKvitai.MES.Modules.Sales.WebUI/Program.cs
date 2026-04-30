@@ -29,21 +29,25 @@ builder.Host.UseSerilog();
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddMudServices();
-builder.Services.AddHttpContextAccessor();
 builder.Services.AddPortalCookieAuthentication(builder.Environment, builder.Configuration);
 builder.Services.AddAuthorization();
 builder.Services.AddCascadingAuthenticationState();
 
-builder.Services.AddTransient<PortalCookieForwardingHandler>();
+// Scoped in Blazor Server = one instance per circuit. Populated in _Host.cshtml
+// during the initial HTTP request, then read by components for the lifetime of
+// the circuit (avoids the HttpContext-after-SignalR trap). NOT consumed from a
+// DelegatingHandler because IHttpClientFactory's handler scope is shared across
+// circuits and would leak one user's cookie to everyone on the same chain.
+builder.Services.AddScoped<PortalAuthCookieState>();
+
 builder.Services.AddHttpClient("SalesApi", (sp, client) =>
 {
     var configuration = sp.GetRequiredService<IConfiguration>();
-    var baseUrl = configuration["SalesApi:BaseUrl"] ?? "https://localhost:5021";
+    var baseUrl = configuration["SalesApi:BaseUrl"] ?? "http://localhost:5021";
 
     client.BaseAddress = new Uri(baseUrl);
     client.Timeout = TimeSpan.FromSeconds(30);
-})
-.AddHttpMessageHandler<PortalCookieForwardingHandler>();
+});
 
 var app = builder.Build();
 

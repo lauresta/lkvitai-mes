@@ -31,7 +31,7 @@ builder.Services.AddMudServices();
 builder.Services.AddHttpClient("ScanningApi", (sp, client) =>
 {
     var configuration = sp.GetRequiredService<IConfiguration>();
-    var baseUrl = configuration["ScanningApi:BaseUrl"] ?? "https://localhost:5041";
+    var baseUrl = configuration["ScanningApi:BaseUrl"] ?? "http://localhost:5041";
 
     client.BaseAddress = new Uri(baseUrl);
     client.Timeout = TimeSpan.FromSeconds(30);

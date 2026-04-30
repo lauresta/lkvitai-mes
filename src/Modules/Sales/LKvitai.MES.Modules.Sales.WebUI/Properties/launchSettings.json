@@ -1,0 +1,13 @@
+{
+  "profiles": {
+    "LKvitai.MES.Modules.Sales.WebUI": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "applicationUrl": "http://localhost:5020",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "SalesApi__BaseUrl": "http://localhost:5021"
+      }
+    }
+  }
+}

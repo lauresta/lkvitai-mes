@@ -1,0 +1,13 @@
+{
+  "profiles": {
+    "LKvitai.MES.Modules.Frontline.WebUI": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "applicationUrl": "http://localhost:5030",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "FrontlineApi__BaseUrl": "http://localhost:5031"
+      }
+    }
+  }
+}
