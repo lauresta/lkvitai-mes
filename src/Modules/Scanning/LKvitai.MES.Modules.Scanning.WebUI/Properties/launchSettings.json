@@ -1,0 +1,13 @@
+{
+  "profiles": {
+    "LKvitai.MES.Modules.Scanning.WebUI": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "applicationUrl": "http://localhost:5040",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ScanningApi__BaseUrl": "http://localhost:5041"
+      }
+    }
+  }
+}

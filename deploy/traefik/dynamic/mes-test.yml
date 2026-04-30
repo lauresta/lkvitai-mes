@@ -1,4 +1,10 @@
 # Test environment — routers, middlewares, services for *.mes-test.lauresta.com
+#
+# Path-based routing under the single mes-test.lauresta.com host. API prefixes
+# are stripped before forwarding so each module's ASP.NET Core host only sees
+# its own routes (e.g. the Warehouse API sees /api/auth/login, the Sales API
+# sees /api/sales/ping). Scaffolded modules (Sales/Frontline/Scanning) mirror
+# the Warehouse/Portal routing pattern exactly.
 http:
   routers:
     mes-test-portal-root:
@@ -26,6 +32,30 @@ http:
       tls:
         certResolver: letsencrypt
 
+    mes-test-sales:
+      rule: "Host(`mes-test.lauresta.com`) && PathPrefix(`/sales`)"
+      entryPoints: [websecure]
+      service: mes-test-sales-webui
+      priority: 100
+      tls:
+        certResolver: letsencrypt
+
+    mes-test-frontline:
+      rule: "Host(`mes-test.lauresta.com`) && PathPrefix(`/frontline`)"
+      entryPoints: [websecure]
+      service: mes-test-frontline-webui
+      priority: 100
+      tls:
+        certResolver: letsencrypt
+
+    mes-test-scan:
+      rule: "Host(`mes-test.lauresta.com`) && PathPrefix(`/scan`)"
+      entryPoints: [websecure]
+      service: mes-test-scanning-webui
+      priority: 100
+      tls:
+        certResolver: letsencrypt
+
     mes-test-api-portal:
       rule: "Host(`mes-test.lauresta.com`) && PathPrefix(`/api/portal`)"
       entryPoints: [websecure]
@@ -44,6 +74,30 @@ http:
       tls:
         certResolver: letsencrypt
 
+    mes-test-api-sales:
+      rule: "Host(`mes-test.lauresta.com`) && PathPrefix(`/api/sales`)"
+      entryPoints: [websecure]
+      service: mes-test-sales-api
+      priority: 200
+      tls:
+        certResolver: letsencrypt
+
+    mes-test-api-frontline:
+      rule: "Host(`mes-test.lauresta.com`) && PathPrefix(`/api/frontline`)"
+      entryPoints: [websecure]
+      service: mes-test-frontline-api
+      priority: 200
+      tls:
+        certResolver: letsencrypt
+
+    mes-test-api-scan:
+      rule: "Host(`mes-test.lauresta.com`) && PathPrefix(`/api/scan`)"
+      entryPoints: [websecure]
+      service: mes-test-scanning-api
+      priority: 200
+      tls:
+        certResolver: letsencrypt
+
   middlewares:
     mes-test-redirect-root-to-portal:
       redirectRegex:
@@ -58,6 +112,11 @@ http:
     mes-test-strip-api-warehouse:
       stripPrefix:
         prefixes: [/api/warehouse]
+
+    # Sales / Frontline / Scanning APIs receive the full /api/<module>/* path
+    # so the MapGroup("/api/sales") etc. in each host's Program.cs matches as
+    # declared. No stripPrefix middleware is needed, matching the group prefix
+    # used by the app.
 
   services:
     mes-test-portal-webui:
@@ -83,3 +142,39 @@ http:
         passHostHeader: true
         servers:
           - url: "http://10.11.12.15:5001"
+
+    mes-test-sales-webui:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://10.11.12.15:5020"
+
+    mes-test-sales-api:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://10.11.12.15:5021"
+
+    mes-test-frontline-webui:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://10.11.12.15:5030"
+
+    mes-test-frontline-api:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://10.11.12.15:5031"
+
+    mes-test-scanning-webui:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://10.11.12.15:5040"
+
+    mes-test-scanning-api:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://10.11.12.15:5041"

@@ -1,0 +1,72 @@
+name: Sales CI
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - src/Modules/Sales/**
+      - src/BuildingBlocks/**
+      - .github/workflows/sales-ci.yml
+
+permissions:
+  contents: read
+
+jobs:
+  sales-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore src/LKvitai.MES.sln
+
+      - name: Build Sales Contracts
+        run: dotnet build src/Modules/Sales/LKvitai.MES.Modules.Sales.Contracts/LKvitai.MES.Modules.Sales.Contracts.csproj -c Release --no-restore
+
+      - name: Build Sales Application
+        run: dotnet build src/Modules/Sales/LKvitai.MES.Modules.Sales.Application/LKvitai.MES.Modules.Sales.Application.csproj -c Release --no-restore
+
+      - name: Build Sales Infrastructure
+        run: dotnet build src/Modules/Sales/LKvitai.MES.Modules.Sales.Infrastructure/LKvitai.MES.Modules.Sales.Infrastructure.csproj -c Release --no-restore
+
+      - name: Build Sales API
+        run: dotnet build src/Modules/Sales/LKvitai.MES.Modules.Sales.Api/LKvitai.MES.Modules.Sales.Api.csproj -c Release --no-restore
+
+      - name: Build Sales WebUI
+        run: dotnet build src/Modules/Sales/LKvitai.MES.Modules.Sales.WebUI/LKvitai.MES.Modules.Sales.WebUI.csproj -c Release --no-restore
+
+      # MCR occasionally returns 403 on anonymous HEAD /v2/.../manifests/... during
+      # BuildKit metadata resolution. Pulling the base images with retries up front
+      # lets the subsequent `docker build` use the local cache instead of hitting MCR.
+      - name: Prefetch .NET 8 base images (retry on MCR 403)
+        shell: bash
+        run: |
+          set -u
+          for image in mcr.microsoft.com/dotnet/sdk:8.0 mcr.microsoft.com/dotnet/aspnet:8.0; do
+            echo "Pulling ${image} ..."
+            attempts=0
+            until docker pull "${image}"; do
+              attempts=$((attempts + 1))
+              if [ ${attempts} -ge 5 ]; then
+                echo "::error::Failed to pull ${image} after ${attempts} attempts"
+                exit 1
+              fi
+              wait=$((attempts * 10))
+              echo "pull ${image} failed, retrying in ${wait}s..."
+              sleep ${wait}
+            done
+          done
+
+      - name: Docker build Sales API
+        run: docker build -f src/Modules/Sales/LKvitai.MES.Modules.Sales.Api/Dockerfile -t lkvitai-mes-sales-api:ci .
+
+      - name: Docker build Sales WebUI
+        run: docker build -f src/Modules/Sales/LKvitai.MES.Modules.Sales.WebUI/Dockerfile -t lkvitai-mes-sales-webui:ci .

@@ -1,5 +1,12 @@
+// Tile status enum (see .module-card.is-* classes in styles.css):
+//   - active     → green, fully navigable
+//   - scaffolded → amber/grey, navigable (WIP — module vertical works end-to-end but has no business logic yet)
+//   - planned    → grey, click shows a toast with the target quarter
 const modules = [
   { key: "warehouse", title: "Warehouse", category: "Operations", desc: "Inventory locations, stock movements, reservations, handling units, 3D warehouse layout.", status: "active", url: "/warehouse/" },
+  { key: "sales", title: "Sales", category: "Commercial", desc: "Customer orders.", status: "scaffolded", url: "/sales/" },
+  { key: "frontline", title: "Frontline", category: "Field", desc: "Field availability lookup.", status: "scaffolded", url: "/frontline/" },
+  { key: "scanning", title: "Scanning", category: "Mobile", desc: "Mobile barcode scan.", status: "scaffolded", url: "/scan/" },
   { key: "orders", title: "Orders", category: "Commercial", desc: "Order lifecycle, product composition, workflow planning.", status: "planned", quarter: "Q3 2026" },
   { key: "shopfloor", title: "Shopfloor", category: "Operations", desc: "Workstation tasks, WIP routing, operator kiosk execution.", status: "planned", quarter: "Q3 2026" },
   { key: "quality", title: "Quality", category: "Operations", desc: "Inspections, defect tracking, rework and returns.", status: "planned", quarter: "Q4 2026" },
@@ -39,6 +46,9 @@ const news = [
 
 const icons = {
   warehouse: '<path d="M4 7l8-4 8 4v14H4z"/><path d="M9 21V11h6v10"/><path d="M4 10h16"/>',
+  sales: '<path d="M6 4h13l-1.2 9H7.4L6 4z"/><path d="M6 4 5 2H2"/><circle cx="9" cy="19" r="1.6"/><circle cx="17" cy="19" r="1.6"/>',
+  frontline: '<path d="M12 3l9 4-9 4-9-4 9-4z"/><path d="M3 11l9 4 9-4"/><path d="M3 15l9 4 9-4"/>',
+  scanning: '<path d="M4 6V4h4M20 6V4h-4M4 18v2h4M20 18v2h-4"/><path d="M7 8v8M11 8v8M15 8v8M19 8v8"/>',
   orders: '<path d="M6 7h15M6 12h15M6 17h15"/><path d="M3.5 7h.01M3.5 12h.01M3.5 17h.01"/>',
   shopfloor: '<path d="M3 21h18"/><path d="M7 21V8l5-3 5 3v13"/><path d="M9.5 11h5M9.5 14h5"/>',
   quality: '<path d="M9 12l2 2 4-5"/><path d="M12 22c5.5-2 8-6 8-12V6l-8-3-8 3v4c0 6 2.5 10 8 12z"/>',
@@ -48,6 +58,7 @@ const icons = {
   finance: '<path d="M14 6H9a3 3 0 0 0 0 6h4a3 3 0 0 1 0 6H8"/><path d="M12 4v16"/>',
   audit: '<path d="M9 5h6M9 9h6M9 13h6"/><path d="M7 3h10a2 2 0 0 1 2 2v16H5V5a2 2 0 0 1 2-2z"/>',
   lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+  wip: '<path d="M12 2v3M4.2 4.2l2.1 2.1M2 12h3M19.8 4.2l-2.1 2.1M22 12h-3"/><path d="M6 14h12l-1 6H7l-1-6z"/>',
 };
 
 let activePeriod = "this";
@@ -132,13 +143,29 @@ function showToast(message) {
 function renderModules(items) {
   moduleGrid.innerHTML = "";
   items.forEach((mod) => {
-    const element = document.createElement(mod.status === "active" ? "a" : "button");
-    element.className = `module-card${mod.status === "active" ? " is-active" : ""}`;
-    if (mod.status === "active") {
+    // "active" and "scaffolded" are both navigable → <a>. Only "planned"
+    // is a disabled <button> that opens a toast on click.
+    const isNavigable = mod.status === "active" || mod.status === "scaffolded";
+    const element = document.createElement(isNavigable ? "a" : "button");
+    const statusClass =
+      mod.status === "active" ? " is-active" :
+      mod.status === "scaffolded" ? " is-scaffolded" : "";
+    element.className = `module-card${statusClass}`;
+
+    if (isNavigable) {
       element.href = mod.url;
     } else {
       element.type = "button";
       element.addEventListener("click", () => showToast(`${mod.title} - planned for ${mod.quarter}. Not available yet.`));
+    }
+
+    let footer;
+    if (mod.status === "active") {
+      footer = `<span class="module-card__status is-available">Available</span><span class="module-card__action">Open ${mod.title} &rarr;</span>`;
+    } else if (mod.status === "scaffolded") {
+      footer = `<span class="module-card__status is-scaffolded"><span class="module-card__badge mono" aria-hidden="true">${svgIcon("wip")}WIP</span> Scaffolded</span><span class="module-card__action">Open ${mod.title} &rarr;</span>`;
+    } else {
+      footer = `<span class="module-card__status mono">Planned &middot; ${mod.quarter}</span><span class="module-card__lock" aria-hidden="true">${svgIcon("lock")}</span>`;
     }
 
     element.innerHTML = `
@@ -149,11 +176,7 @@ function renderModules(items) {
       <h3>${mod.title}</h3>
       <p>${mod.desc}</p>
       <div class="module-card__footer">
-        ${
-          mod.status === "active"
-            ? '<span class="module-card__status is-available">Available</span><span class="module-card__action">Open Warehouse &rarr;</span>'
-            : `<span class="module-card__status mono">Planned &middot; ${mod.quarter}</span><span class="module-card__lock" aria-hidden="true">${svgIcon("lock")}</span>`
-        }
+        ${footer}
       </div>
     `;
     moduleGrid.append(element);

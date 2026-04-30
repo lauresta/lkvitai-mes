@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>LKvitai.MES.Modules.Sales.Infrastructure</RootNamespace>
+    <AssemblyName>LKvitai.MES.Modules.Sales.Infrastructure</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\BuildingBlocks\LKvitai.MES.BuildingBlocks.SharedKernel\LKvitai.MES.BuildingBlocks.SharedKernel.csproj" />
+    <ProjectReference Include="..\LKvitai.MES.Modules.Sales.Application\LKvitai.MES.Modules.Sales.Application.csproj" />
+    <ProjectReference Include="..\LKvitai.MES.Modules.Sales.Contracts\LKvitai.MES.Modules.Sales.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

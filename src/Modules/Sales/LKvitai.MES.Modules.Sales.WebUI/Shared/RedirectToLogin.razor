@@ -1,0 +1,32 @@
+@inject NavigationManager Navigation
+@inject IConfiguration Configuration
+
+@code {
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        var relative = Navigation.ToBaseRelativePath(Navigation.Uri);
+        var salesBasePath = NormalizePath(Configuration["PathBase"], "/sales");
+        var portalLoginBasePath = NormalizePath(Configuration["PortalAuth:LoginBasePath"], "/portal");
+        var returnUrl = string.IsNullOrWhiteSpace(relative)
+            ? $"{salesBasePath}/"
+            : $"{salesBasePath}/{relative.TrimStart('/')}";
+
+        Navigation.NavigateTo($"{portalLoginBasePath}/login.html?returnUrl={Uri.EscapeDataString(returnUrl)}", replace: true);
+    }
+
+    private static string NormalizePath(string? configured, string fallback)
+    {
+        if (string.IsNullOrWhiteSpace(configured))
+        {
+            return fallback;
+        }
+
+        var normalized = configured.Trim().TrimEnd('/');
+        return normalized.StartsWith("/", StringComparison.Ordinal) ? normalized : $"/{normalized}";
+    }
+}

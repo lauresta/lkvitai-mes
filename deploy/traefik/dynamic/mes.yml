@@ -1,9 +1,66 @@
 http:
   routers:
+    # Scaffolded modules (Sales / Frontline / Scanning) route path-based on
+    # mes.lauresta.com — this matches the test topology exactly so /sales/,
+    # /frontline/, /scan/ links produced by the Portal tiles work in both
+    # environments. They take precedence over mes-portal-root because the
+    # PathPrefix rule is more specific. The existing Warehouse/Portal
+    # subdomain routers are kept untouched.
+    mes-sales:
+      rule: "Host(`mes.lauresta.com`) && PathPrefix(`/sales`)"
+      entryPoints: [websecure]
+      service: mes-sales-webui
+      priority: 100
+      tls:
+        certResolver: letsencrypt
+
+    mes-frontline:
+      rule: "Host(`mes.lauresta.com`) && PathPrefix(`/frontline`)"
+      entryPoints: [websecure]
+      service: mes-frontline-webui
+      priority: 100
+      tls:
+        certResolver: letsencrypt
+
+    mes-scan:
+      rule: "Host(`mes.lauresta.com`) && PathPrefix(`/scan`)"
+      entryPoints: [websecure]
+      service: mes-scanning-webui
+      priority: 100
+      tls:
+        certResolver: letsencrypt
+
+    mes-api-sales:
+      rule: "Host(`mes.lauresta.com`) && PathPrefix(`/api/sales`)"
+      entryPoints: [websecure]
+      service: mes-sales-api
+      priority: 200
+      tls:
+        certResolver: letsencrypt
+
+    mes-api-frontline:
+      rule: "Host(`mes.lauresta.com`) && PathPrefix(`/api/frontline`)"
+      entryPoints: [websecure]
+      service: mes-frontline-api
+      priority: 200
+      tls:
+        certResolver: letsencrypt
+
+    mes-api-scan:
+      rule: "Host(`mes.lauresta.com`) && PathPrefix(`/api/scan`)"
+      entryPoints: [websecure]
+      service: mes-scanning-api
+      priority: 200
+      tls:
+        certResolver: letsencrypt
+
     mes-portal-root:
       rule: "Host(`mes.lauresta.com`)"
       entryPoints: [websecure]
       service: mes-portal-webui
+      # Explicit low priority so the scaffolded /sales, /frontline, /scan and
+      # /api/<module>/* routers above always win. Mirrors mes-test-portal-root.
+      priority: 10
       tls:
         certResolver: letsencrypt
 
@@ -48,6 +105,9 @@ http:
       stripPrefix:
         prefixes: [/warehouse]
 
+    # Sales / Frontline / Scanning APIs do NOT strip — the apps themselves use
+    # app.MapGroup("/api/<module>") so they receive the full path unchanged.
+
   services:
     mes-portal-webui:
       loadBalancer:
@@ -72,3 +132,39 @@ http:
         passHostHeader: true
         servers:
           - url: "http://10.11.12.9:5001"
+
+    mes-sales-webui:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://10.11.12.9:5020"
+
+    mes-sales-api:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://10.11.12.9:5021"
+
+    mes-frontline-webui:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://10.11.12.9:5030"
+
+    mes-frontline-api:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://10.11.12.9:5031"
+
+    mes-scanning-webui:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://10.11.12.9:5040"
+
+    mes-scanning-api:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://10.11.12.9:5041"
