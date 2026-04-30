@@ -43,6 +43,7 @@
     <ProjectReference Include="..\LKvitai.MES.Modules.Warehouse.Projections\LKvitai.MES.Modules.Warehouse.Projections.csproj" />
     <ProjectReference Include="..\LKvitai.MES.Modules.Warehouse.Sagas\LKvitai.MES.Modules.Warehouse.Sagas.csproj" />
     <ProjectReference Include="..\LKvitai.MES.Modules.Warehouse.Integration\LKvitai.MES.Modules.Warehouse.Integration.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\LKvitai.MES.BuildingBlocks.PortalAuth\LKvitai.MES.BuildingBlocks.PortalAuth.csproj" />
   </ItemGroup>
 
 </Project>

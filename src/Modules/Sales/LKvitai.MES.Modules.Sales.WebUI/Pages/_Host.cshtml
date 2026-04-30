@@ -1,17 +1,9 @@
 @page "/"
 @namespace LKvitai.MES.Modules.Sales.WebUI.Pages
-@using LKvitai.MES.BuildingBlocks.PortalAuth
 @using LKvitai.MES.Modules.Sales.WebUI
-@using LKvitai.MES.Modules.Sales.WebUI.Services
 @addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
-@inject PortalAuthCookieState CookieState
 @{
     Layout = "_Layout";
-    // HttpContext is live here (we're still in the initial HTTP request that
-    // upgrades to SignalR). Snapshot the Portal cookie now — the Blazor circuit
-    // and PortalCookieForwardingHandler will rely on this value for the
-    // circuit's lifetime instead of touching HttpContext mid-render.
-    CookieState.CookieValue = HttpContext.Request.Cookies[PortalAuthDefaults.CookieName];
 }
 
 <component type="typeof(App)" render-mode="ServerPrerendered" />

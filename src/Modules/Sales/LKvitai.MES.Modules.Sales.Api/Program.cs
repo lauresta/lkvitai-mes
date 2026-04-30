@@ -1,5 +1,8 @@
 using LKvitai.MES.BuildingBlocks.ModuleStartup;
 using LKvitai.MES.BuildingBlocks.PortalAuth;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,7 +15,19 @@ builder.Services.AddScaffoldApiCore();
 // is added to Sales, this will be tightened to match Warehouse's WarehouseHeader
 // scheme (see src/Modules/Warehouse/.../Api/Security/WarehouseAuthenticationHandler.cs).
 builder.Services.AddPortalCookieAuthentication(builder.Environment, builder.Configuration);
-builder.Services.AddAuthorization();
+builder.Services
+    .AddAuthentication()
+    .AddScheme<AuthenticationSchemeOptions, PortalStructuredBearerAuthenticationHandler>(
+        PortalStructuredBearerAuthenticationDefaults.Scheme,
+        _ => { });
+builder.Services.AddAuthorization(options =>
+{
+    options.DefaultPolicy = new AuthorizationPolicyBuilder(
+            CookieAuthenticationDefaults.AuthenticationScheme,
+            PortalStructuredBearerAuthenticationDefaults.Scheme)
+        .RequireAuthenticatedUser()
+        .Build();
+});
 
 var app = builder.Build();
 
