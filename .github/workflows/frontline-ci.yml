@@ -1,0 +1,50 @@
+name: Frontline CI
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - src/Modules/Frontline/**
+      - src/BuildingBlocks/**
+      - .github/workflows/frontline-ci.yml
+
+permissions:
+  contents: read
+
+jobs:
+  frontline-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore src/LKvitai.MES.sln
+
+      - name: Build Frontline Contracts
+        run: dotnet build src/Modules/Frontline/LKvitai.MES.Modules.Frontline.Contracts/LKvitai.MES.Modules.Frontline.Contracts.csproj -c Release --no-restore
+
+      - name: Build Frontline Application
+        run: dotnet build src/Modules/Frontline/LKvitai.MES.Modules.Frontline.Application/LKvitai.MES.Modules.Frontline.Application.csproj -c Release --no-restore
+
+      - name: Build Frontline Infrastructure
+        run: dotnet build src/Modules/Frontline/LKvitai.MES.Modules.Frontline.Infrastructure/LKvitai.MES.Modules.Frontline.Infrastructure.csproj -c Release --no-restore
+
+      - name: Build Frontline API
+        run: dotnet build src/Modules/Frontline/LKvitai.MES.Modules.Frontline.Api/LKvitai.MES.Modules.Frontline.Api.csproj -c Release --no-restore
+
+      - name: Build Frontline WebUI
+        run: dotnet build src/Modules/Frontline/LKvitai.MES.Modules.Frontline.WebUI/LKvitai.MES.Modules.Frontline.WebUI.csproj -c Release --no-restore
+
+      - name: Docker build Frontline API
+        run: docker build -f src/Modules/Frontline/LKvitai.MES.Modules.Frontline.Api/Dockerfile -t lkvitai-mes-frontline-api:ci .
+
+      - name: Docker build Frontline WebUI
+        run: docker build -f src/Modules/Frontline/LKvitai.MES.Modules.Frontline.WebUI/Dockerfile -t lkvitai-mes-frontline-webui:ci .

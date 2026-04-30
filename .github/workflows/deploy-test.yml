@@ -264,6 +264,37 @@ jobs:
           docker compose -f docker-compose.test.yml logs webui --tail 50
           exit 1
 
+      - name: Wait for scaffolded module containers to become healthy
+        run: |
+          set -euo pipefail
+          # Six scaffolded containers (3 modules × {api, webui}) share the same
+          # /health contract as warehouse/portal. Iterate so we fail fast with
+          # useful logs on the first one that doesn't come up.
+          for container in \
+            lkvitai-mes-sales-api \
+            lkvitai-mes-sales-webui \
+            lkvitai-mes-frontline-api \
+            lkvitai-mes-frontline-webui \
+            lkvitai-mes-scanning-api \
+            lkvitai-mes-scanning-webui ; do
+            echo "Waiting for ${container} health..."
+            ok=0
+            for i in $(seq 1 30); do
+              if docker exec "${container}" curl -sf http://localhost:8080/health > /dev/null 2>&1; then
+                echo "${container} is healthy."
+                ok=1
+                break
+              fi
+              echo "  attempt $i/30 — ${container} not ready yet"
+              sleep 5
+            done
+            if [ "$ok" -ne 1 ]; then
+              echo "::error::${container} failed to become healthy within 150s"
+              docker compose -f docker-compose.test.yml logs "${container#lkvitai-mes-}" --tail 80 || true
+              exit 1
+            fi
+          done
+
       - name: Seed master data
         run: |
           docker exec -i "$DB_CONTAINER_NAME" \
@@ -274,8 +305,14 @@ jobs:
         run: |
           echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
           echo "- **Image tag:** ${{ env.IMAGE_TAG }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **API:** http://lkvitai-test:5001" >> $GITHUB_STEP_SUMMARY
-          echo "- **WebUI:** http://lkvitai-test:5000" >> $GITHUB_STEP_SUMMARY
+          echo "- **Warehouse API:** http://lkvitai-test:5001" >> $GITHUB_STEP_SUMMARY
+          echo "- **Warehouse WebUI:** http://lkvitai-test:5000" >> $GITHUB_STEP_SUMMARY
           echo "- **Portal API:** lkvitai-test:5011" >> $GITHUB_STEP_SUMMARY
           echo "- **Portal WebUI:** lkvitai-test:5010" >> $GITHUB_STEP_SUMMARY
+          echo "- **Sales API (scaffold):** lkvitai-test:5021" >> $GITHUB_STEP_SUMMARY
+          echo "- **Sales WebUI (scaffold):** lkvitai-test:5020" >> $GITHUB_STEP_SUMMARY
+          echo "- **Frontline API (scaffold):** lkvitai-test:5031" >> $GITHUB_STEP_SUMMARY
+          echo "- **Frontline WebUI (scaffold):** lkvitai-test:5030" >> $GITHUB_STEP_SUMMARY
+          echo "- **Scanning API (scaffold):** lkvitai-test:5041" >> $GITHUB_STEP_SUMMARY
+          echo "- **Scanning WebUI (scaffold):** lkvitai-test:5040" >> $GITHUB_STEP_SUMMARY
           docker compose -f docker-compose.test.yml ps >> $GITHUB_STEP_SUMMARY

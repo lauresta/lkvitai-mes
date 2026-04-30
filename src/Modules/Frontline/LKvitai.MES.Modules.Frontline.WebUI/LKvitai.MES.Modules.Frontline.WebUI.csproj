@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>LKvitai.MES.Modules.Frontline.WebUI</RootNamespace>
+    <AssemblyName>LKvitai.MES.Modules.Frontline.WebUI</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="MudBlazor" />
+    <PackageReference Include="Serilog.AspNetCore" />
+    <PackageReference Include="Serilog.Sinks.Console" />
+    <PackageReference Include="Serilog.Sinks.File" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\LKvitai.MES.Modules.Frontline.Contracts\LKvitai.MES.Modules.Frontline.Contracts.csproj" />
+  </ItemGroup>
+</Project>

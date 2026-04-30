@@ -1,0 +1,50 @@
+name: Scanning CI
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - src/Modules/Scanning/**
+      - src/BuildingBlocks/**
+      - .github/workflows/scanning-ci.yml
+
+permissions:
+  contents: read
+
+jobs:
+  scanning-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore src/LKvitai.MES.sln
+
+      - name: Build Scanning Contracts
+        run: dotnet build src/Modules/Scanning/LKvitai.MES.Modules.Scanning.Contracts/LKvitai.MES.Modules.Scanning.Contracts.csproj -c Release --no-restore
+
+      - name: Build Scanning Application
+        run: dotnet build src/Modules/Scanning/LKvitai.MES.Modules.Scanning.Application/LKvitai.MES.Modules.Scanning.Application.csproj -c Release --no-restore
+
+      - name: Build Scanning Infrastructure
+        run: dotnet build src/Modules/Scanning/LKvitai.MES.Modules.Scanning.Infrastructure/LKvitai.MES.Modules.Scanning.Infrastructure.csproj -c Release --no-restore
+
+      - name: Build Scanning API
+        run: dotnet build src/Modules/Scanning/LKvitai.MES.Modules.Scanning.Api/LKvitai.MES.Modules.Scanning.Api.csproj -c Release --no-restore
+
+      - name: Build Scanning WebUI
+        run: dotnet build src/Modules/Scanning/LKvitai.MES.Modules.Scanning.WebUI/LKvitai.MES.Modules.Scanning.WebUI.csproj -c Release --no-restore
+
+      - name: Docker build Scanning API
+        run: docker build -f src/Modules/Scanning/LKvitai.MES.Modules.Scanning.Api/Dockerfile -t lkvitai-mes-scanning-api:ci .
+
+      - name: Docker build Scanning WebUI
+        run: docker build -f src/Modules/Scanning/LKvitai.MES.Modules.Scanning.WebUI/Dockerfile -t lkvitai-mes-scanning-webui:ci .

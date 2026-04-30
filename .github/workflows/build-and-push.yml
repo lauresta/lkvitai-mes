@@ -7,6 +7,9 @@ on:
     paths:
       - src/Modules/Warehouse/**
       - src/Modules/Portal/**
+      - src/Modules/Sales/**
+      - src/Modules/Frontline/**
+      - src/Modules/Scanning/**
       - src/BuildingBlocks/**
       - docker-compose.test.yml
       - .github/workflows/build-and-push.yml
@@ -34,6 +37,24 @@ jobs:
           - name: portal-webui
             dockerfile: src/Modules/Portal/LKvitai.MES.Modules.Portal.WebUI/Dockerfile
             image: ghcr.io/${{ github.repository_owner }}/lkvitai-mes-portal-webui
+          - name: sales-api
+            dockerfile: src/Modules/Sales/LKvitai.MES.Modules.Sales.Api/Dockerfile
+            image: ghcr.io/${{ github.repository_owner }}/lkvitai-mes-sales-api
+          - name: sales-webui
+            dockerfile: src/Modules/Sales/LKvitai.MES.Modules.Sales.WebUI/Dockerfile
+            image: ghcr.io/${{ github.repository_owner }}/lkvitai-mes-sales-webui
+          - name: frontline-api
+            dockerfile: src/Modules/Frontline/LKvitai.MES.Modules.Frontline.Api/Dockerfile
+            image: ghcr.io/${{ github.repository_owner }}/lkvitai-mes-frontline-api
+          - name: frontline-webui
+            dockerfile: src/Modules/Frontline/LKvitai.MES.Modules.Frontline.WebUI/Dockerfile
+            image: ghcr.io/${{ github.repository_owner }}/lkvitai-mes-frontline-webui
+          - name: scanning-api
+            dockerfile: src/Modules/Scanning/LKvitai.MES.Modules.Scanning.Api/Dockerfile
+            image: ghcr.io/${{ github.repository_owner }}/lkvitai-mes-scanning-api
+          - name: scanning-webui
+            dockerfile: src/Modules/Scanning/LKvitai.MES.Modules.Scanning.WebUI/Dockerfile
+            image: ghcr.io/${{ github.repository_owner }}/lkvitai-mes-scanning-webui
 
     steps:
       - name: Checkout code

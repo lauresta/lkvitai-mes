@@ -786,7 +786,23 @@ input {
   transform: translateY(-1px);
 }
 
-.module-card:not(.is-active) {
+/* Scaffolded tiles: neutral amber/grey palette, distinct from green is-active
+   and red/grey planned. The vertical works (container + API ping + MudBlazor
+   hello page) but there is no business logic yet — WIP badge signals that. */
+.module-card.is-scaffolded {
+  padding-top: 13px;
+  border-color: oklch(82% 0.08 75);
+  border-top: 3px solid oklch(60% 0.12 75);
+  background: oklch(97% 0.025 75);
+  cursor: pointer;
+}
+
+.module-card.is-scaffolded:hover {
+  box-shadow: 0 6px 18px oklch(60% 0.12 75 / 22%);
+  transform: translateY(-1px);
+}
+
+.module-card:not(.is-active):not(.is-scaffolded) {
   cursor: not-allowed;
 }
 
@@ -814,6 +830,12 @@ input {
   color: var(--accent-700);
 }
 
+.module-card.is-scaffolded .module-card__icon {
+  border: 1px solid oklch(85% 0.06 75);
+  background: var(--n-0);
+  color: oklch(40% 0.12 75);
+}
+
 .module-card__category {
   color: var(--n-400);
   font-size: 10px;
@@ -826,13 +848,18 @@ input {
   color: var(--accent-700);
 }
 
+.module-card.is-scaffolded .module-card__category {
+  color: oklch(40% 0.12 75);
+}
+
 .module-card h3 {
   margin: 0 0 5px;
   color: var(--n-700);
   font-size: 15.5px;
 }
 
-.module-card.is-active h3 {
+.module-card.is-active h3,
+.module-card.is-scaffolded h3 {
   color: var(--n-900);
 }
 
@@ -862,6 +889,10 @@ input {
   border-top-color: var(--accent-100);
 }
 
+.module-card.is-scaffolded .module-card__footer {
+  border-top-color: oklch(85% 0.06 75);
+}
+
 .module-card__status {
   color: var(--n-500);
   font-size: 11px;
@@ -887,11 +918,42 @@ input {
   box-shadow: 0 0 0 3px var(--success-bg);
 }
 
+.module-card__status.is-scaffolded {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: oklch(40% 0.12 75);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .6px;
+  text-transform: uppercase;
+}
+
+.module-card__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 6px 1px 4px;
+  border-radius: 3px;
+  background: oklch(92% 0.06 75);
+  color: oklch(35% 0.12 75);
+  font-size: 9px;
+}
+
+.module-card__badge svg {
+  width: 11px;
+  height: 11px;
+}
+
 .module-card__action {
   color: var(--accent-700);
   font-size: 12.5px;
   font-weight: 700;
   white-space: nowrap;
+}
+
+.module-card.is-scaffolded .module-card__action {
+  color: oklch(35% 0.12 75);
 }
 
 .module-card__lock {

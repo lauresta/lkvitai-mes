@@ -96,6 +96,142 @@ services:
     depends_on:
       - portal-api
 
+  # --- Sales module (scaffold) --------------------------------------------------
+  # Uses the shared PortalAuth cookie (same auth-keys bind-mount, same cookie name)
+  # so a user signed in via Portal is authenticated against the Sales API too.
+  sales-api:
+    image: ghcr.io/lauresta/lkvitai-mes-sales-api:${IMAGE_TAG:-latest}
+    container_name: lkvitai-mes-sales-api
+    restart: unless-stopped
+    ports:
+      - "5021:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Test
+      PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
+    volumes:
+      - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys
+      - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
+    networks:
+      - lkvitai-mes_default
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  sales-webui:
+    image: ghcr.io/lauresta/lkvitai-mes-sales-webui:${IMAGE_TAG:-latest}
+    container_name: lkvitai-mes-sales-webui
+    restart: unless-stopped
+    ports:
+      - "5020:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Test
+      SalesApi__BaseUrl: "http://lkvitai-mes-sales-api:8080"
+      PathBase: "/sales"
+      PortalAuth__LoginBasePath: "/portal"
+      PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
+    volumes:
+      - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys
+      - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
+    networks:
+      - lkvitai-mes_default
+    depends_on:
+      - sales-api
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # --- Frontline module (scaffold, anonymous) -----------------------------------
+  frontline-api:
+    image: ghcr.io/lauresta/lkvitai-mes-frontline-api:${IMAGE_TAG:-latest}
+    container_name: lkvitai-mes-frontline-api
+    restart: unless-stopped
+    ports:
+      - "5031:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Test
+    volumes:
+      - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
+    networks:
+      - lkvitai-mes_default
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  frontline-webui:
+    image: ghcr.io/lauresta/lkvitai-mes-frontline-webui:${IMAGE_TAG:-latest}
+    container_name: lkvitai-mes-frontline-webui
+    restart: unless-stopped
+    ports:
+      - "5030:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Test
+      FrontlineApi__BaseUrl: "http://lkvitai-mes-frontline-api:8080"
+      PathBase: "/frontline"
+    volumes:
+      - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
+    networks:
+      - lkvitai-mes_default
+    depends_on:
+      - frontline-api
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # --- Scanning module (scaffold, anonymous) ------------------------------------
+  scanning-api:
+    image: ghcr.io/lauresta/lkvitai-mes-scanning-api:${IMAGE_TAG:-latest}
+    container_name: lkvitai-mes-scanning-api
+    restart: unless-stopped
+    ports:
+      - "5041:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Test
+    volumes:
+      - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
+    networks:
+      - lkvitai-mes_default
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  scanning-webui:
+    image: ghcr.io/lauresta/lkvitai-mes-scanning-webui:${IMAGE_TAG:-latest}
+    container_name: lkvitai-mes-scanning-webui
+    restart: unless-stopped
+    ports:
+      - "5040:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Test
+      ScanningApi__BaseUrl: "http://lkvitai-mes-scanning-api:8080"
+      PathBase: "/scan"
+    volumes:
+      - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
+    networks:
+      - lkvitai-mes_default
+    depends_on:
+      - scanning-api
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
 networks:
   lkvitai-mes_default:
     external: true

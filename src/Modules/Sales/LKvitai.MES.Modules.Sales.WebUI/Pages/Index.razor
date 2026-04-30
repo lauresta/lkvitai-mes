@@ -1,0 +1,116 @@
+@page "/"
+@using System.Net.Http.Json
+@using System.Security.Claims
+@inject IHttpClientFactory HttpClientFactory
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Sales · Hello</PageTitle>
+
+<MudStack Spacing="4">
+    <MudText Typo="Typo.h3">Hello from Sales.</MudText>
+
+    <MudText Typo="Typo.body1" Class="mud-text-secondary">
+        This is a scaffolded module. There is no business logic yet — no orders, no invoices, no integrations.
+        The page exists so Portal can link to a working WebUI container that round-trips to a sibling API
+        container through Traefik.
+    </MudText>
+
+    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+        <MudChip T="string"
+                 Color="@(_isAuthenticated ? Color.Success : Color.Default)"
+                 Icon="@(_isAuthenticated ? Icons.Material.Filled.Verified : Icons.Material.Filled.PersonOff)">
+            @(_isAuthenticated ? $"signed in as {_username}" : "anonymous")
+        </MudChip>
+    </MudStack>
+
+    <MudDivider />
+
+    <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   StartIcon="@Icons.Material.Filled.NetworkPing"
+                   OnClick="PingApi"
+                   Disabled="_isPinging">
+            @(_isPinging ? "Pinging…" : "Ping API")
+        </MudButton>
+        <MudText Typo="Typo.caption" Class="mud-text-secondary">
+            Calls <code>GET /api/sales/ping</code> on the Sales API container.
+        </MudText>
+    </MudStack>
+
+    @if (_lastResult is not null)
+    {
+        if (_lastResult.IsSuccess)
+        {
+            <MudAlert Severity="Severity.Success" NoIcon="false">
+                <div>
+                    <strong>@_lastResult.ModuleName</strong> responded at
+                    <code>@_lastResult.Timestamp</code>.
+                </div>
+            </MudAlert>
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Error" NoIcon="false">
+                Ping failed: @_lastResult.ErrorMessage
+            </MudAlert>
+        }
+    }
+</MudStack>
+
+@code {
+    private bool _isPinging;
+    private bool _isAuthenticated;
+    private string? _username;
+    private PingResultView? _lastResult;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        _isAuthenticated = state.User.Identity?.IsAuthenticated ?? false;
+        _username = state.User.FindFirstValue(ClaimTypes.Name) ?? state.User.Identity?.Name;
+    }
+
+    private async Task PingApi()
+    {
+        _isPinging = true;
+        _lastResult = null;
+
+        try
+        {
+            var client = HttpClientFactory.CreateClient("SalesApi");
+            var response = await client.GetAsync("/api/sales/ping");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                _lastResult = PingResultView.Failure(
+                    $"{(int)response.StatusCode} {response.ReasonPhrase}");
+                return;
+            }
+
+            var payload = await response.Content.ReadFromJsonAsync<PingPayload>();
+            _lastResult = payload is null
+                ? PingResultView.Failure("Empty response body.")
+                : PingResultView.Success(payload.Module, payload.Now);
+        }
+        catch (Exception ex)
+        {
+            _lastResult = PingResultView.Failure(ex.Message);
+        }
+        finally
+        {
+            _isPinging = false;
+        }
+    }
+
+    private sealed record PingPayload(string Module, string Now);
+
+    private sealed record PingResultView(bool IsSuccess, string? ModuleName, string? Timestamp, string? ErrorMessage)
+    {
+        public static PingResultView Success(string moduleName, string timestamp) =>
+            new(true, moduleName, timestamp, null);
+
+        public static PingResultView Failure(string errorMessage) =>
+            new(false, null, null, errorMessage);
+    }
+}

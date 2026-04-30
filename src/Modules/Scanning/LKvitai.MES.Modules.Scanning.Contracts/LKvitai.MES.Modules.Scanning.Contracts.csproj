@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>LKvitai.MES.Modules.Scanning.Contracts</RootNamespace>
+    <AssemblyName>LKvitai.MES.Modules.Scanning.Contracts</AssemblyName>
+  </PropertyGroup>
+
+</Project>
