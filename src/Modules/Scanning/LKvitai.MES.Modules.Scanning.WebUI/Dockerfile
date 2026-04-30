@@ -7,11 +7,13 @@ COPY Directory.Build.props .
 COPY Directory.Packages.props .
 COPY global.json .
 
+COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.ModuleStartup/LKvitai.MES.BuildingBlocks.ModuleStartup.csproj BuildingBlocks/LKvitai.MES.BuildingBlocks.ModuleStartup/
 COPY src/Modules/Scanning/LKvitai.MES.Modules.Scanning.Contracts/LKvitai.MES.Modules.Scanning.Contracts.csproj Modules/Scanning/LKvitai.MES.Modules.Scanning.Contracts/
 COPY src/Modules/Scanning/LKvitai.MES.Modules.Scanning.WebUI/LKvitai.MES.Modules.Scanning.WebUI.csproj Modules/Scanning/LKvitai.MES.Modules.Scanning.WebUI/
 
 RUN dotnet restore Modules/Scanning/LKvitai.MES.Modules.Scanning.WebUI/LKvitai.MES.Modules.Scanning.WebUI.csproj
 
+COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.ModuleStartup/ BuildingBlocks/LKvitai.MES.BuildingBlocks.ModuleStartup/
 COPY src/Modules/Scanning/LKvitai.MES.Modules.Scanning.Contracts/ Modules/Scanning/LKvitai.MES.Modules.Scanning.Contracts/
 COPY src/Modules/Scanning/LKvitai.MES.Modules.Scanning.WebUI/ Modules/Scanning/LKvitai.MES.Modules.Scanning.WebUI/
 

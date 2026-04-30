@@ -305,8 +305,8 @@ jobs:
         run: |
           echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
           echo "- **Image tag:** ${{ env.IMAGE_TAG }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Warehouse API:** http://lkvitai-test:5001" >> $GITHUB_STEP_SUMMARY
-          echo "- **Warehouse WebUI:** http://lkvitai-test:5000" >> $GITHUB_STEP_SUMMARY
+          echo "- **Warehouse API:** lkvitai-test:5001" >> $GITHUB_STEP_SUMMARY
+          echo "- **Warehouse WebUI:** lkvitai-test:5000" >> $GITHUB_STEP_SUMMARY
           echo "- **Portal API:** lkvitai-test:5011" >> $GITHUB_STEP_SUMMARY
           echo "- **Portal WebUI:** lkvitai-test:5010" >> $GITHUB_STEP_SUMMARY
           echo "- **Sales API (scaffold):** lkvitai-test:5021" >> $GITHUB_STEP_SUMMARY

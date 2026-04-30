@@ -1,42 +1,13 @@
-using Serilog;
-using Serilog.Events;
+using LKvitai.MES.BuildingBlocks.ModuleStartup;
 
 var builder = WebApplication.CreateBuilder(args);
 
-const string structuredLogTemplate =
-    "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] [TraceId:{TraceId}] [Req:{RequestMethod} {RequestPath}] {Message:lj}{NewLine}{Exception}";
-
-var loggerConfiguration = new LoggerConfiguration()
-    .ReadFrom.Configuration(builder.Configuration)
-    .MinimumLevel.Information()
-    .Filter.ByExcluding(logEvent => logEvent.Level is LogEventLevel.Debug or LogEventLevel.Verbose)
-    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
-    .MinimumLevel.Override("System", LogEventLevel.Warning)
-    .Enrich.FromLogContext()
-    .WriteTo.Console(outputTemplate: structuredLogTemplate)
-    .WriteTo.File(
-        "logs/frontline-.log",
-        rollingInterval: RollingInterval.Day,
-        retainedFileCountLimit: 14,
-        outputTemplate: structuredLogTemplate);
-
-Log.Logger = loggerConfiguration.CreateLogger();
-builder.Host.UseSerilog();
-
-builder.Services.AddHealthChecks();
-builder.Services.AddEndpointsApiExplorer();
+builder.UseScaffoldSerilog("frontline");
+builder.Services.AddScaffoldApiCore();
 
 var app = builder.Build();
 
-if (!app.Environment.IsDevelopment())
-{
-    app.UseHsts();
-}
-
-app.UseSerilogRequestLogging();
-app.UseRouting();
-
-app.MapHealthChecks("/health");
+app.UseScaffoldApiPipeline();
 
 // TODO: tighten auth when roles are defined. Frontline is the safe field/branch
 // surface (e.g. fabric availability); it stays anonymous until the role model
