@@ -48,7 +48,7 @@ button, input, select { font: inherit; }
 .link-button:hover { color: var(--n-0); }
 
 /* ── Main ──────────────────────────────────────────────────── */
-.main { padding: 22px 28px 48px; flex: 1; }
+.main { padding: 22px 28px 48px; flex: 1; display: flex; flex-direction: column; }
 
 /* ── Page head ─────────────────────────────────────────────── */
 .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; margin-bottom: 14px; }
@@ -67,6 +67,14 @@ h1 { margin: 0; color: var(--n-900); font-size: 26px; line-height: 1.12; }
 /* ── Panel ──────────────────────────────────────────────────── */
 .panel { overflow: hidden; border: 1px solid var(--n-200); border-radius: 8px; background: var(--n-0); box-shadow: 0 1px 2px rgb(15 23 42 / 4%); }
 .panel + .panel { margin-top: 16px; }
+/* Orders list panel fills remaining vertical space */
+.orders-list { flex: 1; display: flex; flex-direction: column; min-height: 0; margin-bottom: 0; }
+.orders-list .table-wrap {
+  flex: 1;
+  min-height: 360px;
+  max-height: calc(100vh - 280px); /* 280 ≈ test-strip + topbar + page-head + panel-head + toolbar + table-foot */
+  overflow-y: auto;
+}
 .panel__head { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px 14px; border-bottom: 1px solid var(--n-150); background: var(--n-25); }
 .panel__head h2 { margin: 0; color: var(--n-900); font-size: 17px; }
 .panel__head span { color: var(--n-500); font-size: 12px; }
@@ -92,7 +100,9 @@ h1 { margin: 0; color: var(--n-900); font-size: 26px; line-height: 1.12; }
 .pagination button:disabled { color: var(--n-300); cursor: default; border-color: var(--n-150); }
 
 /* ── Table wrap + lk-table ──────────────────────────────────── */
-.table-wrap { overflow: auto; max-height: 360px; }
+.table-wrap { overflow: auto; }
+/* Generic max-height for detail page tables; orders-list overrides with flex */
+.details .table-wrap { max-height: 400px; }
 .lk-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
 .lk-table th, .lk-table td { height: 30px; padding: 6px 12px; border-bottom: 1px solid var(--n-150); text-align: left; white-space: nowrap; vertical-align: middle; }
 .lk-table th { position: sticky; top: 0; z-index: 1; background: var(--n-50); color: var(--n-700); border-bottom-color: var(--n-200); font-family: var(--font-mono); font-size: 10.5px; font-weight: 800; letter-spacing: .45px; text-transform: uppercase; }
