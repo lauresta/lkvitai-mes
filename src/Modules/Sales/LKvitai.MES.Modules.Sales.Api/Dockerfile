@@ -14,6 +14,7 @@ COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.ModuleStartup/LKvitai.MES.Bui
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/LKvitai.MES.BuildingBlocks.PortalAuth.csproj BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/
 COPY src/Modules/Sales/LKvitai.MES.Modules.Sales.Contracts/LKvitai.MES.Modules.Sales.Contracts.csproj Modules/Sales/LKvitai.MES.Modules.Sales.Contracts/
 COPY src/Modules/Sales/LKvitai.MES.Modules.Sales.Application/LKvitai.MES.Modules.Sales.Application.csproj Modules/Sales/LKvitai.MES.Modules.Sales.Application/
+COPY src/Modules/Sales/LKvitai.MES.Modules.Sales.Infrastructure/LKvitai.MES.Modules.Sales.Infrastructure.csproj Modules/Sales/LKvitai.MES.Modules.Sales.Infrastructure/
 COPY src/Modules/Sales/LKvitai.MES.Modules.Sales.Api/LKvitai.MES.Modules.Sales.Api.csproj Modules/Sales/LKvitai.MES.Modules.Sales.Api/
 
 RUN dotnet restore Modules/Sales/LKvitai.MES.Modules.Sales.Api/LKvitai.MES.Modules.Sales.Api.csproj
@@ -24,6 +25,7 @@ COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.ModuleStartup/ BuildingBlocks
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/ BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/
 COPY src/Modules/Sales/LKvitai.MES.Modules.Sales.Contracts/ Modules/Sales/LKvitai.MES.Modules.Sales.Contracts/
 COPY src/Modules/Sales/LKvitai.MES.Modules.Sales.Application/ Modules/Sales/LKvitai.MES.Modules.Sales.Application/
+COPY src/Modules/Sales/LKvitai.MES.Modules.Sales.Infrastructure/ Modules/Sales/LKvitai.MES.Modules.Sales.Infrastructure/
 COPY src/Modules/Sales/LKvitai.MES.Modules.Sales.Api/ Modules/Sales/LKvitai.MES.Modules.Sales.Api/
 
 WORKDIR /src/Modules/Sales/LKvitai.MES.Modules.Sales.Api

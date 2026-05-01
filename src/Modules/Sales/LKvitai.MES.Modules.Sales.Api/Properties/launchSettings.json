@@ -2,7 +2,8 @@
   "profiles": {
     "LKvitai.MES.Modules.Sales.Api": {
       "commandName": "Project",
-      "launchBrowser": false,
+      "launchBrowser": true,
+      "launchUrl": "health",
       "applicationUrl": "http://localhost:5021",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"

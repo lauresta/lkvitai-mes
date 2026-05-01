@@ -1,4 +1,6 @@
 @page "/"
+@inject SalesApiClient Api
+@implements IAsyncDisposable
 
 <PageTitle>Sales · Orders</PageTitle>
 
@@ -35,13 +37,13 @@
             </label>
 
             <LkSelect Label="Status" Value="@_statusFilter" Options="@StatusOptions"
-                      ValueChanged="@(v => { _statusFilter = v; ApplyFilters(); })" />
+                      ValueChanged="@(async v => { _statusFilter = v; await ReloadAsync(); })" />
 
             <LkSelect Label="Store" Value="@_storeFilter" Options="@StoreOptions"
-                      ValueChanged="@(v => { _storeFilter = v; ApplyFilters(); })" />
+                      ValueChanged="@(async v => { _storeFilter = v; await ReloadAsync(); })" />
 
             <LkSelect Label="Date" Value="@_dateFilter" Options="@DateOptions"
-                      ValueChanged="@(v => _dateFilter = v)" />
+                      ValueChanged="@(async v => { _dateFilter = v; await ReloadAsync(); })" />
 
             <label class="field" style="cursor:pointer;padding-right:8px;gap:7px"
                    title="Show only orders with outstanding debt"
@@ -61,6 +63,17 @@
             </nav>
         </div>
 
+        @if (_loadFailed)
+        {
+            <div class="panel__head" role="alert" style="border-top:1px solid var(--n-150);background:var(--danger-bg);color:var(--danger-fg)">
+                <div>
+                    <strong>Sales API unreachable.</strong>
+                    <span>Try again or reload the page.</span>
+                </div>
+                <button class="btn btn--ghost" type="button" @onclick="ReloadAsync">Retry</button>
+            </div>
+        }
+
         @* Desktop table *@
         <div class="table-wrap is-mobile-hidden">
             <table class="lk-table">
@@ -79,7 +92,15 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var o in _filtered)
+                    @if (_orders.Count == 0 && !_loadFailed)
+                    {
+                        <tr>
+                            <td colspan="10" style="text-align:center;color:var(--n-500);padding:24px 12px">
+                                No orders match these filters.
+                            </td>
+                        </tr>
+                    }
+                    @foreach (var o in _orders)
                     {
                         <tr class="@(o.Id == _selectedId ? "is-selected" : "")"
                             @onclick="@(() => _selectedId = o.Id)"
@@ -87,14 +108,14 @@
                             <td><span class="checkbox @(o.Id == _selectedId ? "is-checked" : "")" aria-hidden="true"></span></td>
                             <td>
                                 <a class="order-link"
-                                   href="/orders/@o.Number"
+                                   href="orders/@o.Number"
                                    target="_blank"
                                    title="Open @o.Number in new tab"
                                    @onclick:stopPropagation>@o.Number<span class="order-link__open">&#8599;</span></a>
                             </td>
-                            <td class="mono">@o.Date</td>
-                            <td class="is-money">@o.Price</td>
-                            <td class="is-money @o.DebtClass">@o.Debt</td>
+                            <td class="mono">@OrderFormat.Date(o.Date)</td>
+                            <td class="is-money">@OrderFormat.Money(o.Price)</td>
+                            <td class="is-money @OrderFormat.DebtClass(o.Debt, o.IsOverdue)">@OrderFormat.Money(o.Debt)</td>
                             <td><span class="cust">@o.Customer</span></td>
                             <td>
                                 <span class="cust__flags">
@@ -103,7 +124,7 @@
                                     @if (o.HasNote) { <span class="cust__flag cust__flag--note" title="Has note">!</span> }
                                 </span>
                             </td>
-                            <td><span class="chip @o.StatusChip">@o.Status</span></td>
+                            <td><span class="chip @OrderFormat.StatusChip(o.StatusCode)">@o.Status</span></td>
                             <td>@o.Store</td>
                             <td>@o.Address</td>
                         </tr>
@@ -114,28 +135,34 @@
 
         @* Mobile cards *@
         <div class="mobile-cards" aria-label="Mobile orders">
-            @foreach (var o in _filtered)
+            @if (_orders.Count == 0 && !_loadFailed)
+            {
+                <article class="mobile-card">
+                    <div class="mobile-card__cust" style="color:var(--n-500)">No orders match these filters.</div>
+                </article>
+            }
+            @foreach (var o in _orders)
             {
                 <article class="mobile-card @(o.Id == _selectedId ? "is-selected" : "")"
                          @onclick="@(() => _selectedId = o.Id)">
                     <div class="mobile-card__top">
                         <a class="mobile-card__id order-link"
-                           href="/orders/@o.Number"
+                           href="orders/@o.Number"
                            target="_blank"
                            @onclick:stopPropagation>@o.Number &#8599;</a>
-                        <span class="chip @o.StatusChip">@o.Status</span>
+                        <span class="chip @OrderFormat.StatusChip(o.StatusCode)">@o.Status</span>
                     </div>
                     <div class="mobile-card__cust">@o.Customer</div>
                     <div class="mobile-card__meta">
-                        <span>@o.Date</span>
+                        <span>@OrderFormat.Date(o.Date)</span>
                         <span>@o.Store</span>
-                        @if (o.HasDebt)
+                        @if (o.IsOverdue || (o.HasDebt && o.Debt > 0))
                         {
-                            <span>Debt <b class="danger">@o.Debt</b></span>
+                            <span>Debt <b class="danger">@OrderFormat.Money(o.Debt)</b></span>
                         }
                         else
                         {
-                            <span>Debt <b>@o.Debt</b></span>
+                            <span>Debt <b>@OrderFormat.Money(o.Debt)</b></span>
                         }
                     </div>
                 </article>
@@ -143,7 +170,7 @@
         </div>
 
         <div class="table-foot">
-            <span>Showing <strong>1&#8211;@_filtered.Count</strong> of <strong>284</strong> entries</span>
+            <span>Showing <strong>1&#8211;@_orders.Count</strong> of <strong>@_total</strong> entries</span>
             <nav class="pagination" aria-label="Pagination bottom">
                 <button type="button" disabled>&#8249; Prev</button>
                 <button type="button" class="is-active">1</button>
@@ -157,21 +184,10 @@
 </main>
 
 @code {
-    private static readonly List<OrderRow> AllOrders =
-    [
-        new(1, "KVT-240518-018", "2026-04-29", "1\u202f482,00\u00a0\u20ac", "482,00\u00a0\u20ac",       "is-debt-pos",     "UAB Audenis Projektai",              true,  false, false, "Gaminamas",    "chip--inprogress", "Vilnius",           "Ukmerge\u0161 g. 221, Vilnius"),
-        new(2, "KVT-240517-044", "2026-04-28", "746,50\u00a0\u20ac",         "0,00\u00a0\u20ac",          "is-debt-zero",    "Ingrida Petrauskien\u0117",           false, false, false, "Patvirtintas", "chip--approved",   "Kaunas",            "Savanori\u0173 pr. 284, Kaunas"),
-        new(3, "KVT-240516-102", "2026-04-27", "2\u202f330,00\u00a0\u20ac", "2\u202f330,00\u00a0\u20ac", "is-debt-overdue", "MB Namai Sau",                        true,  true,  false, "\u012evestas",  "chip--entered",    "Klaip\u0117da",     "Taikos pr. 52, Klaip\u0117da"),
-        new(4, "KVT-240516-076", "2026-04-26", "392,80\u00a0\u20ac",         "0,00\u00a0\u20ac",          "is-debt-zero",    "Rasa Butkut\u0117",                   false, false, false, "Pagamintas",   "chip--made",       "Vilnius",           "Kalvarij\u0173 g. 125, Vilnius"),
-        new(5, "KVT-240515-031", "2026-04-25", "924,10\u00a0\u20ac",         "124,10\u00a0\u20ac",         "is-debt-pos",     "UAB \u0160iaur\u0117s Apartamentai", false, false, true,  "Filialui",     "chip--shipped",    "Panev\u0117\u017eys","Respublikos g. 39, Panev\u0117\u017eys"),
-        new(6, "KVT-240514-009", "2026-04-24", "1\u202f096,00\u00a0\u20ac", "0,00\u00a0\u20ac",          "is-debt-zero",    "Darius Vaitkus",                      false, false, false, "Atiduotas",    "chip--delivered",  "\u0160iauliai",     "Til\u017e\u0117s g. 109, \u0160iauliai"),
-        new(7, "KVT-240513-088", "2026-04-22", "615,70\u00a0\u20ac",         "615,70\u00a0\u20ac",         "is-debt-overdue", "UAB Interjero Linija",                true,  false, false, "Sustabdytas",  "chip--paused",     "Vilnius",           "Konstitucijos pr. 12, Vilnius"),
-    ];
-
     private static readonly IReadOnlyList<SelectOption> StatusOptions =
     [
-        new("", "All statuses"),
-        new("\u012evestas",  "\u012evestas"),
+        new("",             "All statuses"),
+        new("Įvestas",      "Įvestas"),
         new("Patvirtintas", "Patvirtintas"),
         new("Gaminamas",    "Gaminamas"),
         new("Pagamintas",   "Pagamintas"),
@@ -182,12 +198,12 @@
 
     private static readonly IReadOnlyList<SelectOption> StoreOptions =
     [
-        new("", "All stores"),
-        new("Vilnius",              "Vilnius"),
-        new("Kaunas",               "Kaunas"),
-        new("Klaip\u0117da",        "Klaip\u0117da"),
-        new("\u0160iauliai",        "\u0160iauliai"),
-        new("Panev\u0117\u017eys",  "Panev\u0117\u017eys"),
+        new("",          "All stores"),
+        new("Vilnius",   "Vilnius"),
+        new("Kaunas",    "Kaunas"),
+        new("Klaipėda",  "Klaipėda"),
+        new("Šiauliai",  "Šiauliai"),
+        new("Panevėžys", "Panevėžys"),
     ];
 
     private static readonly IReadOnlyList<SelectOption> DateOptions =
@@ -197,36 +213,83 @@
         new("ytd",   "YTD"),
     ];
 
-    private List<OrderRow> _filtered    = AllOrders.ToList();
-    private string         _search      = "";
-    private string         _statusFilter = "";
-    private string         _storeFilter  = "";
-    private string         _dateFilter   = "30d";
-    private bool           _hasDebtFilter;
-    private int?           _selectedId;
+    private List<OrderSummaryDto> _orders       = new();
+    private int                   _total;
+    private string                _search       = "";
+    private string                _statusFilter = "";
+    private string                _storeFilter  = "";
+    private string                _dateFilter   = "30d";
+    private bool                  _hasDebtFilter;
+    private int?                  _selectedId;
+    private bool                  _loadFailed;
+    private CancellationTokenSource? _searchCts;
 
-    private void OnSearch(ChangeEventArgs e)
+    protected override async Task OnInitializedAsync()
+    {
+        await ReloadAsync();
+    }
+
+    private async Task OnSearch(ChangeEventArgs e)
     {
         _search = e.Value?.ToString() ?? "";
-        ApplyFilters();
+
+        if (_searchCts is not null)
+        {
+            await _searchCts.CancelAsync();
+            _searchCts.Dispose();
+        }
+        _searchCts = new CancellationTokenSource();
+        var token = _searchCts.Token;
+
+        try
+        {
+            await Task.Delay(200, token);
+            await ReloadAsync();
+        }
+        catch (TaskCanceledException) { /* superseded by a newer keystroke */ }
     }
 
-    private void ApplyFilters()
+    public async ValueTask DisposeAsync()
     {
-        _filtered = AllOrders
-            .Where(o => string.IsNullOrWhiteSpace(_search) ||
-                o.Number.Contains(_search, StringComparison.OrdinalIgnoreCase) ||
-                o.Customer.Contains(_search, StringComparison.OrdinalIgnoreCase) ||
-                o.Address.Contains(_search, StringComparison.OrdinalIgnoreCase))
-            .Where(o => string.IsNullOrEmpty(_statusFilter) || o.Status == _statusFilter)
-            .Where(o => string.IsNullOrEmpty(_storeFilter)  || o.Store  == _storeFilter)
-            .Where(o => !_hasDebtFilter || o.HasDebt)
-            .ToList();
+        if (_searchCts is not null)
+        {
+            await _searchCts.CancelAsync();
+            _searchCts.Dispose();
+            _searchCts = null;
+        }
     }
 
-    private void ToggleDebt()
+    private async Task ToggleDebt()
     {
         _hasDebtFilter = !_hasDebtFilter;
-        ApplyFilters();
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        var query = new OrdersQueryParams
+        {
+            Search  = string.IsNullOrWhiteSpace(_search) ? null : _search,
+            Status  = string.IsNullOrEmpty(_statusFilter) ? null : _statusFilter,
+            Store   = string.IsNullOrEmpty(_storeFilter)  ? null : _storeFilter,
+            Date    = string.IsNullOrEmpty(_dateFilter)   ? null : _dateFilter,
+            HasDebt = _hasDebtFilter,
+        };
+
+        var result = await Api.GetOrdersAsync(query, CancellationToken.None);
+        if (result is null)
+        {
+            _loadFailed = true;
+            _orders = new List<OrderSummaryDto>();
+            _total = 0;
+        }
+        else
+        {
+            _loadFailed = false;
+            _orders = result.Items.ToList();
+            _total = result.Total;
+        }
+
+        StateHasChanged();
     }
 }
