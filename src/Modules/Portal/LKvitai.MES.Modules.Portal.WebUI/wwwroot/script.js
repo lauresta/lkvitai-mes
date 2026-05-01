@@ -163,7 +163,7 @@ function renderModules(items) {
     if (mod.status === "active") {
       footer = `<span class="module-card__status is-available">Available</span><span class="module-card__action">Open ${mod.title} &rarr;</span>`;
     } else if (mod.status === "scaffolded") {
-      footer = `<span class="module-card__status is-scaffolded"><span class="module-card__badge mono" aria-hidden="true">${svgIcon("wip")}WIP</span> Scaffolded</span><span class="module-card__action">Open ${mod.title} &rarr;</span>`;
+      footer = `<span class="module-card__status is-scaffolded">Scaffolded</span><span class="module-card__action">Open ${mod.title} &rarr;</span>`;
     } else {
       footer = `<span class="module-card__status mono">Planned &middot; ${mod.quarter}</span><span class="module-card__lock" aria-hidden="true">${svgIcon("lock")}</span>`;
     }
