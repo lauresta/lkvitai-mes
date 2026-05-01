@@ -96,9 +96,14 @@ services:
     depends_on:
       - portal-api
 
-  # --- Sales module (scaffold) --------------------------------------------------
+  # --- Sales module -------------------------------------------------------------
   # Uses the shared PortalAuth cookie (same auth-keys bind-mount, same cookie name)
   # so a user signed in via Portal is authenticated against the Sales API too.
+  # S-2: Sales.Api now talks directly to the legacy SQL Server (LKvitaiDb — the
+  # migrated MS Access database) via the weblb_* stored procedures. The
+  # connection string is required — the deploy workflow fails fast if
+  # LKVITAI_MSACCESS_DB_CONNECTION is empty, and Sales.Api itself refuses to
+  # start without ConnectionStrings__LKvitaiDb.
   sales-api:
     image: ghcr.io/lauresta/lkvitai-mes-sales-api:${IMAGE_TAG:-latest}
     container_name: lkvitai-mes-sales-api
@@ -108,6 +113,8 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Test
       PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
+      ConnectionStrings__LKvitaiDb: "${LKVITAI_MSACCESS_DB_CONNECTION}"
+      Sales__OrdersDataSource: "Sql"
     volumes:
       - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys
       - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs

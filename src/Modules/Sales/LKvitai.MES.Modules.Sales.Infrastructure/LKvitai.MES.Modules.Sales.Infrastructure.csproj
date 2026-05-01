@@ -9,6 +9,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.Data.SqlClient" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\..\BuildingBlocks\LKvitai.MES.BuildingBlocks.SharedKernel\LKvitai.MES.BuildingBlocks.SharedKernel.csproj" />
     <ProjectReference Include="..\LKvitai.MES.Modules.Sales.Application\LKvitai.MES.Modules.Sales.Application.csproj" />
     <ProjectReference Include="..\LKvitai.MES.Modules.Sales.Contracts\LKvitai.MES.Modules.Sales.Contracts.csproj" />

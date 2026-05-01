@@ -26,6 +26,7 @@ jobs:
       ITEMIMAGES__SECRETKEY: ${{ secrets.ITEMIMAGES__SECRETKEY }}
       ITEMIMAGES__MODEL_PATH: ${{ vars.ITEMIMAGES__MODEL_PATH }}
       CLIP_MODEL_DIR: ${{ vars.CLIP_MODEL_DIR }}
+      LKVITAI_MSACCESS_DB_CONNECTION: ${{ secrets.LKVITAI_MSACCESS_DB_CONNECTION }}
 
     steps:
       - name: Fail fast if required env vars are missing or invalid
@@ -44,6 +45,10 @@ jobs:
           fi
           if [ "${CLIP_MODEL_DIR}" = "/tmp/models" ] || [[ "${CLIP_MODEL_DIR}" == /tmp/* ]]; then
             echo "::error::CLIP_MODEL_DIR points to /tmp, which is ephemeral after reboot/cleanup. Use a persistent path, e.g. /opt/lkvitai-mes/models."
+            exit 1
+          fi
+          if [ -z "${LKVITAI_MSACCESS_DB_CONNECTION}" ]; then
+            echo "::error::LKVITAI_MSACCESS_DB_CONNECTION is missing. Set it in GitHub Environment 'test' as the SQL Server connection string for the legacy LKvitaiDb (the migrated MS Access database). Sales.Api refuses to start without it after S-2."
             exit 1
           fi
 

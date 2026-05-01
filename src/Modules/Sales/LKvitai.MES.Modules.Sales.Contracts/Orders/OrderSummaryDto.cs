@@ -5,7 +5,7 @@ namespace LKvitai.MES.Modules.Sales.Contracts.Orders;
 /// (decimals, dates, flags, semantic codes) — never CSS class names. The WebUI
 /// derives chip / debt-tier classes and locale formatting from these fields.
 /// </summary>
-/// <param name="Id">Stable internal identifier (legacy <c>weblb_Order.Id</c>).</param>
+/// <param name="Id">Stable internal identifier (legacy <c>weblb_Order.Id</c> — BIGINT, mapped as <see cref="long"/>).</param>
 /// <param name="Number">Public order number, e.g. <c>KVT-240518-018</c>.</param>
 /// <param name="Date">Order date (no time component on the list).</param>
 /// <param name="Price">Total order price including VAT.</param>
@@ -28,7 +28,7 @@ namespace LKvitai.MES.Modules.Sales.Contracts.Orders;
 /// matches on <c>Number / Customer / Address</c>.
 /// </param>
 public sealed record OrderSummaryDto(
-    int Id,
+    long Id,
     string Number,
     DateOnly Date,
     decimal Price,
