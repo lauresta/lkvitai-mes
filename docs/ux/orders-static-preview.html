@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LKvitai.MES - Sales Orders Static Preview</title>
+  <style>
+    :root {
+      --n-0: #fff; --n-25: #fbfcfd; --n-50: #f5f6f8; --n-100: #eef1f4;
+      --n-150: #e2e7ec; --n-200: #d5dce4; --n-300: #b9c3ce; --n-400: #8996a4;
+      --n-500: #66717f; --n-600: #4e5966; --n-700: #323b45; --n-800: #1f2632; --n-900: #151922;
+      --accent-50: #eaf8f7; --accent-100: #d1eeec; --accent-400: #56aaa7;
+      --accent-500: #2f8f8b; --accent-600: #257773; --accent-700: #1d5d5a;
+      --sand-25: #faf6ee; --sand-50: #f7f1e5; --sand-100: #ede2c8;
+      --sand-150: #e4dbc5; --sand-300: #daceb7; --sand-500: #c79f63; --sand-600: #b08a4a; --sand-700: #7c5f2a;
+      --ok-fg: #19744a; --ok-bg: #e6f4ec; --ok-bd: #bfe0cd; --ok-dot: #1f9d61;
+      --warn-fg: #7c5f2a; --warn-bg: #f7eed5; --warn-bd: #e2cf9a; --warn-dot: #b08a4a;
+      --info-fg: #1d5d5a; --info-bg: #e3f2f1; --info-bd: #b4dad7; --info-dot: #2f8f8b;
+      --slate-fg: #3a4554; --slate-bg: #eaeef3; --slate-bd: #cdd5de; --slate-dot: #66717f;
+      --danger-fg: #8a1f12; --danger-bg: #fbe7e3; --danger-bd: #f0c2b8; --danger-dot: #c0392b;
+      --done-fg: #2a4a3a; --done-bg: #e3eee7; --done-bd: #bdd2c4; --done-dot: #4a7a5d;
+      --dark: #20242c; --dark-2: #171b22; --dark-line: #3a404c;
+      --font-ui: Inter, "Segoe UI", system-ui, sans-serif;
+      --font-mono: "JetBrains Mono", "SF Mono", Consolas, monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; }
+    body { background: #f0eee9; color: var(--n-900); font-family: var(--font-ui); line-height: 1.38; -webkit-font-smoothing: antialiased; }
+    a { color: inherit; }
+    button, input, select { font: inherit; }
+    .mono { font-family: var(--font-mono); font-feature-settings: "zero"; }
+
+    .app-shell { max-width: 1440px; min-height: 100vh; margin: 0 auto; background: var(--n-50); box-shadow: 0 0 40px rgb(0 0 0 / 4%); overflow-x: hidden; }
+    .test-strip { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 28px; background: repeating-linear-gradient(-45deg, #ead19b, #ead19b 12px, #dfc07a 12px, #dfc07a 24px); color: var(--n-900); font-size: 12px; }
+    .test-strip__main { display: flex; align-items: center; gap: 9px; min-width: 0; }
+    .test-strip__note { opacity: .82; }
+    .test-strip__host { font-size: 11px; white-space: nowrap; }
+    .icon-warning { width: 14px; height: 14px; background: currentColor; clip-path: polygon(50% 5%, 96% 90%, 4% 90%); }
+
+    .topbar { display: flex; align-items: center; gap: 24px; padding: 14px 28px; background: var(--dark); color: var(--n-0); border-bottom: 1px solid var(--dark-line); }
+    .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .brand__mark { display: grid; place-items: center; width: 36px; height: 36px; flex: 0 0 auto; border: 1px solid var(--dark-line); border-radius: 6px; background: var(--dark-2); color: var(--accent-400); font-size: 13px; font-weight: 700; }
+    .brand__name { color: var(--n-0); font-size: 15px; font-weight: 700; line-height: 1.1; }
+    .brand__name span { color: #9ba4b0; font-weight: 400; }
+    .brand__tagline { margin-top: 2px; color: #a5adb8; font-size: 10px; letter-spacing: 1.4px; text-transform: uppercase; white-space: nowrap; }
+    .topbar__separator { width: 1px; height: 28px; background: var(--dark-line); }
+    .topbar__spacer { flex: 1; }
+    .portal-search { position: relative; flex: 1 1 360px; max-width: 460px; }
+    .portal-search input { width: 100%; padding: 8px 10px 8px 34px; border: 1px solid var(--dark-line); border-radius: 4px; outline: none; background: #1b2028; color: var(--n-0); font-size: 13px; }
+    .portal-search__icon { position: absolute; left: 12px; top: 50%; width: 13px; height: 13px; border: 1.8px solid #8f98a6; border-radius: 50%; transform: translateY(-58%); }
+    .portal-search__icon::after { content: ""; position: absolute; right: -5px; bottom: -4px; width: 6px; height: 1.8px; background: #8f98a6; transform: rotate(45deg); transform-origin: left center; }
+    .env-badge { display: flex; border: 1px solid var(--dark-line); border-radius: 4px; overflow: hidden; background: #1b2028; }
+    .env-badge div { display: flex; align-items: center; gap: 7px; padding: 6px 11px; }
+    .env-badge div:first-child { border-right: 1px solid var(--dark-line); background: var(--dark-2); }
+    .env-badge span { color: #9ba4b0; font-size: 10px; }
+    .env-badge strong { color: var(--n-0); font-size: 11px; }
+    .env-badge div:first-child strong { color: #dfc07a; }
+    .user-block { display: flex; align-items: center; gap: 9px; padding-left: 14px; border-left: 1px solid var(--dark-line); }
+    .user-block__avatar { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--dark-line); color: var(--accent-400); font-size: 11px; font-weight: 700; }
+    .user-block__name { color: var(--n-0); font-size: 12px; font-weight: 700; }
+    .link-button { padding: 0; border: 0; background: transparent; color: #a5adb8; cursor: pointer; font-size: 12px; text-align: left; }
+
+    .main { max-width: 1440px; margin: 0 auto; padding: 22px 28px 48px; }
+    .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; margin-bottom: 14px; }
+    .eyebrow { margin: 0 0 6px; color: var(--accent-700); font-size: 10px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; }
+    h1 { margin: 0; color: var(--n-900); font-size: 26px; line-height: 1.12; }
+    .page-head p { max-width: 740px; margin: 7px 0 0; color: var(--n-500); font-size: 13px; }
+    .page-actions { display: flex; gap: 8px; align-items: center; }
+    .btn { min-height: 32px; padding: 7px 11px; border: 1px solid var(--n-200); border-radius: 6px; background: var(--n-0); color: var(--n-700); font-size: 12px; font-weight: 800; cursor: pointer; }
+    .btn--primary { border-color: var(--accent-600); background: var(--accent-600); color: var(--n-0); }
+    .btn--ghost { background: var(--n-25); }
+
+    .panel { overflow: hidden; border: 1px solid var(--n-200); border-radius: 8px; background: var(--n-0); box-shadow: 0 1px 2px rgb(15 23 42 / 4%); }
+    .panel + .panel { margin-top: 16px; }
+    .panel__head { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 12px 14px; border-bottom: 1px solid var(--n-150); background: var(--n-25); }
+    .panel__head h2 { margin: 0; color: var(--n-900); font-size: 17px; }
+    .panel__head span { color: var(--n-500); font-size: 12px; }
+
+    .toolbar { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--n-150); background: var(--n-0); }
+    .field { position: relative; display: flex; align-items: center; gap: 7px; min-height: 32px; border: 1px solid var(--n-200); border-radius: 6px; background: var(--n-0); color: var(--n-700); }
+    .field:focus-within { border-color: var(--accent-500); box-shadow: 0 0 0 3px var(--accent-50); }
+    .field--search { flex: 1 1 320px; max-width: 420px; padding: 0 8px; }
+    .field input, .field select { min-width: 0; border: 0; outline: 0; background: transparent; color: var(--n-900); font-size: 12.5px; }
+    .field input { width: 100%; }
+    .field select { height: 30px; padding: 0 8px; }
+    .toolbar__label { padding-left: 8px; color: var(--n-500); font-size: 11px; font-weight: 800; }
+    .key-hint { display: inline-grid; place-items: center; min-width: 18px; height: 18px; border: 1px solid var(--n-200); border-radius: 4px; color: var(--n-500); font-size: 10px; }
+    .checkbox { display: inline-block; width: 14px; height: 14px; border: 1px solid var(--n-300); border-radius: 3px; background: var(--n-0); vertical-align: middle; }
+    .checkbox.is-checked { border-color: var(--accent-600); background: linear-gradient(var(--accent-600), var(--accent-600)) center / 8px 8px no-repeat var(--accent-600); box-shadow: inset 0 0 0 3px var(--n-0); }
+    .toolbar .spacer { flex: 1; }
+
+    .pagination { display: flex; align-items: center; gap: 4px; color: var(--n-500); }
+    .pagination button { min-width: 28px; min-height: 28px; padding: 4px 8px; border: 1px solid var(--n-200); border-radius: 5px; background: var(--n-0); color: var(--n-600); font-size: 12px; font-weight: 700; cursor: pointer; }
+    .pagination button.is-active { border-color: var(--accent-600); background: var(--accent-600); color: var(--n-0); }
+    .pagination button:disabled { color: var(--n-300); cursor: default; }
+
+    .table-wrap { overflow: auto; max-height: 360px; }
+    .lk-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    .lk-table th, .lk-table td { height: 30px; padding: 6px 12px; border-bottom: 1px solid var(--n-150); text-align: left; white-space: nowrap; vertical-align: middle; }
+    .lk-table th { position: sticky; top: 0; z-index: 1; background: var(--n-50); color: var(--n-700); border-bottom-color: var(--n-200); font-family: var(--font-mono); font-size: 10.5px; font-weight: 800; letter-spacing: .45px; text-transform: uppercase; }
+    .lk-table tbody tr:hover td { background: var(--n-25); }
+    .lk-table tbody tr.is-selected td { background: var(--accent-50); }
+    .lk-table tbody tr.is-selected td:first-child { box-shadow: inset 3px 0 0 var(--accent-500); }
+    .lk-table .is-num, .lk-table .is-money { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+    .lk-table .mono { font-variant-numeric: tabular-nums; }
+    .sort { color: var(--accent-600); font-size: 9px; }
+
+    .order-link { color: var(--accent-700); font-family: var(--font-mono); font-weight: 800; text-decoration: none; }
+    .order-link__open { margin-left: 5px; color: var(--n-400); }
+    .cust { display: block; max-width: 230px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .cust__flags { display: flex; gap: 3px; justify-content: center; }
+    .cust__flag { display: inline-grid; place-items: center; width: 14px; height: 14px; border-radius: 4px; font-family: var(--font-mono); font-size: 10px; font-weight: 900; line-height: 1; }
+    .cust__flag--debt { background: var(--danger-bg); color: var(--danger-fg); }
+    .cust__flag--vip { background: var(--warn-bg); color: var(--warn-fg); }
+    .cust__flag--note { background: var(--info-bg); color: var(--info-fg); }
+    .is-debt-zero { color: var(--n-400); font-weight: 500; }
+    .is-debt-pos { color: var(--n-900); font-weight: 800; }
+    .is-debt-overdue { color: var(--danger-fg); font-weight: 900; }
+
+    .chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; font-family: var(--font-mono); font-size: 10.5px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; line-height: 1; border: 1px solid transparent; border-radius: 999px; white-space: nowrap; }
+    .chip::before { content: ""; width: 6px; height: 6px; flex-shrink: 0; border-radius: 50%; background: currentColor; }
+    .chip--sm { padding: 2px 7px; font-size: 10px; }
+    .chip--entered { background: var(--slate-bg); color: var(--slate-fg); border-color: var(--slate-bd); }
+    .chip--approved { background: var(--info-bg); color: var(--info-fg); border-color: var(--info-bd); }
+    .chip--inprogress { background: var(--warn-bg); color: var(--warn-fg); border-color: var(--warn-bd); }
+    .chip--made { background: var(--ok-bg); color: var(--ok-fg); border-color: var(--ok-bd); }
+    .chip--shipped { background: var(--info-bg); color: var(--info-fg); border-color: var(--info-bd); opacity: .86; }
+    .chip--delivered { background: var(--done-bg); color: var(--done-fg); border-color: var(--done-bd); }
+    .chip--paused { background: var(--danger-bg); color: var(--danger-fg); border-color: var(--danger-bd); }
+
+    .table-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 12px; border-top: 1px solid var(--n-150); color: var(--n-500); font-size: 12px; }
+
+    .mobile-cards { display: none; gap: 8px; padding: 10px; }
+    .mobile-card { padding: 10px; border: 1px solid var(--n-150); border-radius: 8px; background: var(--n-0); }
+    .mobile-card__top { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
+    .mobile-card__id { color: var(--accent-700); font-family: var(--font-mono); font-weight: 900; }
+    .mobile-card__cust { margin-top: 6px; font-weight: 800; }
+    .mobile-card__meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 5px; color: var(--n-500); font-size: 12px; }
+    .danger { color: var(--danger-fg); }
+
+    .details { padding: 14px; }
+    .details__breadcrumb { display: flex; align-items: center; gap: 7px; margin-bottom: 10px; color: var(--n-500); font-size: 12px; }
+    .details__breadcrumb a { color: var(--accent-700); text-decoration: none; }
+    .details__breadcrumb strong { color: var(--n-700); font-family: var(--font-mono); }
+    .details__title { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding: 12px 14px; border: 1px solid var(--n-150); border-radius: 8px; background: var(--n-0); }
+    .details__id { color: var(--accent-700); font-size: 11px; font-weight: 900; letter-spacing: .4px; }
+    .details__title h2 { margin: 2px 0 5px; color: var(--n-900); font-size: 19px; }
+    .details__sub { display: flex; flex-wrap: wrap; gap: 8px 14px; color: var(--n-600); font-size: 12px; }
+    .details__op { margin-top: 6px; color: var(--n-500); font-size: 12px; font-style: italic; }
+    .details__title__actions { display: flex; flex-wrap: wrap; gap: 7px; justify-content: flex-end; }
+    .details__section { margin-top: 15px; }
+    .section-label { margin: 0 0 8px; color: var(--n-700); font-size: 13px; font-weight: 900; }
+    .section-label__count { margin-left: 8px; color: var(--n-500); font-size: 12px; font-weight: 500; }
+    .group-row td { background: var(--sand-25); color: var(--sand-700); font-weight: 900; }
+    .acc-row td { background: var(--n-25); color: var(--n-600); font-style: italic; }
+    .acc-row td:nth-child(2)::before { content: "↳ "; color: var(--n-400); }
+
+    .amounts { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+    .amount-card { padding: 9px 10px; border: 1px solid var(--n-150); border-radius: 8px; background: var(--n-0); }
+    .amount-card__label { display: block; color: var(--n-500); font-size: 11px; }
+    .amount-card__value { display: block; margin-top: 2px; color: var(--n-900); font-family: var(--font-mono); font-size: 14px; font-weight: 900; font-variant-numeric: tabular-nums; }
+    .amount-card--total { border-color: var(--accent-100); background: var(--accent-50); }
+    .amount-card--paid .amount-card__value { color: var(--ok-fg); }
+    .amount-card--debt { border-color: var(--danger-bd); background: #fff4f1; }
+    .amount-card--debt .amount-card__value { color: var(--danger-fg); }
+
+    .emp-name { display: flex; align-items: center; gap: 7px; }
+    .emp-avatar { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--n-100); color: var(--n-700); font-family: var(--font-mono); font-size: 10px; font-weight: 900; }
+    .duty { display: inline-flex; align-items: center; gap: 6px; }
+    .duty::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent-500); }
+    .duty--prod::before { background: var(--sand-600); }
+    .duty--inst::before { background: var(--ok-dot); }
+
+    @media (max-width: 980px) {
+      .topbar { flex-wrap: wrap; gap: 12px; }
+      .topbar__separator, .env-badge { display: none; }
+      .portal-search { order: 3; flex-basis: 100%; max-width: none; }
+      .page-head { display: block; }
+      .page-actions { margin-top: 12px; }
+      .toolbar { flex-wrap: wrap; }
+      .toolbar .spacer { display: none; }
+      .amounts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .details__title { display: block; }
+      .details__title__actions { justify-content: flex-start; margin-top: 10px; }
+    }
+
+    @media (max-width: 760px) {
+      .test-strip { display: none; }
+      .main { padding: 16px 12px 32px; }
+      .brand__tagline { display: none; }
+      .table-wrap.is-mobile-hidden { display: none; }
+      .mobile-cards { display: grid; }
+      .table-foot { align-items: flex-start; flex-direction: column; }
+      .amounts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <div class="test-strip">
+      <div class="test-strip__main">
+        <span class="icon-warning" aria-hidden="true"></span>
+        <strong>STATIC DESIGN PREVIEW</strong>
+        <span class="test-strip__note">Mock data. Sales Orders UI based on approved Portal/Login style.</span>
+      </div>
+      <span class="mono test-strip__host">docs/ux/orders-static-preview.html</span>
+    </div>
+
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand__mark">LK</div>
+        <div>
+          <div class="brand__name">LKvitai<span>.MES</span></div>
+          <div class="brand__tagline mono">Manufacturing &middot; Execution &middot; Standards</div>
+        </div>
+      </div>
+      <div class="topbar__separator" aria-hidden="true"></div>
+      <label class="portal-search"><span class="portal-search__icon" aria-hidden="true"></span><input type="search" placeholder="Find orders, modules, customers..."></label>
+      <div class="topbar__spacer"></div>
+      <div class="env-badge" aria-label="Environment and version"><div><span class="mono">ENV</span><strong class="mono">TEST</strong></div><div><span class="mono">VER</span><strong class="mono">0.1.0</strong></div></div>
+      <div class="user-block"><div class="user-block__avatar">LB</div><div><div class="user-block__name">Lukas B.</div><button class="link-button" type="button">Logout</button></div></div>
+    </header>
+
+    <main class="main">
+      <div class="page-head">
+        <div>
+          <div class="eyebrow mono">Sales &middot; Orders</div>
+          <h1>Orders list and order details</h1>
+          <p>Compact operational Sales Orders preview. The list is dense by default; selected row drives the details panel below.</p>
+        </div>
+        <div class="page-actions">
+          <button class="btn btn--ghost" type="button">Export</button>
+          <button class="btn btn--primary" type="button">+ New order</button>
+        </div>
+      </div>
+
+      <section class="panel orders-list" aria-labelledby="orders-list-title">
+        <div class="panel__head">
+          <div><h2 id="orders-list-title">Recent, unpaid and unfinished orders</h2><span>Server-side search will include hidden product text from legacy ProductsSearch.</span></div>
+          <span class="mono">Compact · 100 rows/page · sorted by Date desc</span>
+        </div>
+
+        <div class="toolbar">
+          <label class="field field--search"><span class="key-hint">/</span><input type="search" value="audenis" aria-label="Search orders"></label>
+          <label class="field"><span class="toolbar__label">Status</span><select><option>All statuses</option><option>Gaminamas</option><option>Patvirtintas</option><option>Sustabdytas</option></select></label>
+          <label class="field"><span class="toolbar__label">Store</span><select><option>All stores</option><option>Vilnius</option><option>Kaunas</option><option>Klaipeda</option></select></label>
+          <label class="field"><span class="toolbar__label">Date</span><select><option>Last 30 days</option><option>This month</option><option>YTD</option></select></label>
+          <label class="field" title="Show only orders with outstanding debt"><span class="checkbox is-checked" aria-hidden="true"></span><span style="font-size:12px;color:var(--n-700);padding-right:8px;">Has debt</span></label>
+          <div class="spacer"></div>
+          <div class="pagination" aria-label="Pagination top"><button type="button" disabled>‹ Prev</button><button type="button" class="is-active">1</button><button type="button">2</button><button type="button">3</button><button type="button">Next ›</button></div>
+        </div>
+
+        <div class="table-wrap is-mobile-hidden">
+          <table class="lk-table">
+            <thead>
+              <tr>
+                <th style="width:32px"><span class="checkbox" aria-label="Select all"></span></th>
+                <th>Number <span class="sort">▼</span></th>
+                <th>Date <span class="sort">▼</span></th>
+                <th class="is-num">Price</th>
+                <th class="is-num">Debt</th>
+                <th>Customer</th>
+                <th style="width:24px" title="Flags"></th>
+                <th>Status</th>
+                <th>Store</th>
+                <th>Address</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="is-selected">
+                <td><span class="checkbox is-checked" aria-label="Selected"></span></td>
+                <td><a class="order-link" href="#order-details">KVT-240518-018<span class="order-link__open">↗</span></a></td>
+                <td class="mono">2026-04-29</td>
+                <td class="is-money">1 482,00 €</td>
+                <td class="is-money is-debt-pos">482,00 €</td>
+                <td><span class="cust">UAB Audenis Projektai</span></td>
+                <td><span class="cust__flags"><span class="cust__flag cust__flag--debt" title="Has debt">€</span></span></td>
+                <td><span class="chip chip--inprogress">Gaminamas</span></td>
+                <td>Vilnius</td>
+                <td>Ukmerges g. 221, Vilnius</td>
+              </tr>
+              <tr>
+                <td><span class="checkbox"></span></td>
+                <td><a class="order-link" href="#">KVT-240517-044<span class="order-link__open">↗</span></a></td>
+                <td class="mono">2026-04-28</td>
+                <td class="is-money">746,50 €</td>
+                <td class="is-money is-debt-zero">0,00 €</td>
+                <td><span class="cust">Ingrida Petrauskiene</span></td>
+                <td></td>
+                <td><span class="chip chip--approved">Patvirtintas</span></td>
+                <td>Kaunas</td>
+                <td>Savanoriu pr. 284, Kaunas</td>
+              </tr>
+              <tr>
+                <td><span class="checkbox"></span></td>
+                <td><a class="order-link" href="#">KVT-240516-102<span class="order-link__open">↗</span></a></td>
+                <td class="mono">2026-04-27</td>
+                <td class="is-money">2 330,00 €</td>
+                <td class="is-money is-debt-overdue">2 330,00 €</td>
+                <td><span class="cust">MB Namai Sau</span></td>
+                <td><span class="cust__flags"><span class="cust__flag cust__flag--debt" title="Has debt">€</span><span class="cust__flag cust__flag--vip" title="VIP customer">★</span></span></td>
+                <td><span class="chip chip--entered">Ivestas</span></td>
+                <td>Klaipeda</td>
+                <td>Taikos pr. 52, Klaipeda</td>
+              </tr>
+              <tr>
+                <td><span class="checkbox"></span></td>
+                <td><a class="order-link" href="#">KVT-240516-076<span class="order-link__open">↗</span></a></td>
+                <td class="mono">2026-04-26</td>
+                <td class="is-money">392,80 €</td>
+                <td class="is-money is-debt-zero">0,00 €</td>
+                <td><span class="cust">Rasa Butkute</span></td>
+                <td></td>
+                <td><span class="chip chip--made">Pagamintas</span></td>
+                <td>Vilnius</td>
+                <td>Kalvariju g. 125, Vilnius</td>
+              </tr>
+              <tr>
+                <td><span class="checkbox"></span></td>
+                <td><a class="order-link" href="#">KVT-240515-031<span class="order-link__open">↗</span></a></td>
+                <td class="mono">2026-04-25</td>
+                <td class="is-money">924,10 €</td>
+                <td class="is-money is-debt-pos">124,10 €</td>
+                <td><span class="cust">UAB Siaures Apartamentai</span></td>
+                <td><span class="cust__flags"><span class="cust__flag cust__flag--note" title="Has note">!</span></span></td>
+                <td><span class="chip chip--shipped">Filialui</span></td>
+                <td>Panevezys</td>
+                <td>Respublikos g. 39, Panevezys</td>
+              </tr>
+              <tr>
+                <td><span class="checkbox"></span></td>
+                <td><a class="order-link" href="#">KVT-240514-009<span class="order-link__open">↗</span></a></td>
+                <td class="mono">2026-04-24</td>
+                <td class="is-money">1 096,00 €</td>
+                <td class="is-money is-debt-zero">0,00 €</td>
+                <td><span class="cust">Darius Vaitkus</span></td>
+                <td></td>
+                <td><span class="chip chip--delivered">Atiduotas</span></td>
+                <td>Siauliai</td>
+                <td>Tilzes g. 109, Siauliai</td>
+              </tr>
+              <tr>
+                <td><span class="checkbox"></span></td>
+                <td><a class="order-link" href="#">KVT-240513-088<span class="order-link__open">↗</span></a></td>
+                <td class="mono">2026-04-22</td>
+                <td class="is-money">615,70 €</td>
+                <td class="is-money is-debt-overdue">615,70 €</td>
+                <td><span class="cust">UAB Interjero Linija</span></td>
+                <td><span class="cust__flags"><span class="cust__flag cust__flag--debt" title="Has debt">€</span></span></td>
+                <td><span class="chip chip--paused">Sustabdytas</span></td>
+                <td>Vilnius</td>
+                <td>Konstitucijos pr. 12, Vilnius</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="mobile-cards" aria-label="Mobile orders">
+          <article class="mobile-card"><div class="mobile-card__top"><span class="mobile-card__id">KVT-240518-018</span><span class="chip chip--inprogress">Gaminamas</span></div><div class="mobile-card__cust">UAB Audenis Projektai</div><div class="mobile-card__meta"><span>2026-04-29</span><span>Vilnius</span><span>Debt <b>482,00 €</b></span></div></article>
+          <article class="mobile-card"><div class="mobile-card__top"><span class="mobile-card__id">KVT-240517-044</span><span class="chip chip--approved">Patvirtintas</span></div><div class="mobile-card__cust">Ingrida Petrauskiene</div><div class="mobile-card__meta"><span>2026-04-28</span><span>Kaunas</span><span>Debt <b>0,00 €</b></span></div></article>
+          <article class="mobile-card"><div class="mobile-card__top"><span class="mobile-card__id">KVT-240516-102</span><span class="chip chip--entered">Ivestas</span></div><div class="mobile-card__cust">MB Namai Sau</div><div class="mobile-card__meta"><span>2026-04-27</span><span>Klaipeda</span><span>Debt <b class="danger">2 330,00 €</b></span></div></article>
+        </div>
+
+        <div class="table-foot">
+          <span>Showing <strong>1-7</strong> of <strong>284</strong> entries</span>
+          <div class="pagination" aria-label="Pagination bottom"><button type="button" disabled>‹ Prev</button><button type="button" class="is-active">1</button><button type="button">2</button><button type="button">3</button><button type="button">Next ›</button></div>
+        </div>
+      </section>
+
+      <section id="order-details" class="panel details" aria-labelledby="details-title">
+        <nav class="details__breadcrumb" aria-label="Breadcrumb"><a href="#">Home</a><span>/</span><a href="#">Orders</a><span>/</span><strong>KVT-240518-018</strong></nav>
+        <header class="details__title">
+          <div>
+            <span class="details__id mono">KVT-240518-018</span>
+            <h2 id="details-title">UAB Audenis Projektai</h2>
+            <div class="details__sub"><span><b>Date:</b> 2026-04-29</span><span><b>Address:</b> Ukmerges g. 221, Vilnius</span><span><b>Store:</b> Vilnius</span><span><b>Status:</b> <span class="chip chip--inprogress chip--sm">Gaminamas</span></span></div>
+            <div class="details__op">Operator: Ruta Markeviciene · 2026-04-29 09:42:17</div>
+          </div>
+          <div class="details__title__actions"><button class="btn btn--ghost" type="button">Print</button><button class="btn" type="button">Email customer</button><button class="btn btn--primary" type="button">Open in PoS</button></div>
+        </header>
+
+        <div class="details__section">
+          <div class="section-label">Items <span class="section-label__count">3 products · 4 line items</span></div>
+          <div class="table-wrap is-mobile-hidden">
+            <table class="lk-table">
+              <thead><tr><th style="width:24px">#</th><th>Item</th><th>Side</th><th>Color</th><th class="is-num">Width</th><th class="is-num">Height</th><th>Notes</th><th class="is-num">Q-ty</th><th class="is-num">Price</th><th class="is-num">Amount</th></tr></thead>
+              <tbody>
+                <tr class="group-row"><td colspan="10">1. Roller blind Audinys R120</td></tr>
+                <tr><td class="mono">1</td><td>Roller blind Audinys R120</td><td>Left</td><td>White</td><td class="is-num mono">1 250,00</td><td class="is-num mono">1 710,00</td><td>Bedroom window</td><td class="is-money">2,00</td><td class="is-money">148,00</td><td class="is-money">296,00</td></tr>
+                <tr class="acc-row"><td></td><td>Metal chain 100 cm</td><td></td><td></td><td></td><td></td><td></td><td class="is-money">2,00</td><td class="is-money">8,00</td><td class="is-money">16,00</td></tr>
+                <tr class="group-row"><td colspan="10">2. Day-night blind DN45</td></tr>
+                <tr><td class="mono">2</td><td>Day-night blind DN45</td><td>Right</td><td>Graphite</td><td class="is-num mono">980,00</td><td class="is-num mono">1 420,00</td><td>Kitchen</td><td class="is-money">1,00</td><td class="is-money">210,00</td><td class="is-money">210,00</td></tr>
+                <tr class="group-row"><td colspan="10">3. Vertical blinds V78</td></tr>
+                <tr><td class="mono">3</td><td>Vertical blinds V78</td><td>Center</td><td>Sand</td><td class="is-num mono">2 420,00</td><td class="is-num mono">2 360,00</td><td>Office, split controls</td><td class="is-money">1,00</td><td class="is-money">960,00</td><td class="is-money">960,00</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="mobile-cards">
+            <article class="mobile-card"><div class="mobile-card__top"><span class="mobile-card__id">1. Roller blind R120</span><span class="chip chip--entered chip--sm">x2</span></div><div class="mobile-card__meta"><span>Left · White</span><span>1 250 x 1 710</span><span>Amount <b>296,00</b></span></div></article>
+            <article class="mobile-card"><div class="mobile-card__top"><span class="mobile-card__id">2. Day-night DN45</span><span class="chip chip--entered chip--sm">x1</span></div><div class="mobile-card__meta"><span>Right · Graphite</span><span>980 x 1 420</span><span>Amount <b>210,00</b></span></div></article>
+          </div>
+        </div>
+
+        <div class="details__section">
+          <div class="section-label">Amounts <span class="section-label__count">all values incl. VAT</span></div>
+          <div class="amounts">
+            <div class="amount-card"><span class="amount-card__label">Defined</span><span class="amount-card__value">1 482,00 €</span></div>
+            <div class="amount-card"><span class="amount-card__label">Calculated</span><span class="amount-card__value">1 540,00 €</span></div>
+            <div class="amount-card"><span class="amount-card__label">Discount</span><span class="amount-card__value">5,00 %</span></div>
+            <div class="amount-card amount-card--total"><span class="amount-card__label">After discount</span><span class="amount-card__value">1 482,00 €</span></div>
+            <div class="amount-card amount-card--paid"><span class="amount-card__label">Paid</span><span class="amount-card__value">1 000,00 €</span></div>
+            <div class="amount-card amount-card--debt"><span class="amount-card__label">Debt</span><span class="amount-card__value">482,00 €</span></div>
+          </div>
+        </div>
+
+        <div class="details__section">
+          <div class="section-label">Employees <span class="section-label__count">3 assignments</span></div>
+          <div class="table-wrap is-mobile-hidden">
+            <table class="lk-table">
+              <thead><tr><th>Duty</th><th>Employee</th><th>Service date</th><th>Acquaintance date</th><th class="is-num">Order q-ty</th><th class="is-num">Item q-ty</th><th class="is-num">Amount</th></tr></thead>
+              <tbody>
+                <tr><td><span class="duty duty--sales">Sales consultant</span></td><td><div class="emp-name"><span class="emp-avatar">RM</span>Ruta Markeviciene</div></td><td class="mono">2026-04-29</td><td class="mono">2026-04-29</td><td class="is-num mono">1</td><td class="is-num mono">4</td><td class="is-money">1 482,00</td></tr>
+                <tr><td><span class="duty duty--prod">Production</span></td><td><div class="emp-name"><span class="emp-avatar">MJ</span>Mantas Jankauskas</div></td><td class="mono">2026-04-30</td><td class="mono">2026-04-30</td><td class="is-num mono">1</td><td class="is-num mono">3</td><td class="is-money">1 210,00</td></tr>
+                <tr><td><span class="duty duty--inst">Installation</span></td><td><div class="emp-name"><span class="emp-avatar">TV</span>Tomas Varnas</div></td><td class="mono">2026-05-03</td><td class="mono">2026-05-03</td><td class="is-num mono">1</td><td class="is-num mono">4</td><td class="is-money">272,00</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>
