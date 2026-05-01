@@ -3,39 +3,48 @@ namespace LKvitai.MES.Modules.Sales.WebUI;
 /// <summary>S-0 sample view models — replaced by Sales.Contracts DTOs in S-1.</summary>
 
 public record OrderRow(
-    long Id,
+    int    Id,
     string Number,
-    DateOnly Date,
-    decimal Price,
-    decimal Debt,
+    string Date,
+    string Price,
+    string Debt,
+    string DebtClass,
     string Customer,
+    bool   HasDebt,
+    bool   IsVip,
+    bool   HasNote,
     string Status,
+    string StatusChip,
     string Store,
-    string Address,
-    bool HasDebt,
-    bool IsVip,
-    bool HasNote);
+    string Address
+);
 
-public record OrderItemLine(
-    string Title,
-    string? Side,
-    string? Color,
-    string? WidthHeight,
-    string? Notes,
-    int Quantity,
-    decimal Price,
-    decimal Amount,
-    bool IsAccessory);
+public record ItemGroup(string Label, IReadOnlyList<ItemLine> Lines);
 
-public record OrderAmountCard(
-    string Label,
-    string Value,
-    string CssModifier);
+public record ItemLine(
+    string Num,
+    string Name,
+    string Side,
+    string Color,
+    string Width,
+    string Height,
+    string Notes,
+    string Qty,
+    string Price,
+    string Amount,
+    bool   IsAcc = false
+);
 
-public record OrderEmployeeLine(
+public record AmountCard(string Label, string Value, string Modifier = "");
+
+public record EmployeeLine(
     string Initials,
-    string FullName,
-    string Duty,
+    string Name,
     string DutyClass,
+    string DutyLabel,
     string ServiceDate,
-    decimal Amount);
+    string AcqDate,
+    string OrderQty,
+    string ItemQty,
+    string Amount
+);
