@@ -1,125 +1,170 @@
 @page "/"
-@using System.Net.Http.Json
-@using System.Security.Claims
-@inject IHttpClientFactory HttpClientFactory
-@inject AuthenticationStateProvider AuthStateProvider
 
-<PageTitle>Sales · Hello</PageTitle>
+<PageTitle>Sales · Orders</PageTitle>
 
-<MudStack Spacing="4">
-    <MudText Typo="Typo.h3">Hello from Sales.</MudText>
+<main class="main">
 
-    <MudText Typo="Typo.body1" Class="mud-text-secondary">
-        This is a scaffolded module. There is no business logic yet — no orders, no invoices, no integrations.
-        The page exists so Portal can link to a working WebUI container that round-trips to a sibling API
-        container through Traefik.
-    </MudText>
+    @* Page head *@
+    <div class="page-head">
+        <div class="page-head__text">
+            <p class="page-head__eyebrow">Sales</p>
+            <h1 class="page-head__title">Orders</h1>
+        </div>
+        <div class="page-head__actions">
+            <button class="btn btn-ghost">Export</button>
+            <button class="btn btn-primary">+ New order</button>
+        </div>
+    </div>
 
-    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
-        <MudChip T="string"
-                 Color="@(_isAuthenticated ? Color.Success : Color.Default)"
-                 Icon="@(_isAuthenticated ? Icons.Material.Filled.Verified : Icons.Material.Filled.PersonOff)">
-            @(_isAuthenticated ? $"signed in as {_username}" : "anonymous")
-        </MudChip>
-    </MudStack>
+    @* Orders list panel *@
+    <div class="panel orders-list">
+        <div class="panel__head">
+            <span class="panel__title">Orders list</span>
+            <span class="panel__meta">@_filtered.Count orders</span>
+        </div>
 
-    <MudDivider />
+        <div class="toolbar">
+            <div class="field field--search">
+                <input type="text"
+                       placeholder="Search… (/)"
+                       value="@_search"
+                       @oninput="OnSearch" />
+            </div>
+            <div class="field">
+                <select @bind="_statusFilter" @bind:after="ApplyFilters">
+                    <option value="">All statuses</option>
+                    @foreach (var s in AllStatuses)
+                    {
+                        <option value="@s">@s</option>
+                    }
+                </select>
+            </div>
+            <div class="field">
+                <select @bind="_storeFilter" @bind:after="ApplyFilters">
+                    <option value="">All stores</option>
+                    @foreach (var s in AllStores)
+                    {
+                        <option value="@s">@s</option>
+                    }
+                </select>
+            </div>
+            <label class="filter-toggle">
+                <input type="checkbox" @bind="_hasDebtFilter" @bind:after="ApplyFilters" />
+                <span>Has debt</span>
+            </label>
+            <div class="toolbar__spacer"></div>
+            <span class="panel__meta">@_filtered.Count of @AllOrders.Count</span>
+        </div>
 
-    <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
-        <MudButton Variant="Variant.Filled"
-                   Color="Color.Primary"
-                   StartIcon="@Icons.Material.Filled.NetworkPing"
-                   OnClick="PingApi"
-                   Disabled="_isPinging">
-            @(_isPinging ? "Pinging…" : "Ping API")
-        </MudButton>
-        <MudText Typo="Typo.caption" Class="mud-text-secondary">
-            Calls <code>GET /api/sales/ping</code> on the Sales API container.
-        </MudText>
-    </MudStack>
+        @* Desktop grid *@
+        <OrdersGrid Orders="@_filtered"
+                    SelectedId="@_selectedId"
+                    OnRowClick="@SelectOrder" />
 
-    @if (_lastResult is not null)
-    {
-        if (_lastResult.IsSuccess)
-        {
-            <MudAlert Severity="Severity.Success" NoIcon="false">
-                <div>
-                    <strong>@_lastResult.ModuleName</strong> responded at
-                    <code>@_lastResult.Timestamp</code>.
+        @* Mobile cards *@
+        <div class="mobile-cards">
+            @foreach (var o in _filtered)
+            {
+                <div class="mobile-card @(o.Id == _selectedId ? "is-selected" : "")"
+                     @onclick="@(() => SelectOrder(o))">
+                    <div class="mobile-card__top">
+                        <span class="mobile-card__number">@o.Number</span>
+                        <span class="chip @MobileStatusChip(o.Status)">@o.Status</span>
+                    </div>
+                    <div class="mobile-card__customer">@o.Customer</div>
+                    <div class="mobile-card__meta">
+                        <span>@o.Date.ToString("yyyy-MM-dd")</span>
+                        <span>@o.Store</span>
+                        @if (o.Debt > 0)
+                        {
+                            <span class="mobile-card__debt">@o.Debt.ToString("N2", CultureInfo.InvariantCulture) € skola</span>
+                        }
+                    </div>
                 </div>
-            </MudAlert>
-        }
-        else
-        {
-            <MudAlert Severity="Severity.Error" NoIcon="false">
-                Ping failed: @_lastResult.ErrorMessage
-            </MudAlert>
-        }
+            }
+        </div>
+
+        <div class="table-foot">
+            Showing @_filtered.Count of @AllOrders.Count orders
+        </div>
+    </div>
+
+    @* Detail panel (shown when a row is selected) *@
+    @if (_selectedOrder is not null)
+    {
+        <OrderDetailPanel Order="@_selectedOrder" />
     }
-</MudStack>
+
+</main>
 
 @code {
-    private bool _isPinging;
-    private bool _isAuthenticated;
-    private string? _username;
-    private string? _accessToken;
-    private PingResultView? _lastResult;
+    // ── Sample data (S-0 only) ──────────────────────────────────────────────
+    private static readonly List<OrderRow> AllOrders =
+    [
+        new(1,  "KVT-2024-0891", new DateOnly(2024, 3, 14), 2840.00m,    0.00m, "UAB Vilniaus Žaluzės",  "Pagamintas",  "Vilnius",   "Gedimino pr. 14, Vilnius",    false, true,  false),
+        new(2,  "KVT-2024-0890", new DateOnly(2024, 3, 13), 1250.50m,  320.00m, "Renata Kazlauskienė",   "Gaminamas",   "Kaunas",    "Laisvės al. 88, Kaunas",      true,  false, true),
+        new(3,  "KVT-2024-0889", new DateOnly(2024, 3, 12), 4120.00m,    0.00m, "Maxima Grupė UAB",      "Atiduotas",   "Vilnius",   "Ukmergės g. 322, Vilnius",    false, true,  false),
+        new(4,  "KVT-2024-0888", new DateOnly(2024, 3, 11),  875.00m,  875.00m, "Algirdas Petraitis",    "Sustabdytas", "Klaipėda",  "Taikos pr. 18, Klaipėda",     true,  false, false),
+        new(5,  "KVT-2024-0887", new DateOnly(2024, 3, 10), 3640.00m,    0.00m, "SB Interior Design",    "Patvirtintas","Vilnius",   "Šv. Jono g. 6, Vilnius",      false, false, true),
+        new(6,  "KVT-2024-0886", new DateOnly(2024, 3,  9),  560.00m,    0.00m, "Jonas Jonaitis",        "Įvestas",     "Šiauliai",  "Tilžės g. 40, Šiauliai",      false, false, false),
+        new(7,  "KVT-2024-0885", new DateOnly(2024, 3,  8), 1980.00m,    0.00m, "Hotel Panorama UAB",    "Filialui",    "Vilnius",   "Sodų g. 14, Vilnius",         false, true,  false),
+        new(8,  "KVT-2024-0884", new DateOnly(2024, 3,  7), 7250.00m, 1200.00m, "OCI Lithuania UAB",     "Patvirtintas","Kaunas",    "Jonavos g. 60, Kaunas",       true,  false, true),
+        new(9,  "KVT-2024-0883", new DateOnly(2024, 3,  6),  430.00m,    0.00m, "Marija Stankevičiūtė", "Atiduotas",   "Panevėžys", "Respublikos g. 28, Panevėžys",false, false, false),
+        new(10, "KVT-2024-0882", new DateOnly(2024, 3,  5), 2100.00m,    0.00m, "Textilės namai UAB",    "Gaminamas",   "Vilnius",   "Verkių g. 29, Vilnius",       false, false, true),
+    ];
 
-    protected override async Task OnInitializedAsync()
+    private static readonly string[] AllStatuses =
+        ["Įvestas", "Patvirtintas", "Gaminamas", "Pagamintas", "Filialui", "Atiduotas", "Sustabdytas"];
+
+    private static readonly string[] AllStores =
+        ["Vilnius", "Kaunas", "Klaipėda", "Šiauliai", "Panevėžys"];
+
+    // ── Filter state ────────────────────────────────────────────────────────
+    private List<OrderRow> _filtered = AllOrders.ToList();
+    private string _search = "";
+    private string _statusFilter = "";
+    private string _storeFilter = "";
+    private bool _hasDebtFilter;
+
+    // ── Selection state ─────────────────────────────────────────────────────
+    private long? _selectedId;
+    private OrderRow? _selectedOrder;
+
+    // ── Filtering ───────────────────────────────────────────────────────────
+    private void OnSearch(ChangeEventArgs e)
     {
-        var state = await AuthStateProvider.GetAuthenticationStateAsync();
-        _isAuthenticated = state.User.Identity?.IsAuthenticated ?? false;
-        _username = state.User.FindFirstValue(ClaimTypes.Name) ?? state.User.Identity?.Name;
-        _accessToken = state.User.FindFirstValue("warehouse_access_token");
+        _search = e.Value?.ToString() ?? "";
+        ApplyFilters();
     }
 
-    private async Task PingApi()
+    private void ApplyFilters()
     {
-        _isPinging = true;
-        _lastResult = null;
-
-        try
-        {
-            var client = HttpClientFactory.CreateClient("SalesApi");
-            var request = new HttpRequestMessage(HttpMethod.Get, "/api/sales/ping");
-
-            if (!string.IsNullOrWhiteSpace(_accessToken))
-            {
-                request.Headers.Authorization = new("Bearer", _accessToken);
-            }
-
-            using var response = await client.SendAsync(request);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                _lastResult = PingResultView.Failure(
-                    $"{(int)response.StatusCode} {response.ReasonPhrase}");
-                return;
-            }
-
-            var payload = await response.Content.ReadFromJsonAsync<PingPayload>();
-            _lastResult = payload is null
-                ? PingResultView.Failure("Empty response body.")
-                : PingResultView.Success(payload.Module, payload.Now);
-        }
-        catch (Exception ex)
-        {
-            _lastResult = PingResultView.Failure(ex.Message);
-        }
-        finally
-        {
-            _isPinging = false;
-        }
+        _filtered = AllOrders
+            .Where(o => string.IsNullOrWhiteSpace(_search) ||
+                o.Number.Contains(_search, StringComparison.OrdinalIgnoreCase) ||
+                o.Customer.Contains(_search, StringComparison.OrdinalIgnoreCase) ||
+                o.Address.Contains(_search, StringComparison.OrdinalIgnoreCase))
+            .Where(o => string.IsNullOrEmpty(_statusFilter) || o.Status == _statusFilter)
+            .Where(o => string.IsNullOrEmpty(_storeFilter) || o.Store == _storeFilter)
+            .Where(o => !_hasDebtFilter || o.Debt > 0)
+            .ToList();
     }
 
-    private sealed record PingPayload(string Module, string Now);
-
-    private sealed record PingResultView(bool IsSuccess, string? ModuleName, string? Timestamp, string? ErrorMessage)
+    private void SelectOrder(OrderRow order)
     {
-        public static PingResultView Success(string moduleName, string timestamp) =>
-            new(true, moduleName, timestamp, null);
-
-        public static PingResultView Failure(string errorMessage) =>
-            new(false, null, null, errorMessage);
+        _selectedId = order.Id;
+        _selectedOrder = order;
     }
+
+    private static string MobileStatusChip(string status) => status switch
+    {
+        "Įvestas"      => "chip--entered",
+        "Patvirtintas" => "chip--approved",
+        "Gaminamas"    => "chip--inprogress",
+        "Pagamintas"   => "chip--made",
+        "Filialui"     => "chip--shipped",
+        "Atiduotas"    => "chip--delivered",
+        "Sustabdytas"  => "chip--paused",
+        _              => "chip--entered"
+    };
 }

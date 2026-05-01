@@ -1,0 +1,46 @@
+@* OrderDetailHeader — breadcrumb, title block, meta row, action buttons *@
+
+<div class="breadcrumb">
+    <a href="/">Orders</a>
+    <span class="breadcrumb__sep">›</span>
+    <span class="breadcrumb__current">@Order.Number</span>
+</div>
+
+<div class="details__title">
+    <p class="details__id">@Order.Number</p>
+    <h2 class="details__customer">@Order.Customer</h2>
+
+    <div class="details__meta">
+        <span>@Order.Date.ToString("yyyy-MM-dd")</span>
+        <span class="details__meta-sep">·</span>
+        <span>@Order.Store</span>
+        <span class="details__meta-sep">·</span>
+        <span>@Order.Address</span>
+        <span class="details__meta-sep">·</span>
+        <span class="chip @StatusChipClass(Order.Status)">@Order.Status</span>
+    </div>
+
+    <p class="details__operator">Įvesta: Tomas Bernotas · 2024-03-10 09:14</p>
+
+    <div class="details__actions">
+        <button class="btn btn-ghost">Print</button>
+        <button class="btn btn-ghost">Email customer</button>
+        <button class="btn btn-primary">Open in PoS</button>
+    </div>
+</div>
+
+@code {
+    [Parameter] public OrderRow Order { get; set; } = default!;
+
+    private static string StatusChipClass(string status) => status switch
+    {
+        "Įvestas"      => "chip--entered",
+        "Patvirtintas" => "chip--approved",
+        "Gaminamas"    => "chip--inprogress",
+        "Pagamintas"   => "chip--made",
+        "Filialui"     => "chip--shipped",
+        "Atiduotas"    => "chip--delivered",
+        "Sustabdytas"  => "chip--paused",
+        _              => "chip--entered"
+    };
+}
