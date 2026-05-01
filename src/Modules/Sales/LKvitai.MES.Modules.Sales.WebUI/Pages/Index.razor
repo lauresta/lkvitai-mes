@@ -8,8 +8,8 @@
     <div class="page-head">
         <div>
             <div class="eyebrow mono">Sales &middot; Orders</div>
-            <h1>Orders list and order details</h1>
-            <p>Compact operational Sales Orders. The list is dense by default; selected row drives the details panel below.</p>
+            <h1>Orders</h1>
+            <p>Compact operational Sales Orders. Click an order number to open details in a new tab.</p>
         </div>
         <div class="page-actions">
             <button class="btn btn--ghost" type="button">Export</button>
@@ -82,7 +82,7 @@
                     @foreach (var o in _filtered)
                     {
                         <tr class="@(o.Id == _selectedId ? "is-selected" : "")"
-                            @onclick="@(() => SelectOrder(o))"
+                            @onclick="@(() => _selectedId = o.Id)"
                             style="cursor:pointer">
                             <td><span class="checkbox @(o.Id == _selectedId ? "is-checked" : "")" aria-hidden="true"></span></td>
                             <td>
@@ -117,9 +117,12 @@
             @foreach (var o in _filtered)
             {
                 <article class="mobile-card @(o.Id == _selectedId ? "is-selected" : "")"
-                         @onclick="@(() => SelectOrder(o))">
+                         @onclick="@(() => _selectedId = o.Id)">
                     <div class="mobile-card__top">
-                        <span class="mobile-card__id">@o.Number</span>
+                        <a class="mobile-card__id order-link"
+                           href="/orders/@o.Number"
+                           target="_blank"
+                           @onclick:stopPropagation>@o.Number &#8599;</a>
                         <span class="chip @o.StatusChip">@o.Status</span>
                     </div>
                     <div class="mobile-card__cust">@o.Customer</div>
@@ -151,163 +154,20 @@
         </div>
     </section>
 
-    @* ── Order details panel ───────────────────────────────────── *@
-    @if (_selected is not null)
-    {
-        <section id="order-details" class="panel details" aria-labelledby="details-title">
-            <nav class="details__breadcrumb" aria-label="Breadcrumb">
-                <a href="#">Home</a><span>/</span>
-                <a href="#">Orders</a><span>/</span>
-                <strong>@_selected.Number</strong>
-            </nav>
-            <header class="details__title">
-                <div>
-                    <span class="details__id mono">@_selected.Number</span>
-                    <h2 id="details-title">@_selected.Customer</h2>
-                    <div class="details__sub">
-                        <span><b>Date:</b> @_selected.Date</span>
-                        <span><b>Address:</b> @_selected.Address</span>
-                        <span><b>Store:</b> @_selected.Store</span>
-                        <span><b>Status:</b> <span class="chip @_selected.StatusChip chip--sm">@_selected.Status</span></span>
-                    </div>
-                    <div class="details__op">Operator: R&#363;ta Markevi&#269;ien&#279; &middot; 2026-04-29 09:42:17</div>
-                </div>
-                <div class="details__title__actions">
-                    <button class="btn btn--ghost" type="button">Print</button>
-                    <button class="btn" type="button">Email customer</button>
-                    <button class="btn btn--primary" type="button">Open in PoS</button>
-                </div>
-            </header>
-
-            @* Items *@
-            <div class="details__section">
-                <div class="section-label">Items <span class="section-label__count">3 products &middot; 4 line items</span></div>
-                <div class="table-wrap is-mobile-hidden">
-                    <table class="lk-table">
-                        <thead>
-                            <tr>
-                                <th style="width:24px">#</th>
-                                <th>Item</th>
-                                <th>Side</th>
-                                <th>Color</th>
-                                <th class="is-num">Width</th>
-                                <th class="is-num">Height</th>
-                                <th>Notes</th>
-                                <th class="is-num">Q-ty</th>
-                                <th class="is-num">Price</th>
-                                <th class="is-num">Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var grp in SampleItems)
-                            {
-                                <tr class="group-row"><td colspan="10">@grp.Label</td></tr>
-                                @foreach (var line in grp.Lines)
-                                {
-                                    <tr class="@(line.IsAcc ? "acc-row" : "")">
-                                        <td class="mono">@line.Num</td>
-                                        <td>@line.Name</td>
-                                        <td>@line.Side</td>
-                                        <td>@line.Color</td>
-                                        <td class="is-num mono">@line.Width</td>
-                                        <td class="is-num mono">@line.Height</td>
-                                        <td>@line.Notes</td>
-                                        <td class="is-money">@line.Qty</td>
-                                        <td class="is-money">@line.Price</td>
-                                        <td class="is-money">@line.Amount</td>
-                                    </tr>
-                                }
-                            }
-                        </tbody>
-                    </table>
-                </div>
-                <div class="mobile-cards">
-                    @foreach (var grp in SampleItems)
-                    {
-                        @foreach (var line in grp.Lines.Where(l => !l.IsAcc))
-                        {
-                            <article class="mobile-card">
-                                <div class="mobile-card__top">
-                                    <span class="mobile-card__id">@line.Num. @line.Name</span>
-                                    <span class="chip chip--entered chip--sm">x@line.Qty</span>
-                                </div>
-                                <div class="mobile-card__meta">
-                                    <span>@line.Side &middot; @line.Color</span>
-                                    <span>@line.Width &times; @line.Height</span>
-                                    <span>Amount <b>@line.Amount</b></span>
-                                </div>
-                            </article>
-                        }
-                    }
-                </div>
-            </div>
-
-            @* Amounts *@
-            <div class="details__section">
-                <div class="section-label">Amounts <span class="section-label__count">all values incl. VAT</span></div>
-                <div class="amounts">
-                    @foreach (var card in SampleAmounts)
-                    {
-                        <div class="amount-card @card.Modifier">
-                            <span class="amount-card__label">@card.Label</span>
-                            <span class="amount-card__value">@card.Value</span>
-                        </div>
-                    }
-                </div>
-            </div>
-
-            @* Employees *@
-            <div class="details__section">
-                <div class="section-label">Employees <span class="section-label__count">3 assignments</span></div>
-                <div class="table-wrap is-mobile-hidden">
-                    <table class="lk-table">
-                        <thead>
-                            <tr>
-                                <th>Duty</th>
-                                <th>Employee</th>
-                                <th>Service date</th>
-                                <th>Acquaintance date</th>
-                                <th class="is-num">Order q-ty</th>
-                                <th class="is-num">Item q-ty</th>
-                                <th class="is-num">Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var e in SampleEmployees)
-                            {
-                                <tr>
-                                    <td><span class="duty @e.DutyClass">@e.DutyLabel</span></td>
-                                    <td><div class="emp-name"><span class="emp-avatar">@e.Initials</span>@e.Name</div></td>
-                                    <td class="mono">@e.ServiceDate</td>
-                                    <td class="mono">@e.AcqDate</td>
-                                    <td class="is-num mono">@e.OrderQty</td>
-                                    <td class="is-num mono">@e.ItemQty</td>
-                                    <td class="is-money">@e.Amount</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-    }
-
 </main>
 
 @code {
-    // ── Sample orders — Lithuanian characters restored ────────────
     private static readonly List<OrderRow> AllOrders =
     [
-        new(1, "KVT-240518-018", "2026-04-29", "1\u202f482,00\u00a0\u20ac", "482,00\u00a0\u20ac",      "is-debt-pos",     "UAB Audenis Projektai",       true,  false, false, "Gaminamas",    "chip--inprogress", "Vilnius",    "Ukmerge\u0161 g. 221, Vilnius"),
-        new(2, "KVT-240517-044", "2026-04-28", "746,50\u00a0\u20ac",        "0,00\u00a0\u20ac",         "is-debt-zero",    "Ingrida Petrauskien\u0117",    false, false, false, "Patvirtintas", "chip--approved",   "Kaunas",     "Savanori\u0173 pr. 284, Kaunas"),
-        new(3, "KVT-240516-102", "2026-04-27", "2\u202f330,00\u00a0\u20ac", "2\u202f330,00\u00a0\u20ac","is-debt-overdue", "MB Namai Sau",                true,  true,  false, "\u012evestas",  "chip--entered",    "Klaip\u0117da","Taikos pr. 52, Klaip\u0117da"),
-        new(4, "KVT-240516-076", "2026-04-26", "392,80\u00a0\u20ac",        "0,00\u00a0\u20ac",         "is-debt-zero",    "Rasa Butkut\u0117",           false, false, false, "Pagamintas",   "chip--made",       "Vilnius",    "Kalvarij\u0173 g. 125, Vilnius"),
-        new(5, "KVT-240515-031", "2026-04-25", "924,10\u00a0\u20ac",        "124,10\u00a0\u20ac",        "is-debt-pos",     "UAB \u0160iaur\u0117s Apartamentai", false, false, true, "Filialui", "chip--shipped",  "Panev\u0117\u017eys","Respublikos g. 39, Panev\u0117\u017eys"),
-        new(6, "KVT-240514-009", "2026-04-24", "1\u202f096,00\u00a0\u20ac", "0,00\u00a0\u20ac",         "is-debt-zero",    "Darius Vaitkus",              false, false, false, "Atiduotas",    "chip--delivered",  "\u0160iauliai",  "Til\u017e\u0117s g. 109, \u0160iauliai"),
-        new(7, "KVT-240513-088", "2026-04-22", "615,70\u00a0\u20ac",        "615,70\u00a0\u20ac",        "is-debt-overdue", "UAB Interjero Linija",        true,  false, false, "Sustabdytas",  "chip--paused",     "Vilnius",    "Konstitucijos pr. 12, Vilnius"),
+        new(1, "KVT-240518-018", "2026-04-29", "1\u202f482,00\u00a0\u20ac", "482,00\u00a0\u20ac",       "is-debt-pos",     "UAB Audenis Projektai",              true,  false, false, "Gaminamas",    "chip--inprogress", "Vilnius",           "Ukmerge\u0161 g. 221, Vilnius"),
+        new(2, "KVT-240517-044", "2026-04-28", "746,50\u00a0\u20ac",         "0,00\u00a0\u20ac",          "is-debt-zero",    "Ingrida Petrauskien\u0117",           false, false, false, "Patvirtintas", "chip--approved",   "Kaunas",            "Savanori\u0173 pr. 284, Kaunas"),
+        new(3, "KVT-240516-102", "2026-04-27", "2\u202f330,00\u00a0\u20ac", "2\u202f330,00\u00a0\u20ac", "is-debt-overdue", "MB Namai Sau",                        true,  true,  false, "\u012evestas",  "chip--entered",    "Klaip\u0117da",     "Taikos pr. 52, Klaip\u0117da"),
+        new(4, "KVT-240516-076", "2026-04-26", "392,80\u00a0\u20ac",         "0,00\u00a0\u20ac",          "is-debt-zero",    "Rasa Butkut\u0117",                   false, false, false, "Pagamintas",   "chip--made",       "Vilnius",           "Kalvarij\u0173 g. 125, Vilnius"),
+        new(5, "KVT-240515-031", "2026-04-25", "924,10\u00a0\u20ac",         "124,10\u00a0\u20ac",         "is-debt-pos",     "UAB \u0160iaur\u0117s Apartamentai", false, false, true,  "Filialui",     "chip--shipped",    "Panev\u0117\u017eys","Respublikos g. 39, Panev\u0117\u017eys"),
+        new(6, "KVT-240514-009", "2026-04-24", "1\u202f096,00\u00a0\u20ac", "0,00\u00a0\u20ac",          "is-debt-zero",    "Darius Vaitkus",                      false, false, false, "Atiduotas",    "chip--delivered",  "\u0160iauliai",     "Til\u017e\u0117s g. 109, \u0160iauliai"),
+        new(7, "KVT-240513-088", "2026-04-22", "615,70\u00a0\u20ac",         "615,70\u00a0\u20ac",         "is-debt-overdue", "UAB Interjero Linija",                true,  false, false, "Sustabdytas",  "chip--paused",     "Vilnius",           "Konstitucijos pr. 12, Vilnius"),
     ];
 
-    // ── Filter options ────────────────────────────────────────────
     private static readonly IReadOnlyList<SelectOption> StatusOptions =
     [
         new("", "All statuses"),
@@ -323,11 +183,11 @@
     private static readonly IReadOnlyList<SelectOption> StoreOptions =
     [
         new("", "All stores"),
-        new("Vilnius",       "Vilnius"),
-        new("Kaunas",        "Kaunas"),
-        new("Klaip\u0117da", "Klaip\u0117da"),
-        new("\u0160iauliai", "\u0160iauliai"),
-        new("Panev\u0117\u017eys", "Panev\u0117\u017eys"),
+        new("Vilnius",              "Vilnius"),
+        new("Kaunas",               "Kaunas"),
+        new("Klaip\u0117da",        "Klaip\u0117da"),
+        new("\u0160iauliai",        "\u0160iauliai"),
+        new("Panev\u0117\u017eys",  "Panev\u0117\u017eys"),
     ];
 
     private static readonly IReadOnlyList<SelectOption> DateOptions =
@@ -337,50 +197,13 @@
         new("ytd",   "YTD"),
     ];
 
-    // ── Detail sample data (UAB Audenis Projektai / KVT-240518-018) ─
-    private static readonly IReadOnlyList<ItemGroup> SampleItems =
-    [
-        new("1. Roller blind Audinys R120",
-        [
-            new("1", "Roller blind Audinys R120", "Left",   "White",    "1\u202f250,00", "1\u202f710,00", "Bedroom window",         "2,00", "148,00", "296,00"),
-            new("",  "Metal chain 100 cm",        "",       "",         "",              "",              "",                       "2,00", "8,00",   "16,00",  IsAcc: true),
-        ]),
-        new("2. Day-night blind DN45",
-        [
-            new("2", "Day-night blind DN45",      "Right",  "Graphite", "980,00",        "1\u202f420,00", "Kitchen",                "1,00", "210,00", "210,00"),
-        ]),
-        new("3. Vertical blinds V78",
-        [
-            new("3", "Vertical blinds V78",       "Center", "Sand",     "2\u202f420,00", "2\u202f360,00", "Office, split controls", "1,00", "960,00", "960,00"),
-        ]),
-    ];
-
-    private static readonly IReadOnlyList<AmountCard> SampleAmounts =
-    [
-        new("Defined",        "1\u202f482,00\u00a0\u20ac"),
-        new("Calculated",     "1\u202f540,00\u00a0\u20ac"),
-        new("Discount",       "5,00\u00a0%"),
-        new("After discount", "1\u202f482,00\u00a0\u20ac", "amount-card--total"),
-        new("Paid",           "1\u202f000,00\u00a0\u20ac", "amount-card--paid"),
-        new("Debt",           "482,00\u00a0\u20ac",        "amount-card--debt"),
-    ];
-
-    private static readonly IReadOnlyList<EmployeeLine> SampleEmployees =
-    [
-        new("RM", "R\u016bta Markevi\u010dien\u0117", "duty--sales", "Sales consultant", "2026-04-29", "2026-04-29", "1", "4", "1\u202f482,00"),
-        new("MJ", "Mantas Jankauskas",                "duty--prod",  "Production",       "2026-04-30", "2026-04-30", "1", "3", "1\u202f210,00"),
-        new("TV", "Tomas Varnas",                     "duty--inst",  "Installation",     "2026-05-03", "2026-05-03", "1", "4", "272,00"),
-    ];
-
-    // ── Filter & selection state ──────────────────────────────────
-    private List<OrderRow> _filtered = AllOrders.ToList();
-    private string    _search       = "";
-    private string    _statusFilter = "";
-    private string    _storeFilter  = "";
-    private string    _dateFilter   = "30d";
-    private bool      _hasDebtFilter;
-    private int?      _selectedId   = 1;
-    private OrderRow? _selected     = AllOrders[0];
+    private List<OrderRow> _filtered    = AllOrders.ToList();
+    private string         _search      = "";
+    private string         _statusFilter = "";
+    private string         _storeFilter  = "";
+    private string         _dateFilter   = "30d";
+    private bool           _hasDebtFilter;
+    private int?           _selectedId;
 
     private void OnSearch(ChangeEventArgs e)
     {
@@ -399,12 +222,6 @@
             .Where(o => string.IsNullOrEmpty(_storeFilter)  || o.Store  == _storeFilter)
             .Where(o => !_hasDebtFilter || o.HasDebt)
             .ToList();
-    }
-
-    private void SelectOrder(OrderRow order)
-    {
-        _selectedId = order.Id;
-        _selected   = order;
     }
 
     private void ToggleDebt()
