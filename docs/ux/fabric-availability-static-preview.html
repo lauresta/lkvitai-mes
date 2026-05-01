@@ -1,0 +1,1081 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LKvitai.MES — Frontline · Fabric Availability</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ─────────────────────────────────────────────────────────────
+   Tokens — same as Portal/Login/Orders
+   ───────────────────────────────────────────────────────────── */
+:root{
+  --n-0:#fff; --n-25:#fbfcfd; --n-50:#f5f6f8; --n-100:#eef1f4;
+  --n-150:#e2e7ec; --n-200:#d5dce4; --n-300:#b9c3ce; --n-400:#8996a4;
+  --n-500:#66717f; --n-600:#4e5966; --n-700:#323b45; --n-800:#1f2632; --n-900:#151922;
+
+  --accent-50:#eaf8f7; --accent-100:#d1eeec; --accent-400:#56aaa7;
+  --accent-500:#2f8f8b; --accent-600:#257773; --accent-700:#1d5d5a;
+
+  --sand-25:#faf6ee; --sand-50:#f7f1e5; --sand-100:#ede2c8;
+  --sand-150:#e4dbc5; --sand-300:#daceb7; --sand-500:#c79f63; --sand-600:#b08a4a; --sand-700:#7c5f2a;
+
+  --ok-fg:#19744a;     --ok-bg:#e6f4ec;     --ok-bd:#bfe0cd;     --ok-dot:#1f9d61;
+  --warn-fg:#7c5f2a;   --warn-bg:#f7eed5;   --warn-bd:#e2cf9a;   --warn-dot:#b08a4a;
+  --info-fg:#1d5d5a;   --info-bg:#e3f2f1;   --info-bd:#b4dad7;   --info-dot:#2f8f8b;
+  --slate-fg:#3a4554;  --slate-bg:#eaeef3;  --slate-bd:#cdd5de;  --slate-dot:#66717f;
+  --danger-fg:#8a1f12; --danger-bg:#fbe7e3; --danger-bd:#f0c2b8; --danger-dot:#c0392b;
+  --done-fg:#2a4a3a;   --done-bg:#e3eee7;   --done-bd:#bdd2c4;   --done-dot:#4a7a5d;
+
+  --dark:#20242c; --dark-2:#171b22; --dark-line:#3a404c;
+
+  --font-ui:'Inter','Segoe UI',system-ui,sans-serif;
+  --font-mono:'JetBrains Mono','SF Mono',Consolas,monospace;
+
+  --shadow-xs:0 1px 0 rgba(15,23,35,0.04);
+  --shadow-sm:0 1px 2px rgba(15,23,35,0.06), 0 0 0 1px rgba(15,23,35,0.03);
+
+  --r-xs:3px; --r-sm:5px; --r-md:7px; --r-lg:10px;
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{
+  font-family:var(--font-ui); color:var(--n-900);
+  background:var(--n-100);
+  line-height:1.45; -webkit-font-smoothing:antialiased;
+}
+button,input,select{font:inherit}
+a{color:inherit; text-decoration:none}
+.mono{font-family:var(--font-mono); font-feature-settings:'zero'}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+
+.app-shell{
+  max-width:1440px; margin:0 auto;
+  background:var(--n-50); min-height:100vh;
+  box-shadow:0 0 40px rgba(0,0,0,0.04);
+  overflow-x:hidden;
+}
+
+/* TEST strip */
+.test-strip{
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding:8px 28px;
+  background:repeating-linear-gradient(-45deg,#ead19b,#ead19b 12px,#dfc07a 12px,#dfc07a 24px);
+  color:var(--n-900); font-size:12px; font-weight:600;
+}
+.test-strip__main{display:flex; align-items:center; gap:9px}
+.test-strip__note{font-weight:400; opacity:.82}
+.test-strip__host{font-size:11px; opacity:.85}
+.icon-warning{width:14px; height:14px; background:currentColor; clip-path:polygon(50% 5%, 96% 90%, 4% 90%);}
+
+/* TOPBAR */
+.topbar{
+  display:flex; align-items:center; gap:24px;
+  padding:14px 28px;
+  background:var(--dark); color:var(--n-0);
+  border-bottom:1px solid var(--dark-line);
+}
+.brand{display:flex; align-items:center; gap:12px}
+.brand__mark{
+  display:grid; place-items:center; width:36px; height:36px;
+  border:1px solid var(--dark-line); border-radius:6px; background:var(--dark-2);
+  color:var(--accent-400); font-size:13px; font-weight:700; position:relative; overflow:hidden;
+}
+.brand__mark::before{
+  content:""; position:absolute; inset:0; opacity:.32;
+  background:linear-gradient(transparent 33%, var(--accent-400) 33% 35%, transparent 35% 65%, var(--accent-400) 65% 67%, transparent 67%);
+}
+.brand__name{color:var(--n-0); font-size:15px; font-weight:600; line-height:1.1}
+.brand__name span{color:#9ba4b0; font-weight:400}
+.brand__tagline{margin-top:2px; color:#a5adb8; font-size:10px; letter-spacing:1.4px; text-transform:uppercase; white-space:nowrap}
+.topbar__separator{width:1px; height:28px; background:var(--dark-line)}
+.topbar__spacer{flex:1}
+
+.portal-search{position:relative; flex:1 1 360px; max-width:460px}
+.portal-search input{
+  width:100%; padding:8px 10px 8px 34px;
+  border:1px solid var(--dark-line); border-radius:4px;
+  background:#1b2028; color:var(--n-0); font-size:13px; outline:none;
+}
+.portal-search input:focus{border-color:var(--accent-500); background:#161a21}
+.portal-search input::placeholder{color:#7c8593}
+.portal-search__icon{
+  position:absolute; left:12px; top:50%; width:13px; height:13px;
+  border:1.8px solid #8f98a6; border-radius:50%; transform:translateY(-58%);
+}
+.portal-search__icon::after{
+  content:""; position:absolute; right:-5px; bottom:-4px;
+  width:6px; height:1.8px; background:#8f98a6; transform:rotate(45deg); transform-origin:left center;
+}
+
+.env-badge{display:flex; border:1px solid var(--dark-line); border-radius:4px; overflow:hidden; background:#1b2028}
+.env-badge div{display:flex; align-items:center; gap:7px; padding:6px 11px}
+.env-badge div:first-child{border-right:1px solid var(--dark-line); background:var(--dark-2)}
+.env-badge span{color:#9ba4b0; font-size:10px; letter-spacing:.5px}
+.env-badge strong{color:var(--n-0); font-size:11px; font-weight:600}
+.env-badge div:first-child strong{color:#dfc07a; font-weight:700}
+
+.user-block{display:flex; align-items:center; gap:9px; padding-left:14px; border-left:1px solid var(--dark-line)}
+.user-block__avatar{display:grid; place-items:center; width:30px; height:30px; border-radius:50%; background:#3a404c; color:var(--accent-400); font-size:11px; font-weight:700}
+.user-block__name{color:var(--n-0); font-size:12px; font-weight:600}
+.link-button{padding:0; border:0; background:transparent; color:#a5adb8; cursor:pointer; font-size:11px}
+.link-button:hover{color:var(--n-0)}
+
+/* PAGE HEAD */
+.main{max-width:1440px; margin:0 auto; padding:22px 28px 48px}
+.page-head{display:flex; align-items:flex-end; justify-content:space-between; gap:18px; margin-bottom:18px}
+.eyebrow{margin:0 0 6px; color:var(--accent-700); font-size:10px; font-weight:700; letter-spacing:1.4px; text-transform:uppercase}
+h1{margin:0; color:var(--n-900); font-size:24px; font-weight:600; letter-spacing:-0.3px; line-height:1.15}
+.page-head__sub{margin:7px 0 0; color:var(--n-500); font-size:13px; max-width:740px}
+
+/* PREVIEW GRID — two phones + desktop panel below */
+.preview-grid{
+  display:grid;
+  grid-template-columns:minmax(0, 360px) minmax(0, 360px) 1fr;
+  gap:16px; align-items:start;
+}
+.preview-grid > .desktop-panel{grid-column:1 / -1; grid-row:2}
+
+.preview-panel{
+  background:var(--n-0);
+  border:1px solid var(--n-200); border-radius:var(--r-md);
+  box-shadow:var(--shadow-xs); overflow:hidden;
+}
+.preview-panel__head{
+  padding:11px 14px;
+  border-bottom:1px solid var(--n-150);
+  background:var(--n-25);
+}
+.preview-panel__head h2{margin:0; color:var(--n-900); font-size:14px; font-weight:600}
+.preview-panel__head p{margin:3px 0 0; color:var(--n-500); font-size:11.5px}
+
+/* ─────────────────────────────────────────────────────────────
+   PHONE FRAME
+   ───────────────────────────────────────────────────────────── */
+.phone-frame{
+  width:min(100%, 360px); margin:0 auto; padding:12px;
+  background:var(--n-100);
+}
+.phone-screen{
+  border:1px solid var(--n-200); border-radius:24px;
+  background:var(--n-50); overflow:hidden;
+  box-shadow:0 14px 30px rgba(15,23,42,0.10);
+  min-height:700px; display:flex; flex-direction:column;
+}
+.phone-status{
+  display:flex; justify-content:space-between;
+  padding:10px 18px 6px;
+  background:var(--dark); color:var(--n-0);
+  font-family:var(--font-mono); font-size:11px; font-weight:600;
+}
+
+/* Mobile top bar — dark, brand-consistent with Portal topbar */
+.mobile-top{
+  display:flex; align-items:center; gap:10px;
+  padding:10px 14px 12px;
+  background:var(--dark); color:var(--n-0);
+}
+.mobile-top__icon{
+  display:grid; place-items:center; width:30px; height:30px;
+  border:1px solid var(--dark-line); border-radius:6px;
+  background:var(--dark-2); color:var(--accent-400);
+  font-size:11px; font-weight:700;
+}
+.mobile-top__title{font-size:14px; font-weight:600; letter-spacing:-0.1px}
+.mobile-top__sub{font-size:10.5px; color:#a5adb8; letter-spacing:.4px; text-transform:uppercase}
+
+.mobile-content{padding:12px; flex:1; overflow-y:auto}
+
+/* Search bar — mobile (rounded, light) */
+.mobile-search{
+  display:flex; gap:8px; margin-bottom:14px;
+}
+.mobile-search__input{
+  flex:1; display:flex; align-items:center; gap:8px;
+  padding:10px 12px;
+  border:1px solid var(--n-200); border-radius:var(--r-md);
+  background:var(--n-0); transition:border-color .12s, box-shadow .12s;
+}
+.mobile-search__input:focus-within{
+  border-color:var(--accent-500);
+  box-shadow:0 0 0 3px rgba(47,143,139,0.14);
+}
+.mobile-search__input input{
+  width:100%; border:0; outline:0; background:transparent;
+  font-size:14px; color:var(--n-900);
+  font-family:var(--font-mono); letter-spacing:.5px;
+}
+.mobile-search__input input::placeholder{
+  color:var(--n-400); font-family:var(--font-ui); letter-spacing:0;
+}
+.icon-svg{width:16px; height:16px; color:var(--n-400); flex-shrink:0}
+
+.btn-primary{
+  border:0; border-radius:var(--r-md);
+  background:var(--accent-600); color:var(--n-0);
+  padding:10px 16px; font-size:13px; font-weight:600;
+  cursor:pointer; white-space:nowrap;
+  box-shadow:0 1px 2px rgba(31,93,90,0.4);
+}
+.btn-primary:hover{background:var(--accent-700)}
+.btn-primary:disabled{background:var(--n-300); box-shadow:none; cursor:not-allowed}
+
+/* Empty state */
+.empty-card{
+  display:grid; place-items:center; text-align:center;
+  padding:32px 20px; min-height:240px;
+  border:1px dashed var(--n-200); border-radius:var(--r-md);
+  background:var(--n-0);
+}
+.empty-illustration{
+  display:grid; place-items:center;
+  width:56px; height:56px; margin-bottom:14px;
+  border-radius:14px; background:var(--accent-50); color:var(--accent-600);
+}
+.empty-illustration svg{width:26px; height:26px}
+.empty-card h3{margin:0; font-size:16px; font-weight:600; color:var(--n-900)}
+.empty-card p{margin:6px 0 0; color:var(--n-500); font-size:12.5px; max-width:240px}
+
+/* Recent checks */
+.section-label{
+  display:flex; align-items:baseline; gap:8px;
+  margin:18px 0 8px;
+  color:var(--n-500); font-size:10.5px; font-weight:700;
+  letter-spacing:.7px; text-transform:uppercase; font-family:var(--font-mono);
+}
+.section-label__count{color:var(--n-400); font-weight:500}
+.recent-list{display:flex; flex-direction:column; gap:6px}
+.recent-row{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding:9px 11px;
+  border:1px solid var(--n-150); border-radius:var(--r-sm);
+  background:var(--n-0);
+}
+.recent-row__code{font-family:var(--font-mono); font-size:13px; font-weight:600; color:var(--n-900)}
+.recent-row__meta{display:flex; align-items:center; gap:8px; color:var(--n-500); font-size:11.5px}
+
+/* ─────────────────────────────────────────────────────────────
+   FABRIC RESULT CARD
+   ───────────────────────────────────────────────────────────── */
+.fabric-card{
+  border:1px solid var(--n-200); border-radius:var(--r-md);
+  background:var(--n-0); box-shadow:var(--shadow-xs); overflow:hidden;
+}
+.fabric-hero{
+  position:relative;
+  display:block; width:100%; aspect-ratio:16/10;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.35), transparent),
+    repeating-linear-gradient(45deg, #d7d1c4 0, #d7d1c4 7px, #c9c1b3 7px, #c9c1b3 14px);
+  border-bottom:1px solid var(--n-150);
+}
+.fabric-hero__ribbon{
+  position:absolute; left:10px; top:10px;
+  display:inline-flex; align-items:center; gap:5px;
+  padding:3px 8px; border-radius:3px;
+  background:var(--n-900); color:var(--n-0);
+  font-family:var(--font-mono); font-size:10px; font-weight:700; letter-spacing:.5px;
+}
+.fabric-body{padding:14px}
+
+.fabric-id{
+  display:flex; align-items:baseline; gap:8px; margin-bottom:2px;
+}
+.fabric-id__code{
+  font-family:var(--font-mono); font-size:18px; font-weight:600;
+  color:var(--n-900); letter-spacing:-0.2px;
+}
+.fabric-id__width{color:var(--n-500); font-size:13px}
+.fabric-name{color:var(--n-600); font-size:12.5px; margin:0 0 12px}
+
+/* Width chips — segmented; one is active */
+.widths-label{
+  font-size:10.5px; color:var(--n-500); font-weight:600;
+  letter-spacing:.5px; text-transform:uppercase; margin-bottom:6px;
+}
+.widths{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px}
+.width-chip{
+  display:inline-flex; align-items:center; gap:6px;
+  padding:5px 10px;
+  border:1px solid var(--n-200); border-radius:var(--r-sm);
+  background:var(--n-0); cursor:pointer;
+  font-family:var(--font-mono); font-size:12px; font-weight:600;
+  color:var(--n-700);
+  transition:border-color .12s, background .12s;
+}
+.width-chip:hover{border-color:var(--n-300)}
+.width-chip.is-active{
+  border-color:var(--accent-600); background:var(--accent-50);
+  color:var(--accent-700);
+  box-shadow:inset 0 0 0 1px var(--accent-600);
+}
+.width-chip__qty{
+  font-size:10.5px; padding:1px 5px; border-radius:3px;
+  background:var(--n-100); color:var(--n-600); font-weight:700;
+}
+.width-chip__qty.is-ok{background:var(--ok-bg); color:var(--ok-fg)}
+.width-chip__qty.is-low{background:var(--warn-bg); color:var(--warn-fg)}
+.width-chip__qty.is-out{background:var(--danger-bg); color:var(--danger-fg)}
+
+/* Status block — large, colored, the primary signal */
+.status-block{
+  display:flex; align-items:center; gap:12px;
+  padding:12px;
+  border:1px solid; border-radius:var(--r-md);
+  margin-bottom:12px;
+}
+.status-block--ok    {background:var(--ok-bg);    border-color:var(--ok-bd)}
+.status-block--low   {background:var(--warn-bg);  border-color:var(--warn-bd)}
+.status-block--out   {background:var(--danger-bg);border-color:var(--danger-bd)}
+.status-block--disc  {background:var(--n-100);   border-color:var(--n-200)}
+
+.status-block__icon{
+  flex-shrink:0; width:32px; height:32px; border-radius:50%;
+  display:grid; place-items:center;
+  background:var(--n-0);
+}
+.status-block__icon svg{width:18px; height:18px}
+.status-block--ok   .status-block__icon{color:var(--ok-fg)}
+.status-block--low  .status-block__icon{color:var(--warn-fg)}
+.status-block--out  .status-block__icon{color:var(--danger-fg)}
+.status-block--disc .status-block__icon{color:var(--n-500)}
+
+.status-block__main{flex:1; min-width:0}
+.status-block__primary{
+  display:flex; align-items:baseline; gap:6px;
+  font-size:14px; font-weight:600;
+}
+.status-block--ok   .status-block__primary{color:var(--ok-fg)}
+.status-block--low  .status-block__primary{color:var(--warn-fg)}
+.status-block--out  .status-block__primary{color:var(--danger-fg)}
+.status-block--disc .status-block__primary{color:var(--n-700)}
+.status-block__qty{
+  font-family:var(--font-mono); font-size:18px; font-weight:700;
+  font-variant-numeric:tabular-nums; letter-spacing:-0.3px;
+}
+.status-block__sub{
+  margin-top:2px; font-size:11.5px; color:var(--n-600);
+}
+.status-block__sub b{color:var(--n-900); font-family:var(--font-mono); font-weight:600}
+
+/* Notes */
+.notes{
+  margin:0 0 12px; padding:8px 10px;
+  border-left:2px solid var(--sand-300);
+  background:var(--sand-25); color:var(--sand-700);
+  font-size:11.5px; font-style:italic;
+}
+
+/* Reserve row */
+.reserve-row{
+  display:flex; gap:8px; padding-top:12px;
+  border-top:1px solid var(--n-150);
+}
+.btn-secondary{
+  flex:1;
+  padding:10px 12px;
+  border:1px solid var(--n-200); border-radius:var(--r-md);
+  background:var(--n-0); color:var(--n-700);
+  font-size:13px; font-weight:600; cursor:pointer;
+}
+.btn-secondary:hover{background:var(--n-50); border-color:var(--n-300)}
+.btn-secondary:disabled{color:var(--n-400); background:var(--n-50); cursor:not-allowed}
+.btn-secondary .pill{
+  font-family:var(--font-mono); font-size:9px; font-weight:700;
+  background:var(--n-100); color:var(--n-500); padding:1px 5px; border-radius:3px;
+  margin-left:6px; letter-spacing:.5px;
+}
+
+/* Alternatives */
+.alt-section{margin-top:16px}
+.alt-head{
+  display:flex; align-items:baseline; justify-content:space-between;
+  margin-bottom:8px;
+}
+.alt-head__label{
+  color:var(--n-500); font-size:10.5px; font-weight:700;
+  letter-spacing:.7px; text-transform:uppercase; font-family:var(--font-mono);
+}
+.alt-head__hint{color:var(--n-400); font-size:11px; font-style:italic}
+.alt-scroll{
+  display:flex; gap:8px; overflow-x:auto; padding-bottom:4px;
+  scroll-snap-type:x proximity; scrollbar-width:thin;
+  margin:0 -14px; padding:0 14px 4px;
+}
+.alt-scroll::-webkit-scrollbar{height:4px}
+.alt-scroll::-webkit-scrollbar-thumb{background:var(--n-200); border-radius:2px}
+.alt-card{
+  flex:0 0 150px;
+  border:1px solid var(--n-200); border-radius:var(--r-sm);
+  background:var(--n-0); overflow:hidden;
+  scroll-snap-align:start;
+}
+.alt-card:hover{border-color:var(--accent-500)}
+.alt-img{
+  display:block; width:100%; aspect-ratio:4/3;
+  background:repeating-linear-gradient(135deg, #e1ded8 0, #e1ded8 8px, #d2ccc0 8px, #d2ccc0 16px);
+  border-bottom:1px solid var(--n-150);
+}
+.alt-card:nth-child(2) .alt-img{
+  background:repeating-linear-gradient(135deg, #cfd9dc 0, #cfd9dc 8px, #bdccd0 8px, #bdccd0 16px);
+}
+.alt-body{padding:8px 10px}
+.alt-body__code{
+  font-family:var(--font-mono); font-size:12px; font-weight:600;
+  color:var(--n-900);
+}
+.alt-body__row{
+  display:flex; align-items:center; justify-content:space-between;
+  margin-top:5px; font-size:11px; color:var(--n-500);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   STATUS CHIPS — same grammar as Orders
+   ───────────────────────────────────────────────────────────── */
+.chip{
+  display:inline-flex; align-items:center; gap:6px;
+  padding:3px 9px;
+  font-family:var(--font-mono); font-size:10.5px; font-weight:700;
+  letter-spacing:.4px; text-transform:uppercase;
+  line-height:1; border-radius:999px;
+  border:1px solid transparent; white-space:nowrap;
+}
+.chip::before{
+  content:""; width:6px; height:6px; border-radius:50%;
+  background:currentColor; flex-shrink:0;
+}
+.chip--ok       {background:var(--ok-bg);     color:var(--ok-fg);     border-color:var(--ok-bd)}
+.chip--low      {background:var(--warn-bg);   color:var(--warn-fg);   border-color:var(--warn-bd)}
+.chip--out      {background:var(--danger-bg); color:var(--danger-fg); border-color:var(--danger-bd)}
+.chip--disc     {background:var(--n-100);     color:var(--n-500);     border-color:var(--n-200)}
+.chip--incoming {background:var(--info-bg);   color:var(--info-fg);   border-color:var(--info-bd)}
+.chip--sm{padding:2px 7px; font-size:10px}
+
+/* ─────────────────────────────────────────────────────────────
+   DESKTOP — low-stock list
+   ───────────────────────────────────────────────────────────── */
+.desktop-panel{min-width:0; width:100%}
+.desktop-body{padding:0}
+
+/* metrics strip — at top, consistent with Orders amount-cards */
+.metrics{
+  display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:0;
+  border-bottom:1px solid var(--n-150);
+}
+.metric{
+  padding:14px 16px; position:relative;
+}
+.metric + .metric{border-left:1px solid var(--n-150)}
+.metric__label{
+  display:block; color:var(--n-500); font-size:10.5px;
+  letter-spacing:.5px; text-transform:uppercase; font-weight:600;
+}
+.metric__value{
+  display:block; margin-top:4px;
+  color:var(--n-900); font-size:22px; font-weight:600;
+  font-family:var(--font-mono); font-variant-numeric:tabular-nums; letter-spacing:-0.5px;
+}
+.metric__delta{
+  display:block; margin-top:2px; font-size:11px; color:var(--n-500);
+}
+.metric--out .metric__value{color:var(--danger-fg)}
+.metric--low .metric__value{color:var(--warn-fg)}
+.metric--ok .metric__value{color:var(--ok-fg)}
+
+/* Toolbar */
+.toolbar{
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  padding:10px 12px;
+  border-bottom:1px solid var(--n-150);
+  background:var(--n-0);
+}
+.field{
+  display:flex; align-items:center; gap:6px;
+  background:var(--n-50); border:1px solid var(--n-200); border-radius:var(--r-sm);
+  padding:0 8px 0 10px; min-height:32px;
+}
+.field:focus-within{border-color:var(--accent-500); background:var(--n-0); box-shadow:0 0 0 3px rgba(47,143,139,0.12)}
+.field input,.field select{
+  border:0; outline:none; background:transparent;
+  font-size:13px; color:var(--n-900); min-height:32px; padding:0 4px;
+}
+.field--search{flex:1 1 240px; max-width:340px}
+.field__icon{width:13px; height:13px; opacity:.55}
+.toolbar__label{color:var(--n-500); font-size:11px; letter-spacing:.5px; text-transform:uppercase; font-weight:600}
+.kbd{
+  font-family:var(--font-mono); font-size:10px; font-weight:600;
+  background:var(--n-100); color:var(--n-600);
+  padding:1px 5px; border-radius:3px; border:1px solid var(--n-200);
+}
+
+/* threshold slider-like select — visually distinct */
+.threshold-field{
+  background:var(--accent-50); border-color:var(--accent-100);
+}
+.threshold-field .toolbar__label{color:var(--accent-700)}
+.threshold-field select{color:var(--accent-700); font-weight:600}
+
+/* Table */
+.table-wrap{overflow-x:auto}
+.lk-table{width:100%; border-collapse:separate; border-spacing:0; font-size:12.5px}
+.lk-table thead th{
+  position:sticky; top:0; z-index:1;
+  background:var(--n-50); color:var(--n-600);
+  font-size:10.5px; font-weight:700; letter-spacing:.5px; text-transform:uppercase;
+  text-align:left; padding:9px 12px;
+  border-bottom:1px solid var(--n-200);
+  white-space:nowrap;
+}
+.lk-table thead th.is-num{text-align:right}
+.lk-table tbody td{
+  padding:6px 12px;
+  border-bottom:1px solid var(--n-100);
+  vertical-align:middle; white-space:nowrap;
+  height:36px;
+}
+.lk-table tbody tr:hover td{background:var(--n-25)}
+
+td.is-num{text-align:right; font-variant-numeric:tabular-nums}
+td.is-meters{text-align:right; font-family:var(--font-mono); font-size:13px; font-variant-numeric:tabular-nums}
+td.is-meters.is-low{color:var(--warn-fg); font-weight:600}
+td.is-meters.is-out{color:var(--danger-fg); font-weight:700}
+td.is-meters.is-ok{color:var(--n-900)}
+td.is-meters.is-disc{color:var(--n-400)}
+
+/* Inline progress bar for available meters vs threshold */
+.meters-bar{
+  display:inline-flex; align-items:center; gap:8px; justify-content:flex-end;
+}
+.meters-bar__num{font-family:var(--font-mono); font-weight:600; min-width:42px; text-align:right}
+.meters-bar__track{
+  width:60px; height:4px; border-radius:2px;
+  background:var(--n-150); overflow:hidden;
+}
+.meters-bar__fill{height:100%; background:var(--ok-dot)}
+.meters-bar__fill.is-low{background:var(--warn-dot)}
+.meters-bar__fill.is-out{background:var(--danger-dot); width:2px !important}
+
+/* Row thumbnail */
+.row-thumb{
+  display:block; width:36px; height:28px;
+  border:1px solid var(--n-150); border-radius:var(--r-xs);
+  background:repeating-linear-gradient(135deg, #d7d1c4 0, #d7d1c4 6px, #c9c1b3 6px, #c9c1b3 12px);
+}
+.row-thumb.blue {background:repeating-linear-gradient(135deg, #cfd9dc 0, #cfd9dc 6px, #bdccd0 6px, #bdccd0 12px)}
+.row-thumb.green{background:repeating-linear-gradient(135deg, #cedbcf 0, #cedbcf 6px, #bdd0be 6px, #bdd0be 12px)}
+.row-thumb.red  {background:repeating-linear-gradient(135deg, #e6d0cc 0, #e6d0cc 6px, #d6bcb7 6px, #d6bcb7 12px)}
+
+.fabric-link{
+  font-family:var(--font-mono); font-size:12.5px; font-weight:600;
+  color:var(--accent-700);
+}
+.fabric-link:hover{text-decoration:underline}
+
+.fabric-name-cell{color:var(--n-700); font-size:12.5px; max-width:280px; overflow:hidden; text-overflow:ellipsis; display:inline-block; vertical-align:middle}
+
+.alts-cell{color:var(--n-500); font-family:var(--font-mono); font-size:11.5px}
+.alts-cell a{color:var(--accent-700)}
+.alts-cell a:hover{text-decoration:underline}
+
+/* Action row */
+.actions{display:inline-flex; gap:4px}
+.btn-xs{
+  padding:4px 9px;
+  border:1px solid var(--n-200); border-radius:var(--r-sm);
+  background:var(--n-0); color:var(--n-700);
+  font-size:11.5px; font-weight:600; cursor:pointer;
+}
+.btn-xs:hover{background:var(--n-50); border-color:var(--n-300)}
+.btn-xs--primary{
+  border-color:var(--accent-700); background:var(--accent-600); color:var(--n-0);
+}
+.btn-xs--primary:hover{background:var(--accent-700)}
+
+/* Footer */
+.table-foot{
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding:10px 14px;
+  border-top:1px solid var(--n-150); background:var(--n-25);
+  color:var(--n-500); font-size:12px;
+}
+
+/* Pagination */
+.pagination{display:flex; align-items:center; gap:4px}
+.pagination button{
+  min-width:28px; padding:4px 9px;
+  border:1px solid var(--n-200); border-radius:var(--r-sm);
+  background:var(--n-0); color:var(--n-600);
+  font-size:12px; cursor:pointer;
+}
+.pagination button:hover:not(.is-active):not(:disabled){background:var(--n-50); color:var(--n-900)}
+.pagination button.is-active{
+  border-color:var(--accent-600); background:var(--accent-600); color:var(--n-0); font-weight:600;
+}
+.pagination button:disabled{color:var(--n-300); cursor:not-allowed}
+
+/* Responsive */
+@media (max-width: 1100px){
+  .preview-grid{grid-template-columns:repeat(2, minmax(0, 360px))}
+  .preview-grid > .desktop-panel{grid-row:auto}
+  .metrics{grid-template-columns:repeat(4, minmax(0,1fr))}
+}
+@media (max-width: 900px){
+  .topbar{flex-wrap:wrap; gap:12px}
+  .topbar__separator,.env-badge{display:none}
+  .portal-search{order:3; flex-basis:100%; max-width:none}
+  .page-head{display:block}
+  .preview-grid{grid-template-columns:1fr; justify-content:center}
+  .preview-grid > .preview-panel{margin:0 auto; width:100%; max-width:480px}
+  .preview-grid > .desktop-panel{max-width:none}
+  .metrics{grid-template-columns:repeat(2, minmax(0,1fr))}
+  .metric:nth-child(2n+1){border-left:0}
+  .metric:nth-child(n+3){border-top:1px solid var(--n-150)}
+}
+@media (max-width: 560px){
+  .test-strip{display:none}
+  .main{padding:16px 12px 32px}
+  .brand__tagline{display:none}
+}
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <!-- TEST -->
+  <div class="test-strip">
+    <div class="test-strip__main">
+      <span class="icon-warning" aria-hidden="true"></span>
+      <strong>TEST ENVIRONMENT</strong>
+      <span class="test-strip__note">Mock data. Fabric Availability redesign handoff.</span>
+    </div>
+    <span class="mono test-strip__host">lkvitai-test.vpn.lauresta.com</span>
+  </div>
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand__mark">LK</div>
+      <div>
+        <div class="brand__name">LKvitai<span>.MES</span></div>
+        <div class="brand__tagline mono">Manufacturing &middot; Execution &middot; Standards</div>
+      </div>
+    </div>
+    <div class="topbar__separator"></div>
+    <label class="portal-search">
+      <span class="portal-search__icon"></span>
+      <input type="search" placeholder="Find fabric, module, customer…">
+    </label>
+    <div class="topbar__spacer"></div>
+    <div class="env-badge">
+      <div><span class="mono">ENV</span><strong class="mono">TEST</strong></div>
+      <div><span class="mono">VER</span><strong class="mono">0.1.0</strong></div>
+    </div>
+    <div class="user-block">
+      <div class="user-block__avatar">LB</div>
+      <div>
+        <div class="user-block__name">Lukas B.</div>
+        <button class="link-button" type="button">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="page-head">
+      <div>
+        <div class="eyebrow mono">Frontline · Fabric Availability</div>
+        <h1>Fabric availability</h1>
+        <p class="page-head__sub">Mobile lookup for sales floor and a desktop low-stock list for purchasing/ops.</p>
+      </div>
+    </div>
+
+    <div class="preview-grid">
+
+      <!-- ─────────── MOBILE: SEARCH ─────────── -->
+      <section class="preview-panel" aria-labelledby="mobile-search-title">
+        <div class="preview-panel__head">
+          <h2 id="mobile-search-title">Mobile · search</h2>
+          <p>Enter fabric code → tap Check.</p>
+        </div>
+        <div class="phone-frame">
+          <div class="phone-screen">
+            <div class="phone-status"><span>09:41</span><span>5G  82%</span></div>
+            <div class="mobile-top">
+              <div class="mobile-top__icon">FA</div>
+              <div>
+                <div class="mobile-top__title">Fabric availability</div>
+                <div class="mobile-top__sub mono">Frontline</div>
+              </div>
+            </div>
+            <div class="mobile-content">
+              <form class="mobile-search">
+                <label class="mobile-search__input">
+                  <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="6.5"/><path d="M21 21l-4.3-4.3"/></svg>
+                  <span class="sr-only">Fabric code</span>
+                  <input type="text" placeholder="Enter fabric code…" autocomplete="off">
+                </label>
+                <button class="btn-primary" type="button">Check</button>
+              </form>
+
+              <section class="empty-card">
+                <div>
+                  <div class="empty-illustration">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="6.5"/><path d="M21 21l-4.3-4.3"/></svg>
+                  </div>
+                  <h3>Check availability</h3>
+                  <p>Enter a fabric code to see stock, expected delivery and alternatives.</p>
+                </div>
+              </section>
+
+              <div class="section-label">Recent <span class="section-label__count">last 5</span></div>
+              <div class="recent-list">
+                <button class="recent-row" type="button" style="all:unset; cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 11px; border:1px solid var(--n-150); border-radius:var(--r-sm); background:var(--n-0)">
+                  <span class="recent-row__code">R120</span>
+                  <span class="recent-row__meta"><span class="mono">2000 mm</span><span class="chip chip--low chip--sm">Low · 8 m</span></span>
+                </button>
+                <button class="recent-row" type="button" style="all:unset; cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 11px; border:1px solid var(--n-150); border-radius:var(--r-sm); background:var(--n-0)">
+                  <span class="recent-row__code">DN45</span>
+                  <span class="recent-row__meta"><span class="mono">1800 mm</span><span class="chip chip--out chip--sm">Out</span></span>
+                </button>
+                <button class="recent-row" type="button" style="all:unset; cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 11px; border:1px solid var(--n-150); border-radius:var(--r-sm); background:var(--n-0)">
+                  <span class="recent-row__code">V78</span>
+                  <span class="recent-row__meta"><span class="mono">2500 mm</span><span class="chip chip--low chip--sm">Low · 8 m</span></span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─────────── MOBILE: RESULT ─────────── -->
+      <section class="preview-panel" aria-labelledby="mobile-result-title">
+        <div class="preview-panel__head">
+          <h2 id="mobile-result-title">Mobile · result</h2>
+          <p>Fabric photo, widths, status, ETA, alternatives.</p>
+        </div>
+        <div class="phone-frame">
+          <div class="phone-screen">
+            <div class="phone-status"><span>09:42</span><span>5G  82%</span></div>
+            <div class="mobile-top">
+              <div class="mobile-top__icon">FA</div>
+              <div>
+                <div class="mobile-top__title">Fabric availability</div>
+                <div class="mobile-top__sub mono">Frontline</div>
+              </div>
+            </div>
+            <div class="mobile-content">
+              <form class="mobile-search">
+                <label class="mobile-search__input">
+                  <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="6.5"/><path d="M21 21l-4.3-4.3"/></svg>
+                  <input type="text" value="R120" autocomplete="off">
+                </label>
+                <button class="btn-primary" type="button">Check</button>
+              </form>
+
+              <article class="fabric-card" aria-live="polite">
+                <div class="fabric-hero" role="img" aria-label="R120 fabric photo">
+                  <span class="fabric-hero__ribbon">−15 % · CAMPAIGN</span>
+                </div>
+                <div class="fabric-body">
+                  <div class="fabric-id">
+                    <span class="fabric-id__code">R120</span>
+                    <span class="fabric-id__width">· 2000 mm</span>
+                  </div>
+                  <p class="fabric-name">Linen texture, warm grey</p>
+
+                  <div class="widths-label">Width</div>
+                  <div class="widths" role="radiogroup" aria-label="Width">
+                    <button class="width-chip" type="button">1600 <span class="width-chip__qty is-ok">42 m</span></button>
+                    <button class="width-chip is-active" type="button" aria-pressed="true">2000 <span class="width-chip__qty is-low">8 m</span></button>
+                    <button class="width-chip" type="button">2500 <span class="width-chip__qty is-out">0 m</span></button>
+                  </div>
+
+                  <div class="status-block status-block--low" role="status">
+                    <div class="status-block__icon">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v5"/><circle cx="12" cy="16.5" r="1" fill="currentColor"/><path d="M12 3l9.5 17H2.5L12 3z"/></svg>
+                    </div>
+                    <div class="status-block__main">
+                      <div class="status-block__primary">Low stock · <span class="status-block__qty">8 m</span></div>
+                      <div class="status-block__sub">Next delivery <b>2026-05-08</b> · <span class="chip chip--incoming chip--sm">+ 60 m incoming</span></div>
+                    </div>
+                  </div>
+
+                  <p class="notes">Use with white bottom bar. Similar tone to R118.</p>
+
+                  <div class="reserve-row">
+                    <button class="btn-secondary" type="button" disabled>Reserve <span class="pill">SOON</span></button>
+                  </div>
+
+                  <div class="alt-section">
+                    <div class="alt-head">
+                      <span class="alt-head__label">Alternatives</span>
+                      <span class="alt-head__hint">swipe →</span>
+                    </div>
+                    <div class="alt-scroll">
+                      <a class="alt-card" href="#">
+                        <div class="alt-img"></div>
+                        <div class="alt-body">
+                          <div class="alt-body__code">R118 · 2000</div>
+                          <div class="alt-body__row">
+                            <span class="chip chip--ok chip--sm">34 m</span>
+                            <span>ready</span>
+                          </div>
+                        </div>
+                      </a>
+                      <a class="alt-card" href="#">
+                        <div class="alt-img"></div>
+                        <div class="alt-body">
+                          <div class="alt-body__code">R124 · 2000</div>
+                          <div class="alt-body__row">
+                            <span class="chip chip--low chip--sm">11 m</span>
+                            <span>05-06</span>
+                          </div>
+                        </div>
+                      </a>
+                      <a class="alt-card" href="#">
+                        <div class="alt-img"></div>
+                        <div class="alt-body">
+                          <div class="alt-body__code">R130 · 2000</div>
+                          <div class="alt-body__row">
+                            <span class="chip chip--ok chip--sm">68 m</span>
+                            <span>ready</span>
+                          </div>
+                        </div>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </article>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ─────────── DESKTOP: LOW-STOCK LIST ─────────── -->
+      <section class="preview-panel desktop-panel" aria-labelledby="desktop-title">
+        <div class="preview-panel__head">
+          <h2 id="desktop-title">Desktop · low-stock materials</h2>
+          <p>All fabrics under threshold. Server-side filter / sort / paging.</p>
+        </div>
+        <div class="desktop-body">
+
+          <!-- Metrics strip -->
+          <div class="metrics">
+            <div class="metric metric--low">
+              <span class="metric__label">Below threshold</span>
+              <strong class="metric__value">38</strong>
+              <span class="metric__delta">+5 vs last week</span>
+            </div>
+            <div class="metric metric--out">
+              <span class="metric__label">Out of stock</span>
+              <strong class="metric__value">9</strong>
+              <span class="metric__delta">3 with no ETA</span>
+            </div>
+            <div class="metric">
+              <span class="metric__label">Expected this week</span>
+              <strong class="metric__value">14</strong>
+              <span class="metric__delta">220 m incoming</span>
+            </div>
+            <div class="metric">
+              <span class="metric__label">Discontinued</span>
+              <strong class="metric__value">4</strong>
+              <span class="metric__delta">need replacement</span>
+            </div>
+          </div>
+
+          <!-- Toolbar -->
+          <div class="toolbar">
+            <label class="field field--search">
+              <svg class="field__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="6.5"/><path d="M21 21l-4.3-4.3"/></svg>
+              <input type="search" value="roller" placeholder="Search code, name, supplier…">
+              <span class="kbd">/</span>
+            </label>
+
+            <label class="field threshold-field">
+              <span class="toolbar__label">Threshold</span>
+              <select>
+                <option>≤ 10 m</option>
+                <option>≤ 25 m</option>
+                <option>≤ 50 m</option>
+                <option>Out of stock only</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span class="toolbar__label">Status</span>
+              <select>
+                <option>All low</option>
+                <option>Low</option>
+                <option>Out</option>
+                <option>Discontinued</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span class="toolbar__label">Width</span>
+              <select>
+                <option>All</option><option>1600</option><option>1800</option><option>2000</option><option>2500</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span class="toolbar__label">Supplier</span>
+              <select>
+                <option>All</option><option>Decora</option><option>Vali</option><option>Marla</option>
+              </select>
+            </label>
+
+            <div style="flex:1"></div>
+
+            <div class="pagination" aria-label="Pagination">
+              <button type="button" disabled>‹</button>
+              <button type="button" class="is-active">1</button>
+              <button type="button">2</button>
+              <button type="button">3</button>
+              <button type="button">›</button>
+            </div>
+          </div>
+
+          <!-- Table -->
+          <div class="table-wrap">
+            <table class="lk-table">
+              <thead>
+                <tr>
+                  <th style="width:48px"></th>
+                  <th>Code</th>
+                  <th>Name</th>
+                  <th>Width</th>
+                  <th class="is-num">Available</th>
+                  <th>Status</th>
+                  <th>Expected</th>
+                  <th class="is-num">Incoming</th>
+                  <th>Alternatives</th>
+                  <th>Last checked</th>
+                  <th style="width:1%"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="row-thumb"></span></td>
+                  <td><a class="fabric-link" href="#">R120</a></td>
+                  <td><span class="fabric-name-cell">Linen texture, warm grey</span></td>
+                  <td class="mono">2000 mm</td>
+                  <td class="is-meters is-low">
+                    <span class="meters-bar">
+                      <span class="meters-bar__num">8 m</span>
+                      <span class="meters-bar__track"><span class="meters-bar__fill is-low" style="width:32%"></span></span>
+                    </span>
+                  </td>
+                  <td><span class="chip chip--low">Low</span></td>
+                  <td class="mono">2026-05-08</td>
+                  <td class="is-num mono">60 m</td>
+                  <td class="alts-cell"><a href="#">R118</a>, <a href="#">R124</a></td>
+                  <td class="mono" style="color:var(--n-500); font-size:11.5px">today 09:42</td>
+                  <td><div class="actions"><button class="btn-xs btn-xs--primary">Open</button><button class="btn-xs">Reserve</button></div></td>
+                </tr>
+                <tr>
+                  <td><span class="row-thumb blue"></span></td>
+                  <td><a class="fabric-link" href="#">DN45</a></td>
+                  <td><span class="fabric-name-cell">Day-night graphite stripe</span></td>
+                  <td class="mono">1800 mm</td>
+                  <td class="is-meters is-out">
+                    <span class="meters-bar">
+                      <span class="meters-bar__num">0 m</span>
+                      <span class="meters-bar__track"><span class="meters-bar__fill is-out"></span></span>
+                    </span>
+                  </td>
+                  <td><span class="chip chip--out">Out</span></td>
+                  <td class="mono">2026-05-12</td>
+                  <td class="is-num mono">120 m</td>
+                  <td class="alts-cell"><a href="#">DN47</a>, <a href="#">DN51</a></td>
+                  <td class="mono" style="color:var(--n-500); font-size:11.5px">today 09:35</td>
+                  <td><div class="actions"><button class="btn-xs btn-xs--primary">Open</button><button class="btn-xs">Notify</button></div></td>
+                </tr>
+                <tr>
+                  <td><span class="row-thumb green"></span></td>
+                  <td><a class="fabric-link" href="#">V78</a></td>
+                  <td><span class="fabric-name-cell">Vertical blind sand</span></td>
+                  <td class="mono">2500 mm</td>
+                  <td class="is-meters is-low">
+                    <span class="meters-bar">
+                      <span class="meters-bar__num">6 m</span>
+                      <span class="meters-bar__track"><span class="meters-bar__fill is-low" style="width:24%"></span></span>
+                    </span>
+                  </td>
+                  <td><span class="chip chip--low">Low</span></td>
+                  <td class="mono">2026-05-06</td>
+                  <td class="is-num mono">40 m</td>
+                  <td class="alts-cell"><a href="#">V80</a></td>
+                  <td class="mono" style="color:var(--n-500); font-size:11.5px">today 09:30</td>
+                  <td><div class="actions"><button class="btn-xs btn-xs--primary">Open</button><button class="btn-xs">Reserve</button></div></td>
+                </tr>
+                <tr>
+                  <td><span class="row-thumb red"></span></td>
+                  <td><a class="fabric-link" href="#">R099</a></td>
+                  <td><span class="fabric-name-cell">Blackout terracotta</span></td>
+                  <td class="mono">1600 mm</td>
+                  <td class="is-meters is-disc">
+                    <span class="meters-bar">
+                      <span class="meters-bar__num">2 m</span>
+                      <span class="meters-bar__track"><span class="meters-bar__fill" style="width:8%; background:var(--n-300)"></span></span>
+                    </span>
+                  </td>
+                  <td><span class="chip chip--disc">Discontinued</span></td>
+                  <td class="mono" style="color:var(--n-400)">—</td>
+                  <td class="is-num mono" style="color:var(--n-400)">—</td>
+                  <td class="alts-cell"><a href="#">R101</a></td>
+                  <td class="mono" style="color:var(--n-500); font-size:11.5px">today 09:21</td>
+                  <td><div class="actions"><button class="btn-xs btn-xs--primary">Open</button><button class="btn-xs">Replace</button></div></td>
+                </tr>
+                <tr>
+                  <td><span class="row-thumb"></span></td>
+                  <td><a class="fabric-link" href="#">R118</a></td>
+                  <td><span class="fabric-name-cell">Linen texture, cool grey</span></td>
+                  <td class="mono">2500 mm</td>
+                  <td class="is-meters is-low">
+                    <span class="meters-bar">
+                      <span class="meters-bar__num">9 m</span>
+                      <span class="meters-bar__track"><span class="meters-bar__fill is-low" style="width:36%"></span></span>
+                    </span>
+                  </td>
+                  <td><span class="chip chip--low">Low</span></td>
+                  <td class="mono">2026-05-10</td>
+                  <td class="is-num mono">80 m</td>
+                  <td class="alts-cell"><a href="#">R120</a>, <a href="#">R124</a></td>
+                  <td class="mono" style="color:var(--n-500); font-size:11.5px">today 09:18</td>
+                  <td><div class="actions"><button class="btn-xs btn-xs--primary">Open</button><button class="btn-xs">Reserve</button></div></td>
+                </tr>
+                <tr>
+                  <td><span class="row-thumb green"></span></td>
+                  <td><a class="fabric-link" href="#">V80</a></td>
+                  <td><span class="fabric-name-cell">Vertical blind seafoam</span></td>
+                  <td class="mono">2500 mm</td>
+                  <td class="is-meters is-ok">
+                    <span class="meters-bar">
+                      <span class="meters-bar__num">11 m</span>
+                      <span class="meters-bar__track"><span class="meters-bar__fill" style="width:44%"></span></span>
+                    </span>
+                  </td>
+                  <td><span class="chip chip--low">Low</span></td>
+                  <td class="mono">2026-05-14</td>
+                  <td class="is-num mono">50 m</td>
+                  <td class="alts-cell">—</td>
+                  <td class="mono" style="color:var(--n-500); font-size:11.5px">today 09:02</td>
+                  <td><div class="actions"><button class="btn-xs btn-xs--primary">Open</button><button class="btn-xs">Reserve</button></div></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="table-foot">
+            <span>Showing <strong>1–6</strong> of <strong>38</strong> materials below 10 m</span>
+            <span class="mono" style="opacity:.7">Server-side filter · sort · paging</span>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+</body>
+</html>

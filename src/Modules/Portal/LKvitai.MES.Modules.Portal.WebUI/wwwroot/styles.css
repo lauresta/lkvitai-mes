@@ -786,19 +786,19 @@ input {
   transform: translateY(-1px);
 }
 
-/* Scaffolded tiles: neutral amber/grey palette, distinct from green is-active
-   and red/grey planned. The vertical works (container + API ping + MudBlazor
-   hello page) but there is no business logic yet — WIP badge signals that. */
+/* Scaffolded tiles: warm sand palette, distinct from green is-active
+   and red/grey planned. The vertical works but has no business logic yet. */
 .module-card.is-scaffolded {
   padding-top: 13px;
-  border-color: oklch(82% 0.08 75);
-  border-top: 3px solid oklch(60% 0.12 75);
-  background: oklch(97% 0.025 75);
+  border-color: oklch(86% 0.035 75);
+  border-top: 3px solid oklch(62% 0.10 75);
+  background: oklch(97.5% 0.018 75);
   cursor: pointer;
 }
 
 .module-card.is-scaffolded:hover {
-  box-shadow: 0 6px 18px oklch(60% 0.12 75 / 22%);
+  background: oklch(96.5% 0.022 75);
+  box-shadow: 0 6px 18px oklch(62% 0.10 75 / 18%);
   transform: translateY(-1px);
 }
 
@@ -831,9 +831,9 @@ input {
 }
 
 .module-card.is-scaffolded .module-card__icon {
-  border: 1px solid oklch(85% 0.06 75);
+  border: 1px solid oklch(90% 0.025 75);
   background: var(--n-0);
-  color: oklch(40% 0.12 75);
+  color: oklch(46% 0.10 75);
 }
 
 .module-card__category {
@@ -849,7 +849,7 @@ input {
 }
 
 .module-card.is-scaffolded .module-card__category {
-  color: oklch(40% 0.12 75);
+  color: oklch(46% 0.10 75);
 }
 
 .module-card h3 {
@@ -890,7 +890,7 @@ input {
 }
 
 .module-card.is-scaffolded .module-card__footer {
-  border-top-color: oklch(85% 0.06 75);
+  border-top-color: oklch(90% 0.025 75);
 }
 
 .module-card__status {
@@ -922,11 +922,20 @@ input {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: oklch(40% 0.12 75);
+  color: oklch(46% 0.10 75);
   font-size: 11px;
   font-weight: 800;
   letter-spacing: .6px;
   text-transform: uppercase;
+}
+
+.module-card__status.is-scaffolded::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: oklch(62% 0.10 75);
+  box-shadow: 0 0 0 3px oklch(92% 0.04 75);
 }
 
 .module-card__badge {
@@ -953,7 +962,7 @@ input {
 }
 
 .module-card.is-scaffolded .module-card__action {
-  color: oklch(35% 0.12 75);
+  color: oklch(42% 0.10 75);
 }
 
 .module-card__lock {
