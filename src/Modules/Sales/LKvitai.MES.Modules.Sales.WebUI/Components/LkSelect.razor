@@ -1,0 +1,56 @@
+@* LkSelect — custom dense dropdown using .field token grammar.
+   Replaces native <select> to match orders-static-preview.html visual exactly. *@
+
+<div class="field lk-select @(_open ? "lk-select--open" : "")"
+     tabindex="0"
+     @onclick="Toggle"
+     @onblur="OnBlur"
+     role="combobox"
+     aria-expanded="@_open"
+     aria-label="@Label">
+    <span class="toolbar__label">@Label</span>
+    <span class="lk-select__value">@SelectedLabel</span>
+    <span class="lk-select__chevron" aria-hidden="true">&#9662;</span>
+    @if (_open)
+    {
+        <div class="lk-select__menu" role="listbox" @onclick:stopPropagation>
+            @foreach (var opt in Options)
+            {
+                <div class="lk-select__opt @(opt.Value == Value ? "is-selected" : "")"
+                     role="option"
+                     aria-selected="@(opt.Value == Value)"
+                     @onmousedown:preventDefault
+                     @onclick="@(() => SelectOpt(opt))">
+                    @opt.Label
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string  Label        { get; set; } = "";
+    [Parameter] public string  Value        { get; set; } = "";
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    [Parameter] public IReadOnlyList<SelectOption> Options { get; set; } = [];
+
+    private bool _open;
+
+    private string SelectedLabel =>
+        Options.FirstOrDefault(o => o.Value == Value)?.Label
+        ?? (Options.Count > 0 ? Options[0].Label : "");
+
+    private void Toggle() => _open = !_open;
+
+    private async Task OnBlur()
+    {
+        await Task.Delay(120);
+        _open = false;
+    }
+
+    private async Task SelectOpt(SelectOption opt)
+    {
+        _open = false;
+        await ValueChanged.InvokeAsync(opt.Value);
+    }
+}

@@ -1,0 +1,20 @@
+@page "/orders/{Number}"
+
+<PageTitle>Order @Number · Sales</PageTitle>
+
+<main class="main">
+    <div class="page-head">
+        <div>
+            <div class="eyebrow mono">Sales &middot; Orders</div>
+            <h1 class="mono">@Number</h1>
+            <p>Full order detail page &mdash; available in S-1 when Sales.Api endpoints are wired.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn--ghost" href="/">&#8592; Back to orders</a>
+        </div>
+    </div>
+</main>
+
+@code {
+    [Parameter] public string Number { get; set; } = "";
+}

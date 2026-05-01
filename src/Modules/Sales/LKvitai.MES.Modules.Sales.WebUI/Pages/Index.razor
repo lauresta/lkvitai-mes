@@ -9,7 +9,7 @@
         <div>
             <div class="eyebrow mono">Sales &middot; Orders</div>
             <h1>Orders list and order details</h1>
-            <p>Compact operational Sales Orders preview. The list is dense by default; selected row drives the details panel below.</p>
+            <p>Compact operational Sales Orders. The list is dense by default; selected row drives the details panel below.</p>
         </div>
         <div class="page-actions">
             <button class="btn btn--ghost" type="button">Export</button>
@@ -24,7 +24,7 @@
                 <h2 id="orders-list-title">Recent, unpaid and unfinished orders</h2>
                 <span>Server-side search will include hidden product text from legacy ProductsSearch.</span>
             </div>
-            <span class="mono">Compact &middot; @_filtered.Count rows/page &middot; sorted by Date desc</span>
+            <span class="mono">Compact &middot; 100 rows/page &middot; sorted by Date desc</span>
         </div>
 
         <div class="toolbar">
@@ -33,33 +33,25 @@
                 <input type="search" value="@_search" aria-label="Search orders"
                        @oninput="OnSearch" placeholder="Search orders" />
             </label>
-            <label class="field">
-                <span class="toolbar__label">Status</span>
-                <select @bind="_statusFilter" @bind:after="ApplyFilters" aria-label="Status filter">
-                    <option value="">All statuses</option>
-                    @foreach (var s in AllStatuses) { <option value="@s">@s</option> }
-                </select>
-            </label>
-            <label class="field">
-                <span class="toolbar__label">Store</span>
-                <select @bind="_storeFilter" @bind:after="ApplyFilters" aria-label="Store filter">
-                    <option value="">All stores</option>
-                    @foreach (var s in AllStores) { <option value="@s">@s</option> }
-                </select>
-            </label>
-            <label class="field">
-                <span class="toolbar__label">Date</span>
-                <select aria-label="Date filter">
-                    <option>Last 30 days</option>
-                    <option>This month</option>
-                    <option>YTD</option>
-                </select>
-            </label>
-            <label class="field" title="Show only orders with outstanding debt" @onclick="ToggleDebt" style="cursor:pointer;padding-right:8px">
+
+            <LkSelect Label="Status" Value="@_statusFilter" Options="@StatusOptions"
+                      ValueChanged="@(v => { _statusFilter = v; ApplyFilters(); })" />
+
+            <LkSelect Label="Store" Value="@_storeFilter" Options="@StoreOptions"
+                      ValueChanged="@(v => { _storeFilter = v; ApplyFilters(); })" />
+
+            <LkSelect Label="Date" Value="@_dateFilter" Options="@DateOptions"
+                      ValueChanged="@(v => _dateFilter = v)" />
+
+            <label class="field" style="cursor:pointer;padding-right:8px;gap:7px"
+                   title="Show only orders with outstanding debt"
+                   @onclick="ToggleDebt">
                 <span class="checkbox @(_hasDebtFilter ? "is-checked" : "")" aria-hidden="true"></span>
                 <span style="font-size:12px;color:var(--n-700)">Has debt</span>
             </label>
+
             <div class="spacer"></div>
+
             <nav class="pagination" aria-label="Pagination top">
                 <button type="button" disabled>&#8249; Prev</button>
                 <button type="button" class="is-active">1</button>
@@ -92,8 +84,14 @@
                         <tr class="@(o.Id == _selectedId ? "is-selected" : "")"
                             @onclick="@(() => SelectOrder(o))"
                             style="cursor:pointer">
-                            <td><span class="checkbox @(o.Id == _selectedId ? "is-checked" : "")" aria-label="@(o.Id == _selectedId ? "Selected" : "")"></span></td>
-                            <td><a class="order-link" href="#order-details" @onclick:stopPropagation="true" @onclick="@(() => SelectOrder(o))">@o.Number<span class="order-link__open">&#8599;</span></a></td>
+                            <td><span class="checkbox @(o.Id == _selectedId ? "is-checked" : "")" aria-hidden="true"></span></td>
+                            <td>
+                                <a class="order-link"
+                                   href="/orders/@o.Number"
+                                   target="_blank"
+                                   title="Open @o.Number in new tab"
+                                   @onclick:stopPropagation>@o.Number<span class="order-link__open">&#8599;</span></a>
+                            </td>
                             <td class="mono">@o.Date</td>
                             <td class="is-money">@o.Price</td>
                             <td class="is-money @o.DebtClass">@o.Debt</td>
@@ -142,7 +140,7 @@
         </div>
 
         <div class="table-foot">
-            <span>Showing <strong>1-@_filtered.Count</strong> of <strong>@AllOrders.Count</strong> entries</span>
+            <span>Showing <strong>1&#8211;@_filtered.Count</strong> of <strong>284</strong> entries</span>
             <nav class="pagination" aria-label="Pagination bottom">
                 <button type="button" disabled>&#8249; Prev</button>
                 <button type="button" class="is-active">1</button>
@@ -172,7 +170,7 @@
                         <span><b>Store:</b> @_selected.Store</span>
                         <span><b>Status:</b> <span class="chip @_selected.StatusChip chip--sm">@_selected.Status</span></span>
                     </div>
-                    <div class="details__op">Operator: Ruta Markeviciene &middot; 2026-04-29 09:42:17</div>
+                    <div class="details__op">Operator: R&#363;ta Markevi&#269;ien&#279; &middot; 2026-04-29 09:42:17</div>
                 </div>
                 <div class="details__title__actions">
                     <button class="btn btn--ghost" type="button">Print</button>
@@ -203,9 +201,7 @@
                         <tbody>
                             @foreach (var grp in SampleItems)
                             {
-                                <tr class="group-row">
-                                    <td colspan="10">@grp.Label</td>
-                                </tr>
+                                <tr class="group-row"><td colspan="10">@grp.Label</td></tr>
                                 @foreach (var line in grp.Lines)
                                 {
                                     <tr class="@(line.IsAcc ? "acc-row" : "")">
@@ -225,7 +221,6 @@
                         </tbody>
                     </table>
                 </div>
-                @* Mobile items *@
                 <div class="mobile-cards">
                     @foreach (var grp in SampleItems)
                     {
@@ -282,12 +277,7 @@
                             {
                                 <tr>
                                     <td><span class="duty @e.DutyClass">@e.DutyLabel</span></td>
-                                    <td>
-                                        <div class="emp-name">
-                                            <span class="emp-avatar">@e.Initials</span>
-                                            @e.Name
-                                        </div>
-                                    </td>
+                                    <td><div class="emp-name"><span class="emp-avatar">@e.Initials</span>@e.Name</div></td>
                                     <td class="mono">@e.ServiceDate</td>
                                     <td class="mono">@e.AcqDate</td>
                                     <td class="is-num mono">@e.OrderQty</td>
@@ -305,64 +295,92 @@
 </main>
 
 @code {
-    // ── Sample orders (from docs/ux/orders-static-preview.html) ──
+    // ── Sample orders — Lithuanian characters restored ────────────
     private static readonly List<OrderRow> AllOrders =
     [
-        new(1, "KVT-240518-018", "2026-04-29", "1 482,00 \u20ac", "482,00 \u20ac",   "is-debt-pos",     "UAB Audenis Projektai",      true,  false, false, "Gaminamas",    "chip--inprogress", "Vilnius",   "Ukmerges g. 221, Vilnius"),
-        new(2, "KVT-240517-044", "2026-04-28", "746,50 \u20ac",   "0,00 \u20ac",     "is-debt-zero",    "Ingrida Petrauskiene",        false, false, false, "Patvirtintas", "chip--approved",   "Kaunas",    "Savanoriu pr. 284, Kaunas"),
-        new(3, "KVT-240516-102", "2026-04-27", "2 330,00 \u20ac", "2 330,00 \u20ac", "is-debt-overdue", "MB Namai Sau",                true,  true,  false, "Ivestas",      "chip--entered",    "Klaipeda",  "Taikos pr. 52, Klaipeda"),
-        new(4, "KVT-240516-076", "2026-04-26", "392,80 \u20ac",   "0,00 \u20ac",     "is-debt-zero",    "Rasa Butkute",                false, false, false, "Pagamintas",   "chip--made",       "Vilnius",   "Kalvariju g. 125, Vilnius"),
-        new(5, "KVT-240515-031", "2026-04-25", "924,10 \u20ac",   "124,10 \u20ac",   "is-debt-pos",     "UAB Siaures Apartamentai",    false, false, true,  "Filialui",     "chip--shipped",    "Panevezys", "Respublikos g. 39, Panevezys"),
-        new(6, "KVT-240514-009", "2026-04-24", "1 096,00 \u20ac", "0,00 \u20ac",     "is-debt-zero",    "Darius Vaitkus",              false, false, false, "Atiduotas",    "chip--delivered",  "Siauliai",  "Tilzes g. 109, Siauliai"),
-        new(7, "KVT-240513-088", "2026-04-22", "615,70 \u20ac",   "615,70 \u20ac",   "is-debt-overdue", "UAB Interjero Linija",        true,  false, false, "Sustabdytas",  "chip--paused",     "Vilnius",   "Konstitucijos pr. 12, Vilnius"),
+        new(1, "KVT-240518-018", "2026-04-29", "1\u202f482,00\u00a0\u20ac", "482,00\u00a0\u20ac",      "is-debt-pos",     "UAB Audenis Projektai",       true,  false, false, "Gaminamas",    "chip--inprogress", "Vilnius",    "Ukmerge\u0161 g. 221, Vilnius"),
+        new(2, "KVT-240517-044", "2026-04-28", "746,50\u00a0\u20ac",        "0,00\u00a0\u20ac",         "is-debt-zero",    "Ingrida Petrauskien\u0117",    false, false, false, "Patvirtintas", "chip--approved",   "Kaunas",     "Savanori\u0173 pr. 284, Kaunas"),
+        new(3, "KVT-240516-102", "2026-04-27", "2\u202f330,00\u00a0\u20ac", "2\u202f330,00\u00a0\u20ac","is-debt-overdue", "MB Namai Sau",                true,  true,  false, "\u012evestas",  "chip--entered",    "Klaip\u0117da","Taikos pr. 52, Klaip\u0117da"),
+        new(4, "KVT-240516-076", "2026-04-26", "392,80\u00a0\u20ac",        "0,00\u00a0\u20ac",         "is-debt-zero",    "Rasa Butkut\u0117",           false, false, false, "Pagamintas",   "chip--made",       "Vilnius",    "Kalvarij\u0173 g. 125, Vilnius"),
+        new(5, "KVT-240515-031", "2026-04-25", "924,10\u00a0\u20ac",        "124,10\u00a0\u20ac",        "is-debt-pos",     "UAB \u0160iaur\u0117s Apartamentai", false, false, true, "Filialui", "chip--shipped",  "Panev\u0117\u017eys","Respublikos g. 39, Panev\u0117\u017eys"),
+        new(6, "KVT-240514-009", "2026-04-24", "1\u202f096,00\u00a0\u20ac", "0,00\u00a0\u20ac",         "is-debt-zero",    "Darius Vaitkus",              false, false, false, "Atiduotas",    "chip--delivered",  "\u0160iauliai",  "Til\u017e\u0117s g. 109, \u0160iauliai"),
+        new(7, "KVT-240513-088", "2026-04-22", "615,70\u00a0\u20ac",        "615,70\u00a0\u20ac",        "is-debt-overdue", "UAB Interjero Linija",        true,  false, false, "Sustabdytas",  "chip--paused",     "Vilnius",    "Konstitucijos pr. 12, Vilnius"),
     ];
 
-    private static readonly string[] AllStatuses = ["Ivestas", "Patvirtintas", "Gaminamas", "Pagamintas", "Filialui", "Atiduotas", "Sustabdytas"];
-    private static readonly string[] AllStores    = ["Vilnius", "Kaunas", "Klaipeda", "Siauliai", "Panevezys"];
+    // ── Filter options ────────────────────────────────────────────
+    private static readonly IReadOnlyList<SelectOption> StatusOptions =
+    [
+        new("", "All statuses"),
+        new("\u012evestas",  "\u012evestas"),
+        new("Patvirtintas", "Patvirtintas"),
+        new("Gaminamas",    "Gaminamas"),
+        new("Pagamintas",   "Pagamintas"),
+        new("Filialui",     "Filialui"),
+        new("Atiduotas",    "Atiduotas"),
+        new("Sustabdytas",  "Sustabdytas"),
+    ];
 
-    // ── Detail sample data (for KVT-240518-018, UAB Audenis Projektai) ──
+    private static readonly IReadOnlyList<SelectOption> StoreOptions =
+    [
+        new("", "All stores"),
+        new("Vilnius",       "Vilnius"),
+        new("Kaunas",        "Kaunas"),
+        new("Klaip\u0117da", "Klaip\u0117da"),
+        new("\u0160iauliai", "\u0160iauliai"),
+        new("Panev\u0117\u017eys", "Panev\u0117\u017eys"),
+    ];
+
+    private static readonly IReadOnlyList<SelectOption> DateOptions =
+    [
+        new("30d",   "Last 30 days"),
+        new("month", "This month"),
+        new("ytd",   "YTD"),
+    ];
+
+    // ── Detail sample data (UAB Audenis Projektai / KVT-240518-018) ─
     private static readonly IReadOnlyList<ItemGroup> SampleItems =
     [
         new("1. Roller blind Audinys R120",
         [
-            new("1", "Roller blind Audinys R120", "Left",   "White",    "1 250,00", "1 710,00", "Bedroom window",      "2,00", "148,00", "296,00"),
-            new("",  "Metal chain 100 cm",        "",       "",         "",         "",         "",                    "2,00", "8,00",   "16,00",  IsAcc: true),
+            new("1", "Roller blind Audinys R120", "Left",   "White",    "1\u202f250,00", "1\u202f710,00", "Bedroom window",         "2,00", "148,00", "296,00"),
+            new("",  "Metal chain 100 cm",        "",       "",         "",              "",              "",                       "2,00", "8,00",   "16,00",  IsAcc: true),
         ]),
         new("2. Day-night blind DN45",
         [
-            new("2", "Day-night blind DN45",      "Right",  "Graphite", "980,00",   "1 420,00", "Kitchen",             "1,00", "210,00", "210,00"),
+            new("2", "Day-night blind DN45",      "Right",  "Graphite", "980,00",        "1\u202f420,00", "Kitchen",                "1,00", "210,00", "210,00"),
         ]),
         new("3. Vertical blinds V78",
         [
-            new("3", "Vertical blinds V78",       "Center", "Sand",     "2 420,00", "2 360,00", "Office, split controls", "1,00", "960,00", "960,00"),
+            new("3", "Vertical blinds V78",       "Center", "Sand",     "2\u202f420,00", "2\u202f360,00", "Office, split controls", "1,00", "960,00", "960,00"),
         ]),
     ];
 
     private static readonly IReadOnlyList<AmountCard> SampleAmounts =
     [
-        new("Defined",        "1 482,00 \u20ac"),
-        new("Calculated",     "1 540,00 \u20ac"),
-        new("Discount",       "5,00 %"),
-        new("After discount", "1 482,00 \u20ac", "amount-card--total"),
-        new("Paid",           "1 000,00 \u20ac", "amount-card--paid"),
-        new("Debt",           "482,00 \u20ac",   "amount-card--debt"),
+        new("Defined",        "1\u202f482,00\u00a0\u20ac"),
+        new("Calculated",     "1\u202f540,00\u00a0\u20ac"),
+        new("Discount",       "5,00\u00a0%"),
+        new("After discount", "1\u202f482,00\u00a0\u20ac", "amount-card--total"),
+        new("Paid",           "1\u202f000,00\u00a0\u20ac", "amount-card--paid"),
+        new("Debt",           "482,00\u00a0\u20ac",        "amount-card--debt"),
     ];
 
     private static readonly IReadOnlyList<EmployeeLine> SampleEmployees =
     [
-        new("RM", "Ruta Markeviciene",  "duty--sales", "Sales consultant", "2026-04-29", "2026-04-29", "1", "4", "1 482,00"),
-        new("MJ", "Mantas Jankauskas",  "duty--prod",  "Production",       "2026-04-30", "2026-04-30", "1", "3", "1 210,00"),
-        new("TV", "Tomas Varnas",       "duty--inst",  "Installation",     "2026-05-03", "2026-05-03", "1", "4", "272,00"),
+        new("RM", "R\u016bta Markevi\u010dien\u0117", "duty--sales", "Sales consultant", "2026-04-29", "2026-04-29", "1", "4", "1\u202f482,00"),
+        new("MJ", "Mantas Jankauskas",                "duty--prod",  "Production",       "2026-04-30", "2026-04-30", "1", "3", "1\u202f210,00"),
+        new("TV", "Tomas Varnas",                     "duty--inst",  "Installation",     "2026-05-03", "2026-05-03", "1", "4", "272,00"),
     ];
 
     // ── Filter & selection state ──────────────────────────────────
     private List<OrderRow> _filtered = AllOrders.ToList();
-    private string  _search      = "";
-    private string  _statusFilter = "";
-    private string  _storeFilter  = "";
-    private bool    _hasDebtFilter;
-    private int?    _selectedId   = 1;
-    private OrderRow? _selected   = AllOrders[0];
+    private string    _search       = "";
+    private string    _statusFilter = "";
+    private string    _storeFilter  = "";
+    private string    _dateFilter   = "30d";
+    private bool      _hasDebtFilter;
+    private int?      _selectedId   = 1;
+    private OrderRow? _selected     = AllOrders[0];
 
     private void OnSearch(ChangeEventArgs e)
     {

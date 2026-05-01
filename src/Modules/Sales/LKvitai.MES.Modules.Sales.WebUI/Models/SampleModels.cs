@@ -2,6 +2,8 @@ namespace LKvitai.MES.Modules.Sales.WebUI;
 
 /// <summary>S-0 sample view models — replaced by Sales.Contracts DTOs in S-1.</summary>
 
+public record SelectOption(string Value, string Label);
+
 public record OrderRow(
     int    Id,
     string Number,

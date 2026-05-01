@@ -119,8 +119,8 @@ h1 { margin: 0; color: var(--n-900); font-size: 26px; line-height: 1.12; }
 .row-check { width: 13px; height: 13px; accent-color: var(--accent-500); cursor: pointer; }
 
 /* ── Status chips ────────────────────────────────────────────── */
-.chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; font-family: var(--font-mono); font-size: 10.5px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; line-height: 1; border: 1px solid transparent; border-radius: 999px; white-space: nowrap; }
-.chip::before { content: ""; width: 6px; height: 6px; flex-shrink: 0; border-radius: 50%; background: currentColor; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; font-family: var(--font-mono); font-size: 10.5px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; line-height: 1; border: 1px solid transparent; border-radius: 999px; white-space: nowrap; vertical-align: middle; }
+.chip::before { content: ""; width: 6px; height: 6px; flex-shrink: 0; border-radius: 50%; background: currentColor; display: inline-block; }
 .chip--sm { padding: 2px 7px; font-size: 10px; }
 .chip--entered    { background: var(--slate-bg); color: var(--slate-fg); border-color: var(--slate-bd); }
 .chip--approved   { background: var(--info-bg);   color: var(--info-fg);   border-color: var(--info-bd); }
@@ -145,7 +145,7 @@ h1 { margin: 0; color: var(--n-900); font-size: 26px; line-height: 1.12; }
 .danger { color: var(--danger-fg); }
 
 /* ── Order details panel ─────────────────────────────────────── */
-.details { padding: 14px; }
+.details { padding: 14px 14px 22px; }
 .details__breadcrumb { display: flex; align-items: center; gap: 7px; margin-bottom: 10px; color: var(--n-500); font-size: 12px; }
 .details__breadcrumb a { color: var(--accent-700); text-decoration: none; }
 .details__breadcrumb a:hover { text-decoration: underline; }
@@ -184,6 +184,21 @@ h1 { margin: 0; color: var(--n-900); font-size: 26px; line-height: 1.12; }
 .duty::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent-500); flex-shrink: 0; }
 .duty--prod::before { background: var(--sand-600); }
 .duty--inst::before { background: var(--ok-dot); }
+
+/* ── LkSelect custom dropdown ─────────────────────────────── */
+.lk-select { position: relative; cursor: pointer; user-select: none; flex-wrap: nowrap; }
+.lk-select__value { flex: 1; font-size: 12.5px; color: var(--n-900); padding: 0 2px; white-space: nowrap; min-width: 80px; }
+.lk-select__chevron { color: var(--n-400); font-size: 9px; padding: 0 8px 0 4px; flex-shrink: 0; transition: transform .12s; }
+.lk-select--open .lk-select__chevron { transform: rotate(180deg); }
+.lk-select__menu {
+  position: absolute; top: calc(100% + 4px); left: 0;
+  min-width: 160px; z-index: 200; overflow: hidden;
+  background: var(--n-0); border: 1px solid var(--n-200);
+  border-radius: 5px; box-shadow: 0 4px 16px rgb(0 0 0 / 10%);
+}
+.lk-select__opt { padding: 7px 12px; font-size: 12px; color: var(--n-700); cursor: pointer; white-space: nowrap; }
+.lk-select__opt:hover { background: var(--accent-50); color: var(--accent-700); }
+.lk-select__opt.is-selected { background: var(--accent-50); color: var(--accent-700); font-weight: 700; }
 
 /* ── Responsive ──────────────────────────────────────────────── */
 @media (max-width: 980px) {
