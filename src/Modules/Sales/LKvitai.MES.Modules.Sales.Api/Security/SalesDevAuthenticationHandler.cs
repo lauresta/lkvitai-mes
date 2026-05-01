@@ -26,8 +26,8 @@ namespace LKvitai.MES.Modules.Sales.Api.Security;
 /// Implementing the dev shim as a real handler ensures the synthetic user
 /// participates in the same auth pipeline that <c>PolicyEvaluator</c> uses.
 ///
-/// TODO S-3: replace with role-aware identity once the Sales role model is
-/// finalised, then drop this scheme from the default policy.
+/// S-3 follow-up: replace with role-aware identity once the Sales role
+/// model is finalised, then drop this scheme from the default policy.
 /// </summary>
 public sealed class SalesDevAuthenticationHandler
     : AuthenticationHandler<AuthenticationSchemeOptions>

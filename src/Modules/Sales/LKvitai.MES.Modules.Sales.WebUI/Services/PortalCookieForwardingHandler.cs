@@ -10,8 +10,8 @@ namespace LKvitai.MES.Modules.Sales.WebUI.Services;
 /// Portal DataProtection keys (see <c>PortalAuthDefaults</c>), so the cookie is
 /// decryptable on the API side without any extra wiring.
 ///
-/// TODO S-3: replace with role-aware token / scoped service identity when the
-/// Sales role model is finalised.
+/// S-3 follow-up: replace with a role-aware token or scoped service identity
+/// once the Sales role model is finalised.
 /// </summary>
 public sealed class PortalCookieForwardingHandler : DelegatingHandler
 {

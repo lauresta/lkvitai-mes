@@ -1,5 +1,6 @@
 @page "/"
 @inject SalesApiClient Api
+@implements IAsyncDisposable
 
 <PageTitle>Sales · Orders</PageTitle>
 
@@ -232,7 +233,11 @@
     {
         _search = e.Value?.ToString() ?? "";
 
-        _searchCts?.Cancel();
+        if (_searchCts is not null)
+        {
+            await _searchCts.CancelAsync();
+            _searchCts.Dispose();
+        }
         _searchCts = new CancellationTokenSource();
         var token = _searchCts.Token;
 
@@ -242,6 +247,16 @@
             await ReloadAsync();
         }
         catch (TaskCanceledException) { /* superseded by a newer keystroke */ }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_searchCts is not null)
+        {
+            await _searchCts.CancelAsync();
+            _searchCts.Dispose();
+            _searchCts = null;
+        }
     }
 
     private async Task ToggleDebt()

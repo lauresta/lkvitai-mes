@@ -14,14 +14,16 @@ public static class OrderFormat
     private const string NarrowNoBreakSpace = "\u202F";
     private const string NoBreakSpace       = "\u00A0";
 
-    private static readonly NumberFormatInfo MoneyFormat = BuildMoneyFormat();
-    private static readonly NumberFormatInfo PercentFormat = BuildPercentFormat();
+    // Money and percent share the Lithuanian numeric grammar: NNBSP thousands
+    // separator, comma decimal, group of 3. Only the trailing unit differs,
+    // so we keep a single shared NumberFormatInfo instead of two clones.
+    private static readonly NumberFormatInfo NumberFormat = BuildNumberFormat();
 
     public static string Money(decimal value)
-        => value.ToString("N2", MoneyFormat) + NoBreakSpace + "\u20AC";
+        => value.ToString("N2", NumberFormat) + NoBreakSpace + "\u20AC";
 
     public static string Percent(decimal value)
-        => value.ToString("N2", PercentFormat) + NoBreakSpace + "%";
+        => value.ToString("N2", NumberFormat) + NoBreakSpace + "%";
 
     public static string Date(DateOnly value)
         => value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
@@ -33,10 +35,10 @@ public static class OrderFormat
         => value.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
 
     public static string Dimension(decimal? value)
-        => value is null ? string.Empty : value.Value.ToString("N2", MoneyFormat);
+        => value is null ? string.Empty : value.Value.ToString("N2", NumberFormat);
 
     public static string Quantity(decimal value)
-        => value.ToString("N2", MoneyFormat);
+        => value.ToString("N2", NumberFormat);
 
     public static string Integer(int value)
         => value.ToString(CultureInfo.InvariantCulture);
@@ -88,16 +90,7 @@ public static class OrderFormat
         };
     }
 
-    private static NumberFormatInfo BuildMoneyFormat()
-    {
-        var nfi = (NumberFormatInfo)CultureInfo.InvariantCulture.NumberFormat.Clone();
-        nfi.NumberGroupSeparator   = NarrowNoBreakSpace;
-        nfi.NumberDecimalSeparator = ",";
-        nfi.NumberGroupSizes       = new[] { 3 };
-        return nfi;
-    }
-
-    private static NumberFormatInfo BuildPercentFormat()
+    private static NumberFormatInfo BuildNumberFormat()
     {
         var nfi = (NumberFormatInfo)CultureInfo.InvariantCulture.NumberFormat.Clone();
         nfi.NumberGroupSeparator   = NarrowNoBreakSpace;

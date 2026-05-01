@@ -1,6 +1,7 @@
 using LKvitai.MES.Modules.Sales.Application.Ports;
 using LKvitai.MES.Modules.Sales.Contracts.Common;
 using LKvitai.MES.Modules.Sales.Contracts.Orders;
+using Microsoft.AspNetCore.Http;
 
 namespace LKvitai.MES.Modules.Sales.Api.Endpoints;
 
@@ -31,28 +32,17 @@ public static class OrdersEndpoints
     }
 
     private static async Task<IResult> GetOrdersAsync(
+        [AsParameters] OrdersQueryParams query,
         IOrdersQueryService orders,
-        CancellationToken cancellationToken,
-        string? search = null,
-        string? status = null,
-        string? store = null,
-        string? date = null,
-        bool hasDebt = false,
-        int page = 1,
-        int pageSize = 100)
+        CancellationToken cancellationToken)
     {
-        var query = new OrdersQueryParams
+        var safeQuery = query with
         {
-            Search   = search,
-            Status   = status,
-            Store    = store,
-            Date     = date,
-            HasDebt  = hasDebt,
-            Page     = page < 1 ? 1 : page,
-            PageSize = pageSize is < 1 or > 500 ? 100 : pageSize,
+            Page     = query.Page < 1 ? 1 : query.Page,
+            PageSize = query.PageSize is < 1 or > 500 ? 100 : query.PageSize,
         };
 
-        var result = await orders.GetOrdersAsync(query, cancellationToken).ConfigureAwait(false);
+        var result = await orders.GetOrdersAsync(safeQuery, cancellationToken).ConfigureAwait(false);
         return Results.Ok(result);
     }
 
