@@ -6,7 +6,7 @@ namespace LKvitai.MES.Modules.Sales.Contracts.Orders;
 /// All raw values — the WebUI handles formatting and chip / debt-tier classes.
 /// </summary>
 public sealed record OrderDetailsDto(
-    int Id,
+    long Id,
     string Number,
     DateOnly Date,
     decimal Price,

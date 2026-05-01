@@ -1,9 +1,8 @@
 using LKvitai.MES.BuildingBlocks.ModuleStartup;
 using LKvitai.MES.BuildingBlocks.PortalAuth;
+using LKvitai.MES.Modules.Sales.Api.Composition;
 using LKvitai.MES.Modules.Sales.Api.Endpoints;
 using LKvitai.MES.Modules.Sales.Api.Security;
-using LKvitai.MES.Modules.Sales.Application.Ports;
-using LKvitai.MES.Modules.Sales.Infrastructure.Stub;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
@@ -13,9 +12,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.UseScaffoldSerilog("sales");
 builder.Services.AddScaffoldApiCore();
 
-// S-1: in-memory stub for the orders read model. Replaced in S-2 by the real
-// SQL Server adapter over the legacy weblb_* stored procedures.
-builder.Services.AddSingleton<IOrdersQueryService, StubOrdersQueryService>();
+// S-2: bind the orders read-side to the SQL Server adapter
+// (SqlOrdersQueryService over the legacy weblb_* stored procedures). Requires
+// ConnectionStrings:LKvitaiDb in every environment — Sales.Api now refuses to
+// start without it. The in-memory StubOrdersQueryService is only used when
+// Sales:OrdersDataSource is explicitly set to "Stub" (test / dev opt-in).
+builder.Services.AddSalesOrdersDataSource(builder.Configuration, builder.Environment);
 
 // Sales replicates Warehouse's "internal user mechanism" by leaning on the shared
 // Portal cookie (PortalAuth). Same DataProtection keys, same cookie name, so a user
