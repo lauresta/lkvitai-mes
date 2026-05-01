@@ -1,0 +1,98 @@
+@namespace LKvitai.MES.BuildingBlocks.WebUI.Components
+@inject NavigationManager Navigation
+
+<div class="app-shell">
+    <div class="test-strip">
+        <div class="test-strip__main">
+            <span class="icon-warning" aria-hidden="true"></span>
+            <strong>@EnvironmentLabel ENVIRONMENT</strong>
+            <span class="test-strip__note">@BannerNote</span>
+        </div>
+        <span class="mono test-strip__host">@DisplayHost</span>
+    </div>
+
+    <header class="topbar">
+        <div class="brand">
+            <div class="brand__mark">LK</div>
+            <div>
+                <div class="brand__name">LKvitai<span>.MES</span></div>
+                <div class="brand__tagline mono">Manufacturing &middot; Execution &middot; Standards</div>
+            </div>
+        </div>
+        <div class="topbar__separator" aria-hidden="true"></div>
+        <label class="portal-search">
+            <span class="portal-search__icon" aria-hidden="true"></span>
+            <span class="sr-only">@SearchLabel</span>
+            <input type="search" placeholder="@SearchPlaceholder" autocomplete="off" />
+        </label>
+        <div class="topbar__spacer"></div>
+        <div class="env-badge" aria-label="Environment and version">
+            <div><span class="mono">ENV</span><strong class="mono">@EnvironmentBadge</strong></div>
+            <div><span class="mono">VER</span><strong class="mono">@Version</strong></div>
+        </div>
+        <div class="user-block">
+            <div class="user-block__avatar">@Initials</div>
+            <div>
+                <div class="user-block__name">@DisplayName</div>
+                <form action="@LogoutAction" method="post" class="logout-form">
+                    <button class="link-button" type="submit">Logout</button>
+                </form>
+            </div>
+        </div>
+    </header>
+
+    @Body
+</div>
+
+@code {
+    [Parameter] public RenderFragment? Body { get; set; }
+    [Parameter] public ClaimsPrincipal? User { get; set; }
+    [Parameter] public string EnvironmentName { get; set; } = "Development";
+    [Parameter] public string? HostLabel { get; set; }
+    [Parameter] public string Version { get; set; } = "0.1.0";
+    [Parameter] public string SearchPlaceholder { get; set; } = "Find a module...";
+    [Parameter] public string SearchLabel { get; set; } = "Find a module";
+    [Parameter] public string LogoutAction { get; set; } = "auth/logout";
+    [Parameter] public string BannerNote { get; set; } = "Data in this environment is not production data and may be reset without notice.";
+
+    private string EnvironmentLabel => (EnvironmentName ?? "Development").ToUpperInvariant();
+
+    private string DisplayHost => !string.IsNullOrWhiteSpace(HostLabel)
+        ? HostLabel
+        : ResolveNavigationHost();
+
+    private string EnvironmentBadge
+    {
+        get
+        {
+            var name = EnvironmentName ?? "Development";
+            return name.Length <= 4 ? name.ToUpperInvariant() : name[..4].ToUpperInvariant();
+        }
+    }
+
+    private string DisplayName => User?.FindFirstValue(ClaimTypes.Name)
+                                  ?? User?.Identity?.Name
+                                  ?? "Signed in";
+
+    private string Initials
+    {
+        get
+        {
+            var parts = DisplayName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            var raw = parts.Length >= 2
+                ? $"{parts[0][0]}{parts[1][0]}"
+                : parts.Length == 1 ? parts[0][0].ToString() : "U";
+            return raw.ToUpperInvariant();
+        }
+    }
+
+    private string ResolveNavigationHost()
+    {
+        if (Uri.TryCreate(Navigation.Uri, UriKind.Absolute, out var uri) && !string.IsNullOrWhiteSpace(uri.Host))
+        {
+            return uri.Host;
+        }
+
+        return "localhost";
+    }
+}
