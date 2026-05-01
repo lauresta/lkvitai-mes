@@ -98,6 +98,8 @@ h1 { margin: 0; color: var(--n-900); font-size: 26px; line-height: 1.12; }
 .pagination button { min-width: 28px; min-height: 28px; padding: 4px 8px; border: 1px solid var(--n-200); border-radius: 5px; background: var(--n-0); color: var(--n-600); font-size: 12px; font-weight: 700; cursor: pointer; }
 .pagination button.is-active { border-color: var(--accent-600); background: var(--accent-600); color: var(--n-0); }
 .pagination button:disabled { color: var(--n-300); cursor: default; border-color: var(--n-150); }
+.pagination button.is-active:disabled { color: var(--n-0); border-color: var(--accent-600); background: var(--accent-600); cursor: default; }
+.pagination__ellipsis { min-width: 18px; text-align: center; font-size: 12px; color: var(--n-400); padding: 0 2px; user-select: none; }
 
 /* ── Table wrap + lk-table ──────────────────────────────────── */
 .table-wrap { overflow: auto; }
@@ -209,6 +211,9 @@ h1 { margin: 0; color: var(--n-900); font-size: 26px; line-height: 1.12; }
 .lk-select__opt { padding: 7px 12px; font-size: 12px; color: var(--n-700); cursor: pointer; white-space: nowrap; }
 .lk-select__opt:hover { background: var(--accent-50); color: var(--accent-700); }
 .lk-select__opt.is-selected { background: var(--accent-50); color: var(--accent-700); font-weight: 700; }
+.lk-select.is-disabled { cursor: not-allowed; opacity: .55; }
+.lk-select.is-disabled .lk-select__value { color: var(--n-500); }
+.lk-select.is-disabled .lk-select__chevron { opacity: .4; }
 
 /* ── Responsive ──────────────────────────────────────────────── */
 @media (max-width: 980px) {
