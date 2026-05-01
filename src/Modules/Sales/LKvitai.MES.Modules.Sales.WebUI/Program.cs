@@ -11,10 +11,10 @@ builder.Services.AddPortalCookieAuthentication(builder.Environment, builder.Conf
 builder.Services.AddAuthorization();
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddTransient<PortalCookieForwardingHandler>();
+builder.Services.AddTransient<SalesApiAuthHandler>();
 builder.Services
     .AddHttpClient("SalesApi")
-    .AddHttpMessageHandler<PortalCookieForwardingHandler>();
+    .AddHttpMessageHandler<SalesApiAuthHandler>();
 builder.Services.AddScoped<SalesApiClient>();
 
 var app = builder.Build();
