@@ -1,5 +1,11 @@
 # CLAUDE.md - LKvitai.MES
 
+## Mandatory Agent Instructions
+
+Before making UI, UX, Blazor, MudBlazor, CSS, layout, table, chip, button, or Portal/WebUI changes, read `AGENTS.md`.
+
+The required UX/design source of truth is `docs/ux/lkvitai-mes-ux-handoff.html`. Do not invent new colors or a new visual language; use the Portal/Login baseline, token families, and MudBlazor mapping rules documented there.
+
 ## Project Overview
 
 LKvitai.MES is a warehouse management module (WMS) for a Manufacturing Execution System (MES). It provides real-time inventory tracking, physical location visualization (2D/3D), cycle counting, unit conversion, and accounting integration with Agnum.
