@@ -209,8 +209,22 @@
     {
         try
         {
-            _order = await Api.GetOrderDetailsAsync(Number, CancellationToken.None);
-            _loadFailed = false;
+            var result = await Api.GetOrderDetailsAsync(Number, CancellationToken.None);
+            switch (result.Outcome)
+            {
+                case SalesApiOutcome.Ok:
+                    _order = result.Value;
+                    _loadFailed = false;
+                    break;
+                case SalesApiOutcome.NotFound:
+                    _order = null;
+                    _loadFailed = false;
+                    break;
+                default: // Failed
+                    _order = null;
+                    _loadFailed = true;
+                    break;
+            }
         }
         catch
         {

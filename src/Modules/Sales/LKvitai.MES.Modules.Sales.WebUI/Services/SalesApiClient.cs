@@ -6,10 +6,35 @@ using LKvitai.MES.Modules.Sales.Contracts.Orders;
 namespace LKvitai.MES.Modules.Sales.WebUI.Services;
 
 /// <summary>
+/// Outcome of a single Sales API call. Lets the calling Razor page tell
+/// "the order genuinely does not exist" (NotFound) apart from
+/// "the API call itself failed" (Failed) so the user sees an accurate
+/// message instead of a misleading "Order not found" on a 401 / 5xx /
+/// transport error.
+/// </summary>
+public enum SalesApiOutcome
+{
+    Ok,
+    NotFound,
+    Failed,
+}
+
+/// <summary>Result wrapper for a single-resource fetch.</summary>
+public sealed record SalesApiResult<T>(SalesApiOutcome Outcome, T? Value)
+{
+    public static SalesApiResult<T> Ok(T value)        => new(SalesApiOutcome.Ok, value);
+    public static SalesApiResult<T> NotFound()         => new(SalesApiOutcome.NotFound, default);
+    public static SalesApiResult<T> Failed()           => new(SalesApiOutcome.Failed, default);
+}
+
+/// <summary>
 /// Thin Sales WebUI HTTP wrapper around the named "SalesApi" <see cref="HttpClient"/>
-/// registered by <c>AddScaffoldWebUiCore</c>. Returns <c>null</c> on transport or
-/// non-success responses so the calling Razor page can render the compact empty/error
-/// state without crashing the page.
+/// registered by <c>AddScaffoldWebUiCore</c>. The list call returns <c>null</c> on
+/// any non-success / transport failure so the toolbar can render its compact
+/// "Sales API unreachable" state. The details call returns a structured
+/// <see cref="SalesApiResult{T}"/> so the details page can distinguish a real
+/// 404 ("Order not found") from an auth/transport failure ("Sales API
+/// unreachable").
 /// </summary>
 public sealed class SalesApiClient
 {
@@ -62,16 +87,16 @@ public sealed class SalesApiClient
 
     /// <summary>
     /// Fetches the full details payload for a single order from
-    /// <c>GET /api/sales/orders/{number}</c>. Returns <c>null</c> when the order
-    /// does not exist (404) or the API is unreachable.
+    /// <c>GET /api/sales/orders/{number}</c>. Returns a wrapped outcome so the
+    /// details page can render different copy for "not found" vs "API error".
     /// </summary>
-    public async Task<OrderDetailsDto?> GetOrderDetailsAsync(
+    public async Task<SalesApiResult<OrderDetailsDto>> GetOrderDetailsAsync(
         string number,
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(number))
         {
-            return null;
+            return SalesApiResult<OrderDetailsDto>.NotFound();
         }
 
         var client = _httpClientFactory.CreateClient(HttpClientName);
@@ -82,7 +107,7 @@ public sealed class SalesApiClient
             using var response = await client.GetAsync(url, cancellationToken).ConfigureAwait(false);
             if (response.StatusCode == HttpStatusCode.NotFound)
             {
-                return null;
+                return SalesApiResult<OrderDetailsDto>.NotFound();
             }
 
             if (!response.IsSuccessStatusCode)
@@ -91,17 +116,21 @@ public sealed class SalesApiClient
                     "Sales API returned {StatusCode} for {Url}",
                     response.StatusCode,
                     url);
-                return null;
+                return SalesApiResult<OrderDetailsDto>.Failed();
             }
 
-            return await response.Content
+            var body = await response.Content
                 .ReadFromJsonAsync<OrderDetailsDto>(cancellationToken)
                 .ConfigureAwait(false);
+
+            return body is null
+                ? SalesApiResult<OrderDetailsDto>.Failed()
+                : SalesApiResult<OrderDetailsDto>.Ok(body);
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {
             _logger.LogError(ex, "Sales API call to {Url} failed", url);
-            return null;
+            return SalesApiResult<OrderDetailsDto>.Failed();
         }
     }
 

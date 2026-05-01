@@ -32,17 +32,12 @@ public static class OrdersEndpoints
     }
 
     private static async Task<IResult> GetOrdersAsync(
-        [AsParameters] OrdersQueryParams query,
+        [AsParameters] OrdersListRequest request,
         IOrdersQueryService orders,
         CancellationToken cancellationToken)
     {
-        var safeQuery = query with
-        {
-            Page     = query.Page < 1 ? 1 : query.Page,
-            PageSize = query.PageSize is < 1 or > 500 ? 100 : query.PageSize,
-        };
-
-        var result = await orders.GetOrdersAsync(safeQuery, cancellationToken).ConfigureAwait(false);
+        var query = request.ToQueryParams();
+        var result = await orders.GetOrdersAsync(query, cancellationToken).ConfigureAwait(false);
         return Results.Ok(result);
     }
 
@@ -53,5 +48,39 @@ public static class OrdersEndpoints
     {
         var details = await orders.GetOrderDetailsAsync(number, cancellationToken).ConfigureAwait(false);
         return details is null ? Results.NotFound() : Results.Ok(details);
+    }
+
+    /// <summary>
+    /// API-side binding shape for <c>GET /api/sales/orders</c>. All members are
+    /// nullable so missing query string values bind to <c>null</c> instead of
+    /// triggering a <c>BadHttpRequestException</c> from minimal-API binding.
+    /// Mapped into the layer-neutral <see cref="OrdersQueryParams"/> with the
+    /// Page / PageSize range guards applied here so the Application contract
+    /// stays free of HTTP concerns.
+    /// </summary>
+    private sealed record OrdersListRequest(
+        string? Search,
+        string? Status,
+        string? Store,
+        string? Date,
+        bool?   HasDebt,
+        int?    Page,
+        int?    PageSize)
+    {
+        public OrdersQueryParams ToQueryParams()
+        {
+            var page = Page is null or < 1 ? 1 : Page.Value;
+            var size = PageSize is null or < 1 or > 500 ? 100 : PageSize.Value;
+            return new OrdersQueryParams
+            {
+                Search   = Search,
+                Status   = Status,
+                Store    = Store,
+                Date     = Date,
+                HasDebt  = HasDebt ?? false,
+                Page     = page,
+                PageSize = size,
+            };
+        }
     }
 }
