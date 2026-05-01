@@ -25,6 +25,10 @@ public static class ScaffoldModuleStartupExtensions
             .Filter.ByExcluding(logEvent => logEvent.Level is LogEventLevel.Debug or LogEventLevel.Verbose)
             .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
             .MinimumLevel.Override("System", LogEventLevel.Warning)
+            // Surface Kestrel lifecycle messages ("Now listening on:", "Application
+            // started.", "Hosting environment", "Content root path") so module
+            // operators can see at a glance that the host actually came up.
+            .MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Information)
             .Enrich.FromLogContext()
             .WriteTo.Console(outputTemplate: StructuredLogTemplate)
             .WriteTo.File(

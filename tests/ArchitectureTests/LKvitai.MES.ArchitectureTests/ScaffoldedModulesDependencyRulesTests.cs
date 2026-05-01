@@ -3,14 +3,21 @@ using Xunit;
 namespace LKvitai.MES.ArchitectureTests;
 
 /// <summary>
-/// Enforces the scaffolding-era dependency rules for the three new modules
+/// Enforces the dependency rules for the three new modules
 /// (Sales, Frontline, Scanning):
 ///
 ///   Modules.X.WebUI         -> Modules.X.Contracts (+ BuildingBlocks)
-///   Modules.X.Api           -> Modules.X.Application + Modules.X.Contracts (+ BuildingBlocks)
+///   Modules.X.Api           -> Modules.X.Application + Modules.X.Contracts
+///                            + Modules.X.Infrastructure (composition root only)
+///                            (+ BuildingBlocks)
 ///   Modules.X.Application   -> Modules.X.Contracts (+ BuildingBlocks)
 ///   Modules.X.Infrastructure-> Modules.X.Application + Modules.X.Contracts (+ BuildingBlocks)
 ///   Modules.X.Contracts     -> BuildingBlocks only (no module project refs)
+///
+/// Api is allowed to reference Infrastructure of its own module purely for the
+/// composition-root wire-up (the same pattern Warehouse uses). It must not
+/// import Infrastructure types in business code — only in <c>Program.cs</c> /
+/// startup extensions for DI registration.
 ///
 /// None of the projects above may reference projects in a *different* module.
 ///
@@ -84,11 +91,12 @@ public class ScaffoldedModulesDependencyRulesTests
             if (!IsModuleProject(r)) continue;
 
             Assert.True(
-                IsSameModuleApplication(r, module) || IsSameModuleContracts(r, module),
+                IsSameModuleApplication(r, module)
+                    || IsSameModuleContracts(r, module)
+                    || IsSameModuleInfrastructure(r, module),
                 $"Api in {module} has disallowed module reference: {r}");
         }
 
-        Assert.DoesNotContain(refs, r => IsModuleInfrastructure(r));
         Assert.DoesNotContain(refs, r => IsModuleWebUI(r));
     }
 
@@ -152,6 +160,9 @@ public class ScaffoldedModulesDependencyRulesTests
 
     private static bool IsSameModuleApplication(string reference, string module) =>
         reference.EndsWith($"LKvitai.MES.Modules.{module}.Application.csproj", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsSameModuleInfrastructure(string reference, string module) =>
+        reference.EndsWith($"LKvitai.MES.Modules.{module}.Infrastructure.csproj", StringComparison.OrdinalIgnoreCase);
 
     private static bool IsModuleApplication(string reference) =>
         reference.EndsWith(".Application.csproj", StringComparison.OrdinalIgnoreCase);

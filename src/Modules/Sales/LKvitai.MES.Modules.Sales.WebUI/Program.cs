@@ -1,5 +1,6 @@
 using LKvitai.MES.BuildingBlocks.ModuleStartup;
 using LKvitai.MES.BuildingBlocks.PortalAuth;
+using LKvitai.MES.Modules.Sales.WebUI.Services;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -9,6 +10,12 @@ builder.Services.AddScaffoldWebUiCore("SalesApi", "SalesApi:BaseUrl", "http://lo
 builder.Services.AddPortalCookieAuthentication(builder.Environment, builder.Configuration);
 builder.Services.AddAuthorization();
 builder.Services.AddCascadingAuthenticationState();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddTransient<PortalCookieForwardingHandler>();
+builder.Services
+    .AddHttpClient("SalesApi")
+    .AddHttpMessageHandler<PortalCookieForwardingHandler>();
+builder.Services.AddScoped<SalesApiClient>();
 
 var app = builder.Build();
 
