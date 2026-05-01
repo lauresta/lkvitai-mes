@@ -19,6 +19,14 @@ namespace LKvitai.MES.Modules.Sales.Contracts.Orders;
 /// <param name="StatusCode">Stable semantic code from <see cref="OrderStatusCodes"/>.</param>
 /// <param name="Store">Owning store / branch (e.g. Vilnius).</param>
 /// <param name="Address">Customer or delivery address shown in the list.</param>
+/// <param name="ProductsSearch">
+/// Hidden, non-displayed haystack of product / accessory / color / note text aggregated
+/// across the order's line items. Mirrors the legacy <c>weblb_Order.ProductsSearch</c>
+/// column so the toolbar search input ("/" key) matches order codes printed on items
+/// (e.g. <c>R120</c>) without forcing the user to scroll through item lines. Optional
+/// — adapters that have not populated it leave this <c>null</c> and the WebUI just
+/// matches on <c>Number / Customer / Address</c>.
+/// </param>
 public sealed record OrderSummaryDto(
     int Id,
     string Number,
@@ -33,4 +41,5 @@ public sealed record OrderSummaryDto(
     string Status,
     string StatusCode,
     string Store,
-    string Address);
+    string Address,
+    string? ProductsSearch = null);
