@@ -6,9 +6,10 @@
 
     @* Page head *@
     <div class="page-head">
-        <div class="page-head__text">
-            <p class="page-head__eyebrow">Sales</p>
-            <h1 class="page-head__title">Orders</h1>
+        <div>
+            <p class="page-head__eyebrow mono">Sales &middot; Orders</p>
+            <h1 class="page-head__title">Orders list and order details</h1>
+            <p class="page-head__sub">Compact operational Sales Orders preview. The list is dense by default; selected row drives the details panel below.</p>
         </div>
         <div class="page-head__actions">
             <button class="btn btn-ghost">Export</button>
@@ -19,41 +20,48 @@
     @* Orders list panel *@
     <div class="panel orders-list">
         <div class="panel__head">
-            <span class="panel__title">Orders list</span>
-            <span class="panel__meta">@_filtered.Count orders</span>
+            <div>
+                <h2 class="panel__title">Recent, unpaid and unfinished orders</h2>
+                <span class="panel__sub">Server-side search will include hidden product text from legacy ProductsSearch.</span>
+            </div>
+            <span class="panel__meta mono">Compact &middot; @_filtered.Count rows &middot; sorted by Date desc</span>
         </div>
 
         <div class="toolbar">
-            <div class="field field--search">
-                <input type="text"
-                       placeholder="Search… (/)"
+            <label class="field field--search">
+                <span class="key-hint" aria-hidden="true">/</span>
+                <input type="search"
+                       placeholder="Search orders"
                        value="@_search"
+                       aria-label="Search orders"
                        @oninput="OnSearch" />
-            </div>
-            <div class="field">
-                <select @bind="_statusFilter" @bind:after="ApplyFilters">
+            </label>
+            <label class="field">
+                <span class="toolbar__label">Status</span>
+                <select @bind="_statusFilter" @bind:after="ApplyFilters" aria-label="Status filter">
                     <option value="">All statuses</option>
                     @foreach (var s in AllStatuses)
                     {
                         <option value="@s">@s</option>
                     }
                 </select>
-            </div>
-            <div class="field">
-                <select @bind="_storeFilter" @bind:after="ApplyFilters">
+            </label>
+            <label class="field">
+                <span class="toolbar__label">Store</span>
+                <select @bind="_storeFilter" @bind:after="ApplyFilters" aria-label="Store filter">
                     <option value="">All stores</option>
                     @foreach (var s in AllStores)
                     {
                         <option value="@s">@s</option>
                     }
                 </select>
-            </div>
-            <label class="filter-toggle">
+            </label>
+            <label class="filter-toggle" title="Show only orders with outstanding debt">
                 <input type="checkbox" @bind="_hasDebtFilter" @bind:after="ApplyFilters" />
                 <span>Has debt</span>
             </label>
             <div class="toolbar__spacer"></div>
-            <span class="panel__meta">@_filtered.Count of @AllOrders.Count</span>
+            <span class="panel__meta mono">@_filtered.Count of @AllOrders.Count</span>
         </div>
 
         @* Desktop grid *@
