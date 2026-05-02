@@ -103,8 +103,74 @@ jobs:
             done
           done
 
-      - name: Build and push ${{ matrix.name }} image
-        uses: docker/build-push-action@v5
+      # Build the image with up to 3 attempts.
+      #
+      # The probe step above already retries `imagetools inspect` 5 times,
+      # but BuildKit (running inside the docker-container driver) keeps its
+      # own short-lived manifest cache and re-issues a HEAD against MCR when
+      # the actual build kicks off. When MCR's Front Door is moody (we have
+      # seen this twice in two days, https://github.com/lauresta/lkvitai-mes/issues/85)
+      # it returns HTML 403 instead of a manifest, the action has no built-in
+      # retry, and the matrix entry dies — forcing a manual `gh run rerun`
+      # before main can move forward.
+      #
+      # The pattern below retries the EXACT SAME action invocation up to two
+      # additional times with growing back-off (30s, 60s). Each attempt is
+      # gated on the previous one having failed, so a successful first pass
+      # adds zero latency. The final attempt drops `continue-on-error` so a
+      # genuine, persistent failure still fails the matrix entry within
+      # ~3 min of wait + 3 attempts of build time, matching the budget on
+      # issue #85.
+      - name: Build and push ${{ matrix.name }} image (attempt 1/3)
+        id: build1
+        continue-on-error: true
+        # Pinned to a commit SHA (v5.4.0) per Sonar githubactions:S7637 — protects
+        # the CI/CD pipeline from a potential supply-chain compromise of the
+        # docker/build-push-action repo. Bump when you intentionally upgrade.
+        uses: docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25 # v5.4.0
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+
+      - name: Wait before retry (attempt 2)
+        if: steps.build1.outcome == 'failure'
+        shell: bash
+        run: |
+          echo "::warning::attempt 1 failed, sleeping 30s before retry"
+          sleep 30
+
+      - name: Build and push ${{ matrix.name }} image (attempt 2/3)
+        id: build2
+        if: steps.build1.outcome == 'failure'
+        continue-on-error: true
+        uses: docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25 # v5.4.0
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+
+      - name: Wait before retry (attempt 3)
+        if: steps.build1.outcome == 'failure' && steps.build2.outcome == 'failure'
+        shell: bash
+        run: |
+          echo "::warning::attempts 1 and 2 failed, sleeping 60s before final retry"
+          sleep 60
+
+      # Final attempt — no continue-on-error so a sustained outage still fails
+      # the matrix entry. This is the step whose outcome the job exit code
+      # ultimately reports against.
+      - name: Build and push ${{ matrix.name }} image (attempt 3/3, final)
+        if: steps.build1.outcome == 'failure' && steps.build2.outcome == 'failure'
+        uses: docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25 # v5.4.0
         with:
           context: .
           file: ${{ matrix.dockerfile }}
