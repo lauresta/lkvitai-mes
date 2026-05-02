@@ -92,12 +92,12 @@ public sealed class SqlOrdersQueryService : IOrdersQueryService
         var rows = new List<OrderSummaryDto>(capacity: pageSize);
         var totalRows = 0;
 
+        // The SP repeats the windowed total count on every row, so any row
+        // works — keep the last one read (or zero if the page is empty).
         var matSw = Stopwatch.StartNew();
         while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
         {
             rows.Add(ReadOrderSummary(reader));
-            // TotalRows is windowed COUNT(*) OVER () — same value on every row;
-            // we just keep the last one read (or zero if the page is empty).
             totalRows = (int)ReadInt64ByOrdinal(reader, ordinal: 12);
         }
         matSw.Stop();
