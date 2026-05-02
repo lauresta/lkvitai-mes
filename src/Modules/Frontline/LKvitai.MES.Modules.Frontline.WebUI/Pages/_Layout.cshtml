@@ -8,7 +8,16 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="~/" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+    @* asp-append-version=true emits a content-hash query string (?v=...) so a
+       redeploy of the same URL with new content reaches the user immediately
+       (avoids stale CDN/browser cache). Same pattern as Sales.WebUI. *@
+    <link href="css/tokens.css" rel="stylesheet" asp-append-version="true" />
+    <link href="_content/LKvitai.MES.BuildingBlocks.WebUI/css/portal-shell.css" rel="stylesheet" asp-append-version="true" />
+    <link href="css/fabric.css" rel="stylesheet" asp-append-version="true" />
     <link rel="icon" href="data:," />
     <title>LKvitai.MES · Frontline</title>
     <component type="typeof(HeadOutlet)" render-mode="ServerPrerendered" />
@@ -21,6 +30,14 @@
         <a href="" class="reload">Reload</a>
         <a class="dismiss">🗙</a>
     </div>
+
+    @* Required for PersistentComponentState to actually transfer state from
+       the prerender pass to the interactive (post-SignalR) pass. Frontline
+       doesn't currently use PersistentComponentState for its hardcoded
+       sample data, but we wire the tag now so adding it later (F-1+) doesn't
+       require a layout edit. Same hardening pattern as Sales.WebUI — see
+       Sales.WebUI/Pages/_Layout.cshtml for the full circuit-death story. *@
+    <persist-component-state />
 
     <script src="_framework/blazor.server.js"></script>
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>

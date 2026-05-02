@@ -1,0 +1,30 @@
+@* FaHeader — dark Fabric Availability sub-header rendered at the top of
+   each Frontline page, BELOW the shared PortalModuleShell topbar. Hosts:
+     - "FA" brand mark + page title/subtitle
+     - mode switcher (Lookup ↔ Low stock)
+
+   Visual baseline: docs/ux/fabric-availability-static-preview.html .mobile-top.
+   On desktop the same FaHeader sits inside the phone-frame (Lookup mode)
+   or runs full-width across the desktop low-stock list. *@
+
+<header class="fa-header" role="banner">
+    <div class="fa-header__brand">
+        <div class="fa-header__icon" aria-hidden="true">FA</div>
+        <div>
+            <div class="fa-header__title">@Title</div>
+            <div class="fa-header__sub mono">@Subtitle</div>
+        </div>
+    </div>
+
+    @if (ShowModeSwitcher)
+    {
+        <ModeSwitcher CurrentMode="@CurrentMode" />
+    }
+</header>
+
+@code {
+    [Parameter] public string  Title           { get; set; } = "Fabric availability";
+    [Parameter] public string  Subtitle        { get; set; } = "Frontline";
+    [Parameter] public string  CurrentMode     { get; set; } = "lookup";
+    [Parameter] public bool    ShowModeSwitcher { get; set; } = true;
+}

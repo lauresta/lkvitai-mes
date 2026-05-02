@@ -1,0 +1,57 @@
+:root {
+  /* Neutrals — cool graphite */
+  --n-0: #fff;
+  --n-25: #fbfcfd;
+  --n-50: #f5f6f8;
+  --n-100: #eef1f4;
+  --n-150: #e2e7ec;
+  --n-200: #d5dce4;
+  --n-300: #b9c3ce;
+  --n-400: #8996a4;
+  --n-500: #66717f;
+  --n-600: #4e5966;
+  --n-700: #323b45;
+  --n-800: #1f2632;
+  --n-900: #151922;
+
+  /* Teal — primary accent */
+  --accent-50: #eaf8f7;
+  --accent-100: #d1eeec;
+  --accent-400: #56aaa7;
+  --accent-500: #2f8f8b;
+  --accent-600: #257773;
+  --accent-700: #1d5d5a;
+
+  /* Sand — warn/operational only (notes, low-stock highlights, scaffold accents) */
+  --sand-25: #faf6ee;
+  --sand-50: #f7f1e5;
+  --sand-100: #ede2c8;
+  --sand-150: #e4dbc5;
+  --sand-300: #daceb7;
+  --sand-500: #c79f63;
+  --sand-600: #b08a4a;
+  --sand-700: #7c5f2a;
+
+  /* Functional chip families — incl. dot variants used by status-block + meters-bar */
+  --ok-fg: #19744a;     --ok-bg: #e6f4ec;     --ok-bd: #bfe0cd;     --ok-dot: #1f9d61;
+  --warn-fg: #7c5f2a;   --warn-bg: #f7eed5;   --warn-bd: #e2cf9a;   --warn-dot: #b08a4a;
+  --info-fg: #1d5d5a;   --info-bg: #e3f2f1;   --info-bd: #b4dad7;   --info-dot: #2f8f8b;
+  --slate-fg: #3a4554;  --slate-bg: #eaeef3;  --slate-bd: #cdd5de;  --slate-dot: #66717f;
+  --danger-fg: #8a1f12; --danger-bg: #fbe7e3; --danger-bd: #f0c2b8; --danger-dot: #c0392b;
+  --done-fg: #2a4a3a;   --done-bg: #e3eee7;   --done-bd: #bdd2c4;   --done-dot: #4a7a5d;
+
+  /* Dark topbar surfaces */
+  --dark: #20242c;
+  --dark-2: #171b22;
+  --dark-line: #3a404c;
+
+  /* Typography */
+  --font-ui: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+
+  /* Radii */
+  --r-xs: 3px;
+  --r-sm: 4px;
+  --r-md: 6px;
+  --r-lg: 8px;
+}

@@ -1,0 +1,37 @@
+@* ModeSwitcher — segmented control toggling between the two FA workflows.
+   Per UX decision (Variant A): Lookup is the primary mobile-first surface,
+   Low stock is the desktop operational list. Both modes are reachable on
+   any device; the default landing page differs by viewport in the page
+   logic, not here. *@
+
+<nav class="mode-switcher" role="tablist" aria-label="Fabric availability mode">
+    <a class="mode-btn @(CurrentMode == "lookup" ? "is-active" : "")"
+       href="@LookupHref"
+       role="tab"
+       aria-selected="@(CurrentMode == "lookup")"
+       title="Single-fabric lookup, optimised for the sales floor">
+        <svg class="mode-btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <rect x="6" y="2" width="12" height="20" rx="3" />
+            <path d="M11 18h2" />
+        </svg>
+        <span>Lookup</span>
+    </a>
+    <a class="mode-btn @(CurrentMode == "low-stock" ? "is-active" : "")"
+       href="@LowStockHref"
+       role="tab"
+       aria-selected="@(CurrentMode == "low-stock")"
+       title="Operational low-stock list for purchasing and ops">
+        <svg class="mode-btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <rect x="3" y="4" width="18" height="4" />
+            <rect x="3" y="10" width="18" height="4" />
+            <rect x="3" y="16" width="18" height="4" />
+        </svg>
+        <span>Low stock</span>
+    </a>
+</nav>
+
+@code {
+    [Parameter] public string CurrentMode  { get; set; } = "lookup";
+    [Parameter] public string LookupHref   { get; set; } = "fabric";
+    [Parameter] public string LowStockHref { get; set; } = "fabric/low-stock";
+}
