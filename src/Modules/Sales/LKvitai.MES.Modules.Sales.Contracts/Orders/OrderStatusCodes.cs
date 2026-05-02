@@ -17,4 +17,11 @@ public static class OrderStatusCodes
     public const string Delivered  = "delivered";
     public const string Paused     = "paused";
     public const string Cancelled  = "cancelled";
+
+    /// <summary>
+    /// Multi-status — the order has lines in more than one status family
+    /// at the same time (legacy label "SKIRTINGAI"). Renders as info-blue
+    /// chip so it's clearly distinct from the single-state families above.
+    /// </summary>
+    public const string MultiStatus = "multistatus";
 }
