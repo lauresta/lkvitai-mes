@@ -1,4 +1,5 @@
 using System.Data;
+using System.Diagnostics;
 using System.Globalization;
 using LKvitai.MES.Modules.Sales.Application.Ports;
 using LKvitai.MES.Modules.Sales.Contracts.Common;
@@ -51,15 +52,30 @@ namespace LKvitai.MES.Modules.Sales.Infrastructure.Sql;
 /// </remarks>
 public sealed class SqlOrdersQueryService : IOrdersQueryService
 {
-    private const string OrdersProcName      = "dbo.weblb_Orders";
-    private const string OrderProcName       = "dbo.weblb_Order";
-    private const string AccessoriesProcName = "dbo.weblb_Accessories";
-    private const string ItemsProcName       = "dbo.weblb_Items";
-    private const string EmployeesProcName   = "dbo.weblb_Employees";
-    private const string OrderIdParameter    = "@OrderId";
+    private const string OrdersProcName       = "dbo.weblb_Orders";
+    private const string OrdersPagedProcName  = "dbo.weblb_Orders_Paged";
+    private const string OrderProcName        = "dbo.weblb_Order";
+    private const string AccessoriesProcName  = "dbo.weblb_Accessories";
+    private const string ItemsProcName        = "dbo.weblb_Items";
+    private const string EmployeesProcName    = "dbo.weblb_Employees";
+    private const string OrderIdParameter     = "@OrderId";
 
     private readonly SalesSqlOptions _options;
     private readonly ILogger<SqlOrdersQueryService> _logger;
+
+    // Single-flight in-process snapshot cache for dbo.weblb_Orders. Guarded by
+    // a SemaphoreSlim so that N concurrent page-change requests behind a stale
+    // snapshot only trigger ONE SQL re-fetch — the rest wait, then return the
+    // freshly populated list. The cached list is treated as immutable (every
+    // reader uses LINQ enumeration; no mutation in ApplyFilterSortPage), so
+    // it is safe to share across concurrent callers without copying.
+    //
+    // Stop-gap until a paged dbo.weblb_Orders_Paged wrapper exists; see the
+    // class header TODO. TTL is configurable via SalesSqlOptions; 0 disables
+    // caching entirely.
+    private readonly SemaphoreSlim _snapshotGate = new(initialCount: 1, maxCount: 1);
+    private List<OrderSummaryDto> _snapshotRows = new(capacity: 0);
+    private DateTime _snapshotExpiresUtc = DateTime.MinValue;
 
     public SqlOrdersQueryService(SalesSqlOptions options, ILogger<SqlOrdersQueryService> logger)
     {
@@ -81,9 +97,160 @@ public sealed class SqlOrdersQueryService : IOrdersQueryService
     {
         ArgumentNullException.ThrowIfNull(query);
 
-        var all = await ReadAllOrdersAsync(cancellationToken).ConfigureAwait(false);
-        return ApplyFilterSortPage(all, query);
+        // Two implementations live behind this method (selected by config —
+        // SalesSqlOptions.QueryMode). The behaviour seen by the caller is the
+        // same; only the latency profile and where the work happens differ.
+        return _options.QueryMode == OrdersQueryMode.Paged
+            ? await GetOrdersFromPagedSpAsync(query, cancellationToken).ConfigureAwait(false)
+            : await GetOrdersFromSnapshotAsync(query, cancellationToken).ConfigureAwait(false);
     }
+
+    /// <summary>
+    /// Snapshot path. Materialises <c>dbo.weblb_Orders</c> in full (cached for
+    /// <see cref="SalesSqlOptions.OrdersListCacheTtlSeconds"/>) and runs
+    /// filter / sort / page in C#. Trades freshness for simplicity — was the
+    /// only path before <c>dbo.weblb_Orders_Paged</c> existed.
+    /// </summary>
+    private async Task<PagedResult<OrderSummaryDto>> GetOrdersFromSnapshotAsync(
+        OrdersQueryParams query,
+        CancellationToken cancellationToken)
+    {
+        // Phase 0 instrumentation: split the SQL read from the in-memory
+        // filter/sort/page pass so we can attribute latency to whichever side
+        // is the actual cost. Connection string and credentials never logged.
+        var totalSw = Stopwatch.StartNew();
+        var sqlSw = Stopwatch.StartNew();
+        var all = await ReadAllOrdersAsync(cancellationToken).ConfigureAwait(false);
+        sqlSw.Stop();
+
+        var postSw = Stopwatch.StartNew();
+        var result = ApplyFilterSortPage(all, query);
+        postSw.Stop();
+        totalSw.Stop();
+
+        _logger.LogInformation(
+            "[SalesPerf] sql.GetOrders mode=snapshot rows={SourceRows} returned={Returned} total={Total} page={Page} pageSize={PageSize} " +
+            "search={HasSearch} status={HasStatus} store={HasStore} hasDebt={HasDebt} " +
+            "sqlMs={SqlMs} postProcMs={PostProcMs} totalMs={TotalMs}",
+            all.Count, result.Items.Count, result.Total, result.Page, result.PageSize,
+            !string.IsNullOrWhiteSpace(query.Search), !string.IsNullOrWhiteSpace(query.Status),
+            !string.IsNullOrWhiteSpace(query.Store), query.HasDebt,
+            sqlSw.ElapsedMilliseconds, postSw.ElapsedMilliseconds, totalSw.ElapsedMilliseconds);
+
+        return result;
+    }
+
+    /// <summary>
+    /// Paged path. Calls <c>dbo.weblb_Orders_Paged</c> with the filter / page
+    /// parameters; the SP returns just the requested page plus a windowed
+    /// <c>TotalRows</c> value (replicated on every row). No in-process cache
+    /// for the orders list itself — every call is a fresh SP execution, so
+    /// the cost scales with <c>PageSize</c>, not with the table size.
+    /// </summary>
+    private async Task<PagedResult<OrderSummaryDto>> GetOrdersFromPagedSpAsync(
+        OrdersQueryParams query,
+        CancellationToken cancellationToken)
+    {
+        var pageSize = query.PageSize <= 0 ? 100 : query.PageSize;
+        var page     = query.Page     <= 0 ? 1   : query.Page;
+
+        var totalSw = Stopwatch.StartNew();
+
+        var openSw = Stopwatch.StartNew();
+        await using var conn = new SqlConnection(_options.ConnectionString);
+        await conn.OpenAsync(cancellationToken).ConfigureAwait(false);
+        openSw.Stop();
+
+        await using var cmd = new SqlCommand(OrdersPagedProcName, conn)
+        {
+            CommandType    = CommandType.StoredProcedure,
+            CommandTimeout = _options.CommandTimeoutSeconds,
+        };
+
+        // The SP normalises NULL / empty parameters internally (LTRIM/RTRIM
+        // and IS NULL guards), so we can pass DBNull straight through for the
+        // "no filter" case without pre-trimming on the client.
+        cmd.Parameters.Add(new SqlParameter("@Page",     SqlDbType.Int)            { Value = page });
+        cmd.Parameters.Add(new SqlParameter("@PageSize", SqlDbType.Int)            { Value = pageSize });
+        cmd.Parameters.Add(new SqlParameter("@Search",   SqlDbType.NVarChar, 200)  { Value = NullableNVarChar(query.Search) });
+        cmd.Parameters.Add(new SqlParameter("@Status",   SqlDbType.NVarChar, 100)  { Value = NullableNVarChar(query.Status) });
+        cmd.Parameters.Add(new SqlParameter("@Store",    SqlDbType.NVarChar, 100)  { Value = NullableNVarChar(query.Store) });
+        cmd.Parameters.Add(new SqlParameter("@HasDebt",  SqlDbType.Bit)            { Value = query.HasDebt ? (object)true : DBNull.Value });
+        cmd.Parameters.Add(new SqlParameter("@DateFrom", SqlDbType.Date)           { Value = DBNull.Value });
+        cmd.Parameters.Add(new SqlParameter("@DateTo",   SqlDbType.Date)           { Value = DBNull.Value });
+
+        var execSw = Stopwatch.StartNew();
+        await using var reader = await cmd.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+        execSw.Stop();
+
+        // Column ordinals for dbo.weblb_Orders_Paged (kept in sync with
+        // .scratch/sp-paged.sql). Any drift would silently mis-project rows,
+        // so when the SP changes shape both sides must be updated together.
+        // Order: Id, Number, Date, Price, Debt, Customer, Status, Store,
+        //        IsCancelled, sImageKey, Address, ProductsSearch, TotalRows
+        var rows = new List<OrderSummaryDto>(capacity: pageSize);
+        var totalRows = 0;
+
+        var matSw = Stopwatch.StartNew();
+        while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var id             = ReadInt64ByOrdinal(reader, ordinal: 0);
+            var number         = ReadStringByOrdinal(reader, ordinal: 1, fallback: string.Empty);
+            var date           = ReadDateOnlyByOrdinal(reader, ordinal: 2);
+            var price          = ReadDecimalByOrdinal(reader, ordinal: 3);
+            var debt           = ReadDecimalByOrdinal(reader, ordinal: 4);
+            var customer       = ReadStringByOrdinal(reader, ordinal: 5, fallback: string.Empty);
+            var status         = ReadStringByOrdinal(reader, ordinal: 6, fallback: string.Empty);
+            var store          = ReadStringByOrdinal(reader, ordinal: 7, fallback: string.Empty);
+            // ordinals 8 (IsCancelled) and 9 (sImageKey) are returned by the
+            // SP but currently unused by the C# DTO — left in the result set
+            // for parity with the legacy weblb_Orders shape.
+            var address        = ReadStringByOrdinal(reader, ordinal: 10, fallback: string.Empty);
+            var productsSearch = ReadStringOrNullByOrdinal(reader, ordinal: 11);
+            // TotalRows is windowed COUNT(*) OVER () — same value on every row;
+            // we just keep the last one read (or zero if the page is empty).
+            totalRows = (int)ReadInt64ByOrdinal(reader, ordinal: 12);
+
+            rows.Add(new OrderSummaryDto(
+                Id:             id,
+                Number:         number,
+                Date:           date,
+                Price:          price,
+                Debt:           debt,
+                IsOverdue:      false,
+                Customer:       customer,
+                HasDebt:        debt > 0m,
+                IsVip:          false,
+                HasNote:        false,
+                Status:         status,
+                StatusCode:     SalesOrderStatusMap.ToStatusCode(status),
+                Store:          store,
+                Address:        address,
+                ProductsSearch: productsSearch));
+        }
+        matSw.Stop();
+        totalSw.Stop();
+
+        _logger.LogInformation(
+            "[SalesPerf] sql.GetOrders mode=paged returned={Returned} total={Total} page={Page} pageSize={PageSize} " +
+            "search={HasSearch} status={HasStatus} store={HasStore} hasDebt={HasDebt} " +
+            "openMs={OpenMs} execMs={ExecMs} materialiseMs={MaterialiseMs} totalMs={TotalMs}",
+            rows.Count, totalRows, page, pageSize,
+            !string.IsNullOrWhiteSpace(query.Search), !string.IsNullOrWhiteSpace(query.Status),
+            !string.IsNullOrWhiteSpace(query.Store), query.HasDebt,
+            openSw.ElapsedMilliseconds, execSw.ElapsedMilliseconds,
+            matSw.ElapsedMilliseconds, totalSw.ElapsedMilliseconds);
+
+        return new PagedResult<OrderSummaryDto>(rows, totalRows, page, pageSize);
+    }
+
+    /// <summary>
+    /// SQL parameter helper: emit <see cref="DBNull.Value"/> for null / blank
+    /// strings so the SP's <c>IS NULL</c> branches fire instead of looking
+    /// for the literal <c>N''</c>.
+    /// </summary>
+    private static object NullableNVarChar(string? value)
+        => string.IsNullOrWhiteSpace(value) ? DBNull.Value : value.Trim();
 
     public async Task<OrdersFilterOptionsDto> GetFilterOptionsAsync(CancellationToken cancellationToken)
     {
@@ -93,8 +260,12 @@ public sealed class SqlOrdersQueryService : IOrdersQueryService
         // round trip. When the paged proc wrapper lands (TODO above), expose
         // dedicated dbo.weblb_StatusList / dbo.weblb_StoreList and wire them
         // here instead.
+        var totalSw = Stopwatch.StartNew();
+        var sqlSw = Stopwatch.StartNew();
         var all = await ReadAllOrdersAsync(cancellationToken).ConfigureAwait(false);
+        sqlSw.Stop();
 
+        var projSw = Stopwatch.StartNew();
         var statuses = all
             .Select(o => o.Status)
             .Where(static s => !string.IsNullOrWhiteSpace(s))
@@ -108,6 +279,14 @@ public sealed class SqlOrdersQueryService : IOrdersQueryService
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(static s => s, StringComparer.CurrentCulture)
             .ToList();
+        projSw.Stop();
+        totalSw.Stop();
+
+        _logger.LogInformation(
+            "[SalesPerf] sql.GetFilterOptions rows={SourceRows} statuses={StatusCount} stores={StoreCount} " +
+            "sqlMs={SqlMs} projectMs={ProjectMs} totalMs={TotalMs}",
+            all.Count, statuses.Count, stores.Count,
+            sqlSw.ElapsedMilliseconds, projSw.ElapsedMilliseconds, totalSw.ElapsedMilliseconds);
 
         return new OrdersFilterOptionsDto(statuses, stores);
     }
@@ -121,20 +300,29 @@ public sealed class SqlOrdersQueryService : IOrdersQueryService
             return null;
         }
 
+        var totalSw = Stopwatch.StartNew();
+
         // Phase 1: locate the summary row in weblb_Orders so we can resolve the
         // legacy Id (the @OrderId parameter all other procs require) and seed
         // the price / debt / store / status fields the details proc does not
         // return.
+        var lookupSw = Stopwatch.StartNew();
         var summary = (await ReadAllOrdersAsync(cancellationToken).ConfigureAwait(false))
             .FirstOrDefault(o => string.Equals(o.Number, number, StringComparison.OrdinalIgnoreCase));
+        lookupSw.Stop();
 
         if (summary is null)
         {
+            _logger.LogInformation(
+                "[SalesPerf] sql.GetOrderDetails number={Number} found=False lookupMs={LookupMs} totalMs={TotalMs}",
+                number, lookupSw.ElapsedMilliseconds, totalSw.ElapsedMilliseconds);
             return null;
         }
 
+        var openSw = Stopwatch.StartNew();
         await using var conn = new SqlConnection(_options.ConnectionString);
         await conn.OpenAsync(cancellationToken).ConfigureAwait(false);
+        openSw.Stop();
 
         // Phase 2: header (operator + amounts + authoritative address override).
         OrderOperatorDto? @operator = null;
@@ -143,6 +331,7 @@ public sealed class SqlOrdersQueryService : IOrdersQueryService
         var headerStatus   = summary.Status;
         var headerAddress  = summary.Address;
 
+        var headerSw = Stopwatch.StartNew();
         await using (var cmd = CreateProc(conn, OrderProcName, summary.Id))
         await using (var reader = await cmd.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false))
         {
@@ -167,8 +356,10 @@ public sealed class SqlOrdersQueryService : IOrdersQueryService
                 amounts.Add(new OrderAmountDto(OrderAmountKind.Debt,          "Debt",           ReadDecimal(reader, "Debt"),             Percent: null));
             }
         }
+        headerSw.Stop();
 
         // Phase 3: accessories (collected first so we can attach them to their parent items).
+        var accSw = Stopwatch.StartNew();
         var accessoriesByItemId = new Dictionary<long, List<OrderItemDto>>();
         await using (var cmd = CreateProc(conn, AccessoriesProcName, summary.Id))
         await using (var reader = await cmd.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false))
@@ -202,8 +393,10 @@ public sealed class SqlOrdersQueryService : IOrdersQueryService
                 bucket.Add(accessoryRow);
             }
         }
+        accSw.Stop();
 
         // Phase 4: items — each becomes one OrderItemGroupDto seeded with its parent line plus accessories.
+        var itemsSw = Stopwatch.StartNew();
         var itemGroups = new List<OrderItemGroupDto>();
         await using (var cmd = CreateProc(conn, ItemsProcName, summary.Id))
         await using (var reader = await cmd.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false))
@@ -250,8 +443,10 @@ public sealed class SqlOrdersQueryService : IOrdersQueryService
                 displayOrder++;
             }
         }
+        itemsSw.Stop();
 
         // Phase 5: employees.
+        var empSw = Stopwatch.StartNew();
         var employees = new List<OrderEmployeeDto>();
         await using (var cmd = CreateProc(conn, EmployeesProcName, summary.Id))
         await using (var reader = await cmd.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false))
@@ -273,6 +468,16 @@ public sealed class SqlOrdersQueryService : IOrdersQueryService
                     Amount:           ReadDecimal(reader, "AquiredAmount")));
             }
         }
+        empSw.Stop();
+        totalSw.Stop();
+
+        _logger.LogInformation(
+            "[SalesPerf] sql.GetOrderDetails number={Number} found=True items={ItemGroups} accessories={AccessoryItems} employees={EmployeeCount} " +
+            "lookupMs={LookupMs} openMs={OpenMs} headerMs={HeaderMs} accMs={AccMs} itemsMs={ItemsMs} empMs={EmpMs} totalMs={TotalMs}",
+            number, itemGroups.Count, accessoriesByItemId.Sum(kv => kv.Value.Count), employees.Count,
+            lookupSw.ElapsedMilliseconds, openSw.ElapsedMilliseconds, headerSw.ElapsedMilliseconds,
+            accSw.ElapsedMilliseconds, itemsSw.ElapsedMilliseconds, empSw.ElapsedMilliseconds,
+            totalSw.ElapsedMilliseconds);
 
         return new OrderDetailsDto(
             Id:         summary.Id,
@@ -301,12 +506,88 @@ public sealed class SqlOrdersQueryService : IOrdersQueryService
     /// legacy proc has no documented column-name contract — the indexes match
     /// the legacy <c>OrdersController</c>'s <c>GetX(n)</c> calls one-for-one.
     /// </summary>
+    /// <summary>
+    /// Returns the materialised <c>dbo.weblb_Orders</c> result set, served from
+    /// an in-process snapshot whose lifetime is bounded by
+    /// <see cref="SalesSqlOptions.OrdersListCacheTtlSeconds"/>. Behind a
+    /// <see cref="SemaphoreSlim"/>: while one caller is fetching a fresh
+    /// snapshot, every concurrent caller waits and then reuses the same
+    /// list (single-flight). Set the TTL to <c>0</c> to disable the cache
+    /// and read from SQL on every call.
+    /// </summary>
     private async Task<List<OrderSummaryDto>> ReadAllOrdersAsync(CancellationToken cancellationToken)
     {
-        var rows = new List<OrderSummaryDto>(capacity: 256);
+        var ttlSeconds = _options.OrdersListCacheTtlSeconds;
+        if (ttlSeconds <= 0)
+        {
+            // Caching disabled — preserve original "fresh SQL on every call"
+            // behaviour. Useful for diagnostics and once a paged proc wrapper
+            // makes the in-process snapshot obsolete.
+            _logger.LogDebug("[SalesPerf] sql.cache disabled ttlSec={TtlSeconds}", ttlSeconds);
+            return await LoadAllOrdersFromSqlAsync(cancellationToken).ConfigureAwait(false);
+        }
 
+        // Fast-path: snapshot still fresh, no lock needed. Reads of the two
+        // fields are independently atomic on .NET 8 (reference + DateTime is
+        // 8 bytes), so worst case we serve a snapshot that just expired —
+        // identical to the post-lock branch under contention.
+        var nowUtc = DateTime.UtcNow;
+        var snapshotRows = _snapshotRows;
+        var snapshotExpiresUtc = _snapshotExpiresUtc;
+        if (nowUtc < snapshotExpiresUtc)
+        {
+            var ageMs = (long)(nowUtc - (snapshotExpiresUtc - TimeSpan.FromSeconds(ttlSeconds))).TotalMilliseconds;
+            _logger.LogInformation(
+                "[SalesPerf] sql.cache hit rows={Rows} ageMs={AgeMs} remainingMs={RemainingMs}",
+                snapshotRows.Count, ageMs, (long)(snapshotExpiresUtc - nowUtc).TotalMilliseconds);
+            return snapshotRows;
+        }
+
+        // Slow-path: stale or first call. Single-flight via SemaphoreSlim —
+        // only one caller fetches; the rest wait then return the new snapshot.
+        await _snapshotGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            // Double-check: another caller may have refreshed the snapshot
+            // while we were waiting on the semaphore. If so, return that.
+            nowUtc = DateTime.UtcNow;
+            if (nowUtc < _snapshotExpiresUtc)
+            {
+                _logger.LogInformation(
+                    "[SalesPerf] sql.cache hit-after-wait rows={Rows} remainingMs={RemainingMs}",
+                    _snapshotRows.Count, (long)(_snapshotExpiresUtc - nowUtc).TotalMilliseconds);
+                return _snapshotRows;
+            }
+
+            var fresh = await LoadAllOrdersFromSqlAsync(cancellationToken).ConfigureAwait(false);
+            _snapshotRows = fresh;
+            _snapshotExpiresUtc = DateTime.UtcNow.AddSeconds(ttlSeconds);
+
+            _logger.LogInformation(
+                "[SalesPerf] sql.cache miss rows={Rows} ttlSec={TtlSeconds} expiresAtUtc={ExpiresAtUtc:O}",
+                fresh.Count, ttlSeconds, _snapshotExpiresUtc);
+            return fresh;
+        }
+        finally
+        {
+            _snapshotGate.Release();
+        }
+    }
+
+    private async Task<List<OrderSummaryDto>> LoadAllOrdersFromSqlAsync(CancellationToken cancellationToken)
+    {
+        // Phase 0 instrumentation — split SQL into Open / Exec (TTFB)
+        // / Materialise so we can tell *where* the time is going. These
+        // segments are cheap (Stopwatch.GetTimestamp() ticks) and emitted
+        // at Debug level only — the parent GetOrders/GetFilterOptions
+        // method already logs the rolled-up sqlMs at Information.
+        var rows = new List<OrderSummaryDto>(capacity: 1024);
+        var totalSw = Stopwatch.StartNew();
+
+        var openSw = Stopwatch.StartNew();
         await using var conn = new SqlConnection(_options.ConnectionString);
         await conn.OpenAsync(cancellationToken).ConfigureAwait(false);
+        openSw.Stop();
 
         await using var cmd = new SqlCommand(OrdersProcName, conn)
         {
@@ -314,9 +595,12 @@ public sealed class SqlOrdersQueryService : IOrdersQueryService
             CommandTimeout = _options.CommandTimeoutSeconds,
         };
 
+        var execSw = Stopwatch.StartNew();
         await using var reader = await cmd.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+        execSw.Stop();
 
         var fieldCount = reader.FieldCount;
+        var matSw = Stopwatch.StartNew();
 
         while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
         {
@@ -354,6 +638,13 @@ public sealed class SqlOrdersQueryService : IOrdersQueryService
                 Address:        address,
                 ProductsSearch: productsSearch));
         }
+        matSw.Stop();
+        totalSw.Stop();
+
+        _logger.LogDebug(
+            "[SalesPerf] sql.weblb_Orders rows={Rows} openMs={OpenMs} execMs={ExecMs} materialiseMs={MaterialiseMs} totalMs={TotalMs}",
+            rows.Count, openSw.ElapsedMilliseconds, execSw.ElapsedMilliseconds,
+            matSw.ElapsedMilliseconds, totalSw.ElapsedMilliseconds);
 
         return rows;
     }

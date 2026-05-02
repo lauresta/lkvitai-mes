@@ -38,9 +38,11 @@ namespace LKvitai.MES.Modules.Sales.Api.Composition;
 /// </remarks>
 public static class SalesOrdersDataSource
 {
-    private const string DataSourceConfigKey  = "Sales:OrdersDataSource";
-    private const string ConnectionStringName = "LKvitaiDb";
-    private const string CommandTimeoutKey    = "Sales:Sql:CommandTimeoutSeconds";
+    private const string DataSourceConfigKey   = "Sales:OrdersDataSource";
+    private const string ConnectionStringName  = "LKvitaiDb";
+    private const string CommandTimeoutKey     = "Sales:Sql:CommandTimeoutSeconds";
+    private const string OrdersCacheTtlKey     = "Sales:Sql:OrdersListCacheTtlSeconds";
+    private const string OrdersQueryModeKey    = "Sales:Sql:OrdersQueryMode";
 
     private const string ModeAuto = "Auto";
     private const string ModeSql  = "Sql";
@@ -92,14 +94,84 @@ public static class SalesOrdersDataSource
                 "or set Sales:OrdersDataSource=Stub explicitly for a stub-only test/dev run.");
         }
 
-        var commandTimeout = configuration.GetValue(CommandTimeoutKey, defaultValue: 30);
+        var commandTimeout  = configuration.GetValue(CommandTimeoutKey, defaultValue: 30);
+        var ordersCacheTtl  = configuration.GetValue(OrdersCacheTtlKey, defaultValue: 30);
+        var ordersQueryMode = ResolveOrdersQueryMode(configuration[OrdersQueryModeKey]);
+
         services.AddSingleton(new SalesSqlOptions
         {
-            ConnectionString      = connectionString!,
-            CommandTimeoutSeconds = commandTimeout <= 0 ? 30 : commandTimeout,
+            ConnectionString          = connectionString!,
+            CommandTimeoutSeconds     = commandTimeout <= 0 ? 30 : commandTimeout,
+            OrdersListCacheTtlSeconds = ordersCacheTtl < 0 ? 30 : ordersCacheTtl,
+            QueryMode                 = ordersQueryMode,
         });
         services.AddSingleton<IOrdersQueryService, SqlOrdersQueryService>();
+
+        // The orders snapshot cache is a deliberate stop-gap; once Paged mode
+        // is the default everywhere we can drop both the cache and this banner.
+        // Until then, surface a loud reminder in non-Development environments
+        // whenever the cache is still hot — so operators don't lose track of it.
+        var snapshotStillUsedForList = ordersQueryMode == OrdersQueryMode.Snapshot;
+        if (!environment.IsDevelopment() && ordersCacheTtl > 0 && snapshotStillUsedForList)
+        {
+            services.AddHostedService(sp => new SalesOrdersCacheBannerHostedService(
+                sp.GetRequiredService<ILoggerFactory>().CreateLogger("Sales.OrdersDataSource"),
+                ordersCacheTtl,
+                environment.EnvironmentName));
+        }
+
         return services;
+    }
+
+    /// <summary>
+    /// Maps the optional <c>Sales:Sql:OrdersQueryMode</c> config value to the
+    /// <see cref="OrdersQueryMode"/> enum. Missing / blank → Snapshot
+    /// (backwards-compatible default). Unknown values fail fast at startup so
+    /// a typo in <c>appsettings</c> cannot silently degrade list latency.
+    /// </summary>
+    private static OrdersQueryMode ResolveOrdersQueryMode(string? requested)
+    {
+        if (string.IsNullOrWhiteSpace(requested)) return OrdersQueryMode.Snapshot;
+        if (Enum.TryParse<OrdersQueryMode>(requested, ignoreCase: true, out var parsed))
+        {
+            return parsed;
+        }
+
+        throw new InvalidOperationException(
+            $"Unknown {OrdersQueryModeKey} '{requested}'. Expected one of: " +
+            $"'{nameof(OrdersQueryMode.Snapshot)}', '{nameof(OrdersQueryMode.Paged)}'.");
+    }
+
+    /// <summary>
+    /// Logs a one-shot Warning during host startup whenever the in-process
+    /// orders snapshot cache is enabled outside Development. Operators see it
+    /// in the same banner as <c>"Application started"</c>, so the stop-gap
+    /// nature of the cache stays visible until the paged-proc wrapper lands.
+    /// </summary>
+    private sealed class SalesOrdersCacheBannerHostedService : IHostedService
+    {
+        private readonly ILogger _logger;
+        private readonly int _ttlSeconds;
+        private readonly string _environmentName;
+
+        public SalesOrdersCacheBannerHostedService(ILogger logger, int ttlSeconds, string environmentName)
+        {
+            _logger = logger;
+            _ttlSeconds = ttlSeconds;
+            _environmentName = environmentName;
+        }
+
+        public Task StartAsync(CancellationToken cancellationToken)
+        {
+            _logger.LogWarning(
+                "Sales orders read-side is using an in-process snapshot cache (TTL={TtlSeconds}s, " +
+                "environment={Environment}). This is a stop-gap; replace with a paged dbo.weblb_Orders_Paged " +
+                "wrapper as soon as practical so the database does the work and the snapshot is no longer needed.",
+                _ttlSeconds, _environmentName);
+            return Task.CompletedTask;
+        }
+
+        public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
     }
 
     /// <summary>

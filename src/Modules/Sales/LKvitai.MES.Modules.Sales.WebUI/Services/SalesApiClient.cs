@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Json;
 using LKvitai.MES.Modules.Sales.Contracts.Common;
@@ -62,25 +63,44 @@ public sealed class SalesApiClient
         var client = _httpClientFactory.CreateClient(HttpClientName);
         var url = BuildOrdersListUrl(query);
 
+        var totalSw = Stopwatch.StartNew();
+        var httpSw = Stopwatch.StartNew();
         try
         {
             using var response = await client.GetAsync(url, cancellationToken).ConfigureAwait(false);
+            httpSw.Stop();
+
             if (!response.IsSuccessStatusCode)
             {
+                totalSw.Stop();
                 _logger.LogWarning(
-                    "Sales API returned {StatusCode} for {Url}",
-                    response.StatusCode,
-                    url);
+                    "[SalesPerf] webui-http GET orders failed status={StatusCode} url={Url} httpMs={HttpMs} totalMs={TotalMs}",
+                    response.StatusCode, url, httpSw.ElapsedMilliseconds, totalSw.ElapsedMilliseconds);
                 return null;
             }
 
-            return await response.Content
+            var deserSw = Stopwatch.StartNew();
+            var body = await response.Content
                 .ReadFromJsonAsync<PagedResult<OrderSummaryDto>>(cancellationToken)
                 .ConfigureAwait(false);
+            deserSw.Stop();
+            totalSw.Stop();
+
+            _logger.LogInformation(
+                "[SalesPerf] webui-http GET orders ok page={Page} pageSize={PageSize} returned={Returned} total={Total} " +
+                "httpMs={HttpMs} deserMs={DeserMs} totalMs={TotalMs} contentLength={ContentLength}",
+                query.Page, query.PageSize, body?.Items.Count ?? 0, body?.Total ?? 0,
+                httpSw.ElapsedMilliseconds, deserSw.ElapsedMilliseconds, totalSw.ElapsedMilliseconds,
+                response.Content.Headers.ContentLength ?? -1);
+
+            return body;
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {
-            _logger.LogError(ex, "Sales API call to {Url} failed", url);
+            totalSw.Stop();
+            _logger.LogError(ex,
+                "[SalesPerf] webui-http GET orders exception url={Url} totalMs={TotalMs}",
+                url, totalSw.ElapsedMilliseconds);
             return null;
         }
     }
@@ -102,26 +122,42 @@ public sealed class SalesApiClient
         var client = _httpClientFactory.CreateClient(HttpClientName);
         var url = $"/api/sales/orders/{Uri.EscapeDataString(number)}";
 
+        var totalSw = Stopwatch.StartNew();
+        var httpSw = Stopwatch.StartNew();
         try
         {
             using var response = await client.GetAsync(url, cancellationToken).ConfigureAwait(false);
+            httpSw.Stop();
+
             if (response.StatusCode == HttpStatusCode.NotFound)
             {
+                totalSw.Stop();
+                _logger.LogInformation(
+                    "[SalesPerf] webui-http GET order not-found number={Number} httpMs={HttpMs} totalMs={TotalMs}",
+                    number, httpSw.ElapsedMilliseconds, totalSw.ElapsedMilliseconds);
                 return SalesApiResult<OrderDetailsDto>.NotFound();
             }
 
             if (!response.IsSuccessStatusCode)
             {
+                totalSw.Stop();
                 _logger.LogWarning(
-                    "Sales API returned {StatusCode} for {Url}",
-                    response.StatusCode,
-                    url);
+                    "[SalesPerf] webui-http GET order failed status={StatusCode} url={Url} httpMs={HttpMs} totalMs={TotalMs}",
+                    response.StatusCode, url, httpSw.ElapsedMilliseconds, totalSw.ElapsedMilliseconds);
                 return SalesApiResult<OrderDetailsDto>.Failed();
             }
 
+            var deserSw = Stopwatch.StartNew();
             var body = await response.Content
                 .ReadFromJsonAsync<OrderDetailsDto>(cancellationToken)
                 .ConfigureAwait(false);
+            deserSw.Stop();
+            totalSw.Stop();
+
+            _logger.LogInformation(
+                "[SalesPerf] webui-http GET order ok number={Number} found={Found} httpMs={HttpMs} deserMs={DeserMs} totalMs={TotalMs} contentLength={ContentLength}",
+                number, body is not null, httpSw.ElapsedMilliseconds, deserSw.ElapsedMilliseconds,
+                totalSw.ElapsedMilliseconds, response.Content.Headers.ContentLength ?? -1);
 
             return body is null
                 ? SalesApiResult<OrderDetailsDto>.Failed()
@@ -129,7 +165,10 @@ public sealed class SalesApiClient
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {
-            _logger.LogError(ex, "Sales API call to {Url} failed", url);
+            totalSw.Stop();
+            _logger.LogError(ex,
+                "[SalesPerf] webui-http GET order exception url={Url} totalMs={TotalMs}",
+                url, totalSw.ElapsedMilliseconds);
             return SalesApiResult<OrderDetailsDto>.Failed();
         }
     }
@@ -145,25 +184,42 @@ public sealed class SalesApiClient
         var client = _httpClientFactory.CreateClient(HttpClientName);
         const string url = "/api/sales/orders/filters";
 
+        var totalSw = Stopwatch.StartNew();
+        var httpSw = Stopwatch.StartNew();
         try
         {
             using var response = await client.GetAsync(url, cancellationToken).ConfigureAwait(false);
+            httpSw.Stop();
+
             if (!response.IsSuccessStatusCode)
             {
+                totalSw.Stop();
                 _logger.LogWarning(
-                    "Sales API returned {StatusCode} for {Url}",
-                    response.StatusCode,
-                    url);
+                    "[SalesPerf] webui-http GET filters failed status={StatusCode} url={Url} httpMs={HttpMs} totalMs={TotalMs}",
+                    response.StatusCode, url, httpSw.ElapsedMilliseconds, totalSw.ElapsedMilliseconds);
                 return null;
             }
 
-            return await response.Content
+            var deserSw = Stopwatch.StartNew();
+            var body = await response.Content
                 .ReadFromJsonAsync<OrdersFilterOptionsDto>(cancellationToken)
                 .ConfigureAwait(false);
+            deserSw.Stop();
+            totalSw.Stop();
+
+            _logger.LogInformation(
+                "[SalesPerf] webui-http GET filters ok statuses={StatusCount} stores={StoreCount} httpMs={HttpMs} deserMs={DeserMs} totalMs={TotalMs}",
+                body?.Statuses.Count ?? 0, body?.Stores.Count ?? 0,
+                httpSw.ElapsedMilliseconds, deserSw.ElapsedMilliseconds, totalSw.ElapsedMilliseconds);
+
+            return body;
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {
-            _logger.LogError(ex, "Sales API call to {Url} failed", url);
+            totalSw.Stop();
+            _logger.LogError(ex,
+                "[SalesPerf] webui-http GET filters exception url={Url} totalMs={TotalMs}",
+                url, totalSw.ElapsedMilliseconds);
             return null;
         }
     }

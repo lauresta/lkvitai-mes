@@ -1,6 +1,7 @@
 @page "/"
 @inject SalesApiClient Api
 @inject PersistentComponentState ApplicationState
+@inject ILogger<Index> Log
 @implements IAsyncDisposable
 
 <PageTitle>Sales · Orders</PageTitle>
@@ -194,7 +195,18 @@
 @code {
     private const int    PageSize             = 100;
     private const int    SearchDebounceMs     = 250;
-    private const int    LoadingMinVisibleMs  = 200; // floor for the loading bar
+
+    // Loading-bar UX: skip the indicator entirely when the API responds within
+    // LoadingShowAfterMs (e.g. snapshot cache hit ≈ 12 ms — showing a bar would
+    // make a near-instant page feel slow). If the response *does* take longer,
+    // surface the bar and keep it on screen for at least LoadingMinVisibleMs
+    // total so it never flashes on/off in a single frame.
+    //
+    // Numbers: 150 ms is the lower bound where humans start perceiving lag;
+    // a 350 ms minimum visible window lets the eye lock onto the bar without
+    // creating a "double-blink" effect on borderline-slow responses.
+    private const int    LoadingShowAfterMs   = 150;
+    private const int    LoadingMinVisibleMs  = 350;
     private const string PersistKeyOrders     = "sales.orders.list";
     private const string PersistKeyFilters    = "sales.orders.filterOptions";
 
@@ -543,8 +555,9 @@
         var token = _reloadCts.Token;
 
         var thisReloadId = ++_latestReloadId;
-        _isRefreshing = true;
-        StateHasChanged(); // immediately show progress bar / dim rows
+        // NOTE: do NOT flip _isRefreshing here. We schedule it after
+        // LoadingShowAfterMs so a fast (cache-hit) response never paints
+        // a loading bar at all — page changes feel instant.
 
         var query = new OrdersQueryParams
         {
@@ -557,26 +570,71 @@
             PageSize = _pageSize,
         };
 
+        // Phase 0 instrumentation: end-to-end ReloadAsync timing as the user
+        // experiences it. apiMs is the real cost; barShown reveals when the
+        // loading affordance was actually painted (vs skipped for a fast hit).
+        var totalSw = System.Diagnostics.Stopwatch.StartNew();
+        var apiSw = System.Diagnostics.Stopwatch.StartNew();
         PagedResult<OrderSummaryDto>? result;
+        long apiOnlyMs;
+        var barShown = false;
+        long? barShownAtMs = null;
         try
         {
-            // Run the API call in parallel with a minimum-visibility delay so
-            // very fast responses still leave the loading bar on screen long
-            // enough for the user to register that the click was registered.
-            // The delay is cancelled along with the API call when superseded.
-            var apiTask   = Api.GetOrdersAsync(query, token);
-            var floorTask = Task.Delay(LoadingMinVisibleMs, token);
-            await Task.WhenAll(apiTask, floorTask);
+            // Race the API call against a "show loading bar" delay. If the API
+            // responds first (cache hit, fast network), no bar is ever shown.
+            // Otherwise, flip _isRefreshing once and force a re-render so the
+            // bar appears, then keep it visible for the rest of the call.
+            var apiTask  = Api.GetOrdersAsync(query, token);
+            var showTask = Task.Delay(LoadingShowAfterMs, token);
+
+            var winner = await Task.WhenAny(apiTask, showTask);
+            if (winner == showTask && !showTask.IsCanceled)
+            {
+                _isRefreshing = true;
+                barShown = true;
+                barShownAtMs = totalSw.ElapsedMilliseconds;
+                StateHasChanged();
+            }
+
             result = await apiTask;
+            apiSw.Stop();
+            apiOnlyMs = apiSw.ElapsedMilliseconds;
+
+            // If the bar did appear, keep it visible long enough that the user
+            // actually registers it — otherwise it would flash off the moment
+            // the API finished, which feels glitchy.
+            if (barShown && barShownAtMs is { } shownAt)
+            {
+                var visibleSoFar = totalSw.ElapsedMilliseconds - shownAt;
+                var remaining = LoadingMinVisibleMs - (int)visibleSoFar;
+                if (remaining > 0)
+                {
+                    try { await Task.Delay(remaining, token); }
+                    catch (OperationCanceledException) { /* superseded; fall through */ }
+                }
+            }
         }
         catch (OperationCanceledException)
         {
+            apiSw.Stop();
+            totalSw.Stop();
+            Log.LogDebug(
+                "[SalesPerf] webui ReloadAsync cancelled reloadId={ReloadId} elapsedMs={ElapsedMs}",
+                thisReloadId, totalSw.ElapsedMilliseconds);
             return; // superseded
         }
 
         // Stale-response guard: if a newer request started while we were waiting,
         // discard this result quietly without touching shared state.
-        if (thisReloadId != _latestReloadId) return;
+        if (thisReloadId != _latestReloadId)
+        {
+            totalSw.Stop();
+            Log.LogDebug(
+                "[SalesPerf] webui ReloadAsync superseded reloadId={ReloadId} latest={Latest} elapsedMs={ElapsedMs}",
+                thisReloadId, _latestReloadId, totalSw.ElapsedMilliseconds);
+            return;
+        }
 
         if (result is null)
         {
@@ -603,6 +661,17 @@
 
         _isRefreshing = false;
         _hasEverLoaded = true;
+        totalSw.Stop();
+
+        Log.LogInformation(
+            "[SalesPerf] webui ReloadAsync done reloadId={ReloadId} page={Page} pageSize={PageSize} returned={Returned} total={Total} " +
+            "search={HasSearch} status={HasStatus} store={HasStore} hasDebt={HasDebt} loadFailed={LoadFailed} " +
+            "apiMs={ApiMs} barShown={BarShown} elapsedMs={ElapsedMs}",
+            thisReloadId, _page, _pageSize, _orders.Count, _total,
+            !string.IsNullOrWhiteSpace(_search), !string.IsNullOrEmpty(_statusFilter),
+            !string.IsNullOrEmpty(_storeFilter), _hasDebtFilter, _loadFailed,
+            apiOnlyMs, barShown, totalSw.ElapsedMilliseconds);
+
         StateHasChanged();
     }
 }
