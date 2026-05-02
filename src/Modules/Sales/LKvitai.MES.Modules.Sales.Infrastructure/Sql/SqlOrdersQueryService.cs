@@ -10,72 +10,41 @@ using Microsoft.Extensions.Logging;
 namespace LKvitai.MES.Modules.Sales.Infrastructure.Sql;
 
 /// <summary>
-/// SQL Server adapter for <see cref="IOrdersQueryService"/> that calls the
-/// legacy <c>dbo.weblb_*</c> stored procedures (S-2). Mirrors the behaviour of
-/// <c>LKvitai.Web.Controllers.OrdersController</c> in the legacy ASP.NET app:
+/// SQL Server adapter for <see cref="IOrdersQueryService"/> over the legacy
+/// <c>LKvitaiDb</c> database. Calls dedicated server-side stored procedures
+/// for every read; nothing is cached or reshaped in C#.
+/// </summary>
+/// <remarks>
 /// <list type="bullet">
-///   <item><c>dbo.weblb_Orders</c> — full table read, no parameters (used for
-///   both the orders list and as the seed for the details summary).</item>
-///   <item><c>dbo.weblb_Order</c> with <c>@OrderId</c> — order header + amounts.</item>
-///   <item><c>dbo.weblb_Accessories</c> with <c>@OrderId</c> — accessory rows.</item>
-///   <item><c>dbo.weblb_Items</c> with <c>@OrderId</c> — item rows (each becomes
-///   one <see cref="OrderItemGroupDto"/>; matching accessories are appended).</item>
-///   <item><c>dbo.weblb_Employees</c> with <c>@OrderId</c> — employee assignments.</item>
+///   <item><c>dbo.weblb_Orders_Paged</c> — page + filter + sort the orders
+///   list. Returns only the requested page plus a windowed <c>TotalRows</c>
+///   value, so cost scales with page size instead of table size.</item>
+///   <item><c>dbo.weblb_Orders_Filters</c> — distinct status / store labels
+///   from the reference (<c>Zinynas_*</c>) tables, two result sets in one
+///   round-trip.</item>
+///   <item><c>dbo.weblb_Orders_LookupByNumber</c> — resolves a human-readable
+///   order number to the legacy <c>UzsakymasID</c> the details procs need.</item>
+///   <item><c>dbo.weblb_Order</c>, <c>dbo.weblb_Accessories</c>,
+///   <c>dbo.weblb_Items</c>, <c>dbo.weblb_Employees</c> — per-order details,
+///   each takes <c>@OrderId BIGINT</c> and is unchanged from the legacy app.</item>
 /// </list>
 /// All column reads are <see cref="DBNull"/>-guarded; missing or unexpected
 /// types degrade to safe defaults (<c>0m</c>, empty string, <c>null</c>) instead
 /// of throwing, so a single bad row never blanks the entire list.
-/// </summary>
-/// <remarks>
-/// <para>
-/// <b>Paging / filtering note (TODO).</b> <c>dbo.weblb_Orders</c> takes no
-/// parameters and returns the full result set. This adapter therefore
-/// materialises every row into memory, then applies search / status / store /
-/// has-debt filters and pages in C#. That matches the legacy app's behaviour and
-/// is acceptable while the table size is in the low thousands, but a long-term
-/// fix is to introduce a paged proc wrapper (e.g. <c>dbo.weblb_Orders_Paged</c>
-/// taking <c>@Skip</c>, <c>@Take</c>, <c>@Search</c>, …) so the database does
-/// the work and we stop shipping the entire table per request.
-/// </para>
-/// <para>
-/// <b>Date filter.</b> <see cref="OrdersQueryParams.Date"/> is intentionally
-/// ignored here — the legacy proc has no date range parameters and the WebUI
-/// keeps that filter disabled until a paged proc wrapper exists. A future
-/// revision should plumb a real range through both the proc and this adapter.
-/// </para>
-/// <para>
-/// <b>Customer flags.</b> The legacy proc does not return <c>IsVip</c>,
-/// <c>HasNote</c> or <c>IsOverdue</c>. We derive <c>HasDebt = Debt &gt; 0</c>
-/// and leave the other three at <c>false</c>. Unknown column ordinals 8 and 9
-/// of <c>weblb_Orders</c> may carry these — to be confirmed with the DBA.
-/// </para>
 /// </remarks>
 public sealed class SqlOrdersQueryService : IOrdersQueryService
 {
-    private const string OrdersProcName       = "dbo.weblb_Orders";
-    private const string OrdersPagedProcName  = "dbo.weblb_Orders_Paged";
-    private const string OrderProcName        = "dbo.weblb_Order";
-    private const string AccessoriesProcName  = "dbo.weblb_Accessories";
-    private const string ItemsProcName        = "dbo.weblb_Items";
-    private const string EmployeesProcName    = "dbo.weblb_Employees";
-    private const string OrderIdParameter     = "@OrderId";
+    private const string OrdersPagedProcName    = "dbo.weblb_Orders_Paged";
+    private const string OrdersFiltersProcName  = "dbo.weblb_Orders_Filters";
+    private const string OrdersLookupProcName   = "dbo.weblb_Orders_LookupByNumber";
+    private const string OrderProcName          = "dbo.weblb_Order";
+    private const string AccessoriesProcName    = "dbo.weblb_Accessories";
+    private const string ItemsProcName          = "dbo.weblb_Items";
+    private const string EmployeesProcName      = "dbo.weblb_Employees";
+    private const string OrderIdParameter       = "@OrderId";
 
     private readonly SalesSqlOptions _options;
     private readonly ILogger<SqlOrdersQueryService> _logger;
-
-    // Single-flight in-process snapshot cache for dbo.weblb_Orders. Guarded by
-    // a SemaphoreSlim so that N concurrent page-change requests behind a stale
-    // snapshot only trigger ONE SQL re-fetch — the rest wait, then return the
-    // freshly populated list. The cached list is treated as immutable (every
-    // reader uses LINQ enumeration; no mutation in ApplyFilterSortPage), so
-    // it is safe to share across concurrent callers without copying.
-    //
-    // Stop-gap until a paged dbo.weblb_Orders_Paged wrapper exists; see the
-    // class header TODO. TTL is configurable via SalesSqlOptions; 0 disables
-    // caching entirely.
-    private readonly SemaphoreSlim _snapshotGate = new(initialCount: 1, maxCount: 1);
-    private List<OrderSummaryDto> _snapshotRows = new(capacity: 0);
-    private DateTime _snapshotExpiresUtc = DateTime.MinValue;
 
     public SqlOrdersQueryService(SalesSqlOptions options, ILogger<SqlOrdersQueryService> logger)
     {
@@ -97,60 +66,6 @@ public sealed class SqlOrdersQueryService : IOrdersQueryService
     {
         ArgumentNullException.ThrowIfNull(query);
 
-        // Two implementations live behind this method (selected by config —
-        // SalesSqlOptions.QueryMode). The behaviour seen by the caller is the
-        // same; only the latency profile and where the work happens differ.
-        return _options.QueryMode == OrdersQueryMode.Paged
-            ? await GetOrdersFromPagedSpAsync(query, cancellationToken).ConfigureAwait(false)
-            : await GetOrdersFromSnapshotAsync(query, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Snapshot path. Materialises <c>dbo.weblb_Orders</c> in full (cached for
-    /// <see cref="SalesSqlOptions.OrdersListCacheTtlSeconds"/>) and runs
-    /// filter / sort / page in C#. Trades freshness for simplicity — was the
-    /// only path before <c>dbo.weblb_Orders_Paged</c> existed.
-    /// </summary>
-    private async Task<PagedResult<OrderSummaryDto>> GetOrdersFromSnapshotAsync(
-        OrdersQueryParams query,
-        CancellationToken cancellationToken)
-    {
-        // Phase 0 instrumentation: split the SQL read from the in-memory
-        // filter/sort/page pass so we can attribute latency to whichever side
-        // is the actual cost. Connection string and credentials never logged.
-        var totalSw = Stopwatch.StartNew();
-        var sqlSw = Stopwatch.StartNew();
-        var all = await ReadAllOrdersAsync(cancellationToken).ConfigureAwait(false);
-        sqlSw.Stop();
-
-        var postSw = Stopwatch.StartNew();
-        var result = ApplyFilterSortPage(all, query);
-        postSw.Stop();
-        totalSw.Stop();
-
-        _logger.LogInformation(
-            "[SalesPerf] sql.GetOrders mode=snapshot rows={SourceRows} returned={Returned} total={Total} page={Page} pageSize={PageSize} " +
-            "search={HasSearch} status={HasStatus} store={HasStore} hasDebt={HasDebt} " +
-            "sqlMs={SqlMs} postProcMs={PostProcMs} totalMs={TotalMs}",
-            all.Count, result.Items.Count, result.Total, result.Page, result.PageSize,
-            !string.IsNullOrWhiteSpace(query.Search), !string.IsNullOrWhiteSpace(query.Status),
-            !string.IsNullOrWhiteSpace(query.Store), query.HasDebt,
-            sqlSw.ElapsedMilliseconds, postSw.ElapsedMilliseconds, totalSw.ElapsedMilliseconds);
-
-        return result;
-    }
-
-    /// <summary>
-    /// Paged path. Calls <c>dbo.weblb_Orders_Paged</c> with the filter / page
-    /// parameters; the SP returns just the requested page plus a windowed
-    /// <c>TotalRows</c> value (replicated on every row). No in-process cache
-    /// for the orders list itself — every call is a fresh SP execution, so
-    /// the cost scales with <c>PageSize</c>, not with the table size.
-    /// </summary>
-    private async Task<PagedResult<OrderSummaryDto>> GetOrdersFromPagedSpAsync(
-        OrdersQueryParams query,
-        CancellationToken cancellationToken)
-    {
         var pageSize = query.PageSize <= 0 ? 100 : query.PageSize;
         var page     = query.Page     <= 0 ? 1   : query.Page;
 
@@ -194,45 +109,16 @@ public sealed class SqlOrdersQueryService : IOrdersQueryService
         var matSw = Stopwatch.StartNew();
         while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
         {
-            var id             = ReadInt64ByOrdinal(reader, ordinal: 0);
-            var number         = ReadStringByOrdinal(reader, ordinal: 1, fallback: string.Empty);
-            var date           = ReadDateOnlyByOrdinal(reader, ordinal: 2);
-            var price          = ReadDecimalByOrdinal(reader, ordinal: 3);
-            var debt           = ReadDecimalByOrdinal(reader, ordinal: 4);
-            var customer       = ReadStringByOrdinal(reader, ordinal: 5, fallback: string.Empty);
-            var status         = ReadStringByOrdinal(reader, ordinal: 6, fallback: string.Empty);
-            var store          = ReadStringByOrdinal(reader, ordinal: 7, fallback: string.Empty);
-            // ordinals 8 (IsCancelled) and 9 (sImageKey) are returned by the
-            // SP but currently unused by the C# DTO — left in the result set
-            // for parity with the legacy weblb_Orders shape.
-            var address        = ReadStringByOrdinal(reader, ordinal: 10, fallback: string.Empty);
-            var productsSearch = ReadStringOrNullByOrdinal(reader, ordinal: 11);
+            rows.Add(ReadOrderSummary(reader));
             // TotalRows is windowed COUNT(*) OVER () — same value on every row;
             // we just keep the last one read (or zero if the page is empty).
             totalRows = (int)ReadInt64ByOrdinal(reader, ordinal: 12);
-
-            rows.Add(new OrderSummaryDto(
-                Id:             id,
-                Number:         number,
-                Date:           date,
-                Price:          price,
-                Debt:           debt,
-                IsOverdue:      false,
-                Customer:       customer,
-                HasDebt:        debt > 0m,
-                IsVip:          false,
-                HasNote:        false,
-                Status:         status,
-                StatusCode:     SalesOrderStatusMap.ToStatusCode(status),
-                Store:          store,
-                Address:        address,
-                ProductsSearch: productsSearch));
         }
         matSw.Stop();
         totalSw.Stop();
 
         _logger.LogInformation(
-            "[SalesPerf] sql.GetOrders mode=paged returned={Returned} total={Total} page={Page} pageSize={PageSize} " +
+            "[SalesPerf] sql.GetOrders returned={Returned} total={Total} page={Page} pageSize={PageSize} " +
             "search={HasSearch} status={HasStatus} store={HasStore} hasDebt={HasDebt} " +
             "openMs={OpenMs} execMs={ExecMs} materialiseMs={MaterialiseMs} totalMs={TotalMs}",
             rows.Count, totalRows, page, pageSize,
@@ -244,49 +130,44 @@ public sealed class SqlOrdersQueryService : IOrdersQueryService
         return new PagedResult<OrderSummaryDto>(rows, totalRows, page, pageSize);
     }
 
-    /// <summary>
-    /// SQL parameter helper: emit <see cref="DBNull.Value"/> for null / blank
-    /// strings so the SP's <c>IS NULL</c> branches fire instead of looking
-    /// for the literal <c>N''</c>.
-    /// </summary>
-    private static object NullableNVarChar(string? value)
-        => string.IsNullOrWhiteSpace(value) ? DBNull.Value : value.Trim();
-
     public async Task<OrdersFilterOptionsDto> GetFilterOptionsAsync(CancellationToken cancellationToken)
     {
-        // Same full-table read as GetOrdersAsync (weblb_Orders has no parameters).
-        // We project the two label sets the WebUI toolbar needs; the data is
-        // small enough that an ad-hoc DISTINCT in C# is cheaper than another
-        // round trip. When the paged proc wrapper lands (TODO above), expose
-        // dedicated dbo.weblb_StatusList / dbo.weblb_StoreList and wire them
-        // here instead.
+        // dbo.weblb_Orders_Filters returns two result sets:
+        //   1) statuses : single column [Status] from dbo.Zinynas_busenos
+        //   2) stores   : single column [Store]  from dbo.Zinynas_vieta
+        // Both already trimmed and ordered server-side — no projection here.
         var totalSw = Stopwatch.StartNew();
-        var sqlSw = Stopwatch.StartNew();
-        var all = await ReadAllOrdersAsync(cancellationToken).ConfigureAwait(false);
-        sqlSw.Stop();
 
-        var projSw = Stopwatch.StartNew();
-        var statuses = all
-            .Select(o => o.Status)
-            .Where(static s => !string.IsNullOrWhiteSpace(s))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .OrderBy(static s => s, StringComparer.CurrentCulture)
-            .ToList();
+        await using var conn = new SqlConnection(_options.ConnectionString);
+        await conn.OpenAsync(cancellationToken).ConfigureAwait(false);
 
-        var stores = all
-            .Select(o => o.Store)
-            .Where(static s => !string.IsNullOrWhiteSpace(s))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .OrderBy(static s => s, StringComparer.CurrentCulture)
-            .ToList();
-        projSw.Stop();
+        await using var cmd = new SqlCommand(OrdersFiltersProcName, conn)
+        {
+            CommandType    = CommandType.StoredProcedure,
+            CommandTimeout = _options.CommandTimeoutSeconds,
+        };
+
+        await using var reader = await cmd.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+
+        var statuses = new List<string>(capacity: 16);
+        while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+        {
+            statuses.Add(reader.GetString(0));
+        }
+
+        await reader.NextResultAsync(cancellationToken).ConfigureAwait(false);
+
+        var stores = new List<string>(capacity: 32);
+        while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+        {
+            stores.Add(reader.GetString(0));
+        }
+
         totalSw.Stop();
 
         _logger.LogInformation(
-            "[SalesPerf] sql.GetFilterOptions rows={SourceRows} statuses={StatusCount} stores={StoreCount} " +
-            "sqlMs={SqlMs} projectMs={ProjectMs} totalMs={TotalMs}",
-            all.Count, statuses.Count, stores.Count,
-            sqlSw.ElapsedMilliseconds, projSw.ElapsedMilliseconds, totalSw.ElapsedMilliseconds);
+            "[SalesPerf] sql.GetFilterOptions statuses={StatusCount} stores={StoreCount} totalMs={TotalMs}",
+            statuses.Count, stores.Count, totalSw.ElapsedMilliseconds);
 
         return new OrdersFilterOptionsDto(statuses, stores);
     }
@@ -302,29 +183,56 @@ public sealed class SqlOrdersQueryService : IOrdersQueryService
 
         var totalSw = Stopwatch.StartNew();
 
-        // Phase 1: locate the summary row in weblb_Orders so we can resolve the
-        // legacy Id (the @OrderId parameter all other procs require) and seed
-        // the price / debt / store / status fields the details proc does not
-        // return.
-        var lookupSw = Stopwatch.StartNew();
-        var summary = (await ReadAllOrdersAsync(cancellationToken).ConfigureAwait(false))
-            .FirstOrDefault(o => string.Equals(o.Number, number, StringComparison.OrdinalIgnoreCase));
-        lookupSw.Stop();
-
-        if (summary is null)
-        {
-            _logger.LogInformation(
-                "[SalesPerf] sql.GetOrderDetails number={Number} found=False lookupMs={LookupMs} totalMs={TotalMs}",
-                number, lookupSw.ElapsedMilliseconds, totalSw.ElapsedMilliseconds);
-            return null;
-        }
-
         var openSw = Stopwatch.StartNew();
         await using var conn = new SqlConnection(_options.ConnectionString);
         await conn.OpenAsync(cancellationToken).ConfigureAwait(false);
         openSw.Stop();
 
-        // Phase 2: header (operator + amounts + authoritative address override).
+        // Phase 1: resolve Number → UzsakymasID via the dedicated lookup SP.
+        // The legacy details procs (weblb_Order/Items/Accessories/Employees)
+        // all key on @OrderId, so we pay one cheap index seek up-front rather
+        // than scanning the orders list.
+        var lookupSw = Stopwatch.StartNew();
+        long orderId;
+        await using (var cmd = new SqlCommand(OrdersLookupProcName, conn)
+        {
+            CommandType    = CommandType.StoredProcedure,
+            CommandTimeout = _options.CommandTimeoutSeconds,
+        })
+        {
+            cmd.Parameters.Add(new SqlParameter("@Number", SqlDbType.NVarChar, 100) { Value = number });
+            var result = await cmd.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false);
+            if (result is null || result is DBNull)
+            {
+                lookupSw.Stop();
+                _logger.LogInformation(
+                    "[SalesPerf] sql.GetOrderDetails number={Number} found=False lookupMs={LookupMs} totalMs={TotalMs}",
+                    number, lookupSw.ElapsedMilliseconds, totalSw.ElapsedMilliseconds);
+                return null;
+            }
+            orderId = Convert.ToInt64(result, CultureInfo.InvariantCulture);
+        }
+        lookupSw.Stop();
+
+        // Phase 2: the legacy weblb_Order proc returns the authoritative
+        // header (operator + amounts + address override). The summary fields
+        // we still need (number, date, price, debt, store, status) are
+        // re-projected from a single-row dbo.weblb_Orders_Paged search call
+        // so this method does not need its own copy of the projection logic.
+        var summarySw = Stopwatch.StartNew();
+        OrderSummaryDto? summary = await ReadSummaryByNumberAsync(conn, number, cancellationToken).ConfigureAwait(false);
+        summarySw.Stop();
+
+        if (summary is null)
+        {
+            // Shouldn't happen — the lookup just told us the order exists —
+            // but guard anyway so we don't NRE on a stale read.
+            _logger.LogWarning(
+                "[SalesPerf] sql.GetOrderDetails number={Number} lookupOk=True summary=null lookupMs={LookupMs} summaryMs={SummaryMs} totalMs={TotalMs}",
+                number, lookupSw.ElapsedMilliseconds, summarySw.ElapsedMilliseconds, totalSw.ElapsedMilliseconds);
+            return null;
+        }
+
         OrderOperatorDto? @operator = null;
         var amounts = new List<OrderAmountDto>(6);
         var headerCustomer = summary.Customer;
@@ -332,7 +240,7 @@ public sealed class SqlOrdersQueryService : IOrdersQueryService
         var headerAddress  = summary.Address;
 
         var headerSw = Stopwatch.StartNew();
-        await using (var cmd = CreateProc(conn, OrderProcName, summary.Id))
+        await using (var cmd = CreateProc(conn, OrderProcName, orderId))
         await using (var reader = await cmd.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false))
         {
             if (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
@@ -361,7 +269,7 @@ public sealed class SqlOrdersQueryService : IOrdersQueryService
         // Phase 3: accessories (collected first so we can attach them to their parent items).
         var accSw = Stopwatch.StartNew();
         var accessoriesByItemId = new Dictionary<long, List<OrderItemDto>>();
-        await using (var cmd = CreateProc(conn, AccessoriesProcName, summary.Id))
+        await using (var cmd = CreateProc(conn, AccessoriesProcName, orderId))
         await using (var reader = await cmd.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false))
         {
             while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
@@ -398,7 +306,7 @@ public sealed class SqlOrdersQueryService : IOrdersQueryService
         // Phase 4: items — each becomes one OrderItemGroupDto seeded with its parent line plus accessories.
         var itemsSw = Stopwatch.StartNew();
         var itemGroups = new List<OrderItemGroupDto>();
-        await using (var cmd = CreateProc(conn, ItemsProcName, summary.Id))
+        await using (var cmd = CreateProc(conn, ItemsProcName, orderId))
         await using (var reader = await cmd.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false))
         {
             var displayOrder = 1;
@@ -448,7 +356,7 @@ public sealed class SqlOrdersQueryService : IOrdersQueryService
         // Phase 5: employees.
         var empSw = Stopwatch.StartNew();
         var employees = new List<OrderEmployeeDto>();
-        await using (var cmd = CreateProc(conn, EmployeesProcName, summary.Id))
+        await using (var cmd = CreateProc(conn, EmployeesProcName, orderId))
         await using (var reader = await cmd.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false))
         {
             while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
@@ -473,14 +381,14 @@ public sealed class SqlOrdersQueryService : IOrdersQueryService
 
         _logger.LogInformation(
             "[SalesPerf] sql.GetOrderDetails number={Number} found=True items={ItemGroups} accessories={AccessoryItems} employees={EmployeeCount} " +
-            "lookupMs={LookupMs} openMs={OpenMs} headerMs={HeaderMs} accMs={AccMs} itemsMs={ItemsMs} empMs={EmpMs} totalMs={TotalMs}",
+            "lookupMs={LookupMs} summaryMs={SummaryMs} openMs={OpenMs} headerMs={HeaderMs} accMs={AccMs} itemsMs={ItemsMs} empMs={EmpMs} totalMs={TotalMs}",
             number, itemGroups.Count, accessoriesByItemId.Sum(kv => kv.Value.Count), employees.Count,
-            lookupSw.ElapsedMilliseconds, openSw.ElapsedMilliseconds, headerSw.ElapsedMilliseconds,
-            accSw.ElapsedMilliseconds, itemsSw.ElapsedMilliseconds, empSw.ElapsedMilliseconds,
-            totalSw.ElapsedMilliseconds);
+            lookupSw.ElapsedMilliseconds, summarySw.ElapsedMilliseconds, openSw.ElapsedMilliseconds,
+            headerSw.ElapsedMilliseconds, accSw.ElapsedMilliseconds, itemsSw.ElapsedMilliseconds,
+            empSw.ElapsedMilliseconds, totalSw.ElapsedMilliseconds);
 
         return new OrderDetailsDto(
-            Id:         summary.Id,
+            Id:         orderId,
             Number:     summary.Number,
             Date:       summary.Date,
             Price:      summary.Price,
@@ -501,218 +409,82 @@ public sealed class SqlOrdersQueryService : IOrdersQueryService
     }
 
     /// <summary>
-    /// Reads <c>dbo.weblb_Orders</c> in full and projects each row to an
-    /// <see cref="OrderSummaryDto"/>. Column reads are by ordinal because the
-    /// legacy proc has no documented column-name contract — the indexes match
-    /// the legacy <c>OrdersController</c>'s <c>GetX(n)</c> calls one-for-one.
+    /// Pulls a single-row summary from <c>dbo.weblb_Orders_Paged</c> by passing
+    /// the human-readable order number through as the <c>@Search</c> filter
+    /// (LIKE-search on Number / Customer / Address). Filtered to one row by
+    /// <c>@PageSize = 1</c>, then post-filtered to the exact match in C# so a
+    /// substring collision (e.g. another order whose Customer text contains
+    /// our number) cannot win.
     /// </summary>
-    /// <summary>
-    /// Returns the materialised <c>dbo.weblb_Orders</c> result set, served from
-    /// an in-process snapshot whose lifetime is bounded by
-    /// <see cref="SalesSqlOptions.OrdersListCacheTtlSeconds"/>. Behind a
-    /// <see cref="SemaphoreSlim"/>: while one caller is fetching a fresh
-    /// snapshot, every concurrent caller waits and then reuses the same
-    /// list (single-flight). Set the TTL to <c>0</c> to disable the cache
-    /// and read from SQL on every call.
-    /// </summary>
-    private async Task<List<OrderSummaryDto>> ReadAllOrdersAsync(CancellationToken cancellationToken)
+    private async Task<OrderSummaryDto?> ReadSummaryByNumberAsync(
+        SqlConnection conn,
+        string number,
+        CancellationToken cancellationToken)
     {
-        var ttlSeconds = _options.OrdersListCacheTtlSeconds;
-        if (ttlSeconds <= 0)
-        {
-            // Caching disabled — preserve original "fresh SQL on every call"
-            // behaviour. Useful for diagnostics and once a paged proc wrapper
-            // makes the in-process snapshot obsolete.
-            _logger.LogDebug("[SalesPerf] sql.cache disabled ttlSec={TtlSeconds}", ttlSeconds);
-            return await LoadAllOrdersFromSqlAsync(cancellationToken).ConfigureAwait(false);
-        }
-
-        // Fast-path: snapshot still fresh, no lock needed. Reads of the two
-        // fields are independently atomic on .NET 8 (reference + DateTime is
-        // 8 bytes), so worst case we serve a snapshot that just expired —
-        // identical to the post-lock branch under contention.
-        var nowUtc = DateTime.UtcNow;
-        var snapshotRows = _snapshotRows;
-        var snapshotExpiresUtc = _snapshotExpiresUtc;
-        if (nowUtc < snapshotExpiresUtc)
-        {
-            var ageMs = (long)(nowUtc - (snapshotExpiresUtc - TimeSpan.FromSeconds(ttlSeconds))).TotalMilliseconds;
-            _logger.LogInformation(
-                "[SalesPerf] sql.cache hit rows={Rows} ageMs={AgeMs} remainingMs={RemainingMs}",
-                snapshotRows.Count, ageMs, (long)(snapshotExpiresUtc - nowUtc).TotalMilliseconds);
-            return snapshotRows;
-        }
-
-        // Slow-path: stale or first call. Single-flight via SemaphoreSlim —
-        // only one caller fetches; the rest wait then return the new snapshot.
-        await _snapshotGate.WaitAsync(cancellationToken).ConfigureAwait(false);
-        try
-        {
-            // Double-check: another caller may have refreshed the snapshot
-            // while we were waiting on the semaphore. If so, return that.
-            nowUtc = DateTime.UtcNow;
-            if (nowUtc < _snapshotExpiresUtc)
-            {
-                _logger.LogInformation(
-                    "[SalesPerf] sql.cache hit-after-wait rows={Rows} remainingMs={RemainingMs}",
-                    _snapshotRows.Count, (long)(_snapshotExpiresUtc - nowUtc).TotalMilliseconds);
-                return _snapshotRows;
-            }
-
-            var fresh = await LoadAllOrdersFromSqlAsync(cancellationToken).ConfigureAwait(false);
-            _snapshotRows = fresh;
-            _snapshotExpiresUtc = DateTime.UtcNow.AddSeconds(ttlSeconds);
-
-            _logger.LogInformation(
-                "[SalesPerf] sql.cache miss rows={Rows} ttlSec={TtlSeconds} expiresAtUtc={ExpiresAtUtc:O}",
-                fresh.Count, ttlSeconds, _snapshotExpiresUtc);
-            return fresh;
-        }
-        finally
-        {
-            _snapshotGate.Release();
-        }
-    }
-
-    private async Task<List<OrderSummaryDto>> LoadAllOrdersFromSqlAsync(CancellationToken cancellationToken)
-    {
-        // Phase 0 instrumentation — split SQL into Open / Exec (TTFB)
-        // / Materialise so we can tell *where* the time is going. These
-        // segments are cheap (Stopwatch.GetTimestamp() ticks) and emitted
-        // at Debug level only — the parent GetOrders/GetFilterOptions
-        // method already logs the rolled-up sqlMs at Information.
-        var rows = new List<OrderSummaryDto>(capacity: 1024);
-        var totalSw = Stopwatch.StartNew();
-
-        var openSw = Stopwatch.StartNew();
-        await using var conn = new SqlConnection(_options.ConnectionString);
-        await conn.OpenAsync(cancellationToken).ConfigureAwait(false);
-        openSw.Stop();
-
-        await using var cmd = new SqlCommand(OrdersProcName, conn)
+        await using var cmd = new SqlCommand(OrdersPagedProcName, conn)
         {
             CommandType    = CommandType.StoredProcedure,
             CommandTimeout = _options.CommandTimeoutSeconds,
         };
+        cmd.Parameters.Add(new SqlParameter("@Page",     SqlDbType.Int)            { Value = 1 });
+        cmd.Parameters.Add(new SqlParameter("@PageSize", SqlDbType.Int)            { Value = 5 });
+        cmd.Parameters.Add(new SqlParameter("@Search",   SqlDbType.NVarChar, 200)  { Value = number });
+        cmd.Parameters.Add(new SqlParameter("@Status",   SqlDbType.NVarChar, 100)  { Value = DBNull.Value });
+        cmd.Parameters.Add(new SqlParameter("@Store",    SqlDbType.NVarChar, 100)  { Value = DBNull.Value });
+        cmd.Parameters.Add(new SqlParameter("@HasDebt",  SqlDbType.Bit)            { Value = DBNull.Value });
+        cmd.Parameters.Add(new SqlParameter("@DateFrom", SqlDbType.Date)           { Value = DBNull.Value });
+        cmd.Parameters.Add(new SqlParameter("@DateTo",   SqlDbType.Date)           { Value = DBNull.Value });
 
-        var execSw = Stopwatch.StartNew();
         await using var reader = await cmd.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
-        execSw.Stop();
-
-        var fieldCount = reader.FieldCount;
-        var matSw = Stopwatch.StartNew();
-
         while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
         {
-            var id             = ReadInt64ByOrdinal(reader, ordinal: 0);
-            var number         = ReadStringByOrdinal(reader, ordinal: 1, fallback: string.Empty);
-            var date           = ReadDateOnlyByOrdinal(reader, ordinal: 2);
-            var price          = ReadDecimalByOrdinal(reader, ordinal: 3);
-            var debt           = ReadDecimalByOrdinal(reader, ordinal: 4);
-            var customer       = ReadStringByOrdinal(reader, ordinal: 5, fallback: string.Empty);
-            var status         = ReadStringByOrdinal(reader, ordinal: 6, fallback: string.Empty);
-            var store          = ReadStringByOrdinal(reader, ordinal: 7, fallback: string.Empty);
-            // ordinals 8 and 9 are unused by the legacy controller — possibly
-            // IsVip / HasNote / DueDate. To be confirmed with the DBA.
-            var address        = fieldCount > 10
-                ? ReadStringByOrdinal(reader, ordinal: 10, fallback: string.Empty)
-                : string.Empty;
-            var productsSearch = fieldCount > 11
-                ? ReadStringOrNullByOrdinal(reader, ordinal: 11)
-                : null;
-
-            rows.Add(new OrderSummaryDto(
-                Id:             id,
-                Number:         number,
-                Date:           date,
-                Price:          price,
-                Debt:           debt,
-                IsOverdue:      false,
-                Customer:       customer,
-                HasDebt:        debt > 0m,
-                IsVip:          false,
-                HasNote:        false,
-                Status:         status,
-                StatusCode:     SalesOrderStatusMap.ToStatusCode(status),
-                Store:          store,
-                Address:        address,
-                ProductsSearch: productsSearch));
+            var summary = ReadOrderSummary(reader);
+            if (string.Equals(summary.Number, number, StringComparison.OrdinalIgnoreCase))
+            {
+                return summary;
+            }
         }
-        matSw.Stop();
-        totalSw.Stop();
-
-        _logger.LogDebug(
-            "[SalesPerf] sql.weblb_Orders rows={Rows} openMs={OpenMs} execMs={ExecMs} materialiseMs={MaterialiseMs} totalMs={TotalMs}",
-            rows.Count, openSw.ElapsedMilliseconds, execSw.ElapsedMilliseconds,
-            matSw.ElapsedMilliseconds, totalSw.ElapsedMilliseconds);
-
-        return rows;
+        return null;
     }
 
     /// <summary>
-    /// Applies the in-memory equivalent of the legacy WHERE / ORDER BY / TOP
-    /// clauses to the materialised order list. Mirrors the contract documented
-    /// on <see cref="OrdersQueryParams"/> and lets the WebUI render real paging
-    /// metadata (Total / Page / PageSize) without an extra count round-trip.
+    /// Projects a row of <c>dbo.weblb_Orders_Paged</c> output into the
+    /// <see cref="OrderSummaryDto"/> shape the WebUI expects. Column ordinals
+    /// are kept in sync with the SP definition (see <c>.scratch/sp-paged.sql</c>).
     /// </summary>
-    private static PagedResult<OrderSummaryDto> ApplyFilterSortPage(
-        IReadOnlyList<OrderSummaryDto> all,
-        OrdersQueryParams query)
+    private static OrderSummaryDto ReadOrderSummary(SqlDataReader reader)
     {
-        IEnumerable<OrderSummaryDto> filtered = all;
+        var debt = ReadDecimalByOrdinal(reader, ordinal: 4);
+        var status = ReadStringByOrdinal(reader, ordinal: 6, fallback: string.Empty);
 
-        if (!string.IsNullOrWhiteSpace(query.Search))
-        {
-            var needle = query.Search.Trim();
-            filtered = filtered.Where(o =>
-                o.Number.Contains(needle, StringComparison.OrdinalIgnoreCase) ||
-                o.Customer.Contains(needle, StringComparison.OrdinalIgnoreCase) ||
-                o.Address.Contains(needle, StringComparison.OrdinalIgnoreCase) ||
-                (o.ProductsSearch is { Length: > 0 } &&
-                    o.ProductsSearch.Contains(needle, StringComparison.OrdinalIgnoreCase)));
-        }
-
-        // Trim both sides — legacy nchar/char columns are right-padded with
-        // spaces, which would otherwise make an exact-equality dropdown filter
-        // silently return zero rows.
-        if (!string.IsNullOrWhiteSpace(query.Status))
-        {
-            var status = query.Status.Trim();
-            filtered = filtered.Where(o =>
-                string.Equals(o.Status?.Trim(), status, StringComparison.OrdinalIgnoreCase));
-        }
-
-        if (!string.IsNullOrWhiteSpace(query.Store))
-        {
-            var store = query.Store.Trim();
-            filtered = filtered.Where(o =>
-                string.Equals(o.Store?.Trim(), store, StringComparison.OrdinalIgnoreCase));
-        }
-
-        if (query.HasDebt)
-        {
-            filtered = filtered.Where(o => o.HasDebt);
-        }
-
-        // S-2 ignores the Date preset on purpose — the legacy proc has no date
-        // range parameter and a real range arrives once a paged proc wrapper
-        // exists. Until then the WebUI keeps that selector disabled.
-
-        var sorted = filtered
-            .OrderByDescending(o => o.Date)
-            .ThenByDescending(o => o.Number, StringComparer.Ordinal)
-            .ToList();
-
-        var pageSize = query.PageSize <= 0 ? 100 : query.PageSize;
-        var page     = query.Page     <= 0 ? 1   : query.Page;
-
-        var paged = sorted
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToList();
-
-        return new PagedResult<OrderSummaryDto>(paged, sorted.Count, page, pageSize);
+        return new OrderSummaryDto(
+            Id:             ReadInt64ByOrdinal(reader, ordinal: 0),
+            Number:         ReadStringByOrdinal(reader, ordinal: 1, fallback: string.Empty),
+            Date:           ReadDateOnlyByOrdinal(reader, ordinal: 2),
+            Price:          ReadDecimalByOrdinal(reader, ordinal: 3),
+            Debt:           debt,
+            IsOverdue:      false,
+            Customer:       ReadStringByOrdinal(reader, ordinal: 5, fallback: string.Empty),
+            HasDebt:        debt > 0m,
+            IsVip:          false,
+            HasNote:        false,
+            Status:         status,
+            StatusCode:     SalesOrderStatusMap.ToStatusCode(status),
+            Store:          ReadStringByOrdinal(reader, ordinal: 7, fallback: string.Empty),
+            // ordinals 8 (IsCancelled) and 9 (sImageKey) are returned by the
+            // SP but currently unused by the C# DTO — left in the result set
+            // for parity with the legacy weblb_Orders shape.
+            Address:        ReadStringByOrdinal(reader, ordinal: 10, fallback: string.Empty),
+            ProductsSearch: ReadStringOrNullByOrdinal(reader, ordinal: 11));
     }
+
+    /// <summary>
+    /// SQL parameter helper: emit <see cref="DBNull.Value"/> for null / blank
+    /// strings so the SP's <c>IS NULL</c> branches fire instead of looking
+    /// for the literal <c>N''</c>.
+    /// </summary>
+    private static object NullableNVarChar(string? value)
+        => string.IsNullOrWhiteSpace(value) ? DBNull.Value : value.Trim();
 
     private SqlCommand CreateProc(SqlConnection conn, string procName, long orderId)
     {
@@ -830,7 +602,7 @@ public sealed class SqlOrdersQueryService : IOrdersQueryService
         if (lower.Contains("montuot") || lower.Contains("install"))     return "mont";
         if (lower.Contains("transport"))                                return "trans";
 
-        return string.Empty; // neutral dot — keeps the row legible without guessing
+        return string.Empty;
     }
 
     private static DateOnly? ParseLegacyDate(string? text)
