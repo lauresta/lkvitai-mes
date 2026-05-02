@@ -12,9 +12,13 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet" />
     <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
-    <link href="css/tokens.css" rel="stylesheet" />
-    <link href="_content/LKvitai.MES.BuildingBlocks.WebUI/css/portal-shell.css" rel="stylesheet" />
-    <link href="css/orders.css" rel="stylesheet" />
+    @* asp-append-version=true emits a content-hash query string (?v=...) so
+       Cloudflare and the browser cache the CSS by hash instead of by name —
+       a redeploy of the same URL with new content reaches the user instantly,
+       not in 4 hours when max-age expires. *@
+    <link href="css/tokens.css" rel="stylesheet" asp-append-version="true" />
+    <link href="_content/LKvitai.MES.BuildingBlocks.WebUI/css/portal-shell.css" rel="stylesheet" asp-append-version="true" />
+    <link href="css/orders.css" rel="stylesheet" asp-append-version="true" />
     <link rel="icon" href="data:," />
     <title>LKvitai.MES · Sales</title>
     <component type="typeof(HeadOutlet)" render-mode="ServerPrerendered" />
@@ -27,6 +31,21 @@
         <a href="" class="reload">Reload</a>
         <a class="dismiss">🗙</a>
     </div>
+
+    @* Required for PersistentComponentState to actually transfer state from the
+       prerender pass to the interactive (post-SignalR) pass. Without this tag
+       the RegisterOnPersisting callbacks fire on the server but the serialized
+       payload is never written into the page, so TryTakeFromJson on the client
+       always returns false and OnInitializedAsync re-fetches data — visible
+       as a flash between the prerendered grid and the re-rendered grid.
+
+       Pairs with two other guards in this module that together prevent the
+       circuit-on-startup death we saw on mes-test:
+         * Program.cs bumps SignalR's MaximumReceiveMessageSize to 256 KB so the
+           hydration message isn't truncated on connect.
+         * Pages/Index.razor persists a slim `PersistedOrderRow` (no
+           ProductsSearch) to keep the payload comfortably under that cap. *@
+    <persist-component-state />
 
     <script src="_framework/blazor.server.js"></script>
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>

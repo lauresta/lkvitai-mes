@@ -1,7 +1,9 @@
+using System.Diagnostics;
 using LKvitai.MES.Modules.Sales.Application.Ports;
 using LKvitai.MES.Modules.Sales.Contracts.Common;
 using LKvitai.MES.Modules.Sales.Contracts.Orders;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 
 namespace LKvitai.MES.Modules.Sales.Api.Endpoints;
 
@@ -28,26 +30,68 @@ public static class OrdersEndpoints
             .Produces<OrderDetailsDto>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status404NotFound);
 
+        // Filter options for the toolbar Status / Store dropdowns. The WebUI
+        // uses these instead of hardcoded city/status names so every option
+        // shown actually filters at least one row in the current data.
+        group.MapGet("/orders/filters", GetOrdersFilterOptionsAsync)
+            .WithName("GetSalesOrdersFilterOptions")
+            .Produces<OrdersFilterOptionsDto>(StatusCodes.Status200OK);
+
         return group;
     }
 
     private static async Task<IResult> GetOrdersAsync(
         [AsParameters] OrdersListRequest request,
         IOrdersQueryService orders,
+        ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
+        var sw = Stopwatch.StartNew();
         var query = request.ToQueryParams();
         var result = await orders.GetOrdersAsync(query, cancellationToken).ConfigureAwait(false);
+        sw.Stop();
+
+        loggerFactory.CreateLogger("LKvitai.MES.Modules.Sales.Api.Endpoints.Orders").LogInformation(
+            "[SalesPerf] api GET /api/sales/orders page={Page} pageSize={PageSize} returned={Returned} total={Total} " +
+            "search={HasSearch} status={HasStatus} store={HasStore} hasDebt={HasDebt} elapsedMs={ElapsedMs}",
+            result.Page, result.PageSize, result.Items.Count, result.Total,
+            !string.IsNullOrWhiteSpace(query.Search), !string.IsNullOrWhiteSpace(query.Status),
+            !string.IsNullOrWhiteSpace(query.Store), query.HasDebt, sw.ElapsedMilliseconds);
+
         return Results.Ok(result);
     }
 
     private static async Task<IResult> GetOrderDetailsAsync(
         string number,
         IOrdersQueryService orders,
+        ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
+        var sw = Stopwatch.StartNew();
         var details = await orders.GetOrderDetailsAsync(number, cancellationToken).ConfigureAwait(false);
+        sw.Stop();
+
+        loggerFactory.CreateLogger("LKvitai.MES.Modules.Sales.Api.Endpoints.Orders").LogInformation(
+            "[SalesPerf] api GET /api/sales/orders/{{number}} number={Number} found={Found} elapsedMs={ElapsedMs}",
+            number, details is not null, sw.ElapsedMilliseconds);
+
         return details is null ? Results.NotFound() : Results.Ok(details);
+    }
+
+    private static async Task<IResult> GetOrdersFilterOptionsAsync(
+        IOrdersQueryService orders,
+        ILoggerFactory loggerFactory,
+        CancellationToken cancellationToken)
+    {
+        var sw = Stopwatch.StartNew();
+        var options = await orders.GetFilterOptionsAsync(cancellationToken).ConfigureAwait(false);
+        sw.Stop();
+
+        loggerFactory.CreateLogger("LKvitai.MES.Modules.Sales.Api.Endpoints.Orders").LogInformation(
+            "[SalesPerf] api GET /api/sales/orders/filters statuses={StatusCount} stores={StoreCount} elapsedMs={ElapsedMs}",
+            options.Statuses.Count, options.Stores.Count, sw.ElapsedMilliseconds);
+
+        return Results.Ok(options);
     }
 
     /// <summary>

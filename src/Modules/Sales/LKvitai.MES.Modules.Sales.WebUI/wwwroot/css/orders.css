@@ -106,6 +106,9 @@ h1:focus { outline: none; }
 .chip--delivered  { background: var(--done-bg);   color: var(--done-fg);   border-color: var(--done-bd); }
 .chip--paused     { background: var(--danger-bg); color: var(--danger-fg); border-color: var(--danger-bd); }
 .chip--cancelled  { background: var(--n-50);      color: var(--n-400);     border-color: var(--n-200); text-decoration: line-through; }
+/* "SKIRTINGAI" — order has lines in multiple status families simultaneously.
+   Info-blue family so it reads as informational rather than warn/danger. */
+.chip--multistatus { background: var(--info-bg);  color: var(--info-fg);   border-color: var(--info-bd); }
 
 /* ── Table foot ──────────────────────────────────────────────── */
 .table-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 12px; border-top: 1px solid var(--n-150); color: var(--n-500); font-size: 12px; }
@@ -153,13 +156,43 @@ h1:focus { outline: none; }
 .amount-card--debt { border-color: var(--danger-bd); background: #fff4f1; }
 .amount-card--debt .amount-card__value { color: var(--danger-fg); }
 
+/* ── List loading affordance ─────────────────────────────────
+   2px teal sliver at the top of the orders panel that's only visible while
+   a refresh is in flight (page change, filter, search). Pure CSS animation,
+   no JS — uses an indeterminate left↔right slide so the user immediately
+   sees that the click was registered without any click being blocked.
+   The dim modifier on .orders-list__body / .orders-list__cards softens
+   the previous rows while the new ones load (fades to 0.6 opacity, but
+   never disappears, so there's no skeleton flash on every page click). */
+.list-loading-bar { position: relative; height: 2px; overflow: hidden; background: transparent; transition: background .12s ease-in-out; }
+.list-loading-bar.is-active { background: var(--accent-50); }
+.list-loading-bar.is-active::before {
+  content: "";
+  position: absolute; left: 0; top: 0; bottom: 0; width: 35%;
+  background: linear-gradient(90deg, transparent 0%, var(--accent-500) 30%, var(--accent-500) 70%, transparent 100%);
+  animation: orders-loading-slide 1.05s ease-in-out infinite;
+}
+@keyframes orders-loading-slide {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(286%); }
+}
+.orders-list.is-refreshing .orders-list__body,
+.orders-list.is-refreshing .orders-list__cards { opacity: .6; pointer-events: none; transition: opacity .12s ease-in-out; }
+
 /* ── Employees table ─────────────────────────────────────────── */
 .emp-name { display: flex; align-items: center; gap: 7px; }
 .emp-avatar { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--n-100); color: var(--n-700); font-family: var(--font-mono); font-size: 10px; font-weight: 900; flex-shrink: 0; }
+/* Employee duty dots — 5 fixed roles per business confirmation 2026-05-02:
+   Konsultantas / Vadybininkas / Matuotojas / Montuotojas / Transportas.
+   Default base dot stays neutral light-grey so an unmapped role doesn't
+   silently steal one of the 5 functional colors. */
 .duty { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; }
-.duty::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent-500); flex-shrink: 0; }
-.duty--prod::before { background: var(--sand-600); }
-.duty--inst::before { background: var(--ok-dot); }
+.duty::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--n-300); flex-shrink: 0; }
+.duty--kons::before  { background: var(--accent-500); } /* Konsultantas — sales floor (teal) */
+.duty--vady::before  { background: var(--accent-700); } /* Vadybininkas — manager (darker teal) */
+.duty--matu::before  { background: var(--info-fg); }    /* Matuotojas — measurer (info-blue) */
+.duty--mont::before  { background: var(--ok-fg); }      /* Montuotojas — installer (ok-green) */
+.duty--trans::before { background: var(--slate-fg); }   /* Transportas — transport (slate-grey) */
 
 /* ── LkSelect custom dropdown ─────────────────────────────── */
 .lk-select { position: relative; cursor: pointer; user-select: none; flex-wrap: nowrap; }

@@ -42,14 +42,16 @@ public sealed class StubOrdersQueryService : IOrdersQueryService
 
         if (!string.IsNullOrWhiteSpace(query.Status))
         {
+            var status = query.Status.Trim();
             filtered = filtered.Where(o =>
-                string.Equals(o.Status, query.Status, StringComparison.Ordinal));
+                string.Equals(o.Status?.Trim(), status, StringComparison.OrdinalIgnoreCase));
         }
 
         if (!string.IsNullOrWhiteSpace(query.Store))
         {
+            var store = query.Store.Trim();
             filtered = filtered.Where(o =>
-                string.Equals(o.Store, query.Store, StringComparison.Ordinal));
+                string.Equals(o.Store?.Trim(), store, StringComparison.OrdinalIgnoreCase));
         }
 
         if (query.HasDebt)
@@ -111,6 +113,25 @@ public sealed class StubOrdersQueryService : IOrdersQueryService
             Employees:  SampleEmployees);
 
         return Task.FromResult<OrderDetailsDto?>(details);
+    }
+
+    public Task<OrdersFilterOptionsDto> GetFilterOptionsAsync(CancellationToken cancellationToken)
+    {
+        var statuses = Orders
+            .Select(o => o.Status)
+            .Where(static s => !string.IsNullOrWhiteSpace(s))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(static s => s, StringComparer.CurrentCulture)
+            .ToList();
+
+        var stores = Orders
+            .Select(o => o.Store)
+            .Where(static s => !string.IsNullOrWhiteSpace(s))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(static s => s, StringComparer.CurrentCulture)
+            .ToList();
+
+        return Task.FromResult(new OrdersFilterOptionsDto(statuses, stores));
     }
 
     private static IReadOnlyList<OrderSummaryDto> BuildOrders()
@@ -319,11 +340,14 @@ public sealed class StubOrdersQueryService : IOrdersQueryService
     {
         return new List<OrderEmployeeDto>
         {
+            // Stub employees use the same 5-bucket short codes the SQL adapter
+            // emits (kons / vady / matu / mont / trans) so the duty dot colors
+            // render consistently between Stub and SQL data sources.
             new(
                 Name:             "Rūta Markevičienė",
                 Initials:         "RM",
-                DutyCode:         "sales",
-                DutyLabel:        "Sales consultant",
+                DutyCode:         "kons",
+                DutyLabel:        "Konsultantas",
                 ServiceDate:      new DateOnly(2026, 4, 29),
                 AcquaintanceDate: new DateOnly(2026, 4, 29),
                 OrderQty:         1,
@@ -332,8 +356,8 @@ public sealed class StubOrdersQueryService : IOrdersQueryService
             new(
                 Name:             "Mantas Jankauskas",
                 Initials:         "MJ",
-                DutyCode:         "prod",
-                DutyLabel:        "Production",
+                DutyCode:         "matu",
+                DutyLabel:        "Matuotojas",
                 ServiceDate:      new DateOnly(2026, 4, 30),
                 AcquaintanceDate: new DateOnly(2026, 4, 30),
                 OrderQty:         1,
@@ -342,8 +366,8 @@ public sealed class StubOrdersQueryService : IOrdersQueryService
             new(
                 Name:             "Tomas Varnas",
                 Initials:         "TV",
-                DutyCode:         "inst",
-                DutyLabel:        "Installation",
+                DutyCode:         "mont",
+                DutyLabel:        "Montuotojas",
                 ServiceDate:      new DateOnly(2026, 5, 3),
                 AcquaintanceDate: new DateOnly(2026, 5, 3),
                 OrderQty:         1,

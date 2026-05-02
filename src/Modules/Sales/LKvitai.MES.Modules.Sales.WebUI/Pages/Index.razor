@@ -1,5 +1,8 @@
 @page "/"
 @inject SalesApiClient Api
+@inject PersistentComponentState ApplicationState
+@inject ILogger<Index> Log
+@inject IJSRuntime JS
 @implements IAsyncDisposable
 
 <PageTitle>Sales · Orders</PageTitle>
@@ -20,7 +23,9 @@
     </div>
 
     @* ── Orders list panel ─────────────────────────────────────── *@
-    <section class="panel orders-list" aria-labelledby="orders-list-title">
+    <section class="panel orders-list @(_isRefreshing ? "is-refreshing" : "")"
+             aria-labelledby="orders-list-title"
+             aria-busy="@(_isRefreshing ? "true" : "false")">
         <div class="panel__head">
             <div>
                 <h2 id="orders-list-title">Recent, unpaid and unfinished orders</h2>
@@ -33,6 +38,7 @@
             <label class="field field--search">
                 <span class="key-hint" aria-hidden="true">/</span>
                 <input type="search" value="@_search" aria-label="Search orders"
+                       @ref="_searchInput"
                        @oninput="OnSearch" placeholder="Search orders" />
             </label>
 
@@ -62,6 +68,12 @@
             @RenderPagination("Pagination top")
         </div>
 
+        @* Top-of-grid loading affordance — non-blocking 2px teal bar visible
+           only while a refresh is in flight. The toolbar above it stays fully
+           interactive (search, filters, debt toggle); only pagination buttons
+           are disabled to prevent click-spam. *@
+        <div class="list-loading-bar @(_isRefreshing ? "is-active" : "")" aria-hidden="true"></div>
+
         @if (_loadFailed)
         {
             <div class="panel__head" role="alert" style="border-top:1px solid var(--n-150);background:var(--danger-bg);color:var(--danger-fg)">
@@ -90,8 +102,11 @@
                         <th>Address</th>
                     </tr>
                 </thead>
-                <tbody>
-                    @if (_orders.Count == 0 && !_loadFailed)
+                <tbody class="orders-list__body">
+                    @* Empty-state copy only after at least one fetch has come back —
+                       prevents the "No orders match" message flashing before any
+                       data has loaded (e.g. during the very first prerender). *@
+                    @if (_orders.Count == 0 && _hasEverLoaded && !_loadFailed)
                     {
                         <tr>
                             <td colspan="10" style="text-align:center;color:var(--n-500);padding:24px 12px">
@@ -133,8 +148,8 @@
         </div>
 
         @* Mobile cards *@
-        <div class="mobile-cards" aria-label="Mobile orders">
-            @if (_orders.Count == 0 && !_loadFailed)
+        <div class="mobile-cards orders-list__cards" aria-label="Mobile orders">
+            @if (_orders.Count == 0 && _hasEverLoaded && !_loadFailed)
             {
                 <article class="mobile-card">
                     <div class="mobile-card__cust" style="color:var(--n-500)">No orders match these filters.</div>
@@ -180,31 +195,70 @@
 </main>
 
 @code {
-    private const int PageSize = 100;
+    private const int    PageSize             = 100;
+    private const int    SearchDebounceMs     = 250;
 
-    private static readonly IReadOnlyList<SelectOption> StatusOptions =
-    [
-        new("",             "All statuses"),
-        new("Įvestas",      "Įvestas"),
-        new("Patvirtintas", "Patvirtintas"),
-        new("Gaminamas",    "Gaminamas"),
-        new("Pagamintas",   "Pagamintas"),
-        new("Filialui",     "Filialui"),
-        new("Atiduotas",    "Atiduotas"),
-        new("Sustabdytas",  "Sustabdytas"),
-    ];
+    // Loading-bar UX: skip the indicator entirely when the API responds within
+    // LoadingShowAfterMs (e.g. snapshot cache hit ≈ 12 ms — showing a bar would
+    // make a near-instant page feel slow). If the response *does* take longer,
+    // surface the bar and keep it on screen for at least LoadingMinVisibleMs
+    // total so it never flashes on/off in a single frame.
+    //
+    // Numbers: 150 ms is the lower bound where humans start perceiving lag;
+    // a 350 ms minimum visible window lets the eye lock onto the bar without
+    // creating a "double-blink" effect on borderline-slow responses.
+    private const int    LoadingShowAfterMs   = 150;
+    private const int    LoadingMinVisibleMs  = 350;
+    private const string PersistKeyOrders     = "sales.orders.list";
+    private const string PersistKeyFilters    = "sales.orders.filterOptions";
 
-    private static readonly IReadOnlyList<SelectOption> StoreOptions =
-    [
-        new("",          "All stores"),
-        new("Vilnius",   "Vilnius"),
-        new("Kaunas",    "Kaunas"),
-        new("Klaipėda",  "Klaipėda"),
-        new("Šiauliai",  "Šiauliai"),
-        new("Panevėžys", "Panevėžys"),
-    ];
+    /// <summary>Snapshot of the orders page persisted across the prerender →
+    /// interactive boundary so OnInitializedAsync skips a second HTTP call and
+    /// the page does not flash empty during hydration.</summary>
+    /// <remarks>
+    /// MUST be <c>public</c>: <see cref="System.Text.Json.JsonSerializer"/> uses
+    /// the parameterized public constructor of records for deserialization.
+    /// A <c>private</c>/<c>internal</c> primary constructor causes
+    /// <see cref="PersistentComponentState.TryTakeFromJson{T}"/> to throw during
+    /// hydration, which kills the Blazor Server circuit before any event
+    /// handlers are wired up — filters/buttons silently stop responding and the
+    /// browser logs "Server returned an error on close".
+    /// </remarks>
+    public sealed record PersistedListState(
+        IReadOnlyList<PersistedOrderRow> Items,
+        int Total,
+        int Page,
+        string Search,
+        string Status,
+        string Store,
+        bool HasDebt);
 
-    // Disabled in S-1 — kept so the visual control stays aligned with the toolbar grid.
+    /// <summary>Slim row shape used only for prerender→interactive persistence.
+    /// Mirrors <see cref="OrderSummaryDto"/> minus <c>ProductsSearch</c>, the
+    /// hidden server-side haystack that the WebUI never displays. Dropping it
+    /// shrinks the persisted JSON for 100 rows from ~80 KB down to well under
+    /// SignalR's 32 KB default receive cap, so even installations that have
+    /// not bumped <c>HubOptions.MaximumReceiveMessageSize</c> still get a live
+    /// circuit. Keep the field set in lock-step with what the table renders.
+    /// </summary>
+    public sealed record PersistedOrderRow(
+        long     Id,
+        string   Number,
+        DateOnly Date,
+        decimal  Price,
+        decimal  Debt,
+        bool     IsOverdue,
+        string   Customer,
+        bool     HasDebt,
+        bool     IsVip,
+        bool     HasNote,
+        string   Status,
+        string   StatusCode,
+        string   Store,
+        string   Address);
+
+    /// <summary>Always-shown date preset list (Date filter is intentionally
+    /// disabled in S-1; kept so the toolbar grid stays aligned).</summary>
     private static readonly IReadOnlyList<SelectOption> DateOptions =
     [
         new("30d",   "Last 30 days"),
@@ -212,44 +266,192 @@
         new("ytd",   "YTD"),
     ];
 
-    private List<OrderSummaryDto> _orders       = new();
+    /// <summary>Fallback while the live filter options request is in flight or
+    /// failed — at minimum the user still sees an "All" option so the dropdown
+    /// is never empty.</summary>
+    private static readonly IReadOnlyList<SelectOption> EmptyStatusOptions =
+    [
+        new("", "All statuses"),
+    ];
+
+    private static readonly IReadOnlyList<SelectOption> EmptyStoreOptions =
+    [
+        new("", "All stores"),
+    ];
+
+    private List<OrderSummaryDto> _orders        = new();
     private int                   _total;
-    private int                   _page         = 1;
-    private readonly int          _pageSize     = PageSize;
-    private string                _search       = "";
-    private string                _statusFilter = "";
-    private string                _storeFilter  = "";
-    private string                _dateFilter   = "30d";
+    private int                   _page          = 1;
+    private readonly int          _pageSize      = PageSize;
+    private string                _search        = "";
+    private string                _statusFilter  = "";
+    private string                _storeFilter   = "";
+    private string                _dateFilter    = "30d";
     private bool                  _hasDebtFilter;
     private long?                 _selectedId;
     private bool                  _loadFailed;
-    private CancellationTokenSource? _searchCts;
+    private bool                  _isRefreshing;
+    private bool                  _hasEverLoaded;
+
+    private IReadOnlyList<SelectOption> _statusOptions = EmptyStatusOptions;
+    private IReadOnlyList<SelectOption> _storeOptions  = EmptyStoreOptions;
+
+    // Cancels the previous in-flight ReloadAsync so a fast click on Next/Next/Next
+    // doesn't end up showing a stale page after the latest one has already arrived.
+    private CancellationTokenSource? _reloadCts;
+
+    // Debounces keystrokes in the search box so we don't fire a request per character.
+    private CancellationTokenSource? _searchDebounceCts;
+
+    // Monotonic id used as a second guard: the response of an old request is
+    // ignored even if its CancellationToken hadn't yet fired by the time it
+    // returned. Together with _reloadCts this gives us strict last-write-wins.
+    private int _latestReloadId;
+
+    // PersistentComponentState subscription — disposed in DisposeAsync.
+    private PersistingComponentStateSubscription _persistingSub;
+
+    // S-3.3 keyboard shortcuts. The JS module is loaded once on first render
+    // and re-used for the lifetime of the circuit; both the module reference
+    // and the .NET callback are released in DisposeAsync to avoid leaking
+    // GCHandles when the user navigates away from the orders list.
+    private ElementReference            _searchInput;
+    private IJSObjectReference?         _shortcutsModule;
+    private DotNetObjectReference<Index>? _shortcutsRef;
 
     private int _totalPages => Math.Max(1, (int)Math.Ceiling(_total / (double)_pageSize));
     private int _from       => _total == 0 ? 0 : ((_page - 1) * _pageSize) + 1;
     private int _to         => Math.Min(_page * _pageSize, _total);
 
+    private IReadOnlyList<SelectOption> StatusOptions => _statusOptions;
+    private IReadOnlyList<SelectOption> StoreOptions  => _storeOptions;
+
+    protected override void OnInitialized()
+    {
+        // Subscribe BEFORE we touch state so the prerender side has a callback
+        // registered when the framework asks for state to persist into the page.
+        _persistingSub = ApplicationState.RegisterOnPersisting(PersistDataAsync);
+    }
+
     protected override async Task OnInitializedAsync()
     {
-        await ReloadAsync();
+        // 1) Try to rehydrate the orders snapshot persisted by the prerender
+        //    side. When present, we skip the HTTP call entirely so the user
+        //    sees the same data the prerendered HTML showed — no flicker.
+        //
+        //    Wrapped in try/catch so a malformed/incompatible persist payload
+        //    can never kill the Blazor circuit — we just fall back to fetching
+        //    fresh data, exactly like a cold load would do.
+        try
+        {
+            if (ApplicationState.TryTakeFromJson<PersistedListState>(PersistKeyOrders, out var persisted) && persisted is not null)
+            {
+                _orders        = persisted.Items.Select(FromPersisted).ToList();
+                _total         = persisted.Total;
+                _page          = persisted.Page;
+                _search        = persisted.Search;
+                _statusFilter  = persisted.Status;
+                _storeFilter   = persisted.Store;
+                _hasDebtFilter = persisted.HasDebt;
+                _hasEverLoaded = true;
+            }
+        }
+        catch
+        {
+            _hasEverLoaded = false; // force a fresh fetch below
+        }
+
+        // 2) Same for the filter options: persisted dropdowns avoid a second
+        //    request and an empty-then-populated visual flicker on the toolbar.
+        try
+        {
+            if (ApplicationState.TryTakeFromJson<OrdersFilterOptionsDto>(PersistKeyFilters, out var persistedFilters) && persistedFilters is not null)
+            {
+                ApplyFilterOptions(persistedFilters);
+            }
+        }
+        catch
+        {
+            // toolbar will repopulate from LoadFilterOptionsAsync below
+        }
+
+        // Both fetches happen during prerender so their results are persisted
+        // for the interactive phase. Run in parallel — no dependency between them.
+        await Task.WhenAll(
+            _hasEverLoaded   ? Task.CompletedTask : ReloadAsync(),
+            _statusOptions.Count > 1 ? Task.CompletedTask : LoadFilterOptionsAsync());
+    }
+
+    private Task PersistDataAsync()
+    {
+        ApplicationState.PersistAsJson(PersistKeyOrders, new PersistedListState(
+            _orders.Select(ToPersisted).ToList(),
+            _total,
+            _page,
+            _search,
+            _statusFilter,
+            _storeFilter,
+            _hasDebtFilter));
+
+        ApplicationState.PersistAsJson(PersistKeyFilters, new OrdersFilterOptionsDto(
+            _statusOptions.Where(o => !string.IsNullOrEmpty(o.Value)).Select(o => o.Value).ToList(),
+            _storeOptions .Where(o => !string.IsNullOrEmpty(o.Value)).Select(o => o.Value).ToList()));
+
+        return Task.CompletedTask;
+    }
+
+    private static PersistedOrderRow ToPersisted(OrderSummaryDto o) => new(
+        o.Id, o.Number, o.Date, o.Price, o.Debt, o.IsOverdue,
+        o.Customer, o.HasDebt, o.IsVip, o.HasNote,
+        o.Status, o.StatusCode, o.Store, o.Address);
+
+    private static OrderSummaryDto FromPersisted(PersistedOrderRow r) => new(
+        r.Id, r.Number, r.Date, r.Price, r.Debt, r.IsOverdue,
+        r.Customer, r.HasDebt, r.IsVip, r.HasNote,
+        r.Status, r.StatusCode, r.Store, r.Address,
+        ProductsSearch: null);
+
+    private async Task LoadFilterOptionsAsync()
+    {
+        var options = await Api.GetFilterOptionsAsync(CancellationToken.None);
+        if (options is null) return; // toolbar keeps the "All …" placeholder lists
+        ApplyFilterOptions(options);
+        StateHasChanged();
+    }
+
+    private void ApplyFilterOptions(OrdersFilterOptionsDto options)
+    {
+        var statuses = new List<SelectOption>(options.Statuses.Count + 1)
+        {
+            new("", "All statuses"),
+        };
+        foreach (var s in options.Statuses) statuses.Add(new SelectOption(s, s));
+        _statusOptions = statuses;
+
+        var stores = new List<SelectOption>(options.Stores.Count + 1)
+        {
+            new("", "All stores"),
+        };
+        foreach (var s in options.Stores) stores.Add(new SelectOption(s, s));
+        _storeOptions = stores;
     }
 
     private async Task OnSearch(ChangeEventArgs e)
     {
         _search = e.Value?.ToString() ?? "";
 
-        if (_searchCts is not null)
+        if (_searchDebounceCts is not null)
         {
-            await _searchCts.CancelAsync();
-            _searchCts.Dispose();
+            await _searchDebounceCts.CancelAsync();
+            _searchDebounceCts.Dispose();
         }
-        _searchCts = new CancellationTokenSource();
-        var token = _searchCts.Token;
+        _searchDebounceCts = new CancellationTokenSource();
+        var token = _searchDebounceCts.Token;
 
         try
         {
-            await Task.Delay(200, token);
-            _page = 1; // any filter change resets to page 1 to avoid landing on an empty page
+            await Task.Delay(SearchDebounceMs, token);
+            _page = 1; // any filter change resets to page 1
             await ReloadAsync();
         }
         catch (TaskCanceledException) { /* superseded by a newer keystroke */ }
@@ -257,12 +459,179 @@
 
     public async ValueTask DisposeAsync()
     {
-        if (_searchCts is not null)
+        _persistingSub.Dispose();
+
+        if (_searchDebounceCts is not null)
         {
-            await _searchCts.CancelAsync();
-            _searchCts.Dispose();
-            _searchCts = null;
+            await _searchDebounceCts.CancelAsync();
+            _searchDebounceCts.Dispose();
+            _searchDebounceCts = null;
         }
+
+        if (_reloadCts is not null)
+        {
+            await _reloadCts.CancelAsync();
+            _reloadCts.Dispose();
+            _reloadCts = null;
+        }
+
+        // Order matters: stop dispatching first so a late JS keydown cannot
+        // hit a disposed DotNetObjectReference, then drop the module, then
+        // the .NET callback object.
+        if (_shortcutsModule is not null)
+        {
+            try   { await _shortcutsModule.InvokeVoidAsync("unregister"); }
+            catch (JSDisconnectedException)        { /* circuit already gone */ }
+            catch (TaskCanceledException)          { /* circuit already gone */ }
+            try   { await _shortcutsModule.DisposeAsync(); }
+            catch (JSDisconnectedException)        { /* circuit already gone */ }
+            catch (TaskCanceledException)          { /* circuit already gone */ }
+            _shortcutsModule = null;
+        }
+
+        _shortcutsRef?.Dispose();
+        _shortcutsRef = null;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        // Wrapped because OnAfterRenderAsync runs during prerender on some
+        // hosting models — calling JS there would throw InvalidOperationException
+        // ("JavaScript interop calls cannot be issued at this time"). Catching
+        // here is cheaper than gating on RendererInfo and keeps the rest of the
+        // page interactive even if the shortcut bridge fails to load.
+        try
+        {
+            _shortcutsModule = await JS.InvokeAsync<IJSObjectReference>(
+                "import", "./js/orders-shortcuts.js");
+            _shortcutsRef    = DotNetObjectReference.Create(this);
+            await _shortcutsModule.InvokeVoidAsync("register", _shortcutsRef);
+        }
+        catch (InvalidOperationException ex)
+        {
+            Log.LogDebug(ex, "[SalesShortcuts] JS interop unavailable on first render — shortcuts disabled");
+        }
+        catch (JSException ex)
+        {
+            Log.LogWarning(ex, "[SalesShortcuts] failed to load orders-shortcuts.js — keyboard shortcuts disabled");
+        }
+    }
+
+    /// <summary>
+    /// Single entry point invoked from <c>orders-shortcuts.js</c>. Action codes
+    /// are kept intentionally short ("slash", "escape", "up", "down", "enter")
+    /// so the JS bridge never has to know about C# enum values; if the codes
+    /// change here they must change in lock-step in the JS module.
+    /// </summary>
+    [JSInvokable]
+    public async Task HandleShortcut(string action)
+    {
+        switch (action)
+        {
+            case "slash":
+                try { await _searchInput.FocusAsync(); }
+                catch (JSDisconnectedException)        { /* circuit gone, ignore */ }
+                catch (InvalidOperationException)      { /* element not yet rendered */ }
+                break;
+
+            case "escape":
+                await HandleEscapeAsync();
+                break;
+
+            case "up":
+                if (MoveSelection(-1)) await ScrollSelectedIntoViewAsync();
+                break;
+
+            case "down":
+                if (MoveSelection(+1)) await ScrollSelectedIntoViewAsync();
+                break;
+
+            case "enter":
+                await OpenSelectedAsync();
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Esc unifies two intents:
+    /// 1) clear an active text search (the most disruptive open filter); and
+    /// 2) deselect the current row (a softer, mostly visual reset).
+    /// We only do one of them per press so a hammered Esc does not nuke both
+    /// the search filter and the selection in the same frame, which would
+    /// feel destructive. Search clear takes precedence because it is what
+    /// stops a long-running query and "frees" the UI back to the full list.
+    /// </summary>
+    private async Task HandleEscapeAsync()
+    {
+        if (!string.IsNullOrEmpty(_search))
+        {
+            _search = "";
+            _page   = 1;
+
+            if (_searchDebounceCts is not null)
+            {
+                await _searchDebounceCts.CancelAsync();
+                _searchDebounceCts.Dispose();
+                _searchDebounceCts = null;
+            }
+
+            await ReloadAsync();
+            return;
+        }
+
+        if (_selectedId is not null)
+        {
+            _selectedId = null;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// Returns <c>true</c> if the selection actually moved (so the caller can
+    /// decide whether to scroll). No-op on empty lists; from no selection,
+    /// ArrowDown lands on row 0 and ArrowUp on the last row, matching the
+    /// usual desktop list-box convention.
+    /// </summary>
+    private bool MoveSelection(int delta)
+    {
+        if (_orders.Count == 0) return false;
+
+        var idx = _selectedId is long sid ? _orders.FindIndex(o => o.Id == sid) : -1;
+        var next = idx < 0
+            ? (delta > 0 ? 0 : _orders.Count - 1)
+            : Math.Clamp(idx + delta, 0, _orders.Count - 1);
+
+        if (next == idx) return false;
+
+        _selectedId = _orders[next].Id;
+        StateHasChanged();
+        return true;
+    }
+
+    private async Task ScrollSelectedIntoViewAsync()
+    {
+        if (_shortcutsModule is null) return;
+        try { await _shortcutsModule.InvokeVoidAsync("scrollSelectedIntoView"); }
+        catch (JSDisconnectedException) { /* circuit gone */ }
+    }
+
+    /// <summary>
+    /// Mirrors clicking the order-number link in the table: opens the detail
+    /// page in a new tab via window.open so the list keeps the user's place
+    /// (selection, scroll, page). The href on the &lt;a&gt; element is the
+    /// same target — Enter just triggers it programmatically.
+    /// </summary>
+    private async Task OpenSelectedAsync()
+    {
+        if (_shortcutsModule is null || _selectedId is not long id) return;
+
+        var sel = _orders.FirstOrDefault(o => o.Id == id);
+        if (sel is null) return;
+
+        try { await _shortcutsModule.InvokeVoidAsync("openInNewTab", $"orders/{sel.Number}"); }
+        catch (JSDisconnectedException) { /* circuit gone */ }
     }
 
     private async Task OnStatusChanged(string value)
@@ -322,7 +691,7 @@
 
     private RenderFragment RenderPagination(string ariaLabel) => @<text>
         <nav class="pagination" aria-label="@ariaLabel">
-            <button type="button" disabled="@(_page <= 1)" @onclick="GoPrev">&#8249; Prev</button>
+            <button type="button" disabled="@(_isRefreshing || _page <= 1)" @onclick="GoPrev">&#8249; Prev</button>
             @foreach (var p in PageButtons())
             {
                 if (p < 0)
@@ -334,28 +703,77 @@
                     var pageValue = p;
                     <button type="button"
                             class="@(pageValue == _page ? "is-active" : "")"
-                            disabled="@(pageValue == _page)"
+                            disabled="@(_isRefreshing || pageValue == _page)"
                             @onclick="@(() => GoToPage(pageValue))">@pageValue</button>
                 }
             }
-            <button type="button" disabled="@(_page >= _totalPages)" @onclick="GoNext">Next &#8250;</button>
+            <button type="button" disabled="@(_isRefreshing || _page >= _totalPages)" @onclick="GoNext">Next &#8250;</button>
         </nav>
     </text>;
 
     private async Task ReloadAsync()
     {
+        // Cancel any previous in-flight reload — superseded by this newer one.
+        if (_reloadCts is not null)
+        {
+            await _reloadCts.CancelAsync();
+            _reloadCts.Dispose();
+        }
+        _reloadCts = new CancellationTokenSource();
+        var token = _reloadCts.Token;
+
+        var thisReloadId = ++_latestReloadId;
+        // NOTE: do NOT flip _isRefreshing here. We schedule it after
+        // LoadingShowAfterMs so a fast (cache-hit) response never paints
+        // a loading bar at all — page changes feel instant.
+
         var query = new OrdersQueryParams
         {
             Search   = string.IsNullOrWhiteSpace(_search) ? null : _search,
             Status   = string.IsNullOrEmpty(_statusFilter) ? null : _statusFilter,
             Store    = string.IsNullOrEmpty(_storeFilter)  ? null : _storeFilter,
-            Date     = null, // S-1: date preset is disabled in the UI; never sent to API
+            Date     = null,
             HasDebt  = _hasDebtFilter,
             Page     = _page,
             PageSize = _pageSize,
         };
 
-        var result = await Api.GetOrdersAsync(query, CancellationToken.None);
+        // Phase 0 instrumentation: end-to-end ReloadAsync timing as the user
+        // experiences it. apiMs is the real cost; barShown reveals when the
+        // loading affordance was actually painted (vs skipped for a fast hit).
+        var totalSw = System.Diagnostics.Stopwatch.StartNew();
+        var apiSw = System.Diagnostics.Stopwatch.StartNew();
+        PagedResult<OrderSummaryDto>? result;
+        long apiOnlyMs;
+        var barShown = false;
+        try
+        {
+            (result, barShown) = await FetchWithDeferredLoadingBarAsync(query, totalSw, token);
+            apiSw.Stop();
+            apiOnlyMs = apiSw.ElapsedMilliseconds;
+        }
+        catch (OperationCanceledException ex)
+        {
+            apiSw.Stop();
+            totalSw.Stop();
+            Log.LogDebug(
+                ex,
+                "[SalesPerf] webui ReloadAsync cancelled reloadId={ReloadId} elapsedMs={ElapsedMs}",
+                thisReloadId, totalSw.ElapsedMilliseconds);
+            return; // superseded
+        }
+
+        // Stale-response guard: if a newer request started while we were waiting,
+        // discard this result quietly without touching shared state.
+        if (thisReloadId != _latestReloadId)
+        {
+            totalSw.Stop();
+            Log.LogDebug(
+                "[SalesPerf] webui ReloadAsync superseded reloadId={ReloadId} latest={Latest} elapsedMs={ElapsedMs}",
+                thisReloadId, _latestReloadId, totalSw.ElapsedMilliseconds);
+            return;
+        }
+
         if (result is null)
         {
             _loadFailed = true;
@@ -373,11 +791,68 @@
             if (_orders.Count == 0 && _total > 0 && _page > _totalPages)
             {
                 _page = _totalPages;
+                _isRefreshing = false;
                 await ReloadAsync();
                 return;
             }
         }
 
+        _isRefreshing = false;
+        _hasEverLoaded = true;
+        totalSw.Stop();
+
+        Log.LogInformation(
+            "[SalesPerf] webui ReloadAsync done reloadId={ReloadId} page={Page} pageSize={PageSize} returned={Returned} total={Total} " +
+            "search={HasSearch} status={HasStatus} store={HasStore} hasDebt={HasDebt} loadFailed={LoadFailed} " +
+            "apiMs={ApiMs} barShown={BarShown} elapsedMs={ElapsedMs}",
+            thisReloadId, _page, _pageSize, _orders.Count, _total,
+            !string.IsNullOrWhiteSpace(_search), !string.IsNullOrEmpty(_statusFilter),
+            !string.IsNullOrEmpty(_storeFilter), _hasDebtFilter, _loadFailed,
+            apiOnlyMs, barShown, totalSw.ElapsedMilliseconds);
+
         StateHasChanged();
+    }
+
+    /// <summary>
+    /// Races the orders API call against a "show loading bar" delay so a fast
+    /// (cache-hit) response never paints a loading affordance, while a slow one
+    /// still gets a stable bar that stays visible for at least
+    /// <see cref="LoadingMinVisibleMs"/>. Returns the fetched page (may be
+    /// <c>null</c> if the API client signals failure) plus whether the bar was
+    /// actually shown so the caller can attribute timings in the perf log.
+    /// </summary>
+    private async Task<(PagedResult<OrderSummaryDto>? Result, bool BarShown)> FetchWithDeferredLoadingBarAsync(
+        OrdersQueryParams query,
+        System.Diagnostics.Stopwatch totalSw,
+        CancellationToken token)
+    {
+        var apiTask  = Api.GetOrdersAsync(query, token);
+        var showTask = Task.Delay(LoadingShowAfterMs, token);
+
+        long? barShownAtMs = null;
+        if (await Task.WhenAny(apiTask, showTask) == showTask && !showTask.IsCanceled)
+        {
+            _isRefreshing = true;
+            barShownAtMs = totalSw.ElapsedMilliseconds;
+            StateHasChanged();
+        }
+
+        var result = await apiTask;
+
+        if (barShownAtMs is { } shownAt)
+        {
+            // Once the bar is up, keep it visible long enough to register —
+            // otherwise it flashes off the moment the API completes, which
+            // feels glitchy. Cancellation here just means we were superseded;
+            // the caller will return early on the stale-response guard.
+            var remaining = LoadingMinVisibleMs - (int)(totalSw.ElapsedMilliseconds - shownAt);
+            if (remaining > 0)
+            {
+                try { await Task.Delay(remaining, token); }
+                catch (OperationCanceledException) { /* superseded; fall through */ }
+            }
+        }
+
+        return (result, barShownAtMs is not null);
     }
 }

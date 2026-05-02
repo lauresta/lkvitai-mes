@@ -22,6 +22,11 @@ internal static class SalesOrderStatusMap
         ["Atiduotas"]    = OrderStatusCodes.Delivered,
         ["Sustabdytas"]  = OrderStatusCodes.Paused,
         ["Atšauktas"]    = OrderStatusCodes.Cancelled,
+        // SKIRTINGAI = "different" / "various" — legacy uppercase label that
+        // weblb_Orders emits for an order whose lines straddle multiple status
+        // families. Mapped to a dedicated MultiStatus code so the chip can
+        // render in info-blue instead of falling back to slate "Entered".
+        ["SKIRTINGAI"]   = OrderStatusCodes.MultiStatus,
     };
 
     public static string ToStatusCode(string? label)
