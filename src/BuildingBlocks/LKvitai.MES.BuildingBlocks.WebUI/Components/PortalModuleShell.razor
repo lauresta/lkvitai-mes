@@ -41,11 +41,11 @@
         </div>
     </header>
 
-    @Body
+    @ChildContent
 </div>
 
 @code {
-    [Parameter] public RenderFragment? Body { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
     [Parameter] public ClaimsPrincipal? User { get; set; }
     [Parameter] public string EnvironmentName { get; set; } = "Development";
     [Parameter] public string? HostLabel { get; set; }
