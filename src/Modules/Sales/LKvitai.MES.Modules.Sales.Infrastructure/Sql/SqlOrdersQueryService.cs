@@ -520,23 +520,26 @@ public sealed class SqlOrdersQueryService : IOrdersQueryService
     }
 
     /// <summary>
-    /// Reduces the Lithuanian duty title to a stable lowercase code the WebUI
-    /// uses to pick the <c>duty--*</c> dot color (<c>sales</c>, <c>prod</c>,
-    /// <c>inst</c>). Conservative: first non-empty word lowercased, then mapped
-    /// onto the three known buckets — anything else falls through as-is and
-    /// renders as a neutral dot.
+    /// Reduces the Lithuanian duty title to a stable short code the WebUI uses
+    /// to pick the <c>duty--*</c> dot color. Recognised buckets (per business
+    /// confirmation 2026-05-02): <c>kons</c> Konsultantas, <c>vady</c>
+    /// Vadybininkas, <c>matu</c> Matuotojas, <c>mont</c> Montuotojas,
+    /// <c>trans</c> Transportas. Anything else returns empty so the WebUI
+    /// renders a neutral light-grey dot — the data is small and any new role
+    /// only needs an extra branch here plus a one-line CSS rule.
     /// </summary>
     private static string BuildDutyCode(string dutyLabel)
     {
         if (string.IsNullOrWhiteSpace(dutyLabel)) return string.Empty;
         var lower = dutyLabel.Trim().ToLowerInvariant();
 
-        if (lower.Contains("pardav") || lower.Contains("sales"))                 return "sales";
-        if (lower.Contains("gamyb")  || lower.Contains("prod"))                  return "prod";
-        if (lower.Contains("monta")  || lower.Contains("install") || lower.Contains("inst")) return "inst";
+        if (lower.Contains("konsult"))                                  return "kons";
+        if (lower.Contains("vadyb"))                                    return "vady";
+        if (lower.Contains("matuot"))                                   return "matu";
+        if (lower.Contains("montuot") || lower.Contains("install"))     return "mont";
+        if (lower.Contains("transport"))                                return "trans";
 
-        var firstWord = lower.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
-        return firstWord ?? string.Empty;
+        return string.Empty; // neutral dot — keeps the row legible without guessing
     }
 
     private static DateOnly? ParseLegacyDate(string? text)

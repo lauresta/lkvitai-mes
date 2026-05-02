@@ -57,9 +57,15 @@ public static class OrderFormat
     public static string StatusChip(string statusCode)
         => string.IsNullOrWhiteSpace(statusCode) ? "chip--entered" : $"chip--{statusCode}";
 
-    /// <summary>Returns the duty dot class for an employee row (<c>duty--sales</c> etc).</summary>
+    /// <summary>
+    /// Returns the duty dot class for an employee row. Known short codes:
+    /// <c>kons</c>, <c>vady</c>, <c>matu</c>, <c>mont</c>, <c>trans</c>
+    /// (see <c>SqlOrdersQueryService.BuildDutyCode</c>). Empty / unknown
+    /// codes fall through with no modifier so the base <c>.duty</c> dot
+    /// renders in neutral light-grey.
+    /// </summary>
     public static string DutyClass(string dutyCode)
-        => string.IsNullOrWhiteSpace(dutyCode) ? "duty--sales" : $"duty--{dutyCode}";
+        => string.IsNullOrWhiteSpace(dutyCode) ? string.Empty : $"duty--{dutyCode}";
 
     /// <summary>
     /// Maps an <see cref="OrderAmountKind"/> to the matching <c>amount-card--*</c>

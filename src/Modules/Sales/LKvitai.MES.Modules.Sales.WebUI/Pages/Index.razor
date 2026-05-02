@@ -192,10 +192,11 @@
 </main>
 
 @code {
-    private const int    PageSize          = 100;
-    private const int    SearchDebounceMs  = 250;
-    private const string PersistKeyOrders  = "sales.orders.list";
-    private const string PersistKeyFilters = "sales.orders.filterOptions";
+    private const int    PageSize             = 100;
+    private const int    SearchDebounceMs     = 250;
+    private const int    LoadingMinVisibleMs  = 200; // floor for the loading bar
+    private const string PersistKeyOrders     = "sales.orders.list";
+    private const string PersistKeyFilters    = "sales.orders.filterOptions";
 
     /// <summary>Snapshot of the orders page persisted across the prerender →
     /// interactive boundary so OnInitializedAsync skips a second HTTP call and
@@ -497,7 +498,14 @@
         PagedResult<OrderSummaryDto>? result;
         try
         {
-            result = await Api.GetOrdersAsync(query, token);
+            // Run the API call in parallel with a minimum-visibility delay so
+            // very fast responses still leave the loading bar on screen long
+            // enough for the user to register that the click was registered.
+            // The delay is cancelled along with the API call when superseded.
+            var apiTask   = Api.GetOrdersAsync(query, token);
+            var floorTask = Task.Delay(LoadingMinVisibleMs, token);
+            await Task.WhenAll(apiTask, floorTask);
+            result = await apiTask;
         }
         catch (OperationCanceledException)
         {
