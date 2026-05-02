@@ -201,7 +201,16 @@
     /// <summary>Snapshot of the orders page persisted across the prerender →
     /// interactive boundary so OnInitializedAsync skips a second HTTP call and
     /// the page does not flash empty during hydration.</summary>
-    private sealed record PersistedListState(
+    /// <remarks>
+    /// MUST be <c>public</c>: <see cref="System.Text.Json.JsonSerializer"/> uses
+    /// the parameterized public constructor of records for deserialization.
+    /// A <c>private</c>/<c>internal</c> primary constructor causes
+    /// <see cref="PersistentComponentState.TryTakeFromJson{T}"/> to throw during
+    /// hydration, which kills the Blazor Server circuit before any event
+    /// handlers are wired up — filters/buttons silently stop responding and the
+    /// browser logs "Server returned an error on close".
+    /// </remarks>
+    public sealed record PersistedListState(
         IReadOnlyList<OrderSummaryDto> Items,
         int Total,
         int Page,
@@ -283,23 +292,41 @@
         // 1) Try to rehydrate the orders snapshot persisted by the prerender
         //    side. When present, we skip the HTTP call entirely so the user
         //    sees the same data the prerendered HTML showed — no flicker.
-        if (ApplicationState.TryTakeFromJson<PersistedListState>(PersistKeyOrders, out var persisted) && persisted is not null)
+        //
+        //    Wrapped in try/catch so a malformed/incompatible persist payload
+        //    can never kill the Blazor circuit — we just fall back to fetching
+        //    fresh data, exactly like a cold load would do.
+        try
         {
-            _orders        = persisted.Items.ToList();
-            _total         = persisted.Total;
-            _page          = persisted.Page;
-            _search        = persisted.Search;
-            _statusFilter  = persisted.Status;
-            _storeFilter   = persisted.Store;
-            _hasDebtFilter = persisted.HasDebt;
-            _hasEverLoaded = true;
+            if (ApplicationState.TryTakeFromJson<PersistedListState>(PersistKeyOrders, out var persisted) && persisted is not null)
+            {
+                _orders        = persisted.Items.ToList();
+                _total         = persisted.Total;
+                _page          = persisted.Page;
+                _search        = persisted.Search;
+                _statusFilter  = persisted.Status;
+                _storeFilter   = persisted.Store;
+                _hasDebtFilter = persisted.HasDebt;
+                _hasEverLoaded = true;
+            }
+        }
+        catch
+        {
+            _hasEverLoaded = false; // force a fresh fetch below
         }
 
         // 2) Same for the filter options: persisted dropdowns avoid a second
         //    request and an empty-then-populated visual flicker on the toolbar.
-        if (ApplicationState.TryTakeFromJson<OrdersFilterOptionsDto>(PersistKeyFilters, out var persistedFilters) && persistedFilters is not null)
+        try
         {
-            ApplyFilterOptions(persistedFilters);
+            if (ApplicationState.TryTakeFromJson<OrdersFilterOptionsDto>(PersistKeyFilters, out var persistedFilters) && persistedFilters is not null)
+            {
+                ApplyFilterOptions(persistedFilters);
+            }
+        }
+        catch
+        {
+            // toolbar will repopulate from LoadFilterOptionsAsync below
         }
 
         // Both fetches happen during prerender so their results are persisted

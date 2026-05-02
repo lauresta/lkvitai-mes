@@ -223,15 +223,25 @@
         // Skip the second fetch if the prerender side persisted us a payload
         // for this exact order number. Tracked by _hydratedFromNumber so we
         // still refetch when the user navigates to a different /orders/{Number}.
-        if (_hydratedFromNumber != Number &&
-            ApplicationState.TryTakeFromJson<OrderDetailsDto>(PersistKey, out var persisted) &&
-            persisted is not null)
+        //
+        // try/catch ensures a malformed/incompatible persist payload never
+        // kills the circuit (filters and buttons would silently stop working).
+        try
         {
-            _order = persisted;
-            _loadFailed = false;
-            _loadCompleted = true;
-            _hydratedFromNumber = Number;
-            return;
+            if (_hydratedFromNumber != Number &&
+                ApplicationState.TryTakeFromJson<OrderDetailsDto>(PersistKey, out var persisted) &&
+                persisted is not null)
+            {
+                _order = persisted;
+                _loadFailed = false;
+                _loadCompleted = true;
+                _hydratedFromNumber = Number;
+                return;
+            }
+        }
+        catch
+        {
+            // fall through to a fresh fetch
         }
 
         _order = null;
