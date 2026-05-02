@@ -1,17 +1,19 @@
 @* FabricLookup — mobile-first single-fabric lookup screen.
 
    UX baseline: docs/ux/fabric-availability-static-preview.html (mobile panels)
-   + Variant A handover (this file): on desktop the mobile UI is rendered
-   inside a 390 px phone frame, with an operational sidebar (recent checks,
-   QR to open on phone) on the right.
+   + Variant A handover: on desktop the mobile UI is rendered inside a 390 px
+   phone frame, with an operational sidebar (recent checks, QR to open on
+   phone) on the right.
 
-   F-0 only: hardcoded local sample records, no Frontline.Contracts /
-   HttpClient calls. F-1 will promote these records to DTOs and wire
-   /api/frontline/fabric/{code}. *@
+   F-1: payload comes from FrontlineApiClient.GetFabricCardAsync over
+   /api/frontline/fabric/{code} (StubFabricQueryService in F-1, SQL adapter in
+   F-2). Recent-checks list stays in-memory per-circuit until F-2 wires the
+   Frontline_FabricLastChecked table. *@
 
 @page "/"
 @page "/fabric"
 @page "/fabric/lookup"
+@inject FrontlineApiClient Api
 
 <PageTitle>Frontline · Fabric availability</PageTitle>
 
@@ -43,7 +45,7 @@
 
                 <div class="fa-content">
 
-                    <form class="mobile-search" @onsubmit="@RunCheck" @onsubmit:preventDefault>
+                    <form class="mobile-search" @onsubmit="@RunCheckAsync" @onsubmit:preventDefault>
                         <label class="mobile-search__input">
                             <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                                 <circle cx="11" cy="11" r="6.5" />
@@ -56,10 +58,42 @@
                                    value="@_code"
                                    @oninput="OnCodeInput" />
                         </label>
-                        <button class="btn-primary" type="submit">Check</button>
+                        <button class="btn-primary" type="submit" disabled="@_busy">
+                            @(_busy ? "…" : "Check")
+                        </button>
                     </form>
 
-                    @if (_result is null)
+                    @if (_apiError)
+                    {
+                        <div class="status-block status-block--out" role="alert" style="margin-top:12px">
+                            <div class="status-block__icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M12 8v5" />
+                                    <circle cx="12" cy="16.5" r="1" fill="currentColor" />
+                                    <path d="M12 3l9.5 17H2.5L12 3z" />
+                                </svg>
+                            </div>
+                            <div class="status-block__main">
+                                <div class="status-block__primary">Frontline API unreachable</div>
+                                <div class="status-block__sub">Try again in a moment, or check the API container.</div>
+                            </div>
+                        </div>
+                    }
+                    else if (_notFound && !string.IsNullOrWhiteSpace(_lastQuery))
+                    {
+                        <div class="status-block status-block--disc" role="status" style="margin-top:12px">
+                            <div class="status-block__icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M6 6l12 12M6 18L18 6" />
+                                </svg>
+                            </div>
+                            <div class="status-block__main">
+                                <div class="status-block__primary">Fabric '@_lastQuery' not found</div>
+                                <div class="status-block__sub">Check the code or scan again.</div>
+                            </div>
+                        </div>
+                    }
+                    else if (_result is null)
                     {
                         <section class="empty-card">
                             <div>
@@ -85,11 +119,11 @@
                                     var captured = r;
                                     <button class="recent-row"
                                             type="button"
-                                            @onclick="@(() => RestoreRecent(captured))">
+                                            @onclick="@(() => RestoreRecentAsync(captured))">
                                         <span class="recent-row__code">@r.Code</span>
                                         <span class="recent-row__meta">
                                             <span class="mono">@r.WidthMm mm</span>
-                                            <span class="chip @StatusChipClass(r.Status) chip--sm">@StatusChipLabel(r)</span>
+                                            <span class="chip @StatusChipClass(r.Status) chip--sm">@RecentChipLabel(r)</span>
                                         </span>
                                     </button>
                                 }
@@ -126,7 +160,7 @@
                                                 aria-pressed="@(w.WidthMm == selected.WidthMm)"
                                                 @onclick="@(() => _selectedWidth = captured.WidthMm)">
                                             @w.WidthMm
-                                            <span class="width-chip__qty @QtyPillClass(w.Status)">@w.StockMeters m</span>
+                                            <span class="width-chip__qty @QtyPillClass(w.Status)">@FormatMeters(w.StockMeters)</span>
                                         </button>
                                     }
                                 </div>
@@ -138,9 +172,9 @@
                                     <div class="status-block__main">
                                         <div class="status-block__primary">
                                             @StatusHeadline(selected.Status) ·
-                                            <span class="status-block__qty">@selected.StockMeters m</span>
+                                            <span class="status-block__qty">@FormatMeters(selected.StockMeters)</span>
                                         </div>
-                                        @if (selected.ExpectedDate is { } eta || selected.IncomingMeters is not null)
+                                        @if (selected.ExpectedDate is not null || selected.IncomingMeters is not null)
                                         {
                                             <div class="status-block__sub">
                                                 @if (selected.ExpectedDate is { } d2)
@@ -184,13 +218,13 @@
                                                 var captured = alt;
                                                 <button class="alt-card"
                                                         type="button"
-                                                        @onclick="@(() => OpenAlternative(captured))">
+                                                        @onclick="@(() => OpenAlternativeAsync(captured))">
                                                     <div class="alt-img @AltImgClass(captured.Code)"></div>
                                                     <div class="alt-body">
                                                         <div class="alt-body__code">@alt.Code · @alt.WidthMm</div>
                                                         <div class="alt-body__row">
                                                             <span class="chip @StatusChipClass(alt.Status) chip--sm">
-                                                                @alt.StockMeters m
+                                                                @FormatMeters(alt.StockMeters)
                                                             </span>
                                                             <span>
                                                                 @(alt.ExpectedDate?.ToString("MM-dd") ?? "ready")
@@ -243,10 +277,10 @@
                                 <button class="last-checked-item"
                                         type="button"
                                         style="all:unset; cursor:pointer; display:flex; flex-direction:column; gap:2px; padding:8px 10px; border-left:2px solid var(--n-200); background:var(--n-25)"
-                                        @onclick="@(() => RestoreRecent(captured))">
+                                        @onclick="@(() => RestoreRecentAsync(captured))">
                                     <span class="last-checked-item__code">@r.Code <span class="dim mono">· @r.WidthMm mm</span></span>
                                     <span class="last-checked-item__meta">
-                                        <span class="chip @StatusChipClass(r.Status) chip--sm">@StatusChipLabel(r)</span>
+                                        <span class="chip @StatusChipClass(r.Status) chip--sm">@RecentChipLabel(r)</span>
                                     </span>
                                 </button>
                             }
@@ -261,130 +295,85 @@
 </main>
 
 @code {
-    /// <summary>Local view-model for a single recent-check entry. F-1 will
-    /// promote this to a Frontline.Contracts DTO.</summary>
-    private sealed record RecentCheck(string Code, int WidthMm, FabricStatus Status, int StockMeters);
-
-    private sealed record AlternativeRow(string Code, int WidthMm, FabricStatus Status, int StockMeters, DateOnly? ExpectedDate);
-
-    private sealed record WidthRow(int WidthMm, FabricStatus Status, int StockMeters, DateOnly? ExpectedDate, int? IncomingMeters);
-
-    private sealed record FabricCard(
-        string Code,
-        string Name,
-        string? Notes,
-        int? DiscountPercent,
-        IReadOnlyList<WidthRow> Widths,
-        IReadOnlyList<AlternativeRow> Alternatives);
-
-    private enum FabricStatus { Ok, Low, Out, Discontinued }
-
-    /* ── Sample dataset (F-0 only) ─────────────────────────────── */
-    private static readonly Dictionary<string, FabricCard> Samples = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["R120"] = new(
-            "R120",
-            "Linen texture, warm grey",
-            "Use with white bottom bar. Similar tone to R118.",
-            DiscountPercent: 15,
-            Widths: new WidthRow[]
-            {
-                new(1600, FabricStatus.Ok,  42, null, null),
-                new(2000, FabricStatus.Low,  8, new DateOnly(2026, 5, 8), 60),
-                new(2500, FabricStatus.Out,  0, new DateOnly(2026, 5, 12), 40),
-            },
-            Alternatives: new AlternativeRow[]
-            {
-                new("R118", 2000, FabricStatus.Ok,  34, null),
-                new("R124", 2000, FabricStatus.Low, 11, new DateOnly(2026, 5, 6)),
-                new("R130", 2000, FabricStatus.Ok,  68, null),
-            }),
-        ["DN45"] = new(
-            "DN45",
-            "Day-night graphite stripe",
-            null,
-            DiscountPercent: null,
-            Widths: new WidthRow[]
-            {
-                new(1600, FabricStatus.Low, 12, new DateOnly(2026, 5, 12), 80),
-                new(1800, FabricStatus.Out,  0, new DateOnly(2026, 5, 12), 120),
-            },
-            Alternatives: new AlternativeRow[]
-            {
-                new("DN47", 1800, FabricStatus.Ok,  56, null),
-                new("DN51", 1800, FabricStatus.Low, 14, new DateOnly(2026, 5, 9)),
-            }),
-        ["V78"] = new(
-            "V78",
-            "Vertical blind sand",
-            "Pairs naturally with V80 for two-tone installs.",
-            DiscountPercent: null,
-            Widths: new WidthRow[]
-            {
-                new(2500, FabricStatus.Low, 6, new DateOnly(2026, 5, 6), 40),
-            },
-            Alternatives: new AlternativeRow[]
-            {
-                new("V80", 2500, FabricStatus.Ok, 11, null),
-            }),
-    };
+    /// <summary>Per-circuit recent-check entry. F-2 will replace this with
+    /// rows persisted in <c>Frontline_FabricLastChecked</c> so the same list
+    /// shows up on every device the operator opens.</summary>
+    private sealed record RecentCheck(string Code, int WidthMm, FabricAvailabilityStatus Status, int? StockMeters);
 
     private string _code = "";
-    private FabricCard? _result;
+    private string _lastQuery = "";
+    private FabricCardDto? _result;
     private int _selectedWidth;
-    private readonly List<RecentCheck> _recent = new()
-    {
-        new("R120", 2000, FabricStatus.Low,  8),
-        new("DN45", 1800, FabricStatus.Out,  0),
-        new("V78",  2500, FabricStatus.Low,  6),
-    };
+    private bool _busy;
+    private bool _apiError;
+    private bool _notFound;
+    private readonly List<RecentCheck> _recent = new();
 
     private void OnCodeInput(ChangeEventArgs e) => _code = e.Value?.ToString() ?? "";
 
-    private void RunCheck()
+    private async Task RunCheckAsync()
     {
         if (string.IsNullOrWhiteSpace(_code))
         {
             _result = null;
+            _notFound = false;
+            _apiError = false;
             return;
         }
 
-        if (Samples.TryGetValue(_code.Trim(), out var card))
-        {
-            _result = card;
-            _selectedWidth = card.Widths.FirstOrDefault(w => w.Status != FabricStatus.Out)?.WidthMm
-                            ?? card.Widths[0].WidthMm;
-            PushRecent(card, _selectedWidth);
-        }
-        else
-        {
-            _result = null;
-        }
+        await LoadAsync(_code, width: null).ConfigureAwait(true);
     }
 
-    private void RestoreRecent(RecentCheck r)
+    private async Task RestoreRecentAsync(RecentCheck r)
     {
         _code = r.Code;
-        if (Samples.TryGetValue(r.Code, out var card))
-        {
-            _result = card;
-            _selectedWidth = r.WidthMm;
-            PushRecent(card, _selectedWidth);
-        }
+        await LoadAsync(r.Code, r.WidthMm).ConfigureAwait(true);
     }
 
-    private void OpenAlternative(AlternativeRow alt)
+    private async Task OpenAlternativeAsync(FabricAlternativeDto alt)
     {
-        if (Samples.TryGetValue(alt.Code, out var card))
+        _code = alt.Code;
+        await LoadAsync(alt.Code, alt.WidthMm).ConfigureAwait(true);
+    }
+
+    private async Task LoadAsync(string code, int? width)
+    {
+        _busy = true;
+        _apiError = false;
+        _notFound = false;
+        _lastQuery = code.Trim().ToUpperInvariant();
+        StateHasChanged();
+
+        try
         {
-            _code = alt.Code;
-            _result = card;
-            _selectedWidth = alt.WidthMm;
-            PushRecent(card, _selectedWidth);
+            var fetched = await Api.GetFabricCardAsync(_lastQuery, width, CancellationToken.None)
+                .ConfigureAwait(true);
+
+            switch (fetched.Outcome)
+            {
+                case FrontlineApiOutcome.Ok when fetched.Value is { Widths.Count: > 0 } card:
+                    _result = card;
+                    _selectedWidth = card.SelectedWidthMm
+                        ?? card.Widths.OrderBy(w => w.WidthMm).First().WidthMm;
+                    PushRecent(card, _selectedWidth);
+                    break;
+                case FrontlineApiOutcome.NotFound:
+                    _result = null;
+                    _notFound = true;
+                    break;
+                default:
+                    _result = null;
+                    _apiError = true;
+                    break;
+            }
+        }
+        finally
+        {
+            _busy = false;
         }
     }
 
-    private void PushRecent(FabricCard card, int widthMm)
+    private void PushRecent(FabricCardDto card, int widthMm)
     {
         var row = card.Widths.FirstOrDefault(w => w.WidthMm == widthMm) ?? card.Widths[0];
         _recent.RemoveAll(r => r.Code == card.Code && r.WidthMm == row.WidthMm);
@@ -396,47 +385,50 @@
     }
 
     /* ── Display helpers ───────────────────────────────────────── */
-    private static string StatusChipClass(FabricStatus s) => s switch
+    private static string StatusChipClass(FabricAvailabilityStatus s) => s switch
     {
-        FabricStatus.Ok           => "chip--ok",
-        FabricStatus.Low          => "chip--low",
-        FabricStatus.Out          => "chip--out",
-        FabricStatus.Discontinued => "chip--disc",
+        FabricAvailabilityStatus.Enough       => "chip--ok",
+        FabricAvailabilityStatus.Low          => "chip--low",
+        FabricAvailabilityStatus.None         => "chip--out",
+        FabricAvailabilityStatus.Discontinued => "chip--disc",
         _ => "chip--disc",
     };
 
-    private static string StatusBlockClass(FabricStatus s) => s switch
+    private static string StatusBlockClass(FabricAvailabilityStatus s) => s switch
     {
-        FabricStatus.Ok           => "status-block--ok",
-        FabricStatus.Low          => "status-block--low",
-        FabricStatus.Out          => "status-block--out",
-        FabricStatus.Discontinued => "status-block--disc",
+        FabricAvailabilityStatus.Enough       => "status-block--ok",
+        FabricAvailabilityStatus.Low          => "status-block--low",
+        FabricAvailabilityStatus.None         => "status-block--out",
+        FabricAvailabilityStatus.Discontinued => "status-block--disc",
         _ => "status-block--disc",
     };
 
-    private static string QtyPillClass(FabricStatus s) => s switch
+    private static string QtyPillClass(FabricAvailabilityStatus s) => s switch
     {
-        FabricStatus.Ok  => "is-ok",
-        FabricStatus.Low => "is-low",
-        FabricStatus.Out => "is-out",
+        FabricAvailabilityStatus.Enough => "is-ok",
+        FabricAvailabilityStatus.Low    => "is-low",
+        FabricAvailabilityStatus.None   => "is-out",
         _ => "",
     };
 
-    private static string StatusHeadline(FabricStatus s) => s switch
+    private static string StatusHeadline(FabricAvailabilityStatus s) => s switch
     {
-        FabricStatus.Ok           => "In stock",
-        FabricStatus.Low          => "Low stock",
-        FabricStatus.Out          => "Out of stock",
-        FabricStatus.Discontinued => "Discontinued",
+        FabricAvailabilityStatus.Enough       => "In stock",
+        FabricAvailabilityStatus.Low          => "Low stock",
+        FabricAvailabilityStatus.None         => "Out of stock",
+        FabricAvailabilityStatus.Discontinued => "Discontinued",
         _ => "Unknown",
     };
 
-    private static string StatusChipLabel(RecentCheck r) => r.Status switch
+    private static string FormatMeters(int? meters) => meters is { } m ? $"{m} m" : "—";
+
+    private static string RecentChipLabel(RecentCheck r) => r.Status switch
     {
-        FabricStatus.Ok  => $"OK · {r.StockMeters} m",
-        FabricStatus.Low => $"Low · {r.StockMeters} m",
-        FabricStatus.Out => "Out",
-        _                => "Disc",
+        FabricAvailabilityStatus.Enough       => $"OK · {r.StockMeters ?? 0} m",
+        FabricAvailabilityStatus.Low          => $"Low · {r.StockMeters ?? 0} m",
+        FabricAvailabilityStatus.None         => "Out",
+        FabricAvailabilityStatus.Discontinued => "Disc",
+        _ => "—",
     };
 
     private static string AltImgClass(string code)
@@ -451,12 +443,12 @@
         };
     }
 
-    private RenderFragment StatusIcon(FabricStatus s) => @<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        @if (s == FabricStatus.Ok)
+    private RenderFragment StatusIcon(FabricAvailabilityStatus s) => @<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        @if (s == FabricAvailabilityStatus.Enough)
         {
             <path d="M5 12l5 5L20 7" />
         }
-        else if (s == FabricStatus.Discontinued)
+        else if (s == FabricAvailabilityStatus.Discontinued)
         {
             <path d="M6 6l12 12M6 18L18 6" />
         }

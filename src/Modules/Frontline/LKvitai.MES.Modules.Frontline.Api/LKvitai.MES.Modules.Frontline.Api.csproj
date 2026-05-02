@@ -18,6 +18,7 @@
     <ProjectReference Include="..\..\..\BuildingBlocks\LKvitai.MES.BuildingBlocks.ModuleStartup\LKvitai.MES.BuildingBlocks.ModuleStartup.csproj" />
     <ProjectReference Include="..\LKvitai.MES.Modules.Frontline.Application\LKvitai.MES.Modules.Frontline.Application.csproj" />
     <ProjectReference Include="..\LKvitai.MES.Modules.Frontline.Contracts\LKvitai.MES.Modules.Frontline.Contracts.csproj" />
+    <ProjectReference Include="..\LKvitai.MES.Modules.Frontline.Infrastructure\LKvitai.MES.Modules.Frontline.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
