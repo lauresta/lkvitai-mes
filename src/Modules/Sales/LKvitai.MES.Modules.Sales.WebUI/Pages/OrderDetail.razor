@@ -1,7 +1,5 @@
 @page "/orders/{Number}"
 @inject SalesApiClient Api
-@inject PersistentComponentState ApplicationState
-@implements IDisposable
 
 <PageTitle>@Number &middot; Sales</PageTitle>
 
@@ -198,51 +196,16 @@
     private OrderDetailsDto? _order;
     private bool             _loadFailed;
     private bool             _loadCompleted;
-    private string?          _hydratedFromNumber;
-    private PersistingComponentStateSubscription _persistingSub;
-
-    private string PersistKey => $"sales.order.details.{Number}";
-
-    protected override void OnInitialized()
-    {
-        // Persist the just-fetched details so the interactive (post-hydration)
-        // pass can rehydrate without a second HTTP roundtrip — kills the
-        // brief "blank → re-render" flash users see when entering the page.
-        _persistingSub = ApplicationState.RegisterOnPersisting(() =>
-        {
-            if (_order is not null)
-            {
-                ApplicationState.PersistAsJson(PersistKey, _order);
-            }
-            return Task.CompletedTask;
-        });
-    }
+    private string?          _loadedNumber;
 
     protected override async Task OnParametersSetAsync()
     {
-        // Skip the second fetch if the prerender side persisted us a payload
-        // for this exact order number. Tracked by _hydratedFromNumber so we
-        // still refetch when the user navigates to a different /orders/{Number}.
-        //
-        // try/catch ensures a malformed/incompatible persist payload never
-        // kills the circuit (filters and buttons would silently stop working).
-        try
-        {
-            if (_hydratedFromNumber != Number &&
-                ApplicationState.TryTakeFromJson<OrderDetailsDto>(PersistKey, out var persisted) &&
-                persisted is not null)
-            {
-                _order = persisted;
-                _loadFailed = false;
-                _loadCompleted = true;
-                _hydratedFromNumber = Number;
-                return;
-            }
-        }
-        catch
-        {
-            // fall through to a fresh fetch
-        }
+        // Refetch only when the route number actually changes (covers Blazor's
+        // habit of calling OnParametersSetAsync more than once for the same
+        // URL during prerender → interactive). Persistence across the
+        // prerender boundary was attempted in PR #78/#79 but broke the circuit
+        // on this stack and was reverted; see Index.razor for the rationale.
+        if (_loadedNumber == Number) return;
 
         _order = null;
         _loadFailed = false;
@@ -279,10 +242,8 @@
         finally
         {
             _loadCompleted = true;
-            _hydratedFromNumber = Number;
+            _loadedNumber = Number;
             StateHasChanged();
         }
     }
-
-    public void Dispose() => _persistingSub.Dispose();
 }

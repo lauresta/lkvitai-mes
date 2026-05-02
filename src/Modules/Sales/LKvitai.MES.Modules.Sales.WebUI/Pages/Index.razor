@@ -1,6 +1,5 @@
 @page "/"
 @inject SalesApiClient Api
-@inject PersistentComponentState ApplicationState
 @implements IAsyncDisposable
 
 <PageTitle>Sales · Orders</PageTitle>
@@ -195,29 +194,6 @@
     private const int    PageSize             = 100;
     private const int    SearchDebounceMs     = 250;
     private const int    LoadingMinVisibleMs  = 200; // floor for the loading bar
-    private const string PersistKeyOrders     = "sales.orders.list";
-    private const string PersistKeyFilters    = "sales.orders.filterOptions";
-
-    /// <summary>Snapshot of the orders page persisted across the prerender →
-    /// interactive boundary so OnInitializedAsync skips a second HTTP call and
-    /// the page does not flash empty during hydration.</summary>
-    /// <remarks>
-    /// MUST be <c>public</c>: <see cref="System.Text.Json.JsonSerializer"/> uses
-    /// the parameterized public constructor of records for deserialization.
-    /// A <c>private</c>/<c>internal</c> primary constructor causes
-    /// <see cref="PersistentComponentState.TryTakeFromJson{T}"/> to throw during
-    /// hydration, which kills the Blazor Server circuit before any event
-    /// handlers are wired up — filters/buttons silently stop responding and the
-    /// browser logs "Server returned an error on close".
-    /// </remarks>
-    public sealed record PersistedListState(
-        IReadOnlyList<OrderSummaryDto> Items,
-        int Total,
-        int Page,
-        string Search,
-        string Status,
-        string Store,
-        bool HasDebt);
 
     /// <summary>Always-shown date preset list (Date filter is intentionally
     /// disabled in S-1; kept so the toolbar grid stays aligned).</summary>
@@ -270,9 +246,6 @@
     // returned. Together with _reloadCts this gives us strict last-write-wins.
     private int _latestReloadId;
 
-    // PersistentComponentState subscription — disposed in DisposeAsync.
-    private PersistingComponentStateSubscription _persistingSub;
-
     private int _totalPages => Math.Max(1, (int)Math.Ceiling(_total / (double)_pageSize));
     private int _from       => _total == 0 ? 0 : ((_page - 1) * _pageSize) + 1;
     private int _to         => Math.Min(_page * _pageSize, _total);
@@ -280,78 +253,19 @@
     private IReadOnlyList<SelectOption> StatusOptions => _statusOptions;
     private IReadOnlyList<SelectOption> StoreOptions  => _storeOptions;
 
-    protected override void OnInitialized()
-    {
-        // Subscribe BEFORE we touch state so the prerender side has a callback
-        // registered when the framework asks for state to persist into the page.
-        _persistingSub = ApplicationState.RegisterOnPersisting(PersistDataAsync);
-    }
-
     protected override async Task OnInitializedAsync()
     {
-        // 1) Try to rehydrate the orders snapshot persisted by the prerender
-        //    side. When present, we skip the HTTP call entirely so the user
-        //    sees the same data the prerendered HTML showed — no flicker.
-        //
-        //    Wrapped in try/catch so a malformed/incompatible persist payload
-        //    can never kill the Blazor circuit — we just fall back to fetching
-        //    fresh data, exactly like a cold load would do.
-        try
-        {
-            if (ApplicationState.TryTakeFromJson<PersistedListState>(PersistKeyOrders, out var persisted) && persisted is not null)
-            {
-                _orders        = persisted.Items.ToList();
-                _total         = persisted.Total;
-                _page          = persisted.Page;
-                _search        = persisted.Search;
-                _statusFilter  = persisted.Status;
-                _storeFilter   = persisted.Store;
-                _hasDebtFilter = persisted.HasDebt;
-                _hasEverLoaded = true;
-            }
-        }
-        catch
-        {
-            _hasEverLoaded = false; // force a fresh fetch below
-        }
-
-        // 2) Same for the filter options: persisted dropdowns avoid a second
-        //    request and an empty-then-populated visual flicker on the toolbar.
-        try
-        {
-            if (ApplicationState.TryTakeFromJson<OrdersFilterOptionsDto>(PersistKeyFilters, out var persistedFilters) && persistedFilters is not null)
-            {
-                ApplyFilterOptions(persistedFilters);
-            }
-        }
-        catch
-        {
-            // toolbar will repopulate from LoadFilterOptionsAsync below
-        }
-
-        // Both fetches happen during prerender so their results are persisted
-        // for the interactive phase. Run in parallel — no dependency between them.
+        // Both fetches happen on every component init. We deliberately do NOT
+        // use PersistentComponentState here: a prior attempt (PR #78/#79) shipped
+        // hydration + `<persist-component-state />` to skip the second fetch and
+        // kill the post-prerender flicker, but that combination broke the entire
+        // Blazor Server circuit on this stack — filters, paging and any @onclick
+        // silently stopped working with "Server returned an error on close" in
+        // the browser console and zero exceptions on the server side. Until that
+        // root cause is properly diagnosed, a brief flash beats a dead page.
         await Task.WhenAll(
-            _hasEverLoaded   ? Task.CompletedTask : ReloadAsync(),
-            _statusOptions.Count > 1 ? Task.CompletedTask : LoadFilterOptionsAsync());
-    }
-
-    private Task PersistDataAsync()
-    {
-        ApplicationState.PersistAsJson(PersistKeyOrders, new PersistedListState(
-            _orders,
-            _total,
-            _page,
-            _search,
-            _statusFilter,
-            _storeFilter,
-            _hasDebtFilter));
-
-        ApplicationState.PersistAsJson(PersistKeyFilters, new OrdersFilterOptionsDto(
-            _statusOptions.Where(o => !string.IsNullOrEmpty(o.Value)).Select(o => o.Value).ToList(),
-            _storeOptions .Where(o => !string.IsNullOrEmpty(o.Value)).Select(o => o.Value).ToList()));
-
-        return Task.CompletedTask;
+            ReloadAsync(),
+            LoadFilterOptionsAsync());
     }
 
     private async Task LoadFilterOptionsAsync()
@@ -402,8 +316,6 @@
 
     public async ValueTask DisposeAsync()
     {
-        _persistingSub.Dispose();
-
         if (_searchDebounceCts is not null)
         {
             await _searchDebounceCts.CancelAsync();

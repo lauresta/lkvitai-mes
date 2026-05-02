@@ -32,13 +32,14 @@
         <a class="dismiss">🗙</a>
     </div>
 
-    @* Required for PersistentComponentState to actually transfer state from the
-       prerender pass to the interactive (post-SignalR) pass. Without this tag
-       the RegisterOnPersisting callbacks fire on the server but the serialized
-       payload is never written into the page, so TryTakeFromJson on the client
-       always returns false and OnInitializedAsync re-fetches data — visible
-       as a flash between the prerendered grid and the re-rendered grid. *@
-    <persist-component-state />
+    @* PersistentComponentState was wired in PR #78 (added <persist-component-state />)
+       and patched in PR #79 to fix a private-record deserialization issue. Both
+       were reverted in this PR because the resulting circuit died ~300 ms after
+       SignalR connect with "Server returned an error on close" in the browser
+       and zero exception traces server-side, leaving the page completely
+       non-interactive (no filters, no paging). The brief post-prerender
+       re-render flash is the lesser of two evils until the persist failure
+       can be reproduced locally and the actual root cause identified. *@
 
     <script src="_framework/blazor.server.js"></script>
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>
