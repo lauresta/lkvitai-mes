@@ -22,9 +22,9 @@ public sealed class SalesSqlOptions
     public string ConnectionString { get; init; } = string.Empty;
 
     /// <summary>
-    /// Per-command timeout in seconds. The legacy <c>weblb_*</c> stored procedures
-    /// historically run sub-second, but the orders list materialises the entire
-    /// table in-memory so we leave headroom for bigger result sets.
+    /// Per-command timeout in seconds. The Sales <c>weblb_*</c> stored
+    /// procedures historically run sub-second; the paged orders SP scales
+    /// with page size rather than table size, so 30 s is comfortable headroom.
     /// </summary>
     public int CommandTimeoutSeconds { get; init; } = 30;
 }

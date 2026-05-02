@@ -38,9 +38,9 @@ namespace LKvitai.MES.Modules.Sales.Api.Composition;
 /// </remarks>
 public static class SalesOrdersDataSource
 {
-    private const string DataSourceConfigKey  = "Sales:OrdersDataSource";
-    private const string ConnectionStringName = "LKvitaiDb";
-    private const string CommandTimeoutKey    = "Sales:Sql:CommandTimeoutSeconds";
+    private const string DataSourceConfigKey   = "Sales:OrdersDataSource";
+    private const string ConnectionStringName  = "LKvitaiDb";
+    private const string CommandTimeoutKey     = "Sales:Sql:CommandTimeoutSeconds";
 
     private const string ModeAuto = "Auto";
     private const string ModeSql  = "Sql";
@@ -99,6 +99,7 @@ public static class SalesOrdersDataSource
             CommandTimeoutSeconds = commandTimeout <= 0 ? 30 : commandTimeout,
         });
         services.AddSingleton<IOrdersQueryService, SqlOrdersQueryService>();
+
         return services;
     }
 
