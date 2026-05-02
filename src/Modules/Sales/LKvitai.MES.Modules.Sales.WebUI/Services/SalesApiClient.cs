@@ -51,6 +51,27 @@ public sealed class SalesApiClient
     }
 
     /// <summary>
+    /// Captures the outcome of one <see cref="HttpClient.GetAsync(string)"/>
+    /// + <c>ReadFromJsonAsync</c> round-trip plus the per-phase timings the
+    /// <c>[SalesPerf]</c> log lines surface. Designed so callers log the
+    /// success line themselves with their own structured fields, while the
+    /// generic transport / non-success branches stay in <see cref="SendJsonGetAsync{T}"/>.
+    /// </summary>
+    private readonly record struct ApiFetch<T>(
+        HttpStatusCode Status,
+        T? Body,
+        long HttpMs,
+        long DeserMs,
+        long TotalMs,
+        long ContentLength,
+        bool TransportFailed)
+    {
+        public bool IsSuccess => !TransportFailed
+            && (int)Status >= 200
+            && (int)Status < 300;
+    }
+
+    /// <summary>
     /// Fetches a page of order summaries from <c>GET /api/sales/orders</c>.
     /// Returns <c>null</c> when the API is unreachable or returns a non-success status.
     /// </summary>
@@ -60,49 +81,19 @@ public sealed class SalesApiClient
     {
         ArgumentNullException.ThrowIfNull(query);
 
-        var client = _httpClientFactory.CreateClient(HttpClientName);
         var url = BuildOrdersListUrl(query);
+        var fetch = await SendJsonGetAsync<PagedResult<OrderSummaryDto>>(url, opLabel: "orders", cancellationToken)
+            .ConfigureAwait(false);
 
-        var totalSw = Stopwatch.StartNew();
-        var httpSw = Stopwatch.StartNew();
-        try
-        {
-            using var response = await client.GetAsync(url, cancellationToken).ConfigureAwait(false);
-            httpSw.Stop();
+        if (!fetch.IsSuccess) return null;
 
-            if (!response.IsSuccessStatusCode)
-            {
-                totalSw.Stop();
-                _logger.LogWarning(
-                    "[SalesPerf] webui-http GET orders failed status={StatusCode} url={Url} httpMs={HttpMs} totalMs={TotalMs}",
-                    response.StatusCode, url, httpSw.ElapsedMilliseconds, totalSw.ElapsedMilliseconds);
-                return null;
-            }
+        _logger.LogInformation(
+            "[SalesPerf] webui-http GET orders ok page={Page} pageSize={PageSize} returned={Returned} total={Total} " +
+            "httpMs={HttpMs} deserMs={DeserMs} totalMs={TotalMs} contentLength={ContentLength}",
+            query.Page, query.PageSize, fetch.Body?.Items.Count ?? 0, fetch.Body?.Total ?? 0,
+            fetch.HttpMs, fetch.DeserMs, fetch.TotalMs, fetch.ContentLength);
 
-            var deserSw = Stopwatch.StartNew();
-            var body = await response.Content
-                .ReadFromJsonAsync<PagedResult<OrderSummaryDto>>(cancellationToken)
-                .ConfigureAwait(false);
-            deserSw.Stop();
-            totalSw.Stop();
-
-            _logger.LogInformation(
-                "[SalesPerf] webui-http GET orders ok page={Page} pageSize={PageSize} returned={Returned} total={Total} " +
-                "httpMs={HttpMs} deserMs={DeserMs} totalMs={TotalMs} contentLength={ContentLength}",
-                query.Page, query.PageSize, body?.Items.Count ?? 0, body?.Total ?? 0,
-                httpSw.ElapsedMilliseconds, deserSw.ElapsedMilliseconds, totalSw.ElapsedMilliseconds,
-                response.Content.Headers.ContentLength ?? -1);
-
-            return body;
-        }
-        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
-        {
-            totalSw.Stop();
-            _logger.LogError(ex,
-                "[SalesPerf] webui-http GET orders exception url={Url} totalMs={TotalMs}",
-                url, totalSw.ElapsedMilliseconds);
-            return null;
-        }
+        return fetch.Body;
     }
 
     /// <summary>
@@ -119,58 +110,27 @@ public sealed class SalesApiClient
             return SalesApiResult<OrderDetailsDto>.NotFound();
         }
 
-        var client = _httpClientFactory.CreateClient(HttpClientName);
         var url = $"/api/sales/orders/{Uri.EscapeDataString(number)}";
+        var fetch = await SendJsonGetAsync<OrderDetailsDto>(url, opLabel: "order", cancellationToken)
+            .ConfigureAwait(false);
 
-        var totalSw = Stopwatch.StartNew();
-        var httpSw = Stopwatch.StartNew();
-        try
+        if (fetch.Status == HttpStatusCode.NotFound)
         {
-            using var response = await client.GetAsync(url, cancellationToken).ConfigureAwait(false);
-            httpSw.Stop();
-
-            if (response.StatusCode == HttpStatusCode.NotFound)
-            {
-                totalSw.Stop();
-                _logger.LogInformation(
-                    "[SalesPerf] webui-http GET order not-found number={Number} httpMs={HttpMs} totalMs={TotalMs}",
-                    number, httpSw.ElapsedMilliseconds, totalSw.ElapsedMilliseconds);
-                return SalesApiResult<OrderDetailsDto>.NotFound();
-            }
-
-            if (!response.IsSuccessStatusCode)
-            {
-                totalSw.Stop();
-                _logger.LogWarning(
-                    "[SalesPerf] webui-http GET order failed status={StatusCode} url={Url} httpMs={HttpMs} totalMs={TotalMs}",
-                    response.StatusCode, url, httpSw.ElapsedMilliseconds, totalSw.ElapsedMilliseconds);
-                return SalesApiResult<OrderDetailsDto>.Failed();
-            }
-
-            var deserSw = Stopwatch.StartNew();
-            var body = await response.Content
-                .ReadFromJsonAsync<OrderDetailsDto>(cancellationToken)
-                .ConfigureAwait(false);
-            deserSw.Stop();
-            totalSw.Stop();
-
             _logger.LogInformation(
-                "[SalesPerf] webui-http GET order ok number={Number} found={Found} httpMs={HttpMs} deserMs={DeserMs} totalMs={TotalMs} contentLength={ContentLength}",
-                number, body is not null, httpSw.ElapsedMilliseconds, deserSw.ElapsedMilliseconds,
-                totalSw.ElapsedMilliseconds, response.Content.Headers.ContentLength ?? -1);
+                "[SalesPerf] webui-http GET order not-found number={Number} httpMs={HttpMs} totalMs={TotalMs}",
+                number, fetch.HttpMs, fetch.TotalMs);
+            return SalesApiResult<OrderDetailsDto>.NotFound();
+        }
 
-            return body is null
-                ? SalesApiResult<OrderDetailsDto>.Failed()
-                : SalesApiResult<OrderDetailsDto>.Ok(body);
-        }
-        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
-        {
-            totalSw.Stop();
-            _logger.LogError(ex,
-                "[SalesPerf] webui-http GET order exception url={Url} totalMs={TotalMs}",
-                url, totalSw.ElapsedMilliseconds);
-            return SalesApiResult<OrderDetailsDto>.Failed();
-        }
+        if (!fetch.IsSuccess) return SalesApiResult<OrderDetailsDto>.Failed();
+
+        _logger.LogInformation(
+            "[SalesPerf] webui-http GET order ok number={Number} found={Found} httpMs={HttpMs} deserMs={DeserMs} totalMs={TotalMs} contentLength={ContentLength}",
+            number, fetch.Body is not null, fetch.HttpMs, fetch.DeserMs, fetch.TotalMs, fetch.ContentLength);
+
+        return fetch.Body is null
+            ? SalesApiResult<OrderDetailsDto>.Failed()
+            : SalesApiResult<OrderDetailsDto>.Ok(fetch.Body);
     }
 
     /// <summary>
@@ -181,8 +141,33 @@ public sealed class SalesApiClient
     /// </summary>
     public async Task<OrdersFilterOptionsDto?> GetFilterOptionsAsync(CancellationToken cancellationToken)
     {
-        var client = _httpClientFactory.CreateClient(HttpClientName);
         const string url = "/api/sales/orders/filters";
+        var fetch = await SendJsonGetAsync<OrdersFilterOptionsDto>(url, opLabel: "filters", cancellationToken)
+            .ConfigureAwait(false);
+
+        if (!fetch.IsSuccess) return null;
+
+        _logger.LogInformation(
+            "[SalesPerf] webui-http GET filters ok statuses={StatusCount} stores={StoreCount} httpMs={HttpMs} deserMs={DeserMs} totalMs={TotalMs}",
+            fetch.Body?.Statuses.Count ?? 0, fetch.Body?.Stores.Count ?? 0,
+            fetch.HttpMs, fetch.DeserMs, fetch.TotalMs);
+
+        return fetch.Body;
+    }
+
+    /// <summary>
+    /// Common transport for every <c>GET /api/sales/...</c> call: dispatch the
+    /// request, time the HTTP and JSON-deserialise phases, and log the failure
+    /// branches once. Success logs stay with the calling method so each
+    /// endpoint emits its own structured line with the fields it cares about.
+    /// </summary>
+    private async Task<ApiFetch<T>> SendJsonGetAsync<T>(
+        string url,
+        string opLabel,
+        CancellationToken cancellationToken)
+        where T : class
+    {
+        var client = _httpClientFactory.CreateClient(HttpClientName);
 
         var totalSw = Stopwatch.StartNew();
         var httpSw = Stopwatch.StartNew();
@@ -194,33 +179,54 @@ public sealed class SalesApiClient
             if (!response.IsSuccessStatusCode)
             {
                 totalSw.Stop();
-                _logger.LogWarning(
-                    "[SalesPerf] webui-http GET filters failed status={StatusCode} url={Url} httpMs={HttpMs} totalMs={TotalMs}",
-                    response.StatusCode, url, httpSw.ElapsedMilliseconds, totalSw.ElapsedMilliseconds);
-                return null;
+                // 404 is a legitimate outcome for the by-number lookup, so
+                // skip the warning log there — caller logs its own info line.
+                if (response.StatusCode != HttpStatusCode.NotFound)
+                {
+                    _logger.LogWarning(
+                        "[SalesPerf] webui-http GET {Op} failed status={StatusCode} url={Url} httpMs={HttpMs} totalMs={TotalMs}",
+                        opLabel, response.StatusCode, url, httpSw.ElapsedMilliseconds, totalSw.ElapsedMilliseconds);
+                }
+                return new ApiFetch<T>(
+                    Status:           response.StatusCode,
+                    Body:             null,
+                    HttpMs:           httpSw.ElapsedMilliseconds,
+                    DeserMs:          0,
+                    TotalMs:          totalSw.ElapsedMilliseconds,
+                    ContentLength:    response.Content.Headers.ContentLength ?? -1,
+                    TransportFailed:  false);
             }
 
             var deserSw = Stopwatch.StartNew();
             var body = await response.Content
-                .ReadFromJsonAsync<OrdersFilterOptionsDto>(cancellationToken)
+                .ReadFromJsonAsync<T>(cancellationToken)
                 .ConfigureAwait(false);
             deserSw.Stop();
             totalSw.Stop();
 
-            _logger.LogInformation(
-                "[SalesPerf] webui-http GET filters ok statuses={StatusCount} stores={StoreCount} httpMs={HttpMs} deserMs={DeserMs} totalMs={TotalMs}",
-                body?.Statuses.Count ?? 0, body?.Stores.Count ?? 0,
-                httpSw.ElapsedMilliseconds, deserSw.ElapsedMilliseconds, totalSw.ElapsedMilliseconds);
-
-            return body;
+            return new ApiFetch<T>(
+                Status:           response.StatusCode,
+                Body:             body,
+                HttpMs:           httpSw.ElapsedMilliseconds,
+                DeserMs:          deserSw.ElapsedMilliseconds,
+                TotalMs:          totalSw.ElapsedMilliseconds,
+                ContentLength:    response.Content.Headers.ContentLength ?? -1,
+                TransportFailed:  false);
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {
             totalSw.Stop();
             _logger.LogError(ex,
-                "[SalesPerf] webui-http GET filters exception url={Url} totalMs={TotalMs}",
-                url, totalSw.ElapsedMilliseconds);
-            return null;
+                "[SalesPerf] webui-http GET {Op} exception url={Url} totalMs={TotalMs}",
+                opLabel, url, totalSw.ElapsedMilliseconds);
+            return new ApiFetch<T>(
+                Status:           default,
+                Body:             null,
+                HttpMs:           httpSw.ElapsedMilliseconds,
+                DeserMs:          0,
+                TotalMs:          totalSw.ElapsedMilliseconds,
+                ContentLength:    -1,
+                TransportFailed:  true);
         }
     }
 
