@@ -85,6 +85,33 @@ public sealed class SqlOrdersQueryService : IOrdersQueryService
         return ApplyFilterSortPage(all, query);
     }
 
+    public async Task<OrdersFilterOptionsDto> GetFilterOptionsAsync(CancellationToken cancellationToken)
+    {
+        // Same full-table read as GetOrdersAsync (weblb_Orders has no parameters).
+        // We project the two label sets the WebUI toolbar needs; the data is
+        // small enough that an ad-hoc DISTINCT in C# is cheaper than another
+        // round trip. When the paged proc wrapper lands (TODO above), expose
+        // dedicated dbo.weblb_StatusList / dbo.weblb_StoreList and wire them
+        // here instead.
+        var all = await ReadAllOrdersAsync(cancellationToken).ConfigureAwait(false);
+
+        var statuses = all
+            .Select(o => o.Status)
+            .Where(static s => !string.IsNullOrWhiteSpace(s))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(static s => s, StringComparer.CurrentCulture)
+            .ToList();
+
+        var stores = all
+            .Select(o => o.Store)
+            .Where(static s => !string.IsNullOrWhiteSpace(s))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(static s => s, StringComparer.CurrentCulture)
+            .ToList();
+
+        return new OrdersFilterOptionsDto(statuses, stores);
+    }
+
     public async Task<OrderDetailsDto?> GetOrderDetailsAsync(
         string number,
         CancellationToken cancellationToken)
@@ -354,16 +381,21 @@ public sealed class SqlOrdersQueryService : IOrdersQueryService
                     o.ProductsSearch.Contains(needle, StringComparison.OrdinalIgnoreCase)));
         }
 
+        // Trim both sides — legacy nchar/char columns are right-padded with
+        // spaces, which would otherwise make an exact-equality dropdown filter
+        // silently return zero rows.
         if (!string.IsNullOrWhiteSpace(query.Status))
         {
+            var status = query.Status.Trim();
             filtered = filtered.Where(o =>
-                string.Equals(o.Status, query.Status, StringComparison.OrdinalIgnoreCase));
+                string.Equals(o.Status?.Trim(), status, StringComparison.OrdinalIgnoreCase));
         }
 
         if (!string.IsNullOrWhiteSpace(query.Store))
         {
+            var store = query.Store.Trim();
             filtered = filtered.Where(o =>
-                string.Equals(o.Store, query.Store, StringComparison.OrdinalIgnoreCase));
+                string.Equals(o.Store?.Trim(), store, StringComparison.OrdinalIgnoreCase));
         }
 
         if (query.HasDebt)

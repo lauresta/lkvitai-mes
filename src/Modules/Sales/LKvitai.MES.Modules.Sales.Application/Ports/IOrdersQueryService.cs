@@ -27,4 +27,13 @@ public interface IOrdersQueryService
     Task<OrderDetailsDto?> GetOrderDetailsAsync(
         string number,
         CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Returns distinct values currently present in the data for the toolbar
+    /// Status and Store dropdowns. The WebUI uses these to populate the
+    /// dropdowns dynamically instead of hardcoding labels — guarantees that
+    /// every option, when picked, actually filters at least one row.
+    /// </summary>
+    Task<OrdersFilterOptionsDto> GetFilterOptionsAsync(
+        CancellationToken cancellationToken);
 }
