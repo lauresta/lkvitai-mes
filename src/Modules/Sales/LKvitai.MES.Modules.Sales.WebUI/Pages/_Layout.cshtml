@@ -37,7 +37,14 @@
        the RegisterOnPersisting callbacks fire on the server but the serialized
        payload is never written into the page, so TryTakeFromJson on the client
        always returns false and OnInitializedAsync re-fetches data — visible
-       as a flash between the prerendered grid and the re-rendered grid. *@
+       as a flash between the prerendered grid and the re-rendered grid.
+
+       Pairs with two other guards in this module that together prevent the
+       circuit-on-startup death we saw on mes-test:
+         * Program.cs bumps SignalR's MaximumReceiveMessageSize to 256 KB so the
+           hydration message isn't truncated on connect.
+         * Pages/Index.razor persists a slim `PersistedOrderRow` (no
+           ProductsSearch) to keep the payload comfortably under that cap. *@
     <persist-component-state />
 
     <script src="_framework/blazor.server.js"></script>
