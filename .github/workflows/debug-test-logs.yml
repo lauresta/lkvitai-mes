@@ -1,0 +1,75 @@
+name: Debug Test Logs
+
+# Manual diagnostic workflow used to surface container/Serilog logs from the
+# self-hosted lkvitai-test runner without SSH access. Triggered ad-hoc via
+# workflow_dispatch when something on https://mes-test.lauresta.com is failing
+# and we need the actual exception text. Safe to delete once the incident is
+# resolved.
+on:
+  workflow_dispatch:
+    inputs:
+      service:
+        description: "Service to inspect (sales | warehouse | portal | frontline | scanning | all)"
+        required: false
+        default: "sales"
+      tail:
+        description: "How many lines of docker logs to dump"
+        required: false
+        default: "200"
+
+jobs:
+  dump:
+    runs-on: [self-hosted, lkvitai-test]
+    environment: test
+    steps:
+      - name: Show docker compose state
+        run: |
+          docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' | grep -E 'lkvitai-mes|NAMES' || true
+
+      - name: Tail docker logs for selected services
+        run: |
+          set -u
+          SERVICE="${{ inputs.service }}"
+          TAIL="${{ inputs.tail }}"
+          case "$SERVICE" in
+            sales)      CONTAINERS="lkvitai-mes-sales-api lkvitai-mes-sales-webui" ;;
+            warehouse)  CONTAINERS="lkvitai-mes-warehouse-api lkvitai-mes-warehouse-webui" ;;
+            portal)     CONTAINERS="lkvitai-mes-portal-api lkvitai-mes-portal-webui" ;;
+            frontline)  CONTAINERS="lkvitai-mes-frontline-api lkvitai-mes-frontline-webui" ;;
+            scanning)   CONTAINERS="lkvitai-mes-scanning-api lkvitai-mes-scanning-webui" ;;
+            all)        CONTAINERS="$(docker ps --format '{{.Names}}' | grep '^lkvitai-mes-')" ;;
+            *)          echo "::error::Unknown service: $SERVICE"; exit 1 ;;
+          esac
+          for c in $CONTAINERS; do
+            echo "::group::docker logs --tail $TAIL $c"
+            docker logs --tail "$TAIL" "$c" 2>&1 || echo "(no logs / not running)"
+            echo "::endgroup::"
+          done
+
+      - name: Dump latest Serilog files
+        run: |
+          set -u
+          LOGS_DIR="${LOGS_DIR:-/opt/lkvitai-mes/logs}"
+          SERVICE="${{ inputs.service }}"
+          case "$SERVICE" in
+            sales)      PATTERNS="sales-api- sales-webui-" ;;
+            warehouse)  PATTERNS="warehouse-" ;;
+            portal)     PATTERNS="portal-" ;;
+            frontline)  PATTERNS="frontline-api- frontline-webui-" ;;
+            scanning)   PATTERNS="scanning-api- scanning-webui-" ;;
+            all)        PATTERNS="sales- warehouse- portal- frontline- scanning-" ;;
+            *)          echo "::error::Unknown service: $SERVICE"; exit 1 ;;
+          esac
+          for prefix in $PATTERNS; do
+            echo "::group::Serilog ${prefix}*.log (latest)"
+            latest="$(ls -1t ${LOGS_DIR}/${prefix}*.log 2>/dev/null | head -n1 || true)"
+            if [ -z "$latest" ]; then
+              echo "(no file matching ${prefix}*.log under $LOGS_DIR)"
+            else
+              echo "file: $latest"
+              tail -n 300 "$latest" || true
+            fi
+            echo "::endgroup::"
+          done
+        env:
+          LOGS_DIR: ${{ vars.LOGS_DIR }}
