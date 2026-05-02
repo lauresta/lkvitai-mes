@@ -1,0 +1,470 @@
+@* FabricLookup — mobile-first single-fabric lookup screen.
+
+   UX baseline: docs/ux/fabric-availability-static-preview.html (mobile panels)
+   + Variant A handover (this file): on desktop the mobile UI is rendered
+   inside a 390 px phone frame, with an operational sidebar (recent checks,
+   QR to open on phone) on the right.
+
+   F-0 only: hardcoded local sample records, no Frontline.Contracts /
+   HttpClient calls. F-1 will promote these records to DTOs and wire
+   /api/frontline/fabric/{code}. *@
+
+@page "/"
+@page "/fabric"
+@page "/fabric/lookup"
+
+<PageTitle>Frontline · Fabric availability</PageTitle>
+
+<main class="fa-main">
+
+    <div class="fa-page-head">
+        <div>
+            <div class="fa-eyebrow mono">Frontline · Fabric availability</div>
+            <h1>Fabric availability</h1>
+            <p>
+                Mobile-first lookup for the sales floor. Optimised for phone use —
+                use the desktop low-stock list for purchasing and ops.
+            </p>
+        </div>
+    </div>
+
+    <div class="lookup-shell">
+
+        @* The phone-frame column. On mobile (< 980px) this collapses to
+           full-width and drops the rounded phone-screen visual. *@
+        <div>
+            <div class="lookup-frame__label" role="note">
+                Optimised for phone use. For live fabric checks on the shop floor,
+                open this page on a phone or scan the QR on the right.
+            </div>
+
+            <div class="fa-app">
+                <FaHeader CurrentMode="lookup" />
+
+                <div class="fa-content">
+
+                    <form class="mobile-search" @onsubmit="@RunCheck" @onsubmit:preventDefault>
+                        <label class="mobile-search__input">
+                            <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                <circle cx="11" cy="11" r="6.5" />
+                                <path d="M21 21l-4.3-4.3" />
+                            </svg>
+                            <span class="sr-only">Fabric code</span>
+                            <input type="text"
+                                   placeholder="Enter fabric code…"
+                                   autocomplete="off"
+                                   value="@_code"
+                                   @oninput="OnCodeInput" />
+                        </label>
+                        <button class="btn-primary" type="submit">Check</button>
+                    </form>
+
+                    @if (_result is null)
+                    {
+                        <section class="empty-card">
+                            <div>
+                                <div class="empty-illustration">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                        <circle cx="11" cy="11" r="6.5" />
+                                        <path d="M21 21l-4.3-4.3" />
+                                    </svg>
+                                </div>
+                                <h3>Check availability</h3>
+                                <p>Enter a fabric code to see stock, expected delivery and alternatives.</p>
+                            </div>
+                        </section>
+
+                        @if (_recent.Count > 0)
+                        {
+                            <div class="fa-section-label">
+                                Recent <span class="fa-section-label__count">last @_recent.Count</span>
+                            </div>
+                            <div class="recent-list">
+                                @foreach (var r in _recent)
+                                {
+                                    var captured = r;
+                                    <button class="recent-row"
+                                            type="button"
+                                            @onclick="@(() => RestoreRecent(captured))">
+                                        <span class="recent-row__code">@r.Code</span>
+                                        <span class="recent-row__meta">
+                                            <span class="mono">@r.WidthMm mm</span>
+                                            <span class="chip @StatusChipClass(r.Status) chip--sm">@StatusChipLabel(r)</span>
+                                        </span>
+                                    </button>
+                                }
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        var widths = _result.Widths;
+                        var selected = widths.FirstOrDefault(w => w.WidthMm == _selectedWidth) ?? widths[0];
+
+                        <article class="fabric-card" aria-live="polite">
+                            <div class="fabric-hero" role="img" aria-label="@($"{_result.Code} fabric photo")">
+                                @if (_result.DiscountPercent is { } d)
+                                {
+                                    <span class="fabric-hero__ribbon">−@d % · CAMPAIGN</span>
+                                }
+                            </div>
+
+                            <div class="fabric-body">
+                                <div class="fabric-id">
+                                    <span class="fabric-id__code">@_result.Code</span>
+                                    <span class="fabric-id__width">· @selected.WidthMm mm</span>
+                                </div>
+                                <p class="fabric-name">@_result.Name</p>
+
+                                <div class="widths-label">Width</div>
+                                <div class="widths" role="radiogroup" aria-label="Width">
+                                    @foreach (var w in widths)
+                                    {
+                                        var captured = w;
+                                        <button class="width-chip @(w.WidthMm == selected.WidthMm ? "is-active" : "")"
+                                                type="button"
+                                                aria-pressed="@(w.WidthMm == selected.WidthMm)"
+                                                @onclick="@(() => _selectedWidth = captured.WidthMm)">
+                                            @w.WidthMm
+                                            <span class="width-chip__qty @QtyPillClass(w.Status)">@w.StockMeters m</span>
+                                        </button>
+                                    }
+                                </div>
+
+                                <div class="status-block @StatusBlockClass(selected.Status)" role="status">
+                                    <div class="status-block__icon">
+                                        @StatusIcon(selected.Status)
+                                    </div>
+                                    <div class="status-block__main">
+                                        <div class="status-block__primary">
+                                            @StatusHeadline(selected.Status) ·
+                                            <span class="status-block__qty">@selected.StockMeters m</span>
+                                        </div>
+                                        @if (selected.ExpectedDate is { } eta || selected.IncomingMeters is not null)
+                                        {
+                                            <div class="status-block__sub">
+                                                @if (selected.ExpectedDate is { } d2)
+                                                {
+                                                    <text>Next delivery <b>@d2.ToString("yyyy-MM-dd")</b></text>
+                                                }
+                                                @if (selected.IncomingMeters is { } im)
+                                                {
+                                                    @if (selected.ExpectedDate is not null) { <text> · </text> }
+                                                    <span class="chip chip--incoming chip--sm">+ @im m incoming</span>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+
+                                @if (!string.IsNullOrWhiteSpace(_result.Notes))
+                                {
+                                    <p class="notes">@_result.Notes</p>
+                                }
+
+                                <div class="reserve-row">
+                                    <button class="btn-secondary"
+                                            type="button"
+                                            disabled
+                                            title="Reserve workflow lands in a later phase">
+                                        Reserve <span class="pill">SOON</span>
+                                    </button>
+                                </div>
+
+                                @if (_result.Alternatives.Count > 0)
+                                {
+                                    <div class="alt-section">
+                                        <div class="alt-head">
+                                            <span class="alt-head__label">Alternatives</span>
+                                            <span class="alt-head__hint">swipe →</span>
+                                        </div>
+                                        <div class="alt-scroll">
+                                            @foreach (var alt in _result.Alternatives)
+                                            {
+                                                var captured = alt;
+                                                <button class="alt-card"
+                                                        type="button"
+                                                        @onclick="@(() => OpenAlternative(captured))">
+                                                    <div class="alt-img @AltImgClass(captured.Code)"></div>
+                                                    <div class="alt-body">
+                                                        <div class="alt-body__code">@alt.Code · @alt.WidthMm</div>
+                                                        <div class="alt-body__row">
+                                                            <span class="chip @StatusChipClass(alt.Status) chip--sm">
+                                                                @alt.StockMeters m
+                                                            </span>
+                                                            <span>
+                                                                @(alt.ExpectedDate?.ToString("MM-dd") ?? "ready")
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </button>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </article>
+                    }
+
+                </div>
+            </div>
+        </div>
+
+        @* Operational sidebar — visible on desktop only (≥ 980 px), hidden
+           via .lookup-shell__sidebar default in fabric.css. *@
+        <aside class="lookup-shell__sidebar lookup-sidebar" aria-label="Lookup sidebar">
+            <section class="panel">
+                <div class="panel__head">
+                    <h3>Open on phone</h3>
+                    <p>Scan to continue this lookup on the sales-floor handset.</p>
+                </div>
+                <div class="qr-block">
+                    <div class="qr-placeholder" aria-hidden="true"></div>
+                    <p class="qr-block__caption">QR will deep-link to this fabric on the mobile lookup once F-2 ships.</p>
+                </div>
+            </section>
+
+            <section class="panel">
+                <div class="panel__head">
+                    <h3>Recent checks</h3>
+                    <p>Tap to restore the last lookup.</p>
+                </div>
+                <div class="panel__body">
+                    @if (_recent.Count == 0)
+                    {
+                        <p class="qr-block__caption" style="margin:0">No recent lookups yet.</p>
+                    }
+                    else
+                    {
+                        <div class="last-checked-list">
+                            @foreach (var r in _recent)
+                            {
+                                var captured = r;
+                                <button class="last-checked-item"
+                                        type="button"
+                                        style="all:unset; cursor:pointer; display:flex; flex-direction:column; gap:2px; padding:8px 10px; border-left:2px solid var(--n-200); background:var(--n-25)"
+                                        @onclick="@(() => RestoreRecent(captured))">
+                                    <span class="last-checked-item__code">@r.Code <span class="dim mono">· @r.WidthMm mm</span></span>
+                                    <span class="last-checked-item__meta">
+                                        <span class="chip @StatusChipClass(r.Status) chip--sm">@StatusChipLabel(r)</span>
+                                    </span>
+                                </button>
+                            }
+                        </div>
+                    }
+                </div>
+            </section>
+        </aside>
+
+    </div>
+
+</main>
+
+@code {
+    /// <summary>Local view-model for a single recent-check entry. F-1 will
+    /// promote this to a Frontline.Contracts DTO.</summary>
+    private sealed record RecentCheck(string Code, int WidthMm, FabricStatus Status, int StockMeters);
+
+    private sealed record AlternativeRow(string Code, int WidthMm, FabricStatus Status, int StockMeters, DateOnly? ExpectedDate);
+
+    private sealed record WidthRow(int WidthMm, FabricStatus Status, int StockMeters, DateOnly? ExpectedDate, int? IncomingMeters);
+
+    private sealed record FabricCard(
+        string Code,
+        string Name,
+        string? Notes,
+        int? DiscountPercent,
+        IReadOnlyList<WidthRow> Widths,
+        IReadOnlyList<AlternativeRow> Alternatives);
+
+    private enum FabricStatus { Ok, Low, Out, Discontinued }
+
+    /* ── Sample dataset (F-0 only) ─────────────────────────────── */
+    private static readonly Dictionary<string, FabricCard> Samples = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["R120"] = new(
+            "R120",
+            "Linen texture, warm grey",
+            "Use with white bottom bar. Similar tone to R118.",
+            DiscountPercent: 15,
+            Widths: new WidthRow[]
+            {
+                new(1600, FabricStatus.Ok,  42, null, null),
+                new(2000, FabricStatus.Low,  8, new DateOnly(2026, 5, 8), 60),
+                new(2500, FabricStatus.Out,  0, new DateOnly(2026, 5, 12), 40),
+            },
+            Alternatives: new AlternativeRow[]
+            {
+                new("R118", 2000, FabricStatus.Ok,  34, null),
+                new("R124", 2000, FabricStatus.Low, 11, new DateOnly(2026, 5, 6)),
+                new("R130", 2000, FabricStatus.Ok,  68, null),
+            }),
+        ["DN45"] = new(
+            "DN45",
+            "Day-night graphite stripe",
+            null,
+            DiscountPercent: null,
+            Widths: new WidthRow[]
+            {
+                new(1600, FabricStatus.Low, 12, new DateOnly(2026, 5, 12), 80),
+                new(1800, FabricStatus.Out,  0, new DateOnly(2026, 5, 12), 120),
+            },
+            Alternatives: new AlternativeRow[]
+            {
+                new("DN47", 1800, FabricStatus.Ok,  56, null),
+                new("DN51", 1800, FabricStatus.Low, 14, new DateOnly(2026, 5, 9)),
+            }),
+        ["V78"] = new(
+            "V78",
+            "Vertical blind sand",
+            "Pairs naturally with V80 for two-tone installs.",
+            DiscountPercent: null,
+            Widths: new WidthRow[]
+            {
+                new(2500, FabricStatus.Low, 6, new DateOnly(2026, 5, 6), 40),
+            },
+            Alternatives: new AlternativeRow[]
+            {
+                new("V80", 2500, FabricStatus.Ok, 11, null),
+            }),
+    };
+
+    private string _code = "";
+    private FabricCard? _result;
+    private int _selectedWidth;
+    private readonly List<RecentCheck> _recent = new()
+    {
+        new("R120", 2000, FabricStatus.Low,  8),
+        new("DN45", 1800, FabricStatus.Out,  0),
+        new("V78",  2500, FabricStatus.Low,  6),
+    };
+
+    private void OnCodeInput(ChangeEventArgs e) => _code = e.Value?.ToString() ?? "";
+
+    private void RunCheck()
+    {
+        if (string.IsNullOrWhiteSpace(_code))
+        {
+            _result = null;
+            return;
+        }
+
+        if (Samples.TryGetValue(_code.Trim(), out var card))
+        {
+            _result = card;
+            _selectedWidth = card.Widths.FirstOrDefault(w => w.Status != FabricStatus.Out)?.WidthMm
+                            ?? card.Widths[0].WidthMm;
+            PushRecent(card, _selectedWidth);
+        }
+        else
+        {
+            _result = null;
+        }
+    }
+
+    private void RestoreRecent(RecentCheck r)
+    {
+        _code = r.Code;
+        if (Samples.TryGetValue(r.Code, out var card))
+        {
+            _result = card;
+            _selectedWidth = r.WidthMm;
+            PushRecent(card, _selectedWidth);
+        }
+    }
+
+    private void OpenAlternative(AlternativeRow alt)
+    {
+        if (Samples.TryGetValue(alt.Code, out var card))
+        {
+            _code = alt.Code;
+            _result = card;
+            _selectedWidth = alt.WidthMm;
+            PushRecent(card, _selectedWidth);
+        }
+    }
+
+    private void PushRecent(FabricCard card, int widthMm)
+    {
+        var row = card.Widths.FirstOrDefault(w => w.WidthMm == widthMm) ?? card.Widths[0];
+        _recent.RemoveAll(r => r.Code == card.Code && r.WidthMm == row.WidthMm);
+        _recent.Insert(0, new RecentCheck(card.Code, row.WidthMm, row.Status, row.StockMeters));
+        if (_recent.Count > 5)
+        {
+            _recent.RemoveRange(5, _recent.Count - 5);
+        }
+    }
+
+    /* ── Display helpers ───────────────────────────────────────── */
+    private static string StatusChipClass(FabricStatus s) => s switch
+    {
+        FabricStatus.Ok           => "chip--ok",
+        FabricStatus.Low          => "chip--low",
+        FabricStatus.Out          => "chip--out",
+        FabricStatus.Discontinued => "chip--disc",
+        _ => "chip--disc",
+    };
+
+    private static string StatusBlockClass(FabricStatus s) => s switch
+    {
+        FabricStatus.Ok           => "status-block--ok",
+        FabricStatus.Low          => "status-block--low",
+        FabricStatus.Out          => "status-block--out",
+        FabricStatus.Discontinued => "status-block--disc",
+        _ => "status-block--disc",
+    };
+
+    private static string QtyPillClass(FabricStatus s) => s switch
+    {
+        FabricStatus.Ok  => "is-ok",
+        FabricStatus.Low => "is-low",
+        FabricStatus.Out => "is-out",
+        _ => "",
+    };
+
+    private static string StatusHeadline(FabricStatus s) => s switch
+    {
+        FabricStatus.Ok           => "In stock",
+        FabricStatus.Low          => "Low stock",
+        FabricStatus.Out          => "Out of stock",
+        FabricStatus.Discontinued => "Discontinued",
+        _ => "Unknown",
+    };
+
+    private static string StatusChipLabel(RecentCheck r) => r.Status switch
+    {
+        FabricStatus.Ok  => $"OK · {r.StockMeters} m",
+        FabricStatus.Low => $"Low · {r.StockMeters} m",
+        FabricStatus.Out => "Out",
+        _                => "Disc",
+    };
+
+    private static string AltImgClass(string code)
+    {
+        var hash = (uint)code.GetHashCode() & 0x3;
+        return hash switch
+        {
+            0 => "",
+            1 => "alt-img--blue",
+            2 => "alt-img--green",
+            _ => "alt-img--red",
+        };
+    }
+
+    private RenderFragment StatusIcon(FabricStatus s) => @<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        @if (s == FabricStatus.Ok)
+        {
+            <path d="M5 12l5 5L20 7" />
+        }
+        else if (s == FabricStatus.Discontinued)
+        {
+            <path d="M6 6l12 12M6 18L18 6" />
+        }
+        else
+        {
+            <path d="M12 8v5" />
+            <circle cx="12" cy="16.5" r="1" fill="currentColor" />
+            <path d="M12 3l9.5 17H2.5L12 3z" />
+        }
+    </svg>;
+}

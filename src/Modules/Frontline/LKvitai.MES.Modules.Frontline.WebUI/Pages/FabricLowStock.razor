@@ -1,0 +1,368 @@
+@* FabricLowStock — desktop low-stock list for purchasing/ops.
+
+   UX baseline: docs/ux/fabric-availability-static-preview.html (.desktop-panel).
+   F-0 only: hardcoded local sample rows + plain semantic <table>. F-1
+   promotes the row shape to FabricLowStockDto; F-3 swaps to MudDataGrid
+   ServerData backed by a real low-stock SP (R-6/R-7).
+
+   Columns (per fabric-availability-codex-rules.md §5):
+     Photo · Code · Name · Width · Available (+progress) · Status · ETA
+     · Incoming · Alternatives · Last checked · Actions *@
+
+@page "/fabric/low-stock"
+
+<PageTitle>Frontline · Fabric availability · Low stock</PageTitle>
+
+<main class="fa-main">
+
+    <div class="fa-page-head">
+        <div>
+            <div class="fa-eyebrow mono">Frontline · Fabric availability</div>
+            <h1>Low-stock materials</h1>
+            <p>
+                All fabrics under the selected threshold. Use this list for
+                purchasing and operational decisions; for a single live check on
+                the sales floor switch to <a class="fabric-link" href="fabric">Lookup</a>.
+            </p>
+        </div>
+        <ModeSwitcher CurrentMode="low-stock" />
+    </div>
+
+    <section class="fa-panel" aria-labelledby="ls-title">
+        <div class="fa-panel__head">
+            <div>
+                <h2 id="ls-title">Low-stock materials</h2>
+                <p>Server-side filter, sort and paging once F-3 lands. Sample data shown.</p>
+            </div>
+            <span class="mono" style="color:var(--n-500); font-size:11.5px">
+                F-0 design shell · sample rows · no API calls
+            </span>
+        </div>
+
+        <div class="metrics" role="group" aria-label="Low-stock summary">
+            <div class="metric metric--low">
+                <span class="metric__label">Below threshold</span>
+                <strong class="metric__value">38</strong>
+                <span class="metric__delta">+5 vs last week</span>
+            </div>
+            <div class="metric metric--out">
+                <span class="metric__label">Out of stock</span>
+                <strong class="metric__value">9</strong>
+                <span class="metric__delta">3 with no ETA</span>
+            </div>
+            <div class="metric">
+                <span class="metric__label">Expected this week</span>
+                <strong class="metric__value">14</strong>
+                <span class="metric__delta">220 m incoming</span>
+            </div>
+            <div class="metric">
+                <span class="metric__label">Discontinued</span>
+                <strong class="metric__value">4</strong>
+                <span class="metric__delta">need replacement</span>
+            </div>
+        </div>
+
+        <div class="fa-toolbar">
+            <label class="field field--search">
+                <svg class="field__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <circle cx="11" cy="11" r="6.5" />
+                    <path d="M21 21l-4.3-4.3" />
+                </svg>
+                <input type="search"
+                       value="@_search"
+                       placeholder="Search code, name, supplier…"
+                       @oninput="@(e => _search = e.Value?.ToString() ?? "")" />
+                <span class="kbd">/</span>
+            </label>
+
+            <LkSelect Label="Threshold"
+                      ExtraClass="threshold-field"
+                      Value="@_threshold"
+                      Options="@ThresholdOptions"
+                      ValueChanged="@(v => _threshold = v)" />
+
+            <LkSelect Label="Status"
+                      Value="@_statusFilter"
+                      Options="@StatusOptions"
+                      ValueChanged="@(v => _statusFilter = v)" />
+
+            <LkSelect Label="Width"
+                      Value="@_widthFilter"
+                      Options="@WidthOptions"
+                      ValueChanged="@(v => _widthFilter = v)" />
+
+            <LkSelect Label="Supplier"
+                      Value="@_supplierFilter"
+                      Options="@SupplierOptions"
+                      ValueChanged="@(v => _supplierFilter = v)" />
+
+            <div style="flex:1"></div>
+
+            <button class="btn-xs" type="button" title="Refresh data">↻ Refresh</button>
+
+            <nav class="pagination" aria-label="Pagination">
+                <button type="button" disabled>‹</button>
+                <button type="button" class="is-active">1</button>
+                <button type="button">2</button>
+                <button type="button">3</button>
+                <button type="button">›</button>
+            </nav>
+        </div>
+
+        <div class="fa-table-wrap">
+            <table class="lk-table">
+                <thead>
+                    <tr>
+                        <th style="width:48px"></th>
+                        <th>Code</th>
+                        <th>Name</th>
+                        <th>Width</th>
+                        <th class="is-num">Available</th>
+                        <th>Status</th>
+                        <th>Expected</th>
+                        <th class="is-num">Incoming</th>
+                        <th>Alternatives</th>
+                        <th>Last checked</th>
+                        <th style="width:1%"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in FilteredRows())
+                    {
+                        <tr>
+                            <td><span class="row-thumb @r.ThumbClass"></span></td>
+                            <td><a class="fabric-link" href="@($"fabric?code={r.Code}")">@r.Code</a></td>
+                            <td><span class="fabric-name-cell">@r.Name</span></td>
+                            <td class="mono">@r.WidthMm mm</td>
+                            <td class="is-meters @MeterStatusClass(r.Status)">
+                                <span class="meters-bar">
+                                    <span class="meters-bar__num">@r.AvailableMeters m</span>
+                                    <span class="meters-bar__track">
+                                        <span class="meters-bar__fill @MeterFillClass(r.Status)"
+                                              style="width:@(MetersBarPct(r))%"></span>
+                                    </span>
+                                </span>
+                            </td>
+                            <td><span class="chip @StatusChipClass(r.Status)">@StatusLabel(r.Status)</span></td>
+                            <td class="mono @(r.ExpectedDate is null ? "dim" : "")">
+                                @(r.ExpectedDate?.ToString("yyyy-MM-dd") ?? "—")
+                            </td>
+                            <td class="is-num mono @(r.IncomingMeters is null ? "dim" : "")">
+                                @(r.IncomingMeters is { } m ? $"{m} m" : "—")
+                            </td>
+                            <td class="alts-cell">
+                                @if (r.Alternatives.Count == 0)
+                                {
+                                    <text>—</text>
+                                }
+                                else
+                                {
+                                    @for (var i = 0; i < r.Alternatives.Count; i++)
+                                    {
+                                        if (i > 0) { <text>, </text> }
+                                        <a href="@($"fabric?code={r.Alternatives[i]}")">@r.Alternatives[i]</a>
+                                    }
+                                }
+                            </td>
+                            <td class="last-checked-cell mono">@r.LastChecked</td>
+                            <td>
+                                <div class="actions">
+                                    <a class="btn-xs btn-xs--primary" href="@($"fabric?code={r.Code}")">Open</a>
+                                    @if (r.Status == FabricStatus.Out)
+                                    {
+                                        <button class="btn-xs" type="button" title="Notify when stock arrives">Notify</button>
+                                    }
+                                    else if (r.Status == FabricStatus.Discontinued)
+                                    {
+                                        <button class="btn-xs" type="button" title="Find a replacement fabric">Replace</button>
+                                    }
+                                    else
+                                    {
+                                        <button class="btn-xs" type="button" title="Reserve from current stock">Reserve</button>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    @if (!FilteredRows().Any())
+                    {
+                        <tr>
+                            <td colspan="11" style="text-align:center; color:var(--n-500); padding:24px 12px">
+                                No fabrics match the current filters.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="fa-table-foot">
+            <span>Showing <strong>1–@FilteredRows().Count()</strong> of <strong>@_rows.Count</strong> sample materials</span>
+            <span class="mono" style="opacity:.7">F-0 sample data · server paging arrives in F-3</span>
+        </div>
+    </section>
+
+</main>
+
+@code {
+    private enum FabricStatus { Ok, Low, Out, Discontinued }
+
+    /// <summary>Local view-model. F-1 will promote to
+    /// <c>Frontline.Contracts.FabricLowStockDto</c> with confirmed shape
+    /// per blockers R-6/R-7.</summary>
+    private sealed record LowStockRow(
+        string Code,
+        string Name,
+        int WidthMm,
+        int AvailableMeters,
+        int ThresholdMeters,
+        FabricStatus Status,
+        DateOnly? ExpectedDate,
+        int? IncomingMeters,
+        string Supplier,
+        IReadOnlyList<string> Alternatives,
+        string LastChecked,
+        string ThumbClass);
+
+    private static readonly IReadOnlyList<SelectOption> ThresholdOptions =
+    [
+        new("10",  "≤ 10 m"),
+        new("25",  "≤ 25 m"),
+        new("50",  "≤ 50 m"),
+        new("out", "Out of stock only"),
+    ];
+
+    private static readonly IReadOnlyList<SelectOption> StatusOptions =
+    [
+        new("",     "All low"),
+        new("low",  "Low"),
+        new("out",  "Out"),
+        new("disc", "Discontinued"),
+    ];
+
+    private static readonly IReadOnlyList<SelectOption> WidthOptions =
+    [
+        new("",     "All widths"),
+        new("1600", "1600 mm"),
+        new("1800", "1800 mm"),
+        new("2000", "2000 mm"),
+        new("2500", "2500 mm"),
+    ];
+
+    private static readonly IReadOnlyList<SelectOption> SupplierOptions =
+    [
+        new("",       "All suppliers"),
+        new("Decora", "Decora"),
+        new("Vali",   "Vali"),
+        new("Marla",  "Marla"),
+    ];
+
+    private string _search          = "";
+    private string _threshold       = "10";
+    private string _statusFilter    = "";
+    private string _widthFilter     = "";
+    private string _supplierFilter  = "";
+
+    private readonly List<LowStockRow> _rows = new()
+    {
+        new("R120", "Linen texture, warm grey",     2000, 8,  25, FabricStatus.Low,
+            new DateOnly(2026, 5, 8),  60,  "Decora", new[] { "R118", "R124" }, "today 09:42", ""),
+        new("DN45", "Day-night graphite stripe",    1800, 0,  25, FabricStatus.Out,
+            new DateOnly(2026, 5, 12), 120, "Vali",   new[] { "DN47", "DN51" }, "today 09:35", "row-thumb--blue"),
+        new("V78",  "Vertical blind sand",          2500, 6,  25, FabricStatus.Low,
+            new DateOnly(2026, 5, 6),  40,  "Marla",  new[] { "V80" },          "today 09:30", "row-thumb--green"),
+        new("R099", "Blackout terracotta",          1600, 2,  25, FabricStatus.Discontinued,
+            null, null, "Decora", new[] { "R101" }, "today 09:21", "row-thumb--red"),
+        new("R118", "Linen texture, cool grey",     2500, 9,  25, FabricStatus.Low,
+            new DateOnly(2026, 5, 10), 80,  "Decora", new[] { "R120", "R124" }, "today 09:18", ""),
+        new("V80",  "Vertical blind seafoam",       2500, 11, 25, FabricStatus.Low,
+            new DateOnly(2026, 5, 14), 50,  "Marla",  Array.Empty<string>(),   "today 09:02", "row-thumb--green"),
+    };
+
+    private IEnumerable<LowStockRow> FilteredRows()
+    {
+        IEnumerable<LowStockRow> q = _rows;
+
+        if (!string.IsNullOrWhiteSpace(_search))
+        {
+            var needle = _search.Trim();
+            q = q.Where(r =>
+                r.Code.Contains(needle, StringComparison.OrdinalIgnoreCase) ||
+                r.Name.Contains(needle, StringComparison.OrdinalIgnoreCase) ||
+                r.Supplier.Contains(needle, StringComparison.OrdinalIgnoreCase) ||
+                r.Alternatives.Any(a => a.Contains(needle, StringComparison.OrdinalIgnoreCase)));
+        }
+
+        q = _statusFilter switch
+        {
+            "low"  => q.Where(r => r.Status == FabricStatus.Low),
+            "out"  => q.Where(r => r.Status == FabricStatus.Out),
+            "disc" => q.Where(r => r.Status == FabricStatus.Discontinued),
+            _      => q,
+        };
+
+        if (_threshold == "out")
+        {
+            q = q.Where(r => r.Status == FabricStatus.Out);
+        }
+        else if (int.TryParse(_threshold, out var t))
+        {
+            q = q.Where(r => r.AvailableMeters <= t || r.Status is FabricStatus.Discontinued or FabricStatus.Out);
+        }
+
+        if (!string.IsNullOrEmpty(_widthFilter) && int.TryParse(_widthFilter, out var w))
+        {
+            q = q.Where(r => r.WidthMm == w);
+        }
+
+        if (!string.IsNullOrEmpty(_supplierFilter))
+        {
+            q = q.Where(r => r.Supplier == _supplierFilter);
+        }
+
+        return q;
+    }
+
+    private static int MetersBarPct(LowStockRow r)
+    {
+        if (r.Status == FabricStatus.Out) return 0;
+        if (r.ThresholdMeters <= 0) return 0;
+        var pct = (int)Math.Round(100.0 * r.AvailableMeters / r.ThresholdMeters);
+        return Math.Clamp(pct, 0, 100);
+    }
+
+    private static string MeterStatusClass(FabricStatus s) => s switch
+    {
+        FabricStatus.Ok           => "is-ok",
+        FabricStatus.Low          => "is-low",
+        FabricStatus.Out          => "is-out",
+        FabricStatus.Discontinued => "is-disc",
+        _ => "",
+    };
+
+    private static string MeterFillClass(FabricStatus s) => s switch
+    {
+        FabricStatus.Low          => "is-low",
+        FabricStatus.Out          => "is-out",
+        FabricStatus.Discontinued => "is-disc",
+        _ => "",
+    };
+
+    private static string StatusChipClass(FabricStatus s) => s switch
+    {
+        FabricStatus.Ok           => "chip--ok",
+        FabricStatus.Low          => "chip--low",
+        FabricStatus.Out          => "chip--out",
+        FabricStatus.Discontinued => "chip--disc",
+        _ => "chip--disc",
+    };
+
+    private static string StatusLabel(FabricStatus s) => s switch
+    {
+        FabricStatus.Ok           => "OK",
+        FabricStatus.Low          => "Low",
+        FabricStatus.Out          => "Out",
+        FabricStatus.Discontinued => "Discontinued",
+        _ => "Unknown",
+    };
+}

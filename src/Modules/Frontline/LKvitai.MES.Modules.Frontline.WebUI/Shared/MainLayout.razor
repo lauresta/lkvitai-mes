@@ -1,13 +1,38 @@
 @inherits LayoutComponentBase
+@inject IWebHostEnvironment Env
 
 <MudThemeProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
 
-<MudLayout>
-    <MudMainContent>
-        <MudContainer MaxWidth="MaxWidth.Large" Class="py-8">
-            @Body
-        </MudContainer>
-    </MudMainContent>
-</MudLayout>
+@* F-0 design shell: Frontline currently has NO Portal cookie auth wired
+   (deliberate per scaffold — see Frontline.Api/Program.cs). To still get
+   the shared dark Portal topbar (brand mark, env-badge, user-block), we
+   wrap the page in PortalModuleShell directly without an AuthorizeView.
+   PortalModuleShell.User is nullable; passing null falls back to the
+   generic "Signed in" / "U" placeholder which is acceptable here.
+
+   F-2.4 will add Portal cookie auth (mirroring Sales.Api / Sales.WebUI),
+   at which point this layout flips to the Sales pattern:
+
+       <AuthorizeView>
+           <Authorized Context="auth">
+               <PortalModuleShell User="@auth.User" ... />
+           </Authorized>
+           <NotAuthorized><RedirectToLogin /></NotAuthorized>
+       </AuthorizeView>
+
+   See plan: .cursor/plans/sales_&_fabric_migration_plan_aa705a91.plan.md F-2.4 *@
+<PortalModuleShell EnvironmentName="@_environmentName"
+                   SearchPlaceholder="Find fabric, module, customer…">
+    @Body
+</PortalModuleShell>
+
+@code {
+    private string _environmentName = "Development";
+
+    protected override void OnInitialized()
+    {
+        _environmentName = Env.EnvironmentName ?? "Development";
+    }
+}
