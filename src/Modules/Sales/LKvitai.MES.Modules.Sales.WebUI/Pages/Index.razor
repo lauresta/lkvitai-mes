@@ -578,48 +578,18 @@
         PagedResult<OrderSummaryDto>? result;
         long apiOnlyMs;
         var barShown = false;
-        long? barShownAtMs = null;
         try
         {
-            // Race the API call against a "show loading bar" delay. If the API
-            // responds first (cache hit, fast network), no bar is ever shown.
-            // Otherwise, flip _isRefreshing once and force a re-render so the
-            // bar appears, then keep it visible for the rest of the call.
-            var apiTask  = Api.GetOrdersAsync(query, token);
-            var showTask = Task.Delay(LoadingShowAfterMs, token);
-
-            var winner = await Task.WhenAny(apiTask, showTask);
-            if (winner == showTask && !showTask.IsCanceled)
-            {
-                _isRefreshing = true;
-                barShown = true;
-                barShownAtMs = totalSw.ElapsedMilliseconds;
-                StateHasChanged();
-            }
-
-            result = await apiTask;
+            (result, barShown) = await FetchWithDeferredLoadingBarAsync(query, totalSw, token);
             apiSw.Stop();
             apiOnlyMs = apiSw.ElapsedMilliseconds;
-
-            // If the bar did appear, keep it visible long enough that the user
-            // actually registers it — otherwise it would flash off the moment
-            // the API finished, which feels glitchy.
-            if (barShown && barShownAtMs is { } shownAt)
-            {
-                var visibleSoFar = totalSw.ElapsedMilliseconds - shownAt;
-                var remaining = LoadingMinVisibleMs - (int)visibleSoFar;
-                if (remaining > 0)
-                {
-                    try { await Task.Delay(remaining, token); }
-                    catch (OperationCanceledException) { /* superseded; fall through */ }
-                }
-            }
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException ex)
         {
             apiSw.Stop();
             totalSw.Stop();
             Log.LogDebug(
+                ex,
                 "[SalesPerf] webui ReloadAsync cancelled reloadId={ReloadId} elapsedMs={ElapsedMs}",
                 thisReloadId, totalSw.ElapsedMilliseconds);
             return; // superseded
@@ -673,5 +643,48 @@
             apiOnlyMs, barShown, totalSw.ElapsedMilliseconds);
 
         StateHasChanged();
+    }
+
+    /// <summary>
+    /// Races the orders API call against a "show loading bar" delay so a fast
+    /// (cache-hit) response never paints a loading affordance, while a slow one
+    /// still gets a stable bar that stays visible for at least
+    /// <see cref="LoadingMinVisibleMs"/>. Returns the fetched page (may be
+    /// <c>null</c> if the API client signals failure) plus whether the bar was
+    /// actually shown so the caller can attribute timings in the perf log.
+    /// </summary>
+    private async Task<(PagedResult<OrderSummaryDto>? Result, bool BarShown)> FetchWithDeferredLoadingBarAsync(
+        OrdersQueryParams query,
+        System.Diagnostics.Stopwatch totalSw,
+        CancellationToken token)
+    {
+        var apiTask  = Api.GetOrdersAsync(query, token);
+        var showTask = Task.Delay(LoadingShowAfterMs, token);
+
+        long? barShownAtMs = null;
+        if (await Task.WhenAny(apiTask, showTask) == showTask && !showTask.IsCanceled)
+        {
+            _isRefreshing = true;
+            barShownAtMs = totalSw.ElapsedMilliseconds;
+            StateHasChanged();
+        }
+
+        var result = await apiTask;
+
+        if (barShownAtMs is { } shownAt)
+        {
+            // Once the bar is up, keep it visible long enough to register —
+            // otherwise it flashes off the moment the API completes, which
+            // feels glitchy. Cancellation here just means we were superseded;
+            // the caller will return early on the stale-response guard.
+            var remaining = LoadingMinVisibleMs - (int)(totalSw.ElapsedMilliseconds - shownAt);
+            if (remaining > 0)
+            {
+                try { await Task.Delay(remaining, token); }
+                catch (OperationCanceledException) { /* superseded; fall through */ }
+            }
+        }
+
+        return (result, barShownAtMs is not null);
     }
 }

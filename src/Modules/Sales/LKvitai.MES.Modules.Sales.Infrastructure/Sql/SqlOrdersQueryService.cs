@@ -76,23 +76,9 @@ public sealed class SqlOrdersQueryService : IOrdersQueryService
         await conn.OpenAsync(cancellationToken).ConfigureAwait(false);
         openSw.Stop();
 
-        await using var cmd = new SqlCommand(OrdersPagedProcName, conn)
-        {
-            CommandType    = CommandType.StoredProcedure,
-            CommandTimeout = _options.CommandTimeoutSeconds,
-        };
-
-        // The SP normalises NULL / empty parameters internally (LTRIM/RTRIM
-        // and IS NULL guards), so we can pass DBNull straight through for the
-        // "no filter" case without pre-trimming on the client.
-        cmd.Parameters.Add(new SqlParameter("@Page",     SqlDbType.Int)            { Value = page });
-        cmd.Parameters.Add(new SqlParameter("@PageSize", SqlDbType.Int)            { Value = pageSize });
-        cmd.Parameters.Add(new SqlParameter("@Search",   SqlDbType.NVarChar, 200)  { Value = NullableNVarChar(query.Search) });
-        cmd.Parameters.Add(new SqlParameter("@Status",   SqlDbType.NVarChar, 100)  { Value = NullableNVarChar(query.Status) });
-        cmd.Parameters.Add(new SqlParameter("@Store",    SqlDbType.NVarChar, 100)  { Value = NullableNVarChar(query.Store) });
-        cmd.Parameters.Add(new SqlParameter("@HasDebt",  SqlDbType.Bit)            { Value = query.HasDebt ? (object)true : DBNull.Value });
-        cmd.Parameters.Add(new SqlParameter("@DateFrom", SqlDbType.Date)           { Value = DBNull.Value });
-        cmd.Parameters.Add(new SqlParameter("@DateTo",   SqlDbType.Date)           { Value = DBNull.Value });
+        await using var cmd = BuildPagedSpCommand(
+            conn, page, pageSize,
+            search: query.Search, status: query.Status, store: query.Store, hasDebt: query.HasDebt);
 
         var execSw = Stopwatch.StartNew();
         await using var reader = await cmd.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
@@ -421,19 +407,9 @@ public sealed class SqlOrdersQueryService : IOrdersQueryService
         string number,
         CancellationToken cancellationToken)
     {
-        await using var cmd = new SqlCommand(OrdersPagedProcName, conn)
-        {
-            CommandType    = CommandType.StoredProcedure,
-            CommandTimeout = _options.CommandTimeoutSeconds,
-        };
-        cmd.Parameters.Add(new SqlParameter("@Page",     SqlDbType.Int)            { Value = 1 });
-        cmd.Parameters.Add(new SqlParameter("@PageSize", SqlDbType.Int)            { Value = 5 });
-        cmd.Parameters.Add(new SqlParameter("@Search",   SqlDbType.NVarChar, 200)  { Value = number });
-        cmd.Parameters.Add(new SqlParameter("@Status",   SqlDbType.NVarChar, 100)  { Value = DBNull.Value });
-        cmd.Parameters.Add(new SqlParameter("@Store",    SqlDbType.NVarChar, 100)  { Value = DBNull.Value });
-        cmd.Parameters.Add(new SqlParameter("@HasDebt",  SqlDbType.Bit)            { Value = DBNull.Value });
-        cmd.Parameters.Add(new SqlParameter("@DateFrom", SqlDbType.Date)           { Value = DBNull.Value });
-        cmd.Parameters.Add(new SqlParameter("@DateTo",   SqlDbType.Date)           { Value = DBNull.Value });
+        await using var cmd = BuildPagedSpCommand(
+            conn, page: 1, pageSize: 5,
+            search: number, status: null, store: null, hasDebt: false);
 
         await using var reader = await cmd.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
         while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
@@ -476,6 +452,40 @@ public sealed class SqlOrdersQueryService : IOrdersQueryService
             // for parity with the legacy weblb_Orders shape.
             Address:        ReadStringByOrdinal(reader, ordinal: 10, fallback: string.Empty),
             ProductsSearch: ReadStringOrNullByOrdinal(reader, ordinal: 11));
+    }
+
+    /// <summary>
+    /// Builds the <see cref="SqlCommand"/> for <c>dbo.weblb_Orders_Paged</c>
+    /// with the full parameter list. Both list reads and the
+    /// number-to-summary lookup go through here so the parameter shape stays
+    /// in lock-step with the SP signature in <c>.scratch/sp-paged.sql</c>.
+    /// The SP normalises NULL / empty strings internally (LTRIM/RTRIM and
+    /// IS NULL guards), so we can pass <see cref="DBNull.Value"/> straight
+    /// through for "no filter" without pre-trimming on the client.
+    /// </summary>
+    private SqlCommand BuildPagedSpCommand(
+        SqlConnection conn,
+        int page,
+        int pageSize,
+        string? search,
+        string? status,
+        string? store,
+        bool hasDebt)
+    {
+        var cmd = new SqlCommand(OrdersPagedProcName, conn)
+        {
+            CommandType    = CommandType.StoredProcedure,
+            CommandTimeout = _options.CommandTimeoutSeconds,
+        };
+        cmd.Parameters.Add(new SqlParameter("@Page",     SqlDbType.Int)            { Value = page });
+        cmd.Parameters.Add(new SqlParameter("@PageSize", SqlDbType.Int)            { Value = pageSize });
+        cmd.Parameters.Add(new SqlParameter("@Search",   SqlDbType.NVarChar, 200)  { Value = NullableNVarChar(search) });
+        cmd.Parameters.Add(new SqlParameter("@Status",   SqlDbType.NVarChar, 100)  { Value = NullableNVarChar(status) });
+        cmd.Parameters.Add(new SqlParameter("@Store",    SqlDbType.NVarChar, 100)  { Value = NullableNVarChar(store) });
+        cmd.Parameters.Add(new SqlParameter("@HasDebt",  SqlDbType.Bit)            { Value = hasDebt ? (object)true : DBNull.Value });
+        cmd.Parameters.Add(new SqlParameter("@DateFrom", SqlDbType.Date)           { Value = DBNull.Value });
+        cmd.Parameters.Add(new SqlParameter("@DateTo",   SqlDbType.Date)           { Value = DBNull.Value });
+        return cmd;
     }
 
     /// <summary>
