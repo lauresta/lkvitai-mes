@@ -134,6 +134,40 @@ public sealed class SalesApiClient
         }
     }
 
+    /// <summary>
+    /// Fetches the toolbar filter options (distinct Statuses + Stores currently
+    /// present in the data) from <c>GET /api/sales/orders/filters</c>.
+    /// Returns <c>null</c> when the API is unreachable so the toolbar can fall
+    /// back to a single "All" option without crashing the page.
+    /// </summary>
+    public async Task<OrdersFilterOptionsDto?> GetFilterOptionsAsync(CancellationToken cancellationToken)
+    {
+        var client = _httpClientFactory.CreateClient(HttpClientName);
+        const string url = "/api/sales/orders/filters";
+
+        try
+        {
+            using var response = await client.GetAsync(url, cancellationToken).ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning(
+                    "Sales API returned {StatusCode} for {Url}",
+                    response.StatusCode,
+                    url);
+                return null;
+            }
+
+            return await response.Content
+                .ReadFromJsonAsync<OrdersFilterOptionsDto>(cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+        {
+            _logger.LogError(ex, "Sales API call to {Url} failed", url);
+            return null;
+        }
+    }
+
     private static string BuildOrdersListUrl(OrdersQueryParams query)
     {
         var parts = new List<string>(8);

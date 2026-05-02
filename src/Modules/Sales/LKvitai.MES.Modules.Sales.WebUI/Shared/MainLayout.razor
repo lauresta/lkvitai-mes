@@ -7,7 +7,13 @@
 
 @* Force a real Portal login on Test/Production. RedirectToLogin builds the
    correct return URL from the Sales PathBase so the user comes back here
-   after Portal sets the shared auth cookie. *@
+   after Portal sets the shared auth cookie.
+
+   The <Authorizing> template intentionally renders the same shell with empty
+   content while AuthenticationStateProvider re-resolves on the client after
+   prerender → interactive hydration. Without it AuthorizeView shows nothing,
+   which causes a visible white flash between the prerendered page and the
+   interactive re-render. *@
 <AuthorizeView>
     <Authorized Context="auth">
         <PortalModuleShell EnvironmentName="@_environmentName"
@@ -15,6 +21,9 @@
             @Body
         </PortalModuleShell>
     </Authorized>
+    <Authorizing>
+        <PortalModuleShell EnvironmentName="@_environmentName" />
+    </Authorizing>
     <NotAuthorized>
         <RedirectToLogin />
     </NotAuthorized>

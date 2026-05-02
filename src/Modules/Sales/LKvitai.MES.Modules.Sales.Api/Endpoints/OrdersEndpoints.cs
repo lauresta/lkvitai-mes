@@ -28,6 +28,13 @@ public static class OrdersEndpoints
             .Produces<OrderDetailsDto>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status404NotFound);
 
+        // Filter options for the toolbar Status / Store dropdowns. The WebUI
+        // uses these instead of hardcoded city/status names so every option
+        // shown actually filters at least one row in the current data.
+        group.MapGet("/orders/filters", GetOrdersFilterOptionsAsync)
+            .WithName("GetSalesOrdersFilterOptions")
+            .Produces<OrdersFilterOptionsDto>(StatusCodes.Status200OK);
+
         return group;
     }
 
@@ -48,6 +55,14 @@ public static class OrdersEndpoints
     {
         var details = await orders.GetOrderDetailsAsync(number, cancellationToken).ConfigureAwait(false);
         return details is null ? Results.NotFound() : Results.Ok(details);
+    }
+
+    private static async Task<IResult> GetOrdersFilterOptionsAsync(
+        IOrdersQueryService orders,
+        CancellationToken cancellationToken)
+    {
+        var options = await orders.GetFilterOptionsAsync(cancellationToken).ConfigureAwait(false);
+        return Results.Ok(options);
     }
 
     /// <summary>

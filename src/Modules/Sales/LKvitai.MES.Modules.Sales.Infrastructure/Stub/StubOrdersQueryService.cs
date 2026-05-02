@@ -42,14 +42,16 @@ public sealed class StubOrdersQueryService : IOrdersQueryService
 
         if (!string.IsNullOrWhiteSpace(query.Status))
         {
+            var status = query.Status.Trim();
             filtered = filtered.Where(o =>
-                string.Equals(o.Status, query.Status, StringComparison.Ordinal));
+                string.Equals(o.Status?.Trim(), status, StringComparison.OrdinalIgnoreCase));
         }
 
         if (!string.IsNullOrWhiteSpace(query.Store))
         {
+            var store = query.Store.Trim();
             filtered = filtered.Where(o =>
-                string.Equals(o.Store, query.Store, StringComparison.Ordinal));
+                string.Equals(o.Store?.Trim(), store, StringComparison.OrdinalIgnoreCase));
         }
 
         if (query.HasDebt)
@@ -111,6 +113,25 @@ public sealed class StubOrdersQueryService : IOrdersQueryService
             Employees:  SampleEmployees);
 
         return Task.FromResult<OrderDetailsDto?>(details);
+    }
+
+    public Task<OrdersFilterOptionsDto> GetFilterOptionsAsync(CancellationToken cancellationToken)
+    {
+        var statuses = Orders
+            .Select(o => o.Status)
+            .Where(static s => !string.IsNullOrWhiteSpace(s))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(static s => s, StringComparer.CurrentCulture)
+            .ToList();
+
+        var stores = Orders
+            .Select(o => o.Store)
+            .Where(static s => !string.IsNullOrWhiteSpace(s))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(static s => s, StringComparer.CurrentCulture)
+            .ToList();
+
+        return Task.FromResult(new OrdersFilterOptionsDto(statuses, stores));
     }
 
     private static IReadOnlyList<OrderSummaryDto> BuildOrders()
