@@ -25,7 +25,9 @@ public static class FabricAvailabilityEndpoints
     /// before it reaches the query service / SQL adapter.
     /// </summary>
     private static readonly Regex CodeShape =
-        new("^[A-Z0-9\\-_./]{2,}$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        new("^[A-Z0-9\\-_./]{2,}$",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant,
+            TimeSpan.FromMilliseconds(100));
 
     public static RouteGroupBuilder MapFabricAvailabilityEndpoints(this RouteGroupBuilder group)
     {

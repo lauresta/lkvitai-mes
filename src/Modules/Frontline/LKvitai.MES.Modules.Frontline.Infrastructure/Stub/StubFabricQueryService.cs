@@ -42,7 +42,9 @@ namespace LKvitai.MES.Modules.Frontline.Infrastructure.Stub;
 public sealed class StubFabricQueryService : IFabricQueryService
 {
     private static readonly Regex CodeShape =
-        new("^[A-Z0-9\\-_./]{2,}$", RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        new("^[A-Z0-9\\-_./]{2,}$",
+            RegexOptions.Compiled | RegexOptions.CultureInvariant,
+            TimeSpan.FromMilliseconds(100));
 
     private static readonly IReadOnlyDictionary<string, FabricCardDto> Cards = BuildCards();
     private static readonly IReadOnlyList<FabricLowStockDto> LowStock = BuildLowStock();
