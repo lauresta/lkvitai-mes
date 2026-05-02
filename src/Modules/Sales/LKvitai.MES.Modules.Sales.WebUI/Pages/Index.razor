@@ -2,6 +2,7 @@
 @inject SalesApiClient Api
 @inject PersistentComponentState ApplicationState
 @inject ILogger<Index> Log
+@inject IJSRuntime JS
 @implements IAsyncDisposable
 
 <PageTitle>Sales · Orders</PageTitle>
@@ -37,6 +38,7 @@
             <label class="field field--search">
                 <span class="key-hint" aria-hidden="true">/</span>
                 <input type="search" value="@_search" aria-label="Search orders"
+                       @ref="_searchInput"
                        @oninput="OnSearch" placeholder="Search orders" />
             </label>
 
@@ -309,6 +311,14 @@
     // PersistentComponentState subscription — disposed in DisposeAsync.
     private PersistingComponentStateSubscription _persistingSub;
 
+    // S-3.3 keyboard shortcuts. The JS module is loaded once on first render
+    // and re-used for the lifetime of the circuit; both the module reference
+    // and the .NET callback are released in DisposeAsync to avoid leaking
+    // GCHandles when the user navigates away from the orders list.
+    private ElementReference            _searchInput;
+    private IJSObjectReference?         _shortcutsModule;
+    private DotNetObjectReference<Index>? _shortcutsRef;
+
     private int _totalPages => Math.Max(1, (int)Math.Ceiling(_total / (double)_pageSize));
     private int _from       => _total == 0 ? 0 : ((_page - 1) * _pageSize) + 1;
     private int _to         => Math.Min(_page * _pageSize, _total);
@@ -464,6 +474,164 @@
             _reloadCts.Dispose();
             _reloadCts = null;
         }
+
+        // Order matters: stop dispatching first so a late JS keydown cannot
+        // hit a disposed DotNetObjectReference, then drop the module, then
+        // the .NET callback object.
+        if (_shortcutsModule is not null)
+        {
+            try   { await _shortcutsModule.InvokeVoidAsync("unregister"); }
+            catch (JSDisconnectedException)        { /* circuit already gone */ }
+            catch (TaskCanceledException)          { /* circuit already gone */ }
+            try   { await _shortcutsModule.DisposeAsync(); }
+            catch (JSDisconnectedException)        { /* circuit already gone */ }
+            catch (TaskCanceledException)          { /* circuit already gone */ }
+            _shortcutsModule = null;
+        }
+
+        _shortcutsRef?.Dispose();
+        _shortcutsRef = null;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        // Wrapped because OnAfterRenderAsync runs during prerender on some
+        // hosting models — calling JS there would throw InvalidOperationException
+        // ("JavaScript interop calls cannot be issued at this time"). Catching
+        // here is cheaper than gating on RendererInfo and keeps the rest of the
+        // page interactive even if the shortcut bridge fails to load.
+        try
+        {
+            _shortcutsModule = await JS.InvokeAsync<IJSObjectReference>(
+                "import", "./js/orders-shortcuts.js");
+            _shortcutsRef    = DotNetObjectReference.Create(this);
+            await _shortcutsModule.InvokeVoidAsync("register", _shortcutsRef);
+        }
+        catch (InvalidOperationException ex)
+        {
+            Log.LogDebug(ex, "[SalesShortcuts] JS interop unavailable on first render — shortcuts disabled");
+        }
+        catch (JSException ex)
+        {
+            Log.LogWarning(ex, "[SalesShortcuts] failed to load orders-shortcuts.js — keyboard shortcuts disabled");
+        }
+    }
+
+    /// <summary>
+    /// Single entry point invoked from <c>orders-shortcuts.js</c>. Action codes
+    /// are kept intentionally short ("slash", "escape", "up", "down", "enter")
+    /// so the JS bridge never has to know about C# enum values; if the codes
+    /// change here they must change in lock-step in the JS module.
+    /// </summary>
+    [JSInvokable]
+    public async Task HandleShortcut(string action)
+    {
+        switch (action)
+        {
+            case "slash":
+                try { await _searchInput.FocusAsync(); }
+                catch (JSDisconnectedException)        { /* circuit gone, ignore */ }
+                catch (InvalidOperationException)      { /* element not yet rendered */ }
+                break;
+
+            case "escape":
+                await HandleEscapeAsync();
+                break;
+
+            case "up":
+                if (MoveSelection(-1)) await ScrollSelectedIntoViewAsync();
+                break;
+
+            case "down":
+                if (MoveSelection(+1)) await ScrollSelectedIntoViewAsync();
+                break;
+
+            case "enter":
+                await OpenSelectedAsync();
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Esc unifies two intents:
+    /// 1) clear an active text search (the most disruptive open filter); and
+    /// 2) deselect the current row (a softer, mostly visual reset).
+    /// We only do one of them per press so a hammered Esc does not nuke both
+    /// the search filter and the selection in the same frame, which would
+    /// feel destructive. Search clear takes precedence because it is what
+    /// stops a long-running query and "frees" the UI back to the full list.
+    /// </summary>
+    private async Task HandleEscapeAsync()
+    {
+        if (!string.IsNullOrEmpty(_search))
+        {
+            _search = "";
+            _page   = 1;
+
+            if (_searchDebounceCts is not null)
+            {
+                await _searchDebounceCts.CancelAsync();
+                _searchDebounceCts.Dispose();
+                _searchDebounceCts = null;
+            }
+
+            await ReloadAsync();
+            return;
+        }
+
+        if (_selectedId is not null)
+        {
+            _selectedId = null;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// Returns <c>true</c> if the selection actually moved (so the caller can
+    /// decide whether to scroll). No-op on empty lists; from no selection,
+    /// ArrowDown lands on row 0 and ArrowUp on the last row, matching the
+    /// usual desktop list-box convention.
+    /// </summary>
+    private bool MoveSelection(int delta)
+    {
+        if (_orders.Count == 0) return false;
+
+        var idx = _selectedId is long sid ? _orders.FindIndex(o => o.Id == sid) : -1;
+        var next = idx < 0
+            ? (delta > 0 ? 0 : _orders.Count - 1)
+            : Math.Clamp(idx + delta, 0, _orders.Count - 1);
+
+        if (next == idx) return false;
+
+        _selectedId = _orders[next].Id;
+        StateHasChanged();
+        return true;
+    }
+
+    private async Task ScrollSelectedIntoViewAsync()
+    {
+        if (_shortcutsModule is null) return;
+        try { await _shortcutsModule.InvokeVoidAsync("scrollSelectedIntoView"); }
+        catch (JSDisconnectedException) { /* circuit gone */ }
+    }
+
+    /// <summary>
+    /// Mirrors clicking the order-number link in the table: opens the detail
+    /// page in a new tab via window.open so the list keeps the user's place
+    /// (selection, scroll, page). The href on the &lt;a&gt; element is the
+    /// same target — Enter just triggers it programmatically.
+    /// </summary>
+    private async Task OpenSelectedAsync()
+    {
+        if (_shortcutsModule is null || _selectedId is not long id) return;
+
+        var sel = _orders.FirstOrDefault(o => o.Id == id);
+        if (sel is null) return;
+
+        try { await _shortcutsModule.InvokeVoidAsync("openInNewTab", $"orders/{sel.Number}"); }
+        catch (JSDisconnectedException) { /* circuit gone */ }
     }
 
     private async Task OnStatusChanged(string value)
