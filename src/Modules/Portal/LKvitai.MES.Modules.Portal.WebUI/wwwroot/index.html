@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>LKvitai.MES - Portal</title>
-  <link rel="stylesheet" href="styles.css?v=0.1.6">
+  <link rel="stylesheet" href="styles.css?v=0.1.7">
 </head>
 <body>
   <div class="app-shell">
@@ -17,40 +17,74 @@
       <span class="mono test-strip__host" id="portal-host">lkvitai-test.vpn.lauresta.com</span>
     </div>
 
+    <!-- Issue #92: Portal home reuses the same brand/search/env contract as
+         the shared PortalModuleShell (BuildingBlocks.WebUI). The static page
+         can't render the Razor component directly (Portal is a static
+         index.html SPA), so we mirror the markup 1:1 — class names, ARIA
+         attributes and behaviour all match so any future migration to the
+         shared component is visually invisible. The brand is a single <a>
+         pointing at "/" (Portal's own root), the topbar search is a
+         placeholder button that opens a "coming soon" popover, and the
+         per-module filter has moved into the Modules section so the global
+         search no longer pretends to be module-only. -->
     <header class="topbar">
-      <div class="brand">
+      <a class="brand brand--link" href="/" aria-label="Portal home">
         <div class="brand__mark">LK</div>
         <div>
           <div class="brand__name">LKvitai<span>.MES</span></div>
           <div class="brand__tagline mono">Manufacturing &middot; Execution &middot; Standards</div>
         </div>
-      </div>
+      </a>
 
       <div class="topbar__separator" aria-hidden="true"></div>
 
-      <label class="search" for="module-search">
-        <span class="search__icon" aria-hidden="true"></span>
-        <span class="sr-only">Find a module</span>
-        <input id="module-search" type="search" placeholder="Find a module..." autocomplete="off">
-      </label>
+      <button id="universal-search"
+              class="portal-search portal-search--placeholder"
+              type="button"
+              aria-haspopup="dialog"
+              aria-expanded="false"
+              aria-controls="universal-search-popover">
+        <span class="portal-search__icon" aria-hidden="true"></span>
+        <span class="portal-search__placeholder">Search…</span>
+        <span class="portal-search__hint mono" aria-hidden="true">⌘K</span>
+      </button>
 
       <div class="topbar__spacer"></div>
 
       <div class="env-badge" aria-label="Environment and version">
         <div><span class="mono">ENV</span><strong class="mono" id="portal-env">TEST</strong></div>
-        <div><span class="mono">VER</span><strong class="mono">0.1.0</strong></div>
+        <div><span class="mono">VER</span><strong class="mono" id="portal-version">—</strong></div>
       </div>
 
+      <!-- AUTHENTIC SEAM: same as PortalModuleShell.razor — only the form
+           target changes when migrating off cookie auth. Display name +
+           initials are static placeholders here only because Portal home
+           is a pre-Blazor static page; issue #93 wires them to the Portal
+           /me endpoint so they match the shared shell on every render. -->
       <div class="user-block">
-        <div class="user-block__avatar">RM</div>
+        <div class="user-block__avatar" id="portal-user-initials">U</div>
         <div>
-          <div class="user-block__name">Signed in</div>
+          <div class="user-block__name" id="portal-user-name">Signed in</div>
           <form action="auth/logout" method="post">
             <button class="link-button" type="submit">Logout</button>
           </form>
         </div>
       </div>
     </header>
+
+    <!-- Universal-search "coming soon" popover. Hidden by default; toggled
+         by script.js. Mirrors the inline panel rendered by
+         PortalModuleShell.razor so the styling stays in lock-step. -->
+    <div id="universal-search-popover" class="universal-search-popover" role="dialog" aria-label="Universal search" hidden>
+      <div class="universal-search-popover__head">
+        <strong>Universal search</strong>
+        <button id="universal-search-close" class="link-button universal-search-popover__close" type="button" aria-label="Dismiss">×</button>
+      </div>
+      <p class="universal-search-popover__body">
+        Search across orders, fabrics, modules and more — coming soon.
+        For now use module-level filters inside each section.
+      </p>
+    </div>
 
     <main class="main">
       <section class="hero">
@@ -104,6 +138,14 @@
               <h2 id="modules-title">Modules</h2>
               <span><strong id="available-count">1</strong> available &middot; <strong id="planned-count">8</strong> planned</span>
             </div>
+            <!-- Module-grid local filter. Lives in the section header
+                 (not the topbar) since the topbar search is now a
+                 universal-search placeholder per issue #92. -->
+            <label class="module-search" for="module-search">
+              <span class="module-search__icon" aria-hidden="true"></span>
+              <span class="sr-only">Filter modules</span>
+              <input id="module-search" type="search" placeholder="Filter modules…" autocomplete="off">
+            </label>
           </div>
 
           <div class="module-grid" id="module-grid"></div>
@@ -168,6 +210,6 @@
   </div>
 
   <output class="toast" id="toast" aria-live="polite" hidden></output>
-  <script src="script.js?v=0.1.6"></script>
+  <script src="script.js?v=0.1.7"></script>
 </body>
 </html>

@@ -90,7 +90,14 @@ function getEnvironment(hostname) {
 const environment = getEnvironment(host);
 
 const moduleGrid = document.querySelector("#module-grid");
+// Issue #92: #module-search now lives inside the Modules section, not the
+// topbar. The topbar's #universal-search button is a placeholder that opens
+// the "coming soon" popover instead of filtering only the module grid —
+// keeping the global search entry honest about its scope.
 const searchInput = document.querySelector("#module-search");
+const universalSearchButton = document.querySelector("#universal-search");
+const universalSearchPopover = document.querySelector("#universal-search-popover");
+const universalSearchClose = document.querySelector("#universal-search-close");
 const emptyState = document.querySelector("#empty-state");
 const emptyQuery = document.querySelector("#empty-query");
 const stageGrid = document.querySelector("#stage-grid");
@@ -260,6 +267,32 @@ document.querySelectorAll("[data-period]").forEach((button) => {
 });
 
 searchInput.addEventListener("input", filterModules);
+
+// Issue #92: universal-search placeholder. Clicking the topbar button
+// opens a small "coming soon" popover (markup below the topbar in
+// index.html). Real cross-module search lands in a follow-up issue.
+function setUniversalSearchOpen(isOpen) {
+  if (!universalSearchPopover || !universalSearchButton) return;
+  universalSearchPopover.hidden = !isOpen;
+  universalSearchButton.setAttribute("aria-expanded", isOpen ? "true" : "false");
+}
+
+if (universalSearchButton) {
+  universalSearchButton.addEventListener("click", () => {
+    setUniversalSearchOpen(universalSearchPopover.hidden);
+  });
+}
+
+if (universalSearchClose) {
+  universalSearchClose.addEventListener("click", () => setUniversalSearchOpen(false));
+}
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && universalSearchPopover && !universalSearchPopover.hidden) {
+    setUniversalSearchOpen(false);
+    universalSearchButton?.focus();
+  }
+});
 
 document.querySelector("#available-count").textContent = modules.filter((mod) => mod.status === "active").length;
 document.querySelector("#planned-count").textContent = modules.filter((mod) => mod.status === "planned").length;
