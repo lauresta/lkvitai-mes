@@ -1,4 +1,16 @@
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Components
 @using Microsoft.AspNetCore.Components.Authorization
+@*
+   CRITICAL: Microsoft.AspNetCore.Components.Web hosts the EventHandlers
+   table that registers @onclick / @onchange / @onsubmit / etc. as Razor
+   directive attributes. Without this @using, the Razor compiler does NOT
+   recognise them as directives and silently emits them to the browser as
+   literal HTML attributes (e.g. <button @onclick="..."> in raw HTML),
+   which the DOM rejects with InvalidCharacterError on the very first
+   Blazor diff batch — terminating the SignalR circuit and breaking every
+   consumer module that renders this shell.
+   See hotfix/portal-shell-onclick-render.
+*@
+@using Microsoft.AspNetCore.Components.Web
 @using Microsoft.Extensions.Configuration
