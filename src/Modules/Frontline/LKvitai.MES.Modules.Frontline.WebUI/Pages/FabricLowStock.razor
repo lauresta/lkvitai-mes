@@ -112,12 +112,6 @@
             <button class="btn-xs" type="button" title="Refresh data" @onclick="ReloadAsync" disabled="@_busy">
                 @(_busy ? "…" : "↻ Refresh")
             </button>
-
-            <nav class="pagination" aria-label="Pagination">
-                <button type="button" disabled>‹</button>
-                <button type="button" class="is-active">1</button>
-                <button type="button" disabled>›</button>
-            </nav>
         </div>
 
         <div class="fa-table-wrap">
@@ -216,7 +210,23 @@
         </div>
 
         <div class="fa-table-foot">
-            <span>Showing <strong>@(_rows.Count == 0 ? 0 : 1)–@_rows.Count</strong> of <strong>@_totalRows</strong> rows</span>
+            <span>
+                @if (_rows.Count == 0)
+                {
+                    <text>No fabrics match the current filters.</text>
+                }
+                else if (_rows.Count == _totalRows)
+                {
+                    <text>Showing all <strong>@_totalRows</strong> matching fabrics.</text>
+                }
+                else
+                {
+                    <text>
+                        Showing first <strong>@_rows.Count</strong> of <strong>@_totalRows</strong> matching fabrics.
+                        Narrow the filters to bring the rest into view (full grid paging tracked in #100).
+                    </text>
+                }
+            </span>
             <span class="mono" style="opacity:.7">Server-side filter via dbo.mes_Fabric_GetLowStockList</span>
         </div>
     </section>
@@ -224,16 +234,14 @@
 </main>
 
 @code {
-    // Default page size for the desktop grid. Mirrors the SP's clamp (500)
-    // far enough to avoid a refetch when the operator scrolls past 100 rows
-    // without having to ship the full 800-row catalogue every time.
-    private const int DefaultPageSize = 200;
-
-    // KPI tiles aggregate across the rows currently on screen — accurate
-    // because the toolbar pushes the same filters into the SP, so the
-    // returned page IS the filtered universe up to DefaultPageSize. When
-    // the result set genuinely exceeds DefaultPageSize the metrics will
-    // undercount; #100 introduces server-side aggregates to fix that.
+    // Default page size for the desktop grid. The SP caps at 1000; the prod
+    // catalogue is ~757 fabrics, so a single fetch carries every row that
+    // matches the filters — KPI tiles stay accurate without a server-side
+    // aggregate proc, and the operator can scan, sort and search the whole
+    // low-stock universe from one screen. #100 will introduce real
+    // MudDataGrid windowed paging if the catalogue ever outgrows 1000 rows
+    // for a single filter combination.
+    private const int DefaultPageSize = 1000;
     private static readonly IReadOnlyList<SelectOption> ThresholdOptions =
     [
         new("",    "Any (all)"),
