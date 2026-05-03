@@ -7,9 +7,9 @@ namespace LKvitai.MES.Modules.Portal.WebUI.Models;
 ///     module shell exists end-to-end but has no business logic yet).
 ///   * <see cref="Planned"/>    — grey, click shows a toast with the
 ///     target quarter; no <c>Url</c> set.
-/// Issue #93 will move the source of truth for this list out of code
-/// into a Portal API endpoint; the enum stays as the public contract
-/// the dashboard renders against.
+/// The string contract over the wire is the enum name (Active / Scaffolded
+/// / Planned) — see <c>PortalApiClient.ParseStatus</c>. Adding a new value
+/// requires updating both ends.
 /// </summary>
 public enum ModuleStatus
 {
@@ -44,30 +44,17 @@ public sealed record NewsItem(
     string Date);
 
 /// <summary>
-/// Static seed data for the Portal dashboard. Lives in code as a
-/// transitional step from the previous JS-hardcoded arrays (see
-/// <c>wwwroot/script.js</c> on the pre-Blazor branch). Issue #93
-/// replaces every consumer with API/config-backed data; until then
-/// this class is the single editable source of dashboard content.
+/// Static seed data for the Portal dashboard sections that haven't been
+/// API-ified yet. After issue #93 (this PR) <c>Modules</c> and <c>News</c>
+/// come from the Portal API; the remaining fields are still hardcoded:
+///   * <see cref="Stages"/>, <see cref="Daily"/>, <see cref="DailyTotal"/>
+///     — Operations preview. Replaced by an Operations Summary API in #94.
+///   * <see cref="Branches"/> — branches-on-track strip. Replaced by a real
+///     "issued / readyForCustomer" metric in #95.
+/// Edit here as a transitional step until those slices ship.
 /// </summary>
 public static class PortalDashboardData
 {
-    public static IReadOnlyList<ModuleCard> Modules { get; } = new[]
-    {
-        new ModuleCard("warehouse",    "Warehouse",    "Operations",   "Inventory locations, stock movements, reservations, handling units, 3D warehouse layout.", ModuleStatus.Active,     Url: "/warehouse/"),
-        new ModuleCard("sales",        "Sales",        "Commercial",   "Customer orders.",                                                                          ModuleStatus.Scaffolded, Url: "/sales/"),
-        new ModuleCard("frontline",    "Frontline",    "Field",        "Field availability lookup.",                                                                ModuleStatus.Scaffolded, Url: "/frontline/"),
-        new ModuleCard("scanning",     "Scanning",     "Mobile",       "Mobile barcode scan.",                                                                      ModuleStatus.Scaffolded, Url: "/scan/"),
-        new ModuleCard("orders",       "Orders",       "Commercial",   "Order lifecycle, product composition, workflow planning.",                                  ModuleStatus.Planned,    Quarter: "Q3 2026"),
-        new ModuleCard("shopfloor",    "Shopfloor",    "Operations",   "Workstation tasks, WIP routing, operator kiosk execution.",                                 ModuleStatus.Planned,    Quarter: "Q3 2026"),
-        new ModuleCard("quality",      "Quality",      "Operations",   "Inspections, defect tracking, rework and returns.",                                         ModuleStatus.Planned,    Quarter: "Q4 2026"),
-        new ModuleCard("delivery",     "Delivery",     "Logistics",    "Route planning, driver tasks, proof of delivery, tracking.",                                ModuleStatus.Planned,    Quarter: "Q4 2026"),
-        new ModuleCard("installation", "Installation", "Logistics",    "Installer visits, acceptance acts, customer sign-off.",                                     ModuleStatus.Planned,    Quarter: "Q1 2027"),
-        new ModuleCard("reporting",    "Reporting",    "Intelligence", "Dashboards, KPIs, production and warehouse analytics.",                                     ModuleStatus.Planned,    Quarter: "Q1 2027"),
-        new ModuleCard("finance",      "Finance",      "Intelligence", "Accounting exports, payments, posting events.",                                             ModuleStatus.Planned,    Quarter: "Q2 2027"),
-        new ModuleCard("audit",        "Audit",        "Compliance",   "Immutable event log, traceability, compliance reports.",                                    ModuleStatus.Planned,    Quarter: "Q2 2027"),
-    };
-
     public static IReadOnlyList<OperationsStage> Stages { get; } = new[]
     {
         new OperationsStage("reg",  "Registered",    248, 221),
@@ -100,13 +87,5 @@ public static class PortalDashboardData
         new BranchOnTrack("Kaunas",   89),
         new BranchOnTrack("Klaipeda", 91),
         new BranchOnTrack("Siauliai", 84),
-    };
-
-    public static IReadOnlyList<NewsItem> News { get; } = new[]
-    {
-        new NewsItem("SHIPPED", "oklch(42% 0.14 155)", "oklch(94% 0.04 155)", "Warehouse 3D layout viewer",  "Rack-level zoom, stock density heatmap, keyboard navigation.",                "Apr 22"),
-        new NewsItem("SHIPPED", "oklch(42% 0.14 155)", "oklch(94% 0.04 155)", "Stock movement audit trail",  "Every transfer now includes operator, reason code and timestamp.",            "Apr 18"),
-        new NewsItem("IN PROG", "var(--accent-700)",   "var(--accent-50)",    "Orders module - alpha",       "Order lifecycle + product composition. Internal QA, Q3 rollout.",             "ongoing"),
-        new NewsItem("PLANNED", "oklch(50% 0.015 240)","var(--n-100)",        "Shopfloor operator kiosk",    "Workstation task list, WIP routing. Design review next week.",                "Q3 2026"),
     };
 }
