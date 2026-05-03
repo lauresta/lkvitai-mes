@@ -1,29 +1,27 @@
 @page "/"
 @inject IWebHostEnvironment Env
+@inject PortalApiClient PortalApi
+@inject IJSRuntime Js
 
 <PageTitle>LKvitai.MES &middot; Portal</PageTitle>
 
 @*
-    Portal home dashboard. Direct port of the legacy wwwroot/index.html
-    body, now living inside the shared MainLayout (which renders the
-    PortalModuleShell topbar + test strip). Behaviour parity with the
-    pre-Blazor static page:
-      * Hero block with "Welcome back" greeting + Open buttons.
-      * Operations preview with This/Last month toggle, stage grid,
-        daily-bars sparkline and branches-on-track strip.
-      * Modules section with a section-local filter (the topbar search
-        is the universal-search placeholder owned by PortalModuleShell).
-      * News + Side-panel + Footer.
+    Portal home dashboard.
 
-    Data source: LKvitai.MES.Modules.Portal.WebUI.Models.PortalDashboardData
-    holds the seed lists in code as a stepping stone — issue #93 swaps
-    each of them for an API/config-backed source without changing the
-    Razor render contract.
+    After issue #93:
+      * Modules + News come from the Portal API (PortalApiClient.GetModulesAsync /
+        GetNewsAsync). The dashboard renders an empty section if the API is
+        unreachable so a Portal-API outage can't take the home page down.
+      * Version is rendered from the same API's /status endpoint, sourced from
+        APP_VERSION / GIT_SHA / BUILD_DATE env vars injected by build-and-push.yml.
+        Local fallback ("0.1.0-dev") keeps `dotnet run` happy.
+      * "Open ..." hero buttons are last-three opened modules from
+        localStorage (lkPortalRecents.get(3)), filtered against the live
+        module list so a renamed/removed module never lingers as a stale chip.
 
-    Kept intentionally as a single big page for the first migration to
-    keep the diff reviewable side-by-side with index.html. Subsequent
-    PRs can split sections into their own components when API data
-    arrives (#93).
+    Out of #93 (still in PortalDashboardData):
+      * Operations preview stages, daily-bars, branches-on-track. Replaced by
+        the Operations Summary API in #94 / Branches metric in #95.
 *@
 
 <main class="main">
@@ -33,9 +31,30 @@
             <h1>Welcome back@(string.IsNullOrWhiteSpace(_greetingName) ? "." : $", {_greetingName}.")</h1>
             <p>Warehouse is available. The remaining modules are listed on the implementation roadmap.</p>
             <div class="hero__actions">
-                <a class="button button--primary" href="/warehouse/">Open Warehouse <span aria-hidden="true">&rarr;</span></a>
-                <button class="button button--disabled" type="button" @onclick="@(() => ToastPlanned("Shopfloor", "Q3 2026"))">Open Shopfloor</button>
-                <button class="button button--disabled" type="button" @onclick="@(() => ToastPlanned("Reporting", "Q1 2027"))">Open Reporting</button>
+                @* Recent shortcuts come from localStorage and are validated
+                   against the live module list, so we never render a chip for
+                   a module that has been removed/renamed. Falls back to the
+                   "Open Warehouse" anchor while no recents exist. The
+                   data-portal-recent-key attribute is what portal-recents.js
+                   listens for in capture-phase to bump the recents list — JS
+                   handles the bump BEFORE the browser navigates away, which
+                   is impossible from a Razor @onclick on a real <a href>. *@
+                @if (_recentShortcuts.Count > 0)
+                {
+                    foreach (var recent in _recentShortcuts)
+                    {
+                        <a class="button @(recent.IsPrimary ? "button--primary" : "button--secondary")"
+                           href="@recent.Url"
+                           data-portal-recent-key="@recent.Key">Open @recent.Title <span aria-hidden="true">&rarr;</span></a>
+                    }
+                }
+                else
+                {
+                    <a class="button button--primary"
+                       href="/warehouse/"
+                       data-portal-recent-key="warehouse">Open Warehouse <span aria-hidden="true">&rarr;</span></a>
+                }
+                <button class="button button--disabled" type="button" @onclick='@(() => ToastPlanned("Shopfloor", "Q3 2026"))'>Open Shopfloor</button>
                 <a class="button button--secondary hero__roadmap" href="#roadmap">Roadmap &amp; news <span aria-hidden="true">&rarr;</span></a>
             </div>
         </div>
@@ -133,7 +152,7 @@
             </div>
 
             @{
-                var filteredModules = FilterModules(_query);
+                var filteredModules = FilterModules(_modules, _query);
             }
             @if (filteredModules.Count == 0)
             {
@@ -157,7 +176,9 @@
 
                         if (isNavigable)
                         {
-                            <a class="module-card @statusClass" href="@mod.Url">
+                            <a class="module-card @statusClass"
+                               href="@mod.Url"
+                               data-portal-recent-key="@mod.Key">
                                 <ModuleCardBody Card="@mod" />
                             </a>
                         }
@@ -165,7 +186,7 @@
                         {
                             <button type="button"
                                     class="module-card @statusClass"
-                                    @onclick="@(() => ToastPlanned(mod.Title, mod.Quarter ?? "later"))">
+                                    @onclick='@(() => ToastPlanned(mod.Title, mod.Quarter ?? "later"))'>
                                 <ModuleCardBody Card="@mod" />
                             </button>
                         }
@@ -182,7 +203,7 @@
                     <a href="#">All updates &rarr;</a>
                 </div>
                 <div class="news-grid">
-                    @foreach (var item in PortalDashboardData.News)
+                    @foreach (var item in _news)
                     {
                         <article class="news-item">
                             <div class="news-item__meta">
@@ -207,7 +228,7 @@
                 </header>
                 <div class="status-row"><span>Environment</span><strong class="mono @_envStatusRowClass">@_envName</strong></div>
                 <div class="status-row"><span>Version</span><strong class="mono">@_displayVersion</strong></div>
-                <div class="status-row"><span>Modules</span><strong class="mono">@_availableCount active / @PortalDashboardData.Modules.Count total</strong></div>
+                <div class="status-row"><span>Modules</span><strong class="mono">@_availableCount active / @_modules.Count total</strong></div>
                 <div class="status-row"><span>Current module</span><strong>Portal</strong></div>
                 <div class="status-row"><span>Channel</span><strong class="mono">@_envChannel</strong></div>
             </section>
@@ -223,6 +244,14 @@
             <section class="panel">
                 <header class="panel__plain-head"><h2>Build</h2></header>
                 <div class="status-row"><span>Version</span><strong class="mono">@_displayVersion</strong></div>
+                @if (!string.IsNullOrWhiteSpace(_displayGitSha))
+                {
+                    <div class="status-row"><span>Commit</span><strong class="mono">@_displayGitSha</strong></div>
+                }
+                @if (_displayBuildDate is { } date)
+                {
+                    <div class="status-row"><span>Built</span><strong class="mono">@date.ToString("yyyy-MM-dd")</strong></div>
+                }
                 <div class="status-row"><span>Channel</span><strong class="mono">@_envChannel</strong></div>
             </section>
         </aside>
@@ -235,6 +264,9 @@
 }
 
 @code {
+    private const int RecentSlots = 3;
+    private const string LocalDevVersion = "0.1.0-dev";
+
     [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
 
     private string _period = "this";
@@ -243,17 +275,95 @@
     private string _envName = "TEST";
     private string _envChannel = "test";
     private string? _envStatusRowClass = "status-row__test";
-    private string _displayVersion = "0.1.0";
+    private string _displayVersion = LocalDevVersion;
+    private string? _displayGitSha;
+    private DateTimeOffset? _displayBuildDate;
 
     private string? _greetingName;
     private bool _toastVisible;
     private string? _toastMessage;
     private CancellationTokenSource? _toastCts;
 
+    private IReadOnlyList<ModuleCard> _modules = Array.Empty<ModuleCard>();
+    private IReadOnlyList<NewsItem> _news = Array.Empty<NewsItem>();
+    private List<RecentShortcut> _recentShortcuts = new();
+
     private int _availableCount;
     private int _plannedCount;
 
     protected override async Task OnInitializedAsync()
+    {
+        ResolveEnvironmentLabels();
+
+        // Fan-out: pull modules + news + status in parallel. None of them
+        // block hero rendering — failures fall back to empty / local defaults
+        // so a Portal API outage degrades the home page rather than killing it.
+        var modulesTask = PortalApi.GetModulesAsync();
+        var newsTask    = PortalApi.GetNewsAsync();
+        var statusTask  = PortalApi.GetStatusAsync();
+
+        _modules = await modulesTask;
+        _news    = await newsTask;
+        var status = await statusTask;
+        if (status is not null)
+        {
+            if (!string.IsNullOrWhiteSpace(status.Version)) _displayVersion = status.Version;
+            if (!string.IsNullOrWhiteSpace(status.GitSha))  _displayGitSha  = ShortSha(status.GitSha);
+            _displayBuildDate = status.BuildDate;
+        }
+
+        _availableCount = _modules.Count(m => m.Status == ModuleStatus.Active);
+        _plannedCount   = _modules.Count(m => m.Status == ModuleStatus.Planned);
+
+        if (AuthState is not null)
+        {
+            var state = await AuthState;
+            _greetingName = ResolveGreetingName(state.User);
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        // Recents come from localStorage (window.lkPortalRecents.get(3)). We
+        // resolve them after first render because JSInterop requires an
+        // attached circuit. A second StateHasChanged() promotes the now-validated
+        // recents into the hero.
+        var recentKeys = await SafeGetRecentsAsync(RecentSlots);
+        var byKey = _modules
+            .Where(m => m.Status is ModuleStatus.Active or ModuleStatus.Scaffolded)
+            .ToDictionary(m => m.Key, StringComparer.OrdinalIgnoreCase);
+
+        var resolved = new List<RecentShortcut>(RecentSlots);
+        foreach (var key in recentKeys)
+        {
+            if (byKey.TryGetValue(key, out var card) && !string.IsNullOrWhiteSpace(card.Url))
+            {
+                resolved.Add(new RecentShortcut(card.Key, card.Title, card.Url, IsPrimary: resolved.Count == 0));
+            }
+            if (resolved.Count >= RecentSlots) break;
+        }
+
+        if (resolved.Count > 0)
+        {
+            _recentShortcuts = resolved;
+            StateHasChanged();
+        }
+    }
+
+    private async Task<IReadOnlyList<string>> SafeGetRecentsAsync(int take)
+    {
+        try
+        {
+            return await Js.InvokeAsync<string[]>("lkPortalRecents.get", take);
+        }
+        catch (JSException) { return Array.Empty<string>(); }
+        catch (InvalidOperationException) { return Array.Empty<string>(); }
+        catch (TaskCanceledException) { return Array.Empty<string>(); }
+    }
+
+    private void ResolveEnvironmentLabels()
     {
         var envName = (Env.EnvironmentName ?? "Development").Trim();
         if (Env.IsProduction())
@@ -274,26 +384,17 @@
             _envChannel = envName.ToLowerInvariant();
             _envStatusRowClass = "status-row__test";
         }
-
-        _availableCount = PortalDashboardData.Modules.Count(m => m.Status == ModuleStatus.Active);
-        _plannedCount   = PortalDashboardData.Modules.Count(m => m.Status == ModuleStatus.Planned);
-
-        if (AuthState is not null)
-        {
-            var state = await AuthState;
-            _greetingName = ResolveGreetingName(state.User);
-        }
     }
 
-    private static IReadOnlyList<ModuleCard> FilterModules(string query)
+    private static IReadOnlyList<ModuleCard> FilterModules(IReadOnlyList<ModuleCard> modules, string query)
     {
         if (string.IsNullOrWhiteSpace(query))
         {
-            return PortalDashboardData.Modules;
+            return modules;
         }
 
         var trimmed = query.Trim();
-        return PortalDashboardData.Modules
+        return modules
             .Where(m => $"{m.Title} {m.Category} {m.Description}".Contains(trimmed, StringComparison.OrdinalIgnoreCase))
             .ToList();
     }
@@ -303,8 +404,11 @@
         _toastMessage = $"{title} — planned for {quarter}. Not available yet.";
         _toastVisible = true;
 
-        _toastCts?.Cancel();
-        _toastCts?.Dispose();
+        if (_toastCts is not null)
+        {
+            await _toastCts.CancelAsync();
+            _toastCts.Dispose();
+        }
         _toastCts = new CancellationTokenSource();
         var token = _toastCts.Token;
 
@@ -341,4 +445,9 @@
         var parts = raw.Split(' ', StringSplitOptions.RemoveEmptyEntries);
         return parts.Length == 0 ? raw : parts[0];
     }
+
+    private static string ShortSha(string fullSha) =>
+        fullSha.Length <= 7 ? fullSha : fullSha[..7];
+
+    private sealed record RecentShortcut(string Key, string Title, string Url, bool IsPrimary);
 }

@@ -1,8 +1,10 @@
 using System.Security.Claims;
 using LKvitai.MES.BuildingBlocks.PortalAuth;
 using LKvitai.MES.Modules.Portal.WebUI.Auth;
+using LKvitai.MES.Modules.Portal.WebUI.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Components.Authorization;
 using Serilog;
 using Serilog.Events;
 
@@ -38,11 +40,20 @@ builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddPortalCookieAuthentication(builder.Environment, builder.Configuration);
 builder.Services.AddAuthorization();
+// CascadingAuthenticationState lets Pages/Home.razor + MainLayout consume
+// AuthenticationStateProvider via [CascadingParameter]. Required for the
+// PortalApiAuthHandler fallback path that resolves the structured bearer
+// from the circuit's auth state once HttpContext is gone.
+builder.Services.AddCascadingAuthenticationState();
 // Portal MainLayout reads Request.Host once at OnInitialized to feed
 // the test-strip host label. AddHttpContextAccessor is needed because
 // Blazor Server components are not in an HTTP request scope after the
 // circuit attaches; the accessor is only consumed during prerender.
+// PortalApiAuthHandler also reads HttpContext during prerender (Sales/Warehouse
+// pattern) so the same registration covers both.
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddTransient<PortalApiAuthHandler>();
+builder.Services.AddScoped<PortalApiClient>();
 builder.Services.AddHttpClient("PortalApi", (sp, client) =>
 {
     var configuration = sp.GetRequiredService<IConfiguration>();
@@ -50,7 +61,8 @@ builder.Services.AddHttpClient("PortalApi", (sp, client) =>
 
     client.BaseAddress = EnsureTrailingSlash(new Uri(baseUrl));
     client.Timeout = TimeSpan.FromSeconds(30);
-});
+})
+.AddHttpMessageHandler<PortalApiAuthHandler>();
 builder.Services.AddHttpClient("WarehouseApi", (sp, client) =>
 {
     var configuration = sp.GetRequiredService<IConfiguration>();
@@ -242,6 +254,9 @@ static bool IsAnonymousPortalPath(PathString path)
            path.StartsWithSegments("/auth/login", StringComparison.OrdinalIgnoreCase) ||
            path.StartsWithSegments("/auth/logout", StringComparison.OrdinalIgnoreCase) ||
            path.StartsWithSegments("/styles.css", StringComparison.OrdinalIgnoreCase) ||
+           path.StartsWithSegments("/css", StringComparison.OrdinalIgnoreCase) ||
+           path.StartsWithSegments("/fonts", StringComparison.OrdinalIgnoreCase) ||
+           path.StartsWithSegments("/js", StringComparison.OrdinalIgnoreCase) ||
            path.StartsWithSegments("/_content", StringComparison.OrdinalIgnoreCase) ||
            path.StartsWithSegments("/favicon.ico", StringComparison.OrdinalIgnoreCase) ||
            path.StartsWithSegments("/_framework", StringComparison.OrdinalIgnoreCase) ||

@@ -21,9 +21,12 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <base href="~/" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet" />
+    @* fonts.css ships Inter + JetBrains Mono as self-hosted woff2. We do NOT
+       use the Google Fonts CDN here — SonarCloud rule Web:S5725 (Subresource
+       Integrity) flags external <link>s without an integrity hash, and Google
+       Fonts' CSS body changes too often to pin a stable SRI hash. Same fix
+       Frontline.WebUI/Pages/_Layout.cshtml ships. *@
+    <link href="css/fonts.css" rel="stylesheet" asp-append-version="true" />
     <link href="_content/LKvitai.MES.BuildingBlocks.WebUI/css/portal-shell.css" rel="stylesheet" asp-append-version="true" />
     <link href="styles.css" rel="stylesheet" asp-append-version="true" />
     <link rel="icon" href="data:," />
@@ -41,6 +44,11 @@
 
     <persist-component-state />
 
+    @* portal-recents.js exposes window.lkPortalRecents.{ get(take), record(key) }
+       which Pages/Home.razor calls via JSInterop to render the "last 3 opened
+       modules" hero shortcuts. Plain script (no module export) so it's
+       available inside the Blazor circuit's invokeJSAsync without bootstrap. *@
+    <script src="js/portal-recents.js" asp-append-version="true"></script>
     <script src="_framework/blazor.server.js"></script>
 </body>
 </html>
