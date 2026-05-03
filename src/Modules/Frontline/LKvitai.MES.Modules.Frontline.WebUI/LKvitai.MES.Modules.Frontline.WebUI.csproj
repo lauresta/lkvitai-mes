@@ -15,6 +15,20 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\BuildingBlocks\LKvitai.MES.BuildingBlocks.ModuleStartup\LKvitai.MES.BuildingBlocks.ModuleStartup.csproj" />
+    <!--
+      PortalAuth ships AddPortalCookieAuthentication, the shared cookie name +
+      sliding-expiration policy, and the DataProtection key-ring binding.
+      Frontline doesn't enforce auth on any route (the fabric lookup stays
+      anonymous so the sales-floor handsets keep working without a Portal
+      login), but registering the scheme + middleware lets the Frontline
+      circuit decode the shared portal cookie when a visitor is signed into
+      Portal — that's how MainLayout's PortalModuleShell surfaces the real
+      admin name in the user-block instead of the "Signed in" / "U"
+      fallback. Originally planned for F-2.4 but #92's "shared header that
+      means it" requires the user-block to match Sales/Portal NOW, and the
+      registration is additive (no API contract change).
+    -->
+    <ProjectReference Include="..\..\..\BuildingBlocks\LKvitai.MES.BuildingBlocks.PortalAuth\LKvitai.MES.BuildingBlocks.PortalAuth.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\LKvitai.MES.BuildingBlocks.WebUI\LKvitai.MES.BuildingBlocks.WebUI.csproj" />
     <ProjectReference Include="..\LKvitai.MES.Modules.Frontline.Contracts\LKvitai.MES.Modules.Frontline.Contracts.csproj" />
   </ItemGroup>

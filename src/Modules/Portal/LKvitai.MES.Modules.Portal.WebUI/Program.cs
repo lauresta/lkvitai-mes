@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using LKvitai.MES.BuildingBlocks.PortalAuth;
+using LKvitai.MES.BuildingBlocks.WebUI.Services;
 using LKvitai.MES.Modules.Portal.WebUI.Auth;
 using LKvitai.MES.Modules.Portal.WebUI.Services;
 using Microsoft.AspNetCore.Authentication;
@@ -52,6 +53,11 @@ builder.Services.AddCascadingAuthenticationState();
 // PortalApiAuthHandler also reads HttpContext during prerender (Sales/Warehouse
 // pattern) so the same registration covers both.
 builder.Services.AddHttpContextAccessor();
+// Reads APP_VERSION / GIT_SHA / BUILD_DATE env vars (injected by
+// build-and-push.yml → Dockerfile ARG → ENV) so MainLayout can render the
+// real release tag in the shell's "VER" badge instead of an em-dash. Same
+// pattern Sales/Frontline call.
+builder.Services.AddBuildVersion();
 builder.Services.AddTransient<PortalApiAuthHandler>();
 builder.Services.AddScoped<PortalApiClient>();
 builder.Services.AddHttpClient("PortalApi", (sp, client) =>

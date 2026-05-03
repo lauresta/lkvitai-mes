@@ -38,4 +38,20 @@ EXPOSE 8080
 ENV ASPNETCORE_URLS=http://+:8080
 ENV ASPNETCORE_ENVIRONMENT=Production
 
+# Build metadata surfaced by IBuildVersionAccessor → MainLayout → the shared
+# topbar's "VER" badge. Filled in by build-and-push.yml via --build-arg so
+# the env-badge stops showing an em-dash in test/prod. Locally these stay
+# empty and the accessor falls back to "—" (or "dev" if APP_VERSION is the
+# 0.1.0-dev sentinel). Same shape the Portal-WebUI Dockerfile uses; keep
+# the four ARGs synchronised across modules so build-and-push.yml's matrix
+# step can pass identical --build-args to every WebUI image.
+ARG APP_VERSION
+ARG RELEASE_TAG
+ARG GIT_SHA
+ARG BUILD_DATE
+ENV APP_VERSION=${APP_VERSION}
+ENV RELEASE_TAG=${RELEASE_TAG}
+ENV GIT_SHA=${GIT_SHA}
+ENV BUILD_DATE=${BUILD_DATE}
+
 ENTRYPOINT ["dotnet", "LKvitai.MES.Modules.Sales.WebUI.dll"]

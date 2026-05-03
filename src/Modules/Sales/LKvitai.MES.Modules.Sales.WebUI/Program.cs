@@ -1,5 +1,6 @@
 using LKvitai.MES.BuildingBlocks.ModuleStartup;
 using LKvitai.MES.BuildingBlocks.PortalAuth;
+using LKvitai.MES.BuildingBlocks.WebUI.Services;
 using LKvitai.MES.Modules.Sales.WebUI.Services;
 using Serilog;
 
@@ -30,6 +31,11 @@ builder.Services.AddPortalCookieAuthentication(builder.Environment, builder.Conf
 builder.Services.AddAuthorization();
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddHttpContextAccessor();
+// Surfaces APP_VERSION / GIT_SHA / BUILD_DATE env vars (injected by
+// build-and-push.yml → Sales.WebUI Dockerfile ARG → ENV) into MainLayout
+// so the shared topbar's "VER" badge shows the real release tag instead
+// of an em-dash. Same registration Portal/Frontline call.
+builder.Services.AddBuildVersion();
 builder.Services.AddTransient<SalesApiAuthHandler>();
 builder.Services
     .AddHttpClient("SalesApi")

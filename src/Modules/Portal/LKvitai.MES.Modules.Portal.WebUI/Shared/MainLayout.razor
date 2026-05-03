@@ -1,6 +1,7 @@
 @inherits LayoutComponentBase
 @inject IWebHostEnvironment Env
 @inject IHttpContextAccessor HttpContextAccessor
+@inject IBuildVersionAccessor BuildVersionAccessor
 
 @*
     Portal MainLayout — same contract as Sales/Frontline so the shared
@@ -24,18 +25,26 @@
 *@
 <AuthorizeView>
     <Authorized Context="auth">
+        @* Notes on the parameter set — these MUST stay in lock-step across
+           Portal/Sales/Frontline (this is half the point of #92):
+           * No SearchPlaceholder — the shell now defaults to the unified
+             "Search everything…" copy. Override here only if a module
+             genuinely needs a different placeholder (none currently do).
+           * Version flows in via IBuildVersionAccessor → APP_VERSION env
+             var (set in build-and-push.yml + the Portal-WebUI Dockerfile).
+             Falls back to "—" / "dev" so the badge never lies. *@
         <PortalModuleShell EnvironmentName="@_environmentName"
                            HostLabel="@_hostLabel"
                            BannerNote="@_bannerNote"
                            User="@auth.User"
                            PortalHomeUrl="/"
-                           SearchPlaceholder="Search…">
+                           Version="@_displayVersion">
             @Body
 
             @* Footer lives inside the shell so the brand colour band wraps
                main + footer the same way the static index.html laid them
-               out. Kept as plain markup (no @code) — release notes / docs
-               links are static for now and become dynamic with #93. *@
+               out. Release notes / docs links are still static placeholders
+               and become real links in a follow-up issue. *@
             <footer class="footer">
                 <div>
                     <span>&copy; 2026 UAB Lauresta &middot; LKvitai.MES Portal</span>
@@ -43,7 +52,7 @@
                     <a href="#">Documentation</a>
                     <a href="#">Support</a>
                 </div>
-                <span class="mono">v0.1.0</span>
+                <span class="mono">@_displayVersion</span>
             </footer>
         </PortalModuleShell>
     </Authorized>
@@ -57,6 +66,7 @@
     private string? _hostLabel;
     private string _bannerNote =
         "Data in this environment is not production data and may be reset without notice.";
+    private string _displayVersion = "—";
 
     protected override void OnInitialized()
     {
@@ -72,5 +82,7 @@
         {
             _bannerNote = "Local or private-network environment. Data may be reset without notice.";
         }
+
+        _displayVersion = BuildVersionAccessor.Get().DisplayVersion;
     }
 }

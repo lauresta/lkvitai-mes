@@ -27,6 +27,15 @@
        Fonts' CSS body changes too often to pin a stable SRI hash. Same fix
        Frontline.WebUI/Pages/_Layout.cshtml ships. *@
     <link href="css/fonts.css" rel="stylesheet" asp-append-version="true" />
+    @* portal-tokens.css MUST load BEFORE portal-shell.css. portal-shell.css
+       is the shared topbar/chrome and reads --dark / --dark-2 / --dark-line /
+       --n-* / --accent-*. Until #92 Portal redefined a SUBSET of these tokens
+       in styles.css (notably WITHOUT --dark-2 + --dark-line), so the shared
+       topbar lost all visible borders + the env-badge first-cell tone in
+       Portal but rendered correctly in Sales/Frontline. Loading the tokens
+       from BuildingBlocks.WebUI guarantees every consumer of portal-shell.css
+       gets the values portal-shell.css was designed against. *@
+    <link href="_content/LKvitai.MES.BuildingBlocks.WebUI/css/portal-tokens.css" rel="stylesheet" asp-append-version="true" />
     <link href="_content/LKvitai.MES.BuildingBlocks.WebUI/css/portal-shell.css" rel="stylesheet" asp-append-version="true" />
     <link href="styles.css" rel="stylesheet" asp-append-version="true" />
     <link rel="icon" href="data:," />

@@ -149,12 +149,17 @@
     [Parameter] public string? PortalHomeUrl { get; set; }
 
     /// <summary>
-    /// Placeholder copy for the universal-search button. Module shells used
-    /// to override this (e.g. Frontline passes "Find fabric…") to hint at
-    /// module context, but the placeholder itself does not perform any
-    /// module-specific filtering — that lives inside the module page.
+    /// Placeholder copy for the universal-search button. Outlook 365-style
+    /// "search everything" entry point — never module-scoped, because the
+    /// placeholder itself does not perform any filtering and module-scoped
+    /// search lives inside the module page (e.g. Sales has its own "Search
+    /// orders" input). Modules SHOULD NOT override this — keeping the copy
+    /// identical across Portal/Sales/Frontline is what teaches users the
+    /// search button is a global entry point and not "Search this module".
+    /// Was "Search…" / "Find fabric, module, customer…" pre-#92 — both
+    /// drifted because each module set its own value.
     /// </summary>
-    [Parameter] public string SearchPlaceholder { get; set; } = "Search…";
+    [Parameter] public string SearchPlaceholder { get; set; } = "Search everything…";
 
     [Parameter] public string SearchLabel { get; set; } = "Open universal search";
 
