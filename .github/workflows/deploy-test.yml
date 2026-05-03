@@ -221,8 +221,44 @@ jobs:
               exit 1
             '
 
+      # Defensive cleanup against half-finished `docker compose recreate`s.
+      #
+      # When `docker rm` of an old container fails mid-way through `up -d`
+      # (we have hit overlayfs `unlinkat ... directory not empty` twice on
+      # the test host), Docker leaves the OLD container alive but renamed
+      # to `<12-hex>_<original-name>` so the canonical name "frees up" for
+      # the new container. The new container then fails to come up because
+      # the published port is still held by the renamed orphan, and the
+      # next health-check (`docker exec lkvitai-mes-warehouse-api ...`)
+      # targets a name that does not exist any more — silent fail.
+      #
+      # This step finds those stale renamed orphans by their hash-prefix
+      # pattern and force-removes them BEFORE we recreate the stack.
+      # Pattern is intentionally narrow: matches only `<12-hex>_lkvitai-mes-…`
+      # so canonical containers (warehouse-api / portal-webui / db-test /
+      # redis / etc.) are never touched. Idempotent — when there is no
+      # orphan the command is a no-op.
+      - name: Remove docker compose recreate orphans
+        run: |
+          set -euo pipefail
+          orphans=$(docker ps -a --format '{{.Names}}' \
+            | grep -E '^[0-9a-f]{12}_lkvitai-mes-' || true)
+          if [ -n "$orphans" ]; then
+            echo "::warning::Found docker compose recreate orphans, removing:"
+            echo "$orphans"
+            echo "$orphans" | xargs -r docker rm -f
+          else
+            echo "No docker compose recreate orphans found."
+          fi
+
       - name: Deploy containers
-        run: IMAGE_TAG=${{ env.IMAGE_TAG }} docker compose -f docker-compose.test.yml up -d
+        # `--remove-orphans` clears any service that disappeared from the
+        # compose file (belt-and-braces against the chore/deploy-test-orphan-cleanup
+        # case above). Note: this does NOT clean up the renamed orphans
+        # the previous step targets — `--remove-orphans` only removes
+        # services unknown to the current compose, while renamed orphans
+        # share the project label and look "known" to compose.
+        run: IMAGE_TAG=${{ env.IMAGE_TAG }} docker compose -f docker-compose.test.yml up -d --remove-orphans
 
       - name: Wait for API health
         run: |
