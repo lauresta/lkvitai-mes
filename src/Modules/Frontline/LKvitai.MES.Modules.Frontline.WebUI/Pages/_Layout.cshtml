@@ -19,7 +19,13 @@
        Fonts' CSS body changes too often to pin a stable SRI hash. Self-hosted
        avoids the CDN dependency entirely. *@
     <link href="css/fonts.css" rel="stylesheet" asp-append-version="true" />
-    <link href="css/tokens.css" rel="stylesheet" asp-append-version="true" />
+    @* portal-tokens.css MUST load BEFORE portal-shell.css. See the long-form
+       rationale in Portal/Pages/_Layout.cshtml; this file owns --dark /
+       --dark-2 / --dark-line / --n-* / --accent-* and replaces the per-module
+       copy that used to live in Frontline/wwwroot/css/tokens.css. Module-local
+       overrides (fabric.css component classes) still load AFTER portal-shell
+       and may consume any token defined here. *@
+    <link href="_content/LKvitai.MES.BuildingBlocks.WebUI/css/portal-tokens.css" rel="stylesheet" asp-append-version="true" />
     <link href="_content/LKvitai.MES.BuildingBlocks.WebUI/css/portal-shell.css" rel="stylesheet" asp-append-version="true" />
     <link href="css/fabric.css" rel="stylesheet" asp-append-version="true" />
     <link rel="icon" href="data:," />

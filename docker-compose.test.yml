@@ -191,7 +191,21 @@ services:
       ASPNETCORE_ENVIRONMENT: Test
       FrontlineApi__BaseUrl: "http://lkvitai-mes-frontline-api:8080"
       PathBase: "/frontline"
+      # #92 — Frontline.WebUI registers AddPortalCookieAuthentication so the
+      # shared dark Portal topbar's user-block surfaces the real signed-in
+      # admin name instead of the "Signed in" / "U" fallback. The cookie is
+      # written by Portal.WebUI; for Frontline to decrypt it we have to:
+      #   1. Pin the same DataProtection key ring (PortalAuth__DataProtectionKeysPath
+      #      → /app/auth-keys, bind-mounted from $AUTH_KEYS_DIR on the host).
+      #   2. Tell PortalAuth to redirect 401s back through the Portal login
+      #      flow (PortalAuth__LoginBasePath="/portal"). Frontline doesn't
+      #      enforce auth on any route, so this only fires if a future page
+      #      adds [Authorize] — but wiring it now keeps Frontline aligned
+      #      with Sales/Portal in case F-2.4 lands an authenticated route.
+      PortalAuth__LoginBasePath: "/portal"
+      PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
     volumes:
+      - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys
       - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
     networks:
       - lkvitai-mes_default

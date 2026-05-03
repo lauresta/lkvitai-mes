@@ -1,38 +1,69 @@
 @inherits LayoutComponentBase
 @inject IWebHostEnvironment Env
+@inject IHttpContextAccessor HttpContextAccessor
+@inject IBuildVersionAccessor BuildVersionAccessor
 
 <MudThemeProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
 
-@* F-0 design shell: Frontline currently has NO Portal cookie auth wired
-   (deliberate per scaffold — see Frontline.Api/Program.cs). To still get
-   the shared dark Portal topbar (brand mark, env-badge, user-block), we
-   wrap the page in PortalModuleShell directly without an AuthorizeView.
-   PortalModuleShell.User is nullable; passing null falls back to the
-   generic "Signed in" / "U" placeholder which is acceptable here.
+@* #92 — Frontline now decodes the shared Portal cookie at the host level
+   (see Program.cs AddPortalCookieAuthentication) so the user-block can
+   show the real signed-in admin name instead of "Signed in" / "U".
+   AuthorizeView's NotAuthorized branch deliberately renders the shell
+   with User=null rather than redirecting — anonymous fabric lookup is
+   the whole point of the sales-floor handsets, so a Frontline visitor
+   without a Portal cookie still gets the page (the user-block falls back
+   to "Signed in" / "U" which signals "no SSO context" without breaking
+   the layout).
 
-   F-2.4 will add Portal cookie auth (mirroring Sales.Api / Sales.WebUI),
-   at which point this layout flips to the Sales pattern:
-
-       <AuthorizeView>
-           <Authorized Context="auth">
-               <PortalModuleShell User="@auth.User" ... />
-           </Authorized>
-           <NotAuthorized><RedirectToLogin /></NotAuthorized>
-       </AuthorizeView>
-
-   See plan: .cursor/plans/sales_&_fabric_migration_plan_aa705a91.plan.md F-2.4 *@
-<PortalModuleShell EnvironmentName="@_environmentName"
-                   SearchPlaceholder="Find fabric, module, customer…">
-    @Body
-</PortalModuleShell>
+   Parameter set MUST stay in lock-step with Portal/Sales MainLayout — that
+   is half the point of #92. No SearchPlaceholder override (the shell's
+   "Search everything…" default unifies the entry point); EnvironmentName +
+   HostLabel + BannerNote + Version mirror the Portal/Sales contract. *@
+<AuthorizeView>
+    <Authorized Context="auth">
+        <PortalModuleShell EnvironmentName="@_environmentName"
+                           HostLabel="@_hostLabel"
+                           BannerNote="@_bannerNote"
+                           User="@auth.User"
+                           Version="@_displayVersion">
+            @Body
+        </PortalModuleShell>
+    </Authorized>
+    <NotAuthorized>
+        <PortalModuleShell EnvironmentName="@_environmentName"
+                           HostLabel="@_hostLabel"
+                           BannerNote="@_bannerNote"
+                           User="@null"
+                           Version="@_displayVersion">
+            @Body
+        </PortalModuleShell>
+    </NotAuthorized>
+</AuthorizeView>
 
 @code {
     private string _environmentName = "Development";
+    private string? _hostLabel;
+    private string _bannerNote =
+        "Data in this environment is not production data and may be reset without notice.";
+    private string _displayVersion = "—";
 
     protected override void OnInitialized()
     {
         _environmentName = Env.EnvironmentName ?? "Development";
+
+        var ctx = HttpContextAccessor.HttpContext;
+        if (ctx is not null && ctx.Request.Host.HasValue)
+        {
+            _hostLabel = ctx.Request.Host.Host;
+        }
+
+        if (Env.IsDevelopment())
+        {
+            _bannerNote = "Local or private-network environment. Data may be reset without notice.";
+        }
+
+        _displayVersion = BuildVersionAccessor.Get().DisplayVersion;
     }
 }

@@ -1,0 +1,96 @@
+/*
+ * portal-tokens.css — single source of truth for the LKvitai.MES design tokens.
+ *
+ * Why this file exists:
+ *   Before #92 each module shipped its own copy of the token block in its
+ *   wwwroot CSS. Drift was inevitable — Portal.WebUI ended up using oklch()
+ *   for --n-* / --accent-* and *did not define* --dark-2 / --dark-line at all,
+ *   so portal-shell.css (the shared topbar) lost all visible borders + the
+ *   env-badge first-cell tone in Portal but not in Sales/Frontline. Hosting
+ *   the tokens in BuildingBlocks.WebUI guarantees every consumer of
+ *   portal-shell.css gets the values portal-shell.css was designed against,
+ *   and renaming/adding a token is one diff instead of N.
+ *
+ * Load order in module _Layout.cshtml:
+ *   1. portal-tokens.css   (this file — defines --*)
+ *   2. portal-shell.css    (uses --*)
+ *   3. module-local CSS    (component overrides; SHOULD NOT redefine tokens)
+ *
+ * Source: docs/ux/lkvitai-mes-ux-handoff.html (the approved Portal/Sales/
+ * Frontline visual baseline). Hex values match the handoff verbatim — do not
+ * substitute oklch() unless the handoff is updated alongside this file.
+ *
+ * Adding a token:
+ *   1. Add it to the handoff first.
+ *   2. Add it here under the right family block.
+ *   3. Reference it from portal-shell.css or a module's component CSS.
+ *   4. Never inline a colour in portal-shell.css.
+ */
+
+:root {
+  /* Neutrals — cool graphite */
+  --n-0: #fff;
+  --n-25: #fbfcfd;
+  --n-50: #f5f6f8;
+  --n-100: #eef1f4;
+  --n-150: #e2e7ec;
+  --n-200: #d5dce4;
+  --n-300: #b9c3ce;
+  --n-400: #8996a4;
+  --n-500: #66717f;
+  --n-600: #4e5966;
+  --n-700: #323b45;
+  --n-800: #1f2632;
+  --n-900: #151922;
+
+  /* Teal — primary accent */
+  --accent-50: #eaf8f7;
+  --accent-100: #d1eeec;
+  --accent-300: #7cc4c1;
+  --accent-400: #56aaa7;
+  --accent-500: #2f8f8b;
+  --accent-600: #257773;
+  --accent-700: #1d5d5a;
+
+  /* Sand — warn/operational only (notes, low-stock highlights, scaffold accents).
+     NEVER promote to a primary brand colour — that's --accent-*. */
+  --sand-25: #faf6ee;
+  --sand-50: #f7f1e5;
+  --sand-100: #ede2c8;
+  --sand-150: #e4dbc5;
+  --sand-300: #daceb7;
+  --sand-500: #c79f63;
+  --sand-600: #b08a4a;
+  --sand-700: #7c5f2a;
+
+  /* Functional chip families — fg/bg/bd plus *-dot variants used by status
+     blocks, meters-bars, and KPI dots across Sales + Frontline. The dot
+     variant is the ONLY value that sits on a coloured background, so it
+     skews slightly more saturated than --*-fg by design. */
+  --ok-fg: #19744a;     --ok-bg: #e6f4ec;     --ok-bd: #bfe0cd;     --ok-dot: #1f9d61;
+  --warn-fg: #7c5f2a;   --warn-bg: #f7eed5;   --warn-bd: #e2cf9a;   --warn-dot: #b08a4a;
+  --info-fg: #1d5d5a;   --info-bg: #e3f2f1;   --info-bd: #b4dad7;   --info-dot: #2f8f8b;
+  --slate-fg: #3a4554;  --slate-bg: #eaeef3;  --slate-bd: #cdd5de;  --slate-dot: #66717f;
+  --danger-fg: #8a1f12; --danger-bg: #fbe7e3; --danger-bd: #f0c2b8; --danger-dot: #c0392b;
+  --done-fg: #2a4a3a;   --done-bg: #e3eee7;   --done-bd: #bdd2c4;   --done-dot: #4a7a5d;
+
+  /* Dark topbar surfaces — read by portal-shell.css.
+     --dark      = topbar background.
+     --dark-2    = brand-mark background, env-badge first-cell tone, search
+                   input fallback. WITHOUT this Portal goes "flat black".
+     --dark-line = every internal divider/border in the topbar. WITHOUT this
+                   the topbar loses all visible structure. */
+  --dark: #20242c;
+  --dark-2: #171b22;
+  --dark-line: #3a404c;
+
+  /* Typography */
+  --font-ui: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+
+  /* Radii */
+  --r-xs: 3px;
+  --r-sm: 4px;
+  --r-md: 6px;
+  --r-lg: 8px;
+}

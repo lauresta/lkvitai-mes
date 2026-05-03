@@ -16,7 +16,13 @@
        Cloudflare and the browser cache the CSS by hash instead of by name —
        a redeploy of the same URL with new content reaches the user instantly,
        not in 4 hours when max-age expires. *@
-    <link href="css/tokens.css" rel="stylesheet" asp-append-version="true" />
+    @* portal-tokens.css MUST load BEFORE portal-shell.css. See the long-form
+       rationale in Portal/Pages/_Layout.cshtml; in short, this file owns
+       --dark / --dark-2 / --dark-line / --n-* / --accent-* and replaces the
+       per-module copy that used to live in Sales/wwwroot/css/tokens.css.
+       Module-local overrides (e.g. orders.css component classes) still load
+       AFTER portal-shell.css and may consume any token defined here. *@
+    <link href="_content/LKvitai.MES.BuildingBlocks.WebUI/css/portal-tokens.css" rel="stylesheet" asp-append-version="true" />
     <link href="_content/LKvitai.MES.BuildingBlocks.WebUI/css/portal-shell.css" rel="stylesheet" asp-append-version="true" />
     <link href="css/orders.css" rel="stylesheet" asp-append-version="true" />
     <link rel="icon" href="data:," />

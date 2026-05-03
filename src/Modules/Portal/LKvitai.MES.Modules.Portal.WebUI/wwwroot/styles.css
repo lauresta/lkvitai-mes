@@ -2,20 +2,24 @@
  * Portal stylesheet — dashboard + login only.
  *
  * The shared topbar / test-strip / brand / universal-search /
- * env-badge / user-block / popover styles previously duplicated
- * here now live ONLY in
+ * env-badge / user-block / popover styles live ONLY in
  *   _content/LKvitai.MES.BuildingBlocks.WebUI/css/portal-shell.css
- * (loaded before this file by Pages/_Layout.cshtml). Keeping the
- * shell chrome in one file means a future tweak to brand/header
- * spacing in BuildingBlocks.WebUI propagates to every consumer
- * (Portal home + Sales + Frontline) without manual mirroring —
- * which was the bug the user spotted: Portal header drifting from
- * Sales/Frontline because two copies of the same selectors lived
- * in two different files.
+ * (loaded before this file by Pages/_Layout.cshtml).
+ *
+ * The :root design tokens (--n-*, --accent-*, --dark*, --font-*)
+ * now live ONLY in
+ *   _content/LKvitai.MES.BuildingBlocks.WebUI/css/portal-tokens.css
+ * (also loaded before this file by Pages/_Layout.cshtml). Until #92
+ * Portal redefined those tokens locally with oklch() values AND was
+ * MISSING --dark-2 + --dark-line entirely, which made the shared
+ * topbar lose all visible structure in Portal but render correctly
+ * in Sales/Frontline. Keeping tokens in BuildingBlocks.WebUI
+ * guarantees every consumer of portal-shell.css sees the values
+ * portal-shell.css was designed against.
  *
  * What stays here:
- *   1. CSS variables (consumed by both portal-shell.css cascade
- *      and the Portal dashboard sections below).
+ *   1. Portal-only token aliases that the dashboard consumes but the
+ *      shell does not (--success / --success-bg / --warning).
  *   2. Reset + body typography.
  *   3. .login-* — the static Portal login.html is independent of
  *      the Razor shell and still needs its own styling.
@@ -28,30 +32,14 @@
  */
 
 :root {
-  --n-0: oklch(100% 0 0);
-  --n-25: oklch(98.8% 0.003 240);
-  --n-50: oklch(97.5% 0.004 240);
-  --n-100: oklch(95.5% 0.006 240);
-  --n-150: oklch(92.5% 0.008 240);
-  --n-200: oklch(89% 0.01 240);
-  --n-300: oklch(80% 0.012 240);
-  --n-400: oklch(65% 0.012 240);
-  --n-500: oklch(52% 0.012 240);
-  --n-600: oklch(42% 0.012 240);
-  --n-700: oklch(32% 0.012 240);
-  --n-900: oklch(15% 0.016 240);
-  --accent-50: oklch(96% 0.018 195);
-  --accent-100: oklch(92% 0.035 195);
-  --accent-400: oklch(62% 0.075 195);
-  --accent-500: oklch(54% 0.082 195);
-  --accent-600: oklch(46% 0.08 195);
-  --accent-700: oklch(38% 0.072 195);
-  --success: oklch(42% 0.14 155);
-  --success-bg: oklch(94% 0.04 155);
-  --warning: oklch(50% 0.12 65);
-  --dark: oklch(18% 0.02 240);
-  --font-ui: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", "SF Mono", Consolas, monospace;
+  /* Portal-dashboard semantic aliases. --success / --warning are NOT
+     in portal-tokens.css because the shared topbar doesn't use them —
+     they're only consumed by the dashboard's status pills + roadmap
+     chips. If a second module starts using these, promote them to
+     portal-tokens.css and remove the local copy. */
+  --success: #1f9d61;
+  --success-bg: #e6f4ec;
+  --warning: #b08a4a;
 }
 
 * {

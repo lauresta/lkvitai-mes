@@ -1,5 +1,7 @@
 @inherits LayoutComponentBase
 @inject IWebHostEnvironment Env
+@inject IHttpContextAccessor HttpContextAccessor
+@inject IBuildVersionAccessor BuildVersionAccessor
 
 <MudThemeProvider />
 <MudDialogProvider />
@@ -14,11 +16,23 @@
    from the cookie/circuit context, so the Authorizing branch never renders
    and would just be dead code. The hydration-time flash is fixed structurally
    by <persist-component-state /> in _Layout.cshtml + PersistentComponentState
-   in Index.razor / OrderDetail.razor. *@
+   in Index.razor / OrderDetail.razor.
+
+   Parameter set MUST stay in lock-step with Portal/Frontline MainLayout —
+   that's half the point of #92's "shared header" guarantee:
+     * No SearchPlaceholder override — the shell defaults to the unified
+       "Search everything…" copy.
+     * EnvironmentName + HostLabel + BannerNote populate the test-strip
+       identically to Portal.
+     * Version flows in via IBuildVersionAccessor (APP_VERSION env from the
+       Sales-WebUI Dockerfile, set by build-and-push.yml). *@
 <AuthorizeView>
     <Authorized Context="auth">
         <PortalModuleShell EnvironmentName="@_environmentName"
-                           User="@auth.User">
+                           HostLabel="@_hostLabel"
+                           BannerNote="@_bannerNote"
+                           User="@auth.User"
+                           Version="@_displayVersion">
             @Body
         </PortalModuleShell>
     </Authorized>
@@ -29,10 +43,32 @@
 
 @code {
     private string _environmentName = "Development";
+    private string? _hostLabel;
+    private string _bannerNote =
+        "Data in this environment is not production data and may be reset without notice.";
+    private string _displayVersion = "—";
 
     protected override void OnInitialized()
     {
-        var name = Env.EnvironmentName ?? "Development";
-        _environmentName = name;
+        _environmentName = Env.EnvironmentName ?? "Development";
+
+        // Same Request.Host capture pattern Portal MainLayout uses — runs
+        // ONCE during the prerender pass while HttpContext is still valid,
+        // so the test-strip host label is stable across re-renders. After
+        // the SignalR circuit attaches HttpContextAccessor.HttpContext goes
+        // null and the shell would fall back to NavigationManager.Uri,
+        // which is fine but we prefer the request host verbatim.
+        var ctx = HttpContextAccessor.HttpContext;
+        if (ctx is not null && ctx.Request.Host.HasValue)
+        {
+            _hostLabel = ctx.Request.Host.Host;
+        }
+
+        if (Env.IsDevelopment())
+        {
+            _bannerNote = "Local or private-network environment. Data may be reset without notice.";
+        }
+
+        _displayVersion = BuildVersionAccessor.Get().DisplayVersion;
     }
 }
