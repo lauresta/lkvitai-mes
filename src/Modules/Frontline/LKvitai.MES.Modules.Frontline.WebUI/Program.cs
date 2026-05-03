@@ -14,6 +14,12 @@ builder.Services.AddScaffoldWebUiCore("FrontlineApi", "FrontlineApi:BaseUrl", "h
 // here and FrontlineApiClient itself will not need to change.
 builder.Services.AddScoped<FrontlineApiClient>();
 
+// Server-rendered QR code generator for the FabricLookup "Open on phone"
+// sidebar (and, ahead of #96, the wall-printable per-fabric QR). Singleton
+// because QRCoder's QRCodeGenerator wraps a thread-safe internal cache
+// and a fresh instance per circuit would just thrash the GC for no win.
+builder.Services.AddSingleton<FabricLookupQrCodeBuilder>();
+
 var app = builder.Build();
 
 app.UseScaffoldWebUiPipeline();

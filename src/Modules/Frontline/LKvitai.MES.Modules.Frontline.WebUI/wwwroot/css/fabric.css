@@ -422,21 +422,24 @@ button, input, select { font: inherit; }
   padding: 16px;
   text-align: center;
 }
-.qr-placeholder {
-  width: 120px; height: 120px;
-  background:
-    linear-gradient(45deg, var(--n-200) 25%, transparent 25%),
-    linear-gradient(-45deg, var(--n-200) 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, var(--n-200) 75%),
-    linear-gradient(-45deg, transparent 75%, var(--n-200) 75%);
-  background-size: 12px 12px;
-  background-position: 0 0, 0 6px, 6px -6px, -6px 0;
-  border: 2px solid var(--n-300);
-  border-radius: var(--r-sm);
-}
 .qr-block__caption {
-  color: var(--n-500); font-size: 11.5px; max-width: 200px; margin: 0;
+  color: var(--n-500); font-size: 11.5px; max-width: 220px; margin: 0;
+  word-break: break-all;
 }
+/* Live QR (server-rendered SVG via QRCoder). Box the SVG so its native
+   pixel size doesn't bleed past the sidebar, and force the inner <svg>
+   to fill the box — QRCoder emits width/height attributes that we want
+   CSS to override. White inner background + 6px padding give the camera
+   a clean quiet zone even when the surrounding panel is tinted. */
+.qr-svg {
+  width: 180px; height: 180px;
+  display: grid; place-items: center;
+  padding: 6px;
+  background: #fff;
+  border: 1px solid var(--n-200);
+  border-radius: 6px;
+}
+.qr-svg svg { width: 100%; height: 100%; display: block; }
 .last-checked-list { display: flex; flex-direction: column; gap: 10px; }
 .last-checked-item {
   display: flex; flex-direction: column; gap: 2px;

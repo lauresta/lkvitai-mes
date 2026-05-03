@@ -14,6 +14,8 @@
 @page "/fabric"
 @page "/fabric/lookup"
 @inject FrontlineApiClient Api
+@inject FabricLookupQrCodeBuilder Qr
+@inject NavigationManager Nav
 
 <PageTitle>Frontline · Fabric availability</PageTitle>
 
@@ -250,11 +252,22 @@
             <section class="panel">
                 <div class="panel__head">
                     <h3>Open on phone</h3>
-                    <p>Scan to continue this lookup on the sales-floor handset.</p>
+                    <p>
+                        @if (_result is null)
+                        {
+                            <text>Scan to open this lookup on the sales-floor handset.</text>
+                        }
+                        else
+                        {
+                            <text>Scan to open <span class="mono">@_result.Code</span> on the sales-floor handset.</text>
+                        }
+                    </p>
                 </div>
                 <div class="qr-block">
-                    <div class="qr-placeholder" aria-hidden="true"></div>
-                    <p class="qr-block__caption">QR will deep-link to this fabric on the mobile lookup once F-2 ships.</p>
+                    <div class="qr-svg" aria-label="@QrAriaLabel()">
+                        @((MarkupString)Qr.BuildSvg(BuildPhoneDeepLink()))
+                    </div>
+                    <p class="qr-block__caption mono">@FormatDeepLinkForCaption(BuildPhoneDeepLink())</p>
                 </div>
             </section>
 
@@ -442,6 +455,53 @@
             _ => "alt-img--red",
         };
     }
+
+    /// <summary>
+    /// Builds the absolute URL the sidebar QR points at. With no result on
+    /// screen it returns the bare lookup page; once the operator has loaded
+    /// a fabric we deep-link to that code (and the selected width, if one
+    /// has been picked) so scanning the QR on a phone lands on the same
+    /// fabric the desktop user is looking at.
+    /// </summary>
+    /// <remarks>
+    /// We always emit an absolute URL: a phone camera scanner needs the
+    /// scheme + host to open the link in a browser. <see cref="NavigationManager.BaseUri"/>
+    /// already includes the trailing slash + the WebUI's base path
+    /// (e.g. <c>https://mes-test.lauresta.com/frontline/</c>) so we just
+    /// append the relative route + query.
+    /// </remarks>
+    private string BuildPhoneDeepLink()
+    {
+        var basePath = "fabric"; // canonical mobile lookup route
+        if (_result is null || string.IsNullOrWhiteSpace(_result.Code))
+        {
+            return new Uri(new Uri(Nav.BaseUri), basePath).AbsoluteUri;
+        }
+
+        var code = Uri.EscapeDataString(_result.Code);
+        var query = $"?code={code}";
+        if (_selectedWidth > 0)
+        {
+            query += $"&width={_selectedWidth}";
+        }
+        return new Uri(new Uri(Nav.BaseUri), $"{basePath}{query}").AbsoluteUri;
+    }
+
+    /// <summary>
+    /// Compact one-line caption shown under the QR: scheme + host + path
+    /// only. Operators don't need the query string in plain text — the QR
+    /// itself carries that — and the truncation keeps the sidebar tight on
+    /// the laptop screens that live behind the cutting tables.
+    /// </summary>
+    private static string FormatDeepLinkForCaption(string url)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var u)) return url;
+        return $"{u.Host}{u.AbsolutePath}";
+    }
+
+    private string QrAriaLabel() => _result is null
+        ? "QR code linking to the Frontline fabric lookup page"
+        : $"QR code linking to fabric {_result.Code} on the Frontline mobile lookup";
 
     private RenderFragment StatusIcon(FabricAvailabilityStatus s) => @<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         @if (s == FabricAvailabilityStatus.Enough)
