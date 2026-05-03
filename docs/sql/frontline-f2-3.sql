@@ -63,7 +63,13 @@ BEGIN
 
     IF @Page     IS NULL OR @Page     < 1   SET @Page     = 1;
     IF @PageSize IS NULL OR @PageSize < 1   SET @PageSize = 50;
-    IF @PageSize > 500                      SET @PageSize = 500;
+    -- Cap at 1000 so a single fetch can carry the whole low-stock view
+    -- (prod catalogue is ~757 fabrics; threshold=25 returns ~560 rows).
+    -- WebUI defaults to PageSize=1000 so every low-stock row is visible
+    -- without paginating through partial pages — until #100 ships
+    -- proper MudDataGrid windowed paging, this keeps KPI tiles accurate
+    -- and removes the confusing "Showing 1–200 of 557" footer.
+    IF @PageSize > 1000                     SET @PageSize = 1000;
     IF @ThresholdMeters IS NULL OR @ThresholdMeters < 0 SET @ThresholdMeters = 25;
     IF @LowThreshold    IS NULL OR @LowThreshold    < 0 SET @LowThreshold    = 10;
 

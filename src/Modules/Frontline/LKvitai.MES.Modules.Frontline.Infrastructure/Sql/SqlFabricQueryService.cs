@@ -52,8 +52,11 @@ public sealed class SqlFabricQueryService : IFabricQueryService
     private const string PlaceholderPhotoUrl    = "/img/fabric_pl.png";
 
     /// <summary>Soft cap on per-page rows; mirrors the SP's own clamp so
-    /// the wire never sees a request the SP would silently shrink.</summary>
-    private const int MaxPageSize = 500;
+    /// the wire never sees a request the SP would silently shrink. The SP
+    /// caps at 1000 because the prod catalogue is ~757 fabrics, so the
+    /// WebUI low-stock view can fetch the entire filtered result set in a
+    /// single round-trip until #100 wires real MudDataGrid windowed paging.</summary>
+    private const int MaxPageSize = 1000;
 
     /// <summary>Deduplication-friendly empty list, returned for fabrics
     /// whose <c>fa_Alternatives</c> column is NULL or whitespace.</summary>
