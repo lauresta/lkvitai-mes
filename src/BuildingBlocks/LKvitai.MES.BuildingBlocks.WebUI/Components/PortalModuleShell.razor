@@ -1,5 +1,38 @@
 @namespace LKvitai.MES.BuildingBlocks.WebUI.Components
 @inject NavigationManager Navigation
+@inject IConfiguration Configuration
+
+@*
+   PortalModuleShell — shared dark Portal topbar + test-strip wrapper used by
+   every WebUI in the solution (Portal home, Sales, Frontline, future modules).
+   Owning this in BuildingBlocks.WebUI keeps brand, environment chrome, search
+   entry point and the user/logout block in lock-step across modules; module
+   pages should only ever render their own content via @ChildContent.
+
+   Issue #92 — Portal 1: Shared Header And Auth-Aware Shell:
+     * Brand block is a single <a> linking to the Portal home URL so users
+       can return from any module. URL resolution priority:
+         1. PortalHomeUrl parameter (lets a host pin a specific value)
+         2. Configuration["PortalWebUi:BaseUrl"] (the canonical knob — same
+            key consumers already use to build cross-module redirects)
+         3. "/" — safe local fallback (works in dev, in tests, and inside the
+            Portal WebUI itself where the home IS this app's root).
+     * Universal search is a PLACEHOLDER button styled to look like a search
+       input. Clicking opens a small "coming soon" popover instead of doing
+       module-only filtering, matching the Outlook 365-style universal-search
+       intent in the Portal dashboard plan.
+     * User name / initials come from ClaimsPrincipal with a layered fallback
+       chain (display_name claim → GivenName+Surname → ClaimTypes.Name →
+       Identity.Name → "Signed in" / "U"). No more hardcoded "Lukas" / "RM".
+     * Environment / Version are explicit slots ready to be fed by runtime
+       data from the Portal status endpoint (Issue #93). Default Version is
+       "—" so an unset value never silently shows a wrong number.
+
+   Authentic-migration seam: the user-block + logout form below is the only
+   place that talks to the current cookie-auth flow. Replacing it with an
+   Authentic-driven token + redirect is a localised change — see the
+   "AUTHENTIC SEAM" markers below.
+*@
 
 <div class="app-shell">
     <div class="test-strip">
@@ -12,24 +45,48 @@
     </div>
 
     <header class="topbar">
-        <div class="brand">
+        @* Brand block: single clickable link back to Portal home. Logo,
+           name and tagline all live INSIDE the same <a> per the design
+           rule (one anchor, one click target). *@
+        <a class="brand brand--link"
+           href="@ResolvedHomeUrl"
+           aria-label="@BrandAriaLabel">
             <div class="brand__mark">LK</div>
             <div>
                 <div class="brand__name">LKvitai<span>.MES</span></div>
                 <div class="brand__tagline mono">Manufacturing &middot; Execution &middot; Standards</div>
             </div>
-        </div>
+        </a>
+
         <div class="topbar__separator" aria-hidden="true"></div>
-        <label class="portal-search">
+
+        @* Universal-search placeholder. Rendered as a button so it cannot
+           accidentally pretend to be a real input — clicking opens a small
+           "coming soon" popover anchored to the topbar. Real cross-module
+           search lands in a future issue. *@
+        <button class="portal-search portal-search--placeholder"
+                type="button"
+                aria-haspopup="dialog"
+                aria-expanded="@_searchOpen.ToString().ToLowerInvariant()"
+                @onclick="ToggleSearchPlaceholder">
             <span class="portal-search__icon" aria-hidden="true"></span>
-            <span class="sr-only">@SearchLabel</span>
-            <input type="search" placeholder="@SearchPlaceholder" autocomplete="off" />
-        </label>
+            <span class="portal-search__placeholder">@SearchPlaceholder</span>
+            <span class="portal-search__hint mono" aria-hidden="true">⌘K</span>
+        </button>
+
         <div class="topbar__spacer"></div>
+
         <div class="env-badge" aria-label="Environment and version">
             <div><span class="mono">ENV</span><strong class="mono">@EnvironmentBadge</strong></div>
             <div><span class="mono">VER</span><strong class="mono">@Version</strong></div>
         </div>
+
+        @* AUTHENTIC SEAM: user-block + logout form.
+           Replace the form below with an Authentic logout endpoint when the
+           module migrates off cookie auth. The DisplayName/Initials helpers
+           keep working as long as the new auth scheme still surfaces a
+           ClaimsPrincipal — only the markup wrapping the logout submit needs
+           to change. *@
         <div class="user-block">
             <div class="user-block__avatar">@Initials</div>
             <div>
@@ -41,19 +98,78 @@
         </div>
     </header>
 
+    @* Universal-search "coming soon" popover. Plain inline panel rather than
+       a full <dialog> — keeps the shell SSR-safe (no JS interop) and small
+       enough that consumers don't need to opt in to extra script. *@
+    @if (_searchOpen)
+    {
+        <div class="universal-search-popover" role="dialog" aria-label="Universal search">
+            <div class="universal-search-popover__head">
+                <strong>Universal search</strong>
+                <button type="button"
+                        class="link-button universal-search-popover__close"
+                        @onclick="CloseSearchPlaceholder"
+                        aria-label="Dismiss">×</button>
+            </div>
+            <p class="universal-search-popover__body">
+                Search across orders, fabrics, modules and more — coming soon.
+                For now use module-level filters inside each section.
+            </p>
+        </div>
+    }
+
     @ChildContent
 </div>
 
 @code {
     [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>
+    /// Authenticated principal whose claims drive <see cref="DisplayName"/>
+    /// and <see cref="Initials"/>. Pass <c>null</c> from anonymous shells —
+    /// the safe "Signed in" / "U" fallback fires.
+    /// </summary>
     [Parameter] public ClaimsPrincipal? User { get; set; }
+
     [Parameter] public string EnvironmentName { get; set; } = "Development";
     [Parameter] public string? HostLabel { get; set; }
-    [Parameter] public string Version { get; set; } = "0.1.0";
-    [Parameter] public string SearchPlaceholder { get; set; } = "Find a module...";
-    [Parameter] public string SearchLabel { get; set; } = "Find a module";
+
+    /// <summary>
+    /// Build/release version shown in the env-badge. Issue #93 wires this
+    /// to the Portal status endpoint (APP_VERSION / RELEASE_TAG); until then
+    /// the default em-dash makes "value not set" obviously not-a-version.
+    /// </summary>
+    [Parameter] public string Version { get; set; } = "—";
+
+    /// <summary>
+    /// Optional override for the Portal home URL the brand block links to.
+    /// When unset, the shell falls back to <c>Configuration["PortalWebUi:BaseUrl"]</c>
+    /// then to <c>"/"</c>.
+    /// </summary>
+    [Parameter] public string? PortalHomeUrl { get; set; }
+
+    /// <summary>
+    /// Placeholder copy for the universal-search button. Module shells used
+    /// to override this (e.g. Frontline passes "Find fabric…") to hint at
+    /// module context, but the placeholder itself does not perform any
+    /// module-specific filtering — that lives inside the module page.
+    /// </summary>
+    [Parameter] public string SearchPlaceholder { get; set; } = "Search…";
+
+    [Parameter] public string SearchLabel { get; set; } = "Open universal search";
+
+    /// <summary>
+    /// POST target for logout. Defaults to the relative <c>auth/logout</c>
+    /// endpoint that <c>Portal.WebUI/Program.cs</c> + every module's auth
+    /// pipeline already maps. AUTHENTIC SEAM: switch to the Authentic-issued
+    /// endpoint here (or wrap the form in a host-provided fragment).
+    /// </summary>
     [Parameter] public string LogoutAction { get; set; } = "auth/logout";
-    [Parameter] public string BannerNote { get; set; } = "Data in this environment is not production data and may be reset without notice.";
+
+    [Parameter] public string BannerNote { get; set; } =
+        "Data in this environment is not production data and may be reset without notice.";
+
+    private bool _searchOpen;
 
     private string EnvironmentLabel => (EnvironmentName ?? "Development").ToUpperInvariant();
 
@@ -70,21 +186,85 @@
         }
     }
 
-    private string DisplayName => User?.FindFirstValue(ClaimTypes.Name)
-                                  ?? User?.Identity?.Name
-                                  ?? "Signed in";
+    /// <summary>
+    /// Layered fallback chain for the user's display name. First match wins:
+    ///   1. <c>display_name</c> claim (preferred — lets identity providers
+    ///      surface a properly-cased "Lukas Mažeika" instead of a username).
+    ///   2. <c>GivenName + Surname</c> assembled from standard claims.
+    ///   3. <see cref="ClaimTypes.Name"/>.
+    ///   4. <c>IIdentity.Name</c> (covers older test fixtures).
+    ///   5. The literal "Signed in" — only when no auth context exists at all.
+    /// </summary>
+    private string DisplayName
+    {
+        get
+        {
+            if (User is null) return "Signed in";
 
+            var displayClaim = User.FindFirstValue("display_name");
+            if (!string.IsNullOrWhiteSpace(displayClaim)) return displayClaim;
+
+            var given   = User.FindFirstValue(ClaimTypes.GivenName);
+            var surname = User.FindFirstValue(ClaimTypes.Surname);
+            if (!string.IsNullOrWhiteSpace(given) || !string.IsNullOrWhiteSpace(surname))
+            {
+                return $"{given} {surname}".Trim();
+            }
+
+            return User.FindFirstValue(ClaimTypes.Name)
+                ?? User.Identity?.Name
+                ?? "Signed in";
+        }
+    }
+
+    /// <summary>
+    /// Two-letter avatar text. Same fallback priority as
+    /// <see cref="DisplayName"/>: an explicit <c>initials</c> claim wins
+    /// outright; otherwise we slice the resolved display name.
+    /// </summary>
     private string Initials
     {
         get
         {
-            var parts = DisplayName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            var explicitInitials = User?.FindFirstValue("initials");
+            if (!string.IsNullOrWhiteSpace(explicitInitials))
+            {
+                return explicitInitials.ToUpperInvariant();
+            }
+
+            var name = DisplayName;
+            if (string.Equals(name, "Signed in", StringComparison.Ordinal))
+            {
+                return "U";
+            }
+
+            var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
             var raw = parts.Length >= 2
                 ? $"{parts[0][0]}{parts[1][0]}"
                 : parts.Length == 1 ? parts[0][0].ToString() : "U";
             return raw.ToUpperInvariant();
         }
     }
+
+    private string ResolvedHomeUrl
+    {
+        get
+        {
+            if (!string.IsNullOrWhiteSpace(PortalHomeUrl)) return PortalHomeUrl;
+
+            var configured = Configuration["PortalWebUi:BaseUrl"];
+            if (!string.IsNullOrWhiteSpace(configured)) return configured;
+
+            // Safe local fallback. Inside the Portal WebUI itself this is
+            // always correct; inside module shells it just no-ops to the
+            // module's own root, which is better than dead-linking.
+            return "/";
+        }
+    }
+
+    private string BrandAriaLabel => string.Equals(ResolvedHomeUrl, "/", StringComparison.Ordinal)
+        ? "Portal home"
+        : "Open Portal home";
 
     private string ResolveNavigationHost()
     {
@@ -95,4 +275,7 @@
 
         return "localhost";
     }
+
+    private void ToggleSearchPlaceholder() => _searchOpen = !_searchOpen;
+    private void CloseSearchPlaceholder() => _searchOpen = false;
 }

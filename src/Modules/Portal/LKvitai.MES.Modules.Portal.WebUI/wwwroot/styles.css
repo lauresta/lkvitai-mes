@@ -236,6 +236,26 @@ input {
   min-width: 0;
 }
 
+/* Brand block as a single anchor back to Portal home (issue #92).
+   Mirrors PortalModuleShell — strips the link chrome and lights up the
+   mark on hover/focus. */
+.brand--link {
+  color: inherit;
+  text-decoration: none;
+  border-radius: 6px;
+  outline: none;
+  transition: background-color .15s ease-in-out;
+}
+.brand--link:hover .brand__mark,
+.brand--link:focus-visible .brand__mark {
+  border-color: var(--accent-400);
+  color: oklch(72% 0.12 175);
+}
+.brand--link:focus-visible {
+  outline: 2px solid var(--accent-400);
+  outline-offset: 2px;
+}
+
 .brand__mark {
   display: grid;
   place-items: center;
@@ -281,29 +301,54 @@ input {
   flex: 1;
 }
 
-.search {
+/* Universal-search placeholder button. Mirrors the styling of
+   PortalModuleShell.razor's .portal-search--placeholder so any future
+   migration of Portal home to the Razor shell stays visually identical.
+   The .search class is kept available below for any third-party page that
+   still embeds the old input markup. */
+.portal-search {
   position: relative;
   flex: 1 1 360px;
   max-width: 460px;
 }
 
-.search input {
+.portal-search--placeholder {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   width: 100%;
   padding: 8px 10px 8px 34px;
   border: 1px solid oklch(28% 0.02 240);
   border-radius: 4px;
   outline: none;
   background: oklch(14% 0.02 240);
-  color: var(--n-0);
+  color: oklch(60% 0.02 240);
   font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .12s ease-in-out, color .12s ease-in-out;
+}
+.portal-search--placeholder:hover {
+  border-color: oklch(36% 0.02 240);
+  color: oklch(78% 0.02 240);
+}
+.portal-search--placeholder:focus-visible {
+  border-color: var(--accent-500);
+  color: var(--n-0);
 }
 
-.search input:focus {
-  border-color: var(--accent-500);
+.portal-search__placeholder { flex: 1; min-width: 0; }
+.portal-search__hint {
+  font-size: 10px;
+  letter-spacing: .5px;
+  padding: 1px 6px;
+  border: 1px solid oklch(28% 0.02 240);
+  border-radius: 3px;
+  color: oklch(60% 0.02 240);
   background: oklch(12% 0.02 240);
 }
 
-.search__icon {
+.portal-search__icon {
   position: absolute;
   left: 12px;
   top: 50%;
@@ -312,9 +357,10 @@ input {
   border: 1.8px solid oklch(55% 0.02 240);
   border-radius: 50%;
   transform: translateY(-58%);
+  pointer-events: none;
 }
 
-.search__icon::after {
+.portal-search__icon::after {
   content: "";
   position: absolute;
   right: -5px;
@@ -324,6 +370,77 @@ input {
   background: oklch(55% 0.02 240);
   transform: rotate(45deg);
   transform-origin: left center;
+}
+
+/* Module-section local filter — moved out of the topbar (issue #92). */
+.module-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 0 1 240px;
+  max-width: 280px;
+}
+.module-search input {
+  width: 100%;
+  padding: 7px 10px 7px 30px;
+  border: 1px solid var(--n-200);
+  border-radius: 4px;
+  outline: none;
+  background: var(--n-0);
+  color: var(--n-900);
+  font-size: 12.5px;
+}
+.module-search input:focus {
+  border-color: var(--accent-500);
+  box-shadow: 0 0 0 3px oklch(76% 0.05 175 / 18%);
+}
+.module-search__icon {
+  position: absolute;
+  left: 10px;
+  width: 12px;
+  height: 12px;
+  border: 1.6px solid var(--n-500);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.module-search__icon::after {
+  content: "";
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  width: 5px;
+  height: 1.6px;
+  background: var(--n-500);
+  transform: rotate(45deg);
+  transform-origin: left center;
+}
+
+/* Universal-search "coming soon" popover — anchored under the topbar.
+   Hidden via the [hidden] attribute toggled by script.js. */
+.universal-search-popover {
+  position: relative;
+  margin: -1px 28px 0 28px;
+  padding: 12px 14px;
+  background: var(--n-0);
+  border: 1px solid var(--n-200);
+  border-top: 0;
+  border-radius: 0 0 6px 6px;
+  box-shadow: 0 8px 24px oklch(0% 0 0 / 8%);
+  font-size: 12.5px;
+  color: var(--n-700);
+}
+.universal-search-popover__head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 4px;
+  color: var(--n-900);
+}
+.universal-search-popover__body { margin: 0; }
+.universal-search-popover__close {
+  font-size: 16px; line-height: 1; color: var(--n-500);
+}
+.universal-search-popover__close:hover,
+.universal-search-popover__close:focus-visible {
+  color: var(--n-900); text-decoration: none;
 }
 
 .env-badge {
