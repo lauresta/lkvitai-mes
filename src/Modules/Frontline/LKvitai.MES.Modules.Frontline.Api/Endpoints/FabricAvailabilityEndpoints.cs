@@ -135,10 +135,26 @@ public static class FabricAvailabilityEndpoints
         int?    Page,
         int?    PageSize)
     {
+        // PageSize semantics: missing or non-positive → server default (50);
+        // anything above the SP cap is clamped DOWN to the cap rather than
+        // silently reset to 50 (the previous behaviour, which made the
+        // WebUI's pageSize=1000 request collapse to 50 rows and made the
+        // toolbar filters look broken because the first 50 Code-ASC rows
+        // rarely change between threshold values).
+        // Cap is kept in sync with SqlFabricQueryService.MaxPageSize and
+        // dbo.mes_Fabric_GetLowStockList's @PageSize clamp (both 1000).
+        private const int MaxPageSize = 1000;
+
         public FabricLowStockQueryParams ToQueryParams()
         {
             var page = Page is null or < 1 ? 1 : Page.Value;
-            var size = PageSize is null or < 1 or > 500 ? 50 : PageSize.Value;
+            var size = PageSize switch
+            {
+                null               => 50,
+                < 1                => 50,
+                > MaxPageSize      => MaxPageSize,
+                _                  => PageSize.Value,
+            };
             return new FabricLowStockQueryParams
             {
                 Search          = Search,

@@ -184,7 +184,11 @@ public sealed class FrontlineApiClient
         {
             parts.Add($"page={query.Page}");
         }
-        if (query.PageSize is > 0 and not 50)
+        // Always forward pageSize when explicitly set on the client query —
+        // omitting it lets the server fall back to its own default (50),
+        // which silently throws away the WebUI's "show me everything"
+        // intent. The API endpoint clamps to its own MaxPageSize cap.
+        if (query.PageSize > 0)
         {
             parts.Add($"pageSize={query.PageSize}");
         }

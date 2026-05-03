@@ -528,6 +528,44 @@ button, input, select { font: inherit; }
 .threshold-field .toolbar__label { color: var(--accent-700); }
 .threshold-field select { color: var(--accent-700); font-weight: 600; }
 
+/* ── Loading affordance ────────────────────────────────────────
+   Mirrors the Sales orders-list loading bar (orders.css §list-loading-bar)
+   so the Frontline low-stock screen feels identical when filters reload.
+   The bar sits between the toolbar and the table; the table body fades to
+   60% opacity and ignores pointer events while a refresh is in flight. */
+.fa-loading-bar { position: relative; height: 2px; overflow: hidden;
+  background: transparent; transition: background .12s ease-in-out; }
+.fa-loading-bar.is-active { background: var(--accent-50); }
+.fa-loading-bar.is-active::before {
+  content: "";
+  position: absolute; left: 0; top: 0; bottom: 0; width: 35%;
+  background: linear-gradient(90deg, transparent 0%,
+    var(--accent-500) 30%, var(--accent-500) 70%, transparent 100%);
+  animation: fa-loading-slide 1.05s ease-in-out infinite;
+}
+@keyframes fa-loading-slide {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(286%); }
+}
+.fa-table-wrap.is-refreshing tbody { opacity: .6; pointer-events: none;
+  transition: opacity .12s ease-in-out; }
+
+/* First-load skeleton rows — gentle pulse so an operator opening the
+   page on a cold deploy sees structured placeholder content instead of
+   a blank panel + a loading bar. The placeholder bar inside each cell
+   varies in width so it doesn't read as a uniform striped pattern. */
+.fa-skel { display: inline-block; height: 10px; border-radius: 3px;
+  background: var(--n-100); animation: fa-skel-pulse 1.4s ease-in-out infinite; }
+.fa-skel--w20  { width:  20px; } .fa-skel--w40  { width:  40px; }
+.fa-skel--w60  { width:  60px; } .fa-skel--w80  { width:  80px; }
+.fa-skel--w120 { width: 120px; } .fa-skel--w160 { width: 160px; }
+.fa-skel--thumb { width: 36px; height: 28px; border-radius: 4px;
+  vertical-align: middle; }
+@keyframes fa-skel-pulse {
+  0%, 100% { opacity: .55; }
+  50%      { opacity: .9; }
+}
+
 /* ── Low-stock table (also used inside fabric.css; lk-table is local copy
       to keep Frontline.WebUI self-contained until shared assembly extraction) */
 .fa-table-wrap { overflow-x: auto; }

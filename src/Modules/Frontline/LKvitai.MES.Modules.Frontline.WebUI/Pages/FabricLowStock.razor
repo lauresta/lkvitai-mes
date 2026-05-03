@@ -43,9 +43,18 @@
                 <p>Server-side filter and sort over <span class="mono">dbo.mes_Fabric_GetLowStockList</span>; full grid paging arrives with #100.</p>
             </div>
             <span class="mono" style="color:var(--n-500); font-size:11.5px">
-                @(_apiError
-                    ? "Frontline API unreachable"
-                    : $"{_rows.Count} of {_totalRows} rows · /api/frontline/fabric/low-stock")
+                @if (_apiError)
+                {
+                    <text>Frontline API unreachable</text>
+                }
+                else if (!_initialised)
+                {
+                    <text>Loading… · /api/frontline/fabric/low-stock</text>
+                }
+                else
+                {
+                    @($"{_rows.Count} of {_totalRows} rows · /api/frontline/fabric/low-stock")
+                }
             </span>
         </div>
 
@@ -109,12 +118,18 @@
 
             <div style="flex:1"></div>
 
-            <button class="btn-xs" type="button" title="Refresh data" @onclick="ReloadAsync" disabled="@_busy">
-                @(_busy ? "…" : "↻ Refresh")
+            <button class="btn-xs" type="button" title="Refresh data" @onclick="ReloadAsync" disabled="@_isRefreshing">
+                @(_isRefreshing ? "…" : "↻ Refresh")
             </button>
         </div>
 
-        <div class="fa-table-wrap">
+        @* Non-blocking loading affordance. Stays invisible for fast (cache-hit)
+           reloads — only paints if the API takes longer than LoadingShowAfterMs.
+           Toolbar above stays interactive; table body below dims to 60% via the
+           is-refreshing modifier on .fa-table-wrap. Same UX as Sales orders. *@
+        <div class="fa-loading-bar @(_isRefreshing ? "is-active" : "")" aria-hidden="true"></div>
+
+        <div class="fa-table-wrap @(_isRefreshing ? "is-refreshing" : "")">
             <table class="lk-table">
                 <thead>
                     <tr>
@@ -132,6 +147,29 @@
                     </tr>
                 </thead>
                 <tbody>
+                    @* First-load skeleton: render placeholder rows until the
+                       very first response lands. Without it the operator sees
+                       an empty <tbody> + a 2px loading bar, which reads as
+                       "no data" rather than "loading" on a slow cold start. *@
+                    @if (!_initialised && !_apiError)
+                    {
+                        @for (var i = 0; i < SkeletonRowCount; i++)
+                        {
+                            <tr class="fa-skel-row" aria-hidden="true">
+                                <td><span class="fa-skel fa-skel--thumb"></span></td>
+                                <td><span class="fa-skel fa-skel--w60"></span></td>
+                                <td><span class="fa-skel fa-skel--w160"></span></td>
+                                <td><span class="fa-skel fa-skel--w40"></span></td>
+                                <td><span class="fa-skel fa-skel--w120"></span></td>
+                                <td><span class="fa-skel fa-skel--w60"></span></td>
+                                <td><span class="fa-skel fa-skel--w80"></span></td>
+                                <td><span class="fa-skel fa-skel--w40"></span></td>
+                                <td><span class="fa-skel fa-skel--w120"></span></td>
+                                <td><span class="fa-skel fa-skel--w60"></span></td>
+                                <td><span class="fa-skel fa-skel--w60"></span></td>
+                            </tr>
+                        }
+                    }
                     @foreach (var r in _rows)
                     {
                         <tr>
@@ -211,7 +249,11 @@
 
         <div class="fa-table-foot">
             <span>
-                @if (_rows.Count == 0)
+                @if (!_initialised)
+                {
+                    <text>Loading…</text>
+                }
+                else if (_rows.Count == 0)
                 {
                     <text>No fabrics match the current filters.</text>
                 }
@@ -275,7 +317,26 @@
 
     private List<FabricLowStockDto> _rows = new();
     private int _totalRows;
-    private bool _busy;
+
+    // Loading-bar UX (mirrors Sales orders Index.razor):
+    //   * `_isRefreshing` is the *visible* state — it is only flipped on
+    //     after LoadingShowAfterMs so a fast (cache-hit) reload never
+    //     paints a bar at all.
+    //   * Once shown, the bar stays on screen for at least
+    //     LoadingMinVisibleMs total so it does not flash on/off in a
+    //     single frame on borderline-slow responses.
+    //   * The Refresh button and pagination buttons share `_isRefreshing`
+    //     so they only disable when the bar is actually visible —
+    //     instant reloads keep the toolbar fully responsive.
+    private bool _isRefreshing;
+    private const int LoadingShowAfterMs  = 150;
+    private const int LoadingMinVisibleMs = 350;
+
+    // Number of placeholder rows rendered before the first response lands.
+    // 8 fills a typical 1080p viewport without dwarfing the panel — enough
+    // structure to read as "loading" rather than "no data".
+    private const int SkeletonRowCount = 8;
+
     private bool _apiError;
     private bool _initialised;
 
@@ -323,13 +384,14 @@
         _reloadCts = new CancellationTokenSource();
         var ct = _reloadCts.Token;
 
-        _busy = true;
         _apiError = false;
-        StateHasChanged();
+        // NOTE: do NOT flip _isRefreshing here. We schedule it after
+        // LoadingShowAfterMs so a fast (cache-hit) response never paints
+        // a loading bar at all — filter changes feel instant.
 
         try
         {
-            var page = await Api.GetLowStockAsync(BuildQuery(), ct).ConfigureAwait(true);
+            var page = await FetchWithDeferredLoadingBarAsync(ct).ConfigureAwait(true);
 
             if (ct.IsCancellationRequested) return;
 
@@ -355,10 +417,55 @@
         }
         finally
         {
-            // Only clear busy if this is still the current reload —
-            // otherwise the newer reload will manage the flag itself.
-            if (!ct.IsCancellationRequested) _busy = false;
+            // Only clear the visible refresh state if this is still the
+            // current reload — otherwise the newer reload will manage it.
+            if (!ct.IsCancellationRequested)
+            {
+                _isRefreshing = false;
+                StateHasChanged();
+            }
         }
+    }
+
+    /// <summary>
+    /// Races the low-stock API call against a "show loading bar" delay so a
+    /// fast (cache-hit) response never paints a loading affordance, while a
+    /// slow one still gets a stable bar that stays visible for at least
+    /// <see cref="LoadingMinVisibleMs"/>. Mirrors the Sales orders helper of
+    /// the same shape — keep both in sync if the UX lever ever moves.
+    /// </summary>
+    private async Task<PagedResult<FabricLowStockDto>?> FetchWithDeferredLoadingBarAsync(CancellationToken ct)
+    {
+        var totalSw  = System.Diagnostics.Stopwatch.StartNew();
+        var apiTask  = Api.GetLowStockAsync(BuildQuery(), ct);
+        var showTask = Task.Delay(LoadingShowAfterMs, ct);
+
+        long? barShownAtMs = null;
+        if (await Task.WhenAny(apiTask, showTask).ConfigureAwait(true) == showTask
+            && !showTask.IsCanceled)
+        {
+            _isRefreshing = true;
+            barShownAtMs  = totalSw.ElapsedMilliseconds;
+            StateHasChanged();
+        }
+
+        var result = await apiTask.ConfigureAwait(true);
+
+        if (barShownAtMs is { } shownAt)
+        {
+            // Once the bar is up, keep it visible long enough to register —
+            // otherwise it flashes off the moment the API completes, which
+            // feels glitchy. Cancellation here just means we were superseded;
+            // the caller handles the stale-response case.
+            var remaining = LoadingMinVisibleMs - (int)(totalSw.ElapsedMilliseconds - shownAt);
+            if (remaining > 0)
+            {
+                try { await Task.Delay(remaining, ct).ConfigureAwait(true); }
+                catch (OperationCanceledException) { /* superseded; fall through */ }
+            }
+        }
+
+        return result;
     }
 
     private void RebuildDropdowns()
