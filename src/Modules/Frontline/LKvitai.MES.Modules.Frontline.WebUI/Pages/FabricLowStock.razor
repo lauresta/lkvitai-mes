@@ -1,11 +1,16 @@
 @* FabricLowStock — desktop low-stock list for purchasing/ops.
 
    UX baseline: docs/ux/fabric-availability-static-preview.html (.desktop-panel).
-   F-1: rows come from FrontlineApiClient.GetLowStockAsync over
-   /api/frontline/fabric/low-stock. The toolbar still drives client-side
-   filtering only (server-side filter / sort / paging arrives in F-3 with
-   MudDataGrid ServerData and a real low-stock proc derived from the legacy
-   web_RemainsAll view).
+   F-2.3 / F-2.4: rows come from FrontlineApiClient.GetLowStockAsync over
+   /api/frontline/fabric/low-stock, which executes
+   dbo.mes_Fabric_GetLowStockList against the legacy LKvitaiDb. The toolbar
+   pushes search / threshold / status / width / supplier filters into the
+   FabricLowStockQueryParams payload so the SP does the heavy lifting and
+   the client only renders the returned page. KPI tiles aggregate across
+   the rows currently loaded; a server-side aggregate proc + windowed grid
+   are tracked in #100 and #101 — when the result set grows past one page
+   this view still works, but the metrics will need that follow-up to stay
+   accurate at scale.
 
    Columns (per fabric-availability-codex-rules.md §5):
      Photo · Code · Name · Width · Available (+progress) · Status · ETA
@@ -35,12 +40,12 @@
         <div class="fa-panel__head">
             <div>
                 <h2 id="ls-title">Low-stock materials</h2>
-                <p>Server-side filter, sort and paging once F-3 lands. F-1 uses the stub data source.</p>
+                <p>Server-side filter and sort over <span class="mono">dbo.mes_Fabric_GetLowStockList</span>; full grid paging arrives with #100.</p>
             </div>
             <span class="mono" style="color:var(--n-500); font-size:11.5px">
                 @(_apiError
                     ? "Frontline API unreachable"
-                    : $"F-1 · {_rows.Count} rows from /api/frontline/fabric/low-stock")
+                    : $"{_rows.Count} of {_totalRows} rows · /api/frontline/fabric/low-stock")
             </span>
         </div>
 
@@ -76,7 +81,8 @@
                 <input type="search"
                        value="@_search"
                        placeholder="Search code, name, supplier…"
-                       @oninput="@(e => _search = e.Value?.ToString() ?? "")" />
+                       @oninput="@OnSearchInput"
+                       @onkeyup="@OnSearchKeyUp" />
                 <span class="kbd">/</span>
             </label>
 
@@ -84,22 +90,22 @@
                       ExtraClass="threshold-field"
                       Value="@_threshold"
                       Options="@ThresholdOptions"
-                      ValueChanged="@(v => _threshold = v)" />
+                      ValueChanged="@OnThresholdChanged" />
 
             <LkSelect Label="Status"
                       Value="@_statusFilter"
                       Options="@StatusOptions"
-                      ValueChanged="@(v => _statusFilter = v)" />
+                      ValueChanged="@OnStatusChanged" />
 
             <LkSelect Label="Width"
                       Value="@_widthFilter"
-                      Options="@WidthOptions"
-                      ValueChanged="@(v => _widthFilter = v)" />
+                      Options="@_widthOptions"
+                      ValueChanged="@OnWidthChanged" />
 
             <LkSelect Label="Supplier"
                       Value="@_supplierFilter"
-                      Options="@SupplierOptions"
-                      ValueChanged="@(v => _supplierFilter = v)" />
+                      Options="@_supplierOptions"
+                      ValueChanged="@OnSupplierChanged" />
 
             <div style="flex:1"></div>
 
@@ -132,7 +138,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var r in FilteredRows())
+                    @foreach (var r in _rows)
                     {
                         <tr>
                             <td><span class="row-thumb @ThumbClass(r.Code)"></span></td>
@@ -197,7 +203,7 @@
                             </td>
                         </tr>
                     }
-                    else if (_initialised && !FilteredRows().Any())
+                    else if (_initialised && _rows.Count == 0)
                     {
                         <tr>
                             <td colspan="11" style="text-align:center; color:var(--n-500); padding:24px 12px">
@@ -210,14 +216,24 @@
         </div>
 
         <div class="fa-table-foot">
-            <span>Showing <strong>1–@FilteredRows().Count()</strong> of <strong>@_rows.Count</strong> rows</span>
-            <span class="mono" style="opacity:.7">F-1 stub · server paging arrives in F-3</span>
+            <span>Showing <strong>@(_rows.Count == 0 ? 0 : 1)–@_rows.Count</strong> of <strong>@_totalRows</strong> rows</span>
+            <span class="mono" style="opacity:.7">Server-side filter via dbo.mes_Fabric_GetLowStockList</span>
         </div>
     </section>
 
 </main>
 
 @code {
+    // Default page size for the desktop grid. Mirrors the SP's clamp (500)
+    // far enough to avoid a refetch when the operator scrolls past 100 rows
+    // without having to ship the full 800-row catalogue every time.
+    private const int DefaultPageSize = 200;
+
+    // KPI tiles aggregate across the rows currently on screen — accurate
+    // because the toolbar pushes the same filters into the SP, so the
+    // returned page IS the filtered universe up to DefaultPageSize. When
+    // the result set genuinely exceeds DefaultPageSize the metrics will
+    // undercount; #100 introduces server-side aggregates to fix that.
     private static readonly IReadOnlyList<SelectOption> ThresholdOptions =
     [
         new("",    "Any (all)"),
@@ -235,33 +251,36 @@
         new("disc", "Discontinued"),
     ];
 
-    private static readonly IReadOnlyList<SelectOption> WidthOptions =
-    [
-        new("",     "All widths"),
-        new("1600", "1600 mm"),
-        new("1800", "1800 mm"),
-        new("2000", "2000 mm"),
-        new("2500", "2500 mm"),
-    ];
-
-    private static readonly IReadOnlyList<SelectOption> SupplierOptions =
-    [
-        new("",       "All suppliers"),
-        new("Decora", "Decora"),
-        new("Vali",   "Vali"),
-        new("Marla",  "Marla"),
-    ];
+    // Width and supplier dropdowns are derived from the loaded rows so the
+    // operator only ever sees values that exist in the data — the legacy
+    // SQL Server has long-tail width / supplier values we don't want to
+    // hard-code. The rebuild runs on every reload; an empty list always
+    // includes the "All …" sentinel so the dropdown stays usable.
+    private IReadOnlyList<SelectOption> _widthOptions    = new[] { new SelectOption("", "All widths") };
+    private IReadOnlyList<SelectOption> _supplierOptions = new[] { new SelectOption("", "All suppliers") };
 
     private string _search          = "";
-    private string _threshold       = "";
+    private string _threshold       = "25";   // matches the SP default; "" = Any (all)
     private string _statusFilter    = "";
     private string _widthFilter     = "";
     private string _supplierFilter  = "";
 
     private List<FabricLowStockDto> _rows = new();
+    private int _totalRows;
     private bool _busy;
     private bool _apiError;
     private bool _initialised;
+
+    // Coalesces overlapping reloads when the operator types fast in the
+    // search box. The latest filter snapshot always wins; the previous
+    // request's CancellationToken is cancelled so its result never
+    // overwrites a newer one.
+    private CancellationTokenSource? _reloadCts;
+
+    // Free-text search debounce. 250 ms feels responsive without spamming
+    // the SP on every keystroke.
+    private CancellationTokenSource? _searchDebounceCts;
+    private const int SearchDebounceMs = 250;
 
     private int _metricBelow;
     private int _metricOut;
@@ -275,44 +294,109 @@
         await ReloadAsync().ConfigureAwait(true);
     }
 
+    private FabricLowStockQueryParams BuildQuery() => new()
+    {
+        Page             = 1,
+        PageSize         = DefaultPageSize,
+        Search           = string.IsNullOrWhiteSpace(_search) ? null : _search.Trim(),
+        ThresholdMeters  = int.TryParse(_threshold, out var t) ? t : (int?)null,
+        Status           = string.IsNullOrWhiteSpace(_statusFilter) ? null : _statusFilter,
+        WidthMm          = int.TryParse(_widthFilter, out var w) ? w : (int?)null,
+        Supplier         = string.IsNullOrWhiteSpace(_supplierFilter) ? null : _supplierFilter,
+    };
+
     private async Task ReloadAsync()
     {
+        // Cancel any in-flight request — keystroke storms shouldn't pile
+        // up requests that all eventually overwrite the UI in arrival
+        // order rather than relevance order.
+        _reloadCts?.Cancel();
+        _reloadCts?.Dispose();
+        _reloadCts = new CancellationTokenSource();
+        var ct = _reloadCts.Token;
+
         _busy = true;
         _apiError = false;
         StateHasChanged();
 
         try
         {
-            // F-1: fetch a single page of every row (stub returns ≤ 6 today).
-            // F-3 will switch to MudDataGrid ServerData and push these
-            // filters into FabricLowStockQueryParams instead of filtering in-memory.
-            var page = await Api
-                .GetLowStockAsync(new FabricLowStockQueryParams { Page = 1, PageSize = 200 }, CancellationToken.None)
-                .ConfigureAwait(true);
+            var page = await Api.GetLowStockAsync(BuildQuery(), ct).ConfigureAwait(true);
+
+            if (ct.IsCancellationRequested) return;
 
             if (page is null)
             {
                 _apiError = true;
                 _rows = new();
+                _totalRows = 0;
             }
             else
             {
                 _rows = page.Items.ToList();
+                _totalRows = page.Total;
+                RebuildDropdowns();
                 RecomputeMetrics();
             }
 
             _initialised = true;
         }
+        catch (OperationCanceledException)
+        {
+            // Superseded by a newer reload; nothing to do.
+        }
         finally
         {
-            _busy = false;
+            // Only clear busy if this is still the current reload —
+            // otherwise the newer reload will manage the flag itself.
+            if (!ct.IsCancellationRequested) _busy = false;
+        }
+    }
+
+    private void RebuildDropdowns()
+    {
+        // Widths: distinct, sorted ascending. The "All widths" sentinel is
+        // always first so the operator can clear the filter without typing.
+        var widths = new List<SelectOption> { new("", "All widths") };
+        widths.AddRange(_rows
+            .Select(r => r.WidthMm)
+            .Where(w => w > 0)
+            .Distinct()
+            .OrderBy(w => w)
+            .Select(w => new SelectOption(w.ToString(), $"{w} mm")));
+        _widthOptions = widths;
+
+        // Suppliers: distinct (case-insensitive), sorted alphabetically.
+        var suppliers = new List<SelectOption> { new("", "All suppliers") };
+        suppliers.AddRange(_rows
+            .Select(r => r.Supplier)
+            .Where(s => !string.IsNullOrWhiteSpace(s))
+            .Select(s => s!.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(s => s, StringComparer.OrdinalIgnoreCase)
+            .Select(s => new SelectOption(s, s)));
+        _supplierOptions = suppliers;
+
+        // If the operator's current filter value vanished from the data
+        // (e.g. supplier filter set to "Bamar Pol" but the threshold
+        // change dropped them), clear it silently — keeping a stale value
+        // would result in an empty grid the operator can't explain.
+        if (!string.IsNullOrEmpty(_widthFilter) &&
+            !_widthOptions.Any(o => o.Value == _widthFilter))
+        {
+            _widthFilter = "";
+        }
+        if (!string.IsNullOrEmpty(_supplierFilter) &&
+            !_supplierOptions.Any(o => string.Equals(o.Value, _supplierFilter, StringComparison.OrdinalIgnoreCase)))
+        {
+            _supplierFilter = "";
         }
     }
 
     private void RecomputeMetrics()
     {
         var weekFromNow = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(7));
-        _metricBelow = _rows.Count;
+        _metricBelow = _totalRows;
         _metricOut = _rows.Count(r => r.Status == FabricAvailabilityStatus.None);
         _metricOutNoEta = _rows.Count(r => r.Status == FabricAvailabilityStatus.None && r.ExpectedDate is null);
         _metricExpected = _rows.Count(r => r.ExpectedDate is { } d && d <= weekFromNow);
@@ -320,51 +404,66 @@
         _metricDisc = _rows.Count(r => r.Status == FabricAvailabilityStatus.Discontinued);
     }
 
-    private IEnumerable<FabricLowStockDto> FilteredRows()
+    private void OnSearchInput(ChangeEventArgs e)
     {
-        IEnumerable<FabricLowStockDto> q = _rows;
+        _search = e.Value?.ToString() ?? "";
+        DebouncedReload();
+    }
 
-        if (!string.IsNullOrWhiteSpace(_search))
+    private async Task OnSearchKeyUp(KeyboardEventArgs e)
+    {
+        // Enter triggers an immediate fetch — operator is signalling intent.
+        if (string.Equals(e.Key, "Enter", StringComparison.OrdinalIgnoreCase))
         {
-            var needle = _search.Trim();
-            q = q.Where(r =>
-                r.Code.Contains(needle, StringComparison.OrdinalIgnoreCase) ||
-                r.Name.Contains(needle, StringComparison.OrdinalIgnoreCase) ||
-                (r.Supplier?.Contains(needle, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                r.AlternativeCodes.Any(a => a.Contains(needle, StringComparison.OrdinalIgnoreCase)));
+            _searchDebounceCts?.Cancel();
+            await ReloadAsync().ConfigureAwait(true);
         }
+    }
 
-        q = _statusFilter switch
-        {
-            "low"  => q.Where(r => r.Status == FabricAvailabilityStatus.Low),
-            "out"  => q.Where(r => r.Status == FabricAvailabilityStatus.None),
-            "disc" => q.Where(r => r.Status == FabricAvailabilityStatus.Discontinued),
-            _      => q,
-        };
+    private void DebouncedReload()
+    {
+        _searchDebounceCts?.Cancel();
+        _searchDebounceCts?.Dispose();
+        _searchDebounceCts = new CancellationTokenSource();
+        var ct = _searchDebounceCts.Token;
 
-        if (_threshold == "0")
+        // Fire-and-forget: the await happens inside Task.Run so the input
+        // handler returns immediately and Blazor batches the StateHasChanged
+        // for the new search value.
+        _ = Task.Run(async () =>
         {
-            q = q.Where(r => r.Status == FabricAvailabilityStatus.None);
-        }
-        else if (int.TryParse(_threshold, out var t))
-        {
-            q = q.Where(r =>
-                r.AvailableMeters <= t ||
-                r.Status is FabricAvailabilityStatus.Discontinued or FabricAvailabilityStatus.None);
-        }
+            try
+            {
+                await Task.Delay(SearchDebounceMs, ct).ConfigureAwait(false);
+                if (ct.IsCancellationRequested) return;
+                await InvokeAsync(ReloadAsync).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) { /* superseded */ }
+        });
+    }
 
-        if (!string.IsNullOrEmpty(_widthFilter) && int.TryParse(_widthFilter, out var w))
-        {
-            q = q.Where(r => r.WidthMm == w);
-        }
+    private Task OnThresholdChanged(string v)
+    {
+        _threshold = v;
+        return ReloadAsync();
+    }
 
-        if (!string.IsNullOrEmpty(_supplierFilter))
-        {
-            q = q.Where(r =>
-                string.Equals(r.Supplier, _supplierFilter, StringComparison.OrdinalIgnoreCase));
-        }
+    private Task OnStatusChanged(string v)
+    {
+        _statusFilter = v;
+        return ReloadAsync();
+    }
 
-        return q;
+    private Task OnWidthChanged(string v)
+    {
+        _widthFilter = v;
+        return ReloadAsync();
+    }
+
+    private Task OnSupplierChanged(string v)
+    {
+        _supplierFilter = v;
+        return ReloadAsync();
     }
 
     private static int MetersBarPct(FabricLowStockDto r)
