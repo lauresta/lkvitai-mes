@@ -38,6 +38,11 @@ builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddPortalCookieAuthentication(builder.Environment, builder.Configuration);
 builder.Services.AddAuthorization();
+// Portal MainLayout reads Request.Host once at OnInitialized to feed
+// the test-strip host label. AddHttpContextAccessor is needed because
+// Blazor Server components are not in an HTTP request scope after the
+// circuit attaches; the accessor is only consumed during prerender.
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient("PortalApi", (sp, client) =>
 {
     var configuration = sp.GetRequiredService<IConfiguration>();
@@ -212,8 +217,15 @@ app.MapPost("/auth/login", async (
 
 app.MapPortalLogout();
 
+// Razor Pages host (_Host.cshtml) renders the Blazor Server App.
+// MapFallbackToPage is the canonical pairing for Blazor Server and
+// replaces the legacy MapFallbackToFile("index.html") that served the
+// hand-written static dashboard. The static index.html / script.js
+// were removed in this migration; styles.css stays for shared dashboard
+// styles still consumed by Pages/Home.razor.
+app.MapRazorPages();
 app.MapBlazorHub();
-app.MapFallbackToFile("index.html");
+app.MapFallbackToPage("/_Host");
 
 await app.RunAsync();
 
@@ -230,7 +242,7 @@ static bool IsAnonymousPortalPath(PathString path)
            path.StartsWithSegments("/auth/login", StringComparison.OrdinalIgnoreCase) ||
            path.StartsWithSegments("/auth/logout", StringComparison.OrdinalIgnoreCase) ||
            path.StartsWithSegments("/styles.css", StringComparison.OrdinalIgnoreCase) ||
-           path.StartsWithSegments("/script.js", StringComparison.OrdinalIgnoreCase) ||
+           path.StartsWithSegments("/_content", StringComparison.OrdinalIgnoreCase) ||
            path.StartsWithSegments("/favicon.ico", StringComparison.OrdinalIgnoreCase) ||
            path.StartsWithSegments("/_framework", StringComparison.OrdinalIgnoreCase) ||
            path.StartsWithSegments("/_blazor", StringComparison.OrdinalIgnoreCase);

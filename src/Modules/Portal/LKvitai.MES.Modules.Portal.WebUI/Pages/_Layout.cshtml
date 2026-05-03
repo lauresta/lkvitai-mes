@@ -1,0 +1,46 @@
+@using Microsoft.AspNetCore.Components.Web
+@namespace LKvitai.MES.Modules.Portal.WebUI.Pages
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+
+@*
+    Portal _Layout — Blazor Server hosting page. Mirrors Sales WebUI:
+      * <base href="~/"> so NavigationManager builds correct URLs under
+        the configured PathBase (e.g. /portal in test/prod).
+      * Same font + portal-shell + tokens stylesheets as Sales/Frontline
+        so the brand chrome stays in lock-step.
+      * <persist-component-state /> is required for any future use of
+        PersistentComponentState (no current consumers — added for parity
+        with Sales so adding state-bearing components later is one-step).
+      * No MudBlazor on Portal home — Portal is intentionally lightweight
+        and the static dashboard never used it. Keeping it out trims the
+        first-load CSS/JS budget for the Portal landing page.
+*@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="~/" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet" />
+    <link href="_content/LKvitai.MES.BuildingBlocks.WebUI/css/portal-shell.css" rel="stylesheet" asp-append-version="true" />
+    <link href="styles.css" rel="stylesheet" asp-append-version="true" />
+    <link rel="icon" href="data:," />
+    <title>LKvitai.MES &middot; Portal</title>
+    <component type="typeof(HeadOutlet)" render-mode="ServerPrerendered" />
+</head>
+<body>
+    @RenderBody()
+
+    <div id="blazor-error-ui">
+        An unhandled error has occurred.
+        <a href="" class="reload">Reload</a>
+        <a class="dismiss">🗙</a>
+    </div>
+
+    <persist-component-state />
+
+    <script src="_framework/blazor.server.js"></script>
+</body>
+</html>

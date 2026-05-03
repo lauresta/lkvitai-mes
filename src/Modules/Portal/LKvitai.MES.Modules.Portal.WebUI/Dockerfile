@@ -5,12 +5,22 @@ WORKDIR /src
 COPY src/LKvitai.MES.sln .
 COPY Directory.Build.props .
 COPY Directory.Packages.props .
+COPY global.json .
 
-COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/ BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/
+# Two-phase copy mirrors Sales/Frontline Dockerfiles:
+#   1. csproj-only copy → dotnet restore → docker layer cached when only
+#      source (not project structure) changes.
+#   2. full source copy → dotnet publish --no-restore.
+# BuildingBlocks.WebUI is needed because Pages/Home.razor + Shared/MainLayout.razor
+# render PortalModuleShell from that project (the static index.html no longer exists).
+COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/LKvitai.MES.BuildingBlocks.PortalAuth.csproj BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/
+COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.WebUI/LKvitai.MES.BuildingBlocks.WebUI.csproj BuildingBlocks/LKvitai.MES.BuildingBlocks.WebUI/
 COPY src/Modules/Portal/LKvitai.MES.Modules.Portal.WebUI/LKvitai.MES.Modules.Portal.WebUI.csproj Modules/Portal/LKvitai.MES.Modules.Portal.WebUI/
 
 RUN dotnet restore Modules/Portal/LKvitai.MES.Modules.Portal.WebUI/LKvitai.MES.Modules.Portal.WebUI.csproj
 
+COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/ BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/
+COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.WebUI/ BuildingBlocks/LKvitai.MES.BuildingBlocks.WebUI/
 COPY src/Modules/Portal/LKvitai.MES.Modules.Portal.WebUI/ Modules/Portal/LKvitai.MES.Modules.Portal.WebUI/
 
 WORKDIR /src/Modules/Portal/LKvitai.MES.Modules.Portal.WebUI

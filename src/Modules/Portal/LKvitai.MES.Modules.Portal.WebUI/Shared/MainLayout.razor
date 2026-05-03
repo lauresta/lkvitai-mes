@@ -1,0 +1,76 @@
+@inherits LayoutComponentBase
+@inject IWebHostEnvironment Env
+@inject IHttpContextAccessor HttpContextAccessor
+
+@*
+    Portal MainLayout — same contract as Sales/Frontline so the shared
+    PortalModuleShell is the single source of truth for header chrome.
+
+    AuthorizeView is the Blazor-Server-correct way to bridge the cookie
+    auth state into the shell:
+      * Authorized branch fires once per circuit, hands the live
+        ClaimsPrincipal to PortalModuleShell so DisplayName/Initials
+        come from auth claims rather than a hardcoded "Lukas".
+      * NotAuthorized branch only fires if a user reaches a Razor route
+        without the auth cookie — Program.cs already redirects anonymous
+        traffic to /login.html before Blazor takes over, so this is
+        defence in depth (and matches the Sales pattern verbatim).
+
+    HostLabel is sourced from the request once at OnInitialized so it's
+    stable across re-renders; PortalModuleShell falls back to its own
+    Navigation-derived host if we leave it null, but for Portal we want
+    the actual request host (e.g. mes-test.lauresta.com) in the test
+    strip even before the first interactive ping.
+*@
+<AuthorizeView>
+    <Authorized Context="auth">
+        <PortalModuleShell EnvironmentName="@_environmentName"
+                           HostLabel="@_hostLabel"
+                           BannerNote="@_bannerNote"
+                           User="@auth.User"
+                           PortalHomeUrl="/"
+                           SearchPlaceholder="Search…">
+            @Body
+
+            @* Footer lives inside the shell so the brand colour band wraps
+               main + footer the same way the static index.html laid them
+               out. Kept as plain markup (no @code) — release notes / docs
+               links are static for now and become dynamic with #93. *@
+            <footer class="footer">
+                <div>
+                    <span>&copy; 2026 UAB Lauresta &middot; LKvitai.MES Portal</span>
+                    <a href="#">Release notes</a>
+                    <a href="#">Documentation</a>
+                    <a href="#">Support</a>
+                </div>
+                <span class="mono">v0.1.0</span>
+            </footer>
+        </PortalModuleShell>
+    </Authorized>
+    <NotAuthorized>
+        <RedirectToLogin />
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    private string _environmentName = "Development";
+    private string? _hostLabel;
+    private string _bannerNote =
+        "Data in this environment is not production data and may be reset without notice.";
+
+    protected override void OnInitialized()
+    {
+        _environmentName = Env.EnvironmentName ?? "Development";
+
+        var ctx = HttpContextAccessor.HttpContext;
+        if (ctx is not null && ctx.Request.Host.HasValue)
+        {
+            _hostLabel = ctx.Request.Host.Host;
+        }
+
+        if (Env.IsDevelopment())
+        {
+            _bannerNote = "Local or private-network environment. Data may be reset without notice.";
+        }
+    }
+}

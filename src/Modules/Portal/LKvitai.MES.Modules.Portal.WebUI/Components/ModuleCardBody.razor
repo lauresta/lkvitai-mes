@@ -1,0 +1,43 @@
+@*
+    Inner content of a module card. Extracted so Home.razor can render
+    either an <a> (navigable modules) or a <button> (planned modules
+    that pop a toast) around the same body without duplicating the
+    icon + title + footer markup.
+
+    Footer chip mirrors the legacy script.js renderer:
+      * Active     → "Available" green chip + "Open …" CTA
+      * Scaffolded → "Scaffolded" amber chip + "Open …" CTA
+      * Planned    → "Planned · Q…" mono caption + lock glyph
+*@
+
+<div class="module-card__top">
+    <div class="module-card__icon">
+        <ModuleIcon Key="@Card.Key" />
+    </div>
+    <span class="module-card__category mono">@Card.Category</span>
+</div>
+<h3>@Card.Title</h3>
+<p>@Card.Description</p>
+<div class="module-card__footer">
+    @switch (Card.Status)
+    {
+        case ModuleStatus.Active:
+            <span class="module-card__status is-available">Available</span>
+            <span class="module-card__action">Open @Card.Title &rarr;</span>
+            break;
+        case ModuleStatus.Scaffolded:
+            <span class="module-card__status is-scaffolded">Scaffolded</span>
+            <span class="module-card__action">Open @Card.Title &rarr;</span>
+            break;
+        default:
+            <span class="module-card__status mono">Planned &middot; @Card.Quarter</span>
+            <span class="module-card__lock" aria-hidden="true">
+                <ModuleIcon Key="lock" />
+            </span>
+            break;
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public ModuleCard Card { get; set; } = default!;
+}

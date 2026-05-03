@@ -1,0 +1,38 @@
+@*
+    Inline SVG icon set ported 1:1 from the legacy script.js icons map.
+    Kept as a Razor component (instead of <img> sprites) so each icon
+    inherits currentColor from the module-card hover/scaffold/planned
+    states without an extra fetch — same trade-off the static page made.
+
+    Issue #93 wires the icon key from the API-backed module list. The
+    render contract here stays string-keyed for stability so an API
+    rename never breaks the dashboard outright (unknown keys render an
+    empty <svg/> placeholder rather than throw).
+*@
+
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+     stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    @((MarkupString)PathFor(Key))
+</svg>
+
+@code {
+    [Parameter, EditorRequired] public string Key { get; set; } = string.Empty;
+
+    private static string PathFor(string key) => key switch
+    {
+        "warehouse"    => "<path d=\"M4 7l8-4 8 4v14H4z\"/><path d=\"M9 21V11h6v10\"/><path d=\"M4 10h16\"/>",
+        "sales"        => "<path d=\"M6 4h13l-1.2 9H7.4L6 4z\"/><path d=\"M6 4 5 2H2\"/><circle cx=\"9\" cy=\"19\" r=\"1.6\"/><circle cx=\"17\" cy=\"19\" r=\"1.6\"/>",
+        "frontline"    => "<path d=\"M12 3l9 4-9 4-9-4 9-4z\"/><path d=\"M3 11l9 4 9-4\"/><path d=\"M3 15l9 4 9-4\"/>",
+        "scanning"     => "<path d=\"M4 6V4h4M20 6V4h-4M4 18v2h4M20 18v2h-4\"/><path d=\"M7 8v8M11 8v8M15 8v8M19 8v8\"/>",
+        "orders"       => "<path d=\"M6 7h15M6 12h15M6 17h15\"/><path d=\"M3.5 7h.01M3.5 12h.01M3.5 17h.01\"/>",
+        "shopfloor"    => "<path d=\"M3 21h18\"/><path d=\"M7 21V8l5-3 5 3v13\"/><path d=\"M9.5 11h5M9.5 14h5\"/>",
+        "quality"      => "<path d=\"M9 12l2 2 4-5\"/><path d=\"M12 22c5.5-2 8-6 8-12V6l-8-3-8 3v4c0 6 2.5 10 8 12z\"/>",
+        "delivery"     => "<path d=\"M3 16V7h11v9\"/><path d=\"M14 10h4l3 3v3h-7\"/><circle cx=\"7\" cy=\"18\" r=\"2\"/><circle cx=\"17\" cy=\"18\" r=\"2\"/>",
+        "installation" => "<path d=\"M14 7l3 3M7 14l3 3M13 8l-7 7\"/><path d=\"M16 5l3 3-2 2-3-3zM5 16l3 3-2 2-3-3z\"/>",
+        "reporting"    => "<path d=\"M4 19V5M4 19h16M8 16v-5M12 16V8M16 16v-3\"/>",
+        "finance"      => "<path d=\"M14 6H9a3 3 0 0 0 0 6h4a3 3 0 0 1 0 6H8\"/><path d=\"M12 4v16\"/>",
+        "audit"        => "<path d=\"M9 5h6M9 9h6M9 13h6\"/><path d=\"M7 3h10a2 2 0 0 1 2 2v16H5V5a2 2 0 0 1 2-2z\"/>",
+        "lock"         => "<rect x=\"5\" y=\"11\" width=\"14\" height=\"10\" rx=\"2\"/><path d=\"M8 11V8a4 4 0 0 1 8 0v3\"/>",
+        _              => string.Empty,
+    };
+}
