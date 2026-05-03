@@ -54,6 +54,8 @@ public static class FabricAvailabilityEndpoints
         int? lowThreshold,
         int? enoughThreshold,
         IFabricQueryService fabric,
+        IFabricLookupRecorder recorder,
+        HttpContext httpContext,
         ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
@@ -78,6 +80,14 @@ public static class FabricAvailabilityEndpoints
 
         var card = await fabric.GetMobileCardAsync(query, cancellationToken).ConfigureAwait(false);
         sw.Stop();
+
+        // Record the lookup attempt regardless of hit/miss — purchasing wants
+        // signal on every code an operator types, including unknown ones (a
+        // miss often means a customer asked for a fabric we should source).
+        // The recorder swallows infrastructural errors itself; await it so a
+        // genuinely cancelled request still tears down cleanly.
+        var checkedBy = httpContext.User?.Identity?.Name;
+        await recorder.RecordAsync(normalised, checkedBy, cancellationToken).ConfigureAwait(false);
 
         loggerFactory.CreateLogger("LKvitai.MES.Modules.Frontline.Api.Endpoints.Fabric").LogInformation(
             "[FrontlinePerf] api GET /api/frontline/fabric/{{code}} code={Code} width={Width} found={Found} elapsedMs={ElapsedMs}",
