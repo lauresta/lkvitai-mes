@@ -1,3 +1,32 @@
+/*
+ * Portal stylesheet — dashboard + login only.
+ *
+ * The shared topbar / test-strip / brand / universal-search /
+ * env-badge / user-block / popover styles previously duplicated
+ * here now live ONLY in
+ *   _content/LKvitai.MES.BuildingBlocks.WebUI/css/portal-shell.css
+ * (loaded before this file by Pages/_Layout.cshtml). Keeping the
+ * shell chrome in one file means a future tweak to brand/header
+ * spacing in BuildingBlocks.WebUI propagates to every consumer
+ * (Portal home + Sales + Frontline) without manual mirroring —
+ * which was the bug the user spotted: Portal header drifting from
+ * Sales/Frontline because two copies of the same selectors lived
+ * in two different files.
+ *
+ * What stays here:
+ *   1. CSS variables (consumed by both portal-shell.css cascade
+ *      and the Portal dashboard sections below).
+ *   2. Reset + body typography.
+ *   3. .login-* — the static Portal login.html is independent of
+ *      the Razor shell and still needs its own styling.
+ *   4. .mono helper.
+ *   5. .module-search — Portal-only (Sales/Frontline don't show a
+ *      module-grid filter).
+ *   6. Dashboard sections: hero, operations, modules, news, side
+ *      panel, footer, toast.
+ *   7. Responsive layout for Portal-specific dashboard sections.
+ */
+
 :root {
   --n-0: oklch(100% 0 0);
   --n-25: oklch(98.8% 0.003 240);
@@ -51,6 +80,13 @@ button,
 input {
   font: inherit;
 }
+
+.mono {
+  font-family: var(--font-mono);
+  font-feature-settings: "zero";
+}
+
+/* ── Login (static login.html) ──────────────────────────────────── */
 
 .login-page {
   background: var(--n-50);
@@ -135,244 +171,9 @@ input {
   font-size: 13px;
 }
 
-.link-button {
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: oklch(65% 0.025 240);
-  cursor: pointer;
-  font-size: 12px;
-  text-align: left;
-}
-
-.link-button:hover,
-.link-button:focus {
-  color: var(--n-0);
-  text-decoration: underline;
-}
-
-.mono {
-  font-family: var(--font-mono);
-  font-feature-settings: "zero";
-}
-
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-.app-shell {
-  max-width: 1440px;
-  min-height: 100vh;
-  margin: 0 auto;
-  background: var(--n-50);
-  box-shadow: 0 0 40px rgb(0 0 0 / 4%);
-  overflow-x: hidden;
-}
-
-.test-strip {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 8px 28px;
-  background: repeating-linear-gradient(-45deg, oklch(85% 0.12 75), oklch(85% 0.12 75) 12px, oklch(82% 0.14 75) 12px, oklch(82% 0.14 75) 24px);
-  color: var(--n-900);
-  font-size: 12px;
-}
-
-.test-strip[hidden] {
-  display: none;
-}
-
-.test-strip--dev {
-  background: repeating-linear-gradient(-45deg, oklch(86% 0.09 150), oklch(86% 0.09 150) 12px, oklch(82% 0.11 150) 12px, oklch(82% 0.11 150) 24px);
-}
-
-.test-strip__main {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  min-width: 0;
-}
-
-.test-strip__note {
-  opacity: .82;
-}
-
-.test-strip__host {
-  font-size: 11px;
-  white-space: nowrap;
-}
-
-.icon-warning {
-  width: 14px;
-  height: 14px;
-  background: currentColor;
-  clip-path: polygon(50% 5%, 96% 90%, 4% 90%);
-}
-
-.topbar {
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  padding: 14px 28px;
-  background: var(--dark);
-  color: var(--n-0);
-  border-bottom: 1px solid oklch(26% 0.02 240);
-}
-
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-width: 0;
-}
-
-/* Brand block as a single anchor back to Portal home (issue #92).
-   Mirrors PortalModuleShell — strips the link chrome and lights up the
-   mark on hover/focus. */
-.brand--link {
-  color: inherit;
-  text-decoration: none;
-  border-radius: 6px;
-  outline: none;
-  transition: background-color .15s ease-in-out;
-}
-.brand--link:hover .brand__mark,
-.brand--link:focus-visible .brand__mark {
-  border-color: var(--accent-400);
-  color: oklch(72% 0.12 175);
-}
-.brand--link:focus-visible {
-  outline: 2px solid var(--accent-400);
-  outline-offset: 2px;
-}
-
-.brand__mark {
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  flex: 0 0 auto;
-  border: 1px solid oklch(28% 0.03 240);
-  border-radius: 6px;
-  background: oklch(12% 0.02 240);
-  color: var(--accent-400);
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.brand__name {
-  color: var(--n-0);
-  font-size: 15px;
-  font-weight: 700;
-  line-height: 1.1;
-}
-
-.brand__name span {
-  color: oklch(60% 0.02 240);
-  font-weight: 400;
-}
-
-.brand__tagline {
-  margin-top: 2px;
-  color: oklch(65% 0.025 240);
-  font-size: 10px;
-  letter-spacing: 1.4px;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-.topbar__separator {
-  width: 1px;
-  height: 28px;
-  background: oklch(28% 0.02 240);
-}
-
-.topbar__spacer {
-  flex: 1;
-}
-
-/* Universal-search placeholder button. Mirrors the styling of
-   PortalModuleShell.razor's .portal-search--placeholder so any future
-   migration of Portal home to the Razor shell stays visually identical.
-   The .search class is kept available below for any third-party page that
-   still embeds the old input markup. */
-.portal-search {
-  position: relative;
-  flex: 1 1 360px;
-  max-width: 460px;
-}
-
-.portal-search--placeholder {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  padding: 8px 10px 8px 34px;
-  border: 1px solid oklch(28% 0.02 240);
-  border-radius: 4px;
-  outline: none;
-  background: oklch(14% 0.02 240);
-  color: oklch(60% 0.02 240);
-  font-size: 13px;
-  text-align: left;
-  cursor: pointer;
-  transition: border-color .12s ease-in-out, color .12s ease-in-out;
-}
-.portal-search--placeholder:hover {
-  border-color: oklch(36% 0.02 240);
-  color: oklch(78% 0.02 240);
-}
-.portal-search--placeholder:focus-visible {
-  border-color: var(--accent-500);
-  color: var(--n-0);
-}
-
-.portal-search__placeholder { flex: 1; min-width: 0; }
-.portal-search__hint {
-  font-size: 10px;
-  letter-spacing: .5px;
-  padding: 1px 6px;
-  border: 1px solid oklch(28% 0.02 240);
-  border-radius: 3px;
-  color: oklch(60% 0.02 240);
-  background: oklch(12% 0.02 240);
-}
-
-.portal-search__icon {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  width: 13px;
-  height: 13px;
-  border: 1.8px solid oklch(55% 0.02 240);
-  border-radius: 50%;
-  transform: translateY(-58%);
-  pointer-events: none;
-}
-
-.portal-search__icon::after {
-  content: "";
-  position: absolute;
-  right: -5px;
-  bottom: -4px;
-  width: 6px;
-  height: 1.8px;
-  background: oklch(55% 0.02 240);
-  transform: rotate(45deg);
-  transform-origin: left center;
-}
-
-/* Module-section local filter — moved out of the topbar (issue #92). */
+/* ── Module-section local filter (Portal-only) ──────────────────── */
+/* Lives in the section header, not the topbar — the topbar's
+   universal-search button is a placeholder owned by PortalModuleShell. */
 .module-search {
   position: relative;
   display: flex;
@@ -415,98 +216,7 @@ input {
   transform-origin: left center;
 }
 
-/* Universal-search "coming soon" popover — anchored under the topbar.
-   Hidden via the [hidden] attribute toggled by script.js. */
-.universal-search-popover {
-  position: relative;
-  margin: -1px 28px 0 28px;
-  padding: 12px 14px;
-  background: var(--n-0);
-  border: 1px solid var(--n-200);
-  border-top: 0;
-  border-radius: 0 0 6px 6px;
-  box-shadow: 0 8px 24px oklch(0% 0 0 / 8%);
-  font-size: 12.5px;
-  color: var(--n-700);
-}
-.universal-search-popover__head {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 4px;
-  color: var(--n-900);
-}
-.universal-search-popover__body { margin: 0; }
-.universal-search-popover__close {
-  font-size: 16px; line-height: 1; color: var(--n-500);
-}
-.universal-search-popover__close:hover,
-.universal-search-popover__close:focus-visible {
-  color: var(--n-900); text-decoration: none;
-}
-
-.env-badge {
-  display: flex;
-  border: 1px solid oklch(28% 0.02 240);
-  border-radius: 4px;
-  overflow: hidden;
-  background: oklch(14% 0.02 240);
-}
-
-.env-badge div {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 6px 11px;
-}
-
-.env-badge div:first-child {
-  border-right: 1px solid oklch(28% 0.02 240);
-  background: oklch(12% 0.02 240);
-}
-
-.env-badge span {
-  color: oklch(60% 0.02 240);
-  font-size: 10px;
-}
-
-.env-badge strong {
-  color: var(--n-0);
-  font-size: 11px;
-}
-
-.env-badge div:first-child strong {
-  color: oklch(75% 0.16 75);
-}
-
-.user-block {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  padding-left: 14px;
-  border-left: 1px solid oklch(28% 0.02 240);
-}
-
-.user-block__avatar {
-  display: grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: oklch(28% 0.03 240);
-  color: var(--accent-400);
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.user-block__name {
-  color: var(--n-0);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.user-block__role {
-  color: oklch(60% 0.02 240);
-  font-size: 10px;
-}
+/* ── Dashboard layout ────────────────────────────────────────────── */
 
 .main {
   max-width: 1440px;
@@ -617,6 +327,8 @@ input {
   background: currentColor;
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='none' stroke='black' stroke-width='2' d='M7 11V8a5 5 0 0 1 10 0v3M6 11h12v10H6z'/%3E%3C/svg%3E") center / contain no-repeat;
 }
+
+/* ── Operations preview ─────────────────────────────────────────── */
 
 .operations {
   min-width: 0;
@@ -824,6 +536,8 @@ input {
 .branch.is-warning strong {
   color: var(--warning);
 }
+
+/* ── Modules + Side panel grid ──────────────────────────────────── */
 
 .content-grid {
   display: grid;
@@ -1055,22 +769,6 @@ input {
   box-shadow: 0 0 0 3px oklch(92% 0.04 75);
 }
 
-.module-card__badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  padding: 1px 6px 1px 4px;
-  border-radius: 3px;
-  background: oklch(92% 0.06 75);
-  color: oklch(35% 0.12 75);
-  font-size: 9px;
-}
-
-.module-card__badge svg {
-  width: 11px;
-  height: 11px;
-}
-
 .module-card__action {
   color: var(--accent-700);
   font-size: 12.5px;
@@ -1096,6 +794,8 @@ input {
   color: var(--n-500);
   text-align: center;
 }
+
+/* ── Side panel ─────────────────────────────────────────────────── */
 
 .side-panel {
   position: sticky;
@@ -1229,6 +929,8 @@ input {
   color: oklch(42% 0.14 155) !important;
 }
 
+/* ── News ───────────────────────────────────────────────────────── */
+
 .news {
   margin-top: 24px;
   overflow: hidden;
@@ -1321,6 +1023,8 @@ input {
   font-size: 11.5px;
 }
 
+/* ── Footer + toast ─────────────────────────────────────────────── */
+
 .footer {
   display: flex;
   align-items: center;
@@ -1361,23 +1065,10 @@ input {
   display: none !important;
 }
 
+/* ── Responsive (dashboard only — chrome breakpoints live in
+      portal-shell.css) ────────────────────────────────────────────── */
+
 @media (max-width: 1099px) {
-  .topbar {
-    flex-wrap: wrap;
-  }
-
-  .topbar__separator,
-  .topbar__spacer,
-  .user-block {
-    display: none;
-  }
-
-  .search {
-    order: 3;
-    flex-basis: 100%;
-    max-width: none;
-  }
-
   .main {
     padding: 22px;
   }
@@ -1414,27 +1105,6 @@ input {
 }
 
 @media (max-width: 759px) {
-  .test-strip {
-    padding: 7px 16px;
-    font-size: 11px;
-  }
-
-  .test-strip__note,
-  .test-strip__host,
-  .env-badge {
-    display: none;
-  }
-
-  .topbar {
-    gap: 12px;
-    padding: 12px 16px;
-  }
-
-  .brand__tagline {
-    font-size: 9px;
-    letter-spacing: 1px;
-  }
-
   .main {
     padding: 16px 16px 28px;
   }
@@ -1495,10 +1165,6 @@ input {
     display: block;
     overflow: hidden;
     text-overflow: ellipsis;
-  }
-
-  .stage-arrow {
-    display: none;
   }
 
   .daily-card {

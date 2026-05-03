@@ -1,0 +1,32 @@
+@inject NavigationManager Navigation
+
+@*
+    Defence-in-depth fallback for the AuthorizeView NotAuthorized branch.
+    Program.cs already gates anonymous traffic with a server-side redirect
+    to /login.html before Blazor renders anything, so in practice this
+    component never fires — but if it ever does (auth misconfiguration,
+    new anonymous Razor route added without a Program.cs allowlist update,
+    etc.) we send the user to the same login URL with a returnUrl, the
+    same way Portal middleware does it, instead of leaving them on a
+    silently-empty page.
+*@
+
+@code {
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        var relative = Navigation.ToBaseRelativePath(Navigation.Uri);
+        var returnUrl = string.IsNullOrWhiteSpace(relative)
+            ? "/"
+            : $"/{relative.TrimStart('/')}";
+
+        Navigation.NavigateTo(
+            $"login.html?returnUrl={Uri.EscapeDataString(returnUrl)}",
+            forceLoad: true,
+            replace: true);
+    }
+}

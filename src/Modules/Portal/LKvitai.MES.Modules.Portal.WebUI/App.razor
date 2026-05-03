@@ -1,0 +1,36 @@
+@*
+    Portal root. Mirrors the Sales WebUI App.razor pattern:
+
+      * <CascadingAuthenticationState> exposes the cookie-derived
+        ClaimsPrincipal to <AuthorizeView> in MainLayout. Without it the
+        layout would render the NotAuthorized branch on every interactive
+        re-render even though Program.cs middleware already gated the
+        request, producing a redirect-loop after SignalR connect.
+      * Router scans this assembly for @page-routed components (currently
+        Pages/Home.razor at /). NotFound returns to MainLayout so the
+        shared shell stays around the empty state.
+*@
+<CascadingAuthenticationState>
+    <Router AppAssembly="@typeof(App).Assembly">
+        <Found Context="routeData">
+            <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+        </Found>
+        <NotFound>
+            <PageTitle>Not found</PageTitle>
+            <LayoutView Layout="@typeof(MainLayout)">
+                <main class="main">
+                    <section class="hero">
+                        <div class="hero__copy">
+                            <div class="eyebrow mono">Portal &middot; Not found</div>
+                            <h1>Nothing at this address.</h1>
+                            <p>The page you tried to open does not exist on the Portal.</p>
+                            <div class="hero__actions">
+                                <a class="button button--primary" href="/">Back to Portal home</a>
+                            </div>
+                        </div>
+                    </section>
+                </main>
+            </LayoutView>
+        </NotFound>
+    </Router>
+</CascadingAuthenticationState>

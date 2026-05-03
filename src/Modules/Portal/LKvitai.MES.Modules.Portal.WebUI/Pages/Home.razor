@@ -1,0 +1,344 @@
+@page "/"
+@inject IWebHostEnvironment Env
+
+<PageTitle>LKvitai.MES &middot; Portal</PageTitle>
+
+@*
+    Portal home dashboard. Direct port of the legacy wwwroot/index.html
+    body, now living inside the shared MainLayout (which renders the
+    PortalModuleShell topbar + test strip). Behaviour parity with the
+    pre-Blazor static page:
+      * Hero block with "Welcome back" greeting + Open buttons.
+      * Operations preview with This/Last month toggle, stage grid,
+        daily-bars sparkline and branches-on-track strip.
+      * Modules section with a section-local filter (the topbar search
+        is the universal-search placeholder owned by PortalModuleShell).
+      * News + Side-panel + Footer.
+
+    Data source: LKvitai.MES.Modules.Portal.WebUI.Models.PortalDashboardData
+    holds the seed lists in code as a stepping stone — issue #93 swaps
+    each of them for an API/config-backed source without changing the
+    Razor render contract.
+
+    Kept intentionally as a single big page for the first migration to
+    keep the diff reviewable side-by-side with index.html. Subsequent
+    PRs can split sections into their own components when API data
+    arrives (#93).
+*@
+
+<main class="main">
+    <section class="hero">
+        <div class="hero__copy">
+            <div class="eyebrow mono">Portal &middot; Welcome</div>
+            <h1>Welcome back@(string.IsNullOrWhiteSpace(_greetingName) ? "." : $", {_greetingName}.")</h1>
+            <p>Warehouse is available. The remaining modules are listed on the implementation roadmap.</p>
+            <div class="hero__actions">
+                <a class="button button--primary" href="/warehouse/">Open Warehouse <span aria-hidden="true">&rarr;</span></a>
+                <button class="button button--disabled" type="button" @onclick="@(() => ToastPlanned("Shopfloor", "Q3 2026"))">Open Shopfloor</button>
+                <button class="button button--disabled" type="button" @onclick="@(() => ToastPlanned("Reporting", "Q1 2027"))">Open Reporting</button>
+                <a class="button button--secondary hero__roadmap" href="#roadmap">Roadmap &amp; news <span aria-hidden="true">&rarr;</span></a>
+            </div>
+        </div>
+
+        <section class="operations" aria-labelledby="operations-title">
+            <div class="operations__head">
+                <div>
+                    <h2 id="operations-title" class="eyebrow mono">Operations preview</h2>
+                    <span class="operations__sample mono">Sample data</span>
+                </div>
+                <fieldset class="segmented" aria-label="Operations period">
+                    <legend class="sr-only">Operations period</legend>
+                    <button class="segmented__button @(_period == "this" ? "is-active" : null)"
+                            type="button"
+                            @onclick='@(() => _period = "this")'>This month</button>
+                    <button class="segmented__button @(_period == "last" ? "is-active" : null)"
+                            type="button"
+                            @onclick='@(() => _period = "last")'>Last month</button>
+                </fieldset>
+            </div>
+
+            <div class="stage-grid">
+                @{
+                    var stages = PortalDashboardData.Stages;
+                }
+                @for (var index = 0; index < stages.Count; index++)
+                {
+                    var stage = stages[index];
+                    var isFinal = index == stages.Count - 1;
+                    var value = _period == "this" ? stage.ThisMonth : stage.LastMonth;
+                    <div class="stage @(isFinal ? "is-final" : null)">
+                        <span>@stage.Label</span>
+                        <strong class="mono">@value</strong>
+                    </div>
+                }
+            </div>
+
+            <div class="daily-card">
+                <div class="daily-card__label mono">Completed / day <span>30d</span></div>
+                <div class="daily-card__bars" aria-hidden="true">
+                    @{
+                        var values = PortalDashboardData.Daily[_period];
+                        var max = values.Max();
+                    }
+                    @for (var index = 0; index < values.Count; index++)
+                    {
+                        var raw = values[index];
+                        var height = Math.Max(4, (int)Math.Round(raw / (double)max * 26d));
+                        var weekend = index % 7 is 5 or 6;
+                        <i class="@(weekend ? "is-weekend" : null)" style="--bar-height: @(height)px"></i>
+                    }
+                </div>
+                <div class="daily-card__total">
+                    <strong class="mono">@PortalDashboardData.DailyTotal[_period]</strong>
+                    <span>+5.6%</span>
+                </div>
+            </div>
+
+            <div>
+                <div class="operations__label mono">Branches on track</div>
+                <div class="branch-grid">
+                    @foreach (var branch in PortalDashboardData.Branches)
+                    {
+                        <div class="branch @(branch.PercentOnTrack < 90 ? "is-warning" : null)">
+                            <span>@branch.Name</span>
+                            <strong class="mono">@branch.PercentOnTrack%</strong>
+                        </div>
+                    }
+                </div>
+            </div>
+        </section>
+    </section>
+
+    <div class="content-grid">
+        <section id="roadmap" class="modules-section" aria-labelledby="modules-title">
+            <div class="section-head">
+                <div>
+                    <h2 id="modules-title">Modules</h2>
+                    <span><strong>@_availableCount</strong> available &middot; <strong>@_plannedCount</strong> planned</span>
+                </div>
+                @* Module-grid local filter. The topbar's universal-search is now
+                   a "coming soon" placeholder owned by PortalModuleShell, so the
+                   per-section module filter lives inside the Modules section
+                   header — keeping the global search entry honest about scope. *@
+                <label class="module-search" for="module-search">
+                    <span class="module-search__icon" aria-hidden="true"></span>
+                    <span class="sr-only">Filter modules</span>
+                    <input id="module-search"
+                           type="search"
+                           placeholder="Filter modules…"
+                           autocomplete="off"
+                           @bind="_query"
+                           @bind:event="oninput" />
+                </label>
+            </div>
+
+            @{
+                var filteredModules = FilterModules(_query);
+            }
+            @if (filteredModules.Count == 0)
+            {
+                <div class="empty-state">
+                    <div class="mono">No matches</div>
+                    <p>No modules match <strong>"@_query"</strong>.</p>
+                </div>
+            }
+            else
+            {
+                <div class="module-grid">
+                    @foreach (var mod in filteredModules)
+                    {
+                        var isNavigable = mod.Status is ModuleStatus.Active or ModuleStatus.Scaffolded;
+                        var statusClass = mod.Status switch
+                        {
+                            ModuleStatus.Active     => "is-active",
+                            ModuleStatus.Scaffolded => "is-scaffolded",
+                            _                        => null,
+                        };
+
+                        if (isNavigable)
+                        {
+                            <a class="module-card @statusClass" href="@mod.Url">
+                                <ModuleCardBody Card="@mod" />
+                            </a>
+                        }
+                        else
+                        {
+                            <button type="button"
+                                    class="module-card @statusClass"
+                                    @onclick="@(() => ToastPlanned(mod.Title, mod.Quarter ?? "later"))">
+                                <ModuleCardBody Card="@mod" />
+                            </button>
+                        }
+                    }
+                </div>
+            }
+
+            <section class="news" aria-labelledby="news-title">
+                <div class="news__head">
+                    <div>
+                        <h2 id="news-title">News</h2>
+                        <span>What's changing in LKvitai.MES</span>
+                    </div>
+                    <a href="#">All updates &rarr;</a>
+                </div>
+                <div class="news-grid">
+                    @foreach (var item in PortalDashboardData.News)
+                    {
+                        <article class="news-item">
+                            <div class="news-item__meta">
+                                <span class="news-tag mono" style="color:@item.TagColor;background:@item.TagBackground">@item.Tag</span>
+                                <span class="news-date mono">@item.Date</span>
+                            </div>
+                            <h3>@item.Title</h3>
+                            <p>@item.Excerpt</p>
+                        </article>
+                    }
+                </div>
+            </section>
+        </section>
+
+        <aside class="side-panel" aria-label="Portal status">
+            <div class="side-panel__label mono">Portal</div>
+
+            <section class="panel panel--status">
+                <header>
+                    <h2>System status</h2>
+                    <span><i aria-hidden="true"></i> Online</span>
+                </header>
+                <div class="status-row"><span>Environment</span><strong class="mono @_envStatusRowClass">@_envName</strong></div>
+                <div class="status-row"><span>Version</span><strong class="mono">@_displayVersion</strong></div>
+                <div class="status-row"><span>Modules</span><strong class="mono">@_availableCount active / @PortalDashboardData.Modules.Count total</strong></div>
+                <div class="status-row"><span>Current module</span><strong>Portal</strong></div>
+                <div class="status-row"><span>Channel</span><strong class="mono">@_envChannel</strong></div>
+            </section>
+
+            <section class="panel">
+                <header class="panel__plain-head"><h2>Support</h2></header>
+                <div class="panel__body">
+                    <p>MES helpdesk sms &middot; <span class="mono">+37062454321</span></p>
+                    <p>MES team &middot; <a href="mailto:developa@lauresta.lt">developa@lauresta.lt</a></p>
+                </div>
+            </section>
+
+            <section class="panel">
+                <header class="panel__plain-head"><h2>Build</h2></header>
+                <div class="status-row"><span>Version</span><strong class="mono">@_displayVersion</strong></div>
+                <div class="status-row"><span>Channel</span><strong class="mono">@_envChannel</strong></div>
+            </section>
+        </aside>
+    </div>
+</main>
+
+@if (_toastVisible)
+{
+    <output class="toast" aria-live="polite">@_toastMessage</output>
+}
+
+@code {
+    [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
+
+    private string _period = "this";
+    private string _query = string.Empty;
+
+    private string _envName = "TEST";
+    private string _envChannel = "test";
+    private string? _envStatusRowClass = "status-row__test";
+    private string _displayVersion = "0.1.0";
+
+    private string? _greetingName;
+    private bool _toastVisible;
+    private string? _toastMessage;
+    private CancellationTokenSource? _toastCts;
+
+    private int _availableCount;
+    private int _plannedCount;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var envName = (Env.EnvironmentName ?? "Development").Trim();
+        if (Env.IsProduction())
+        {
+            _envName = "PROD";
+            _envChannel = "prod";
+            _envStatusRowClass = null;
+        }
+        else if (Env.IsDevelopment())
+        {
+            _envName = "DEV";
+            _envChannel = "dev";
+            _envStatusRowClass = "status-row__dev";
+        }
+        else
+        {
+            _envName = envName.ToUpperInvariant();
+            _envChannel = envName.ToLowerInvariant();
+            _envStatusRowClass = "status-row__test";
+        }
+
+        _availableCount = PortalDashboardData.Modules.Count(m => m.Status == ModuleStatus.Active);
+        _plannedCount   = PortalDashboardData.Modules.Count(m => m.Status == ModuleStatus.Planned);
+
+        if (AuthState is not null)
+        {
+            var state = await AuthState;
+            _greetingName = ResolveGreetingName(state.User);
+        }
+    }
+
+    private static IReadOnlyList<ModuleCard> FilterModules(string query)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return PortalDashboardData.Modules;
+        }
+
+        var trimmed = query.Trim();
+        return PortalDashboardData.Modules
+            .Where(m => $"{m.Title} {m.Category} {m.Description}".Contains(trimmed, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+    }
+
+    private async Task ToastPlanned(string title, string quarter)
+    {
+        _toastMessage = $"{title} — planned for {quarter}. Not available yet.";
+        _toastVisible = true;
+
+        _toastCts?.Cancel();
+        _toastCts?.Dispose();
+        _toastCts = new CancellationTokenSource();
+        var token = _toastCts.Token;
+
+        try
+        {
+            await Task.Delay(2600, token);
+        }
+        catch (TaskCanceledException)
+        {
+            return;
+        }
+
+        _toastVisible = false;
+        StateHasChanged();
+    }
+
+    private static string? ResolveGreetingName(ClaimsPrincipal user)
+    {
+        // Greet with the first available human-friendly name. Same fallback
+        // chain as PortalModuleShell.DisplayName but stops short of "Signed
+        // in" — the hero copy reads naturally without a name suffix.
+        var displayClaim = user.FindFirstValue("display_name");
+        if (!string.IsNullOrWhiteSpace(displayClaim)) return SafeFirstName(displayClaim);
+
+        var given = user.FindFirstValue(ClaimTypes.GivenName);
+        if (!string.IsNullOrWhiteSpace(given)) return given;
+
+        var name = user.FindFirstValue(ClaimTypes.Name) ?? user.Identity?.Name;
+        return string.IsNullOrWhiteSpace(name) ? null : SafeFirstName(name);
+    }
+
+    private static string SafeFirstName(string raw)
+    {
+        var parts = raw.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length == 0 ? raw : parts[0];
+    }
+}

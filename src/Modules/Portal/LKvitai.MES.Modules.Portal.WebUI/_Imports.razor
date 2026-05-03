@@ -1,0 +1,23 @@
+@using System.Net.Http
+@using System.Net.Http.Json
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Routing
+@*
+   CRITICAL: Microsoft.AspNetCore.Components.Web hosts the EventHandlers
+   table that registers @onclick / @onchange / @onsubmit / etc. as Razor
+   directive attributes. Without this @using, the Razor compiler silently
+   emits them as literal HTML attributes, the DOM rejects them with
+   InvalidCharacterError, and the entire SignalR circuit dies on the
+   first batch — see hotfix/portal-shell-onclick-render (PR #114).
+*@
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.JSInterop
+@using LKvitai.MES.BuildingBlocks.WebUI.Components
+@using LKvitai.MES.Modules.Portal.WebUI
+@using LKvitai.MES.Modules.Portal.WebUI.Components
+@using LKvitai.MES.Modules.Portal.WebUI.Models
+@using LKvitai.MES.Modules.Portal.WebUI.Pages
+@using LKvitai.MES.Modules.Portal.WebUI.Shared
