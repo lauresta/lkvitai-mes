@@ -1,0 +1,117 @@
+@namespace LKvitai.MES.BuildingBlocks.WebUI.Components
+@using LKvitai.MES.BuildingBlocks.WebUI.Services
+@inject IWebHostEnvironment Env
+@inject IHttpContextAccessor HttpContextAccessor
+@inject IBuildVersionAccessor BuildVersionAccessor
+
+@*
+    PortalAuthenticatedShell — convenience wrapper around PortalModuleShell
+    that owns the boilerplate every module's MainLayout used to repeat:
+
+        * Resolve EnvironmentName from IWebHostEnvironment.
+        * Resolve HostLabel from HttpContextAccessor.HttpContext.Request.Host
+          (captured ONCE during prerender so it's stable across re-renders;
+          PortalModuleShell falls back to NavigationManager-derived host if
+          left null, but we prefer the request host verbatim).
+        * Resolve BannerNote — Production/Test get the standard "not
+          production data" copy; Development swaps in the local-network copy.
+        * Resolve DisplayVersion from IBuildVersionAccessor (env-var driven —
+          APP_VERSION/GIT_SHA/BUILD_DATE injected by build-and-push.yml +
+          each WebUI's Dockerfile).
+
+    Without this wrapper the same ~30 lines lived inline in Portal/Sales/
+    Frontline MainLayout. Sonar (#92 PR check) flagged this as 3.9% new
+    duplication; centralising it here drops that to zero AND guarantees
+    every module truly does pass the same parameter set — which was the
+    whole point of #92's "shared header that means it".
+
+    Two slot pattern (ChildContent + NotAuthorizedContent) intentionally
+    mirrors AuthorizeView so Sales/Portal can drop a <RedirectToLogin /> in
+    NotAuthorizedContent while Frontline opts into AllowAnonymous and lets
+    the shell render with User=null. AllowAnonymous=true renders the SAME
+    shell twice (once per AuthorizeView branch) so anonymous fabric lookup
+    keeps working without a redirect — slight component-internal
+    duplication, but keeps the API surface single-method.
+*@
+
+<AuthorizeView>
+    <Authorized Context="auth">
+        <PortalModuleShell EnvironmentName="@_environmentName"
+                           HostLabel="@_hostLabel"
+                           BannerNote="@_bannerNote"
+                           User="@auth.User"
+                           Version="@_displayVersion"
+                           PortalHomeUrl="@PortalHomeUrl">
+            @ChildContent
+        </PortalModuleShell>
+    </Authorized>
+    <NotAuthorized>
+        @if (AllowAnonymous)
+        {
+            <PortalModuleShell EnvironmentName="@_environmentName"
+                               HostLabel="@_hostLabel"
+                               BannerNote="@_bannerNote"
+                               User="@null"
+                               Version="@_displayVersion"
+                               PortalHomeUrl="@PortalHomeUrl">
+                @ChildContent
+            </PortalModuleShell>
+        }
+        else
+        {
+            @NotAuthorizedContent
+        }
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    /// <summary>Body of the page rendered inside the shell when the user is
+    /// authenticated, OR when <see cref="AllowAnonymous"/> is true and no
+    /// auth context exists. Equivalent to placing markup inside
+    /// <c>&lt;PortalModuleShell&gt;...&lt;/PortalModuleShell&gt;</c>.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>Rendered in place of the shell when the visitor is NOT
+    /// authenticated AND <see cref="AllowAnonymous"/> is false. Sales/Portal
+    /// pass a <c>&lt;RedirectToLogin /&gt;</c> here.</summary>
+    [Parameter] public RenderFragment? NotAuthorizedContent { get; set; }
+
+    /// <summary>When true, anonymous visitors still see the topbar (with the
+    /// "Signed in" / "U" fallback). Frontline opts into this so the
+    /// sales-floor handsets keep loading the fabric lookup without a Portal
+    /// login.</summary>
+    [Parameter] public bool AllowAnonymous { get; set; }
+
+    /// <summary>Forwarded verbatim to <see cref="PortalModuleShell.PortalHomeUrl"/>.
+    /// Portal sets this to "/" so the brand block does not bounce through
+    /// the Portal redirect; Sales/Frontline can leave it null and the shell
+    /// resolves it from <c>PortalWebUi:BaseUrl</c>.</summary>
+    [Parameter] public string? PortalHomeUrl { get; set; }
+
+    private string _environmentName = "Development";
+    private string? _hostLabel;
+    private string _bannerNote =
+        "Data in this environment is not production data and may be reset without notice.";
+    private string _displayVersion = "—";
+
+    protected override void OnInitialized()
+    {
+        _environmentName = Env.EnvironmentName ?? "Development";
+
+        // HttpContext is available during the prerender pass and goes null
+        // once the SignalR circuit attaches — capture host now so the
+        // test-strip label is stable across re-renders.
+        var ctx = HttpContextAccessor.HttpContext;
+        if (ctx is not null && ctx.Request.Host.HasValue)
+        {
+            _hostLabel = ctx.Request.Host.Host;
+        }
+
+        if (Env.IsDevelopment())
+        {
+            _bannerNote = "Local or private-network environment. Data may be reset without notice.";
+        }
+
+        _displayVersion = BuildVersionAccessor.Get().DisplayVersion;
+    }
+}

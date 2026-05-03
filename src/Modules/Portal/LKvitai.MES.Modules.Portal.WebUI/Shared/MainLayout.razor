@@ -1,88 +1,29 @@
 @inherits LayoutComponentBase
-@inject IWebHostEnvironment Env
-@inject IHttpContextAccessor HttpContextAccessor
-@inject IBuildVersionAccessor BuildVersionAccessor
 
 @*
-    Portal MainLayout — same contract as Sales/Frontline so the shared
-    PortalModuleShell is the single source of truth for header chrome.
-
-    AuthorizeView is the Blazor-Server-correct way to bridge the cookie
-    auth state into the shell:
-      * Authorized branch fires once per circuit, hands the live
-        ClaimsPrincipal to PortalModuleShell so DisplayName/Initials
-        come from auth claims rather than a hardcoded "Lukas".
-      * NotAuthorized branch only fires if a user reaches a Razor route
-        without the auth cookie — Program.cs already redirects anonymous
-        traffic to /login.html before Blazor takes over, so this is
-        defence in depth (and matches the Sales pattern verbatim).
-
-    HostLabel is sourced from the request once at OnInitialized so it's
-    stable across re-renders; PortalModuleShell falls back to its own
-    Navigation-derived host if we leave it null, but for Portal we want
-    the actual request host (e.g. mes-test.lauresta.com) in the test
-    strip even before the first interactive ping.
+    Portal MainLayout — wraps the page in the shared
+    PortalAuthenticatedShell, which owns the Env/HostLabel/BannerNote/Version
+    boilerplate. PortalHomeUrl="/" is the only Portal-specific knob (the
+    brand block links to the local root rather than going through
+    PortalWebUi:BaseUrl). The Portal footer lives inside ChildContent so the
+    brand colour band wraps both main + footer the same way the legacy
+    static index.html laid them out.
 *@
-<AuthorizeView>
-    <Authorized Context="auth">
-        @* Notes on the parameter set — these MUST stay in lock-step across
-           Portal/Sales/Frontline (this is half the point of #92):
-           * No SearchPlaceholder — the shell now defaults to the unified
-             "Search everything…" copy. Override here only if a module
-             genuinely needs a different placeholder (none currently do).
-           * Version flows in via IBuildVersionAccessor → APP_VERSION env
-             var (set in build-and-push.yml + the Portal-WebUI Dockerfile).
-             Falls back to "—" / "dev" so the badge never lies. *@
-        <PortalModuleShell EnvironmentName="@_environmentName"
-                           HostLabel="@_hostLabel"
-                           BannerNote="@_bannerNote"
-                           User="@auth.User"
-                           PortalHomeUrl="/"
-                           Version="@_displayVersion">
-            @Body
+<PortalAuthenticatedShell PortalHomeUrl="/">
+    <ChildContent>
+        @Body
 
-            @* Footer lives inside the shell so the brand colour band wraps
-               main + footer the same way the static index.html laid them
-               out. Release notes / docs links are still static placeholders
-               and become real links in a follow-up issue. *@
-            <footer class="footer">
-                <div>
-                    <span>&copy; 2026 UAB Lauresta &middot; LKvitai.MES Portal</span>
-                    <a href="#">Release notes</a>
-                    <a href="#">Documentation</a>
-                    <a href="#">Support</a>
-                </div>
-                <span class="mono">@_displayVersion</span>
-            </footer>
-        </PortalModuleShell>
-    </Authorized>
-    <NotAuthorized>
+        <footer class="footer">
+            <div>
+                <span>&copy; 2026 UAB Lauresta &middot; LKvitai.MES Portal</span>
+                <a href="#">Release notes</a>
+                <a href="#">Documentation</a>
+                <a href="#">Support</a>
+            </div>
+            <span class="mono">v0.1.0</span>
+        </footer>
+    </ChildContent>
+    <NotAuthorizedContent>
         <RedirectToLogin />
-    </NotAuthorized>
-</AuthorizeView>
-
-@code {
-    private string _environmentName = "Development";
-    private string? _hostLabel;
-    private string _bannerNote =
-        "Data in this environment is not production data and may be reset without notice.";
-    private string _displayVersion = "—";
-
-    protected override void OnInitialized()
-    {
-        _environmentName = Env.EnvironmentName ?? "Development";
-
-        var ctx = HttpContextAccessor.HttpContext;
-        if (ctx is not null && ctx.Request.Host.HasValue)
-        {
-            _hostLabel = ctx.Request.Host.Host;
-        }
-
-        if (Env.IsDevelopment())
-        {
-            _bannerNote = "Local or private-network environment. Data may be reset without notice.";
-        }
-
-        _displayVersion = BuildVersionAccessor.Get().DisplayVersion;
-    }
-}
+    </NotAuthorizedContent>
+</PortalAuthenticatedShell>
