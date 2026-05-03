@@ -44,9 +44,15 @@ GO
 CREATE PROCEDURE dbo.mes_Fabric_GetMobileCard
     @Code            nvarchar(50),
     @DefaultPhotoUrl nvarchar(256) = N'/img/fabric_pl.png',
-    @LowThreshold    int           = 10,    -- < 10  -> Low
-    @EnoughThreshold int           = 25     -- >= 25 -> Enough; in-between still Low
+    @LowThreshold    int           = 10,    -- reserved (see note)
+    @EnoughThreshold int           = 25     -- >= @EnoughThreshold -> Enough; 1..@EnoughThreshold-1 -> Low
 AS
+-- @LowThreshold is currently unused. It used to define a separate "critical"
+-- tier (1..@LowThreshold-1) but the contract only exposes a single Low state,
+-- so the lookup card now treats every positive sub-threshold value as Low.
+-- The parameter is kept in the signature for backwards compatibility with the
+-- .NET adapter (FabricLookupParams.LowThreshold) and to leave the door open
+-- for a future "critical" UI tier.
 BEGIN
     SET NOCOUNT ON;
 
@@ -104,7 +110,14 @@ BEGIN
         Status = CASE
                     WHEN IsDiscontinued = 1 THEN 4
                     WHEN ISNULL(CAST(StockMetersRaw AS int), 0) >= @EnoughThreshold THEN 1
-                    WHEN ISNULL(CAST(StockMetersRaw AS int), 0) BETWEEN 1 AND @LowThreshold - 1 THEN 2
+                    -- ANY positive value below @EnoughThreshold is Low. The
+                    -- legacy proc had a gap (10..24m fell through to 0/Unknown)
+                    -- which surfaced as a missing badge on the lookup card.
+                    -- F-2.3 (mes_Fabric_GetLowStockList) treats the same range
+                    -- as Low; mirror that here so swapping between lookup and
+                    -- low-stock list never disagrees on whether a fabric is
+                    -- "running out".
+                    WHEN ISNULL(CAST(StockMetersRaw AS int), 0) BETWEEN 1 AND @EnoughThreshold - 1 THEN 2
                     WHEN ISNULL(CAST(StockMetersRaw AS int), 0) = 0 THEN 3
                     ELSE 0
                  END,
@@ -198,7 +211,11 @@ BEGIN
         Status      = CASE
                         WHEN IsDiscontinued = 1 THEN 4
                         WHEN ISNULL(CAST(StockMetersRaw AS int), 0) >= @EnoughThreshold THEN 1
-                        WHEN ISNULL(CAST(StockMetersRaw AS int), 0) BETWEEN 1 AND @LowThreshold - 1 THEN 2
+                        -- See RS2 comment: any positive value below
+                        -- @EnoughThreshold is Low. Keeps the alternatives
+                        -- chip strip aligned with the main width chip on
+                        -- the same card.
+                        WHEN ISNULL(CAST(StockMetersRaw AS int), 0) BETWEEN 1 AND @EnoughThreshold - 1 THEN 2
                         WHEN ISNULL(CAST(StockMetersRaw AS int), 0) = 0 THEN 3
                         ELSE 0
                       END,

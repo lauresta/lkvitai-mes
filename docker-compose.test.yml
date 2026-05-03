@@ -153,7 +153,13 @@ services:
       retries: 5
       start_period: 30s
 
-  # --- Frontline module (scaffold, anonymous) -----------------------------------
+  # --- Frontline module (anonymous in F-2; PortalAuth lands in F-Auth) ---------
+  # F-2.4: Frontline.Api defaults to FabricDataSource=Auto, so it talks to the
+  # legacy SQL Server (LKvitaiDb) when the connection string is set, and
+  # quietly falls back to the in-memory stub otherwise (with a Warning log).
+  # The deploy workflow ships LKVITAI_MSACCESS_DB_CONNECTION as a secret —
+  # mirror Sales here so /api/frontline/fabric/{code} and /api/frontline/fabric/low-stock
+  # return real production data instead of the F-1 stub fixtures.
   frontline-api:
     image: ghcr.io/lauresta/lkvitai-mes-frontline-api:${IMAGE_TAG:-latest}
     container_name: lkvitai-mes-frontline-api
@@ -162,6 +168,8 @@ services:
       - "5031:8080"
     environment:
       ASPNETCORE_ENVIRONMENT: Test
+      ConnectionStrings__LKvitaiDb: "${LKVITAI_MSACCESS_DB_CONNECTION}"
+      Frontline__FabricDataSource: "Sql"
     volumes:
       - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
     networks:

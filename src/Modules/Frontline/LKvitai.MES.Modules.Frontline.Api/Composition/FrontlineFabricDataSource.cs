@@ -16,28 +16,30 @@ namespace LKvitai.MES.Modules.Frontline.Api.Composition;
 /// </summary>
 /// <remarks>
 /// <para>
-/// <b>F-2.2 reality check.</b> The SQL adapter
-/// (<see cref="SqlFabricQueryService"/>) implements the lookup card via
-/// <c>dbo.mes_Fabric_GetMobileCard</c> and pairs with
-/// <see cref="SqlFabricLookupRecorder"/> for audit-log writes via
-/// <c>dbo.mes_Fabric_RecordLookup</c>. The low-stock list path is reserved
-/// for F-2.3 — calling <c>GetLowStockListAsync</c> on the SQL adapter
-/// throws <see cref="NotImplementedException"/> with a pointer to that
-/// task. The default mode therefore stays <c>"Stub"</c> until F-2.4 flips
-/// the switch.
+/// <b>F-2.3 reality.</b> The SQL adapter
+/// (<see cref="SqlFabricQueryService"/>) implements both the lookup card
+/// (<c>dbo.mes_Fabric_GetMobileCard</c>) and the desktop low-stock list
+/// (<c>dbo.mes_Fabric_GetLowStockList</c>); audit-log writes go through
+/// <see cref="SqlFabricLookupRecorder"/> over
+/// <c>dbo.mes_Fabric_RecordLookup</c>. F-2.4 flips the default mode from
+/// the old <c>"Stub"</c> to <c>"Auto"</c>, so any deploy that ships the
+/// <c>LKvitaiDb</c> connection string automatically wires the legacy DB
+/// without touching configuration.
 /// </para>
 /// <para>
 /// <b>Selection rules.</b>
 /// </para>
 /// <list type="bullet">
-///   <item><c>"Stub"</c> (current default) — registers
-///   <see cref="StubFabricQueryService"/> +
-///   <see cref="NoOpFabricLookupRecorder"/>; logs an informational line so
-///   the stub origin of every payload is obvious in the startup banner.</item>
-///   <item><c>"Sql"</c> / <c>"Auto"</c> — requires
-///   <c>ConnectionStrings:LKvitaiDb</c>; throws at startup if it's missing.
-///   Registers <see cref="SqlFabricQueryService"/> +
-///   <see cref="SqlFabricLookupRecorder"/>.</item>
+///   <item><c>"Auto"</c> (default) — uses SQL when
+///   <c>ConnectionStrings:LKvitaiDb</c> is set; otherwise falls back to
+///   the in-memory stub with a startup-warning log line so the stub origin
+///   of every payload is obvious. Same shape as
+///   <c>SalesOrdersDataSource</c>.</item>
+///   <item><c>"Sql"</c> — requires <c>ConnectionStrings:LKvitaiDb</c>;
+///   throws at startup if the connection string is missing.</item>
+///   <item><c>"Stub"</c> — explicit dev / test opt-in. Registers the in-memory
+///   stub and the no-op recorder regardless of whether a connection string
+///   is configured, so unit / integration tests can run hermetically.</item>
 /// </list>
 /// </remarks>
 public static class FrontlineFabricDataSource
@@ -65,38 +67,55 @@ public static class FrontlineFabricDataSource
 
         var mode = ResolveMode(requestedMode);
 
+        // Auto = "Sql when we have the connection, Stub otherwise (with a
+        // loud warning so the operator sees the fallback in the startup log)."
+        // Same shape as SalesOrdersDataSource so the two modules stay in
+        // lock-step.
+        if (mode == ModeAuto)
+        {
+            mode = hasConnection ? ModeSql : ModeStub;
+        }
+
         if (mode == ModeStub)
         {
-            // Explicit dev / test path. Both ports are registered together
-            // so the endpoint can call IFabricLookupRecorder unconditionally
-            // — the no-op recorder makes the stub flow indistinguishable
-            // from the SQL flow as far as the API surface is concerned.
             services.AddSingleton<IFabricQueryService>(sp =>
             {
                 var logger = sp.GetService<ILoggerFactory>()?
                     .CreateLogger("Frontline.FabricDataSource");
-                logger?.LogInformation(
-                    "Frontline fabric read-side is using the in-memory STUB " +
-                    "(Frontline:FabricDataSource={Mode}). Environment={Environment}. " +
-                    "F-2.4 will flip the default to Sql once the low-stock adapter ships.",
-                    requestedMode ?? "Stub (default)", environment.EnvironmentName);
+                if (string.Equals(requestedMode, ModeStub, StringComparison.OrdinalIgnoreCase))
+                {
+                    logger?.LogInformation(
+                        "Frontline fabric read-side is using the in-memory STUB " +
+                        "(Frontline:FabricDataSource=Stub, environment={Environment}).",
+                        environment.EnvironmentName);
+                }
+                else
+                {
+                    // Auto-fallback path. Real deploys MUST set ConnectionStrings:LKvitaiDb;
+                    // logging at Warning makes the stub origin impossible to miss.
+                    logger?.LogWarning(
+                        "Frontline fabric read-side fell back to the in-memory STUB because " +
+                        "ConnectionStrings:LKvitaiDb is missing (Frontline:FabricDataSource={Mode}, environment={Environment}). " +
+                        "Set the connection string to use the legacy LKvitaiDb data, or set Frontline:FabricDataSource=Stub to silence this warning.",
+                        requestedMode ?? "Auto (default)", environment.EnvironmentName);
+                }
                 return new StubFabricQueryService();
             });
             services.AddSingleton<IFabricLookupRecorder, NoOpFabricLookupRecorder>();
             return services;
         }
 
-        // Sql / Auto — both require the legacy connection string. Fail fast
-        // (at composition time, before the host opens any sockets) so the
-        // operator sees a clear startup error instead of a 500 on the first
-        // /api/frontline/fabric/{code} request.
+        // Sql — explicit (or Auto-resolved) legacy DB binding. Fail fast at
+        // composition time so the operator sees a clear startup error
+        // instead of a 500 on the first /api/frontline/fabric/{code} request.
         if (!hasConnection)
         {
             throw new InvalidOperationException(
                 $"Frontline fabric SQL adapter requires ConnectionStrings:{ConnectionStringName} to be set " +
-                $"(environment '{environment.EnvironmentName}'). Provide the LKvitaiDb connection string via " +
-                "environment variable (ConnectionStrings__LKvitaiDb) or user-secrets, " +
-                "or set Frontline:FabricDataSource=Stub explicitly for a stub-only test/dev run.");
+                $"(environment '{environment.EnvironmentName}', requested mode '{requestedMode ?? "(none)"}'). " +
+                "Provide the LKvitaiDb connection string via environment variable " +
+                "(ConnectionStrings__LKvitaiDb) or user-secrets, or set Frontline:FabricDataSource=Stub explicitly " +
+                "for a stub-only test/dev run.");
         }
 
         var commandTimeout = configuration.GetValue(CommandTimeoutKey, defaultValue: 30);
@@ -113,16 +132,17 @@ public static class FrontlineFabricDataSource
 
     private static string ResolveMode(string? requestedMode)
     {
-        // F-2.2 default is still Stub — the SQL low-stock adapter lands in
-        // F-2.3 and the data-source flip lands in F-2.4. Until then a
-        // plain default has to keep the WebUI usable in dev without a
-        // legacy connection string.
-        if (string.IsNullOrWhiteSpace(requestedMode)) return ModeStub;
+        // F-2.4 flips the default from Stub → Auto so any deploy that ships
+        // the LKvitaiDb connection string automatically uses real data
+        // without touching configuration. The Auto branch above degrades
+        // to Stub (with a startup warning) when the connection string is
+        // missing, so dev machines without the legacy DB still boot.
+        if (string.IsNullOrWhiteSpace(requestedMode)) return ModeAuto;
         if (string.Equals(requestedMode, ModeStub, StringComparison.OrdinalIgnoreCase)) return ModeStub;
         if (string.Equals(requestedMode, ModeSql,  StringComparison.OrdinalIgnoreCase)) return ModeSql;
         if (string.Equals(requestedMode, ModeAuto, StringComparison.OrdinalIgnoreCase)) return ModeAuto;
 
         throw new InvalidOperationException(
-            $"Unknown Frontline:FabricDataSource '{requestedMode}'. Expected one of: '{ModeSql}', '{ModeAuto}', '{ModeStub}'.");
+            $"Unknown Frontline:FabricDataSource '{requestedMode}'. Expected one of: '{ModeAuto}', '{ModeSql}', '{ModeStub}'.");
     }
 }

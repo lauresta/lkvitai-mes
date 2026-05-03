@@ -13,8 +13,9 @@ namespace LKvitai.MES.Modules.Frontline.Infrastructure.Sql;
 /// SQL Server adapter for <see cref="IFabricQueryService"/> over the legacy
 /// <c>LKvitaiDb</c> database. Lookup card calls
 /// <c>dbo.mes_Fabric_GetMobileCard</c> (F-2.2 successor to the legacy
-/// <c>weblb_Fabric_GetMobileCard</c>); the low-stock list is reserved for
-/// F-2.3 and currently throws.
+/// <c>weblb_Fabric_GetMobileCard</c>); the desktop low-stock list calls
+/// <c>dbo.mes_Fabric_GetLowStockList</c> (F-2.3 — server-side filter,
+/// sort and paging over <c>dbo.V_Remains</c> + <c>dbo.TBD_Components</c>).
 /// </summary>
 /// <remarks>
 /// <list type="bullet">
@@ -22,22 +23,41 @@ namespace LKvitai.MES.Modules.Frontline.Infrastructure.Sql;
 ///   widths, alternatives). Unknown / blacklisted code → zero result sets;
 ///   the adapter treats "no rows in RS1" as a 404 to keep the proc cheap on
 ///   the unhappy path.</item>
-///   <item>Status integers in RS2/RS3 map 1:1 to
-///   <see cref="FabricAvailabilityStatus"/> (1 Enough, 2 Low, 3 None,
-///   4 Discontinued, 0 Unknown).</item>
-///   <item>Selected width is picked client-side: explicit <c>?width=</c>
-///   wins when present in the returned set; otherwise the smallest available
-///   width — same rule as the F-1 in-memory stub and the legacy
-///   <c>FabricAvailabilityController.Mobile</c>.</item>
+///   <item><c>dbo.mes_Fabric_GetLowStockList</c> — single paged result set
+///   plus a windowed <c>TotalRows</c> column on every row (same shape as
+///   <c>dbo.weblb_Orders_Paged</c>). The adapter trims and uppercases the
+///   filter inputs before passing them through; nullable filters travel as
+///   <see cref="DBNull"/> so the SP's <c>IS NULL</c> branches fire instead
+///   of looking for the literal <c>N''</c>.</item>
+///   <item>Status integers map 1:1 to <see cref="FabricAvailabilityStatus"/>
+///   (1 Enough, 2 Low, 3 None, 4 Discontinued, 0 Unknown).</item>
+///   <item>Selected width on the lookup card is picked client-side:
+///   explicit <c>?width=</c> wins when present in the returned set;
+///   otherwise the smallest available width — same rule as the in-memory
+///   stub and the legacy <c>FabricAvailabilityController.Mobile</c>.</item>
+///   <item><c>AlternativeCodes</c> on the low-stock list comes back from
+///   the SP as a raw CSV string (same format as <c>fa_Alternatives</c>).
+///   The adapter splits and normalises it client-side: tokens are trimmed,
+///   uppercased, deduplicated, and the legacy <c>NRxxx → Rxxx</c> rewrite
+///   is applied so the WebUI never sees a mixed bag.</item>
 /// </list>
 /// All column reads are <see cref="DBNull"/>-guarded; missing columns or
 /// unexpected types degrade to safe defaults instead of throwing, so a
-/// single bad row never blanks the whole card.
+/// single bad row never blanks the whole card / page.
 /// </remarks>
 public sealed class SqlFabricQueryService : IFabricQueryService
 {
-    private const string GetMobileCardProcName = "dbo.mes_Fabric_GetMobileCard";
-    private const string PlaceholderPhotoUrl   = "/img/fabric_pl.png";
+    private const string GetMobileCardProcName  = "dbo.mes_Fabric_GetMobileCard";
+    private const string GetLowStockProcName    = "dbo.mes_Fabric_GetLowStockList";
+    private const string PlaceholderPhotoUrl    = "/img/fabric_pl.png";
+
+    /// <summary>Soft cap on per-page rows; mirrors the SP's own clamp so
+    /// the wire never sees a request the SP would silently shrink.</summary>
+    private const int MaxPageSize = 500;
+
+    /// <summary>Deduplication-friendly empty list, returned for fabrics
+    /// whose <c>fa_Alternatives</c> column is NULL or whitespace.</summary>
+    private static readonly IReadOnlyList<string> EmptyAlternativeList = Array.Empty<string>();
 
     private readonly FrontlineSqlOptions _options;
     private readonly ILogger<SqlFabricQueryService> _logger;
@@ -181,19 +201,127 @@ public sealed class SqlFabricQueryService : IFabricQueryService
             Alternatives:    alternatives);
     }
 
-    public Task<PagedResult<FabricLowStockDto>> GetLowStockListAsync(
+    public async Task<PagedResult<FabricLowStockDto>> GetLowStockListAsync(
         FabricLowStockQueryParams query,
         CancellationToken cancellationToken)
     {
-        // F-2.3 will wire this to dbo.mes_Fabric_GetLowStockList. Until then
-        // the SQL data source covers the lookup card only; anyone running
-        // Frontline:FabricDataSource=Sql who needs the low-stock list must
-        // either complete F-2.3 or switch back to Stub.
-        throw new NotImplementedException(
-            "SqlFabricQueryService.GetLowStockListAsync is reserved for F-2.3 " +
-            "(dbo.mes_Fabric_GetLowStockList over dbo.V_Remains + TBD_Components.mes_*). " +
-            "Set Frontline:FabricDataSource=Stub if you need the low-stock list to render today.");
+        ArgumentNullException.ThrowIfNull(query);
+
+        var page     = query.Page     < 1 ? 1 : query.Page;
+        var pageSize = query.PageSize < 1 ? 50 : (query.PageSize > MaxPageSize ? MaxPageSize : query.PageSize);
+
+        var totalSw = Stopwatch.StartNew();
+
+        var openSw = Stopwatch.StartNew();
+        await using var conn = new SqlConnection(_options.ConnectionString);
+        await conn.OpenAsync(cancellationToken).ConfigureAwait(false);
+        openSw.Stop();
+
+        await using var cmd = new SqlCommand(GetLowStockProcName, conn)
+        {
+            CommandType    = CommandType.StoredProcedure,
+            CommandTimeout = _options.CommandTimeoutSeconds,
+        };
+        cmd.Parameters.Add(new SqlParameter("@Search",          SqlDbType.NVarChar, 100) { Value = NullableNVarChar(query.Search) });
+        cmd.Parameters.Add(new SqlParameter("@ThresholdMeters", SqlDbType.Int)           { Value = (object?)query.ThresholdMeters ?? DBNull.Value });
+        cmd.Parameters.Add(new SqlParameter("@Status",          SqlDbType.NVarChar, 20)  { Value = NullableNVarChar(query.Status) });
+        cmd.Parameters.Add(new SqlParameter("@WidthMm",         SqlDbType.Int)           { Value = (object?)query.WidthMm ?? DBNull.Value });
+        cmd.Parameters.Add(new SqlParameter("@Supplier",        SqlDbType.NVarChar, 100) { Value = NullableNVarChar(query.Supplier) });
+        cmd.Parameters.Add(new SqlParameter("@Page",            SqlDbType.Int)           { Value = page });
+        cmd.Parameters.Add(new SqlParameter("@PageSize",        SqlDbType.Int)           { Value = pageSize });
+
+        var execSw = Stopwatch.StartNew();
+        await using var reader = await cmd.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+        execSw.Stop();
+
+        var matSw = Stopwatch.StartNew();
+        var rows = new List<FabricLowStockDto>(capacity: pageSize);
+        var totalRows = 0;
+        while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+        {
+            rows.Add(new FabricLowStockDto(
+                Code:             ReadString(reader, "Code", string.Empty),
+                Name:             ReadString(reader, "Name", string.Empty),
+                PhotoUrl:         ReadString(reader, "PhotoUrl", PlaceholderPhotoUrl),
+                WidthMm:          ReadInt(reader, "WidthMm"),
+                AvailableMeters:  ReadInt(reader, "AvailableMeters"),
+                ThresholdMeters:  ReadInt(reader, "ThresholdMeters"),
+                Status:           ReadStatus(reader, "Status"),
+                ExpectedDate:     ReadDateOnlyOrNull(reader, "ExpectedDate"),
+                IncomingMeters:   ReadIntOrNull(reader, "IncomingMeters"),
+                Supplier:         ReadStringOrNull(reader, "Supplier"),
+                AlternativeCodes: SplitAlternatives(ReadStringOrNull(reader, "AlternativeCodes"), excludeCode: ReadString(reader, "Code", string.Empty)),
+                LastChecked:      ReadDateTimeOffsetOrNull(reader, "LastChecked"),
+                CanReserve:       ReadBool(reader, "CanReserve"),
+                CanNotify:        ReadBool(reader, "CanNotify"),
+                CanReplace:       ReadBool(reader, "CanReplace")));
+
+            totalRows = ReadInt(reader, "TotalRows");  // every row carries the same windowed count
+        }
+        matSw.Stop();
+        totalSw.Stop();
+
+        _logger.LogInformation(
+            "[FrontlinePerf] sql.GetLowStockList returned={Returned} total={Total} page={Page} pageSize={PageSize} " +
+            "search={HasSearch} threshold={Threshold} status={HasStatus} width={HasWidth} supplier={HasSupplier} " +
+            "openMs={OpenMs} execMs={ExecMs} materialiseMs={MatMs} totalMs={TotalMs}",
+            rows.Count, totalRows, page, pageSize,
+            !string.IsNullOrWhiteSpace(query.Search), query.ThresholdMeters,
+            !string.IsNullOrWhiteSpace(query.Status), query.WidthMm.HasValue,
+            !string.IsNullOrWhiteSpace(query.Supplier),
+            openSw.ElapsedMilliseconds, execSw.ElapsedMilliseconds,
+            matSw.ElapsedMilliseconds, totalSw.ElapsedMilliseconds);
+
+        return new PagedResult<FabricLowStockDto>(rows, totalRows, page, pageSize);
     }
+
+    /// <summary>
+    /// Splits a CSV-ish alternatives string into a normalised list. Operators
+    /// have used commas, semicolons, slashes, pipes, spaces, and tabs as
+    /// separators over the years — mirror the legacy proc's tolerance so
+    /// the same input that worked on <c>weblb_Fabric_GetMobileCard</c>
+    /// keeps working here. Tokens are trimmed, uppercased, and the legacy
+    /// <c>NRxxx → Rxxx</c> rewrite is applied. The fabric's own code is
+    /// removed from the result so a self-reference never appears as an
+    /// alternative chip.
+    /// </summary>
+    private static IReadOnlyList<string> SplitAlternatives(string? raw, string excludeCode)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return EmptyAlternativeList;
+
+        var seen   = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var result = new List<string>(capacity: 4);
+        var exclude = (excludeCode ?? string.Empty).Trim().ToUpperInvariant();
+
+        foreach (var token in raw.Split(_alternativeSeparators, StringSplitOptions.RemoveEmptyEntries))
+        {
+            var t = token.Trim().ToUpperInvariant();
+            if (t.Length == 0) continue;
+
+            // Strip residual punctuation that has shown up in operator entries.
+            t = t.Replace(".", string.Empty, StringComparison.Ordinal)
+                 .Replace(":", string.Empty, StringComparison.Ordinal)
+                 .Replace("\\", string.Empty, StringComparison.Ordinal);
+            if (t.Length == 0) continue;
+
+            // Legacy "NRxxx" prefix → "Rxxx".
+            if (t.Length > 2 && t[0] == 'N' && t[1] == 'R')
+            {
+                t = "R" + t.Substring(2);
+            }
+
+            if (string.Equals(t, exclude, StringComparison.Ordinal)) continue;
+            if (seen.Add(t)) result.Add(t);
+        }
+
+        return result.Count == 0 ? EmptyAlternativeList : result;
+    }
+
+    private static readonly char[] _alternativeSeparators =
+        new[] { ',', ';', ' ', '\t', '\n', '\r', '|', '/' };
+
+    private static object NullableNVarChar(string? value)
+        => string.IsNullOrWhiteSpace(value) ? DBNull.Value : value.Trim();
 
     // ---------------------------------------------------------------------
     // Defensive readers — same pattern as SqlOrdersQueryService. Tolerate
@@ -255,6 +383,40 @@ public sealed class SqlFabricQueryService : IFabricQueryService
         var ordinal = TryGetOrdinal(reader, columnName);
         if (ordinal < 0 || reader.IsDBNull(ordinal)) return null;
         return Convert.ToDateTime(reader.GetValue(ordinal), CultureInfo.InvariantCulture);
+    }
+
+    /// <summary>
+    /// Reads a SQL <c>datetime2</c> column as a UTC <see cref="DateTimeOffset"/>.
+    /// The proc stamps <c>mes_LastCheckedAt</c> via <c>sysutcdatetime()</c>,
+    /// so the value is already in UTC — we just attach the offset so callers
+    /// can display "checked 5 min ago" without re-deriving the timezone.
+    /// </summary>
+    private static DateTimeOffset? ReadDateTimeOffsetOrNull(SqlDataReader reader, string columnName)
+    {
+        var dt = ReadDateTimeOrNull(reader, columnName);
+        if (dt is null) return null;
+        return new DateTimeOffset(DateTime.SpecifyKind(dt.Value, DateTimeKind.Utc));
+    }
+
+    /// <summary>
+    /// Reads a SQL <c>bit</c> column as <see cref="bool"/>. Tolerates wider
+    /// numeric representations (some legacy procs project <c>tinyint</c>);
+    /// non-zero ⇒ <c>true</c>.
+    /// </summary>
+    private static bool ReadBool(SqlDataReader reader, string columnName)
+    {
+        var ordinal = TryGetOrdinal(reader, columnName);
+        if (ordinal < 0 || reader.IsDBNull(ordinal)) return false;
+        var raw = reader.GetValue(ordinal);
+        return raw switch
+        {
+            bool b   => b,
+            byte by  => by != 0,
+            short s  => s != 0,
+            int i    => i != 0,
+            long l   => l != 0,
+            _        => bool.TryParse(Convert.ToString(raw, CultureInfo.InvariantCulture), out var parsed) && parsed,
+        };
     }
 
     private static int TryGetOrdinal(SqlDataReader reader, string columnName)
