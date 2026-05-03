@@ -67,7 +67,7 @@
         <button class="portal-search portal-search--placeholder"
                 type="button"
                 aria-haspopup="dialog"
-                aria-expanded="@_searchOpen.ToString().ToLowerInvariant()"
+                aria-expanded="@(_searchOpen ? "true" : "false")"
                 @onclick="ToggleSearchPlaceholder">
             <span class="portal-search__icon" aria-hidden="true"></span>
             <span class="portal-search__placeholder">@SearchPlaceholder</span>
