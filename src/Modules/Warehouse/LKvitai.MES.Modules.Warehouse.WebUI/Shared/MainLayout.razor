@@ -1,15 +1,17 @@
 @inherits LayoutComponentBase
 
+<MudThemeProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
 <PortalAuthenticatedShell>
     <ChildContent>
-        <MudLayout style="flex:1;min-height:0">
+        <MudLayout style="flex:1;min-height:0;overflow:hidden">
             <MudDrawer Class="sidebar bg-dark text-white"
-                       Variant="DrawerVariant.Responsive"
-                       Breakpoint="Breakpoint.Md"
+                       Variant="DrawerVariant.Persistent"
                        Width="250px"
-                       Elevation="1"
-                       @bind-Open="_drawerOpen"
-                       ClipMode="DrawerClipMode.Never">
+                       Elevation="0"
+                       @bind-Open="_drawerOpen">
                 <NavMenu />
             </MudDrawer>
 
