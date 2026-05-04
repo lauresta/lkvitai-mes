@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
+using Microsoft.Data.SqlClient;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -47,6 +48,19 @@ builder.Services.AddDbContext<PortalDbContext>(options =>
 builder.Services
     .AddOptions<PortalDashboardOptions>()
     .Bind(builder.Configuration.GetSection(PortalDashboardOptions.SectionName));
+
+// LKvitaiDb (SQL Server) — optional; used by SqlOperationsSummaryService.
+// Portal.Api starts normally even when the connection string is absent:
+// the operations-summary endpoint returns a null/empty response instead
+// of failing with a startup exception.
+var salesConnStr = builder.Configuration.GetConnectionString("LKvitaiDb");
+builder.Services.AddSingleton(new SalesDbOptions
+{
+    ConnectionString = salesConnStr,
+    CommandTimeoutSeconds = builder.Configuration
+        .GetValue("Sales:Sql:CommandTimeoutSeconds", 30)
+});
+builder.Services.AddScoped<SqlOperationsSummaryService>();
 
 // Portal API speaks the shared PortalStructuredBearer scheme, same contract
 // Sales.Api / Warehouse.Api use. The Portal cookie path stays a Portal.WebUI

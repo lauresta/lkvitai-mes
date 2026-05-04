@@ -49,6 +49,26 @@ public sealed record NewsItem(
     string Date);
 
 /// <summary>
+/// Operations summary loaded from GET /api/portal/v1/operations-summary.
+/// Mirrors the API wire shape as a WebUI-side view model so Home.razor
+/// does not reference Portal.Api types directly.
+/// </summary>
+public sealed record OperationsSummary(
+    OperationsPeriod Period,
+    IReadOnlyList<OperationsStageData> Stages,
+    IReadOnlyList<OperationsStatusCount> Statuses,
+    IReadOnlyList<OperationsDayCount> CreatedByDay,
+    IReadOnlyList<OperationsDayCount> CompletedByDay);
+
+public sealed record OperationsPeriod(string Key, string From, string To);
+
+public sealed record OperationsStageData(string Key, string Label, int Count);
+
+public sealed record OperationsStatusCount(string Status, int Count);
+
+public sealed record OperationsDayCount(string Date, int Count);
+
+/// <summary>
 /// Static seed data for the Portal dashboard sections that haven't been
 /// API-ified yet. After issue #93 (this PR) <c>Modules</c> and <c>News</c>
 /// come from the Portal API; the remaining fields are still hardcoded:

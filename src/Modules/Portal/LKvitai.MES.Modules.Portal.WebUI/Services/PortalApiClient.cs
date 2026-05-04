@@ -218,6 +218,53 @@ public sealed class PortalApiClient
         return response.IsSuccessStatusCode;
     }
 
+    /// <summary>
+    /// Returns the operations summary for the requested period ('this' or 'last'),
+    /// or <c>null</c> when the Portal API is unreachable, the connection to
+    /// SQL Server is not configured server-side, or any other transient failure.
+    /// Callers should fall back to mock/empty data on null.
+    /// </summary>
+    public async Task<OperationsSummary?> GetOperationsSummaryAsync(
+        string period,
+        CancellationToken cancellationToken = default)
+    {
+        var client = _httpClientFactory.CreateClient(ClientName);
+        try
+        {
+            var dto = await client
+                .GetFromJsonAsync<PortalOperationsSummaryDto>(
+                    $"api/portal/v1/operations-summary?period={Uri.EscapeDataString(period)}",
+                    cancellationToken)
+                .ConfigureAwait(false);
+
+            if (dto is null) return null;
+
+            return new OperationsSummary(
+                Period: new OperationsPeriod(dto.Period.Key, dto.Period.From, dto.Period.To),
+                Stages: dto.Stages
+                    .Select(s => new OperationsStageData(s.Key, s.Label, s.Count))
+                    .ToList(),
+                Statuses: dto.Statuses
+                    .Select(s => new OperationsStatusCount(s.Status, s.Count))
+                    .ToList(),
+                CreatedByDay: dto.CreatedByDay
+                    .Select(d => new OperationsDayCount(d.Date, d.Count))
+                    .ToList(),
+                CompletedByDay: dto.CompletedByDay
+                    .Select(d => new OperationsDayCount(d.Date, d.Count))
+                    .ToList());
+        }
+        catch (Exception ex) when (ex is HttpRequestException
+                                      or TaskCanceledException
+                                      or System.Text.Json.JsonException)
+        {
+            _logger.LogWarning(ex,
+                "Portal API GET /operations-summary failed for period={Period}; using fallback data",
+                period);
+            return null;
+        }
+    }
+
     private static ModuleStatus ParseStatus(string raw) =>
         raw switch
         {
@@ -275,6 +322,18 @@ public sealed class PortalApiClient
         string Excerpt,
         string Date,
         string? Url);
+
+    private sealed record PortalOperationsSummaryDto(
+        PortalPeriodDto Period,
+        IReadOnlyList<PortalStageDtoItem> Stages,
+        IReadOnlyList<PortalStatusCountDtoItem> Statuses,
+        IReadOnlyList<PortalDayCountDtoItem> CreatedByDay,
+        IReadOnlyList<PortalDayCountDtoItem> CompletedByDay);
+
+    private sealed record PortalPeriodDto(string Key, string From, string To);
+    private sealed record PortalStageDtoItem(string Key, string Label, int Count);
+    private sealed record PortalStatusCountDtoItem(string Status, int Count);
+    private sealed record PortalDayCountDtoItem(string Date, int Count);
 }
 
 /// <summary>

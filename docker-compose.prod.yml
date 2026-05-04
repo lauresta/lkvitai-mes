@@ -49,6 +49,7 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ConnectionStrings__PortalDb: ${PORTAL_DB_CONNECTION}
+      ConnectionStrings__LKvitaiDb: ${LKVITAI_MSACCESS_DB_CONNECTION}
     networks:
       - lkvitai-mes_prod
     healthcheck:

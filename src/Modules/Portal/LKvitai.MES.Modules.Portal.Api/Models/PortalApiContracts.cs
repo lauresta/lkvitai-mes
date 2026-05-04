@@ -72,3 +72,40 @@ public sealed record PortalNewsItemResponse(
     string Excerpt,
     string Date,
     string? Url);
+
+// ---------------------------------------------------------------------------
+// Operations summary  (GET /api/portal/v1/operations-summary?period=this|last)
+// ---------------------------------------------------------------------------
+
+/// <summary>
+/// Full operations summary response for one calendar month.
+/// Returned by <c>GET /api/portal/v1/operations-summary?period=this|last</c>.
+/// </summary>
+public sealed record PortalOperationsSummaryResponse(
+    PortalPeriodInfo Period,
+    IReadOnlyList<PortalStageDto> Stages,
+    IReadOnlyList<PortalStatusCountDto> Statuses,
+    IReadOnlyList<PortalDayCountDto> CreatedByDay,
+    IReadOnlyList<PortalDayCountDto> CompletedByDay);
+
+/// <summary>Calendar period described by the summary.</summary>
+public sealed record PortalPeriodInfo(
+    string Key,
+    string From,
+    string To);
+
+/// <summary>One pipeline stage with its order count for the period.</summary>
+public sealed record PortalStageDto(
+    string Key,
+    string Label,
+    int Count);
+
+/// <summary>Raw localized status with its count — for debugging / drill-down.</summary>
+public sealed record PortalStatusCountDto(
+    string Status,
+    int Count);
+
+/// <summary>Per-day order count (ISO date string + integer).</summary>
+public sealed record PortalDayCountDto(
+    string Date,
+    int Count);
