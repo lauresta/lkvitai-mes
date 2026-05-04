@@ -624,14 +624,13 @@ input {
   border-color: var(--warn-bd);
   border-top: 3px solid var(--warn-dot);
   background: var(--warn-bg);
-  cursor: not-allowed;
 }
 
 .module-card.is-developing:hover {
   background: color-mix(in srgb, var(--warn-bg) 88%, var(--n-0));
 }
 
-.module-card:not(.is-live):not(.is-pilot) {
+.module-card:not(.is-live):not(.is-pilot):not(.is-developing) {
   cursor: not-allowed;
 }
 
@@ -808,6 +807,10 @@ input {
 
 .module-card.is-pilot .module-card__action {
   color: var(--info-fg);
+}
+
+.module-card.is-developing .module-card__action {
+  color: var(--warn-fg);
 }
 
 .module-card__lock {
