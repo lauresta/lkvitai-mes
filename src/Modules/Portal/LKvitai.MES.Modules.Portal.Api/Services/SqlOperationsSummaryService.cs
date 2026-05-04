@@ -113,7 +113,7 @@ public sealed class SqlOperationsSummaryService
             while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
             {
                 createdByDay.Add(new PortalDayCountDto(
-                    Date:  ((DateTime)reader.GetValue(0)).ToString("yyyy-MM-dd"),
+                    Date:  reader.GetString(0),
                     Count: reader.GetInt32(1)));
             }
 
@@ -125,7 +125,7 @@ public sealed class SqlOperationsSummaryService
             while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
             {
                 completedByDay.Add(new PortalDayCountDto(
-                    Date:  ((DateTime)reader.GetValue(0)).ToString("yyyy-MM-dd"),
+                    Date:  reader.GetString(0),
                     Count: reader.GetInt32(1)));
             }
 
@@ -138,7 +138,8 @@ public sealed class SqlOperationsSummaryService
         }
         catch (Exception ex) when (ex is SqlException
                                       or TaskCanceledException
-                                      or InvalidOperationException)
+                                      or InvalidOperationException
+                                      or InvalidCastException)
         {
             _logger.LogWarning(ex,
                 "SqlOperationsSummaryService: failed to fetch operations summary for period={Period}",
