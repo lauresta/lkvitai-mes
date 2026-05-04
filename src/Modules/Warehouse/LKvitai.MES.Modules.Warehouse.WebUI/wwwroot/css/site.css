@@ -54,30 +54,15 @@ html, body {
     gap: 1rem;
 }
 
-/* MudBlazor reserves 64px padding for MudAppBar — we use a custom topbar instead */
+/* MudBlazor reserves 64px padding for MudAppBar — we use PortalModuleShell topbar instead */
 .mud-layout {
     --mud-appbar-height: 0px;
+    flex: 1;
+    min-height: 0;
 }
 
 h1:focus {
     outline: none;
-}
-
-a, .btn-link {
-    color: #0071c1;
-}
-
-.btn-primary {
-    color: #fff;
-    background-color: #1b6ec2;
-    border-color: #1861ac;
-}
-
-.btn-fixed-height {
-    min-height: 38px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
 }
 
 .content {
@@ -99,14 +84,14 @@ a, .btn-link {
 }
 
 .sidebar .nav-link.active {
-    color: #facc15 !important;
-    background-color: transparent !important;
+    color: var(--accent-300) !important;
+    background-color: rgba(86, 170, 167, 0.1) !important;
     font-weight: 500;
     text-decoration: none;
 }
 
 .sidebar .nav-link.active i {
-    color: #facc15 !important;
+    color: var(--accent-300) !important;
 }
 
 /* Accordion nav sections */
@@ -149,11 +134,11 @@ a, .btn-link {
 }
 
 .nav-section-toggle.has-active {
-    color: #facc15;
+    color: var(--accent-300);
 }
 
 .nav-section-toggle.has-active i:first-child {
-    color: #facc15;
+    color: var(--accent-300);
 }
 
 .nav-section-toggle .nav-chevron {
