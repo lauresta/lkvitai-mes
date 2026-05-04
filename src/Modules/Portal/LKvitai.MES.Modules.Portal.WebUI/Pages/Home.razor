@@ -29,10 +29,10 @@
         <div class="hero__copy">
             <div class="eyebrow mono">Portal &middot; Welcome</div>
             <h1>Welcome back@(string.IsNullOrWhiteSpace(_greetingName) ? "." : $", {_greetingName}.")</h1>
-            <p>Warehouse is available. The remaining modules are listed on the implementation roadmap.</p>
+            <p>Warehouse is live. Pilot modules are available for trial use; the remaining modules stay on the implementation roadmap.</p>
             <div class="hero__actions">
                 @* Recent shortcuts come from localStorage and are validated
-                   against the live module list, so we never render a chip for
+                   against the navigable module list, so we never render a chip for
                    a module that has been removed/renamed. Falls back to the
                    "Open Warehouse" anchor while no recents exist. The
                    data-portal-recent-key attribute is what portal-recents.js
@@ -133,7 +133,7 @@
             <div class="section-head">
                 <div>
                     <h2 id="modules-title">Modules</h2>
-                    <span><strong>@_availableCount</strong> available &middot; <strong>@_plannedCount</strong> planned</span>
+                    <span><strong>@_liveCount</strong> live &middot; <strong>@_pilotCount</strong> pilot &middot; <strong>@_developingCount</strong> developing &middot; <strong>@_plannedCount</strong> planned</span>
                 </div>
                 @* Module-grid local filter. The topbar's universal-search is now
                    a "coming soon" placeholder owned by PortalModuleShell, so the
@@ -166,12 +166,13 @@
                 <div class="module-grid">
                     @foreach (var mod in filteredModules)
                     {
-                        var isNavigable = mod.Status is ModuleStatus.Active or ModuleStatus.Scaffolded;
+                        var isNavigable = mod.Status is ModuleStatus.Live or ModuleStatus.Pilot;
                         var statusClass = mod.Status switch
                         {
-                            ModuleStatus.Active     => "is-active",
-                            ModuleStatus.Scaffolded => "is-scaffolded",
-                            _                        => null,
+                            ModuleStatus.Live       => "is-live",
+                            ModuleStatus.Pilot      => "is-pilot",
+                            ModuleStatus.Developing => "is-developing",
+                            _                       => null,
                         };
 
                         if (isNavigable)
@@ -228,7 +229,7 @@
                 </header>
                 <div class="status-row"><span>Environment</span><strong class="mono @_envStatusRowClass">@_envName</strong></div>
                 <div class="status-row"><span>Version</span><strong class="mono">@_displayVersion</strong></div>
-                <div class="status-row"><span>Modules</span><strong class="mono">@_availableCount active / @_modules.Count total</strong></div>
+                <div class="status-row"><span>Modules</span><strong class="mono">@_liveCount live / @_pilotCount pilot / @_modules.Count total</strong></div>
                 <div class="status-row"><span>Current module</span><strong>Portal</strong></div>
                 <div class="status-row"><span>Channel</span><strong class="mono">@_envChannel</strong></div>
             </section>
@@ -289,7 +290,9 @@
     private IReadOnlyList<NewsItem> _news = Array.Empty<NewsItem>();
     private List<RecentShortcut> _recentShortcuts = new();
 
-    private int _availableCount;
+    private int _liveCount;
+    private int _pilotCount;
+    private int _developingCount;
     private int _plannedCount;
 
     protected override async Task OnInitializedAsync()
@@ -313,8 +316,10 @@
             _displayBuildDate = status.BuildDate;
         }
 
-        _availableCount = _modules.Count(m => m.Status == ModuleStatus.Active);
-        _plannedCount   = _modules.Count(m => m.Status == ModuleStatus.Planned);
+        _liveCount       = _modules.Count(m => m.Status == ModuleStatus.Live);
+        _pilotCount      = _modules.Count(m => m.Status == ModuleStatus.Pilot);
+        _developingCount = _modules.Count(m => m.Status == ModuleStatus.Developing);
+        _plannedCount    = _modules.Count(m => m.Status == ModuleStatus.Planned);
 
         if (AuthState is not null)
         {
@@ -333,7 +338,7 @@
         // recents into the hero.
         var recentKeys = await SafeGetRecentsAsync(RecentSlots);
         var byKey = _modules
-            .Where(m => m.Status is ModuleStatus.Active or ModuleStatus.Scaffolded)
+            .Where(m => m.Status is ModuleStatus.Live or ModuleStatus.Pilot)
             .ToDictionary(m => m.Key, StringComparer.OrdinalIgnoreCase);
 
         var resolved = new List<RecentShortcut>(RecentSlots);

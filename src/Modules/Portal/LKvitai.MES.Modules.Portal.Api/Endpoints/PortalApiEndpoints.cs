@@ -225,7 +225,7 @@ public static class PortalApiEndpoints
         }
 
         var status = request.Status.Trim();
-        if (status is not ("Active" or "Scaffolded" or "Planned"))
+        if (status is not ("Planned" or "Developing" or "Pilot" or "Live"))
         {
             return Results.BadRequest(new { error = "invalid_status" });
         }

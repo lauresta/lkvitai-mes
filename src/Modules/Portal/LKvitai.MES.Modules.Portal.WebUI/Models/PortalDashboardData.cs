@@ -2,20 +2,20 @@ namespace LKvitai.MES.Modules.Portal.WebUI.Models;
 
 /// <summary>
 /// Tile status enum mirroring the legacy <c>script.js</c> contract:
-///   * <see cref="Active"/>     — green chip, fully navigable.
-///   * <see cref="Scaffolded"/> — amber/grey chip, navigable (the
-///     module shell exists end-to-end but has no business logic yet).
-///   * <see cref="Planned"/>    — grey, click shows a toast with the
-///     target quarter; no <c>Url</c> set.
-/// The string contract over the wire is the enum name (Active / Scaffolded
-/// / Planned) — see <c>PortalApiClient.ParseStatus</c>. Adding a new value
-/// requires updating both ends.
+///   * <see cref="Live"/>       — production work system.
+///   * <see cref="Pilot"/>      — available for trial/pilot use.
+///   * <see cref="Developing"/> — in build, not ready for users yet.
+///   * <see cref="Planned"/>    — roadmap item.
+/// The string contract over the wire is the enum name — see
+/// <c>PortalApiClient.ParseStatus</c>. Adding a new value requires updating
+/// both ends.
 /// </summary>
 public enum ModuleStatus
 {
-    Active,
-    Scaffolded,
     Planned,
+    Developing,
+    Pilot,
+    Live,
 }
 
 public sealed record ModuleCard(

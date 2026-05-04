@@ -1,13 +1,14 @@
 @*
     Inner content of a module card. Extracted so Home.razor can render
-    either an <a> (navigable modules) or a <button> (planned modules
+    either an <a> (navigable modules) or a <button> (non-navigable modules
     that pop a toast) around the same body without duplicating the
     icon + title + footer markup.
 
-    Footer chip mirrors the legacy script.js renderer:
-      * Active     → "Available" green chip + "Open …" CTA
-      * Scaffolded → "Scaffolded" amber chip + "Open …" CTA
-      * Planned    → "Planned · Q…" mono caption + lock glyph
+    Footer chip mirrors the Portal tile lifecycle:
+      * Live       → "Live" ok chip + "Open …" CTA
+      * Pilot      → "Pilot" teal chip + "Open …" CTA
+      * Developing → sand chip + lock glyph
+      * Planned    → slate caption + lock glyph
 *@
 
 <div class="module-card__top">
@@ -21,16 +22,22 @@
 <div class="module-card__footer">
     @switch (Card.Status)
     {
-        case ModuleStatus.Active:
-            <span class="module-card__status is-available">Available</span>
+        case ModuleStatus.Live:
+            <span class="module-card__status is-live">Live</span>
             <span class="module-card__action">Open @Card.Title &rarr;</span>
             break;
-        case ModuleStatus.Scaffolded:
-            <span class="module-card__status is-scaffolded">Scaffolded</span>
+        case ModuleStatus.Pilot:
+            <span class="module-card__status is-pilot">Pilot</span>
             <span class="module-card__action">Open @Card.Title &rarr;</span>
+            break;
+        case ModuleStatus.Developing:
+            <span class="module-card__status is-developing">Developing</span>
+            <span class="module-card__lock" aria-hidden="true">
+                <ModuleIcon Key="lock" />
+            </span>
             break;
         default:
-            <span class="module-card__status mono">Planned &middot; @Card.Quarter</span>
+            <span class="module-card__status mono">Planned@(string.IsNullOrWhiteSpace(Card.Quarter) ? null : $" · {Card.Quarter}")</span>
             <span class="module-card__lock" aria-hidden="true">
                 <ModuleIcon Key="lock" />
             </span>

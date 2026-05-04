@@ -221,9 +221,10 @@ public sealed class PortalApiClient
     private static ModuleStatus ParseStatus(string raw) =>
         raw switch
         {
-            "Active"     => ModuleStatus.Active,
-            "Scaffolded" => ModuleStatus.Scaffolded,
-            _            => ModuleStatus.Planned,
+            "Live" or "Active"       => ModuleStatus.Live,
+            "Pilot" or "Scaffolded"  => ModuleStatus.Pilot,
+            "Developing"             => ModuleStatus.Developing,
+            _                        => ModuleStatus.Planned,
         };
 
     private sealed record PortalStatusDto(
