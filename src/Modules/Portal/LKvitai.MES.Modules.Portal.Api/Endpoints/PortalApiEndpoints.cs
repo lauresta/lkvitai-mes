@@ -27,6 +27,7 @@ public static class PortalApiEndpoints
         portal.MapGet("/status", BuildStatus).AllowAnonymous();
         portal.MapGet("/modules", GetModules).RequireAuthorization();
         portal.MapGet("/news", GetNews).RequireAuthorization();
+        portal.MapGet("/operations-summary", GetOperationsSummary).RequireAuthorization();
 
         var admin = portal.MapGroup("/admin")
             .RequireAuthorization(PortalPolicies.AdminOnly);
@@ -102,6 +103,19 @@ public static class PortalApiEndpoints
         CancellationToken cancellationToken)
     {
         return news.GetAsync(cancellationToken);
+    }
+
+    private static async Task<IResult> GetOperationsSummary(
+        [Microsoft.AspNetCore.Mvc.FromQuery] string? period,
+        SqlOperationsSummaryService summaryService,
+        CancellationToken cancellationToken)
+    {
+        var result = await summaryService.GetAsync(period ?? "this", cancellationToken)
+            .ConfigureAwait(false);
+
+        return result is null
+            ? Results.StatusCode(503)
+            : Results.Ok(result);
     }
 
     private static async Task<IReadOnlyList<PortalModuleResponse>> GetAdminTiles(
