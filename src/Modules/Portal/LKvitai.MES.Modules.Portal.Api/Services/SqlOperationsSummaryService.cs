@@ -113,7 +113,7 @@ public sealed class SqlOperationsSummaryService
             while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
             {
                 createdByDay.Add(new PortalDayCountDto(
-                    Date:  reader.GetString(0),
+                    Date:  ((DateTime)reader.GetValue(0)).ToString("yyyy-MM-dd"),
                     Count: reader.GetInt32(1)));
             }
 
@@ -125,7 +125,7 @@ public sealed class SqlOperationsSummaryService
             while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
             {
                 completedByDay.Add(new PortalDayCountDto(
-                    Date:  reader.GetString(0),
+                    Date:  ((DateTime)reader.GetValue(0)).ToString("yyyy-MM-dd"),
                     Count: reader.GetInt32(1)));
             }
 
