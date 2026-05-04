@@ -166,7 +166,12 @@
                 <div class="module-grid">
                     @foreach (var mod in filteredModules)
                     {
-                        var isNavigable = mod.Status is ModuleStatus.Live or ModuleStatus.Pilot;
+                        // Only Planned tiles are non-navigable. Live / Pilot /
+                        // Developing all open the module; Developing tiles
+                        // without a URL fall back to the toast so we never
+                        // render a dead <a href="">.
+                        var isNavigable = mod.Status is not ModuleStatus.Planned
+                            && !string.IsNullOrWhiteSpace(mod.Url);
                         var statusClass = mod.Status switch
                         {
                             ModuleStatus.Live       => "is-live",
@@ -338,7 +343,7 @@
         // recents into the hero.
         var recentKeys = await SafeGetRecentsAsync(RecentSlots);
         var byKey = _modules
-            .Where(m => m.Status is ModuleStatus.Live or ModuleStatus.Pilot)
+            .Where(m => m.Status is not ModuleStatus.Planned && !string.IsNullOrWhiteSpace(m.Url))
             .ToDictionary(m => m.Key, StringComparer.OrdinalIgnoreCase);
 
         var resolved = new List<RecentShortcut>(RecentSlots);

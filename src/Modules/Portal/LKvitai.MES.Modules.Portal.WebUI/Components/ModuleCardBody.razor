@@ -7,8 +7,8 @@
     Footer chip mirrors the Portal tile lifecycle:
       * Live       → "Live" ok chip + "Open …" CTA
       * Pilot      → "Pilot" teal chip + "Open …" CTA
-      * Developing → sand chip + lock glyph
-      * Planned    → slate caption + lock glyph
+      * Developing → sand chip + "Open …" CTA (clickable, marked work-in-progress)
+      * Planned    → slate caption + lock glyph (only non-navigable status)
 *@
 
 <div class="module-card__top">
@@ -32,9 +32,7 @@
             break;
         case ModuleStatus.Developing:
             <span class="module-card__status is-developing">Developing</span>
-            <span class="module-card__lock" aria-hidden="true">
-                <ModuleIcon Key="lock" />
-            </span>
+            <span class="module-card__action">Open @Card.Title &rarr;</span>
             break;
         default:
             <span class="module-card__status mono">Planned@(string.IsNullOrWhiteSpace(Card.Quarter) ? null : $" · {Card.Quarter}")</span>
