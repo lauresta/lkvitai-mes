@@ -525,6 +525,20 @@ input {
   color: var(--warning);
 }
 
+.branch__metric {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0;
+}
+
+.branch__metric small {
+  font-size: 9px;
+  color: var(--n-500);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
 /* ── Modules + Side panel grid ──────────────────────────────────── */
 
 .content-grid {

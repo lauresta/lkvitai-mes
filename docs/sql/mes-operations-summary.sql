@@ -10,12 +10,13 @@
 --   @Period  NVARCHAR(10)  'this' = current month (default)
 --                          'last' = previous calendar month
 --
--- Result sets (always 5, always in this order)
+-- Result sets (always 6, always in this order)
 --   1. Period      (1 row)   PeriodKey, PeriodFrom, PeriodTo
 --   2. Stages      (8 rows)  StageKey, StageLabel, StageCount
 --   3. Statuses    (n rows)  StatusName, StatusCount
 --   4. CreatedByDay          Day (DATE), DayCount
 --   5. CompletedByDay        Day (DATE), DayCount
+--   6. BranchesOnTrack       BranchName, ReadyBasis, ReadyCount, IssuedCount, OnTrackPercent (INT NULL)
 --
 -- Business rules
 --   * Exclude test branch: FilialoID <> 7
@@ -24,6 +25,10 @@
 --       AND LTRIM(RTRIM(ISNULL(sNotes,''))) = 'Kliento prasymu anuliuotas'
 --   * Period scope : dtDateInsert in [@From, @To)  (@To = first day of next month)
 --   * completedByDay date: ISNULL(dtFinishingOrderDate, dtDateInsert)
+--   * branchesOnTrack readiness:
+--       Klaipeda (FilialoID=1): ready = Pagamintas (StateID=1173102374) + Isduotas klientui (StateID=2)
+--       All other branches:     ready = Issistas i filiala (StateID=1173102376) + Isduotas klientui (StateID=2)
+--       onTrackPercent = IssuedCount * 100 / ReadyCount  (NULL when ReadyCount = 0)
 -- ============================================================
 
 IF OBJECT_ID(N'dbo.mes_OperationsSummary', N'P') IS NOT NULL
@@ -155,6 +160,55 @@ BEGIN
         )
     GROUP BY CAST(ISNULL(u.dtFinishingOrderDate, u.dtDateInsert) AS DATE)
     ORDER BY [Day];
+
+    -- -------------------------------------------------------
+    -- Result set 6 — Branches on track
+    --   For Klaipeda (FilialoID=1):
+    --     ready = Pagamintas (StateID=1173102374) + Isduotas klientui (StateID=2)
+    --   For all other branches:
+    --     ready = Issistas i filiala (StateID=1173102376) + Isduotas klientui (StateID=2)
+    --   onTrackPercent = IssuedCount * 100 / ReadyCount  (NULL when ReadyCount=0)
+    -- -------------------------------------------------------
+    ;WITH BranchOrders AS (
+        SELECT us.FilialoID, u.StateID
+        FROM dbo.Uzsakymai u
+        INNER JOIN dbo.Zinynas_UzsakymoSerijos us ON us.UzsakymoSerijaID = u.UzsakymoSerija
+        WHERE
+            us.FilialoID <> 7
+            AND CAST(u.dtDateInsert AS DATE) >= @From
+            AND CAST(u.dtDateInsert AS DATE) <  @To
+            AND (
+                u.Sugadintas = 0
+                OR LTRIM(RTRIM(ISNULL(u.sNotes, N''))) <> N'Kliento prasymu anuliuotas'
+            )
+    ),
+    BranchAgg AS (
+        SELECT
+            o.FilialoID,
+            SUM(CASE
+                WHEN o.FilialoID = 1
+                    THEN CASE WHEN o.StateID IN (1173102374, 2) THEN 1 ELSE 0 END
+                ELSE
+                    CASE WHEN o.StateID IN (1173102376, 2) THEN 1 ELSE 0 END
+            END) AS ReadyCount,
+            SUM(CASE WHEN o.StateID = 2 THEN 1 ELSE 0 END) AS IssuedCount,
+            COUNT(*) AS TotalCount
+        FROM BranchOrders o
+        GROUP BY o.FilialoID
+    )
+    SELECT
+        f.FilialoPavadinimas                                                        AS BranchName,
+        CASE WHEN f.FilialoID = 1 THEN N'Pagamintas' ELSE N'Išsiųstas į filialą' END AS ReadyBasis,
+        a.ReadyCount,
+        a.IssuedCount,
+        CASE WHEN a.ReadyCount > 0
+             THEN CAST(ROUND(a.IssuedCount * 100.0 / a.ReadyCount, 0) AS INT)
+             ELSE NULL
+        END AS OnTrackPercent
+    FROM BranchAgg a
+    INNER JOIN dbo.Zinynas_filialai f ON f.FilialoID = a.FilialoID
+    WHERE a.TotalCount > 0
+    ORDER BY f.FilialoPavadinimas;
 
 END;
 GO

@@ -252,6 +252,9 @@ public sealed class PortalApiClient
                     .ToList(),
                 CompletedByDay: dto.CompletedByDay
                     .Select(d => new OperationsDayCount(d.Date, d.Count))
+                    .ToList(),
+                BranchesOnTrack: dto.BranchesOnTrack
+                    .Select(b => new BranchOnTrack(b.Branch, b.ReadyBasis, b.Ready, b.Issued, b.OnTrackPercent))
                     .ToList());
         }
         catch (Exception ex) when (ex is HttpRequestException
@@ -328,12 +331,19 @@ public sealed class PortalApiClient
         IReadOnlyList<PortalStageDtoItem> Stages,
         IReadOnlyList<PortalStatusCountDtoItem> Statuses,
         IReadOnlyList<PortalDayCountDtoItem> CreatedByDay,
-        IReadOnlyList<PortalDayCountDtoItem> CompletedByDay);
+        IReadOnlyList<PortalDayCountDtoItem> CompletedByDay,
+        IReadOnlyList<PortalBranchOnTrackDtoItem> BranchesOnTrack);
 
     private sealed record PortalPeriodDto(string Key, string From, string To);
     private sealed record PortalStageDtoItem(string Key, string Label, int Count);
     private sealed record PortalStatusCountDtoItem(string Status, int Count);
     private sealed record PortalDayCountDtoItem(string Date, int Count);
+    private sealed record PortalBranchOnTrackDtoItem(
+        string Branch,
+        string ReadyBasis,
+        int Ready,
+        int Issued,
+        int? OnTrackPercent);
 }
 
 /// <summary>

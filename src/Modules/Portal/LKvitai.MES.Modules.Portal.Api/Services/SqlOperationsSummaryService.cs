@@ -7,7 +7,7 @@ namespace LKvitai.MES.Modules.Portal.Api.Services;
 
 /// <summary>
 /// Executes <c>dbo.mes_OperationsSummary</c> against the legacy SQL Server
-/// database (LKvitaiDb) and maps the five result sets into a
+/// database (LKvitaiDb) and maps the six result sets into a
 /// <see cref="PortalOperationsSummaryResponse"/>.
 ///
 /// Fails soft: if <see cref="SalesDbOptions.ConnectionString"/> is absent or
@@ -129,14 +129,30 @@ public sealed class SqlOperationsSummaryService
                     Count: reader.GetInt32(1)));
             }
 
+            // ---------------------------------------------------------
+            // Result set 6 — Branches on track
+            // ---------------------------------------------------------
+            await reader.NextResultAsync(cancellationToken).ConfigureAwait(false);
+            var branchesOnTrack = new List<PortalBranchOnTrackDto>();
+            while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+            {
+                branchesOnTrack.Add(new PortalBranchOnTrackDto(
+                    Branch:         reader.GetString(0),
+                    ReadyBasis:     reader.GetString(1),
+                    Ready:          reader.GetInt32(2),
+                    Issued:         reader.GetInt32(3),
+                    OnTrackPercent: reader.IsDBNull(4) ? null : reader.GetInt32(4)));
+            }
+
             var resolvedPeriod = periodInfo ?? new PortalPeriodInfo(normalised, string.Empty, string.Empty);
 
             return new PortalOperationsSummaryResponse(
-                Period:         resolvedPeriod,
-                Stages:         stages,
-                Statuses:       statuses,
-                CreatedByDay:   PadToFullPeriod(createdByDay,   resolvedPeriod.From, resolvedPeriod.To),
-                CompletedByDay: PadToFullPeriod(completedByDay, resolvedPeriod.From, resolvedPeriod.To));
+                Period:          resolvedPeriod,
+                Stages:          stages,
+                Statuses:        statuses,
+                CreatedByDay:    PadToFullPeriod(createdByDay,   resolvedPeriod.From, resolvedPeriod.To),
+                CompletedByDay:  PadToFullPeriod(completedByDay, resolvedPeriod.From, resolvedPeriod.To),
+                BranchesOnTrack: branchesOnTrack);
         }
         catch (Exception ex) when (ex is SqlException
                                       or TaskCanceledException
