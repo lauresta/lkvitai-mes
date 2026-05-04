@@ -48,6 +48,7 @@ services:
       - "5011:8080"
     environment:
       ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__PortalDb: ${PORTAL_DB_CONNECTION}
     networks:
       - lkvitai-mes_prod
     healthcheck:

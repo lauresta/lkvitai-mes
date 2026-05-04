@@ -196,6 +196,7 @@ jobs:
             -e HOME=/tmp \
             -e DOTNET_CLI_HOME=/tmp/.dotnet \
             -e "ConnectionStrings__WarehouseDb=Host=pg;Port=5432;Database=$TEST_DB_NAME;Username=$TEST_DB_USER;Password=$TEST_DB_PASSWORD" \
+            -e "ConnectionStrings__PortalDb=Host=pg;Port=5432;Database=$TEST_DB_NAME;Username=$TEST_DB_USER;Password=$TEST_DB_PASSWORD" \
             mcr.microsoft.com/dotnet/sdk:8.0 \
             bash -c '
               set -e
@@ -209,6 +210,12 @@ jobs:
                   --startup-project src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Api \
                   --no-build \
                   --configuration Release; then
+                  dotnet build src/Modules/Portal/LKvitai.MES.Modules.Portal.Api/LKvitai.MES.Modules.Portal.Api.csproj -c Release
+                  dotnet ef database update \
+                    --project src/Modules/Portal/LKvitai.MES.Modules.Portal.Api \
+                    --startup-project src/Modules/Portal/LKvitai.MES.Modules.Portal.Api \
+                    --no-build \
+                    --configuration Release
                   echo "Migration succeeded on attempt $attempt"
                   exit 0
                 fi

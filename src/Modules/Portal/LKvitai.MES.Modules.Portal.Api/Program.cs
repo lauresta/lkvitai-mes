@@ -1,13 +1,48 @@
 using LKvitai.MES.BuildingBlocks.PortalAuth;
+using LKvitai.MES.Modules.Portal.Api;
 using LKvitai.MES.Modules.Portal.Api.Configuration;
 using LKvitai.MES.Modules.Portal.Api.Endpoints;
+using LKvitai.MES.Modules.Portal.Api.Persistence;
+using LKvitai.MES.Modules.Portal.Api.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddHealthChecks();
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddMemoryCache();
+builder.Services.AddHttpClient("GitHubReleases", client =>
+{
+    client.BaseAddress = new Uri("https://api.github.com/");
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("LKvitai.MES.Portal/1.0");
+    client.Timeout = TimeSpan.FromSeconds(12);
+});
+builder.Services.AddScoped<GitHubReleaseNewsService>();
+
+var portalDbConnectionString = builder.Configuration.GetConnectionString("PortalDb");
+if (string.IsNullOrWhiteSpace(portalDbConnectionString))
+{
+    throw new InvalidOperationException("ConnectionStrings:PortalDb is required for Portal CMS.");
+}
+var portalDbBuilder = new NpgsqlConnectionStringBuilder(portalDbConnectionString)
+{
+    MinPoolSize = 2,
+    MaxPoolSize = 25,
+    ConnectionLifetime = 300,
+    ConnectionIdleLifetime = 60,
+    Timeout = 30
+};
+builder.Services.AddDbContext<PortalDbContext>(options =>
+{
+    options.UseNpgsql(portalDbBuilder.ConnectionString, npgsql =>
+    {
+        npgsql.MigrationsHistoryTable("__EFMigrationsHistory", PortalDbContext.Schema);
+        npgsql.EnableRetryOnFailure(maxRetryCount: 3);
+    });
+});
 
 builder.Services
     .AddOptions<PortalDashboardOptions>()
@@ -30,6 +65,9 @@ builder.Services.AddAuthorization(options =>
             PortalStructuredBearerAuthenticationDefaults.Scheme)
         .RequireAuthenticatedUser()
         .Build();
+
+    options.AddPolicy(PortalPolicies.AdminOnly, policy =>
+        policy.RequireRole(PortalPolicies.AdminRoles));
 });
 
 var app = builder.Build();
@@ -44,5 +82,7 @@ app.UseAuthorization();
 
 app.MapHealthChecks("/health");
 app.MapPortalApiV1();
+
+await PortalDbSeeder.SeedAsync(app.Services);
 
 await app.RunAsync();

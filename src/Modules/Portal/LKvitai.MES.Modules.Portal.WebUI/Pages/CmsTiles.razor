@@ -1,0 +1,286 @@
+@page "/cms/tiles"
+@inject PortalApiClient PortalApi
+
+<PageTitle>Portal CMS · Tiles</PageTitle>
+
+<main class="main cms-page">
+    <section class="cms-head">
+        <div>
+            <div class="eyebrow mono">Portal CMS</div>
+            <h1>Tiles</h1>
+        </div>
+        <button type="button" class="button button--primary" @onclick="BeginCreate">New tile</button>
+    </section>
+
+    @if (!_isAdmin)
+    {
+        <section class="panel empty-state">
+            <div class="mono">Admin access required</div>
+            <p>Portal tile configuration is available to Admin, WarehouseAdmin or PortalAdmin roles.</p>
+        </section>
+    }
+    else
+    {
+        <div class="cms-grid">
+            <section class="panel cms-table-panel" aria-labelledby="tiles-title">
+                <div class="section-head">
+                    <div>
+                        <h2 id="tiles-title">Dashboard tiles</h2>
+                        <span><strong>@_tiles.Count</strong> total · <strong>@_tiles.Count(t => t.IsVisible)</strong> visible</span>
+                    </div>
+                </div>
+
+                @if (_loading)
+                {
+                    <div class="empty-state"><div class="mono">Loading</div></div>
+                }
+                else
+                {
+                    <div class="cms-table-wrap">
+                        <table class="cms-table">
+                            <thead>
+                                <tr>
+                                    <th>Order</th>
+                                    <th>Tile</th>
+                                    <th>Status</th>
+                                    <th>URL</th>
+                                    <th>Visible</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var tile in _tiles)
+                                {
+                                    <tr class="@(_selected?.Id == tile.Id ? "is-selected" : null)">
+                                        <td class="mono">@tile.SortOrder</td>
+                                        <td>
+                                            <strong>@tile.Title</strong>
+                                            <span>@tile.Key · @tile.Category</span>
+                                        </td>
+                                        <td><span class="module-card__status @(StatusClass(tile.Status))">@tile.Status</span></td>
+                                        <td class="mono">@(tile.Url ?? tile.Quarter ?? "—")</td>
+                                        <td>@(tile.IsVisible ? "Yes" : "No")</td>
+                                        <td>
+                                            <button type="button" class="button button--secondary cms-action" @onclick="@(() => BeginEdit(tile))">Edit</button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </section>
+
+            <aside class="panel cms-editor" aria-label="Tile editor">
+                <header class="panel__plain-head">
+                    <h2>@(_form.Id is null ? "New tile" : "Edit tile")</h2>
+                </header>
+
+                <EditForm Model="_form" OnValidSubmit="SaveAsync" class="cms-form">
+                    <DataAnnotationsValidator />
+
+                    <label>
+                        <span>Key</span>
+                        <InputText @bind-Value="_form.Key" />
+                    </label>
+                    <label>
+                        <span>Title</span>
+                        <InputText @bind-Value="_form.Title" />
+                    </label>
+                    <label>
+                        <span>Category</span>
+                        <InputText @bind-Value="_form.Category" />
+                    </label>
+                    <label>
+                        <span>Description</span>
+                        <InputTextArea @bind-Value="_form.Description" rows="4" />
+                    </label>
+                    <div class="cms-form__split">
+                        <label>
+                            <span>Status</span>
+                            <InputSelect @bind-Value="_form.Status">
+                                <option value="Active">Active</option>
+                                <option value="Scaffolded">Scaffolded</option>
+                                <option value="Planned">Planned</option>
+                            </InputSelect>
+                        </label>
+                        <label>
+                            <span>Sort</span>
+                            <InputNumber @bind-Value="_form.SortOrder" />
+                        </label>
+                    </div>
+                    <label>
+                        <span>URL</span>
+                        <InputText @bind-Value="_form.Url" />
+                    </label>
+                    <div class="cms-form__split">
+                        <label>
+                            <span>Quarter</span>
+                            <InputText @bind-Value="_form.Quarter" />
+                        </label>
+                        <label>
+                            <span>Icon key</span>
+                            <InputText @bind-Value="_form.IconKey" />
+                        </label>
+                    </div>
+                    <label class="cms-check">
+                        <InputCheckbox @bind-Value="_form.IsVisible" />
+                        <span>Visible on dashboard</span>
+                    </label>
+
+                    @if (!string.IsNullOrWhiteSpace(_message))
+                    {
+                        <p class="cms-message">@_message</p>
+                    }
+
+                    <div class="cms-form__actions">
+                        <button type="submit" class="button button--primary">Save</button>
+                        @if (_form.Id is not null)
+                        {
+                            <button type="button" class="button button--secondary" @onclick="HideAsync">Hide</button>
+                        }
+                    </div>
+                </EditForm>
+            </aside>
+        </div>
+    }
+</main>
+
+@code {
+    [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
+
+    private readonly List<ModuleCard> _tiles = [];
+    private TileForm _form = TileForm.Empty();
+    private ModuleCard? _selected;
+    private bool _loading = true;
+    private bool _isAdmin;
+    private string? _message;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthState is not null)
+        {
+            var state = await AuthState;
+            _isAdmin = state.User.IsInRole("Admin") ||
+                       state.User.IsInRole("WarehouseAdmin") ||
+                       state.User.IsInRole("PortalAdmin");
+        }
+
+        if (_isAdmin)
+        {
+            await LoadAsync();
+        }
+    }
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        _tiles.Clear();
+        _tiles.AddRange(await PortalApi.GetAdminTilesAsync());
+        _loading = false;
+    }
+
+    private void BeginCreate()
+    {
+        _selected = null;
+        _form = TileForm.Empty();
+        _message = null;
+    }
+
+    private void BeginEdit(ModuleCard tile)
+    {
+        _selected = tile;
+        _form = TileForm.From(tile);
+        _message = null;
+    }
+
+    private async Task SaveAsync()
+    {
+        var saved = await PortalApi.SaveTileAsync(_form.ToCard());
+        if (saved is null)
+        {
+            _message = "Save failed. Check required fields and permissions.";
+            return;
+        }
+
+        _message = "Saved.";
+        await LoadAsync();
+        BeginEdit(saved);
+    }
+
+    private async Task HideAsync()
+    {
+        if (_form.Id is not { } id) return;
+
+        if (await PortalApi.HideTileAsync(id))
+        {
+            _message = "Hidden.";
+            await LoadAsync();
+            BeginCreate();
+        }
+        else
+        {
+            _message = "Hide failed.";
+        }
+    }
+
+    private static string StatusClass(ModuleStatus status) => status switch
+    {
+        ModuleStatus.Active => "is-available",
+        ModuleStatus.Scaffolded => "is-scaffolded",
+        _ => string.Empty
+    };
+
+    private sealed class TileForm
+    {
+        public int? Id { get; set; }
+        public string Key { get; set; } = string.Empty;
+        public string Title { get; set; } = string.Empty;
+        public string Category { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public string Status { get; set; } = "Planned";
+        public string? Url { get; set; }
+        public string? Quarter { get; set; }
+        public string IconKey { get; set; } = "orders";
+        public int SortOrder { get; set; } = 999;
+        public bool IsVisible { get; set; } = true;
+        public IReadOnlyList<string>? RequiredRoles { get; set; }
+
+        public static TileForm Empty() => new();
+
+        public static TileForm From(ModuleCard tile) => new()
+        {
+            Id = tile.Id,
+            Key = tile.Key,
+            Title = tile.Title,
+            Category = tile.Category,
+            Description = tile.Description,
+            Status = tile.Status.ToString(),
+            Url = tile.Url,
+            Quarter = tile.Quarter,
+            IconKey = tile.IconKey ?? tile.Key,
+            SortOrder = tile.SortOrder,
+            IsVisible = tile.IsVisible,
+            RequiredRoles = tile.RequiredRoles
+        };
+
+        public ModuleCard ToCard() => new(
+            Id: Id,
+            Key: Key,
+            Title: Title,
+            Category: Category,
+            Description: Description,
+            Status: Status switch
+            {
+                "Active" => ModuleStatus.Active,
+                "Scaffolded" => ModuleStatus.Scaffolded,
+                _ => ModuleStatus.Planned
+            },
+            Url: Url,
+            Quarter: Quarter,
+            IconKey: IconKey,
+            SortOrder: SortOrder,
+            IsVisible: IsVisible,
+            RequiredRoles: RequiredRoles);
+    }
+}

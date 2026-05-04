@@ -36,8 +36,13 @@ internal sealed class ConfigurationBuildVersionAccessor : IBuildVersionAccessor
     public BuildVersion Get()
     {
         var version = TrimToNull(_configuration["APP_VERSION"]);
+        var releaseTag = TrimToNull(_configuration["RELEASE_TAG"]);
         var sha     = TrimToNull(_configuration["GIT_SHA"]);
         var rawDate = TrimToNull(_configuration["BUILD_DATE"]);
+        var branchName = TrimToNull(_configuration["BRANCH_NAME"]);
+        var rawPrNumber = TrimToNull(_configuration["PR_NUMBER"]);
+        var environmentName = TrimToNull(_configuration["ASPNETCORE_ENVIRONMENT"]);
+        var prNumber = int.TryParse(rawPrNumber, out var parsedPr) ? parsedPr : (int?)null;
 
         DateTimeOffset? builtAt = null;
         if (rawDate is not null && DateTimeOffset.TryParse(
@@ -49,7 +54,7 @@ internal sealed class ConfigurationBuildVersionAccessor : IBuildVersionAccessor
             builtAt = parsed;
         }
 
-        return new BuildVersion(version, sha, builtAt);
+        return new BuildVersion(version, releaseTag, sha, builtAt, branchName, prNumber, environmentName);
     }
 
     private static string? TrimToNull(string? value) =>

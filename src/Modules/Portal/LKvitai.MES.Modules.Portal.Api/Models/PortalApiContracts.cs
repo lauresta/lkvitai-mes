@@ -11,12 +11,15 @@ namespace LKvitai.MES.Modules.Portal.Api.Models;
 public sealed record PortalStatusResponse(
     string Module,
     string Status,
+    string DisplayVersion,
     string? Version,
     string? ReleaseTag,
     string? GitSha,
     DateTimeOffset? BuildDate,
     string Environment,
-    string Channel);
+    string Channel,
+    string? BranchName,
+    int? PullRequestNumber);
 
 /// <summary>
 /// Module card shape returned by GET /api/portal/v1/modules. Mirrors the
@@ -26,6 +29,7 @@ public sealed record PortalStatusResponse(
 /// slice).
 /// </summary>
 public sealed record PortalModuleResponse(
+    int? Id,
     string Key,
     string Title,
     string Category,
@@ -33,6 +37,22 @@ public sealed record PortalModuleResponse(
     string Status,
     string? Url,
     string? Quarter,
+    string? IconKey,
+    int? SortOrder,
+    bool? IsVisible,
+    IReadOnlyList<string>? RequiredRoles);
+
+public sealed record PortalTileUpsertRequest(
+    string Key,
+    string Title,
+    string Category,
+    string Description,
+    string Status,
+    string? Url,
+    string? Quarter,
+    string IconKey,
+    int SortOrder,
+    bool IsVisible,
     IReadOnlyList<string>? RequiredRoles);
 
 /// <summary>

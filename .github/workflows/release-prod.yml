@@ -61,6 +61,21 @@ jobs:
             type=raw,value=${{ github.event.release.tag_name }}
             type=sha,prefix=,format=long
 
+      - name: Capture release build metadata
+        id: meta_build
+        shell: bash
+        run: |
+          GIT_SHA="${GITHUB_SHA}"
+          BUILD_DATE="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          {
+            echo "git_sha=${GIT_SHA}"
+            echo "build_date=${BUILD_DATE}"
+            echo "app_version=${{ github.event.release.tag_name }}"
+            echo "release_tag=${{ github.event.release.tag_name }}"
+            echo "branch_name=${{ github.event.release.tag_name }}"
+            echo "pr_number="
+          } >> "${GITHUB_OUTPUT}"
+
       - name: Build and push ${{ matrix.name }} image
         uses: docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25
         with:
@@ -69,6 +84,13 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            APP_VERSION=${{ steps.meta_build.outputs.app_version }}
+            RELEASE_TAG=${{ steps.meta_build.outputs.release_tag }}
+            GIT_SHA=${{ steps.meta_build.outputs.git_sha }}
+            BUILD_DATE=${{ steps.meta_build.outputs.build_date }}
+            BRANCH_NAME=${{ steps.meta_build.outputs.branch_name }}
+            PR_NUMBER=${{ steps.meta_build.outputs.pr_number }}
           cache-from: type=gha,scope=release-${{ matrix.name }}
           cache-to: type=gha,mode=max,scope=release-${{ matrix.name }}
 
@@ -83,6 +105,7 @@ jobs:
       IMAGE_TAG: ${{ github.event.release.tag_name }}
       DOCKER_NETWORK_NAME: ${{ vars.DOCKER_NETWORK_NAME || 'lkvitai-mes_prod' }}
       WAREHOUSE_DB_CONNECTION: ${{ secrets.WAREHOUSE_DB_CONNECTION }}
+      PORTAL_DB_CONNECTION: ${{ secrets.PORTAL_DB_CONNECTION }}
       WAREHOUSE_API_BASE_URL: ${{ vars.WAREHOUSE_API_BASE_URL }}
     steps:
       - name: Checkout release code
@@ -111,6 +134,10 @@ jobs:
             echo "::error::WAREHOUSE_DB_CONNECTION is missing. Set it in GitHub Environment 'prod'."
             exit 1
           fi
+          if [ -z "${PORTAL_DB_CONNECTION}" ]; then
+            echo "::error::PORTAL_DB_CONNECTION is missing. Set it in GitHub Environment 'prod'."
+            exit 1
+          fi
 
           docker rm -f lkvitai-mes-prod-migration 2>/dev/null || true
 
@@ -122,6 +149,7 @@ jobs:
             -e HOME=/tmp \
             -e DOTNET_CLI_HOME=/tmp/.dotnet \
             -e "ConnectionStrings__WarehouseDb=$WAREHOUSE_DB_CONNECTION" \
+            -e "ConnectionStrings__PortalDb=$PORTAL_DB_CONNECTION" \
             mcr.microsoft.com/dotnet/sdk:8.0 \
             bash -c '
               set -e
@@ -131,6 +159,12 @@ jobs:
               dotnet ef database update \
                 --project src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Infrastructure \
                 --startup-project src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Api \
+                --no-build \
+                --configuration Release
+              dotnet build src/Modules/Portal/LKvitai.MES.Modules.Portal.Api/LKvitai.MES.Modules.Portal.Api.csproj -c Release
+              dotnet ef database update \
+                --project src/Modules/Portal/LKvitai.MES.Modules.Portal.Api \
+                --startup-project src/Modules/Portal/LKvitai.MES.Modules.Portal.Api \
                 --no-build \
                 --configuration Release
             '
