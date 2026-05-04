@@ -8,14 +8,17 @@ COPY Directory.Build.props .
 COPY Directory.Packages.props .
 COPY global.json .
 
-# Copy referenced BuildingBlock + all project files for restore (optimize layer caching)
-COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/ BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/
+# Copy referenced BuildingBlock csproj files for restore (optimize layer caching)
+COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/LKvitai.MES.BuildingBlocks.PortalAuth.csproj BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/
+COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.WebUI/LKvitai.MES.BuildingBlocks.WebUI.csproj BuildingBlocks/LKvitai.MES.BuildingBlocks.WebUI/
 COPY src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.WebUI/LKvitai.MES.Modules.Warehouse.WebUI.csproj Modules/Warehouse/LKvitai.MES.Modules.Warehouse.WebUI/
 
 # Restore dependencies
 RUN dotnet restore Modules/Warehouse/LKvitai.MES.Modules.Warehouse.WebUI/LKvitai.MES.Modules.Warehouse.WebUI.csproj
 
 # Copy source code
+COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/ BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/
+COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.WebUI/ BuildingBlocks/LKvitai.MES.BuildingBlocks.WebUI/
 COPY src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.WebUI/ Modules/Warehouse/LKvitai.MES.Modules.Warehouse.WebUI/
 
 # Build and publish
@@ -44,5 +47,20 @@ EXPOSE 8080
 # Set environment variables
 ENV ASPNETCORE_URLS=http://+:8080
 ENV ASPNETCORE_ENVIRONMENT=Production
+
+# Build metadata surfaced by IBuildVersionAccessor → MainLayout → the shared
+# topbar's "VER" badge. Filled in by build-and-push.yml via --build-arg so
+# the env-badge stops showing an em-dash in test/prod. Same shape as
+# Sales/Portal/Frontline WebUI Dockerfiles; keep the four ARGs synchronised
+# across modules so build-and-push.yml's matrix step can pass identical
+# --build-args to every WebUI image.
+ARG APP_VERSION
+ARG RELEASE_TAG
+ARG GIT_SHA
+ARG BUILD_DATE
+ENV APP_VERSION=${APP_VERSION}
+ENV RELEASE_TAG=${RELEASE_TAG}
+ENV GIT_SHA=${GIT_SHA}
+ENV BUILD_DATE=${BUILD_DATE}
 
 ENTRYPOINT ["dotnet", "LKvitai.MES.Modules.Warehouse.WebUI.dll"]
