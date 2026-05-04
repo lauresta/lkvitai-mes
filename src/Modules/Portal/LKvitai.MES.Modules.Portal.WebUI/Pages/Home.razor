@@ -101,25 +101,32 @@
             </div>
 
             <div class="daily-card">
-                <div class="daily-card__label mono">Completed / day <span>30d</span></div>
+                <div class="daily-card__label mono">Completed / day <span>@(_period == "last" ? "last mo." : "this mo.")</span></div>
                 <div class="daily-card__bars" aria-hidden="true">
                     @{
-                        IReadOnlyList<int> values;
+                        IReadOnlyList<(int Count, bool IsWeekend)> bars;
                         if (_summary is not null && _summary.CompletedByDay.Count > 0)
                         {
-                            values = _summary.CompletedByDay.Select(d => d.Count).ToList();
+                            bars = _summary.CompletedByDay
+                                .Select(d => (
+                                    d.Count,
+                                    IsWeekend: DateTime.TryParse(d.Date, out var dt) &&
+                                               (dt.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)))
+                                .ToList();
                         }
                         else
                         {
-                            values = PortalDashboardData.Daily[_period];
+                            bars = PortalDashboardData.Daily[_period]
+                                .Select((count, i) => (Count: count, IsWeekend: i % 7 is 5 or 6))
+                                .ToList();
                         }
-                        var max = values.Max();
+                        var maxVal = bars.Count > 0 ? bars.Max(b => b.Count) : 1;
+                        if (maxVal == 0) maxVal = 1;
                     }
-                    @for (var index = 0; index < values.Count; index++)
+                    @for (var index = 0; index < bars.Count; index++)
                     {
-                        var raw = values[index];
-                        var height = Math.Max(4, (int)Math.Round(raw / (double)max * 26d));
-                        var weekend = index % 7 is 5 or 6;
+                        var (raw, weekend) = bars[index];
+                        var height = Math.Max(4, (int)Math.Round(raw / (double)maxVal * 26d));
                         <i class="@(weekend ? "is-weekend" : null)" style="--bar-height: @(height)px"></i>
                     }
                 </div>

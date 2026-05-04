@@ -129,12 +129,14 @@ public sealed class SqlOperationsSummaryService
                     Count: reader.GetInt32(1)));
             }
 
+            var resolvedPeriod = periodInfo ?? new PortalPeriodInfo(normalised, string.Empty, string.Empty);
+
             return new PortalOperationsSummaryResponse(
-                Period:         periodInfo ?? new PortalPeriodInfo(normalised, string.Empty, string.Empty),
+                Period:         resolvedPeriod,
                 Stages:         stages,
                 Statuses:       statuses,
-                CreatedByDay:   createdByDay,
-                CompletedByDay: completedByDay);
+                CreatedByDay:   PadToFullPeriod(createdByDay,   resolvedPeriod.From, resolvedPeriod.To),
+                CompletedByDay: PadToFullPeriod(completedByDay, resolvedPeriod.From, resolvedPeriod.To));
         }
         catch (Exception ex) when (ex is SqlException
                                       or TaskCanceledException
@@ -146,5 +148,36 @@ public sealed class SqlOperationsSummaryService
                 normalised);
             return null;
         }
+    }
+
+    /// <summary>
+    /// Expands a sparse list of day-count entries into a dense list that
+    /// contains one entry for every calendar day in [from, to], filling
+    /// missing days with a zero count.  This ensures the UI bar chart
+    /// always renders the full month width regardless of data density.
+    /// </summary>
+    private static IReadOnlyList<PortalDayCountDto> PadToFullPeriod(
+        IReadOnlyList<PortalDayCountDto> data,
+        string fromStr,
+        string toStr)
+    {
+        if (!DateTime.TryParse(fromStr, out var from) ||
+            !DateTime.TryParse(toStr,   out var to)   || from > to)
+        {
+            return data;
+        }
+
+        var lookup = data.ToDictionary(d => d.Date, StringComparer.Ordinal);
+        var result = new List<PortalDayCountDto>((int)(to - from).TotalDays + 1);
+
+        for (var day = from; day <= to; day = day.AddDays(1))
+        {
+            var key = day.ToString("yyyy-MM-dd");
+            result.Add(lookup.TryGetValue(key, out var dto)
+                ? dto
+                : new PortalDayCountDto(key, 0));
+        }
+
+        return result;
     }
 }
