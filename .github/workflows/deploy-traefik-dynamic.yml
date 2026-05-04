@@ -38,6 +38,7 @@ jobs:
           grep -q 'Host(`warehouse.mes.lauresta.com`)' deploy/traefik/dynamic/mes.yml
           grep -q 'Host(`api.mes.lauresta.com`)' deploy/traefik/dynamic/mes.yml
           grep -qE 'Host\(`mes-test\.lauresta\.com`\)|HostRegexp\(.*mes-test' deploy/traefik/dynamic/mes-test.yml
+          grep -qE 'lkvitai\.lauresta\.com' deploy/traefik/dynamic/mes-test.yml
           grep -q 'PathPrefix(`/api/portal`)' deploy/traefik/dynamic/mes-test.yml
           grep -q 'PathPrefix(`/api/warehouse`)' deploy/traefik/dynamic/mes-test.yml
 
