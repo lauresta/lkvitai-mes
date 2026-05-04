@@ -11,5 +11,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\BuildingBlocks\LKvitai.MES.BuildingBlocks.PortalAuth\LKvitai.MES.BuildingBlocks.PortalAuth.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\LKvitai.MES.BuildingBlocks.WebUI\LKvitai.MES.BuildingBlocks.WebUI.csproj" />
   </ItemGroup>
 </Project>

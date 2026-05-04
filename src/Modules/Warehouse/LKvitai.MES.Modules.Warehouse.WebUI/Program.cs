@@ -1,5 +1,6 @@
 using System.Net.Http.Headers;
 using LKvitai.MES.BuildingBlocks.PortalAuth;
+using LKvitai.MES.BuildingBlocks.WebUI.Services;
 using LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure;
 using LKvitai.MES.Modules.Warehouse.WebUI.Services;
 using MudBlazor.Services;
@@ -13,6 +14,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddPortalCookieAuthentication(builder.Environment, builder.Configuration);
 builder.Services.AddAuthorization();
 builder.Services.AddCascadingAuthenticationState();
+builder.Services.AddBuildVersion();
 builder.Services.AddTransient<WarehouseApiAuthHandler>();
 
 builder.Services.AddHttpClient("WarehouseApi", (sp, client) =>
