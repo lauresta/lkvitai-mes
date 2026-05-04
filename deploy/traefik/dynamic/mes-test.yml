@@ -1,14 +1,14 @@
 # Test environment — routers, middlewares, services for mes-test.lauresta.com
 # and its alias lkvitai.lauresta.com (Cloudflare CNAME → mes-test.lauresta.com).
 #
-# All routers use HostRegexp so both hostnames are covered without duplication.
-# Traefik resolves Let's Encrypt certificates per SNI on first request.
+# Path-based routing under both hostnames. API prefixes are stripped before
+# forwarding so each module's ASP.NET Core host only sees its own routes.
 # Scaffolded modules (Sales/Frontline/Scanning) mirror the Warehouse/Portal
 # routing pattern exactly.
 http:
   routers:
     mes-test-portal-root:
-      rule: "HostRegexp(`{d:(mes-test|lkvitai)\\.lauresta\\.com}`) && Path(`/`)"
+      rule: "(Host(`mes-test.lauresta.com`) || Host(`lkvitai.lauresta.com`)) && Path(`/`)"
       entryPoints: [websecure]
       middlewares: [mes-test-redirect-root-to-portal]
       service: mes-test-portal-webui
@@ -17,7 +17,7 @@ http:
         certResolver: letsencrypt
 
     mes-test-portal:
-      rule: "HostRegexp(`{d:(mes-test|lkvitai)\\.lauresta\\.com}`) && PathPrefix(`/portal`)"
+      rule: "(Host(`mes-test.lauresta.com`) || Host(`lkvitai.lauresta.com`)) && PathPrefix(`/portal`)"
       entryPoints: [websecure]
       service: mes-test-portal-webui
       priority: 100
@@ -25,7 +25,7 @@ http:
         certResolver: letsencrypt
 
     mes-test-warehouse:
-      rule: "HostRegexp(`{d:(mes-test|lkvitai)\\.lauresta\\.com}`) && PathPrefix(`/warehouse`)"
+      rule: "(Host(`mes-test.lauresta.com`) || Host(`lkvitai.lauresta.com`)) && PathPrefix(`/warehouse`)"
       entryPoints: [websecure]
       service: mes-test-warehouse-webui
       priority: 100
@@ -33,7 +33,7 @@ http:
         certResolver: letsencrypt
 
     mes-test-sales:
-      rule: "HostRegexp(`{d:(mes-test|lkvitai)\\.lauresta\\.com}`) && PathPrefix(`/sales`)"
+      rule: "(Host(`mes-test.lauresta.com`) || Host(`lkvitai.lauresta.com`)) && PathPrefix(`/sales`)"
       entryPoints: [websecure]
       service: mes-test-sales-webui
       priority: 100
@@ -41,7 +41,7 @@ http:
         certResolver: letsencrypt
 
     mes-test-frontline:
-      rule: "HostRegexp(`{d:(mes-test|lkvitai)\\.lauresta\\.com}`) && PathPrefix(`/frontline`)"
+      rule: "(Host(`mes-test.lauresta.com`) || Host(`lkvitai.lauresta.com`)) && PathPrefix(`/frontline`)"
       entryPoints: [websecure]
       service: mes-test-frontline-webui
       priority: 100
@@ -49,7 +49,7 @@ http:
         certResolver: letsencrypt
 
     mes-test-scan:
-      rule: "HostRegexp(`{d:(mes-test|lkvitai)\\.lauresta\\.com}`) && PathPrefix(`/scan`)"
+      rule: "(Host(`mes-test.lauresta.com`) || Host(`lkvitai.lauresta.com`)) && PathPrefix(`/scan`)"
       entryPoints: [websecure]
       service: mes-test-scanning-webui
       priority: 100
@@ -57,7 +57,7 @@ http:
         certResolver: letsencrypt
 
     mes-test-api-portal:
-      rule: "HostRegexp(`{d:(mes-test|lkvitai)\\.lauresta\\.com}`) && PathPrefix(`/api/portal`)"
+      rule: "(Host(`mes-test.lauresta.com`) || Host(`lkvitai.lauresta.com`)) && PathPrefix(`/api/portal`)"
       entryPoints: [websecure]
       middlewares: [mes-test-strip-api-portal]
       service: mes-test-portal-api
@@ -66,7 +66,7 @@ http:
         certResolver: letsencrypt
 
     mes-test-api-warehouse:
-      rule: "HostRegexp(`{d:(mes-test|lkvitai)\\.lauresta\\.com}`) && PathPrefix(`/api/warehouse`)"
+      rule: "(Host(`mes-test.lauresta.com`) || Host(`lkvitai.lauresta.com`)) && PathPrefix(`/api/warehouse`)"
       entryPoints: [websecure]
       middlewares: [mes-test-strip-api-warehouse]
       service: mes-test-warehouse-api
@@ -75,7 +75,7 @@ http:
         certResolver: letsencrypt
 
     mes-test-api-sales:
-      rule: "HostRegexp(`{d:(mes-test|lkvitai)\\.lauresta\\.com}`) && PathPrefix(`/api/sales`)"
+      rule: "(Host(`mes-test.lauresta.com`) || Host(`lkvitai.lauresta.com`)) && PathPrefix(`/api/sales`)"
       entryPoints: [websecure]
       service: mes-test-sales-api
       priority: 200
@@ -83,7 +83,7 @@ http:
         certResolver: letsencrypt
 
     mes-test-api-frontline:
-      rule: "HostRegexp(`{d:(mes-test|lkvitai)\\.lauresta\\.com}`) && PathPrefix(`/api/frontline`)"
+      rule: "(Host(`mes-test.lauresta.com`) || Host(`lkvitai.lauresta.com`)) && PathPrefix(`/api/frontline`)"
       entryPoints: [websecure]
       service: mes-test-frontline-api
       priority: 200
@@ -91,7 +91,7 @@ http:
         certResolver: letsencrypt
 
     mes-test-api-scan:
-      rule: "HostRegexp(`{d:(mes-test|lkvitai)\\.lauresta\\.com}`) && PathPrefix(`/api/scan`)"
+      rule: "(Host(`mes-test.lauresta.com`) || Host(`lkvitai.lauresta.com`)) && PathPrefix(`/api/scan`)"
       entryPoints: [websecure]
       service: mes-test-scanning-api
       priority: 200
