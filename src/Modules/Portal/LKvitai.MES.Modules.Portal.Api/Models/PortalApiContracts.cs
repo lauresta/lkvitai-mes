@@ -86,7 +86,8 @@ public sealed record PortalOperationsSummaryResponse(
     IReadOnlyList<PortalStageDto> Stages,
     IReadOnlyList<PortalStatusCountDto> Statuses,
     IReadOnlyList<PortalDayCountDto> CreatedByDay,
-    IReadOnlyList<PortalDayCountDto> CompletedByDay);
+    IReadOnlyList<PortalDayCountDto> CompletedByDay,
+    IReadOnlyList<PortalBranchOnTrackDto> BranchesOnTrack);
 
 /// <summary>Calendar period described by the summary.</summary>
 public sealed record PortalPeriodInfo(
@@ -109,3 +110,22 @@ public sealed record PortalStatusCountDto(
 public sealed record PortalDayCountDto(
     string Date,
     int Count);
+
+/// <summary>
+/// Per-branch readiness metric for one calendar month period.
+/// <para>
+/// <see cref="ReadyBasis"/> is the localized Lithuanian status name used
+/// as the readiness threshold: <c>Išsiųstas į filialą</c> for normal branches
+/// and <c>Pagamintas</c> for Klaipėda.
+/// </para>
+/// <para>
+/// <see cref="OnTrackPercent"/> is <c>null</c> when <see cref="Ready"/> is zero
+/// (no orders have reached the readiness threshold yet in the period).
+/// </para>
+/// </summary>
+public sealed record PortalBranchOnTrackDto(
+    string Branch,
+    string ReadyBasis,
+    int Ready,
+    int Issued,
+    int? OnTrackPercent);

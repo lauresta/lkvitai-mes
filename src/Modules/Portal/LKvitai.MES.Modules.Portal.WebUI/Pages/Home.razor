@@ -143,11 +143,27 @@
             <div>
                 <div class="operations__label mono">Branches on track</div>
                 <div class="branch-grid">
-                    @foreach (var branch in PortalDashboardData.Branches)
+                    @{
+                        var branches = _summary?.BranchesOnTrack is { Count: > 0 } realBranches
+                            ? realBranches
+                            : (IReadOnlyList<BranchOnTrack>)PortalDashboardData.Branches;
+                    }
+                    @foreach (var branch in branches)
                     {
-                        <div class="branch @(branch.PercentOnTrack < 90 ? "is-warning" : null)">
+                        var pct = branch.OnTrackPercent;
+                        <div class="branch @(pct.HasValue && pct < 90 ? "is-warning" : null)">
                             <span>@branch.Name</span>
-                            <strong class="mono">@branch.PercentOnTrack%</strong>
+                            @if (pct.HasValue)
+                            {
+                                <div class="branch__metric">
+                                    <strong class="mono">@pct%</strong>
+                                    <small class="mono">@branch.Issued&nbsp;/&nbsp;@branch.Ready</small>
+                                </div>
+                            }
+                            else
+                            {
+                                <strong class="mono">–</strong>
+                            }
                         </div>
                     }
                 </div>

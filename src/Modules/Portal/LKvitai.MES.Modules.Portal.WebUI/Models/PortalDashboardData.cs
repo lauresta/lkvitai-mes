@@ -38,7 +38,12 @@ public sealed record OperationsStage(
     int ThisMonth,
     int LastMonth);
 
-public sealed record BranchOnTrack(string Name, int PercentOnTrack);
+public sealed record BranchOnTrack(
+    string Name,
+    string ReadyBasis,
+    int Ready,
+    int Issued,
+    int? OnTrackPercent);
 
 public sealed record NewsItem(
     string Tag,
@@ -58,7 +63,8 @@ public sealed record OperationsSummary(
     IReadOnlyList<OperationsStageData> Stages,
     IReadOnlyList<OperationsStatusCount> Statuses,
     IReadOnlyList<OperationsDayCount> CreatedByDay,
-    IReadOnlyList<OperationsDayCount> CompletedByDay);
+    IReadOnlyList<OperationsDayCount> CompletedByDay,
+    IReadOnlyList<BranchOnTrack> BranchesOnTrack);
 
 public sealed record OperationsPeriod(string Key, string From, string To);
 
@@ -108,9 +114,9 @@ public static class PortalDashboardData
 
     public static IReadOnlyList<BranchOnTrack> Branches { get; } = new[]
     {
-        new BranchOnTrack("Vilnius",  94),
-        new BranchOnTrack("Kaunas",   89),
-        new BranchOnTrack("Klaipeda", 91),
-        new BranchOnTrack("Siauliai", 84),
+        new BranchOnTrack("Vilnius",  "Išsiųstas į filialą", 50, 47, 94),
+        new BranchOnTrack("Kaunas",   "Išsiųstas į filialą", 55, 49, 89),
+        new BranchOnTrack("Klaipeda", "Pagamintas",           42, 38, 91),
+        new BranchOnTrack("Siauliai", "Išsiųstas į filialą", 44, 37, 84),
     };
 }
