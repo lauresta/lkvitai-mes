@@ -30,6 +30,18 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/*
 
+# Legacy LKvitaiDb (SQL Server 2008/2012) compatibility:
+# the .NET 8 base image (Debian 12) ships OpenSSL 3 with SECLEVEL=2 and
+# MinProtocol=TLSv1.2. The legacy SQL Server only offers TLS 1.0 with
+# SHA1-signed self-signed certs during the TDS pre-login handshake (which
+# is mandatory regardless of Encrypt=False), so the connection dies with
+# "SSL Provider, error: 31 - Encryption(ssl/tls) handshake failed" before
+# any SQL is sent. Lower SECLEVEL and MinProtocol so the handshake can
+# complete; the actual data exchange is still unencrypted because the
+# connection string sets Encrypt=False;TrustServerCertificate=True.
+RUN sed -i 's|^\[openssl_init\]|[openssl_init]\nssl_conf = ssl_sect|' /etc/ssl/openssl.cnf \
+    && printf '\n[ssl_sect]\nsystem_default = system_default_sect\n\n[system_default_sect]\nMinProtocol = TLSv1\nCipherString = DEFAULT:@SECLEVEL=0\n' >> /etc/ssl/openssl.cnf
+
 # Use the base image's built-in non-root `app` user (uid 1654, gid 1654).
 # Standard .NET 8 convention. Published binaries deliberately stay
 # root-owned (read+exec for `app`, no write) — Sonar docker:S6504. Any
