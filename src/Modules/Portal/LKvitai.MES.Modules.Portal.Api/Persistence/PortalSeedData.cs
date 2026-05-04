@@ -4,10 +4,10 @@ public static class PortalSeedData
 {
     public static IReadOnlyList<PortalTile> Tiles(DateTimeOffset now) =>
     [
-        Tile("warehouse", "Warehouse", "Operations", "Inventory locations, stock movements, reservations, handling units, 3D warehouse layout.", "Active", "/warehouse/", null, "warehouse", 10, now),
-        Tile("sales", "Sales", "Commercial", "Customer orders.", "Scaffolded", "/sales/", null, "sales", 20, now),
-        Tile("frontline", "Frontline", "Field", "Field availability lookup.", "Scaffolded", "/frontline/", null, "frontline", 30, now),
-        Tile("scanning", "Scanning", "Mobile", "Mobile barcode scan.", "Scaffolded", "/scan/", null, "scanning", 40, now),
+        Tile("warehouse", "Warehouse", "Operations", "Inventory locations, stock movements, reservations, handling units, 3D warehouse layout.", "Live", "/warehouse/", null, "warehouse", 10, now),
+        Tile("sales", "Sales", "Commercial", "Customer orders.", "Pilot", "/sales/", null, "sales", 20, now),
+        Tile("frontline", "Frontline", "Field", "Field availability lookup.", "Pilot", "/frontline/", null, "frontline", 30, now),
+        Tile("scanning", "Scanning", "Mobile", "Mobile barcode scan.", "Pilot", "/scan/", null, "scanning", 40, now),
         Tile("orders", "Orders", "Commercial", "Order lifecycle, product composition, workflow planning.", "Planned", null, "Q3 2026", "orders", 50, now),
         Tile("shopfloor", "Shopfloor", "Operations", "Workstation tasks, WIP routing, operator kiosk execution.", "Planned", null, "Q3 2026", "shopfloor", 60, now),
         Tile("quality", "Quality", "Operations", "Inspections, defect tracking, rework and returns.", "Planned", null, "Q4 2026", "quality", 70, now),

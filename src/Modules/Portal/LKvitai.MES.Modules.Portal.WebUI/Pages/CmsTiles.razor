@@ -99,9 +99,10 @@
                         <label>
                             <span>Status</span>
                             <InputSelect @bind-Value="_form.Status">
-                                <option value="Active">Active</option>
-                                <option value="Scaffolded">Scaffolded</option>
                                 <option value="Planned">Planned</option>
+                                <option value="Developing">Developing</option>
+                                <option value="Pilot">Pilot</option>
+                                <option value="Live">Live</option>
                             </InputSelect>
                         </label>
                         <label>
@@ -226,8 +227,9 @@
 
     private static string StatusClass(ModuleStatus status) => status switch
     {
-        ModuleStatus.Active => "is-available",
-        ModuleStatus.Scaffolded => "is-scaffolded",
+        ModuleStatus.Live => "is-live",
+        ModuleStatus.Pilot => "is-pilot",
+        ModuleStatus.Developing => "is-developing",
         _ => string.Empty
     };
 
@@ -272,8 +274,9 @@
             Description: Description,
             Status: Status switch
             {
-                "Active" => ModuleStatus.Active,
-                "Scaffolded" => ModuleStatus.Scaffolded,
+                "Live" => ModuleStatus.Live,
+                "Pilot" => ModuleStatus.Pilot,
+                "Developing" => ModuleStatus.Developing,
                 _ => ModuleStatus.Planned
             },
             Url: Url,

@@ -592,7 +592,7 @@ input {
   box-shadow: 0 2px 6px rgb(15 23 42 / 6%);
 }
 
-.module-card.is-active {
+.module-card.is-live {
   padding-top: 13px;
   border-color: var(--accent-400);
   border-top: 3px solid var(--accent-600);
@@ -600,28 +600,38 @@ input {
   cursor: pointer;
 }
 
-.module-card.is-active:hover {
+.module-card.is-live:hover {
   box-shadow: 0 6px 18px oklch(54% 0.082 195 / 22%);
   transform: translateY(-1px);
 }
 
-/* Scaffolded tiles: warm sand palette, distinct from green is-active
-   and red/grey planned. The vertical works but has no business logic yet. */
-.module-card.is-scaffolded {
+.module-card.is-pilot {
   padding-top: 13px;
-  border-color: oklch(86% 0.035 75);
-  border-top: 3px solid oklch(62% 0.10 75);
-  background: oklch(97.5% 0.018 75);
+  border-color: var(--info-bd);
+  border-top: 3px solid var(--info-dot);
+  background: var(--info-bg);
   cursor: pointer;
 }
 
-.module-card.is-scaffolded:hover {
-  background: oklch(96.5% 0.022 75);
-  box-shadow: 0 6px 18px oklch(62% 0.10 75 / 18%);
+.module-card.is-pilot:hover {
+  background: color-mix(in srgb, var(--info-bg) 82%, var(--n-0));
+  box-shadow: 0 6px 18px rgb(47 143 139 / 18%);
   transform: translateY(-1px);
 }
 
-.module-card:not(.is-active):not(.is-scaffolded) {
+.module-card.is-developing {
+  padding-top: 13px;
+  border-color: var(--warn-bd);
+  border-top: 3px solid var(--warn-dot);
+  background: var(--warn-bg);
+  cursor: not-allowed;
+}
+
+.module-card.is-developing:hover {
+  background: color-mix(in srgb, var(--warn-bg) 88%, var(--n-0));
+}
+
+.module-card:not(.is-live):not(.is-pilot) {
   cursor: not-allowed;
 }
 
@@ -643,16 +653,22 @@ input {
   color: var(--n-400);
 }
 
-.module-card.is-active .module-card__icon {
+.module-card.is-live .module-card__icon {
   border: 1px solid var(--accent-100);
   background: var(--n-0);
   color: var(--accent-700);
 }
 
-.module-card.is-scaffolded .module-card__icon {
-  border: 1px solid oklch(90% 0.025 75);
+.module-card.is-pilot .module-card__icon {
+  border: 1px solid var(--info-bd);
   background: var(--n-0);
-  color: oklch(46% 0.10 75);
+  color: var(--info-fg);
+}
+
+.module-card.is-developing .module-card__icon {
+  border: 1px solid var(--warn-bd);
+  background: var(--n-0);
+  color: var(--warn-fg);
 }
 
 .module-card__category {
@@ -663,12 +679,16 @@ input {
   text-transform: uppercase;
 }
 
-.module-card.is-active .module-card__category {
+.module-card.is-live .module-card__category {
   color: var(--accent-700);
 }
 
-.module-card.is-scaffolded .module-card__category {
-  color: oklch(46% 0.10 75);
+.module-card.is-pilot .module-card__category {
+  color: var(--info-fg);
+}
+
+.module-card.is-developing .module-card__category {
+  color: var(--warn-fg);
 }
 
 .module-card h3 {
@@ -677,8 +697,9 @@ input {
   font-size: 15.5px;
 }
 
-.module-card.is-active h3,
-.module-card.is-scaffolded h3 {
+.module-card.is-live h3,
+.module-card.is-pilot h3,
+.module-card.is-developing h3 {
   color: var(--n-900);
 }
 
@@ -704,12 +725,16 @@ input {
   border-top: 1px solid var(--n-150);
 }
 
-.module-card.is-active .module-card__footer {
+.module-card.is-live .module-card__footer {
   border-top-color: var(--accent-100);
 }
 
-.module-card.is-scaffolded .module-card__footer {
-  border-top-color: oklch(90% 0.025 75);
+.module-card.is-pilot .module-card__footer {
+  border-top-color: var(--info-bd);
+}
+
+.module-card.is-developing .module-card__footer {
+  border-top-color: var(--warn-bd);
 }
 
 .module-card__status {
@@ -717,44 +742,61 @@ input {
   font-size: 11px;
 }
 
-.module-card__status.is-available {
+.module-card__status.is-live {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: var(--success);
+  color: var(--ok-fg);
   font-size: 11px;
   font-weight: 800;
   letter-spacing: .6px;
   text-transform: uppercase;
 }
 
-.module-card__status.is-available::before {
+.module-card__status.is-live::before {
   content: "";
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: oklch(58% 0.15 155);
-  box-shadow: 0 0 0 3px var(--success-bg);
+  background: var(--ok-dot);
+  box-shadow: 0 0 0 3px var(--ok-bg);
 }
 
-.module-card__status.is-scaffolded {
+.module-card__status.is-pilot,
+.module-card__status.is-developing {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: oklch(46% 0.10 75);
   font-size: 11px;
   font-weight: 800;
   letter-spacing: .6px;
   text-transform: uppercase;
 }
 
-.module-card__status.is-scaffolded::before {
+.module-card__status.is-pilot {
+  color: var(--info-fg);
+}
+
+.module-card__status.is-pilot::before,
+.module-card__status.is-developing::before {
   content: "";
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: oklch(62% 0.10 75);
-  box-shadow: 0 0 0 3px oklch(92% 0.04 75);
+}
+
+.module-card__status.is-pilot::before {
+  background: var(--info-dot);
+  box-shadow: 0 0 0 3px var(--info-bg);
+}
+
+.module-card__status.is-developing {
+  color: var(--warn-fg);
+}
+
+.module-card__status.is-developing::before {
+  background: var(--warn-dot);
+  box-shadow: 0 0 0 3px var(--warn-bg);
 }
 
 .module-card__action {
@@ -764,8 +806,8 @@ input {
   white-space: nowrap;
 }
 
-.module-card.is-scaffolded .module-card__action {
-  color: oklch(42% 0.10 75);
+.module-card.is-pilot .module-card__action {
+  color: var(--info-fg);
 }
 
 .module-card__lock {
@@ -1329,7 +1371,9 @@ input {
     padding: 13px 13px 11px;
   }
 
-  .module-card.is-active {
+  .module-card.is-live,
+  .module-card.is-pilot,
+  .module-card.is-developing {
     padding-top: 11px;
   }
 
