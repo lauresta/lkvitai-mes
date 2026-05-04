@@ -21,14 +21,17 @@ api.mes.lauresta.com/portal      -> http://10.11.12.9:5011
 api.mes.lauresta.com/warehouse   -> http://10.11.12.9:5001
 ```
 
-Test VM `lkvitai-test`:
+Test VM `lkvitai-test` (both hostnames via `HostRegexp`):
 
 ```text
-mes-test.lauresta.com/                 -> redirects to /portal/
-mes-test.lauresta.com/portal          -> http://10.11.12.15:5010
-mes-test.lauresta.com/warehouse       -> http://10.11.12.15:5000
-mes-test.lauresta.com/api/portal      -> http://10.11.12.15:5011
-mes-test.lauresta.com/api/warehouse   -> http://10.11.12.15:5001
+mes-test.lauresta.com  \
+lkvitai.lauresta.com    /  -> same backends, cert resolved per SNI by Let's Encrypt
+
+/                      -> redirects to /portal/
+/portal                -> http://10.11.12.15:5010
+/warehouse             -> http://10.11.12.15:5000
+/api/portal            -> http://10.11.12.15:5011
+/api/warehouse         -> http://10.11.12.15:5001
 ```
 
 Production API routers strip the module prefix before forwarding. For example,
