@@ -42,12 +42,15 @@ public sealed class PortalApiClient
             return new PortalStatus(
                 Module: dto.Module,
                 Status: dto.Status,
+                DisplayVersion: dto.DisplayVersion,
                 Version: dto.Version,
                 ReleaseTag: dto.ReleaseTag,
                 GitSha: dto.GitSha,
                 BuildDate: dto.BuildDate,
                 Environment: dto.Environment,
-                Channel: dto.Channel);
+                Channel: dto.Channel,
+                BranchName: dto.BranchName,
+                PullRequestNumber: dto.PullRequestNumber);
         }
         catch (Exception ex) when (ex is HttpRequestException
                                       or TaskCanceledException
@@ -69,13 +72,18 @@ public sealed class PortalApiClient
 
             return dtos
                 .Select(d => new ModuleCard(
+                    Id: d.Id,
                     Key: d.Key,
                     Title: d.Title,
                     Category: d.Category,
                     Description: d.Description,
                     Status: ParseStatus(d.Status),
                     Url: d.Url,
-                    Quarter: d.Quarter))
+                    Quarter: d.Quarter,
+                    IconKey: d.IconKey,
+                    SortOrder: d.SortOrder ?? 0,
+                    IsVisible: d.IsVisible ?? true,
+                    RequiredRoles: d.RequiredRoles))
                 .ToList();
         }
         catch (Exception ex) when (ex is HttpRequestException
@@ -115,6 +123,101 @@ public sealed class PortalApiClient
         }
     }
 
+    public async Task<IReadOnlyList<ModuleCard>> GetAdminTilesAsync(CancellationToken cancellationToken = default)
+    {
+        var client = _httpClientFactory.CreateClient(ClientName);
+        try
+        {
+            var dtos = await client.GetFromJsonAsync<List<PortalModuleDto>>(
+                "api/portal/v1/admin/tiles", cancellationToken).ConfigureAwait(false);
+            if (dtos is null) return Array.Empty<ModuleCard>();
+
+            return dtos
+                .Select(d => new ModuleCard(
+                    Id: d.Id,
+                    Key: d.Key,
+                    Title: d.Title,
+                    Category: d.Category,
+                    Description: d.Description,
+                    Status: ParseStatus(d.Status),
+                    Url: d.Url,
+                    Quarter: d.Quarter,
+                    IconKey: d.IconKey,
+                    SortOrder: d.SortOrder ?? 0,
+                    IsVisible: d.IsVisible ?? true,
+                    RequiredRoles: d.RequiredRoles))
+                .ToList();
+        }
+        catch (Exception ex) when (ex is HttpRequestException
+                                      or TaskCanceledException
+                                      or System.Text.Json.JsonException)
+        {
+            _logger.LogWarning(ex, "Portal API GET /admin/tiles failed");
+            return Array.Empty<ModuleCard>();
+        }
+    }
+
+    public async Task<ModuleCard?> SaveTileAsync(ModuleCard tile, CancellationToken cancellationToken = default)
+    {
+        var client = _httpClientFactory.CreateClient(ClientName);
+        var request = new PortalTileUpsertDto(
+            Key: tile.Key,
+            Title: tile.Title,
+            Category: tile.Category,
+            Description: tile.Description,
+            Status: tile.Status.ToString(),
+            Url: tile.Url,
+            Quarter: tile.Quarter,
+            IconKey: tile.IconKey ?? tile.Key,
+            SortOrder: tile.SortOrder,
+            IsVisible: tile.IsVisible,
+            RequiredRoles: tile.RequiredRoles);
+
+        HttpResponseMessage response;
+        if (tile.Id is { } id)
+        {
+            response = await client.PutAsJsonAsync($"api/portal/v1/admin/tiles/{id}", request, cancellationToken)
+                .ConfigureAwait(false);
+        }
+        else
+        {
+            response = await client.PostAsJsonAsync("api/portal/v1/admin/tiles", request, cancellationToken)
+                .ConfigureAwait(false);
+        }
+
+        if (!response.IsSuccessStatusCode)
+        {
+            _logger.LogWarning("Portal API save tile failed. StatusCode={StatusCode}", (int)response.StatusCode);
+            return null;
+        }
+
+        var dto = await response.Content.ReadFromJsonAsync<PortalModuleDto>(cancellationToken: cancellationToken)
+            .ConfigureAwait(false);
+        return dto is null
+            ? null
+            : new ModuleCard(
+                Id: dto.Id,
+                Key: dto.Key,
+                Title: dto.Title,
+                Category: dto.Category,
+                Description: dto.Description,
+                Status: ParseStatus(dto.Status),
+                Url: dto.Url,
+                Quarter: dto.Quarter,
+                IconKey: dto.IconKey,
+                SortOrder: dto.SortOrder ?? 0,
+                IsVisible: dto.IsVisible ?? true,
+                RequiredRoles: dto.RequiredRoles);
+    }
+
+    public async Task<bool> HideTileAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var client = _httpClientFactory.CreateClient(ClientName);
+        var response = await client.DeleteAsync($"api/portal/v1/admin/tiles/{id}", cancellationToken)
+            .ConfigureAwait(false);
+        return response.IsSuccessStatusCode;
+    }
+
     private static ModuleStatus ParseStatus(string raw) =>
         raw switch
         {
@@ -126,14 +229,18 @@ public sealed class PortalApiClient
     private sealed record PortalStatusDto(
         string Module,
         string Status,
+        string DisplayVersion,
         string? Version,
         string? ReleaseTag,
         string? GitSha,
         DateTimeOffset? BuildDate,
         string Environment,
-        string Channel);
+        string Channel,
+        string? BranchName,
+        int? PullRequestNumber);
 
     private sealed record PortalModuleDto(
+        int? Id,
         string Key,
         string Title,
         string Category,
@@ -141,6 +248,22 @@ public sealed class PortalApiClient
         string Status,
         string? Url,
         string? Quarter,
+        string? IconKey,
+        int? SortOrder,
+        bool? IsVisible,
+        IReadOnlyList<string>? RequiredRoles);
+
+    private sealed record PortalTileUpsertDto(
+        string Key,
+        string Title,
+        string Category,
+        string Description,
+        string Status,
+        string? Url,
+        string? Quarter,
+        string IconKey,
+        int SortOrder,
+        bool IsVisible,
         IReadOnlyList<string>? RequiredRoles);
 
     private sealed record PortalNewsDto(
@@ -161,9 +284,12 @@ public sealed class PortalApiClient
 public sealed record PortalStatus(
     string Module,
     string Status,
+    string DisplayVersion,
     string? Version,
     string? ReleaseTag,
     string? GitSha,
     DateTimeOffset? BuildDate,
     string Environment,
-    string Channel);
+    string Channel,
+    string? BranchName,
+    int? PullRequestNumber);

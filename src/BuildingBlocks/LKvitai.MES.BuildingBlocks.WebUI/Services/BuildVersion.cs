@@ -12,7 +12,14 @@ namespace LKvitai.MES.BuildingBlocks.WebUI.Services;
 /// returns "dev" rather than the em-dash so a `dotnet run` session still shows
 /// SOMETHING in the badge.
 /// </summary>
-public sealed record BuildVersion(string? Version, string? GitSha, DateTimeOffset? BuildDate)
+public sealed record BuildVersion(
+    string? Version,
+    string? ReleaseTag,
+    string? GitSha,
+    DateTimeOffset? BuildDate,
+    string? BranchName,
+    int? PullRequestNumber,
+    string? EnvironmentName)
 {
     /// <summary>"—" when no version is wired (the explicit "value not set"
     /// signal the shell already uses). When APP_VERSION is the literal
@@ -25,6 +32,23 @@ public sealed record BuildVersion(string? Version, string? GitSha, DateTimeOffse
         {
             if (string.IsNullOrWhiteSpace(Version)) return "—";
             if (string.Equals(Version, "0.1.0-dev", StringComparison.OrdinalIgnoreCase)) return "dev";
+            if (string.Equals(EnvironmentName, "Production", StringComparison.OrdinalIgnoreCase) &&
+                !string.IsNullOrWhiteSpace(ReleaseTag))
+            {
+                return ReleaseTag;
+            }
+            if (string.Equals(EnvironmentName, "Test", StringComparison.OrdinalIgnoreCase) &&
+                PullRequestNumber is not null &&
+                !string.IsNullOrWhiteSpace(ShortSha))
+            {
+                return $"PR-{PullRequestNumber} · {ShortSha}";
+            }
+            if (string.Equals(EnvironmentName, "Test", StringComparison.OrdinalIgnoreCase) &&
+                !string.IsNullOrWhiteSpace(BranchName) &&
+                !string.IsNullOrWhiteSpace(ShortSha))
+            {
+                return $"{BranchName} · {ShortSha}";
+            }
             return Version;
         }
     }

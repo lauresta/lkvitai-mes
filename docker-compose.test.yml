@@ -66,6 +66,7 @@ services:
       - "5011:8080"
     environment:
       ASPNETCORE_ENVIRONMENT: Test
+      ConnectionStrings__PortalDb: "Host=pg;Port=5432;Database=${TEST_DB_NAME:-lkvitai_warehouse_test};Username=${TEST_DB_USER:-postgres};Password=${TEST_DB_PASSWORD}"
     networks:
       - lkvitai-mes_default
     healthcheck:

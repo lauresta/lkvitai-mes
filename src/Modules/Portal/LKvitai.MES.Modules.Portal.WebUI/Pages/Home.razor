@@ -238,6 +238,7 @@
                 <div class="panel__body">
                     <p>MES helpdesk sms &middot; <span class="mono">+37062454321</span></p>
                     <p>MES team &middot; <a href="mailto:developa@lauresta.lt">developa@lauresta.lt</a></p>
+                    <p>Portal CMS &middot; <a href="cms/tiles">Tiles</a></p>
                 </div>
             </section>
 
@@ -307,7 +308,7 @@
         var status = await statusTask;
         if (status is not null)
         {
-            if (!string.IsNullOrWhiteSpace(status.Version)) _displayVersion = status.Version;
+            if (!string.IsNullOrWhiteSpace(status.DisplayVersion)) _displayVersion = status.DisplayVersion;
             if (!string.IsNullOrWhiteSpace(status.GitSha))  _displayGitSha  = ShortSha(status.GitSha);
             _displayBuildDate = status.BuildDate;
         }

@@ -19,13 +19,18 @@ public enum ModuleStatus
 }
 
 public sealed record ModuleCard(
+    int? Id,
     string Key,
     string Title,
     string Category,
     string Description,
     ModuleStatus Status,
     string? Url = null,
-    string? Quarter = null);
+    string? Quarter = null,
+    string? IconKey = null,
+    int SortOrder = 0,
+    bool IsVisible = true,
+    IReadOnlyList<string>? RequiredRoles = null);
 
 public sealed record OperationsStage(
     string Key,

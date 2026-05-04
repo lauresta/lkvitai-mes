@@ -12,7 +12,7 @@
 
 <div class="module-card__top">
     <div class="module-card__icon">
-        <ModuleIcon Key="@Card.Key" />
+        <ModuleIcon Key="@(Card.IconKey ?? Card.Key)" />
     </div>
     <span class="module-card__category mono">@Card.Category</span>
 </div>

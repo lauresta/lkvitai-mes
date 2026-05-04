@@ -141,11 +141,15 @@ jobs:
           BUILD_DATE="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
           APP_VERSION="$(git describe --tags --always 2>/dev/null || echo "${GIT_SHA:0:7}")"
           RELEASE_TAG="${APP_VERSION}"
+          BRANCH_NAME="${GITHUB_REF_NAME}"
+          PR_NUMBER="$(git log -1 --pretty=%B | grep -Eo '#[0-9]+' | head -1 | tr -d '#' || true)"
           {
             echo "git_sha=${GIT_SHA}"
             echo "build_date=${BUILD_DATE}"
             echo "app_version=${APP_VERSION}"
             echo "release_tag=${RELEASE_TAG}"
+            echo "branch_name=${BRANCH_NAME}"
+            echo "pr_number=${PR_NUMBER}"
           } >> "${GITHUB_OUTPUT}"
 
       - name: Build and push ${{ matrix.name }} image (attempt 1/3)
@@ -166,6 +170,8 @@ jobs:
             RELEASE_TAG=${{ steps.meta_build.outputs.release_tag }}
             GIT_SHA=${{ steps.meta_build.outputs.git_sha }}
             BUILD_DATE=${{ steps.meta_build.outputs.build_date }}
+            BRANCH_NAME=${{ steps.meta_build.outputs.branch_name }}
+            PR_NUMBER=${{ steps.meta_build.outputs.pr_number }}
           cache-from: type=gha,scope=${{ matrix.name }}
           cache-to: type=gha,mode=max,scope=${{ matrix.name }}
 
@@ -192,6 +198,8 @@ jobs:
             RELEASE_TAG=${{ steps.meta_build.outputs.release_tag }}
             GIT_SHA=${{ steps.meta_build.outputs.git_sha }}
             BUILD_DATE=${{ steps.meta_build.outputs.build_date }}
+            BRANCH_NAME=${{ steps.meta_build.outputs.branch_name }}
+            PR_NUMBER=${{ steps.meta_build.outputs.pr_number }}
           cache-from: type=gha,scope=${{ matrix.name }}
           cache-to: type=gha,mode=max,scope=${{ matrix.name }}
 
@@ -219,5 +227,7 @@ jobs:
             RELEASE_TAG=${{ steps.meta_build.outputs.release_tag }}
             GIT_SHA=${{ steps.meta_build.outputs.git_sha }}
             BUILD_DATE=${{ steps.meta_build.outputs.build_date }}
+            BRANCH_NAME=${{ steps.meta_build.outputs.branch_name }}
+            PR_NUMBER=${{ steps.meta_build.outputs.pr_number }}
           cache-from: type=gha,scope=${{ matrix.name }}
           cache-to: type=gha,mode=max,scope=${{ matrix.name }}
