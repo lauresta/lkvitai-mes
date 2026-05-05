@@ -11,7 +11,8 @@
 }
 
 .app-shell {
-  max-width: 1440px;
+  width: 100%;
+  max-width: none;
   min-height: 100vh;
   margin: 0 auto;
   background: var(--n-50);

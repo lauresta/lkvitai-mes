@@ -17,6 +17,17 @@ Warehouse modular monolith (Phase refactor branch).
 - `docs/` - architecture, blueprint, audit, and status documents
 - `scripts/` - operational and deployment scripts
 
+## Shell Layout
+
+The shared portal shell is full-bleed: the test strip, topbar, and module body
+span the viewport. Module content is capped inside the body with
+`--content-max: 1600px`; Warehouse uses `.main__inner` for this cap while its
+sidebar remains a fixed-width column (`240px` expanded, `52px` collapsed).
+
+Do not reintroduce a centered `max-width` on `.app-shell`. It separates
+MudBlazor's persistent drawer from the centered topbar/content on wide screens,
+which makes the Warehouse sidebar appear to drift to the far left.
+
 ## Refactor Blueprint
 
 - Source of truth: `docs/blueprints/repo-refactor-blueprint.md`
