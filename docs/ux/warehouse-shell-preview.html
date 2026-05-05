@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Warehouse Shell — Design Preview</title>
+<style>
+/* ── Tokens (portal-tokens.css verbatim) ─────────────────────────── */
+:root {
+  --n-0:#fff; --n-25:#fbfcfd; --n-50:#f5f6f8; --n-100:#eef1f4;
+  --n-150:#e2e7ec; --n-200:#d5dce4; --n-300:#b9c3ce; --n-400:#8996a4;
+  --n-500:#66717f; --n-600:#4e5966; --n-700:#323b45; --n-800:#1f2632; --n-900:#151922;
+  --accent-50:#eaf8f7; --accent-100:#d1eeec; --accent-300:#7cc4c1;
+  --accent-400:#56aaa7; --accent-500:#2f8f8b; --accent-600:#257773; --accent-700:#1d5d5a;
+  --sand-25:#faf6ee; --sand-50:#f7f1e5; --sand-100:#ede2c8;
+  --sand-500:#c79f63; --sand-600:#b08a4a; --sand-700:#7c5f2a;
+  --ok-fg:#19744a;   --ok-bg:#e6f4ec;   --ok-dot:#1f9d61;
+  --warn-fg:#7c5f2a; --warn-bg:#f7eed5; --warn-dot:#b08a4a;
+  --info-fg:#1d5d5a; --info-bg:#e3f2f1; --info-dot:#2f8f8b;
+  --slate-fg:#3a4554;--slate-bg:#eaeef3;--slate-dot:#66717f;
+  --danger-fg:#8a1f12;--danger-bg:#fbe7e3;--danger-dot:#c0392b;
+  --dark:#20242c; --dark-2:#171b22; --dark-line:#3a404c;
+  --font-ui:'Inter','Segoe UI',system-ui,sans-serif;
+  --font-mono:'JetBrains Mono','SF Mono',Consolas,monospace;
+  --r-sm:4px; --r-md:6px; --r-lg:8px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-family: var(--font-ui); font-size: 13px; color: var(--n-900); background: var(--n-100); }
+
+/* ── Shell ──────────────────────────────────────────────────────── */
+.app-shell {
+  max-width: 1440px; min-height: 100vh;
+  margin: 0 auto; background: var(--n-50);
+  box-shadow: 0 0 40px rgb(0 0 0/.04);
+  display: flex; flex-direction: column; overflow-x: hidden;
+}
+
+/* ── Test-strip ─────────────────────────────────────────────────── */
+.test-strip {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 8px 28px;
+  background: repeating-linear-gradient(-45deg,#ead19b,#ead19b 12px,#dfc07a 12px,#dfc07a 24px);
+  color: var(--n-900); font-size: 12px;
+}
+.test-strip__main { display: flex; align-items: center; gap: 9px; }
+.icon-warn { width:14px;height:14px;background:currentColor;clip-path:polygon(50% 5%,96% 90%,4% 90%);display:inline-block; }
+.test-strip__host { font-family:var(--font-mono);font-size:11px;white-space:nowrap; }
+
+/* ── Topbar ─────────────────────────────────────────────────────── */
+.topbar {
+  display: flex; align-items: center; gap: 24px;
+  padding: 14px 28px;
+  background: var(--dark); color: var(--n-0);
+  border-bottom: 1px solid var(--dark-line);
+}
+.brand { display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit;border-radius:6px; }
+.brand__mark {
+  display:grid;place-items:center;width:36px;height:36px;
+  border:1px solid var(--dark-line);border-radius:6px;
+  background:var(--dark-2);color:var(--accent-400);font-size:13px;font-weight:700;
+}
+.brand__name { color:var(--n-0);font-size:15px;font-weight:700;line-height:1.1; }
+.brand__name span { color:#9ba4b0;font-weight:400; }
+.brand__tagline { margin-top:2px;color:#a5adb8;font-size:10px;letter-spacing:1.4px;text-transform:uppercase;white-space:nowrap;font-family:var(--font-mono); }
+.topbar__sep { width:1px;height:28px;background:var(--dark-line); }
+.topbar__spacer { flex:1; }
+.portal-search {
+  flex:1 1 360px;max-width:460px;position:relative;
+  display:flex;align-items:center;gap:8px;
+  padding:8px 10px 8px 34px;
+  border:1px solid var(--dark-line);border-radius:4px;
+  background:#1b2028;color:#8f98a6;font-size:13px;cursor:pointer;
+}
+.portal-search__icon {
+  position:absolute;left:12px;top:50%;width:13px;height:13px;
+  border:1.8px solid #8f98a6;border-radius:50%;transform:translateY(-58%);
+}
+.portal-search__icon::after {
+  content:"";position:absolute;right:-5px;bottom:-4px;
+  width:6px;height:1.8px;background:#8f98a6;transform:rotate(45deg);transform-origin:left center;
+}
+.portal-search__hint {
+  font-size:10px;letter-spacing:.5px;padding:1px 6px;
+  border:1px solid var(--dark-line);border-radius:3px;color:#8f98a6;background:var(--dark-2);
+  font-family:var(--font-mono);
+}
+.env-badge {
+  display:flex;border:1px solid var(--dark-line);border-radius:4px;overflow:hidden;background:#1b2028;
+}
+.env-badge div { display:flex;align-items:center;gap:7px;padding:6px 11px; }
+.env-badge div:first-child { border-right:1px solid var(--dark-line);background:var(--dark-2); }
+.env-badge span { color:#9ba4b0;font-size:10px;font-family:var(--font-mono); }
+.env-badge strong { color:var(--n-0);font-size:11px;font-family:var(--font-mono); }
+.env-badge div:first-child strong { color:#dfc07a; }
+.user-block { display:flex;align-items:center;gap:9px;padding-left:14px;border-left:1px solid var(--dark-line); }
+.user-block__avatar {
+  display:grid;place-items:center;width:30px;height:30px;border-radius:50%;
+  background:var(--dark-line);color:var(--accent-400);font-size:11px;font-weight:700;
+  font-family:var(--font-mono);
+}
+.user-block__name { color:var(--n-0);font-size:12px;font-weight:700; }
+.user-block__logout { color:#a5adb8;font-size:11px;background:none;border:0;cursor:pointer;padding:0; }
+
+/* ── Body (sidebar + content) ───────────────────────────────────── */
+.shell-body { display: flex; flex: 1; min-height: 0; }
+
+/* ── Sidebar ────────────────────────────────────────────────────── */
+.sidebar {
+  width: 250px; flex: 0 0 250px;
+  background: var(--dark); color: var(--n-0);
+  display: flex; flex-direction: column;
+  border-right: 1px solid var(--dark-line);
+  overflow-y: auto;
+}
+.sidebar-inner { padding: 12px 8px; }
+
+/* nav dash link */
+.nav-dash {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 10px; border-radius: var(--r-sm);
+  color: var(--n-0); text-decoration: none; font-size: 13px;
+  margin-bottom: 4px;
+}
+.nav-dash:hover { background: rgba(255,255,255,.08); }
+.nav-dash.active { color: var(--accent-300); font-weight: 600; }
+.nav-dash svg { flex:0 0 15px;opacity:.7; }
+
+/* section headers */
+.nav-section { margin-bottom: 2px; }
+.nav-section-toggle {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; padding: 5px 10px;
+  background: transparent; border: 0; border-radius: var(--r-sm);
+  color: rgba(255,255,255,.45); font-size: 10.5px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .06em;
+  cursor: pointer; text-align: left;
+}
+.nav-section-toggle:hover { color: rgba(255,255,255,.85); background: rgba(255,255,255,.05); }
+.nav-section-toggle.open { color: rgba(255,255,255,.85); }
+.nav-section-toggle.has-active { color: var(--accent-300); }
+.nav-chevron { font-size: 9px; transition: transform .18s ease; }
+.nav-section-toggle.open .nav-chevron { transform: rotate(180deg); }
+.nav-section-items { padding: 2px 0 4px 8px; }
+.nav-link {
+  display: flex; align-items: center; gap: 7px;
+  padding: 4px 10px; border-radius: var(--r-sm);
+  color: rgba(255,255,255,.72); text-decoration: none; font-size: 12.5px;
+}
+.nav-link:hover { background: rgba(255,255,255,.07); color: var(--n-0); }
+.nav-link.active { color: var(--accent-300); font-weight: 600; background: rgba(86,170,167,.1); }
+
+/* ── Main content ────────────────────────────────────────────────── */
+.main-content { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.main-inner { padding: 24px 28px; flex: 1; }
+
+/* ── Fake page content — stock dashboard ─────────────────────────── */
+.page-header { display:flex;align-items:baseline;justify-content:space-between;margin-bottom:20px; }
+.page-title { font-size:18px;font-weight:700;color:var(--n-900); }
+.page-sub  { font-size:12px;color:var(--n-500);margin-top:2px; }
+.btn { display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:var(--r-sm);font-size:12.5px;font-weight:600;border:0;cursor:pointer; }
+.btn-primary { background:var(--accent-500);color:#fff; }
+.btn-outline { background:var(--n-0);color:var(--n-700);border:1px solid var(--n-200); }
+
+.kpi-row { display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px; }
+.kpi {
+  background:var(--n-0);border:1px solid var(--n-150);border-radius:var(--r-lg);
+  padding:14px 16px;
+}
+.kpi__label { font-size:11px;color:var(--n-500);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px; }
+.kpi__val { font-size:22px;font-weight:700;font-family:var(--font-mono);color:var(--n-900); }
+.kpi__delta { font-size:11px;margin-top:3px; }
+.kpi__delta.up { color:var(--ok-fg); }
+.kpi__delta.down { color:var(--danger-fg); }
+
+.panel {
+  background:var(--n-0);border:1px solid var(--n-150);border-radius:var(--r-lg);
+  margin-bottom:16px;overflow:hidden;
+}
+.panel-head {
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 16px;border-bottom:1px solid var(--n-100);
+}
+.panel-title { font-size:13px;font-weight:600;color:var(--n-800); }
+.panel-actions { display:flex;gap:8px; }
+
+.data-table { width:100%;border-collapse:collapse; }
+.data-table th {
+  padding:8px 12px;text-align:left;font-size:11px;font-weight:600;
+  color:var(--n-500);text-transform:uppercase;letter-spacing:.05em;
+  background:var(--n-50);border-bottom:1px solid var(--n-150);
+}
+.data-table td { padding:8px 12px;border-bottom:1px solid var(--n-100);font-size:12.5px; }
+.data-table tr:last-child td { border-bottom:0; }
+.data-table tr:hover td { background:var(--n-50); }
+.mono { font-family:var(--font-mono); }
+.chip {
+  display:inline-flex;align-items:center;gap:4px;
+  padding:2px 7px;border-radius:10px;font-size:11px;font-weight:600;
+  border:1px solid transparent;
+}
+.chip--ok    { background:var(--ok-bg);   color:var(--ok-fg);    border-color:#bfe0cd; }
+.chip--warn  { background:var(--warn-bg); color:var(--warn-fg);  border-color:#e2cf9a; }
+.chip--info  { background:var(--info-bg); color:var(--info-fg);  border-color:#b4dad7; }
+.chip--slate { background:var(--slate-bg);color:var(--slate-fg); border-color:#cdd5de; }
+
+/* ── Design questions panel (annotation overlay) ─────────────────── */
+.design-qa {
+  position: fixed; bottom: 0; right: 0;
+  width: 340px; max-height: 80vh;
+  background: var(--n-0); border: 1px solid var(--n-200);
+  border-radius: var(--r-lg) 0 0 0;
+  box-shadow: -4px -4px 24px rgb(0 0 0/.1);
+  display: flex; flex-direction: column; z-index: 100;
+  font-size: 12px;
+}
+.design-qa__head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; background: var(--dark); color: var(--n-0);
+  border-radius: var(--r-lg) 0 0 0;
+}
+.design-qa__head h3 { font-size: 12px; font-weight: 700; }
+.design-qa__tag { font-size: 10px; background: var(--sand-100); color: var(--sand-700); padding: 2px 6px; border-radius: 3px; font-family: var(--font-mono); }
+.design-qa__body { overflow-y: auto; padding: 12px 14px; }
+.qa-item { margin-bottom: 14px; }
+.qa-item:last-child { margin-bottom: 0; }
+.qa-num { font-family: var(--font-mono); font-size: 10px; font-weight: 700; color: var(--accent-500); margin-bottom: 3px; }
+.qa-q { font-weight: 600; color: var(--n-800); line-height: 1.4; margin-bottom: 4px; }
+.qa-context { color: var(--n-500); line-height: 1.5; }
+.qa-divider { border: 0; border-top: 1px solid var(--n-100); margin: 12px 0; }
+.toggle-qa { background: none; border: 0; color: var(--n-400); cursor: pointer; font-size: 16px; line-height: 1; }
+
+/* toggle collapsed */
+.design-qa.collapsed .design-qa__body { display: none; }
+.design-qa.collapsed { max-height: auto; }
+
+/* annotation dots on screenshot */
+.ann {
+  display: inline-block; width: 18px; height: 18px;
+  background: var(--accent-500); color: #fff;
+  border-radius: 50%; font-size: 10px; font-weight: 700;
+  text-align: center; line-height: 18px;
+  position: absolute; cursor: default;
+  box-shadow: 0 2px 6px rgb(0 0 0/.25);
+}
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- ① Test strip (BuildingBlocks PortalModuleShell) -->
+  <div class="test-strip">
+    <div class="test-strip__main">
+      <span class="icon-warn"></span>
+      <strong>TEST ENVIRONMENT</strong>
+      <span style="opacity:.82">Data in this environment is not production data and may be reset without notice.</span>
+    </div>
+    <span class="test-strip__host mono">mes-test.lauresta.com</span>
+  </div>
+
+  <!-- ② Topbar (BuildingBlocks PortalModuleShell) -->
+  <header class="topbar">
+    <a class="brand" href="/">
+      <div class="brand__mark">LK</div>
+      <div>
+        <div class="brand__name">LKvitai<span>.MES</span></div>
+        <div class="brand__tagline mono">Manufacturing · Execution · Standards</div>
+      </div>
+    </a>
+    <div class="topbar__sep"></div>
+    <div class="portal-search">
+      <span class="portal-search__icon"></span>
+      Search everything…
+      <span class="portal-search__hint">⌘K</span>
+    </div>
+    <div class="topbar__spacer"></div>
+    <div class="env-badge">
+      <div><span class="mono">ENV</span><strong class="mono">TEST</strong></div>
+      <div><span class="mono">VER</span><strong class="mono">1.4.2</strong></div>
+    </div>
+    <div class="user-block">
+      <div class="user-block__avatar">LM</div>
+      <div>
+        <div class="user-block__name">Lukas Mažeika</div>
+        <button class="user-block__logout">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ③ Shell body: sidebar + main -->
+  <div class="shell-body">
+
+    <!-- ④ Left sidebar (current Warehouse nav, restyled to tokens) -->
+    <nav class="sidebar">
+      <div class="sidebar-inner">
+
+        <a class="nav-dash" href="#">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M0 0h7v7H0zm9 0h7v7H9zM0 9h7v7H0zm9 0h7v7H9z"/></svg>
+          Dashboard
+        </a>
+
+        <!-- Stock -->
+        <div class="nav-section">
+          <button class="nav-section-toggle open has-active">
+            <span>
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" style="margin-right:6px"><path d="M8.186 1.113a.5.5 0 0 0-.372 0L1.846 3.5 8 5.961 14.154 3.5 8.186 1.113zM15 4.239l-6.5 2.6v7.922l6.5-2.6V4.24zm-7 10.522V6.838L1 4.239v7.923l7 2.6z"/></svg>
+              Stock
+            </span>
+            <span class="nav-chevron">▼</span>
+          </button>
+          <div class="nav-section-items">
+            <a class="nav-link active" href="#">Available Stock</a>
+            <a class="nav-link" href="#">Search by Image</a>
+            <a class="nav-link" href="#">Stock Dashboard</a>
+            <a class="nav-link" href="#">Location Balance</a>
+            <a class="nav-link" href="#">Adjustments</a>
+            <a class="nav-link" href="#">Reservations</a>
+          </div>
+        </div>
+
+        <!-- Inbound -->
+        <div class="nav-section">
+          <button class="nav-section-toggle">
+            <span>
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" style="margin-right:6px"><path d="M0 3.5A1.5 1.5 0 0 1 1.5 2h9A1.5 1.5 0 0 1 12 3.5V5h1.02a1.5 1.5 0 0 1 1.17.563l1.481 1.85a1.5 1.5 0 0 1 .329.938V10.5a1.5 1.5 0 0 1-1.5 1.5H14a2 2 0 1 1-4 0H5a2 2 0 1 1-4 0 1.5 1.5 0 0 1-1.5-1.5v-7z"/></svg>
+              Inbound
+            </span>
+            <span class="nav-chevron">▼</span>
+          </button>
+        </div>
+
+        <!-- Outbound -->
+        <div class="nav-section">
+          <button class="nav-section-toggle">
+            <span>
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" style="margin-right:6px"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.1a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.1a.5.5 0 0 1 1 0v2.1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.1a.5.5 0 0 1 .5-.5z"/><path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"/></svg>
+              Outbound
+            </span>
+            <span class="nav-chevron">▼</span>
+          </button>
+        </div>
+
+        <!-- Operations -->
+        <div class="nav-section">
+          <button class="nav-section-toggle">
+            <span>
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" style="margin-right:6px"><path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492zM5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0z"/><path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.892 3.433-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.892-1.64-.901-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52l-.094-.319z"/></svg>
+              Operations
+            </span>
+            <span class="nav-chevron">▼</span>
+          </button>
+        </div>
+
+        <!-- Finance -->
+        <div class="nav-section">
+          <button class="nav-section-toggle">
+            <span>
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" style="margin-right:6px"><path d="M1 3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1H1zm7 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/><path d="M0 5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1V5zm3 0a2 2 0 0 1-2 2v4a2 2 0 0 1 2 2h10a2 2 0 0 1 2-2V7a2 2 0 0 1-2-2H3z"/></svg>
+              Finance
+            </span>
+            <span class="nav-chevron">▼</span>
+          </button>
+        </div>
+
+        <!-- Admin -->
+        <div class="nav-section">
+          <button class="nav-section-toggle">
+            <span>
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" style="margin-right:6px"><path d="M5.338 1.59a61.44 61.44 0 0 0-2.837.856.481.481 0 0 0-.328.39c-.554 4.157.726 7.19 2.253 9.188a10.725 10.725 0 0 0 2.287 2.233c.346.244.652.42.893.533.12.057.218.095.293.118a.55.55 0 0 0 .101.025.615.615 0 0 0 .1-.025c.076-.023.174-.061.294-.118.24-.113.547-.29.893-.533a10.726 10.726 0 0 0 2.287-2.233c1.527-1.997 2.807-5.031 2.253-9.188a.48.48 0 0 0-.328-.39c-.651-.213-1.75-.56-2.837-.855C9.552 1.29 8.531 1.067 8 1.067c-.53 0-1.552.223-2.662.524zM5.072.56C6.157.265 7.31 0 8 0s1.843.265 2.928.56c1.11.3 2.229.655 2.887.87a1.54 1.54 0 0 1 1.044 1.262c.596 4.477-.787 7.795-2.465 9.99a11.775 11.775 0 0 1-2.517 2.453 7.159 7.159 0 0 1-1.048.625c-.28.132-.581.24-.829.24s-.548-.108-.829-.24a7.158 7.158 0 0 1-1.048-.625 11.777 11.777 0 0 1-2.517-2.453C1.928 10.487.545 7.169 1.141 2.692A1.54 1.54 0 0 1 2.185 1.43 62.456 62.456 0 0 1 5.072.56z"/></svg>
+              Admin
+            </span>
+            <span class="nav-chevron">▼</span>
+          </button>
+        </div>
+
+        <!-- Reports -->
+        <div class="nav-section">
+          <button class="nav-section-toggle">
+            <span>
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" style="margin-right:6px"><path d="M4 11H2v3h2v-3zm5-4H7v7h2V7zm5-5v12h-2V2h2zm-2-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1h-2zM6 7a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7zm-5 4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1v-3z"/></svg>
+              Reports
+            </span>
+            <span class="nav-chevron">▼</span>
+          </button>
+        </div>
+
+        <!-- Analytics -->
+        <div class="nav-section">
+          <button class="nav-section-toggle">
+            <span>
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor" style="margin-right:6px"><path d="M0 0h1v15h15v1H0V0Zm10 3.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V4.9l-3.613 4.417a.5.5 0 0 1-.74.037L7.06 6.767l-3.656 5.027a.5.5 0 0 1-.808-.588l4-5.5a.5.5 0 0 1 .758-.06l2.609 2.61L13.445 4H10.5a.5.5 0 0 1-.5-.5Z"/></svg>
+              Analytics
+            </span>
+            <span class="nav-chevron">▼</span>
+          </button>
+        </div>
+
+      </div>
+    </nav>
+
+    <!-- ⑤ Main content area (fake Available Stock page) -->
+    <div class="main-content">
+      <div class="main-inner">
+
+        <div class="page-header">
+          <div>
+            <div class="page-title">Available Stock</div>
+            <div class="page-sub">Real-time on-hand minus hard-locked quantities — updated every 5 s</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-outline">Export CSV</button>
+            <button class="btn btn-primary">+ Adjust</button>
+          </div>
+        </div>
+
+        <!-- KPIs -->
+        <div class="kpi-row">
+          <div class="kpi">
+            <div class="kpi__label">Total SKUs</div>
+            <div class="kpi__val mono">1 284</div>
+            <div class="kpi__delta up">↑ 12 vs last week</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi__label">Low Stock</div>
+            <div class="kpi__val mono">47</div>
+            <div class="kpi__delta down">↑ 8 vs last week</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi__label">Hard Locked</div>
+            <div class="kpi__val mono">318</div>
+            <div class="kpi__delta" style="color:var(--n-400)">— no change</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi__label">Locations Used</div>
+            <div class="kpi__val mono">892</div>
+            <div class="kpi__delta up">↑ 3</div>
+          </div>
+        </div>
+
+        <!-- Table panel -->
+        <div class="panel">
+          <div class="panel-head">
+            <span class="panel-title">Stock by SKU</span>
+            <div class="panel-actions">
+              <input type="text" placeholder="Search SKU or description…" style="padding:5px 10px;border:1px solid var(--n-200);border-radius:var(--r-sm);font-size:12px;color:var(--n-700);width:220px">
+              <button class="btn btn-outline" style="padding:5px 10px;font-size:12px">Filters</button>
+            </div>
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>SKU</th>
+                <th>Description</th>
+                <th>Location</th>
+                <th style="text-align:right">On Hand</th>
+                <th style="text-align:right">Reserved</th>
+                <th style="text-align:right">Available</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="mono" style="color:var(--accent-500)">FAB-0412</td>
+                <td>Cotton canvas 240g/m² ivory</td>
+                <td class="mono">A-02-03</td>
+                <td class="mono" style="text-align:right">240</td>
+                <td class="mono" style="text-align:right">80</td>
+                <td class="mono" style="text-align:right;font-weight:700">160</td>
+                <td><span class="chip chip--ok">OK</span></td>
+                <td><a href="#" style="color:var(--accent-500);font-family:var(--font-mono);font-size:11px">↗ Open</a></td>
+              </tr>
+              <tr>
+                <td class="mono" style="color:var(--accent-500)">FAB-0188</td>
+                <td>Linen blend 180g/m² charcoal</td>
+                <td class="mono">B-01-07</td>
+                <td class="mono" style="text-align:right">45</td>
+                <td class="mono" style="text-align:right">38</td>
+                <td class="mono" style="text-align:right;font-weight:700">7</td>
+                <td><span class="chip chip--warn">Low</span></td>
+                <td><a href="#" style="color:var(--accent-500);font-family:var(--font-mono);font-size:11px">↗ Open</a></td>
+              </tr>
+              <tr>
+                <td class="mono" style="color:var(--accent-500)">FAB-0301</td>
+                <td>Viscose twill 95g/m² black</td>
+                <td class="mono">A-04-01</td>
+                <td class="mono" style="text-align:right">512</td>
+                <td class="mono" style="text-align:right">0</td>
+                <td class="mono" style="text-align:right;font-weight:700">512</td>
+                <td><span class="chip chip--ok">OK</span></td>
+                <td><a href="#" style="color:var(--accent-500);font-family:var(--font-mono);font-size:11px">↗ Open</a></td>
+              </tr>
+              <tr>
+                <td class="mono" style="color:var(--accent-500)">FAB-0099</td>
+                <td>Wool blend 320g/m² navy</td>
+                <td class="mono">C-02-05</td>
+                <td class="mono" style="text-align:right">12</td>
+                <td class="mono" style="text-align:right">12</td>
+                <td class="mono" style="text-align:right;font-weight:700">0</td>
+                <td><span class="chip chip--slate">Fully reserved</span></td>
+                <td><a href="#" style="color:var(--accent-500);font-family:var(--font-mono);font-size:11px">↗ Open</a></td>
+              </tr>
+              <tr>
+                <td class="mono" style="color:var(--accent-500)">FAB-0750</td>
+                <td>Polyester mesh 60g/m² white</td>
+                <td class="mono">D-01-02</td>
+                <td class="mono" style="text-align:right">880</td>
+                <td class="mono" style="text-align:right">120</td>
+                <td class="mono" style="text-align:right;font-weight:700">760</td>
+                <td><span class="chip chip--ok">OK</span></td>
+                <td><a href="#" style="color:var(--accent-500);font-family:var(--font-mono);font-size:11px">↗ Open</a></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div><!-- /main-inner -->
+    </div><!-- /main-content -->
+
+  </div><!-- /shell-body -->
+</div><!-- /app-shell -->
+
+
+<!-- ── Design Q&A panel ──────────────────────────────────────────── -->
+<div class="design-qa" id="qaPanel">
+  <div class="design-qa__head">
+    <h3>🎨 Design questions for Claude</h3>
+    <div style="display:flex;gap:8px;align-items:center">
+      <span class="design-qa__tag">warehouse shell</span>
+      <button class="toggle-qa" onclick="document.getElementById('qaPanel').classList.toggle('collapsed')">▼</button>
+    </div>
+  </div>
+  <div class="design-qa__body">
+
+    <div class="qa-item">
+      <div class="qa-num">Q1 · LAYOUT</div>
+      <div class="qa-q">Does the left sidebar belong inside or outside the shared topbar container?</div>
+      <div class="qa-context">
+        Portal/Sales/Frontline have no persistent left nav — the shared <code>PortalModuleShell</code>
+        just wraps full-width content. Warehouse is different: it has a 250 px collapsible sidebar
+        (MudBlazor Drawer) for 8 nav sections with 50+ items. Should the sidebar sit
+        <em>below the topbar</em> as a column in a flex row, or should we follow a different
+        pattern entirely for WMS?
+      </div>
+    </div>
+
+    <hr class="qa-divider">
+
+    <div class="qa-item">
+      <div class="qa-num">Q2 · NAV ACTIVE COLOUR</div>
+      <div class="qa-q">Yellow or teal for active nav items?</div>
+      <div class="qa-context">
+        Current Warehouse nav uses <code>#facc15</code> (yellow) for active state —
+        this preview switches it to <code>--accent-300</code> (teal). Teal is the design system
+        primary. Yellow isn't in the token set at all. Does yellow stay (for differentiation
+        from Portal/Sales), or standardise on teal?
+      </div>
+    </div>
+
+    <hr class="qa-divider">
+
+    <div class="qa-item">
+      <div class="qa-num">Q3 · NAV HAMBURGER</div>
+      <div class="qa-q">Where does the sidebar toggle button live in the new topbar?</div>
+      <div class="qa-context">
+        The current topbar has a Bootstrap hamburger button that toggles the MudDrawer.
+        The shared topbar has no slot for module-level controls. Three options:
+        (a) add a left slot to <code>PortalModuleShell</code> for a toggle icon,
+        (b) keep hamburger only on mobile (sidebar is always visible on desktop ≥ 1024 px),
+        (c) replace MudDrawer with a CSS-only sidebar that doesn't need a toggle.
+      </div>
+    </div>
+
+    <hr class="qa-divider">
+
+    <div class="qa-item">
+      <div class="qa-num">Q4 · INFORMATION ARCHITECTURE</div>
+      <div class="qa-q">8 sections, 50+ items — is that too many for a left nav?</div>
+      <div class="qa-context">
+        The warehouse has: Stock · Inbound · Outbound · Operations · Finance · Admin ·
+        Reports · Analytics. Admin alone has 22 items. On a 768 px screen this nav is
+        taller than the viewport. Should some sections (Admin, Reports) move to a separate
+        settings/reporting area instead of the primary left nav?
+      </div>
+    </div>
+
+    <hr class="qa-divider">
+
+    <div class="qa-item">
+      <div class="qa-num">Q5 · SIDEBAR WIDTH &amp; FEEL</div>
+      <div class="qa-q">250 px sidebar width — keep or adjust?</div>
+      <div class="qa-context">
+        Current MudDrawer is 250 px. The content area for dense operational tables (stock
+        balance, picking tasks) benefits from being as wide as possible. Would 200 px or
+        icon-only collapsed state (48 px) + hover-expand work better for power users who
+        know the nav? Or is full label always visible preferred?
+      </div>
+    </div>
+
+    <hr class="qa-divider">
+
+    <div class="qa-item">
+      <div class="qa-num">Q6 · BOOTSTRAP vs TOKEN SYSTEM</div>
+      <div class="qa-q">Bootstrap CSS — remove entirely or just override?</div>
+      <div class="qa-context">
+        Warehouse ships Bootstrap 5 + MudBlazor. Portal/Sales use only MudBlazor + token CSS.
+        Bootstrap adds ~200 KB and resets conflict with MudBlazor. For the new shell: strip
+        Bootstrap and use the token system (already done in this preview for the nav), or keep
+        Bootstrap as a utility layer for the content pages (tables, forms, badges)?
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

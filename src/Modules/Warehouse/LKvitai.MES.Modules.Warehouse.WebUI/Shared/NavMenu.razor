@@ -1,36 +1,44 @@
 @inject NavigationManager Navigation
+@implements IDisposable
 
-<div class="pt-3 px-2" style="overflow-y:auto;">
-    <ul class="nav flex-column mb-2">
-        <li class="nav-item">
-            <NavLink class="nav-link" href="dashboard" Match="NavLinkMatch.All">
-                <i class="bi bi-speedometer2 me-2"></i>Dashboard
-            </NavLink>
-        </li>
-    </ul>
+<nav aria-label="Warehouse navigation" class="sidebar__nav">
+
+    <NavLink class="nav-dash" href="dashboard" Match="NavLinkMatch.All" ActiveClass="is-active">
+        <i class="bi bi-speedometer2" title="@(Collapsed ? "Dashboard" : null)"></i>
+        @if (!Collapsed) { <span>Dashboard</span> }
+    </NavLink>
 
     @foreach (var grp in _sections)
     {
         var isOpen = _openSection == grp.Key;
         var hasActive = grp.Items.Any(i => _currentPath.StartsWith(i.Href, StringComparison.OrdinalIgnoreCase));
+        var sectionId = $"nav-sect-{grp.Key}";
 
         <div class="nav-section">
-            <button class="nav-section-toggle @(isOpen ? "open" : "") @(hasActive && !isOpen ? "has-active" : "")"
+            <button class="nav-section-toggle @(isOpen ? "open" : "") @(hasActive ? "has-active" : "")"
+                    aria-expanded="@isOpen.ToString().ToLower()"
+                    aria-controls="@(Collapsed ? null : sectionId)"
+                    title="@grp.Label"
                     @onclick="() => Toggle(grp.Key)">
-                <span>
-                    <i class="bi @grp.Icon me-2"></i>@grp.Label
-                </span>
-                <i class="bi bi-chevron-down nav-chevron"></i>
+                <i class="bi @grp.Icon" title="@(Collapsed ? grp.Label : null)"></i>
+                @if (!Collapsed)
+                {
+                    <span class="nav-section-label">@grp.Label</span>
+                    <i class="bi bi-chevron-down nav-chevron" aria-hidden="true"></i>
+                }
             </button>
 
-            @if (isOpen)
+            @if (isOpen && !Collapsed)
             {
-                <ul class="nav flex-column nav-section-items">
+                <ul class="nav-section-items" id="@sectionId" role="list">
                     @foreach (var item in grp.Items)
                     {
-                        <li class="nav-item">
-                            <NavLink class="nav-link" href="@item.Href" Match="NavLinkMatch.Prefix">
-                                <i class="bi @item.Icon me-2"></i>@item.Label
+                        <li>
+                            <NavLink class="nav-link" href="@item.Href"
+                                     Match="NavLinkMatch.Prefix"
+                                     ActiveClass="is-active">
+                                <i class="bi @item.Icon" aria-hidden="true"></i>
+                                <span>@item.Label</span>
                             </NavLink>
                         </li>
                     }
@@ -38,9 +46,12 @@
             }
         </div>
     }
-</div>
+
+</nav>
 
 @code {
+    [Parameter] public bool Collapsed { get; set; }
+
     private string? _openSection;
     private string _currentPath = "";
 
@@ -75,7 +86,8 @@
 
     private void Toggle(string key)
     {
-        _openSection = _openSection == key ? null : key;
+        if (!Collapsed)
+            _openSection = _openSection == key ? null : key;
     }
 
     public void Dispose()

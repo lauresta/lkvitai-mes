@@ -207,9 +207,9 @@ input {
 /* ── Dashboard layout ────────────────────────────────────────────── */
 
 .main {
-  max-width: 1440px;
+  max-width: var(--content-max, 1600px);
   margin: 0 auto;
-  padding: 28px 28px 48px;
+  padding: clamp(20px, 2.4vw, 36px) clamp(20px, 2.4vw, 36px) 48px;
 }
 
 .hero {
