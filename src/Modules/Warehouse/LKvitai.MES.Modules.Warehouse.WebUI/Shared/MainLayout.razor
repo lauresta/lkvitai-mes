@@ -1,20 +1,43 @@
 @inherits LayoutComponentBase
+@inject IJSRuntime JS
 
 <PortalAuthenticatedShell>
     <ChildContent>
         <MudLayout style="flex:1;min-height:0;overflow:hidden">
-            <MudDrawer Class="sidebar bg-dark text-white"
+            <MudDrawer Class="@($"sidebar {(_collapsed ? "is-collapsed" : "")}")"
                        Variant="DrawerVariant.Persistent"
-                       Width="250px"
+                       Width="@(_collapsed ? "52px" : "240px")"
                        Elevation="0"
                        @bind-Open="_drawerOpen">
-                <NavMenu />
+
+                <div class="sidebar__head">
+                    <span class="sidebar__module">
+                        <i class="bi bi-box-seam"></i>
+                        @if (!_collapsed) { <span>Warehouse</span> }
+                    </span>
+                    <button class="sidebar__collapse"
+                            @onclick="ToggleCollapse"
+                            title="@(_collapsed ? "Expand sidebar []]" : "Collapse sidebar [[]")">
+                        <i class="bi @(_collapsed ? "bi-chevron-double-right" : "bi-chevron-double-left")"></i>
+                    </button>
+                </div>
+
+                <NavMenu Collapsed="_collapsed" />
+
+                @if (!_collapsed)
+                {
+                    <div class="sidebar__footer">
+                        <span>Loaded <span class="mono">@_initTime</span></span>
+                    </div>
+                }
             </MudDrawer>
 
             <MudMainContent>
-                <main class="container-fluid p-4 position-relative">
-                    <ToastContainer />
-                    @Body
+                <main class="wh-main">
+                    <div class="main__inner">
+                        <ToastContainer />
+                        @Body
+                    </div>
                 </main>
             </MudMainContent>
         </MudLayout>
@@ -26,4 +49,44 @@
 
 @code {
     private bool _drawerOpen = true;
+    private bool _collapsed;
+    private string _initTime = "";
+
+    private const string CollapseStorageKey = "lkvitai.warehouse.sidebar.collapsed";
+
+    protected override void OnInitialized()
+    {
+        _initTime = DateTime.Now.ToString("HH:mm:ss");
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                var val = await JS.InvokeAsync<string?>("localStorage.getItem", CollapseStorageKey);
+                if (val == "true")
+                {
+                    _collapsed = true;
+                    StateHasChanged();
+                }
+            }
+            catch
+            {
+                // localStorage not available during SSR pre-render pass
+            }
+        }
+    }
+
+    private async Task ToggleCollapse()
+    {
+        _collapsed = !_collapsed;
+        try
+        {
+            await JS.InvokeVoidAsync("localStorage.setItem", CollapseStorageKey,
+                _collapsed ? "true" : "false");
+        }
+        catch { }
+    }
 }
