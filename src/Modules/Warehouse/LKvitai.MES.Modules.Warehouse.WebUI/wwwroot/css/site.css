@@ -17,7 +17,6 @@
 
 /* ─── Warehouse-local layout constants ────────────────────────────────── */
 :root {
-  --content-max: 1600px;
   --sidebar-w: 240px;
   --sidebar-w-collapsed: 52px;
 }
