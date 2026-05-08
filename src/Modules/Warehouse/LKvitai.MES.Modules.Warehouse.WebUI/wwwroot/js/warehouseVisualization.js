@@ -1049,6 +1049,19 @@
                 return;
             }
 
+            const syncVisualizationHeight = () => {
+                const page = container.closest(".viz-page");
+                if (!page) {
+                    return;
+                }
+
+                const top = page.getBoundingClientRect().top;
+                const availableHeight = Math.max(300, window.innerHeight - top);
+                page.style.height = `${availableHeight}px`;
+            };
+
+            syncVisualizationHeight();
+
             log("render: start", {
                 containerId,
                 binCount: Array.isArray(data) ? data.length : (Array.isArray(data?.bins) ? data.bins.length : 0),
@@ -1896,6 +1909,7 @@
             }
 
             const onResize = () => {
+                syncVisualizationHeight();
                 const nextWidth = Math.max(container.clientWidth, 300);
                 const nextHeight = Math.max(container.clientHeight, 300);
                 camera.aspect = nextWidth / nextHeight;
