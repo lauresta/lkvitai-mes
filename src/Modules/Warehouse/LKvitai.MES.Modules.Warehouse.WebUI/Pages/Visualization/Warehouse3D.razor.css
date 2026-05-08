@@ -1,7 +1,8 @@
 .viz-page {
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 56px);
+    flex: 1;
+    min-height: 0;
     overflow: hidden;
     background:
         radial-gradient(circle at top left, rgba(191, 219, 254, 0.18), transparent 28%),
