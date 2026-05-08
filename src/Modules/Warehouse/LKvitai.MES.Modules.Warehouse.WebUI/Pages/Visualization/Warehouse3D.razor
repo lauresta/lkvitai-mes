@@ -272,6 +272,42 @@
                 @if (_is3dView)
                 {
                     <div id="@CanvasId" class="viz-canvas"></div>
+                    <div class="viz-mouse-help" aria-label="3D mouse controls">
+                        <div class="viz-mouse-help-title">Mouse controls</div>
+                        <div class="viz-mouse-help-grid">
+                            <div class="viz-mouse-help-item">
+                                <svg class="viz-mouse-icon" viewBox="0 0 34 46" aria-hidden="true" focusable="false">
+                                    <rect x="5" y="3" width="24" height="40" rx="12" />
+                                    <path class="viz-mouse-active" d="M17 4h-1.5C9.7 4 6 8.7 6 14.5V22h11V4z" />
+                                    <line x1="17" y1="4" x2="17" y2="22" />
+                                    <line x1="6" y1="22" x2="28" y2="22" />
+                                    <rect class="viz-mouse-wheel" x="15" y="8" width="4" height="8" rx="2" />
+                                </svg>
+                                <span>Rotate / Select</span>
+                            </div>
+                            <div class="viz-mouse-help-item">
+                                <svg class="viz-mouse-icon" viewBox="0 0 34 46" aria-hidden="true" focusable="false">
+                                    <rect x="5" y="3" width="24" height="40" rx="12" />
+                                    <line x1="17" y1="4" x2="17" y2="22" />
+                                    <line x1="6" y1="22" x2="28" y2="22" />
+                                    <rect class="viz-mouse-active" x="15" y="8" width="4" height="8" rx="2" />
+                                    <path class="viz-mouse-arrow" d="M27 9v10m0-10l-3 3m3-3l3 3m-3 7l-3-3m3 3l3-3" />
+                                </svg>
+                                <span>Zoom</span>
+                            </div>
+                            <div class="viz-mouse-help-item">
+                                <svg class="viz-mouse-icon" viewBox="0 0 34 46" aria-hidden="true" focusable="false">
+                                    <rect x="5" y="3" width="24" height="40" rx="12" />
+                                    <path class="viz-mouse-active" d="M17 4h1.5C24.3 4 28 8.7 28 14.5V22H17V4z" />
+                                    <line x1="17" y1="4" x2="17" y2="22" />
+                                    <line x1="6" y1="22" x2="28" y2="22" />
+                                    <rect class="viz-mouse-wheel" x="15" y="8" width="4" height="8" rx="2" />
+                                    <path class="viz-mouse-arrow" d="M25 31h-9m9 0l-3-3m3 3l-3 3m-6-3l3-3m-3 3l3 3" />
+                                </svg>
+                                <span>Drag / Pan</span>
+                            </div>
+                        </div>
+                    </div>
                 }
                 else
                 {
