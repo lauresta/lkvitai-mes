@@ -432,21 +432,51 @@
         scene.add(createFloorOutline(w, l, 0x9ca3af, 0.55, 0.004));
 
         if (h > 0) {
-            const wallMat = new THREE.MeshStandardMaterial({ color: 0xd7dee8, roughness: 0.92, metalness: 0.0, transparent: true, opacity: 0.68, side: THREE.DoubleSide });
-            const thickness = 0.15;
-            const walls = [
-                { w, dh: h, dd: thickness, x: w / 2, y: h / 2, z: 0 },
-                { w, dh: h, dd: thickness, x: w / 2, y: h / 2, z: l },
-                { w: thickness, dh: h, dd: l, x: 0, y: h / 2, z: l / 2 },
-                { w: thickness, dh: h, dd: l, x: w, y: h / 2, z: l / 2 }
-            ];
-            walls.forEach((wall) => {
-                const mesh = new THREE.Mesh(new THREE.BoxGeometry(wall.w, wall.dh, wall.dd), wallMat);
-                mesh.position.set(wall.x, wall.y, wall.z);
-                scene.add(mesh);
+            const rearWallMat = new THREE.MeshBasicMaterial({
+                color: 0xf8fafc,
+                transparent: true,
+                opacity: 0.12,
+                depthWrite: false,
+                side: THREE.DoubleSide
+            });
+            const edgeMat = new THREE.LineBasicMaterial({
+                color: 0x94a3b8,
+                transparent: true,
+                opacity: 0.46,
+                depthWrite: false
             });
 
+            const addWallPanel = (geometry, position, rotationY = 0) => {
+                const mesh = new THREE.Mesh(geometry, rearWallMat);
+                mesh.position.set(position.x, position.y, position.z);
+                mesh.rotation.y = rotationY;
+                mesh.raycast = () => null;
+                scene.add(mesh);
+            };
+
+            const addWallEdges = (geometry, position, rotationY = 0) => {
+                const edge = new THREE.LineSegments(new THREE.EdgesGeometry(geometry), edgeMat);
+                edge.position.set(position.x, position.y, position.z);
+                edge.rotation.y = rotationY;
+                edge.raycast = () => null;
+                scene.add(edge);
+            };
+
+            const northSouthGeometry = new THREE.PlaneGeometry(w, h);
+            const eastWestGeometry = new THREE.PlaneGeometry(l, h);
+
+            // Keep rear/left panes faint for orientation, but front-facing walls are ribs only
+            // so they never visually block racks or participate in hover targeting.
+            addWallPanel(northSouthGeometry, { x: w / 2, y: h / 2, z: l });
+            addWallPanel(eastWestGeometry, { x: 0, y: h / 2, z: l / 2 }, Math.PI / 2);
+
+            addWallEdges(northSouthGeometry, { x: w / 2, y: h / 2, z: 0 });
+            addWallEdges(northSouthGeometry, { x: w / 2, y: h / 2, z: l });
+            addWallEdges(eastWestGeometry, { x: 0, y: h / 2, z: l / 2 }, Math.PI / 2);
+            addWallEdges(eastWestGeometry, { x: w, y: h / 2, z: l / 2 }, Math.PI / 2);
+
             const roofOutline = createFloorOutline(w, l, 0x94a3b8, 0.5, h + 0.002);
+            roofOutline.raycast = () => null;
             scene.add(roofOutline);
         }
     }
@@ -549,10 +579,154 @@
         }
 
         const group = new THREE.Group();
-        const postMaterial = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.28, roughness: 0.58 });
-        const plankMaterial = new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.12, roughness: 0.68 });
+        const uprightMaterial = new THREE.MeshStandardMaterial({ color: 0x0057b8, metalness: 0.34, roughness: 0.44 });
+        const beamMaterial = new THREE.MeshStandardMaterial({ color: 0xf97316, metalness: 0.18, roughness: 0.48 });
+        const deckMaterial = new THREE.MeshBasicMaterial({ color: 0xdbeafe, transparent: true, opacity: 0.38, side: THREE.DoubleSide, depthWrite: false });
+        const braceMaterial = new THREE.MeshStandardMaterial({ color: 0x004ea8, metalness: 0.28, roughness: 0.54 });
+        const cantileverColumnMaterial = new THREE.MeshStandardMaterial({ color: 0x0057b8, metalness: 0.34, roughness: 0.44 });
+        const cantileverArmMaterial = new THREE.MeshStandardMaterial({ color: 0xf97316, metalness: 0.18, roughness: 0.46 });
+        const cantileverDeckMaterial = new THREE.MeshBasicMaterial({ color: 0xe0f2fe, transparent: true, opacity: 0.22, side: THREE.DoubleSide, depthWrite: false });
         const floorMaterial = new THREE.MeshBasicMaterial({ color: 0x86efac, transparent: true, opacity: 0.24, side: THREE.DoubleSide });
         const fenceMaterial = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.12, roughness: 0.66 });
+
+        const addRackMesh = (geometry, material, position, rackId, options = {}) => {
+            const mesh = new THREE.Mesh(geometry, material.clone ? material.clone() : material);
+            mesh.position.set(position.x, position.y, position.z);
+            if (options.rotationZ) {
+                mesh.rotation.z = options.rotationZ;
+            }
+            mesh.castShadow = options.castShadow ?? true;
+            mesh.receiveShadow = options.receiveShadow ?? true;
+            mesh.userData = {
+                kind: "rack",
+                rackId
+            };
+            group.add(mesh);
+            interactiveRackMeshes.push(mesh);
+            return mesh;
+        };
+
+        const addBeam = (layout, rackId, material, position, size, options) => addRackMesh(
+            new THREE.BoxGeometry(size.w, size.h, size.d),
+            material,
+            position,
+            rackId,
+            options);
+
+        const addDiagonalBrace = (start, end, rackId) => {
+            const dx = end.x - start.x;
+            const dy = end.y - start.y;
+            const length = Math.sqrt((dx * dx) + (dy * dy));
+            if (length <= 0.01) {
+                return;
+            }
+
+            addRackMesh(
+                new THREE.BoxGeometry(0.045, length, 0.045),
+                braceMaterial,
+                {
+                    x: start.x + (dx / 2),
+                    y: start.y + (dy / 2),
+                    z: start.z
+                },
+                rackId,
+                { rotationZ: -Math.atan2(dx, dy) });
+        };
+
+        const addRackLabel = (rack, layout) => {
+            const labelText = String(rack.id || "").trim();
+            if (!showRackLabels || !labelText) {
+                return;
+            }
+
+            const sideOffset = Math.max(0.85, layout.length * 0.5 + 0.55);
+            const localCenterX = layout.width / 2;
+            const nearSide = rotateLocalPoint(localCenterX, -sideOffset, rack);
+            const farSide = rotateLocalPoint(localCenterX, layout.length + 0.55, rack);
+
+            [nearSide, farSide].forEach((point) => {
+                const labelSprite = createRackFloorLabel(labelText);
+                const labelWidth = Math.max(1.5, Math.min(3.2, 1.1 + (labelText.length * 0.45)));
+                labelSprite.position.set(point.x, 0.16, point.z);
+                labelSprite.scale.set(labelWidth, 0.72, 1);
+                group.add(labelSprite);
+            });
+        };
+
+        const renderPalletRack = (rack, layout) => {
+            const postSize = 0.09;
+            const beamHeight = 0.12;
+            const beamDepth = 0.13;
+            const deckThickness = 0.035;
+            const bayCount = Math.max(Number(rack.bayCount || 0), 1);
+            const uprightPairs = bayCount + 1;
+            const spacing = layout.width / bayCount;
+            const frontZ = layout.z + (postSize / 2);
+            const backZ = layout.z + layout.length - (postSize / 2);
+
+            for (let i = 0; i < uprightPairs; i += 1) {
+                const postX = layout.x + (i * spacing);
+                addBeam(layout, rack.id, uprightMaterial, { x: postX, y: layout.centerY, z: frontZ }, { w: postSize, h: layout.height, d: postSize });
+                addBeam(layout, rack.id, uprightMaterial, { x: postX, y: layout.centerY, z: backZ }, { w: postSize, h: layout.height, d: postSize });
+            }
+
+            (rack.levels || []).forEach((level) => {
+                const levelY = layout.y + Number(level.heightFromBase || 0);
+                const beamY = levelY + (beamHeight / 2);
+                addBeam(layout, rack.id, beamMaterial, { x: layout.centerX, y: beamY, z: frontZ }, { w: layout.width, h: beamHeight, d: beamDepth });
+                addBeam(layout, rack.id, beamMaterial, { x: layout.centerX, y: beamY, z: backZ }, { w: layout.width, h: beamHeight, d: beamDepth });
+
+                const deck = new THREE.Mesh(new THREE.BoxGeometry(layout.width, deckThickness, layout.length), deckMaterial.clone());
+                deck.position.set(layout.centerX, levelY + beamHeight + (deckThickness / 2), layout.centerZ);
+                deck.raycast = () => null;
+                group.add(deck);
+            });
+
+            if (layout.height > 0.8 && layout.length > 0.2) {
+                const braceBottom = layout.y + 0.25;
+                const braceTop = layout.y + layout.height - 0.35;
+                addDiagonalBrace({ x: layout.x + 0.08, y: braceBottom, z: frontZ }, { x: layout.x + spacing - 0.08, y: braceTop, z: frontZ }, rack.id);
+                addDiagonalBrace({ x: layout.x + 0.08, y: braceTop, z: backZ }, { x: layout.x + spacing - 0.08, y: braceBottom, z: backZ }, rack.id);
+                addDiagonalBrace({ x: layout.x + layout.width - spacing + 0.08, y: braceBottom, z: frontZ }, { x: layout.x + layout.width - 0.08, y: braceTop, z: frontZ }, rack.id);
+                addDiagonalBrace({ x: layout.x + layout.width - spacing + 0.08, y: braceTop, z: backZ }, { x: layout.x + layout.width - 0.08, y: braceBottom, z: backZ }, rack.id);
+            }
+        };
+
+        const renderWallShelf = (rack, layout) => {
+            const postSize = 0.11;
+            const armHeight = 0.11;
+            const armWidth = 0.13;
+            const bayCount = Math.max(Number(rack.bayCount || 0), 1);
+            const uprightCount = bayCount + 1;
+            const spacing = layout.width / bayCount;
+            const columnZ = rack.backToBack ? layout.centerZ : layout.z + (postSize / 2);
+            const armLength = rack.backToBack ? Math.max((layout.length / 2) - (postSize / 2), 0.16) : Math.max(layout.length - postSize, 0.16);
+            const armDirections = rack.backToBack ? [-1, 1] : [1];
+
+            for (let i = 0; i < uprightCount; i += 1) {
+                const postX = layout.x + (i * spacing);
+                addBeam(layout, rack.id, cantileverColumnMaterial, { x: postX, y: layout.centerY, z: columnZ }, { w: postSize, h: layout.height, d: postSize });
+
+                (rack.levels || []).forEach((level) => {
+                    const levelY = layout.y + Number(level.heightFromBase || 0);
+                    armDirections.forEach((direction) => {
+                        const centerZ = columnZ + (direction * ((armLength / 2) + (postSize / 2)));
+                        addBeam(layout, rack.id, cantileverArmMaterial, { x: postX, y: levelY + (armHeight / 2), z: centerZ }, { w: armWidth, h: armHeight, d: armLength });
+                    });
+                });
+            }
+
+            (rack.levels || []).forEach((level) => {
+                const levelY = layout.y + Number(level.heightFromBase || 0);
+                armDirections.forEach((direction) => {
+                    const centerZ = columnZ + (direction * ((armLength / 2) + (postSize / 2)));
+                    const shelf = new THREE.Mesh(new THREE.BoxGeometry(layout.width, 0.025, armLength), cantileverDeckMaterial.clone());
+                    shelf.position.set(layout.centerX, levelY + armHeight + 0.012, centerZ);
+                    shelf.raycast = () => null;
+                    group.add(shelf);
+                });
+            });
+        };
 
         racks.forEach((rack) => {
             const layout = toSceneCoordinates(rack.origin, rack.dimensions);
@@ -590,75 +764,15 @@
                 return;
             }
 
-            if (rack.type !== "PalletRack" && rack.type !== "WallShelf") {
+            if (rack.type === "PalletRack") {
+                renderPalletRack(rack, layout);
+                addRackLabel(rack, layout);
                 return;
             }
 
-            const postSize = 0.06;
-            const plankThickness = 0.06;
-            const bayCount = Math.max(Number(rack.bayCount || 0), 0);
-            const effectiveBayCount = Math.max(bayCount, 1);
-            const uprightPairs = effectiveBayCount + 1;
-            const spacing = layout.width / effectiveBayCount;
-
-            for (let i = 0; i < uprightPairs; i += 1) {
-                const postX = layout.x + (i * spacing);
-
-                const frontPost = new THREE.Mesh(new THREE.BoxGeometry(postSize, layout.height, postSize), postMaterial);
-                frontPost.position.set(postX, layout.centerY, layout.z + (postSize / 2));
-                frontPost.castShadow = true;
-                frontPost.receiveShadow = true;
-                frontPost.userData = {
-                    kind: "rack",
-                    rackId: rack.id
-                };
-                group.add(frontPost);
-                interactiveRackMeshes.push(frontPost);
-
-                const backPost = new THREE.Mesh(new THREE.BoxGeometry(postSize, layout.height, postSize), postMaterial);
-                backPost.position.set(postX, layout.centerY, layout.z + layout.length - (postSize / 2));
-                backPost.castShadow = true;
-                backPost.receiveShadow = true;
-                backPost.userData = {
-                    kind: "rack",
-                    rackId: rack.id
-                };
-                group.add(backPost);
-                interactiveRackMeshes.push(backPost);
-            }
-
-            (rack.levels || []).forEach((level) => {
-                const plank = new THREE.Mesh(
-                    new THREE.BoxGeometry(layout.width, plankThickness, layout.length),
-                    plankMaterial);
-                plank.position.set(
-                    layout.centerX,
-                    layout.y + Number(level.heightFromBase || 0) + (plankThickness / 2),
-                    layout.centerZ);
-                plank.castShadow = true;
-                plank.receiveShadow = true;
-                plank.userData = {
-                    kind: "rack",
-                    rackId: rack.id
-                };
-                group.add(plank);
-                interactiveRackMeshes.push(plank);
-            });
-
-            const labelText = String(rack.id || "").trim();
-            if (showRackLabels && labelText) {
-                const sideOffset = Math.max(0.85, layout.length * 0.5 + 0.55);
-                const localCenterX = layout.width / 2;
-                const nearSide = rotateLocalPoint(localCenterX, -sideOffset, rack);
-                const farSide = rotateLocalPoint(localCenterX, layout.length + 0.55, rack);
-
-                [nearSide, farSide].forEach((point) => {
-                    const labelSprite = createRackFloorLabel(labelText);
-                    const labelWidth = Math.max(1.5, Math.min(3.2, 1.1 + (labelText.length * 0.45)));
-                    labelSprite.position.set(point.x, 0.16, point.z);
-                    labelSprite.scale.set(labelWidth, 0.72, 1);
-                    group.add(labelSprite);
-                });
+            if (rack.type === "WallShelf") {
+                renderWallShelf(rack, layout);
+                addRackLabel(rack, layout);
             }
         });
 
