@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet" />
-    <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
+    <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" asp-append-version="true" />
     @* asp-append-version=true emits a content-hash query string (?v=...) so
        Cloudflare and the browser cache the CSS by hash instead of by name —
        a redeploy of the same URL with new content reaches the user instantly,
@@ -53,7 +53,7 @@
            ProductsSearch) to keep the payload comfortably under that cap. *@
     <persist-component-state />
 
-    <script src="_framework/blazor.server.js"></script>
-    <script src="_content/MudBlazor/MudBlazor.min.js"></script>
+    <script src="_framework/blazor.server.js" asp-append-version="true"></script>
+    <script src="_content/MudBlazor/MudBlazor.min.js" asp-append-version="true"></script>
 </body>
 </html>
