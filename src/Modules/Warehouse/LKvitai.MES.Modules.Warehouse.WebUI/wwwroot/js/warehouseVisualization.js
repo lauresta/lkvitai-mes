@@ -588,6 +588,11 @@
         const cantileverDeckMaterial = new THREE.MeshBasicMaterial({ color: 0xe0f2fe, transparent: true, opacity: 0.22, side: THREE.DoubleSide, depthWrite: false });
         const floorMaterial = new THREE.MeshBasicMaterial({ color: 0x86efac, transparent: true, opacity: 0.24, side: THREE.DoubleSide });
         const fenceMaterial = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.12, roughness: 0.66 });
+        const normalizeRackId = (rackId) => String(rackId || "").trim().toLowerCase();
+        const rackById = new Map(racks
+            .filter((rack) => String(rack?.id || "").trim())
+            .map((rack) => [normalizeRackId(rack.id), rack]));
+        const renderedRackIds = new Set();
 
         const addRackMesh = (geometry, material, position, rackId, options = {}) => {
             const mesh = new THREE.Mesh(geometry, material.clone ? material.clone() : material);
@@ -728,7 +733,71 @@
             });
         };
 
+        const renderBackToBackWallShelfPair = (firstRack, firstLayout, secondRack, secondLayout) => {
+            const postSize = 0.11;
+            const armHeight = 0.11;
+            const armWidth = 0.13;
+            const columnGap = postSize * 0.72;
+            const leftLayout = firstLayout.z <= secondLayout.z ? firstLayout : secondLayout;
+            const rightLayout = leftLayout === firstLayout ? secondLayout : firstLayout;
+            const leftRack = leftLayout === firstLayout ? firstRack : secondRack;
+            const rightRack = leftRack === firstRack ? secondRack : firstRack;
+            const bayCount = Math.max(Number(firstRack.bayCount || 0), Number(secondRack.bayCount || 0), 1);
+            const uprightCount = bayCount + 1;
+            const x = Math.min(firstLayout.x, secondLayout.x);
+            const width = Math.max(firstLayout.x + firstLayout.width, secondLayout.x + secondLayout.width) - x;
+            const spacing = width / bayCount;
+            const minY = Math.min(firstLayout.y, secondLayout.y);
+            const maxY = Math.max(firstLayout.y + firstLayout.height, secondLayout.y + secondLayout.height);
+            const centerY = (minY + maxY) / 2;
+            const height = maxY - minY;
+            const seamZ = ((leftLayout.z + leftLayout.length) + rightLayout.z) / 2;
+            const leftColumnZ = seamZ - (columnGap / 2);
+            const rightColumnZ = seamZ + (columnGap / 2);
+            const leftArmLength = Math.max(leftColumnZ - leftLayout.z - (postSize / 2), 0.16);
+            const rightArmLength = Math.max((rightLayout.z + rightLayout.length) - rightColumnZ - (postSize / 2), 0.16);
+            const leftArmCenterZ = leftColumnZ - (postSize / 2) - (leftArmLength / 2);
+            const rightArmCenterZ = rightColumnZ + (postSize / 2) + (rightArmLength / 2);
+
+            for (let i = 0; i < uprightCount; i += 1) {
+                const postX = x + (i * spacing);
+                addBeam(leftLayout, leftRack.id, cantileverColumnMaterial, { x: postX, y: centerY, z: leftColumnZ }, { w: postSize, h: height, d: postSize });
+                addBeam(rightLayout, rightRack.id, cantileverColumnMaterial, { x: postX, y: centerY, z: rightColumnZ }, { w: postSize, h: height, d: postSize });
+
+                (leftRack.levels || []).forEach((level) => {
+                    const levelY = leftLayout.y + Number(level.heightFromBase || 0);
+                    addBeam(leftLayout, leftRack.id, cantileverArmMaterial, { x: postX, y: levelY + (armHeight / 2), z: leftArmCenterZ }, { w: armWidth, h: armHeight, d: leftArmLength });
+                });
+
+                (rightRack.levels || []).forEach((level) => {
+                    const levelY = rightLayout.y + Number(level.heightFromBase || 0);
+                    addBeam(rightLayout, rightRack.id, cantileverArmMaterial, { x: postX, y: levelY + (armHeight / 2), z: rightArmCenterZ }, { w: armWidth, h: armHeight, d: rightArmLength });
+                });
+            }
+
+            (leftRack.levels || []).forEach((level) => {
+                const levelY = leftLayout.y + Number(level.heightFromBase || 0);
+                const shelf = new THREE.Mesh(new THREE.BoxGeometry(width, 0.025, leftArmLength), cantileverDeckMaterial.clone());
+                shelf.position.set(x + (width / 2), levelY + armHeight + 0.012, leftArmCenterZ);
+                shelf.raycast = () => null;
+                group.add(shelf);
+            });
+
+            (rightRack.levels || []).forEach((level) => {
+                const levelY = rightLayout.y + Number(level.heightFromBase || 0);
+                const shelf = new THREE.Mesh(new THREE.BoxGeometry(width, 0.025, rightArmLength), cantileverDeckMaterial.clone());
+                shelf.position.set(x + (width / 2), levelY + armHeight + 0.012, rightArmCenterZ);
+                shelf.raycast = () => null;
+                group.add(shelf);
+            });
+        };
+
         racks.forEach((rack) => {
+            const rackKey = normalizeRackId(rack.id);
+            if (renderedRackIds.has(rackKey)) {
+                return;
+            }
+
             const layout = toSceneCoordinates(rack.origin, rack.dimensions);
 
             if (rack.type === "FloorStorage") {
@@ -761,18 +830,35 @@
                     interactiveRackMeshes.push(mesh);
                 });
 
+                renderedRackIds.add(rackKey);
                 return;
             }
 
             if (rack.type === "PalletRack") {
                 renderPalletRack(rack, layout);
                 addRackLabel(rack, layout);
+                renderedRackIds.add(rackKey);
                 return;
             }
 
             if (rack.type === "WallShelf") {
+                const pairedRack = rack.backToBack && rack.pairedWithRackId
+                    ? rackById.get(normalizeRackId(rack.pairedWithRackId))
+                    : null;
+
+                if (pairedRack && pairedRack !== rack && stringEquals(pairedRack.type, "WallShelf") && pairedRack.backToBack) {
+                    const pairedLayout = toSceneCoordinates(pairedRack.origin, pairedRack.dimensions);
+                    renderBackToBackWallShelfPair(rack, layout, pairedRack, pairedLayout);
+                    addRackLabel(rack, layout);
+                    addRackLabel(pairedRack, pairedLayout);
+                    renderedRackIds.add(rackKey);
+                    renderedRackIds.add(normalizeRackId(pairedRack.id));
+                    return;
+                }
+
                 renderWallShelf(rack, layout);
                 addRackLabel(rack, layout);
+                renderedRackIds.add(rackKey);
             }
         });
 
