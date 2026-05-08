@@ -313,6 +313,7 @@ h1:focus { outline: none; }
   flex-direction: column;
   background: var(--n-100);
   min-height: 0;
+  overflow: hidden;
 }
 
 .main__inner {
@@ -320,6 +321,21 @@ h1:focus { outline: none; }
   max-width: var(--content-max, 1600px);
   margin: 0 auto;
   padding: clamp(20px, 2.4vw, 36px);
+}
+
+.mud-main-content:has(.viz-page) {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.main__inner:has(> .viz-page) {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  max-width: none;
+  padding: 0;
+  overflow: hidden;
 }
 
 /* ─── Bootstrap button overrides → teal ───────────────────────────────── */
