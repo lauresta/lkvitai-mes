@@ -535,30 +535,73 @@
             }
 
             const color = resolveDoorColor(door.type);
-            const doorMaterial = new THREE.MeshBasicMaterial({
+            const frameMaterial = new THREE.MeshStandardMaterial({
                 color,
+                metalness: 0.18,
+                roughness: 0.46
+            });
+            const edgeMaterial = new THREE.LineBasicMaterial({
+                color: 0x0f172a,
                 transparent: true,
-                opacity: 0.86,
+                opacity: 0.62,
                 depthWrite: false,
                 toneMapped: false
             });
-            const doorMesh = new THREE.Mesh(
-                new THREE.BoxGeometry(placement.box.width, placement.box.height, placement.box.depth),
-                doorMaterial);
-            doorMesh.position.set(placement.position.x, placement.position.y, placement.position.z);
-            doorMesh.renderOrder = 3;
-            group.add(doorMesh);
+            const frameThickness = 0.14;
+            const thresholdHeight = 0.055;
+            const isNorthSouth = placement.box.width >= placement.box.depth;
+            const bottom = placement.position.y - (placement.box.height / 2);
+            const top = placement.position.y + (placement.box.height / 2);
 
-            const edge = new THREE.LineSegments(
-                new THREE.EdgesGeometry(doorMesh.geometry),
-                new THREE.LineBasicMaterial({
-                    color: 0x0f172a,
-                    transparent: true,
-                    opacity: 0.7,
-                    depthWrite: false,
-                    toneMapped: false
-                }));
-            doorMesh.add(edge);
+            const addFrameBeam = (size, position) => {
+                const geometry = new THREE.BoxGeometry(size.width, size.height, size.depth);
+                const beam = new THREE.Mesh(geometry, frameMaterial.clone());
+                beam.position.set(position.x, position.y, position.z);
+                beam.castShadow = true;
+                beam.receiveShadow = true;
+                beam.raycast = () => null;
+                group.add(beam);
+
+                const edge = new THREE.LineSegments(new THREE.EdgesGeometry(geometry), edgeMaterial);
+                edge.raycast = () => null;
+                beam.add(edge);
+            };
+
+            if (isNorthSouth) {
+                const width = placement.box.width;
+                const depth = Math.max(placement.box.depth, 0.1);
+                const leftX = placement.position.x - (width / 2);
+                const rightX = placement.position.x + (width / 2);
+                addFrameBeam(
+                    { width: frameThickness, height: placement.box.height, depth },
+                    { x: leftX, y: placement.position.y, z: placement.position.z });
+                addFrameBeam(
+                    { width: frameThickness, height: placement.box.height, depth },
+                    { x: rightX, y: placement.position.y, z: placement.position.z });
+                addFrameBeam(
+                    { width: width + frameThickness, height: frameThickness, depth },
+                    { x: placement.position.x, y: top, z: placement.position.z });
+                addFrameBeam(
+                    { width: width + frameThickness, height: thresholdHeight, depth },
+                    { x: placement.position.x, y: bottom + (thresholdHeight / 2), z: placement.position.z });
+            } else {
+                const width = placement.box.depth;
+                const depth = Math.max(placement.box.width, 0.1);
+                const nearZ = placement.position.z - (width / 2);
+                const farZ = placement.position.z + (width / 2);
+                addFrameBeam(
+                    { width: depth, height: placement.box.height, depth: frameThickness },
+                    { x: placement.position.x, y: placement.position.y, z: nearZ });
+                addFrameBeam(
+                    { width: depth, height: placement.box.height, depth: frameThickness },
+                    { x: placement.position.x, y: placement.position.y, z: farZ });
+                addFrameBeam(
+                    { width: depth, height: frameThickness, depth: width + frameThickness },
+                    { x: placement.position.x, y: top, z: placement.position.z });
+                addFrameBeam(
+                    { width: depth, height: thresholdHeight, depth: width + frameThickness },
+                    { x: placement.position.x, y: bottom + (thresholdHeight / 2), z: placement.position.z });
+            }
 
             const labelText = String(door.label || door.id || "").trim();
             if (labelText) {
