@@ -594,9 +594,23 @@
             .map((rack) => [normalizeRackId(rack.id), rack]));
         const renderedRackIds = new Set();
 
+        const getRackRotationY = (rack) => -((Number(rack?.orientationDeg || 0) * Math.PI) / 180);
+
+        const toRackWorld = (rack, localX, localY, localZ) => {
+            const point = rotateLocalPoint(localX, localZ, rack);
+            return {
+                x: point.x,
+                y: Number(rack?.origin?.z || 0) + localY,
+                z: point.z
+            };
+        };
+
         const addRackMesh = (geometry, material, position, rackId, options = {}) => {
             const mesh = new THREE.Mesh(geometry, material.clone ? material.clone() : material);
             mesh.position.set(position.x, position.y, position.z);
+            if (options.rotationY) {
+                mesh.rotation.y = options.rotationY;
+            }
             if (options.rotationZ) {
                 mesh.rotation.z = options.rotationZ;
             }
@@ -618,7 +632,26 @@
             rackId,
             options);
 
-        const addDiagonalBrace = (start, end, rackId) => {
+        const addLocalBeam = (rack, rackId, material, localPosition, size, options = {}) => addRackMesh(
+            new THREE.BoxGeometry(size.w, size.h, size.d),
+            material,
+            toRackWorld(rack, localPosition.x, localPosition.y, localPosition.z),
+            rackId,
+            {
+                ...options,
+                rotationY: getRackRotationY(rack)
+            });
+
+        const addLocalDeck = (rack, material, localPosition, size) => {
+            const deck = new THREE.Mesh(new THREE.BoxGeometry(size.w, size.h, size.d), material.clone());
+            const position = toRackWorld(rack, localPosition.x, localPosition.y, localPosition.z);
+            deck.position.set(position.x, position.y, position.z);
+            deck.rotation.y = getRackRotationY(rack);
+            deck.raycast = () => null;
+            group.add(deck);
+        };
+
+        const addDiagonalBrace = (start, end, rackId, options = {}) => {
             const dx = end.x - start.x;
             const dy = end.y - start.y;
             const length = Math.sqrt((dx * dx) + (dy * dy));
@@ -635,7 +668,18 @@
                     z: start.z
                 },
                 rackId,
-                { rotationZ: -Math.atan2(dx, dy) });
+                {
+                    rotationY: options.rotationY,
+                    rotationZ: -Math.atan2(dx, dy)
+                });
+        };
+
+        const addLocalDiagonalBrace = (rack, start, end, rackId) => {
+            addDiagonalBrace(
+                toRackWorld(rack, start.x, start.y, start.z),
+                toRackWorld(rack, end.x, end.y, end.z),
+                rackId,
+                { rotationY: getRackRotationY(rack) });
         };
 
         const addRackLabel = (rack, layout) => {
@@ -666,34 +710,35 @@
             const bayCount = Math.max(Number(rack.bayCount || 0), 1);
             const uprightPairs = bayCount + 1;
             const spacing = layout.width / bayCount;
-            const frontZ = layout.z + (postSize / 2);
-            const backZ = layout.z + layout.length - (postSize / 2);
+            const frontZ = postSize / 2;
+            const backZ = layout.length - (postSize / 2);
 
             for (let i = 0; i < uprightPairs; i += 1) {
-                const postX = layout.x + (i * spacing);
-                addBeam(layout, rack.id, uprightMaterial, { x: postX, y: layout.centerY, z: frontZ }, { w: postSize, h: layout.height, d: postSize });
-                addBeam(layout, rack.id, uprightMaterial, { x: postX, y: layout.centerY, z: backZ }, { w: postSize, h: layout.height, d: postSize });
+                const postX = i * spacing;
+                addLocalBeam(rack, rack.id, uprightMaterial, { x: postX, y: layout.height / 2, z: frontZ }, { w: postSize, h: layout.height, d: postSize });
+                addLocalBeam(rack, rack.id, uprightMaterial, { x: postX, y: layout.height / 2, z: backZ }, { w: postSize, h: layout.height, d: postSize });
             }
 
             (rack.levels || []).forEach((level) => {
-                const levelY = layout.y + Number(level.heightFromBase || 0);
+                const levelY = Number(level.heightFromBase || 0);
                 const beamY = levelY + (beamHeight / 2);
-                addBeam(layout, rack.id, beamMaterial, { x: layout.centerX, y: beamY, z: frontZ }, { w: layout.width, h: beamHeight, d: beamDepth });
-                addBeam(layout, rack.id, beamMaterial, { x: layout.centerX, y: beamY, z: backZ }, { w: layout.width, h: beamHeight, d: beamDepth });
+                addLocalBeam(rack, rack.id, beamMaterial, { x: layout.width / 2, y: beamY, z: frontZ }, { w: layout.width, h: beamHeight, d: beamDepth });
+                addLocalBeam(rack, rack.id, beamMaterial, { x: layout.width / 2, y: beamY, z: backZ }, { w: layout.width, h: beamHeight, d: beamDepth });
 
-                const deck = new THREE.Mesh(new THREE.BoxGeometry(layout.width, deckThickness, layout.length), deckMaterial.clone());
-                deck.position.set(layout.centerX, levelY + beamHeight + (deckThickness / 2), layout.centerZ);
-                deck.raycast = () => null;
-                group.add(deck);
+                addLocalDeck(
+                    rack,
+                    deckMaterial,
+                    { x: layout.width / 2, y: levelY + beamHeight + (deckThickness / 2), z: layout.length / 2 },
+                    { w: layout.width, h: deckThickness, d: layout.length });
             });
 
             if (layout.height > 0.8 && layout.length > 0.2) {
-                const braceBottom = layout.y + 0.25;
-                const braceTop = layout.y + layout.height - 0.35;
-                addDiagonalBrace({ x: layout.x + 0.08, y: braceBottom, z: frontZ }, { x: layout.x + spacing - 0.08, y: braceTop, z: frontZ }, rack.id);
-                addDiagonalBrace({ x: layout.x + 0.08, y: braceTop, z: backZ }, { x: layout.x + spacing - 0.08, y: braceBottom, z: backZ }, rack.id);
-                addDiagonalBrace({ x: layout.x + layout.width - spacing + 0.08, y: braceBottom, z: frontZ }, { x: layout.x + layout.width - 0.08, y: braceTop, z: frontZ }, rack.id);
-                addDiagonalBrace({ x: layout.x + layout.width - spacing + 0.08, y: braceTop, z: backZ }, { x: layout.x + layout.width - 0.08, y: braceBottom, z: backZ }, rack.id);
+                const braceBottom = 0.25;
+                const braceTop = layout.height - 0.35;
+                addLocalDiagonalBrace(rack, { x: 0.08, y: braceBottom, z: frontZ }, { x: spacing - 0.08, y: braceTop, z: frontZ }, rack.id);
+                addLocalDiagonalBrace(rack, { x: 0.08, y: braceTop, z: backZ }, { x: spacing - 0.08, y: braceBottom, z: backZ }, rack.id);
+                addLocalDiagonalBrace(rack, { x: layout.width - spacing + 0.08, y: braceBottom, z: frontZ }, { x: layout.width - 0.08, y: braceTop, z: frontZ }, rack.id);
+                addLocalDiagonalBrace(rack, { x: layout.width - spacing + 0.08, y: braceTop, z: backZ }, { x: layout.width - 0.08, y: braceBottom, z: backZ }, rack.id);
             }
         };
 
@@ -704,31 +749,32 @@
             const bayCount = Math.max(Number(rack.bayCount || 0), 1);
             const uprightCount = bayCount + 1;
             const spacing = layout.width / bayCount;
-            const columnZ = rack.backToBack ? layout.centerZ : layout.z + (postSize / 2);
+            const columnZ = rack.backToBack ? layout.length / 2 : postSize / 2;
             const armLength = rack.backToBack ? Math.max((layout.length / 2) - (postSize / 2), 0.16) : Math.max(layout.length - postSize, 0.16);
             const armDirections = rack.backToBack ? [-1, 1] : [1];
 
             for (let i = 0; i < uprightCount; i += 1) {
-                const postX = layout.x + (i * spacing);
-                addBeam(layout, rack.id, cantileverColumnMaterial, { x: postX, y: layout.centerY, z: columnZ }, { w: postSize, h: layout.height, d: postSize });
+                const postX = i * spacing;
+                addLocalBeam(rack, rack.id, cantileverColumnMaterial, { x: postX, y: layout.height / 2, z: columnZ }, { w: postSize, h: layout.height, d: postSize });
 
                 (rack.levels || []).forEach((level) => {
-                    const levelY = layout.y + Number(level.heightFromBase || 0);
+                    const levelY = Number(level.heightFromBase || 0);
                     armDirections.forEach((direction) => {
                         const centerZ = columnZ + (direction * ((armLength / 2) + (postSize / 2)));
-                        addBeam(layout, rack.id, cantileverArmMaterial, { x: postX, y: levelY + (armHeight / 2), z: centerZ }, { w: armWidth, h: armHeight, d: armLength });
+                        addLocalBeam(rack, rack.id, cantileverArmMaterial, { x: postX, y: levelY + (armHeight / 2), z: centerZ }, { w: armWidth, h: armHeight, d: armLength });
                     });
                 });
             }
 
             (rack.levels || []).forEach((level) => {
-                const levelY = layout.y + Number(level.heightFromBase || 0);
+                const levelY = Number(level.heightFromBase || 0);
                 armDirections.forEach((direction) => {
                     const centerZ = columnZ + (direction * ((armLength / 2) + (postSize / 2)));
-                    const shelf = new THREE.Mesh(new THREE.BoxGeometry(layout.width, 0.025, armLength), cantileverDeckMaterial.clone());
-                    shelf.position.set(layout.centerX, levelY + armHeight + 0.012, centerZ);
-                    shelf.raycast = () => null;
-                    group.add(shelf);
+                    addLocalDeck(
+                        rack,
+                        cantileverDeckMaterial,
+                        { x: layout.width / 2, y: levelY + armHeight + 0.012, z: centerZ },
+                        { w: layout.width, h: 0.025, d: armLength });
                 });
             });
         };
