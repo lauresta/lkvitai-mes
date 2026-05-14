@@ -139,6 +139,13 @@
 
                         <article class="fabric-card" aria-live="polite">
                             <div class="fabric-hero" role="img" aria-label="@($"{_result.Code} fabric photo")">
+                                @if (TryPhotoUrl(_result.ThumbnailUrl ?? _result.PhotoUrl) is { } photoUrl)
+                                {
+                                    <img src="@photoUrl"
+                                         alt=""
+                                         loading="lazy"
+                                         decoding="async" />
+                                }
                                 @if (_result.DiscountPercent is { } d)
                                 {
                                     <span class="fabric-hero__ribbon">−@d % · CAMPAIGN</span>
@@ -221,7 +228,15 @@
                                                 <button class="alt-card"
                                                         type="button"
                                                         @onclick="@(() => OpenAlternativeAsync(captured))">
-                                                    <div class="alt-img @AltImgClass(captured.Code)"></div>
+                                                    <div class="alt-img @AltImgClass(captured.Code)">
+                                                        @if (TryPhotoUrl(captured.ThumbnailUrl ?? captured.PhotoUrl) is { } altPhotoUrl)
+                                                        {
+                                                            <img src="@altPhotoUrl"
+                                                                 alt=""
+                                                                 loading="lazy"
+                                                                 decoding="async" />
+                                                        }
+                                                    </div>
                                                     <div class="alt-body">
                                                         <div class="alt-body__code">@alt.Code · @alt.WidthMm</div>
                                                         <div class="alt-body__row">
@@ -455,6 +470,12 @@
             _ => "alt-img--red",
         };
     }
+
+    private static string? TryPhotoUrl(string? url)
+        => string.IsNullOrWhiteSpace(url) ||
+           string.Equals(url, "/img/fabric_pl.png", StringComparison.OrdinalIgnoreCase)
+            ? null
+            : url;
 
     /// <summary>
     /// Builds the absolute URL the sidebar QR points at. With no result on

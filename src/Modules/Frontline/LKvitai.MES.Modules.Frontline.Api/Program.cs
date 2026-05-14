@@ -14,6 +14,7 @@ builder.Services.AddScaffoldApiCore();
 // derived from the legacy web_RemainsAll view, at which point the default
 // will flip to Sql/Auto.
 builder.Services.AddFrontlineFabricDataSource(builder.Configuration, builder.Environment);
+builder.Services.AddFrontlineFabricPhotos(builder.Configuration);
 
 var app = builder.Build();
 

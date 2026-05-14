@@ -173,7 +173,17 @@
                     @foreach (var r in _rows)
                     {
                         <tr>
-                            <td><span class="row-thumb @ThumbClass(r.Code)"></span></td>
+                            <td>
+                                <span class="row-thumb @ThumbClass(r.Code)">
+                                    @if (TryPhotoUrl(r.ThumbnailUrl ?? r.PhotoUrl) is { } thumbUrl)
+                                    {
+                                        <img src="@thumbUrl"
+                                             alt=""
+                                             loading="lazy"
+                                             decoding="async" />
+                                    }
+                                </span>
+                            </td>
                             <td><a class="fabric-link" href="@($"fabric?code={r.Code}")">@r.Code</a></td>
                             <td><span class="fabric-name-cell">@r.Name</span></td>
                             <td class="mono">@r.WidthMm mm</td>
@@ -631,6 +641,12 @@
         2 => "row-thumb--green",
         _ => "row-thumb--red",
     };
+
+    private static string? TryPhotoUrl(string? url)
+        => string.IsNullOrWhiteSpace(url) ||
+           string.Equals(url, "/img/fabric_pl.png", StringComparison.OrdinalIgnoreCase)
+            ? null
+            : url;
 
     private static string FormatLastChecked(DateTimeOffset? value)
     {

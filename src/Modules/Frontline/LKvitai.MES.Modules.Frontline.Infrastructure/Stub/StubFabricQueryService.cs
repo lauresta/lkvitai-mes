@@ -156,6 +156,7 @@ public sealed class StubFabricQueryService : IFabricQueryService
                 Code: "R120",
                 Name: "Linen texture, warm grey",
                 PhotoUrl: PlaceholderPhoto,
+                ThumbnailUrl: null,
                 Notes: "Use with white bottom bar. Similar tone to R118.",
                 DiscountPercent: 15,
                 Widths: new WidthStockDto[]
@@ -167,14 +168,15 @@ public sealed class StubFabricQueryService : IFabricQueryService
                 SelectedWidthMm: null,
                 Alternatives: new FabricAlternativeDto[]
                 {
-                    new("R118", PlaceholderPhoto, 2000, FabricAvailabilityStatus.Enough, 34, null),
-                    new("R124", PlaceholderPhoto, 2000, FabricAvailabilityStatus.Low,    11, new DateOnly(2026, 5, 6)),
-                    new("R130", PlaceholderPhoto, 2000, FabricAvailabilityStatus.Enough, 68, null),
+                    new("R118", PlaceholderPhoto, null, 2000, FabricAvailabilityStatus.Enough, 34, null),
+                    new("R124", PlaceholderPhoto, null, 2000, FabricAvailabilityStatus.Low,    11, new DateOnly(2026, 5, 6)),
+                    new("R130", PlaceholderPhoto, null, 2000, FabricAvailabilityStatus.Enough, 68, null),
                 }),
             ["DN45"] = new(
                 Code: "DN45",
                 Name: "Day-night graphite stripe",
                 PhotoUrl: PlaceholderPhoto,
+                ThumbnailUrl: null,
                 Notes: null,
                 DiscountPercent: null,
                 Widths: new WidthStockDto[]
@@ -185,13 +187,14 @@ public sealed class StubFabricQueryService : IFabricQueryService
                 SelectedWidthMm: null,
                 Alternatives: new FabricAlternativeDto[]
                 {
-                    new("DN47", PlaceholderPhoto, 1800, FabricAvailabilityStatus.Enough, 56, null),
-                    new("DN51", PlaceholderPhoto, 1800, FabricAvailabilityStatus.Low,    14, new DateOnly(2026, 5, 9)),
+                    new("DN47", PlaceholderPhoto, null, 1800, FabricAvailabilityStatus.Enough, 56, null),
+                    new("DN51", PlaceholderPhoto, null, 1800, FabricAvailabilityStatus.Low,    14, new DateOnly(2026, 5, 9)),
                 }),
             ["V78"] = new(
                 Code: "V78",
                 Name: "Vertical blind sand",
                 PhotoUrl: PlaceholderPhoto,
+                ThumbnailUrl: null,
                 Notes: "Pairs naturally with V80 for two-tone installs.",
                 DiscountPercent: null,
                 Widths: new WidthStockDto[]
@@ -201,7 +204,7 @@ public sealed class StubFabricQueryService : IFabricQueryService
                 SelectedWidthMm: null,
                 Alternatives: new FabricAlternativeDto[]
                 {
-                    new("V80", PlaceholderPhoto, 2500, FabricAvailabilityStatus.Enough, 11, null),
+                    new("V80", PlaceholderPhoto, null, 2500, FabricAvailabilityStatus.Enough, 11, null),
                 }),
         };
     }
@@ -221,6 +224,7 @@ public sealed class StubFabricQueryService : IFabricQueryService
                 Code:             code,
                 Name:             name,
                 PhotoUrl:         "/img/fabric_pl.png",
+                ThumbnailUrl:     null,
                 WidthMm:          widthMm,
                 AvailableMeters:  available,
                 ThresholdMeters:  25,

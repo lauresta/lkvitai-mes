@@ -3,7 +3,9 @@ using System.Text.RegularExpressions;
 using LKvitai.MES.Modules.Frontline.Application.Ports;
 using LKvitai.MES.Modules.Frontline.Contracts.Common;
 using LKvitai.MES.Modules.Frontline.Contracts.Fabric;
+using LKvitai.MES.Modules.Frontline.Infrastructure.Media;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Net.Http.Headers;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
 
@@ -45,6 +47,13 @@ public static class FabricAvailabilityEndpoints
             .WithName("GetFrontlineFabricLowStock")
             .Produces<PagedResult<FabricLowStockDto>>(StatusCodes.Status200OK);
 
+        fabric.MapGet("/{code}/photo", GetPhotoAsync)
+            .WithName("GetFrontlineFabricPhoto")
+            .Produces(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status304NotModified)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status404NotFound);
+
         return group;
     }
 
@@ -54,6 +63,7 @@ public static class FabricAvailabilityEndpoints
         int? lowThreshold,
         int? enoughThreshold,
         IFabricQueryService fabric,
+        IFabricPhotoService photos,
         IFabricLookupRecorder recorder,
         HttpContext httpContext,
         ILoggerFactory loggerFactory,
@@ -79,6 +89,10 @@ public static class FabricAvailabilityEndpoints
             EnoughThreshold: enoughThreshold ?? 25);
 
         var card = await fabric.GetMobileCardAsync(query, cancellationToken).ConfigureAwait(false);
+        if (card is not null)
+        {
+            card = await EnrichCardAsync(card, photos, cancellationToken).ConfigureAwait(false);
+        }
         sw.Stop();
 
         // Record the lookup attempt regardless of hit/miss — purchasing wants
@@ -99,12 +113,14 @@ public static class FabricAvailabilityEndpoints
     private static async Task<IResult> GetLowStockListAsync(
         [AsParameters] LowStockListRequest request,
         IFabricQueryService fabric,
+        IFabricPhotoService photos,
         ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
         var sw = Stopwatch.StartNew();
         var query = request.ToQueryParams();
         var page = await fabric.GetLowStockListAsync(query, cancellationToken).ConfigureAwait(false);
+        page = await EnrichPageAsync(page, photos, cancellationToken).ConfigureAwait(false);
         sw.Stop();
 
         loggerFactory.CreateLogger("LKvitai.MES.Modules.Frontline.Api.Endpoints.Fabric").LogInformation(
@@ -116,6 +132,97 @@ public static class FabricAvailabilityEndpoints
             !string.IsNullOrWhiteSpace(query.Supplier), sw.ElapsedMilliseconds);
 
         return Results.Ok(page);
+    }
+
+    private static async Task<IResult> GetPhotoAsync(
+        string code,
+        string? size,
+        IFabricPhotoService photos,
+        HttpContext httpContext,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(code))
+        {
+            return Results.BadRequest(new { error = "Code is required." });
+        }
+
+        var normalised = code.Trim().ToUpperInvariant();
+        if (!CodeShape.IsMatch(normalised))
+        {
+            return Results.BadRequest(new { error = $"Wrong format: '{normalised}'." });
+        }
+
+        var requestedSize = string.IsNullOrWhiteSpace(size) ? "thumb" : size.Trim();
+        if (!string.Equals(requestedSize, "thumb", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(requestedSize, "original", StringComparison.OrdinalIgnoreCase))
+        {
+            return Results.BadRequest(new { error = "Query parameter 'size' must be 'thumb' or 'original'." });
+        }
+
+        var photo = await photos.GetPhotoAsync(normalised, requestedSize, cancellationToken).ConfigureAwait(false);
+        if (photo is null)
+        {
+            return Results.NotFound();
+        }
+
+        var normalizedEtag = photo.ETag.Trim('"');
+        httpContext.Response.Headers[HeaderNames.CacheControl] = $"public, max-age={photos.CacheMaxAgeSeconds}";
+        httpContext.Response.Headers[HeaderNames.ETag] = $"\"{normalizedEtag}\"";
+
+        if (httpContext.Request.Headers.TryGetValue(HeaderNames.IfNoneMatch, out var ifNoneMatchValues))
+        {
+            var matches = ifNoneMatchValues.Any(x =>
+                string.Equals(x?.Trim('"'), normalizedEtag, StringComparison.OrdinalIgnoreCase));
+            if (matches)
+            {
+                return Results.StatusCode(StatusCodes.Status304NotModified);
+            }
+        }
+
+        return Results.File(photo.Stream, photo.ContentType);
+    }
+
+    private static async Task<FabricCardDto> EnrichCardAsync(
+        FabricCardDto card,
+        IFabricPhotoService photos,
+        CancellationToken cancellationToken)
+    {
+        var codes = card.Alternatives
+            .Select(x => x.Code)
+            .Append(card.Code);
+        var urlMap = await photos.GetPrimaryUrlsAsync(codes, cancellationToken).ConfigureAwait(false);
+
+        var enrichedCard = urlMap.TryGetValue(card.Code, out var cardUrls)
+            ? card with { PhotoUrl = cardUrls.PhotoUrl, ThumbnailUrl = cardUrls.ThumbnailUrl }
+            : card;
+
+        if (card.Alternatives.Count == 0)
+        {
+            return enrichedCard;
+        }
+
+        var alternatives = card.Alternatives
+            .Select(x => urlMap.TryGetValue(x.Code, out var urls)
+                ? x with { PhotoUrl = urls.PhotoUrl, ThumbnailUrl = urls.ThumbnailUrl }
+                : x)
+            .ToArray();
+
+        return enrichedCard with { Alternatives = alternatives };
+    }
+
+    private static async Task<PagedResult<FabricLowStockDto>> EnrichPageAsync(
+        PagedResult<FabricLowStockDto> page,
+        IFabricPhotoService photos,
+        CancellationToken cancellationToken)
+    {
+        var urlMap = await photos.GetPrimaryUrlsAsync(page.Items.Select(x => x.Code), cancellationToken).ConfigureAwait(false);
+        var enriched = page.Items
+            .Select(x => urlMap.TryGetValue(x.Code, out var urls)
+                ? x with { PhotoUrl = urls.PhotoUrl, ThumbnailUrl = urls.ThumbnailUrl }
+                : x)
+            .ToArray();
+
+        return new PagedResult<FabricLowStockDto>(enriched, page.Total, page.Page, page.PageSize);
     }
 
     /// <summary>

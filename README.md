@@ -156,6 +156,11 @@ Or open `src/LKvitai.MES.sln` in Visual Studio / Rider and run from IDE.
 | `UseJaegerExporter` | No | `false` | `true` → traces to Jaeger UI; `false` → traces to console |
 | `Jaeger__AgentHost` | No | `localhost` | Jaeger UDP agent host |
 
+Fabric photos for Frontline use the same object-storage configuration but are
+stored under `fabric-photos/{fabricCode}/{photoId}/...` and mapped in
+`public.fabric_photos`, separate from Warehouse `item_photos`. See
+`docs/frontline/fabric-photos.md` for importer and API details.
+
 ### Build & Test
 
 ```bash

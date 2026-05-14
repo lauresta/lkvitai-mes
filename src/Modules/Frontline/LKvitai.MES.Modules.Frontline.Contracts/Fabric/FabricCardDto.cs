@@ -15,6 +15,7 @@ public sealed record FabricCardDto(
     string Code,
     string Name,
     string PhotoUrl,
+    string? ThumbnailUrl,
     string? Notes,
     int? DiscountPercent,
     IReadOnlyList<WidthStockDto> Widths,
