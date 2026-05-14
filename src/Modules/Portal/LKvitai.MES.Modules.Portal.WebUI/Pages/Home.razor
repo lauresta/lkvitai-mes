@@ -277,7 +277,7 @@
                 </header>
                 <div class="status-row"><span>Environment</span><strong class="mono @_envStatusRowClass">@_envName</strong></div>
                 <div class="status-row"><span>Version</span><strong class="mono">@_displayVersion</strong></div>
-                <div class="status-row"><span>Modules</span><strong class="mono">@_liveCount live / @_pilotCount pilot / @_modules.Count total</strong></div>
+                <div class="status-row"><span>Modules</span><strong class="mono">@FormatModuleStatusSummary()</strong></div>
                 <div class="status-row"><span>Current module</span><strong>Portal</strong></div>
                 <div class="status-row"><span>Channel</span><strong class="mono">@_envChannel</strong></div>
             </section>
@@ -509,6 +509,17 @@
 
     private static string ShortSha(string fullSha) =>
         fullSha.Length <= 7 ? fullSha : fullSha[..7];
+
+    private string FormatModuleStatusSummary()
+    {
+        var parts = new List<string>(5);
+        if (_liveCount > 0) parts.Add($"{_liveCount} live");
+        if (_pilotCount > 0) parts.Add($"{_pilotCount} pilot");
+        if (_developingCount > 0) parts.Add($"{_developingCount} developing");
+        if (_plannedCount > 0) parts.Add($"{_plannedCount} planned");
+        parts.Add($"{_modules.Count} total");
+        return string.Join(" / ", parts);
+    }
 
     private sealed record RecentShortcut(string Key, string Title, string Url, bool IsPrimary);
 
