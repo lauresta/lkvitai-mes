@@ -171,7 +171,14 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Test
       ConnectionStrings__LKvitaiDb: "${LKVITAI_MSACCESS_DB_CONNECTION}"
+      ConnectionStrings__WarehouseDb: "Host=pg;Port=5432;Database=lkvitai_warehouse_test;Username=postgres;Password=postgres"
       Frontline__FabricDataSource: "Sql"
+      ITEMIMAGES__ENDPOINT: "${ITEMIMAGES__ENDPOINT}"
+      ITEMIMAGES__BUCKET: "${ITEMIMAGES__BUCKET}"
+      ITEMIMAGES__USESSL: "${ITEMIMAGES__USESSL:-false}"
+      ITEMIMAGES__ACCESSKEY: "${ITEMIMAGES__ACCESSKEY}"
+      ITEMIMAGES__SECRETKEY: "${ITEMIMAGES__SECRETKEY}"
+      ITEMIMAGES__CACHEMAXAGESECONDS: "${ITEMIMAGES__CACHEMAXAGESECONDS:-86400}"
     volumes:
       - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
     networks:
