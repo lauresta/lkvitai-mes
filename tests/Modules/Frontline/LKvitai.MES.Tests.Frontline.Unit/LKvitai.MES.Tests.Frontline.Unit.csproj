@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <RootNamespace>LKvitai.MES.Tests.Frontline.Unit</RootNamespace>
+    <AssemblyName>LKvitai.MES.Tests.Frontline.Unit</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" />
+    <PackageReference Include="coverlet.collector" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\src\BuildingBlocks\LKvitai.MES.BuildingBlocks.ObjectStorage\LKvitai.MES.BuildingBlocks.ObjectStorage.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Modules\Frontline\LKvitai.MES.Modules.Frontline.Infrastructure\LKvitai.MES.Modules.Frontline.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\..\..\tools\FabricPhotoImporter\FabricPhotoImporter.csproj" />
+  </ItemGroup>
+</Project>

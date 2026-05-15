@@ -136,9 +136,19 @@
                     {
                         var widths = _result.Widths;
                         var selected = widths.FirstOrDefault(w => w.WidthMm == _selectedWidth) ?? widths[0];
+                        var heroPhotoUrl = TryPhotoUrl(_result.ThumbnailUrl ?? _result.PhotoUrl);
 
                         <article class="fabric-card" aria-live="polite">
-                            <div class="fabric-hero" role="img" aria-label="@($"{_result.Code} fabric photo")">
+                            <div class="fabric-hero @(heroPhotoUrl is null ? "is-missing" : "has-photo")" role="img" aria-label="@($"{_result.Code} fabric photo")">
+                                @if (heroPhotoUrl is not null)
+                                {
+                                    <img src="@heroPhotoUrl"
+                                         alt=""
+                                         loading="lazy"
+                                         decoding="async"
+                                         onerror="this.style.display='none';this.parentElement.classList.remove('has-photo');this.parentElement.classList.add('is-missing');" />
+                                }
+                                <span class="photo-placeholder-label">No photo</span>
                                 @if (_result.DiscountPercent is { } d)
                                 {
                                     <span class="fabric-hero__ribbon">−@d % · CAMPAIGN</span>
@@ -218,10 +228,21 @@
                                             @foreach (var alt in _result.Alternatives)
                                             {
                                                 var captured = alt;
+                                                var altPhotoUrl = TryPhotoUrl(captured.ThumbnailUrl ?? captured.PhotoUrl);
                                                 <button class="alt-card"
                                                         type="button"
                                                         @onclick="@(() => OpenAlternativeAsync(captured))">
-                                                    <div class="alt-img @AltImgClass(captured.Code)"></div>
+                                                    <div class="alt-img @AltImgClass(captured.Code) @(altPhotoUrl is null ? "is-missing" : "has-photo")">
+                                                        @if (altPhotoUrl is not null)
+                                                        {
+                                                            <img src="@altPhotoUrl"
+                                                                 alt=""
+                                                                 loading="lazy"
+                                                                 decoding="async"
+                                                                 onerror="this.style.display='none';this.parentElement.classList.remove('has-photo');this.parentElement.classList.add('is-missing');" />
+                                                        }
+                                                        <span class="photo-placeholder-label">No photo</span>
+                                                    </div>
                                                     <div class="alt-body">
                                                         <div class="alt-body__code">@alt.Code · @alt.WidthMm</div>
                                                         <div class="alt-body__row">
@@ -455,6 +476,12 @@
             _ => "alt-img--red",
         };
     }
+
+    private static string? TryPhotoUrl(string? url)
+        => string.IsNullOrWhiteSpace(url) ||
+           string.Equals(url, "/img/fabric_pl.png", StringComparison.OrdinalIgnoreCase)
+            ? null
+            : url;
 
     /// <summary>
     /// Builds the absolute URL the sidebar QR points at. With no result on

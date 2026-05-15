@@ -9,12 +9,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Minio" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" />
+    <PackageReference Include="Npgsql" />
     <PackageReference Include="Serilog.AspNetCore" />
     <PackageReference Include="Serilog.Sinks.Console" />
     <PackageReference Include="Serilog.Sinks.File" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\BuildingBlocks\LKvitai.MES.BuildingBlocks.ObjectStorage\LKvitai.MES.BuildingBlocks.ObjectStorage.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\LKvitai.MES.BuildingBlocks.ModuleStartup\LKvitai.MES.BuildingBlocks.ModuleStartup.csproj" />
     <ProjectReference Include="..\LKvitai.MES.Modules.Frontline.Application\LKvitai.MES.Modules.Frontline.Application.csproj" />
     <ProjectReference Include="..\LKvitai.MES.Modules.Frontline.Contracts\LKvitai.MES.Modules.Frontline.Contracts.csproj" />

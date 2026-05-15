@@ -10,10 +10,13 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.SqlClient" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\BuildingBlocks\LKvitai.MES.BuildingBlocks.ObjectStorage\LKvitai.MES.BuildingBlocks.ObjectStorage.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\LKvitai.MES.BuildingBlocks.SharedKernel\LKvitai.MES.BuildingBlocks.SharedKernel.csproj" />
     <ProjectReference Include="..\LKvitai.MES.Modules.Frontline.Application\LKvitai.MES.Modules.Frontline.Application.csproj" />
     <ProjectReference Include="..\LKvitai.MES.Modules.Frontline.Contracts\LKvitai.MES.Modules.Frontline.Contracts.csproj" />

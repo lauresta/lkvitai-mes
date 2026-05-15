@@ -1,4 +1,5 @@
 using LKvitai.MES.Modules.Warehouse.Api.Configuration;
+using LKvitai.MES.BuildingBlocks.ObjectStorage;
 using LKvitai.MES.Modules.Warehouse.Api.ErrorHandling;
 using LKvitai.MES.Modules.Warehouse.Api.Middleware;
 using LKvitai.MES.Modules.Warehouse.Api.Observability;
@@ -73,6 +74,7 @@ builder.Services.Configure<OAuthOptions>(builder.Configuration.GetSection(OAuthO
 builder.Services.Configure<MfaOptions>(builder.Configuration.GetSection(MfaOptions.SectionName));
 builder.Services.Configure<LabelPrintingConfig>(builder.Configuration.GetSection("LabelPrinting"));
 builder.Services.AddSingleton(_ => ItemImageOptions.FromConfiguration(builder.Configuration));
+builder.Services.AddSingleton(sp => sp.GetRequiredService<ItemImageOptions>().ToObjectStorageOptions());
 builder.Services.AddSingleton<IMinioClient>(sp =>
 {
     var options = sp.GetRequiredService<ItemImageOptions>();
@@ -82,6 +84,7 @@ builder.Services.AddSingleton<IMinioClient>(sp =>
         .WithSSL(options.UseSsl)
         .Build();
 });
+builder.Services.AddSingleton<IObjectStorageService, MinioObjectStorageService>();
 builder.Services.AddSingleton<IItemImageStorageService, ItemImageStorageService>();
 builder.Services.AddScoped<IItemPhotoService, ItemPhotoService>();
 builder.Services.AddScoped<IItemImageSearchCapabilityService, ItemImageSearchCapabilityService>();

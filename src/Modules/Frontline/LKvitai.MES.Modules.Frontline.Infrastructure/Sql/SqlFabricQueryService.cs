@@ -165,6 +165,7 @@ public sealed class SqlFabricQueryService : IFabricQueryService
             alternatives.Add(new FabricAlternativeDto(
                 Code:         ReadString(reader, "Code", string.Empty),
                 PhotoUrl:     ReadString(reader, "PhotoUrl", PlaceholderPhotoUrl),
+                ThumbnailUrl: null,
                 WidthMm:      ReadInt(reader, "WidthMm"),
                 Status:       ReadStatus(reader, "Status"),
                 StockMeters:  ReadIntOrNull(reader, "StockMeters"),
@@ -197,6 +198,7 @@ public sealed class SqlFabricQueryService : IFabricQueryService
             Code:            code,
             Name:            name,
             PhotoUrl:        photoUrl,
+            ThumbnailUrl:    null,
             Notes:           notes,
             DiscountPercent: discount,
             Widths:          widths,
@@ -246,6 +248,7 @@ public sealed class SqlFabricQueryService : IFabricQueryService
                 Code:             ReadString(reader, "Code", string.Empty),
                 Name:             ReadString(reader, "Name", string.Empty),
                 PhotoUrl:         ReadString(reader, "PhotoUrl", PlaceholderPhotoUrl),
+                ThumbnailUrl:     null,
                 WidthMm:          ReadInt(reader, "WidthMm"),
                 AvailableMeters:  ReadInt(reader, "AvailableMeters"),
                 ThresholdMeters:  ReadInt(reader, "ThresholdMeters"),

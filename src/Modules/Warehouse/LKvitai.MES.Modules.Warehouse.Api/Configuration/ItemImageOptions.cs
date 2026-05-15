@@ -1,4 +1,5 @@
 using System.Globalization;
+using LKvitai.MES.BuildingBlocks.ObjectStorage;
 
 namespace LKvitai.MES.Modules.Warehouse.Api.Configuration;
 
@@ -18,6 +19,16 @@ public sealed class ItemImageOptions
     public double MinSearchScore { get; init; } = DefaultMinSearchScore;
 
     public const double DefaultMinSearchScore = 0.35d;
+
+    public ObjectStorageOptions ToObjectStorageOptions() => new()
+    {
+        Endpoint = Endpoint,
+        BucketName = BucketName,
+        UseSsl = UseSsl,
+        AccessKey = AccessKey,
+        SecretKey = SecretKey,
+        CacheMaxAgeSeconds = CacheMaxAgeSeconds
+    };
 
     public static ItemImageOptions FromConfiguration(IConfiguration configuration)
     {

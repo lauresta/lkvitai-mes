@@ -8,6 +8,7 @@ namespace LKvitai.MES.Modules.Frontline.Contracts.Fabric;
 public sealed record FabricAlternativeDto(
     string Code,
     string PhotoUrl,
+    string? ThumbnailUrl,
     int WidthMm,
     FabricAvailabilityStatus Status,
     int? StockMeters,

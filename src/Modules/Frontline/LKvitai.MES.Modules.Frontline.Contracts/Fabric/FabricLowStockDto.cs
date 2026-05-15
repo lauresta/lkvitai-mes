@@ -29,6 +29,7 @@ public sealed record FabricLowStockDto(
     string Code,
     string Name,
     string PhotoUrl,
+    string? ThumbnailUrl,
     int WidthMm,
     int AvailableMeters,
     int ThresholdMeters,
