@@ -123,7 +123,7 @@ public sealed class FabricPhotoImporterService
                     existing.ImageWidth = row.ImageWidth;
                     existing.ImageHeight = row.ImageHeight;
                     existing.FileSizeBytes = row.FileSizeBytes;
-                    existing.IsPrimary = row.IsPrimary;
+                    existing.IsPrimary = existing.IsPrimary || row.IsPrimary;
                     existing.UpdatedAt = DateTimeOffset.UtcNow;
                     updated++;
                 }

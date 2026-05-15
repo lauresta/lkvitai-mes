@@ -78,6 +78,12 @@ path instead. The importer is idempotent: the stable photo id is derived from
 `FabricCode + Sha256` when possible, and `FabricCode + Sha256` updates existing
 rows instead of creating duplicate logical photos.
 
+Prepared CSV packages may contain duplicate rows for the same fabric image.
+Duplicate detection is by `FabricCode + Sha256`, and `IsPrimary` is monotonic:
+once a logical photo is primary, later duplicate rows cannot downgrade it to
+non-primary. If a non-primary duplicate is seen first and the primary duplicate
+arrives later, the existing row is promoted to primary.
+
 ## API
 
 Frontline enriches legacy fabric responses with MES photo URLs:

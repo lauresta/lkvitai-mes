@@ -51,6 +51,58 @@ public class FabricPhotoImporterTests
     }
 
     [Fact]
+    public async Task ImportAsync_WhenPrimaryDuplicateIsFollowedByNonPrimary_KeepsPrimary()
+    {
+        using var fixture = FabricImportFixture.CreateWithDuplicateRows(primaryFirst: true);
+        await using var db = CreateDbContext();
+        var importer = new FabricPhotoImporterService(db, new FakeObjectStorageService(), TextWriter.Null);
+
+        var result = await importer.ImportAsync(fixture.Root);
+
+        result.Imported.Should().Be(1);
+        result.Updated.Should().Be(1);
+        db.FabricPhotos.Should().ContainSingle(x =>
+            x.FabricCode == "R416" &&
+            x.Sha256 == FabricImportFixture.DuplicateSha &&
+            x.IsPrimary);
+    }
+
+    [Fact]
+    public async Task ImportAsync_WhenNonPrimaryDuplicateIsFollowedByPrimary_PromotesToPrimary()
+    {
+        using var fixture = FabricImportFixture.CreateWithDuplicateRows(primaryFirst: false);
+        await using var db = CreateDbContext();
+        var importer = new FabricPhotoImporterService(db, new FakeObjectStorageService(), TextWriter.Null);
+
+        var result = await importer.ImportAsync(fixture.Root);
+
+        result.Imported.Should().Be(1);
+        result.Updated.Should().Be(1);
+        db.FabricPhotos.Should().ContainSingle(x =>
+            x.FabricCode == "R416" &&
+            x.Sha256 == FabricImportFixture.DuplicateSha &&
+            x.IsPrimary);
+    }
+
+    [Fact]
+    public async Task ImportAsync_WhenDuplicatePackageIsRunRepeatedly_RemainsIdempotent()
+    {
+        using var fixture = FabricImportFixture.CreateWithDuplicateRows(primaryFirst: true);
+        await using var db = CreateDbContext();
+        var importer = new FabricPhotoImporterService(db, new FakeObjectStorageService(), TextWriter.Null);
+
+        await importer.ImportAsync(fixture.Root);
+        var second = await importer.ImportAsync(fixture.Root);
+
+        second.Imported.Should().Be(0);
+        second.Updated.Should().Be(2);
+        db.FabricPhotos.Should().ContainSingle(x =>
+            x.FabricCode == "R416" &&
+            x.Sha256 == FabricImportFixture.DuplicateSha &&
+            x.IsPrimary);
+    }
+
+    [Fact]
     public async Task FabricPhotoService_MapsFabricCodeToPhotoUrlsWithoutWarehouseItemPhoto()
     {
         await using var db = CreateDbContext();
@@ -130,6 +182,8 @@ internal sealed class FakeObjectStorageService : IObjectStorageService
 
 internal sealed class FabricImportFixture : IDisposable
 {
+    public const string DuplicateSha = "c54f7dbf2179cc9fe2624bb43d69a181f80e6cf6516af6b7b5cde80f4c5fceaa";
+
     private FabricImportFixture(string root, string csvPath)
     {
         Root = root;
@@ -156,6 +210,37 @@ internal sealed class FabricImportFixture : IDisposable
             FabricCode,FabricGroup,SourceImageUrl,SourcePageUrl,OriginalFile,ThumbFile,ImageWidth,ImageHeight,FileSizeBytes,Sha256,IsPrimary,Notes
             R85,Group,https://example.test/R85.JPG,https://example.test/page,images/original/R85.JPG,images/thumb/R85.webp,10,12,3,abcdef,true,
             """);
+
+        return new FabricImportFixture(root, csvPath);
+    }
+
+    public static FabricImportFixture CreateWithDuplicateRows(bool primaryFirst)
+    {
+        var root = Path.Combine(Path.GetTempPath(), "fabric-import-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(Path.Combine(root, "output"));
+        Directory.CreateDirectory(Path.Combine(root, "images", "original"));
+        Directory.CreateDirectory(Path.Combine(root, "images", "thumb"));
+
+        File.WriteAllBytes(Path.Combine(root, "images", "original", "R416_A.JPG"), new byte[] { 1, 2, 3 });
+        File.WriteAllBytes(Path.Combine(root, "images", "original", "R416_B.JPG"), new byte[] { 4, 5, 6 });
+        File.WriteAllBytes(Path.Combine(root, "images", "thumb", "R416.webp"), new byte[] { 7, 8, 9 });
+        File.WriteAllBytes(Path.Combine(root, "images", "thumb", "R416_2.webp"), new byte[] { 10, 11, 12 });
+
+        var primaryRow =
+            $"R416,Group,https://example.test/R416_A.JPG,https://example.test/page,images/original/R416_A.JPG,images/thumb/R416.webp,10,12,3,{DuplicateSha},true,";
+        var nonPrimaryRow =
+            $"R416,Group,https://example.test/R416_B.JPG,https://example.test/page,images/original/R416_B.JPG,images/thumb/R416_2.webp,10,12,3,{DuplicateSha},false,";
+        var rows = primaryFirst
+            ? new[] { primaryRow, nonPrimaryRow }
+            : new[] { nonPrimaryRow, primaryRow };
+
+        var csvPath = Path.Combine(root, "output", "fabric_photos.csv");
+        File.WriteAllText(
+            csvPath,
+            "FabricCode,FabricGroup,SourceImageUrl,SourcePageUrl,OriginalFile,ThumbFile,ImageWidth,ImageHeight,FileSizeBytes,Sha256,IsPrimary,Notes" +
+            Environment.NewLine +
+            string.Join(Environment.NewLine, rows) +
+            Environment.NewLine);
 
         return new FabricImportFixture(root, csvPath);
     }

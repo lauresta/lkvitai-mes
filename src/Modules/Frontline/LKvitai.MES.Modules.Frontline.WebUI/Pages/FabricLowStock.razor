@@ -172,16 +172,19 @@
                     }
                     @foreach (var r in _rows)
                     {
+                        var thumbUrl = TryPhotoUrl(r.ThumbnailUrl ?? r.PhotoUrl);
                         <tr>
                             <td>
-                                <span class="row-thumb @ThumbClass(r.Code)">
-                                    @if (TryPhotoUrl(r.ThumbnailUrl ?? r.PhotoUrl) is { } thumbUrl)
+                                <span class="row-thumb @ThumbClass(r.Code) @(thumbUrl is null ? "is-missing" : "has-photo")">
+                                    @if (thumbUrl is not null)
                                     {
                                         <img src="@thumbUrl"
                                              alt=""
                                              loading="lazy"
-                                             decoding="async" />
+                                             decoding="async"
+                                             onerror="this.style.display='none';this.parentElement.classList.remove('has-photo');this.parentElement.classList.add('is-missing');" />
                                     }
+                                    <span class="photo-placeholder-label">No photo</span>
                                 </span>
                             </td>
                             <td><a class="fabric-link" href="@($"fabric?code={r.Code}")">@r.Code</a></td>
