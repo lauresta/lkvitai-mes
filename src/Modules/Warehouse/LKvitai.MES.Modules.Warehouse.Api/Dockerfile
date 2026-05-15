@@ -19,6 +19,7 @@ COPY src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Contracts/LKvitai.MES.M
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.SharedKernel/LKvitai.MES.BuildingBlocks.SharedKernel.csproj BuildingBlocks/LKvitai.MES.BuildingBlocks.SharedKernel/
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.Cqrs.Abstractions/LKvitai.MES.BuildingBlocks.Cqrs.Abstractions.csproj BuildingBlocks/LKvitai.MES.BuildingBlocks.Cqrs.Abstractions/
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/LKvitai.MES.BuildingBlocks.PortalAuth.csproj BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/
+COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.ObjectStorage/LKvitai.MES.BuildingBlocks.ObjectStorage.csproj BuildingBlocks/LKvitai.MES.BuildingBlocks.ObjectStorage/
 
 # Restore dependencies
 RUN dotnet restore Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Api/LKvitai.MES.Modules.Warehouse.Api.csproj
@@ -35,6 +36,7 @@ COPY src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Contracts/ Modules/Ware
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.SharedKernel/ BuildingBlocks/LKvitai.MES.BuildingBlocks.SharedKernel/
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.Cqrs.Abstractions/ BuildingBlocks/LKvitai.MES.BuildingBlocks.Cqrs.Abstractions/
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/ BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/
+COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.ObjectStorage/ BuildingBlocks/LKvitai.MES.BuildingBlocks.ObjectStorage/
 
 # Build and publish
 WORKDIR /src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Api

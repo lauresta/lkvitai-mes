@@ -10,6 +10,7 @@ COPY global.json .
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.Cqrs.Abstractions/LKvitai.MES.BuildingBlocks.Cqrs.Abstractions.csproj BuildingBlocks/LKvitai.MES.BuildingBlocks.Cqrs.Abstractions/
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.SharedKernel/LKvitai.MES.BuildingBlocks.SharedKernel.csproj BuildingBlocks/LKvitai.MES.BuildingBlocks.SharedKernel/
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.ModuleStartup/LKvitai.MES.BuildingBlocks.ModuleStartup.csproj BuildingBlocks/LKvitai.MES.BuildingBlocks.ModuleStartup/
+COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.ObjectStorage/LKvitai.MES.BuildingBlocks.ObjectStorage.csproj BuildingBlocks/LKvitai.MES.BuildingBlocks.ObjectStorage/
 COPY src/Modules/Frontline/LKvitai.MES.Modules.Frontline.Contracts/LKvitai.MES.Modules.Frontline.Contracts.csproj Modules/Frontline/LKvitai.MES.Modules.Frontline.Contracts/
 COPY src/Modules/Frontline/LKvitai.MES.Modules.Frontline.Application/LKvitai.MES.Modules.Frontline.Application.csproj Modules/Frontline/LKvitai.MES.Modules.Frontline.Application/
 COPY src/Modules/Frontline/LKvitai.MES.Modules.Frontline.Infrastructure/LKvitai.MES.Modules.Frontline.Infrastructure.csproj Modules/Frontline/LKvitai.MES.Modules.Frontline.Infrastructure/
@@ -20,6 +21,7 @@ RUN dotnet restore Modules/Frontline/LKvitai.MES.Modules.Frontline.Api/LKvitai.M
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.Cqrs.Abstractions/ BuildingBlocks/LKvitai.MES.BuildingBlocks.Cqrs.Abstractions/
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.SharedKernel/ BuildingBlocks/LKvitai.MES.BuildingBlocks.SharedKernel/
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.ModuleStartup/ BuildingBlocks/LKvitai.MES.BuildingBlocks.ModuleStartup/
+COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.ObjectStorage/ BuildingBlocks/LKvitai.MES.BuildingBlocks.ObjectStorage/
 COPY src/Modules/Frontline/LKvitai.MES.Modules.Frontline.Contracts/ Modules/Frontline/LKvitai.MES.Modules.Frontline.Contracts/
 COPY src/Modules/Frontline/LKvitai.MES.Modules.Frontline.Application/ Modules/Frontline/LKvitai.MES.Modules.Frontline.Application/
 COPY src/Modules/Frontline/LKvitai.MES.Modules.Frontline.Infrastructure/ Modules/Frontline/LKvitai.MES.Modules.Frontline.Infrastructure/
