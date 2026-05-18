@@ -2,7 +2,7 @@ namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Agnum;
 
 public sealed class AgnumApiClientOptions
 {
-    public string BaseUrl { get; set; } = "http://agnum-api:8181";
+    public string BaseUrl { get; set; } = string.Empty;
     public int TimeoutSeconds { get; set; } = 15;
 }
 

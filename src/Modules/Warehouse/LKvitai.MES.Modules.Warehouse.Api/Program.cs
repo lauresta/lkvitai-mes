@@ -61,15 +61,21 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddMemoryCache();
 builder.Services.AddDataProtection();
 builder.Services.AddHttpClient("AgnumExportApi");
-var agnumApiBaseUrl = builder.Configuration.GetValue<string>("Agnum:Api:BaseUrl", "http://agnum-api:8181");
+var agnumApiBaseUrl = builder.Configuration.GetValue<string>("Agnum:Api:BaseUrl")
+    ?? builder.Configuration.GetValue<string>("AGNUM_API_BASE_URL");
 var agnumApiTimeoutSeconds = builder.Configuration.GetValue<int>("Agnum:Api:TimeoutSeconds", 15);
+
+if (string.IsNullOrWhiteSpace(agnumApiBaseUrl))
+{
+    throw new InvalidOperationException(
+        "Missing Agnum API base URL. Set Agnum:Api:BaseUrl in appsettings or Agnum__Api__BaseUrl / AGNUM_API_BASE_URL in environment.");
+}
 
 foreach (var warehouse in builder.Configuration.GetSection("Agnum:Warehouses").GetChildren())
 {
-    var clientBaseUrl = agnumApiBaseUrl ?? "http://agnum-api:8181";
     builder.Services.AddHttpClient($"Agnum-{warehouse.Key}", client =>
     {
-        client.BaseAddress = new Uri(clientBaseUrl);
+        client.BaseAddress = new Uri(agnumApiBaseUrl);
         client.Timeout = TimeSpan.FromSeconds(agnumApiTimeoutSeconds);
     });
 }
