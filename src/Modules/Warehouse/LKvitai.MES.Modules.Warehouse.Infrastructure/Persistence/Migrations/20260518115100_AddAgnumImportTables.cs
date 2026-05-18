@@ -152,18 +152,15 @@ namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
-            migrationBuilder.InsertData(
-                schema: "public",
-                table: "agnum_warehouse_mappings",
-                columns: new[] { "Id", "AgnumName", "ApiKeyConfigName", "CreatedAt", "CreatedBy", "IsImportEnabled", "MesVirtualWarehouseCode", "SndId", "UpdatedAt", "UpdatedBy" },
-                values: new object[,]
-                {
-                    { 1, "Sandėlys", "sandelys", new DateTimeOffset(new DateTime(2026, 2, 13, 0, 0, 0, 0, DateTimeKind.Unspecified), TimeSpan.Zero), "system", true, "AGNUM-493", 493, null, null },
-                    { 2, "Pardavimai", "pardavimai", new DateTimeOffset(new DateTime(2026, 2, 13, 0, 0, 0, 0, DateTimeKind.Unspecified), TimeSpan.Zero), "system", true, "AGNUM-496", 496, null, null }
-                });
-
-            migrationBuilder.Sql(
-                "SELECT setval(pg_get_serial_sequence('public.agnum_warehouse_mappings', 'Id'), 2, true);");
+            migrationBuilder.Sql(@"
+INSERT INTO public.agnum_warehouse_mappings
+    (""Id"", ""AgnumName"", ""ApiKeyConfigName"", ""CreatedAt"", ""CreatedBy"", ""IsImportEnabled"", ""MesVirtualWarehouseCode"", ""SndId"", ""UpdatedAt"", ""UpdatedBy"")
+VALUES
+    (1, 'Sandėlys', 'sandelys', '2026-02-13 00:00:00+00', 'system', true, 'AGNUM-493', 493, NULL, NULL),
+    (2, 'Pardavimai', 'pardavimai', '2026-02-13 00:00:00+00', 'system', true, 'AGNUM-496', 496, NULL, NULL)
+ON CONFLICT (""Id"") DO NOTHING;
+SELECT setval(pg_get_serial_sequence('public.agnum_warehouse_mappings', 'Id'), 2, true);
+");
 
             migrationBuilder.CreateIndex(
                 name: "IX_agnum_product_links_ItemId",
