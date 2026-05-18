@@ -1,4 +1,7 @@
 using System;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -7,6 +10,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.Migrations
 {
     /// <inheritdoc />
+    [DbContext(typeof(WarehouseDbContext))]
     [Migration("20260518115100_AddAgnumImportTables")]
     public partial class AddAgnumImportTables : Migration
     {
