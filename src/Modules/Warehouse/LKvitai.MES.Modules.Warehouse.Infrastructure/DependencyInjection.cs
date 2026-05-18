@@ -11,6 +11,8 @@ using LKvitai.MES.Modules.Warehouse.Infrastructure.Locking;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Projections;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Visualization;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.Agnum;
+using LKvitai.MES.Modules.Warehouse.Integration.Agnum;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace LKvitai.MES.Modules.Warehouse.Infrastructure;
@@ -62,6 +64,11 @@ public static class DependencyInjection
         services.AddSingleton<IIdempotencyCleanupService, IdempotencyCleanupService>();
         services.AddSingleton<IEventUpcaster, StockMovedV1ToStockMovedEventUpcaster>();
         services.AddSingleton<IEventSchemaVersionRegistry, EventSchemaVersionRegistry>();
+
+        // Agnum import services
+        services.AddSingleton<IAgnumApiClientFactory, AgnumApiClientFactory>();
+        services.AddScoped<IAgnumNomenclatureImportService, AgnumNomenclatureImportService>();
+        services.AddScoped<IAgnumBalanceImportService, AgnumBalanceImportService>();
 
         // Consistency checks
         services.AddScoped<IConsistencyCheck, StuckReservationCheck>();

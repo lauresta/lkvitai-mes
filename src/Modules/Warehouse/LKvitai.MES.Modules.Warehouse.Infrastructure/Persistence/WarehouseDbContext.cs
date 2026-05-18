@@ -60,6 +60,11 @@ public class WarehouseDbContext : DbContext
     public DbSet<AgnumExportConfig> AgnumExportConfigs => Set<AgnumExportConfig>();
     public DbSet<AgnumMapping> AgnumMappings => Set<AgnumMapping>();
     public DbSet<AgnumExportHistory> AgnumExportHistories => Set<AgnumExportHistory>();
+    public DbSet<AgnumWarehouseMapping> AgnumWarehouseMappings => Set<AgnumWarehouseMapping>();
+    public DbSet<AgnumProductLink> AgnumProductLinks => Set<AgnumProductLink>();
+    public DbSet<ItemExternalAttribute> ItemExternalAttributes => Set<ItemExternalAttribute>();
+    public DbSet<AgnumBalanceImportRun> AgnumBalanceImportRuns => Set<AgnumBalanceImportRun>();
+    public DbSet<AgnumVirtualWarehouseBalance> AgnumVirtualWarehouseBalances => Set<AgnumVirtualWarehouseBalance>();
     public DbSet<TransactionExport> TransactionExports => Set<TransactionExport>();
     public DbSet<SupplierItemMapping> SupplierItemMappings => Set<SupplierItemMapping>();
     public DbSet<Location> Locations => Set<Location>();
@@ -285,6 +290,79 @@ public class WarehouseDbContext : DbContext
                 .HasFilter("\"IsPrimary\" = true");
             entity.HasOne(e => e.Item).WithMany(e => e.Barcodes).HasForeignKey(e => e.ItemId).OnDelete(DeleteBehavior.Cascade);
             entity.ToTable(t => t.HasCheckConstraint("ck_item_barcodes_type", "\"BarcodeType\" IN ('EAN13','Code128','QR','UPC','Other')"));
+        });
+
+        modelBuilder.Entity<AgnumWarehouseMapping>(entity =>
+        {
+            entity.ToTable("agnum_warehouse_mappings");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.SndId).IsRequired();
+            entity.Property(e => e.AgnumName).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.MesVirtualWarehouseCode).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.ApiKeyConfigName).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.IsImportEnabled).IsRequired();
+            entity.HasIndex(e => e.SndId).IsUnique();
+        });
+
+        modelBuilder.Entity<AgnumProductLink>(entity =>
+        {
+            entity.ToTable("agnum_product_links");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ItemId).IsRequired();
+            entity.Property(e => e.SndId).IsRequired();
+            entity.Property(e => e.AgnumProductId).IsRequired();
+            entity.Property(e => e.AgnumCode).HasMaxLength(100).IsRequired();
+            entity.HasIndex(e => new { e.SndId, e.AgnumProductId }).IsUnique();
+            entity.HasIndex(e => e.ItemId);
+            entity.HasOne(e => e.Item).WithMany().HasForeignKey(e => e.ItemId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<ItemExternalAttribute>(entity =>
+        {
+            entity.ToTable("item_external_attributes");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ItemId).IsRequired();
+            entity.Property(e => e.SourceSystem).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.SourceContext).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.Key).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.ValueText).HasColumnType("text");
+            entity.Property(e => e.ValueNumber).HasPrecision(18, 4);
+            entity.HasIndex(e => e.ItemId);
+            entity.HasIndex(e => new { e.ItemId, e.SourceSystem, e.SourceContext, e.Key }).IsUnique();
+            entity.HasOne(e => e.Item).WithMany().HasForeignKey(e => e.ItemId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<AgnumBalanceImportRun>(entity =>
+        {
+            entity.ToTable("agnum_balance_import_runs");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.SndId).IsRequired();
+            entity.Property(e => e.StartedAt).IsRequired();
+            entity.Property(e => e.FinishedAt);
+            entity.Property(e => e.Status).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.ProductCount).IsRequired();
+            entity.Property(e => e.BalanceCount).IsRequired();
+            entity.Property(e => e.ErrorCount).IsRequired();
+            entity.Property(e => e.ErrorSummary).HasMaxLength(500);
+        });
+
+        modelBuilder.Entity<AgnumVirtualWarehouseBalance>(entity =>
+        {
+            entity.ToTable("agnum_virtual_warehouse_balances");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ImportRunId).IsRequired();
+            entity.Property(e => e.SndId).IsRequired();
+            entity.Property(e => e.AgnumProductId).IsRequired();
+            entity.Property(e => e.ItemId);
+            entity.Property(e => e.Sku).HasMaxLength(100);
+            entity.Property(e => e.Quantity).HasPrecision(18, 4).IsRequired();
+            entity.Property(e => e.Uom).HasMaxLength(10).IsRequired();
+            entity.Property(e => e.ImportedAt).IsRequired();
+            entity.Property(e => e.SourceHash).HasMaxLength(128);
+            entity.HasIndex(e => e.ImportRunId);
+            entity.HasIndex(e => new { e.SndId, e.AgnumProductId });
+            entity.HasOne(e => e.ImportRun).WithMany().HasForeignKey(e => e.ImportRunId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne<Item>().WithMany().HasForeignKey(e => e.ItemId).OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<Supplier>(entity =>
