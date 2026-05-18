@@ -98,22 +98,7 @@ http:
       tls:
         certResolver: letsencrypt
 
-    mes-test-hangfire-warehouse:
-      rule: "(Host(`mes-test.lauresta.com`) || Host(`lkvitai.lauresta.com`)) && PathPrefix(`/hangfire/warehouse`)"
-      entryPoints: [websecure]
-      middlewares: [mes-test-hangfire-auth]
-      service: mes-test-warehouse-api
-      priority: 300
-      tls:
-        certResolver: letsencrypt
-
   middlewares:
-    mes-test-hangfire-auth:
-      basicAuth:
-        users:
-          - "${HANGFIRE_BASIC_AUTH_USER}"
-        removeHeader: true
-
     mes-test-redirect-root-to-portal:
       redirectRegex:
         regex: "^https://(mes-test|lkvitai)\\.lauresta\\.com/$"

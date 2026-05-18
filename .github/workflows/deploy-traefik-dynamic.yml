@@ -48,8 +48,6 @@ jobs:
           fi
 
       - name: Install dynamic config on Traefik VPS
-        env:
-          HANGFIRE_BASIC_AUTH_USER: ${{ secrets.HANGFIRE_BASIC_AUTH_USER }}
         run: |
           set -euo pipefail
 
@@ -71,11 +69,7 @@ jobs:
               $sudo_cmd cp "$target_file" "$target_file.$timestamp.bak"
             fi
 
-            # Substitute secrets (e.g. ${HANGFIRE_BASIC_AUTH_USER}) before deploy.
-            # envsubst only replaces declared variables to avoid clobbering
-            # Traefik's own ${...} placeholders (there are none in these files).
-            envsubst '${HANGFIRE_BASIC_AUTH_USER}' < "$source_file" \
-              | $sudo_cmd install -m 0644 /dev/stdin "$target_file"
+            $sudo_cmd install -m 0644 "$source_file" "$target_file"
           done
 
           $sudo_cmd ls -lah "$TRAEFIK_DYNAMIC_DIR"
