@@ -27,6 +27,9 @@ jobs:
       ITEMIMAGES__MODEL_PATH: ${{ vars.ITEMIMAGES__MODEL_PATH }}
       CLIP_MODEL_DIR: ${{ vars.CLIP_MODEL_DIR }}
       LKVITAI_MSACCESS_DB_CONNECTION: ${{ secrets.LKVITAI_MSACCESS_DB_CONNECTION }}
+      Agnum__Api__BaseUrl: ${{ vars.Agnum__Api__BaseUrl }}
+      Agnum__Warehouses__sandelys__ApiKey: ${{ secrets.AGNUM__WAREHOUSES__SANDELYS__APIKEY }}
+      Agnum__Warehouses__pardavimai__ApiKey: ${{ secrets.AGNUM__WAREHOUSES__PARDAVIMAI__APIKEY }}
 
     steps:
       - name: Fail fast if required env vars are missing or invalid

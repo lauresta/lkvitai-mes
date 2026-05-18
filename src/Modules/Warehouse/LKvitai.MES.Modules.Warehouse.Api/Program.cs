@@ -1,4 +1,5 @@
 using LKvitai.MES.Modules.Warehouse.Api.Configuration;
+using LKvitai.MES.Modules.Warehouse.Api.BackgroundJobs;
 using LKvitai.MES.BuildingBlocks.ObjectStorage;
 using LKvitai.MES.Modules.Warehouse.Api.ErrorHandling;
 using LKvitai.MES.Modules.Warehouse.Api.Middleware;
@@ -227,6 +228,7 @@ builder.Services.AddScoped<IAvailableStockQuantityResolver, MartenAvailableStock
 builder.Services.AddScoped<IAgnumSecretProtector, AgnumDataProtector>();
 builder.Services.AddScoped<IAgnumExportOrchestrator, AgnumExportOrchestrator>();
 builder.Services.AddScoped<AgnumExportRecurringJob>();
+builder.Services.AddScoped<AgnumImportRecurringJob>();
 builder.Services.AddSingleton<IAgnumReconciliationReportStore, InMemoryAgnumReconciliationReportStore>();
 builder.Services.AddScoped<IAgnumReconciliationService, AgnumReconciliationService>();
 builder.Services.AddSingleton<LabelTemplateEngine>();
@@ -419,6 +421,21 @@ RecurringJob.AddOrUpdate<AgnumExportRecurringJob>(
     AgnumRecurringJobs.DailyExportJobId,
     job => job.ExecuteAsync("SCHEDULED", null, 0),
     "0 23 * * *",
+    new RecurringJobOptions
+    {
+        TimeZone = TimeZoneInfo.Utc
+    });
+
+var agnumImportCron = builder.Configuration.GetValue<string>("Agnum:Import:DailyCron");
+if (string.IsNullOrWhiteSpace(agnumImportCron))
+{
+    agnumImportCron = "0 6 * * *";
+}
+
+RecurringJob.AddOrUpdate<AgnumImportRecurringJob>(
+    AgnumImportRecurringJob.JobId,
+    job => job.ExecuteAsync(CancellationToken.None),
+    agnumImportCron,
     new RecurringJobOptions
     {
         TimeZone = TimeZoneInfo.Utc

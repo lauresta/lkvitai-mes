@@ -313,6 +313,7 @@ public class WarehouseDbContext : DbContext
             entity.Property(e => e.AgnumProductId).IsRequired();
             entity.Property(e => e.AgnumCode).HasMaxLength(100).IsRequired();
             entity.HasIndex(e => new { e.SndId, e.AgnumProductId }).IsUnique();
+            entity.HasIndex(e => new { e.SndId, e.AgnumCode }).IsUnique();
             entity.HasIndex(e => e.ItemId);
             entity.HasOne(e => e.Item).WithMany().HasForeignKey(e => e.ItemId).OnDelete(DeleteBehavior.Restrict);
         });
@@ -360,6 +361,7 @@ public class WarehouseDbContext : DbContext
             entity.Property(e => e.ImportedAt).IsRequired();
             entity.Property(e => e.SourceHash).HasMaxLength(128);
             entity.HasIndex(e => e.ImportRunId);
+            entity.HasIndex(e => new { e.ImportRunId, e.SndId, e.AgnumProductId }).IsUnique();
             entity.HasIndex(e => new { e.SndId, e.AgnumProductId });
             entity.HasOne(e => e.ImportRun).WithMany().HasForeignKey(e => e.ImportRunId).OnDelete(DeleteBehavior.Cascade);
             entity.HasOne<Item>().WithMany().HasForeignKey(e => e.ItemId).OnDelete(DeleteBehavior.Restrict);
@@ -1446,6 +1448,30 @@ public class WarehouseDbContext : DbContext
             new RolePermission { RoleId = 3, PermissionId = 5 },
             new RolePermission { RoleId = 4, PermissionId = 7 },
             new RolePermission { RoleId = 4, PermissionId = 8 });
+
+        modelBuilder.Entity<AgnumWarehouseMapping>().HasData(
+            new AgnumWarehouseMapping
+            {
+                Id = 1,
+                SndId = 493,
+                AgnumName = "Sandėlys",
+                MesVirtualWarehouseCode = "AGNUM-493",
+                ApiKeyConfigName = "sandelys",
+                IsImportEnabled = true,
+                CreatedAt = systemCreatedAt,
+                CreatedBy = "system"
+            },
+            new AgnumWarehouseMapping
+            {
+                Id = 2,
+                SndId = 496,
+                AgnumName = "Pardavimai",
+                MesVirtualWarehouseCode = "AGNUM-496",
+                ApiKeyConfigName = "pardavimai",
+                IsImportEnabled = true,
+                CreatedAt = systemCreatedAt,
+                CreatedBy = "system"
+            });
 
         modelBuilder.Entity<SerialNumber>(entity =>
         {

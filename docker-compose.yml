@@ -32,6 +32,9 @@ services:
       ConnectionStrings__WarehouseDb: "Host=pg;Port=5432;Database=lkvitai_warehouse_test;Username=postgres;Password=postgres;Minimum Pool Size=10;Maximum Pool Size=100;Connection Lifetime=300;Connection Idle Lifetime=60;Timeout=30"
       Caching__RedisConnectionString: "redis:6379,abortConnect=false,connectRetry=3,connectTimeout=1000,syncTimeout=1000"
       SkipSchemaValidation: "true"
+      Agnum__Api__BaseUrl: "${Agnum__Api__BaseUrl:-http://agnum-api:8181}"
+      Agnum__Warehouses__sandelys__ApiKey: "${Agnum__Warehouses__sandelys__ApiKey}"
+      Agnum__Warehouses__pardavimai__ApiKey: "${Agnum__Warehouses__pardavimai__ApiKey}"
     depends_on:
       - pg
       - redis
@@ -53,6 +56,9 @@ services:
       ConnectionStrings__WarehouseDb: "Host=pg;Port=5432;Database=lkvitai_warehouse_test;Username=postgres;Password=postgres;Minimum Pool Size=10;Maximum Pool Size=100;Connection Lifetime=300;Connection Idle Lifetime=60;Timeout=30"
       Caching__RedisConnectionString: "redis:6379,abortConnect=false,connectRetry=3,connectTimeout=1000,syncTimeout=1000"
       SkipSchemaValidation: "true"
+      Agnum__Api__BaseUrl: "${Agnum__Api__BaseUrl:-http://agnum-api:8181}"
+      Agnum__Warehouses__sandelys__ApiKey: "${Agnum__Warehouses__sandelys__ApiKey}"
+      Agnum__Warehouses__pardavimai__ApiKey: "${Agnum__Warehouses__pardavimai__ApiKey}"
     depends_on:
       - pg
       - redis
@@ -74,6 +80,9 @@ services:
       ConnectionStrings__WarehouseDb: "Host=pg;Port=5432;Database=lkvitai_warehouse_test;Username=postgres;Password=postgres;Minimum Pool Size=10;Maximum Pool Size=100;Connection Lifetime=300;Connection Idle Lifetime=60;Timeout=30"
       Caching__RedisConnectionString: "redis:6379,abortConnect=false,connectRetry=3,connectTimeout=1000,syncTimeout=1000"
       SkipSchemaValidation: "true"
+      Agnum__Api__BaseUrl: "${Agnum__Api__BaseUrl:-http://agnum-api:8181}"
+      Agnum__Warehouses__sandelys__ApiKey: "${Agnum__Warehouses__sandelys__ApiKey}"
+      Agnum__Warehouses__pardavimai__ApiKey: "${Agnum__Warehouses__pardavimai__ApiKey}"
     depends_on:
       - pg
       - redis
