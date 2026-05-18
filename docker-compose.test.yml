@@ -45,6 +45,7 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Test
       WarehouseApi__BaseUrl: "http://lkvitai-mes-warehouse-api:8080"
+      Hangfire__DashboardUrl: "http://lkvitai-test.vpn.lauresta.com:5001/warehouse/hangfire"
       PathBase: "/warehouse"
       PortalAuth__LoginBasePath: "/portal"
       PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
