@@ -189,6 +189,12 @@ jobs:
       - name: Clean up leftover migration container
         run: docker rm -f lkvitai-mes-migration 2>/dev/null || true
 
+      - name: Fix corrupted Agnum migration history (one-time)
+        run: |
+          docker exec "$DB_CONTAINER_NAME" \
+            psql -U "$TEST_DB_USER" -d "$TEST_DB_NAME" -c \
+            "DELETE FROM \"__EFMigrationsHistory\" WHERE \"MigrationId\" = '20260518115100_AddAgnumImportTables' AND NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'agnum_warehouse_mappings');"
+
       - name: Apply EF Core migrations to test DB
         run: |
           docker run --rm --name lkvitai-mes-migration \
