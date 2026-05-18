@@ -385,7 +385,7 @@ app.UseMiddleware<MfaEnforcementMiddleware>();
 app.UseMiddleware<ApiKeyScopeMiddleware>();
 app.UseMiddleware<PermissionPolicyMiddleware>();
 app.UseAuthorization();
-app.UseHangfireDashboard("/hangfire/warehouse", new Hangfire.DashboardOptions
+app.UseHangfireDashboard("/warehouse/hangfire", new Hangfire.DashboardOptions
 {
     Authorization = [],
     DashboardTitle = "Warehouse Jobs",
