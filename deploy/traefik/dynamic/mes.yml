@@ -96,6 +96,14 @@ http:
       tls:
         certResolver: letsencrypt
 
+    mes-hangfire-warehouse:
+      rule: "Host(`mes.lauresta.com`) && PathPrefix(`/hangfire/warehouse`)"
+      entryPoints: [websecure]
+      service: mes-warehouse-api
+      priority: 300
+      tls:
+        certResolver: letsencrypt
+
   middlewares:
     mes-strip-api-portal:
       stripPrefix:

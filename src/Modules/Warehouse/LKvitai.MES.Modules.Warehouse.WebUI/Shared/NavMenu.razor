@@ -34,12 +34,22 @@
                     @foreach (var item in grp.Items)
                     {
                         <li>
-                            <NavLink class="nav-link" href="@item.Href"
-                                     Match="NavLinkMatch.Prefix"
-                                     ActiveClass="is-active">
-                                <i class="bi @item.Icon" aria-hidden="true"></i>
-                                <span>@item.Label</span>
-                            </NavLink>
+                            @if (item.External)
+                            {
+                                <a class="nav-link" href="@item.Href" target="_blank" rel="noopener noreferrer">
+                                    <i class="bi @item.Icon" aria-hidden="true"></i>
+                                    <span>@item.Label</span>
+                                </a>
+                            }
+                            else
+                            {
+                                <NavLink class="nav-link" href="@item.Href"
+                                         Match="NavLinkMatch.Prefix"
+                                         ActiveClass="is-active">
+                                    <i class="bi @item.Icon" aria-hidden="true"></i>
+                                    <span>@item.Label</span>
+                                </NavLink>
+                            }
                         </li>
                     }
                 </ul>
@@ -55,7 +65,7 @@
     private string? _openSection;
     private string _currentPath = "";
 
-    private record NavItem(string Href, string Icon, string Label);
+    private record NavItem(string Href, string Icon, string Label, bool External = false);
     private record NavSection(string Key, string Label, string Icon, NavItem[] Items);
 
     protected override void OnInitialized()
@@ -178,6 +188,10 @@
         new("analytics", "Analytics", "bi-graph-up-arrow", [
             new("analytics/fulfillment", "bi-graph-up-arrow", "Fulfillment KPIs"),
             new("analytics/quality", "bi-shield-exclamation", "Quality Analytics"),
+        ]),
+
+        new("system", "System", "bi-terminal", [
+            new("/hangfire/warehouse", "bi-clock-history", "Job Queue", External: true),
         ]),
     ];
 }
