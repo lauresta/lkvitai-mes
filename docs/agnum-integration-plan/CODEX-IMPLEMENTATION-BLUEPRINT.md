@@ -524,8 +524,11 @@ In `Infrastructure/DependencyInjection.cs`, add:
 - `IAgnumNomenclatureImportService` → `AgnumNomenclatureImportService` scoped.
 - `IAgnumBalanceImportService` → `AgnumBalanceImportService` scoped.
 
-Bind config: `services.Configure<AgnumApiClientOptions>(config.GetSection("Agnum"))`.
-Loop `config.GetSection("Agnum:Warehouses").GetChildren()` to register per-warehouse clients.
+Bind config: `services.Configure<AgnumApiClientOptions>(config.GetSection("Agnum:Api"))`.
+Loop `config.GetSection("Agnum:Warehouses").GetChildren()` to register per-warehouse named HttpClients.
+Config key for base URL: `Agnum:Api:BaseUrl` (default `http://agnum-api:8181`).
+Register `IAgnumApiClientFactory` as **Singleton** (reads config once in constructor).
+Register `IAgnumNomenclatureImportService` and `IAgnumBalanceImportService` as **Scoped**.
 
 ---
 

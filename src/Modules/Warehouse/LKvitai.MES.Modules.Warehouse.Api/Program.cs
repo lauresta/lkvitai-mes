@@ -9,6 +9,7 @@ using LKvitai.MES.Modules.Warehouse.Application.EventVersioning;
 using LKvitai.MES.Modules.Warehouse.Application.Ports;
 using LKvitai.MES.Modules.Warehouse.Application.Services;
 using LKvitai.MES.Modules.Warehouse.Infrastructure;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.Agnum;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.BackgroundJobs;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Caching;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
@@ -60,6 +61,20 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddMemoryCache();
 builder.Services.AddDataProtection();
 builder.Services.AddHttpClient("AgnumExportApi");
+var agnumApiBaseUrl = builder.Configuration.GetValue<string>("Agnum:Api:BaseUrl", "http://agnum-api:8181");
+var agnumApiTimeoutSeconds = builder.Configuration.GetValue<int>("Agnum:Api:TimeoutSeconds", 15);
+
+foreach (var warehouse in builder.Configuration.GetSection("Agnum:Warehouses").GetChildren())
+{
+    var clientBaseUrl = agnumApiBaseUrl ?? "http://agnum-api:8181";
+    builder.Services.AddHttpClient($"Agnum-{warehouse.Key}", client =>
+    {
+        client.BaseAddress = new Uri(clientBaseUrl);
+        client.Timeout = TimeSpan.FromSeconds(agnumApiTimeoutSeconds);
+    });
+}
+
+builder.Services.Configure<AgnumApiClientOptions>(builder.Configuration.GetSection("Agnum:Api"));
 builder.Services.AddHttpClient("FedExApi");
 builder.Services.AddHttpClient("OAuthProvider");
 builder.Services.AddHttpClient("PagerDuty");

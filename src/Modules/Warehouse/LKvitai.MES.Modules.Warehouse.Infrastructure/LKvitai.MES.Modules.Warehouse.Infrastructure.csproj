@@ -15,6 +15,8 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Http" />
     <PackageReference Include="StackExchange.Redis" />
     <PackageReference Include="Serilog" />
     <PackageReference Include="Serilog.Sinks.Console" />
@@ -25,6 +27,7 @@
     <ProjectReference Include="..\LKvitai.MES.Modules.Warehouse.Domain\LKvitai.MES.Modules.Warehouse.Domain.csproj" />
     <ProjectReference Include="..\LKvitai.MES.Modules.Warehouse.Contracts\LKvitai.MES.Modules.Warehouse.Contracts.csproj" />
     <ProjectReference Include="..\LKvitai.MES.Modules.Warehouse.Application\LKvitai.MES.Modules.Warehouse.Application.csproj" />
+    <ProjectReference Include="..\LKvitai.MES.Modules.Warehouse.Integration\LKvitai.MES.Modules.Warehouse.Integration.csproj" />
   </ItemGroup>
 
 </Project>
