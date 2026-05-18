@@ -5,6 +5,11 @@ on:
   push:
     branches: [ "main" ]
 
+env:
+  Agnum__Api__BaseUrl: ${{ vars.Agnum__Api__BaseUrl }}
+  Agnum__Warehouses__sandelys__ApiKey: ${{ secrets.AGNUM__WAREHOUSES__SANDELYS__APIKEY }}
+  Agnum__Warehouses__pardavimai__ApiKey: ${{ secrets.AGNUM__WAREHOUSES__PARDAVIMAI__APIKEY }}
+
 jobs:
   docker-gated-integration-tests:
     runs-on: ubuntu-latest
