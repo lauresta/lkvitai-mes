@@ -1,5 +1,13 @@
 # 05. Open Questions
 
+## Resolved 2026-05-18
+
+| Question | Answer |
+| --- | --- |
+| Which sndid are in WMS scope? | **493** (Centrinis sandėlys) — main. **496** (Pagaminta produkcija-pardavimai) — secondary. **498** (Gamyba) — pending business confirmation. |
+| Which sndid to exclude? | 500 Mažavertis, 502 Kuras, 507 Ilgalaikis, 509 Visi, 1498 Nebaigta statyba, 12503 Paslaugos, 142026 PVZ, 142029 Parduotuvė, 144513 (null). |
+| Is sndid 498 Gamyba used? | Pending — Vytautas to confirm. |
+
 ## Business Process
 
 1. Which Agnum `sndid` values are in scope for MES import?

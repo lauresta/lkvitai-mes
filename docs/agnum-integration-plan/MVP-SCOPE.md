@@ -36,7 +36,7 @@ These are the working defaults for Codex. Do not re-open them unless business co
 
 | Decision | Default |
 | --- | --- |
-| Active sndid for import | `493` (Sandelys), `498` (Gamyba). Add `496` only if API key is available. |
+| Active sndid for import | `493` (Centrinis sandėlys) — main WMS warehouse. `496` (Pagaminta produkcija-pardavimai) — secondary. `498` (Gamyba) — confirm with business. Exclude all others: 502 Kuras, 507 Ilgalaikis, 509 Visi, 1498, 12503 Paslaugos, 142026 PVZ, 142029 Parduotuvė, 144513. |
 | Product identity | `(sndid, agnumProductId)` — not `agnumProductId` alone |
 | SKU source | Agnum `code` → `Item.InternalSKU` |
 | Balance storage | Never on `Item`. Import as `AgnumVirtualWarehouseBalance` only. |
