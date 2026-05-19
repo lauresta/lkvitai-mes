@@ -36,4 +36,16 @@ public sealed class AgnumProductDto
     public string? Place { get; init; }
     public string? F1 { get; init; }
     public string? F2 { get; init; }
+
+    [JsonPropertyName("supplier_code")]
+    public string? SupplierCode { get; init; }
+
+    [JsonPropertyName("supplier_name")]
+    public string? SupplierName { get; init; }
+
+    [JsonPropertyName("supplier_sku")]
+    public string? SupplierSku { get; init; }
+
+    [JsonPropertyName("uom_type")]
+    public string? UnitOfMeasureType { get; init; }
 }

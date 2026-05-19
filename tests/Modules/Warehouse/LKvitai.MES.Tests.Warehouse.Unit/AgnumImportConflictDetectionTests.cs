@@ -15,7 +15,7 @@ namespace LKvitai.MES.Tests.Warehouse.Unit;
 public class AgnumImportConflictDetectionTests
 {
     [Fact]
-    public async Task PreviewAsync_WhenPcsIsUnknown_ShouldReturnUnknownUoM()
+    public async Task PreviewAsync_WhenPcsIsUnknown_ShouldReturnToCreate()
     {
         await using var db = CreateDbContext();
         await SeedUnitOfMeasuresAsync(db, "vnt");
@@ -34,8 +34,8 @@ public class AgnumImportConflictDetectionTests
 
         var preview = await service.PreviewAsync(493);
 
-        preview.Conflicts.Should().ContainSingle();
-        preview.Conflicts[0].Reason.Should().Be("UnknownUoM");
+        preview.Conflicts.Should().BeEmpty();
+        preview.ToCreate.Should().ContainSingle(x => x.AgnumProductId == 1 && x.Pcs == "unknown");
     }
 
     [Fact]
@@ -164,6 +164,102 @@ public class AgnumImportConflictDetectionTests
         var preview = await service.PreviewAsync(493);
 
         preview.ToUpdate.Should().ContainSingle(x => x.AgnumProductId == 5);
+    }
+
+    [Fact]
+    public async Task ApplyAsync_WhenProductHasMissingReferences_ShouldCreateReferenceGraph()
+    {
+        await using var db = CreateDbContext();
+
+        var product = new AgnumProductDto
+        {
+            Id = 6,
+            Code = "SKU-FULL",
+            Name = "Full Import Product",
+            Pcs = "m2",
+            UnitOfMeasureType = "Length",
+            Enabled = true,
+            Balance = 1,
+            Netto = 1.25m,
+            Barcode = "111",
+            Barcodes = new List<string> { "222" },
+            Group = "Fabric",
+            Category = "Cotton",
+            Subgroup = "Printed",
+            SupplierCode = "sup-001",
+            SupplierName = "Supplier One",
+            SupplierSku = "SUP-SKU-001"
+        };
+
+        var service = CreateService(db, product);
+
+        var result = await service.ApplyAsync(493);
+
+        result.Created.Should().Be(1);
+        result.Skipped.Should().Be(0);
+
+        var item = await db.Items.SingleAsync(x => x.InternalSKU == "SKU-FULL");
+        item.BaseUoM.Should().Be("m2");
+        item.Weight.Should().Be(1.25m);
+        item.PrimaryBarcode.Should().Be("222");
+
+        var unitOfMeasure = await db.UnitOfMeasures.SingleAsync(x => x.Code == "m2");
+        unitOfMeasure.Type.Should().Be("Length");
+
+        var leafCategory = await db.ItemCategories.SingleAsync(x => x.Code == "FABRIC-COTTON-PRINTED");
+        item.CategoryId.Should().Be(leafCategory.Id);
+
+        var supplier = await db.Suppliers.SingleAsync(x => x.Code == "SUP-001");
+        supplier.Name.Should().Be("Supplier One");
+
+        var mapping = await db.SupplierItemMappings.SingleAsync();
+        mapping.SupplierId.Should().Be(supplier.Id);
+        mapping.ItemId.Should().Be(item.Id);
+        mapping.SupplierSKU.Should().Be("SUP-SKU-001");
+
+        (await db.AgnumProductLinks.SingleAsync()).ItemId.Should().Be(item.Id);
+        (await db.ItemExternalAttributes.CountAsync(x => x.ItemId == item.Id)).Should().BeGreaterThan(0);
+        (await db.ItemBarcodes.CountAsync(x => x.ItemId == item.Id)).Should().Be(2);
+    }
+
+    [Fact]
+    public async Task ApplyAsync_WhenProductsShareNewCategoryHierarchy_ShouldReuseTrackedCategories()
+    {
+        await using var db = CreateDbContext();
+        await SeedUnitOfMeasuresAsync(db, "vnt");
+
+        var first = new AgnumProductDto
+        {
+            Id = 7,
+            Code = "SKU-CAT-1",
+            Name = "First",
+            Pcs = "vnt",
+            Enabled = true,
+            Balance = 1,
+            Group = "Group",
+            Category = "Category",
+            Subgroup = "Subgroup"
+        };
+        var second = new AgnumProductDto
+        {
+            Id = 8,
+            Code = "SKU-CAT-2",
+            Name = "Second",
+            Pcs = "vnt",
+            Enabled = true,
+            Balance = 1,
+            Group = "Group",
+            Category = "Category",
+            Subgroup = "Subgroup"
+        };
+
+        var service = CreateService(db, first, second);
+
+        var result = await service.ApplyAsync(493);
+
+        result.Created.Should().Be(2);
+        (await db.ItemCategories.CountAsync()).Should().Be(3);
+        (await db.ItemCategories.CountAsync(x => x.Code == "GROUP-CATEGORY-SUBGROUP")).Should().Be(1);
     }
 
     private static AgnumNomenclatureImportService CreateService(WarehouseDbContext db, params AgnumProductDto[] products)
