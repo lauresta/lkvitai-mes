@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Diagnostics;
 using System.Text.Json;
 
 namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Agnum;
@@ -55,6 +56,7 @@ public sealed class AgnumApiClient : IAgnumApiClient
 
         try
         {
+            var stopwatch = Stopwatch.StartNew();
             using var response = await _httpClient.SendAsync(request, ct);
             if (!response.IsSuccessStatusCode)
             {
@@ -71,6 +73,10 @@ public sealed class AgnumApiClient : IAgnumApiClient
             var products = JsonSerializer.Deserialize<IReadOnlyList<AgnumProductDto>>(content, JsonOptions);
             if (products is null)
             {
+                _logger.LogInformation(
+                    "Agnum API GET {RequestUri} returned no products in {ElapsedMs} ms.",
+                    requestUri,
+                    stopwatch.ElapsedMilliseconds);
                 return Array.Empty<AgnumProductDto>();
             }
 
@@ -88,6 +94,12 @@ public sealed class AgnumApiClient : IAgnumApiClient
                     }
                 }
             }
+
+            _logger.LogInformation(
+                "Agnum API GET {RequestUri} returned {ProductCount} products in {ElapsedMs} ms.",
+                requestUri,
+                products.Count,
+                stopwatch.ElapsedMilliseconds);
 
             return products;
         }

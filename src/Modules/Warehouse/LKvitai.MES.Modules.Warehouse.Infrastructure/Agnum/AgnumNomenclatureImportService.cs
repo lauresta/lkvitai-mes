@@ -27,7 +27,14 @@ public sealed class AgnumNomenclatureImportService : IAgnumNomenclatureImportSer
     {
         var client = _apiClientFactory.GetForSndId(sndId);
         var products = await client.GetProductsAsync(ct);
+        return await BuildPreviewAsync(sndId, products, ct);
+    }
 
+    private async Task<AgnumImportPreview> BuildPreviewAsync(
+        int sndId,
+        IReadOnlyList<AgnumProductDto> products,
+        CancellationToken ct)
+    {
         var existingLinks = await _dbContext.AgnumProductLinks
             .Where(x => x.SndId == sndId)
             .ToListAsync(ct);
@@ -111,8 +118,8 @@ public sealed class AgnumNomenclatureImportService : IAgnumNomenclatureImportSer
 
     public async Task<AgnumImportResult> ApplyAsync(int sndId, CancellationToken ct = default)
     {
-        var preview = await PreviewAsync(sndId, ct);
         var products = await _apiClientFactory.GetForSndId(sndId).GetProductsAsync(ct);
+        var preview = await BuildPreviewAsync(sndId, products, ct);
         var productById = products.ToDictionary(x => x.Id);
         var existingLinks = await _dbContext.AgnumProductLinks
             .Where(x => x.SndId == sndId)
@@ -171,7 +178,7 @@ public sealed class AgnumNomenclatureImportService : IAgnumNomenclatureImportSer
             BaseUoM = unitOfMeasure.Code,
             BaseUnit = unitOfMeasure,
             Status = product.Enabled ? "Active" : "Discontinued",
-            Weight = product.Netto,
+            Weight = NormalizePositiveDecimal(product.Netto),
             Category = category,
             CreatedAt = DateTimeOffset.UtcNow,
             UpdatedAt = DateTimeOffset.UtcNow,
@@ -215,7 +222,7 @@ public sealed class AgnumNomenclatureImportService : IAgnumNomenclatureImportSer
         item.BaseUnit = unitOfMeasure;
         item.Category = category;
         item.Status = product.Enabled ? "Active" : "Discontinued";
-        item.Weight = product.Netto;
+        item.Weight = NormalizePositiveDecimal(product.Netto);
         item.PrimaryBarcode = GetProductBarcodes(product).FirstOrDefault() ?? item.PrimaryBarcode;
         item.UpdatedAt = DateTimeOffset.UtcNow;
 
@@ -587,6 +594,11 @@ public sealed class AgnumNomenclatureImportService : IAgnumNomenclatureImportSer
 
         var normalized = NormalizeCategoryCode(value);
         return string.IsNullOrWhiteSpace(normalized) ? null : normalized;
+    }
+
+    private static decimal? NormalizePositiveDecimal(decimal? value)
+    {
+        return value > 0 ? value : null;
     }
 
     private static List<string> GetProductBarcodes(AgnumProductDto product)
