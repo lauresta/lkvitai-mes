@@ -31,15 +31,17 @@ public sealed class ItemUomConversionsController : ControllerBase
         var query = from conversion in _dbContext.ItemUoMConversions.AsNoTracking()
                     join item in _dbContext.Items.AsNoTracking() on conversion.ItemId equals item.Id into itemGroup
                     from item in itemGroup.DefaultIfEmpty()
-                    select new ConversionProjection(
+                    select new
+                    {
                         conversion.Id,
                         conversion.ItemId,
-                        item != null ? item.InternalSKU : string.Empty,
-                        item != null ? item.Name : string.Empty,
+                        ItemSku = item != null ? item.InternalSKU : string.Empty,
+                        ItemName = item != null ? item.Name : string.Empty,
                         conversion.FromUoM,
                         conversion.ToUoM,
                         conversion.Factor,
-                        conversion.RoundingRule);
+                        conversion.RoundingRule
+                    };
 
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -47,15 +49,15 @@ public sealed class ItemUomConversionsController : ControllerBase
             query = query.Where(x =>
                 x.ItemSku.ToLower().Contains(normalized) ||
                 x.ItemName.ToLower().Contains(normalized) ||
-                x.FromUom.ToLower().Contains(normalized) ||
-                x.ToUom.ToLower().Contains(normalized));
+                x.FromUoM.ToLower().Contains(normalized) ||
+                x.ToUoM.ToLower().Contains(normalized));
         }
 
         var totalCount = await query.CountAsync(cancellationToken);
         var items = await query
             .OrderBy(x => x.ItemSku)
-            .ThenBy(x => x.FromUom)
-            .ThenBy(x => x.ToUom)
+            .ThenBy(x => x.FromUoM)
+            .ThenBy(x => x.ToUoM)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .Select(x => new ItemUomConversionDto(
@@ -63,24 +65,14 @@ public sealed class ItemUomConversionsController : ControllerBase
                 x.ItemId,
                 x.ItemSku,
                 x.ItemName,
-                x.FromUom,
-                x.ToUom,
+                x.FromUoM,
+                x.ToUoM,
                 x.Factor,
                 x.RoundingRule))
             .ToListAsync(cancellationToken);
 
         return Ok(new PagedResponse<ItemUomConversionDto>(items, totalCount, pageNumber, pageSize));
     }
-
-    private sealed record ConversionProjection(
-        int Id,
-        int ItemId,
-        string ItemSku,
-        string ItemName,
-        string FromUom,
-        string ToUom,
-        decimal Factor,
-        string RoundingRule);
 
     public sealed record ItemUomConversionDto(
         int Id,
