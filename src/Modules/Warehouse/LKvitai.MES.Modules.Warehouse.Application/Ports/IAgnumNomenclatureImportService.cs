@@ -3,7 +3,7 @@ namespace LKvitai.MES.Modules.Warehouse.Application.Ports;
 public interface IAgnumNomenclatureImportService
 {
     Task<AgnumImportPreview> PreviewAsync(int sndId, CancellationToken ct = default);
-    Task<AgnumImportResult> ApplyAsync(int sndId, CancellationToken ct = default);
+    Task<AgnumImportResult> ApplyAsync(int sndId, CancellationToken ct = default, bool importPartners = true);
 }
 
 public sealed class AgnumImportPreview

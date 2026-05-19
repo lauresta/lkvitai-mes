@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using LKvitai.MES.Modules.Warehouse.Application.Ports;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using LKvitai.MES.Modules.Warehouse.Integration.Agnum;
@@ -135,11 +136,13 @@ public sealed class AgnumNomenclatureImportService : IAgnumNomenclatureImportSer
         return preview;
     }
 
-    public async Task<AgnumImportResult> ApplyAsync(int sndId, CancellationToken ct = default)
+    public async Task<AgnumImportResult> ApplyAsync(int sndId, CancellationToken ct = default, bool importPartners = true)
     {
         var client = _apiClientFactory.GetForSndId(sndId);
         var products = await client.GetProductsAsync(ct);
-        var clients = await client.GetClientsAsync(ct);
+        var clients = importPartners
+            ? await client.GetClientsAsync(ct)
+            : Array.Empty<AgnumClientDto>();
         var preview = await BuildPreviewAsync(sndId, products, ct);
         var productById = products.ToDictionary(x => x.Id);
         var existingLinks = await _dbContext.AgnumProductLinks
@@ -149,36 +152,62 @@ public sealed class AgnumNomenclatureImportService : IAgnumNomenclatureImportSer
         var created = 0;
         var updated = 0;
 
-        await EnsurePartnersAsync(clients, ct);
-
-        foreach (var candidate in preview.ToCreate)
+        var autoDetectChanges = _dbContext.ChangeTracker.AutoDetectChangesEnabled;
+        _dbContext.ChangeTracker.AutoDetectChangesEnabled = false;
+        try
         {
-            if (!productById.TryGetValue(candidate.AgnumProductId, out var product))
+            if (importPartners)
             {
-                continue;
+                await EnsurePartnersAsync(clients, ct);
             }
 
-            await CreateProductAsync(product, sndId, ct);
-            created++;
-        }
+            foreach (var candidate in preview.ToCreate)
+            {
+                if (!productById.TryGetValue(candidate.AgnumProductId, out var product))
+                {
+                    continue;
+                }
 
-        foreach (var candidate in preview.ToUpdate)
+                await CreateProductAsync(product, sndId, ct);
+                created++;
+            }
+
+            foreach (var candidate in preview.ToUpdate)
+            {
+                if (!productById.TryGetValue(candidate.AgnumProductId, out var product))
+                {
+                    continue;
+                }
+
+                if (!existingLinks.TryGetValue(product.Id, out var link))
+                {
+                    continue;
+                }
+
+                await UpdateProductAsync(link, product, sndId, ct);
+                updated++;
+            }
+
+            var saveStartedAt = Stopwatch.StartNew();
+            _logger.LogInformation(
+                "Saving Agnum nomenclature import for sndId {SndId}. Created={Created} Updated={Updated} Skipped={Skipped} TrackedEntities={TrackedEntities}",
+                sndId,
+                created,
+                updated,
+                preview.Conflicts.Count,
+                _dbContext.ChangeTracker.Entries().Count());
+
+            _dbContext.ChangeTracker.DetectChanges();
+            await _dbContext.SaveChangesAsync(ct);
+            _logger.LogInformation(
+                "Saved Agnum nomenclature import for sndId {SndId} in {ElapsedMs} ms.",
+                sndId,
+                saveStartedAt.ElapsedMilliseconds);
+        }
+        finally
         {
-            if (!productById.TryGetValue(candidate.AgnumProductId, out var product))
-            {
-                continue;
-            }
-
-            if (!existingLinks.TryGetValue(product.Id, out var link))
-            {
-                continue;
-            }
-
-            await UpdateProductAsync(link, product, sndId, ct);
-            updated++;
+            _dbContext.ChangeTracker.AutoDetectChangesEnabled = autoDetectChanges;
         }
-
-        await _dbContext.SaveChangesAsync(ct);
 
         return new AgnumImportResult
         {
