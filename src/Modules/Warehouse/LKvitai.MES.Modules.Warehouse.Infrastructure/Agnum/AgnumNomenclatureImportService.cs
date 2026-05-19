@@ -28,10 +28,6 @@ public sealed class AgnumNomenclatureImportService : IAgnumNomenclatureImportSer
         var client = _apiClientFactory.GetForSndId(sndId);
         var products = await client.GetProductsAsync(ct);
 
-        var validUoms = await _dbContext.UnitOfMeasures
-            .Select(x => x.Code)
-            .ToListAsync(ct);
-
         var existingLinks = await _dbContext.AgnumProductLinks
             .Where(x => x.SndId == sndId)
             .ToListAsync(ct);
@@ -54,13 +50,13 @@ public sealed class AgnumNomenclatureImportService : IAgnumNomenclatureImportSer
 
         foreach (var product in products)
         {
-            if (string.IsNullOrWhiteSpace(product.Pcs) || !validUoms.Contains(product.Pcs, StringComparer.OrdinalIgnoreCase))
+            if (string.IsNullOrWhiteSpace(product.Pcs))
             {
                 preview.Conflicts.Add(new AgnumImportConflict
                 {
                     AgnumProductId = product.Id,
                     Code = product.Code,
-                    Reason = "UnknownUoM"
+                    Reason = "MissingUoM"
                 });
                 continue;
             }
@@ -165,22 +161,26 @@ public sealed class AgnumNomenclatureImportService : IAgnumNomenclatureImportSer
 
     private async Task CreateProductAsync(AgnumProductDto product, int sndId, CancellationToken ct)
     {
-        var categoryId = await EnsureCategoryHierarchyAsync(product.Group, product.Category, product.Subgroup, ct);
+        var category = await EnsureCategoryHierarchyAsync(product.Group, product.Category, product.Subgroup, ct);
+        var unitOfMeasure = await EnsureUnitOfMeasureAsync(product.Pcs, product.UnitOfMeasureType, ct);
+        var supplier = await EnsureSupplierAsync(product.SupplierCode, product.SupplierName, ct);
         var item = new Item
         {
             InternalSKU = product.Code,
             Name = product.Name,
-            BaseUoM = product.Pcs,
+            BaseUoM = unitOfMeasure.Code,
+            BaseUnit = unitOfMeasure,
             Status = product.Enabled ? "Active" : "Discontinued",
             Weight = product.Netto,
-            CategoryId = categoryId,
+            Category = category,
             CreatedAt = DateTimeOffset.UtcNow,
             UpdatedAt = DateTimeOffset.UtcNow,
-            PrimaryBarcode = product.Barcodes?.FirstOrDefault()
+            PrimaryBarcode = GetProductBarcodes(product).FirstOrDefault()
         };
 
         _dbContext.Items.Add(item);
         await AddItemBarcodesAsync(item, product, ct);
+        await EnsureSupplierItemMappingAsync(item, supplier, product, ct);
 
         _dbContext.AgnumProductLinks.Add(new AgnumProductLink
         {
@@ -206,14 +206,21 @@ public sealed class AgnumNomenclatureImportService : IAgnumNomenclatureImportSer
             return;
         }
 
+        var category = await EnsureCategoryHierarchyAsync(product.Group, product.Category, product.Subgroup, ct);
+        var unitOfMeasure = await EnsureUnitOfMeasureAsync(product.Pcs, product.UnitOfMeasureType, ct);
+        var supplier = await EnsureSupplierAsync(product.SupplierCode, product.SupplierName, ct);
+
         item.Name = product.Name;
-        item.BaseUoM = product.Pcs;
+        item.BaseUoM = unitOfMeasure.Code;
+        item.BaseUnit = unitOfMeasure;
+        item.Category = category;
         item.Status = product.Enabled ? "Active" : "Discontinued";
         item.Weight = product.Netto;
-        item.PrimaryBarcode = product.Barcodes?.FirstOrDefault() ?? item.PrimaryBarcode;
+        item.PrimaryBarcode = GetProductBarcodes(product).FirstOrDefault() ?? item.PrimaryBarcode;
         item.UpdatedAt = DateTimeOffset.UtcNow;
 
         await AddItemBarcodesAsync(item, product, ct);
+        await EnsureSupplierItemMappingAsync(item, supplier, product, ct);
         await ReplaceExternalAttributesAsync(item, product, sndId, ct);
 
         link.AgnumCode = product.Code;
@@ -225,12 +232,7 @@ public sealed class AgnumNomenclatureImportService : IAgnumNomenclatureImportSer
 
     private async Task AddItemBarcodesAsync(Item item, AgnumProductDto product, CancellationToken ct)
     {
-        var barcodes = product.Barcodes ?? new List<string>();
-        var distinctBarcodes = barcodes
-            .Where(x => !string.IsNullOrWhiteSpace(x))
-            .Select(x => x.Trim())
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
+        var distinctBarcodes = GetProductBarcodes(product);
 
         if (distinctBarcodes.Count == 0)
         {
@@ -288,7 +290,11 @@ public sealed class AgnumNomenclatureImportService : IAgnumNomenclatureImportSer
             CreateAttribute(sourceContext, "branch", product.Branch),
             CreateAttribute(sourceContext, "place", product.Place),
             CreateAttribute(sourceContext, "f1", product.F1),
-            CreateAttribute(sourceContext, "f2", product.F2)
+            CreateAttribute(sourceContext, "f2", product.F2),
+            CreateAttribute(sourceContext, "supplierCode", product.SupplierCode),
+            CreateAttribute(sourceContext, "supplierName", product.SupplierName),
+            CreateAttribute(sourceContext, "supplierSku", product.SupplierSku),
+            CreateAttribute(sourceContext, "uomType", product.UnitOfMeasureType)
         };
 
         return attributes.Where(x => x is not null)!;
@@ -317,68 +323,203 @@ public sealed class AgnumNomenclatureImportService : IAgnumNomenclatureImportSer
         return attribute;
     }
 
-    private async Task<int> EnsureCategoryHierarchyAsync(string? group, string? category, string? subgroup, CancellationToken ct)
+    private async Task<ItemCategory> EnsureCategoryHierarchyAsync(string? group, string? category, string? subgroup, CancellationToken ct)
     {
-        int? parentId = null;
+        ItemCategory? parent = null;
 
         if (!string.IsNullOrWhiteSpace(group))
         {
-            parentId = await GetOrCreateCategoryAsync(group.Trim(), null, ct);
+            parent = await GetOrCreateCategoryAsync(group.Trim(), null, ct);
         }
 
         if (!string.IsNullOrWhiteSpace(category))
         {
-            parentId = await GetOrCreateCategoryAsync(category.Trim(), parentId, ct);
+            parent = await GetOrCreateCategoryAsync(category.Trim(), parent, ct);
         }
 
         if (!string.IsNullOrWhiteSpace(subgroup))
         {
-            parentId = await GetOrCreateCategoryAsync(subgroup.Trim(), parentId, ct);
+            parent = await GetOrCreateCategoryAsync(subgroup.Trim(), parent, ct);
         }
 
-        if (parentId.HasValue)
+        if (parent is not null)
         {
-            return parentId.Value;
+            return parent;
         }
 
         return await GetOrCreateCategoryAsync("Agnum", null, ct);
     }
 
-    private async Task<int> GetOrCreateCategoryAsync(string name, int? parentCategoryId, CancellationToken ct)
+    private async Task<ItemCategory> GetOrCreateCategoryAsync(string name, ItemCategory? parentCategory, CancellationToken ct)
     {
         var normalizedCode = NormalizeCategoryCode(name);
-        if (parentCategoryId.HasValue)
+        var normalizedCodeUpper = normalizedCode.ToUpperInvariant();
+        if (parentCategory is not null)
         {
-            var parent = await _dbContext.ItemCategories.FindAsync(new object[] { parentCategoryId.Value }, ct);
-            if (parent is null)
-            {
-                parentCategoryId = null;
-            }
-            else
-            {
-                normalizedCode = NormalizeCategoryCode(parent.Code + "-" + name);
-            }
+            normalizedCode = NormalizeCategoryCode(parentCategory.Code + "-" + name);
+            normalizedCodeUpper = normalizedCode.ToUpperInvariant();
+        }
+
+        var tracked = _dbContext.ItemCategories.Local
+            .FirstOrDefault(x => string.Equals(x.Code, normalizedCode, StringComparison.OrdinalIgnoreCase));
+        if (tracked is not null)
+        {
+            return tracked;
         }
 
         var existing = await _dbContext.ItemCategories
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Code == normalizedCode, ct);
+            .FirstOrDefaultAsync(x => x.Code.ToUpper() == normalizedCodeUpper, ct);
 
         if (existing is not null)
         {
-            return existing.Id;
+            return existing;
         }
 
         var category = new ItemCategory
         {
             Code = normalizedCode,
             Name = name,
-            ParentCategoryId = parentCategoryId
+            ParentCategory = parentCategory
         };
 
         _dbContext.ItemCategories.Add(category);
-        await _dbContext.SaveChangesAsync(ct);
-        return category.Id;
+        return category;
+    }
+
+    private async Task<UnitOfMeasure> EnsureUnitOfMeasureAsync(string code, string? type, CancellationToken ct)
+    {
+        var normalizedCode = NormalizeUnitOfMeasureCode(code);
+        var normalizedCodeUpper = normalizedCode.ToUpperInvariant();
+
+        var tracked = _dbContext.UnitOfMeasures.Local
+            .FirstOrDefault(x => string.Equals(x.Code, normalizedCode, StringComparison.OrdinalIgnoreCase));
+        if (tracked is not null)
+        {
+            return tracked;
+        }
+
+        var existing = await _dbContext.UnitOfMeasures
+            .FirstOrDefaultAsync(x => x.Code.ToUpper() == normalizedCodeUpper, ct);
+        if (existing is not null)
+        {
+            return existing;
+        }
+
+        var unitOfMeasure = new UnitOfMeasure
+        {
+            Code = normalizedCode,
+            Name = normalizedCode,
+            Type = NormalizeUnitOfMeasureType(type, normalizedCode)
+        };
+
+        _dbContext.UnitOfMeasures.Add(unitOfMeasure);
+        return unitOfMeasure;
+    }
+
+    private async Task<Supplier?> EnsureSupplierAsync(string? code, string? name, CancellationToken ct)
+    {
+        var normalizedCode = NormalizeSupplierCode(code);
+        if (normalizedCode is null)
+        {
+            normalizedCode = NormalizeSupplierCode(name);
+        }
+
+        if (normalizedCode is null)
+        {
+            return null;
+        }
+
+        var supplierName = string.IsNullOrWhiteSpace(name) ? normalizedCode : name.Trim();
+        var normalizedCodeUpper = normalizedCode.ToUpperInvariant();
+        var tracked = _dbContext.Suppliers.Local
+            .FirstOrDefault(x => string.Equals(x.Code, normalizedCode, StringComparison.OrdinalIgnoreCase));
+        if (tracked is not null)
+        {
+            if (string.IsNullOrWhiteSpace(tracked.Name) || tracked.Name == tracked.Code)
+            {
+                tracked.Name = supplierName;
+            }
+
+            return tracked;
+        }
+
+        var existing = await _dbContext.Suppliers
+            .FirstOrDefaultAsync(x => x.Code.ToUpper() == normalizedCodeUpper, ct);
+        if (existing is not null)
+        {
+            if (string.IsNullOrWhiteSpace(existing.Name) || existing.Name == existing.Code)
+            {
+                existing.Name = supplierName;
+            }
+
+            return existing;
+        }
+
+        var supplier = new Supplier
+        {
+            Code = normalizedCode,
+            Name = supplierName,
+            CreatedAt = DateTimeOffset.UtcNow,
+            UpdatedAt = DateTimeOffset.UtcNow
+        };
+
+        _dbContext.Suppliers.Add(supplier);
+        return supplier;
+    }
+
+    private async Task EnsureSupplierItemMappingAsync(Item item, Supplier? supplier, AgnumProductDto product, CancellationToken ct)
+    {
+        if (supplier is null)
+        {
+            return;
+        }
+
+        var supplierSku = (product.SupplierSku ?? product.F2 ?? product.Code).Trim();
+        if (string.IsNullOrWhiteSpace(supplierSku))
+        {
+            return;
+        }
+
+        var tracked = _dbContext.SupplierItemMappings.Local.FirstOrDefault(x =>
+            string.Equals(x.SupplierSKU, supplierSku, StringComparison.OrdinalIgnoreCase)
+            && (ReferenceEquals(x.Supplier, supplier) || x.SupplierId != 0 && x.SupplierId == supplier.Id));
+
+        if (tracked is not null)
+        {
+            if (tracked.Item is null && tracked.ItemId == 0)
+            {
+                tracked.Item = item;
+            }
+
+            return;
+        }
+
+        if (supplier.Id != 0)
+        {
+            var existing = await _dbContext.SupplierItemMappings
+                .FirstOrDefaultAsync(x => x.SupplierId == supplier.Id && x.SupplierSKU == supplierSku, ct);
+            if (existing is not null)
+            {
+                if (existing.ItemId == item.Id)
+                {
+                    return;
+                }
+
+                _logger.LogWarning(
+                    "Supplier SKU {SupplierSku} for supplier {SupplierCode} is already mapped to item {ItemId}.",
+                    supplierSku,
+                    supplier.Code,
+                    existing.ItemId);
+                return;
+            }
+        }
+
+        _dbContext.SupplierItemMappings.Add(new SupplierItemMapping
+        {
+            Supplier = supplier,
+            Item = item,
+            SupplierSKU = supplierSku
+        });
     }
 
     private static string NormalizeCategoryCode(string value)
@@ -407,6 +548,67 @@ public sealed class AgnumNomenclatureImportService : IAgnumNomenclatureImportSer
         return code;
     }
 
+    private static string NormalizeUnitOfMeasureCode(string value)
+    {
+        var code = value.Trim();
+        return code.Length > 10 ? code[..10] : code;
+    }
+
+    private static string NormalizeUnitOfMeasureType(string? type, string code)
+    {
+        if (!string.IsNullOrWhiteSpace(type))
+        {
+            var normalizedType = type.Trim();
+            if (normalizedType.Equals("Weight", StringComparison.OrdinalIgnoreCase)
+                || normalizedType.Equals("Volume", StringComparison.OrdinalIgnoreCase)
+                || normalizedType.Equals("Piece", StringComparison.OrdinalIgnoreCase)
+                || normalizedType.Equals("Length", StringComparison.OrdinalIgnoreCase))
+            {
+                return char.ToUpperInvariant(normalizedType[0]) + normalizedType[1..].ToLowerInvariant();
+            }
+        }
+
+        var normalizedCode = code.Trim().ToLowerInvariant();
+        return normalizedCode switch
+        {
+            "kg" or "g" or "gr" or "t" => "Weight",
+            "l" or "ltr" or "m3" => "Volume",
+            "m" or "m2" or "cm" or "mm" => "Length",
+            _ => "Piece"
+        };
+    }
+
+    private static string? NormalizeSupplierCode(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        var normalized = NormalizeCategoryCode(value);
+        return string.IsNullOrWhiteSpace(normalized) ? null : normalized;
+    }
+
+    private static List<string> GetProductBarcodes(AgnumProductDto product)
+    {
+        var barcodes = new List<string>();
+        if (product.Barcodes is not null)
+        {
+            barcodes.AddRange(product.Barcodes);
+        }
+
+        if (!string.IsNullOrWhiteSpace(product.Barcode))
+        {
+            barcodes.Add(product.Barcode);
+        }
+
+        return barcodes
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Select(x => x.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
     private static string ComputeRawHash(AgnumProductDto product)
     {
         var text = string.Join("|",
@@ -425,7 +627,11 @@ public sealed class AgnumNomenclatureImportService : IAgnumNomenclatureImportSer
             product.Branch ?? string.Empty,
             product.Place ?? string.Empty,
             product.F1 ?? string.Empty,
-            product.F2 ?? string.Empty);
+            product.F2 ?? string.Empty,
+            product.SupplierCode ?? string.Empty,
+            product.SupplierName ?? string.Empty,
+            product.SupplierSku ?? string.Empty,
+            product.UnitOfMeasureType ?? string.Empty);
 
         using var sha = System.Security.Cryptography.SHA256.Create();
         var bytes = System.Text.Encoding.UTF8.GetBytes(text);

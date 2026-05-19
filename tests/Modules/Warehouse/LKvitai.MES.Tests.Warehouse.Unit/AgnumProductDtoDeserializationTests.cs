@@ -60,4 +60,18 @@ public class AgnumProductDtoDeserializationTests
         result!.Barcode.Should().BeNull();
         result.Barcodes.Should().BeNull();
     }
+
+    [Fact]
+    public void Deserialize_ProductWithSupplierAndUomMetadata_ShouldPopulateImportFields()
+    {
+        var json = "{\"id\":1,\"code\":\"SKU-001\",\"name\":\"Test\",\"pcs\":\"vnt\",\"enabled\":true,\"balance\":10,\"supplier_code\":\"SUP-001\",\"supplier_name\":\"Supplier One\",\"supplier_sku\":\"SUP-SKU-001\",\"uom_type\":\"Piece\"}";
+
+        var result = JsonSerializer.Deserialize<AgnumProductDto>(json, JsonOptions);
+
+        result.Should().NotBeNull();
+        result!.SupplierCode.Should().Be("SUP-001");
+        result.SupplierName.Should().Be("Supplier One");
+        result.SupplierSku.Should().Be("SUP-SKU-001");
+        result.UnitOfMeasureType.Should().Be("Piece");
+    }
 }
