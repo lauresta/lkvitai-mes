@@ -94,6 +94,7 @@ public sealed class ItemBarcode
 public sealed class Supplier : AuditableEntity
 {
     public int Id { get; set; }
+    public int? AgnumClientId { get; set; }
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string? ContactInfo { get; set; }
@@ -146,6 +147,7 @@ public sealed class Address
 public sealed class Customer : AuditableEntity
 {
     public Guid Id { get; set; } = Guid.NewGuid();
+    public int? AgnumClientId { get; set; }
     public string CustomerCode { get; set; } = string.Empty;
     [Encrypted]
     public string Name { get; set; } = string.Empty;

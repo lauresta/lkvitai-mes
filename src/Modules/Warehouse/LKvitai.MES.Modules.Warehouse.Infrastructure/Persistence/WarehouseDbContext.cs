@@ -371,10 +371,12 @@ public class WarehouseDbContext : DbContext
         {
             entity.ToTable("suppliers");
             entity.HasKey(e => e.Id);
+            entity.Property(e => e.AgnumClientId);
             entity.Property(e => e.Code).HasMaxLength(50).IsRequired();
             entity.Property(e => e.Name).HasMaxLength(200).IsRequired();
             entity.Property(e => e.ContactInfo).HasColumnType("text");
             entity.HasIndex(e => e.Code).IsUnique();
+            entity.HasIndex(e => e.AgnumClientId).IsUnique();
         });
 
         modelBuilder.Entity<Customer>(entity =>
@@ -385,6 +387,7 @@ public class WarehouseDbContext : DbContext
                 .HasMaxLength(50)
                 .IsRequired()
                 .HasDefaultValueSql("'CUST-' || LPAD(nextval('customer_code_seq')::text, 4, '0')");
+            entity.Property(e => e.AgnumClientId);
             entity.Property(e => e.Name).HasColumnType("text").HasConversion(PiiEncryption.StringConverter).IsRequired();
             entity.Property(e => e.Email).HasColumnType("text").HasConversion(PiiEncryption.StringConverter).IsRequired();
             entity.Property(e => e.Phone).HasMaxLength(50);
@@ -393,6 +396,7 @@ public class WarehouseDbContext : DbContext
             entity.Property(e => e.CreditLimit).HasPrecision(18, 2);
             entity.Property(e => e.IsDeleted).HasDefaultValue(false);
             entity.HasIndex(e => e.CustomerCode).IsUnique();
+            entity.HasIndex(e => e.AgnumClientId).IsUnique();
             entity.HasIndex(e => e.Name);
             entity.HasIndex(e => e.Status);
             entity.HasQueryFilter(e => !e.IsDeleted);
