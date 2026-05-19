@@ -215,7 +215,7 @@ public sealed class AgnumNomenclatureImportService : IAgnumNomenclatureImportSer
             AgnumProductId = product.Id,
             AgnumCode = product.Code,
             AgnumEnabled = product.Enabled,
-            AgnumModifiedAt = product.ModifyDate,
+            AgnumModifiedAt = NormalizeUtcDateTime(product.ModifyDate),
             LastImportedAt = DateTime.UtcNow,
             RawHash = ComputeRawHash(product)
         });
@@ -251,7 +251,7 @@ public sealed class AgnumNomenclatureImportService : IAgnumNomenclatureImportSer
 
         link.AgnumCode = product.Code;
         link.AgnumEnabled = product.Enabled;
-        link.AgnumModifiedAt = product.ModifyDate;
+        link.AgnumModifiedAt = NormalizeUtcDateTime(product.ModifyDate);
         link.LastImportedAt = DateTime.UtcNow;
         link.RawHash = ComputeRawHash(product);
     }
@@ -623,6 +623,21 @@ public sealed class AgnumNomenclatureImportService : IAgnumNomenclatureImportSer
     private static string NormalizeSkuCode(string? value)
     {
         return value?.Trim() ?? string.Empty;
+    }
+
+    private static DateTime? NormalizeUtcDateTime(DateTime? value)
+    {
+        if (value is null)
+        {
+            return null;
+        }
+
+        return value.Value.Kind switch
+        {
+            DateTimeKind.Utc => value.Value,
+            DateTimeKind.Local => value.Value.ToUniversalTime(),
+            _ => DateTime.SpecifyKind(value.Value, DateTimeKind.Utc)
+        };
     }
 
     private static List<string> GetProductBarcodes(AgnumProductDto product)

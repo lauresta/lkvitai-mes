@@ -357,6 +357,32 @@ public class AgnumImportConflictDetectionTests
         preview.Conflicts.Should().OnlyContain(x => x.Reason == "DuplicateAgnumCode");
     }
 
+    [Fact]
+    public async Task ApplyAsync_WhenModifyDateHasUnspecifiedKind_ShouldStoreUtcAgnumModifiedAt()
+    {
+        await using var db = CreateDbContext();
+        await SeedUnitOfMeasuresAsync(db, "vnt");
+
+        var product = new AgnumProductDto
+        {
+            Id = 13,
+            Code = "SKU-DATE",
+            Name = "Date product",
+            Pcs = "vnt",
+            Enabled = true,
+            Balance = 1,
+            ModifyDate = new DateTime(2026, 5, 19, 10, 30, 0, DateTimeKind.Unspecified)
+        };
+
+        var service = CreateService(db, product);
+
+        await service.ApplyAsync(493);
+
+        var link = await db.AgnumProductLinks.SingleAsync(x => x.AgnumProductId == product.Id);
+        link.AgnumModifiedAt.Should().NotBeNull();
+        link.AgnumModifiedAt!.Value.Kind.Should().Be(DateTimeKind.Utc);
+    }
+
     private static AgnumNomenclatureImportService CreateService(WarehouseDbContext db, params AgnumProductDto[] products)
     {
         var clientMock = new Mock<IAgnumApiClient>();
