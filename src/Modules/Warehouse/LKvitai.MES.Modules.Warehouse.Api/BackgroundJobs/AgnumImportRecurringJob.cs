@@ -38,6 +38,7 @@ public sealed class AgnumImportRecurringJob
 
         var succeeded = 0;
         var failed = 0;
+        var partnersImported = false;
 
         foreach (var mapping in mappings)
         {
@@ -50,7 +51,11 @@ public sealed class AgnumImportRecurringJob
                     mapping.AgnumName);
 
                 _logger.LogInformation("Agnum nomenclature import started for sndId {SndId}.", mapping.SndId);
-                var productResult = await _nomenclatureImportService.ApplyAsync(mapping.SndId, cancellationToken);
+                var productResult = await _nomenclatureImportService.ApplyAsync(
+                    mapping.SndId,
+                    cancellationToken,
+                    importPartners: !partnersImported);
+                partnersImported = true;
                 _logger.LogInformation(
                     "Agnum nomenclature import completed for sndId {SndId}. Created={Created} Updated={Updated} Skipped={Skipped} Conflicts={Conflicts}",
                     mapping.SndId,
