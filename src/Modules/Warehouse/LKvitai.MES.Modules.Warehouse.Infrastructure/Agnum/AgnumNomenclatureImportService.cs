@@ -259,6 +259,7 @@ public sealed class AgnumNomenclatureImportService : IAgnumNomenclatureImportSer
         var attributes = BuildAttributes(product, sndId);
         foreach (var attribute in attributes)
         {
+            attribute.Item = item;
             _dbContext.ItemExternalAttributes.Add(attribute);
         }
 
