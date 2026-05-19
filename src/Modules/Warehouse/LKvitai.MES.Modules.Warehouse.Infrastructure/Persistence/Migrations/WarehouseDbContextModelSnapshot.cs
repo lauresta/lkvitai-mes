@@ -804,6 +804,9 @@ namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.Migrations
                     b.Property<string>("CreatedBy")
                         .HasColumnType("text");
 
+                    b.Property<int?>("AgnumClientId")
+                        .HasColumnType("integer");
+
                     b.Property<decimal?>("CreditLimit")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
@@ -849,6 +852,9 @@ namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AgnumClientId")
+                        .IsUnique();
 
                     b.HasIndex("CustomerCode")
                         .IsUnique();
@@ -1595,6 +1601,9 @@ namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("AgnumClientId")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Code")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -1609,6 +1618,9 @@ namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.Migrations
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AgnumClientId")
+                        .IsUnique();
 
                     b.HasIndex("Code")
                         .IsUnique();

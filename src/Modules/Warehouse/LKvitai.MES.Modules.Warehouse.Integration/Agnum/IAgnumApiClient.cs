@@ -5,6 +5,7 @@ namespace LKvitai.MES.Modules.Warehouse.Integration.Agnum;
 public interface IAgnumApiClient
 {
     Task<IReadOnlyList<AgnumProductDto>> GetProductsAsync(CancellationToken ct = default);
+    Task<IReadOnlyList<AgnumClientDto>> GetClientsAsync(CancellationToken ct = default);
 }
 
 public sealed class AgnumProductDto
@@ -48,4 +49,31 @@ public sealed class AgnumProductDto
 
     [JsonPropertyName("uom_type")]
     public string? UnitOfMeasureType { get; init; }
+}
+
+public sealed class AgnumClientDto
+{
+    public int Id { get; init; }
+    public string Code { get; init; } = string.Empty;
+    public string Name { get; init; } = string.Empty;
+
+    [JsonPropertyName("company_code")]
+    public string? CompanyCode { get; init; }
+
+    [JsonPropertyName("vat_code")]
+    public string? VatCode { get; init; }
+
+    public string? Email { get; init; }
+
+    [JsonPropertyName("registeredAddress")]
+    public string? RegisteredAddress { get; init; }
+
+    [JsonPropertyName("officeAddress")]
+    public string? OfficeAddress { get; init; }
+
+    [JsonPropertyName("client_role")]
+    public List<string>? ClientRoles { get; init; }
+
+    [JsonPropertyName("pozym_numbers")]
+    public List<int>? PozymNumbers { get; init; }
 }

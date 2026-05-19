@@ -282,6 +282,9 @@ public class AgnumImportConflictDetectionTests
         clientMock
             .Setup(x => x.GetProductsAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<AgnumProductDto> { product });
+        clientMock
+            .Setup(x => x.GetClientsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<AgnumClientDto>());
 
         var factoryMock = new Mock<IAgnumApiClientFactory>();
         factoryMock.Setup(x => x.GetForSndId(It.IsAny<int>())).Returns(clientMock.Object);
@@ -383,10 +386,79 @@ public class AgnumImportConflictDetectionTests
         link.AgnumModifiedAt!.Value.Kind.Should().Be(DateTimeKind.Utc);
     }
 
+    [Fact]
+    public async Task ApplyAsync_WhenAgnumPartnerClientsExist_ShouldImportSupplierAndCustomerCatalogs()
+    {
+        await using var db = CreateDbContext();
+        await SeedUnitOfMeasuresAsync(db, "vnt");
+
+        var product = new AgnumProductDto
+        {
+            Id = 14,
+            Code = "SKU-SUPPLIER-CATALOG",
+            Name = "Supplier catalog product",
+            Pcs = "vnt",
+            Enabled = true,
+            Balance = 1
+        };
+        var supplier = new AgnumClientDto
+        {
+            Id = 57,
+            Code = "PL7209-100-63-81",
+            Name = "Samex P.P.H.U.",
+            CompanyCode = "PL7209-100-63-81",
+            VatCode = "PL72091006381",
+            PozymNumbers = new List<int> { 1 }
+        };
+        var customer = new AgnumClientDto
+        {
+            Id = 6,
+            Code = "110305282",
+            Name = "Omnitel AB",
+            Email = "test@example.com",
+            RegisteredAddress = "T.Ševčenkos g.25, Vilnius",
+            PozymNumbers = new List<int> { 2 }
+        };
+        var both = new AgnumClientDto
+        {
+            Id = 99,
+            Code = "BOTH",
+            Name = "Both Roles",
+            ClientRoles = new List<string> { "BUYER", "SUPPLIER" }
+        };
+
+        var service = CreateService(db, new[] { product }, new[] { supplier, customer, both });
+
+        await service.ApplyAsync(493);
+
+        var importedSupplier = await db.Suppliers.SingleAsync(x => x.Code == "PL7209-100-63-81");
+        importedSupplier.AgnumClientId.Should().Be(57);
+        importedSupplier.Code.Should().Be("PL7209-100-63-81");
+        importedSupplier.Name.Should().Be("Samex P.P.H.U.");
+        importedSupplier.ContactInfo.Should().Contain("CompanyCode=PL7209-100-63-81");
+        (await db.Suppliers.CountAsync()).Should().Be(2);
+
+        var importedCustomer = await db.Customers.SingleAsync(x => x.CustomerCode == "110305282");
+        importedCustomer.AgnumClientId.Should().Be(6);
+        importedCustomer.Name.Should().Be("Omnitel AB");
+        importedCustomer.Email.Should().Be("test@example.com");
+        importedCustomer.BillingAddress.Street.Should().Be("T.Ševčenkos g.25, Vilnius");
+        (await db.Customers.CountAsync()).Should().Be(2);
+
+        (await db.SupplierItemMappings.CountAsync()).Should().Be(0);
+    }
+
     private static AgnumNomenclatureImportService CreateService(WarehouseDbContext db, params AgnumProductDto[] products)
+        => CreateService(db, products, Array.Empty<AgnumClientDto>());
+
+    private static AgnumNomenclatureImportService CreateService(
+        WarehouseDbContext db,
+        IReadOnlyList<AgnumProductDto> products,
+        IReadOnlyList<AgnumClientDto> suppliers)
     {
         var clientMock = new Mock<IAgnumApiClient>();
         clientMock.Setup(x => x.GetProductsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(products.ToList());
+        clientMock.Setup(x => x.GetClientsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(suppliers.ToList());
 
         var factoryMock = new Mock<IAgnumApiClientFactory>();
         factoryMock.Setup(x => x.GetForSndId(It.IsAny<int>())).Returns(clientMock.Object);

@@ -137,7 +137,9 @@ public sealed class AgnumNomenclatureImportService : IAgnumNomenclatureImportSer
 
     public async Task<AgnumImportResult> ApplyAsync(int sndId, CancellationToken ct = default)
     {
-        var products = await _apiClientFactory.GetForSndId(sndId).GetProductsAsync(ct);
+        var client = _apiClientFactory.GetForSndId(sndId);
+        var products = await client.GetProductsAsync(ct);
+        var clients = await client.GetClientsAsync(ct);
         var preview = await BuildPreviewAsync(sndId, products, ct);
         var productById = products.ToDictionary(x => x.Id);
         var existingLinks = await _dbContext.AgnumProductLinks
@@ -146,6 +148,8 @@ public sealed class AgnumNomenclatureImportService : IAgnumNomenclatureImportSer
 
         var created = 0;
         var updated = 0;
+
+        await EnsurePartnersAsync(clients, ct);
 
         foreach (var candidate in preview.ToCreate)
         {
@@ -493,6 +497,211 @@ public sealed class AgnumNomenclatureImportService : IAgnumNomenclatureImportSer
         return supplier;
     }
 
+    private async Task EnsurePartnersAsync(IReadOnlyList<AgnumClientDto> clients, CancellationToken ct)
+    {
+        await EnsureSuppliersAsync(clients.Where(IsSupplier).ToList(), ct);
+        await EnsureCustomersAsync(clients.Where(IsBuyer).ToList(), ct);
+    }
+
+    private async Task EnsureSuppliersAsync(IReadOnlyList<AgnumClientDto> suppliers, CancellationToken ct)
+    {
+        if (suppliers.Count == 0)
+        {
+            return;
+        }
+
+        var normalizedCodes = suppliers
+            .Select(x => NormalizeSupplierCode(x.Code))
+            .Where(x => x is not null)
+            .Select(x => x!)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        var agnumClientIds = suppliers
+            .Where(x => x.Id > 0)
+            .Select(x => x.Id)
+            .Distinct()
+            .ToList();
+
+        var normalizedCodeUpperSet = normalizedCodes
+            .Select(x => x.ToUpperInvariant())
+            .ToHashSet(StringComparer.Ordinal);
+
+        var existingSuppliers = await _dbContext.Suppliers
+            .Where(x => normalizedCodeUpperSet.Contains(x.Code.ToUpper()) || x.AgnumClientId != null && agnumClientIds.Contains(x.AgnumClientId.Value))
+            .ToListAsync(ct);
+        var existingSuppliersByCode = existingSuppliers
+            .ToDictionary(x => x.Code, StringComparer.OrdinalIgnoreCase);
+        var existingSuppliersByAgnumId = existingSuppliers
+            .Where(x => x.AgnumClientId is not null)
+            .ToDictionary(x => x.AgnumClientId!.Value);
+
+        var imported = 0;
+        foreach (var supplierClient in suppliers)
+        {
+            var normalizedCode = NormalizeSupplierCode(supplierClient.Code);
+            if (normalizedCode is null)
+            {
+                continue;
+            }
+
+            var supplierName = string.IsNullOrWhiteSpace(supplierClient.Name)
+                ? normalizedCode
+                : supplierClient.Name.Trim();
+            var contactInfo = BuildSupplierContactInfo(supplierClient);
+
+            var tracked = _dbContext.Suppliers.Local.FirstOrDefault(x =>
+                x.AgnumClientId == supplierClient.Id
+                || string.Equals(x.Code, normalizedCode, StringComparison.OrdinalIgnoreCase));
+            if (tracked is not null)
+            {
+                tracked.AgnumClientId = supplierClient.Id;
+                tracked.Name = supplierName;
+                tracked.ContactInfo = contactInfo;
+                tracked.UpdatedAt = DateTimeOffset.UtcNow;
+                imported++;
+                continue;
+            }
+
+            if ((supplierClient.Id > 0 && existingSuppliersByAgnumId.TryGetValue(supplierClient.Id, out var existing))
+                || existingSuppliersByCode.TryGetValue(normalizedCode, out existing))
+            {
+                existing.AgnumClientId = supplierClient.Id;
+                existing.Code = normalizedCode;
+                existing.Name = supplierName;
+                existing.ContactInfo = contactInfo;
+                existing.UpdatedAt = DateTimeOffset.UtcNow;
+                imported++;
+                continue;
+            }
+
+            var supplier = new Supplier
+            {
+                AgnumClientId = supplierClient.Id,
+                Code = normalizedCode,
+                Name = supplierName,
+                ContactInfo = contactInfo,
+                CreatedAt = DateTimeOffset.UtcNow,
+                UpdatedAt = DateTimeOffset.UtcNow
+            };
+
+            _dbContext.Suppliers.Add(supplier);
+            existingSuppliersByCode[normalizedCode] = supplier;
+            if (supplierClient.Id > 0)
+            {
+                existingSuppliersByAgnumId[supplierClient.Id] = supplier;
+            }
+
+            imported++;
+        }
+
+        _logger.LogInformation("Prepared {SupplierCount} Agnum suppliers for import.", imported);
+    }
+
+    private async Task EnsureCustomersAsync(IReadOnlyList<AgnumClientDto> customers, CancellationToken ct)
+    {
+        if (customers.Count == 0)
+        {
+            return;
+        }
+
+        var normalizedCodes = customers
+            .Select(x => NormalizeCustomerCode(x.Code))
+            .Where(x => x is not null)
+            .Select(x => x!)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        var agnumClientIds = customers
+            .Where(x => x.Id > 0)
+            .Select(x => x.Id)
+            .Distinct()
+            .ToList();
+
+        var normalizedCodeUpperSet = normalizedCodes
+            .Select(x => x.ToUpperInvariant())
+            .ToHashSet(StringComparer.Ordinal);
+
+        var existingCustomers = await _dbContext.Customers
+            .IgnoreQueryFilters()
+            .Where(x => normalizedCodeUpperSet.Contains(x.CustomerCode.ToUpper()) || x.AgnumClientId != null && agnumClientIds.Contains(x.AgnumClientId.Value))
+            .ToListAsync(ct);
+        var existingCustomersByCode = existingCustomers
+            .ToDictionary(x => x.CustomerCode, StringComparer.OrdinalIgnoreCase);
+        var existingCustomersByAgnumId = existingCustomers
+            .Where(x => x.AgnumClientId is not null)
+            .ToDictionary(x => x.AgnumClientId!.Value);
+
+        var imported = 0;
+        foreach (var client in customers)
+        {
+            var normalizedCode = NormalizeCustomerCode(client.Code);
+            if (normalizedCode is null)
+            {
+                continue;
+            }
+
+            var customerName = string.IsNullOrWhiteSpace(client.Name)
+                ? normalizedCode
+                : client.Name.Trim();
+            var customerEmail = client.Email?.Trim() ?? string.Empty;
+            var billingAddress = BuildCustomerAddress(client);
+
+            var tracked = _dbContext.Customers.Local.FirstOrDefault(x =>
+                x.AgnumClientId == client.Id
+                || string.Equals(x.CustomerCode, normalizedCode, StringComparison.OrdinalIgnoreCase));
+            if (tracked is not null)
+            {
+                tracked.AgnumClientId = client.Id;
+                tracked.Name = customerName;
+                tracked.Email = customerEmail;
+                tracked.BillingAddress = billingAddress;
+                tracked.Status = CustomerStatus.Active;
+                tracked.IsDeleted = false;
+                tracked.UpdatedAt = DateTimeOffset.UtcNow;
+                imported++;
+                continue;
+            }
+
+            if ((client.Id > 0 && existingCustomersByAgnumId.TryGetValue(client.Id, out var existing))
+                || existingCustomersByCode.TryGetValue(normalizedCode, out existing))
+            {
+                existing.AgnumClientId = client.Id;
+                existing.CustomerCode = normalizedCode;
+                existing.Name = customerName;
+                existing.Email = customerEmail;
+                existing.BillingAddress = billingAddress;
+                existing.Status = CustomerStatus.Active;
+                existing.IsDeleted = false;
+                existing.UpdatedAt = DateTimeOffset.UtcNow;
+                imported++;
+                continue;
+            }
+
+            var customer = new Customer
+            {
+                AgnumClientId = client.Id,
+                CustomerCode = normalizedCode,
+                Name = customerName,
+                Email = customerEmail,
+                BillingAddress = billingAddress,
+                Status = CustomerStatus.Active,
+                PaymentTerms = PaymentTerms.Net30,
+                CreatedAt = DateTimeOffset.UtcNow,
+                UpdatedAt = DateTimeOffset.UtcNow
+            };
+
+            _dbContext.Customers.Add(customer);
+            existingCustomersByCode[normalizedCode] = customer;
+            if (client.Id > 0)
+            {
+                existingCustomersByAgnumId[client.Id] = customer;
+            }
+
+            imported++;
+        }
+
+        _logger.LogInformation("Prepared {CustomerCount} Agnum customers for import.", imported);
+    }
+
     private async Task EnsureSupplierItemMappingAsync(Item item, Supplier? supplier, AgnumProductDto product, CancellationToken ct)
     {
         if (supplier is null)
@@ -613,6 +822,48 @@ public sealed class AgnumNomenclatureImportService : IAgnumNomenclatureImportSer
 
         var normalized = NormalizeCategoryCode(value);
         return string.IsNullOrWhiteSpace(normalized) ? null : normalized;
+    }
+
+    private static string? NormalizeCustomerCode(string? value)
+        => NormalizeSupplierCode(value);
+
+    private static bool IsSupplier(AgnumClientDto client)
+    {
+        return client.ClientRoles?.Any(x => string.Equals(x, "SUPPLIER", StringComparison.OrdinalIgnoreCase)) == true
+            || client.PozymNumbers?.Contains(1) == true;
+    }
+
+    private static bool IsBuyer(AgnumClientDto client)
+    {
+        return client.ClientRoles?.Any(x => string.Equals(x, "BUYER", StringComparison.OrdinalIgnoreCase)) == true
+            || client.PozymNumbers?.Contains(2) == true;
+    }
+
+    private static Address BuildCustomerAddress(AgnumClientDto client)
+    {
+        var address = string.IsNullOrWhiteSpace(client.RegisteredAddress)
+            ? client.OfficeAddress
+            : client.RegisteredAddress;
+
+        return new Address
+        {
+            Street = address?.Trim() ?? string.Empty
+        };
+    }
+
+    private static string? BuildSupplierContactInfo(AgnumClientDto supplier)
+    {
+        var parts = new[]
+        {
+            string.IsNullOrWhiteSpace(supplier.CompanyCode) ? null : $"CompanyCode={supplier.CompanyCode.Trim()}",
+            string.IsNullOrWhiteSpace(supplier.VatCode) ? null : $"VatCode={supplier.VatCode.Trim()}",
+            string.IsNullOrWhiteSpace(supplier.Email) ? null : $"Email={supplier.Email.Trim()}",
+            string.IsNullOrWhiteSpace(supplier.RegisteredAddress) ? null : $"RegisteredAddress={supplier.RegisteredAddress.Trim()}",
+            string.IsNullOrWhiteSpace(supplier.OfficeAddress) ? null : $"OfficeAddress={supplier.OfficeAddress.Trim()}"
+        };
+
+        var contactInfo = string.Join("; ", parts.Where(x => x is not null));
+        return string.IsNullOrWhiteSpace(contactInfo) ? null : contactInfo;
     }
 
     private static decimal? NormalizePositiveDecimal(decimal? value)
