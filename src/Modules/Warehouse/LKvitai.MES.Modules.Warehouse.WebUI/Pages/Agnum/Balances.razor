@@ -1,0 +1,195 @@
+@page "/agnum/balances"
+@using LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure
+@using LKvitai.MES.Modules.Warehouse.WebUI.Models
+@inject AgnumClient AgnumClient
+
+<PageTitle>Agnum Balances</PageTitle>
+
+<h1>Agnum Balances</h1>
+
+@if (_apiError is not null)
+{
+    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
+                 TraceId="@_apiError.TraceId"
+                 OnRetry="LoadAsync"
+                 OnDismiss="DismissError" />
+}
+
+<div class="card shadow-sm position-relative">
+    <LoadingSpinner IsLoading="_isLoading" />
+
+    <div class="card-body">
+        <div class="row g-3 align-items-end">
+            <div class="col-12 col-md-4">
+                <label class="form-label">Virtual warehouse</label>
+                <select class="form-select" @bind="_selectedSndId" @bind:after="LoadBalancesAsync">
+                    @foreach (var warehouse in _warehouses)
+                    {
+                        <option value="@warehouse.SndId">
+                            @warehouse.AgnumName (@warehouse.SndId) - @warehouse.MesVirtualWarehouseCode
+                        </option>
+                    }
+                </select>
+            </div>
+            <div class="col-12 col-md-4">
+                <label class="form-label">Search</label>
+                <input class="form-control" @bind="_search" @bind:event="oninput" placeholder="SKU or Agnum product id" />
+            </div>
+            <div class="col-12 col-md-4 d-flex gap-2">
+                <button class="btn btn-outline-secondary" type="button" @onclick="LoadAsync" disabled="@_isLoading">Refresh</button>
+            </div>
+        </div>
+
+        <div class="d-flex flex-wrap gap-3 text-muted small mt-3">
+            <span>Rows: @FilteredRows.Count</span>
+            <span>Total qty: @FilteredRows.Sum(x => x.Quantity).ToString("0.###")</span>
+            @if (_balances?.ImportedAt is not null)
+            {
+                <span>Imported: @_balances.ImportedAt.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</span>
+            }
+            @if (_balances?.RunId is not null)
+            {
+                <span>Run: @_balances.RunId</span>
+            }
+        </div>
+
+        <div class="table-responsive mt-3">
+            <table class="table table-sm align-middle">
+                <thead>
+                <tr>
+                    <th>SKU</th>
+                    <th>Agnum Product</th>
+                    <th>MES Item</th>
+                    <th class="text-end">Quantity</th>
+                    <th>UoM</th>
+                    <th>Imported</th>
+                </tr>
+                </thead>
+                <tbody>
+                @if (FilteredRows.Count == 0)
+                {
+                    <tr>
+                        <td colspan="6" class="text-muted py-3">No Agnum balances found.</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var row in FilteredRows.Take(500))
+                    {
+                        <tr>
+                            <td class="font-monospace">@row.Sku</td>
+                            <td class="font-monospace">@row.AgnumProductId</td>
+                            <td>@(row.ItemId?.ToString() ?? "-")</td>
+                            <td class="text-end">@row.Quantity.ToString("0.###")</td>
+                            <td>@row.Uom</td>
+                            <td>@row.ImportedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</td>
+                        </tr>
+                    }
+                }
+                </tbody>
+            </table>
+        </div>
+
+        @if (FilteredRows.Count > 500)
+        {
+            <div class="text-muted small">Showing first 500 rows. Use search to narrow the list.</div>
+        }
+    </div>
+</div>
+
+@code {
+    private readonly List<AgnumVirtualWarehouseDto> _warehouses = [];
+    private AgnumBalancesResponseDto? _balances;
+    private ApiException? _apiError;
+    private bool _isLoading;
+    private int _selectedSndId;
+    private string? _search;
+
+    private List<AgnumBalanceRowDto> FilteredRows
+    {
+        get
+        {
+            var rows = _balances?.Balances ?? Array.Empty<AgnumBalanceRowDto>();
+            if (string.IsNullOrWhiteSpace(_search))
+            {
+                return rows.ToList();
+            }
+
+            var term = _search.Trim();
+            return rows
+                .Where(x =>
+                    (x.Sku?.Contains(term, StringComparison.OrdinalIgnoreCase) ?? false)
+                    || x.AgnumProductId.ToString().Contains(term, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            _warehouses.Clear();
+            _warehouses.AddRange(await AgnumClient.GetVirtualWarehousesAsync());
+            if (_selectedSndId <= 0)
+            {
+                _selectedSndId = _warehouses.FirstOrDefault(x => x.IsImportEnabled)?.SndId
+                    ?? _warehouses.FirstOrDefault()?.SndId
+                    ?? 0;
+            }
+
+            await LoadBalancesAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task LoadBalancesAsync()
+    {
+        if (_selectedSndId <= 0)
+        {
+            _balances = null;
+            return;
+        }
+
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            _balances = await AgnumClient.GetBalancesAsync(_selectedSndId);
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private void DismissError()
+    {
+        _apiError = null;
+    }
+
+    private static string BuildErrorMessage(ApiException ex)
+        => ex.UserMessage
+           ?? ex.ProblemDetails?.Detail
+           ?? ex.ProblemDetails?.Title
+           ?? "Agnum balances request failed.";
+}

@@ -86,6 +86,12 @@ public sealed class AgnumClient
     public Task<IReadOnlyList<AgnumExportHistoryDto>> GetHistoryAsync(CancellationToken cancellationToken = default)
         => GetAsync<IReadOnlyList<AgnumExportHistoryDto>>("/api/warehouse/v1/agnum/history", cancellationToken);
 
+    public Task<IReadOnlyList<AgnumVirtualWarehouseDto>> GetVirtualWarehousesAsync(CancellationToken cancellationToken = default)
+        => GetAsync<IReadOnlyList<AgnumVirtualWarehouseDto>>("/api/warehouse/v1/agnum/virtual-warehouses", cancellationToken);
+
+    public Task<AgnumBalancesResponseDto> GetBalancesAsync(int sndId, CancellationToken cancellationToken = default)
+        => GetAsync<AgnumBalancesResponseDto>($"/api/warehouse/v1/agnum/balances?sndId={sndId}", cancellationToken);
+
     private Task<T> GetAsync<T>(string relativeUrl, CancellationToken cancellationToken)
         => SendAndReadAsync<T>(() =>
         {
