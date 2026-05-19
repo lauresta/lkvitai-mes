@@ -103,3 +103,30 @@ public sealed record AgnumExportHistoryDto
     public int RetryCount { get; init; }
     public string Trigger { get; init; } = string.Empty;
 }
+
+public sealed record AgnumVirtualWarehouseDto
+{
+    public int SndId { get; init; }
+    public string AgnumName { get; init; } = string.Empty;
+    public string MesVirtualWarehouseCode { get; init; } = string.Empty;
+    public string ApiKeyConfigName { get; init; } = string.Empty;
+    public bool IsImportEnabled { get; init; }
+}
+
+public sealed record AgnumBalanceRowDto
+{
+    public int AgnumProductId { get; init; }
+    public string? Sku { get; init; }
+    public decimal Quantity { get; init; }
+    public string Uom { get; init; } = string.Empty;
+    public int? ItemId { get; init; }
+    public DateTime ImportedAt { get; init; }
+}
+
+public sealed record AgnumBalancesResponseDto
+{
+    public int SndId { get; init; }
+    public Guid? RunId { get; init; }
+    public DateTime? ImportedAt { get; init; }
+    public IReadOnlyList<AgnumBalanceRowDto> Balances { get; init; } = Array.Empty<AgnumBalanceRowDto>();
+}
