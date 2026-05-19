@@ -40,34 +40,28 @@ public sealed class AgnumBalanceImportService : IAgnumBalanceImportService
             var client = _apiClientFactory.GetForSndId(sndId);
             var products = await client.GetProductsAsync(ct);
             var links = await _dbContext.AgnumProductLinks
+                .AsNoTracking()
                 .Where(x => x.SndId == sndId)
                 .Include(x => x.Item)
                 .ToDictionaryAsync(x => x.AgnumProductId, x => x, ct);
 
             var balanceCount = 0;
+            var importedAt = DateTime.UtcNow;
             foreach (var product in products)
             {
-                var existing = await _dbContext.AgnumVirtualWarehouseBalances
-                    .FirstOrDefaultAsync(x => x.ImportRunId == run.Id && x.SndId == sndId && x.AgnumProductId == product.Id, ct);
-
                 var link = links.TryGetValue(product.Id, out var productLink) ? productLink : null;
-                if (existing is null)
+                _dbContext.AgnumVirtualWarehouseBalances.Add(new AgnumVirtualWarehouseBalance
                 {
-                    existing = new AgnumVirtualWarehouseBalance
-                    {
-                        ImportRunId = run.Id,
-                        SndId = sndId,
-                        AgnumProductId = product.Id
-                    };
-                    _dbContext.AgnumVirtualWarehouseBalances.Add(existing);
-                }
-
-                existing.ItemId = link?.ItemId;
-                existing.Sku = link?.Item?.InternalSKU;
-                existing.Quantity = product.Balance;
-                existing.Uom = product.Pcs;
-                existing.ImportedAt = DateTime.UtcNow;
-                existing.SourceHash = ComputeRawHash(product);
+                    ImportRunId = run.Id,
+                    SndId = sndId,
+                    AgnumProductId = product.Id,
+                    ItemId = link?.ItemId,
+                    Sku = link?.Item?.InternalSKU,
+                    Quantity = product.Balance,
+                    Uom = product.Pcs,
+                    ImportedAt = importedAt,
+                    SourceHash = ComputeRawHash(product)
+                });
 
                 balanceCount++;
             }

@@ -262,6 +262,67 @@ public class AgnumImportConflictDetectionTests
         (await db.ItemCategories.CountAsync(x => x.Code == "GROUP-CATEGORY-SUBGROUP")).Should().Be(1);
     }
 
+    [Fact]
+    public async Task ApplyAsync_ShouldFetchProductsOnlyOnce()
+    {
+        await using var db = CreateDbContext();
+        await SeedUnitOfMeasuresAsync(db, "vnt");
+
+        var product = new AgnumProductDto
+        {
+            Id = 9,
+            Code = "SKU-FETCH-ONCE",
+            Name = "Fetch once",
+            Pcs = "vnt",
+            Enabled = true,
+            Balance = 1
+        };
+
+        var clientMock = new Mock<IAgnumApiClient>();
+        clientMock
+            .Setup(x => x.GetProductsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<AgnumProductDto> { product });
+
+        var factoryMock = new Mock<IAgnumApiClientFactory>();
+        factoryMock.Setup(x => x.GetForSndId(It.IsAny<int>())).Returns(clientMock.Object);
+
+        var service = new AgnumNomenclatureImportService(
+            db,
+            factoryMock.Object,
+            new LoggerFactory().CreateLogger<AgnumNomenclatureImportService>());
+
+        await service.ApplyAsync(493);
+
+        clientMock.Verify(x => x.GetProductsAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public async Task ApplyAsync_WhenNettoIsNotPositive_ShouldStoreNullWeight(decimal netto)
+    {
+        await using var db = CreateDbContext();
+        await SeedUnitOfMeasuresAsync(db, "vnt");
+
+        var product = new AgnumProductDto
+        {
+            Id = 10,
+            Code = $"SKU-WEIGHT-{netto}",
+            Name = "Invalid weight",
+            Pcs = "vnt",
+            Enabled = true,
+            Balance = 1,
+            Netto = netto
+        };
+
+        var service = CreateService(db, product);
+
+        await service.ApplyAsync(493);
+
+        var item = await db.Items.SingleAsync(x => x.InternalSKU == product.Code);
+        item.Weight.Should().BeNull();
+    }
+
     private static AgnumNomenclatureImportService CreateService(WarehouseDbContext db, params AgnumProductDto[] products)
     {
         var clientMock = new Mock<IAgnumApiClient>();

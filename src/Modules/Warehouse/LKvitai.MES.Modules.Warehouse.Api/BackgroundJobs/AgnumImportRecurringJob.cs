@@ -27,6 +27,7 @@ public sealed class AgnumImportRecurringJob
 
     public async Task ExecuteAsync(CancellationToken cancellationToken = default)
     {
+        var startedAt = DateTimeOffset.UtcNow;
         var mappings = await _dbContext.AgnumWarehouseMappings
             .AsNoTracking()
             .Where(x => x.IsImportEnabled)
@@ -42,13 +43,30 @@ public sealed class AgnumImportRecurringJob
         {
             try
             {
+                var warehouseStartedAt = DateTimeOffset.UtcNow;
+                _logger.LogInformation(
+                    "Agnum import started for sndId {SndId} ({AgnumName}).",
+                    mapping.SndId,
+                    mapping.AgnumName);
+
+                _logger.LogInformation("Agnum nomenclature import started for sndId {SndId}.", mapping.SndId);
                 var productResult = await _nomenclatureImportService.ApplyAsync(mapping.SndId, cancellationToken);
+                _logger.LogInformation(
+                    "Agnum nomenclature import completed for sndId {SndId}. Created={Created} Updated={Updated} Skipped={Skipped} Conflicts={Conflicts}",
+                    mapping.SndId,
+                    productResult.Created,
+                    productResult.Updated,
+                    productResult.Skipped,
+                    productResult.Conflicts.Count);
+
+                _logger.LogInformation("Agnum balance import started for sndId {SndId}.", mapping.SndId);
                 var balanceRunId = await _balanceImportService.StartImportAsync(mapping.SndId, cancellationToken);
 
                 succeeded++;
                 _logger.LogInformation(
-                    "Agnum import completed for sndId {SndId}. Created={Created} Updated={Updated} Skipped={Skipped} Conflicts={Conflicts} BalanceRunId={BalanceRunId}",
+                    "Agnum import completed for sndId {SndId} in {ElapsedMs} ms. Created={Created} Updated={Updated} Skipped={Skipped} Conflicts={Conflicts} BalanceRunId={BalanceRunId}",
                     mapping.SndId,
+                    (DateTimeOffset.UtcNow - warehouseStartedAt).TotalMilliseconds,
                     productResult.Created,
                     productResult.Updated,
                     productResult.Skipped,
@@ -66,7 +84,8 @@ public sealed class AgnumImportRecurringJob
         }
 
         _logger.LogInformation(
-            "Agnum daily import finished. Succeeded={Succeeded} Failed={Failed}",
+            "Agnum daily import finished in {ElapsedMs} ms. Succeeded={Succeeded} Failed={Failed}",
+            (DateTimeOffset.UtcNow - startedAt).TotalMilliseconds,
             succeeded,
             failed);
     }
