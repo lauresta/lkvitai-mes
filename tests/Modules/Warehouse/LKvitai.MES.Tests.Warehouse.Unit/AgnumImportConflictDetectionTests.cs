@@ -323,6 +323,40 @@ public class AgnumImportConflictDetectionTests
         item.Weight.Should().BeNull();
     }
 
+    [Fact]
+    public async Task PreviewAsync_WhenAgnumPayloadContainsDuplicateCodes_ShouldReturnDuplicateAgnumCodeConflicts()
+    {
+        await using var db = CreateDbContext();
+        await SeedUnitOfMeasuresAsync(db, "vnt");
+
+        var first = new AgnumProductDto
+        {
+            Id = 11,
+            Code = "SKU-DUP",
+            Name = "Duplicate first",
+            Pcs = "vnt",
+            Enabled = true,
+            Balance = 1
+        };
+        var second = new AgnumProductDto
+        {
+            Id = 12,
+            Code = " sku-dup ",
+            Name = "Duplicate second",
+            Pcs = "vnt",
+            Enabled = true,
+            Balance = 1
+        };
+
+        var service = CreateService(db, first, second);
+
+        var preview = await service.PreviewAsync(493);
+
+        preview.ToCreate.Should().BeEmpty();
+        preview.Conflicts.Should().HaveCount(2);
+        preview.Conflicts.Should().OnlyContain(x => x.Reason == "DuplicateAgnumCode");
+    }
+
     private static AgnumNomenclatureImportService CreateService(WarehouseDbContext db, params AgnumProductDto[] products)
     {
         var clientMock = new Mock<IAgnumApiClient>();

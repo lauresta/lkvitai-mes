@@ -49,6 +49,14 @@ public sealed class AgnumNomenclatureImportService : IAgnumNomenclatureImportSer
         var linkByProductId = existingLinks
             .ToDictionary(x => x.AgnumProductId, x => x);
 
+        var duplicateAgnumCodes = products
+            .Select(x => NormalizeSkuCode(x.Code))
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .GroupBy(x => x, StringComparer.OrdinalIgnoreCase)
+            .Where(x => x.Count() > 1)
+            .Select(x => x.Key)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
         var preview = new AgnumImportPreview
         {
             SndId = sndId,
@@ -64,6 +72,17 @@ public sealed class AgnumNomenclatureImportService : IAgnumNomenclatureImportSer
                     AgnumProductId = product.Id,
                     Code = product.Code,
                     Reason = "MissingUoM"
+                });
+                continue;
+            }
+
+            if (duplicateAgnumCodes.Contains(NormalizeSkuCode(product.Code)))
+            {
+                preview.Conflicts.Add(new AgnumImportConflict
+                {
+                    AgnumProductId = product.Id,
+                    Code = product.Code,
+                    Reason = "DuplicateAgnumCode"
                 });
                 continue;
             }
@@ -599,6 +618,11 @@ public sealed class AgnumNomenclatureImportService : IAgnumNomenclatureImportSer
     private static decimal? NormalizePositiveDecimal(decimal? value)
     {
         return value > 0 ? value : null;
+    }
+
+    private static string NormalizeSkuCode(string? value)
+    {
+        return value?.Trim() ?? string.Empty;
     }
 
     private static List<string> GetProductBarcodes(AgnumProductDto product)
