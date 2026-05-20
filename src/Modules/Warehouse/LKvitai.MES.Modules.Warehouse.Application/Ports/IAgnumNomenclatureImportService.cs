@@ -18,6 +18,7 @@ public sealed class AgnumImportPreview
 public sealed class AgnumImportCandidate
 {
     public int AgnumProductId { get; init; }
+    public int? ExistingItemId { get; init; }
     public string Code { get; init; } = string.Empty;
     public string Name { get; init; } = string.Empty;
     public string Pcs { get; init; } = string.Empty;

@@ -39,7 +39,7 @@ public class AgnumImportConflictDetectionTests
     }
 
     [Fact]
-    public async Task PreviewAsync_WhenDuplicateItemExistsWithoutLink_ShouldReturnDuplicateSku()
+    public async Task PreviewAsync_WhenItemSkuExistsWithoutCurrentWarehouseLink_ShouldLinkExistingItem()
     {
         await using var db = CreateDbContext();
         await SeedUnitOfMeasuresAsync(db, "vnt");
@@ -61,8 +61,43 @@ public class AgnumImportConflictDetectionTests
 
         var preview = await service.PreviewAsync(493);
 
-        preview.Conflicts.Should().ContainSingle();
-        preview.Conflicts[0].Reason.Should().Be("DuplicateSku");
+        preview.Conflicts.Should().BeEmpty();
+        preview.ToCreate.Should().ContainSingle(x =>
+            x.AgnumProductId == 2
+            && x.Code == "SKU-001"
+            && x.ExistingItemId.HasValue);
+    }
+
+    [Fact]
+    public async Task ApplyAsync_WhenItemSkuExistsWithoutCurrentWarehouseLink_ShouldCreateLinkToExistingItem()
+    {
+        await using var db = CreateDbContext();
+        await SeedUnitOfMeasuresAsync(db, "vnt");
+
+        db.Items.Add(new Item { InternalSKU = "SKU-001", Name = "Existing Item", BaseUoM = "vnt", CategoryId = await GetOrCreateCategoryIdAsync(db) });
+        await db.SaveChangesAsync();
+
+        var existingItem = await db.Items.SingleAsync(x => x.InternalSKU == "SKU-001");
+        var product = new AgnumProductDto
+        {
+            Id = 2,
+            Code = "SKU-001",
+            Name = "Existing Item",
+            Pcs = "vnt",
+            Enabled = true,
+            Balance = 1
+        };
+
+        var service = CreateService(db, product);
+
+        var result = await service.ApplyAsync(496);
+
+        result.Conflicts.Should().BeEmpty();
+        result.Created.Should().Be(1);
+        db.Items.Count(x => x.InternalSKU == "SKU-001").Should().Be(1);
+        var link = await db.AgnumProductLinks.SingleAsync(x => x.SndId == 496 && x.AgnumProductId == 2);
+        link.ItemId.Should().Be(existingItem.Id);
+        link.AgnumCode.Should().Be("SKU-001");
     }
 
     [Fact]

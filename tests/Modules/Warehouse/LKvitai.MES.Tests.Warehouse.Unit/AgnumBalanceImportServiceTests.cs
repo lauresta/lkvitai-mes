@@ -81,6 +81,7 @@ public class AgnumBalanceImportServiceTests
         var balance = await db.AgnumVirtualWarehouseBalances.FirstOrDefaultAsync(x => x.ImportRunId == runId);
         balance.Should().NotBeNull();
         balance!.ItemId.Should().BeNull();
+        balance.Sku.Should().Be("SKU-002");
         balance.Quantity.Should().Be(5);
     }
 

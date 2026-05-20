@@ -66,6 +66,18 @@ public sealed class AgnumNomenclatureImportService : IAgnumNomenclatureImportSer
 
         foreach (var product in products)
         {
+            var normalizedCode = NormalizeSkuCode(product.Code);
+            if (string.IsNullOrWhiteSpace(normalizedCode))
+            {
+                preview.Conflicts.Add(new AgnumImportConflict
+                {
+                    AgnumProductId = product.Id,
+                    Code = product.Code,
+                    Reason = "MissingSku"
+                });
+                continue;
+            }
+
             if (string.IsNullOrWhiteSpace(product.Pcs))
             {
                 preview.Conflicts.Add(new AgnumImportConflict
@@ -77,7 +89,7 @@ public sealed class AgnumNomenclatureImportService : IAgnumNomenclatureImportSer
                 continue;
             }
 
-            if (duplicateAgnumCodes.Contains(NormalizeSkuCode(product.Code)))
+            if (duplicateAgnumCodes.Contains(normalizedCode))
             {
                 preview.Conflicts.Add(new AgnumImportConflict
                 {
@@ -113,13 +125,15 @@ public sealed class AgnumNomenclatureImportService : IAgnumNomenclatureImportSer
                 continue;
             }
 
-            if (itemLookup.ContainsKey(product.Code))
+            if (itemLookup.TryGetValue(product.Code, out var existingItem))
             {
-                preview.Conflicts.Add(new AgnumImportConflict
+                preview.ToCreate.Add(new AgnumImportCandidate
                 {
                     AgnumProductId = product.Id,
+                    ExistingItemId = existingItem.Id,
                     Code = product.Code,
-                    Reason = "DuplicateSku"
+                    Name = product.Name,
+                    Pcs = product.Pcs
                 });
                 continue;
             }
@@ -168,7 +182,15 @@ public sealed class AgnumNomenclatureImportService : IAgnumNomenclatureImportSer
                     continue;
                 }
 
-                await CreateProductAsync(product, sndId, ct);
+                if (candidate.ExistingItemId is not null)
+                {
+                    await LinkExistingProductAsync(product, candidate.ExistingItemId.Value, sndId, ct);
+                }
+                else
+                {
+                    await CreateProductAsync(product, sndId, ct);
+                }
+
                 created++;
             }
 
@@ -254,6 +276,48 @@ public sealed class AgnumNomenclatureImportService : IAgnumNomenclatureImportSer
         });
 
         await AddExternalAttributesAsync(item, product, sndId, ct);
+    }
+
+    private async Task LinkExistingProductAsync(AgnumProductDto product, int itemId, int sndId, CancellationToken ct)
+    {
+        var item = await _dbContext.Items.FindAsync(new object[] { itemId }, ct);
+        if (item is null)
+        {
+            _logger.LogWarning(
+                "Missing item {ItemId} for Agnum product {AgnumProductId} during link import.",
+                itemId,
+                product.Id);
+            return;
+        }
+
+        var category = await EnsureCategoryHierarchyAsync(product.Group, product.Category, product.Subgroup, ct);
+        var unitOfMeasure = await EnsureUnitOfMeasureAsync(product.Pcs, product.UnitOfMeasureType, ct);
+        var supplier = await EnsureSupplierAsync(product.SupplierCode, product.SupplierName, ct);
+
+        item.Name = product.Name;
+        item.BaseUoM = unitOfMeasure.Code;
+        item.BaseUnit = unitOfMeasure;
+        item.Category = category;
+        item.Status = product.Enabled ? "Active" : "Discontinued";
+        item.Weight = NormalizePositiveDecimal(product.Netto);
+        item.PrimaryBarcode = GetProductBarcodes(product).FirstOrDefault() ?? item.PrimaryBarcode;
+        item.UpdatedAt = DateTimeOffset.UtcNow;
+
+        await AddItemBarcodesAsync(item, product, ct);
+        await EnsureSupplierItemMappingAsync(item, supplier, product, ct);
+        await AddExternalAttributesAsync(item, product, sndId, ct);
+
+        _dbContext.AgnumProductLinks.Add(new AgnumProductLink
+        {
+            Item = item,
+            SndId = sndId,
+            AgnumProductId = product.Id,
+            AgnumCode = product.Code,
+            AgnumEnabled = product.Enabled,
+            AgnumModifiedAt = NormalizeUtcDateTime(product.ModifyDate),
+            LastImportedAt = DateTime.UtcNow,
+            RawHash = ComputeRawHash(product)
+        });
     }
 
     private async Task UpdateProductAsync(AgnumProductLink link, AgnumProductDto product, int sndId, CancellationToken ct)
