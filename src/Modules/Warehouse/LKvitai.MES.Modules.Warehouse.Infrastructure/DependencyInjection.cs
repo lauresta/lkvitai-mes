@@ -69,6 +69,7 @@ public static class DependencyInjection
         services.AddSingleton<IAgnumApiClientFactory, AgnumApiClientFactory>();
         services.AddScoped<IAgnumNomenclatureImportService, AgnumNomenclatureImportService>();
         services.AddScoped<IAgnumBalanceImportService, AgnumBalanceImportService>();
+        services.AddScoped<IAgnumDistributionService, AgnumDistributionService>();
 
         // Consistency checks
         services.AddScoped<IConsistencyCheck, StuckReservationCheck>();

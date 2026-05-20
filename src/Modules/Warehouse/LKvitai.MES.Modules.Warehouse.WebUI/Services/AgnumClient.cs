@@ -92,6 +92,27 @@ public sealed class AgnumClient
     public Task<AgnumBalancesResponseDto> GetBalancesAsync(int sndId, CancellationToken cancellationToken = default)
         => GetAsync<AgnumBalancesResponseDto>($"/api/warehouse/v1/agnum/balances?sndId={sndId}", cancellationToken);
 
+    public async Task DistributeAsync(
+        Guid virtualBalanceId,
+        string locationCode,
+        string warehouseId,
+        decimal quantity,
+        Guid operatorId,
+        CancellationToken cancellationToken = default)
+    {
+        await PostAsync<object>(
+            $"/api/warehouse/v1/agnum/balances/{virtualBalanceId}/distribute",
+            new DistributeAgnumBalanceRequestDto(locationCode, warehouseId, quantity, operatorId),
+            cancellationToken);
+    }
+
+    public Task<List<AgnumBalanceDistributionDto>> GetDistributionsAsync(
+        Guid virtualBalanceId,
+        CancellationToken cancellationToken = default)
+        => GetAsync<List<AgnumBalanceDistributionDto>>(
+            $"/api/warehouse/v1/agnum/balances/{virtualBalanceId}/distributions",
+            cancellationToken);
+
     private Task<T> GetAsync<T>(string relativeUrl, CancellationToken cancellationToken)
         => SendAndReadAsync<T>(() =>
         {

@@ -215,6 +215,8 @@ public sealed class MasterDataAdminClient
         bool includeVirtual,
         int pageNumber,
         int pageSize,
+        Guid? warehouseId = null,
+        string? type = null,
         CancellationToken cancellationToken = default)
     {
         var query = new List<string>
@@ -232,6 +234,16 @@ public sealed class MasterDataAdminClient
         if (!string.IsNullOrWhiteSpace(status))
         {
             query.Add($"status={Uri.EscapeDataString(status)}");
+        }
+
+        if (warehouseId.HasValue)
+        {
+            query.Add($"warehouseId={warehouseId.Value}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(type))
+        {
+            query.Add($"type={Uri.EscapeDataString(type)}");
         }
 
         return GetAsync<PagedApiResponse<AdminLocationDto>>(

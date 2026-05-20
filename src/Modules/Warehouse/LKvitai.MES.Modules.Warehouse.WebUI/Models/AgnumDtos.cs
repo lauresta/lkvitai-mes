@@ -115,9 +115,12 @@ public sealed record AgnumVirtualWarehouseDto
 
 public sealed record AgnumBalanceRowDto
 {
+    public Guid Id { get; init; }
     public int AgnumProductId { get; init; }
     public string? Sku { get; init; }
     public decimal Quantity { get; init; }
+    public decimal DistributedQty { get; init; }
+    public decimal RemainingQty { get; init; }
     public string Uom { get; init; } = string.Empty;
     public int? ItemId { get; init; }
     public DateTime ImportedAt { get; init; }
@@ -129,4 +132,25 @@ public sealed record AgnumBalancesResponseDto
     public Guid? RunId { get; init; }
     public DateTime? ImportedAt { get; init; }
     public IReadOnlyList<AgnumBalanceRowDto> Balances { get; init; } = Array.Empty<AgnumBalanceRowDto>();
+}
+
+public sealed record DistributeAgnumBalanceRequestDto(
+    string LocationCode,
+    string WarehouseId,
+    decimal Quantity,
+    Guid OperatorId);
+
+public sealed record AgnumBalanceDistributionDto
+{
+    public Guid Id { get; init; }
+    public Guid VirtualBalanceId { get; init; }
+    public int SndId { get; init; }
+    public int AgnumProductId { get; init; }
+    public string Sku { get; init; } = string.Empty;
+    public string LocationCode { get; init; } = string.Empty;
+    public string WarehouseId { get; init; } = string.Empty;
+    public decimal Quantity { get; init; }
+    public Guid StockMovementCommandId { get; init; }
+    public DateTime DistributedAt { get; init; }
+    public string DistributedBy { get; init; } = string.Empty;
 }
