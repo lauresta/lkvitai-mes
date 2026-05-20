@@ -79,11 +79,7 @@ public sealed class StockController : ControllerBase
             .Query<AvailableStockView>()
             .Where(x => x.OnHandQty != 0m);
 
-        if (string.IsNullOrWhiteSpace(warehouse))
-        {
-            query = query.Where(x => x.WarehouseId == DefaultWarehouseId);
-        }
-        else
+        if (!string.IsNullOrWhiteSpace(warehouse))
         {
             var normalizedWarehouse = warehouse.Trim();
             query = query.Where(x => x.WarehouseId == normalizedWarehouse);
