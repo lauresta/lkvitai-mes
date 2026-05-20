@@ -65,6 +65,7 @@ public class WarehouseDbContext : DbContext
     public DbSet<ItemExternalAttribute> ItemExternalAttributes => Set<ItemExternalAttribute>();
     public DbSet<AgnumBalanceImportRun> AgnumBalanceImportRuns => Set<AgnumBalanceImportRun>();
     public DbSet<AgnumVirtualWarehouseBalance> AgnumVirtualWarehouseBalances => Set<AgnumVirtualWarehouseBalance>();
+    public DbSet<AgnumBalanceDistribution> AgnumBalanceDistributions => Set<AgnumBalanceDistribution>();
     public DbSet<TransactionExport> TransactionExports => Set<TransactionExport>();
     public DbSet<SupplierItemMapping> SupplierItemMappings => Set<SupplierItemMapping>();
     public DbSet<Location> Locations => Set<Location>();
@@ -365,6 +366,24 @@ public class WarehouseDbContext : DbContext
             entity.HasIndex(e => new { e.SndId, e.AgnumProductId });
             entity.HasOne(e => e.ImportRun).WithMany().HasForeignKey(e => e.ImportRunId).OnDelete(DeleteBehavior.Cascade);
             entity.HasOne<Item>().WithMany().HasForeignKey(e => e.ItemId).OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<AgnumBalanceDistribution>(entity =>
+        {
+            entity.ToTable("agnum_balance_distributions");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Sku).HasMaxLength(100).IsRequired();
+            entity.Property(e => e.LocationCode).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.WarehouseId).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.Quantity).HasPrecision(18, 4).IsRequired();
+            entity.Property(e => e.DistributedBy).HasMaxLength(200).IsRequired();
+            entity.HasIndex(e => e.VirtualBalanceId);
+            entity.HasIndex(e => e.StockMovementCommandId).IsUnique();
+            entity.HasIndex(e => new { e.SndId, e.AgnumProductId });
+            entity.HasOne(e => e.VirtualBalance)
+                .WithMany()
+                .HasForeignKey(e => e.VirtualBalanceId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<Supplier>(entity =>

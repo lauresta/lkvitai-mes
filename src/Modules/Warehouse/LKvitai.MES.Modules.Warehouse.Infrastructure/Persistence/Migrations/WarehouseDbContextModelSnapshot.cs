@@ -235,6 +235,63 @@ namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.Migrations
                     b.ToTable("agnum_balance_import_runs", "public");
                 });
 
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.AgnumBalanceDistribution", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("AgnumProductId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("DistributedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DistributedBy")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("LocationCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<decimal>("Quantity")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("numeric(18,4)");
+
+                    b.Property<int>("SndId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Sku")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<Guid>("StockMovementCommandId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("VirtualBalanceId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("WarehouseId")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SndId", "AgnumProductId");
+
+                    b.HasIndex("StockMovementCommandId")
+                        .IsUnique();
+
+                    b.HasIndex("VirtualBalanceId");
+
+                    b.ToTable("agnum_balance_distributions", "public");
+                });
+
             modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.AgnumExportConfig", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3916,6 +3973,17 @@ namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Item");
+                });
+
+            modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.AgnumBalanceDistribution", b =>
+                {
+                    b.HasOne("LKvitai.MES.Modules.Warehouse.Domain.Entities.AgnumVirtualWarehouseBalance", "VirtualBalance")
+                        .WithMany()
+                        .HasForeignKey("VirtualBalanceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("VirtualBalance");
                 });
 
             modelBuilder.Entity("LKvitai.MES.Modules.Warehouse.Domain.Entities.AgnumVirtualWarehouseBalance", b =>

@@ -1,7 +1,10 @@
+using LKvitai.MES.BuildingBlocks.SharedKernel;
 using LKvitai.MES.Modules.Warehouse.Api.Security;
+using LKvitai.MES.Modules.Warehouse.Application.Commands;
 using LKvitai.MES.Modules.Warehouse.Application.Ports;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -16,15 +19,21 @@ public sealed class AgnumImportController : ControllerBase
     private readonly WarehouseDbContext _dbContext;
     private readonly IAgnumNomenclatureImportService _nomenclatureImportService;
     private readonly IAgnumBalanceImportService _balanceImportService;
+    private readonly IAgnumDistributionService _distributionService;
+    private readonly IMediator _mediator;
 
     public AgnumImportController(
         WarehouseDbContext dbContext,
         IAgnumNomenclatureImportService nomenclatureImportService,
-        IAgnumBalanceImportService balanceImportService)
+        IAgnumBalanceImportService balanceImportService,
+        IAgnumDistributionService distributionService,
+        IMediator mediator)
     {
         _dbContext = dbContext;
         _nomenclatureImportService = nomenclatureImportService;
         _balanceImportService = balanceImportService;
+        _distributionService = distributionService;
+        _mediator = mediator;
     }
 
     [HttpGet("virtual-warehouses")]
@@ -164,12 +173,21 @@ public sealed class AgnumImportController : ControllerBase
             return Ok(new { SndId = sndId, RunId = (Guid?)null, Balances = Array.Empty<object>() });
         }
 
-        var balances = await _dbContext.AgnumVirtualWarehouseBalances
+        var distributedByBalance = await _dbContext.AgnumBalanceDistributions
+            .AsNoTracking()
+            .Where(d => d.SndId == sndId)
+            .GroupBy(d => d.VirtualBalanceId)
+            .Select(g => new { VirtualBalanceId = g.Key, Total = g.Sum(x => x.Quantity) })
+            .ToListAsync(ct);
+        var distributedLookup = distributedByBalance.ToDictionary(x => x.VirtualBalanceId, x => x.Total);
+
+        var balanceRows = await _dbContext.AgnumVirtualWarehouseBalances
             .AsNoTracking()
             .Where(x => x.ImportRunId == latestRun.Id)
             .OrderByDescending(x => x.Quantity)
             .Select(x => new
             {
+                x.Id,
                 x.AgnumProductId,
                 x.Sku,
                 x.Quantity,
@@ -179,7 +197,70 @@ public sealed class AgnumImportController : ControllerBase
             })
             .ToListAsync(ct);
 
+        var balances = balanceRows
+            .Select(x =>
+            {
+                var distributedQty = distributedLookup.GetValueOrDefault(x.Id);
+                return new AgnumVirtualBalanceRow(
+                    x.Id,
+                    x.AgnumProductId,
+                    x.Sku,
+                    x.Quantity,
+                    distributedQty,
+                    x.Quantity - distributedQty,
+                    x.Uom,
+                    x.ItemId,
+                    x.ImportedAt);
+            })
+            .ToList();
+
         return Ok(new { SndId = sndId, RunId = latestRun.Id, ImportedAt = latestRun.FinishedAt, Balances = balances });
+    }
+
+    [HttpPost("balances/{id:guid}/distribute")]
+    public async Task<IActionResult> DistributeBalanceAsync(
+        Guid id,
+        [FromBody] DistributeAgnumBalanceRequest request,
+        CancellationToken ct = default)
+    {
+        var result = await _mediator.Send(new DistributeAgnumBalanceCommand
+        {
+            CorrelationId = Guid.NewGuid(),
+            CausationId = Guid.NewGuid(),
+            VirtualBalanceId = id,
+            LocationCode = request.LocationCode,
+            WarehouseId = request.WarehouseId,
+            Quantity = request.Quantity,
+            OperatorId = request.OperatorId
+        }, ct);
+
+        if (result.IsSuccess)
+        {
+            return Ok(new { });
+        }
+
+        if (result.ErrorCode == DomainErrorCodes.NotFound)
+        {
+            return NotFound(new { Error = result.ErrorDetail ?? result.Error });
+        }
+
+        return BadRequest(new { Error = result.ErrorDetail ?? result.Error });
+    }
+
+    [HttpGet("balances/{id:guid}/distributions")]
+    public async Task<IActionResult> GetBalanceDistributionsAsync(
+        Guid id,
+        CancellationToken ct = default)
+    {
+        try
+        {
+            var summary = await _distributionService.GetVirtualBalanceSummaryAsync(id, ct);
+            return Ok(summary.Distributions);
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
     }
 
     private sealed record AgnumWarehouseResponse(
@@ -188,4 +269,21 @@ public sealed class AgnumImportController : ControllerBase
         string MesVirtualWarehouseCode,
         string ApiKeyConfigName,
         bool IsImportEnabled);
+
+    private sealed record AgnumVirtualBalanceRow(
+        Guid Id,
+        int AgnumProductId,
+        string? Sku,
+        decimal Quantity,
+        decimal DistributedQty,
+        decimal RemainingQty,
+        string Uom,
+        int? ItemId,
+        DateTime ImportedAt);
+
+    public sealed record DistributeAgnumBalanceRequest(
+        string LocationCode,
+        string WarehouseId,
+        decimal Quantity,
+        Guid OperatorId);
 }

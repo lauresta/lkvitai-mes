@@ -68,3 +68,20 @@ public sealed class AgnumVirtualWarehouseBalance
 
     public AgnumBalanceImportRun? ImportRun { get; set; }
 }
+
+public sealed class AgnumBalanceDistribution
+{
+    public Guid Id { get; set; }
+    public Guid VirtualBalanceId { get; set; }
+    public int SndId { get; set; }
+    public int AgnumProductId { get; set; }
+    public string Sku { get; set; } = string.Empty;
+    public string LocationCode { get; set; } = string.Empty;
+    public string WarehouseId { get; set; } = string.Empty;
+    public decimal Quantity { get; set; }
+    public Guid StockMovementCommandId { get; set; }
+    public DateTime DistributedAt { get; set; }
+    public string DistributedBy { get; set; } = string.Empty;
+
+    public AgnumVirtualWarehouseBalance VirtualBalance { get; set; } = null!;
+}

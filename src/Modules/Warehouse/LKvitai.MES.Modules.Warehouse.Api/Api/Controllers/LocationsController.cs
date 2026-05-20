@@ -34,6 +34,7 @@ public sealed class LocationsController : ControllerBase
         [FromQuery] string? search,
         [FromQuery] string? status,
         [FromQuery] Guid? warehouseId,
+        [FromQuery] string? type,
         [FromQuery] bool includeVirtual = true,
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 50,
@@ -68,6 +69,18 @@ public sealed class LocationsController : ControllerBase
         {
             var normalizedStatus = status.Trim();
             query = query.Where(x => x.Status == normalizedStatus);
+        }
+
+        if (!string.IsNullOrWhiteSpace(type))
+        {
+            var requestedTypes = type
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .ToArray();
+
+            if (requestedTypes.Length > 0)
+            {
+                query = query.Where(x => requestedTypes.Contains(x.Type));
+            }
         }
 
         var totalCount = await query.CountAsync(cancellationToken);

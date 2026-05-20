@@ -2,6 +2,7 @@
 @using LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure
 @using LKvitai.MES.Modules.Warehouse.WebUI.Models
 @inject AgnumClient AgnumClient
+@inject MasterDataAdminClient MasterDataAdminClient
 
 <PageTitle>Agnum Balances</PageTitle>
 
@@ -43,6 +44,8 @@
         <div class="d-flex flex-wrap gap-3 text-muted small mt-3">
             <span>Rows: @FilteredRows.Count</span>
             <span>Total qty: @FilteredRows.Sum(x => x.Quantity).ToString("0.###")</span>
+            <span>Distributed: @FilteredRows.Sum(x => x.DistributedQty).ToString("0.###")</span>
+            <span>Remaining: @FilteredRows.Sum(x => x.RemainingQty).ToString("0.###")</span>
             @if (_balances?.ImportedAt is not null)
             {
                 <span>Imported: @_balances.ImportedAt.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</span>
@@ -61,15 +64,18 @@
                     <th>Agnum Product</th>
                     <th>MES Item</th>
                     <th class="text-end">Quantity</th>
+                    <th class="text-end">Distributed</th>
+                    <th class="text-end">Remaining</th>
                     <th>UoM</th>
                     <th>Imported</th>
+                    <th></th>
                 </tr>
                 </thead>
                 <tbody>
                 @if (FilteredRows.Count == 0)
                 {
                     <tr>
-                        <td colspan="6" class="text-muted py-3">No Agnum balances found.</td>
+                        <td colspan="9" class="text-muted py-3">No Agnum balances found.</td>
                     </tr>
                 }
                 else
@@ -81,14 +87,84 @@
                             <td class="font-monospace">@row.AgnumProductId</td>
                             <td>@(row.ItemId?.ToString() ?? "-")</td>
                             <td class="text-end">@row.Quantity.ToString("0.###")</td>
+                            <td class="text-end">@row.DistributedQty.ToString("0.###")</td>
+                            <td class="text-end">@row.RemainingQty.ToString("0.###")</td>
                             <td>@row.Uom</td>
                             <td>@row.ImportedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</td>
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-outline-primary"
+                                        type="button"
+                                        disabled="@string.IsNullOrWhiteSpace(row.Sku)"
+                                        @onclick="() => BeginDistributionAsync(row)">
+                                    Distribute
+                                </button>
+                            </td>
                         </tr>
                     }
                 }
                 </tbody>
             </table>
         </div>
+
+        @if (_distributionRow is not null)
+        {
+            <div class="border rounded p-3 mt-3 bg-light">
+                <div class="d-flex justify-content-between align-items-start gap-3">
+                    <div>
+                        <div class="fw-semibold">Distribute @(_distributionRow.Sku ?? "-")</div>
+                        <div class="text-muted small">
+                            Remaining @_distributionRow.RemainingQty.ToString("0.###") @_distributionRow.Uom from Agnum product @_distributionRow.AgnumProductId
+                        </div>
+                    </div>
+                    <button class="btn-close" type="button" aria-label="Close" @onclick="CancelDistribution"></button>
+                </div>
+
+                <div class="row g-3 align-items-end mt-1">
+                    <div class="col-12 col-md-4">
+                        <label class="form-label">Warehouse</label>
+                        <select class="form-select" @bind="_distributionWarehouseGuid" @bind:after="LoadDistributionLocationsAsync">
+                            <option value="">Select warehouse</option>
+                            @foreach (var warehouse in _physicalWarehouses)
+                            {
+                                <option value="@warehouse.Id">@warehouse.Code - @warehouse.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-4">
+                        <label class="form-label">Location</label>
+                        <select class="form-select" @bind="_distributionLocationCode" disabled="@(_isLoadingLocations || _distributionLocations.Count == 0)">
+                            <option value="">Select location</option>
+                            @foreach (var location in _distributionLocations)
+                            {
+                                <option value="@location.Code">@location.Code (@location.Type)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-2">
+                        <label class="form-label">Quantity</label>
+                        <input class="form-control"
+                               type="number"
+                               min="0.0001"
+                               max="@_distributionRow.RemainingQty"
+                               step="0.0001"
+                               @bind="_distributionQuantity" />
+                    </div>
+                    <div class="col-12 col-md-2 d-flex gap-2">
+                        <button class="btn btn-primary"
+                                type="button"
+                                disabled="@(!CanSubmitDistribution)"
+                                @onclick="SubmitDistributionAsync">
+                            Submit
+                        </button>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(_distributionMessage))
+                {
+                    <div class="text-muted small mt-2">@_distributionMessage</div>
+                }
+            </div>
+        }
 
         @if (FilteredRows.Count > 500)
         {
@@ -102,8 +178,25 @@
     private AgnumBalancesResponseDto? _balances;
     private ApiException? _apiError;
     private bool _isLoading;
+    private bool _isSubmittingDistribution;
+    private bool _isLoadingLocations;
     private int _selectedSndId;
     private string? _search;
+    private readonly List<AdminWarehouseDto> _physicalWarehouses = [];
+    private readonly List<AdminLocationDto> _distributionLocations = [];
+    private AgnumBalanceRowDto? _distributionRow;
+    private string _distributionWarehouseGuid = string.Empty;
+    private string _distributionLocationCode = string.Empty;
+    private decimal _distributionQuantity;
+    private string? _distributionMessage;
+
+    private bool CanSubmitDistribution =>
+        !_isSubmittingDistribution
+        && _distributionRow is not null
+        && Guid.TryParse(_distributionWarehouseGuid, out _)
+        && !string.IsNullOrWhiteSpace(_distributionLocationCode)
+        && _distributionQuantity > 0m
+        && _distributionQuantity <= _distributionRow.RemainingQty;
 
     private List<AgnumBalanceRowDto> FilteredRows
     {
@@ -138,6 +231,9 @@
         {
             _warehouses.Clear();
             _warehouses.AddRange(await AgnumClient.GetVirtualWarehousesAsync());
+            _physicalWarehouses.Clear();
+            var warehouses = await MasterDataAdminClient.GetWarehousesAsync(null, "Active", false, 1, 200);
+            _physicalWarehouses.AddRange(warehouses.Items);
             if (_selectedSndId <= 0)
             {
                 _selectedSndId = _warehouses.FirstOrDefault(x => x.IsImportEnabled)?.SndId
@@ -171,6 +267,8 @@
         try
         {
             _balances = await AgnumClient.GetBalancesAsync(_selectedSndId);
+            _distributionRow = null;
+            _distributionLocations.Clear();
         }
         catch (ApiException ex)
         {
@@ -185,6 +283,106 @@
     private void DismissError()
     {
         _apiError = null;
+    }
+
+    private async Task BeginDistributionAsync(AgnumBalanceRowDto row)
+    {
+        _distributionRow = row;
+        _distributionMessage = null;
+        _distributionQuantity = row.RemainingQty > 0m ? row.RemainingQty : 0m;
+        _distributionLocationCode = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(_distributionWarehouseGuid) && _physicalWarehouses.Count > 0)
+        {
+            _distributionWarehouseGuid = _physicalWarehouses[0].Id.ToString();
+        }
+
+        await LoadDistributionLocationsAsync();
+    }
+
+    private async Task LoadDistributionLocationsAsync()
+    {
+        _distributionLocations.Clear();
+        _distributionLocationCode = string.Empty;
+
+        if (!Guid.TryParse(_distributionWarehouseGuid, out var warehouseId))
+        {
+            return;
+        }
+
+        _isLoadingLocations = true;
+        _apiError = null;
+
+        try
+        {
+            var locations = await MasterDataAdminClient.GetLocationsAsync(
+                null,
+                "Active",
+                false,
+                1,
+                500,
+                warehouseId,
+                "Bin,Shelf");
+
+            _distributionLocations.AddRange(locations.Items);
+            _distributionLocationCode = _distributionLocations.FirstOrDefault()?.Code ?? string.Empty;
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+        }
+        finally
+        {
+            _isLoadingLocations = false;
+        }
+    }
+
+    private async Task SubmitDistributionAsync()
+    {
+        if (_distributionRow is null || !Guid.TryParse(_distributionWarehouseGuid, out var warehouseGuid))
+        {
+            return;
+        }
+
+        var warehouse = _physicalWarehouses.FirstOrDefault(x => x.Id == warehouseGuid);
+        if (warehouse is null)
+        {
+            _distributionMessage = "Select a warehouse.";
+            return;
+        }
+
+        _isSubmittingDistribution = true;
+        _apiError = null;
+        _distributionMessage = null;
+
+        try
+        {
+            await AgnumClient.DistributeAsync(
+                _distributionRow.Id,
+                _distributionLocationCode,
+                warehouse.Code,
+                _distributionQuantity,
+                Guid.Empty);
+
+            await LoadBalancesAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+        }
+        finally
+        {
+            _isSubmittingDistribution = false;
+        }
+    }
+
+    private void CancelDistribution()
+    {
+        _distributionRow = null;
+        _distributionMessage = null;
+        _distributionLocations.Clear();
+        _distributionLocationCode = string.Empty;
+        _distributionQuantity = 0m;
     }
 
     private static string BuildErrorMessage(ApiException ex)
