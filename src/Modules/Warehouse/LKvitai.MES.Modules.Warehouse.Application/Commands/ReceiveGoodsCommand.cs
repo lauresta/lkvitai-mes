@@ -20,6 +20,7 @@ public record ReceiveGoodsCommand : ICommand
 
     public string WarehouseId { get; init; } = string.Empty;
     public string Location { get; init; } = string.Empty;
+    public string FromLocation { get; init; } = "SUPPLIER";
     public string HuType { get; init; } = "PALLET"; // PALLET, BOX, BAG, UNIT
     public Guid OperatorId { get; init; }
 

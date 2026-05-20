@@ -107,7 +107,7 @@ public class MartenReceiveGoodsOrchestration : IReceiveGoodsOrchestration
                         movementId: Guid.NewGuid(),
                         sku: line.SKU,
                         quantity: line.Quantity,
-                        fromLocation: "SUPPLIER",
+                        fromLocation: command.FromLocation,
                         toLocation: command.Location,
                         movementType: MovementType.Receipt,
                         operatorId: command.OperatorId,

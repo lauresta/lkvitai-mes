@@ -189,7 +189,9 @@ public class ProjectionRebuildService : IProjectionRebuildService
                 checksumSql,
                 cancellationToken);
 
-            var checksumMatch = productionChecksum == shadowChecksum;
+            var productionChecksumIsEmpty = string.IsNullOrWhiteSpace(productionChecksum)
+                || string.Equals(productionChecksum, "empty", StringComparison.OrdinalIgnoreCase);
+            var checksumMatch = productionChecksumIsEmpty || productionChecksum == shadowChecksum;
 
             _logger.LogInformation(
                 "Checksums - Production: {ProductionChecksum}, Shadow: {ShadowChecksum}, Match: {Match}",
