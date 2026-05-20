@@ -63,25 +63,30 @@ public sealed class DistributeAgnumBalanceCommandHandler
                 $"Quantity must be greater than 0 and no more than remaining quantity {remaining:0.####}.");
         }
 
-        var stockMovementCommandId = Guid.NewGuid();
-        var stockMovementResult = await _mediator.Send(new RecordStockMovementCommand
+        var huCommandId = Guid.NewGuid();
+        var receiveResult = await _mediator.Send(new ReceiveGoodsCommand
         {
-            CommandId = stockMovementCommandId,
+            CommandId = huCommandId,
             CorrelationId = command.CommandId,
             CausationId = command.CommandId,
             WarehouseId = command.WarehouseId.Trim(),
-            SKU = virtualBalance.Sku.Trim(),
-            Quantity = command.Quantity,
+            Location = command.LocationCode.Trim(),
             FromLocation = "AGNUM",
-            ToLocation = command.LocationCode.Trim(),
-            MovementType = MovementType.Receipt,
+            HuType = "PALLET",
             OperatorId = command.OperatorId,
-            Reason = $"Agnum distribution sndid={virtualBalance.SndId}"
+            Lines =
+            [
+                new ReceiveGoodsLineDto
+                {
+                    SKU = virtualBalance.Sku.Trim(),
+                    Quantity = command.Quantity
+                }
+            ]
         }, ct);
 
-        if (!stockMovementResult.IsSuccess)
+        if (!receiveResult.IsSuccess)
         {
-            return stockMovementResult;
+            return receiveResult;
         }
 
         _dbContext.AgnumBalanceDistributions.Add(new AgnumBalanceDistribution
@@ -94,7 +99,7 @@ public sealed class DistributeAgnumBalanceCommandHandler
             LocationCode = command.LocationCode.Trim(),
             WarehouseId = command.WarehouseId.Trim(),
             Quantity = command.Quantity,
-            StockMovementCommandId = stockMovementCommandId,
+            StockMovementCommandId = huCommandId,
             DistributedAt = DateTime.UtcNow,
             DistributedBy = command.OperatorId.ToString()
         });
