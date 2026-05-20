@@ -21,12 +21,12 @@ The first deliverable is read-only visibility and a distribution bridge:
 
 | Phase | Description | Status |
 | --- | --- | --- |
-| 0 | Business confirmations (sndid scope, UoM rules, category mapping) | **Resolved** — defaults in this file |
-| 1 | Agnum read connector (`IAgnumApiClient`, `AgnumApiClient`, DTOs) | **SLICE 1** |
-| 2 | Product/nomenclature import (`AgnumProductLink`, `ItemExternalAttribute`, conflict detection, apply) | **SLICE 1** |
-| 3 | Virtual balance import (`AgnumVirtualWarehouseBalance`, `AgnumBalanceImportRun`) | **SLICE 1** |
-| 4 | Distribution from virtual balance to physical MES location | **SLICE 2** — after Slice 1 compiles |
-| 5 | Product search + 2D/3D location visibility | **SLICE 3** — after distribution works |
+| 0 | Business confirmations (sndid scope, UoM rules, category mapping) | **Done** — defaults in this file |
+| 1 | Agnum read connector (`IAgnumApiClient`, `AgnumApiClient`, DTOs) | **Done** — PR #159, shipping on main |
+| 2 | Product/nomenclature import (`AgnumProductLink`, `ItemExternalAttribute`, conflict detection, apply, supplier sync, UoM auto-create, category hierarchy) | **Done** — PR #159 + fixes #162–169 |
+| 3 | Virtual balance import (`AgnumVirtualWarehouseBalance`, `AgnumBalanceImportRun`), Hangfire daily job, `Balances.razor` read-only UI | **Done** — PR #160 + #161 + #169 |
+| 4 | Distribution from virtual balance to physical MES location | **SLICE 2** — next |
+| 5 | Product search + 2D/3D location visibility after distribution | **SLICE 3** — after Slice 2 |
 | 6 | Real warehouse operations | **NOT NEEDED** — packages A–F already implement all MES warehouse operations; no changes required |
 | 7 | Agnum document export | **BACKLOG** — governed by ADR-006; do not start until phases 1–5 are stable |
 

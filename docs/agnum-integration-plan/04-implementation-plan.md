@@ -1,10 +1,12 @@
 # 04. Implementation Plan
 
-> **Current MVP scope:** Phases 1–3 are active (Slice 1). Phase 4 is Slice 2.
-> Phase 5 is Slice 3. **Phase 6 is not an implementation task** — packages A–F already implement
-> all MES warehouse operations; no changes are needed there.
-> **Phase 7 is backlog** — do not start until Phases 1–5 are stable.
-> See `MVP-SCOPE.md` for the authoritative scope gate and frozen file list.
+> **Status as of 2026-05-20:**
+> Phases 1–3 are **Done** (Slice 1 complete, PRs #159–169 merged to main).
+> Phase 4 (distribution) is **SLICE 2** — active next.
+> Phase 5 (2D/3D search) is **SLICE 3** — after distribution.
+> **Phase 6 is not an implementation task** — packages A–F already implement all MES warehouse operations.
+> **Phase 7 is backlog** — governed by ADR-006; do not start until phases 1–5 are stable.
+> See `MVP-SCOPE.md` for the authoritative scope gate and `08-slice2-distribution-blueprint.md` for Slice 2 spec.
 
 ## Revised Business Priority
 
