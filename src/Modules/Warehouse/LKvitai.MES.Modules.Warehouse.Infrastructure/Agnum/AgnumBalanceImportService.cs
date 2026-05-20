@@ -56,7 +56,9 @@ public sealed class AgnumBalanceImportService : IAgnumBalanceImportService
                     SndId = sndId,
                     AgnumProductId = product.Id,
                     ItemId = link?.ItemId,
-                    Sku = link?.Item?.InternalSKU,
+                    Sku = string.IsNullOrWhiteSpace(product.Code)
+                        ? link?.Item?.InternalSKU
+                        : product.Code.Trim(),
                     Quantity = product.Balance,
                     Uom = product.Pcs,
                     ImportedAt = importedAt,
