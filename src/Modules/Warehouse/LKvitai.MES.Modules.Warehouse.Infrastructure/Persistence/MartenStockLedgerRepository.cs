@@ -48,7 +48,19 @@ public class MartenStockLedgerRepository : IStockLedgerRepository
 
         try
         {
-            session.Events.Append(streamId, expectedVersion, evt);
+            if (expectedVersion == -2)
+            {
+                // New stream (no prior events): skip version check — the stream does not yet exist
+                // so there is nothing to conflict with. Two concurrent inbound receipts to the
+                // same brand-new (warehouse, location, sku) are extremely rare; the retry loop
+                // handles the resulting ConcurrencyException if they do race.
+                session.Events.Append(streamId, evt);
+            }
+            else
+            {
+                session.Events.Append(streamId, expectedVersion, evt);
+            }
+
             await session.SaveChangesAsync(ct);
         }
         catch (Marten.Exceptions.EventStreamUnexpectedMaxEventIdException ex)
