@@ -8,7 +8,7 @@ namespace LKvitai.MES.Modules.Warehouse.Application.Commands;
 ///
 /// Workflow (single transaction boundary):
 ///   1. Emit HandlingUnitCreated event (HU stream)
-///   2. Record StockMovement per line (SUPPLIER → location) via StockLedger
+///   2. Record StockMovement per line (FromLocation → location) via StockLedger
 ///   3. Emit HandlingUnitSealed event (HU stream)
 ///   All committed atomically — no partial state on failure.
 /// </summary>
