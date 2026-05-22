@@ -14,7 +14,7 @@ namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 /// Marten implementation of <see cref="IReceiveGoodsOrchestration"/>.
 ///
 /// Production-safe guarantees:
-///   - Expected-version append on every stream (V-2 concurrency protection)
+///   - Expected-version append on every stream (optimistic concurrency protection)
 ///   - Bounded retry (max 2 attempts) on <see cref="EventStreamUnexpectedMaxEventIdException"/>
 ///   - Defensive sealed-HU guard (verifies HU stream is new)
 ///   - Atomic multi-stream commit (single SaveChangesAsync)
@@ -72,12 +72,12 @@ public class MartenReceiveGoodsOrchestration : IReceiveGoodsOrchestration
                     if (!stockStreamVersions.ContainsKey(stockStreamId))
                     {
                         var state = await session.Events.FetchStreamStateAsync(stockStreamId, ct);
-                        // Marten uses -2 for new streams (V-2 versioning scheme)
-                        stockStreamVersions[stockStreamId] = state?.Version ?? -2;
+                        // Marten stream versions are 0 for new streams, then 1..N.
+                        stockStreamVersions[stockStreamId] = state?.Version ?? 0;
                     }
                 }
 
-                // ── Step 1: Emit HandlingUnitCreated (new stream, expect version 0) ──
+                // ── Step 1: Emit HandlingUnitCreated (new stream, final version 1) ──
                 var createdEvent = new HandlingUnitCreatedEvent
                 {
                     HuId = huId,
@@ -89,7 +89,7 @@ public class MartenReceiveGoodsOrchestration : IReceiveGoodsOrchestration
                     Timestamp = now
                 };
 
-                long huExpectedVersion = 0;
+                long huExpectedVersion = 1;
                 session.Events.Append(huStreamId, huExpectedVersion, createdEvent);
 
                 _logger.LogDebug(
@@ -129,8 +129,8 @@ public class MartenReceiveGoodsOrchestration : IReceiveGoodsOrchestration
 
                 foreach (var (streamId, events) in stockEventsByStream)
                 {
-                    var expectedVersion = stockStreamVersions[streamId];
-                    session.Events.Append(streamId, expectedVersion, events.ToArray());
+                    var currentVersion = stockStreamVersions[streamId];
+                    session.Events.Append(streamId, currentVersion + events.Count, events.ToArray());
                 }
 
                 // ── Step 3: Emit HandlingUnitSealed ──────────────────────────

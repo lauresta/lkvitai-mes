@@ -127,7 +127,7 @@ public sealed class AdjustCostCommandHandler : IRequestHandler<AdjustCostCommand
                 request.CommandId,
                 request.ApproverId);
 
-            session.Events.Append(streamId, streamState.Version, costAdjusted);
+            session.Events.Append(streamId, streamState.Version + 1, costAdjusted);
             await session.SaveChangesAsync(cancellationToken);
 
             CostAdjustmentsTotal.Add(

@@ -141,7 +141,7 @@ public class HandlingUnitProjection : MultiStreamProjection<HandlingUnitView, st
 
     private static bool IsVirtualLocation(string location)
     {
-        return location is "SUPPLIER" or "PRODUCTION" or "SCRAP" or "SYSTEM";
+        return location is "SUPPLIER" or "PRODUCTION" or "SCRAP" or "SYSTEM" or "AGNUM";
     }
 }
 

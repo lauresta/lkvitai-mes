@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 namespace LKvitai.MES.Modules.Warehouse.Application.Commands;
 
 /// <summary>
-/// Handles <see cref="RecordStockMovementCommand"/> with expected-version append (V-2)
+/// Handles <see cref="RecordStockMovementCommand"/> with expected-version append
 /// and bounded retries (max 3 attempts, exponential backoff).
 ///
 /// Stream partitioning (ADR-001):
@@ -51,7 +51,7 @@ public class RecordStockMovementCommandHandler : IRequestHandler<RecordStockMove
         var movementId = Guid.NewGuid();
 
         // Compute the primary stream ID per ADR-001: (warehouseId, location, sku)
-        // Inbound → TO-side stream; Outbound/Transfer → FROM-side stream (V-2 balance check)
+        // Inbound → TO-side stream; Outbound/Transfer → FROM-side stream (balance check)
         var streamId = ComputeStreamId(request);
 
         // [HOTFIX CRIT-01] Acquire advisory lock for balance-decreasing movements.
@@ -91,7 +91,7 @@ public class RecordStockMovementCommandHandler : IRequestHandler<RecordStockMove
                         request.HandlingUnitId,
                         request.Reason);
 
-                    // Step 3: Append with expected-version (V-2)
+                    // Step 3: Append with expected-version
                     await _repository.AppendEventAsync(
                         streamId, evt, version, cancellationToken);
 
@@ -163,7 +163,7 @@ public class RecordStockMovementCommandHandler : IRequestHandler<RecordStockMove
     /// <summary>
     /// Computes the StockLedger stream ID from command fields per ADR-001.
     /// Inbound movements target the TO location's stream.
-    /// Outbound/transfer movements target the FROM location's stream (V-2 balance check).
+    /// Outbound/transfer movements target the FROM location's stream (balance check).
     /// </summary>
     private static string ComputeStreamId(RecordStockMovementCommand request)
     {
