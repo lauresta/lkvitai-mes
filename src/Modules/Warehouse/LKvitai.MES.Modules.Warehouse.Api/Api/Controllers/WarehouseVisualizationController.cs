@@ -379,6 +379,7 @@ public sealed class WarehouseVisualizationController : ControllerBase
             _dbContext.Warehouses.AsNoTracking(),
             x => x.Code == layout.WarehouseCode,
             cancellationToken);
+        var warehouseKeys = BuildWarehouseKeys(layout.WarehouseCode, warehouseEntity);
 
         List<Location> locations;
         if (warehouseEntity is not null)
@@ -445,12 +446,12 @@ public sealed class WarehouseVisualizationController : ControllerBase
         var locationCodes = resolvedLocations.Select(x => x.Code).ToArray();
         var locationSet = new HashSet<string>(locationCodes, StringComparer.OrdinalIgnoreCase);
         var stockRows = stockCandidates
-            .Where(x => x.WarehouseId == layout.WarehouseCode &&
-                        locationSet.Contains(x.Location))
+            .Where(x => warehouseKeys.Contains(x.WarehouseId) &&
+                        locationSet.Contains(GetStockLocationCode(x)))
             .ToList();
 
         var qtyByLocation = stockRows
-            .GroupBy(x => x.Location, StringComparer.OrdinalIgnoreCase)
+            .GroupBy(GetStockLocationCode, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(
                 x => x.Key,
                 x => x.Sum(y => y.OnHandQty),
@@ -458,7 +459,7 @@ public sealed class WarehouseVisualizationController : ControllerBase
 
         var hardLockRows = await _hardLocksRepository.GetAllActiveLocksAsync(cancellationToken);
         var hardLockByLocation = hardLockRows
-            .Where(x => x.WarehouseId == layout.WarehouseCode)
+            .Where(x => warehouseKeys.Contains(x.WarehouseId))
             .GroupBy(x => x.Location, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(
                 x => x.Key,
@@ -467,12 +468,13 @@ public sealed class WarehouseVisualizationController : ControllerBase
 
         var handlingUnitViews = await MartenAsync.ToListAsync(
             session.Query<HandlingUnitView>()
-                .Where(x => x.WarehouseId == layout.WarehouseCode)
+                .Where(x => locationCodes.Contains(x.CurrentLocation))
                 .OrderBy(x => x.LPN),
             cancellationToken);
 
         var husByLocation = handlingUnitViews
-            .Where(x => !x.IsEmpty)
+            .Where(x => !x.IsEmpty &&
+                        (warehouseKeys.Contains(x.WarehouseId) || locationSet.Contains(x.CurrentLocation)))
             .GroupBy(x => x.CurrentLocation, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(
                 x => x.Key,
@@ -513,8 +515,29 @@ public sealed class WarehouseVisualizationController : ControllerBase
             var utilization = ComputeUtilization(location, onHandQty);
             var utilizationPercent = decimal.Round(utilization * 100m, 2, MidpointRounding.AwayFromZero);
             var handlingUnitsForLocation = husByLocation.GetValueOrDefault(location.Code, new List<HandlingUnitView>());
-            var status = ResolveCapacityStatus(handlingUnitsForLocation.Count, utilization);
+            var status = ResolveCapacityStatus(utilization);
             var color = ResolveStatusColor(status);
+            var handlingUnitResponses = handlingUnitsForLocation.Select(x =>
+            {
+                var firstLine = x.Lines.FirstOrDefault();
+                return new VisualizationHandlingUnitResponse(
+                    x.HuId,
+                    x.LPN,
+                    firstLine?.SKU ?? string.Empty,
+                    firstLine?.Quantity ?? 0m);
+            }).ToList();
+
+            if (handlingUnitResponses.Count == 0 && onHandQty > 0m)
+            {
+                handlingUnitResponses.AddRange(stockRows
+                    .Where(x => string.Equals(GetStockLocationCode(x), location.Code, StringComparison.OrdinalIgnoreCase))
+                    .GroupBy(x => x.SKU, StringComparer.OrdinalIgnoreCase)
+                    .Select(x => new VisualizationHandlingUnitResponse(
+                        Guid.Empty,
+                        "Physical stock",
+                        x.Key,
+                        x.Sum(y => y.OnHandQty))));
+            }
 
             return new VisualizationBinResponse(
                 location.Id,
@@ -540,15 +563,7 @@ public sealed class WarehouseVisualizationController : ControllerBase
                 node.StartSlot,
                 node.Span,
                 node.LocationRole,
-                handlingUnitsForLocation.Select(x =>
-                {
-                    var firstLine = x.Lines.FirstOrDefault();
-                    return new VisualizationHandlingUnitResponse(
-                        x.HuId,
-                        x.LPN,
-                        firstLine?.SKU ?? string.Empty,
-                        firstLine?.Quantity ?? 0m);
-                }).ToList());
+                handlingUnitResponses);
         }).ToList();
 
         ApiDurationMs.Record(Stopwatch.GetElapsedTime(startedAt).TotalMilliseconds);
@@ -692,11 +707,9 @@ public sealed class WarehouseVisualizationController : ControllerBase
         return onHandQty > 0m ? 0.6m : 0m;
     }
 
-    private static string ResolveCapacityStatus(
-        int huCount,
-        decimal utilization)
+    private static string ResolveCapacityStatus(decimal utilization)
     {
-        if (huCount == 0)
+        if (utilization <= 0m)
         {
             return EmptyStatus;
         }
@@ -718,6 +731,28 @@ public sealed class WarehouseVisualizationController : ControllerBase
 
         return LowStatus;
     }
+
+    private static HashSet<string> BuildWarehouseKeys(
+        string layoutWarehouseCode,
+        Domain.Aggregates.WarehouseLayout? warehouseEntity)
+    {
+        var keys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (!string.IsNullOrWhiteSpace(layoutWarehouseCode))
+        {
+            keys.Add(layoutWarehouseCode.Trim());
+        }
+
+        if (warehouseEntity is not null)
+        {
+            keys.Add(warehouseEntity.Code);
+            keys.Add(warehouseEntity.WarehouseId.ToString());
+        }
+
+        return keys;
+    }
+
+    private static string GetStockLocationCode(AvailableStockView stock)
+        => string.IsNullOrWhiteSpace(stock.LocationCode) ? stock.Location : stock.LocationCode;
 
     private static string ResolveStatusColor(string status)
     {

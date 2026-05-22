@@ -1,5 +1,7 @@
+using LKvitai.MES.Contracts.ReadModels;
 using LKvitai.MES.BuildingBlocks.SharedKernel;
 using LKvitai.MES.Modules.Warehouse.Api.Security;
+using LKvitai.MES.Modules.Warehouse.Api.Services;
 using LKvitai.MES.Modules.Warehouse.Application.Commands;
 using LKvitai.MES.Modules.Warehouse.Application.Ports;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
@@ -20,6 +22,7 @@ public sealed class AgnumImportController : ControllerBase
     private readonly IAgnumNomenclatureImportService _nomenclatureImportService;
     private readonly IAgnumBalanceImportService _balanceImportService;
     private readonly IAgnumDistributionService _distributionService;
+    private readonly Marten.IDocumentStore _documentStore;
     private readonly IMediator _mediator;
 
     public AgnumImportController(
@@ -27,12 +30,14 @@ public sealed class AgnumImportController : ControllerBase
         IAgnumNomenclatureImportService nomenclatureImportService,
         IAgnumBalanceImportService balanceImportService,
         IAgnumDistributionService distributionService,
+        Marten.IDocumentStore documentStore,
         IMediator mediator)
     {
         _dbContext = dbContext;
         _nomenclatureImportService = nomenclatureImportService;
         _balanceImportService = balanceImportService;
         _distributionService = distributionService;
+        _documentStore = documentStore;
         _mediator = mediator;
     }
 
@@ -197,17 +202,62 @@ public sealed class AgnumImportController : ControllerBase
             })
             .ToListAsync(ct);
 
+        var skus = balanceRows
+            .Select(x => x.Sku)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Select(x => x!)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var physicalStockBySku = new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase);
+        var physicalLocationsBySku = new Dictionary<string, List<AgnumPhysicalLocationDto>>(StringComparer.OrdinalIgnoreCase);
+        if (skus.Count > 0)
+        {
+            await using var querySession = _documentStore.QuerySession();
+            var physicalStockRows = await Marten.QueryableExtensions.ToListAsync(
+                querySession.Query<AvailableStockView>().Where(x => skus.Contains(x.SKU)),
+                ct);
+
+            physicalStockBySku = physicalStockRows
+                .GroupBy(x => x.SKU, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(x => x.Key, x => x.Sum(y => y.OnHandQty), StringComparer.OrdinalIgnoreCase);
+
+            physicalLocationsBySku = physicalStockRows
+                .GroupBy(x => x.SKU, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(
+                    x => x.Key,
+                    x => x
+                        .GroupBy(y => new { y.WarehouseId, LocationCode = y.LocationCode ?? y.Location })
+                        .Select(g => new AgnumPhysicalLocationDto(
+                            g.Key.WarehouseId,
+                            g.Key.LocationCode,
+                            g.Sum(y => y.OnHandQty)))
+                        .Where(location => location.Qty > 0m)
+                        .OrderBy(location => location.LocationCode)
+                        .ToList(),
+                    StringComparer.OrdinalIgnoreCase);
+        }
+
         var balances = balanceRows
             .Select(x =>
             {
                 var distributedQty = distributedLookup.GetValueOrDefault(x.Id);
-                return new AgnumVirtualBalanceRow(
+                var mesPhysicalQty = string.IsNullOrWhiteSpace(x.Sku)
+                    ? 0m
+                    : physicalStockBySku.GetValueOrDefault(x.Sku);
+                var mesLocations = string.IsNullOrWhiteSpace(x.Sku)
+                    ? new List<AgnumPhysicalLocationDto>()
+                    : physicalLocationsBySku.GetValueOrDefault(x.Sku, new List<AgnumPhysicalLocationDto>());
+
+                return new AgnumVirtualWarehouseBalanceDto(
                     x.Id,
                     x.AgnumProductId,
                     x.Sku,
                     x.Quantity,
                     distributedQty,
                     x.Quantity - distributedQty,
+                    mesPhysicalQty,
+                    mesLocations,
                     x.Uom,
                     x.ItemId,
                     x.ImportedAt);
@@ -215,6 +265,120 @@ public sealed class AgnumImportController : ControllerBase
             .ToList();
 
         return Ok(new { SndId = sndId, RunId = latestRun.Id, ImportedAt = latestRun.FinishedAt, Balances = balances });
+    }
+
+    [HttpGet("reconciliation")]
+    public async Task<IActionResult> GetReconciliationAsync(
+        [FromQuery] int sndId,
+        CancellationToken ct = default)
+    {
+        if (sndId <= 0)
+        {
+            return BadRequest(new { Error = "sndId is required." });
+        }
+
+        var latestRun = await _dbContext.AgnumBalanceImportRuns
+            .AsNoTracking()
+            .Where(x => x.SndId == sndId && x.Status == "Completed")
+            .OrderByDescending(x => x.FinishedAt)
+            .FirstOrDefaultAsync(ct);
+
+        if (latestRun is null)
+        {
+            return Ok(Array.Empty<AgnumReconciliationRowDto>());
+        }
+
+        var balanceRows = await _dbContext.AgnumVirtualWarehouseBalances
+            .AsNoTracking()
+            .Where(x => x.ImportRunId == latestRun.Id)
+            .OrderBy(x => x.Sku ?? string.Empty)
+            .Select(x => new
+            {
+                x.Id,
+                x.AgnumProductId,
+                x.ItemId,
+                x.Sku,
+                x.Quantity
+            })
+            .ToListAsync(ct);
+
+        var balanceIds = balanceRows.Select(x => x.Id).ToList();
+        var distributedByBalance = await _dbContext.AgnumBalanceDistributions
+            .AsNoTracking()
+            .Where(d => balanceIds.Contains(d.VirtualBalanceId))
+            .GroupBy(d => d.VirtualBalanceId)
+            .Select(g => new { VirtualBalanceId = g.Key, Total = g.Sum(x => x.Quantity) })
+            .ToListAsync(ct);
+        var distributedLookup = distributedByBalance.ToDictionary(x => x.VirtualBalanceId, x => x.Total);
+
+        var itemIds = balanceRows
+            .Select(x => x.ItemId)
+            .Where(x => x.HasValue)
+            .Select(x => x!.Value)
+            .Distinct()
+            .ToList();
+
+        var itemNameById = itemIds.Count == 0
+            ? new Dictionary<int, string>()
+            : await _dbContext.Items
+                .AsNoTracking()
+                .Where(x => itemIds.Contains(x.Id))
+                .ToDictionaryAsync(x => x.Id, x => x.Name, ct);
+
+        var agnumProductIds = balanceRows
+            .Select(x => x.AgnumProductId)
+            .Distinct()
+            .ToList();
+        var agnumCodeByProductId = await _dbContext.AgnumProductLinks
+            .AsNoTracking()
+            .Where(x => x.SndId == sndId && agnumProductIds.Contains(x.AgnumProductId))
+            .ToDictionaryAsync(x => x.AgnumProductId, x => x.AgnumCode, ct);
+
+        var skus = balanceRows
+            .Select(x => x.Sku)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Select(x => x!)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var physicalBySku = new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase);
+        if (skus.Count > 0)
+        {
+            await using var querySession = _documentStore.QuerySession();
+            var physicalStockRows = await Marten.QueryableExtensions.ToListAsync(
+                querySession.Query<AvailableStockView>().Where(x => skus.Contains(x.SKU)),
+                ct);
+
+            physicalBySku = physicalStockRows
+                .GroupBy(x => x.SKU, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(x => x.Key, x => x.Sum(y => y.OnHandQty), StringComparer.OrdinalIgnoreCase);
+        }
+
+        var rows = balanceRows
+            .Select(x =>
+            {
+                var distributedQty = distributedLookup.GetValueOrDefault(x.Id);
+                var remainingQty = x.Quantity - distributedQty;
+                var mesPhysicalQty = string.IsNullOrWhiteSpace(x.Sku)
+                    ? 0m
+                    : physicalBySku.GetValueOrDefault(x.Sku);
+                var delta = mesPhysicalQty - distributedQty;
+                var status = AgnumReconciliationStatusCalculator.GetStatus(x.Sku, delta);
+
+                return new AgnumReconciliationRowDto(
+                    agnumCodeByProductId.GetValueOrDefault(x.AgnumProductId, x.AgnumProductId.ToString()),
+                    x.Sku,
+                    x.ItemId.HasValue && itemNameById.TryGetValue(x.ItemId.Value, out var itemName) ? itemName : null,
+                    x.Quantity,
+                    distributedQty,
+                    remainingQty,
+                    mesPhysicalQty,
+                    delta,
+                    status);
+            })
+            .ToList();
+
+        return Ok(rows);
     }
 
     [HttpPost("balances/{id:guid}/distribute")]
@@ -270,16 +434,31 @@ public sealed class AgnumImportController : ControllerBase
         string ApiKeyConfigName,
         bool IsImportEnabled);
 
-    private sealed record AgnumVirtualBalanceRow(
+    public sealed record AgnumVirtualWarehouseBalanceDto(
         Guid Id,
         int AgnumProductId,
         string? Sku,
         decimal Quantity,
         decimal DistributedQty,
         decimal RemainingQty,
+        decimal MesPhysicalQty,
+        List<AgnumPhysicalLocationDto> MesLocations,
         string Uom,
         int? ItemId,
         DateTime ImportedAt);
+
+    public sealed record AgnumPhysicalLocationDto(string WarehouseId, string LocationCode, decimal Qty);
+
+    public sealed record AgnumReconciliationRowDto(
+        string AgnumCode,
+        string? Sku,
+        string? ItemName,
+        decimal VirtualQty,
+        decimal DistributedQty,
+        decimal RemainingQty,
+        decimal MesPhysicalQty,
+        decimal Delta,
+        string Status);
 
     public sealed record DistributeAgnumBalanceRequest(
         string LocationCode,
