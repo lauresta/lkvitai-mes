@@ -8,7 +8,7 @@ namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 
 /// <summary>
 /// Marten implementation of <see cref="IStockLedgerRepository"/>.
-/// Uses expected-version append (V-2) for optimistic concurrency.
+/// Uses expected-version append for optimistic concurrency.
 /// Creates a fresh lightweight session per operation to support retry loops.
 ///
 /// Stream IDs are produced by <see cref="LKvitai.MES.Modules.Warehouse.Domain.StockLedgerStreamId"/>
@@ -33,9 +33,8 @@ public class MartenStockLedgerRepository : IStockLedgerRepository
             streamId, token: ct) ?? new StockLedger();
 
         var state = await session.Events.FetchStreamStateAsync(streamId, ct);
-        // Marten uses -2 for new streams (V-2 versioning scheme)
-        // New stream: -2, After 1 event: -1, After 2 events: 0, etc.
-        var version = state?.Version ?? -2;
+        // Marten stream versions are 0 for new streams, then 1..N.
+        var version = state?.Version ?? 0;
 
         return (ledger, version);
     }
@@ -48,18 +47,7 @@ public class MartenStockLedgerRepository : IStockLedgerRepository
 
         try
         {
-            if (expectedVersion == -2)
-            {
-                // New stream (no prior events): skip version check — the stream does not yet exist
-                // so there is nothing to conflict with. Two concurrent inbound receipts to the
-                // same brand-new (warehouse, location, sku) are extremely rare; the retry loop
-                // handles the resulting ConcurrencyException if they do race.
-                session.Events.Append(streamId, evt);
-            }
-            else
-            {
-                session.Events.Append(streamId, expectedVersion, evt);
-            }
+            session.Events.Append(streamId, expectedVersion + 1, evt);
 
             await session.SaveChangesAsync(ct);
         }

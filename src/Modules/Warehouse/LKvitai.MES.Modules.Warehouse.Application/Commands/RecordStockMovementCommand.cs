@@ -4,7 +4,7 @@ namespace LKvitai.MES.Modules.Warehouse.Application.Commands;
 
 /// <summary>
 /// Command to record a stock movement in the StockLedger.
-/// Handled with expected-version append (V-2) and bounded retries.
+/// Handled with expected-version append and bounded retries.
 /// </summary>
 public record RecordStockMovementCommand : ICommand
 {

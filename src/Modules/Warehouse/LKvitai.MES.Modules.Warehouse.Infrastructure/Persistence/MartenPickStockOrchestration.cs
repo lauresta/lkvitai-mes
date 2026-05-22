@@ -149,8 +149,8 @@ public class MartenPickStockOrchestration : IPickStockOrchestration
 
                 // Get stream version for optimistic concurrency
                 var streamState = await session.Events.FetchStreamStateAsync(streamId, ct);
-                // Marten uses -2 for new streams (V-2 versioning scheme)
-                var expectedVersion = streamState?.Version ?? -2;
+                // Marten stream versions are 0 for new streams, then 1..N.
+                var expectedVersion = streamState?.Version ?? 0;
 
                 // Build released hard lock lines from reservation state
                 var releasedLines = reservation.Lines.Select(l => new HardLockLineDto
@@ -170,7 +170,7 @@ public class MartenPickStockOrchestration : IPickStockOrchestration
                     ReleasedHardLockLines = releasedLines
                 };
 
-                session.Events.Append(streamId, expectedVersion, consumedEvent);
+                session.Events.Append(streamId, expectedVersion + 1, consumedEvent);
                 await session.SaveChangesAsync(ct);
 
                 _logger.LogInformation(
@@ -227,14 +227,14 @@ public class MartenPickStockOrchestration : IPickStockOrchestration
                 {
                     var ledgerStreamId = StockLedgerStreamId.For(warehouseId, fromLocation, sku);
 
-                    // Hydrate the StockLedger aggregate to check balance (V-2 invariant)
+                    // Hydrate the StockLedger aggregate to check balance.
                     var ledger = await session.Events.AggregateStreamAsync<StockLedger>(
                         ledgerStreamId, token: ct) ?? new StockLedger();
 
                     // Get current stream version for optimistic concurrency
                     var streamState = await session.Events.FetchStreamStateAsync(ledgerStreamId, ct);
-                    // Marten uses -2 for new streams (V-2 versioning scheme)
-                    var expectedVersion = streamState?.Version ?? -2;
+                    // Marten stream versions are 0 for new streams, then 1..N.
+                    var expectedVersion = streamState?.Version ?? 0;
 
                     // Produce the event (validates balance invariant)
                     var stockMovedEvent = ledger.RecordMovement(
@@ -248,7 +248,7 @@ public class MartenPickStockOrchestration : IPickStockOrchestration
                         handlingUnitId: handlingUnitId,
                         reason: "Pick for reservation");
 
-                    session.Events.Append(ledgerStreamId, expectedVersion, stockMovedEvent);
+                    session.Events.Append(ledgerStreamId, expectedVersion + 1, stockMovedEvent);
                     await session.SaveChangesAsync(ct);
 
                     // [CRIT-01] Commit lock AFTER Marten commit succeeds

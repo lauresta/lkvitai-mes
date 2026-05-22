@@ -12,7 +12,7 @@ using Xunit;
 namespace LKvitai.MES.Tests.Warehouse.Unit;
 
 /// <summary>
-/// Tests for RecordStockMovementCommandHandler — verifies expected-version append (V-2),
+/// Tests for RecordStockMovementCommandHandler — verifies expected-version append,
 /// bounded retry (max 3), domain error propagation, and correct stream ID routing per ADR-001.
 /// </summary>
 public class RecordStockMovementCommandHandlerTests

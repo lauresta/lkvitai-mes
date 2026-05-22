@@ -161,7 +161,7 @@ public sealed class AdjustValuationCostCommandHandler : IRequestHandler<AdjustVa
                 request.ApprovedBy,
                 request.CommandId);
 
-            session.Events.Append(streamId, streamState.Version, adjusted);
+            session.Events.Append(streamId, streamState.Version + 1, adjusted);
             await session.SaveChangesAsync(cancellationToken);
 
             await ValuationProjectionWriter.UpsertOnHandValueAsync(
@@ -402,7 +402,7 @@ public sealed class WriteDownCommandHandler : IRequestHandler<WriteDownCommand, 
                 request.ApprovedBy,
                 request.CommandId);
 
-            session.Events.Append(streamId, streamState.Version, writtenDown);
+            session.Events.Append(streamId, streamState.Version + 1, writtenDown);
             await session.SaveChangesAsync(cancellationToken);
 
             await ValuationProjectionWriter.UpsertOnHandValueAsync(

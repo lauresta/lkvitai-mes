@@ -182,8 +182,8 @@ public class MartenStartPickingOrchestration : IStartPickingOrchestration
                 // ─── Step 5: Get stream version for optimistic concurrency ───
                 var streamState = await session.Events.FetchStreamStateAsync(
                     streamId, cancellationToken);
-                // Marten uses -2 for new streams (V-2 versioning scheme)
-                var expectedVersion = streamState?.Version ?? -2;
+                // Marten stream versions are 0 for new streams, then 1..N.
+                var expectedVersion = streamState?.Version ?? 0;
 
                 // ─── Step 6: Append PickingStartedEvent ───
                 var pickingStartedEvent = new PickingStartedEvent
@@ -202,7 +202,7 @@ public class MartenStartPickingOrchestration : IStartPickingOrchestration
                     }).ToList()
                 };
 
-                session.Events.Append(streamId, expectedVersion, pickingStartedEvent);
+                session.Events.Append(streamId, expectedVersion + 1, pickingStartedEvent);
 
                 // ─── Step 7: SaveChanges — atomic commit + inline projection ───
                 // ActiveHardLocksProjection (Inline) fires here, inserting rows.
