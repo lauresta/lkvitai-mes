@@ -393,7 +393,7 @@
                                 <dt class="col-5">Type</dt>
                                 <dd class="col-7">@_selectedRack.Type</dd>
                                 <dt class="col-5">Origin</dt>
-                                <dd class="col-7">@_selectedRack.Origin.X, @_selectedRack.Origin.Y, @_selectedRack.Origin.Z</dd>
+                                <dd class="col-7">@FormatCoordinates(_selectedRack.Origin)</dd>
                                 <dt class="col-5">Dimensions</dt>
                                 <dd class="col-7">@FormatRackDimensions(_selectedRack.Dimensions)</dd>
                                 <dt class="col-5">Levels</dt>
@@ -445,7 +445,7 @@
                                 }
                             }
                             <dt class="col-5">Coordinates</dt>
-                            <dd class="col-7">@_selectedSlot.Origin.X, @_selectedSlot.Origin.Y, @_selectedSlot.Origin.Z</dd>
+                            <dd class="col-7">@FormatCoordinates(_selectedSlot.Origin)</dd>
                             <dt class="col-5">Dimensions</dt>
                             <dd class="col-7">@FormatRackDimensions(_selectedSlot.Dimensions)</dd>
                         </dl>
@@ -474,7 +474,7 @@
                         <dt class="col-5">Utilization</dt>
                         <dd class="col-7">@_selectedBin.UtilizationPercent.ToString("0.##", CultureInfo.InvariantCulture)%</dd>
                         <dt class="col-5">Coordinates</dt>
-                        <dd class="col-7">@_selectedBin.Coordinates.X, @_selectedBin.Coordinates.Y, @_selectedBin.Coordinates.Z</dd>
+                        <dd class="col-7">@FormatCoordinates(_selectedBin.Coordinates)</dd>
                         @if (!string.IsNullOrWhiteSpace(_selectedBin.Address))
                         {
                             <dt class="col-5">Address</dt>
@@ -1109,7 +1109,9 @@
     {
         var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
         var query = QueryHelpers.ParseQuery(uri.Query);
-        if (!query.TryGetValue("selected", out var selected))
+
+        if (!query.TryGetValue("selected", out var selected) &&
+            !query.TryGetValue("location", out selected))
         {
             return null;
         }
@@ -1124,6 +1126,11 @@
         var volume = capacity.Volume.HasValue ? $"{capacity.Volume.Value} m3" : "n/a";
         return $"{weight} / {volume}";
     }
+
+    private static string FormatCoordinates(VisualizationCoordinateDto coordinates)
+        => string.Create(
+            CultureInfo.InvariantCulture,
+            $"{coordinates.X:0.0}, {coordinates.Y:0.0}, {coordinates.Z:0.0}");
 
     private static string FormatDimensions(VisualizationBinDimensionsDto dimensions)
     {

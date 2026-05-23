@@ -92,6 +92,13 @@ public sealed class AgnumClient
     public Task<AgnumBalancesResponseDto> GetBalancesAsync(int sndId, CancellationToken cancellationToken = default)
         => GetAsync<AgnumBalancesResponseDto>($"/api/warehouse/v1/agnum/balances?sndId={sndId}", cancellationToken);
 
+    public Task<IReadOnlyList<AgnumReconciliationRowDto>> GetReconciliationDataAsync(
+        int sndId,
+        CancellationToken cancellationToken = default)
+        => GetAsync<IReadOnlyList<AgnumReconciliationRowDto>>(
+            $"/api/warehouse/v1/agnum/reconciliation?sndId={sndId}",
+            cancellationToken);
+
     public async Task DistributeAsync(
         Guid virtualBalanceId,
         string locationCode,

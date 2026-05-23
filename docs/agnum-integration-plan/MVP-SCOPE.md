@@ -25,8 +25,8 @@ The first deliverable is read-only visibility and a distribution bridge:
 | 1 | Agnum read connector (`IAgnumApiClient`, `AgnumApiClient`, DTOs) | **Done** — PR #159, shipping on main |
 | 2 | Product/nomenclature import (`AgnumProductLink`, `ItemExternalAttribute`, conflict detection, apply, supplier sync, UoM auto-create, category hierarchy) | **Done** — PR #159 + fixes #162–169 |
 | 3 | Virtual balance import (`AgnumVirtualWarehouseBalance`, `AgnumBalanceImportRun`), Hangfire daily job, `Balances.razor` read-only UI | **Done** — PR #160 + #161 + #169 |
-| 4 | Distribution from virtual balance to physical MES location | **SLICE 2** — next |
-| 5 | Product search + 2D/3D location visibility after distribution | **SLICE 3** — after Slice 2 |
+| 4 | Distribution from virtual balance to physical MES location | **Done** — PR #171 + #172 + #174 |
+| 5 | Product search + 2D/3D location visibility after distribution | **Done** — PR #174 + Phase 5 UI |
 | 6 | Real warehouse operations | **NOT NEEDED** — packages A–F already implement all MES warehouse operations; no changes required |
 | 7 | Agnum document export | **BACKLOG** — governed by ADR-006; do not start until phases 1–5 are stable |
 

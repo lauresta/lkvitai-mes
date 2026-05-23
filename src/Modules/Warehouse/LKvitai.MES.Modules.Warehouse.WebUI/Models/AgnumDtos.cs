@@ -121,9 +121,18 @@ public sealed record AgnumBalanceRowDto
     public decimal Quantity { get; init; }
     public decimal DistributedQty { get; init; }
     public decimal RemainingQty { get; init; }
+    public decimal MesPhysicalQty { get; init; }
+    public IReadOnlyList<AgnumPhysicalLocationDto> MesLocations { get; init; } = Array.Empty<AgnumPhysicalLocationDto>();
     public string Uom { get; init; } = string.Empty;
     public int? ItemId { get; init; }
     public DateTime ImportedAt { get; init; }
+}
+
+public sealed record AgnumPhysicalLocationDto
+{
+    public string WarehouseId { get; init; } = string.Empty;
+    public string LocationCode { get; init; } = string.Empty;
+    public decimal Qty { get; init; }
 }
 
 public sealed record AgnumBalancesResponseDto
@@ -132,6 +141,19 @@ public sealed record AgnumBalancesResponseDto
     public Guid? RunId { get; init; }
     public DateTime? ImportedAt { get; init; }
     public IReadOnlyList<AgnumBalanceRowDto> Balances { get; init; } = Array.Empty<AgnumBalanceRowDto>();
+}
+
+public sealed record AgnumReconciliationRowDto
+{
+    public string AgnumCode { get; init; } = string.Empty;
+    public string? Sku { get; init; }
+    public string? ItemName { get; init; }
+    public decimal VirtualQty { get; init; }
+    public decimal DistributedQty { get; init; }
+    public decimal RemainingQty { get; init; }
+    public decimal MesPhysicalQty { get; init; }
+    public decimal Delta { get; init; }
+    public string Status { get; init; } = string.Empty;
 }
 
 public sealed record DistributeAgnumBalanceRequestDto(

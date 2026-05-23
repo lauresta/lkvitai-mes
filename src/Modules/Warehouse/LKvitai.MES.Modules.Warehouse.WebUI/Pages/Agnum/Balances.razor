@@ -46,6 +46,7 @@
             <span>Total qty: @FilteredRows.Sum(x => x.Quantity).ToString("0.###")</span>
             <span>Distributed: @FilteredRows.Sum(x => x.DistributedQty).ToString("0.###")</span>
             <span>Remaining: @FilteredRows.Sum(x => x.RemainingQty).ToString("0.###")</span>
+            <span>MES physical: @FilteredRows.Sum(x => x.MesPhysicalQty).ToString("0.###")</span>
             @if (_balances?.ImportedAt is not null)
             {
                 <span>Imported: @_balances.ImportedAt.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</span>
@@ -66,6 +67,9 @@
                     <th class="text-end">Quantity</th>
                     <th class="text-end">Distributed</th>
                     <th class="text-end">Remaining</th>
+                    <th class="text-end">MES Physical</th>
+                    <th class="text-end">Delta</th>
+                    <th>Locations</th>
                     <th>UoM</th>
                     <th>Imported</th>
                     <th></th>
@@ -75,7 +79,7 @@
                 @if (FilteredRows.Count == 0)
                 {
                     <tr>
-                        <td colspan="9" class="text-muted py-3">No Agnum balances found.</td>
+                        <td colspan="12" class="text-muted py-3">No Agnum balances found.</td>
                     </tr>
                 }
                 else
@@ -89,6 +93,32 @@
                             <td class="text-end">@row.Quantity.ToString("0.###")</td>
                             <td class="text-end">@row.DistributedQty.ToString("0.###")</td>
                             <td class="text-end">@row.RemainingQty.ToString("0.###")</td>
+                            <td class="text-end">@row.MesPhysicalQty.ToString("0.###")</td>
+                            <td class="text-end">
+                                <span class="@GetDeltaChipClass(row.MesPhysicalQty - row.DistributedQty)">
+                                    @((row.MesPhysicalQty - row.DistributedQty).ToString("0.###"))
+                                </span>
+                            </td>
+                            <td>
+                                @if (row.MesLocations.Count == 0)
+                                {
+                                    <span class="text-muted">-</span>
+                                }
+                                else
+                                {
+                                    @foreach (var location in row.MesLocations.Take(2))
+                                    {
+                                        <a class="font-monospace me-2"
+                                           href="@BuildLocationHref(row, location)">
+                                            @location.LocationCode (@location.Qty.ToString("0.###"))
+                                        </a>
+                                    }
+                                    @if (row.MesLocations.Count > 2)
+                                    {
+                                        <span class="chip chip--slate">+@(row.MesLocations.Count - 2) more</span>
+                                    }
+                                }
+                            </td>
                             <td>@row.Uom</td>
                             <td>@row.ImportedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</td>
                             <td class="text-end">
@@ -390,4 +420,33 @@
            ?? ex.ProblemDetails?.Detail
            ?? ex.ProblemDetails?.Title
            ?? "Agnum balances request failed.";
+
+    private static string GetDeltaChipClass(decimal delta)
+    {
+        if (delta > 0m)
+        {
+            return "chip chip--ok";
+        }
+
+        if (delta < 0m)
+        {
+            return "chip chip--danger";
+        }
+
+        return "chip chip--slate";
+    }
+
+    private static string BuildLocationHref(AgnumBalanceRowDto row, AgnumPhysicalLocationDto location)
+    {
+        var query = new Dictionary<string, string?>
+        {
+            ["selected"] = location.LocationCode,
+            ["location"] = location.LocationCode,
+            ["sku"] = row.Sku
+        };
+
+        return Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString(
+            "/warehouse/visualization/3d",
+            query);
+    }
 }
