@@ -215,7 +215,7 @@ public sealed class AgnumImportController : ControllerBase
         {
             await using var querySession = _documentStore.QuerySession();
             var physicalStockRows = await Marten.QueryableExtensions.ToListAsync(
-                querySession.Query<AvailableStockView>().Where(x => skus.Contains(x.SKU)),
+                querySession.Query<AvailableStockView>().Where(x => skus.Contains(x.SKU) && x.OnHandQty > 0m),
                 ct);
 
             physicalStockBySku = physicalStockRows
@@ -346,7 +346,7 @@ public sealed class AgnumImportController : ControllerBase
         {
             await using var querySession = _documentStore.QuerySession();
             var physicalStockRows = await Marten.QueryableExtensions.ToListAsync(
-                querySession.Query<AvailableStockView>().Where(x => skus.Contains(x.SKU)),
+                querySession.Query<AvailableStockView>().Where(x => skus.Contains(x.SKU) && x.OnHandQty > 0m),
                 ct);
 
             physicalBySku = physicalStockRows
