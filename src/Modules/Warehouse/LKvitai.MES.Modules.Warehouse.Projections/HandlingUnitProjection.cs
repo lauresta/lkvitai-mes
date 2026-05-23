@@ -19,9 +19,9 @@ namespace LKvitai.MES.Modules.Warehouse.Projections;
 ///   If toLocation == HU.location: AddLine(sku, qty)
 ///   If locations differ: Update HU.location
 ///
-/// Sealed invariant (defensive): once Status == "SEALED", LineAdded / LineRemoved /
-/// StockMoved are silently ignored. Primary enforcement is in the command path;
-/// the projection guard prevents stale or replayed events from corrupting state.
+/// Sealed invariant (defensive): once Status == "SEALED", explicit LineAdded /
+/// LineRemoved events are silently ignored. StockMoved is still projected because
+/// receipt transactions can be grouped after the seal event by the async daemon.
 ///
 /// CRITICAL: Async lifecycle (uses Marten async daemon)
 /// CRITICAL: V-5 Rule B — uses only self-contained event data (no external queries)
@@ -86,9 +86,6 @@ public class HandlingUnitProjection : MultiStreamProjection<HandlingUnitView, st
 
     public HandlingUnitView Apply(StockMovedEvent evt, HandlingUnitView current)
     {
-        // Sealed HU is immutable — ignore post-seal mutations (defensive)
-        if (current.Status == "SEALED") return current;
-
         // Design spec projection logic:
         //   If fromLocation == HU.location: RemoveLine(sku, qty)
         //   If toLocation == HU.location: AddLine(sku, qty)
@@ -193,7 +190,8 @@ public class HandlingUnitGrouper : IAggregateGrouper<string>
 /// without Marten infrastructure. Mirrors the Apply methods on HandlingUnitProjection.
 ///
 /// V-5 Rule B: Uses only self-contained event data (no external queries).
-/// Sealed invariant: post-seal LineAdded/LineRemoved/StockMoved are ignored.
+/// Sealed invariant: post-seal LineAdded/LineRemoved are ignored. StockMoved is
+/// still applied so async projection ordering cannot drop receipt HU contents.
 /// </summary>
 public static class HandlingUnitAggregation
 {
@@ -238,8 +236,6 @@ public static class HandlingUnitAggregation
 
     public static HandlingUnitView ApplyStockMoved(StockMovedEvent evt, HandlingUnitView current)
     {
-        if (current.Status == "SEALED") return current;
-
         var huLocation = current.CurrentLocation;
 
         if (!string.IsNullOrEmpty(huLocation))
@@ -280,6 +276,6 @@ public static class HandlingUnitAggregation
 
     private static bool IsVirtualLocation(string location)
     {
-        return location is "SUPPLIER" or "PRODUCTION" or "SCRAP" or "SYSTEM";
+        return location is "SUPPLIER" or "PRODUCTION" or "SCRAP" or "SYSTEM" or "AGNUM";
     }
 }

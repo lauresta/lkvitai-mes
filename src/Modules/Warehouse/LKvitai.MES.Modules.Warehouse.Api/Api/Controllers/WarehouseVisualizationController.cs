@@ -511,10 +511,14 @@ public sealed class WarehouseVisualizationController : ControllerBase
             var location = node.Location;
             var hasHardLock = hardLockByLocation.TryGetValue(location.Code, out var hardLockedQty) &&
                               hardLockedQty > 0m;
-            var onHandQty = qtyByLocation.GetValueOrDefault(location.Code, 0m);
-            var utilization = ComputeUtilization(location, onHandQty);
-            var utilizationPercent = decimal.Round(utilization * 100m, 2, MidpointRounding.AwayFromZero);
             var handlingUnitsForLocation = husByLocation.GetValueOrDefault(location.Code, new List<HandlingUnitView>());
+            var onHandQty = qtyByLocation.GetValueOrDefault(location.Code, 0m);
+            var huQty = handlingUnitsForLocation
+                .SelectMany(x => x.Lines)
+                .Sum(x => x.Quantity);
+            var displayedQty = onHandQty > 0m ? onHandQty : huQty;
+            var utilization = ComputeUtilization(location, displayedQty);
+            var utilizationPercent = decimal.Round(utilization * 100m, 2, MidpointRounding.AwayFromZero);
             var status = ResolveCapacityStatus(utilization);
             var color = ResolveStatusColor(status);
             var handlingUnitResponses = handlingUnitsForLocation.Select(x =>
@@ -527,7 +531,7 @@ public sealed class WarehouseVisualizationController : ControllerBase
                     firstLine?.Quantity ?? 0m);
             }).ToList();
 
-            if (handlingUnitResponses.Count == 0 && onHandQty > 0m)
+            if (handlingUnitResponses.Count == 0 && displayedQty > 0m)
             {
                 handlingUnitResponses.AddRange(stockRows
                     .Where(x => string.Equals(GetStockLocationCode(x), location.Code, StringComparison.OrdinalIgnoreCase))

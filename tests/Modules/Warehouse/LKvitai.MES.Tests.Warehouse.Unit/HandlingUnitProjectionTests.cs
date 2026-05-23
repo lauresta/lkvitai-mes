@@ -335,7 +335,7 @@ public class HandlingUnitProjectionTests
         view.IsEmpty.Should().BeFalse();
     }
 
-    // ── Sealed HU guards (defensive — projection ignores post-seal mutations) ──
+    // ── Sealed HU guards (defensive — projection ignores explicit line mutations) ──
 
     [Fact]
     public void Sealed_LineAdded_DoesNotChangeLines()
@@ -364,31 +364,46 @@ public class HandlingUnitProjectionTests
     }
 
     [Fact]
-    public void Sealed_StockMoved_DoesNotChangeLocationOrLines()
+    public void Sealed_StockMoved_AppliesMovement()
     {
         var view = MakeSealedView();
-        var locationBefore = view.CurrentLocation;
-        var linesBefore = view.Lines.Select(l => (l.SKU, l.Quantity)).ToList();
         var evt = MakeStockMoved(Location, "LOC-B", Sku1, 50m, HuId);
 
         var result = HandlingUnitAggregation.ApplyStockMoved(evt, view);
 
         result.Status.Should().Be("SEALED");
-        result.CurrentLocation.Should().Be(locationBefore);
-        result.Lines.Select(l => (l.SKU, l.Quantity)).Should().BeEquivalentTo(linesBefore);
+        result.CurrentLocation.Should().Be("LOC-B");
+        result.Lines.Should().HaveCount(1);
+        result.Lines[0].SKU.Should().Be(Sku1);
+        result.Lines[0].Quantity.Should().Be(50m);
     }
 
     [Fact]
-    public void Sealed_StockMoved_Receipt_DoesNotAddLine()
+    public void Sealed_StockMoved_Receipt_AddsLine()
     {
         var view = MakeSealedView();
-        var lineCountBefore = view.Lines.Count;
         var evt = MakeStockMoved("SUPPLIER", Location, Sku2, 200m, HuId);
 
         var result = HandlingUnitAggregation.ApplyStockMoved(evt, view);
 
         result.Status.Should().Be("SEALED");
-        result.Lines.Should().HaveCount(lineCountBefore);
+        result.Lines.Should().HaveCount(2);
+        result.Lines.Should().Contain(x => x.SKU == Sku2 && x.Quantity == 200m);
+    }
+
+    [Fact]
+    public void Sealed_StockMoved_AgnumReceipt_AfterSeal_AddsLine()
+    {
+        var view = MakeOpenView();
+        HandlingUnitAggregation.ApplySealed(MakeSealed(HuId, DateTime.UtcNow), view);
+        var evt = MakeStockMoved("AGNUM", Location, Sku2, 18m, HuId);
+
+        var result = HandlingUnitAggregation.ApplyStockMoved(evt, view);
+
+        result.Status.Should().Be("SEALED");
+        result.CurrentLocation.Should().Be(Location);
+        result.IsEmpty.Should().BeFalse();
+        result.Lines.Should().ContainSingle(x => x.SKU == Sku2 && x.Quantity == 18m);
     }
 
     // ── Helpers ───────────────────────────────────────────────────
