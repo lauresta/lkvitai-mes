@@ -30,6 +30,8 @@ public sealed record ImportExecutionResult(
 
 public sealed class MasterDataImportService : IMasterDataImportService
 {
+    private const int MaxErrorReportRows = 10_000;
+
     private readonly WarehouseDbContext _dbContext;
     private readonly ISkuGenerationService _skuGenerationService;
 
@@ -98,13 +100,22 @@ public sealed class MasterDataImportService : IMasterDataImportService
             sheet.Cell(1, i + 1).Style.Font.Bold = true;
         }
 
-        for (var i = 0; i < errors.Count; i++)
+        var reportRows = Math.Min(errors.Count, MaxErrorReportRows);
+        for (var i = 0; i < reportRows; i++)
         {
             var row = i + 2;
             sheet.Cell(row, 1).Value = errors[i].Row;
             sheet.Cell(row, 2).Value = errors[i].Column;
             sheet.Cell(row, 3).Value = errors[i].Value ?? string.Empty;
             sheet.Cell(row, 4).Value = errors[i].Message;
+        }
+
+        if (errors.Count > reportRows)
+        {
+            var noteRow = reportRows + 3;
+            sheet.Cell(noteRow, 1).Value = "Truncated";
+            sheet.Cell(noteRow, 4).Value = $"Showing first {MaxErrorReportRows} errors out of {errors.Count}.";
+            sheet.Range(noteRow, 1, noteRow, 4).Style.Font.Italic = true;
         }
 
         sheet.Columns().AdjustToContents();

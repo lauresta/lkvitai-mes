@@ -110,6 +110,39 @@ public class LabelPrintOrchestratorTests
 
     [Fact]
     [Trait("Category", "LabelPrinting")]
+    public async Task GetPdfAsync_WhenFileExistsUnderPdfDirectory_ShouldReturnFile()
+    {
+        var outputRoot = Path.Combine(Path.GetTempPath(), $"label-print-tests-{Guid.NewGuid():N}");
+        var pdfDirectory = Path.Combine(outputRoot, "pdf");
+        Directory.CreateDirectory(pdfDirectory);
+        await File.WriteAllBytesAsync(Path.Combine(pdfDirectory, "label-test.pdf"), [(byte)'%', (byte)'P', (byte)'D', (byte)'F']);
+        var sut = CreateSut(new SuccessfulPrinterClient(), CreateBackgroundJobs().Object, outputRoot);
+
+        var file = await sut.GetPdfAsync("label-test.pdf");
+
+        file.Should().NotBeNull();
+        file!.ContentType.Should().Be("application/pdf");
+        file.FileName.Should().Be("label-test.pdf");
+        file.Content.Should().Equal([(byte)'%', (byte)'P', (byte)'D', (byte)'F']);
+    }
+
+    [Theory]
+    [InlineData("../secret.pdf")]
+    [InlineData("nested/secret.pdf")]
+    [InlineData("label-test.txt")]
+    [Trait("Category", "LabelPrinting")]
+    public async Task GetPdfAsync_WhenFileNameIsUnsafe_ShouldReturnNull(string fileName)
+    {
+        var outputRoot = Path.Combine(Path.GetTempPath(), $"label-print-tests-{Guid.NewGuid():N}");
+        var sut = CreateSut(new SuccessfulPrinterClient(), CreateBackgroundJobs().Object, outputRoot);
+
+        var file = await sut.GetPdfAsync(fileName);
+
+        file.Should().BeNull();
+    }
+
+    [Fact]
+    [Trait("Category", "LabelPrinting")]
     public async Task PrintAsync_WhenLabelTypeInvalid_ShouldThrow()
     {
         var sut = CreateSut(new SuccessfulPrinterClient(), CreateBackgroundJobs().Object);
