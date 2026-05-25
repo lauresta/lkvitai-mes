@@ -334,12 +334,19 @@ public sealed class LabelPrintOrchestrator : ILabelPrintOrchestrator
     {
         if (string.IsNullOrWhiteSpace(fileName) ||
             fileName.Contains(Path.DirectorySeparatorChar, StringComparison.Ordinal) ||
-            fileName.Contains(Path.AltDirectorySeparatorChar, StringComparison.Ordinal))
+            fileName.Contains(Path.AltDirectorySeparatorChar, StringComparison.Ordinal) ||
+            !string.Equals(Path.GetExtension(fileName), ".pdf", StringComparison.OrdinalIgnoreCase))
         {
             return null;
         }
 
-        var path = Path.Combine(_outputRootPath, "pdf", fileName);
+        var pdfRoot = Path.GetFullPath(Path.Combine(_outputRootPath, "pdf"));
+        var path = Path.GetFullPath(Path.Combine(pdfRoot, fileName));
+        if (!IsUnderDirectory(path, pdfRoot))
+        {
+            return null;
+        }
+
         if (!File.Exists(path))
         {
             return null;
@@ -347,6 +354,15 @@ public sealed class LabelPrintOrchestrator : ILabelPrintOrchestrator
 
         var content = await File.ReadAllBytesAsync(path, cancellationToken);
         return new LabelPdfFileResult(content, "application/pdf", fileName);
+    }
+
+    private static bool IsUnderDirectory(string candidatePath, string rootPath)
+    {
+        var normalizedRoot = rootPath.EndsWith(Path.DirectorySeparatorChar)
+            ? rootPath
+            : rootPath + Path.DirectorySeparatorChar;
+
+        return candidatePath.StartsWith(normalizedRoot, StringComparison.Ordinal);
     }
 
     private async Task<string> CreatePdfFallbackAsync(

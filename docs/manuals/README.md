@@ -32,7 +32,7 @@ docs/manuals/
 ### Lokalus kūrimas
 
 ```bash
-pip install mkdocs-material
+pip install --only-binary :all: -r requirements.lock
 cd docs/manuals
 mkdocs serve
 # Atidaryk http://127.0.0.1:8000
