@@ -9,7 +9,8 @@
 - Scope bridge overrides to `.lk .mud-*`, `.lk-grid`, `.lk-dialog`, `.lk-state`, and `.panel`.
 - Keep `.lk-bare` as an emergency escape hatch for rare raw-Mud experiments.
 - Use one bordered Mud field base style:
-  - `.lk-field--filter` for 30px toolbar filters.
+  - `.lk-field--filter` for 32px interactive toolbar filters.
+  - Filter labels are external mono-caps micro-labels; do not use Mud floating labels in dense list toolbars.
   - `.lk-field--inline` for row actions / inline fields without labels.
 - Dialogs:
   - Neutral header by default.
@@ -27,6 +28,13 @@
 - Tables:
   - 30px rows everywhere, including admin/catalog and read-heavy reports.
   - For read-heavy reports, use grouping and section spacing instead of taller rows.
+- Admin/list density:
+  - Keep the intentional split: `--row-h: 30px` for display rows, `--control-h: 32px` for interactive inputs/buttons.
+  - Filter toolbar and grid live in one `MudPaper.panel`; do not stack a separate filter card above a separate grid card.
+  - Fold `Total` and page indicator into a 34px grid header strip.
+  - MudDataGrid pager target is 36px with 28x28 icon buttons.
+  - Empty filtered grids use one compact 56-64px block with mono-caps title and optional `Clear filters` action.
+  - Non-row chrome under the page title should stay at or below about 168px on admin/list screens.
 - State grammar:
   - `.lk-state` is for page/panel context.
   - `.chip` is for a single row, record, cell, or field.
