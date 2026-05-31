@@ -21,49 +21,54 @@
     </div>
 }
 
-<div class="card shadow-sm position-relative">
+<MudPaper Outlined="true" Elevation="0" Class="panel stock-results-panel">
     <LoadingSpinner IsLoading="@(_isLoadingWarehouses || _isSearching)" />
 
-    <div class="card-body">
-        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-            <div class="text-muted" data-testid="stock-summary">
+        <div class="stock-grid-head">
+            <div class="stock-grid-head__summary" data-testid="stock-summary">
                 @_summaryText
             </div>
-            <div class="d-flex flex-wrap gap-2 align-items-center">
-                <div class="btn-group" role="group" aria-label="View mode">
-                    <button class="btn btn-sm @(GetModeClass(StockViewMode.Table))" @onclick="@(() => SetMode(StockViewMode.Table))">Table</button>
-                    <button class="btn btn-sm @(GetModeClass(StockViewMode.List))" @onclick="@(() => SetMode(StockViewMode.List))">List</button>
-                    <button class="btn btn-sm @(GetModeClass(StockViewMode.Gallery))" @onclick="@(() => SetMode(StockViewMode.Gallery))">Gallery</button>
+            <div class="stock-grid-head__actions">
+                <div class="stock-view-toggle" role="group" aria-label="View mode">
+                    <MudButton Size="Size.Small" Variant="@GetModeVariant(StockViewMode.Table)" Color="Color.Primary" OnClick="@(() => SetMode(StockViewMode.Table))">Table</MudButton>
+                    <MudButton Size="Size.Small" Variant="@GetModeVariant(StockViewMode.List)" Color="Color.Primary" OnClick="@(() => SetMode(StockViewMode.List))">List</MudButton>
+                    <MudButton Size="Size.Small" Variant="@GetModeVariant(StockViewMode.Gallery)" Color="Color.Primary" OnClick="@(() => SetMode(StockViewMode.Gallery))">Gallery</MudButton>
                 </div>
-                <label class="form-label mb-0 text-muted small" for="stock-page-size-select">Page size</label>
-                <select id="stock-page-size-select"
-                        class="form-select form-select-sm"
-                        style="width: 110px;"
-                        data-testid="stock-page-size"
-                        value="@_pageSize"
-                        @onchange="OnPageSizeChangedFromChangeEventAsync">
-                    <option value="25">25</option>
-                    <option value="50">50</option>
-                    <option value="100">100</option>
-                </select>
-                <button class="btn btn-outline-secondary btn-sm"
-                        data-testid="stock-refresh"
-                        @onclick="RefreshAsync"
-                        disabled="@(_isLoadingWarehouses || _isSearching)">
+                <div class="lk-field--filter stock-page-size" data-testid="stock-page-size">
+                    <MudSelect T="int"
+                               Variant="Variant.Outlined"
+                               Margin="Margin.Dense"
+                               Value="@_pageSize"
+                               ValueChanged="OnPageSizeChangedAsync"
+                               InputAttributes="@StockPageSizeAttributes">
+                        <MudSelectItem T="int" Value="25">25</MudSelectItem>
+                        <MudSelectItem T="int" Value="50">50</MudSelectItem>
+                        <MudSelectItem T="int" Value="100">100</MudSelectItem>
+                    </MudSelect>
+                </div>
+                <MudButton Variant="Variant.Outlined"
+                           Size="Size.Small"
+                           OnClick="RefreshAsync"
+                           Disabled="@(_isLoadingWarehouses || _isSearching)"
+                           UserAttributes="@StockRefreshAttributes">
                     Refresh
-                </button>
-                <button class="btn btn-outline-secondary btn-sm"
-                        data-testid="stock-export"
-                        @onclick="ExportCsvAsync"
-                        disabled="@(_items.Count == 0)">
+                </MudButton>
+                <MudButton Variant="Variant.Outlined"
+                           Size="Size.Small"
+                           OnClick="ExportCsvAsync"
+                           Disabled="@(_items.Count == 0)"
+                           UserAttributes="@StockExportAttributes">
                     Export CSV
-                </button>
+                </MudButton>
             </div>
         </div>
 
         @if (!_hasSearched)
         {
-            <p class="text-muted mb-0" data-testid="stock-before-search">Enter at least one filter and click Search.</p>
+            <div class="stock-grid__empty" data-testid="stock-before-search">
+                <span class="stock-grid__empty-title">Ready for search</span>
+                <span>Enter at least one filter and click Search.</span>
+            </div>
         }
         else
         {
@@ -76,34 +81,48 @@
                              Dense="true"
                              Hover="true"
                              Loading="@_isSearching"
+                             Class="lk-grid stock-grid"
                              @attributes="@StockGridAttributes">
                     <NoRecordsContent>
-                        <p class="text-muted mb-0 py-2">No stock found matching filters.</p>
+                        <div class="stock-grid__empty">
+                            <span class="stock-grid__empty-title">No stock found</span>
+                            <span>No stock matches the current filters.</span>
+                        </div>
                     </NoRecordsContent>
                     <Columns>
                         <TemplateColumn Title="">
                             <CellTemplate>
                                 @if (!string.IsNullOrWhiteSpace(context.Item.PrimaryThumbnailUrl))
                                 {
-                                    <img src="@context.Item.PrimaryThumbnailUrl" alt="@context.Item.SKU" loading="lazy" style="width:48px;height:48px;object-fit:cover;border-radius:4px;" />
+                                    <img class="stock-thumb" src="@context.Item.PrimaryThumbnailUrl" alt="@context.Item.SKU" loading="lazy" />
                                 }
                                 else
                                 {
-                                    <div class="bg-light border text-muted d-flex align-items-center justify-content-center" style="width:48px;height:48px;border-radius:4px;">-</div>
+                                    <span class="stock-thumb stock-thumb--empty">-</span>
                                 }
                             </CellTemplate>
                         </TemplateColumn>
                         <PropertyColumn Property="x => x.WarehouseId" Title="Warehouse" />
                         <PropertyColumn Property="x => x.Location" Title="Location" />
-                        <PropertyColumn Property="x => x.SKU" Title="SKU" />
+                        <TemplateColumn Title="SKU">
+                            <CellTemplate>
+                                <span class="sku-link">@context.Item.SKU</span>
+                            </CellTemplate>
+                        </TemplateColumn>
                         <PropertyColumn Property="x => x.ItemName" Title="Name" />
-                        <PropertyColumn Property="x => x.PhysicalQty" Title="Physical Qty" />
-                        <PropertyColumn Property="x => x.ReservedQty" Title="Reserved Qty" />
-                        <PropertyColumn Property="x => x.AvailableQty" Title="Available Qty" />
+                        <TemplateColumn Title="Physical">
+                            <CellTemplate><span class="is-num">@FormatQty(context.Item.PhysicalQty)</span></CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Reserved">
+                            <CellTemplate><span class="is-num">@FormatQty(context.Item.ReservedQty)</span></CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Available">
+                            <CellTemplate><span class="is-num"><strong>@FormatQty(context.Item.AvailableQty)</strong></span></CellTemplate>
+                        </TemplateColumn>
                         <TemplateColumn Title="Last Updated">
                             <CellTemplate>
-                                @context.Item.LastUpdated.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")
-                                <span class="ms-2"><StaleBadge LastUpdated="context.Item.LastUpdated" /></span>
+                                <span class="mono">@context.Item.LastUpdated.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</span>
+                                <span class="stock-stale"><StaleBadge LastUpdated="context.Item.LastUpdated" /></span>
                             </CellTemplate>
                         </TemplateColumn>
                     </Columns>
@@ -111,25 +130,25 @@
             }
             else if (_viewMode == StockViewMode.List)
             {
-                <div class="d-flex flex-column gap-2">
+                <div class="stock-list">
                     @foreach (var row in _items)
                     {
-                        <div class="border rounded p-2 d-flex align-items-center gap-3">
+                        <div class="stock-list-row">
                             @if (!string.IsNullOrWhiteSpace(row.PrimaryThumbnailUrl))
                             {
-                                <img src="@row.PrimaryThumbnailUrl" alt="@row.SKU" loading="lazy" style="width:64px;height:64px;object-fit:cover;border-radius:4px;" />
+                                <img class="stock-list-row__thumb" src="@row.PrimaryThumbnailUrl" alt="@row.SKU" loading="lazy" />
                             }
                             else
                             {
-                                <div class="bg-light border text-muted d-flex align-items-center justify-content-center" style="width:64px;height:64px;border-radius:4px;">-</div>
+                                <span class="stock-list-row__thumb stock-thumb--empty">-</span>
                             }
-                            <div class="flex-grow-1">
-                                <div><strong>@row.SKU</strong> - @row.ItemName</div>
-                                <div class="small text-muted">@row.WarehouseId / @row.Location</div>
+                            <div class="stock-list-row__main">
+                                <div><span class="sku-link">@row.SKU</span> @row.ItemName</div>
+                                <div class="stock-list-row__meta">@row.WarehouseId / @row.Location</div>
                             </div>
-                            <div class="text-end">
-                                <div>On hand: @row.PhysicalQty</div>
-                                <div>Available: @row.AvailableQty</div>
+                            <div class="stock-list-row__qty">
+                                <div>On hand: <span class="mono">@FormatQty(row.PhysicalQty)</span></div>
+                                <div>Available: <strong class="mono">@FormatQty(row.AvailableQty)</strong></div>
                             </div>
                         </div>
                     }
@@ -137,42 +156,39 @@
             }
             else
             {
-                <div class="row g-3">
+                <div class="stock-gallery">
                     @foreach (var row in _items)
                     {
-                        <div class="col-6 col-md-4 col-lg-3">
-                            <div class="card h-100">
-                                @if (!string.IsNullOrWhiteSpace(row.PrimaryThumbnailUrl))
-                                {
-                                    <img src="@row.PrimaryThumbnailUrl" alt="@row.SKU" loading="lazy" style="height:150px;object-fit:cover;" />
-                                }
-                                else
-                                {
-                                    <div class="bg-light border text-muted d-flex align-items-center justify-content-center" style="height:150px;">No image</div>
-                                }
-                                <div class="card-body">
-                                    <div><strong>@row.SKU</strong></div>
-                                    <div class="small text-muted mb-2">@row.ItemName</div>
-                                    <div class="small">@row.WarehouseId / @row.Location</div>
-                                    <div class="small">On hand: @row.PhysicalQty</div>
-                                    <div class="small">Available: @row.AvailableQty</div>
-                                </div>
+                        <div class="stock-gallery-card">
+                            @if (!string.IsNullOrWhiteSpace(row.PrimaryThumbnailUrl))
+                            {
+                                <img class="stock-gallery-card__image" src="@row.PrimaryThumbnailUrl" alt="@row.SKU" loading="lazy" />
+                            }
+                            else
+                            {
+                                <div class="stock-gallery-card__image stock-thumb--empty">No image</div>
+                            }
+                            <div class="stock-gallery-card__body">
+                                <div><span class="sku-link">@row.SKU</span></div>
+                                <div class="stock-list-row__meta">@row.ItemName</div>
+                                <div>@row.WarehouseId / @row.Location</div>
+                                <div>On hand: <span class="mono">@FormatQty(row.PhysicalQty)</span></div>
+                                <div>Available: <strong class="mono">@FormatQty(row.AvailableQty)</strong></div>
                             </div>
                         </div>
                     }
                 </div>
             }
 
-            <div class="mt-3">
-                <Pagination CurrentPage="@_page"
-                            TotalPages="@_totalPages"
-                            PageSize="@_pageSize"
-                            OnPageChanged="OnPageChangedAsync"
-                            OnPageSizeChanged="OnPageSizeChangedAsync" />
+            <div class="stock-grid-footer" data-testid="stock-pager">
+                <span class="mono">Page @_page of @_totalPages</span>
+                <div class="stock-grid-footer__actions">
+                    <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="@(() => OnPageChangedAsync(_page - 1))" Disabled="@(_page <= 1)">Previous</MudButton>
+                    <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="@(() => OnPageChangedAsync(_page + 1))" Disabled="@(_page >= _totalPages)">Next</MudButton>
+                </div>
             </div>
         }
-    </div>
-</div>
+</MudPaper>
 </div>
 
 @code {
@@ -192,6 +208,9 @@
     private bool _isDisposed;
     private readonly CancellationTokenSource _disposeCts = new();
     private static readonly Dictionary<string, object> StockGridAttributes = new() { ["data-testid"] = "stock-grid" };
+    private static readonly Dictionary<string, object> StockPageSizeAttributes = new() { ["aria-label"] = "Page size" };
+    private static readonly Dictionary<string, object> StockRefreshAttributes = new() { ["data-testid"] = "stock-refresh" };
+    private static readonly Dictionary<string, object> StockExportAttributes = new() { ["data-testid"] = "stock-export" };
 
     private StockViewMode _viewMode = StockViewMode.Table;
     private int _totalPages => Math.Max(1, (int)Math.Ceiling(_totalCount / (double)Math.Max(1, _pageSize)));
@@ -366,23 +385,16 @@
         await LoadPageAsync(_page, _pageSize);
     }
 
-    private async Task OnPageSizeChangedFromChangeEventAsync(ChangeEventArgs args)
-    {
-        if (args.Value is null || !int.TryParse(args.Value.ToString(), out var parsed))
-        {
-            return;
-        }
-
-        await OnPageSizeChangedAsync(parsed);
-    }
-
     private void SetMode(StockViewMode mode)
     {
         _viewMode = mode;
     }
 
-    private string GetModeClass(StockViewMode mode)
-        => _viewMode == mode ? "btn-primary" : "btn-outline-primary";
+    private Variant GetModeVariant(StockViewMode mode)
+        => _viewMode == mode ? Variant.Filled : Variant.Outlined;
+
+    private static string FormatQty(decimal value)
+        => value.ToString("0.###");
 
     private static string BuildErrorMessage(ApiException ex)
     {
