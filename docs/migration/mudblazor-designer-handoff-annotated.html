@@ -1,0 +1,871 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LKvitai.MES MudBlazor Designer Handoff</title>
+  <style>
+    :root {
+      --n-0: #fff;
+      --n-25: #fbfcfd;
+      --n-50: #f5f6f8;
+      --n-100: #eef1f4;
+      --n-150: #e2e7ec;
+      --n-200: #d5dce4;
+      --n-300: #b9c3ce;
+      --n-400: #8996a4;
+      --n-500: #66717f;
+      --n-600: #4e5966;
+      --n-700: #323b45;
+      --n-800: #1f2632;
+      --n-900: #151922;
+      --accent-50: #eaf8f7;
+      --accent-100: #d1eeec;
+      --accent-300: #7cc4c1;
+      --accent-400: #56aaa7;
+      --accent-500: #2f8f8b;
+      --accent-600: #257773;
+      --accent-700: #1d5d5a;
+      --sand-25: #faf6ee;
+      --sand-50: #f7f1e5;
+      --sand-100: #ede2c8;
+      --sand-700: #7c5f2a;
+      --ok-fg: #19744a;
+      --ok-bg: #e6f4ec;
+      --ok-bd: #bfe0cd;
+      --warn-fg: #7c5f2a;
+      --warn-bg: #f7eed5;
+      --warn-bd: #e2cf9a;
+      --info-fg: #1d5d5a;
+      --info-bg: #e3f2f1;
+      --info-bd: #b4dad7;
+      --slate-fg: #3a4554;
+      --slate-bg: #eaeef3;
+      --slate-bd: #cdd5de;
+      --danger-fg: #8a1f12;
+      --danger-bg: #fbe7e3;
+      --danger-bd: #f0c2b8;
+      --done-fg: #2a4a3a;
+      --done-bg: #e3eee7;
+      --done-bd: #bdd2c4;
+      --dark: #20242c;
+      --dark-2: #171b22;
+      --dark-line: #3a404c;
+      --font-ui: Inter, "Segoe UI", system-ui, sans-serif;
+      --font-mono: "JetBrains Mono", "SF Mono", Consolas, monospace;
+      --r-xs: 3px;
+      --r-sm: 4px;
+      --r-md: 6px;
+      --r-lg: 8px;
+      --content-max: 1600px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--n-50);
+      color: var(--n-800);
+      font: 13px/1.5 var(--font-ui);
+    }
+    .topbar {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      padding: 14px 28px;
+      background: var(--dark);
+      color: var(--n-0);
+      border-bottom: 1px solid var(--dark-line);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand__mark {
+      display: grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--dark-line);
+      border-radius: 6px;
+      background: var(--dark-2);
+      color: var(--accent-400);
+      font-weight: 700;
+    }
+    .brand__name {
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1.1;
+    }
+    .brand__tagline {
+      margin-top: 2px;
+      color: #a5adb8;
+      font-size: 10px;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+    }
+    main {
+      max-width: var(--content-max);
+      margin: 0 auto;
+      padding: 28px;
+    }
+    h1, h2, h3 { margin: 0; color: var(--n-900); line-height: 1.2; }
+    h1 { font-size: 24px; font-weight: 650; }
+    h2 { margin-top: 28px; font-size: 17px; }
+    h3 { margin-top: 18px; font-size: 14px; }
+    p { margin: 8px 0 0; }
+    a { color: var(--accent-700); }
+    .panel {
+      margin-top: 14px;
+      background: var(--n-0);
+      border: 1px solid var(--n-200);
+      border-radius: var(--r-md);
+      overflow: hidden;
+    }
+    .panel__head {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--n-150);
+      background: var(--n-25);
+      font-weight: 650;
+      color: var(--n-800);
+    }
+    .panel__body { padding: 12px; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+    }
+    .swatches {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 8px;
+    }
+    .swatch {
+      border: 1px solid var(--n-200);
+      border-radius: var(--r-sm);
+      overflow: hidden;
+      background: var(--n-0);
+    }
+    .swatch__color { height: 34px; border-bottom: 1px solid var(--n-150); }
+    .swatch__label {
+      padding: 6px 8px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--n-700);
+    }
+    .note {
+      padding: 10px 12px;
+      background: var(--warn-bg);
+      border: 1px solid var(--warn-bd);
+      border-radius: var(--r-md);
+      color: var(--warn-fg);
+    }
+    .ok {
+      padding: 10px 12px;
+      background: var(--ok-bg);
+      border: 1px solid var(--ok-bd);
+      border-radius: var(--r-md);
+      color: var(--ok-fg);
+    }
+    code, pre {
+      font-family: var(--font-mono);
+      font-size: 12px;
+    }
+    code {
+      padding: 1px 4px;
+      border: 1px solid var(--n-200);
+      border-radius: var(--r-xs);
+      background: var(--n-100);
+    }
+    pre {
+      margin: 0;
+      padding: 12px;
+      overflow: auto;
+      background: #11151c;
+      color: #e8edf3;
+      border-radius: var(--r-md);
+      max-height: 520px;
+    }
+    ul { margin: 8px 0 0; padding-left: 20px; }
+    li + li { margin-top: 4px; }
+    .two-col {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 14px;
+    }
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+      font-size: 12px;
+    }
+    .table th,
+    .table td {
+      padding: 7px 8px;
+      border-bottom: 1px solid var(--n-150);
+      text-align: left;
+      vertical-align: top;
+    }
+    .table th {
+      background: var(--n-50);
+      color: var(--n-600);
+      font-size: 10.5px;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+    }
+    .mono { font-family: var(--font-mono); }
+    .todo {
+      border-left: 3px solid var(--accent-500);
+      padding: 10px 12px;
+      background: var(--accent-50);
+      color: var(--n-800);
+      border-radius: var(--r-sm);
+    }
+    @media (max-width: 860px) {
+      .two-col { grid-template-columns: 1fr; }
+      main { padding: 18px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand__mark">LK</div>
+      <div>
+        <div class="brand__name">LKvitai.MES</div>
+        <div class="brand__tagline">MudBlazor migration design handoff</div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <h1>Designer Handoff: MudBlazor Migration</h1>
+    <p class="note">This is the single static file to hand to the designer. The designer may edit this file directly or return annotated recommendations. Codex will later distribute the final decisions into <code>AppTheme.cs</code>, <code>site.css</code>, shared components, and migration rules.</p>
+
+    <section class="panel">
+      <div class="panel__head">Assignment For Designer</div>
+      <div class="panel__body">
+        <pre>You are reviewing the LKvitai.MES Warehouse WebUI MudBlazor migration.
+
+Goal:
+Align the current MudBlazor bridge layer and future MudBlazor migration rules with the already approved LKvitai.MES design system. Do not invent a new visual language.
+
+Primary design source:
+- docs/ux/lkvitai-mes-ux-handoff.html
+- portal-tokens.css
+- portal-shell.css
+
+Approved visual baseline:
+- compact enterprise/product UI
+- dark Portal topbar/header
+- LKvitai.MES brand block
+- neutral grey application surfaces
+- teal active/focus/link/primary states
+- warm sand only for operational warning/scaffold accents
+- dense operational tables
+- no marketing layout
+- no decorative gradients
+- no random bright colors
+- no oversized cards
+
+Please edit this handoff or return a written answer with these sections:
+
+A. AppTheme.cs recommendations
+   - final MudBlazor palette mapping
+   - radius/elevation defaults
+   - any MudBlazor theme properties that should be added
+
+B. site.css additions/replacements
+   - panels / MudPaper
+   - dialogs
+   - error, warning, info, success states
+   - buttons
+   - forms and focus states
+   - chips and statuses
+   - dense tables / MudDataGrid
+   - pagination, toolbars, filters
+   - empty/loading states
+
+C. MudBlazor component usage rules for future pages
+   - which Mud components to use
+   - which Mud defaults must be overridden
+   - component density, spacing, and table rules
+
+D. Bootstrap migration rules
+   - how to replace Bootstrap cards, rows, buttons, forms, tables, alerts, badges
+   - how to replace Bootstrap Icons
+   - what must stay during Phase 1-2 coexistence
+
+E. Current conflicts
+   - CSS or markup that conflicts with the approved design system
+   - risk areas before Bootstrap is removed in Phase 3
+
+Important:
+Do not redesign the app. Align it to the existing approved design. Keep it compact, operational, dense, and enterprise-focused.</pre>
+      </div>
+    </section>
+
+    <h2>Current Migration State</h2>
+    <div class="grid">
+      <div class="panel"><div class="panel__head">Phase 0 rule</div><div class="panel__body">Additive only. Bootstrap CDN and Bootstrap Icons remain until Phase 3.</div></div>
+      <div class="panel"><div class="panel__head">MudBlazor version</div><div class="panel__body"><code>6.20.0</code></div></div>
+      <div class="panel"><div class="panel__head">Current Mud pages</div><div class="panel__body"><code>AvailableStock</code>, <code>Admin/Lots</code>, app shell providers.</div></div>
+      <div class="panel"><div class="panel__head">Designer output target</div><div class="panel__body">Rules and CSS that Codex can apply across Phase 1-3 page migration.</div></div>
+    </div>
+
+    <h2>Relevant Repository Files</h2>
+    <table class="table">
+      <thead><tr><th>Purpose</th><th>Path</th></tr></thead>
+      <tbody>
+        <tr><td>Primary design source</td><td class="mono">docs/ux/lkvitai-mes-ux-handoff.html</td></tr>
+        <tr><td>Design tokens</td><td class="mono">src/BuildingBlocks/LKvitai.MES.BuildingBlocks.WebUI/wwwroot/css/portal-tokens.css</td></tr>
+        <tr><td>Portal shell/topbar</td><td class="mono">src/BuildingBlocks/LKvitai.MES.BuildingBlocks.WebUI/wwwroot/css/portal-shell.css</td></tr>
+        <tr><td>Warehouse local CSS</td><td class="mono">src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.WebUI/wwwroot/css/site.css</td></tr>
+        <tr><td>Mud theme</td><td class="mono">src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.WebUI/Infrastructure/AppTheme.cs</td></tr>
+        <tr><td>Layout resource order</td><td class="mono">src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.WebUI/Pages/_Layout.cshtml</td></tr>
+        <tr><td>Current shell</td><td class="mono">src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.WebUI/Shared/MainLayout.razor</td></tr>
+        <tr><td>Current nav</td><td class="mono">src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.WebUI/Shared/NavMenu.razor</td></tr>
+        <tr><td>Phase 0 shared dialog</td><td class="mono">src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.WebUI/Components/SharedConfirmDialog.razor</td></tr>
+        <tr><td>Phase 0 shared error</td><td class="mono">src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.WebUI/Components/SharedErrorAlert.razor</td></tr>
+        <tr><td>Migration strategy</td><td class="mono">docs/migration/mudblazor-migration-strategy.md</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Approved Token Set</h2>
+    <h3>Neutrals</h3>
+    <div class="swatches">
+      <div class="swatch"><div class="swatch__color" style="background:#fff"></div><div class="swatch__label">--n-0 #fff</div></div>
+      <div class="swatch"><div class="swatch__color" style="background:#fbfcfd"></div><div class="swatch__label">--n-25 #fbfcfd</div></div>
+      <div class="swatch"><div class="swatch__color" style="background:#f5f6f8"></div><div class="swatch__label">--n-50 #f5f6f8</div></div>
+      <div class="swatch"><div class="swatch__color" style="background:#eef1f4"></div><div class="swatch__label">--n-100 #eef1f4</div></div>
+      <div class="swatch"><div class="swatch__color" style="background:#d5dce4"></div><div class="swatch__label">--n-200 #d5dce4</div></div>
+      <div class="swatch"><div class="swatch__color" style="background:#66717f"></div><div class="swatch__label">--n-500 #66717f</div></div>
+      <div class="swatch"><div class="swatch__color" style="background:#323b45"></div><div class="swatch__label">--n-700 #323b45</div></div>
+      <div class="swatch"><div class="swatch__color" style="background:#151922"></div><div class="swatch__label">--n-900 #151922</div></div>
+    </div>
+
+    <h3>Accent and Operational Families</h3>
+    <div class="swatches">
+      <div class="swatch"><div class="swatch__color" style="background:#eaf8f7"></div><div class="swatch__label">--accent-50 #eaf8f7</div></div>
+      <div class="swatch"><div class="swatch__color" style="background:#56aaa7"></div><div class="swatch__label">--accent-400 #56aaa7</div></div>
+      <div class="swatch"><div class="swatch__color" style="background:#2f8f8b"></div><div class="swatch__label">--accent-500 #2f8f8b</div></div>
+      <div class="swatch"><div class="swatch__color" style="background:#1d5d5a"></div><div class="swatch__label">--accent-700 #1d5d5a</div></div>
+      <div class="swatch"><div class="swatch__color" style="background:#f7eed5"></div><div class="swatch__label">warn bg #f7eed5</div></div>
+      <div class="swatch"><div class="swatch__color" style="background:#e6f4ec"></div><div class="swatch__label">ok bg #e6f4ec</div></div>
+      <div class="swatch"><div class="swatch__color" style="background:#e3f2f1"></div><div class="swatch__label">info bg #e3f2f1</div></div>
+      <div class="swatch"><div class="swatch__color" style="background:#fbe7e3"></div><div class="swatch__label">danger bg #fbe7e3</div></div>
+    </div>
+
+    <h2>Current Phase 0 Implementation</h2>
+    <div class="two-col">
+      <section class="panel">
+        <div class="panel__head">AppTheme.cs</div>
+        <div class="panel__body">
+<pre>using MudBlazor;
+
+namespace LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure;
+
+public static class AppTheme
+{
+    public static readonly MudTheme Default = new()
+    {
+        Palette = new PaletteLight
+        {
+            Primary = "#2f8f8b",
+            PrimaryDarken = "#1d5d5a",
+            Secondary = "#56aaa7",
+            Success = "#19744a",
+            Warning = "#7c5f2a",
+            Error = "#8a1f12",
+            Background = "#f5f6f8",
+            Surface = "#ffffff",
+            AppbarBackground = "#1f2632",
+            AppbarText = "#ffffff",
+            DrawerBackground = "#1f2632",
+            DrawerText = "#eef1f4"
+        },
+        LayoutProperties = new LayoutProperties
+        {
+            DefaultBorderRadius = "6px"
+        }
+    };
+}</pre>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel__head">Layout resource order</div>
+        <div class="panel__body">
+<pre>&lt;link href="_content/LKvitai.MES.BuildingBlocks.WebUI/css/portal-tokens.css" rel="stylesheet" /&gt;
+&lt;link href="_content/LKvitai.MES.BuildingBlocks.WebUI/css/portal-shell.css" rel="stylesheet" /&gt;
+&lt;link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="8eece1e1fafdfafceffecebba0bda0bd">[email&#160;protected]</a>/dist/css/bootstrap.min.css" /&gt;
+&lt;link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="bddfd2d2c9cec9cfdccd90d4ded2d3cefd8c938c8c938e">[email&#160;protected]</a>/font/bootstrap-icons.min.css" /&gt;
+&lt;link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" /&gt;
+&lt;link href="css/site.css" rel="stylesheet" /&gt;
+
+&lt;script src="_content/MudBlazor/MudBlazor.min.js"&gt;&lt;/script&gt;
+&lt;script src="_framework/blazor.server.js"&gt;&lt;/script&gt;</pre>
+        </div>
+      </section>
+    </div>
+
+    <section class="panel">
+      <div class="panel__head">Current Mud bridge CSS</div>
+      <div class="panel__body">
+<pre>.lk-grid .mud-table-head th {
+  background: var(--n-50) !important;
+  color: var(--n-600) !important;
+  font-size: 10.5px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.5px !important;
+  text-transform: uppercase !important;
+  border-bottom: 1px solid var(--n-200) !important;
+}
+
+.lk-grid .mud-table-cell {
+  padding: 6px 12px !important;
+  font-size: 12.5px !important;
+  height: 34px !important;
+  border-bottom: 1px solid var(--n-100) !important;
+}
+
+.lk-grid .mud-table-row:hover .mud-table-cell {
+  background: var(--n-25) !important;
+}
+
+.lk-grid .mud-table-row.is-selected .mud-table-cell {
+  background: var(--accent-50) !important;
+}
+
+.lk-grid .mud-table-row.is-selected .mud-table-cell:first-child {
+  box-shadow: inset 3px 0 0 var(--accent-500) !important;
+}
+
+.mud-paper.panel {
+  border-radius: var(--r-md) !important;
+  border: 1px solid var(--n-200) !important;
+}
+
+.shared-dialog {
+  width: min(420px, calc(100vw - 32px));
+  background: var(--n-0) !important;
+}
+
+.shared-dialog__head,
+.shared-dialog__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+}
+
+.shared-dialog__head {
+  border-bottom: 1px solid var(--n-150);
+  background: var(--n-25);
+}
+
+.shared-dialog__title {
+  color: var(--n-900);
+  font-size: 15px !important;
+  font-weight: 600 !important;
+}
+
+.shared-dialog__body {
+  padding: 12px;
+  color: var(--n-700);
+}
+
+.shared-error {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-color: var(--danger-bd) !important;
+  background: var(--danger-bg) !important;
+  color: var(--danger-fg) !important;
+}</pre>
+      </div>
+    </section>
+
+    <h2>Current Bridge Components</h2>
+    <div class="two-col">
+      <section class="panel">
+        <div class="panel__head">SharedConfirmDialog.razor</div>
+        <div class="panel__body">
+<pre>&lt;MudOverlay Visible="true" DarkBackground="true" ZIndex="1400"&gt;
+    &lt;MudPaper Outlined="true" Elevation="0" Class="panel shared-dialog"&gt;
+        &lt;div class="shared-dialog__head"&gt;
+            &lt;MudText Typo="Typo.h6" Class="shared-dialog__title"&gt;@Title&lt;/MudText&gt;
+            &lt;MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" /&gt;
+        &lt;/div&gt;
+        &lt;div class="shared-dialog__body"&gt;
+            &lt;MudText Typo="Typo.body2"&gt;@Message&lt;/MudText&gt;
+        &lt;/div&gt;
+        &lt;div class="shared-dialog__actions"&gt;
+            &lt;MudButton Variant="Variant.Outlined" Color="Color.Default"&gt;Cancel&lt;/MudButton&gt;
+            &lt;MudButton Variant="Variant.Filled" Color="Color.Primary"&gt;@ConfirmText&lt;/MudButton&gt;
+        &lt;/div&gt;
+    &lt;/MudPaper&gt;
+&lt;/MudOverlay&gt;</pre>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel__head">SharedErrorAlert.razor</div>
+        <div class="panel__body">
+<pre>&lt;MudPaper Outlined="true" Elevation="0" Class="shared-error" role="alert"&gt;
+    &lt;div class="shared-error__content"&gt;
+        &lt;MudIcon Icon="@Icons.Material.Filled.ErrorOutline" Class="shared-error__icon" /&gt;
+        &lt;div class="shared-error__body"&gt;
+            &lt;MudText Typo="Typo.body2"&gt;@Message&lt;/MudText&gt;
+            &lt;MudText Typo="Typo.caption" Class="shared-error__trace"&gt;Error ID: @TraceId&lt;/MudText&gt;
+        &lt;/div&gt;
+    &lt;/div&gt;
+    &lt;div class="shared-error__actions"&gt;
+        &lt;MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small"&gt;Retry&lt;/MudButton&gt;
+        &lt;MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small" /&gt;
+    &lt;/div&gt;
+&lt;/MudPaper&gt;</pre>
+        </div>
+      </section>
+    </div>
+
+    <h2>Questions To Answer</h2>
+    <div class="panel">
+      <div class="panel__body">
+        <ol>
+          <li>Is the current Mud palette complete enough, or should additional Mud palette fields be mapped to existing tokens?</li>
+          <li>Should all Mud buttons be globally skinned, or should we require local classes per page/control type?</li>
+          <li>What are the final table row heights, header styles, pagination style, and toolbar/filter density for MudDataGrid?</li>
+          <li>What should replace Bootstrap <code>card</code>, <code>alert</code>, <code>badge</code>, <code>btn</code>, <code>form-control</code>, and <code>table</code> during migration?</li>
+          <li>What icon set and sizing rules should replace Bootstrap Icons?</li>
+          <li>Which current bridge CSS should be changed before Phase 1 begins?</li>
+        </ol>
+      </div>
+    </div>
+
+    <h2>Designer Response Area</h2>
+    <p class="ok"><strong>Filled in by design system.</strong> Sections A–E below are answered against the approved LKvitai.MES tokens (<code>colors_and_type.css</code> / <code>portal-tokens.css</code>). Every value references an existing token — no new colors introduced.</p>
+    <section class="panel">
+      <div class="panel__head">A. AppTheme.cs recommendations</div>
+      <div class="panel__body">
+        <div class="ok"><strong>Designer answer.</strong> The current palette is on-brand but under-mapped. MudBlazor reads ~20 palette fields when it auto-styles components; if they are left at Mud defaults you get stray purples/blues on links, text-secondary, dividers, action icons and the drawer. Map every field below to an existing token. <strong>Do not introduce any hex value that is not already in <code>portal-tokens.css</code>.</strong></div>
+
+        <h3>A1. Complete the PaletteLight mapping</h3>
+<pre>Palette = new PaletteLight
+{
+    // Brand / interactive — teal
+    Primary            = "#2f8f8b",  // --accent-500
+    PrimaryDarken      = "#1d5d5a",  // --accent-700  (hover/press)
+    PrimaryLighten     = "#56aaa7",  // --accent-400
+    Secondary          = "#257773",  // --accent-600  (keep teal family, NOT pink)
+    SecondaryDarken    = "#1d5d5a",
+    Tertiary           = "#56aaa7",
+
+    // Operational status families (match chip tokens exactly)
+    Success            = "#19744a",  // --ok-fg
+    Warning            = "#7c5f2a",  // --warn-fg  (sand, not orange)
+    Error              = "#8a1f12",  // --danger-fg
+    Info               = "#1d5d5a",  // --info-fg  (teal, NOT blue)
+
+    // Surfaces
+    Background         = "#f5f6f8",  // --n-50  app body
+    BackgroundGrey     = "#eef1f4",  // --n-100
+    Surface            = "#ffffff",  // --n-0   panels/cards
+    DrawerBackground   = "#20242c",  // --dark
+    DrawerText         = "#eef1f4",  // --n-100
+    DrawerIcon         = "#a5adb8",
+    AppbarBackground   = "#20242c",  // --dark  (was #1f2632 / --n-800 — use --dark for parity with Portal topbar)
+    AppbarText         = "#ffffff",
+
+    // Text
+    TextPrimary        = "#151922",  // --n-900
+    TextSecondary      = "#66717f",  // --n-500
+    TextDisabled       = "#8996a4",  // --n-400
+
+    // Lines / dividers / actions
+    ActionDefault      = "#66717f",  // --n-500  (icon buttons at rest)
+    ActionDisabled     = "#b9c3ce",  // --n-300
+    Divider            = "#e2e7ec",  // --n-150
+    DividerLight       = "#eef1f4",  // --n-100
+    LinesDefault       = "#d5dce4",  // --n-200  (input borders)
+    LinesInputs        = "#d5dce4",  // --n-200
+    TableLines         = "#eef1f4",  // --n-100  (row separators lighter than panel)
+    TableStriped       = "#fbfcfd",  // --n-25
+    TableHover         = "#fbfcfd",  // --n-25
+
+    // Hover overlay opacity — keep subtle
+    HoverOpacity       = 0.04,
+
+    // Focus ring driver
+    OverlayLight       = "rgba(47,143,139,0.12)"
+}</pre>
+
+        <h3>A2. Layout, radius &amp; elevation</h3>
+        <p>The design system uses tight radii and almost no elevation (hairline borders do the work, not shadows). Override Mud's default 8 elevation levels toward flat.</p>
+<pre>LayoutProperties = new LayoutProperties
+{
+    DefaultBorderRadius = "6px",    // --r-md  (cards/panels)
+    DrawerWidthLeft     = "260px",
+    AppbarHeight        = "56px"
+},
+Typography = new Typography
+{
+    Default   = new Default   { FontFamily = new[]{ "Inter","Segoe UI","system-ui","sans-serif" }, FontSize = "12.5px", LineHeight = "1.45" },
+    H6        = new H6        { FontSize = "15px", FontWeight = 600 },
+    Subtitle2 = new Subtitle2 { FontSize = "13px", FontWeight = 600 },
+    Body1     = new Body1     { FontSize = "12.5px" },
+    Body2     = new Body2     { FontSize = "12px" },
+    Caption   = new Caption   { FontSize = "11px" },
+    Button    = new Button    { FontSize = "12px", FontWeight = 700, TextTransform = "none" }  // never UPPERCASE buttons
+}</pre>
+
+        <h3>A3. Rules</h3>
+        <ul>
+          <li><strong>Use <code>--dark</code> (#20242c) for both AppBar and Drawer</strong> so Mud surfaces match the Portal topbar exactly. The current <code>#1f2632</code> (--n-800) is one step too light and reads as a different bar next to the Portal shell.</li>
+          <li><strong>Info must be teal, not blue.</strong> Mud's default Info is <code>#2196f3</code>; mapping it to <code>--info-fg</code> keeps blue out of the product entirely.</li>
+          <li><strong>Warning is sand (#7c5f2a), reserved for operational warn/scaffold only</strong> — never use <code>Color.Warning</code> for primary actions.</li>
+          <li>Set <code>Button.TextTransform = "none"</code> globally — the design system uses Title Case buttons; only chips/eyebrows/table headers are mono UPPERCASE.</li>
+        </ul>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="panel__head">B. site.css additions/replacements</div>
+      <div class="panel__body">
+        <div class="ok"><strong>Designer answer.</strong> Scope every override under a wrapper class (<code>.lk-grid</code>, <code>.panel</code>, <code>.lk-dialog</code>) so the bridge is opt-in during coexistence and we never fight Bootstrap globally. Token names below all exist in <code>portal-tokens.css</code>.</div>
+
+        <h3>B1. Panels / MudPaper</h3>
+<pre>.mud-paper.panel{
+  border:1px solid var(--n-200)!important;
+  border-radius:var(--r-md)!important;
+  box-shadow:0 1px 0 rgba(15,23,35,.04)!important; /* hairline, not Mud elevation */
+}
+.panel__head{
+  padding:12px 14px;border-bottom:1px solid var(--n-150);
+  background:var(--n-25);font-weight:650;color:var(--n-900);
+}
+.panel__body{padding:14px}</pre>
+
+        <h3>B2. Dialogs</h3>
+<pre>.lk-dialog .mud-paper{
+  width:min(440px,calc(100vw - 32px));
+  border:1px solid var(--n-200)!important;border-radius:var(--r-md)!important;
+}
+.lk-dialog .mud-dialog-title{
+  padding:11px 14px;border-bottom:1px solid var(--n-150);
+  background:var(--n-25);font-size:15px;font-weight:600;color:var(--n-900);
+}
+.lk-dialog .mud-dialog-content{padding:14px;color:var(--n-700);font-size:12.5px}
+.lk-dialog .mud-dialog-actions{padding:10px 14px;border-top:1px solid var(--n-150);background:var(--n-25)}</pre>
+
+        <h3>B3. State blocks — error / warn / info / success</h3>
+        <p>One grammar: left surface tint + matching border, never Mud's filled alert. Use for <code>SharedErrorAlert</code> and any inline banner.</p>
+<pre>.lk-state{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;
+  border:1px solid transparent;border-radius:var(--r-md);font-size:12.5px}
+.lk-state--error  {background:var(--danger-bg);border-color:var(--danger-bd);color:var(--danger-fg)}
+.lk-state--warn   {background:var(--warn-bg);  border-color:var(--warn-bd);  color:var(--warn-fg)}
+.lk-state--info   {background:var(--info-bg);  border-color:var(--info-bd);  color:var(--info-fg)}
+.lk-state--success{background:var(--ok-bg);    border-color:var(--ok-bd);    color:var(--ok-fg)}
+.lk-state__trace{font-family:var(--font-mono);font-size:11px;opacity:.8}</pre>
+
+        <h3>B4. Buttons</h3>
+<pre>.lk .mud-button-root{
+  min-height:32px;border-radius:var(--r-sm)!important;
+  font-size:12px;font-weight:700;text-transform:none!important;letter-spacing:0;
+}
+.lk .mud-button-filled-primary{background:var(--accent-600)!important;border:1px solid var(--accent-700)!important;color:#fff!important}
+.lk .mud-button-filled-primary:hover{background:var(--accent-700)!important}
+.lk .mud-button-outlined{border:1px solid var(--n-200)!important;background:var(--n-0)!important;color:var(--n-700)!important}
+.lk .mud-button-outlined:hover{background:var(--n-25)!important}
+/* disabled = dashed, the system's "planned/unavailable" affordance */
+.lk .mud-button-root:disabled{border-style:dashed!important;background:var(--n-50)!important;color:var(--n-400)!important}</pre>
+
+        <h3>B5. Forms &amp; focus</h3>
+<pre>.lk .mud-input-control .mud-input-slot{
+  min-height:32px;border:1px solid var(--n-200);border-radius:var(--r-sm);background:var(--n-0);
+  font-size:12.5px;color:var(--n-900);
+}
+.lk .mud-input-control.mud-focused .mud-input-slot{
+  border-color:var(--accent-500);box-shadow:0 0 0 3px rgba(47,143,139,.12);
+}
+.lk .mud-input-label{font-size:11px;font-weight:600;color:var(--n-700)}
+/* kill Mud's animated bottom-border underline; we use full borders */
+.lk .mud-input-underline:before,.lk .mud-input-underline:after{display:none!important}</pre>
+
+        <h3>B6. Chips &amp; statuses</h3>
+        <p>Render statuses as custom markup, not <code>MudChip Color=</code>. Single grammar: mono caps + 6px dot prefix.</p>
+<pre>.chip{display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border:1px solid transparent;
+  border-radius:999px;font-family:var(--font-mono);font-size:10.5px;font-weight:700;
+  letter-spacing:.4px;text-transform:uppercase;line-height:1;white-space:nowrap}
+.chip::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+.chip--ok    {background:var(--ok-bg);    color:var(--ok-fg);    border-color:var(--ok-bd)}
+.chip--warn  {background:var(--warn-bg);  color:var(--warn-fg);  border-color:var(--warn-bd)}
+.chip--info  {background:var(--info-bg);  color:var(--info-fg);  border-color:var(--info-bd)}
+.chip--slate {background:var(--slate-bg); color:var(--slate-fg); border-color:var(--slate-bd)}
+.chip--danger{background:var(--danger-bg);color:var(--danger-fg);border-color:var(--danger-bd)}
+.chip--done  {background:var(--done-bg);  color:var(--done-fg);  border-color:var(--done-bd)}</pre>
+
+        <h3>B7. Dense tables / MudDataGrid</h3>
+        <p>Keep the existing <code>.lk-grid</code> bridge but standardise row height to <strong>30px</strong> (the design-system operational density) rather than the current 34px, and make the header mono caps.</p>
+<pre>.lk-grid .mud-table-root{border-collapse:collapse}
+.lk-grid .mud-table-head th{
+  position:sticky;top:0;z-index:1;
+  background:var(--n-50)!important;color:var(--n-700)!important;
+  border-bottom:1px solid var(--n-200)!important;
+  font-family:var(--font-mono)!important;font-size:10.5px!important;font-weight:800!important;
+  letter-spacing:.45px!important;text-transform:uppercase!important;
+}
+.lk-grid .mud-table-cell{
+  height:30px!important;padding:6px 12px!important;font-size:12.5px!important;
+  border-bottom:1px solid var(--n-100)!important;
+}
+.lk-grid .mud-table-row:hover .mud-table-cell{background:var(--n-25)!important}
+.lk-grid .mud-table-row.is-selected .mud-table-cell{background:var(--accent-50)!important}
+.lk-grid .mud-table-row.is-selected .mud-table-cell:first-child{box-shadow:inset 3px 0 0 var(--accent-500)!important}
+/* money/date/code columns */
+.lk-grid .is-num{ text-align:right;font-family:var(--font-mono);font-variant-numeric:tabular-nums }</pre>
+
+        <h3>B8. Pagination, toolbars, filters</h3>
+<pre>.lk-grid .mud-table-pagination{border-top:1px solid var(--n-150);background:var(--n-25);font-size:12px}
+.lk-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:10px 12px;border-bottom:1px solid var(--n-150)}
+.lk-toolbar .mud-input-slot{min-height:30px}
+/* "key filter" highlight (e.g. fabric threshold) */
+.lk-filter--key .mud-input-slot{background:var(--accent-50)!important;border-color:var(--accent-100)!important}
+.lk-filter--key .mud-input-label{color:var(--accent-700)!important}
+.lk-pagebtn.is-active{background:var(--accent-600)!important;border-color:var(--accent-700)!important;color:#fff!important}</pre>
+
+        <h3>B9. Empty / loading</h3>
+<pre>.lk-empty{padding:28px 16px;text-align:center;color:var(--n-500)}
+.lk-empty__title{font-family:var(--font-mono);font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:var(--n-600)}
+.lk-empty a{color:var(--accent-700);font-weight:700}
+/* loading: tint the grid, no shimmer. Mud's linear progress in teal. */
+.lk-grid .mud-progress-linear .mud-progress-linear-bar{background:var(--accent-500)!important}</pre>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="panel__head">C. MudBlazor component usage rules</div>
+      <div class="panel__body">
+        <div class="ok"><strong>Designer answer.</strong> MudBlazor is allowed as the engine, but Mud defaults are never the final look. Wrap operational surfaces in <code>.lk</code> / <code>.lk-grid</code> and skin them. Prefer semantic HTML for display-only content.</div>
+
+        <h3>C1. Component allow-list</h3>
+        <table class="table">
+          <thead><tr><th>Need</th><th>Use</th><th>Must override</th></tr></thead>
+          <tbody>
+            <tr><td>App shell / topbar</td><td class="mono">MudAppBar Dense + MudLayout</td><td>Custom <code>.topbar</code>,<code>.brand</code>,<code>.env-badge</code>; bg = --dark</td></tr>
+            <tr><td>Panels / cards</td><td class="mono">MudPaper Outlined Elevation="0"</td><td>Add <code>.panel</code>; no elevation, hairline border</td></tr>
+            <tr><td>Operational list</td><td class="mono">MudDataGrid Dense FixedHeader ServerData</td><td>Wrap <code>.lk-grid</code>; 30px rows, mono caps head</td></tr>
+            <tr><td>Display tables (details)</td><td class="mono">plain &lt;table class="lk-table"&gt;</td><td>Don't use MudDataGrid for static detail tables</td></tr>
+            <tr><td>Buttons</td><td class="mono">MudButton Variant Filled/Outlined</td><td>TextTransform none; teal primary; dashed disabled</td></tr>
+            <tr><td>Inputs / selects</td><td class="mono">MudTextField, MudSelect</td><td>Full border + teal focus ring; kill underline</td></tr>
+            <tr><td>Status</td><td class="mono">custom &lt;span class="chip chip--*"&gt;</td><td>Never <code>MudChip Color=</code></td></tr>
+            <tr><td>Dialogs</td><td class="mono">MudDialog / MudOverlay</td><td><code>.lk-dialog</code> head/body/actions</td></tr>
+            <tr><td>Toolbars/filters</td><td class="mono">MudToolBar / MudStack</td><td><code>.lk-toolbar</code>; key filter teal-50</td></tr>
+            <tr><td>State banners</td><td class="mono">custom &lt;div class="lk-state--*"&gt;</td><td>Never <code>MudAlert</code> defaults</td></tr>
+          </tbody>
+        </table>
+
+        <h3>C2. Density &amp; spacing</h3>
+        <ul>
+          <li>Always pass <code>Dense="true"</code> on grids, tables, app bars, lists.</li>
+          <li>Table row height <strong>30px</strong>, cell padding <strong>6×12</strong>. No density toggle.</li>
+          <li>Panel head padding 12×14; body 14. Toolbar padding 10×12.</li>
+          <li>Use the 4px spacing grid (4/8/12/16/20/24/28/32). Mud's <code>Spacing</code> param maps to 4px units — <code>Spacing="3"</code>=12px is the default gap.</li>
+        </ul>
+
+        <h3>C3. Hard rules</h3>
+        <ul>
+          <li>Never ship a page using <code>Color.Primary</code>/<code>Secondary</code> on chips or alerts — they bypass the token grammar.</li>
+          <li>Money, dates, dimensions, fabric codes, order ids → <code>.mono</code> + tabular-nums, always.</li>
+          <li>Icons at 18px inside Mud components; 16px inline in text. Neutral-500 at rest, teal-700 active.</li>
+          <li>No <code>Elevation</code> &gt; 0 on operational surfaces. Dialogs/menus may use Mud's overlay shadow only.</li>
+        </ul>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="panel__head">D. Bootstrap migration rules</div>
+      <div class="panel__body">
+        <div class="ok"><strong>Designer answer.</strong> Replace Bootstrap surface-by-surface, leaf components first. Keep Bootstrap's grid (<code>.row/.col</code>) longest — it's layout-only and low-risk; remove Bootstrap's <em>visual</em> components (cards/alerts/badges/buttons) early because they carry the off-brand blue/shadows.</p></div>
+
+        <h3>D1. Component replacement map</h3>
+        <table class="table">
+          <thead><tr><th>Bootstrap</th><th>Replace with</th><th>Phase</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">.card</td><td>MudPaper.panel</td><td>1</td></tr>
+            <tr><td class="mono">.alert-*</td><td><code>.lk-state--*</code> blocks</td><td>1</td></tr>
+            <tr><td class="mono">.badge</td><td><code>.chip chip--*</code></td><td>1</td></tr>
+            <tr><td class="mono">.btn / .btn-primary</td><td>MudButton (skinned)</td><td>1–2</td></tr>
+            <tr><td class="mono">.form-control / .form-select</td><td>MudTextField / MudSelect</td><td>2</td></tr>
+            <tr><td class="mono">.table</td><td>MudDataGrid <code>.lk-grid</code> (lists) / <code>.lk-table</code> (detail)</td><td>2</td></tr>
+            <tr><td class="mono">.modal</td><td>MudDialog <code>.lk-dialog</code></td><td>2</td></tr>
+            <tr><td class="mono">.nav / .navbar</td><td>MudAppBar + MudNavMenu (dark)</td><td>2</td></tr>
+            <tr><td class="mono">.row / .col-*</td><td>keep, or CSS grid/flex</td><td>3 (last)</td></tr>
+          </tbody>
+        </table>
+
+        <h3>D2. Icons</h3>
+        <ul>
+          <li>Replace <strong>Bootstrap Icons</strong> with <strong>Mud's built-in Material icons</strong> (<code>@Icons.Material.Outlined.*</code>) at <strong>18px</strong>, neutral-500 at rest. Outlined, not Filled, to match the line weight of the design system's CSS-drawn glyphs.</li>
+          <li>Keep the design system's <strong>mono-glyph data flags</strong> (<code>€ ★ ! ↗ ↳</code>) as-is — they are typographic, not icons, and must not be swapped for Material icons.</li>
+          <li>Do not load a third icon font. One Material set + the mono glyphs is the whole vocabulary.</li>
+        </ul>
+
+        <h3>D3. Coexistence (Phase 1–2)</h3>
+        <ul>
+          <li>Keep Bootstrap CDN + Bootstrap Icons loaded until Phase 3 (per Phase 0 rule), but <strong>scope all Mud overrides under <code>.lk</code>/<code>.lk-grid</code></strong> so the two systems don't collide on bare elements.</li>
+          <li><strong>Resource order matters:</strong> portal-tokens → portal-shell → Bootstrap → MudBlazor → site.css. site.css loads last so its <code>!important</code> bridges win over both Bootstrap and Mud. Keep this order.</li>
+          <li>Migrate a whole page at a time; don't leave a single page half-Bootstrap/half-Mud — mixed borders/radii read as broken.</li>
+        </ul>
+      </div>
+    </section>
+    <section class="panel">
+      <div class="panel__head">E. Current conflicts</div>
+      <div class="panel__body">
+        <div class="note"><strong>Designer answer.</strong> Conflicts found in the current Phase 0 implementation, ranked by risk before Bootstrap is removed in Phase 3.</div>
+
+        <h3>E1. Token / palette conflicts</h3>
+        <ul>
+          <li><strong>AppBar/Drawer use <code>#1f2632</code> (--n-800), but the Portal topbar is <code>#20242c</code> (--dark).</strong> Side by side they look like two different bars. Fix in AppTheme (section A1).</li>
+          <li><strong>Mud Info/Secondary still resolve to blue/pink</strong> wherever a component isn't explicitly colored (links inside MudText, selected nav, focus on some inputs). Mapping all palette fields (A1) closes this.</li>
+          <li>Bootstrap's <code>--bs-primary</code> (#0d6efd blue) and <code>.btn-primary</code> shadow are loaded globally and will bleed onto any un-migrated button. Acceptable in Phase 1–2 only because those pages are scheduled for replacement; flag any <em>new</em> page that uses a raw <code>.btn</code>.</li>
+        </ul>
+
+        <h3>E2. CSS specificity / structure</h3>
+        <ul>
+          <li><strong>Current <code>.lk-grid</code> row height is 34px; design-system operational density is 30px.</strong> Standardise to 30 (section B7) so Mud grids match the static previews.</li>
+          <li>The bridge relies on <code>!important</code> against both Bootstrap and Mud. That's fine as a bridge, but it means <strong>un-scoped Mud overrides would also hit Bootstrap tables.</strong> Keep every override under <code>.lk</code>/<code>.lk-grid</code>/<code>.panel</code> — do not add bare <code>.mud-*</code> global rules.</li>
+          <li>Mud injects its stylesheet after Bootstrap but the bridge (<code>site.css</code>) loads last and wins — correct. <strong>Do not move <code>site.css</code> earlier</strong> or the bridge silently breaks.</li>
+        </ul>
+
+        <h3>E3. Component conflicts</h3>
+        <ul>
+          <li><code>SharedErrorAlert</code> uses <code>MudPaper</code> + manual danger colors — good, but it should adopt the shared <code>.lk-state--error</code> grammar (B3) so error/warn/info/success are one system instead of a one-off.</li>
+          <li><code>SharedConfirmDialog</code> hard-codes <code>Color.Primary</code> on the confirm button — fine once Primary = teal (A1), but the Cancel button uses <code>Color.Default</code> which renders Mud grey, not the <code>--n-700</code> outline button. Add <code>.lk</code> wrapper + outlined skin (B4).</li>
+          <li>Material icon default size in Mud is 24px — too large for this density. Force 18px (C3).</li>
+        </ul>
+
+        <h3>E4. Phase 3 removal risks</h3>
+        <ul>
+          <li>When Bootstrap is removed, anything still using <code>.row/.col</code>, <code>.d-flex</code>, <code>.text-muted</code>, <code>.mb-*</code> utilities will lose layout. Audit for Bootstrap utility classes <em>before</em> dropping the CDN; replace with CSS grid/flex + token spacing.</li>
+          <li>Bootstrap Icons (<code>.bi-*</code>) glyphs vanish when the icon font is removed — every one must be migrated to Material (D2) first. Grep for <code>bi-</code> as a release gate.</li>
+          <li>Removing Bootstrap also removes its CSS reset; verify base <code>box-sizing</code>, heading margins and list resets exist in <code>portal-tokens.css</code>/<code>site.css</code> so type doesn't shift.</li>
+        </ul>
+      </div>
+    </section>
+
+    <h2>Answers To The Six Questions</h2>
+    <div class="panel"><div class="panel__body">
+      <ol>
+        <li><strong>Palette complete?</strong> No — extend it (A1). The current 12 fields leave ~8 Mud fields at default (Info, Secondary, TextSecondary, Divider, Lines, Action, Table*), which is where stray blue/grey leaks in.</li>
+        <li><strong>Global vs local button skin?</strong> Skin globally under a <code>.lk</code> wrapper applied at the layout root, so every Mud button inherits the teal/dashed grammar without per-control classes. Reserve per-page classes only for exceptions.</li>
+        <li><strong>Final grid spec?</strong> 30px rows, 6×12 cells, mono-caps neutral header (--n-50 bg, --n-200 bottom border), hover --n-25, selected --accent-50 + 3px teal inset, pagination teal-600 active on --n-25 footer. Compact only, no toggle.</li>
+        <li><strong>Bootstrap replacements?</strong> card→MudPaper.panel, alert→.lk-state, badge→.chip, btn→MudButton, form-control→MudTextField/Select, table→MudDataGrid.lk-grid or .lk-table (see D1).</li>
+        <li><strong>Icons?</strong> Material Outlined via Mud at 18px (16px inline), neutral-500/teal-700; keep the mono data-glyphs. Drop Bootstrap Icons in Phase 3 (D2).</li>
+        <li><strong>Bridge CSS to change before Phase 1?</strong> Row height 34→30px; adopt <code>.lk-state</code> for SharedErrorAlert; set AppBar/Drawer to --dark; add Button TextTransform none + outlined Cancel skin.</li>
+      </ol>
+    </div></div>
+  </main>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script></body>
+</html>

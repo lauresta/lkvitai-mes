@@ -1,0 +1,69 @@
+@if (!string.IsNullOrWhiteSpace(Message))
+{
+    <MudPaper Outlined="true" Elevation="0" Class="lk-state lk-state--error shared-error" role="alert" data-testid="shared-error-banner">
+        <div class="shared-error__content">
+            <MudIcon Icon="@Icons.Material.Filled.ErrorOutline" Class="shared-error__icon" />
+            <div class="shared-error__body">
+                <MudText Typo="Typo.body2">@Message</MudText>
+
+                @if (!string.IsNullOrWhiteSpace(TraceId))
+                {
+                    <MudText Typo="Typo.caption" Class="lk-state__trace shared-error__trace">Error ID: @TraceId</MudText>
+                }
+            </div>
+        </div>
+
+        <div class="shared-error__actions">
+            @if (CanShowRetry)
+            {
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Error"
+                           Size="Size.Small"
+                           OnClick="OnRetry"
+                           data-testid="shared-error-retry">Retry</MudButton>
+            }
+
+            <MudIconButton Icon="@Icons.Material.Filled.Close"
+                           Size="Size.Small"
+                           OnClick="OnDismiss"
+                           aria-label="Close"
+                           data-testid="shared-error-close" />
+        </div>
+    </MudPaper>
+}
+
+@code {
+    [Parameter]
+    public string Message { get; set; } = string.Empty;
+
+    [Parameter]
+    public string? TraceId { get; set; }
+
+    [Parameter]
+    public EventCallback OnRetry { get; set; }
+
+    [Parameter]
+    public EventCallback OnDismiss { get; set; }
+
+    [Parameter]
+    public bool? ShowRetry { get; set; }
+
+    private bool CanShowRetry => OnRetry.HasDelegate && (ShowRetry ?? InferRetryFromMessage(Message));
+
+    private static bool InferRetryFromMessage(string message)
+    {
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            return true;
+        }
+
+        var normalized = message.ToLowerInvariant();
+        return !(normalized.Contains("insufficient") ||
+                 normalized.Contains("validation") ||
+                 normalized.Contains("not found") ||
+                 normalized.Contains("do not have permission") ||
+                 normalized.Contains("authentication required") ||
+                 normalized.Contains("business rules") ||
+                 normalized.Contains("cannot be completed"));
+    }
+}

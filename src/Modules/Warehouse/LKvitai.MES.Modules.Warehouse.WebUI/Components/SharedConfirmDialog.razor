@@ -1,0 +1,50 @@
+@if (IsVisible)
+{
+    <MudOverlay Visible="true" DarkBackground="true" ZIndex="1400" Class="lk-dialog" data-testid="shared-confirm-dialog">
+        <MudPaper Outlined="true" Elevation="0" Class="panel shared-dialog">
+            <div class="shared-dialog__head">
+                <MudText Typo="Typo.h6" Class="shared-dialog__title">@Title</MudText>
+                <MudIconButton Icon="@Icons.Material.Filled.Close"
+                               Size="Size.Small"
+                               OnClick="OnCancel"
+                               aria-label="Close"
+                               data-testid="shared-confirm-close" />
+            </div>
+
+            <div class="shared-dialog__body">
+                <MudText Typo="Typo.body2">@Message</MudText>
+            </div>
+
+            <div class="shared-dialog__actions">
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Default"
+                           OnClick="OnCancel"
+                           data-testid="shared-confirm-cancel">Cancel</MudButton>
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           OnClick="OnConfirm"
+                           data-testid="shared-confirm-submit">@ConfirmText</MudButton>
+            </div>
+        </MudPaper>
+    </MudOverlay>
+}
+
+@code {
+    [Parameter]
+    public string Title { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Message { get; set; } = string.Empty;
+
+    [Parameter]
+    public string ConfirmText { get; set; } = "Confirm";
+
+    [Parameter]
+    public bool IsVisible { get; set; }
+
+    [Parameter]
+    public EventCallback OnConfirm { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+}

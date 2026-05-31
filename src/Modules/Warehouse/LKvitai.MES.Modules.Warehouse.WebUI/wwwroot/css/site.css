@@ -174,7 +174,7 @@ h1:focus { outline: none; }
 
 .nav-dash:hover        { background: var(--n-50); color: var(--n-900); }
 .nav-dash.is-active    { background: var(--accent-50); color: var(--accent-700); }
-.nav-dash i            { font-size: 14px; opacity: 0.8; flex-shrink: 0; }
+.nav-dash i            { font-size: 18px; opacity: 0.8; flex-shrink: 0; }
 .nav-dash.is-active i  { opacity: 1; }
 
 /* Section headers (#145 aria-expanded handled by HTML) */
@@ -201,7 +201,7 @@ h1:focus { outline: none; }
   transition: color 0.12s, background 0.12s;
 }
 
-.nav-section-toggle i:first-child { font-size: 13px; flex-shrink: 0; }
+.nav-section-toggle i:first-child { font-size: 18px; flex-shrink: 0; }
 
 .nav-section-label { flex: 1; }
 
@@ -263,7 +263,7 @@ h1:focus { outline: none; }
 
 .nav-link.is-active::before { background: var(--accent-500); width: 4px; height: 4px; }
 
-.nav-link i { font-size: 13px; flex-shrink: 0; }
+.nav-link i { font-size: 18px; flex-shrink: 0; }
 
 /* ── Sidebar footer (#141) ─────────────────────────────────────────────── */
 .sidebar__footer {
@@ -424,8 +424,8 @@ h1:focus { outline: none; }
 
 .panel__head {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 11px 14px; border-bottom: 1px solid var(--n-150);
-  background: var(--n-25);
+  padding: 12px 14px; border-bottom: 1px solid var(--n-150);
+  background: var(--n-25); font-weight: 650; color: var(--n-900);
 }
 
 .panel__title { font-size: 13px; font-weight: 600; color: var(--n-800); }
@@ -564,14 +564,18 @@ td.is-num strong { font-weight: 700; }
 .activity-row__time { color: var(--n-500); font-family: var(--font-mono); font-size: 11px; flex-shrink: 0; }
 
 /* ─── MudBlazor DataGrid overrides (.lk-grid) ──────────────────────────── */
+.lk-grid .mud-table-root { border-collapse: collapse; }
+
 .lk-grid .mud-table-head th {
-  background: var(--n-50) !important; color: var(--n-600) !important;
-  font-size: 10.5px !important; font-weight: 700 !important;
-  letter-spacing: 0.5px !important; text-transform: uppercase !important;
+  position: sticky; top: 0; z-index: 1;
+  background: var(--n-50) !important; color: var(--n-700) !important;
+  font-family: var(--font-mono) !important;
+  font-size: 10.5px !important; font-weight: 800 !important;
+  letter-spacing: 0.45px !important; text-transform: uppercase !important;
   border-bottom: 1px solid var(--n-200) !important;
 }
 
-.lk-grid .mud-table-cell { padding: 6px 12px !important; font-size: 12.5px !important; height: 34px !important; border-bottom: 1px solid var(--n-100) !important; }
+.lk-grid .mud-table-cell { padding: 6px 12px !important; font-size: 12.5px !important; height: 30px !important; border-bottom: 1px solid var(--n-100) !important; }
 .lk-grid .mud-table-row:hover .mud-table-cell { background: var(--n-25) !important; }
 
 .lk-grid .mud-table-row.is-selected .mud-table-cell { background: var(--accent-50) !important; }
@@ -580,10 +584,241 @@ td.is-num strong { font-weight: 700; }
 .lk-grid .mud-selected-item td,
 .lk-grid .mud-table-row-selected .mud-table-cell { background: var(--accent-50) !important; }
 
-.lk-grid .mud-table-pagination { font-size: 12px; color: var(--n-600); }
+.lk-grid .is-num { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.lk-grid .mud-table-pagination { border-top: 1px solid var(--n-150); background: var(--n-25); font-size: 12px; color: var(--n-600); }
 .lk-grid .mud-table-pagination button.mud-selected { background: var(--accent-600) !important; color: #fff !important; }
+.lk-grid .mud-progress-linear .mud-progress-linear-bar { background: var(--accent-500) !important; }
 
-.mud-paper.panel { border-radius: var(--r-md) !important; border: 1px solid var(--n-200) !important; }
+.mud-paper.panel {
+  border-radius: var(--r-md) !important;
+  border: 1px solid var(--n-200) !important;
+  box-shadow: 0 1px 0 rgba(15, 23, 35, 0.04) !important;
+}
+
+/* ─── Shared Mud bridge components ─────────────────────────────────────── */
+.lk-bare {
+  /* Escape hatch for rare raw-Mud experiments; add targeted resets here only when needed. */
+}
+
+.lk .mud-button-root,
+.lk-dialog .mud-button-root {
+  min-height: 32px;
+  border-radius: var(--r-sm) !important;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none !important;
+}
+
+.lk .mud-button-filled-primary,
+.lk-dialog .mud-button-filled-primary {
+  background: var(--accent-600) !important;
+  border: 1px solid var(--accent-700) !important;
+  color: #fff !important;
+}
+
+.lk .mud-button-filled-primary:hover,
+.lk-dialog .mud-button-filled-primary:hover {
+  background: var(--accent-700) !important;
+}
+
+.lk .mud-button-filled-error,
+.lk-dialog .mud-button-filled-error {
+  background: var(--danger-fg) !important;
+  border: 1px solid var(--danger-fg) !important;
+  color: #fff !important;
+}
+
+.lk .mud-button-filled-error:hover,
+.lk-dialog .mud-button-filled-error:hover {
+  background: var(--danger-fg) !important;
+}
+
+.lk .mud-button-outlined,
+.lk-dialog .mud-button-outlined {
+  border: 1px solid var(--n-200) !important;
+  background: var(--n-0) !important;
+  color: var(--n-700) !important;
+}
+
+.lk .mud-button-outlined:hover,
+.lk-dialog .mud-button-outlined:hover {
+  background: var(--n-25) !important;
+}
+
+.lk .mud-button-outlined-error,
+.lk-dialog .mud-button-outlined-error {
+  border-color: var(--danger-bd) !important;
+  color: var(--danger-fg) !important;
+}
+
+.lk .mud-button-outlined-error:hover,
+.lk-dialog .mud-button-outlined-error:hover {
+  background: var(--danger-bg) !important;
+}
+
+.lk .mud-button-root:disabled,
+.lk-dialog .mud-button-root:disabled {
+  border-style: dashed !important;
+  background: var(--n-50) !important;
+  color: var(--n-400) !important;
+}
+
+.lk .mud-input-control .mud-input-slot {
+  min-height: 32px;
+  border: 1px solid var(--n-200);
+  border-radius: var(--r-sm);
+  background: var(--n-0);
+  color: var(--n-900);
+  font-size: 12.5px;
+}
+
+.lk .mud-input-control.mud-focused .mud-input-slot {
+  border-color: var(--accent-500);
+  box-shadow: 0 0 0 3px rgba(47, 143, 139, 0.12);
+}
+
+.lk .mud-input-label {
+  color: var(--n-700);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.lk .mud-input-underline::before,
+.lk .mud-input-underline::after {
+  display: none !important;
+}
+
+.lk-field--filter .mud-input-control .mud-input-slot,
+.lk-toolbar .mud-input-control .mud-input-slot {
+  min-height: 30px;
+}
+
+.lk-field--inline .mud-input-control {
+  margin: 0;
+}
+
+.lk-field--inline .mud-input-label {
+  display: none;
+}
+
+.lk-field--inline .mud-input-control .mud-input-slot {
+  min-height: 28px;
+}
+
+.lk .mud-icon-root,
+.lk-dialog .mud-icon-root {
+  font-size: 18px;
+}
+
+.lk-dialog .mud-paper {
+  border: 1px solid var(--n-200) !important;
+  border-radius: var(--r-md) !important;
+}
+
+.shared-dialog {
+  width: min(440px, calc(100vw - 32px));
+  background: var(--n-0) !important;
+}
+
+.shared-dialog__head,
+.shared-dialog__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 11px 14px;
+}
+
+.shared-dialog__head {
+  border-bottom: 1px solid var(--n-150);
+  background: var(--n-25);
+}
+
+.lk-dialog--danger .shared-dialog__head {
+  background: var(--danger-bg);
+  border-bottom-color: var(--danger-bd);
+}
+
+.shared-dialog__title {
+  color: var(--n-900);
+  font-size: 15px !important;
+  font-weight: 600 !important;
+}
+
+.lk-dialog--danger .shared-dialog__title {
+  color: var(--danger-fg);
+}
+
+.shared-dialog__body {
+  padding: 14px;
+  color: var(--n-700);
+  font-size: 12.5px;
+}
+
+.shared-dialog__actions {
+  justify-content: flex-end;
+  border-top: 1px solid var(--n-150);
+  background: var(--n-25);
+}
+
+.lk-state {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-radius: var(--r-md);
+  font-size: 12.5px;
+}
+
+.lk-state--error   { background: var(--danger-bg) !important; border-color: var(--danger-bd) !important; color: var(--danger-fg) !important; }
+.lk-state--warn    { background: var(--warn-bg) !important;   border-color: var(--warn-bd) !important;   color: var(--warn-fg) !important; }
+.lk-state--info    { background: var(--info-bg) !important;   border-color: var(--info-bd) !important;   color: var(--info-fg) !important; }
+.lk-state--success { background: var(--ok-bg) !important;     border-color: var(--ok-bd) !important;     color: var(--ok-fg) !important; }
+
+.lk-state__trace {
+  font-family: var(--font-mono) !important;
+  font-size: 11px !important;
+  opacity: 0.8;
+}
+
+.shared-error {
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.shared-error__content {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.shared-error__icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--danger-fg) !important;
+}
+
+.shared-error__body {
+  min-width: 0;
+}
+
+.shared-error__trace {
+  display: block;
+  margin-top: 3px;
+  color: var(--n-600) !important;
+  font-family: var(--font-mono) !important;
+}
+
+.shared-error__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
 
 /* ─── Responsive ────────────────────────────────────────────────────────── */
 @media (max-width: 980px) {
