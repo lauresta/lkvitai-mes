@@ -875,6 +875,8 @@ td.is-num strong { font-weight: 700; }
   min-height: var(--control-h);
   padding: 0 10px;
   align-items: center;
+  border: 0;
+  background: transparent;
 }
 
 .lk-field--filter .mud-input-control,
@@ -885,15 +887,44 @@ td.is-num strong { font-weight: 700; }
 
 .lk-field--filter .mud-input,
 .lk-toolbar .mud-input {
+  height: var(--control-h);
   min-height: var(--control-h);
   font-size: 12.5px;
 }
 
+.lk-field--filter .mud-input.mud-input-outlined,
+.lk-toolbar .mud-input.mud-input-outlined {
+  padding: 0 8px 0 10px !important;
+  border: 1px solid var(--n-200);
+  border-radius: var(--r-sm);
+  background: var(--n-0);
+}
+
 .lk-field--filter .mud-input > input.mud-input-root,
-.lk-field--filter .mud-input > .mud-input-root,
-.lk-toolbar .mud-input > input.mud-input-root,
-.lk-toolbar .mud-input > .mud-input-root {
-  padding: 0 10px !important;
+.lk-toolbar .mud-input > input.mud-input-root {
+  height: var(--control-h) !important;
+  padding: 0 !important;
+  line-height: var(--control-h) !important;
+  box-sizing: border-box !important;
+}
+
+.lk-field--filter .mud-input > div.mud-input-slot.mud-input-root-outlined,
+.lk-toolbar .mud-input > div.mud-input-slot.mud-input-root-outlined {
+  display: flex !important;
+  align-items: center !important;
+  height: var(--control-h) !important;
+  min-height: var(--control-h) !important;
+  padding: 0 !important;
+  line-height: 1.2 !important;
+  box-sizing: border-box !important;
+}
+
+.lk-field--filter .mud-input-control.mud-focused .mud-input.mud-input-outlined,
+.lk-toolbar .mud-input-control.mud-focused .mud-input.mud-input-outlined,
+.lk-field--filter .mud-input.mud-input-outlined:focus-within,
+.lk-toolbar .mud-input.mud-input-outlined:focus-within {
+  border-color: var(--accent-500);
+  box-shadow: 0 0 0 3px rgba(47, 143, 139, 0.12);
 }
 
 .lk-field--filter .mud-input-outlined-border,
@@ -914,7 +945,19 @@ td.is-num strong { font-weight: 700; }
 
 .lk-field--filter .mud-input-adornment-end,
 .lk-toolbar .mud-input-adornment-end {
-  margin-right: 4px;
+  display: flex;
+  align-items: center;
+  align-self: stretch;
+  height: var(--control-h);
+  max-height: none;
+  margin-left: 6px;
+  margin-right: 0;
+}
+
+.lk-field--filter .mud-input-adornment-end .mud-icon-root,
+.lk-toolbar .mud-input-adornment-end .mud-icon-root {
+  display: block;
+  line-height: 1;
 }
 
 .lk-field--inline .mud-input-control {
