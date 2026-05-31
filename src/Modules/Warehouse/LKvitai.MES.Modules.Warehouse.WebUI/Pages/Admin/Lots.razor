@@ -17,119 +17,116 @@
     </div>
 }
 
-<div class="card shadow-sm mb-3">
-    <div class="card-body">
-        <div class="row g-2 align-items-end">
-            <div class="col-md-4" data-testid="lots-search">
-                <MudTextField T="string"
-                              Label="Search"
-                              Variant="Variant.Outlined"
-                              Margin="Margin.Dense"
-                              @bind-Value="_search"
-                              Placeholder="Lot number, SKU, item name"
-                              InputAttributes="@LotsFilterSearchAttributes" />
-            </div>
-            <div class="col-md-3">
-                <MudSelect T="string"
-                           Label="Status"
+<MudPaper Outlined="true" Elevation="0" Class="panel lots-filter-panel">
+    <div class="lk-toolbar lots-filter-toolbar">
+        <div class="lk-field--filter lots-filter__search" data-testid="lots-search">
+            <MudTextField T="string"
+                          Label="Search"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          @bind-Value="_search"
+                          Placeholder="Lot number, SKU, item name"
+                          InputAttributes="@LotsFilterSearchAttributes" />
+        </div>
+        <div class="lk-field--filter lots-filter__status">
+            <MudSelect T="string"
+                       Label="Status"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       @bind-Value="_status"
+                       InputAttributes="@LotsFilterStatusAttributes">
+                <MudSelectItem T="string" Value="@string.Empty">All</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Active")">Active</MudSelectItem>
+                <MudSelectItem T="string" Value="@("ExpiringSoon")">Expiring soon</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Expired")">Expired</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Depleted")">Depleted</MudSelectItem>
+            </MudSelect>
+        </div>
+        <div class="lk-field--filter lots-filter__page-size">
+            <div data-testid="lots-page-size">
+                <MudSelect T="int"
+                           Label="Page size"
                            Variant="Variant.Outlined"
                            Margin="Margin.Dense"
-                           @bind-Value="_status"
-                           InputAttributes="@LotsFilterStatusAttributes">
-                    <MudSelectItem T="string" Value="@string.Empty">All</MudSelectItem>
-                    <MudSelectItem T="string" Value="@("Active")">Active</MudSelectItem>
-                    <MudSelectItem T="string" Value="@("ExpiringSoon")">Expiring soon</MudSelectItem>
-                    <MudSelectItem T="string" Value="@("Expired")">Expired</MudSelectItem>
-                    <MudSelectItem T="string" Value="@("Depleted")">Depleted</MudSelectItem>
+                           Value="@_pageSize"
+                           ValueChanged="OnPageSizeChangedAsync"
+                           InputAttributes="@LotsPageSizeAttributes">
+                    <MudSelectItem T="int" Value="25">25</MudSelectItem>
+                    <MudSelectItem T="int" Value="50">50</MudSelectItem>
+                    <MudSelectItem T="int" Value="100">100</MudSelectItem>
                 </MudSelect>
             </div>
-            <div class="col-md-2">
-                <div data-testid="lots-page-size">
-                    <MudSelect T="int"
-                               Label="Page size"
-                               Variant="Variant.Outlined"
-                               Margin="Margin.Dense"
-                               Value="@_pageSize"
-                               ValueChanged="OnPageSizeChangedAsync"
-                               InputAttributes="@LotsPageSizeAttributes">
-                        <MudSelectItem T="int" Value="25">25</MudSelectItem>
-                        <MudSelectItem T="int" Value="50">50</MudSelectItem>
-                        <MudSelectItem T="int" Value="100">100</MudSelectItem>
-                    </MudSelect>
-                </div>
-            </div>
-            <div class="col-md-3 d-flex gap-2">
-                <MudButton Variant="Variant.Filled"
-                           Color="Color.Primary"
-                           OnClick="ApplyFiltersAsync"
-                           UserAttributes="@LotsSearchButtonAttributes">
-                    Filter
-                </MudButton>
-                <MudButton Variant="Variant.Outlined"
-                           Color="Color.Primary"
-                           OnClick="RefreshAsync"
-                           UserAttributes="@LotsRefreshAttributes">
-                    Refresh
-                </MudButton>
-            </div>
+        </div>
+        <div class="lots-filter__actions">
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       OnClick="ApplyFiltersAsync"
+                       UserAttributes="@LotsSearchButtonAttributes">
+                Filter
+            </MudButton>
+            <MudButton Variant="Variant.Outlined"
+                       Color="Color.Primary"
+                       OnClick="RefreshAsync"
+                       UserAttributes="@LotsRefreshAttributes">
+                Refresh
+            </MudButton>
         </div>
     </div>
-</div>
+</MudPaper>
 
-<div class="card shadow-sm position-relative">
-    <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <strong data-testid="lots-summary">Total: @_totalCount</strong>
-            <span class="text-muted small" data-testid="lots-current-page">Page @_currentPage</span>
-        </div>
-
-        <MudDataGrid T="LotListItemDto"
-                     @ref="_grid"
-                     @key="_gridRenderKey"
-                     ServerData="LoadServerDataAsync"
-                     Filterable="false"
-                     SortMode="SortMode.Single"
-                     Dense="true"
-                     Hover="true"
-                     RowsPerPage="@_pageSize"
-                     Loading="@_isLoading"
-                     @attributes="@LotsGridAttributes">
-            <Columns>
-                <PropertyColumn Property="x => x.LotNumber" Title="Lot" />
-                <TemplateColumn Title="Item">
-                    <CellTemplate>
-                        @($"{context.Item.ItemSku} - {context.Item.ItemName}")
-                    </CellTemplate>
-                </TemplateColumn>
-                <TemplateColumn Title="Qty">
-                    <CellTemplate>@context.Item.Qty.ToString("0.###")</CellTemplate>
-                </TemplateColumn>
-                <TemplateColumn Title="Reserved">
-                    <CellTemplate>@context.Item.ReservedQty.ToString("0.###")</CellTemplate>
-                </TemplateColumn>
-                <TemplateColumn Title="Available">
-                    <CellTemplate>@context.Item.AvailableQty.ToString("0.###")</CellTemplate>
-                </TemplateColumn>
-                <PropertyColumn Property="x => x.BaseUom" Title="UoM" />
-                <TemplateColumn Title="Production">
-                    <CellTemplate>@FormatDate(context.Item.ProductionDate)</CellTemplate>
-                </TemplateColumn>
-                <TemplateColumn Title="Expiry">
-                    <CellTemplate>@FormatDate(context.Item.ExpiryDate)</CellTemplate>
-                </TemplateColumn>
-                <PropertyColumn Property="x => x.Status" Title="Status" />
-            </Columns>
-            <NoRecordsContent>
-                <MudText Typo="Typo.body2" Class="text-muted">No lots found.</MudText>
-            </NoRecordsContent>
-            <PagerContent>
-                <div data-testid="lots-pager">
-                    <MudDataGridPager T="LotListItemDto" />
-                </div>
-            </PagerContent>
-        </MudDataGrid>
+<MudPaper Outlined="true" Elevation="0" Class="panel lots-grid-panel">
+    <div class="lots-grid-head">
+        <strong data-testid="lots-summary">Total: @_totalCount</strong>
+        <span data-testid="lots-current-page">Page @_currentPage</span>
     </div>
-</div>
+
+    <MudDataGrid T="LotListItemDto"
+                 @ref="_grid"
+                 @key="_gridRenderKey"
+                 ServerData="LoadServerDataAsync"
+                 Filterable="false"
+                 SortMode="SortMode.Single"
+                 Dense="true"
+                 Hover="true"
+                 RowsPerPage="@_pageSize"
+                 Loading="@_isLoading"
+                 Class="lk-grid lots-grid"
+                 @attributes="@LotsGridAttributes">
+        <Columns>
+            <PropertyColumn Property="x => x.LotNumber" Title="Lot" />
+            <TemplateColumn Title="Item">
+                <CellTemplate>
+                    @($"{context.Item.ItemSku} - {context.Item.ItemName}")
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="Qty">
+                <CellTemplate>@context.Item.Qty.ToString("0.###")</CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="Reserved">
+                <CellTemplate>@context.Item.ReservedQty.ToString("0.###")</CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="Available">
+                <CellTemplate>@context.Item.AvailableQty.ToString("0.###")</CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.BaseUom" Title="UoM" />
+            <TemplateColumn Title="Production">
+                <CellTemplate>@FormatDate(context.Item.ProductionDate)</CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="Expiry">
+                <CellTemplate>@FormatDate(context.Item.ExpiryDate)</CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.Status" Title="Status" />
+        </Columns>
+        <NoRecordsContent>
+            <MudText Typo="Typo.body2" Class="lk-empty lots-empty">No lots found.</MudText>
+        </NoRecordsContent>
+        <PagerContent>
+            <div class="lots-pager" data-testid="lots-pager">
+                <MudDataGridPager T="LotListItemDto" />
+            </div>
+        </PagerContent>
+    </MudDataGrid>
+</MudPaper>
 </div>
 
 @code {
