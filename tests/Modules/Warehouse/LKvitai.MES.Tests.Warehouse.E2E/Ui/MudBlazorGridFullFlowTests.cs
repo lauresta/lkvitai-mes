@@ -128,7 +128,7 @@ public sealed class MudBlazorGridFullFlowTests : PlaywrightUiTestBase
         {
             await WaitForStockFiltersReadyAsync(page);
 
-            var stockSearch = ByTestId(page, "stock-search");
+            var stockSearch = StockSearchInput(page);
             await Expect(stockSearch).ToBeVisibleAsync();
             await stockSearch.FillAsync(searchValue);
             await stockSearch.PressAsync("Tab");
@@ -166,8 +166,11 @@ public sealed class MudBlazorGridFullFlowTests : PlaywrightUiTestBase
             });
         }
 
-        await Expect(ByTestId(page, "stock-search")).ToBeVisibleAsync();
+        await Expect(StockSearchInput(page)).ToBeVisibleAsync();
     }
+
+    private static ILocator StockSearchInput(IPage page)
+        => ByTestId(page, "stock-search").GetByRole(AriaRole.Textbox).First;
 
     private static async Task TrySelectMudSelectOptionAsync(IPage page, string testId, string optionText)
     {

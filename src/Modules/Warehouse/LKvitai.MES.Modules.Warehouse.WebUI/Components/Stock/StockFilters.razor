@@ -1,7 +1,7 @@
 <form data-testid="stock-filters" @onsubmit="HandleSubmitAsync" @onsubmit:preventDefault="true">
     <MudPaper Outlined="true" Elevation="0" Class="panel stock-filter-panel">
         <div class="lk-toolbar stock-filter-toolbar">
-            <div class="lk-field--filter stock-field stock-filter__warehouse">
+            <div class="lk-field--filter stock-field stock-filter__warehouse" data-testid="stock-warehouse">
                 <MudSelect T="string"
                            Variant="Variant.Outlined"
                            Margin="Margin.Dense"
@@ -15,7 +15,7 @@
                 </MudSelect>
             </div>
 
-            <div class="lk-field--filter stock-field stock-filter__location">
+            <div class="lk-field--filter stock-field stock-filter__location" data-testid="stock-location">
                 <MudTextField T="string"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
@@ -24,7 +24,7 @@
                               InputAttributes="@LocationAttributes" />
             </div>
 
-            <div class="lk-field--filter stock-field stock-filter__sku">
+            <div class="lk-field--filter stock-field stock-filter__sku" data-testid="stock-search">
                 <MudTextField T="string"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
@@ -78,9 +78,9 @@
     private string _sku = string.Empty;
     private bool _includeVirtual;
     private string? _validationError;
-    private static readonly Dictionary<string, object> WarehouseAttributes = new() { ["data-testid"] = "stock-warehouse", ["aria-label"] = "Warehouse" };
-    private static readonly Dictionary<string, object> LocationAttributes = new() { ["data-testid"] = "stock-location", ["aria-label"] = "Location" };
-    private static readonly Dictionary<string, object> SkuAttributes = new() { ["data-testid"] = "stock-search", ["aria-label"] = "SKU" };
+    private static readonly Dictionary<string, object> WarehouseAttributes = new() { ["aria-label"] = "Warehouse" };
+    private static readonly Dictionary<string, object> LocationAttributes = new() { ["aria-label"] = "Location" };
+    private static readonly Dictionary<string, object> SkuAttributes = new() { ["aria-label"] = "SKU" };
     private static readonly Dictionary<string, object> SearchButtonAttributes = new() { ["data-testid"] = "stock-search-btn" };
     private static readonly Dictionary<string, object> ClearButtonAttributes = new() { ["data-testid"] = "stock-clear" };
 
