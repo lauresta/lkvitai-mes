@@ -13,7 +13,7 @@
 | MudBlazor installed | Yes — `6.20.0` (referenced in csproj, registered in DI, providers in App.razor) |
 | Pages using Mud components | **4 of 102** (App.razor, MainLayout.razor, AvailableStock.razor, Admin/Lots.razor) |
 | Bootstrap CDN | **Present** — Bootstrap 5.3.3 + Bootstrap Icons 1.11.3 in `_Layout.cshtml` |
-| Bootstrap class usage in Razor | Effectively 0 raw class tokens (grep clean) — but layout/shell still Bootstrap-structured |
+| Bootstrap class usage in Razor | Present in many unmigrated pages/components — Bootstrap must stay until page migration is complete |
 | Portal design system | Active — `portal-tokens.css` + `portal-shell.css` loaded from `BuildingBlocks.WebUI` |
 | AppTheme (Mud palette config) | **Not present** — no `AppTheme.cs`, Mud runs with default blue palette |
 
@@ -89,23 +89,34 @@ This gives:
 
 > **Rule:** Phase 0 is additive only. Nothing is removed. The app must look and behave exactly as before Phase 0, except Mud components now render with the correct portal palette.
 
+**Designer follow-up decisions locked for Phase 1+:**
+- Keep `.lk` globally on the Warehouse `MudLayout`. Overrides are scoped to `.lk .mud-*`, so Bootstrap-only pages are unaffected and any Mud component rendered from an unmigrated page still receives the approved design language.
+- Reserve `.lk-bare` as a rare escape hatch for raw Mud experiments; prefer adding targeted resets there over removing the global `.lk` wrapper.
+- Forms use one bordered base style, plus `.lk-field--filter` for 30px toolbar filters and `.lk-field--inline` for row-action/inline fields without labels.
+- Dialogs use neutral headers by default. Destructive confirmations use `.lk-dialog--danger` on the header only, neutral body, and filled danger only for the final confirmation button.
+- Disabled Mud buttons use the dashed disabled grammar globally. Destructive row actions are outlined danger; filled danger is reserved for final destructive confirmation.
+- Use Material Outlined icons. Filled icons are allowed only for active nav and critical status signals. Nav icons, including collapsed sidebar icons, are 18px.
+- Operational table rows are 30px everywhere, including admin/catalog and read-heavy reports.
+- `.lk-state` is for page/panel state; `.chip` is for one record, row, cell, or field.
+- Golden Phase 1 screens: `AvailableStock` (operational list), `Admin/Lots` (CRUD), `StockAdjustments` (workflow/confirmations/state banners).
+
 **What is safe to do in Phase 0:**
 
-1. **Add `AppTheme.cs`** — new file, zero risk. Correct palette to match portal tokens (not the blue from the frozen branch):
+1. **Add `AppTheme.cs`** — new file, zero risk. Correct palette to match portal tokens and designer handoff (not the blue from the frozen branch):
    ```csharp
    Palette = new PaletteLight {
-       Primary       = "#2f8f8b",   // --accent-500
-       PrimaryDarken = "#1d5d5a",   // --accent-700
-       Secondary     = "#56aaa7",   // --accent-400
-       Success       = "#19744a",   // --ok-fg
-       Warning       = "#7c5f2a",   // --warn-fg
-       Error         = "#8a1f12",   // --danger-fg
-       Background    = "#f5f6f8",   // --n-50
-       Surface       = "#ffffff",   // --n-0
-       AppbarBackground = "#1f2632", // --n-800 (dark topbar)
-       AppbarText    = "#ffffff",
-       DrawerBackground = "#1f2632",
-       DrawerText    = "#eef1f4",   // --n-100
+       Primary          = "#2f8f8b", // --accent-500
+       PrimaryDarken    = "#1d5d5a", // --accent-700
+       PrimaryLighten   = "#56aaa7", // --accent-400
+       Secondary        = "#56aaa7", // teal family, never Mud pink
+       Info             = "#1d5d5a", // --info-fg, never Mud blue
+       Success          = "#19744a", // --ok-fg
+       Warning          = "#7c5f2a", // --warn-fg
+       Error            = "#8a1f12", // --danger-fg
+       Background       = "#f5f6f8", // --n-50
+       Surface          = "#ffffff", // --n-0
+       AppbarBackground = "#20242c", // --dark
+       DrawerBackground = "#20242c", // --dark
    }
    ```
 
@@ -127,7 +138,7 @@ This gives:
    <script src="_framework/blazor.server.js"></script>
    ```
 
-4. **Add shared Mud components**: SharedConfirmDialog, SharedErrorAlert (new files, additive).
+4. **Add shared Mud components**: SharedConfirmDialog, SharedErrorAlert (new files, additive). Skin them through opt-in bridge classes from `docs/migration/mudblazor-designer-handoff-annotated.html`: `.lk`, `.lk-dialog`, `.lk-state`, `.lk-grid`, `.panel`.
 
 5. **Copy CI guard script** `validate-webui-no-bootstrap.sh` — but configure it in **warn-only mode** (log output, do NOT `exit 1` yet). Activating it as a hard gate happens in Phase 3 when Bootstrap is actually gone.
 
@@ -143,6 +154,7 @@ This gives:
 - `dotnet build` green
 - Smoke: `AvailableStock_FullFlow` + `Lots_FullFlow` pass
 - Portal teal (`#2f8f8b`) renders on Mud components (AvailableStock, Lots)
+- Mud grids use 30px operational rows and scoped `.lk-grid` overrides
 - All non-migrated pages visually unchanged
 - Bootstrap CDN still loading
 - Portal teal visible in topbar/primary button
@@ -195,11 +207,11 @@ Per page: copy from branch → verify DTO compatibility → build → smoke → 
 
 **Goal:** Remove all Bootstrap remnants, enforce via CI.
 
-1. Remove Bootstrap 5.3.3 CDN from `_Layout.cshtml` (should already be done in Phase 0)
-2. Remove Bootstrap Icons CDN
-3. Replace any remaining `bi-` icons with `Icons.Material.*`
-4. Wire `validate-webui-no-bootstrap.sh` to CI (if not done in Phase 0)
-5. Migrate the 7 unmigrated pages (CrossDock, PickingTasks, WavePicking, AnalyticsFulfillment, AnalyticsQuality, AdminImport, Index) — these are low business priority, write fresh
+1. Migrate the 7 unmigrated pages (CrossDock, PickingTasks, WavePicking, AnalyticsFulfillment, AnalyticsQuality, AdminImport, Index) — these are low business priority, write fresh
+2. Replace any remaining `bi-` icons with `Icons.Material.*`
+3. Remove Bootstrap 5.3.3 CDN from `_Layout.cshtml`
+4. Remove Bootstrap Icons CDN
+5. Wire `validate-webui-no-bootstrap.sh` to CI as a hard gate
 6. Final full smoke run
 
 ---
@@ -249,6 +261,8 @@ During Phases 1–2, pages that haven't been migrated yet will coexist with Mud 
 - [ ] No Bootstrap `class=""` tokens in migrated file
 - [ ] Page-level smoke test passes
 - [ ] DTO fields verified against current main models
+- [ ] Mud components follow `docs/migration/mudblazor-designer-handoff-annotated.html`: `.panel`, `.lk-grid`, `.lk-state`, `.chip`, `.lk-toolbar`; 30px table rows; Material Outlined icons
+- [ ] Compare migrated pages against the three golden screens: `AvailableStock`, `Admin/Lots`, `StockAdjustments`
 
 ### Phase 2 (per page batch)
 - [ ] All pages in batch build clean
@@ -270,12 +284,13 @@ During Phases 1–2, pages that haven't been migrated yet will coexist with Mud 
 src/.../WebUI/Infrastructure/AppTheme.cs           ← fix palette
 src/.../WebUI/App.razor                            ← already done on main, minor delta
 src/.../WebUI/Pages/_Layout.cshtml                 ← fix: restore portal CSS, correct script order
-src/.../WebUI/Shared/MainLayout.razor              ← port + verify nav entries
 src/.../WebUI/Components/SharedConfirmDialog.razor ← new, copy
 src/.../WebUI/Components/SharedErrorAlert.razor    ← new, copy
 scripts/validate-webui-no-bootstrap.sh             ← copy
 docs/adr/006-mudblazor-render-mode-server-and-shell-stability.md ← copy
 ```
+
+Do not port `MainLayout.razor` or `NavMenu.razor` in Phase 0. They already provide the current application shell and changing them risks global navigation regressions. Revisit shell changes only after page migrations make them necessary.
 
 ### Port with DTO verification (high reuse)
 All pages with `<Mud` in the mudblazor branch that are NOT in the priority warehouse list:

@@ -8,6 +8,7 @@ on:
       - src/Modules/Warehouse/**
       - src/BuildingBlocks/**
       - tests/Modules/Warehouse/**
+      - scripts/validate-webui-no-bootstrap.sh
 
 permissions:
   contents: read
@@ -30,6 +31,9 @@ jobs:
 
       - name: Build
         run: dotnet build src/LKvitai.MES.sln -c Release --no-restore
+
+      - name: Bootstrap migration guard (warn only)
+        run: scripts/validate-webui-no-bootstrap.sh
 
       - name: Unit tests
         run: dotnet test tests/Modules/Warehouse/LKvitai.MES.Tests.Warehouse.Unit/LKvitai.MES.Tests.Warehouse.Unit.csproj -c Release --no-build
