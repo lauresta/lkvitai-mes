@@ -596,10 +596,10 @@ td.is-num strong { font-weight: 700; }
 
 .lots-filter-toolbar {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   flex-wrap: wrap;
   gap: 8px 10px;
-  padding: 8px 12px;
+  padding: 6px 12px;
   border-bottom: 1px solid var(--n-150);
   background: var(--n-25);
 }
@@ -646,7 +646,7 @@ td.is-num strong { font-weight: 700; }
 
 .lots-filter__actions {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   gap: 8px;
 }
 
