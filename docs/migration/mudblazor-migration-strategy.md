@@ -85,58 +85,66 @@ This gives:
 
 ### Phase 0 — Infrastructure (prerequisite for everything, ~2–3 days)
 
-**Goal:** Mud shell running on main, Bootstrap CDN removed, portal palette applied, coexistence confirmed.
+**Goal:** Mud theme and shared infrastructure wired on main. Bootstrap CDN stays — **do not touch it in this phase**. Portal palette applied to Mud. Script order fixed. Coexistence confirmed.
 
-**Steps:**
+> **Rule:** Phase 0 is additive only. Nothing is removed. The app must look and behave exactly as before Phase 0, except Mud components now render with the correct portal palette.
 
-1. **Create integration branch** from `main` HEAD:
-   ```
-   git checkout -b feat/mudblazor-v2 main
-   ```
+**What is safe to do in Phase 0:**
 
-2. **Port AppTheme.cs** from mudblazor branch, correcting palette to match portal tokens:
+1. **Add `AppTheme.cs`** — new file, zero risk. Correct palette to match portal tokens (not the blue from the frozen branch):
    ```csharp
    Palette = new PaletteLight {
-       Primary      = "#2f8f8b",   // --accent-500
-       PrimaryDarken = "#1d5d5a",  // --accent-700
-       Secondary    = "#56aaa7",   // --accent-400
-       Success      = "#19744a",   // --ok-fg
-       Warning      = "#7c5f2a",   // --warn-fg
-       Error        = "#8a1f12",   // --danger-fg
-       Background   = "#f5f6f8",   // --n-50
-       Surface      = "#ffffff",   // --n-0
+       Primary       = "#2f8f8b",   // --accent-500
+       PrimaryDarken = "#1d5d5a",   // --accent-700
+       Secondary     = "#56aaa7",   // --accent-400
+       Success       = "#19744a",   // --ok-fg
+       Warning       = "#7c5f2a",   // --warn-fg
+       Error         = "#8a1f12",   // --danger-fg
+       Background    = "#f5f6f8",   // --n-50
+       Surface       = "#ffffff",   // --n-0
        AppbarBackground = "#1f2632", // --n-800 (dark topbar)
-       AppbarText   = "#ffffff",
+       AppbarText    = "#ffffff",
        DrawerBackground = "#1f2632",
-       DrawerText   = "#eef1f4",   // --n-100
+       DrawerText    = "#eef1f4",   // --n-100
    }
    ```
 
-3. **Fix `_Layout.cshtml`** — keep portal-tokens.css and portal-shell.css, remove Bootstrap CDN, correct script order (MudBlazor.min.js BEFORE blazor.server.js per ADR-006):
+2. **Wire theme in `App.razor`** — `<MudThemeProvider Theme="AppTheme.Default" />` (already has the tag, just add the attribute).
+
+3. **Fix script order in `_Layout.cshtml`** — move `MudBlazor.min.js` to load BEFORE `blazor.server.js` (per ADR-006). Keep Bootstrap CDN and Bootstrap Icons CDN exactly where they are:
    ```html
-   <link href="_content/LKvitai.MES.BuildingBlocks.WebUI/css/portal-tokens.css" rel="stylesheet" />
-   <link href="_content/LKvitai.MES.BuildingBlocks.WebUI/css/portal-shell.css" rel="stylesheet" />
-   <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
-   <!-- NO Bootstrap CDN -->
+   <!-- portal CSS — keep -->
+   <link href="_content/LKvitai.MES.BuildingBlocks.WebUI/css/portal-tokens.css" ... />
+   <link href="_content/LKvitai.MES.BuildingBlocks.WebUI/css/portal-shell.css" ... />
+   <!-- Mud CSS — keep -->
+   <link href="_content/MudBlazor/MudBlazor.min.css" ... />
+   <!-- Bootstrap CDN — KEEP, do not remove -->
+   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/..." ... />
+   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/..." ... />
    ...
+   <!-- script order: Mud JS first, then Blazor -->
    <script src="_content/MudBlazor/MudBlazor.min.js"></script>
    <script src="_framework/blazor.server.js"></script>
    ```
 
-4. **Port MainLayout.razor + NavMenu** from mudblazor branch, verify all routes match current main NavMenu.
+4. **Add shared Mud components**: SharedConfirmDialog, SharedErrorAlert (new files, additive).
 
-5. **Port shared components**: SharedConfirmDialog, SharedErrorAlert; migrate ToastService bridge and LoadingSpinner internals to Mud.
+5. **Copy CI guard script** `validate-webui-no-bootstrap.sh` — but configure it in **warn-only mode** (log output, do NOT `exit 1` yet). Activating it as a hard gate happens in Phase 3 when Bootstrap is actually gone.
 
-6. **Port App.razor** theme binding (already partially done on main).
+6. **Verify**: existing AvailableStock + Lots pages still work, all other pages visually unchanged.
 
-7. **Copy CI guard script** `validate-webui-no-bootstrap.sh` and wire to CI.
-
-8. **Verify**: existing AvailableStock + Lots pages still work, smoke passes.
+**What is NOT allowed in Phase 0:**
+- Removing Bootstrap CDN or Bootstrap Icons CDN
+- Removing Bootstrap class tokens from any page
+- Replacing `bi-*` icons
+- Changing MainLayout or NavMenu structure (risk: navigation regression across all pages)
 
 **Exit criteria for Phase 0:**
 - `dotnet build` green
 - Smoke: `AvailableStock_FullFlow` + `Lots_FullFlow` pass
-- No Bootstrap CDN in layout
+- Portal teal (`#2f8f8b`) renders on Mud components (AvailableStock, Lots)
+- All non-migrated pages visually unchanged
+- Bootstrap CDN still loading
 - Portal teal visible in topbar/primary button
 
 ---
@@ -230,9 +238,11 @@ During Phases 1–2, pages that haven't been migrated yet will coexist with Mud 
 ### Phase 0
 - [ ] `dotnet build src/LKvitai.MES.sln` green
 - [ ] `dotnet test ... --filter FullyQualifiedName~.Ui.` passes (existing smoke)
-- [ ] No Bootstrap CDN or Bootstrap Icons CDN in `_Layout.cshtml`
+- [ ] Bootstrap CDN and Bootstrap Icons CDN **still present** in `_Layout.cshtml`
 - [ ] portal-tokens.css and portal-shell.css still loading
-- [ ] Portal teal (#2f8f8b) renders as primary color in AppBar
+- [ ] `MudBlazor.min.js` loads before `blazor.server.js`
+- [ ] Portal teal (#2f8f8b) renders as primary color on Mud components (AvailableStock, Lots)
+- [ ] All non-migrated pages visually unchanged
 
 ### Phase 1 (per page)
 - [ ] Page renders without visual regressions
