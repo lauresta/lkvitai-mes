@@ -92,11 +92,12 @@ This gives:
 **Designer follow-up decisions locked for Phase 1+:**
 - Keep `.lk` globally on the Warehouse `MudLayout`. Overrides are scoped to `.lk .mud-*`, so Bootstrap-only pages are unaffected and any Mud component rendered from an unmigrated page still receives the approved design language.
 - Reserve `.lk-bare` as a rare escape hatch for raw Mud experiments; prefer adding targeted resets there over removing the global `.lk` wrapper.
-- Forms use one bordered base style, plus `.lk-field--filter` for 30px toolbar filters and `.lk-field--inline` for row-action/inline fields without labels.
+- Forms use one bordered base style, plus `.lk-field--filter` for 32px interactive toolbar filters with external mono-caps labels and `.lk-field--inline` for row-action/inline fields without labels.
 - Dialogs use neutral headers by default. Destructive confirmations use `.lk-dialog--danger` on the header only, neutral body, and filled danger only for the final confirmation button.
 - Disabled Mud buttons use the dashed disabled grammar globally. Destructive row actions are outlined danger; filled danger is reserved for final destructive confirmation.
 - Use Material Outlined icons. Filled icons are allowed only for active nav and critical status signals. Nav icons, including collapsed sidebar icons, are 18px.
 - Operational table rows are 30px everywhere, including admin/catalog and read-heavy reports.
+- Admin/list screens use one density split: `--row-h: 30px` for display rows, `--control-h: 32px` for interactive inputs/buttons. Filter toolbar and grid should live in one `MudPaper.panel`, with the `Total`/page strip folded into the grid panel.
 - `.lk-state` is for page/panel state; `.chip` is for one record, row, cell, or field.
 - Golden Phase 1 screens: `AvailableStock` (operational list), `Admin/Lots` (CRUD), `StockAdjustments` (workflow/confirmations/state banners).
 

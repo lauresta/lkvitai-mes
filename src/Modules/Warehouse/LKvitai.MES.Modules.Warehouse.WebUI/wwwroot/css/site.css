@@ -508,14 +508,14 @@ td.is-num strong { font-weight: 700; }
 .field {
   display: flex; align-items: center; gap: 6px;
   background: var(--n-50); border: 1px solid var(--n-200); border-radius: var(--r-sm);
-  padding: 0 8px 0 10px; min-height: 30px;
+  padding: 0 8px 0 10px; min-height: var(--control-h);
 }
 
 .field:focus-within { border-color: var(--accent-500); background: var(--n-0); box-shadow: 0 0 0 3px rgba(47, 143, 139, 0.12); }
 
 .field input, .field select {
   border: 0; outline: none; background: transparent;
-  font-size: 12.5px; color: var(--n-900); min-height: 30px; padding: 0 2px;
+  font-size: 12.5px; color: var(--n-900); min-height: var(--control-h); padding: 0 2px;
 }
 
 .field--search { flex: 1 1 240px; max-width: 340px; }
@@ -567,6 +567,7 @@ td.is-num strong { font-weight: 700; }
 .lk-grid .mud-table-root { border-collapse: collapse; }
 
 .lk-grid .mud-table-head th {
+  height: var(--row-h) !important;
   position: sticky; top: 0; z-index: 1;
   background: var(--n-50) !important; color: var(--n-700) !important;
   font-family: var(--font-mono) !important;
@@ -575,7 +576,7 @@ td.is-num strong { font-weight: 700; }
   border-bottom: 1px solid var(--n-200) !important;
 }
 
-.lk-grid .mud-table-cell { padding: 6px 12px !important; font-size: 12.5px !important; height: 30px !important; border-bottom: 1px solid var(--n-100) !important; }
+.lk-grid .mud-table-cell { padding: 6px 12px !important; font-size: 12.5px !important; height: var(--row-h) !important; border-bottom: 1px solid var(--n-100) !important; }
 .lk-grid .mud-table-row:hover .mud-table-cell { background: var(--n-25) !important; }
 
 .lk-grid .mud-table-row.is-selected .mud-table-cell { background: var(--accent-50) !important; }
@@ -588,6 +589,151 @@ td.is-num strong { font-weight: 700; }
 .lk-grid .mud-table-pagination { border-top: 1px solid var(--n-150); background: var(--n-25); font-size: 12px; color: var(--n-600); }
 .lk-grid .mud-table-pagination button.mud-selected { background: var(--accent-600) !important; color: #fff !important; }
 .lk-grid .mud-progress-linear .mud-progress-linear-bar { background: var(--accent-500) !important; }
+
+.lots-list-panel {
+  margin-bottom: 16px;
+}
+
+.lots-filter-toolbar {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--n-150);
+  background: var(--n-25);
+}
+
+.lots-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.lots-field--grow {
+  flex: 1 1 280px;
+}
+
+.lots-field__label {
+  padding-left: 1px;
+  color: var(--n-600);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.lots-filter__search {
+  min-width: 240px;
+}
+
+.lots-filter__status {
+  flex: 0 0 170px;
+}
+
+.lots-filter__page-size {
+  flex: 0 0 96px;
+}
+
+.lots-filter__search .mud-input-control,
+.lots-filter__status .mud-input-control,
+.lots-filter__page-size .mud-input-control {
+  width: 100%;
+}
+
+.lots-filter__actions {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.lots-filter__actions .mud-button-root {
+  min-height: var(--control-h);
+  padding: 0 14px;
+}
+
+.lots-grid-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  height: 34px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--n-150);
+  background: var(--n-25);
+  color: var(--n-900);
+  font-size: 12.5px;
+}
+
+.lots-grid-head span {
+  color: var(--n-500);
+  font-size: 12px;
+}
+
+.lots-grid .mud-table-head th {
+  height: var(--row-h) !important;
+  padding: 0 12px !important;
+}
+
+.lots-grid .mud-table-cell {
+  height: var(--row-h) !important;
+  padding: 0 12px !important;
+}
+
+.lots-grid .mud-table-pagination {
+  min-height: 36px;
+  padding: 0 8px;
+}
+
+.lots-grid .mud-table-pagination .mud-input-control {
+  margin: 0;
+}
+
+.lots-grid .mud-table-pagination .mud-button-root {
+  min-width: 28px;
+  min-height: 28px;
+  padding: 0;
+}
+
+.lots-grid__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 18px 16px;
+  color: var(--n-500);
+  font-size: 12.5px;
+}
+
+.lots-grid__empty-title {
+  color: var(--n-600);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+}
+
+.lots-grid__empty-action {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent-700);
+  cursor: pointer;
+  font-weight: 700;
+}
+
+@media (max-width: 720px) {
+  .lots-filter__search,
+  .lots-filter__status,
+  .lots-filter__page-size,
+  .lots-filter__actions {
+    flex: 1 1 100%;
+  }
+}
 
 .mud-paper.panel {
   border-radius: var(--r-md) !important;
@@ -691,7 +837,49 @@ td.is-num strong { font-weight: 700; }
 
 .lk-field--filter .mud-input-control .mud-input-slot,
 .lk-toolbar .mud-input-control .mud-input-slot {
-  min-height: 30px;
+  min-height: var(--control-h);
+  padding: 0 10px;
+  align-items: center;
+}
+
+.lk-field--filter .mud-input-control,
+.lk-toolbar .mud-input-control {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.lk-field--filter .mud-input,
+.lk-toolbar .mud-input {
+  min-height: var(--control-h);
+  font-size: 12.5px;
+}
+
+.lk-field--filter .mud-input > input.mud-input-root,
+.lk-field--filter .mud-input > .mud-input-root,
+.lk-toolbar .mud-input > input.mud-input-root,
+.lk-toolbar .mud-input > .mud-input-root {
+  padding: 0 10px !important;
+}
+
+.lk-field--filter .mud-input-outlined-border,
+.lk-toolbar .mud-input-outlined-border {
+  display: none !important;
+}
+
+.lk-field--filter .mud-input-control.mud-focused .mud-input-outlined-border,
+.lk-toolbar .mud-input-control.mud-focused .mud-input-outlined-border {
+  border-color: var(--accent-500) !important;
+  box-shadow: 0 0 0 3px rgba(47, 143, 139, 0.12);
+}
+
+.lk-field--filter .mud-input-label,
+.lk-toolbar .mud-input-label {
+  display: none !important;
+}
+
+.lk-field--filter .mud-input-adornment-end,
+.lk-toolbar .mud-input-adornment-end {
+  margin-right: 4px;
 }
 
 .lk-field--inline .mud-input-control {
