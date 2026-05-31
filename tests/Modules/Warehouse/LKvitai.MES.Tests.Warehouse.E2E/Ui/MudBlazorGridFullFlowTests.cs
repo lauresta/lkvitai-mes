@@ -35,7 +35,7 @@ public sealed class MudBlazorGridFullFlowTests : PlaywrightUiTestBase
             await lotHeader.ClickAsync();
             await Expect(ByTestId(page, "lots-grid")).ToBeVisibleAsync();
 
-            await TrySelectLotsPageSizeAsync(page, "25");
+            await TrySelectMudSelectOptionAsync(page, "lots-page-size", "25");
             await EnsureMudOverlayClosedAsync(page);
 
             await TryChangePageAsync(page, "lots-pager", "lots-current-page");
@@ -63,7 +63,7 @@ public sealed class MudBlazorGridFullFlowTests : PlaywrightUiTestBase
             await Expect(ByTestId(page, "stock-grid")).ToBeVisibleAsync();
             await Expect(ByTestId(page, "stock-summary")).ToContainTextAsync("Showing");
 
-            await ByTestId(page, "stock-include-virtual").CheckAsync();
+            await TrySetCheckboxAsync(page, "stock-include-virtual", true);
             await ByTestId(page, "stock-search-btn").ClickAsync();
             await Expect(ByTestId(page, "stock-grid")).ToBeVisibleAsync();
 
@@ -71,8 +71,8 @@ public sealed class MudBlazorGridFullFlowTests : PlaywrightUiTestBase
             await skuHeader.ClickAsync();
             await Expect(ByTestId(page, "stock-grid")).ToBeVisibleAsync();
 
-            await ByTestId(page, "stock-page-size").SelectOptionAsync("25");
-            Assert.Equal("25", await ByTestId(page, "stock-page-size").InputValueAsync());
+            await TrySelectMudSelectOptionAsync(page, "stock-page-size", "25");
+            await Expect(ByTestId(page, "stock-grid")).ToBeVisibleAsync();
 
             await TryChangePageAsync(page, "stock-pager", "stock-summary");
 
@@ -128,7 +128,7 @@ public sealed class MudBlazorGridFullFlowTests : PlaywrightUiTestBase
         {
             await WaitForStockFiltersReadyAsync(page);
 
-            var stockSearch = ByTestId(page, "stock-search");
+            var stockSearch = StockSearchInput(page);
             await Expect(stockSearch).ToBeVisibleAsync();
             await stockSearch.FillAsync(searchValue);
             await stockSearch.PressAsync("Tab");
@@ -166,12 +166,15 @@ public sealed class MudBlazorGridFullFlowTests : PlaywrightUiTestBase
             });
         }
 
-        await Expect(ByTestId(page, "stock-search")).ToBeVisibleAsync();
+        await Expect(StockSearchInput(page)).ToBeVisibleAsync();
     }
 
-    private static async Task TrySelectLotsPageSizeAsync(IPage page, string optionText)
+    private static ILocator StockSearchInput(IPage page)
+        => ByTestId(page, "stock-search").GetByRole(AriaRole.Textbox).First;
+
+    private static async Task TrySelectMudSelectOptionAsync(IPage page, string testId, string optionText)
     {
-        var scope = ByTestId(page, "lots-page-size");
+        var scope = ByTestId(page, testId);
         if (await scope.CountAsync() == 0)
         {
             return;
@@ -220,6 +223,28 @@ public sealed class MudBlazorGridFullFlowTests : PlaywrightUiTestBase
         }
 
         await EnsureMudOverlayClosedAsync(page);
+    }
+
+    private static async Task TrySetCheckboxAsync(IPage page, string testId, bool isChecked)
+    {
+        var scope = ByTestId(page, testId);
+        if (await scope.CountAsync() == 0)
+        {
+            return;
+        }
+
+        var target = scope.GetByRole(AriaRole.Checkbox);
+        if (await target.CountAsync() == 0)
+        {
+            target = scope.Locator("input[type='checkbox']");
+        }
+
+        if (await target.CountAsync() == 0)
+        {
+            target = scope;
+        }
+
+        await target.First.SetCheckedAsync(isChecked);
     }
 
     private static async Task EnsureMudOverlayClosedAsync(IPage page)

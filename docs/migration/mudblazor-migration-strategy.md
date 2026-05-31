@@ -162,23 +162,19 @@ This gives:
 
 ---
 
-### Phase 1 — Priority warehouse pages (business-driven, 1–2 weeks)
+### Phase 1 — Golden warehouse screens (pattern-driven, 2–4 days)
 
-**Goal:** Migrate pages business has flagged as highest priority. Coexistence with unmigrated pages is still active.
+**Goal:** Migrate a small set of representative screens first, then reuse their settled density, spacing, and interaction patterns for the rest of Warehouse WebUI. Coexistence with unmigrated pages is still active.
 
-**Priority order** (suggest confirming with business):
+**Golden screens:**
 
-| Priority | Page | Route | Branch reuse? |
-|----------|------|-------|--------------|
-| P1 | Items list + detail | `/admin/items`, `/admin/items/{id}` | Template only — verify DTOs |
-| P1 | Stock Adjustments | `/warehouse/stock/adjustments` | Template only |
-| P1 | Inbound Shipments (list + create + detail) | `/warehouse/inbound/shipments/*` | Template only |
-| P1 | Transfers (list + create + execute) | `/warehouse/transfers/*` | Template only |
-| P2 | Receiving QC + Putaway | `/warehouse/inbound/qc`, `/warehouse/putaway` | Template only |
-| P2 | Locations admin | `/admin/locations` | Template only |
-| P2 | UoM + Suppliers | `/admin/uom`, `/admin/suppliers` | Template only |
-| P3 | Stock Movement reports | `/reports/stock-movements` | Template only |
-| P3 | Picking tasks | `/warehouse/picking/tasks` | Not migrated in branch |
+| Pattern | Page | Route | What it defines |
+|---------|------|-------|-----------------|
+| Dense operational list | Available Stock | `/available-stock` | Filter bar, result toolbar, dense grid, list/gallery alternatives, compact empty state |
+| Admin CRUD/list | Lots | `/admin/lots` | Single panel with filters + server grid + pager, 30px rows, 32px controls |
+| Workflow + history | Stock Adjustments | `/warehouse/stock/adjustments` | Create/action panel, warning state, dense history table, signed quantity chips |
+
+**Deferred after golden screens:** Items, Locations, UoM, Suppliers, Inbound Shipments, Transfers, Receiving QC, Putaway, reports, picking tasks, reservations, labels, dashboards, and the remaining warehouse workflows. These should follow the closest golden pattern instead of inventing page-local density rules.
 
 **Per-page migration checklist:**
 - [ ] Compare mudblazor branch version vs main version (diff DTOs, API calls, behaviors)
