@@ -94,6 +94,10 @@
   --r-md: 6px;
   --r-lg: 8px;
 
+  /* Density */
+  --row-h: 30px;
+  --control-h: 32px;
+
   /* Shell layout — content cap shared across all modules (Sales, Warehouse,
      Frontline, Portal). Each module's main content wrapper uses this value.
      1600px fits comfortably on 1920px monitors (160px side breathing room)
