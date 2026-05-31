@@ -4,6 +4,8 @@ namespace LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure;
 
 public static class AppTheme
 {
+    private const string Neutral100 = "#eef1f4";
+
     public static readonly MudTheme Default = new()
     {
         Palette = new PaletteLight
@@ -19,12 +21,12 @@ public static class AppTheme
             Error = "#8a1f12",
             Info = "#1d5d5a",
             Background = "#f5f6f8",
-            BackgroundGrey = "#eef1f4",
+            BackgroundGrey = Neutral100,
             Surface = "#ffffff",
             AppbarBackground = "#20242c",
             AppbarText = "#ffffff",
             DrawerBackground = "#20242c",
-            DrawerText = "#eef1f4",
+            DrawerText = Neutral100,
             DrawerIcon = "#a5adb8",
             TextPrimary = "#151922",
             TextSecondary = "#66717f",
@@ -32,10 +34,10 @@ public static class AppTheme
             ActionDefault = "#66717f",
             ActionDisabled = "#b9c3ce",
             Divider = "#e2e7ec",
-            DividerLight = "#eef1f4",
+            DividerLight = Neutral100,
             LinesDefault = "#d5dce4",
             LinesInputs = "#d5dce4",
-            TableLines = "#eef1f4",
+            TableLines = Neutral100,
             TableStriped = "#fbfcfd",
             TableHover = "#fbfcfd",
             HoverOpacity = 0.04,
