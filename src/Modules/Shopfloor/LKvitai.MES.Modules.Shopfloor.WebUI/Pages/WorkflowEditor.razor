@@ -2,193 +2,24 @@
 
 <PageTitle>LKvitai.MES · Workflow Editor</PageTitle>
 
-<main class="workflow-page">
+<main class="workflow-page workflow-page--embed">
     <section class="workflow-head">
         <div>
             <div class="eyebrow mono">Shopfloor · Engineering</div>
             <h1>Workflow editor</h1>
-            <p>Static prototype view for product routing, task dependencies and runtime formulas.</p>
+            <p>Embedded working ShopfloorPilot prototype for product routing, task dependencies and runtime formulas.</p>
         </div>
         <div class="workflow-head__meta">
             <span class="chip chip--info">Product <span class="mono">ROLLER_STD</span></span>
-            <span class="chip chip--slate">Prototype v0.3.0</span>
+            <a class="workflow-open-link" href="prototypes/shopfloor-workflow-editor-prototype.html" target="_blank" rel="noopener noreferrer">
+                Open prototype
+            </a>
         </div>
     </section>
 
-    <section class="workflow-shell" aria-label="Workflow editor prototype">
-        <div class="workflow-toolbar">
-            <div class="workflow-brand">
-                <span class="workflow-brand__mark mono">LK</span>
-                <span>
-                    <strong>ShopfloorPilot</strong>
-                    <small class="mono">ROLLER_STD routing</small>
-                </span>
-            </div>
-            <div class="workflow-toolbar__actions">
-                <button type="button" class="workflow-btn">
-                    <i class="bi bi-plus-lg" aria-hidden="true"></i>
-                    Add Task
-                </button>
-                <button type="button" class="workflow-btn">
-                    <i class="bi bi-diagram-3" aria-hidden="true"></i>
-                    Auto layout
-                </button>
-                <button type="button" class="workflow-btn workflow-btn--danger">
-                    <i class="bi bi-trash3" aria-hidden="true"></i>
-                    Delete selected
-                </button>
-                <button type="button" class="workflow-btn workflow-btn--primary">
-                    <i class="bi bi-download" aria-hidden="true"></i>
-                    Export JSON
-                </button>
-            </div>
-        </div>
-
-        <div class="workflow-body">
-            <section class="workflow-canvas-panel" aria-label="Workflow canvas">
-                <div class="workflow-canvas">
-                    <svg class="workflow-edges" viewBox="0 0 1180 620" role="img" aria-label="ROLLER_STD task dependency graph">
-                        <defs>
-                            <marker id="workflow-arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto">
-                                <path d="M1 1 L9 5 L1 9 z" />
-                            </marker>
-                        </defs>
-                        <path d="M180 185 C245 185 265 130 335 130" />
-                        <path d="M180 185 C245 185 265 250 335 250" />
-                        <path d="M555 130 C620 130 650 200 720 200" />
-                        <path d="M555 250 C620 250 650 200 720 200" />
-                        <path d="M930 200 C990 200 1010 320 1075 320" />
-                    </svg>
-
-                    <article class="workflow-node workflow-node--start" style="left:42px; top:126px;">
-                        <span class="workflow-node__kind mono">START</span>
-                        <strong>Job Received</strong>
-                        <small>Creates execution plan from sales order dimensions.</small>
-                    </article>
-
-                    <article class="workflow-node workflow-node--task is-selected" style="left:334px; top:74px;">
-                        <span class="workflow-node__kind mono">CUT_FABRIC</span>
-                        <strong>Cut fabric</strong>
-                        <dl>
-                            <div><dt>WC</dt><dd class="mono">FAB</dd></div>
-                            <div><dt>Kit impact</dt><dd class="mono">10</dd></div>
-                        </dl>
-                    </article>
-
-                    <article class="workflow-node workflow-node--task" style="left:334px; top:194px;">
-                        <span class="workflow-node__kind mono">CUT_TUBE</span>
-                        <strong>Cut tube</strong>
-                        <dl>
-                            <div><dt>WC</dt><dd class="mono">FAB</dd></div>
-                            <div><dt>Kit impact</dt><dd class="mono">4</dd></div>
-                        </dl>
-                    </article>
-
-                    <article class="workflow-node workflow-node--task" style="left:720px; top:144px;">
-                        <span class="workflow-node__kind mono">ASSEMBLE</span>
-                        <strong>Assemble roller</strong>
-                        <dl>
-                            <div><dt>WC</dt><dd class="mono">ASM</dd></div>
-                            <div><dt>Required</dt><dd>Yes</dd></div>
-                        </dl>
-                    </article>
-
-                    <article class="workflow-node workflow-node--finish" style="left:996px; top:264px;">
-                        <span class="workflow-node__kind mono">FINISH</span>
-                        <strong>Print label</strong>
-                        <small>Terminal operation for packed order release.</small>
-                    </article>
-                </div>
-
-                <div class="workflow-canvas-foot">
-                    <div class="workflow-legend">
-                        <span><i class="workflow-dot workflow-dot--start"></i>Start</span>
-                        <span><i class="workflow-dot workflow-dot--task"></i>Task</span>
-                        <span><i class="workflow-dot workflow-dot--finish"></i>Finish</span>
-                    </div>
-                    <div class="workflow-zoom mono">
-                        <button type="button" title="Zoom out">-</button>
-                        <span>82%</span>
-                        <button type="button" title="Zoom in">+</button>
-                        <button type="button" title="Fit to view">Fit</button>
-                    </div>
-                </div>
-            </section>
-
-            <aside class="workflow-inspector" aria-label="Task inspector">
-                <div class="workflow-panel">
-                    <div class="panel__head">
-                        <div>
-                            <h2>Task settings</h2>
-                            <span>Edit runtime rules for the selected task.</span>
-                        </div>
-                        <span class="chip chip--warn">Selected</span>
-                    </div>
-
-                    <div class="workflow-form">
-                        <label>
-                            <span>Task Type</span>
-                            <input class="mono" value="CUT_FABRIC" readonly />
-                        </label>
-                        <div class="workflow-fields">
-                            <label>
-                                <span>Work Center</span>
-                                <select disabled>
-                                    <option>FAB</option>
-                                </select>
-                            </label>
-                            <label>
-                                <span>Terminal</span>
-                                <select disabled>
-                                    <option>No</option>
-                                </select>
-                            </label>
-                        </div>
-                        <div class="workflow-fields">
-                            <label>
-                                <span>Kit Impact</span>
-                                <input class="mono" value="10" readonly />
-                            </label>
-                            <label>
-                                <span>Required</span>
-                                <select disabled>
-                                    <option>Yes</option>
-                                </select>
-                            </label>
-                        </div>
-                        <label>
-                            <span>Formulas (Excel style)</span>
-                            <textarea class="mono" readonly>fabric_length_mm =
-=CEILING((height_mm + 20) * 1.01, 1)</textarea>
-                        </label>
-                    </div>
-                </div>
-
-                <div class="workflow-panel workflow-preview">
-                    <div class="workflow-panel__title">
-                        <span class="eyebrow mono">Preview</span>
-                        <strong>Runtime values</strong>
-                    </div>
-                    <dl>
-                        <div><dt class="mono">width_mm</dt><dd class="mono">1750</dd></div>
-                        <div><dt class="mono">height_mm</dt><dd class="mono">2200</dd></div>
-                        <div><dt class="mono">fabric_length_mm</dt><dd class="mono">2243</dd></div>
-                    </dl>
-                </div>
-
-                <div class="workflow-panel">
-                    <div class="workflow-panel__title">
-                        <span class="eyebrow mono">Modeling rules</span>
-                        <strong>Tips</strong>
-                    </div>
-                    <ul class="workflow-tips">
-                        <li>Start node is output-only.</li>
-                        <li>Finish node is input-only.</li>
-                        <li>Links read source -> target as a dependency.</li>
-                        <li>Export JSON emits graph and runtime metadata.</li>
-                    </ul>
-                </div>
-            </aside>
-        </div>
+    <section class="workflow-embed-shell" aria-label="Workflow editor prototype">
+        <iframe class="workflow-embed"
+                src="prototypes/shopfloor-workflow-editor-prototype.html"
+                title="Shopfloor workflow editor prototype"></iframe>
     </section>
 </main>

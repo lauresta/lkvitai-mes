@@ -1,0 +1,1379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ShopfloorPilot — Workflow Editor · ROLLER_STD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+/* ───────────────────────────────────────────────
+   LKvitai.MES tokens (grounded in design system)
+   + ShopfloorPilot Lauresta brand accents
+   ─────────────────────────────────────────────── */
+:root{
+  --n-0:#fff; --n-25:#fbfcfd; --n-50:#f5f6f8; --n-100:#eef1f4;
+  --n-150:#e2e7ec; --n-200:#d5dce4; --n-300:#b9c3ce; --n-400:#8996a4;
+  --n-500:#66717f; --n-600:#4e5966; --n-700:#323b45; --n-800:#1f2632; --n-900:#151922;
+
+  --accent-50:#eaf8f7; --accent-100:#d1eeec; --accent-400:#56aaa7;
+  --accent-500:#2f8f8b; --accent-600:#257773; --accent-700:#1d5d5a;
+
+  --sand-25:#faf6ee; --sand-50:#f7f1e5; --sand-100:#ede2c8;
+  --sand-500:#c79f63; --sand-600:#b08a4a; --sand-700:#7c5f2a;
+
+  /* Primary action = teal accent (LKvitai.MES — the only accent).
+     --brand-* are aliases onto the teal scale so every reference
+     resolves to the design-system accent. */
+  --brand-50:var(--accent-50); --brand-100:var(--accent-100); --brand-300:var(--accent-400);
+  --brand-500:var(--accent-500); --brand-600:var(--accent-600); --brand-700:var(--accent-700);
+
+  /* node families — mapped to design-system functional groups:
+     start = info (teal), task = warn (sand), finish = ok (green) */
+  --start-bg:#e3f2f1; --start-bg2:#d4ebe9; --start-bd:#b4dad7; --start-fg:#1d5d5a; --start-dot:#2f8f8b;
+  --task-bg:#f7eed5;  --task-bg2:#f0e3bf; --task-bd:#e2cf9a; --task-fg:#7c5f2a; --task-dot:#b08a4a;
+  --finish-bg:#e6f4ec; --finish-bg2:#d8ecdf; --finish-bd:#bfe0cd; --finish-fg:#19744a; --finish-dot:#1f9d61;
+
+  --ok-dot:#1f9d61; --warn-bg:#f7eed5; --warn-bd:#e2cf9a; --warn-fg:#7c5f2a;
+  --danger-fg:#8a1f12; --danger-bg:#fbe7e3; --danger-bd:#f0c2b8;
+
+  --dark:#20242c; --dark-2:#171b22; --dark-line:#3a404c; --dark-fg:#fff; --dark-fg-muted:#a5adb8;
+  --page-wash:#f0eee9;
+
+  --font-ui:Inter,"Segoe UI",system-ui,-apple-system,sans-serif;
+  --font-mono:"JetBrains Mono","SF Mono",Consolas,monospace;
+
+  --r-xs:3px; --r-sm:5px; --r-md:7px; --r-lg:10px; --r-pill:999px;
+  --shadow-xs:0 1px 0 rgba(15,23,35,.04);
+  --shadow-sm:0 1px 2px rgba(15,23,35,.06),0 0 0 1px rgba(15,23,35,.03);
+  --shadow-md:0 6px 18px rgba(15,23,42,.08);
+  --shadow-lg:0 14px 30px rgba(15,23,42,.12);
+  --ls-eyebrow:1.4px;
+}
+
+*{box-sizing:border-box;}
+html,body{height:100%;}
+body{
+  margin:0; font-family:var(--font-ui); font-size:12.5px; color:var(--n-900);
+  background:var(--n-50); -webkit-font-smoothing:antialiased;
+  overflow:hidden;
+}
+.mono{font-family:var(--font-mono); font-variant-numeric:tabular-nums; font-feature-settings:"zero";}
+
+/* ── App shell ───────────────────────────────── */
+.app{display:flex; flex-direction:column; height:100vh; width:100vw;}
+
+/* ── Topbar ──────────────────────────────────── */
+.topbar{
+  display:flex; align-items:center; gap:14px; height:56px; flex:0 0 56px;
+  padding:0 18px; background:var(--n-0); border-bottom:1px solid var(--n-200);
+  box-shadow:var(--shadow-xs); z-index:30; position:relative;
+}
+.brand-pill{
+  display:flex; align-items:center; gap:9px; padding:7px 13px 7px 8px;
+  background:var(--dark); border-radius:var(--r-pill); color:var(--dark-fg);
+}
+.brand-mark{
+  width:24px; height:24px; border-radius:6px; background:var(--brand-500);
+  display:grid; place-items:center; font-weight:800; font-size:11px; color:#fff;
+  letter-spacing:.5px; box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);
+}
+.brand-pill .b-name{font-weight:700; font-size:12px; letter-spacing:.2px;}
+.brand-pill .b-dim{color:var(--dark-fg-muted); font-weight:500;}
+.ctx-pill{
+  display:flex; align-items:center; gap:7px; padding:7px 12px;
+  background:var(--n-50); border:1px solid var(--n-200); border-radius:var(--r-pill);
+  font-size:11.5px;
+}
+.ctx-pill .lbl{color:var(--n-500); font-weight:500;}
+.ctx-pill .val{font-family:var(--font-mono); font-weight:700; color:var(--n-900); letter-spacing:.3px;}
+.ctx-pill .dot{width:7px; height:7px; border-radius:50%; background:var(--ok-dot);}
+
+.sel-chip{
+  display:none; align-items:center; gap:8px; padding:5px 10px 5px 8px;
+  background:var(--brand-50); border:1px solid var(--brand-100); border-radius:var(--r-pill);
+  font-size:11px; color:var(--brand-700); max-width:340px;
+}
+.sel-chip.show{display:flex;}
+.sel-chip .sc-dot{width:8px;height:8px;border-radius:50%;background:var(--brand-500);flex:0 0 auto;}
+.sel-chip .sc-id{font-family:var(--font-mono); font-weight:700;}
+.sel-chip .sc-sep{color:var(--brand-300);}
+.sel-chip .sc-type{font-family:var(--font-mono); color:var(--n-600); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+
+.spacer{flex:1 1 auto;}
+
+.btn{
+  display:inline-flex; align-items:center; gap:7px; height:34px; padding:0 13px;
+  border-radius:var(--r-sm); font-family:var(--font-ui); font-size:13px; font-weight:600;
+  border:1px solid var(--n-200); background:var(--n-0); color:var(--n-800); cursor:pointer;
+  transition:background .14s, border-color .14s, box-shadow .14s, color .14s, transform .05s;
+  white-space:nowrap;
+}
+.btn:hover{background:var(--n-50); border-color:var(--n-300);}
+.btn:active{transform:translateY(.5px);}
+.btn .ic{width:15px; height:15px; flex:0 0 auto;}
+.btn-danger{color:var(--danger-fg); border-color:var(--danger-bd); background:var(--danger-bg);}
+.btn-danger:hover{background:#f8dcd6; border-color:#e7ab9f;}
+.btn-danger:disabled{color:var(--n-400); background:var(--n-50); border-color:var(--n-200); cursor:not-allowed; opacity:.7;}
+.btn-danger:disabled:hover{background:var(--n-50); border-color:var(--n-200);}
+.btn-primary{
+  background:var(--brand-500); border-color:var(--brand-600); color:#fff;
+  box-shadow:0 1px 0 rgba(29,93,90,.30), inset 0 1px 0 rgba(255,255,255,.18);
+}
+.btn-primary:hover{background:var(--brand-600); border-color:var(--brand-700);}
+.btn-sep{width:1px; height:24px; background:var(--n-200); margin:0 2px;}
+
+/* ── Layout: canvas + sidebar ────────────────── */
+.body-row{display:flex; flex:1 1 auto; min-height:0;}
+
+.canvas-wrap{position:relative; flex:1 1 auto; min-width:0; overflow:hidden; background:var(--n-50);}
+.canvas{
+  position:absolute; inset:0; overflow:hidden; cursor:grab;
+  background-color:#f6f7f9;
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(60,72,88,.16) 1px, transparent 0);
+  background-size:22px 22px;
+}
+.canvas.panning{cursor:grabbing;}
+.canvas::after{
+  content:""; position:absolute; inset:0; pointer-events:none;
+  background:
+    radial-gradient(120% 80% at 50% 0%, rgba(255,255,255,.55), transparent 60%),
+    linear-gradient(180deg, rgba(245,246,248,.0), rgba(228,231,236,.45));
+}
+.world{position:absolute; top:0; left:0; width:6000px; height:4000px; transform-origin:0 0;}
+.edges{position:absolute; top:0; left:0; width:6000px; height:4000px; overflow:visible; pointer-events:none;}
+
+/* ── Edge styling ────────────────────────────── */
+.edge-path{fill:none; stroke:var(--n-400); stroke-width:2.25; stroke-linecap:round; pointer-events:none;}
+.edge-flow{
+  fill:none; stroke:var(--n-500); stroke-width:2.25; stroke-linecap:round;
+  stroke-dasharray:7 9; animation:dashflow 1s linear infinite; pointer-events:none;
+}
+.edge-hit{fill:none; stroke:transparent; stroke-width:22; cursor:pointer; pointer-events:stroke;}
+@keyframes dashflow{to{stroke-dashoffset:-32;}}
+.edge.sel-edge .edge-path{stroke:var(--brand-500);}
+.edge.sel-edge .edge-flow{stroke:var(--brand-600);}
+.edge.edge-active .edge-path{stroke:var(--accent-600); stroke-width:3;}
+.edge.edge-active .edge-flow{stroke:var(--accent-500); stroke-width:3;}
+.edge-temp{fill:none; stroke:var(--accent-500); stroke-width:2.5; stroke-dasharray:6 6; stroke-linecap:round; pointer-events:none;}
+.edge-del{
+  position:absolute; width:26px; height:26px; border-radius:50%; border:1px solid var(--danger-bd);
+  background:var(--danger-bg); color:var(--danger-fg); display:grid; place-items:center; cursor:pointer;
+  box-shadow:var(--shadow-md); z-index:6; transform-origin:center; padding:0;
+}
+.edge-del:hover{background:#f6cfc7; border-color:#e3a99c;}
+
+/* ── Node cards ──────────────────────────────── */
+.node{
+  position:absolute; user-select:none;
+  transition:box-shadow .16s, transform .12s;
+}
+.node.animating{transition:left .52s cubic-bezier(.4,0,.2,1), top .52s cubic-bezier(.4,0,.2,1), box-shadow .16s;}
+.card{
+  position:relative; border-radius:var(--r-lg); border:1px solid var(--n-200);
+  background:var(--n-0); box-shadow:var(--shadow-sm); cursor:grab;
+}
+.node.dragging .card{cursor:grabbing; box-shadow:var(--shadow-lg);}
+.node:hover .card{box-shadow:var(--shadow-md);}
+.node.selected .card{box-shadow:0 0 0 2.5px var(--brand-500), var(--shadow-md);}
+
+.card-head{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:10px 13px 8px; border-radius:var(--r-lg) var(--r-lg) 0 0;
+}
+.card-title{font-weight:700; font-size:13px; line-height:1.15;}
+.card-kind{
+  font-family:var(--font-mono); font-size:9px; font-weight:700; letter-spacing:var(--ls-eyebrow);
+  text-transform:uppercase; padding:2px 6px; border-radius:var(--r-xs);
+}
+
+/* start node */
+.node-start .card{width:188px; background:linear-gradient(180deg,var(--start-bg),var(--start-bg2)); border-color:var(--start-bd);}
+.node-start .card-title{color:var(--start-fg);}
+.node-start .card-kind{color:var(--start-fg); background:rgba(59,122,209,.12);}
+/* finish node */
+.node-finish .card{width:212px; background:linear-gradient(180deg,var(--finish-bg),var(--finish-bg2)); border-color:var(--finish-bd);}
+.node-finish .card-title{color:var(--finish-fg);}
+.node-finish .card-kind{color:var(--finish-fg); background:rgba(31,157,97,.13);}
+/* task node */
+.node-task .card{width:268px; background:linear-gradient(180deg,var(--task-bg),var(--task-bg2)); border-color:var(--task-bd);}
+.node-task .card-title{color:var(--task-fg);}
+.node-task .card-kind{color:var(--task-fg); background:rgba(176,138,74,.18);}
+
+/* socket rows */
+.sock-row{display:flex; align-items:center; gap:8px; padding:5px 13px; position:relative;}
+.sock-row.out{justify-content:flex-end;}
+.sock-label{font-family:var(--font-mono); font-size:10.5px; font-weight:600; color:var(--n-600); letter-spacing:.2px;}
+.socket{
+  width:13px; height:13px; border-radius:50%; background:var(--n-0);
+  border:2.5px solid var(--task-dot); position:absolute; top:50%; transform:translateY(-50%);
+  box-shadow:0 0 0 3px rgba(255,255,255,.6); transition:transform .12s, box-shadow .12s;
+  cursor:crosshair; touch-action:none;
+}
+.socket::after{content:""; position:absolute; inset:2px; border-radius:50%; background:var(--ok-dot); opacity:0; transition:opacity .12s;}
+.socket.connected::after{opacity:1;}
+.socket.in{left:-7px;}
+.socket.out{right:-7px;}
+.node-start .socket{border-color:var(--start-dot);}
+.node-finish .socket{border-color:var(--finish-dot);}
+.node:hover .socket{transform:translateY(-50%) scale(1.12);}
+.socket:hover{transform:translateY(-50%) scale(1.35); box-shadow:0 0 0 4px var(--accent-50);}
+.node.selected .socket{box-shadow:0 0 0 3px var(--brand-50);}
+
+/* task type field */
+.tt-field{
+  margin:6px 13px 4px; display:flex; align-items:center; gap:8px;
+  background:var(--n-0); border:1px solid var(--n-200); border-radius:var(--r-sm);
+  padding:6px 10px; box-shadow:var(--shadow-xs);
+}
+.tt-field .tt-ic{width:13px;height:13px;color:var(--task-dot);flex:0 0 auto;}
+.tt-val{font-family:var(--font-mono); font-size:12px; font-weight:700; color:var(--n-800); letter-spacing:.3px;}
+
+/* metadata block */
+.meta{padding:8px 13px 12px; display:grid; gap:3px;}
+.meta-row{display:flex; gap:5px; font-size:10.5px; line-height:1.35; color:var(--n-600);}
+.meta-row .k{font-weight:700; color:var(--task-fg); white-space:nowrap;}
+.meta-row .v{color:var(--n-600);}
+.meta-row.note{color:var(--n-500); font-style:italic;}
+
+.start-body, .finish-body{padding:4px 0 9px;}
+
+/* ── Mini canvas toolbar ─────────────────────── */
+.mini-tb{
+  position:absolute; left:14px; bottom:14px; z-index:12;
+  display:flex; align-items:center; gap:2px; padding:4px;
+  background:var(--n-0); border:1px solid var(--n-200); border-radius:var(--r-md);
+  box-shadow:var(--shadow-md);
+}
+.mini-btn{
+  width:30px; height:30px; display:grid; place-items:center; border:none; background:transparent;
+  border-radius:var(--r-sm); cursor:pointer; color:var(--n-600);
+}
+.mini-btn:hover{background:var(--n-100); color:var(--n-900);}
+.mini-btn svg{width:16px;height:16px;}
+.zoom-val{
+  min-width:46px; text-align:center; font-family:var(--font-mono); font-size:11px;
+  font-weight:600; color:var(--n-600); padding:0 4px; cursor:default;
+}
+.mini-sep{width:1px;height:20px;background:var(--n-200);margin:0 2px;}
+
+.canvas-hint{
+  position:absolute; right:14px; bottom:14px; z-index:11;
+  display:flex; align-items:center; gap:8px; padding:6px 11px;
+  background:rgba(255,255,255,.82); border:1px solid var(--n-200); border-radius:var(--r-pill);
+  font-size:10.5px; color:var(--n-500); backdrop-filter:saturate(1.2);
+}
+.canvas-hint .dot{width:6px;height:6px;border-radius:50%;background:var(--n-400);}
+
+/* legend */
+.legend{
+  position:absolute; left:14px; top:14px; z-index:11; display:flex; gap:6px;
+}
+.legend .lg{
+  display:flex; align-items:center; gap:6px; padding:5px 10px; background:rgba(255,255,255,.85);
+  border:1px solid var(--n-200); border-radius:var(--r-pill); font-size:10.5px; font-weight:600; color:var(--n-600);
+  backdrop-filter:saturate(1.2);
+}
+.legend .sw{width:9px;height:9px;border-radius:3px;}
+.legend .sw.s{background:var(--start-dot);}
+.legend .sw.t{background:var(--task-dot);}
+.legend .sw.f{background:var(--finish-dot);}
+
+/* ── Sidebar ─────────────────────────────────── */
+.sidebar{
+  flex:0 0 320px; width:320px; background:var(--n-0); border-left:1px solid var(--n-200);
+  display:flex; flex-direction:column; overflow-y:auto; z-index:20;
+}
+.panel{padding:16px; border-bottom:1px solid var(--n-100);}
+.panel-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;}
+.panel-title{font-size:15px; font-weight:700; color:var(--n-900);}
+.panel-eyebrow{
+  font-family:var(--font-mono); font-size:10px; font-weight:700; letter-spacing:var(--ls-eyebrow);
+  text-transform:uppercase; color:var(--brand-700);
+}
+.panel-sub{font-size:11px; color:var(--n-500); margin:2px 0 14px;}
+
+.field{margin-bottom:13px;}
+.field-grid{display:grid; grid-template-columns:1fr 1fr; gap:11px;}
+.field label{display:block; font-size:11px; font-weight:600; color:var(--n-600); margin-bottom:5px;}
+.field label .req{color:var(--brand-600); margin-left:3px;}
+.input, .select, .textarea{
+  width:100%; font-family:var(--font-ui); font-size:13px; color:var(--n-900);
+  border:1px solid var(--n-200); border-radius:var(--r-sm); padding:8px 10px; background:var(--n-0);
+  transition:border-color .14s, box-shadow .14s; outline:none;
+}
+.input.mono, .textarea.mono{font-family:var(--font-mono); font-size:12px;}
+.input:focus, .select:focus, .textarea:focus{border-color:var(--brand-500); box-shadow:0 0 0 3px var(--brand-50);}
+.input:disabled, .select:disabled, .textarea:disabled{background:var(--n-50); color:var(--n-400); cursor:not-allowed;}
+.select{
+  appearance:none; background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2366717f' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+  background-repeat:no-repeat; background-position:right 9px center; padding-right:28px; cursor:pointer;
+}
+.textarea{resize:vertical; min-height:78px; line-height:1.5;}
+.helper{font-size:10.5px; color:var(--n-500); margin-top:5px;}
+.helper .mono{color:var(--n-600);}
+
+.side-actions{display:flex; gap:9px; margin-top:4px;}
+.side-actions .btn{height:34px; flex:1;}
+
+.preview-out{
+  margin-top:11px; border:1px solid var(--accent-100); background:var(--accent-50);
+  border-radius:var(--r-sm); padding:10px 11px; font-size:11.5px; display:none;
+}
+.preview-out.show{display:block;}
+.preview-out .po-title{font-family:var(--font-mono); font-size:9.5px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--accent-700); margin-bottom:6px;}
+.preview-out .po-row{display:flex; justify-content:space-between; gap:10px; padding:2px 0; font-family:var(--font-mono); font-size:11.5px;}
+.preview-out .po-row .pk{color:var(--n-600);}
+.preview-out .po-row .pv{color:var(--n-900); font-weight:700;}
+.preview-out .po-res{margin-top:6px; padding-top:7px; border-top:1px dashed var(--accent-100); display:flex; justify-content:space-between; align-items:baseline;}
+.preview-out .po-res .pv{color:var(--accent-700); font-size:15px;}
+
+/* empty/disabled sidebar state */
+.empty-state{display:none; padding:6px 0 2px;}
+.empty-state.show{display:block;}
+.empty-card{
+  border:1px dashed var(--n-200); border-radius:var(--r-md); padding:18px 14px; text-align:center; background:var(--n-25);
+}
+.empty-card .es-ic{width:34px;height:34px;margin:0 auto 10px; display:grid; place-items:center; border-radius:9px;}
+.empty-card .es-ic.start{background:var(--start-bg); color:var(--start-fg);}
+.empty-card .es-ic.finish{background:var(--finish-bg); color:var(--finish-fg);}
+.empty-card .es-ic.none{background:var(--n-100); color:var(--n-400);}
+.empty-card .es-t{font-size:13px; font-weight:700; color:var(--n-800); margin-bottom:4px;}
+.empty-card .es-d{font-size:11.5px; color:var(--n-500); line-height:1.5;}
+.empty-card .es-tag{
+  display:inline-block; margin-top:9px; font-family:var(--font-mono); font-size:9.5px; font-weight:700;
+  letter-spacing:1px; text-transform:uppercase; padding:3px 9px; border-radius:var(--r-pill);
+}
+.es-tag.start{background:var(--start-bg2); color:var(--start-fg);}
+.es-tag.finish{background:var(--finish-bg2); color:var(--finish-fg);}
+.es-tag.none{background:var(--n-100); color:var(--n-500);}
+
+/* tips */
+.tips{list-style:none; margin:0; padding:0; display:grid; gap:9px;}
+.tips li{display:flex; gap:9px; font-size:11.5px; line-height:1.5; color:var(--n-600);}
+.tips li .tdot{flex:0 0 auto; width:6px; height:6px; border-radius:50%; background:var(--brand-300); margin-top:6px;}
+.tips li b{color:var(--n-800); font-weight:700;}
+
+.side-foot{margin-top:auto; padding:14px 16px; font-size:10.5px; color:var(--n-400);
+  display:flex; align-items:center; justify-content:space-between; border-top:1px solid var(--n-100);}
+.side-foot .mono{color:var(--n-500);}
+
+/* ── Modal ───────────────────────────────────── */
+.modal-veil{
+  position:fixed; inset:0; background:rgba(20,25,34,.46); z-index:100;
+  display:none; align-items:center; justify-content:center; padding:30px;
+}
+.modal-veil.show{display:flex; animation:veilin .16s ease;}
+@keyframes veilin{from{opacity:0;}}
+.modal{
+  width:560px; max-width:100%; max-height:84vh; background:var(--n-0); border-radius:var(--r-lg);
+  box-shadow:var(--shadow-lg); display:flex; flex-direction:column; overflow:hidden;
+  animation:modalin .18s cubic-bezier(.3,.7,.3,1);
+}
+@keyframes modalin{from{opacity:0; transform:translateY(8px) scale(.99);}}
+.modal-head{display:flex; align-items:center; justify-content:space-between; padding:15px 18px; border-bottom:1px solid var(--n-150);}
+.modal-head .mh-l{display:flex; align-items:center; gap:10px;}
+.modal-head .mh-ic{width:30px;height:30px;border-radius:7px;background:var(--brand-50);color:var(--brand-600);display:grid;place-items:center;}
+.modal-head h3{font-size:15px; font-weight:700;}
+.modal-head .mh-sub{font-size:11px; color:var(--n-500); font-family:var(--font-mono);}
+.modal-x{width:30px;height:30px;border:none;background:transparent;border-radius:var(--r-sm);cursor:pointer;color:var(--n-500);display:grid;place-items:center;}
+.modal-x:hover{background:var(--n-100); color:var(--n-900);}
+.modal-toolbar{display:flex; align-items:center; gap:8px; padding:9px 18px; border-bottom:1px solid var(--n-100); background:var(--n-25);}
+.modal-toolbar .mt-meta{font-size:10.5px; color:var(--n-500); font-family:var(--font-mono);}
+.json-scroll{overflow:auto; padding:16px 18px; background:#fbfcfd;}
+pre.json{
+  margin:0; font-family:var(--font-mono); font-size:12px; line-height:1.65; white-space:pre;
+  color:var(--n-700); tab-size:2;
+}
+.tok-key{color:#7c5f2a; font-weight:600;}
+.tok-str{color:#19744a;}
+.tok-num{color:#1d5d5a; font-weight:600;}
+.tok-bool{color:#8a1f12; font-weight:600;}
+.tok-null{color:var(--n-400);}
+.tok-punct{color:var(--n-400);}
+.modal-foot{display:flex; align-items:center; justify-content:flex-end; gap:9px; padding:13px 18px; border-top:1px solid var(--n-150);}
+
+/* copy toast */
+.toast{
+  position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(14px);
+  background:var(--dark); color:#fff; padding:10px 16px; border-radius:var(--r-pill);
+  font-size:12px; font-weight:600; z-index:200; opacity:0; pointer-events:none;
+  transition:opacity .2s, transform .2s; display:flex; align-items:center; gap:8px;
+  box-shadow:var(--shadow-lg);
+}
+.toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+.toast .t-dot{width:7px;height:7px;border-radius:50%;background:var(--ok-dot);}
+
+::-webkit-scrollbar{width:11px;height:11px;}
+::-webkit-scrollbar-thumb{background:var(--n-200); border-radius:99px; border:3px solid transparent; background-clip:content-box;}
+::-webkit-scrollbar-thumb:hover{background:var(--n-300); background-clip:content-box;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ── TOPBAR ───────────────────────────────── -->
+  <header class="topbar">
+    <div class="brand-pill">
+      <div class="brand-mark">LK</div>
+      <div><span class="b-dim">LAURESTA</span> <span class="b-name">• ShopfloorPilot</span></div>
+    </div>
+    <div class="ctx-pill">
+      <span class="dot"></span>
+      <span class="lbl">Product</span>
+      <span class="val">ROLLER_STD</span>
+    </div>
+    <div class="sel-chip" id="selChip">
+      <span class="sc-dot"></span>
+      <span class="sc-id" id="scId">—</span>
+      <span class="sc-sep">·</span>
+      <span class="sc-type" id="scType">—</span>
+    </div>
+
+    <div class="spacer"></div>
+
+    <button class="btn" id="btnAdd">
+      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      Add Task
+    </button>
+    <button class="btn" id="btnLayout">
+      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="9" width="6" height="6" rx="1"/><path d="M9 12h4M13 8v8M13 8h4M13 16h4"/></svg>
+      Auto layout
+    </button>
+    <button class="btn btn-danger" id="btnDelete" disabled>
+      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+      Delete selected
+    </button>
+    <div class="btn-sep"></div>
+    <button class="btn btn-primary" id="btnExport">
+      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M8 11l4 4 4-4M5 19h14"/></svg>
+      Export JSON
+    </button>
+  </header>
+
+  <!-- ── BODY ──────────────────────────────────── -->
+  <div class="body-row">
+
+    <!-- CANVAS -->
+    <div class="canvas-wrap">
+      <div class="canvas" id="canvas">
+        <div class="world" id="world">
+          <svg class="edges" id="edges">
+            <defs>
+              <marker id="arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M1 1 L9 5 L1 9 z" fill="var(--n-500)"/>
+              </marker>
+              <marker id="arrow-sel" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M1 1 L9 5 L1 9 z" fill="var(--brand-600)"/>
+              </marker>
+            </defs>
+          </svg>
+          <!-- nodes injected here -->
+        </div>
+      </div>
+
+      <div class="legend">
+        <div class="lg"><span class="sw s"></span>Start</div>
+        <div class="lg"><span class="sw t"></span>Task</div>
+        <div class="lg"><span class="sw f"></span>Finish</div>
+      </div>
+
+      <div class="mini-tb">
+        <button class="mini-btn" id="zoomOut" title="Zoom out">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><path d="M5 12h14"/></svg>
+        </button>
+        <span class="zoom-val" id="zoomVal">100%</span>
+        <button class="mini-btn" id="zoomIn" title="Zoom in">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+        <div class="mini-sep"></div>
+        <button class="mini-btn" id="zoomFit" title="Fit to view">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+        </button>
+        <button class="mini-btn" id="zoomReset" title="Reset view (100%)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v4h4"/></svg>
+        </button>
+      </div>
+
+      <div class="canvas-hint">
+        <span class="dot"></span>
+        Drag nodes · drag a socket to link · click a link to delete · scroll to zoom
+      </div>
+    </div>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="panel">
+        <div class="panel-head">
+          <span class="panel-eyebrow">Inspector</span>
+        </div>
+        <div class="panel-title">Task Settings</div>
+        <div class="panel-sub" id="settingsSub">Edit runtime rules for the selected task.</div>
+
+        <!-- empty / disabled states -->
+        <div class="empty-state" id="emptyState">
+          <div class="empty-card">
+            <div class="es-ic none" id="esIc">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            </div>
+            <div class="es-t" id="esTitle">No task selected</div>
+            <div class="es-d" id="esDesc">Select an amber task node on the canvas to edit its execution rules and formulas.</div>
+            <span class="es-tag none" id="esTag" style="display:none;">—</span>
+          </div>
+        </div>
+
+        <!-- task form -->
+        <div id="taskForm">
+          <div class="field">
+            <label>Task Type<span class="req">*</span></label>
+            <input class="input mono" id="fType" value="CUT_FABRIC" />
+          </div>
+          <div class="field-grid">
+            <div class="field">
+              <label>Work Center</label>
+              <select class="select" id="fWc">
+                <option>FAB</option><option>ASM</option><option>QC</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Terminal</label>
+              <select class="select" id="fTerminal">
+                <option>No</option><option>Yes</option>
+              </select>
+            </div>
+          </div>
+          <div class="field-grid">
+            <div class="field">
+              <label>Kit Impact</label>
+              <input class="input mono" id="fKit" type="number" value="10" />
+            </div>
+            <div class="field">
+              <label>Required</label>
+              <select class="select" id="fReq">
+                <option>Yes</option><option>No</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <label>Formulas (Excel style)</label>
+            <textarea class="textarea mono" id="fFormula">fabric_length_mm =
+=CEILING((height_mm + 20) * 1.01, 1)</textarea>
+            <div class="helper">Runtime values evaluated by the execution engine per work order.</div>
+          </div>
+
+          <div class="side-actions">
+            <button class="btn" id="btnPreview" style="flex:0 0 auto;">
+              <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+              Preview
+            </button>
+            <div class="helper" style="margin-top:0; align-self:center;">Test with: <span class="mono">width=1750, height=2200</span></div>
+          </div>
+
+          <div class="preview-out" id="previewOut">
+            <div class="po-title">Formula preview · CUT_FABRIC</div>
+            <div class="po-row"><span class="pk">width_mm</span><span class="pv">1750</span></div>
+            <div class="po-row"><span class="pk">height_mm</span><span class="pv">2200</span></div>
+            <div class="po-res"><span class="pk mono">fabric_length_mm</span><span class="pv mono" id="poResult">—</span></div>
+          </div>
+
+          <button class="btn" id="btnPlan" style="width:100%; margin-top:13px;">
+            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6M9 9h1"/></svg>
+            PlanJson (demo)
+          </button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-eyebrow" style="margin-bottom:7px;">Modeling rules</div>
+        <div class="panel-title" style="font-size:14px; margin-bottom:11px;">Tips</div>
+        <ul class="tips">
+          <li><span class="tdot"></span><span><b>Start</b> node <b>Job Received</b> is output-only.</span></li>
+          <li><span class="tdot"></span><span><b>Finish</b> node <b>Print Label</b> is input-only.</span></li>
+          <li><span class="tdot"></span><span>Links read <b>Source → Target</b> as a dependency.</span></li>
+          <li><span class="tdot"></span><span><b>Export JSON</b> emits graph + runtime (dependsOn, formulas).</span></li>
+          <li><span class="tdot"></span><span>Styling follows <b>LKvitai.MES</b> teal accents.</span></li>
+        </ul>
+      </div>
+
+      <div class="side-foot">
+        <span>ShopfloorPilot · UI prototype</span>
+        <span class="mono">v0.3.0</span>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<!-- ── EXPORT / PLAN MODAL ────────────────────── -->
+<div class="modal-veil" id="modalVeil">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="mh-l">
+        <div class="mh-ic" id="modalIc"></div>
+        <div>
+          <h3 id="modalTitle">Export JSON</h3>
+          <div class="mh-sub" id="modalSub">product · ROLLER_STD</div>
+        </div>
+      </div>
+      <button class="modal-x" id="modalClose">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-toolbar">
+      <span class="mt-meta" id="modalMeta">graph + runtime model</span>
+      <div class="spacer" style="flex:1;"></div>
+      <button class="btn" id="modalCopy" style="height:28px; padding:0 11px; font-size:12px;">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Copy
+      </button>
+    </div>
+    <div class="json-scroll">
+      <pre class="json" id="jsonOut"></pre>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" id="modalDownload">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        Download
+      </button>
+      <button class="btn btn-primary" id="modalDone">Done</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"><span class="t-dot"></span><span id="toastMsg">Copied</span></div>
+
+<script>
+/* ════════════════════════════════════════════════
+   ShopfloorPilot Workflow Editor — framework-free.
+   Domain model stays MudBlazor-translatable:
+   nodes, edges, runtime tasks, formulas.
+   ════════════════════════════════════════════════ */
+
+const META = {
+  conwip:"LINE-01",
+  label:"SEMI_06 (semi finished)",
+  code:"cutting_id",
+  duration:"300 sek",
+  batching:"by size and color",
+  notes:"Saziningumo taisykle taikoma priverstinai"
+};
+
+/* ── Domain state ──────────────────────────────── */
+const state = {
+  productCode:"ROLLER_STD",
+  nodes:[
+    {id:"start",  title:"Job Received", kind:"start",  x:120, y:430},
+    {id:"cut-1",  title:"Task", kind:"task", taskType:"CUT_FABRIC", wc:"FAB", terminal:false, kitImpact:10, mandatory:true,
+      formulasText:"fabric_length_mm =\n=CEILING((height_mm + 20) * 1.01, 1)", x:470, y:120},
+    {id:"cut-2",  title:"Task", kind:"task", taskType:"CUT_FABRIC", wc:"FAB", terminal:false, kitImpact:10, mandatory:true,
+      formulasText:"fabric_length_mm =\n=CEILING((height_mm + 20) * 1.01, 1)", x:470, y:430},
+    {id:"cut-3",  title:"Task", kind:"task", taskType:"CUT_FABRIC", wc:"FAB", terminal:false, kitImpact:10, mandatory:true,
+      formulasText:"fabric_length_mm =\n=CEILING((height_mm + 20) * 1.01, 1)", x:470, y:740},
+    {id:"merge-1",title:"Task", kind:"task", taskType:"MERGE_PANELS", wc:"ASM", terminal:false, kitImpact:10, mandatory:true,
+      formulasText:"join_count =\n=ROUND(width_mm / 600, 0)", x:840, y:275},
+    {id:"finish", title:"Finish Product • Print Label", kind:"finish", x:870, y:760}
+  ],
+  edges:[
+    {from:"start", to:"cut-1"},
+    {from:"start", to:"cut-2"},
+    {from:"start", to:"cut-3"},
+    {from:"cut-1", to:"merge-1"},
+    {from:"cut-2", to:"merge-1"},
+    {from:"cut-3", to:"finish"}
+  ],
+  selected:null,
+  selectedEdge:null,
+  taskSeq:3
+};
+
+/* ── View transform ────────────────────────────── */
+const view = {scale:0.82, x:40, y:30};
+
+const $ = s=>document.querySelector(s);
+const world  = $("#world");
+const canvas = $("#canvas");
+const edgesSvg = $("#edges");
+
+/* ── Node rendering ────────────────────────────── */
+function metaHtml(){
+  return `<div class="meta">
+    <div class="meta-row"><span class="k">CONWIP Group:</span><span class="v">${META.conwip}</span></div>
+    <div class="meta-row"><span class="k">Label template:</span><span class="v">${META.label}</span></div>
+    <div class="meta-row"><span class="k">Task code:</span><span class="v">${META.code}</span></div>
+    <div class="meta-row"><span class="k">Def. duration:</span><span class="v">${META.duration}</span></div>
+    <div class="meta-row"><span class="k">Batching rule:</span><span class="v">${META.batching}</span></div>
+    <div class="meta-row note"><span class="k" style="color:var(--n-500);">Notes:</span><span class="v">${META.notes}</span></div>
+  </div>`;
+}
+
+function nodeHtml(n){
+  if(n.kind==="start"){
+    return `<div class="card">
+      <div class="card-head"><span class="card-title">${n.title}</span><span class="card-kind">START</span></div>
+      <div class="start-body">
+        <div class="sock-row out"><span class="sock-label">flow</span><span class="socket out connected" data-sock="out"></span></div>
+      </div>
+    </div>`;
+  }
+  if(n.kind==="finish"){
+    return `<div class="card">
+      <div class="card-head"><span class="card-title">${n.title}</span><span class="card-kind">FINISH</span></div>
+      <div class="finish-body">
+        <div class="sock-row in"><span class="socket in connected" data-sock="in"></span><span class="sock-label">flow</span></div>
+      </div>
+    </div>`;
+  }
+  // task
+  return `<div class="card">
+    <div class="card-head"><span class="card-title">Task</span><span class="card-kind">${n.wc}</span></div>
+    <div class="sock-row out"><span class="sock-label">prerequisite</span><span class="socket out connected" data-sock="out"></span></div>
+    <div class="tt-field">
+      <svg class="tt-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 1 0-5.7 5.6l-6 6V21h3l6-6a4 4 0 0 0 2.7-8.7z"/></svg>
+      <span class="tt-val" data-ttval>${n.taskType}</span>
+    </div>
+    <div class="sock-row in"><span class="socket in connected" data-sock="in"></span><span class="sock-label">dependsOn</span></div>
+    ${metaHtml()}
+  </div>`;
+}
+
+function renderNodes(){
+  // remove existing node DOM (keep svg)
+  [...world.querySelectorAll(".node")].forEach(el=>el.remove());
+  state.nodes.forEach(n=>{
+    const el = document.createElement("div");
+    el.className = "node node-"+n.kind + (state.selected===n.id?" selected":"");
+    el.dataset.id = n.id;
+    el.style.left = n.x+"px";
+    el.style.top  = n.y+"px";
+    el.innerHTML = nodeHtml(n);
+    world.appendChild(el);
+    attachNodeEvents(el, n);
+  });
+}
+
+/* ── Edge rendering (socket-accurate beziers) ──── */
+function socketCenter(nodeId, which){
+  const sel = `.node[data-id="${CSS.escape(nodeId)}"] .socket.${which}`;
+  const sock = world.querySelector(sel);
+  if(!sock) return null;
+  const r = sock.getBoundingClientRect();
+  const wr = world.getBoundingClientRect();
+  return {
+    x:(r.left + r.width/2 - wr.left)/view.scale,
+    y:(r.top  + r.height/2 - wr.top )/view.scale
+  };
+}
+
+const SVGNS = "http://www.w3.org/2000/svg";
+function renderEdges(){
+  // clear paths + any delete buttons
+  [...edgesSvg.querySelectorAll(".edge")].forEach(el=>el.remove());
+  [...world.querySelectorAll(".edge-del")].forEach(el=>el.remove());
+  state.edges.forEach((e,i)=>{
+    const a = socketCenter(e.from,"out");
+    const b = socketCenter(e.to,"in");
+    if(!a||!b) return;
+    const dx = Math.max(60, Math.abs(b.x-a.x)*0.5);
+    const c1x = a.x+dx, c2x = b.x-dx;
+    const d = `M ${a.x} ${a.y} C ${c1x} ${a.y}, ${c2x} ${b.y}, ${b.x} ${b.y}`;
+    const nodeSel = state.selected && (e.from===state.selected || e.to===state.selected);
+    const edgeSel = state.selectedEdge===i;
+    const hi = nodeSel || edgeSel;
+    const g = document.createElementNS(SVGNS,"g");
+    g.setAttribute("class","edge"+(hi?" sel-edge":"")+(edgeSel?" edge-active":""));
+    g.innerHTML =
+      `<path class="edge-hit" d="${d}"></path>
+       <path class="edge-path" d="${d}" marker-end="url(#${hi?'arrow-sel':'arrow'})"></path>
+       <path class="edge-flow" d="${d}"></path>`;
+    g.querySelector(".edge-hit").addEventListener("pointerdown", ev=>{ ev.stopPropagation(); selectEdge(i); });
+    edgesSvg.appendChild(g);
+
+    if(edgeSel){
+      const mx = 0.125*a.x + 0.375*c1x + 0.375*c2x + 0.125*b.x;
+      const my = 0.5*a.y + 0.5*b.y;
+      const del = document.createElement("button");
+      del.className = "edge-del";
+      del.style.left = mx+"px";
+      del.style.top  = my+"px";
+      del.style.transform = `translate(-50%,-50%) scale(${1/view.scale})`;
+      del.title = "Delete link";
+      del.innerHTML = `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>`;
+      del.addEventListener("pointerdown", ev=>ev.stopPropagation());
+      del.addEventListener("click", ev=>{ ev.stopPropagation(); deleteEdge(i); });
+      world.appendChild(del);
+    }
+  });
+}
+
+/* ── Connection (edge) editing ─────────────────── */
+function selectEdge(i){
+  state.selectedEdge = i;
+  state.selected = null;
+  world.querySelectorAll(".node").forEach(el=>el.classList.remove("selected"));
+  syncSidebar();
+  // tailor the inspector empty-state to the link
+  const e = state.edges[i];
+  $("#emptyState").classList.add("show");
+  $("#taskForm").style.display = "none";
+  $("#esIc").className = "es-ic none";
+  $("#esTitle").textContent = "Dependency link selected";
+  $("#esDesc").innerHTML = `<span class="mono">${e.from} → ${e.to}</span><br>Press <b>Delete</b> or the × on the link to remove it. Drag socket-to-socket to add new links.`;
+  $("#settingsSub").textContent = "Link — Source → Target dependency.";
+  $("#esTag").className = "es-tag none"; $("#esTag").style.display = "inline-block"; $("#esTag").textContent = "DEPENDENCY";
+  const chip = $("#selChip");
+  chip.classList.add("show");
+  $("#scId").textContent = e.from+"→"+e.to; $("#scType").textContent = "dependency link";
+  renderEdges();
+}
+function deleteEdge(i){
+  const e = state.edges[i];
+  if(!e) return;
+  state.edges.splice(i,1);
+  state.selectedEdge = null;
+  renderEdges(); syncSidebar();
+  toast("Link removed · "+e.from+" → "+e.to);
+}
+function addEdge(fromId, toId){
+  if(fromId===toId){ toast("Cannot link a node to itself"); return false; }
+  const fromN = state.nodes.find(n=>n.id===fromId), toN = state.nodes.find(n=>n.id===toId);
+  if(!fromN||!toN) return false;
+  if(fromN.kind==="finish"){ toast("Finish node has no output"); return false; }
+  if(toN.kind==="start"){ toast("Start node has no input"); return false; }
+  if(state.edges.some(e=>e.from===fromId && e.to===toId)){ toast("Link already exists"); return false; }
+  if(reaches(toId, fromId)){ toast("Link would create a cycle"); return false; }
+  state.edges.push({from:fromId, to:toId});
+  toast("Linked · "+fromId+" → "+toId);
+  return true;
+}
+function reaches(src, target){
+  const adj={}; state.nodes.forEach(n=>adj[n.id]=[]);
+  state.edges.forEach(e=>adj[e.from] && adj[e.from].push(e.to));
+  const seen=new Set(), stack=[src];
+  while(stack.length){ const c=stack.pop(); if(c===target) return true; if(seen.has(c)) continue; seen.add(c); (adj[c]||[]).forEach(t=>stack.push(t)); }
+  return false;
+}
+
+/* ── Live link drag (socket → socket) ──────────── */
+let linking = null;
+function startLink(fromId, sockType, ev){
+  linking = { fromId, sockType };
+  const p = document.createElementNS(SVGNS,"path");
+  p.setAttribute("class","edge-temp");
+  edgesSvg.appendChild(p);
+  linking.path = p;
+  linkMove(ev);
+}
+function linkMove(ev){
+  if(!linking) return;
+  const a = socketCenter(linking.fromId, linking.sockType);
+  if(!a) return;
+  const wr = world.getBoundingClientRect();
+  const bx = (ev.clientX - wr.left)/view.scale;
+  const by = (ev.clientY - wr.top )/view.scale;
+  const dir = linking.sockType==="out" ? 1 : -1;
+  const dx = Math.max(50, Math.abs(bx-a.x)*0.5);
+  linking.path.setAttribute("d", `M ${a.x} ${a.y} C ${a.x+dx*dir} ${a.y}, ${bx-dx*dir} ${by}, ${bx} ${by}`);
+}
+function linkUp(ev){
+  if(!linking) return;
+  // Forgiving target: drop anywhere on the destination NODE, not just its
+  // tiny socket. addEdge() validates direction (start=no input, finish=no output).
+  const el = document.elementFromPoint(ev.clientX, ev.clientY);
+  const targetNode = el && el.closest && el.closest(".node");
+  let added = false;
+  if(targetNode){
+    const targetId = targetNode.dataset.id;
+    if(targetId !== linking.fromId){
+      let fromId, toId;
+      if(linking.sockType==="out"){ fromId=linking.fromId; toId=targetId; }
+      else { fromId=targetId; toId=linking.fromId; }
+      added = addEdge(fromId, toId);
+    }
+  }
+  linking.path.remove();
+  linking = null;
+  if(added) renderEdges();
+}
+
+/* ── Transform application ─────────────────────── */
+function applyView(){
+  world.style.transform = `translate(${view.x}px,${view.y}px) scale(${view.scale})`;
+  $("#zoomVal").textContent = Math.round(view.scale*100)+"%";
+  // keep the link delete button counter-scaled when zoom changes
+  if(state.selectedEdge!=null) renderEdges();
+}
+
+/* ── Selection + sidebar binding ───────────────── */
+/* Update selection IN PLACE — never rebuild node DOM here, or an
+   in-flight pointer drag loses its captured element. */
+function select(id){
+  state.selected = id;
+  state.selectedEdge = null;
+  world.querySelectorAll(".node").forEach(el=>el.classList.toggle("selected", el.dataset.id===id));
+  renderEdges();
+  syncSidebar();
+}
+
+function syncSidebar(){
+  const n = state.nodes.find(x=>x.id===state.selected);
+  const isTask = n && n.kind==="task";
+  $("#taskForm").style.display = isTask ? "block" : "none";
+  $("#emptyState").classList.toggle("show", !isTask);
+  $("#btnDelete").disabled = !isTask;
+
+  // selection chip
+  const chip = $("#selChip");
+  if(n){
+    chip.classList.add("show");
+    $("#scId").textContent = n.id;
+    $("#scType").textContent = isTask ? n.taskType+" · "+n.wc : (n.kind==="start"?"Start · output-only":"Finish · input-only");
+  } else chip.classList.remove("show");
+
+  if(isTask){
+    $("#settingsSub").textContent = "Editing "+n.id+" — runtime execution rules.";
+    $("#fType").value = n.taskType;
+    $("#fWc").value = n.wc;
+    $("#fTerminal").value = n.terminal ? "Yes":"No";
+    $("#fKit").value = n.kitImpact;
+    $("#fReq").value = n.mandatory ? "Yes":"No";
+    $("#fFormula").value = n.formulasText;
+    $("#previewOut").classList.remove("show");
+  } else if(n){
+    // disabled / empty state tuned to node kind
+    const start = n.kind==="start";
+    $("#esTitle").textContent = start ? "Start · Job Received" : "Finish · Print Label";
+    $("#esDesc").textContent = start
+      ? "The start node only emits flow — it has no execution rules to configure. Connect it to the tasks that begin the job."
+      : "The finish node only receives flow and prints the product label. It carries no editable runtime formulas.";
+    $("#settingsSub").textContent = start ? "Start node — output only." : "Finish node — input only.";
+    const ic = $("#esIc"), tag = $("#esTag");
+    ic.className = "es-ic "+(start?"start":"finish");
+    tag.className = "es-tag "+(start?"start":"finish");
+    tag.style.display = "inline-block";
+    tag.textContent = start ? "OUTPUT ONLY" : "INPUT ONLY";
+  } else {
+    $("#settingsSub").textContent = "Edit runtime rules for the selected task.";
+    $("#esTitle").textContent = "No task selected";
+    $("#esDesc").textContent = "Select an amber task node on the canvas to edit its execution rules and formulas.";
+    $("#esIc").className = "es-ic none";
+    $("#esTag").style.display = "none";
+  }
+}
+
+/* update task card live as fields change */
+function updateCardFromForm(){
+  const n = state.nodes.find(x=>x.id===state.selected);
+  if(!n||n.kind!=="task") return;
+  n.taskType = $("#fType").value.trim() || "TASK";
+  n.wc = $("#fWc").value;
+  n.terminal = $("#fTerminal").value==="Yes";
+  n.kitImpact = parseInt($("#fKit").value,10)||0;
+  n.mandatory = $("#fReq").value==="Yes";
+  n.formulasText = $("#fFormula").value;
+  // live reflect on the card
+  const el = world.querySelector(`.node[data-id="${CSS.escape(n.id)}"]`);
+  if(el){
+    el.querySelector("[data-ttval]").textContent = n.taskType;
+    el.querySelector(".card-kind").textContent = n.wc;
+  }
+  // chip
+  $("#scType").textContent = n.taskType+" · "+n.wc;
+}
+
+["fType","fWc","fTerminal","fKit","fReq","fFormula"].forEach(id=>{
+  $("#"+id).addEventListener("input", updateCardFromForm);
+  $("#"+id).addEventListener("change", updateCardFromForm);
+});
+
+/* ── Node drag + click ─────────────────────────── */
+function attachNodeEvents(el, n){
+  let drag=null;
+  el.addEventListener("pointerdown", ev=>{
+    if(ev.button!==0) return;
+    if(ev.target.closest(".socket")) return;
+    ev.stopPropagation();
+    select(n.id);
+    drag = {sx:ev.clientX, sy:ev.clientY, ox:n.x, oy:n.y, moved:false};
+    try{ el.setPointerCapture(ev.pointerId); }catch(_){}
+    el.classList.add("dragging");
+  });
+  el.addEventListener("pointermove", ev=>{
+    if(!drag) return;
+    const dx=(ev.clientX-drag.sx)/view.scale, dy=(ev.clientY-drag.sy)/view.scale;
+    if(Math.abs(dx)>2||Math.abs(dy)>2) drag.moved=true;
+    n.x = Math.round(drag.ox+dx); n.y = Math.round(drag.oy+dy);
+    el.style.left = n.x+"px"; el.style.top = n.y+"px";
+    renderEdges();
+  });
+  el.addEventListener("pointerup", ev=>{
+    if(!drag) return;
+    el.classList.remove("dragging");
+    try{ el.releasePointerCapture(ev.pointerId); }catch(_){}
+    drag=null;
+  });
+
+  // socket → socket linking
+  el.querySelectorAll(".socket").forEach(s=>{
+    s.addEventListener("pointerdown", ev=>{
+      if(ev.button!==0) return;
+      ev.stopPropagation(); ev.preventDefault();
+      try{ s.setPointerCapture(ev.pointerId); }catch(_){}
+      startLink(n.id, s.dataset.sock, ev);
+    });
+    s.addEventListener("pointermove", ev=>{ if(linking) linkMove(ev); });
+    s.addEventListener("pointerup", ev=>{
+      if(linking) linkUp(ev);
+      try{ s.releasePointerCapture(ev.pointerId); }catch(_){}
+    });
+  });
+}
+
+/* ── Canvas pan + zoom ─────────────────────────── */
+let pan=null;
+canvas.addEventListener("pointerdown", ev=>{
+  if(ev.target.closest(".node")) return;
+  if(ev.button!==0) return;
+  // click empty canvas => deselect node or link
+  if(state.selected || state.selectedEdge!=null){ select(null); }
+  pan={sx:ev.clientX, sy:ev.clientY, ox:view.x, oy:view.y};
+  canvas.classList.add("panning");
+  canvas.setPointerCapture(ev.pointerId);
+});
+canvas.addEventListener("pointermove", ev=>{
+  if(!pan) return;
+  view.x = pan.ox+(ev.clientX-pan.sx);
+  view.y = pan.oy+(ev.clientY-pan.sy);
+  applyView();
+});
+canvas.addEventListener("pointerup", ev=>{
+  if(!pan) return; pan=null; canvas.classList.remove("panning");
+  try{canvas.releasePointerCapture(ev.pointerId);}catch(e){}
+});
+
+canvas.addEventListener("wheel", ev=>{
+  ev.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const mx = ev.clientX-rect.left, my = ev.clientY-rect.top;
+  const old = view.scale;
+  const factor = ev.deltaY<0 ? 1.1 : 1/1.1;
+  const ns = Math.min(2, Math.max(0.35, old*factor));
+  // zoom toward cursor
+  view.x = mx - (mx-view.x)*(ns/old);
+  view.y = my - (my-view.y)*(ns/old);
+  view.scale = ns;
+  applyView();
+}, {passive:false});
+
+function zoomBy(f){
+  const rect = canvas.getBoundingClientRect();
+  const mx = rect.width/2, my = rect.height/2;
+  const old=view.scale, ns=Math.min(2,Math.max(0.35, old*f));
+  view.x = mx-(mx-view.x)*(ns/old);
+  view.y = my-(my-view.y)*(ns/old);
+  view.scale=ns; applyView();
+}
+$("#zoomIn").onclick =()=>zoomBy(1.15);
+$("#zoomOut").onclick=()=>zoomBy(1/1.15);
+$("#zoomReset").onclick=()=>{view.scale=1; view.x=40; view.y=30; applyView();};
+$("#zoomFit").onclick=()=>fitView();
+
+function fitView(){
+  // bounding box of nodes
+  let minX=1e9,minY=1e9,maxX=-1e9,maxY=-1e9;
+  state.nodes.forEach(n=>{
+    const el=world.querySelector(`.node[data-id="${CSS.escape(n.id)}"]`);
+    const w = el?el.offsetWidth:240, h = el?el.offsetHeight:160;
+    minX=Math.min(minX,n.x); minY=Math.min(minY,n.y);
+    maxX=Math.max(maxX,n.x+w); maxY=Math.max(maxY,n.y+h);
+  });
+  const pad=70;
+  const rect=canvas.getBoundingClientRect();
+  const bw=maxX-minX+pad*2, bh=maxY-minY+pad*2;
+  const s=Math.min(rect.width/bw, rect.height/bh, 1.4);
+  view.scale=s;
+  view.x = (rect.width - (maxX+minX)*s)/2;
+  view.y = (rect.height - (maxY+minY)*s)/2;
+  applyView();
+}
+
+/* ── Add Task ──────────────────────────────────── */
+$("#btnAdd").onclick=()=>{
+  state.taskSeq++;
+  const id = "task-"+state.taskSeq;
+  // place near current viewport center, with a cascade offset so
+  // successive adds never stack exactly on each other
+  const rect=canvas.getBoundingClientRect();
+  const off=(state.taskSeq%6)*34;
+  const cx=(rect.width/2 - view.x)/view.scale - 134 + off;
+  const cy=(rect.height/2 - view.y)/view.scale - 90 + off;
+  const n = {id, title:"Task", kind:"task", taskType:"NEW_TASK", wc:"FAB", terminal:false,
+    kitImpact:10, mandatory:true, formulasText:"value_mm =\n=CEILING(height_mm * 1.0, 1)",
+    x:Math.round(cx), y:Math.round(cy)};
+  state.nodes.push(n);
+  renderNodes(); renderEdges();
+  select(id);
+  flashNode(id);
+  toast("Task "+id+" added");
+};
+
+function flashNode(id){
+  const el=world.querySelector(`.node[data-id="${CSS.escape(id)}"]`);
+  if(!el) return;
+  el.animate([{transform:"scale(.9)",opacity:.4},{transform:"scale(1)",opacity:1}],{duration:280,easing:"cubic-bezier(.3,.8,.3,1)"});
+}
+
+/* ── Delete selected (tasks only) ──────────────── */
+$("#btnDelete").onclick=()=>{
+  const n=state.nodes.find(x=>x.id===state.selected);
+  if(!n||n.kind!=="task") return;
+  const el=world.querySelector(`.node[data-id="${CSS.escape(n.id)}"]`);
+  const done=()=>{
+    state.nodes = state.nodes.filter(x=>x.id!==n.id);
+    state.edges = state.edges.filter(e=>e.from!==n.id && e.to!==n.id);
+    renderNodes();
+    select(null);
+    toast("Task "+n.id+" removed");
+  };
+  if(el){
+    el.animate([{transform:"scale(1)",opacity:1},{transform:"scale(.88)",opacity:0}],{duration:200,easing:"ease-in"}).onfinish=done;
+  } else done();
+};
+
+/* ── Auto layout (animated, left→right by depth) ─ */
+$("#btnLayout").onclick=()=>autoLayout();
+function autoLayout(){
+  // compute depth (longest path from start) via Kahn-ish BFS
+  const depth={}; state.nodes.forEach(n=>depth[n.id]=0);
+  const adj={}; state.nodes.forEach(n=>adj[n.id]=[]);
+  state.edges.forEach(e=>{ if(adj[e.from]) adj[e.from].push(e.to); });
+  // iterate to stabilize longest-path depths
+  for(let i=0;i<state.nodes.length+2;i++){
+    state.edges.forEach(e=>{
+      if(depth[e.to] < depth[e.from]+1) depth[e.to]=depth[e.from]+1;
+    });
+  }
+  // force finish to be the deepest column
+  const maxD = Math.max(0,...Object.values(depth));
+  const finish = state.nodes.find(n=>n.kind==="finish");
+  if(finish) depth[finish.id] = Math.max(depth[finish.id], maxD);
+
+  // group by depth
+  const cols={};
+  state.nodes.forEach(n=>{ (cols[depth[n.id]] ||= []).push(n); });
+  const colXgap=330, rowYgap=260, x0=120, y0=90;
+  Object.keys(cols).sort((a,b)=>a-b).forEach(d=>{
+    const list=cols[d];
+    const colH=(list.length-1)*rowYgap;
+    const cy=430; // vertical center anchor
+    list.forEach((n,i)=>{
+      n.x = x0 + d*colXgap;
+      n.y = Math.round(cy - colH/2 + i*rowYgap);
+    });
+  });
+
+  // animate
+  const els=[...world.querySelectorAll(".node")];
+  els.forEach(el=>el.classList.add("animating"));
+  els.forEach(el=>{
+    const n=state.nodes.find(x=>x.id===el.dataset.id);
+    if(n){ el.style.left=n.x+"px"; el.style.top=n.y+"px"; }
+  });
+  const t0=performance.now();
+  (function loop(){
+    renderEdges();
+    if(performance.now()-t0<560) requestAnimationFrame(loop);
+    else { els.forEach(el=>el.classList.remove("animating")); fitView(); }
+  })();
+  toast("Auto layout applied");
+}
+
+/* ── Formula preview (=CEILING) ────────────────── */
+$("#btnPreview").onclick=()=>{
+  const n=state.nodes.find(x=>x.id===state.selected);
+  if(!n||n.kind!=="task") return;
+  const W=1750, H=2200;
+  // evaluate the simple excel-style formula from the textarea, fall back to default
+  let result;
+  try{
+    result = evalFormula(n.formulasText, {width_mm:W, height_mm:H});
+  }catch(e){ result = "ERR"; }
+  $("#previewOut").querySelector(".po-title").textContent = "Formula preview · "+n.taskType;
+  $("#poResult").textContent = (typeof result==="number") ? result : result;
+  $("#previewOut").classList.add("show");
+};
+
+function evalFormula(text, vars){
+  // take last non-empty line, strip leading '='
+  const lines = text.split("\n").map(s=>s.trim()).filter(Boolean);
+  let expr = lines[lines.length-1].replace(/^=/,"");
+  // substitute vars
+  Object.entries(vars).forEach(([k,v])=>{ expr = expr.replace(new RegExp("\\b"+k+"\\b","g"), v); });
+  // translate CEILING/ROUND/FLOOR
+  expr = expr.replace(/CEILING\s*\(([^,]+),\s*([^)]+)\)/gi, (m,a,b)=>`(Math.ceil((${a})/(${b}))*(${b}))`);
+  expr = expr.replace(/FLOOR\s*\(([^,]+),\s*([^)]+)\)/gi, (m,a,b)=>`(Math.floor((${a})/(${b}))*(${b}))`);
+  expr = expr.replace(/ROUND\s*\(([^,]+),\s*([^)]+)\)/gi, (m,a,b)=>{
+    const f=`Math.pow(10,(${b}))`; return `(Math.round((${a})*${f})/${f})`;
+  });
+  if(!/^[0-9+\-*/.()\sMathceilroundfowp,]*$/i.test(expr)) throw new Error("unsafe");
+  // eslint-disable-next-line no-new-func
+  return Function('"use strict";return ('+expr+')')();
+}
+
+/* ── Build export / plan JSON ──────────────────── */
+function buildExport(){
+  const depMap={}; state.nodes.forEach(n=>depMap[n.id]=[]);
+  state.edges.forEach(e=>{ if(depMap[e.to]) depMap[e.to].push(e.from); });
+  const tasks = state.nodes.filter(n=>n.kind==="task").map(n=>{
+    const deps = depMap[n.id].map(src=>{
+      const sn=state.nodes.find(x=>x.id===src);
+      return sn&&sn.kind==="start" ? "START" : (sn?sn.taskType:src);
+    });
+    return {taskType:n.taskType, wc:n.wc, isTerminal:n.terminal, dependsOn:deps};
+  });
+  const formulasByTask={};
+  state.nodes.filter(n=>n.kind==="task").forEach(n=>{
+    const lines=n.formulasText.split("\n").map(s=>s.trim()).filter(Boolean);
+    const obj={};
+    // pair "name =" with the formula line
+    for(let i=0;i<lines.length;i++){
+      const m=lines[i].match(/^([a-z_][a-z0-9_]*)\s*=?$/i);
+      if(m && lines[i+1] && lines[i+1].startsWith("=")){ obj[m[1]]=lines[i+1]; i++; }
+      else { const m2=lines[i].match(/^([a-z_][a-z0-9_]*)\s*=\s*(=.+)$/i); if(m2) obj[m2[1]]=m2[2]; }
+    }
+    formulasByTask[n.taskType]=obj;
+  });
+  return {
+    productCode: state.productCode,
+    graph:{
+      nodes: state.nodes.map(n=>{
+        const base={id:n.id, title:n.kind==="task"?"Task":n.title, kind:n.kind, position:[n.x,n.y]};
+        if(n.kind==="task") Object.assign(base,{taskType:n.taskType, wc:n.wc, terminal:n.terminal, kitImpact:n.kitImpact, mandatory:n.mandatory, formulasText:n.formulasText.replace(/\n/g," ")});
+        return base;
+      }),
+      edges: state.edges.map(e=>({from:e.from, to:e.to}))
+    },
+    runtime:{ tasks, formulasByTask }
+  };
+}
+
+function buildPlan(){
+  const exp=buildExport();
+  const order = topoOrder();
+  return {
+    plan:{
+      productCode: state.productCode,
+      generatedAt:"2026-06-07T18:40:00+03:00",
+      conwipGroup: META.conwip,
+      labelTemplate: META.label,
+      sequence: order.filter(id=>{
+        const n=state.nodes.find(x=>x.id===id); return n && n.kind!=="start";
+      }).map((id,i)=>{
+        const n=state.nodes.find(x=>x.id===id);
+        return {
+          step:i+1,
+          node:id,
+          op:n.kind==="finish"?"PRINT_LABEL":n.taskType,
+          wc:n.kind==="finish"?"QC":n.wc,
+          durationSek:n.kind==="finish"?60:300,
+          dependsOn: exp.runtime.tasks.find(t=>t.taskType===n.taskType)?.dependsOn || (n.kind==="finish"?["CUT_FABRIC"]:[])
+        };
+      }),
+      resolvedFormulas:{ "fabric_length_mm": 2243, "_inputs":{width_mm:1750, height_mm:2200} }
+    }
+  };
+}
+
+function topoOrder(){
+  const indeg={}, adj={};
+  state.nodes.forEach(n=>{indeg[n.id]=0; adj[n.id]=[];});
+  state.edges.forEach(e=>{ adj[e.from].push(e.to); indeg[e.to]++; });
+  const q=state.nodes.filter(n=>indeg[n.id]===0).map(n=>n.id);
+  const out=[];
+  while(q.length){ const id=q.shift(); out.push(id); (adj[id]||[]).forEach(t=>{ if(--indeg[t]===0) q.push(t); }); }
+  // append any leftover (cycles) deterministically
+  state.nodes.forEach(n=>{ if(!out.includes(n.id)) out.push(n.id); });
+  return out;
+}
+
+/* ── JSON syntax highlight ─────────────────────── */
+function highlight(obj){
+  let json = JSON.stringify(obj, null, 2);
+  json = json.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  json = json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d+)?(?:[eE][+\-]?\d+)?)/g,
+    m=>{
+      let cls="tok-num";
+      if(/^"/.test(m)){ cls = /:$/.test(m) ? "tok-key" : "tok-str"; }
+      else if(/true|false/.test(m)) cls="tok-bool";
+      else if(/null/.test(m)) cls="tok-null";
+      return `<span class="${cls}">${m}</span>`;
+    });
+  json = json.replace(/([{}\[\],])/g, '<span class="tok-punct">$1</span>');
+  return json;
+}
+
+/* ── Modal control ─────────────────────────────── */
+let modalMode="export";
+function openModal(mode){
+  modalMode=mode;
+  const obj = mode==="plan" ? buildPlan() : buildExport();
+  $("#jsonOut").innerHTML = highlight(obj);
+  $("#modalTitle").textContent = mode==="plan" ? "PlanJson (demo)" : "Export JSON";
+  $("#modalSub").textContent = "product · "+state.productCode;
+  $("#modalMeta").textContent = mode==="plan"
+    ? "mock generated execution plan · "+ (obj.plan.sequence.length) +" steps"
+    : "graph + runtime model · "+state.nodes.length+" nodes · "+state.edges.length+" edges";
+  $("#modalIc").innerHTML = mode==="plan"
+    ? `<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>`
+    : `<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M8 11l4 4 4-4M5 19h14"/></svg>`;
+  $("#modalVeil").classList.add("show");
+}
+function closeModal(){ $("#modalVeil").classList.remove("show"); }
+$("#btnExport").onclick=()=>openModal("export");
+$("#btnPlan").onclick=()=>openModal("plan");
+$("#modalClose").onclick=closeModal;
+$("#modalDone").onclick=closeModal;
+$("#modalVeil").addEventListener("pointerdown", e=>{ if(e.target===$("#modalVeil")) closeModal(); });
+document.addEventListener("keydown", e=>{
+  if(e.key==="Escape"){ closeModal(); return; }
+  const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement && document.activeElement.tagName);
+  if((e.key==="Delete"||e.key==="Backspace") && !typing){
+    if(state.selectedEdge!=null){ e.preventDefault(); deleteEdge(state.selectedEdge); }
+    else if(!$("#btnDelete").disabled){ e.preventDefault(); $("#btnDelete").click(); }
+  }
+});
+
+$("#modalCopy").onclick=()=>{
+  const obj = modalMode==="plan"?buildPlan():buildExport();
+  navigator.clipboard?.writeText(JSON.stringify(obj,null,2)).then(()=>toast("JSON copied to clipboard")).catch(()=>toast("Copy unavailable"));
+};
+$("#modalDownload").onclick=()=>{
+  const obj = modalMode==="plan"?buildPlan():buildExport();
+  const blob=new Blob([JSON.stringify(obj,null,2)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download = (modalMode==="plan"?"plan":"workflow")+"_"+state.productCode+".json";
+  a.click(); URL.revokeObjectURL(a.href);
+  toast("Downloaded "+a.download);
+};
+
+/* ── Toast ─────────────────────────────────────── */
+let toastT;
+function toast(msg){
+  $("#toastMsg").textContent=msg;
+  $("#toast").classList.add("show");
+  clearTimeout(toastT); toastT=setTimeout(()=>$("#toast").classList.remove("show"),1900);
+}
+
+/* ── Boot ──────────────────────────────────────── */
+function boot(){
+  applyView();
+  renderNodes();
+  // edges need a layout pass to read socket positions
+  requestAnimationFrame(()=>{ renderEdges(); syncSidebar(); fitView(); requestAnimationFrame(renderEdges); });
+}
+boot();
+window.addEventListener("resize", ()=>renderEdges());
+</script>
+</body>
+</html>
