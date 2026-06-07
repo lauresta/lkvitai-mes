@@ -30,6 +30,7 @@ lkvitai.lauresta.com    /  -> same backends, cert resolved per SNI by Let's Encr
 /                      -> redirects to /portal/
 /portal                -> http://10.11.12.15:5010
 /warehouse             -> http://10.11.12.15:5000
+/shopfloor            -> http://10.11.12.15:5050
 /api/portal            -> http://10.11.12.15:5011
 /api/warehouse         -> http://10.11.12.15:5001
 ```

@@ -324,16 +324,17 @@ jobs:
       - name: Wait for scaffolded module containers to become healthy
         run: |
           set -euo pipefail
-          # Six scaffolded containers (3 modules × {api, webui}) share the same
-          # /health contract as warehouse/portal. Iterate so we fail fast with
-          # useful logs on the first one that doesn't come up.
+          # Scaffolded containers share the same /health contract as
+          # warehouse/portal. Iterate so we fail fast with useful logs on the
+          # first one that doesn't come up.
           for container in \
             lkvitai-mes-sales-api \
             lkvitai-mes-sales-webui \
             lkvitai-mes-frontline-api \
             lkvitai-mes-frontline-webui \
             lkvitai-mes-scanning-api \
-            lkvitai-mes-scanning-webui ; do
+            lkvitai-mes-scanning-webui \
+            lkvitai-mes-shopfloor-webui ; do
             echo "Waiting for ${container} health..."
             ok=0
             for i in $(seq 1 30); do
@@ -372,4 +373,5 @@ jobs:
           echo "- **Frontline WebUI (scaffold):** lkvitai-test:5030" >> $GITHUB_STEP_SUMMARY
           echo "- **Scanning API (scaffold):** lkvitai-test:5041" >> $GITHUB_STEP_SUMMARY
           echo "- **Scanning WebUI (scaffold):** lkvitai-test:5040" >> $GITHUB_STEP_SUMMARY
+          echo "- **Shopfloor WebUI (scaffold):** lkvitai-test:5050" >> $GITHUB_STEP_SUMMARY
           docker compose -f docker-compose.test.yml ps >> $GITHUB_STEP_SUMMARY

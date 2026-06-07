@@ -1,0 +1,178 @@
+@page "/"
+@inject ShopfloorDatabaseStatusService DatabaseStatusService
+
+<PageTitle>LKvitai.MES · Shopfloor</PageTitle>
+
+<main class="shopfloor-page">
+    <section class="sf-head">
+        <div>
+            <div class="eyebrow mono">Shopfloor · Scaffold</div>
+            <h1>Operator execution board</h1>
+            <p>Workstation menu scaffold for production tasks, WIP routing and shift control.</p>
+        </div>
+        <div class="sf-head__actions">
+            <MudButton Variant="Variant.Outlined" Class="lk-btn" Disabled="true">Scan badge</MudButton>
+            <MudButton Variant="Variant.Filled" Class="lk-btn lk-btn--primary" Disabled="true">Start task</MudButton>
+        </div>
+    </section>
+
+    <section class="sf-kpis" aria-label="Shopfloor summary">
+        @foreach (var metric in Metrics)
+        {
+            <MudPaper Outlined="true" Elevation="0" Class="panel kpi">
+                <span class="kpi__label mono">@metric.Label</span>
+                <strong class="mono">@metric.Value</strong>
+                <span class="chip @metric.ChipClass">@metric.Status</span>
+            </MudPaper>
+        }
+    </section>
+
+    <div class="sf-grid">
+        <MudPaper Outlined="true" Elevation="0" Class="panel">
+            <div class="panel__head">
+                <div>
+                    <h2>Menu</h2>
+                    <span>Future shopfloor entry points</span>
+                </div>
+                <span class="chip chip--info">Stub</span>
+            </div>
+            <div class="menu-grid">
+                @foreach (var item in MenuItems)
+                {
+                    <button class="menu-tile" type="button" disabled>
+                        <span class="menu-tile__icon mono">@item.Code</span>
+                        <span>
+                            <strong>@item.Title</strong>
+                            <small>@item.Description</small>
+                        </span>
+                    </button>
+                }
+            </div>
+        </MudPaper>
+
+        <MudPaper Outlined="true" Elevation="0" Class="panel db-panel">
+            <div class="panel__head">
+                <div>
+                    <h2>Database</h2>
+                    <span>Same PostgreSQL diagnostic</span>
+                </div>
+                @if (_dbStatus is null)
+                {
+                    <span class="chip chip--slate">Loading</span>
+                }
+                else
+                {
+                    <span class="chip @(_dbStatus.IsAvailable ? "chip--ok" : "chip--danger")">@_dbStatus.Message</span>
+                }
+            </div>
+
+            @if (_dbStatus is null)
+            {
+                <div class="db-lines">
+                    <span class="skeleton"></span>
+                    <span class="skeleton"></span>
+                    <span class="skeleton"></span>
+                </div>
+            }
+            else
+            {
+                <dl class="db-facts">
+                    <div>
+                        <dt>Database</dt>
+                        <dd class="mono">@(_dbStatus.Database ?? "n/a")</dd>
+                    </div>
+                    <div>
+                        <dt>Schema</dt>
+                        <dd class="mono">@(_dbStatus.Schema ?? "n/a")</dd>
+                    </div>
+                    <div>
+                        <dt>Endpoint</dt>
+                        <dd class="mono">@(_dbStatus.ServerEndpoint ?? "n/a")</dd>
+                    </div>
+                    <div>
+                        <dt>Checked</dt>
+                        <dd class="mono">@_dbStatus.CheckedAt.ToString("yyyy-MM-dd HH:mm:ss")</dd>
+                    </div>
+                </dl>
+                <div class="version-box mono">@(_dbStatus.ServerVersion ?? _dbStatus.Message)</div>
+            }
+        </MudPaper>
+    </div>
+
+    <MudPaper Outlined="true" Elevation="0" Class="panel">
+        <div class="panel__head">
+            <div>
+                <h2>Work queue</h2>
+                <span>Static scaffold rows for layout review</span>
+            </div>
+            <fieldset class="sf-segmented" aria-label="Queue period">
+                <button class="is-active" type="button">Now</button>
+                <button type="button" disabled>Next shift</button>
+            </fieldset>
+        </div>
+
+        <div class="table-wrap">
+            <table class="sf-table">
+                <thead>
+                    <tr>
+                        <th>Task</th>
+                        <th>Station</th>
+                        <th>Order</th>
+                        <th>Operator</th>
+                        <th>Status</th>
+                        <th>Target</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in QueueRows)
+                    {
+                        <tr>
+                            <td class="mono">@row.Task</td>
+                            <td>@row.Station</td>
+                            <td class="mono">@row.Order</td>
+                            <td>@row.Operator</td>
+                            <td><span class="chip @row.ChipClass">@row.Status</span></td>
+                            <td class="mono">@row.Target</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </MudPaper>
+</main>
+
+@code {
+    private ShopfloorDatabaseStatus? _dbStatus;
+
+    private static readonly IReadOnlyList<(string Label, string Value, string Status, string ChipClass)> Metrics =
+    [
+        ("Stations active", "08 / 12", "Pilot", "chip--info"),
+        ("WIP tasks", "146", "Sample", "chip--slate"),
+        ("Late operations", "05", "Attention", "chip--warn"),
+        ("Completed today", "312", "On track", "chip--ok"),
+    ];
+
+    private static readonly IReadOnlyList<(string Code, string Title, string Description)> MenuItems =
+    [
+        ("WO", "Work orders", "Open, release and track operation packets."),
+        ("ST", "Stations", "Operator kiosk and workstation load view."),
+        ("WIP", "WIP routing", "Move units between production steps."),
+        ("QC", "Quality hold", "Defect capture and rework routing."),
+        ("MAT", "Material calls", "Request fabrics, fittings and packaging."),
+        ("SHIFT", "Shift handover", "Notes, downtime and line readiness."),
+    ];
+
+    private static readonly IReadOnlyList<(string Task, string Station, string Order, string Operator, string Status, string ChipClass, string Target)> QueueRows =
+    [
+        ("CUT-10482", "Cutting A", "SO-240118", "R. Petrauskas", "Running", "chip--ok", "14:20"),
+        ("SEW-10483", "Sewing 3", "SO-240121", "I. Kazlauskiene", "Queued", "chip--info", "15:05"),
+        ("ASM-10487", "Assembly 2", "SO-240130", "M. Jankus", "Blocked", "chip--warn", "15:30"),
+        ("QC-10491", "Quality", "SO-240144", "A. Zukas", "Hold", "chip--danger", "16:10"),
+        ("PKG-10495", "Packing", "SO-240151", "L. Stonys", "Ready", "chip--done", "16:45"),
+    ];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _dbStatus = await DatabaseStatusService.GetStatusAsync();
+    }
+}

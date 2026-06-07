@@ -267,6 +267,34 @@ services:
       retries: 5
       start_period: 30s
 
+  # --- Shopfloor module (scaffold, PortalAuth) ---------------------------------
+  shopfloor-webui:
+    image: ghcr.io/lauresta/lkvitai-mes-shopfloor-webui:${IMAGE_TAG:-latest}
+    container_name: lkvitai-mes-shopfloor-webui
+    restart: unless-stopped
+    ports:
+      - "5050:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Test
+      PathBase: "/shopfloor"
+      ConnectionStrings__WarehouseDb: "Host=pg;Port=5432;Database=${TEST_DB_NAME:-lkvitai_warehouse_test};Username=${TEST_DB_USER:-postgres};Password=${TEST_DB_PASSWORD}"
+      PortalAuth__LoginBasePath: "/portal"
+      PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
+    volumes:
+      - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys
+      - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
+    networks:
+      - lkvitai-mes_default
+    depends_on:
+      - portal-webui
+      - api
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
 networks:
   lkvitai-mes_default:
     external: true

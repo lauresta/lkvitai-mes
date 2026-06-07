@@ -9,7 +9,7 @@ public static class PortalSeedData
         Tile("frontline", "Frontline", "Field", "Field availability lookup.", "Pilot", "/frontline/", null, "frontline", 30, now),
         Tile("scanning", "Scanning", "Mobile", "Mobile barcode scan.", "Pilot", "/scan/", null, "scanning", 40, now),
         Tile("orders", "Orders", "Commercial", "Order lifecycle, product composition, workflow planning.", "Planned", null, "Q3 2026", "orders", 50, now),
-        Tile("shopfloor", "Shopfloor", "Operations", "Workstation tasks, WIP routing, operator kiosk execution.", "Planned", null, "Q3 2026", "shopfloor", 60, now),
+        Tile("shopfloor", "Shopfloor", "Operations", "Workstation tasks, WIP routing, operator kiosk execution.", "Pilot", "/shopfloor/", null, "shopfloor", 60, now),
         Tile("quality", "Quality", "Operations", "Inspections, defect tracking, rework and returns.", "Planned", null, "Q4 2026", "quality", 70, now),
         Tile("delivery", "Delivery", "Logistics", "Route planning, driver tasks, proof of delivery, tracking.", "Planned", null, "Q4 2026", "delivery", 80, now),
         Tile("installation", "Installation", "Logistics", "Installer visits, acceptance acts, customer sign-off.", "Planned", null, "Q1 2027", "installation", 90, now),

@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
     inputs:
       service:
-        description: "Service to inspect (sales | warehouse | portal | frontline | scanning | all)"
+        description: "Service to inspect (sales | warehouse | portal | frontline | scanning | shopfloor | all)"
         required: false
         default: "sales"
       tail:
@@ -47,6 +47,7 @@ jobs:
             portal)     CONTAINERS="lkvitai-mes-portal-api lkvitai-mes-portal-webui" ;;
             frontline)  CONTAINERS="lkvitai-mes-frontline-api lkvitai-mes-frontline-webui" ;;
             scanning)   CONTAINERS="lkvitai-mes-scanning-api lkvitai-mes-scanning-webui" ;;
+            shopfloor)  CONTAINERS="lkvitai-mes-shopfloor-webui" ;;
             all)        CONTAINERS="$(docker ps --format '{{.Names}}' | grep '^lkvitai-mes-')" ;;
             *)          echo "::error::Unknown service: $SERVICE"; exit 1 ;;
           esac
@@ -70,7 +71,8 @@ jobs:
             portal)     PATTERNS="portal-" ;;
             frontline)  PATTERNS="frontline-api- frontline-webui-" ;;
             scanning)   PATTERNS="scanning-api- scanning-webui-" ;;
-            all)        PATTERNS="sales- warehouse- portal- frontline- scanning-" ;;
+            shopfloor)  PATTERNS="shopfloor-webui-" ;;
+            all)        PATTERNS="sales- warehouse- portal- frontline- scanning- shopfloor-webui-" ;;
             *)          echo "::error::Unknown service: $SERVICE"; exit 1 ;;
           esac
           for prefix in $PATTERNS; do
