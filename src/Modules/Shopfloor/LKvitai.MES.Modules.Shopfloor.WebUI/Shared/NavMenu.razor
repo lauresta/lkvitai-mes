@@ -1,0 +1,118 @@
+@inject NavigationManager Navigation
+@implements IDisposable
+
+<nav aria-label="Shopfloor navigation" class="sidebar__nav">
+    <a class="nav-dash @(IsDashboardActive ? "is-active" : null)" href="dashboard" title="@(Collapsed ? "Dashboard" : null)">
+        <i class="bi bi-speedometer2" aria-hidden="true"></i>
+        @if (!Collapsed)
+        {
+            <span>Dashboard</span>
+        }
+    </a>
+
+    @foreach (var grp in _sections)
+    {
+        var isOpen = _openSection == grp.Key;
+        var hasActive = grp.Items.Any(i => IsActive(i.Href));
+        var sectionId = $"shopfloor-nav-{grp.Key}";
+
+        <div class="nav-section">
+            <button class="nav-section-toggle @(isOpen ? "open" : "") @(hasActive ? "has-active" : "")"
+                    type="button"
+                    aria-expanded="@isOpen.ToString().ToLowerInvariant()"
+                    aria-controls="@(Collapsed ? null : sectionId)"
+                    title="@grp.Label"
+                    @onclick="() => Toggle(grp.Key)">
+                <i class="bi @grp.Icon" title="@(Collapsed ? grp.Label : null)" aria-hidden="true"></i>
+                @if (!Collapsed)
+                {
+                    <span class="nav-section-label">@grp.Label</span>
+                    <i class="bi bi-chevron-down nav-chevron" aria-hidden="true"></i>
+                }
+            </button>
+
+            @if (isOpen && !Collapsed)
+            {
+                <ul class="nav-section-items" id="@sectionId" role="list">
+                    @foreach (var item in grp.Items)
+                    {
+                        <li>
+                            <NavLink class="nav-link" href="@item.Href" Match="NavLinkMatch.Prefix" ActiveClass="is-active">
+                                <i class="bi @item.Icon" aria-hidden="true"></i>
+                                <span>@item.Label</span>
+                            </NavLink>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    }
+</nav>
+
+@code {
+    [Parameter] public bool Collapsed { get; set; }
+
+    private string? _openSection;
+    private string _currentPath = "";
+
+    private bool IsDashboardActive => string.IsNullOrWhiteSpace(_currentPath) || IsActive("dashboard");
+
+    private record NavItem(string Href, string Icon, string Label);
+    private record NavSection(string Key, string Label, string Icon, NavItem[] Items);
+
+    protected override void OnInitialized()
+    {
+        _currentPath = TrimPath(Navigation.ToBaseRelativePath(Navigation.Uri));
+        Navigation.LocationChanged += OnLocationChanged;
+        _openSection = FindSectionForPath(_currentPath) ?? "engineering";
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        _currentPath = TrimPath(Navigation.ToBaseRelativePath(e.Location));
+        var active = FindSectionForPath(_currentPath);
+        if (active is not null)
+            _openSection = active;
+
+        InvokeAsync(StateHasChanged);
+    }
+
+    private bool IsActive(string href)
+    {
+        return _currentPath.StartsWith(TrimPath(href), StringComparison.OrdinalIgnoreCase);
+    }
+
+    private string? FindSectionForPath(string path)
+    {
+        foreach (var section in _sections)
+        {
+            if (section.Items.Any(item => path.StartsWith(TrimPath(item.Href), StringComparison.OrdinalIgnoreCase)))
+                return section.Key;
+        }
+
+        return null;
+    }
+
+    private static string TrimPath(string path)
+    {
+        return path.Split('?', '#')[0].Trim('/');
+    }
+
+    private void Toggle(string key)
+    {
+        if (!Collapsed)
+            _openSection = _openSection == key ? null : key;
+    }
+
+    public void Dispose()
+    {
+        Navigation.LocationChanged -= OnLocationChanged;
+    }
+
+    private static readonly NavSection[] _sections =
+    [
+        new("engineering", "Engineering", "bi-diagram-3", [
+            new("workflow-editor", "bi-diagram-3", "Workflow Editor"),
+        ]),
+    ];
+}
