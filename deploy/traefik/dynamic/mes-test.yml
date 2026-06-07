@@ -3,8 +3,8 @@
 #
 # Path-based routing under both hostnames. API prefixes are stripped before
 # forwarding so each module's ASP.NET Core host only sees its own routes.
-# Scaffolded modules (Sales/Frontline/Scanning) mirror the Warehouse/Portal
-# routing pattern exactly.
+# Scaffolded modules (Sales/Frontline/Scanning/Shopfloor) mirror the
+# Warehouse/Portal routing pattern exactly.
 http:
   routers:
     mes-test-portal-root:
@@ -52,6 +52,14 @@ http:
       rule: "(Host(`mes-test.lauresta.com`) || Host(`lkvitai.lauresta.com`)) && PathPrefix(`/scan`)"
       entryPoints: [websecure]
       service: mes-test-scanning-webui
+      priority: 100
+      tls:
+        certResolver: letsencrypt
+
+    mes-test-shopfloor:
+      rule: "(Host(`mes-test.lauresta.com`) || Host(`lkvitai.lauresta.com`)) && PathPrefix(`/shopfloor`)"
+      entryPoints: [websecure]
+      service: mes-test-shopfloor-webui
       priority: 100
       tls:
         certResolver: letsencrypt
@@ -178,3 +186,9 @@ http:
         passHostHeader: true
         servers:
           - url: "http://10.11.12.15:5041"
+
+    mes-test-shopfloor-webui:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://10.11.12.15:5050"

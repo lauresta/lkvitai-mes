@@ -10,6 +10,7 @@ on:
       - src/Modules/Sales/**
       - src/Modules/Frontline/**
       - src/Modules/Scanning/**
+      - src/Modules/Shopfloor/**
       - src/BuildingBlocks/**
       - docker-compose.test.yml
       - .github/workflows/build-and-push.yml
@@ -56,6 +57,9 @@ jobs:
           - name: scanning-webui
             dockerfile: src/Modules/Scanning/LKvitai.MES.Modules.Scanning.WebUI/Dockerfile
             image: ghcr.io/${{ github.repository_owner }}/lkvitai-mes-scanning-webui
+          - name: shopfloor-webui
+            dockerfile: src/Modules/Shopfloor/LKvitai.MES.Modules.Shopfloor.WebUI/Dockerfile
+            image: ghcr.io/${{ github.repository_owner }}/lkvitai-mes-shopfloor-webui
 
     steps:
       - name: Checkout code

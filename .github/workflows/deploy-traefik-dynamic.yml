@@ -41,6 +41,7 @@ jobs:
           grep -qE 'lkvitai\.lauresta\.com' deploy/traefik/dynamic/mes-test.yml
           grep -q 'PathPrefix(`/api/portal`)' deploy/traefik/dynamic/mes-test.yml
           grep -q 'PathPrefix(`/api/warehouse`)' deploy/traefik/dynamic/mes-test.yml
+          grep -q 'PathPrefix(`/shopfloor`)' deploy/traefik/dynamic/mes-test.yml
 
           if grep -Eq 'Host\(`(portal|warehouse|api)\.mes-test\.lauresta\.com`\)' deploy/traefik/dynamic/mes-test.yml; then
             echo "::error::Test routing must stay path-based under mes-test.lauresta.com."

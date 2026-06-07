@@ -1,0 +1,14 @@
+@inherits LayoutComponentBase
+
+<MudThemeProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<PortalAuthenticatedShell>
+    <ChildContent>
+        @Body
+    </ChildContent>
+    <NotAuthorizedContent>
+        <RedirectToLogin />
+    </NotAuthorizedContent>
+</PortalAuthenticatedShell>

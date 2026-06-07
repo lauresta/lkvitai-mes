@@ -1,0 +1,21 @@
+<CascadingAuthenticationState>
+    <Router AppAssembly="@typeof(App).Assembly">
+        <Found Context="routeData">
+            <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+        </Found>
+        <NotFound>
+            <PageTitle>Not found</PageTitle>
+            <LayoutView Layout="@typeof(MainLayout)">
+                <main class="shopfloor-page">
+                    <MudPaper Outlined="true" Elevation="0" Class="panel">
+                        <div class="empty-panel">
+                            <span class="chip chip--warn">404</span>
+                            <h1>Nothing at this address.</h1>
+                            <a class="sf-link" href="/shopfloor/">Back to Shopfloor</a>
+                        </div>
+                    </MudPaper>
+                </main>
+            </LayoutView>
+        </NotFound>
+    </Router>
+</CascadingAuthenticationState>
