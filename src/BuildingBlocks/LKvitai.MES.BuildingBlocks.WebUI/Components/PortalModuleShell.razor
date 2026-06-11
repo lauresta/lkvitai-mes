@@ -51,9 +51,15 @@
         <a class="brand brand--link"
            href="@ResolvedHomeUrl"
            aria-label="@BrandAriaLabel">
-            <div class="brand__mark">LK</div>
+            <div class="brand__mark" aria-hidden="true">
+                <svg class="brand__mark-icon" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" focusable="false">
+                    <path d="M12 15 C22 12.5 30 15.5 32 21" />
+                    <path d="M11 21 C21 19 28.5 22 31 27" />
+                    <circle cx="9" cy="18.5" r="2.8" fill="currentColor" stroke="none" />
+                </svg>
+            </div>
             <div>
-                <div class="brand__name">LKvitai<span>.MES</span></div>
+                <div class="brand__name"><span class="brand__wordmark">Cikada</span><span class="brand__suffix">.MES</span></div>
                 <div class="brand__tagline mono">Manufacturing &middot; Execution &middot; Standards</div>
             </div>
         </a>
@@ -268,8 +274,8 @@
     }
 
     private string BrandAriaLabel => string.Equals(ResolvedHomeUrl, "/", StringComparison.Ordinal)
-        ? "Portal home"
-        : "Open Portal home";
+        ? "Cikada.MES Portal home"
+        : "Open Cikada.MES Portal home";
 
     private string ResolveNavigationHost()
     {

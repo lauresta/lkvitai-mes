@@ -109,14 +109,27 @@
   font-weight: 700;
 }
 
+.brand__mark-icon {
+  display: block;
+  width: 62%;
+  height: 62%;
+}
+
 .brand__name {
   color: var(--n-0);
   font-size: 15px;
-  font-weight: 700;
+  font-weight: 800;
   line-height: 1.1;
 }
 
-.brand__name span {
+.brand__wordmark {
+  background-image: linear-gradient(92deg, var(--accent-400), var(--brand-cyan-bright));
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.brand__suffix {
   color: #9ba4b0;
   font-weight: 400;
 }
