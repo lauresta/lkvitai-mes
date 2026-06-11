@@ -103,14 +103,40 @@ input {
   margin-bottom: 20px;
 }
 
+.login-brand .brand__mark {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  border: 1px solid var(--n-200);
+  border-radius: 50%;
+  background: var(--n-50);
+  color: var(--accent-600);
+}
+
+.login-brand .brand__mark-icon {
+  display: block;
+  width: 62%;
+  height: 62%;
+}
+
 .login-brand h1 {
   margin: 0;
   color: var(--n-900);
   font-size: 24px;
+  font-weight: 800;
   line-height: 1.1;
 }
 
-.login-brand h1 span {
+.login-brand .brand__wordmark {
+  background-image: linear-gradient(92deg, var(--accent-600), var(--brand-cyan));
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.login-brand .brand__suffix {
   color: var(--n-500);
   font-weight: 400;
 }

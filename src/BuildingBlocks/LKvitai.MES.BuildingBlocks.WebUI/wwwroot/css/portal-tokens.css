@@ -1,5 +1,5 @@
 /*
- * portal-tokens.css — single source of truth for the LKvitai.MES design tokens.
+ * portal-tokens.css — single source of truth for the Cikada.MES design tokens.
  *
  * Why this file exists:
  *   Before #92 each module shipped its own copy of the token block in its
@@ -51,6 +51,11 @@
   --accent-500: #2f8f8b;
   --accent-600: #257773;
   --accent-700: #1d5d5a;
+
+  /* Cikada wordmark gradient terminus only. Functional UI accents still use
+     --accent-*; do not use these values for controls, chips, or statuses. */
+  --brand-cyan: #12a594;
+  --brand-cyan-bright: #3fd1c0;
 
   /* Sand — warn/operational only (notes, low-stock highlights, scaffold accents).
      NEVER promote to a primary brand colour — that's --accent-*. */
