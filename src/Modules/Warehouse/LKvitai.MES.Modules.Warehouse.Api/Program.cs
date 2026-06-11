@@ -95,18 +95,30 @@ builder.Services.Configure<DevAuthOptions>(builder.Configuration.GetSection(DevA
 builder.Services.Configure<OAuthOptions>(builder.Configuration.GetSection(OAuthOptions.SectionName));
 builder.Services.Configure<MfaOptions>(builder.Configuration.GetSection(MfaOptions.SectionName));
 builder.Services.Configure<LabelPrintingConfig>(builder.Configuration.GetSection("LabelPrinting"));
-builder.Services.AddSingleton(_ => ItemImageOptions.FromConfiguration(builder.Configuration));
-builder.Services.AddSingleton(sp => sp.GetRequiredService<ItemImageOptions>().ToObjectStorageOptions());
-builder.Services.AddSingleton<IMinioClient>(sp =>
+var itemImageOptions = ItemImageOptions.FromConfiguration(builder.Configuration);
+var objectStorageOptions = itemImageOptions.ToObjectStorageOptions();
+builder.Services.AddSingleton(itemImageOptions);
+builder.Services.AddSingleton(objectStorageOptions);
+if (objectStorageOptions.HasRequiredConfiguration)
 {
-    var options = sp.GetRequiredService<ItemImageOptions>();
-    return new MinioClient()
-        .WithEndpoint(options.Endpoint)
-        .WithCredentials(options.AccessKey, options.SecretKey)
-        .WithSSL(options.UseSsl)
-        .Build();
-});
-builder.Services.AddSingleton<IObjectStorageService, MinioObjectStorageService>();
+    builder.Services.AddSingleton<IMinioClient>(sp =>
+    {
+        var options = sp.GetRequiredService<ItemImageOptions>();
+        return new MinioClient()
+            .WithEndpoint(options.Endpoint)
+            .WithCredentials(options.AccessKey, options.SecretKey)
+            .WithSSL(options.UseSsl)
+            .Build();
+    });
+    builder.Services.AddSingleton<IObjectStorageService, MinioObjectStorageService>();
+}
+else
+{
+    builder.Services.AddSingleton<IObjectStorageService>(sp =>
+        new UnavailableObjectStorageService(
+            sp.GetRequiredService<ObjectStorageOptions>(),
+            "Item image object storage is not configured."));
+}
 builder.Services.AddSingleton<IItemImageStorageService, ItemImageStorageService>();
 builder.Services.AddScoped<IItemPhotoService, ItemPhotoService>();
 builder.Services.AddScoped<IItemImageSearchCapabilityService, ItemImageSearchCapabilityService>();

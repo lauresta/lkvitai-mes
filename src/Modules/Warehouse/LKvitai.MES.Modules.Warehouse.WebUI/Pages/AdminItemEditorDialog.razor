@@ -1,0 +1,229 @@
+<MudDialog Class="admin-item-dialog">
+    <TitleContent>
+        <div class="admin-item-dialog__title">
+            <span>@(IsEdit ? "Edit Item" : "Create Item")</span>
+            @if (IsEdit && !string.IsNullOrWhiteSpace(Item?.InternalSKU))
+            {
+                <span class="mono">@Item.InternalSKU</span>
+            }
+        </div>
+    </TitleContent>
+    <DialogContent>
+        @if (!string.IsNullOrWhiteSpace(_validationMessage))
+        {
+            <div class="lk-state lk-state--warn admin-item-dialog__validation">@_validationMessage</div>
+        }
+
+        <div class="admin-item-dialog__grid">
+            @if (!IsEdit)
+            {
+                <MudTextField T="string"
+                              Label="Internal SKU"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              @bind-Value="_model.InternalSKU"
+                              Placeholder="Auto-generated if empty" />
+            }
+
+            <MudTextField T="string"
+                          Label="Name"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          @bind-Value="_model.Name"
+                          Required="true" />
+
+            <MudSelect T="int"
+                       Label="Category"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       @bind-Value="_model.CategoryId"
+                       Required="true">
+                @foreach (var category in Categories)
+                {
+                    <MudSelectItem T="int" Value="@category.Id">@($"{category.Code} - {category.Name}")</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudSelect T="string"
+                       Label="Base UoM"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       @bind-Value="_model.BaseUoM"
+                       Required="true">
+                @foreach (var unit in Units)
+                {
+                    <MudSelectItem T="string" Value="@unit.Code">@($"{unit.Code} - {unit.Name}")</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudSelect T="string"
+                       Label="Status"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       @bind-Value="_model.Status">
+                <MudSelectItem T="string" Value="@("Active")">Active</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Discontinued")">Discontinued</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Obsolete")">Obsolete</MudSelectItem>
+            </MudSelect>
+
+            <MudTextField T="string"
+                          Label="Primary Barcode"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          @bind-Value="_model.PrimaryBarcode" />
+
+            <MudNumericField T="decimal?"
+                             Label="Weight"
+                             Variant="Variant.Outlined"
+                             Margin="Margin.Dense"
+                             Min="0.001m"
+                             @bind-Value="_model.Weight" />
+
+            <MudNumericField T="decimal?"
+                             Label="Volume"
+                             Variant="Variant.Outlined"
+                             Margin="Margin.Dense"
+                             Min="0.001m"
+                             @bind-Value="_model.Volume" />
+
+            <MudTextField T="string"
+                          Label="Product Config"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          @bind-Value="_model.ProductConfigId" />
+
+            <div class="admin-item-dialog__checks">
+                <MudCheckBox T="bool" @bind-Checked="_model.RequiresLotTracking" Label="Requires lot tracking" />
+                <MudCheckBox T="bool" @bind-Checked="_model.RequiresQC" Label="Requires QC" />
+            </div>
+
+            <MudTextField T="string"
+                          Label="Description"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Lines="3"
+                          Class="admin-item-dialog__description"
+                          @bind-Value="_model.Description" />
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveAsync">@(IsEdit ? "Save Changes" : "Create Item")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private MudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public bool IsEdit { get; set; }
+    [Parameter] public ItemDetailsDto? Item { get; set; }
+    [Parameter] public IReadOnlyList<AdminCategoryDto> Categories { get; set; } = Array.Empty<AdminCategoryDto>();
+    [Parameter] public IReadOnlyList<UnitOfMeasureDto> Units { get; set; } = Array.Empty<UnitOfMeasureDto>();
+
+    private readonly ItemFormModel _model = new();
+    private string? _validationMessage;
+
+    protected override void OnInitialized()
+    {
+        if (Item is not null)
+        {
+            _model.InternalSKU = Item.InternalSKU;
+            _model.Name = Item.Name;
+            _model.Description = Item.Description;
+            _model.CategoryId = Item.CategoryId;
+            _model.BaseUoM = Item.BaseUoM;
+            _model.Weight = Item.Weight;
+            _model.Volume = Item.Volume;
+            _model.RequiresLotTracking = Item.RequiresLotTracking;
+            _model.RequiresQC = Item.RequiresQC;
+            _model.Status = Item.Status;
+            _model.PrimaryBarcode = Item.PrimaryBarcode;
+            _model.ProductConfigId = Item.ProductConfigId;
+            return;
+        }
+
+        _model.CategoryId = Categories.FirstOrDefault()?.Id ?? 0;
+        _model.BaseUoM = Units.FirstOrDefault(x => string.Equals(x.Code, "PCS", StringComparison.OrdinalIgnoreCase))?.Code
+                         ?? Units.FirstOrDefault()?.Code
+                         ?? "PCS";
+    }
+
+    private Task SaveAsync()
+    {
+        _validationMessage = Validate();
+        if (!string.IsNullOrWhiteSpace(_validationMessage))
+        {
+            return Task.CompletedTask;
+        }
+
+        MudDialog.Close(DialogResult.Ok(_model.ToRequest(IsEdit)));
+        return Task.CompletedTask;
+    }
+
+    private string? Validate()
+    {
+        if (string.IsNullOrWhiteSpace(_model.Name))
+        {
+            return "Name is required.";
+        }
+
+        if (_model.CategoryId <= 0)
+        {
+            return "Category is required.";
+        }
+
+        if (string.IsNullOrWhiteSpace(_model.BaseUoM))
+        {
+            return "Base UoM is required.";
+        }
+
+        if (_model.Weight is <= 0)
+        {
+            return "Weight must be greater than zero.";
+        }
+
+        if (_model.Volume is <= 0)
+        {
+            return "Volume must be greater than zero.";
+        }
+
+        return null;
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private sealed class ItemFormModel
+    {
+        public string? InternalSKU { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public int CategoryId { get; set; }
+        public string BaseUoM { get; set; } = "PCS";
+        public decimal? Weight { get; set; }
+        public decimal? Volume { get; set; }
+        public bool RequiresLotTracking { get; set; }
+        public bool RequiresQC { get; set; }
+        public string Status { get; set; } = "Active";
+        public string? PrimaryBarcode { get; set; }
+        public string? ProductConfigId { get; set; }
+
+        public CreateOrUpdateItemRequest ToRequest(bool isEdit) => new()
+        {
+            InternalSKU = isEdit ? null : Normalize(InternalSKU),
+            Name = Name.Trim(),
+            Description = Normalize(Description),
+            CategoryId = CategoryId,
+            BaseUoM = BaseUoM.Trim(),
+            Weight = Weight,
+            Volume = Volume,
+            RequiresLotTracking = RequiresLotTracking,
+            RequiresQC = RequiresQC,
+            Status = string.IsNullOrWhiteSpace(Status) ? "Active" : Status.Trim(),
+            PrimaryBarcode = Normalize(PrimaryBarcode),
+            ProductConfigId = Normalize(ProductConfigId)
+        };
+
+        private static string? Normalize(string? value)
+            => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
+}

@@ -47,6 +47,57 @@ public sealed class MudBlazorGridFullFlowTests : PlaywrightUiTestBase
     }
 
     [Fact]
+    public async Task AdminItems_FullFlow()
+    {
+        await RunUiAsync(nameof(AdminItems_FullFlow), async page =>
+        {
+            var itemsUrl = new Uri(Fixture.Settings.BaseUrl, "/warehouse/admin/items");
+            await page.GotoAsync(itemsUrl.ToString(), new PageGotoOptions { WaitUntil = WaitUntilState.DOMContentLoaded });
+            await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+
+            await Expect(ByTestId(page, "admin-items-page")).ToBeVisibleAsync();
+            await Expect(ByTestId(page, "admin-items-grid")).ToBeVisibleAsync();
+            await Expect(ByTestId(page, "admin-items-search")).ToBeVisibleAsync();
+
+            var searchInput = ByTestId(page, "admin-items-search").GetByRole(AriaRole.Textbox).First;
+            await Expect(searchInput).ToBeVisibleAsync();
+            await searchInput.FillAsync("SKU");
+            await ByTestId(page, "admin-items-search-btn").ClickAsync();
+            await Expect(ByTestId(page, "admin-items-current-page")).ToContainTextAsync("Page");
+
+            var skuHeader = ByTestId(page, "admin-items-grid").GetByRole(AriaRole.Columnheader, new() { Name = "SKU" });
+            await skuHeader.ClickAsync();
+            await Expect(ByTestId(page, "admin-items-grid")).ToBeVisibleAsync();
+
+            await TrySelectMudSelectOptionAsync(page, "admin-items-page-size", "25");
+            await EnsureMudOverlayClosedAsync(page);
+            await TryChangePageAsync(page, "admin-items-pager", "admin-items-current-page");
+            await EnsureMudOverlayClosedAsync(page);
+
+            await ByTestId(page, "admin-items-create").ClickAsync();
+            await Expect(page.GetByText("Create Item").First).ToBeVisibleAsync();
+            await page.GetByRole(AriaRole.Button, new() { Name = "Cancel" }).ClickAsync();
+            await EnsureMudOverlayClosedAsync(page);
+
+            var actionButtons = ByTestId(page, "admin-items-grid").Locator("button[aria-label^='Actions for']");
+            if (await actionButtons.CountAsync() > 0)
+            {
+                await actionButtons.First.ClickAsync();
+                await Expect(page.GetByText("Photos")).ToBeVisibleAsync();
+                await Expect(page.GetByText("Edit")).ToBeVisibleAsync();
+                await page.GetByText("Edit").ClickAsync();
+                await Expect(page.GetByText("Edit Item").First).ToBeVisibleAsync();
+                await page.GetByRole(AriaRole.Button, new() { Name = "Cancel" }).ClickAsync();
+                await EnsureMudOverlayClosedAsync(page);
+            }
+
+            await ByTestId(page, "admin-items-refresh").ClickAsync();
+            await Expect(ByTestId(page, "admin-items-grid")).ToBeVisibleAsync();
+            Assert.Equal(0, await page.GetByTestId("admin-items-error").CountAsync());
+        });
+    }
+
+    [Fact]
     public async Task AvailableStock_FullFlow()
     {
         await RunUiAsync(nameof(AvailableStock_FullFlow), async page =>

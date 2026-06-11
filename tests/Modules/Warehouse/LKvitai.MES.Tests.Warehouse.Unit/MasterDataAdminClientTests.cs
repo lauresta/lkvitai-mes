@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Headers;
+using System.Text.Json;
 using FluentAssertions;
 using LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure;
 using LKvitai.MES.Modules.Warehouse.WebUI.Models;
@@ -28,6 +29,89 @@ public class MasterDataAdminClientTests
         exception.Which.StatusCode.Should().Be(400);
         exception.Which.ErrorCode.Should().Be("VALIDATION_ERROR");
         exception.Which.TraceId.Should().Be("trace-items-400");
+    }
+
+    [Fact]
+    public async Task CreateItemAsync_SerializesFullItemPayload()
+    {
+        string? body = null;
+        var sut = CreateSut(CreateHttpClient(request =>
+        {
+            body = request.Content?.ReadAsStringAsync().GetAwaiter().GetResult();
+            return new HttpResponseMessage(HttpStatusCode.NoContent);
+        }));
+
+        await sut.CreateItemAsync(new CreateOrUpdateItemRequest
+        {
+            InternalSKU = "RAW-001",
+            Name = "Fabric",
+            Description = "Dense cotton",
+            CategoryId = 7,
+            BaseUoM = "M",
+            Weight = 1.25m,
+            Volume = 0.4m,
+            RequiresLotTracking = true,
+            RequiresQC = true,
+            Status = "Active",
+            PrimaryBarcode = "BAR-001",
+            ProductConfigId = "CFG-9"
+        });
+
+        body.Should().NotBeNullOrWhiteSpace();
+        using var json = JsonDocument.Parse(body!);
+        var root = json.RootElement;
+        root.GetProperty("internalSKU").GetString().Should().Be("RAW-001");
+        root.GetProperty("description").GetString().Should().Be("Dense cotton");
+        root.GetProperty("weight").GetDecimal().Should().Be(1.25m);
+        root.GetProperty("volume").GetDecimal().Should().Be(0.4m);
+        root.GetProperty("productConfigId").GetString().Should().Be("CFG-9");
+    }
+
+    [Fact]
+    public async Task GetItemsAsync_DeserializesExtendedListFields()
+    {
+        var sut = CreateSut(CreateHttpClient(_ => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(
+                """
+                {
+                  "items": [
+                    {
+                      "id": 42,
+                      "internalSKU": "RAW-042",
+                      "name": "Fabric",
+                      "categoryId": 7,
+                      "categoryName": "Raw",
+                      "baseUoM": "M",
+                      "status": "Active",
+                      "requiresLotTracking": true,
+                      "requiresQC": false,
+                      "primaryBarcode": "BAR-042",
+                      "weight": 1.25,
+                      "volume": 0.4,
+                      "productConfigId": "CFG-42",
+                      "createdAt": "2026-06-10T08:00:00Z",
+                      "updatedAt": "2026-06-11T08:00:00Z",
+                      "primaryThumbnailUrl": "/api/warehouse/v1/items/42/photos/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa?size=thumb",
+                      "primaryPhotoId": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+                    }
+                  ],
+                  "totalCount": 1,
+                  "pageNumber": 1,
+                  "pageSize": 50
+                }
+                """)
+        }));
+
+        var result = await sut.GetItemsAsync("RAW", 7, "Active", 1, 50);
+
+        result.Items.Should().ContainSingle();
+        var row = result.Items[0];
+        row.Weight.Should().Be(1.25m);
+        row.Volume.Should().Be(0.4m);
+        row.ProductConfigId.Should().Be("CFG-42");
+        row.UpdatedAt.Should().NotBeNull();
+        row.PrimaryThumbnailUrl.Should().Contain("size=thumb");
     }
 
     [Fact]

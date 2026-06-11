@@ -1,296 +1,403 @@
 @page "/admin/items"
+@using System.Diagnostics
 @inject MasterDataAdminClient AdminClient
+@inject UomClient UomClient
 @inject ToastService ToastService
 @inject NavigationManager NavigationManager
+@inject IDialogService DialogService
 
 <PageTitle>Admin Items - LKvitai.MES</PageTitle>
 
-<h3>Items Management</h3>
+<div data-testid="admin-items-page">
+    <h3>Items Management</h3>
 
-@if (_apiError is not null)
-{
-    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
-                 TraceId="@_apiError.TraceId"
-                 OnRetry="ReloadAsync"
-                 OnDismiss="@(() => _apiError = null)" />
-}
+    @if (_apiError is not null)
+    {
+        <div data-testid="admin-items-error">
+            <SharedErrorAlert Message="@BuildErrorMessage(_apiError)"
+                              TraceId="@_apiError.TraceId"
+                              OnRetry="ReloadAsync"
+                              OnDismiss="@(() => _apiError = null)" />
+        </div>
+    }
 
-<div class="card shadow-sm mb-3">
-    <div class="card-body">
-        <div class="row g-2 align-items-end">
-            <div class="col-md-4">
-                <label class="form-label">Search</label>
-                <input class="form-control" @bind="_search" placeholder="SKU or name" />
+    <MudPaper Outlined="true" Elevation="0" Class="panel items-list-panel lots-filter">
+        <div class="lk-toolbar lots-filter-toolbar items-filter-toolbar">
+            <div class="lk-field--filter lots-field lots-field--grow items-filter__search" data-testid="admin-items-search">
+                <MudTextField T="string"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              @bind-Value="_search"
+                              Placeholder="SKU, name, barcode"
+                              InputAttributes="@ItemsSearchAttributes" />
             </div>
-            <div class="col-md-3">
-                <label class="form-label">Category</label>
-                <select class="form-select" @bind="_categoryFilter">
-                    <option value="">All</option>
+            <div class="lk-field--filter lots-field items-filter__category">
+                <MudSelect T="string"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           @bind-Value="_categoryFilter"
+                           InputAttributes="@ItemsCategoryAttributes">
+                    <MudSelectItem T="string" Value="@string.Empty">All categories</MudSelectItem>
                     @foreach (var category in _categories)
                     {
-                        <option value="@category.Id">@category.Code - @category.Name</option>
+                        <MudSelectItem T="string" Value="@category.Id.ToString()">@($"{category.Code} - {category.Name}")</MudSelectItem>
                     }
-                </select>
+                </MudSelect>
             </div>
-            <div class="col-md-3">
-                <label class="form-label">Status</label>
-                <select class="form-select" @bind="_status">
-                    <option value="">All</option>
-                    <option value="Active">Active</option>
-                    <option value="Discontinued">Discontinued</option>
-                    <option value="Obsolete">Obsolete</option>
-                </select>
+            <div class="lk-field--filter lots-field items-filter__status">
+                <MudSelect T="string"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           @bind-Value="_status"
+                           InputAttributes="@ItemsStatusAttributes">
+                    <MudSelectItem T="string" Value="@string.Empty">All statuses</MudSelectItem>
+                    <MudSelectItem T="string" Value="@("Active")">Active</MudSelectItem>
+                    <MudSelectItem T="string" Value="@("Discontinued")">Discontinued</MudSelectItem>
+                    <MudSelectItem T="string" Value="@("Obsolete")">Obsolete</MudSelectItem>
+                </MudSelect>
             </div>
-            <div class="col-md-2 d-grid">
-                <button class="btn btn-primary" @onclick="ApplyFiltersAsync">Filter</button>
+            <div class="lk-field--filter lots-field items-filter__page-size">
+                <div data-testid="admin-items-page-size">
+                    <MudSelect T="int"
+                               Variant="Variant.Outlined"
+                               Margin="Margin.Dense"
+                               Value="@_pageSize"
+                               ValueChanged="OnPageSizeChangedAsync"
+                               InputAttributes="@ItemsPageSizeAttributes">
+                        <MudSelectItem T="int" Value="25">25</MudSelectItem>
+                        <MudSelectItem T="int" Value="50">50</MudSelectItem>
+                        <MudSelectItem T="int" Value="100">100</MudSelectItem>
+                    </MudSelect>
+                </div>
+            </div>
+            <div class="lots-filter__actions items-filter__actions">
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           OnClick="ApplyFiltersAsync"
+                           UserAttributes="@ItemsSearchButtonAttributes">
+                    Filter
+                </MudButton>
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Primary"
+                           OnClick="RefreshAsync"
+                           UserAttributes="@ItemsRefreshAttributes">
+                    Refresh
+                </MudButton>
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Primary"
+                           OnClick="OpenCreateDialogAsync"
+                           UserAttributes="@ItemsCreateAttributes">
+                    Create
+                </MudButton>
             </div>
         </div>
-    </div>
-</div>
 
-<div class="card shadow-sm mb-3 position-relative">
-    <LoadingSpinner IsLoading="@_isLoading" />
-    <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <strong>Total: @_totalCount</strong>
-            <button class="btn btn-sm btn-outline-primary" @onclick="@(() => _showCreate = !_showCreate)">
-                @(_showCreate ? "Hide Create Form" : "Create Item")
-            </button>
+        <div class="lots-grid-head items-grid-head">
+            <strong data-testid="admin-items-summary">Total: @_totalCount</strong>
+            <span class="mono" data-testid="admin-items-current-page">Page @_currentPage</span>
         </div>
 
-        <div class="table-responsive">
-            <table class="table table-sm table-hover align-middle">
-                <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>SKU</th>
-                    <th>Category</th>
-                    <th>Status</th>
-                    <th>Lot</th>
-                    <th>QC</th>
-                    <th></th>
-                </tr>
-                </thead>
-                <tbody>
-                @if (_items.Count == 0)
-                {
-                    <tr>
-                        <td colspan="7" class="text-muted">No items found.</td>
-                    </tr>
-                }
-                else
-                {
-                    @foreach (var row in _items)
-                    {
-                        <tr>
-                            <td>
-                                <div class="d-flex align-items-center gap-3">
-                                    @if (!string.IsNullOrWhiteSpace(row.PrimaryThumbnailUrl))
-                                    {
-                                        <img src="@row.PrimaryThumbnailUrl"
-                                             alt="@row.Name"
-                                             loading="lazy"
-                                             style="width:48px;height:48px;object-fit:cover;border-radius:6px;flex-shrink:0;cursor:pointer;"
-                                             @onclick="@(() => OpenDetails(row.Id))" />
-                                    }
-                                    else
-                                    {
-                                        <div class="bg-light border d-flex align-items-center justify-content-center text-muted flex-shrink-0"
-                                             style="width:48px;height:48px;border-radius:6px;font-size:10px;cursor:pointer;"
-                                             @onclick="@(() => OpenDetails(row.Id))">No img</div>
-                                    }
-                                    <span>@row.Name</span>
-                                </div>
-                            </td>
-                            <td>
-                                <a href="" @onclick="@((MouseEventArgs _) => OpenDetails(row.Id))" @onclick:preventDefault="true">
-                                    @row.InternalSKU
-                                </a>
-                            </td>
-                            <td>@row.CategoryName</td>
-                            <td>@row.Status</td>
-                            <td>@(row.RequiresLotTracking ? "Yes" : "No")</td>
-                            <td>@(row.RequiresQC ? "Yes" : "No")</td>
-                            <td class="text-end">
-                                <button type="button" class="btn btn-sm btn-outline-secondary me-1" @onclick="@(() => BeginEdit(row))">Edit</button>
-                                <button class="btn btn-sm btn-outline-danger"
-                                        disabled="@string.Equals(row.Status, "Discontinued", StringComparison.OrdinalIgnoreCase)"
-                                        @onclick="@(() => DeactivateAsync(row.Id))">
+        <MudDataGrid T="AdminItemDto"
+                     @ref="_grid"
+                     @key="_gridRenderKey"
+                     ServerData="LoadServerDataAsync"
+                     Filterable="false"
+                     SortMode="SortMode.Single"
+                     Dense="true"
+                     Hover="true"
+                     FixedHeader="true"
+                     RowsPerPage="@_pageSize"
+                     Loading="@_isLoading"
+                     Class="lk-grid lots-grid items-grid"
+                     @attributes="@ItemsGridAttributes">
+            <Columns>
+                <TemplateColumn Title="Image" Sortable="false">
+                    <CellTemplate>
+                        <button type="button"
+                                class="items-thumb"
+                                title="Open photos"
+                                @onclick="@(() => OpenPhotosDialogAsync(context.Item))">
+                            @if (!string.IsNullOrWhiteSpace(context.Item.PrimaryThumbnailUrl))
+                            {
+                                <img src="@context.Item.PrimaryThumbnailUrl"
+                                     alt="@context.Item.Name"
+                                     loading="lazy" />
+                            }
+                            else
+                            {
+                                <span>No img</span>
+                            }
+                        </button>
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="SKU">
+                    <CellTemplate>
+                        <button type="button"
+                                class="row-action sku-link"
+                                @onclick="@(() => OpenDetails(context.Item.Id))">
+                            @context.Item.InternalSKU
+                        </button>
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Name">
+                    <CellTemplate>
+                        <span class="items-name" title="@context.Item.Name">@context.Item.Name</span>
+                    </CellTemplate>
+                </TemplateColumn>
+                <PropertyColumn Property="x => x.CategoryName" Title="Category" />
+                <PropertyColumn Property="x => x.BaseUoM" Title="UoM" />
+                <TemplateColumn Title="Status">
+                    <CellTemplate>
+                        <span class="@StatusChipClass(context.Item.Status)">@context.Item.Status</span>
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Lot">
+                    <CellTemplate>
+                        <span class="@BoolChipClass(context.Item.RequiresLotTracking)">@(context.Item.RequiresLotTracking ? "Lot" : "No")</span>
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="QC">
+                    <CellTemplate>
+                        <span class="@BoolChipClass(context.Item.RequiresQC)">@(context.Item.RequiresQC ? "QC" : "No")</span>
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Weight">
+                    <CellTemplate>
+                        <span class="is-num">@FormatDecimal(context.Item.Weight)</span>
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Volume">
+                    <CellTemplate>
+                        <span class="is-num">@FormatDecimal(context.Item.Volume)</span>
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Barcode">
+                    <CellTemplate>
+                        <span class="mono">@FormatNullable(context.Item.PrimaryBarcode)</span>
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Updated">
+                    <CellTemplate>
+                        <span class="mono">@FormatDate(context.Item.UpdatedAt ?? context.Item.CreatedAt)</span>
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="" Sortable="false">
+                    <CellTemplate>
+                        <MudMenu Dense="true"
+                                 AnchorOrigin="Origin.BottomRight"
+                                 TransformOrigin="Origin.TopRight">
+                            <ActivatorContent>
+                                <MudIconButton Icon="@Icons.Material.Outlined.MoreVert"
+                                               Size="Size.Small"
+                                               Color="Color.Primary"
+                                               aria-label="@($"Actions for {context.Item.InternalSKU}")" />
+                            </ActivatorContent>
+                            <ChildContent>
+                                <MudMenuItem OnClick="@(() => OpenEditDialogAsync(context.Item))">Edit</MudMenuItem>
+                                <MudMenuItem OnClick="@(() => OpenPhotosDialogAsync(context.Item))">Photos</MudMenuItem>
+                                <MudMenuItem OnClick="@(() => OpenDetails(context.Item.Id))">Details</MudMenuItem>
+                                <MudMenuItem Disabled="@IsDiscontinued(context.Item)"
+                                             OnClick="@(() => RequestDeactivate(context.Item))">
                                     Deactivate
-                                </button>
-                            </td>
-                        </tr>
-                    }
-                }
-                </tbody>
-            </table>
-        </div>
+                                </MudMenuItem>
+                            </ChildContent>
+                        </MudMenu>
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+            <NoRecordsContent>
+                <div class="lots-grid__empty">
+                    <span class="lots-grid__empty-title">No items found</span>
+                    <span>
+                        No items match the current filter.
+                        @if (HasAppliedFilters)
+                        {
+                            <button type="button" class="lots-grid__empty-action" @onclick="ClearFiltersAsync">Clear filters</button>
+                        }
+                    </span>
+                </div>
+            </NoRecordsContent>
+            <PagerContent>
+                <div class="lots-pager" data-testid="admin-items-pager">
+                    <MudDataGridPager T="AdminItemDto" />
+                </div>
+            </PagerContent>
+        </MudDataGrid>
+    </MudPaper>
 
-        @if (_totalCount > 0)
-        {
-            <Pagination CurrentPage="@_pageNumber"
-                        TotalPages="@TotalPages"
-                        PageSize="@_pageSize"
-                        OnPageChanged="OnPageChangedAsync"
-                        OnPageSizeChanged="OnPageSizeChangedAsync" />
-        }
-    </div>
+    <SharedConfirmDialog IsVisible="@(_deactivateTarget is not null)"
+                         Title="Deactivate item"
+                         Message="@DeactivateMessage"
+                         ConfirmText="Deactivate"
+                         OnConfirm="ConfirmDeactivateAsync"
+                         OnCancel="@(() => _deactivateTarget = null)" />
 </div>
-
-@if (_showCreate)
-{
-    <div class="card shadow-sm mb-3">
-        <div class="card-header">Create Item</div>
-        <div class="card-body">
-            <div class="row g-2">
-                <div class="col-md-4">
-                    <label class="form-label">Name</label>
-                    <input class="form-control" @bind="_create.Name" />
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Category</label>
-                    <select class="form-select" @bind="_create.CategoryId">
-                        @foreach (var category in _categories)
-                        {
-                            <option value="@category.Id">@category.Code</option>
-                        }
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Base UoM</label>
-                    <input class="form-control" @bind="_create.BaseUoM" />
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Status</label>
-                    <select class="form-select" @bind="_create.Status">
-                        <option value="Active">Active</option>
-                        <option value="Discontinued">Discontinued</option>
-                        <option value="Obsolete">Obsolete</option>
-                    </select>
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label">Primary Barcode</label>
-                    <input class="form-control" @bind="_create.PrimaryBarcode" />
-                </div>
-                <div class="col-md-4 d-flex align-items-end gap-3">
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" @bind="_create.RequiresLotTracking" />
-                        <label class="form-check-label">Requires lot tracking</label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" @bind="_create.RequiresQC" />
-                        <label class="form-check-label">Requires QC</label>
-                    </div>
-                </div>
-                <div class="col-md-4 d-flex align-items-end">
-                    <button class="btn btn-primary btn-fixed-height px-4" @onclick="CreateAsync">Save Item</button>
-                </div>
-            </div>
-        </div>
-    </div>
-}
-
-@if (_editing is not null)
-{
-    <div class="card shadow-sm">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <span>Edit Item: @_editing.InternalSKU</span>
-            <button class="btn btn-sm btn-outline-secondary" @onclick="@(() => _editing = null)">Close</button>
-        </div>
-        <div class="card-body">
-            <div class="row g-2">
-                <div class="col-md-4">
-                    <label class="form-label">Name</label>
-                    <input class="form-control" @bind="_editing.Name" />
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Category</label>
-                    <select class="form-select" @bind="_editing.CategoryId">
-                        @foreach (var category in _categories)
-                        {
-                            <option value="@category.Id">@category.Code</option>
-                        }
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Base UoM</label>
-                    <input class="form-control" @bind="_editing.BaseUoM" />
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Status</label>
-                    <select class="form-select" @bind="_editing.Status">
-                        <option value="Active">Active</option>
-                        <option value="Discontinued">Discontinued</option>
-                        <option value="Obsolete">Obsolete</option>
-                    </select>
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label">Primary Barcode</label>
-                    <input class="form-control" @bind="_editing.PrimaryBarcode" />
-                </div>
-                <div class="col-md-4 d-flex align-items-end gap-3">
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" @bind="_editing.RequiresLotTracking" />
-                        <label class="form-check-label">Requires lot tracking</label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" @bind="_editing.RequiresQC" />
-                        <label class="form-check-label">Requires QC</label>
-                    </div>
-                </div>
-                <div class="col-md-4 d-flex align-items-end">
-                    <button class="btn btn-primary btn-fixed-height px-4" @onclick="UpdateAsync">Save Changes</button>
-                </div>
-            </div>
-        </div>
-    </div>
-}
 
 @code {
-    private readonly List<AdminItemDto> _items = [];
+    private MudDataGrid<AdminItemDto>? _grid;
     private readonly List<AdminCategoryDto> _categories = [];
+    private readonly List<UnitOfMeasureDto> _units = [];
 
-    private string? _search;
-    private string? _status;
-    private string? _categoryFilter;
-    private int _pageNumber = 1;
+    private string _search = string.Empty;
+    private string _status = string.Empty;
+    private string _categoryFilter = string.Empty;
+    private string? _appliedSearch;
+    private string? _appliedStatus;
+    private int? _appliedCategoryId;
     private int _pageSize = 50;
     private int _totalCount;
+    private int _currentPage = 1;
+    private int _gridRenderKey;
     private bool _isLoading;
-    private bool _showCreate;
     private ApiException? _apiError;
+    private AdminItemDto? _deactivateTarget;
 
-    private ItemFormModel _create = new();
-    private ItemEditModel? _editing;
+    private static readonly DialogOptions ItemDialogOptions = new()
+    {
+        MaxWidth = MaxWidth.Medium,
+        FullWidth = true,
+        CloseButton = true
+    };
 
-    private int TotalPages => Math.Max(1, (int)Math.Ceiling(_totalCount / (double)Math.Max(1, _pageSize)));
+    private static readonly DialogOptions PhotoDialogOptions = new()
+    {
+        MaxWidth = MaxWidth.Large,
+        FullWidth = true,
+        CloseButton = true
+    };
+
+    private static readonly Dictionary<string, object> ItemsGridAttributes = new() { ["data-testid"] = "admin-items-grid" };
+    private static readonly Dictionary<string, object> ItemsSearchAttributes = new() { ["data-testid"] = "admin-items-search-input", ["aria-label"] = "Search" };
+    private static readonly Dictionary<string, object> ItemsCategoryAttributes = new() { ["data-testid"] = "admin-items-category", ["aria-label"] = "Category" };
+    private static readonly Dictionary<string, object> ItemsStatusAttributes = new() { ["data-testid"] = "admin-items-status", ["aria-label"] = "Status" };
+    private static readonly Dictionary<string, object> ItemsPageSizeAttributes = new() { ["data-testid"] = "admin-items-page-size-select", ["aria-label"] = "Page size" };
+    private static readonly Dictionary<string, object> ItemsSearchButtonAttributes = new() { ["data-testid"] = "admin-items-search-btn" };
+    private static readonly Dictionary<string, object> ItemsRefreshAttributes = new() { ["data-testid"] = "admin-items-refresh" };
+    private static readonly Dictionary<string, object> ItemsCreateAttributes = new() { ["data-testid"] = "admin-items-create" };
+
+    private string DeactivateMessage => _deactivateTarget is null
+        ? string.Empty
+        : $"Deactivate {_deactivateTarget.InternalSKU} - {_deactivateTarget.Name}?";
+
+    private bool HasAppliedFilters =>
+        !string.IsNullOrWhiteSpace(_appliedSearch) ||
+        !string.IsNullOrWhiteSpace(_appliedStatus) ||
+        _appliedCategoryId.HasValue;
 
     protected override async Task OnInitializedAsync()
     {
-        await ReloadAsync();
+        await LoadLookupsAsync();
     }
 
     private async Task ReloadAsync()
     {
-        _isLoading = true;
-        _apiError = null;
+        await LoadLookupsAsync();
+        await RefreshAsync();
+    }
 
+    private async Task LoadLookupsAsync()
+    {
         try
         {
-            var categories = await AdminClient.GetCategoriesAsync();
+            _apiError = null;
+            var categoriesTask = AdminClient.GetCategoriesAsync();
+            var unitsTask = UomClient.GetUnitsAsync(null, null);
+            await Task.WhenAll(categoriesTask, unitsTask);
+
             _categories.Clear();
-            _categories.AddRange(categories);
+            _categories.AddRange(categoriesTask.Result.OrderBy(x => x.Code, StringComparer.OrdinalIgnoreCase));
 
-            if (_create.CategoryId == 0 && _categories.Count > 0)
-            {
-                _create.CategoryId = _categories[0].Id;
-            }
-
-            await LoadItemsAsync();
+            _units.Clear();
+            _units.AddRange(unitsTask.Result.OrderBy(x => x.Code, StringComparer.OrdinalIgnoreCase));
         }
         catch (ApiException ex)
         {
             _apiError = ex;
+        }
+    }
+
+    private async Task ApplyFiltersAsync()
+    {
+        _appliedSearch = string.IsNullOrWhiteSpace(_search) ? null : _search.Trim();
+        _appliedStatus = string.IsNullOrWhiteSpace(_status) ? null : _status;
+        _appliedCategoryId = int.TryParse(_categoryFilter, out var categoryId) ? categoryId : null;
+        _gridRenderKey++;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnPageSizeChangedAsync(int pageSize)
+    {
+        _pageSize = Math.Clamp(pageSize, 1, 500);
+        _gridRenderKey++;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ClearFiltersAsync()
+    {
+        _search = string.Empty;
+        _status = string.Empty;
+        _categoryFilter = string.Empty;
+        _appliedSearch = null;
+        _appliedStatus = null;
+        _appliedCategoryId = null;
+        _gridRenderKey++;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task RefreshAsync()
+    {
+        if (_grid is null)
+        {
+            return;
+        }
+
+        await _grid.ReloadServerData();
+    }
+
+    private async Task<GridData<AdminItemDto>> LoadServerDataAsync(GridState<AdminItemDto> state)
+    {
+        _isLoading = true;
+        _apiError = null;
+        _currentPage = state.Page + 1;
+
+        var requestedPageSize = state.PageSize > 0 ? state.PageSize : _pageSize;
+        _pageSize = requestedPageSize;
+
+        try
+        {
+            var result = await AdminClient.GetItemsAsync(
+                _appliedSearch,
+                _appliedCategoryId,
+                _appliedStatus,
+                state.Page + 1,
+                requestedPageSize);
+
+            _totalCount = result.TotalCount;
+            return new GridData<AdminItemDto>
+            {
+                Items = result.Items,
+                TotalItems = result.TotalCount
+            };
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            _totalCount = 0;
+            return EmptyGridData();
+        }
+        catch (Exception ex)
+        {
+            _apiError = new ApiException(
+                new ProblemDetailsModel
+                {
+                    Title = "Items query failed",
+                    Detail = ex.Message,
+                    Status = 500,
+                    TraceId = Activity.Current?.Id
+                },
+                500);
+            _totalCount = 0;
+            return EmptyGridData();
         }
         finally
         {
@@ -298,75 +405,24 @@
         }
     }
 
-    private async Task ApplyFiltersAsync()
+    private static GridData<AdminItemDto> EmptyGridData() => new()
     {
-        _pageNumber = 1;
-        await LoadItemsAsync();
-    }
+        Items = Array.Empty<AdminItemDto>(),
+        TotalItems = 0
+    };
 
-    private async Task LoadItemsAsync()
+    private async Task OpenCreateDialogAsync()
     {
-        int? categoryId = int.TryParse(_categoryFilter, out var value) ? value : null;
-        var result = await AdminClient.GetItemsAsync(_search, categoryId, _status, _pageNumber, _pageSize);
-
-        _items.Clear();
-        _items.AddRange(result.Items);
-        _totalCount = result.TotalCount;
-    }
-
-    private async Task OnPageChangedAsync(int page)
-    {
-        _pageNumber = Math.Max(1, page);
-        await LoadItemsAsync();
-    }
-
-    private async Task OnPageSizeChangedAsync(int size)
-    {
-        _pageSize = Math.Clamp(size, 1, 500);
-        _pageNumber = 1;
-        await LoadItemsAsync();
-    }
-
-    private async Task CreateAsync()
-    {
-        try
+        var parameters = new DialogParameters
         {
-            _apiError = null;
-            await AdminClient.CreateItemAsync(_create.ToRequest());
-            ToastService.ShowSuccess("Item created.");
-            _create = new ItemFormModel
-            {
-                CategoryId = _categories.FirstOrDefault()?.Id ?? 0
-            };
-            await LoadItemsAsync();
-        }
-        catch (ApiException ex)
-        {
-            _apiError = ex;
-            ToastService.ShowError(BuildErrorMessage(ex));
-        }
-    }
-
-    private void BeginEdit(AdminItemDto row)
-    {
-        _showCreate = false;
-        _editing = new ItemEditModel
-        {
-            Id = row.Id,
-            InternalSKU = row.InternalSKU,
-            Name = row.Name,
-            CategoryId = row.CategoryId,
-            BaseUoM = row.BaseUoM,
-            Status = row.Status,
-            PrimaryBarcode = row.PrimaryBarcode,
-            RequiresLotTracking = row.RequiresLotTracking,
-            RequiresQC = row.RequiresQC
+            ["IsEdit"] = false,
+            ["Categories"] = _categories,
+            ["Units"] = _units
         };
-    }
 
-    private async Task UpdateAsync()
-    {
-        if (_editing is null)
+        var dialog = await DialogService.ShowAsync<AdminItemEditorDialog>("Create item", parameters, ItemDialogOptions);
+        var result = await dialog.Result;
+        if (result.Canceled || result.Data is not CreateOrUpdateItemRequest request)
         {
             return;
         }
@@ -374,10 +430,9 @@
         try
         {
             _apiError = null;
-            await AdminClient.UpdateItemAsync(_editing.Id, _editing.ToRequest());
-            ToastService.ShowSuccess("Item updated.");
-            _editing = null;
-            await LoadItemsAsync();
+            await AdminClient.CreateItemAsync(request);
+            ToastService.ShowSuccess("Item created.");
+            await RefreshAsync();
         }
         catch (ApiException ex)
         {
@@ -386,14 +441,30 @@
         }
     }
 
-    private async Task DeactivateAsync(int id)
+    private async Task OpenEditDialogAsync(AdminItemDto row)
     {
         try
         {
             _apiError = null;
-            await AdminClient.DeactivateItemAsync(id);
-            ToastService.ShowWarning("Item deactivated.");
-            await LoadItemsAsync();
+            var item = await AdminClient.GetItemByIdAsync(row.Id);
+            var parameters = new DialogParameters
+            {
+                ["IsEdit"] = true,
+                ["Item"] = item,
+                ["Categories"] = _categories,
+                ["Units"] = _units
+            };
+
+            var dialog = await DialogService.ShowAsync<AdminItemEditorDialog>("Edit item", parameters, ItemDialogOptions);
+            var result = await dialog.Result;
+            if (result.Canceled || result.Data is not CreateOrUpdateItemRequest request)
+            {
+                return;
+            }
+
+            await AdminClient.UpdateItemAsync(row.Id, request);
+            ToastService.ShowSuccess("Item updated.");
+            await RefreshAsync();
         }
         catch (ApiException ex)
         {
@@ -401,6 +472,80 @@
             ToastService.ShowError(BuildErrorMessage(ex));
         }
     }
+
+    private async Task OpenPhotosDialogAsync(AdminItemDto row)
+    {
+        var parameters = new DialogParameters
+        {
+            ["ItemId"] = row.Id,
+            ["InternalSKU"] = row.InternalSKU,
+            ["Name"] = row.Name
+        };
+
+        var dialog = await DialogService.ShowAsync<AdminItemPhotosDialog>("Item photos", parameters, PhotoDialogOptions);
+        var result = await dialog.Result;
+        if (!result.Canceled && result.Data is true)
+        {
+            await RefreshAsync();
+        }
+    }
+
+    private void RequestDeactivate(AdminItemDto row)
+    {
+        _deactivateTarget = row;
+    }
+
+    private async Task ConfirmDeactivateAsync()
+    {
+        if (_deactivateTarget is null)
+        {
+            return;
+        }
+
+        var target = _deactivateTarget;
+        _deactivateTarget = null;
+
+        try
+        {
+            _apiError = null;
+            await AdminClient.DeactivateItemAsync(target.Id);
+            ToastService.ShowWarning("Item deactivated.");
+            await RefreshAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+    }
+
+    private void OpenDetails(int itemId)
+    {
+        NavigationManager.NavigateTo($"/admin/items/{itemId}");
+    }
+
+    private static bool IsDiscontinued(AdminItemDto item)
+        => string.Equals(item.Status, "Discontinued", StringComparison.OrdinalIgnoreCase);
+
+    private static string StatusChipClass(string status) => status switch
+    {
+        "Active" => "chip chip--ok",
+        "Obsolete" => "chip chip--low",
+        "Discontinued" => "chip chip--locked",
+        _ => "chip chip--reserved"
+    };
+
+    private static string BoolChipClass(bool value)
+        => value ? "chip chip--reserved" : "chip chip--locked";
+
+    private static string FormatDecimal(decimal? value)
+        => value?.ToString("0.###") ?? "-";
+
+    private static string FormatNullable(string? value)
+        => string.IsNullOrWhiteSpace(value) ? "-" : value;
+
+    private static string FormatDate(DateTimeOffset value)
+        => value.ToLocalTime().ToString("yyyy-MM-dd");
 
     private static string BuildErrorMessage(ApiException error)
     {
@@ -410,38 +555,5 @@
         }
 
         return error.UserMessage;
-    }
-
-    private void OpenDetails(int itemId)
-    {
-        NavigationManager.NavigateTo($"/admin/items/{itemId}");
-    }
-
-    private class ItemFormModel
-    {
-        public string Name { get; set; } = string.Empty;
-        public int CategoryId { get; set; }
-        public string BaseUoM { get; set; } = "PCS";
-        public string Status { get; set; } = "Active";
-        public string? PrimaryBarcode { get; set; }
-        public bool RequiresLotTracking { get; set; }
-        public bool RequiresQC { get; set; }
-
-        public CreateOrUpdateItemRequest ToRequest() => new()
-        {
-            Name = Name,
-            CategoryId = CategoryId,
-            BaseUoM = BaseUoM,
-            Status = Status,
-            PrimaryBarcode = PrimaryBarcode,
-            RequiresLotTracking = RequiresLotTracking,
-            RequiresQC = RequiresQC
-        };
-    }
-
-    private sealed class ItemEditModel : ItemFormModel
-    {
-        public int Id { get; set; }
-        public string InternalSKU { get; set; } = string.Empty;
     }
 }

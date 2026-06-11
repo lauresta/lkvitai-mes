@@ -1,0 +1,10 @@
+<div class="items-detail-field">
+    <span>@Label</span>
+    <strong class="@(IsMono ? "mono" : null)">@Value</strong>
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = string.Empty;
+    [Parameter] public string Value { get; set; } = "-";
+    [Parameter] public bool IsMono { get; set; }
+}

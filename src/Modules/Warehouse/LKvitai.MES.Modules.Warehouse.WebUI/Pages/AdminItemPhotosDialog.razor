@@ -1,89 +1,33 @@
-@page "/admin/items/{Id:int}"
 @inject MasterDataAdminClient AdminClient
 @inject ToastService ToastService
-@inject NavigationManager NavigationManager
 
-<PageTitle>Item Details - LKvitai.MES</PageTitle>
-
-<div data-testid="admin-item-detail-page">
-    <div class="items-detail-title">
-        <div>
-            <h3>Item Details</h3>
-            @if (_item is not null)
-            {
-                <div class="items-detail-title__meta">
-                    <span class="mono">@_item.InternalSKU</span>
-                    <span class="@StatusChipClass(_item.Status)">@_item.Status</span>
-                </div>
-            }
+<MudDialog Class="admin-item-photos-dialog">
+    <TitleContent>
+        <div class="admin-item-dialog__title">
+            <span>Item Photos</span>
+            <span class="mono">@InternalSKU</span>
         </div>
-        <MudButton Variant="Variant.Outlined"
-                   Color="Color.Primary"
-                   OnClick="BackToList"
-                   data-testid="admin-item-detail-back">
-            Back to list
-        </MudButton>
-    </div>
-
-    @if (_apiError is not null)
-    {
-        <div data-testid="admin-item-detail-error">
+    </TitleContent>
+    <DialogContent>
+        @if (_apiError is not null)
+        {
             <SharedErrorAlert Message="@BuildErrorMessage(_apiError)"
                               TraceId="@_apiError.TraceId"
-                              OnRetry="ReloadAsync"
+                              OnRetry="LoadPhotosAsync"
                               OnDismiss="@(() => _apiError = null)" />
-        </div>
-    }
+        }
 
-    <MudPaper Outlined="true" Elevation="0" Class="panel items-detail-panel" data-testid="admin-item-detail-fields">
         @if (_isLoading)
         {
             <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
         }
 
-        @if (_item is null && !_isLoading)
-        {
-            <div class="lots-grid__empty">
-                <span class="lots-grid__empty-title">Item not found</span>
-                <span>The item could not be loaded.</span>
+        <div class="admin-item-photos-dialog__toolbar">
+            <div>
+                <strong>@Name</strong>
+                <span class="mono">@_photos.Count photo(s)</span>
             </div>
-        }
-        else if (_item is not null)
-        {
-            <div class="panel__head">
-                <span class="panel__title">@_item.Name</span>
-                <span class="mono">@FormatDateTime(_item.UpdatedAt ?? _item.CreatedAt)</span>
-            </div>
-            <div class="items-detail-fields">
-                <AdminItemFieldBlock Label="SKU" Value="@_item.InternalSKU" IsMono="true" />
-                <AdminItemFieldBlock Label="Name" Value="@_item.Name" />
-                <AdminItemFieldBlock Label="Category ID" Value="@_item.CategoryId.ToString()" IsMono="true" />
-                <AdminItemFieldBlock Label="Base UoM" Value="@_item.BaseUoM" IsMono="true" />
-                <AdminItemFieldBlock Label="Weight" Value="@FormatDecimal(_item.Weight)" IsMono="true" />
-                <AdminItemFieldBlock Label="Volume" Value="@FormatDecimal(_item.Volume)" IsMono="true" />
-                <AdminItemFieldBlock Label="Primary Barcode" Value="@FormatNullable(_item.PrimaryBarcode)" IsMono="true" />
-                <AdminItemFieldBlock Label="Product Config" Value="@FormatNullable(_item.ProductConfigId)" IsMono="true" />
-                <AdminItemFieldBlock Label="Lot Tracking" Value="@(_item.RequiresLotTracking ? "Required" : "Not required")" />
-                <AdminItemFieldBlock Label="QC" Value="@(_item.RequiresQC ? "Required" : "Not required")" />
-                <AdminItemFieldBlock Label="Created" Value="@FormatDateTime(_item.CreatedAt)" IsMono="true" />
-                <AdminItemFieldBlock Label="Updated" Value="@(_item.UpdatedAt.HasValue ? FormatDateTime(_item.UpdatedAt.Value) : "-")" IsMono="true" />
-                <div class="items-detail-field items-detail-field--wide">
-                    <span>Description</span>
-                    <strong>@FormatNullable(_item.Description)</strong>
-                </div>
-            </div>
-        }
-    </MudPaper>
-
-    <MudPaper Outlined="true" Elevation="0" Class="panel items-detail-panel items-photo-panel" data-testid="admin-item-detail-photos">
-        @if (_isLoading)
-        {
-            <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
-        }
-
-        <div class="panel__head">
-            <span class="panel__title">Photos <small>@_photos.Count total</small></span>
-            <div class="panel__actions items-photo-actions">
+            <div class="admin-item-photos-dialog__actions">
                 <InputFile OnChange="HandleFileSelectedAsync" accept="image/jpeg,image/png,image/webp" />
                 <MudButton Variant="Variant.Outlined"
                            Color="Color.Primary"
@@ -97,9 +41,9 @@
 
         @if (!_isLoading && _photos.Count == 0)
         {
-            <div class="lots-grid__empty">
+            <div class="admin-item-photos-dialog__empty">
                 <span class="lots-grid__empty-title">No photos</span>
-                <span>Upload a photo to show thumbnails in item and stock lists.</span>
+                <span>Upload a product image to make it visible in the items grid.</span>
             </div>
         }
         else
@@ -108,16 +52,16 @@
                 @foreach (var photo in _photos)
                 {
                     <div class="admin-item-photo">
-                        <img src="@photo.ThumbUrl" alt="@($"{_item?.Name ?? "Item"} photo")" loading="lazy" />
+                        <img src="@photo.ThumbUrl" alt="@($"{Name} photo")" loading="lazy" />
                         <div class="admin-item-photo__body">
                             <div class="admin-item-photo__meta">
                                 @if (photo.IsPrimary)
                                 {
-                                    <span class="chip chip--reserved">Primary</span>
+                                    <span class="chip chip--info">Primary</span>
                                 }
                                 else
                                 {
-                                    <span class="chip chip--locked">Photo</span>
+                                    <span class="chip chip--slate">Photo</span>
                                 }
                                 <span class="mono">@FormatBytes(photo.SizeBytes)</span>
                             </div>
@@ -150,40 +94,46 @@
                 }
             </div>
         }
-    </MudPaper>
-</div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Close">Close</MudButton>
+    </DialogActions>
+</MudDialog>
 
 @code {
     private const long MaxPhotoBytes = 5L * 1024 * 1024;
 
-    [Parameter] public int Id { get; set; }
+    [CascadingParameter] private MudDialogInstance MudDialog { get; set; } = default!;
 
-    private ItemDetailsDto? _item;
+    [Parameter] public int ItemId { get; set; }
+    [Parameter] public string InternalSKU { get; set; } = string.Empty;
+    [Parameter] public string Name { get; set; } = string.Empty;
+
     private readonly List<ItemPhotoDto> _photos = [];
     private bool _isLoading;
+    private bool _changed;
     private ApiException? _apiError;
 
-    protected override async Task OnParametersSetAsync()
+    protected override async Task OnInitializedAsync()
     {
-        await ReloadAsync();
+        await LoadPhotosAsync();
     }
 
-    private async Task ReloadAsync()
+    private async Task LoadPhotosAsync()
     {
         _isLoading = true;
         _apiError = null;
 
         try
         {
-            _item = await AdminClient.GetItemByIdAsync(Id);
+            var response = await AdminClient.GetItemPhotosAsync(ItemId);
             _photos.Clear();
-            _photos.AddRange(_item.Photos.OrderByDescending(x => x.IsPrimary).ThenByDescending(x => x.CreatedAt));
+            _photos.AddRange(response.Photos.OrderByDescending(x => x.IsPrimary).ThenByDescending(x => x.CreatedAt));
         }
         catch (ApiException ex)
         {
             _apiError = ex;
-            _item = null;
-            _photos.Clear();
+            ToastService.ShowError(BuildErrorMessage(ex));
         }
         finally
         {
@@ -207,9 +157,10 @@
             await using var stream = file.OpenReadStream(MaxPhotoBytes);
             using var ms = new MemoryStream();
             await stream.CopyToAsync(ms);
-            await AdminClient.UploadPhotoAsync(Id, file.Name, ms.ToArray(), file.ContentType);
+            await AdminClient.UploadPhotoAsync(ItemId, file.Name, ms.ToArray(), file.ContentType);
+            _changed = true;
             ToastService.ShowSuccess("Photo uploaded.");
-            await ReloadAsync();
+            await LoadPhotosAsync();
         }
         catch (ApiException ex)
         {
@@ -233,9 +184,10 @@
 
         try
         {
-            await AdminClient.MakePrimaryPhotoAsync(Id, photoId);
+            await AdminClient.MakePrimaryPhotoAsync(ItemId, photoId);
+            _changed = true;
             ToastService.ShowSuccess("Primary photo updated.");
-            await ReloadAsync();
+            await LoadPhotosAsync();
         }
         catch (ApiException ex)
         {
@@ -255,9 +207,10 @@
 
         try
         {
-            await AdminClient.DeletePhotoAsync(Id, photoId);
+            await AdminClient.DeletePhotoAsync(ItemId, photoId);
+            _changed = true;
             ToastService.ShowWarning("Photo deleted.");
-            await ReloadAsync();
+            await LoadPhotosAsync();
         }
         catch (ApiException ex)
         {
@@ -277,7 +230,7 @@
 
         try
         {
-            var count = await AdminClient.RecomputeEmbeddingsAsync(Id);
+            var count = await AdminClient.RecomputeEmbeddingsAsync(ItemId);
             ToastService.ShowSuccess($"Embeddings recomputed for {count} photo(s).");
         }
         catch (ApiException ex)
@@ -291,27 +244,7 @@
         }
     }
 
-    private void BackToList()
-    {
-        NavigationManager.NavigateTo("/admin/items");
-    }
-
-    private static string StatusChipClass(string status) => status switch
-    {
-        "Active" => "chip chip--ok",
-        "Obsolete" => "chip chip--low",
-        "Discontinued" => "chip chip--locked",
-        _ => "chip chip--reserved"
-    };
-
-    private static string FormatDecimal(decimal? value)
-        => value?.ToString("0.###") ?? "-";
-
-    private static string FormatNullable(string? value)
-        => string.IsNullOrWhiteSpace(value) ? "-" : value;
-
-    private static string FormatDateTime(DateTimeOffset value)
-        => value.ToLocalTime().ToString("yyyy-MM-dd HH:mm");
+    private void Close() => MudDialog.Close(DialogResult.Ok(_changed));
 
     private static string FormatBytes(long bytes)
         => bytes >= 1024 * 1024
