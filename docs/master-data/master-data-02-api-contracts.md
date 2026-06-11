@@ -252,9 +252,13 @@
 
 ### Suppliers
 
+Suppliers carry structured, nullable fields. All structured fields are optional except `code` and `name`. `agnumClientId` and `lastAgnumSyncedAt` are read-only and owned by the Agnum sync. `contactInfo` is retained for backward compatibility only and is no longer the primary display/edit surface.
+
 #### **GET /api/warehouse/v1/suppliers**
 
-**Query Parameters**: `search`, `pageNumber`, `pageSize`
+**Query Parameters**: `search`, `country`, `pageNumber`, `pageSize`
+
+`search` matches (case-insensitive, substring) across: `code`, `name`, `shortName`, `companyCode`, `vatCode`, `email`, `phone`, `country`, `city`. `country` filters to an exact (case-insensitive) country match.
 
 **Response** (200 OK):
 ```json
@@ -262,10 +266,25 @@
   "items": [
     {
       "id": 1,
+      "agnumClientId": 57,
       "code": "SUP-001",
       "name": "ABC Fasteners Ltd",
-      "contactInfo": "{\"email\":\"orders@abc.com\"}",
-      "createdAt": "2026-01-10T09:00:00Z"
+      "shortName": "ABC",
+      "companyCode": "302345678",
+      "vatCode": "LT100001234567",
+      "registeredAddress": "Gamyklos g. 1, Vilnius",
+      "pickupAddress": "Sandėlio g. 5, Vilnius",
+      "city": "Vilnius",
+      "country": "Lithuania",
+      "contactName": "Jonas Jonaitis",
+      "phone": "+370 600 00000",
+      "email": "orders@abc.com",
+      "website": "https://abc.example",
+      "additionalInfo": "Preferred fastener supplier",
+      "contactInfo": null,
+      "lastAgnumSyncedAt": "2026-01-10T23:00:00Z",
+      "createdAt": "2026-01-10T09:00:00Z",
+      "updatedAt": "2026-01-12T11:00:00Z"
     }
   ],
   "totalCount": 42,
@@ -274,18 +293,42 @@
 }
 ```
 
+#### **GET /api/warehouse/v1/suppliers/countries**
+
+Returns the distinct, non-empty country values across suppliers (sorted) — used to populate the country filter.
+
+**Response** (200 OK): `["Lithuania", "Poland"]`
+
 #### **POST /api/warehouse/v1/suppliers**
 
-**Request Body**:
+**Request Body** (only `code` and `name` are required):
 ```json
 {
   "code": "SUP-002",
   "name": "XYZ Hardware Co",
-  "contactInfo": "{\"email\":\"sales@xyz.com\",\"phone\":\"+1234567890\"}"
+  "shortName": "XYZ",
+  "companyCode": "302999111",
+  "vatCode": "LT302999111",
+  "registeredAddress": "Pramonės g. 9, Kaunas",
+  "pickupAddress": "Pramonės g. 9, Kaunas",
+  "city": "Kaunas",
+  "country": "Lithuania",
+  "contactName": "Petras Petraitis",
+  "phone": "+370 600 11111",
+  "email": "sales@xyz.com",
+  "website": "https://xyz.example",
+  "additionalInfo": null,
+  "contactInfo": null
 }
 ```
 
-**Response** (201 Created): Similar to Items
+**Response** (201 Created): the created `SupplierListItemDto`.
+
+#### **PUT /api/warehouse/v1/suppliers/{id}**
+
+Same body as POST. `agnumClientId` cannot be set or changed through this endpoint — it is owned by the Agnum sync.
+
+**Agnum ownership behavior**: the Agnum supplier import maps `company_code → companyCode`, `vat_code → vatCode`, `email → email`, `registeredAddress → registeredAddress`, and `officeAddress → pickupAddress`, and stamps `lastAgnumSyncedAt`. The sync never overwrites a non-empty manual value with a blank incoming value. Fields Agnum does not currently expose (`phone`, `contactName`, `website`, `shortName`, `city`, `country`, `additionalInfo`) are managed manually and are never touched by the sync. If Agnum later exposes phone/contact/website, extend `AgnumClientDto` and map them through the same non-blank-preserving merge.
 
 ---
 
@@ -524,10 +567,10 @@ Row 3 (Empty for user data)
 
 **Request/Response**: Similar to Items import
 
-**Template Columns**:
+**Template Columns** (only `Code` and `Name` are required; `ContactInfo` is legacy/backward-compatible only):
 ```
-Code | Name | ContactInfo
-SUP-001 | ABC Fasteners Ltd | {"email":"orders@abc.com"}
+Code | Name | ShortName | CompanyCode | VatCode | RegisteredAddress | PickupAddress | City | Country | ContactName | Phone | Email | Website | AdditionalInfo | ContactInfo
+SUP-001 | ABC Fasteners Ltd | ABC | 302345678 | LT100001234567 | Gamyklos g. 1, Vilnius | Sandėlio g. 5, Vilnius | Vilnius | Lithuania | Jonas Jonaitis | +370 600 00000 | orders@abc.com | https://abc.example | Preferred fastener supplier |
 ```
 
 ---

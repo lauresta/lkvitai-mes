@@ -470,7 +470,9 @@ public class AgnumImportConflictDetectionTests
         importedSupplier.AgnumClientId.Should().Be(57);
         importedSupplier.Code.Should().Be("PL7209-100-63-81");
         importedSupplier.Name.Should().Be("Samex P.P.H.U.");
-        importedSupplier.ContactInfo.Should().Contain("CompanyCode=PL7209-100-63-81");
+        importedSupplier.CompanyCode.Should().Be("PL7209-100-63-81");
+        importedSupplier.VatCode.Should().Be("PL72091006381");
+        importedSupplier.LastAgnumSyncedAt.Should().NotBeNull();
         (await db.Suppliers.CountAsync()).Should().Be(2);
 
         var importedCustomer = await db.Customers.SingleAsync(x => x.CustomerCode == "110305282");
@@ -481,6 +483,63 @@ public class AgnumImportConflictDetectionTests
         (await db.Customers.CountAsync()).Should().Be(2);
 
         (await db.SupplierItemMappings.CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task ApplyAsync_WhenSupplierLinkedToAgnum_ShouldNotBlankOutManualFields()
+    {
+        await using var db = CreateDbContext();
+        await SeedUnitOfMeasuresAsync(db, "vnt");
+
+        db.Suppliers.Add(new Supplier
+        {
+            AgnumClientId = 57,
+            Code = "PL7209-100-63-81",
+            Name = "Samex P.P.H.U.",
+            Phone = "+370 600 11111",
+            ContactName = "Manual Contact",
+            Email = "manual@example.com",
+            Website = "https://manual.example",
+            CompanyCode = "OLD-COMPANY",
+            CreatedAt = DateTimeOffset.UtcNow,
+            UpdatedAt = DateTimeOffset.UtcNow
+        });
+        await db.SaveChangesAsync();
+
+        var product = new AgnumProductDto
+        {
+            Id = 14,
+            Code = "SKU-SUPPLIER-CATALOG",
+            Name = "Supplier catalog product",
+            Pcs = "vnt",
+            Enabled = true,
+            Balance = 1
+        };
+        var supplier = new AgnumClientDto
+        {
+            Id = 57,
+            Code = "PL7209-100-63-81",
+            Name = "Samex P.P.H.U.",
+            CompanyCode = "PL7209-100-63-81",
+            VatCode = "PL72091006381",
+            Email = "", // blank from Agnum must NOT clear the manual value
+            PozymNumbers = new List<int> { 1 }
+        };
+
+        var service = CreateService(db, new[] { product }, new[] { supplier });
+
+        await service.ApplyAsync(493);
+
+        var updated = await db.Suppliers.SingleAsync(x => x.Code == "PL7209-100-63-81");
+        // Agnum-owned fields are refreshed.
+        updated.CompanyCode.Should().Be("PL7209-100-63-81");
+        updated.VatCode.Should().Be("PL72091006381");
+        updated.LastAgnumSyncedAt.Should().NotBeNull();
+        // Manual values that Agnum does not provide (or sends blank) are preserved.
+        updated.Email.Should().Be("manual@example.com");
+        updated.Phone.Should().Be("+370 600 11111");
+        updated.ContactName.Should().Be("Manual Contact");
+        updated.Website.Should().Be("https://manual.example");
     }
 
     private static AgnumNomenclatureImportService CreateService(WarehouseDbContext db, params AgnumProductDto[] products)

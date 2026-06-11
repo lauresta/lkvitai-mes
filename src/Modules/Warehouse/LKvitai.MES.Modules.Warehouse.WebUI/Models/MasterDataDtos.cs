@@ -103,12 +103,47 @@ public record CreateOrUpdateItemRequest
 public record AdminSupplierDto
 {
     public int Id { get; init; }
+    public int? AgnumClientId { get; init; }
     public string Code { get; init; } = string.Empty;
     public string Name { get; init; } = string.Empty;
+    public string? ShortName { get; init; }
+    public string? CompanyCode { get; init; }
+    public string? VatCode { get; init; }
+    public string? RegisteredAddress { get; init; }
+    public string? PickupAddress { get; init; }
+    public string? City { get; init; }
+    public string? Country { get; init; }
+    public string? ContactName { get; init; }
+    public string? Phone { get; init; }
+    public string? Email { get; init; }
+    public string? Website { get; init; }
+    public string? AdditionalInfo { get; init; }
     public string? ContactInfo { get; init; }
+    public DateTimeOffset? LastAgnumSyncedAt { get; init; }
+    public DateTimeOffset CreatedAt { get; init; }
+    public DateTimeOffset? UpdatedAt { get; init; }
+
+    public bool IsAgnumLinked => AgnumClientId is > 0;
 }
 
-public record CreateOrUpdateSupplierRequest(string Code, string Name, string? ContactInfo);
+public record CreateOrUpdateSupplierRequest
+{
+    public string Code { get; init; } = string.Empty;
+    public string Name { get; init; } = string.Empty;
+    public string? ShortName { get; init; }
+    public string? CompanyCode { get; init; }
+    public string? VatCode { get; init; }
+    public string? RegisteredAddress { get; init; }
+    public string? PickupAddress { get; init; }
+    public string? City { get; init; }
+    public string? Country { get; init; }
+    public string? ContactName { get; init; }
+    public string? Phone { get; init; }
+    public string? Email { get; init; }
+    public string? Website { get; init; }
+    public string? AdditionalInfo { get; init; }
+    public string? ContactInfo { get; init; }
+}
 
 public record AdminSupplierMappingDto
 {

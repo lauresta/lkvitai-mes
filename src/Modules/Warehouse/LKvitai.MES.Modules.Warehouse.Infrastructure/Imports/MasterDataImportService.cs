@@ -319,17 +319,18 @@ public sealed class MasterDataImportService : IMasterDataImportService
             if (existing.TryGetValue(code, out var current))
             {
                 current.Name = name;
-                current.ContactInfo = row.Get("ContactInfo");
+                ApplySupplierRow(current, row);
                 toUpdate.Add(current);
             }
             else
             {
-                toInsert.Add(new Supplier
+                var supplier = new Supplier
                 {
                     Code = code,
-                    Name = name,
-                    ContactInfo = row.Get("ContactInfo")
-                });
+                    Name = name
+                };
+                ApplySupplierRow(supplier, row);
+                toInsert.Add(supplier);
             }
         }
 
@@ -356,6 +357,27 @@ public sealed class MasterDataImportService : IMasterDataImportService
 
         return BuildResult(toInsert.Count, toUpdate.Count, 0, dryRun, usedBulk, errors, startedAt);
     }
+
+    private static void ApplySupplierRow(Supplier supplier, RowData row)
+    {
+        supplier.ShortName = Normalize(row.Get("ShortName"));
+        supplier.CompanyCode = Normalize(row.Get("CompanyCode"));
+        supplier.VatCode = Normalize(row.Get("VatCode"));
+        supplier.RegisteredAddress = Normalize(row.Get("RegisteredAddress"));
+        supplier.PickupAddress = Normalize(row.Get("PickupAddress"));
+        supplier.City = Normalize(row.Get("City"));
+        supplier.Country = Normalize(row.Get("Country"));
+        supplier.ContactName = Normalize(row.Get("ContactName"));
+        supplier.Phone = Normalize(row.Get("Phone"));
+        supplier.Email = Normalize(row.Get("Email"));
+        supplier.Website = Normalize(row.Get("Website"));
+        supplier.AdditionalInfo = Normalize(row.Get("AdditionalInfo"));
+        // ContactInfo retained as legacy/backward-compatible free-text input only.
+        supplier.ContactInfo = Normalize(row.Get("ContactInfo"));
+    }
+
+    private static string? Normalize(string? value)
+        => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
     private async Task<ImportExecutionResult> ImportMappingsAsync(
         IReadOnlyList<RowData> rows,

@@ -1,0 +1,232 @@
+<MudDialog Class="admin-item-dialog admin-supplier-dialog">
+    <TitleContent>
+        <div class="admin-item-dialog__title">
+            <span>@(IsEdit ? "Edit Supplier" : "Create Supplier")</span>
+            @if (IsEdit && !string.IsNullOrWhiteSpace(Supplier?.Code))
+            {
+                <span class="mono">@Supplier.Code</span>
+            }
+        </div>
+    </TitleContent>
+    <DialogContent>
+        @if (!string.IsNullOrWhiteSpace(_validationMessage))
+        {
+            <div class="lk-state lk-state--warn admin-item-dialog__validation" data-testid="admin-supplier-dialog-validation">@_validationMessage</div>
+        }
+
+        @if (Supplier?.IsAgnumLinked == true)
+        {
+            <MudTextField T="string"
+                          Label="Agnum Client Id"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Value="@Supplier.AgnumClientId?.ToString()"
+                          ReadOnly="true"
+                          Disabled="true"
+                          Class="admin-supplier-dialog__agnum"
+                          HelperText="Linked to Agnum. Synced fields are refreshed automatically; manual edits are preserved." />
+        }
+
+        <div class="admin-item-dialog__grid">
+            <MudTextField T="string"
+                          Label="Code"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          @bind-Value="_model.Code"
+                          Required="true" />
+
+            <MudTextField T="string"
+                          Label="Name"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          @bind-Value="_model.Name"
+                          Required="true" />
+
+            <MudTextField T="string"
+                          Label="Short name"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          @bind-Value="_model.ShortName" />
+
+            <MudTextField T="string"
+                          Label="Company code"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          @bind-Value="_model.CompanyCode" />
+
+            <MudTextField T="string"
+                          Label="VAT code"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          @bind-Value="_model.VatCode" />
+
+            <MudTextField T="string"
+                          Label="Country"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          @bind-Value="_model.Country" />
+
+            <MudTextField T="string"
+                          Label="City"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          @bind-Value="_model.City" />
+
+            <MudTextField T="string"
+                          Label="Contact name"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          @bind-Value="_model.ContactName" />
+
+            <MudTextField T="string"
+                          Label="Phone"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          @bind-Value="_model.Phone" />
+
+            <MudTextField T="string"
+                          Label="Email"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          @bind-Value="_model.Email" />
+
+            <MudTextField T="string"
+                          Label="Website"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          @bind-Value="_model.Website" />
+
+            <MudTextField T="string"
+                          Label="Registered address"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Lines="2"
+                          Class="admin-item-dialog__description"
+                          @bind-Value="_model.RegisteredAddress" />
+
+            <MudTextField T="string"
+                          Label="Pickup address"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Lines="2"
+                          Class="admin-item-dialog__description"
+                          @bind-Value="_model.PickupAddress" />
+
+            <MudTextField T="string"
+                          Label="Additional info"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Lines="2"
+                          Class="admin-item-dialog__description"
+                          @bind-Value="_model.AdditionalInfo" />
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveAsync">@(IsEdit ? "Save Changes" : "Create Supplier")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private MudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public bool IsEdit { get; set; }
+    [Parameter] public AdminSupplierDto? Supplier { get; set; }
+
+    private readonly SupplierFormModel _model = new();
+    private string? _validationMessage;
+
+    protected override void OnInitialized()
+    {
+        if (Supplier is null)
+        {
+            return;
+        }
+
+        _model.Code = Supplier.Code;
+        _model.Name = Supplier.Name;
+        _model.ShortName = Supplier.ShortName;
+        _model.CompanyCode = Supplier.CompanyCode;
+        _model.VatCode = Supplier.VatCode;
+        _model.RegisteredAddress = Supplier.RegisteredAddress;
+        _model.PickupAddress = Supplier.PickupAddress;
+        _model.City = Supplier.City;
+        _model.Country = Supplier.Country;
+        _model.ContactName = Supplier.ContactName;
+        _model.Phone = Supplier.Phone;
+        _model.Email = Supplier.Email;
+        _model.Website = Supplier.Website;
+        _model.AdditionalInfo = Supplier.AdditionalInfo;
+        _model.ContactInfo = Supplier.ContactInfo;
+    }
+
+    private Task SaveAsync()
+    {
+        _validationMessage = Validate();
+        if (!string.IsNullOrWhiteSpace(_validationMessage))
+        {
+            return Task.CompletedTask;
+        }
+
+        MudDialog.Close(DialogResult.Ok(_model.ToRequest()));
+        return Task.CompletedTask;
+    }
+
+    private string? Validate()
+    {
+        if (string.IsNullOrWhiteSpace(_model.Code))
+        {
+            return "Code is required.";
+        }
+
+        if (string.IsNullOrWhiteSpace(_model.Name))
+        {
+            return "Name is required.";
+        }
+
+        return null;
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private sealed class SupplierFormModel
+    {
+        public string Code { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string? ShortName { get; set; }
+        public string? CompanyCode { get; set; }
+        public string? VatCode { get; set; }
+        public string? RegisteredAddress { get; set; }
+        public string? PickupAddress { get; set; }
+        public string? City { get; set; }
+        public string? Country { get; set; }
+        public string? ContactName { get; set; }
+        public string? Phone { get; set; }
+        public string? Email { get; set; }
+        public string? Website { get; set; }
+        public string? AdditionalInfo { get; set; }
+        public string? ContactInfo { get; set; }
+
+        public CreateOrUpdateSupplierRequest ToRequest() => new()
+        {
+            Code = Code.Trim(),
+            Name = Name.Trim(),
+            ShortName = Normalize(ShortName),
+            CompanyCode = Normalize(CompanyCode),
+            VatCode = Normalize(VatCode),
+            RegisteredAddress = Normalize(RegisteredAddress),
+            PickupAddress = Normalize(PickupAddress),
+            City = Normalize(City),
+            Country = Normalize(Country),
+            ContactName = Normalize(ContactName),
+            Phone = Normalize(Phone),
+            Email = Normalize(Email),
+            Website = Normalize(Website),
+            AdditionalInfo = Normalize(AdditionalInfo),
+            ContactInfo = Normalize(ContactInfo)
+        };
+
+        private static string? Normalize(string? value)
+            => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+    }
+}

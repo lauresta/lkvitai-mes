@@ -97,6 +97,23 @@ public sealed class Supplier : AuditableEntity
     public int? AgnumClientId { get; set; }
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
+    public string? ShortName { get; set; }
+    public string? CompanyCode { get; set; }
+    public string? VatCode { get; set; }
+    public string? RegisteredAddress { get; set; }
+    public string? PickupAddress { get; set; }
+    public string? City { get; set; }
+    public string? Country { get; set; }
+    public string? ContactName { get; set; }
+    public string? Phone { get; set; }
+    public string? Email { get; set; }
+    public string? Website { get; set; }
+    public string? AdditionalInfo { get; set; }
+
+    /// <summary>Timestamp of the most recent successful Agnum sync for this supplier.</summary>
+    public DateTimeOffset? LastAgnumSyncedAt { get; set; }
+
+    /// <summary>Legacy free-text contact blob; retained for backward compatibility only.</summary>
     public string? ContactInfo { get; set; }
 }
 

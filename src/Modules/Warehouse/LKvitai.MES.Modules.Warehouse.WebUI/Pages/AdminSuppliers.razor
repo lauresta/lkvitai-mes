@@ -1,178 +1,340 @@
 @page "/admin/suppliers"
+@using System.Diagnostics
 @inject MasterDataAdminClient AdminClient
 @inject ToastService ToastService
+@inject NavigationManager NavigationManager
+@inject IDialogService DialogService
 
 <PageTitle>Admin Suppliers - LKvitai.MES</PageTitle>
 
-<h3>Suppliers Management</h3>
+<div data-testid="admin-suppliers-page">
+    <h3>Suppliers Management</h3>
 
-@if (_apiError is not null)
-{
-    <ErrorBanner Message="@BuildErrorMessage(_apiError)"
-                 TraceId="@_apiError.TraceId"
-                 OnRetry="ReloadAsync"
-                 OnDismiss="@(() => _apiError = null)" />
-}
-
-<div class="card shadow-sm mb-3">
-    <div class="card-body">
-        <div class="row g-2 align-items-end">
-            <div class="col-md-6">
-                <label class="form-label">Search</label>
-                <input class="form-control" @bind="_search" placeholder="Code or name" />
-            </div>
-            <div class="col-md-2 d-grid">
-                <button class="btn btn-primary" @onclick="ApplyFiltersAsync">Filter</button>
-            </div>
-            <div class="col-md-2 d-grid">
-                <a class="btn btn-outline-secondary" href="admin/supplier-mappings">View Mappings</a>
-            </div>
-            <div class="col-md-2 d-grid">
-                <button class="btn btn-outline-primary" @onclick="@(() => _showCreate = !_showCreate)">
-                    @(_showCreate ? "Hide Create Form" : "Create Supplier")
-                </button>
-            </div>
+    @if (_apiError is not null)
+    {
+        <div data-testid="admin-suppliers-error">
+            <SharedErrorAlert Message="@BuildErrorMessage(_apiError)"
+                              TraceId="@_apiError.TraceId"
+                              OnRetry="ReloadAsync"
+                              OnDismiss="@(() => _apiError = null)" />
         </div>
-    </div>
-</div>
+    }
 
-<div class="card shadow-sm mb-3 position-relative">
-    <LoadingSpinner IsLoading="@_isLoading" />
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-sm table-hover align-middle">
-                <thead>
-                <tr>
-                    <th>Code</th>
-                    <th>Name</th>
-                    <th>Contact Info</th>
-                    <th></th>
-                </tr>
-                </thead>
-                <tbody>
-                @if (_suppliers.Count == 0)
-                {
-                    <tr>
-                        <td colspan="4" class="text-muted">No suppliers found.</td>
-                    </tr>
-                }
-                else
-                {
-                    @foreach (var row in _suppliers)
+    <MudPaper Outlined="true" Elevation="0" Class="panel suppliers-list-panel lots-filter">
+        <div class="lk-toolbar lots-filter-toolbar suppliers-filter-toolbar">
+            <div class="lk-field--filter lots-field lots-field--grow suppliers-filter__search" data-testid="admin-suppliers-search">
+                <MudTextField T="string"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              @bind-Value="_search"
+                              Placeholder="Code, name, company/VAT code, email, phone, country, city"
+                              InputAttributes="@SuppliersSearchAttributes" />
+            </div>
+            <div class="lk-field--filter lots-field suppliers-filter__country">
+                <MudSelect T="string"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           @bind-Value="_countryFilter"
+                           InputAttributes="@SuppliersCountryAttributes">
+                    <MudSelectItem T="string" Value="@string.Empty">All countries</MudSelectItem>
+                    @foreach (var country in _countries)
                     {
-                        <tr>
-                            <td>@row.Code</td>
-                            <td>@row.Name</td>
-                            <td>@row.ContactInfo</td>
-                            <td class="text-end">
-                                <button class="btn btn-sm btn-outline-secondary" @onclick="@(() => BeginEdit(row))">Edit</button>
-                            </td>
-                        </tr>
+                        <MudSelectItem T="string" Value="@country">@country</MudSelectItem>
                     }
-                }
-                </tbody>
-            </table>
+                </MudSelect>
+            </div>
+            <div class="lk-field--filter lots-field suppliers-filter__page-size">
+                <div data-testid="admin-suppliers-page-size">
+                    <MudSelect T="int"
+                               Variant="Variant.Outlined"
+                               Margin="Margin.Dense"
+                               Value="@_pageSize"
+                               ValueChanged="OnPageSizeChangedAsync"
+                               InputAttributes="@SuppliersPageSizeAttributes">
+                        <MudSelectItem T="int" Value="25">25</MudSelectItem>
+                        <MudSelectItem T="int" Value="50">50</MudSelectItem>
+                        <MudSelectItem T="int" Value="100">100</MudSelectItem>
+                    </MudSelect>
+                </div>
+            </div>
+            <div class="lots-filter__actions suppliers-filter__actions">
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           OnClick="ApplyFiltersAsync"
+                           UserAttributes="@SuppliersSearchButtonAttributes">
+                    Filter
+                </MudButton>
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Primary"
+                           OnClick="RefreshAsync"
+                           UserAttributes="@SuppliersRefreshAttributes">
+                    Refresh
+                </MudButton>
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Primary"
+                           OnClick="OpenCreateDialogAsync"
+                           UserAttributes="@SuppliersCreateAttributes">
+                    Create
+                </MudButton>
+                <MudButton Variant="Variant.Outlined"
+                           Color="Color.Primary"
+                           OnClick="@(() => OpenMappings(null))"
+                           UserAttributes="@SuppliersMappingsAttributes">
+                    Mappings
+                </MudButton>
+            </div>
         </div>
 
-        @if (_totalCount > 0)
-        {
-            <Pagination CurrentPage="@_pageNumber"
-                        TotalPages="@TotalPages"
-                        PageSize="@_pageSize"
-                        OnPageChanged="OnPageChangedAsync"
-                        OnPageSizeChanged="OnPageSizeChangedAsync" />
-        }
-    </div>
+        <div class="lots-grid-head suppliers-grid-head">
+            <strong data-testid="admin-suppliers-summary">Total: @_totalCount</strong>
+            <span class="mono" data-testid="admin-suppliers-current-page">Page @_currentPage</span>
+        </div>
+
+        <MudDataGrid T="AdminSupplierDto"
+                     @ref="_grid"
+                     @key="_gridRenderKey"
+                     ServerData="LoadServerDataAsync"
+                     Filterable="false"
+                     SortMode="SortMode.Single"
+                     Dense="true"
+                     Hover="true"
+                     FixedHeader="true"
+                     RowsPerPage="@_pageSize"
+                     Loading="@_isLoading"
+                     Class="lk-grid lots-grid suppliers-grid"
+                     @attributes="@SuppliersGridAttributes">
+            <Columns>
+                <TemplateColumn Title="Code">
+                    <CellTemplate>
+                        <button type="button"
+                                class="row-action sku-link"
+                                @onclick="@(() => OpenEditDialogAsync(context.Item))">
+                            <span class="mono">@context.Item.Code</span>
+                        </button>
+                        @if (context.Item.IsAgnumLinked)
+                        {
+                            <span class="chip chip--reserved suppliers-agnum-chip" title="@($"Agnum client {context.Item.AgnumClientId}")">Agnum</span>
+                        }
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Name">
+                    <CellTemplate>
+                        <span class="suppliers-name" title="@context.Item.Name">@context.Item.Name</span>
+                    </CellTemplate>
+                </TemplateColumn>
+                <PropertyColumn Property="x => x.ShortName" Title="Short name" />
+                <TemplateColumn Title="Company code">
+                    <CellTemplate><span class="mono">@FormatNullable(context.Item.CompanyCode)</span></CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="VAT code">
+                    <CellTemplate><span class="mono">@FormatNullable(context.Item.VatCode)</span></CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Country / City">
+                    <CellTemplate>@FormatLocation(context.Item)</CellTemplate>
+                </TemplateColumn>
+                <PropertyColumn Property="x => x.ContactName" Title="Contact" />
+                <TemplateColumn Title="Phone">
+                    <CellTemplate><span class="mono">@FormatNullable(context.Item.Phone)</span></CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Email">
+                    <CellTemplate><span class="mono">@FormatNullable(context.Item.Email)</span></CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Website">
+                    <CellTemplate>
+                        @if (!string.IsNullOrWhiteSpace(context.Item.Website))
+                        {
+                            <a class="row-action sku-link" href="@NormalizeUrl(context.Item.Website)" target="_blank" rel="noopener">@context.Item.Website</a>
+                        }
+                        else
+                        {
+                            <span>-</span>
+                        }
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Updated">
+                    <CellTemplate>
+                        <span class="mono">@FormatDate(context.Item.UpdatedAt ?? context.Item.CreatedAt)</span>
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="" Sortable="false">
+                    <CellTemplate>
+                        <MudMenu Dense="true"
+                                 AnchorOrigin="Origin.BottomRight"
+                                 TransformOrigin="Origin.TopRight">
+                            <ActivatorContent>
+                                <MudIconButton Icon="@Icons.Material.Outlined.MoreVert"
+                                               Size="Size.Small"
+                                               Color="Color.Primary"
+                                               aria-label="@($"Actions for {context.Item.Code}")" />
+                            </ActivatorContent>
+                            <ChildContent>
+                                <MudMenuItem OnClick="@(() => OpenEditDialogAsync(context.Item))">Edit</MudMenuItem>
+                                <MudMenuItem OnClick="@(() => OpenMappings(null))">View mappings</MudMenuItem>
+                                <MudMenuItem OnClick="@(() => OpenMappings(context.Item.Id))">Open supplier mappings</MudMenuItem>
+                            </ChildContent>
+                        </MudMenu>
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+            <NoRecordsContent>
+                <div class="lots-grid__empty">
+                    <span class="lots-grid__empty-title">No suppliers found</span>
+                    <span>
+                        No suppliers match the current filter.
+                        @if (HasAppliedFilters)
+                        {
+                            <button type="button" class="lots-grid__empty-action" @onclick="ClearFiltersAsync">Clear filters</button>
+                        }
+                    </span>
+                </div>
+            </NoRecordsContent>
+            <PagerContent>
+                <div class="lots-pager" data-testid="admin-suppliers-pager">
+                    <MudDataGridPager T="AdminSupplierDto" />
+                </div>
+            </PagerContent>
+        </MudDataGrid>
+    </MudPaper>
 </div>
-
-@if (_showCreate)
-{
-    <div class="card shadow-sm mb-3">
-        <div class="card-header">Create Supplier</div>
-        <div class="card-body">
-            <div class="row g-2">
-                <div class="col-md-3">
-                    <label class="form-label">Code</label>
-                    <input class="form-control" @bind="_create.Code" />
-                </div>
-                <div class="col-md-5">
-                    <label class="form-label">Name</label>
-                    <input class="form-control" @bind="_create.Name" />
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label">Contact Info</label>
-                    <input class="form-control" @bind="_create.ContactInfo" />
-                </div>
-                <div class="col-md-3 d-grid">
-                    <button class="btn btn-primary" @onclick="CreateAsync">Save Supplier</button>
-                </div>
-            </div>
-        </div>
-    </div>
-}
-
-@if (_editing is not null)
-{
-    <div class="card shadow-sm">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <span>Edit Supplier: @_editing.Code</span>
-            <button class="btn btn-sm btn-outline-secondary" @onclick="@(() => _editing = null)">Close</button>
-        </div>
-        <div class="card-body">
-            <div class="row g-2">
-                <div class="col-md-3">
-                    <label class="form-label">Code</label>
-                    <input class="form-control" @bind="_editing.Code" />
-                </div>
-                <div class="col-md-5">
-                    <label class="form-label">Name</label>
-                    <input class="form-control" @bind="_editing.Name" />
-                </div>
-                <div class="col-md-4">
-                    <label class="form-label">Contact Info</label>
-                    <input class="form-control" @bind="_editing.ContactInfo" />
-                </div>
-                <div class="col-md-3 d-grid">
-                    <button class="btn btn-primary" @onclick="UpdateAsync">Save Changes</button>
-                </div>
-            </div>
-        </div>
-    </div>
-}
 
 @code {
-    private readonly List<AdminSupplierDto> _suppliers = [];
+    private MudDataGrid<AdminSupplierDto>? _grid;
+    private readonly List<string> _countries = [];
 
-    private string? _search;
-    private int _pageNumber = 1;
+    private string _search = string.Empty;
+    private string _countryFilter = string.Empty;
+    private string? _appliedSearch;
+    private string? _appliedCountry;
     private int _pageSize = 50;
     private int _totalCount;
+    private int _currentPage = 1;
+    private int _gridRenderKey;
     private bool _isLoading;
-    private bool _showCreate;
     private ApiException? _apiError;
 
-    private SupplierForm _create = new();
-    private SupplierEditForm? _editing;
+    private static readonly DialogOptions SupplierDialogOptions = new()
+    {
+        MaxWidth = MaxWidth.Medium,
+        FullWidth = true,
+        CloseButton = true
+    };
 
-    private int TotalPages => Math.Max(1, (int)Math.Ceiling(_totalCount / (double)Math.Max(1, _pageSize)));
+    private static readonly Dictionary<string, object> SuppliersGridAttributes = new() { ["data-testid"] = "admin-suppliers-grid" };
+    private static readonly Dictionary<string, object> SuppliersSearchAttributes = new() { ["data-testid"] = "admin-suppliers-search-input", ["aria-label"] = "Search" };
+    private static readonly Dictionary<string, object> SuppliersCountryAttributes = new() { ["data-testid"] = "admin-suppliers-country", ["aria-label"] = "Country" };
+    private static readonly Dictionary<string, object> SuppliersPageSizeAttributes = new() { ["data-testid"] = "admin-suppliers-page-size-select", ["aria-label"] = "Page size" };
+    private static readonly Dictionary<string, object> SuppliersSearchButtonAttributes = new() { ["data-testid"] = "admin-suppliers-search-btn" };
+    private static readonly Dictionary<string, object> SuppliersRefreshAttributes = new() { ["data-testid"] = "admin-suppliers-refresh" };
+    private static readonly Dictionary<string, object> SuppliersCreateAttributes = new() { ["data-testid"] = "admin-suppliers-create" };
+    private static readonly Dictionary<string, object> SuppliersMappingsAttributes = new() { ["data-testid"] = "admin-suppliers-mappings" };
+
+    private bool HasAppliedFilters =>
+        !string.IsNullOrWhiteSpace(_appliedSearch) || !string.IsNullOrWhiteSpace(_appliedCountry);
 
     protected override async Task OnInitializedAsync()
     {
-        await ReloadAsync();
+        await LoadCountriesAsync();
     }
 
     private async Task ReloadAsync()
     {
-        _isLoading = true;
-        _apiError = null;
+        await LoadCountriesAsync();
+        await RefreshAsync();
+    }
 
+    private async Task LoadCountriesAsync()
+    {
         try
         {
-            await LoadSuppliersAsync();
+            _apiError = null;
+            var countries = await AdminClient.GetSupplierCountriesAsync();
+            _countries.Clear();
+            _countries.AddRange(countries);
         }
         catch (ApiException ex)
         {
             _apiError = ex;
+        }
+    }
+
+    private async Task ApplyFiltersAsync()
+    {
+        _appliedSearch = string.IsNullOrWhiteSpace(_search) ? null : _search.Trim();
+        _appliedCountry = string.IsNullOrWhiteSpace(_countryFilter) ? null : _countryFilter;
+        _gridRenderKey++;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnPageSizeChangedAsync(int pageSize)
+    {
+        _pageSize = Math.Clamp(pageSize, 1, 500);
+        _gridRenderKey++;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ClearFiltersAsync()
+    {
+        _search = string.Empty;
+        _countryFilter = string.Empty;
+        _appliedSearch = null;
+        _appliedCountry = null;
+        _gridRenderKey++;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task RefreshAsync()
+    {
+        if (_grid is null)
+        {
+            return;
+        }
+
+        await _grid.ReloadServerData();
+    }
+
+    private async Task<GridData<AdminSupplierDto>> LoadServerDataAsync(GridState<AdminSupplierDto> state)
+    {
+        _isLoading = true;
+        _apiError = null;
+        _currentPage = state.Page + 1;
+
+        var requestedPageSize = state.PageSize > 0 ? state.PageSize : _pageSize;
+        _pageSize = requestedPageSize;
+
+        try
+        {
+            var result = await AdminClient.GetSuppliersAsync(
+                _appliedSearch,
+                state.Page + 1,
+                requestedPageSize,
+                _appliedCountry);
+
+            _totalCount = result.TotalCount;
+            return new GridData<AdminSupplierDto>
+            {
+                Items = result.Items,
+                TotalItems = result.TotalCount
+            };
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            _totalCount = 0;
+            return EmptyGridData();
+        }
+        catch (Exception ex)
+        {
+            _apiError = new ApiException(
+                new ProblemDetailsModel
+                {
+                    Title = "Suppliers query failed",
+                    Detail = ex.Message,
+                    Status = 500,
+                    TraceId = Activity.Current?.Id
+                },
+                500);
+            _totalCount = 0;
+            return EmptyGridData();
         }
         finally
         {
@@ -180,67 +342,22 @@
         }
     }
 
-    private async Task ApplyFiltersAsync()
+    private static GridData<AdminSupplierDto> EmptyGridData() => new()
     {
-        _pageNumber = 1;
-        await LoadSuppliersAsync();
-    }
+        Items = Array.Empty<AdminSupplierDto>(),
+        TotalItems = 0
+    };
 
-    private async Task LoadSuppliersAsync()
+    private async Task OpenCreateDialogAsync()
     {
-        var result = await AdminClient.GetSuppliersAsync(_search, _pageNumber, _pageSize);
-        _suppliers.Clear();
-        _suppliers.AddRange(result.Items);
-        _totalCount = result.TotalCount;
-    }
-
-    private async Task OnPageChangedAsync(int page)
-    {
-        _pageNumber = Math.Max(1, page);
-        await LoadSuppliersAsync();
-    }
-
-    private async Task OnPageSizeChangedAsync(int size)
-    {
-        _pageSize = Math.Clamp(size, 1, 500);
-        _pageNumber = 1;
-        await LoadSuppliersAsync();
-    }
-
-    private async Task CreateAsync()
-    {
-        try
+        var parameters = new DialogParameters
         {
-            _apiError = null;
-            await AdminClient.CreateSupplierAsync(new CreateOrUpdateSupplierRequest(
-                _create.Code,
-                _create.Name,
-                _create.ContactInfo));
-            ToastService.ShowSuccess("Supplier created.");
-            _create = new SupplierForm();
-            await LoadSuppliersAsync();
-        }
-        catch (ApiException ex)
-        {
-            _apiError = ex;
-            ToastService.ShowError(BuildErrorMessage(ex));
-        }
-    }
-
-    private void BeginEdit(AdminSupplierDto row)
-    {
-        _editing = new SupplierEditForm
-        {
-            Id = row.Id,
-            Code = row.Code,
-            Name = row.Name,
-            ContactInfo = row.ContactInfo
+            ["IsEdit"] = false
         };
-    }
 
-    private async Task UpdateAsync()
-    {
-        if (_editing is null)
+        var dialog = await DialogService.ShowAsync<AdminSupplierEditorDialog>("Create supplier", parameters, SupplierDialogOptions);
+        var result = await dialog.Result;
+        if (result.Canceled || result.Data is not CreateOrUpdateSupplierRequest request)
         {
             return;
         }
@@ -248,12 +365,10 @@
         try
         {
             _apiError = null;
-            await AdminClient.UpdateSupplierAsync(
-                _editing.Id,
-                new CreateOrUpdateSupplierRequest(_editing.Code, _editing.Name, _editing.ContactInfo));
-            ToastService.ShowSuccess("Supplier updated.");
-            _editing = null;
-            await LoadSuppliersAsync();
+            await AdminClient.CreateSupplierAsync(request);
+            ToastService.ShowSuccess("Supplier created.");
+            await LoadCountriesAsync();
+            await RefreshAsync();
         }
         catch (ApiException ex)
         {
@@ -261,6 +376,61 @@
             ToastService.ShowError(BuildErrorMessage(ex));
         }
     }
+
+    private async Task OpenEditDialogAsync(AdminSupplierDto row)
+    {
+        var parameters = new DialogParameters
+        {
+            ["IsEdit"] = true,
+            ["Supplier"] = row
+        };
+
+        var dialog = await DialogService.ShowAsync<AdminSupplierEditorDialog>("Edit supplier", parameters, SupplierDialogOptions);
+        var result = await dialog.Result;
+        if (result.Canceled || result.Data is not CreateOrUpdateSupplierRequest request)
+        {
+            return;
+        }
+
+        try
+        {
+            _apiError = null;
+            await AdminClient.UpdateSupplierAsync(row.Id, request);
+            ToastService.ShowSuccess("Supplier updated.");
+            await LoadCountriesAsync();
+            await RefreshAsync();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+    }
+
+    private void OpenMappings(int? supplierId)
+    {
+        var url = supplierId.HasValue
+            ? $"/admin/supplier-mappings?supplierId={supplierId.Value}"
+            : "/admin/supplier-mappings";
+        NavigationManager.NavigateTo(url);
+    }
+
+    private static string FormatNullable(string? value)
+        => string.IsNullOrWhiteSpace(value) ? "-" : value;
+
+    private static string FormatLocation(AdminSupplierDto supplier)
+    {
+        var parts = new[] { supplier.Country, supplier.City }
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .ToArray();
+        return parts.Length == 0 ? "-" : string.Join(" / ", parts);
+    }
+
+    private static string NormalizeUrl(string website)
+        => website.StartsWith("http", StringComparison.OrdinalIgnoreCase) ? website : $"https://{website}";
+
+    private static string FormatDate(DateTimeOffset value)
+        => value.ToLocalTime().ToString("yyyy-MM-dd");
 
     private static string BuildErrorMessage(ApiException error)
     {
@@ -270,17 +440,5 @@
         }
 
         return error.UserMessage;
-    }
-
-    private class SupplierForm
-    {
-        public string Code { get; set; } = string.Empty;
-        public string Name { get; set; } = string.Empty;
-        public string? ContactInfo { get; set; }
-    }
-
-    private sealed class SupplierEditForm : SupplierForm
-    {
-        public int Id { get; set; }
     }
 }

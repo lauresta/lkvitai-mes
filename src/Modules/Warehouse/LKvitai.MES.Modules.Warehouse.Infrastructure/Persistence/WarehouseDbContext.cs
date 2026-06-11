@@ -393,9 +393,23 @@ public class WarehouseDbContext : DbContext
             entity.Property(e => e.AgnumClientId);
             entity.Property(e => e.Code).HasMaxLength(50).IsRequired();
             entity.Property(e => e.Name).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.ShortName).HasMaxLength(200);
+            entity.Property(e => e.CompanyCode).HasMaxLength(50);
+            entity.Property(e => e.VatCode).HasMaxLength(50);
+            entity.Property(e => e.RegisteredAddress).HasColumnType("text");
+            entity.Property(e => e.PickupAddress).HasColumnType("text");
+            entity.Property(e => e.City).HasMaxLength(120);
+            entity.Property(e => e.Country).HasMaxLength(120);
+            entity.Property(e => e.ContactName).HasMaxLength(200);
+            entity.Property(e => e.Phone).HasMaxLength(80);
+            entity.Property(e => e.Email).HasMaxLength(200);
+            entity.Property(e => e.Website).HasMaxLength(200);
+            entity.Property(e => e.AdditionalInfo).HasColumnType("text");
+            entity.Property(e => e.LastAgnumSyncedAt);
             entity.Property(e => e.ContactInfo).HasColumnType("text");
             entity.HasIndex(e => e.Code).IsUnique();
             entity.HasIndex(e => e.AgnumClientId).IsUnique();
+            entity.HasIndex(e => e.Country);
         });
 
         modelBuilder.Entity<Customer>(entity =>

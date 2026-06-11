@@ -227,10 +227,19 @@
     private MappingFormModel _create = new();
     private MappingEditModel? _editing;
 
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "supplierId")]
+    public int? SupplierIdQuery { get; set; }
+
     private int TotalPages => Math.Max(1, (int)Math.Ceiling(_totalCount / (double)Math.Max(1, _pageSize)));
 
     protected override async Task OnInitializedAsync()
     {
+        if (SupplierIdQuery is > 0)
+        {
+            _supplierFilter = SupplierIdQuery.Value.ToString();
+        }
+
         await ReloadAsync();
     }
 
