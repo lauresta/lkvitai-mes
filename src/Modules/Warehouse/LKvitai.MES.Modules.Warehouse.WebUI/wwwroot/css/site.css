@@ -688,6 +688,36 @@ td.is-num strong { font-weight: 700; }
   padding: 0 8px;
 }
 
+.lots-grid .mud-table-pagination-toolbar {
+  --mud-internal-toolbar-height: 36px;
+  height: 36px;
+  min-height: 36px;
+  padding: 0 2px;
+}
+
+.lots-grid .mud-table-pagination-caption {
+  padding: 0 8px;
+}
+
+.lots-grid .mud-table-pagination-select {
+  margin: 0 8px !important;
+  min-width: 46px;
+}
+
+.lots-grid .mud-table-pagination-select .mud-input {
+  min-height: 28px;
+}
+
+.lots-grid .mud-table-pagination-select .mud-input-root {
+  margin-top: 0 !important;
+  padding: 0 6px !important;
+}
+
+.lots-grid .mud-table-pagination-actions {
+  margin-left: 8px;
+  margin-inline-start: 8px;
+}
+
 .lots-grid .mud-table-pagination .mud-input-control {
   margin: 0;
 }
@@ -698,12 +728,17 @@ td.is-num strong { font-weight: 700; }
   padding: 0;
 }
 
+.lots-grid .mud-table-empty-row .mud-table-cell {
+  height: auto !important;
+  padding: 0 !important;
+}
+
 .lots-grid__empty {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 18px 16px;
+  gap: 3px;
+  padding: 12px 16px;
   color: var(--n-500);
   font-size: 12.5px;
 }
