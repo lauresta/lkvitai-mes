@@ -12,9 +12,7 @@
         var relative = Navigation.ToBaseRelativePath(Navigation.Uri);
         var warehouseBasePath = NormalizePath(Configuration["PathBase"], "/warehouse");
         var portalLoginBasePath = NormalizePath(Configuration["PortalAuth:LoginBasePath"], "/portal");
-        var returnUrl = string.IsNullOrWhiteSpace(relative)
-            ? $"{warehouseBasePath}/dashboard"
-            : $"{warehouseBasePath}/{relative.TrimStart('/')}";
+        var returnUrl = BuildReturnUrl(relative, warehouseBasePath);
 
         Navigation.NavigateTo($"{portalLoginBasePath}/login.html?returnUrl={Uri.EscapeDataString(returnUrl)}", replace: true);
     }
@@ -28,5 +26,19 @@
 
         var normalized = configured.Trim().TrimEnd('/');
         return normalized.StartsWith("/", StringComparison.Ordinal) ? normalized : $"/{normalized}";
+    }
+
+    private static string BuildReturnUrl(string relative, string warehouseBasePath)
+    {
+        if (string.IsNullOrWhiteSpace(relative))
+        {
+            return $"{warehouseBasePath}/dashboard";
+        }
+
+        var normalizedRelative = $"/{relative.TrimStart('/')}";
+        return normalizedRelative.StartsWith($"{warehouseBasePath}/", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(normalizedRelative, warehouseBasePath, StringComparison.OrdinalIgnoreCase)
+            ? normalizedRelative
+            : $"{warehouseBasePath}{normalizedRelative}";
     }
 }

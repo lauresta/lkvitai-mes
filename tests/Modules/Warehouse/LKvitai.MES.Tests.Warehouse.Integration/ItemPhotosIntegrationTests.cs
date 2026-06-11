@@ -162,6 +162,67 @@ public class ItemPhotosIntegrationTests
     }
 
     [Fact]
+    public async Task GetItems_ShouldReturnExtendedFieldsAndPrimaryThumbnail()
+    {
+        await using var db = CreateDbContext();
+        await SeedMinimalItemAsync(db, 1005);
+
+        var item = await db.Items.SingleAsync(x => x.Id == 1005);
+        item.Weight = 1.25m;
+        item.Volume = 0.4m;
+        item.PrimaryBarcode = "BAR-1005";
+        item.ProductConfigId = "CFG-1005";
+        item.CreatedAt = DateTimeOffset.Parse("2026-06-10T08:00:00Z");
+        item.UpdatedAt = DateTimeOffset.Parse("2026-06-11T08:00:00Z");
+
+        var photoId = Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
+        db.ItemPhotos.Add(new ItemPhoto
+        {
+            Id = photoId,
+            ItemId = 1005,
+            OriginalKey = "original",
+            ThumbKey = "thumb",
+            ContentType = "image/png",
+            SizeBytes = 128,
+            IsPrimary = true
+        });
+        await db.SaveChangesAsync();
+
+        var storage = new InMemoryItemImageStorageService();
+        var capability = new ItemImageSearchCapabilityService(
+            storage,
+            db,
+            new Microsoft.Extensions.Logging.Abstractions.NullLogger<ItemImageSearchCapabilityService>());
+        var photoService = new ItemPhotoService(
+            db,
+            storage,
+            capability,
+            new ItemImageEmbeddingService(),
+            new Microsoft.Extensions.Logging.Abstractions.NullLogger<ItemPhotoService>());
+        var controller = new ItemsController(db, new StubSkuGenerationService(), photoService, capability)
+        {
+            ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext()
+            }
+        };
+
+        var result = await controller.GetAsync(null, null, null, 1, 50);
+
+        var ok = result.Should().BeOfType<OkObjectResult>().Subject;
+        var payload = ok.Value.Should()
+            .BeOfType<ItemsController.PagedResponse<ItemsController.ItemListItemDto>>()
+            .Subject;
+        payload.Items.Should().ContainSingle();
+        var row = payload.Items[0];
+        row.Weight.Should().Be(1.25m);
+        row.Volume.Should().Be(0.4m);
+        row.ProductConfigId.Should().Be("CFG-1005");
+        row.PrimaryThumbnailUrl.Should().Be($"/api/warehouse/v1/items/1005/photos/{photoId}?size=thumb");
+        row.PrimaryPhotoId.Should().Be(photoId);
+    }
+
+    [Fact]
     public async Task SearchByImage_WhenCapabilityMissing_ShouldReturn503()
     {
         await using var db = CreateDbContext();

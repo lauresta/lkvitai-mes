@@ -20,6 +20,11 @@ public record AdminItemDto
     public bool RequiresLotTracking { get; init; }
     public bool RequiresQC { get; init; }
     public string? PrimaryBarcode { get; init; }
+    public decimal? Weight { get; init; }
+    public decimal? Volume { get; init; }
+    public string? ProductConfigId { get; init; }
+    public DateTimeOffset CreatedAt { get; init; }
+    public DateTimeOffset? UpdatedAt { get; init; }
     public string? PrimaryThumbnailUrl { get; init; }
     public Guid? PrimaryPhotoId { get; init; }
 }
