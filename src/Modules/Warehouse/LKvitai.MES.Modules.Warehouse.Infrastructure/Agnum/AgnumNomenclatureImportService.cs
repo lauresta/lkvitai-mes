@@ -640,7 +640,6 @@ public sealed class AgnumNomenclatureImportService : IAgnumNomenclatureImportSer
             var supplierName = string.IsNullOrWhiteSpace(supplierClient.Name)
                 ? normalizedCode
                 : supplierClient.Name.Trim();
-            var contactInfo = BuildSupplierContactInfo(supplierClient);
 
             var tracked = _dbContext.Suppliers.Local.FirstOrDefault(x =>
                 x.AgnumClientId == supplierClient.Id
@@ -649,7 +648,7 @@ public sealed class AgnumNomenclatureImportService : IAgnumNomenclatureImportSer
             {
                 tracked.AgnumClientId = supplierClient.Id;
                 tracked.Name = supplierName;
-                tracked.ContactInfo = contactInfo;
+                ApplyAgnumSupplierFields(tracked, supplierClient);
                 tracked.UpdatedAt = DateTimeOffset.UtcNow;
                 imported++;
                 continue;
@@ -661,7 +660,7 @@ public sealed class AgnumNomenclatureImportService : IAgnumNomenclatureImportSer
                 existing.AgnumClientId = supplierClient.Id;
                 existing.Code = normalizedCode;
                 existing.Name = supplierName;
-                existing.ContactInfo = contactInfo;
+                ApplyAgnumSupplierFields(existing, supplierClient);
                 existing.UpdatedAt = DateTimeOffset.UtcNow;
                 imported++;
                 continue;
@@ -672,10 +671,10 @@ public sealed class AgnumNomenclatureImportService : IAgnumNomenclatureImportSer
                 AgnumClientId = supplierClient.Id,
                 Code = normalizedCode,
                 Name = supplierName,
-                ContactInfo = contactInfo,
                 CreatedAt = DateTimeOffset.UtcNow,
                 UpdatedAt = DateTimeOffset.UtcNow
             };
+            ApplyAgnumSupplierFields(supplier, supplierClient);
 
             _dbContext.Suppliers.Add(supplier);
             existingSuppliersByCode[normalizedCode] = supplier;
@@ -944,20 +943,28 @@ public sealed class AgnumNomenclatureImportService : IAgnumNomenclatureImportSer
         };
     }
 
-    private static string? BuildSupplierContactInfo(AgnumClientDto supplier)
+    /// <summary>
+    /// Maps Agnum-owned client fields onto the structured supplier columns. Agnum is the source of
+    /// truth for values it provides, but it never overwrites a non-empty manual value with a blank
+    /// (Agnum does not currently expose phone/contact/website, so those manual fields stay intact).
+    /// </summary>
+    private static void ApplyAgnumSupplierFields(Supplier supplier, AgnumClientDto client)
     {
-        var parts = new[]
-        {
-            string.IsNullOrWhiteSpace(supplier.CompanyCode) ? null : $"CompanyCode={supplier.CompanyCode.Trim()}",
-            string.IsNullOrWhiteSpace(supplier.VatCode) ? null : $"VatCode={supplier.VatCode.Trim()}",
-            string.IsNullOrWhiteSpace(supplier.Email) ? null : $"Email={supplier.Email.Trim()}",
-            string.IsNullOrWhiteSpace(supplier.RegisteredAddress) ? null : $"RegisteredAddress={supplier.RegisteredAddress.Trim()}",
-            string.IsNullOrWhiteSpace(supplier.OfficeAddress) ? null : $"OfficeAddress={supplier.OfficeAddress.Trim()}"
-        };
-
-        var contactInfo = string.Join("; ", parts.Where(x => x is not null));
-        return string.IsNullOrWhiteSpace(contactInfo) ? null : contactInfo;
+        supplier.CompanyCode = MergeAgnumValue(supplier.CompanyCode, client.CompanyCode);
+        supplier.VatCode = MergeAgnumValue(supplier.VatCode, client.VatCode);
+        supplier.Email = MergeAgnumValue(supplier.Email, client.Email);
+        supplier.RegisteredAddress = MergeAgnumValue(supplier.RegisteredAddress, client.RegisteredAddress);
+        // Agnum's officeAddress is the pickup/dispatch location for the supplier relationship.
+        supplier.PickupAddress = MergeAgnumValue(supplier.PickupAddress, client.OfficeAddress);
+        supplier.LastAgnumSyncedAt = DateTimeOffset.UtcNow;
     }
+
+    /// <summary>
+    /// Returns the trimmed Agnum value when present; otherwise keeps the existing (manual) value.
+    /// A blank incoming value never clears a stored manual correction.
+    /// </summary>
+    private static string? MergeAgnumValue(string? existing, string? incoming)
+        => string.IsNullOrWhiteSpace(incoming) ? existing : incoming.Trim();
 
     private static decimal? NormalizePositiveDecimal(decimal? value)
     {

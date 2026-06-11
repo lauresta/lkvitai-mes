@@ -121,12 +121,80 @@ public class MasterDataAdminClientTests
         var sut = CreateSut(CreateHttpClient(_ => response));
 
         var act = async () => await sut.CreateSupplierAsync(
-            new CreateOrUpdateSupplierRequest("SUP-1", "Supplier", null));
+            new CreateOrUpdateSupplierRequest { Code = "SUP-1", Name = "Supplier" });
 
         var exception = await act.Should().ThrowAsync<ApiException>();
         exception.Which.StatusCode.Should().Be(400);
         exception.Which.ErrorCode.Should().Be("VALIDATION_ERROR");
         exception.Which.TraceId.Should().Be("trace-suppliers-400");
+    }
+
+    [Fact]
+    public async Task GetSuppliersAsync_WhenStructuredPayload_DeserializesAllFields()
+    {
+        HttpRequestMessage? captured = null;
+        var sut = CreateSut(CreateHttpClient(request =>
+        {
+            captured = request;
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(
+                    """
+                    {
+                      "items": [
+                        {
+                          "id": 11,
+                          "agnumClientId": 57,
+                          "code": "SUP-1",
+                          "name": "ABC Fasteners",
+                          "shortName": "ABC",
+                          "companyCode": "302345678",
+                          "vatCode": "LT100001234567",
+                          "registeredAddress": "Gamyklos g. 1",
+                          "pickupAddress": "Sandelio g. 5",
+                          "city": "Vilnius",
+                          "country": "Lithuania",
+                          "contactName": "Jonas",
+                          "phone": "+37060000000",
+                          "email": "orders@abc.example",
+                          "website": "https://abc.example",
+                          "additionalInfo": "Preferred",
+                          "contactInfo": "legacy",
+                          "lastAgnumSyncedAt": "2026-06-10T10:00:00+00:00",
+                          "createdAt": "2026-06-01T08:00:00+00:00",
+                          "updatedAt": "2026-06-09T09:00:00+00:00"
+                        }
+                      ],
+                      "totalCount": 1,
+                      "pageNumber": 1,
+                      "pageSize": 50
+                    }
+                    """)
+            };
+        }));
+
+        var result = await sut.GetSuppliersAsync("ABC", 1, 50, "Lithuania");
+
+        captured!.RequestUri!.Query.Should().Contain("search=ABC");
+        captured.RequestUri!.Query.Should().Contain("country=Lithuania");
+
+        var row = result.Items.Should().ContainSingle().Subject;
+        row.AgnumClientId.Should().Be(57);
+        row.IsAgnumLinked.Should().BeTrue();
+        row.ShortName.Should().Be("ABC");
+        row.CompanyCode.Should().Be("302345678");
+        row.VatCode.Should().Be("LT100001234567");
+        row.RegisteredAddress.Should().Be("Gamyklos g. 1");
+        row.PickupAddress.Should().Be("Sandelio g. 5");
+        row.City.Should().Be("Vilnius");
+        row.Country.Should().Be("Lithuania");
+        row.ContactName.Should().Be("Jonas");
+        row.Phone.Should().Be("+37060000000");
+        row.Email.Should().Be("orders@abc.example");
+        row.Website.Should().Be("https://abc.example");
+        row.AdditionalInfo.Should().Be("Preferred");
+        row.ContactInfo.Should().Be("legacy");
+        row.LastAgnumSyncedAt.Should().NotBeNull();
     }
 
     [Fact]

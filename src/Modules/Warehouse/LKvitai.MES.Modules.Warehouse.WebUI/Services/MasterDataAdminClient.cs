@@ -140,6 +140,7 @@ public sealed class MasterDataAdminClient
         string? search,
         int pageNumber,
         int pageSize,
+        string? country = null,
         CancellationToken cancellationToken = default)
     {
         var query = new List<string>
@@ -153,10 +154,18 @@ public sealed class MasterDataAdminClient
             query.Add($"search={Uri.EscapeDataString(search)}");
         }
 
+        if (!string.IsNullOrWhiteSpace(country))
+        {
+            query.Add($"country={Uri.EscapeDataString(country)}");
+        }
+
         return GetAsync<PagedApiResponse<AdminSupplierDto>>(
             $"/api/warehouse/v1/suppliers?{string.Join("&", query)}",
             cancellationToken);
     }
+
+    public Task<IReadOnlyList<string>> GetSupplierCountriesAsync(CancellationToken cancellationToken = default)
+        => GetAsync<IReadOnlyList<string>>("/api/warehouse/v1/suppliers/countries", cancellationToken);
 
     public Task CreateSupplierAsync(CreateOrUpdateSupplierRequest request, CancellationToken cancellationToken = default)
         => SendNoContentAsync(HttpMethod.Post, "/api/warehouse/v1/suppliers", request, cancellationToken);
