@@ -116,7 +116,7 @@ public sealed class MudBlazorGridFullFlowTests : PlaywrightUiTestBase
             await ByTestId(page, "admin-suppliers-search-btn").ClickAsync();
             await Expect(ByTestId(page, "admin-suppliers-current-page")).ToContainTextAsync("Page");
 
-            var codeHeader = ByTestId(page, "admin-suppliers-grid").GetByRole(AriaRole.Columnheader, new() { Name = "Code" });
+            var codeHeader = ByTestId(page, "admin-suppliers-grid").GetByRole(AriaRole.Columnheader, new() { Name = "Code", Exact = true });
             await codeHeader.ClickAsync();
             await Expect(ByTestId(page, "admin-suppliers-grid")).ToBeVisibleAsync();
 
