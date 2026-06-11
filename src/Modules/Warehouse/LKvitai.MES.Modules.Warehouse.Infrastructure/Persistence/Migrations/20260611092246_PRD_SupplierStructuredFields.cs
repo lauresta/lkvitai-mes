@@ -11,6 +11,15 @@ namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            // Absorbs the earlier 20260519163000_AddAgnumClientIdsToPartners migration, which never
+            // executed under Database.Migrate() because it shipped without a .Designer.cs (no [Migration]
+            // attribute, so EF never registered it). Idempotent so it is safe on databases that were
+            // provisioned via EnsureCreated() and already have these columns.
+            migrationBuilder.Sql(@"ALTER TABLE public.suppliers ADD COLUMN IF NOT EXISTS ""AgnumClientId"" integer;");
+            migrationBuilder.Sql(@"ALTER TABLE public.customers ADD COLUMN IF NOT EXISTS ""AgnumClientId"" integer;");
+            migrationBuilder.Sql(@"CREATE UNIQUE INDEX IF NOT EXISTS ""IX_suppliers_AgnumClientId"" ON public.suppliers (""AgnumClientId"");");
+            migrationBuilder.Sql(@"CREATE UNIQUE INDEX IF NOT EXISTS ""IX_customers_AgnumClientId"" ON public.customers (""AgnumClientId"");");
+
             migrationBuilder.AddColumn<string>(
                 name: "AdditionalInfo",
                 schema: "public",
@@ -190,6 +199,11 @@ namespace LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence.Migrations
                 name: "Website",
                 schema: "public",
                 table: "suppliers");
+
+            migrationBuilder.Sql(@"DROP INDEX IF EXISTS public.""IX_suppliers_AgnumClientId"";");
+            migrationBuilder.Sql(@"DROP INDEX IF EXISTS public.""IX_customers_AgnumClientId"";");
+            migrationBuilder.Sql(@"ALTER TABLE public.suppliers DROP COLUMN IF EXISTS ""AgnumClientId"";");
+            migrationBuilder.Sql(@"ALTER TABLE public.customers DROP COLUMN IF EXISTS ""AgnumClientId"";");
         }
     }
 }
