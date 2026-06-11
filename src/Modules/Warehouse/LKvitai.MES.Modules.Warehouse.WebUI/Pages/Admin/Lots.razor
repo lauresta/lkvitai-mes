@@ -20,6 +20,7 @@
 <MudPaper Outlined="true" Elevation="0" Class="panel lots-list-panel lots-filter">
     <div class="lk-toolbar lots-filter-toolbar">
         <div class="lk-field--filter lots-field lots-field--grow lots-filter__search" data-testid="lots-search">
+            <span class="lots-field__label">Search</span>
             <MudTextField T="string"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
@@ -28,6 +29,7 @@
                           InputAttributes="@LotsFilterSearchAttributes" />
         </div>
         <div class="lk-field--filter lots-field lots-filter__status">
+            <span class="lots-field__label">Status</span>
             <MudSelect T="string"
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
@@ -41,6 +43,7 @@
             </MudSelect>
         </div>
         <div class="lk-field--filter lots-field lots-filter__page-size">
+            <span class="lots-field__label">Page size</span>
             <div data-testid="lots-page-size">
                 <MudSelect T="int"
                            Variant="Variant.Outlined"
