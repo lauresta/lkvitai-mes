@@ -27,6 +27,11 @@ public class StockClient
         string? warehouse,
         string? location,
         string? sku,
+        string? item = null,
+        string? itemName = null,
+        string? tag = null,
+        string? supplier = null,
+        string? supplierCountry = null,
         bool includeVirtual = false,
         int page = 1,
         int pageSize = 50,
@@ -50,6 +55,12 @@ public class StockClient
             query.Append("&sku=").Append(Uri.EscapeDataString(sku));
         }
 
+        AppendOptionalQuery(query, "item", item);
+        AppendOptionalQuery(query, "itemName", itemName);
+        AppendOptionalQuery(query, "tag", tag);
+        AppendOptionalQuery(query, "supplier", supplier);
+        AppendOptionalQuery(query, "supplierCountry", supplierCountry);
+
         return SearchCoreAsync(query.ToString(), cancellationToken);
     }
 
@@ -57,6 +68,11 @@ public class StockClient
         string? warehouse,
         string? location,
         string? sku,
+        string? item = null,
+        string? itemName = null,
+        string? tag = null,
+        string? supplier = null,
+        string? supplierCountry = null,
         bool includeVirtual = false,
         CancellationToken cancellationToken = default)
     {
@@ -77,6 +93,12 @@ public class StockClient
         {
             query.Append("&sku=").Append(Uri.EscapeDataString(sku));
         }
+
+        AppendOptionalQuery(query, "item", item);
+        AppendOptionalQuery(query, "itemName", itemName);
+        AppendOptionalQuery(query, "tag", tag);
+        AppendOptionalQuery(query, "supplier", supplier);
+        AppendOptionalQuery(query, "supplierCountry", supplierCountry);
 
         var client = _factory.CreateClient("WarehouseApi");
         var response = await client.GetAsync(query.ToString(), cancellationToken);
@@ -153,6 +175,19 @@ public class StockClient
             Page = payload.PageNumber,
             PageSize = payload.PageSize
         };
+    }
+
+    private static void AppendOptionalQuery(StringBuilder query, string name, string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return;
+        }
+
+        query.Append('&')
+            .Append(name)
+            .Append('=')
+            .Append(Uri.EscapeDataString(value.Trim()));
     }
 
     private async Task<T> GetAsync<T>(string relativeUrl, CancellationToken cancellationToken = default)

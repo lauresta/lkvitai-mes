@@ -35,6 +35,11 @@ public sealed class StockController : ControllerBase
         [FromQuery] string? warehouse = null,
         [FromQuery] string? location = null,
         [FromQuery] string? sku = null,
+        [FromQuery] string? item = null,
+        [FromQuery] string? itemName = null,
+        [FromQuery] string? tag = null,
+        [FromQuery] string? supplier = null,
+        [FromQuery] string? supplierCountry = null,
         [FromQuery] int? itemId = null,
         [FromQuery] int? locationId = null,
         [FromQuery] int? categoryId = null,
@@ -53,6 +58,11 @@ public sealed class StockController : ControllerBase
                           !exportCsv &&
                           string.IsNullOrWhiteSpace(location) &&
                           string.IsNullOrWhiteSpace(sku) &&
+                          string.IsNullOrWhiteSpace(item) &&
+                          string.IsNullOrWhiteSpace(itemName) &&
+                          string.IsNullOrWhiteSpace(tag) &&
+                          string.IsNullOrWhiteSpace(supplier) &&
+                          string.IsNullOrWhiteSpace(supplierCountry) &&
                           !categoryId.HasValue &&
                           !expiringBefore.HasValue &&
                           pageNumber == 1 &&
@@ -101,6 +111,33 @@ public sealed class StockController : ControllerBase
             .ToDictionaryAsync(x => x.InternalSKU, cancellationToken);
 
         var itemIds = itemMap.Values.Select(x => x.Id).Distinct().ToList();
+        var metadataFilters = new AvailableStockMetadataFilters(item, itemName, tag, supplier, supplierCountry);
+        HashSet<int>? metadataFilteredItemIds = null;
+
+        if (metadataFilters.HasAny)
+        {
+            IReadOnlyList<SupplierItemMapping> supplierMappings = metadataFilters.NeedsSupplierData
+                ? await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync(
+                    _dbContext.SupplierItemMappings
+                        .AsNoTracking()
+                        .Include(x => x.Supplier)
+                        .Where(x => itemIds.Contains(x.ItemId)),
+                    cancellationToken)
+                : Array.Empty<SupplierItemMapping>();
+
+            IReadOnlyList<ItemPhoto> taggedPhotos = metadataFilters.NeedsTagData
+                ? await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync(
+                    _dbContext.ItemPhotos
+                        .AsNoTracking()
+                        .Where(x => itemIds.Contains(x.ItemId) && x.Tags != null && x.Tags != ""),
+                    cancellationToken)
+                : Array.Empty<ItemPhoto>();
+
+            metadataFilteredItemIds = StockMetadataFilter
+                .FilterItemIds(itemMap.Values, supplierMappings, taggedPhotos, metadataFilters)
+                .ToHashSet();
+        }
+
         var primaryPhotoByItemId = await _dbContext.ItemPhotos
             .AsNoTracking()
             .Where(x => itemIds.Contains(x.ItemId) && x.IsPrimary)
@@ -151,6 +188,11 @@ public sealed class StockController : ControllerBase
         if (categoryId.HasValue)
         {
             mapped = mapped.Where(x => x.CategoryId == categoryId.Value);
+        }
+
+        if (metadataFilteredItemIds is not null)
+        {
+            mapped = mapped.Where(x => x.ItemId.HasValue && metadataFilteredItemIds.Contains(x.ItemId.Value));
         }
 
         if (!includeVirtualLocations)
@@ -523,4 +565,184 @@ public sealed class StockController : ControllerBase
         int TotalCount,
         int PageNumber,
         int PageSize);
+}
+
+public sealed record AvailableStockMetadataFilters(
+    string? Item,
+    string? ItemName,
+    string? Tag,
+    string? Supplier,
+    string? SupplierCountry)
+{
+    public string ItemFilter { get; } = Item?.Trim() ?? string.Empty;
+    public string ItemNameFilter { get; } = ItemName?.Trim() ?? string.Empty;
+    public string TagFilter { get; } = Tag?.Trim() ?? string.Empty;
+    public string SupplierFilter { get; } = Supplier?.Trim() ?? string.Empty;
+    public string SupplierCountryFilter { get; } = SupplierCountry?.Trim() ?? string.Empty;
+
+    public bool HasAny =>
+        !string.IsNullOrWhiteSpace(ItemFilter) ||
+        !string.IsNullOrWhiteSpace(ItemNameFilter) ||
+        !string.IsNullOrWhiteSpace(TagFilter) ||
+        !string.IsNullOrWhiteSpace(SupplierFilter) ||
+        !string.IsNullOrWhiteSpace(SupplierCountryFilter);
+
+    public bool NeedsSupplierData =>
+        !string.IsNullOrWhiteSpace(SupplierFilter) ||
+        !string.IsNullOrWhiteSpace(SupplierCountryFilter);
+
+    public bool NeedsTagData => !string.IsNullOrWhiteSpace(TagFilter);
+}
+
+public static class StockMetadataFilter
+{
+    public static IReadOnlyCollection<int> FilterItemIds(
+        IEnumerable<Item> items,
+        IEnumerable<SupplierItemMapping> supplierMappings,
+        IEnumerable<ItemPhoto> itemPhotos,
+        AvailableStockMetadataFilters filters)
+    {
+        var itemList = items.ToList();
+        var result = itemList.Select(x => x.Id).ToHashSet();
+
+        if (!string.IsNullOrWhiteSpace(filters.ItemFilter))
+        {
+            IntersectWith(result, itemList
+                .Where(x =>
+                    MatchesPattern(x.InternalSKU, filters.ItemFilter) ||
+                    MatchesPattern(x.Name, filters.ItemFilter) ||
+                    MatchesPattern(x.ProductConfigId, filters.ItemFilter))
+                .Select(x => x.Id));
+        }
+
+        if (!string.IsNullOrWhiteSpace(filters.ItemNameFilter))
+        {
+            IntersectWith(result, itemList
+                .Where(x => MatchesPattern(x.Name, filters.ItemNameFilter))
+                .Select(x => x.Id));
+        }
+
+        if (!string.IsNullOrWhiteSpace(filters.TagFilter))
+        {
+            IntersectWith(result, itemPhotos
+                .Where(x => MatchesTag(x.Tags, filters.TagFilter))
+                .Select(x => x.ItemId)
+                .Distinct());
+        }
+
+        if (filters.NeedsSupplierData)
+        {
+            IntersectWith(result, supplierMappings
+                .Where(x => MatchesSupplier(x, filters.SupplierFilter) &&
+                            MatchesSupplierCountry(x, filters.SupplierCountryFilter))
+                .Select(x => x.ItemId)
+                .Distinct());
+        }
+
+        return result;
+    }
+
+    public static bool MatchesPattern(string? value, string pattern)
+    {
+        if (string.IsNullOrWhiteSpace(pattern))
+        {
+            return true;
+        }
+
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return false;
+        }
+
+        var normalizedPattern = pattern.Trim();
+        if (normalizedPattern == "*")
+        {
+            return true;
+        }
+
+        var isPrefix = normalizedPattern.EndsWith('*');
+        var isSuffix = normalizedPattern.StartsWith('*');
+        var token = normalizedPattern.Trim('*');
+        if (string.IsNullOrEmpty(token))
+        {
+            return true;
+        }
+
+        var comparison = StringComparison.OrdinalIgnoreCase;
+        if (isPrefix && isSuffix)
+        {
+            return value.Contains(token, comparison);
+        }
+
+        if (isPrefix)
+        {
+            return value.StartsWith(token, comparison);
+        }
+
+        if (isSuffix)
+        {
+            return value.EndsWith(token, comparison);
+        }
+
+        return value.Contains(token, comparison);
+    }
+
+    private static void IntersectWith(HashSet<int> current, IEnumerable<int> next)
+    {
+        current.IntersectWith(next);
+    }
+
+    private static bool MatchesSupplier(SupplierItemMapping mapping, string supplierFilter)
+    {
+        if (string.IsNullOrWhiteSpace(supplierFilter))
+        {
+            return true;
+        }
+
+        return MatchesPattern(mapping.SupplierSKU, supplierFilter) ||
+               MatchesPattern(mapping.Supplier?.Code, supplierFilter) ||
+               MatchesPattern(mapping.Supplier?.Name, supplierFilter) ||
+               MatchesPattern(mapping.Supplier?.ShortName, supplierFilter) ||
+               MatchesPattern(mapping.Supplier?.CompanyCode, supplierFilter);
+    }
+
+    private static bool MatchesSupplierCountry(SupplierItemMapping mapping, string supplierCountryFilter)
+    {
+        if (string.IsNullOrWhiteSpace(supplierCountryFilter))
+        {
+            return true;
+        }
+
+        return MatchesPattern(mapping.Supplier?.Country, supplierCountryFilter);
+    }
+
+    private static bool MatchesTag(string? tags, string tagFilter)
+    {
+        if (string.IsNullOrWhiteSpace(tagFilter))
+        {
+            return true;
+        }
+
+        if (string.IsNullOrWhiteSpace(tags))
+        {
+            return false;
+        }
+
+        var normalizedFilter = NormalizeTag(tagFilter);
+        if (string.IsNullOrWhiteSpace(normalizedFilter))
+        {
+            return true;
+        }
+
+        if (MatchesPattern(tags, normalizedFilter) || MatchesPattern(tags, "#" + normalizedFilter))
+        {
+            return true;
+        }
+
+        var tokens = tags.Split([',', ';', '|', ' ', '\t', '\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
+        return tokens.Any(token => string.Equals(NormalizeTag(token), normalizedFilter, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static string NormalizeTag(string value)
+        => value.Trim().TrimStart('#');
 }

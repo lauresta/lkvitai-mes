@@ -4,8 +4,12 @@
 
 <PageTitle>Available Stock - Cikada.MES</PageTitle>
 
-<div data-testid="stock-page">
-<h3>Available Stock</h3>
+<div class="stock-page" data-testid="stock-page">
+<header class="page-head stock-page-head">
+    <div>
+        <h1>Available Stock</h1>
+    </div>
+</header>
 
 <StockFilters Warehouses="@_warehouses"
               Filters="@_filters"
@@ -90,18 +94,6 @@
                         </div>
                     </NoRecordsContent>
                     <Columns>
-                        <TemplateColumn Title="">
-                            <CellTemplate>
-                                @if (!string.IsNullOrWhiteSpace(context.Item.PrimaryThumbnailUrl))
-                                {
-                                    <img class="stock-thumb" src="@context.Item.PrimaryThumbnailUrl" alt="@context.Item.SKU" loading="lazy" />
-                                }
-                                else
-                                {
-                                    <span class="stock-thumb stock-thumb--empty">-</span>
-                                }
-                            </CellTemplate>
-                        </TemplateColumn>
                         <PropertyColumn Property="x => x.WarehouseId" Title="Warehouse" />
                         <PropertyColumn Property="x => x.Location" Title="Location" />
                         <TemplateColumn Title="SKU">
@@ -111,7 +103,7 @@
                         </TemplateColumn>
                         <PropertyColumn Property="x => x.ItemName" Title="Name" />
                         <TemplateColumn Title="Physical">
-                            <CellTemplate><span class="is-num">@FormatQty(context.Item.PhysicalQty)</span></CellTemplate>
+                            <CellTemplate><span class="@GetQtyClass(context.Item.PhysicalQty)">@FormatQty(context.Item.PhysicalQty)</span></CellTemplate>
                         </TemplateColumn>
                         <TemplateColumn Title="Reserved">
                             <CellTemplate><span class="is-num">@FormatQty(context.Item.ReservedQty)</span></CellTemplate>
@@ -122,7 +114,6 @@
                         <TemplateColumn Title="Last Updated">
                             <CellTemplate>
                                 <span class="mono">@context.Item.LastUpdated.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</span>
-                                <span class="stock-stale"><StaleBadge LastUpdated="context.Item.LastUpdated" /></span>
                             </CellTemplate>
                         </TemplateColumn>
                     </Columns>
@@ -134,20 +125,12 @@
                     @foreach (var row in _items)
                     {
                         <div class="stock-list-row">
-                            @if (!string.IsNullOrWhiteSpace(row.PrimaryThumbnailUrl))
-                            {
-                                <img class="stock-list-row__thumb" src="@row.PrimaryThumbnailUrl" alt="@row.SKU" loading="lazy" />
-                            }
-                            else
-                            {
-                                <span class="stock-list-row__thumb stock-thumb--empty">-</span>
-                            }
                             <div class="stock-list-row__main">
                                 <div><span class="sku-link">@row.SKU</span> @row.ItemName</div>
                                 <div class="stock-list-row__meta">@row.WarehouseId / @row.Location</div>
                             </div>
                             <div class="stock-list-row__qty">
-                                <div>On hand: <span class="mono">@FormatQty(row.PhysicalQty)</span></div>
+                                <div>On hand: <span class="@GetQtyClass(row.PhysicalQty)">@FormatQty(row.PhysicalQty)</span></div>
                                 <div>Available: <strong class="mono">@FormatQty(row.AvailableQty)</strong></div>
                             </div>
                         </div>
@@ -301,13 +284,18 @@
         try
         {
             var result = await StockApiClient.SearchAvailableStockAsync(
-                _filters.Warehouse,
-                _filters.Location,
-                _filters.Sku,
-                _filters.IncludeVirtual,
-                page,
-                pageSize,
-                _disposeCts.Token);
+                warehouse: _filters.Warehouse,
+                location: _filters.Location,
+                sku: _filters.Sku,
+                item: _filters.Item,
+                itemName: _filters.ItemName,
+                tag: _filters.Tag,
+                supplier: _filters.Supplier,
+                supplierCountry: _filters.SupplierCountry,
+                includeVirtual: _filters.IncludeVirtual,
+                page: page,
+                pageSize: pageSize,
+                cancellationToken: _disposeCts.Token);
 
             _items = result.Items;
             _totalCount = result.TotalCount;
@@ -359,11 +347,16 @@
         try
         {
             await StockApiClient.ExportAvailableStockCsvAsync(
-                _filters.Warehouse,
-                _filters.Location,
-                _filters.Sku,
-                _filters.IncludeVirtual,
-                _disposeCts.Token);
+                warehouse: _filters.Warehouse,
+                location: _filters.Location,
+                sku: _filters.Sku,
+                item: _filters.Item,
+                itemName: _filters.ItemName,
+                tag: _filters.Tag,
+                supplier: _filters.Supplier,
+                supplierCountry: _filters.SupplierCountry,
+                includeVirtual: _filters.IncludeVirtual,
+                cancellationToken: _disposeCts.Token);
         }
         catch (ApiException ex)
         {
@@ -395,6 +388,9 @@
 
     private static string FormatQty(decimal value)
         => value.ToString("0.###");
+
+    private static string GetQtyClass(decimal value)
+        => value < 0m ? "is-num stock-qty stock-qty--negative" : "is-num stock-qty";
 
     private static string BuildErrorMessage(ApiException ex)
     {
