@@ -2,9 +2,11 @@
     <MudPaper Outlined="true" Elevation="0" Class="panel stock-filter-panel">
         <div class="lk-toolbar stock-filter-toolbar">
             <div class="lk-field--filter stock-field stock-filter__warehouse" data-testid="stock-warehouse">
+                <span class="stock-field__label">Warehouse</span>
                 <MudSelect T="string"
                            Variant="Variant.Outlined"
                            Margin="Margin.Dense"
+                           Placeholder="All warehouses"
                            @bind-Value="_warehouse"
                            InputAttributes="@WarehouseAttributes">
                     <MudSelectItem T="string" Value="@string.Empty">All warehouses</MudSelectItem>
@@ -16,6 +18,7 @@
             </div>
 
             <div class="lk-field--filter stock-field stock-filter__location" data-testid="stock-location">
+                <span class="stock-field__label">Location</span>
                 <MudTextField T="string"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
@@ -25,18 +28,69 @@
             </div>
 
             <div class="lk-field--filter stock-field stock-filter__sku" data-testid="stock-search">
+                <span class="stock-field__label">SKU</span>
                 <MudTextField T="string"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               @bind-Value="_sku"
-                              Placeholder="SKU e.g. SKU*"
+                              Placeholder="SKU e.g. RM-*"
                               InputAttributes="@SkuAttributes" />
+            </div>
+
+            <div class="lk-field--filter stock-field stock-filter__item" data-testid="stock-item">
+                <span class="stock-field__label">Product / item</span>
+                <MudTextField T="string"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              @bind-Value="_item"
+                              Placeholder="Product code or name"
+                              InputAttributes="@ItemAttributes" />
+            </div>
+
+            <div class="lk-field--filter stock-field stock-filter__item-name" data-testid="stock-item-name">
+                <span class="stock-field__label">Name</span>
+                <MudTextField T="string"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              @bind-Value="_itemName"
+                              Placeholder="Item name"
+                              InputAttributes="@ItemNameAttributes" />
+            </div>
+
+            <div class="lk-field--filter stock-field stock-filter__tag" data-testid="stock-tag">
+                <span class="stock-field__label">Tag</span>
+                <MudTextField T="string"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              @bind-Value="_tag"
+                              Placeholder="#tag"
+                              InputAttributes="@TagAttributes" />
+            </div>
+
+            <div class="lk-field--filter stock-field stock-filter__supplier" data-testid="stock-supplier">
+                <span class="stock-field__label">Supplier</span>
+                <MudTextField T="string"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              @bind-Value="_supplier"
+                              Placeholder="Supplier code or name"
+                              InputAttributes="@SupplierAttributes" />
+            </div>
+
+            <div class="lk-field--filter stock-field stock-filter__supplier-country" data-testid="stock-supplier-country">
+                <span class="stock-field__label">Supplier country</span>
+                <MudTextField T="string"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              @bind-Value="_supplierCountry"
+                              Placeholder="Country"
+                              InputAttributes="@SupplierCountryAttributes" />
             </div>
 
             <div class="stock-filter__toggle" data-testid="stock-include-virtual">
                 <MudCheckBox T="bool"
                              Dense="true"
-                             Label="Virtual"
+                             Label="Include virtual"
                              @bind-Checked="_includeVirtual" />
             </div>
 
@@ -76,19 +130,34 @@
     private string? _warehouse;
     private string _location = string.Empty;
     private string _sku = string.Empty;
+    private string _item = string.Empty;
+    private string _itemName = string.Empty;
+    private string _tag = string.Empty;
+    private string _supplier = string.Empty;
+    private string _supplierCountry = string.Empty;
     private bool _includeVirtual;
     private string? _validationError;
     private static readonly Dictionary<string, object> WarehouseAttributes = new() { ["aria-label"] = "Warehouse" };
     private static readonly Dictionary<string, object> LocationAttributes = new() { ["aria-label"] = "Location" };
     private static readonly Dictionary<string, object> SkuAttributes = new() { ["aria-label"] = "SKU" };
+    private static readonly Dictionary<string, object> ItemAttributes = new() { ["aria-label"] = "Product or item" };
+    private static readonly Dictionary<string, object> ItemNameAttributes = new() { ["aria-label"] = "Item name" };
+    private static readonly Dictionary<string, object> TagAttributes = new() { ["aria-label"] = "Tag" };
+    private static readonly Dictionary<string, object> SupplierAttributes = new() { ["aria-label"] = "Supplier" };
+    private static readonly Dictionary<string, object> SupplierCountryAttributes = new() { ["aria-label"] = "Supplier country" };
     private static readonly Dictionary<string, object> SearchButtonAttributes = new() { ["data-testid"] = "stock-search-btn" };
     private static readonly Dictionary<string, object> ClearButtonAttributes = new() { ["data-testid"] = "stock-clear" };
 
     protected override void OnParametersSet()
     {
-        _warehouse = Filters.Warehouse;
+        _warehouse = Filters.Warehouse ?? string.Empty;
         _location = Filters.Location;
         _sku = Filters.Sku;
+        _item = Filters.Item;
+        _itemName = Filters.ItemName;
+        _tag = Filters.Tag;
+        _supplier = Filters.Supplier;
+        _supplierCountry = Filters.SupplierCountry;
         _includeVirtual = Filters.IncludeVirtual;
     }
 
@@ -96,15 +165,20 @@
     {
         var next = new AvailableStockSearchFilters
         {
-            Warehouse = _warehouse,
+            Warehouse = string.IsNullOrWhiteSpace(_warehouse) ? null : _warehouse,
             Location = _location.Trim(),
             Sku = _sku.Trim(),
+            Item = _item.Trim(),
+            ItemName = _itemName.Trim(),
+            Tag = _tag.Trim(),
+            Supplier = _supplier.Trim(),
+            SupplierCountry = _supplierCountry.Trim(),
             IncludeVirtual = _includeVirtual
         };
 
         if (!next.HasAtLeastOneFilter)
         {
-            _validationError = "Provide at least one filter: warehouse, location, or SKU.";
+            _validationError = "Provide at least one filter: warehouse, location, SKU, item, name, tag, supplier, or country.";
             return;
         }
 
@@ -118,9 +192,14 @@
 
     private async Task ResetAsync()
     {
-        _warehouse = null;
+        _warehouse = string.Empty;
         _location = string.Empty;
         _sku = string.Empty;
+        _item = string.Empty;
+        _itemName = string.Empty;
+        _tag = string.Empty;
+        _supplier = string.Empty;
+        _supplierCountry = string.Empty;
         _includeVirtual = false;
         _validationError = null;
 

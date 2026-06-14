@@ -42,6 +42,11 @@ public class StockClientTests
             warehouse: "WH-1",
             location: "A*",
             sku: "SKU*",
+            item: "Product 42",
+            itemName: "Lenta",
+            tag: "#oak",
+            supplier: "SUP*",
+            supplierCountry: "Lithuania",
             includeVirtual: false,
             page: 2,
             pageSize: 25);
@@ -55,6 +60,11 @@ public class StockClientTests
         capturedPathAndQuery.Should().Contain("warehouse=WH-1");
         capturedPathAndQuery.Should().Contain("location=A%2A");
         capturedPathAndQuery.Should().Contain("sku=SKU%2A");
+        capturedPathAndQuery.Should().Contain("item=Product%2042");
+        capturedPathAndQuery.Should().Contain("itemName=Lenta");
+        capturedPathAndQuery.Should().Contain("tag=%23oak");
+        capturedPathAndQuery.Should().Contain("supplier=SUP%2A");
+        capturedPathAndQuery.Should().Contain("supplierCountry=Lithuania");
     }
 
     [Fact]
