@@ -139,6 +139,32 @@
                         </button>
                     </CellTemplate>
                 </TemplateColumn>
+                <TemplateColumn Title="Actions" Sortable="false">
+                    <CellTemplate>
+                        <MudMenu Dense="true"
+                                 AnchorOrigin="Origin.BottomLeft"
+                                 TransformOrigin="Origin.TopLeft">
+                            <ActivatorContent>
+                                <MudButton Variant="Variant.Outlined"
+                                           Color="Color.Primary"
+                                           Size="Size.Small"
+                                           Class="items-actions-button"
+                                           aria-label="@($"Actions for {context.Item.InternalSKU}")">
+                                    Actions
+                                </MudButton>
+                            </ActivatorContent>
+                            <ChildContent>
+                                <MudMenuItem OnClick="@(() => OpenEditDialogAsync(context.Item))">Edit</MudMenuItem>
+                                <MudMenuItem OnClick="@(() => OpenDetails(context.Item.Id))">Details</MudMenuItem>
+                                <MudMenuItem OnClick="@(() => OpenPhotosDialogAsync(context.Item))">Photos</MudMenuItem>
+                                <MudMenuItem Disabled="@IsDiscontinued(context.Item)"
+                                             OnClick="@(() => RequestDeactivate(context.Item))">
+                                    Deactivate
+                                </MudMenuItem>
+                            </ChildContent>
+                        </MudMenu>
+                    </CellTemplate>
+                </TemplateColumn>
                 <TemplateColumn Title="Name">
                     <CellTemplate>
                         <span class="items-name" title="@context.Item.Name">@context.Item.Name</span>
@@ -147,13 +173,20 @@
                 <TemplateColumn Title="Tags" Sortable="false">
                     <CellTemplate>
                         <div class="item-tags item-tags--compact">
-                            @foreach (var tag in context.Item.Tags.Take(3))
+                            @if (context.Item.Tags.Count == 0)
                             {
-                                <span class="chip chip--reserved item-tag-chip">#@tag</span>
+                                <span class="item-tags__empty">No tags</span>
                             }
-                            @if (context.Item.Tags.Count > 3)
+                            else
                             {
-                                <span class="chip chip--locked item-tag-chip">+@(context.Item.Tags.Count - 3)</span>
+                                @foreach (var tag in context.Item.Tags.Take(3))
+                                {
+                                    <span class="chip chip--reserved item-tag-chip">#@tag</span>
+                                }
+                                @if (context.Item.Tags.Count > 3)
+                                {
+                                    <span class="chip chip--locked item-tag-chip">+@(context.Item.Tags.Count - 3)</span>
+                                }
                             }
                         </div>
                     </CellTemplate>
@@ -193,29 +226,6 @@
                 <TemplateColumn Title="Updated">
                     <CellTemplate>
                         <span class="mono">@FormatDate(context.Item.UpdatedAt ?? context.Item.CreatedAt)</span>
-                    </CellTemplate>
-                </TemplateColumn>
-                <TemplateColumn Title="" Sortable="false">
-                    <CellTemplate>
-                        <MudMenu Dense="true"
-                                 AnchorOrigin="Origin.BottomRight"
-                                 TransformOrigin="Origin.TopRight">
-                            <ActivatorContent>
-                                <MudIconButton Icon="@Icons.Material.Outlined.MoreVert"
-                                               Size="Size.Small"
-                                               Color="Color.Primary"
-                                               aria-label="@($"Actions for {context.Item.InternalSKU}")" />
-                            </ActivatorContent>
-                            <ChildContent>
-                                <MudMenuItem OnClick="@(() => OpenEditDialogAsync(context.Item))">Edit</MudMenuItem>
-                                <MudMenuItem OnClick="@(() => OpenPhotosDialogAsync(context.Item))">Photos</MudMenuItem>
-                                <MudMenuItem OnClick="@(() => OpenDetails(context.Item.Id))">Details</MudMenuItem>
-                                <MudMenuItem Disabled="@IsDiscontinued(context.Item)"
-                                             OnClick="@(() => RequestDeactivate(context.Item))">
-                                    Deactivate
-                                </MudMenuItem>
-                            </ChildContent>
-                        </MudMenu>
                     </CellTemplate>
                 </TemplateColumn>
             </Columns>
