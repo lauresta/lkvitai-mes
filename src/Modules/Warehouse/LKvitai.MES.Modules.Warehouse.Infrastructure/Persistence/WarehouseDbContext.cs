@@ -217,6 +217,7 @@ public class WarehouseDbContext : DbContext
             entity.Property(e => e.Status).HasMaxLength(20).IsRequired().HasDefaultValue("Active");
             entity.Property(e => e.PrimaryBarcode).HasMaxLength(100);
             entity.Property(e => e.ProductConfigId).HasMaxLength(50);
+            entity.Property(e => e.Tags).HasMaxLength(500);
             entity.HasIndex(e => e.InternalSKU).IsUnique();
             entity.HasIndex(e => e.CategoryId).HasDatabaseName("idx_items_category_id");
             entity.HasIndex(e => e.BaseUoM);

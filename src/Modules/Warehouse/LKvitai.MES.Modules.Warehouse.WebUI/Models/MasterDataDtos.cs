@@ -23,6 +23,7 @@ public record AdminItemDto
     public decimal? Weight { get; init; }
     public decimal? Volume { get; init; }
     public string? ProductConfigId { get; init; }
+    public IReadOnlyList<string> Tags { get; init; } = Array.Empty<string>();
     public DateTimeOffset CreatedAt { get; init; }
     public DateTimeOffset? UpdatedAt { get; init; }
     public string? PrimaryThumbnailUrl { get; init; }
@@ -57,6 +58,7 @@ public record ItemDetailsDto
     public string Status { get; init; } = string.Empty;
     public string? PrimaryBarcode { get; init; }
     public string? ProductConfigId { get; init; }
+    public IReadOnlyList<string> Tags { get; init; } = Array.Empty<string>();
     public DateTimeOffset CreatedAt { get; init; }
     public DateTimeOffset? UpdatedAt { get; init; }
     public string? PrimaryThumbnailUrl { get; init; }
@@ -98,6 +100,12 @@ public record CreateOrUpdateItemRequest
     public string? Status { get; init; }
     public string? PrimaryBarcode { get; init; }
     public string? ProductConfigId { get; init; }
+    public IReadOnlyList<string> Tags { get; init; } = Array.Empty<string>();
+}
+
+public record ItemTagsResponseDto
+{
+    public IReadOnlyList<string> Tags { get; init; } = Array.Empty<string>();
 }
 
 public record AdminSupplierDto

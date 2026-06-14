@@ -61,7 +61,8 @@ public sealed class ItemsController : ControllerBase
             var normalized = search.Trim().ToLowerInvariant();
             query = query.Where(i =>
                 i.InternalSKU.ToLower().Contains(normalized) ||
-                i.Name.ToLower().Contains(normalized));
+                i.Name.ToLower().Contains(normalized) ||
+                (i.Tags != null && i.Tags.ToLower().Contains(normalized.TrimStart('#'))));
         }
 
         if (categoryId.HasValue)
@@ -93,6 +94,7 @@ public sealed class ItemsController : ControllerBase
                 i.Weight,
                 i.Volume,
                 i.ProductConfigId,
+                SplitTags(i.Tags),
                 i.CreatedAt,
                 i.UpdatedAt,
                 null,
@@ -170,7 +172,8 @@ public sealed class ItemsController : ControllerBase
             RequiresQC = request.RequiresQC,
             Status = string.IsNullOrWhiteSpace(request.Status) ? "Active" : request.Status.Trim(),
             PrimaryBarcode = request.PrimaryBarcode?.Trim(),
-            ProductConfigId = request.ProductConfigId?.Trim()
+            ProductConfigId = request.ProductConfigId?.Trim(),
+            Tags = SerializeTags(request.Tags)
         };
 
         _dbContext.Items.Add(item);
@@ -231,6 +234,7 @@ public sealed class ItemsController : ControllerBase
             item.Status,
             item.PrimaryBarcode,
             item.ProductConfigId,
+            SplitTags(item.Tags),
             item.CreatedAt,
             item.UpdatedAt,
             primaryPhoto?.ThumbUrl,
@@ -284,11 +288,39 @@ public sealed class ItemsController : ControllerBase
         item.Status = string.IsNullOrWhiteSpace(request.Status) ? item.Status : request.Status.Trim();
         item.PrimaryBarcode = request.PrimaryBarcode?.Trim();
         item.ProductConfigId = request.ProductConfigId?.Trim();
+        item.Tags = SerializeTags(request.Tags);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
         await Cache.RemoveAsync($"item:{id}", cancellationToken);
 
         return Ok(new ItemUpdatedDto(item.Id, item.InternalSKU, item.Name, item.Status, item.UpdatedAt));
+    }
+
+    [HttpGet("tags")]
+    [Authorize(Policy = WarehousePolicies.OperatorOrAbove)]
+    public async Task<IActionResult> GetTagsAsync(
+        [FromQuery] string? search = null,
+        [FromQuery] int limit = 30,
+        CancellationToken cancellationToken = default)
+    {
+        limit = Math.Clamp(limit, 1, 100);
+        var normalizedSearch = NormalizeTag(search);
+        var values = await _dbContext.Items
+            .AsNoTracking()
+            .Where(x => x.Tags != null && x.Tags != "")
+            .Select(x => x.Tags!)
+            .ToListAsync(cancellationToken);
+
+        var tags = values
+            .SelectMany(SplitTags)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Where(x => string.IsNullOrWhiteSpace(normalizedSearch) ||
+                        x.Contains(normalizedSearch, StringComparison.OrdinalIgnoreCase))
+            .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+            .Take(limit)
+            .ToList();
+
+        return Ok(new ItemTagsResponse(tags));
     }
 
     [HttpPost("{id:int}/deactivate")]
@@ -603,6 +635,44 @@ public sealed class ItemsController : ControllerBase
         };
     }
 
+    private static IReadOnlyList<string> NormalizeTags(IEnumerable<string>? tags)
+    {
+        if (tags is null)
+        {
+            return Array.Empty<string>();
+        }
+
+        return tags
+            .SelectMany(SplitTagInput)
+            .Select(NormalizeTag)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static string? SerializeTags(IEnumerable<string>? tags)
+    {
+        var normalized = NormalizeTags(tags);
+        return normalized.Count == 0 ? null : string.Join(",", normalized);
+    }
+
+    private static IReadOnlyList<string> SplitTags(string? tags)
+        => NormalizeTags(SplitTagInput(tags));
+
+    private static IEnumerable<string> SplitTagInput(string? tags)
+    {
+        if (string.IsNullOrWhiteSpace(tags))
+        {
+            return Array.Empty<string>();
+        }
+
+        return tags.Split([',', ';', '|', ' ', '\t', '\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
+    }
+
+    private static string NormalizeTag(string? value)
+        => value?.Trim().TrimStart('#').Trim() ?? string.Empty;
+
     public sealed record CreateItemRequestDto(
         string? InternalSKU,
         string Name,
@@ -615,7 +685,8 @@ public sealed class ItemsController : ControllerBase
         bool RequiresQC,
         string? Status,
         string? PrimaryBarcode,
-        string? ProductConfigId);
+        string? ProductConfigId,
+        IReadOnlyList<string>? Tags);
 
     public sealed record UpdateItemRequestDto(
         string Name,
@@ -628,7 +699,8 @@ public sealed class ItemsController : ControllerBase
         bool RequiresQC,
         string? Status,
         string? PrimaryBarcode,
-        string? ProductConfigId);
+        string? ProductConfigId,
+        IReadOnlyList<string>? Tags);
 
     public sealed record ItemCreatedDto(int Id, string InternalSKU, string Name, DateTimeOffset CreatedAt);
     public sealed record ItemUpdatedDto(int Id, string InternalSKU, string Name, string Status, DateTimeOffset? UpdatedAt);
@@ -647,6 +719,7 @@ public sealed class ItemsController : ControllerBase
         decimal? Weight,
         decimal? Volume,
         string? ProductConfigId,
+        IReadOnlyList<string> Tags,
         DateTimeOffset CreatedAt,
         DateTimeOffset? UpdatedAt,
         string? PrimaryThumbnailUrl,
@@ -666,6 +739,7 @@ public sealed class ItemsController : ControllerBase
         string Status,
         string? PrimaryBarcode,
         string? ProductConfigId,
+        IReadOnlyList<string> Tags,
         DateTimeOffset CreatedAt,
         DateTimeOffset? UpdatedAt,
         string? PrimaryThumbnailUrl,
@@ -676,6 +750,7 @@ public sealed class ItemsController : ControllerBase
     public sealed record ItemBarcodeDto(int Id, string Barcode, string BarcodeType, bool IsPrimary);
     public sealed record ItemBarcodesResponse(int ItemId, string InternalSKU, IReadOnlyList<ItemBarcodeDto> Barcodes);
     public sealed record ItemPhotosResponse(int ItemId, IReadOnlyList<ItemPhotoDto> Photos);
+    public sealed record ItemTagsResponse(IReadOnlyList<string> Tags);
     public sealed record ImageSearchResponse(IReadOnlyList<ItemImageSearchResultDto> Results);
 
     public sealed record PagedResponse<T>(

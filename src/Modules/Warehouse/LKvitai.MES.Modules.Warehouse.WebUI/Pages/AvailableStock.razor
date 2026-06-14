@@ -102,6 +102,20 @@
                             </CellTemplate>
                         </TemplateColumn>
                         <PropertyColumn Property="x => x.ItemName" Title="Name" />
+                        <TemplateColumn Title="Tags" Sortable="false">
+                            <CellTemplate>
+                                <div class="item-tags item-tags--compact">
+                                    @foreach (var tag in context.Item.Tags.Take(3))
+                                    {
+                                        <span class="chip chip--reserved item-tag-chip">#@tag</span>
+                                    }
+                                    @if (context.Item.Tags.Count > 3)
+                                    {
+                                        <span class="chip chip--locked item-tag-chip">+@(context.Item.Tags.Count - 3)</span>
+                                    }
+                                </div>
+                            </CellTemplate>
+                        </TemplateColumn>
                         <TemplateColumn Title="Physical">
                             <CellTemplate><span class="@GetQtyClass(context.Item.PhysicalQty)">@FormatQty(context.Item.PhysicalQty)</span></CellTemplate>
                         </TemplateColumn>
@@ -127,6 +141,15 @@
                         <div class="stock-list-row">
                             <div class="stock-list-row__main">
                                 <div><span class="sku-link">@row.SKU</span> @row.ItemName</div>
+                                @if (row.Tags.Count > 0)
+                                {
+                                    <div class="item-tags item-tags--compact">
+                                        @foreach (var tag in row.Tags.Take(3))
+                                        {
+                                            <span class="chip chip--reserved item-tag-chip">#@tag</span>
+                                        }
+                                    </div>
+                                }
                                 <div class="stock-list-row__meta">@row.WarehouseId / @row.Location</div>
                             </div>
                             <div class="stock-list-row__qty">
@@ -154,6 +177,15 @@
                             <div class="stock-gallery-card__body">
                                 <div><span class="sku-link">@row.SKU</span></div>
                                 <div class="stock-list-row__meta">@row.ItemName</div>
+                                @if (row.Tags.Count > 0)
+                                {
+                                    <div class="item-tags">
+                                        @foreach (var tag in row.Tags.Take(4))
+                                        {
+                                            <span class="chip chip--reserved item-tag-chip">#@tag</span>
+                                        }
+                                    </div>
+                                }
                                 <div>@row.WarehouseId / @row.Location</div>
                                 <div>On hand: <span class="mono">@FormatQty(row.PhysicalQty)</span></div>
                                 <div>Available: <strong class="mono">@FormatQty(row.AvailableQty)</strong></div>

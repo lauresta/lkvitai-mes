@@ -125,16 +125,8 @@ public sealed class StockController : ControllerBase
                     cancellationToken)
                 : Array.Empty<SupplierItemMapping>();
 
-            IReadOnlyList<ItemPhoto> taggedPhotos = metadataFilters.NeedsTagData
-                ? await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync(
-                    _dbContext.ItemPhotos
-                        .AsNoTracking()
-                        .Where(x => itemIds.Contains(x.ItemId) && x.Tags != null && x.Tags != ""),
-                    cancellationToken)
-                : Array.Empty<ItemPhoto>();
-
             metadataFilteredItemIds = StockMetadataFilter
-                .FilterItemIds(itemMap.Values, supplierMappings, taggedPhotos, metadataFilters)
+                .FilterItemIds(itemMap.Values, supplierMappings, metadataFilters)
                 .ToHashSet();
         }
 
@@ -170,6 +162,7 @@ public sealed class StockController : ControllerBase
                 row.LastUpdated,
                 item?.CategoryId,
                 location?.IsVirtual ?? false,
+                StockMetadataFilter.SplitTags(item?.Tags),
                 item is not null && primaryPhotoByItemId.TryGetValue(item.Id, out var photoUrl)
                     ? photoUrl
                     : null);
@@ -254,6 +247,7 @@ public sealed class StockController : ControllerBase
                 x.AvailableQty,
                 x.BaseUom,
                 x.LastUpdated,
+                x.Tags,
                 x.PrimaryThumbnailUrl)).ToList(),
             totalCount,
             pageNumber,
@@ -369,12 +363,13 @@ public sealed class StockController : ControllerBase
     private static string BuildAvailableCsv(IReadOnlyCollection<AvailableStockRow> rows)
     {
         var sb = new StringBuilder();
-        sb.AppendLine("ItemId,InternalSKU,ItemName,LocationId,LocationCode,LotNumber,ExpiryDate,Qty,ReservedQty,AvailableQty,BaseUoM,LastUpdated");
+        sb.AppendLine("ItemId,InternalSKU,ItemName,Tags,LocationId,LocationCode,LotNumber,ExpiryDate,Qty,ReservedQty,AvailableQty,BaseUoM,LastUpdated");
         foreach (var row in rows)
         {
             sb.Append(row.ItemId?.ToString(CultureInfo.InvariantCulture) ?? string.Empty).Append(',');
             sb.Append(EscapeCsv(row.InternalSku)).Append(',');
             sb.Append(EscapeCsv(row.ItemName)).Append(',');
+            sb.Append(EscapeCsv(string.Join(' ', row.Tags.Select(tag => "#" + tag)))).Append(',');
             sb.Append(row.LocationId?.ToString(CultureInfo.InvariantCulture) ?? string.Empty).Append(',');
             sb.Append(EscapeCsv(row.LocationCode)).Append(',');
             sb.Append(EscapeCsv(row.LotNumber)).Append(',');
@@ -524,6 +519,7 @@ public sealed class StockController : ControllerBase
         DateTime LastUpdated,
         int? CategoryId,
         bool IsVirtualLocation,
+        IReadOnlyList<string> Tags,
         string? PrimaryThumbnailUrl);
 
     public sealed record AvailableStockItemDto(
@@ -539,6 +535,7 @@ public sealed class StockController : ControllerBase
         decimal AvailableQty,
         string BaseUom,
         DateTime LastUpdated,
+        IReadOnlyList<string> Tags,
         string? PrimaryThumbnailUrl);
 
     public sealed record PagedStockResponse<T>(
@@ -591,7 +588,6 @@ public sealed record AvailableStockMetadataFilters(
         !string.IsNullOrWhiteSpace(SupplierFilter) ||
         !string.IsNullOrWhiteSpace(SupplierCountryFilter);
 
-    public bool NeedsTagData => !string.IsNullOrWhiteSpace(TagFilter);
 }
 
 public static class StockMetadataFilter
@@ -599,7 +595,6 @@ public static class StockMetadataFilter
     public static IReadOnlyCollection<int> FilterItemIds(
         IEnumerable<Item> items,
         IEnumerable<SupplierItemMapping> supplierMappings,
-        IEnumerable<ItemPhoto> itemPhotos,
         AvailableStockMetadataFilters filters)
     {
         var itemList = items.ToList();
@@ -624,10 +619,9 @@ public static class StockMetadataFilter
 
         if (!string.IsNullOrWhiteSpace(filters.TagFilter))
         {
-            IntersectWith(result, itemPhotos
+            IntersectWith(result, itemList
                 .Where(x => MatchesTag(x.Tags, filters.TagFilter))
-                .Select(x => x.ItemId)
-                .Distinct());
+                .Select(x => x.Id));
         }
 
         if (filters.NeedsSupplierData)
@@ -716,6 +710,22 @@ public static class StockMetadataFilter
         return MatchesPattern(mapping.Supplier?.Country, supplierCountryFilter);
     }
 
+    public static IReadOnlyList<string> SplitTags(string? tags)
+    {
+        if (string.IsNullOrWhiteSpace(tags))
+        {
+            return Array.Empty<string>();
+        }
+
+        return tags
+            .Split([',', ';', '|', ' ', '\t', '\r', '\n'], StringSplitOptions.RemoveEmptyEntries)
+            .Select(NormalizeTag)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
     private static bool MatchesTag(string? tags, string tagFilter)
     {
         if (string.IsNullOrWhiteSpace(tagFilter))
@@ -734,13 +744,10 @@ public static class StockMetadataFilter
             return true;
         }
 
-        if (MatchesPattern(tags, normalizedFilter) || MatchesPattern(tags, "#" + normalizedFilter))
-        {
-            return true;
-        }
-
-        var tokens = tags.Split([',', ';', '|', ' ', '\t', '\r', '\n'], StringSplitOptions.RemoveEmptyEntries);
-        return tokens.Any(token => string.Equals(NormalizeTag(token), normalizedFilter, StringComparison.OrdinalIgnoreCase));
+        var hasWildcard = normalizedFilter.Contains('*');
+        return SplitTags(tags).Any(token => hasWildcard
+            ? MatchesPattern(token, normalizedFilter)
+            : string.Equals(token, normalizedFilter, StringComparison.OrdinalIgnoreCase));
     }
 
     private static string NormalizeTag(string value)

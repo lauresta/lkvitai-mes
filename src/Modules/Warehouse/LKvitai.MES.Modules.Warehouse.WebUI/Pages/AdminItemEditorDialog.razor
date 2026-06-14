@@ -92,6 +92,52 @@
                           Margin="Margin.Dense"
                           @bind-Value="_model.ProductConfigId" />
 
+            <div class="admin-item-dialog__tags">
+                <div class="admin-item-tag-entry">
+                    <MudAutocomplete T="string"
+                                     Label="Tags"
+                                     Variant="Variant.Outlined"
+                                     Margin="Margin.Dense"
+                                     Value="@_tagInput"
+                                     ValueChanged="OnTagInputChanged"
+                                     SearchFunc="SearchTagsAsync"
+                                     CoerceText="true"
+                                     CoerceValue="true"
+                                     ResetValueOnEmptyText="true"
+                                     MinCharacters="0"
+                                     MaxItems="12"
+                                     Placeholder="#tag" />
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Primary"
+                               Disabled="@string.IsNullOrWhiteSpace(_tagInput)"
+                               OnClick="AddTagAsync">
+                        Add
+                    </MudButton>
+                </div>
+
+                <div class="item-tags" data-testid="admin-item-tags">
+                    @if (_model.Tags.Count == 0)
+                    {
+                        <span class="item-tags__empty">No tags</span>
+                    }
+                    else
+                    {
+                        @foreach (var tag in _model.Tags)
+                        {
+                            <span class="chip chip--reserved item-tag-chip">
+                                #@tag
+                                <button type="button"
+                                        class="item-tag-chip__remove"
+                                        aria-label="@($"Remove tag {tag}")"
+                                        @onclick="@(() => RemoveTag(tag))">
+                                    x
+                                </button>
+                            </span>
+                        }
+                    }
+                </div>
+            </div>
+
             <div class="admin-item-dialog__checks">
                 <MudCheckBox T="bool" @bind-Checked="_model.RequiresLotTracking" Label="Requires lot tracking" />
                 <MudCheckBox T="bool" @bind-Checked="_model.RequiresQC" Label="Requires QC" />
@@ -119,9 +165,11 @@
     [Parameter] public ItemDetailsDto? Item { get; set; }
     [Parameter] public IReadOnlyList<AdminCategoryDto> Categories { get; set; } = Array.Empty<AdminCategoryDto>();
     [Parameter] public IReadOnlyList<UnitOfMeasureDto> Units { get; set; } = Array.Empty<UnitOfMeasureDto>();
+    [Parameter] public IReadOnlyList<string> ExistingTags { get; set; } = Array.Empty<string>();
 
     private readonly ItemFormModel _model = new();
     private string? _validationMessage;
+    private string? _tagInput;
 
     protected override void OnInitialized()
     {
@@ -139,6 +187,8 @@
             _model.Status = Item.Status;
             _model.PrimaryBarcode = Item.PrimaryBarcode;
             _model.ProductConfigId = Item.ProductConfigId;
+            _model.Tags.Clear();
+            _model.Tags.AddRange(Item.Tags.Select(NormalizeTag).Where(x => !string.IsNullOrWhiteSpace(x)));
             return;
         }
 
@@ -192,6 +242,65 @@
 
     private void Cancel() => MudDialog.Cancel();
 
+    private Task<IEnumerable<string>> SearchTagsAsync(string value)
+    {
+        var normalized = NormalizeTag(value);
+        var selected = _model.Tags.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var result = ExistingTags
+            .Select(NormalizeTag)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Where(x => !selected.Contains(x))
+            .Where(x => string.IsNullOrWhiteSpace(normalized) ||
+                        x.Contains(normalized, StringComparison.OrdinalIgnoreCase))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(x => x, StringComparer.OrdinalIgnoreCase);
+
+        return Task.FromResult<IEnumerable<string>>(result);
+    }
+
+    private Task OnTagInputChanged(string value)
+    {
+        _tagInput = value;
+        return Task.CompletedTask;
+    }
+
+    private Task AddTagAsync()
+    {
+        var additions = SplitTags(_tagInput).ToList();
+        foreach (var tag in additions)
+        {
+            if (!_model.Tags.Contains(tag, StringComparer.OrdinalIgnoreCase))
+            {
+                _model.Tags.Add(tag);
+            }
+        }
+
+        _model.Tags.Sort(StringComparer.OrdinalIgnoreCase);
+        _tagInput = string.Empty;
+        return Task.CompletedTask;
+    }
+
+    private void RemoveTag(string tag)
+    {
+        _model.Tags.RemoveAll(x => string.Equals(x, tag, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static IEnumerable<string> SplitTags(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return Array.Empty<string>();
+        }
+
+        return value
+            .Split([',', ';', '|', ' ', '\t', '\r', '\n'], StringSplitOptions.RemoveEmptyEntries)
+            .Select(NormalizeTag)
+            .Where(x => !string.IsNullOrWhiteSpace(x));
+    }
+
+    private static string NormalizeTag(string? value)
+        => value?.Trim().TrimStart('#').Trim() ?? string.Empty;
+
     private sealed class ItemFormModel
     {
         public string? InternalSKU { get; set; }
@@ -206,6 +315,7 @@
         public string Status { get; set; } = "Active";
         public string? PrimaryBarcode { get; set; }
         public string? ProductConfigId { get; set; }
+        public List<string> Tags { get; } = [];
 
         public CreateOrUpdateItemRequest ToRequest(bool isEdit) => new()
         {
@@ -220,7 +330,8 @@
             RequiresQC = RequiresQC,
             Status = string.IsNullOrWhiteSpace(Status) ? "Active" : Status.Trim(),
             PrimaryBarcode = Normalize(PrimaryBarcode),
-            ProductConfigId = Normalize(ProductConfigId)
+            ProductConfigId = Normalize(ProductConfigId),
+            Tags = Tags.ToArray()
         };
 
         private static string? Normalize(string? value)
