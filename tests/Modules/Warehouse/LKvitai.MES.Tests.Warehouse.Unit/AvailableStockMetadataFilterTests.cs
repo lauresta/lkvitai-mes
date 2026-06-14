@@ -16,19 +16,22 @@ public class AvailableStockMetadataFilterTests
             Id = 10,
             InternalSKU = "WOOD-001",
             Name = "Oak board",
-            ProductConfigId = "PRD-OAK"
+            ProductConfigId = "PRD-OAK",
+            Tags = "oak,surfaced"
         };
         var wrongCountry = new Item
         {
             Id = 20,
             InternalSKU = "WOOD-002",
-            Name = "Oak board premium"
+            Name = "Oak board premium",
+            Tags = "oak"
         };
         var wrongTag = new Item
         {
             Id = 30,
             InternalSKU = "WOOD-003",
-            Name = "Oak board reserve"
+            Name = "Oak board reserve",
+            Tags = "pine"
         };
 
         var supplierLt = new Supplier { Id = 1, Code = "SUP-LT", Name = "Baltic Wood", Country = "Lithuania" };
@@ -39,13 +42,6 @@ public class AvailableStockMetadataFilterTests
             new SupplierItemMapping { ItemId = target.Id, SupplierId = supplierLt.Id, SupplierSKU = "BW-001", Supplier = supplierLt },
             new SupplierItemMapping { ItemId = wrongCountry.Id, SupplierId = supplierPl.Id, SupplierSKU = "BW-002", Supplier = supplierPl },
             new SupplierItemMapping { ItemId = wrongTag.Id, SupplierId = supplierLt.Id, SupplierSKU = "BW-003", Supplier = supplierLt }
-        };
-
-        var photos = new[]
-        {
-            new ItemPhoto { ItemId = target.Id, Tags = "#oak, surfaced" },
-            new ItemPhoto { ItemId = wrongCountry.Id, Tags = "#oak" },
-            new ItemPhoto { ItemId = wrongTag.Id, Tags = "#pine" }
         };
 
         var filters = new AvailableStockMetadataFilters(
@@ -59,7 +55,6 @@ public class AvailableStockMetadataFilterTests
         var result = StockMetadataFilter.FilterItemIds(
             [target, wrongCountry, wrongTag],
             mappings,
-            photos,
             filters);
 
         // Assert
