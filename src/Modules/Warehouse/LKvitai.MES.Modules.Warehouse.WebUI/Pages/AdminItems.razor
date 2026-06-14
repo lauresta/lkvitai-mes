@@ -144,6 +144,20 @@
                         <span class="items-name" title="@context.Item.Name">@context.Item.Name</span>
                     </CellTemplate>
                 </TemplateColumn>
+                <TemplateColumn Title="Tags" Sortable="false">
+                    <CellTemplate>
+                        <div class="item-tags item-tags--compact">
+                            @foreach (var tag in context.Item.Tags.Take(3))
+                            {
+                                <span class="chip chip--reserved item-tag-chip">#@tag</span>
+                            }
+                            @if (context.Item.Tags.Count > 3)
+                            {
+                                <span class="chip chip--locked item-tag-chip">+@(context.Item.Tags.Count - 3)</span>
+                            }
+                        </div>
+                    </CellTemplate>
+                </TemplateColumn>
                 <PropertyColumn Property="x => x.CategoryName" Title="Category" />
                 <PropertyColumn Property="x => x.BaseUoM" Title="UoM" />
                 <TemplateColumn Title="Status">
@@ -237,6 +251,7 @@
     private MudDataGrid<AdminItemDto>? _grid;
     private readonly List<AdminCategoryDto> _categories = [];
     private readonly List<UnitOfMeasureDto> _units = [];
+    private readonly List<string> _itemTags = [];
 
     private string _search = string.Empty;
     private string _status = string.Empty;
@@ -302,13 +317,17 @@
             _apiError = null;
             var categoriesTask = AdminClient.GetCategoriesAsync();
             var unitsTask = UomClient.GetUnitsAsync(null, null);
-            await Task.WhenAll(categoriesTask, unitsTask);
+            var tagsTask = AdminClient.GetItemTagsAsync(limit: 100);
+            await Task.WhenAll(categoriesTask, unitsTask, tagsTask);
 
             _categories.Clear();
             _categories.AddRange(categoriesTask.Result.OrderBy(x => x.Code, StringComparer.OrdinalIgnoreCase));
 
             _units.Clear();
             _units.AddRange(unitsTask.Result.OrderBy(x => x.Code, StringComparer.OrdinalIgnoreCase));
+
+            _itemTags.Clear();
+            _itemTags.AddRange(tagsTask.Result.OrderBy(x => x, StringComparer.OrdinalIgnoreCase));
         }
         catch (ApiException ex)
         {
@@ -417,7 +436,8 @@
         {
             ["IsEdit"] = false,
             ["Categories"] = _categories,
-            ["Units"] = _units
+            ["Units"] = _units,
+            ["ExistingTags"] = _itemTags
         };
 
         var dialog = await DialogService.ShowAsync<AdminItemEditorDialog>("Create item", parameters, ItemDialogOptions);
@@ -432,6 +452,7 @@
             _apiError = null;
             await AdminClient.CreateItemAsync(request);
             ToastService.ShowSuccess("Item created.");
+            await LoadLookupsAsync();
             await RefreshAsync();
         }
         catch (ApiException ex)
@@ -452,7 +473,8 @@
                 ["IsEdit"] = true,
                 ["Item"] = item,
                 ["Categories"] = _categories,
-                ["Units"] = _units
+                ["Units"] = _units,
+                ["ExistingTags"] = _itemTags
             };
 
             var dialog = await DialogService.ShowAsync<AdminItemEditorDialog>("Edit item", parameters, ItemDialogOptions);
@@ -464,6 +486,7 @@
 
             await AdminClient.UpdateItemAsync(row.Id, request);
             ToastService.ShowSuccess("Item updated.");
+            await LoadLookupsAsync();
             await RefreshAsync();
         }
         catch (ApiException ex)
@@ -521,7 +544,7 @@
 
     private void OpenDetails(int itemId)
     {
-        NavigationManager.NavigateTo($"/admin/items/{itemId}");
+        NavigationManager.NavigateTo($"admin/items/{itemId}");
     }
 
     private static bool IsDiscontinued(AdminItemDto item)

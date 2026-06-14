@@ -165,6 +165,7 @@ public class StockClient
             ReservedQty = row.ReservedQty,
             AvailableQty = row.AvailableQty,
             LastUpdated = row.LastUpdated,
+            Tags = row.Tags,
             PrimaryThumbnailUrl = row.PrimaryThumbnailUrl
         }).ToList();
 
@@ -230,6 +231,7 @@ public class StockClient
         public decimal ReservedQty { get; init; }
         public decimal AvailableQty { get; init; }
         public DateTime LastUpdated { get; init; }
+        public IReadOnlyList<string> Tags { get; init; } = Array.Empty<string>();
         public string? PrimaryThumbnailUrl { get; init; }
     }
 

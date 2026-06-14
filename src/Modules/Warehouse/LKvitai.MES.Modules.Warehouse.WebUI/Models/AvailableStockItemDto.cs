@@ -11,5 +11,6 @@ public record AvailableStockItemDto
     public decimal ReservedQty { get; init; }
     public decimal AvailableQty { get; init; }
     public DateTime LastUpdated { get; init; }
+    public IReadOnlyList<string> Tags { get; init; } = Array.Empty<string>();
     public string? PrimaryThumbnailUrl { get; init; }
 }

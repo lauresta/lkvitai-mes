@@ -63,6 +63,22 @@
                 <AdminItemFieldBlock Label="Volume" Value="@FormatDecimal(_item.Volume)" IsMono="true" />
                 <AdminItemFieldBlock Label="Primary Barcode" Value="@FormatNullable(_item.PrimaryBarcode)" IsMono="true" />
                 <AdminItemFieldBlock Label="Product Config" Value="@FormatNullable(_item.ProductConfigId)" IsMono="true" />
+                <div class="items-detail-field">
+                    <span>Tags</span>
+                    <div class="item-tags item-tags--detail">
+                        @if (_item.Tags.Count == 0)
+                        {
+                            <strong>-</strong>
+                        }
+                        else
+                        {
+                            @foreach (var tag in _item.Tags)
+                            {
+                                <span class="chip chip--reserved item-tag-chip">#@tag</span>
+                            }
+                        }
+                    </div>
+                </div>
                 <AdminItemFieldBlock Label="Lot Tracking" Value="@(_item.RequiresLotTracking ? "Required" : "Not required")" />
                 <AdminItemFieldBlock Label="QC" Value="@(_item.RequiresQC ? "Required" : "Not required")" />
                 <AdminItemFieldBlock Label="Created" Value="@FormatDateTime(_item.CreatedAt)" IsMono="true" />
@@ -293,7 +309,7 @@
 
     private void BackToList()
     {
-        NavigationManager.NavigateTo("/admin/items");
+        NavigationManager.NavigateTo("admin/items");
     }
 
     private static string StatusChipClass(string status) => status switch

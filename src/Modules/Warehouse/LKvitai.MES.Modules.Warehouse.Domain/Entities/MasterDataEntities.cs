@@ -26,6 +26,7 @@ public sealed class Item : AuditableEntity
     public string Status { get; set; } = "Active";
     public string? PrimaryBarcode { get; set; }
     public string? ProductConfigId { get; set; }
+    public string? Tags { get; set; }
 
     public ItemCategory? Category { get; set; }
     public UnitOfMeasure? BaseUnit { get; set; }

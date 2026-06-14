@@ -66,6 +66,24 @@ public sealed class MasterDataAdminClient
     public Task UpdateItemAsync(int id, CreateOrUpdateItemRequest request, CancellationToken cancellationToken = default)
         => SendNoContentAsync(HttpMethod.Put, $"/api/warehouse/v1/items/{id}", request, cancellationToken);
 
+    public async Task<IReadOnlyList<string>> GetItemTagsAsync(
+        string? search = null,
+        int limit = 30,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new List<string> { $"limit={limit}" };
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            query.Add($"search={Uri.EscapeDataString(search)}");
+        }
+
+        var response = await GetAsync<ItemTagsResponseDto>(
+            $"/api/warehouse/v1/items/tags?{string.Join("&", query)}",
+            cancellationToken);
+
+        return response.Tags;
+    }
+
     public Task DeactivateItemAsync(int id, CancellationToken cancellationToken = default)
         => SendNoContentAsync(HttpMethod.Post, $"/api/warehouse/v1/items/{id}/deactivate", null, cancellationToken);
 
