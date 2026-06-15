@@ -64,7 +64,7 @@
     {
         _currentPath = TrimPath(Navigation.ToBaseRelativePath(Navigation.Uri));
         Navigation.LocationChanged += OnLocationChanged;
-        _openSection = FindSectionForPath(_currentPath) ?? "engineering";
+        _openSection = FindSectionForPath(_currentPath) ?? "execution";
     }
 
     private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
@@ -111,6 +111,9 @@
 
     private static readonly NavSection[] _sections =
     [
+        new("execution", "Execution", "bi-kanban", [
+            new("operator-work-queue", "bi-list-check", "Operator Queue"),
+        ]),
         new("engineering", "Engineering", "bi-diagram-3", [
             new("workflow-editor", "bi-diagram-3", "Workflow Editor"),
         ]),
