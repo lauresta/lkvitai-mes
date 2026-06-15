@@ -1,3 +1,5 @@
+@inject MasterDataAdminClient AdminClient
+
 <MudDialog Class="admin-item-dialog">
     <TitleContent>
         <div class="admin-item-dialog__title">
@@ -98,11 +100,14 @@
                                      Label="Tags"
                                      Variant="Variant.Outlined"
                                      Margin="Margin.Dense"
-                                     Value="@_tagInput"
-                                     ValueChanged="OnTagInputChanged"
+                                     Value="@_selectedTag"
+                                     ValueChanged="OnTagSelectedAsync"
+                                     Text="@_tagInput"
+                                     TextChanged="OnTagTextChanged"
                                      SearchFunc="SearchTagsAsync"
-                                     CoerceText="true"
-                                     CoerceValue="true"
+                                     ToStringFunc="FormatTagOption"
+                                     CoerceText="false"
+                                     CoerceValue="false"
                                      ResetValueOnEmptyText="true"
                                      MinCharacters="0"
                                      MaxItems="12"
@@ -170,6 +175,7 @@
     private readonly ItemFormModel _model = new();
     private string? _validationMessage;
     private string? _tagInput;
+    private string? _selectedTag;
 
     protected override void OnInitialized()
     {
@@ -242,32 +248,66 @@
 
     private void Cancel() => MudDialog.Cancel();
 
-    private Task<IEnumerable<string>> SearchTagsAsync(string value)
+    private async Task<IEnumerable<string>> SearchTagsAsync(string value)
     {
         var normalized = NormalizeTag(value);
         var selected = _model.Tags.ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var result = ExistingTags
+
+        var candidates = new List<string>();
+        try
+        {
+            candidates.AddRange(await AdminClient.GetItemTagsAsync(normalized, limit: 30));
+        }
+        catch (ApiException)
+        {
+            // Keep autocomplete usable even if the suggestions endpoint is temporarily unavailable.
+        }
+
+        candidates.AddRange(ExistingTags);
+        if (!string.IsNullOrWhiteSpace(normalized))
+        {
+            candidates.Add(normalized);
+        }
+
+        return candidates
             .Select(NormalizeTag)
             .Where(x => !string.IsNullOrWhiteSpace(x))
             .Where(x => !selected.Contains(x))
             .Where(x => string.IsNullOrWhiteSpace(normalized) ||
                         x.Contains(normalized, StringComparison.OrdinalIgnoreCase))
             .Distinct(StringComparer.OrdinalIgnoreCase)
-            .OrderBy(x => x, StringComparer.OrdinalIgnoreCase);
-
-        return Task.FromResult<IEnumerable<string>>(result);
+            .OrderByDescending(x => string.Equals(x, normalized, StringComparison.OrdinalIgnoreCase))
+            .ThenByDescending(x => x.StartsWith(normalized, StringComparison.OrdinalIgnoreCase))
+            .ThenBy(x => x, StringComparer.OrdinalIgnoreCase)
+            .Take(12)
+            .ToList();
     }
 
-    private Task OnTagInputChanged(string value)
+    private Task OnTagTextChanged(string value)
     {
         _tagInput = value;
         return Task.CompletedTask;
     }
 
+    private Task OnTagSelectedAsync(string value)
+    {
+        AddTags(value);
+        _selectedTag = null;
+        _tagInput = string.Empty;
+        return Task.CompletedTask;
+    }
+
     private Task AddTagAsync()
     {
-        var additions = SplitTags(_tagInput).ToList();
-        foreach (var tag in additions)
+        AddTags(_tagInput);
+        _selectedTag = null;
+        _tagInput = string.Empty;
+        return Task.CompletedTask;
+    }
+
+    private void AddTags(string? value)
+    {
+        foreach (var tag in SplitTags(value))
         {
             if (!_model.Tags.Contains(tag, StringComparer.OrdinalIgnoreCase))
             {
@@ -276,8 +316,6 @@
         }
 
         _model.Tags.Sort(StringComparer.OrdinalIgnoreCase);
-        _tagInput = string.Empty;
-        return Task.CompletedTask;
     }
 
     private void RemoveTag(string tag)
@@ -300,6 +338,12 @@
 
     private static string NormalizeTag(string? value)
         => value?.Trim().TrimStart('#').Trim() ?? string.Empty;
+
+    private static string FormatTagOption(string tag)
+    {
+        var normalized = NormalizeTag(tag);
+        return string.IsNullOrWhiteSpace(normalized) ? string.Empty : "#" + normalized;
+    }
 
     private sealed class ItemFormModel
     {
