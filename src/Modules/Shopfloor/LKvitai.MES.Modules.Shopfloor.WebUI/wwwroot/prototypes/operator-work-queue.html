@@ -41,8 +41,8 @@ button,input,select{font:inherit;color:inherit}
 .mono{font-family:var(--font-mono);font-feature-settings:"zero";font-variant-numeric:tabular-nums}
 
 /* ── App shell ───────────────────────────────────────────────────── */
-.app{display:flex;flex-direction:column;height:100vh;max-width:1680px;margin:0 auto;
-  background:var(--n-50);box-shadow:0 0 40px rgba(0,0,0,.05);overflow:hidden}
+.app{display:flex;flex-direction:column;width:100%;height:100vh;margin:0;
+  background:var(--n-50);overflow:hidden}
 
 /* ── Topbar ──────────────────────────────────────────────────────── */
 .topbar{display:flex;align-items:center;gap:18px;padding:11px 22px;background:var(--dark);
@@ -120,6 +120,14 @@ button,input,select{font:inherit;color:inherit}
 .target-pill b{font-family:var(--font-mono);color:var(--n-800);font-weight:800}
 .target-pill .bar{width:90px;height:6px;border-radius:99px;background:var(--n-150);overflow:hidden}
 .target-pill .bar i{display:block;height:100%;border-radius:99px;background:var(--accent-500)}
+.stats .station{margin-left:10px}
+.stats .station-pill{min-height:32px;padding:4px 10px;background:var(--n-25);border-color:var(--n-200)}
+.stats .station-pill__ico{width:22px;height:22px;background:var(--accent-50);color:var(--accent-700);font-size:11px}
+.stats .station-pill__code{color:var(--n-800);font-size:10.5px}
+.stats .station-pill__sub{color:var(--n-500);font-size:9.5px}
+.stats .switch-btn{width:28px;height:28px;border-color:var(--n-200);background:var(--n-0);color:var(--n-600)}
+.stats .switch-btn:hover{border-color:var(--accent-300);background:var(--accent-50);color:var(--accent-700)}
+.stats .switch-menu{top:38px;right:0;left:auto}
 
 /* ── Workspace (queue + detail) ──────────────────────────────────── */
 .work{display:grid;grid-template-columns:minmax(0,1fr) 484px;gap:0;flex:1 1 auto;min-height:0}
@@ -410,55 +418,6 @@ button,input,select{font:inherit;color:inherit}
 <body>
 <div class="app">
 
-  <!-- TOPBAR -->
-  <header class="topbar">
-    <div class="brand">
-      <div class="brand__mark">LK</div>
-      <div>
-        <div class="brand__name">LAURESTA<span> · ShopfloorPilot</span></div>
-        <div class="brand__tag">LKvitai · MES · Shopfloor</div>
-      </div>
-    </div>
-    <div class="tsep"></div>
-    <div class="station">
-      <div class="station-pill">
-        <div class="station-pill__ico">✂</div>
-        <div>
-          <div class="station-pill__code">AUDINIO PJOVIMAS</div>
-          <div class="station-pill__sub">Fabric cutting · Line A · Vilnius</div>
-        </div>
-      </div>
-      <button class="switch-btn" id="switchBtn" title="Switch station">▾</button>
-      <div class="switch-menu" id="switchMenu">
-        <div class="switch-menu__lbl">Your stations · queue depth ahead</div>
-        <div class="switch-row is-current">
-          <div class="switch-row__ico">✂</div>
-          <div><div class="switch-row__code">AUDINIO PJOVIMAS</div><div class="switch-row__sub">Fabric cutting · Line A</div></div>
-          <div class="switch-row__depth"><b id="swDepthA">12</b><span>ahead</span></div>
-        </div>
-        <div class="switch-row">
-          <div class="switch-row__ico">⬗</div>
-          <div><div class="switch-row__code">VELENO PJOVIMAS</div><div class="switch-row__sub">Shaft cutting · Line A</div></div>
-          <div class="switch-row__depth"><b>7</b><span>ahead</span></div>
-        </div>
-        <div class="switch-row">
-          <div class="switch-row__ico">⊟</div>
-          <div><div class="switch-row__code">AUDINIO KLIJAVIMAS</div><div class="switch-row__sub">Fabric→shaft gluing · Line A</div></div>
-          <div class="switch-row__depth"><b>19</b><span>ahead</span></div>
-        </div>
-      </div>
-    </div>
-    <div class="spacer"></div>
-    <div class="env-badge">
-      <div><span>ENV</span><strong class="warn-text">TEST</strong></div>
-      <div><span>VER</span><strong>0.4.1</strong></div>
-    </div>
-    <div class="op-chip">
-      <div class="op-chip__avatar">DG</div>
-      <div><div class="op-chip__name">Darius G.</div><div class="op-chip__role">Operator · badge 2041</div></div>
-    </div>
-  </header>
-
   <!-- STATS STRIP -->
   <div class="stats">
     <div class="stat stat--done"><div class="stat__lbl">Done today</div><div class="stat__val" id="stDone">6</div></div>
@@ -466,6 +425,34 @@ button,input,select{font:inherit;color:inherit}
     <div class="stat stat--cph"><div class="stat__lbl">CPH · cuts / hr</div><div class="stat__val" id="stCph">11.4</div></div>
     <div class="stat stat--wip"><div class="stat__lbl">WIP · this station</div><div class="stat__val" id="stWip">1<small>active</small></div></div>
     <div class="stats__right">
+      <div class="station">
+        <div class="station-pill">
+          <div class="station-pill__ico">✂</div>
+          <div>
+            <div class="station-pill__code">AUDINIO PJOVIMAS</div>
+            <div class="station-pill__sub">Fabric cutting · Line A · Vilnius</div>
+          </div>
+        </div>
+        <button class="switch-btn" id="switchBtn" title="Switch station">▾</button>
+        <div class="switch-menu" id="switchMenu">
+          <div class="switch-menu__lbl">Your stations · queue depth ahead</div>
+          <div class="switch-row is-current">
+            <div class="switch-row__ico">✂</div>
+            <div><div class="switch-row__code">AUDINIO PJOVIMAS</div><div class="switch-row__sub">Fabric cutting · Line A</div></div>
+            <div class="switch-row__depth"><b id="swDepthA">12</b><span>ahead</span></div>
+          </div>
+          <div class="switch-row">
+            <div class="switch-row__ico">⬗</div>
+            <div><div class="switch-row__code">VELENO PJOVIMAS</div><div class="switch-row__sub">Shaft cutting · Line A</div></div>
+            <div class="switch-row__depth"><b>7</b><span>ahead</span></div>
+          </div>
+          <div class="switch-row">
+            <div class="switch-row__ico">⊟</div>
+            <div><div class="switch-row__code">AUDINIO KLIJAVIMAS</div><div class="switch-row__sub">Fabric→shaft gluing · Line A</div></div>
+            <div class="switch-row__depth"><b>19</b><span>ahead</span></div>
+          </div>
+        </div>
+      </div>
       <div class="target-pill">Shift target <b id="tgN">6</b>/40 <div class="bar"><i id="tgBar" style="width:15%"></i></div></div>
     </div>
   </div>
