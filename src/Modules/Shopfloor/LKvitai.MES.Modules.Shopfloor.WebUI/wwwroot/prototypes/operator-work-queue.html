@@ -4,7 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>LAURESTA · ShopfloorPilot — AUDINIO PJOVIMAS</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 /* ── LKvitai.MES tokens (inlined for standalone drop-in) ─────────── */
 :root{
@@ -480,7 +479,7 @@ button,input,select{font:inherit;color:inherit}
           <b>Work queue</b>
           <span>Auto-ordered by prioritization engine</span>
         </div>
-        <label class="field field--search"><span class="field__ico"></span><input type="search" placeholder="Filter order / fabric / product…" id="qSearch"></label>
+        <label class="field field--search"><span class="field__ico"></span><input type="search" placeholder="Filter order / fabric / product…" id="qSearch" aria-label="Filter order, fabric or product"></label>
         <div class="toggle" id="doneToggle"><span class="toggle__sw"></span>Include done today</div>
         <div class="engine-note"><span class="dot"></span>Ranked: due · changeover · kit impact · fairness</div>
       </div>
@@ -688,7 +687,7 @@ let searchTerm = '';
 let doneToday = 6, cphBase = 11.4;
 
 /* ── Helpers ─────────────────────────────────────────────────────── */
-function fmt(n){ return n.toLocaleString('lt-LT').replace(/,/g,' '); }
+function fmt(n){ return n.toLocaleString('lt-LT').replaceAll(',',' '); }
 function dueClass(d){
   if(d<=TODAY) return 'due--today';
   const dt=new Date(d), t=new Date(TODAY);
@@ -727,19 +726,24 @@ function renderQueue(){
       const same=vis.filter(x=>x.cluster===it.cluster);
       const color=CLUSTER_COLORS[it.cluster]||CLUSTER_COLORS._solo;
       const isBatch=same.length>1;
+      const batchMeta = isBatch
+        ? '<span class="grp__save">⇄ same batch · ' + same.length + ' cuts · saves 1 changeover</span>'
+        : '<span style="color:var(--n-400)">single cut</span>';
       html+=`<tr class="grp-row"><td colspan="9"><div class="grp">
         <span class="grp__band" style="background:${color}"></span>
         <span class="grp__sku">${it.cluster}</span>
         <span class="grp__name">${it.fabricName}</span>
         <span class="grp__meta">
-          ${isBatch?`<span class="grp__save">⇄ same batch · ${same.length} cuts · saves 1 changeover</span>`:`<span style="color:var(--n-400)">single cut</span>`}
+          ${batchMeta}
         </span>
       </div></td></tr>`;
     }
     const color=CLUSTER_COLORS[it.cluster]||CLUSTER_COLORS._solo;
     const rm=REASON_META[it.reason], sm=STATUS_META[it.status];
     const sel=it._uid===selectedUid?'sel':'';
-    const extraCls=it.status==='done'?'done':(it.status==='stopped'?'stopped':'');
+    let extraCls='';
+    if(it.status==='done') extraCls='done';
+    else if(it.status==='stopped') extraCls='stopped';
     html+=`<tr class="qrow ${sel} ${extraCls}" data-uid="${it._uid}">
       <td class="clband"><i style="background:${color}"></i></td>
       <td>
@@ -902,14 +906,17 @@ function detailActions(it){
     <button class="btn btn--danger" data-dact="stop">⏹ Stop</button>`;
   if(it.status==='blocked') return `
     <button class="btn btn--block" disabled>Blocked — waiting on predecessor</button>`;
-  if(it.status==='done') return `
-    <button class="btn btn--block" disabled>✓ Completed${it.actual?` · logged ${it.actual} mm × ${it.qty}`:''}</button>`;
+  if(it.status==='done'){
+    const actualText = it.actual ? ' · logged ' + it.actual + ' mm × ' + it.qty : '';
+    return `
+    <button class="btn btn--block" disabled>✓ Completed${actualText}</button>`;
+  }
   if(it.status==='stopped') return `
     <button class="btn btn--primary btn--block" data-dact="start">▶ Resume job</button>`;
   return '';
 }
 function barcode(seed){
-  let s=0; for(const c of seed) s=(s*31+c.charCodeAt(0))&0xffff;
+  let s=0; for(const c of seed) s=(s*31+c.codePointAt(0))&0xffff;
   let out='';
   for(let i=0;i<40;i++){ s=(s*1103515245+12345)&0x7fffffff; const h=8+((s>>i)&1?14:6); out+=`<i style="height:${h}px;opacity:${(s>>3&1)?1:.78}"></i>`; }
   return out;
@@ -960,7 +967,7 @@ function openComplete(it){
 }
 function updateDelta(){
   const it=completeTarget; if(!it) return;
-  const a=parseFloat(document.getElementById('cmActual').value)||0;
+  const a=Number.parseFloat(document.getElementById('cmActual').value)||0;
   const d=a-it.cut;
   const el=document.getElementById('cmDelta');
   if(d===0){ el.className='delta delta--match'; el.innerHTML='● matches plan'; }
@@ -974,7 +981,7 @@ document.querySelectorAll('#cmReasons button').forEach(b=>{
 });
 document.getElementById('cmConfirm').addEventListener('click',()=>{
   const it=completeTarget; if(!it) return;
-  const actual=parseFloat(document.getElementById('cmActual').value)||it.cut;
+  const actual=Number.parseFloat(document.getElementById('cmActual').value)||it.cut;
   it.actual=actual; it.status='done';
   doneToday++; cphBase=Math.min(14,cphBase+0.2);
   closeModals();
@@ -991,7 +998,8 @@ document.getElementById('cmConfirm').addEventListener('click',()=>{
     if(showDone){ const r=document.querySelector(`.qrow[data-uid="${it._uid}"]`); if(r) r.classList.add('done-flash'); }
     if(unblocked){ const r=document.querySelector(`.qrow[data-uid="${unblocked._uid}"]`); if(r) r.classList.add('unblocking'); }
   });
-  showToast('Cut completed', `${it.id} · logged ${fmt(actual*it.qty)} mm of ${it.fabric}${unblocked?` · unblocked ${unblocked.id}`:''}`);
+  const unblockText = unblocked ? ' · unblocked ' + unblocked.id : '';
+  showToast('Cut completed', `${it.id} · logged ${fmt(actual*it.qty)} mm of ${it.fabric}${unblockText}`);
 });
 
 /* STOP */
