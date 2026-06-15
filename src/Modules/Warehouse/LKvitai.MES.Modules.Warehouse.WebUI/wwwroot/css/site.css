@@ -1093,6 +1093,12 @@ td.is-num strong { font-weight: 700; }
   vertical-align: middle;
 }
 
+.items-actions-button {
+  min-width: 72px !important;
+  height: 28px;
+  padding-inline: 10px !important;
+}
+
 .items-thumb {
   display: inline-flex;
   align-items: center;
