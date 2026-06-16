@@ -12,15 +12,35 @@ public sealed class WorkStationRepository : IWorkStationRepository
     public WorkStationRepository(ShopfloorDbContext db) => _db = db;
 
     public async Task<IReadOnlyList<WorkStationWithCenter>> ListAsync(CancellationToken cancellationToken)
-        => await JoinedQuery().OrderBy(x => x.Station.Code)
+    {
+        // Filtering/ordering must run against the joined entities (anonymous
+        // type is transparent to EF). Composing operators over a record-
+        // constructor projection is untranslatable, so the record is built
+        // client-side after materialization.
+        var rows = await (
+            from station in _db.WorkStations.AsNoTracking()
+            join center in _db.WorkCenters.AsNoTracking() on station.WorkCenterId equals center.Id
+            orderby station.Code
+            select new { Station = station, CenterName = center.Name })
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
 
+        return rows.Select(x => new WorkStationWithCenter(x.Station, x.CenterName)).ToList();
+    }
+
     public async Task<IReadOnlyList<WorkStationWithCenter>> ListActiveAsync(CancellationToken cancellationToken)
-        => await JoinedQuery().Where(x => x.Station.IsActive)
-            .OrderBy(x => x.Station.Code)
+    {
+        var rows = await (
+            from station in _db.WorkStations.AsNoTracking()
+            join center in _db.WorkCenters.AsNoTracking() on station.WorkCenterId equals center.Id
+            where station.IsActive
+            orderby station.Code
+            select new { Station = station, CenterName = center.Name })
             .ToListAsync(cancellationToken)
             .ConfigureAwait(false);
+
+        return rows.Select(x => new WorkStationWithCenter(x.Station, x.CenterName)).ToList();
+    }
 
     public async Task<WorkStationWithCenter?> GetAsync(Guid id, CancellationToken cancellationToken)
     {
@@ -72,9 +92,4 @@ public sealed class WorkStationRepository : IWorkStationRepository
     public void Add(WorkStation workStation) => _db.WorkStations.Add(workStation);
 
     public void Remove(WorkStation workStation) => _db.WorkStations.Remove(workStation);
-
-    private IQueryable<WorkStationWithCenter> JoinedQuery()
-        => from station in _db.WorkStations.AsNoTracking()
-           join center in _db.WorkCenters.AsNoTracking() on station.WorkCenterId equals center.Id
-           select new WorkStationWithCenter(station, center.Name);
 }

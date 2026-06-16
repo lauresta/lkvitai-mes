@@ -661,6 +661,13 @@ body {
   align-items: start;
 }
 
+/* When the editor form panel is closed only the list panel remains, so the
+   grid must collapse to a single full-width column instead of reserving the
+   empty form track. */
+.sf-grid--editor:has(> :only-child) {
+  grid-template-columns: 1fr;
+}
+
 .sf-form {
   display: grid;
   gap: 10px;
