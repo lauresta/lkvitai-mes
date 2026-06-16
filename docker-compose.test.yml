@@ -289,8 +289,6 @@ services:
       - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
     networks:
       - lkvitai-mes_default
-    depends_on:
-      - pg
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 15s
