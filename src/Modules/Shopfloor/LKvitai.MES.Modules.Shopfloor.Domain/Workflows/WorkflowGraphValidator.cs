@@ -131,38 +131,42 @@ public static class WorkflowGraphValidator
         var visiting = new HashSet<string>(StringComparer.Ordinal);
         var done = new HashSet<string>(StringComparer.Ordinal);
 
-        bool Visit(string node)
-        {
-            visiting.Add(node);
-            if (adjacency.TryGetValue(node, out var next))
-            {
-                foreach (var target in next)
-                {
-                    if (visiting.Contains(target))
-                    {
-                        return true;
-                    }
-
-                    if (!done.Contains(target) && Visit(target))
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            visiting.Remove(node);
-            done.Add(node);
-            return false;
-        }
-
         foreach (var node in graph.Nodes)
         {
-            if (!done.Contains(node.Id) && Visit(node.Id))
+            if (!done.Contains(node.Id) && VisitForCycle(node.Id, adjacency, visiting, done))
             {
                 return true;
             }
         }
 
+        return false;
+    }
+
+    private static bool VisitForCycle(
+        string node,
+        Dictionary<string, List<string>> adjacency,
+        HashSet<string> visiting,
+        HashSet<string> done)
+    {
+        visiting.Add(node);
+        if (adjacency.TryGetValue(node, out var next))
+        {
+            foreach (var target in next)
+            {
+                if (visiting.Contains(target))
+                {
+                    return true;
+                }
+
+                if (!done.Contains(target) && VisitForCycle(target, adjacency, visiting, done))
+                {
+                    return true;
+                }
+            }
+        }
+
+        visiting.Remove(node);
+        done.Add(node);
         return false;
     }
 
