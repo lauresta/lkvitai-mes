@@ -1,0 +1,353 @@
+@page "/workflows"
+@inject ShopfloorApiClient Api
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+
+<PageTitle>Cikada.MES · Production Families</PageTitle>
+
+<main class="shopfloor-page">
+    <section class="sf-head">
+        <div>
+            <div class="eyebrow mono">Shopfloor · Workflows</div>
+            <h1>Production Families</h1>
+            <p>Workflow templates authored in the editor and mapped to legacy product types.</p>
+        </div>
+        <div class="sf-head__actions">
+            <MudButton Variant="Variant.Filled" Class="lk-btn lk-btn--primary" OnClick="StartCreate">New family</MudButton>
+        </div>
+    </section>
+
+    <div class="sf-grid sf-grid--editor">
+        <MudPaper Outlined="true" Elevation="0" Class="panel">
+            <div class="panel__head">
+                <div>
+                    <h2>Families</h2>
+                    <span>@(_families?.Count ?? 0) total</span>
+                </div>
+            </div>
+
+            @if (_families is null)
+            {
+                <div class="db-lines"><span class="skeleton"></span><span class="skeleton"></span></div>
+            }
+            else if (_families.Count == 0)
+            {
+                <p class="sf-empty">No production families yet.</p>
+            }
+            else
+            {
+                <div class="table-wrap">
+                    <table class="sf-table">
+                        <thead>
+                            <tr>
+                                <th>Code</th><th>Name</th><th>Status</th><th>Mapped</th><th>Tasks</th><th>Updated</th>
+                                <th class="sf-col-actions">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var f in _families)
+                            {
+                                <tr>
+                                    <td class="mono">@f.Code</td>
+                                    <td>@f.Name</td>
+                                    <td><span class="chip @StatusChip(f.Status)">@f.Status</span></td>
+                                    <td class="mono">@f.MappedLegacyCount</td>
+                                    <td class="mono">@f.TaskCount</td>
+                                    <td class="mono">@((f.UpdatedAt ?? f.CreatedAt).ToString("yyyy-MM-dd HH:mm"))</td>
+                                    <td class="sf-col-actions">
+                                        <MudButton Size="Size.Small" Variant="Variant.Filled" Class="lk-btn lk-btn--primary" OnClick="@(() => OpenEditor(f))">Editor</MudButton>
+                                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Class="lk-btn" OnClick="@(() => Preview(f))">Preview</MudButton>
+                                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Class="lk-btn" OnClick="@(() => Publish(f))">Publish</MudButton>
+                                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Class="lk-btn" OnClick="@(() => StartClone(f))">Clone</MudButton>
+                                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Class="lk-btn" OnClick="@(() => Delete(f))">Delete</MudButton>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </MudPaper>
+
+        @if (_formOpen)
+        {
+            <MudPaper Outlined="true" Elevation="0" Class="panel">
+                <div class="panel__head">
+                    <div>
+                        <h2>@(_cloneSourceId is null ? "New family" : "Clone family")</h2>
+                        <span>Code and name are required</span>
+                    </div>
+                </div>
+                <div class="sf-form">
+                    <MudTextField @bind-Value="_code" Label="Code" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    <MudTextField @bind-Value="_name" Label="Name" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    <MudTextField @bind-Value="_description" Label="Description (optional)" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="2" />
+                    <div class="sf-form__actions">
+                        <MudButton Variant="Variant.Outlined" Class="lk-btn" OnClick="CancelForm">Cancel</MudButton>
+                        <MudButton Variant="Variant.Filled" Class="lk-btn lk-btn--primary" Disabled="_saving" OnClick="Save">Save</MudButton>
+                    </div>
+                </div>
+            </MudPaper>
+        }
+        else if (_preview is not null)
+        {
+            <MudPaper Outlined="true" Elevation="0" Class="panel">
+                <div class="panel__head">
+                    <div>
+                        <h2>Preview · @_preview.FamilyName</h2>
+                        <span>Client-side dry run — topologically ordered task plan</span>
+                    </div>
+                    <MudButton Size="Size.Small" Variant="Variant.Outlined" Class="lk-btn" OnClick="@(() => _preview = null)">Close</MudButton>
+                </div>
+
+                @if (_preview.Errors.Count > 0)
+                {
+                    <ul class="sf-errors">
+                        @foreach (var e in _preview.Errors)
+                        {
+                            <li><span class="chip chip--danger">Invalid</span> @e</li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <div class="table-wrap">
+                        <table class="sf-table">
+                            <thead>
+                                <tr><th>Step</th><th>Task</th><th>Station</th><th>Duration</th></tr>
+                            </thead>
+                            <tbody>
+                                @{ var step = 1; }
+                                @foreach (var t in _preview.Steps)
+                                {
+                                    <tr>
+                                        <td class="mono">@step</td>
+                                        <td>@t.Name</td>
+                                        <td>@t.Station</td>
+                                        <td class="mono">@t.Duration</td>
+                                    </tr>
+                                    step++;
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </MudPaper>
+        }
+    </div>
+</main>
+
+@code {
+    private IReadOnlyList<WorkflowTemplateSummaryDto>? _families;
+    private IReadOnlyList<WorkStationDto>? _stations;
+
+    private bool _formOpen;
+    private bool _saving;
+    private Guid? _cloneSourceId;
+    private string _code = "";
+    private string _name = "";
+    private string? _description;
+
+    private PreviewModel? _preview;
+
+    private sealed record PreviewStep(string Name, string Station, string Duration);
+    private sealed record PreviewModel(string FamilyName, IReadOnlyList<PreviewStep> Steps, IReadOnlyList<string> Errors);
+
+    protected override async Task OnInitializedAsync()
+    {
+        _stations = await Api.GetWorkStationsAsync(false, CancellationToken.None);
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _families = await Api.GetWorkflowsAsync(CancellationToken.None);
+        if (_families is null)
+        {
+            Snackbar.Add("Shopfloor API is unreachable.", Severity.Error);
+        }
+    }
+
+    private void OpenEditor(WorkflowTemplateSummaryDto f)
+        => Navigation.NavigateTo($"workflow-editor?id={f.Id}");
+
+    private void StartCreate()
+    {
+        _preview = null;
+        _cloneSourceId = null;
+        _code = "";
+        _name = "";
+        _description = null;
+        _formOpen = true;
+    }
+
+    private void StartClone(WorkflowTemplateSummaryDto f)
+    {
+        _preview = null;
+        _cloneSourceId = f.Id;
+        _code = f.Code + "-COPY";
+        _name = f.Name + " (copy)";
+        _description = f.Description;
+        _formOpen = true;
+    }
+
+    private void CancelForm() => _formOpen = false;
+
+    private async Task Save()
+    {
+        _saving = true;
+        try
+        {
+            if (_cloneSourceId is { } sourceId)
+            {
+                var result = await Api.CloneWorkflowAsync(sourceId, new CloneWorkflowTemplateRequest(_code, _name, _description), CancellationToken.None);
+                if (!Handle(result.Success, result.Error, "Family cloned.")) return;
+            }
+            else
+            {
+                var result = await Api.CreateWorkflowAsync(new CreateWorkflowTemplateRequest(_code, _name, _description), CancellationToken.None);
+                if (!Handle(result.Success, result.Error, "Family created.")) return;
+            }
+
+            _formOpen = false;
+            await LoadAsync();
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private async Task Publish(WorkflowTemplateSummaryDto f)
+    {
+        var result = await Api.PublishWorkflowAsync(f.Id, CancellationToken.None);
+        if (Handle(result.Success, result.Error, $"{f.Code} published."))
+        {
+            await LoadAsync();
+        }
+    }
+
+    private async Task Delete(WorkflowTemplateSummaryDto f)
+    {
+        var result = await Api.DeleteWorkflowAsync(f.Id, CancellationToken.None);
+        if (Handle(result.Success, result.Error, $"{f.Code} deleted."))
+        {
+            await LoadAsync();
+        }
+    }
+
+    private async Task Preview(WorkflowTemplateSummaryDto f)
+    {
+        _formOpen = false;
+        var detail = await Api.GetWorkflowAsync(f.Id, CancellationToken.None);
+        if (detail is null)
+        {
+            Snackbar.Add("Could not load workflow graph.", Severity.Error);
+            return;
+        }
+
+        _preview = BuildPreview(detail);
+    }
+
+    private PreviewModel BuildPreview(WorkflowTemplateDto wf)
+    {
+        var graph = wf.Graph;
+        var errors = new List<string>();
+
+        var nodes = graph.Nodes.ToDictionary(n => n.Id, n => n);
+        var starts = graph.Nodes.Where(n => n.Kind == WorkflowNodeKinds.Start).ToList();
+        var finishes = graph.Nodes.Where(n => n.Kind == WorkflowNodeKinds.Finish).ToList();
+
+        if (starts.Count != 1) errors.Add("Graph must have exactly one start node.");
+        if (finishes.Count != 1) errors.Add("Graph must have exactly one finish node.");
+
+        foreach (var t in graph.Nodes.Where(n => n.Kind == WorkflowNodeKinds.Task))
+        {
+            if (t.WorkStationId is null) errors.Add($"Task '{t.Name}' has no work station.");
+            if (t.DurationSec is null or <= 0) errors.Add($"Task '{t.Name}' has no positive duration.");
+        }
+
+        var order = TopologicalOrder(graph, nodes, errors);
+
+        if (errors.Count > 0)
+        {
+            return new PreviewModel(wf.Name, Array.Empty<PreviewStep>(), errors);
+        }
+
+        var stationNames = (_stations ?? Array.Empty<WorkStationDto>())
+            .ToDictionary(s => s.Id, s => $"{s.Code} — {s.Name}");
+
+        var steps = order
+            .Where(id => nodes[id].Kind == WorkflowNodeKinds.Task)
+            .Select(id => nodes[id])
+            .Select(n => new PreviewStep(
+                n.Name,
+                n.WorkStationId is { } sid && stationNames.TryGetValue(sid, out var name) ? name : "—",
+                n.DurationSec is { } d ? $"{d}s" : "—"))
+            .ToList();
+
+        return new PreviewModel(wf.Name, steps, errors);
+    }
+
+    private static List<string> TopologicalOrder(
+        WorkflowGraphDto graph,
+        IReadOnlyDictionary<string, WorkflowNodeDto> nodes,
+        List<string> errors)
+    {
+        var inDegree = nodes.Keys.ToDictionary(id => id, _ => 0);
+        var adjacency = nodes.Keys.ToDictionary(id => id, _ => new List<string>());
+
+        foreach (var e in graph.Edges)
+        {
+            if (!nodes.ContainsKey(e.From) || !nodes.ContainsKey(e.To))
+            {
+                errors.Add($"Edge {e.From} → {e.To} references a missing node.");
+                continue;
+            }
+
+            adjacency[e.From].Add(e.To);
+            inDegree[e.To]++;
+        }
+
+        var queue = new Queue<string>(inDegree.Where(kv => kv.Value == 0).Select(kv => kv.Key));
+        var order = new List<string>();
+        while (queue.Count > 0)
+        {
+            var current = queue.Dequeue();
+            order.Add(current);
+            foreach (var next in adjacency[current])
+            {
+                if (--inDegree[next] == 0)
+                {
+                    queue.Enqueue(next);
+                }
+            }
+        }
+
+        if (order.Count != nodes.Count)
+        {
+            errors.Add("Graph contains a cycle.");
+        }
+
+        return order;
+    }
+
+    private static string StatusChip(WorkflowStatus status) => status switch
+    {
+        WorkflowStatus.Published => "chip--ok",
+        WorkflowStatus.Archived => "chip--slate",
+        _ => "chip--info",
+    };
+
+    private bool Handle(bool success, string? error, string okMessage)
+    {
+        if (success)
+        {
+            Snackbar.Add(okMessage, Severity.Success);
+            return true;
+        }
+
+        Snackbar.Add(error ?? "Operation failed.", Severity.Error);
+        return false;
+    }
+}

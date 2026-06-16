@@ -16,6 +16,12 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddBuildVersion();
 builder.Services.AddScoped<ShopfloorDatabaseStatusService>();
 
+builder.Services.AddTransient<ShopfloorApiAuthHandler>();
+builder.Services
+    .AddHttpClient("ShopfloorApi")
+    .AddHttpMessageHandler<ShopfloorApiAuthHandler>();
+builder.Services.AddScoped<ShopfloorApiClient>();
+
 var app = builder.Build();
 
 app.UsePathBase(ScaffoldModuleStartupExtensions.ResolvePathBase(app.Configuration));

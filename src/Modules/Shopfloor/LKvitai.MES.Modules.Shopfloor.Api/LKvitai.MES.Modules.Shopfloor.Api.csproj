@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>LKvitai.MES.Modules.Shopfloor.Api</RootNamespace>
+    <AssemblyName>LKvitai.MES.Modules.Shopfloor.Api</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Serilog.AspNetCore" />
+    <PackageReference Include="Serilog.Sinks.Console" />
+    <PackageReference Include="Serilog.Sinks.File" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\BuildingBlocks\LKvitai.MES.BuildingBlocks.ModuleStartup\LKvitai.MES.BuildingBlocks.ModuleStartup.csproj" />
+    <ProjectReference Include="..\..\..\BuildingBlocks\LKvitai.MES.BuildingBlocks.PortalAuth\LKvitai.MES.BuildingBlocks.PortalAuth.csproj" />
+    <ProjectReference Include="..\LKvitai.MES.Modules.Shopfloor.Application\LKvitai.MES.Modules.Shopfloor.Application.csproj" />
+    <ProjectReference Include="..\LKvitai.MES.Modules.Shopfloor.Contracts\LKvitai.MES.Modules.Shopfloor.Contracts.csproj" />
+    <ProjectReference Include="..\LKvitai.MES.Modules.Shopfloor.Infrastructure\LKvitai.MES.Modules.Shopfloor.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

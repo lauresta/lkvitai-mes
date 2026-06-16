@@ -53,7 +53,7 @@ as first-class architectural capabilities — see §7.
 
 **Phase 1 (in scope)**
 - Ingest "order released to production" from the legacy system (poll + translate).
-- `WorkflowTemplate` per product type, authored in the existing Workflow Editor.
+- `WorkflowTemplate` per **Production Family** (many legacy product types → one flow), authored in the existing Workflow Editor.
 - Generate `WorkItem`s per order from the template (split by workstation, with dependencies).
 - Per-line work **queue** with automatic ordering (Take-Next prioritization).
 - Operator complete / stop with **actual quantity** capture.
@@ -105,7 +105,7 @@ These are locked. Blueprints must not relitigate them.
 
 | # | Decision | Rule |
 |---|----------|------|
-| **S-1** | Product types live in legacy | Shopfloor stores `productTypeCode` as an opaque string. It never owns the 400-type catalog. A native `ProductCatalog` module is revisited only when Sales moves into MES. |
+| **S-1** | Product types live in legacy | Shopfloor never owns the 400-type catalog. It caches a **read-only snapshot** (code + name) of legacy product types and **maps many of them (many : 1) to a Production Family** that carries one workflow. Legacy codes are opaque strings; the mapping is a separate table so re-sync never drops it. A native catalog is revisited only when Sales moves into MES. |
 | **S-2** | Legacy integration is one-directional read + status write-back | MES **polls** legacy MS SQL (no webhooks/CDC — Access/SQL can't push). Status flows back as a write to a legacy table/proc. Both directions cross the ACL only. |
 | **S-3** | Warehouse owns all stock truth | Shopfloor never writes stock. It emits intent (`MaterialReservationRequested`, `MaterialConsumed`); Warehouse applies it via existing commands. Honors Warehouse **Decision 1** (StockLedger is sole movement owner). |
 | **S-4** | Reserve on release, consume on completion | Reservation (SOFT) is placed when an order is released. Real write-off happens only when an operator completes a task and enters the **actual** quantity. A stopped task consumes nothing — the reservation simply remains. |
@@ -121,12 +121,15 @@ Names are conceptual; fields are defined later in `shopfloor-01-domain-model.md`
 
 | Aggregate | Responsibility | Persistence (proposed) |
 |-----------|----------------|------------------------|
-| **WorkflowTemplate** | The flow for one product type: nodes (operations), edges (dependencies), per-node formulas + material lines. Authored in Workflow Editor. | State-based (changes rarely; versioned) |
+| **WorkflowTemplate** (= Production Family) | The flow for a **family** of legacy product types that share one production flow (many codes → one template). Nodes (operations), edges (dependencies); per-node materials + formulas come later. Authored in Workflow Editor. | State-based (changes rarely; versioned) |
 | **ProductionOrder** | One legacy order released to production. Carries `productTypeCode` + `params` (width, height, fabric SKU, qty…) verbatim. Lifecycle: `Released → InProgress → Done / Stopped`. | Event-sourced (auditable lifecycle) |
 | **WorkItem** | One atomic task instance = (ProductionOrder × WorkflowTemplate node). Bound to a WorkStation, carries resolved materials and dependency links. Lifecycle: `Blocked → Pending → InProgress → Done / Stopped`. | Event-sourced (traceability + actual qty) |
 | **WorkStation** | A physical workplace (fabric cutting, aluminium saw, steel saw, assembly, semi-assembly, profile cutting). Holds the ordered queue of its WorkItems; has a WIP/CONWIP limit. | State-based |
 
 Supporting concepts (not necessarily their own aggregates in Phase 1):
+- **LegacyProductType** (read-only cache) + **ProductTypeWorkflowMap** (many : 1) — the
+  legacy snapshot and the product-type → Production Family mapping. See
+  [`shopfloor-10`](./shopfloor-10-mvp-authoring-scope.md).
 - **Release batch** — the morning grouping of orders. Modeled as an ingestion grouping key,
   not a rigid aggregate. The "packs by product type" behavior emerges from queue ordering
   (SetupGain), not from a hard batch entity.
@@ -222,7 +225,8 @@ WorkItem / order, surfaced to the operator and back to legacy as "stopped". Not 
 ```
 1. Morning poll: legacy orders flagged "released"  ──▶  Integration.LegacyOrders
 2. ACL publishes ProductionOrderReleased {legacyId, productTypeCode, params}  ──▶ RabbitMQ
-3. Shopfloor creates ProductionOrder; loads WorkflowTemplate[productTypeCode]
+3. Shopfloor creates ProductionOrder; resolves its Production Family via the
+     product-type mapping → loads that family's WorkflowTemplate
 4. Flow Engine expands order × template  ──▶  WorkItems (+ dependencies, + resolved materials)
 5. Formula Engine computes cut sizes / quantities from params
 6. Reservation: MaterialReservationRequested  ──▶  Warehouse AllocateReservation (SOFT)
@@ -276,6 +280,10 @@ This file is the umbrella. Implementation blueprints follow, each self-contained
 | `shopfloor-05-prioritization-engine` | Score model, coefficients, configuration, tests |
 | `shopfloor-06-operator-queue-ui` | Per-line queue UI, complete/stop + actual-qty flow |
 | `shopfloor-07-digital-twin` | Live projection, dashboard, Prometheus/Grafana export |
+| `shopfloor-08-ui-scope` | **Cross-cutting** — full UI screen inventory (all groups, mappings, settings) |
+| `shopfloor-09-solution-architecture` | **Cross-cutting** — projects, namespaces, classes, component & external interactions |
+| `shopfloor-10-mvp-authoring-scope` | **MVP cut** — author workflows + lines + product-type mapping (the "see the scale" slice) |
+| `shopfloor-11-mvp-authoring-implementation-blueprint` | Buildable spec for the MVP authoring slice (projects, schema, legacy sync, editor bridge) |
 
 **Build order:** 01 → 02 → 04 → 06 deliver the core loop (order → tasks → queue → consume →
 status back). 03/05/07 layer on the differentiators.

@@ -57,6 +57,9 @@ jobs:
           - name: scanning-webui
             dockerfile: src/Modules/Scanning/LKvitai.MES.Modules.Scanning.WebUI/Dockerfile
             image: ghcr.io/${{ github.repository_owner }}/lkvitai-mes-scanning-webui
+          - name: shopfloor-api
+            dockerfile: src/Modules/Shopfloor/LKvitai.MES.Modules.Shopfloor.Api/Dockerfile
+            image: ghcr.io/${{ github.repository_owner }}/lkvitai-mes-shopfloor-api
           - name: shopfloor-webui
             dockerfile: src/Modules/Shopfloor/LKvitai.MES.Modules.Shopfloor.WebUI/Dockerfile
             image: ghcr.io/${{ github.repository_owner }}/lkvitai-mes-shopfloor-webui

@@ -1,0 +1,165 @@
+@page "/ref/work-centers"
+@inject ShopfloorApiClient Api
+@inject ISnackbar Snackbar
+
+<PageTitle>Cikada.MES · Work Centers</PageTitle>
+
+<main class="shopfloor-page">
+    <section class="sf-head">
+        <div>
+            <div class="eyebrow mono">Shopfloor · Reference Data</div>
+            <h1>Work Centers</h1>
+            <p>Production work centers grouping one or more work stations.</p>
+        </div>
+        <div class="sf-head__actions">
+            <MudButton Variant="Variant.Filled" Class="lk-btn lk-btn--primary" OnClick="StartCreate">New work center</MudButton>
+        </div>
+    </section>
+
+    <div class="sf-grid sf-grid--editor">
+        <MudPaper Outlined="true" Elevation="0" Class="panel">
+            <div class="panel__head">
+                <div>
+                    <h2>Work centers</h2>
+                    <span>@(_centers?.Count ?? 0) total</span>
+                </div>
+            </div>
+
+            @if (_centers is null)
+            {
+                <div class="db-lines"><span class="skeleton"></span><span class="skeleton"></span></div>
+            }
+            else if (_centers.Count == 0)
+            {
+                <p class="sf-empty">No work centers yet.</p>
+            }
+            else
+            {
+                <div class="table-wrap">
+                    <table class="sf-table">
+                        <thead>
+                            <tr><th>Code</th><th>Name</th><th class="sf-col-actions">Actions</th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var c in _centers)
+                            {
+                                <tr class="@(_editingId == c.Id ? "is-selected" : null)">
+                                    <td class="mono">@c.Code</td>
+                                    <td>@c.Name</td>
+                                    <td class="sf-col-actions">
+                                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Class="lk-btn" OnClick="@(() => StartEdit(c))">Edit</MudButton>
+                                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Class="lk-btn" OnClick="@(() => Delete(c))">Delete</MudButton>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </MudPaper>
+
+        @if (_formOpen)
+        {
+            <MudPaper Outlined="true" Elevation="0" Class="panel">
+                <div class="panel__head">
+                    <div>
+                        <h2>@(_editingId is null ? "New work center" : "Edit work center")</h2>
+                        <span>Code and name are required</span>
+                    </div>
+                </div>
+                <div class="sf-form">
+                    <MudTextField @bind-Value="_code" Label="Code" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    <MudTextField @bind-Value="_name" Label="Name" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    <div class="sf-form__actions">
+                        <MudButton Variant="Variant.Outlined" Class="lk-btn" OnClick="CancelForm">Cancel</MudButton>
+                        <MudButton Variant="Variant.Filled" Class="lk-btn lk-btn--primary" Disabled="_saving" OnClick="Save">Save</MudButton>
+                    </div>
+                </div>
+            </MudPaper>
+        }
+    </div>
+</main>
+
+@code {
+    private IReadOnlyList<WorkCenterDto>? _centers;
+    private bool _formOpen;
+    private bool _saving;
+    private Guid? _editingId;
+    private string _code = "";
+    private string _name = "";
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _centers = await Api.GetWorkCentersAsync(CancellationToken.None);
+        if (_centers is null)
+        {
+            Snackbar.Add("Shopfloor API is unreachable.", Severity.Error);
+        }
+    }
+
+    private void StartCreate()
+    {
+        _editingId = null;
+        _code = "";
+        _name = "";
+        _formOpen = true;
+    }
+
+    private void StartEdit(WorkCenterDto c)
+    {
+        _editingId = c.Id;
+        _code = c.Code;
+        _name = c.Name;
+        _formOpen = true;
+    }
+
+    private void CancelForm() => _formOpen = false;
+
+    private async Task Save()
+    {
+        _saving = true;
+        try
+        {
+            if (_editingId is { } id)
+            {
+                var result = await Api.UpdateWorkCenterAsync(id, new UpdateWorkCenterRequest(_code, _name), CancellationToken.None);
+                if (!Handle(result.Success, result.Error, "Work center updated.")) return;
+            }
+            else
+            {
+                var result = await Api.CreateWorkCenterAsync(new CreateWorkCenterRequest(_code, _name), CancellationToken.None);
+                if (!Handle(result.Success, result.Error, "Work center created.")) return;
+            }
+
+            _formOpen = false;
+            await LoadAsync();
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private async Task Delete(WorkCenterDto c)
+    {
+        var result = await Api.DeleteWorkCenterAsync(c.Id, CancellationToken.None);
+        if (Handle(result.Success, result.Error, "Work center deleted."))
+        {
+            await LoadAsync();
+        }
+    }
+
+    private bool Handle(bool success, string? error, string okMessage)
+    {
+        if (success)
+        {
+            Snackbar.Add(okMessage, Severity.Success);
+            return true;
+        }
+
+        Snackbar.Add(error ?? "Operation failed.", Severity.Error);
+        return false;
+    }
+}

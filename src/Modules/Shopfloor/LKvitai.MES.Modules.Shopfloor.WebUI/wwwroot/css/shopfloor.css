@@ -610,6 +610,106 @@ body {
 
 }
 
+/* MVP authoring: CRUD/mapping layout helpers */
+.sf-grid--editor {
+  align-items: start;
+}
+
+.sf-form {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+
+.sf-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.sf-toolbar,
+.sf-bulkbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--n-100);
+}
+
+.sf-bulkbar {
+  background: var(--n-25);
+}
+
+.sf-toolbar .mud-input-control,
+.sf-bulkbar .mud-input-control {
+  min-width: 180px;
+}
+
+.sf-col-actions {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.sf-col-actions .lk-btn {
+  margin-left: 4px;
+}
+
+.sf-col-check {
+  width: 32px;
+  text-align: center;
+}
+
+.sf-table tr.is-selected td {
+  background: var(--accent-50);
+}
+
+.sf-empty {
+  margin: 0;
+  padding: 18px 14px;
+  color: var(--n-500);
+  font-size: 13px;
+}
+
+.sf-errors {
+  margin: 0;
+  padding: 12px 16px;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+
+.sf-errors li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--n-700);
+}
+
+.sf-editor-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--n-150);
+  background: var(--n-25);
+}
+
+.sf-editor-toolbar__picker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 320px;
+}
+
+.sf-editor-toolbar__status {
+  color: var(--n-500);
+  font-size: 12px;
+}
+
 @media (max-width: 640px) {
   .shopfloor-page {
     padding: 16px 12px 32px;

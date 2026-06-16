@@ -1,9 +1,200 @@
 @page "/workflow-editor"
+@using System.Text.Json
+@implements IAsyncDisposable
+@inject ShopfloorApiClient Api
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
 
 <PageTitle>Cikada.MES · Workflow Editor</PageTitle>
 
 <main class="workflow-page workflow-page--embed">
-    <iframe class="workflow-embed"
+    <section class="sf-editor-toolbar">
+        <div class="sf-editor-toolbar__picker">
+            <MudSelect T="Guid" Value="_selectedId" ValueChanged="OnFamilyChanged" Label="Production family"
+                       Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true">
+                @foreach (var f in _families ?? Array.Empty<WorkflowTemplateSummaryDto>())
+                {
+                    <MudSelectItem T="Guid" Value="f.Id">@f.Code — @f.Name</MudSelectItem>
+                }
+            </MudSelect>
+            @if (_current is not null)
+            {
+                <span class="chip @StatusChip(_current.Status)">@_current.Status</span>
+            }
+        </div>
+        <div class="sf-editor-toolbar__status mono">@_statusMessage</div>
+    </section>
+
+    <iframe id="workflow-editor-frame"
+            class="workflow-embed"
             src="prototypes/shopfloor-workflow-editor-prototype.html"
             title="Shopfloor workflow editor prototype"></iframe>
 </main>
+
+@code {
+    private IReadOnlyList<WorkflowTemplateSummaryDto>? _families;
+    private WorkflowTemplateDto? _current;
+    private IReadOnlyList<WorkStationDto>? _stations;
+    private Guid _selectedId;
+    private string _statusMessage = "Select a production family to begin.";
+
+    private DotNetObjectReference<WorkflowEditor>? _selfRef;
+    private bool _bridgeReady;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _families = await Api.GetWorkflowsAsync(CancellationToken.None) ?? Array.Empty<WorkflowTemplateSummaryDto>();
+        _stations = await Api.GetWorkStationsAsync(true, CancellationToken.None) ?? Array.Empty<WorkStationDto>();
+
+        var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+        var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+        if (query.TryGetValue("id", out var idValue) && Guid.TryParse(idValue, out var id))
+        {
+            _selectedId = id;
+        }
+        else
+        {
+            _selectedId = _families.FirstOrDefault()?.Id ?? Guid.Empty;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        _selfRef = DotNetObjectReference.Create(this);
+        await JS.InvokeVoidAsync("shopfloorWorkflowBridge.init", _selfRef, "workflow-editor-frame");
+        _bridgeReady = true;
+
+        if (_selectedId != Guid.Empty)
+        {
+            await LoadAndPushAsync();
+        }
+    }
+
+    private async Task OnFamilyChanged(Guid id)
+    {
+        _selectedId = id;
+        if (_bridgeReady && id != Guid.Empty)
+        {
+            await LoadAndPushAsync();
+        }
+    }
+
+    private async Task LoadAndPushAsync()
+    {
+        _current = await Api.GetWorkflowAsync(_selectedId, CancellationToken.None);
+        if (_current is null)
+        {
+            _statusMessage = "Could not load workflow.";
+            Snackbar.Add("Could not load workflow.", Severity.Error);
+            return;
+        }
+
+        var payload = new
+        {
+            type = "shopfloor.workflow.load",
+            workflow = new
+            {
+                id = _current.Id.ToString(),
+                code = _current.Code,
+                name = _current.Name,
+                graph = _current.Graph,
+            },
+            stations = (_stations ?? Array.Empty<WorkStationDto>()).Select(s => new
+            {
+                id = s.Id.ToString(),
+                code = s.Code,
+                name = s.Name,
+                workCenterName = s.WorkCenterName,
+            }),
+        };
+
+        var json = System.Text.Json.JsonSerializer.Serialize(payload, JsonOptions);
+        await JS.InvokeVoidAsync("shopfloorWorkflowBridge.postLoad", json);
+        _statusMessage = $"Loaded {_current.Code}.";
+    }
+
+    [JSInvokable]
+    public async Task OnSaveRequested(string messageJson)
+    {
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(messageJson);
+            var root = doc.RootElement;
+            var workflowId = root.GetProperty("workflowId").GetString();
+            if (!Guid.TryParse(workflowId, out var id))
+            {
+                await PostSaveResultAsync(false, "Invalid workflow id.");
+                return;
+            }
+
+            var graph = root.GetProperty("graph").Deserialize<WorkflowGraphDto>(JsonOptions);
+            if (graph is null)
+            {
+                await PostSaveResultAsync(false, "Invalid graph payload.");
+                return;
+            }
+
+            var result = await Api.SaveWorkflowGraphAsync(id, new SaveWorkflowGraphRequest(graph), CancellationToken.None);
+            if (result.Success)
+            {
+                _current = result.Value;
+                _statusMessage = "Saved.";
+                Snackbar.Add("Workflow graph saved.", Severity.Success);
+                await PostSaveResultAsync(true, "Saved");
+            }
+            else
+            {
+                _statusMessage = result.Error ?? "Save failed.";
+                Snackbar.Add(result.Error ?? "Save failed.", Severity.Error);
+                await PostSaveResultAsync(false, result.Error ?? "Save failed.");
+            }
+        }
+        catch (Exception ex)
+        {
+            await PostSaveResultAsync(false, "Save failed: " + ex.Message);
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task PostSaveResultAsync(bool ok, string message)
+    {
+        var json = System.Text.Json.JsonSerializer.Serialize(new
+        {
+            type = "shopfloor.workflow.save-result",
+            ok,
+            message,
+        }, JsonOptions);
+        await JS.InvokeVoidAsync("shopfloorWorkflowBridge.postSaveResult", json);
+    }
+
+    private static string StatusChip(WorkflowStatus status) => status switch
+    {
+        WorkflowStatus.Published => "chip--ok",
+        WorkflowStatus.Archived => "chip--slate",
+        _ => "chip--info",
+    };
+
+    private static readonly System.Text.Json.JsonSerializerOptions JsonOptions =
+        new(System.Text.Json.JsonSerializerDefaults.Web);
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("shopfloorWorkflowBridge.dispose");
+        }
+        catch
+        {
+            // Circuit already torn down.
+        }
+
+        _selfRef?.Dispose();
+    }
+}
