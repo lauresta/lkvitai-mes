@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - src/Modules/Shopfloor/**
+      - tests/Modules/Shopfloor/**
       - src/BuildingBlocks/**
       - .github/workflows/shopfloor-ci.yml
 
@@ -28,8 +29,26 @@ jobs:
       - name: Restore
         run: dotnet restore src/LKvitai.MES.sln
 
+      - name: Build Shopfloor Contracts
+        run: dotnet build src/Modules/Shopfloor/LKvitai.MES.Modules.Shopfloor.Contracts/LKvitai.MES.Modules.Shopfloor.Contracts.csproj -c Release --no-restore
+
+      - name: Build Shopfloor Domain
+        run: dotnet build src/Modules/Shopfloor/LKvitai.MES.Modules.Shopfloor.Domain/LKvitai.MES.Modules.Shopfloor.Domain.csproj -c Release --no-restore
+
+      - name: Build Shopfloor Application
+        run: dotnet build src/Modules/Shopfloor/LKvitai.MES.Modules.Shopfloor.Application/LKvitai.MES.Modules.Shopfloor.Application.csproj -c Release --no-restore
+
+      - name: Build Shopfloor Infrastructure
+        run: dotnet build src/Modules/Shopfloor/LKvitai.MES.Modules.Shopfloor.Infrastructure/LKvitai.MES.Modules.Shopfloor.Infrastructure.csproj -c Release --no-restore
+
+      - name: Build Shopfloor API
+        run: dotnet build src/Modules/Shopfloor/LKvitai.MES.Modules.Shopfloor.Api/LKvitai.MES.Modules.Shopfloor.Api.csproj -c Release --no-restore
+
       - name: Build Shopfloor WebUI
         run: dotnet build src/Modules/Shopfloor/LKvitai.MES.Modules.Shopfloor.WebUI/LKvitai.MES.Modules.Shopfloor.WebUI.csproj -c Release --no-restore
+
+      - name: Test Shopfloor Unit
+        run: dotnet test tests/Modules/Shopfloor/LKvitai.MES.Tests.Shopfloor.Unit/LKvitai.MES.Tests.Shopfloor.Unit.csproj -c Release --no-restore
 
       # MCR occasionally returns 403 on anonymous HEAD /v2/.../manifests/... during
       # BuildKit metadata resolution. Pulling the base images with retries up front
@@ -52,6 +71,9 @@ jobs:
               sleep ${wait}
             done
           done
+
+      - name: Docker build Shopfloor API
+        run: docker build -f src/Modules/Shopfloor/LKvitai.MES.Modules.Shopfloor.Api/Dockerfile -t lkvitai-mes-shopfloor-api:ci .
 
       - name: Docker build Shopfloor WebUI
         run: docker build -f src/Modules/Shopfloor/LKvitai.MES.Modules.Shopfloor.WebUI/Dockerfile -t lkvitai-mes-shopfloor-webui:ci .

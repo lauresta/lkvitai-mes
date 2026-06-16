@@ -299,6 +299,7 @@ body{
 .field-grid{display:grid; grid-template-columns:1fr 1fr; gap:11px;}
 .field label{display:block; font-size:11px; font-weight:600; color:var(--n-600); margin-bottom:5px;}
 .field label .req{color:var(--brand-600); margin-left:3px;}
+.field label .opt{color:var(--n-400); font-weight:500; margin-left:3px;}
 .input, .select, .textarea{
   width:100%; font-family:var(--font-ui); font-size:13px; color:var(--n-900);
   border:1px solid var(--n-200); border-radius:var(--r-sm); padding:8px 10px; background:var(--n-0);
@@ -422,8 +423,8 @@ pre.json{
     </div>
     <div class="ctx-pill">
       <span class="dot"></span>
-      <span class="lbl">Product</span>
-      <span class="val">ROLLER_STD</span>
+      <span class="lbl">Family</span>
+      <span class="val" id="ctxFamily">—</span>
     </div>
     <div class="sel-chip" id="selChip">
       <span class="sc-dot"></span>
@@ -446,10 +447,14 @@ pre.json{
       <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
       Delete selected
     </button>
-    <div class="btn-sep"></div>
-    <button class="btn btn-primary" id="btnExport">
+    <button class="btn" id="btnExport">
       <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M8 11l4 4 4-4M5 19h14"/></svg>
       Export JSON
+    </button>
+    <div class="btn-sep"></div>
+    <button class="btn btn-primary" id="btnSave">
+      <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
+      Save
     </button>
   </header>
 
@@ -510,7 +515,7 @@ pre.json{
           <span class="panel-eyebrow">Inspector</span>
         </div>
         <div class="panel-title">Task Settings</div>
-        <div class="panel-sub" id="settingsSub">Edit runtime rules for the selected task.</div>
+        <div class="panel-sub" id="settingsSub">Edit the selected task’s name, work station and duration.</div>
 
         <!-- empty / disabled states -->
         <div class="empty-state" id="emptyState">
@@ -519,69 +524,32 @@ pre.json{
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
             </div>
             <div class="es-t" id="esTitle">No task selected</div>
-            <div class="es-d" id="esDesc">Select an amber task node on the canvas to edit its execution rules and formulas.</div>
+            <div class="es-d" id="esDesc">Select an amber task node on the canvas to edit its name, work station and duration.</div>
             <span class="es-tag none" id="esTag" style="display:none;">—</span>
           </div>
         </div>
 
-        <!-- task form -->
+        <!-- task form (MVP fields) -->
         <div id="taskForm">
           <div class="field">
-            <label>Task Type<span class="req">*</span></label>
-            <input class="input mono" id="fType" value="CUT_FABRIC" />
-          </div>
-          <div class="field-grid">
-            <div class="field">
-              <label>Work Center</label>
-              <select class="select" id="fWc">
-                <option>FAB</option><option>ASM</option><option>QC</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>Terminal</label>
-              <select class="select" id="fTerminal">
-                <option>No</option><option>Yes</option>
-              </select>
-            </div>
-          </div>
-          <div class="field-grid">
-            <div class="field">
-              <label>Kit Impact</label>
-              <input class="input mono" id="fKit" type="number" value="10" />
-            </div>
-            <div class="field">
-              <label>Required</label>
-              <select class="select" id="fReq">
-                <option>Yes</option><option>No</option>
-              </select>
-            </div>
+            <label for="fName">Task name<span class="req">*</span></label>
+            <input class="input" id="fName" value="" />
           </div>
           <div class="field">
-            <label>Formulas (Excel style)</label>
-            <textarea class="textarea mono" id="fFormula">fabric_length_mm =
-=CEILING((height_mm + 20) * 1.01, 1)</textarea>
-            <div class="helper">Runtime values evaluated by the execution engine per work order.</div>
+            <label for="fStation">Work station<span class="req">*</span></label>
+            <select class="select" id="fStation">
+              <option value="">— select station —</option>
+            </select>
           </div>
-
-          <div class="side-actions">
-            <button class="btn" id="btnPreview" style="flex:0 0 auto;">
-              <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
-              Preview
-            </button>
-            <div class="helper" style="margin-top:0; align-self:center;">Test with: <span class="mono">width=1750, height=2200</span></div>
+          <div class="field">
+            <label for="fDuration">Duration (seconds)<span class="req">*</span></label>
+            <input class="input mono" id="fDuration" type="number" min="1" value="" />
           </div>
-
-          <div class="preview-out" id="previewOut">
-            <div class="po-title">Formula preview · CUT_FABRIC</div>
-            <div class="po-row"><span class="pk">width_mm</span><span class="pv">1750</span></div>
-            <div class="po-row"><span class="pk">height_mm</span><span class="pv">2200</span></div>
-            <div class="po-res"><span class="pk mono">fabric_length_mm</span><span class="pv mono" id="poResult">—</span></div>
+          <div class="field">
+            <label for="fTaskType">Task type code <span class="opt">(reserved)</span></label>
+            <input class="input mono" id="fTaskType" value="" disabled />
+            <div class="helper">Reserved for a future execution engine — disabled in the authoring MVP.</div>
           </div>
-
-          <button class="btn" id="btnPlan" style="width:100%; margin-top:13px;">
-            <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6M9 9h1"/></svg>
-            PlanJson (demo)
-          </button>
         </div>
       </div>
 
@@ -589,11 +557,11 @@ pre.json{
         <div class="panel-eyebrow" style="margin-bottom:7px;">Modeling rules</div>
         <div class="panel-title" style="font-size:14px; margin-bottom:11px;">Tips</div>
         <ul class="tips">
-          <li><span class="tdot"></span><span><b>Start</b> node <b>Job Received</b> is output-only.</span></li>
-          <li><span class="tdot"></span><span><b>Finish</b> node <b>Print Label</b> is input-only.</span></li>
+          <li><span class="tdot"></span><span><b>Start</b> node is output-only; <b>Finish</b> is input-only.</span></li>
+          <li><span class="tdot"></span><span>Each <b>task</b> needs a name, work station and positive duration.</span></li>
           <li><span class="tdot"></span><span>Links read <b>Source → Target</b> as a dependency.</span></li>
-          <li><span class="tdot"></span><span><b>Export JSON</b> emits graph + runtime (dependsOn, formulas).</span></li>
-          <li><span class="tdot"></span><span>Styling follows <b>Cikada.MES</b> teal accents.</span></li>
+          <li><span class="tdot"></span><span><b>Save</b> persists the graph (lenient draft validation).</span></li>
+          <li><span class="tdot"></span><span>Publish runs full validation from the Families list.</span></li>
         </ul>
       </div>
 
@@ -650,42 +618,26 @@ pre.json{
    nodes, edges, runtime tasks, formulas.
    ════════════════════════════════════════════════ */
 
-const META = {
-  conwip:"LINE-01",
-  label:"SEMI_06 (semi finished)",
-  code:"cutting_id",
-  duration:"300 sek",
-  batching:"by size and color",
-  notes:"Saziningumo taisykle taikoma priverstinai"
-};
-
-/* ── Domain state ──────────────────────────────── */
+/* ── Domain state (MVP authoring) ──────────────── */
 const state = {
-  productCode:"ROLLER_STD",
+  workflowId:null,
+  familyCode:"—",
+  familyName:"",
+  stations:[],
   nodes:[
-    {id:"start",  title:"Job Received", kind:"start",  x:120, y:430},
-    {id:"cut-1",  title:"Task", kind:"task", taskType:"CUT_FABRIC", wc:"FAB", terminal:false, kitImpact:10, mandatory:true,
-      formulasText:"fabric_length_mm =\n=CEILING((height_mm + 20) * 1.01, 1)", x:470, y:120},
-    {id:"cut-2",  title:"Task", kind:"task", taskType:"CUT_FABRIC", wc:"FAB", terminal:false, kitImpact:10, mandatory:true,
-      formulasText:"fabric_length_mm =\n=CEILING((height_mm + 20) * 1.01, 1)", x:470, y:430},
-    {id:"cut-3",  title:"Task", kind:"task", taskType:"CUT_FABRIC", wc:"FAB", terminal:false, kitImpact:10, mandatory:true,
-      formulasText:"fabric_length_mm =\n=CEILING((height_mm + 20) * 1.01, 1)", x:470, y:740},
-    {id:"merge-1",title:"Task", kind:"task", taskType:"MERGE_PANELS", wc:"ASM", terminal:false, kitImpact:10, mandatory:true,
-      formulasText:"join_count =\n=ROUND(width_mm / 600, 0)", x:840, y:275},
-    {id:"finish", title:"Finish Product • Print Label", kind:"finish", x:870, y:760}
+    {id:"start",  name:"Start",  kind:"start",  x:160, y:430},
+    {id:"finish", name:"Finish", kind:"finish", x:760, y:430}
   ],
   edges:[
-    {from:"start", to:"cut-1"},
-    {from:"start", to:"cut-2"},
-    {from:"start", to:"cut-3"},
-    {from:"cut-1", to:"merge-1"},
-    {from:"cut-2", to:"merge-1"},
-    {from:"cut-3", to:"finish"}
+    {from:"start", to:"finish"}
   ],
   selected:null,
   selectedEdge:null,
-  taskSeq:3
+  taskSeq:0
 };
+
+let stationsById = {};
+function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 
 /* ── View transform ────────────────────────────── */
 const view = {scale:0.82, x:40, y:30};
@@ -696,21 +648,15 @@ const canvas = $("#canvas");
 const edgesSvg = $("#edges");
 
 /* ── Node rendering ────────────────────────────── */
-function metaHtml(){
-  return `<div class="meta">
-    <div class="meta-row"><span class="k">CONWIP Group:</span><span class="v">${META.conwip}</span></div>
-    <div class="meta-row"><span class="k">Label template:</span><span class="v">${META.label}</span></div>
-    <div class="meta-row"><span class="k">Task code:</span><span class="v">${META.code}</span></div>
-    <div class="meta-row"><span class="k">Def. duration:</span><span class="v">${META.duration}</span></div>
-    <div class="meta-row"><span class="k">Batching rule:</span><span class="v">${META.batching}</span></div>
-    <div class="meta-row note"><span class="k" style="color:var(--n-500);">Notes:</span><span class="v">${META.notes}</span></div>
-  </div>`;
+function stationLabel(n){
+  const s = n.workStationId ? stationsById[n.workStationId] : null;
+  return s ? { code:s.code, name:s.name } : { code:"TASK", name:"— no station —" };
 }
 
 function nodeHtml(n){
   if(n.kind==="start"){
     return `<div class="card">
-      <div class="card-head"><span class="card-title">${n.title}</span><span class="card-kind">START</span></div>
+      <div class="card-head"><span class="card-title">${esc(n.name||"Start")}</span><span class="card-kind">START</span></div>
       <div class="start-body">
         <div class="sock-row out"><span class="sock-label">flow</span><span class="socket out connected" data-sock="out"></span></div>
       </div>
@@ -718,22 +664,23 @@ function nodeHtml(n){
   }
   if(n.kind==="finish"){
     return `<div class="card">
-      <div class="card-head"><span class="card-title">${n.title}</span><span class="card-kind">FINISH</span></div>
+      <div class="card-head"><span class="card-title">${esc(n.name||"Finish")}</span><span class="card-kind">FINISH</span></div>
       <div class="finish-body">
         <div class="sock-row in"><span class="socket in connected" data-sock="in"></span><span class="sock-label">flow</span></div>
       </div>
     </div>`;
   }
   // task
+  const sl = stationLabel(n);
   return `<div class="card">
-    <div class="card-head"><span class="card-title">Task</span><span class="card-kind">${n.wc}</span></div>
-    <div class="sock-row out"><span class="sock-label">prerequisite</span><span class="socket out connected" data-sock="out"></span></div>
-    <div class="tt-field">
-      <svg class="tt-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 1 0-5.7 5.6l-6 6V21h3l6-6a4 4 0 0 0 2.7-8.7z"/></svg>
-      <span class="tt-val" data-ttval>${n.taskType}</span>
+    <div class="card-head"><span class="card-title">${esc(n.name||"Task")}</span><span class="card-kind">${esc(sl.code)}</span></div>
+    <div class="sock-row out"><span class="sock-label">next</span><span class="socket out connected" data-sock="out"></span></div>
+    <div class="meta">
+      <div class="meta-row"><span class="k">Station:</span><span class="v">${esc(sl.name)}</span></div>
+      <div class="meta-row"><span class="k">Duration:</span><span class="v">${n.durationSec?esc(n.durationSec)+" s":"—"}</span></div>
+      ${n.taskTypeCode?`<div class="meta-row"><span class="k">Type:</span><span class="v">${esc(n.taskTypeCode)}</span></div>`:""}
     </div>
-    <div class="sock-row in"><span class="socket in connected" data-sock="in"></span><span class="sock-label">dependsOn</span></div>
-    ${metaHtml()}
+    <div class="sock-row in"><span class="socket in connected" data-sock="in"></span><span class="sock-label">prev</span></div>
   </div>`;
 }
 
@@ -927,18 +874,15 @@ function syncSidebar(){
   if(n){
     chip.classList.add("show");
     $("#scId").textContent = n.id;
-    $("#scType").textContent = isTask ? n.taskType+" · "+n.wc : (n.kind==="start"?"Start · output-only":"Finish · input-only");
+    $("#scType").textContent = isTask ? (n.name||"Task")+" · "+stationLabel(n).code : (n.kind==="start"?"Start · output-only":"Finish · input-only");
   } else chip.classList.remove("show");
 
   if(isTask){
-    $("#settingsSub").textContent = "Editing "+n.id+" — runtime execution rules.";
-    $("#fType").value = n.taskType;
-    $("#fWc").value = n.wc;
-    $("#fTerminal").value = n.terminal ? "Yes":"No";
-    $("#fKit").value = n.kitImpact;
-    $("#fReq").value = n.mandatory ? "Yes":"No";
-    $("#fFormula").value = n.formulasText;
-    $("#previewOut").classList.remove("show");
+    $("#settingsSub").textContent = "Editing "+n.id+" — task definition.";
+    $("#fName").value = n.name || "";
+    $("#fStation").value = n.workStationId || "";
+    $("#fDuration").value = n.durationSec || "";
+    $("#fTaskType").value = n.taskTypeCode || "";
   } else if(n){
     // disabled / empty state tuned to node kind
     const start = n.kind==="start";
@@ -965,26 +909,34 @@ function syncSidebar(){
 function updateCardFromForm(){
   const n = state.nodes.find(x=>x.id===state.selected);
   if(!n||n.kind!=="task") return;
-  n.taskType = $("#fType").value.trim() || "TASK";
-  n.wc = $("#fWc").value;
-  n.terminal = $("#fTerminal").value==="Yes";
-  n.kitImpact = parseInt($("#fKit").value,10)||0;
-  n.mandatory = $("#fReq").value==="Yes";
-  n.formulasText = $("#fFormula").value;
-  // live reflect on the card
+  n.name = $("#fName").value.trim() || "Task";
+  n.workStationId = $("#fStation").value || null;
+  const dur = parseInt($("#fDuration").value,10);
+  n.durationSec = (Number.isFinite(dur) && dur>0) ? dur : null;
+  n.taskTypeCode = $("#fTaskType").value.trim() || null;
+  // live reflect on the card (re-render this node only)
   const el = world.querySelector(`.node[data-id="${CSS.escape(n.id)}"]`);
   if(el){
-    el.querySelector("[data-ttval]").textContent = n.taskType;
-    el.querySelector(".card-kind").textContent = n.wc;
+    el.innerHTML = nodeHtml(n);
+    attachNodeEvents(el, n);
+    renderEdges();
   }
-  // chip
-  $("#scType").textContent = n.taskType+" · "+n.wc;
+  $("#scType").textContent = (n.name)+" · "+stationLabel(n).code;
 }
 
-["fType","fWc","fTerminal","fKit","fReq","fFormula"].forEach(id=>{
+// fTaskType is reserved/disabled in the MVP, so it is not wired for live edits.
+["fName","fStation","fDuration"].forEach(id=>{
   $("#"+id).addEventListener("input", updateCardFromForm);
   $("#"+id).addEventListener("change", updateCardFromForm);
 });
+
+/* populate the station dropdown from the load payload */
+function populateStations(){
+  const sel = $("#fStation");
+  if(!sel) return;
+  sel.innerHTML = '<option value="">— select station —</option>' +
+    state.stations.map(s=>`<option value="${esc(s.id)}">${esc(s.code)} — ${esc(s.name)}</option>`).join("");
+}
 
 /* ── Node drag + click ─────────────────────────── */
 function attachNodeEvents(el, n){
@@ -1107,8 +1059,8 @@ $("#btnAdd").onclick=()=>{
   const off=(state.taskSeq%6)*34;
   const cx=(rect.width/2 - view.x)/view.scale - 134 + off;
   const cy=(rect.height/2 - view.y)/view.scale - 90 + off;
-  const n = {id, title:"Task", kind:"task", taskType:"NEW_TASK", wc:"FAB", terminal:false,
-    kitImpact:10, mandatory:true, formulasText:"value_mm =\n=CEILING(height_mm * 1.0, 1)",
+  const n = {id, name:"New task", kind:"task",
+    workStationId: state.stations[0]?.id || null, durationSec:60, taskTypeCode:null,
     x:Math.round(cx), y:Math.round(cy)};
   state.nodes.push(n);
   renderNodes(); renderEdges();
@@ -1188,112 +1140,20 @@ function autoLayout(){
   toast("Auto layout applied");
 }
 
-/* ── Formula preview (=CEILING) ────────────────── */
-$("#btnPreview").onclick=()=>{
-  const n=state.nodes.find(x=>x.id===state.selected);
-  if(!n||n.kind!=="task") return;
-  const W=1750, H=2200;
-  // evaluate the simple excel-style formula from the textarea, fall back to default
-  let result;
-  try{
-    result = evalFormula(n.formulasText, {width_mm:W, height_mm:H});
-  }catch(e){ result = "ERR"; }
-  $("#previewOut").querySelector(".po-title").textContent = "Formula preview · "+n.taskType;
-  $("#poResult").textContent = (typeof result==="number") ? result : result;
-  $("#previewOut").classList.add("show");
-};
-
-function evalFormula(text, vars){
-  // take last non-empty line, strip leading '='
-  const lines = text.split("\n").map(s=>s.trim()).filter(Boolean);
-  let expr = lines[lines.length-1].replace(/^=/,"");
-  // substitute vars
-  Object.entries(vars).forEach(([k,v])=>{ expr = expr.replace(new RegExp("\\b"+k+"\\b","g"), v); });
-  // translate CEILING/ROUND/FLOOR
-  expr = expr.replace(/CEILING\s*\(([^,]+),\s*([^)]+)\)/gi, (m,a,b)=>`(Math.ceil((${a})/(${b}))*(${b}))`);
-  expr = expr.replace(/FLOOR\s*\(([^,]+),\s*([^)]+)\)/gi, (m,a,b)=>`(Math.floor((${a})/(${b}))*(${b}))`);
-  expr = expr.replace(/ROUND\s*\(([^,]+),\s*([^)]+)\)/gi, (m,a,b)=>{
-    const f=`Math.pow(10,(${b}))`; return `(Math.round((${a})*${f})/${f})`;
-  });
-  if(!/^[0-9+\-*/.()\sMathceilroundfowp,]*$/i.test(expr)) throw new Error("unsafe");
-  // eslint-disable-next-line no-new-func
-  return Function('"use strict";return ('+expr+')')();
-}
-
-/* ── Build export / plan JSON ──────────────────── */
-function buildExport(){
-  const depMap={}; state.nodes.forEach(n=>depMap[n.id]=[]);
-  state.edges.forEach(e=>{ if(depMap[e.to]) depMap[e.to].push(e.from); });
-  const tasks = state.nodes.filter(n=>n.kind==="task").map(n=>{
-    const deps = depMap[n.id].map(src=>{
-      const sn=state.nodes.find(x=>x.id===src);
-      return sn&&sn.kind==="start" ? "START" : (sn?sn.taskType:src);
-    });
-    return {taskType:n.taskType, wc:n.wc, isTerminal:n.terminal, dependsOn:deps};
-  });
-  const formulasByTask={};
-  state.nodes.filter(n=>n.kind==="task").forEach(n=>{
-    const lines=n.formulasText.split("\n").map(s=>s.trim()).filter(Boolean);
-    const obj={};
-    // pair "name =" with the formula line
-    for(let i=0;i<lines.length;i++){
-      const m=lines[i].match(/^([a-z_][a-z0-9_]*)\s*=?$/i);
-      if(m && lines[i+1] && lines[i+1].startsWith("=")){ obj[m[1]]=lines[i+1]; i++; }
-      else { const m2=lines[i].match(/^([a-z_][a-z0-9_]*)\s*=\s*(=.+)$/i); if(m2) obj[m2[1]]=m2[2]; }
-    }
-    formulasByTask[n.taskType]=obj;
-  });
+/* ── Build the WorkflowGraphDto-shaped payload ─── */
+function buildGraph(){
   return {
-    productCode: state.productCode,
-    graph:{
-      nodes: state.nodes.map(n=>{
-        const base={id:n.id, title:n.kind==="task"?"Task":n.title, kind:n.kind, position:[n.x,n.y]};
-        if(n.kind==="task") Object.assign(base,{taskType:n.taskType, wc:n.wc, terminal:n.terminal, kitImpact:n.kitImpact, mandatory:n.mandatory, formulasText:n.formulasText.replace(/\n/g," ")});
-        return base;
-      }),
-      edges: state.edges.map(e=>({from:e.from, to:e.to}))
-    },
-    runtime:{ tasks, formulasByTask }
+    nodes: state.nodes.map(n=>({
+      id:n.id,
+      kind:n.kind,
+      name: n.name || (n.kind==="start"?"Start":n.kind==="finish"?"Finish":"Task"),
+      position:{ x:n.x, y:n.y },
+      workStationId: n.kind==="task" ? (n.workStationId || null) : null,
+      durationSec: n.kind==="task" ? (n.durationSec ?? null) : null,
+      taskTypeCode: n.kind==="task" ? (n.taskTypeCode || null) : null
+    })),
+    edges: state.edges.map(e=>({ from:e.from, to:e.to }))
   };
-}
-
-function buildPlan(){
-  const exp=buildExport();
-  const order = topoOrder();
-  return {
-    plan:{
-      productCode: state.productCode,
-      generatedAt:"2026-06-07T18:40:00+03:00",
-      conwipGroup: META.conwip,
-      labelTemplate: META.label,
-      sequence: order.filter(id=>{
-        const n=state.nodes.find(x=>x.id===id); return n && n.kind!=="start";
-      }).map((id,i)=>{
-        const n=state.nodes.find(x=>x.id===id);
-        return {
-          step:i+1,
-          node:id,
-          op:n.kind==="finish"?"PRINT_LABEL":n.taskType,
-          wc:n.kind==="finish"?"QC":n.wc,
-          durationSek:n.kind==="finish"?60:300,
-          dependsOn: exp.runtime.tasks.find(t=>t.taskType===n.taskType)?.dependsOn || (n.kind==="finish"?["CUT_FABRIC"]:[])
-        };
-      }),
-      resolvedFormulas:{ "fabric_length_mm": 2243, "_inputs":{width_mm:1750, height_mm:2200} }
-    }
-  };
-}
-
-function topoOrder(){
-  const indeg={}, adj={};
-  state.nodes.forEach(n=>{indeg[n.id]=0; adj[n.id]=[];});
-  state.edges.forEach(e=>{ adj[e.from].push(e.to); indeg[e.to]++; });
-  const q=state.nodes.filter(n=>indeg[n.id]===0).map(n=>n.id);
-  const out=[];
-  while(q.length){ const id=q.shift(); out.push(id); (adj[id]||[]).forEach(t=>{ if(--indeg[t]===0) q.push(t); }); }
-  // append any leftover (cycles) deterministically
-  state.nodes.forEach(n=>{ if(!out.includes(n.id)) out.push(n.id); });
-  return out;
 }
 
 /* ── JSON syntax highlight ─────────────────────── */
@@ -1312,25 +1172,19 @@ function highlight(obj){
   return json;
 }
 
-/* ── Modal control ─────────────────────────────── */
-let modalMode="export";
-function openModal(mode){
-  modalMode=mode;
-  const obj = mode==="plan" ? buildPlan() : buildExport();
+/* ── Modal control (debug Export JSON) ─────────── */
+function openModal(){
+  const obj = buildGraph();
   $("#jsonOut").innerHTML = highlight(obj);
-  $("#modalTitle").textContent = mode==="plan" ? "PlanJson (demo)" : "Export JSON";
-  $("#modalSub").textContent = "product · "+state.productCode;
-  $("#modalMeta").textContent = mode==="plan"
-    ? "mock generated execution plan · "+ (obj.plan.sequence.length) +" steps"
-    : "graph + runtime model · "+state.nodes.length+" nodes · "+state.edges.length+" edges";
-  $("#modalIc").innerHTML = mode==="plan"
-    ? `<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>`
-    : `<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M8 11l4 4 4-4M5 19h14"/></svg>`;
+  $("#modalTitle").textContent = "Export JSON";
+  $("#modalSub").textContent = "family · "+state.familyCode;
+  $("#modalMeta").textContent = "workflow graph · "+state.nodes.length+" nodes · "+state.edges.length+" edges";
+  $("#modalIc").innerHTML =
+    `<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M8 11l4 4 4-4M5 19h14"/></svg>`;
   $("#modalVeil").classList.add("show");
 }
 function closeModal(){ $("#modalVeil").classList.remove("show"); }
-$("#btnExport").onclick=()=>openModal("export");
-$("#btnPlan").onclick=()=>openModal("plan");
+$("#btnExport").onclick=()=>openModal();
 $("#modalClose").onclick=closeModal;
 $("#modalDone").onclick=closeModal;
 $("#modalVeil").addEventListener("pointerdown", e=>{ if(e.target===$("#modalVeil")) closeModal(); });
@@ -1344,17 +1198,73 @@ document.addEventListener("keydown", e=>{
 });
 
 $("#modalCopy").onclick=()=>{
-  const obj = modalMode==="plan"?buildPlan():buildExport();
-  navigator.clipboard?.writeText(JSON.stringify(obj,null,2)).then(()=>toast("JSON copied to clipboard")).catch(()=>toast("Copy unavailable"));
+  navigator.clipboard?.writeText(JSON.stringify(buildGraph(),null,2)).then(()=>toast("JSON copied to clipboard")).catch(()=>toast("Copy unavailable"));
 };
 $("#modalDownload").onclick=()=>{
-  const obj = modalMode==="plan"?buildPlan():buildExport();
-  const blob=new Blob([JSON.stringify(obj,null,2)],{type:"application/json"});
+  const blob=new Blob([JSON.stringify(buildGraph(),null,2)],{type:"application/json"});
   const a=document.createElement("a");
   a.href=URL.createObjectURL(blob);
-  a.download = (modalMode==="plan"?"plan":"workflow")+"_"+state.productCode+".json";
+  a.download = "workflow_"+(state.familyCode||"graph")+".json";
   a.click(); URL.revokeObjectURL(a.href);
   toast("Downloaded "+a.download);
+};
+
+/* ── Parent ↔ iframe bridge (postMessage) ──────── */
+function postToParent(msg){
+  if(window.parent && window.parent!==window){ window.parent.postMessage(msg, "*"); }
+}
+
+function loadFromPayload(workflow, stations){
+  if(!workflow) return;
+  state.workflowId = workflow.id || null;
+  state.familyCode = workflow.code || "—";
+  state.familyName = workflow.name || "";
+  $("#ctxFamily").textContent = state.familyCode;
+
+  state.stations = Array.isArray(stations) ? stations : [];
+  stationsById = {};
+  state.stations.forEach(s=>{ stationsById[s.id] = s; });
+  populateStations();
+
+  const graph = workflow.graph || { nodes:[], edges:[] };
+  state.nodes = (graph.nodes||[]).map(n=>({
+    id:n.id,
+    kind:n.kind,
+    name:n.name,
+    workStationId:n.workStationId || null,
+    durationSec:n.durationSec ?? null,
+    taskTypeCode:n.taskTypeCode || null,
+    x: n.position ? Math.round(n.position.x) : 160,
+    y: n.position ? Math.round(n.position.y) : 200
+  }));
+  state.edges = (graph.edges||[]).map(e=>({ from:e.from, to:e.to }));
+  state.selected = null;
+  state.selectedEdge = null;
+
+  // keep task sequence ahead of any numeric "task-N" ids
+  let maxSeq = 0;
+  state.nodes.forEach(n=>{ const m=/^task-(\d+)$/.exec(n.id); if(m) maxSeq=Math.max(maxSeq, parseInt(m[1],10)); });
+  state.taskSeq = maxSeq;
+
+  renderNodes();
+  requestAnimationFrame(()=>{ renderEdges(); syncSidebar(); fitView(); requestAnimationFrame(renderEdges); });
+  toast("Loaded "+state.familyCode);
+}
+
+window.addEventListener("message", ev=>{
+  // Only accept messages from the hosting parent on the same origin.
+  if(ev.origin !== window.location.origin) return;
+  if(window.parent && window.parent !== window && ev.source !== window.parent) return;
+  const d = ev.data;
+  if(!d || typeof d!=="object") return;
+  if(d.type==="shopfloor.workflow.load"){ loadFromPayload(d.workflow, d.stations); }
+  else if(d.type==="shopfloor.workflow.save-result"){ toast(d.ok ? (d.message||"Saved") : (d.message||"Save failed")); }
+});
+
+$("#btnSave").onclick=()=>{
+  if(!state.workflowId){ toast("No workflow loaded"); return; }
+  postToParent({ type:"shopfloor.workflow.save", workflowId:state.workflowId, graph:buildGraph() });
+  toast("Saving…");
 };
 
 /* ── Toast ─────────────────────────────────────── */
@@ -1371,6 +1281,8 @@ function boot(){
   renderNodes();
   // edges need a layout pass to read socket positions
   requestAnimationFrame(()=>{ renderEdges(); syncSidebar(); fitView(); requestAnimationFrame(renderEdges); });
+  // tell the Blazor host we are ready to receive the load payload
+  postToParent({ type:"shopfloor.workflow.ready" });
 }
 boot();
 window.addEventListener("resize", ()=>renderEdges());

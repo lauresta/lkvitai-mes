@@ -1,0 +1,236 @@
+@page "/map/product-types"
+@inject ShopfloorApiClient Api
+@inject ISnackbar Snackbar
+
+<PageTitle>Cikada.MES · Legacy Types & Coverage</PageTitle>
+
+<main class="shopfloor-page">
+    <section class="sf-head">
+        <div>
+            <div class="eyebrow mono">Shopfloor · Mappings</div>
+            <h1>Legacy Types &amp; Coverage</h1>
+            <p>Map legacy product types to production families.</p>
+        </div>
+        <div class="sf-head__actions">
+            <MudButton Variant="Variant.Outlined" Class="lk-btn" Disabled="_syncing" OnClick="Sync">@(_syncing ? "Syncing…" : "Sync legacy")</MudButton>
+        </div>
+    </section>
+
+    <section class="sf-kpis" aria-label="Coverage">
+        <MudPaper Outlined="true" Elevation="0" Class="panel kpi">
+            <span class="kpi__label mono">Mapped / total</span>
+            <strong class="mono">@(_coverage?.MappedLegacyTypes.ToString() ?? "—") / @(_coverage?.TotalLegacyTypes.ToString() ?? "—")</strong>
+            <span class="chip chip--info">Coverage</span>
+        </MudPaper>
+        <MudPaper Outlined="true" Elevation="0" Class="panel kpi">
+            <span class="kpi__label mono">Unmapped</span>
+            <strong class="mono">@(_coverage?.UnmappedLegacyTypes.ToString() ?? "—")</strong>
+            <span class="chip @((_coverage?.UnmappedLegacyTypes ?? 0) > 0 ? "chip--warn" : "chip--ok")">@((_coverage?.UnmappedLegacyTypes ?? 0) > 0 ? "Attention" : "Complete")</span>
+        </MudPaper>
+        <MudPaper Outlined="true" Elevation="0" Class="panel kpi">
+            <span class="kpi__label mono">Families</span>
+            <strong class="mono">@(_coverage?.FamilyCount.ToString() ?? "—")</strong>
+            <span class="chip chip--slate">Mapped</span>
+        </MudPaper>
+    </section>
+
+    <MudPaper Outlined="true" Elevation="0" Class="panel">
+        <div class="panel__head">
+            <div>
+                <h2>Legacy product types</h2>
+                <span>@(_rows?.Count ?? 0) shown@(_total > 0 ? $" of {_total}" : "")</span>
+            </div>
+        </div>
+
+        <div class="sf-toolbar">
+            <MudTextField @bind-Value="_search" Label="Search" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="false" OnKeyUp="OnSearchKey" />
+            <MudSelect T="string" @bind-Value="_mappedFilter" Label="Mapping" Variant="Variant.Outlined" Margin="Margin.Dense">
+                <MudSelectItem T="string" Value="@("all")">All</MudSelectItem>
+                <MudSelectItem T="string" Value="@("mapped")">Mapped</MudSelectItem>
+                <MudSelectItem T="string" Value="@("unmapped")">Unmapped</MudSelectItem>
+            </MudSelect>
+            <MudButton Variant="Variant.Outlined" Class="lk-btn" OnClick="Reload">Apply</MudButton>
+        </div>
+
+        <div class="sf-bulkbar">
+            <span class="mono">@_selected.Count selected</span>
+            <MudSelect T="Guid" @bind-Value="_assignTarget" Label="Assign to family" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="@(_selected.Count == 0)">
+                @foreach (var f in _families ?? Array.Empty<WorkflowTemplateSummaryDto>())
+                {
+                    <MudSelectItem T="Guid" Value="f.Id">@f.Code — @f.Name</MudSelectItem>
+                }
+            </MudSelect>
+            <MudButton Variant="Variant.Filled" Class="lk-btn lk-btn--primary" Disabled="@(_selected.Count == 0 || _assignTarget == Guid.Empty)" OnClick="BulkAssign">Assign</MudButton>
+        </div>
+
+        @if (_rows is null)
+        {
+            <div class="db-lines"><span class="skeleton"></span><span class="skeleton"></span></div>
+        }
+        else if (_rows.Count == 0)
+        {
+            <p class="sf-empty">No legacy product types match the current filters.</p>
+        }
+        else
+        {
+            <div class="table-wrap">
+                <table class="sf-table">
+                    <thead>
+                        <tr>
+                            <th class="sf-col-check"><input type="checkbox" @onchange="ToggleAll" checked="@AllSelected" /></th>
+                            <th>Code</th><th>Kind</th><th>Name</th><th>Mapped family</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var r in _rows)
+                        {
+                            <tr class="@(_selected.Contains(r.Code) ? "is-selected" : null)">
+                                <td class="sf-col-check"><input type="checkbox" checked="@_selected.Contains(r.Code)" @onchange="@(e => ToggleRow(r.Code, e))" /></td>
+                                <td class="mono">@r.Code</td>
+                                <td>@r.KindName</td>
+                                <td>@r.Name</td>
+                                <td>
+                                    @if (r.MappedWorkflowTemplateId is not null)
+                                    {
+                                        <span class="chip chip--ok mono">@r.MappedWorkflowCode</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="chip chip--slate">Unmapped</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </MudPaper>
+</main>
+
+@code {
+    private IReadOnlyList<LegacyProductTypeDto>? _rows;
+    private IReadOnlyList<WorkflowTemplateSummaryDto>? _families;
+    private CoverageSummaryDto? _coverage;
+    private readonly HashSet<string> _selected = new(StringComparer.Ordinal);
+
+    private string _search = "";
+    private string _mappedFilter = "all";
+    private Guid _assignTarget;
+    private int _total;
+    private bool _syncing;
+
+    private bool AllSelected => _rows is { Count: > 0 } && _rows.All(r => _selected.Contains(r.Code));
+
+    protected override async Task OnInitializedAsync()
+    {
+        _families = await Api.GetWorkflowsAsync(CancellationToken.None);
+        await Reload();
+    }
+
+    private async Task Reload()
+    {
+        await LoadCoverageAsync();
+        await LoadRowsAsync();
+    }
+
+    private async Task LoadCoverageAsync()
+        => _coverage = await Api.GetCoverageAsync(CancellationToken.None);
+
+    private async Task LoadRowsAsync()
+    {
+        bool? mapped = _mappedFilter switch
+        {
+            "mapped" => true,
+            "unmapped" => false,
+            _ => null,
+        };
+
+        var page = await Api.GetLegacyProductTypesAsync(_search, mapped, false, 1, 200, CancellationToken.None);
+        if (page is null)
+        {
+            Snackbar.Add("Shopfloor API is unreachable.", Severity.Error);
+            _rows = Array.Empty<LegacyProductTypeDto>();
+            _total = 0;
+            return;
+        }
+
+        _rows = page.Items;
+        _total = page.Total;
+        _selected.RemoveWhere(code => _rows.All(r => r.Code != code));
+    }
+
+    private void OnSearchKey(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            _ = Reload();
+        }
+    }
+
+    private void ToggleRow(string code, ChangeEventArgs e)
+    {
+        if (e.Value is true)
+        {
+            _selected.Add(code);
+        }
+        else
+        {
+            _selected.Remove(code);
+        }
+    }
+
+    private void ToggleAll(ChangeEventArgs e)
+    {
+        if (_rows is null) return;
+
+        if (e.Value is true)
+        {
+            foreach (var r in _rows) _selected.Add(r.Code);
+        }
+        else
+        {
+            _selected.Clear();
+        }
+    }
+
+    private async Task BulkAssign()
+    {
+        if (_selected.Count == 0 || _assignTarget == Guid.Empty) return;
+
+        var request = new BulkAssignMappingRequest(_selected.ToList(), _assignTarget);
+        var result = await Api.BulkAssignAsync(request, CancellationToken.None);
+        if (result.Success)
+        {
+            Snackbar.Add($"Assigned {_selected.Count} product type(s).", Severity.Success);
+            _selected.Clear();
+            await Reload();
+        }
+        else
+        {
+            Snackbar.Add(result.Error ?? "Assign failed.", Severity.Error);
+        }
+    }
+
+    private async Task Sync()
+    {
+        _syncing = true;
+        try
+        {
+            var result = await Api.SyncLegacyProductTypesAsync(CancellationToken.None);
+            if (result.Success)
+            {
+                Snackbar.Add("Legacy product types synced.", Severity.Success);
+                await Reload();
+            }
+            else
+            {
+                Snackbar.Add(result.Error ?? "Sync failed.", Severity.Error);
+            }
+        }
+        finally
+        {
+            _syncing = false;
+        }
+    }
+}

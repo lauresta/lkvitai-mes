@@ -10,6 +10,7 @@ COPY global.json .
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.ModuleStartup/LKvitai.MES.BuildingBlocks.ModuleStartup.csproj BuildingBlocks/LKvitai.MES.BuildingBlocks.ModuleStartup/
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/LKvitai.MES.BuildingBlocks.PortalAuth.csproj BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.WebUI/LKvitai.MES.BuildingBlocks.WebUI.csproj BuildingBlocks/LKvitai.MES.BuildingBlocks.WebUI/
+COPY src/Modules/Shopfloor/LKvitai.MES.Modules.Shopfloor.Contracts/LKvitai.MES.Modules.Shopfloor.Contracts.csproj Modules/Shopfloor/LKvitai.MES.Modules.Shopfloor.Contracts/
 COPY src/Modules/Shopfloor/LKvitai.MES.Modules.Shopfloor.WebUI/LKvitai.MES.Modules.Shopfloor.WebUI.csproj Modules/Shopfloor/LKvitai.MES.Modules.Shopfloor.WebUI/
 
 RUN dotnet restore Modules/Shopfloor/LKvitai.MES.Modules.Shopfloor.WebUI/LKvitai.MES.Modules.Shopfloor.WebUI.csproj
@@ -17,6 +18,7 @@ RUN dotnet restore Modules/Shopfloor/LKvitai.MES.Modules.Shopfloor.WebUI/LKvitai
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.ModuleStartup/ BuildingBlocks/LKvitai.MES.BuildingBlocks.ModuleStartup/
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/ BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/
 COPY src/BuildingBlocks/LKvitai.MES.BuildingBlocks.WebUI/ BuildingBlocks/LKvitai.MES.BuildingBlocks.WebUI/
+COPY src/Modules/Shopfloor/LKvitai.MES.Modules.Shopfloor.Contracts/ Modules/Shopfloor/LKvitai.MES.Modules.Shopfloor.Contracts/
 COPY src/Modules/Shopfloor/LKvitai.MES.Modules.Shopfloor.WebUI/ Modules/Shopfloor/LKvitai.MES.Modules.Shopfloor.WebUI/
 
 WORKDIR /src/Modules/Shopfloor/LKvitai.MES.Modules.Shopfloor.WebUI

@@ -17,5 +17,6 @@
     <ProjectReference Include="..\..\..\BuildingBlocks\LKvitai.MES.BuildingBlocks.ModuleStartup\LKvitai.MES.BuildingBlocks.ModuleStartup.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\LKvitai.MES.BuildingBlocks.PortalAuth\LKvitai.MES.BuildingBlocks.PortalAuth.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\LKvitai.MES.BuildingBlocks.WebUI\LKvitai.MES.BuildingBlocks.WebUI.csproj" />
+    <ProjectReference Include="..\LKvitai.MES.Modules.Shopfloor.Contracts\LKvitai.MES.Modules.Shopfloor.Contracts.csproj" />
   </ItemGroup>
 </Project>

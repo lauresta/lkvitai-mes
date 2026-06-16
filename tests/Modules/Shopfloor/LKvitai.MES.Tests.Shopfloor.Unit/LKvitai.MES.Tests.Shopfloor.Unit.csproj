@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <RootNamespace>LKvitai.MES.Tests.Shopfloor.Unit</RootNamespace>
+    <AssemblyName>LKvitai.MES.Tests.Shopfloor.Unit</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="coverlet.collector" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\src\Modules\Shopfloor\LKvitai.MES.Modules.Shopfloor.Contracts\LKvitai.MES.Modules.Shopfloor.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Modules\Shopfloor\LKvitai.MES.Modules.Shopfloor.Domain\LKvitai.MES.Modules.Shopfloor.Domain.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Modules\Shopfloor\LKvitai.MES.Modules.Shopfloor.Application\LKvitai.MES.Modules.Shopfloor.Application.csproj" />
+  </ItemGroup>
+</Project>

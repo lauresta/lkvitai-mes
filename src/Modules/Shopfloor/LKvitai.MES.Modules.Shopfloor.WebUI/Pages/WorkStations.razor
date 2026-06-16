@@ -1,0 +1,190 @@
+@page "/ref/stations"
+@inject ShopfloorApiClient Api
+@inject ISnackbar Snackbar
+
+<PageTitle>Cikada.MES · Work Stations</PageTitle>
+
+<main class="shopfloor-page">
+    <section class="sf-head">
+        <div>
+            <div class="eyebrow mono">Shopfloor · Reference Data</div>
+            <h1>Work Stations</h1>
+            <p>Stations belong to a work center and carry an optional WIP limit.</p>
+        </div>
+        <div class="sf-head__actions">
+            <MudButton Variant="Variant.Filled" Class="lk-btn lk-btn--primary" OnClick="StartCreate" Disabled="@(_centers is null || _centers.Count == 0)">New work station</MudButton>
+        </div>
+    </section>
+
+    <div class="sf-grid sf-grid--editor">
+        <MudPaper Outlined="true" Elevation="0" Class="panel">
+            <div class="panel__head">
+                <div>
+                    <h2>Work stations</h2>
+                    <span>@(_stations?.Count ?? 0) total</span>
+                </div>
+            </div>
+
+            @if (_stations is null)
+            {
+                <div class="db-lines"><span class="skeleton"></span><span class="skeleton"></span></div>
+            }
+            else if (_stations.Count == 0)
+            {
+                <p class="sf-empty">No work stations yet.</p>
+            }
+            else
+            {
+                <div class="table-wrap">
+                    <table class="sf-table">
+                        <thead>
+                            <tr><th>Code</th><th>Name</th><th>Work center</th><th>WIP</th><th>Active</th><th class="sf-col-actions">Actions</th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var s in _stations)
+                            {
+                                <tr class="@(_editingId == s.Id ? "is-selected" : null)">
+                                    <td class="mono">@s.Code</td>
+                                    <td>@s.Name</td>
+                                    <td>@s.WorkCenterName</td>
+                                    <td class="mono">@(s.WipLimit?.ToString() ?? "—")</td>
+                                    <td><span class="chip @(s.IsActive ? "chip--ok" : "chip--slate")">@(s.IsActive ? "Active" : "Inactive")</span></td>
+                                    <td class="sf-col-actions">
+                                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Class="lk-btn" OnClick="@(() => StartEdit(s))">Edit</MudButton>
+                                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Class="lk-btn" OnClick="@(() => Delete(s))">Delete</MudButton>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </MudPaper>
+
+        @if (_formOpen)
+        {
+            <MudPaper Outlined="true" Elevation="0" Class="panel">
+                <div class="panel__head">
+                    <div>
+                        <h2>@(_editingId is null ? "New work station" : "Edit work station")</h2>
+                        <span>Code, name and work center are required</span>
+                    </div>
+                </div>
+                <div class="sf-form">
+                    <MudTextField @bind-Value="_code" Label="Code" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    <MudTextField @bind-Value="_name" Label="Name" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    <MudSelect T="Guid" @bind-Value="_workCenterId" Label="Work center" Variant="Variant.Outlined" Margin="Margin.Dense">
+                        @foreach (var c in _centers ?? Array.Empty<WorkCenterDto>())
+                        {
+                            <MudSelectItem T="Guid" Value="c.Id">@c.Code — @c.Name</MudSelectItem>
+                        }
+                    </MudSelect>
+                    <MudNumericField @bind-Value="_wipLimit" Label="WIP limit (optional)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" />
+                    <MudSwitch T="bool" @bind-Checked="_isActive" Label="Active" Color="Color.Default" />
+                    <div class="sf-form__actions">
+                        <MudButton Variant="Variant.Outlined" Class="lk-btn" OnClick="CancelForm">Cancel</MudButton>
+                        <MudButton Variant="Variant.Filled" Class="lk-btn lk-btn--primary" Disabled="_saving" OnClick="Save">Save</MudButton>
+                    </div>
+                </div>
+            </MudPaper>
+        }
+    </div>
+</main>
+
+@code {
+    private IReadOnlyList<WorkStationDto>? _stations;
+    private IReadOnlyList<WorkCenterDto>? _centers;
+    private bool _formOpen;
+    private bool _saving;
+    private Guid? _editingId;
+    private string _code = "";
+    private string _name = "";
+    private Guid _workCenterId;
+    private int? _wipLimit;
+    private bool _isActive = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _centers = await Api.GetWorkCentersAsync(CancellationToken.None);
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _stations = await Api.GetWorkStationsAsync(false, CancellationToken.None);
+        if (_stations is null)
+        {
+            Snackbar.Add("Shopfloor API is unreachable.", Severity.Error);
+        }
+    }
+
+    private void StartCreate()
+    {
+        _editingId = null;
+        _code = "";
+        _name = "";
+        _workCenterId = _centers?.FirstOrDefault()?.Id ?? Guid.Empty;
+        _wipLimit = null;
+        _isActive = true;
+        _formOpen = true;
+    }
+
+    private void StartEdit(WorkStationDto s)
+    {
+        _editingId = s.Id;
+        _code = s.Code;
+        _name = s.Name;
+        _workCenterId = s.WorkCenterId;
+        _wipLimit = s.WipLimit;
+        _isActive = s.IsActive;
+        _formOpen = true;
+    }
+
+    private void CancelForm() => _formOpen = false;
+
+    private async Task Save()
+    {
+        _saving = true;
+        try
+        {
+            if (_editingId is { } id)
+            {
+                var result = await Api.UpdateWorkStationAsync(id, new UpdateWorkStationRequest(_code, _name, _workCenterId, _wipLimit, _isActive), CancellationToken.None);
+                if (!Handle(result.Success, result.Error, "Work station updated.")) return;
+            }
+            else
+            {
+                var result = await Api.CreateWorkStationAsync(new CreateWorkStationRequest(_code, _name, _workCenterId, _wipLimit, _isActive), CancellationToken.None);
+                if (!Handle(result.Success, result.Error, "Work station created.")) return;
+            }
+
+            _formOpen = false;
+            await LoadAsync();
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private async Task Delete(WorkStationDto s)
+    {
+        var result = await Api.DeleteWorkStationAsync(s.Id, CancellationToken.None);
+        if (Handle(result.Success, result.Error, "Work station deleted."))
+        {
+            await LoadAsync();
+        }
+    }
+
+    private bool Handle(bool success, string? error, string okMessage)
+    {
+        if (success)
+        {
+            Snackbar.Add(okMessage, Severity.Success);
+            return true;
+        }
+
+        Snackbar.Add(error ?? "Operation failed.", Severity.Error);
+        return false;
+    }
+}
