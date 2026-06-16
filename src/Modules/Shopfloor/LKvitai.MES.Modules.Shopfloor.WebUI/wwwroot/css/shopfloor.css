@@ -16,6 +16,15 @@ body {
   background: var(--n-100);
 }
 
+/*
+ * No MudAppBar is used in this shell (the Portal topbar lives outside
+ * MudLayout, in normal flow), so MudMainContent's default app-bar top padding
+ * is just an empty band under the topbar on every page. Drop it globally.
+ */
+.mud-main-content {
+  padding-top: 0;
+}
+
 .mud-drawer .sidebar,
 .sidebar {
   background: var(--n-0) !important;
@@ -268,8 +277,8 @@ body {
 }
 
 .shopfloor-page {
-  max-width: var(--content-max, 1600px);
-  margin: 0 auto;
+  max-width: none;
+  margin: 0;
   padding: 24px clamp(18px, 2vw, 32px) 44px;
 }
 
