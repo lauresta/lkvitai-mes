@@ -17,55 +17,87 @@ public sealed class LegacyProductTypeRepository : ILegacyProductTypeRepository
         LegacyProductTypesQuery query,
         CancellationToken cancellationToken)
     {
-        var projected =
+        // Single LEFT JOIN to the mapping. Filters run against the joined
+        // entities (EF cannot translate a Where over a projected record
+        // constructor), and the flat projection happens only in the final
+        // materialized Select. Template code/name is resolved in a second query.
+        var joined =
             from lpt in _db.LegacyProductTypes.AsNoTracking()
             join map in _db.ProductTypeWorkflowMaps.AsNoTracking()
                 on lpt.Code equals map.LegacyProductTypeCode into maps
             from map in maps.DefaultIfEmpty()
-            join tpl in _db.WorkflowTemplates.AsNoTracking()
-                on map!.WorkflowTemplateId equals tpl.Id into templates
-            from tpl in templates.DefaultIfEmpty()
-            select new ProjectedRow(lpt, map, tpl);
+            select new { Legacy = lpt, Map = map };
 
         if (!query.Removed)
         {
-            projected = projected.Where(x => x.Legacy.RemovedAt == null);
+            joined = joined.Where(x => x.Legacy.RemovedAt == null);
         }
 
         if (query.Mapped is { } mapped)
         {
-            projected = mapped
-                ? projected.Where(x => x.Map != null)
-                : projected.Where(x => x.Map == null);
+            joined = mapped
+                ? joined.Where(x => x.Map != null)
+                : joined.Where(x => x.Map == null);
         }
 
         if (!string.IsNullOrWhiteSpace(query.Search))
         {
             var term = $"%{query.Search.Trim()}%";
-            projected = projected.Where(x =>
+            joined = joined.Where(x =>
                 EF.Functions.ILike(x.Legacy.Code, term) ||
                 EF.Functions.ILike(x.Legacy.Name, term) ||
                 EF.Functions.ILike(x.Legacy.KindName, term));
         }
 
-        var total = await projected.CountAsync(cancellationToken).ConfigureAwait(false);
+        var total = await joined.CountAsync(cancellationToken).ConfigureAwait(false);
 
-        var rows = await projected
+        var rows = await joined
             .OrderBy(x => x.Legacy.Code)
             .Skip((query.Page - 1) * query.PageSize)
             .Take(query.PageSize)
-            .ToListAsync(cancellationToken)
-            .ConfigureAwait(false);
-
-        var items = rows
-            .Select(x => new LegacyProductTypeDto(
+            .Select(x => new ProjectedRow(
                 x.Legacy.Code,
                 x.Legacy.KindName,
                 x.Legacy.Name,
-                x.Legacy.RemovedAt != null,
-                x.Map != null ? x.Map.WorkflowTemplateId : null,
-                x.Template != null ? x.Template.Code : null,
-                x.Template != null ? x.Template.Name : null))
+                x.Legacy.RemovedAt,
+                x.Map == null ? (Guid?)null : x.Map.WorkflowTemplateId))
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        var templateIds = rows
+            .Where(x => x.MappedTemplateId.HasValue)
+            .Select(x => x.MappedTemplateId!.Value)
+            .Distinct()
+            .ToList();
+
+        var templates = templateIds.Count == 0
+            ? new Dictionary<Guid, TemplateRef>()
+            : await _db.WorkflowTemplates.AsNoTracking()
+                .Where(t => templateIds.Contains(t.Id))
+                .Select(t => new TemplateRef(t.Id, t.Code, t.Name))
+                .ToDictionaryAsync(t => t.Id, cancellationToken)
+                .ConfigureAwait(false);
+
+        var items = rows
+            .Select(x =>
+            {
+                string? templateCode = null;
+                string? templateName = null;
+                if (x.MappedTemplateId is { } id && templates.TryGetValue(id, out var tpl))
+                {
+                    templateCode = tpl.Code;
+                    templateName = tpl.Name;
+                }
+
+                return new LegacyProductTypeDto(
+                    x.Code,
+                    x.KindName,
+                    x.Name,
+                    x.RemovedAt != null,
+                    x.MappedTemplateId,
+                    templateCode,
+                    templateName);
+            })
             .ToList();
 
         return new PagedResult<LegacyProductTypeDto>(items, total, query.Page, query.PageSize);
@@ -108,7 +140,11 @@ public sealed class LegacyProductTypeRepository : ILegacyProductTypeRepository
     public void Add(LegacyProductType productType) => _db.LegacyProductTypes.Add(productType);
 
     private sealed record ProjectedRow(
-        LegacyProductType Legacy,
-        ProductTypeWorkflowMap? Map,
-        WorkflowTemplate? Template);
+        string Code,
+        string KindName,
+        string Name,
+        DateTimeOffset? RemovedAt,
+        Guid? MappedTemplateId);
+
+    private sealed record TemplateRef(Guid Id, string Code, string Name);
 }
