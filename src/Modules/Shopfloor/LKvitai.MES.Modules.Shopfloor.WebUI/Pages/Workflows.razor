@@ -114,7 +114,7 @@
                     <div class="table-wrap">
                         <table class="sf-table">
                             <thead>
-                                <tr><th>Step</th><th>Task</th><th>Station</th><th>Duration</th></tr>
+                                <tr><th>Step</th><th>Task</th><th>Description</th><th>Station</th><th>Duration</th></tr>
                             </thead>
                             <tbody>
                                 @{ var step = 1; }
@@ -123,6 +123,7 @@
                                     <tr>
                                         <td class="mono">@step</td>
                                         <td>@t.Name</td>
+                                        <td>@(string.IsNullOrWhiteSpace(t.Description) ? "—" : t.Description)</td>
                                         <td>@t.Station</td>
                                         <td class="mono">@t.Duration</td>
                                     </tr>
@@ -150,7 +151,7 @@
 
     private PreviewModel? _preview;
 
-    private sealed record PreviewStep(string Name, string Station, string Duration);
+    private sealed record PreviewStep(string Name, string? Description, string Station, string Duration);
     private sealed record PreviewModel(string FamilyName, IReadOnlyList<PreviewStep> Steps, IReadOnlyList<string> Errors);
 
     protected override async Task OnInitializedAsync()
@@ -282,6 +283,7 @@
             .Select(id => nodes[id])
             .Select(n => new PreviewStep(
                 n.Name,
+                n.Description,
                 n.WorkStationId is { } sid && stationNames.TryGetValue(sid, out var name) ? name : "—",
                 n.DurationSec is { } d ? $"{d}s" : "—"))
             .ToList();

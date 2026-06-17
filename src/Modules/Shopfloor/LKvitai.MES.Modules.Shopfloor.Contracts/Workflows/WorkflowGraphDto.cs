@@ -10,7 +10,8 @@ public sealed record WorkflowGraphDto(
 
 /// <summary>
 /// A single graph node. Only <c>task</c> nodes use <see cref="WorkStationId"/>,
-/// <see cref="DurationSec"/> and the optional <see cref="TaskTypeCode"/>.
+/// <see cref="DurationSec"/>, the optional <see cref="TaskTypeCode"/> and the
+/// optional free-text <see cref="Description"/>.
 /// </summary>
 public sealed record WorkflowNodeDto(
     string Id,
@@ -19,7 +20,8 @@ public sealed record WorkflowNodeDto(
     WorkflowNodePositionDto Position,
     Guid? WorkStationId,
     int? DurationSec,
-    string? TaskTypeCode);
+    string? TaskTypeCode,
+    string? Description = null);
 
 public sealed record WorkflowEdgeDto(string From, string To);
 

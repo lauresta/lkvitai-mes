@@ -117,6 +117,7 @@
                 <thead>
                     <tr>
                         <th>Task</th>
+                        <th>Description</th>
                         <th>Station</th>
                         <th>Order</th>
                         <th>Operator</th>
@@ -129,6 +130,7 @@
                     {
                         <tr>
                             <td class="mono">@row.Task</td>
+                            <td>@row.Description</td>
                             <td>@row.Station</td>
                             <td class="mono">@row.Order</td>
                             <td>@row.Operator</td>
@@ -163,13 +165,13 @@
         ("SHIFT", "Shift handover", "Notes, downtime and line readiness."),
     ];
 
-    private static readonly IReadOnlyList<(string Task, string Station, string Order, string Operator, string Status, string ChipClass, string Target)> QueueRows =
+    private static readonly IReadOnlyList<(string Task, string Description, string Station, string Order, string Operator, string Status, string ChipClass, string Target)> QueueRows =
     [
-        ("CUT-10482", "Cutting A", "SO-240118", "R. Petrauskas", "Running", "chip--ok", "14:20"),
-        ("SEW-10483", "Sewing 3", "SO-240121", "I. Kazlauskiene", "Queued", "chip--info", "15:05"),
-        ("ASM-10487", "Assembly 2", "SO-240130", "M. Jankus", "Blocked", "chip--warn", "15:30"),
-        ("QC-10491", "Quality", "SO-240144", "A. Zukas", "Hold", "chip--danger", "16:10"),
-        ("PKG-10495", "Packing", "SO-240151", "L. Stonys", "Ready", "chip--done", "16:45"),
+        ("CUT-10482", "Cut roller fabric to width", "Cutting A", "SO-240118", "R. Petrauskas", "Running", "chip--ok", "14:20"),
+        ("SEW-10483", "Hem and seam panels", "Sewing 3", "SO-240121", "I. Kazlauskiene", "Queued", "chip--info", "15:05"),
+        ("ASM-10487", "Assemble tube and brackets", "Assembly 2", "SO-240130", "M. Jankus", "Blocked", "chip--warn", "15:30"),
+        ("QC-10491", "Inspect finish and dimensions", "Quality", "SO-240144", "A. Zukas", "Hold", "chip--danger", "16:10"),
+        ("PKG-10495", "Pack and label for dispatch", "Packing", "SO-240151", "L. Stonys", "Ready", "chip--done", "16:45"),
     ];
 
     protected override async Task OnInitializedAsync()

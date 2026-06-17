@@ -455,6 +455,9 @@ introduce, persist, or export any field outside that shape.
 **Task inspector — the only editable, persisted fields:**
 
 - `name` — task name
+- `description` — optional, nullable free text. Operator-facing notes shown on
+  the task card and in the workflow preview; editable in the inspector and
+  round-tripped through `graph_json`.
 - `workStationId` — WorkStation / line dropdown
 - `durationSec` — approximate duration in seconds
 - `taskTypeCode` — optional, nullable. Kept in the contract but **rendered
@@ -490,8 +493,8 @@ the old runtime/formula payload.
 
 **Save payload must match `WorkflowGraphDto` exactly** — `nodes` + `edges`, with
 each task node containing only `id`, `kind`, `name`, `position`, `workStationId`,
-`durationSec`, and optional `taskTypeCode`. `start`/`finish` nodes carry `id`,
-`kind`, `name`, `position` only. The iframe must never serialize non-MVP fields
+`durationSec`, optional `taskTypeCode`, and optional `description`.
+`start`/`finish` nodes carry `id`, `kind`, `name`, `position` only. The iframe must never serialize non-MVP fields
 into the Save or Export payload.
 
 Message shapes:

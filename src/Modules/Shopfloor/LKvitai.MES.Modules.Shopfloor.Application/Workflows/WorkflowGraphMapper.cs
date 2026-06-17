@@ -57,7 +57,8 @@ public static class WorkflowGraphMapper
                 node.Name,
                 node.WorkStationId,
                 node.DurationSec,
-                node.TaskTypeCode));
+                node.TaskTypeCode,
+                node.Description));
         }
 
         var edges = graph.Edges

@@ -536,6 +536,11 @@ pre.json{
             <input class="input" id="fName" value="" />
           </div>
           <div class="field">
+            <label for="fDescription">Description <span class="opt">(optional)</span></label>
+            <textarea class="textarea" id="fDescription" rows="3" placeholder="Operator notes for this task…"></textarea>
+            <div class="helper">Shown on the task card and in the workflow preview.</div>
+          </div>
+          <div class="field">
             <label for="fStation">Work station<span class="req">*</span></label>
             <select class="select" id="fStation">
               <option value="">— select station —</option>
@@ -679,6 +684,7 @@ function nodeHtml(n){
       <div class="meta-row"><span class="k">Station:</span><span class="v">${esc(sl.name)}</span></div>
       <div class="meta-row"><span class="k">Duration:</span><span class="v">${n.durationSec?esc(n.durationSec)+" s":"—"}</span></div>
       ${n.taskTypeCode?`<div class="meta-row"><span class="k">Type:</span><span class="v">${esc(n.taskTypeCode)}</span></div>`:""}
+      ${n.description?`<div class="meta-row note"><span class="v">${esc(n.description)}</span></div>`:""}
     </div>
     <div class="sock-row in"><span class="socket in connected" data-sock="in"></span><span class="sock-label">prev</span></div>
   </div>`;
@@ -880,6 +886,7 @@ function syncSidebar(){
   if(isTask){
     $("#settingsSub").textContent = "Editing "+n.id+" — task definition.";
     $("#fName").value = n.name || "";
+    $("#fDescription").value = n.description || "";
     $("#fStation").value = n.workStationId || "";
     $("#fDuration").value = n.durationSec || "";
     $("#fTaskType").value = n.taskTypeCode || "";
@@ -910,6 +917,7 @@ function updateCardFromForm(){
   const n = state.nodes.find(x=>x.id===state.selected);
   if(!n||n.kind!=="task") return;
   n.name = $("#fName").value.trim() || "Task";
+  n.description = $("#fDescription").value.trim() || null;
   n.workStationId = $("#fStation").value || null;
   const dur = parseInt($("#fDuration").value,10);
   n.durationSec = (Number.isFinite(dur) && dur>0) ? dur : null;
@@ -925,7 +933,7 @@ function updateCardFromForm(){
 }
 
 // fTaskType is reserved/disabled in the MVP, so it is not wired for live edits.
-["fName","fStation","fDuration"].forEach(id=>{
+["fName","fDescription","fStation","fDuration"].forEach(id=>{
   $("#"+id).addEventListener("input", updateCardFromForm);
   $("#"+id).addEventListener("change", updateCardFromForm);
 });
@@ -1059,7 +1067,7 @@ $("#btnAdd").onclick=()=>{
   const off=(state.taskSeq%6)*34;
   const cx=(rect.width/2 - view.x)/view.scale - 134 + off;
   const cy=(rect.height/2 - view.y)/view.scale - 90 + off;
-  const n = {id, name:"New task", kind:"task",
+  const n = {id, name:"New task", kind:"task", description:null,
     workStationId: state.stations[0]?.id || null, durationSec:60, taskTypeCode:null,
     x:Math.round(cx), y:Math.round(cy)};
   state.nodes.push(n);
@@ -1150,7 +1158,8 @@ function buildGraph(){
       position:{ x:n.x, y:n.y },
       workStationId: n.kind==="task" ? (n.workStationId || null) : null,
       durationSec: n.kind==="task" ? (n.durationSec ?? null) : null,
-      taskTypeCode: n.kind==="task" ? (n.taskTypeCode || null) : null
+      taskTypeCode: n.kind==="task" ? (n.taskTypeCode || null) : null,
+      description: n.kind==="task" ? (n.description || null) : null
     })),
     edges: state.edges.map(e=>({ from:e.from, to:e.to }))
   };
@@ -1231,6 +1240,7 @@ function loadFromPayload(workflow, stations){
     id:n.id,
     kind:n.kind,
     name:n.name,
+    description:n.description || null,
     workStationId:n.workStationId || null,
     durationSec:n.durationSec ?? null,
     taskTypeCode:n.taskTypeCode || null,

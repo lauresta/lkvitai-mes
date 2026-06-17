@@ -15,7 +15,8 @@ public sealed record WorkflowGraphNode(
     string Name,
     Guid? WorkStationId,
     int? DurationSec,
-    string? TaskTypeCode);
+    string? TaskTypeCode,
+    string? Description = null);
 
 public sealed record WorkflowGraphEdge(string From, string To);
 
