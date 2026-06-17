@@ -445,6 +445,12 @@ Iframe responsibilities:
 - Keep add task, delete task, drag, link, cycle prevention, auto layout, export
   JSON.
 - Add primary Save action that posts the graph back to the parent.
+- Add a **Validate** action in the toolbar that runs the smart validator client-side and
+  opens the report panel (errors / warnings / hints + metrics), with click-to-highlight on
+  the canvas, and a live count badge on the button. Rules, severity, and the
+  `ValidationReport` contract are defined in
+  [`shopfloor-12-smart-validation.md`](./shopfloor-12-smart-validation.md); its visual
+  presentation is the paired design guide. The same engine re-runs on the server at Publish.
 
 ### Strict MVP field contract (AUTH graph only)
 

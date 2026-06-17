@@ -284,6 +284,7 @@ This file is the umbrella. Implementation blueprints follow, each self-contained
 | `shopfloor-09-solution-architecture` | **Cross-cutting** — projects, namespaces, classes, component & external interactions |
 | `shopfloor-10-mvp-authoring-scope` | **MVP cut** — author workflows + lines + product-type mapping (the "see the scale" slice) |
 | `shopfloor-11-mvp-authoring-implementation-blueprint` | Buildable spec for the MVP authoring slice (projects, schema, legacy sync, editor bridge) |
+| `shopfloor-12-smart-validation` | Editor **Validate** button: smart rule catalog (errors/warnings/hints), severity, result contract — the client WOW |
 
 **Build order:** 01 → 02 → 04 → 06 deliver the core loop (order → tasks → queue → consume →
 status back). 03/05/07 layer on the differentiators.
