@@ -38,6 +38,19 @@ window.shopfloorWorkflowBridge = (function () {
             // Editor finished booting — (re)send the load payload if we have it.
             if (pendingLoadJson) {
                 post(JSON.parse(pendingLoadJson));
+            } else if (dotNetRef) {
+                // No payload cached yet — ask the host to fetch + push it.
+                dotNetRef.invokeMethodAsync('OnLoadRequested');
+            }
+            return;
+        }
+
+        if (data.type === 'shopfloor.workflow.request-load') {
+            // Editor has no workflow — resend cached payload or ask host to fetch.
+            if (pendingLoadJson) {
+                post(JSON.parse(pendingLoadJson));
+            } else if (dotNetRef) {
+                dotNetRef.invokeMethodAsync('OnLoadRequested');
             }
             return;
         }

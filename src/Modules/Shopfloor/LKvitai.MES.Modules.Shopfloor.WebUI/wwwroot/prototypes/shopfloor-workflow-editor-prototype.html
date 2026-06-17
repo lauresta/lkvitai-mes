@@ -1434,8 +1434,16 @@ window.addEventListener("message", ev=>{
   }
 });
 
+/* Ask the host to (re)send the selected workflow. Self-heals cases where the
+   initial load handshake didn't deliver (slow circuit, iframe boot race). */
+let loadRequestedAt = 0;
+function requestLoadFromHost(){
+  loadRequestedAt = Date.now();
+  postToParent({ type:"shopfloor.workflow.request-load" });
+}
+
 $("#btnSave").onclick=()=>{
-  if(!state.workflowId){ toast("No workflow loaded"); return; }
+  if(!state.workflowId){ requestLoadFromHost(); toast("Loading workflow… try again in a moment."); return; }
   postToParent({ type:"shopfloor.workflow.save", workflowId:state.workflowId, graph:buildGraph() });
   toast("Saving…");
 };
@@ -1668,7 +1676,7 @@ function setBadge(arg){
 
 /* ── Validation lifecycle ──────────────────────── */
 function requestValidation(){
-  if(!state.workflowId){ toast("No workflow loaded"); return; }
+  if(!state.workflowId){ requestLoadFromHost(); toast("Loading workflow… try again in a moment."); return; }
   vBusy = true;
   setBadge("busy");
   $("#vreport").classList.remove("stale");
@@ -1736,6 +1744,10 @@ function boot(){
   requestAnimationFrame(()=>{ renderEdges(); syncSidebar(); fitView(); requestAnimationFrame(renderEdges); });
   // tell the Blazor host we are ready to receive the load payload
   postToParent({ type:"shopfloor.workflow.ready" });
+  // safety net: if no workflow arrives shortly (handshake race / slow circuit),
+  // explicitly ask the host to push the selected workflow.
+  setTimeout(()=>{ if(!state.workflowId) requestLoadFromHost(); }, 1500);
+  setTimeout(()=>{ if(!state.workflowId) requestLoadFromHost(); }, 4000);
 }
 boot();
 window.addEventListener("resize", ()=>renderEdges());

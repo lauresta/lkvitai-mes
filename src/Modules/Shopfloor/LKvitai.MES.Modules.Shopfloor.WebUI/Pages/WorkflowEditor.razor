@@ -73,6 +73,7 @@
         if (_selectedId != Guid.Empty)
         {
             await LoadAndPushAsync();
+            StateHasChanged();
         }
     }
 
@@ -82,6 +83,32 @@
         if (_bridgeReady && id != Guid.Empty)
         {
             await LoadAndPushAsync();
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    /// The editor reports it has no workflow (initial handshake race or slow
+    /// circuit). Re-fetch the selected workflow and push it again.
+    /// </summary>
+    [JSInvokable]
+    public async Task OnLoadRequested()
+    {
+        if (!_bridgeReady)
+        {
+            return;
+        }
+
+        if (_selectedId == Guid.Empty)
+        {
+            _families ??= await Api.GetWorkflowsAsync(CancellationToken.None) ?? Array.Empty<WorkflowTemplateSummaryDto>();
+            _selectedId = _families.FirstOrDefault()?.Id ?? Guid.Empty;
+        }
+
+        if (_selectedId != Guid.Empty)
+        {
+            await LoadAndPushAsync();
+            StateHasChanged();
         }
     }
 
