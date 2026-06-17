@@ -174,6 +174,47 @@
         await JS.InvokeVoidAsync("shopfloorWorkflowBridge.postSaveResult", json);
     }
 
+    [JSInvokable]
+    public async Task OnValidateRequested(string messageJson)
+    {
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(messageJson);
+            var graph = doc.RootElement.GetProperty("graph").Deserialize<WorkflowGraphDto>(JsonOptions);
+            if (graph is null)
+            {
+                await PostValidateResultAsync(false, "Invalid graph payload.", null);
+                return;
+            }
+
+            var result = await Api.ValidateWorkflowGraphAsync(new SaveWorkflowGraphRequest(graph), CancellationToken.None);
+            if (result.Success && result.Value is not null)
+            {
+                await PostValidateResultAsync(true, null, result.Value);
+            }
+            else
+            {
+                await PostValidateResultAsync(false, result.Error ?? "Validation failed.", null);
+            }
+        }
+        catch (Exception ex)
+        {
+            await PostValidateResultAsync(false, "Validation failed: " + ex.Message, null);
+        }
+    }
+
+    private async Task PostValidateResultAsync(bool ok, string? message, ValidationReportDto? report)
+    {
+        var json = System.Text.Json.JsonSerializer.Serialize(new
+        {
+            type = "shopfloor.workflow.validate-result",
+            ok,
+            message,
+            report,
+        }, JsonOptions);
+        await JS.InvokeVoidAsync("shopfloorWorkflowBridge.postValidateResult", json);
+    }
+
     private static string StatusChip(WorkflowStatus status) => status switch
     {
         WorkflowStatus.Published => "chip--ok",

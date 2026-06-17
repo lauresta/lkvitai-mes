@@ -175,6 +175,16 @@ CSS/JS, no build) — it extends the editor prototype with the Validate button +
 the report drawer, node/edge/line highlighting, the branch-imbalance callout, and the
 all-good state. **Reuse the editor tokens verbatim; add no new color families.**
 
+> **Wired into the live editor (v0.3).** The Validate button, count badge, report
+> drawer, node/edge highlights, and click-to-locate are now integrated directly in
+> `wwwroot/prototypes/shopfloor-workflow-editor-prototype.html` (the iframe the Blazor
+> `WorkflowEditor.razor` hosts). Validate posts the current graph over the existing
+> `postMessage` bridge → `WorkflowEditor.OnValidateRequested` → `POST
+> /api/shopfloor/workflows/validate` → the report is posted back and rendered. Any graph
+> edit marks the report **stale** (highlights drop, badge greys) until re-validated.
+> The branch-imbalance callout and over-WIP striping remain in the standalone mockup
+> only (not yet ported to the live editor).
+
 ### 7.1 Severity → visual mapping (locked)
 
 | Severity | Token family | Ring / fill | Icon | Where |

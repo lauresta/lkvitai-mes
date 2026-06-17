@@ -44,6 +44,11 @@ window.shopfloorWorkflowBridge = (function () {
 
         if (data.type === 'shopfloor.workflow.save' && dotNetRef) {
             dotNetRef.invokeMethodAsync('OnSaveRequested', JSON.stringify(data));
+            return;
+        }
+
+        if (data.type === 'shopfloor.workflow.validate' && dotNetRef) {
+            dotNetRef.invokeMethodAsync('OnValidateRequested', JSON.stringify(data));
         }
     }
 
@@ -58,6 +63,9 @@ window.shopfloorWorkflowBridge = (function () {
             post(JSON.parse(loadJson));
         },
         postSaveResult: function (resultJson) {
+            post(JSON.parse(resultJson));
+        },
+        postValidateResult: function (resultJson) {
             post(JSON.parse(resultJson));
         },
         dispose: function () {
