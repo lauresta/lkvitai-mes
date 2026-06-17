@@ -97,6 +97,9 @@ public sealed class ShopfloorApiClient
     public Task<ApiResult<WorkflowTemplateDto>> PublishWorkflowAsync(Guid id, CancellationToken ct)
         => SendAsync<WorkflowTemplateDto>(HttpMethod.Post, $"/api/shopfloor/workflows/{id}/publish", null, ct);
 
+    public Task<ApiResult<ValidationReportDto>> ValidateWorkflowGraphAsync(SaveWorkflowGraphRequest request, CancellationToken ct)
+        => SendAsync<ValidationReportDto>(HttpMethod.Post, "/api/shopfloor/workflows/validate", request, ct);
+
     public Task<ApiResult<WorkflowTemplateDto>> CloneWorkflowAsync(Guid id, CloneWorkflowTemplateRequest request, CancellationToken ct)
         => SendAsync<WorkflowTemplateDto>(HttpMethod.Post, $"/api/shopfloor/workflows/{id}/clone", request, ct);
 
