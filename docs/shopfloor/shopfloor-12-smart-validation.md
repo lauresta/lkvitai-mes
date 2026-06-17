@@ -90,6 +90,15 @@ everything available in the authoring MVP. No order/material/runtime data needed
 | **H5** | Isolated cluster | a connected group attached to neither start nor finish |
 | **H6** | Family anomaly | task count far from sibling families (e.g. "similar flows have ~6 tasks, this has 1") |
 
+### 3.3.1 Implementation status (v0.2)
+
+The engine `SmartWorkflowValidator` (Domain) implements: **E1–E7**, **W1, W3–W9, W11**,
+**H1–H4**. W2 is surfaced as a metric (`metrics.criticalPath`), not a finding. Not yet
+implemented: **W10** (runtime), **H5** (overlaps E3/E4), **H6** (needs cross-template
+sibling data). Engine entry point: `SmartWorkflowValidator.Validate(graph, stations)`;
+result mapped to `ValidationReportDto`. Runs on `POST …/validate`, `POST …/{id}/validate`,
+and as the `POST …/{id}/publish` gate (422 + report when not publishable).
+
 ### 3.4 Backlog — not in the authoring validator
 
 - **W10 · Changeover clustering** — real setup waste depends on **order** material/colour/size
@@ -160,12 +169,81 @@ ValidationReport {
 
 ## 7. Presentation (visual guide)
 
-How findings are shown — node/line highlighting, the report panel, badges, critical-path
-overlay, bottleneck badge, score/throughput display, click-to-locate, empty/all-good
-state — is defined by the **paired design guide** produced via the Claude Designer pass.
-That guide pastes in here as §7 once approved. Design constraints: reuse the existing
-editor prototype tokens (Cikada.MES teal; danger=red, warn=sand, ok=green, info=teal);
-no new color families; WOW but enterprise-clean.
+This is the approved Designer pass. The buildable reference mockup is
+`wwwroot/prototypes/shopfloor-validation-report-prototype.html` (standalone, inline
+CSS/JS, no build) — it extends the editor prototype with the Validate button + badge,
+the report drawer, node/edge/line highlighting, the branch-imbalance callout, and the
+all-good state. **Reuse the editor tokens verbatim; add no new color families.**
+
+### 7.1 Severity → visual mapping (locked)
+
+| Severity | Token family | Ring / fill | Icon | Where |
+|----------|--------------|-------------|------|-------|
+| **Error** ⛔ | `--danger-*` (red) | `--danger-strong` ring | ⛔ | node ring, finding row, badge `err` |
+| **Warning** ⚠ | `--warn-* / --sand-*` (amber) | `--warn-strong` ring | ⚠ | node ring, finding row, badge `warn` |
+| **Hint** 💡 | `--info-* / --accent-*` (teal) | `--info-strong` ring | 💡 | node ring, finding row, badge `hint` |
+| **OK** ✓ | `--ok-* / green` | `--ok-dot` | ✓ | score state, all-good, clean badge |
+| **Critical path** | `--accent-*` (teal) | `--accent-500` rail + thick teal edge | — | informational overlay (not a severity) |
+| **Bottleneck** | `--n-800` (neutral-dark) | dark chip + dark load bar | ▣ | the one constraint marker — neutral so it never reads as "error" |
+
+Critical-path and bottleneck are **informational**, not problems — that's why they map to
+the teal accent and neutral-dark, never to red/amber. They show in the all-good state too.
+
+### 7.2 Surfaces & where they live
+
+1. **Validate button** — editor toolbar, next to Save / Publish. Carries a live
+   **count badge** `2 ⛔ · 5 ⚠ · 1 💡` (mono, severity-tinted pills). Clean graph →
+   the button goes green with `✓ healthy`. The badge updates on edit; clicking opens the
+   report drawer (non-destructive).
+2. **Report drawer** — right side, fixed `392px`, four stacked zones:
+   - **Header** — score ring (0–100, color by band: ≥80 green, 50–79 amber, <50 red),
+     publish-state chip (`Publish blocked` / `Ready to publish`), summary pills.
+   - **Metrics** — `Lead time`, `Bottleneck` line, and a full-width **Throughput** tile
+     (the one number that matters — accent-washed, big mono `~12 units/hr`).
+   - **Per-line load strip** — one bar per station (load = width, mono value inside).
+     Bottleneck bar is dark + `▣ BOTTLENECK`; over-WIP bar is sand-striped + `WIP 5/3`.
+     Rows are clickable → locate that line's nodes.
+   - **Findings** — grouped `Errors → Warnings → Hints`; each row = severity icon, rule
+     id chip (`E4`), title, one-line message (ids/numbers in mono), and a locate button.
+3. **Node highlights** (canvas) — ring color by precedence (below), corner severity chip
+   top-right, `▣ BOTTLENECK` chip, and bottom-left flags `CRITICAL PATH` / `WIP n/limit`.
+4. **Edge highlights** — critical path = thick teal solid + sparse flow; cycle = red
+   dashed; redundant/over-constraining = thin amber dotted.
+5. **Branch-imbalance callout** — a small card anchored left of the merge node: two
+   mini-bars (Branch A teal vs Branch B sand) + `Branch B idles 2h 58m at this merge`.
+6. **All-good state** — replaces the findings list: green check, "Flow is healthy", and
+   the throughput number. Score ring 100, Publish enabled.
+
+### 7.3 Node highlight precedence (overlaps coexist)
+
+A node can be several things at once. Resolve as:
+
+- **Ring color** = single highest severity present: `error > warning > hint > (critical-only)`.
+  A critical-path node with a warning shows an **amber** ring (warning wins the ring).
+- **Critical-path rail** (teal left stripe + `CRITICAL PATH` flag) renders **regardless**
+  of ring color, so a critical+warning node shows amber ring **and** teal rail together.
+- **Bottleneck chip** (`▣`, neutral-dark) renders **regardless** of everything else.
+- **WIP flag** renders independently at bottom-left.
+- Worked example (Assembly merge node): amber ring (W1+W3) + teal critical rail +
+  `▣ BOTTLENECK` chip — all visible, instantly legible.
+
+### 7.4 Click-to-locate interaction
+
+Clicking a finding (row or its locate button) — or a line-load row:
+
+1. Marks the finding **active** (teal left-border + `--accent-50` wash).
+2. Resolves targets → node ids (expanding any `stationIds` to that line's nodes).
+3. **Pans + zooms** the canvas to fit the targets (animated `~520ms`, capped ≤115%).
+4. **Pulses** the target nodes (scale 1→1.045 ×2) and target edges (stroke 3→6 ×2).
+
+Edges are re-rendered after the pan settles so socket-anchored beziers stay accurate.
+
+### 7.5 Tiered enforcement reflected in the UI
+
+- Save (`PUT …/graph`) never blocks — badge still shows counts; drawer stays advisory.
+- Publish is **disabled while any Error exists**; the header reads `Publish blocked · N
+  errors must be fixed`. With zero errors it flips to `Ready to publish` and enables.
+- Warnings + Hints never gate Publish — they are insight, not a wall.
 
 ---
 
@@ -174,4 +252,5 @@ no new color families; WOW but enterprise-clean.
 - Rules origin & MVP scope: [`shopfloor-10`](./shopfloor-10-mvp-authoring-scope.md),
   [`shopfloor-11`](./shopfloor-11-mvp-authoring-implementation-blueprint.md) §7
 - Editor bridge (where Validate lives): `shopfloor-11` §9
-- Prototype to extend: `wwwroot/prototypes/shopfloor-workflow-editor-prototype.html`
+- Editor prototype to extend: `wwwroot/prototypes/shopfloor-workflow-editor-prototype.html`
+- **Validation report mockup (this §7):** `wwwroot/prototypes/shopfloor-validation-report-prototype.html`

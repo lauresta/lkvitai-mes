@@ -14,6 +14,7 @@ public sealed class WorkflowService : IWorkflowService
 {
     private readonly IWorkflowTemplateRepository _repository;
     private readonly IProductTypeMappingRepository _mappings;
+    private readonly IWorkStationRepository _workStations;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IValidator<CreateWorkflowTemplateRequest> _createValidator;
     private readonly IValidator<UpdateWorkflowTemplateRequest> _updateValidator;
@@ -22,6 +23,7 @@ public sealed class WorkflowService : IWorkflowService
     public WorkflowService(
         IWorkflowTemplateRepository repository,
         IProductTypeMappingRepository mappings,
+        IWorkStationRepository workStations,
         IUnitOfWork unitOfWork,
         IValidator<CreateWorkflowTemplateRequest> createValidator,
         IValidator<UpdateWorkflowTemplateRequest> updateValidator,
@@ -29,6 +31,7 @@ public sealed class WorkflowService : IWorkflowService
     {
         _repository = repository;
         _mappings = mappings;
+        _workStations = workStations;
         _unitOfWork = unitOfWork;
         _createValidator = createValidator;
         _updateValidator = updateValidator;
@@ -106,17 +109,42 @@ public sealed class WorkflowService : IWorkflowService
             ?? throw NotFound(id);
 
         var graph = WorkflowGraphMapper.Deserialize(template.GraphJson);
-        var domain = WorkflowGraphMapper.ToDomain(graph);
-        var result = WorkflowGraphValidator.ValidateForPublish(domain);
-        if (!result.IsValid)
+        var report = await RunValidatorAsync(graph, cancellationToken).ConfigureAwait(false);
+        if (!report.Publishable)
         {
-            throw new ShopfloorValidationException(
-                "Workflow cannot be published: " + string.Join("; ", result.Errors), result.Errors);
+            throw new ShopfloorWorkflowNotPublishableException(WorkflowValidationMapper.ToDto(report));
         }
 
         template.Publish(DateTimeOffset.UtcNow);
         await _unitOfWork.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         return MapFull(template);
+    }
+
+    public async Task<ValidationReportDto> ValidateAsync(Guid id, CancellationToken cancellationToken)
+    {
+        var template = await _repository.GetAsync(id, cancellationToken).ConfigureAwait(false)
+            ?? throw NotFound(id);
+
+        var graph = WorkflowGraphMapper.Deserialize(template.GraphJson);
+        var report = await RunValidatorAsync(graph, cancellationToken).ConfigureAwait(false);
+        return WorkflowValidationMapper.ToDto(report);
+    }
+
+    public async Task<ValidationReportDto> ValidateGraphAsync(WorkflowGraphDto graph, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(graph);
+        var report = await RunValidatorAsync(graph, cancellationToken).ConfigureAwait(false);
+        return WorkflowValidationMapper.ToDto(report);
+    }
+
+    private async Task<ValidationReport> RunValidatorAsync(WorkflowGraphDto graph, CancellationToken cancellationToken)
+    {
+        var domain = WorkflowGraphMapper.ToDomain(graph);
+        var stations = await _workStations.ListAsync(cancellationToken).ConfigureAwait(false);
+        var stationInfos = stations
+            .Select(s => new WorkflowStationInfo(s.Station.Id, s.Station.Code, s.Station.Name, s.Station.WipLimit, s.Station.IsActive))
+            .ToList();
+        return SmartWorkflowValidator.Validate(domain, stationInfos);
     }
 
     public async Task<WorkflowTemplateDto> CloneAsync(Guid id, CloneWorkflowTemplateRequest request, CancellationToken cancellationToken)

@@ -38,6 +38,14 @@ public static class WorkflowsEndpoints
         workflows.MapPost("/{id:guid}/publish", async (Guid id, IWorkflowService service, CancellationToken ct) =>
             Results.Ok(await service.PublishAsync(id, ct).ConfigureAwait(false)));
 
+        // Smart validation — non-destructive. Editor Validate / Preview posts the
+        // current canvas graph; the stored-graph variant backs the publish gate.
+        workflows.MapPost("/{id:guid}/validate", async (Guid id, IWorkflowService service, CancellationToken ct) =>
+            Results.Ok(await service.ValidateAsync(id, ct).ConfigureAwait(false)));
+
+        workflows.MapPost("/validate", async (SaveWorkflowGraphRequest request, IWorkflowService service, CancellationToken ct) =>
+            Results.Ok(await service.ValidateGraphAsync(request.Graph, ct).ConfigureAwait(false)));
+
         workflows.MapPost("/{id:guid}/clone", async (Guid id, CloneWorkflowTemplateRequest request, IWorkflowService service, CancellationToken ct) =>
         {
             var created = await service.CloneAsync(id, request, ct).ConfigureAwait(false);
