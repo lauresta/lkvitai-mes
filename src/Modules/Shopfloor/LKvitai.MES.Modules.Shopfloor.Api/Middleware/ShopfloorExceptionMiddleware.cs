@@ -1,5 +1,6 @@
 using System.Text.Json;
 using LKvitai.MES.Modules.Shopfloor.Application.Exceptions;
+using LKvitai.MES.Modules.Shopfloor.Contracts.Workflows;
 
 namespace LKvitai.MES.Modules.Shopfloor.Api.Middleware;
 
@@ -10,6 +11,8 @@ namespace LKvitai.MES.Modules.Shopfloor.Api.Middleware;
 /// </summary>
 public sealed class ShopfloorExceptionMiddleware
 {
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+
     private readonly RequestDelegate _next;
     private readonly ILogger<ShopfloorExceptionMiddleware> _logger;
 
@@ -24,6 +27,10 @@ public sealed class ShopfloorExceptionMiddleware
         try
         {
             await _next(context).ConfigureAwait(false);
+        }
+        catch (ShopfloorWorkflowNotPublishableException ex)
+        {
+            await WriteReportAsync(context, ex.Message, ex.Report).ConfigureAwait(false);
         }
         catch (ShopfloorValidationException ex)
         {
@@ -57,6 +64,28 @@ public sealed class ShopfloorExceptionMiddleware
             message,
             errors = errors ?? Array.Empty<string>(),
         });
+
+        await context.Response.WriteAsync(payload).ConfigureAwait(false);
+    }
+
+    private async Task WriteReportAsync(HttpContext context, string message, ValidationReportDto report)
+    {
+        if (context.Response.HasStarted)
+        {
+            _logger.LogWarning("[Shopfloor] cannot write 422 report, response already started for {Path}", context.Request.Path);
+            return;
+        }
+
+        context.Response.Clear();
+        context.Response.StatusCode = StatusCodes.Status422UnprocessableEntity;
+        context.Response.ContentType = "application/json";
+
+        var payload = JsonSerializer.Serialize(new
+        {
+            status = StatusCodes.Status422UnprocessableEntity,
+            message,
+            report,
+        }, JsonOptions);
 
         await context.Response.WriteAsync(payload).ConfigureAwait(false);
     }

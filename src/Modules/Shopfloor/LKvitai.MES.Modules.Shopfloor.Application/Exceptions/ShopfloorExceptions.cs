@@ -1,3 +1,5 @@
+using LKvitai.MES.Modules.Shopfloor.Contracts.Workflows;
+
 namespace LKvitai.MES.Modules.Shopfloor.Application.Exceptions;
 
 /// <summary>Raised when a referenced resource does not exist (maps to 404).</summary>
@@ -32,4 +34,20 @@ public sealed class ShopfloorValidationException : Exception
     {
         Errors = errors;
     }
+}
+
+/// <summary>
+/// Raised when a workflow cannot be published because the smart validator found
+/// blocking errors. Carries the full <see cref="ValidationReportDto"/> so the API
+/// can return it (maps to 422).
+/// </summary>
+public sealed class ShopfloorWorkflowNotPublishableException : Exception
+{
+    public ShopfloorWorkflowNotPublishableException(ValidationReportDto report)
+        : base($"Workflow cannot be published: {report.Summary.Errors} blocking error(s).")
+    {
+        Report = report;
+    }
+
+    public ValidationReportDto Report { get; }
 }
