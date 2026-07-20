@@ -22,6 +22,8 @@ public record AdminItemDto
     public string? PrimaryBarcode { get; init; }
     public decimal? Weight { get; init; }
     public decimal? Volume { get; init; }
+    public decimal? BasePrice { get; init; }
+    public decimal? PurchasePrice { get; init; }
     public string? ProductConfigId { get; init; }
     public IReadOnlyList<string> Tags { get; init; } = Array.Empty<string>();
     public DateTimeOffset CreatedAt { get; init; }
@@ -53,6 +55,8 @@ public record ItemDetailsDto
     public string BaseUoM { get; init; } = string.Empty;
     public decimal? Weight { get; init; }
     public decimal? Volume { get; init; }
+    public decimal? BasePrice { get; init; }
+    public decimal? PurchasePrice { get; init; }
     public bool RequiresLotTracking { get; init; }
     public bool RequiresQC { get; init; }
     public string Status { get; init; } = string.Empty;
@@ -95,6 +99,8 @@ public record CreateOrUpdateItemRequest
     public string BaseUoM { get; init; } = string.Empty;
     public decimal? Weight { get; init; }
     public decimal? Volume { get; init; }
+    public decimal? BasePrice { get; init; }
+    public decimal? PurchasePrice { get; init; }
     public bool RequiresLotTracking { get; init; }
     public bool RequiresQC { get; init; }
     public string? Status { get; init; }
@@ -266,6 +272,60 @@ public record AdminCategoryDto
 }
 
 public record CreateOrUpdateCategoryRequest(string Code, string Name, int? ParentCategoryId);
+
+public record PriceGroupDto
+{
+    public int Id { get; init; }
+    public string Code { get; init; } = string.Empty;
+    public string Name { get; init; } = string.Empty;
+    public bool IsActive { get; init; }
+}
+
+public record CreateOrUpdatePriceGroupRequest(string Code, string Name, bool IsActive);
+
+public record PriceGroupCustomerDto
+{
+    public Guid Id { get; init; }
+    public string CustomerCode { get; init; } = string.Empty;
+    public string Name { get; init; } = string.Empty;
+}
+
+public record ItemPriceOverrideDto
+{
+    public int PriceGroupId { get; init; }
+    public string PriceGroupCode { get; init; } = string.Empty;
+    public string PriceGroupName { get; init; } = string.Empty;
+    public decimal? OverrideAmount { get; init; }
+    public decimal? BasePrice { get; init; }
+    public decimal? EffectivePrice => OverrideAmount ?? BasePrice;
+}
+
+public record SetPriceOverrideRequest(decimal? Amount);
+
+public record ItemPriceHistoryDto
+{
+    public long Id { get; init; }
+    public int ItemId { get; init; }
+    public string PriceType { get; init; } = string.Empty;
+    public int? PriceGroupId { get; init; }
+    public decimal? OldAmount { get; init; }
+    public decimal NewAmount { get; init; }
+    public string ChangedBy { get; init; } = string.Empty;
+    public DateTimeOffset ChangedAt { get; init; }
+    public string? Reason { get; init; }
+}
+
+public record CustomerLookupDto
+{
+    public Guid Id { get; init; }
+    public string CustomerCode { get; init; } = string.Empty;
+    public string Name { get; init; } = string.Empty;
+    public string Status { get; init; } = string.Empty;
+    public int? PriceGroupId { get; init; }
+    public string? PriceGroupName { get; init; }
+}
+
+public record SetCustomerPriceGroupRequest(int? PriceGroupId);
 
 public record ImportExecutionResultDto
 {

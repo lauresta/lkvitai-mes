@@ -52,6 +52,8 @@ public sealed class CustomersController : ControllerBase
                 x.CustomerCode,
                 x.Name,
                 x.Status.ToString().ToUpperInvariant(),
+                x.PriceGroupId,
+                x.PriceGroup != null ? x.PriceGroup.Name : null,
                 x.DefaultShippingAddress == null
                     ? null
                     : new AddressResponse(
@@ -86,6 +88,8 @@ public sealed class CustomersController : ControllerBase
                 x.Email,
                 x.Phone,
                 x.Status.ToString().ToUpperInvariant(),
+                x.PriceGroupId,
+                x.PriceGroup != null ? x.PriceGroup.Name : null,
                 new AddressResponse(
                     x.BillingAddress.Street,
                     x.BillingAddress.City,
@@ -156,6 +160,37 @@ public sealed class CustomersController : ControllerBase
         return Created($"/api/warehouse/v1/customers/{row.Id}", new { row.Id, row.CustomerCode });
     }
 
+    [HttpPut("{id:guid}/price-group")]
+    [Authorize(Policy = WarehousePolicies.SalesAdminOrManager)]
+    public async Task<IActionResult> SetPriceGroupAsync(
+        Guid id,
+        [FromBody] SetCustomerPriceGroupRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var customer = await _dbContext.Customers.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        if (customer is null)
+        {
+            return NotFound();
+        }
+
+        if (request.PriceGroupId.HasValue)
+        {
+            var groupExists = await _dbContext.PriceGroups
+                .AsNoTracking()
+                .AnyAsync(x => x.Id == request.PriceGroupId.Value, cancellationToken);
+            if (!groupExists)
+            {
+                return BadRequest($"Price group '{request.PriceGroupId.Value}' does not exist.");
+            }
+        }
+
+        customer.PriceGroupId = request.PriceGroupId;
+        await _dbContext.SaveChangesAsync(cancellationToken);
+        await Cache.RemoveAsync($"customer:{id:N}", cancellationToken);
+
+        return Ok(new { customer.Id, customer.PriceGroupId });
+    }
+
     private ICacheService Cache => HttpContext?.RequestServices?.GetService<ICacheService>() ?? new LKvitai.MES.Modules.Warehouse.Infrastructure.Caching.NoOpCacheService();
 
     public sealed record AddressResponse(
@@ -170,6 +205,8 @@ public sealed class CustomersController : ControllerBase
         string CustomerCode,
         string Name,
         string Status,
+        int? PriceGroupId,
+        string? PriceGroupName,
         AddressResponse? DefaultShippingAddress);
 
     public sealed record CustomerDetailResponse(
@@ -179,8 +216,12 @@ public sealed class CustomersController : ControllerBase
         string Email,
         string? Phone,
         string Status,
+        int? PriceGroupId,
+        string? PriceGroupName,
         AddressResponse BillingAddress,
         AddressResponse? DefaultShippingAddress);
+
+    public sealed record SetCustomerPriceGroupRequest(int? PriceGroupId);
 
     public sealed record CreateCustomerRequest(
         string Name,

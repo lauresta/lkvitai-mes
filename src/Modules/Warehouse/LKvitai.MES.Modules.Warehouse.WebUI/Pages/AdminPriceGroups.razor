@@ -1,0 +1,293 @@
+@page "/admin/price-groups"
+@inject MasterDataAdminClient AdminClient
+@inject ToastService ToastService
+@inject IDialogService DialogService
+
+<PageTitle>Price Groups - Cikada.MES</PageTitle>
+
+<div data-testid="admin-price-groups-page">
+    <h3>Price Groups</h3>
+
+    @if (_apiError is not null)
+    {
+        <div data-testid="admin-price-groups-error">
+            <SharedErrorAlert Message="@BuildErrorMessage(_apiError)"
+                              TraceId="@_apiError.TraceId"
+                              OnRetry="ReloadAsync"
+                              OnDismiss="@(() => _apiError = null)" />
+        </div>
+    }
+
+    <MudPaper Outlined="true" Elevation="0" Class="panel items-list-panel">
+        <div class="panel__head">
+            <span class="panel__title">Groups <small>@_groups.Count total</small></span>
+            <div class="panel__actions">
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="RefreshAsync">Refresh</MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenCreateDialogAsync">Create Group</MudButton>
+            </div>
+        </div>
+
+        <MudDataGrid T="PriceGroupDto" Items="@_groups" Dense="true" Hover="true" FixedHeader="true" Loading="@_isLoading">
+            <Columns>
+                <PropertyColumn Property="x => x.Code" Title="Code" />
+                <PropertyColumn Property="x => x.Name" Title="Name" />
+                <TemplateColumn Title="Status">
+                    <CellTemplate>
+                        <span class="@(context.Item.IsActive ? "chip chip--ok" : "chip chip--locked")">@(context.Item.IsActive ? "Active" : "Inactive")</span>
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="">
+                    <CellTemplate>
+                        <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="@(() => SelectGroupAsync(context.Item))">Customers</MudButton>
+                        <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="@(() => OpenEditDialogAsync(context.Item))">Edit</MudButton>
+                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Error" OnClick="@(() => DeleteAsync(context.Item))">Delete</MudButton>
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+            <NoRecordsContent>
+                <div class="lots-grid__empty">
+                    <span class="lots-grid__empty-title">No price groups</span>
+                    <span>Create one to start overriding item prices per customer tier.</span>
+                </div>
+            </NoRecordsContent>
+        </MudDataGrid>
+    </MudPaper>
+
+    @if (_selectedGroup is not null)
+    {
+        <MudPaper Outlined="true" Elevation="0" Class="panel items-detail-panel">
+            <div class="panel__head">
+                <span class="panel__title">Customers in "@_selectedGroup.Name"</span>
+            </div>
+
+            <div class="lk-toolbar">
+                <MudAutocomplete T="CustomerLookupDto"
+                                 Label="Assign customer"
+                                 Variant="Variant.Outlined"
+                                 Margin="Margin.Dense"
+                                 SearchFunc="SearchCustomersAsync"
+                                 ToStringFunc="@(x => x is null ? string.Empty : $"{x.CustomerCode} - {x.Name}")"
+                                 ValueChanged="AssignCustomerAsync"
+                                 ResetValueOnEmptyText="true"
+                                 CoerceValue="true"
+                                 MinCharacters="1"
+                                 Placeholder="Search customers by name or code" />
+            </div>
+
+            @if (_groupCustomers.Count == 0)
+            {
+                <div class="lots-grid__empty">
+                    <span class="lots-grid__empty-title">No customers assigned</span>
+                </div>
+            }
+            else
+            {
+                <table class="lk-table">
+                    <thead>
+                    <tr>
+                        <th>Code</th>
+                        <th>Name</th>
+                        <th></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var customer in _groupCustomers)
+                    {
+                        <tr>
+                            <td class="mono">@customer.CustomerCode</td>
+                            <td>@customer.Name</td>
+                            <td class="text-end">
+                                <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Error" OnClick="@(() => UnassignCustomerAsync(customer))">Remove</MudButton>
+                            </td>
+                        </tr>
+                    }
+                    </tbody>
+                </table>
+            }
+        </MudPaper>
+    }
+</div>
+
+@code {
+    private readonly List<PriceGroupDto> _groups = [];
+    private readonly List<PriceGroupCustomerDto> _groupCustomers = [];
+    private PriceGroupDto? _selectedGroup;
+    private bool _isLoading;
+    private ApiException? _apiError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            var rows = await AdminClient.GetPriceGroupsAsync();
+            _groups.Clear();
+            _groups.AddRange(rows.OrderBy(x => x.Code));
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private Task RefreshAsync() => ReloadAsync();
+
+    private async Task SelectGroupAsync(PriceGroupDto group)
+    {
+        _selectedGroup = group;
+        try
+        {
+            var customers = await AdminClient.GetPriceGroupCustomersAsync(group.Id);
+            _groupCustomers.Clear();
+            _groupCustomers.AddRange(customers);
+        }
+        catch (ApiException ex)
+        {
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+    }
+
+    private async Task<IEnumerable<CustomerLookupDto>> SearchCustomersAsync(string value)
+    {
+        try
+        {
+            return await AdminClient.SearchCustomersAsync(value);
+        }
+        catch (ApiException)
+        {
+            return Array.Empty<CustomerLookupDto>();
+        }
+    }
+
+    private async Task AssignCustomerAsync(CustomerLookupDto? customer)
+    {
+        if (customer is null || _selectedGroup is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await AdminClient.SetCustomerPriceGroupAsync(customer.Id, _selectedGroup.Id);
+            ToastService.ShowSuccess($"{customer.Name} assigned to {_selectedGroup.Name}.");
+            await SelectGroupAsync(_selectedGroup);
+        }
+        catch (ApiException ex)
+        {
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+    }
+
+    private async Task UnassignCustomerAsync(PriceGroupCustomerDto customer)
+    {
+        if (_selectedGroup is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await AdminClient.SetCustomerPriceGroupAsync(customer.Id, null);
+            ToastService.ShowWarning($"{customer.Name} removed from {_selectedGroup.Name}.");
+            await SelectGroupAsync(_selectedGroup);
+        }
+        catch (ApiException ex)
+        {
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+    }
+
+    private async Task OpenCreateDialogAsync()
+    {
+        var parameters = new DialogParameters<AdminPriceGroupEditorDialog>
+        {
+            { x => x.IsEdit, false }
+        };
+
+        var dialog = await DialogService.ShowAsync<AdminPriceGroupEditorDialog>("Create Price Group", parameters);
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not CreateOrUpdatePriceGroupRequest request)
+        {
+            return;
+        }
+
+        try
+        {
+            await AdminClient.CreatePriceGroupAsync(request);
+            ToastService.ShowSuccess("Price group created.");
+            await ReloadAsync();
+        }
+        catch (ApiException ex)
+        {
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+    }
+
+    private async Task OpenEditDialogAsync(PriceGroupDto group)
+    {
+        var parameters = new DialogParameters<AdminPriceGroupEditorDialog>
+        {
+            { x => x.IsEdit, true },
+            { x => x.Group, group }
+        };
+
+        var dialog = await DialogService.ShowAsync<AdminPriceGroupEditorDialog>("Edit Price Group", parameters);
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not CreateOrUpdatePriceGroupRequest request)
+        {
+            return;
+        }
+
+        try
+        {
+            await AdminClient.UpdatePriceGroupAsync(group.Id, request);
+            ToastService.ShowSuccess("Price group updated.");
+            await ReloadAsync();
+        }
+        catch (ApiException ex)
+        {
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+    }
+
+    private async Task DeleteAsync(PriceGroupDto group)
+    {
+        try
+        {
+            await AdminClient.DeletePriceGroupAsync(group.Id);
+            ToastService.ShowWarning("Price group deleted.");
+            if (_selectedGroup?.Id == group.Id)
+            {
+                _selectedGroup = null;
+                _groupCustomers.Clear();
+            }
+
+            await ReloadAsync();
+        }
+        catch (ApiException ex)
+        {
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+    }
+
+    private static string BuildErrorMessage(ApiException error)
+    {
+        if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
+        {
+            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+        }
+
+        return error.UserMessage;
+    }
+}

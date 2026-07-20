@@ -61,6 +61,8 @@
                 <AdminItemFieldBlock Label="Base UoM" Value="@_item.BaseUoM" IsMono="true" />
                 <AdminItemFieldBlock Label="Weight" Value="@FormatDecimal(_item.Weight)" IsMono="true" />
                 <AdminItemFieldBlock Label="Volume" Value="@FormatDecimal(_item.Volume)" IsMono="true" />
+                <AdminItemFieldBlock Label="Base Price" Value="@FormatMoney(_item.BasePrice)" IsMono="true" />
+                <AdminItemFieldBlock Label="Purchase Price" Value="@FormatMoney(_item.PurchasePrice)" IsMono="true" />
                 <AdminItemFieldBlock Label="Primary Barcode" Value="@FormatNullable(_item.PrimaryBarcode)" IsMono="true" />
                 <AdminItemFieldBlock Label="Product Config" Value="@FormatNullable(_item.ProductConfigId)" IsMono="true" />
                 <div class="items-detail-field">
@@ -167,6 +169,106 @@
             </div>
         }
     </MudPaper>
+
+    <MudPaper Outlined="true" Elevation="0" Class="panel items-detail-panel" data-testid="admin-item-detail-prices">
+        @if (_isLoading)
+        {
+            <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+        }
+
+        <div class="panel__head">
+            <span class="panel__title">Prices by group</span>
+        </div>
+
+        @if (_priceOverrides.Count == 0)
+        {
+            <div class="lots-grid__empty">
+                <span class="lots-grid__empty-title">No price groups</span>
+                <span>Create a price group under Admin &gt; Price Groups to set group-specific prices.</span>
+            </div>
+        }
+        else
+        {
+            <table class="lk-table">
+                <thead>
+                <tr>
+                    <th>Group</th>
+                    <th class="is-num">Override</th>
+                    <th class="is-num">Effective Price</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (var row in _priceOverrides)
+                {
+                    <tr>
+                        <td>@row.PriceGroupCode - @row.PriceGroupName</td>
+                        @if (_editingGroupId == row.PriceGroupId)
+                        {
+                            <td class="is-num">
+                                <MudNumericField T="decimal?" Variant="Variant.Outlined" Margin="Margin.Dense" Format="0.00" @bind-Value="_editingAmount" />
+                            </td>
+                            <td class="is-num">-</td>
+                            <td class="text-end">
+                                <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" OnClick="SavePriceOverrideAsync">Save</MudButton>
+                                <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="CancelEditOverride">Cancel</MudButton>
+                            </td>
+                        }
+                        else
+                        {
+                            <td class="is-money is-num">@(row.OverrideAmount.HasValue ? FormatMoney(row.OverrideAmount) : "-")</td>
+                            <td class="is-money is-num">@FormatMoney(row.EffectivePrice)</td>
+                            <td class="text-end">
+                                <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="@(() => BeginEditOverride(row))">Edit</MudButton>
+                            </td>
+                        }
+                    </tr>
+                }
+                </tbody>
+            </table>
+        }
+    </MudPaper>
+
+    <MudPaper Outlined="true" Elevation="0" Class="panel items-detail-panel" data-testid="admin-item-detail-price-history">
+        <div class="panel__head">
+            <span class="panel__title">Price History</span>
+        </div>
+
+        @if (_priceHistory.Count == 0)
+        {
+            <div class="lots-grid__empty">
+                <span class="lots-grid__empty-title">No price changes yet</span>
+            </div>
+        }
+        else
+        {
+            <table class="lk-table">
+                <thead>
+                <tr>
+                    <th>When</th>
+                    <th>Type</th>
+                    <th class="is-num">Old</th>
+                    <th class="is-num">New</th>
+                    <th>Changed By</th>
+                    <th>Reason</th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (var row in _priceHistory)
+                {
+                    <tr>
+                        <td class="mono">@row.ChangedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                        <td>@DescribePriceType(row)</td>
+                        <td class="is-money is-num">@(row.OldAmount.HasValue ? FormatMoney(row.OldAmount) : "-")</td>
+                        <td class="is-money is-num">@FormatMoney(row.NewAmount)</td>
+                        <td>@row.ChangedBy</td>
+                        <td>@FormatNullable(row.Reason)</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        }
+    </MudPaper>
 </div>
 
 @code {
@@ -176,8 +278,12 @@
 
     private ItemDetailsDto? _item;
     private readonly List<ItemPhotoDto> _photos = [];
+    private readonly List<ItemPriceOverrideDto> _priceOverrides = [];
+    private readonly List<ItemPriceHistoryDto> _priceHistory = [];
     private bool _isLoading;
     private ApiException? _apiError;
+    private int? _editingGroupId;
+    private decimal? _editingAmount;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -194,6 +300,14 @@
             _item = await AdminClient.GetItemByIdAsync(Id);
             _photos.Clear();
             _photos.AddRange(_item.Photos.OrderByDescending(x => x.IsPrimary).ThenByDescending(x => x.CreatedAt));
+
+            var overrides = await AdminClient.GetItemPriceOverridesAsync(Id);
+            _priceOverrides.Clear();
+            _priceOverrides.AddRange(overrides);
+
+            var history = await AdminClient.GetItemPriceHistoryAsync(Id);
+            _priceHistory.Clear();
+            _priceHistory.AddRange(history);
         }
         catch (ApiException ex)
         {
@@ -206,6 +320,47 @@
             _isLoading = false;
         }
     }
+
+    private void BeginEditOverride(ItemPriceOverrideDto row)
+    {
+        _editingGroupId = row.PriceGroupId;
+        _editingAmount = row.OverrideAmount;
+    }
+
+    private void CancelEditOverride()
+    {
+        _editingGroupId = null;
+        _editingAmount = null;
+    }
+
+    private async Task SavePriceOverrideAsync()
+    {
+        if (_editingGroupId is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await AdminClient.SetItemPriceOverrideAsync(Id, _editingGroupId.Value, _editingAmount);
+            ToastService.ShowSuccess("Price override updated.");
+            _editingGroupId = null;
+            _editingAmount = null;
+            await ReloadAsync();
+        }
+        catch (ApiException ex)
+        {
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+    }
+
+    private static string DescribePriceType(ItemPriceHistoryDto row) => row.PriceType switch
+    {
+        "Base" => "Base price",
+        "Purchase" => "Purchase price",
+        "GroupOverride" => "Group override",
+        _ => row.PriceType
+    };
 
     private async Task HandleFileSelectedAsync(InputFileChangeEventArgs args)
     {
@@ -322,6 +477,9 @@
 
     private static string FormatDecimal(decimal? value)
         => value?.ToString("0.###") ?? "-";
+
+    private static string FormatMoney(decimal? value)
+        => value.HasValue ? $"{value.Value:0.00} €" : "-";
 
     private static string FormatNullable(string? value)
         => string.IsNullOrWhiteSpace(value) ? "-" : value;

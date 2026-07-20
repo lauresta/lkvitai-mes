@@ -25,17 +25,23 @@ public sealed class ItemsController : ControllerBase
     private readonly ISkuGenerationService _skuGenerationService;
     private readonly IItemPhotoService _itemPhotoService;
     private readonly IItemImageSearchCapabilityService _searchCapabilityService;
+    private readonly IItemPriceHistoryService _priceHistoryService;
+    private readonly ICurrentUserService _currentUserService;
 
     public ItemsController(
         WarehouseDbContext dbContext,
         ISkuGenerationService skuGenerationService,
         IItemPhotoService itemPhotoService,
-        IItemImageSearchCapabilityService searchCapabilityService)
+        IItemImageSearchCapabilityService searchCapabilityService,
+        IItemPriceHistoryService priceHistoryService,
+        ICurrentUserService currentUserService)
     {
         _dbContext = dbContext;
         _skuGenerationService = skuGenerationService;
         _itemPhotoService = itemPhotoService;
         _searchCapabilityService = searchCapabilityService;
+        _priceHistoryService = priceHistoryService;
+        _currentUserService = currentUserService;
     }
 
     [HttpGet]
@@ -93,6 +99,8 @@ public sealed class ItemsController : ControllerBase
                 i.PrimaryBarcode,
                 i.Weight,
                 i.Volume,
+                i.BasePrice,
+                i.PurchasePrice,
                 i.ProductConfigId,
                 SplitTags(i.Tags),
                 i.CreatedAt,
@@ -173,7 +181,9 @@ public sealed class ItemsController : ControllerBase
             Status = string.IsNullOrWhiteSpace(request.Status) ? "Active" : request.Status.Trim(),
             PrimaryBarcode = request.PrimaryBarcode?.Trim(),
             ProductConfigId = request.ProductConfigId?.Trim(),
-            Tags = SerializeTags(request.Tags)
+            Tags = SerializeTags(request.Tags),
+            BasePrice = request.BasePrice,
+            PurchasePrice = request.PurchasePrice
         };
 
         _dbContext.Items.Add(item);
@@ -189,6 +199,8 @@ public sealed class ItemsController : ControllerBase
         }
 
         await Cache.RemoveAsync($"item:{item.Id}", cancellationToken);
+        await WritePriceHistoryIfSetAsync(item.Id, ItemPriceTypes.Base, null, request.BasePrice, cancellationToken);
+        await WritePriceHistoryIfSetAsync(item.Id, ItemPriceTypes.Purchase, null, request.PurchasePrice, cancellationToken);
 
         return CreatedAtRoute(
             GetItemByIdRouteName,
@@ -229,6 +241,8 @@ public sealed class ItemsController : ControllerBase
             item.BaseUoM,
             item.Weight,
             item.Volume,
+            item.BasePrice,
+            item.PurchasePrice,
             item.RequiresLotTracking,
             item.RequiresQC,
             item.Status,
@@ -277,6 +291,9 @@ public sealed class ItemsController : ControllerBase
             return ValidationFailure($"UoM '{request.BaseUoM}' does not exist.");
         }
 
+        var oldBasePrice = item.BasePrice;
+        var oldPurchasePrice = item.PurchasePrice;
+
         item.Name = request.Name.Trim();
         item.Description = request.Description?.Trim();
         item.CategoryId = request.CategoryId;
@@ -289,11 +306,139 @@ public sealed class ItemsController : ControllerBase
         item.PrimaryBarcode = request.PrimaryBarcode?.Trim();
         item.ProductConfigId = request.ProductConfigId?.Trim();
         item.Tags = SerializeTags(request.Tags);
+        item.BasePrice = request.BasePrice;
+        item.PurchasePrice = request.PurchasePrice;
 
         await _dbContext.SaveChangesAsync(cancellationToken);
         await Cache.RemoveAsync($"item:{id}", cancellationToken);
 
+        if (oldBasePrice != request.BasePrice)
+        {
+            await WritePriceHistoryIfChangedAsync(id, ItemPriceTypes.Base, oldBasePrice, request.BasePrice, cancellationToken);
+        }
+
+        if (oldPurchasePrice != request.PurchasePrice)
+        {
+            await WritePriceHistoryIfChangedAsync(id, ItemPriceTypes.Purchase, oldPurchasePrice, request.PurchasePrice, cancellationToken);
+        }
+
         return Ok(new ItemUpdatedDto(item.Id, item.InternalSKU, item.Name, item.Status, item.UpdatedAt));
+    }
+
+    [HttpGet("{id:int}/price-overrides")]
+    [Authorize(Policy = WarehousePolicies.OperatorOrAbove)]
+    public async Task<IActionResult> GetPriceOverridesAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var item = await _dbContext.Items
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        if (item is null)
+        {
+            return Failure(Result.Fail(DomainErrorCodes.NotFound, $"Item with ID {id} does not exist."));
+        }
+
+        var overridesByGroup = await _dbContext.ItemPriceOverrides
+            .AsNoTracking()
+            .Where(x => x.ItemId == id)
+            .ToDictionaryAsync(x => x.PriceGroupId, x => x.Amount, cancellationToken);
+
+        var groups = await _dbContext.PriceGroups
+            .AsNoTracking()
+            .Where(x => x.IsActive)
+            .OrderBy(x => x.Code)
+            .Select(x => new ItemPriceOverrideDto(
+                x.Id,
+                x.Code,
+                x.Name,
+                overridesByGroup.ContainsKey(x.Id) ? overridesByGroup[x.Id] : null,
+                item.BasePrice))
+            .ToListAsync(cancellationToken);
+
+        return Ok(groups);
+    }
+
+    [HttpPut("{id:int}/price-overrides/{priceGroupId:int}")]
+    [Authorize(Policy = WarehousePolicies.ManagerOrAdmin)]
+    public async Task<IActionResult> SetPriceOverrideAsync(
+        int id,
+        int priceGroupId,
+        [FromBody] SetPriceOverrideRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var itemExists = await _dbContext.Items.AsNoTracking().AnyAsync(x => x.Id == id, cancellationToken);
+        if (!itemExists)
+        {
+            return Failure(Result.Fail(DomainErrorCodes.NotFound, $"Item with ID {id} does not exist."));
+        }
+
+        var groupExists = await _dbContext.PriceGroups.AsNoTracking().AnyAsync(x => x.Id == priceGroupId, cancellationToken);
+        if (!groupExists)
+        {
+            return Failure(Result.Fail(DomainErrorCodes.NotFound, $"Price group '{priceGroupId}' does not exist."));
+        }
+
+        if (request.Amount is < 0)
+        {
+            return ValidationFailure("Amount must be greater than or equal to zero.");
+        }
+
+        var existing = await _dbContext.ItemPriceOverrides
+            .FirstOrDefaultAsync(x => x.ItemId == id && x.PriceGroupId == priceGroupId, cancellationToken);
+        var oldAmount = existing?.Amount;
+
+        if (request.Amount is null)
+        {
+            if (existing is not null)
+            {
+                _dbContext.ItemPriceOverrides.Remove(existing);
+                await _dbContext.SaveChangesAsync(cancellationToken);
+            }
+        }
+        else if (existing is null)
+        {
+            _dbContext.ItemPriceOverrides.Add(new ItemPriceOverride
+            {
+                ItemId = id,
+                PriceGroupId = priceGroupId,
+                Amount = request.Amount.Value
+            });
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+        else
+        {
+            existing.Amount = request.Amount.Value;
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        if (oldAmount != request.Amount)
+        {
+            await _priceHistoryService.WriteAsync(new ItemPriceHistoryWriteRequest(
+                id,
+                ItemPriceTypes.GroupOverride,
+                priceGroupId,
+                oldAmount,
+                request.Amount ?? 0m,
+                _currentUserService.GetCurrentUserId(),
+                DateTimeOffset.UtcNow,
+                request.Amount is null ? "Override removed, reverted to base price" : null), cancellationToken);
+        }
+
+        await Cache.RemoveAsync($"item:{id}", cancellationToken);
+        return Ok();
+    }
+
+    [HttpGet("{id:int}/price-history")]
+    [Authorize(Policy = WarehousePolicies.OperatorOrAbove)]
+    public async Task<IActionResult> GetPriceHistoryAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var itemExists = await _dbContext.Items.AsNoTracking().AnyAsync(x => x.Id == id, cancellationToken);
+        if (!itemExists)
+        {
+            return Failure(Result.Fail(DomainErrorCodes.NotFound, $"Item with ID {id} does not exist."));
+        }
+
+        var rows = await _priceHistoryService.QueryAsync(id, cancellationToken);
+        return Ok(rows);
     }
 
     [HttpGet("tags")]
@@ -673,6 +818,47 @@ public sealed class ItemsController : ControllerBase
     private static string NormalizeTag(string? value)
         => value?.Trim().TrimStart('#').Trim() ?? string.Empty;
 
+    private async Task WritePriceHistoryIfSetAsync(
+        int itemId,
+        string priceType,
+        decimal? oldAmount,
+        decimal? newAmount,
+        CancellationToken cancellationToken)
+    {
+        if (newAmount is null)
+        {
+            return;
+        }
+
+        await _priceHistoryService.WriteAsync(new ItemPriceHistoryWriteRequest(
+            itemId,
+            priceType,
+            null,
+            oldAmount,
+            newAmount.Value,
+            _currentUserService.GetCurrentUserId(),
+            DateTimeOffset.UtcNow,
+            null), cancellationToken);
+    }
+
+    private async Task WritePriceHistoryIfChangedAsync(
+        int itemId,
+        string priceType,
+        decimal? oldAmount,
+        decimal? newAmount,
+        CancellationToken cancellationToken)
+    {
+        await _priceHistoryService.WriteAsync(new ItemPriceHistoryWriteRequest(
+            itemId,
+            priceType,
+            null,
+            oldAmount,
+            newAmount ?? 0m,
+            _currentUserService.GetCurrentUserId(),
+            DateTimeOffset.UtcNow,
+            newAmount is null ? "Price cleared" : null), cancellationToken);
+    }
+
     public sealed record CreateItemRequestDto(
         string? InternalSKU,
         string Name,
@@ -686,7 +872,9 @@ public sealed class ItemsController : ControllerBase
         string? Status,
         string? PrimaryBarcode,
         string? ProductConfigId,
-        IReadOnlyList<string>? Tags);
+        IReadOnlyList<string>? Tags,
+        decimal? BasePrice = null,
+        decimal? PurchasePrice = null);
 
     public sealed record UpdateItemRequestDto(
         string Name,
@@ -700,7 +888,9 @@ public sealed class ItemsController : ControllerBase
         string? Status,
         string? PrimaryBarcode,
         string? ProductConfigId,
-        IReadOnlyList<string>? Tags);
+        IReadOnlyList<string>? Tags,
+        decimal? BasePrice = null,
+        decimal? PurchasePrice = null);
 
     public sealed record ItemCreatedDto(int Id, string InternalSKU, string Name, DateTimeOffset CreatedAt);
     public sealed record ItemUpdatedDto(int Id, string InternalSKU, string Name, string Status, DateTimeOffset? UpdatedAt);
@@ -718,6 +908,8 @@ public sealed class ItemsController : ControllerBase
         string? PrimaryBarcode,
         decimal? Weight,
         decimal? Volume,
+        decimal? BasePrice,
+        decimal? PurchasePrice,
         string? ProductConfigId,
         IReadOnlyList<string> Tags,
         DateTimeOffset CreatedAt,
@@ -734,6 +926,8 @@ public sealed class ItemsController : ControllerBase
         string BaseUoM,
         decimal? Weight,
         decimal? Volume,
+        decimal? BasePrice,
+        decimal? PurchasePrice,
         bool RequiresLotTracking,
         bool RequiresQC,
         string Status,
@@ -751,6 +945,13 @@ public sealed class ItemsController : ControllerBase
     public sealed record ItemBarcodesResponse(int ItemId, string InternalSKU, IReadOnlyList<ItemBarcodeDto> Barcodes);
     public sealed record ItemPhotosResponse(int ItemId, IReadOnlyList<ItemPhotoDto> Photos);
     public sealed record ItemTagsResponse(IReadOnlyList<string> Tags);
+    public sealed record ItemPriceOverrideDto(
+        int PriceGroupId,
+        string PriceGroupCode,
+        string PriceGroupName,
+        decimal? OverrideAmount,
+        decimal? BasePrice);
+    public sealed record SetPriceOverrideRequest(decimal? Amount);
     public sealed record ImageSearchResponse(IReadOnlyList<ItemImageSearchResultDto> Results);
 
     public sealed record PagedResponse<T>(
