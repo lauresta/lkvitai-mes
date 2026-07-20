@@ -173,7 +173,7 @@ public sealed class StockController : ControllerBase
                     : null,
                 item is not null && unitCostByItemId.TryGetValue(item.Id, out var unitCost)
                     ? unitCost
-                    : null);
+                    : item?.PurchasePrice);
         });
 
         if (itemId.HasValue)
