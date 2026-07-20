@@ -74,8 +74,6 @@ public sealed class MartenAvailableStockQuantityResolver : IAvailableStockQuanti
 public sealed class OnHandValueProjectionConsumer :
     IConsumer<ValuationInitialized>,
     IConsumer<CostAdjusted>,
-    IConsumer<LandedCostAllocated>,
-    IConsumer<StockWrittenDown>,
     IConsumer<LandedCostApplied>,
     IConsumer<WrittenDown>,
     IConsumer<StockMovedEvent>
@@ -127,30 +125,6 @@ public sealed class OnHandValueProjectionConsumer :
             context.Message.ItemId,
             context.Message.NewUnitCost,
             nameof(CostAdjusted),
-            context.CancellationToken);
-    }
-
-    public Task Consume(ConsumeContext<LandedCostAllocated> context)
-    {
-        return UpsertFromValuationAsync(
-            context.Message.EventId,
-            context.Message.Timestamp,
-            context.Message.CorrelationId,
-            context.Message.ItemId,
-            context.Message.NewUnitCost,
-            nameof(LandedCostAllocated),
-            context.CancellationToken);
-    }
-
-    public Task Consume(ConsumeContext<StockWrittenDown> context)
-    {
-        return UpsertFromValuationAsync(
-            context.Message.EventId,
-            context.Message.Timestamp,
-            context.Message.CorrelationId,
-            context.Message.ItemId,
-            context.Message.NewUnitCost,
-            nameof(StockWrittenDown),
             context.CancellationToken);
     }
 
@@ -222,7 +196,7 @@ public sealed class OnHandValueProjectionConsumer :
 
             projection = new OnHandValue
             {
-                Id = Valuation.ToValuationItemId(item.Id),
+                Id = ValuationItemId.ToValuationItemId(item.Id),
                 ItemId = item.Id,
                 ItemSku = item.InternalSKU,
                 ItemName = item.Name,
@@ -274,7 +248,7 @@ public sealed class OnHandValueProjectionConsumer :
             return;
         }
 
-        if (!Valuation.TryToInventoryItemId(valuationItemId, out var itemId))
+        if (!ValuationItemId.TryToInventoryItemId(valuationItemId, out var itemId))
         {
             await OnHandValueProjectionMetrics.SaveProjectionAsync(
                 _dbContext,
@@ -319,7 +293,7 @@ public sealed class OnHandValueProjectionConsumer :
         {
             projection = new OnHandValue
             {
-                Id = Valuation.ToValuationItemId(item.Id),
+                Id = ValuationItemId.ToValuationItemId(item.Id),
                 ItemId = item.Id,
                 ItemSku = item.InternalSKU,
                 ItemName = item.Name,
@@ -375,7 +349,7 @@ public sealed class OnHandValueProjectionConsumer :
             return;
         }
 
-        var valuationItemId = Valuation.ToValuationItemId(itemId);
+        var valuationItemId = ValuationItemId.ToValuationItemId(itemId);
         await UpsertFromValuationAsync(
             eventId,
             eventTimestampUtc,

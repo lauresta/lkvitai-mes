@@ -120,7 +120,7 @@ public class ItemValuationTests
         aggregate.Apply(new CostAdjusted
         {
             InventoryItemId = 10,
-            ItemId = Valuation.ToValuationItemId(10),
+            ItemId = ValuationItemId.ToValuationItemId(10),
             OldUnitCost = 10m,
             NewUnitCost = 13.55555m,
             Reason = "Market",
@@ -236,7 +236,7 @@ public class ItemValuationTests
         aggregate.Apply(new ValuationInitialized
         {
             InventoryItemId = 10,
-            ItemId = Valuation.ToValuationItemId(10),
+            ItemId = ValuationItemId.ToValuationItemId(10),
             InitialUnitCost = initialCost,
             Reason = "Initial purchase",
             Source = "MANUAL",
@@ -253,7 +253,7 @@ public class ItemValuationTests
         return new ValuationInitialized
         {
             InventoryItemId = 10,
-            ItemId = Valuation.ToValuationItemId(10),
+            ItemId = ValuationItemId.ToValuationItemId(10),
             InitialUnitCost = 10m,
             Reason = "Initial purchase",
             Source = "MANUAL",

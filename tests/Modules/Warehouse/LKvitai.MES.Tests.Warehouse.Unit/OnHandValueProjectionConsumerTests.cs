@@ -40,7 +40,7 @@ public class OnHandValueProjectionConsumerTests
         var message = new ValuationInitialized
         {
             EventId = Guid.NewGuid(),
-            ItemId = Valuation.ToValuationItemId(101),
+            ItemId = ValuationItemId.ToValuationItemId(101),
             InitialUnitCost = 10m,
             Source = "Manual",
             InitializedBy = "finance",
@@ -75,7 +75,7 @@ public class OnHandValueProjectionConsumerTests
         });
         db.OnHandValues.Add(new OnHandValue
         {
-            Id = Valuation.ToValuationItemId(102),
+            Id = ValuationItemId.ToValuationItemId(102),
             ItemId = 102,
             ItemSku = "FG-0001",
             ItemName = "Finished Good A",
@@ -93,7 +93,7 @@ public class OnHandValueProjectionConsumerTests
         var message = new CostAdjusted
         {
             EventId = Guid.NewGuid(),
-            ItemId = Valuation.ToValuationItemId(102),
+            ItemId = ValuationItemId.ToValuationItemId(102),
             OldUnitCost = 20m,
             NewUnitCost = 25m,
             Reason = "Market revaluation",
@@ -116,7 +116,7 @@ public class OnHandValueProjectionConsumerTests
         await using var db = CreateDbContext();
         db.OnHandValues.Add(new OnHandValue
         {
-            Id = Valuation.ToValuationItemId(103),
+            Id = ValuationItemId.ToValuationItemId(103),
             ItemId = 103,
             ItemSku = "RM-0003",
             ItemName = "Raw Material C",
@@ -175,7 +175,7 @@ public class OnHandValueProjectionConsumerTests
         var message = new ValuationInitialized
         {
             EventId = Guid.NewGuid(),
-            ItemId = Valuation.ToValuationItemId(104),
+            ItemId = ValuationItemId.ToValuationItemId(104),
             InitialUnitCost = 2m,
             Source = "Manual",
             InitializedBy = "seed",

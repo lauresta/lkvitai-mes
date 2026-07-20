@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using LKvitai.MES.Modules.Warehouse.Api.ErrorHandling;
 using LKvitai.MES.Modules.Warehouse.Api.Security;
 using LKvitai.MES.Modules.Warehouse.Api.Services;
@@ -29,22 +28,19 @@ public sealed class ValuationController : ControllerBase
     private readonly IDocumentStore _documentStore;
     private readonly IAvailableStockQuantityResolver _quantityResolver;
     private readonly IReasonCodeService _reasonCodeService;
-    private readonly IElectronicSignatureService _signatureService;
 
     public ValuationController(
         IMediator mediator,
         WarehouseDbContext dbContext,
         IDocumentStore documentStore,
         IAvailableStockQuantityResolver quantityResolver,
-        IReasonCodeService reasonCodeService,
-        IElectronicSignatureService signatureService)
+        IReasonCodeService reasonCodeService)
     {
         _mediator = mediator;
         _dbContext = dbContext;
         _documentStore = documentStore;
         _quantityResolver = quantityResolver;
         _reasonCodeService = reasonCodeService;
-        _signatureService = signatureService;
     }
 
     [HttpPost("initialize")]
@@ -174,82 +170,6 @@ public sealed class ValuationController : ControllerBase
             cancellationToken);
 
         return Ok(new ValuationCommandAcceptedResponse(commandId, request.ItemId, "WRITTEN_DOWN"));
-    }
-
-    [HttpPost("{itemId:int}/adjust-cost")]
-    [Authorize(Policy = WarehousePolicies.InventoryAccountantOrManager)]
-    public async Task<IActionResult> AdjustCostAsync(
-        int itemId,
-        [FromBody] AdjustCostRequest? request,
-        CancellationToken cancellationToken = default)
-    {
-        if (request is null)
-        {
-            return ValidationFailure("Request body is required.");
-        }
-
-        var commandId = request.CommandId == Guid.Empty ? Guid.NewGuid() : request.CommandId;
-
-        var result = await _mediator.Send(new AdjustCostCommand
-        {
-            CommandId = commandId,
-            CorrelationId = ResolveCorrelationId(),
-            ItemId = itemId,
-            NewUnitCost = request.NewUnitCost,
-            Reason = request.Reason,
-            ApproverId = request.ApproverId
-        }, cancellationToken);
-
-        if (!result.IsSuccess)
-        {
-            return Failure(result);
-        }
-
-        await _reasonCodeService.IncrementUsageIfCodeMatchesAsync(
-            request.Reason,
-            ReasonCategory.REVALUATION,
-            cancellationToken);
-
-        var itemQuery = _dbContext.Items.AsNoTracking();
-        var item = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
-            itemQuery,
-            x => x.Id == itemId,
-            cancellationToken);
-
-        if (item is null)
-        {
-            return Failure(Result.Fail(DomainErrorCodes.NotFound, $"Item {itemId} not found."));
-        }
-
-        var streamId = Valuation.StreamIdFor(Valuation.ToValuationItemId(itemId));
-
-        await using var session = _documentStore.QuerySession();
-
-        var costAdjustedEvent = await LoadCostAdjustedEventAsync(session, streamId, commandId, cancellationToken);
-        if (costAdjustedEvent is null)
-        {
-            return Failure(Result.Fail(
-                DomainErrorCodes.InternalError,
-                "Cost adjustment event was not found after command execution."));
-        }
-
-        var availableQty = await ResolveAvailableQtyAsync(session, item, cancellationToken);
-        var costDelta = decimal.Round(costAdjustedEvent.NewUnitCost - costAdjustedEvent.OldUnitCost, 4, MidpointRounding.AwayFromZero);
-        var impact = decimal.Round(costDelta * availableQty, 4, MidpointRounding.AwayFromZero);
-
-        await TryCaptureSignatureAsync(request, item.InternalSKU, impact, cancellationToken);
-
-        return Ok(new AdjustCostResponse(
-            itemId,
-            item.InternalSKU,
-            costAdjustedEvent.OldUnitCost,
-            costAdjustedEvent.NewUnitCost,
-            costDelta,
-            availableQty,
-            impact,
-            costAdjustedEvent.Reason,
-            costAdjustedEvent.ApproverId?.ToString() ?? costAdjustedEvent.AdjustedBy,
-            costAdjustedEvent.AdjustedAt));
     }
 
     [HttpGet("on-hand-value")]
@@ -526,41 +446,6 @@ public sealed class ValuationController : ControllerBase
             .ToList());
     }
 
-    private static async Task<CostAdjusted?> LoadCostAdjustedEventAsync(
-        IQuerySession session,
-        string streamId,
-        Guid commandId,
-        CancellationToken cancellationToken)
-    {
-        var events = await session.Events.FetchStreamAsync(streamId, token: cancellationToken);
-
-        return events
-            .Select(x => x.Data)
-            .OfType<CostAdjusted>()
-            .LastOrDefault(x => x.CommandId == commandId);
-    }
-
-    private static async Task<decimal> ResolveAvailableQtyAsync(
-        IQuerySession session,
-        LKvitai.MES.Modules.Warehouse.Domain.Entities.Item item,
-        CancellationToken cancellationToken)
-    {
-        var rowsByItemIdQuery = session.Query<AvailableStockView>()
-            .Where(x => x.ItemId == item.Id);
-        var rowsByItemId = await Marten.QueryableExtensions.ToListAsync(rowsByItemIdQuery, cancellationToken);
-
-        if (rowsByItemId.Count > 0)
-        {
-            return rowsByItemId.Sum(x => x.AvailableQty);
-        }
-
-        var rowsBySkuQuery = session.Query<AvailableStockView>()
-            .Where(x => x.SKU == item.InternalSKU);
-        var rowsBySku = await Marten.QueryableExtensions.ToListAsync(rowsBySkuQuery, cancellationToken);
-
-        return rowsBySku.Sum(x => x.AvailableQty);
-    }
-
     private ObjectResult Failure(Result result)
     {
         var problemDetails = ResultProblemDetailsMapper.ToProblemDetails(result, HttpContext);
@@ -609,40 +494,7 @@ public sealed class ValuationController : ControllerBase
         return new DateTimeOffset(candidate, TimeSpan.Zero);
     }
 
-    private Task TryCaptureSignatureAsync(
-        AdjustCostRequest request,
-        string itemSku,
-        decimal impact,
-        CancellationToken cancellationToken)
-    {
-        var requiresSignature = Math.Abs(impact) >= 10000m;
-        if (!requiresSignature ||
-            string.IsNullOrWhiteSpace(request.SignatureText) ||
-            string.IsNullOrWhiteSpace(request.SignaturePassword))
-        {
-            return Task.CompletedTask;
-        }
-
-        return _signatureService.CaptureAsync(new CaptureSignatureCommand(
-            "COST_ADJUSTMENT",
-            itemSku,
-            request.SignatureText!,
-            request.SignatureMeaning ?? "APPROVED",
-            User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "unknown",
-            HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-            request.SignaturePassword), cancellationToken);
-    }
-
     private ICacheService Cache => HttpContext?.RequestServices?.GetService<ICacheService>() ?? new LKvitai.MES.Modules.Warehouse.Infrastructure.Caching.NoOpCacheService();
-
-    public sealed record AdjustCostRequest(
-        Guid CommandId,
-        decimal NewUnitCost,
-        string Reason,
-        Guid? ApproverId,
-        string? SignatureText = null,
-        string? SignaturePassword = null,
-        string? SignatureMeaning = null);
 
     public sealed record InitializeValuationRequest(
         Guid CommandId,
@@ -679,18 +531,6 @@ public sealed class ValuationController : ControllerBase
     public sealed record LandedCostCommandAcceptedResponse(
         Guid CommandId,
         Guid ShipmentId);
-
-    public sealed record AdjustCostResponse(
-        int ItemId,
-        string ItemSku,
-        decimal OldUnitCost,
-        decimal NewUnitCost,
-        decimal CostDelta,
-        decimal AvailableQty,
-        decimal Impact,
-        string Reason,
-        string ApprovedBy,
-        DateTime AdjustedAt);
 
     public sealed record OnHandValueResponse(
         Guid Id,
