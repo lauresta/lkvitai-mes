@@ -1,0 +1,262 @@
+@inject MasterDataAdminClient AdminClient
+
+<MudDialog Class="admin-item-dialog admin-customer-dialog">
+    <TitleContent>
+        <div class="admin-item-dialog__title">
+            <span>@(IsEdit ? "Edit Customer" : "Create Customer")</span>
+            @if (IsEdit && !string.IsNullOrWhiteSpace(Customer?.CustomerCode))
+            {
+                <span class="mono">@Customer.CustomerCode</span>
+            }
+        </div>
+    </TitleContent>
+    <DialogContent>
+        @if (!string.IsNullOrWhiteSpace(_validationMessage))
+        {
+            <div class="lk-state lk-state--warn admin-item-dialog__validation">@_validationMessage</div>
+        }
+
+        <div class="admin-item-dialog__grid">
+            <MudTextField T="string"
+                          Label="Name"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          @bind-Value="_model.Name"
+                          Required="true" />
+
+            <MudTextField T="string"
+                          Label="Email"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          @bind-Value="_model.Email"
+                          Required="true" />
+
+            <MudTextField T="string"
+                          Label="Phone"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          @bind-Value="_model.Phone" />
+
+            @if (IsEdit)
+            {
+                <MudSelect T="string"
+                           Label="Status"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           @bind-Value="_model.Status">
+                    <MudSelectItem T="string" Value="@("Active")">Active</MudSelectItem>
+                    <MudSelectItem T="string" Value="@("OnHold")">On Hold</MudSelectItem>
+                    <MudSelectItem T="string" Value="@("Inactive")">Inactive</MudSelectItem>
+                </MudSelect>
+            }
+
+            <MudSelect T="string"
+                       Label="Payment Terms"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       @bind-Value="_model.PaymentTerms">
+                <MudSelectItem T="string" Value="@("Net30")">Net 30</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Net60")">Net 60</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Cod")">Cash on delivery</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Prepaid")">Prepaid</MudSelectItem>
+                <MudSelectItem T="string" Value="@("CreditCard")">Credit card</MudSelectItem>
+            </MudSelect>
+
+            <MudNumericField T="decimal?"
+                             Label="Credit Limit"
+                             Variant="Variant.Outlined"
+                             Margin="Margin.Dense"
+                             Min="0m"
+                             Format="0.00"
+                             Adornment="Adornment.End"
+                             AdornmentText="€"
+                             @bind-Value="_model.CreditLimit" />
+
+            <MudSelect T="int?"
+                       Label="Price Group"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       @bind-Value="_model.PriceGroupId">
+                <MudSelectItem T="int?" Value="@((int?)null)">None (base price)</MudSelectItem>
+                @foreach (var group in _priceGroups)
+                {
+                    <MudSelectItem T="int?" Value="@group.Id">@($"{group.Code} - {group.Name}")</MudSelectItem>
+                }
+            </MudSelect>
+
+            <div class="admin-item-dialog__description">
+                <h4>Billing Address</h4>
+            </div>
+            <MudTextField T="string" Label="Street" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="_model.BillingStreet" />
+            <MudTextField T="string" Label="City" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="_model.BillingCity" />
+            <MudTextField T="string" Label="State" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="_model.BillingState" />
+            <MudTextField T="string" Label="Zip Code" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="_model.BillingZipCode" />
+            <MudTextField T="string" Label="Country" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="_model.BillingCountry" />
+
+            <div class="admin-item-dialog__description">
+                <MudCheckBox T="bool" @bind-Checked="_model.ShippingSameAsBilling" Label="Shipping address same as billing" />
+            </div>
+
+            @if (!_model.ShippingSameAsBilling)
+            {
+                <div class="admin-item-dialog__description">
+                    <h4>Shipping Address</h4>
+                </div>
+                <MudTextField T="string" Label="Street" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="_model.ShippingStreet" />
+                <MudTextField T="string" Label="City" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="_model.ShippingCity" />
+                <MudTextField T="string" Label="State" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="_model.ShippingState" />
+                <MudTextField T="string" Label="Zip Code" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="_model.ShippingZipCode" />
+                <MudTextField T="string" Label="Country" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="_model.ShippingCountry" />
+            }
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveAsync">@(IsEdit ? "Save Changes" : "Create Customer")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private MudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public bool IsEdit { get; set; }
+    [Parameter] public CustomerDetailsDto? Customer { get; set; }
+
+    private readonly CustomerFormModel _model = new();
+    private IReadOnlyList<PriceGroupDto> _priceGroups = [];
+    private string? _validationMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _priceGroups = await AdminClient.GetPriceGroupsAsync();
+        }
+        catch (ApiException)
+        {
+            _priceGroups = [];
+        }
+
+        if (Customer is null)
+        {
+            return;
+        }
+
+        _model.Name = Customer.Name;
+        _model.Email = Customer.Email;
+        _model.Phone = Customer.Phone;
+        _model.Status = Customer.Status;
+        _model.PaymentTerms = Customer.PaymentTerms;
+        _model.CreditLimit = Customer.CreditLimit;
+        _model.PriceGroupId = Customer.PriceGroupId;
+        _model.BillingStreet = Customer.BillingAddress.Street;
+        _model.BillingCity = Customer.BillingAddress.City;
+        _model.BillingState = Customer.BillingAddress.State;
+        _model.BillingZipCode = Customer.BillingAddress.ZipCode;
+        _model.BillingCountry = Customer.BillingAddress.Country;
+
+        if (Customer.DefaultShippingAddress is not null)
+        {
+            _model.ShippingSameAsBilling = false;
+            _model.ShippingStreet = Customer.DefaultShippingAddress.Street;
+            _model.ShippingCity = Customer.DefaultShippingAddress.City;
+            _model.ShippingState = Customer.DefaultShippingAddress.State;
+            _model.ShippingZipCode = Customer.DefaultShippingAddress.ZipCode;
+            _model.ShippingCountry = Customer.DefaultShippingAddress.Country;
+        }
+    }
+
+    private Task SaveAsync()
+    {
+        _validationMessage = Validate();
+        if (!string.IsNullOrWhiteSpace(_validationMessage))
+        {
+            return Task.CompletedTask;
+        }
+
+        MudDialog.Close(DialogResult.Ok(_model.ToRequest()));
+        return Task.CompletedTask;
+    }
+
+    private string? Validate()
+    {
+        if (string.IsNullOrWhiteSpace(_model.Name))
+        {
+            return "Name is required.";
+        }
+
+        if (string.IsNullOrWhiteSpace(_model.Email))
+        {
+            return "Email is required.";
+        }
+
+        if (_model.CreditLimit is < 0)
+        {
+            return "Credit limit must be greater than or equal to zero.";
+        }
+
+        return null;
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private sealed class CustomerFormModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string? Phone { get; set; }
+        public string Status { get; set; } = "Active";
+        public string PaymentTerms { get; set; } = "Net30";
+        public decimal? CreditLimit { get; set; }
+        public int? PriceGroupId { get; set; }
+
+        public string? BillingStreet { get; set; }
+        public string? BillingCity { get; set; }
+        public string? BillingState { get; set; }
+        public string? BillingZipCode { get; set; }
+        public string? BillingCountry { get; set; }
+
+        public bool ShippingSameAsBilling { get; set; } = true;
+        public string? ShippingStreet { get; set; }
+        public string? ShippingCity { get; set; }
+        public string? ShippingState { get; set; }
+        public string? ShippingZipCode { get; set; }
+        public string? ShippingCountry { get; set; }
+
+        public CreateOrUpdateCustomerRequest ToRequest()
+        {
+            var billing = new SalesOrderAddressDto
+            {
+                Street = BillingStreet ?? string.Empty,
+                City = BillingCity ?? string.Empty,
+                State = BillingState ?? string.Empty,
+                ZipCode = BillingZipCode ?? string.Empty,
+                Country = BillingCountry ?? string.Empty
+            };
+
+            var shipping = ShippingSameAsBilling
+                ? billing
+                : new SalesOrderAddressDto
+                {
+                    Street = ShippingStreet ?? string.Empty,
+                    City = ShippingCity ?? string.Empty,
+                    State = ShippingState ?? string.Empty,
+                    ZipCode = ShippingZipCode ?? string.Empty,
+                    Country = ShippingCountry ?? string.Empty
+                };
+
+            return new CreateOrUpdateCustomerRequest
+            {
+                Name = Name.Trim(),
+                Email = Email.Trim(),
+                Phone = string.IsNullOrWhiteSpace(Phone) ? null : Phone.Trim(),
+                BillingAddress = billing,
+                ShippingAddress = shipping,
+                Status = Status,
+                PaymentTerms = PaymentTerms,
+                CreditLimit = CreditLimit,
+                PriceGroupId = PriceGroupId
+            };
+        }
+    }
+}

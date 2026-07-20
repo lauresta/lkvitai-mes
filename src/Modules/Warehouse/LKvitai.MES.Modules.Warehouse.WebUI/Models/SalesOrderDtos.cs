@@ -79,5 +79,7 @@ public record SalesOrderCustomerLookupDto
     public string CustomerCode { get; init; } = string.Empty;
     public string Name { get; init; } = string.Empty;
     public string Status { get; init; } = string.Empty;
+    public int? PriceGroupId { get; init; }
+    public string? PriceGroupName { get; init; }
     public SalesOrderAddressDto? DefaultShippingAddress { get; init; }
 }

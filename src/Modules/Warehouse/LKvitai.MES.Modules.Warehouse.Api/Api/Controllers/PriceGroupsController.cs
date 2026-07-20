@@ -168,6 +168,25 @@ public sealed class PriceGroupsController : ControllerBase
         return Ok(rows);
     }
 
+    [HttpGet("{id:int}/item-prices")]
+    [Authorize(Policy = WarehousePolicies.OperatorOrAbove)]
+    public async Task<IActionResult> GetItemPricesAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var groupExists = await _dbContext.PriceGroups.AsNoTracking().AnyAsync(x => x.Id == id, cancellationToken);
+        if (!groupExists)
+        {
+            return Failure(Result.Fail(DomainErrorCodes.NotFound, $"Price group '{id}' does not exist."));
+        }
+
+        var rows = await _dbContext.ItemPriceOverrides
+            .AsNoTracking()
+            .Where(x => x.PriceGroupId == id)
+            .Select(x => new PriceGroupItemPriceDto(x.ItemId, x.Amount))
+            .ToListAsync(cancellationToken);
+
+        return Ok(rows);
+    }
+
     private ObjectResult ValidationFailure(string detail)
     {
         var problemDetails = ResultProblemDetailsMapper.ToProblemDetails(
@@ -206,4 +225,5 @@ public sealed class PriceGroupsController : ControllerBase
     public sealed record UpsertPriceGroupRequest(string Code, string Name, bool IsActive);
     public sealed record PriceGroupDto(int Id, string Code, string Name, bool IsActive);
     public sealed record PriceGroupCustomerDto(Guid Id, string CustomerCode, string Name);
+    public sealed record PriceGroupItemPriceDto(int ItemId, decimal Amount);
 }

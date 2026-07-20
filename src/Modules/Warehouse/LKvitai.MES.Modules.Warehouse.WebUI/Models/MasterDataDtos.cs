@@ -327,6 +327,37 @@ public record CustomerLookupDto
 
 public record SetCustomerPriceGroupRequest(int? PriceGroupId);
 
+public record CustomerDetailsDto
+{
+    public Guid Id { get; init; }
+    public string CustomerCode { get; init; } = string.Empty;
+    public string Name { get; init; } = string.Empty;
+    public string Email { get; init; } = string.Empty;
+    public string? Phone { get; init; }
+    public string Status { get; init; } = string.Empty;
+    public string PaymentTerms { get; init; } = string.Empty;
+    public decimal? CreditLimit { get; init; }
+    public int? PriceGroupId { get; init; }
+    public string? PriceGroupName { get; init; }
+    public SalesOrderAddressDto BillingAddress { get; init; } = new();
+    public SalesOrderAddressDto? DefaultShippingAddress { get; init; }
+}
+
+public record CreateOrUpdateCustomerRequest
+{
+    public string Name { get; init; } = string.Empty;
+    public string Email { get; init; } = string.Empty;
+    public string? Phone { get; init; }
+    public SalesOrderAddressDto? BillingAddress { get; init; }
+    public SalesOrderAddressDto? ShippingAddress { get; init; }
+    public string? Status { get; init; }
+    public string? PaymentTerms { get; init; }
+    public decimal? CreditLimit { get; init; }
+    public int? PriceGroupId { get; init; }
+}
+
+public record PriceGroupItemPriceDto(int ItemId, decimal Amount);
+
 public record ImportExecutionResultDto
 {
     public int Inserted { get; init; }
