@@ -44,7 +44,6 @@ public static class MartenConfiguration
             RegisterMartenEventTypes(options);
             RegisterMartenDocumentAliases(options);
 
-            options.Projections.Snapshot<Valuation>(SnapshotLifecycle.Inline);
             options.Projections.Snapshot<ItemValuation>(SnapshotLifecycle.Inline);
             
             // Performance tuning
@@ -108,15 +107,12 @@ public static class MartenConfiguration
         RegisterEventType<TransferCompletedEvent>(options);
         RegisterEventType<ValuationInitialized>(options);
         RegisterEventType<CostAdjusted>(options);
-        RegisterEventType<LandedCostAllocated>(options);
-        RegisterEventType<StockWrittenDown>(options);
         RegisterEventType<LandedCostApplied>(options);
         RegisterEventType<WrittenDown>(options);
     }
 
     private static void RegisterMartenDocumentAliases(StoreOptions options)
     {
-        RegisterDocumentAlias<Valuation>(options);
         RegisterDocumentAlias<ItemValuation>(options);
         RegisterDocumentAlias<ActiveHardLockView>(options);
         RegisterDocumentAlias<LocationBalanceView>(options);

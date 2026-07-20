@@ -88,6 +88,26 @@
                              Min="0.001m"
                              @bind-Value="_model.Volume" />
 
+            <MudNumericField T="decimal?"
+                             Label="Base Price"
+                             Variant="Variant.Outlined"
+                             Margin="Margin.Dense"
+                             Min="0m"
+                             Format="0.00"
+                             Adornment="Adornment.End"
+                             AdornmentText="€"
+                             @bind-Value="_model.BasePrice" />
+
+            <MudNumericField T="decimal?"
+                             Label="Purchase Price"
+                             Variant="Variant.Outlined"
+                             Margin="Margin.Dense"
+                             Min="0m"
+                             Format="0.00"
+                             Adornment="Adornment.End"
+                             AdornmentText="€"
+                             @bind-Value="_model.PurchasePrice" />
+
             <MudTextField T="string"
                           Label="Product Config"
                           Variant="Variant.Outlined"
@@ -188,6 +208,8 @@
             _model.BaseUoM = Item.BaseUoM;
             _model.Weight = Item.Weight;
             _model.Volume = Item.Volume;
+            _model.BasePrice = Item.BasePrice;
+            _model.PurchasePrice = Item.PurchasePrice;
             _model.RequiresLotTracking = Item.RequiresLotTracking;
             _model.RequiresQC = Item.RequiresQC;
             _model.Status = Item.Status;
@@ -241,6 +263,16 @@
         if (_model.Volume is <= 0)
         {
             return "Volume must be greater than zero.";
+        }
+
+        if (_model.BasePrice is < 0)
+        {
+            return "Base price must be greater than or equal to zero.";
+        }
+
+        if (_model.PurchasePrice is < 0)
+        {
+            return "Purchase price must be greater than or equal to zero.";
         }
 
         return null;
@@ -354,6 +386,8 @@
         public string BaseUoM { get; set; } = "PCS";
         public decimal? Weight { get; set; }
         public decimal? Volume { get; set; }
+        public decimal? BasePrice { get; set; }
+        public decimal? PurchasePrice { get; set; }
         public bool RequiresLotTracking { get; set; }
         public bool RequiresQC { get; set; }
         public string Status { get; set; } = "Active";
@@ -370,6 +404,8 @@
             BaseUoM = BaseUoM.Trim(),
             Weight = Weight,
             Volume = Volume,
+            BasePrice = BasePrice,
+            PurchasePrice = PurchasePrice,
             RequiresLotTracking = RequiresLotTracking,
             RequiresQC = RequiresQC,
             Status = string.IsNullOrWhiteSpace(Status) ? "Active" : Status.Trim(),

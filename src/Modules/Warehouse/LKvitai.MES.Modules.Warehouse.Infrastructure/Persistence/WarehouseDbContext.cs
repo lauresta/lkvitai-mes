@@ -38,6 +38,9 @@ public class WarehouseDbContext : DbContext
     public DbSet<Item> Items => Set<Item>();
     public DbSet<ItemPhoto> ItemPhotos => Set<ItemPhoto>();
     public DbSet<ItemCategory> ItemCategories => Set<ItemCategory>();
+    public DbSet<PriceGroup> PriceGroups => Set<PriceGroup>();
+    public DbSet<ItemPriceOverride> ItemPriceOverrides => Set<ItemPriceOverride>();
+    public DbSet<ItemPriceHistory> ItemPriceHistories => Set<ItemPriceHistory>();
     public DbSet<UnitOfMeasure> UnitOfMeasures => Set<UnitOfMeasure>();
     public DbSet<ItemUoMConversion> ItemUoMConversions => Set<ItemUoMConversion>();
     public DbSet<ItemBarcode> ItemBarcodes => Set<ItemBarcode>();
@@ -218,6 +221,8 @@ public class WarehouseDbContext : DbContext
             entity.Property(e => e.PrimaryBarcode).HasMaxLength(100);
             entity.Property(e => e.ProductConfigId).HasMaxLength(50);
             entity.Property(e => e.Tags).HasMaxLength(500);
+            entity.Property(e => e.BasePrice).HasPrecision(18, 2);
+            entity.Property(e => e.PurchasePrice).HasPrecision(18, 2);
             entity.HasIndex(e => e.InternalSKU).IsUnique();
             entity.HasIndex(e => e.CategoryId).HasDatabaseName("idx_items_category_id");
             entity.HasIndex(e => e.BaseUoM);
@@ -230,7 +235,49 @@ public class WarehouseDbContext : DbContext
                 t.HasCheckConstraint("ck_items_status", "\"Status\" IN ('Active','Discontinued','Obsolete')");
                 t.HasCheckConstraint("ck_items_weight", "\"Weight\" IS NULL OR \"Weight\" > 0");
                 t.HasCheckConstraint("ck_items_volume", "\"Volume\" IS NULL OR \"Volume\" > 0");
+                t.HasCheckConstraint("ck_items_base_price", "\"BasePrice\" IS NULL OR \"BasePrice\" >= 0");
+                t.HasCheckConstraint("ck_items_purchase_price", "\"PurchasePrice\" IS NULL OR \"PurchasePrice\" >= 0");
             });
+        });
+
+        modelBuilder.Entity<PriceGroup>(entity =>
+        {
+            entity.ToTable("price_groups");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Code).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.Name).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.HasIndex(e => e.Code).IsUnique();
+        });
+
+        modelBuilder.Entity<ItemPriceOverride>(entity =>
+        {
+            entity.ToTable("item_price_overrides");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Amount).HasPrecision(18, 2).IsRequired();
+            entity.HasIndex(e => new { e.ItemId, e.PriceGroupId }).IsUnique();
+            entity.HasOne(e => e.Item).WithMany(e => e.PriceOverrides).HasForeignKey(e => e.ItemId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne(e => e.PriceGroup).WithMany(e => e.ItemPriceOverrides).HasForeignKey(e => e.PriceGroupId).OnDelete(DeleteBehavior.Restrict);
+            entity.ToTable(t => t.HasCheckConstraint("ck_item_price_overrides_amount", "\"Amount\" >= 0"));
+        });
+
+        modelBuilder.Entity<ItemPriceHistory>(entity =>
+        {
+            entity.ToTable("item_price_history");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
+            entity.Property(e => e.PriceType).HasMaxLength(20).IsRequired();
+            entity.Property(e => e.OldAmount).HasPrecision(18, 2);
+            entity.Property(e => e.NewAmount).HasPrecision(18, 2).IsRequired();
+            entity.Property(e => e.ChangedBy).HasMaxLength(200).IsRequired();
+            entity.Property(e => e.Reason).HasMaxLength(500);
+            entity.HasIndex(e => e.ItemId);
+            entity.HasIndex(e => e.ChangedAt);
+            entity.HasOne<Item>().WithMany().HasForeignKey(e => e.ItemId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasOne<PriceGroup>().WithMany().HasForeignKey(e => e.PriceGroupId).OnDelete(DeleteBehavior.Restrict);
+            entity.ToTable(t => t.HasCheckConstraint(
+                "ck_item_price_history_type",
+                "\"PriceType\" IN ('Base','Purchase','GroupOverride')"));
         });
 
         modelBuilder.Entity<ItemPhoto>(entity =>
@@ -433,7 +480,9 @@ public class WarehouseDbContext : DbContext
             entity.HasIndex(e => e.AgnumClientId).IsUnique();
             entity.HasIndex(e => e.Name);
             entity.HasIndex(e => e.Status);
+            entity.HasIndex(e => e.PriceGroupId);
             entity.HasQueryFilter(e => !e.IsDeleted);
+            entity.HasOne(e => e.PriceGroup).WithMany(e => e.Customers).HasForeignKey(e => e.PriceGroupId).OnDelete(DeleteBehavior.Restrict);
 
             entity.OwnsOne(e => e.BillingAddress, owned =>
             {

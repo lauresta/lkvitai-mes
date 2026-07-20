@@ -100,7 +100,7 @@
                             var line = _lines[i];
                             <tr>
                                 <td>
-                                    <select class="form-select" @bind="line.ItemId">
+                                    <select class="form-select" @bind="line.ItemId" @bind:after="() => OnLineItemChangedAsync(line)">
                                         <option value="">Select item</option>
                                         @foreach (var item in _items)
                                         {
@@ -138,6 +138,7 @@
     private readonly List<SalesOrderCustomerLookupDto> _customers = [];
     private readonly List<AdminItemDto> _items = [];
     private readonly List<LineFormModel> _lines = [];
+    private readonly Dictionary<int, decimal> _priceOverridesByItemId = [];
     private bool _isLoading;
     private bool _isSubmitting;
     private ApiException? _apiError;
@@ -183,25 +184,73 @@
         }
     }
 
-    private Task OnCustomerChangedAsync()
+    private async Task OnCustomerChangedAsync()
     {
+        _priceOverridesByItemId.Clear();
+
         if (!Guid.TryParse(_selectedCustomerId, out var customerId))
         {
-            return Task.CompletedTask;
+            return;
         }
 
         var customer = _customers.FirstOrDefault(x => x.Id == customerId);
-        if (customer?.DefaultShippingAddress is null)
+        if (customer?.DefaultShippingAddress is not null)
         {
-            return Task.CompletedTask;
+            _shippingStreet = customer.DefaultShippingAddress.Street;
+            _shippingCity = customer.DefaultShippingAddress.City;
+            _shippingState = customer.DefaultShippingAddress.State;
+            _shippingZipCode = customer.DefaultShippingAddress.ZipCode;
+            _shippingCountry = customer.DefaultShippingAddress.Country;
         }
 
-        _shippingStreet = customer.DefaultShippingAddress.Street;
-        _shippingCity = customer.DefaultShippingAddress.City;
-        _shippingState = customer.DefaultShippingAddress.State;
-        _shippingZipCode = customer.DefaultShippingAddress.ZipCode;
-        _shippingCountry = customer.DefaultShippingAddress.Country;
+        if (customer?.PriceGroupId is not { } priceGroupId)
+        {
+            return;
+        }
+
+        try
+        {
+            var overrides = await SalesOrdersClient.GetPriceGroupItemPricesAsync(priceGroupId);
+            foreach (var row in overrides)
+            {
+                _priceOverridesByItemId[row.ItemId] = row.Amount;
+            }
+        }
+        catch (ApiException)
+        {
+            // Keep the form usable even if price-group lookup fails; unit price stays manually editable.
+        }
+
+        foreach (var line in _lines)
+        {
+            ApplyEffectivePrice(line);
+        }
+    }
+
+    private Task OnLineItemChangedAsync(LineFormModel line)
+    {
+        ApplyEffectivePrice(line);
         return Task.CompletedTask;
+    }
+
+    private void ApplyEffectivePrice(LineFormModel line)
+    {
+        if (line.ItemId is not { } itemId)
+        {
+            return;
+        }
+
+        if (_priceOverridesByItemId.TryGetValue(itemId, out var overrideAmount))
+        {
+            line.UnitPrice = overrideAmount;
+            return;
+        }
+
+        var item = _items.FirstOrDefault(x => x.Id == itemId);
+        if (item?.BasePrice is { } basePrice)
+        {
+            line.UnitPrice = basePrice;
+        }
     }
 
     private void AddLine()

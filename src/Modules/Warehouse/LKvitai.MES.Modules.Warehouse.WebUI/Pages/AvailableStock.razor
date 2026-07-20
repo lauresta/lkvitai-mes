@@ -125,6 +125,12 @@
                         <TemplateColumn Title="Available">
                             <CellTemplate><span class="is-num"><strong>@FormatQty(context.Item.AvailableQty)</strong></span></CellTemplate>
                         </TemplateColumn>
+                        <TemplateColumn Title="Unit Cost">
+                            <CellTemplate><span class="is-money is-num">@FormatMoney(context.Item.UnitCost)</span></CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Value">
+                            <CellTemplate><span class="is-money is-num">@FormatMoney(context.Item.TotalValue)</span></CellTemplate>
+                        </TemplateColumn>
                         <TemplateColumn Title="Last Updated">
                             <CellTemplate>
                                 <span class="mono">@context.Item.LastUpdated.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</span>
@@ -420,6 +426,9 @@
 
     private static string FormatQty(decimal value)
         => value.ToString("0.###");
+
+    private static string FormatMoney(decimal? value)
+        => value.HasValue ? $"{value.Value:0.00} €" : "-";
 
     private static string GetQtyClass(decimal value)
         => value < 0m ? "is-num stock-qty stock-qty--negative" : "is-num stock-qty";

@@ -454,7 +454,7 @@ internal static class ValuationProjectionWriter
         {
             projection = new OnHandValue
             {
-                Id = Valuation.ToValuationItemId(item.Id),
+                Id = ValuationItemId.ToValuationItemId(item.Id),
                 ItemId = item.Id,
                 ItemSku = item.InternalSKU,
                 ItemName = item.Name,

@@ -36,7 +36,7 @@ public class ItemPhotosIntegrationTests
             new ItemImageEmbeddingService(),
             new Microsoft.Extensions.Logging.Abstractions.NullLogger<ItemPhotoService>());
 
-        var controller = new ItemsController(db, new StubSkuGenerationService(), photoService, capability)
+        var controller = new ItemsController(db, new StubSkuGenerationService(), photoService, capability, new ItemPriceHistoryService(db), new StaticCurrentUserService())
         {
             ControllerContext = new ControllerContext
             {
@@ -93,7 +93,7 @@ public class ItemPhotosIntegrationTests
             .AddSingleton<ICacheService>(cache)
             .BuildServiceProvider();
 
-        var controller = new ItemsController(db, new StubSkuGenerationService(), photoService, capability)
+        var controller = new ItemsController(db, new StubSkuGenerationService(), photoService, capability, new ItemPriceHistoryService(db), new StaticCurrentUserService())
         {
             ControllerContext = new ControllerContext
             {
@@ -136,7 +136,7 @@ public class ItemPhotosIntegrationTests
             new ItemImageEmbeddingService(),
             new Microsoft.Extensions.Logging.Abstractions.NullLogger<ItemPhotoService>());
 
-        var controller = new ItemsController(db, new StubSkuGenerationService(), photoService, capability)
+        var controller = new ItemsController(db, new StubSkuGenerationService(), photoService, capability, new ItemPriceHistoryService(db), new StaticCurrentUserService())
         {
             ControllerContext = new ControllerContext
             {
@@ -199,7 +199,7 @@ public class ItemPhotosIntegrationTests
             capability,
             new ItemImageEmbeddingService(),
             new Microsoft.Extensions.Logging.Abstractions.NullLogger<ItemPhotoService>());
-        var controller = new ItemsController(db, new StubSkuGenerationService(), photoService, capability)
+        var controller = new ItemsController(db, new StubSkuGenerationService(), photoService, capability, new ItemPriceHistoryService(db), new StaticCurrentUserService())
         {
             ControllerContext = new ControllerContext
             {
@@ -240,7 +240,7 @@ public class ItemPhotosIntegrationTests
             new ItemImageEmbeddingService(),
             new Microsoft.Extensions.Logging.Abstractions.NullLogger<ItemPhotoService>());
 
-        var controller = new ItemsController(db, new StubSkuGenerationService(), photoService, capability)
+        var controller = new ItemsController(db, new StubSkuGenerationService(), photoService, capability, new ItemPriceHistoryService(db), new StaticCurrentUserService())
         {
             ControllerContext = new ControllerContext
             {
@@ -299,6 +299,11 @@ public class ItemPhotosIntegrationTests
     {
         public Task<string> GenerateNextSkuAsync(int categoryId, CancellationToken cancellationToken = default)
             => Task.FromResult($"SKU-{categoryId:D4}");
+    }
+
+    private sealed class StaticCurrentUserService : ICurrentUserService
+    {
+        public string GetCurrentUserId() => "test-user";
     }
 
 

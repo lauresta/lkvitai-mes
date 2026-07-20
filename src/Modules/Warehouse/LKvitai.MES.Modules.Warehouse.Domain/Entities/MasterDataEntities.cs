@@ -27,12 +27,15 @@ public sealed class Item : AuditableEntity
     public string? PrimaryBarcode { get; set; }
     public string? ProductConfigId { get; set; }
     public string? Tags { get; set; }
+    public decimal? BasePrice { get; set; }
+    public decimal? PurchasePrice { get; set; }
 
     public ItemCategory? Category { get; set; }
     public UnitOfMeasure? BaseUnit { get; set; }
     public ICollection<ItemUoMConversion> UomConversions { get; set; } = new List<ItemUoMConversion>();
     public ICollection<ItemBarcode> Barcodes { get; set; } = new List<ItemBarcode>();
     public ICollection<ItemPhoto> Photos { get; set; } = new List<ItemPhoto>();
+    public ICollection<ItemPriceOverride> PriceOverrides { get; set; } = new List<ItemPriceOverride>();
 }
 
 public sealed class ItemPhoto
@@ -67,6 +70,62 @@ public sealed class UnitOfMeasure
     public string Code { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string Type { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Named selling-price group (e.g. Retail/Wholesale/Partner). Items may override their
+/// base price for a group via <see cref="ItemPriceOverride"/>; customers are assigned to
+/// one group via <see cref="Customer.PriceGroupId"/>.
+/// </summary>
+public sealed class PriceGroup
+{
+    public int Id { get; set; }
+    public string Code { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public bool IsActive { get; set; } = true;
+
+    public ICollection<ItemPriceOverride> ItemPriceOverrides { get; set; } = new List<ItemPriceOverride>();
+    public ICollection<Customer> Customers { get; set; } = new List<Customer>();
+}
+
+/// <summary>
+/// Per-item selling-price override for a <see cref="PriceGroup"/>. Absence of a row for a
+/// given (Item, PriceGroup) pair means the item's <see cref="Item.BasePrice"/> applies.
+/// </summary>
+public sealed class ItemPriceOverride
+{
+    public int Id { get; set; }
+    public int ItemId { get; set; }
+    public int PriceGroupId { get; set; }
+    public decimal Amount { get; set; }
+
+    public Item? Item { get; set; }
+    public PriceGroup? PriceGroup { get; set; }
+}
+
+/// <summary>
+/// Insert-only audit trail of every price change on an Item: its base price, its purchase
+/// price, or one of its per-group overrides. Never updated or deleted, mirroring
+/// <see cref="SecurityAuditLog"/>.
+/// </summary>
+public sealed class ItemPriceHistory
+{
+    public long Id { get; set; }
+    public int ItemId { get; set; }
+    public string PriceType { get; set; } = string.Empty;
+    public int? PriceGroupId { get; set; }
+    public decimal? OldAmount { get; set; }
+    public decimal NewAmount { get; set; }
+    public string ChangedBy { get; set; } = string.Empty;
+    public DateTimeOffset ChangedAt { get; set; } = DateTimeOffset.UtcNow;
+    public string? Reason { get; set; }
+}
+
+public static class ItemPriceTypes
+{
+    public const string Base = "Base";
+    public const string Purchase = "Purchase";
+    public const string GroupOverride = "GroupOverride";
 }
 
 public sealed class ItemUoMConversion
@@ -178,7 +237,9 @@ public sealed class Customer : AuditableEntity
     public CustomerStatus Status { get; set; } = CustomerStatus.Active;
     public decimal? CreditLimit { get; set; }
     public bool IsDeleted { get; set; }
+    public int? PriceGroupId { get; set; }
 
+    public PriceGroup? PriceGroup { get; set; }
     public ICollection<SalesOrder> SalesOrders { get; set; } = new List<SalesOrder>();
 }
 

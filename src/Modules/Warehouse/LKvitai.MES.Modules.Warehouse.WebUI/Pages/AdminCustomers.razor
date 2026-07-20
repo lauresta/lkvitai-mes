@@ -1,0 +1,201 @@
+@page "/admin/customers"
+@inject MasterDataAdminClient AdminClient
+@inject ToastService ToastService
+@inject IDialogService DialogService
+
+<PageTitle>Admin Customers - Cikada.MES</PageTitle>
+
+<div data-testid="admin-customers-page">
+    <h3>Customers Management</h3>
+
+    @if (_apiError is not null)
+    {
+        <div data-testid="admin-customers-error">
+            <SharedErrorAlert Message="@BuildErrorMessage(_apiError)"
+                              TraceId="@_apiError.TraceId"
+                              OnRetry="ReloadAsync"
+                              OnDismiss="@(() => _apiError = null)" />
+        </div>
+    }
+
+    <MudPaper Outlined="true" Elevation="0" Class="panel items-list-panel lots-filter">
+        <div class="lk-toolbar lots-filter-toolbar">
+            <div class="lk-field--filter lots-field lots-field--grow" data-testid="admin-customers-search">
+                <MudTextField T="string"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              @bind-Value="_search"
+                              Placeholder="Code or name" />
+            </div>
+            <div class="lots-filter__actions">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ApplyFilterAsync">Filter</MudButton>
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="RefreshAsync">Refresh</MudButton>
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="OpenCreateDialogAsync">Create Customer</MudButton>
+            </div>
+        </div>
+
+        <div class="lots-grid-head">
+            <strong data-testid="admin-customers-summary">Total: @_customers.Count</strong>
+        </div>
+
+        <MudDataGrid T="CustomerLookupDto" Items="@_filtered" Dense="true" Hover="true" FixedHeader="true" Loading="@_isLoading" Class="lk-grid">
+            <Columns>
+                <TemplateColumn Title="Code">
+                    <CellTemplate>
+                        <span class="mono">@context.Item.CustomerCode</span>
+                    </CellTemplate>
+                </TemplateColumn>
+                <PropertyColumn Property="x => x.Name" Title="Name" />
+                <TemplateColumn Title="Status">
+                    <CellTemplate>
+                        <span class="@StatusChipClass(context.Item.Status)">@context.Item.Status</span>
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="Price Group">
+                    <CellTemplate>@(context.Item.PriceGroupName ?? "-")</CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn Title="">
+                    <CellTemplate>
+                        <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="@(() => OpenEditDialogAsync(context.Item))">Edit</MudButton>
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+            <NoRecordsContent>
+                <div class="lots-grid__empty">
+                    <span class="lots-grid__empty-title">No customers found</span>
+                </div>
+            </NoRecordsContent>
+        </MudDataGrid>
+    </MudPaper>
+</div>
+
+@code {
+    private readonly List<CustomerLookupDto> _customers = [];
+    private IReadOnlyList<CustomerLookupDto> _filtered = [];
+    private string _search = string.Empty;
+    private string? _appliedSearch;
+    private bool _isLoading;
+    private ApiException? _apiError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            var rows = await AdminClient.GetCustomersAsync(_appliedSearch, activeOnly: false);
+            _customers.Clear();
+            _customers.AddRange(rows.OrderBy(x => x.Name));
+            ApplyFilter();
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task ApplyFilterAsync()
+    {
+        _appliedSearch = string.IsNullOrWhiteSpace(_search) ? null : _search.Trim();
+        await ReloadAsync();
+    }
+
+    private Task RefreshAsync() => ReloadAsync();
+
+    private void ApplyFilter()
+    {
+        _filtered = _customers;
+    }
+
+    private async Task OpenCreateDialogAsync()
+    {
+        var parameters = new DialogParameters<AdminCustomerEditorDialog>
+        {
+            { x => x.IsEdit, false }
+        };
+
+        var dialog = await DialogService.ShowAsync<AdminCustomerEditorDialog>("Create Customer", parameters);
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not CreateOrUpdateCustomerRequest request)
+        {
+            return;
+        }
+
+        try
+        {
+            await AdminClient.CreateCustomerAsync(request);
+            ToastService.ShowSuccess("Customer created.");
+            await ReloadAsync();
+        }
+        catch (ApiException ex)
+        {
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+    }
+
+    private async Task OpenEditDialogAsync(CustomerLookupDto row)
+    {
+        CustomerDetailsDto detail;
+        try
+        {
+            detail = await AdminClient.GetCustomerByIdAsync(row.Id);
+        }
+        catch (ApiException ex)
+        {
+            ToastService.ShowError(BuildErrorMessage(ex));
+            return;
+        }
+
+        var parameters = new DialogParameters<AdminCustomerEditorDialog>
+        {
+            { x => x.IsEdit, true },
+            { x => x.Customer, detail }
+        };
+
+        var dialog = await DialogService.ShowAsync<AdminCustomerEditorDialog>("Edit Customer", parameters);
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not CreateOrUpdateCustomerRequest request)
+        {
+            return;
+        }
+
+        try
+        {
+            await AdminClient.UpdateCustomerAsync(row.Id, request);
+            ToastService.ShowSuccess("Customer updated.");
+            await ReloadAsync();
+        }
+        catch (ApiException ex)
+        {
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+    }
+
+    private static string StatusChipClass(string status) => status.ToUpperInvariant() switch
+    {
+        "ACTIVE" => "chip chip--ok",
+        "ONHOLD" => "chip chip--low",
+        "INACTIVE" => "chip chip--locked",
+        _ => "chip chip--reserved"
+    };
+
+    private static string BuildErrorMessage(ApiException error)
+    {
+        if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
+        {
+            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+        }
+
+        return error.UserMessage;
+    }
+}

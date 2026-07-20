@@ -218,6 +218,11 @@
                         <span class="is-num">@FormatDecimal(context.Item.Volume)</span>
                     </CellTemplate>
                 </TemplateColumn>
+                <TemplateColumn Title="Base Price">
+                    <CellTemplate>
+                        <span class="is-money is-num">@FormatMoney(context.Item.BasePrice)</span>
+                    </CellTemplate>
+                </TemplateColumn>
                 <TemplateColumn Title="Barcode">
                     <CellTemplate>
                         <span class="mono">@FormatNullable(context.Item.PrimaryBarcode)</span>
@@ -573,6 +578,9 @@
 
     private static string FormatDecimal(decimal? value)
         => value?.ToString("0.###") ?? "-";
+
+    private static string FormatMoney(decimal? value)
+        => value.HasValue ? $"{value.Value:0.00} €" : "-";
 
     private static string FormatNullable(string? value)
         => string.IsNullOrWhiteSpace(value) ? "-" : value;

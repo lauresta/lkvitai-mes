@@ -2,18 +2,6 @@ using LKvitai.MES.BuildingBlocks.SharedKernel;
 
 namespace LKvitai.MES.Modules.Warehouse.Application.Commands;
 
-public sealed record AdjustCostCommand : ICommand
-{
-    public Guid CommandId { get; init; } = Guid.NewGuid();
-    public Guid CorrelationId { get; init; }
-    public Guid CausationId { get; init; }
-
-    public int ItemId { get; init; }
-    public decimal NewUnitCost { get; init; }
-    public string Reason { get; init; } = string.Empty;
-    public Guid? ApproverId { get; init; }
-}
-
 public sealed record InitializeValuationCommand : ICommand
 {
     public Guid CommandId { get; init; } = Guid.NewGuid();

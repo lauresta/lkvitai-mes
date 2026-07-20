@@ -358,6 +358,86 @@ public sealed class MasterDataAdminClient
         await EnsureSuccessAsync(response);
     }
 
+    public Task<IReadOnlyList<PriceGroupDto>> GetPriceGroupsAsync(CancellationToken cancellationToken = default)
+        => GetAsync<IReadOnlyList<PriceGroupDto>>("/api/warehouse/v1/price-groups", cancellationToken);
+
+    public Task CreatePriceGroupAsync(CreateOrUpdatePriceGroupRequest request, CancellationToken cancellationToken = default)
+        => SendNoContentAsync(HttpMethod.Post, "/api/warehouse/v1/price-groups", request, cancellationToken);
+
+    public Task UpdatePriceGroupAsync(int id, CreateOrUpdatePriceGroupRequest request, CancellationToken cancellationToken = default)
+        => SendNoContentAsync(HttpMethod.Put, $"/api/warehouse/v1/price-groups/{id}", request, cancellationToken);
+
+    public async Task DeletePriceGroupAsync(int id, CancellationToken cancellationToken = default)
+    {
+        var client = _factory.CreateClient("WarehouseApi");
+        var response = await client.DeleteAsync($"/api/warehouse/v1/price-groups/{id}", cancellationToken);
+        await EnsureSuccessAsync(response);
+    }
+
+    public Task<IReadOnlyList<PriceGroupCustomerDto>> GetPriceGroupCustomersAsync(int id, CancellationToken cancellationToken = default)
+        => GetAsync<IReadOnlyList<PriceGroupCustomerDto>>($"/api/warehouse/v1/price-groups/{id}/customers", cancellationToken);
+
+    public Task<IReadOnlyList<ItemPriceOverrideDto>> GetItemPriceOverridesAsync(int itemId, CancellationToken cancellationToken = default)
+        => GetAsync<IReadOnlyList<ItemPriceOverrideDto>>($"/api/warehouse/v1/items/{itemId}/price-overrides", cancellationToken);
+
+    public Task SetItemPriceOverrideAsync(int itemId, int priceGroupId, decimal? amount, CancellationToken cancellationToken = default)
+        => SendNoContentAsync(
+            HttpMethod.Put,
+            $"/api/warehouse/v1/items/{itemId}/price-overrides/{priceGroupId}",
+            new SetPriceOverrideRequest(amount),
+            cancellationToken);
+
+    public Task<IReadOnlyList<ItemPriceHistoryDto>> GetItemPriceHistoryAsync(int itemId, CancellationToken cancellationToken = default)
+        => GetAsync<IReadOnlyList<ItemPriceHistoryDto>>($"/api/warehouse/v1/items/{itemId}/price-history", cancellationToken);
+
+    public Task<IReadOnlyList<CustomerLookupDto>> SearchCustomersAsync(string? search, CancellationToken cancellationToken = default)
+    {
+        var query = new List<string> { "activeOnly=true" };
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            query.Add($"search={Uri.EscapeDataString(search)}");
+        }
+
+        return GetAsync<IReadOnlyList<CustomerLookupDto>>(
+            $"/api/warehouse/v1/customers?{string.Join("&", query)}",
+            cancellationToken);
+    }
+
+    public Task<IReadOnlyList<CustomerLookupDto>> GetCustomersAsync(
+        string? search = null,
+        bool activeOnly = false,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new List<string> { $"activeOnly={activeOnly.ToString().ToLowerInvariant()}" };
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            query.Add($"search={Uri.EscapeDataString(search)}");
+        }
+
+        return GetAsync<IReadOnlyList<CustomerLookupDto>>(
+            $"/api/warehouse/v1/customers?{string.Join("&", query)}",
+            cancellationToken);
+    }
+
+    public Task<CustomerDetailsDto> GetCustomerByIdAsync(Guid id, CancellationToken cancellationToken = default)
+        => GetAsync<CustomerDetailsDto>($"/api/warehouse/v1/customers/{id}", cancellationToken);
+
+    public Task CreateCustomerAsync(CreateOrUpdateCustomerRequest request, CancellationToken cancellationToken = default)
+        => SendNoContentAsync(HttpMethod.Post, "/api/warehouse/v1/customers", request, cancellationToken);
+
+    public Task UpdateCustomerAsync(Guid id, CreateOrUpdateCustomerRequest request, CancellationToken cancellationToken = default)
+        => SendNoContentAsync(HttpMethod.Put, $"/api/warehouse/v1/customers/{id}", request, cancellationToken);
+
+    public Task<IReadOnlyList<PriceGroupItemPriceDto>> GetPriceGroupItemPricesAsync(int priceGroupId, CancellationToken cancellationToken = default)
+        => GetAsync<IReadOnlyList<PriceGroupItemPriceDto>>($"/api/warehouse/v1/price-groups/{priceGroupId}/item-prices", cancellationToken);
+
+    public Task SetCustomerPriceGroupAsync(Guid customerId, int? priceGroupId, CancellationToken cancellationToken = default)
+        => SendNoContentAsync(
+            HttpMethod.Put,
+            $"/api/warehouse/v1/customers/{customerId}/price-group",
+            new SetCustomerPriceGroupRequest(priceGroupId),
+            cancellationToken);
+
     public async Task<byte[]> DownloadTemplateAsync(string entityType, CancellationToken cancellationToken = default)
     {
         var client = _factory.CreateClient("WarehouseApi");

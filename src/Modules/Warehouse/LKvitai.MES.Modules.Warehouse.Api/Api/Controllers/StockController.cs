@@ -139,6 +139,11 @@ public sealed class StockController : ControllerBase
                 x => ItemPhotoService.BuildProxyUrl(x.ItemId, x.Id, "thumb"),
                 cancellationToken);
 
+        var unitCostByItemId = await _dbContext.OnHandValues
+            .AsNoTracking()
+            .Where(x => itemIds.Contains(x.ItemId))
+            .ToDictionaryAsync(x => x.ItemId, x => x.UnitCost, cancellationToken);
+
         var locationMap = await LoadLocationsByCodeAsync(locationCodes, cancellationToken);
 
         var mapped = rows.Select(row =>
@@ -165,6 +170,9 @@ public sealed class StockController : ControllerBase
                 StockMetadataFilter.SplitTags(item?.Tags),
                 item is not null && primaryPhotoByItemId.TryGetValue(item.Id, out var photoUrl)
                     ? photoUrl
+                    : null,
+                item is not null && unitCostByItemId.TryGetValue(item.Id, out var unitCost)
+                    ? unitCost
                     : null);
         });
 
@@ -248,7 +256,9 @@ public sealed class StockController : ControllerBase
                 x.BaseUom,
                 x.LastUpdated,
                 x.Tags,
-                x.PrimaryThumbnailUrl)).ToList(),
+                x.PrimaryThumbnailUrl,
+                x.UnitCost,
+                x.UnitCost.HasValue ? decimal.Round(x.Qty * x.UnitCost.Value, 4, MidpointRounding.AwayFromZero) : null)).ToList(),
             totalCount,
             pageNumber,
             pageSize,
@@ -520,7 +530,8 @@ public sealed class StockController : ControllerBase
         int? CategoryId,
         bool IsVirtualLocation,
         IReadOnlyList<string> Tags,
-        string? PrimaryThumbnailUrl);
+        string? PrimaryThumbnailUrl,
+        decimal? UnitCost);
 
     public sealed record AvailableStockItemDto(
         int? ItemId,
@@ -536,7 +547,9 @@ public sealed class StockController : ControllerBase
         string BaseUom,
         DateTime LastUpdated,
         IReadOnlyList<string> Tags,
-        string? PrimaryThumbnailUrl);
+        string? PrimaryThumbnailUrl,
+        decimal? UnitCost,
+        decimal? TotalValue);
 
     public sealed record PagedStockResponse<T>(
         IReadOnlyList<T> Items,

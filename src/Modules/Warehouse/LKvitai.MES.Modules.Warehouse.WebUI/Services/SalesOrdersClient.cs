@@ -106,6 +106,9 @@ public sealed class SalesOrdersClient
         return GetAsync<PagedApiResponse<AdminItemDto>>($"/api/warehouse/v1/items{query}");
     }
 
+    public Task<IReadOnlyList<PriceGroupItemPriceDto>> GetPriceGroupItemPricesAsync(int priceGroupId)
+        => GetAsync<IReadOnlyList<PriceGroupItemPriceDto>>($"/api/warehouse/v1/price-groups/{priceGroupId}/item-prices");
+
     private async Task<T> GetAsync<T>(string relativeUrl)
     {
         var client = _factory.CreateClient("WarehouseApi");

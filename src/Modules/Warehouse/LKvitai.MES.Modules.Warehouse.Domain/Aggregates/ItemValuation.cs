@@ -73,7 +73,7 @@ public sealed class ItemValuation
         return new ValuationInitialized
         {
             InventoryItemId = itemId,
-            ItemId = Valuation.ToValuationItemId(itemId),
+            ItemId = ValuationItemId.ToValuationItemId(itemId),
             InitialUnitCost = Normalize(initialCost),
             Reason = reason.Trim(),
             Source = "MANUAL",
@@ -119,7 +119,7 @@ public sealed class ItemValuation
         return new CostAdjusted
         {
             InventoryItemId = ItemId,
-            ItemId = Valuation.ToValuationItemId(ItemId),
+            ItemId = ValuationItemId.ToValuationItemId(ItemId),
             OldUnitCost = CurrentCost,
             NewUnitCost = Normalize(newCost),
             Reason = reason.Trim(),
@@ -227,7 +227,7 @@ public sealed class ItemValuation
     {
         ItemId = evt.InventoryItemId > 0
             ? evt.InventoryItemId
-            : Valuation.ToInventoryItemId(evt.ItemId);
+            : ValuationItemId.ToInventoryItemId(evt.ItemId);
         Id = StreamIdFor(ItemId);
         CurrentCost = Normalize(evt.InitialUnitCost);
         IsInitialized = true;
@@ -268,7 +268,7 @@ public sealed class ItemValuation
         var resolvedItemId = eventItemId;
         if (resolvedItemId <= 0 && legacyItemId != Guid.Empty)
         {
-            resolvedItemId = Valuation.ToInventoryItemId(legacyItemId);
+            resolvedItemId = ValuationItemId.ToInventoryItemId(legacyItemId);
         }
 
         if (resolvedItemId <= 0 || resolvedItemId != ItemId)

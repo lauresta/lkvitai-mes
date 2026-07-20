@@ -166,7 +166,9 @@ public class StockClient
             AvailableQty = row.AvailableQty,
             LastUpdated = row.LastUpdated,
             Tags = row.Tags,
-            PrimaryThumbnailUrl = row.PrimaryThumbnailUrl
+            PrimaryThumbnailUrl = row.PrimaryThumbnailUrl,
+            UnitCost = row.UnitCost,
+            TotalValue = row.TotalValue
         }).ToList();
 
         return new PagedResult<AvailableStockItemDto>
@@ -233,6 +235,8 @@ public class StockClient
         public DateTime LastUpdated { get; init; }
         public IReadOnlyList<string> Tags { get; init; } = Array.Empty<string>();
         public string? PrimaryThumbnailUrl { get; init; }
+        public decimal? UnitCost { get; init; }
+        public decimal? TotalValue { get; init; }
     }
 
     private sealed record StockSearchResponseDto

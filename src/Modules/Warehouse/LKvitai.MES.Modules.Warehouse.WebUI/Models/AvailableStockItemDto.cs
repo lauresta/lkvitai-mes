@@ -13,4 +13,6 @@ public record AvailableStockItemDto
     public DateTime LastUpdated { get; init; }
     public IReadOnlyList<string> Tags { get; init; } = Array.Empty<string>();
     public string? PrimaryThumbnailUrl { get; init; }
+    public decimal? UnitCost { get; init; }
+    public decimal? TotalValue { get; init; }
 }

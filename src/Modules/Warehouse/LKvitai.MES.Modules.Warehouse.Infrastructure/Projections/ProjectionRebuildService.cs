@@ -795,24 +795,14 @@ public class ProjectionRebuildService : IProjectionRebuildService
         {
             switch (rawEvent.Data)
             {
-                case ValuationInitialized initialized when Domain.Aggregates.Valuation.TryToInventoryItemId(initialized.ItemId, out var initializedItemId):
+                case ValuationInitialized initialized when Domain.Aggregates.ValuationItemId.TryToInventoryItemId(initialized.ItemId, out var initializedItemId):
                     unitCostByItemId[initializedItemId] = decimal.Round(initialized.InitialUnitCost, 4, MidpointRounding.AwayFromZero);
                     valuationUpdatedAtByItemId[initializedItemId] = DateTime.SpecifyKind(initialized.Timestamp, DateTimeKind.Utc);
                     processedEvents++;
                     break;
-                case CostAdjusted adjusted when Domain.Aggregates.Valuation.TryToInventoryItemId(adjusted.ItemId, out var adjustedItemId):
+                case CostAdjusted adjusted when Domain.Aggregates.ValuationItemId.TryToInventoryItemId(adjusted.ItemId, out var adjustedItemId):
                     unitCostByItemId[adjustedItemId] = decimal.Round(adjusted.NewUnitCost, 4, MidpointRounding.AwayFromZero);
                     valuationUpdatedAtByItemId[adjustedItemId] = DateTime.SpecifyKind(adjusted.Timestamp, DateTimeKind.Utc);
-                    processedEvents++;
-                    break;
-                case LandedCostAllocated landed when Domain.Aggregates.Valuation.TryToInventoryItemId(landed.ItemId, out var landedItemId):
-                    unitCostByItemId[landedItemId] = decimal.Round(landed.NewUnitCost, 4, MidpointRounding.AwayFromZero);
-                    valuationUpdatedAtByItemId[landedItemId] = DateTime.SpecifyKind(landed.Timestamp, DateTimeKind.Utc);
-                    processedEvents++;
-                    break;
-                case StockWrittenDown writtenDown when Domain.Aggregates.Valuation.TryToInventoryItemId(writtenDown.ItemId, out var writtenDownItemId):
-                    unitCostByItemId[writtenDownItemId] = decimal.Round(writtenDown.NewUnitCost, 4, MidpointRounding.AwayFromZero);
-                    valuationUpdatedAtByItemId[writtenDownItemId] = DateTime.SpecifyKind(writtenDown.Timestamp, DateTimeKind.Utc);
                     processedEvents++;
                     break;
             }
@@ -875,7 +865,7 @@ public class ProjectionRebuildService : IProjectionRebuildService
                     : 0m;
 
             var totalValue = decimal.Round(qty * unitCost, 4, MidpointRounding.AwayFromZero);
-            var id = Domain.Aggregates.Valuation.ToValuationItemId(item.ItemId);
+            var id = Domain.Aggregates.ValuationItemId.ToValuationItemId(item.ItemId);
             var updatedAt = ResolveUpdatedAt(
                 item.ItemId,
                 item.Sku,

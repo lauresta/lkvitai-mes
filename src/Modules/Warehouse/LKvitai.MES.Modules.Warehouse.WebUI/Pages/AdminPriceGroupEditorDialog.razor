@@ -1,0 +1,72 @@
+<MudDialog>
+    <TitleContent>
+        <span>@(IsEdit ? "Edit Price Group" : "Create Price Group")</span>
+    </TitleContent>
+    <DialogContent>
+        @if (!string.IsNullOrWhiteSpace(_validationMessage))
+        {
+            <div class="lk-state lk-state--warn">@_validationMessage</div>
+        }
+
+        <MudTextField T="string"
+                      Label="Code"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      @bind-Value="_code"
+                      Required="true" />
+
+        <MudTextField T="string"
+                      Label="Name"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      @bind-Value="_name"
+                      Required="true" />
+
+        <MudCheckBox T="bool" @bind-Checked="_isActive" Label="Active" />
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Save">@(IsEdit ? "Save Changes" : "Create")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private MudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public bool IsEdit { get; set; }
+    [Parameter] public PriceGroupDto? Group { get; set; }
+
+    private string _code = string.Empty;
+    private string _name = string.Empty;
+    private bool _isActive = true;
+    private string? _validationMessage;
+
+    protected override void OnInitialized()
+    {
+        if (Group is not null)
+        {
+            _code = Group.Code;
+            _name = Group.Name;
+            _isActive = Group.IsActive;
+        }
+    }
+
+    private void Save()
+    {
+        if (string.IsNullOrWhiteSpace(_code))
+        {
+            _validationMessage = "Code is required.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_name))
+        {
+            _validationMessage = "Name is required.";
+            return;
+        }
+
+        MudDialog.Close(DialogResult.Ok(new CreateOrUpdatePriceGroupRequest(_code.Trim(), _name.Trim(), _isActive)));
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+}
