@@ -458,6 +458,10 @@ public class ReceivingWorkflowIntegrationTests : IAsyncLifetime
             throw new NotSupportedException($"NoOpMediator does not support {typeof(TResponse)}.");
         }
 
+        public Task Send<TRequest>(TRequest request, CancellationToken cancellationToken = default)
+            where TRequest : IRequest
+            => throw new NotSupportedException();
+
         public Task<object?> Send(object request, CancellationToken cancellationToken = default)
             => throw new NotSupportedException();
 
