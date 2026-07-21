@@ -750,13 +750,20 @@
         }
     }
 
-    private static string ExpiryChipClass(int daysRemaining) => daysRemaining switch
+    private static string ExpiryChipClass(int daysRemaining)
     {
-        < 0 => "chip chip--out",
-        <= 7 => "chip chip--out",
-        <= 30 => "chip chip--low",
-        _ => "chip chip--reserved"
-    };
+        if (daysRemaining <= 7)
+        {
+            return "chip chip--out";
+        }
+
+        if (daysRemaining <= 30)
+        {
+            return "chip chip--low";
+        }
+
+        return "chip chip--reserved";
+    }
 
     private static string IncomingChipClass(IncomingShipmentDto row)
     {
