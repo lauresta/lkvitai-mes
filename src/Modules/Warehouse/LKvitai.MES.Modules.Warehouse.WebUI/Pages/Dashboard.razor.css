@@ -51,7 +51,13 @@
 }
 
 ::deep .dash-kpis {
+  display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
+  background: var(--n-0);
+  border: 1px solid var(--n-200);
+  border-radius: var(--r-md);
+  margin-bottom: 16px;
+  overflow: hidden;
 }
 
 ::deep a.kpi { text-decoration: none; cursor: pointer; }
