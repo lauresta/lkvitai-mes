@@ -1,0 +1,238 @@
+/* Warehouse Dashboard — scoped styles built on top of the shared token
+   families and .panel/.kpi/.chip/.lk-table classes in wwwroot/css/site.css.
+   Source: docs/ux/warehouse-dashboard redesign brief. */
+
+::deep .dash-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+::deep .dash-refresh {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--n-500);
+  font-size: 11.5px;
+}
+
+::deep .dash-refresh__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent-500);
+}
+
+::deep .dash-segmented {
+  display: flex;
+  border: 1px solid var(--n-200);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  background: var(--n-0);
+}
+
+::deep .dash-segmented__btn {
+  padding: 7px 12px;
+  border: 0;
+  border-left: 1px solid var(--n-200);
+  background: var(--n-0);
+  color: var(--n-600);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+::deep .dash-segmented__btn:first-child { border-left: 0; }
+
+::deep .dash-segmented__btn.is-active {
+  background: var(--dark);
+  color: #fff;
+  font-weight: 600;
+}
+
+::deep .dash-kpis {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+::deep a.kpi { text-decoration: none; cursor: pointer; }
+::deep a.kpi:hover { background: var(--n-25); }
+
+::deep .dash-panel__sub {
+  margin: 2px 0 0;
+  color: var(--n-500);
+  font-size: 11px;
+}
+
+::deep .dash-panel__count {
+  color: var(--n-500);
+  font-size: 11.5px;
+}
+
+::deep .dash-panel-body {
+  padding: 12px 14px;
+}
+
+::deep .dash-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+::deep .dash-grid-agnum {
+  display: grid;
+  grid-template-columns: 1.15fr .85fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+::deep .dash-section { margin-bottom: 16px; }
+
+::deep .dash-table-scroll { overflow-x: auto; }
+
+::deep .dash-empty {
+  margin: 0;
+  padding: 16px 14px;
+  color: var(--n-500);
+  font-size: 12.5px;
+}
+
+/* ─── Donut ──────────────────────────────────────────────────────────── */
+::deep .dash-donut-wrap {
+  padding: 16px 14px;
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  flex-wrap: wrap;
+}
+
+::deep .dash-donut {
+  position: relative;
+  width: 132px;
+  height: 132px;
+  flex: none;
+  border-radius: 50%;
+}
+
+::deep .dash-donut__hole {
+  position: absolute;
+  inset: 27px;
+  border-radius: 50%;
+  background: var(--n-0);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 0 0 1px var(--n-150);
+}
+
+::deep .dash-donut__hole span:first-child { font-family: var(--font-mono); font-size: 15px; font-weight: 700; color: var(--n-900); }
+::deep .dash-donut__hole span:last-child { font-family: var(--font-mono); font-size: 9px; letter-spacing: .6px; color: var(--n-400); text-transform: uppercase; margin-top: 2px; }
+
+::deep .dash-legend {
+  flex: 1 1 200px;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+::deep .dash-legend__row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 12.5px;
+  color: var(--n-700);
+}
+
+::deep .dash-legend__dot { width: 11px; height: 11px; border-radius: 3px; flex: none; }
+::deep .dash-legend__label { flex: 1; min-width: 0; }
+::deep .dash-legend__pct { width: 40px; text-align: right; color: var(--n-400); font-size: 11px; }
+
+/* ─── Warehouse bars ─────────────────────────────────────────────────── */
+::deep .dash-bars-wrap { padding: 16px 14px; display: flex; flex-direction: column; gap: 14px; }
+
+::deep .dash-bar-row { display: flex; align-items: center; gap: 12px; }
+::deep .dash-bar-row__label { width: 132px; flex: none; font-size: 12.5px; color: var(--n-700); }
+::deep .dash-bar-row__track { flex: 1; height: 20px; background: var(--n-100); border-radius: 5px; overflow: hidden; }
+::deep .dash-bar-row__fill { display: block; height: 100%; background: linear-gradient(90deg, var(--accent-600), var(--accent-500)); border-radius: 5px; }
+::deep .dash-bar-row__value { width: 100px; text-align: right; font-size: 12.5px; font-weight: 600; color: var(--n-900); }
+
+::deep .dash-bar-foot { display: flex; gap: 18px; padding-top: 10px; margin-top: 4px; border-top: 1px solid var(--n-150); }
+::deep .dash-bar-foot__label { display: block; font-size: 10px; color: var(--n-400); text-transform: uppercase; letter-spacing: .6px; }
+::deep .dash-bar-foot__val { display: block; margin-top: 3px; font-size: 15px; font-weight: 700; color: var(--n-900); }
+
+/* ─── Meter (low stock / incoming progress) ─────────────────────────── */
+::deep .dash-meter { display: inline-flex; align-items: center; gap: 8px; }
+::deep .dash-meter__val { min-width: 40px; text-align: right; font-weight: 600; }
+::deep .dash-meter__val.is-warn { color: var(--warn-fg); }
+::deep .dash-meter__val.is-danger { color: var(--danger-fg); }
+::deep .dash-meter__track { width: 80px; height: 5px; border-radius: 3px; background: var(--n-150); overflow: hidden; display: inline-block; }
+::deep .dash-meter__track--sm { width: 60px; }
+::deep .dash-meter__fill { display: block; height: 100%; }
+::deep .dash-meter__fill.is-warn { background: var(--warn-dot); }
+::deep .dash-meter__fill.is-danger { background: var(--danger-dot); }
+::deep .dash-meter__fill.is-ok { background: var(--ok-dot); }
+
+::deep .dash-muted { color: var(--n-400); font-size: 10.5px; }
+::deep td .dash-muted { display: block; margin-top: 1px; }
+::deep .is-danger { color: var(--danger-fg); }
+::deep .is-ok { color: var(--ok-fg); }
+
+::deep .dash-bucket-row td {
+  padding: 5px 12px;
+  background: var(--sand-25);
+  color: var(--sand-700);
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: .7px;
+  text-transform: uppercase;
+}
+
+/* ─── Agnum health ───────────────────────────────────────────────────── */
+::deep .dash-agnum-row {
+  display: grid;
+  grid-template-columns: 150px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--n-100);
+}
+
+::deep .dash-agnum-row__title { font-size: 12.5px; font-weight: 600; color: var(--n-900); }
+::deep .dash-agnum-row__meta { font-size: 11.5px; color: var(--n-600); }
+
+::deep .dash-agnum-recon { padding: 12px 0 4px; }
+::deep .dash-agnum-recon__chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 9px; }
+
+/* ─── Reservation funnel ─────────────────────────────────────────────── */
+::deep .dash-funnel { display: flex; flex-direction: column; gap: 11px; }
+::deep .dash-funnel__row { display: flex; flex-direction: column; }
+::deep .dash-funnel__head { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 11.5px; color: var(--n-600); }
+::deep .dash-funnel__track { height: 12px; border-radius: 4px; background: var(--n-100); overflow: hidden; }
+::deep .dash-funnel__fill { height: 100%; border-radius: 4px; }
+::deep .dash-funnel__fill.is-allocated { background: var(--accent-600); }
+::deep .dash-funnel__fill.is-picking { background: var(--accent-500); }
+::deep .dash-funnel__fill.is-consumed { background: var(--done-dot); }
+::deep .dash-funnel__foot { display: flex; align-items: center; gap: 10px; margin-top: 6px; padding-top: 14px; border-top: 1px solid var(--n-100); }
+
+/* ─── Recent activity ────────────────────────────────────────────────── */
+::deep .dash-summary { cursor: pointer; list-style: none; }
+::deep .dash-summary::-webkit-details-marker { display: none; }
+
+::deep .dash-activity { padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; max-height: 320px; overflow-y: auto; }
+::deep .dash-activity__row { display: flex; align-items: center; gap: 12px; padding: 7px 11px; border: 1px solid var(--n-100); border-radius: 5px; font-size: 12px; }
+::deep .dash-activity__sku { font-weight: 600; color: var(--n-900); }
+::deep .dash-spacer { flex: 1; }
+::deep .dash-activity__time { width: 46px; text-align: right; }
+
+@media (max-width: 1100px) {
+  ::deep .dash-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  ::deep .dash-grid-2 { grid-template-columns: 1fr; }
+  ::deep .dash-grid-agnum { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+  ::deep .dash-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

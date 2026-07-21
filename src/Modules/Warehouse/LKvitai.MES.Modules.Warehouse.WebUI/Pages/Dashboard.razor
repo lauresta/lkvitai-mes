@@ -3,10 +3,9 @@
 @inject DashboardClient DashboardClient
 @inject IConfiguration Configuration
 @using System.Diagnostics
+@using System.Globalization
 
-<PageTitle>Dashboard - Cikada.MES</PageTitle>
-
-<h3>Dashboard</h3>
+<PageTitle>Warehouse Dashboard - LKvitai.MES</PageTitle>
 
 @if (_pageError is not null)
 {
@@ -16,68 +15,522 @@
                  OnDismiss="DismissPageError" />
 }
 
-<div class="row g-3">
-    <div class="col-12 col-xl-6">
-        <HealthStatusCard Data="@_health.Data"
-                          IsLoading="@_health.IsLoading"
-                          ErrorMessage="@BuildErrorMessage(_health.Error)"
-                          TraceId="@_health.Error?.TraceId"
-                          OnRetry="LoadHealthAsync"
-                          OnDismiss="@(() => DismissCardError(_health))" />
+<div class="page-head">
+    <div>
+        <p class="eyebrow">Warehouse &middot; Overview</p>
+        <h1>Warehouse Dashboard</h1>
     </div>
+    <div class="dash-controls">
+        <div class="dash-refresh">
+            <span class="dash-refresh__dot"></span>
+            <span>Updated <b class="mono">@FormatAge(_lastRefreshedAt)</b> ago &middot; auto @(_refreshIntervalSeconds)s</span>
+        </div>
 
-    <div class="col-12 col-xl-6">
-        <StockSummaryCard Data="@_stockSummary.Data"
-                          IsLoading="@_stockSummary.IsLoading"
-                          ErrorMessage="@BuildErrorMessage(_stockSummary.Error)"
-                          TraceId="@_stockSummary.Error?.TraceId"
-                          OnRetry="LoadStockSummaryAsync"
-                          OnDismiss="@(() => DismissCardError(_stockSummary))" />
-    </div>
-
-    <div class="col-12 col-xl-6">
-        <ReservationSummaryCard Data="@_reservationSummary.Data"
-                                IsLoading="@_reservationSummary.IsLoading"
-                                ErrorMessage="@BuildErrorMessage(_reservationSummary.Error)"
-                                TraceId="@_reservationSummary.Error?.TraceId"
-                                OnRetry="LoadReservationSummaryAsync"
-                                OnDismiss="@(() => DismissCardError(_reservationSummary))" />
-    </div>
-
-    <div class="col-12 col-xl-6">
-        <ProjectionHealthCard Data="@_projectionHealth.Data"
-                              IsLoading="@_projectionHealth.IsLoading"
-                              ErrorMessage="@BuildErrorMessage(_projectionHealth.Error)"
-                              TraceId="@_projectionHealth.Error?.TraceId"
-                              OnRetry="LoadProjectionHealthAsync"
-                              OnDismiss="@(() => DismissCardError(_projectionHealth))" />
-    </div>
-
-    <div class="col-12">
-        <RecentActivityFeed Items="@(_recentActivity.Data ?? Array.Empty<RecentMovementDto>())"
-                            IsLoading="@_recentActivity.IsLoading"
-                            ErrorMessage="@BuildErrorMessage(_recentActivity.Error)"
-                            TraceId="@_recentActivity.Error?.TraceId"
-                            OnRetry="LoadRecentActivityAsync"
-                            OnDismiss="@(() => DismissCardError(_recentActivity))" />
+        <div class="dash-segmented">
+            <button type="button"
+                    class="dash-segmented__btn @(_selectedWarehouseId is null ? "is-active" : "")"
+                    @onclick="@(() => SelectWarehouseAsync(null))">
+                All warehouses
+            </button>
+            @foreach (var warehouse in _warehouses)
+            {
+                <button type="button"
+                        class="dash-segmented__btn mono @(_selectedWarehouseId == warehouse.Code ? "is-active" : "")"
+                        @onclick="@(() => SelectWarehouseAsync(warehouse.Code))">
+                    @warehouse.Code
+                </button>
+            }
+        </div>
     </div>
 </div>
 
+<div class="kpis dash-kpis">
+    <div class="kpi">
+        <span class="kpi__label">Total stock value</span>
+        @if (_overview.Data is not null)
+        {
+            <span class="kpi__val mono">@FormatMoney(_overview.Data.TotalStockValue)</span>
+        }
+        else
+        {
+            <span class="kpi__val mono">&mdash;</span>
+        }
+    </div>
+    <div class="kpi">
+        <span class="kpi__label">SKUs on hand</span>
+        <span class="kpi__val mono">@(_overview.Data?.TotalSKUs.ToString("N0", CultureInfo.InvariantCulture) ?? "-")</span>
+        <span class="kpi__delta">distinct &middot; qty &gt; 0</span>
+    </div>
+    <div class="kpi">
+        <span class="kpi__label">Total quantity</span>
+        <span class="kpi__val mono">@(_overview.Data?.TotalQuantity.ToString("N0", CultureInfo.InvariantCulture) ?? "-")</span>
+        <span class="kpi__delta">base UoM &middot; mixed units</span>
+    </div>
+    <a href="#lowstock" class="kpi @(HasLowStock ? "kpi--warn" : "")">
+        <span class="kpi__label">Low stock items</span>
+        <span class="kpi__val mono">@(_overview.Data?.LowStockCount.ToString("N0", CultureInfo.InvariantCulture) ?? "-")</span>
+        @if (_overview.Data is { OutOfStockCount: > 0 })
+        {
+            <span class="chip chip--out">@_overview.Data.OutOfStockCount out</span>
+        }
+    </a>
+    <a href="#expiring" class="kpi @(HasExpiring ? "kpi--danger" : "")">
+        <span class="kpi__label">Expiring soon</span>
+        <span class="kpi__val mono">@(_overview.Data?.ExpiringSoonCount.ToString("N0", CultureInfo.InvariantCulture) ?? "-")</span>
+        @if (_overview.Data is { ExpiredCount: > 0 })
+        {
+            <span class="chip chip--out">@_overview.Data.ExpiredCount expired</span>
+        }
+        else
+        {
+            <span class="kpi__delta">&le;30 d</span>
+        }
+    </a>
+    <a href="#agnum" class="kpi">
+        <span class="kpi__label">Agnum sync</span>
+        <span class="@AgnumChipClass(_overview.Data?.AgnumStatus)">@AgnumStatusLabel(_overview.Data?.AgnumStatus)</span>
+    </a>
+</div>
+
+<div class="dash-grid-2">
+    <div class="panel">
+        <div class="panel__head">
+            <div>
+                <div class="panel__title">Stock value by category</div>
+                <p class="dash-panel__sub">Grouped from OnHandValue &middot; % of total</p>
+            </div>
+        </div>
+        <div class="dash-donut-wrap">
+            @if (_categoryValues.Error is not null)
+            {
+                <SharedErrorAlert Message="@BuildErrorMessage(_categoryValues.Error)" OnRetry="LoadStockByCategoryAsync" OnDismiss="@(() => DismissCardError(_categoryValues))" />
+            }
+            else if (_categoryValues.Data is { Count: > 0 })
+            {
+                <div class="dash-donut" style="background: conic-gradient(@BuildConicGradient(_categoryValues.Data))">
+                    <div class="dash-donut__hole">
+                        <span class="mono">@FormatMoney(_categoryValues.Data.Sum(x => x.Value))</span>
+                        <span>Total value</span>
+                    </div>
+                </div>
+                <div class="dash-legend">
+                    @foreach (var (row, index) in _categoryValues.Data.Select((x, i) => (x, i)))
+                    {
+                        <div class="dash-legend__row">
+                            <span class="dash-legend__dot" style="background:@PaletteColor(index)"></span>
+                            <span class="dash-legend__label">@row.CategoryName</span>
+                            <span class="mono">@FormatMoney(row.Value)</span>
+                            <span class="mono dash-legend__pct">@row.Percent.ToString("0.#", CultureInfo.InvariantCulture)%</span>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <p class="dash-empty">No valuation data available.</p>
+            }
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel__head">
+            <div>
+                <div class="panel__title">Stock value by warehouse</div>
+                <p class="dash-panel__sub">Select a single warehouse for a zone breakdown</p>
+            </div>
+        </div>
+        <div class="dash-bars-wrap">
+            @if (_warehouseValues.Error is not null)
+            {
+                <SharedErrorAlert Message="@BuildErrorMessage(_warehouseValues.Error)" OnRetry="LoadStockByWarehouseAsync" OnDismiss="@(() => DismissCardError(_warehouseValues))" />
+            }
+            else if (_warehouseValues.Data is { Count: > 0 })
+            {
+                var maxValue = _warehouseValues.Data.Max(x => x.Value);
+                @foreach (var row in _warehouseValues.Data)
+                {
+                    <div class="dash-bar-row">
+                        <span class="dash-bar-row__label"><b class="mono">@row.WarehouseCode</b> @row.WarehouseName</span>
+                        <span class="dash-bar-row__track">
+                            <span class="dash-bar-row__fill" style="width:@(WidthPercent(row.Value, maxValue))%"></span>
+                        </span>
+                        <span class="dash-bar-row__value mono">@FormatMoney(row.Value)</span>
+                    </div>
+                }
+                <div class="dash-bar-foot">
+                    <div><span class="dash-bar-foot__label">Warehouses</span><span class="mono dash-bar-foot__val">@_warehouseValues.Data.Count</span></div>
+                </div>
+            }
+            else
+            {
+                <p class="dash-empty">No warehouses configured.</p>
+            }
+        </div>
+    </div>
+</div>
+
+<div id="lowstock" class="panel dash-section">
+    <div class="panel__head">
+        <div>
+            <div class="panel__title">Low stock &amp; reorder</div>
+            <p class="dash-panel__sub">Below reorder point &middot; available = on-hand minus HARD locks and reservations</p>
+        </div>
+        @if (_lowStock.Data is { TotalCount: > 0 })
+        {
+            <span class="mono dash-panel__count">@_lowStock.Data.TotalCount below reorder point</span>
+        }
+    </div>
+    @if (_lowStock.Error is not null)
+    {
+        <div class="dash-panel-body"><SharedErrorAlert Message="@BuildErrorMessage(_lowStock.Error)" OnRetry="LoadLowStockAsync" OnDismiss="@(() => DismissCardError(_lowStock))" /></div>
+    }
+    else if (_lowStock.Data is { Items.Count: > 0 })
+    {
+        <div class="dash-table-scroll">
+        <table class="lk-table">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Category</th>
+                    <th class="is-num">On-hand</th>
+                    <th class="is-num">Reorder pt</th>
+                    <th>Available</th>
+                    <th>Supplier &middot; lead</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in _lowStock.Data.Items)
+                {
+                    <tr>
+                        <td><span class="sku-link">@row.SKU</span> @row.ItemName</td>
+                        <td>@row.CategoryName</td>
+                        <td class="is-num">@row.OnHandQty.ToString("N0", CultureInfo.InvariantCulture) @row.BaseUoM</td>
+                        <td class="is-num">@row.ReorderPoint.ToString("N0", CultureInfo.InvariantCulture) @row.BaseUoM</td>
+                        <td>
+                            <span class="dash-meter">
+                                <span class="mono dash-meter__val @(row.Status == "Out" ? "is-danger" : "is-warn")">@row.AvailableQty.ToString("N0", CultureInfo.InvariantCulture)</span>
+                                <span class="dash-meter__track">
+                                    <span class="dash-meter__fill @(row.Status == "Out" ? "is-danger" : "is-warn")" style="width:@(WidthPercent(row.OnHandQty, row.ReorderPoint))%"></span>
+                                </span>
+                            </span>
+                        </td>
+                        <td>
+                            @if (!string.IsNullOrWhiteSpace(row.SupplierName))
+                            {
+                                @row.SupplierName <span class="mono dash-muted">&middot; @(row.LeadTimeDays?.ToString(CultureInfo.InvariantCulture) ?? "-") d</span>
+                            }
+                            else
+                            {
+                                <span class="dash-muted">&mdash;</span>
+                            }
+                        </td>
+                        <td><span class="@(row.Status == "Out" ? "chip chip--out" : "chip chip--low")">@row.Status</span></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        </div>
+    }
+    else
+    {
+        <p class="dash-empty">Nothing below reorder point.</p>
+    }
+</div>
+
+<div class="dash-grid-2">
+    <div id="expiring" class="panel">
+        <div class="panel__head">
+            <div>
+                <div class="panel__title">Expiring soon</div>
+                <p class="dash-panel__sub">Lots by remaining shelf life</p>
+            </div>
+        </div>
+        @if (_expiring.Error is not null)
+        {
+            <div class="dash-panel-body"><SharedErrorAlert Message="@BuildErrorMessage(_expiring.Error)" OnRetry="LoadExpiringAsync" OnDismiss="@(() => DismissCardError(_expiring))" /></div>
+        }
+        else if (_expiring.Data is { Count: > 0 })
+        {
+            <div class="dash-table-scroll">
+            <table class="lk-table">
+                <thead>
+                    <tr>
+                        <th>Item &middot; lot</th>
+                        <th>Location</th>
+                        <th class="is-num">Qty</th>
+                        <th>Expiry</th>
+                        <th class="is-num">Days</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var (bucket, rows) in GroupExpiring(_expiring.Data))
+                    {
+                        <tr class="dash-bucket-row"><td colspan="5">@bucket</td></tr>
+                        @foreach (var row in rows)
+                        {
+                            <tr>
+                                <td>@row.ItemName <span class="mono dash-muted">&middot; @(row.LotNumber ?? "-")</span></td>
+                                <td class="mono">@(row.LocationCode ?? "-")</td>
+                                <td class="is-num">@row.Qty.ToString("N0", CultureInfo.InvariantCulture) @row.BaseUoM</td>
+                                <td class="mono">@row.ExpiryDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)</td>
+                                <td class="is-num"><span class="@ExpiryChipClass(row.DaysRemaining)">@(row.DaysRemaining < 0 ? $"{row.DaysRemaining}d" : $"{row.DaysRemaining}d")</span></td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+            </div>
+        }
+        else
+        {
+            <p class="dash-empty">Nothing expiring in the selected window.</p>
+        }
+    </div>
+
+    <div class="panel">
+        <div class="panel__head">
+            <div>
+                <div class="panel__title">Incoming &amp; expected</div>
+                <p class="dash-panel__sub">Open inbound shipments &middot; soonest first</p>
+            </div>
+        </div>
+        @if (_incoming.Error is not null)
+        {
+            <div class="dash-panel-body"><SharedErrorAlert Message="@BuildErrorMessage(_incoming.Error)" OnRetry="LoadIncomingAsync" OnDismiss="@(() => DismissCardError(_incoming))" /></div>
+        }
+        else if (_incoming.Data is { Count: > 0 })
+        {
+            <div class="dash-table-scroll">
+            <table class="lk-table">
+                <thead>
+                    <tr>
+                        <th>Reference</th>
+                        <th>Expected</th>
+                        <th>Status</th>
+                        <th>Received</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in _incoming.Data)
+                    {
+                        <tr>
+                            <td><span class="sku-link">@row.ReferenceNumber</span><div class="dash-muted">@row.SupplierName &middot; @row.TotalLines lines</div></td>
+                            <td class="mono @(row.IsOverdue ? "is-danger" : "")">@(row.ExpectedDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? "-")</td>
+                            <td><span class="@IncomingChipClass(row)">@(row.IsOverdue ? "Overdue" : row.Status)</span></td>
+                            <td>
+                                <span class="dash-meter">
+                                    <span class="dash-meter__track dash-meter__track--sm">
+                                        <span class="dash-meter__fill is-ok" style="width:@(WidthPercent(row.CompletionPercent, 100m))%"></span>
+                                    </span>
+                                    <span class="mono dash-muted">@row.TotalReceivedQty.ToString("N0", CultureInfo.InvariantCulture)/@row.TotalExpectedQty.ToString("N0", CultureInfo.InvariantCulture)</span>
+                                </span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            </div>
+        }
+        else
+        {
+            <p class="dash-empty">No open inbound shipments.</p>
+        }
+    </div>
+</div>
+
+<div class="dash-grid-agnum">
+    <div id="agnum" class="panel">
+        <div class="panel__head">
+            <div>
+                <div class="panel__title">Agnum integration health</div>
+                <p class="dash-panel__sub">Accounting sync &middot; MES &harr; Agnum</p>
+            </div>
+            @if (_agnum.Data is not null)
+            {
+                <span class="@AgnumChipClass(_agnum.Data.OverallStatus)">@AgnumStatusLabel(_agnum.Data.OverallStatus)</span>
+            }
+        </div>
+        @if (_agnum.Error is not null)
+        {
+            <div class="dash-panel-body"><SharedErrorAlert Message="@BuildErrorMessage(_agnum.Error)" OnRetry="LoadAgnumAsync" OnDismiss="@(() => DismissCardError(_agnum))" /></div>
+        }
+        else if (_agnum.Data is not null)
+        {
+            <div class="dash-panel-body">
+                <div class="dash-agnum-row">
+                    <div><div class="dash-agnum-row__title">Export</div><div class="dash-muted">MES &rarr; Agnum</div></div>
+                    <div class="mono dash-agnum-row__meta">
+                        @(_agnum.Data.ExportedAt?.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture) ?? "never")
+                        &middot; @_agnum.Data.ExportRowCount.ToString("N0", CultureInfo.InvariantCulture) rows
+                        @if (_agnum.Data.ExportRetryCount > 0)
+                        {
+                            <span class="is-danger">&middot; @_agnum.Data.ExportRetryCount retries</span>
+                        }
+                    </div>
+                    <span class="@StatusChipClass(_agnum.Data.ExportStatus)">@_agnum.Data.ExportStatus</span>
+                </div>
+                <div class="dash-agnum-row">
+                    <div><div class="dash-agnum-row__title">Import</div><div class="dash-muted">Agnum &rarr; MES</div></div>
+                    <div class="mono dash-agnum-row__meta">
+                        @(_agnum.Data.ImportFinishedAt?.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture) ?? "never")
+                        &middot; @_agnum.Data.ImportProductCount.ToString("N0", CultureInfo.InvariantCulture) products
+                        @if (_agnum.Data.ImportErrorCount > 0)
+                        {
+                            <span class="is-danger">&middot; @_agnum.Data.ImportErrorCount errors</span>
+                        }
+                    </div>
+                    <span class="@StatusChipClass(_agnum.Data.ImportStatus)">@_agnum.Data.ImportStatus</span>
+                </div>
+                <div class="dash-agnum-recon">
+                    <div class="dash-agnum-row__title">Reconciliation</div>
+                    <div class="dash-agnum-recon__chips">
+                        <span class="chip chip--slate">Matched @_agnum.Data.ReconciliationMatched.ToString("N0", CultureInfo.InvariantCulture)</span>
+                        @if (_agnum.Data.ReconciliationOver > 0)
+                        {
+                            <span class="chip chip--low">Over @_agnum.Data.ReconciliationOver.ToString("N0", CultureInfo.InvariantCulture)</span>
+                        }
+                        @if (_agnum.Data.ReconciliationUnder > 0)
+                        {
+                            <span class="chip chip--out">Under @_agnum.Data.ReconciliationUnder.ToString("N0", CultureInfo.InvariantCulture)</span>
+                        }
+                        @if (_agnum.Data.ReconciliationNotLinked > 0)
+                        {
+                            <span class="chip chip--locked">Not linked @_agnum.Data.ReconciliationNotLinked.ToString("N0", CultureInfo.InvariantCulture)</span>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="panel">
+        <div class="panel__head">
+            <div>
+                <div class="panel__title">Reservations &amp; picking</div>
+                <p class="dash-panel__sub">Flow by status</p>
+            </div>
+        </div>
+        @if (_reservations.Error is not null)
+        {
+            <div class="dash-panel-body"><SharedErrorAlert Message="@BuildErrorMessage(_reservations.Error)" OnRetry="LoadReservationsAsync" OnDismiss="@(() => DismissCardError(_reservations))" /></div>
+        }
+        else if (_reservations.Data is not null)
+        {
+            var maxCount = new[] { _reservations.Data.Allocated, _reservations.Data.Picking, _reservations.Data.Consumed }.DefaultIfEmpty(0).Max();
+            <div class="dash-panel-body dash-funnel">
+                <div class="dash-funnel__row">
+                    <div class="dash-funnel__head"><span>Allocated (SOFT)</span><span class="mono">@_reservations.Data.Allocated</span></div>
+                    <div class="dash-funnel__track"><div class="dash-funnel__fill is-allocated" style="width:@(WidthPercent(_reservations.Data.Allocated, maxCount))%"></div></div>
+                </div>
+                <div class="dash-funnel__row">
+                    <div class="dash-funnel__head"><span>Picking (HARD)</span><span class="mono">@_reservations.Data.Picking</span></div>
+                    <div class="dash-funnel__track"><div class="dash-funnel__fill is-picking" style="width:@(WidthPercent(_reservations.Data.Picking, maxCount))%"></div></div>
+                </div>
+                <div class="dash-funnel__row">
+                    <div class="dash-funnel__head"><span>Consumed</span><span class="mono">@_reservations.Data.Consumed</span></div>
+                    <div class="dash-funnel__track"><div class="dash-funnel__fill is-consumed" style="width:@(WidthPercent(_reservations.Data.Consumed, maxCount))%"></div></div>
+                </div>
+                <div class="dash-funnel__foot">
+                    <div><span class="dash-bar-foot__label">Active HARD locks</span><span class="mono dash-bar-foot__val">@_reservations.Data.ActiveHardLocks</span></div>
+                    @if (_reservations.Data.StuckInPickingOver2h > 0)
+                    {
+                        <span class="chip chip--low">@_reservations.Data.StuckInPickingOver2h in picking &gt; 2h</span>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<details class="panel dash-section" open>
+    <summary class="panel__head dash-summary">
+        <div><span class="panel__title">Recent activity</span> <span class="dash-panel__sub">transfers &amp; adjustments</span></div>
+        <span class="mono dash-panel__count">last @_recentActivity.Data?.Count</span>
+    </summary>
+    @if (_recentActivity.Error is not null)
+    {
+        <div class="dash-panel-body"><SharedErrorAlert Message="@BuildErrorMessage(_recentActivity.Error)" OnRetry="LoadRecentActivityAsync" OnDismiss="@(() => DismissCardError(_recentActivity))" /></div>
+    }
+    else if (_recentActivity.Data is { Count: > 0 })
+    {
+        <div class="dash-activity">
+            @foreach (var item in _recentActivity.Data)
+            {
+                <div class="dash-activity__row">
+                    <span class="chip chip--slate">@(item.FromLocation == "-" || item.ToLocation == "-" ? "Adjust" : "Transfer")</span>
+                    <span class="mono dash-activity__sku">@item.SKU</span>
+                    <span class="mono dash-muted">@item.FromLocation &rarr; @item.ToLocation</span>
+                    <span class="dash-spacer"></span>
+                    <span class="mono @(item.Quantity < 0 ? "is-danger" : "is-ok")">@(item.Quantity >= 0 ? "+" : "")@item.Quantity.ToString("N0", CultureInfo.InvariantCulture)</span>
+                    <span class="mono dash-muted dash-activity__time">@item.Timestamp.ToLocalTime().ToString("HH:mm", CultureInfo.InvariantCulture)</span>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <p class="dash-empty">No recent movements.</p>
+    }
+</details>
+
 @code {
-    private readonly CardState<HealthStatusDto> _health = new();
-    private readonly CardState<StockSummaryDto> _stockSummary = new();
-    private readonly CardState<ReservationSummaryDto> _reservationSummary = new();
-    private readonly CardState<ProjectionHealthDto> _projectionHealth = new();
-    private readonly CardState<IReadOnlyList<RecentMovementDto>> _recentActivity = new(Array.Empty<RecentMovementDto>());
+    private sealed class Section<T>
+    {
+        public Section()
+        {
+        }
+
+        public Section(T initialData)
+        {
+            Data = initialData;
+        }
+
+        public T? Data { get; set; }
+        public bool IsLoading { get; set; }
+        public ApiException? Error { get; set; }
+    }
+
+    private static readonly string[] Palette =
+    {
+        "var(--accent-600)", "var(--accent-500)", "var(--accent-400)",
+        "var(--n-300)", "var(--sand-300)", "var(--n-200)"
+    };
+
+    private readonly Section<DashboardOverviewDto> _overview = new();
+    private readonly Section<IReadOnlyList<CategoryValueDto>> _categoryValues = new(Array.Empty<CategoryValueDto>());
+    private readonly Section<IReadOnlyList<WarehouseValueDto>> _warehouseValues = new(Array.Empty<WarehouseValueDto>());
+    private readonly Section<LowStockResponseDto> _lowStock = new();
+    private readonly Section<IReadOnlyList<ExpiringLotDto>> _expiring = new(Array.Empty<ExpiringLotDto>());
+    private readonly Section<IReadOnlyList<IncomingShipmentDto>> _incoming = new(Array.Empty<IncomingShipmentDto>());
+    private readonly Section<AgnumHealthDto> _agnum = new();
+    private readonly Section<ReservationFunnelDto> _reservations = new();
+    private readonly Section<IReadOnlyList<RecentMovementDto>> _recentActivity = new(Array.Empty<RecentMovementDto>());
+
+    private IReadOnlyList<WarehouseOptionDto> _warehouses = Array.Empty<WarehouseOptionDto>();
+    private string? _selectedWarehouseId;
 
     private readonly SemaphoreSlim _loadLock = new(1, 1);
     private Timer? _refreshTimer;
     private ApiException? _pageError;
     private int _refreshIntervalSeconds = 30;
+    private DateTime _lastRefreshedAt = DateTime.UtcNow;
+
+    private bool HasLowStock => (_overview.Data?.LowStockCount ?? 0) > 0;
+    private bool HasExpiring => (_overview.Data?.ExpiringSoonCount ?? 0) > 0 || (_overview.Data?.ExpiredCount ?? 0) > 0;
 
     protected override async Task OnInitializedAsync()
     {
         _refreshIntervalSeconds = Math.Max(5, Configuration.GetValue<int?>("RefreshIntervals:DashboardSeconds") ?? 30);
+
+        try
+        {
+            _warehouses = await DashboardClient.GetWarehousesAsync();
+        }
+        catch (ApiException)
+        {
+            _warehouses = Array.Empty<WarehouseOptionDto>();
+        }
 
         await LoadAllAsync();
 
@@ -94,24 +547,41 @@
         _loadLock.Dispose();
     }
 
+    private async Task SelectWarehouseAsync(string? warehouseId)
+    {
+        _selectedWarehouseId = warehouseId;
+        await LoadAllAsync();
+    }
+
     private async Task RetryAllAsync()
     {
         _pageError = null;
         await LoadAllAsync();
     }
 
-    private Task LoadHealthAsync() => LoadSingleCardAsync(_health, () => DashboardClient.GetHealthAsync());
+    private Task LoadStockByCategoryAsync()
+        => LoadSectionAsync(_categoryValues, () => DashboardClient.GetStockByCategoryAsync(_selectedWarehouseId));
 
-    private Task LoadStockSummaryAsync() => LoadSingleCardAsync(_stockSummary, () => DashboardClient.GetStockSummaryAsync());
+    private Task LoadStockByWarehouseAsync()
+        => LoadSectionAsync(_warehouseValues, () => DashboardClient.GetStockByWarehouseAsync());
 
-    private Task LoadReservationSummaryAsync()
-        => LoadSingleCardAsync(_reservationSummary, () => DashboardClient.GetReservationSummaryAsync());
+    private Task LoadLowStockAsync()
+        => LoadSectionAsync(_lowStock, () => DashboardClient.GetLowStockAsync(_selectedWarehouseId, 8));
 
-    private Task LoadProjectionHealthAsync()
-        => LoadSingleCardAsync(_projectionHealth, () => DashboardClient.GetProjectionHealthAsync());
+    private Task LoadExpiringAsync()
+        => LoadSectionAsync(_expiring, () => DashboardClient.GetExpiringAsync(_selectedWarehouseId, 90, 20));
+
+    private Task LoadIncomingAsync()
+        => LoadSectionAsync(_incoming, () => DashboardClient.GetIncomingAsync(8));
+
+    private Task LoadAgnumAsync()
+        => LoadSectionAsync(_agnum, () => DashboardClient.GetAgnumHealthAsync());
+
+    private Task LoadReservationsAsync()
+        => LoadSectionAsync(_reservations, () => DashboardClient.GetReservationFunnelAsync());
 
     private Task LoadRecentActivityAsync()
-        => LoadSingleCardAsync(_recentActivity, () => DashboardClient.GetRecentActivityAsync(10));
+        => LoadSectionAsync(_recentActivity, () => DashboardClient.GetRecentActivityAsync(8));
 
     private async Task LoadAllAsync()
     {
@@ -122,28 +592,31 @@
             _pageError = null;
 
             await Task.WhenAll(
-                LoadSingleCardAsync(_health, () => DashboardClient.GetHealthAsync(), suppressStateChange: true),
-                LoadSingleCardAsync(_stockSummary, () => DashboardClient.GetStockSummaryAsync(), suppressStateChange: true),
-                LoadSingleCardAsync(_reservationSummary, () => DashboardClient.GetReservationSummaryAsync(), suppressStateChange: true),
-                LoadSingleCardAsync(_projectionHealth, () => DashboardClient.GetProjectionHealthAsync(), suppressStateChange: true),
-                LoadSingleCardAsync(_recentActivity, () => DashboardClient.GetRecentActivityAsync(10), suppressStateChange: true));
+                LoadSectionAsync(_overview, () => DashboardClient.GetOverviewAsync(_selectedWarehouseId), suppressStateChange: true),
+                LoadSectionAsync(_categoryValues, () => DashboardClient.GetStockByCategoryAsync(_selectedWarehouseId), suppressStateChange: true),
+                LoadSectionAsync(_warehouseValues, () => DashboardClient.GetStockByWarehouseAsync(), suppressStateChange: true),
+                LoadSectionAsync(_lowStock, () => DashboardClient.GetLowStockAsync(_selectedWarehouseId, 8), suppressStateChange: true),
+                LoadSectionAsync(_expiring, () => DashboardClient.GetExpiringAsync(_selectedWarehouseId, 90, 20), suppressStateChange: true),
+                LoadSectionAsync(_incoming, () => DashboardClient.GetIncomingAsync(8), suppressStateChange: true),
+                LoadSectionAsync(_agnum, () => DashboardClient.GetAgnumHealthAsync(), suppressStateChange: true),
+                LoadSectionAsync(_reservations, () => DashboardClient.GetReservationFunnelAsync(), suppressStateChange: true),
+                LoadSectionAsync(_recentActivity, () => DashboardClient.GetRecentActivityAsync(8), suppressStateChange: true));
 
             var errors = new[]
             {
-                _health.Error,
-                _stockSummary.Error,
-                _reservationSummary.Error,
-                _projectionHealth.Error,
-                _recentActivity.Error
+                _overview.Error, _categoryValues.Error, _warehouseValues.Error, _lowStock.Error,
+                _expiring.Error, _incoming.Error, _agnum.Error, _reservations.Error, _recentActivity.Error
             }
             .Where(error => error is not null)
             .Cast<ApiException>()
             .ToList();
 
-            if (errors.Count == 5)
+            if (errors.Count == 9)
             {
                 _pageError = errors.FirstOrDefault(error => error.StatusCode == 503);
             }
+
+            _lastRefreshedAt = DateTime.UtcNow;
         }
         finally
         {
@@ -152,8 +625,8 @@
         }
     }
 
-    private async Task LoadSingleCardAsync<T>(
-        CardState<T> state,
+    private async Task LoadSectionAsync<T>(
+        Section<T> state,
         Func<Task<T>> loader,
         bool suppressStateChange = false)
     {
@@ -195,7 +668,7 @@
 
     private void DismissPageError() => _pageError = null;
 
-    private static void DismissCardError<T>(CardState<T> state)
+    private static void DismissCardError<T>(Section<T> state)
     {
         state.Error = null;
     }
@@ -220,19 +693,107 @@
         return $"{error.UserMessage} {detail}";
     }
 
-    private sealed class CardState<T>
+    private static string FormatAge(DateTime lastRefreshedAt)
     {
-        public CardState()
-        {
-        }
-
-        public CardState(T initialData)
-        {
-            Data = initialData;
-        }
-
-        public T? Data { get; set; }
-        public bool IsLoading { get; set; }
-        public ApiException? Error { get; set; }
+        var elapsed = DateTime.UtcNow - lastRefreshedAt;
+        return elapsed.TotalSeconds < 1 ? "0s" : $"{(int)elapsed.TotalSeconds}s";
     }
+
+    private static string FormatMoney(decimal value)
+        => value.ToString("N0", CultureInfo.GetCultureInfo("lt-LT")) + " €";
+
+    private static decimal WidthPercent(decimal value, decimal max)
+        => max <= 0m ? 0m : Math.Clamp(value / max * 100m, 0m, 100m);
+
+    private static string PaletteColor(int index) => Palette[index % Palette.Length];
+
+    private static string BuildConicGradient(IReadOnlyList<CategoryValueDto> categories)
+    {
+        var total = categories.Sum(x => x.Value);
+        if (total <= 0m)
+        {
+            return "var(--n-200) 0 100%";
+        }
+
+        var segments = new List<string>();
+        var cursor = 0m;
+        for (var i = 0; i < categories.Count; i++)
+        {
+            var share = categories[i].Value / total * 100m;
+            var start = cursor;
+            var end = Math.Min(100m, cursor + share);
+            segments.Add($"{PaletteColor(i)} {start.ToString("0.##", CultureInfo.InvariantCulture)}% {end.ToString("0.##", CultureInfo.InvariantCulture)}%");
+            cursor = end;
+        }
+
+        return string.Join(",", segments);
+    }
+
+    private static IEnumerable<(string Bucket, List<ExpiringLotDto> Rows)> GroupExpiring(IReadOnlyList<ExpiringLotDto> rows)
+    {
+        var order = new[] { "Expired", "0-7", "8-30", "31-90" };
+        var labels = new Dictionary<string, string>
+        {
+            ["Expired"] = "Expired",
+            ["0-7"] = "≤ 7 days",
+            ["8-30"] = "8–30 days",
+            ["31-90"] = "31–90 days"
+        };
+
+        foreach (var bucketKey in order)
+        {
+            var bucketRows = rows.Where(x => x.Bucket == bucketKey).ToList();
+            if (bucketRows.Count > 0)
+            {
+                yield return (labels[bucketKey], bucketRows);
+            }
+        }
+    }
+
+    private static string ExpiryChipClass(int daysRemaining) => daysRemaining switch
+    {
+        < 0 => "chip chip--out",
+        <= 7 => "chip chip--out",
+        <= 30 => "chip chip--low",
+        _ => "chip chip--reserved"
+    };
+
+    private static string IncomingChipClass(IncomingShipmentDto row)
+    {
+        if (row.IsOverdue)
+        {
+            return "chip chip--low";
+        }
+
+        return row.Status.ToLowerInvariant() switch
+        {
+            "receiving" => "chip chip--made",
+            "in transit" or "intransit" => "chip chip--reserved",
+            _ => "chip chip--entered"
+        };
+    }
+
+    private static string StatusChipClass(string status) => status.ToLowerInvariant() switch
+    {
+        "success" or "completed" => "chip chip--ok",
+        "failed" => "chip chip--out",
+        "retrying" or "running" => "chip chip--low",
+        _ => "chip chip--locked"
+    };
+
+    private static string AgnumChipClass(string? status) => status?.ToLowerInvariant() switch
+    {
+        "ok" => "chip chip--ok",
+        "degraded" => "chip chip--low",
+        "failed" => "chip chip--out",
+        _ => "chip chip--locked"
+    };
+
+    private static string AgnumStatusLabel(string? status) => status?.ToLowerInvariant() switch
+    {
+        "ok" => "In sync",
+        "degraded" => "Degraded",
+        "failed" => "Failed",
+        _ => "Unknown"
+    };
 }

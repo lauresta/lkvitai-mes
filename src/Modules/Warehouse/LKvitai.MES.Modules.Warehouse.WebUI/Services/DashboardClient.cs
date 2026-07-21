@@ -36,6 +36,50 @@ public class DashboardClient
     public Task<IReadOnlyList<RecentMovementDto>> GetRecentActivityAsync(int limit = 10)
         => GetRecentActivityCoreAsync(limit);
 
+    public Task<IReadOnlyList<WarehouseOptionDto>> GetWarehousesAsync()
+        => GetAsync<IReadOnlyList<WarehouseOptionDto>>("/api/dashboard/warehouses");
+
+    public Task<DashboardOverviewDto> GetOverviewAsync(string? warehouseId)
+        => GetAsync<DashboardOverviewDto>(BuildUrl("/api/dashboard/overview", warehouseId));
+
+    public Task<IReadOnlyList<CategoryValueDto>> GetStockByCategoryAsync(string? warehouseId)
+        => GetAsync<IReadOnlyList<CategoryValueDto>>(BuildUrl("/api/dashboard/stock-by-category", warehouseId));
+
+    public Task<IReadOnlyList<WarehouseValueDto>> GetStockByWarehouseAsync()
+        => GetAsync<IReadOnlyList<WarehouseValueDto>>("/api/dashboard/stock-by-warehouse");
+
+    public Task<LowStockResponseDto> GetLowStockAsync(string? warehouseId, int take = 5)
+        => GetAsync<LowStockResponseDto>(BuildUrl("/api/dashboard/low-stock", warehouseId, take));
+
+    public Task<IReadOnlyList<ExpiringLotDto>> GetExpiringAsync(string? warehouseId, int days = 90, int take = 20)
+        => GetAsync<IReadOnlyList<ExpiringLotDto>>(
+            BuildUrl("/api/dashboard/expiring", warehouseId, take) + $"&days={days}");
+
+    public Task<IReadOnlyList<IncomingShipmentDto>> GetIncomingAsync(int take = 8)
+        => GetAsync<IReadOnlyList<IncomingShipmentDto>>($"/api/dashboard/incoming?take={take}");
+
+    public Task<AgnumHealthDto> GetAgnumHealthAsync()
+        => GetAsync<AgnumHealthDto>("/api/dashboard/agnum-health");
+
+    public Task<ReservationFunnelDto> GetReservationFunnelAsync()
+        => GetAsync<ReservationFunnelDto>("/api/dashboard/reservation-funnel");
+
+    private static string BuildUrl(string path, string? warehouseId, int? take = null)
+    {
+        var query = new List<string>();
+        if (!string.IsNullOrWhiteSpace(warehouseId))
+        {
+            query.Add($"warehouseId={Uri.EscapeDataString(warehouseId)}");
+        }
+
+        if (take.HasValue)
+        {
+            query.Add($"take={take.Value}");
+        }
+
+        return query.Count == 0 ? path : $"{path}?{string.Join('&', query)}";
+    }
+
     private async Task<ProjectionHealthDto> GetProjectionHealthCoreAsync()
     {
         var client = _factory.CreateClient("WarehouseApi");
