@@ -1305,6 +1305,19 @@ public sealed class InboundShipment : AuditableEntity
     public DateOnly? ExpectedDate { get; set; }
     public string Status { get; set; } = "Draft";
 
+    /// <summary>Supplier invoice reference, if known when the shipment is created/received.</summary>
+    public string? InvoiceNumber { get; set; }
+    public DateOnly? InvoiceDate { get; set; }
+
+    /// <summary>
+    /// Header-level landed costs, distributed proportionally across lines (by received
+    /// line value) at receiving time and folded into each item's weighted-average cost.
+    /// </summary>
+    public decimal? FreightCost { get; set; }
+    public decimal? DutyCost { get; set; }
+    public decimal? InsuranceCost { get; set; }
+    public decimal? OtherCost { get; set; }
+
     public Supplier? Supplier { get; set; }
     public ICollection<InboundShipmentLine> Lines { get; set; } = new List<InboundShipmentLine>();
 }
@@ -1317,6 +1330,10 @@ public sealed class InboundShipmentLine
     public decimal ExpectedQty { get; set; }
     public decimal ReceivedQty { get; set; }
     public string BaseUoM { get; set; } = string.Empty;
+
+    /// <summary>Unit purchase price. Must be set before the line can be received.</summary>
+    public decimal? UnitPrice { get; set; }
+    public string? Currency { get; set; }
 
     public InboundShipment? Shipment { get; set; }
     public Item? Item { get; set; }

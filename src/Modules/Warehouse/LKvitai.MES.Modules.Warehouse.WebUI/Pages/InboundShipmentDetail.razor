@@ -80,6 +80,14 @@
                     </div>
 
                     <div class="row g-2 mt-1">
+                        <div class="col-md-2">
+                            <label class="form-label">Unit Price @(SelectedLineHasPrice ? "" : "(required)")</label>
+                            <input type="number" min="0" step="0.0001" class="form-control @(SelectedLineHasPrice ? "" : "border-warning")" @bind="_unitPrice" placeholder="@SelectedLinePricePlaceholder" />
+                        </div>
+                        <div class="col-md-1">
+                            <label class="form-label">Ccy</label>
+                            <input class="form-control" maxlength="3" @bind="_currency" />
+                        </div>
                         <div class="col-md-3">
                             <label class="form-label">Lot Number</label>
                             <input class="form-control" @bind="_lotNumber" />
@@ -92,11 +100,15 @@
                             <label class="form-label">Expiry Date</label>
                             <input type="date" class="form-control" @bind="_expiryDate" />
                         </div>
-                        <div class="col-md-5">
+                        <div class="col-md-2">
                             <label class="form-label">Notes</label>
                             <input class="form-control" @bind="_notes" />
                         </div>
                     </div>
+                    @if (!SelectedLineHasPrice)
+                    {
+                        <div class="small text-warning mt-1">This line has no purchase price yet. Enter the unit price before receiving - whoever enters the receipt enters the price.</div>
+                    }
                 </div>
             </div>
 
@@ -111,6 +123,7 @@
                             <th>Expected</th>
                             <th>Received</th>
                             <th>Remaining</th>
+                            <th>Unit Price</th>
                             <th>Flags</th>
                         </tr>
                     </thead>
@@ -137,6 +150,16 @@
                                 <td>@line.ExpectedQty.ToString("0.##") @line.BaseUoM</td>
                                 <td>@line.ReceivedQty.ToString("0.##") @line.BaseUoM</td>
                                 <td>@Math.Max(0m, line.ExpectedQty - line.ReceivedQty).ToString("0.##") @line.BaseUoM</td>
+                                <td>
+                                    @if (line.UnitPrice.HasValue)
+                                    {
+                                        @($"{line.UnitPrice.Value:0.####} {line.Currency ?? "EUR"}")
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning text-dark">not set</span>
+                                    }
+                                </td>
                                 <td>
                                     @if (line.RequiresLotTracking)
                                     {
@@ -172,8 +195,20 @@
     private DateTime? _productionDate;
     private DateTime? _expiryDate;
     private string _notes = string.Empty;
+    private decimal? _unitPrice;
+    private string _currency = "EUR";
 
     private int? SelectedLineId => int.TryParse(_selectedLineId, out var lineId) ? lineId : null;
+
+    private InboundShipmentLineDetailDto? SelectedLine
+        => _shipment?.Lines.FirstOrDefault(x => x.LineId == SelectedLineId);
+
+    private bool SelectedLineHasPrice => SelectedLine?.UnitPrice.HasValue == true || _unitPrice.HasValue;
+
+    private string SelectedLinePricePlaceholder
+        => SelectedLine?.UnitPrice.HasValue == true
+            ? $"currently {SelectedLine.UnitPrice.Value:0.####}"
+            : "required before receiving";
 
     private decimal TotalExpected => _shipment?.Lines.Sum(x => x.ExpectedQty) ?? 0m;
     private decimal TotalReceived => _shipment?.Lines.Sum(x => x.ReceivedQty) ?? 0m;
@@ -250,6 +285,18 @@
             return;
         }
 
+        if (!SelectedLineHasPrice)
+        {
+            ToastService.ShowError("Enter the unit price before receiving this line.");
+            return;
+        }
+
+        if (_unitPrice is < 0m)
+        {
+            ToastService.ShowError("Unit price must be greater than or equal to zero.");
+            return;
+        }
+
         _isSubmitting = true;
         _apiError = null;
 
@@ -262,7 +309,9 @@
                 LotNumber = string.IsNullOrWhiteSpace(_lotNumber) ? null : _lotNumber.Trim(),
                 ProductionDate = _productionDate.HasValue ? DateOnly.FromDateTime(_productionDate.Value.Date) : null,
                 ExpiryDate = _expiryDate.HasValue ? DateOnly.FromDateTime(_expiryDate.Value.Date) : null,
-                Notes = string.IsNullOrWhiteSpace(_notes) ? null : _notes.Trim()
+                Notes = string.IsNullOrWhiteSpace(_notes) ? null : _notes.Trim(),
+                UnitPrice = _unitPrice,
+                Currency = string.IsNullOrWhiteSpace(_currency) ? null : _currency.Trim()
             };
 
             var response = await ReceivingClient.ReceiveItemsAsync(_shipment.Id, request);
@@ -272,6 +321,7 @@
             _notes = string.Empty;
             _receivedQty = 1m;
             _scanBarcode = string.Empty;
+            _unitPrice = null;
 
             await LoadAsync();
         }

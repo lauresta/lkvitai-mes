@@ -28,6 +28,8 @@ public record InboundShipmentLineDetailDto
     public decimal ExpectedQty { get; init; }
     public decimal ReceivedQty { get; init; }
     public string BaseUoM { get; init; } = string.Empty;
+    public decimal? UnitPrice { get; init; }
+    public string? Currency { get; init; }
 }
 
 public record InboundShipmentDetailDto
@@ -38,6 +40,12 @@ public record InboundShipmentDetailDto
     public string SupplierName { get; init; } = string.Empty;
     public DateOnly? ExpectedDate { get; init; }
     public string Status { get; init; } = string.Empty;
+    public string? InvoiceNumber { get; init; }
+    public DateOnly? InvoiceDate { get; init; }
+    public decimal? FreightCost { get; init; }
+    public decimal? DutyCost { get; init; }
+    public decimal? InsuranceCost { get; init; }
+    public decimal? OtherCost { get; init; }
     public DateTimeOffset CreatedAt { get; init; }
     public DateTimeOffset? UpdatedAt { get; init; }
     public IReadOnlyList<InboundShipmentLineDetailDto> Lines { get; init; } = Array.Empty<InboundShipmentLineDetailDto>();
@@ -47,6 +55,8 @@ public record CreateInboundShipmentLineRequestDto
 {
     public int ItemId { get; init; }
     public decimal ExpectedQty { get; init; }
+    public decimal? UnitPrice { get; init; }
+    public string? Currency { get; init; }
 }
 
 public record CreateInboundShipmentRequestDto
@@ -55,6 +65,12 @@ public record CreateInboundShipmentRequestDto
     public int SupplierId { get; init; }
     public string? Type { get; init; }
     public DateOnly? ExpectedDate { get; init; }
+    public string? InvoiceNumber { get; init; }
+    public DateOnly? InvoiceDate { get; init; }
+    public decimal? FreightCost { get; init; }
+    public decimal? DutyCost { get; init; }
+    public decimal? InsuranceCost { get; init; }
+    public decimal? OtherCost { get; init; }
     public IReadOnlyList<CreateInboundShipmentLineRequestDto> Lines { get; init; } = Array.Empty<CreateInboundShipmentLineRequestDto>();
 }
 
@@ -74,6 +90,8 @@ public record ReceiveShipmentLineRequestDto
     public DateOnly? ProductionDate { get; init; }
     public DateOnly? ExpiryDate { get; init; }
     public string? Notes { get; init; }
+    public decimal? UnitPrice { get; init; }
+    public string? Currency { get; init; }
 }
 
 public record ReceiveGoodsResponseDto

@@ -4,6 +4,7 @@ using System.Text;
 using LKvitai.MES.Modules.Warehouse.Api.ErrorHandling;
 using LKvitai.MES.Modules.Warehouse.Api.Security;
 using LKvitai.MES.Modules.Warehouse.Api.Services;
+using LKvitai.MES.Modules.Warehouse.Application.Commands;
 using LKvitai.MES.Modules.Warehouse.Application.Services;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Contracts.ReadModels;
@@ -11,6 +12,7 @@ using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 using LKvitai.MES.BuildingBlocks.SharedKernel;
 using IDocumentStore = Marten.IDocumentStore;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -24,18 +26,33 @@ public sealed class ReceivingController : ControllerBase
 {
     private const string DefaultWarehouseId = "WH1";
 
+    /// <summary>
+    /// Marker passed as ApprovedBy when the receiving flow auto-adjusts an item's
+    /// weighted-average cost from a real purchase. This is real purchase data derived
+    /// from a receipt, not a manual override, so it bypasses the &gt;20% manual-approval
+    /// gate that exists to catch typos in ad-hoc cost adjustments (see
+    /// ValuationCostAdjustmentPolicy.ValidateApproval).
+    /// </summary>
+    private const string ReceivingValuationActor = "system:receiving";
+
     private readonly WarehouseDbContext _dbContext;
     private readonly IDocumentStore _documentStore;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IMediator _mediator;
+    private readonly ILogger<ReceivingController> _logger;
 
     public ReceivingController(
         WarehouseDbContext dbContext,
         IDocumentStore documentStore,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IMediator mediator,
+        ILogger<ReceivingController> logger)
     {
         _dbContext = dbContext;
         _documentStore = documentStore;
         _currentUserService = currentUserService;
+        _mediator = mediator;
+        _logger = logger;
     }
 
     [HttpGet]
@@ -152,6 +169,12 @@ public sealed class ReceivingController : ControllerBase
             shipment.Supplier?.Name ?? string.Empty,
             shipment.ExpectedDate,
             shipment.Status,
+            shipment.InvoiceNumber,
+            shipment.InvoiceDate,
+            shipment.FreightCost,
+            shipment.DutyCost,
+            shipment.InsuranceCost,
+            shipment.OtherCost,
             shipment.CreatedAt,
             shipment.UpdatedAt,
             shipment.Lines
@@ -167,7 +190,9 @@ public sealed class ReceivingController : ControllerBase
                     x.Item?.RequiresQC ?? false,
                     x.ExpectedQty,
                     x.ReceivedQty,
-                    x.BaseUoM))
+                    x.BaseUoM,
+                    x.UnitPrice,
+                    x.Currency))
                 .ToList()));
     }
 
@@ -217,12 +242,28 @@ public sealed class ReceivingController : ControllerBase
             return ValidationFailure("All shipment line expectedQty values must be greater than 0.");
         }
 
+        if (request.Lines.Any(x => x.UnitPrice is < 0m))
+        {
+            return ValidationFailure("Shipment line unitPrice must be greater than or equal to 0.");
+        }
+
+        if (request.FreightCost is < 0m || request.DutyCost is < 0m || request.InsuranceCost is < 0m || request.OtherCost is < 0m)
+        {
+            return ValidationFailure("Shipment additional costs must be greater than or equal to 0.");
+        }
+
         var shipment = new InboundShipment
         {
             ReferenceNumber = request.ReferenceNumber.Trim(),
             SupplierId = request.SupplierId,
             ExpectedDate = request.ExpectedDate,
-            Status = "Draft"
+            Status = "Draft",
+            InvoiceNumber = string.IsNullOrWhiteSpace(request.InvoiceNumber) ? null : request.InvoiceNumber.Trim(),
+            InvoiceDate = request.InvoiceDate,
+            FreightCost = request.FreightCost,
+            DutyCost = request.DutyCost,
+            InsuranceCost = request.InsuranceCost,
+            OtherCost = request.OtherCost
         };
 
         foreach (var line in request.Lines)
@@ -233,7 +274,9 @@ public sealed class ReceivingController : ControllerBase
                 ItemId = line.ItemId,
                 ExpectedQty = line.ExpectedQty,
                 ReceivedQty = 0m,
-                BaseUoM = item.BaseUoM
+                BaseUoM = item.BaseUoM,
+                UnitPrice = line.UnitPrice,
+                Currency = string.IsNullOrWhiteSpace(line.Currency) ? null : line.Currency.Trim().ToUpperInvariant()
             });
         }
 
@@ -316,6 +359,27 @@ public sealed class ReceivingController : ControllerBase
         {
             return ValidationFailure(
                 $"Received quantity would exceed expected quantity ({line.ExpectedQty}) for line '{line.Id}'.");
+        }
+
+        if (request.UnitPrice is < 0m)
+        {
+            return ValidationFailure("Field 'unitPrice' must be greater than or equal to 0.");
+        }
+
+        var effectiveUnitPrice = request.UnitPrice ?? line.UnitPrice;
+        if (effectiveUnitPrice is null)
+        {
+            return UnprocessableFailure(
+                $"Unit price is required before receiving line '{line.Id}'. Set it on the shipment line or provide it with this request.");
+        }
+
+        if (request.UnitPrice.HasValue)
+        {
+            line.UnitPrice = request.UnitPrice.Value;
+            if (!string.IsNullOrWhiteSpace(request.Currency))
+            {
+                line.Currency = request.Currency.Trim().ToUpperInvariant();
+            }
         }
 
         if (item.RequiresLotTracking && string.IsNullOrWhiteSpace(request.LotNumber))
@@ -402,6 +466,30 @@ public sealed class ReceivingController : ControllerBase
             await session.SaveChangesAsync(cancellationToken);
         }
 
+        // Best-effort: fold this receipt's price (plus its proportional share of the
+        // shipment's header-level landed costs) into the item's weighted-average cost.
+        // The physical receipt above has already succeeded and must not be rolled back
+        // or fail the request because of a valuation hiccup — see Non-Negotiable
+        // Constraints (valuation is a separate concern from physical stock).
+        try
+        {
+            await UpdateItemValuationForReceiptAsync(
+                shipment,
+                line,
+                item.Id,
+                request.ReceivedQty,
+                effectiveUnitPrice.Value,
+                cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "Failed to update valuation for item {ItemId} after receiving shipment line {LineId}. Physical receipt was still recorded.",
+                item.Id,
+                line.Id);
+        }
+
         return Ok(new ReceiveGoodsResponse(
             shipment.Id,
             line.Id,
@@ -412,6 +500,93 @@ public sealed class ReceivingController : ControllerBase
             destinationCode,
             evt.EventId,
             now));
+    }
+
+    /// <summary>
+    /// Computes this receipt's all-in landed unit cost (invoice price plus its
+    /// proportional share of the shipment's header-level freight/duty/insurance/other
+    /// costs, allocated across lines by expected value) and folds it into the item's
+    /// <see cref="ItemValuation"/> stream — initializing it on the first receipt, or
+    /// recomputing a weighted average against the current on-hand cost afterwards.
+    /// </summary>
+    private async Task UpdateItemValuationForReceiptAsync(
+        InboundShipment shipment,
+        InboundShipmentLine line,
+        int itemId,
+        decimal receivedQty,
+        decimal unitPrice,
+        CancellationToken cancellationToken)
+    {
+        var totalAdditionalCost =
+            (shipment.FreightCost ?? 0m) +
+            (shipment.DutyCost ?? 0m) +
+            (shipment.InsuranceCost ?? 0m) +
+            (shipment.OtherCost ?? 0m);
+
+        var landedUnitCost = unitPrice;
+        if (totalAdditionalCost > 0m)
+        {
+            var totalExpectedValue = shipment.Lines.Sum(x => x.ExpectedQty * (x.UnitPrice ?? 0m));
+            if (totalExpectedValue > 0m && line.ExpectedQty > 0m)
+            {
+                var lineExpectedValue = line.ExpectedQty * unitPrice;
+                var lineShareOfAdditionalCost = totalAdditionalCost * lineExpectedValue / totalExpectedValue;
+                landedUnitCost += lineShareOfAdditionalCost / line.ExpectedQty;
+            }
+        }
+
+        var currency = string.IsNullOrWhiteSpace(line.Currency) ? "EUR" : line.Currency;
+        var reason = string.Format(
+            CultureInfo.InvariantCulture,
+            "Receipt {0} - {1:0.###} {2} @ {3:0.####} {4}",
+            shipment.ReferenceNumber,
+            receivedQty,
+            line.BaseUoM,
+            landedUnitCost,
+            currency);
+
+        var initializeResult = await _mediator.Send(
+            new InitializeValuationCommand
+            {
+                ItemId = itemId,
+                InitialCost = landedUnitCost,
+                Reason = reason
+            },
+            cancellationToken);
+
+        if (initializeResult.IsSuccess)
+        {
+            return;
+        }
+
+        var existingValuation = await _dbContext.OnHandValues
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.ItemId == itemId, cancellationToken);
+
+        var newCost = landedUnitCost;
+        if (existingValuation is not null && existingValuation.Qty > 0m)
+        {
+            newCost = ((existingValuation.Qty * existingValuation.UnitCost) + (receivedQty * landedUnitCost))
+                / (existingValuation.Qty + receivedQty);
+        }
+
+        var adjustResult = await _mediator.Send(
+            new AdjustValuationCostCommand
+            {
+                ItemId = itemId,
+                NewCost = newCost,
+                Reason = reason,
+                ApprovedBy = ReceivingValuationActor
+            },
+            cancellationToken);
+
+        if (!adjustResult.IsSuccess)
+        {
+            _logger.LogWarning(
+                "Valuation adjust command failed for item {ItemId} after receipt: {Error}",
+                itemId,
+                adjustResult.Error);
+        }
     }
 
     private ObjectResult ValidationFailure(string detail)
@@ -496,9 +671,19 @@ public sealed class ReceivingController : ControllerBase
         int SupplierId,
         string? Type,
         DateOnly? ExpectedDate,
+        string? InvoiceNumber,
+        DateOnly? InvoiceDate,
+        decimal? FreightCost,
+        decimal? DutyCost,
+        decimal? InsuranceCost,
+        decimal? OtherCost,
         IReadOnlyList<CreateInboundShipmentLineRequest> Lines);
 
-    public sealed record CreateInboundShipmentLineRequest(int ItemId, decimal ExpectedQty);
+    public sealed record CreateInboundShipmentLineRequest(
+        int ItemId,
+        decimal ExpectedQty,
+        decimal? UnitPrice,
+        string? Currency);
 
     public sealed record ShipmentCreatedResponse(int Id, string ReferenceNumber, string Status, DateTime CreatedAt);
 
@@ -508,7 +693,9 @@ public sealed class ReceivingController : ControllerBase
         string? LotNumber,
         DateOnly? ProductionDate,
         DateOnly? ExpiryDate,
-        string? Notes);
+        string? Notes,
+        decimal? UnitPrice,
+        string? Currency);
 
     public sealed record ReceiveGoodsResponse(
         int ShipmentId,
@@ -541,6 +728,12 @@ public sealed class ReceivingController : ControllerBase
         string SupplierName,
         DateOnly? ExpectedDate,
         string Status,
+        string? InvoiceNumber,
+        DateOnly? InvoiceDate,
+        decimal? FreightCost,
+        decimal? DutyCost,
+        decimal? InsuranceCost,
+        decimal? OtherCost,
         DateTimeOffset CreatedAt,
         DateTimeOffset? UpdatedAt,
         IReadOnlyList<InboundShipmentLineDetailDto> Lines);
@@ -556,7 +749,9 @@ public sealed class ReceivingController : ControllerBase
         bool RequiresQC,
         decimal ExpectedQty,
         decimal ReceivedQty,
-        string BaseUoM);
+        string BaseUoM,
+        decimal? UnitPrice,
+        string? Currency);
 
     public sealed record PagedResponse<T>(
         IReadOnlyList<T> Items,
