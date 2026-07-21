@@ -749,76 +749,101 @@ public sealed class DashboardController : ControllerBase
 
         foreach (var sndId in sndIds)
         {
-            var latestRunQuery = _dbContext.AgnumBalanceImportRuns
-                .AsNoTracking()
-                .Where(x => x.SndId == sndId && x.Status == "Completed")
-                .OrderByDescending(x => x.FinishedAt);
-            var latestRun = await EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(latestRunQuery, cancellationToken);
+            var counts = await ComputeReconciliationCountsForSndIdAsync(sndId, cancellationToken);
+            matched += counts.Matched;
+            over += counts.Over;
+            under += counts.Under;
+            notLinked += counts.NotLinked;
+        }
 
-            if (latestRun is null)
+        return (matched, over, under, notLinked);
+    }
+
+    private async Task<(int Matched, int Over, int Under, int NotLinked)> ComputeReconciliationCountsForSndIdAsync(
+        int sndId,
+        CancellationToken cancellationToken)
+    {
+        var latestRunQuery = _dbContext.AgnumBalanceImportRuns
+            .AsNoTracking()
+            .Where(x => x.SndId == sndId && x.Status == "Completed")
+            .OrderByDescending(x => x.FinishedAt);
+        var latestRun = await EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(latestRunQuery, cancellationToken);
+
+        if (latestRun is null)
+        {
+            return (0, 0, 0, 0);
+        }
+
+        var balanceRowsQuery = _dbContext.AgnumVirtualWarehouseBalances
+            .AsNoTracking()
+            .Where(x => x.ImportRunId == latestRun.Id)
+            .Select(x => new { x.Id, x.Sku, x.Quantity });
+        var balanceRows = await EntityFrameworkQueryableExtensions.ToListAsync(balanceRowsQuery, cancellationToken);
+
+        if (balanceRows.Count == 0)
+        {
+            return (0, 0, 0, 0);
+        }
+
+        var balanceIds = balanceRows.Select(x => x.Id).ToList();
+        var distributedByBalance = await _dbContext.AgnumBalanceDistributions
+            .AsNoTracking()
+            .Where(x => balanceIds.Contains(x.VirtualBalanceId))
+            .GroupBy(x => x.VirtualBalanceId)
+            .Select(g => new { VirtualBalanceId = g.Key, Total = g.Sum(x => x.Quantity) })
+            .ToDictionaryAsync(x => x.VirtualBalanceId, x => x.Total, cancellationToken);
+
+        var physicalBySku = await LoadPhysicalStockBySkuAsync(balanceRows.Select(x => x.Sku), cancellationToken);
+
+        var matched = 0;
+        var over = 0;
+        var under = 0;
+        var notLinked = 0;
+
+        foreach (var row in balanceRows)
+        {
+            var distributedQty = distributedByBalance.GetValueOrDefault(row.Id);
+            var physicalQty = string.IsNullOrWhiteSpace(row.Sku)
+                ? 0m
+                : physicalBySku.GetValueOrDefault(row.Sku);
+            var delta = physicalQty - distributedQty;
+            var status = AgnumReconciliationStatusCalculator.GetStatus(row.Sku, delta);
+
+            switch (status)
             {
-                continue;
-            }
-
-            var balanceRowsQuery = _dbContext.AgnumVirtualWarehouseBalances
-                .AsNoTracking()
-                .Where(x => x.ImportRunId == latestRun.Id)
-                .Select(x => new { x.Id, x.Sku, x.Quantity });
-            var balanceRows = await EntityFrameworkQueryableExtensions.ToListAsync(balanceRowsQuery, cancellationToken);
-
-            if (balanceRows.Count == 0)
-            {
-                continue;
-            }
-
-            var balanceIds = balanceRows.Select(x => x.Id).ToList();
-            var distributedByBalance = await _dbContext.AgnumBalanceDistributions
-                .AsNoTracking()
-                .Where(x => balanceIds.Contains(x.VirtualBalanceId))
-                .GroupBy(x => x.VirtualBalanceId)
-                .Select(g => new { VirtualBalanceId = g.Key, Total = g.Sum(x => x.Quantity) })
-                .ToDictionaryAsync(x => x.VirtualBalanceId, x => x.Total, cancellationToken);
-
-            var skus = balanceRows
-                .Select(x => x.Sku)
-                .Where(x => !string.IsNullOrWhiteSpace(x))
-                .Select(x => x!)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToList();
-
-            var physicalBySku = new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase);
-            if (skus.Count > 0)
-            {
-                await using var querySession = _documentStore.QuerySession();
-                var physicalRows = await Marten.QueryableExtensions.ToListAsync(
-                    querySession.Query<AvailableStockView>().Where(x => skus.Contains(x.SKU) && x.OnHandQty > 0m),
-                    cancellationToken);
-
-                physicalBySku = physicalRows
-                    .GroupBy(x => x.SKU, StringComparer.OrdinalIgnoreCase)
-                    .ToDictionary(x => x.Key, x => x.Sum(y => y.OnHandQty), StringComparer.OrdinalIgnoreCase);
-            }
-
-            foreach (var row in balanceRows)
-            {
-                var distributedQty = distributedByBalance.GetValueOrDefault(row.Id);
-                var physicalQty = string.IsNullOrWhiteSpace(row.Sku)
-                    ? 0m
-                    : physicalBySku.GetValueOrDefault(row.Sku);
-                var delta = physicalQty - distributedQty;
-                var status = AgnumReconciliationStatusCalculator.GetStatus(row.Sku, delta);
-
-                switch (status)
-                {
-                    case "Matched": matched++; break;
-                    case "Over": over++; break;
-                    case "Under": under++; break;
-                    default: notLinked++; break;
-                }
+                case "Matched": matched++; break;
+                case "Over": over++; break;
+                case "Under": under++; break;
+                default: notLinked++; break;
             }
         }
 
         return (matched, over, under, notLinked);
+    }
+
+    private async Task<Dictionary<string, decimal>> LoadPhysicalStockBySkuAsync(
+        IEnumerable<string?> skus,
+        CancellationToken cancellationToken)
+    {
+        var skuList = skus
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Select(x => x!)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (skuList.Count == 0)
+        {
+            return new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase);
+        }
+
+        await using var querySession = _documentStore.QuerySession();
+        var physicalRows = await Marten.QueryableExtensions.ToListAsync(
+            querySession.Query<AvailableStockView>().Where(x => skuList.Contains(x.SKU) && x.OnHandQty > 0m),
+            cancellationToken);
+
+        return physicalRows
+            .GroupBy(x => x.SKU, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(x => x.Key, x => x.Sum(y => y.OnHandQty), StringComparer.OrdinalIgnoreCase);
     }
 
     private static string BucketFor(int daysRemaining) => daysRemaining switch

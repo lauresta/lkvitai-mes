@@ -274,7 +274,7 @@
                                 <td class="mono">@(row.LocationCode ?? "-")</td>
                                 <td class="is-num">@row.Qty.ToString("N0", CultureInfo.InvariantCulture) @row.BaseUoM</td>
                                 <td class="mono">@row.ExpiryDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)</td>
-                                <td class="is-num"><span class="@ExpiryChipClass(row.DaysRemaining)">@(row.DaysRemaining < 0 ? $"{row.DaysRemaining}d" : $"{row.DaysRemaining}d")</span></td>
+                                <td class="is-num"><span class="@ExpiryChipClass(row.DaysRemaining)">@($"{row.DaysRemaining}d")</span></td>
                             </tr>
                         }
                     }
