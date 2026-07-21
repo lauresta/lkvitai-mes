@@ -42,9 +42,37 @@
             <div class="col-md-2 d-flex align-items-end">
                 <button class="btn btn-outline-secondary" @onclick="BackToList">Back</button>
             </div>
+            <div class="col-md-4">
+                <label class="form-label">Invoice Number</label>
+                <input class="form-control" @bind="_invoiceNumber" placeholder="Optional - fill in when invoice arrives" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Invoice Date</label>
+                <input type="date" class="form-control" @bind="_invoiceDate" />
+            </div>
         </div>
 
         <hr />
+
+        <div class="mb-2"><h5 class="mb-0">Additional costs</h5><small class="text-muted">Freight/duty/insurance/other - distributed across lines by value when the shipment is received.</small></div>
+        <div class="row g-3 mb-3">
+            <div class="col-md-3">
+                <label class="form-label">Freight</label>
+                <input type="number" min="0" step="0.01" class="form-control" @bind="_freightCost" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Duty</label>
+                <input type="number" min="0" step="0.01" class="form-control" @bind="_dutyCost" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Insurance</label>
+                <input type="number" min="0" step="0.01" class="form-control" @bind="_insuranceCost" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Other</label>
+                <input type="number" min="0" step="0.01" class="form-control" @bind="_otherCost" />
+            </div>
+        </div>
 
         <div class="d-flex justify-content-between align-items-center mb-2">
             <h5 class="mb-0">Lines</h5>
@@ -64,9 +92,11 @@
                 <table class="table table-hover align-middle">
                     <thead>
                         <tr>
-                            <th style="width: 65%;">Item</th>
-                            <th style="width: 20%;">Expected Qty</th>
-                            <th style="width: 15%;">Actions</th>
+                            <th style="width: 40%;">Item</th>
+                            <th style="width: 12%;">Expected Qty</th>
+                            <th style="width: 15%;">Unit Price</th>
+                            <th style="width: 13%;">Currency</th>
+                            <th style="width: 20%;">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -85,6 +115,12 @@
                                 </td>
                                 <td>
                                     <input type="number" min="0.01" step="0.01" class="form-control" @bind="line.ExpectedQty" />
+                                </td>
+                                <td>
+                                    <input type="number" min="0" step="0.0001" class="form-control" placeholder="optional for now" @bind="line.UnitPrice" />
+                                </td>
+                                <td>
+                                    <input class="form-control" maxlength="3" placeholder="EUR" @bind="line.Currency" />
                                 </td>
                                 <td>
                                     <button class="btn btn-sm btn-outline-danger"
@@ -118,6 +154,12 @@
     private string _referenceNumber = $"IN-{DateTime.UtcNow:yyyyMMdd-HHmmss}";
     private string _supplierId = string.Empty;
     private DateTime? _expectedDate;
+    private string? _invoiceNumber;
+    private DateTime? _invoiceDate;
+    private decimal? _freightCost;
+    private decimal? _dutyCost;
+    private decimal? _insuranceCost;
+    private decimal? _otherCost;
 
     protected override async Task OnInitializedAsync()
     {
@@ -191,7 +233,9 @@
             .Select(x => new CreateInboundShipmentLineRequestDto
             {
                 ItemId = x.ItemId!.Value,
-                ExpectedQty = x.ExpectedQty
+                ExpectedQty = x.ExpectedQty,
+                UnitPrice = x.UnitPrice,
+                Currency = string.IsNullOrWhiteSpace(x.Currency) ? null : x.Currency.Trim()
             })
             .ToList();
 
@@ -212,6 +256,12 @@
                 SupplierId = supplierId,
                 Type = "PO",
                 ExpectedDate = _expectedDate.HasValue ? DateOnly.FromDateTime(_expectedDate.Value.Date) : null,
+                InvoiceNumber = string.IsNullOrWhiteSpace(_invoiceNumber) ? null : _invoiceNumber.Trim(),
+                InvoiceDate = _invoiceDate.HasValue ? DateOnly.FromDateTime(_invoiceDate.Value.Date) : null,
+                FreightCost = _freightCost,
+                DutyCost = _dutyCost,
+                InsuranceCost = _insuranceCost,
+                OtherCost = _otherCost,
                 Lines = lines
             };
 
@@ -256,5 +306,7 @@
     {
         public int? ItemId { get; set; }
         public decimal ExpectedQty { get; set; } = 1m;
+        public decimal? UnitPrice { get; set; }
+        public string? Currency { get; set; } = "EUR";
     }
 }

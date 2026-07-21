@@ -1131,9 +1131,20 @@ public class WarehouseDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.ReferenceNumber).HasMaxLength(100).IsRequired();
             entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValue("Draft").IsRequired();
+            entity.Property(e => e.InvoiceNumber).HasMaxLength(100);
+            entity.Property(e => e.FreightCost).HasPrecision(18, 2);
+            entity.Property(e => e.DutyCost).HasPrecision(18, 2);
+            entity.Property(e => e.InsuranceCost).HasPrecision(18, 2);
+            entity.Property(e => e.OtherCost).HasPrecision(18, 2);
             entity.HasIndex(e => e.ReferenceNumber).IsUnique();
             entity.HasOne(e => e.Supplier).WithMany().HasForeignKey(e => e.SupplierId).OnDelete(DeleteBehavior.Restrict);
-            entity.ToTable(t => t.HasCheckConstraint("ck_inbound_shipments_status", "\"Status\" IN ('Draft','Partial','Complete','Cancelled')"));
+            entity.ToTable(t =>
+            {
+                t.HasCheckConstraint("ck_inbound_shipments_status", "\"Status\" IN ('Draft','Partial','Complete','Cancelled')");
+                t.HasCheckConstraint(
+                    "ck_inbound_shipments_costs",
+                    "(\"FreightCost\" IS NULL OR \"FreightCost\" >= 0) AND (\"DutyCost\" IS NULL OR \"DutyCost\" >= 0) AND (\"InsuranceCost\" IS NULL OR \"InsuranceCost\" >= 0) AND (\"OtherCost\" IS NULL OR \"OtherCost\" >= 0)");
+            });
         });
 
         modelBuilder.Entity<InboundShipmentLine>(entity =>
@@ -1143,6 +1154,8 @@ public class WarehouseDbContext : DbContext
             entity.Property(e => e.ExpectedQty).HasPrecision(18, 3);
             entity.Property(e => e.ReceivedQty).HasPrecision(18, 3);
             entity.Property(e => e.BaseUoM).HasMaxLength(10).IsRequired();
+            entity.Property(e => e.UnitPrice).HasPrecision(18, 4);
+            entity.Property(e => e.Currency).HasMaxLength(3);
             entity.HasIndex(e => new { e.ShipmentId, e.ItemId }).IsUnique();
             entity.HasOne(e => e.Shipment).WithMany(e => e.Lines).HasForeignKey(e => e.ShipmentId).OnDelete(DeleteBehavior.Cascade);
             entity.HasOne(e => e.Item).WithMany().HasForeignKey(e => e.ItemId).OnDelete(DeleteBehavior.Restrict);
@@ -1151,6 +1164,7 @@ public class WarehouseDbContext : DbContext
             {
                 t.HasCheckConstraint("ck_inbound_shipment_lines_expected_qty", "\"ExpectedQty\" > 0");
                 t.HasCheckConstraint("ck_inbound_shipment_lines_received_qty", "\"ReceivedQty\" >= 0");
+                t.HasCheckConstraint("ck_inbound_shipment_lines_unit_price", "\"UnitPrice\" IS NULL OR \"UnitPrice\" >= 0");
             });
         });
 

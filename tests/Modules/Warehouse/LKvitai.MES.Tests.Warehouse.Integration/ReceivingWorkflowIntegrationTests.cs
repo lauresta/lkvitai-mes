@@ -2,6 +2,7 @@ using FluentAssertions;
 using LKvitai.MES.Modules.Warehouse.Api.Controllers;
 using LKvitai.MES.Modules.Warehouse.Api.Services;
 using LKvitai.MES.Modules.Warehouse.Application.Services;
+using LKvitai.MES.BuildingBlocks.SharedKernel;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Contracts.ReadModels;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
@@ -9,9 +10,11 @@ using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 using LKvitai.MES.Modules.Warehouse.Projections;
 using Marten;
 using Marten.Events.Projections;
+using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using Testcontainers.PostgreSql;
 using Xunit;
 
@@ -89,7 +92,13 @@ public class ReceivingWorkflowIntegrationTests : IAsyncLifetime
             1,
             "PurchaseOrder",
             DateOnly.FromDateTime(DateTime.UtcNow.AddDays(1)),
-            [new ReceivingController.CreateInboundShipmentLineRequest(1, 100m)]));
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            [new ReceivingController.CreateInboundShipmentLineRequest(1, 100m, 10m, "EUR")]));
 
         var created = result.Should().BeOfType<CreatedAtActionResult>().Subject;
         var payload = created.Value.Should().BeOfType<ReceivingController.ShipmentCreatedResponse>().Subject;
@@ -126,6 +135,8 @@ public class ReceivingWorkflowIntegrationTests : IAsyncLifetime
                 null,
                 null,
                 null,
+                null,
+                null,
                 null));
 
         var objectResult = result.Should().BeOfType<ObjectResult>().Subject;
@@ -152,7 +163,9 @@ public class ReceivingWorkflowIntegrationTests : IAsyncLifetime
                 "LOT-001",
                 DateOnly.FromDateTime(DateTime.UtcNow.Date),
                 DateOnly.FromDateTime(DateTime.UtcNow.Date.AddMonths(6)),
-                "partial"));
+                "partial",
+                null,
+                null));
 
         var ok = result.Should().BeOfType<OkObjectResult>().Subject;
         var payload = ok.Value.Should().BeOfType<ReceivingController.ReceiveGoodsResponse>().Subject;
@@ -223,7 +236,9 @@ public class ReceivingWorkflowIntegrationTests : IAsyncLifetime
                 null,
                 null,
                 null,
-                "received"));
+                "received",
+                null,
+                null));
 
         var receiveOk = receiveResult.Should().BeOfType<OkObjectResult>().Subject;
         var receivePayload = receiveOk.Value.Should().BeOfType<ReceivingController.ReceiveGoodsResponse>().Subject;
@@ -283,7 +298,9 @@ public class ReceivingWorkflowIntegrationTests : IAsyncLifetime
                 null,
                 null,
                 null,
-                "received"));
+                "received",
+                null,
+                null));
 
         receiveResult.Should().BeOfType<OkObjectResult>();
 
@@ -325,7 +342,7 @@ public class ReceivingWorkflowIntegrationTests : IAsyncLifetime
         => new(_dbOptions!, new StaticCurrentUserService("tester"));
 
     private ReceivingController CreateReceivingController(WarehouseDbContext db)
-        => new(db, _store!, new StaticCurrentUserService("tester"))
+        => new(db, _store!, new StaticCurrentUserService("tester"), new NoOpMediator(), NullLogger<ReceivingController>.Instance)
         {
             ControllerContext = new ControllerContext
             {
@@ -389,7 +406,9 @@ public class ReceivingWorkflowIntegrationTests : IAsyncLifetime
                     ItemId = itemId,
                     BaseUoM = "PCS",
                     ExpectedQty = expectedQty,
-                    ReceivedQty = 0m
+                    ReceivedQty = 0m,
+                    UnitPrice = 10m,
+                    Currency = "EUR"
                 }
             }
         };
@@ -418,6 +437,46 @@ public class ReceivingWorkflowIntegrationTests : IAsyncLifetime
         }
 
         public string GetCurrentUserId() => _user;
+    }
+
+    /// <summary>
+    /// Minimal IMediator stub for tests that don't exercise the valuation pipeline.
+    /// ReceivingController's post-receipt valuation call is best-effort (wrapped in a
+    /// try/catch that never fails the physical receipt), so returning a failure Result
+    /// here exercises exactly that fallback path.
+    /// </summary>
+    private sealed class NoOpMediator : IMediator
+    {
+        public Task<TResponse> Send<TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken = default)
+        {
+            if (typeof(TResponse) == typeof(Result))
+            {
+                var failure = Result.Fail(DomainErrorCodes.InternalError, "Valuation is not available in this test.");
+                return Task.FromResult((TResponse)(object)failure);
+            }
+
+            throw new NotSupportedException($"NoOpMediator does not support {typeof(TResponse)}.");
+        }
+
+        public Task Send<TRequest>(TRequest request, CancellationToken cancellationToken = default)
+            where TRequest : IRequest
+            => throw new NotSupportedException();
+
+        public Task<object?> Send(object request, CancellationToken cancellationToken = default)
+            => throw new NotSupportedException();
+
+        public IAsyncEnumerable<TResponse> CreateStream<TResponse>(IStreamRequest<TResponse> request, CancellationToken cancellationToken = default)
+            => throw new NotSupportedException();
+
+        public IAsyncEnumerable<object?> CreateStream(object request, CancellationToken cancellationToken = default)
+            => throw new NotSupportedException();
+
+        public Task Publish(object notification, CancellationToken cancellationToken = default)
+            => throw new NotSupportedException();
+
+        public Task Publish<TNotification>(TNotification notification, CancellationToken cancellationToken = default)
+            where TNotification : INotification
+            => throw new NotSupportedException();
     }
 
     private sealed class StubSignatureService : IElectronicSignatureService

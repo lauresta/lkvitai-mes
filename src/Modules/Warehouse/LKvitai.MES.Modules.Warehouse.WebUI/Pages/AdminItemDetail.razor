@@ -1,5 +1,6 @@
 @page "/admin/items/{Id:int}"
 @inject MasterDataAdminClient AdminClient
+@inject ValuationClient ValuationClient
 @inject ToastService ToastService
 @inject NavigationManager NavigationManager
 
@@ -269,6 +270,47 @@
             </table>
         }
     </MudPaper>
+
+    <MudPaper Outlined="true" Elevation="0" Class="panel items-detail-panel" data-testid="admin-item-detail-purchase-history">
+        <div class="panel__head">
+            <span class="panel__title">Purchase / cost history</span>
+        </div>
+
+        @if (_purchaseHistory.Count == 0)
+        {
+            <div class="lots-grid__empty">
+                <span class="lots-grid__empty-title">No purchase receipts or cost changes yet</span>
+            </div>
+        }
+        else
+        {
+            <table class="lk-table">
+                <thead>
+                <tr>
+                    <th>When</th>
+                    <th>Type</th>
+                    <th class="is-num">Old cost</th>
+                    <th class="is-num">New cost</th>
+                    <th>By</th>
+                    <th>Reason</th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (var row in _purchaseHistory)
+                {
+                    <tr>
+                        <td class="mono">@row.ChangedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                        <td>@row.ActionType</td>
+                        <td class="is-money is-num">@(row.OldCost.HasValue ? row.OldCost.Value.ToString("0.####") : "-")</td>
+                        <td class="is-money is-num">@(row.NewCost.HasValue ? row.NewCost.Value.ToString("0.####") : "-")</td>
+                        <td>@(row.ApprovedBy ?? "-")</td>
+                        <td>@row.Reason</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        }
+    </MudPaper>
 </div>
 
 @code {
@@ -280,6 +322,7 @@
     private readonly List<ItemPhotoDto> _photos = [];
     private readonly List<ItemPriceOverrideDto> _priceOverrides = [];
     private readonly List<ItemPriceHistoryDto> _priceHistory = [];
+    private readonly List<CostHistoryRowDto> _purchaseHistory = [];
     private bool _isLoading;
     private ApiException? _apiError;
     private int? _editingGroupId;
@@ -308,6 +351,10 @@
             var history = await AdminClient.GetItemPriceHistoryAsync(Id);
             _priceHistory.Clear();
             _priceHistory.AddRange(history);
+
+            var purchaseHistory = await ValuationClient.GetCostHistoryAsync(itemId: Id);
+            _purchaseHistory.Clear();
+            _purchaseHistory.AddRange(purchaseHistory.OrderByDescending(x => x.ChangedAt));
         }
         catch (ApiException ex)
         {
