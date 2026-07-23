@@ -292,10 +292,37 @@ public sealed class ReceivingController : ControllerBase
             Timestamp = now
         };
 
-        await using (var session = _documentStore.LightweightSession())
+        try
         {
-            session.Events.Append(ShipmentStreamId(shipment.Id), evt);
+            await using var session = _documentStore.LightweightSession();
+
+            // StartStream (not Append) is deliberate: this must be the first event on this
+            // shipment's stream. If a stream already exists for this id - e.g. a stale event
+            // stream left behind by a prior reset of the `inbound_shipments` table that didn't
+            // also clear the Marten event store - Append would silently land this event on top
+            // of unrelated history, and the InboundShipmentSummaryProjection (which only runs
+            // its Create handler on a stream's first matching event) would keep showing the old
+            // ghost data forever while this brand-new shipment never appears correctly in the
+            // list. Fail loudly instead so the id collision gets noticed and cleaned up.
+            session.Events.StartStream(ShipmentStreamId(shipment.Id), evt);
             await session.SaveChangesAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogCritical(
+                ex,
+                "Shipment {ShipmentId} ({ReferenceNumber}) was created in the database but its event " +
+                "stream could not be started - a stream for this id may already exist (stale data from a " +
+                "prior partial reset). The shipment record exists but will not appear correctly in the " +
+                "inbound-shipments list until this is investigated and the conflicting stream is cleaned up.",
+                shipment.Id,
+                shipment.ReferenceNumber);
+
+            return Failure(Result.Fail(
+                DomainErrorCodes.InternalError,
+                $"Shipment '{shipment.Id}' was created but its event history could not be initialized " +
+                "due to a data conflict. Contact an administrator before relying on this shipment - it may " +
+                "not appear correctly in the shipments list."));
         }
 
         return Created(
