@@ -31,14 +31,14 @@
             <div class="lk-form-field">
                 <span class="lk-form-field__label">Reference Number</span>
                 <div class="lk-form-field__control">
-                    <MudTextField T="string" Variant="Variant.Outlined" @bind-Value="_referenceNumber" Required="true" />
+                    <MudTextField T="string" Variant="Variant.Text" @bind-Value="_referenceNumber" Required="true" />
                 </div>
             </div>
             <div class="lk-form-field">
                 <span class="lk-form-field__label">Supplier</span>
                 <div class="lk-form-field__control">
                     <MudAutocomplete T="AdminSupplierDto"
-                                      Variant="Variant.Outlined"
+                                      Variant="Variant.Text"
                                       @bind-Value="_supplier"
                                       SearchFunc="SearchSuppliersAsync"
                                       ToStringFunc="@(s => s is null ? string.Empty : $"{s.Code} - {s.Name}")"
@@ -50,19 +50,19 @@
             <div class="lk-form-field">
                 <span class="lk-form-field__label">Expected Date</span>
                 <div class="lk-form-field__control">
-                    <MudDatePicker Variant="Variant.Outlined" @bind-Date="_expectedDate" />
+                    <MudDatePicker Variant="Variant.Text" @bind-Date="_expectedDate" />
                 </div>
             </div>
             <div class="lk-form-field">
                 <span class="lk-form-field__label">Invoice Number</span>
                 <div class="lk-form-field__control">
-                    <MudTextField T="string" Variant="Variant.Outlined" @bind-Value="_invoiceNumber" Placeholder="Optional" />
+                    <MudTextField T="string" Variant="Variant.Text" @bind-Value="_invoiceNumber" Placeholder="Optional" />
                 </div>
             </div>
             <div class="lk-form-field">
                 <span class="lk-form-field__label">Invoice Date</span>
                 <div class="lk-form-field__control">
-                    <MudDatePicker Variant="Variant.Outlined" @bind-Date="_invoiceDate" />
+                    <MudDatePicker Variant="Variant.Text" @bind-Date="_invoiceDate" />
                 </div>
             </div>
         </div>
@@ -89,7 +89,7 @@
                     <div class="ish-create__item-cell">
                         <div class="lk-field--inline">
                             <MudAutocomplete T="AdminItemDto"
-                                              Variant="Variant.Outlined"
+                                              Variant="Variant.Text"
                                               Value="@context.Item"
                                               ValueChanged="@(v => OnLineItemChanged(context, v))"
                                               SearchFunc="SearchItemsAsync"
@@ -106,17 +106,17 @@
                 </MudTd>
                 <MudTd DataLabel="Qty" Style="width: 90px;">
                     <div class="lk-field--inline">
-                        <MudNumericField T="decimal" Variant="Variant.Outlined" Min="0.001m" @bind-Value="context.ExpectedQty" />
+                        <MudNumericField T="decimal" Variant="Variant.Text" Min="0.001m" @bind-Value="context.ExpectedQty" />
                     </div>
                 </MudTd>
                 <MudTd DataLabel="Invoice unit price" Style="width: 130px;">
                     <div class="lk-field--inline">
-                        <MudNumericField T="decimal?" Variant="Variant.Outlined" Min="0m" Format="0.####" @bind-Value="context.UnitPrice" />
+                        <MudNumericField T="decimal?" Variant="Variant.Text" Min="0m" Format="0.####" @bind-Value="context.UnitPrice" />
                     </div>
                 </MudTd>
                 <MudTd DataLabel="Ccy" Style="width: 76px;">
                     <div class="lk-field--inline">
-                        <MudTextField T="string" Variant="Variant.Outlined" MaxLength="3" @bind-Value="context.Currency" />
+                        <MudTextField T="string" Variant="Variant.Text" MaxLength="3" @bind-Value="context.Currency" />
                     </div>
                 </MudTd>
                 <MudTd DataLabel="Actual unit price" Style="width: 120px;" Class="is-num">
@@ -162,7 +162,7 @@
                 <MudTd DataLabel="Type" Style="min-width: 180px;">
                     <div class="lk-field--inline">
                         <MudAutocomplete T="string"
-                                          Variant="Variant.Outlined"
+                                          Variant="Variant.Text"
                                           @bind-Value="context.CostType"
                                           SearchFunc="SearchCostTypesAsync"
                                           CoerceText="true"
@@ -171,12 +171,12 @@
                 </MudTd>
                 <MudTd DataLabel="Amount" Style="width: 140px;">
                     <div class="lk-field--inline">
-                        <MudNumericField T="decimal" Variant="Variant.Outlined" Min="0m" Format="0.00" Adornment="Adornment.End" AdornmentText="€" @bind-Value="context.Amount" />
+                        <MudNumericField T="decimal" Variant="Variant.Text" Min="0m" Format="0.00" Adornment="Adornment.End" AdornmentText="€" @bind-Value="context.Amount" />
                     </div>
                 </MudTd>
                 <MudTd DataLabel="Ccy" Style="width: 76px;">
                     <div class="lk-field--inline">
-                        <MudTextField T="string" Variant="Variant.Outlined" MaxLength="3" @bind-Value="context.Currency" />
+                        <MudTextField T="string" Variant="Variant.Text" MaxLength="3" @bind-Value="context.Currency" />
                     </div>
                 </MudTd>
                 <MudTd Style="width: 40px;">

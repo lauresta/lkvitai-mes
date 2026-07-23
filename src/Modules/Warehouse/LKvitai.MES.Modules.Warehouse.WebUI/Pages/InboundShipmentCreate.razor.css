@@ -20,7 +20,11 @@
     }
 }
 
-/* ─── Labeled compact field (external mono-caps label + 32px bordered box) ─ */
+/* ─── Labeled compact field (external mono-caps label + 32px bordered box) ─
+   The border lives on this plain wrapper div, not on MudBlazor's own markup -
+   fighting Mud's Outlined-variant fieldset/legend produced a double-border
+   artifact in production, so fields use Variant.Text (no fieldset at all)
+   reduced to a bare input filling this box instead. */
 .lk-form-field {
     display: flex;
     flex-direction: column;
@@ -35,41 +39,49 @@
     text-transform: uppercase;
 }
 
-::deep .lk-form-field__control .mud-input-label {
-    display: none !important;
+.lk-form-field__control {
+    display: flex;
+    align-items: center;
+    height: var(--control-h);
+    min-height: var(--control-h);
+    padding: 0 10px;
+    border: 1px solid var(--n-200);
+    border-radius: var(--r-sm);
+    background: var(--n-0);
+    box-sizing: border-box;
+}
+
+.lk-form-field__control:focus-within {
+    border-color: var(--accent-500);
+    box-shadow: 0 0 0 3px rgba(47, 143, 139, 0.12);
 }
 
 ::deep .lk-form-field__control .mud-input-control {
     margin: 0 !important;
+    width: 100%;
 }
 
-::deep .lk-form-field__control .mud-input.mud-input-outlined {
-    height: var(--control-h) !important;
-    min-height: var(--control-h) !important;
-    padding: 0 10px !important;
-    border: 1px solid var(--n-200) !important;
-    border-radius: var(--r-sm) !important;
-    background: var(--n-0) !important;
-    box-sizing: border-box !important;
-}
-
-::deep .lk-form-field__control .mud-input > input.mud-input-root,
-::deep .lk-form-field__control .mud-input > div.mud-input-slot.mud-input-root-outlined {
-    height: var(--control-h) !important;
-    min-height: var(--control-h) !important;
-    padding: 0 !important;
-    line-height: var(--control-h) !important;
-    font-size: 12.5px !important;
-    box-sizing: border-box !important;
-}
-
-::deep .lk-form-field__control .mud-input-outlined-border {
+::deep .lk-form-field__control .mud-input-label {
     display: none !important;
 }
 
-::deep .lk-form-field__control .mud-input-control.mud-focused .mud-input.mud-input-outlined {
-    border-color: var(--accent-500) !important;
-    box-shadow: 0 0 0 3px rgba(47, 143, 139, 0.12);
+::deep .lk-form-field__control .mud-input-underline::before,
+::deep .lk-form-field__control .mud-input-underline::after {
+    display: none !important;
+}
+
+::deep .lk-form-field__control .mud-input {
+    height: var(--control-h) !important;
+}
+
+::deep .lk-form-field__control .mud-input > input.mud-input-root,
+::deep .lk-form-field__control .mud-input > div.mud-input-slot {
+    height: var(--control-h) !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    font-size: 12.5px !important;
+    box-sizing: border-box !important;
 }
 
 /* ─── Section headers ────────────────────────────────────────────────────── */
@@ -122,27 +134,41 @@
 }
 
 /* Row-level inline fields (no visible label - the column header already
-   labels them); ::deep because MudAutocomplete/MudNumericField/MudTextField
-   render this markup themselves, not this component's own top-level markup. */
-::deep .lk-field--inline .mud-input.mud-input-outlined {
-    border: 1px solid var(--n-200) !important;
-    border-radius: var(--r-sm) !important;
-    background: var(--n-0) !important;
-    padding: 0 8px !important;
+   labels them). Border lives on this plain wrapper div, same reasoning as
+   .lk-form-field__control above - fields use Variant.Text, reduced to a bare
+   input filling the box, instead of fighting Mud's Outlined fieldset. */
+.lk-field--inline {
+    display: flex;
+    align-items: center;
+    min-height: 28px;
+    padding: 0 8px;
+    border: 1px solid var(--n-200);
+    border-radius: var(--r-sm);
+    background: var(--n-0);
+    box-sizing: border-box;
 }
 
-::deep .lk-field--inline .mud-input-outlined-border {
-    display: none !important;
-}
-
-::deep .lk-field--inline .mud-input-control.mud-focused .mud-input.mud-input-outlined {
-    border-color: var(--accent-500) !important;
+.lk-field--inline:focus-within {
+    border-color: var(--accent-500);
     box-shadow: 0 0 0 2px rgba(47, 143, 139, 0.12);
 }
 
-::deep .lk-field--inline .mud-input > input.mud-input-root {
-    font-size: 12.5px !important;
+::deep .lk-field--inline .mud-input-control {
+    margin: 0 !important;
+    width: 100%;
+}
+
+::deep .lk-field--inline .mud-input-underline::before,
+::deep .lk-field--inline .mud-input-underline::after {
+    display: none !important;
+}
+
+::deep .lk-field--inline .mud-input > input.mud-input-root,
+::deep .lk-field--inline .mud-input > div.mud-input-slot {
     padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    font-size: 12.5px !important;
 }
 
 /* ─── Totals bar ──────────────────────────────────────────────────────────── */
