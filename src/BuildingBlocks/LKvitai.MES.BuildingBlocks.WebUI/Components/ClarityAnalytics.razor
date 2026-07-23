@@ -20,6 +20,12 @@
     and rendered via MarkupString - a Blazor component has no Html.Raw (that's
     an MVC view helper), and plain @@expression text nodes get HTML-encoded,
     which would corrupt the JS (quotes turned into &amp;quot; entities).
+
+    Built with plain string concatenation, not a C# 11 raw string literal
+    ($$"""...""") - the Razor tokenizer in this toolchain misparses the
+    triple-quotes as unterminated regular string literals (RZ1000) inside
+    @@code blocks, even though the same syntax compiles fine in plain .cs
+    files.
 *@
 
 @if (_scriptBody is not null)
@@ -38,13 +44,15 @@
             return;
         }
 
-        var body = $$"""
-            (function(c,l,a,r,i,t,y){
-                c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-                t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-                y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-            })(window, document, "clarity", "script", {{JsonSerializer.Serialize(clarityProjectId)}});
-            """;
+        var lines = new[]
+        {
+            "(function(c,l,a,r,i,t,y){",
+            "    c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};",
+            "    t=l.createElement(r);t.async=1;t.src=\"https://www.clarity.ms/tag/\"+i;",
+            "    y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);",
+            "})(window, document, \"clarity\", \"script\", " + JsonSerializer.Serialize(clarityProjectId) + ");",
+        };
+        var body = string.Join('\n', lines);
 
         // HttpContext is available during the prerender pass - captured once
         // here, same lifecycle as PortalAuthenticatedShell's host-label read.
@@ -58,7 +66,7 @@
             var label = string.Equals(user.Identity!.Name, "admin", StringComparison.OrdinalIgnoreCase)
                 ? "admin-sesija"
                 : user.Identity!.Name;
-            body += $"\nclarity(\"identify\", {JsonSerializer.Serialize(label)});";
+            body += "\nclarity(\"identify\", " + JsonSerializer.Serialize(label) + ");";
         }
 
         _scriptBody = body;
