@@ -1,0 +1,197 @@
+/* Compact-enterprise density for this page - AGENTS.md: "MudBlazor defaults
+   are not the visual source of truth". Reuses the app's existing tokens
+   (--row-h: 30px, --control-h: 32px, --n-*, --r-sm) instead of MudBlazor's
+   spacious default field/row sizing. */
+
+.ish-create__body {
+    padding: 14px;
+}
+
+.ish-create__header-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+@media (max-width: 900px) {
+    .ish-create__header-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+/* ─── Labeled compact field (external mono-caps label + 32px bordered box) ─ */
+.lk-form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.lk-form-field__label {
+    color: var(--n-500);
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+::deep .lk-form-field__control .mud-input-label {
+    display: none !important;
+}
+
+::deep .lk-form-field__control .mud-input-control {
+    margin: 0 !important;
+}
+
+::deep .lk-form-field__control .mud-input.mud-input-outlined {
+    height: var(--control-h) !important;
+    min-height: var(--control-h) !important;
+    padding: 0 10px !important;
+    border: 1px solid var(--n-200) !important;
+    border-radius: var(--r-sm) !important;
+    background: var(--n-0) !important;
+    box-sizing: border-box !important;
+}
+
+::deep .lk-form-field__control .mud-input > input.mud-input-root,
+::deep .lk-form-field__control .mud-input > div.mud-input-slot.mud-input-root-outlined {
+    height: var(--control-h) !important;
+    min-height: var(--control-h) !important;
+    padding: 0 !important;
+    line-height: var(--control-h) !important;
+    font-size: 12.5px !important;
+    box-sizing: border-box !important;
+}
+
+::deep .lk-form-field__control .mud-input-outlined-border {
+    display: none !important;
+}
+
+::deep .lk-form-field__control .mud-input-control.mud-focused .mud-input.mud-input-outlined {
+    border-color: var(--accent-500) !important;
+    box-shadow: 0 0 0 3px rgba(47, 143, 139, 0.12);
+}
+
+/* ─── Section headers ────────────────────────────────────────────────────── */
+.ish-create__section-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 16px 0 8px;
+}
+
+.ish-create__section-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--n-800);
+}
+
+.ish-create__section-title small {
+    display: block;
+    margin-top: 2px;
+    color: var(--n-500);
+    font-size: 11.5px;
+    font-weight: 400;
+}
+
+.ish-create__warning {
+    margin-bottom: 8px;
+}
+
+/* ─── Editable grids ─────────────────────────────────────────────────────── */
+.ish-create__grid {
+    margin-bottom: 4px;
+}
+
+::deep .ish-create__grid .mud-table-cell {
+    height: auto !important;
+    min-height: 34px !important;
+    padding: 3px 8px !important;
+    vertical-align: middle !important;
+}
+
+.ish-create__item-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.ish-create__service-chip {
+    align-self: flex-start;
+}
+
+/* Row-level inline fields (no visible label - the column header already
+   labels them); ::deep because MudAutocomplete/MudNumericField/MudTextField
+   render this markup themselves, not this component's own top-level markup. */
+::deep .lk-field--inline .mud-input.mud-input-outlined {
+    border: 1px solid var(--n-200) !important;
+    border-radius: var(--r-sm) !important;
+    background: var(--n-0) !important;
+    padding: 0 8px !important;
+}
+
+::deep .lk-field--inline .mud-input-outlined-border {
+    display: none !important;
+}
+
+::deep .lk-field--inline .mud-input-control.mud-focused .mud-input.mud-input-outlined {
+    border-color: var(--accent-500) !important;
+    box-shadow: 0 0 0 2px rgba(47, 143, 139, 0.12);
+}
+
+::deep .lk-field--inline .mud-input > input.mud-input-root {
+    font-size: 12.5px !important;
+    padding: 0 !important;
+}
+
+/* ─── Totals bar ──────────────────────────────────────────────────────────── */
+.ish-create__totals {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0;
+    background: var(--n-0);
+    border: 1px solid var(--n-200);
+    border-radius: var(--r-md);
+    margin: 12px 0;
+    overflow: hidden;
+}
+
+@media (max-width: 900px) {
+    .ish-create__totals {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+.ish-create__totals-item {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 9px 12px;
+    border-left: 1px solid var(--n-150);
+}
+
+.ish-create__totals-item:first-child {
+    border-left: 0;
+}
+
+.ish-create__totals-label {
+    color: var(--n-500);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+}
+
+.ish-create__totals-value {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--n-900);
+    font-variant-numeric: tabular-nums;
+}
+
+.ish-create__footer {
+    display: flex;
+    justify-content: flex-end;
+}
