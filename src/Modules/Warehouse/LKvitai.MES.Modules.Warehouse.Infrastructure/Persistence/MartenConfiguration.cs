@@ -79,6 +79,7 @@ public static class MartenConfiguration
         RegisterEventType<HandlingUnitSplitEvent>(options);
         RegisterEventType<HandlingUnitMergedEvent>(options);
         RegisterEventType<InboundShipmentCreatedEvent>(options);
+        RegisterEventType<InboundShipmentUpdatedEvent>(options);
         RegisterEventType<GoodsReceivedEvent>(options);
         RegisterEventType<PickCompletedEvent>(options);
         RegisterEventType<StockAdjustedEvent>(options);

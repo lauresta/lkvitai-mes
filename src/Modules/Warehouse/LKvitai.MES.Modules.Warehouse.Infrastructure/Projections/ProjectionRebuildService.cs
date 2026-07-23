@@ -609,6 +609,28 @@ public class ProjectionRebuildService : IProjectionRebuildService
                     break;
                 }
 
+                case InboundShipmentUpdatedEvent updated:
+                {
+                    var id = InboundShipmentSummaryView.ComputeId(updated.ShipmentId);
+                    if (views.TryGetValue(id, out var view))
+                    {
+                        view.ReferenceNumber = updated.ReferenceNumber;
+                        view.SupplierId = updated.SupplierId;
+                        view.SupplierName = updated.SupplierName;
+                        view.ExpectedDate = updated.ExpectedDate;
+                        view.TotalLines = updated.TotalLines;
+                        view.TotalExpectedQty = updated.TotalExpectedQty;
+                        view.CompletionPercent = view.TotalExpectedQty <= 0m
+                            ? 0m
+                            : Math.Min(1m, view.TotalReceivedQty / view.TotalExpectedQty);
+                        view.LastUpdated = new DateTimeOffset(DateTime.SpecifyKind(updated.Timestamp, DateTimeKind.Utc));
+
+                        processed++;
+                    }
+
+                    break;
+                }
+
                 case GoodsReceivedEvent received:
                 {
                     var id = InboundShipmentSummaryView.ComputeId(received.ShipmentId);

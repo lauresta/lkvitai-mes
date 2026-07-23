@@ -21,6 +21,23 @@ public sealed class InboundShipmentCreatedEvent : WarehouseOperationalEvent
     public decimal TotalExpectedQty { get; set; }
 }
 
+/// <summary>
+/// Raised when a Draft shipment's header/lines/costs are edited before any receiving has
+/// happened. Only fires for Draft shipments (see ReceivingController.UpdateShipmentAsync's
+/// guard) - once receiving starts the lines are frozen, so this never needs to reconcile
+/// against in-flight received quantities.
+/// </summary>
+public sealed class InboundShipmentUpdatedEvent : WarehouseOperationalEvent
+{
+    public int ShipmentId { get; set; }
+    public string ReferenceNumber { get; set; } = string.Empty;
+    public int SupplierId { get; set; }
+    public string SupplierName { get; set; } = string.Empty;
+    public DateOnly? ExpectedDate { get; set; }
+    public int TotalLines { get; set; }
+    public decimal TotalExpectedQty { get; set; }
+}
+
 public sealed class GoodsReceivedEvent : WarehouseOperationalEvent
 {
     public string WarehouseId { get; set; } = string.Empty;

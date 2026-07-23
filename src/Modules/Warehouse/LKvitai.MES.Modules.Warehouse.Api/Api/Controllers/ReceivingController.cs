@@ -334,6 +334,129 @@ public sealed class ReceivingController : ControllerBase
                 now));
     }
 
+    [HttpPut("{id:int}")]
+    [Authorize(Policy = WarehousePolicies.QcOrManager)]
+    public async Task<IActionResult> UpdateShipmentAsync(
+        int id,
+        [FromBody] CreateInboundShipmentRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var shapeError = ValidateShipmentRequestShape(request);
+        if (shapeError is not null)
+        {
+            return shapeError;
+        }
+
+        var shipment = await _dbContext.InboundShipments
+            .Include(x => x.Lines)
+            .Include(x => x.AdditionalCosts)
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+        if (shipment is null)
+        {
+            return Failure(Result.Fail(DomainErrorCodes.NotFound, $"Shipment '{id}' does not exist."));
+        }
+
+        // Editing is only safe before any receiving has happened - once a line has a
+        // received qty, changing/removing it here would silently orphan that stock
+        // movement from what the shipment claims it received. ComputeShipmentStatus
+        // only reports "Draft" when every line's ReceivedQty is still 0.
+        if (shipment.Status != "Draft")
+        {
+            return UnprocessableFailure(
+                $"Shipment '{id}' has status '{shipment.Status}' and can no longer be edited - " +
+                "receiving has already started against it.");
+        }
+
+        var supplier = await _dbContext.Suppliers
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == request.SupplierId, cancellationToken);
+        if (supplier is null)
+        {
+            return ValidationFailure($"Supplier '{request.SupplierId}' does not exist.");
+        }
+
+        var lineItemIds = request.Lines.Select(x => x.ItemId).Distinct().ToList();
+        var items = await _dbContext.Items
+            .AsNoTracking()
+            .Where(x => lineItemIds.Contains(x.Id))
+            .Select(x => new { x.Id, x.BaseUoM, x.ItemType })
+            .ToListAsync(cancellationToken);
+
+        if (items.Count != lineItemIds.Count)
+        {
+            return ValidationFailure("One or more line ItemId values do not exist.");
+        }
+
+        var (additionalCostRows, costError) = BuildAdditionalCostRows(request.AdditionalCosts);
+        if (costError is not null)
+        {
+            return costError;
+        }
+
+        shipment.ReferenceNumber = request.ReferenceNumber.Trim();
+        shipment.SupplierId = request.SupplierId;
+        shipment.ExpectedDate = request.ExpectedDate;
+        shipment.InvoiceNumber = string.IsNullOrWhiteSpace(request.InvoiceNumber) ? null : request.InvoiceNumber.Trim();
+        shipment.InvoiceDate = request.InvoiceDate;
+
+        // No line has been received yet (guarded above), so the old rows can be fully
+        // replaced rather than diffed line-by-line.
+        _dbContext.RemoveRange(shipment.Lines);
+        shipment.Lines.Clear();
+        _dbContext.RemoveRange(shipment.AdditionalCosts);
+        shipment.AdditionalCosts.Clear();
+
+        foreach (var costRow in additionalCostRows)
+        {
+            shipment.AdditionalCosts.Add(costRow);
+        }
+
+        foreach (var line in request.Lines)
+        {
+            var item = items.First(x => x.Id == line.ItemId);
+            var isService = item.ItemType == ItemType.Service;
+
+            shipment.Lines.Add(new InboundShipmentLine
+            {
+                ItemId = line.ItemId,
+                ExpectedQty = line.ExpectedQty,
+                ReceivedQty = isService ? line.ExpectedQty : 0m,
+                BaseUoM = item.BaseUoM,
+                UnitPrice = line.UnitPrice,
+                Currency = string.IsNullOrWhiteSpace(line.Currency) ? null : line.Currency.Trim().ToUpperInvariant()
+            });
+        }
+
+        shipment.Status = ComputeShipmentStatus(shipment.Lines);
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        var now = DateTime.UtcNow;
+        var evt = new InboundShipmentUpdatedEvent
+        {
+            AggregateId = Guid.NewGuid(),
+            UserId = _currentUserService.GetCurrentUserId(),
+            TraceId = Activity.Current?.Id ?? HttpContext.TraceIdentifier,
+            ShipmentId = shipment.Id,
+            ReferenceNumber = shipment.ReferenceNumber,
+            SupplierId = shipment.SupplierId,
+            SupplierName = supplier.Name,
+            ExpectedDate = shipment.ExpectedDate,
+            TotalLines = shipment.Lines.Count,
+            TotalExpectedQty = shipment.Lines.Sum(x => x.ExpectedQty),
+            Timestamp = now
+        };
+
+        await using (var session = _documentStore.LightweightSession())
+        {
+            session.Events.Append(ShipmentStreamId(shipment.Id), evt);
+            await session.SaveChangesAsync(cancellationToken);
+        }
+
+        return Ok(new ShipmentUpdatedResponse(shipment.Id, shipment.ReferenceNumber, shipment.Status, now));
+    }
+
     [HttpPost("{id:int}/receive")]
     [HttpPost("{id:int}/receive-items")]
     [Authorize(Policy = WarehousePolicies.QcOrManager)]
@@ -793,6 +916,8 @@ public sealed class ReceivingController : ControllerBase
         string? Currency);
 
     public sealed record ShipmentCreatedResponse(int Id, string ReferenceNumber, string Status, DateTime CreatedAt);
+
+    public sealed record ShipmentUpdatedResponse(int Id, string ReferenceNumber, string Status, DateTime UpdatedAt);
 
     public sealed record ReceiveShipmentLineRequest(
         int LineId,
