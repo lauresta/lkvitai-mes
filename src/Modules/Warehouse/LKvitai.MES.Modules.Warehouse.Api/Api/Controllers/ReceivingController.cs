@@ -211,24 +211,16 @@ public sealed class ReceivingController : ControllerBase
             return shapeError;
         }
 
-        var supplier = await _dbContext.Suppliers
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == request.SupplierId, cancellationToken);
-        if (supplier is null)
+        var (supplier, supplierError) = await LoadSupplierAsync(request.SupplierId, cancellationToken);
+        if (supplierError is not null)
         {
-            return ValidationFailure($"Supplier '{request.SupplierId}' does not exist.");
+            return supplierError;
         }
 
-        var lineItemIds = request.Lines.Select(x => x.ItemId).Distinct().ToList();
-        var items = await _dbContext.Items
-            .AsNoTracking()
-            .Where(x => lineItemIds.Contains(x.Id))
-            .Select(x => new { x.Id, x.BaseUoM, x.ItemType })
-            .ToListAsync(cancellationToken);
-
-        if (items.Count != lineItemIds.Count)
+        var (items, itemsError) = await LoadLineItemsAsync(request.Lines, cancellationToken);
+        if (itemsError is not null)
         {
-            return ValidationFailure("One or more line ItemId values do not exist.");
+            return itemsError;
         }
 
         var (additionalCostRows, costError) = BuildAdditionalCostRows(request.AdditionalCosts);
@@ -255,20 +247,9 @@ public sealed class ReceivingController : ControllerBase
         // Service-type lines (e.g. "Transport" invoiced as its own line) have nothing
         // physical to receive - auto-complete them at creation instead of routing them
         // through ReceiveGoodsAsync's lot/QC/location logic (see plan decision #3).
-        foreach (var line in request.Lines)
+        foreach (var line in BuildShipmentLines(request.Lines, items))
         {
-            var item = items.First(x => x.Id == line.ItemId);
-            var isService = item.ItemType == ItemType.Service;
-
-            shipment.Lines.Add(new InboundShipmentLine
-            {
-                ItemId = line.ItemId,
-                ExpectedQty = line.ExpectedQty,
-                ReceivedQty = isService ? line.ExpectedQty : 0m,
-                BaseUoM = item.BaseUoM,
-                UnitPrice = line.UnitPrice,
-                Currency = string.IsNullOrWhiteSpace(line.Currency) ? null : line.Currency.Trim().ToUpperInvariant()
-            });
+            shipment.Lines.Add(line);
         }
 
         shipment.Status = ComputeShipmentStatus(shipment.Lines);
@@ -285,7 +266,7 @@ public sealed class ReceivingController : ControllerBase
             ShipmentId = shipment.Id,
             ReferenceNumber = shipment.ReferenceNumber,
             SupplierId = shipment.SupplierId,
-            SupplierName = supplier.Name,
+            SupplierName = supplier!.Name,
             ExpectedDate = shipment.ExpectedDate,
             TotalLines = shipment.Lines.Count,
             TotalExpectedQty = shipment.Lines.Sum(x => x.ExpectedQty),
@@ -368,24 +349,16 @@ public sealed class ReceivingController : ControllerBase
                 "receiving has already started against it.");
         }
 
-        var supplier = await _dbContext.Suppliers
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == request.SupplierId, cancellationToken);
-        if (supplier is null)
+        var (supplier, supplierError) = await LoadSupplierAsync(request.SupplierId, cancellationToken);
+        if (supplierError is not null)
         {
-            return ValidationFailure($"Supplier '{request.SupplierId}' does not exist.");
+            return supplierError;
         }
 
-        var lineItemIds = request.Lines.Select(x => x.ItemId).Distinct().ToList();
-        var items = await _dbContext.Items
-            .AsNoTracking()
-            .Where(x => lineItemIds.Contains(x.Id))
-            .Select(x => new { x.Id, x.BaseUoM, x.ItemType })
-            .ToListAsync(cancellationToken);
-
-        if (items.Count != lineItemIds.Count)
+        var (items, itemsError) = await LoadLineItemsAsync(request.Lines, cancellationToken);
+        if (itemsError is not null)
         {
-            return ValidationFailure("One or more line ItemId values do not exist.");
+            return itemsError;
         }
 
         var (additionalCostRows, costError) = BuildAdditionalCostRows(request.AdditionalCosts);
@@ -412,20 +385,9 @@ public sealed class ReceivingController : ControllerBase
             shipment.AdditionalCosts.Add(costRow);
         }
 
-        foreach (var line in request.Lines)
+        foreach (var line in BuildShipmentLines(request.Lines, items))
         {
-            var item = items.First(x => x.Id == line.ItemId);
-            var isService = item.ItemType == ItemType.Service;
-
-            shipment.Lines.Add(new InboundShipmentLine
-            {
-                ItemId = line.ItemId,
-                ExpectedQty = line.ExpectedQty,
-                ReceivedQty = isService ? line.ExpectedQty : 0m,
-                BaseUoM = item.BaseUoM,
-                UnitPrice = line.UnitPrice,
-                Currency = string.IsNullOrWhiteSpace(line.Currency) ? null : line.Currency.Trim().ToUpperInvariant()
-            });
+            shipment.Lines.Add(line);
         }
 
         shipment.Status = ComputeShipmentStatus(shipment.Lines);
@@ -441,7 +403,7 @@ public sealed class ReceivingController : ControllerBase
             ShipmentId = shipment.Id,
             ReferenceNumber = shipment.ReferenceNumber,
             SupplierId = shipment.SupplierId,
-            SupplierName = supplier.Name,
+            SupplierName = supplier!.Name,
             ExpectedDate = shipment.ExpectedDate,
             TotalLines = shipment.Lines.Count,
             TotalExpectedQty = shipment.Lines.Sum(x => x.ExpectedQty),
@@ -726,6 +688,68 @@ public sealed class ReceivingController : ControllerBase
                 adjustResult.Error);
         }
     }
+
+    private async Task<(Supplier? Supplier, ObjectResult? Error)> LoadSupplierAsync(
+        int supplierId,
+        CancellationToken cancellationToken)
+    {
+        var supplier = await _dbContext.Suppliers
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == supplierId, cancellationToken);
+
+        return supplier is null
+            ? (null, ValidationFailure($"Supplier '{supplierId}' does not exist."))
+            : (supplier, null);
+    }
+
+    private async Task<(List<LineItemLookup> Items, ObjectResult? Error)> LoadLineItemsAsync(
+        IReadOnlyList<CreateInboundShipmentLineRequest> lines,
+        CancellationToken cancellationToken)
+    {
+        var lineItemIds = lines.Select(x => x.ItemId).Distinct().ToList();
+        var items = await _dbContext.Items
+            .AsNoTracking()
+            .Where(x => lineItemIds.Contains(x.Id))
+            .Select(x => new LineItemLookup(x.Id, x.BaseUoM, x.ItemType))
+            .ToListAsync(cancellationToken);
+
+        return items.Count != lineItemIds.Count
+            ? ([], ValidationFailure("One or more line ItemId values do not exist."))
+            : (items, null);
+    }
+
+    /// <summary>
+    /// Materializes shipment line entities from the request. Service-type lines (e.g. a
+    /// "Transport" invoice line) have nothing physical to receive - auto-complete them here
+    /// instead of routing them through ReceiveGoodsAsync's lot/QC/location logic (plan decision #3).
+    /// Shared by create and update - both fully (re)build the line set from scratch.
+    /// </summary>
+    private static List<InboundShipmentLine> BuildShipmentLines(
+        IReadOnlyList<CreateInboundShipmentLineRequest> requestLines,
+        IReadOnlyList<LineItemLookup> items)
+    {
+        var lines = new List<InboundShipmentLine>();
+
+        foreach (var line in requestLines)
+        {
+            var item = items.First(x => x.Id == line.ItemId);
+            var isService = item.ItemType == ItemType.Service;
+
+            lines.Add(new InboundShipmentLine
+            {
+                ItemId = line.ItemId,
+                ExpectedQty = line.ExpectedQty,
+                ReceivedQty = isService ? line.ExpectedQty : 0m,
+                BaseUoM = item.BaseUoM,
+                UnitPrice = line.UnitPrice,
+                Currency = string.IsNullOrWhiteSpace(line.Currency) ? null : line.Currency.Trim().ToUpperInvariant()
+            });
+        }
+
+        return lines;
+    }
+
+    private sealed record LineItemLookup(int Id, string BaseUoM, ItemType ItemType);
 
     private ObjectResult? ValidateShipmentRequestShape(CreateInboundShipmentRequest request)
     {
