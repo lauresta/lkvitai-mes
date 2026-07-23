@@ -16,182 +16,205 @@
                  OnDismiss="DismissError" />
 }
 
-<MudPaper Class="pa-4 position-relative" Elevation="0" Outlined="true">
+<MudPaper Class="panel ish-create position-relative" Elevation="0" Outlined="true">
     <LoadingSpinner IsLoading="_isLoading || _isSubmitting" />
 
-    <MudGrid>
-        <MudItem xs="12" md="4">
-            <MudTextField T="string" Label="Reference Number" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="_referenceNumber" Required="true" />
-        </MudItem>
-        <MudItem xs="12" md="4">
-            <MudAutocomplete T="AdminSupplierDto"
-                              Label="Supplier"
-                              Variant="Variant.Outlined"
-                              Margin="Margin.Dense"
-                              @bind-Value="_supplier"
-                              SearchFunc="SearchSuppliersAsync"
-                              ToStringFunc="@(s => s is null ? string.Empty : $"{s.Code} - {s.Name}")"
-                              CoerceText="true"
-                              ResetValueOnEmptyText="true"
-                              Required="true" />
-        </MudItem>
-        <MudItem xs="12" md="4">
-            <MudDatePicker Label="Expected Date" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Date="_expectedDate" />
-        </MudItem>
-        <MudItem xs="12" md="4">
-            <MudTextField T="string" Label="Invoice Number" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="_invoiceNumber" Placeholder="Optional - fill in when invoice arrives" />
-        </MudItem>
-        <MudItem xs="12" md="4">
-            <MudDatePicker Label="Invoice Date" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Date="_invoiceDate" />
-        </MudItem>
-        <MudItem xs="12" md="4" Class="d-flex align-center justify-end">
-            <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="BackToList">Back</MudButton>
-        </MudItem>
-    </MudGrid>
-
-    <MudDivider Class="my-4" />
-
-    <div class="d-flex justify-space-between align-center mb-2">
-        <MudText Typo="Typo.h6">Lines</MudText>
-        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AddLine" Disabled="@_isSubmitting">Add Line</MudButton>
-    </div>
-
-    <MudText Typo="Typo.caption" Class="mb-2">
-        Service items (e.g. Transport, Delivery) don't hold physical stock - their line total instead
-        folds automatically into Additional Costs below, bucketed by the item's cost type.
-    </MudText>
-
-    <MudTable Items="@_lines" Dense="true" Hover="true" Class="lk-table mb-2">
-        <HeaderContent>
-            <MudTh>Item</MudTh>
-            <MudTh>Qty</MudTh>
-            <MudTh>Invoice unit price</MudTh>
-            <MudTh>Currency</MudTh>
-            <MudTh>Actual unit price</MudTh>
-            <MudTh></MudTh>
-        </HeaderContent>
-        <RowTemplate>
-            <MudTd DataLabel="Item" Style="min-width: 260px;">
-                <MudAutocomplete T="AdminItemDto"
-                                  Variant="Variant.Outlined"
-                                  Margin="Margin.Dense"
-                                  Value="@context.Item"
-                                  ValueChanged="@(v => OnLineItemChanged(context, v))"
-                                  SearchFunc="SearchItemsAsync"
-                                  ToStringFunc="@(i => i is null ? string.Empty : $"{i.InternalSKU} - {i.Name}")"
-                                  CoerceText="true"
-                                  ResetValueOnEmptyText="true"
-                                  Placeholder="Select item" />
-                @if (context.Item?.IsService == true)
-                {
-                    <MudChip T="string" Size="Size.Small" Color="Color.Info" Class="mt-1">Service - @(context.Item.CostType ?? "Other")</MudChip>
-                }
-            </MudTd>
-            <MudTd DataLabel="Qty" Style="width: 110px;">
-                <MudNumericField T="decimal" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0.001m" @bind-Value="context.ExpectedQty" />
-            </MudTd>
-            <MudTd DataLabel="Invoice unit price" Style="width: 140px;">
-                <MudNumericField T="decimal?" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0m" Format="0.####" @bind-Value="context.UnitPrice" />
-            </MudTd>
-            <MudTd DataLabel="Currency" Style="width: 100px;">
-                <MudTextField T="string" Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="3" @bind-Value="context.Currency" />
-            </MudTd>
-            <MudTd DataLabel="Actual unit price" Style="width: 140px;">
-                @if (context.Item?.IsService == true)
-                {
-                    <span class="text-muted">-</span>
-                }
-                else
-                {
-                    <span class="mono">@FormatMoney(ComputeActualUnitPrice(context))</span>
-                }
-            </MudTd>
-            <MudTd Style="width: 60px;">
-                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" Disabled="@(_isSubmitting || _lines.Count == 1)" OnClick="@(() => RemoveLine(context))" />
-            </MudTd>
-        </RowTemplate>
-        <NoRecordsContent>
-            <EmptyState Title="No lines" Message="Add at least one item line." IconCss="bi bi-list-ul" OnAction="AddLineAsync" />
-        </NoRecordsContent>
-    </MudTable>
-
-    <MudDivider Class="my-4" />
-
-    <div class="d-flex justify-space-between align-center mb-2">
-        <div>
-            <MudText Typo="Typo.h6">Additional costs</MudText>
-            <MudText Typo="Typo.caption">Freight/duty/insurance/other, distributed across Stock lines by value when the shipment is received.</MudText>
+    <div class="panel__head">
+        <div class="panel__title">Shipment Details</div>
+        <div class="panel__actions">
+            <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Default" OnClick="BackToList">Back</MudButton>
         </div>
-        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AddAdditionalCost" Disabled="@_isSubmitting">Add Cost</MudButton>
     </div>
 
-    @if (_duplicateCostTypeWarning is not null)
-    {
-        <MudAlert Severity="Severity.Warning" Class="mb-2" Dense="true">@_duplicateCostTypeWarning</MudAlert>
-    }
+    <div class="ish-create__body">
+        <div class="ish-create__header-grid">
+            <div class="lk-form-field">
+                <span class="lk-form-field__label">Reference Number</span>
+                <div class="lk-form-field__control">
+                    <MudTextField T="string" Variant="Variant.Outlined" @bind-Value="_referenceNumber" Required="true" />
+                </div>
+            </div>
+            <div class="lk-form-field">
+                <span class="lk-form-field__label">Supplier</span>
+                <div class="lk-form-field__control">
+                    <MudAutocomplete T="AdminSupplierDto"
+                                      Variant="Variant.Outlined"
+                                      @bind-Value="_supplier"
+                                      SearchFunc="SearchSuppliersAsync"
+                                      ToStringFunc="@(s => s is null ? string.Empty : $"{s.Code} - {s.Name}")"
+                                      CoerceText="true"
+                                      ResetValueOnEmptyText="true"
+                                      Required="true" />
+                </div>
+            </div>
+            <div class="lk-form-field">
+                <span class="lk-form-field__label">Expected Date</span>
+                <div class="lk-form-field__control">
+                    <MudDatePicker Variant="Variant.Outlined" @bind-Date="_expectedDate" />
+                </div>
+            </div>
+            <div class="lk-form-field">
+                <span class="lk-form-field__label">Invoice Number</span>
+                <div class="lk-form-field__control">
+                    <MudTextField T="string" Variant="Variant.Outlined" @bind-Value="_invoiceNumber" Placeholder="Optional" />
+                </div>
+            </div>
+            <div class="lk-form-field">
+                <span class="lk-form-field__label">Invoice Date</span>
+                <div class="lk-form-field__control">
+                    <MudDatePicker Variant="Variant.Outlined" @bind-Date="_invoiceDate" />
+                </div>
+            </div>
+        </div>
 
-    <MudTable Items="@_additionalCosts" Dense="true" Hover="true" Class="lk-table mb-2">
-        <HeaderContent>
-            <MudTh>Type</MudTh>
-            <MudTh>Amount</MudTh>
-            <MudTh>Currency</MudTh>
-            <MudTh></MudTh>
-        </HeaderContent>
-        <RowTemplate>
-            <MudTd DataLabel="Type" Style="min-width: 200px;">
-                <MudAutocomplete T="string"
-                                  Variant="Variant.Outlined"
-                                  Margin="Margin.Dense"
-                                  @bind-Value="context.CostType"
-                                  SearchFunc="SearchCostTypesAsync"
-                                  CoerceText="true"
-                                  CoerceValue="true" />
-            </MudTd>
-            <MudTd DataLabel="Amount" Style="width: 160px;">
-                <MudNumericField T="decimal" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0m" Format="0.00" Adornment="Adornment.End" AdornmentText="€" @bind-Value="context.Amount" />
-            </MudTd>
-            <MudTd DataLabel="Currency" Style="width: 100px;">
-                <MudTextField T="string" Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="3" @bind-Value="context.Currency" />
-            </MudTd>
-            <MudTd Style="width: 60px;">
-                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" Disabled="@_isSubmitting" OnClick="@(() => RemoveAdditionalCost(context))" />
-            </MudTd>
-        </RowTemplate>
-    </MudTable>
+        <div class="ish-create__section-head">
+            <div class="ish-create__section-title">
+                Lines
+                <small>Service items (Transport, Delivery...) fold into Additional Costs below instead of holding stock.</small>
+            </div>
+            <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AddLine" Disabled="@_isSubmitting">Add Line</MudButton>
+        </div>
 
-    <MudDivider Class="my-4" />
+        <MudTable Items="@_lines" Dense="true" Hover="true" Class="lk-grid ish-create__grid">
+            <HeaderContent>
+                <MudTh>Item</MudTh>
+                <MudTh>Qty</MudTh>
+                <MudTh>Invoice unit price</MudTh>
+                <MudTh>Ccy</MudTh>
+                <MudTh>Actual unit price</MudTh>
+                <MudTh></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Item" Style="min-width: 240px;">
+                    <div class="ish-create__item-cell">
+                        <div class="lk-field--inline">
+                            <MudAutocomplete T="AdminItemDto"
+                                              Variant="Variant.Outlined"
+                                              Value="@context.Item"
+                                              ValueChanged="@(v => OnLineItemChanged(context, v))"
+                                              SearchFunc="SearchItemsAsync"
+                                              ToStringFunc="@(i => i is null ? string.Empty : $"{i.InternalSKU} - {i.Name}")"
+                                              CoerceText="true"
+                                              ResetValueOnEmptyText="true"
+                                              Placeholder="Select item" />
+                        </div>
+                        @if (context.Item?.IsService == true)
+                        {
+                            <span class="chip chip--reserved ish-create__service-chip">Service - @(context.Item.CostType ?? "Other")</span>
+                        }
+                    </div>
+                </MudTd>
+                <MudTd DataLabel="Qty" Style="width: 90px;">
+                    <div class="lk-field--inline">
+                        <MudNumericField T="decimal" Variant="Variant.Outlined" Min="0.001m" @bind-Value="context.ExpectedQty" />
+                    </div>
+                </MudTd>
+                <MudTd DataLabel="Invoice unit price" Style="width: 130px;">
+                    <div class="lk-field--inline">
+                        <MudNumericField T="decimal?" Variant="Variant.Outlined" Min="0m" Format="0.####" @bind-Value="context.UnitPrice" />
+                    </div>
+                </MudTd>
+                <MudTd DataLabel="Ccy" Style="width: 76px;">
+                    <div class="lk-field--inline">
+                        <MudTextField T="string" Variant="Variant.Outlined" MaxLength="3" @bind-Value="context.Currency" />
+                    </div>
+                </MudTd>
+                <MudTd DataLabel="Actual unit price" Style="width: 120px;" Class="is-num">
+                    @if (context.Item?.IsService == true)
+                    {
+                        <span class="text-muted">-</span>
+                    }
+                    else
+                    {
+                        <span class="mono">@FormatMoney(ComputeActualUnitPrice(context))</span>
+                    }
+                </MudTd>
+                <MudTd Style="width: 40px;">
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" Disabled="@(_isSubmitting || _lines.Count == 1)" OnClick="@(() => RemoveLine(context))" />
+                </MudTd>
+            </RowTemplate>
+            <NoRecordsContent>
+                <EmptyState Title="No lines" Message="Add at least one item line." IconCss="bi bi-list-ul" OnAction="AddLineAsync" />
+            </NoRecordsContent>
+        </MudTable>
 
-    <MudPaper Class="pa-3" Elevation="0" Outlined="true">
-        <MudGrid>
-            <MudItem xs="6" md="2">
-                <MudText Typo="Typo.caption">Total Qty (Stock)</MudText>
-                <MudText Typo="Typo.subtitle1" Class="mono">@TotalStockQty.ToString("0.###")</MudText>
-            </MudItem>
-            <MudItem xs="6" md="2">
-                <MudText Typo="Typo.caption">Total Invoice Value</MudText>
-                <MudText Typo="Typo.subtitle1" Class="mono">@FormatMoney(TotalInvoiceValue)</MudText>
-            </MudItem>
-            <MudItem xs="6" md="2">
-                <MudText Typo="Typo.caption">Total Additional Costs</MudText>
-                <MudText Typo="Typo.subtitle1" Class="mono">@FormatMoney(TotalAdditionalCostPool)</MudText>
-            </MudItem>
-            <MudItem xs="6" md="2">
-                <MudText Typo="Typo.caption">Total Actual Value</MudText>
-                <MudText Typo="Typo.subtitle1" Class="mono">@FormatMoney(TotalActualValue)</MudText>
-            </MudItem>
-            <MudItem xs="6" md="2">
-                <MudText Typo="Typo.caption">Avg Invoice Unit Price</MudText>
-                <MudText Typo="Typo.subtitle1" Class="mono">@FormatMoney(AverageInvoiceUnitPrice)</MudText>
-            </MudItem>
-            <MudItem xs="6" md="2">
-                <MudText Typo="Typo.caption">Avg Actual Unit Price</MudText>
-                <MudText Typo="Typo.subtitle1" Class="mono">@FormatMoney(AverageActualUnitPrice)</MudText>
-            </MudItem>
-        </MudGrid>
-    </MudPaper>
+        <div class="ish-create__section-head">
+            <div class="ish-create__section-title">
+                Additional costs
+                <small>Freight/duty/insurance/other, distributed across Stock lines by value at receiving time.</small>
+            </div>
+            <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AddAdditionalCost" Disabled="@_isSubmitting">Add Cost</MudButton>
+        </div>
 
-    <div class="d-flex justify-end mt-4">
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="CreateAsync" Disabled="@_isSubmitting">Create Shipment</MudButton>
+        @if (_duplicateCostTypeWarning is not null)
+        {
+            <div class="lk-state lk-state--warn ish-create__warning">@_duplicateCostTypeWarning</div>
+        }
+
+        <MudTable Items="@_additionalCosts" Dense="true" Hover="true" Class="lk-grid ish-create__grid">
+            <HeaderContent>
+                <MudTh>Type</MudTh>
+                <MudTh>Amount</MudTh>
+                <MudTh>Ccy</MudTh>
+                <MudTh></MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Type" Style="min-width: 180px;">
+                    <div class="lk-field--inline">
+                        <MudAutocomplete T="string"
+                                          Variant="Variant.Outlined"
+                                          @bind-Value="context.CostType"
+                                          SearchFunc="SearchCostTypesAsync"
+                                          CoerceText="true"
+                                          CoerceValue="true" />
+                    </div>
+                </MudTd>
+                <MudTd DataLabel="Amount" Style="width: 140px;">
+                    <div class="lk-field--inline">
+                        <MudNumericField T="decimal" Variant="Variant.Outlined" Min="0m" Format="0.00" Adornment="Adornment.End" AdornmentText="€" @bind-Value="context.Amount" />
+                    </div>
+                </MudTd>
+                <MudTd DataLabel="Ccy" Style="width: 76px;">
+                    <div class="lk-field--inline">
+                        <MudTextField T="string" Variant="Variant.Outlined" MaxLength="3" @bind-Value="context.Currency" />
+                    </div>
+                </MudTd>
+                <MudTd Style="width: 40px;">
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" Disabled="@_isSubmitting" OnClick="@(() => RemoveAdditionalCost(context))" />
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+
+        <div class="ish-create__totals">
+            <div class="ish-create__totals-item">
+                <span class="ish-create__totals-label">Total Qty (Stock)</span>
+                <span class="ish-create__totals-value">@TotalStockQty.ToString("0.###")</span>
+            </div>
+            <div class="ish-create__totals-item">
+                <span class="ish-create__totals-label">Total Invoice Value</span>
+                <span class="ish-create__totals-value">@FormatMoney(TotalInvoiceValue)</span>
+            </div>
+            <div class="ish-create__totals-item">
+                <span class="ish-create__totals-label">Total Additional Costs</span>
+                <span class="ish-create__totals-value">@FormatMoney(TotalAdditionalCostPool)</span>
+            </div>
+            <div class="ish-create__totals-item">
+                <span class="ish-create__totals-label">Total Actual Value</span>
+                <span class="ish-create__totals-value">@FormatMoney(TotalActualValue)</span>
+            </div>
+            <div class="ish-create__totals-item">
+                <span class="ish-create__totals-label">Avg Invoice Price</span>
+                <span class="ish-create__totals-value">@FormatMoney(AverageInvoiceUnitPrice)</span>
+            </div>
+            <div class="ish-create__totals-item">
+                <span class="ish-create__totals-label">Avg Actual Price</span>
+                <span class="ish-create__totals-value">@FormatMoney(AverageActualUnitPrice)</span>
+            </div>
+        </div>
+
+        <div class="ish-create__footer">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="CreateAsync" Disabled="@_isSubmitting">Create Shipment</MudButton>
+        </div>
     </div>
 </MudPaper>
 
