@@ -1,0 +1,66 @@
+@namespace LKvitai.MES.BuildingBlocks.WebUI.Components
+@using System.Text.Json
+@inject IConfiguration Configuration
+@inject IHttpContextAccessor HttpContextAccessor
+
+@*
+    Shared MS Clarity bootstrap snippet - referenced identically from every
+    module's _Layout.cshtml via <component type="typeof(ClarityAnalytics)"
+    render-mode="ServerPrerendered" />, same pattern already used for
+    HeadOutlet. Previously this ~25-line block was pasted into all six
+    _Layout.cshtml files verbatim, which SonarCloud flagged as 44.7% new-code
+    duplication on the PR that introduced it - centralising it here drops
+    that to zero, same fix PortalAuthenticatedShell already applied to the
+    topbar boilerplate.
+
+    Inert unless Clarity:ProjectId is configured (only wired up for the test
+    environment for now via docker-compose.test.yml / deploy-test.yml).
+
+    The whole script body is built as one C# string with JSON-encoded values
+    and rendered via MarkupString - a Blazor component has no Html.Raw (that's
+    an MVC view helper), and plain @@expression text nodes get HTML-encoded,
+    which would corrupt the JS (quotes turned into &amp;quot; entities).
+*@
+
+@if (_scriptBody is not null)
+{
+    <script type="text/javascript">@((MarkupString)_scriptBody!)</script>
+}
+
+@code {
+    private string? _scriptBody;
+
+    protected override void OnInitialized()
+    {
+        var clarityProjectId = Configuration["Clarity:ProjectId"];
+        if (string.IsNullOrWhiteSpace(clarityProjectId))
+        {
+            return;
+        }
+
+        var body = $$"""
+            (function(c,l,a,r,i,t,y){
+                c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+                t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+                y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+            })(window, document, "clarity", "script", {{JsonSerializer.Serialize(clarityProjectId)}});
+            """;
+
+        // HttpContext is available during the prerender pass - captured once
+        // here, same lifecycle as PortalAuthenticatedShell's host-label read.
+        var user = HttpContextAccessor.HttpContext?.User;
+        if (user?.Identity?.IsAuthenticated == true)
+        {
+            // Test env runs everyone through one shared "admin" login today -
+            // label those sessions explicitly rather than pretending they're
+            // anonymous. Once real per-person accounts exist, this naturally
+            // becomes their actual username (denis, jonas, petras, ...).
+            var label = string.Equals(user.Identity!.Name, "admin", StringComparison.OrdinalIgnoreCase)
+                ? "admin-sesija"
+                : user.Identity!.Name;
+            body += $"\nclarity(\"identify\", {JsonSerializer.Serialize(label)});";
+        }
+
+        _scriptBody = body;
+    }
+}
