@@ -106,7 +106,9 @@ public sealed class ItemsController : ControllerBase
                 i.CreatedAt,
                 i.UpdatedAt,
                 null,
-                null))
+                null,
+                i.ItemType.ToString(),
+                i.CostType))
             .ToListAsync(cancellationToken);
 
         if (items.Count > 0)
@@ -163,6 +165,11 @@ public sealed class ItemsController : ControllerBase
             return ValidationFailure($"UoM '{request.BaseUoM}' does not exist.");
         }
 
+        if (!TryParseItemType(request.ItemType, out var itemType))
+        {
+            return ValidationFailure($"Invalid itemType '{request.ItemType}'. Expected 'Stock' or 'Service'.");
+        }
+
         var sku = string.IsNullOrWhiteSpace(request.InternalSKU)
             ? await _skuGenerationService.GenerateNextSkuAsync(request.CategoryId, cancellationToken)
             : request.InternalSKU.Trim();
@@ -183,7 +190,11 @@ public sealed class ItemsController : ControllerBase
             ProductConfigId = request.ProductConfigId?.Trim(),
             Tags = SerializeTags(request.Tags),
             BasePrice = request.BasePrice,
-            PurchasePrice = request.PurchasePrice
+            PurchasePrice = request.PurchasePrice,
+            ItemType = itemType,
+            CostType = itemType == ItemType.Service && !string.IsNullOrWhiteSpace(request.CostType)
+                ? request.CostType.Trim()
+                : null
         };
 
         _dbContext.Items.Add(item);
@@ -253,7 +264,9 @@ public sealed class ItemsController : ControllerBase
             item.UpdatedAt,
             primaryPhoto?.ThumbUrl,
             primaryPhoto?.Id,
-            photos);
+            photos,
+            item.ItemType.ToString(),
+            item.CostType);
 
         await Cache.SetAsync(cacheKey, dto, TimeSpan.FromHours(1), cancellationToken);
         return Ok(dto);
@@ -291,6 +304,11 @@ public sealed class ItemsController : ControllerBase
             return ValidationFailure($"UoM '{request.BaseUoM}' does not exist.");
         }
 
+        if (!TryParseItemType(request.ItemType, out var itemType))
+        {
+            return ValidationFailure($"Invalid itemType '{request.ItemType}'. Expected 'Stock' or 'Service'.");
+        }
+
         var oldBasePrice = item.BasePrice;
         var oldPurchasePrice = item.PurchasePrice;
 
@@ -308,6 +326,10 @@ public sealed class ItemsController : ControllerBase
         item.Tags = SerializeTags(request.Tags);
         item.BasePrice = request.BasePrice;
         item.PurchasePrice = request.PurchasePrice;
+        item.ItemType = itemType;
+        item.CostType = itemType == ItemType.Service && !string.IsNullOrWhiteSpace(request.CostType)
+            ? request.CostType.Trim()
+            : null;
 
         await _dbContext.SaveChangesAsync(cancellationToken);
         await Cache.RemoveAsync($"item:{id}", cancellationToken);
@@ -818,6 +840,17 @@ public sealed class ItemsController : ControllerBase
     private static string NormalizeTag(string? value)
         => value?.Trim().TrimStart('#').Trim() ?? string.Empty;
 
+    private static bool TryParseItemType(string? value, out ItemType itemType)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            itemType = ItemType.Stock;
+            return true;
+        }
+
+        return Enum.TryParse(value.Trim(), ignoreCase: true, out itemType);
+    }
+
     private async Task WritePriceHistoryIfSetAsync(
         int itemId,
         string priceType,
@@ -874,7 +907,9 @@ public sealed class ItemsController : ControllerBase
         string? ProductConfigId,
         IReadOnlyList<string>? Tags,
         decimal? BasePrice = null,
-        decimal? PurchasePrice = null);
+        decimal? PurchasePrice = null,
+        string? ItemType = null,
+        string? CostType = null);
 
     public sealed record UpdateItemRequestDto(
         string Name,
@@ -890,7 +925,9 @@ public sealed class ItemsController : ControllerBase
         string? ProductConfigId,
         IReadOnlyList<string>? Tags,
         decimal? BasePrice = null,
-        decimal? PurchasePrice = null);
+        decimal? PurchasePrice = null,
+        string? ItemType = null,
+        string? CostType = null);
 
     public sealed record ItemCreatedDto(int Id, string InternalSKU, string Name, DateTimeOffset CreatedAt);
     public sealed record ItemUpdatedDto(int Id, string InternalSKU, string Name, string Status, DateTimeOffset? UpdatedAt);
@@ -915,7 +952,9 @@ public sealed class ItemsController : ControllerBase
         DateTimeOffset CreatedAt,
         DateTimeOffset? UpdatedAt,
         string? PrimaryThumbnailUrl,
-        Guid? PrimaryPhotoId);
+        Guid? PrimaryPhotoId,
+        string ItemType,
+        string? CostType);
 
     public sealed record ItemDetailDto(
         int Id,
@@ -938,7 +977,9 @@ public sealed class ItemsController : ControllerBase
         DateTimeOffset? UpdatedAt,
         string? PrimaryThumbnailUrl,
         Guid? PrimaryPhotoId,
-        IReadOnlyList<ItemPhotoDto> Photos);
+        IReadOnlyList<ItemPhotoDto> Photos,
+        string ItemType,
+        string? CostType);
 
     public sealed record AddBarcodeRequest(string Barcode, string BarcodeType, bool IsPrimary);
     public sealed record ItemBarcodeDto(int Id, string Barcode, string BarcodeType, bool IsPrimary);

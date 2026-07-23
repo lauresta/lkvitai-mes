@@ -68,6 +68,30 @@
                 <MudSelectItem T="string" Value="@("Obsolete")">Obsolete</MudSelectItem>
             </MudSelect>
 
+            <MudSelect T="string"
+                       Label="Item Type"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       @bind-Value="_model.ItemType"
+                       HelperText="Service items (e.g. Transport, Delivery) never receive physical stock.">
+                <MudSelectItem T="string" Value="@("Stock")">Stock</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Service")">Service</MudSelectItem>
+            </MudSelect>
+
+            @if (string.Equals(_model.ItemType, "Service", StringComparison.OrdinalIgnoreCase))
+            {
+                <MudAutocomplete T="string"
+                                 Label="Cost Type"
+                                 Variant="Variant.Outlined"
+                                 Margin="Margin.Dense"
+                                 @bind-Value="_model.CostType"
+                                 SearchFunc="SearchCostTypesAsync"
+                                 CoerceText="true"
+                                 CoerceValue="true"
+                                 ResetValueOnEmptyText="true"
+                                 HelperText="Which additional-cost bucket this service's amount folds into on inbound shipments. Pick a preset or type a custom value." />
+            }
+
             <MudTextField T="string"
                           Label="Primary Barcode"
                           Variant="Variant.Outlined"
@@ -192,6 +216,8 @@
     [Parameter] public IReadOnlyList<UnitOfMeasureDto> Units { get; set; } = Array.Empty<UnitOfMeasureDto>();
     [Parameter] public IReadOnlyList<string> ExistingTags { get; set; } = Array.Empty<string>();
 
+    private static readonly string[] CostTypePresets = ["Freight", "Duty", "Insurance", "VAT", "Other"];
+
     private readonly ItemFormModel _model = new();
     private string? _validationMessage;
     private string? _tagInput;
@@ -215,6 +241,8 @@
             _model.Status = Item.Status;
             _model.PrimaryBarcode = Item.PrimaryBarcode;
             _model.ProductConfigId = Item.ProductConfigId;
+            _model.ItemType = Item.ItemType;
+            _model.CostType = Item.CostType;
             _model.Tags.Clear();
             _model.Tags.AddRange(Item.Tags.Select(NormalizeTag).Where(x => !string.IsNullOrWhiteSpace(x)));
             return;
@@ -279,6 +307,18 @@
     }
 
     private void Cancel() => MudDialog.Cancel();
+
+    private Task<IEnumerable<string>> SearchCostTypesAsync(string value)
+    {
+        IEnumerable<string> results = string.IsNullOrWhiteSpace(value)
+            ? CostTypePresets
+            : CostTypePresets
+                .Where(x => x.Contains(value, StringComparison.OrdinalIgnoreCase))
+                .Append(value.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase);
+
+        return Task.FromResult(results);
+    }
 
     private async Task<IEnumerable<string>> SearchTagsAsync(string value)
     {
@@ -393,6 +433,8 @@
         public string Status { get; set; } = "Active";
         public string? PrimaryBarcode { get; set; }
         public string? ProductConfigId { get; set; }
+        public string ItemType { get; set; } = "Stock";
+        public string? CostType { get; set; }
         public List<string> Tags { get; } = [];
 
         public CreateOrUpdateItemRequest ToRequest(bool isEdit) => new()
@@ -411,7 +453,11 @@
             Status = string.IsNullOrWhiteSpace(Status) ? "Active" : Status.Trim(),
             PrimaryBarcode = Normalize(PrimaryBarcode),
             ProductConfigId = Normalize(ProductConfigId),
-            Tags = Tags.ToArray()
+            Tags = Tags.ToArray(),
+            ItemType = string.IsNullOrWhiteSpace(ItemType) ? "Stock" : ItemType.Trim(),
+            CostType = string.Equals(ItemType, "Service", StringComparison.OrdinalIgnoreCase)
+                ? Normalize(CostType)
+                : null
         };
 
         private static string? Normalize(string? value)

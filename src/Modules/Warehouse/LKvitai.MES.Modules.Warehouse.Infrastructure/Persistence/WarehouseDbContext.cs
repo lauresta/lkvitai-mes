@@ -78,6 +78,7 @@ public class WarehouseDbContext : DbContext
     public DbSet<Lot> Lots => Set<Lot>();
     public DbSet<InboundShipment> InboundShipments => Set<InboundShipment>();
     public DbSet<InboundShipmentLine> InboundShipmentLines => Set<InboundShipmentLine>();
+    public DbSet<InboundShipmentAdditionalCost> InboundShipmentAdditionalCosts => Set<InboundShipmentAdditionalCost>();
     public DbSet<AdjustmentReasonCode> AdjustmentReasonCodes => Set<AdjustmentReasonCode>();
     public DbSet<ApprovalRule> ApprovalRules => Set<ApprovalRule>();
     public DbSet<Role> Roles => Set<Role>();
@@ -223,11 +224,14 @@ public class WarehouseDbContext : DbContext
             entity.Property(e => e.Tags).HasMaxLength(500);
             entity.Property(e => e.BasePrice).HasPrecision(18, 2);
             entity.Property(e => e.PurchasePrice).HasPrecision(18, 2);
+            entity.Property(e => e.ItemType).HasConversion<string>().HasMaxLength(20).IsRequired().HasDefaultValue(ItemType.Stock);
+            entity.Property(e => e.CostType).HasMaxLength(50);
             entity.HasIndex(e => e.InternalSKU).IsUnique();
             entity.HasIndex(e => e.CategoryId).HasDatabaseName("idx_items_category_id");
             entity.HasIndex(e => e.BaseUoM);
             entity.HasIndex(e => e.Status);
             entity.HasIndex(e => e.PrimaryBarcode).HasDatabaseName("idx_items_barcode");
+            entity.HasIndex(e => e.ItemType);
             entity.HasOne(e => e.Category).WithMany().HasForeignKey(e => e.CategoryId).OnDelete(DeleteBehavior.Restrict);
             entity.HasOne(e => e.BaseUnit).WithMany().HasForeignKey(e => e.BaseUoM).OnDelete(DeleteBehavior.Restrict);
             entity.ToTable(t =>
@@ -237,6 +241,7 @@ public class WarehouseDbContext : DbContext
                 t.HasCheckConstraint("ck_items_volume", "\"Volume\" IS NULL OR \"Volume\" > 0");
                 t.HasCheckConstraint("ck_items_base_price", "\"BasePrice\" IS NULL OR \"BasePrice\" >= 0");
                 t.HasCheckConstraint("ck_items_purchase_price", "\"PurchasePrice\" IS NULL OR \"PurchasePrice\" >= 0");
+                t.HasCheckConstraint("ck_items_type", "\"ItemType\" IN ('Stock','Service')");
             });
         });
 
@@ -1132,18 +1137,11 @@ public class WarehouseDbContext : DbContext
             entity.Property(e => e.ReferenceNumber).HasMaxLength(100).IsRequired();
             entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValue("Draft").IsRequired();
             entity.Property(e => e.InvoiceNumber).HasMaxLength(100);
-            entity.Property(e => e.FreightCost).HasPrecision(18, 2);
-            entity.Property(e => e.DutyCost).HasPrecision(18, 2);
-            entity.Property(e => e.InsuranceCost).HasPrecision(18, 2);
-            entity.Property(e => e.OtherCost).HasPrecision(18, 2);
             entity.HasIndex(e => e.ReferenceNumber).IsUnique();
             entity.HasOne(e => e.Supplier).WithMany().HasForeignKey(e => e.SupplierId).OnDelete(DeleteBehavior.Restrict);
             entity.ToTable(t =>
             {
                 t.HasCheckConstraint("ck_inbound_shipments_status", "\"Status\" IN ('Draft','Partial','Complete','Cancelled')");
-                t.HasCheckConstraint(
-                    "ck_inbound_shipments_costs",
-                    "(\"FreightCost\" IS NULL OR \"FreightCost\" >= 0) AND (\"DutyCost\" IS NULL OR \"DutyCost\" >= 0) AND (\"InsuranceCost\" IS NULL OR \"InsuranceCost\" >= 0) AND (\"OtherCost\" IS NULL OR \"OtherCost\" >= 0)");
             });
         });
 
@@ -1166,6 +1164,18 @@ public class WarehouseDbContext : DbContext
                 t.HasCheckConstraint("ck_inbound_shipment_lines_received_qty", "\"ReceivedQty\" >= 0");
                 t.HasCheckConstraint("ck_inbound_shipment_lines_unit_price", "\"UnitPrice\" IS NULL OR \"UnitPrice\" >= 0");
             });
+        });
+
+        modelBuilder.Entity<InboundShipmentAdditionalCost>(entity =>
+        {
+            entity.ToTable("inbound_shipment_additional_costs");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.CostType).HasMaxLength(50).IsRequired();
+            entity.Property(e => e.Amount).HasPrecision(18, 2).IsRequired();
+            entity.Property(e => e.Currency).HasMaxLength(3).IsRequired();
+            entity.HasIndex(e => e.ShipmentId);
+            entity.HasOne(e => e.Shipment).WithMany(e => e.AdditionalCosts).HasForeignKey(e => e.ShipmentId).OnDelete(DeleteBehavior.Cascade);
+            entity.ToTable(t => t.HasCheckConstraint("ck_inbound_shipment_additional_costs_amount", "\"Amount\" >= 0"));
         });
 
         modelBuilder.Entity<AdjustmentReasonCode>(entity =>

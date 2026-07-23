@@ -16,154 +16,210 @@
                  OnDismiss="DismissError" />
 }
 
-<div class="card shadow-sm position-relative">
+<MudPaper Class="pa-4 position-relative" Elevation="0" Outlined="true">
     <LoadingSpinner IsLoading="_isLoading || _isSubmitting" />
 
-    <div class="card-body">
-        <div class="row g-3">
-            <div class="col-md-4">
-                <label class="form-label">Reference Number</label>
-                <input class="form-control" @bind="_referenceNumber" />
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">Supplier</label>
-                <select class="form-select" @bind="_supplierId">
-                    <option value="">Select supplier</option>
-                    @foreach (var supplier in _suppliers)
-                    {
-                        <option value="@supplier.Id">@supplier.Code - @supplier.Name</option>
-                    }
-                </select>
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">Expected Date</label>
-                <input type="date" class="form-control" @bind="_expectedDate" />
-            </div>
-            <div class="col-md-2 d-flex align-items-end">
-                <button class="btn btn-outline-secondary" @onclick="BackToList">Back</button>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">Invoice Number</label>
-                <input class="form-control" @bind="_invoiceNumber" placeholder="Optional - fill in when invoice arrives" />
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">Invoice Date</label>
-                <input type="date" class="form-control" @bind="_invoiceDate" />
-            </div>
-        </div>
+    <MudGrid>
+        <MudItem xs="12" md="4">
+            <MudTextField T="string" Label="Reference Number" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="_referenceNumber" Required="true" />
+        </MudItem>
+        <MudItem xs="12" md="4">
+            <MudAutocomplete T="AdminSupplierDto"
+                              Label="Supplier"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              @bind-Value="_supplier"
+                              SearchFunc="SearchSuppliersAsync"
+                              ToStringFunc="@(s => s is null ? string.Empty : $"{s.Code} - {s.Name}")"
+                              CoerceText="true"
+                              ResetValueOnEmptyText="true"
+                              Required="true" />
+        </MudItem>
+        <MudItem xs="12" md="4">
+            <MudDatePicker Label="Expected Date" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Date="_expectedDate" />
+        </MudItem>
+        <MudItem xs="12" md="4">
+            <MudTextField T="string" Label="Invoice Number" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="_invoiceNumber" Placeholder="Optional - fill in when invoice arrives" />
+        </MudItem>
+        <MudItem xs="12" md="4">
+            <MudDatePicker Label="Invoice Date" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Date="_invoiceDate" />
+        </MudItem>
+        <MudItem xs="12" md="4" Class="d-flex align-center justify-end">
+            <MudButton Variant="Variant.Outlined" Color="Color.Default" OnClick="BackToList">Back</MudButton>
+        </MudItem>
+    </MudGrid>
 
-        <hr />
+    <MudDivider Class="my-4" />
 
-        <div class="mb-2"><h5 class="mb-0">Additional costs</h5><small class="text-muted">Freight/duty/insurance/other - distributed across lines by value when the shipment is received.</small></div>
-        <div class="row g-3 mb-3">
-            <div class="col-md-3">
-                <label class="form-label">Freight</label>
-                <input type="number" min="0" step="0.01" class="form-control" @bind="_freightCost" />
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Duty</label>
-                <input type="number" min="0" step="0.01" class="form-control" @bind="_dutyCost" />
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Insurance</label>
-                <input type="number" min="0" step="0.01" class="form-control" @bind="_insuranceCost" />
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Other</label>
-                <input type="number" min="0" step="0.01" class="form-control" @bind="_otherCost" />
-            </div>
-        </div>
-
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <h5 class="mb-0">Lines</h5>
-            <button class="btn btn-sm btn-outline-primary" @onclick="AddLine" disabled="@_isSubmitting">+ Add Line</button>
-        </div>
-
-        @if (_lines.Count == 0)
-        {
-            <EmptyState Title="No lines"
-                        Message="Add at least one item line."
-                        IconCss="bi bi-list-ul"
-                        OnAction="AddLineAsync" />
-        }
-        else
-        {
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead>
-                        <tr>
-                            <th style="width: 40%;">Item</th>
-                            <th style="width: 12%;">Expected Qty</th>
-                            <th style="width: 15%;">Unit Price</th>
-                            <th style="width: 13%;">Currency</th>
-                            <th style="width: 20%;">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @for (var i = 0; i < _lines.Count; i++)
-                        {
-                            var line = _lines[i];
-                            <tr>
-                                <td>
-                                    <select class="form-select" @bind="line.ItemId">
-                                        <option value="">Select item</option>
-                                        @foreach (var item in _items)
-                                        {
-                                            <option value="@item.Id">@item.InternalSKU - @item.Name</option>
-                                        }
-                                    </select>
-                                </td>
-                                <td>
-                                    <input type="number" min="0.01" step="0.01" class="form-control" @bind="line.ExpectedQty" />
-                                </td>
-                                <td>
-                                    <input type="number" min="0" step="0.0001" class="form-control" placeholder="optional for now" @bind="line.UnitPrice" />
-                                </td>
-                                <td>
-                                    <input class="form-control" maxlength="3" placeholder="EUR" @bind="line.Currency" />
-                                </td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-danger"
-                                            disabled="@(_isSubmitting || _lines.Count == 1)"
-                                            @onclick="() => RemoveLine(i)">
-                                        Remove
-                                    </button>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        }
-
-        <div class="d-flex justify-content-end mt-3">
-            <button class="btn btn-primary" @onclick="CreateAsync" disabled="@_isSubmitting">Create Shipment</button>
-        </div>
+    <div class="d-flex justify-space-between align-center mb-2">
+        <MudText Typo="Typo.h6">Lines</MudText>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AddLine" Disabled="@_isSubmitting">Add Line</MudButton>
     </div>
-</div>
+
+    <MudText Typo="Typo.caption" Class="mb-2">
+        Service items (e.g. Transport, Delivery) don't hold physical stock - their line total instead
+        folds automatically into Additional Costs below, bucketed by the item's cost type.
+    </MudText>
+
+    <MudTable Items="@_lines" Dense="true" Hover="true" Class="lk-table mb-2">
+        <HeaderContent>
+            <MudTh>Item</MudTh>
+            <MudTh>Qty</MudTh>
+            <MudTh>Invoice unit price</MudTh>
+            <MudTh>Currency</MudTh>
+            <MudTh>Actual unit price</MudTh>
+            <MudTh></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Item" Style="min-width: 260px;">
+                <MudAutocomplete T="AdminItemDto"
+                                  Variant="Variant.Outlined"
+                                  Margin="Margin.Dense"
+                                  Value="@context.Item"
+                                  ValueChanged="@(v => OnLineItemChanged(context, v))"
+                                  SearchFunc="SearchItemsAsync"
+                                  ToStringFunc="@(i => i is null ? string.Empty : $"{i.InternalSKU} - {i.Name}")"
+                                  CoerceText="true"
+                                  ResetValueOnEmptyText="true"
+                                  Placeholder="Select item" />
+                @if (context.Item?.IsService == true)
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Info" Class="mt-1">Service - @(context.Item.CostType ?? "Other")</MudChip>
+                }
+            </MudTd>
+            <MudTd DataLabel="Qty" Style="width: 110px;">
+                <MudNumericField T="decimal" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0.001m" @bind-Value="context.ExpectedQty" />
+            </MudTd>
+            <MudTd DataLabel="Invoice unit price" Style="width: 140px;">
+                <MudNumericField T="decimal?" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0m" Format="0.####" @bind-Value="context.UnitPrice" />
+            </MudTd>
+            <MudTd DataLabel="Currency" Style="width: 100px;">
+                <MudTextField T="string" Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="3" @bind-Value="context.Currency" />
+            </MudTd>
+            <MudTd DataLabel="Actual unit price" Style="width: 140px;">
+                @if (context.Item?.IsService == true)
+                {
+                    <span class="text-muted">-</span>
+                }
+                else
+                {
+                    <span class="mono">@FormatMoney(ComputeActualUnitPrice(context))</span>
+                }
+            </MudTd>
+            <MudTd Style="width: 60px;">
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" Disabled="@(_isSubmitting || _lines.Count == 1)" OnClick="@(() => RemoveLine(context))" />
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <EmptyState Title="No lines" Message="Add at least one item line." IconCss="bi bi-list-ul" OnAction="AddLineAsync" />
+        </NoRecordsContent>
+    </MudTable>
+
+    <MudDivider Class="my-4" />
+
+    <div class="d-flex justify-space-between align-center mb-2">
+        <div>
+            <MudText Typo="Typo.h6">Additional costs</MudText>
+            <MudText Typo="Typo.caption">Freight/duty/insurance/other, distributed across Stock lines by value when the shipment is received.</MudText>
+        </div>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AddAdditionalCost" Disabled="@_isSubmitting">Add Cost</MudButton>
+    </div>
+
+    @if (_duplicateCostTypeWarning is not null)
+    {
+        <MudAlert Severity="Severity.Warning" Class="mb-2" Dense="true">@_duplicateCostTypeWarning</MudAlert>
+    }
+
+    <MudTable Items="@_additionalCosts" Dense="true" Hover="true" Class="lk-table mb-2">
+        <HeaderContent>
+            <MudTh>Type</MudTh>
+            <MudTh>Amount</MudTh>
+            <MudTh>Currency</MudTh>
+            <MudTh></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Type" Style="min-width: 200px;">
+                <MudAutocomplete T="string"
+                                  Variant="Variant.Outlined"
+                                  Margin="Margin.Dense"
+                                  @bind-Value="context.CostType"
+                                  SearchFunc="SearchCostTypesAsync"
+                                  CoerceText="true"
+                                  CoerceValue="true" />
+            </MudTd>
+            <MudTd DataLabel="Amount" Style="width: 160px;">
+                <MudNumericField T="decimal" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0m" Format="0.00" Adornment="Adornment.End" AdornmentText="€" @bind-Value="context.Amount" />
+            </MudTd>
+            <MudTd DataLabel="Currency" Style="width: 100px;">
+                <MudTextField T="string" Variant="Variant.Outlined" Margin="Margin.Dense" MaxLength="3" @bind-Value="context.Currency" />
+            </MudTd>
+            <MudTd Style="width: 60px;">
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small" Disabled="@_isSubmitting" OnClick="@(() => RemoveAdditionalCost(context))" />
+            </MudTd>
+        </RowTemplate>
+    </MudTable>
+
+    <MudDivider Class="my-4" />
+
+    <MudPaper Class="pa-3" Elevation="0" Outlined="true">
+        <MudGrid>
+            <MudItem xs="6" md="2">
+                <MudText Typo="Typo.caption">Total Qty (Stock)</MudText>
+                <MudText Typo="Typo.subtitle1" Class="mono">@TotalStockQty.ToString("0.###")</MudText>
+            </MudItem>
+            <MudItem xs="6" md="2">
+                <MudText Typo="Typo.caption">Total Invoice Value</MudText>
+                <MudText Typo="Typo.subtitle1" Class="mono">@FormatMoney(TotalInvoiceValue)</MudText>
+            </MudItem>
+            <MudItem xs="6" md="2">
+                <MudText Typo="Typo.caption">Total Additional Costs</MudText>
+                <MudText Typo="Typo.subtitle1" Class="mono">@FormatMoney(TotalAdditionalCostPool)</MudText>
+            </MudItem>
+            <MudItem xs="6" md="2">
+                <MudText Typo="Typo.caption">Total Actual Value</MudText>
+                <MudText Typo="Typo.subtitle1" Class="mono">@FormatMoney(TotalActualValue)</MudText>
+            </MudItem>
+            <MudItem xs="6" md="2">
+                <MudText Typo="Typo.caption">Avg Invoice Unit Price</MudText>
+                <MudText Typo="Typo.subtitle1" Class="mono">@FormatMoney(AverageInvoiceUnitPrice)</MudText>
+            </MudItem>
+            <MudItem xs="6" md="2">
+                <MudText Typo="Typo.caption">Avg Actual Unit Price</MudText>
+                <MudText Typo="Typo.subtitle1" Class="mono">@FormatMoney(AverageActualUnitPrice)</MudText>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
+
+    <div class="d-flex justify-end mt-4">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="CreateAsync" Disabled="@_isSubmitting">Create Shipment</MudButton>
+    </div>
+</MudPaper>
 
 @code {
-    private readonly List<AdminSupplierDto> _suppliers = [];
-    private readonly List<AdminItemDto> _items = [];
+    private static readonly string[] CostTypePresets = ["Freight", "Duty", "Insurance", "VAT", "Other"];
+
     private readonly List<InboundLineModel> _lines = [];
+    private readonly List<AdditionalCostModel> _additionalCosts = [];
 
     private bool _isLoading;
     private bool _isSubmitting;
     private ApiException? _apiError;
+    private string? _duplicateCostTypeWarning;
 
     private string _referenceNumber = $"IN-{DateTime.UtcNow:yyyyMMdd-HHmmss}";
-    private string _supplierId = string.Empty;
+    private AdminSupplierDto? _supplier;
     private DateTime? _expectedDate;
     private string? _invoiceNumber;
     private DateTime? _invoiceDate;
-    private decimal? _freightCost;
-    private decimal? _dutyCost;
-    private decimal? _insuranceCost;
-    private decimal? _otherCost;
 
     protected override async Task OnInitializedAsync()
     {
         _lines.Add(new InboundLineModel());
+        foreach (var costType in CostTypePresets.Where(x => x != "Other"))
+        {
+            _additionalCosts.Add(new AdditionalCostModel { CostType = costType });
+        }
+
         await LoadLookupDataAsync();
     }
 
@@ -174,13 +230,9 @@
 
         try
         {
-            var suppliers = await MasterDataAdminClient.GetSuppliersAsync(null, 1, 300);
-            _suppliers.Clear();
-            _suppliers.AddRange(suppliers.Items);
-
-            var items = await MasterDataAdminClient.GetItemsAsync(null, null, "Active", 1, 500);
-            _items.Clear();
-            _items.AddRange(items.Items);
+            // Warm the supplier/item autocompletes are server-searched on demand; nothing to
+            // preload here beyond validating the API is reachable.
+            await MasterDataAdminClient.GetSuppliersAsync(null, 1, 1);
         }
         catch (ApiException ex)
         {
@@ -193,10 +245,51 @@
         }
     }
 
-    private void AddLine()
+    private async Task<IEnumerable<AdminSupplierDto>> SearchSuppliersAsync(string value)
     {
-        _lines.Add(new InboundLineModel());
+        try
+        {
+            var result = await MasterDataAdminClient.GetSuppliersAsync(value, 1, 20);
+            return result.Items;
+        }
+        catch (ApiException)
+        {
+            return Array.Empty<AdminSupplierDto>();
+        }
     }
+
+    private async Task<IEnumerable<AdminItemDto>> SearchItemsAsync(string value)
+    {
+        try
+        {
+            var result = await MasterDataAdminClient.GetItemsAsync(value, null, "Active", 1, 20);
+            return result.Items;
+        }
+        catch (ApiException)
+        {
+            return Array.Empty<AdminItemDto>();
+        }
+    }
+
+    private Task<IEnumerable<string>> SearchCostTypesAsync(string value)
+    {
+        IEnumerable<string> results = string.IsNullOrWhiteSpace(value)
+            ? CostTypePresets
+            : CostTypePresets
+                .Where(x => x.Contains(value, StringComparison.OrdinalIgnoreCase))
+                .Append(value.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase);
+
+        return Task.FromResult(results);
+    }
+
+    private void OnLineItemChanged(InboundLineModel line, AdminItemDto? item)
+    {
+        line.Item = item;
+        RefreshDuplicateCostTypeWarning();
+    }
+
+    private void AddLine() => _lines.Add(new InboundLineModel());
 
     private Task AddLineAsync()
     {
@@ -204,15 +297,84 @@
         return Task.CompletedTask;
     }
 
-    private void RemoveLine(int index)
+    private void RemoveLine(InboundLineModel line)
     {
-        if (index < 0 || index >= _lines.Count || _lines.Count == 1)
+        if (_lines.Count == 1)
         {
             return;
         }
 
-        _lines.RemoveAt(index);
+        _lines.Remove(line);
+        RefreshDuplicateCostTypeWarning();
     }
+
+    private void AddAdditionalCost() => _additionalCosts.Add(new AdditionalCostModel { CostType = "Other" });
+
+    private void RemoveAdditionalCost(AdditionalCostModel cost)
+    {
+        _additionalCosts.Remove(cost);
+        RefreshDuplicateCostTypeWarning();
+    }
+
+    private void RefreshDuplicateCostTypeWarning()
+    {
+        var serviceCostTypes = _lines
+            .Where(x => x.Item?.IsService == true)
+            .Select(x => NormalizeCostType(x.Item!.CostType))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var manualDuplicates = _additionalCosts
+            .Where(x => x.Amount > 0m)
+            .Select(x => NormalizeCostType(x.CostType))
+            .Where(x => serviceCostTypes.Contains(x))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        _duplicateCostTypeWarning = manualDuplicates.Count == 0
+            ? null
+            : $"A manual additional cost row shares a cost type ({string.Join(", ", manualDuplicates)}) with a Service line on this shipment - check this isn't double-counting the same invoice amount.";
+    }
+
+    private static string NormalizeCostType(string? value)
+        => string.IsNullOrWhiteSpace(value) ? "Other" : value.Trim();
+
+    // --- Live totals / landed-cost preview (mirrors ReceivingController.UpdateItemValuationForReceiptAsync) ---
+
+    private IEnumerable<InboundLineModel> StockLines => _lines.Where(x => x.Item is null || !x.Item.IsService);
+    private IEnumerable<InboundLineModel> ServiceLines => _lines.Where(x => x.Item?.IsService == true);
+
+    private decimal TotalStockQty => StockLines.Sum(x => x.ExpectedQty);
+
+    private decimal TotalInvoiceValue => _lines.Sum(x => x.ExpectedQty * (x.UnitPrice ?? 0m));
+
+    private decimal TotalStockExpectedValue => StockLines.Sum(x => x.ExpectedQty * (x.UnitPrice ?? 0m));
+
+    private decimal TotalAdditionalCostPool
+        => _additionalCosts.Sum(x => x.Amount) + ServiceLines.Sum(x => x.ExpectedQty * (x.UnitPrice ?? 0m));
+
+    private decimal TotalActualValue => TotalStockExpectedValue + TotalAdditionalCostPool;
+
+    private decimal AverageInvoiceUnitPrice => TotalStockQty > 0m ? TotalStockExpectedValue / TotalStockQty : 0m;
+
+    private decimal AverageActualUnitPrice => TotalStockQty > 0m ? TotalActualValue / TotalStockQty : 0m;
+
+    private decimal ComputeActualUnitPrice(InboundLineModel line)
+    {
+        var unitPrice = line.UnitPrice ?? 0m;
+        var totalPool = TotalAdditionalCostPool;
+        var totalStockValue = TotalStockExpectedValue;
+
+        if (totalPool <= 0m || totalStockValue <= 0m || line.ExpectedQty <= 0m)
+        {
+            return unitPrice;
+        }
+
+        var lineValue = line.ExpectedQty * unitPrice;
+        var lineShare = totalPool * lineValue / totalStockValue;
+        return unitPrice + (lineShare / line.ExpectedQty);
+    }
+
+    private static string FormatMoney(decimal value) => value.ToString("0.00");
 
     private async Task CreateAsync()
     {
@@ -222,17 +384,17 @@
             return;
         }
 
-        if (!int.TryParse(_supplierId, out var supplierId) || supplierId <= 0)
+        if (_supplier is null)
         {
             ToastService.ShowError("Supplier is required.");
             return;
         }
 
         var lines = _lines
-            .Where(x => x.ItemId.HasValue && x.ExpectedQty > 0m)
+            .Where(x => x.Item is not null && x.ExpectedQty > 0m)
             .Select(x => new CreateInboundShipmentLineRequestDto
             {
-                ItemId = x.ItemId!.Value,
+                ItemId = x.Item!.Id,
                 ExpectedQty = x.ExpectedQty,
                 UnitPrice = x.UnitPrice,
                 Currency = string.IsNullOrWhiteSpace(x.Currency) ? null : x.Currency.Trim()
@@ -245,6 +407,16 @@
             return;
         }
 
+        var additionalCosts = _additionalCosts
+            .Where(x => x.Amount > 0m)
+            .Select(x => new CreateAdditionalCostRequestDto
+            {
+                CostType = string.IsNullOrWhiteSpace(x.CostType) ? "Other" : x.CostType.Trim(),
+                Amount = x.Amount,
+                Currency = string.IsNullOrWhiteSpace(x.Currency) ? null : x.Currency.Trim()
+            })
+            .ToList();
+
         _isSubmitting = true;
         _apiError = null;
 
@@ -253,16 +425,13 @@
             var request = new CreateInboundShipmentRequestDto
             {
                 ReferenceNumber = _referenceNumber.Trim(),
-                SupplierId = supplierId,
+                SupplierId = _supplier.Id,
                 Type = "PO",
                 ExpectedDate = _expectedDate.HasValue ? DateOnly.FromDateTime(_expectedDate.Value.Date) : null,
                 InvoiceNumber = string.IsNullOrWhiteSpace(_invoiceNumber) ? null : _invoiceNumber.Trim(),
                 InvoiceDate = _invoiceDate.HasValue ? DateOnly.FromDateTime(_invoiceDate.Value.Date) : null,
-                FreightCost = _freightCost,
-                DutyCost = _dutyCost,
-                InsuranceCost = _insuranceCost,
-                OtherCost = _otherCost,
-                Lines = lines
+                Lines = lines,
+                AdditionalCosts = additionalCosts
             };
 
             var created = await ReceivingClient.CreateShipmentAsync(request);
@@ -304,9 +473,16 @@
 
     private sealed class InboundLineModel
     {
-        public int? ItemId { get; set; }
+        public AdminItemDto? Item { get; set; }
         public decimal ExpectedQty { get; set; } = 1m;
         public decimal? UnitPrice { get; set; }
+        public string? Currency { get; set; } = "EUR";
+    }
+
+    private sealed class AdditionalCostModel
+    {
+        public string CostType { get; set; } = "Other";
+        public decimal Amount { get; set; }
         public string? Currency { get; set; } = "EUR";
     }
 }
