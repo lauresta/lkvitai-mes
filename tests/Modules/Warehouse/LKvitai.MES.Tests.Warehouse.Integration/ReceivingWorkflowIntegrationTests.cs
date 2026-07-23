@@ -1,6 +1,7 @@
 using FluentAssertions;
 using LKvitai.MES.Modules.Warehouse.Api.Controllers;
 using LKvitai.MES.Modules.Warehouse.Api.Services;
+using LKvitai.MES.Modules.Warehouse.Application.Commands;
 using LKvitai.MES.Modules.Warehouse.Application.Services;
 using LKvitai.MES.BuildingBlocks.SharedKernel;
 using LKvitai.MES.Contracts.Events;
@@ -94,10 +95,6 @@ public class ReceivingWorkflowIntegrationTests : IAsyncLifetime
             DateOnly.FromDateTime(DateTime.UtcNow.AddDays(1)),
             null,
             null,
-            null,
-            null,
-            null,
-            null,
             [new ReceivingController.CreateInboundShipmentLineRequest(1, 100m, 10m, "EUR")]));
 
         var created = result.Should().BeOfType<CreatedAtActionResult>().Subject;
@@ -113,6 +110,82 @@ public class ReceivingWorkflowIntegrationTests : IAsyncLifetime
         await using var session = _store!.QuerySession();
         var events = await session.Events.FetchStreamAsync(ShipmentStreamId(payload.Id));
         events.Select(x => x.Data).Should().Contain(x => x is InboundShipmentCreatedEvent);
+    }
+
+    [SkippableFact]
+    public async Task CreateShipment_WithServiceLine_ShouldAutoCompleteServiceLineAndFoldCostIntoStockLanding()
+    {
+        DockerRequirement.EnsureEnabled();
+
+        await SeedBaseDataAsync(requiresLotTracking: false, requiresQc: false);
+
+        await using (var seedDb = CreateDbContext())
+        {
+            seedDb.Items.Add(new Item
+            {
+                Id = 2,
+                InternalSKU = "SVC-TRANSPORT",
+                Name = "Transport",
+                CategoryId = 1,
+                BaseUoM = "PCS",
+                Status = "Active",
+                ItemType = ItemType.Service,
+                CostType = "Freight"
+            });
+            await seedDb.SaveChangesAsync();
+        }
+
+        await using var db = CreateDbContext();
+        var createController = CreateReceivingController(db);
+
+        var createResult = await createController.CreateShipmentAsync(new ReceivingController.CreateInboundShipmentRequest(
+            "PO-SVC",
+            1,
+            "PurchaseOrder",
+            DateOnly.FromDateTime(DateTime.UtcNow.AddDays(1)),
+            null,
+            null,
+            [
+                new ReceivingController.CreateInboundShipmentLineRequest(1, 10m, 10m, "EUR"),
+                new ReceivingController.CreateInboundShipmentLineRequest(2, 1m, 50m, "EUR")
+            ]));
+
+        var created = createResult.Should().BeOfType<CreatedAtActionResult>().Subject;
+        var payload = created.Value.Should().BeOfType<ReceivingController.ShipmentCreatedResponse>().Subject;
+
+        var shipment = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.SingleAsync(
+            db.InboundShipments.Include(x => x.Lines).Where(x => x.Id == payload.Id));
+
+        var stockLine = shipment.Lines.Single(x => x.ItemId == 1);
+        var serviceLine = shipment.Lines.Single(x => x.ItemId == 2);
+
+        // Decision #3: the Service line has nothing physical to receive, so it is
+        // auto-completed at creation and excluded from the receiving flow entirely.
+        serviceLine.ReceivedQty.Should().Be(serviceLine.ExpectedQty);
+        stockLine.ReceivedQty.Should().Be(0m);
+        shipment.Status.Should().Be("Partial");
+
+        var receivingController = CreateReceivingController(db, out var mediator);
+        var receiveResult = await receivingController.ReceiveGoodsAsync(
+            shipment.Id,
+            new ReceivingController.ReceiveShipmentLineRequest(
+                stockLine.Id,
+                10m,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null));
+
+        receiveResult.Should().BeOfType<OkObjectResult>();
+
+        // totalAdditionalCost = service line's expected value (1 * 50 = 50), folded entirely
+        // onto the sole Stock line since it's the only line in the denominator:
+        // landedUnitCost = 10 (invoice) + 50 / 10 (qty) = 15.
+        var initializeCommand = mediator.LastCommand.Should().BeOfType<InitializeValuationCommand>().Subject;
+        initializeCommand.ItemId.Should().Be(1);
+        initializeCommand.InitialCost.Should().Be(15m);
     }
 
     [SkippableFact]
@@ -342,13 +415,19 @@ public class ReceivingWorkflowIntegrationTests : IAsyncLifetime
         => new(_dbOptions!, new StaticCurrentUserService("tester"));
 
     private ReceivingController CreateReceivingController(WarehouseDbContext db)
-        => new(db, _store!, new StaticCurrentUserService("tester"), new NoOpMediator(), NullLogger<ReceivingController>.Instance)
+        => CreateReceivingController(db, out _);
+
+    private ReceivingController CreateReceivingController(WarehouseDbContext db, out NoOpMediator mediator)
+    {
+        mediator = new NoOpMediator();
+        return new ReceivingController(db, _store!, new StaticCurrentUserService("tester"), mediator, NullLogger<ReceivingController>.Instance)
         {
             ControllerContext = new ControllerContext
             {
                 HttpContext = new DefaultHttpContext()
             }
         };
+    }
 
     private QCController CreateQcController(WarehouseDbContext db)
         => new(db, _store!, new StaticCurrentUserService("qc-tester"), new StubSignatureService())
@@ -447,8 +526,15 @@ public class ReceivingWorkflowIntegrationTests : IAsyncLifetime
     /// </summary>
     private sealed class NoOpMediator : IMediator
     {
+        /// <summary>Last command handed to <see cref="Send{TResponse}"/>, for tests that need to
+        /// inspect what the controller computed (e.g. the landed unit cost) without a real
+        /// valuation pipeline behind it.</summary>
+        public object? LastCommand { get; private set; }
+
         public Task<TResponse> Send<TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken = default)
         {
+            LastCommand = request;
+
             if (typeof(TResponse) == typeof(Result))
             {
                 var failure = Result.Fail(DomainErrorCodes.InternalError, "Valuation is not available in this test.");

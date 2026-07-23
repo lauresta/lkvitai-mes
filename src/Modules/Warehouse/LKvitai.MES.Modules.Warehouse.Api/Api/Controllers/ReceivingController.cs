@@ -145,6 +145,7 @@ public sealed class ReceivingController : ControllerBase
             .Include(x => x.Supplier)
             .Include(x => x.Lines)
                 .ThenInclude(x => x.Item)
+            .Include(x => x.AdditionalCosts)
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
         if (shipment is null)
@@ -171,10 +172,6 @@ public sealed class ReceivingController : ControllerBase
             shipment.Status,
             shipment.InvoiceNumber,
             shipment.InvoiceDate,
-            shipment.FreightCost,
-            shipment.DutyCost,
-            shipment.InsuranceCost,
-            shipment.OtherCost,
             shipment.CreatedAt,
             shipment.UpdatedAt,
             shipment.Lines
@@ -192,7 +189,13 @@ public sealed class ReceivingController : ControllerBase
                     x.ReceivedQty,
                     x.BaseUoM,
                     x.UnitPrice,
-                    x.Currency))
+                    x.Currency,
+                    (x.Item?.ItemType ?? ItemType.Stock).ToString(),
+                    x.Item?.CostType))
+                .ToList(),
+            shipment.AdditionalCosts
+                .OrderBy(x => x.Id)
+                .Select(x => new AdditionalCostDto(x.Id, x.CostType, x.Amount, x.Currency))
                 .ToList()));
     }
 
@@ -202,19 +205,10 @@ public sealed class ReceivingController : ControllerBase
         [FromBody] CreateInboundShipmentRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(request.ReferenceNumber))
+        var shapeError = ValidateShipmentRequestShape(request);
+        if (shapeError is not null)
         {
-            return ValidationFailure("Field 'referenceNumber' is required.");
-        }
-
-        if (request.SupplierId <= 0)
-        {
-            return ValidationFailure("Field 'supplierId' is required.");
-        }
-
-        if (request.Lines.Count == 0)
-        {
-            return ValidationFailure("At least one shipment line is required.");
+            return shapeError;
         }
 
         var supplier = await _dbContext.Suppliers
@@ -229,7 +223,7 @@ public sealed class ReceivingController : ControllerBase
         var items = await _dbContext.Items
             .AsNoTracking()
             .Where(x => lineItemIds.Contains(x.Id))
-            .Select(x => new { x.Id, x.BaseUoM })
+            .Select(x => new { x.Id, x.BaseUoM, x.ItemType })
             .ToListAsync(cancellationToken);
 
         if (items.Count != lineItemIds.Count)
@@ -237,19 +231,10 @@ public sealed class ReceivingController : ControllerBase
             return ValidationFailure("One or more line ItemId values do not exist.");
         }
 
-        if (request.Lines.Any(x => x.ExpectedQty <= 0m))
+        var (additionalCostRows, costError) = BuildAdditionalCostRows(request.AdditionalCosts);
+        if (costError is not null)
         {
-            return ValidationFailure("All shipment line expectedQty values must be greater than 0.");
-        }
-
-        if (request.Lines.Any(x => x.UnitPrice is < 0m))
-        {
-            return ValidationFailure("Shipment line unitPrice must be greater than or equal to 0.");
-        }
-
-        if (request.FreightCost is < 0m || request.DutyCost is < 0m || request.InsuranceCost is < 0m || request.OtherCost is < 0m)
-        {
-            return ValidationFailure("Shipment additional costs must be greater than or equal to 0.");
+            return costError;
         }
 
         var shipment = new InboundShipment
@@ -259,26 +244,34 @@ public sealed class ReceivingController : ControllerBase
             ExpectedDate = request.ExpectedDate,
             Status = "Draft",
             InvoiceNumber = string.IsNullOrWhiteSpace(request.InvoiceNumber) ? null : request.InvoiceNumber.Trim(),
-            InvoiceDate = request.InvoiceDate,
-            FreightCost = request.FreightCost,
-            DutyCost = request.DutyCost,
-            InsuranceCost = request.InsuranceCost,
-            OtherCost = request.OtherCost
+            InvoiceDate = request.InvoiceDate
         };
 
+        foreach (var costRow in additionalCostRows)
+        {
+            shipment.AdditionalCosts.Add(costRow);
+        }
+
+        // Service-type lines (e.g. "Transport" invoiced as its own line) have nothing
+        // physical to receive - auto-complete them at creation instead of routing them
+        // through ReceiveGoodsAsync's lot/QC/location logic (see plan decision #3).
         foreach (var line in request.Lines)
         {
             var item = items.First(x => x.Id == line.ItemId);
+            var isService = item.ItemType == ItemType.Service;
+
             shipment.Lines.Add(new InboundShipmentLine
             {
                 ItemId = line.ItemId,
                 ExpectedQty = line.ExpectedQty,
-                ReceivedQty = 0m,
+                ReceivedQty = isService ? line.ExpectedQty : 0m,
                 BaseUoM = item.BaseUoM,
                 UnitPrice = line.UnitPrice,
                 Currency = string.IsNullOrWhiteSpace(line.Currency) ? null : line.Currency.Trim().ToUpperInvariant()
             });
         }
+
+        shipment.Status = ComputeShipmentStatus(shipment.Lines);
 
         _dbContext.InboundShipments.Add(shipment);
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -334,6 +327,8 @@ public sealed class ReceivingController : ControllerBase
 
         var shipment = await _dbContext.InboundShipments
             .Include(x => x.Lines)
+                .ThenInclude(x => x.Item)
+            .Include(x => x.AdditionalCosts)
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
         if (shipment is null)
@@ -426,13 +421,7 @@ public sealed class ReceivingController : ControllerBase
 
         line.ReceivedQty += request.ReceivedQty;
 
-        var allComplete = shipment.Lines.All(x => x.ReceivedQty >= x.ExpectedQty);
-        var anyReceived = shipment.Lines.Any(x => x.ReceivedQty > 0m);
-        shipment.Status = allComplete
-            ? "Complete"
-            : anyReceived
-                ? "Partial"
-                : "Draft";
+        shipment.Status = ComputeShipmentStatus(shipment.Lines);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -503,11 +492,12 @@ public sealed class ReceivingController : ControllerBase
     }
 
     /// <summary>
-    /// Computes this receipt's all-in landed unit cost (invoice price plus its
-    /// proportional share of the shipment's header-level freight/duty/insurance/other
-    /// costs, allocated across lines by expected value) and folds it into the item's
-    /// <see cref="ItemValuation"/> stream — initializing it on the first receipt, or
-    /// recomputing a weighted average against the current on-hand cost afterwards.
+    /// Computes this receipt's all-in landed unit cost (invoice price plus its proportional
+    /// share of the shipment's additional-cost pool - manual <see cref="InboundShipmentAdditionalCost"/>
+    /// rows plus any Service-type sibling lines, allocated across Stock-type lines by expected
+    /// value) and folds it into the item's <see cref="ItemValuation"/> stream — initializing it
+    /// on the first receipt, or recomputing a weighted average against the current on-hand cost
+    /// afterwards.
     /// </summary>
     private async Task UpdateItemValuationForReceiptAsync(
         InboundShipment shipment,
@@ -517,16 +507,14 @@ public sealed class ReceivingController : ControllerBase
         decimal unitPrice,
         CancellationToken cancellationToken)
     {
-        var totalAdditionalCost =
-            (shipment.FreightCost ?? 0m) +
-            (shipment.DutyCost ?? 0m) +
-            (shipment.InsuranceCost ?? 0m) +
-            (shipment.OtherCost ?? 0m);
+        var totalAdditionalCost = ComputeTotalAdditionalCostPool(shipment);
 
         var landedUnitCost = unitPrice;
         if (totalAdditionalCost > 0m)
         {
-            var totalExpectedValue = shipment.Lines.Sum(x => x.ExpectedQty * (x.UnitPrice ?? 0m));
+            var totalExpectedValue = shipment.Lines
+                .Where(x => x.Item is null || x.Item.ItemType == ItemType.Stock)
+                .Sum(x => x.ExpectedQty * (x.UnitPrice ?? 0m));
             if (totalExpectedValue > 0m && line.ExpectedQty > 0m)
             {
                 var lineExpectedValue = line.ExpectedQty * unitPrice;
@@ -587,6 +575,96 @@ public sealed class ReceivingController : ControllerBase
                 itemId,
                 adjustResult.Error);
         }
+    }
+
+    private ObjectResult? ValidateShipmentRequestShape(CreateInboundShipmentRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.ReferenceNumber))
+        {
+            return ValidationFailure("Field 'referenceNumber' is required.");
+        }
+
+        if (request.SupplierId <= 0)
+        {
+            return ValidationFailure("Field 'supplierId' is required.");
+        }
+
+        if (request.Lines.Count == 0)
+        {
+            return ValidationFailure("At least one shipment line is required.");
+        }
+
+        if (request.Lines.Any(x => x.ExpectedQty <= 0m))
+        {
+            return ValidationFailure("All shipment line expectedQty values must be greater than 0.");
+        }
+
+        if (request.Lines.Any(x => x.UnitPrice is < 0m))
+        {
+            return ValidationFailure("Shipment line unitPrice must be greater than or equal to 0.");
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Validates and materializes the additional-cost rows for a new shipment. 0-amount rows
+    /// are seeded defaults the user left untouched (see plan decision #1) and are silently
+    /// dropped rather than persisted as noise.
+    /// </summary>
+    private (List<InboundShipmentAdditionalCost> Rows, ObjectResult? Error) BuildAdditionalCostRows(
+        IReadOnlyList<CreateAdditionalCostRequest>? requested)
+    {
+        var requestedCosts = requested ?? Array.Empty<CreateAdditionalCostRequest>();
+        if (requestedCosts.Any(x => x.Amount < 0m))
+        {
+            return ([], ValidationFailure("Shipment additional costs must be greater than or equal to 0."));
+        }
+
+        var positiveRows = requestedCosts.Where(x => x.Amount > 0m).ToList();
+        if (positiveRows.Any(x => string.IsNullOrWhiteSpace(x.CostType)))
+        {
+            return ([], ValidationFailure("Each additional cost row with a positive amount must have a costType."));
+        }
+
+        var rows = positiveRows
+            .Select(x => new InboundShipmentAdditionalCost
+            {
+                CostType = x.CostType.Trim(),
+                Amount = x.Amount,
+                Currency = string.IsNullOrWhiteSpace(x.Currency) ? "EUR" : x.Currency.Trim().ToUpperInvariant()
+            })
+            .ToList();
+
+        return (rows, null);
+    }
+
+    private static string ComputeShipmentStatus(IEnumerable<InboundShipmentLine> lines)
+    {
+        var materialized = lines as ICollection<InboundShipmentLine> ?? lines.ToList();
+        if (materialized.All(x => x.ReceivedQty >= x.ExpectedQty))
+        {
+            return "Complete";
+        }
+
+        return materialized.Any(x => x.ReceivedQty > 0m) ? "Partial" : "Draft";
+    }
+
+    /// <summary>
+    /// Sums the shipment's manual <see cref="InboundShipmentAdditionalCost"/> rows plus the
+    /// expected value of its Service-type lines (e.g. a "Transport" invoice line) - both feed
+    /// the same landed-cost allocation pool distributed across Stock-type lines. No currency
+    /// conversion is performed; amounts are summed as-is, same as the header-column model this
+    /// replaced.
+    /// </summary>
+    private static decimal ComputeTotalAdditionalCostPool(InboundShipment shipment)
+    {
+        var manualCosts = shipment.AdditionalCosts.Sum(x => x.Amount);
+        var serviceLineCosts = shipment.Lines
+            .Where(x => x.Item is not null && x.Item.ItemType == ItemType.Service)
+            .Sum(x => x.ExpectedQty * (x.UnitPrice ?? 0m));
+
+        return manualCosts + serviceLineCosts;
     }
 
     private ObjectResult ValidationFailure(string detail)
@@ -673,16 +751,18 @@ public sealed class ReceivingController : ControllerBase
         DateOnly? ExpectedDate,
         string? InvoiceNumber,
         DateOnly? InvoiceDate,
-        decimal? FreightCost,
-        decimal? DutyCost,
-        decimal? InsuranceCost,
-        decimal? OtherCost,
-        IReadOnlyList<CreateInboundShipmentLineRequest> Lines);
+        IReadOnlyList<CreateInboundShipmentLineRequest> Lines,
+        IReadOnlyList<CreateAdditionalCostRequest>? AdditionalCosts = null);
 
     public sealed record CreateInboundShipmentLineRequest(
         int ItemId,
         decimal ExpectedQty,
         decimal? UnitPrice,
+        string? Currency);
+
+    public sealed record CreateAdditionalCostRequest(
+        string CostType,
+        decimal Amount,
         string? Currency);
 
     public sealed record ShipmentCreatedResponse(int Id, string ReferenceNumber, string Status, DateTime CreatedAt);
@@ -730,13 +810,10 @@ public sealed class ReceivingController : ControllerBase
         string Status,
         string? InvoiceNumber,
         DateOnly? InvoiceDate,
-        decimal? FreightCost,
-        decimal? DutyCost,
-        decimal? InsuranceCost,
-        decimal? OtherCost,
         DateTimeOffset CreatedAt,
         DateTimeOffset? UpdatedAt,
-        IReadOnlyList<InboundShipmentLineDetailDto> Lines);
+        IReadOnlyList<InboundShipmentLineDetailDto> Lines,
+        IReadOnlyList<AdditionalCostDto> AdditionalCosts);
 
     public sealed record InboundShipmentLineDetailDto(
         int LineId,
@@ -751,7 +828,15 @@ public sealed class ReceivingController : ControllerBase
         decimal ReceivedQty,
         string BaseUoM,
         decimal? UnitPrice,
-        string? Currency);
+        string? Currency,
+        string ItemType,
+        string? CostType);
+
+    public sealed record AdditionalCostDto(
+        int Id,
+        string CostType,
+        decimal Amount,
+        string Currency);
 
     public sealed record PagedResponse<T>(
         IReadOnlyList<T> Items,

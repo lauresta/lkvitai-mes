@@ -50,6 +50,17 @@
                 <button class="btn btn-sm btn-outline-primary" @onclick="OpenQcQueue">Open QC Queue</button>
             </div>
 
+            @if (_shipment.AdditionalCosts.Count > 0)
+            {
+                <div class="alert alert-light border">
+                    <strong>Additional costs:</strong>
+                    @foreach (var cost in _shipment.AdditionalCosts)
+                    {
+                        <span class="badge bg-light text-dark border me-1">@cost.CostType: @cost.Amount.ToString("0.00") @cost.Currency</span>
+                    }
+                </div>
+            }
+
             <div class="card border mb-3">
                 <div class="card-body">
                     <div class="row g-2 align-items-end">
@@ -64,7 +75,7 @@
                             <label class="form-label">Line</label>
                             <select class="form-select" @bind="_selectedLineId">
                                 <option value="">Select line</option>
-                                @foreach (var line in _shipment.Lines)
+                                @foreach (var line in _shipment.Lines.Where(x => !x.IsService))
                                 {
                                     <option value="@line.LineId">@line.ItemSku - @line.ItemName (Line @line.LineId)</option>
                                 }
@@ -161,6 +172,10 @@
                                     }
                                 </td>
                                 <td>
+                                    @if (line.IsService)
+                                    {
+                                        <span class="badge bg-secondary me-1">SERVICE - @(line.CostType ?? "Other")</span>
+                                    }
                                     @if (line.RequiresLotTracking)
                                     {
                                         <span class="badge bg-warning text-dark me-1">LOT</span>

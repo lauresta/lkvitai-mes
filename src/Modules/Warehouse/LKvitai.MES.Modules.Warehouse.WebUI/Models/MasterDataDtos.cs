@@ -30,6 +30,10 @@ public record AdminItemDto
     public DateTimeOffset? UpdatedAt { get; init; }
     public string? PrimaryThumbnailUrl { get; init; }
     public Guid? PrimaryPhotoId { get; init; }
+    public string ItemType { get; init; } = "Stock";
+    public string? CostType { get; init; }
+
+    public bool IsService => string.Equals(ItemType, "Service", StringComparison.OrdinalIgnoreCase);
 }
 
 public record ItemPhotoDto
@@ -68,6 +72,8 @@ public record ItemDetailsDto
     public string? PrimaryThumbnailUrl { get; init; }
     public Guid? PrimaryPhotoId { get; init; }
     public IReadOnlyList<ItemPhotoDto> Photos { get; init; } = Array.Empty<ItemPhotoDto>();
+    public string ItemType { get; init; } = "Stock";
+    public string? CostType { get; init; }
 }
 
 public record ItemPhotosResponseDto
@@ -107,6 +113,8 @@ public record CreateOrUpdateItemRequest
     public string? PrimaryBarcode { get; init; }
     public string? ProductConfigId { get; init; }
     public IReadOnlyList<string> Tags { get; init; } = Array.Empty<string>();
+    public string ItemType { get; init; } = "Stock";
+    public string? CostType { get; init; }
 }
 
 public record ItemTagsResponseDto

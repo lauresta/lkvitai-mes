@@ -30,6 +30,18 @@ public record InboundShipmentLineDetailDto
     public string BaseUoM { get; init; } = string.Empty;
     public decimal? UnitPrice { get; init; }
     public string? Currency { get; init; }
+    public string ItemType { get; init; } = "Stock";
+    public string? CostType { get; init; }
+
+    public bool IsService => string.Equals(ItemType, "Service", StringComparison.OrdinalIgnoreCase);
+}
+
+public record AdditionalCostDto
+{
+    public int Id { get; init; }
+    public string CostType { get; init; } = string.Empty;
+    public decimal Amount { get; init; }
+    public string Currency { get; init; } = string.Empty;
 }
 
 public record InboundShipmentDetailDto
@@ -42,13 +54,10 @@ public record InboundShipmentDetailDto
     public string Status { get; init; } = string.Empty;
     public string? InvoiceNumber { get; init; }
     public DateOnly? InvoiceDate { get; init; }
-    public decimal? FreightCost { get; init; }
-    public decimal? DutyCost { get; init; }
-    public decimal? InsuranceCost { get; init; }
-    public decimal? OtherCost { get; init; }
     public DateTimeOffset CreatedAt { get; init; }
     public DateTimeOffset? UpdatedAt { get; init; }
     public IReadOnlyList<InboundShipmentLineDetailDto> Lines { get; init; } = Array.Empty<InboundShipmentLineDetailDto>();
+    public IReadOnlyList<AdditionalCostDto> AdditionalCosts { get; init; } = Array.Empty<AdditionalCostDto>();
 }
 
 public record CreateInboundShipmentLineRequestDto
@@ -56,6 +65,13 @@ public record CreateInboundShipmentLineRequestDto
     public int ItemId { get; init; }
     public decimal ExpectedQty { get; init; }
     public decimal? UnitPrice { get; init; }
+    public string? Currency { get; init; }
+}
+
+public record CreateAdditionalCostRequestDto
+{
+    public string CostType { get; init; } = string.Empty;
+    public decimal Amount { get; init; }
     public string? Currency { get; init; }
 }
 
@@ -67,11 +83,8 @@ public record CreateInboundShipmentRequestDto
     public DateOnly? ExpectedDate { get; init; }
     public string? InvoiceNumber { get; init; }
     public DateOnly? InvoiceDate { get; init; }
-    public decimal? FreightCost { get; init; }
-    public decimal? DutyCost { get; init; }
-    public decimal? InsuranceCost { get; init; }
-    public decimal? OtherCost { get; init; }
     public IReadOnlyList<CreateInboundShipmentLineRequestDto> Lines { get; init; } = Array.Empty<CreateInboundShipmentLineRequestDto>();
+    public IReadOnlyList<CreateAdditionalCostRequestDto> AdditionalCosts { get; init; } = Array.Empty<CreateAdditionalCostRequestDto>();
 }
 
 public record ShipmentCreatedResponseDto

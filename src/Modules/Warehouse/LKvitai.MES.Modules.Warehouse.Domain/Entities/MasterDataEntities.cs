@@ -11,6 +11,12 @@ public abstract class AuditableEntity : IAuditable
     public string? UpdatedBy { get; set; }
 }
 
+public enum ItemType
+{
+    Stock = 0,
+    Service = 1
+}
+
 public sealed class Item : AuditableEntity
 {
     public int Id { get; set; }
@@ -29,6 +35,14 @@ public sealed class Item : AuditableEntity
     public string? Tags { get; set; }
     public decimal? BasePrice { get; set; }
     public decimal? PurchasePrice { get; set; }
+    public ItemType ItemType { get; set; } = ItemType.Stock;
+
+    /// <summary>
+    /// Additional-cost bucket this item's invoice lines fold into when <see cref="ItemType"/>
+    /// is <see cref="Entities.ItemType.Service"/> (e.g. "Freight", "Duty", "Insurance", "VAT",
+    /// "Other", or a user-defined value). Ignored for Stock items.
+    /// </summary>
+    public string? CostType { get; set; }
 
     public ItemCategory? Category { get; set; }
     public UnitOfMeasure? BaseUnit { get; set; }
@@ -1309,17 +1323,16 @@ public sealed class InboundShipment : AuditableEntity
     public string? InvoiceNumber { get; set; }
     public DateOnly? InvoiceDate { get; set; }
 
-    /// <summary>
-    /// Header-level landed costs, distributed proportionally across lines (by received
-    /// line value) at receiving time and folded into each item's weighted-average cost.
-    /// </summary>
-    public decimal? FreightCost { get; set; }
-    public decimal? DutyCost { get; set; }
-    public decimal? InsuranceCost { get; set; }
-    public decimal? OtherCost { get; set; }
-
     public Supplier? Supplier { get; set; }
     public ICollection<InboundShipmentLine> Lines { get; set; } = new List<InboundShipmentLine>();
+
+    /// <summary>
+    /// Header-level landed costs not already covered by a Service-type line on this shipment
+    /// (e.g. a separate freight-forwarder invoice). Distributed proportionally across
+    /// Stock-type lines (by expected line value) at receiving time, together with the total of
+    /// any Service-type sibling lines, and folded into each item's weighted-average cost.
+    /// </summary>
+    public ICollection<InboundShipmentAdditionalCost> AdditionalCosts { get; set; } = new List<InboundShipmentAdditionalCost>();
 }
 
 public sealed class InboundShipmentLine
@@ -1331,12 +1344,32 @@ public sealed class InboundShipmentLine
     public decimal ReceivedQty { get; set; }
     public string BaseUoM { get; set; } = string.Empty;
 
-    /// <summary>Unit purchase price. Must be set before the line can be received.</summary>
+    /// <summary>
+    /// Unit purchase price. Must be set before a Stock-type line can be received. For
+    /// Service-type lines (see <see cref="Entities.Item.ItemType"/>) this is the price of the
+    /// service itself, not a per-unit cost of physical goods.
+    /// </summary>
     public decimal? UnitPrice { get; set; }
     public string? Currency { get; set; }
 
     public InboundShipment? Shipment { get; set; }
     public Item? Item { get; set; }
+}
+
+/// <summary>
+/// A single additional-cost row on an inbound shipment (e.g. Freight, Duty, Insurance, VAT, or
+/// a user-defined type). <see cref="CostType"/> is a free string, not an enum, so users can add
+/// their own categories beyond the seeded defaults without a code change.
+/// </summary>
+public sealed class InboundShipmentAdditionalCost
+{
+    public int Id { get; set; }
+    public int ShipmentId { get; set; }
+    public string CostType { get; set; } = string.Empty;
+    public decimal Amount { get; set; }
+    public string Currency { get; set; } = string.Empty;
+
+    public InboundShipment? Shipment { get; set; }
 }
 
 public enum ReasonCategory
