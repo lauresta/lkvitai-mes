@@ -92,7 +92,7 @@ services:
       ASPNETCORE_ENVIRONMENT: Test
       PortalApi__BaseUrl: "http://lkvitai-mes-portal-api:8080"
       WarehouseApi__BaseUrl: "http://lkvitai-mes-warehouse-api:8080"
-      WarehouseWebUi__BaseUrl: "https://cikada.test.lauresta.com/warehouse"
+      WarehouseWebUi__BaseUrl: "https://cikada-test.lauresta.com/warehouse"
       PathBase: "/portal"
       PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
       Clarity__ProjectId: "${CLARITY_PROJECT_ID:-}"
