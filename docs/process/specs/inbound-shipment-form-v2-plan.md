@@ -1,6 +1,6 @@
 # Inbound Shipment form v2 — MudBlazor rebuild + service/cost line classification
 
-**Status:** PLANNING COMPLETE — IMPLEMENTATION NOT STARTED.
+**Status:** DONE — merged in PR #208.
 **Owner:** whichever AI agent is currently assigned this repo/task.
 
 ## Read this first (handoff contract)
@@ -308,21 +308,21 @@ proactively this time:
 Work through in order. Check each box when done, commit the checkbox update
 with the corresponding code.
 
-- [ ] **Step 0 — Orientation.** Read this file fully. Skim the diffs of PR
+- [x] **Step 0 — Orientation.** Read this file fully. Skim the diffs of PR
       #205 and PR #206 (`git log --oneline main`, then `git show <merge
       commit>`) to see the actual shape of what exists today before editing.
-- [ ] **Step 1 — Domain: Item classification.** Add `ItemType` enum
+- [x] **Step 1 — Domain: Item classification.** Add `ItemType` enum
       (`Stock`/`Service`) and `CostType` (nullable string) to `Item` in
       `src/Modules/Warehouse/LKvitai.MES.Modules.Warehouse.Domain/Entities/MasterDataEntities.cs`.
-- [ ] **Step 2 — Domain: additional-cost table.** Remove the four fixed cost
+- [x] **Step 2 — Domain: additional-cost table.** Remove the four fixed cost
       columns from `InboundShipment`; add the `InboundShipmentAdditionalCost`
       entity (same file) with a collection nav property on `InboundShipment`.
-- [ ] **Step 3 — Infrastructure/EF.** Update `WarehouseDbContext.cs` fluent
+- [x] **Step 3 — Infrastructure/EF.** Update `WarehouseDbContext.cs` fluent
       config for both entity changes (new columns on `Items` table, drop the
       four columns from `inbound_shipments`, new `inbound_shipment_additional_costs`
       table with FK to `inbound_shipments`). Hand-author the migration +
       Designer.cs + ModelSnapshot.cs update per gotcha #2 above.
-- [ ] **Step 4 — Api: ReceivingController.** Update
+- [x] **Step 4 — Api: ReceivingController.** Update
       `CreateInboundShipmentRequest`/`CreateInboundShipmentLineRequest` DTOs:
       drop the four cost fields, add `AdditionalCosts: List<{CostType,
       Amount, Currency}>`. In `CreateShipmentAsync`, persist the cost rows;
@@ -333,46 +333,50 @@ with the corresponding code.
       `InboundShipmentAdditionalCost` rows **plus** the shipment's Service-type
       lines (grouped by the *item's* `CostType`, defaulting to `"Other"`),
       instead of reading the four old fixed fields.
-- [ ] **Step 5 — Api: Item admin endpoints.** Update
+- [x] **Step 5 — Api: Item admin endpoints.** Update
       `ItemsController.cs` (create/update item) and its request/response
       DTOs to accept/return `ItemType`/`CostType`.
-- [ ] **Step 6 — WebUI models/clients.** Mirror all the above DTO shape
+- [x] **Step 6 — WebUI models/clients.** Mirror all the above DTO shape
       changes in `WebUI/Models/InboundDtos.cs`, `WebUI/Models/MasterDataDtos.cs`
       (or wherever `AdminItemDto`/`CreateOrUpdateItemRequest` live), and the
       corresponding methods on `ReceivingClient.cs` /
       `MasterDataAdminClient.cs`.
-- [ ] **Step 7 — WebUI: item editor.** Add `ItemType` (dropdown: Stock/
+- [x] **Step 7 — WebUI: item editor.** Add `ItemType` (dropdown: Stock/
       Service) and `CostType` (dropdown, only visible/relevant when
       ItemType = Service; allow free text for custom types) fields to
       `Pages/AdminItemEditorDialog.razor`.
-- [ ] **Step 8 — WebUI: rebuild InboundShipmentCreate.razor.** Full
+- [x] **Step 8 — WebUI: rebuild InboundShipmentCreate.razor.** Full
       MudBlazor rebuild per decisions #1–#6 above: autocomplete pickers,
       Mud grid for Lines (Invoice unit price + read-only live-computed
       Actual unit price columns), Mud table for Additional Costs (4 seeded
       rows + add-custom-row), totals footer, soft duplicate-type warning.
-- [ ] **Step 9 (stretch, optional) — WebUI: InboundShipmentDetail.razor.**
+- [x] **Step 9 (stretch, optional) — WebUI: InboundShipmentDetail.razor.**
       Apply the same MudBlazor treatment for consistency. Not required to
       consider this plan complete, but keep the page functionally correct
       against any DTO shape changes from Step 6 regardless.
-- [ ] **Step 10 — Tests.** Update
+      (Landed as a functional-correctness pass only, not a full MudBlazor
+      rebuild: Additional Costs display + Service-line badges were added,
+      and Service lines were excluded from the receivable-line dropdown. A
+      full Mud rebuild of this page remains a legitimate follow-up.)
+- [x] **Step 10 — Tests.** Update
       `tests/Modules/Warehouse/LKvitai.MES.Tests.Warehouse.Integration/ReceivingWorkflowIntegrationTests.cs`
       for the new request/response shapes (same kind of fixes as PR #206's
       second commit). Add at least one test covering: a shipment with one
       Stock line + one Service line (e.g. "Transport") correctly excludes
       the Service line from received quantity and folds its amount into the
       Stock line's landed cost.
-- [ ] **Step 11 — Manual review pass.** For every file touched: verify
+- [x] **Step 11 — Manual review pass.** For every file touched: verify
       brace/paren balance (`python3 -c "..."` count trick used in PR #205/
       #206), verify every positional-record call site across `src/` and
       `tests/` was updated, re-read the diff end to end once before
       committing.
-- [ ] **Step 12 — Ship it.** Create a new feature branch (do not commit to
+- [x] **Step 12 — Ship it.** Create a new feature branch (do not commit to
       `main` directly — see gotcha #6), commit, push, open a PR against
       `main` (use `mcp__github__create_pull_request`), subscribe to PR
       activity (`mcp__github__subscribe_pr_activity`), and work through CI
       feedback until green — expect 1–2 rounds of fixes based on prior
       history, that's normal.
-- [ ] **Step 13 — Close out.** Once merged, update this file's status line
+- [x] **Step 13 — Close out.** Once merged, update this file's status line
       at the top to `DONE — merged in PR #<number>` and check off any
       remaining boxes.
 
