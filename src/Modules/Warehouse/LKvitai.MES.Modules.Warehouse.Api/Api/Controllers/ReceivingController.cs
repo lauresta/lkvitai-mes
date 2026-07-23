@@ -212,9 +212,9 @@ public sealed class ReceivingController : ControllerBase
         }
 
         var (supplier, supplierError) = await LoadSupplierAsync(request.SupplierId, cancellationToken);
-        if (supplierError is not null)
+        if (supplierError is not null || supplier is null)
         {
-            return supplierError;
+            return supplierError ?? Failure(Result.Fail(DomainErrorCodes.InternalError, "Supplier lookup failed unexpectedly."));
         }
 
         var (items, itemsError) = await LoadLineItemsAsync(request.Lines, cancellationToken);
@@ -266,7 +266,7 @@ public sealed class ReceivingController : ControllerBase
             ShipmentId = shipment.Id,
             ReferenceNumber = shipment.ReferenceNumber,
             SupplierId = shipment.SupplierId,
-            SupplierName = supplier!.Name,
+            SupplierName = supplier.Name,
             ExpectedDate = shipment.ExpectedDate,
             TotalLines = shipment.Lines.Count,
             TotalExpectedQty = shipment.Lines.Sum(x => x.ExpectedQty),
@@ -350,9 +350,9 @@ public sealed class ReceivingController : ControllerBase
         }
 
         var (supplier, supplierError) = await LoadSupplierAsync(request.SupplierId, cancellationToken);
-        if (supplierError is not null)
+        if (supplierError is not null || supplier is null)
         {
-            return supplierError;
+            return supplierError ?? Failure(Result.Fail(DomainErrorCodes.InternalError, "Supplier lookup failed unexpectedly."));
         }
 
         var (items, itemsError) = await LoadLineItemsAsync(request.Lines, cancellationToken);
@@ -403,7 +403,7 @@ public sealed class ReceivingController : ControllerBase
             ShipmentId = shipment.Id,
             ReferenceNumber = shipment.ReferenceNumber,
             SupplierId = shipment.SupplierId,
-            SupplierName = supplier!.Name,
+            SupplierName = supplier.Name,
             ExpectedDate = shipment.ExpectedDate,
             TotalLines = shipment.Lines.Count,
             TotalExpectedQty = shipment.Lines.Sum(x => x.ExpectedQty),

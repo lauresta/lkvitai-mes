@@ -288,12 +288,17 @@
 
     private async Task LoadShipmentForEditAsync()
     {
+        if (Id is not { } shipmentId)
+        {
+            return;
+        }
+
         _isLoading = true;
         _apiError = null;
 
         try
         {
-            var shipment = await ReceivingClient.GetShipmentByIdAsync(Id!.Value);
+            var shipment = await ReceivingClient.GetShipmentByIdAsync(shipmentId);
 
             if (!string.Equals(shipment.Status, "Draft", StringComparison.OrdinalIgnoreCase))
             {
@@ -521,53 +526,33 @@
             return;
         }
 
-        var lines = _lines
-            .Where(x => x.Item is not null && x.ExpectedQty > 0m)
-            .Select(x => new CreateInboundShipmentLineRequestDto
-            {
-                ItemId = x.Item!.Id,
-                ExpectedQty = x.ExpectedQty,
-                UnitPrice = x.UnitPrice,
-                Currency = string.IsNullOrWhiteSpace(x.Currency) ? null : x.Currency.Trim()
-            })
-            .ToList();
-
+        var lines = BuildLineRequests();
         if (lines.Count == 0)
         {
             ToastService.ShowError("Add at least one valid line.");
             return;
         }
 
-        var additionalCosts = _additionalCosts
-            .Where(x => x.Amount > 0m)
-            .Select(x => new CreateAdditionalCostRequestDto
-            {
-                CostType = string.IsNullOrWhiteSpace(x.CostType) ? "Other" : x.CostType.Trim(),
-                Amount = x.Amount,
-                Currency = string.IsNullOrWhiteSpace(x.Currency) ? null : x.Currency.Trim()
-            })
-            .ToList();
+        var request = new CreateInboundShipmentRequestDto
+        {
+            ReferenceNumber = _referenceNumber.Trim(),
+            SupplierId = _supplier.Id,
+            Type = "PO",
+            ExpectedDate = _expectedDate.HasValue ? DateOnly.FromDateTime(_expectedDate.Value.Date) : null,
+            InvoiceNumber = string.IsNullOrWhiteSpace(_invoiceNumber) ? null : _invoiceNumber.Trim(),
+            InvoiceDate = _invoiceDate.HasValue ? DateOnly.FromDateTime(_invoiceDate.Value.Date) : null,
+            Lines = lines,
+            AdditionalCosts = BuildAdditionalCostRequests()
+        };
 
         _isSubmitting = true;
         _apiError = null;
 
         try
         {
-            var request = new CreateInboundShipmentRequestDto
+            if (IsEditMode && Id is { } shipmentId)
             {
-                ReferenceNumber = _referenceNumber.Trim(),
-                SupplierId = _supplier.Id,
-                Type = "PO",
-                ExpectedDate = _expectedDate.HasValue ? DateOnly.FromDateTime(_expectedDate.Value.Date) : null,
-                InvoiceNumber = string.IsNullOrWhiteSpace(_invoiceNumber) ? null : _invoiceNumber.Trim(),
-                InvoiceDate = _invoiceDate.HasValue ? DateOnly.FromDateTime(_invoiceDate.Value.Date) : null,
-                Lines = lines,
-                AdditionalCosts = additionalCosts
-            };
-
-            if (IsEditMode)
-            {
-                var updated = await ReceivingClient.UpdateShipmentAsync(Id!.Value, request);
+                var updated = await ReceivingClient.UpdateShipmentAsync(shipmentId, request);
                 ToastService.ShowSuccess($"Inbound shipment ISH-{updated.Id} updated.");
                 NavigationManager.NavigateTo($"/warehouse/inbound/shipments/{updated.Id}");
             }
@@ -587,6 +572,33 @@
         {
             _isSubmitting = false;
         }
+    }
+
+    private List<CreateInboundShipmentLineRequestDto> BuildLineRequests()
+    {
+        return _lines
+            .Where(x => x.Item is not null && x.ExpectedQty > 0m)
+            .Select(x => new CreateInboundShipmentLineRequestDto
+            {
+                ItemId = x.Item!.Id,
+                ExpectedQty = x.ExpectedQty,
+                UnitPrice = x.UnitPrice,
+                Currency = string.IsNullOrWhiteSpace(x.Currency) ? null : x.Currency.Trim()
+            })
+            .ToList();
+    }
+
+    private List<CreateAdditionalCostRequestDto> BuildAdditionalCostRequests()
+    {
+        return _additionalCosts
+            .Where(x => x.Amount > 0m)
+            .Select(x => new CreateAdditionalCostRequestDto
+            {
+                CostType = string.IsNullOrWhiteSpace(x.CostType) ? "Other" : x.CostType.Trim(),
+                Amount = x.Amount,
+                Currency = string.IsNullOrWhiteSpace(x.Currency) ? null : x.Currency.Trim()
+            })
+            .ToList();
     }
 
     private void BackToList()

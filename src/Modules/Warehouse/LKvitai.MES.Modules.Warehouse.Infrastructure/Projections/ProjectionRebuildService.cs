@@ -582,90 +582,13 @@ public class ProjectionRebuildService : IProjectionRebuildService
 
         foreach (var rawEvent in allEvents)
         {
-            switch (rawEvent.Data)
+            processed += rawEvent.Data switch
             {
-                case InboundShipmentCreatedEvent created:
-                {
-                    var id = InboundShipmentSummaryView.ComputeId(created.ShipmentId);
-                    var timestamp = DateTime.SpecifyKind(created.Timestamp, DateTimeKind.Utc);
-                    views[id] = new InboundShipmentSummaryView
-                    {
-                        Id = id,
-                        ShipmentId = created.ShipmentId,
-                        ReferenceNumber = created.ReferenceNumber,
-                        SupplierId = created.SupplierId,
-                        SupplierName = created.SupplierName,
-                        TotalExpectedQty = created.TotalExpectedQty,
-                        TotalReceivedQty = 0m,
-                        CompletionPercent = 0m,
-                        TotalLines = created.TotalLines,
-                        Status = "Draft",
-                        ExpectedDate = created.ExpectedDate,
-                        CreatedAt = new DateTimeOffset(timestamp),
-                        LastUpdated = new DateTimeOffset(timestamp)
-                    };
-
-                    processed++;
-                    break;
-                }
-
-                case InboundShipmentUpdatedEvent updated:
-                {
-                    var id = InboundShipmentSummaryView.ComputeId(updated.ShipmentId);
-                    if (views.TryGetValue(id, out var view))
-                    {
-                        view.ReferenceNumber = updated.ReferenceNumber;
-                        view.SupplierId = updated.SupplierId;
-                        view.SupplierName = updated.SupplierName;
-                        view.ExpectedDate = updated.ExpectedDate;
-                        view.TotalLines = updated.TotalLines;
-                        view.TotalExpectedQty = updated.TotalExpectedQty;
-                        view.CompletionPercent = view.TotalExpectedQty <= 0m
-                            ? 0m
-                            : Math.Min(1m, view.TotalReceivedQty / view.TotalExpectedQty);
-                        view.LastUpdated = new DateTimeOffset(DateTime.SpecifyKind(updated.Timestamp, DateTimeKind.Utc));
-
-                        processed++;
-                    }
-
-                    break;
-                }
-
-                case GoodsReceivedEvent received:
-                {
-                    var id = InboundShipmentSummaryView.ComputeId(received.ShipmentId);
-                    if (!views.TryGetValue(id, out var view))
-                    {
-                        var fallbackTimestamp = DateTime.SpecifyKind(received.Timestamp, DateTimeKind.Utc);
-                        view = new InboundShipmentSummaryView
-                        {
-                            Id = id,
-                            ShipmentId = received.ShipmentId,
-                            SupplierId = received.SupplierId ?? 0,
-                            CreatedAt = new DateTimeOffset(fallbackTimestamp),
-                            LastUpdated = new DateTimeOffset(fallbackTimestamp)
-                        };
-                        views[id] = view;
-                    }
-
-                    view.TotalReceivedQty += received.ReceivedQty;
-                    view.CompletionPercent = view.TotalExpectedQty <= 0m
-                        ? 0m
-                        : Math.Min(1m, view.TotalReceivedQty / view.TotalExpectedQty);
-                    view.Status = view.TotalReceivedQty switch
-                    {
-                        <= 0m => "Draft",
-                        _ when view.TotalReceivedQty >= view.TotalExpectedQty => "Complete",
-                        _ => "Partial"
-                    };
-
-                    var timestamp = DateTime.SpecifyKind(received.Timestamp, DateTimeKind.Utc);
-                    view.LastUpdated = new DateTimeOffset(timestamp);
-
-                    processed++;
-                    break;
-                }
-            }
+                InboundShipmentCreatedEvent created => ApplyInboundShipmentCreated(views, created),
+                InboundShipmentUpdatedEvent updated => ApplyInboundShipmentUpdated(views, updated),
+                GoodsReceivedEvent received => ApplyGoodsReceived(views, received),
+                _ => 0
+            };
         }
 
         await InsertDocumentsToShadowAsync(shadowTable, views.Values, writeConnection, ct);
@@ -676,6 +599,91 @@ public class ProjectionRebuildService : IProjectionRebuildService
             views.Count);
 
         return processed;
+    }
+
+    private static int ApplyInboundShipmentCreated(
+        Dictionary<string, InboundShipmentSummaryView> views,
+        InboundShipmentCreatedEvent created)
+    {
+        var id = InboundShipmentSummaryView.ComputeId(created.ShipmentId);
+        var timestamp = DateTime.SpecifyKind(created.Timestamp, DateTimeKind.Utc);
+        views[id] = new InboundShipmentSummaryView
+        {
+            Id = id,
+            ShipmentId = created.ShipmentId,
+            ReferenceNumber = created.ReferenceNumber,
+            SupplierId = created.SupplierId,
+            SupplierName = created.SupplierName,
+            TotalExpectedQty = created.TotalExpectedQty,
+            TotalReceivedQty = 0m,
+            CompletionPercent = 0m,
+            TotalLines = created.TotalLines,
+            Status = "Draft",
+            ExpectedDate = created.ExpectedDate,
+            CreatedAt = new DateTimeOffset(timestamp),
+            LastUpdated = new DateTimeOffset(timestamp)
+        };
+
+        return 1;
+    }
+
+    private static int ApplyInboundShipmentUpdated(
+        Dictionary<string, InboundShipmentSummaryView> views,
+        InboundShipmentUpdatedEvent updated)
+    {
+        var id = InboundShipmentSummaryView.ComputeId(updated.ShipmentId);
+        if (!views.TryGetValue(id, out var view))
+        {
+            return 0;
+        }
+
+        view.ReferenceNumber = updated.ReferenceNumber;
+        view.SupplierId = updated.SupplierId;
+        view.SupplierName = updated.SupplierName;
+        view.ExpectedDate = updated.ExpectedDate;
+        view.TotalLines = updated.TotalLines;
+        view.TotalExpectedQty = updated.TotalExpectedQty;
+        view.CompletionPercent = view.TotalExpectedQty <= 0m
+            ? 0m
+            : Math.Min(1m, view.TotalReceivedQty / view.TotalExpectedQty);
+        view.LastUpdated = new DateTimeOffset(DateTime.SpecifyKind(updated.Timestamp, DateTimeKind.Utc));
+
+        return 1;
+    }
+
+    private static int ApplyGoodsReceived(
+        Dictionary<string, InboundShipmentSummaryView> views,
+        GoodsReceivedEvent received)
+    {
+        var id = InboundShipmentSummaryView.ComputeId(received.ShipmentId);
+        if (!views.TryGetValue(id, out var view))
+        {
+            var fallbackTimestamp = DateTime.SpecifyKind(received.Timestamp, DateTimeKind.Utc);
+            view = new InboundShipmentSummaryView
+            {
+                Id = id,
+                ShipmentId = received.ShipmentId,
+                SupplierId = received.SupplierId ?? 0,
+                CreatedAt = new DateTimeOffset(fallbackTimestamp),
+                LastUpdated = new DateTimeOffset(fallbackTimestamp)
+            };
+            views[id] = view;
+        }
+
+        view.TotalReceivedQty += received.ReceivedQty;
+        view.CompletionPercent = view.TotalExpectedQty <= 0m
+            ? 0m
+            : Math.Min(1m, view.TotalReceivedQty / view.TotalExpectedQty);
+        view.Status = view.TotalReceivedQty switch
+        {
+            <= 0m => "Draft",
+            _ when view.TotalReceivedQty >= view.TotalExpectedQty => "Complete",
+            _ => "Partial"
+        };
+
+        view.LastUpdated = new DateTimeOffset(DateTime.SpecifyKind(received.Timestamp, DateTimeKind.Utc));
+
+        return 1;
     }
 
     // ═══════════════════════════════════════════════════════════════════

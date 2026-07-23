@@ -33,7 +33,7 @@ public sealed class InboundShipmentSummaryProjection : SingleStreamProjection<In
         };
     }
 
-    public void Apply(InboundShipmentUpdatedEvent evt, InboundShipmentSummaryView view)
+    public static void Apply(InboundShipmentUpdatedEvent evt, InboundShipmentSummaryView view)
     {
         view.ReferenceNumber = evt.ReferenceNumber;
         view.SupplierId = evt.SupplierId;
