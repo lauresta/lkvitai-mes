@@ -1,6 +1,7 @@
 @using Microsoft.AspNetCore.Components.Web
 @namespace LKvitai.MES.Modules.Sales.WebUI.Pages
 @addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
 
 <!DOCTYPE html>
 <html lang="en">
@@ -29,6 +30,34 @@
     <meta name="theme-color" content="#2f8f8b" />
     <title>Cikada.MES · Sales</title>
     <component type="typeof(HeadOutlet)" render-mode="ServerPrerendered" />
+@{
+    var clarityProjectId = Configuration["Clarity:ProjectId"];
+    string? clarityUserLabel = null;
+    if (!string.IsNullOrWhiteSpace(clarityProjectId) && User?.Identity?.IsAuthenticated == true)
+    {
+        // Test env runs everyone through one shared "admin" login today - label
+        // those sessions explicitly rather than pretending they're anonymous.
+        // Once real per-person accounts exist, this naturally becomes their
+        // actual username (denis, jonas, petras, ...).
+        clarityUserLabel = string.Equals(User.Identity!.Name, "admin", StringComparison.OrdinalIgnoreCase)
+            ? "admin-sesija"
+            : User.Identity!.Name;
+    }
+}
+@if (!string.IsNullOrWhiteSpace(clarityProjectId))
+{
+    <script type="text/javascript">
+        (function(c,l,a,r,i,t,y){
+            c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+            t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+            y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+        })(window, document, "clarity", "script", @Html.Raw(System.Text.Json.JsonSerializer.Serialize(clarityProjectId)));
+        @if (clarityUserLabel is not null)
+        {
+            @Html.Raw($"clarity(\"identify\", {System.Text.Json.JsonSerializer.Serialize(clarityUserLabel)});")
+        }
+    </script>
+}
 </head>
 <body>
     @RenderBody()

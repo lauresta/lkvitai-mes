@@ -49,6 +49,7 @@ services:
       PathBase: "/warehouse"
       PortalAuth__LoginBasePath: "/portal"
       PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
+      Clarity__ProjectId: "${CLARITY_PROJECT_ID:-}"
     volumes:
       - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys
     networks:
@@ -91,9 +92,10 @@ services:
       ASPNETCORE_ENVIRONMENT: Test
       PortalApi__BaseUrl: "http://lkvitai-mes-portal-api:8080"
       WarehouseApi__BaseUrl: "http://lkvitai-mes-warehouse-api:8080"
-      WarehouseWebUi__BaseUrl: "https://mes-test.lauresta.com/warehouse"
+      WarehouseWebUi__BaseUrl: "https://cikada.test.lauresta.com/warehouse"
       PathBase: "/portal"
       PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
+      Clarity__ProjectId: "${CLARITY_PROJECT_ID:-}"
     volumes:
       - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys
       - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
@@ -145,6 +147,7 @@ services:
       PathBase: "/sales"
       PortalAuth__LoginBasePath: "/portal"
       PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
+      Clarity__ProjectId: "${CLARITY_PROJECT_ID:-}"
     volumes:
       - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys
       - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
@@ -210,6 +213,7 @@ services:
       #      with Sales/Portal in case F-2.4 lands an authenticated route.
       PortalAuth__LoginBasePath: "/portal"
       PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
+      Clarity__ProjectId: "${CLARITY_PROJECT_ID:-}"
     volumes:
       - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys
       - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
@@ -254,6 +258,7 @@ services:
       ASPNETCORE_ENVIRONMENT: Test
       ScanningApi__BaseUrl: "http://lkvitai-mes-scanning-api:8080"
       PathBase: "/scan"
+      Clarity__ProjectId: "${CLARITY_PROJECT_ID:-}"
     volumes:
       - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
     networks:
@@ -311,6 +316,7 @@ services:
       ConnectionStrings__ShopfloorDb: "Host=pg;Port=5432;Database=${TEST_DB_NAME:-lkvitai_warehouse_test};Username=${TEST_DB_USER:-postgres};Password=${TEST_DB_PASSWORD}"
       PortalAuth__LoginBasePath: "/portal"
       PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
+      Clarity__ProjectId: "${CLARITY_PROJECT_ID:-}"
     volumes:
       - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys
       - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs

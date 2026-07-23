@@ -30,6 +30,11 @@ jobs:
       Agnum__Api__BaseUrl: ${{ vars.Agnum__Api__BaseUrl }}
       Agnum__Warehouses__sandelys__ApiKey: ${{ secrets.AGNUM__WAREHOUSES__SANDELYS__APIKEY }}
       Agnum__Warehouses__pardavimai__ApiKey: ${{ secrets.AGNUM__WAREHOUSES__PARDAVIMAI__APIKEY }}
+      # Not a secret - the Clarity project id is embedded in client-side JS and
+      # visible to anyone visiting the site. A repo Variable (not a Secret) is
+      # the right slot. Test-only for now; prod will get its own project id
+      # via the same vars.CLARITY_PROJECT_ID name scoped to the prod environment.
+      CLARITY_PROJECT_ID: ${{ vars.CLARITY_PROJECT_ID }}
 
     steps:
       - name: Fail fast if required env vars are missing or invalid
