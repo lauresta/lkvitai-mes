@@ -332,9 +332,10 @@ static string ResolveWarehouseWebUiBaseUrl(HttpContext context)
         return $"{scheme}://warehouse.mes.lauresta.com";
     }
 
-    if (host.Equals("mes-test.lauresta.com", StringComparison.OrdinalIgnoreCase))
+    if (host.Equals("cikada.test.lauresta.com", StringComparison.OrdinalIgnoreCase) ||
+        host.Equals("mes-test.lauresta.com", StringComparison.OrdinalIgnoreCase))
     {
-        return $"{scheme}://mes-test.lauresta.com/warehouse";
+        return $"{scheme}://{host}/warehouse";
     }
 
     return $"{scheme}://warehouse.{host}";

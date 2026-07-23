@@ -1,5 +1,8 @@
-# Test environment — routers, middlewares, services for mes-test.lauresta.com
-# and its alias lkvitai.lauresta.com (Cloudflare CNAME → mes-test.lauresta.com).
+# Test environment — routers, middlewares, services for cikada.test.lauresta.com
+# (the official brand for the test environment) and its alias lkvitai.lauresta.com
+# (Cloudflare CNAME). The legacy mes-test.lauresta.com hostname now permanently
+# redirects to cikada.test.lauresta.com (see mes-test-legacy-redirect below) -
+# it no longer serves content directly.
 #
 # Path-based routing under both hostnames. API prefixes are stripped before
 # forwarding so each module's ASP.NET Core host only sees its own routes.
@@ -7,8 +10,22 @@
 # Warehouse/Portal routing pattern exactly.
 http:
   routers:
+    mes-test-legacy-redirect:
+      # mes-test.lauresta.com is the old hostname; cikada.test.lauresta.com is
+      # the new official brand. Redirect the whole host, every path, so old
+      # links/bookmarks keep working. No PathPrefix/Path constraint needed -
+      # mes-test.lauresta.com is otherwise absent from every router below, so
+      # this is the only router that can match that host.
+      rule: "Host(`mes-test.lauresta.com`)"
+      entryPoints: [websecure]
+      middlewares: [mes-test-legacy-redirect-to-cikada]
+      service: mes-test-portal-webui
+      priority: 300
+      tls:
+        certResolver: letsencrypt
+
     mes-test-portal-root:
-      rule: "(Host(`mes-test.lauresta.com`) || Host(`lkvitai.lauresta.com`)) && Path(`/`)"
+      rule: "(Host(`cikada.test.lauresta.com`) || Host(`lkvitai.lauresta.com`)) && Path(`/`)"
       entryPoints: [websecure]
       middlewares: [mes-test-redirect-root-to-portal]
       service: mes-test-portal-webui
@@ -17,7 +34,7 @@ http:
         certResolver: letsencrypt
 
     mes-test-portal:
-      rule: "(Host(`mes-test.lauresta.com`) || Host(`lkvitai.lauresta.com`)) && PathPrefix(`/portal`)"
+      rule: "(Host(`cikada.test.lauresta.com`) || Host(`lkvitai.lauresta.com`)) && PathPrefix(`/portal`)"
       entryPoints: [websecure]
       service: mes-test-portal-webui
       priority: 100
@@ -25,7 +42,7 @@ http:
         certResolver: letsencrypt
 
     mes-test-warehouse:
-      rule: "(Host(`mes-test.lauresta.com`) || Host(`lkvitai.lauresta.com`)) && PathPrefix(`/warehouse`)"
+      rule: "(Host(`cikada.test.lauresta.com`) || Host(`lkvitai.lauresta.com`)) && PathPrefix(`/warehouse`)"
       entryPoints: [websecure]
       service: mes-test-warehouse-webui
       priority: 100
@@ -33,7 +50,7 @@ http:
         certResolver: letsencrypt
 
     mes-test-sales:
-      rule: "(Host(`mes-test.lauresta.com`) || Host(`lkvitai.lauresta.com`)) && PathPrefix(`/sales`)"
+      rule: "(Host(`cikada.test.lauresta.com`) || Host(`lkvitai.lauresta.com`)) && PathPrefix(`/sales`)"
       entryPoints: [websecure]
       service: mes-test-sales-webui
       priority: 100
@@ -41,7 +58,7 @@ http:
         certResolver: letsencrypt
 
     mes-test-frontline:
-      rule: "(Host(`mes-test.lauresta.com`) || Host(`lkvitai.lauresta.com`)) && PathPrefix(`/frontline`)"
+      rule: "(Host(`cikada.test.lauresta.com`) || Host(`lkvitai.lauresta.com`)) && PathPrefix(`/frontline`)"
       entryPoints: [websecure]
       service: mes-test-frontline-webui
       priority: 100
@@ -49,7 +66,7 @@ http:
         certResolver: letsencrypt
 
     mes-test-scan:
-      rule: "(Host(`mes-test.lauresta.com`) || Host(`lkvitai.lauresta.com`)) && PathPrefix(`/scan`)"
+      rule: "(Host(`cikada.test.lauresta.com`) || Host(`lkvitai.lauresta.com`)) && PathPrefix(`/scan`)"
       entryPoints: [websecure]
       service: mes-test-scanning-webui
       priority: 100
@@ -57,7 +74,7 @@ http:
         certResolver: letsencrypt
 
     mes-test-shopfloor:
-      rule: "(Host(`mes-test.lauresta.com`) || Host(`lkvitai.lauresta.com`)) && PathPrefix(`/shopfloor`)"
+      rule: "(Host(`cikada.test.lauresta.com`) || Host(`lkvitai.lauresta.com`)) && PathPrefix(`/shopfloor`)"
       entryPoints: [websecure]
       service: mes-test-shopfloor-webui
       priority: 100
@@ -65,7 +82,7 @@ http:
         certResolver: letsencrypt
 
     mes-test-api-portal:
-      rule: "(Host(`mes-test.lauresta.com`) || Host(`lkvitai.lauresta.com`)) && PathPrefix(`/api/portal`)"
+      rule: "(Host(`cikada.test.lauresta.com`) || Host(`lkvitai.lauresta.com`)) && PathPrefix(`/api/portal`)"
       entryPoints: [websecure]
       middlewares: [mes-test-strip-api-portal]
       service: mes-test-portal-api
@@ -74,7 +91,7 @@ http:
         certResolver: letsencrypt
 
     mes-test-api-warehouse:
-      rule: "(Host(`mes-test.lauresta.com`) || Host(`lkvitai.lauresta.com`)) && PathPrefix(`/api/warehouse`)"
+      rule: "(Host(`cikada.test.lauresta.com`) || Host(`lkvitai.lauresta.com`)) && PathPrefix(`/api/warehouse`)"
       entryPoints: [websecure]
       middlewares: [mes-test-strip-api-warehouse]
       service: mes-test-warehouse-api
@@ -83,7 +100,7 @@ http:
         certResolver: letsencrypt
 
     mes-test-api-sales:
-      rule: "(Host(`mes-test.lauresta.com`) || Host(`lkvitai.lauresta.com`)) && PathPrefix(`/api/sales`)"
+      rule: "(Host(`cikada.test.lauresta.com`) || Host(`lkvitai.lauresta.com`)) && PathPrefix(`/api/sales`)"
       entryPoints: [websecure]
       service: mes-test-sales-api
       priority: 200
@@ -91,7 +108,7 @@ http:
         certResolver: letsencrypt
 
     mes-test-api-frontline:
-      rule: "(Host(`mes-test.lauresta.com`) || Host(`lkvitai.lauresta.com`)) && PathPrefix(`/api/frontline`)"
+      rule: "(Host(`cikada.test.lauresta.com`) || Host(`lkvitai.lauresta.com`)) && PathPrefix(`/api/frontline`)"
       entryPoints: [websecure]
       service: mes-test-frontline-api
       priority: 200
@@ -99,7 +116,7 @@ http:
         certResolver: letsencrypt
 
     mes-test-api-scan:
-      rule: "(Host(`mes-test.lauresta.com`) || Host(`lkvitai.lauresta.com`)) && PathPrefix(`/api/scan`)"
+      rule: "(Host(`cikada.test.lauresta.com`) || Host(`lkvitai.lauresta.com`)) && PathPrefix(`/api/scan`)"
       entryPoints: [websecure]
       service: mes-test-scanning-api
       priority: 200
@@ -107,10 +124,16 @@ http:
         certResolver: letsencrypt
 
   middlewares:
+    mes-test-legacy-redirect-to-cikada:
+      redirectRegex:
+        regex: "^https://mes-test\\.lauresta\\.com(/.*)?$"
+        replacement: "https://cikada.test.lauresta.com${1}"
+        permanent: true
+
     mes-test-redirect-root-to-portal:
       redirectRegex:
-        regex: "^https://(mes-test|lkvitai)\\.lauresta\\.com/$"
-        replacement: "https://${1}.lauresta.com/portal/"
+        regex: "^https://(cikada\\.test\\.lauresta\\.com|lkvitai\\.lauresta\\.com)/$"
+        replacement: "https://${1}/portal/"
         permanent: false
 
     mes-test-strip-api-portal:
