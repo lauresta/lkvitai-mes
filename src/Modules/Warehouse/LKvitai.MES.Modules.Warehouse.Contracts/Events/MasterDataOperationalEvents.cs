@@ -10,7 +10,12 @@ public abstract class WarehouseOperationalEvent : DomainEvent
     public string? TraceId { get; set; }
 }
 
-public sealed class InboundShipmentCreatedEvent : WarehouseOperationalEvent
+/// <summary>
+/// Header fields shared by every event that (re)states an inbound shipment's identity -
+/// currently Created and Updated. Kept as a base class rather than duplicating the property
+/// list, since the two events would otherwise be identical except for name and doc comment.
+/// </summary>
+public abstract class InboundShipmentHeaderEvent : WarehouseOperationalEvent
 {
     public int ShipmentId { get; set; }
     public string ReferenceNumber { get; set; } = string.Empty;
@@ -21,22 +26,15 @@ public sealed class InboundShipmentCreatedEvent : WarehouseOperationalEvent
     public decimal TotalExpectedQty { get; set; }
 }
 
+public sealed class InboundShipmentCreatedEvent : InboundShipmentHeaderEvent;
+
 /// <summary>
 /// Raised when a Draft shipment's header/lines/costs are edited before any receiving has
 /// happened. Only fires for Draft shipments (see ReceivingController.UpdateShipmentAsync's
 /// guard) - once receiving starts the lines are frozen, so this never needs to reconcile
 /// against in-flight received quantities.
 /// </summary>
-public sealed class InboundShipmentUpdatedEvent : WarehouseOperationalEvent
-{
-    public int ShipmentId { get; set; }
-    public string ReferenceNumber { get; set; } = string.Empty;
-    public int SupplierId { get; set; }
-    public string SupplierName { get; set; } = string.Empty;
-    public DateOnly? ExpectedDate { get; set; }
-    public int TotalLines { get; set; }
-    public decimal TotalExpectedQty { get; set; }
-}
+public sealed class InboundShipmentUpdatedEvent : InboundShipmentHeaderEvent;
 
 public sealed class GoodsReceivedEvent : WarehouseOperationalEvent
 {

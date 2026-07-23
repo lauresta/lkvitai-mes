@@ -70,17 +70,20 @@ public sealed class ReceivingClient
         });
 
     private Task<T> PostAsync<T>(string relativeUrl, object payload, CancellationToken cancellationToken)
-        => SendAndReadAsync<T>(() =>
-        {
-            var client = _factory.CreateClient("WarehouseApi");
-            return client.PostAsJsonAsync(relativeUrl, payload, cancellationToken);
-        });
+        => SendJsonAsync<T>(HttpMethod.Post, relativeUrl, payload, cancellationToken);
 
     private Task<T> PutAsync<T>(string relativeUrl, object payload, CancellationToken cancellationToken)
+        => SendJsonAsync<T>(HttpMethod.Put, relativeUrl, payload, cancellationToken);
+
+    private Task<T> SendJsonAsync<T>(HttpMethod method, string relativeUrl, object payload, CancellationToken cancellationToken)
         => SendAndReadAsync<T>(() =>
         {
             var client = _factory.CreateClient("WarehouseApi");
-            return client.PutAsJsonAsync(relativeUrl, payload, cancellationToken);
+            var request = new HttpRequestMessage(method, relativeUrl)
+            {
+                Content = JsonContent.Create(payload)
+            };
+            return client.SendAsync(request, cancellationToken);
         });
 
     private async Task<T> SendAndReadAsync<T>(Func<Task<HttpResponseMessage>> sender)
