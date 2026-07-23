@@ -308,7 +308,7 @@
 
     private void Cancel() => MudDialog.Cancel();
 
-    private Task<IEnumerable<string>> SearchCostTypesAsync(string value)
+    private static Task<IEnumerable<string>> SearchCostTypesAsync(string value)
     {
         IEnumerable<string> results = string.IsNullOrWhiteSpace(value)
             ? CostTypePresets

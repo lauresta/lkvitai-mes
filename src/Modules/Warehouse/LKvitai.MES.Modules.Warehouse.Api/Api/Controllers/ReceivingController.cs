@@ -205,19 +205,10 @@ public sealed class ReceivingController : ControllerBase
         [FromBody] CreateInboundShipmentRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(request.ReferenceNumber))
+        var shapeError = ValidateShipmentRequestShape(request);
+        if (shapeError is not null)
         {
-            return ValidationFailure("Field 'referenceNumber' is required.");
-        }
-
-        if (request.SupplierId <= 0)
-        {
-            return ValidationFailure("Field 'supplierId' is required.");
-        }
-
-        if (request.Lines.Count == 0)
-        {
-            return ValidationFailure("At least one shipment line is required.");
+            return shapeError;
         }
 
         var supplier = await _dbContext.Suppliers
@@ -240,31 +231,10 @@ public sealed class ReceivingController : ControllerBase
             return ValidationFailure("One or more line ItemId values do not exist.");
         }
 
-        if (request.Lines.Any(x => x.ExpectedQty <= 0m))
+        var (additionalCostRows, costError) = BuildAdditionalCostRows(request.AdditionalCosts);
+        if (costError is not null)
         {
-            return ValidationFailure("All shipment line expectedQty values must be greater than 0.");
-        }
-
-        if (request.Lines.Any(x => x.UnitPrice is < 0m))
-        {
-            return ValidationFailure("Shipment line unitPrice must be greater than or equal to 0.");
-        }
-
-        var requestedAdditionalCosts = request.AdditionalCosts ?? Array.Empty<CreateAdditionalCostRequest>();
-        if (requestedAdditionalCosts.Any(x => x.Amount < 0m))
-        {
-            return ValidationFailure("Shipment additional costs must be greater than or equal to 0.");
-        }
-
-        // 0-amount rows are seeded defaults the user left untouched (see plan decision #1) -
-        // don't persist them as noise.
-        var additionalCostRows = requestedAdditionalCosts
-            .Where(x => x.Amount > 0m)
-            .ToList();
-
-        if (additionalCostRows.Any(x => string.IsNullOrWhiteSpace(x.CostType)))
-        {
-            return ValidationFailure("Each additional cost row with a positive amount must have a costType.");
+            return costError;
         }
 
         var shipment = new InboundShipment
@@ -279,22 +249,17 @@ public sealed class ReceivingController : ControllerBase
 
         foreach (var costRow in additionalCostRows)
         {
-            shipment.AdditionalCosts.Add(new InboundShipmentAdditionalCost
-            {
-                CostType = costRow.CostType.Trim(),
-                Amount = costRow.Amount,
-                Currency = string.IsNullOrWhiteSpace(costRow.Currency) ? "EUR" : costRow.Currency.Trim().ToUpperInvariant()
-            });
+            shipment.AdditionalCosts.Add(costRow);
         }
 
+        // Service-type lines (e.g. "Transport" invoiced as its own line) have nothing
+        // physical to receive - auto-complete them at creation instead of routing them
+        // through ReceiveGoodsAsync's lot/QC/location logic (see plan decision #3).
         foreach (var line in request.Lines)
         {
             var item = items.First(x => x.Id == line.ItemId);
             var isService = item.ItemType == ItemType.Service;
 
-            // Service-type lines (e.g. "Transport" invoiced as its own line) have nothing
-            // physical to receive - auto-complete them at creation instead of routing them
-            // through ReceiveGoodsAsync's lot/QC/location logic (see plan decision #3).
             shipment.Lines.Add(new InboundShipmentLine
             {
                 ItemId = line.ItemId,
@@ -306,13 +271,7 @@ public sealed class ReceivingController : ControllerBase
             });
         }
 
-        var allComplete = shipment.Lines.All(x => x.ReceivedQty >= x.ExpectedQty);
-        var anyReceived = shipment.Lines.Any(x => x.ReceivedQty > 0m);
-        shipment.Status = allComplete
-            ? "Complete"
-            : anyReceived
-                ? "Partial"
-                : "Draft";
+        shipment.Status = ComputeShipmentStatus(shipment.Lines);
 
         _dbContext.InboundShipments.Add(shipment);
         await _dbContext.SaveChangesAsync(cancellationToken);
@@ -462,13 +421,7 @@ public sealed class ReceivingController : ControllerBase
 
         line.ReceivedQty += request.ReceivedQty;
 
-        var allComplete = shipment.Lines.All(x => x.ReceivedQty >= x.ExpectedQty);
-        var anyReceived = shipment.Lines.Any(x => x.ReceivedQty > 0m);
-        shipment.Status = allComplete
-            ? "Complete"
-            : anyReceived
-                ? "Partial"
-                : "Draft";
+        shipment.Status = ComputeShipmentStatus(shipment.Lines);
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 
@@ -622,6 +575,79 @@ public sealed class ReceivingController : ControllerBase
                 itemId,
                 adjustResult.Error);
         }
+    }
+
+    private ObjectResult? ValidateShipmentRequestShape(CreateInboundShipmentRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.ReferenceNumber))
+        {
+            return ValidationFailure("Field 'referenceNumber' is required.");
+        }
+
+        if (request.SupplierId <= 0)
+        {
+            return ValidationFailure("Field 'supplierId' is required.");
+        }
+
+        if (request.Lines.Count == 0)
+        {
+            return ValidationFailure("At least one shipment line is required.");
+        }
+
+        if (request.Lines.Any(x => x.ExpectedQty <= 0m))
+        {
+            return ValidationFailure("All shipment line expectedQty values must be greater than 0.");
+        }
+
+        if (request.Lines.Any(x => x.UnitPrice is < 0m))
+        {
+            return ValidationFailure("Shipment line unitPrice must be greater than or equal to 0.");
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Validates and materializes the additional-cost rows for a new shipment. 0-amount rows
+    /// are seeded defaults the user left untouched (see plan decision #1) and are silently
+    /// dropped rather than persisted as noise.
+    /// </summary>
+    private (List<InboundShipmentAdditionalCost> Rows, ObjectResult? Error) BuildAdditionalCostRows(
+        IReadOnlyList<CreateAdditionalCostRequest>? requested)
+    {
+        var requestedCosts = requested ?? Array.Empty<CreateAdditionalCostRequest>();
+        if (requestedCosts.Any(x => x.Amount < 0m))
+        {
+            return ([], ValidationFailure("Shipment additional costs must be greater than or equal to 0."));
+        }
+
+        var positiveRows = requestedCosts.Where(x => x.Amount > 0m).ToList();
+        if (positiveRows.Any(x => string.IsNullOrWhiteSpace(x.CostType)))
+        {
+            return ([], ValidationFailure("Each additional cost row with a positive amount must have a costType."));
+        }
+
+        var rows = positiveRows
+            .Select(x => new InboundShipmentAdditionalCost
+            {
+                CostType = x.CostType.Trim(),
+                Amount = x.Amount,
+                Currency = string.IsNullOrWhiteSpace(x.Currency) ? "EUR" : x.Currency.Trim().ToUpperInvariant()
+            })
+            .ToList();
+
+        return (rows, null);
+    }
+
+    private static string ComputeShipmentStatus(IEnumerable<InboundShipmentLine> lines)
+    {
+        var materialized = lines as ICollection<InboundShipmentLine> ?? lines.ToList();
+        if (materialized.All(x => x.ReceivedQty >= x.ExpectedQty))
+        {
+            return "Complete";
+        }
+
+        return materialized.Any(x => x.ReceivedQty > 0m) ? "Partial" : "Draft";
     }
 
     /// <summary>
