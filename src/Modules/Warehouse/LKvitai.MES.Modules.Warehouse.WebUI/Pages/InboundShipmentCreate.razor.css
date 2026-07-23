@@ -1,7 +1,27 @@
 /* Compact-enterprise density for this page - AGENTS.md: "MudBlazor defaults
    are not the visual source of truth". Reuses the app's existing tokens
    (--row-h: 30px, --control-h: 32px, --n-*, --r-sm) instead of MudBlazor's
-   spacious default field/row sizing. */
+   spacious default field/row sizing.
+
+   DOM reference (verified against MudBlazor 6.20.0 source - all four field
+   types used on this page funnel through the same MudInput internals):
+     .mud-input-control                    <- MudInputControl root
+       .mud-input-control-input-container
+         .mud-input.mud-input-text[.mud-input-underline][.mud-input-adorned-*]
+           .mud-input-adornment.mud-input-adornment-start   (optional)
+           input.mud-input-slot.mud-input-root.mud-input-root-text  <- THE input
+                                                             (one element, both classes)
+           .mud-input-adornment.mud-input-adornment-end     (optional: €, arrow, calendar)
+           .mud-input-numeric-spin                          (MudNumericField only)
+   MudAutocomplete adds "mud-select-input" to the same <input>. MudDatePicker
+   wraps everything in an outer .mud-picker div and internally renders a plain
+   MudTextField, so it shares 100% of the same input markup above.
+
+   Border/background/focus-ring live ONLY on the wrapper div
+   (.lk-form-field__control / .lk-field--inline); every Mud-drawn border,
+   underline and shadow is zeroed below so there is exactly one frame per
+   field, and --control-h is applied to every internal node (not just
+   .mud-input) so nothing can silently grow the row. */
 
 .ish-create__body {
     padding: 14px;
@@ -20,11 +40,7 @@
     }
 }
 
-/* ─── Labeled compact field (external mono-caps label + 32px bordered box) ─
-   The border lives on this plain wrapper div, not on MudBlazor's own markup -
-   fighting Mud's Outlined-variant fieldset/legend produced a double-border
-   artifact in production, so fields use Variant.Text (no fieldset at all)
-   reduced to a bare input filling this box instead. */
+/* ─── Labeled compact field (external mono-caps label + control-h box) ───── */
 .lk-form-field {
     display: flex;
     flex-direction: column;
@@ -39,11 +55,14 @@
     text-transform: uppercase;
 }
 
-.lk-form-field__control {
+/* ─── Unified control frame: single border/bg/focus-ring for every field ── */
+.lk-form-field__control,
+.lk-field--inline {
     display: flex;
     align-items: center;
     height: var(--control-h);
     min-height: var(--control-h);
+    max-height: var(--control-h);
     padding: 0 10px;
     border: 1px solid var(--n-200);
     border-radius: var(--r-sm);
@@ -51,37 +70,183 @@
     box-sizing: border-box;
 }
 
-.lk-form-field__control:focus-within {
+.lk-field--inline {
+    padding: 0 8px;
+}
+
+.lk-form-field__control:focus-within,
+.lk-field--inline:focus-within {
     border-color: var(--accent-500);
     box-shadow: 0 0 0 3px rgba(47, 143, 139, 0.12);
 }
 
-::deep .lk-form-field__control .mud-input-control {
+/* MudInputControl root + its inner container: fill the wrapper, no margin */
+::deep .lk-form-field__control .mud-input-control,
+::deep .lk-field--inline .mud-input-control,
+::deep .lk-form-field__control .mud-input-control-input-container,
+::deep .lk-field--inline .mud-input-control-input-container {
     margin: 0 !important;
     width: 100%;
+    height: 100%;
 }
 
-::deep .lk-form-field__control .mud-input-label {
+::deep .lk-form-field__control .mud-input-label,
+::deep .lk-field--inline .mud-input-label {
     display: none !important;
 }
 
+/* The .mud-input row: fixed height, transparent - the wrapper div already
+   draws the border/background, so this must contribute nothing visually. */
+::deep .lk-form-field__control .mud-input,
+::deep .lk-field--inline .mud-input {
+    height: var(--control-h) !important;
+    min-height: var(--control-h) !important;
+    max-height: var(--control-h) !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    box-sizing: border-box !important;
+}
+
+/* Underline (Variant.Text) is drawn via ::before/::after on the .mud-input
+   itself (mud-input-underline is a class on that same div, not a child) -
+   kill both pseudo-elements in both states. */
 ::deep .lk-form-field__control .mud-input-underline::before,
-::deep .lk-form-field__control .mud-input-underline::after {
+::deep .lk-form-field__control .mud-input-underline::after,
+::deep .lk-field--inline .mud-input-underline::before,
+::deep .lk-field--inline .mud-input-underline::after {
     display: none !important;
+    content: none !important;
+    border: 0 !important;
 }
 
-::deep .lk-form-field__control .mud-input {
-    height: var(--control-h) !important;
+/* Defensive: if a field is ever switched back to Variant.Outlined, the
+   fieldset/legend border must not reappear - the wrapper div is always the
+   single source of the visible frame. */
+::deep .lk-form-field__control .mud-input-outlined-border,
+::deep .lk-field--inline .mud-input-outlined-border {
+    display: none !important;
+    border: 0 !important;
 }
 
-::deep .lk-form-field__control .mud-input > input.mud-input-root,
-::deep .lk-form-field__control .mud-input > div.mud-input-slot {
+/* The real <input> - one element carrying both .mud-input-slot and
+   .mud-input-root (verified in MudInput.razor: `<input class="@InputClassname">`
+   where InputClassname = "mud-input-slot mud-input-root mud-input-root-{variant} ..."). */
+::deep .lk-form-field__control input.mud-input-root,
+::deep .lk-field--inline input.mud-input-root {
     height: var(--control-h) !important;
+    min-height: var(--control-h) !important;
+    max-height: var(--control-h) !important;
     padding: 0 !important;
     border: 0 !important;
+    box-shadow: none !important;
     background: transparent !important;
-    font-size: 12.5px !important;
+    color: var(--n-900);
+    font-family: var(--font-ui);
     box-sizing: border-box !important;
+}
+
+.lk-form-field__control input.mud-input-root {
+    font-size: 13px;
+}
+
+.lk-field--inline input.mud-input-root {
+    font-size: 12.5px;
+}
+
+::deep .lk-form-field__control input.mud-input-root::placeholder,
+::deep .lk-field--inline input.mud-input-root::placeholder {
+    color: var(--n-400);
+    opacity: 1;
+}
+
+/* ─── Adornments (autocomplete dropdown arrow, date-picker calendar icon,
+   the € text on Amount) - one shared class for all three, per MudInputCssHelper. */
+::deep .lk-form-field__control .mud-input-adornment,
+::deep .lk-field--inline .mud-input-adornment {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: var(--control-h) !important;
+    min-height: var(--control-h) !important;
+    max-height: var(--control-h) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    color: var(--n-400);
+}
+
+
+::deep .lk-form-field__control .mud-input-adornment .mud-icon-root,
+::deep .lk-field--inline .mud-input-adornment .mud-icon-root {
+    font-size: 18px;
+}
+
+::deep .lk-form-field__control .mud-input-adornment .mud-icon-button,
+::deep .lk-field--inline .mud-input-adornment .mud-icon-button {
+    padding: 0;
+    height: 24px;
+    width: 24px;
+}
+
+/* ─── Numeric spin buttons (MudNumericField) - must not grow the row. ───── */
+::deep .lk-form-field__control .mud-input-numeric-spin,
+::deep .lk-field--inline .mud-input-numeric-spin {
+    display: flex;
+    flex-direction: column;
+    align-self: center;
+    height: var(--control-h) !important;
+    max-height: var(--control-h) !important;
+    justify-content: center;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+
+::deep .lk-form-field__control .mud-input-numeric-spin .mud-button-root,
+::deep .lk-field--inline .mud-input-numeric-spin .mud-button-root {
+    min-width: 0;
+    height: 14px;
+    max-height: 14px;
+    padding: 0;
+}
+
+::deep .lk-form-field__control .mud-input-numeric-spin .mud-icon-root,
+::deep .lk-field--inline .mud-input-numeric-spin .mud-icon-root {
+    font-size: 14px;
+}
+
+/* Belt-and-braces: MudNumericField renders InputType.Text internally (not a
+   native <input type=number>), so this normally has no effect, but it's
+   harmless insurance against any native spin box ever appearing. */
+::deep .lk-form-field__control input[type="number"]::-webkit-outer-spin-button,
+::deep .lk-form-field__control input[type="number"]::-webkit-inner-spin-button,
+::deep .lk-field--inline input[type="number"]::-webkit-outer-spin-button,
+::deep .lk-field--inline input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+::deep .lk-form-field__control input[type="number"],
+::deep .lk-field--inline input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+/* ─── Numbers/money/Ccy/dates: monospace + tabular figures. ──────────────
+   Dates are reliably identifiable by MudDatePicker's outer .mud-picker
+   wrapper. Qty/Price/Amount/Ccy have no distinguishing Mud class (they're
+   plain MudNumericField/MudTextField instances), so they're targeted by
+   column position within the grids below - column 1 (Item/Type) stays UI
+   font, columns 2-4 (Qty|Amount, Price|Ccy, Ccy) are mono. Keep this in
+   sync if the Lines/Additional-costs column order ever changes. */
+::deep .lk-form-field__control .mud-picker input.mud-input-root {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+}
+
+.ish-create__grid td:nth-child(n+2):nth-child(-n+4) .lk-field--inline input.mud-input-root {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
 }
 
 /* ─── Section headers ────────────────────────────────────────────────────── */
@@ -118,7 +283,7 @@
 
 ::deep .ish-create__grid .mud-table-cell {
     height: auto !important;
-    min-height: 34px !important;
+    min-height: calc(var(--control-h) + 6px) !important;
     padding: 3px 8px !important;
     vertical-align: middle !important;
 }
@@ -131,44 +296,6 @@
 
 .ish-create__service-chip {
     align-self: flex-start;
-}
-
-/* Row-level inline fields (no visible label - the column header already
-   labels them). Border lives on this plain wrapper div, same reasoning as
-   .lk-form-field__control above - fields use Variant.Text, reduced to a bare
-   input filling the box, instead of fighting Mud's Outlined fieldset. */
-.lk-field--inline {
-    display: flex;
-    align-items: center;
-    min-height: 28px;
-    padding: 0 8px;
-    border: 1px solid var(--n-200);
-    border-radius: var(--r-sm);
-    background: var(--n-0);
-    box-sizing: border-box;
-}
-
-.lk-field--inline:focus-within {
-    border-color: var(--accent-500);
-    box-shadow: 0 0 0 2px rgba(47, 143, 139, 0.12);
-}
-
-::deep .lk-field--inline .mud-input-control {
-    margin: 0 !important;
-    width: 100%;
-}
-
-::deep .lk-field--inline .mud-input-underline::before,
-::deep .lk-field--inline .mud-input-underline::after {
-    display: none !important;
-}
-
-::deep .lk-field--inline .mud-input > input.mud-input-root,
-::deep .lk-field--inline .mud-input > div.mud-input-slot {
-    padding: 0 !important;
-    border: 0 !important;
-    background: transparent !important;
-    font-size: 12.5px !important;
 }
 
 /* ─── Totals bar ──────────────────────────────────────────────────────────── */
