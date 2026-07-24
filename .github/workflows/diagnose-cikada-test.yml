@@ -10,11 +10,24 @@ jobs:
   diagnose:
     runs-on: [self-hosted, lauresta-vps]
     steps:
+      - name: Detect docker access
+        id: docker_access
+        run: |
+          if docker ps >/dev/null 2>&1; then
+            echo "cmd=docker" >> "$GITHUB_OUTPUT"
+          elif sudo -n docker ps >/dev/null 2>&1; then
+            echo "cmd=sudo -n docker" >> "$GITHUB_OUTPUT"
+          else
+            echo "cmd=docker" >> "$GITHUB_OUTPUT"
+            echo "::warning::Neither plain docker nor sudo -n docker worked - docker commands below will likely fail with a permission error, which is itself a useful finding."
+          fi
+
       - name: Find Traefik container
         run: |
-          echo "## Traefik container" >> "$GITHUB_STEP_SUMMARY"
+          DOCKER="${{ steps.docker_access.outputs.cmd }}"
+          echo "## Traefik container (docker access: $DOCKER)" >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
-          docker ps --filter "name=traefik" --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.RunningFor}}' >> "$GITHUB_STEP_SUMMARY" || true
+          $DOCKER ps --filter "name=traefik" --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.RunningFor}}' >> "$GITHUB_STEP_SUMMARY" 2>&1 || true
           echo '```' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Deployed dynamic config on disk
@@ -29,24 +42,35 @@ jobs:
       - name: Traefik logs - cikada/acme/error mentions (last 500 lines)
         run: |
           set -uo pipefail
-          NAME=$(docker ps --filter "name=traefik" --format '{{.Names}}' | head -1)
+          DOCKER="${{ steps.docker_access.outputs.cmd }}"
+          NAME=$($DOCKER ps --filter "name=traefik" --format '{{.Names}}' 2>/dev/null | head -1)
           echo "## Traefik logs (container: ${NAME:-none found})" >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
           if [ -n "$NAME" ]; then
-            docker logs "$NAME" --tail 500 2>&1 | grep -iE 'cikada|acme|certificate|error|panic' | tail -100 >> "$GITHUB_STEP_SUMMARY" || echo "(no matching lines in last 500)" >> "$GITHUB_STEP_SUMMARY"
+            $DOCKER logs "$NAME" --tail 500 2>&1 | grep -iE 'cikada|acme|certificate|error|panic' | tail -100 >> "$GITHUB_STEP_SUMMARY" || echo "(no matching lines in last 500)" >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "no traefik container found by name filter" >> "$GITHUB_STEP_SUMMARY"
+            echo "no traefik container found by name filter (or no docker access)" >> "$GITHUB_STEP_SUMMARY"
           fi
           echo '```' >> "$GITHUB_STEP_SUMMARY"
 
       - name: ACME storage - does it know about cikada-test.lauresta.com
         run: |
-          echo "## ACME storage search" >> "$GITHUB_STEP_SUMMARY"
+          DOCKER="${{ steps.docker_access.outputs.cmd }}"
+          echo "## ACME storage search (filesystem)" >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
-          for f in $(find /opt/traefik /etc/traefik /var/lib/traefik -maxdepth 4 -iname "acme.json" 2>/dev/null); do
+          FOUND=0
+          for f in $(sudo -n find /opt/traefik /etc/traefik /var/lib/traefik -maxdepth 4 -iname "acme.json" 2>/dev/null || find /opt/traefik /etc/traefik /var/lib/traefik -maxdepth 4 -iname "acme.json" 2>/dev/null); do
+            FOUND=1
             echo "-- $f --"
-            grep -o "cikada-test.lauresta.com" "$f" | head -3 || echo "(no match in $f)"
-          done >> "$GITHUB_STEP_SUMMARY" 2>&1 || echo "no acme.json found under common paths" >> "$GITHUB_STEP_SUMMARY"
+            (sudo -n grep -o "cikada-test.lauresta.com" "$f" 2>/dev/null || grep -o "cikada-test.lauresta.com" "$f" 2>/dev/null) | head -3 || echo "(no match in $f)"
+          done >> "$GITHUB_STEP_SUMMARY" 2>&1
+          if [ "$FOUND" = "0" ]; then
+            echo "no acme.json found under common filesystem paths - trying docker exec into the traefik container" >> "$GITHUB_STEP_SUMMARY"
+            NAME=$($DOCKER ps --filter "name=traefik" --format '{{.Names}}' 2>/dev/null | head -1)
+            if [ -n "$NAME" ]; then
+              $DOCKER exec "$NAME" sh -c 'find / -maxdepth 6 -iname "acme.json" 2>/dev/null' >> "$GITHUB_STEP_SUMMARY" 2>&1 || echo "docker exec find failed" >> "$GITHUB_STEP_SUMMARY"
+            fi
+          fi
           echo '```' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Backend reachability (portal-webui 10.11.12.15:5010)
