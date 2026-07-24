@@ -25,7 +25,7 @@ jobs:
             echo '-- systemd traefik service --'
             (systemctl status traefik --no-pager 2>&1 | head -20) || echo "no systemd unit named traefik, or systemctl not permitted"
             echo '```'
-          } >> "$GITHUB_STEP_SUMMARY" 2>&1 || true
+          } 2>&1 | tee -a "$GITHUB_STEP_SUMMARY" || true
 
       - name: Deployed dynamic config on disk
         run: |
@@ -39,7 +39,7 @@ jobs:
               echo "file not readable by this user, or does not exist at this path: $(ls -la /opt/traefik/dynamic/ 2>&1)"
             fi
             echo '```'
-          } >> "$GITHUB_STEP_SUMMARY" 2>&1 || true
+          } 2>&1 | tee -a "$GITHUB_STEP_SUMMARY" || true
 
       - name: Search filesystem for Traefik data / ACME storage (no docker needed)
         run: |
@@ -53,7 +53,7 @@ jobs:
               (grep -o "cikada-test.lauresta.com" "$f" 2>&1 | head -3) || echo "(not readable, or no match)"
             done
             echo '```'
-          } >> "$GITHUB_STEP_SUMMARY" 2>&1 || true
+          } 2>&1 | tee -a "$GITHUB_STEP_SUMMARY" || true
 
       - name: Backend reachability (portal-webui 10.11.12.15:5010)
         run: |
@@ -62,7 +62,7 @@ jobs:
             echo '```'
             curl -sS -m 8 -o /dev/null -w 'HTTP %{http_code} in %{time_total}s\n' http://10.11.12.15:5010/ || echo "curl to backend failed"
             echo '```'
-          } >> "$GITHUB_STEP_SUMMARY" 2>&1 || true
+          } 2>&1 | tee -a "$GITHUB_STEP_SUMMARY" || true
 
       - name: HTTPS checks - public path vs direct-to-Traefik, new host vs known-good host
         run: |
@@ -80,4 +80,4 @@ jobs:
             echo "-- TLS cert Traefik presents for mes-test.lauresta.com (direct, known-good comparison) --"
             echo | openssl s_client -connect 127.0.0.1:443 -servername mes-test.lauresta.com 2>&1 | openssl x509 -noout -subject -dates -issuer 2>&1 || echo "openssl check failed"
             echo '```'
-          } >> "$GITHUB_STEP_SUMMARY" 2>&1 || true
+          } 2>&1 | tee -a "$GITHUB_STEP_SUMMARY" || true
