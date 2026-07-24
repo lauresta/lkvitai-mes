@@ -1,19 +1,20 @@
 @page "/inbound/shipments/create"
+@page "/inbound/shipments/{Id:int}/edit"
 @using System.Globalization
 @inject ReceivingClient ReceivingClient
 @inject MasterDataAdminClient MasterDataAdminClient
 @inject NavigationManager NavigationManager
 @inject ToastService ToastService
 
-<PageTitle>Create Inbound Shipment - Cikada.MES</PageTitle>
+<PageTitle>@(IsEditMode ? $"Edit ISH-{Id} - Cikada.MES" : "Create Inbound Shipment - Cikada.MES")</PageTitle>
 
-<h1>Create Inbound Shipment</h1>
+<h1>@(IsEditMode ? $"Edit Inbound Shipment ISH-{Id}" : "Create Inbound Shipment")</h1>
 
 @if (_apiError is not null)
 {
     <ErrorBanner Message="@BuildErrorMessage(_apiError)"
                  TraceId="@_apiError.TraceId"
-                 OnRetry="LoadLookupDataAsync"
+                 OnRetry="@(IsEditMode ? LoadShipmentForEditAsync : LoadLookupDataAsync)"
                  OnDismiss="DismissError" />
 }
 
@@ -214,7 +215,7 @@
         </div>
 
         <div class="ish-create__footer">
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="CreateAsync" Disabled="@_isSubmitting">Create Shipment</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SubmitAsync" Disabled="@_isSubmitting">@(IsEditMode ? "Save Changes" : "Create Shipment")</MudButton>
         </div>
     </div>
 </MudPaper>
@@ -225,6 +226,11 @@
     // Lithuanian formatting: comma decimal separator, matches the convention already
     // used for money elsewhere in the app (see Dashboard.razor's lt-LT price formatting).
     private static readonly CultureInfo NumberCulture = CultureInfo.GetCultureInfo("lt-LT");
+
+    [Parameter]
+    public int? Id { get; set; }
+
+    private bool IsEditMode => Id.HasValue;
 
     private readonly List<InboundLineModel> _lines = [];
     private readonly List<AdditionalCostModel> _additionalCosts = [];
@@ -242,13 +248,20 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _lines.Add(new InboundLineModel());
-        foreach (var costType in CostTypePresets.Where(x => x != "Other"))
+        if (IsEditMode)
         {
-            _additionalCosts.Add(new AdditionalCostModel { CostType = costType });
+            await LoadShipmentForEditAsync();
         }
+        else
+        {
+            _lines.Add(new InboundLineModel());
+            foreach (var costType in CostTypePresets.Where(x => x != "Other"))
+            {
+                _additionalCosts.Add(new AdditionalCostModel { CostType = costType });
+            }
 
-        await LoadLookupDataAsync();
+            await LoadLookupDataAsync();
+        }
     }
 
     private async Task LoadLookupDataAsync()
@@ -261,6 +274,101 @@
             // Warm the supplier/item autocompletes are server-searched on demand; nothing to
             // preload here beyond validating the API is reachable.
             await MasterDataAdminClient.GetSuppliersAsync(null, 1, 1);
+        }
+        catch (ApiException ex)
+        {
+            _apiError = ex;
+            ToastService.ShowError(BuildErrorMessage(ex));
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task LoadShipmentForEditAsync()
+    {
+        if (Id is not { } shipmentId)
+        {
+            return;
+        }
+
+        _isLoading = true;
+        _apiError = null;
+
+        try
+        {
+            var shipment = await ReceivingClient.GetShipmentByIdAsync(shipmentId);
+
+            if (!string.Equals(shipment.Status, "Draft", StringComparison.OrdinalIgnoreCase))
+            {
+                ToastService.ShowError(
+                    $"ISH-{shipment.Id} has status '{shipment.Status}' and can no longer be edited - " +
+                    "receiving has already started against it.");
+                NavigationManager.NavigateTo($"/warehouse/inbound/shipments/{shipment.Id}");
+                return;
+            }
+
+            _referenceNumber = shipment.ReferenceNumber;
+            _expectedDate = shipment.ExpectedDate?.ToDateTime(TimeOnly.MinValue);
+            _invoiceNumber = shipment.InvoiceNumber;
+            _invoiceDate = shipment.InvoiceDate?.ToDateTime(TimeOnly.MinValue);
+
+            // The detail response carries the supplier's display name but not its Code
+            // (needed by the Supplier autocomplete's ToStringFunc), so look the full
+            // record up by searching on that name rather than round-tripping a
+            // dedicated by-id endpoint that doesn't exist yet.
+            _supplier = (await SearchSuppliersAsync(shipment.SupplierName))
+                .FirstOrDefault(x => x.Id == shipment.SupplierId)
+                ?? new AdminSupplierDto { Id = shipment.SupplierId, Name = shipment.SupplierName };
+
+            _lines.Clear();
+            foreach (var line in shipment.Lines)
+            {
+                _lines.Add(new InboundLineModel
+                {
+                    Item = new AdminItemDto
+                    {
+                        Id = line.ItemId,
+                        InternalSKU = line.ItemSku,
+                        Name = line.ItemName,
+                        BaseUoM = line.BaseUoM,
+                        RequiresLotTracking = line.RequiresLotTracking,
+                        RequiresQC = line.RequiresQC,
+                        ItemType = line.ItemType,
+                        CostType = line.CostType
+                    },
+                    ExpectedQty = line.ExpectedQty,
+                    UnitPrice = line.UnitPrice,
+                    Currency = line.Currency ?? "EUR"
+                });
+            }
+
+            if (_lines.Count == 0)
+            {
+                _lines.Add(new InboundLineModel());
+            }
+
+            _additionalCosts.Clear();
+            foreach (var cost in shipment.AdditionalCosts)
+            {
+                _additionalCosts.Add(new AdditionalCostModel
+                {
+                    CostType = cost.CostType,
+                    Amount = cost.Amount,
+                    Currency = cost.Currency
+                });
+            }
+
+            if (_additionalCosts.Count == 0)
+            {
+                foreach (var costType in CostTypePresets.Where(x => x != "Other"))
+                {
+                    _additionalCosts.Add(new AdditionalCostModel { CostType = costType });
+                }
+            }
+
+            RefreshDuplicateCostTypeWarning();
         }
         catch (ApiException ex)
         {
@@ -404,7 +512,7 @@
 
     private static string FormatMoney(decimal value) => value.ToString("0.00", NumberCulture);
 
-    private async Task CreateAsync()
+    private async Task SubmitAsync()
     {
         if (string.IsNullOrWhiteSpace(_referenceNumber))
         {
@@ -418,53 +526,42 @@
             return;
         }
 
-        var lines = _lines
-            .Where(x => x.Item is not null && x.ExpectedQty > 0m)
-            .Select(x => new CreateInboundShipmentLineRequestDto
-            {
-                ItemId = x.Item!.Id,
-                ExpectedQty = x.ExpectedQty,
-                UnitPrice = x.UnitPrice,
-                Currency = string.IsNullOrWhiteSpace(x.Currency) ? null : x.Currency.Trim()
-            })
-            .ToList();
-
+        var lines = BuildLineRequests();
         if (lines.Count == 0)
         {
             ToastService.ShowError("Add at least one valid line.");
             return;
         }
 
-        var additionalCosts = _additionalCosts
-            .Where(x => x.Amount > 0m)
-            .Select(x => new CreateAdditionalCostRequestDto
-            {
-                CostType = string.IsNullOrWhiteSpace(x.CostType) ? "Other" : x.CostType.Trim(),
-                Amount = x.Amount,
-                Currency = string.IsNullOrWhiteSpace(x.Currency) ? null : x.Currency.Trim()
-            })
-            .ToList();
+        var request = new CreateInboundShipmentRequestDto
+        {
+            ReferenceNumber = _referenceNumber.Trim(),
+            SupplierId = _supplier.Id,
+            Type = "PO",
+            ExpectedDate = _expectedDate.HasValue ? DateOnly.FromDateTime(_expectedDate.Value.Date) : null,
+            InvoiceNumber = string.IsNullOrWhiteSpace(_invoiceNumber) ? null : _invoiceNumber.Trim(),
+            InvoiceDate = _invoiceDate.HasValue ? DateOnly.FromDateTime(_invoiceDate.Value.Date) : null,
+            Lines = lines,
+            AdditionalCosts = BuildAdditionalCostRequests()
+        };
 
         _isSubmitting = true;
         _apiError = null;
 
         try
         {
-            var request = new CreateInboundShipmentRequestDto
+            if (IsEditMode && Id is { } shipmentId)
             {
-                ReferenceNumber = _referenceNumber.Trim(),
-                SupplierId = _supplier.Id,
-                Type = "PO",
-                ExpectedDate = _expectedDate.HasValue ? DateOnly.FromDateTime(_expectedDate.Value.Date) : null,
-                InvoiceNumber = string.IsNullOrWhiteSpace(_invoiceNumber) ? null : _invoiceNumber.Trim(),
-                InvoiceDate = _invoiceDate.HasValue ? DateOnly.FromDateTime(_invoiceDate.Value.Date) : null,
-                Lines = lines,
-                AdditionalCosts = additionalCosts
-            };
-
-            var created = await ReceivingClient.CreateShipmentAsync(request);
-            ToastService.ShowSuccess($"Inbound shipment ISH-{created.Id} created.");
-            NavigationManager.NavigateTo($"/warehouse/inbound/shipments/{created.Id}");
+                var updated = await ReceivingClient.UpdateShipmentAsync(shipmentId, request);
+                ToastService.ShowSuccess($"Inbound shipment ISH-{updated.Id} updated.");
+                NavigationManager.NavigateTo($"/warehouse/inbound/shipments/{updated.Id}");
+            }
+            else
+            {
+                var created = await ReceivingClient.CreateShipmentAsync(request);
+                ToastService.ShowSuccess($"Inbound shipment ISH-{created.Id} created.");
+                NavigationManager.NavigateTo($"/warehouse/inbound/shipments/{created.Id}");
+            }
         }
         catch (ApiException ex)
         {
@@ -477,9 +574,38 @@
         }
     }
 
+    private List<CreateInboundShipmentLineRequestDto> BuildLineRequests()
+    {
+        return _lines
+            .Where(x => x.Item is not null && x.ExpectedQty > 0m)
+            .Select(x => new CreateInboundShipmentLineRequestDto
+            {
+                ItemId = x.Item!.Id,
+                ExpectedQty = x.ExpectedQty,
+                UnitPrice = x.UnitPrice,
+                Currency = string.IsNullOrWhiteSpace(x.Currency) ? null : x.Currency.Trim()
+            })
+            .ToList();
+    }
+
+    private List<CreateAdditionalCostRequestDto> BuildAdditionalCostRequests()
+    {
+        return _additionalCosts
+            .Where(x => x.Amount > 0m)
+            .Select(x => new CreateAdditionalCostRequestDto
+            {
+                CostType = string.IsNullOrWhiteSpace(x.CostType) ? "Other" : x.CostType.Trim(),
+                Amount = x.Amount,
+                Currency = string.IsNullOrWhiteSpace(x.Currency) ? null : x.Currency.Trim()
+            })
+            .ToList();
+    }
+
     private void BackToList()
     {
-        NavigationManager.NavigateTo("/warehouse/inbound/shipments");
+        NavigationManager.NavigateTo(IsEditMode
+            ? $"/warehouse/inbound/shipments/{Id}"
+            : "/warehouse/inbound/shipments");
     }
 
     private void DismissError()

@@ -33,6 +33,20 @@ public sealed class InboundShipmentSummaryProjection : SingleStreamProjection<In
         };
     }
 
+    public void Apply(InboundShipmentUpdatedEvent evt, InboundShipmentSummaryView view)
+    {
+        view.ReferenceNumber = evt.ReferenceNumber;
+        view.SupplierId = evt.SupplierId;
+        view.SupplierName = evt.SupplierName;
+        view.ExpectedDate = evt.ExpectedDate;
+        view.TotalLines = evt.TotalLines;
+        view.TotalExpectedQty = evt.TotalExpectedQty;
+        view.CompletionPercent = view.TotalExpectedQty <= 0m
+            ? 0m
+            : Math.Min(1m, view.TotalReceivedQty / view.TotalExpectedQty);
+        view.LastUpdated = evt.Timestamp;
+    }
+
     public void Apply(GoodsReceivedEvent evt, InboundShipmentSummaryView view)
     {
         view.TotalReceivedQty += evt.ReceivedQty;

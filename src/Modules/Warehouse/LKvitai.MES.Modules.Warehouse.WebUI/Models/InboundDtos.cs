@@ -95,6 +95,14 @@ public record ShipmentCreatedResponseDto
     public DateTime CreatedAt { get; init; }
 }
 
+public record ShipmentUpdatedResponseDto
+{
+    public int Id { get; init; }
+    public string ReferenceNumber { get; init; } = string.Empty;
+    public string Status { get; init; } = string.Empty;
+    public DateTime UpdatedAt { get; init; }
+}
+
 public record ReceiveShipmentLineRequestDto
 {
     public int LineId { get; init; }

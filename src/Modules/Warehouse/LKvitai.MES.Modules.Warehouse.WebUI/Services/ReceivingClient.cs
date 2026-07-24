@@ -47,6 +47,9 @@ public sealed class ReceivingClient
     public Task<ShipmentCreatedResponseDto> CreateShipmentAsync(CreateInboundShipmentRequestDto request, CancellationToken cancellationToken = default)
         => PostAsync<ShipmentCreatedResponseDto>("/api/warehouse/v1/inbound-shipments", request, cancellationToken);
 
+    public Task<ShipmentUpdatedResponseDto> UpdateShipmentAsync(int id, CreateInboundShipmentRequestDto request, CancellationToken cancellationToken = default)
+        => PutAsync<ShipmentUpdatedResponseDto>($"/api/warehouse/v1/inbound-shipments/{id}", request, cancellationToken);
+
     public Task<ReceiveGoodsResponseDto> ReceiveItemsAsync(int shipmentId, ReceiveShipmentLineRequestDto request, CancellationToken cancellationToken = default)
         => PostAsync<ReceiveGoodsResponseDto>($"/api/warehouse/v1/inbound-shipments/{shipmentId}/receive-items", request, cancellationToken);
 
@@ -67,10 +70,20 @@ public sealed class ReceivingClient
         });
 
     private Task<T> PostAsync<T>(string relativeUrl, object payload, CancellationToken cancellationToken)
+        => SendJsonAsync<T>(HttpMethod.Post, relativeUrl, payload, cancellationToken);
+
+    private Task<T> PutAsync<T>(string relativeUrl, object payload, CancellationToken cancellationToken)
+        => SendJsonAsync<T>(HttpMethod.Put, relativeUrl, payload, cancellationToken);
+
+    private Task<T> SendJsonAsync<T>(HttpMethod method, string relativeUrl, object payload, CancellationToken cancellationToken)
         => SendAndReadAsync<T>(() =>
         {
             var client = _factory.CreateClient("WarehouseApi");
-            return client.PostAsJsonAsync(relativeUrl, payload, cancellationToken);
+            var request = new HttpRequestMessage(method, relativeUrl)
+            {
+                Content = JsonContent.Create(payload)
+            };
+            return client.SendAsync(request, cancellationToken);
         });
 
     private async Task<T> SendAndReadAsync<T>(Func<Task<HttpResponseMessage>> sender)

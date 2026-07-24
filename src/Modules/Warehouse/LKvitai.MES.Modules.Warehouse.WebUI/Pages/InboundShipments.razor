@@ -94,6 +94,10 @@
                                 <td>@row.TotalReceivedQty.ToString("0.##") / @row.TotalExpectedQty.ToString("0.##")</td>
                                 <td>
                                     <button class="btn btn-sm btn-outline-primary" @onclick="() => OpenDetails(row.Id)">View</button>
+                                    @if (string.Equals(row.Status, "Draft", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        <button class="btn btn-sm btn-outline-secondary ms-1" @onclick="() => OpenEdit(row.Id)">Edit</button>
+                                    }
                                 </td>
                             </tr>
                         }
@@ -194,6 +198,11 @@
     private void OpenDetails(int id)
     {
         NavigationManager.NavigateTo($"/warehouse/inbound/shipments/{id}");
+    }
+
+    private void OpenEdit(int id)
+    {
+        NavigationManager.NavigateTo($"/warehouse/inbound/shipments/{id}/edit");
     }
 
     private void OpenCreate()

@@ -102,6 +102,16 @@
     height: var(--control-h) !important;
     min-height: var(--control-h) !important;
     max-height: var(--control-h) !important;
+    /* MudBlazor's default .mud-input has margin-top: 16px, reserved for the
+       floating label to shrink up into. The label is display:none above, but
+       the margin survives independently and was never zeroed - it pushed the
+       whole input+adornment+spinner block down inside its fixed-height
+       parent, overflowing the box's bottom edge (confirmed via computed
+       styles: parent container was 30px tall, .mud-input sat at margin-top
+       16px with its own height 32px, so it started 16px below the parent's
+       top and ended 18px past its bottom). This was the actual root cause of
+       every "still misaligned" report, not just cosmetic border cleanup. */
+    margin: 0 !important;
     border: 0 !important;
     box-shadow: none !important;
     background: transparent !important;

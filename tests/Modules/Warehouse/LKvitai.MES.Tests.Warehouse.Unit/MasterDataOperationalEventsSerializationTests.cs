@@ -125,6 +125,19 @@ public class MasterDataOperationalEventsSerializationTests
                 TotalLines = 2,
                 TotalExpectedQty = 200,
                 Timestamp = now
+            },
+            new InboundShipmentUpdatedEvent
+            {
+                AggregateId = Guid.NewGuid(),
+                UserId = "operator-3",
+                TraceId = "trace-h2",
+                ShipmentId = 11,
+                ReferenceNumber = "PO-100-REV2",
+                SupplierId = 12,
+                SupplierName = "Supplier",
+                TotalLines = 3,
+                TotalExpectedQty = 260,
+                Timestamp = now
             }
         };
 

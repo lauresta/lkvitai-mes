@@ -37,6 +37,10 @@
                 </div>
                 <div class="d-flex align-items-center gap-2">
                     <span class="badge @GetStatusBadge(_shipment.Status)">@_shipment.Status</span>
+                    @if (string.Equals(_shipment.Status, "Draft", StringComparison.OrdinalIgnoreCase))
+                    {
+                        <button class="btn btn-outline-primary btn-sm" @onclick="OpenEdit">Edit</button>
+                    }
                     <button class="btn btn-outline-secondary btn-sm" @onclick="BackToList">Back</button>
                     <button class="btn btn-outline-secondary btn-sm" @onclick="LoadAsync">Refresh</button>
                 </div>
@@ -354,6 +358,11 @@
     private void OpenQcQueue()
     {
         NavigationManager.NavigateTo("/warehouse/inbound/qc");
+    }
+
+    private void OpenEdit()
+    {
+        NavigationManager.NavigateTo($"/warehouse/inbound/shipments/{Id}/edit");
     }
 
     private void BackToList()

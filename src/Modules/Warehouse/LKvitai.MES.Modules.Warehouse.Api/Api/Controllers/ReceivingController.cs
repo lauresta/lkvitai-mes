@@ -211,31 +211,14 @@ public sealed class ReceivingController : ControllerBase
             return shapeError;
         }
 
-        var supplier = await _dbContext.Suppliers
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == request.SupplierId, cancellationToken);
-        if (supplier is null)
+        var (inputs, inputsError) = await LoadShipmentInputsAsync(
+            request.SupplierId, request.Lines, request.AdditionalCosts, cancellationToken);
+        if (inputs is null || inputsError is null)
         {
-            return ValidationFailure($"Supplier '{request.SupplierId}' does not exist.");
+            return inputsError ?? Failure(Result.Fail(DomainErrorCodes.InternalError, "Shipment input validation failed unexpectedly."));
         }
 
-        var lineItemIds = request.Lines.Select(x => x.ItemId).Distinct().ToList();
-        var items = await _dbContext.Items
-            .AsNoTracking()
-            .Where(x => lineItemIds.Contains(x.Id))
-            .Select(x => new { x.Id, x.BaseUoM, x.ItemType })
-            .ToListAsync(cancellationToken);
-
-        if (items.Count != lineItemIds.Count)
-        {
-            return ValidationFailure("One or more line ItemId values do not exist.");
-        }
-
-        var (additionalCostRows, costError) = BuildAdditionalCostRows(request.AdditionalCosts);
-        if (costError is not null)
-        {
-            return costError;
-        }
+        var supplier = inputs.Supplier;
 
         var shipment = new InboundShipment
         {
@@ -247,7 +230,7 @@ public sealed class ReceivingController : ControllerBase
             InvoiceDate = request.InvoiceDate
         };
 
-        foreach (var costRow in additionalCostRows)
+        foreach (var costRow in inputs.AdditionalCostRows)
         {
             shipment.AdditionalCosts.Add(costRow);
         }
@@ -255,20 +238,9 @@ public sealed class ReceivingController : ControllerBase
         // Service-type lines (e.g. "Transport" invoiced as its own line) have nothing
         // physical to receive - auto-complete them at creation instead of routing them
         // through ReceiveGoodsAsync's lot/QC/location logic (see plan decision #3).
-        foreach (var line in request.Lines)
+        foreach (var line in BuildShipmentLines(request.Lines, inputs.Items))
         {
-            var item = items.First(x => x.Id == line.ItemId);
-            var isService = item.ItemType == ItemType.Service;
-
-            shipment.Lines.Add(new InboundShipmentLine
-            {
-                ItemId = line.ItemId,
-                ExpectedQty = line.ExpectedQty,
-                ReceivedQty = isService ? line.ExpectedQty : 0m,
-                BaseUoM = item.BaseUoM,
-                UnitPrice = line.UnitPrice,
-                Currency = string.IsNullOrWhiteSpace(line.Currency) ? null : line.Currency.Trim().ToUpperInvariant()
-            });
+            shipment.Lines.Add(line);
         }
 
         shipment.Status = ComputeShipmentStatus(shipment.Lines);
@@ -332,6 +304,135 @@ public sealed class ReceivingController : ControllerBase
                 shipment.ReferenceNumber,
                 shipment.Status,
                 now));
+    }
+
+    [HttpPut("{id:int}")]
+    [Authorize(Policy = WarehousePolicies.QcOrManager)]
+    public async Task<IActionResult> UpdateShipmentAsync(
+        int id,
+        [FromBody] CreateInboundShipmentRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var shapeError = ValidateShipmentRequestShape(request);
+        if (shapeError is not null)
+        {
+            return shapeError;
+        }
+
+        var shipment = await _dbContext.InboundShipments
+            .Include(x => x.Lines)
+            .Include(x => x.AdditionalCosts)
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+        if (shipment is null)
+        {
+            return Failure(Result.Fail(DomainErrorCodes.NotFound, $"Shipment '{id}' does not exist."));
+        }
+
+        // Editing is only safe before any receiving has happened - once a line has a
+        // received qty, changing/removing it here would silently orphan that stock
+        // movement from what the shipment claims it received. ComputeShipmentStatus
+        // only reports "Draft" when every line's ReceivedQty is still 0.
+        if (shipment.Status != "Draft")
+        {
+            return UnprocessableFailure(
+                $"Shipment '{id}' has status '{shipment.Status}' and can no longer be edited - " +
+                "receiving has already started against it.");
+        }
+
+        var (inputs, inputsError) = await LoadShipmentInputsAsync(
+            request.SupplierId, request.Lines, request.AdditionalCosts, cancellationToken);
+        if (inputs is null || inputsError is null)
+        {
+            return inputsError ?? Failure(Result.Fail(DomainErrorCodes.InternalError, "Shipment input validation failed unexpectedly."));
+        }
+
+        var supplier = inputs.Supplier;
+
+        shipment.ReferenceNumber = request.ReferenceNumber.Trim();
+        shipment.SupplierId = request.SupplierId;
+        shipment.ExpectedDate = request.ExpectedDate;
+        shipment.InvoiceNumber = string.IsNullOrWhiteSpace(request.InvoiceNumber) ? null : request.InvoiceNumber.Trim();
+        shipment.InvoiceDate = request.InvoiceDate;
+
+        // No line has been received yet (guarded above), so the old rows can be fully
+        // replaced rather than diffed line-by-line.
+        _dbContext.RemoveRange(shipment.Lines);
+        shipment.Lines.Clear();
+        _dbContext.RemoveRange(shipment.AdditionalCosts);
+        shipment.AdditionalCosts.Clear();
+
+        foreach (var costRow in inputs.AdditionalCostRows)
+        {
+            shipment.AdditionalCosts.Add(costRow);
+        }
+
+        foreach (var line in BuildShipmentLines(request.Lines, inputs.Items))
+        {
+            shipment.Lines.Add(line);
+        }
+
+        shipment.Status = ComputeShipmentStatus(shipment.Lines);
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        var now = DateTime.UtcNow;
+        var evt = new InboundShipmentUpdatedEvent
+        {
+            AggregateId = Guid.NewGuid(),
+            UserId = _currentUserService.GetCurrentUserId(),
+            TraceId = Activity.Current?.Id ?? HttpContext.TraceIdentifier,
+            ShipmentId = shipment.Id,
+            ReferenceNumber = shipment.ReferenceNumber,
+            SupplierId = shipment.SupplierId,
+            SupplierName = supplier.Name,
+            ExpectedDate = shipment.ExpectedDate,
+            TotalLines = shipment.Lines.Count,
+            TotalExpectedQty = shipment.Lines.Sum(x => x.ExpectedQty),
+            Timestamp = now
+        };
+
+        await using (var session = _documentStore.LightweightSession())
+        {
+            session.Events.Append(ShipmentStreamId(shipment.Id), evt);
+            await session.SaveChangesAsync(cancellationToken);
+        }
+
+        // Belt-and-braces: the async InboundShipmentSummaryProjection daemon will also pick
+        // this event up on its own, but its catch-up timing is not something a user editing
+        // a shipment should have to wait on (or risk missing, if the daemon's batch happens
+        // to skip a stale-then-updated document - observed during manual testing). Patch the
+        // list's read model directly and immediately so the edit is reflected right away
+        // regardless of daemon timing; the later async replay of the same event is a no-op
+        // since it recomputes the identical values.
+        await using (var patchSession = _documentStore.LightweightSession())
+        {
+            // SingleStreamProjection identifies its document by the event STREAM id, not by
+            // whatever the Create() handler assigns to InboundShipmentSummaryView.Id -
+            // confirmed by inspecting the persisted rows (id column = "inbound-shipment:{n}",
+            // matching ShipmentStreamId, not InboundShipmentSummaryView.ComputeId's plain "{n}").
+            var summaryView = await patchSession.LoadAsync<InboundShipmentSummaryView>(
+                ShipmentStreamId(shipment.Id), cancellationToken);
+
+            if (summaryView is not null)
+            {
+                summaryView.ReferenceNumber = shipment.ReferenceNumber;
+                summaryView.SupplierId = shipment.SupplierId;
+                summaryView.SupplierName = supplier.Name;
+                summaryView.ExpectedDate = shipment.ExpectedDate;
+                summaryView.TotalLines = shipment.Lines.Count;
+                summaryView.TotalExpectedQty = shipment.Lines.Sum(x => x.ExpectedQty);
+                summaryView.CompletionPercent = summaryView.TotalExpectedQty <= 0m
+                    ? 0m
+                    : Math.Min(1m, summaryView.TotalReceivedQty / summaryView.TotalExpectedQty);
+                summaryView.LastUpdated = now;
+
+                patchSession.Store(summaryView);
+                await patchSession.SaveChangesAsync(cancellationToken);
+            }
+        }
+
+        return Ok(new ShipmentUpdatedResponse(shipment.Id, shipment.ReferenceNumber, shipment.Status, now));
     }
 
     [HttpPost("{id:int}/receive")]
@@ -604,6 +705,106 @@ public sealed class ReceivingController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Runs the supplier/items/additional-costs validation pipeline shared by
+    /// CreateShipmentAsync and UpdateShipmentAsync - both need the exact same three checks
+    /// before touching the shipment entity. Returns null Inputs with the first failure as
+    /// Error; callers only need one guard clause instead of three.
+    /// </summary>
+    private async Task<(ShipmentInputs? Inputs, ObjectResult? Error)> LoadShipmentInputsAsync(
+        int supplierId,
+        IReadOnlyList<CreateInboundShipmentLineRequest> lines,
+        IReadOnlyList<CreateAdditionalCostRequest>? additionalCosts,
+        CancellationToken cancellationToken)
+    {
+        var (supplier, supplierError) = await LoadSupplierAsync(supplierId, cancellationToken);
+        if (supplierError is not null || supplier is null)
+        {
+            return (null, supplierError ?? Failure(Result.Fail(DomainErrorCodes.InternalError, "Supplier lookup failed unexpectedly.")));
+        }
+
+        var (items, itemsError) = await LoadLineItemsAsync(lines, cancellationToken);
+        if (itemsError is not null)
+        {
+            return (null, itemsError);
+        }
+
+        var (additionalCostRows, costError) = BuildAdditionalCostRows(additionalCosts);
+        if (costError is not null)
+        {
+            return (null, costError);
+        }
+
+        return (new ShipmentInputs(supplier, items, additionalCostRows), null);
+    }
+
+    private sealed record ShipmentInputs(
+        Supplier Supplier,
+        List<LineItemLookup> Items,
+        List<InboundShipmentAdditionalCost> AdditionalCostRows);
+
+    private async Task<(Supplier? Supplier, ObjectResult? Error)> LoadSupplierAsync(
+        int supplierId,
+        CancellationToken cancellationToken)
+    {
+        var supplier = await _dbContext.Suppliers
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == supplierId, cancellationToken);
+
+        return supplier is null
+            ? (null, ValidationFailure($"Supplier '{supplierId}' does not exist."))
+            : (supplier, null);
+    }
+
+    private async Task<(List<LineItemLookup> Items, ObjectResult? Error)> LoadLineItemsAsync(
+        IReadOnlyList<CreateInboundShipmentLineRequest> lines,
+        CancellationToken cancellationToken)
+    {
+        var lineItemIds = lines.Select(x => x.ItemId).Distinct().ToList();
+        var items = await _dbContext.Items
+            .AsNoTracking()
+            .Where(x => lineItemIds.Contains(x.Id))
+            .Select(x => new LineItemLookup(x.Id, x.BaseUoM, x.ItemType))
+            .ToListAsync(cancellationToken);
+
+        return items.Count != lineItemIds.Count
+            ? ([], ValidationFailure("One or more line ItemId values do not exist."))
+            : (items, null);
+    }
+
+    /// <summary>
+    /// Materializes shipment line entities from the request. Service-type lines (e.g. a
+    /// "Transport" invoice line) have nothing physical to receive - auto-complete them here
+    /// instead of routing them through ReceiveGoodsAsync's lot/QC/location logic (plan decision #3).
+    /// Shared by create and update - both fully (re)build the line set from scratch.
+    /// </summary>
+    private static List<InboundShipmentLine> BuildShipmentLines(
+        IReadOnlyList<CreateInboundShipmentLineRequest> requestLines,
+        IReadOnlyList<LineItemLookup> items)
+    {
+        var lines = new List<InboundShipmentLine>();
+
+        foreach (var line in requestLines)
+        {
+            var item = items.First(x => x.Id == line.ItemId);
+            var isService = item.ItemType == ItemType.Service;
+
+            lines.Add(new InboundShipmentLine
+            {
+                ItemId = line.ItemId,
+                ExpectedQty = line.ExpectedQty,
+                ReceivedQty = isService ? line.ExpectedQty : 0m,
+                BaseUoM = item.BaseUoM,
+                UnitPrice = line.UnitPrice,
+                Currency = string.IsNullOrWhiteSpace(line.Currency) ? null : line.Currency.Trim().ToUpperInvariant()
+            });
+        }
+
+        return lines;
+    }
+
+    private sealed record LineItemLookup(int Id, string BaseUoM, ItemType ItemType);
+
     private ObjectResult? ValidateShipmentRequestShape(CreateInboundShipmentRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.ReferenceNumber))
@@ -793,6 +994,8 @@ public sealed class ReceivingController : ControllerBase
         string? Currency);
 
     public sealed record ShipmentCreatedResponse(int Id, string ReferenceNumber, string Status, DateTime CreatedAt);
+
+    public sealed record ShipmentUpdatedResponse(int Id, string ReferenceNumber, string Status, DateTime UpdatedAt);
 
     public sealed record ReceiveShipmentLineRequest(
         int LineId,
