@@ -10,84 +10,74 @@ jobs:
   diagnose:
     runs-on: [self-hosted, lauresta-vps]
     steps:
-      - name: Detect docker access
-        id: docker_access
+      - name: Runner identity and docker/systemd access
         run: |
-          if docker ps >/dev/null 2>&1; then
-            echo "cmd=docker" >> "$GITHUB_OUTPUT"
-          elif sudo -n docker ps >/dev/null 2>&1; then
-            echo "cmd=sudo -n docker" >> "$GITHUB_OUTPUT"
-          else
-            echo "cmd=docker" >> "$GITHUB_OUTPUT"
-            echo "::warning::Neither plain docker nor sudo -n docker worked - docker commands below will likely fail with a permission error, which is itself a useful finding."
-          fi
-
-      - name: Find Traefik container
-        run: |
-          DOCKER="${{ steps.docker_access.outputs.cmd }}"
-          echo "## Traefik container (docker access: $DOCKER)" >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-          $DOCKER ps --filter "name=traefik" --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.RunningFor}}' >> "$GITHUB_STEP_SUMMARY" 2>&1 || true
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "## Runner identity"
+            echo '```'
+            whoami
+            id
+            echo '-- docker --'
+            (docker ps >/dev/null 2>&1 && echo "docker ps: OK (no sudo needed)") || echo "docker ps: FAILED"
+            (sudo -n docker ps >/dev/null 2>&1 && echo "sudo -n docker ps: OK") || echo "sudo -n docker ps: FAILED (no passwordless sudo for this user/command)"
+            echo "docker group membership: $(groups | tr ' ' '\n' | grep -x docker || echo 'not in docker group')"
+            echo "docker.sock perms: $(ls -la /var/run/docker.sock 2>&1)"
+            echo '-- systemd traefik service --'
+            (systemctl status traefik --no-pager 2>&1 | head -20) || echo "no systemd unit named traefik, or systemctl not permitted"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY" 2>&1 || true
 
       - name: Deployed dynamic config on disk
         run: |
-          echo "## /opt/traefik/dynamic/mes-test.yml - cikada-test lines" >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-          grep -n "cikada-test\|mes-test" /opt/traefik/dynamic/mes-test.yml >> "$GITHUB_STEP_SUMMARY" || echo "grep found nothing / file missing" >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "File mtime: $(stat -c '%y' /opt/traefik/dynamic/mes-test.yml 2>/dev/null || echo unknown)" >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Traefik logs - cikada/acme/error mentions (last 500 lines)
-        run: |
-          set -uo pipefail
-          DOCKER="${{ steps.docker_access.outputs.cmd }}"
-          NAME=$($DOCKER ps --filter "name=traefik" --format '{{.Names}}' 2>/dev/null | head -1)
-          echo "## Traefik logs (container: ${NAME:-none found})" >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-          if [ -n "$NAME" ]; then
-            $DOCKER logs "$NAME" --tail 500 2>&1 | grep -iE 'cikada|acme|certificate|error|panic' | tail -100 >> "$GITHUB_STEP_SUMMARY" || echo "(no matching lines in last 500)" >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "no traefik container found by name filter (or no docker access)" >> "$GITHUB_STEP_SUMMARY"
-          fi
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-
-      - name: ACME storage - does it know about cikada-test.lauresta.com
-        run: |
-          DOCKER="${{ steps.docker_access.outputs.cmd }}"
-          echo "## ACME storage search (filesystem)" >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-          FOUND=0
-          for f in $(sudo -n find /opt/traefik /etc/traefik /var/lib/traefik -maxdepth 4 -iname "acme.json" 2>/dev/null || find /opt/traefik /etc/traefik /var/lib/traefik -maxdepth 4 -iname "acme.json" 2>/dev/null); do
-            FOUND=1
-            echo "-- $f --"
-            (sudo -n grep -o "cikada-test.lauresta.com" "$f" 2>/dev/null || grep -o "cikada-test.lauresta.com" "$f" 2>/dev/null) | head -3 || echo "(no match in $f)"
-          done >> "$GITHUB_STEP_SUMMARY" 2>&1
-          if [ "$FOUND" = "0" ]; then
-            echo "no acme.json found under common filesystem paths - trying docker exec into the traefik container" >> "$GITHUB_STEP_SUMMARY"
-            NAME=$($DOCKER ps --filter "name=traefik" --format '{{.Names}}' 2>/dev/null | head -1)
-            if [ -n "$NAME" ]; then
-              $DOCKER exec "$NAME" sh -c 'find / -maxdepth 6 -iname "acme.json" 2>/dev/null' >> "$GITHUB_STEP_SUMMARY" 2>&1 || echo "docker exec find failed" >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "## /opt/traefik/dynamic/mes-test.yml"
+            echo '```'
+            if [ -r /opt/traefik/dynamic/mes-test.yml ]; then
+              echo "-- mtime: $(stat -c '%y' /opt/traefik/dynamic/mes-test.yml 2>&1) --"
+              grep -n "cikada-test\|mes-test" /opt/traefik/dynamic/mes-test.yml || echo "(grep found no matching lines)"
+            else
+              echo "file not readable by this user, or does not exist at this path: $(ls -la /opt/traefik/dynamic/ 2>&1)"
             fi
-          fi
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY" 2>&1 || true
+
+      - name: Search filesystem for Traefik data / ACME storage (no docker needed)
+        run: |
+          {
+            echo "## Filesystem search for traefik data dirs / acme.json"
+            echo '```'
+            find /opt /etc /var/lib /srv -maxdepth 5 \( -iname "acme.json" -o -iname "traefik.yml" -o -iname "traefik.yaml" -o -iname "traefik.toml" \) 2>/dev/null | head -50
+            echo '-- if any acme.json found above, checking for cikada-test.lauresta.com in it --'
+            for f in $(find /opt /etc /var/lib /srv -maxdepth 5 -iname "acme.json" 2>/dev/null); do
+              echo "-- $f --"
+              (grep -o "cikada-test.lauresta.com" "$f" 2>&1 | head -3) || echo "(not readable, or no match)"
+            done
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY" 2>&1 || true
 
       - name: Backend reachability (portal-webui 10.11.12.15:5010)
         run: |
-          echo "## Backend check" >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-          curl -sS -m 8 -o /dev/null -w 'HTTP %{http_code} in %{time_total}s\n' http://10.11.12.15:5010/ >> "$GITHUB_STEP_SUMMARY" 2>&1 || echo "curl to backend failed" >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "## Backend check"
+            echo '```'
+            curl -sS -m 8 -o /dev/null -w 'HTTP %{http_code} in %{time_total}s\n' http://10.11.12.15:5010/ || echo "curl to backend failed"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY" 2>&1 || true
 
-      - name: Local HTTPS check against Traefik itself (bypasses Cloudflare)
+      - name: HTTPS checks - public path vs direct-to-Traefik, new host vs known-good host
         run: |
-          echo "## curl https://cikada-test.lauresta.com from the VPS (resolves via real DNS, hits Cloudflare) vs direct to Traefik" >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-          echo "-- via public DNS/Cloudflare --" >> "$GITHUB_STEP_SUMMARY"
-          curl -sS -m 15 -o /dev/null -w 'HTTP %{http_code} in %{time_total}s\n' https://cikada-test.lauresta.com/portal/ >> "$GITHUB_STEP_SUMMARY" 2>&1 || echo "curl failed" >> "$GITHUB_STEP_SUMMARY"
-          echo "-- direct to Traefik on localhost:443 with SNI override (bypasses Cloudflare) --" >> "$GITHUB_STEP_SUMMARY"
-          curl -sS -m 15 -o /dev/null -w 'HTTP %{http_code} in %{time_total}s\n' --resolve cikada-test.lauresta.com:443:127.0.0.1 https://cikada-test.lauresta.com/portal/ >> "$GITHUB_STEP_SUMMARY" 2>&1 || echo "curl failed" >> "$GITHUB_STEP_SUMMARY"
-          echo "-- known-good comparison: mes-test.lauresta.com direct to Traefik --" >> "$GITHUB_STEP_SUMMARY"
-          curl -sS -m 15 -o /dev/null -w 'HTTP %{http_code} in %{time_total}s\n' --resolve mes-test.lauresta.com:443:127.0.0.1 https://mes-test.lauresta.com/portal/ >> "$GITHUB_STEP_SUMMARY" 2>&1 || echo "curl failed" >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "## HTTPS checks"
+            echo '```'
+            echo "-- cikada-test.lauresta.com via public DNS (through Cloudflare) --"
+            curl -sS -m 20 -o /dev/null -w 'HTTP %{http_code} in %{time_total}s\n' https://cikada-test.lauresta.com/portal/ || echo "curl failed/timed out"
+            echo "-- cikada-test.lauresta.com direct to 127.0.0.1 (bypasses Cloudflare, hits Traefik locally, SNI preserved) --"
+            curl -sS -m 20 -o /dev/null -w 'HTTP %{http_code} in %{time_total}s\n' --resolve cikada-test.lauresta.com:443:127.0.0.1 https://cikada-test.lauresta.com/portal/ || echo "curl failed/timed out"
+            echo "-- known-good comparison: mes-test.lauresta.com direct to 127.0.0.1 --"
+            curl -sS -m 20 -o /dev/null -w 'HTTP %{http_code} in %{time_total}s\n' --resolve mes-test.lauresta.com:443:127.0.0.1 https://mes-test.lauresta.com/portal/ || echo "curl failed/timed out"
+            echo "-- TLS cert Traefik presents for cikada-test.lauresta.com (direct, bypasses Cloudflare) --"
+            echo | openssl s_client -connect 127.0.0.1:443 -servername cikada-test.lauresta.com 2>&1 | openssl x509 -noout -subject -dates -issuer 2>&1 || echo "openssl check failed"
+            echo "-- TLS cert Traefik presents for mes-test.lauresta.com (direct, known-good comparison) --"
+            echo | openssl s_client -connect 127.0.0.1:443 -servername mes-test.lauresta.com 2>&1 | openssl x509 -noout -subject -dates -issuer 2>&1 || echo "openssl check failed"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY" 2>&1 || true
