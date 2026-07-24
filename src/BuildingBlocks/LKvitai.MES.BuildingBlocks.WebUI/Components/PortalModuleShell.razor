@@ -45,6 +45,27 @@
     </div>
 
     <header class="topbar">
+        @if (OnMobileNavigationToggle.HasDelegate)
+        {
+            <button class="topbar__menu-toggle"
+                    type="button"
+                    aria-label="@MobileNavigationLabel"
+                    aria-controls="@MobileNavigationTargetId"
+                    aria-expanded="@MobileNavigationOpen.ToString().ToLowerInvariant()"
+                    @onkeydown="HandleMobileNavigationKeyDown"
+                    @onclick="OnMobileNavigationToggle">
+                <svg viewBox="0 0 24 24"
+                     fill="none"
+                     stroke="currentColor"
+                     stroke-width="1.8"
+                     stroke-linecap="round"
+                     aria-hidden="true"
+                     focusable="false">
+                    <path d="M4 7h16M4 12h16M4 17h16" />
+                </svg>
+            </button>
+        }
+
         @* Brand block: single clickable link back to Portal home. Logo,
            name and tagline all live INSIDE the same <a> per the design
            rule (one anchor, one click target). *@
@@ -153,6 +174,22 @@
     /// then to <c>"/"</c>.
     /// </summary>
     [Parameter] public string? PortalHomeUrl { get; set; }
+
+    /// <summary>
+    /// Optional callback for modules that own a sidebar. When supplied, the
+    /// topbar renders a hamburger at the mobile breakpoint; modules without a
+    /// sidebar leave it unset so the shared header never shows a dead control.
+    /// </summary>
+    [Parameter] public EventCallback OnMobileNavigationToggle { get; set; }
+
+    /// <summary>Current off-canvas navigation state for <c>aria-expanded</c>.</summary>
+    [Parameter] public bool MobileNavigationOpen { get; set; }
+
+    /// <summary>Accessible action label for the mobile navigation toggle.</summary>
+    [Parameter] public string MobileNavigationLabel { get; set; } = "Toggle navigation menu";
+
+    /// <summary>ID of the module drawer controlled by the mobile toggle.</summary>
+    [Parameter] public string? MobileNavigationTargetId { get; set; }
 
     /// <summary>
     /// Placeholder copy for the universal-search button. Outlook 365-style
@@ -289,4 +326,16 @@
 
     private void ToggleSearchPlaceholder() => _searchOpen = !_searchOpen;
     private void CloseSearchPlaceholder() => _searchOpen = false;
+
+    private async Task HandleMobileNavigationKeyDown(KeyboardEventArgs args)
+    {
+        if (!MobileNavigationOpen
+            || !OnMobileNavigationToggle.HasDelegate
+            || !string.Equals(args.Key, "Escape", StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        await OnMobileNavigationToggle.InvokeAsync();
+    }
 }
