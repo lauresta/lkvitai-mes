@@ -41,7 +41,11 @@
                            BannerNote="@_bannerNote"
                            User="@auth.User"
                            Version="@_displayVersion"
-                           PortalHomeUrl="@PortalHomeUrl">
+                           PortalHomeUrl="@PortalHomeUrl"
+                           OnMobileNavigationToggle="@OnMobileNavigationToggle"
+                           MobileNavigationOpen="@MobileNavigationOpen"
+                           MobileNavigationLabel="@MobileNavigationLabel"
+                           MobileNavigationTargetId="@MobileNavigationTargetId">
             @ChildContent
         </PortalModuleShell>
     </Authorized>
@@ -53,7 +57,11 @@
                                BannerNote="@_bannerNote"
                                User="@null"
                                Version="@_displayVersion"
-                               PortalHomeUrl="@PortalHomeUrl">
+                               PortalHomeUrl="@PortalHomeUrl"
+                               OnMobileNavigationToggle="@OnMobileNavigationToggle"
+                               MobileNavigationOpen="@MobileNavigationOpen"
+                               MobileNavigationLabel="@MobileNavigationLabel"
+                               MobileNavigationTargetId="@MobileNavigationTargetId">
                 @ChildContent
             </PortalModuleShell>
         }
@@ -87,6 +95,22 @@
     /// the Portal redirect; Sales/Frontline can leave it null and the shell
     /// resolves it from <c>PortalWebUi:BaseUrl</c>.</summary>
     [Parameter] public string? PortalHomeUrl { get; set; }
+
+    /// <summary>
+    /// Optional module-navigation toggle rendered by the shared topbar at the
+    /// mobile breakpoint. Modules without a sidebar leave this unset and do
+    /// not get an inert hamburger.
+    /// </summary>
+    [Parameter] public EventCallback OnMobileNavigationToggle { get; set; }
+
+    /// <summary>Current off-canvas navigation state for <c>aria-expanded</c>.</summary>
+    [Parameter] public bool MobileNavigationOpen { get; set; }
+
+    /// <summary>Accessible action label for the mobile navigation toggle.</summary>
+    [Parameter] public string MobileNavigationLabel { get; set; } = "Toggle navigation menu";
+
+    /// <summary>ID of the module drawer controlled by the mobile toggle.</summary>
+    [Parameter] public string? MobileNavigationTargetId { get; set; }
 
     private string _environmentName = "Development";
     private string? _hostLabel;

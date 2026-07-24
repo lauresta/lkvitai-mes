@@ -632,14 +632,15 @@ body {
   flex-direction: column;
 }
 
-/*
- * Keep the persistent drawer (and its "Loaded" footer) within the viewport,
- * below the fixed Portal topbar (33px env banner + 66px topbar). Without this
- * the drawer is a full 100vh offset downward, so its bottom (the footer) is
- * clipped off-screen.
- */
-.mud-drawer.sidebar.mud-drawer-fixed {
-  height: calc(100vh - 99px) !important;
+@media (min-width: 960px) {
+  /*
+   * Keep the desktop drawer (and its "Loaded" footer) within the viewport,
+   * below the Portal header. The mobile drawer is a full-height off-canvas
+   * surface and must not inherit this desktop-only height subtraction.
+   */
+  .mud-drawer.sidebar.mud-drawer-fixed {
+    height: calc(100vh - 99px) !important;
+  }
 }
 
 @media (max-width: 960px) {

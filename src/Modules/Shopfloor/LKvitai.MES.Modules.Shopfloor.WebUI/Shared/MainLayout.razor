@@ -1,38 +1,48 @@
 @inherits LayoutComponentBase
+@implements IDisposable
 @inject IJSRuntime JS
+@inject NavigationManager Navigation
 
 <MudThemeProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
 
-<PortalAuthenticatedShell>
+<PortalAuthenticatedShell OnMobileNavigationToggle="ToggleDrawer"
+                          MobileNavigationOpen="DrawerOpen"
+                          MobileNavigationLabel="@(DrawerOpen ? "Close Shopfloor navigation" : "Open Shopfloor navigation")"
+                          MobileNavigationTargetId="@DrawerId">
     <ChildContent>
         <MudLayout Class="lk sf-shell">
-            <MudDrawer Class="@($"sidebar {(_collapsed ? "is-collapsed" : "")}")"
-                       Variant="DrawerVariant.Persistent"
-                       Width="@(_collapsed ? "52px" : "240px")"
+            <MudDrawer id="@DrawerId"
+                       Class="@($"sidebar {(EffectiveCollapsed ? "is-collapsed" : "")}")"
+                       Variant="DrawerVariant.Responsive"
+                       Breakpoint="Breakpoint.Md"
+                       ClipMode="DrawerClipMode.Never"
+                       Width="@(EffectiveCollapsed ? "52px" : "240px")"
                        Elevation="0"
-                       @bind-Open="_drawerOpen">
+                       @onkeydown="HandleDrawerKeyDown"
+                       @bind-Open="DrawerOpen">
 
                 <div class="sidebar__head">
                     <span class="sidebar__module">
                         <i class="bi bi-tools"></i>
-                        @if (!_collapsed)
+                        @if (!EffectiveCollapsed)
                         {
                             <span>Shopfloor</span>
                         }
                     </span>
                     <button class="sidebar__collapse"
                             type="button"
-                            @onclick="ToggleCollapse"
-                            title="@(_collapsed ? "Expand sidebar []]" : "Collapse sidebar [[]")">
-                        <i class="bi @(_collapsed ? "bi-chevron-double-right" : "bi-chevron-double-left")"></i>
+                            @onclick="HandleSidebarControl"
+                            aria-label="@SidebarControlLabel"
+                            title="@SidebarControlLabel">
+                        <i class="bi @SidebarControlIcon" aria-hidden="true"></i>
                     </button>
                 </div>
 
-                <NavMenu Collapsed="_collapsed" />
+                <NavMenu Collapsed="EffectiveCollapsed" />
 
-                @if (!_collapsed)
+                @if (!EffectiveCollapsed)
                 {
                     <div class="sidebar__footer">
                         <span>Loaded <span class="mono">@_initTime</span></span>
@@ -55,13 +65,37 @@
 @code {
     private bool _drawerOpen = true;
     private bool _collapsed;
+    private bool _mobileNavigationExpanded;
     private string _initTime = "";
 
     private const string CollapseStorageKey = "lkvitai.shopfloor.sidebar.collapsed";
+    private const string DrawerId = "shopfloor-navigation";
+
+    private bool DrawerOpen
+    {
+        get => _drawerOpen;
+        set
+        {
+            _drawerOpen = value;
+            if (!value)
+            {
+                _mobileNavigationExpanded = false;
+            }
+        }
+    }
+
+    private bool EffectiveCollapsed => _collapsed && !_mobileNavigationExpanded;
+    private string SidebarControlLabel => _mobileNavigationExpanded
+        ? "Close Shopfloor navigation"
+        : _collapsed ? "Expand sidebar" : "Collapse sidebar";
+    private string SidebarControlIcon => _mobileNavigationExpanded
+        ? "bi-x-lg"
+        : _collapsed ? "bi-chevron-double-right" : "bi-chevron-double-left";
 
     protected override void OnInitialized()
     {
         _initTime = DateTime.Now.ToString("HH:mm:ss");
+        Navigation.LocationChanged += OnLocationChanged;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -96,5 +130,47 @@
         {
             // Ignore browsers that block localStorage.
         }
+    }
+
+    private void ToggleDrawer()
+    {
+        _mobileNavigationExpanded = !_drawerOpen;
+        DrawerOpen = !_drawerOpen;
+    }
+
+    private Task HandleSidebarControl()
+    {
+        if (_mobileNavigationExpanded)
+        {
+            DrawerOpen = false;
+            return Task.CompletedTask;
+        }
+
+        return ToggleCollapse();
+    }
+
+    private void HandleDrawerKeyDown(KeyboardEventArgs args)
+    {
+        if (_mobileNavigationExpanded
+            && string.Equals(args.Key, "Escape", StringComparison.Ordinal))
+        {
+            DrawerOpen = false;
+        }
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs args)
+    {
+        if (!_mobileNavigationExpanded)
+        {
+            return;
+        }
+
+        DrawerOpen = false;
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        Navigation.LocationChanged -= OnLocationChanged;
     }
 }
