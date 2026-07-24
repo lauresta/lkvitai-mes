@@ -1,0 +1,69 @@
+name: Diagnose cikada-test.lauresta.com
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: [self-hosted, lauresta-vps]
+    steps:
+      - name: Find Traefik container
+        run: |
+          echo "## Traefik container" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          docker ps --filter "name=traefik" --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.RunningFor}}' >> "$GITHUB_STEP_SUMMARY" || true
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Deployed dynamic config on disk
+        run: |
+          echo "## /opt/traefik/dynamic/mes-test.yml - cikada-test lines" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          grep -n "cikada-test\|mes-test" /opt/traefik/dynamic/mes-test.yml >> "$GITHUB_STEP_SUMMARY" || echo "grep found nothing / file missing" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "File mtime: $(stat -c '%y' /opt/traefik/dynamic/mes-test.yml 2>/dev/null || echo unknown)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Traefik logs - cikada/acme/error mentions (last 500 lines)
+        run: |
+          set -uo pipefail
+          NAME=$(docker ps --filter "name=traefik" --format '{{.Names}}' | head -1)
+          echo "## Traefik logs (container: ${NAME:-none found})" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          if [ -n "$NAME" ]; then
+            docker logs "$NAME" --tail 500 2>&1 | grep -iE 'cikada|acme|certificate|error|panic' | tail -100 >> "$GITHUB_STEP_SUMMARY" || echo "(no matching lines in last 500)" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "no traefik container found by name filter" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: ACME storage - does it know about cikada-test.lauresta.com
+        run: |
+          echo "## ACME storage search" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          for f in $(find /opt/traefik /etc/traefik /var/lib/traefik -maxdepth 4 -iname "acme.json" 2>/dev/null); do
+            echo "-- $f --"
+            grep -o "cikada-test.lauresta.com" "$f" | head -3 || echo "(no match in $f)"
+          done >> "$GITHUB_STEP_SUMMARY" 2>&1 || echo "no acme.json found under common paths" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Backend reachability (portal-webui 10.11.12.15:5010)
+        run: |
+          echo "## Backend check" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          curl -sS -m 8 -o /dev/null -w 'HTTP %{http_code} in %{time_total}s\n' http://10.11.12.15:5010/ >> "$GITHUB_STEP_SUMMARY" 2>&1 || echo "curl to backend failed" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Local HTTPS check against Traefik itself (bypasses Cloudflare)
+        run: |
+          echo "## curl https://cikada-test.lauresta.com from the VPS (resolves via real DNS, hits Cloudflare) vs direct to Traefik" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          echo "-- via public DNS/Cloudflare --" >> "$GITHUB_STEP_SUMMARY"
+          curl -sS -m 15 -o /dev/null -w 'HTTP %{http_code} in %{time_total}s\n' https://cikada-test.lauresta.com/portal/ >> "$GITHUB_STEP_SUMMARY" 2>&1 || echo "curl failed" >> "$GITHUB_STEP_SUMMARY"
+          echo "-- direct to Traefik on localhost:443 with SNI override (bypasses Cloudflare) --" >> "$GITHUB_STEP_SUMMARY"
+          curl -sS -m 15 -o /dev/null -w 'HTTP %{http_code} in %{time_total}s\n' --resolve cikada-test.lauresta.com:443:127.0.0.1 https://cikada-test.lauresta.com/portal/ >> "$GITHUB_STEP_SUMMARY" 2>&1 || echo "curl failed" >> "$GITHUB_STEP_SUMMARY"
+          echo "-- known-good comparison: mes-test.lauresta.com direct to Traefik --" >> "$GITHUB_STEP_SUMMARY"
+          curl -sS -m 15 -o /dev/null -w 'HTTP %{http_code} in %{time_total}s\n' --resolve mes-test.lauresta.com:443:127.0.0.1 https://mes-test.lauresta.com/portal/ >> "$GITHUB_STEP_SUMMARY" 2>&1 || echo "curl failed" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
