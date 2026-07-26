@@ -23,9 +23,12 @@ public sealed class ValuationClient
 
     public Task<IReadOnlyList<OnHandValueRowDto>> GetOnHandValueAsync(
         int? categoryId = null,
+        int? itemId = null,
         CancellationToken cancellationToken = default)
     {
-        var query = BuildQuery(("categoryId", categoryId?.ToString()));
+        var query = BuildQuery(
+            ("categoryId", categoryId?.ToString()),
+            ("itemId", itemId?.ToString()));
         return GetAsync<IReadOnlyList<OnHandValueRowDto>>(
             $"/api/warehouse/v1/valuation/on-hand-value{query}",
             cancellationToken);

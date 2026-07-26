@@ -175,6 +175,7 @@ public sealed class ValuationController : ControllerBase
     [HttpGet("on-hand-value")]
     [Authorize(Policy = WarehousePolicies.InventoryAccountantOrManager)]
     public async Task<IActionResult> GetOnHandValueAsync(
+        [FromQuery] int? itemId,
         [FromQuery] int? categoryId,
         [FromQuery] string? categoryName,
         [FromQuery] int? locationId,
@@ -183,6 +184,11 @@ public sealed class ValuationController : ControllerBase
         CancellationToken cancellationToken = default)
     {
         var query = _dbContext.OnHandValues.AsNoTracking().AsQueryable();
+
+        if (itemId.HasValue)
+        {
+            query = query.Where(x => x.ItemId == itemId.Value);
+        }
 
         if (categoryId.HasValue)
         {
