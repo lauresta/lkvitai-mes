@@ -171,6 +171,34 @@
         }
     </MudPaper>
 
+    <MudPaper Outlined="true" Elevation="0" Class="panel items-detail-panel" data-testid="admin-item-detail-onhand">
+        @if (_isLoading)
+        {
+            <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+        }
+
+        <div class="panel__head">
+            <span class="panel__title">Current on-hand value</span>
+        </div>
+
+        @if (_onHandValue is null)
+        {
+            <div class="lots-grid__empty">
+                <span class="lots-grid__empty-title">No on-hand value data</span>
+                <span>This item has no recorded on-hand quantity or cost yet.</span>
+            </div>
+        }
+        else
+        {
+            <div class="items-detail-fields">
+                <AdminItemFieldBlock Label="On-hand Qty" Value="@_onHandValue.Qty.ToString("0.##")" IsMono="true" />
+                <AdminItemFieldBlock Label="Current Unit Cost (WAC)" Value="@FormatMoney(_onHandValue.UnitCost)" IsMono="true" />
+                <AdminItemFieldBlock Label="Total Value" Value="@FormatMoney(_onHandValue.TotalValue)" IsMono="true" />
+                <AdminItemFieldBlock Label="As Of" Value="@FormatDateTime(_onHandValue.LastUpdated)" IsMono="true" />
+            </div>
+        }
+    </MudPaper>
+
     <MudPaper Outlined="true" Elevation="0" Class="panel items-detail-panel" data-testid="admin-item-detail-prices">
         @if (_isLoading)
         {
@@ -323,6 +351,7 @@
     private readonly List<ItemPriceOverrideDto> _priceOverrides = [];
     private readonly List<ItemPriceHistoryDto> _priceHistory = [];
     private readonly List<CostHistoryRowDto> _purchaseHistory = [];
+    private OnHandValueRowDto? _onHandValue;
     private bool _isLoading;
     private ApiException? _apiError;
     private int? _editingGroupId;
@@ -355,12 +384,16 @@
             var purchaseHistory = await ValuationClient.GetCostHistoryAsync(itemId: Id);
             _purchaseHistory.Clear();
             _purchaseHistory.AddRange(purchaseHistory.OrderByDescending(x => x.ChangedAt));
+
+            var onHandRows = await ValuationClient.GetOnHandValueAsync(itemId: Id);
+            _onHandValue = onHandRows.FirstOrDefault();
         }
         catch (ApiException ex)
         {
             _apiError = ex;
             _item = null;
             _photos.Clear();
+            _onHandValue = null;
         }
         finally
         {

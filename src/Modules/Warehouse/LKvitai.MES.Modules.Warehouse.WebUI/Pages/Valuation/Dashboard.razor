@@ -94,7 +94,7 @@
                     @foreach (var row in _onHandRows)
                     {
                         <tr>
-                            <td>@row.ItemSku - @row.ItemName</td>
+                            <td><span class="sku-link" role="button" @onclick="() => OpenItem(row.ItemId)">@row.ItemSku</span> - @row.ItemName</td>
                             <td class="text-end">@row.Qty.ToString("0.###", CultureInfo.InvariantCulture)</td>
                             <td class="text-end">@row.UnitCost.ToString("0.####", CultureInfo.InvariantCulture)</td>
                             <td class="text-end">@row.TotalValue.ToString("0.####", CultureInfo.InvariantCulture)</td>
@@ -175,7 +175,7 @@
                     @foreach (var row in _costHistoryRows)
                     {
                         <tr>
-                            <td>@row.ItemSku</td>
+                            <td><span class="sku-link" role="button" @onclick="() => OpenItem(row.ItemId)">@row.ItemSku</span></td>
                             <td>@row.ChangedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
                             <td class="text-end">@(row.OldCost.HasValue ? row.OldCost.Value.ToString("0.####", CultureInfo.InvariantCulture) : "-")</td>
                             <td class="text-end">@(row.NewCost.HasValue ? row.NewCost.Value.ToString("0.####", CultureInfo.InvariantCulture) : "-")</td>
@@ -340,6 +340,11 @@
     private void OpenWriteDown()
     {
         NavigationManager.NavigateTo("/warehouse/valuation/write-down");
+    }
+
+    private void OpenItem(int itemId)
+    {
+        NavigationManager.NavigateTo($"/warehouse/admin/items/{itemId}");
     }
 
     private void DismissError()

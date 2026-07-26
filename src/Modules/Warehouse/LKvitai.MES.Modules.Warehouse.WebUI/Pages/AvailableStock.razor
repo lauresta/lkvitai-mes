@@ -1,6 +1,7 @@
 @page "/available-stock"
 @implements IDisposable
 @inject StockClient StockApiClient
+@inject NavigationManager NavigationManager
 
 <PageTitle>Available Stock - Cikada.MES</PageTitle>
 
@@ -98,7 +99,14 @@
                         <PropertyColumn Property="x => x.Location" Title="Location" />
                         <TemplateColumn Title="SKU">
                             <CellTemplate>
-                                <span class="sku-link">@context.Item.SKU</span>
+                                @if (context.Item.ItemId.HasValue)
+                                {
+                                    <span class="sku-link" role="button" @onclick="() => OpenItem(context.Item.ItemId)">@context.Item.SKU</span>
+                                }
+                                else
+                                {
+                                    <span class="sku-link">@context.Item.SKU</span>
+                                }
                             </CellTemplate>
                         </TemplateColumn>
                         <PropertyColumn Property="x => x.ItemName" Title="Name" />
@@ -146,7 +154,17 @@
                     {
                         <div class="stock-list-row">
                             <div class="stock-list-row__main">
-                                <div><span class="sku-link">@row.SKU</span> @row.ItemName</div>
+                                <div>
+                                    @if (row.ItemId.HasValue)
+                                    {
+                                        <span class="sku-link" role="button" @onclick="() => OpenItem(row.ItemId)">@row.SKU</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="sku-link">@row.SKU</span>
+                                    }
+                                    @row.ItemName
+                                </div>
                                 @if (row.Tags.Count > 0)
                                 {
                                     <div class="item-tags item-tags--compact">
@@ -181,7 +199,16 @@
                                 <div class="stock-gallery-card__image stock-thumb--empty">No image</div>
                             }
                             <div class="stock-gallery-card__body">
-                                <div><span class="sku-link">@row.SKU</span></div>
+                                <div>
+                                    @if (row.ItemId.HasValue)
+                                    {
+                                        <span class="sku-link" role="button" @onclick="() => OpenItem(row.ItemId)">@row.SKU</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="sku-link">@row.SKU</span>
+                                    }
+                                </div>
                                 <div class="stock-list-row__meta">@row.ItemName</div>
                                 @if (row.Tags.Count > 0)
                                 {
@@ -448,6 +475,14 @@
     private void DismissError()
     {
         _apiError = null;
+    }
+
+    private void OpenItem(int? itemId)
+    {
+        if (itemId.HasValue)
+        {
+            NavigationManager.NavigateTo($"admin/items/{itemId.Value}");
+        }
     }
 
     private enum StockViewMode
