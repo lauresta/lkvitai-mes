@@ -42,6 +42,20 @@ public static class PortalAuthServiceCollectionExtensions
                     : Microsoft.AspNetCore.Http.CookieSecurePolicy.Always;
                 options.SlidingExpiration = true;
                 options.ExpireTimeSpan = PortalAuthDefaults.CookieLifetime;
+                options.Events = new CookieAuthenticationEvents
+                {
+                    OnRedirectToLogin = ctx =>
+                    {
+                        var configured = configuration[PortalAuthDefaults.LoginBasePathConfigKey];
+                        var loginBasePath = string.IsNullOrWhiteSpace(configured)
+                            ? "/portal"
+                            : $"/{configured.Trim().TrimEnd('/').TrimStart('/')}";
+                        var returnUrl = ctx.Request.PathBase + ctx.Request.Path + ctx.Request.QueryString;
+                        ctx.Response.Redirect(
+                            $"{loginBasePath}/login.html?returnUrl={Uri.EscapeDataString(returnUrl)}");
+                        return Task.CompletedTask;
+                    }
+                };
             });
 
         return services;

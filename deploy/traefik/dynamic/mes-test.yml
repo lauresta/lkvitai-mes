@@ -93,7 +93,7 @@ http:
     mes-test-api-warehouse:
       rule: "(Host(`cikada-test.lauresta.com`) || Host(`lkvitai.lauresta.com`)) && PathPrefix(`/api/warehouse`)"
       entryPoints: [websecure]
-      middlewares: [mes-test-strip-api-warehouse]
+      middlewares: [mes-test-rewrite-api-warehouse]
       service: mes-test-warehouse-api
       priority: 200
       tls:
@@ -126,13 +126,13 @@ http:
   middlewares:
     mes-test-legacy-redirect-to-cikada:
       redirectRegex:
-        regex: "^https://mes-test\\.lauresta\\.com(/.*)?$"
+        regex: "^https://mes-test\.lauresta\.com(/.*)?$"
         replacement: "https://cikada-test.lauresta.com${1}"
         permanent: true
 
     mes-test-redirect-root-to-portal:
       redirectRegex:
-        regex: "^https://(cikada-test\\.lauresta\\.com|lkvitai\\.lauresta\\.com)/$"
+        regex: "^https://(cikada-test\.lauresta\.com|lkvitai\.lauresta\.com)/$"
         replacement: "https://${1}/portal/"
         permanent: false
 
@@ -140,9 +140,12 @@ http:
       stripPrefix:
         prefixes: [/api/portal]
 
-    mes-test-strip-api-warehouse:
-      stripPrefix:
-        prefixes: [/api/warehouse]
+    mes-test-rewrite-api-warehouse:
+      # Rewrite /api/warehouse/* → /api/* so the warehouse API's [Route("api/...")]
+      # controllers match without needing /warehouse in their route templates.
+      replacePathRegex:
+        regex: "^/api/warehouse(.*)"
+        replacement: "/api$1"
 
     # Sales / Frontline / Scanning APIs receive the full /api/<module>/* path
     # so the MapGroup("/api/sales") etc. in each host's Program.cs matches as
