@@ -260,6 +260,10 @@
                             <section class="panel demo-product-catalog__types">
                                 <div class="panel__head"><h2>2 · Type</h2><span>@SelectedCategory.Name · selecting a type opens its editor</span></div>
                                 <div class="demo-product-catalog__type-list">
+                                    @if (FilteredTypes.Count == 0)
+                                    {
+                                        <div class="demo-product-editor__empty">No active types in this category.</div>
+                                    }
                                     @foreach (var type in FilteredTypes)
                                     {
                                         <button type="button" @onclick="() => CreateProductFromType(type)"><strong>@type.Name</strong><span>→</span></button>
@@ -296,12 +300,14 @@
                                 {
                                     <div class="demo-product-editor__control">
                                         <label class="demo-label" for="config-control">Control · Valdymas</label>
-                                        <div class="demo-product-editor__control-options">
-                                            <button type="button" class="@(_configuringLine.ControlType == "Chain left" ? "is-selected" : "")" @onclick="SetControlLeft">Chain left</button>
-                                            <button type="button" class="@(_configuringLine.ControlType == "Chain right" ? "is-selected" : "")" @onclick="SetControlRight">Chain right</button>
-                                            <button type="button" class="@(_configuringLine.ControlType == "Motor" ? "is-selected" : "")" @onclick="SetControlMotor">Motor</button>
+                                        <div class="demo-product-editor__control-entry">
+                                            <div class="demo-product-editor__control-options">
+                                                <button type="button" class="@(_configuringLine.ControlType == "Chain left" ? "is-selected" : "")" @onclick="SetControlLeft">Chain left</button>
+                                                <button type="button" class="@(_configuringLine.ControlType == "Chain right" ? "is-selected" : "")" @onclick="SetControlRight">Chain right</button>
+                                                <button type="button" class="@(_configuringLine.ControlType == "Motor" ? "is-selected" : "")" @onclick="SetControlMotor">Motor</button>
+                                            </div>
+                                            <input id="config-control" class="demo-input" @bind="_configuringLine.ControlType" @bind:event="oninput" placeholder="Other control" />
                                         </div>
-                                        <input id="config-control" class="demo-input" @bind="_configuringLine.ControlType" @bind:event="oninput" placeholder="Or enter another control" />
                                     </div>
                                 }
                                 <div class="demo-product-editor__dimensions">
@@ -312,18 +318,18 @@
                                     }
                                     <div><label class="demo-label" for="config-quantity">Quantity</label><input id="config-quantity" type="number" min="0.001" step="0.001" class="demo-input mono" @bind="_configuringLine.Quantity" @bind:event="oninput" @bind:after="RecalculateConfiguredParameters" /></div>
                                 </div>
-                                <div class="demo-product-editor__secondary">
+                                <div class="demo-product-editor__secondary @(_configuringLine.Kind == "Product" ? "" : "demo-product-editor__secondary--service")">
                                     @if (_configuringLine.Kind == "Product")
                                     {
                                         <div><label class="demo-label" for="config-colour">Colour · fabric code</label><input id="config-colour" list="demo-colour-codes" class="demo-input mono" value="@_configuringLine.ColourCode" @onchange="UpdateColour" placeholder="Search code" autocomplete="off" /><datalist id="demo-colour-codes">@foreach (var colour in ConfiguredColours) { <option value="@colour.Code">@colour.Name</option> }</datalist><small>@ConfiguredColours.Count codes · stock in milestone 2</small></div>
                                     }
                                     <div><label class="demo-label" for="config-price">Preview unit price · €</label><input id="config-price" type="number" min="0" step="0.01" class="demo-input mono" @bind="_configuringLine.Price" @bind:event="oninput" /></div>
+                                    <div class="demo-product-editor__note"><label class="demo-label" for="config-note">Product notes · Pastabos</label><input id="config-note" class="demo-input" @bind="_configuringLine.Note" placeholder="Notes for production" /></div>
                                 </div>
                                 @if (_configuringLine.Kind == "Product" && !string.IsNullOrWhiteSpace(_configuringLine.ColourCode) && _configuringLine.ColourId is null)
                                 {
                                     <div class="demo-field-error">Code not found for this category in the static snapshot.</div>
                                 }
-                                <div class="demo-product-editor__note"><label class="demo-label" for="config-note">Product notes · Pastabos</label><input id="config-note" class="demo-input" @bind="_configuringLine.Note" placeholder="Notes for production" /></div>
                             </div>
                         </section>
                         @if (_configuringLine.Kind == "Product")
@@ -361,7 +367,7 @@
                     </main>
                     <aside class="demo-product-preview">
                         <section class="panel">
-                            <div class="panel__head"><h2>Live preview</h2><span class="mono">TO SCALE</span></div>
+                            <div class="panel__head"><h2>Live preview</h2><span class="mono">@(_configuringLine.WidthMm > 0 && _configuringLine.HeightMm > 0 ? "TO SCALE" : "SCHEMATIC")</span></div>
                             <LiveProductPreview Category="@_configuringLine.Category" TypeName="@_configuringLine.Name" WidthMm="@_configuringLine.WidthMm" HeightMm="@_configuringLine.HeightMm" Quantity="@_configuringLine.Quantity" ControlType="@_configuringLine.ControlType" />
                             <div class="demo-product-preview__caption">@_configuringLine.Name · @_configuringLine.ColourCode · @_configuringLine.ControlType</div>
                         </section>
@@ -675,8 +681,7 @@
     }
 
     private IReadOnlyList<DemoCategory> FilteredCategories => Catalog.Categories
-        .Where(x => x.Types.Count > 0 &&
-            (string.IsNullOrWhiteSpace(_catalogSearch)
+        .Where(x => (string.IsNullOrWhiteSpace(_catalogSearch)
              || x.Name.Contains(_catalogSearch, StringComparison.OrdinalIgnoreCase)
              || x.Types.Any(t => t.Name.Contains(_catalogSearch, StringComparison.OrdinalIgnoreCase))))
         .ToList();

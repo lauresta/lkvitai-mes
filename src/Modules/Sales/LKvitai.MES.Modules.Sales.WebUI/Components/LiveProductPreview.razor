@@ -18,6 +18,6 @@
     [Parameter] public string ControlType { get; set; } = "";
 
     private double Ratio => WidthMm <= 0 || HeightMm <= 0 ? 0.8 : (double)WidthMm / HeightMm;
-    private double PixelWidth => Math.Min(220, 260 * Ratio);
-    private double PixelHeight => Math.Min(260, 220 / Ratio);
+    private double PixelWidth => Math.Min(220, 220 * Ratio);
+    private double PixelHeight => Math.Min(220, 220 / Ratio);
 }
