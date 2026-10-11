@@ -18,7 +18,7 @@
         </div>
         <div class="page-actions">
             <button class="btn btn--ghost" type="button">Export</button>
-            <button class="btn btn--primary" type="button">+ New order</button>
+            <button class="btn btn--primary" type="button" @onclick="OpenNewOrder">+ New order</button>
         </div>
     </div>
 
@@ -194,7 +194,20 @@
 
 </main>
 
+@if (_showNewOrder)
+{
+    <NewOrderWorkspace @ref="_newOrderWorkspace" OnClose="CloseNewOrder" />
+}
+
 @code {
+    private bool _showNewOrder;
+    private NewOrderWorkspace? _newOrderWorkspace;
+    private void OpenNewOrder() => _showNewOrder = true;
+    private void CloseNewOrder()
+    {
+        _showNewOrder = false;
+        _newOrderWorkspace = null;
+    }
     private const int    PageSize             = 100;
     private const int    SearchDebounceMs     = 250;
 
@@ -528,8 +541,18 @@
     [JSInvokable]
     public async Task HandleShortcut(string action)
     {
+        if (_showNewOrder)
+        {
+            if (action == "escape" && _newOrderWorkspace is not null)
+                await _newOrderWorkspace.HandleEscapeAsync();
+            return;
+        }
         switch (action)
         {
+            case "new":
+                OpenNewOrder();
+                await InvokeAsync(StateHasChanged);
+                break;
             case "slash":
                 try { await _searchInput.FocusAsync(); }
                 catch (JSDisconnectedException)        { /* circuit gone, ignore */ }

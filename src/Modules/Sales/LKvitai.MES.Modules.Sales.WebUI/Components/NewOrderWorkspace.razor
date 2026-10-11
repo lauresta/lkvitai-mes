@@ -1,0 +1,884 @@
+@using System.Globalization
+
+<div class="demo-layer" role="dialog" aria-modal="true" aria-label="New order preview">
+    @if (_order is null)
+    {
+        <button class="demo-backdrop" type="button" aria-label="Close new order" @onclick="CloseAsync"></button>
+        <aside class="demo-drawer" aria-labelledby="demo-new-title">
+            <div class="demo-drawer__head">
+                <div><div class="eyebrow mono">Sales · Orders</div><h2 id="demo-new-title">New order</h2></div>
+                <button class="demo-icon-button" type="button" aria-label="Close" @onclick="CloseAsync">×</button>
+            </div>
+            <div class="demo-drawer__body">
+                <p class="demo-notice">UI preview · Reference snapshot @Catalog.SnapshotDate. This draft is kept only while this screen is open. Nothing is written to the database.</p>
+                <label class="demo-label" for="demo-number">Order number <span class="demo-required">*</span></label>
+                <input id="demo-number" class="demo-input mono" value="@_rawNumber" @oninput="OnNumberInput"
+                       placeholder="VV-123 or VV-123-A" autocomplete="off" aria-describedby="demo-number-help" />
+                <div id="demo-number-help" class="demo-help">Type the series and sequence. The current year group is added automatically.</div>
+                @if (SeriesSuggestions.Count > 0)
+                {
+                    <div class="demo-suggestions" aria-label="Matching series">
+                        @foreach (var suggestion in SeriesSuggestions)
+                        {
+                            <button type="button" @onclick="() => ChooseSeries(suggestion)">@suggestion<span class="mono">series</span></button>
+                        }
+                    </div>
+                }
+                @if (HasNumberPreview)
+                {
+                    <div class="demo-number-preview"><span>Will be shown as</span><strong class="mono">@PreviewNumber</strong></div>
+                }
+                else if (!string.IsNullOrWhiteSpace(_rawNumber) && _numberTouched)
+                {
+                    <div class="demo-field-error" role="alert">@NumberError</div>
+                }
+                @if (!string.IsNullOrWhiteSpace(_lastAutofilledSeries))
+                {
+                    <div class="demo-help">Series @_lastAutofilledSeries filled the available people and store defaults from the static snapshot. You can edit them here.</div>
+                }
+
+                <div class="demo-form-grid">
+                    <div>
+                        <label class="demo-label" for="demo-customer">Customer <span class="demo-required">*</span></label>
+                        <input id="demo-customer" class="demo-input" @bind="_customer" placeholder="Customer name" />
+                    </div>
+                    <div>
+                        <label class="demo-label" for="demo-store">Store <span class="demo-required">*</span></label>
+                        <input id="demo-store" class="demo-input" @bind="_store" placeholder="Store / branch" />
+                    </div>
+                    <div>
+                        <label class="demo-label" for="demo-manager">Manager</label>
+                        <input id="demo-manager" class="demo-input" @bind="_manager" placeholder="Manager" />
+                    </div>
+                    <div>
+                        <label class="demo-label" for="demo-consultant">Consultant</label>
+                        <input id="demo-consultant" class="demo-input" @bind="_consultant" placeholder="Consultant" />
+                    </div>
+                    <div>
+                        <label class="demo-label" for="demo-date">Order date</label>
+                        <input id="demo-date" type="date" class="demo-input mono" value="@_date" @onchange="e => _date = e.Value?.ToString() ?? _date" />
+                    </div>
+                    <div>
+                        <label class="demo-label" for="demo-due">Due date</label>
+                        <input id="demo-due" type="date" class="demo-input mono" value="@_due" @onchange="e => _due = e.Value?.ToString() ?? _due" />
+                    </div>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(_formError))
+                {
+                    <div class="demo-field-error demo-field-error--block" role="alert">@_formError</div>
+                }
+            </div>
+            <div class="demo-drawer__foot">
+                <button class="btn btn--ghost" type="button" @onclick="CloseAsync">Cancel</button>
+                <button class="btn btn--primary" type="button" @onclick="CreateDraft">Create draft and open</button>
+            </div>
+        </aside>
+    }
+    else
+    {
+        <div class="demo-editor">
+            <header class="demo-editor__top">
+                <div>
+                    <div class="eyebrow mono">Sales · Order draft</div>
+                    <h1 class="mono">@_order.Number</h1>
+                    <div class="demo-editor__meta">@_order.Customer · @_order.Store</div>
+                </div>
+                <div class="demo-editor__actions">
+                    <span class="chip chip--entered">Local preview</span>
+                    <button class="btn btn--ghost" type="button" @onclick="CloseAsync">Discard and return to orders</button>
+                </div>
+            </header>
+            <div class="demo-editor__banner" role="status">This is an interactive design draft. Refreshing or closing this screen discards it; no order, product, accessory, or payment is saved.</div>
+            <div class="demo-stage-strip" aria-label="Order stage"><span class="is-current">Įvestas</span><span>Patvirtintas</span><span>Gaminamas</span><span>Pagamintas</span><span>Filialui</span><span>Atiduotas</span></div>
+            <div class="demo-editor__grid">
+                <div class="demo-editor__main">
+                    <section class="panel demo-panel">
+                        <div class="panel__head"><h2>People and dates</h2><span>Editable draft fields</span></div>
+                        <div class="demo-panel__body demo-summary-grid">
+                            <div><label class="demo-label" for="edit-customer">Customer</label><input id="edit-customer" class="demo-input" @bind="_order.Customer" /></div>
+                            <div><label class="demo-label" for="edit-manager">Manager</label><input id="edit-manager" class="demo-input" @bind="_order.Manager" /></div>
+                            <div><label class="demo-label" for="edit-store">Store</label><input id="edit-store" class="demo-input" @bind="_order.Store" /></div>
+                            <div><label class="demo-label" for="edit-consultant">Consultant</label><input id="edit-consultant" class="demo-input" @bind="_order.Consultant" /></div>
+                            <div><label class="demo-label" for="edit-date">Order date</label><input id="edit-date" type="date" class="demo-input mono" value="@_editorDate" @onchange="UpdateOrderDate" /></div>
+                            <div><label class="demo-label" for="edit-due">Due date</label><input id="edit-due" type="date" class="demo-input mono" value="@_editorDue" @onchange="UpdateDueDate" /></div>
+                            <div><label class="demo-label" for="edit-mounting-date">Mounting date</label><input id="edit-mounting-date" type="date" class="demo-input mono" value="@_editorMountingDate" @onchange="UpdateMountingDate" /></div>
+                            <div><label class="demo-label" for="edit-priority">Priority</label><select id="edit-priority" class="demo-input" @bind="_order.Priority"><option>Normal</option><option>High</option><option>Urgent</option></select></div>
+                        </div>
+                    </section>
+
+                    <section class="panel demo-panel">
+                        <div class="panel__head"><h2>Address</h2><span>Draft contact and delivery details</span></div>
+                        <div class="demo-panel__body">
+                            <div class="demo-form-grid demo-form-grid--address">
+                                <div><label class="demo-label" for="address-region">Region · Apskritis</label><input id="address-region" class="demo-input" @bind="_order.Region" /></div>
+                                <div><label class="demo-label" for="address-city">City · Miestas</label><input id="address-city" class="demo-input" @bind="_order.City" /></div>
+                                <div><label class="demo-label" for="address-street">Street · Gatvė</label><input id="address-street" class="demo-input" @bind="_order.Street" /></div>
+                                <div><label class="demo-label" for="address-building">Building No.</label><input id="address-building" class="demo-input mono" @bind="_order.Building" /></div>
+                                <div><label class="demo-label" for="address-flat">Flat No.</label><input id="address-flat" class="demo-input mono" @bind="_order.Flat" /></div>
+                                <div><label class="demo-label" for="address-phone">Phone</label><input id="address-phone" type="tel" class="demo-input mono" @bind="_order.Phone" /></div>
+                            </div>
+                            <label class="demo-label demo-label--spaced" for="address-note">Address notes</label><textarea id="address-note" class="demo-textarea" @bind="_order.AddressNote"></textarea>
+                        </div>
+                    </section>
+
+                    <section class="panel demo-panel">
+                        <div class="panel__head">
+                            <div><h2>Products, services and priedai</h2><span>@_order.Lines.Count lines in this draft</span></div>
+                            <div class="demo-panel__actions">
+                                <button class="btn btn--ghost" type="button" @onclick="() => OpenAccessoryPicker(null)">+ Priedai</button>
+                                <button class="btn btn--primary" type="button" @onclick="OpenProductPicker">+ Add product / service</button>
+                            </div>
+                        </div>
+                        @if (_order.Lines.Count == 0)
+                        {
+                            <div class="demo-empty">No lines yet. Add a product, a service, or priedai to explore the order flow.</div>
+                        }
+                        else
+                        {
+                            <div class="table-wrap">
+                                <table class="lk-table demo-lines">
+                                    <thead><tr><th>Item</th><th>Details</th><th class="is-num">Qty</th><th class="is-num">Price</th><th class="is-num">Amount</th><th></th></tr></thead>
+                                    <tbody>
+                                        @foreach (var line in _order.Lines)
+                                        {
+                                            <tr>
+                                                <td><div class="demo-line-name"><div class="demo-line-sketch"><ProductSketch Category="@line.Category" TypeName="@line.Name" /></div><div>
+                                                    <button class="demo-line-open" type="button" @onclick="() => OpenConfigurator(line)">@line.Name ↗</button>
+                                                    <small>@line.Category</small></div></div></td>
+                                                <td class="mono">@(line.WidthMm > 0 ? $"{line.WidthMm} × {line.HeightMm} mm" : line.Unit)</td>
+                                                <td class="is-num"><input class="demo-table-input mono" type="number" min="0.001" step="0.001" aria-label="Quantity for @line.Name" @bind="line.Quantity" /></td>
+                                                <td class="is-num"><input class="demo-table-input mono" type="number" min="0" step="0.01" aria-label="Price for @line.Name" @bind="line.Price" /></td>
+                                                <td class="is-num">@OrderFormat.Money(line.Quantity * line.Price)</td>
+                                                <td class="demo-line-actions">
+                                                    <label class="demo-discount-flag" title="Include in preview discount"><input type="checkbox" @bind="line.Discountable" /> Disc.</label>
+                                                    @if (line.Kind == "Product")
+                                                    {
+                                                        <button type="button" title="Add accessory to this product" @onclick="() => OpenAccessoryPicker(line)">+ ACC</button>
+                                                    }
+                                                    <button type="button" title="Remove line" @onclick="() => RemoveLine(line)">×</button>
+                                                </td>
+                                            </tr>
+                                            @foreach (var accessory in line.Accessories)
+                                            {
+                                                <tr class="demo-attached-row">
+                                                    <td>↳ @accessory.Name</td><td>@accessory.Unit</td>
+                                                    <td class="is-num"><input class="demo-table-input mono" type="number" min="0.001" step="0.001" aria-label="Quantity for @accessory.Name" @bind="accessory.Quantity" /></td>
+                                                    <td class="is-num"><input class="demo-table-input mono" type="number" min="0" step="0.01" aria-label="Price for @accessory.Name" @bind="accessory.Price" /></td>
+                                                    <td class="is-num">@OrderFormat.Money(accessory.Quantity * accessory.Price)</td>
+                                                    <td class="demo-line-actions"><button type="button" title="Remove accessory" @onclick="() => RemoveAccessory(line, accessory)">×</button></td>
+                                                </tr>
+                                            }
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </section>
+
+                    <section class="panel demo-panel">
+                        <div class="panel__head"><h2>Responsible employees</h2><span>Local draft assignments</span></div>
+                        <div class="demo-panel__body">
+                            @foreach (var employee in _order.Employees)
+                            {
+                                <div class="demo-employee-row"><span><strong>@employee.Duty</strong> — @employee.Name <small class="mono">@OrderFormat.Date(employee.Date)</small></span><button class="demo-small-remove" type="button" title="Remove employee" @onclick="() => _order.Employees.Remove(employee)">×</button></div>
+                            }
+                            <div class="demo-employee-add">
+                                <div><label class="demo-label" for="employee-duty">Duty</label><select id="employee-duty" class="demo-input" @bind="_employeeDuty"><option>Konsultantas</option><option>Vadybininkas</option><option>Matuotojas</option><option>Montuotojas</option><option>Transportas</option></select></div>
+                                <div><label class="demo-label" for="employee-name">Employee</label><input id="employee-name" class="demo-input" @bind="_employeeName" /></div>
+                                <div><label class="demo-label" for="employee-date">Date</label><input id="employee-date" type="date" class="demo-input mono" value="@_employeeDate" @onchange="e => _employeeDate = e.Value?.ToString() ?? _employeeDate" /></div>
+                                <button class="btn btn--ghost" type="button" @onclick="AddEmployee">+ Add</button>
+                            </div>
+                            @if (!string.IsNullOrWhiteSpace(_employeeError)) { <div class="demo-field-error">@_employeeError</div> }
+                        </div>
+                    </section>
+
+                    <section class="panel demo-panel">
+                        <div class="panel__head"><h2>Note</h2><span>Draft only</span></div>
+                        <div class="demo-panel__body"><textarea class="demo-textarea" maxlength="128" @bind="_order.Note" placeholder="Order note"></textarea><div class="demo-help">Maximum 128 characters.</div></div>
+                    </section>
+                </div>
+                <aside class="panel demo-receipt">
+                    <div class="panel__head"><h2>Receipt</h2><span>Preview amount</span></div>
+                    <div class="demo-receipt__row"><span>Before discount</span><strong class="mono">@OrderFormat.Money(_order.BeforeDiscount)</strong></div>
+                    <div class="demo-receipt__row"><span>Discountable</span><strong class="mono">@OrderFormat.Money(_order.DiscountableAmount)</strong></div>
+                    <div class="demo-receipt__discount">
+                        <label class="demo-label" for="receipt-discount">Discount % · negative = markup</label><input id="receipt-discount" type="number" min="-100" max="100" step="0.01" class="demo-input mono" @bind="_order.DiscountPercent" @bind:after="NormalizeDiscount" />
+                        <label class="demo-label demo-label--spaced" for="receipt-fixed-price">Fixed final price · €</label><input id="receipt-fixed-price" type="number" min="0" step="0.01" class="demo-input mono" value="@_order.Total.ToString("0.00", CultureInfo.InvariantCulture)" @onchange="SetFixedPrice" />
+                        @if (!string.IsNullOrWhiteSpace(_discountError)) { <div class="demo-field-error">@_discountError</div> }
+                    </div>
+                    <div class="demo-receipt__row"><span>@(_order.DiscountPercent < 0 ? "Markup" : "Discount")</span><strong class="mono">@OrderFormat.Money(Math.Abs(_order.DiscountAmount))</strong></div>
+                    <div class="demo-receipt__row demo-receipt__row--total"><span>Total</span><strong class="mono">@OrderFormat.Money(_order.Total)</strong></div>
+                    <div class="demo-receipt__row"><span>Paid</span><strong class="mono">@OrderFormat.Money(_order.Paid)</strong></div>
+                    <div class="demo-receipt__row"><span>Debt</span><strong class="mono">@OrderFormat.Money(_order.Debt)</strong></div>
+                    <p>Prices here are editable preview values. Legacy pricing, credit checks and payment rules arrive in milestone 2.</p>
+                    <button class="btn btn--primary" type="button" @onclick="SavePreview">Save draft preview</button>
+                    @if (!string.IsNullOrWhiteSpace(_saveMessage)) { <div class="demo-save-message @(_saveIsError ? "demo-save-message--error" : "")" role="status">@_saveMessage</div> }
+                    <button class="btn btn--ghost" type="button" disabled title="Database writing starts in milestone 2">Confirm for production · M2</button>
+                    <div class="demo-receipt__payments">
+                        <div><strong>Payments</strong><button class="btn btn--ghost" type="button" @onclick="OpenPaymentSheet">+ New payment</button></div>
+                        @if (_order.Payments.Count == 0)
+                        {
+                            <p>No payments in this local draft.</p>
+                        }
+                        @foreach (var payment in _order.Payments)
+                        {
+                            <div class="demo-payment-row"><span>@payment.Method<br /><small class="mono">@OrderFormat.Date(payment.Date) · @payment.Reference @payment.ReceiverOrRegister</small></span><strong class="mono">@OrderFormat.Money(payment.Amount)</strong><button class="demo-small-remove" type="button" title="Remove payment" @onclick="() => _order.Payments.Remove(payment)">×</button></div>
+                        }
+                    </div>
+                </aside>
+            </div>
+        </div>
+
+        @if (_configuringLine is not null)
+        {
+            <div class="demo-configurator">
+                <header class="demo-editor__top">
+                    <div><div class="eyebrow mono">Line for order @_order.Number</div><h1>@_configuringLine.Name</h1><div class="demo-editor__meta">@_configuringLine.Category · local preview</div></div>
+                    <button class="btn btn--ghost" type="button" @onclick="CloseConfigurator">← Back to order</button>
+                </header>
+                <div class="demo-editor__banner">Configuration changes update only this draft. Arithmetic PPP previews use the reference snapshot; legacy-only formulas, pricing, stock and production rules are connected in milestone 2.</div>
+                <div class="demo-configurator__grid">
+                    <aside class="panel demo-configurator__rail">
+                        <div class="panel__head"><h2>Order lines</h2></div>
+                        @foreach (var product in _order.Lines)
+                        {
+                            <button type="button" class="demo-configurator__rail-item @(ReferenceEquals(product, _configuringLine) ? "is-selected" : "")" @onclick="() => OpenConfigurator(product)"><span><ProductSketch Category="@product.Category" TypeName="@product.Name" /></span><strong>@product.Name<small class="mono">@(product.Kind == "Product" ? $"{product.WidthMm} × {product.HeightMm} mm · ×{product.Quantity}" : $"×{product.Quantity} {product.Unit}")</small></strong></button>
+                        }
+                        <button class="btn btn--ghost demo-configurator__rail-add" type="button" @onclick="OpenProductPicker">+ New product</button>
+                    </aside>
+                    <div class="demo-configurator__main">
+                        <section class="panel demo-panel">
+                            <div class="panel__head"><h2>Main parameters</h2><span>@_configuringLine.Category</span></div>
+                            <div class="demo-panel__body">
+                                <div class="demo-form-grid demo-form-grid--picker">
+                                    @if (_configuringLine.Kind == "Product")
+                                    {
+                                        <div><label class="demo-label" for="config-width">Width · mm</label><input id="config-width" type="number" min="0" class="demo-input mono" @bind="_configuringLine.WidthMm" @bind:after="RecalculateConfiguredParameters" /></div>
+                                        <div><label class="demo-label" for="config-height">Height · mm</label><input id="config-height" type="number" min="0" class="demo-input mono" @bind="_configuringLine.HeightMm" @bind:after="RecalculateConfiguredParameters" /></div>
+                                    }
+                                    <div><label class="demo-label" for="config-quantity">Quantity</label><input id="config-quantity" type="number" min="0.001" step="0.001" class="demo-input mono" @bind="_configuringLine.Quantity" @bind:after="RecalculateConfiguredParameters" /></div>
+                                    @if (_configuringLine.Kind == "Product")
+                                    {
+                                        <div>
+                                            <label class="demo-label" for="config-colour">Colour / fabric code</label>
+                                            <input id="config-colour" list="demo-colour-codes" class="demo-input mono" value="@_configuringLine.ColourCode" @onchange="UpdateColour" placeholder="Search code from static catalog" autocomplete="off" />
+                                            <datalist id="demo-colour-codes">@foreach (var colour in ConfiguredColours) { <option value="@colour.Code">@colour.Name</option> }</datalist>
+                                            <div class="demo-help">@ConfiguredColours.Count codes in this category · stock is checked in milestone 2.</div>
+                                            @if (!string.IsNullOrWhiteSpace(_configuringLine.ColourCode) && _configuringLine.ColourId is null) { <div class="demo-field-error">Code not found for this category in the static snapshot.</div> }
+                                        </div>
+                                        <div><label class="demo-label" for="config-control">Control type · Valdymas</label><input id="config-control" class="demo-input" @bind="_configuringLine.ControlType" placeholder="Manual / motor / chain" /></div>
+                                    }
+                                    <div><label class="demo-label" for="config-price">Preview unit price · €</label><input id="config-price" type="number" min="0" step="0.01" class="demo-input mono" @bind="_configuringLine.Price" /></div>
+                                </div>
+                                <label class="demo-label demo-label--spaced" for="config-note">Product notes · Pastabos</label><textarea id="config-note" class="demo-textarea" @bind="_configuringLine.Note"></textarea>
+                            </div>
+                        </section>
+                        @if (_configuringLine.Kind == "Product")
+                        {
+                        <section class="panel demo-panel">
+                            <div class="panel__head"><h2>Additional parameters · PPP01–PPP12</h2><span>Fields from legacy category and type</span></div>
+                            <div class="demo-panel__body">
+                                @if (ConfiguredCategory is null || !ConfiguredCategory.ParameterLabels.Any(x => x is not null))
+                                {
+                                    <p class="demo-help">This category has no additional PPP fields in the legacy reference snapshot.</p>
+                                }
+                                else
+                                {
+                                    <div class="demo-parameter-grid">
+                                        @for (var index = 0; index < 12; index++)
+                                        {
+                                            var parameterIndex = index;
+                                            var label = ConfiguredCategory.ParameterLabels.ElementAtOrDefault(index);
+                                            if (label is null) continue;
+                                            var formula = ConfiguredType?.ParameterFormulas.ElementAtOrDefault(index);
+                                            var automatic = formula is not null && !_configuringLine.ParameterManual[index]
+                                                && DemoParameterFormula.TryEvaluate(formula, _configuringLine, out _);
+                                            <div class="demo-parameter-field">
+                                                <div class="demo-parameter-field__head"><label class="demo-label" for="config-ppp-@index">@label <span class="mono">PPP@((index + 1).ToString("D2"))</span></label><span class="chip @(automatic ? "chip--approved" : "chip--entered")">@(automatic ? "Auto preview" : "Manual")</span></div>
+                                                <input id="config-ppp-@index" class="demo-input mono" value="@_configuringLine.ParameterValues[index]" @onchange="e => SetParameter(parameterIndex, e.Value?.ToString() ?? string.Empty)" />
+                                                @if (!string.IsNullOrWhiteSpace(formula))
+                                                {
+                                                    <div class="demo-parameter-formula mono">Legacy: @formula</div>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
+                                    <p class="demo-help">Editable PPP values stay with this product draft. Automatic previews cover simple arithmetic only; functions used by legacy stay manual until database integration.</p>
+                                }
+                            </div>
+                        </section>
+                        <section class="panel demo-panel">
+                            <div class="panel__head"><h2>Accessories / priedai</h2><button class="btn btn--ghost" type="button" @onclick="() => OpenAccessoryPicker(_configuringLine)">+ Add accessory</button></div>
+                            @if (_configuringLine.Accessories.Count == 0)
+                            {
+                                <div class="demo-empty">No accessories for this product.</div>
+                            }
+                            @foreach (var accessory in _configuringLine.Accessories)
+                            {
+                                <div class="demo-configurator__accessory"><span>@accessory.Name <small>@accessory.Unit · ×@accessory.Quantity</small></span><strong class="mono">@OrderFormat.Money(accessory.Quantity * accessory.Price)</strong><button type="button" aria-label="Remove accessory" @onclick="() => RemoveAccessory(_configuringLine, accessory)">×</button></div>
+                            }
+                        </section>
+                        }
+                    </div>
+                    <aside class="panel demo-configurator__preview">
+                        <div class="panel__head"><h2>Live schematic</h2><span>Preview</span></div>
+                        <div class="demo-configurator__drawing"><ProductSketch Category="@_configuringLine.Category" TypeName="@_configuringLine.Name" /><div class="mono">@(_configuringLine.Kind == "Product" ? $"{_configuringLine.WidthMm} × {_configuringLine.HeightMm} mm · ×{_configuringLine.Quantity}" : $"×{_configuringLine.Quantity} {_configuringLine.Unit}")</div></div>
+                        <div class="demo-receipt__row demo-receipt__row--total"><span>Product total</span><strong class="mono">@OrderFormat.Money(_configuringLine.Total)</strong></div>
+                    </aside>
+                </div>
+            </div>
+        }
+
+        @if (_paymentSheetOpen)
+        {
+            <button class="demo-picker-backdrop demo-payment-backdrop" type="button" aria-label="Close payment sheet" @onclick="ClosePaymentSheet"></button>
+            <aside class="demo-drawer demo-drawer--payment" aria-labelledby="demo-payment-title">
+                <div class="demo-drawer__head"><div><div class="eyebrow mono">@_order.Number · Debt @OrderFormat.Money(_order.Debt)</div><h2 id="demo-payment-title">New payment</h2></div><button class="demo-icon-button" type="button" aria-label="Close payment sheet" @onclick="ClosePaymentSheet">×</button></div>
+                <div class="demo-drawer__body">
+                    <p class="demo-notice">UI preview · This payment stays only in the local draft.</p>
+                    <label class="demo-label" for="payment-method">Payment method</label>
+                    <select id="payment-method" class="demo-input" @bind="_paymentMethod"><option>Via PPK</option><option>Bank transfer</option><option>Cash desk</option><option>EKA register</option></select>
+                    <div class="demo-form-grid">
+                        <div><label class="demo-label" for="payment-date">Date</label><input id="payment-date" type="date" class="demo-input mono" value="@_paymentDate" @onchange="e => _paymentDate = e.Value?.ToString() ?? _paymentDate" /></div>
+                        <div><label class="demo-label" for="payment-amount">Amount · €</label><input id="payment-amount" type="number" min="0.01" step="0.01" class="demo-input mono" @bind="_paymentAmount" /></div>
+                    </div>
+                    @if (_paymentMethod is "Via PPK" or "Bank transfer")
+                    {
+                        <label class="demo-label demo-label--spaced" for="payment-reference">@(_paymentMethod == "Via PPK" ? "PPK receipt series and number" : "Bank transfer reference")</label><input id="payment-reference" class="demo-input mono" @bind="_paymentReference" />
+                    }
+                    else
+                    {
+                        <label class="demo-label demo-label--spaced" for="payment-party">@(_paymentMethod == "Cash desk" ? "Cash receiver" : "EKA register")</label><input id="payment-party" class="demo-input" @bind="_paymentParty" />
+                    }
+                    <label class="demo-label demo-label--spaced" for="payment-note">Notes</label><textarea id="payment-note" class="demo-textarea" @bind="_paymentNote"></textarea>
+                    <div class="demo-number-preview"><span>Debt after payment</span><strong class="mono">@OrderFormat.Money(_order.Debt - _paymentAmount)</strong></div>
+                    @if (!string.IsNullOrWhiteSpace(_paymentError)) { <div class="demo-field-error demo-field-error--block" role="alert">@_paymentError</div> }
+                </div>
+                <div class="demo-drawer__foot"><button class="btn btn--ghost" type="button" @onclick="ClosePaymentSheet">Cancel</button><button class="btn btn--primary" type="button" @onclick="AddPayment">Add to draft</button></div>
+            </aside>
+        }
+
+        @if (_pickerMode is not null)
+        {
+            <button class="demo-picker-backdrop" type="button" aria-label="Close picker" @onclick="ClosePicker"></button>
+            <aside class="demo-drawer demo-drawer--picker" aria-labelledby="demo-picker-title">
+                <div class="demo-drawer__head">
+                    <div><div class="eyebrow mono">@_order.Number · Draft line</div><h2 id="demo-picker-title">@(_pickerMode == "product" ? "Add product or service" : _attachedTo is null ? "Add priedai" : $"Accessory for {_attachedTo.Name}")</h2></div>
+                    <button class="demo-icon-button" type="button" aria-label="Close picker" @onclick="ClosePicker">×</button>
+                </div>
+                <div class="demo-drawer__body">
+                    @if (_pickerMode == "product")
+                    {
+                        <label class="demo-label" for="demo-category-search">Find a category or type</label>
+                        <input id="demo-category-search" class="demo-input" @bind="_catalogSearch" @bind:event="oninput" placeholder="Search 26 categories and 290 types" />
+                        <div class="demo-category-list">
+                            @foreach (var category in FilteredCategories)
+                            {
+                                <button type="button" class="demo-category @(_selectedCategoryId == category.Id ? "is-selected" : "")" @onclick="() => SelectCategory(category.Id)">
+                                    <span class="demo-category__image"><ProductSketch Category="@category.Name" /></span>
+                                    <span><strong>@category.Name</strong><small>@category.Types.Count types</small></span>
+                                </button>
+                            }
+                        </div>
+                        @if (SelectedCategory is not null)
+                        {
+                            <div class="demo-picker-section-title">@SelectedCategory.Name · choose type</div>
+                            <div class="demo-type-list">
+                                @foreach (var type in FilteredTypes)
+                                {
+                                    <button type="button" class="@(_selectedTypeId == type.Id ? "is-selected" : "")" @onclick="() => _selectedTypeId = type.Id">@type.Name</button>
+                                }
+                            </div>
+                            @if (SelectedType is not null)
+                            {
+                                <div class="demo-selected-preview"><ProductSketch Category="@SelectedCategory.Name" TypeName="@SelectedType.Name" /><div><strong>@SelectedType.Name</strong><small>@SelectedCategory.Name · schematic preview</small></div></div>
+                                <div class="demo-form-grid demo-form-grid--picker">
+                                    @if (SelectedCategory.Name is not ("Paslaugos" or "Priedai" or "Be gaminių"))
+                                    {
+                                        <div><label class="demo-label" for="demo-width">Width · mm</label><input id="demo-width" type="number" min="0" class="demo-input mono" @bind="_widthMm" /></div>
+                                        <div><label class="demo-label" for="demo-height">Height · mm</label><input id="demo-height" type="number" min="0" class="demo-input mono" @bind="_heightMm" /></div>
+                                    }
+                                    <div><label class="demo-label" for="demo-qty">Quantity</label><input id="demo-qty" type="number" min="0.001" step="0.001" class="demo-input mono" @bind="_quantity" /></div>
+                                    <div><label class="demo-label" for="demo-price">Preview unit price · €</label><input id="demo-price" type="number" min="0" step="0.01" class="demo-input mono" @bind="_price" /></div>
+                                </div>
+                            }
+                        }
+                    }
+                    else
+                    {
+                        <p class="demo-help">@(_attachedTo is null ? "Select a standalone priedai line for this order." : "These accessory options match the selected product category in the legacy reference snapshot.")</p>
+                        <label class="demo-label" for="demo-accessory-search">Search priedai</label>
+                        <input id="demo-accessory-search" class="demo-input" @bind="_accessorySearch" @bind:event="oninput" placeholder="Name or code" />
+                        <div class="demo-type-list demo-type-list--accessories">
+                            @foreach (var accessory in FilteredAccessories)
+                            {
+                                <button type="button" class="@(_selectedAccessoryId == accessory.Id ? "is-selected" : "")" @onclick="() => SelectAccessory(accessory.Id)">
+                                    <span>@accessory.Name</span><small class="mono">@accessory.Unit · @OrderFormat.Money(accessory.Price)</small>
+                                </button>
+                            }
+                        </div>
+                        @if (SelectedAccessory is not null)
+                        {
+                            @if (_attachedTo is not null)
+                            {
+                                <p class="demo-help">The suggested quantity uses the legacy unit rule and this product's dimensions. You can change it for this draft.</p>
+                            }
+                            <div class="demo-form-grid demo-form-grid--picker">
+                                <div><label class="demo-label" for="demo-acc-qty">Quantity · @SelectedAccessory.Unit</label><input id="demo-acc-qty" type="number" min="0.001" step="0.001" class="demo-input mono" @bind="_quantity" /></div>
+                                <div><label class="demo-label" for="demo-acc-price">Preview unit price · €</label><input id="demo-acc-price" type="number" min="0" step="0.01" class="demo-input mono" @bind="_price" /></div>
+                            </div>
+                        }
+                    }
+                    @if (!string.IsNullOrWhiteSpace(_pickerError))
+                    {
+                        <div class="demo-field-error demo-field-error--block" role="alert">@_pickerError</div>
+                    }
+                </div>
+                <div class="demo-drawer__foot">
+                    <button class="btn btn--ghost" type="button" @onclick="ClosePicker">Cancel</button>
+                    <button class="btn btn--primary" type="button" @onclick="AddLine">Add to draft</button>
+                </div>
+            </aside>
+        }
+    }
+</div>
+
+@code {
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private static readonly DemoCatalog Catalog = DemoCatalog.Load();
+    private static readonly TimeZoneInfo Vilnius = TimeZoneInfo.FindSystemTimeZoneById("Europe/Vilnius");
+    private static DateOnly Today => DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, Vilnius));
+    private string _rawNumber = "";
+    private string _customer = "";
+    private string _manager = "";
+    private string _store = "";
+    private string _consultant = "";
+    private string _date = Today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+    private string _due = Today.AddDays(14).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+    private string _editorDate = "";
+    private string _editorDue = "";
+    private string _editorMountingDate = "";
+    private string _employeeDuty = "Konsultantas";
+    private string _employeeName = "";
+    private string _employeeDate = Today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+    private string _employeeError = "";
+    private string _discountError = "";
+    private string _saveMessage = "";
+    private bool _saveIsError;
+    private string _formError = "";
+    private bool _numberTouched;
+    private bool _showSeriesSuggestions;
+    private string _lastAutofilledSeries = "";
+    private DemoOrderDraft? _order;
+    private DemoOrderLine? _configuringLine;
+    private bool _paymentSheetOpen;
+    private string _paymentMethod = "Bank transfer";
+    private string _paymentDate = Today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+    private decimal _paymentAmount;
+    private string _paymentReference = "";
+    private string _paymentParty = "";
+    private string _paymentNote = "";
+    private string _paymentError = "";
+    private string? _pickerMode;
+    private DemoOrderLine? _attachedTo;
+    private string _catalogSearch = "";
+    private string _accessorySearch = "";
+    private int _selectedCategoryId;
+    private int _selectedTypeId;
+    private int _selectedAccessoryId;
+    private int _widthMm;
+    private int _heightMm;
+    private decimal _quantity = 1;
+    private decimal _price;
+    private string _pickerError = "";
+
+    private bool HasNumberPreview => DemoOrderNumber.TryNormalize(_rawNumber, Today.Year, Catalog, out _, out _, out _);
+    private string PreviewNumber => DemoOrderNumber.TryNormalize(_rawNumber, Today.Year, Catalog, out var number, out _, out _) ? number : "";
+    private string NumberError => DemoOrderNumber.TryNormalize(_rawNumber, Today.Year, Catalog, out _, out _, out var error) ? "" : error;
+    private IReadOnlyList<string> SeriesSuggestions
+    {
+        get
+        {
+            if (!_showSeriesSuggestions || string.IsNullOrWhiteSpace(_rawNumber)) return [];
+            var prefix = _rawNumber.Split('-')[0].Trim();
+            if (prefix.Length is < 1 or > 8 || _rawNumber.Contains('-')) return [];
+            return Catalog.Series.Where(x => x.Code.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                .Take(6).Select(x => x.Code).ToList();
+        }
+    }
+
+    private void OnNumberInput(ChangeEventArgs e)
+    {
+        _rawNumber = e.Value?.ToString() ?? "";
+        _numberTouched = true;
+        _showSeriesSuggestions = true;
+        _formError = "";
+        if (_rawNumber.Contains('-')) ApplySeriesDefaults(_rawNumber.Split('-')[0].Trim());
+    }
+
+    private void ChooseSeries(string code)
+    {
+        _rawNumber = code + "-";
+        _showSeriesSuggestions = false;
+        _numberTouched = false;
+        ApplySeriesDefaults(code);
+    }
+
+    private void ApplySeriesDefaults(string code)
+    {
+        if (string.Equals(code, _lastAutofilledSeries, StringComparison.OrdinalIgnoreCase)) return;
+        var item = Catalog.Series.FirstOrDefault(x => string.Equals(x.Code, code, StringComparison.OrdinalIgnoreCase));
+        if (item is null) return;
+        _customer = item.Customer;
+        _manager = item.Manager;
+        _store = item.Store;
+        _consultant = item.Consultant;
+        _lastAutofilledSeries = item.Code;
+    }
+
+    private void CreateDraft()
+    {
+        _numberTouched = true;
+        if (!DemoOrderNumber.TryNormalize(_rawNumber, Today.Year, Catalog, out var number, out var series, out var error))
+        {
+            _formError = error;
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(_customer) || string.IsNullOrWhiteSpace(_store))
+        {
+            _formError = "Customer and store are required for this preview.";
+            return;
+        }
+        if (!DateOnly.TryParseExact(_date, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date)
+            || !DateOnly.TryParseExact(_due, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var due)
+            || due < date)
+        {
+            _formError = "Enter valid dates. The due date cannot be before the order date.";
+            return;
+        }
+        _order = new DemoOrderDraft
+        {
+            Number = number, Series = series, Customer = _customer.Trim(), Store = _store.Trim(),
+            Manager = _manager.Trim(), Consultant = _consultant.Trim(), Date = date, Due = due
+        };
+        _editorDate = _date;
+        _editorDue = _due;
+        _formError = "";
+    }
+
+    private void UpdateOrderDate(ChangeEventArgs e)
+    {
+        if (_order is null) return;
+        var value = e.Value?.ToString() ?? "";
+        if (DateOnly.TryParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
+        {
+            _order.Date = date;
+            _editorDate = value;
+        }
+    }
+
+    private void UpdateDueDate(ChangeEventArgs e)
+    {
+        if (_order is null) return;
+        var value = e.Value?.ToString() ?? "";
+        if (DateOnly.TryParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
+        {
+            _order.Due = date;
+            _editorDue = value;
+        }
+    }
+
+    private void UpdateMountingDate(ChangeEventArgs e)
+    {
+        if (_order is null) return;
+        var value = e.Value?.ToString() ?? "";
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            _order.MountingDate = null;
+            _editorMountingDate = "";
+        }
+        else if (DateOnly.TryParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
+        {
+            _order.MountingDate = date;
+            _editorMountingDate = value;
+        }
+    }
+
+    private void AddEmployee()
+    {
+        if (_order is null) return;
+        if (string.IsNullOrWhiteSpace(_employeeName)
+            || !DateOnly.TryParseExact(_employeeDate, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
+        {
+            _employeeError = "Enter an employee and valid date.";
+            return;
+        }
+        _order.Employees.Add(new DemoResponsibleEmployee { Duty = _employeeDuty, Name = _employeeName.Trim(), Date = date });
+        _employeeName = "";
+        _employeeError = "";
+    }
+
+    private void NormalizeDiscount()
+    {
+        if (_order is null) return;
+        _order.DiscountPercent = Math.Clamp(_order.DiscountPercent, -100m, 100m);
+        _discountError = "";
+    }
+
+    private void SetFixedPrice(ChangeEventArgs e)
+    {
+        if (_order is null) return;
+        if (!decimal.TryParse(e.Value?.ToString(), NumberStyles.Number, CultureInfo.InvariantCulture, out var requested)
+            || requested < 0 || _order.DiscountableAmount <= 0)
+        {
+            _discountError = "Enter a nonnegative final price and mark at least one line discountable.";
+            return;
+        }
+        var percent = (_order.BeforeDiscount - requested) * 100m / _order.DiscountableAmount;
+        if (percent is < -100m or > 100m)
+        {
+            _discountError = "This fixed price would require a discount or markup above 100%.";
+            return;
+        }
+        _order.DiscountPercent = Math.Round(percent, 2, MidpointRounding.AwayFromZero);
+        _discountError = "";
+    }
+
+    private void SavePreview()
+    {
+        if (_order is null) return;
+        _saveIsError = true;
+        if (string.IsNullOrWhiteSpace(_order.Customer) || string.IsNullOrWhiteSpace(_order.Store))
+            _saveMessage = "Customer and store are required.";
+        else if (_order.Due < _order.Date)
+            _saveMessage = "Due date cannot be before the order date.";
+        else if (_order.Lines.Count == 0)
+            _saveMessage = "Add at least one product, service, or priedai line.";
+        else if (_order.Lines.Any(x => x.Quantity <= 0 || x.Price < 0 || x.Kind == "Product" && (x.WidthMm <= 0 || x.HeightMm <= 0)
+                    || x.Accessories.Any(a => a.Quantity <= 0 || a.Price < 0)))
+            _saveMessage = "Check line quantities, prices, and product dimensions.";
+        else if (_order.Lines.Any(x => !string.IsNullOrWhiteSpace(x.ColourCode) && x.ColourId is null))
+            _saveMessage = "Choose a colour or fabric code from the static catalog.";
+        else
+        {
+            _saveIsError = false;
+            _saveMessage = "Preview checked. This draft is only in the open screen and disappears when you close or refresh it.";
+        }
+    }
+
+    private IReadOnlyList<DemoCategory> FilteredCategories => Catalog.Categories
+        .Where(x => x.Types.Count > 0 &&
+            (string.IsNullOrWhiteSpace(_catalogSearch)
+             || x.Name.Contains(_catalogSearch, StringComparison.OrdinalIgnoreCase)
+             || x.Types.Any(t => t.Name.Contains(_catalogSearch, StringComparison.OrdinalIgnoreCase))))
+        .ToList();
+    private DemoCategory? SelectedCategory => Catalog.Categories.FirstOrDefault(x => x.Id == _selectedCategoryId);
+    private IReadOnlyList<DemoType> FilteredTypes => SelectedCategory?.Types
+        .Where(x => string.IsNullOrWhiteSpace(_catalogSearch)
+            || SelectedCategory.Name.Contains(_catalogSearch, StringComparison.OrdinalIgnoreCase)
+            || x.Name.Contains(_catalogSearch, StringComparison.OrdinalIgnoreCase)).ToList() ?? [];
+    private DemoType? SelectedType => SelectedCategory?.Types.FirstOrDefault(x => x.Id == _selectedTypeId);
+    private DemoCategory? ConfiguredCategory => Catalog.Categories.FirstOrDefault(x => x.Id == _configuringLine?.CategoryId);
+    private DemoType? ConfiguredType => ConfiguredCategory?.Types.FirstOrDefault(x => x.Id == _configuringLine?.TypeId);
+    private IReadOnlyList<DemoColour> ConfiguredColours => _configuringLine is null ? [] : Catalog.Colours
+        .Where(x => x.CategoryIds.Contains(_configuringLine.CategoryId)).ToList();
+    private IReadOnlyList<DemoAccessory> FilteredAccessories => Catalog.Accessories
+        .Where(x => (_attachedTo is null || x.CategoryIds.Contains(_attachedTo.CategoryId))
+            && (string.IsNullOrWhiteSpace(_accessorySearch)
+                || x.Name.Contains(_accessorySearch, StringComparison.OrdinalIgnoreCase)
+                || x.Id.ToString(CultureInfo.InvariantCulture).Contains(_accessorySearch, StringComparison.OrdinalIgnoreCase)))
+        .Take(80).ToList();
+    private DemoAccessory? SelectedAccessory => Catalog.Accessories.FirstOrDefault(x => x.Id == _selectedAccessoryId);
+
+    private void OpenProductPicker()
+    {
+        ResetPicker();
+        _pickerMode = "product";
+    }
+    private void OpenConfigurator(DemoOrderLine line)
+    {
+        _configuringLine = line;
+        RecalculateConfiguredParameters();
+    }
+    private void CloseConfigurator() => _configuringLine = null;
+    private void RecalculateConfiguredParameters()
+    {
+        if (_configuringLine is null || ConfiguredType is null) return;
+        for (var index = 0; index < 12; index++)
+        {
+            if (_configuringLine.ParameterManual[index]) continue;
+            var formula = ConfiguredType.ParameterFormulas.ElementAtOrDefault(index);
+            if (DemoParameterFormula.TryEvaluate(formula, _configuringLine, out var result))
+                _configuringLine.ParameterValues[index] = result;
+        }
+    }
+    private void SetParameter(int index, string value)
+    {
+        if (_configuringLine is null) return;
+        _configuringLine.ParameterValues[index] = value.Trim();
+        _configuringLine.ParameterManual[index] = true;
+    }
+    private void UpdateColour(ChangeEventArgs e)
+    {
+        if (_configuringLine is null) return;
+        var code = e.Value?.ToString()?.Trim() ?? "";
+        var match = ConfiguredColours.FirstOrDefault(x => x.Code.Equals(code, StringComparison.OrdinalIgnoreCase));
+        _configuringLine.ColourCode = match?.Code ?? code;
+        _configuringLine.ColourId = match?.Id;
+    }
+    private void OpenPaymentSheet()
+    {
+        if (_order is null) return;
+        _paymentMethod = "Bank transfer";
+        _paymentDate = Today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        _paymentAmount = Math.Max(0, _order.Debt);
+        _paymentReference = "";
+        _paymentParty = "";
+        _paymentNote = "";
+        _paymentError = "";
+        _paymentSheetOpen = true;
+    }
+    private void ClosePaymentSheet() => _paymentSheetOpen = false;
+    private void AddPayment()
+    {
+        if (_order is null) return;
+        if (_paymentAmount <= 0 || !DateOnly.TryParseExact(_paymentDate, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
+        {
+            _paymentError = "Enter a valid payment date and a positive amount.";
+            return;
+        }
+        if ((_paymentMethod is "Via PPK" or "Bank transfer") && string.IsNullOrWhiteSpace(_paymentReference)
+            || (_paymentMethod is "Cash desk" or "EKA register") && string.IsNullOrWhiteSpace(_paymentParty))
+        {
+            _paymentError = "Enter the document reference, receiver, or register required for this method.";
+            return;
+        }
+        _order.Payments.Add(new DemoPayment
+        {
+            Date = date, Method = _paymentMethod, Amount = _paymentAmount,
+            Reference = _paymentReference.Trim(), ReceiverOrRegister = _paymentParty.Trim(), Note = _paymentNote.Trim()
+        });
+        _paymentSheetOpen = false;
+    }
+    private void OpenAccessoryPicker(DemoOrderLine? parent)
+    {
+        ResetPicker();
+        _attachedTo = parent;
+        _pickerMode = "accessory";
+    }
+    private void ResetPicker()
+    {
+        _pickerError = "";
+        _catalogSearch = "";
+        _accessorySearch = "";
+        _selectedCategoryId = 0;
+        _selectedTypeId = 0;
+        _selectedAccessoryId = 0;
+        _widthMm = 0;
+        _heightMm = 0;
+        _quantity = 1;
+        _price = 0;
+    }
+    private void SelectCategory(int id)
+    {
+        _selectedCategoryId = id;
+        _selectedTypeId = 0;
+        _pickerError = "";
+    }
+    private void SelectAccessory(int id)
+    {
+        _selectedAccessoryId = id;
+        _price = SelectedAccessory?.Price ?? 0;
+        if (_attachedTo is not null && SelectedAccessory is not null)
+        {
+            var width = _attachedTo.WidthMm / 1000m;
+            var height = _attachedTo.HeightMm / 1000m;
+            _quantity = SelectedAccessory.Unit switch
+            {
+                "1m pločio" => width * _attachedTo.Quantity,
+                "1m aukščio" => height * _attachedTo.Quantity,
+                "vnt" => _attachedTo.Quantity,
+                "kvm" => width * height * _attachedTo.Quantity,
+                _ => 1m
+            };
+            if (_quantity <= 0) _quantity = 1;
+        }
+        _pickerError = "";
+    }
+    private void AddLine()
+    {
+        if (_order is null) return;
+        if (_quantity <= 0 || _price < 0)
+        {
+            _pickerError = "Quantity must be positive and price cannot be negative.";
+            return;
+        }
+        if (_pickerMode == "product")
+        {
+            if (SelectedCategory is null || SelectedType is null)
+            {
+                _pickerError = "Choose a category and type.";
+                return;
+            }
+            var kind = SelectedCategory.Name switch
+            {
+                "Priedai" or "Be gaminių" => "Priedai",
+                "Paslaugos" => "Service",
+                _ => "Product"
+            };
+            if (kind == "Product" && (_widthMm <= 0 || _heightMm <= 0))
+            {
+                _pickerError = "Enter a positive width and height for this product.";
+                return;
+            }
+            var line = new DemoOrderLine
+            {
+                Kind = kind, TypeId = SelectedType.Id, CategoryId = SelectedCategory.Id,
+                Category = SelectedCategory.Name, Name = SelectedType.Name,
+                WidthMm = _widthMm, HeightMm = _heightMm, Quantity = _quantity, Price = _price,
+                Discountable = kind == "Product"
+            };
+            _order.Lines.Add(line);
+            ClosePicker();
+            if (kind == "Product") OpenConfigurator(line);
+            return;
+        }
+        else if (SelectedAccessory is not null)
+        {
+            var line = new DemoOrderLine
+            {
+                Kind = "Priedai", TypeId = SelectedAccessory.Id,
+                Category = "Priedai", Name = SelectedAccessory.Name,
+                Unit = SelectedAccessory.Unit, Quantity = _quantity, Price = _price,
+                Discountable = _attachedTo is not null
+            };
+            if (_attachedTo is null) _order.Lines.Add(line);
+            else _attachedTo.Accessories.Add(line);
+        }
+        else
+        {
+            _pickerError = "Choose a priedai item.";
+            return;
+        }
+        ClosePicker();
+    }
+
+    private void RemoveLine(DemoOrderLine line) => _order?.Lines.Remove(line);
+    private static void RemoveAccessory(DemoOrderLine parent, DemoOrderLine accessory) => parent.Accessories.Remove(accessory);
+    private void ClosePicker()
+    {
+        _pickerMode = null;
+        _attachedTo = null;
+    }
+    private Task CloseAsync() => OnClose.InvokeAsync();
+    public async Task HandleEscapeAsync()
+    {
+        if (_pickerMode is not null) ClosePicker();
+        else if (_paymentSheetOpen) ClosePaymentSheet();
+        else if (_configuringLine is not null) CloseConfigurator();
+        else await CloseAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+    private static string Display(string value) => string.IsNullOrWhiteSpace(value) ? "—" : value;
+}

@@ -13,6 +13,7 @@
 //   ArrowUp  — move row selection one up
 //   ArrowDn  — move row selection one down
 //   Enter    — open the currently selected order in a new tab
+//   N        — open the local new-order preview
 //
 // Editable-element guard: ArrowUp/Down/Enter are intentionally NOT swallowed
 // when the user is typing in an input/textarea/select/contenteditable, so
@@ -88,6 +89,12 @@ function onKey(e) {
     }
 
     if (isEditable) return;
+
+    if (e.key.toLowerCase() === 'n' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+        _dotnetRef.invokeMethodAsync('HandleShortcut', 'new');
+        return;
+    }
 
     switch (e.key) {
         case 'ArrowUp':
