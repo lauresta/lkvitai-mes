@@ -1,0 +1,23 @@
+<div class="demo-live-preview" role="img" aria-label="@TypeName, @WidthMm by @HeightMm millimetres, @Quantity pieces">
+    <div class="demo-live-preview__width mono">@(WidthMm > 0 ? $"{WidthMm} mm" : "Width · mm")</div>
+    <div class="demo-live-preview__stage">
+        <div class="demo-live-preview__product" style="width: @PixelWidth.ToString(System.Globalization.CultureInfo.InvariantCulture)px; height: @PixelHeight.ToString(System.Globalization.CultureInfo.InvariantCulture)px; transform: @(ControlType.Contains("left", StringComparison.OrdinalIgnoreCase) ? "scaleX(-1)" : "none")">
+            <ProductSketch Category="@Category" TypeName="@TypeName" />
+        </div>
+        <div class="demo-live-preview__height mono">@(HeightMm > 0 ? $"{HeightMm} mm" : "Height · mm")</div>
+    </div>
+    <div class="demo-live-preview__quantity mono">× @Quantity pcs</div>
+</div>
+
+@code {
+    [Parameter] public string Category { get; set; } = "";
+    [Parameter] public string TypeName { get; set; } = "";
+    [Parameter] public int WidthMm { get; set; }
+    [Parameter] public int HeightMm { get; set; }
+    [Parameter] public decimal Quantity { get; set; }
+    [Parameter] public string ControlType { get; set; } = "";
+
+    private double Ratio => WidthMm <= 0 || HeightMm <= 0 ? 0.8 : (double)WidthMm / HeightMm;
+    private double PixelWidth => Math.Min(220, 260 * Ratio);
+    private double PixelHeight => Math.Min(260, 220 / Ratio);
+}

@@ -229,101 +229,150 @@
             </div>
         </div>
 
-        @if (_configuringLine is not null)
+        @if (_selectingProduct)
         {
-            <div class="demo-configurator">
-                <header class="demo-editor__top">
-                    <div><div class="eyebrow mono">Line for order @_order.Number</div><h1>@_configuringLine.Name</h1><div class="demo-editor__meta">@_configuringLine.Category · local preview</div></div>
-                    <button class="btn btn--ghost" type="button" @onclick="CloseConfigurator">← Back to order</button>
+            <div class="demo-product-page" aria-label="Choose a new product">
+                <header class="demo-product-page__header">
+                    <div><div class="eyebrow mono">Product for order @_order.Number</div><h1>New product or service</h1></div>
+                    <button class="btn btn--ghost" type="button" @onclick="CloseProductPicker">← Back to order</button>
                 </header>
-                <div class="demo-editor__banner">Configuration changes update only this draft. Arithmetic PPP previews use the reference snapshot; legacy-only formulas, pricing, stock and production rules are connected in milestone 2.</div>
-                <div class="demo-configurator__grid">
-                    <aside class="panel demo-configurator__rail">
-                        <div class="panel__head"><h2>Order lines</h2></div>
+                <div class="demo-product-page__grid">
+                    <aside class="panel demo-product-rail">
+                        <div class="panel__head"><h2>Order products</h2><span class="mono">@OrderFormat.Money(_order.BeforeDiscount)</span></div>
                         @foreach (var product in _order.Lines)
                         {
-                            <button type="button" class="demo-configurator__rail-item @(ReferenceEquals(product, _configuringLine) ? "is-selected" : "")" @onclick="() => OpenConfigurator(product)"><span><ProductSketch Category="@product.Category" TypeName="@product.Name" /></span><strong>@product.Name<small class="mono">@(product.Kind == "Product" ? $"{product.WidthMm} × {product.HeightMm} mm · ×{product.Quantity}" : $"×{product.Quantity} {product.Unit}")</small></strong></button>
+                            <button type="button" class="demo-product-rail__item" @onclick="() => OpenConfigurator(product)"><span><ProductSketch Category="@product.Category" TypeName="@product.Name" /></span><strong>@product.Name<small class="mono">@(product.Kind == "Product" ? $"{product.WidthMm} × {product.HeightMm} mm · ×{product.Quantity}" : $"×{product.Quantity} {product.Unit}")</small></strong></button>
                         }
-                        <button class="btn btn--ghost demo-configurator__rail-add" type="button" @onclick="OpenProductPicker">+ New product</button>
+                        <div class="demo-product-rail__new">+ New product</div>
                     </aside>
-                    <div class="demo-configurator__main">
-                        <section class="panel demo-panel">
-                            <div class="panel__head"><h2>Main parameters</h2><span>@_configuringLine.Category</span></div>
-                            <div class="demo-panel__body">
-                                <div class="demo-form-grid demo-form-grid--picker">
-                                    @if (_configuringLine.Kind == "Product")
+                    <main class="demo-product-catalog">
+                        <section class="panel demo-product-catalog__categories">
+                            <div class="panel__head"><h2>1 · Category</h2><input class="demo-input demo-product-catalog__search" aria-label="Find a category or type" @bind="_catalogSearch" @bind:event="oninput" placeholder="Search @Catalog.Categories.Count categories and types" /></div>
+                            <div class="demo-product-catalog__tiles">
+                                @foreach (var category in FilteredCategories)
+                                {
+                                    <button type="button" class="demo-product-tile @(_selectedCategoryId == category.Id ? "is-selected" : "")" @onclick="() => SelectCategory(category.Id)"><span><ProductSketch Category="@category.Name" /></span><strong>@category.Name</strong><small>@category.Types.Count types</small></button>
+                                }
+                            </div>
+                        </section>
+                        @if (SelectedCategory is not null)
+                        {
+                            <section class="panel demo-product-catalog__types">
+                                <div class="panel__head"><h2>2 · Type</h2><span>@SelectedCategory.Name · selecting a type opens its editor</span></div>
+                                <div class="demo-product-catalog__type-list">
+                                    @foreach (var type in FilteredTypes)
                                     {
-                                        <div><label class="demo-label" for="config-width">Width · mm</label><input id="config-width" type="number" min="0" class="demo-input mono" @bind="_configuringLine.WidthMm" @bind:after="RecalculateConfiguredParameters" /></div>
-                                        <div><label class="demo-label" for="config-height">Height · mm</label><input id="config-height" type="number" min="0" class="demo-input mono" @bind="_configuringLine.HeightMm" @bind:after="RecalculateConfiguredParameters" /></div>
+                                        <button type="button" @onclick="() => CreateProductFromType(type)"><strong>@type.Name</strong><span>→</span></button>
                                     }
-                                    <div><label class="demo-label" for="config-quantity">Quantity</label><input id="config-quantity" type="number" min="0.001" step="0.001" class="demo-input mono" @bind="_configuringLine.Quantity" @bind:after="RecalculateConfiguredParameters" /></div>
-                                    @if (_configuringLine.Kind == "Product")
-                                    {
-                                        <div>
-                                            <label class="demo-label" for="config-colour">Colour / fabric code</label>
-                                            <input id="config-colour" list="demo-colour-codes" class="demo-input mono" value="@_configuringLine.ColourCode" @onchange="UpdateColour" placeholder="Search code from static catalog" autocomplete="off" />
-                                            <datalist id="demo-colour-codes">@foreach (var colour in ConfiguredColours) { <option value="@colour.Code">@colour.Name</option> }</datalist>
-                                            <div class="demo-help">@ConfiguredColours.Count codes in this category · stock is checked in milestone 2.</div>
-                                            @if (!string.IsNullOrWhiteSpace(_configuringLine.ColourCode) && _configuringLine.ColourId is null) { <div class="demo-field-error">Code not found for this category in the static snapshot.</div> }
-                                        </div>
-                                        <div><label class="demo-label" for="config-control">Control type · Valdymas</label><input id="config-control" class="demo-input" @bind="_configuringLine.ControlType" placeholder="Manual / motor / chain" /></div>
-                                    }
-                                    <div><label class="demo-label" for="config-price">Preview unit price · €</label><input id="config-price" type="number" min="0" step="0.01" class="demo-input mono" @bind="_configuringLine.Price" /></div>
                                 </div>
-                                <label class="demo-label demo-label--spaced" for="config-note">Product notes · Pastabos</label><textarea id="config-note" class="demo-textarea" @bind="_configuringLine.Note"></textarea>
+                            </section>
+                        }
+                    </main>
+                </div>
+            </div>
+        }
+
+        @if (_configuringLine is not null)
+        {
+            <div class="demo-product-page demo-product-page--editor" aria-label="Product editor">
+                <header class="demo-product-page__header">
+                    <div><div class="eyebrow mono">Product for order @_order.Number</div><h1>@_configuringLine.Name</h1><div class="demo-editor__meta">@_configuringLine.Category · local draft</div></div>
+                    <button class="btn btn--ghost" type="button" @onclick="CloseConfigurator">← Back to order</button>
+                </header>
+                <div class="demo-product-page__grid demo-product-page__grid--editor">
+                    <aside class="panel demo-product-rail">
+                        <div class="panel__head"><h2>Order products</h2><span class="mono">@OrderFormat.Money(_order.BeforeDiscount)</span></div>
+                        @foreach (var product in _order.Lines)
+                        {
+                            <button type="button" class="demo-product-rail__item @(ReferenceEquals(product, _configuringLine) ? "is-selected" : "")" @onclick="() => OpenConfigurator(product)"><span><ProductSketch Category="@product.Category" TypeName="@product.Name" /></span><strong>@product.Name<small class="mono">@(product.Kind == "Product" ? $"{product.WidthMm} × {product.HeightMm} mm · ×{product.Quantity}" : $"×{product.Quantity} {product.Unit}")</small></strong></button>
+                        }
+                        <button class="btn btn--ghost demo-product-rail__add" type="button" @onclick="OpenProductPicker">+ New product</button>
+                    </aside>
+                    <main class="demo-product-editor">
+                        <section class="panel demo-product-editor__main">
+                            <div class="panel__head"><h2>Main parameters</h2><span>@_configuringLine.Category</span></div>
+                            <div class="demo-product-editor__body">
+                                @if (_configuringLine.Kind == "Product")
+                                {
+                                    <div class="demo-product-editor__control">
+                                        <label class="demo-label" for="config-control">Control · Valdymas</label>
+                                        <div class="demo-product-editor__control-options">
+                                            <button type="button" class="@(_configuringLine.ControlType == "Chain left" ? "is-selected" : "")" @onclick="SetControlLeft">Chain left</button>
+                                            <button type="button" class="@(_configuringLine.ControlType == "Chain right" ? "is-selected" : "")" @onclick="SetControlRight">Chain right</button>
+                                            <button type="button" class="@(_configuringLine.ControlType == "Motor" ? "is-selected" : "")" @onclick="SetControlMotor">Motor</button>
+                                        </div>
+                                        <input id="config-control" class="demo-input" @bind="_configuringLine.ControlType" @bind:event="oninput" placeholder="Or enter another control" />
+                                    </div>
+                                }
+                                <div class="demo-product-editor__dimensions">
+                                    @if (_configuringLine.Kind == "Product")
+                                    {
+                                        <div><label class="demo-label" for="config-width">Width · mm</label><input id="config-width" type="number" min="0" class="demo-input mono" @bind="_configuringLine.WidthMm" @bind:event="oninput" @bind:after="RecalculateConfiguredParameters" /></div>
+                                        <div><label class="demo-label" for="config-height">Height · mm</label><input id="config-height" type="number" min="0" class="demo-input mono" @bind="_configuringLine.HeightMm" @bind:event="oninput" @bind:after="RecalculateConfiguredParameters" /></div>
+                                    }
+                                    <div><label class="demo-label" for="config-quantity">Quantity</label><input id="config-quantity" type="number" min="0.001" step="0.001" class="demo-input mono" @bind="_configuringLine.Quantity" @bind:event="oninput" @bind:after="RecalculateConfiguredParameters" /></div>
+                                </div>
+                                <div class="demo-product-editor__secondary">
+                                    @if (_configuringLine.Kind == "Product")
+                                    {
+                                        <div><label class="demo-label" for="config-colour">Colour · fabric code</label><input id="config-colour" list="demo-colour-codes" class="demo-input mono" value="@_configuringLine.ColourCode" @onchange="UpdateColour" placeholder="Search code" autocomplete="off" /><datalist id="demo-colour-codes">@foreach (var colour in ConfiguredColours) { <option value="@colour.Code">@colour.Name</option> }</datalist><small>@ConfiguredColours.Count codes · stock in milestone 2</small></div>
+                                    }
+                                    <div><label class="demo-label" for="config-price">Preview unit price · €</label><input id="config-price" type="number" min="0" step="0.01" class="demo-input mono" @bind="_configuringLine.Price" @bind:event="oninput" /></div>
+                                </div>
+                                @if (_configuringLine.Kind == "Product" && !string.IsNullOrWhiteSpace(_configuringLine.ColourCode) && _configuringLine.ColourId is null)
+                                {
+                                    <div class="demo-field-error">Code not found for this category in the static snapshot.</div>
+                                }
+                                <div class="demo-product-editor__note"><label class="demo-label" for="config-note">Product notes · Pastabos</label><input id="config-note" class="demo-input" @bind="_configuringLine.Note" placeholder="Notes for production" /></div>
                             </div>
                         </section>
                         @if (_configuringLine.Kind == "Product")
                         {
-                        <section class="panel demo-panel">
-                            <div class="panel__head"><h2>Additional parameters · PPP01–PPP12</h2><span>Fields from legacy category and type</span></div>
-                            <div class="demo-panel__body">
+                            <section class="panel demo-product-editor__parameters">
+                                <div class="panel__head"><h2>Additional parameters · PPP01–PPP12</h2><span>Legacy category fields</span></div>
                                 @if (ConfiguredCategory is null || !ConfiguredCategory.ParameterLabels.Any(x => x is not null))
                                 {
-                                    <p class="demo-help">This category has no additional PPP fields in the legacy reference snapshot.</p>
+                                    <div class="demo-product-editor__empty">This category has no additional PPP fields in the reference snapshot.</div>
                                 }
                                 else
                                 {
-                                    <div class="demo-parameter-grid">
+                                    <div class="demo-product-editor__parameter-grid">
                                         @for (var index = 0; index < 12; index++)
                                         {
                                             var parameterIndex = index;
                                             var label = ConfiguredCategory.ParameterLabels.ElementAtOrDefault(index);
                                             if (label is null) continue;
                                             var formula = ConfiguredType?.ParameterFormulas.ElementAtOrDefault(index);
-                                            var automatic = formula is not null && !_configuringLine.ParameterManual[index]
-                                                && DemoParameterFormula.TryEvaluate(formula, _configuringLine, out _);
-                                            <div class="demo-parameter-field">
-                                                <div class="demo-parameter-field__head"><label class="demo-label" for="config-ppp-@index">@label <span class="mono">PPP@((index + 1).ToString("D2"))</span></label><span class="chip @(automatic ? "chip--approved" : "chip--entered")">@(automatic ? "Auto preview" : "Manual")</span></div>
-                                                <input id="config-ppp-@index" class="demo-input mono" value="@_configuringLine.ParameterValues[index]" @onchange="e => SetParameter(parameterIndex, e.Value?.ToString() ?? string.Empty)" />
-                                                @if (!string.IsNullOrWhiteSpace(formula))
-                                                {
-                                                    <div class="demo-parameter-formula mono">Legacy: @formula</div>
-                                                }
-                                            </div>
+                                            var automatic = formula is not null && !_configuringLine.ParameterManual[index] && DemoParameterFormula.TryEvaluate(formula, _configuringLine, out _);
+                                            <div class="demo-product-editor__parameter"><label class="demo-label" for="config-ppp-@index">@label <span class="mono">PPP@((index + 1).ToString("D2"))</span></label><input id="config-ppp-@index" class="demo-input mono" value="@_configuringLine.ParameterValues[index]" @onchange="e => SetParameter(parameterIndex, e.Value?.ToString() ?? string.Empty)" /><small>@(automatic ? "ƒx Auto preview" : "Manual")</small></div>
                                         }
                                     </div>
-                                    <p class="demo-help">Editable PPP values stay with this product draft. Automatic previews cover simple arithmetic only; functions used by legacy stay manual until database integration.</p>
                                 }
-                            </div>
-                        </section>
-                        <section class="panel demo-panel">
-                            <div class="panel__head"><h2>Accessories / priedai</h2><button class="btn btn--ghost" type="button" @onclick="() => OpenAccessoryPicker(_configuringLine)">+ Add accessory</button></div>
-                            @if (_configuringLine.Accessories.Count == 0)
-                            {
-                                <div class="demo-empty">No accessories for this product.</div>
-                            }
-                            @foreach (var accessory in _configuringLine.Accessories)
-                            {
-                                <div class="demo-configurator__accessory"><span>@accessory.Name <small>@accessory.Unit · ×@accessory.Quantity</small></span><strong class="mono">@OrderFormat.Money(accessory.Quantity * accessory.Price)</strong><button type="button" aria-label="Remove accessory" @onclick="() => RemoveAccessory(_configuringLine, accessory)">×</button></div>
-                            }
-                        </section>
+                            </section>
+                            <section class="panel demo-product-editor__accessories">
+                                <div class="panel__head"><h2>Accessories · Priedai <span class="mono">@OrderFormat.Money(_configuringLine.Accessories.Sum(x => x.Total))</span></h2><button class="btn btn--ghost" type="button" @onclick="() => OpenAccessoryPicker(_configuringLine)">+ Add accessory</button></div>
+                                @if (_configuringLine.Accessories.Count == 0) { <div class="demo-product-editor__empty">No accessories. Options are filtered by product category.</div> }
+                                @foreach (var accessory in _configuringLine.Accessories)
+                                {
+                                    <div class="demo-configurator__accessory"><span>@accessory.Name <small>@accessory.Unit · ×@accessory.Quantity</small></span><strong class="mono">@OrderFormat.Money(accessory.Total)</strong><button type="button" aria-label="Remove accessory" @onclick="() => RemoveAccessory(_configuringLine, accessory)">×</button></div>
+                                }
+                            </section>
                         }
-                    </div>
-                    <aside class="panel demo-configurator__preview">
-                        <div class="panel__head"><h2>Live schematic</h2><span>Preview</span></div>
-                        <div class="demo-configurator__drawing"><ProductSketch Category="@_configuringLine.Category" TypeName="@_configuringLine.Name" /><div class="mono">@(_configuringLine.Kind == "Product" ? $"{_configuringLine.WidthMm} × {_configuringLine.HeightMm} mm · ×{_configuringLine.Quantity}" : $"×{_configuringLine.Quantity} {_configuringLine.Unit}")</div></div>
-                        <div class="demo-receipt__row demo-receipt__row--total"><span>Product total</span><strong class="mono">@OrderFormat.Money(_configuringLine.Total)</strong></div>
+                    </main>
+                    <aside class="demo-product-preview">
+                        <section class="panel">
+                            <div class="panel__head"><h2>Live preview</h2><span class="mono">TO SCALE</span></div>
+                            <LiveProductPreview Category="@_configuringLine.Category" TypeName="@_configuringLine.Name" WidthMm="@_configuringLine.WidthMm" HeightMm="@_configuringLine.HeightMm" Quantity="@_configuringLine.Quantity" ControlType="@_configuringLine.ControlType" />
+                            <div class="demo-product-preview__caption">@_configuringLine.Name · @_configuringLine.ColourCode · @_configuringLine.ControlType</div>
+                        </section>
+                        <section class="panel demo-product-preview__totals">
+                            <div class="panel__head"><h2>Price and stock</h2></div>
+                            <div class="demo-receipt__row"><span>Product</span><strong class="mono">@OrderFormat.Money(_configuringLine.Quantity * _configuringLine.Price)</strong></div>
+                            <div class="demo-receipt__row"><span>Accessories</span><strong class="mono">@OrderFormat.Money(_configuringLine.Accessories.Sum(x => x.Total))</strong></div>
+                            <div class="demo-receipt__row demo-receipt__row--total"><span>Product total</span><strong class="mono">@OrderFormat.Money(_configuringLine.Total)</strong></div>
+                            <p>Fabric stock, list price and legacy formulas connect in milestone 2.</p>
+                            <button class="btn btn--primary" type="button" @onclick="CloseConfigurator">Done — back to order</button>
+                        </section>
                     </aside>
                 </div>
             </div>
@@ -363,49 +412,10 @@
             <button class="demo-picker-backdrop" type="button" aria-label="Close picker" @onclick="ClosePicker"></button>
             <aside class="demo-drawer demo-drawer--picker" aria-labelledby="demo-picker-title">
                 <div class="demo-drawer__head">
-                    <div><div class="eyebrow mono">@_order.Number · Draft line</div><h2 id="demo-picker-title">@(_pickerMode == "product" ? "Add product or service" : _attachedTo is null ? "Add priedai" : $"Accessory for {_attachedTo.Name}")</h2></div>
+                    <div><div class="eyebrow mono">@_order.Number · Draft line</div><h2 id="demo-picker-title">@(_attachedTo is null ? "Add priedai" : $"Accessory for {_attachedTo.Name}")</h2></div>
                     <button class="demo-icon-button" type="button" aria-label="Close picker" @onclick="ClosePicker">×</button>
                 </div>
                 <div class="demo-drawer__body">
-                    @if (_pickerMode == "product")
-                    {
-                        <label class="demo-label" for="demo-category-search">Find a category or type</label>
-                        <input id="demo-category-search" class="demo-input" @bind="_catalogSearch" @bind:event="oninput" placeholder="Search 26 categories and 290 types" />
-                        <div class="demo-category-list">
-                            @foreach (var category in FilteredCategories)
-                            {
-                                <button type="button" class="demo-category @(_selectedCategoryId == category.Id ? "is-selected" : "")" @onclick="() => SelectCategory(category.Id)">
-                                    <span class="demo-category__image"><ProductSketch Category="@category.Name" /></span>
-                                    <span><strong>@category.Name</strong><small>@category.Types.Count types</small></span>
-                                </button>
-                            }
-                        </div>
-                        @if (SelectedCategory is not null)
-                        {
-                            <div class="demo-picker-section-title">@SelectedCategory.Name · choose type</div>
-                            <div class="demo-type-list">
-                                @foreach (var type in FilteredTypes)
-                                {
-                                    <button type="button" class="@(_selectedTypeId == type.Id ? "is-selected" : "")" @onclick="() => _selectedTypeId = type.Id">@type.Name</button>
-                                }
-                            </div>
-                            @if (SelectedType is not null)
-                            {
-                                <div class="demo-selected-preview"><ProductSketch Category="@SelectedCategory.Name" TypeName="@SelectedType.Name" /><div><strong>@SelectedType.Name</strong><small>@SelectedCategory.Name · schematic preview</small></div></div>
-                                <div class="demo-form-grid demo-form-grid--picker">
-                                    @if (SelectedCategory.Name is not ("Paslaugos" or "Priedai" or "Be gaminių"))
-                                    {
-                                        <div><label class="demo-label" for="demo-width">Width · mm</label><input id="demo-width" type="number" min="0" class="demo-input mono" @bind="_widthMm" /></div>
-                                        <div><label class="demo-label" for="demo-height">Height · mm</label><input id="demo-height" type="number" min="0" class="demo-input mono" @bind="_heightMm" /></div>
-                                    }
-                                    <div><label class="demo-label" for="demo-qty">Quantity</label><input id="demo-qty" type="number" min="0.001" step="0.001" class="demo-input mono" @bind="_quantity" /></div>
-                                    <div><label class="demo-label" for="demo-price">Preview unit price · €</label><input id="demo-price" type="number" min="0" step="0.01" class="demo-input mono" @bind="_price" /></div>
-                                </div>
-                            }
-                        }
-                    }
-                    else
-                    {
                         <p class="demo-help">@(_attachedTo is null ? "Select a standalone priedai line for this order." : "These accessory options match the selected product category in the legacy reference snapshot.")</p>
                         <label class="demo-label" for="demo-accessory-search">Search priedai</label>
                         <input id="demo-accessory-search" class="demo-input" @bind="_accessorySearch" @bind:event="oninput" placeholder="Name or code" />
@@ -428,7 +438,6 @@
                                 <div><label class="demo-label" for="demo-acc-price">Preview unit price · €</label><input id="demo-acc-price" type="number" min="0" step="0.01" class="demo-input mono" @bind="_price" /></div>
                             </div>
                         }
-                    }
                     @if (!string.IsNullOrWhiteSpace(_pickerError))
                     {
                         <div class="demo-field-error demo-field-error--block" role="alert">@_pickerError</div>
@@ -472,6 +481,7 @@
     private string _lastAutofilledSeries = "";
     private DemoOrderDraft? _order;
     private DemoOrderLine? _configuringLine;
+    private bool _selectingProduct;
     private bool _paymentSheetOpen;
     private string _paymentMethod = "Bank transfer";
     private string _paymentDate = Today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
@@ -485,10 +495,7 @@
     private string _catalogSearch = "";
     private string _accessorySearch = "";
     private int _selectedCategoryId;
-    private int _selectedTypeId;
     private int _selectedAccessoryId;
-    private int _widthMm;
-    private int _heightMm;
     private decimal _quantity = 1;
     private decimal _price;
     private string _pickerError = "";
@@ -678,7 +685,6 @@
         .Where(x => string.IsNullOrWhiteSpace(_catalogSearch)
             || SelectedCategory.Name.Contains(_catalogSearch, StringComparison.OrdinalIgnoreCase)
             || x.Name.Contains(_catalogSearch, StringComparison.OrdinalIgnoreCase)).ToList() ?? [];
-    private DemoType? SelectedType => SelectedCategory?.Types.FirstOrDefault(x => x.Id == _selectedTypeId);
     private DemoCategory? ConfiguredCategory => Catalog.Categories.FirstOrDefault(x => x.Id == _configuringLine?.CategoryId);
     private DemoType? ConfiguredType => ConfiguredCategory?.Types.FirstOrDefault(x => x.Id == _configuringLine?.TypeId);
     private IReadOnlyList<DemoColour> ConfiguredColours => _configuringLine is null ? [] : Catalog.Colours
@@ -693,15 +699,45 @@
 
     private void OpenProductPicker()
     {
+        var previousCategoryId = _selectedCategoryId;
         ResetPicker();
-        _pickerMode = "product";
+        _selectedCategoryId = previousCategoryId != 0
+            ? previousCategoryId
+            : Catalog.Categories.FirstOrDefault(x => x.Name.Equals("Roletai", StringComparison.OrdinalIgnoreCase))?.Id
+                ?? Catalog.Categories.FirstOrDefault()?.Id ?? 0;
+        _configuringLine = null;
+        _selectingProduct = true;
+    }
+    private void CloseProductPicker() => _selectingProduct = false;
+    private void CreateProductFromType(DemoType type)
+    {
+        if (_order is null || SelectedCategory is null) return;
+        var kind = SelectedCategory.Name switch
+        {
+            "Priedai" or "Be gaminių" => "Priedai",
+            "Paslaugos" => "Service",
+            _ => "Product"
+        };
+        var line = new DemoOrderLine
+        {
+            Kind = kind, TypeId = type.Id, CategoryId = SelectedCategory.Id,
+            Category = SelectedCategory.Name, Name = type.Name,
+            Quantity = 1, Price = 0, Discountable = kind == "Product"
+        };
+        _order.Lines.Add(line);
+        _selectingProduct = false;
+        OpenConfigurator(line);
     }
     private void OpenConfigurator(DemoOrderLine line)
     {
+        _selectingProduct = false;
         _configuringLine = line;
         RecalculateConfiguredParameters();
     }
     private void CloseConfigurator() => _configuringLine = null;
+    private void SetControlLeft() { if (_configuringLine is not null) _configuringLine.ControlType = "Chain left"; }
+    private void SetControlRight() { if (_configuringLine is not null) _configuringLine.ControlType = "Chain right"; }
+    private void SetControlMotor() { if (_configuringLine is not null) _configuringLine.ControlType = "Motor"; }
     private void RecalculateConfiguredParameters()
     {
         if (_configuringLine is null || ConfiguredType is null) return;
@@ -773,17 +809,13 @@
         _catalogSearch = "";
         _accessorySearch = "";
         _selectedCategoryId = 0;
-        _selectedTypeId = 0;
         _selectedAccessoryId = 0;
-        _widthMm = 0;
-        _heightMm = 0;
         _quantity = 1;
         _price = 0;
     }
     private void SelectCategory(int id)
     {
         _selectedCategoryId = id;
-        _selectedTypeId = 0;
         _pickerError = "";
     }
     private void SelectAccessory(int id)
@@ -814,37 +846,7 @@
             _pickerError = "Quantity must be positive and price cannot be negative.";
             return;
         }
-        if (_pickerMode == "product")
-        {
-            if (SelectedCategory is null || SelectedType is null)
-            {
-                _pickerError = "Choose a category and type.";
-                return;
-            }
-            var kind = SelectedCategory.Name switch
-            {
-                "Priedai" or "Be gaminių" => "Priedai",
-                "Paslaugos" => "Service",
-                _ => "Product"
-            };
-            if (kind == "Product" && (_widthMm <= 0 || _heightMm <= 0))
-            {
-                _pickerError = "Enter a positive width and height for this product.";
-                return;
-            }
-            var line = new DemoOrderLine
-            {
-                Kind = kind, TypeId = SelectedType.Id, CategoryId = SelectedCategory.Id,
-                Category = SelectedCategory.Name, Name = SelectedType.Name,
-                WidthMm = _widthMm, HeightMm = _heightMm, Quantity = _quantity, Price = _price,
-                Discountable = kind == "Product"
-            };
-            _order.Lines.Add(line);
-            ClosePicker();
-            if (kind == "Product") OpenConfigurator(line);
-            return;
-        }
-        else if (SelectedAccessory is not null)
+        if (SelectedAccessory is not null)
         {
             var line = new DemoOrderLine
             {
@@ -877,6 +879,7 @@
         if (_pickerMode is not null) ClosePicker();
         else if (_paymentSheetOpen) ClosePaymentSheet();
         else if (_configuringLine is not null) CloseConfigurator();
+        else if (_selectingProduct) CloseProductPicker();
         else await CloseAsync();
         await InvokeAsync(StateHasChanged);
     }

@@ -12,9 +12,13 @@ reference snapshot and expands the current-year group:
 
 The drawer fills customer, manager, store, and consultant from the selected
 series snapshot, and allows the operator to edit them. Creating the draft opens
-an interactive editor with product/service selection, standalone `priedai`,
-and accessories attached to a product. An item opens a configurable product
-screen, and the receipt opens a local payment sheet. Product/category
+an interactive editor with standalone `priedai` and accessories attached to a
+product. `+ Add product / service` opens a full-width category and type page.
+Selecting a type immediately adds a draft line and opens its separate product
+editor. The editor keeps the order-product rail, width/height/quantity, control,
+colour, price, PPP fields, accessories, and a dimension-responsive live
+schematic together on a desktop screen. `Done` returns to the order; the
+receipt opens a local payment sheet. Product/category
 illustrations are schematic SVGs. The editor exposes all 26 category records and 290 type records
 with `Naudojamas <> 0` in the snapshot, plus 469 accessory definitions and
 1,449 active colour/fabric codes mapped to their categories. The
