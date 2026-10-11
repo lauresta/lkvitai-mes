@@ -20,6 +20,7 @@ with `Naudojamas <> 0` in the snapshot, plus 469 accessory definitions and
 1,449 active colour/fabric codes mapped to their categories. The
 snapshot was read from the legacy database on 2026-10-11 and is embedded in the
 WebUI assembly at `Data/demo-catalog.json`. It is **static** at runtime.
+One legacy accessory has no name; the preview displays its ID as a fallback.
 
 The configurator exposes width, height, quantity, colour/fabric, control type,
 price, product notes, and the visible `PPP01–PPP12` fields. PPP captions come

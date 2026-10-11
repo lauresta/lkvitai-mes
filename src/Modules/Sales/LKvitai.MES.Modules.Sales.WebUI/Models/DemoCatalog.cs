@@ -56,7 +56,12 @@ public sealed class DemoType
 public sealed class DemoAccessory
 {
     public int Id { get; init; }
-    public string Name { get; init; } = "";
+    private string? _name;
+    public string Name
+    {
+        get => string.IsNullOrWhiteSpace(_name) ? $"Priedas #{Id}" : _name;
+        init => _name = value;
+    }
     public string Unit { get; init; } = "";
     public decimal Price { get; init; }
     public List<int> CategoryIds { get; init; } = [];
