@@ -189,6 +189,7 @@ h1:focus { outline: none; }
 .demo-product-catalog__type-list span { color: var(--accent-700); }
 .demo-product-editor { display: flex; flex-direction: column; gap: 10px; min-height: 0; overflow: auto; }
 .demo-product-editor > .panel { flex: 0 0 auto; margin-top: 0; }
+.demo-product-editor > .panel + .panel, .demo-product-preview > .panel + .panel { margin-top: 0; }
 .demo-product-editor__body { padding: 12px; }
 .demo-product-editor__control { margin-bottom: 9px; }
 .demo-product-editor__control-entry { display: flex; gap: 8px; }
