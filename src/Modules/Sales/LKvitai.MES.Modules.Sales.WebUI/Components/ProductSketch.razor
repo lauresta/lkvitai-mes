@@ -1,4 +1,4 @@
-<svg class="product-sketch" viewBox="0 0 120 100" role="img" aria-label="Schematic illustration of @Category">
+<svg class="product-sketch" viewBox="0 0 120 100" preserveAspectRatio="@(Stretch ? "none" : "xMidYMid meet")" role="img" aria-label="Schematic illustration of @Category">
     <rect x="16" y="8" width="88" height="82" rx="3" fill="var(--n-0)" stroke="var(--n-300)" stroke-width="3" />
     <rect x="20" y="12" width="80" height="74" fill="var(--n-50)" />
     @if (Kind == "roller")
@@ -104,6 +104,7 @@
 @code {
     [Parameter] public string Category { get; set; } = "";
     [Parameter] public string TypeName { get; set; } = "";
+    [Parameter] public bool Stretch { get; set; }
 
     private bool IsCassette => Category.Contains("kasetin", StringComparison.OrdinalIgnoreCase)
         || TypeName.Contains("kaset", StringComparison.OrdinalIgnoreCase)
