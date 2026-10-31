@@ -1,7 +1,8 @@
 @* To-scale live preview. Port of Sales Prototype.dc.html → preview(). One SVG, blind drawn in a 100×100 box and scaled; strokes use vector-effect so they never distort. *@
 @using System.Globalization
 @{
-    const double VW = 320, VH = 330, MaxW = 220, MaxH = 236;
+    const double VW = 320, MaxW = 220, MaxH = 236;
+    var viewHeight = Quantity > 1 ? 330 : 300;
     var w = Math.Max(200, WidthMm); var h = Math.Max(200, HeightMm);
     var sc = Math.Min(MaxW / w, MaxH / h);
     var bw = w * sc; var bh = h * sc; var x = (VW - bw) / 2 - 10; const double y = 52;
@@ -12,7 +13,7 @@
     var motor = ControlType.Contains("motor", StringComparison.OrdinalIgnoreCase);
     var kind = Kind;
 }
-<svg class="live-preview" viewBox="0 0 @F(VW) @F(VH)" role="img" aria-label="@TypeName, @WidthMm × @HeightMm mm">
+<svg class="live-preview" viewBox="0 0 @F(VW) @viewHeight" role="img" aria-label="@TypeName, @WidthMm × @HeightMm mm">
     @* window + sill *@
     <g style="transform:@box">
         <rect x="-6" y="-9" width="112" height="116" fill="var(--n-0)" stroke="var(--n-200)" vector-effect="non-scaling-stroke" />
