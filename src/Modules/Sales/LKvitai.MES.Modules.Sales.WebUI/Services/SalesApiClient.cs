@@ -1,8 +1,10 @@
 using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Json;
+using Microsoft.AspNetCore.Components.Authorization;
 using LKvitai.MES.Modules.Sales.Contracts.Common;
 using LKvitai.MES.Modules.Sales.Contracts.Orders;
+using LKvitai.MES.Modules.Sales.Infrastructure.Stub;
 
 namespace LKvitai.MES.Modules.Sales.WebUI.Services;
 
@@ -43,11 +45,19 @@ public sealed class SalesApiClient
 
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<SalesApiClient> _logger;
+    private readonly AuthenticationStateProvider _authStateProvider;
+    private readonly StubOrdersQueryService _reviewOrders;
 
-    public SalesApiClient(IHttpClientFactory httpClientFactory, ILogger<SalesApiClient> logger)
+    public SalesApiClient(
+        IHttpClientFactory httpClientFactory,
+        ILogger<SalesApiClient> logger,
+        AuthenticationStateProvider authStateProvider,
+        StubOrdersQueryService reviewOrders)
     {
         _httpClientFactory = httpClientFactory;
         _logger = logger;
+        _authStateProvider = authStateProvider;
+        _reviewOrders = reviewOrders;
     }
 
     /// <summary>
@@ -81,6 +91,11 @@ public sealed class SalesApiClient
     {
         ArgumentNullException.ThrowIfNull(query);
 
+        if (await IsReviewUserAsync().ConfigureAwait(false))
+        {
+            return await _reviewOrders.GetOrdersAsync(query, cancellationToken).ConfigureAwait(false);
+        }
+
         var url = BuildOrdersListUrl(query);
         var fetch = await SendJsonGetAsync<PagedResult<OrderSummaryDto>>(url, opLabel: "orders", cancellationToken)
             .ConfigureAwait(false);
@@ -108,6 +123,14 @@ public sealed class SalesApiClient
         if (string.IsNullOrWhiteSpace(number))
         {
             return SalesApiResult<OrderDetailsDto>.NotFound();
+        }
+
+        if (await IsReviewUserAsync().ConfigureAwait(false))
+        {
+            var sample = await _reviewOrders.GetOrderDetailsAsync(number, cancellationToken).ConfigureAwait(false);
+            return sample is null
+                ? SalesApiResult<OrderDetailsDto>.NotFound()
+                : SalesApiResult<OrderDetailsDto>.Ok(sample);
         }
 
         var url = $"/api/sales/orders/{Uri.EscapeDataString(number)}";
@@ -141,6 +164,11 @@ public sealed class SalesApiClient
     /// </summary>
     public async Task<OrdersFilterOptionsDto?> GetFilterOptionsAsync(CancellationToken cancellationToken)
     {
+        if (await IsReviewUserAsync().ConfigureAwait(false))
+        {
+            return await _reviewOrders.GetFilterOptionsAsync(cancellationToken).ConfigureAwait(false);
+        }
+
         const string url = "/api/sales/orders/filters";
         var fetch = await SendJsonGetAsync<OrdersFilterOptionsDto>(url, opLabel: "filters", cancellationToken)
             .ConfigureAwait(false);
@@ -153,6 +181,12 @@ public sealed class SalesApiClient
             fetch.HttpMs, fetch.DeserMs, fetch.TotalMs);
 
         return fetch.Body;
+    }
+
+    private async Task<bool> IsReviewUserAsync()
+    {
+        var state = await _authStateProvider.GetAuthenticationStateAsync().ConfigureAwait(false);
+        return state.User.HasClaim(SalesReviewAccess.ReviewClaim, "true");
     }
 
     /// <summary>

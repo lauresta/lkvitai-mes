@@ -147,6 +147,9 @@ services:
       PathBase: "/sales"
       PortalAuth__LoginBasePath: "/portal"
       PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
+      # Optional, test-only design review. Empty settings keep normal Portal login.
+      SalesReview__Key: "${SALES_REVIEW_KEY:-}"
+      SalesReview__ExpiresAtUtc: "${SALES_REVIEW_EXPIRES_AT_UTC:-}"
       Clarity__ProjectId: "${CLARITY_PROJECT_ID:-}"
     volumes:
       - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys

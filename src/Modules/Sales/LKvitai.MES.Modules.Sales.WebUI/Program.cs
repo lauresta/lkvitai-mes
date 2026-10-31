@@ -28,6 +28,10 @@ builder.Services
     .AddHubOptions(o => o.MaximumReceiveMessageSize = 256 * 1024);
 
 builder.Services.AddPortalCookieAuthentication(builder.Environment, builder.Configuration);
+if (string.Equals(builder.Environment.EnvironmentName, "Test", StringComparison.OrdinalIgnoreCase))
+{
+    builder.Services.AddSalesReviewAccess(builder.Environment, builder.Configuration);
+}
 builder.Services.AddAuthorization();
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddHttpContextAccessor();
@@ -41,6 +45,7 @@ builder.Services
     .AddHttpClient("SalesApi")
     .AddHttpMessageHandler<SalesApiAuthHandler>();
 builder.Services.AddScoped<SalesApiClient>();
+builder.Services.AddSingleton<LKvitai.MES.Modules.Sales.Infrastructure.Stub.StubOrdersQueryService>();
 
 var app = builder.Build();
 
@@ -51,6 +56,10 @@ app.UseSerilogRequestLogging();
 app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication();
+if (string.Equals(app.Environment.EnvironmentName, "Test", StringComparison.OrdinalIgnoreCase))
+{
+    app.UseSalesReviewAccess();
+}
 app.UseAuthorization();
 
 app.MapGet("/health", () => Results.Ok());
