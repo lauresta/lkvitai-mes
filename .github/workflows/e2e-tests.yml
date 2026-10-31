@@ -8,7 +8,8 @@ on:
 
 jobs:
   e2e-tests:
-    runs-on: ubuntu-latest
+    # Playwright 1.51.1 cannot install Chromium on the new ubuntu-latest (26.04).
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     services:
       postgres:
