@@ -1,0 +1,30 @@
+@inject NavigationManager Navigation
+@* Category icon from the approved Sales design review sprite. Keep the app path base for test deployment. *@
+<svg class="cat-icon" role="img" aria-label="@Category" focusable="false">
+    <use href="@($"{Navigation.BaseUri}img/sales-category-icons.svg#cat-{Slug}")" />
+</svg>
+
+@code {
+    [Parameter] public string Category { get; set; } = "";
+
+    // Slug = lowercase, Lithuanian letters folded, non-alphanumerics → "-". Matches icons/icons.json keys.
+    private string Slug
+    {
+        get
+        {
+            var s = Category.Trim().ToLowerInvariant()
+                .Replace("ė", "e").Replace("ę", "e").Replace("ą", "a").Replace("į", "i").Replace("ų", "u").Replace("ū", "u")
+                .Replace("š", "s").Replace("ž", "z").Replace("č", "c");
+            s = System.Text.RegularExpressions.Regex.Replace(s, "[^a-z0-9]+", "-").Trim('-');
+            return Known.Contains(s) ? s : "be-gaminiu"; // fallback glyph for unknown categories
+        }
+    }
+
+    private static readonly HashSet<string> Known = new()
+    {
+        "apsaugines","be-gaminiu","garazo-vartai","grotos","horizontalios","markizes","nature-concept","paneltrack","paslaugos",
+        "plisuotos-20","plisuotos-20-senas","plisuotos-xl","priedai","pvc-gaminiai","roletai","roletai-versti",
+        "roletai-glasgard-kasetiniai","roletai-glasgard-paprasti","roletai-screen-kasetiniai","roletai-screen-paprasti",
+        "roletai-textile-kasetiniai","roletai-textile-paprasti","roletai-zebra","romanetes","tinkleliai","vertikalios"
+    };
+}

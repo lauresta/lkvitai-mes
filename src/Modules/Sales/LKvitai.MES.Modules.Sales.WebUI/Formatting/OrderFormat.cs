@@ -43,6 +43,9 @@ public static class OrderFormat
     public static string Integer(int value)
         => value.ToString(CultureInfo.InvariantCulture);
 
+    public static string Mm(int value)
+        => value.ToString("N0", NumberFormat);
+
     /// <summary>
     /// Maps debt amount + overdue flag to the matching <c>is-debt-*</c> tier class
     /// from <c>docs/ux/sales-orders-codex-rules.md</c> §3.

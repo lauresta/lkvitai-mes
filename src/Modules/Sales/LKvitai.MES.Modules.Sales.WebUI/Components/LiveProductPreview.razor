@@ -1,15 +1,101 @@
-<div class="demo-live-preview" role="img" aria-label="@TypeName, @WidthMm by @HeightMm millimetres, @Quantity pieces">
-    <div class="demo-live-preview__assembly">
-        <div class="demo-live-preview__width mono" style="width: @PixelWidth.ToString(System.Globalization.CultureInfo.InvariantCulture)px">@(WidthMm > 0 ? $"{WidthMm} mm" : "Width · mm")</div>
-        <div class="demo-live-preview__stage">
-            <div class="demo-live-preview__product" style="width: @PixelWidth.ToString(System.Globalization.CultureInfo.InvariantCulture)px; height: @PixelHeight.ToString(System.Globalization.CultureInfo.InvariantCulture)px; transform: @(ControlType.Contains("left", StringComparison.OrdinalIgnoreCase) ? "scaleX(-1)" : "none")">
-                <ProductSketch Category="@Category" TypeName="@TypeName" Stretch="true" />
-            </div>
-            <div class="demo-live-preview__height mono" style="height: @PixelHeight.ToString(System.Globalization.CultureInfo.InvariantCulture)px">@(HeightMm > 0 ? $"{HeightMm} mm" : "Height · mm")</div>
-        </div>
-    </div>
-    <div class="demo-live-preview__quantity mono">× @Quantity pcs</div>
-</div>
+@* To-scale live preview. Port of Sales Prototype.dc.html → preview(). One SVG, blind drawn in a 100×100 box and scaled; strokes use vector-effect so they never distort. *@
+@using System.Globalization
+@{
+    const double VW = 320, VH = 330, MaxW = 220, MaxH = 236;
+    var w = Math.Max(200, WidthMm); var h = Math.Max(200, HeightMm);
+    var sc = Math.Min(MaxW / w, MaxH / h);
+    var bw = w * sc; var bh = h * sc; var x = (VW - bw) / 2 - 10; const double y = 52;
+    string F(double v) => v.ToString("0.##", CultureInfo.InvariantCulture);
+    var box = $"translate({F(x)}px,{F(y)}px) scale({F(bw / 100)},{F(bh / 100)})";
+    var fill = string.IsNullOrWhiteSpace(FabricHex) ? "var(--sand-100)" : FabricHex;
+    var left = ControlType.Contains("left", StringComparison.OrdinalIgnoreCase);
+    var motor = ControlType.Contains("motor", StringComparison.OrdinalIgnoreCase);
+    var kind = Kind;
+}
+<svg class="live-preview" viewBox="0 0 @F(VW) @F(VH)" role="img" aria-label="@TypeName, @WidthMm × @HeightMm mm">
+    @* window + sill *@
+    <g style="transform:@box">
+        <rect x="-6" y="-9" width="112" height="116" fill="var(--n-0)" stroke="var(--n-200)" vector-effect="non-scaling-stroke" />
+        <rect x="-9" y="107" width="118" height="3" fill="var(--n-200)" />
+    </g>
+    @* blind *@
+    <g style="transform:@box">
+        @switch (kind)
+        {
+            case "roller":
+                <rect x="-3" y="-5" width="106" height="5.5" fill="var(--n-300)" />
+                <rect x="0" y="0.5" width="100" height="94" fill="@fill" stroke="var(--n-300)" vector-effect="non-scaling-stroke" />
+                <rect x="-1" y="93.5" width="102" height="3.5" fill="var(--n-600)" />
+                @if (motor) { <rect x="100" y="-6" width="5" height="7" fill="var(--n-700)" /> }
+                else { <line x1="@(left ? -4 : 104)" y1="0" x2="@(left ? -4 : 104)" y2="64" stroke="var(--n-500)" stroke-width="1.4" stroke-dasharray="2 2" vector-effect="non-scaling-stroke" /> }
+                break;
+            case "vertical":
+                <rect x="-2" y="-4" width="104" height="3.2" fill="var(--n-500)" />
+                var verticalCount = Math.Clamp((int)Math.Round(w / 89.0), 3, 70); var lw = 100.0 / verticalCount;
+                @for (var i = 0; i < verticalCount; i++) { <rect x="@F(i * lw + lw * .08)" y="0.5" width="@F(lw * .84)" height="99" fill="@fill" stroke="var(--n-300)" vector-effect="non-scaling-stroke" /> }
+                break;
+            case "horizontal":
+                <rect x="-2" y="-4" width="104" height="3.2" fill="var(--n-500)" />
+                var horizontalCount = Math.Clamp((int)Math.Round(h / 30.0), 8, 70); var sh = 100.0 / horizontalCount;
+                @for (var i = 0; i < horizontalCount; i++) { <rect x="0" y="@F(i * sh + .3)" width="100" height="@F(sh * .72)" fill="@fill" stroke="var(--n-300)" vector-effect="non-scaling-stroke" /> }
+                <line x1="12" y1="0" x2="12" y2="100" stroke="rgba(0,0,0,.18)" vector-effect="non-scaling-stroke" /><line x1="88" y1="0" x2="88" y2="100" stroke="rgba(0,0,0,.18)" vector-effect="non-scaling-stroke" />
+                break;
+            case "pleated":
+                <rect x="-2" y="-3.5" width="104" height="3.2" fill="var(--n-500)" />
+                <rect x="0" y="-0.3" width="100" height="97" fill="@fill" stroke="var(--n-300)" vector-effect="non-scaling-stroke" />
+                var pleatCount = Math.Clamp((int)Math.Round(h / 22.0), 10, 90);
+                @for (var i = 1; i < pleatCount; i++) { <line x1="0" y1="@F(i * 97.0 / pleatCount)" x2="100" y2="@F(i * 97.0 / pleatCount)" stroke="@(i % 2 == 1 ? "rgba(0,0,0,.16)" : "rgba(255,255,255,.35)")" vector-effect="non-scaling-stroke" /> }
+                <rect x="-2" y="96.5" width="104" height="3.2" fill="var(--n-500)" />
+                break;
+            case "screen":
+            case "grille":
+                @for (var i = 1; i < 14; i++) { <line x1="0" y1="@F(i * 100 / 14.0)" x2="100" y2="@F(i * 100 / 14.0)" stroke="var(--n-300)" stroke-width=".6" vector-effect="non-scaling-stroke" /><line x1="@F(i * 100 / 14.0)" y1="0" x2="@F(i * 100 / 14.0)" y2="100" stroke="var(--n-300)" stroke-width=".6" vector-effect="non-scaling-stroke" /> }
+                <rect x="0" y="0" width="100" height="100" fill="none" stroke="var(--n-400)" stroke-width="@(kind == "grille" ? 4 : 6)" vector-effect="non-scaling-stroke" />
+                @if (h > 1200) { <line x1="0" y1="50" x2="100" y2="50" stroke="var(--n-400)" stroke-width="3" vector-effect="non-scaling-stroke" /> }
+                break;
+            case "roman":
+                <rect x="-2" y="-4" width="104" height="3.2" fill="var(--n-500)" />
+                var foldCount = Math.Clamp((int)Math.Round(h / 240.0), 3, 10); var fh = 100.0 / foldCount;
+                @for (var i = 0; i < foldCount; i++) { <rect x="0" y="@F(i * fh)" width="100" height="@F(fh - .6)" fill="@fill" stroke="var(--n-300)" vector-effect="non-scaling-stroke" /><rect x="0" y="@F((i + .62) * fh)" width="100" height="@F(fh * .38 - .6)" fill="rgba(0,0,0,.09)" /> }
+                break;
+            case "awning":
+                <rect x="-2" y="-4" width="104" height="4" fill="var(--n-500)" />
+                <path d="M0 5H100L88 77H12Z" fill="@fill" stroke="var(--n-300)" vector-effect="non-scaling-stroke" />
+                <line x1="0" y1="5" x2="12" y2="77" stroke="var(--n-500)" vector-effect="non-scaling-stroke" /><line x1="100" y1="5" x2="88" y2="77" stroke="var(--n-500)" vector-effect="non-scaling-stroke" />
+                <rect x="10" y="77" width="80" height="4" fill="var(--n-600)" />
+                break;
+            case "gate":
+                <rect x="0" y="0" width="100" height="100" fill="@fill" stroke="var(--n-500)" stroke-width="4" vector-effect="non-scaling-stroke" />
+                @for (var i = 1; i < 9; i++) { <line x1="0" y1="@F(i * 100.0 / 9)" x2="100" y2="@F(i * 100.0 / 9)" stroke="var(--n-400)" vector-effect="non-scaling-stroke" /> }
+                break;
+            case "panel":
+                <rect x="-2" y="-4" width="104" height="4" fill="var(--n-500)" />
+                var panelCount = w >= 2000 ? 5 : 3; var panelWidth = 100.0 / panelCount;
+                @for (var i = 0; i < panelCount; i++) { <rect x="@F(i * panelWidth)" y="0" width="@F(panelWidth + 2)" height="100" fill="@fill" stroke="var(--n-400)" vector-effect="non-scaling-stroke" /> }
+                break;
+            case "pvc":
+                <rect x="0" y="0" width="100" height="100" fill="var(--n-25)" stroke="var(--n-600)" stroke-width="6" vector-effect="non-scaling-stroke" />
+                <line x1="50" y1="0" x2="50" y2="100" stroke="var(--n-600)" stroke-width="4" vector-effect="non-scaling-stroke" /><line x1="0" y1="50" x2="100" y2="50" stroke="var(--n-600)" stroke-width="4" vector-effect="non-scaling-stroke" />
+                <line x1="55" y1="10" x2="90" y2="35" stroke="var(--accent-400)" vector-effect="non-scaling-stroke" />
+                break;
+            default:
+                <rect x="-2" y="-4" width="104" height="3.2" fill="var(--n-500)" />
+                <rect x="0" y="0.5" width="100" height="99" fill="@fill" stroke="var(--n-300)" vector-effect="non-scaling-stroke" />
+                break;
+        }
+    </g>
+    @* width dimension *@
+    <g style="transform:translate(@F(x)px,26px) scale(@F(bw / 100),1)">
+        <line x1="0" y1="0" x2="100" y2="0" stroke="var(--accent-500)" vector-effect="non-scaling-stroke" /><line x1="0" y1="-4" x2="0" y2="4" stroke="var(--accent-500)" vector-effect="non-scaling-stroke" /><line x1="100" y1="-4" x2="100" y2="4" stroke="var(--accent-500)" vector-effect="non-scaling-stroke" />
+    </g>
+    <text x="@F(x + bw / 2)" y="18" text-anchor="middle" class="live-preview__dim">@OrderFormat.Mm(WidthMm) mm</text>
+    @* height dimension *@
+    <g style="transform:translate(@F(x + bw + 18)px,@F(y)px) scale(1,@F(bh / 100))">
+        <line x1="0" y1="0" x2="0" y2="100" stroke="var(--accent-500)" vector-effect="non-scaling-stroke" /><line x1="-4" y1="0" x2="4" y2="0" stroke="var(--accent-500)" vector-effect="non-scaling-stroke" /><line x1="-4" y1="100" x2="4" y2="100" stroke="var(--accent-500)" vector-effect="non-scaling-stroke" />
+    </g>
+    <text transform="translate(@F(x + bw + 30) @F(y + bh / 2)) rotate(90)" text-anchor="middle" class="live-preview__dim">@OrderFormat.Mm(HeightMm) mm</text>
+    @if (Quantity > 1) { <g><text x="@F(x + 4)" y="@F(y + bh + 30)" class="live-preview__qty">× @Quantity pcs</text></g> }
+</svg>
 
 @code {
     [Parameter] public string Category { get; set; } = "";
@@ -18,9 +104,25 @@
     [Parameter] public int HeightMm { get; set; }
     [Parameter] public decimal Quantity { get; set; }
     [Parameter] public string ControlType { get; set; } = "";
+    [Parameter] public string? FabricHex { get; set; }   // M2: DemoColour.Hex; null → sand placeholder
 
-    // Keep a fixed millimetre-to-pixel scale until the drawing reaches the available preview area.
-    private double Scale => Math.Min(0.11, Math.Min(190d / Math.Max(WidthMm, 200), 200d / Math.Max(HeightMm, 200)));
-    private double PixelWidth => Math.Max(WidthMm, 200) * Scale;
-    private double PixelHeight => Math.Max(HeightMm, 200) * Scale;
+    private string Kind
+    {
+        get
+        {
+            var n = Category.ToLowerInvariant();
+            if (n.Contains("rolet") || n.Contains("apsaug")) return "roller";
+            if (n.Contains("vertikal")) return "vertical";
+            if (n.Contains("horizontal") || n.Contains("nature")) return "horizontal";
+            if (n.Contains("plisuot")) return "pleated";
+            if (n.Contains("tinkle")) return "screen";
+            if (n.Contains("grot")) return "grille";
+            if (n.Contains("romanet")) return "roman";
+            if (n.Contains("markiz")) return "awning";
+            if (n.Contains("vartai")) return "gate";
+            if (n.Contains("panel")) return "panel";
+            if (n.Contains("pvc")) return "pvc";
+            return "other";
+        }
+    }
 }
