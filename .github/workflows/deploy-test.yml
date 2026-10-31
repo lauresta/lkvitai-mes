@@ -204,9 +204,13 @@ jobs:
 
       - name: Apply EF Core migrations to test DB
         run: |
+          # The current SDK image fails during NuGet's first-run named-mutex
+          # setup under the runner UID on this host. The build container is
+          # short-lived; the next deploy's root-owned workspace cleanup is
+          # already handled by the "Clean workspace" step above.
           docker run --rm --name lkvitai-mes-migration \
             --network "$DOCKER_NETWORK_NAME" \
-            --user "$(id -u):$(id -g)" \
+            --user 0:0 \
             -v "${{ github.workspace }}:/src" \
             -w /src \
             -e HOME=/tmp \
