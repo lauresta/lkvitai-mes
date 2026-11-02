@@ -7,7 +7,7 @@ import { randomUUID } from 'node:crypto';
 import { createServer as createHttpServer, type IncomingMessage, type Server as HttpServer, type ServerResponse } from 'node:http';
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
 import { CikadaApi } from './api.js';
-import type { Config } from './config.js';
+import { stripTrailingSlashes, type Config } from './config.js';
 import { challenge, checkBearer, handleOAuth, type Log } from './oauth.js';
 import { createServer } from './server.js';
 
@@ -68,7 +68,7 @@ export function startRemote(config: Config, log: Log = stderrLog, deps: Dependen
     // Some MCP clients normalize the endpoint to /mcp/ and append / to its
     // protected-resource discovery URL. Both spellings identify the same MCP
     // resource; keep the advertised canonical resource URL unchanged.
-    const path = requestPath === '/' ? '/' : requestPath.replace(/\/+$/, '');
+    const path = requestPath === '/' ? '/' : stripTrailingSlashes(requestPath);
     const detail: Record<string, unknown> = {};
     if (path !== '/healthz') res.on('finish', () => log({ msg: 'request', method: req.method, path, status: res.statusCode, ms: Date.now() - started, ...detail }));
 
