@@ -1,7 +1,7 @@
 using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text.Encodings.Web;
-using LKvitai.MES.Modules.Sales.Infrastructure.Security;
+using LKvitai.MES.BuildingBlocks.PortalAuth;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;

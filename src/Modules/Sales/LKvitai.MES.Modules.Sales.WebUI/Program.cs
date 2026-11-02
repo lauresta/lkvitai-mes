@@ -45,7 +45,7 @@ builder.Services.AddHttpClient("SalesApi")
     .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
 builder.Services.AddScoped<SalesApiClient>();
 builder.Services.AddScoped<SalesOrderEntryClient>();
-builder.Services.AddSingleton<LKvitai.MES.Modules.Sales.Infrastructure.Stub.StubOrdersQueryService>();
+builder.Services.AddSingleton<LKvitai.MES.Modules.Sales.Contracts.Samples.SalesSampleOrders>();
 
 var app = builder.Build();
 

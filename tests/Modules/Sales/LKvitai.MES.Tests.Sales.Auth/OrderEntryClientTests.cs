@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using LKvitai.MES.Modules.Sales.Contracts.OrderEntry;
-using LKvitai.MES.Modules.Sales.Infrastructure.Security;
+using LKvitai.MES.BuildingBlocks.PortalAuth;
 using LKvitai.MES.Modules.Sales.WebUI.Models;
 using LKvitai.MES.Modules.Sales.WebUI.Services;
 using Microsoft.AspNetCore.Components.Authorization;

@@ -5,7 +5,7 @@ using LKvitai.MES.Modules.Sales.Api.Endpoints;
 using LKvitai.MES.Modules.Sales.Api.Security;
 using LKvitai.MES.Modules.Sales.Application.Ports;
 using LKvitai.MES.Modules.Sales.Contracts.OrderEntry;
-using LKvitai.MES.Modules.Sales.Infrastructure.Security;
+using LKvitai.MES.BuildingBlocks.PortalAuth;
 using LKvitai.MES.Modules.Sales.Infrastructure.Sql;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.DataProtection;

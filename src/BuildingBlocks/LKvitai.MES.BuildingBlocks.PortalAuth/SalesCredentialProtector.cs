@@ -3,7 +3,7 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using Microsoft.AspNetCore.DataProtection;
 
-namespace LKvitai.MES.Modules.Sales.Infrastructure.Security;
+namespace LKvitai.MES.BuildingBlocks.PortalAuth;
 
 /// <summary>Sales-only cryptographic transport. Contains no user/session cache.</summary>
 public sealed class SalesCredentialProtector(IDataProtectionProvider provider, TimeProvider clock)

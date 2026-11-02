@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using LKvitai.MES.Modules.Sales.Contracts.OrderEntry;
 namespace LKvitai.MES.Modules.Sales.Application.OrderEntry;
 
@@ -18,8 +17,7 @@ public static class LegacyPaymentRules
     public const decimal MaximumAmount=922337203685477.58m;
     public const decimal CashMaximum=922337203685477.5807m;
     public const decimal PaidMaximum=214748.3647m;
-    public static bool IsValidPositiveAmount(decimal amount)=>amount>0&&amount<=MaximumAmount
-        &&decimal.Round(amount,AmountDecimalPlaces)==amount;
+    public static bool IsValidPositiveAmount(decimal amount)=>OrderPaymentFormats.IsValidPositiveAmount(amount);
     public static decimal MaximumAdditionalAmount(decimal paid)=>Math.Max(0,
         Math.Min(MaximumAmount,decimal.Floor((PaidMaximum-paid)*100m)/100m));
     public static void ValidateBalanceAddition(decimal amount,decimal paid,decimal cash)
@@ -29,8 +27,7 @@ public static class LegacyPaymentRules
         if(cash+amount<0||cash+amount>CashMaximum)throw new OrderEntryException("PAYMENT_CASH_RANGE","The resulting receiver cash amount is outside legacy MONEY storage.");
     }
     public static bool IsSupportedMethod(int id)=>id is PpkMethodId or BankMethodId or CashMethodId or RegisterMethodId;
-    public static bool IsValidPpkReceipt(string? receipt)=>receipt?.Length==PpkReceiptLength
-        &&Regex.IsMatch(receipt,@"\A[RV][RVS][LS][0-9]{7}\z",RegexOptions.IgnoreCase|RegexOptions.CultureInvariant);
+    public static bool IsValidPpkReceipt(string? receipt)=>OrderPaymentFormats.IsValidPpkReceipt(receipt);
     public static bool IsReceiverAllowed(bool visibleInAllowedDepartment,bool explicitlyApproved,bool selectedRegisterDefault)
         =>visibleInAllowedDepartment||explicitlyApproved||selectedRegisterDefault;
 }

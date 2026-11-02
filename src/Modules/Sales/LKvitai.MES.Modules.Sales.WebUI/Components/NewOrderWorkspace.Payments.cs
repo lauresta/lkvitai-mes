@@ -1,7 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
 using LKvitai.MES.Modules.Sales.Contracts.OrderEntry;
-using LKvitai.MES.Modules.Sales.Application.OrderEntry;
 using LKvitai.MES.Modules.Sales.WebUI.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
@@ -28,11 +27,11 @@ public partial class NewOrderWorkspace
     private bool PaymentContextMatches => _paymentReferences?.Selection is { } selection && selection.MethodId==_paymentMethodId && selection.BankTransferId==_paymentBankTransferId && selection.RegisterId==_paymentRegisterId;
     private bool PaymentDownstreamEnabled => _paymentContextValid && !_paymentLookupBusy && PaymentContextMatches && SelectedPaymentMethod is { } method && PaymentMethodAllowed(method)
         && string.IsNullOrEmpty(_paymentReferences?.PrerequisiteError)
-        && (!method.RequiresPpkReceipt || LegacyPaymentRules.IsValidPpkReceipt(_paymentReference))
+        && (!method.RequiresPpkReceipt || OrderPaymentFormats.IsValidPpkReceipt(_paymentReference))
         && (!method.RequiresBankTransfer || SelectedPaymentBank is { IsAvailable:true } bank && bank.Id==_paymentBankTransferId)
         && (!method.RequiresRegister || _paymentReferences?.SelectedRegister?.Id==_paymentRegisterId && _paymentRegisterId is not null);
     private bool PaymentCanSubmit => _paymentReferences?.Enabled==true && _paymentReferences.OrderRevision==_order?.Revision && CanPostLivePayment && PaymentDownstreamEnabled && !_paymentBankLoading;
-    private string? PaymentPrerequisiteMessage => SelectedPaymentMethod?.RequiresPpkReceipt==true && !LegacyPaymentRules.IsValidPpkReceipt(_paymentReference)
+    private string? PaymentPrerequisiteMessage => SelectedPaymentMethod?.RequiresPpkReceipt==true && !OrderPaymentFormats.IsValidPpkReceipt(_paymentReference)
         ? "Enter the actual ten-character PPK receipt number to continue."
         : _paymentReferences?.PrerequisiteError;
     private bool PaymentDirty => IsLive && _paymentSheetOpen && PaymentDraftState() != _paymentSaved;
@@ -100,10 +99,10 @@ public partial class NewOrderWorkspace
     private void ChangePaymentPpk(ChangeEventArgs e)
     {
         if(PaymentCommandPending)return;
-        var wasValid=LegacyPaymentRules.IsValidPpkReceipt(_paymentReference);
+        var wasValid=OrderPaymentFormats.IsValidPpkReceipt(_paymentReference);
         _paymentReference=e.Value?.ToString() ?? "";
         _paymentError="";
-        if(!LegacyPaymentRules.IsValidPpkReceipt(_paymentReference))ResetPaymentDownstream();
+        if(!OrderPaymentFormats.IsValidPpkReceipt(_paymentReference))ResetPaymentDownstream();
         else if(!wasValid)_paymentFocusReceiver=true;
     }
     private async Task ChangePaymentBank(ChangeEventArgs e)
@@ -174,14 +173,14 @@ public partial class NewOrderWorkspace
         { _paymentError="Payment posting is unavailable. Reopen the payment sheet to refresh its options."; return; }
         if (HeaderDirty || AddressDirty) { _paymentError="Save header and address changes before posting a payment."; return; }
         if (!PaymentCanSubmit) { _paymentError="Complete the selected method's reference before posting a payment."; return; }
-        if (!LegacyPaymentRules.IsValidPositiveAmount(_paymentAmount) || references.MaximumAmount is { } maximum && _paymentAmount>maximum)
+        if (!OrderPaymentFormats.IsValidPositiveAmount(_paymentAmount) || references.MaximumAmount is { } maximum && _paymentAmount>maximum)
         { _paymentError="Enter a positive amount with at most two decimal places."; return; }
         if (!DateOnly.TryParseExact(_paymentDate,"yyyy-MM-dd",CultureInfo.InvariantCulture,DateTimeStyles.None,out var date) || date!=references.BusinessDate)
         { _paymentError="Use the current business date."; return; }
         var method=SelectedPaymentMethod;
         if (method is null || !PaymentMethodAllowed(method) || _paymentEmployeeId is not { } employee || !references.Employees.Any(x=>x.Id==employee) || references.Currency is null)
         { _paymentError="Choose an available payment method and employee."; return; }
-        if (method.RequiresPpkReceipt && !LegacyPaymentRules.IsValidPpkReceipt(_paymentReference))
+        if (method.RequiresPpkReceipt && !OrderPaymentFormats.IsValidPpkReceipt(_paymentReference))
         { _paymentError="Enter the actual ten-character PPK receipt number."; return; }
         if (method.RequiresBankTransfer && !(SelectedPaymentBank is { IsAvailable:true } selectedBank && selectedBank.Id==_paymentBankTransferId && selectedBank.AvailableAmount>=_paymentAmount))
         { _paymentError="Choose a bank transfer with a sufficient available amount."; return; }

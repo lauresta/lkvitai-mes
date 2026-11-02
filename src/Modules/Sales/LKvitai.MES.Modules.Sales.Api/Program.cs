@@ -71,7 +71,7 @@ app.Use(async(context,next)=>
     }
 });
 
-var sales = app.MapGroup("/api/sales").RequireAuthorization(LKvitai.MES.Modules.Sales.Infrastructure.Security.SalesCredentialProtector.Policy);
+var sales = app.MapGroup("/api/sales").RequireAuthorization(LKvitai.MES.BuildingBlocks.PortalAuth.SalesCredentialProtector.Policy);
 
 sales.MapGet("/ping", () => Results.Ok(new
 {

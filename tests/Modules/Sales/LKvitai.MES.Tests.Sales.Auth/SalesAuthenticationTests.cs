@@ -5,7 +5,7 @@ using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text.Json;
 using LKvitai.MES.Modules.Sales.Api.Security;
-using LKvitai.MES.Modules.Sales.Infrastructure.Security;
+using LKvitai.MES.BuildingBlocks.PortalAuth;
 using LKvitai.MES.Modules.Sales.WebUI.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -116,7 +116,7 @@ public sealed class SalesAuthenticationTests
         {
             var state = new State(User(subject, codec.CreateSession(subject, "Employee", clock.Now.AddHours(1))));
             return new SalesApiClient(factory, NullLogger<SalesApiClient>.Instance, state,
-                new StubOrdersQueryService(), new SalesSessionCredentials(state, codec));
+                new LKvitai.MES.Modules.Sales.Contracts.Samples.SalesSampleOrders(), new SalesSessionCredentials(state, codec));
         }
         var clientA = Client(a); var clientB = Client(b);
         await Task.WhenAll(Enumerable.Range(0, 20).SelectMany(_ => new[]
@@ -125,7 +125,7 @@ public sealed class SalesAuthenticationTests
         Assert.Equal(20, transport.Subjects.Count(x => x == b));
         var review = new State(new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim("sales_review", "true") }, "SalesReviewCookie")));
         var reviewer = new SalesApiClient(factory, NullLogger<SalesApiClient>.Instance, review,
-            new StubOrdersQueryService(), new SalesSessionCredentials(review, codec));
+            new LKvitai.MES.Modules.Sales.Contracts.Samples.SalesSampleOrders(), new SalesSessionCredentials(review, codec));
         var samples = await reviewer.GetOrdersAsync(new OrdersQueryParams(), default);
         Assert.NotEmpty(samples!.Items);
         Assert.Equal(40, transport.Subjects.Count);

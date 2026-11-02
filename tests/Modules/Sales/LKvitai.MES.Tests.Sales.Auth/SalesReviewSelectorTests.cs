@@ -67,7 +67,7 @@ public sealed class SalesReviewSelectorTests
             return Results.Text($"{selected}:{identityCount}");
         });
         app.MapGet("/api/sales/actor", () => Results.Ok())
-            .RequireAuthorization(LKvitai.MES.Modules.Sales.Infrastructure.Security.SalesCredentialProtector.Policy);
+            .RequireAuthorization(LKvitai.MES.BuildingBlocks.PortalAuth.SalesCredentialProtector.Policy);
         await app.StartAsync();
         var client = app.GetTestClient();
         var cookies = new List<string>();

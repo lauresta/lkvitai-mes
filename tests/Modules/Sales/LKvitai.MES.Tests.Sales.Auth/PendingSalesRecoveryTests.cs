@@ -4,7 +4,7 @@ using System.Reflection;
 using System.Security.Claims;
 using System.Text.Json;
 using LKvitai.MES.Modules.Sales.Contracts.OrderEntry;
-using LKvitai.MES.Modules.Sales.Infrastructure.Security;
+using LKvitai.MES.BuildingBlocks.PortalAuth;
 using LKvitai.MES.Modules.Sales.WebUI.Components;
 using LKvitai.MES.Modules.Sales.WebUI.Models;
 using LKvitai.MES.Modules.Sales.WebUI.Services;

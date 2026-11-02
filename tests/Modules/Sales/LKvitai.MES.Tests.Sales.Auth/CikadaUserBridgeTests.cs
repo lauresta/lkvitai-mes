@@ -2,7 +2,6 @@ using System.Net;
 using System.Security.Claims;
 using LKvitai.MES.BuildingBlocks.PortalAuth;
 using LKvitai.MES.Modules.Sales.Api.Security;
-using LKvitai.MES.Modules.Sales.Infrastructure.Security;
 using LKvitai.MES.Modules.Sales.Contracts.OrderEntry;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;

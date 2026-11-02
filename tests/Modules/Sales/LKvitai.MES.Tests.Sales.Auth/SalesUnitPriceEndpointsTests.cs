@@ -6,7 +6,7 @@ using LKvitai.MES.Modules.Sales.Api.Security;
 using LKvitai.MES.Modules.Sales.Application.Ports;
 using LKvitai.MES.Modules.Sales.Application.Pricing;
 using LKvitai.MES.Modules.Sales.Contracts.Quotes;
-using LKvitai.MES.Modules.Sales.Infrastructure.Security;
+using LKvitai.MES.BuildingBlocks.PortalAuth;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting;
