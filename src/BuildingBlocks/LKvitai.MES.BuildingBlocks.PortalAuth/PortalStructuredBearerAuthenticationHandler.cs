@@ -2,6 +2,7 @@ using System.Security.Claims;
 using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -13,8 +14,9 @@ public static class PortalStructuredBearerAuthenticationDefaults
 }
 
 /// <summary>
-/// Authenticates the structured token issued by Warehouse local login and stored
-/// in the Portal auth ticket as the warehouse_access_token claim.
+/// Authenticates the API bearer forwarded by the WebUIs (warehouse_access_token claim):
+/// an SSO JWT validated by <see cref="CikadaJwtValidator"/>, or the legacy structured
+/// token issued by Warehouse local login (until Oidc:DisableLegacyTokens is on).
 /// </summary>
 public sealed class PortalStructuredBearerAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
 {
@@ -26,24 +28,46 @@ public sealed class PortalStructuredBearerAuthenticationHandler : Authentication
     {
     }
 
-    protected override Task<AuthenticateResult> HandleAuthenticateAsync()
+    protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
         var authHeader = Request.Headers.Authorization.FirstOrDefault();
         if (string.IsNullOrWhiteSpace(authHeader) ||
             !authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
         {
-            return Task.FromResult(AuthenticateResult.NoResult());
+            return AuthenticateResult.NoResult();
         }
 
         var token = authHeader["Bearer ".Length..].Trim();
+        var sso = Context.RequestServices.GetService<CikadaJwtValidator>();
+        if (CikadaJwtValidator.LooksLikeJwt(token))
+        {
+            if (sso is null || !sso.IsEnabled)
+            {
+                return AuthenticateResult.Fail("SSO tokens are not accepted by this host.");
+            }
+
+            var ssoPrincipal = await sso.ValidateAsync(
+                token,
+                PortalStructuredBearerAuthenticationDefaults.Scheme,
+                Context.RequestAborted);
+            return ssoPrincipal is null
+                ? AuthenticateResult.Fail("Invalid SSO token.")
+                : AuthenticateResult.Success(new AuthenticationTicket(ssoPrincipal, PortalStructuredBearerAuthenticationDefaults.Scheme));
+        }
+
+        if (sso?.LegacyTokensDisabled == true)
+        {
+            return AuthenticateResult.Fail("Legacy bearer tokens are disabled.");
+        }
+
         if (!PortalStructuredBearerToken.TryParse(token, out var parsed))
         {
-            return Task.FromResult(AuthenticateResult.Fail("Invalid bearer token."));
+            return AuthenticateResult.Fail("Invalid bearer token.");
         }
 
         if (parsed.IsExpired(DateTimeOffset.UtcNow))
         {
-            return Task.FromResult(AuthenticateResult.Fail("Token expired."));
+            return AuthenticateResult.Fail("Token expired.");
         }
 
         var identity = new ClaimsIdentity(
@@ -53,7 +77,7 @@ public sealed class PortalStructuredBearerAuthenticationHandler : Authentication
             ClaimTypes.Role);
         var principal = new ClaimsPrincipal(identity);
         var ticket = new AuthenticationTicket(principal, PortalStructuredBearerAuthenticationDefaults.Scheme);
-        return Task.FromResult(AuthenticateResult.Success(ticket));
+        return AuthenticateResult.Success(ticket);
     }
 
     protected override Task HandleChallengeAsync(AuthenticationProperties properties)

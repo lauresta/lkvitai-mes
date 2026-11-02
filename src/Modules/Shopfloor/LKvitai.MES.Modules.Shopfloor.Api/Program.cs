@@ -21,6 +21,8 @@ builder.Services.AddShopfloorInfrastructure(builder.Configuration);
 // Same Portal auth pattern used by Sales: shared Portal cookie + structured
 // bearer, plus a dev-only synthetic identity gated behind Shopfloor:DevAuthEnabled.
 builder.Services.AddPortalCookieAuthentication(builder.Environment, builder.Configuration);
+// SSO (authentik) JWTs are validated by PortalStructuredBearerAuthenticationHandler.
+builder.Services.AddCikadaSsoTokenValidation(builder.Configuration);
 builder.Services
     .AddAuthentication()
     .AddScheme<AuthenticationSchemeOptions, PortalStructuredBearerAuthenticationHandler>(
