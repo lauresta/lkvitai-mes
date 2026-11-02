@@ -60,7 +60,15 @@ export function challenge(config: Config, error?: 'invalid_token'): string {
 
 // ---------------------------------------------------------------------------------------------------------------------------------- bearer check
 
-export type TokenCheck = { ok: true; token: string; subject?: string; expiresAt: number } | { ok: false; reason: 'missing' | 'malformed' | 'expired' | 'issuer' | 'audience' };
+/** Who the token says the caller is: for display only (whoami); every API validates the token itself. */
+export interface TokenUser {
+  username?: string;
+  name?: string;
+  email?: string;
+  roles: string[];
+}
+
+export type TokenCheck = { ok: true; token: string; subject?: string; expiresAt: number; user: TokenUser } | { ok: false; reason: 'missing' | 'malformed' | 'expired' | 'issuer' | 'audience' };
 
 const BEARER = /^Bearer\s+([A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]*)\s*$/i;
 
@@ -77,6 +85,21 @@ function decodePart(part: string): Record<string, unknown> | undefined {
  * Shape, expiry, issuer and (when present) audience of the bearer. Not a signature check: that is the APIs' job, and they get this token unchanged.
  * This only separates "sign in again" (401 with the discovery challenge) from a request worth forwarding.
  */
+function claimRoles(raw: unknown): string[] {
+  let list: unknown[] = [];
+  if (Array.isArray(raw)) list = raw;
+  else if (typeof raw === 'string') list = raw.split(',');
+  return list.filter((r): r is string => typeof r === 'string').map((r) => r.trim()).filter(Boolean);
+}
+
+function tokenUser(claims: Record<string, unknown>): TokenUser {
+  const user: TokenUser = { roles: claimRoles(claims.roles) };
+  if (typeof claims.preferred_username === 'string') user.username = claims.preferred_username;
+  if (typeof claims.name === 'string') user.name = claims.name;
+  if (typeof claims.email === 'string') user.email = claims.email;
+  return user;
+}
+
 export function checkBearer(header: string | undefined, config: Config, now: number = Date.now()): TokenCheck {
   if (!header || !header.trim()) return { ok: false, reason: 'missing' };
   const match = BEARER.exec(header);
@@ -96,7 +119,8 @@ export function checkBearer(header: string | undefined, config: Config, now: num
     const audiences = Array.isArray(aud) ? aud : [aud];
     if (!audiences.includes(config.oauth.clientId)) return { ok: false, reason: 'audience' };
   }
-  return { ok: true, token, expiresAt: exp * 1000, ...(typeof claims.sub === 'string' ? { subject: claims.sub } : {}) };
+  const user = tokenUser(claims);
+  return { ok: true, token, expiresAt: exp * 1000, user, ...(typeof claims.sub === 'string' ? { subject: claims.sub } : {}) };
 }
 
 // ---------------------------------------------------------------------------------------------------------------------------------- endpoints

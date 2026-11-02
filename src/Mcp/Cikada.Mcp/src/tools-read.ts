@@ -359,4 +359,22 @@ const stockGet: ToolDef = {
   },
 };
 
-export const READ_TOOLS: readonly ToolDef[] = [ordersSearch, orderGet, ordersFilters, customersSearch, customerGet, priceGroupsList, itemsSearch, stockGet];
+const whoami: ToolDef = {
+  name: 'whoami',
+  title: 'Who am I',
+  description:
+    'The signed-in user and their Cikada roles. Use it to explain a 403: orders and order entry need SalesAdmin (writes also a legacy SQL login), items and stock need Operator or above, the management reports need SalesAdmin or Reports.',
+  inputSchema: obj({}),
+  annotations: READ,
+  handler: (_args, { user }) => {
+    const roles = user?.roles ?? [];
+    const who = user?.name ?? user?.username ?? 'Unknown user';
+    const login = user?.username ? ' (' + user.username + ')' : '';
+    return Promise.resolve({
+      text: `${who}${login}: roles ${roles.length ? roles.join(', ') : 'none'}.`,
+      data: compact({ username: user?.username, name: user?.name, email: user?.email, roles }),
+    });
+  },
+};
+
+export const READ_TOOLS: readonly ToolDef[] = [whoami, ordersSearch, orderGet, ordersFilters, customersSearch, customerGet, priceGroupsList, itemsSearch, stockGet];

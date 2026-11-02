@@ -111,7 +111,7 @@ export function startRemote(config: Config, log: Log = stderrLog, deps: Dependen
     if (bearer.subject) detail.sub = bearer.subject.slice(0, 64);
 
     const api = new CikadaApi({ salesUrl: config.salesApiUrl, warehouseUrl: config.warehouseApiUrl, token: bearer.token, ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}) });
-    const server = createServer({ api, newId: deps.newId ?? randomUUID, today: deps.today ?? vilniusToday }, config.orderEntry, log);
+    const server = createServer({ api, newId: deps.newId ?? randomUUID, today: deps.today ?? vilniusToday, user: bearer.user }, config.orderEntry, log);
     const transport = new WebStandardStreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
     try {
       await server.connect(transport);
