@@ -33,7 +33,14 @@ export interface Config {
 
 export class ConfigError extends Error {}
 
-const trimUrl = (value: string | undefined): string | undefined => value?.trim().replace(/\/+$/, '') || undefined;
+/** Drops trailing slashes without a backtracking regex. */
+export const stripTrailingSlashes = (text: string): string => {
+  let end = text.length;
+  while (end > 0 && text.charCodeAt(end - 1) === 47) end--;
+  return text.slice(0, end);
+};
+
+const trimUrl = (value: string | undefined): string | undefined => (value === undefined ? undefined : stripTrailingSlashes(value.trim()) || undefined);
 
 function httpUrl(name: string, value: string | undefined, fallback?: string): string {
   const text = trimUrl(value) ?? fallback;

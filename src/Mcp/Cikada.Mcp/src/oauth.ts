@@ -13,7 +13,7 @@
 // which receive the very same token.
 
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { SCOPES, type Config } from './config.js';
+import { SCOPES, stripTrailingSlashes, type Config } from './config.js';
 
 const MAX_FORM_BYTES = 16 * 1024;
 const UPSTREAM_TIMEOUT_MS = 10_000;
@@ -90,7 +90,7 @@ export function checkBearer(header: string | undefined, config: Config, now: num
   if (typeof exp !== 'number') return { ok: false, reason: 'malformed' };
   if (exp * 1000 <= now) return { ok: false, reason: 'expired' };
   const issuer = typeof claims.iss === 'string' ? claims.iss : '';
-  if (issuer.replace(/\/+$/, '') !== config.oauth.issuer.replace(/\/+$/, '')) return { ok: false, reason: 'issuer' };
+  if (stripTrailingSlashes(issuer) !== stripTrailingSlashes(config.oauth.issuer)) return { ok: false, reason: 'issuer' };
   const aud = claims.aud;
   if (aud !== undefined) {
     const audiences = Array.isArray(aud) ? aud : [aud];
