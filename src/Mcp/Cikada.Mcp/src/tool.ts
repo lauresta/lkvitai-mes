@@ -32,7 +32,7 @@ export interface ToolDef {
   description: string;
   inputSchema: Schema;
   annotations: Omit<Annotations, 'title'>;
-  /** Offered only when MCP_ENABLE_ORDER_ENTRY=true (the order entry contract is not on main yet). */
+  /** Offered only when MCP_ENABLE_ORDER_ENTRY=true. */
   orderEntry?: boolean;
   handler: (args: Record<string, unknown>, ctx: ToolContext) => Promise<ToolResult>;
 }

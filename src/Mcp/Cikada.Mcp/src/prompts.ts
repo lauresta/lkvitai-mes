@@ -53,7 +53,7 @@ export const PROMPTS: readonly PromptDef[] = [
         '1. Find the customer with order_entry_catalog (section customers) and the series with section series; propose the series defaults (store, manager, consultant) and ask me for the order number and the due date.',
         '2. For each product find the type (section types) and the colour (section colours, check free stock), read the type with order_entry_references kind=type, get the list price with order_entry_unit_price and preview it with order_entry_product_preview.',
         '3. Show me a summary table (type, size, quantity, colour, unit price, amount, stock warning) and the header, and wait for my explicit yes.',
-        '4. Only then: order_create, order_product_add + order_product_update for each product (always pass the latest revision), order_address_set if I gave an address.',
+        '4. Only then: order_create, order_product_add + order_product_update for each product (always pass the latest revision), order_accessory_set for accessories I asked for, order_address_set if I gave an address, order_final_price_set only if I named a final total.',
         '5. Finish with order_entry_get and show the saved order. Do not confirm it for production unless I ask (order_confirm).',
       ].join('\n'),
   },

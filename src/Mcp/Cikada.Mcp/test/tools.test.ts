@@ -184,3 +184,19 @@ test('order_update keeps the fields not given, sends the revision and a command 
     await stand.close();
   }
 });
+
+test('order_accessory_set posts exactly the SaveAccessoryCommand fields', async () => {
+  const order = { header: { id: 5, number: 'VLN-5-26' }, products: [], revision: 'r2', writesAllowed: true };
+  const api = mockFetch(() => ({ status: 200, body: { order, productId: 7, replayed: false } }));
+  const stand = await running(testConfig({ MCP_ENABLE_ORDER_ENTRY: 'true' }), { fetchImpl: api.fetchImpl, newId: () => '00000000-0000-4000-8000-000000000001' });
+  try {
+    const args = { orderId: 5, productId: 7, expectedRevision: 'r1', accessoryId: 12, quantity: 2, unitPrice: 3.5 };
+    const result = (await rpc(stand.base, fakeJwt(), 'tools/call', { name: 'order_accessory_set', arguments: args })).body.result;
+    assert.equal(result.isError, undefined, JSON.stringify(result));
+    const post = api.seen.find((s) => s.method === 'POST')!;
+    assert.equal(post.url.pathname, '/api/sales/order-entry/orders/5/products/7/accessories');
+    assert.deepEqual(post.body, { commandId: '00000000-0000-4000-8000-000000000001', expectedRevision: 'r1', accessoryId: 12, quantity: 2, unitPrice: 3.5 });
+  } finally {
+    await stand.close();
+  }
+});

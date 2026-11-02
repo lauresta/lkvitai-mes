@@ -34,7 +34,7 @@ Read (always on):
 | `items_search` | Warehouse `GET /api/warehouse/v1/items`, `GET /api/warehouse/v1/stock/available`, `GET /api/warehouse/v1/price-groups/{id}/item-prices` |
 | `stock_get` | Warehouse `GET /api/warehouse/v1/stock/available` |
 
-Order entry (only with `MCP_ENABLE_ORDER_ENTRY=true`; the API is PR #224):
+Order entry (only with `MCP_ENABLE_ORDER_ENTRY=true`; on test via the `CIKADA_MCP_ORDER_ENTRY` environment variable):
 
 | Tool | API call |
 |---|---|
@@ -48,6 +48,10 @@ Order entry (only with `MCP_ENABLE_ORDER_ENTRY=true`; the API is PR #224):
 | `order_update` | `PUT /api/sales/order-entry/orders/{id}` (merges with the current header) |
 | `order_product_add` | `POST /api/sales/order-entry/orders/{id}/products` |
 | `order_product_update` | `PUT /api/sales/order-entry/orders/{id}/products/{productId}` (merges with the current line) |
+| `order_product_duplicate` | `POST /api/sales/order-entry/orders/{id}/products/{productId}/duplicate` |
+| `order_accessory_set` | `POST /api/sales/order-entry/orders/{id}/products/{productId}/accessories` |
+| `order_accessory_remove` | `DELETE /api/sales/order-entry/orders/{id}/products/{productId}/accessories/{accessoryId}` |
+| `order_final_price_set` | `PUT /api/sales/order-entry/orders/{id}/final-price` |
 | `order_product_remove` | `DELETE /api/sales/order-entry/orders/{id}/products/{productId}` (destructive) |
 | `order_address_set` | `PUT /api/sales/order-entry/orders/{id}/address` |
 | `order_confirm` | `POST /api/sales/order-entry/orders/{id}/confirm` (destructive: sends to production) |
