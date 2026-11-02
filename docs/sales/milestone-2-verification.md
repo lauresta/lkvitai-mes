@@ -561,3 +561,20 @@ duplicates in deterministic NoteID order. The history query follows authorized
 parent resolution. Editable command contracts reject submitted history. The
 privacy marker is translated only in rendering. No history records or prices
 are changed. Full local Sales suite321/321 and diff checks passed.
+
+Final release `m2-686afeb`: confirmation=true with prefix MEST on test;
+Testavimas455 exposes enabled confirmation, ordinary branch remains disabled.
+Native Portal login/session proof/API credentials and SQL actor work after
+moving the unchanged credential codec into shared PortalAuth. WebUI references
+only Contracts/BuildingBlocks; shared payment formats and sample data retain
+existing behavior. Full321 Sales tests and29 architecture tests passed.
+
+Native history equality passed for details/editor (IDs, exact text, author,
+timestamps and ordering), including owned450/XXXX-943185-26 with one historical
+entry. Browser verified current note/history separation and enabled Confirm
+for production on455 without invoking it. Screenshot:
+`/tmp/sales-m2-evidence/v25/note-history-final.png`. No confirmation documents,
+legacy business writes, history edits or other branch writes were executed.
+Warehouse/Portal/config gates preserved, cancellation off; expired observer
+untouched. QA credentials/helpers removed; deployed application source drift0.
+All implementation and follow-ups are in one PR: https://github.com/lauresta/lkvitai-mes/pull/224.

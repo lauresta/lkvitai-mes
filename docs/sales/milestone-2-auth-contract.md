@@ -61,7 +61,7 @@ serialize the old bearer or accept claimed roles as proof of identity. Use
 `TimeProvider` for deterministic expiry tests.
 
 A common small codec can live in
-`Sales.Infrastructure/Security/SalesCredentialProtector.cs` (both hosts
+`BuildingBlocks.PortalAuth/SalesCredentialProtector.cs` (both hosts
 already reference Infrastructure), with a DataProtection framework reference
 as needed. Registration and use remain Sales-only. There is no new auth server,
 public token exchange, user database or custom cryptographic algorithm.

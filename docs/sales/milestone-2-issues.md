@@ -46,7 +46,7 @@ An execution with the current Access client remains required for full parity.
 
 ## S2-003 — Production confirmation containment
 
-**Status: owner-authorized activation on test for manual verification (2026-11-02); successful production confirmation not yet runtime verified.** The optional server command follows
+**Status: enabled on test in `m2-686afeb` for owner manual verification (2026-11-02); successful production confirmation is not yet runtime verified.** The optional server command follows
 the actual document/barcode-detail path. Actual SQL consumers
 `V_WaitingProductionBlinds` and `sp_SelectBlindsForProductionIntoTPRODBLNDS`
 include confirmed Testavimas products without a branch7/prefix exclusion:
@@ -263,7 +263,7 @@ Demo-mode arithmetic and native SQL pricing/totals are unchanged.
 
 ## S2-015 — Access order-note display parity
 
-**Status: implemented and locally tested (321 Sales tests), deployment verification pending.**
+**Status: resolved on test, build `m2-686afeb` (2026-11-02).**
 Current editable note and read-only historical entries are now separate on
 order details/editor. History retains every native NoteID/text/author/time in
 NoteID order, including duplicate entries; the privacy marker is translated
@@ -283,7 +283,9 @@ Existing SQL consumers were not rewritten, and sp_CancellOrder only sets
 Sugadintas; it does not automatically assign this note. Cancellation stays
 disabled under S2-001; confirmation activation for manual test is recorded in S2-003.
 
-Remaining verification: compare native history with deployed API/UI reads.
+Verified: native history matches deployed details/editor by ID, exact text,
+author, timestamp and order; positive fixture XXXX-943185-26 has one native
+entry. Browser confirms a separate read-only history panel.
 History is read-only, parent-scoped, and excluded from editable command inputs.
 No history/price repair, cancellation migration or automated confirmation is
 part of this change.
