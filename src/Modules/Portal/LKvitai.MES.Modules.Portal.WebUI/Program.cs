@@ -43,9 +43,11 @@ builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddCikadaLocalization(builder.Configuration);
 builder.Services.AddPortalCookieAuthentication(builder.Environment, builder.Configuration);
-// SSO login (sso.lauresta.com) when Oidc:Enabled; the local login page stays reachable via ?local=1.
+// SSO login (sso.lauresta.com) when Oidc:Enabled; the local login page stays reachable via ?local=1 unless SSO-only.
 builder.Services.AddPortalOidcLogin(builder.Configuration);
 var ssoEnabled = builder.Configuration.IsCikadaSsoEnabled();
+// SSO-only (Oidc:DisableLegacyTokens): the password login is gone, its legacy token is refused by every API.
+var ssoOnly = ssoEnabled && builder.Configuration.GetValue<bool>($"{CikadaOidcOptions.SectionName}:{nameof(CikadaOidcOptions.DisableLegacyTokens)}");
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     // Behind Traefik: the OIDC redirect_uri must use the public https scheme.
@@ -138,15 +140,28 @@ app.Use(async (context, next) =>
 if (ssoEnabled)
 {
     // Modules redirect unauthenticated users to /portal/login.html; with SSO on, send them
-    // straight to the provider unless the local login was asked for explicitly (?local=1).
+    // straight to the provider unless the login page was asked for explicitly (?local=1: logout,
+    // SSO failure). SSO-only shows that page with the SSO button alone (?sso=1).
     app.Use(async (context, next) =>
     {
-        if (context.Request.Path.StartsWithSegments("/login.html", StringComparison.OrdinalIgnoreCase) &&
-            !context.Request.Query.ContainsKey("local"))
+        if (context.Request.Path.StartsWithSegments("/login.html", StringComparison.OrdinalIgnoreCase))
         {
-            var returnUrl = context.Request.Query["returnUrl"].ToString();
-            context.Response.Redirect(BuildLocalUrl(context, PortalOidcDefaults.LoginPath, $"returnUrl={Uri.EscapeDataString(returnUrl)}"));
-            return;
+            var query = context.Request.Query;
+            if (!query.ContainsKey("local") && !query.ContainsKey("sso"))
+            {
+                var returnUrl = query["returnUrl"].ToString();
+                context.Response.Redirect(BuildLocalUrl(context, PortalOidcDefaults.LoginPath, $"returnUrl={Uri.EscapeDataString(returnUrl)}"));
+                return;
+            }
+
+            if (ssoOnly && !query.ContainsKey("sso"))
+            {
+                var kept = new[] { "error", "loggedOut", "returnUrl" }
+                    .Where(key => !string.IsNullOrEmpty(query[key]))
+                    .Select(key => $"&{key}={Uri.EscapeDataString(query[key].ToString())}");
+                context.Response.Redirect(BuildLocalUrl(context, "/login.html", "sso=1" + string.Concat(kept)));
+                return;
+            }
         }
 
         await next();
@@ -175,6 +190,11 @@ app.MapPost("/auth/login", async (
     ILogger<Program> logger,
     CancellationToken cancellationToken) =>
 {
+    if (ssoOnly)
+    {
+        return Results.NotFound();
+    }
+
     var form = await httpContext.Request.ReadFormAsync(cancellationToken);
     var username = form["username"].ToString();
     var password = form["password"].ToString();

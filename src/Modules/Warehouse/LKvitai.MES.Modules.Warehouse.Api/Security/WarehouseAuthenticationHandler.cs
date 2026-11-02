@@ -17,8 +17,10 @@ public static class WarehouseAuthenticationDefaults
 /// <summary>
 /// Lightweight authentication handler for warehouse APIs.
 /// Accepts either:
-/// - X-User-Id + X-User-Roles headers
-/// - Authorization: Bearer userId|Role1,Role2
+/// - X-API-Key
+/// - Authorization: Bearer &lt;SSO JWT&gt;
+/// - X-User-Id + X-User-Roles headers or Authorization: Bearer userId|Role1,Role2,
+///   only while Oidc:DisableLegacyTokens is off (they are unsigned and can be forged)
 /// </summary>
 public sealed class WarehouseAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
 {
@@ -78,8 +80,10 @@ public sealed class WarehouseAuthenticationHandler : AuthenticationHandler<Authe
             return AuthenticateResult.Success(apiKeyTicket);
         }
 
-        var userId = Request.Headers["X-User-Id"].FirstOrDefault();
-        var rolesValue = Request.Headers["X-User-Roles"].FirstOrDefault();
+        var sso = Context.RequestServices.GetService<CikadaJwtValidator>();
+        var legacyDisabled = sso?.LegacyTokensDisabled == true;
+        var userId = legacyDisabled ? null : Request.Headers["X-User-Id"].FirstOrDefault();
+        var rolesValue = legacyDisabled ? null : Request.Headers["X-User-Roles"].FirstOrDefault();
         string? authSource = null;
         bool? mfaVerified = null;
 
@@ -88,7 +92,6 @@ public sealed class WarehouseAuthenticationHandler : AuthenticationHandler<Authe
             authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
         {
             var token = authHeader["Bearer ".Length..].Trim();
-            var sso = Context.RequestServices.GetService<CikadaJwtValidator>();
             if (LooksLikeJwt(token) && sso?.IsEnabled == true)
             {
                 var ssoPrincipal = await sso.ValidateAsync(token, WarehouseAuthenticationDefaults.Scheme, Context.RequestAborted);
@@ -133,7 +136,7 @@ public sealed class WarehouseAuthenticationHandler : AuthenticationHandler<Authe
                 return AuthenticateResult.Success(jwtTicket);
             }
 
-            if (sso?.LegacyTokensDisabled == true)
+            if (legacyDisabled)
             {
                 return AuthenticateResult.Fail("Legacy bearer tokens are disabled.");
             }
@@ -154,6 +157,11 @@ public sealed class WarehouseAuthenticationHandler : AuthenticationHandler<Authe
 
         if (string.IsNullOrWhiteSpace(userId))
         {
+            if (legacyDisabled)
+            {
+                return AuthenticateResult.NoResult();
+            }
+
             var hostEnvironment = Context.RequestServices.GetService<IHostEnvironment>();
             if (hostEnvironment?.IsDevelopment() == true)
             {
