@@ -1,0 +1,912 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="Catalog.UnnamedAccessory" xml:space="preserve">
+    <value>Accessory #{0}</value>
+  </data>
+  <data name="Common.Add" xml:space="preserve">
+    <value>+ Add</value>
+  </data>
+  <data name="Common.Address" xml:space="preserve">
+    <value>Address</value>
+  </data>
+  <data name="Common.Amount" xml:space="preserve">
+    <value>Amount</value>
+  </data>
+  <data name="Common.BackToOrders" xml:space="preserve">
+    <value>Back to orders</value>
+  </data>
+  <data name="Common.Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Common.Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="Common.Consultant" xml:space="preserve">
+    <value>Consultant</value>
+  </data>
+  <data name="Common.Customer" xml:space="preserve">
+    <value>Customer</value>
+  </data>
+  <data name="Common.Date" xml:space="preserve">
+    <value>Date</value>
+  </data>
+  <data name="Common.Debt" xml:space="preserve">
+    <value>Debt</value>
+  </data>
+  <data name="Common.Delete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="Common.Details" xml:space="preserve">
+    <value>Details</value>
+  </data>
+  <data name="Common.DueDate" xml:space="preserve">
+    <value>Due date</value>
+  </data>
+  <data name="Common.Employee" xml:space="preserve">
+    <value>Employee</value>
+  </data>
+  <data name="Common.Height" xml:space="preserve">
+    <value>Height</value>
+  </data>
+  <data name="Common.Home" xml:space="preserve">
+    <value>Home</value>
+  </data>
+  <data name="Common.Manager" xml:space="preserve">
+    <value>Manager</value>
+  </data>
+  <data name="Common.Note" xml:space="preserve">
+    <value>Note</value>
+  </data>
+  <data name="Common.Notes" xml:space="preserve">
+    <value>Notes</value>
+  </data>
+  <data name="Common.Number" xml:space="preserve">
+    <value>Number</value>
+  </data>
+  <data name="Common.OrderDate" xml:space="preserve">
+    <value>Order date</value>
+  </data>
+  <data name="Common.Orders" xml:space="preserve">
+    <value>Orders</value>
+  </data>
+  <data name="Common.Paid" xml:space="preserve">
+    <value>Paid</value>
+  </data>
+  <data name="Common.Payments" xml:space="preserve">
+    <value>Payments</value>
+  </data>
+  <data name="Common.Phone" xml:space="preserve">
+    <value>Phone</value>
+  </data>
+  <data name="Common.Price" xml:space="preserve">
+    <value>Price</value>
+  </data>
+  <data name="Common.Quantity" xml:space="preserve">
+    <value>Quantity</value>
+  </data>
+  <data name="Common.Refresh" xml:space="preserve">
+    <value>Refresh</value>
+  </data>
+  <data name="Common.Retry" xml:space="preserve">
+    <value>Retry</value>
+  </data>
+  <data name="Common.Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="Common.Store" xml:space="preserve">
+    <value>Store</value>
+  </data>
+  <data name="Common.Total" xml:space="preserve">
+    <value>Total</value>
+  </data>
+  <data name="Common.Width" xml:space="preserve">
+    <value>Width</value>
+  </data>
+  <data name="Details.AcquaintanceDate" xml:space="preserve">
+    <value>Acquaintance date</value>
+  </data>
+  <data name="Details.Amount.AfterDiscount" xml:space="preserve">
+    <value>After discount</value>
+  </data>
+  <data name="Details.Amount.Calculated" xml:space="preserve">
+    <value>Calculated</value>
+  </data>
+  <data name="Details.Amount.Debt" xml:space="preserve">
+    <value>Debt</value>
+  </data>
+  <data name="Details.Amount.Defined" xml:space="preserve">
+    <value>Defined</value>
+  </data>
+  <data name="Details.Amount.Discount" xml:space="preserve">
+    <value>Discount</value>
+  </data>
+  <data name="Details.Amount.Paid" xml:space="preserve">
+    <value>Paid</value>
+  </data>
+  <data name="Details.Amounts" xml:space="preserve">
+    <value>Amounts</value>
+  </data>
+  <data name="Details.AssignmentCount" xml:space="preserve">
+    <value>{0} assignments</value>
+  </data>
+  <data name="Details.Color" xml:space="preserve">
+    <value>Color</value>
+  </data>
+  <data name="Details.CouldNotLoad" xml:space="preserve">
+    <value>Could not load {0}.</value>
+  </data>
+  <data name="Details.Duty" xml:space="preserve">
+    <value>Duty</value>
+  </data>
+  <data name="Details.EmailCustomer" xml:space="preserve">
+    <value>Email customer</value>
+  </data>
+  <data name="Details.Employee" xml:space="preserve">
+    <value>Employee</value>
+  </data>
+  <data name="Details.Employees" xml:space="preserve">
+    <value>Employees</value>
+  </data>
+  <data name="Details.Item" xml:space="preserve">
+    <value>Item</value>
+  </data>
+  <data name="Details.ItemCount" xml:space="preserve">
+    <value>{0} products · {1} line items</value>
+  </data>
+  <data name="Details.ItemQuantity" xml:space="preserve">
+    <value>Item q-ty</value>
+  </data>
+  <data name="Details.Items" xml:space="preserve">
+    <value>Items</value>
+  </data>
+  <data name="Details.NoMatchingOrder" xml:space="preserve">
+    <value>No order matches {0}.</value>
+  </data>
+  <data name="Details.NotFound" xml:space="preserve">
+    <value>Order not found.</value>
+  </data>
+  <data name="Details.OpenPos" xml:space="preserve">
+    <value>Open in PoS</value>
+  </data>
+  <data name="Details.Operator" xml:space="preserve">
+    <value>Operator: {0} · {1}</value>
+  </data>
+  <data name="Details.OrderQuantity" xml:space="preserve">
+    <value>Order q-ty</value>
+  </data>
+  <data name="Details.PageTitle" xml:space="preserve">
+    <value>{0} · Sales</value>
+  </data>
+  <data name="Details.Print" xml:space="preserve">
+    <value>Print</value>
+  </data>
+  <data name="Details.ProductType" xml:space="preserve">
+    <value>Product type</value>
+  </data>
+  <data name="Details.QuantityShort" xml:space="preserve">
+    <value>Q-ty</value>
+  </data>
+  <data name="Details.ServiceDate" xml:space="preserve">
+    <value>Service date</value>
+  </data>
+  <data name="Details.Side" xml:space="preserve">
+    <value>Side</value>
+  </data>
+  <data name="Details.Title" xml:space="preserve">
+    <value>Order details</value>
+  </data>
+  <data name="Details.VatIncluded" xml:space="preserve">
+    <value>all values incl. VAT</value>
+  </data>
+  <data name="Errors.Client.NumberExample" xml:space="preserve">
+    <value>Enter a number such as VV-123 or VV-123-A.</value>
+  </data>
+  <data name="Errors.Client.YearSuffixLength" xml:space="preserve">
+    <value>Use at most two characters after the year group.</value>
+  </data>
+  <data name="Nav.BackToOrders" xml:space="preserve">
+    <value>Back to orders</value>
+  </data>
+  <data name="Nav.Breadcrumb" xml:space="preserve">
+    <value>Breadcrumb</value>
+  </data>
+  <data name="Nav.NotFound" xml:space="preserve">
+    <value>Not found</value>
+  </data>
+  <data name="Nav.NothingHere" xml:space="preserve">
+    <value>Nothing at this address.</value>
+  </data>
+  <data name="Orders.AllStatuses" xml:space="preserve">
+    <value>All statuses</value>
+  </data>
+  <data name="Orders.AllStores" xml:space="preserve">
+    <value>All stores</value>
+  </data>
+  <data name="Orders.ApiUnavailable" xml:space="preserve">
+    <value>Sales API unreachable.</value>
+  </data>
+  <data name="Orders.DateFilterUnavailable" xml:space="preserve">
+    <value>Date range filter activates in S-2</value>
+  </data>
+  <data name="Orders.DebtFilter" xml:space="preserve">
+    <value>Show only orders with outstanding debt</value>
+  </data>
+  <data name="Orders.Export" xml:space="preserve">
+    <value>Export</value>
+  </data>
+  <data name="Orders.Flags" xml:space="preserve">
+    <value>Flags</value>
+  </data>
+  <data name="Orders.HasDebt" xml:space="preserve">
+    <value>Has debt</value>
+  </data>
+  <data name="Orders.HasNote" xml:space="preserve">
+    <value>Has note</value>
+  </data>
+  <data name="Orders.Introduction" xml:space="preserve">
+    <value>Compact operational Sales Orders. Click an order number to open details in a new tab.</value>
+  </data>
+  <data name="Orders.Last30Days" xml:space="preserve">
+    <value>Last 30 days</value>
+  </data>
+  <data name="Orders.ListSummary" xml:space="preserve">
+    <value>Compact · {0} rows/page · sorted by Date desc</value>
+  </data>
+  <data name="Orders.ListTitle" xml:space="preserve">
+    <value>Recent, unpaid and unfinished orders</value>
+  </data>
+  <data name="Orders.MobileOrders" xml:space="preserve">
+    <value>Mobile orders</value>
+  </data>
+  <data name="Orders.NewOrder" xml:space="preserve">
+    <value>New order</value>
+  </data>
+  <data name="Orders.NextPage" xml:space="preserve">
+    <value>Next</value>
+  </data>
+  <data name="Orders.NoMatches" xml:space="preserve">
+    <value>No orders match these filters.</value>
+  </data>
+  <data name="Orders.OpenNewTab" xml:space="preserve">
+    <value>Open {0} in new tab</value>
+  </data>
+  <data name="Orders.PageTitle" xml:space="preserve">
+    <value>Sales · Orders</value>
+  </data>
+  <data name="Orders.PaginationBottom" xml:space="preserve">
+    <value>Pagination bottom</value>
+  </data>
+  <data name="Orders.PaginationTop" xml:space="preserve">
+    <value>Pagination top</value>
+  </data>
+  <data name="Orders.PreviousPage" xml:space="preserve">
+    <value>Prev</value>
+  </data>
+  <data name="Orders.RetryLoad" xml:space="preserve">
+    <value>Try again or reload the page.</value>
+  </data>
+  <data name="Orders.Search" xml:space="preserve">
+    <value>Search orders</value>
+  </data>
+  <data name="Orders.SearchDescription" xml:space="preserve">
+    <value>Search matches order number, customer, address, and the hidden ProductsSearch text aggregated from item lines.</value>
+  </data>
+  <data name="Orders.SelectAll" xml:space="preserve">
+    <value>Select all</value>
+  </data>
+  <data name="Orders.ShowingEntries" xml:space="preserve">
+    <value>Showing {0}–{1} of {2} entries</value>
+  </data>
+  <data name="Orders.SortedDescending" xml:space="preserve">
+    <value>Sorted descending</value>
+  </data>
+  <data name="Orders.Status.Approved" xml:space="preserve">
+    <value>Approved</value>
+  </data>
+  <data name="Orders.Status.Cancelled" xml:space="preserve">
+    <value>Cancelled</value>
+  </data>
+  <data name="Orders.Status.Delivered" xml:space="preserve">
+    <value>Delivered</value>
+  </data>
+  <data name="Orders.Status.Entered" xml:space="preserve">
+    <value>Entered</value>
+  </data>
+  <data name="Orders.Status.InProgress" xml:space="preserve">
+    <value>In production</value>
+  </data>
+  <data name="Orders.Status.Made" xml:space="preserve">
+    <value>Made</value>
+  </data>
+  <data name="Orders.Status.MultiStatus" xml:space="preserve">
+    <value>Mixed statuses</value>
+  </data>
+  <data name="Orders.Status.Paused" xml:space="preserve">
+    <value>Paused</value>
+  </data>
+  <data name="Orders.Status.Shipped" xml:space="preserve">
+    <value>Sent to branch</value>
+  </data>
+  <data name="Orders.ThisMonth" xml:space="preserve">
+    <value>This month</value>
+  </data>
+  <data name="Orders.VipCustomer" xml:space="preserve">
+    <value>VIP customer</value>
+  </data>
+  <data name="Orders.YearToDate" xml:space="preserve">
+    <value>YTD</value>
+  </data>
+  <data name="Payment.AddDraft" xml:space="preserve">
+    <value>Add to draft</value>
+  </data>
+  <data name="Payment.AddNew" xml:space="preserve">
+    <value>+ New payment</value>
+  </data>
+  <data name="Payment.AmountEur" xml:space="preserve">
+    <value>Amount · €</value>
+  </data>
+  <data name="Payment.BankReference" xml:space="preserve">
+    <value>Bank transfer reference</value>
+  </data>
+  <data name="Payment.BankTransfer" xml:space="preserve">
+    <value>Bank transfer</value>
+  </data>
+  <data name="Payment.CashDesk" xml:space="preserve">
+    <value>Cash desk</value>
+  </data>
+  <data name="Payment.CashReceiver" xml:space="preserve">
+    <value>Cash receiver</value>
+  </data>
+  <data name="Payment.Close" xml:space="preserve">
+    <value>Close payment sheet</value>
+  </data>
+  <data name="Payment.DebtAfter" xml:space="preserve">
+    <value>Debt after payment</value>
+  </data>
+  <data name="Payment.DraftHelp" xml:space="preserve">
+    <value>UI preview · This payment stays only in the local draft.</value>
+  </data>
+  <data name="Payment.Method" xml:space="preserve">
+    <value>Payment method</value>
+  </data>
+  <data name="Payment.New" xml:space="preserve">
+    <value>New payment</value>
+  </data>
+  <data name="Payment.NoDraft" xml:space="preserve">
+    <value>No payments in this local draft.</value>
+  </data>
+  <data name="Payment.PpkNumber" xml:space="preserve">
+    <value>PPK receipt series and number</value>
+  </data>
+  <data name="Payment.Register" xml:space="preserve">
+    <value>EKA register</value>
+  </data>
+  <data name="Payment.Remove" xml:space="preserve">
+    <value>Remove payment</value>
+  </data>
+  <data name="Payment.RequiredReference" xml:space="preserve">
+    <value>Enter the document reference, receiver, or register required for this method.</value>
+  </data>
+  <data name="Payment.ValidDateAmount" xml:space="preserve">
+    <value>Enter a valid payment date and a positive amount.</value>
+  </data>
+  <data name="Payment.ViaPpk" xml:space="preserve">
+    <value>Via PPK</value>
+  </data>
+  <data name="Preview.DimensionsAria" xml:space="preserve">
+    <value>{0}, {1} × {2} mm</value>
+  </data>
+  <data name="Preview.Quantity" xml:space="preserve">
+    <value>× {0} pcs</value>
+  </data>
+  <data name="Product.Accessories" xml:space="preserve">
+    <value>Accessories</value>
+  </data>
+  <data name="Product.AccessoriesHeading" xml:space="preserve">
+    <value>Accessories · Priedai</value>
+  </data>
+  <data name="Product.AccessoryCategoryHelp" xml:space="preserve">
+    <value>These accessory options match the selected product category in the legacy reference snapshot.</value>
+  </data>
+  <data name="Product.AccessoryFor" xml:space="preserve">
+    <value>Accessory for {0}</value>
+  </data>
+  <data name="Product.AddAccessory" xml:space="preserve">
+    <value>+ Add accessory</value>
+  </data>
+  <data name="Product.AddAccessoryShort" xml:space="preserve">
+    <value>+ ACC</value>
+  </data>
+  <data name="Product.AddNew" xml:space="preserve">
+    <value>+ New product</value>
+  </data>
+  <data name="Product.AddPriedai" xml:space="preserve">
+    <value>Add priedai</value>
+  </data>
+  <data name="Product.AddToProduct" xml:space="preserve">
+    <value>Add accessory to this product</value>
+  </data>
+  <data name="Product.AdditionalParameters" xml:space="preserve">
+    <value>Additional parameters · PPP01–PPP12</value>
+  </data>
+  <data name="Product.BackOrderArrow" xml:space="preserve">
+    <value>← Back to order</value>
+  </data>
+  <data name="Product.CategoryStep" xml:space="preserve">
+    <value>1 · Category</value>
+  </data>
+  <data name="Product.ChainLeft" xml:space="preserve">
+    <value>Chain left</value>
+  </data>
+  <data name="Product.ChainRight" xml:space="preserve">
+    <value>Chain right</value>
+  </data>
+  <data name="Product.CheckParameters" xml:space="preserve">
+    <value>Check parameters</value>
+  </data>
+  <data name="Product.ChooseNew" xml:space="preserve">
+    <value>Choose a new product</value>
+  </data>
+  <data name="Product.ChoosePriedai" xml:space="preserve">
+    <value>Choose a priedai item.</value>
+  </data>
+  <data name="Product.ClosePicker" xml:space="preserve">
+    <value>Close picker</value>
+  </data>
+  <data name="Product.ColourFabric" xml:space="preserve">
+    <value>Colour · fabric</value>
+  </data>
+  <data name="Product.Control" xml:space="preserve">
+    <value>Control</value>
+  </data>
+  <data name="Product.DecreaseHeight" xml:space="preserve">
+    <value>Decrease height</value>
+  </data>
+  <data name="Product.DecreaseQuantity" xml:space="preserve">
+    <value>Decrease quantity</value>
+  </data>
+  <data name="Product.DecreaseWidth" xml:space="preserve">
+    <value>Decrease width</value>
+  </data>
+  <data name="Product.Duplicate" xml:space="preserve">
+    <value>Duplicate</value>
+  </data>
+  <data name="Product.Editor" xml:space="preserve">
+    <value>Product editor</value>
+  </data>
+  <data name="Product.FabricNeeded" xml:space="preserve">
+    <value>Fabric needed</value>
+  </data>
+  <data name="Product.FindCategoryType" xml:space="preserve">
+    <value>Find a category or type</value>
+  </data>
+  <data name="Product.ForOrder" xml:space="preserve">
+    <value>Product for order {0}</value>
+  </data>
+  <data name="Product.FreeUnknown" xml:space="preserve">
+    <value>free —</value>
+  </data>
+  <data name="Product.FromPriceList" xml:space="preserve">
+    <value>From price list</value>
+  </data>
+  <data name="Product.IncreaseHeight" xml:space="preserve">
+    <value>Increase height</value>
+  </data>
+  <data name="Product.IncreaseQuantity" xml:space="preserve">
+    <value>Increase quantity</value>
+  </data>
+  <data name="Product.IncreaseWidth" xml:space="preserve">
+    <value>Increase width</value>
+  </data>
+  <data name="Product.Info" xml:space="preserve">
+    <value>Product info</value>
+  </data>
+  <data name="Product.Kind" xml:space="preserve">
+    <value>Product</value>
+  </data>
+  <data name="Product.LivePreview" xml:space="preserve">
+    <value>Live preview</value>
+  </data>
+  <data name="Product.LocalDraftAt" xml:space="preserve">
+    <value>Local draft · {0}</value>
+  </data>
+  <data name="Product.MainParameters" xml:space="preserve">
+    <value>Main parameters</value>
+  </data>
+  <data name="Product.MilestoneHelp" xml:space="preserve">
+    <value>Fabric stock, list price and legacy formulas connect in milestone 2.</value>
+  </data>
+  <data name="Product.Motor" xml:space="preserve">
+    <value>Motor</value>
+  </data>
+  <data name="Product.NameCode" xml:space="preserve">
+    <value>Name or code</value>
+  </data>
+  <data name="Product.New" xml:space="preserve">
+    <value>New product</value>
+  </data>
+  <data name="Product.NewService" xml:space="preserve">
+    <value>New product or service</value>
+  </data>
+  <data name="Product.NoAccessories" xml:space="preserve">
+    <value>No accessories. Options are filtered by product category.</value>
+  </data>
+  <data name="Product.NoActiveTypes" xml:space="preserve">
+    <value>No active types in this category.</value>
+  </data>
+  <data name="Product.NoParameters" xml:space="preserve">
+    <value>This category has no additional PPP fields in the reference snapshot.</value>
+  </data>
+  <data name="Product.NotesExample" xml:space="preserve">
+    <value>e.g. Bedroom window, mount inside the frame</value>
+  </data>
+  <data name="Product.OrderProducts" xml:space="preserve">
+    <value>Order products</value>
+  </data>
+  <data name="Product.Other" xml:space="preserve">
+    <value>Other</value>
+  </data>
+  <data name="Product.OtherControl" xml:space="preserve">
+    <value>Other control</value>
+  </data>
+  <data name="Product.OtherControlButton" xml:space="preserve">
+    <value>Other…</value>
+  </data>
+  <data name="Product.Pieces" xml:space="preserve">
+    <value>pcs</value>
+  </data>
+  <data name="Product.PositiveQuantityPrice" xml:space="preserve">
+    <value>Quantity must be positive and price cannot be negative.</value>
+  </data>
+  <data name="Product.PreviewUnitPriceEur" xml:space="preserve">
+    <value>Preview unit price · €</value>
+  </data>
+  <data name="Product.PriceFocus" xml:space="preserve">
+    <value>focus to look up</value>
+  </data>
+  <data name="Product.PriceFor" xml:space="preserve">
+    <value>Price for {0}</value>
+  </data>
+  <data name="Product.PriceFromList" xml:space="preserve">
+    <value>Price from list</value>
+  </data>
+  <data name="Product.PriceStock" xml:space="preserve">
+    <value>Price and stock</value>
+  </data>
+  <data name="Product.QuantityFor" xml:space="preserve">
+    <value>Quantity for {0}</value>
+  </data>
+  <data name="Product.RemoveAccessory" xml:space="preserve">
+    <value>Remove accessory</value>
+  </data>
+  <data name="Product.ReturnProduction" xml:space="preserve">
+    <value>Return from production</value>
+  </data>
+  <data name="Product.Schematic" xml:space="preserve">
+    <value>SCHEMATIC</value>
+  </data>
+  <data name="Product.SearchCategories" xml:space="preserve">
+    <value>Search {0} categories and types</value>
+  </data>
+  <data name="Product.SearchPriedai" xml:space="preserve">
+    <value>Search priedai</value>
+  </data>
+  <data name="Product.StandaloneHelp" xml:space="preserve">
+    <value>Select a standalone priedai line for this order.</value>
+  </data>
+  <data name="Product.StateHistory" xml:space="preserve">
+    <value>State history</value>
+  </data>
+  <data name="Product.StaticCodeRequired" xml:space="preserve">
+    <value>Choose a colour or fabric code from the static catalog.</value>
+  </data>
+  <data name="Product.SuggestedQuantityHelp" xml:space="preserve">
+    <value>The suggested quantity uses the legacy unit rule and this product's dimensions. You can change it for this draft.</value>
+  </data>
+  <data name="Product.ToScale" xml:space="preserve">
+    <value>TO SCALE</value>
+  </data>
+  <data name="Product.Total" xml:space="preserve">
+    <value>Product total</value>
+  </data>
+  <data name="Product.TypeStep" xml:space="preserve">
+    <value>2 · Type</value>
+  </data>
+  <data name="Product.Warranty" xml:space="preserve">
+    <value>Warranty repair</value>
+  </data>
+  <data name="Shell.PageTitle" xml:space="preserve">
+    <value>Cikada.MES · Sales</value>
+  </data>
+  <data name="Shell.Reload" xml:space="preserve">
+    <value>Reload</value>
+  </data>
+  <data name="Shell.UnhandledError" xml:space="preserve">
+    <value>An unhandled error has occurred.</value>
+  </data>
+  <data name="Workspace.AddLineRequired" xml:space="preserve">
+    <value>Add at least one product, service, or priedai line.</value>
+  </data>
+  <data name="Workspace.AddPriedai" xml:space="preserve">
+    <value>+ Priedai</value>
+  </data>
+  <data name="Workspace.AddProductService" xml:space="preserve">
+    <value>+ Add product / service</value>
+  </data>
+  <data name="Workspace.AddressNotes" xml:space="preserve">
+    <value>Address notes</value>
+  </data>
+  <data name="Workspace.BeforeDiscount" xml:space="preserve">
+    <value>Before discount</value>
+  </data>
+  <data name="Workspace.Building" xml:space="preserve">
+    <value>Building No.</value>
+  </data>
+  <data name="Workspace.CheckLines" xml:space="preserve">
+    <value>Check line quantities, prices, and product dimensions.</value>
+  </data>
+  <data name="Workspace.City" xml:space="preserve">
+    <value>City · Miestas</value>
+  </data>
+  <data name="Workspace.CloseNew" xml:space="preserve">
+    <value>Close new order</value>
+  </data>
+  <data name="Workspace.CreateDraftOpen" xml:space="preserve">
+    <value>Create draft and open</value>
+  </data>
+  <data name="Workspace.CustomerName" xml:space="preserve">
+    <value>Customer name</value>
+  </data>
+  <data name="Workspace.CustomerStoreRequired" xml:space="preserve">
+    <value>Customer and store are required.</value>
+  </data>
+  <data name="Workspace.DiscardReturn" xml:space="preserve">
+    <value>Discard and return to orders</value>
+  </data>
+  <data name="Workspace.DiscountPercent" xml:space="preserve">
+    <value>Discount % · negative = markup</value>
+  </data>
+  <data name="Workspace.DiscountShort" xml:space="preserve">
+    <value>Disc.</value>
+  </data>
+  <data name="Workspace.Discountable" xml:space="preserve">
+    <value>Discountable</value>
+  </data>
+  <data name="Workspace.DraftAssignments" xml:space="preserve">
+    <value>Local draft assignments</value>
+  </data>
+  <data name="Workspace.DraftContactDelivery" xml:space="preserve">
+    <value>Draft contact and delivery details</value>
+  </data>
+  <data name="Workspace.DraftOnly" xml:space="preserve">
+    <value>Draft only</value>
+  </data>
+  <data name="Workspace.DueBeforeDate" xml:space="preserve">
+    <value>Due date cannot be before the order date.</value>
+  </data>
+  <data name="Workspace.DutyConsultant" xml:space="preserve">
+    <value>Consultant</value>
+  </data>
+  <data name="Workspace.DutyInstaller" xml:space="preserve">
+    <value>Installer</value>
+  </data>
+  <data name="Workspace.DutyManager" xml:space="preserve">
+    <value>Manager</value>
+  </data>
+  <data name="Workspace.DutyMeasurer" xml:space="preserve">
+    <value>Measurer</value>
+  </data>
+  <data name="Workspace.DutyTransport" xml:space="preserve">
+    <value>Transport</value>
+  </data>
+  <data name="Workspace.EditableFields" xml:space="preserve">
+    <value>Editable draft fields</value>
+  </data>
+  <data name="Workspace.FixedFinalPrice" xml:space="preserve">
+    <value>Fixed final price · €</value>
+  </data>
+  <data name="Workspace.Flat" xml:space="preserve">
+    <value>Flat No.</value>
+  </data>
+  <data name="Workspace.IncludeDiscount" xml:space="preserve">
+    <value>Include in preview discount</value>
+  </data>
+  <data name="Workspace.LocalPreview" xml:space="preserve">
+    <value>Local preview</value>
+  </data>
+  <data name="Workspace.MatchingSeries" xml:space="preserve">
+    <value>Matching series</value>
+  </data>
+  <data name="Workspace.MountingDate" xml:space="preserve">
+    <value>Mounting date</value>
+  </data>
+  <data name="Workspace.NoLines" xml:space="preserve">
+    <value>No lines yet. Add a product, a service, or priedai to explore the order flow.</value>
+  </data>
+  <data name="Workspace.NoteLimit" xml:space="preserve">
+    <value>Maximum 128 characters.</value>
+  </data>
+  <data name="Workspace.NumberExample" xml:space="preserve">
+    <value>VV-123 or VV-123-A</value>
+  </data>
+  <data name="Workspace.NumberHelp" xml:space="preserve">
+    <value>Type the series and sequence. The current year group is added automatically.</value>
+  </data>
+  <data name="Workspace.NumberPreview" xml:space="preserve">
+    <value>Will be shown as</value>
+  </data>
+  <data name="Workspace.OrderNote" xml:space="preserve">
+    <value>Order note</value>
+  </data>
+  <data name="Workspace.OrderNumber" xml:space="preserve">
+    <value>Order number</value>
+  </data>
+  <data name="Workspace.OrderStage" xml:space="preserve">
+    <value>Order stage</value>
+  </data>
+  <data name="Workspace.PeopleDates" xml:space="preserve">
+    <value>People and dates</value>
+  </data>
+  <data name="Workspace.PreviewAmount" xml:space="preserve">
+    <value>Preview amount</value>
+  </data>
+  <data name="Workspace.PreviewChecked" xml:space="preserve">
+    <value>Preview checked. This draft is only in the open screen and disappears when you close or refresh it.</value>
+  </data>
+  <data name="Workspace.PreviewCustomerStore" xml:space="preserve">
+    <value>Customer and store are required for this preview.</value>
+  </data>
+  <data name="Workspace.PriceDiscountable" xml:space="preserve">
+    <value>Enter a nonnegative final price and mark at least one line discountable.</value>
+  </data>
+  <data name="Workspace.PriceOverLimit" xml:space="preserve">
+    <value>This fixed price would require a discount or markup above 100%.</value>
+  </data>
+  <data name="Workspace.Priority" xml:space="preserve">
+    <value>Priority</value>
+  </data>
+  <data name="Workspace.PriorityHigh" xml:space="preserve">
+    <value>High</value>
+  </data>
+  <data name="Workspace.PriorityNormal" xml:space="preserve">
+    <value>Normal</value>
+  </data>
+  <data name="Workspace.PriorityUrgent" xml:space="preserve">
+    <value>Urgent</value>
+  </data>
+  <data name="Workspace.ProductsServices" xml:space="preserve">
+    <value>Products, services and priedai</value>
+  </data>
+  <data name="Workspace.Qty" xml:space="preserve">
+    <value>Qty</value>
+  </data>
+  <data name="Workspace.Receipt" xml:space="preserve">
+    <value>Receipt</value>
+  </data>
+  <data name="Workspace.Region" xml:space="preserve">
+    <value>Region · Apskritis</value>
+  </data>
+  <data name="Workspace.RemoveLine" xml:space="preserve">
+    <value>Remove line</value>
+  </data>
+  <data name="Workspace.ResponsibleEmployees" xml:space="preserve">
+    <value>Responsible employees</value>
+  </data>
+  <data name="Workspace.SalesDraft" xml:space="preserve">
+    <value>Sales · Order draft</value>
+  </data>
+  <data name="Workspace.SaveDraft" xml:space="preserve">
+    <value>Save draft preview</value>
+  </data>
+  <data name="Workspace.Series" xml:space="preserve">
+    <value>series</value>
+  </data>
+  <data name="Workspace.SeriesDefaults" xml:space="preserve">
+    <value>Series {0} filled the available people and store defaults. You can edit them here.</value>
+  </data>
+  <data name="Workspace.StoreBranch" xml:space="preserve">
+    <value>Store / branch</value>
+  </data>
+  <data name="Workspace.Street" xml:space="preserve">
+    <value>Street · Gatvė</value>
+  </data>
+  <data name="Workspace.ValidDatesOrder" xml:space="preserve">
+    <value>Enter valid dates. The due date cannot be before the order date.</value>
+  </data>
+  <data name="Workspace.ValidEmployeeDate" xml:space="preserve">
+    <value>Enter an employee and valid date.</value>
+  </data>
+  <data name="Preview.RemoveEmployee" xml:space="preserve">
+    <value>Remove employee</value>
+  </data>
+  <data name="Preview.Milestone2" xml:space="preserve">
+    <value>Milestone 2</value>
+  </data>
+  <data name="Preview.DatabaseLater" xml:space="preserve">
+    <value>Database writing starts in milestone 2</value>
+  </data>
+  <data name="Preview.SearchFabric" xml:space="preserve">
+    <value>Search fabric code</value>
+  </data>
+  <data name="Preview.OverrideParameter" xml:space="preserve">
+    <value>Click to override the calculated value</value>
+  </data>
+  <data name="Preview.DraftHelp" xml:space="preserve">
+    <value>This is an interactive design draft. Refreshing or closing this screen discards it; no order, product, accessory, or payment is saved.</value>
+  </data>
+  <data name="Preview.PriceHelp" xml:space="preserve">
+    <value>Prices here are editable preview values. Legacy pricing, credit checks and payment rules arrive in milestone 2.</value>
+  </data>
+  <data name="Preview.ConfirmLater" xml:space="preserve">
+    <value>Confirm for production · M2</value>
+  </data>
+  <data name="Preview.MinimumWidth" xml:space="preserve">
+    <value>Minimum width is 200 mm.</value>
+  </data>
+  <data name="Preview.MinimumHeight" xml:space="preserve">
+    <value>Minimum height is 200 mm.</value>
+  </data>
+  <data name="Preview.StockLater" xml:space="preserve">
+    <value>stock in M2</value>
+  </data>
+  <data name="Preview.PriceLater" xml:space="preserve">
+    <value>List prices in milestone 2.</value>
+  </data>
+  <data name="Preview.CodeMissing" xml:space="preserve">
+    <value>Code not found for this category in the static snapshot.</value>
+  </data>
+  <data name="Preview.DoneOrder" xml:space="preserve">
+    <value>Done — back to order</value>
+  </data>
+  <data name="Preview.Snapshot" xml:space="preserve">
+    <value>UI preview · Reference snapshot {0}. This draft is kept only while this screen is open. Nothing is written to the database.</value>
+  </data>
+  <data name="Preview.UnknownSeries" xml:space="preserve">
+    <value>Series {0} does not exist in the reference snapshot.</value>
+  </data>
+  <data name="Payment.Header" xml:space="preserve">
+    <value>{0} · Debt {1}</value>
+  </data>
+  <data name="Product.DraftLineHeader" xml:space="preserve">
+    <value>{0} · Draft line</value>
+  </data>
+  <data name="Product.ParameterFieldCount" xml:space="preserve">
+    <value>{0} PPP fields</value>
+  </data>
+  <data name="Product.ParameterSummary" xml:space="preserve">
+    <value>{0} · {1} parameters · auto-calculated</value>
+  </data>
+  <data name="Product.QuantityUnit" xml:space="preserve">
+    <value>Quantity · {0}</value>
+  </data>
+  <data name="Product.TypeCount" xml:space="preserve">
+    <value>{0} types</value>
+  </data>
+  <data name="Workspace.Discount" xml:space="preserve">
+    <value>Discount</value>
+  </data>
+  <data name="Workspace.LineCount" xml:space="preserve">
+    <value>{0} lines in this draft</value>
+  </data>
+  <data name="Workspace.Markup" xml:space="preserve">
+    <value>Markup</value>
+  </data>
+  <data name="Workspace.OrderEntry" xml:space="preserve">
+    <value>Order entry</value>
+  </data>
+  <data name="Errors.Client.SequenceRange" xml:space="preserve">
+    <value>The sequence must be a positive number within the legacy range.</value>
+  </data>
+</root>

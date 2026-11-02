@@ -13,7 +13,7 @@
     var motor = ControlType.Contains("motor", StringComparison.OrdinalIgnoreCase);
     var kind = Kind;
 }
-<svg class="live-preview" viewBox="0 0 @F(VW) @viewHeight" role="img" aria-label="@TypeName, @WidthMm × @HeightMm mm">
+<svg class="live-preview" viewBox="0 0 @F(VW) @viewHeight" role="img" aria-label="@L["Preview.DimensionsAria", TypeName, WidthMm, HeightMm]">
     @* window + sill *@
     <g style="transform:@box">
         <rect x="-6" y="-9" width="112" height="116" fill="var(--n-0)" stroke="var(--n-200)" vector-effect="non-scaling-stroke" />
@@ -95,7 +95,7 @@
         <line x1="0" y1="0" x2="0" y2="100" stroke="var(--accent-500)" vector-effect="non-scaling-stroke" /><line x1="-4" y1="0" x2="4" y2="0" stroke="var(--accent-500)" vector-effect="non-scaling-stroke" /><line x1="-4" y1="100" x2="4" y2="100" stroke="var(--accent-500)" vector-effect="non-scaling-stroke" />
     </g>
     <text transform="translate(@F(x + bw + 30) @F(y + bh / 2)) rotate(90)" text-anchor="middle" class="live-preview__dim">@OrderFormat.Mm(HeightMm) mm</text>
-    @if (Quantity > 1) { <g><text x="@F(x + 4)" y="@F(y + bh + 30)" class="live-preview__qty">× @Quantity pcs</text></g> }
+    @if (Quantity > 1) { <g><text x="@F(x + 4)" y="@F(y + bh + 30)" class="live-preview__qty">@L["Preview.Quantity", Quantity]</text></g> }
 </svg>
 
 @code {
