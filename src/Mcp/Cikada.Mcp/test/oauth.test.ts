@@ -20,10 +20,10 @@ test('configuration needs the public URL, the client id and both APIs, and holds
   assert.equal(testConfig({ MCP_PUBLIC_URL: 'http://localhost:5070' }).publicUrl, 'http://localhost:5070');
 });
 
-test('protected resource metadata names /mcp and this host as its authorization server, at both well-known paths', async () => {
+test('protected resource metadata names /mcp and this host as its authorization server, including client-added trailing slashes', async () => {
   const stand = await running(testConfig());
   try {
-    for (const path of ['/.well-known/oauth-protected-resource', '/.well-known/oauth-protected-resource/mcp']) {
+    for (const path of ['/.well-known/oauth-protected-resource', '/.well-known/oauth-protected-resource/mcp', '/.well-known/oauth-protected-resource/mcp/']) {
       const response = await fetch(stand.base + path);
       assert.equal(response.status, 200);
       const body = (await response.json()) as Record<string, unknown>;
@@ -61,6 +61,9 @@ test('/mcp without a token is a 401 whose challenge points at the resource metad
     const response = await rpc(stand.base, undefined, 'tools/list');
     assert.equal(response.status, 401);
     assert.equal(response.headers.get('www-authenticate'), `Bearer resource_metadata="${BASE}/.well-known/oauth-protected-resource/mcp"`);
+    const slash = await fetch(`${stand.base}/mcp/`);
+    assert.equal(slash.status, 401);
+    assert.equal(slash.headers.get('www-authenticate'), response.headers.get('www-authenticate'));
   } finally {
     await stand.close();
   }
