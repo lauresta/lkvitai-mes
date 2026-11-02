@@ -12,6 +12,7 @@ on:
       - src/Modules/Scanning/**
       - src/Modules/Shopfloor/**
       - src/BuildingBlocks/**
+      - src/Mcp/**
       - docker-compose.test.yml
       - .github/workflows/build-and-push.yml
   workflow_dispatch:
@@ -63,6 +64,11 @@ jobs:
           - name: shopfloor-webui
             dockerfile: src/Modules/Shopfloor/LKvitai.MES.Modules.Shopfloor.WebUI/Dockerfile
             image: ghcr.io/${{ github.repository_owner }}/lkvitai-mes-shopfloor-webui
+          # Node service: its own build context (the package directory), not the repo root.
+          - name: mcp
+            dockerfile: src/Mcp/Cikada.Mcp/Dockerfile
+            context: src/Mcp/Cikada.Mcp
+            image: ghcr.io/${{ github.repository_owner }}/lkvitai-mes-mcp
 
     steps:
       - name: Checkout code
@@ -167,7 +173,7 @@ jobs:
         # docker/build-push-action repo. Bump when you intentionally upgrade.
         uses: docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25 # v5.4.0
         with:
-          context: .
+          context: ${{ matrix.context || '.' }}
           file: ${{ matrix.dockerfile }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
@@ -195,7 +201,7 @@ jobs:
         continue-on-error: true
         uses: docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25 # v5.4.0
         with:
-          context: .
+          context: ${{ matrix.context || '.' }}
           file: ${{ matrix.dockerfile }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
@@ -224,7 +230,7 @@ jobs:
         if: steps.build1.outcome == 'failure' && steps.build2.outcome == 'failure'
         uses: docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25 # v5.4.0
         with:
-          context: .
+          context: ${{ matrix.context || '.' }}
           file: ${{ matrix.dockerfile }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
