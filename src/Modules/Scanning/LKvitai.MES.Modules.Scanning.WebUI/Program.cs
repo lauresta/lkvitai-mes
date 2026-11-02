@@ -1,4 +1,5 @@
 using LKvitai.MES.BuildingBlocks.ModuleStartup;
+using LKvitai.MES.BuildingBlocks.WebUI.Localization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,9 +9,13 @@ builder.Services.AddScaffoldWebUiCore("ScanningApi", "ScanningApi:BaseUrl", "htt
 // the current request's User - Scanning has no PortalAuth wired up so this
 // resolves to an unauthenticated principal, same as every other page here.
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddCikadaLocalization(builder.Configuration);
 
 var app = builder.Build();
 
+// Shared EN/LT UI culture cookie (docs/i18n/README.md); runs before the scaffold pipeline's routing.
+app.UseCikadaRequestLocalization();
 app.UseScaffoldWebUiPipeline();
+app.MapCikadaCultureEndpoint();
 
 await app.RunAsync();

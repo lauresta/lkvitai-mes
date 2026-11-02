@@ -403,3 +403,38 @@ body:has(.mud-drawer-overlay--open) {
     display: none;
   }
 }
+
+/* EN / LT language switcher (LanguageSwitcher.razor) — sits between the
+   env-badge and the user block and reuses the env-badge dark-chrome tokens. */
+.lang-switch {
+  display: flex;
+  margin: 0;
+  border: 1px solid var(--dark-line);
+  border-radius: 4px;
+  overflow: hidden;
+  background: #1b2028;
+}
+
+.lang-switch__option {
+  padding: 6px 10px;
+  border: 0;
+  background: transparent;
+  color: #9ba4b0;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.lang-switch__option + .lang-switch__option {
+  border-left: 1px solid var(--dark-line);
+}
+
+.lang-switch__option:hover,
+.lang-switch__option:focus-visible {
+  color: var(--n-0);
+}
+
+.lang-switch__option.is-active {
+  background: var(--dark-2);
+  color: #dfc07a;
+  font-weight: 700;
+}

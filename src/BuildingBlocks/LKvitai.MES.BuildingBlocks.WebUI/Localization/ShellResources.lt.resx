@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Shell.EnvironmentBanner" xml:space="preserve"><value>{0} APLINKA</value></data>
+  <data name="Shell.BannerNote.Shared" xml:space="preserve"><value>Šios aplinkos duomenys nėra gamybiniai ir gali būti ištrinti be įspėjimo.</value></data>
+  <data name="Shell.BannerNote.Local" xml:space="preserve"><value>Vietinė arba privataus tinklo aplinka. Duomenys gali būti ištrinti be įspėjimo.</value></data>
+  <data name="Shell.EnvironmentAndVersion" xml:space="preserve"><value>Aplinka ir versija</value></data>
+  <data name="Shell.Search.Placeholder" xml:space="preserve"><value>Ieškoti visur…</value></data>
+  <data name="Shell.Search.Label" xml:space="preserve"><value>Atidaryti bendrą paiešką</value></data>
+  <data name="Shell.Search.PopoverTitle" xml:space="preserve"><value>Bendra paieška</value></data>
+  <data name="Shell.Search.PopoverBody" xml:space="preserve"><value>Paieška tarp užsakymų, audinių, modulių ir kt. — jau netrukus. Kol kas naudokite filtrus kiekviename modulyje.</value></data>
+  <data name="Shell.Dismiss" xml:space="preserve"><value>Uždaryti</value></data>
+  <data name="Shell.Logout" xml:space="preserve"><value>Atsijungti</value></data>
+  <data name="Shell.SignedIn" xml:space="preserve"><value>Prisijungęs</value></data>
+  <data name="Shell.MobileNavigation" xml:space="preserve"><value>Perjungti navigacijos meniu</value></data>
+  <data name="Shell.HomeLink" xml:space="preserve"><value>Cikada.MES portalo pradžia</value></data>
+  <data name="Shell.HomeLink.Open" xml:space="preserve"><value>Atidaryti Cikada.MES portalo pradžią</value></data>
+  <data name="Shell.Language" xml:space="preserve"><value>Kalba</value></data>
+</root>

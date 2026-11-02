@@ -1,22 +1,22 @@
 @page "/cms/tiles"
 @inject PortalApiClient PortalApi
 
-<PageTitle>Portal CMS · Tiles</PageTitle>
+<PageTitle>@L["Common.PortalCms"] · @L["Common.Tiles"]</PageTitle>
 
 <main class="main cms-page">
     <section class="cms-head">
         <div>
-            <div class="eyebrow mono">Portal CMS</div>
-            <h1>Tiles</h1>
+            <div class="eyebrow mono">@L["Common.PortalCms"]</div>
+            <h1>@L["Common.Tiles"]</h1>
         </div>
-        <button type="button" class="button button--primary" @onclick="BeginCreate">New tile</button>
+        <button type="button" class="button button--primary" @onclick="BeginCreate">@L["CmsTiles.NewTile"]</button>
     </section>
 
     @if (!_isAdmin)
     {
         <section class="panel empty-state">
-            <div class="mono">Admin access required</div>
-            <p>Portal tile configuration is available to Admin, WarehouseAdmin or PortalAdmin roles.</p>
+            <div class="mono">@L["CmsTiles.AdminRequired"]</div>
+            <p>@L["CmsTiles.AdminRequiredText"]</p>
         </section>
     }
     else
@@ -25,14 +25,14 @@
             <section class="panel cms-table-panel" aria-labelledby="tiles-title">
                 <div class="section-head">
                     <div>
-                        <h2 id="tiles-title">Dashboard tiles</h2>
-                        <span><strong>@_tiles.Count</strong> total · <strong>@_tiles.Count(t => t.IsVisible)</strong> visible</span>
+                        <h2 id="tiles-title">@L["CmsTiles.Table.Title"]</h2>
+                        <span><strong>@_tiles.Count</strong> @L["Common.Count.Total"] · <strong>@_tiles.Count(t => t.IsVisible)</strong> @L["Common.Count.Visible"]</span>
                     </div>
                 </div>
 
                 @if (_loading)
                 {
-                    <div class="empty-state"><div class="mono">Loading</div></div>
+                    <div class="empty-state"><div class="mono">@L["Common.Loading"]</div></div>
                 }
                 else
                 {
@@ -40,11 +40,11 @@
                         <table class="cms-table">
                             <thead>
                                 <tr>
-                                    <th>Order</th>
-                                    <th>Tile</th>
-                                    <th>Status</th>
-                                    <th>URL</th>
-                                    <th>Visible</th>
+                                    <th>@L["CmsTiles.Column.Order"]</th>
+                                    <th>@L["CmsTiles.Column.Tile"]</th>
+                                    <th>@L["CmsTiles.Column.Status"]</th>
+                                    <th>@L["CmsTiles.Column.Url"]</th>
+                                    <th>@L["CmsTiles.Column.Visible"]</th>
                                     <th></th>
                                 </tr>
                             </thead>
@@ -57,11 +57,11 @@
                                             <strong>@tile.Title</strong>
                                             <span>@tile.Key · @tile.Category</span>
                                         </td>
-                                        <td><span class="module-card__status @(StatusClass(tile.Status))">@tile.Status</span></td>
+                                        <td><span class="module-card__status @(StatusClass(tile.Status))">@L.ModuleStatusLabel(tile.Status)</span></td>
                                         <td class="mono">@(tile.Url ?? tile.Quarter ?? "—")</td>
-                                        <td>@(tile.IsVisible ? "Yes" : "No")</td>
+                                        <td>@(tile.IsVisible ? L["Common.Yes"] : L["Common.No"])</td>
                                         <td>
-                                            <button type="button" class="button button--secondary cms-action" @onclick="@(() => BeginEdit(tile))">Edit</button>
+                                            <button type="button" class="button button--secondary cms-action" @onclick="@(() => BeginEdit(tile))">@L["Common.Edit"]</button>
                                         </td>
                                     </tr>
                                 }
@@ -71,62 +71,62 @@
                 }
             </section>
 
-            <aside class="panel cms-editor" aria-label="Tile editor">
+            <aside class="panel cms-editor" aria-label="@L["CmsTiles.Editor.AriaLabel"]">
                 <header class="panel__plain-head">
-                    <h2>@(_form.Id is null ? "New tile" : "Edit tile")</h2>
+                    <h2>@(_form.Id is null ? L["CmsTiles.NewTile"] : L["CmsTiles.EditTile"])</h2>
                 </header>
 
                 <EditForm Model="_form" OnValidSubmit="SaveAsync" class="cms-form">
                     <DataAnnotationsValidator />
 
                     <label>
-                        <span>Key</span>
+                        <span>@L["CmsTiles.Field.Key"]</span>
                         <InputText @bind-Value="_form.Key" />
                     </label>
                     <label>
-                        <span>Title</span>
+                        <span>@L["CmsTiles.Field.Title"]</span>
                         <InputText @bind-Value="_form.Title" />
                     </label>
                     <label>
-                        <span>Category</span>
+                        <span>@L["CmsTiles.Field.Category"]</span>
                         <InputText @bind-Value="_form.Category" />
                     </label>
                     <label>
-                        <span>Description</span>
+                        <span>@L["CmsTiles.Field.Description"]</span>
                         <InputTextArea @bind-Value="_form.Description" rows="4" />
                     </label>
                     <div class="cms-form__split">
                         <label>
-                            <span>Status</span>
+                            <span>@L["CmsTiles.Field.Status"]</span>
                             <InputSelect @bind-Value="_form.Status">
-                                <option value="Planned">Planned</option>
-                                <option value="Developing">Developing</option>
-                                <option value="Pilot">Pilot</option>
-                                <option value="Live">Live</option>
+                                <option value="Planned">@L["Common.Status.Planned"]</option>
+                                <option value="Developing">@L["Common.Status.Developing"]</option>
+                                <option value="Pilot">@L["Common.Status.Pilot"]</option>
+                                <option value="Live">@L["Common.Status.Live"]</option>
                             </InputSelect>
                         </label>
                         <label>
-                            <span>Sort</span>
+                            <span>@L["CmsTiles.Field.Sort"]</span>
                             <InputNumber @bind-Value="_form.SortOrder" />
                         </label>
                     </div>
                     <label>
-                        <span>URL</span>
+                        <span>@L["CmsTiles.Field.Url"]</span>
                         <InputText @bind-Value="_form.Url" />
                     </label>
                     <div class="cms-form__split">
                         <label>
-                            <span>Quarter</span>
+                            <span>@L["CmsTiles.Field.Quarter"]</span>
                             <InputText @bind-Value="_form.Quarter" />
                         </label>
                         <label>
-                            <span>Icon key</span>
+                            <span>@L["CmsTiles.Field.IconKey"]</span>
                             <InputText @bind-Value="_form.IconKey" />
                         </label>
                     </div>
                     <label class="cms-check">
                         <InputCheckbox @bind-Value="_form.IsVisible" />
-                        <span>Visible on dashboard</span>
+                        <span>@L["CmsTiles.Field.VisibleOnDashboard"]</span>
                     </label>
 
                     @if (!string.IsNullOrWhiteSpace(_message))
@@ -135,10 +135,10 @@
                     }
 
                     <div class="cms-form__actions">
-                        <button type="submit" class="button button--primary">Save</button>
+                        <button type="submit" class="button button--primary">@L["Common.Save"]</button>
                         @if (_form.Id is not null)
                         {
-                            <button type="button" class="button button--secondary" @onclick="HideAsync">Hide</button>
+                            <button type="button" class="button button--secondary" @onclick="HideAsync">@L["Common.Hide"]</button>
                         }
                     </div>
                 </EditForm>
@@ -200,11 +200,11 @@
         var saved = await PortalApi.SaveTileAsync(_form.ToCard());
         if (saved is null)
         {
-            _message = "Save failed. Check required fields and permissions.";
+            _message = L["CmsTiles.Message.SaveFailed"].Value;
             return;
         }
 
-        _message = "Saved.";
+        _message = L["CmsTiles.Message.Saved"].Value;
         await LoadAsync();
         BeginEdit(saved);
     }
@@ -215,13 +215,13 @@
 
         if (await PortalApi.HideTileAsync(id))
         {
-            _message = "Hidden.";
+            _message = L["CmsTiles.Message.Hidden"].Value;
             await LoadAsync();
             BeginCreate();
         }
         else
         {
-            _message = "Hide failed.";
+            _message = L["CmsTiles.Message.HideFailed"].Value;
         }
     }
 

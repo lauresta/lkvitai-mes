@@ -3,7 +3,7 @@
 @inject PortalApiClient PortalApi
 @inject IJSRuntime Js
 
-<PageTitle>Cikada.MES &middot; Portal</PageTitle>
+<PageTitle>Cikada.MES &middot; @L["Common.Portal"]</PageTitle>
 
 @*
     Portal home dashboard.
@@ -27,9 +27,9 @@
 <main class="main">
     <section class="hero">
         <div class="hero__copy">
-            <div class="eyebrow mono">Portal &middot; Welcome</div>
-            <h1>Welcome back@(string.IsNullOrWhiteSpace(_greetingName) ? "." : $", {_greetingName}.")</h1>
-            <p>Warehouse is live. Pilot modules are available for trial use; the remaining modules stay on the implementation roadmap.</p>
+            <div class="eyebrow mono">@L["Common.Portal"] &middot; @L["Home.Welcome"]</div>
+            <h1>@(string.IsNullOrWhiteSpace(_greetingName) ? L["Home.Greeting"] : L["Home.GreetingNamed", _greetingName])</h1>
+            <p>@L["Home.Intro"]</p>
             <div class="hero__actions">
                 @* Recent shortcuts come from localStorage and are validated
                    against the navigable module list, so we never render a chip for
@@ -45,43 +45,43 @@
                     {
                         <a class="button @(recent.IsPrimary ? "button--primary" : "button--secondary")"
                            href="@recent.Url"
-                           data-portal-recent-key="@recent.Key">Open @recent.Title <span aria-hidden="true">&rarr;</span></a>
+                           data-portal-recent-key="@recent.Key">@L["Common.OpenModule", recent.Title] <span aria-hidden="true">&rarr;</span></a>
                     }
                 }
                 else
                 {
                     <a class="button button--primary"
                        href="/warehouse/"
-                       data-portal-recent-key="warehouse">Open Warehouse <span aria-hidden="true">&rarr;</span></a>
+                       data-portal-recent-key="warehouse">@L["Common.OpenModule", L["Module.warehouse.Title"]] <span aria-hidden="true">&rarr;</span></a>
                 }
                 <a class="button button--secondary"
                    href="/shopfloor/"
-                   data-portal-recent-key="shopfloor">Open Shopfloor <span aria-hidden="true">&rarr;</span></a>
-                <a class="button button--secondary hero__roadmap" href="#roadmap">Roadmap &amp; news <span aria-hidden="true">&rarr;</span></a>
+                   data-portal-recent-key="shopfloor">@L["Common.OpenModule", L["Module.shopfloor.Title"]] <span aria-hidden="true">&rarr;</span></a>
+                <a class="button button--secondary hero__roadmap" href="#roadmap">@L["Home.RoadmapNews"] <span aria-hidden="true">&rarr;</span></a>
             </div>
         </div>
 
         <section class="operations" aria-labelledby="operations-title">
             <div class="operations__head">
                 <div>
-                    <h2 id="operations-title" class="eyebrow mono">Operations preview</h2>
+                    <h2 id="operations-title" class="eyebrow mono">@L["Home.Operations.Title"]</h2>
                     @if (_summaryLoading)
                     {
-                        <span class="operations__sample mono">Loading…</span>
+                        <span class="operations__sample mono">@L["Common.Loading"]</span>
                     }
                     else if (_summary is null)
                     {
-                        <span class="operations__sample mono">Sample data</span>
+                        <span class="operations__sample mono">@L["Home.Operations.SampleData"]</span>
                     }
                 </div>
-                <fieldset class="segmented" aria-label="Operations period">
-                    <legend class="sr-only">Operations period</legend>
+                <fieldset class="segmented" aria-label="@L["Home.Operations.Period"]">
+                    <legend class="sr-only">@L["Home.Operations.Period"]</legend>
                     <button class="segmented__button @(_period == "this" ? "is-active" : null)"
                             type="button"
-                            @onclick='@(() => SetPeriod("this"))'>This month</button>
+                            @onclick='@(() => SetPeriod("this"))'>@L["Home.Operations.ThisMonth"]</button>
                     <button class="segmented__button @(_period == "last" ? "is-active" : null)"
                             type="button"
-                            @onclick='@(() => SetPeriod("last"))'>Last month</button>
+                            @onclick='@(() => SetPeriod("last"))'>@L["Home.Operations.LastMonth"]</button>
                 </fieldset>
             </div>
 
@@ -89,7 +89,7 @@
                 @{
                     var stages = _summary is not null
                         ? _summary.Stages.Select(s => (Label: s.Label, Count: s.Count)).ToList()
-                        : PortalDashboardData.Stages.Select(s => (Label: s.Label, Count: _period == "this" ? s.ThisMonth : s.LastMonth)).ToList();
+                        : PortalDashboardData.Stages.Select(s => (Label: StageLabel(s), Count: _period == "this" ? s.ThisMonth : s.LastMonth)).ToList();
                 }
                 @for (var index = 0; index < stages.Count; index++)
                 {
@@ -103,7 +103,7 @@
             </div>
 
             <div class="daily-card">
-                <div class="daily-card__label mono">Completed / day <span>@(_period == "last" ? "last mo." : "this mo.")</span></div>
+                <div class="daily-card__label mono">@L["Home.Operations.CompletedPerDay"] <span>@(_period == "last" ? L["Home.Operations.LastMonthShort"] : L["Home.Operations.ThisMonthShort"])</span></div>
                 <div class="daily-card__bars" aria-hidden="true">
                     @{
                         IReadOnlyList<(int Count, bool IsWeekend)> bars;
@@ -143,7 +143,7 @@
             </div>
 
             <div>
-                <div class="operations__label mono">Branches on track</div>
+                <div class="operations__label mono">@L["Home.Operations.BranchesOnTrack"]</div>
                 <div class="branch-grid">
                     @{
                         var branches = _summary?.BranchesOnTrack is { Count: > 0 } realBranches
@@ -177,8 +177,8 @@
         <section id="roadmap" class="modules-section" aria-labelledby="modules-title">
             <div class="section-head">
                 <div>
-                    <h2 id="modules-title">Modules</h2>
-                    <span><strong>@_liveCount</strong> live &middot; <strong>@_pilotCount</strong> pilot &middot; <strong>@_developingCount</strong> developing &middot; <strong>@_plannedCount</strong> planned</span>
+                    <h2 id="modules-title">@L["Common.Modules"]</h2>
+                    <span><strong>@_liveCount</strong> @L["Common.Count.Live"] &middot; <strong>@_pilotCount</strong> @L["Common.Count.Pilot"] &middot; <strong>@_developingCount</strong> @L["Common.Count.Developing"] &middot; <strong>@_plannedCount</strong> @L["Common.Count.Planned"]</span>
                 </div>
                 @* Module-grid local filter. The topbar's universal-search is now
                    a "coming soon" placeholder owned by PortalModuleShell, so the
@@ -186,10 +186,10 @@
                    header — keeping the global search entry honest about scope. *@
                 <label class="module-search" for="module-search">
                     <span class="module-search__icon" aria-hidden="true"></span>
-                    <span class="sr-only">Filter modules</span>
+                    <span class="sr-only">@L["Home.Modules.FilterLabel"]</span>
                     <input id="module-search"
                            type="search"
-                           placeholder="Filter modules…"
+                           placeholder="@L["Home.Modules.FilterPlaceholder"]"
                            autocomplete="off"
                            @bind="_query"
                            @bind:event="oninput" />
@@ -202,8 +202,8 @@
             @if (filteredModules.Count == 0)
             {
                 <div class="empty-state">
-                    <div class="mono">No matches</div>
-                    <p>No modules match <strong>"@_query"</strong>.</p>
+                    <div class="mono">@L["Home.Modules.NoMatches"]</div>
+                    <p>@L["Home.Modules.NoMatchesText"] <strong>"@_query"</strong>.</p>
                 </div>
             }
             else
@@ -237,7 +237,7 @@
                         {
                             <button type="button"
                                     class="module-card @statusClass"
-                                    @onclick='@(() => ToastPlanned(mod.Title, mod.Quarter ?? "later"))'>
+                                    @onclick='@(() => ToastPlanned(L.ModuleTitle(mod), mod.Quarter ?? L["Home.Toast.Later"].Value))'>
                                 <ModuleCardBody Card="@mod" />
                             </button>
                         }
@@ -248,10 +248,10 @@
             <section class="news" aria-labelledby="news-title">
                 <div class="news__head">
                     <div>
-                        <h2 id="news-title">News</h2>
-                        <span>What's changing in Cikada.MES</span>
+                        <h2 id="news-title">@L["Home.News.Title"]</h2>
+                        <span>@L["Home.News.Subtitle"]</span>
                     </div>
-                    <a href="#">All updates &rarr;</a>
+                    <a href="#">@L["Home.News.AllUpdates"] &rarr;</a>
                 </div>
                 <div class="news-grid">
                     @foreach (var item in _news)
@@ -269,42 +269,42 @@
             </section>
         </section>
 
-        <aside class="side-panel" aria-label="Portal status">
-            <div class="side-panel__label mono">Portal</div>
+        <aside class="side-panel" aria-label="@L["Home.Side.AriaLabel"]">
+            <div class="side-panel__label mono">@L["Common.Portal"]</div>
 
             <section class="panel panel--status">
                 <header>
-                    <h2>System status</h2>
-                    <span><i aria-hidden="true"></i> Online</span>
+                    <h2>@L["Home.Status.Title"]</h2>
+                    <span><i aria-hidden="true"></i> @L["Home.Status.Online"]</span>
                 </header>
-                <div class="status-row"><span>Environment</span><strong class="mono @_envStatusRowClass">@_envName</strong></div>
-                <div class="status-row"><span>Version</span><strong class="mono">@_displayVersion</strong></div>
-                <div class="status-row"><span>Modules</span><strong class="mono">@FormatModuleStatusSummary()</strong></div>
-                <div class="status-row"><span>Current module</span><strong>Portal</strong></div>
-                <div class="status-row"><span>Channel</span><strong class="mono">@_envChannel</strong></div>
+                <div class="status-row"><span>@L["Home.Status.Environment"]</span><strong class="mono @_envStatusRowClass">@_envName</strong></div>
+                <div class="status-row"><span>@L["Common.Version"]</span><strong class="mono">@_displayVersion</strong></div>
+                <div class="status-row"><span>@L["Common.Modules"]</span><strong class="mono">@FormatModuleStatusSummary()</strong></div>
+                <div class="status-row"><span>@L["Home.Status.CurrentModule"]</span><strong>@L["Common.Portal"]</strong></div>
+                <div class="status-row"><span>@L["Common.Channel"]</span><strong class="mono">@_envChannel</strong></div>
             </section>
 
             <section class="panel">
-                <header class="panel__plain-head"><h2>Support</h2></header>
+                <header class="panel__plain-head"><h2>@L["Home.Support.Title"]</h2></header>
                 <div class="panel__body">
-                    <p>MES helpdesk sms &middot; <span class="mono">+37062454321</span></p>
-                    <p>MES team &middot; <a href="mailto:developa@lauresta.lt">developa@lauresta.lt</a></p>
-                    <p>Portal CMS &middot; <a href="cms/tiles">Tiles</a></p>
+                    <p>@L["Home.Support.Helpdesk"] &middot; <span class="mono">+37062454321</span></p>
+                    <p>@L["Home.Support.Team"] &middot; <a href="mailto:developa@lauresta.lt">developa@lauresta.lt</a></p>
+                    <p>@L["Common.PortalCms"] &middot; <a href="cms/tiles">@L["Common.Tiles"]</a></p>
                 </div>
             </section>
 
             <section class="panel">
-                <header class="panel__plain-head"><h2>Build</h2></header>
-                <div class="status-row"><span>Version</span><strong class="mono">@_displayVersion</strong></div>
+                <header class="panel__plain-head"><h2>@L["Home.Build.Title"]</h2></header>
+                <div class="status-row"><span>@L["Common.Version"]</span><strong class="mono">@_displayVersion</strong></div>
                 @if (!string.IsNullOrWhiteSpace(_displayGitSha))
                 {
-                    <div class="status-row"><span>Commit</span><strong class="mono">@_displayGitSha</strong></div>
+                    <div class="status-row"><span>@L["Home.Build.Commit"]</span><strong class="mono">@_displayGitSha</strong></div>
                 }
                 @if (_displayBuildDate is { } date)
                 {
-                    <div class="status-row"><span>Built</span><strong class="mono">@date.ToString("yyyy-MM-dd")</strong></div>
+                    <div class="status-row"><span>@L["Home.Build.Built"]</span><strong class="mono">@date.ToString("yyyy-MM-dd")</strong></div>
                 }
-                <div class="status-row"><span>Channel</span><strong class="mono">@_envChannel</strong></div>
+                <div class="status-row"><span>@L["Common.Channel"]</span><strong class="mono">@_envChannel</strong></div>
             </section>
         </aside>
     </div>
@@ -403,7 +403,7 @@
         {
             if (byKey.TryGetValue(key, out var card) && !string.IsNullOrWhiteSpace(card.Url))
             {
-                resolved.Add(new RecentShortcut(card.Key, card.Title, card.Url, IsPrimary: resolved.Count == 0));
+                resolved.Add(new RecentShortcut(card.Key, L.ModuleTitle(card), card.Url, IsPrimary: resolved.Count == 0));
             }
             if (resolved.Count >= RecentSlots) break;
         }
@@ -449,7 +449,7 @@
         }
     }
 
-    private static IReadOnlyList<ModuleCard> FilterModules(IReadOnlyList<ModuleCard> modules, string query)
+    private IReadOnlyList<ModuleCard> FilterModules(IReadOnlyList<ModuleCard> modules, string query)
     {
         if (string.IsNullOrWhiteSpace(query))
         {
@@ -458,13 +458,13 @@
 
         var trimmed = query.Trim();
         return modules
-            .Where(m => $"{m.Title} {m.Category} {m.Description}".Contains(trimmed, StringComparison.OrdinalIgnoreCase))
+            .Where(m => $"{m.Title} {m.Category} {m.Description} {L.ModuleTitle(m)} {L.ModuleCategory(m)} {L.ModuleDescription(m)}".Contains(trimmed, StringComparison.OrdinalIgnoreCase))
             .ToList();
     }
 
     private async Task ToastPlanned(string title, string quarter)
     {
-        _toastMessage = $"{title} — planned for {quarter}. Not available yet.";
+        _toastMessage = L["Home.Toast.Planned", title, quarter].Value;
         _toastVisible = true;
 
         if (_toastCts is not null)
@@ -515,12 +515,20 @@
     private string FormatModuleStatusSummary()
     {
         var parts = new List<string>(5);
-        if (_liveCount > 0) parts.Add($"{_liveCount} live");
-        if (_pilotCount > 0) parts.Add($"{_pilotCount} pilot");
-        if (_developingCount > 0) parts.Add($"{_developingCount} developing");
-        if (_plannedCount > 0) parts.Add($"{_plannedCount} planned");
-        parts.Add($"{_modules.Count} total");
+        if (_liveCount > 0) parts.Add($"{_liveCount} {L["Common.Count.Live"].Value}");
+        if (_pilotCount > 0) parts.Add($"{_pilotCount} {L["Common.Count.Pilot"].Value}");
+        if (_developingCount > 0) parts.Add($"{_developingCount} {L["Common.Count.Developing"].Value}");
+        if (_plannedCount > 0) parts.Add($"{_plannedCount} {L["Common.Count.Planned"].Value}");
+        parts.Add($"{_modules.Count} {L["Common.Count.Total"].Value}");
         return string.Join(" / ", parts);
+    }
+
+    // Sample-data stage labels are hardcoded English in PortalDashboardData;
+    // live stage labels come from the Sales DB and are rendered as-is.
+    private string StageLabel(OperationsStage stage)
+    {
+        var localized = L[$"Home.Operations.Stage.{stage.Key}"];
+        return localized.ResourceNotFound ? stage.Label : localized.Value;
     }
 
     private sealed record RecentShortcut(string Key, string Title, string Url, bool IsPrimary);

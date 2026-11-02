@@ -1,3 +1,4 @@
+using LKvitai.MES.BuildingBlocks.WebUI.Localization;
 using LKvitai.MES.BuildingBlocks.ModuleStartup;
 using LKvitai.MES.BuildingBlocks.PortalAuth;
 using LKvitai.MES.BuildingBlocks.WebUI.Services;
@@ -8,6 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.UseScaffoldSerilog("shopfloor-webui");
 builder.Services.AddScaffoldWebUiCore("ShopfloorApi", "ShopfloorApi:BaseUrl", "http://localhost:5041");
+builder.Services.AddCikadaLocalization(builder.Configuration);
 
 builder.Services.AddPortalCookieAuthentication(builder.Environment, builder.Configuration);
 builder.Services.AddAuthorization();
@@ -25,6 +27,8 @@ builder.Services.AddScoped<ShopfloorApiClient>();
 var app = builder.Build();
 
 app.UsePathBase(ScaffoldModuleStartupExtensions.ResolvePathBase(app.Configuration));
+// Shared EN/LT UI culture from the cross-module culture cookie (docs/i18n/README.md).
+app.UseCikadaRequestLocalization();
 app.UsePortalSecureHosting(app.Environment);
 
 app.UseSerilogRequestLogging();
@@ -35,6 +39,7 @@ app.UseAuthorization();
 
 app.MapGet("/health", () => Results.Ok());
 app.MapPortalLogout();
+app.MapCikadaCultureEndpoint();
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
 
