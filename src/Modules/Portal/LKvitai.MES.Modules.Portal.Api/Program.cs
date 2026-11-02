@@ -67,6 +67,8 @@ builder.Services.AddScoped<SqlOperationsSummaryService>();
 // concern; this API only ever sees the Bearer token forwarded by
 // Portal.WebUI's PortalApiAuthHandler. /status remains AllowAnonymous so the
 // dashboard can render version metadata even before the user signs in.
+// SSO (authentik) JWTs are validated by PortalStructuredBearerAuthenticationHandler.
+builder.Services.AddCikadaSsoTokenValidation(builder.Configuration);
 builder.Services
     .AddAuthentication(PortalStructuredBearerAuthenticationDefaults.Scheme)
     .AddScheme<AuthenticationSchemeOptions, PortalStructuredBearerAuthenticationHandler>(
