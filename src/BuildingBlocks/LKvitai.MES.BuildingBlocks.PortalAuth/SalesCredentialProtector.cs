@@ -10,6 +10,19 @@ public sealed class SalesCredentialProtector(IDataProtectionProvider provider, T
 {
     public const string SessionClaim = "sales_portal_session_proof";
     public const string Scheme = "SalesProtectedBearer";
+    public const string SsoScheme = "SalesSsoBearer";
+    public const string LocalAccountClaim = "sales_cikada_user_id";
+
+    public static Guid? Subject(ClaimsIdentity? identity)
+    {
+        if (identity is null || !identity.IsAuthenticated) return null;
+        var source = identity.FindFirst("auth_source")?.Value;
+        var value = source == CikadaJwtValidator.AuthSource
+            ? identity.FindFirst(LocalAccountClaim)?.Value
+            : identity.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        return Guid.TryParse(value, out var id) && id != Guid.Empty ? id : null;
+    }
+
     public const string Policy = "SalesEmployee";
     public const string ReviewClaim = "sales_review";
     private readonly IDataProtector _session = provider.CreateProtector("LKvitai.MES.Sales.PortalSession.v1");

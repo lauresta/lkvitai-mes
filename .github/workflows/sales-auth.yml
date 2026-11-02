@@ -1,0 +1,36 @@
+name: Sales Authentication
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - src/Modules/Sales/**
+      - src/BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/**
+      - tests/Modules/Sales/**
+      - docker-compose.test.yml
+      - .github/workflows/deploy-test.yml
+      - scripts/sales/**
+      - Directory.Packages.props
+      - .github/workflows/sales-auth.yml
+  push:
+    branches: [main]
+    paths:
+      - src/Modules/Sales/**
+      - src/BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/**
+      - tests/Modules/Sales/**
+      - docker-compose.test.yml
+      - .github/workflows/deploy-test.yml
+      - scripts/sales/**
+      - Directory.Packages.props
+      - .github/workflows/sales-auth.yml
+
+jobs:
+  cookie-selection:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Validate Portal and review-cookie combinations
+        run: dotnet test tests/Modules/Sales/LKvitai.MES.Tests.Sales.Auth/LKvitai.MES.Tests.Sales.Auth.csproj -c Release

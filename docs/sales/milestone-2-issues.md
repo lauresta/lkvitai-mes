@@ -376,18 +376,20 @@ stored StateID or introducing new statuses.
 
 ## S2-021 — Existing material code passed as a literal component parameter
 
-**Status: open; found during localization browser QA, 2026-11-02.**
-The product editor passes `ExistingCode="_configuringLine.ColourCode"` to the
+**Status: resolved in the integrated M2 candidate, 2026-11-02; actual editor rendering regressions pass in EN/LT.**
+The product editor previously passed `ExistingCode="_configuringLine.ColourCode"` to the
 string parameter of `MaterialAutocomplete`, so an initially empty material can
 show the source expression itself. The same markup is present before the
 localization changes. Follow-up should bind the actual property, verify empty
 and saved-material display in both sample and live mode, and preserve material
-selection, stock validation and error focus. Deferred outside translation scope.
+selection, stock validation and error focus. Integrated M2 now binds the actual
+property; EN/LT editor-render regressions verify the stored code and reject the
+old expression text.
 
 
 ## S2-022 — Main deployment reintroduces the Sales WebUI dependency violation
 
-**Status: open on main; outside the Safari authentication correction, 2026-11-02.**
+**Status: resolved in the integrated M2 candidate, 2026-11-02; all29 architecture checks pass.**
 Main's Sales WebUI still references Sales.Infrastructure, so architecture CI
 fails `WebUI_Only_References_Contracts_Of_Same_Module_And_BuildingBlocks` (28/29
 pass). The same failure exists on PR #227 before the login correction; the
@@ -409,3 +411,16 @@ SQL/data scoping. Recheck fresh native authentication and effective identity
 before changing behavior. No authentication, mapping or data permission changes
 were made as part of localization. The M2 identity/recovery bridge is still in
 unmerged PR #224; its integration must retain the new SSO behavior.
+
+
+## S2-024 — Missing-DB-container fallback omits the existing persistent bind
+
+**Status: existing infrastructure edge; deferred outside Sales integration, 2026-11-02.**
+The running test PostgreSQL uses `/opt/postgres-test/pg/data` and retains the
+Cikada user mappings across normal app deployments. The deploy workflow's
+fallback for a missing database container does not mount that existing bind.
+Recreating a deleted DB container through that fallback would not reuse the
+existing data directory. The current healthy DB container is retained by this
+release; no database container, volume or data directory was recreated. Repair
+the missing-container provisioning path separately, preserving the existing
+cluster and credentials rather than silently initializing another database.

@@ -45,7 +45,7 @@ if (liveReferencesConfigured)
 // Portal key-ring configuration is reused; real Sales endpoints accept only
 // the purpose-bound Sales credential, not Portal cookies or raw structured tokens.
 builder.Services.AddPortalCookieAuthentication(builder.Environment, builder.Configuration);
-builder.Services.AddSalesProtectedAuthentication();
+builder.Services.AddSalesProtectedAuthentication(builder.Configuration);
 
 var app = builder.Build();
 

@@ -51,9 +51,14 @@ public static class PortalAuthApplicationBuilderExtensions
 
         endpoints.MapPost(PortalAuthDefaults.LogoutPath, async (HttpContext httpContext) =>
         {
+            var loginPath = ResolveLoginPath(httpContext);
+            // Read the SSO session before the cookie is cleared from the principal.
+            var ssoLogout = PortalOidcExtensions.BuildSsoLogoutUrl(
+                httpContext,
+                $"{httpContext.Request.Scheme}://{httpContext.Request.Host}{loginPath}?local=1&loggedOut=1");
             await httpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             httpContext.DeleteLegacyPortalAuthCookies();
-            return Results.Redirect(ResolveLoginPath(httpContext));
+            return Results.Redirect(ssoLogout ?? loginPath);
         });
 
         return endpoints;

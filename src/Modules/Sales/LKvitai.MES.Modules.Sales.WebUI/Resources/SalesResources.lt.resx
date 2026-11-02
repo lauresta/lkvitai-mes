@@ -1257,11 +1257,59 @@
   <data name="Payment.ViaPpk" xml:space="preserve">
     <value>Pagal PPK</value>
   </data>
+  <data name="Preview.CodeMissing" xml:space="preserve">
+    <value>Šios rūšies kodas nerastas žinyno kopijoje.</value>
+  </data>
+  <data name="Preview.ConfirmLater" xml:space="preserve">
+    <value>Patvirtinti gamybai · 2 etapas</value>
+  </data>
+  <data name="Preview.DatabaseLater" xml:space="preserve">
+    <value>Įrašymas į duomenų bazę prijungiamas 2 etape</value>
+  </data>
   <data name="Preview.DimensionsAria" xml:space="preserve">
     <value>{0}, {1} × {2} mm</value>
   </data>
+  <data name="Preview.DoneOrder" xml:space="preserve">
+    <value>Baigti ir grįžti į užsakymą</value>
+  </data>
+  <data name="Preview.DraftHelp" xml:space="preserve">
+    <value>Tai interaktyvus dizaino juodraštis. Atnaujinus arba užvėrus šį ekraną jis pašalinamas; užsakymas, gaminys, priedas ar mokėjimas neišsaugomas.</value>
+  </data>
+  <data name="Preview.Milestone2" xml:space="preserve">
+    <value>2 etapas</value>
+  </data>
+  <data name="Preview.MinimumHeight" xml:space="preserve">
+    <value>Mažiausias aukštis – 200 mm.</value>
+  </data>
+  <data name="Preview.MinimumWidth" xml:space="preserve">
+    <value>Mažiausias plotis – 200 mm.</value>
+  </data>
+  <data name="Preview.OverrideParameter" xml:space="preserve">
+    <value>Spustelėkite, kad pakeistumėte apskaičiuotą reikšmę</value>
+  </data>
+  <data name="Preview.PriceHelp" xml:space="preserve">
+    <value>Čia kainos redaguojamos tik peržiūrai. Senosios sistemos kainodara, kredito patikros ir mokėjimų taisyklės prijungiamos 2 etape.</value>
+  </data>
+  <data name="Preview.PriceLater" xml:space="preserve">
+    <value>Kainoraštis prijungiamas 2 etape.</value>
+  </data>
   <data name="Preview.Quantity" xml:space="preserve">
     <value>× {0} vnt.</value>
+  </data>
+  <data name="Preview.RemoveEmployee" xml:space="preserve">
+    <value>Pašalinti darbuotoją</value>
+  </data>
+  <data name="Preview.SearchFabric" xml:space="preserve">
+    <value>Ieškoti audinio kodo</value>
+  </data>
+  <data name="Preview.Snapshot" xml:space="preserve">
+    <value>Sąsajos peržiūra · Žinyno kopija {0}. Juodraštis saugomas tik kol šis ekranas atvertas. Į duomenų bazę nieko neįrašoma.</value>
+  </data>
+  <data name="Preview.StockLater" xml:space="preserve">
+    <value>atsargos 2 etape</value>
+  </data>
+  <data name="Preview.UnknownSeries" xml:space="preserve">
+    <value>Serijos {0} nėra žinyno kopijoje.</value>
   </data>
   <data name="Privacy.Description" xml:space="preserve">
     <value>Šis užsakymas anuliuotas kliento prašymu. Dalis užsakymo informacijos pašalinta dėl asmens duomenų apsaugos.</value>

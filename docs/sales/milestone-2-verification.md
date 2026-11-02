@@ -578,3 +578,43 @@ legacy business writes, history edits or other branch writes were executed.
 Warehouse/Portal/config gates preserved, cancellation off; expired observer
 untouched. QA credentials/helpers removed; deployed application source drift0.
 All implementation and follow-ups are in one PR: https://github.com/lauresta/lkvitai-mes/pull/224.
+
+## 2026-11-02 — integrate the completed M2 work into main
+
+The owner requested that all completed Sales work be merged, conflicts resolved
+and test deployed from main. The earlier manual M2 deployment had been replaced
+by ordinary main deployments while PR #224 remained open. This integration
+removes that release gap rather than relying on another manually patched image.
+
+The candidate retains the full SQL order/product/PPP/accessory/price/payment
+implementation, command recovery, department guards, confirmation gate and
+history/privacy behavior. Shared SSO, MCP, Safari-cookie fallback and EN/LT from
+main remain present. The full M2 UI has718 paired resource keys; the material
+code is bound as a property, with actual editor-render regressions in both
+languages. Warehouse user administration resolves the same durable account for
+SSO and native sessions, without rewriting the external subject or copying roles.
+
+Candidate validation:337 Sales tests,27 focused Warehouse account/admin tests,
+and29 architecture tests pass. A clean solution restore followed by the full
+Release build passes;14 pre-existing package-advisory warnings remain. The
+initial no-restore build exposed stale pre-SSO package assets; restoring the
+solution removed the assembly-version conflicts.
+
+Read-only deployment/native evidence:
+
+- Persistent admin and bykovas records are active with matching role sets and
+  their approved sa / TERMINAL\d.bykovas mappings. No hashes or credentials are
+  exported. Their existing additive user-store migration is already applied.
+- Approved database fingerprint and all four Testavimas series match actual
+  SQL. Automatic compose deployment now persists those write/payment gates,
+  EUR2, the approved receiver/methods, cancellation OFF and confirmation ON/MEST.
+- bykovas has a native department scope at least as broad as sa. A real existing
+  restricted SQL login OP046001 sees owned order2148197455 under the native
+  guard, while real foreign-branch order2148197447 is hidden. EXECUTE AS and
+  REVERT were verified, with no SQL account or permission changes.
+- Existing financial fixtures are retained unchanged. Successful production
+  confirmation remains for the owner's manual verification; this release does
+  not execute it or apply the declined cancellation audit schema repair.
+
+Final merged image, deployment result and actual browser/persistence acceptance
+are recorded in PR #224 after rollout.

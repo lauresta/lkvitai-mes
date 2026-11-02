@@ -124,6 +124,23 @@ public sealed class DatabaseAdminUserStoreTests
     }
 
     [Fact]
+    public void Sso_username_lookup_returns_only_the_existing_active_durable_account()
+    {
+        using var context = new WarehouseDbContext(Options());
+        var store = new DatabaseAdminUserStore(context);
+        Assert.True(store.TryCreate(NewUser("bykovas"), out var created, out _));
+        var linked = store.FindActiveByUsername("BYKOVAS");
+        Assert.NotNull(linked);
+        Assert.Equal(created!.Id, linked!.Id);
+        Assert.Equal(created.LegacySqlLogin, linked.LegacySqlLogin);
+        Assert.Null(store.FindActiveByUsername("missing-user"));
+        Assert.Null(store.FindActiveByUsername(""));
+        Assert.True(store.TryUpdate(created.Id, new UpdateAdminUserRequest(created.Roles, "Inactive"), out _, out _));
+        Assert.Null(store.FindActiveByUsername("bykovas"));
+        Assert.Single(store.GetAll()); // No auto-provisioning or duplicate account.
+    }
+
+    [Fact]
     public void User_management_remains_admin_only()
     {
         var authorize = Assert.Single(typeof(AdminUsersController).GetCustomAttributes(typeof(AuthorizeAttribute), true).Cast<AuthorizeAttribute>());

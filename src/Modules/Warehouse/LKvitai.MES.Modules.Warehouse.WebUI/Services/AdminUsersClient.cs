@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using LKvitai.MES.BuildingBlocks.PortalAuth;
 using System.Text.Json;
 using LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure;
 using LKvitai.MES.Modules.Warehouse.WebUI.Models;
@@ -16,12 +17,13 @@ public sealed class AdminUsersClient
     private readonly Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider _authentication;
     private readonly LKvitai.MES.BuildingBlocks.PortalAuth.CikadaUserBridgeProof _proof;
     private readonly ILogger<AdminUsersClient>? _logger;
+    private readonly CikadaSsoAccountLookup? _ssoAccounts;
 
     public AdminUsersClient(IHttpClientFactory factory,
         Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider authentication,
         LKvitai.MES.BuildingBlocks.PortalAuth.CikadaUserBridgeProof proof,
-        ILogger<AdminUsersClient>? logger=null)
-    { _factory=factory;_authentication=authentication;_proof=proof;_logger=logger; }
+        ILogger<AdminUsersClient>? logger=null, CikadaSsoAccountLookup? ssoAccounts=null)
+    { _factory=factory;_authentication=authentication;_proof=proof;_logger=logger;_ssoAccounts=ssoAccounts; }
 
     public Task<IReadOnlyList<AdminUserDto>> GetUsersAsync(CancellationToken cancellationToken=default)
         =>Send<IReadOnlyList<AdminUserDto>>(HttpMethod.Get,"/api/warehouse/v1/admin/users",null,cancellationToken);
@@ -34,9 +36,13 @@ public sealed class AdminUsersClient
     {
         var user=(await _authentication.GetAuthenticationStateAsync()).User;
         var identities=user.Identities.Where(x=>x.IsAuthenticated).ToArray();
-        if(identities.Length!=1 || identities[0].AuthenticationType!="Cookies"
-            || !Guid.TryParse(user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value,out var actor) || actor==Guid.Empty)
+        if(identities.Length!=1 || identities[0].AuthenticationType!="Cookies")
             throw new InvalidOperationException("Sign in with your Cikada account to manage users.");
+        Guid actor;
+        if (user.FindFirst("auth_source")?.Value == CikadaJwtValidator.AuthSource)
+            actor = _ssoAccounts is null ? Guid.Empty : (await _ssoAccounts.ResolveAsync(user, ct))?.UserId ?? Guid.Empty;
+        else Guid.TryParse(user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value, out actor);
+        if (actor == Guid.Empty) throw new InvalidOperationException("Sign in with your Cikada account to manage users.");
         var token=user.FindFirst("warehouse_access_token")?.Value;
         if(string.IsNullOrWhiteSpace(token))throw new InvalidOperationException("Renew your Cikada session before managing users.");
         using var request=new HttpRequestMessage(method,url);

@@ -42,7 +42,7 @@ builder.Services.AddHttpContextAccessor();
 // so the shared topbar's "VER" badge shows the real release tag instead
 // of an em-dash. Same registration Portal/Frontline call.
 builder.Services.AddBuildVersion();
-builder.Services.AddSalesSessionCredentials();
+builder.Services.AddSalesSessionCredentials(builder.Configuration);
 builder.Services.AddHttpClient("SalesApi")
     .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
 builder.Services.AddScoped<SalesApiClient>();

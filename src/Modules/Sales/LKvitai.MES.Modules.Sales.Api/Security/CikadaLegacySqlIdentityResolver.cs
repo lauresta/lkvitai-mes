@@ -17,9 +17,12 @@ public sealed class CikadaLegacySqlIdentityResolver(
     private async Task<LegacySqlIdentity?> ResolveCoreAsync(CancellationToken ct)
     {
         var user=accessor.HttpContext?.User;
-        if(user?.Identity?.AuthenticationType!=LKvitai.MES.BuildingBlocks.PortalAuth.SalesCredentialProtector.Scheme
-            || !Guid.TryParse(user.FindFirstValue(ClaimTypes.NameIdentifier),out var actor) || actor==Guid.Empty)
+        var authenticatedIdentity = user?.Identities.SingleOrDefault(identity => identity.IsAuthenticated);
+        var subject = SalesCredentialProtector.Subject(authenticatedIdentity);
+        if (authenticatedIdentity?.AuthenticationType is not (SalesCredentialProtector.Scheme or SalesCredentialProtector.SsoScheme)
+            || subject is null)
             throw new OrderEntryException("AUTHENTICATED_ACTOR_REQUIRED","Sign in to use Sales.",401);
+        var actor = subject.Value;
         using var request=new HttpRequestMessage(HttpMethod.Get,"/api/internal/legacy-sql-identity");
         request.Headers.Add(CikadaUserBridgeProof.HeaderName,proof.Create(actor,CikadaUserBridgeProof.LookupLegacySql));
         try

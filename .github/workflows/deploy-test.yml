@@ -28,6 +28,9 @@ jobs:
       CLIP_MODEL_DIR: ${{ vars.CLIP_MODEL_DIR }}
       LKVITAI_MSACCESS_DB_CONNECTION: ${{ secrets.LKVITAI_MSACCESS_DB_CONNECTION }}
       SALES_REVIEW_KEY: ${{ secrets.SALES_REVIEW_KEY }}
+      CIKADA_OIDC_CLIENT_ID: ${{ vars.CIKADA_OIDC_CLIENT_ID }}
+      CIKADA_OIDC_CLIENT_SECRET: ${{ secrets.CIKADA_OIDC_CLIENT_SECRET }}
+      CIKADA_MCP_CLIENT_ID: ${{ vars.CIKADA_MCP_CLIENT_ID }}
       SALES_REVIEW_EXPIRES_AT_UTC: ${{ vars.SALES_REVIEW_EXPIRES_AT_UTC }}
       Agnum__Api__BaseUrl: ${{ vars.Agnum__Api__BaseUrl }}
       Agnum__Warehouses__sandelys__ApiKey: ${{ secrets.AGNUM__WAREHOUSES__SANDELYS__APIKEY }}
@@ -37,6 +40,9 @@ jobs:
       # the right slot. Test-only for now; prod will get its own project id
       # via the same vars.CLARITY_PROJECT_ID name scoped to the prod environment.
       CLARITY_PROJECT_ID: ${{ vars.CLARITY_PROJECT_ID }}
+      # Cikada MCP order entry tools (writes). Off unless the variable is "true";
+      # turn on once the order entry API (PR #224) is deployed.
+      CIKADA_MCP_ORDER_ENTRY: ${{ vars.CIKADA_MCP_ORDER_ENTRY }}
 
     steps:
       - name: Fail fast if required env vars are missing or invalid
@@ -364,6 +370,21 @@ jobs:
             fi
           done
 
+      - name: Wait for Cikada MCP health
+        # Node image: no curl inside, and the endpoint is /healthz.
+        run: |
+          for i in $(seq 1 30); do
+            if docker exec lkvitai-mes-mcp node -e "fetch('http://127.0.0.1:8080/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))" > /dev/null 2>&1; then
+              echo "Cikada MCP is healthy."
+              exit 0
+            fi
+            echo "  attempt $i/30 — lkvitai-mes-mcp not ready yet"
+            sleep 5
+          done
+          echo "::error::lkvitai-mes-mcp failed to become healthy within 150s (is vars.CIKADA_MCP_CLIENT_ID set in the test environment?)"
+          docker compose -f docker-compose.test.yml logs mcp --tail 80 || true
+          exit 1
+
       - name: Seed master data
         run: |
           docker exec -i "$DB_CONTAINER_NAME" \
@@ -385,6 +406,7 @@ jobs:
           echo "- **Scanning API (scaffold):** lkvitai-test:5041" >> $GITHUB_STEP_SUMMARY
           echo "- **Scanning WebUI (scaffold):** lkvitai-test:5040" >> $GITHUB_STEP_SUMMARY
           echo "- **Shopfloor WebUI (scaffold):** lkvitai-test:5050" >> $GITHUB_STEP_SUMMARY
+          echo "- **Cikada MCP:** lkvitai-test:5070 (https://cikada-test.lauresta.com/mcp)" >> $GITHUB_STEP_SUMMARY
           docker compose -f docker-compose.test.yml ps >> $GITHUB_STEP_SUMMARY
 
       - name: Prune unused Docker images

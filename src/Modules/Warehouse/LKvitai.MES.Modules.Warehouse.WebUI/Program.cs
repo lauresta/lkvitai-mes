@@ -19,6 +19,17 @@ builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddBuildVersion();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<CikadaUserBridgeProof>();
+if (builder.Configuration.IsCikadaSsoEnabled())
+{
+    builder.Services.AddCikadaSsoTokenValidation(builder.Configuration);
+    builder.Services.AddSingleton<CikadaSsoAccountProof>();
+    builder.Services.AddScoped<CikadaSsoAccountLookup>();
+    builder.Services.AddHttpClient("CikadaUsers", client =>
+    {
+        client.BaseAddress = new Uri(builder.Configuration["WarehouseApi:BaseUrl"] ?? "https://localhost:5001");
+        client.Timeout = TimeSpan.FromSeconds(10);
+    }).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
+}
 builder.Services.AddTransient<WarehouseApiAuthHandler>();
 
 builder.Services.AddHttpClient("WarehouseApi", (sp, client) =>

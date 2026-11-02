@@ -1257,11 +1257,59 @@
   <data name="Payment.ViaPpk" xml:space="preserve">
     <value>Via PPK</value>
   </data>
+  <data name="Preview.CodeMissing" xml:space="preserve">
+    <value>Code not found for this category in the static snapshot.</value>
+  </data>
+  <data name="Preview.ConfirmLater" xml:space="preserve">
+    <value>Confirm for production · M2</value>
+  </data>
+  <data name="Preview.DatabaseLater" xml:space="preserve">
+    <value>Database writing starts in milestone 2</value>
+  </data>
   <data name="Preview.DimensionsAria" xml:space="preserve">
     <value>{0}, {1} × {2} mm</value>
   </data>
+  <data name="Preview.DoneOrder" xml:space="preserve">
+    <value>Done — back to order</value>
+  </data>
+  <data name="Preview.DraftHelp" xml:space="preserve">
+    <value>This is an interactive design draft. Refreshing or closing this screen discards it; no order, product, accessory, or payment is saved.</value>
+  </data>
+  <data name="Preview.Milestone2" xml:space="preserve">
+    <value>Milestone 2</value>
+  </data>
+  <data name="Preview.MinimumHeight" xml:space="preserve">
+    <value>Minimum height is 200 mm.</value>
+  </data>
+  <data name="Preview.MinimumWidth" xml:space="preserve">
+    <value>Minimum width is 200 mm.</value>
+  </data>
+  <data name="Preview.OverrideParameter" xml:space="preserve">
+    <value>Click to override the calculated value</value>
+  </data>
+  <data name="Preview.PriceHelp" xml:space="preserve">
+    <value>Prices here are editable preview values. Legacy pricing, credit checks and payment rules arrive in milestone 2.</value>
+  </data>
+  <data name="Preview.PriceLater" xml:space="preserve">
+    <value>List prices in milestone 2.</value>
+  </data>
   <data name="Preview.Quantity" xml:space="preserve">
     <value>× {0} pcs</value>
+  </data>
+  <data name="Preview.RemoveEmployee" xml:space="preserve">
+    <value>Remove employee</value>
+  </data>
+  <data name="Preview.SearchFabric" xml:space="preserve">
+    <value>Search fabric code</value>
+  </data>
+  <data name="Preview.Snapshot" xml:space="preserve">
+    <value>UI preview · Reference snapshot {0}. This draft is kept only while this screen is open. Nothing is written to the database.</value>
+  </data>
+  <data name="Preview.StockLater" xml:space="preserve">
+    <value>stock in M2</value>
+  </data>
+  <data name="Preview.UnknownSeries" xml:space="preserve">
+    <value>Series {0} does not exist in the reference snapshot.</value>
   </data>
   <data name="Privacy.Description" xml:space="preserve">
     <value>This order was cancelled at the customer’s request. Certain order information has been removed for privacy reasons.</value>

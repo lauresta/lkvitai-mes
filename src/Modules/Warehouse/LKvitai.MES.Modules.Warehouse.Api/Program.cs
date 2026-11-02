@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.DataProtection;
+using LKvitai.MES.BuildingBlocks.PortalAuth;
 using LKvitai.MES.Modules.Warehouse.Api.Configuration;
 using LKvitai.MES.Modules.Warehouse.Api.BackgroundJobs;
 using LKvitai.MES.BuildingBlocks.ObjectStorage;
@@ -94,6 +95,7 @@ builder.Services.Configure<CapacityPlanningOptions>(builder.Configuration.GetSec
 builder.Services.Configure<FeatureFlagsOptions>(builder.Configuration.GetSection(FeatureFlagsOptions.SectionName));
 builder.Services.Configure<DevAuthOptions>(builder.Configuration.GetSection(DevAuthOptions.SectionName));
 builder.Services.Configure<OAuthOptions>(builder.Configuration.GetSection(OAuthOptions.SectionName));
+builder.Services.AddCikadaSsoTokenValidation(builder.Configuration);
 builder.Services.Configure<MfaOptions>(builder.Configuration.GetSection(MfaOptions.SectionName));
 builder.Services.Configure<LabelPrintingConfig>(builder.Configuration.GetSection("LabelPrinting"));
 var itemImageOptions = ItemImageOptions.FromConfiguration(builder.Configuration);
@@ -137,6 +139,7 @@ builder.Services.AddDataProtection()
     .DisableAutomaticKeyGeneration();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<LKvitai.MES.BuildingBlocks.PortalAuth.CikadaUserBridgeProof>();
+builder.Services.AddSingleton<CikadaSsoAccountProof>();
 builder.Services.AddScoped<TrustedUserAdministrationFilter>();
 
 builder.Services.AddSingleton<IOAuthRoleMapper, OAuthRoleMapper>();

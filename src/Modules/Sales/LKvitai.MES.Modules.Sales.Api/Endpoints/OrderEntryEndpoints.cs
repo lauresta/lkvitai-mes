@@ -54,5 +54,5 @@ public static class OrderEntryEndpoints
         group.MapOrderEntryFinancialEndpoints();
         return sales;
     }
-    private static Guid Actor(ClaimsPrincipal user)=>Guid.TryParse(user.FindFirstValue(ClaimTypes.NameIdentifier),out var actor)&&actor!=Guid.Empty?actor:throw new OrderEntryException("INVALID_ACTOR","Trusted Portal employee identity required.",401);
+    private static Guid Actor(ClaimsPrincipal user) => LKvitai.MES.BuildingBlocks.PortalAuth.SalesCredentialProtector.Subject(user.Identities.SingleOrDefault(identity => identity.IsAuthenticated)) ?? throw new OrderEntryException("INVALID_ACTOR","Trusted Portal employee identity required.",401);
 }

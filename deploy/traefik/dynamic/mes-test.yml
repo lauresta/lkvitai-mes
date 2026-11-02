@@ -123,6 +123,20 @@ http:
       tls:
         certResolver: letsencrypt
 
+    # Cikada MCP (remote MCP server for ChatGPT / Claude). The resource is
+    # https://cikada-test.lauresta.com/mcp; MCP clients look for OAuth discovery
+    # at the host root, so the well-known documents, /register (static public
+    # client), /authorize (302 to sso.lauresta.com) and /token (relay to
+    # sso.lauresta.com) are routed to the MCP container too. Priority above the
+    # module routers and the root redirect; no path is stripped.
+    mes-test-mcp:
+      rule: "(Host(`cikada-test.lauresta.com`) || Host(`lkvitai.lauresta.com`)) && (PathPrefix(`/mcp`) || PathPrefix(`/.well-known/oauth-protected-resource`) || PathPrefix(`/.well-known/oauth-authorization-server`) || PathPrefix(`/.well-known/openid-configuration`) || Path(`/register`) || Path(`/authorize`) || Path(`/token`))"
+      entryPoints: [websecure]
+      service: mes-test-mcp
+      priority: 250
+      tls:
+        certResolver: letsencrypt
+
   middlewares:
     mes-test-legacy-redirect-to-cikada:
       redirectRegex:
@@ -215,3 +229,9 @@ http:
         passHostHeader: true
         servers:
           - url: "http://10.11.12.15:5050"
+
+    mes-test-mcp:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://10.11.12.15:5070"

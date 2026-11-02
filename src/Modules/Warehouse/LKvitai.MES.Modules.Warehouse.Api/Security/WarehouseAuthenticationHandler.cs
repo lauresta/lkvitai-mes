@@ -88,6 +88,15 @@ public sealed class WarehouseAuthenticationHandler : AuthenticationHandler<Authe
             authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
         {
             var token = authHeader["Bearer ".Length..].Trim();
+            var sso = Context.RequestServices.GetService<CikadaJwtValidator>();
+            if (LooksLikeJwt(token) && sso?.IsEnabled == true)
+            {
+                var ssoPrincipal = await sso.ValidateAsync(token, WarehouseAuthenticationDefaults.Scheme, Context.RequestAborted);
+                return ssoPrincipal is null
+                    ? AuthenticateResult.Fail("Invalid SSO token.")
+                    : AuthenticateResult.Success(new AuthenticationTicket(ssoPrincipal, WarehouseAuthenticationDefaults.Scheme));
+            }
+
             if (LooksLikeJwt(token))
             {
                 var tokenValidator = Context.RequestServices.GetService<IOAuthTokenValidator>();
@@ -122,6 +131,11 @@ public sealed class WarehouseAuthenticationHandler : AuthenticationHandler<Authe
 
                 var jwtTicket = new AuthenticationTicket(jwtPrincipal, WarehouseAuthenticationDefaults.Scheme);
                 return AuthenticateResult.Success(jwtTicket);
+            }
+
+            if (sso?.LegacyTokensDisabled == true)
+            {
+                return AuthenticateResult.Fail("Legacy bearer tokens are disabled.");
             }
 
             if (PortalStructuredBearerToken.TryParse(token, out var parsed))

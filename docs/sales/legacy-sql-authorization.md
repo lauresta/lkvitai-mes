@@ -90,3 +90,30 @@ denied-order search/count, number lookup, editor, preview, cross-order reservati
 add-back, payment references, bank search, reference lists and default-reference
 masking. The production database was not mutated. Sixteen isolated adapter tests
 also prove that a missing actor mapping fails before any physical SQL access.
+
+## Main integration: SSO and MCP identities
+
+The authentik external subject remains the external identity, even when it looks
+like a Guid. Sales resolves the validated preferred username to an existing,
+active durable Cikada account on the server and uses that account's local Guid
+for SQL mapping and command ownership. It does not provision users, copy IdP
+roles into stored profiles, or accept a SQL login from a browser/JWT payload.
+
+Sales-only cookies carry a local-account alias plus the bounded Sales session
+proof. Newly issued OIDC cookies contain server-validated issuer/audience/subject
+metadata; their Sales lookup remains valid for the signed Portal session even
+after the embedded API JWT expires. Older cookies without that metadata can be
+upgraded only through a still-valid signed JWT; otherwise normal SSO login is
+required. Other modules retain the original external subject.
+
+Direct SSO/MCP calls use issuer/audience/signature/lifetime-validated JWTs and
+the same active-account resolution. Unsigned legacy structured bearer strings
+are never added to the Sales employee policy. The internal account lookup uses
+a separate purpose-bound, two-minute server assertion and the shared read-only
+key ring in Warehouse. User administration still requires both a validated
+administrator caller and an active durable administrator account.
+
+Native login and SSO for the same stored account therefore reach the same
+`LegacySqlLogin`, while SQL department guards and Testavimas write allowlists
+remain the final data boundaries. Missing/inactive accounts and invalid or
+ambiguous credentials fail closed.

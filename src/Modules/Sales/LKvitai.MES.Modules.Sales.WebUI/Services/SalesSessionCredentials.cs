@@ -12,7 +12,7 @@ public sealed class SalesSessionCredentials(AuthenticationStateProvider authenti
     public async Task<Guid?> SubjectAsync()
     {
         var identity=SalesCredentialProtector.PortalIdentity((await authentication.GetAuthenticationStateAsync()).User);
-        return Guid.TryParse(identity?.FindFirst(ClaimTypes.NameIdentifier)?.Value,out var subject) && subject!=Guid.Empty ? subject : null;
+        return SalesCredentialProtector.Subject(identity);
     }
     private readonly object _sync = new();
     private string? _refreshedProof;
@@ -22,8 +22,8 @@ public sealed class SalesSessionCredentials(AuthenticationStateProvider authenti
     {
         var user = (await authentication.GetAuthenticationStateAsync()).User;
         var identity = SalesCredentialProtector.PortalIdentity(user);
-        if (identity is null || !Guid.TryParse(identity.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var subject))
-            return false;
+        var subject = SalesCredentialProtector.Subject(identity);
+        if (subject is null) return false;
         lock (_sync)
         {
             if (_boundSubject.HasValue && _boundSubject != subject) return false;
@@ -39,7 +39,8 @@ public sealed class SalesSessionCredentials(AuthenticationStateProvider authenti
     {
         var user = (await authentication.GetAuthenticationStateAsync()).User;
         var identity = SalesCredentialProtector.PortalIdentity(user);
-        if (identity is null || !Guid.TryParse(identity.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var subject)) return null;
+        var subject = SalesCredentialProtector.Subject(identity);
+        if (identity is null || subject is null) return null;
         lock (_sync)
         {
             if (_boundSubject.HasValue && _boundSubject != subject) return null;
@@ -53,11 +54,22 @@ public sealed class SalesSessionCredentials(AuthenticationStateProvider authenti
 
 public static class SalesSessionAuthentication
 {
-    public static IServiceCollection AddSalesSessionCredentials(this IServiceCollection services)
+    public static IServiceCollection AddSalesSessionCredentials(this IServiceCollection services, IConfiguration? configuration = null)
     {
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<SalesCredentialProtector>();
         services.AddScoped<SalesSessionCredentials>();
+        if (configuration?.IsCikadaSsoEnabled() == true)
+        {
+            services.AddCikadaSsoTokenValidation(configuration);
+            services.AddSingleton<CikadaSsoAccountProof>();
+            services.AddScoped<CikadaSsoAccountLookup>();
+            services.AddHttpClient("CikadaUsers", client =>
+            {
+                client.BaseAddress = new Uri(configuration["CikadaUsers:BaseUrl"] ?? "http://localhost:5001");
+                client.Timeout = TimeSpan.FromSeconds(10);
+            }).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
+        }
         services.PostConfigure<CookieAuthenticationOptions>(CookieAuthenticationDefaults.AuthenticationScheme, options =>
         {
             var previous = options.Events.OnValidatePrincipal;
@@ -66,13 +78,49 @@ public static class SalesSessionAuthentication
                 if (previous is not null) await previous(context);
                 if (context.Principal is null || context.Properties.ExpiresUtc is not { } expires) return;
                 var identity = SalesCredentialProtector.PortalIdentity(context.Principal);
-                if (identity is null || !Guid.TryParse(identity.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var subject)
-                    || subject == Guid.Empty || expires <= DateTimeOffset.UtcNow) return;
+                if (identity is null || expires <= DateTimeOffset.UtcNow) return;
                 var cloned = new ClaimsIdentity(identity);
-                foreach (var claim in cloned.FindAll(SalesCredentialProtector.SessionClaim).ToArray()) cloned.RemoveClaim(claim);
+                foreach (var claim in cloned.Claims.Where(claim => claim.Type is SalesCredentialProtector.SessionClaim or SalesCredentialProtector.LocalAccountClaim).ToArray())
+                    cloned.RemoveClaim(claim);
+                context.ReplacePrincipal(new ClaimsPrincipal(cloned));
+                if (cloned.FindFirst("auth_source")?.Value == CikadaJwtValidator.AuthSource)
+                {
+                    var lookup = context.HttpContext.RequestServices.GetService<CikadaSsoAccountLookup>();
+                    if (lookup is null) return;
+                    try
+                    {
+                        // Existing SSO cookies predate the explicit issuer/audience metadata.
+                        // Upgrade only from their still-valid, signed access token, never a name.
+                        if (cloned.FindFirst(CikadaJwtValidator.SsoIssuerClaim) is null)
+                        {
+                            var token = cloned.FindFirst(PortalOidcDefaults.AccessTokenClaim)?.Value;
+                            var validator = context.HttpContext.RequestServices.GetRequiredService<CikadaJwtValidator>();
+                            var verified = string.IsNullOrWhiteSpace(token) ? null : await validator.ValidateAsync(
+                                token, CookieAuthenticationDefaults.AuthenticationScheme, context.HttpContext.RequestAborted);
+                            if (verified is null || verified.FindFirstValue(ClaimTypes.NameIdentifier) != cloned.FindFirst(ClaimTypes.NameIdentifier)?.Value) return;
+                            foreach (var type in new[] { CikadaJwtValidator.SsoSubjectClaim, CikadaJwtValidator.SsoUsernameClaim,
+                                CikadaJwtValidator.SsoIssuerClaim, CikadaJwtValidator.SsoAudienceClaim })
+                            {
+                                foreach (var claim in cloned.FindAll(type).ToArray()) cloned.RemoveClaim(claim);
+                                foreach (var claim in verified.FindAll(type)) cloned.AddClaim(claim);
+                            }
+                        }
+                        var account = await lookup.ResolveAsync(new ClaimsPrincipal(cloned), context.HttpContext.RequestAborted);
+                        if (account is null) return;
+                        cloned.AddClaim(new Claim(SalesCredentialProtector.LocalAccountClaim, account.UserId.ToString()));
+                    }
+                    catch (Exception exception) when (exception is HttpRequestException or System.Text.Json.JsonException or InvalidOperationException
+                        || exception is OperationCanceledException && !context.HttpContext.RequestAborted.IsCancellationRequested)
+                    {
+                        // Keep the Portal session, but issue no Sales credential on lookup failure.
+                        return;
+                    }
+                }
+                var subject = SalesCredentialProtector.Subject(cloned);
+                if (subject is null) return;
                 var codec = context.HttpContext.RequestServices.GetRequiredService<SalesCredentialProtector>();
                 cloned.AddClaim(new Claim(SalesCredentialProtector.SessionClaim,
-                    codec.CreateSession(subject, cloned.Name ?? subject.ToString(), expires)));
+                    codec.CreateSession(subject.Value, cloned.Name ?? subject.ToString()!, expires)));
                 context.ReplacePrincipal(new ClaimsPrincipal(cloned));
             };
         });

@@ -86,6 +86,15 @@ public sealed class DatabaseAdminUserStore(WarehouseDbContext database) : IAdmin
         return true;
     }
 
+    public AdminUserView? FindActiveByUsername(string username)
+    {
+        if (string.IsNullOrWhiteSpace(username)) return null;
+        var normalized = username.Trim().ToUpperInvariant();
+        var account = database.LocalUserAccounts.AsNoTracking().SingleOrDefault(user =>
+            user.NormalizedUsername == normalized && user.Status == AdminUserRecord.ActiveStatus);
+        return account is null ? null : MapView(account);
+    }
+
     public bool TryGetLegacySqlLogin(Guid id, out string? legacySqlLogin)
     {
         legacySqlLogin = database.LocalUserAccounts.AsNoTracking()

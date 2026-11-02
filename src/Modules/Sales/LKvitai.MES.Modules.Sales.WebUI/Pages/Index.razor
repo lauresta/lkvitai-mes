@@ -201,44 +201,8 @@
 
 @code {
 
-    private string LocalizedStatus(string code, string raw)
-    {
-        var key = code switch
-        {
-            OrderStatusCodes.Entered => "Orders.Status.Entered",
-            OrderStatusCodes.Approved => "Orders.Status.Approved",
-            OrderStatusCodes.InProgress => "Orders.Status.InProgress",
-            OrderStatusCodes.Made => "Orders.Status.Made",
-            OrderStatusCodes.Shipped => "Orders.Status.Shipped",
-            OrderStatusCodes.Delivered => "Orders.Status.Delivered",
-            OrderStatusCodes.Paused => "Orders.Status.Paused",
-            OrderStatusCodes.Cancelled => "Orders.Status.Cancelled",
-            OrderStatusCodes.MultiStatus => "Orders.Status.MultiStatus",
-            _ => null
-        };
-        if (key is null) return raw;
-        var value = L[key];
-        return value.ResourceNotFound ? raw : value.Value;
-    }
-
-    private string LocalizedNativeStatus(string raw)
-    {
-        // Labels are localized; the original database string stays the filter value.
-        var code = raw.Trim().ToUpperInvariant() switch
-        {
-            "ĮVESTAS" or "ĮVESTAS Į PROGRAMĄ" => OrderStatusCodes.Entered,
-            "PATVIRTINTAS" => OrderStatusCodes.Approved,
-            "GAMINAMAS" => OrderStatusCodes.InProgress,
-            "PAGAMINTAS" => OrderStatusCodes.Made,
-            "FILIALUI" => OrderStatusCodes.Shipped,
-            "ATIDUOTAS" => OrderStatusCodes.Delivered,
-            "SUSTABDYTAS" => OrderStatusCodes.Paused,
-            "ANULIUOTAS" or "ATŠAUKTAS" => OrderStatusCodes.Cancelled,
-            "SKIRTINGAI" => OrderStatusCodes.MultiStatus,
-            _ => ""
-        };
-        return LocalizedStatus(code, raw);
-    }
+    private string LocalizedStatus(string code, string raw) => SalesStatusText.Localize(L, code, raw);
+    private string LocalizedNativeStatus(string raw) => SalesStatusText.Localize(L, "", raw);
 
     private bool _showNewOrder;
     private NewOrderWorkspace? _newOrderWorkspace;

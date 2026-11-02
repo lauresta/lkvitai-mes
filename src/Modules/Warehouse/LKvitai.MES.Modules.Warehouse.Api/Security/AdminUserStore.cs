@@ -50,6 +50,9 @@ public interface IAdminUserStore
     bool TryCreate(CreateAdminUserRequest request, out AdminUserView? user, out string? error);
     bool TryUpdate(Guid id, UpdateAdminUserRequest request, out AdminUserView? user, out string? error);
     bool TryValidatePassword(string username, string password, out AdminUserView? user);
+    AdminUserView? FindActiveByUsername(string username) => GetAll().SingleOrDefault(user =>
+        user.Status == AdminUserRecord.ActiveStatus && string.Equals(user.Username, username, StringComparison.OrdinalIgnoreCase));
+
     bool TryGetLegacySqlLogin(Guid id, out string? legacySqlLogin)
     {
         var user = GetAll().SingleOrDefault(user => user.Id == id && user.Status == AdminUserRecord.ActiveStatus);
