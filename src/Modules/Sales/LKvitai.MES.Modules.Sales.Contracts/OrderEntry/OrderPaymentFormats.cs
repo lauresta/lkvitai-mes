@@ -10,5 +10,5 @@ public static class OrderPaymentFormats
     public static bool IsValidPositiveAmount(decimal amount)=>amount>0&&amount<=MaximumAmount
         &&decimal.Round(amount,AmountDecimalPlaces)==amount;
     public static bool IsValidPpkReceipt(string? receipt)=>receipt?.Length==PpkReceiptLength
-        &&Regex.IsMatch(receipt,@"\A[RV][RVS][LS][0-9]{7}\z",RegexOptions.IgnoreCase|RegexOptions.CultureInvariant);
+        &&Regex.IsMatch(receipt,@"\A[RV][RVS][LS][0-9]{7}\z",RegexOptions.IgnoreCase|RegexOptions.CultureInvariant,TimeSpan.FromMilliseconds(100));
 }

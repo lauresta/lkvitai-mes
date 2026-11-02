@@ -113,9 +113,9 @@ public sealed partial class SalesOrderEntryClient
         var tail=match.Groups["tail"].Value;
         return method switch
         {
-            "PUT"=>Regex.IsMatch(tail,@"\A(?:|/address|/final-price|/products/-?[0-9]+)\z",RegexOptions.CultureInvariant),
-            "POST"=>Regex.IsMatch(tail,@"\A/(?:products|duties|payments|confirm|cancel|products/-?[0-9]+/(?:duplicate|accessories))\z",RegexOptions.CultureInvariant),
-            "DELETE"=>Regex.IsMatch(tail,@"\A/(?:products/-?[0-9]+(?:/accessories/-?[0-9]+)?|duties/-?[0-9]+/-?[0-9]+)\z",RegexOptions.CultureInvariant),
+            "PUT"=>Regex.IsMatch(tail,@"\A(?:|/address|/final-price|/products/-?[0-9]+)\z",RegexOptions.CultureInvariant,TimeSpan.FromMilliseconds(100)),
+            "POST"=>Regex.IsMatch(tail,@"\A/(?:products|duties|payments|confirm|cancel|products/-?[0-9]+/(?:duplicate|accessories))\z",RegexOptions.CultureInvariant,TimeSpan.FromMilliseconds(100)),
+            "DELETE"=>Regex.IsMatch(tail,@"\A/(?:products/-?[0-9]+(?:/accessories/-?[0-9]+)?|duties/-?[0-9]+/-?[0-9]+)\z",RegexOptions.CultureInvariant,TimeSpan.FromMilliseconds(100)),
             _=>false
         };
     }

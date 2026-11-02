@@ -19,7 +19,7 @@ export function start(target, url) {
     stopped = false;
     reference = target;
     endpoint = url;
-    refresh();
+    void refresh();
     interval = setInterval(refresh, 60000);
     window.addEventListener('online', refresh);
     document.addEventListener('visibilitychange', refresh);

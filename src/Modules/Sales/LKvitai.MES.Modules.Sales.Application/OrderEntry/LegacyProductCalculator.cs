@@ -151,7 +151,8 @@ public static class LegacyProductCalculator
                     if(!Take(','))throw new FormatException("Round precision is required.");
                     var precision=Expression();Skip();if(!Take(')'))throw new FormatException("Invalid Round arguments.");
                     if(validateOnly)return 0;
-                    if(precision!=Math.Truncate(precision)||precision<0||precision>15)throw new FormatException("Invalid Round precision.");
+                    // Exact integer checks preserve VBA Round semantics; tolerances would accept invalid precision.
+                    if(!precision.Equals(Math.Truncate(precision))||precision<0||precision>15)throw new FormatException("Invalid Round precision.");
                     return Math.Round(argument,(int)precision,MidpointRounding.ToEven);
                 }
                 if(!Take(')'))throw new FormatException("Invalid function arguments.");
@@ -177,8 +178,9 @@ public static class LegacyProductCalculator
             var carriers=Math.Round(((value-edge)/step+1)+0.5,0,MidpointRounding.ToEven);
             if(family=="CDE"&&carriers%2==1)carriers++;
             if(!corrector)return carriers;
-            if(carriers==0)return 0;
-            if(carriers==1)throw new DivideByZeroException("One carrier cannot produce a corrector spacing.");
+            // Carriers is already rounded to an integer; exact sentinel values are intentional.
+            if(carriers.Equals(0d))return 0;
+            if(carriers.Equals(1d))throw new DivideByZeroException("One carrier cannot produce a corrector spacing.");
             return Math.Round(((step-(value-edge)/(carriers-1))*carriers)/6,0,MidpointRounding.ToEven);
         }
         private void Skip(){while(_at<source.Length&&char.IsWhiteSpace(source[_at]))_at++;}

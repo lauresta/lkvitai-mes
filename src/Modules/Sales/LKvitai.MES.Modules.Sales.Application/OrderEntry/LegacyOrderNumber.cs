@@ -10,7 +10,7 @@ public sealed record LegacyOrderNumber(int Sequence,string Group,string Canonica
         var prefix=knownSeries.Trim().ToUpperInvariant()+"-";
         var text=input.Trim().ToUpperInvariant();
         if(!text.StartsWith(prefix,StringComparison.Ordinal))throw new OrderEntryException("NUMBER_SERIES","Number must use the selected live order series.");
-        var match=Regex.Match(text[prefix.Length..],@"^([0-9]+)(?:-([A-Z0-9]{1,4}))?$",RegexOptions.CultureInvariant);
+        var match=Regex.Match(text[prefix.Length..],@"^([0-9]+)(?:-([A-Z0-9]{1,4}))?$",RegexOptions.CultureInvariant,TimeSpan.FromMilliseconds(100));
         if(!match.Success || !int.TryParse(match.Groups[1].Value,NumberStyles.None,CultureInfo.InvariantCulture,out var sequence)||sequence<=0)
             throw new OrderEntryException("INVALID_NUMBER","Enter a positive order number with an optional group suffix.");
         var year=(currentYear%100).ToString("D2",CultureInfo.InvariantCulture);

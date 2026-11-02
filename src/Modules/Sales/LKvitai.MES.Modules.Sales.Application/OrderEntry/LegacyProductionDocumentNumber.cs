@@ -9,7 +9,7 @@ public static class LegacyProductionDocumentNumber
     public const int MaximumCharacters=32;
     public static string Create(string prefix,Guid uniqueId)
     {
-        if(string.IsNullOrWhiteSpace(prefix)||!Regex.IsMatch(prefix,@"\A[A-Za-z0-9]{1,5}\z",RegexOptions.CultureInvariant)||uniqueId==Guid.Empty)
+        if(string.IsNullOrWhiteSpace(prefix)||!Regex.IsMatch(prefix,@"\A[A-Za-z0-9]{1,5}\z",RegexOptions.CultureInvariant,TimeSpan.FromMilliseconds(100))||uniqueId==Guid.Empty)
             throw new OrderEntryException("CONFIRMATION_CONFIGURATION","Configure a verified one-to-five-character Sales document prefix and unique identifier.",503);
         const string alphabet="ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
         var encoded=new StringBuilder(26);var buffer=0;var bits=0;
