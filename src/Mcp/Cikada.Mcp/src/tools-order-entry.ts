@@ -1,4 +1,4 @@
-// Order entry: the legacy order editor's contract (Sales API /api/sales/order-entry/*, PR #224, not on main yet). Offered only with
+// Order entry: the legacy order editor's contract (Sales API /api/sales/order-entry/*). Offered only with
 // MCP_ENABLE_ORDER_ENTRY=true. Every write takes the order's revision (`expectedRevision`, from order_entry_get or the previous write's answer) and a
 // command id: the API refuses a stale revision, and a repeated command id is a replay, not a second write. No id is ever guessed: each comes from the
 // catalog, references or an earlier answer, as the descriptions say.
@@ -544,6 +544,94 @@ const orderAddressSet: ToolDef = {
   },
 };
 
+const orderProductDuplicate: ToolDef = {
+  name: 'order_product_duplicate',
+  title: 'Duplicate a product line',
+  description: 'Copies a product line (configuration and accessories) into a new line on the same order and returns its productId. Change the copy with order_product_update.',
+  inputSchema: obj({ orderId: ORDER_ID, productId: PRODUCT_ID, expectedRevision: REVISION, commandId: COMMAND_ID }, ['orderId', 'productId', 'expectedRevision']),
+  annotations: write(false),
+  orderEntry: true,
+  handler: async (args, { api, newId }) => {
+    const orderId = args.orderId as number;
+    const productId = args.productId as number;
+    const commandId = asString(args.commandId) ?? newId();
+    const result = await oe<Row>(
+      api,
+      { method: 'POST', path: `${OE}/orders/${orderId}/products/${productId}/duplicate`, body: { commandId, expectedRevision: args.expectedRevision } },
+      `There is no product ${productId} on order ${orderId}.`,
+    );
+    return commandResult(result, commandId, `Product ${productId} duplicated`);
+  },
+};
+
+const orderAccessorySet: ToolDef = {
+  name: 'order_accessory_set',
+  title: 'Add or change an accessory',
+  description:
+    'Adds an accessory to a product line, or changes its quantity / price when the line already has it. The accessory id comes from order_entry_catalog section accessories (filtered by the line\'s categoryId); its `price` is the list price to use unless the user gives another.',
+  inputSchema: obj(
+    {
+      orderId: ORDER_ID,
+      productId: PRODUCT_ID,
+      expectedRevision: REVISION,
+      accessoryId: int('Accessory id (order_entry_catalog section accessories).', { minimum: 1 }),
+      quantity: num('Quantity.', { minimum: 0 }),
+      unitPrice: num('Unit price (the catalog price unless the user says otherwise).', { minimum: 0 }),
+      commandId: COMMAND_ID,
+    },
+    ['orderId', 'productId', 'expectedRevision', 'accessoryId', 'quantity', 'unitPrice'],
+  ),
+  annotations: write(false),
+  orderEntry: true,
+  handler: async (args, { api, newId }) => {
+    const orderId = args.orderId as number;
+    const productId = args.productId as number;
+    const commandId = asString(args.commandId) ?? newId();
+    const body = { commandId, expectedRevision: args.expectedRevision, accessoryId: args.accessoryId, quantity: args.quantity, unitPrice: args.unitPrice };
+    const result = await oe<Row>(api, { method: 'POST', path: `${OE}/orders/${orderId}/products/${productId}/accessories`, body }, `There is no product ${productId} on order ${orderId}.`);
+    return commandResult(result, commandId, 'Accessory saved');
+  },
+};
+
+const orderAccessoryRemove: ToolDef = {
+  name: 'order_accessory_remove',
+  title: 'Remove an accessory',
+  description: 'Removes an accessory from a product line.',
+  inputSchema: obj(
+    { orderId: ORDER_ID, productId: PRODUCT_ID, expectedRevision: REVISION, accessoryId: int('Accessory id on the line (order_entry_get products[].accessories[].accessoryId).', { minimum: 1 }), commandId: COMMAND_ID },
+    ['orderId', 'productId', 'expectedRevision', 'accessoryId'],
+  ),
+  annotations: write(true),
+  orderEntry: true,
+  handler: async (args, { api, newId }) => {
+    const orderId = args.orderId as number;
+    const productId = args.productId as number;
+    const commandId = asString(args.commandId) ?? newId();
+    const result = await oe<Row>(
+      api,
+      { method: 'DELETE', path: `${OE}/orders/${orderId}/products/${productId}/accessories/${args.accessoryId as number}`, body: { commandId, expectedRevision: args.expectedRevision } },
+      `There is no accessory ${String(args.accessoryId)} on product ${productId}.`,
+    );
+    return commandResult(result, commandId, 'Accessory removed');
+  },
+};
+
+const orderFinalPriceSet: ToolDef = {
+  name: 'order_final_price_set',
+  title: 'Set the final order price',
+  description:
+    'Sets the order\'s final (agreed) total; the discount is derived from it. Use when the user names the total the customer pays. Show the calculated total and the new one to the user first.',
+  inputSchema: obj({ orderId: ORDER_ID, expectedRevision: REVISION, finalPrice: num('The final total in EUR.', { minimum: 0 }), commandId: COMMAND_ID }, ['orderId', 'expectedRevision', 'finalPrice']),
+  annotations: write(false),
+  orderEntry: true,
+  handler: async (args, { api, newId }) => {
+    const orderId = args.orderId as number;
+    const commandId = asString(args.commandId) ?? newId();
+    const result = await oe<Row>(api, { method: 'PUT', path: `${OE}/orders/${orderId}/final-price`, body: { commandId, expectedRevision: args.expectedRevision, finalPrice: args.finalPrice } }, `There is no order with id ${orderId}.`);
+    return commandResult(result, commandId, `Final price set to ${money(args.finalPrice)}`);
+  },
+};
+
 const orderConfirm: ToolDef = {
   name: 'order_confirm',
   title: 'Confirm products for production',
@@ -595,6 +683,10 @@ export const ORDER_ENTRY_TOOLS: readonly ToolDef[] = [
   orderProductAdd,
   orderProductUpdate,
   orderProductRemove,
+  orderProductDuplicate,
+  orderAccessorySet,
+  orderAccessoryRemove,
+  orderFinalPriceSet,
   orderAddressSet,
   orderConfirm,
   orderCancel,
