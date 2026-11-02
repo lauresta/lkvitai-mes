@@ -59,7 +59,7 @@ test('orders_search forwards the bearer unchanged to the Sales API and answers c
 
     assert.equal(api.seen.length, 1);
     const call = api.seen[0]!;
-    assert.equal(call.url.origin, 'http://sales.internal:8080');
+    assert.equal(call.url.origin, 'https://sales.internal');
     assert.equal(call.url.pathname, '/api/sales/orders');
     assert.equal(call.url.searchParams.get('search'), 'VLN');
     assert.equal(call.url.searchParams.get('store'), 'Vilnius');

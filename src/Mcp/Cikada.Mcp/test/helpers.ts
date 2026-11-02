@@ -10,8 +10,8 @@ export function testConfig(overrides: Record<string, string> = {}): Config {
   return loadConfig({
     MCP_PUBLIC_URL: 'https://cikada-test.example.com',
     MCP_OAUTH_CLIENT_ID: CLIENT_ID,
-    SALES_API_URL: 'http://sales.internal:8080',
-    WAREHOUSE_API_URL: 'http://warehouse.internal:8080',
+    SALES_API_URL: 'https://sales.internal',
+    WAREHOUSE_API_URL: 'https://warehouse.internal',
     MCP_PORT: '0',
     ...overrides,
   });
