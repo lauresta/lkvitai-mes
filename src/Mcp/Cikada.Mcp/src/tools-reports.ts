@@ -10,7 +10,7 @@ const TEXT_ROWS = 40;
 
 type Row = Record<string, unknown>;
 
-const DATE_ARG = (what: string): Schema => ({ type: 'string', description: `${what} (YYYY-MM-DD).`, pattern: '^\\d{4}-\\d{2}-\\d{2}$' });
+const DATE_ARG = (what: string): Schema => ({ type: 'string', description: `${what} (YYYY-MM-DD).`, pattern: String.raw`^\d{4}-\d{2}-\d{2}$` });
 
 const COMMON: Record<string, Schema> = {
   from: DATE_ARG('First day, inclusive; default the first day of the current month'),
@@ -57,18 +57,20 @@ async function runReport(report: string, filterNames: string[], args: Record<str
 
   const groupBy = (result.groupBy as string[]) ?? [];
   const measures = (result.measures as string[]) ?? [];
-  const rows = ((result.rows as Row[]) ?? []).map((r) => ({ ...((r.keys as Row) ?? {}), ...((r.values as Row) ?? {}) }));
+  const rows = ((result.rows as Row[]) ?? []).map((r) => Object.assign({}, r.keys as Row | undefined, r.values as Row | undefined) as Row);
   const totals: Row = {};
   for (const m of measures) totals[m] = Math.round(rows.reduce((sum, r) => sum + (typeof r[m] === 'number' ? (r[m] as number) : 0), 0) * 1000) / 1000;
 
-  const fmt = (v: unknown) => (typeof v === 'number' ? (Number.isInteger(v) ? String(v) : v.toFixed(2)) : String(v ?? ''));
+  const fmt = (v: unknown): string => {
+    if (typeof v === 'number') return Number.isInteger(v) ? String(v) : v.toFixed(2);
+    return typeof v === 'string' ? v : '';
+  };
   const header = [...groupBy, ...measures].join(' | ');
   const lines = rows.slice(0, TEXT_ROWS).map((r) => [...groupBy, ...measures].map((c) => fmt(r[c])).join(' | '));
   const more = rows.length > TEXT_ROWS ? `\n… ${rows.length - TEXT_ROWS} more rows in data.rows` : '';
-  const text =
-    `${report} ${from} … ${toInclusive}: ${rows.length} row(s)${result.truncated ? ' (TRUNCATED at 2000: narrow the period or the grouping)' : ''}.\n` +
-    `${header}\n${lines.join('\n')}${more}\n` +
-    `Total over the rows: ${measures.map((m) => `${m} ${fmt(totals[m])}`).join(', ')}`;
+  const truncatedNote = result.truncated ? ' (TRUNCATED at 2000: narrow the period or the grouping)' : '';
+  const totalsText = measures.map((m) => m + ' ' + fmt(totals[m])).join(', ');
+  const text = `${report} ${from} … ${toInclusive}: ${rows.length} row(s)${truncatedNote}.\n${header}\n${lines.join('\n')}${more}\nTotal over the rows: ${totalsText}`;
   return { text, data: { report, from, to: toInclusive, granularity: result.granularity, groupBy, measures, totals, truncated: result.truncated === true, rows } };
 }
 

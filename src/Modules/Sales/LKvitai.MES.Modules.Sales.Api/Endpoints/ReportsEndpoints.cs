@@ -25,23 +25,26 @@ public static class ReportsEndpoints
             catch (SalesReportException ex) { return Results.Problem(statusCode: 400, title: ex.Message); }
         });
 
-        reports.MapGet("/{report}", async (string report, DateOnly? from, DateOnly? to, string? groupBy, string? granularity,
-            HttpContext http, ISalesReports service, CancellationToken ct) =>
-        {
-            var today = DateOnly.FromDateTime(DateTime.Today);
-            var start = from ?? new DateOnly(today.Year, today.Month, 1);
-            var end = to ?? today.AddDays(1);
-            var filters = FilterNames
-                .Select(name => (name, value: http.Request.Query[name].ToString()))
-                .Where(x => !string.IsNullOrWhiteSpace(x.value))
-                .ToDictionary(x => x.name, x => x.value);
-            var dims = (groupBy ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-            return Results.Ok(await service.RunAsync(new SalesReportQuery(report, start, end, dims, granularity ?? "month", filters), ct));
-        });
+        reports.MapGet("/{report}", async ([AsParameters] ReportRequest request, HttpContext http, ISalesReports service, CancellationToken ct) =>
+            Results.Ok(await service.RunAsync(request.ToQuery(http.Request.Query), ct)));
 
         reports.MapGet("/{report}/dimensions", async (string report, ISalesReports service, CancellationToken ct) =>
             Results.Ok(await service.DimensionsAsync(report, ct)));
 
         return sales;
+    }
+
+    public sealed record ReportRequest(string Report, DateOnly? From, DateOnly? To, string? GroupBy, string? Granularity)
+    {
+        public SalesReportQuery ToQuery(IQueryCollection query)
+        {
+            var today = DateOnly.FromDateTime(DateTime.Today);
+            var filters = FilterNames
+                .Select(name => (name, value: query[name].ToString()))
+                .Where(x => !string.IsNullOrWhiteSpace(x.value))
+                .ToDictionary(x => x.name, x => x.value);
+            var dims = (GroupBy ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            return new SalesReportQuery(Report, From ?? new DateOnly(today.Year, today.Month, 1), To ?? today.AddDays(1), dims, Granularity ?? "month", filters);
+        }
     }
 }

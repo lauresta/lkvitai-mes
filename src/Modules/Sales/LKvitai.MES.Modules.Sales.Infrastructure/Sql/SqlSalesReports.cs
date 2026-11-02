@@ -17,6 +17,7 @@ namespace LKvitai.MES.Modules.Sales.Infrastructure.Sql;
 public sealed class SqlSalesReports(SalesSqlOptions options, ILegacySqlConnectionFactory connections) : ISalesReports
 {
     public const int MaxRows = 2000;
+    private const string Period = "period";
     private static readonly string[] Granularities = ["day", "month", "year"];
 
     private sealed record Definition(
@@ -133,74 +134,87 @@ public sealed class SqlSalesReports(SalesSqlOptions options, ILegacySqlConnectio
         var granularity = (query.Granularity ?? "month").Trim().ToLowerInvariant();
         if (!Granularities.Contains(granularity)) throw new SalesReportException("granularity must be day, month or year.");
 
-        var groupBy = new List<string>();
-        foreach (var name in query.GroupBy.Select(x => x.Trim()).Where(x => x.Length > 0))
+        var groupBy = ResolveGroupBy(def, query.GroupBy);
+        var filters = ResolveFilters(def, query.Filters);
+        var measures = def.Measures.Keys.ToList();
+        var sql = BuildSql(def, groupBy, granularity, filters);
+
+        await using var lease = await connections.OpenAsync(cancellationToken).ConfigureAwait(false);
+        await using var cmd = lease.Connection.CreateCommand();
+        cmd.CommandType = CommandType.Text;
+        cmd.CommandTimeout = Math.Max(options.CommandTimeoutSeconds, 60);
+        // The text is built only from the constant definitions above; every caller value is a parameter.
+        cmd.CommandText = sql; // NOSONAR
+        cmd.Parameters.Add(new SqlParameter("@from", SqlDbType.DateTime) { Value = query.From.ToDateTime(TimeOnly.MinValue) });
+        cmd.Parameters.Add(new SqlParameter("@to", SqlDbType.DateTime) { Value = query.To.ToDateTime(TimeOnly.MinValue) });
+        for (var i = 0; i < filters.Count; i++)
+            cmd.Parameters.Add(new SqlParameter($"@f{i}", SqlDbType.NVarChar, 210) { Value = "%" + EscapeLike(filters[i].Value) + "%" });
+
+        var rows = new List<SalesReportRow>();
+        await using (var reader = await cmd.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false))
         {
-            var canonical = name.Equals("period", StringComparison.OrdinalIgnoreCase) ? "period"
-                : def.Dimensions.Keys.FirstOrDefault(k => k.Equals(name, StringComparison.OrdinalIgnoreCase))
-                  ?? throw new SalesReportException($"Unknown dimension '{name}'. Use: period, {string.Join(", ", def.Dimensions.Keys)}.");
+            while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false)) rows.Add(ReadRow(reader, groupBy, measures));
+        }
+
+        var truncated = rows.Count > MaxRows;
+        if (truncated) rows.RemoveAt(rows.Count - 1);
+        return new SalesReportResult(query.Report.ToLowerInvariant(), query.From, query.To, groupBy, granularity, measures, rows, truncated);
+    }
+
+    private static List<string> ResolveGroupBy(Definition def, IEnumerable<string> requested)
+    {
+        var groupBy = new List<string>();
+        foreach (var name in requested.Select(x => x.Trim()).Where(x => x.Length > 0))
+        {
+            var canonical = name.Equals(Period, StringComparison.OrdinalIgnoreCase) ? Period : Dimension(def, name, "dimension");
             if (!groupBy.Contains(canonical)) groupBy.Add(canonical);
         }
-        foreach (var required in def.RequiredGroupBy.Where(r => !groupBy.Contains(r))) groupBy.Add(required);
+        groupBy.AddRange(def.RequiredGroupBy.Where(r => !groupBy.Contains(r)));
+        return groupBy;
+    }
 
+    /// <summary>Filters as (whitelisted dimension, trimmed value); the value only ever becomes a parameter.</summary>
+    private static List<KeyValuePair<string, string>> ResolveFilters(Definition def, IReadOnlyDictionary<string, string> filters) =>
+        filters.Where(f => !string.IsNullOrWhiteSpace(f.Value))
+            .Select(f => new KeyValuePair<string, string>(Dimension(def, f.Key, "filter"), f.Value.Trim()))
+            .ToList();
+
+    private static string Dimension(Definition def, string name, string what) =>
+        def.Dimensions.Keys.FirstOrDefault(k => k.Equals(name, StringComparison.OrdinalIgnoreCase))
+        ?? throw new SalesReportException($"Unknown {what} '{name}'. Use: {string.Join(", ", def.Dimensions.Keys)}.");
+
+    private static string BuildSql(Definition def, IReadOnlyList<string> groupBy, string granularity, IReadOnlyList<KeyValuePair<string, string>> filters)
+    {
         var periodSql = granularity switch
         {
             "day" => $"CONVERT(char(10), {def.DateColumn}, 126)",
             "year" => $"CONVERT(char(4), {def.DateColumn}, 126)",
             _ => $"CONVERT(char(7), {def.DateColumn}, 126)",
         };
-        string Expr(string dim) => dim == "period" ? periodSql : def.Dimensions[dim];
+        string Expr(string dim) => dim == Period ? periodSql : def.Dimensions[dim];
 
-        await using var lease = await connections.OpenAsync(cancellationToken).ConfigureAwait(false);
-        await using var cmd = lease.Connection.CreateCommand();
-        cmd.CommandType = CommandType.Text;
-        cmd.CommandTimeout = Math.Max(options.CommandTimeoutSeconds, 60);
-        cmd.Parameters.Add(new SqlParameter("@from", SqlDbType.DateTime) { Value = query.From.ToDateTime(TimeOnly.MinValue) });
-        cmd.Parameters.Add(new SqlParameter("@to", SqlDbType.DateTime) { Value = query.To.ToDateTime(TimeOnly.MinValue) });
-
+        // Filter i compares the i-th resolved dimension with parameter @f{i}.
         var where = new StringBuilder($"{def.DateColumn} >= @from AND {def.DateColumn} < @to");
-        var i = 0;
-        foreach (var (name, value) in query.Filters)
-        {
-            if (string.IsNullOrWhiteSpace(value)) continue;
-            var dim = def.Dimensions.Keys.FirstOrDefault(k => k.Equals(name, StringComparison.OrdinalIgnoreCase))
-                ?? throw new SalesReportException($"Unknown filter '{name}'. Use: {string.Join(", ", def.Dimensions.Keys)}.");
-            var p = $"@f{i++}";
-            where.Append(CultureInfo.InvariantCulture, $" AND {def.Dimensions[dim]} LIKE {p}");
-            cmd.Parameters.Add(new SqlParameter(p, SqlDbType.NVarChar, 210) { Value = "%" + EscapeLike(value.Trim()) + "%" });
-        }
+        for (var i = 0; i < filters.Count; i++) where.Append(CultureInfo.InvariantCulture, $" AND {def.Dimensions[filters[i].Key]} LIKE @f{i}");
 
-        var measures = def.Measures.Keys.ToList();
         var select = groupBy.Select(g => $"{Expr(g)} AS [{g}]").Concat(def.Measures.Select(m => $"{m.Value} AS [{m.Key}]"));
-        var order = groupBy.Contains("period") ? "[period], " : "";
-        cmd.CommandText = $"""
-            SELECT TOP ({MaxRows + 1}) {string.Join(", ", select)}
-            FROM {def.From}
-            WHERE {where}
-            {(groupBy.Count > 0 ? "GROUP BY " + string.Join(", ", groupBy.Select(Expr)) : "")}
-            ORDER BY {order}[{measures[0]}] DESC
-            """;
+        var groupClause = groupBy.Count > 0 ? "GROUP BY " + string.Join(", ", groupBy.Select(Expr)) : "";
+        var order = groupBy.Contains(Period) ? "[period], " : "";
+        return $"SELECT TOP ({MaxRows + 1}) {string.Join(", ", select)}\nFROM {def.From}\nWHERE {where}\n{groupClause}\nORDER BY {order}[{def.Measures.Keys.First()}] DESC";
+    }
 
-        var rows = new List<SalesReportRow>();
-        await using (var reader = await cmd.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false))
+    private static SalesReportRow ReadRow(SqlDataReader reader, IReadOnlyList<string> groupBy, IReadOnlyList<string> measures)
+    {
+        var keys = new Dictionary<string, string?>(StringComparer.Ordinal);
+        for (var k = 0; k < groupBy.Count; k++)
+            keys[groupBy[k]] = reader.IsDBNull(k) ? null : Convert.ToString(reader.GetValue(k), CultureInfo.InvariantCulture)?.Trim();
+        var values = new Dictionary<string, decimal>(StringComparer.Ordinal);
+        for (var m = 0; m < measures.Count; m++)
         {
-            while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
-            {
-                var keys = new Dictionary<string, string?>(StringComparer.Ordinal);
-                for (var k = 0; k < groupBy.Count; k++) keys[groupBy[k]] = reader.IsDBNull(k) ? null : Convert.ToString(reader.GetValue(k), CultureInfo.InvariantCulture)?.Trim();
-                var values = new Dictionary<string, decimal>(StringComparer.Ordinal);
-                for (var m = 0; m < measures.Count; m++)
-                {
-                    var o = groupBy.Count + m;
-                    values[measures[m]] = reader.IsDBNull(o) ? 0m : Math.Round(Convert.ToDecimal(reader.GetValue(o), CultureInfo.InvariantCulture), 3);
-                }
-                rows.Add(new SalesReportRow(keys, values));
-            }
+            var o = groupBy.Count + m;
+            values[measures[m]] = reader.IsDBNull(o) ? 0m : Math.Round(Convert.ToDecimal(reader.GetValue(o), CultureInfo.InvariantCulture), 3);
         }
-
-        var truncated = rows.Count > MaxRows;
-        if (truncated) rows.RemoveAt(rows.Count - 1);
-        return new SalesReportResult(query.Report.ToLowerInvariant(), query.From, query.To, groupBy, granularity, measures, rows, truncated);
+        return new SalesReportRow(keys, values);
     }
 
     public async Task<SalesReportDimensions> DimensionsAsync(string report, CancellationToken cancellationToken)
@@ -212,13 +226,14 @@ public sealed class SqlSalesReports(SalesSqlOptions options, ILegacySqlConnectio
         {
             await using var cmd = lease.Connection.CreateCommand();
             cmd.CommandTimeout = options.CommandTimeoutSeconds;
-            cmd.CommandText = $"SELECT DISTINCT LTRIM(RTRIM(v)) FROM ({sql}) AS t(v) WHERE v IS NOT NULL AND LTRIM(RTRIM(v)) <> N'' ORDER BY 1";
+            // A constant reference query from the definitions above; no caller input.
+            cmd.CommandText = $"SELECT DISTINCT LTRIM(RTRIM(v)) FROM ({sql}) AS t(v) WHERE v IS NOT NULL AND LTRIM(RTRIM(v)) <> N'' ORDER BY 1"; // NOSONAR
             var list = new List<string>();
             await using var reader = await cmd.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
             while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false)) list.Add(reader.GetString(0));
             values[dim] = list;
         }
-        return new SalesReportDimensions(report.ToLowerInvariant(), ["period", .. def.Dimensions.Keys], [.. def.Measures.Keys], values);
+        return new SalesReportDimensions(report.ToLowerInvariant(), [Period, .. def.Dimensions.Keys], [.. def.Measures.Keys], values);
     }
 
     private static Definition Find(string report) =>
