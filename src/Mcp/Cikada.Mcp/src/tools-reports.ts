@@ -142,4 +142,153 @@ const reportDimensions: ToolDef = {
   },
 };
 
-export const REPORT_TOOLS: readonly ToolDef[] = [productionReport, workReport, paymentsReport, reportDimensions];
+// ------------------------------------------------------------------------------------------------------------------------------- operational lists
+
+const LIST_TEXT_ROWS = 30;
+const bool = (description: string): Schema => ({ type: 'boolean', description });
+const int = (description: string, max?: number): Schema => ({ type: 'integer', minimum: 0, ...(max ? { maximum: max } : {}), description });
+const text = (description: string): Schema => ({ type: 'string', maxLength: 100, description });
+
+/** args (tool names) → API query (SQL parameter names); dates given inclusive become an exclusive `to`. */
+async function runList(list: string, mapping: Record<string, string>, args: Record<string, unknown>, ctx: ToolContext): Promise<ToolResult> {
+  const query: Record<string, string | undefined> = {};
+  for (const [argName, apiName] of Object.entries(mapping)) {
+    const value = args[argName];
+    if (value === undefined || value === null || value === '') continue;
+    query[apiName] = argName === 'to' ? addDay(String(value)) : String(value);
+  }
+  let result: Row;
+  try {
+    result = await ctx.api.json<Row>({ target: 'sales', method: 'GET', path: `${REPORTS}/lists/${list}`, query });
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 403) {
+      throw new ApiError('Reports need the Cikada role SalesAdmin or Reports, and a legacy SQL login allowed to read them.', 403, error.code);
+    }
+    throw error;
+  }
+  const columns = (result.columns as string[]) ?? [];
+  const rows = (result.rows as Row[]) ?? [];
+  const cell = (v: unknown): string => {
+    if (v === null || v === undefined) return '';
+    if (typeof v === 'number') return Number.isInteger(v) ? String(v) : v.toFixed(2);
+    return typeof v === 'string' ? v : JSON.stringify(v);
+  };
+  const lines = rows.slice(0, LIST_TEXT_ROWS).map((r) => columns.map((c) => cell(r[c])).join(' | '));
+  const more = rows.length > LIST_TEXT_ROWS ? `\n… ${rows.length - LIST_TEXT_ROWS} more rows in data.rows` : '';
+  const truncatedNote = result.truncated ? ' (TRUNCATED at 1000: narrow the filters)' : '';
+  return {
+    text: `${list}: ${rows.length} row(s)${truncatedNote}.\n${columns.join(' | ')}\n${lines.join('\n')}${more}`,
+    data: { list, columns, rows, truncated: result.truncated === true },
+  };
+}
+
+const pipelineList: ToolDef = {
+  name: 'production_queue',
+  title: 'Production queue now',
+  description:
+    'The live production queue: manufactured products not yet handed to the customer, by their CURRENT state and product type (vnt types), with pieces, average and maximum days in that state and pieces stuck longer than staleDays. ' +
+    'States: Įvestas į programą (entered, waiting for approval), Patvirtintas gamybai (approved = queued for production), Gaminamas (in production), Pagamintas (made), Išsiųstas į filialą (sent to branch), Sustabdytas (stopped). ' +
+    'Old forgotten items inflate the queue: use maxOrderAgeDays (e.g. 180) for a realistic picture. For "how many per day do we make" use report_production instead.',
+  inputSchema: obj({
+    branch: text('Only orders of this branch (name contains).'),
+    maxOrderAgeDays: int('Ignore products of orders older than this many days.'),
+    staleDays: int('Count pieces in their state longer than this (default 30).'),
+  }),
+  annotations: READ,
+  handler: (args, ctx) => runList('pipeline', { branch: 'branch', maxOrderAgeDays: 'maxOrderAgeDays', staleDays: 'staleDays' }, args, ctx),
+};
+
+const materialsList: ToolDef = {
+  name: 'materials_popularity',
+  title: 'Most used materials',
+  description:
+    'Materials / colours ranked by use in orders of a period (by order date): material code, name and category, product category and type, orders, pieces and m². ' +
+    'Filter by product (type contains, e.g. "roletai", "zebra", "plis") and material (code or name contains). The default placeholder colour is left out.',
+  inputSchema: obj({
+    from: DATE_ARG('First order date, inclusive; default the first day of the current month'),
+    to: DATE_ARG('Last order date, INCLUSIVE; default today'),
+    type: text('Product type or category contains.'),
+    material: text('Material code or name contains.'),
+    top: int('How many rows, default 50.', 500),
+  }),
+  annotations: READ,
+  handler: (args, ctx) => runList('materials', { from: 'from', to: 'to', type: 'typeSearch', material: 'materialSearch', top: 'top' }, args, ctx),
+};
+
+const stoppedList: ToolDef = {
+  name: 'stopped_products',
+  title: 'Stopped products',
+  description:
+    'Products currently stopped (state Sustabdytas): order, customer, branch, product, material, size, since when and how many days, the state before the stop, who stopped it, and the order / product notes. ' +
+    'The legacy system stores NO stop reason (the "missing material" states were never used): the notes are the only hint, say so when asked why.',
+  inputSchema: obj({ search: text('Order number or customer contains.'), includeCancelled: bool('Also cancelled orders.') }),
+  annotations: READ,
+  handler: (args, ctx) => runList('stopped', { search: 'search', includeCancelled: 'includeCancelled' }, args, ctx),
+};
+
+const unpaidList: ToolDef = {
+  name: 'unpaid_orders',
+  title: 'Long unpaid orders',
+  description:
+    'Orders with outstanding debt (price − paid), oldest first: state, customer, wholesale or retail, branch, price, paid, debt, days since order and since handed out, last payment, and LegacyOverdue (handed out more than 30 days ago for wholesale / 15 for retail, the rule of the legacy reminder e-mail). ' +
+    'Debt includes prepayments of orders not yet handed out: use onlyHandedOut for money actually owed after delivery. Retail sales are booked on one customer per branch ("Kaunas - mažmena").',
+  inputSchema: obj({
+    minDays: int('Only orders at least this many days old (default 30).'),
+    minDebt: { type: 'number', minimum: 0, description: 'Only debts of at least this many EUR.' },
+    onlyHandedOut: bool('Only orders already handed out to the customer.'),
+    onlyLegacyOverdue: bool('Only orders overdue by the legacy rule.'),
+    search: text('Customer or order number contains.'),
+  }),
+  annotations: READ,
+  handler: (args, ctx) =>
+    runList('unpaid-orders', { minDays: 'minDays', minDebt: 'minDebt', onlyHandedOut: 'onlyHandedOut', onlyLegacyOverdue: 'onlyLegacyOverdue', search: 'search' }, args, ctx),
+};
+
+const notDeliveredList: ToolDef = {
+  name: 'made_not_delivered',
+  title: 'Made but not handed out or installed',
+  description:
+    'Orders made long ago but not handed out, and handed-out orders whose installation is not recorded yet: lines and pieces, made / handed lines, made date and days since, hand-out date, NotHandedOut, NeedsInstall (has a Montavimas service line), InstallerDate, InstallPending, debt. ' +
+    'Installation has no "done" flag in the legacy system: it counts as done when an installer (Montuotojas) is recorded with a date up to today.',
+  inputSchema: obj({
+    days: int('At least this many days since made (default 20, as the legacy e-mail).'),
+    allMade: bool('true (default): every product of the order is made; false: at least one.'),
+    includeInstall: bool('Also handed-out orders with installation pending (default true).'),
+    maxOrderAgeDays: int('Ignore orders older than this many days (default 365; old data has gaps).'),
+  }),
+  annotations: READ,
+  handler: (args, ctx) => runList('not-delivered', { days: 'days', allMade: 'allMade', includeInstall: 'includeInstall', maxOrderAgeDays: 'maxOrderAgeDays' }, args, ctx),
+};
+
+const customerDebtList: ToolDef = {
+  name: 'customer_debt',
+  title: 'Customer debt',
+  description:
+    'Debt per customer, largest first: orders in debt, total debt, debt of handed-out orders, oldest debt date and age, the debt in Agnum (accounting) and the credit limit. Search one customer by name. ' +
+    'Retail customers are not stored by name (one customer per branch), so this is meaningful for wholesale customers.',
+  inputSchema: obj({ search: text('Customer name contains.'), onlyHandedOut: bool('Only handed-out orders.'), top: int('How many customers, default 20.', 500) }),
+  annotations: READ,
+  handler: (args, ctx) => runList('customer-debt', { search: 'search', onlyHandedOut: 'onlyHandedOut', top: 'top' }, args, ctx),
+};
+
+const orderSearchList: ToolDef = {
+  name: 'orders_find',
+  title: 'Find orders by period, product and material',
+  description:
+    'Orders with an order date in a period, optionally only those with a product of a type and / or material, in a state, of a branch; oldest first, with price, paid, debt and the matching lines / pieces. Use orders_search for free text and order_get for one order.',
+  inputSchema: obj({
+    from: DATE_ARG('First order date, inclusive; default the first day of the current month'),
+    to: DATE_ARG('Last order date, INCLUSIVE; default today'),
+    type: text('Product type or category contains, e.g. "zebra", "roletai", "tinklel".'),
+    material: text('Material code or name contains.'),
+    state: text('Order state contains, e.g. "Gaminamas", "Pagamintas", "Išduotas".'),
+    branch: text('Branch name contains.'),
+    includeCancelled: bool('Also cancelled orders.'),
+    top: int('At most this many orders, default 200.', 1000),
+  }),
+  annotations: READ,
+  handler: (args, ctx) =>
+    runList('order-search', { from: 'from', to: 'to', type: 'typeSearch', material: 'materialSearch', state: 'state', branch: 'branch', includeCancelled: 'includeCancelled', top: 'top' }, args, ctx),
+};
+
+export const REPORT_TOOLS: readonly ToolDef[] = [productionReport, workReport, paymentsReport, reportDimensions, pipelineList, materialsList, stoppedList, unpaidList, notDeliveredList, customerDebtList, orderSearchList];

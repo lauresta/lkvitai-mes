@@ -53,7 +53,7 @@ export function instructions(orderEntry: boolean): string {
     orderEntry
       ? 'Order entry: order_entry_catalog / order_entry_references give every id; order_entry_get gives the revision every write needs. Never guess an id, a number or a price; summarise and get an explicit yes before order_create, order_confirm, order_cancel or order_product_remove. After a refused write read the order again.'
       : 'Order entry (creating or changing orders) is not enabled on this server.',
-    'Management reports (live, with history since 2020): report_production (made / in production / queue / stopped by product type, series, state, day or month), report_work (accruals per employee and duty), report_payments (money received by method and branch); report_dimensions gives exact filter values. Answer from them directly, and draw a chart from data.rows when it helps.',
+    'Management reports (live, with history since 2020): report_production (made / in production / queue / stopped by product type, series, state, day or month), report_work (accruals per employee and duty), report_payments (money received by method and branch); report_dimensions gives exact filter values. Live lists: production_queue (queue now), materials_popularity, stopped_products, unpaid_orders, made_not_delivered (not handed out / not installed), customer_debt, orders_find (orders by period, product, material). Answer from them directly, and draw a chart from data.rows when it helps.',
     'Every call runs as the signed-in user; a 403 means the user lacks the Cikada role for it.',
   ].join('\n');
 }

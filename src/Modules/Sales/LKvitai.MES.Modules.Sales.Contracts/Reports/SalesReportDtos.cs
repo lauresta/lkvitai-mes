@@ -48,3 +48,21 @@ public sealed record SalesReportDimensions(
     IReadOnlyDictionary<string, IReadOnlyList<string>> Values);
 
 public sealed class SalesReportException(string message) : Exception(message);
+
+/// <summary>Operational lists (see <c>GET /api/sales/reports/lists/{name}</c>).</summary>
+public static class SalesListReportNames
+{
+    public const string Pipeline = "pipeline";
+    public const string Materials = "materials";
+    public const string Stopped = "stopped";
+    public const string UnpaidOrders = "unpaid-orders";
+    public const string NotDelivered = "not-delivered";
+    public const string CustomerDebt = "customer-debt";
+    public const string OrderSearch = "order-search";
+}
+
+public sealed record SalesListResult(
+    string List,
+    IReadOnlyList<string> Columns,
+    IReadOnlyList<IReadOnlyDictionary<string, object?>> Rows,
+    bool Truncated);

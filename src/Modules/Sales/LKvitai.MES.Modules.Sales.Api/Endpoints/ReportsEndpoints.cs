@@ -28,6 +28,10 @@ public static class ReportsEndpoints
         reports.MapGet("/{report}", async ([AsParameters] ReportRequest request, HttpContext http, ISalesReports service, CancellationToken ct) =>
             Results.Ok(await service.RunAsync(request.ToQuery(http.Request.Query), ct)));
 
+        reports.MapGet("/lists/{name}", async (string name, HttpContext http, ISalesListReports lists, CancellationToken ct) =>
+            Results.Ok(await lists.RunAsync(name, http.Request.Query.Where(q => !string.IsNullOrWhiteSpace(q.Value.ToString()))
+                .ToDictionary(q => q.Key, q => q.Value.ToString(), StringComparer.OrdinalIgnoreCase), ct)));
+
         reports.MapGet("/{report}/dimensions", async (string report, ISalesReports service, CancellationToken ct) =>
             Results.Ok(await service.DimensionsAsync(report, ct)));
 

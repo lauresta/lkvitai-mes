@@ -43,6 +43,15 @@ Management reports (live legacy Mango workbook reports; roles SalesAdmin or Repo
 | `report_work` | Sales `GET /api/sales/reports/work` (accruals per duty / employee / branch) |
 | `report_payments` | Sales `GET /api/sales/reports/payments` (money received by method / branch) |
 | `report_dimensions` | Sales `GET /api/sales/reports/{report}/dimensions` |
+| `production_queue` | Sales `GET /api/sales/reports/lists/pipeline` (current state × type, days in state) |
+| `materials_popularity` | Sales `GET /api/sales/reports/lists/materials` |
+| `stopped_products` | Sales `GET /api/sales/reports/lists/stopped` |
+| `unpaid_orders` | Sales `GET /api/sales/reports/lists/unpaid-orders` |
+| `made_not_delivered` | Sales `GET /api/sales/reports/lists/not-delivered` |
+| `customer_debt` | Sales `GET /api/sales/reports/lists/customer-debt` |
+| `orders_find` | Sales `GET /api/sales/reports/lists/order-search` |
+
+Prompts: `production_status`, `debt_review`, `management_report`, `daily_orders_review`, `take_new_order`.
 
 Order entry (only with `MCP_ENABLE_ORDER_ENTRY=true`; on test via the `CIKADA_MCP_ORDER_ENTRY` environment variable):
 

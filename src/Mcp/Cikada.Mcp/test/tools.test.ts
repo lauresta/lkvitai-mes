@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { NOT_DEPLOYED } from '../src/tools-order-entry.js';
 import { fakeJwt, mockFetch, rpc, running, testConfig } from './helpers.js';
 
-const READ_TOOLS = ['whoami', 'orders_search', 'order_get', 'orders_filters', 'customers_search', 'customer_get', 'price_groups_list', 'items_search', 'stock_get', 'report_production', 'report_work', 'report_payments', 'report_dimensions'];
+const READ_TOOLS = ['whoami', 'orders_search', 'order_get', 'orders_filters', 'customers_search', 'customer_get', 'price_groups_list', 'items_search', 'stock_get', 'report_production', 'report_work', 'report_payments', 'report_dimensions', 'production_queue', 'materials_popularity', 'stopped_products', 'unpaid_orders', 'made_not_delivered', 'customer_debt', 'orders_find'];
 const WRITE_TOOLS = ['order_create', 'order_update', 'order_product_add', 'order_product_update', 'order_product_remove', 'order_address_set', 'order_confirm', 'order_cancel'];
 const DESTRUCTIVE = ['order_product_remove', 'order_confirm', 'order_cancel'];
 
@@ -27,9 +27,9 @@ test('tools/list: the read tools by default, read-only annotated; order entry on
       assert.equal(all.find((t) => t.name === name)?.annotations.readOnlyHint, true, name);
     }
     const prompts = (await rpc(on.base, token, 'prompts/list')).body.result.prompts as { name: string }[];
-    assert.deepEqual(prompts.map((p) => p.name), ['management_report', 'daily_orders_review', 'take_new_order']);
+    assert.deepEqual(prompts.map((p) => p.name), ['production_status', 'debt_review', 'management_report', 'daily_orders_review', 'take_new_order']);
     const offPrompts = (await rpc(off.base, token, 'prompts/list')).body.result.prompts as { name: string }[];
-    assert.deepEqual(offPrompts.map((p) => p.name), ['management_report', 'daily_orders_review']);
+    assert.deepEqual(offPrompts.map((p) => p.name), ['production_status', 'debt_review', 'management_report', 'daily_orders_review']);
   } finally {
     await off.close();
     await on.close();

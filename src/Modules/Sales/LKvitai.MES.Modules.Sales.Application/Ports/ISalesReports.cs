@@ -12,3 +12,9 @@ public interface ISalesReports
 
     Task<SalesReportDimensions> DimensionsAsync(string report, CancellationToken cancellationToken);
 }
+
+/// <summary>Operational lists (queue, stopped, unpaid, not delivered, debt, order search), same identity rules as <see cref="ISalesReports"/>.</summary>
+public interface ISalesListReports
+{
+    Task<SalesListResult> RunAsync(string name, IReadOnlyDictionary<string, string> args, CancellationToken cancellationToken);
+}

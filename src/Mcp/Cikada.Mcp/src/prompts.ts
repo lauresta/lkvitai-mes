@@ -20,6 +20,35 @@ const given = (value: string | undefined, ask: string): string => (value?.trim()
 
 export const PROMPTS: readonly PromptDef[] = [
   {
+    name: 'production_status',
+    title: 'Production status today',
+    description: 'What is in production now, what was made in the last days, what is stopped and what is made but waits too long.',
+    arguments: [{ name: 'branch', description: 'Only one branch (optional).', required: false }],
+    text: (args) =>
+      [
+        `Give me the production status${args.branch?.trim() ? ` for ${args.branch.trim()}` : ''}.`,
+        '1. production_queue with maxOrderAgeDays 180: a table state × product type (pieces), and the products waiting longest.',
+        '2. report_production state "Pagamintas", type "(vnt)", granularity day, groupBy period and type, for the last 14 days: made per day (chart) and the average per working day.',
+        '3. stopped_products: count and the five oldest, with the notes (no stop reason is stored).',
+        '4. made_not_delivered with days 20: how many orders wait to be handed out or installed, the ten oldest.',
+        'Finish with a short list of what needs attention today.',
+      ].join('\n'),
+  },
+  {
+    name: 'debt_review',
+    title: 'Debt review',
+    description: 'Who owes money: largest debtors, long unpaid handed-out orders, overdue by the legacy rule.',
+    arguments: [],
+    text: () =>
+      [
+        'Review the outstanding debt.',
+        '1. customer_debt with onlyHandedOut true, top 15: the largest debtors (wholesale), with the oldest debt age.',
+        '2. unpaid_orders with onlyLegacyOverdue true: the overdue handed-out orders, oldest first, grouped by branch with totals.',
+        '3. A bar chart of overdue debt by branch.',
+        'Retail sales sit on one customer per branch, so name them as the branch. Finish with the five calls to make first.',
+      ].join('\n'),
+  },
+  {
     name: 'management_report',
     title: 'Management report (month)',
     description: 'The three management reports for a month (production, payments received, work) compared with the month before and the same month last year, with charts.',

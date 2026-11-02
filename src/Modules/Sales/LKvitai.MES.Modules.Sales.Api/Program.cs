@@ -34,6 +34,7 @@ if (liveReferencesConfigured)
     }).ConfigurePrimaryHttpMessageHandler(()=>new HttpClientHandler{AllowAutoRedirect=false});
     builder.Services.AddScoped<ISalesOrderEntryReferences, SqlSalesOrderEntryReferences>();
     builder.Services.AddScoped<ISalesReports, SqlSalesReports>();
+    builder.Services.AddScoped<ISalesListReports, SqlSalesListReports>();
     builder.Services.AddScoped<ISalesUnitPriceLookup, SqlSalesUnitPriceLookup>();
     builder.Services.AddScoped<ILiveOrderEntryCatalog, SqlLiveOrderEntryCatalog>();
     builder.Services.AddScoped<IOrderEntryAddressLookup, SqlOrderEntryAddressLookup>();
