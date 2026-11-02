@@ -1,5 +1,14 @@
 name: lkvitai-mes
 
+# SSO (authentik, sso.lauresta.com). APIs accept JWTs minted for the web client
+# and for the MCP client; Portal WebUI also runs the interactive login.
+x-oidc-api: &oidc-api
+  Oidc__Enabled: "${CIKADA_OIDC_ENABLED:-true}"
+  Oidc__Authority: "https://sso.lauresta.com/application/o/cikada/"
+  Oidc__ClientId: "${CIKADA_OIDC_CLIENT_ID:-}"
+  Oidc__Audiences__0: "${CIKADA_MCP_CLIENT_ID:-}"
+  Oidc__Issuers__0: "https://sso.lauresta.com/application/o/cikada-mcp/"
+
 services:
   api:
     image: ghcr.io/lauresta/lkvitai-mes-warehouse-api:${IMAGE_TAG:-latest}
@@ -8,6 +17,7 @@ services:
     ports:
       - "5001:8080"
     environment:
+      <<: *oidc-api
       ASPNETCORE_ENVIRONMENT: Test
       UseJaegerExporter: "false"
       ConnectionStrings__WarehouseDb: "Host=pg;Port=5432;Database=lkvitai_warehouse_test;Username=postgres;Password=postgres"
@@ -70,6 +80,7 @@ services:
     ports:
       - "5011:8080"
     environment:
+      <<: *oidc-api
       ASPNETCORE_ENVIRONMENT: Test
       ConnectionStrings__PortalDb: "Host=pg;Port=5432;Database=${TEST_DB_NAME:-lkvitai_warehouse_test};Username=${TEST_DB_USER:-postgres};Password=${TEST_DB_PASSWORD}"
       ConnectionStrings__LKvitaiDb: "${LKVITAI_MSACCESS_DB_CONNECTION}"
@@ -89,6 +100,8 @@ services:
     ports:
       - "5010:8080"
     environment:
+      <<: *oidc-api
+      Oidc__ClientSecret: "${CIKADA_OIDC_CLIENT_SECRET:-}"
       ASPNETCORE_ENVIRONMENT: Test
       PortalApi__BaseUrl: "http://lkvitai-mes-portal-api:8080"
       WarehouseApi__BaseUrl: "http://lkvitai-mes-warehouse-api:8080"
@@ -119,6 +132,7 @@ services:
     ports:
       - "5021:8080"
     environment:
+      <<: *oidc-api
       ASPNETCORE_ENVIRONMENT: Test
       PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
       ConnectionStrings__LKvitaiDb: "${LKVITAI_MSACCESS_DB_CONNECTION}"
@@ -287,6 +301,7 @@ services:
     ports:
       - "5051:8080"
     environment:
+      <<: *oidc-api
       ASPNETCORE_ENVIRONMENT: Test
       PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
       ConnectionStrings__ShopfloorDb: "Host=pg;Port=5432;Database=${TEST_DB_NAME:-lkvitai_warehouse_test};Username=${TEST_DB_USER:-postgres};Password=${TEST_DB_PASSWORD}"

@@ -28,6 +28,9 @@ jobs:
       CLIP_MODEL_DIR: ${{ vars.CLIP_MODEL_DIR }}
       LKVITAI_MSACCESS_DB_CONNECTION: ${{ secrets.LKVITAI_MSACCESS_DB_CONNECTION }}
       SALES_REVIEW_KEY: ${{ secrets.SALES_REVIEW_KEY }}
+      CIKADA_OIDC_CLIENT_ID: ${{ vars.CIKADA_OIDC_CLIENT_ID }}
+      CIKADA_OIDC_CLIENT_SECRET: ${{ secrets.CIKADA_OIDC_CLIENT_SECRET }}
+      CIKADA_MCP_CLIENT_ID: ${{ vars.CIKADA_MCP_CLIENT_ID }}
       SALES_REVIEW_EXPIRES_AT_UTC: ${{ vars.SALES_REVIEW_EXPIRES_AT_UTC }}
       Agnum__Api__BaseUrl: ${{ vars.Agnum__Api__BaseUrl }}
       Agnum__Warehouses__sandelys__ApiKey: ${{ secrets.AGNUM__WAREHOUSES__SANDELYS__APIKEY }}

@@ -25,6 +25,8 @@ builder.Services.AddSalesOrdersDataSource(builder.Configuration, builder.Environ
 // is added to Sales, this will be tightened to match Warehouse's WarehouseHeader
 // scheme (see src/Modules/Warehouse/.../Api/Security/WarehouseAuthenticationHandler.cs).
 builder.Services.AddPortalCookieAuthentication(builder.Environment, builder.Configuration);
+// SSO (authentik) JWTs are validated by PortalStructuredBearerAuthenticationHandler.
+builder.Services.AddCikadaSsoTokenValidation(builder.Configuration);
 builder.Services
     .AddAuthentication()
     .AddScheme<AuthenticationSchemeOptions, PortalStructuredBearerAuthenticationHandler>(

@@ -5,6 +5,7 @@ using LKvitai.MES.BuildingBlocks.WebUI.Services;
 using LKvitai.MES.Modules.Portal.WebUI.Auth;
 using LKvitai.MES.Modules.Portal.WebUI.Services;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;
 using Serilog;
@@ -42,6 +43,16 @@ builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddCikadaLocalization(builder.Configuration);
 builder.Services.AddPortalCookieAuthentication(builder.Environment, builder.Configuration);
+// SSO login (sso.lauresta.com) when Oidc:Enabled; the local login page stays reachable via ?local=1.
+builder.Services.AddPortalOidcLogin(builder.Configuration);
+var ssoEnabled = builder.Configuration.IsCikadaSsoEnabled();
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    // Behind Traefik: the OIDC redirect_uri must use the public https scheme.
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 builder.Services.AddAuthorization();
 // CascadingAuthenticationState lets Pages/Home.razor + MainLayout consume
 // AuthenticationStateProvider via [CascadingParameter]. Required for the
@@ -82,6 +93,7 @@ builder.Services.AddHttpClient("WarehouseApi", (sp, client) =>
 
 var app = builder.Build();
 
+app.UseForwardedHeaders();
 app.UsePathBase(ResolvePathBase(app.Configuration));
 // Shared EN/LT UI culture from the cross-module culture cookie (docs/i18n/README.md).
 app.UseCikadaRequestLocalization();
@@ -118,8 +130,28 @@ app.Use(async (context, next) =>
     }
 
     var returnUrl = context.Request.PathBase + context.Request.Path + context.Request.QueryString;
-    context.Response.Redirect(BuildLocalUrl(context, "/login.html", $"returnUrl={Uri.EscapeDataString(returnUrl)}"));
+    context.Response.Redirect(ssoEnabled
+        ? BuildLocalUrl(context, PortalOidcDefaults.LoginPath, $"returnUrl={Uri.EscapeDataString(returnUrl)}")
+        : BuildLocalUrl(context, "/login.html", $"returnUrl={Uri.EscapeDataString(returnUrl)}"));
 });
+
+if (ssoEnabled)
+{
+    // Modules redirect unauthenticated users to /portal/login.html; with SSO on, send them
+    // straight to the provider unless the local login was asked for explicitly (?local=1).
+    app.Use(async (context, next) =>
+    {
+        if (context.Request.Path.StartsWithSegments("/login.html", StringComparison.OrdinalIgnoreCase) &&
+            !context.Request.Query.ContainsKey("local"))
+        {
+            var returnUrl = context.Request.Query["returnUrl"].ToString();
+            context.Response.Redirect(BuildLocalUrl(context, PortalOidcDefaults.LoginPath, $"returnUrl={Uri.EscapeDataString(returnUrl)}"));
+            return;
+        }
+
+        await next();
+    });
+}
 
 app.Use(async (context, next) =>
 {
@@ -238,6 +270,10 @@ app.MapPost("/auth/login", async (
 }).AllowAnonymous();
 
 app.MapPortalLogout();
+if (ssoEnabled)
+{
+    app.MapPortalOidcLogin();
+}
 
 // Razor Pages host (_Host.cshtml) renders the Blazor Server App.
 // MapFallbackToPage is the canonical pairing for Blazor Server and
@@ -265,6 +301,9 @@ static bool IsAnonymousPortalPath(PathString path)
            path.StartsWithSegments("/culture", StringComparison.OrdinalIgnoreCase) ||
            path.StartsWithSegments("/auth/login", StringComparison.OrdinalIgnoreCase) ||
            path.StartsWithSegments("/auth/logout", StringComparison.OrdinalIgnoreCase) ||
+           path.StartsWithSegments(PortalOidcDefaults.LoginPath, StringComparison.OrdinalIgnoreCase) ||
+           path.StartsWithSegments(PortalOidcDefaults.CallbackPath, StringComparison.OrdinalIgnoreCase) ||
+           path.StartsWithSegments("/signout-callback-oidc", StringComparison.OrdinalIgnoreCase) ||
            path.StartsWithSegments("/styles.css", StringComparison.OrdinalIgnoreCase) ||
            path.StartsWithSegments("/css", StringComparison.OrdinalIgnoreCase) ||
            path.StartsWithSegments("/fonts", StringComparison.OrdinalIgnoreCase) ||
