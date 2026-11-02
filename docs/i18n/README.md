@@ -104,3 +104,8 @@ buttons (`Išsaugoti`), and Lithuanian quotes/number words only inside resx valu
 - [ ] `dotnet build src/LKvitai.MES.sln -c Release` passes (TreatWarningsAsErrors).
 - [ ] Manually: switch EN ↔ LT in the topbar on 2–3 pages of the module; the choice survives
       navigation to Portal and back.
+
+## 5. Module coverage
+
+- Portal dashboard: reference implementation above.
+- Sales: [coverage and verification](sales.md).

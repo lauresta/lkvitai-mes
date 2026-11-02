@@ -88,7 +88,7 @@ public static class DemoOrderNumber
     {
         canonical = "";
         series = "";
-        error = "Enter a number such as VV-123 or VV-123-A.";
+        error = LKvitai.MES.Modules.Sales.WebUI.Resources.SalesResourceText.Localizer["Errors.Client.NumberExample"].Value;
         var match = Pattern.Match(input?.Trim() ?? "");
         if (!match.Success) return false;
 
@@ -96,13 +96,13 @@ public static class DemoOrderNumber
         var requestedSeries = series;
         if (!catalog.Series.Any(x => string.Equals(x.Code, requestedSeries, StringComparison.OrdinalIgnoreCase)))
         {
-            error = $"Series {series} does not exist in the reference snapshot.";
+            error = LKvitai.MES.Modules.Sales.WebUI.Resources.SalesResourceText.Localizer["Preview.UnknownSeries", series].Value;
             return false;
         }
         if (!int.TryParse(match.Groups[2].Value, NumberStyles.None, CultureInfo.InvariantCulture, out var sequence)
             || sequence <= 0)
         {
-            error = "The sequence must be a positive number within the legacy range.";
+            error = LKvitai.MES.Modules.Sales.WebUI.Resources.SalesResourceText.Localizer["Errors.Client.SequenceRange"].Value;
             return false;
         }
 
@@ -111,7 +111,7 @@ public static class DemoOrderNumber
         if (suffix.StartsWith(yearPart, StringComparison.Ordinal)) suffix = suffix[2..];
         if (suffix.Length > 2)
         {
-            error = "Use at most two characters after the year group.";
+            error = LKvitai.MES.Modules.Sales.WebUI.Resources.SalesResourceText.Localizer["Errors.Client.YearSuffixLength"].Value;
             return false;
         }
 

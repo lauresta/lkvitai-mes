@@ -1,0 +1,912 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="Catalog.UnnamedAccessory" xml:space="preserve">
+    <value>Priedas #{0}</value>
+  </data>
+  <data name="Common.Add" xml:space="preserve">
+    <value>+ Pridėti</value>
+  </data>
+  <data name="Common.Address" xml:space="preserve">
+    <value>Adresas</value>
+  </data>
+  <data name="Common.Amount" xml:space="preserve">
+    <value>Suma</value>
+  </data>
+  <data name="Common.BackToOrders" xml:space="preserve">
+    <value>Grįžti į užsakymus</value>
+  </data>
+  <data name="Common.Cancel" xml:space="preserve">
+    <value>Atšaukti</value>
+  </data>
+  <data name="Common.Close" xml:space="preserve">
+    <value>Uždaryti</value>
+  </data>
+  <data name="Common.Consultant" xml:space="preserve">
+    <value>Konsultantas</value>
+  </data>
+  <data name="Common.Customer" xml:space="preserve">
+    <value>Klientas</value>
+  </data>
+  <data name="Common.Date" xml:space="preserve">
+    <value>Data</value>
+  </data>
+  <data name="Common.Debt" xml:space="preserve">
+    <value>Skola</value>
+  </data>
+  <data name="Common.Delete" xml:space="preserve">
+    <value>Ištrinti</value>
+  </data>
+  <data name="Common.Details" xml:space="preserve">
+    <value>Informacija</value>
+  </data>
+  <data name="Common.DueDate" xml:space="preserve">
+    <value>Terminas</value>
+  </data>
+  <data name="Common.Employee" xml:space="preserve">
+    <value>Darbuotojas</value>
+  </data>
+  <data name="Common.Height" xml:space="preserve">
+    <value>Aukštis</value>
+  </data>
+  <data name="Common.Home" xml:space="preserve">
+    <value>Pradžia</value>
+  </data>
+  <data name="Common.Manager" xml:space="preserve">
+    <value>Vadybininkas</value>
+  </data>
+  <data name="Common.Note" xml:space="preserve">
+    <value>Pastaba</value>
+  </data>
+  <data name="Common.Notes" xml:space="preserve">
+    <value>Pastabos</value>
+  </data>
+  <data name="Common.Number" xml:space="preserve">
+    <value>Numeris</value>
+  </data>
+  <data name="Common.OrderDate" xml:space="preserve">
+    <value>Užsakymo data</value>
+  </data>
+  <data name="Common.Orders" xml:space="preserve">
+    <value>Užsakymai</value>
+  </data>
+  <data name="Common.Paid" xml:space="preserve">
+    <value>Apmokėta</value>
+  </data>
+  <data name="Common.Payments" xml:space="preserve">
+    <value>Mokėjimai</value>
+  </data>
+  <data name="Common.Phone" xml:space="preserve">
+    <value>Telefonas</value>
+  </data>
+  <data name="Common.Price" xml:space="preserve">
+    <value>Kaina</value>
+  </data>
+  <data name="Common.Quantity" xml:space="preserve">
+    <value>Kiekis</value>
+  </data>
+  <data name="Common.Refresh" xml:space="preserve">
+    <value>Atnaujinti</value>
+  </data>
+  <data name="Common.Retry" xml:space="preserve">
+    <value>Bandyti dar kartą</value>
+  </data>
+  <data name="Common.Status" xml:space="preserve">
+    <value>Būsena</value>
+  </data>
+  <data name="Common.Store" xml:space="preserve">
+    <value>Salonas</value>
+  </data>
+  <data name="Common.Total" xml:space="preserve">
+    <value>Iš viso</value>
+  </data>
+  <data name="Common.Width" xml:space="preserve">
+    <value>Plotis</value>
+  </data>
+  <data name="Details.AcquaintanceDate" xml:space="preserve">
+    <value>Susipažinimo data</value>
+  </data>
+  <data name="Details.Amount.AfterDiscount" xml:space="preserve">
+    <value>Po nuolaidos</value>
+  </data>
+  <data name="Details.Amount.Calculated" xml:space="preserve">
+    <value>Apskaičiuota</value>
+  </data>
+  <data name="Details.Amount.Debt" xml:space="preserve">
+    <value>Skola</value>
+  </data>
+  <data name="Details.Amount.Defined" xml:space="preserve">
+    <value>Nustatyta</value>
+  </data>
+  <data name="Details.Amount.Discount" xml:space="preserve">
+    <value>Nuolaida</value>
+  </data>
+  <data name="Details.Amount.Paid" xml:space="preserve">
+    <value>Apmokėta</value>
+  </data>
+  <data name="Details.Amounts" xml:space="preserve">
+    <value>Sumos</value>
+  </data>
+  <data name="Details.AssignmentCount" xml:space="preserve">
+    <value>Priskyrimų: {0}</value>
+  </data>
+  <data name="Details.Color" xml:space="preserve">
+    <value>Spalva</value>
+  </data>
+  <data name="Details.CouldNotLoad" xml:space="preserve">
+    <value>Nepavyko įkelti užsakymo {0}.</value>
+  </data>
+  <data name="Details.Duty" xml:space="preserve">
+    <value>Pareiga</value>
+  </data>
+  <data name="Details.EmailCustomer" xml:space="preserve">
+    <value>Rašyti klientui</value>
+  </data>
+  <data name="Details.Employee" xml:space="preserve">
+    <value>Darbuotojas</value>
+  </data>
+  <data name="Details.Employees" xml:space="preserve">
+    <value>Darbuotojai</value>
+  </data>
+  <data name="Details.Item" xml:space="preserve">
+    <value>Prekė</value>
+  </data>
+  <data name="Details.ItemCount" xml:space="preserve">
+    <value>Gaminių: {0} · eilučių: {1}</value>
+  </data>
+  <data name="Details.ItemQuantity" xml:space="preserve">
+    <value>Prekių kiekis</value>
+  </data>
+  <data name="Details.Items" xml:space="preserve">
+    <value>Prekės</value>
+  </data>
+  <data name="Details.NoMatchingOrder" xml:space="preserve">
+    <value>Užsakymas {0} nerastas.</value>
+  </data>
+  <data name="Details.NotFound" xml:space="preserve">
+    <value>Užsakymas nerastas.</value>
+  </data>
+  <data name="Details.OpenPos" xml:space="preserve">
+    <value>Atidaryti POS</value>
+  </data>
+  <data name="Details.Operator" xml:space="preserve">
+    <value>Operatorius: {0} · {1}</value>
+  </data>
+  <data name="Details.OrderQuantity" xml:space="preserve">
+    <value>Užsak. kiekis</value>
+  </data>
+  <data name="Details.PageTitle" xml:space="preserve">
+    <value>{0} · Pardavimai</value>
+  </data>
+  <data name="Details.Print" xml:space="preserve">
+    <value>Spausdinti</value>
+  </data>
+  <data name="Details.ProductType" xml:space="preserve">
+    <value>Gaminio tipas</value>
+  </data>
+  <data name="Details.QuantityShort" xml:space="preserve">
+    <value>Kiekis</value>
+  </data>
+  <data name="Details.ServiceDate" xml:space="preserve">
+    <value>Paslaugos data</value>
+  </data>
+  <data name="Details.Side" xml:space="preserve">
+    <value>Pusė</value>
+  </data>
+  <data name="Details.Title" xml:space="preserve">
+    <value>Užsakymo informacija</value>
+  </data>
+  <data name="Details.VatIncluded" xml:space="preserve">
+    <value>visos sumos su PVM</value>
+  </data>
+  <data name="Errors.Client.NumberExample" xml:space="preserve">
+    <value>Įveskite numerį, pavyzdžiui, VV-123 arba VV-123-A.</value>
+  </data>
+  <data name="Errors.Client.YearSuffixLength" xml:space="preserve">
+    <value>Po metų grupės galima įvesti ne daugiau kaip du simbolius.</value>
+  </data>
+  <data name="Nav.BackToOrders" xml:space="preserve">
+    <value>Grįžti į užsakymus</value>
+  </data>
+  <data name="Nav.Breadcrumb" xml:space="preserve">
+    <value>Naršymo kelias</value>
+  </data>
+  <data name="Nav.NotFound" xml:space="preserve">
+    <value>Nerasta</value>
+  </data>
+  <data name="Nav.NothingHere" xml:space="preserve">
+    <value>Šiuo adresu nieko nėra.</value>
+  </data>
+  <data name="Orders.AllStatuses" xml:space="preserve">
+    <value>Visos būsenos</value>
+  </data>
+  <data name="Orders.AllStores" xml:space="preserve">
+    <value>Visi salonai</value>
+  </data>
+  <data name="Orders.ApiUnavailable" xml:space="preserve">
+    <value>Pardavimų modulis nepasiekiamas.</value>
+  </data>
+  <data name="Orders.DateFilterUnavailable" xml:space="preserve">
+    <value>Datos intervalo filtras bus įjungtas antrajame etape</value>
+  </data>
+  <data name="Orders.DebtFilter" xml:space="preserve">
+    <value>Rodyti tik neapmokėtus užsakymus</value>
+  </data>
+  <data name="Orders.Export" xml:space="preserve">
+    <value>Eksportuoti</value>
+  </data>
+  <data name="Orders.Flags" xml:space="preserve">
+    <value>Žymos</value>
+  </data>
+  <data name="Orders.HasDebt" xml:space="preserve">
+    <value>Yra skola</value>
+  </data>
+  <data name="Orders.HasNote" xml:space="preserve">
+    <value>Yra pastaba</value>
+  </data>
+  <data name="Orders.Introduction" xml:space="preserve">
+    <value>Užsakymų darbo sąrašas. Spustelėkite užsakymo numerį, kad atidarytumėte informaciją naujame skirtuke.</value>
+  </data>
+  <data name="Orders.Last30Days" xml:space="preserve">
+    <value>Paskutinės 30 dienų</value>
+  </data>
+  <data name="Orders.ListSummary" xml:space="preserve">
+    <value>Glaustas vaizdas · {0} eilučių puslapyje · naujausi viršuje</value>
+  </data>
+  <data name="Orders.ListTitle" xml:space="preserve">
+    <value>Nauji, neapmokėti ir neužbaigti užsakymai</value>
+  </data>
+  <data name="Orders.MobileOrders" xml:space="preserve">
+    <value>Užsakymų kortelės</value>
+  </data>
+  <data name="Orders.NewOrder" xml:space="preserve">
+    <value>Naujas užsakymas</value>
+  </data>
+  <data name="Orders.NextPage" xml:space="preserve">
+    <value>Kitas</value>
+  </data>
+  <data name="Orders.NoMatches" xml:space="preserve">
+    <value>Šiuos filtrus atitinkančių užsakymų nėra.</value>
+  </data>
+  <data name="Orders.OpenNewTab" xml:space="preserve">
+    <value>Atidaryti {0} naujame skirtuke</value>
+  </data>
+  <data name="Orders.PageTitle" xml:space="preserve">
+    <value>Pardavimai · Užsakymai</value>
+  </data>
+  <data name="Orders.PaginationBottom" xml:space="preserve">
+    <value>Puslapiavimas apačioje</value>
+  </data>
+  <data name="Orders.PaginationTop" xml:space="preserve">
+    <value>Puslapiavimas viršuje</value>
+  </data>
+  <data name="Orders.PreviousPage" xml:space="preserve">
+    <value>Ankstesnis</value>
+  </data>
+  <data name="Orders.RetryLoad" xml:space="preserve">
+    <value>Bandykite dar kartą arba įkelkite puslapį iš naujo.</value>
+  </data>
+  <data name="Orders.Search" xml:space="preserve">
+    <value>Ieškoti užsakymų</value>
+  </data>
+  <data name="Orders.SearchDescription" xml:space="preserve">
+    <value>Ieškoma pagal užsakymo numerį, klientą, adresą ir užsakymo eilučių informaciją.</value>
+  </data>
+  <data name="Orders.SelectAll" xml:space="preserve">
+    <value>Pasirinkti visus</value>
+  </data>
+  <data name="Orders.ShowingEntries" xml:space="preserve">
+    <value>Rodomi įrašai {0}–{1} iš {2}</value>
+  </data>
+  <data name="Orders.SortedDescending" xml:space="preserve">
+    <value>Surikiuota mažėjančiai</value>
+  </data>
+  <data name="Orders.Status.Approved" xml:space="preserve">
+    <value>Patvirtintas</value>
+  </data>
+  <data name="Orders.Status.Cancelled" xml:space="preserve">
+    <value>Anuliuotas</value>
+  </data>
+  <data name="Orders.Status.Delivered" xml:space="preserve">
+    <value>Atiduotas</value>
+  </data>
+  <data name="Orders.Status.Entered" xml:space="preserve">
+    <value>Įvestas</value>
+  </data>
+  <data name="Orders.Status.InProgress" xml:space="preserve">
+    <value>Gaminamas</value>
+  </data>
+  <data name="Orders.Status.Made" xml:space="preserve">
+    <value>Pagamintas</value>
+  </data>
+  <data name="Orders.Status.MultiStatus" xml:space="preserve">
+    <value>Skirtingos būsenos</value>
+  </data>
+  <data name="Orders.Status.Paused" xml:space="preserve">
+    <value>Sustabdytas</value>
+  </data>
+  <data name="Orders.Status.Shipped" xml:space="preserve">
+    <value>Filialui</value>
+  </data>
+  <data name="Orders.ThisMonth" xml:space="preserve">
+    <value>Šis mėnuo</value>
+  </data>
+  <data name="Orders.VipCustomer" xml:space="preserve">
+    <value>VIP klientas</value>
+  </data>
+  <data name="Orders.YearToDate" xml:space="preserve">
+    <value>Nuo metų pradžios</value>
+  </data>
+  <data name="Payment.AddDraft" xml:space="preserve">
+    <value>Pridėti į juodraštį</value>
+  </data>
+  <data name="Payment.AddNew" xml:space="preserve">
+    <value>+ Naujas mokėjimas</value>
+  </data>
+  <data name="Payment.AmountEur" xml:space="preserve">
+    <value>Suma · €</value>
+  </data>
+  <data name="Payment.BankReference" xml:space="preserve">
+    <value>Banko pavedimo nuoroda</value>
+  </data>
+  <data name="Payment.BankTransfer" xml:space="preserve">
+    <value>Banko pavedimas</value>
+  </data>
+  <data name="Payment.CashDesk" xml:space="preserve">
+    <value>Kasa</value>
+  </data>
+  <data name="Payment.CashReceiver" xml:space="preserve">
+    <value>Pinigų gavėjas</value>
+  </data>
+  <data name="Payment.Close" xml:space="preserve">
+    <value>Uždaryti mokėjimo formą</value>
+  </data>
+  <data name="Payment.DebtAfter" xml:space="preserve">
+    <value>Skola po mokėjimo</value>
+  </data>
+  <data name="Payment.DraftHelp" xml:space="preserve">
+    <value>Sąsajos peržiūra · Šis mokėjimas lieka tik vietiniame juodraštyje.</value>
+  </data>
+  <data name="Payment.Method" xml:space="preserve">
+    <value>Mokėjimo būdas</value>
+  </data>
+  <data name="Payment.New" xml:space="preserve">
+    <value>Naujas mokėjimas</value>
+  </data>
+  <data name="Payment.NoDraft" xml:space="preserve">
+    <value>Šiame vietiniame juodraštyje mokėjimų nėra.</value>
+  </data>
+  <data name="Payment.PpkNumber" xml:space="preserve">
+    <value>PPK serija ir numeris</value>
+  </data>
+  <data name="Payment.Register" xml:space="preserve">
+    <value>EKA kasos aparatas</value>
+  </data>
+  <data name="Payment.Remove" xml:space="preserve">
+    <value>Pašalinti mokėjimą</value>
+  </data>
+  <data name="Payment.RequiredReference" xml:space="preserve">
+    <value>Įveskite šiam būdui reikalingą dokumento nuorodą, gavėją arba kasos aparatą.</value>
+  </data>
+  <data name="Payment.ValidDateAmount" xml:space="preserve">
+    <value>Įveskite tinkamą mokėjimo datą ir teigiamą sumą.</value>
+  </data>
+  <data name="Payment.ViaPpk" xml:space="preserve">
+    <value>Pagal PPK</value>
+  </data>
+  <data name="Preview.DimensionsAria" xml:space="preserve">
+    <value>{0}, {1} × {2} mm</value>
+  </data>
+  <data name="Preview.Quantity" xml:space="preserve">
+    <value>× {0} vnt.</value>
+  </data>
+  <data name="Product.Accessories" xml:space="preserve">
+    <value>Priedai</value>
+  </data>
+  <data name="Product.AccessoriesHeading" xml:space="preserve">
+    <value>Priedai</value>
+  </data>
+  <data name="Product.AccessoryCategoryHelp" xml:space="preserve">
+    <value>Šie priedai atitinka pasirinkto gaminio rūšį senosios sistemos žinyno kopijoje.</value>
+  </data>
+  <data name="Product.AccessoryFor" xml:space="preserve">
+    <value>Gaminio {0} priedas</value>
+  </data>
+  <data name="Product.AddAccessory" xml:space="preserve">
+    <value>+ Pridėti priedą</value>
+  </data>
+  <data name="Product.AddAccessoryShort" xml:space="preserve">
+    <value>+ Priedas</value>
+  </data>
+  <data name="Product.AddNew" xml:space="preserve">
+    <value>+ Naujas gaminys</value>
+  </data>
+  <data name="Product.AddPriedai" xml:space="preserve">
+    <value>Pridėti priedų</value>
+  </data>
+  <data name="Product.AddToProduct" xml:space="preserve">
+    <value>Pridėti priedą šiam gaminiui</value>
+  </data>
+  <data name="Product.AdditionalParameters" xml:space="preserve">
+    <value>Papildomi parametrai · PPP01–PPP12</value>
+  </data>
+  <data name="Product.BackOrderArrow" xml:space="preserve">
+    <value>← Grįžti į užsakymą</value>
+  </data>
+  <data name="Product.CategoryStep" xml:space="preserve">
+    <value>1 · Rūšis</value>
+  </data>
+  <data name="Product.ChainLeft" xml:space="preserve">
+    <value>Grandinėlė kairėje</value>
+  </data>
+  <data name="Product.ChainRight" xml:space="preserve">
+    <value>Grandinėlė dešinėje</value>
+  </data>
+  <data name="Product.CheckParameters" xml:space="preserve">
+    <value>Patikrinti parametrus</value>
+  </data>
+  <data name="Product.ChooseNew" xml:space="preserve">
+    <value>Pasirinkti naują gaminį</value>
+  </data>
+  <data name="Product.ChoosePriedai" xml:space="preserve">
+    <value>Pasirinkite priedą.</value>
+  </data>
+  <data name="Product.ClosePicker" xml:space="preserve">
+    <value>Uždaryti pasirinkimą</value>
+  </data>
+  <data name="Product.ColourFabric" xml:space="preserve">
+    <value>Spalva · audinys</value>
+  </data>
+  <data name="Product.Control" xml:space="preserve">
+    <value>Valdymas</value>
+  </data>
+  <data name="Product.DecreaseHeight" xml:space="preserve">
+    <value>Sumažinti aukštį</value>
+  </data>
+  <data name="Product.DecreaseQuantity" xml:space="preserve">
+    <value>Sumažinti kiekį</value>
+  </data>
+  <data name="Product.DecreaseWidth" xml:space="preserve">
+    <value>Sumažinti plotį</value>
+  </data>
+  <data name="Product.Duplicate" xml:space="preserve">
+    <value>Kopijuoti</value>
+  </data>
+  <data name="Product.Editor" xml:space="preserve">
+    <value>Gaminio redagavimas</value>
+  </data>
+  <data name="Product.FabricNeeded" xml:space="preserve">
+    <value>Reikia audinio</value>
+  </data>
+  <data name="Product.FindCategoryType" xml:space="preserve">
+    <value>Ieškoti rūšies arba tipo</value>
+  </data>
+  <data name="Product.ForOrder" xml:space="preserve">
+    <value>Užsakymo {0} gaminys</value>
+  </data>
+  <data name="Product.FreeUnknown" xml:space="preserve">
+    <value>laisva —</value>
+  </data>
+  <data name="Product.FromPriceList" xml:space="preserve">
+    <value>Iš kainoraščio</value>
+  </data>
+  <data name="Product.IncreaseHeight" xml:space="preserve">
+    <value>Padidinti aukštį</value>
+  </data>
+  <data name="Product.IncreaseQuantity" xml:space="preserve">
+    <value>Padidinti kiekį</value>
+  </data>
+  <data name="Product.IncreaseWidth" xml:space="preserve">
+    <value>Padidinti plotį</value>
+  </data>
+  <data name="Product.Info" xml:space="preserve">
+    <value>Gaminio informacija</value>
+  </data>
+  <data name="Product.Kind" xml:space="preserve">
+    <value>Gaminys</value>
+  </data>
+  <data name="Product.LivePreview" xml:space="preserve">
+    <value>Tiesioginė peržiūra</value>
+  </data>
+  <data name="Product.LocalDraftAt" xml:space="preserve">
+    <value>Vietinis juodraštis · {0}</value>
+  </data>
+  <data name="Product.MainParameters" xml:space="preserve">
+    <value>Pagrindiniai parametrai</value>
+  </data>
+  <data name="Product.MilestoneHelp" xml:space="preserve">
+    <value>Audinių atsargos, kainoraštis ir senosios sistemos formulės prijungiami 2 etape.</value>
+  </data>
+  <data name="Product.Motor" xml:space="preserve">
+    <value>Variklis</value>
+  </data>
+  <data name="Product.NameCode" xml:space="preserve">
+    <value>Pavadinimas arba kodas</value>
+  </data>
+  <data name="Product.New" xml:space="preserve">
+    <value>Naujas gaminys</value>
+  </data>
+  <data name="Product.NewService" xml:space="preserve">
+    <value>Naujas gaminys arba paslauga</value>
+  </data>
+  <data name="Product.NoAccessories" xml:space="preserve">
+    <value>Priedų nėra. Pasirinkimai atrenkami pagal gaminio rūšį.</value>
+  </data>
+  <data name="Product.NoActiveTypes" xml:space="preserve">
+    <value>Šioje rūšyje nėra aktyvių tipų.</value>
+  </data>
+  <data name="Product.NoParameters" xml:space="preserve">
+    <value>Ši rūšis žinyno kopijoje neturi papildomų PPP laukų.</value>
+  </data>
+  <data name="Product.NotesExample" xml:space="preserve">
+    <value>Pvz., miegamojo langas, montuoti rėmo viduje</value>
+  </data>
+  <data name="Product.OrderProducts" xml:space="preserve">
+    <value>Užsakymo gaminiai</value>
+  </data>
+  <data name="Product.Other" xml:space="preserve">
+    <value>Kitas</value>
+  </data>
+  <data name="Product.OtherControl" xml:space="preserve">
+    <value>Kitas valdymas</value>
+  </data>
+  <data name="Product.OtherControlButton" xml:space="preserve">
+    <value>Kitas…</value>
+  </data>
+  <data name="Product.Pieces" xml:space="preserve">
+    <value>vnt.</value>
+  </data>
+  <data name="Product.PositiveQuantityPrice" xml:space="preserve">
+    <value>Kiekis turi būti teigiamas, o kaina negali būti neigiama.</value>
+  </data>
+  <data name="Product.PreviewUnitPriceEur" xml:space="preserve">
+    <value>Peržiūros vieneto kaina · €</value>
+  </data>
+  <data name="Product.PriceFocus" xml:space="preserve">
+    <value>aktyvinkite paieškai</value>
+  </data>
+  <data name="Product.PriceFor" xml:space="preserve">
+    <value>{0} kaina</value>
+  </data>
+  <data name="Product.PriceFromList" xml:space="preserve">
+    <value>Kaina iš kainoraščio</value>
+  </data>
+  <data name="Product.PriceStock" xml:space="preserve">
+    <value>Kaina ir atsargos</value>
+  </data>
+  <data name="Product.QuantityFor" xml:space="preserve">
+    <value>{0} kiekis</value>
+  </data>
+  <data name="Product.RemoveAccessory" xml:space="preserve">
+    <value>Pašalinti priedą</value>
+  </data>
+  <data name="Product.ReturnProduction" xml:space="preserve">
+    <value>Grąžinti iš gamybos</value>
+  </data>
+  <data name="Product.Schematic" xml:space="preserve">
+    <value>SCHEMA</value>
+  </data>
+  <data name="Product.SearchCategories" xml:space="preserve">
+    <value>Ieškoti tarp {0} rūšių ir jų tipų</value>
+  </data>
+  <data name="Product.SearchPriedai" xml:space="preserve">
+    <value>Ieškoti priedų</value>
+  </data>
+  <data name="Product.StandaloneHelp" xml:space="preserve">
+    <value>Pasirinkite atskirą šio užsakymo priedo eilutę.</value>
+  </data>
+  <data name="Product.StateHistory" xml:space="preserve">
+    <value>Būsenų istorija</value>
+  </data>
+  <data name="Product.StaticCodeRequired" xml:space="preserve">
+    <value>Pasirinkite spalvos arba audinio kodą iš statinio katalogo.</value>
+  </data>
+  <data name="Product.SuggestedQuantityHelp" xml:space="preserve">
+    <value>Siūlomas kiekis apskaičiuotas pagal senosios sistemos matavimo vieneto taisyklę ir šio gaminio matmenis. Juodraštyje jį galite pakeisti.</value>
+  </data>
+  <data name="Product.ToScale" xml:space="preserve">
+    <value>PAGAL MASTELĮ</value>
+  </data>
+  <data name="Product.Total" xml:space="preserve">
+    <value>Gaminio suma</value>
+  </data>
+  <data name="Product.TypeStep" xml:space="preserve">
+    <value>2 · Tipas</value>
+  </data>
+  <data name="Product.Warranty" xml:space="preserve">
+    <value>Garantinis remontas</value>
+  </data>
+  <data name="Shell.PageTitle" xml:space="preserve">
+    <value>Cikada.MES · Pardavimai</value>
+  </data>
+  <data name="Shell.Reload" xml:space="preserve">
+    <value>Įkelti iš naujo</value>
+  </data>
+  <data name="Shell.UnhandledError" xml:space="preserve">
+    <value>Įvyko nenumatyta klaida.</value>
+  </data>
+  <data name="Workspace.AddLineRequired" xml:space="preserve">
+    <value>Pridėkite bent vieną gaminio, paslaugos arba priedo eilutę.</value>
+  </data>
+  <data name="Workspace.AddPriedai" xml:space="preserve">
+    <value>+ Priedai</value>
+  </data>
+  <data name="Workspace.AddProductService" xml:space="preserve">
+    <value>+ Pridėti gaminį / paslaugą</value>
+  </data>
+  <data name="Workspace.AddressNotes" xml:space="preserve">
+    <value>Adreso pastabos</value>
+  </data>
+  <data name="Workspace.BeforeDiscount" xml:space="preserve">
+    <value>Prieš nuolaidą</value>
+  </data>
+  <data name="Workspace.Building" xml:space="preserve">
+    <value>Namo Nr.</value>
+  </data>
+  <data name="Workspace.CheckLines" xml:space="preserve">
+    <value>Patikrinkite eilučių kiekius, kainas ir gaminių matmenis.</value>
+  </data>
+  <data name="Workspace.City" xml:space="preserve">
+    <value>Miestas</value>
+  </data>
+  <data name="Workspace.CloseNew" xml:space="preserve">
+    <value>Uždaryti naują užsakymą</value>
+  </data>
+  <data name="Workspace.CreateDraftOpen" xml:space="preserve">
+    <value>Sukurti ir atidaryti juodraštį</value>
+  </data>
+  <data name="Workspace.CustomerName" xml:space="preserve">
+    <value>Kliento pavadinimas</value>
+  </data>
+  <data name="Workspace.CustomerStoreRequired" xml:space="preserve">
+    <value>Būtina nurodyti klientą ir saloną.</value>
+  </data>
+  <data name="Workspace.DiscardReturn" xml:space="preserve">
+    <value>Atmesti pakeitimus ir grįžti į užsakymus</value>
+  </data>
+  <data name="Workspace.DiscountPercent" xml:space="preserve">
+    <value>Nuolaida % · neigiama = antkainis</value>
+  </data>
+  <data name="Workspace.DiscountShort" xml:space="preserve">
+    <value>Nuol.</value>
+  </data>
+  <data name="Workspace.Discountable" xml:space="preserve">
+    <value>Taikoma nuolaida</value>
+  </data>
+  <data name="Workspace.DraftAssignments" xml:space="preserve">
+    <value>Vietinio juodraščio priskyrimai</value>
+  </data>
+  <data name="Workspace.DraftContactDelivery" xml:space="preserve">
+    <value>Juodraščio kontaktai ir pristatymo duomenys</value>
+  </data>
+  <data name="Workspace.DraftOnly" xml:space="preserve">
+    <value>Tik juodraštyje</value>
+  </data>
+  <data name="Workspace.DueBeforeDate" xml:space="preserve">
+    <value>Terminas negali būti ankstesnis už užsakymo datą.</value>
+  </data>
+  <data name="Workspace.DutyConsultant" xml:space="preserve">
+    <value>Konsultantas</value>
+  </data>
+  <data name="Workspace.DutyInstaller" xml:space="preserve">
+    <value>Montuotojas</value>
+  </data>
+  <data name="Workspace.DutyManager" xml:space="preserve">
+    <value>Vadybininkas</value>
+  </data>
+  <data name="Workspace.DutyMeasurer" xml:space="preserve">
+    <value>Matuotojas</value>
+  </data>
+  <data name="Workspace.DutyTransport" xml:space="preserve">
+    <value>Transportas</value>
+  </data>
+  <data name="Workspace.EditableFields" xml:space="preserve">
+    <value>Redaguojami juodraščio laukai</value>
+  </data>
+  <data name="Workspace.FixedFinalPrice" xml:space="preserve">
+    <value>Fiksuota galutinė kaina · €</value>
+  </data>
+  <data name="Workspace.Flat" xml:space="preserve">
+    <value>Buto Nr.</value>
+  </data>
+  <data name="Workspace.IncludeDiscount" xml:space="preserve">
+    <value>Įtraukti į peržiūros nuolaidą</value>
+  </data>
+  <data name="Workspace.LocalPreview" xml:space="preserve">
+    <value>Vietinė peržiūra</value>
+  </data>
+  <data name="Workspace.MatchingSeries" xml:space="preserve">
+    <value>Atitinkančios serijos</value>
+  </data>
+  <data name="Workspace.MountingDate" xml:space="preserve">
+    <value>Montavimo data</value>
+  </data>
+  <data name="Workspace.NoLines" xml:space="preserve">
+    <value>Eilučių dar nėra. Pridėkite gaminį, paslaugą arba priedą, kad išbandytumėte užsakymo eigą.</value>
+  </data>
+  <data name="Workspace.NoteLimit" xml:space="preserve">
+    <value>Ne daugiau kaip 128 simboliai.</value>
+  </data>
+  <data name="Workspace.NumberExample" xml:space="preserve">
+    <value>VV-123 arba VV-123-A</value>
+  </data>
+  <data name="Workspace.NumberHelp" xml:space="preserve">
+    <value>Įveskite seriją ir numerį. Einamųjų metų grupė pridedama automatiškai.</value>
+  </data>
+  <data name="Workspace.NumberPreview" xml:space="preserve">
+    <value>Bus rodoma</value>
+  </data>
+  <data name="Workspace.OrderNote" xml:space="preserve">
+    <value>Užsakymo pastaba</value>
+  </data>
+  <data name="Workspace.OrderNumber" xml:space="preserve">
+    <value>Užsakymo numeris</value>
+  </data>
+  <data name="Workspace.OrderStage" xml:space="preserve">
+    <value>Užsakymo etapas</value>
+  </data>
+  <data name="Workspace.PeopleDates" xml:space="preserve">
+    <value>Asmenys ir datos</value>
+  </data>
+  <data name="Workspace.PreviewAmount" xml:space="preserve">
+    <value>Peržiūros suma</value>
+  </data>
+  <data name="Workspace.PreviewChecked" xml:space="preserve">
+    <value>Peržiūra patikrinta. Juodraštis saugomas tik atidarytame ekrane ir dings jį uždarius arba atnaujinus.</value>
+  </data>
+  <data name="Workspace.PreviewCustomerStore" xml:space="preserve">
+    <value>Šiai peržiūrai būtina nurodyti klientą ir saloną.</value>
+  </data>
+  <data name="Workspace.PriceDiscountable" xml:space="preserve">
+    <value>Įveskite neneigiamą galutinę kainą ir pažymėkite bent vieną eilutę, kuriai taikoma nuolaida.</value>
+  </data>
+  <data name="Workspace.PriceOverLimit" xml:space="preserve">
+    <value>Šiai fiksuotai kainai reikėtų didesnės nei 100 % nuolaidos arba antkainio.</value>
+  </data>
+  <data name="Workspace.Priority" xml:space="preserve">
+    <value>Prioritetas</value>
+  </data>
+  <data name="Workspace.PriorityHigh" xml:space="preserve">
+    <value>Aukštas</value>
+  </data>
+  <data name="Workspace.PriorityNormal" xml:space="preserve">
+    <value>Įprastas</value>
+  </data>
+  <data name="Workspace.PriorityUrgent" xml:space="preserve">
+    <value>Skubus</value>
+  </data>
+  <data name="Workspace.ProductsServices" xml:space="preserve">
+    <value>Gaminiai, paslaugos ir priedai</value>
+  </data>
+  <data name="Workspace.Qty" xml:space="preserve">
+    <value>Kiekis</value>
+  </data>
+  <data name="Workspace.Receipt" xml:space="preserve">
+    <value>Kvitas</value>
+  </data>
+  <data name="Workspace.Region" xml:space="preserve">
+    <value>Apskritis</value>
+  </data>
+  <data name="Workspace.RemoveLine" xml:space="preserve">
+    <value>Pašalinti eilutę</value>
+  </data>
+  <data name="Workspace.ResponsibleEmployees" xml:space="preserve">
+    <value>Atsakingi darbuotojai</value>
+  </data>
+  <data name="Workspace.SalesDraft" xml:space="preserve">
+    <value>Pardavimai · Užsakymo juodraštis</value>
+  </data>
+  <data name="Workspace.SaveDraft" xml:space="preserve">
+    <value>Išsaugoti juodraščio peržiūrą</value>
+  </data>
+  <data name="Workspace.Series" xml:space="preserve">
+    <value>serija</value>
+  </data>
+  <data name="Workspace.SeriesDefaults" xml:space="preserve">
+    <value>Serija {0} užpildė esamus asmenų ir salono numatytuosius duomenis. Juos galite redaguoti čia.</value>
+  </data>
+  <data name="Workspace.StoreBranch" xml:space="preserve">
+    <value>Salonas / filialas</value>
+  </data>
+  <data name="Workspace.Street" xml:space="preserve">
+    <value>Gatvė</value>
+  </data>
+  <data name="Workspace.ValidDatesOrder" xml:space="preserve">
+    <value>Įveskite tinkamas datas. Terminas negali būti ankstesnis už užsakymo datą.</value>
+  </data>
+  <data name="Workspace.ValidEmployeeDate" xml:space="preserve">
+    <value>Įveskite darbuotoją ir tinkamą datą.</value>
+  </data>
+  <data name="Preview.RemoveEmployee" xml:space="preserve">
+    <value>Pašalinti darbuotoją</value>
+  </data>
+  <data name="Preview.Milestone2" xml:space="preserve">
+    <value>2 etapas</value>
+  </data>
+  <data name="Preview.DatabaseLater" xml:space="preserve">
+    <value>Įrašymas į duomenų bazę prijungiamas 2 etape</value>
+  </data>
+  <data name="Preview.SearchFabric" xml:space="preserve">
+    <value>Ieškoti audinio kodo</value>
+  </data>
+  <data name="Preview.OverrideParameter" xml:space="preserve">
+    <value>Spustelėkite, kad pakeistumėte apskaičiuotą reikšmę</value>
+  </data>
+  <data name="Preview.DraftHelp" xml:space="preserve">
+    <value>Tai interaktyvus dizaino juodraštis. Atnaujinus arba užvėrus šį ekraną jis pašalinamas; užsakymas, gaminys, priedas ar mokėjimas neišsaugomas.</value>
+  </data>
+  <data name="Preview.PriceHelp" xml:space="preserve">
+    <value>Čia kainos redaguojamos tik peržiūrai. Senosios sistemos kainodara, kredito patikros ir mokėjimų taisyklės prijungiamos 2 etape.</value>
+  </data>
+  <data name="Preview.ConfirmLater" xml:space="preserve">
+    <value>Patvirtinti gamybai · 2 etapas</value>
+  </data>
+  <data name="Preview.MinimumWidth" xml:space="preserve">
+    <value>Mažiausias plotis – 200 mm.</value>
+  </data>
+  <data name="Preview.MinimumHeight" xml:space="preserve">
+    <value>Mažiausias aukštis – 200 mm.</value>
+  </data>
+  <data name="Preview.StockLater" xml:space="preserve">
+    <value>atsargos 2 etape</value>
+  </data>
+  <data name="Preview.PriceLater" xml:space="preserve">
+    <value>Kainoraštis prijungiamas 2 etape.</value>
+  </data>
+  <data name="Preview.CodeMissing" xml:space="preserve">
+    <value>Šios rūšies kodas nerastas žinyno kopijoje.</value>
+  </data>
+  <data name="Preview.DoneOrder" xml:space="preserve">
+    <value>Baigti ir grįžti į užsakymą</value>
+  </data>
+  <data name="Preview.Snapshot" xml:space="preserve">
+    <value>Sąsajos peržiūra · Žinyno kopija {0}. Juodraštis saugomas tik kol šis ekranas atvertas. Į duomenų bazę nieko neįrašoma.</value>
+  </data>
+  <data name="Preview.UnknownSeries" xml:space="preserve">
+    <value>Serijos {0} nėra žinyno kopijoje.</value>
+  </data>
+  <data name="Payment.Header" xml:space="preserve">
+    <value>{0} · Skola {1}</value>
+  </data>
+  <data name="Product.DraftLineHeader" xml:space="preserve">
+    <value>{0} · Juodraščio eilutė</value>
+  </data>
+  <data name="Product.ParameterFieldCount" xml:space="preserve">
+    <value>PPP laukų: {0}</value>
+  </data>
+  <data name="Product.ParameterSummary" xml:space="preserve">
+    <value>{0} · parametrų: {1} · skaičiuojama automatiškai</value>
+  </data>
+  <data name="Product.QuantityUnit" xml:space="preserve">
+    <value>Kiekis · {0}</value>
+  </data>
+  <data name="Product.TypeCount" xml:space="preserve">
+    <value>Tipų: {0}</value>
+  </data>
+  <data name="Workspace.Discount" xml:space="preserve">
+    <value>Nuolaida</value>
+  </data>
+  <data name="Workspace.LineCount" xml:space="preserve">
+    <value>Šio juodraščio eilučių: {0}</value>
+  </data>
+  <data name="Workspace.Markup" xml:space="preserve">
+    <value>Antkainis</value>
+  </data>
+  <data name="Workspace.OrderEntry" xml:space="preserve">
+    <value>Užsakymo įvedimas</value>
+  </data>
+  <data name="Errors.Client.SequenceRange" xml:space="preserve">
+    <value>Eilės numeris turi būti teigiamas ir neviršyti senosios sistemos ribų.</value>
+  </data>
+</root>
