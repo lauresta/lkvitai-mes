@@ -423,8 +423,14 @@ app.MapLegacySqlMappingLookup();
 
 app.MapPost(
         "/api/auth/login",
-        (LocalLoginRequest request, IAdminUserStore userStore, ILogger<Program> logger) =>
+        (LocalLoginRequest request, IAdminUserStore userStore, CikadaJwtValidator sso, ILogger<Program> logger) =>
         {
+            // SSO-only: the password login mints the unsigned legacy token every API now refuses.
+            if (sso.LegacyTokensDisabled)
+            {
+                return Results.NotFound();
+            }
+
             if (!userStore.TryValidatePassword(request.Username, request.Password, out var user) || user is null)
             {
                 logger.LogWarning(

@@ -8,6 +8,8 @@ x-oidc-api: &oidc-api
   Oidc__ClientId: "${CIKADA_OIDC_CLIENT_ID:-}"
   Oidc__Audiences__0: "${CIKADA_MCP_CLIENT_ID:-}"
   Oidc__Issuers__0: "https://sso.lauresta.com/application/o/cikada-mcp/"
+  # SSO-only: no password login, unsigned legacy bearer tokens and X-User-* headers are refused.
+  Oidc__DisableLegacyTokens: "${CIKADA_SSO_ONLY:-true}"
 
 services:
   api:

@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using LKvitai.MES.BuildingBlocks.PortalAuth;
 using LKvitai.MES.Modules.Warehouse.Api.Security;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
@@ -7,6 +8,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
@@ -63,12 +65,42 @@ public class RbacProblemDetailsIntegrationTests
         Assert.True(payload.RootElement.TryGetProperty("ok", out _));
     }
 
-    private static TestServer BuildServer()
+    [Fact]
+    public async Task SsoOnly_UnsignedHeadersAndLegacyBearer_Return401()
+    {
+        using var server = BuildServer(ssoOnly: true);
+        var client = server.CreateClient();
+
+        using var headers = new HttpRequestMessage(HttpMethod.Get, "/api/warehouse/v1/stock/available");
+        headers.Headers.Add("X-User-Id", "user-1");
+        headers.Headers.Add("X-User-Roles", WarehouseRoles.WarehouseAdmin);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.SendAsync(headers)).StatusCode);
+
+        var expires = DateTimeOffset.UtcNow.AddHours(1).ToUnixTimeSeconds();
+        using var bearer = new HttpRequestMessage(HttpMethod.Get, "/api/warehouse/v1/stock/available");
+        bearer.Headers.TryAddWithoutValidation("Authorization", $"Bearer user-1|{WarehouseRoles.WarehouseAdmin}|{expires}|local");
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.SendAsync(bearer)).StatusCode);
+    }
+
+    private static TestServer BuildServer(bool ssoOnly = false)
     {
         var webHostBuilder = new WebHostBuilder()
             .ConfigureServices(services =>
             {
                 services.AddRouting();
+                if (ssoOnly)
+                {
+                    var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+                    {
+                        ["Oidc:Enabled"] = "true",
+                        ["Oidc:Authority"] = "https://sso.example.test/application/o/cikada/",
+                        ["Oidc:ClientId"] = "cikada-web",
+                        ["Oidc:DisableLegacyTokens"] = "true"
+                    }).Build();
+                    services.AddLogging();
+                    services.AddCikadaSsoTokenValidation(configuration);
+                }
+
                 services
                     .AddAuthentication(WarehouseAuthenticationDefaults.Scheme)
                     .AddScheme<AuthenticationSchemeOptions, WarehouseAuthenticationHandler>(
