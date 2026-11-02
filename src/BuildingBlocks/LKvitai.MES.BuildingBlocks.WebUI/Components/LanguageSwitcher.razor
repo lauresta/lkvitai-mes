@@ -1,0 +1,37 @@
+@namespace LKvitai.MES.BuildingBlocks.WebUI.Components
+@using System.Globalization
+@using LKvitai.MES.BuildingBlocks.WebUI.Localization
+@using Microsoft.Extensions.Localization
+@inject NavigationManager Navigation
+@inject IStringLocalizer<ShellResources> L
+
+@*
+   EN / LT switcher rendered by PortalModuleShell between the env-badge and
+   the user block. A plain GET form (not an interactive Blazor handler) so the
+   culture cookie is written by a real HTTP response (CikadaLocalization
+   culture/set endpoint) and the page reloads with a fresh circuit in the new
+   UI culture. Works in prerender and without JS interop.
+*@
+
+<form class="lang-switch" method="get" action="@CikadaLocalization.SetCultureEndpoint" aria-label="@L["Shell.Language"]">
+    <input type="hidden" name="returnUrl" value="@ReturnUrl" />
+    @foreach (var language in CikadaLocalization.Languages)
+    {
+        var active = IsActive(language);
+        <button type="submit"
+                name="culture"
+                value="@language.Code"
+                class="lang-switch__option mono @(active ? "is-active" : null)"
+                aria-pressed="@(active ? "true" : "false")"
+                lang="@language.Code"
+                title="@language.NativeName">@language.Label</button>
+    }
+</form>
+
+@code {
+    private string ReturnUrl =>
+        Uri.TryCreate(Navigation.Uri, UriKind.Absolute, out var uri) ? uri.PathAndQuery : "/";
+
+    private static bool IsActive(CikadaLanguage language) =>
+        string.Equals(CultureInfo.CurrentUICulture.TwoLetterISOLanguageName, language.Code, StringComparison.OrdinalIgnoreCase);
+}

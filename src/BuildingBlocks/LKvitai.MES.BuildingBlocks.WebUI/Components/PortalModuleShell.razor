@@ -1,6 +1,7 @@
 @namespace LKvitai.MES.BuildingBlocks.WebUI.Components
 @inject NavigationManager Navigation
 @inject IConfiguration Configuration
+@inject Microsoft.Extensions.Localization.IStringLocalizer<LKvitai.MES.BuildingBlocks.WebUI.Localization.ShellResources> L
 
 @*
    PortalModuleShell — shared dark Portal topbar + test-strip wrapper used by
@@ -38,8 +39,8 @@
     <div class="test-strip">
         <div class="test-strip__main">
             <span class="icon-warning" aria-hidden="true"></span>
-            <strong>@EnvironmentLabel ENVIRONMENT</strong>
-            <span class="test-strip__note">@BannerNote</span>
+            <strong>@L["Shell.EnvironmentBanner", EnvironmentLabel]</strong>
+            <span class="test-strip__note">@ResolvedBannerNote</span>
         </div>
         <span class="mono test-strip__host">@DisplayHost</span>
     </div>
@@ -49,7 +50,7 @@
         {
             <button class="topbar__menu-toggle"
                     type="button"
-                    aria-label="@MobileNavigationLabel"
+                    aria-label="@(MobileNavigationLabel ?? L["Shell.MobileNavigation"])"
                     aria-controls="@MobileNavigationTargetId"
                     aria-expanded="@MobileNavigationOpen.ToString().ToLowerInvariant()"
                     @onkeydown="HandleMobileNavigationKeyDown"
@@ -93,20 +94,23 @@
            search lands in a future issue. *@
         <button class="portal-search portal-search--placeholder"
                 type="button"
+                aria-label="@(SearchLabel ?? L["Shell.Search.Label"])"
                 aria-haspopup="dialog"
                 aria-expanded="@(_searchOpen ? "true" : "false")"
                 @onclick="ToggleSearchPlaceholder">
             <span class="portal-search__icon" aria-hidden="true"></span>
-            <span class="portal-search__placeholder">@SearchPlaceholder</span>
+            <span class="portal-search__placeholder">@(SearchPlaceholder ?? L["Shell.Search.Placeholder"])</span>
             <span class="portal-search__hint mono" aria-hidden="true">⌘K</span>
         </button>
 
         <div class="topbar__spacer"></div>
 
-        <div class="env-badge" aria-label="Environment and version">
+        <div class="env-badge" aria-label="@L["Shell.EnvironmentAndVersion"]">
             <div><span class="mono">ENV</span><strong class="mono">@EnvironmentBadge</strong></div>
             <div><span class="mono">VER</span><strong class="mono">@Version</strong></div>
         </div>
+
+        <LanguageSwitcher />
 
         @* AUTHENTIC SEAM: user-block + logout form.
            Replace the form below with an Authentic logout endpoint when the
@@ -119,7 +123,7 @@
             <div>
                 <div class="user-block__name">@DisplayName</div>
                 <form action="@LogoutAction" method="post" class="logout-form">
-                    <button class="link-button" type="submit">Logout</button>
+                    <button class="link-button" type="submit">@L["Shell.Logout"]</button>
                 </form>
             </div>
         </div>
@@ -130,17 +134,16 @@
        enough that consumers don't need to opt in to extra script. *@
     @if (_searchOpen)
     {
-        <div class="universal-search-popover" role="dialog" aria-label="Universal search">
+        <div class="universal-search-popover" role="dialog" aria-label="@L["Shell.Search.PopoverTitle"]">
             <div class="universal-search-popover__head">
-                <strong>Universal search</strong>
+                <strong>@L["Shell.Search.PopoverTitle"]</strong>
                 <button type="button"
                         class="link-button universal-search-popover__close"
                         @onclick="CloseSearchPlaceholder"
-                        aria-label="Dismiss">×</button>
+                        aria-label="@L["Shell.Dismiss"]">×</button>
             </div>
             <p class="universal-search-popover__body">
-                Search across orders, fabrics, modules and more — coming soon.
-                For now use module-level filters inside each section.
+                @L["Shell.Search.PopoverBody"]
             </p>
         </div>
     }
@@ -186,7 +189,7 @@
     [Parameter] public bool MobileNavigationOpen { get; set; }
 
     /// <summary>Accessible action label for the mobile navigation toggle.</summary>
-    [Parameter] public string MobileNavigationLabel { get; set; } = "Toggle navigation menu";
+    [Parameter] public string? MobileNavigationLabel { get; set; }
 
     /// <summary>ID of the module drawer controlled by the mobile toggle.</summary>
     [Parameter] public string? MobileNavigationTargetId { get; set; }
@@ -202,9 +205,9 @@
     /// Was "Search…" / "Find fabric, module, customer…" pre-#92 — both
     /// drifted because each module set its own value.
     /// </summary>
-    [Parameter] public string SearchPlaceholder { get; set; } = "Search everything…";
+    [Parameter] public string? SearchPlaceholder { get; set; }
 
-    [Parameter] public string SearchLabel { get; set; } = "Open universal search";
+    [Parameter] public string? SearchLabel { get; set; }
 
     /// <summary>
     /// POST target for logout. Defaults to the relative <c>auth/logout</c>
@@ -214,8 +217,10 @@
     /// </summary>
     [Parameter] public string LogoutAction { get; set; } = "auth/logout";
 
-    [Parameter] public string BannerNote { get; set; } =
-        "Data in this environment is not production data and may be reset without notice.";
+    /// <summary>Test-strip note. Null falls back to the localized shared-environment copy.</summary>
+    [Parameter] public string? BannerNote { get; set; }
+
+    private string ResolvedBannerNote => BannerNote ?? L["Shell.BannerNote.Shared"].Value;
 
     private bool _searchOpen;
 
@@ -247,7 +252,7 @@
     {
         get
         {
-            if (User is null) return "Signed in";
+            if (User is null) return SignedInLabel;
 
             var displayClaim = User.FindFirstValue("display_name");
             if (!string.IsNullOrWhiteSpace(displayClaim)) return displayClaim;
@@ -261,7 +266,7 @@
 
             return User.FindFirstValue(ClaimTypes.Name)
                 ?? User.Identity?.Name
-                ?? "Signed in";
+                ?? SignedInLabel;
         }
     }
 
@@ -281,7 +286,7 @@
             }
 
             var name = DisplayName;
-            if (string.Equals(name, "Signed in", StringComparison.Ordinal))
+            if (string.Equals(name, SignedInLabel, StringComparison.Ordinal))
             {
                 return "U";
             }
@@ -311,8 +316,10 @@
     }
 
     private string BrandAriaLabel => string.Equals(ResolvedHomeUrl, "/", StringComparison.Ordinal)
-        ? "Cikada.MES Portal home"
-        : "Open Cikada.MES Portal home";
+        ? L["Shell.HomeLink"].Value
+        : L["Shell.HomeLink.Open"].Value;
+
+    private string SignedInLabel => L["Shell.SignedIn"].Value;
 
     private string ResolveNavigationHost()
     {

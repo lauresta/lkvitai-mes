@@ -15,27 +15,27 @@
     <div class="module-card__icon">
         <ModuleIcon Key="@(Card.IconKey ?? Card.Key)" />
     </div>
-    <span class="module-card__category mono">@Card.Category</span>
+    <span class="module-card__category mono">@L.ModuleCategory(Card)</span>
 </div>
-<h3>@Card.Title</h3>
-<p>@Card.Description</p>
+<h3>@L.ModuleTitle(Card)</h3>
+<p>@L.ModuleDescription(Card)</p>
 <div class="module-card__footer">
     @switch (Card.Status)
     {
         case ModuleStatus.Live:
-            <span class="module-card__status is-live">Live</span>
-            <span class="module-card__action">Open @Card.Title &rarr;</span>
+            <span class="module-card__status is-live">@L["Common.Status.Live"]</span>
+            <span class="module-card__action">@L["Common.OpenModule", L.ModuleTitle(Card)] &rarr;</span>
             break;
         case ModuleStatus.Pilot:
-            <span class="module-card__status is-pilot">Pilot</span>
-            <span class="module-card__action">Open @Card.Title &rarr;</span>
+            <span class="module-card__status is-pilot">@L["Common.Status.Pilot"]</span>
+            <span class="module-card__action">@L["Common.OpenModule", L.ModuleTitle(Card)] &rarr;</span>
             break;
         case ModuleStatus.Developing:
-            <span class="module-card__status is-developing">Developing</span>
-            <span class="module-card__action">Open @Card.Title &rarr;</span>
+            <span class="module-card__status is-developing">@L["Common.Status.Developing"]</span>
+            <span class="module-card__action">@L["Common.OpenModule", L.ModuleTitle(Card)] &rarr;</span>
             break;
         default:
-            <span class="module-card__status mono">Planned@(string.IsNullOrWhiteSpace(Card.Quarter) ? null : $" · {Card.Quarter}")</span>
+            <span class="module-card__status mono">@L["Common.Status.Planned"]@(string.IsNullOrWhiteSpace(Card.Quarter) ? null : $" · {Card.Quarter}")</span>
             <span class="module-card__lock" aria-hidden="true">
                 <ModuleIcon Key="lock" />
             </span>

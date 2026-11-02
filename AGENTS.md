@@ -77,3 +77,7 @@ Blazor and MudBlazor are allowed, but MudBlazor defaults are not the visual sour
 - Keep UI compact and operational.
 - Add annotations/docs when changing UX behavior or data contracts.
 - Do not commit unless explicitly asked.
+
+## Localization (EN / LT)
+
+All user-visible WebUI text must come from `.resx` resources via `IStringLocalizer`, never hardcoded. Before translating or adding UI text in any module, read `docs/i18n/README.md` (shared culture cookie, header switcher, per-module recipe, Lithuanian glossary). Portal WebUI is the reference implementation.

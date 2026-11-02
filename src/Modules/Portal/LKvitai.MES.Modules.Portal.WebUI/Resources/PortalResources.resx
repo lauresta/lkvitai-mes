@@ -1,0 +1,398 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Common.Portal" xml:space="preserve">
+    <value>Portal</value>
+  </data>
+  <data name="Common.PortalCms" xml:space="preserve">
+    <value>Portal CMS</value>
+  </data>
+  <data name="Common.Tiles" xml:space="preserve">
+    <value>Tiles</value>
+  </data>
+  <data name="Common.Loading" xml:space="preserve">
+    <value>Loading…</value>
+  </data>
+  <data name="Common.Yes" xml:space="preserve">
+    <value>Yes</value>
+  </data>
+  <data name="Common.No" xml:space="preserve">
+    <value>No</value>
+  </data>
+  <data name="Common.Save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="Common.Edit" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="Common.Hide" xml:space="preserve">
+    <value>Hide</value>
+  </data>
+  <data name="Common.Version" xml:space="preserve">
+    <value>Version</value>
+  </data>
+  <data name="Common.Channel" xml:space="preserve">
+    <value>Channel</value>
+  </data>
+  <data name="Common.Modules" xml:space="preserve">
+    <value>Modules</value>
+  </data>
+  <data name="Common.OpenModule" xml:space="preserve">
+    <value>Open {0}</value>
+  </data>
+  <data name="Common.Status.Live" xml:space="preserve">
+    <value>Live</value>
+  </data>
+  <data name="Common.Status.Pilot" xml:space="preserve">
+    <value>Pilot</value>
+  </data>
+  <data name="Common.Status.Developing" xml:space="preserve">
+    <value>Developing</value>
+  </data>
+  <data name="Common.Status.Planned" xml:space="preserve">
+    <value>Planned</value>
+  </data>
+  <data name="Common.Count.Live" xml:space="preserve">
+    <value>live</value>
+  </data>
+  <data name="Common.Count.Pilot" xml:space="preserve">
+    <value>pilot</value>
+  </data>
+  <data name="Common.Count.Developing" xml:space="preserve">
+    <value>developing</value>
+  </data>
+  <data name="Common.Count.Planned" xml:space="preserve">
+    <value>planned</value>
+  </data>
+  <data name="Common.Count.Total" xml:space="preserve">
+    <value>total</value>
+  </data>
+  <data name="Common.Count.Visible" xml:space="preserve">
+    <value>visible</value>
+  </data>
+  <data name="Home.Welcome" xml:space="preserve">
+    <value>Welcome</value>
+  </data>
+  <data name="Home.Greeting" xml:space="preserve">
+    <value>Welcome back.</value>
+  </data>
+  <data name="Home.GreetingNamed" xml:space="preserve">
+    <value>Welcome back, {0}.</value>
+  </data>
+  <data name="Home.Intro" xml:space="preserve">
+    <value>Warehouse is live. Pilot modules are available for trial use; the remaining modules stay on the implementation roadmap.</value>
+  </data>
+  <data name="Home.RoadmapNews" xml:space="preserve">
+    <value>Roadmap &amp; news</value>
+  </data>
+  <data name="Home.Operations.Title" xml:space="preserve">
+    <value>Operations preview</value>
+  </data>
+  <data name="Home.Operations.SampleData" xml:space="preserve">
+    <value>Sample data</value>
+  </data>
+  <data name="Home.Operations.Period" xml:space="preserve">
+    <value>Operations period</value>
+  </data>
+  <data name="Home.Operations.ThisMonth" xml:space="preserve">
+    <value>This month</value>
+  </data>
+  <data name="Home.Operations.LastMonth" xml:space="preserve">
+    <value>Last month</value>
+  </data>
+  <data name="Home.Operations.ThisMonthShort" xml:space="preserve">
+    <value>this mo.</value>
+  </data>
+  <data name="Home.Operations.LastMonthShort" xml:space="preserve">
+    <value>last mo.</value>
+  </data>
+  <data name="Home.Operations.CompletedPerDay" xml:space="preserve">
+    <value>Completed / day</value>
+  </data>
+  <data name="Home.Operations.BranchesOnTrack" xml:space="preserve">
+    <value>Branches on track</value>
+  </data>
+  <data name="Home.Operations.Stage.reg" xml:space="preserve">
+    <value>Registered</value>
+  </data>
+  <data name="Home.Operations.Stage.acc" xml:space="preserve">
+    <value>Accepted</value>
+  </data>
+  <data name="Home.Operations.Stage.mfg" xml:space="preserve">
+    <value>Manufacturing</value>
+  </data>
+  <data name="Home.Operations.Stage.ship" xml:space="preserve">
+    <value>Shipped</value>
+  </data>
+  <data name="Home.Operations.Stage.done" xml:space="preserve">
+    <value>Completed</value>
+  </data>
+  <data name="Home.Modules.FilterLabel" xml:space="preserve">
+    <value>Filter modules</value>
+  </data>
+  <data name="Home.Modules.FilterPlaceholder" xml:space="preserve">
+    <value>Filter modules…</value>
+  </data>
+  <data name="Home.Modules.NoMatches" xml:space="preserve">
+    <value>No matches</value>
+  </data>
+  <data name="Home.Modules.NoMatchesText" xml:space="preserve">
+    <value>No modules match</value>
+  </data>
+  <data name="Home.Toast.Planned" xml:space="preserve">
+    <value>{0} — planned for {1}. Not available yet.</value>
+  </data>
+  <data name="Home.Toast.Later" xml:space="preserve">
+    <value>later</value>
+  </data>
+  <data name="Home.News.Title" xml:space="preserve">
+    <value>News</value>
+  </data>
+  <data name="Home.News.Subtitle" xml:space="preserve">
+    <value>What's changing in Cikada.MES</value>
+  </data>
+  <data name="Home.News.AllUpdates" xml:space="preserve">
+    <value>All updates</value>
+  </data>
+  <data name="Home.Side.AriaLabel" xml:space="preserve">
+    <value>Portal status</value>
+  </data>
+  <data name="Home.Status.Title" xml:space="preserve">
+    <value>System status</value>
+  </data>
+  <data name="Home.Status.Online" xml:space="preserve">
+    <value>Online</value>
+  </data>
+  <data name="Home.Status.Environment" xml:space="preserve">
+    <value>Environment</value>
+  </data>
+  <data name="Home.Status.CurrentModule" xml:space="preserve">
+    <value>Current module</value>
+  </data>
+  <data name="Home.Support.Title" xml:space="preserve">
+    <value>Support</value>
+  </data>
+  <data name="Home.Support.Helpdesk" xml:space="preserve">
+    <value>MES helpdesk sms</value>
+  </data>
+  <data name="Home.Support.Team" xml:space="preserve">
+    <value>MES team</value>
+  </data>
+  <data name="Home.Build.Title" xml:space="preserve">
+    <value>Build</value>
+  </data>
+  <data name="Home.Build.Commit" xml:space="preserve">
+    <value>Commit</value>
+  </data>
+  <data name="Home.Build.Built" xml:space="preserve">
+    <value>Built</value>
+  </data>
+  <data name="CmsTiles.NewTile" xml:space="preserve">
+    <value>New tile</value>
+  </data>
+  <data name="CmsTiles.EditTile" xml:space="preserve">
+    <value>Edit tile</value>
+  </data>
+  <data name="CmsTiles.AdminRequired" xml:space="preserve">
+    <value>Admin access required</value>
+  </data>
+  <data name="CmsTiles.AdminRequiredText" xml:space="preserve">
+    <value>Portal tile configuration is available to Admin, WarehouseAdmin or PortalAdmin roles.</value>
+  </data>
+  <data name="CmsTiles.Table.Title" xml:space="preserve">
+    <value>Dashboard tiles</value>
+  </data>
+  <data name="CmsTiles.Column.Order" xml:space="preserve">
+    <value>Order</value>
+  </data>
+  <data name="CmsTiles.Column.Tile" xml:space="preserve">
+    <value>Tile</value>
+  </data>
+  <data name="CmsTiles.Column.Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="CmsTiles.Column.Url" xml:space="preserve">
+    <value>URL</value>
+  </data>
+  <data name="CmsTiles.Column.Visible" xml:space="preserve">
+    <value>Visible</value>
+  </data>
+  <data name="CmsTiles.Editor.AriaLabel" xml:space="preserve">
+    <value>Tile editor</value>
+  </data>
+  <data name="CmsTiles.Field.Key" xml:space="preserve">
+    <value>Key</value>
+  </data>
+  <data name="CmsTiles.Field.Title" xml:space="preserve">
+    <value>Title</value>
+  </data>
+  <data name="CmsTiles.Field.Category" xml:space="preserve">
+    <value>Category</value>
+  </data>
+  <data name="CmsTiles.Field.Description" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="CmsTiles.Field.Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="CmsTiles.Field.Sort" xml:space="preserve">
+    <value>Sort</value>
+  </data>
+  <data name="CmsTiles.Field.Url" xml:space="preserve">
+    <value>URL</value>
+  </data>
+  <data name="CmsTiles.Field.Quarter" xml:space="preserve">
+    <value>Quarter</value>
+  </data>
+  <data name="CmsTiles.Field.IconKey" xml:space="preserve">
+    <value>Icon key</value>
+  </data>
+  <data name="CmsTiles.Field.VisibleOnDashboard" xml:space="preserve">
+    <value>Visible on dashboard</value>
+  </data>
+  <data name="CmsTiles.Message.SaveFailed" xml:space="preserve">
+    <value>Save failed. Check required fields and permissions.</value>
+  </data>
+  <data name="CmsTiles.Message.Saved" xml:space="preserve">
+    <value>Saved.</value>
+  </data>
+  <data name="CmsTiles.Message.Hidden" xml:space="preserve">
+    <value>Hidden.</value>
+  </data>
+  <data name="CmsTiles.Message.HideFailed" xml:space="preserve">
+    <value>Hide failed.</value>
+  </data>
+  <data name="Module.Category.Operations" xml:space="preserve">
+    <value>Operations</value>
+  </data>
+  <data name="Module.Category.Commercial" xml:space="preserve">
+    <value>Commercial</value>
+  </data>
+  <data name="Module.Category.Field" xml:space="preserve">
+    <value>Field</value>
+  </data>
+  <data name="Module.Category.Mobile" xml:space="preserve">
+    <value>Mobile</value>
+  </data>
+  <data name="Module.Category.Logistics" xml:space="preserve">
+    <value>Logistics</value>
+  </data>
+  <data name="Module.Category.Intelligence" xml:space="preserve">
+    <value>Intelligence</value>
+  </data>
+  <data name="Module.Category.Compliance" xml:space="preserve">
+    <value>Compliance</value>
+  </data>
+  <data name="Module.warehouse.Title" xml:space="preserve">
+    <value>Warehouse</value>
+  </data>
+  <data name="Module.warehouse.Description" xml:space="preserve">
+    <value>Inventory locations, stock movements, reservations, handling units, 3D warehouse layout.</value>
+  </data>
+  <data name="Module.sales.Title" xml:space="preserve">
+    <value>Sales</value>
+  </data>
+  <data name="Module.sales.Description" xml:space="preserve">
+    <value>Customer orders.</value>
+  </data>
+  <data name="Module.frontline.Title" xml:space="preserve">
+    <value>Frontline</value>
+  </data>
+  <data name="Module.frontline.Description" xml:space="preserve">
+    <value>Field availability lookup.</value>
+  </data>
+  <data name="Module.scanning.Title" xml:space="preserve">
+    <value>Scanning</value>
+  </data>
+  <data name="Module.scanning.Description" xml:space="preserve">
+    <value>Mobile barcode scan.</value>
+  </data>
+  <data name="Module.orders.Title" xml:space="preserve">
+    <value>Orders</value>
+  </data>
+  <data name="Module.orders.Description" xml:space="preserve">
+    <value>Order lifecycle, product composition, workflow planning.</value>
+  </data>
+  <data name="Module.shopfloor.Title" xml:space="preserve">
+    <value>Shopfloor</value>
+  </data>
+  <data name="Module.shopfloor.Description" xml:space="preserve">
+    <value>Workstation tasks, WIP routing, operator kiosk execution.</value>
+  </data>
+  <data name="Module.quality.Title" xml:space="preserve">
+    <value>Quality</value>
+  </data>
+  <data name="Module.quality.Description" xml:space="preserve">
+    <value>Inspections, defect tracking, rework and returns.</value>
+  </data>
+  <data name="Module.delivery.Title" xml:space="preserve">
+    <value>Delivery</value>
+  </data>
+  <data name="Module.delivery.Description" xml:space="preserve">
+    <value>Route planning, driver tasks, proof of delivery, tracking.</value>
+  </data>
+  <data name="Module.installation.Title" xml:space="preserve">
+    <value>Installation</value>
+  </data>
+  <data name="Module.installation.Description" xml:space="preserve">
+    <value>Installer visits, acceptance acts, customer sign-off.</value>
+  </data>
+  <data name="Module.reporting.Title" xml:space="preserve">
+    <value>Reporting</value>
+  </data>
+  <data name="Module.reporting.Description" xml:space="preserve">
+    <value>Dashboards, KPIs, production and warehouse analytics.</value>
+  </data>
+  <data name="Module.finance.Title" xml:space="preserve">
+    <value>Finance</value>
+  </data>
+  <data name="Module.finance.Description" xml:space="preserve">
+    <value>Accounting exports, payments, posting events.</value>
+  </data>
+  <data name="Module.audit.Title" xml:space="preserve">
+    <value>Audit</value>
+  </data>
+  <data name="Module.audit.Description" xml:space="preserve">
+    <value>Immutable event log, traceability, compliance reports.</value>
+  </data>
+</root>

@@ -1,3 +1,4 @@
+using LKvitai.MES.BuildingBlocks.WebUI.Localization;
 using System.Net.Http.Headers;
 using LKvitai.MES.BuildingBlocks.PortalAuth;
 using LKvitai.MES.BuildingBlocks.WebUI.Services;
@@ -9,6 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
+builder.Services.AddCikadaLocalization(builder.Configuration);
 builder.Services.AddMudServices();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddPortalCookieAuthentication(builder.Environment, builder.Configuration);
@@ -65,6 +67,8 @@ builder.Services.AddScoped<ToastService>();
 var app = builder.Build();
 
 app.UsePathBase(ResolvePathBase(app.Configuration));
+// Shared EN/LT UI culture from the cross-module culture cookie (docs/i18n/README.md).
+app.UseCikadaRequestLocalization();
 app.UsePortalSecureHosting(app.Environment);
 
 app.UseStaticFiles();
@@ -105,6 +109,7 @@ app.MapGet("/api/warehouse/v1/items/{itemId:int}/photos/{photoId:guid}",
             await upstream.Content.CopyToAsync(httpCtx.Response.Body, cancellationToken);
     });
 
+app.MapCikadaCultureEndpoint();
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
 

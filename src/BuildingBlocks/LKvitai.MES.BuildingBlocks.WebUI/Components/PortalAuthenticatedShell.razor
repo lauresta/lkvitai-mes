@@ -3,6 +3,7 @@
 @inject IWebHostEnvironment Env
 @inject IHttpContextAccessor HttpContextAccessor
 @inject IBuildVersionAccessor BuildVersionAccessor
+@inject Microsoft.Extensions.Localization.IStringLocalizer<LKvitai.MES.BuildingBlocks.WebUI.Localization.ShellResources> L
 
 @*
     PortalAuthenticatedShell — convenience wrapper around PortalModuleShell
@@ -107,15 +108,14 @@
     [Parameter] public bool MobileNavigationOpen { get; set; }
 
     /// <summary>Accessible action label for the mobile navigation toggle.</summary>
-    [Parameter] public string MobileNavigationLabel { get; set; } = "Toggle navigation menu";
+    [Parameter] public string? MobileNavigationLabel { get; set; }
 
     /// <summary>ID of the module drawer controlled by the mobile toggle.</summary>
     [Parameter] public string? MobileNavigationTargetId { get; set; }
 
     private string _environmentName = "Development";
     private string? _hostLabel;
-    private string _bannerNote =
-        "Data in this environment is not production data and may be reset without notice.";
+    private string? _bannerNote;
     private string _displayVersion = "—";
 
     protected override void OnInitialized()
@@ -133,7 +133,7 @@
 
         if (Env.IsDevelopment())
         {
-            _bannerNote = "Local or private-network environment. Data may be reset without notice.";
+            _bannerNote = L["Shell.BannerNote.Local"].Value;
         }
 
         _displayVersion = BuildVersionAccessor.Get().DisplayVersion;
