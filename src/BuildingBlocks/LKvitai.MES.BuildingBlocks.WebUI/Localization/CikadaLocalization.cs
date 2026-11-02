@@ -107,7 +107,9 @@ public static class CikadaLocalization
                         IsEssential = true,
                         HttpOnly = true,
                         SameSite = SameSiteMode.Lax,
-                        Secure = context.Request.IsHttps
+                        // Always Secure: test/prod are HTTPS behind the proxy, and browsers
+                        // treat http://localhost as a secure context for local dev.
+                        Secure = true
                     });
 
                 return Results.LocalRedirect(NormalizeReturnUrl(context, returnUrl));
