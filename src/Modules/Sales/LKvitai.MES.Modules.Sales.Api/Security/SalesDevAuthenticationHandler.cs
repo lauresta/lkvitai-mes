@@ -9,7 +9,7 @@ namespace LKvitai.MES.Modules.Sales.Api.Security;
 
 /// <summary>
 /// Sales-only dev authentication handler. Only succeeds when:
-///   1. The host is running in <see cref="IHostEnvironment.IsDevelopment"/>
+///   1. The host is running in <c>Development</c>
 ///      or <c>EnvironmentName == "Test"</c>; AND
 ///   2. The configuration flag <see cref="SalesDevAuthDefaults.ConfigFlag"/>
 ///      (<c>Sales:DevAuthEnabled</c>) is <c>true</c>.

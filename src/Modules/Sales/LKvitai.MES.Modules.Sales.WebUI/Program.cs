@@ -42,12 +42,12 @@ builder.Services.AddHttpContextAccessor();
 // so the shared topbar's "VER" badge shows the real release tag instead
 // of an em-dash. Same registration Portal/Frontline call.
 builder.Services.AddBuildVersion();
-builder.Services.AddTransient<SalesApiAuthHandler>();
-builder.Services
-    .AddHttpClient("SalesApi")
-    .AddHttpMessageHandler<SalesApiAuthHandler>();
+builder.Services.AddSalesSessionCredentials(builder.Configuration);
+builder.Services.AddHttpClient("SalesApi")
+    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
 builder.Services.AddScoped<SalesApiClient>();
-builder.Services.AddSingleton<LKvitai.MES.Modules.Sales.Infrastructure.Stub.StubOrdersQueryService>();
+builder.Services.AddScoped<SalesOrderEntryClient>();
+builder.Services.AddSingleton<LKvitai.MES.Modules.Sales.Contracts.Samples.SalesSampleOrders>();
 
 var app = builder.Build();
 
@@ -64,10 +64,12 @@ if (string.Equals(app.Environment.EnvironmentName, "Test", StringComparison.Ordi
 {
     app.UseSalesReviewAccess();
 }
+app.UseSalesAuthDiagnostics();
 app.UseAuthorization();
 
 app.MapGet("/health", () => Results.Ok());
 app.MapPortalLogout();
+app.MapSalesSessionProof();
 app.MapCikadaCultureEndpoint();
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");

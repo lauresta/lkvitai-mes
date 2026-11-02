@@ -1,0 +1,19 @@
+@if (IsRestricted)
+{
+    <aside class="customer-privacy-notice" role="note" aria-labelledby="@_titleId">
+        <div class="customer-privacy-notice__copy">
+            <strong id="@_titleId">@L["Privacy.Title"]</strong>
+            <p>@L["Privacy.Description"]</p>
+        </div>
+        <a class="customer-privacy-notice__back" href="@BackHref" @onclick="BackAsync" @onclick:preventDefault="@OnBack.HasDelegate">← @L["Nav.BackToOrders"]</a>
+    </aside>
+    <div class="customer-privacy-watermark" aria-hidden="true"><span>@L["Privacy.Title"]</span></div>
+}
+
+@code {
+    [Parameter] public bool IsRestricted { get; set; }
+    [Parameter] public string BackHref { get; set; } = "./";
+    [Parameter] public EventCallback OnBack { get; set; }
+    private readonly string _titleId = "privacy-title-" + Guid.NewGuid().ToString("N");
+    private Task BackAsync() => OnBack.HasDelegate ? OnBack.InvokeAsync() : Task.CompletedTask;
+}

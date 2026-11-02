@@ -17,6 +17,19 @@ builder.Services.AddPortalCookieAuthentication(builder.Environment, builder.Conf
 builder.Services.AddAuthorization();
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddBuildVersion();
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<CikadaUserBridgeProof>();
+if (builder.Configuration.IsCikadaSsoEnabled())
+{
+    builder.Services.AddCikadaSsoTokenValidation(builder.Configuration);
+    builder.Services.AddSingleton<CikadaSsoAccountProof>();
+    builder.Services.AddScoped<CikadaSsoAccountLookup>();
+    builder.Services.AddHttpClient("CikadaUsers", client =>
+    {
+        client.BaseAddress = new Uri(builder.Configuration["WarehouseApi:BaseUrl"] ?? "https://localhost:5001");
+        client.Timeout = TimeSpan.FromSeconds(10);
+    }).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
+}
 builder.Services.AddTransient<WarehouseApiAuthHandler>();
 
 builder.Services.AddHttpClient("WarehouseApi", (sp, client) =>
@@ -43,6 +56,11 @@ builder.Services.AddScoped<ReceivingClient>();
 builder.Services.AddScoped<TransfersClient>();
 builder.Services.AddScoped<ValuationClient>();
 builder.Services.AddScoped<AgnumClient>();
+builder.Services.AddHttpClient("WarehouseUserAdminApi", (sp, client)=>
+{
+    client.BaseAddress=new Uri(sp.GetRequiredService<IConfiguration>()["WarehouseApi:BaseUrl"] ?? "https://localhost:5001");
+    client.Timeout=TimeSpan.FromSeconds(30);
+}).ConfigurePrimaryHttpMessageHandler(()=>new HttpClientHandler{AllowAutoRedirect=false});
 builder.Services.AddScoped<AdminUsersClient>();
 builder.Services.AddScoped<AdminConfigurationClient>();
 builder.Services.AddScoped<ApiKeysClient>();

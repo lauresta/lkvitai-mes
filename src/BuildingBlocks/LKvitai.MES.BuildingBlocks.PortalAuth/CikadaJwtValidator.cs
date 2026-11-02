@@ -16,6 +16,10 @@ namespace LKvitai.MES.BuildingBlocks.PortalAuth;
 public sealed class CikadaJwtValidator
 {
     public const string AuthSource = "oauth";
+    public const string SsoSubjectClaim = "cikada_sso_subject";
+    public const string SsoUsernameClaim = "cikada_sso_username";
+    public const string SsoIssuerClaim = "cikada_sso_issuer";
+    public const string SsoAudienceClaim = "cikada_sso_audience";
 
     private readonly IOptionsMonitor<CikadaOidcOptions> _options;
     private readonly ILogger<CikadaJwtValidator> _logger;
@@ -86,7 +90,8 @@ public sealed class CikadaJwtValidator
         string? First(params string[] types) =>
             types.Select(t => claims.FirstOrDefault(c => c.Type == t)?.Value).FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
 
-        var subject = First("sub", ClaimTypes.NameIdentifier) ?? "sso-user";
+        var validatedSubject = First("sub", ClaimTypes.NameIdentifier);
+        var subject = validatedSubject ?? "sso-user";
         var name = First("preferred_username", "nickname", ClaimTypes.Name, "name", "email") ?? subject;
         var email = First("email", ClaimTypes.Email);
 
@@ -97,6 +102,17 @@ public sealed class CikadaJwtValidator
             new("auth_source", AuthSource),
             new("mfa_verified", "true")
         };
+
+        // These claims are emitted only after OIDC/JWT validation. Keep the
+        // external subject unchanged; Sales resolves its own durable local id.
+        var ssoUsername = First("preferred_username");
+        var issuer = First("iss");
+        var audience = claims.Where(c => c.Type is "aud" or "azp" or "client_id")
+            .Select(c => c.Value).FirstOrDefault(value => options.ValidAudiences.Contains(value, StringComparer.Ordinal));
+        if (!string.IsNullOrWhiteSpace(validatedSubject)) result.Add(new Claim(SsoSubjectClaim, validatedSubject));
+        if (!string.IsNullOrWhiteSpace(ssoUsername)) result.Add(new Claim(SsoUsernameClaim, ssoUsername));
+        if (!string.IsNullOrWhiteSpace(issuer)) result.Add(new Claim(SsoIssuerClaim, issuer));
+        if (!string.IsNullOrWhiteSpace(audience)) result.Add(new Claim(SsoAudienceClaim, audience));
 
         if (!string.IsNullOrWhiteSpace(email))
         {

@@ -1,39 +1,53 @@
-# Sales EN / LT
+# Sales EN / LT localization
 
-Sales uses the shared [localization contract](README.md), language switcher and
-`.AspNetCore.Culture` cookie. English is the neutral resource; Lithuanian is the
-`lt` satellite. `CurrentUICulture` alone changes: money/date formats, parsing,
-order numbers and business values retain their existing behavior.
+Sales follows [the shared localization contract](README.md): English is the
+neutral resource and Lithuanian is the `lt` satellite; the shared topbar and
+`.AspNetCore.Culture` cookie select the UI language across modules.
 
-The 299 paired resource keys cover the current main/test Sales order list,
-filters, details, order-entry preview, products, dimensions/live preview, PPP,
-accessories, payment preview, validation, tooltips, accessibility labels and
-host-page title/error text. This changes the currently deployed module; it does
-not integrate the separate M2 branch or enable database-writing capabilities.
+## Coverage and contracts
 
-Names, notes, material/product catalog entries and stored values remain data.
-Option labels are localized while their original values remain unchanged.
-Known status labels are mapped for presentation only; unknown nonempty labels
-remain verbatim. Full native workflow labels retain their meaning even when an
-older API assigns a generic semantic chip code. Filters still submit the native
-value and chip codes are untouched.
+`SalesResources.resx` and `SalesResources.lt.resx` contain 718 matching keys for
+the live order list/details/editor, product dimensions/live preview, PPP,
+accessories, cascading payments, production confirmation, privacy notice,
+read-only note history, validation/notifications and pending-command recovery.
+The existing sample-only review flow is also localized. This integration keeps
+the full M2 business flow together with current main's shared localization,
+SSO support and validated review-cookie fallback.
 
-## Verification — 2026-11-02
+Known API validation text is translated at the WebUI boundary by `SalesApiErrors`.
+Exact messages take precedence; code-only fallbacks apply only to empty messages.
+Unknown nonempty messages, customer notes and legacy data remain verbatim.
+Dynamic numbers, formula tokens and technical field prefixes are preserved so
+field-error focus and recovery continue to work.
 
-- 22 Sales tests pass: the 18 authentication regressions plus resource/format
-  parity and source-key coverage, real order-entry rendering in EN and LT,
-  unchanged number/date/money formatting and unknown-status preservation.
-- Isolated browser QA covers EN/LT list/details, LT order creation, product
-  categories/editor/live preview/PPP, accessories and payment methods. Browser
-  option values remain Via PPK / Bank transfer / Cash desk / EKA register.
-- Local QA uses the existing sample-only review mode with the Sales API pointing
-  at a disabled loopback address; no business records are written.
-- Shared cookie persistence through Portal was verified during the earlier
-  translation pass; remote test acceptance follows this deployment.
-- The pre-existing Sales WebUI → Infrastructure architecture violation is
-  outside localization, as in the authentication fix PR #228.
+Submitted option/filter values, control/payment/duty values, legacy cancellation
+markers, customer/product/material names and audit history are not rewritten.
+Only `CurrentUICulture` changes: prices, dates, dimensions, decimal parsing,
+order-number rules, SQL permissions and command identities retain their behavior.
+Known full native workflow labels retain their meaning in presentation even when
+an older API supplies a generic semantic chip code; unknown nonempty labels stay
+verbatim. Database state IDs and chip-family codes remain unchanged.
 
-The full Release solution build passes with existing warnings. Treating all
-solution warnings as errors is blocked by 14 pre-existing dependency advisory
-errors (Marten, ImageSharp, SSH.NET and related packages). The strict Sales WebUI
-build passes with zero warnings. Dependency upgrades are outside this task.
+Material selection receives the actual existing code from the product draft,
+including unavailable legacy materials; it never displays the C# property
+expression as a literal. Thumbnails/stock metadata and server-side material
+validation retain their existing behavior.
+
+## Verification
+
+Resource parity/format arguments and literal-key coverage span Razor, C# and
+CSHTML. Regression tests cover UI-only culture changes, unchanged numbering and
+money/date formatting, unknown API/native-data preservation, EN/LT privacy and
+history rendering, the order-entry review flow, and stored material codes in the
+actual product editor. Full Sales and architecture verification is recorded in
+`docs/sales/milestone-2-verification.md` during integration/deployment.
+
+Prior isolated browser QA covered EN/LT order list/details and LT product,
+PPP/accessory/payment screens with API destinations disabled. Current-main
+translation PR #229 was also verified on test in Safari, including EN ↔ LT and
+Portal → Sales navigation. The integrated M2 test deployment is verified
+separately; no review-mode sample can write legacy business data.
+
+Existing dependency advisories remain outside localization; treating every
+solution warning as an error is blocked by those advisories. The strict Sales
+WebUI build itself is checked separately without upgrading unrelated packages.

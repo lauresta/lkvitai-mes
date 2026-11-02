@@ -11,7 +11,8 @@ public sealed record AdminUserView(
     IReadOnlyList<string> Roles,
     string Status,
     DateTimeOffset CreatedAt,
-    DateTimeOffset? UpdatedAt);
+    DateTimeOffset? UpdatedAt,
+    string? LegacySqlLogin = null);
 
 public sealed class AdminUserRecord
 {
@@ -25,6 +26,7 @@ public sealed class AdminUserRecord
     public string Status { get; set; } = ActiveStatus;
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? UpdatedAt { get; set; }
+    public string? LegacySqlLogin { get; set; }
 }
 
 public sealed record CreateAdminUserRequest(
@@ -32,12 +34,15 @@ public sealed record CreateAdminUserRequest(
     string Email,
     string Password,
     IReadOnlyList<string> Roles,
-    string Status);
+    string Status,
+    string? LegacySqlLogin = null);
 
 public sealed record UpdateAdminUserRequest(
     IReadOnlyList<string> Roles,
     string Status,
-    string? Email = null);
+    string? Email = null,
+    string? LegacySqlLogin = null,
+    bool UpdateLegacySqlLogin = false);
 
 public interface IAdminUserStore
 {
@@ -45,6 +50,15 @@ public interface IAdminUserStore
     bool TryCreate(CreateAdminUserRequest request, out AdminUserView? user, out string? error);
     bool TryUpdate(Guid id, UpdateAdminUserRequest request, out AdminUserView? user, out string? error);
     bool TryValidatePassword(string username, string password, out AdminUserView? user);
+    AdminUserView? FindActiveByUsername(string username) => GetAll().SingleOrDefault(user =>
+        user.Status == AdminUserRecord.ActiveStatus && string.Equals(user.Username, username, StringComparison.OrdinalIgnoreCase));
+
+    bool TryGetLegacySqlLogin(Guid id, out string? legacySqlLogin)
+    {
+        var user = GetAll().SingleOrDefault(user => user.Id == id && user.Status == AdminUserRecord.ActiveStatus);
+        legacySqlLogin = user?.LegacySqlLogin;
+        return !string.IsNullOrWhiteSpace(legacySqlLogin);
+    }
 }
 
 public sealed class InMemoryAdminUserStore : IAdminUserStore
@@ -91,7 +105,8 @@ public sealed class InMemoryAdminUserStore : IAdminUserStore
     public bool TryCreate(CreateAdminUserRequest request, out AdminUserView? user, out string? error)
     {
         user = null;
-        error = ValidateCommon(request.Username, request.Email, request.Roles, request.Status, request.Password);
+        error = ValidateCommon(request.Username, request.Email, request.Roles, request.Status, request.Password)
+            ?? ValidateLegacySqlLogin(request.LegacySqlLogin);
         if (error is not null)
         {
             return false;
@@ -110,6 +125,7 @@ public sealed class InMemoryAdminUserStore : IAdminUserStore
             Id = Guid.NewGuid(),
             Username = request.Username.Trim(),
             Email = request.Email.Trim(),
+            LegacySqlLogin = NormalizeLegacySqlLogin(request.LegacySqlLogin),
             Roles = normalizedRoles,
             Status = normalizedStatus,
             CreatedAt = DateTimeOffset.UtcNow
@@ -129,7 +145,8 @@ public sealed class InMemoryAdminUserStore : IAdminUserStore
     public bool TryUpdate(Guid id, UpdateAdminUserRequest request, out AdminUserView? user, out string? error)
     {
         user = null;
-        error = ValidateUpdate(request.Roles, request.Status, request.Email);
+        error = ValidateUpdate(request.Roles, request.Status, request.Email)
+            ?? (request.UpdateLegacySqlLogin ? ValidateLegacySqlLogin(request.LegacySqlLogin) : null);
         if (error is not null)
         {
             return false;
@@ -148,6 +165,7 @@ public sealed class InMemoryAdminUserStore : IAdminUserStore
             existing.Email = request.Email.Trim();
         }
 
+        if (request.UpdateLegacySqlLogin) existing.LegacySqlLogin = NormalizeLegacySqlLogin(request.LegacySqlLogin);
         existing.UpdatedAt = DateTimeOffset.UtcNow;
         user = MapView(existing);
         return true;
@@ -179,21 +197,21 @@ public sealed class InMemoryAdminUserStore : IAdminUserStore
         return true;
     }
 
-    private static string? ValidateCommon(
+    internal static string? ValidateCommon(
         string username,
         string email,
         IReadOnlyList<string> roles,
         string status,
         string? password)
     {
-        if (string.IsNullOrWhiteSpace(username))
+        if (string.IsNullOrWhiteSpace(username) || username.Trim().Length > 100)
         {
-            return "Username required.";
+            return "Username is required and limited to 100 characters.";
         }
 
-        if (string.IsNullOrWhiteSpace(email))
+        if (string.IsNullOrWhiteSpace(email) || email.Trim().Length > 320)
         {
-            return "Email required.";
+            return "Email is required and limited to 320 characters.";
         }
 
         if (!IsValidEmail(email))
@@ -201,7 +219,7 @@ public sealed class InMemoryAdminUserStore : IAdminUserStore
             return "Invalid email format.";
         }
 
-        if (roles.Count == 0)
+        if (roles is null || roles.Count == 0)
         {
             return "At least one role is required.";
         }
@@ -218,7 +236,7 @@ public sealed class InMemoryAdminUserStore : IAdminUserStore
 
         if (password is null)
         {
-            return null;
+            return "Password required.";
         }
 
         if (password.Trim().Length < 8)
@@ -229,9 +247,9 @@ public sealed class InMemoryAdminUserStore : IAdminUserStore
         return null;
     }
 
-    private static string? ValidateUpdate(IReadOnlyList<string> roles, string status, string? email)
+    internal static string? ValidateUpdate(IReadOnlyList<string> roles, string status, string? email)
     {
-        if (roles.Count == 0)
+        if (roles is null || roles.Count == 0)
         {
             return "At least one role is required.";
         }
@@ -246,7 +264,7 @@ public sealed class InMemoryAdminUserStore : IAdminUserStore
             return $"Status must be {AdminUserRecord.ActiveStatus} or Inactive.";
         }
 
-        if (!string.IsNullOrWhiteSpace(email) && !IsValidEmail(email))
+        if (!string.IsNullOrWhiteSpace(email) && (email.Trim().Length > 320 || !IsValidEmail(email)))
         {
             return "Invalid email format.";
         }
@@ -254,12 +272,25 @@ public sealed class InMemoryAdminUserStore : IAdminUserStore
         return null;
     }
 
+    internal static string? ValidateLegacySqlLogin(string? login)
+    {
+        if (string.IsNullOrWhiteSpace(login)) return null;
+        var value = login.Trim();
+        return login.Any(char.IsControl) || value.Length > 128 || value.Any(character => char.IsControl(character)
+            || !(char.IsLetterOrDigit(character) || character is '\\' or '.' or '-' or '_' or '@' or '$'))
+            ? "Legacy SQL login must be at most 128 characters and contain only letters, digits, backslash, dot, dash, underscore, @ or $."
+            : null;
+    }
+
+    internal static string? NormalizeLegacySqlLogin(string? login)
+        => string.IsNullOrWhiteSpace(login) ? null : login.Trim();
+
     private static bool IsAllowedRole(string role)
-        => AllowedRoles.Contains(role.Trim());
+        => !string.IsNullOrWhiteSpace(role) && AllowedRoles.Contains(role.Trim());
 
     private static bool IsAllowedStatus(string status)
-        => string.Equals(status.Trim(), AdminUserRecord.ActiveStatus, StringComparison.OrdinalIgnoreCase) ||
-           string.Equals(status.Trim(), "Inactive", StringComparison.OrdinalIgnoreCase);
+        => !string.IsNullOrWhiteSpace(status) && (string.Equals(status.Trim(), AdminUserRecord.ActiveStatus, StringComparison.OrdinalIgnoreCase) ||
+           string.Equals(status.Trim(), "Inactive", StringComparison.OrdinalIgnoreCase));
 
     private static bool IsValidEmail(string email)
     {
@@ -274,7 +305,7 @@ public sealed class InMemoryAdminUserStore : IAdminUserStore
         }
     }
 
-    private static List<string> NormalizeRoles(IReadOnlyList<string> roles)
+    internal static List<string> NormalizeRoles(IReadOnlyList<string> roles)
     {
         return roles
             .Select(x => x.Trim())
@@ -284,7 +315,7 @@ public sealed class InMemoryAdminUserStore : IAdminUserStore
             .ToList();
     }
 
-    private static string NormalizeStatus(string status)
+    internal static string NormalizeStatus(string status)
         => string.Equals(status.Trim(), "Inactive", StringComparison.OrdinalIgnoreCase)
             ? "Inactive"
             : AdminUserRecord.ActiveStatus;
@@ -297,5 +328,6 @@ public sealed class InMemoryAdminUserStore : IAdminUserStore
             user.Roles.AsReadOnly(),
             user.Status,
             user.CreatedAt,
-            user.UpdatedAt);
+            user.UpdatedAt,
+            user.LegacySqlLogin);
 }

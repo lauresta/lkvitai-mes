@@ -1,6 +1,7 @@
 using System.Net;
 using System.Security.Claims;
 using System.Security.Cryptography;
+using LKvitai.MES.Modules.Sales.Api.Security;
 using LKvitai.MES.Modules.Sales.WebUI.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -52,10 +53,12 @@ public sealed class SalesReviewSelectorTests
         builder.Services.AddDataProtection().UseEphemeralDataProtectionProvider();
         builder.Services.AddAuthentication("Cookies").AddCookie("Cookies");
         builder.Services.AddSalesReviewAccess(builder.Environment, builder.Configuration);
-        builder.Services.AddAuthorization();
+        builder.Services.AddSalesSessionCredentials();
+        builder.Services.AddSalesProtectedAuthentication();
         await using var app = builder.Build();
         app.UseAuthentication();
         app.UseAuthorization();
+        app.MapSalesSessionProof();
         app.MapGet("/selected", (HttpContext context) =>
         {
             var identityCount = context.User.Identities.Count(identity => identity.IsAuthenticated);
@@ -63,6 +66,8 @@ public sealed class SalesReviewSelectorTests
             // A result with both identities would violate review isolation.
             return Results.Text($"{selected}:{identityCount}");
         });
+        app.MapGet("/api/sales/actor", () => Results.Ok())
+            .RequireAuthorization(LKvitai.MES.BuildingBlocks.PortalAuth.SalesCredentialProtector.Policy);
         await app.StartAsync();
         var client = app.GetTestClient();
         var cookies = new List<string>();
@@ -95,6 +100,9 @@ public sealed class SalesReviewSelectorTests
         }
         if (cookies.Count > 0) client.DefaultRequestHeaders.Add("Cookie", string.Join("; ", cookies));
         Assert.Equal(expected + (expected == "anonymous" ? ":0" : ":1"), await client.GetStringAsync("/selected"));
+        Assert.Equal(expected switch { "review" => HttpStatusCode.Forbidden, "portal" => HttpStatusCode.OK, _ => HttpStatusCode.Unauthorized },
+            (await client.GetAsync("/auth/session-proof")).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/sales/actor")).StatusCode);
     }
 
     private static AuthenticationProperties Properties(bool expired) => new()

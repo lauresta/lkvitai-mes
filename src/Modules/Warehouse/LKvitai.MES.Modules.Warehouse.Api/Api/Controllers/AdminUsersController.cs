@@ -11,6 +11,7 @@ namespace LKvitai.MES.Modules.Warehouse.Api.Controllers;
 [Route("api/admin/users")]
 [Route("api/warehouse/v1/admin/users")]
 [Authorize(Policy = WarehousePolicies.AdminOnly)]
+[ServiceFilter(typeof(TrustedUserAdministrationFilter))]
 public sealed class AdminUsersController : ControllerBase
 {
     private readonly IAdminUserStore _userStore;
@@ -44,7 +45,8 @@ public sealed class AdminUsersController : ControllerBase
                     request.Email,
                     request.Password,
                     request.Roles,
-                    request.Status),
+                    request.Status,
+                    request.LegacySqlLogin),
                 out var created,
                 out var error))
         {
@@ -72,7 +74,7 @@ public sealed class AdminUsersController : ControllerBase
 
         if (!_userStore.TryUpdate(
                 id,
-                new UpdateAdminUserRequest(request.Roles, request.Status, request.Email),
+                new UpdateAdminUserRequest(request.Roles, request.Status, request.Email, request.LegacySqlLogin, request.UpdateLegacySqlLogin),
                 out var updated,
                 out var error))
         {
@@ -122,10 +124,13 @@ public sealed class AdminUsersController : ControllerBase
         string Email,
         string Password,
         IReadOnlyList<string> Roles,
-        string Status);
+        string Status,
+        string? LegacySqlLogin = null);
 
     public sealed record UpdateUserRequest(
         IReadOnlyList<string> Roles,
         string Status,
-        string? Email = null);
+        string? Email = null,
+        string? LegacySqlLogin = null,
+        bool UpdateLegacySqlLogin = false);
 }

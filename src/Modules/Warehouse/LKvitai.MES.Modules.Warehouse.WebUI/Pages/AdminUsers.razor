@@ -21,16 +21,21 @@
             <div class="card-body">
                 <h5>Create User</h5>
                 <div class="mb-2">
-                    <label class="form-label">Username</label>
-                    <input class="form-control" @bind="_createUsername" />
+                    <label class="form-label" for="create-username">Username</label>
+                    <input id="create-username" name="new-username" class="form-control" autocomplete="username" @bind="_createUsername" />
                 </div>
                 <div class="mb-2">
-                    <label class="form-label">Email</label>
-                    <input class="form-control" @bind="_createEmail" />
+                    <label class="form-label" for="create-email">Email</label>
+                    <input id="create-email" name="new-email" class="form-control" type="email" autocomplete="email" @bind="_createEmail" />
                 </div>
                 <div class="mb-2">
-                    <label class="form-label">Password</label>
-                    <input class="form-control" type="password" @bind="_createPassword" />
+                    <label class="form-label" for="create-password">Password</label>
+                    <input id="create-password" name="new-password" class="form-control" type="password" autocomplete="new-password" @bind="_createPassword" />
+                </div>
+                <div class="mb-2">
+                    <label class="form-label" for="create-legacy-sql-login">Legacy SQL login</label>
+                    <input id="create-legacy-sql-login" class="form-control font-monospace" maxlength="128" @bind="_createLegacySqlLogin" autocomplete="off" />
+                    <small class="text-muted">Optional. Explicit SQL identity for legacy access; leave empty to deny legacy access.</small>
                 </div>
                 <div class="mb-2">
                     <label class="form-label">Status</label>
@@ -72,6 +77,7 @@
                             <tr>
                                 <th>Username</th>
                                 <th>Email</th>
+                                <th>Legacy SQL login</th>
                                 <th>Roles</th>
                                 <th>Status</th>
                                 <th>Created</th>
@@ -82,7 +88,7 @@
                             @if (_users.Count == 0)
                             {
                                 <tr>
-                                    <td colspan="6" class="text-muted">No users found.</td>
+                                    <td colspan="7" class="text-muted">No users found.</td>
                                 </tr>
                             }
                             else
@@ -92,6 +98,7 @@
                                     <tr>
                                         <td>@user.Username</td>
                                         <td>@user.Email</td>
+                                        <td class="font-monospace">@(user.LegacySqlLogin ?? "—")</td>
                                         <td>
                                             @foreach (var role in user.Roles)
                                             {
@@ -122,6 +129,11 @@
                             <div class="col-md-6">
                                 <label class="form-label">Email</label>
                                 <input class="form-control" @bind="_editEmail" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="edit-legacy-sql-login">Legacy SQL login</label>
+                                <input id="edit-legacy-sql-login" class="form-control font-monospace" maxlength="128" @bind="_editLegacySqlLogin" autocomplete="off" />
+                                <small class="text-muted">Clearing this field removes legacy access.</small>
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label">Status</label>
@@ -183,12 +195,14 @@
 
     private string _createUsername = string.Empty;
     private string _createEmail = string.Empty;
+    private string _createLegacySqlLogin = string.Empty;
     private string _createPassword = string.Empty;
     private string _createStatus = "Active";
     private readonly HashSet<string> _createRoles = ["WarehouseAdmin"];
 
     private AdminUserDto? _editUser;
     private string _editEmail = string.Empty;
+    private string _editLegacySqlLogin = string.Empty;
     private string _editStatus = "Active";
     private HashSet<string> _editRoles = [];
 
@@ -242,6 +256,7 @@
             {
                 Username = _createUsername.Trim(),
                 Email = _createEmail.Trim(),
+                LegacySqlLogin = _createLegacySqlLogin,
                 Password = _createPassword,
                 Status = _createStatus,
                 Roles = _createRoles.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList()
@@ -250,6 +265,7 @@
             ToastService.ShowSuccess($"User {created.Username} created.");
             _createUsername = string.Empty;
             _createEmail = string.Empty;
+            _createLegacySqlLogin = string.Empty;
             _createPassword = string.Empty;
             _createStatus = "Active";
             _createRoles.Clear();
@@ -271,6 +287,7 @@
     {
         _editUser = user;
         _editEmail = user.Email;
+        _editLegacySqlLogin = user.LegacySqlLogin ?? string.Empty;
         _editStatus = user.Status;
         _editRoles = user.Roles.ToHashSet(StringComparer.OrdinalIgnoreCase);
     }
@@ -279,6 +296,7 @@
     {
         _editUser = null;
         _editEmail = string.Empty;
+        _editLegacySqlLogin = string.Empty;
         _editStatus = "Active";
         _editRoles = [];
     }
@@ -304,6 +322,8 @@
             var updated = await AdminUsersClient.UpdateUserAsync(_editUser.Id, new UpdateAdminUserRequestDto
             {
                 Email = _editEmail.Trim(),
+                LegacySqlLogin = _editLegacySqlLogin,
+                UpdateLegacySqlLogin = true,
                 Status = _editStatus,
                 Roles = _editRoles.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList()
             });

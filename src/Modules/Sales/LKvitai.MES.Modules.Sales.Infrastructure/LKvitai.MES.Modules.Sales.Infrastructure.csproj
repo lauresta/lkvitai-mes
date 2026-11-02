@@ -9,8 +9,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Microsoft.Data.SqlClient" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Sql/Queries/*.sql" />
   </ItemGroup>
 
   <ItemGroup>

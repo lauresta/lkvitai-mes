@@ -1,7 +1,7 @@
 @inject NavigationManager Navigation
 @* Category icon from the approved Sales design review sprite. Keep the app path base for test deployment. *@
 <svg class="cat-icon" role="img" aria-label="@Category" focusable="false">
-    <use href="@($"{Navigation.BaseUri}img/sales-category-icons.svg#cat-{Slug}")" />
+    <use href="@($"{new Uri(Navigation.BaseUri).AbsolutePath}img/sales-category-icons.svg#cat-{Slug}")" />
 </svg>
 
 @code {

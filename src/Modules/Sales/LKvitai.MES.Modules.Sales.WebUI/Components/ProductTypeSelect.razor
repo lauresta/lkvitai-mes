@@ -1,0 +1,17 @@
+@using LKvitai.MES.Modules.Sales.WebUI.Models
+<select class="demo-product-editor__type-select" aria-label="@L["Details.ProductType"]" value="@Value" @onchange="Changed">
+    @if (!Types.Any(type => type.Id == Value))
+    {
+        <option value="@Value">@L["Reference.SavedValue", SavedName]</option>
+    }
+    @foreach (var type in Types)
+    {
+        <option value="@type.Id">@type.Name</option>
+    }
+</select>
+@code {
+    [Parameter] public int Value { get; set; }
+    [Parameter] public string SavedName { get; set; } = "";
+    [Parameter] public IReadOnlyList<DemoType> Types { get; set; } = [];
+    [Parameter] public EventCallback<ChangeEventArgs> Changed { get; set; }
+}

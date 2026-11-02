@@ -23,4 +23,7 @@ public sealed record OrderDetailsDto(
     OrderOperatorDto? Operator,
     IReadOnlyList<OrderItemGroupDto> ItemGroups,
     IReadOnlyList<OrderAmountDto> Amounts,
-    IReadOnlyList<OrderEmployeeDto> Employees);
+    IReadOnlyList<OrderEmployeeDto> Employees,
+    bool IsPrivacyRestricted = false,
+    string? CurrentNote = null,
+    IReadOnlyList<OrderNoteHistoryEntry>? NoteHistory = null);

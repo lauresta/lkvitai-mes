@@ -1,34 +1,82 @@
 @using System.Globalization
+@using System.Text.Json
 @implements IAsyncDisposable
 @inject IJSRuntime JS
+@inject LKvitai.MES.BuildingBlocks.WebUI.Services.IBuildVersionAccessor BuildVersion
+@using LKvitai.MES.Modules.Sales.Contracts.OrderEntry
+<NavigationLock ConfirmExternalNavigation="@(IsLive && (HeaderDirty || ProductDirty || AddressDirty || PaymentDirty || ConfirmationDirty || Entry.HasPendingCommand))" OnBeforeInternalNavigation="GuardNavigationAsync" />
 
-<div class="demo-layer" role="dialog" aria-modal="true" aria-label="@L["Workspace.OrderEntry"]" @ref="_layerElement">
+<div class="demo-layer" role="dialog" aria-modal="true" aria-label="@L["Workspace.OrderEntry"].Value" @ref="_layerElement">
+    @if (_loading)
+    {
+        <div class="panel demo-editor__banner" role="status">@L["Workspace.LoadingReferences"].Value</div>
+    }
+    else if (_loadError is not null)
+    {
+        <div class="panel demo-editor__banner" role="alert">@_loadError <button class="btn btn--ghost" @onclick="ReloadLiveAsync">@L["Common.Retry"].Value</button><button class="btn btn--ghost" @onclick="CloseAsync">@L["Common.BackToOrders"].Value</button></div>
+    }
+    else
+    {
+    <div class="demo-workspace-notifications">
+    @if (_busy || IsLive && !_pendingRestored)
+    {
+        <div class="demo-editor__banner" role="status">@(_busy ? L["Workspace.SavingLoading"].Value : L["Workspace.LoadingSavedInput"].Value)</div>
+    }
+    @if (!_busy && Entry.HasPendingCommand)
+    {
+        <div class="demo-editor__banner" role="alert">@L["Recovery.Interrupted"].Value <button class="btn btn--primary" @onclick="RecoverCommandAsync">@L["Recovery.CheckRetry"].Value</button> <button class="btn btn--ghost" @onclick="OpenOtherOrders">@L["Recovery.OtherOrders"].Value</button></div>
+    }
+    @if(Entry.LegacyPendingId is not null)
+    {
+        <div class="demo-editor__banner" role="status">@L["Recovery.EarlierNeedsCheck"].Value <button class="btn btn--ghost" disabled="@_busy" @onclick="CheckLegacySaveAsync">@L["Recovery.CheckEarlier"].Value</button></div>
+    }
+    @if(_legacySaveOutcome is { } earlier)
+    {
+        <div class="demo-editor__banner" role="status">@L["Recovery.EarlierAvailable"].Value <a href="@($"entry/{earlier.OrderId}")">@L["Recovery.OpenItsOrder"].Value</a></div>
+    }
+    @foreach(var pending in Entry.OtherPendingSaves)
+    {
+        <div class="demo-editor__banner" role="status">@L["Recovery.AnotherPending"].Value @if(pending.OrderId is { } orderId){<a href="@($"entry/{orderId}")">@L["Recovery.OpenThatOrder"].Value</a>}else{<button class="btn btn--ghost" @onclick="OpenOtherOrders">@L["Recovery.OpenUnfinished"].Value</button>}</div>
+    }
+    @if(Entry.PendingRestoreWarning is { } storageWarning){<div class="demo-editor__banner" role="status">@storageWarning</div>}
+    @if (!string.IsNullOrEmpty(_noticeText))
+    {
+        <div @key="_noticeVersion" class="sales-toast sales-toast--@_noticeKind" role="@(_noticeKind == "success" ? "status" : "alert")" aria-atomic="true">
+            <span class="sales-toast__icon" aria-hidden="true">@(_noticeKind == "success" ? "✓" : "!")</span>
+            <div><strong>@_noticeTitle</strong><p>@_noticeText</p>
+                @if(_lastInvalidField is not null && _noticeKind == "error") { <button class="sales-toast__action" type="button" @onclick="FocusProductErrorAsync">@L["Workspace.GoToField"].Value</button> }
+            </div>
+            <button class="sales-toast__close" type="button" aria-label="@L["Workspace.DismissMessage"].Value" @onclick="DismissNotice">×</button>
+        </div>
+    }
+    </div>
+    <fieldset disabled="@(_busy || Entry.HasPendingCommand || IsLive && !_pendingRestored)" style="display:contents">
     @if (_order is null)
     {
-        <button class="demo-backdrop" type="button" aria-label="@L["Workspace.CloseNew"]" @onclick="CloseAsync"></button>
+        <button class="demo-backdrop" type="button" aria-label="@L["Workspace.CloseNew"].Value" @onclick="CloseAsync"></button>
         <aside class="demo-drawer" aria-labelledby="demo-new-title">
             <div class="demo-drawer__head">
-                <div><div class="eyebrow mono">@L["Orders.PageTitle"]</div><h2 id="demo-new-title">@L["Orders.NewOrder"]</h2></div>
-                <button class="demo-icon-button" type="button" aria-label="@L["Common.Close"]" @onclick="CloseAsync">×</button>
+                <div><div class="eyebrow mono">@L["Workspace.SalesOrders"].Value</div><h2 id="demo-new-title">@L["Workspace.NewOrder"].Value</h2></div>
+                <button class="demo-icon-button" type="button" aria-label="@L["Common.Close"].Value" @onclick="CloseAsync">×</button>
             </div>
             <div class="demo-drawer__body">
-                <p class="demo-notice">@L["Preview.Snapshot", Catalog.SnapshotDate]</p>
-                <label class="demo-label" for="demo-number">@L["Workspace.OrderNumber"] <span class="demo-required">*</span></label>
+                <p class="demo-notice">@(IsLive ? L["Workspace.LiveEntryHelp"].Value : L["Workspace.SnapshotPreview", Catalog.SnapshotDate].Value)</p>
+                <label class="demo-label" for="demo-number">@L["Workspace.OrderNumber"].Value <span class="demo-required">*</span></label>
                 <input id="demo-number" class="demo-input mono" value="@_rawNumber" @oninput="OnNumberInput"
-                       placeholder="@L["Workspace.NumberExample"]" autocomplete="off" aria-describedby="demo-number-help" />
-                <div id="demo-number-help" class="demo-help">@L["Workspace.NumberHelp"]</div>
+                       placeholder="@L["Workspace.NumberExample"].Value" autocomplete="off" aria-describedby="demo-number-help" />
+                <div id="demo-number-help" class="demo-help">@L["Workspace.NumberHelp"].Value</div>
                 @if (SeriesSuggestions.Count > 0)
                 {
-                    <div class="demo-suggestions" aria-label="@L["Workspace.MatchingSeries"]">
+                    <div class="demo-suggestions" aria-label="@L["Workspace.MatchingSeries"].Value">
                         @foreach (var suggestion in SeriesSuggestions)
                         {
-                            <button type="button" @onclick="() => ChooseSeries(suggestion)">@suggestion<span class="mono">@L["Workspace.Series"]</span></button>
+                            <button type="button" @onclick="() => ChooseSeries(suggestion)">@suggestion<span class="mono">@L["Workspace.Series"].Value</span></button>
                         }
                     </div>
                 }
                 @if (HasNumberPreview)
                 {
-                    <div class="demo-number-preview"><span>@L["Workspace.NumberPreview"]</span><strong class="mono">@PreviewNumber</strong></div>
+                    <div class="demo-number-preview"><span>@L["Workspace.NumberPreview"].Value</span><strong class="mono">@PreviewNumber</strong></div>
                 }
                 else if (!string.IsNullOrWhiteSpace(_rawNumber) && _numberTouched)
                 {
@@ -36,32 +84,32 @@
                 }
                 @if (!string.IsNullOrWhiteSpace(_lastAutofilledSeries))
                 {
-                    <div class="demo-help">@L["Workspace.SeriesDefaults", _lastAutofilledSeries]</div>
+                    <div class="demo-help">@L["Workspace.SeriesDefaults", _lastAutofilledSeries].Value</div>
                 }
 
                 <div class="demo-form-grid">
                     <div>
-                        <label class="demo-label" for="demo-customer">@L["Common.Customer"] <span class="demo-required">*</span></label>
-                        <input id="demo-customer" class="demo-input" @bind="_customer" placeholder="@L["Workspace.CustomerName"]" />
+                        <label class="demo-label" for="demo-customer">@L["Common.Customer"].Value <span class="demo-required">*</span></label>
+                        @if (IsLive) { @ReferenceSelect("demo-customer", Catalog.Customers, _customerId, value => { _customerId=value; _customer=ReferenceName(Catalog.Customers,value); }, existingLabel: _customer) } else { <input id="demo-customer" class="demo-input" @bind="_customer" placeholder="@L["Workspace.CustomerName"].Value" /> }
                     </div>
                     <div>
-                        <label class="demo-label" for="demo-store">@L["Common.Store"]<span class="demo-required">*</span></label>
-                        <input id="demo-store" class="demo-input" @bind="_store" placeholder="@L["Workspace.StoreBranch"]" />
+                        <label class="demo-label" for="demo-store">@L["Workspace.Store"].Value <span class="demo-required">*</span></label>
+                        @if (IsLive) { @ReferenceSelect("demo-store", Catalog.Stores, _storeId, value => { _storeId=value; _store=ReferenceName(Catalog.Stores,value); }, existingLabel: _store) } else { <input id="demo-store" class="demo-input" @bind="_store" placeholder="@L["Workspace.StoreBranch"].Value" /> }
                     </div>
                     <div>
-                        <label class="demo-label" for="demo-manager">@L["Common.Manager"]</label>
-                        <input id="demo-manager" class="demo-input" @bind="_manager" placeholder="@L["Common.Manager"]" />
+                        <label class="demo-label" for="demo-manager">@L["Common.Manager"].Value</label>
+                        @if (IsLive) { @ReferenceSelect("demo-manager", Catalog.Employees, _managerId, value => { _managerId=value; _manager=ReferenceName(Catalog.Employees,value); }, existingLabel: _manager) } else { <input id="demo-manager" class="demo-input" @bind="_manager" placeholder="@L["Common.Manager"].Value" /> }
                     </div>
                     <div>
-                        <label class="demo-label" for="demo-consultant">@L["Common.Consultant"]</label>
-                        <input id="demo-consultant" class="demo-input" @bind="_consultant" placeholder="@L["Common.Consultant"]" />
+                        <label class="demo-label" for="demo-consultant">@L["Common.Consultant"].Value</label>
+                        @if (IsLive) { @ReferenceSelect("demo-consultant", Catalog.Employees, _consultantId, value => { _consultantId=value; _consultant=ReferenceName(Catalog.Employees,value); }, existingLabel: _consultant) } else { <input id="demo-consultant" class="demo-input" @bind="_consultant" placeholder="@L["Common.Consultant"].Value" /> }
                     </div>
                     <div>
-                        <label class="demo-label" for="demo-date">@L["Common.OrderDate"]</label>
+                        <label class="demo-label" for="demo-date">@L["Common.OrderDate"].Value</label>
                         <input id="demo-date" type="date" class="demo-input mono" value="@_date" @onchange="e => _date = e.Value?.ToString() ?? _date" />
                     </div>
                     <div>
-                        <label class="demo-label" for="demo-due">@L["Common.DueDate"]</label>
+                        <label class="demo-label" for="demo-due">@L["Common.DueDate"].Value</label>
                         <input id="demo-due" type="date" class="demo-input mono" value="@_due" @onchange="e => _due = e.Value?.ToString() ?? _due" />
                     </div>
                 </div>
@@ -71,75 +119,90 @@
                 }
             </div>
             <div class="demo-drawer__foot">
-                <button class="btn btn--ghost" type="button" @onclick="CloseAsync">@L["Common.Cancel"]</button>
-                <button class="btn btn--primary" type="button" @onclick="CreateDraft">@L["Workspace.CreateDraftOpen"]</button>
+                <button class="btn btn--ghost" type="button" @onclick="CloseAsync">@L["Common.Cancel"].Value</button>
+                <button class="btn btn--primary" type="button" @onclick="CreateDraft">@(IsLive ? L["Workspace.CreateOpen"].Value : L["Workspace.CreateDraftOpen"].Value)</button>
             </div>
         </aside>
     }
     else
     {
         <div class="demo-editor">
+            @if (!_selectingProduct && _configuringLine is null)
+            {
+                <CustomerPrivacyNotice IsRestricted="IsPrivacyRestricted" OnBack="CloseAsync" />
+            }
             <header class="demo-editor__top">
                 <div>
-                    <div class="eyebrow mono">@L["Workspace.SalesDraft"]</div>
+                    <div class="eyebrow mono">@L["Workspace.SalesDraft"].Value</div>
                     <h1 class="mono">@_order.Number</h1>
                     <div class="demo-editor__meta">@_order.Customer · @_order.Store</div>
                 </div>
                 <div class="demo-editor__actions">
-                    <span class="chip chip--entered">@L["Workspace.LocalPreview"]</span>
-                    <button class="btn btn--ghost" type="button" @onclick="CloseAsync">@L["Workspace.DiscardReturn"]</button>
+                    <span class="chip chip--entered">@(IsLive ? (_busy ? L["Workspace.Saving"].Value : HeaderDirty || ProductDirty || AddressDirty ? L["Workspace.UnsavedChanges"].Value : L["Workspace.SavedOrder"].Value) : L["Workspace.LocalPreview"].Value)</span>
+                    @if(IsLive && _order.Cancelled) { <span class="chip chip--danger">@L["Workspace.Cancelled"].Value</span> }
+                    <button class="btn btn--ghost" type="button" @onclick="CloseAsync">@(IsLive ? L["Common.BackToOrders"].Value : L["Workspace.DiscardReturn"].Value)</button>
+                    @if(IsLive) { <button class="btn btn--ghost" type="button" disabled="@(!_order.WritesAllowed || _order.Cancelled || _order.StateId is not (4 or 7) || _order.CancellationUnavailableReason is not null)" title="@ApiMessage(_order.CancellationUnavailableReason)" @onclick="CancelLiveOrderAsync">@L["Workspace.CancelOrder"].Value</button> }
                 </div>
             </header>
-            <div class="demo-editor__banner" role="status">@L["Preview.DraftHelp"]</div>
-            <div class="demo-stage-strip" aria-label="@L["Workspace.OrderStage"]"><span class="is-current">@L["Orders.Status.Entered"]</span><span>@L["Orders.Status.Approved"]</span><span>@L["Orders.Status.InProgress"]</span><span>@L["Orders.Status.Made"]</span><span>@L["Orders.Status.Shipped"]</span><span>@L["Orders.Status.Delivered"]</span></div>
+            <div class="demo-editor__banner" role="status">@(IsLive ? (_order.WritesAllowed ? L["Workspace.SaveHelp"].Value : L["Workspace.ReadOnlyTest"].Value) : L["Workspace.DraftHelp"].Value)</div>
+            <div class="demo-stage-strip" aria-label="@L["Workspace.OrderStage"].Value"><span class="is-current">@(IsLive ? _order.StateName : L["Workspace.StageEntered"].Value)</span><span>@L["Workspace.StageConfirmed"].Value</span><span>@L["Workspace.StageManufacturing"].Value</span><span>@L["Workspace.StageManufactured"].Value</span><span>@L["Workspace.StageBranch"].Value</span><span>@L["Workspace.StageDelivered"].Value</span></div>
             <div class="demo-editor__grid">
                 <div class="demo-editor__main">
-                    <section class="panel demo-panel">
-                        <div class="panel__head"><h2>@L["Workspace.PeopleDates"]</h2><span>@L["Workspace.EditableFields"]</span></div>
+                    <section class="panel demo-panel demo-reference-panel">
+                        <div class="panel__head"><h2>@L["Workspace.PeopleDates"].Value</h2><span>@L["Workspace.EditableFields"].Value</span></div>
                         <div class="demo-panel__body demo-summary-grid">
-                            <div><label class="demo-label" for="edit-customer">@L["Common.Customer"]</label><input id="edit-customer" class="demo-input" @bind="_order.Customer" /></div>
-                            <div><label class="demo-label" for="edit-manager">@L["Common.Manager"]</label><input id="edit-manager" class="demo-input" @bind="_order.Manager" /></div>
-                            <div><label class="demo-label" for="edit-store">@L["Common.Store"]</label><input id="edit-store" class="demo-input" @bind="_order.Store" /></div>
-                            <div><label class="demo-label" for="edit-consultant">@L["Common.Consultant"]</label><input id="edit-consultant" class="demo-input" @bind="_order.Consultant" /></div>
-                            <div><label class="demo-label" for="edit-date">@L["Common.OrderDate"]</label><input id="edit-date" type="date" class="demo-input mono" value="@_editorDate" @onchange="UpdateOrderDate" /></div>
-                            <div><label class="demo-label" for="edit-due">@L["Common.DueDate"]</label><input id="edit-due" type="date" class="demo-input mono" value="@_editorDue" @onchange="UpdateDueDate" /></div>
-                            <div><label class="demo-label" for="edit-mounting-date">@L["Workspace.MountingDate"]</label><input id="edit-mounting-date" type="date" class="demo-input mono" value="@_editorMountingDate" @onchange="UpdateMountingDate" /></div>
-                            <div><label class="demo-label" for="edit-priority">@L["Workspace.Priority"]</label><select id="edit-priority" class="demo-input" @bind="_order.Priority"><option value="Normal">@L["Workspace.PriorityNormal"]</option><option value="High">@L["Workspace.PriorityHigh"]</option><option value="Urgent">@L["Workspace.PriorityUrgent"]</option></select></div>
+                            <div><label class="demo-label" for="edit-customer">@L["Common.Customer"].Value</label>@if (IsLive) { @ReferenceSelect("edit-customer", Catalog.Customers, _order.CustomerId, value => { _order.CustomerId=value; _order.Customer=ReferenceName(Catalog.Customers,value); }, !_order.CanEdit || !_order.WritesAllowed, _order.Customer) } else { <input id="edit-customer" class="demo-input" @bind="_order.Customer" /> }</div>
+                            <div><label class="demo-label" for="edit-manager">@L["Common.Manager"].Value</label>@if (IsLive) { @ReferenceSelect("edit-manager", Catalog.Employees, _order.ManagerId, value => { _order.ManagerId=value; _order.Manager=ReferenceName(Catalog.Employees,value); }, !_order.CanEdit || !_order.WritesAllowed, _order.Manager) } else { <input id="edit-manager" class="demo-input" @bind="_order.Manager" /> }</div>
+                            <div><label class="demo-label" for="edit-store">@L["Workspace.Store"].Value</label>@if (IsLive) { @ReferenceSelect("edit-store", Catalog.Stores, _order.StoreId, value => { _order.StoreId=value; _order.Store=ReferenceName(Catalog.Stores,value); }, !_order.WritesAllowed, _order.Store) } else { <input id="edit-store" class="demo-input" @bind="_order.Store" /> }</div>
+                            <div><label class="demo-label" for="edit-consultant">@L["Common.Consultant"].Value</label>@if (IsLive) { @ReferenceSelect("edit-consultant", Catalog.Employees, _order.ConsultantId, value => { _order.ConsultantId=value; _order.Consultant=ReferenceName(Catalog.Employees,value); }, !_order.CanEdit || !_order.WritesAllowed, _order.Consultant) } else { <input id="edit-consultant" class="demo-input" @bind="_order.Consultant" /> }</div>
+                            <div><label class="demo-label" for="edit-date">@L["Common.OrderDate"].Value</label><input id="edit-date" type="date" readonly="@(IsLive && (!_order.CanEdit || !_order.WritesAllowed))" class="demo-input mono" value="@_editorDate" @onchange="UpdateOrderDate" /></div>
+                            <div><label class="demo-label" for="edit-due">@L["Common.DueDate"].Value</label><input id="edit-due" type="date" readonly="@(IsLive && !_order.WritesAllowed)" class="demo-input mono" value="@_editorDue" @onchange="UpdateDueDate" /></div>
+                            <div><label class="demo-label" for="edit-mounting-date">@L["Workspace.MountingDate"].Value</label><input id="edit-mounting-date" type="date" readonly="@(IsLive && !_order.WritesAllowed)" class="demo-input mono" value="@_editorMountingDate" @onchange="UpdateMountingDate" /></div>
+                            <div><label class="demo-label" for="edit-priority">@L["Workspace.Priority"].Value</label>@if (IsLive) { @ReferenceSelect("edit-priority", _priorities, _order.PriorityId, value => _order.PriorityId=value ?? 2, !_order.CanEdit || !_order.WritesAllowed) } else { <select id="edit-priority" class="demo-input" @bind="_order.Priority"><option value="Normal">@L["Workspace.PriorityNormal"].Value</option><option value="High">@L["Workspace.PriorityHigh"].Value</option><option value="Urgent">@L["Workspace.PriorityUrgent"].Value</option></select> }</div>
                         </div>
                     </section>
 
                     <section class="panel demo-panel">
-                        <div class="panel__head"><h2>@L["Common.Address"]</h2><span>@L["Workspace.DraftContactDelivery"]</span></div>
+                        <div class="panel__head"><h2>@L["Common.Address"].Value</h2><span>@(IsLive ? L["Workspace.ContactDelivery"].Value : L["Workspace.DraftContactDelivery"].Value)</span></div>
                         <div class="demo-panel__body">
                             <div class="demo-form-grid demo-form-grid--address">
-                                <div><label class="demo-label" for="address-region">@L["Workspace.Region"]</label><input id="address-region" class="demo-input" @bind="_order.Region" /></div>
-                                <div><label class="demo-label" for="address-city">@L["Workspace.City"]</label><input id="address-city" class="demo-input" @bind="_order.City" /></div>
-                                <div><label class="demo-label" for="address-street">@L["Workspace.Street"]</label><input id="address-street" class="demo-input" @bind="_order.Street" /></div>
-                                <div><label class="demo-label" for="address-building">@L["Workspace.Building"]</label><input id="address-building" class="demo-input mono" @bind="_order.Building" /></div>
-                                <div><label class="demo-label" for="address-flat">@L["Workspace.Flat"]</label><input id="address-flat" class="demo-input mono" @bind="_order.Flat" /></div>
-                                <div><label class="demo-label" for="address-phone">@L["Common.Phone"]</label><input id="address-phone" type="tel" class="demo-input mono" @bind="_order.Phone" /></div>
+                                @if (IsLive)
+                                {
+                                    <div><label class="demo-label" for="address-search">@L["Workspace.FindAddress"].Value</label><input id="address-search" class="demo-input" @bind="_addressSearch" placeholder="@L["Workspace.CityStreet"].Value" /><button class="btn btn--ghost" type="button" @onclick="FindAddressesAsync">@L["Common.Search"].Value</button></div>
+                                    <div><label class="demo-label" for="address-street-live">@L["Workspace.StreetReference"].Value</label><select id="address-street-live" class="demo-input" value="@_order.StreetId" @onchange="SelectAddress"><option value="">@L["Common.Choose"].Value</option>@foreach(var address in _addressOptions) { <option value="@address.Id">@(address.Path ?? address.Name)</option> }</select></div>
+                                }
+                                else
+                                {
+                                <div><label class="demo-label" for="address-region">@L["Workspace.Region"].Value</label><input id="address-region" class="demo-input" @bind="_order.Region" /></div>
+                                <div><label class="demo-label" for="address-city">@L["Workspace.City"].Value</label><input id="address-city" class="demo-input" @bind="_order.City" /></div>
+                                <div><label class="demo-label" for="address-street">@L["Workspace.Street"].Value</label><input id="address-street" class="demo-input" @bind="_order.Street" /></div>
+                                }
+                                <div><label class="demo-label" for="address-building">@L["Workspace.Building"].Value</label><input id="address-building" class="demo-input mono" @bind="_order.Building" /></div>
+                                <div><label class="demo-label" for="address-flat">@L["Workspace.Flat"].Value</label><input id="address-flat" class="demo-input mono" @bind="_order.Flat" /></div>
+                                <div><label class="demo-label" for="address-phone">@L["Common.Phone"].Value</label><input id="address-phone" type="tel" class="demo-input mono" @bind="_order.Phone" /></div>
                             </div>
-                            <label class="demo-label demo-label--spaced" for="address-note">@L["Workspace.AddressNotes"]</label><textarea id="address-note" class="demo-textarea" @bind="_order.AddressNote"></textarea>
+                            <label class="demo-label demo-label--spaced" for="address-note">@L["Workspace.AddressNotes"].Value</label><textarea id="address-note" class="demo-textarea" @bind="_order.AddressNote"></textarea>
+                            @if(IsLive) { <button type="button" class="btn btn--ghost" disabled="@(!_order.WritesAllowed)" @onclick="SaveLiveAddressAsync">@L["Workspace.SaveAddress"].Value</button><span class="demo-help">@_addressError</span> }
                         </div>
                     </section>
 
                     <section class="panel demo-panel">
                         <div class="panel__head">
-                            <div><h2>@L["Workspace.ProductsServices"]</h2><span>@L["Workspace.LineCount", _order.Lines.Count]</span></div>
+                            <div><h2>@L["Workspace.ProductsServices"].Value</h2><span>@L["Workspace.LineCount", _order.Lines.Count].Value</span></div>
                             <div class="demo-panel__actions">
-                                <button class="btn btn--ghost" type="button" @onclick="() => OpenAccessoryPicker(null)">@L["Workspace.AddPriedai"]</button>
-                                <button class="btn btn--primary" type="button" @onclick="OpenProductPicker">@L["Workspace.AddProductService"]</button>
+                                <button class="btn btn--ghost" type="button" disabled="@(IsLive && (!_order.WritesAllowed || _order.Cancelled))" @onclick="() => OpenAccessoryPicker(null)">@L["Workspace.AddPriedai"].Value</button>
+                                <button class="btn btn--primary" type="button" disabled="@(IsLive && (!_order.WritesAllowed || _order.Cancelled))" @onclick="OpenProductPicker">@L["Workspace.AddProductService"].Value</button>
                             </div>
                         </div>
                         @if (_order.Lines.Count == 0)
                         {
-                            <div class="demo-empty">@L["Workspace.NoLines"]</div>
+                            <div class="demo-empty">@L["Workspace.NoLines"].Value</div>
                         }
                         else
                         {
                             <div class="table-wrap">
                                 <table class="lk-table demo-lines">
-                                    <thead><tr><th>@L["Details.Item"]</th><th>@L["Common.Details"]</th><th class="is-num">@L["Workspace.Qty"]</th><th class="is-num">@L["Common.Price"]</th><th class="is-num">@L["Common.Amount"]</th><th></th></tr></thead>
+                                    <thead><tr><th>@L["Workspace.Item"].Value</th><th>@L["Common.Details"].Value</th><th class="is-num">@L["Workspace.Qty"].Value</th><th class="is-num">@L["Common.Price"].Value</th><th class="is-num">@L["Common.Amount"].Value</th><th></th></tr></thead>
                                     <tbody>
                                         @foreach (var line in _order.Lines)
                                         {
@@ -147,27 +210,27 @@
                                                 <td><div class="demo-line-name"><div class="demo-line-sketch"><CategoryIcon Category="@line.Category" /></div><div>
                                                     <button class="demo-line-open" type="button" @onclick="() => OpenConfigurator(line)">@line.Name ↗</button>
                                                     <small>@line.Category</small></div></div></td>
-                                                <td class="mono">@(line.WidthMm > 0 ? $"{line.WidthMm} × {line.HeightMm} mm" : line.Unit)</td>
-                                                <td class="is-num"><input class="demo-table-input mono" type="number" min="0.001" step="0.001" aria-label="@L["Product.QuantityFor", line.Name]" @bind="line.Quantity" /></td>
-                                                <td class="is-num"><input class="demo-table-input mono" type="number" min="0" step="0.01" aria-label="@L["Product.PriceFor", line.Name]" @bind="line.Price" /></td>
-                                                <td class="is-num">@OrderFormat.Money(line.Quantity * line.Price)</td>
+                                                <td class="mono">@(line.WidthMm > 0 ? $"{line.WidthMm} × {line.HeightMm} mm" : DisplayUnit(line.Unit))</td>
+                                                <td class="is-num"><input class="demo-table-input mono" readonly="@IsLive" type="number" min="0.001" step="0.001" aria-label="@L["Product.QuantityFor", line.Name].Value" @bind="line.Quantity" /></td>
+                                                <td class="is-num"><input class="demo-table-input mono" readonly="@IsLive" type="number" min="0" step="0.01" aria-label="@L["Product.PriceFor", line.Name].Value" @bind="line.Price" /></td>
+                                                <td class="is-num">@OrderFormat.Money(IsLive ? line.ServerAmount ?? line.Quantity * line.Price : line.Quantity * line.Price)</td>
                                                 <td class="demo-line-actions">
-                                                    <label class="demo-discount-flag" title="@L["Workspace.IncludeDiscount"]"><input type="checkbox" @bind="line.Discountable" />@L["Workspace.DiscountShort"]</label>
+                                                    <label class="demo-discount-flag" title="@L["Workspace.IncludeDiscount"].Value"><input type="checkbox" disabled="@IsLive" @bind="line.Discountable" /> @L["Workspace.DiscountShort"].Value</label>
                                                     @if (line.Kind == "Product")
                                                     {
-                                                        <button type="button" title="@L["Product.AddToProduct"]" @onclick="() => OpenAccessoryPicker(line)">@L["Product.AddAccessoryShort"]</button>
+                                                        <button type="button" title="@L["Product.AddToProduct"].Value" disabled="@(IsLive && (!line.CanEdit || !_order.WritesAllowed))" @onclick="() => OpenAccessoryPicker(line)">@L["Product.AddAccessoryShort"].Value</button>
                                                     }
-                                                    <button type="button" title="@L["Workspace.RemoveLine"]" @onclick="() => RemoveLine(line)">×</button>
+                                                    <button type="button" title="@L["Workspace.RemoveLine"].Value" disabled="@(IsLive && (!line.CanDelete || !_order.WritesAllowed))" @onclick="() => RemoveLine(line)">×</button>
                                                 </td>
                                             </tr>
                                             @foreach (var accessory in line.Accessories)
                                             {
                                                 <tr class="demo-attached-row">
-                                                    <td>↳ @accessory.Name</td><td>@accessory.Unit</td>
-                                                    <td class="is-num"><input class="demo-table-input mono" type="number" min="0.001" step="0.001" aria-label="@L["Product.QuantityFor", accessory.Name]" @bind="accessory.Quantity" /></td>
-                                                    <td class="is-num"><input class="demo-table-input mono" type="number" min="0" step="0.01" aria-label="@L["Product.PriceFor", accessory.Name]" @bind="accessory.Price" /></td>
+                                                    <td>@if (IsLive) { <button type="button" class="demo-line-open" @onclick="() => EditAccessoryAsync(line, accessory)">↳ @accessory.Name</button> } else { <span>↳ @accessory.Name</span> }</td><td>@accessory.Unit</td>
+                                                    <td class="is-num"><input class="demo-table-input mono" readonly="@IsLive" type="number" min="0.001" step="0.001" aria-label="@L["Product.QuantityFor", accessory.Name].Value" @bind="accessory.Quantity" /></td>
+                                                    <td class="is-num"><input class="demo-table-input mono" readonly="@IsLive" type="number" min="0" step="0.01" aria-label="@L["Product.PriceFor", accessory.Name].Value" @bind="accessory.Price" /></td>
                                                     <td class="is-num">@OrderFormat.Money(accessory.Quantity * accessory.Price)</td>
-                                                    <td class="demo-line-actions"><button type="button" title="@L["Product.RemoveAccessory"]" @onclick="() => RemoveAccessory(line, accessory)">×</button></td>
+                                                    <td class="demo-line-actions"><button type="button" title="@L["Product.RemoveAccessory"].Value" disabled="@(IsLive && (!line.CanEdit || !_order.WritesAllowed))" @onclick="() => RemoveAccessory(line, accessory)">×</button></td>
                                                 </tr>
                                             }
                                         }
@@ -178,53 +241,57 @@
                     </section>
 
                     <section class="panel demo-panel">
-                        <div class="panel__head"><h2>@L["Workspace.ResponsibleEmployees"]</h2><span>@L["Workspace.DraftAssignments"]</span></div>
+                        <div class="panel__head"><h2>@L["Workspace.ResponsibleEmployees"].Value</h2><span>@(IsLive ? L["Workspace.SavedAssignments"].Value : L["Workspace.DraftAssignments"].Value)</span></div>
                         <div class="demo-panel__body">
                             @foreach (var employee in _order.Employees)
                             {
-                                <div class="demo-employee-row"><span><strong>@DisplayDuty(employee.Duty)</strong> — @employee.Name <small class="mono">@OrderFormat.Date(employee.Date)</small></span><button class="demo-small-remove" type="button" title="@L["Preview.RemoveEmployee"]" @onclick="() => _order.Employees.Remove(employee)">×</button></div>
+                                <div class="demo-employee-row"><span><strong>@DisplayDuty(employee.Duty)</strong> — @employee.Name <small class="mono">@OrderFormat.Date(employee.Date)</small></span><button class="demo-small-remove" type="button" disabled="@(IsLive && !_order.WritesAllowed)" title="@L["Workspace.RemoveAssignment"].Value" @onclick="() => RemoveEmployeeAsync(employee)">×</button></div>
                             }
                             <div class="demo-employee-add">
-                                <div><label class="demo-label" for="employee-duty">@L["Details.Duty"]</label><select id="employee-duty" class="demo-input" @bind="_employeeDuty"><option value="Konsultantas">@L["Workspace.DutyConsultant"]</option><option value="Vadybininkas">@L["Workspace.DutyManager"]</option><option value="Matuotojas">@L["Workspace.DutyMeasurer"]</option><option value="Montuotojas">@L["Workspace.DutyInstaller"]</option><option value="Transportas">@L["Workspace.DutyTransport"]</option></select></div>
-                                <div><label class="demo-label" for="employee-name">@L["Common.Employee"]</label><input id="employee-name" class="demo-input" @bind="_employeeName" /></div>
-                                <div><label class="demo-label" for="employee-date">@L["Common.Date"]</label><input id="employee-date" type="date" class="demo-input mono" value="@_employeeDate" @onchange="e => _employeeDate = e.Value?.ToString() ?? _employeeDate" /></div>
-                                <button class="btn btn--ghost" type="button" @onclick="AddEmployee">@L["Common.Add"]</button>
+                                <div><label class="demo-label" for="employee-duty">@L["Workspace.Duty"].Value</label>@if (IsLive) { @ReferenceSelect("employee-duty",_duties,_employeeDutyId,value=>_employeeDutyId=value) } else { <select id="employee-duty" class="demo-input" @bind="_employeeDuty"><option value="Konsultantas">@L["Workspace.DutyConsultant"].Value</option><option value="Vadybininkas">@L["Workspace.DutyManager"].Value</option><option value="Matuotojas">@L["Workspace.DutyMeasurer"].Value</option><option value="Montuotojas">@L["Workspace.DutyInstaller"].Value</option><option value="Transportas">@L["Workspace.DutyTransport"].Value</option></select> }</div>
+                                <div><label class="demo-label" for="employee-name">@L["Common.Employee"].Value</label>@if (IsLive) { @ReferenceSelect("employee-name",Catalog.Employees,_employeeId,value=>_employeeId=value) } else { <input id="employee-name" class="demo-input" @bind="_employeeName" /> }</div>
+                                <div><label class="demo-label" for="employee-date">@L["Common.Date"].Value</label><input id="employee-date" type="date" class="demo-input mono" value="@_employeeDate" @onchange="e => _employeeDate = e.Value?.ToString() ?? _employeeDate" /></div>
+                                <button class="btn btn--ghost" type="button" disabled="@(IsLive && !_order.WritesAllowed)" @onclick="AddEmployee">@L["Common.Add"].Value</button>
                             </div>
                             @if (!string.IsNullOrWhiteSpace(_employeeError)) { <div class="demo-field-error">@_employeeError</div> }
                         </div>
                     </section>
 
+                    @if (!IsPrivacyRestricted)
+                    {
                     <section class="panel demo-panel">
-                        <div class="panel__head"><h2>@L["Common.Note"]</h2><span>@L["Workspace.DraftOnly"]</span></div>
-                        <div class="demo-panel__body"><textarea class="demo-textarea" maxlength="128" @bind="_order.Note" placeholder="@L["Workspace.OrderNote"]"></textarea><div class="demo-help">@L["Workspace.NoteLimit"]</div></div>
+                        <div class="panel__head"><h2>@L["Common.Note"].Value</h2><span>@(IsLive ? L["Workspace.SavedWithOrder"].Value : L["Workspace.DraftOnly"].Value)</span></div>
+                        <div class="demo-panel__body"><textarea class="demo-textarea" maxlength="128" readonly="@(IsLive && (!_order.CanEdit || !_order.WritesAllowed))" @bind="_order.Note" placeholder="@L["Workspace.OrderNote"].Value"></textarea><div class="demo-help">@L["Workspace.NoteLimit"].Value</div></div>
                     </section>
+                    }
+                    <OrderNoteHistory Entries="_order.NoteHistory" />
                 </div>
                 <aside class="panel demo-receipt">
-                    <div class="panel__head"><h2>@L["Workspace.Receipt"]</h2><span>@L["Workspace.PreviewAmount"]</span></div>
-                    <div class="demo-receipt__row"><span>@L["Workspace.BeforeDiscount"]</span><strong class="mono">@OrderFormat.Money(_order.BeforeDiscount)</strong></div>
-                    <div class="demo-receipt__row"><span>@L["Workspace.Discountable"]</span><strong class="mono">@OrderFormat.Money(_order.DiscountableAmount)</strong></div>
+                    <div class="panel__head"><h2>@L["Workspace.Receipt"].Value</h2><span>@(IsLive ? L["Workspace.LegacyAmount"].Value : L["Workspace.PreviewAmount"].Value)</span></div>
+                    <div class="demo-receipt__row"><span>@L["Workspace.BeforeDiscount"].Value</span><strong class="mono">@OrderFormat.Money(_order.BeforeDiscount)</strong></div>
+                    <div class="demo-receipt__row"><span>@L["Workspace.Discountable"].Value</span><strong class="mono">@OrderFormat.Money(_order.DiscountableAmount)</strong></div>
                     <div class="demo-receipt__discount">
-                        <label class="demo-label" for="receipt-discount">@L["Workspace.DiscountPercent"]</label><input id="receipt-discount" type="number" min="-100" max="100" step="0.01" class="demo-input mono" @bind="_order.DiscountPercent" @bind:after="NormalizeDiscount" />
-                        <label class="demo-label demo-label--spaced" for="receipt-fixed-price">@L["Workspace.FixedFinalPrice"]</label><input id="receipt-fixed-price" type="number" min="0" step="0.01" class="demo-input mono" value="@_order.Total.ToString("0.00", CultureInfo.InvariantCulture)" @onchange="SetFixedPrice" />
+                        <label class="demo-label" for="receipt-discount">@L["Workspace.DiscountPercent"].Value</label><input id="receipt-discount" readonly="@(IsLive && (!_order.CanEdit || !_order.WritesAllowed))" type="number" min="-100" max="100" step="0.01" class="demo-input mono" @bind="_order.DiscountPercent" @bind:after="NormalizeDiscount" />
+                        <label class="demo-label demo-label--spaced" for="receipt-fixed-price">@L["Workspace.FixedFinalPrice"].Value</label><input id="receipt-fixed-price" readonly="@(IsLive && (!_order.CanEdit || !_order.WritesAllowed))" title="@L["Workspace.SetFinalPrice"].Value" type="number" min="0" step="0.01" class="demo-input mono" value="@(_finalPriceInput ?? _order.Total.ToString("0.00", CultureInfo.InvariantCulture))" @onchange="SetFixedPrice" />
                         @if (!string.IsNullOrWhiteSpace(_discountError)) { <div class="demo-field-error">@_discountError</div> }
                     </div>
                     <div class="demo-receipt__row"><span>@(_order.DiscountPercent < 0 ? L["Workspace.Markup"].Value : L["Workspace.Discount"].Value)</span><strong class="mono">@OrderFormat.Money(Math.Abs(_order.DiscountAmount))</strong></div>
-                    <div class="demo-receipt__row demo-receipt__row--total"><span>@L["Common.Total"]</span><strong class="mono">@OrderFormat.Money(_order.Total)</strong></div>
-                    <div class="demo-receipt__row"><span>@L["Common.Paid"]</span><strong class="mono">@OrderFormat.Money(_order.Paid)</strong></div>
-                    <div class="demo-receipt__row"><span>@L["Common.Debt"]</span><strong class="mono">@OrderFormat.Money(_order.Debt)</strong></div>
-                    <p>@L["Preview.PriceHelp"]</p>
-                    <button class="btn btn--primary" type="button" @onclick="SavePreview">@L["Workspace.SaveDraft"]</button>
+                    <div class="demo-receipt__row demo-receipt__row--total"><span>@L["Common.Total"].Value</span><strong class="mono">@OrderFormat.Money(_order.Total)</strong></div>
+                    <div class="demo-receipt__row"><span>@L["Common.Paid"].Value</span><strong class="mono">@OrderFormat.Money(_order.Paid)</strong></div>
+                    <div class="demo-receipt__row"><span>@L["Common.Debt"].Value</span><strong class="mono">@OrderFormat.Money(_order.Debt)</strong></div>
+                    <p>@(IsLive ? L["Workspace.TotalsAfterSave"].Value : L["Workspace.LocalValuesOnly"].Value)</p>
+                    <button class="btn btn--primary" type="button" disabled="@(IsLive && !_order.WritesAllowed)" @onclick="SavePreview">@(IsLive ? L["Workspace.SaveOrder"].Value : L["Workspace.SaveDraft"].Value)</button>
                     @if (!string.IsNullOrWhiteSpace(_saveMessage)) { <div class="demo-save-message @(_saveIsError ? "demo-save-message--error" : "")" role="status">@_saveMessage</div> }
-                    <button class="btn btn--ghost" type="button" disabled title="@L["Preview.DatabaseLater"]">@L["Preview.ConfirmLater"]</button>
+                    <button class="btn btn--ghost" type="button" disabled="@(!CanConfirmLiveProducts)" title="@(!CanConfirmLiveProducts ? L["Confirmation.Unavailable"].Value : null)" @onclick="OpenConfirmationAsync">@L["Confirmation.ConfirmProduction"].Value</button>
                     <div class="demo-receipt__payments">
-                        <div><strong>@L["Common.Payments"]</strong><button class="btn btn--ghost" type="button" @onclick="OpenPaymentSheet">@L["Payment.AddNew"]</button></div>
+                        <div><strong>@L["Common.Payments"].Value</strong><button class="btn btn--ghost" type="button" disabled="@(IsLive && !CanPostLivePayment)" title="@(IsLive && !CanPostLivePayment ? L["Payment.UnavailableOrder"].Value : null)" @onclick="OpenPaymentSheet">@L["Payment.AddNew"].Value</button></div>
                         @if (_order.Payments.Count == 0)
                         {
-                            <p>@L["Payment.NoDraft"]</p>
+                            <p>@(IsLive ? L["Payment.NoRecorded"].Value : L["Payment.NoDraft"].Value)</p>
                         }
                         @foreach (var payment in _order.Payments)
                         {
-                            <div class="demo-payment-row"><span>@DisplayPaymentMethod(payment.Method)<br /><small class="mono">@OrderFormat.Date(payment.Date) · @payment.Reference @payment.ReceiverOrRegister</small></span><strong class="mono">@OrderFormat.Money(payment.Amount)</strong><button class="demo-small-remove" type="button" title="@L["Payment.Remove"]" @onclick="() => _order.Payments.Remove(payment)">×</button></div>
+                            <div class="demo-payment-row"><span>@DisplayPaymentMethod(payment.Method)<br /><small class="mono">@(payment.HasDate ? OrderFormat.Date(payment.Date) : "—") · @payment.Reference @payment.ReceiverOrRegister</small></span><strong class="mono">@(IsLive ? payment.Amount.ToString("N2",CultureInfo.GetCultureInfo("lt-LT")) + " " + payment.CurrencyCode : OrderFormat.Money(payment.Amount))</strong>@if(!IsLive) { <button class="demo-small-remove" type="button" title="@L["Payment.Remove"].Value" @onclick="() => _order.Payments.Remove(payment)">×</button> }</div>
                         }
                     </div>
                 </aside>
@@ -233,42 +300,43 @@
 
         @if (_selectingProduct)
         {
-            <div class="demo-product-page" aria-label="@L["Product.ChooseNew"]">
+            <div class="demo-product-page" aria-label="@L["Product.ChooseNew"].Value">
+                <CustomerPrivacyNotice IsRestricted="IsPrivacyRestricted" OnBack="CloseAsync" />
                 <header class="demo-product-page__header">
-                    <div><nav class="demo-breadcrumb" aria-label="@L["Nav.Breadcrumb"]"><button type="button" @onclick="CloseAsync">@L["Common.Home"]</button><span>/</span><button type="button" @onclick="CloseProductPicker">@L["Common.Orders"]</button><span>/</span><button type="button" @onclick="CloseProductPicker">@_order.Number</button><span>/</span><strong>@L["Product.New"]</strong></nav><div class="eyebrow mono">@L["Product.ForOrder", _order.Number]</div><h1>@L["Product.NewService"]</h1></div>
-                    <button class="btn btn--ghost" type="button" @onclick="CloseProductPicker">@L["Product.BackOrderArrow"]</button>
+                    <div><nav class="demo-breadcrumb" aria-label="@L["Product.Breadcrumb"].Value"><button type="button" @onclick="CloseAsync">@L["Common.Home"].Value</button><span>/</span><button type="button" @onclick="CloseProductPicker">@L["Common.Orders"].Value</button><span>/</span><button type="button" @onclick="CloseProductPicker">@_order.Number</button><span>/</span><strong>@L["Product.New"].Value</strong></nav><div class="eyebrow mono">@L["Product.ForOrder", _order.Number].Value</div><h1>@L["Product.NewService"].Value</h1></div>
+                    <button class="btn btn--ghost" type="button" @onclick="CloseProductPicker">@L["Product.BackOrderArrow"].Value</button>
                 </header>
                 <div class="demo-product-page__grid">
                     <aside class="panel demo-product-rail">
-                        <div class="panel__head"><h2>@L["Product.OrderProducts"]</h2><span class="mono">@OrderFormat.Money(_order.BeforeDiscount)</span></div>
+                        <div class="panel__head"><h2>@L["Product.OrderProducts"].Value</h2><span class="mono">@OrderFormat.Money(_order.BeforeDiscount)</span></div>
                         @foreach (var product in _order.Lines)
                         {
-                            <button type="button" class="demo-product-rail__item" @onclick="() => OpenConfigurator(product)"><span><CategoryIcon Category="@product.Category" /></span><strong>@product.Name<small class="mono">@LineDimensions(product)</small><span class="chip chip--entered">@L["Orders.Status.Entered"]</span></strong></button>
+                            <button type="button" class="demo-product-rail__item" @onclick="() => OpenConfigurator(product)"><span><CategoryIcon Category="@product.Category" /></span><strong>@product.Name<small class="mono">@LineDimensions(product)</small><span class="chip chip--entered">@(IsLive ? product.StateName : L["Workspace.StageEntered"].Value)</span></strong></button>
                         }
-                        <button class="demo-product-rail__new" type="button" @onclick="OpenProductPicker">@L["Product.AddNew"]</button>
+                        <button class="demo-product-rail__new" type="button" disabled="@(IsLive && (!_order.WritesAllowed || _order.Cancelled))" @onclick="OpenProductPicker">@L["Product.AddNew"].Value</button>
                     </aside>
                     <main class="demo-product-catalog">
                         <section class="panel demo-product-catalog__categories">
-                            <div class="panel__head"><h2>@L["Product.CategoryStep"]</h2><input class="demo-input demo-product-catalog__search" aria-label="@L["Product.FindCategoryType"]" @bind="_catalogSearch" @bind:event="oninput" placeholder="@L["Product.SearchCategories", Catalog.Categories.Count]" /></div>
+                            <div class="panel__head"><h2>@L["Product.CategoryStep"].Value</h2><input class="demo-input demo-product-catalog__search" aria-label="@L["Product.FindCategoryType"].Value" @bind="_catalogSearch" @bind:event="oninput" placeholder="@L["Product.SearchCategories", PickerCategoryCount].Value" /></div>
                             <div class="demo-product-catalog__tiles">
                                 @foreach (var category in FilteredCategories)
                                 {
-                                    <button type="button" class="demo-product-tile @(_selectedCategoryId == category.Id ? "is-selected" : "")" @onclick="() => SelectCategory(category.Id)"><span><CategoryIcon Category="@category.Name" /></span><strong>@category.Name</strong><small>@L["Product.TypeCount", category.Types.Count]</small></button>
+                                    <button type="button" class="demo-product-tile @(_selectedCategoryId == category.Id ? "is-selected" : "")" @onclick="() => SelectCategory(category.Id)"><span><CategoryIcon Category="@category.Name" /></span><strong>@category.Name</strong><small>@L["Product.TypeCount", category.Types.Count].Value</small></button>
                                 }
                             </div>
                         </section>
                         @if (SelectedCategory is not null)
                         {
                             <section class="panel demo-product-catalog__types">
-                                <div class="panel__head"><h2>@L["Product.TypeStep"]</h2><span>@SelectedCategory.Name</span></div>
+                                <div class="panel__head"><h2>@L["Product.TypeStep"].Value</h2><span>@SelectedCategory.Name</span></div>
                                 <div class="demo-product-catalog__type-list">
                                     @if (FilteredTypes.Count == 0)
                                     {
-                                        <div class="demo-product-editor__empty">@L["Product.NoActiveTypes"]</div>
+                                        <div class="demo-product-editor__empty">@L["Product.NoActiveTypes"].Value</div>
                                     }
                                     @foreach (var choice in FilteredTypes.Select((type, index) => (type, index)))
                                     {
-                                        <button type="button" @onclick="() => CreateProductFromType(choice.type)"><strong>@choice.type.Name<small>@L["Product.ParameterFieldCount", choice.type.ParameterFormulas.Count(x => !string.IsNullOrWhiteSpace(x))]</small></strong><span>@(choice.index < 9 ? (choice.index + 1).ToString(CultureInfo.InvariantCulture) : "") →</span></button>
+                                        <button type="button" disabled="@(IsLive && choice.type.UnsupportedReason is not null)" title="@(IsLive && choice.type.UnsupportedReason is not null ? ApiMessage(choice.type.UnsupportedReason) : null)" @onclick="() => CreateProductFromType(choice.type)"><strong>@choice.type.Name<small>@L["Product.ParameterFieldCount", choice.type.ParameterFormulas.Count(x => !string.IsNullOrWhiteSpace(x))].Value</small></strong><span>@(choice.index < 9 ? (choice.index + 1).ToString(CultureInfo.InvariantCulture) : "") →</span></button>
                                     }
                                 </div>
                             </section>
@@ -280,67 +348,85 @@
 
         @if (_configuringLine is not null)
         {
-            <div class="demo-product-page demo-product-page--editor" aria-label="@L["Product.Editor"]">
+            <div class="demo-product-page demo-product-page--editor" aria-label="@L["Product.Editor"].Value">
+                <CustomerPrivacyNotice IsRestricted="IsPrivacyRestricted" OnBack="CloseAsync" />
                 <header class="demo-product-page__header">
-                    <div><nav class="demo-breadcrumb" aria-label="@L["Nav.Breadcrumb"]"><button type="button" @onclick="CloseAsync">@L["Common.Home"]</button><span>/</span><button type="button" @onclick="CloseConfigurator">@L["Common.Orders"]</button><span>/</span><button type="button" @onclick="CloseConfigurator">@_order.Number</button><span>/</span><strong>@_configuringLine.Name</strong></nav><div class="eyebrow mono">@L["Product.ForOrder", _order.Number]</div><div class="demo-product-page__title"><h1>@_configuringLine.Name</h1><span>@_configuringLine.Category</span><span class="chip chip--entered">@L["Orders.Status.Entered"]</span></div></div>
-                    <div class="demo-product-page__actions"><button class="btn btn--ghost" type="button" disabled title="@L["Preview.Milestone2"]">@L["Product.CheckParameters"]</button><button class="btn btn--ghost" type="button" disabled title="@L["Preview.Milestone2"]">@L["Product.PriceFromList"]</button><button class="btn btn--ghost" type="button" disabled title="@L["Preview.Milestone2"]">@L["Product.Duplicate"]</button><button class="btn btn--ghost" type="button" disabled title="@L["Preview.Milestone2"]">@L["Common.Refresh"]</button><button class="btn btn--ghost" type="button" disabled title="@L["Preview.Milestone2"]">@L["Product.ReturnProduction"]</button><button class="btn btn--ghost" type="button" disabled title="@L["Preview.Milestone2"]">@L["Product.Warranty"]</button><button class="btn btn--ghost demo-danger-action" type="button" disabled title="@L["Preview.Milestone2"]">@L["Common.Delete"]</button><button class="btn btn--ghost" type="button" @onclick="CloseConfigurator">@L["Product.BackOrderArrow"]</button></div>
+                    <div><nav class="demo-breadcrumb" aria-label="@L["Product.Breadcrumb"].Value"><button type="button" @onclick="CloseAsync">@L["Common.Home"].Value</button><span>/</span><button type="button" @onclick="CloseConfigurator">@L["Common.Orders"].Value</button><span>/</span><button type="button" @onclick="CloseConfigurator">@_order.Number</button><span>/</span><strong>@_configuringLine.Name</strong></nav><div class="eyebrow mono">@L["Product.ForOrder", _order.Number].Value</div><div class="demo-product-page__title"><h1>@_configuringLine.Name</h1><span>@_configuringLine.Category</span><span class="chip chip--entered">@(IsLive ? _configuringLine.StateName : L["Workspace.StageEntered"].Value)</span></div></div>
+                    <div class="demo-product-page__actions">
+                        <button class="btn btn--ghost" type="button" disabled="@(!IsLive)" @onclick="CheckLiveParametersAsync">@L["Product.CheckParameters"].Value</button>
+                        <button class="btn btn--ghost" type="button" disabled="@(!IsLive || !_configuringLine.CanEdit || !_order.WritesAllowed)" @onclick="LookupLivePriceAsync">@L["Product.PriceFromList"].Value</button>
+                        <button class="btn btn--ghost" type="button" disabled="@(!IsLive || !_configuringLine.CanEdit || !_order.WritesAllowed)" @onclick="DuplicateLiveProductAsync">@L["Product.Duplicate"].Value</button>
+                        <button class="btn btn--ghost" type="button" disabled="@(!IsLive)" @onclick="RefreshLiveProductAsync">@L["Common.Refresh"].Value</button>
+                        <button class="btn btn--ghost" type="button" disabled title="@L["Product.ReturnOutside"].Value">@L["Product.ReturnProduction"].Value</button>
+                        <button class="btn btn--ghost" type="button" disabled title="@L["Product.WarrantyOutside"].Value">@L["Product.Warranty"].Value</button>
+                        <button class="btn btn--ghost demo-danger-action" type="button" disabled="@(!IsLive || !_configuringLine.CanDelete || !_order.WritesAllowed)" @onclick="() => DeleteLiveProductAsync(_configuringLine)">@L["Common.Delete"].Value</button>
+                        <button class="btn btn--ghost" type="button" @onclick="BackToOrderAsync">@L["Product.BackOrderArrow"].Value</button>
+                    </div>
                 </header>
                 <div class="demo-product-page__grid demo-product-page__grid--editor">
                     <aside class="panel demo-product-rail">
-                        <div class="panel__head"><h2>@L["Product.OrderProducts"]</h2><span class="mono">@OrderFormat.Money(_order.BeforeDiscount)</span></div>
+                        <div class="panel__head"><h2>@L["Product.OrderProducts"].Value</h2><span class="mono">@OrderFormat.Money(_order.BeforeDiscount)</span></div>
                         @foreach (var product in _order.Lines)
                         {
-                            <button type="button" class="demo-product-rail__item @(ReferenceEquals(product, _configuringLine) ? "is-selected" : "")" @onclick="() => OpenConfigurator(product)"><span><CategoryIcon Category="@product.Category" /></span><strong>@product.Name<small class="mono">@LineDimensions(product)</small><span class="chip chip--entered">@L["Orders.Status.Entered"]</span></strong></button>
+                            <button type="button" class="demo-product-rail__item @(ReferenceEquals(product, _configuringLine) ? "is-selected" : "")" @onclick="() => OpenConfigurator(product)"><span><CategoryIcon Category="@product.Category" /></span><strong>@product.Name<small class="mono">@LineDimensions(product)</small><span class="chip chip--entered">@(IsLive ? product.StateName : L["Workspace.StageEntered"].Value)</span></strong></button>
                         }
-                        <button class="demo-product-rail__add" type="button" @onclick="OpenProductPicker">@L["Product.AddNew"]</button>
+                        <button class="demo-product-rail__add" type="button" disabled="@(IsLive && (!_order.WritesAllowed || _order.Cancelled))" @onclick="OpenProductPicker">@L["Product.AddNew"].Value</button>
                     </aside>
                     <main class="demo-product-editor">
+                        <fieldset disabled="@(IsLive && (!_configuringLine.CanEdit || !_order.WritesAllowed))" style="display:contents">
                         <section class="panel demo-product-editor__main">
-                            <div class="panel__head"><h2>@L["Product.MainParameters"]</h2><select class="demo-product-editor__type-select" aria-label="@L["Details.ProductType"]" value="@_configuringLine.TypeId" @onchange="ChangeConfiguredType">@foreach (var type in ConfiguredCategory?.Types ?? []) { <option value="@type.Id">@type.Name</option> }</select></div>
+                            <div class="panel__head"><h2>@L["Product.MainParameters"].Value</h2><ProductTypeSelect Value="_configuringLine.TypeId" SavedName="@_configuringLine.Name" Types="@(ConfiguredCategory?.Types ?? [])" Changed="ChangeConfiguredType" /></div>
                             <div class="demo-product-editor__body">
                                 @if (_configuringLine.Kind == "Product")
                                 {
                                     <div class="demo-product-editor__control">
-                                        <label class="demo-label" id="config-control-label">@L["Product.Control"]</label>
+                                        <label class="demo-label" id="config-control-label">@L["Product.Control"].Value</label>
                                         <div class="demo-product-editor__control-entry">
+                                            @if (IsLive)
+                                            {
+                                                <datalist id="legacy-control-values"><option value="K">K</option><option value="D">D</option></datalist><input id="config-control" aria-invalid="@(ProductError("control") is not null ? "true" : "false")" aria-describedby="config-control-error" data-select-on-focus list="legacy-control-values" class="demo-input @ProductFieldClass("control")" maxlength="10" aria-label="@L["Product.Control"].Value" @bind="_configuringLine.ControlType" placeholder="@L["Product.ControlPlaceholder"].Value" readonly="@(!_configuringLine.CanEdit)" />@ProductFieldError("control")
+                                            }
+                                            else
+                                            {
                                             <div class="demo-product-editor__control-options" aria-labelledby="config-control-label">
-                                                <button type="button" class="@(_configuringLine.ControlType == "Chain left" ? "is-selected" : "")" @onclick="SetControlLeft">@L["Product.ChainLeft"]</button>
-                                                <button type="button" class="@(_configuringLine.ControlType == "Chain right" ? "is-selected" : "")" @onclick="SetControlRight">@L["Product.ChainRight"]</button>
-                                                <button type="button" class="@(_configuringLine.ControlType == "Motor" ? "is-selected" : "")" @onclick="SetControlMotor">@L["Product.Motor"]</button>
-                                                <button type="button" class="@(IsOtherControl ? "is-selected" : "")" @onclick="SetControlOther">@L["Product.OtherControlButton"]</button>
+                                                <button type="button" class="@(_configuringLine.ControlType == "Chain left" ? "is-selected" : "")" @onclick="SetControlLeft">@L["Product.ChainLeft"].Value</button>
+                                                <button type="button" class="@(_configuringLine.ControlType == "Chain right" ? "is-selected" : "")" @onclick="SetControlRight">@L["Product.ChainRight"].Value</button>
+                                                <button type="button" class="@(_configuringLine.ControlType == "Motor" ? "is-selected" : "")" @onclick="SetControlMotor">@L["Product.Motor"].Value</button>
+                                                <button type="button" class="@(IsOtherControl ? "is-selected" : "")" @onclick="SetControlOther">@L["Product.OtherControlButton"].Value</button>
                                             </div>
-                                            @if (IsOtherControl) { <input id="config-control" class="demo-input" aria-label="@L["Product.OtherControl"]" @bind="_configuringLine.ControlType" @bind:event="oninput" placeholder="@L["Product.OtherControl"]" /> }
+                                            @if (IsOtherControl) { <input id="config-control" aria-invalid="@(ProductError("control") is not null ? "true" : "false")" aria-describedby="config-control-error" data-select-on-focus class="demo-input @ProductFieldClass("control")" aria-label="@L["Product.OtherControl"].Value" @bind="_configuringLine.ControlType" @bind:event="oninput" placeholder="@L["Product.OtherControl"].Value" /> }
+                                            }
                                         </div>
                                     </div>
                                 }
                                 <div class="demo-product-editor__dimensions">
                                     @if (_configuringLine.Kind == "Product")
                                     {
-                                        <div><label class="demo-label" for="config-width">@L["Common.Width"]</label><div class="lk-stepper @(InvalidWidth ? "is-invalid" : "")"><button type="button" aria-label="@L["Product.DecreaseWidth"]" @onclick="() => StepWidth(-10)">−</button><input id="config-width" type="number" min="200" step="10" @bind="_configuringLine.WidthMm" @bind:event="oninput" @bind:after="RecalculateConfiguredParameters" /><span class="unit">mm</span><button type="button" aria-label="@L["Product.IncreaseWidth"]" @onclick="() => StepWidth(10)">+</button></div>@if (InvalidWidth) { <div class="lk-field-error">@L["Preview.MinimumWidth"]</div> }</div>
-                                        <div><label class="demo-label" for="config-height">@L["Common.Height"]</label><div class="lk-stepper @(InvalidHeight ? "is-invalid" : "")"><button type="button" aria-label="@L["Product.DecreaseHeight"]" @onclick="() => StepHeight(-10)">−</button><input id="config-height" type="number" min="200" step="10" @bind="_configuringLine.HeightMm" @bind:event="oninput" @bind:after="RecalculateConfiguredParameters" /><span class="unit">mm</span><button type="button" aria-label="@L["Product.IncreaseHeight"]" @onclick="() => StepHeight(10)">+</button></div>@if (InvalidHeight) { <div class="lk-field-error">@L["Preview.MinimumHeight"]</div> }</div>
+                                        <div><label class="demo-label" for="config-width">@L["Product.Width"].Value</label><div class="lk-stepper @ProductFieldClass("width") @(InvalidWidth ? "is-invalid" : "")"><button type="button" tabindex="-1" aria-label="@L["Product.DecreaseWidth"].Value" @onclick="() => StepWidth(-10)">−</button><input id="config-width" type="text" inputmode="decimal" data-select-on-focus aria-invalid="@(ProductError("width") is not null ? "true" : "false")" aria-describedby="config-width-error" min="@(IsLive ? 1 : 200)" step="10" @bind="_configuringLine.WidthMm" @bind:culture="CultureInfo.InvariantCulture" @bind:event="oninput" @bind:after="RecalculateConfiguredParameters" /><span class="unit">mm</span><button type="button" tabindex="-1" aria-label="@L["Product.IncreaseWidth"].Value" @onclick="() => StepWidth(10)">+</button></div>@if (InvalidWidth) { <div class="lk-field-error">@L["Product.PositiveWidth"].Value</div> }@ProductFieldError("width")</div>
+                                        <div><label class="demo-label" for="config-height">@L["Product.Height"].Value</label><div class="lk-stepper @ProductFieldClass("height") @(InvalidHeight ? "is-invalid" : "")"><button type="button" tabindex="-1" aria-label="@L["Product.DecreaseHeight"].Value" @onclick="() => StepHeight(-10)">−</button><input id="config-height" type="text" inputmode="decimal" data-select-on-focus aria-invalid="@(ProductError("height") is not null ? "true" : "false")" aria-describedby="config-height-error" min="@(IsLive ? 1 : 200)" step="10" @bind="_configuringLine.HeightMm" @bind:culture="CultureInfo.InvariantCulture" @bind:event="oninput" @bind:after="RecalculateConfiguredParameters" /><span class="unit">mm</span><button type="button" tabindex="-1" aria-label="@L["Product.IncreaseHeight"].Value" @onclick="() => StepHeight(10)">+</button></div>@if (InvalidHeight) { <div class="lk-field-error">@L["Product.PositiveHeight"].Value</div> }@ProductFieldError("height")</div>
                                     }
-                                    <div><label class="demo-label" for="config-quantity">@L["Common.Quantity"]</label><div class="lk-stepper"><button type="button" aria-label="@L["Product.DecreaseQuantity"]" @onclick="() => StepQuantity(-1)">−</button><input id="config-quantity" type="number" min="@(_configuringLine.Kind == "Product" ? "1" : "0.001")" step="@(_configuringLine.Kind == "Product" ? "1" : "0.001")" @bind="_configuringLine.Quantity" @bind:event="oninput" @bind:after="RecalculateConfiguredParameters" /><span class="unit">@DisplayUnit(_configuringLine.Unit)</span><button type="button" aria-label="@L["Product.IncreaseQuantity"]" @onclick="() => StepQuantity(1)">+</button></div></div>
+                                    <div><label class="demo-label" for="config-quantity">@L["Common.Quantity"].Value</label><div class="lk-stepper @ProductFieldClass("quantity")"><button type="button" tabindex="-1" aria-label="@L["Product.DecreaseQuantity"].Value" @onclick="() => StepQuantity(-1)">−</button><input id="config-quantity" type="text" inputmode="decimal" data-select-on-focus aria-invalid="@(ProductError("quantity") is not null ? "true" : "false")" aria-describedby="config-quantity-error" min="@(IsLive ? "0.001" : _configuringLine.Kind == "Product" ? "1" : "0.001")" step="@(IsLive ? "0.001" : _configuringLine.Kind == "Product" ? "1" : "0.001")" @bind="_configuringLine.Quantity" @bind:culture="CultureInfo.InvariantCulture" @bind:event="oninput" @bind:after="RecalculateConfiguredParameters" /><span class="unit">@DisplayUnit(_configuringLine.Unit)</span><button type="button" tabindex="-1" aria-label="@L["Product.IncreaseQuantity"].Value" @onclick="() => StepQuantity(1)">+</button></div>@ProductFieldError("quantity")</div>
                                 </div>
                                 <div class="demo-product-editor__secondary @(_configuringLine.Kind == "Product" ? "" : "demo-product-editor__secondary--service")">
-                                    @if (_configuringLine.Kind == "Product")
+                                    @if (_configuringLine.Kind == "Product" || IsLive && ConfiguredColours.Count > 0)
                                     {
-                                        <div><label class="demo-label" for="config-colour">@L["Product.ColourFabric"]</label><div class="lk-fabric"><span class="swatch" aria-hidden="true"></span><input id="config-colour" list="demo-colour-codes" class="mono" value="@_configuringLine.ColourCode" @onchange="UpdateColour" placeholder="@L["Preview.SearchFabric"]" autocomplete="off" /><span class="name">@ConfiguredColour?.Name</span><span class="stock">@L["Preview.StockLater"]</span></div><datalist id="demo-colour-codes">@foreach (var colour in ConfiguredColours) { <option value="@colour.Code">@colour.Name</option> }</datalist></div>
+                                        <div><label class="demo-label" for="config-colour">@(IsLive ? L["Product.ColourMaterial"].Value : L["Product.ColourFabric"].Value)</label><MaterialAutocomplete @key="_configuringLine" Id="config-colour" Items="ConfiguredColours" Value="_configuringLine.ColourId" ExistingCode="@_configuringLine.ColourCode" ValueChanged="SelectConfiguredMaterialAsync" Invalid="@(ProductError("colour") is not null)" DescribedBy="config-colour-error" ErrorText="@ProductError("colour")" Disabled="@(IsLive && (!_configuringLine.CanEdit || !_order.WritesAllowed))" /></div>
                                     }
-                                    <div><label class="demo-label" for="config-price">@L["Common.Price"]</label><div class="lk-price"><div class="field"><input id="config-price" type="number" min="0" step="0.01" @bind="_configuringLine.Price" @bind:event="oninput" placeholder="@L["Product.PriceFocus"]" /><span>€</span></div><button class="btn btn--ghost" type="button" disabled title="@L["Preview.Milestone2"]">@L["Product.FromPriceList"]</button><span class="hint">@L["Preview.PriceLater"]</span></div></div>
+                                    <div><label class="demo-label" for="config-price">@L["Common.Price"].Value</label><div class="lk-price @ProductFieldClass("price")"><div class="field"><input id="config-price" type="text" inputmode="decimal" data-select-on-focus aria-invalid="@(ProductError("price") is not null ? "true" : "false")" aria-describedby="config-price-error" min="0" step="0.01" @bind="_configuringLine.Price" @bind:culture="CultureInfo.InvariantCulture" @bind:event="oninput" @bind:after="MarkManualPrice" placeholder="@L["Product.PriceFocus"].Value" @onfocus="LookupZeroPriceAsync" readonly="@(IsLive && (!CanEnterManualPrice || !_configuringLine.CanEdit))" /><span>€</span></div><button class="btn btn--ghost" type="button" disabled="@(!IsLive || !_configuringLine.CanEdit)" @onclick="LookupLivePriceAsync">@L["Product.FromPriceList"].Value</button><span class="hint">@_priceMessage</span></div>@ProductFieldError("price")</div>
                                 </div>
-                                @if (_configuringLine.Kind == "Product" && !string.IsNullOrWhiteSpace(_configuringLine.ColourCode) && _configuringLine.ColourId is null)
+                                @if ((_configuringLine.Kind == "Product" || IsLive) && !string.IsNullOrWhiteSpace(_configuringLine.ColourCode) && _configuringLine.ColourId is null)
                                 {
-                                    <div class="demo-field-error">@L["Preview.CodeMissing"]</div>
+                                    <div class="demo-field-error">@L["Product.UnknownCode"].Value</div>
                                 }
                             </div>
                         </section>
-                        @if (_configuringLine.Kind == "Product")
+                        @if (_configuringLine.Kind == "Product" || IsLive)
                         {
                             <section class="panel demo-product-editor__parameters">
-                                <div class="panel__head"><h2>@L["Product.AdditionalParameters"]</h2><span>@L["Product.ParameterSummary", _configuringLine.Category, ConfiguredParameterCount]</span></div>
+                                <div class="panel__head"><h2>@L["Product.AdditionalParameters"].Value</h2><span>@L["Product.ParameterSummary", _configuringLine.Category, ConfiguredParameterCount].Value</span></div>
                                 @if (ConfiguredCategory is null || !ConfiguredCategory.ParameterLabels.Any(x => x is not null))
                                 {
-                                    <div class="demo-product-editor__empty">@L["Product.NoParameters"]</div>
+                                    <div class="demo-product-editor__empty">@L["Product.NoParameters"].Value</div>
                                 }
                                 else
                                 {
@@ -351,58 +437,132 @@
                                             var label = ConfiguredCategory.ParameterLabels.ElementAtOrDefault(index);
                                             if (label is null) continue;
                                             var formula = ConfiguredType?.ParameterFormulas.ElementAtOrDefault(index);
-                                            var automatic = formula is not null && !_configuringLine.ParameterManual[index] && DemoParameterFormula.TryEvaluate(formula, _configuringLine, out _);
-                                            <div class="demo-product-editor__parameter @(automatic ? "" : "is-manual")"><label class="demo-label" for="config-ppp-@index">@label <span class="mono">PPP@((index + 1).ToString("D2"))</span><span class="fx">ƒx</span></label>@if (automatic) { <button id="config-ppp-@index" class="demo-parameter-auto mono" type="button" title="@L["Preview.OverrideParameter"]" @onclick="() => ActivateParameter(parameterIndex)">@Display(_configuringLine.ParameterValues[index])</button> } else { <input id="config-ppp-@index" class="demo-input mono" value="@_configuringLine.ParameterValues[index]" @onchange="e => SetParameter(parameterIndex, e.Value?.ToString() ?? string.Empty)" /> }</div>
+                                            var automatic = formula is not null && !_configuringLine.ParameterManual[index] && (IsLive || DemoParameterFormula.TryEvaluate(formula, _configuringLine, out _));
+                                            <div class="demo-product-editor__parameter @ProductFieldClass("ppp-"+index) @(automatic ? "" : "is-manual")"><label class="demo-label" for="config-ppp-@index">@label <span class="mono">PPP@((index + 1).ToString("D2"))</span><span class="fx">ƒx</span></label><input id="config-ppp-@index" data-select-on-focus aria-invalid="@(ProductError("ppp-"+index) is not null ? "true" : "false")" aria-describedby="config-ppp-@index-error" type="text" inputmode="@(index == 11 ? "decimal" : "text")" maxlength="@(index == 11 ? 20 : 15)" class="demo-input mono @(automatic ? "demo-parameter-auto" : "")" title="@(automatic ? L["Product.CalculatedOverride"].Value : L["Product.ManualParameter"].Value)" value="@_configuringLine.ParameterValues[index]" @onchange="e => SetParameter(parameterIndex, e.Value?.ToString() ?? string.Empty)" />@ProductFieldError("ppp-"+index)</div>
                                         }
                                     </div>
                                 }
                             </section>
                             <section class="panel demo-product-editor__accessories">
-                                <div class="panel__head"><h2>@L["Product.AccessoriesHeading"] <span class="mono">@OrderFormat.Money(_configuringLine.Accessories.Sum(x => x.Total))</span></h2><button class="btn btn--ghost" type="button" @onclick="() => OpenAccessoryPicker(_configuringLine)">@L["Product.AddAccessory"]</button></div>
-                                @if (_configuringLine.Accessories.Count == 0) { <div class="demo-product-editor__empty">@L["Product.NoAccessories"]</div> }
+                                <div class="panel__head"><h2>@L["Product.AccessoriesHeading"].Value <span class="mono">@OrderFormat.Money(IsLive ? _configuringLine.ServerAccessoryAmount ?? _configuringLine.Accessories.Sum(x => x.Total) : _configuringLine.Accessories.Sum(x => x.Total))</span></h2><button class="btn btn--ghost" type="button" @onclick="() => OpenAccessoryPicker(_configuringLine)">@L["Product.AddAccessory"].Value</button></div>
+                                @if (_configuringLine.Accessories.Count == 0) { <div class="demo-product-editor__empty">@L["Product.NoAccessories"].Value</div> }
                                 @foreach (var accessory in _configuringLine.Accessories)
                                 {
-                                    <div class="demo-configurator__accessory"><span>@accessory.Name <small>@accessory.Unit · ×@accessory.Quantity</small></span><strong class="mono">@OrderFormat.Money(accessory.Total)</strong><button type="button" aria-label="@L["Product.RemoveAccessory"]" @onclick="() => RemoveAccessory(_configuringLine, accessory)">×</button></div>
+                                    <div class="demo-configurator__accessory"><span>@if (IsLive) { <button class="demo-line-open" @onclick="() => EditAccessoryAsync(_configuringLine, accessory)">@accessory.Name</button> } else { @accessory.Name } <small>@accessory.Unit · ×@accessory.Quantity</small></span><strong class="mono">@OrderFormat.Money(accessory.Total)</strong><button type="button" aria-label="@L["Product.RemoveAccessory"].Value" @onclick="() => RemoveAccessory(_configuringLine, accessory)">×</button></div>
                                 }
                             </section>
                         }
                         <section class="panel demo-product-editor__info">
-                            <div class="panel__head"><h2>@L["Product.Info"]</h2></div>
-                            <div class="demo-product-info"><div><label class="demo-label" for="config-note">@L["Common.Notes"]</label><textarea id="config-note" class="demo-textarea" @bind="_configuringLine.Note" placeholder="@L["Product.NotesExample"]"></textarea></div><div><div class="demo-label">@L["Product.StateHistory"]</div><div class="demo-state-history"><span class="demo-state-history__dot"></span><div><span class="chip chip--entered">@L["Orders.Status.Entered"]</span><small class="mono">@L["Product.LocalDraftAt", DraftCreatedAtLabel]</small></div></div></div></div>
+                            <div class="panel__head"><h2>@L["Product.Info"].Value</h2></div>
+                            <div class="demo-product-info"><div><label class="demo-label" for="config-note">@L["Common.Notes"].Value</label><textarea id="config-note" aria-invalid="@(ProductError("note") is not null ? "true" : "false")" aria-describedby="config-note-error" class="demo-textarea @ProductFieldClass("note")" @bind="_configuringLine.Note" placeholder="@L["Product.NotesExample"].Value"></textarea>@ProductFieldError("note")</div><div><div class="demo-label">@(IsLive ? L["Product.CurrentState"].Value : L["Product.StateHistory"].Value)</div><div class="demo-state-history"><span class="demo-state-history__dot"></span><div><span class="chip chip--entered">@(IsLive ? _configuringLine.StateName : L["Workspace.StageEntered"].Value)</span><small class="mono">@(IsLive ? L["Product.Saved"].Value : L["Product.LocalDraftAt", DraftCreatedAtLabel].Value)</small></div></div></div></div>
                         </section>
+                        </fieldset>
                     </main>
                     <aside class="demo-product-preview">
                         <section class="panel">
-                            <div class="panel__head"><h2>@L["Product.LivePreview"]</h2><span class="mono">@(_configuringLine.WidthMm > 0 && _configuringLine.HeightMm > 0 ? L["Product.ToScale"].Value : L["Product.Schematic"].Value)</span></div>
+                            <div class="panel__head"><h2>@L["Product.LivePreview"].Value</h2><span class="mono">@(_configuringLine.WidthMm > 0 && _configuringLine.HeightMm > 0 ? L["Product.ToScale"].Value : L["Product.Schematic"].Value)</span></div>
                             <LiveProductPreview Category="@_configuringLine.Category" TypeName="@_configuringLine.Name" WidthMm="@_configuringLine.WidthMm" HeightMm="@_configuringLine.HeightMm" Quantity="@_configuringLine.Quantity" ControlType="@_configuringLine.ControlType" />
                             <div class="demo-product-preview__caption">@PreviewCaption</div>
                         </section>
                         <section class="panel demo-product-preview__totals">
-                            <div class="panel__head"><h2>@L["Product.PriceStock"]</h2></div>
-                            <div class="lk-stock"><div>@L["Product.FabricNeeded"]<span class="mono">—</span><span class="lk-stock__free mono">@L["Product.FreeUnknown"]</span></div><div class="bar"><i></i></div></div>
-                            <div class="demo-receipt__row"><span>@L["Product.Kind"]</span><strong class="mono">@OrderFormat.Money(_configuringLine.Quantity * _configuringLine.Price)</strong></div>
-                            <div class="demo-receipt__row"><span>@L["Product.Accessories"]</span><strong class="mono">@OrderFormat.Money(_configuringLine.Accessories.Sum(x => x.Total))</strong></div>
-                            <div class="lk-total"><div class="label">@L["Product.Total"]</div><div class="value">@OrderFormat.Money(_configuringLine.Total)</div></div>
-                            <p>@L["Product.MilestoneHelp"]</p>
-                            <button class="btn btn--primary" type="button" @onclick="CloseConfigurator">@L["Preview.DoneOrder"]</button>
+                            <div class="panel__head"><h2>@L["Product.PriceStock"].Value</h2></div>
+                            <div class="lk-stock"><div>@L["Product.FabricNeeded"].Value <span class="mono">@(_requiredMaterial?.ToString("0.###",CultureInfo.InvariantCulture) ?? "—")</span><span class="lk-stock__free mono" title="@L["Product.AvailableHelp"].Value">@(IsLive ? L["Product.AvailableForProduct", _availableMaterial?.ToString("0.###",CultureInfo.InvariantCulture) ?? "—", _materialUnit ?? ""].Value : L["Product.FreeUnknown"].Value)</span></div><div class="bar"><i style="width:@StockPercent;background:@(_isMaterialShort==true ? "var(--warn-dot)" : "var(--accent-500)")"></i></div>@if(IsLive) { <small>@StockMessage</small> }</div>
+                            <div class="demo-receipt__row"><span>@(IsLive ? L["Product.ProductSaved"].Value : L["Product.Kind"].Value)</span><strong class="mono">@OrderFormat.Money(IsLive ? _configuringLine.ServerAmount ?? 0 : _configuringLine.Quantity * _configuringLine.Price)</strong></div>
+                            <div class="demo-receipt__row"><span>@L["Product.Accessories"].Value</span><strong class="mono">@OrderFormat.Money(IsLive ? _configuringLine.ServerAccessoryAmount ?? _configuringLine.Accessories.Sum(x => x.Total) : _configuringLine.Accessories.Sum(x => x.Total))</strong></div>
+                            <div class="lk-total"><div class="label">@(IsLive ? L["Product.TotalSaved"].Value : L["Product.Total"].Value)</div><div class="value">@(IsLive && _configuringLine.ServerAmount is null ? "—" : OrderFormat.Money(_configuringLine.Total))</div></div>
+                            <p>@(IsLive ? L["Product.SaveChecks"].Value : L["Product.MilestoneHelp"].Value)</p>
+                            <button class="btn btn--primary" type="button" disabled="@_busy" @onclick="CloseConfigurator">@(IsLive && ProductDirty ? L["Product.SaveBackOrder"].Value : L["Product.BackOrder"].Value)</button>
                         </section>
                     </aside>
                 </div>
             </div>
         }
 
+        @if(_confirmationSheetOpen)
+        {
+            <button class="demo-picker-backdrop demo-payment-backdrop" type="button" aria-label="@L["Confirmation.Close"].Value" @onclick="CloseConfirmation"></button>
+            <aside class="demo-drawer demo-drawer--payment" role="dialog" aria-modal="true" aria-labelledby="production-confirmation-title">
+                <div class="demo-drawer__head"><div><div class="eyebrow mono">@_order.Number</div><h2 id="production-confirmation-title">@L["Confirmation.ConfirmProduction"].Value</h2></div><button class="demo-icon-button" type="button" aria-label="@L["Confirmation.Close"].Value" @onclick="CloseConfirmation">×</button></div>
+                <div class="demo-drawer__body">
+                    <p class="demo-help">@L["Confirmation.Help"].Value</p>
+                    @if(ConfirmationCandidates.Count==0)
+                    {
+                        <p class="demo-empty">@L["Confirmation.NoProducts"].Value</p>
+                    }
+                    else
+                    {
+                        <div class="table-wrap"><table class="lk-table"><thead><tr><th></th><th>@L["Product.Kind"].Value</th><th class="is-num">@L["Common.Quantity"].Value</th><th>@L["Common.State"].Value</th></tr></thead><tbody>
+                            @foreach(var product in ConfirmationCandidates)
+                            {
+                                var productId=product.LegacyId!.Value;
+                                <tr><td><input type="checkbox" aria-label="@L["Confirmation.ConfirmProduct", product.Name].Value" checked="@_confirmationSelected.Contains(productId)" @onchange="e=>SelectConfirmationProduct(productId,e)" /></td><td><strong>@product.Name</strong><br /><small class="mono">@LineDimensions(product)</small></td><td class="is-num mono">@OrderFormat.Quantity(product.Quantity)</td><td><span class="chip chip--entered">@product.StateName</span></td></tr>
+                            }
+                        </tbody></table></div>
+                    }
+                    @if(!string.IsNullOrWhiteSpace(_confirmationError)){<div class="demo-field-error demo-field-error--block" role="alert">@_confirmationError</div>}
+                </div>
+                <div class="demo-drawer__foot"><button class="btn btn--ghost" type="button" @onclick="CloseConfirmation">@L["Common.Cancel"].Value</button><button class="btn btn--primary" type="button" disabled="@(!CanConfirmLiveProducts || _confirmationSelected.Count==0)" @onclick="ConfirmSelectedProductsAsync">@L["Confirmation.ConfirmSelected", _confirmationSelected.Count].Value</button></div>
+            </aside>
+        }
         @if (_paymentSheetOpen)
         {
-            <button class="demo-picker-backdrop demo-payment-backdrop" type="button" aria-label="@L["Payment.Close"]" @onclick="ClosePaymentSheet"></button>
+            <button class="demo-picker-backdrop demo-payment-backdrop" type="button" aria-label="@L["Payment.Close"].Value" @onclick="ClosePaymentSheet"></button>
             <aside class="demo-drawer demo-drawer--payment" aria-labelledby="demo-payment-title">
-                <div class="demo-drawer__head"><div><div class="eyebrow mono">@L["Payment.Header", _order.Number, OrderFormat.Money(_order.Debt)]</div><h2 id="demo-payment-title">@L["Payment.New"]</h2></div><button class="demo-icon-button" type="button" aria-label="@L["Payment.Close"]" @onclick="ClosePaymentSheet">×</button></div>
+                <div class="demo-drawer__head"><div><div class="eyebrow mono">@L["Payment.Header", _order.Number, IsLive ? PaymentMoney(_order.Debt) : OrderFormat.Money(_order.Debt)].Value</div><h2 id="demo-payment-title">@L["Payment.New"].Value</h2></div><button class="demo-icon-button" type="button" aria-label="@L["Payment.Close"].Value" @onclick="ClosePaymentSheet">×</button></div>
                 <div class="demo-drawer__body">
-                    <p class="demo-notice">@L["Payment.DraftHelp"]</p>
-                    <label class="demo-label" for="payment-method">@L["Payment.Method"]</label>
-                    <select id="payment-method" class="demo-input" @bind="_paymentMethod"><option value="Via PPK">@L["Payment.ViaPpk"]</option><option value="Bank transfer">@L["Payment.BankTransfer"]</option><option value="Cash desk">@L["Payment.CashDesk"]</option><option value="EKA register">@L["Payment.Register"]</option></select>
+                    @if(IsLive)
+                    {
+                        <p class="demo-help">@L["Payment.PostsSaved"].Value</p>
+                        <label class="demo-label" for="payment-method">@L["Payment.Method"].Value</label>
+                        <select id="payment-method" class="demo-input" value="@_paymentMethodId" @onchange="ChangePaymentMethod"><option value="">@L["Common.Choose"].Value</option>@foreach(var method in PaymentMethods) { <option value="@method.Id" disabled="@(!PaymentMethodAllowed(method))" title="@ApiMessage(method.UnavailableReason)">@method.Name</option> }</select>
+                        <label class="demo-label demo-label--spaced" for="payment-date">@L["Payment.BusinessDate"].Value</label><input id="payment-date" type="date" class="demo-input mono" value="@_paymentDate" readonly />
+                        @if(SelectedPaymentMethod?.RequiresPpkReceipt==true)
+                        {
+                            <label class="demo-label demo-label--spaced" for="payment-reference">@L["Payment.PpkNumber"].Value</label><input id="payment-reference" class="demo-input mono" maxlength="10" value="@_paymentReference" @oninput="ChangePaymentPpk" />
+                        }
+                        @if(SelectedPaymentMethod?.RequiresBankTransfer==true)
+                        {
+                            <label class="demo-label demo-label--spaced" for="payment-bank-search">@L["Payment.FindBank"].Value</label>
+                            <div class="demo-form-grid"><input id="payment-bank-search" class="demo-input" placeholder="@L["Payment.BankSearch"].Value" @bind="_paymentBankSearch" @bind:event="oninput" /><button class="btn btn--ghost" type="button" disabled="@_paymentBankLoading" @onclick="SearchPaymentBanksAsync">@L["Payment.SearchBank"].Value</button></div>
+                            <label class="demo-label demo-label--spaced" for="payment-bank-transfer">@L["Payment.BankTransfer"].Value</label>
+                            <select id="payment-bank-transfer" class="demo-input" value="@_paymentBankTransferId" @onchange="ChangePaymentBank"><option value="">@L["Common.Choose"].Value</option>@if(SelectedPaymentBank is { } selected && !(_paymentBankPage?.Items.Any(x=>x.Id==selected.Id) ?? false)) { <option value="@selected.Id" disabled="@(!selected.IsAvailable)">@BankTransferLabel(selected)</option> }@foreach(var transfer in _paymentBankPage?.Items ?? []) { <option value="@transfer.Id" disabled="@(!transfer.IsAvailable)">@BankTransferLabel(transfer)</option> }</select>
+                            @if(_paymentBankPage is { } bankPage)
+                            {
+                                <div class="demo-help"><button class="btn btn--ghost" type="button" disabled="@(_paymentBankLoading || bankPage.Page<=1)" @onclick="() => LoadPaymentBanksAsync(bankPage.Page-1)">@L["Common.Previous"].Value</button> @L["Payment.TransferPage", bankPage.TotalCount, bankPage.Page].Value <button class="btn btn--ghost" type="button" disabled="@(_paymentBankLoading || bankPage.Page*bankPage.PageSize>=bankPage.TotalCount)" @onclick="() => LoadPaymentBanksAsync(bankPage.Page+1)">@L["Common.Next"].Value</button></div>
+                            }
+                            @if(SelectedPaymentBank is { } bank)
+                            {
+                                <div class="demo-number-preview"><span><strong>@(bank.Payer ?? L["Payment.PayerMissing"].Value)</strong><br /><small>@bank.Purpose</small><br /><small class="mono">@(bank.Date?.ToString("yyyy-MM-dd") ?? "—")</small></span><strong class="mono">@BankAmount(bank.AvailableAmount)<small> @L["Payment.Unassigned"].Value</small></strong></div>
+                                @if(!bank.IsAvailable){<p class="demo-field-error">@ApiMessage(bank.UnavailableReason)</p>}
+                            }
+                            <p class="demo-help">@L["Payment.NoBankCurrency", _paymentReferences?.Currency?.Code ?? ""].Value</p>
+                        }
+                        @if(SelectedPaymentMethod?.RequiresRegister==true)
+                        {
+                            <label class="demo-label demo-label--spaced" for="payment-register">@L["Payment.Register"].Value</label>
+                            <select id="payment-register" class="demo-input" value="@_paymentRegisterId" @onchange="ChangePaymentRegister"><option value="">@L["Common.Choose"].Value</option>@foreach(var register in _paymentReferences?.Registers ?? []) { <option value="@register.Id">@register.Name</option> }</select>
+                            @if(_paymentReferences?.SelectedRegister is { } selectedRegister)
+                            {
+                                <p class="demo-help">@DefaultPaymentReceiver(selectedRegister.DefaultEmployeeName, selectedRegister.DefaultEmployeeIsHidden)</p>
+                            }
+                        }
+                        @if(_paymentLookupBusy){<p class="demo-help" role="status">@L["Payment.LoadingReferences"].Value</p>}
+                        else if(!string.IsNullOrWhiteSpace(PaymentPrerequisiteMessage)){<p class="demo-help" role="status">@PaymentPrerequisiteMessage</p>}
+                        <fieldset disabled="@(!PaymentDownstreamEnabled)" style="display:contents">
+                            <label class="demo-label demo-label--spaced" for="payment-employee">@L["Payment.Receiver"].Value</label>
+                            <select id="payment-employee" class="demo-input" value="@_paymentEmployeeId" @onchange="ChangePaymentEmployee" @ref="_paymentReceiverElement"><option value="">@L["Common.Choose"].Value</option>@foreach(var employee in _paymentReferences?.Employees ?? []) { <option value="@employee.Id">@(employee.IsHidden ? L["Payment.HiddenEmployee", employee.Name].Value : employee.Name)</option> }</select>
+                            <label class="demo-label demo-label--spaced" for="payment-amount">@L["Payment.AmountCurrency", _paymentReferences?.Currency?.Code ?? ""].Value</label><input id="payment-amount" type="number" min="0.01" max="@_paymentReferences?.MaximumAmount?.ToString(CultureInfo.InvariantCulture)" step="0.01" class="demo-input mono" value="@_paymentAmountText" @oninput="ChangePaymentAmount" />
+                            <label class="demo-label demo-label--spaced" for="payment-note">@L["Common.Notes"].Value</label><textarea id="payment-note" class="demo-textarea" maxlength="500" @bind="_paymentNote" @bind:event="oninput"></textarea>
+                        </fieldset>
+                    }
+                    else
+                    {
+                    <p class="demo-notice">@L["Payment.DraftHelp"].Value</p>
+                    <label class="demo-label" for="payment-method">@L["Payment.Method"].Value</label>
+                    <select id="payment-method" class="demo-input" @bind="_paymentMethod"><option value="Via PPK">@L["Payment.ViaPpk"].Value</option><option value="Bank transfer">@L["Payment.BankTransfer"].Value</option><option value="Cash desk">@L["Payment.CashDesk"].Value</option><option value="EKA register">@L["Payment.Register"].Value</option></select>
                     <div class="demo-form-grid">
-                        <div><label class="demo-label" for="payment-date">@L["Common.Date"]</label><input id="payment-date" type="date" class="demo-input mono" value="@_paymentDate" @onchange="e => _paymentDate = e.Value?.ToString() ?? _paymentDate" /></div>
-                        <div><label class="demo-label" for="payment-amount">@L["Payment.AmountEur"]</label><input id="payment-amount" type="number" min="0.01" step="0.01" class="demo-input mono" @bind="_paymentAmount" /></div>
+                        <div><label class="demo-label" for="payment-date">@L["Common.Date"].Value</label><input id="payment-date" type="date" class="demo-input mono" value="@_paymentDate" @onchange="e => _paymentDate = e.Value?.ToString() ?? _paymentDate" /></div>
+                        <div><label class="demo-label" for="payment-amount">@L["Payment.AmountEur"].Value</label><input id="payment-amount" type="number" min="0.01" step="0.01" class="demo-input mono" @bind="_paymentAmount" /></div>
                     </div>
                     @if (_paymentMethod is "Via PPK" or "Bank transfer")
                     {
@@ -412,26 +572,28 @@
                     {
                         <label class="demo-label demo-label--spaced" for="payment-party">@(_paymentMethod == "Cash desk" ? L["Payment.CashReceiver"].Value : L["Payment.Register"].Value)</label><input id="payment-party" class="demo-input" @bind="_paymentParty" />
                     }
-                    <label class="demo-label demo-label--spaced" for="payment-note">@L["Common.Notes"]</label><textarea id="payment-note" class="demo-textarea" @bind="_paymentNote"></textarea>
-                    <div class="demo-number-preview"><span>@L["Payment.DebtAfter"]</span><strong class="mono">@OrderFormat.Money(_order.Debt - _paymentAmount)</strong></div>
+                    }
+                    @if(!IsLive){<label class="demo-label demo-label--spaced" for="payment-note">@L["Common.Notes"].Value</label><textarea id="payment-note" class="demo-textarea" maxlength="500" @bind="_paymentNote" @bind:event="oninput"></textarea>}
+                    <div class="demo-number-preview"><span>@L["Payment.DebtAfter"].Value</span><strong class="mono">@(IsLive ? PaymentDownstreamEnabled && _paymentAmount>0 ? PaymentMoney(_order.Debt - _paymentAmount) : "—" : OrderFormat.Money(_order.Debt - _paymentAmount))</strong></div>
                     @if (!string.IsNullOrWhiteSpace(_paymentError)) { <div class="demo-field-error demo-field-error--block" role="alert">@_paymentError</div> }
                 </div>
-                <div class="demo-drawer__foot"><button class="btn btn--ghost" type="button" @onclick="ClosePaymentSheet">@L["Common.Cancel"]</button><button class="btn btn--primary" type="button" @onclick="AddPayment">@L["Payment.AddDraft"]</button></div>
+                <div class="demo-drawer__foot"><button class="btn btn--ghost" type="button" @onclick="ClosePaymentSheet">@L["Common.Cancel"].Value</button><button class="btn btn--primary" type="button" disabled="@(IsLive && !PaymentCanSubmit)" @onclick="AddPayment">@(IsLive ? L["Payment.Post"].Value : L["Payment.AddDraft"].Value)</button></div>
             </aside>
         }
 
         @if (_pickerMode is not null)
         {
-            <button class="demo-picker-backdrop" type="button" aria-label="@L["Product.ClosePicker"]" @onclick="ClosePicker"></button>
+            <button class="demo-picker-backdrop" type="button" aria-label="@L["Product.ClosePicker"].Value" @onclick="ClosePicker"></button>
             <aside class="demo-drawer demo-drawer--picker" aria-labelledby="demo-picker-title">
                 <div class="demo-drawer__head">
-                    <div><div class="eyebrow mono">@L["Product.DraftLineHeader", _order.Number]</div><h2 id="demo-picker-title">@(_attachedTo is null ? L["Product.AddPriedai"].Value : L["Product.AccessoryFor", _attachedTo.Name].Value)</h2></div>
-                    <button class="demo-icon-button" type="button" aria-label="@L["Product.ClosePicker"]" @onclick="ClosePicker">×</button>
+                    <div><div class="eyebrow mono">@L["Product.DraftLineHeader", _order.Number].Value</div><h2 id="demo-picker-title">@(_attachedTo is null ? L["Product.AddPriedai"].Value : L["Product.AccessoryFor", _attachedTo.Name].Value)</h2></div>
+                    <button class="demo-icon-button" type="button" aria-label="@L["Product.ClosePicker"].Value" @onclick="ClosePicker">×</button>
                 </div>
                 <div class="demo-drawer__body">
+                    <fieldset disabled="@(IsLive && (_attachedTo?.CanEdit != true || !_order.WritesAllowed))" style="display:contents">
                         <p class="demo-help">@(_attachedTo is null ? L["Product.StandaloneHelp"].Value : L["Product.AccessoryCategoryHelp"].Value)</p>
-                        <label class="demo-label" for="demo-accessory-search">@L["Product.SearchPriedai"]</label>
-                        <input id="demo-accessory-search" class="demo-input" @bind="_accessorySearch" @bind:event="oninput" placeholder="@L["Product.NameCode"]" />
+                        <label class="demo-label" for="demo-accessory-search">@L["Product.SearchPriedai"].Value</label>
+                        <input id="demo-accessory-search" class="demo-input" @bind="_accessorySearch" @bind:event="oninput" placeholder="@L["Product.NameCode"].Value" />
                         <div class="demo-type-list demo-type-list--accessories">
                             @foreach (var accessory in FilteredAccessories)
                             {
@@ -444,29 +606,33 @@
                         {
                             @if (_attachedTo is not null)
                             {
-                                <p class="demo-help">@L["Product.SuggestedQuantityHelp"]</p>
+                                <p class="demo-help">@L["Product.SuggestedQuantityHelp"].Value</p>
                             }
                             <div class="demo-form-grid demo-form-grid--picker">
-                                <div><label class="demo-label" for="demo-acc-qty">@L["Product.QuantityUnit", DisplayUnit(SelectedAccessory.Unit)]</label><input id="demo-acc-qty" type="number" min="0.001" step="0.001" class="demo-input mono" @bind="_quantity" /></div>
-                                <div><label class="demo-label" for="demo-acc-price">@L["Product.PreviewUnitPriceEur"]</label><input id="demo-acc-price" type="number" min="0" step="0.01" class="demo-input mono" @bind="_price" /></div>
+                                <div><label class="demo-label" for="demo-acc-qty">@L["Product.QuantityUnit", SelectedAccessory.Unit].Value</label><input id="demo-acc-qty" type="number" min="0.001" step="0.001" class="demo-input mono" @bind="_quantity" /></div>
+                                <div><label class="demo-label" for="demo-acc-price">@(IsLive ? L["Product.UnitPriceEur"].Value : L["Product.PreviewUnitPriceEur"].Value)</label><input id="demo-acc-price" type="number" min="0" step="0.0001" class="demo-input mono" @bind="_price" @bind:after="MarkAccessoryPrice" /></div>
                             </div>
                         }
                     @if (!string.IsNullOrWhiteSpace(_pickerError))
                     {
                         <div class="demo-field-error demo-field-error--block" role="alert">@_pickerError</div>
                     }
+                    </fieldset>
                 </div>
                 <div class="demo-drawer__foot">
-                    <button class="btn btn--ghost" type="button" @onclick="ClosePicker">@L["Common.Cancel"]</button>
-                    <button class="btn btn--primary" type="button" @onclick="AddLine">@L["Payment.AddDraft"]</button>
+                    <button class="btn btn--ghost" type="button" @onclick="ClosePicker">@L["Common.Cancel"].Value</button>
+                    <button class="btn btn--primary" type="button" disabled="@(IsLive && (_attachedTo?.CanEdit != true || !_order.WritesAllowed))" @onclick="AddLine">@(IsLive ? L["Product.SaveAccessory"].Value : L["Payment.AddDraft"].Value)</button>
                 </div>
             </aside>
         }
+    }
+    </fieldset>
     }
 </div>
 
 @code {
     [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public long? LegacyOrderId { get; set; }
 
     private ElementReference _layerElement;
     private IJSObjectReference? _draftModule;
@@ -475,13 +641,28 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
+        if (_loading || _loadError is not null) return;
+        if (_draftReference is null)
         {
             _draftReference = DotNetObjectReference.Create(this);
-            _draftModule = await JS.InvokeAsync<IJSObjectReference>("import", "./js/sales-draft.js");
+            if (IsLive)
+            {
+                try { await Entry.RestorePendingAsync(); }
+                catch(SalesOrderEntryFailure ex){_liveError=ex.Message;}
+                _pendingRestored=true;
+                await InvokeAsync(StateHasChanged);
+            }
+            var moduleVersion = BuildVersion.Get();
+            _draftModule = await JS.InvokeAsync<IJSObjectReference>("import", "./js/sales-draft.js?v=" + Uri.EscapeDataString(moduleVersion.GitSha ?? moduleVersion.Version ?? "m2-history-2"));
             await _draftModule.InvokeVoidAsync("register", _draftReference, _layerElement);
         }
         if (_draftModule is null) return;
+        await _draftModule.InvokeVoidAsync("updateNoticePosition");
+        if (_focusInvalidField is { } invalidField)
+        {
+            _focusInvalidField=null;
+            await _draftModule.InvokeVoidAsync("focusInvalidField", invalidField);
+        }
         var productVisible = _selectingProduct || _configuringLine is not null;
         if (productVisible && !_historyActive)
         {
@@ -493,24 +674,30 @@
             _historyActive = false;
             await _draftModule.InvokeVoidAsync("closeProduct");
         }
+        if(_paymentFocusReceiver && _paymentSheetOpen && PaymentDownstreamEnabled)
+        {
+            _paymentFocusReceiver=false;
+            await _paymentReceiverElement.FocusAsync();
+        }
     }
 
     [JSInvokable]
-    public Task HandleProductHistoryExit()
+    public async Task HandleProductHistoryExit()
     {
+        if (IsLive && !await LeaveProductAsync()) return;
         _selectingProduct = false;
         _configuringLine = null;
         _historyActive = false;
-        return InvokeAsync(StateHasChanged);
+        await InvokeAsync(StateHasChanged);
     }
 
     [JSInvokable]
-    public Task SelectProductTypeByShortcut(int number)
+    public async Task SelectProductTypeByShortcut(int number)
     {
-        if (!_selectingProduct || number is < 1 or > 9) return Task.CompletedTask;
+        if (!_selectingProduct || number is < 1 or > 9) return;
         var type = FilteredTypes.ElementAtOrDefault(number - 1);
-        if (type is not null) CreateProductFromType(type);
-        return InvokeAsync(StateHasChanged);
+        if (type is not null) await CreateProductFromType(type);
+        await InvokeAsync(StateHasChanged);
     }
 
     public async ValueTask DisposeAsync()
@@ -527,7 +714,7 @@
         _draftReference?.Dispose();
     }
 
-    private static readonly DemoCatalog Catalog = DemoCatalog.Load();
+    private DemoCatalog Catalog = new();
     private static readonly TimeZoneInfo Vilnius = TimeZoneInfo.FindSystemTimeZoneById("Europe/Vilnius");
     private static DateOnly Today => DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, Vilnius));
     private string _rawNumber = "";
@@ -594,7 +781,8 @@
         _numberTouched = true;
         _showSeriesSuggestions = true;
         _formError = "";
-        if (_rawNumber.Contains('-')) ApplySeriesDefaults(_rawNumber.Split('-')[0].Trim());
+        var match=Catalog.Series.OrderByDescending(x=>x.Code.Length).FirstOrDefault(x=>_rawNumber.StartsWith(x.Code+"-",StringComparison.OrdinalIgnoreCase));
+        if(match is not null) ApplySeriesDefaults(match.Code);
     }
 
     private void ChooseSeries(string code)
@@ -615,10 +803,12 @@
         _store = item.Store;
         _consultant = item.Consultant;
         _lastAutofilledSeries = item.Code;
+        _customerId=item.CustomerId; _storeId=item.StoreId; _managerId=item.ManagerId; _consultantId=item.ConsultantId;
     }
 
-    private void CreateDraft()
+    private async Task CreateDraft()
     {
+        if (IsLive) { await CreateLiveOrderAsync(); return; }
         _numberTouched = true;
         if (!DemoOrderNumber.TryNormalize(_rawNumber, Today.Year, Catalog, out var number, out var series, out var error))
         {
@@ -686,8 +876,9 @@
         }
     }
 
-    private void AddEmployee()
+    private async Task AddEmployee()
     {
+        if (IsLive) { await SaveLiveDutyAsync(); return; }
         if (_order is null) return;
         if (string.IsNullOrWhiteSpace(_employeeName)
             || !DateOnly.TryParseExact(_employeeDate, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
@@ -707,8 +898,9 @@
         _discountError = "";
     }
 
-    private void SetFixedPrice(ChangeEventArgs e)
+    private async Task SetFixedPrice(ChangeEventArgs e)
     {
+        if(IsLive){await SetLiveFinalPriceAsync(e);return;}
         if (_order is null) return;
         if (!decimal.TryParse(e.Value?.ToString(), NumberStyles.Number, CultureInfo.InvariantCulture, out var requested)
             || requested < 0 || _order.DiscountableAmount <= 0)
@@ -726,8 +918,9 @@
         _discountError = "";
     }
 
-    private void SavePreview()
+    private async Task SavePreview()
     {
+        if (IsLive) { await SaveLiveOrderAsync(); return; }
         if (_order is null) return;
         _saveIsError = true;
         if (string.IsNullOrWhiteSpace(_order.Customer) || string.IsNullOrWhiteSpace(_order.Store))
@@ -748,30 +941,32 @@
         }
     }
 
+    private int PickerCategoryCount => Catalog.Categories.Count(x => !IsLive || x.Active);
     private IReadOnlyList<DemoCategory> FilteredCategories => Catalog.Categories
+        .Where(x => !IsLive || x.Active)
         .Where(x => (string.IsNullOrWhiteSpace(_catalogSearch)
              || x.Name.Contains(_catalogSearch, StringComparison.OrdinalIgnoreCase)
              || x.Types.Any(t => t.Name.Contains(_catalogSearch, StringComparison.OrdinalIgnoreCase))))
         .ToList();
-    private DemoCategory? SelectedCategory => Catalog.Categories.FirstOrDefault(x => x.Id == _selectedCategoryId);
+    private DemoCategory? SelectedCategory => Catalog.Categories.FirstOrDefault(x => x.Id == _selectedCategoryId && (!IsLive || x.Active));
     private IReadOnlyList<DemoType> FilteredTypes => SelectedCategory?.Types
         .Where(x => string.IsNullOrWhiteSpace(_catalogSearch)
             || SelectedCategory.Name.Contains(_catalogSearch, StringComparison.OrdinalIgnoreCase)
             || x.Name.Contains(_catalogSearch, StringComparison.OrdinalIgnoreCase)).ToList() ?? [];
     private DemoCategory? ConfiguredCategory => Catalog.Categories.FirstOrDefault(x => x.Id == _configuringLine?.CategoryId);
     private DemoType? ConfiguredType => ConfiguredCategory?.Types.FirstOrDefault(x => x.Id == _configuringLine?.TypeId);
-    private int ConfiguredParameterCount => ConfiguredCategory?.ParameterLabels.Count(x => !string.IsNullOrWhiteSpace(x)) ?? 0;
+    private int ConfiguredParameterCount => ConfiguredCategory?.ParameterLabels.Count(x => x is not null) ?? 0;
     private IReadOnlyList<DemoColour> ConfiguredColours => _configuringLine is null ? [] : Catalog.Colours
         .Where(x => x.CategoryIds.Contains(_configuringLine.CategoryId)).ToList();
     private DemoColour? ConfiguredColour => ConfiguredColours.FirstOrDefault(x => x.Id == _configuringLine?.ColourId);
-    private bool InvalidWidth => _configuringLine is { Kind: "Product", WidthMm: > 0 and < 200 };
-    private bool InvalidHeight => _configuringLine is { Kind: "Product", HeightMm: > 0 and < 200 };
+    private bool InvalidWidth => _configuringLine is { Kind: "Product" } && _configuringLine.WidthMm < (IsLive ? 1 : 200);
+    private bool InvalidHeight => _configuringLine is { Kind: "Product" } && _configuringLine.HeightMm < (IsLive ? 1 : 200);
     private bool IsOtherControl => _configuringLine is not null && _configuringLine.ControlType is not ("Chain left" or "Chain right" or "Motor") && !string.IsNullOrWhiteSpace(_configuringLine.ControlType);
     private string DraftCreatedAtLabel => TimeZoneInfo.ConvertTime(_draftCreatedAt, Vilnius).ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
     private string PreviewCaption => _configuringLine is null ? "" : string.Join(" · ", new[] { _configuringLine.Name, ConfiguredColour?.Name ?? _configuringLine.ColourCode, DisplayControl(_configuringLine.ControlType) }.Where(x => !string.IsNullOrWhiteSpace(x)));
-    private static string LineDimensions(DemoOrderLine line) => line.Kind == "Product"
+    private string LineDimensions(DemoOrderLine line) => line.Kind == "Product"
         ? $"{OrderFormat.Mm(line.WidthMm)} × {OrderFormat.Mm(line.HeightMm)} mm · ×{line.Quantity}"
-        : $"×{line.Quantity} {line.Unit}";
+        : $"×{line.Quantity} {DisplayUnit(line.Unit)}";
     private IReadOnlyList<DemoAccessory> FilteredAccessories => Catalog.Accessories
         .Where(x => (_attachedTo is null || x.CategoryIds.Contains(_attachedTo.CategoryId))
             && (string.IsNullOrWhiteSpace(_accessorySearch)
@@ -780,20 +975,23 @@
         .Take(80).ToList();
     private DemoAccessory? SelectedAccessory => Catalog.Accessories.FirstOrDefault(x => x.Id == _selectedAccessoryId);
 
-    private void OpenProductPicker()
+    private async Task OpenProductPicker()
     {
+        if (IsLive && !await LeaveProductAsync()) return;
+        if (IsLive && !await RefreshLiveCatalogAsync()) return;
         var previousCategoryId = _selectedCategoryId;
         ResetPicker();
-        _selectedCategoryId = previousCategoryId != 0
+        _selectedCategoryId = previousCategoryId != 0 && Catalog.Categories.Any(x => x.Id == previousCategoryId && (!IsLive || x.Active))
             ? previousCategoryId
-            : Catalog.Categories.FirstOrDefault(x => x.Name.Equals("Roletai", StringComparison.OrdinalIgnoreCase))?.Id
-                ?? Catalog.Categories.FirstOrDefault()?.Id ?? 0;
+            : Catalog.Categories.FirstOrDefault(x => (!IsLive || x.Active) && x.Name.Equals("Roletai", StringComparison.OrdinalIgnoreCase))?.Id
+                ?? Catalog.Categories.FirstOrDefault(x => !IsLive || x.Active)?.Id ?? 0;
         _configuringLine = null;
         _selectingProduct = true;
     }
     private void CloseProductPicker() => _selectingProduct = false;
-    private void CreateProductFromType(DemoType type)
+    private async Task CreateProductFromType(DemoType type)
     {
+        if (IsLive) { await CreateLiveProductAsync(type); return; }
         if (_order is null || SelectedCategory is null) return;
         var kind = SelectedCategory.Name switch
         {
@@ -812,48 +1010,55 @@
         };
         _order.Lines.Add(line);
         _selectingProduct = false;
-        OpenConfigurator(line);
+        await OpenConfigurator(line);
     }
-    private void OpenConfigurator(DemoOrderLine line)
+    private async Task OpenConfigurator(DemoOrderLine line)
     {
+        if (IsLive && !await LeaveProductAsync()) return;
         _selectingProduct = false;
+        if(IsLive && line.LegacyId is not null) line=_order?.Lines.FirstOrDefault(x=>x.LegacyId==line.LegacyId) ?? line;
+        ClearProductErrors();
         _configuringLine = line;
-        RecalculateConfiguredParameters();
+        _productSaved=ProductState(line);
+        if(!IsLive) await RecalculateConfiguredParameters();
+        else { _requiredMaterial=null;_availableMaterial=null;_freeMaterial=null;_shortageDisposition=null;_isMaterialShort=null;await UpdateLivePreviewAsync(false); }
     }
-    private void CloseConfigurator() => _configuringLine = null;
+    private async Task CloseConfigurator() { if (IsLive && !await SaveLiveProductAsync()) return; _configuringLine = null; }
     private void SetControlLeft() { if (_configuringLine is not null) _configuringLine.ControlType = "Chain left"; }
     private void SetControlRight() { if (_configuringLine is not null) _configuringLine.ControlType = "Chain right"; }
     private void SetControlMotor() { if (_configuringLine is not null) _configuringLine.ControlType = "Motor"; }
     private void SetControlOther() { if (_configuringLine is not null) _configuringLine.ControlType = "Other"; }
-    private void StepWidth(int step)
+    private async Task StepWidth(int step)
     {
         if (_configuringLine is null) return;
-        _configuringLine.WidthMm = Math.Max(200, _configuringLine.WidthMm + step);
-        RecalculateConfiguredParameters();
+        _configuringLine.WidthMm = Math.Max(IsLive ? 1 : 200, _configuringLine.WidthMm + step);
+        await RecalculateConfiguredParameters();
     }
-    private void StepHeight(int step)
+    private async Task StepHeight(int step)
     {
         if (_configuringLine is null) return;
-        _configuringLine.HeightMm = Math.Max(200, _configuringLine.HeightMm + step);
-        RecalculateConfiguredParameters();
+        _configuringLine.HeightMm = Math.Max(IsLive ? 1 : 200, _configuringLine.HeightMm + step);
+        await RecalculateConfiguredParameters();
     }
-    private void StepQuantity(int step)
+    private async Task StepQuantity(int step)
     {
         if (_configuringLine is null) return;
-        _configuringLine.Quantity = Math.Max(_configuringLine.Kind == "Product" ? 1m : 0.001m, _configuringLine.Quantity + step);
-        RecalculateConfiguredParameters();
+        _configuringLine.Quantity = Math.Max(IsLive ? 0.001m : _configuringLine.Kind == "Product" ? 1m : 0.001m, _configuringLine.Quantity + step);
+        await RecalculateConfiguredParameters();
     }
-    private void ChangeConfiguredType(ChangeEventArgs e)
+    private async Task ChangeConfiguredType(ChangeEventArgs e)
     {
         if (_configuringLine is null || !int.TryParse(e.Value?.ToString(), out var id)) return;
         var type = ConfiguredCategory?.Types.FirstOrDefault(x => x.Id == id);
         if (type is null) return;
         _configuringLine.TypeId = type.Id;
+        if(IsLive) { _configuringLine.UseListPrice=false; _configuringLine.RecalculateParameters=true; }
         _configuringLine.Name = type.Name;
-        RecalculateConfiguredParameters();
+        await RecalculateConfiguredParameters();
     }
-    private void RecalculateConfiguredParameters()
+    private async Task RecalculateConfiguredParameters()
     {
+        if (IsLive && _configuringLine is not null) { Array.Fill(_configuringLine.ParameterManual,false); _configuringLine.RecalculateParameters=true; await UpdateLivePreviewAsync(); return; }
         if (_configuringLine is null || ConfiguredType is null) return;
         for (var index = 0; index < 12; index++)
         {
@@ -863,26 +1068,30 @@
                 _configuringLine.ParameterValues[index] = result;
         }
     }
-    private void SetParameter(int index, string value)
+    private async Task SetParameter(int index, string value)
     {
         if (_configuringLine is null) return;
+        if(IsLive) _previewGeneration++;
         _configuringLine.ParameterValues[index] = value.Trim();
         _configuringLine.ParameterManual[index] = true;
+        if(IsLive) await UpdateLivePreviewAsync(false);
     }
     private void ActivateParameter(int index)
     {
         if (_configuringLine is not null) _configuringLine.ParameterManual[index] = true;
     }
-    private void UpdateColour(ChangeEventArgs e)
+    private async Task SelectConfiguredMaterialAsync(int? id)
     {
-        if (_configuringLine is null) return;
-        var code = e.Value?.ToString()?.Trim() ?? "";
-        var match = ConfiguredColours.FirstOrDefault(x => x.Code.Equals(code, StringComparison.OrdinalIgnoreCase));
-        _configuringLine.ColourCode = match?.Code ?? code;
-        _configuringLine.ColourId = match?.Id;
+        if(_configuringLine is null)return;
+        var material=ConfiguredColours.FirstOrDefault(x=>x.Id==id);
+        _configuringLine.ColourId=material?.Id;
+        _configuringLine.ColourCode=material?.Code ?? "";
+        _productErrors.Remove("colour");
+        if(IsLive) await UpdateLivePreviewAsync(false);
     }
-    private void OpenPaymentSheet()
+    private async Task OpenPaymentSheet()
     {
+        if(IsLive) { await OpenLivePaymentAsync(); return; }
         if (_order is null) return;
         _paymentMethod = "Bank transfer";
         _paymentDate = Today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
@@ -893,9 +1102,15 @@
         _paymentError = "";
         _paymentSheetOpen = true;
     }
-    private void ClosePaymentSheet() => _paymentSheetOpen = false;
-    private void AddPayment()
+    private async Task ClosePaymentSheet()
     {
+        if(IsLive && Entry.HasPendingCommand) { _paymentError=L["Payment.RecoverBeforeClose"].Value;return; }
+        if(PaymentDirty && !await JS.InvokeAsync<bool>("confirm",L["Payment.DiscardConfirm"].Value))return;
+        _paymentSheetOpen=false;
+    }
+    private async Task AddPayment()
+    {
+        if(IsLive) { await PostLivePaymentAsync(); return; }
         if (_order is null) return;
         if (_paymentAmount <= 0 || !DateOnly.TryParseExact(_paymentDate, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
         {
@@ -915,8 +1130,10 @@
         });
         _paymentSheetOpen = false;
     }
-    private void OpenAccessoryPicker(DemoOrderLine? parent)
+    private async Task OpenAccessoryPicker(DemoOrderLine? parent)
     {
+        if (IsLive) { if (parent is null) { await OpenStandalonePriedaiAsync(); return; } if (!await SaveLiveProductAsync()) return; parent=_order?.Lines.FirstOrDefault(x=>x.LegacyId==parent.LegacyId) ?? parent; }
+        if (IsLive && !await RefreshLiveCatalogAsync()) return;
         ResetPicker();
         _attachedTo = parent;
         _pickerMode = "accessory";
@@ -939,6 +1156,7 @@
     private void SelectAccessory(int id)
     {
         _selectedAccessoryId = id;
+        _accessoryPriceEntered=false;
         _price = SelectedAccessory?.Price ?? 0;
         if (_attachedTo is not null && SelectedAccessory is not null)
         {
@@ -956,8 +1174,9 @@
         }
         _pickerError = "";
     }
-    private void AddLine()
+    private async Task AddLine()
     {
+        if (IsLive) { await SaveLiveAccessoryAsync(); return; }
         if (_order is null) return;
         if (_quantity <= 0 || _price < 0)
         {
@@ -984,39 +1203,52 @@
         ClosePicker();
     }
 
-    private void RemoveLine(DemoOrderLine line) => _order?.Lines.Remove(line);
-    private static void RemoveAccessory(DemoOrderLine parent, DemoOrderLine accessory) => parent.Accessories.Remove(accessory);
+    private async Task RemoveLine(DemoOrderLine line) { if (IsLive) await DeleteLiveProductAsync(line); else _order?.Lines.Remove(line); }
+    private async Task RemoveAccessory(DemoOrderLine parent, DemoOrderLine accessory) { if (IsLive) await DeleteLiveAccessoryAsync(parent,accessory); else parent.Accessories.Remove(accessory); }
     private void ClosePicker()
     {
         _pickerMode = null;
         _attachedTo = null;
     }
-    private Task CloseAsync() => OnClose.InvokeAsync();
+    private async Task CloseAsync()
+    {
+        if (IsLive && (Entry.HasPendingCommand)) { _liveError=L["Recovery.ResolveBeforeClose"].Value; return; }
+        if (IsLive && !await LeaveProductAsync()) return;
+        if (IsLive && (HeaderDirty || AddressDirty || PaymentDirty || ConfirmationDirty) && !await JS.InvokeAsync<bool>("confirm", L["Workspace.LeaveUnsavedConfirm"].Value)) return;
+        _leaving=true;
+        await OnClose.InvokeAsync();
+    }
     public async Task HandleEscapeAsync()
     {
         if (_pickerMode is not null) ClosePicker();
-        else if (_paymentSheetOpen) ClosePaymentSheet();
-        else if (_configuringLine is not null) CloseConfigurator();
+        else if (_confirmationSheetOpen) CloseConfirmation();
+        else if (_paymentSheetOpen) await ClosePaymentSheet();
+        else if (_configuringLine is not null) await CloseConfigurator();
         else if (_selectingProduct) CloseProductPicker();
         else await CloseAsync();
         await InvokeAsync(StateHasChanged);
     }
-    private string DisplayDuty(string value) => value switch
+    private string ApiMessage(string? message) => string.IsNullOrWhiteSpace(message) ? message ?? "" : LKvitai.MES.Modules.Sales.WebUI.Resources.SalesApiErrors.Translate(L, "", message);
+    private string DisplayDuty(string value) => IsLive ? value : value switch
     {
         "Konsultantas" => L["Workspace.DutyConsultant"].Value, "Vadybininkas" => L["Workspace.DutyManager"].Value,
         "Matuotojas" => L["Workspace.DutyMeasurer"].Value, "Montuotojas" => L["Workspace.DutyInstaller"].Value,
         "Transportas" => L["Workspace.DutyTransport"].Value, _ => value
     };
-    private string DisplayPaymentMethod(string value) => value switch
+    private string DisplayPaymentMethod(string value) => IsLive ? value : value switch
     {
         "Via PPK" => L["Payment.ViaPpk"].Value, "Bank transfer" => L["Payment.BankTransfer"].Value,
         "Cash desk" => L["Payment.CashDesk"].Value, "EKA register" => L["Payment.Register"].Value, _ => value
     };
-    private string DisplayControl(string value) => value switch
+    private string DisplayControl(string value) => IsLive ? value : value switch
     {
         "Chain left" => L["Product.ChainLeft"].Value, "Chain right" => L["Product.ChainRight"].Value,
         "Motor" => L["Product.Motor"].Value, "Other" => L["Product.Other"].Value, _ => value
     };
     private string DisplayUnit(string value) => value == "pcs" ? L["Product.Pieces"].Value : value;
+    private string DefaultPaymentReceiver(string? name, bool hidden) => string.IsNullOrWhiteSpace(name)
+        ? L["Payment.DefaultReceiverUnavailable"].Value
+        : hidden ? L["Payment.DefaultReceiverHidden", name].Value : L["Payment.DefaultReceiver", name].Value;
     private static string Display(string value) => string.IsNullOrWhiteSpace(value) ? "—" : value;
+    private bool IsPrivacyRestricted => IsLive && LKvitai.MES.Modules.Sales.Contracts.Orders.LegacyOrderPrivacy.IsRestricted(_order?.Note);
 }

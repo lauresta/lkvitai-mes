@@ -1,0 +1,8 @@
+@page "/entry/{OrderId:long}"
+@inject NavigationManager Navigation
+<PageTitle>@L["Orders.EntryPageTitle"]</PageTitle>
+<NewOrderWorkspace @key="OrderId" LegacyOrderId="OrderId" OnClose="BackToOrders" />
+@code {
+    [Parameter] public long OrderId { get; set; }
+    private void BackToOrders() => Navigation.NavigateTo("");
+}

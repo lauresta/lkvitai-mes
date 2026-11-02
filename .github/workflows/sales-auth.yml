@@ -7,6 +7,9 @@ on:
       - src/Modules/Sales/**
       - src/BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/**
       - tests/Modules/Sales/**
+      - docker-compose.test.yml
+      - .github/workflows/deploy-test.yml
+      - scripts/sales/**
       - Directory.Packages.props
       - .github/workflows/sales-auth.yml
   push:
@@ -15,6 +18,9 @@ on:
       - src/Modules/Sales/**
       - src/BuildingBlocks/LKvitai.MES.BuildingBlocks.PortalAuth/**
       - tests/Modules/Sales/**
+      - docker-compose.test.yml
+      - .github/workflows/deploy-test.yml
+      - scripts/sales/**
       - Directory.Packages.props
       - .github/workflows/sales-auth.yml
 

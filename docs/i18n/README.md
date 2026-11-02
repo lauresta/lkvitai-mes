@@ -108,4 +108,4 @@ buttons (`Išsaugoti`), and Lithuanian quotes/number words only inside resx valu
 ## 5. Module coverage
 
 - Portal dashboard: reference implementation above.
-- Sales: [coverage and verification](sales.md).
+- Sales: [coverage, contracts and verification](sales.md).

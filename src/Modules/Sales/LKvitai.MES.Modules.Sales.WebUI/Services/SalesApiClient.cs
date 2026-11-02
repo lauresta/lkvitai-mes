@@ -4,7 +4,7 @@ using System.Net.Http.Json;
 using Microsoft.AspNetCore.Components.Authorization;
 using LKvitai.MES.Modules.Sales.Contracts.Common;
 using LKvitai.MES.Modules.Sales.Contracts.Orders;
-using LKvitai.MES.Modules.Sales.Infrastructure.Stub;
+using LKvitai.MES.Modules.Sales.Contracts.Samples;
 
 namespace LKvitai.MES.Modules.Sales.WebUI.Services;
 
@@ -46,18 +46,21 @@ public sealed class SalesApiClient
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<SalesApiClient> _logger;
     private readonly AuthenticationStateProvider _authStateProvider;
-    private readonly StubOrdersQueryService _reviewOrders;
+    private readonly SalesSampleOrders _reviewOrders;
+    private readonly SalesSessionCredentials _credentials;
 
     public SalesApiClient(
         IHttpClientFactory httpClientFactory,
         ILogger<SalesApiClient> logger,
         AuthenticationStateProvider authStateProvider,
-        StubOrdersQueryService reviewOrders)
+        SalesSampleOrders reviewOrders,
+        SalesSessionCredentials credentials)
     {
         _httpClientFactory = httpClientFactory;
         _logger = logger;
         _authStateProvider = authStateProvider;
         _reviewOrders = reviewOrders;
+        _credentials = credentials;
     }
 
     /// <summary>
@@ -207,7 +210,11 @@ public sealed class SalesApiClient
         var httpSw = Stopwatch.StartNew();
         try
         {
-            using var response = await client.GetAsync(url, cancellationToken).ConfigureAwait(false);
+            var credential = await _credentials.CreateApiCredentialAsync().ConfigureAwait(false);
+            if (credential is null) return new ApiFetch<T>(HttpStatusCode.Unauthorized, null, 0, 0, 0, 0, false);
+            using var request = new HttpRequestMessage(HttpMethod.Get, url);
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", credential);
+            using var response = await client.SendAsync(request, cancellationToken).ConfigureAwait(false);
             httpSw.Stop();
 
             if (!response.IsSuccessStatusCode)
