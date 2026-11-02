@@ -1,0 +1,19 @@
+@if (IsRestricted)
+{
+    <aside class="customer-privacy-notice" role="note" aria-labelledby="@_titleId">
+        <div class="customer-privacy-notice__copy">
+            <strong id="@_titleId">Personal data restricted — GDPR</strong>
+            <p>This order was cancelled at the customer’s request. Certain order information has been removed for privacy reasons.</p>
+        </div>
+        <a class="customer-privacy-notice__back" href="@BackHref" @onclick="BackAsync" @onclick:preventDefault="@OnBack.HasDelegate">← Back to orders</a>
+    </aside>
+    <div class="customer-privacy-watermark" aria-hidden="true"><span>Personal data restricted — GDPR</span></div>
+}
+
+@code {
+    [Parameter] public bool IsRestricted { get; set; }
+    [Parameter] public string BackHref { get; set; } = "./";
+    [Parameter] public EventCallback OnBack { get; set; }
+    private readonly string _titleId = "privacy-title-" + Guid.NewGuid().ToString("N");
+    private Task BackAsync() => OnBack.HasDelegate ? OnBack.InvokeAsync() : Task.CompletedTask;
+}

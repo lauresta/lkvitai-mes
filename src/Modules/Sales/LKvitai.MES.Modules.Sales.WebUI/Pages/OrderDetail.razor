@@ -14,6 +14,7 @@
             <h1>Order details</h1>
         </div>
         <div class="page-actions">
+            @if(_order is not null) { <a class="btn btn--primary" href="entry/@_order.Id">Edit order</a> }
             <a class="btn btn--ghost" href="./">&#8592; Back to orders</a>
         </div>
     </div>
@@ -47,6 +48,7 @@
         var o = _order;
 
         <section class="panel details" aria-labelledby="details-title">
+            <CustomerPrivacyNotice IsRestricted="o.IsPrivacyRestricted" />
             <nav class="details__breadcrumb" aria-label="Breadcrumb">
                 <a href="./">Home</a><span>/</span>
                 <a href="./">Orders</a><span>/</span>
@@ -139,6 +141,12 @@
                     }
                 </div>
             </div>
+
+            @if (!o.IsPrivacyRestricted && !string.IsNullOrWhiteSpace(o.CurrentNote))
+            {
+                <div class="details__section"><div class="section-label">Current note</div><p style="white-space:pre-wrap">@o.CurrentNote</p></div>
+            }
+            <OrderNoteHistory Entries="o.NoteHistory" />
 
             @* Amounts *@
             <div class="details__section">

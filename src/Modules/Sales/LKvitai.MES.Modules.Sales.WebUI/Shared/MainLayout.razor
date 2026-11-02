@@ -1,4 +1,5 @@
 @inherits LayoutComponentBase
+@inject IWebHostEnvironment HostEnvironment
 
 <MudThemeProvider />
 <MudDialogProvider />
@@ -15,8 +16,9 @@
    and would just be dead code. The hydration-time flash is fixed
    structurally by <persist-component-state /> in _Layout.cshtml +
    PersistentComponentState in Index.razor / OrderDetail.razor. *@
-<PortalAuthenticatedShell>
+<PortalAuthenticatedShell BannerNote="@(HostEnvironment.IsEnvironment("Test") ? "Test environment. Legacy production data is shared; changes are restricted to Testavimas." : null)">
     <ChildContent>
+        <AuthorizeView><Authorized Context="session">@if (!session.User.HasClaim("sales_review", "true")) { <SalesSessionRefresh /> }</Authorized></AuthorizeView>
         @Body
     </ChildContent>
     <NotAuthorizedContent>

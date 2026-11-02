@@ -639,3 +639,42 @@ h1:focus { outline: none; }
   .lk-fabric { flex-wrap: wrap; padding: 9px 12px; }
   .lk-fabric .stock { width: 100%; margin-left: 34px; }
 }
+
+/* Save/conflict recovery stays above full-page product and accessory editors. */
+.demo-workspace-notifications { position: absolute; z-index: 20; top: 8px; left: 50%; transform: translateX(-50%); width: min(820px, calc(100% - 32px)); pointer-events: none; }
+.demo-workspace-notifications .demo-editor__banner { pointer-events: auto; box-shadow: 0 2px 8px rgb(15 23 42 / 10%); }
+.demo-workspace-notifications .btn { margin-left: 8px; }
+
+/* Reference suggestions must escape the saved-order panel, without changing table clipping. */
+.demo-reference-panel.panel { overflow: visible; }
+.demo-reference-panel > .panel__head { border-radius: var(--r-md) var(--r-md) 0 0; }
+
+/* Persistent, corner-anchored operator feedback. Errors need explicit dismissal. */
+.demo-workspace-notifications { position: fixed; top: var(--sales-notice-top, 110px); right: var(--sales-notice-right, 18px); left: auto; transform: none; width: min(var(--sales-notice-width, 420px), calc(100vw - 28px)); max-height: calc(100dvh - 110px); overflow-y: auto; z-index: 40; }
+.sales-toast { pointer-events: auto; display: grid; grid-template-columns: 24px minmax(0,1fr) 22px; gap: 10px; margin-bottom: 10px; padding: 14px; border: 1px solid var(--warn-bd); border-left: 4px solid var(--warn-dot); border-radius: var(--r-md); background: var(--warn-bg); color: var(--warn-fg); box-shadow: 0 5px 18px rgb(21 25 34 / 18%); animation: sales-toast-in 160ms ease-out; }
+.sales-toast--error { border-color: var(--danger-bd); border-left-color: var(--danger-dot); background: var(--danger-bg); color: var(--danger-fg); }
+.sales-toast--success { border-color: var(--ok-bd); border-left-color: var(--ok-dot); background: var(--ok-bg); color: var(--ok-fg); }
+.sales-toast strong { display: block; font-size: 13px; }
+.sales-toast p { margin: 5px 0 0; font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
+.sales-toast__icon { display: grid; place-items: center; width: 22px; height: 22px; border: 1px solid currentColor; border-radius: 50%; font-weight: 800; }
+.sales-toast__close, .sales-toast__action { color: inherit; border: 0; background: transparent; cursor: pointer; }
+.sales-toast__close { padding: 0; font-size: 22px; line-height: 1; align-self: start; }
+.sales-toast__action { padding: 0; margin-top: 8px; text-decoration: underline; font-weight: 700; font-size: 12px; }
+.has-error, .lk-stepper.has-error, .lk-price.has-error .field { border-color: var(--danger-dot); box-shadow: 0 0 0 2px var(--danger-bg); }
+.lk-field-error { color: var(--danger-fg); font-size: 12px; line-height: 1.4; margin-top: 5px; }
+input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--danger-dot); }
+.sales-field-attention { animation: sales-field-attention 260ms ease-out; }
+@keyframes sales-toast-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes sales-field-attention { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+@media (prefers-reduced-motion: reduce) { .sales-toast, .sales-field-attention { animation: none; } }
+
+/* Let the material results overlap lower panels while the page itself scrolls. */
+.demo-product-editor .demo-product-editor__main.panel { overflow: visible; }
+.demo-product-editor__main > .panel__head { border-radius: var(--r-md) var(--r-md) 0 0; }
+
+.sales-toast { max-height: min(260px, calc(100dvh - var(--sales-notice-top, 110px) - 18px)); overflow-y: auto; }
+
+/* display:contents removes the fieldset's box, not its DOM ancestry. Keep the
+   panels from flex-shrinking and clipping their validation/price content. */
+.demo-product-editor > fieldset > .panel { flex: 0 0 auto; margin-top: 0; }
+.demo-product-editor > fieldset > .panel + .panel { margin-top: 0; }

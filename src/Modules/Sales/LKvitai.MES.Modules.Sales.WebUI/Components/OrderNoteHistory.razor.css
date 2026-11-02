@@ -1,0 +1,6 @@
+.order-note-history{margin-top:12px}
+.order-note-history ol{list-style:none;margin:0;padding:0 14px;max-height:280px;overflow:auto}
+.order-note-history li{padding:9px 0;border-bottom:1px solid var(--n-150)}
+.order-note-history li:last-child{border-bottom:0}
+.order-note-history__meta{display:flex;flex-wrap:wrap;gap:12px;font-size:11px;color:var(--n-500)}
+.order-note-history p{margin:4px 0 0;white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;color:var(--n-800)}

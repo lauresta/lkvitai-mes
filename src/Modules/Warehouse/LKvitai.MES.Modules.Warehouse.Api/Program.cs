@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.DataProtection;
 using LKvitai.MES.Modules.Warehouse.Api.Configuration;
 using LKvitai.MES.Modules.Warehouse.Api.BackgroundJobs;
 using LKvitai.MES.BuildingBlocks.ObjectStorage;
@@ -126,7 +127,18 @@ builder.Services.AddScoped<IItemImageEmbeddingService, ItemImageEmbeddingService
 builder.Services.AddSingleton<IDevAuthService, DevAuthService>();
 builder.Services.AddSingleton<IFeatureFlagService, FeatureFlagService>();
 builder.Services.AddSingleton<ConnectionPoolMonitoringInterceptor>();
-builder.Services.AddSingleton<IAdminUserStore, InMemoryAdminUserStore>();
+builder.Services.AddScoped<IAdminUserStore, DatabaseAdminUserStore>();
+// The mapping lookup and user administration use a purpose-bound proof rather
+// than trusting the existing unsigned Warehouse role-header format.
+builder.Services.AddDataProtection()
+    .SetApplicationName(LKvitai.MES.BuildingBlocks.PortalAuth.PortalAuthDefaults.ApplicationName)
+    .PersistKeysToFileSystem(new DirectoryInfo(builder.Configuration[LKvitai.MES.BuildingBlocks.PortalAuth.PortalAuthDefaults.DataProtectionKeysPathConfigKey]
+        ?? Path.Combine(builder.Environment.ContentRootPath,".auth-keys")))
+    .DisableAutomaticKeyGeneration();
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<LKvitai.MES.BuildingBlocks.PortalAuth.CikadaUserBridgeProof>();
+builder.Services.AddScoped<TrustedUserAdministrationFilter>();
+
 builder.Services.AddSingleton<IOAuthRoleMapper, OAuthRoleMapper>();
 builder.Services.AddSingleton<IOAuthOpenIdConfigurationProvider, OAuthOpenIdConfigurationProvider>();
 builder.Services.AddSingleton<IOAuthLoginStateStore, OAuthLoginStateStore>();
@@ -404,6 +416,7 @@ app.UseHangfireDashboard("/warehouse/hangfire", new Hangfire.DashboardOptions
     DashboardTitle = "Warehouse Jobs",
 });
 app.MapControllers();
+app.MapLegacySqlMappingLookup();
 
 app.MapPost(
         "/api/auth/login",

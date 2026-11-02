@@ -7,6 +7,7 @@ on:
     paths:
       - src/Modules/Sales/**
       - src/BuildingBlocks/**
+      - tests/Modules/Sales/**
       - .github/workflows/sales-ci.yml
 
 permissions:
@@ -42,6 +43,9 @@ jobs:
 
       - name: Build Sales WebUI
         run: dotnet build src/Modules/Sales/LKvitai.MES.Modules.Sales.WebUI/LKvitai.MES.Modules.Sales.WebUI.csproj -c Release --no-restore
+
+      - name: Test Sales entry and authentication
+        run: dotnet test tests/Modules/Sales/LKvitai.MES.Tests.Sales.Auth/LKvitai.MES.Tests.Sales.Auth.csproj -c Release
 
       # MCR occasionally returns 403 on anonymous HEAD /v2/.../manifests/... during
       # BuildKit metadata resolution. Pulling the base images with retries up front

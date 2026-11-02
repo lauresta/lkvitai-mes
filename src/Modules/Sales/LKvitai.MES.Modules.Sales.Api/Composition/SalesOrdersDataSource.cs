@@ -98,7 +98,7 @@ public static class SalesOrdersDataSource
             ConnectionString      = connectionString!,
             CommandTimeoutSeconds = commandTimeout <= 0 ? 30 : commandTimeout,
         });
-        services.AddSingleton<IOrdersQueryService, SqlOrdersQueryService>();
+        services.AddScoped<IOrdersQueryService, SqlOrdersQueryService>();
 
         return services;
     }

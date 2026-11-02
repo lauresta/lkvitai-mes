@@ -30,14 +30,7 @@ public static class SalesReviewAccess
                 options.DefaultScheme = SelectorScheme;
                 options.DefaultChallengeScheme = CookieAuthenticationDefaults.AuthenticationScheme;
             })
-            .AddPolicyScheme(SelectorScheme, null, options =>
-            {
-                options.ForwardDefaultSelector = context =>
-                    context.Request.Cookies.ContainsKey(CookieName)
-                    && TryGetSettings(environment, configuration, out _, out _)
-                        ? CookieScheme
-                        : CookieAuthenticationDefaults.AuthenticationScheme;
-            })
+            .AddScheme<AuthenticationSchemeOptions, SalesReviewSelectorHandler>(SelectorScheme, _ => { })
             .AddCookie(CookieScheme, options =>
             {
                 options.Cookie.Name = CookieName;
@@ -116,6 +109,9 @@ public static class SalesReviewAccess
             await next(context);
         });
     }
+
+    internal static bool IsConfigured(IHostEnvironment environment, IConfiguration configuration)
+        => TryGetSettings(environment, configuration, out _, out _);
 
     private static bool TryGetSettings(
         IHostEnvironment environment,

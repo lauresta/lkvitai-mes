@@ -18,7 +18,8 @@
         </div>
         <div class="page-actions">
             <button class="btn btn--ghost" type="button">Export</button>
-            <button class="btn btn--primary" type="button" @onclick="OpenNewOrder">+ New order</button>
+            @if(_selectedId is not null) { <a class="btn btn--ghost" href="entry/@_selectedId">Edit selected order</a> }
+            <button class="btn btn--primary" type="button" disabled="@(!_interactiveReady)" @onclick="OpenNewOrder">+ New order</button>
         </div>
     </div>
 
@@ -202,11 +203,13 @@
 @code {
     private bool _showNewOrder;
     private NewOrderWorkspace? _newOrderWorkspace;
+    private bool _interactiveReady;
     private void OpenNewOrder() => _showNewOrder = true;
-    private void CloseNewOrder()
+    private async Task CloseNewOrder()
     {
         _showNewOrder = false;
         _newOrderWorkspace = null;
+        await ReloadAsync();
     }
     private const int    PageSize             = 100;
     private const int    SearchDebounceMs     = 250;
@@ -509,6 +512,10 @@
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender) return;
+
+        // A prerendered button cannot handle clicks until its circuit is live.
+        _interactiveReady = true;
+        await InvokeAsync(StateHasChanged);
 
         // Wrapped because OnAfterRenderAsync runs during prerender on some
         // hosting models — calling JS there would throw InvalidOperationException

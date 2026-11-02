@@ -1,0 +1,13 @@
+/* The containing order/product surface is positioned; this overlay does not
+   replace, blur or intercept its customer, product, price or navigation data. */
+.customer-privacy-notice{position:relative;z-index:9;display:flex;flex:0 0 auto;align-items:center;justify-content:space-between;gap:12px;width:100%;max-width:1800px;margin:0 auto 12px;padding:11px 14px;border:1px solid var(--warn-bd);border-left:4px solid var(--warn-dot);border-radius:6px;background:var(--warn-bg);color:var(--warn-fg);pointer-events:none}
+.customer-privacy-notice__copy{min-width:0}
+.customer-privacy-notice__copy strong{display:block;font-size:14px;line-height:1.4}
+.customer-privacy-notice__copy p{margin:3px 0 0;font-size:12px;line-height:1.5}
+.customer-privacy-notice__back{flex:none;display:inline-flex;align-items:center;min-height:32px;padding:6px 10px;border:1px solid var(--n-200);border-radius:5px;background:var(--n-0);color:var(--accent-700);font-size:12px;font-weight:700;text-decoration:none;pointer-events:auto}
+.customer-privacy-notice__back:hover{border-color:var(--accent-500);background:var(--accent-50)}
+.customer-privacy-notice__back:focus-visible{outline:2px solid var(--accent-500);outline-offset:3px}
+.customer-privacy-watermark{position:absolute;inset:0;z-index:8;overflow:hidden;pointer-events:none;user-select:none}
+.customer-privacy-watermark span{position:absolute;top:clamp(170px,30vh,330px);left:2%;right:2%;color:var(--n-700);opacity:.15;font:800 clamp(34px,5.8vw,86px)/1.25 var(--font-ui);text-align:center;transform:rotate(-14deg);overflow-wrap:normal}
+@media(max-width:700px){.customer-privacy-notice{align-items:flex-start;flex-direction:column;gap:7px;padding:10px 12px}.customer-privacy-notice__copy strong{font-size:13px}.customer-privacy-notice__back{min-height:32px}.customer-privacy-watermark span{top:270px;font-size:clamp(28px,8vw,46px)}}
+@media print{.customer-privacy-notice__back{display:none}.customer-privacy-watermark span{opacity:.15}}

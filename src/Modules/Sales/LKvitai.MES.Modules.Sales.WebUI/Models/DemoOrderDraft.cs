@@ -6,6 +6,29 @@ namespace LKvitai.MES.Modules.Sales.WebUI.Models;
 /// <summary>Only lives in the open Blazor component. Nothing is posted to the API.</summary>
 public sealed class DemoOrderDraft
 {
+    public string? CancellationUnavailableReason { get; set; }
+    public bool PaymentsEnabled { get; set; }
+    public bool ConfirmationEnabled { get; set; }
+    public IReadOnlyList<int> AllowedPaymentMethods { get; set; } = [];
+    public long? LegacyId { get; set; }
+    public string Revision { get; set; } = "";
+    public int SeriesId { get; set; }
+    public int? CustomerId { get; set; }
+    public int? StoreId { get; set; }
+    public int? ManagerId { get; set; }
+    public int? ConsultantId { get; set; }
+    public int PriorityId { get; set; } = 2;
+    public int? StreetId { get; set; }
+    public int? StateId { get; set; }
+    public bool Cancelled { get; set; }
+    public bool CanEdit { get; set; } = true;
+    public bool WritesAllowed { get; set; } = true;
+    public decimal? ServerTotal { get; set; }
+    public decimal? ServerPaid { get; set; }
+    public decimal? ServerCalculated { get; set; }
+    public decimal? ServerDiscountable { get; set; }
+    public decimal? ServerDiscountAmount { get; set; }
+    public string StateName { get; set; } = "Įvestas";
     public string Number { get; set; } = "";
     public string Series { get; set; } = "";
     public string Customer { get; set; } = "";
@@ -17,6 +40,7 @@ public sealed class DemoOrderDraft
     public DateOnly? MountingDate { get; set; }
     public string Priority { get; set; } = "Normal";
     public string Note { get; set; } = "";
+    public IReadOnlyList<LKvitai.MES.Modules.Sales.Contracts.Orders.OrderNoteHistoryEntry> NoteHistory { get; set; } = [];
     public string Region { get; set; } = "";
     public string City { get; set; } = "";
     public string Street { get; set; } = "";
@@ -29,16 +53,31 @@ public sealed class DemoOrderDraft
     public List<DemoPayment> Payments { get; } = [];
     public List<DemoResponsibleEmployee> Employees { get; } = [];
 
-    public decimal BeforeDiscount => Lines.Sum(x => x.Total);
-    public decimal DiscountableAmount => Lines.Where(x => x.Discountable).Sum(x => x.Total);
-    public decimal DiscountAmount => Math.Round(DiscountableAmount * DiscountPercent / 100m, 2, MidpointRounding.AwayFromZero);
-    public decimal Total => BeforeDiscount - DiscountAmount;
-    public decimal Paid => Payments.Sum(x => x.Amount);
+    public decimal BeforeDiscount => ServerCalculated ?? Lines.Sum(x => x.Total);
+    public decimal DiscountableAmount => ServerDiscountable ?? Lines.Where(x => x.Discountable).Sum(x => x.Total);
+    public decimal DiscountAmount => ServerDiscountAmount ?? Math.Round(DiscountableAmount * DiscountPercent / 100m, 2, MidpointRounding.AwayFromZero);
+    public decimal Total => ServerTotal ?? BeforeDiscount - DiscountAmount;
+    public decimal Paid => ServerPaid ?? Payments.Sum(x => x.Amount);
     public decimal Debt => Total - Paid;
 }
 
 public sealed class DemoOrderLine
 {
+    public bool? IsManufactured { get; set; }
+    public bool HasStoredPrice { get; set; }
+    public bool HasStoredDimensions { get; set; }
+    public long? LegacyId { get; set; }
+    public int? AccessoryId { get; set; }
+    public bool CanEdit { get; set; } = true;
+    public bool CanDelete { get; set; } = true;
+    public string StateName { get; set; } = "ĮVESTAS";
+    public int? StateId { get; set; }
+    public bool UseListPrice { get; set; }
+    public bool RecalculateParameters { get; set; }
+    public string? CalculationRevision { get; set; }
+    public string? CalculationContext { get; set; }
+    public decimal? ServerAmount { get; set; }
+    public decimal? ServerAccessoryAmount { get; set; }
     public string Kind { get; set; } = "Product";
     public int TypeId { get; set; }
     public int CategoryId { get; set; }
@@ -57,11 +96,13 @@ public sealed class DemoOrderLine
     public string[] ParameterValues { get; } = new string[12];
     public bool[] ParameterManual { get; } = new bool[12];
     public List<DemoOrderLine> Accessories { get; } = [];
-    public decimal Total => Quantity * Price + Accessories.Sum(x => x.Quantity * x.Price);
+    public decimal Total => (ServerAmount ?? Quantity * Price) + (ServerAccessoryAmount ?? Accessories.Sum(x => x.Quantity * x.Price));
 }
 
 public sealed class DemoResponsibleEmployee
 {
+    public int? DutyId { get; set; }
+    public int? EmployeeId { get; set; }
     public string Duty { get; set; } = "Matuotojas";
     public string Name { get; set; } = "";
     public DateOnly Date { get; set; }
@@ -69,6 +110,10 @@ public sealed class DemoResponsibleEmployee
 
 public sealed class DemoPayment
 {
+    public long? LegacyId { get; set; }
+    public bool HasDate { get; set; } = true;
+    public int? CurrencyId { get; set; }
+    public string CurrencyCode { get; set; } = "";
     public DateOnly Date { get; set; }
     public string Method { get; set; } = "Bank transfer";
     public string Reference { get; set; } = "";
@@ -89,16 +134,12 @@ public static class DemoOrderNumber
         canonical = "";
         series = "";
         error = "Enter a number such as VV-123 or VV-123-A.";
-        var match = Pattern.Match(input?.Trim() ?? "");
+        var text = input?.Trim() ?? "";
+        var known = catalog.Series.OrderByDescending(x => x.Code.Length).FirstOrDefault(x => text.StartsWith(x.Code + "-", StringComparison.OrdinalIgnoreCase));
+        if (known is null) { error = "Choose an existing order series."; return false; }
+        series = known.Code;
+        var match = Pattern.Match("S-" + text[(known.Code.Length + 1)..]);
         if (!match.Success) return false;
-
-        series = match.Groups[1].Value.ToUpperInvariant();
-        var requestedSeries = series;
-        if (!catalog.Series.Any(x => string.Equals(x.Code, requestedSeries, StringComparison.OrdinalIgnoreCase)))
-        {
-            error = $"Series {series} does not exist in the reference snapshot.";
-            return false;
-        }
         if (!int.TryParse(match.Groups[2].Value, NumberStyles.None, CultureInfo.InvariantCulture, out var sequence)
             || sequence <= 0)
         {

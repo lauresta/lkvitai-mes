@@ -81,6 +81,8 @@ public class WarehouseDbContext : DbContext
     public DbSet<InboundShipmentAdditionalCost> InboundShipmentAdditionalCosts => Set<InboundShipmentAdditionalCost>();
     public DbSet<AdjustmentReasonCode> AdjustmentReasonCodes => Set<AdjustmentReasonCode>();
     public DbSet<ApprovalRule> ApprovalRules => Set<ApprovalRule>();
+    public DbSet<LocalUserAccount> LocalUserAccounts => Set<LocalUserAccount>();
+
     public DbSet<Role> Roles => Set<Role>();
     public DbSet<Permission> Permissions => Set<Permission>();
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
@@ -138,6 +140,20 @@ public class WarehouseDbContext : DbContext
             .StartsAt(1)
             .IncrementsBy(1);
         
+        modelBuilder.Entity<LocalUserAccount>(entity =>
+        {
+            entity.ToTable("local_user_accounts");
+            entity.HasKey(user => user.Id);
+            entity.Property(user => user.Username).IsRequired().HasMaxLength(100);
+            entity.Property(user => user.NormalizedUsername).IsRequired().HasMaxLength(100);
+            entity.HasIndex(user => user.NormalizedUsername).IsUnique();
+            entity.Property(user => user.Email).IsRequired().HasMaxLength(320);
+            entity.Property(user => user.PasswordHash).IsRequired().HasMaxLength(1024);
+            entity.Property(user => user.Roles).IsRequired().HasColumnType("text[]");
+            entity.Property(user => user.Status).IsRequired().HasMaxLength(16);
+            entity.Property(user => user.LegacySqlLogin).HasMaxLength(128);
+        });
+
         // HandlingUnit configuration per blueprint
         modelBuilder.Entity<HandlingUnitAggregate>(entity =>
         {

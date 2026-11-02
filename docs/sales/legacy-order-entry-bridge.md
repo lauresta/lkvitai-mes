@@ -1,6 +1,7 @@
 # Legacy order entry in Sales: discovery and migration boundary
 
-> Current delivery plan: [order-entry-milestones.md](order-entry-milestones.md).
+> Current delivery plan: [milestone-2-plan.md](milestone-2-plan.md), reviewed
+> on 2026-10-31. This document records earlier discovery, not completed parity.
 > The product owner chose manual one-field numbering with current-year group
 > expansion and access to all branches. Milestone 1 is UI-only; database
 > integration begins only after the milestone review.
@@ -42,46 +43,36 @@ not a second order store or an asynchronous copy.
 | Address, duties, accessories | `forms/dlgOrderAddress.md`, `forms/frmOrdersDuties.md`, `forms/dlgNewAccessories.md` | Bound to `TCR_OrderAddresses`, `TCR_OrdersDutiesEmployees`, and `ParduotiPriedai` respectively. |
 | Cancellation and payments | `vba/Form_frmOrderList.bas`, `forms/dlgPayments.md` | Cancellation calls `sp_CancellOrder`; payment display calls `sp_frmPaymentsByOrder`. Payment creation needs separate tracing through the payment forms before implementation. |
 
-## Proposed implementation sequence
+## Decisions and remaining discovery
 
-1. **Set the write identity and test environment.** The legacy
-   `Loc_leidimas()` function filters branches by `SYSTEM_USER`. The inspected
-   `sa` login maps to 11 departments and can see 191 of 197 series. Portal
-   users authenticate through a separate cookie/bearer identity, and Sales
-   currently only requires an authenticated user. The existing
-   `weblb_Orders_Paged` and `weblb_Order` reads also use `Loc_leidimas()`, so
-   their effective scope is the shared SQL login, not the Portal user. Define
-   the branch and audit mapping before any write endpoint is enabled. Use a
-   non-production database copy for create/update parity tests.
-2. **Create a narrow order-header write slice.** Add Sales API contracts and
-   a SQL command adapter for selecting allowed series and creating an order.
-   Use parameterized SQL and a transaction. Decide whether users enter
-   `UzsakymoNumeris` as in Access or the new server allocates it safely under
-   concurrency. Return the legacy `UzsakymasID`
-   and canonical order number, then read the new row through the existing
-   Sales query path. Put validation and authorization on the server.
-3. **Verify two-way visibility.** Create in Sales and reopen in Access; create
-   in Access and refresh Sales. Compare number, people, dates, and stored
-   amounts in both clients. Repeat with two simultaneous creators to verify
-   numbering and conflict handling.
-4. **Expand one write area at a time.** Header edits, address, products,
-   accessories, duties, pricing, and payments each need a verified write
-   contract and a parity scenario. Reuse existing SQL procedures where they
-   are authoritative; move Access-only business rules to the Sales server
-   layer before enabling the corresponding action.
+Implementation order is now defined solely in
+[milestone-2-plan.md](milestone-2-plan.md). The owner resolved these choices:
+
+- One-field manual numbering with current-year expansion; no server allocation.
+- Eventual access to all branches; initial write verification only in the
+  production database's Testavimas branch and its verified series.
+- An isolated database remains appropriate for routine automated tests and
+  experiments with effects that cannot be contained in Testavimas. It is not
+  a prerequisite replacing the owner's chosen shared-database test deployment.
+
+At the earlier inspection, the shared login mapped to 11 departments and saw
+191 of 197 series through `Loc_leidimas()`. The `weblb_*` read filters therefore
+did not establish the agreed all-branch business scope. Refresh that evidence
+and resolve Sales reads without changing Access users' rights globally.
 
 ## Open contract questions
 
-- Should the new UI retain manually entered receipt numbers from Access, or
-  introduce automatic allocation? The latter is a new rule and needs a
-  concurrency-safe SQL implementation shared with Access.
-- How should Portal users map to legacy branch permissions and audit identity?
-  A shared `sa` connection does not preserve the Access user's `SYSTEM_USER`.
+- How does trusted Portal identity reach Sales and its command audit? The
+  current raw structured bearer is not cryptographically verified; a shared
+  SQL login also does not preserve the Access user's `SYSTEM_USER`.
 - Which rules run in triggers/procedures, and which exist only in VBA or
   Access form validation? The inspected database provides SQL definitions,
   while `sFormulaValue` and some UI rules are clearly Access-side.
 - What is the supported concurrency token for edits made by both clients?
-  The new client must detect stale edits without requiring a change to Access.
+  Sales must detect Access changes; verify what protection the Access client
+  itself applies before promising protection in the reverse direction.
+- How are command receipts committed atomically with legacy writes so a lost
+  response/restart cannot duplicate a product or payment?
 - Are the current `weblb_*` read procedures deployed against the same database
   and schema used by the live Access client in each environment?
 

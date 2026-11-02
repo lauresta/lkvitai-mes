@@ -1,0 +1,84 @@
+{
+  "inspectedAt": "2026-10-31",
+  "database": "LKVITAIDBV1SQL",
+  "server": "TERMINAL",
+  "version": "12.0.6024.0",
+  "definitionHashEncoding": "UTF-8 of sys.sql_modules.definition, unchanged line endings",
+  "definitions": [
+    {
+      "schema": "dbo",
+      "name": "sp_frmOrder",
+      "sha256": "08f84a1e60e30593f69a05da08f5780bdeef262488210ac10749baa8fb02b091"
+    },
+    {
+      "schema": "dbo",
+      "name": "sproc_AccuireSalaryForOrder",
+      "sha256": "c595034344da19fc76ec9b5b80527cd7c3e27d283be73211d4ef70bcac64777c"
+    },
+    {
+      "schema": "dbo",
+      "name": "weblb_Orders_Paged",
+      "sha256": "f52bb8a35e11cc92e674f50f7f9c4a1c1d38fe6e8344387308252e03393ad6db"
+    },
+    {
+      "schema": "dbo",
+      "name": "sp_EmailAboutTooCheapOrder",
+      "sha256": "d46abf907a42cfd2eff622473b08c75fbc6b32ec65db92a374e3a2dbed4b8758"
+    },
+    {
+      "schema": "dbo",
+      "name": "sp_DeleteBlind",
+      "sha256": "b415ff2326b00bddf96ae7726f1e7eb0cfc5bcff25bcd25d4e4bd08fb31ab22c"
+    },
+    {
+      "schema": "dbo",
+      "name": "Loc_leidimas",
+      "sha256": "ba0a76f88fb7fc5b12f7bb6ab72c51433b687959f846e325498aab03455ee315"
+    },
+    {
+      "schema": "dbo",
+      "name": "sp_CancellOrder",
+      "sha256": "698afc72de875b1c113ed7d6ce7c501e5720bf95e072d4d4e6e75fd7d308beaf"
+    },
+    {
+      "schema": "dbo",
+      "name": "weblb_Order",
+      "sha256": "62b5620e4b1b48b3e130ee5ecd25d15d12fc0c1330fa03869cf196a30c7e3b6b"
+    },
+    {
+      "schema": "dbo",
+      "name": "trg_ChangeOrder",
+      "sha256": "e33c8767a528ccd185bd558e5e211e7e4394024076a1cd78b6cf82171aa69086"
+    },
+    {
+      "schema": "dbo",
+      "name": "trg_NewOrder",
+      "sha256": "d9c69311f8a81b2997cbdc3154e67b5d68940d306ee90731889dba11eed4cdc9"
+    },
+    {
+      "schema": "dbo",
+      "name": "trg_NewPayments",
+      "sha256": "3ffdc595cd9de8f311a9e6ef55d17f77e94a091718b5e9c32552d9ddd4678272"
+    },
+    {
+      "schema": "dbo",
+      "name": "trg_DeleteBlind",
+      "sha256": "3aef69af7f2c663bbe7d8c9551fdb5b40f5287b63693091d16369f546da8b1db"
+    },
+    {
+      "schema": "dbo",
+      "name": "trg_NewBlind",
+      "sha256": "8f0999e60399957e59f1f8e6610a5cb2406dd50d91b9af2b4a417ebd69a6ba2e"
+    },
+    {
+      "schema": "dbo",
+      "name": "trg_ChangeBlind",
+      "sha256": "6ec14ac49168d4e7a361ef1290db30f26d4bc6f1a415344f07652ab1a22b6d3f"
+    },
+    {
+      "schema": "dbo",
+      "name": "sp_CreateNewItem",
+      "sha256": "d6c09a87db5236227b6fc0158e9b22f2ff67329a13a3a683d6452454ac7616b8"
+    }
+  ]
+}

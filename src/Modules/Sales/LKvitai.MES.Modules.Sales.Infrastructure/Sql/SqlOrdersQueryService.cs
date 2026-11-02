@@ -1,3 +1,4 @@
+using LKvitai.MES.Modules.Sales.Infrastructure.Sql.Security;
 using System.Data;
 using System.Diagnostics;
 using System.Globalization;
@@ -11,8 +12,8 @@ namespace LKvitai.MES.Modules.Sales.Infrastructure.Sql;
 
 /// <summary>
 /// SQL Server adapter for <see cref="IOrdersQueryService"/> over the legacy
-/// <c>LKvitaiDb</c> database. Calls dedicated server-side stored procedures
-/// for every read; nothing is cached or reshaped in C#.
+/// <c>LKvitaiDb</c> database. Reuses legacy result shapes
+/// for child reads and actor-scoped Sales-owned header/list projections. No query cache.
 /// </summary>
 /// <remarks>
 /// <list type="bullet">
@@ -34,9 +35,7 @@ namespace LKvitai.MES.Modules.Sales.Infrastructure.Sql;
 /// </remarks>
 public sealed class SqlOrdersQueryService : IOrdersQueryService
 {
-    private const string OrdersPagedProcName    = "dbo.weblb_Orders_Paged";
     private const string OrdersFiltersProcName  = "dbo.weblb_Orders_Filters";
-    private const string OrdersLookupProcName   = "dbo.weblb_Orders_LookupByNumber";
     private const string OrderProcName          = "dbo.weblb_Order";
     private const string AccessoriesProcName    = "dbo.weblb_Accessories";
     private const string ItemsProcName          = "dbo.weblb_Items";
@@ -44,9 +43,10 @@ public sealed class SqlOrdersQueryService : IOrdersQueryService
     private const string OrderIdParameter       = "@OrderId";
 
     private readonly SalesSqlOptions _options;
+    private readonly ILegacySqlConnectionFactory _connections;
     private readonly ILogger<SqlOrdersQueryService> _logger;
 
-    public SqlOrdersQueryService(SalesSqlOptions options, ILogger<SqlOrdersQueryService> logger)
+    public SqlOrdersQueryService(SalesSqlOptions options, ILogger<SqlOrdersQueryService> logger, ILegacySqlConnectionFactory connections)
     {
         ArgumentNullException.ThrowIfNull(options);
         if (string.IsNullOrWhiteSpace(options.ConnectionString))
@@ -57,6 +57,7 @@ public sealed class SqlOrdersQueryService : IOrdersQueryService
         }
 
         _options = options;
+        _connections = connections ?? throw new ArgumentNullException(nameof(connections));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -72,8 +73,8 @@ public sealed class SqlOrdersQueryService : IOrdersQueryService
         var totalSw = Stopwatch.StartNew();
 
         var openSw = Stopwatch.StartNew();
-        await using var conn = new SqlConnection(_options.ConnectionString);
-        await conn.OpenAsync(cancellationToken).ConfigureAwait(false);
+        await using var lease = await _connections.OpenAsync(cancellationToken).ConfigureAwait(false);
+        var conn = lease.Connection;
         openSw.Stop();
 
         await using var cmd = BuildPagedSpCommand(
@@ -124,12 +125,19 @@ public sealed class SqlOrdersQueryService : IOrdersQueryService
         // Both already trimmed and ordered server-side — no projection here.
         var totalSw = Stopwatch.StartNew();
 
-        await using var conn = new SqlConnection(_options.ConnectionString);
-        await conn.OpenAsync(cancellationToken).ConfigureAwait(false);
+        await using var lease = await _connections.OpenAsync(cancellationToken).ConfigureAwait(false);
+        var conn = lease.Connection;
 
-        await using var cmd = new SqlCommand(OrdersFiltersProcName, conn)
+        await using var cmd = new SqlCommand("""
+            SELECT LTRIM(RTRIM(Busena)) AS [Status] FROM dbo.Zinynas_busenos
+            WHERE Busena IS NOT NULL AND LTRIM(RTRIM(Busena))<>N''
+            UNION SELECT N'Anuliuotas' ORDER BY 1;
+            SELECT LTRIM(RTRIM(v.VietaPavadinimas)) AS [Store] FROM dbo.Zinynas_vieta v
+            WHERE v.VietaPavadinimas IS NOT NULL AND LTRIM(RTRIM(v.VietaPavadinimas))<>N''
+              AND EXISTS(SELECT 1 FROM dbo.Loc_leidimas() access WHERE access.UKS=v.Filialas) ORDER BY 1;
+            """, conn)
         {
-            CommandType    = CommandType.StoredProcedure,
+            CommandType    = CommandType.Text,
             CommandTimeout = _options.CommandTimeoutSeconds,
         };
 
@@ -170,34 +178,16 @@ public sealed class SqlOrdersQueryService : IOrdersQueryService
         var totalSw = Stopwatch.StartNew();
 
         var openSw = Stopwatch.StartNew();
-        await using var conn = new SqlConnection(_options.ConnectionString);
-        await conn.OpenAsync(cancellationToken).ConfigureAwait(false);
+        await using var lease = await _connections.OpenAsync(cancellationToken).ConfigureAwait(false);
+        var conn = lease.Connection;
         openSw.Stop();
 
-        // Phase 1: resolve Number → UzsakymasID via the dedicated lookup SP.
-        // The legacy details procs (weblb_Order/Items/Accessories/Employees)
-        // all key on @OrderId, so we pay one cheap index seek up-front rather
-        // than scanning the orders list.
+        // Exact composite lookup also supports hyphenated series (RY-TEST).
+        // Both number resolution and the header projection enforce the acting login scope.
         var lookupSw = Stopwatch.StartNew();
-        long orderId;
-        await using (var cmd = new SqlCommand(OrdersLookupProcName, conn)
-        {
-            CommandType    = CommandType.StoredProcedure,
-            CommandTimeout = _options.CommandTimeoutSeconds,
-        })
-        {
-            cmd.Parameters.Add(new SqlParameter("@Number", SqlDbType.NVarChar, 100) { Value = number });
-            var result = await cmd.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false);
-            if (result is null || result is DBNull)
-            {
-                lookupSw.Stop();
-                _logger.LogInformation(
-                    "[SalesPerf] sql.GetOrderDetails number={Number} found=False lookupMs={LookupMs} totalMs={TotalMs}",
-                    number, lookupSw.ElapsedMilliseconds, totalSw.ElapsedMilliseconds);
-                return null;
-            }
-            orderId = Convert.ToInt64(result, CultureInfo.InvariantCulture);
-        }
+        var resolved = await LookupOrderIdAsync(conn, number, cancellationToken).ConfigureAwait(false);
+        if (resolved is null) return null;
+        var orderId = resolved.Value;
         lookupSw.Stop();
 
         // Phase 2: the legacy weblb_Order proc returns the authoritative
@@ -206,7 +196,7 @@ public sealed class SqlOrdersQueryService : IOrdersQueryService
         // re-projected from a single-row dbo.weblb_Orders_Paged search call
         // so this method does not need its own copy of the projection logic.
         var summarySw = Stopwatch.StartNew();
-        OrderSummaryDto? summary = await ReadSummaryByNumberAsync(conn, number, cancellationToken).ConfigureAwait(false);
+        OrderSummaryDto? summary = await ReadSummaryByIdAsync(conn, orderId, cancellationToken).ConfigureAwait(false);
         summarySw.Stop();
 
         if (summary is null)
@@ -224,6 +214,8 @@ public sealed class SqlOrdersQueryService : IOrdersQueryService
         var headerCustomer = summary.Customer;
         var headerStatus   = summary.Status;
         var headerAddress  = summary.Address;
+        var privacyRestricted = false;
+        string? currentNote = null;
 
         var headerSw = Stopwatch.StartNew();
         await using (var cmd = CreateProc(conn, OrderProcName, orderId))
@@ -234,9 +226,11 @@ public sealed class SqlOrdersQueryService : IOrdersQueryService
                 headerCustomer = ReadString(reader, "Customer", summary.Customer);
                 headerStatus   = ReadString(reader, "Status",   summary.Status);
                 headerAddress  = ReadString(reader, "Address",  summary.Address);
+                currentNote = ReadString(reader, "OrderNote", string.Empty);
+                privacyRestricted = LegacyOrderPrivacy.IsRestricted(currentNote);
 
                 var operatorName = ReadString(reader, "sUserNameInsert", string.Empty);
-                var operatorAt   = ReadDateTime(reader, "Date");
+                var operatorAt   = ReadDateTime(reader, "dtDateInsert");
                 if (!string.IsNullOrWhiteSpace(operatorName) && operatorAt is not null)
                 {
                     @operator = new OrderOperatorDto(operatorName, operatorAt.Value);
@@ -251,6 +245,7 @@ public sealed class SqlOrdersQueryService : IOrdersQueryService
             }
         }
         headerSw.Stop();
+        var noteHistory = await LegacyOrderNoteHistory.ReadAsync(conn, null, orderId, _options.CommandTimeoutSeconds, cancellationToken);
 
         // Phase 3: accessories (collected first so we can attach them to their parent items).
         var accSw = Stopwatch.StartNew();
@@ -391,7 +386,10 @@ public sealed class SqlOrdersQueryService : IOrdersQueryService
             Operator:   @operator,
             ItemGroups: itemGroups,
             Amounts:    amounts,
-            Employees:  employees);
+            Employees:  employees,
+            IsPrivacyRestricted: privacyRestricted,
+            CurrentNote: currentNote,
+            NoteHistory: noteHistory);
     }
 
     /// <summary>
@@ -402,26 +400,50 @@ public sealed class SqlOrdersQueryService : IOrdersQueryService
     /// substring collision (e.g. another order whose Customer text contains
     /// our number) cannot win.
     /// </summary>
-    private async Task<OrderSummaryDto?> ReadSummaryByNumberAsync(
-        SqlConnection conn,
-        string number,
-        CancellationToken cancellationToken)
+    private async Task<OrderSummaryDto?> ReadSummaryByIdAsync(
+        SqlConnection conn, long orderId, CancellationToken cancellationToken)
     {
-        await using var cmd = BuildPagedSpCommand(
-            conn, page: 1, pageSize: 5,
-            search: number, status: null, store: null, hasDebt: false);
-
+        await using var cmd = BuildPagedSpCommand(conn, 1, 1, null, null, null, false, orderId);
         await using var reader = await cmd.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
-        while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
-        {
-            var summary = ReadOrderSummary(reader);
-            if (string.Equals(summary.Number, number, StringComparison.OrdinalIgnoreCase))
-            {
-                return summary;
-            }
-        }
-        return null;
+        return await reader.ReadAsync(cancellationToken).ConfigureAwait(false) ? ReadOrderSummary(reader) : null;
     }
+
+    private async Task<long?> LookupOrderIdAsync(SqlConnection conn, string number, CancellationToken ct)
+    {
+        const string seriesSql = "SELECT TOP(1) UzsakymoSerijaID, UzsakymoSerijaPav FROM dbo.Zinynas_UzsakymoSerijos s WHERE EXISTS(SELECT 1 FROM dbo.Loc_leidimas() access WHERE access.UKS=s.FilialoID) AND LEFT(@Number,LEN(UzsakymoSerijaPav)+1)=UzsakymoSerijaPav+N'-' ORDER BY LEN(UzsakymoSerijaPav) DESC";
+        await using var series = new SqlCommand(seriesSql, conn) { CommandTimeout = _options.CommandTimeoutSeconds };
+        series.Parameters.Add("@Number", SqlDbType.NVarChar, 100).Value = number.Trim();
+        int seriesId; string code;
+        await using (var reader = await series.ExecuteReaderAsync(ct).ConfigureAwait(false))
+        {
+            if (!await reader.ReadAsync(ct).ConfigureAwait(false)) return null;
+            seriesId = reader.GetInt32(0); code = reader.GetString(1);
+        }
+        var rest = number.Trim()[(code.Length+1)..];
+        var separator = rest.LastIndexOf('-');
+        if (separator < 1 || !int.TryParse(rest[..separator], NumberStyles.Integer,
+                CultureInfo.InvariantCulture, out var sequence)) return null;
+        var group = rest[(separator+1)..];
+        if (group.Length is < 1 or > 4) return null;
+        await using var lookup = new SqlCommand("SELECT u.UzsakymasID FROM dbo.Uzsakymai u JOIN dbo.Zinynas_UzsakymoSerijos s ON s.UzsakymoSerijaID=u.UzsakymoSerija WHERE u.UzsakymoSerija=@Series AND u.UzsakymoNumeris=@Sequence AND u.UzsakymoGrupe=@Group AND EXISTS(SELECT 1 FROM dbo.Loc_leidimas() access WHERE access.UKS=s.FilialoID)", conn)
+        { CommandTimeout = _options.CommandTimeoutSeconds };
+        lookup.Parameters.Add("@Series", SqlDbType.Int).Value = seriesId;
+        lookup.Parameters.Add("@Sequence", SqlDbType.Int).Value = sequence;
+        lookup.Parameters.Add("@Group", SqlDbType.NVarChar, 4).Value = group;
+        var id = await lookup.ExecuteScalarAsync(ct).ConfigureAwait(false);
+        return id is null or DBNull ? null : Convert.ToInt64(id, CultureInfo.InvariantCulture);
+    }
+
+    private static string ReadQuery(string file)
+    {
+        using var stream = typeof(SqlOrdersQueryService).Assembly.GetManifestResourceStream(
+            $"LKvitai.MES.Modules.Sales.Infrastructure.Sql.Queries.{file}")
+            ?? throw new InvalidOperationException("Missing Sales read projection.");
+        using var reader = new StreamReader(stream);
+        return reader.ReadToEnd();
+    }
+    private static readonly string ScopedPagedSql = ReadQuery("SalesOrdersPaged.sql");
+    private static readonly string ScopedHeaderSql = ReadQuery("SalesOrderHeader.sql");
 
     /// <summary>
     /// Projects a row of <c>dbo.weblb_Orders_Paged</c> output into the
@@ -431,7 +453,9 @@ public sealed class SqlOrdersQueryService : IOrdersQueryService
     private static OrderSummaryDto ReadOrderSummary(SqlDataReader reader)
     {
         var debt = ReadDecimalByOrdinal(reader, ordinal: 4);
-        var status = ReadStringByOrdinal(reader, ordinal: 6, fallback: string.Empty);
+        var status = !reader.IsDBNull(8) && Convert.ToBoolean(reader.GetValue(8), CultureInfo.InvariantCulture)
+            ? "Anuliuotas"
+            : ReadStringByOrdinal(reader, ordinal: 6, fallback: string.Empty);
 
         return new OrderSummaryDto(
             Id:             ReadInt64ByOrdinal(reader, ordinal: 0),
@@ -447,9 +471,8 @@ public sealed class SqlOrdersQueryService : IOrdersQueryService
             Status:         status,
             StatusCode:     SalesOrderStatusMap.ToStatusCode(status),
             Store:          ReadStringByOrdinal(reader, ordinal: 7, fallback: string.Empty),
-            // ordinals 8 (IsCancelled) and 9 (sImageKey) are returned by the
-            // SP but currently unused by the C# DTO — left in the result set
-            // for parity with the legacy weblb_Orders shape.
+            // IsCancelled overrides the old workflow status. sImageKey is
+            // retained only for legacy result-shape compatibility.
             Address:        ReadStringByOrdinal(reader, ordinal: 10, fallback: string.Empty),
             ProductsSearch: ReadStringOrNullByOrdinal(reader, ordinal: 11));
     }
@@ -470,13 +493,14 @@ public sealed class SqlOrdersQueryService : IOrdersQueryService
         string? search,
         string? status,
         string? store,
-        bool hasDebt)
+        bool hasDebt, long? exactOrderId = null)
     {
-        var cmd = new SqlCommand(OrdersPagedProcName, conn)
+        var cmd = new SqlCommand(ScopedPagedSql, conn)
         {
-            CommandType    = CommandType.StoredProcedure,
+            CommandType    = CommandType.Text,
             CommandTimeout = _options.CommandTimeoutSeconds,
         };
+        cmd.Parameters.Add("@ExactOrderId", SqlDbType.BigInt).Value = (object?)exactOrderId ?? DBNull.Value;
         cmd.Parameters.Add(new SqlParameter("@Page",     SqlDbType.Int)            { Value = page });
         cmd.Parameters.Add(new SqlParameter("@PageSize", SqlDbType.Int)            { Value = pageSize });
         cmd.Parameters.Add(new SqlParameter("@Search",   SqlDbType.NVarChar, 200)  { Value = NullableNVarChar(search) });
@@ -498,9 +522,9 @@ public sealed class SqlOrdersQueryService : IOrdersQueryService
 
     private SqlCommand CreateProc(SqlConnection conn, string procName, long orderId)
     {
-        var cmd = new SqlCommand(procName, conn)
+        var cmd = new SqlCommand(procName == OrderProcName ? ScopedHeaderSql : procName, conn)
         {
-            CommandType    = CommandType.StoredProcedure,
+            CommandType    = procName == OrderProcName ? CommandType.Text : CommandType.StoredProcedure,
             CommandTimeout = _options.CommandTimeoutSeconds,
         };
         cmd.Parameters.Add(new SqlParameter(OrderIdParameter, SqlDbType.BigInt) { Value = orderId });

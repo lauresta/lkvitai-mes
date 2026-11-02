@@ -3,9 +3,9 @@ using LKvitai.MES.BuildingBlocks.PortalAuth;
 using LKvitai.MES.Modules.Sales.Api.Composition;
 using LKvitai.MES.Modules.Sales.Api.Endpoints;
 using LKvitai.MES.Modules.Sales.Api.Security;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authorization;
+using LKvitai.MES.Modules.Sales.Application.Ports;
+using LKvitai.MES.Modules.Sales.Infrastructure.Sql;
+using LKvitai.MES.Modules.Sales.Infrastructure.Sql.Security;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,51 +18,60 @@ builder.Services.AddScaffoldApiCore();
 // start without it. The in-memory StubOrdersQueryService is only used when
 // Sales:OrdersDataSource is explicitly set to "Stub" (test / dev opt-in).
 builder.Services.AddSalesOrdersDataSource(builder.Configuration, builder.Environment);
-
-// Sales replicates Warehouse's "internal user mechanism" by leaning on the shared
-// Portal cookie (PortalAuth). Same DataProtection keys, same cookie name, so a user
-// signed in via Portal is authenticated here too. Once real role-based authorization
-// is added to Sales, this will be tightened to match Warehouse's WarehouseHeader
-// scheme (see src/Modules/Warehouse/.../Api/Security/WarehouseAuthenticationHandler.cs).
-builder.Services.AddPortalCookieAuthentication(builder.Environment, builder.Configuration);
-builder.Services
-    .AddAuthentication()
-    .AddScheme<AuthenticationSchemeOptions, PortalStructuredBearerAuthenticationHandler>(
-        PortalStructuredBearerAuthenticationDefaults.Scheme,
-        _ => { })
-    // Dev-only synthetic identity. Returns NoResult unless the host is in
-    // Development/Test AND Sales:DevAuthEnabled=true, so it cannot weaken
-    // production auth. See SalesDevAuthenticationHandler for the rationale
-    // for using a scheme instead of plain middleware.
-    .AddScheme<AuthenticationSchemeOptions, SalesDevAuthenticationHandler>(
-        SalesDevAuthDefaults.Scheme,
-        _ => { });
-
-var defaultAuthSchemes = new List<string>
+// Explicit Stub hosts have no live SQL options. Keep their sample-order path
+// usable without registering/misrepresenting a live reference service.
+var liveReferencesConfigured = builder.Services.Any(x => x.ServiceType == typeof(SalesSqlOptions));
+if (liveReferencesConfigured)
 {
-    CookieAuthenticationDefaults.AuthenticationScheme,
-    PortalStructuredBearerAuthenticationDefaults.Scheme,
-};
-if (builder.Environment.IsDevelopment()
-    || string.Equals(builder.Environment.EnvironmentName, "Test", StringComparison.OrdinalIgnoreCase))
-{
-    defaultAuthSchemes.Add(SalesDevAuthDefaults.Scheme);
+    builder.Services.AddHttpContextAccessor();
+    builder.Services.AddSingleton<CikadaUserBridgeProof>();
+    builder.Services.AddScoped<ILegacySqlIdentityResolver,CikadaLegacySqlIdentityResolver>();
+    builder.Services.AddScoped<ILegacySqlConnectionFactory,LegacySqlConnectionFactory>();
+    builder.Services.AddHttpClient("CikadaUsers", client=>
+    {
+        client.BaseAddress=new Uri(builder.Configuration["CikadaUsers:BaseUrl"] ?? "http://localhost:5001");
+        client.Timeout=TimeSpan.FromSeconds(10);
+    }).ConfigurePrimaryHttpMessageHandler(()=>new HttpClientHandler{AllowAutoRedirect=false});
+    builder.Services.AddScoped<ISalesOrderEntryReferences, SqlSalesOrderEntryReferences>();
+    builder.Services.AddScoped<ISalesUnitPriceLookup, SqlSalesUnitPriceLookup>();
+    builder.Services.AddScoped<ILiveOrderEntryCatalog, SqlLiveOrderEntryCatalog>();
+    builder.Services.AddScoped<IOrderEntryAddressLookup, SqlOrderEntryAddressLookup>();
+    builder.Services.AddScoped<ILegacyProductPreview, SqlLegacyProductPreview>();
+    builder.Services.AddSingleton(builder.Configuration.GetSection("Sales:OrderEntry").Get<SalesOrderEntryOptions>() ?? new SalesOrderEntryOptions());
+    builder.Services.AddScoped<ISalesOrderEntryService, SqlSalesOrderEntryService>();
+    builder.Services.AddScoped<ISalesOrderFinancialCommands>(sp => (ISalesOrderFinancialCommands)sp.GetRequiredService<ISalesOrderEntryService>());
 }
 
-builder.Services.AddAuthorization(options =>
-{
-    options.DefaultPolicy = new AuthorizationPolicyBuilder(defaultAuthSchemes.ToArray())
-        .RequireAuthenticatedUser()
-        .Build();
-});
+// Portal key-ring configuration is reused; real Sales endpoints accept only
+// the purpose-bound Sales credential, not Portal cookies or raw structured tokens.
+builder.Services.AddPortalCookieAuthentication(builder.Environment, builder.Configuration);
+builder.Services.AddSalesProtectedAuthentication();
 
 var app = builder.Build();
 
 app.UseScaffoldApiPipeline();
 app.UseAuthentication();
 app.UseAuthorization();
+// Mapping and horizontal-access failures apply to every Sales route, including
+// list/catalog/preview endpoints outside the command group.
+app.Use(async(context,next)=>
+{
+    try { await next(context); }
+    catch(Microsoft.Data.SqlClient.SqlException ex)when(ex.Number is 229 or 230 && !context.Response.HasStarted)
+    {
+        context.Response.StatusCode=403;
+        await context.Response.WriteAsJsonAsync(new Microsoft.AspNetCore.Mvc.ProblemDetails
+        { Status=403,Title="Your legacy SQL account does not permit this operation.",Extensions={ ["code"]="LEGACY_SQL_PERMISSION_DENIED" } });
+    }
+    catch(LKvitai.MES.Modules.Sales.Contracts.OrderEntry.OrderEntryException ex) when(!context.Response.HasStarted)
+    {
+        context.Response.StatusCode=ex.Status;
+        await context.Response.WriteAsJsonAsync(new Microsoft.AspNetCore.Mvc.ProblemDetails
+        { Status=ex.Status,Title=ex.Message,Extensions={ ["code"]=ex.Code } });
+    }
+});
 
-var sales = app.MapGroup("/api/sales").RequireAuthorization();
+var sales = app.MapGroup("/api/sales").RequireAuthorization(LKvitai.MES.Modules.Sales.Infrastructure.Security.SalesCredentialProtector.Policy);
 
 sales.MapGet("/ping", () => Results.Ok(new
 {
@@ -71,5 +80,13 @@ sales.MapGet("/ping", () => Results.Ok(new
 }));
 
 sales.MapOrdersEndpoints();
+if (liveReferencesConfigured)
+{
+    sales.MapOrderEntryReferenceEndpoints();
+    sales.MapOrderEntryPricingEndpoints();
+    sales.MapOrderEntryCatalogEndpoints();
+    sales.MapOrderEntryPreviewEndpoints();
+    sales.MapOrderEntryEndpoints();
+}
 
 await app.RunAsync();

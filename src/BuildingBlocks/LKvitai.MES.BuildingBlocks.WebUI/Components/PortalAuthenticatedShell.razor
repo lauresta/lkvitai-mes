@@ -112,6 +112,9 @@
     /// <summary>ID of the module drawer controlled by the mobile toggle.</summary>
     [Parameter] public string? MobileNavigationTargetId { get; set; }
 
+    /// <summary>Optional module-specific description of the environment's actual data boundary.</summary>
+    [Parameter] public string? BannerNote { get; set; }
+
     private string _environmentName = "Development";
     private string? _hostLabel;
     private string _bannerNote =
@@ -136,6 +139,7 @@
             _bannerNote = "Local or private-network environment. Data may be reset without notice.";
         }
 
+        if (!string.IsNullOrWhiteSpace(BannerNote)) _bannerNote = BannerNote;
         _displayVersion = BuildVersionAccessor.Get().DisplayVersion;
     }
 }

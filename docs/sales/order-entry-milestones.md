@@ -55,6 +55,16 @@ existing API and SQL procedures.
 
 ## Milestone 2 — legacy database integration
 
+The product owner requested a reviewed milestone 2 plan on 2026-10-31.
+[milestone-2-plan.md](milestone-2-plan.md) now defines the reviewed implementation
+sequence, command protocol and acceptance gates. The owner subsequently
+authorized implementation; live core entry is now deployed on the remote test
+stand with branch7-only writes and verified new Testavimas orders. Current
+execution evidence and remaining M2 gaps are in
+[milestone-2-verification.md](milestone-2-verification.md).
+The actual database is production; initial write verification is restricted to
+its verified Testavimas branch/series. Start with read-only contract discovery.
+
 Start only after the product owner reviews milestone 1 and requests it. Replace
 the static snapshot and local draft with API-backed reference lookups and
 transactional writes to the same legacy SQL Server tables/procedures used by
@@ -62,11 +72,12 @@ Access. Preserve the separate `Priedai` category and `ParduotiPriedai` child
 lines, including legacy unit-based quantity calculation. Verify each write
 path against a test-branch order and confirm visibility in both clients.
 
-Before enabling writes, address the existing Sales read procedures' branch
-filters (`Loc_leidimas()` and the explicit branch-7 exclusion), so the agreed
-all-branch scope and two-way visibility hold. Price formulas, credit checks,
-stock rules, triggers, audit identity, and concurrency behavior also need
-parity tests. Production database writes were not used for milestone 1.
+Before enabling writes, establish trusted Sales authentication, exact ID-based
+editor reads, branch scope, audit identity, concurrency and durable retry
+handling. The first product slice already requires all applicable PPP, pricing,
+credit and stock rules; later gates expand coverage rather than waive these
+checks. Verify actual Access behavior as well as stored SQL values. Production
+database writes were not used for milestone 1.
 
 ## Design precedence
 

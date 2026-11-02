@@ -1,0 +1,24 @@
+--- Form_frmNewBlind.vba (owner-confirmed Desktop export)
++++ Form_frmNewBlind.vba (proposed compatibility edit; NOT applied to ADP)
+@@
+-    Dim iNewItemID As Long
++    Dim iNewItemID As Variant
+@@
+ Private Sub cmd_Refresh_Click()
+ 
+     Dim rs As Object
+-    Dim iBlindID As Long
++    Dim iBlindID As Variant
+@@
+-    rs.Find "[ParduotoGaminioID] = " & str(Nz(iBlindID, 0))
++    rs.Find "[ParduotoGaminioID] = " & CStr(Nz(iBlindID, 0))
+--- Form_frmNewOrder.vba (owner-confirmed Desktop export)
++++ Form_frmNewOrder.vba (optional helper compatibility edit; NOT applied to ADP)
+@@
+-Public Function sOrderAddress(iOrderID As Long) As String
++Public Function sOrderAddress(ByVal iOrderID As Variant) As String
+--- Form_frmViewOrder.vba (owner-confirmed Desktop export)
++++ Form_frmViewOrder.vba (optional helper compatibility edit; NOT applied to ADP)
+@@
+-Public Function sOrderAddress(iOrderID As Long) As String
++Public Function sOrderAddress(ByVal iOrderID As Variant) As String

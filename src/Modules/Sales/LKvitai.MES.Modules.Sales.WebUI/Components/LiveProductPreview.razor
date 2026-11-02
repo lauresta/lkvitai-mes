@@ -9,7 +9,8 @@
     string F(double v) => v.ToString("0.##", CultureInfo.InvariantCulture);
     var box = $"translate({F(x)}px,{F(y)}px) scale({F(bw / 100)},{F(bh / 100)})";
     var fill = string.IsNullOrWhiteSpace(FabricHex) ? "var(--sand-100)" : FabricHex;
-    var left = ControlType.Contains("left", StringComparison.OrdinalIgnoreCase);
+    var left = ControlType.Trim().Equals("K", StringComparison.OrdinalIgnoreCase)
+        || ControlType.Contains("left", StringComparison.OrdinalIgnoreCase);
     var motor = ControlType.Contains("motor", StringComparison.OrdinalIgnoreCase);
     var kind = Kind;
 }
