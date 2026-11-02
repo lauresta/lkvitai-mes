@@ -64,7 +64,11 @@ export interface Dependencies {
 export function startRemote(config: Config, log: Log = stderrLog, deps: Dependencies = {}): Promise<HttpServer> {
   const http = createHttpServer(async (req, res) => {
     const started = Date.now();
-    const path = new URL(req.url ?? '/', 'http://localhost').pathname;
+    const requestPath = new URL(req.url ?? '/', 'http://localhost').pathname;
+    // Some MCP clients normalize the endpoint to /mcp/ and append / to its
+    // protected-resource discovery URL. Both spellings identify the same MCP
+    // resource; keep the advertised canonical resource URL unchanged.
+    const path = requestPath === '/' ? '/' : requestPath.replace(/\/+$/, '');
     const detail: Record<string, unknown> = {};
     if (path !== '/healthz') res.on('finish', () => log({ msg: 'request', method: req.method, path, status: res.statusCode, ms: Date.now() - started, ...detail }));
 
