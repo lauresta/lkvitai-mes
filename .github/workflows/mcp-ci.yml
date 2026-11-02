@@ -1,0 +1,39 @@
+name: MCP CI
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - src/Mcp/**
+      - .github/workflows/mcp-ci.yml
+
+permissions:
+  contents: read
+
+jobs:
+  mcp-build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/Mcp/Cikada.Mcp
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: src/Mcp/Cikada.Mcp/package-lock.json
+
+      - name: Install
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Build and test
+        run: npm test
+
+      - name: Docker build
+        run: docker build -t lkvitai-mes-mcp:ci .
