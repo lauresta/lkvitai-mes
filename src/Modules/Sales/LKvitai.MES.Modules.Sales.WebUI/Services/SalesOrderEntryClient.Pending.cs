@@ -38,7 +38,7 @@ public sealed partial class SalesOrderEntryClient
     private async Task<Guid> BindActorAsync()
     {
         _currentActor=await credentials.SubjectAsync();
-        return _currentActor ?? throw new SalesOrderEntryFailure("Your session needs to be renewed. Sign in in another tab, then retry.",false,401);
+        return _currentActor ?? throw new SalesOrderEntryFailure(L["Errors.Client.SessionRenew"].Value,false,401);
     }
     public async Task RestorePendingAsync()
     {
@@ -59,7 +59,7 @@ public sealed partial class SalesOrderEntryClient
                 {
                     // Preserve oversized or malformed originals separately before a future save.
                     await js.InvokeVoidAsync("sessionStorage.setItem",OutboxStorageKey(actor)+":quarantine:"+DateTimeOffset.UtcNow.Ticks,raw);
-                    PendingRestoreWarning="A saved input record is too large to restore. It has been preserved and was not resent.";
+                    PendingRestoreWarning=L["Errors.Client.InputTooLarge"].Value;
                 }
                 else
                 {
@@ -80,14 +80,14 @@ public sealed partial class SalesOrderEntryClient
                             {
                                 if(!_unrecognized.TryGetValue(actor,out var preserved))_unrecognized[actor]=preserved=[];
                                 preserved.Add(item.Clone());
-                                PendingRestoreWarning="An older saved input record could not be restored automatically. It is preserved and was not resent.";
+                                PendingRestoreWarning=L["Errors.Client.OlderInputNotRestored"].Value;
                             }
                         }
                     }
                     catch(JsonException)
                     {
                         await js.InvokeVoidAsync("sessionStorage.setItem",OutboxStorageKey(actor)+":quarantine:"+DateTimeOffset.UtcNow.Ticks,raw);
-                        PendingRestoreWarning="An older saved input record could not be read. It is preserved and was not resent.";
+                        PendingRestoreWarning=L["Errors.Client.OlderInputUnreadable"].Value;
                     }
                 }
             }
@@ -96,7 +96,7 @@ public sealed partial class SalesOrderEntryClient
             _restoredActors.Add(actor);
         }
         catch(Exception ex) when(ex is JSException or InvalidOperationException)
-        { PendingRestoreWarning="Browser recovery storage is unavailable. Keep this tab open while a save is unresolved."; }
+        { PendingRestoreWarning=L["Errors.Client.StorageUnavailable"].Value; }
     }
     private static bool IsRestorable(PendingCommand command,Guid actor)=>command.Version==2 && command.ActorId==actor && command.Id!=Guid.Empty
         && command.Body.ValueKind==JsonValueKind.Object && command.Body.GetRawText().Length<=MaximumBodyBytes
@@ -129,14 +129,14 @@ public sealed partial class SalesOrderEntryClient
             else
             {
                 var json=JsonSerializer.Serialize(items,OutboxJson);
-                if(json.Length>MaximumOutboxBytes)throw new SalesOrderEntryFailure("Too much saved input needs recovery. Resolve an earlier save before starting another.");
+                if(json.Length>MaximumOutboxBytes)throw new SalesOrderEntryFailure(L["Errors.Client.TooMuchRecoveryInput"].Value);
                 await js.InvokeVoidAsync("sessionStorage.setItem",OutboxStorageKey(actor),json);
             }
         }
         catch(Exception ex) when(ex is JSException or InvalidOperationException)
         {
-            PendingRestoreWarning="Browser recovery storage is unavailable. Keep this tab open while a save is unresolved.";
-            if(required)throw new SalesOrderEntryFailure("The browser could not retain recovery input. Nothing was sent. Keep this form open and allow session storage before saving.");
+            PendingRestoreWarning=L["Errors.Client.StorageUnavailable"].Value;
+            if(required)throw new SalesOrderEntryFailure(L["Errors.Client.InputNotRetained"].Value);
         }
     }
     public async Task ClearRecoveredAsync(Guid commandId)
@@ -149,42 +149,42 @@ public sealed partial class SalesOrderEntryClient
     {
         if(LegacyPendingId!=commandId)return;
         try{await js.InvokeVoidAsync("sessionStorage.removeItem","sales-entry-pending");LegacyPendingId=null;}
-        catch(Exception ex) when(ex is JSException or InvalidOperationException){PendingRestoreWarning="The earlier saved result was found, but this browser could not clear its old recovery marker.";}
+        catch(Exception ex) when(ex is JSException or InvalidOperationException){PendingRestoreWarning=L["Errors.Client.OldMarkerNotCleared"].Value;}
     }
     public async Task<OrderEntryCommandResult> RetryPendingAsync()
     {
         await BindActorAsync();
-        var command=ActivePending ?? throw new SalesOrderEntryFailure("There is no unresolved save for this order.");
+        var command=ActivePending ?? throw new SalesOrderEntryFailure(L["Errors.Client.NoUnresolvedSave"].Value);
         return await SendPendingAsync(command);
     }
     private async Task<OrderEntryCommandResult> CommandAsync(Guid id,HttpMethod method,string path,object body)
     {
         var actor=await BindActorAsync();
         await RestorePendingAsync();
-        if(!_restoredActors.Contains(actor))throw new SalesOrderEntryFailure("The browser could not read saved recovery input. Nothing was sent. Keep this form open and allow session storage before saving.");
-        if(!TryRoute(method.Method,path,out var orderId))throw new SalesOrderEntryFailure("This save route is not supported.");
+        if(!_restoredActors.Contains(actor))throw new SalesOrderEntryFailure(L["Errors.Client.RecoveryInputUnreadable"].Value);
+        if(!TryRoute(method.Method,path,out var orderId))throw new SalesOrderEntryFailure(L["Errors.Client.UnsupportedSaveRoute"].Value);
         var scope=Scope(orderId);
         if(!_explicitScope)_activeScope=scope;
-        if(_explicitScope && scope!=_activeScope)throw new SalesOrderEntryFailure("This editor changed. Reopen the correct order before saving.");
-        if(_pending.ContainsKey((actor,scope)))throw new SalesOrderEntryFailure("Resolve the interrupted save for this order before making another change.",true);
-        if(_pending.Values.Any(x=>x.ActorId==actor && x.Id==id))throw new SalesOrderEntryFailure("This saved input belongs to another order. Its original recovery input is retained.",true,409,"RECOVERY_SCOPE_MISMATCH");
-        if(_pending.Count(x=>x.Key.Actor==actor)>=MaximumPendingEntries)throw new SalesOrderEntryFailure("Too many saves need recovery. Resolve an existing saved input before starting another.");
+        if(_explicitScope && scope!=_activeScope)throw new SalesOrderEntryFailure(L["Errors.Client.EditorChanged"].Value);
+        if(_pending.ContainsKey((actor,scope)))throw new SalesOrderEntryFailure(L["Errors.Client.ResolveInterruptedSave"].Value,true);
+        if(_pending.Values.Any(x=>x.ActorId==actor && x.Id==id))throw new SalesOrderEntryFailure(L["Errors.Client.InputBelongsToOtherOrder"].Value,true,409,"RECOVERY_SCOPE_MISMATCH");
+        if(_pending.Count(x=>x.Key.Actor==actor)>=MaximumPendingEntries)throw new SalesOrderEntryFailure(L["Errors.Client.TooManyUnresolvedSaves"].Value);
         // Clone now: later edits to caller-owned arrays must never alter an issued request.
         var frozen=JsonSerializer.SerializeToElement(body,body.GetType(),OutboxJson);
         var command=new PendingCommand(2,actor,id,scope,orderId,method.Method,path,frozen,DateTimeOffset.UtcNow);
-        if(!IsRestorable(command,actor))throw new SalesOrderEntryFailure("The save input cannot be stored safely. Check its size and reopen the editor.");
+        if(!IsRestorable(command,actor))throw new SalesOrderEntryFailure(L["Errors.Client.UnsafeRecoveryInput"].Value);
         _pending[(actor,scope)]=command;
         try{await PersistPendingAsync(actor,true);}catch{_pending.Remove((actor,scope));throw;}
         return await SendPendingAsync(command);
     }
     private async Task<OrderEntryCommandResult> SendPendingAsync(PendingCommand command)
     {
-        if(await credentials.SubjectAsync()!=command.ActorId)throw new SalesOrderEntryFailure("Return to the account that started this save before recovering it.",true,401);
+        if(await credentials.SubjectAsync()!=command.ActorId)throw new SalesOrderEntryFailure(L["Errors.Client.ReturnToOriginalAccount"].Value,true,401);
         try
         {
             var result=await SendAsync<OrderEntryCommandResult>(new HttpMethod(command.Method),command.Path,command.Body);
             if(command.OrderId is { } expected && result.Order.Header.Id!=expected)
-                throw new SalesOrderEntryFailure("The saved result refers to another order. Your original input is retained; check the affected order before retrying.",true,409,"RECOVERY_SCOPE_MISMATCH");
+                throw new SalesOrderEntryFailure(L["Errors.Client.ResultBelongsToOtherOrder"].Value,true,409,"RECOVERY_SCOPE_MISMATCH");
             _pending.Remove((command.ActorId,command.Scope));await PersistPendingAsync(command.ActorId);
             return result;
         }
@@ -192,7 +192,7 @@ public sealed partial class SalesOrderEntryClient
         {
             if(ex.OutcomeUnknown){command.OutcomeWasUnknown=true;await PersistPendingAsync(command.ActorId);}
             else if(command.OutcomeWasUnknown)
-                throw new SalesOrderEntryFailure(ex.Message+" The earlier save is still unconfirmed. Your input is retained; check or retry the same save.",true,ex.Status,ex.Code);
+                throw new SalesOrderEntryFailure(L["Errors.Client.EarlierSaveUnconfirmed",ex.Message].Value,true,ex.Status,ex.Code);
             else{_pending.Remove((command.ActorId,command.Scope));await PersistPendingAsync(command.ActorId);}
             throw;
         }

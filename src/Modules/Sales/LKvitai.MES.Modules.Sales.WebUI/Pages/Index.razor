@@ -5,21 +5,21 @@
 @inject IJSRuntime JS
 @implements IAsyncDisposable
 
-<PageTitle>Sales · Orders</PageTitle>
+<PageTitle>@L["Orders.PageTitle"]</PageTitle>
 
 <main class="main">
 
     @* ── Page head ─────────────────────────────────────────────── *@
     <div class="page-head">
         <div>
-            <div class="eyebrow mono">Sales &middot; Orders</div>
-            <h1>Orders</h1>
-            <p>Compact operational Sales Orders. Click an order number to open details in a new tab.</p>
+            <div class="eyebrow mono">@L["Orders.PageTitle"]</div>
+            <h1>@L["Common.Orders"]</h1>
+            <p>@L["Orders.Introduction"]</p>
         </div>
         <div class="page-actions">
-            <button class="btn btn--ghost" type="button">Export</button>
-            @if(_selectedId is not null) { <a class="btn btn--ghost" href="entry/@_selectedId">Edit selected order</a> }
-            <button class="btn btn--primary" type="button" disabled="@(!_interactiveReady)" @onclick="OpenNewOrder">+ New order</button>
+            <button class="btn btn--ghost" type="button">@L["Orders.Export"]</button>
+            @if(_selectedId is not null) { <a class="btn btn--ghost" href="entry/@_selectedId">@L["Orders.EditSelected"]</a> }
+            <button class="btn btn--primary" type="button" disabled="@(!_interactiveReady)" @onclick="OpenNewOrder">+ @L["Orders.NewOrder"]</button>
         </div>
     </div>
 
@@ -29,44 +29,44 @@
              aria-busy="@(_isRefreshing ? "true" : "false")">
         <div class="panel__head">
             <div>
-                <h2 id="orders-list-title">Recent, unpaid and unfinished orders</h2>
-                <span>Search matches order number, customer, address, and the hidden ProductsSearch text aggregated from item lines.</span>
+                <h2 id="orders-list-title">@L["Orders.ListTitle"]</h2>
+                <span>@L["Orders.SearchDescription"]</span>
             </div>
-            <span class="mono">Compact &middot; @_pageSize rows/page &middot; sorted by Date desc</span>
+            <span class="mono">@L["Orders.ListSummary", _pageSize]</span>
         </div>
 
         <div class="toolbar">
             <label class="field field--search">
                 <span class="key-hint" aria-hidden="true">/</span>
-                <input type="search" value="@_search" aria-label="Search orders"
+                <input type="search" value="@_search" aria-label="@L["Orders.Search"]"
                        @ref="_searchInput"
-                       @oninput="OnSearch" placeholder="Search orders" />
+                       @oninput="OnSearch" placeholder="@L["Orders.Search"]" />
             </label>
 
-            <LkSelect Label="Status" Value="@_statusFilter" Options="@StatusOptions"
+            <LkSelect Label="@L["Common.Status"]" Value="@_statusFilter" Options="@StatusOptions"
                       ValueChanged="OnStatusChanged" />
 
-            <LkSelect Label="Store" Value="@_storeFilter" Options="@StoreOptions"
+            <LkSelect Label="@L["Common.Store"]" Value="@_storeFilter" Options="@StoreOptions"
                       ValueChanged="OnStoreChanged" />
 
             @* Date filter is intentionally disabled in S-1 — the legacy "30d / month / ytd"
                presets need real range semantics that arrive in S-2 (handoff R-7). Showing
                it greyed out preserves the toolbar layout without lying about behavior. *@
-            <LkSelect Label="Date" Value="@_dateFilter" Options="@DateOptions"
+            <LkSelect Label="@L["Common.Date"]" Value="@_dateFilter" Options="@DateOptions"
                       Disabled="true"
-                      Title="Date range filter activates in S-2"
+                      Title="@L["Orders.DateFilterUnavailable"]"
                       ValueChanged="@(_ => Task.CompletedTask)" />
 
             <label class="field" style="cursor:pointer;padding-right:8px;gap:7px"
-                   title="Show only orders with outstanding debt"
+                   title="@L["Orders.DebtFilter"]"
                    @onclick="ToggleDebt">
                 <span class="checkbox @(_hasDebtFilter ? "is-checked" : "")" aria-hidden="true"></span>
-                <span style="font-size:12px;color:var(--n-700)">Has debt</span>
+                <span style="font-size:12px;color:var(--n-700)">@L["Orders.HasDebt"]</span>
             </label>
 
             <div class="spacer"></div>
 
-            @RenderPagination("Pagination top")
+            @RenderPagination(L["Orders.PaginationTop"].Value)
         </div>
 
         @* Top-of-grid loading affordance — non-blocking 2px teal bar visible
@@ -79,10 +79,10 @@
         {
             <div class="panel__head" role="alert" style="border-top:1px solid var(--n-150);background:var(--danger-bg);color:var(--danger-fg)">
                 <div>
-                    <strong>Sales API unreachable.</strong>
-                    <span>Try again or reload the page.</span>
+                    <strong>@L["Orders.ApiUnavailable"]</strong>
+                    <span>@L["Orders.RetryLoad"]</span>
                 </div>
-                <button class="btn btn--ghost" type="button" @onclick="ReloadAsync">Retry</button>
+                <button class="btn btn--ghost" type="button" @onclick="ReloadAsync">@L["Common.Retry"]</button>
             </div>
         }
 
@@ -91,16 +91,16 @@
             <table class="lk-table">
                 <thead>
                     <tr>
-                        <th style="width:32px"><span class="checkbox" aria-label="Select all"></span></th>
-                        <th>Number</th>
-                        <th>Date <span class="sort" title="Sorted descending">&#9660;</span></th>
-                        <th class="is-num">Price</th>
-                        <th class="is-num">Debt</th>
-                        <th>Customer</th>
-                        <th style="width:24px" title="Flags"></th>
-                        <th>Status</th>
-                        <th>Store</th>
-                        <th>Address</th>
+                        <th style="width:32px"><span class="checkbox" aria-label="@L["Orders.SelectAll"]"></span></th>
+                        <th>@L["Common.Number"]</th>
+                        <th>@L["Common.Date"] <span class="sort" title="@L["Orders.SortedDescending"]">&#9660;</span></th>
+                        <th class="is-num">@L["Common.Price"]</th>
+                        <th class="is-num">@L["Common.Debt"]</th>
+                        <th>@L["Common.Customer"]</th>
+                        <th style="width:24px" title="@L["Orders.Flags"]"></th>
+                        <th>@L["Common.Status"]</th>
+                        <th>@L["Common.Store"]</th>
+                        <th>@L["Common.Address"]</th>
                     </tr>
                 </thead>
                 <tbody class="orders-list__body">
@@ -111,7 +111,7 @@
                     {
                         <tr>
                             <td colspan="10" style="text-align:center;color:var(--n-500);padding:24px 12px">
-                                No orders match these filters.
+                                @L["Orders.NoMatches"]
                             </td>
                         </tr>
                     }
@@ -125,7 +125,7 @@
                                 <a class="order-link"
                                    href="orders/@o.Number"
                                    target="_blank"
-                                   title="Open @o.Number in new tab"
+                                   title="@L["Orders.OpenNewTab", o.Number]"
                                    @onclick:stopPropagation>@o.Number<span class="order-link__open">&#8599;</span></a>
                             </td>
                             <td class="mono">@OrderFormat.Date(o.Date)</td>
@@ -134,12 +134,12 @@
                             <td><span class="cust">@o.Customer</span></td>
                             <td>
                                 <span class="cust__flags">
-                                    @if (o.HasDebt) { <span class="cust__flag cust__flag--debt" title="Has debt">&#8364;</span> }
-                                    @if (o.IsVip)   { <span class="cust__flag cust__flag--vip"  title="VIP customer">&#9733;</span> }
-                                    @if (o.HasNote) { <span class="cust__flag cust__flag--note" title="Has note">!</span> }
+                                    @if (o.HasDebt) { <span class="cust__flag cust__flag--debt" title="@L["Orders.HasDebt"]">&#8364;</span> }
+                                    @if (o.IsVip)   { <span class="cust__flag cust__flag--vip"  title="@L["Orders.VipCustomer"]">&#9733;</span> }
+                                    @if (o.HasNote) { <span class="cust__flag cust__flag--note" title="@L["Orders.HasNote"]">!</span> }
                                 </span>
                             </td>
-                            <td><span class="chip @OrderFormat.StatusChip(o.StatusCode)">@o.Status</span></td>
+                            <td><span class="chip @OrderFormat.StatusChip(o.StatusCode)">@LocalizedStatus(o.StatusCode, o.Status)</span></td>
                             <td>@o.Store</td>
                             <td>@o.Address</td>
                         </tr>
@@ -149,11 +149,11 @@
         </div>
 
         @* Mobile cards *@
-        <div class="mobile-cards orders-list__cards" aria-label="Mobile orders">
+        <div class="mobile-cards orders-list__cards" aria-label="@L["Orders.MobileOrders"]">
             @if (_orders.Count == 0 && _hasEverLoaded && !_loadFailed)
             {
                 <article class="mobile-card">
-                    <div class="mobile-card__cust" style="color:var(--n-500)">No orders match these filters.</div>
+                    <div class="mobile-card__cust" style="color:var(--n-500)">@L["Orders.NoMatches"]</div>
                 </article>
             }
             @foreach (var o in _orders)
@@ -165,7 +165,7 @@
                            href="orders/@o.Number"
                            target="_blank"
                            @onclick:stopPropagation>@o.Number &#8599;</a>
-                        <span class="chip @OrderFormat.StatusChip(o.StatusCode)">@o.Status</span>
+                        <span class="chip @OrderFormat.StatusChip(o.StatusCode)">@LocalizedStatus(o.StatusCode, o.Status)</span>
                     </div>
                     <div class="mobile-card__cust">@o.Customer</div>
                     <div class="mobile-card__meta">
@@ -173,11 +173,11 @@
                         <span>@o.Store</span>
                         @if (o.IsOverdue || (o.HasDebt && o.Debt > 0))
                         {
-                            <span>Debt <b class="danger">@OrderFormat.Money(o.Debt)</b></span>
+                            <span>@L["Common.Debt"] <b class="danger">@OrderFormat.Money(o.Debt)</b></span>
                         }
                         else
                         {
-                            <span>Debt <b>@OrderFormat.Money(o.Debt)</b></span>
+                            <span>@L["Common.Debt"] <b>@OrderFormat.Money(o.Debt)</b></span>
                         }
                     </div>
                 </article>
@@ -186,10 +186,9 @@
 
         <div class="table-foot">
             <span>
-                Showing <strong>@OrderFormat.Integer(_from)&#8211;@OrderFormat.Integer(_to)</strong>
-                of <strong>@OrderFormat.Integer(_total)</strong> entries
+                @L["Orders.ShowingEntries", OrderFormat.Integer(_from), OrderFormat.Integer(_to), OrderFormat.Integer(_total)]
             </span>
-            @RenderPagination("Pagination bottom")
+            @RenderPagination(L["Orders.PaginationBottom"].Value)
         </div>
     </section>
 
@@ -201,6 +200,46 @@
 }
 
 @code {
+
+    private string LocalizedStatus(string code, string raw)
+    {
+        var key = code switch
+        {
+            OrderStatusCodes.Entered => "Orders.Status.Entered",
+            OrderStatusCodes.Approved => "Orders.Status.Approved",
+            OrderStatusCodes.InProgress => "Orders.Status.InProgress",
+            OrderStatusCodes.Made => "Orders.Status.Made",
+            OrderStatusCodes.Shipped => "Orders.Status.Shipped",
+            OrderStatusCodes.Delivered => "Orders.Status.Delivered",
+            OrderStatusCodes.Paused => "Orders.Status.Paused",
+            OrderStatusCodes.Cancelled => "Orders.Status.Cancelled",
+            OrderStatusCodes.MultiStatus => "Orders.Status.MultiStatus",
+            _ => null
+        };
+        if (key is null) return raw;
+        var value = L[key];
+        return value.ResourceNotFound ? raw : value.Value;
+    }
+
+    private string LocalizedNativeStatus(string raw)
+    {
+        // Labels are localized; the original database string stays the filter value.
+        var code = raw.Trim().ToUpperInvariant() switch
+        {
+            "ĮVESTAS" or "ĮVESTAS Į PROGRAMĄ" => OrderStatusCodes.Entered,
+            "PATVIRTINTAS" => OrderStatusCodes.Approved,
+            "GAMINAMAS" => OrderStatusCodes.InProgress,
+            "PAGAMINTAS" => OrderStatusCodes.Made,
+            "FILIALUI" => OrderStatusCodes.Shipped,
+            "ATIDUOTAS" => OrderStatusCodes.Delivered,
+            "SUSTABDYTAS" => OrderStatusCodes.Paused,
+            "ANULIUOTAS" or "ATŠAUKTAS" => OrderStatusCodes.Cancelled,
+            "SKIRTINGAI" => OrderStatusCodes.MultiStatus,
+            _ => ""
+        };
+        return LocalizedStatus(code, raw);
+    }
+
     private bool _showNewOrder;
     private NewOrderWorkspace? _newOrderWorkspace;
     private bool _interactiveReady;
@@ -275,24 +314,24 @@
 
     /// <summary>Always-shown date preset list (Date filter is intentionally
     /// disabled in S-1; kept so the toolbar grid stays aligned).</summary>
-    private static readonly IReadOnlyList<SelectOption> DateOptions =
+    private IReadOnlyList<SelectOption> DateOptions =>
     [
-        new("30d",   "Last 30 days"),
-        new("month", "This month"),
-        new("ytd",   "YTD"),
+        new("30d",   L["Orders.Last30Days"].Value),
+        new("month", L["Orders.ThisMonth"].Value),
+        new("ytd",   L["Orders.YearToDate"].Value),
     ];
 
     /// <summary>Fallback while the live filter options request is in flight or
     /// failed — at minimum the user still sees an "All" option so the dropdown
     /// is never empty.</summary>
-    private static readonly IReadOnlyList<SelectOption> EmptyStatusOptions =
+    private IReadOnlyList<SelectOption> EmptyStatusOptions =>
     [
-        new("", "All statuses"),
+        new("", L["Orders.AllStatuses"].Value),
     ];
 
-    private static readonly IReadOnlyList<SelectOption> EmptyStoreOptions =
+    private IReadOnlyList<SelectOption> EmptyStoreOptions =>
     [
-        new("", "All stores"),
+        new("", L["Orders.AllStores"].Value),
     ];
 
     private List<OrderSummaryDto> _orders        = new();
@@ -309,8 +348,8 @@
     private bool                  _isRefreshing;
     private bool                  _hasEverLoaded;
 
-    private IReadOnlyList<SelectOption> _statusOptions = EmptyStatusOptions;
-    private IReadOnlyList<SelectOption> _storeOptions  = EmptyStoreOptions;
+    private IReadOnlyList<SelectOption> _statusOptions = [];
+    private IReadOnlyList<SelectOption> _storeOptions  = [];
 
     // Cancels the previous in-flight ReloadAsync so a fast click on Next/Next/Next
     // doesn't end up showing a stale page after the latest one has already arrived.
@@ -339,8 +378,8 @@
     private int _from       => _total == 0 ? 0 : ((_page - 1) * _pageSize) + 1;
     private int _to         => Math.Min(_page * _pageSize, _total);
 
-    private IReadOnlyList<SelectOption> StatusOptions => _statusOptions;
-    private IReadOnlyList<SelectOption> StoreOptions  => _storeOptions;
+    private IReadOnlyList<SelectOption> StatusOptions => _statusOptions.Count > 0 ? _statusOptions : EmptyStatusOptions;
+    private IReadOnlyList<SelectOption> StoreOptions  => _storeOptions.Count > 0 ? _storeOptions : EmptyStoreOptions;
 
     protected override void OnInitialized()
     {
@@ -439,14 +478,14 @@
     {
         var statuses = new List<SelectOption>(options.Statuses.Count + 1)
         {
-            new("", "All statuses"),
+            new("", L["Orders.AllStatuses"].Value),
         };
-        foreach (var s in options.Statuses) statuses.Add(new SelectOption(s, s));
+        foreach (var s in options.Statuses) statuses.Add(new SelectOption(s, LocalizedNativeStatus(s)));
         _statusOptions = statuses;
 
         var stores = new List<SelectOption>(options.Stores.Count + 1)
         {
-            new("", "All stores"),
+            new("", L["Orders.AllStores"].Value),
         };
         foreach (var s in options.Stores) stores.Add(new SelectOption(s, s));
         _storeOptions = stores;
@@ -721,7 +760,7 @@
 
     private RenderFragment RenderPagination(string ariaLabel) => @<text>
         <nav class="pagination" aria-label="@ariaLabel">
-            <button type="button" disabled="@(_isRefreshing || _page <= 1)" @onclick="GoPrev">&#8249; Prev</button>
+            <button type="button" disabled="@(_isRefreshing || _page <= 1)" @onclick="GoPrev">&#8249; @L["Orders.PreviousPage"]</button>
             @foreach (var p in PageButtons())
             {
                 if (p < 0)
@@ -737,7 +776,7 @@
                             @onclick="@(() => GoToPage(pageValue))">@pageValue</button>
                 }
             }
-            <button type="button" disabled="@(_isRefreshing || _page >= _totalPages)" @onclick="GoNext">Next &#8250;</button>
+            <button type="button" disabled="@(_isRefreshing || _page >= _totalPages)" @onclick="GoNext">@L["Orders.NextPage"] &#8250;</button>
         </nav>
     </text>;
 

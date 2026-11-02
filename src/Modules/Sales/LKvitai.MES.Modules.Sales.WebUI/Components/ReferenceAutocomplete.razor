@@ -10,15 +10,15 @@
 <div class="reference-autocomplete @Class" data-selected-id="@_selectedId">
     <div class="reference-autocomplete__field">
         <input @ref="_input" id="@InputId" data-select-on-focus class="demo-input reference-autocomplete__input"
-               value="@_text" placeholder="@Placeholder" disabled="@Disabled" readonly="@ReadOnly"
+               value="@_text" placeholder="@(Placeholder ?? L["Reference.Search"].Value)" disabled="@Disabled" readonly="@ReadOnly"
                autocomplete="off" spellcheck="false" role="combobox" aria-label="@(string.IsNullOrWhiteSpace(Label) ? null : Label)"
                aria-autocomplete="list" aria-expanded="@(_open ? "true" : "false")"
                aria-controls="@ListId" aria-activedescendant="@ActiveOptionId"
                @oninput="ChangeTextAsync" @onfocus="Open" @onblur="Close" @onkeydown="KeyDownAsync" />
         @if (!Disabled && !ReadOnly && (_selectedId.HasValue || _text.Length > 0))
         {
-            <button class="reference-autocomplete__clear" type="button" tabindex="-1" aria-label="Clear @AccessibleLabel"
-                    title="Clear selection" @onclick="ClearAsync">×</button>
+            <button class="reference-autocomplete__clear" type="button" tabindex="-1" aria-label="@L["Reference.ClearField", AccessibleLabel]"
+                    title="@L["Reference.ClearSelection"]" @onclick="ClearAsync">×</button>
         }
     </div>
     @if (_open && !Disabled && !ReadOnly)
@@ -33,11 +33,11 @@
             }
             @if (_matches.Count == 0)
             {
-                <div class="reference-autocomplete__message" role="status">No matching records</div>
+                <div class="reference-autocomplete__message" role="status">@L["Reference.NoMatches"]</div>
             }
             else if (_hasMore)
             {
-                <div class="reference-autocomplete__message" role="status">First @MaximumSuggestions matches · type to narrow</div>
+                <div class="reference-autocomplete__message" role="status">@L["Reference.FirstMatches", MaximumSuggestions]</div>
             }
         </div>
     }
@@ -48,7 +48,7 @@
     [Parameter] public string Id { get; set; } = "";
     [Parameter] public string Label { get; set; } = "";
     [Parameter] public string? Class { get; set; }
-    [Parameter] public string Placeholder { get; set; } = "Type to search…";
+    [Parameter] public string? Placeholder { get; set; }
     [Parameter] public IEnumerable<LiveNamedReferenceDto> Items { get; set; } = [];
     [Parameter] public int? Value { get; set; }
     [Parameter] public EventCallback<int?> ValueChanged { get; set; }
@@ -67,7 +67,7 @@
     private int _activeIndex = -1;
     private string InputId => string.IsNullOrWhiteSpace(Id) ? _instanceId : Id;
     private string ListId => _instanceId + "-list";
-    private string AccessibleLabel => string.IsNullOrWhiteSpace(Label) ? "selection" : Label;
+    private string AccessibleLabel => string.IsNullOrWhiteSpace(Label) ? L["Reference.Selection"].Value : Label;
     private string OptionId(int index) => _instanceId + "-option-" + index;
     private string? ActiveOptionId => _open && _activeIndex >= 0 && _activeIndex < _matches.Count ? OptionId(_activeIndex) : null;
 
@@ -95,7 +95,7 @@
     {
         if (!_selectedId.HasValue) return "";
         var live = _items.FirstOrDefault(item => item.Id == _selectedId);
-        return live?.Name ?? $"{(string.IsNullOrWhiteSpace(ExistingLabel) ? $"#{_selectedId}" : ExistingLabel)} (saved)";
+        return live?.Name ?? L["Reference.SavedValue", string.IsNullOrWhiteSpace(ExistingLabel) ? $"#{_selectedId}" : ExistingLabel].Value;
     }
 
     private void Filter()

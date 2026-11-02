@@ -372,3 +372,40 @@ The S2-019 fix maps cancellation explicitly; it does not silently broaden all
 other legacy status mappings. Follow-up should verify the actual reference
 labels and add the matching existing semantic families without changing
 stored StateID or introducing new statuses.
+
+
+## S2-021 — Existing material code passed as a literal component parameter
+
+**Status: open; found during localization browser QA, 2026-11-02.**
+The product editor passes `ExistingCode="_configuringLine.ColourCode"` to the
+string parameter of `MaterialAutocomplete`, so an initially empty material can
+show the source expression itself. The same markup is present before the
+localization changes. Follow-up should bind the actual property, verify empty
+and saved-material display in both sample and live mode, and preserve material
+selection, stock validation and error focus. Deferred outside translation scope.
+
+
+## S2-022 — Main deployment reintroduces the Sales WebUI dependency violation
+
+**Status: open on main; outside the Safari authentication correction, 2026-11-02.**
+Main's Sales WebUI still references Sales.Infrastructure, so architecture CI
+fails `WebUI_Only_References_Contracts_Of_Same_Module_And_BuildingBlocks` (28/29
+pass). The same failure exists on PR #227 before the login correction; the
+cookie fix does not modify the project reference or architecture rules. The
+separate M2 branch already contains the boundary correction (`f9fd7ef`), but it
+has not been integrated into main. Integrate that correction through its normal
+review rather than changing architecture policy in the Safari hotfix.
+
+
+## S2-023 — Native browser session and fresh SSO session differ on current main
+
+**Status: observation requiring separate investigation, 2026-11-02.**
+During translation acceptance on a12aa41, the existing native IAB `bykovas`
+cookie session initially displayed API-unavailable and, after hydration, an
+empty list. The fresh Safari SSO session for Denisas Bykovas loaded the real
+order list successfully and remained authenticated after reload. This does
+not establish whether the difference is expired credentials, roles or intended
+SQL/data scoping. Recheck fresh native authentication and effective identity
+before changing behavior. No authentication, mapping or data permission changes
+were made as part of localization. The M2 identity/recovery bridge is still in
+unmerged PR #224; its integration must retain the new SSO behavior.

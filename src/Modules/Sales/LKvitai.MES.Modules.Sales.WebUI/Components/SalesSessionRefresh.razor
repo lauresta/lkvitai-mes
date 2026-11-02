@@ -7,8 +7,8 @@
 
 @if (_expired)
 {
-    <div class="demo-editor__banner" role="status">Your session needs to be renewed.
-        <a href="/portal/login.html?returnUrl=%2Fsales%2F" target="_blank" rel="noopener">Sign in in another tab</a> to keep this editor open.
+    <div class="demo-editor__banner" role="status">@L["Nav.SessionExpired"]
+        <a href="/portal/login.html?returnUrl=%2Fsales%2F" target="_blank" rel="noopener">@L["Nav.SignInAnotherTab"]</a>
     </div>
 }
 

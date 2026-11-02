@@ -1,8 +1,8 @@
 @using LKvitai.MES.Modules.Sales.WebUI.Models
-<select class="demo-product-editor__type-select" aria-label="Product type" value="@Value" @onchange="Changed">
+<select class="demo-product-editor__type-select" aria-label="@L["Details.ProductType"]" value="@Value" @onchange="Changed">
     @if (!Types.Any(type => type.Id == Value))
     {
-        <option value="@Value">@SavedName (saved)</option>
+        <option value="@Value">@L["Reference.SavedValue", SavedName]</option>
     }
     @foreach (var type in Types)
     {

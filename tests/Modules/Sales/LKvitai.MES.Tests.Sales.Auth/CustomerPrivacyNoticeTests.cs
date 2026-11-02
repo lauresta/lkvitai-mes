@@ -80,7 +80,7 @@ public sealed class CustomerPrivacyNoticeTests
     private static async Task<string> Render<T>(Dictionary<string,object?> parameters) where T:IComponent
     {
         var js=new NoJs();
-        await using var services=new ServiceCollection().AddLogging().AddSingleton<IJSRuntime>(js)
+        await using var services=new ServiceCollection().AddLogging().AddLocalization().AddSingleton<IJSRuntime>(js)
             .AddSingleton<NavigationManager>(new Navigation()).AddSingleton<AuthenticationStateProvider>(new Authentication())
             .AddSingleton<IBuildVersionAccessor>(new Build()).AddSingleton(new SalesOrderEntryClient(null!,null!,js)).BuildServiceProvider();
         await using var renderer=new HtmlRenderer(services,services.GetRequiredService<ILoggerFactory>());

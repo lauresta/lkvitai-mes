@@ -137,7 +137,7 @@ public sealed class ReferenceAutocompleteTests
         public static async Task<Mounted> Create(IReadOnlyList<LiveNamedReferenceDto> items, int? value = null, string? existingLabel = null)
         {
             var js = new FakeJs();
-            var services = new ServiceCollection().AddLogging().AddSingleton<IJSRuntime>(js).BuildServiceProvider();
+            var services = new ServiceCollection().AddLogging().AddLocalization().AddSingleton<IJSRuntime>(js).BuildServiceProvider();
             var renderer = new ComponentRenderer(services, services.GetRequiredService<ILoggerFactory>());
             var parameters = new Dictionary<string, object?>
             {

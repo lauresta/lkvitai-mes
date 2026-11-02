@@ -32,20 +32,20 @@ public partial class NewOrderWorkspace
         && (!method.RequiresRegister || _paymentReferences?.SelectedRegister?.Id==_paymentRegisterId && _paymentRegisterId is not null);
     private bool PaymentCanSubmit => _paymentReferences?.Enabled==true && _paymentReferences.OrderRevision==_order?.Revision && CanPostLivePayment && PaymentDownstreamEnabled && !_paymentBankLoading;
     private string? PaymentPrerequisiteMessage => SelectedPaymentMethod?.RequiresPpkReceipt==true && !OrderPaymentFormats.IsValidPpkReceipt(_paymentReference)
-        ? "Enter the actual ten-character PPK receipt number to continue."
-        : _paymentReferences?.PrerequisiteError;
+        ? L["Payment.PpkContinue"].Value
+        : ApiMessage(_paymentReferences?.PrerequisiteError);
     private bool PaymentDirty => IsLive && _paymentSheetOpen && PaymentDraftState() != _paymentSaved;
     private string PaymentDraftState() => JsonSerializer.Serialize(new { _paymentDate, _paymentAmount, _paymentAmountText, _paymentMethodId, _paymentEmployeeId, _paymentRegisterId, _paymentBankTransferId, _paymentReference, _paymentNote });
     private string PaymentMoney(decimal amount) => amount.ToString("N2", CultureInfo.GetCultureInfo("lt-LT")) + " " + (_paymentReferences?.Currency?.Code ?? "—");
     private static string BankAmount(decimal amount) => amount.ToString(amount==decimal.Round(amount,2)?"N2":amount==decimal.Round(amount,3)?"N3":"N4",CultureInfo.GetCultureInfo("lt-LT"));
-    private static string BankTransferLabel(OrderPaymentBankTransferReference bank) => $"{bank.Payer ?? "Payer not specified"} · {bank.Date?.ToString("yyyy-MM-dd") ?? "—"} · {BankAmount(bank.AvailableAmount)}";
+    private string BankTransferLabel(OrderPaymentBankTransferReference bank) => L["Payment.BankLabel", bank.Payer ?? L["Payment.PayerMissing"].Value, bank.Date?.ToString("yyyy-MM-dd") ?? "—", BankAmount(bank.AvailableAmount)].Value;
 
     private async Task OpenLivePaymentAsync()
     {
         if (_order?.LegacyId is not { } id || !CanPostLivePayment) return;
-        if (_confirmationSheetOpen) { _liveError="Close production confirmation before opening a payment."; return; }
+        if (_confirmationSheetOpen) { _liveError=L["Payment.CloseConfirmationFirst"].Value; return; }
         if (!await LeaveProductAsync()) return;
-        if (HeaderDirty || AddressDirty) { _liveError="Save the header and address changes before posting a payment."; return; }
+        if (HeaderDirty || AddressDirty) { _liveError=L["Payment.SaveHeaderAddressFirst"].Value; return; }
         _busy=true;
         _paymentError="";
         _paymentReferences=null;
@@ -121,8 +121,8 @@ public partial class NewOrderWorkspace
     }
     private void SetPaymentReferenceError()
     {
-        if(_paymentReferences?.Enabled!=true)_paymentError=_paymentReferences?.UnavailableReason ?? "Payment posting is unavailable.";
-        else if(_paymentReferences.OrderRevision!=_order?.Revision)_paymentError="The order changed. Close and reopen payments to refresh balances.";
+        if(_paymentReferences?.Enabled!=true)_paymentError=_paymentReferences?.UnavailableReason is { } unavailable ? ApiMessage(unavailable) : L["Payment.PostingUnavailable"].Value;
+        else if(_paymentReferences.OrderRevision!=_order?.Revision)_paymentError=L["Payment.OrderChanged"].Value;
     }
     private async Task RefreshPaymentContextAsync()
     {
@@ -170,23 +170,23 @@ public partial class NewOrderWorkspace
     private async Task PostLivePaymentAsync()
     {
         if (_order?.LegacyId is not { } id || _paymentReferences is not { Enabled:true } references || !CanPostLivePayment)
-        { _paymentError="Payment posting is unavailable. Reopen the payment sheet to refresh its options."; return; }
-        if (HeaderDirty || AddressDirty) { _paymentError="Save header and address changes before posting a payment."; return; }
-        if (!PaymentCanSubmit) { _paymentError="Complete the selected method's reference before posting a payment."; return; }
+        { _paymentError=L["Payment.ReopenUnavailable"].Value; return; }
+        if (HeaderDirty || AddressDirty) { _paymentError=L["Payment.SaveChangesFirst"].Value; return; }
+        if (!PaymentCanSubmit) { _paymentError=L["Payment.CompleteReference"].Value; return; }
         if (!OrderPaymentFormats.IsValidPositiveAmount(_paymentAmount) || references.MaximumAmount is { } maximum && _paymentAmount>maximum)
-        { _paymentError="Enter a positive amount with at most two decimal places."; return; }
+        { _paymentError=L["Payment.PositiveAmount"].Value; return; }
         if (!DateOnly.TryParseExact(_paymentDate,"yyyy-MM-dd",CultureInfo.InvariantCulture,DateTimeStyles.None,out var date) || date!=references.BusinessDate)
-        { _paymentError="Use the current business date."; return; }
+        { _paymentError=L["Payment.CurrentBusinessDate"].Value; return; }
         var method=SelectedPaymentMethod;
         if (method is null || !PaymentMethodAllowed(method) || _paymentEmployeeId is not { } employee || !references.Employees.Any(x=>x.Id==employee) || references.Currency is null)
-        { _paymentError="Choose an available payment method and employee."; return; }
+        { _paymentError=L["Payment.ChooseMethodEmployee"].Value; return; }
         if (method.RequiresPpkReceipt && !OrderPaymentFormats.IsValidPpkReceipt(_paymentReference))
-        { _paymentError="Enter the actual ten-character PPK receipt number."; return; }
+        { _paymentError=L["Payment.ActualPpk"].Value; return; }
         if (method.RequiresBankTransfer && !(SelectedPaymentBank is { IsAvailable:true } selectedBank && selectedBank.Id==_paymentBankTransferId && selectedBank.AvailableAmount>=_paymentAmount))
-        { _paymentError="Choose a bank transfer with a sufficient available amount."; return; }
+        { _paymentError=L["Payment.SufficientTransfer"].Value; return; }
         if (method.RequiresRegister && references.SelectedRegister?.Id!=_paymentRegisterId)
-        { _paymentError="Choose an available register."; return; }
-        if (_paymentNote.Length>500) { _paymentError="Payment notes can contain at most 500 characters."; return; }
+        { _paymentError=L["Payment.ChooseRegister"].Value; return; }
+        if (_paymentNote.Length>500) { _paymentError=L["Payment.NoteLimit"].Value; return; }
         _busy=true;
         try
         {
@@ -198,7 +198,7 @@ public partial class NewOrderWorkspace
             var result=await Entry.PostPaymentAsync(id,new PostOrderPaymentCommand(Guid.NewGuid(),_order.Revision,input));
             ApplySnapshot(result.Order);
             _paymentSheetOpen=false; _paymentReferences=null; _paymentError="";
-            _saveIsError=false; _saveMessage="Payment posted; balances refreshed.";
+            _saveIsError=false; _saveMessage=L["Payment.Posted"].Value;
         }
         catch (SalesOrderEntryFailure ex) { _paymentError=ex.Message; _liveError=ex.Message; }
         finally { _busy=false; }

@@ -1,3 +1,4 @@
+using LKvitai.MES.BuildingBlocks.WebUI.Localization;
 using LKvitai.MES.BuildingBlocks.ModuleStartup;
 using LKvitai.MES.BuildingBlocks.PortalAuth;
 using LKvitai.MES.BuildingBlocks.WebUI.Services;
@@ -8,6 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.UseScaffoldSerilog("frontline-webui");
 builder.Services.AddScaffoldWebUiCore("FrontlineApi", "FrontlineApi:BaseUrl", "http://localhost:5031");
+builder.Services.AddCikadaLocalization(builder.Configuration);
 
 // F-1 wires the named "FrontlineApi" HttpClient (registered by
 // AddScaffoldWebUiCore above) to the FrontlineApiClient wrapper used by the
@@ -56,6 +58,8 @@ var app = builder.Build();
 // cookie middleware see the right HttpContext when the Blazor circuit asks
 // for AuthenticationStateProvider during prerender.
 app.UsePathBase(ScaffoldModuleStartupExtensions.ResolvePathBase(app.Configuration));
+// Shared EN/LT UI culture from the cross-module culture cookie (docs/i18n/README.md).
+app.UseCikadaRequestLocalization();
 app.UsePortalSecureHosting(app.Environment);
 
 app.UseSerilogRequestLogging();
@@ -66,6 +70,7 @@ app.UseAuthorization();
 
 app.MapGet("/health", () => Results.Ok());
 app.MapPortalLogout();
+app.MapCikadaCultureEndpoint();
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
 

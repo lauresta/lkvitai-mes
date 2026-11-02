@@ -39,7 +39,7 @@ public sealed class OrderNoteHistoryTests
             """));
     private static async Task<string> Render(IReadOnlyList<OrderNoteHistoryEntry> entries)
     {
-        await using var services = new ServiceCollection().AddLogging().BuildServiceProvider();
+        await using var services = new ServiceCollection().AddLogging().AddLocalization().BuildServiceProvider();
         await using var renderer = new HtmlRenderer(services,services.GetRequiredService<ILoggerFactory>());
         return await renderer.Dispatcher.InvokeAsync(async()=>
             (await renderer.RenderComponentAsync<OrderNoteHistory>(ParameterView.FromDictionary(

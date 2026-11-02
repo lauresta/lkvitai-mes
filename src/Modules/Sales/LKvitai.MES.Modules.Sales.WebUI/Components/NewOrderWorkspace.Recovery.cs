@@ -15,7 +15,7 @@ public partial class NewOrderWorkspace
             {
                 var outcome=await Entry.OutcomeAsync(id);
                 if(Entry.PendingOrderId is { } expected && outcome.OrderId!=expected)
-                    throw new Services.SalesOrderEntryFailure("The earlier result refers to another order. Recovery input is retained; this editor has not been changed.",true,409,"RECOVERY_SCOPE_MISMATCH");
+                    throw new Services.SalesOrderEntryFailure(L["Recovery.ScopeMismatch"].Value,true,409,"RECOVERY_SCOPE_MISMATCH");
                 var snapshot=await Entry.ReadAsync(outcome.OrderId);
                 result=new(snapshot with{Warnings=snapshot.Warnings.Concat(outcome.Warnings ?? []).Distinct().ToArray()},outcome.ProductId,true,outcome.PaymentId,outcome.ProductionDocumentId);
                 await Entry.ClearRecoveredAsync(id);
@@ -32,9 +32,9 @@ public partial class NewOrderWorkspace
                 return;
             }
             ApplySnapshot(result.Order,result.ProductId);
-            if(result.PaymentId is not null){_paymentSheetOpen=false;_saveIsError=false;_saveMessage="Payment posted; balances refreshed.";}
+            if(result.PaymentId is not null){_paymentSheetOpen=false;_saveIsError=false;_saveMessage=L["Payment.Posted"].Value;}
             if(result.ProductionDocumentId is not null)ProductionConfirmationRecovered();
-            _liveError="The saved result was recovered. Current values are shown."+(string.IsNullOrWhiteSpace(_liveError)?"":" "+_liveError);
+            _liveError=string.IsNullOrWhiteSpace(_liveError) ? L["Recovery.Recovered"].Value : L["Recovery.RecoveredWithWarning", _liveError].Value;
         }
         catch(Services.SalesOrderEntryFailure ex){_liveError=ex.Message;}
         finally{_busy=false;}
@@ -47,12 +47,12 @@ public partial class NewOrderWorkspace
         {
             _legacySaveOutcome=await Entry.OutcomeAsync(id);
             await Entry.ClearRecoveredLegacyAsync(id);
-            _liveError="The earlier saved result was found. Open its order using the link; this editor has not been changed.";
+            _liveError=L["Recovery.FoundEarlier"].Value;
         }
         catch(Services.SalesOrderEntryFailure ex)
         {
             _liveError=ex.Status==404
-                ? "No confirmed result was found for that earlier save. Its recovery marker is retained. Check the original order before entering the same operation again. Other orders remain available."
+                ? L["Recovery.NoConfirmedResult"].Value
                 : ex.Message;
         }
         finally{_busy=false;}

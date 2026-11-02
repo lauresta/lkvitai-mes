@@ -23,6 +23,7 @@ public sealed class PendingSalesRecoveryTests
     {
         var client=Client(new Storage(),new Transport{FailFirst=false});client.SetOrderScope(null);
         var navigation=new Navigation();var component=new NewOrderWorkspace{Entry=client,Navigation=navigation};
+        SalesTestLocalization.Wire(component);
         var flags=BindingFlags.Instance|BindingFlags.NonPublic;var type=typeof(NewOrderWorkspace);
         void Set(string name,object? value)=>type.GetField(name,flags)!.SetValue(component,value);
         Set("Catalog",new DemoCatalog{Series=[new DemoSeries{Id=1,Code="XXXX"}]});
@@ -127,6 +128,7 @@ public sealed class PendingSalesRecoveryTests
         var command=new CreateProductCommand(Guid.NewGuid(),"r1",17);await Assert.ThrowsAsync<SalesOrderEntryFailure>(()=>client.CreateProductAsync(1,command));
         transport.OutcomeOrder=2;
         var component=new NewOrderWorkspace{Entry=client};
+        SalesTestLocalization.Wire(component);
         typeof(NewOrderWorkspace).GetField("_order",BindingFlags.Instance|BindingFlags.NonPublic)!.SetValue(component,new DemoOrderDraft{LegacyId=1});
         await (Task)typeof(NewOrderWorkspace).GetMethod("RecoverCommandAsync",BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(component,[])!;
         Assert.Equal(command.CommandId,client.PendingCommandId);

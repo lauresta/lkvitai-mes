@@ -81,13 +81,13 @@ public partial class NewOrderWorkspace
     {
         if (!IsLive || _configuringLine is null || !await RefreshLiveCatalogAsync(true)) return;
         await UpdateLivePreviewAsync(false);
-        if (string.IsNullOrEmpty(_previewError)) _priceMessage = "Parameter and stock preview refreshed. Saving checks the current legacy rules.";
+        if (string.IsNullOrEmpty(_previewError)) _priceMessage = L["Product.PreviewRefreshed"].Value;
     }
 
     private async Task RefreshLiveProductAsync()
     {
         if (_order?.LegacyId is not { } id || _configuringLine?.LegacyId is not { } productId) return;
-        if ((HeaderDirty || ProductDirty || AddressDirty) && !await JS.InvokeAsync<bool>("confirm", "Reload saved values? Unsaved header, address and product edits will be discarded.")) return;
+        if ((HeaderDirty || ProductDirty || AddressDirty) && !await JS.InvokeAsync<bool>("confirm", L["Product.ReloadConfirm"].Value)) return;
         _busy = true;
         try
         {
@@ -109,7 +109,7 @@ public partial class NewOrderWorkspace
             var result = await Entry.DuplicateProductAsync(id, productId, new DuplicateProductCommand(Guid.NewGuid(), _order.Revision));
             ApplySnapshot(result.Order, result.ProductId);
             await UpdateLivePreviewAsync(false);
-            _priceMessage = "Product duplicated with current legacy checks.";
+            _priceMessage = L["Product.Duplicated"].Value;
         }
         catch (SalesOrderEntryFailure ex) { _liveError = ex.Message; }
         finally { _busy = false; }
@@ -191,19 +191,19 @@ public partial class NewOrderWorkspace
         { DutyId=duty.DutyId, EmployeeId=duty.EmployeeId, Duty=duty.DutyName ?? $"#{duty.DutyId}", Name=duty.EmployeeName ?? $"#{duty.EmployeeId}", Date=DateOnly.FromDateTime(duty.Date) });
         foreach(var payment in snapshot.Payments ?? []) order.Payments.Add(new DemoPayment
         { LegacyId=payment.Id, Date=payment.Date ?? default, HasDate=payment.Date.HasValue, Amount=payment.Amount,
-            Method=payment.MethodName ?? $"Payment #{payment.MethodId}",
+            Method=payment.MethodName ?? L["Payment.MethodFallback", payment.MethodId?.ToString(CultureInfo.InvariantCulture) ?? ""].Value,
             Reference=payment.PpkReceipt ?? payment.BankTransferId?.ToString(CultureInfo.InvariantCulture) ?? "",
             ReceiverOrRegister=payment.RegisterName ?? payment.EmployeeName ?? payment.RegisterId?.ToString(CultureInfo.InvariantCulture) ?? ReferenceName(Catalog.Employees,payment.EmployeeId),
-            Note=payment.Note ?? "", CurrencyId=payment.CurrencyId, CurrencyCode=payment.CurrencyCode ?? $"currency #{payment.CurrencyId}" });
+            Note=payment.Note ?? "", CurrencyId=payment.CurrencyId, CurrencyCode=payment.CurrencyCode ?? L["Payment.CurrencyFallback", payment.CurrencyId?.ToString(CultureInfo.InvariantCulture) ?? ""].Value });
         _order=order;
         _editorDate=order.Date.ToString("yyyy-MM-dd",CultureInfo.InvariantCulture);
         _editorDue=order.Due.ToString("yyyy-MM-dd",CultureInfo.InvariantCulture);
         _editorMountingDate=order.MountingDate?.ToString("yyyy-MM-dd",CultureInfo.InvariantCulture) ?? "";
         _headerSaved=JsonSerializer.Serialize(HeaderInput());
-        if(order.StreetId is not null) _addressOptions=[new OrderAddressReferenceDto(order.StreetId.Value,$"Address #{order.StreetId}",null,null,false)];
+        if(order.StreetId is not null) _addressOptions=[new OrderAddressReferenceDto(order.StreetId.Value,L["Workspace.AddressFallback", order.StreetId].Value,null,null,false)];
         _configuringLine=selectedProductId is null ? null : order.Lines.FirstOrDefault(x=>x.LegacyId==selectedProductId);
         _productSaved=_configuringLine is null ? "" : ProductState(_configuringLine);
-        _liveError=string.Join(" ",snapshot.Warnings);
+        _liveError=string.Join(" ",snapshot.Warnings.Select(ApiMessage));
         _addressSaved=JsonSerializer.Serialize(AddressInput());
         RestoreHeaderBuffer(headerBuffer);
         if(addressBuffer is not null){order.StreetId=addressBuffer.StreetId;order.Building=addressBuffer.Building ?? "";order.Flat=addressBuffer.Room ?? "";order.Phone=addressBuffer.Phone ?? "";order.AddressNote=addressBuffer.Note ?? "";_addressOptions=addressOptionsBuffer ?? _addressOptions;}
@@ -213,8 +213,8 @@ public partial class NewOrderWorkspace
         _formError="";
         if(!DemoOrderNumber.TryNormalize(_rawNumber,Today.Year,Catalog,out var number,out var series,out var error)) { _formError=error;return; }
         var seriesRow=Catalog.Series.First(x=>x.Code==series);
-        if(_customerId is null || _storeId is null) { _formError="Choose a customer and store from the live references.";return; }
-        if(!DateOnly.TryParse(_date,CultureInfo.InvariantCulture,DateTimeStyles.None,out var date)||!DateOnly.TryParse(_due,CultureInfo.InvariantCulture,DateTimeStyles.None,out var due)) { _formError="Enter valid dates.";return; }
+        if(_customerId is null || _storeId is null) { _formError=L["Workspace.ChooseCustomerStore"].Value;return; }
+        if(!DateOnly.TryParse(_date,CultureInfo.InvariantCulture,DateTimeStyles.None,out var date)||!DateOnly.TryParse(_due,CultureInfo.InvariantCulture,DateTimeStyles.None,out var due)) { _formError=L["Workspace.ValidDates"].Value;return; }
         _busy=true;
         try
         {
@@ -234,7 +234,7 @@ public partial class NewOrderWorkspace
         try
         {
             var result=await Entry.SaveAsync(id,new UpdateOrderCommand(Guid.NewGuid(),_order.Revision,HeaderInput()));
-            ApplySnapshot(result.Order,preserveHeader:false);_saveIsError=false;_saveMessage="Order saved.";
+            ApplySnapshot(result.Order,preserveHeader:false);_saveIsError=false;_saveMessage=L["Workspace.OrderSaved"].Value;
         }
         catch(SalesOrderEntryFailure ex){_saveIsError=true;_saveMessage=ex.Message;_liveError=ex.Message;}
         finally{_busy=false;}
@@ -242,10 +242,10 @@ public partial class NewOrderWorkspace
     private async Task CreateLiveProductAsync(DemoType type)
     {
         if(_busy || Entry.HasPendingCommand)return;
-        if(_order?.Cancelled==true){_liveError="This order is cancelled. New products cannot be added.";return;}
+        if(_order?.Cancelled==true){_liveError=L["Product.CancelledOrder"].Value;return;}
         if(_order?.LegacyId is not { } id || !await LeaveProductAsync())return;
-        if(type.UnsupportedReason is not null){_liveError=type.UnsupportedReason;return;}
-        if(HeaderDirty){_liveError="Save the header changes before adding a product.";return;}
+        if(type.UnsupportedReason is not null){_liveError=ApiMessage(type.UnsupportedReason);return;}
+        if(HeaderDirty){_liveError=L["Product.SaveHeaderBeforeAdd"].Value;return;}
         _busy=true;
         try
         {
@@ -260,7 +260,7 @@ public partial class NewOrderWorkspace
     private async Task<bool> SaveLiveProductAsync()
     {
         if(_order?.LegacyId is not { } id || _configuringLine?.LegacyId is not { } productId || !ProductDirty)return true;
-        if(!_configuringLine.CanEdit||!_order.WritesAllowed){_liveError="This product is read-only.";return false;}
+        if(!_configuringLine.CanEdit||!_order.WritesAllowed){_liveError=L["Product.ReadOnly"].Value;return false;}
         var headerBuffer=HeaderDirty?HeaderInput():null;
         ClearProductErrors();
         _busy=true;
@@ -276,16 +276,16 @@ public partial class NewOrderWorkspace
                     await UpdateLivePreviewAsync(false);
                     if (string.IsNullOrEmpty(_previewError))
                     {
-                        _priceMessage = "Parameters refreshed. Review them, then click Save & back to order again.";
-                        ShowNotice(_priceMessage, "warning", "Review refreshed parameters");
+                        _priceMessage = L["Product.RefreshedReview"].Value;
+                        ShowNotice(_priceMessage, "warning", L["Product.ReviewParameters"].Value);
                     }
                     else ShowProductFailure(_previewFailure ?? new SalesOrderEntryFailure(_previewError));
                     return false;
                 }
                 if (wasPreviewPending)
                 {
-                    _priceMessage = "Parameters are ready. Review them, then click Save & back to order again.";
-                    ShowNotice(_priceMessage, "warning", "Review refreshed parameters");
+                    _priceMessage = L["Product.ReadyReview"].Value;
+                    ShowNotice(_priceMessage, "warning", L["Product.ReviewParameters"].Value);
                     return false;
                 }
             }
@@ -293,9 +293,9 @@ public partial class NewOrderWorkspace
             ApplySnapshot(result.Order,productId);
             RestoreHeaderBuffer(headerBuffer);
             ClearProductErrors();
-            _priceMessage="Product saved; parameters and amounts updated.";
-            if(result.Order.Warnings.Count > 0) ShowNotice(string.Join(" ", result.Order.Warnings), "warning", "Product saved with a warning");
-            else ShowNotice("The product changes were saved.", "success", "Product saved");
+            _priceMessage=L["Product.SavedUpdated"].Value;
+            if(result.Order.Warnings.Count > 0) ShowNotice(string.Join(" ", result.Order.Warnings.Select(ApiMessage)), "warning", L["Product.SavedWarning"].Value);
+            else ShowNotice(L["Product.ChangesSaved"].Value, "success", L["Product.SavedTitle"].Value);
             return true;
         }
         catch(SalesOrderEntryFailure ex){ShowProductFailure(ex);return false;}
@@ -317,8 +317,8 @@ public partial class NewOrderWorkspace
     private async Task BackToOrderAsync()
     {
         if(!IsLive || !ProductDirty) { _configuringLine=null; ClearProductErrors(); DismissNotice(); return; }
-        if(Entry.HasPendingCommand) { _liveError="Check the outstanding save before leaving this product."; return; }
-        if(!await JS.InvokeAsync<bool>("confirm", "Discard the unsaved product changes and return to the order? Previously saved values remain."))return;
+        if(Entry.HasPendingCommand) { _liveError=L["Product.CheckPendingBeforeLeave"].Value; return; }
+        if(!await JS.InvokeAsync<bool>("confirm", L["Product.DiscardConfirm"].Value))return;
         if(_order?.LegacyId is not { } id)return;
         _busy=true;
         try
@@ -348,7 +348,7 @@ public partial class NewOrderWorkspace
     private async Task SaveLiveAccessoryAsync()
     {
         if(_order?.LegacyId is not { } id||_attachedTo?.LegacyId is not { } productId||SelectedAccessory is null)return;
-        if(!SelectedAccessory.HasReferencePrice && !_accessoryPriceEntered){_pickerError="This reference has no price. Enter an explicit unit price before saving.";return;}
+        if(!SelectedAccessory.HasReferencePrice && !_accessoryPriceEntered){_pickerError=L["Product.ExplicitPriceRequired"].Value;return;}
         _busy=true;
         try
         {
@@ -370,8 +370,8 @@ public partial class NewOrderWorkspace
     private async Task DeleteLiveProductAsync(DemoOrderLine line)
     {
         if(_order?.LegacyId is not { } id||line.LegacyId is not { } productId)return;
-        if(!line.CanDelete){_liveError="This product cannot be deleted in its current state.";return;}
-        if(!await JS.InvokeAsync<bool>("confirm","Delete this product and its accessories from the saved order?"))return;
+        if(!line.CanDelete){_liveError=L["Product.CannotDelete"].Value;return;}
+        if(!await JS.InvokeAsync<bool>("confirm",L["Product.DeleteConfirm"].Value))return;
         _busy=true;
         try{var result=await Entry.DeleteProductAsync(id,productId,new DeleteProductCommand(Guid.NewGuid(),_order.Revision));ApplySnapshot(result.Order);}
         catch(SalesOrderEntryFailure ex){_liveError=ex.Message;}
@@ -389,7 +389,7 @@ public partial class NewOrderWorkspace
         var line=_configuringLine;
         if(line.ColourId is null or 0 || line.WidthMm<=0 || line.HeightMm<=0)
         {
-            _priceMessage=CanEnterManualPrice ? "Enter a unit price, or select dimensions and material for a price-list lookup." : "Enter dimensions and choose material before looking up a price.";
+            _priceMessage=CanEnterManualPrice ? L["Product.PriceOrDimensions"].Value : L["Product.DimensionsBeforePrice"].Value;
             return;
         }
         try
@@ -399,10 +399,10 @@ public partial class NewOrderWorkspace
             var query=new SalesUnitPriceQuery(line.TypeId,line.ColourId.Value,line.WidthMm,line.HeightMm,line.Quantity,savedDate);
             var result=await Entry.PriceAsync(query);
             if(generation!=_priceRequestGeneration || !ReferenceEquals(line,_configuringLine) || line.TypeId!=query.TypeId || line.ColourId!=query.ComponentId || line.WidthMm!=query.WidthMm || line.HeightMm!=query.HeightMm || line.Quantity!=query.Quantity || SavedOrderDate!=query.OrderDate)return;
-            if(result.Status==SalesUnitPriceStatus.Found){_productErrors.Remove("price");line.Price=result.UnitPrice!.Value;line.UseListPrice=true;_priceMessage=_order.Date==savedDate ? "Price from legacy list." : $"Price from legacy list for saved order date {savedDate:yyyy-MM-dd}. Save the header date before quoting for another date.";}
+            if(result.Status==SalesUnitPriceStatus.Found){_productErrors.Remove("price");line.Price=result.UnitPrice!.Value;line.UseListPrice=true;_priceMessage=_order.Date==savedDate ? L["Product.LegacyListPrice"].Value : L["Product.PriceSavedDate", savedDate].Value;}
             else
             {
-                _priceMessage=$"No list price was found for {line.WidthMm} × {line.HeightMm} mm, material {line.ColourCode}, order date {savedDate:yyyy-MM-dd}. Check these values or ask for the price list to be updated.";
+                _priceMessage=L["Product.ListPriceMissing", line.WidthMm, line.HeightMm, line.ColourCode, savedDate].Value;
                 ShowProductFailure(new SalesOrderEntryFailure(_priceMessage, code:"PRICE_NOT_FOUND"), focusField:false);
             }
         }
@@ -410,7 +410,7 @@ public partial class NewOrderWorkspace
     }
     private async Task SaveLiveDutyAsync()
     {
-        if(_order?.LegacyId is not { } id||_employeeDutyId is null||_employeeId is null||!DateOnly.TryParse(_employeeDate,out var date)){_employeeError="Choose a duty, employee and date.";return;}
+        if(_order?.LegacyId is not { } id||_employeeDutyId is null||_employeeId is null||!DateOnly.TryParse(_employeeDate,out var date)){_employeeError=L["Workspace.ChooseDutyEmployeeDate"].Value;return;}
         _busy=true;
         try{var result=await Entry.SaveDutyAsync(id,new SaveOrderDutyCommand(Guid.NewGuid(),_order.Revision,new OrderDutyInput(_employeeDutyId.Value,_employeeId.Value,date,null)));ApplySnapshot(result.Order);_employeeError="";}
         catch(SalesOrderEntryFailure ex){_employeeError=ex.Message;}
@@ -428,14 +428,14 @@ public partial class NewOrderWorkspace
     private bool? _isMaterialShort;
     private string? _materialUnit;
     private bool _stockPreviewPending;
-    private string StockMessage => _stockPreviewPending ? "Checking material availability…" : _shortageDisposition switch
+    private string StockMessage => _stockPreviewPending ? L["Product.CheckingStock"].Value : _shortageDisposition switch
     {
-        "block" => "Insufficient material. Saving this configuration is blocked.",
-        "warn" => "Insufficient material. The configured policy permits entry with a warning.",
-        "allow" => "Material shortage. The configured policy permits entry.",
-        "unknown-policy" => "The shortage rule is unavailable. This configuration cannot be saved.",
-        "invalid-requirement" => "Check the required material quantity.",
-        _ => "Availability is checked again when saving."
+        "block" => L["Product.StockBlocked"].Value,
+        "warn" => L["Product.StockWarning"].Value,
+        "allow" => L["Product.StockAllowed"].Value,
+        "unknown-policy" => L["Product.StockUnknown"].Value,
+        "invalid-requirement" => L["Product.CheckRequiredMaterial"].Value,
+        _ => L["Product.StockCheckedOnSave"].Value
     };
     private string StockPercent => (_requiredMaterial > 0 && _availableMaterial is not null
         ? Math.Clamp(_availableMaterial.Value / _requiredMaterial.Value * 100, 0, 100) : 0).ToString("0.##",CultureInfo.InvariantCulture) + "%";
@@ -448,7 +448,7 @@ public partial class NewOrderWorkspace
     private async Task GuardNavigationAsync(Microsoft.AspNetCore.Components.Routing.LocationChangingContext context)
     {
         if(_leaving || !IsLive || !(HeaderDirty || ProductDirty || AddressDirty || PaymentDirty || ConfirmationDirty || Entry.HasPendingCommand))return;
-        if(!await JS.InvokeAsync<bool>("confirm","Leave this editor? Unsaved inputs will be lost. Saved legacy records remain."))context.PreventNavigation();
+        if(!await JS.InvokeAsync<bool>("confirm",L["Workspace.LeaveConfirm"].Value))context.PreventNavigation();
     }
     private Task UpdateLivePreviewAsync(bool recalculate = true) => _previewTask = RunLivePreviewAsync(recalculate);
     private async Task RunLivePreviewAsync(bool recalculate)
@@ -482,7 +482,7 @@ public partial class NewOrderWorkspace
             _materialUnit=result.MaterialUnit;
             _stockPreviewPending=false;
             line.RecalculateParameters=false;
-            if(input.RecalculateParameters) _priceMessage="Parameters recalculated. Save to apply.";
+            if(input.RecalculateParameters) _priceMessage=L["Product.ParametersRecalculated"].Value;
             await InvokeAsync(StateHasChanged);
         }
         catch(SalesOrderEntryFailure ex){if(generation==_previewGeneration){_stockPreviewPending=false;_previewError=ex.Message;_previewFailure=ex;_priceMessage=ex.Message;await InvokeAsync(StateHasChanged);}}
@@ -507,7 +507,7 @@ public partial class NewOrderWorkspace
         var selected=_addressOptions.FirstOrDefault(x=>x.Id==id);
         if(selected?.HasChildren==true)
         {
-            try{_addressOptions=await Entry.AddressesAsync(parentId:id);_addressError=$"Choose a street/address in {selected.Name}.";}
+            try{_addressOptions=await Entry.AddressesAsync(parentId:id);_addressError=L["Workspace.ChooseAddressIn", selected.Name].Value;}
             catch(SalesOrderEntryFailure ex){_addressError=ex.Message;}
             return;
         }
@@ -515,7 +515,7 @@ public partial class NewOrderWorkspace
     }
     private async Task SaveLiveAddressAsync()
     {
-        if(_order?.LegacyId is not { } id||_order.StreetId is not { } streetId){_addressError="Choose a street/address reference from the search results.";return;}
+        if(_order?.LegacyId is not { } id||_order.StreetId is not { } streetId){_addressError=L["Workspace.ChooseAddressReference"].Value;return;}
         if(!await SaveLiveProductAsync())return;
         var buffer=HeaderDirty?HeaderInput():null;
         _busy=true;
@@ -523,7 +523,7 @@ public partial class NewOrderWorkspace
         {
             var result=await Entry.SaveAddressAsync(id,new SaveOrderAddressCommand(Guid.NewGuid(),_order!.Revision,
                 new OrderAddressInput(streetId,_order.Building,_order.Flat,_order.Phone,_order.AddressNote)));
-            ApplySnapshot(result.Order,preserveAddress:false);RestoreHeaderBuffer(buffer);_addressError="Address saved.";
+            ApplySnapshot(result.Order,preserveAddress:false);RestoreHeaderBuffer(buffer);_addressError=L["Workspace.AddressSaved"].Value;
         }
         catch(SalesOrderEntryFailure ex){_addressError=ex.Message;}
         finally{_busy=false;}
@@ -534,24 +534,24 @@ public partial class NewOrderWorkspace
     {
         _finalPriceInput=e.Value?.ToString();
         if(_order?.LegacyId is not { } id)return;
-        if(HeaderDirty){_discountError="Save the header changes before setting a final price.";return;}
-        if(!decimal.TryParse(_finalPriceInput,NumberStyles.AllowDecimalPoint,CultureInfo.InvariantCulture,out var price)||price<0){_discountError="Enter a nonnegative final price.";return;}
+        if(HeaderDirty){_discountError=L["Workspace.SaveHeaderBeforePrice"].Value;return;}
+        if(!decimal.TryParse(_finalPriceInput,NumberStyles.AllowDecimalPoint,CultureInfo.InvariantCulture,out var price)||price<0){_discountError=L["Workspace.NonnegativeFinalPrice"].Value;return;}
         if(!await SaveLiveProductAsync())return;
         _busy=true;
         try
         {
             var result=await Entry.SetFinalPriceAsync(id,new SetOrderFinalPriceCommand(Guid.NewGuid(),_order!.Revision,price));
-            ApplySnapshot(result.Order);_finalPriceInput=null;_discountError="";_saveMessage="Final price saved.";
+            ApplySnapshot(result.Order);_finalPriceInput=null;_discountError="";_saveMessage=L["Workspace.FinalPriceSaved"].Value;
         }
         catch(SalesOrderEntryFailure ex){_discountError=ex.Message;_liveError=ex.Message;}
         finally{_busy=false;}
     }
     private async Task CancelLiveOrderAsync()
     {
-        if(_order?.CancellationUnavailableReason is { } reason){_liveError=reason;return;}
+        if(_order?.CancellationUnavailableReason is { } reason){_liveError=ApiMessage(reason);return;}
         if(_order?.LegacyId is not { } id)return;
-        if(HeaderDirty||AddressDirty||ProductDirty){_liveError="Save the current changes before cancelling the order.";return;}
-        if(!await JS.InvokeAsync<bool>("confirm","Cancel this saved order? Its history remains available."))return;
+        if(HeaderDirty||AddressDirty||ProductDirty){_liveError=L["Workspace.SaveBeforeCancel"].Value;return;}
+        if(!await JS.InvokeAsync<bool>("confirm",L["Workspace.CancelConfirm"].Value))return;
         _busy=true;
         try{var result=await Entry.CancelOrderAsync(id,new CancelOrderCommand(Guid.NewGuid(),_order.Revision));ApplySnapshot(result.Order);}
         catch(SalesOrderEntryFailure ex){_liveError=ex.Message;}

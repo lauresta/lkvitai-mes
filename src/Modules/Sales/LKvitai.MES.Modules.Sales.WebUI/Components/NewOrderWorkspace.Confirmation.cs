@@ -19,14 +19,14 @@ public partial class NewOrderWorkspace
     private async Task OpenConfirmationAsync()
     {
         if(!CanConfirmLiveProducts || _order?.LegacyId is not { } id)return;
-        if(_paymentSheetOpen){_liveError="Close the payment sheet before confirming production.";return;}
+        if(_paymentSheetOpen){_liveError=L["Confirmation.ClosePaymentFirst"].Value;return;}
         if(HeaderDirty||ProductDirty||AddressDirty||PaymentDirty)
-        { _liveError="Save or discard current header, product, address and payment inputs before confirming production.";return; }
+        { _liveError=L["Confirmation.SaveInputsFirst"].Value;return; }
         _busy=true;
         try
         {
             ApplySnapshot(await Entry.ReadAsync(id));
-            if(!CanConfirmLiveProducts){_liveError="Production confirmation is unavailable for this order.";return;}
+            if(!CanConfirmLiveProducts){_liveError=L["Confirmation.Unavailable"].Value;return;}
             _confirmationSelected.Clear();_confirmationRevision=_order!.Revision;
             _confirmationError="";_confirmationSheetOpen=true;
         }
@@ -39,16 +39,16 @@ public partial class NewOrderWorkspace
     }
     private void CloseConfirmation()
     {
-        if(Entry.HasPendingCommand){_confirmationError="Recover the outstanding command before closing confirmation.";return;}
+        if(Entry.HasPendingCommand){_confirmationError=L["Confirmation.RecoverBeforeClose"].Value;return;}
         _confirmationSheetOpen=false;_confirmationSelected.Clear();
     }
     private async Task ConfirmSelectedProductsAsync()
     {
         if(!CanConfirmLiveProducts||_order?.LegacyId is not { } id)return;
         if(HeaderDirty||ProductDirty||AddressDirty||PaymentDirty||_order.Revision!=_confirmationRevision)
-        { _confirmationError="The order or inputs changed. Save or discard edits, then reopen confirmation.";return; }
+        { _confirmationError=L["Confirmation.InputsChanged"].Value;return; }
         if(_confirmationSelected.Count is <1 or >500 || _confirmationSelected.Any(id=>!ConfirmationCandidates.Any(line=>line.LegacyId==id)))
-        { _confirmationError="Select between one and 500 saved manufactured products.";return; }
+        { _confirmationError=L["Confirmation.SelectRange"].Value;return; }
         _busy=true;
         try
         {
@@ -63,6 +63,6 @@ public partial class NewOrderWorkspace
     private void ProductionConfirmationRecovered()
     {
         _confirmationSheetOpen=false;_confirmationSelected.Clear();_confirmationError="";
-        _saveIsError=false;_saveMessage="Products confirmed for production.";
+        _saveIsError=false;_saveMessage=L["Confirmation.Completed"].Value;
     }
 }

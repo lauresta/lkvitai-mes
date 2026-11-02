@@ -168,6 +168,7 @@ public sealed class PaymentCascadeTests
         var authentication=new FixtureAuthentication(new ClaimsPrincipal(new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier,subject.ToString()),new Claim(SalesCredentialProtector.SessionClaim,proof)],"Cookies")));
         var transport=new CascadeTransport();
         var component=new NewOrderWorkspace{Entry=new SalesOrderEntryClient(new ClientFactory(new HttpClient(transport){BaseAddress=new Uri("https://test.invalid")}),new SalesSessionCredentials(authentication,codec),new NoJs())};
+        SalesTestLocalization.Wire(component);
         Set(component,"_order",new DemoOrderDraft{LegacyId=1,Revision="r1",PaymentsEnabled=true,WritesAllowed=true,AllowedPaymentMethods=Methods.Select(x=>x.Id).ToArray()});
         Set(component,"_headerSaved",System.Text.Json.JsonSerializer.Serialize(typeof(NewOrderWorkspace).GetMethod("HeaderInput",Private)!.Invoke(component,[])));
         Set(component,"_addressSaved","null");

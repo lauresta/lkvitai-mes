@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Shell.EnvironmentBanner" xml:space="preserve"><value>{0} ENVIRONMENT</value></data>
+  <data name="Shell.BannerNote.Shared" xml:space="preserve"><value>Data in this environment is not production data and may be reset without notice.</value></data>
+  <data name="Shell.BannerNote.Local" xml:space="preserve"><value>Local or private-network environment. Data may be reset without notice.</value></data>
+  <data name="Shell.EnvironmentAndVersion" xml:space="preserve"><value>Environment and version</value></data>
+  <data name="Shell.Search.Placeholder" xml:space="preserve"><value>Search everything…</value></data>
+  <data name="Shell.Search.Label" xml:space="preserve"><value>Open universal search</value></data>
+  <data name="Shell.Search.PopoverTitle" xml:space="preserve"><value>Universal search</value></data>
+  <data name="Shell.Search.PopoverBody" xml:space="preserve"><value>Search across orders, fabrics, modules and more — coming soon. For now use module-level filters inside each section.</value></data>
+  <data name="Shell.Dismiss" xml:space="preserve"><value>Dismiss</value></data>
+  <data name="Shell.Logout" xml:space="preserve"><value>Logout</value></data>
+  <data name="Shell.SignedIn" xml:space="preserve"><value>Signed in</value></data>
+  <data name="Shell.MobileNavigation" xml:space="preserve"><value>Toggle navigation menu</value></data>
+  <data name="Shell.HomeLink" xml:space="preserve"><value>Cikada.MES Portal home</value></data>
+  <data name="Shell.HomeLink.Open" xml:space="preserve"><value>Open Cikada.MES Portal home</value></data>
+  <data name="Shell.Language" xml:space="preserve"><value>Language</value></data>
+</root>

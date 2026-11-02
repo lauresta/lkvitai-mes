@@ -90,7 +90,7 @@ public sealed class DemoAccessory
     private string? _name;
     public string Name
     {
-        get => string.IsNullOrWhiteSpace(_name) ? $"Priedas #{Id}" : _name;
+        get => string.IsNullOrWhiteSpace(_name) ? LKvitai.MES.Modules.Sales.WebUI.Resources.SalesResourceText.Localizer["Catalog.UnnamedAccessory", Id].Value : _name;
         init => _name = value;
     }
     public string Unit { get; init; } = "";

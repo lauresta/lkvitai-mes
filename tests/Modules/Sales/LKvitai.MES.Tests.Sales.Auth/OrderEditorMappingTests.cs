@@ -15,6 +15,7 @@ public sealed class OrderEditorMappingTests
     public void Confirmation_selection_uses_persisted_manufactured_facts_and_retains_historical_types()
     {
         var component=new NewOrderWorkspace();
+        SalesTestLocalization.Wire(component);
         var flags=BindingFlags.Instance|BindingFlags.NonPublic;
         var type=typeof(NewOrderWorkspace);
         var catalogue=new DemoCatalog { Categories=[
@@ -61,6 +62,7 @@ public sealed class OrderEditorMappingTests
                "MethodName":"Actual legacy cash method","EmployeeName":"Approved hidden receiver"}]}
             """)!;
         var component=new NewOrderWorkspace();
+        SalesTestLocalization.Wire(component);
         var flags=BindingFlags.Instance|BindingFlags.NonPublic;
         var type=typeof(NewOrderWorkspace);
         void Apply(OrderEditorSnapshot data)=>type.GetMethod("ApplySnapshot",flags)!.Invoke(component,[data,null,false,false]);
@@ -83,7 +85,7 @@ public sealed class OrderEditorMappingTests
     public async Task Historical_type_renders_its_saved_selection_without_adding_it_to_new_product_choices()
     {
         var activeTypes = new List<DemoType> { new() { Id=1, Name="Current active type" } };
-        await using var services = new ServiceCollection().AddLogging().BuildServiceProvider();
+        await using var services = new ServiceCollection().AddLogging().AddLocalization().BuildServiceProvider();
         await using var renderer = new HtmlRenderer(services, services.GetRequiredService<ILoggerFactory>());
         var html = await renderer.Dispatcher.InvokeAsync(async () =>
         {
@@ -95,6 +97,7 @@ public sealed class OrderEditorMappingTests
         Assert.True(System.Text.RegularExpressions.Regex.IsMatch(html, "<option(?=[^>]*value=\"-42\")(?=[^>]*selected)[^>]*>Historical R25 \\(saved\\)</option>"), html);
         Assert.Contains("<option value=\"1\">Current active type</option>", html);
         var component = new NewOrderWorkspace();
+        SalesTestLocalization.Wire(component);
         var flags = BindingFlags.Instance | BindingFlags.NonPublic;
         typeof(NewOrderWorkspace).GetField("Catalog", flags)!.SetValue(component, new DemoCatalog { Categories=[new DemoCategory { Id=7, Name="Roletai", Active=true, Types=activeTypes }] });
         typeof(NewOrderWorkspace).GetField("_selectedCategoryId", flags)!.SetValue(component, 7);
@@ -106,6 +109,7 @@ public sealed class OrderEditorMappingTests
     public void Inactive_categories_are_excluded_from_live_new_choices_but_retained_for_saved_product_display()
     {
         var component = new NewOrderWorkspace();
+        SalesTestLocalization.Wire(component);
         var flags = BindingFlags.Instance | BindingFlags.NonPublic;
         var type = typeof(NewOrderWorkspace);
         type.GetField("Catalog", flags)!.SetValue(component, new DemoCatalog { Categories = [
@@ -122,6 +126,7 @@ public sealed class OrderEditorMappingTests
     public void Price_lookup_context_uses_committed_date_while_header_edit_is_buffered()
     {
         var component = new NewOrderWorkspace();
+        SalesTestLocalization.Wire(component);
         var flags = BindingFlags.Instance | BindingFlags.NonPublic;
         var type = typeof(NewOrderWorkspace);
         type.GetField("_order", flags)!.SetValue(component, new DemoOrderDraft { Date = new DateOnly(2026, 11, 1) });
@@ -133,6 +138,7 @@ public sealed class OrderEditorMappingTests
     public void Calculation_reference_refresh_does_not_dirty_product_and_note_only_is_separate_from_business_configuration()
     {
         var component = new NewOrderWorkspace();
+        SalesTestLocalization.Wire(component);
         var line = new DemoOrderLine { TypeId = 4, Price = 12, WidthMm = 800, HeightMm = 1500, Quantity = 1 };
         var type = typeof(NewOrderWorkspace);
         var flags = BindingFlags.Instance | BindingFlags.NonPublic;
@@ -165,6 +171,7 @@ public sealed class OrderEditorMappingTests
             """)!;
         snapshot=snapshot with {Header=snapshot.Header with {Cancelled=cancelled},Products=[snapshot.Products[0] with {CanEdit=lineFlag,CanDelete=lineFlag}]};
         var component=new NewOrderWorkspace();
+        SalesTestLocalization.Wire(component);
         typeof(NewOrderWorkspace).GetMethod("ApplySnapshot",BindingFlags.Instance|BindingFlags.NonPublic)!.Invoke(component,[snapshot,null,false,false]);
         var model=(DemoOrderDraft)typeof(NewOrderWorkspace).GetField("_order",BindingFlags.Instance|BindingFlags.NonPublic)!.GetValue(component)!;
         Assert.Equal(expectedHeader,model.CanEdit);

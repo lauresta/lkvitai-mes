@@ -1,3 +1,4 @@
+using LKvitai.MES.BuildingBlocks.WebUI.Localization;
 using System.Security.Claims;
 using LKvitai.MES.BuildingBlocks.PortalAuth;
 using LKvitai.MES.BuildingBlocks.WebUI.Services;
@@ -39,6 +40,7 @@ builder.Host.UseSerilog();
 
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
+builder.Services.AddCikadaLocalization(builder.Configuration);
 builder.Services.AddPortalCookieAuthentication(builder.Environment, builder.Configuration);
 builder.Services.AddAuthorization();
 // CascadingAuthenticationState lets Pages/Home.razor + MainLayout consume
@@ -81,6 +83,8 @@ builder.Services.AddHttpClient("WarehouseApi", (sp, client) =>
 var app = builder.Build();
 
 app.UsePathBase(ResolvePathBase(app.Configuration));
+// Shared EN/LT UI culture from the cross-module culture cookie (docs/i18n/README.md).
+app.UseCikadaRequestLocalization();
 app.UsePortalSecureHosting(app.Environment);
 
 app.Use(async (context, next) =>
@@ -242,6 +246,7 @@ app.MapPortalLogout();
 // were removed in this migration; styles.css stays for shared dashboard
 // styles still consumed by Pages/Home.razor.
 app.MapRazorPages();
+app.MapCikadaCultureEndpoint();
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
 
@@ -257,6 +262,7 @@ static IResult RedirectToLogin(HttpContext context, string returnUrl, string err
 static bool IsAnonymousPortalPath(PathString path)
 {
     return path.StartsWithSegments("/login.html", StringComparison.OrdinalIgnoreCase) ||
+           path.StartsWithSegments("/culture", StringComparison.OrdinalIgnoreCase) ||
            path.StartsWithSegments("/auth/login", StringComparison.OrdinalIgnoreCase) ||
            path.StartsWithSegments("/auth/logout", StringComparison.OrdinalIgnoreCase) ||
            path.StartsWithSegments("/styles.css", StringComparison.OrdinalIgnoreCase) ||

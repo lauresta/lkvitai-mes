@@ -1,8 +1,8 @@
 @using LKvitai.MES.Modules.Sales.Contracts.Orders
 @if (Entries is { Count: > 0 })
 {
-    <section class="panel order-note-history" aria-label="Order note history">
-        <div class="panel__head"><h2>Note history</h2><span>@Entries.Count entries · read-only</span></div>
+    <section class="panel order-note-history" aria-label="@L["Notes.HistoryAria"]">
+        <div class="panel__head"><h2>@L["Notes.History"]</h2><span>@L["Notes.EntryCount", Entries.Count]</span></div>
         <ol>
             @foreach (var entry in Entries)
             {
@@ -11,7 +11,7 @@
                         @if (entry.At is not null) { <time>@OrderFormat.DateTime(entry.At.Value)</time> }
                         @if (!string.IsNullOrWhiteSpace(entry.Author)) { <span>@entry.Author</span> }
                     </div>
-                    <p>@(LegacyOrderPrivacy.IsRestricted(entry.Note) ? "Order cancelled at the customer’s request." : entry.Note)</p>
+                    <p>@(LegacyOrderPrivacy.IsRestricted(entry.Note) ? L["Notes.CustomerCancellation"].Value : entry.Note)</p>
                 </li>
             }
         </ol>

@@ -133,17 +133,17 @@ public static class DemoOrderNumber
     {
         canonical = "";
         series = "";
-        error = "Enter a number such as VV-123 or VV-123-A.";
+        error = LKvitai.MES.Modules.Sales.WebUI.Resources.SalesResourceText.Localizer["Errors.Client.NumberExample"].Value;
         var text = input?.Trim() ?? "";
         var known = catalog.Series.OrderByDescending(x => x.Code.Length).FirstOrDefault(x => text.StartsWith(x.Code + "-", StringComparison.OrdinalIgnoreCase));
-        if (known is null) { error = "Choose an existing order series."; return false; }
+        if (known is null) { error = LKvitai.MES.Modules.Sales.WebUI.Resources.SalesResourceText.Localizer["Errors.Client.ExistingSeries"].Value; return false; }
         series = known.Code;
         var match = Pattern.Match("S-" + text[(known.Code.Length + 1)..]);
         if (!match.Success) return false;
         if (!int.TryParse(match.Groups[2].Value, NumberStyles.None, CultureInfo.InvariantCulture, out var sequence)
             || sequence <= 0)
         {
-            error = "The sequence must be a positive number within the legacy range.";
+            error = LKvitai.MES.Modules.Sales.WebUI.Resources.SalesResourceText.Localizer["Errors.Client.SequenceRange"].Value;
             return false;
         }
 
@@ -152,7 +152,7 @@ public static class DemoOrderNumber
         if (suffix.StartsWith(yearPart, StringComparison.Ordinal)) suffix = suffix[2..];
         if (suffix.Length > 2)
         {
-            error = "Use at most two characters after the year group.";
+            error = LKvitai.MES.Modules.Sales.WebUI.Resources.SalesResourceText.Localizer["Errors.Client.YearSuffixLength"].Value;
             return false;
         }
 

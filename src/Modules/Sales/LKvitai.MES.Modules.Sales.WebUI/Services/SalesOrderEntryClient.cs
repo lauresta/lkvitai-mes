@@ -3,14 +3,17 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.JSInterop;
+using Microsoft.Extensions.Localization;
+using LKvitai.MES.Modules.Sales.WebUI.Resources;
 using LKvitai.MES.Modules.Sales.Contracts.OrderEntry;
 using LKvitai.MES.Modules.Sales.Contracts.Quotes;
 
 namespace LKvitai.MES.Modules.Sales.WebUI.Services;
 
 /// <summary>Circuit-scoped transport. Unknown mutation outcomes retain the original command for exact replay.</summary>
-public sealed partial class SalesOrderEntryClient(IHttpClientFactory factory, SalesSessionCredentials credentials, IJSRuntime js)
+public sealed partial class SalesOrderEntryClient(IHttpClientFactory factory, SalesSessionCredentials credentials, IJSRuntime js, IStringLocalizer<SalesResources>? localizer = null)
 {
+    private readonly IStringLocalizer<SalesResources> L = localizer ?? SalesResourceText.Localizer;
     public Task<LiveOrderEntryCatalogDto> CatalogAsync() => GetAsync<LiveOrderEntryCatalogDto>("/api/sales/order-entry/catalog");
     public Task<IReadOnlyList<OrderAddressReferenceDto>> AddressesAsync(string? search = null, int? parentId = null, int? id = null) => GetAsync<IReadOnlyList<OrderAddressReferenceDto>>("/api/sales/order-entry/addresses?" + string.Join("&",new[] { search is null ? null : "search="+Uri.EscapeDataString(search), parentId is null ? null : "parentId="+parentId, id is null ? null : "id="+id }.Where(x=>x is not null)));
     public Task<LegacyProductPreviewDto> PreviewAsync(LegacyProductPreviewRequest request) => SendAsync<LegacyProductPreviewDto>(HttpMethod.Post,"/api/sales/order-entry/product-preview",request,false);
@@ -42,7 +45,7 @@ public sealed partial class SalesOrderEntryClient(IHttpClientFactory factory, Sa
     {
         var mutation = isMutation ?? method != HttpMethod.Get;
         var credential = await credentials.CreateApiCredentialAsync();
-        if (credential is null) throw new SalesOrderEntryFailure("Your session needs to be renewed. Sign in in another tab, then retry.", false, 401);
+        if (credential is null) throw new SalesOrderEntryFailure(L["Errors.Client.SessionRenew"].Value, false, 401);
         using var request = new HttpRequestMessage(method, path);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", credential);
         if (body is not null) request.Content = JsonContent.Create(body, body.GetType());
@@ -51,7 +54,7 @@ public sealed partial class SalesOrderEntryClient(IHttpClientFactory factory, Sa
             using var response = await factory.CreateClient("SalesApi").SendAsync(request);
             if (!response.IsSuccessStatusCode)
             {
-                var message = "The Sales service could not complete this operation.";
+                var message = L["Errors.Client.ServiceFailure"].Value;
                 var code = "";
                 try
                 {
@@ -61,12 +64,12 @@ public sealed partial class SalesOrderEntryClient(IHttpClientFactory factory, Sa
                     if (problem.TryGetProperty("code", out var errorCode)) code = errorCode.GetString() ?? "";
                 }
                 catch (JsonException) { }
-                throw new SalesOrderEntryFailure(message, mutation && (int)response.StatusCode >= 500, (int)response.StatusCode, code);
+                throw new SalesOrderEntryFailure(SalesApiErrors.Translate(L, code, message), mutation && (int)response.StatusCode >= 500, (int)response.StatusCode, code);
             }
-            return await response.Content.ReadFromJsonAsync<T>() ?? throw new SalesOrderEntryFailure("The service returned an empty response. Check the save outcome before retrying.", mutation);
+            return await response.Content.ReadFromJsonAsync<T>() ?? throw new SalesOrderEntryFailure(L["Errors.Client.EmptyResponse"].Value, mutation);
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException)
-        { throw new SalesOrderEntryFailure("Connection interrupted. Your input is retained; retry the same save to recover its result.", mutation); }
+        { throw new SalesOrderEntryFailure(L["Errors.Client.ConnectionInterrupted"].Value, mutation); }
     }
 }
 

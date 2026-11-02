@@ -9,23 +9,23 @@
             else { <span class="material-picker__placeholder">▧</span> }
         </span>
         <input @ref="_input" id="@InputId" class="mono material-picker__input" value="@_text"
-               data-select-on-focus placeholder="Search material code or name" disabled="@Disabled" autocomplete="off" spellcheck="false"
-               role="combobox" aria-label="Material" aria-autocomplete="list" aria-expanded="@(_open ? "true" : "false")"
+               data-select-on-focus placeholder="@L["Material.Search"]" disabled="@Disabled" autocomplete="off" spellcheck="false"
+               role="combobox" aria-label="@L["Material.Material"]" aria-autocomplete="list" aria-expanded="@(_open ? "true" : "false")"
                aria-controls="@ListId" aria-activedescendant="@ActiveOptionId" aria-invalid="@(Invalid ? "true" : null)"
                aria-describedby="@DescribedBy" @oninput="ChangeTextAsync" @onfocus="Open" @onblur="Close"
                @onkeydown="KeyDownAsync" />
         @if (Selected is { } material)
         {
             <span class="material-picker__selected-name">@material.Name</span>
-            <span class="material-picker__free @(material.FreeQuantity <= 0 ? "is-short" : "")">Free @Quantity(material.FreeQuantity) @material.Unit</span>
+            <span class="material-picker__free @(material.FreeQuantity <= 0 ? "is-short" : "")">@L["Material.FreeQuantity", Quantity(material.FreeQuantity), material.Unit ?? ""]</span>
         }
-        <button type="button" class="material-picker__toggle" tabindex="-1" disabled="@Disabled" aria-label="Show materials"
+        <button type="button" class="material-picker__toggle" tabindex="-1" disabled="@Disabled" aria-label="@L["Material.ShowMaterials"]"
                 @onmousedown:preventDefault @onclick="ToggleAsync">▾</button>
     </div>
     @if (_open && !Disabled)
     {
-        <div id="@ListId" class="material-picker__menu" role="listbox" aria-label="Materials">
-            <div class="material-picker__head" aria-hidden="true"><span>Material</span><span>Free</span><span>Warehouse</span><span>Production</span><span>Total</span><span>Reserved</span></div>
+        <div id="@ListId" class="material-picker__menu" role="listbox" aria-label="@L["Material.Materials"]">
+            <div class="material-picker__head" aria-hidden="true"><span>@L["Material.Material"]</span><span>@L["Material.Free"]</span><span>@L["Material.Warehouse"]</span><span>@L["Material.Production"]</span><span>@L["Material.Total"]</span><span>@L["Material.Reserved"]</span></div>
             @for (var index = 0; index < _matches.Count; index++)
             {
                 var item = _matches[index];
@@ -42,9 +42,9 @@
                     <span class="material-picker__quantity">@Quantity(item.ReservedQuantity)</span>
                 </div>
             }
-            @if (_matches.Count == 0) { <div class="material-picker__message">No matching materials. Choose a listed code.</div> }
-            else if (_hasMore) { <div class="material-picker__message">First @MaximumSuggestions results · type to narrow</div> }
-            <div class="material-picker__message">Stock snapshot · checked again when saving. Reserved quantities are negative.</div>
+            @if (_matches.Count == 0) { <div class="material-picker__message">@L["Material.NoMatches"]</div> }
+            else if (_hasMore) { <div class="material-picker__message">@L["Material.FirstResults", MaximumSuggestions]</div> }
+            <div class="material-picker__message">@L["Material.StockSnapshot"]</div>
         </div>
     }
     @if (!string.IsNullOrWhiteSpace(ErrorText)) { <div id="@DescribedBy" class="material-picker__error" role="alert">@ErrorText</div> }

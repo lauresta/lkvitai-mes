@@ -1,6 +1,6 @@
 @page "/entry/{OrderId:long}"
 @inject NavigationManager Navigation
-<PageTitle>Sales · Order entry</PageTitle>
+<PageTitle>@L["Orders.EntryPageTitle"]</PageTitle>
 <NewOrderWorkspace @key="OrderId" LegacyOrderId="OrderId" OnClose="BackToOrders" />
 @code {
     [Parameter] public long OrderId { get; set; }

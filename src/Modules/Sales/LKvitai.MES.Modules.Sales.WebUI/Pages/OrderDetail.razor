@@ -3,19 +3,19 @@
 @inject PersistentComponentState ApplicationState
 @implements IDisposable
 
-<PageTitle>@Number &middot; Sales</PageTitle>
+<PageTitle>@L["Details.PageTitle", Number]</PageTitle>
 
 <main class="main">
 
     @* ── Page head ─────────────────────────────────────────────── *@
     <div class="page-head">
         <div>
-            <div class="eyebrow mono">Sales &middot; Orders</div>
-            <h1>Order details</h1>
+            <div class="eyebrow mono">@L["Orders.PageTitle"]</div>
+            <h1>@L["Details.Title"]</h1>
         </div>
         <div class="page-actions">
-            @if(_order is not null) { <a class="btn btn--primary" href="entry/@_order.Id">Edit order</a> }
-            <a class="btn btn--ghost" href="./">&#8592; Back to orders</a>
+            @if(_order is not null) { <a class="btn btn--primary" href="entry/@_order.Id">@L["Details.EditOrder"]</a> }
+            <a class="btn btn--ghost" href="./">&#8592; @L["Nav.BackToOrders"]</a>
         </div>
     </div>
 
@@ -24,10 +24,10 @@
         <section class="panel" role="alert">
             <div class="panel__head" style="background:var(--danger-bg);color:var(--danger-fg)">
                 <div>
-                    <strong>Sales API unreachable.</strong>
-                    <span>Could not load <span class="mono">@Number</span>.</span>
+                    <strong>@L["Orders.ApiUnavailable"]</strong>
+                    <span>@L["Details.CouldNotLoad", Number]</span>
                 </div>
-                <button class="btn btn--ghost" type="button" @onclick="ReloadAsync">Retry</button>
+                <button class="btn btn--ghost" type="button" @onclick="ReloadAsync">@L["Common.Retry"]</button>
             </div>
         </section>
     }
@@ -36,10 +36,10 @@
         <section class="panel">
             <div class="panel__head">
                 <div>
-                    <strong>Order not found.</strong>
-                    <span>No order matches <span class="mono">@Number</span>.</span>
+                    <strong>@L["Details.NotFound"]</strong>
+                    <span>@L["Details.NoMatchingOrder", Number]</span>
                 </div>
-                <a class="btn btn--ghost" href="./">Back to orders</a>
+                <a class="btn btn--ghost" href="./">@L["Nav.BackToOrders"]</a>
             </div>
         </section>
     }
@@ -49,9 +49,9 @@
 
         <section class="panel details" aria-labelledby="details-title">
             <CustomerPrivacyNotice IsRestricted="o.IsPrivacyRestricted" />
-            <nav class="details__breadcrumb" aria-label="Breadcrumb">
-                <a href="./">Home</a><span>/</span>
-                <a href="./">Orders</a><span>/</span>
+            <nav class="details__breadcrumb" aria-label="@L["Nav.Breadcrumb"]">
+                <a href="./">@L["Nav.Home"]</a><span>/</span>
+                <a href="./">@L["Common.Orders"]</a><span>/</span>
                 <strong>@o.Number</strong>
             </nav>
             <header class="details__title">
@@ -59,43 +59,43 @@
                     <span class="details__id mono">@o.Number</span>
                     <h2 id="details-title">@o.Customer</h2>
                     <div class="details__sub">
-                        <span><b>Date:</b> @OrderFormat.Date(o.Date)</span>
-                        <span><b>Address:</b> @o.Address</span>
-                        <span><b>Store:</b> @o.Store</span>
-                        <span><b>Status:</b> <span class="chip @OrderFormat.StatusChip(o.StatusCode) chip--sm">@o.Status</span></span>
+                        <span><b>@L["Common.Date"]:</b> @OrderFormat.Date(o.Date)</span>
+                        <span><b>@L["Common.Address"]:</b> @o.Address</span>
+                        <span><b>@L["Common.Store"]:</b> @o.Store</span>
+                        <span><b>@L["Common.Status"]:</b> <span class="chip @OrderFormat.StatusChip(o.StatusCode) chip--sm">@LocalizedStatus(o.StatusCode, o.Status)</span></span>
                     </div>
                     @if (o.Operator is not null)
                     {
-                        <div class="details__op">Operator: @o.Operator.Name &middot; @OrderFormat.DateTime(o.Operator.At)</div>
+                        <div class="details__op">@L["Details.Operator", o.Operator.Name, OrderFormat.DateTime(o.Operator.At)]</div>
                     }
                 </div>
                 <div class="details__title__actions">
-                    <button class="btn btn--ghost" type="button">Print</button>
-                    <button class="btn" type="button">Email customer</button>
-                    <button class="btn btn--primary" type="button">Open in PoS</button>
+                    <button class="btn btn--ghost" type="button">@L["Details.Print"]</button>
+                    <button class="btn" type="button">@L["Details.EmailCustomer"]</button>
+                    <button class="btn btn--primary" type="button">@L["Details.OpenPos"]</button>
                 </div>
             </header>
 
             @* Items *@
             <div class="details__section">
                 <div class="section-label">
-                    Items
-                    <span class="section-label__count">@o.ItemGroups.Count products &middot; @o.ItemGroups.Sum(g => g.Lines.Count) line items</span>
+                    @L["Details.Items"]
+                    <span class="section-label__count">@L["Details.ItemCount", o.ItemGroups.Count, o.ItemGroups.Sum(g => g.Lines.Count)]</span>
                 </div>
                 <div class="table-wrap is-mobile-hidden">
                     <table class="lk-table">
                         <thead>
                             <tr>
                                 <th style="width:24px">#</th>
-                                <th>Item</th>
-                                <th>Side</th>
-                                <th>Color</th>
-                                <th class="is-num">Width</th>
-                                <th class="is-num">Height</th>
-                                <th>Notes</th>
-                                <th class="is-num">Q-ty</th>
-                                <th class="is-num">Price</th>
-                                <th class="is-num">Amount</th>
+                                <th>@L["Details.Item"]</th>
+                                <th>@L["Details.Side"]</th>
+                                <th>@L["Details.Color"]</th>
+                                <th class="is-num">@L["Common.Width"]</th>
+                                <th class="is-num">@L["Common.Height"]</th>
+                                <th>@L["Common.Notes"]</th>
+                                <th class="is-num">@L["Details.QuantityShort"]</th>
+                                <th class="is-num">@L["Common.Price"]</th>
+                                <th class="is-num">@L["Common.Amount"]</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -134,7 +134,7 @@
                                 <div class="mobile-card__meta">
                                     <span>@line.Side &middot; @line.Color</span>
                                     <span>@OrderFormat.Dimension(line.Width) &times; @OrderFormat.Dimension(line.Height)</span>
-                                    <span>Amount <b>@OrderFormat.Money(line.Amount)</b></span>
+                                    <span>@L["Common.Amount"] <b>@OrderFormat.Money(line.Amount)</b></span>
                                 </div>
                             </article>
                         }
@@ -144,18 +144,18 @@
 
             @if (!o.IsPrivacyRestricted && !string.IsNullOrWhiteSpace(o.CurrentNote))
             {
-                <div class="details__section"><div class="section-label">Current note</div><p style="white-space:pre-wrap">@o.CurrentNote</p></div>
+                <div class="details__section"><div class="section-label">@L["Notes.Current"]</div><p style="white-space:pre-wrap">@o.CurrentNote</p></div>
             }
             <OrderNoteHistory Entries="o.NoteHistory" />
 
             @* Amounts *@
             <div class="details__section">
-                <div class="section-label">Amounts <span class="section-label__count">all values incl. VAT</span></div>
+                <div class="section-label">@L["Details.Amounts"] <span class="section-label__count">@L["Details.VatIncluded"]</span></div>
                 <div class="amounts">
                     @foreach (var card in o.Amounts)
                     {
                         <div class="amount-card @OrderFormat.AmountModifier(card.Kind)">
-                            <span class="amount-card__label">@card.Label</span>
+                            <span class="amount-card__label">@AmountLabel(card)</span>
                             <span class="amount-card__value">@OrderFormat.AmountValue(card)</span>
                         </div>
                     }
@@ -164,18 +164,18 @@
 
             @* Employees *@
             <div class="details__section">
-                <div class="section-label">Employees <span class="section-label__count">@o.Employees.Count assignments</span></div>
+                <div class="section-label">@L["Details.Employees"] <span class="section-label__count">@L["Details.AssignmentCount", o.Employees.Count]</span></div>
                 <div class="table-wrap is-mobile-hidden">
                     <table class="lk-table">
                         <thead>
                             <tr>
-                                <th>Duty</th>
-                                <th>Employee</th>
-                                <th>Service date</th>
-                                <th>Acquaintance date</th>
-                                <th class="is-num">Order q-ty</th>
-                                <th class="is-num">Item q-ty</th>
-                                <th class="is-num">Amount</th>
+                                <th>@L["Details.Duty"]</th>
+                                <th>@L["Details.Employee"]</th>
+                                <th>@L["Details.ServiceDate"]</th>
+                                <th>@L["Details.AcquaintanceDate"]</th>
+                                <th class="is-num">@L["Details.OrderQuantity"]</th>
+                                <th class="is-num">@L["Details.ItemQuantity"]</th>
+                                <th class="is-num">@L["Common.Amount"]</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -201,6 +201,33 @@
 </main>
 
 @code {
+
+    private string LocalizedStatus(string code, string raw)
+    {
+        var key = code switch
+        {
+            OrderStatusCodes.Entered => "Orders.Status.Entered",
+            OrderStatusCodes.Approved => "Orders.Status.Approved",
+            OrderStatusCodes.InProgress => "Orders.Status.InProgress",
+            OrderStatusCodes.Made => "Orders.Status.Made",
+            OrderStatusCodes.Shipped => "Orders.Status.Shipped",
+            OrderStatusCodes.Delivered => "Orders.Status.Delivered",
+            OrderStatusCodes.Paused => "Orders.Status.Paused",
+            OrderStatusCodes.Cancelled => "Orders.Status.Cancelled",
+            OrderStatusCodes.MultiStatus => "Orders.Status.MultiStatus",
+            _ => null
+        };
+        if (key is null) return raw;
+        var value = L[key];
+        return value.ResourceNotFound ? raw : value.Value;
+    }
+
+    private string AmountLabel(OrderAmountDto amount)
+    {
+        var value = L[$"Details.Amount.{amount.Kind}"];
+        return value.ResourceNotFound ? amount.Label : value.Value;
+    }
+
     [Parameter] public string Number { get; set; } = "";
 
     private OrderDetailsDto? _order;

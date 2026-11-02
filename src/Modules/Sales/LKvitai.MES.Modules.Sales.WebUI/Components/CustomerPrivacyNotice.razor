@@ -2,12 +2,12 @@
 {
     <aside class="customer-privacy-notice" role="note" aria-labelledby="@_titleId">
         <div class="customer-privacy-notice__copy">
-            <strong id="@_titleId">Personal data restricted — GDPR</strong>
-            <p>This order was cancelled at the customer’s request. Certain order information has been removed for privacy reasons.</p>
+            <strong id="@_titleId">@L["Privacy.Title"]</strong>
+            <p>@L["Privacy.Description"]</p>
         </div>
-        <a class="customer-privacy-notice__back" href="@BackHref" @onclick="BackAsync" @onclick:preventDefault="@OnBack.HasDelegate">← Back to orders</a>
+        <a class="customer-privacy-notice__back" href="@BackHref" @onclick="BackAsync" @onclick:preventDefault="@OnBack.HasDelegate">← @L["Nav.BackToOrders"]</a>
     </aside>
-    <div class="customer-privacy-watermark" aria-hidden="true"><span>Personal data restricted — GDPR</span></div>
+    <div class="customer-privacy-watermark" aria-hidden="true"><span>@L["Privacy.Title"]</span></div>
 }
 
 @code {

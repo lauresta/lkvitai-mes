@@ -6,7 +6,7 @@ namespace LKvitai.MES.Modules.Sales.WebUI.Components;
 public partial class NewOrderWorkspace
 {
     private string _noticeText = "";
-    private string _noticeTitle = "Order entry";
+    private string _noticeTitle = "";
     private string _noticeKind = "warning";
     private int _noticeVersion;
     private string? _focusInvalidField;
@@ -15,9 +15,9 @@ public partial class NewOrderWorkspace
     private string? ProductError(string field) => _productErrors.GetValueOrDefault(field);
     private string ProductFieldClass(string field) => ProductError(field) is null ? "" : "has-error";
     private void DismissNotice() => _noticeText = "";
-    private void ShowNotice(string text, string kind = "warning", string title = "Action needs attention")
+    private void ShowNotice(string text, string kind = "warning", string? title = null)
     {
-        _noticeText = text; _noticeKind = kind; _noticeTitle = title; _noticeVersion++;
+        _noticeText = ApiMessage(text); _noticeKind = kind; _noticeTitle = title ?? L["Workspace.Attention"].Value; _noticeVersion++;
     }
     private void ClearProductErrors() { _productErrors.Clear(); _lastInvalidField=null; }
     private async Task FocusProductErrorAsync()
@@ -50,7 +50,7 @@ public partial class NewOrderWorkspace
         if(failure.Code == "LEGACY_VALIDATION" && message.Contains("UPPER CASE CHARACTERS", StringComparison.OrdinalIgnoreCase))
         {
             field="note";
-            message="The notes contain too many capital letters or exclamation marks. Use normal sentence case, then save again.";
+            message=L["Product.NoteCapitalization"].Value;
         }
         // Older legacy rule responses carry a technical field prefix. Keep the
         // operator text readable while using that prefix to locate the input.
@@ -64,6 +64,6 @@ public partial class NewOrderWorkspace
             if (prefixField.Length > 0) { field=prefixField; message=message[(separator+2)..]; }
         }
         if(field.Length > 0) { _productErrors[field]=message; _lastInvalidField="config-"+field; if(focusField)_focusInvalidField=_lastInvalidField; }
-        ShowNotice(message, "error", "Product changes were not saved");
+        ShowNotice(message, "error", L["Product.ChangesNotSaved"].Value);
     }
 }

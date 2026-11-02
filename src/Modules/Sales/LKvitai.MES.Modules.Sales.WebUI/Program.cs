@@ -1,3 +1,4 @@
+using LKvitai.MES.BuildingBlocks.WebUI.Localization;
 using LKvitai.MES.BuildingBlocks.ModuleStartup;
 using LKvitai.MES.BuildingBlocks.PortalAuth;
 using LKvitai.MES.BuildingBlocks.WebUI.Services;
@@ -8,6 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.UseScaffoldSerilog("sales-webui");
 builder.Services.AddScaffoldWebUiCore("SalesApi", "SalesApi:BaseUrl", "http://localhost:5021");
+builder.Services.AddCikadaLocalization(builder.Configuration);
 
 // Bump the Blazor Server SignalR receive cap so PersistentComponentState
 // hydration messages aren't truncated. The framework default is 32 KB, and
@@ -50,6 +52,8 @@ builder.Services.AddSingleton<LKvitai.MES.Modules.Sales.Contracts.Samples.SalesS
 var app = builder.Build();
 
 app.UsePathBase(ScaffoldModuleStartupExtensions.ResolvePathBase(app.Configuration));
+// Shared EN/LT UI culture from the cross-module culture cookie (docs/i18n/README.md).
+app.UseCikadaRequestLocalization();
 app.UsePortalSecureHosting(app.Environment);
 
 app.UseSerilogRequestLogging();
@@ -66,6 +70,7 @@ app.UseAuthorization();
 app.MapGet("/health", () => Results.Ok());
 app.MapPortalLogout();
 app.MapSalesSessionProof();
+app.MapCikadaCultureEndpoint();
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
 

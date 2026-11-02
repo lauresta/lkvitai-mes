@@ -4,10 +4,10 @@
             <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
         </Found>
         <NotFound>
-            <PageTitle>Not found</PageTitle>
+            <PageTitle>@L["Nav.NotFound"]</PageTitle>
             <LayoutView Layout="@typeof(MainLayout)">
                 <MudContainer MaxWidth="MaxWidth.Medium" Class="py-8">
-                    <MudAlert Severity="Severity.Warning">Nothing at this address.</MudAlert>
+                    <MudAlert Severity="Severity.Warning">@L["Nav.NothingHere"]</MudAlert>
                 </MudContainer>
             </LayoutView>
         </NotFound>

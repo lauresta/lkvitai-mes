@@ -1,0 +1,398 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Common.Portal" xml:space="preserve">
+    <value>Portalas</value>
+  </data>
+  <data name="Common.PortalCms" xml:space="preserve">
+    <value>Portalo TVS</value>
+  </data>
+  <data name="Common.Tiles" xml:space="preserve">
+    <value>Plytelės</value>
+  </data>
+  <data name="Common.Loading" xml:space="preserve">
+    <value>Įkeliama…</value>
+  </data>
+  <data name="Common.Yes" xml:space="preserve">
+    <value>Taip</value>
+  </data>
+  <data name="Common.No" xml:space="preserve">
+    <value>Ne</value>
+  </data>
+  <data name="Common.Save" xml:space="preserve">
+    <value>Išsaugoti</value>
+  </data>
+  <data name="Common.Edit" xml:space="preserve">
+    <value>Redaguoti</value>
+  </data>
+  <data name="Common.Hide" xml:space="preserve">
+    <value>Slėpti</value>
+  </data>
+  <data name="Common.Version" xml:space="preserve">
+    <value>Versija</value>
+  </data>
+  <data name="Common.Channel" xml:space="preserve">
+    <value>Kanalas</value>
+  </data>
+  <data name="Common.Modules" xml:space="preserve">
+    <value>Moduliai</value>
+  </data>
+  <data name="Common.OpenModule" xml:space="preserve">
+    <value>Atidaryti: {0}</value>
+  </data>
+  <data name="Common.Status.Live" xml:space="preserve">
+    <value>Veikia</value>
+  </data>
+  <data name="Common.Status.Pilot" xml:space="preserve">
+    <value>Bandomasis</value>
+  </data>
+  <data name="Common.Status.Developing" xml:space="preserve">
+    <value>Kuriamas</value>
+  </data>
+  <data name="Common.Status.Planned" xml:space="preserve">
+    <value>Planuojamas</value>
+  </data>
+  <data name="Common.Count.Live" xml:space="preserve">
+    <value>veikia</value>
+  </data>
+  <data name="Common.Count.Pilot" xml:space="preserve">
+    <value>bandomieji</value>
+  </data>
+  <data name="Common.Count.Developing" xml:space="preserve">
+    <value>kuriami</value>
+  </data>
+  <data name="Common.Count.Planned" xml:space="preserve">
+    <value>planuojami</value>
+  </data>
+  <data name="Common.Count.Total" xml:space="preserve">
+    <value>iš viso</value>
+  </data>
+  <data name="Common.Count.Visible" xml:space="preserve">
+    <value>matomi</value>
+  </data>
+  <data name="Home.Welcome" xml:space="preserve">
+    <value>Sveiki</value>
+  </data>
+  <data name="Home.Greeting" xml:space="preserve">
+    <value>Sveiki sugrįžę.</value>
+  </data>
+  <data name="Home.GreetingNamed" xml:space="preserve">
+    <value>Sveiki sugrįžę, {0}.</value>
+  </data>
+  <data name="Home.Intro" xml:space="preserve">
+    <value>Sandėlis jau veikia. Bandomieji moduliai prieinami išbandyti, o kiti moduliai lieka diegimo plane.</value>
+  </data>
+  <data name="Home.RoadmapNews" xml:space="preserve">
+    <value>Planai ir naujienos</value>
+  </data>
+  <data name="Home.Operations.Title" xml:space="preserve">
+    <value>Veiklos apžvalga</value>
+  </data>
+  <data name="Home.Operations.SampleData" xml:space="preserve">
+    <value>Pavyzdiniai duomenys</value>
+  </data>
+  <data name="Home.Operations.Period" xml:space="preserve">
+    <value>Laikotarpis</value>
+  </data>
+  <data name="Home.Operations.ThisMonth" xml:space="preserve">
+    <value>Šis mėnuo</value>
+  </data>
+  <data name="Home.Operations.LastMonth" xml:space="preserve">
+    <value>Praėjęs mėnuo</value>
+  </data>
+  <data name="Home.Operations.ThisMonthShort" xml:space="preserve">
+    <value>šį mėn.</value>
+  </data>
+  <data name="Home.Operations.LastMonthShort" xml:space="preserve">
+    <value>praėjusį mėn.</value>
+  </data>
+  <data name="Home.Operations.CompletedPerDay" xml:space="preserve">
+    <value>Užbaigta per dieną</value>
+  </data>
+  <data name="Home.Operations.BranchesOnTrack" xml:space="preserve">
+    <value>Filialai pagal planą</value>
+  </data>
+  <data name="Home.Operations.Stage.reg" xml:space="preserve">
+    <value>Užregistruota</value>
+  </data>
+  <data name="Home.Operations.Stage.acc" xml:space="preserve">
+    <value>Priimta</value>
+  </data>
+  <data name="Home.Operations.Stage.mfg" xml:space="preserve">
+    <value>Gaminama</value>
+  </data>
+  <data name="Home.Operations.Stage.ship" xml:space="preserve">
+    <value>Išsiųsta</value>
+  </data>
+  <data name="Home.Operations.Stage.done" xml:space="preserve">
+    <value>Užbaigta</value>
+  </data>
+  <data name="Home.Modules.FilterLabel" xml:space="preserve">
+    <value>Filtruoti modulius</value>
+  </data>
+  <data name="Home.Modules.FilterPlaceholder" xml:space="preserve">
+    <value>Filtruoti modulius…</value>
+  </data>
+  <data name="Home.Modules.NoMatches" xml:space="preserve">
+    <value>Atitikmenų nerasta</value>
+  </data>
+  <data name="Home.Modules.NoMatchesText" xml:space="preserve">
+    <value>Nėra modulių, atitinkančių</value>
+  </data>
+  <data name="Home.Toast.Planned" xml:space="preserve">
+    <value>{0} – planuojama {1}. Kol kas neprieinama.</value>
+  </data>
+  <data name="Home.Toast.Later" xml:space="preserve">
+    <value>vėliau</value>
+  </data>
+  <data name="Home.News.Title" xml:space="preserve">
+    <value>Naujienos</value>
+  </data>
+  <data name="Home.News.Subtitle" xml:space="preserve">
+    <value>Kas keičiasi Cikada.MES</value>
+  </data>
+  <data name="Home.News.AllUpdates" xml:space="preserve">
+    <value>Visi atnaujinimai</value>
+  </data>
+  <data name="Home.Side.AriaLabel" xml:space="preserve">
+    <value>Portalo būsena</value>
+  </data>
+  <data name="Home.Status.Title" xml:space="preserve">
+    <value>Sistemos būsena</value>
+  </data>
+  <data name="Home.Status.Online" xml:space="preserve">
+    <value>Veikia</value>
+  </data>
+  <data name="Home.Status.Environment" xml:space="preserve">
+    <value>Aplinka</value>
+  </data>
+  <data name="Home.Status.CurrentModule" xml:space="preserve">
+    <value>Dabartinis modulis</value>
+  </data>
+  <data name="Home.Support.Title" xml:space="preserve">
+    <value>Pagalba</value>
+  </data>
+  <data name="Home.Support.Helpdesk" xml:space="preserve">
+    <value>MES pagalbos SMS</value>
+  </data>
+  <data name="Home.Support.Team" xml:space="preserve">
+    <value>MES komanda</value>
+  </data>
+  <data name="Home.Build.Title" xml:space="preserve">
+    <value>Versijos duomenys</value>
+  </data>
+  <data name="Home.Build.Commit" xml:space="preserve">
+    <value>Revizija</value>
+  </data>
+  <data name="Home.Build.Built" xml:space="preserve">
+    <value>Sukurta</value>
+  </data>
+  <data name="CmsTiles.NewTile" xml:space="preserve">
+    <value>Nauja plytelė</value>
+  </data>
+  <data name="CmsTiles.EditTile" xml:space="preserve">
+    <value>Redaguoti plytelę</value>
+  </data>
+  <data name="CmsTiles.AdminRequired" xml:space="preserve">
+    <value>Reikalingos administratoriaus teisės</value>
+  </data>
+  <data name="CmsTiles.AdminRequiredText" xml:space="preserve">
+    <value>Portalo plytelių nustatymai prieinami Admin, WarehouseAdmin arba PortalAdmin rolėms.</value>
+  </data>
+  <data name="CmsTiles.Table.Title" xml:space="preserve">
+    <value>Skydelio plytelės</value>
+  </data>
+  <data name="CmsTiles.Column.Order" xml:space="preserve">
+    <value>Eilė</value>
+  </data>
+  <data name="CmsTiles.Column.Tile" xml:space="preserve">
+    <value>Plytelė</value>
+  </data>
+  <data name="CmsTiles.Column.Status" xml:space="preserve">
+    <value>Būsena</value>
+  </data>
+  <data name="CmsTiles.Column.Url" xml:space="preserve">
+    <value>URL</value>
+  </data>
+  <data name="CmsTiles.Column.Visible" xml:space="preserve">
+    <value>Matoma</value>
+  </data>
+  <data name="CmsTiles.Editor.AriaLabel" xml:space="preserve">
+    <value>Plytelės redaktorius</value>
+  </data>
+  <data name="CmsTiles.Field.Key" xml:space="preserve">
+    <value>Raktas</value>
+  </data>
+  <data name="CmsTiles.Field.Title" xml:space="preserve">
+    <value>Pavadinimas</value>
+  </data>
+  <data name="CmsTiles.Field.Category" xml:space="preserve">
+    <value>Kategorija</value>
+  </data>
+  <data name="CmsTiles.Field.Description" xml:space="preserve">
+    <value>Aprašymas</value>
+  </data>
+  <data name="CmsTiles.Field.Status" xml:space="preserve">
+    <value>Būsena</value>
+  </data>
+  <data name="CmsTiles.Field.Sort" xml:space="preserve">
+    <value>Eilė</value>
+  </data>
+  <data name="CmsTiles.Field.Url" xml:space="preserve">
+    <value>URL</value>
+  </data>
+  <data name="CmsTiles.Field.Quarter" xml:space="preserve">
+    <value>Ketvirtis</value>
+  </data>
+  <data name="CmsTiles.Field.IconKey" xml:space="preserve">
+    <value>Piktogramos raktas</value>
+  </data>
+  <data name="CmsTiles.Field.VisibleOnDashboard" xml:space="preserve">
+    <value>Rodoma skydelyje</value>
+  </data>
+  <data name="CmsTiles.Message.SaveFailed" xml:space="preserve">
+    <value>Išsaugoti nepavyko. Patikrinkite privalomus laukus ir teises.</value>
+  </data>
+  <data name="CmsTiles.Message.Saved" xml:space="preserve">
+    <value>Išsaugota.</value>
+  </data>
+  <data name="CmsTiles.Message.Hidden" xml:space="preserve">
+    <value>Paslėpta.</value>
+  </data>
+  <data name="CmsTiles.Message.HideFailed" xml:space="preserve">
+    <value>Paslėpti nepavyko.</value>
+  </data>
+  <data name="Module.Category.Operations" xml:space="preserve">
+    <value>Operacijos</value>
+  </data>
+  <data name="Module.Category.Commercial" xml:space="preserve">
+    <value>Komercija</value>
+  </data>
+  <data name="Module.Category.Field" xml:space="preserve">
+    <value>Lauko darbai</value>
+  </data>
+  <data name="Module.Category.Mobile" xml:space="preserve">
+    <value>Mobilieji</value>
+  </data>
+  <data name="Module.Category.Logistics" xml:space="preserve">
+    <value>Logistika</value>
+  </data>
+  <data name="Module.Category.Intelligence" xml:space="preserve">
+    <value>Analitika</value>
+  </data>
+  <data name="Module.Category.Compliance" xml:space="preserve">
+    <value>Atitiktis</value>
+  </data>
+  <data name="Module.warehouse.Title" xml:space="preserve">
+    <value>Sandėlis</value>
+  </data>
+  <data name="Module.warehouse.Description" xml:space="preserve">
+    <value>Atsargų vietos, atsargų judėjimas, rezervacijos, krovinių vienetai, 3D sandėlio išdėstymas.</value>
+  </data>
+  <data name="Module.sales.Title" xml:space="preserve">
+    <value>Pardavimai</value>
+  </data>
+  <data name="Module.sales.Description" xml:space="preserve">
+    <value>Klientų užsakymai.</value>
+  </data>
+  <data name="Module.frontline.Title" xml:space="preserve">
+    <value>Frontline</value>
+  </data>
+  <data name="Module.frontline.Description" xml:space="preserve">
+    <value>Prekių prieinamumo paieška vietoje.</value>
+  </data>
+  <data name="Module.scanning.Title" xml:space="preserve">
+    <value>Skenavimas</value>
+  </data>
+  <data name="Module.scanning.Description" xml:space="preserve">
+    <value>Brūkšninių kodų skenavimas mobiliuoju.</value>
+  </data>
+  <data name="Module.orders.Title" xml:space="preserve">
+    <value>Užsakymai</value>
+  </data>
+  <data name="Module.orders.Description" xml:space="preserve">
+    <value>Užsakymo gyvavimo ciklas, gaminio sudėtis, darbų planavimas.</value>
+  </data>
+  <data name="Module.shopfloor.Title" xml:space="preserve">
+    <value>Gamybos cechas</value>
+  </data>
+  <data name="Module.shopfloor.Description" xml:space="preserve">
+    <value>Darbo vietų užduotys, nebaigtos gamybos maršrutai, operatoriaus kioskas.</value>
+  </data>
+  <data name="Module.quality.Title" xml:space="preserve">
+    <value>Kokybė</value>
+  </data>
+  <data name="Module.quality.Description" xml:space="preserve">
+    <value>Patikros, defektų sekimas, perdirbimas ir grąžinimai.</value>
+  </data>
+  <data name="Module.delivery.Title" xml:space="preserve">
+    <value>Pristatymas</value>
+  </data>
+  <data name="Module.delivery.Description" xml:space="preserve">
+    <value>Maršrutų planavimas, vairuotojų užduotys, pristatymo patvirtinimas, sekimas.</value>
+  </data>
+  <data name="Module.installation.Title" xml:space="preserve">
+    <value>Montavimas</value>
+  </data>
+  <data name="Module.installation.Description" xml:space="preserve">
+    <value>Montuotojų vizitai, priėmimo aktai, kliento patvirtinimas.</value>
+  </data>
+  <data name="Module.reporting.Title" xml:space="preserve">
+    <value>Ataskaitos</value>
+  </data>
+  <data name="Module.reporting.Description" xml:space="preserve">
+    <value>Skydeliai, KPI, gamybos ir sandėlio analitika.</value>
+  </data>
+  <data name="Module.finance.Title" xml:space="preserve">
+    <value>Finansai</value>
+  </data>
+  <data name="Module.finance.Description" xml:space="preserve">
+    <value>Apskaitos eksportas, mokėjimai, registravimo įvykiai.</value>
+  </data>
+  <data name="Module.audit.Title" xml:space="preserve">
+    <value>Auditas</value>
+  </data>
+  <data name="Module.audit.Description" xml:space="preserve">
+    <value>Nekeičiamas įvykių žurnalas, atsekamumas, atitikties ataskaitos.</value>
+  </data>
+</root>
