@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { NOT_DEPLOYED } from '../src/tools-order-entry.js';
 import { fakeJwt, mockFetch, rpc, running, testConfig } from './helpers.js';
 
-const READ_TOOLS = ['orders_search', 'order_get', 'orders_filters', 'customers_search', 'customer_get', 'price_groups_list', 'items_search', 'stock_get'];
+const READ_TOOLS = ['whoami', 'orders_search', 'order_get', 'orders_filters', 'customers_search', 'customer_get', 'price_groups_list', 'items_search', 'stock_get', 'report_production', 'report_work', 'report_payments', 'report_dimensions'];
 const WRITE_TOOLS = ['order_create', 'order_update', 'order_product_add', 'order_product_update', 'order_product_remove', 'order_address_set', 'order_confirm', 'order_cancel'];
 const DESTRUCTIVE = ['order_product_remove', 'order_confirm', 'order_cancel'];
 
@@ -27,9 +27,9 @@ test('tools/list: the read tools by default, read-only annotated; order entry on
       assert.equal(all.find((t) => t.name === name)?.annotations.readOnlyHint, true, name);
     }
     const prompts = (await rpc(on.base, token, 'prompts/list')).body.result.prompts as { name: string }[];
-    assert.deepEqual(prompts.map((p) => p.name), ['daily_orders_review', 'take_new_order']);
+    assert.deepEqual(prompts.map((p) => p.name), ['management_report', 'daily_orders_review', 'take_new_order']);
     const offPrompts = (await rpc(off.base, token, 'prompts/list')).body.result.prompts as { name: string }[];
-    assert.deepEqual(offPrompts.map((p) => p.name), ['daily_orders_review']);
+    assert.deepEqual(offPrompts.map((p) => p.name), ['management_report', 'daily_orders_review']);
   } finally {
     await off.close();
     await on.close();
@@ -196,6 +196,30 @@ test('order_accessory_set posts exactly the SaveAccessoryCommand fields', async 
     const post = api.seen.find((s) => s.method === 'POST')!;
     assert.equal(post.url.pathname, '/api/sales/order-entry/orders/5/products/7/accessories');
     assert.deepEqual(post.body, { commandId: '00000000-0000-4000-8000-000000000001', expectedRevision: 'r1', accessoryId: 12, quantity: 2, unitPrice: 3.5 });
+  } finally {
+    await stand.close();
+  }
+});
+
+test('report_production sends an exclusive end date and flattens the rows for charts', async () => {
+  const api = mockFetch(() => ({
+    status: 200,
+    body: { granularity: 'month', groupBy: ['period', 'type', 'unit'], measures: ['quantity', 'pieces'], truncated: false, rows: [
+      { keys: { period: '2026-10', type: 'Apsauginės (vnt)', unit: 'vnt' }, values: { quantity: 166, pieces: 166 } },
+    ] },
+  }));
+  const stand = await running(testConfig(), { fetchImpl: api.fetchImpl, today: () => '2026-11-02' });
+  try {
+    const args = { from: '2026-10-01', to: '2026-10-31', groupBy: ['period', 'type'], type: 'apsaug', state: 'Pagamintas' };
+    const result = (await rpc(stand.base, fakeJwt(), 'tools/call', { name: 'report_production', arguments: args })).body.result;
+    assert.equal(result.isError, undefined, JSON.stringify(result));
+    const call = api.seen[0]!;
+    assert.equal(call.url.pathname, '/api/sales/reports/production');
+    assert.equal(call.url.searchParams.get('to'), '2026-11-01');
+    assert.equal(call.url.searchParams.get('groupBy'), 'period,type');
+    assert.equal(call.url.searchParams.get('type'), 'apsaug');
+    assert.deepEqual(result.structuredContent.rows, [{ period: '2026-10', type: 'Apsauginės (vnt)', unit: 'vnt', quantity: 166, pieces: 166 }]);
+    assert.equal(result.structuredContent.totals.pieces, 166);
   } finally {
     await stand.close();
   }

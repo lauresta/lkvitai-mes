@@ -20,6 +20,21 @@ const given = (value: string | undefined, ask: string): string => (value?.trim()
 
 export const PROMPTS: readonly PromptDef[] = [
   {
+    name: 'management_report',
+    title: 'Management report (month)',
+    description: 'The three management reports for a month (production, payments received, work) compared with the month before and the same month last year, with charts.',
+    arguments: [{ name: 'month', description: 'The month, e.g. "2026-10" (default: the last full month).', required: false }],
+    text: (args) =>
+      [
+        `Make the Lauresta management report for ${given(args.month, 'use the last full month')}.`,
+        '1. Production: report_production with state "Pagamintas", groupBy type, for the month, the month before and the same month last year. Show made pieces per product (the "(vnt)" types only) in one table with the change in %, then a bar chart of the top 10 products.',
+        '2. Payments: report_payments groupBy method and branch for the month and the month before; a table branch × method with totals, and a stacked bar chart.',
+        '3. Production by day: report_production state "Pagamintas", type "(vnt)", granularity day, groupBy period, for the month; a line chart and the average per working day.',
+        '4. Work: report_work groupBy duty for the month (totals only, no per-person pay unless I ask).',
+        'End with three short findings (what grew, what fell, anything unusual). Numbers only from the tools; say so if a report is empty or refused.',
+      ].join('\n'),
+  },
+  {
     name: 'daily_orders_review',
     title: 'Daily orders review',
     description: 'Review today\'s sales orders for a store: new orders, orders with debt or overdue, and what needs a call or follow-up.',

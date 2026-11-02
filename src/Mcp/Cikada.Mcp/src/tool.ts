@@ -24,6 +24,8 @@ export interface ToolContext {
   newId: () => string;
   /** Today in Europe/Vilnius, YYYY-MM-DD. */
   today: () => string;
+  /** The caller as the token names them (display only). */
+  user?: { username?: string; name?: string; email?: string; roles: string[] };
 }
 
 export interface ToolDef {

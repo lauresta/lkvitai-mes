@@ -33,6 +33,7 @@ if (liveReferencesConfigured)
         client.Timeout=TimeSpan.FromSeconds(10);
     }).ConfigurePrimaryHttpMessageHandler(()=>new HttpClientHandler{AllowAutoRedirect=false});
     builder.Services.AddScoped<ISalesOrderEntryReferences, SqlSalesOrderEntryReferences>();
+    builder.Services.AddScoped<ISalesReports, SqlSalesReports>();
     builder.Services.AddScoped<ISalesUnitPriceLookup, SqlSalesUnitPriceLookup>();
     builder.Services.AddScoped<ILiveOrderEntryCatalog, SqlLiveOrderEntryCatalog>();
     builder.Services.AddScoped<IOrderEntryAddressLookup, SqlOrderEntryAddressLookup>();
@@ -87,6 +88,7 @@ if (liveReferencesConfigured)
     sales.MapOrderEntryCatalogEndpoints();
     sales.MapOrderEntryPreviewEndpoints();
     sales.MapOrderEntryEndpoints();
+    sales.MapReportsEndpoints();
 }
 
 await app.RunAsync();

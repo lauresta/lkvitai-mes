@@ -33,6 +33,16 @@ Read (always on):
 | `price_groups_list` | Warehouse `GET /api/warehouse/v1/price-groups` |
 | `items_search` | Warehouse `GET /api/warehouse/v1/items`, `GET /api/warehouse/v1/stock/available`, `GET /api/warehouse/v1/price-groups/{id}/item-prices` |
 | `stock_get` | Warehouse `GET /api/warehouse/v1/stock/available` |
+| `whoami` | none: the signed-in user and roles from the token (explains a 403) |
+
+Management reports (live legacy Mango workbook reports; roles SalesAdmin or Reports, plus the caller's legacy SQL permissions):
+
+| Tool | API call |
+|---|---|
+| `report_production` | Sales `GET /api/sales/reports/production` (products by state / type / series, per day, month or year) |
+| `report_work` | Sales `GET /api/sales/reports/work` (accruals per duty / employee / branch) |
+| `report_payments` | Sales `GET /api/sales/reports/payments` (money received by method / branch) |
+| `report_dimensions` | Sales `GET /api/sales/reports/{report}/dimensions` |
 
 Order entry (only with `MCP_ENABLE_ORDER_ENTRY=true`; on test via the `CIKADA_MCP_ORDER_ENTRY` environment variable):
 
