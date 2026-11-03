@@ -8,17 +8,34 @@ public static class ProductionQueueEndpoints
 {
     public static RouteGroupBuilder MapProductionQueueEndpoints(this RouteGroupBuilder group)
     {
-        group.MapGet("/production-queue", async (int? page, int? pageSize, string? orderNumber, long? seriesId,
-            long? typeId, long? priorityId, ProductionQueueReader reader, CancellationToken ct) =>
+        group.MapGet("/production-queue", async (int? page, int? pageSize, string? orderNumber,
+            long? departmentId, long? seriesId, long? categoryId, long? typeId,
+            long? priorityId, ProductionQueueReader reader, CancellationToken ct) =>
         {
-            if (page is < 1 or > 100000 || pageSize is < 1 or > 100 || seriesId is <= 0
-                || typeId is <= 0 || priorityId is <= 0 || orderNumber?.Length > 80)
+            if (page is < 1 or > 100000 || pageSize is < 1 or > 100 || departmentId is <= 0
+                || seriesId is <= 0 || categoryId is <= 0 || typeId is <= 0
+                || priorityId is <= 0 || orderNumber?.Length > 80)
                 return Results.BadRequest(new { code = "INVALID_QUEUE_FILTER" });
             try
             {
                 return Results.Ok(await reader.ReadAsync(page ?? 1, pageSize ?? 50, orderNumber,
-                    seriesId, typeId, priorityId, ct));
+                    departmentId, seriesId, categoryId, typeId, priorityId, ct));
             }
+            catch (ProductionQueueAccessException ex)
+            {
+                return Results.Problem(ex.Message, statusCode: ex.Status,
+                    extensions: new Dictionary<string, object?> { ["code"] = ex.Code });
+            }
+            catch (SqlException ex) when (ex.Number is 229 or 230)
+            {
+                return Results.Problem("Your legacy SQL account does not permit this operation.",
+                    statusCode: 403, extensions: new Dictionary<string, object?>
+                    { ["code"] = "LEGACY_SQL_PERMISSION_DENIED" });
+            }
+        });
+        group.MapGet("/production-queue/facets", async (ProductionQueueReader reader, CancellationToken ct) =>
+        {
+            try { return Results.Ok(await reader.ReadFacetsAsync(ct)); }
             catch (ProductionQueueAccessException ex)
             {
                 return Results.Problem(ex.Message, statusCode: ex.Status,
@@ -43,6 +60,8 @@ public sealed record ProductionQueueItem(long ProductId, long OrderId, string Or
     long PriorityId, string Priority, string Department, string State, string? Barcode);
 public sealed record ProductionQueuePage(int Page, int PageSize, bool HasMore,
     IReadOnlyList<ProductionQueueItem> Items);
+public sealed record ProductionQueueFacet(string Kind, long Id, string Name, long? ParentId,
+    int Rows, decimal Quantity);
 public sealed class ProductionQueueAccessException(string code, string message, int status)
     : Exception(message)
 {

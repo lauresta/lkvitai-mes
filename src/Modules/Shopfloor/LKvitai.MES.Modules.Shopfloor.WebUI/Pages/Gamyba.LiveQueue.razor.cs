@@ -11,9 +11,16 @@ public partial class Gamyba
 
     private bool LiveQueueEnabled => Configuration.GetValue<bool>("Shopfloor:ProductionQueue:Enabled");
     private ProductionQueuePageDto? _liveQueue;
+    private List<ProductionQueueFacetDto> _liveFacets = [];
+    private string? _liveFacetError;
     private string? _liveQueueError;
     private bool _liveQueueLoading;
     private int _liveQueuePage = 1;
+    private long? _liveDepartmentId;
+    private long? _liveSeriesId;
+    private long? _liveCategoryId;
+    private long? _liveTypeId;
+    private long? _livePriorityId;
     private ProductionTaskPageDto? _liveTasks;
     private ProductionTaskDetailDto? _liveTask;
     private string? _liveTaskError;
@@ -25,17 +32,38 @@ public partial class Gamyba
 
     protected override async Task OnInitializedAsync()
     {
-        if (LiveQueueEnabled) await LoadLiveQueueAsync(1);
+        if (LiveQueueEnabled)
+        {
+            await LoadLiveFacetsAsync();
+            await LoadLiveQueueAsync(1);
+        }
+    }
+
+    private async Task LoadLiveFacetsAsync()
+    {
+        try
+        {
+            var result = await ShopfloorApi.GetProductionQueueFacetsAsync(CancellationToken.None);
+            if (result.Success && result.Value is not null) _liveFacets = result.Value;
+            else _liveFacetError = result.Error ?? L("Could not load queue filters.", "Nepavyko įkelti eilės filtrų.");
+        }
+        catch (Exception)
+        {
+            _liveFacetError = L("Could not load queue filters.", "Nepavyko įkelti eilės filtrų.");
+        }
     }
 
     private async Task LoadLiveQueueAsync(int page)
     {
         if (page < 1 || _liveQueueLoading) return;
         _liveQueueLoading = true;
+        _liveQueue = null;
         _liveQueueError = null;
         try
         {
-            var result = await ShopfloorApi.GetProductionQueueAsync(page, _fromSales, CancellationToken.None);
+            var result = await ShopfloorApi.GetProductionQueueAsync(page, _fromSales,
+                _liveDepartmentId, _liveSeriesId, _liveCategoryId, _liveTypeId,
+                _livePriorityId, CancellationToken.None);
             if (result.Success && result.Value is not null)
             {
                 _liveQueue = result.Value;
@@ -56,6 +84,23 @@ public partial class Gamyba
         await LoadLiveQueueAsync(1);
     }
 
+    private async Task SetLiveQueueFilterAsync(string kind, long? id)
+    {
+        switch (kind)
+        {
+            case "branch": _liveDepartmentId = id; _liveSeriesId = null; break;
+            case "series": _liveSeriesId = id; break;
+            case "category": _liveCategoryId = id; _liveTypeId = null; break;
+            case "type": _liveTypeId = id; break;
+            case "priority": _livePriorityId = id; break;
+        }
+        await LoadLiveQueueAsync(1);
+    }
+
+    private Task SetLiveSelectAsync(string kind, ChangeEventArgs args)
+        => SetLiveQueueFilterAsync(kind,
+            long.TryParse(args.Value?.ToString(), out var id) ? id : null);
+
     private async Task GoLiveAwareAsync(string screen)
     {
         Go(screen);
@@ -67,6 +112,7 @@ public partial class Gamyba
     {
         if (page < 1 || _liveTaskLoading) return;
         _liveTaskLoading = true;
+        _liveTasks = null;
         _liveTaskError = null;
         try
         {
