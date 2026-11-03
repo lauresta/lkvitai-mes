@@ -6,6 +6,10 @@ namespace LKvitai.MES.Modules.Shopfloor.WebUI.Pages;
 
 public partial class Gamyba : ComponentBase
 {
+    // The designer's fixture switches are opt-in; the operator page stays clear.
+    [Parameter, SupplyParameterFromQuery(Name = "prototypeControls")]
+    public bool PrototypeControls { get; set; }
+
     [Inject] private IJSRuntime Js { get; set; } = default!;
     [Inject] private NavigationManager Navigation { get; set; } = default!;
 
