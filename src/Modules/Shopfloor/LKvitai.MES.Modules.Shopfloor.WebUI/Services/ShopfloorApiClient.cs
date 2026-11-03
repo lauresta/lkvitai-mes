@@ -215,6 +215,15 @@ public sealed class ProductionReportDataDto
     public List<string> Columns { get; set; } = [];
     public List<List<JsonElement>> Rows { get; set; } = [];
     public bool NoData { get; set; }
+    public List<ProductionReportAccessoryDto> Accessories { get; set; } = [];
+}
+
+public sealed class ProductionReportAccessoryDto
+{
+    public long ProductId { get; set; }
+    public decimal Quantity { get; set; }
+    public string? Unit { get; set; }
+    public string? AccessoryName { get; set; }
 }
 
 /// <summary>
