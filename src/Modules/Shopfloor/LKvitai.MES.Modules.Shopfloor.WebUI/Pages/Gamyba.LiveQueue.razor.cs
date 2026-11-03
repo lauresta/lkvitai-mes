@@ -10,6 +10,10 @@ public partial class Gamyba
     [Inject] private ShopfloorApiClient ShopfloorApi { get; set; } = default!;
 
     private bool LiveQueueEnabled => Configuration.GetValue<bool>("Shopfloor:ProductionQueue:Enabled");
+    private bool LiveTaskWriteEnabled => LiveQueueEnabled && Configuration.GetValue<bool>("Shopfloor:ProductionTaskWrite:Enabled");
+    private int? _liveIssueTaskId;
+    private bool _liveIssueBusy;
+    private string? _liveIssueError;
     private ProductionQueuePageDto? _liveQueue;
     private List<ProductionQueueFacetDto> _liveFacets = [];
     private string? _liveFacetError;
@@ -141,6 +145,55 @@ public partial class Gamyba
         _liveSelected.Clear();
         foreach (var item in (_liveQueue?.Items ?? []).Take(Math.Clamp(_liveFirstN, 1, 100)))
             _liveSelected.Add(item.ProductId);
+    }
+
+    private void OpenLiveIssue()
+    {
+        if (!LiveTaskWriteEnabled || _liveSelected.Count == 0) return;
+        _liveIssueError = null;
+        _modal = "live-issue";
+    }
+
+    private async Task ConfirmLiveIssueAsync()
+    {
+        if (_liveIssueBusy || _liveSelected.Count == 0) return;
+        _liveIssueBusy = true;
+        _liveIssueError = null;
+        try
+        {
+            // frmBlindsProduction.Gaminti inserts checked rows from the last
+            // visible row to the first; preserve that order for the GU detail.
+            var result = await ShopfloorApi.IssueProductionPortionAsync(_liveIssueTaskId,
+                LiveSelectedItems.Reverse().Select(item => item.ProductId).ToArray(), CancellationToken.None);
+            if (!result.Success || result.Value is null)
+            {
+                _liveIssueError = result.Error ?? L("Issue could not be confirmed. Check the GU before retrying.",
+                    "Išdavimas nepatvirtintas. Prieš kartodami patikrinkite GU.");
+                return;
+            }
+            var issued = result.Value;
+            _modal = null;
+            _liveIssueTaskId = null;
+            await LoadLiveQueueAsync(1);
+            await LoadLiveTasksAsync(1);
+            await OpenLiveTaskAsync(issued.TaskId);
+            Notice("ok", $"{issued.Number}: {issued.IssuedRows} rows issued.",
+                $"{issued.Number}: išduota {issued.IssuedRows} eil.");
+        }
+        catch (Exception)
+        {
+            _liveIssueError = L("Response lost. Check the GU and refresh the queue before retrying.",
+                "Atsakymas prarastas. Prieš kartodami patikrinkite GU ir atnaujinkite eilę.");
+        }
+        finally { _liveIssueBusy = false; }
+    }
+
+    private void AddLivePortion()
+    {
+        if (!LiveTaskWriteEnabled || _liveTask is null) return;
+        _liveIssueTaskId = _liveTask.Task.Id;
+        _liveSelected.Clear();
+        Go("queue");
     }
 
     private async Task ClearLiveOrderFilterAsync()

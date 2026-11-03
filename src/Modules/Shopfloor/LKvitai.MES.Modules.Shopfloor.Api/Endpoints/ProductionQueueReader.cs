@@ -261,7 +261,7 @@ public sealed class ProductionQueueReader(IHttpContextAccessor accessor, IHttpCl
 
     // Parenthesized eligibility is the five OR branches in SP_fsubProduction,
     // factored without changing its result. The explicit ACL is outside the OR.
-    private const string QueueSourceSql = """
+    internal const string QueueSourceSql = """
         FROM dbo.ParduotiGaminiai pg
         JOIN dbo.Uzsakymai u ON u.UzsakymasID=pg.UzsakymoID
         JOIN dbo.Zinynas_UzsakymoSerijos us ON us.UzsakymoSerijaID=u.UzsakymoSerija

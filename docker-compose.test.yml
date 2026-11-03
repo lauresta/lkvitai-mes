@@ -339,6 +339,7 @@ services:
       ConnectionStrings__LKvitaiDb: "${LKVITAI_MSACCESS_DB_CONNECTION}"
       Shopfloor__LegacyProductTypes__DataSource: "Sql"
       Shopfloor__ProductionQueue__Enabled: "true"
+      Shopfloor__ProductionTaskWrite__Enabled: "true"
       CikadaUsers__BaseUrl: "http://lkvitai-mes-warehouse-api:8080"
     volumes:
       - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys
@@ -363,6 +364,7 @@ services:
       PathBase: "/shopfloor"
       ShopfloorApi__BaseUrl: "http://lkvitai-mes-shopfloor-api:8080"
       Shopfloor__ProductionQueue__Enabled: "true"
+      Shopfloor__ProductionTaskWrite__Enabled: "true"
       # Dashboard "Database" panel runs a read-only diagnostic query directly
       # against the same PostgreSQL used by shopfloor-api.
       ConnectionStrings__ShopfloorDb: "Host=pg;Port=5432;Database=${TEST_DB_NAME:-lkvitai_warehouse_test};Username=${TEST_DB_USER:-postgres};Password=${TEST_DB_PASSWORD}"

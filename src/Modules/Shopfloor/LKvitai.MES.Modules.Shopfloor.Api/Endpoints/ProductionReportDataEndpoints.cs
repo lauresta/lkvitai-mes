@@ -52,7 +52,7 @@ public sealed class ProductionReportDataReader(ProductionQueueReader queue)
         [17] = new("rptGamDokGarantiniai", "dbo.SP_GamInWarrantyFaultsByTask"),
         [18] = new("rptGamDokNatureConcept", "dbo.SP_rptGamNatureConceptByTask"),
         [19] = new("rptGamDokGrotos", "dbo.SP_GamGrotosByTask"),
-        [20] = new("rptGamDokPleated", "dbo.SP_GamPlisuotasByTask")
+        [20] = new("rptGamDokPleated", "dbo.SP_GamPleatedByTask")
     };
 
     public Task<IReadOnlyList<ProductionReportCatalogItem>> CatalogAsync(CancellationToken ct)
