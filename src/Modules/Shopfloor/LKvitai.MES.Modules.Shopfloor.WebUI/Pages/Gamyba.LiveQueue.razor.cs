@@ -36,6 +36,11 @@ public partial class Gamyba
     private int _liveRepairPage = 1;
     private ProductionRepairDto? LiveRepair =>
         _liveRepairs?.Items.FirstOrDefault(x => x.Id == _liveRepairId);
+    private List<ProductionReportCatalogDto> _liveReportCatalog = [];
+    private ProductionReportDataDto? _liveReportData;
+    private int? _liveReportId;
+    private string? _liveReportError;
+    private bool _liveReportLoading;
 
     protected override async Task OnInitializedAsync()
     {
@@ -115,6 +120,9 @@ public partial class Gamyba
             await LoadLiveTasksAsync(1);
         if (LiveQueueEnabled && screen == "stops" && _stopTab == "repairs" && _liveRepairs is null)
             await LoadLiveRepairsAsync(1);
+        if (LiveQueueEnabled && screen == "reports"
+            && (_liveReportCatalog.Count == 0 || _liveReportError is not null))
+            await LoadLiveReportCatalogAsync();
     }
 
     private async Task LoadLiveTasksAsync(int page)
@@ -230,5 +238,49 @@ public partial class Gamyba
     {
         _stopTab = "repairs";
         if (LiveQueueEnabled && _liveRepairs is null) await LoadLiveRepairsAsync(1);
+    }
+
+    private async Task OpenLiveReportsAsync()
+    {
+        Go("reports");
+        if (_liveReportCatalog.Count == 0) await LoadLiveReportCatalogAsync();
+    }
+
+    private async Task LoadLiveReportCatalogAsync()
+    {
+        _liveReportError = null;
+        try
+        {
+            var result = await ShopfloorApi.GetProductionReportCatalogAsync(CancellationToken.None);
+            if (result.Success && result.Value is not null)
+                _liveReportCatalog = result.Value;
+            else _liveReportError = result.Error ?? L("Could not load report catalog.", "Nepavyko įkelti ataskaitų sąrašo.");
+        }
+        catch (Exception)
+        {
+            _liveReportError = L("Could not load report catalog.", "Nepavyko įkelti ataskaitų sąrašo.");
+        }
+    }
+
+    private async Task SelectLiveReportAsync(int reportId)
+    {
+        if (_liveReportLoading || (_liveReportId == reportId && _liveReportData is not null)) return;
+        _liveReportId = reportId;
+        _liveReportData = null;
+        _liveReportError = null;
+        if (_liveTask is null) return;
+        _liveReportLoading = true;
+        try
+        {
+            var result = await ShopfloorApi.GetProductionReportDataAsync(
+                _liveTask.Task.Id, reportId, CancellationToken.None);
+            if (result.Success && result.Value is not null) _liveReportData = result.Value;
+            else _liveReportError = result.Error ?? L("Report unavailable or access denied.", "Ataskaita neprieinama arba neturite teisių.");
+        }
+        catch (Exception)
+        {
+            _liveReportError = L("Could not load report data.", "Nepavyko įkelti ataskaitos duomenų.");
+        }
+        finally { _liveReportLoading = false; }
     }
 }

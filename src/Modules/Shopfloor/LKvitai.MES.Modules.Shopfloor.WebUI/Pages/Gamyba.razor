@@ -39,7 +39,7 @@
         </nav>
 
         <main class="gamyba-main @(PrototypeControls ? "gamyba-main--demo" : "")">
-            @if (LiveQueueEnabled && _screen is not ("queue" or "tasks" or "task" or "history")
+            @if (LiveQueueEnabled && _screen is not ("queue" or "tasks" or "task" or "history" or "reports")
                 && !(_screen == "stops" && _stopTab == "repairs"))
             {
                 <div class="gamyba-alert gamyba-alert--info" role="status">@L("Preview: this screen uses sample data and does not change production.", "Peržiūra: šiame ekrane naudojami pavyzdiniai duomenys; gamyba nekeičiama.")</div>
@@ -178,7 +178,7 @@
                     @if (_liveTaskError is not null){<div class="gamyba-alert gamyba-alert--danger" role="alert">@_liveTaskError</div>}
                     @if (_liveTask is not null)
                     {
-                        <div class="gamyba-taskhead"><div><div class="gamyba-eyebrow">@L("TASK", "UŽDUOTIS") GU <span class="chip chip--info">@L("READ ONLY", "TIK PERŽIŪRA")</span></div><h1 class="mono">@_liveTask.Task.Number</h1><p>@_liveTask.Task.Created?.ToString("yyyy-MM-dd HH:mm") · @_liveTask.Task.Author · @_liveTask.Task.ItemRows @L("rows", "eil.") · @_liveTask.Task.OrderCount @L("orders", "užsakymai")</p></div></div>
+                        <div class="gamyba-taskhead"><div><div class="gamyba-eyebrow">@L("TASK", "UŽDUOTIS") GU <span class="chip chip--info">@L("READ ONLY", "TIK PERŽIŪRA")</span></div><h1 class="mono">@_liveTask.Task.Number</h1><p>@_liveTask.Task.Created?.ToString("yyyy-MM-dd HH:mm") · @_liveTask.Task.Author · @_liveTask.Task.ItemRows @L("rows", "eil.") · @_liveTask.Task.OrderCount @L("orders", "užsakymai")</p></div><button type="button" class="gamyba-btn" @onclick="OpenLiveReportsAsync">@L("Production documents", "Gamybos dokumentai")</button></div>
                         <section class="gamyba-panel"><div class="gamyba-panel__head"><strong>@L("Composition", "Sudėtis")</strong><span>@L("Live Access document", "Gyvas Access dokumentas")</span></div><div class="gamyba-tablewrap"><table class="gamyba-table"><thead><tr><th>@L("Barcode", "Kodas")</th><th>@L("Order", "Užsakymas")</th><th>@L("Type", "Tipas")</th><th>@L("Material", "Medžiaga")</th><th class="is-num">@L("Size", "Matmenys")</th><th class="is-num">@L("Qty", "Kiekis")</th><th>@L("State", "Būsena")</th></tr></thead><tbody>
                         @foreach (var item in _liveTask.Items)
                         {
@@ -481,6 +481,44 @@
 
             @if (_screen == "reports")
             {
+                @if (LiveQueueEnabled)
+                {
+                    <div class="gamyba-pagehead"><div><div class="gamyba-eyebrow">SHOPFLOOR · G05 · @(_liveTask?.Task.Number ?? "GU")</div><h1>@L("Production report data", "Gamybos ataskaitų duomenys")</h1></div><span class="chip chip--info">@L("READ ONLY", "TIK PERŽIŪRA")</span></div>
+                    <div class="gamyba-alert gamyba-alert--info" role="status">@L("Live Access report datasets. Page layout, PDF and printing are still being verified.", "Gyvi Access ataskaitų duomenys. Puslapio maketas, PDF ir spausdinimas dar tikrinami.")</div>
+                    @if (_liveReportError is not null){<div class="gamyba-alert gamyba-alert--danger" role="alert">@_liveReportError</div>}
+                    @if (_liveTask is null)
+                    {
+                        <div class="gamyba-empty"><strong>@L("Select a GU in Production tasks first.", "Pirmiausia pasirinkite GU Gamybos užduotyse.")</strong><button type="button" class="gamyba-btn" @onclick='() => GoLiveAwareAsync("tasks")'>@L("Open tasks", "Atidaryti užduotis")</button></div>
+                    }
+                    else
+                    {
+                        <div class="gamyba-docs-grid">
+                            <section class="gamyba-panel"><div class="gamyba-panel__head"><strong>@_liveReportCatalog.Count @L("reports", "ataskaitų")</strong><span>DIC_ProjectReports · gam</span></div><div class="gamyba-report-list">
+                                @foreach (var report in _liveReportCatalog)
+                                {
+                                    <button type="button" class="@(_liveReportId == report.Id ? "is-active" : "")" @onclick="() => SelectLiveReportAsync(report.Id)"><span class="gamyba-report-radio"></span><span>@report.Title</span></button>
+                                }
+                            </div></section>
+                            <section class="gamyba-panel gamyba-docs-preview"><div class="gamyba-panel__head"><div><strong>@(_liveReportCatalog.FirstOrDefault(x => x.Id == _liveReportId)?.Title ?? L("Select report", "Pasirinkite ataskaitą"))</strong><span class="mono"> · @_liveTask.Task.Number</span></div><span class="mono">@(_liveReportData?.Rows.Count ?? 0) @L("rows", "eil.")</span></div>
+                                @if (_liveReportLoading){<div class="gamyba-empty">@L("Loading report data…", "Įkeliami ataskaitos duomenys…")</div>}
+                                else if (_liveReportData?.Rows.Count == 0){<div class="gamyba-empty"><strong>NoData</strong><span>@L("No rows in this dataset. Printing is not available here.", "Šiame duomenų rinkinyje eilučių nėra. Spausdinimas čia neprieinamas.")</span></div>}
+                                else if (_liveReportData is not null)
+                                {
+                                    <div class="gamyba-tablewrap"><table class="gamyba-table"><thead><tr>@foreach (var column in _liveReportData.Columns){<th>@column</th>}</tr></thead><tbody>
+                                        @foreach (var row in _liveReportData.Rows.Take(50))
+                                        {
+                                            <tr>@foreach (var cell in row){<td>@cell.ToString()</td>}</tr>
+                                        }
+                                    </tbody></table></div>
+                                    <div class="gamyba-panel__foot">@L("First 50 rows shown; this is dataset inspection, not the final print layout.", "Rodoma pirmų 50 eilučių; tai duomenų peržiūra, ne galutinis spausdinimo maketas.")</div>
+                                }
+                            </section>
+                            <aside class="gamyba-stack"><section class="gamyba-panel"><div class="gamyba-panel__head"><strong>@L("Data pilot", "Duomenų bandymas")</strong></div><div class="gamyba-sidebody"><span class="chip chip--info">@L("READ ONLY", "TIK PERŽIŪRA")</span><small>@L("Only the selected GU's legacy report rows are shown. Document layout and saved PDFs will be connected after comparison with Access.", "Rodomos tik pasirinkto GU legacy ataskaitos eilutės. Dokumento maketas ir išsaugoti PDF bus prijungti po palyginimo su Access.")</small></div></section></aside>
+                        </div>
+                    }
+                }
+                else
+                {
                 <div class="gamyba-pagehead"><div><div class="gamyba-eyebrow">SHOPFLOOR · G05 · @L("DOCUMENTS FOR", "DOKUMENTAI GU") <span class="mono">@CurrentTask.Number</span></div><h1>@L("Production documents", "Gamybos dokumentai")</h1></div><div class="gamyba-segment"><button type="button" class="@(_reportMode == "preview" ? "is-active" : "")" @onclick='() => _reportMode = "preview"'>@L("Print · PDF", "Spausdinti · PDF")</button><button type="button" class="@(_reportMode == "editor" ? "is-active" : "")" disabled="@(!Supervisor)" @onclick='() => _reportMode = "editor"'>@L("Template editor", "Šablono redaktorius")</button></div></div>
                 @if(_reportMode == "preview")
                 {
@@ -497,6 +535,7 @@
                         <section class="gamyba-panel gamyba-editor-preview"><div class="gamyba-panel__head"><div class="gamyba-segment"><button type="button" class="@(!_compareTemplates ? "is-active" : "")" @onclick='() => _compareTemplates = false'>@L("Draft", "Juodraštis")</button><button type="button" class="@(_compareTemplates ? "is-active" : "")" @onclick='() => _compareTemplates = true'>@L("Compare", "Palyginti")</button></div><span>@L("Click a column header to edit it", "Paspauskite stulpelio antraštę redagavimui")</span></div><div class="gamyba-editor-stage"><div class="gamyba-editor-sheet"><div class="gamyba-report-sheet__head"><strong>@_report</strong><span class="mono">v3-draft · @L("Draft", "Juodraštis")</span></div><table class="gamyba-table"><thead><tr>@foreach(var column in _columns){<th><button type="button" class="gamyba-editor-column @(_selectedColumn == column.Field ? "is-active" : "")" @onclick="() => _selectedColumn = column.Field">@column.Label</button></th>}</tr></thead><tbody>@foreach(var item in ReportItems.Take(3)){<tr>@foreach(var column in _columns){<td>@TemplateCell(item,column.Field)</td>}</tr>}</tbody></table></div>@if(_compareTemplates){<div class="gamyba-editor-sheet"><div class="gamyba-report-sheet__head"><strong>@_report</strong><span class="mono">@_templateVersion · @L("Published", "Paskelbta")</span></div><table class="gamyba-table"><thead><tr>@foreach(var column in _publishedColumns){<th>@column.Label</th>}</tr></thead><tbody>@foreach(var item in ReportItems.Take(3)){<tr>@foreach(var column in _publishedColumns){<td>@TemplateCell(item,column.Field)</td>}</tr>}</tbody></table></div>}</div></section>
                         <aside class="gamyba-stack"><section class="gamyba-panel"><div class="gamyba-panel__head"><strong>@L("Field", "Laukas") · <span class="mono">@_selectedColumn</span></strong></div>@if(CurrentColumn is null){<div class="gamyba-sidebody"><p>@L("Select a column in the draft preview.", "Pasirinkite stulpelį juodraščio peržiūroje.")</p></div>}else{<div class="gamyba-sidebody"><label class="gamyba-fieldlabel">@L("Label", "Pavadinimas")</label><input class="gamyba-input" @bind="CurrentColumn.Label" @bind:after="() => _templateDraftSaved = false" @onfocus="SelectFocusedInput" /><div class="gamyba-formrow"><label>@L("Position", "Vieta")<span class="gamyba-actions"><button type="button" class="gamyba-btn gamyba-btn--xs" @onclick="() => MoveTemplateField(-1)">←</button><button type="button" class="gamyba-btn gamyba-btn--xs" @onclick="() => MoveTemplateField(1)">→</button></span></label><label>@L("Width", "Plotis") %<input type="number" min="4" max="80" class="gamyba-input mono" @bind="CurrentColumn.Width" @bind:after="() => _templateDraftSaved = false" @onfocus="SelectFocusedInput" /></label></div><button type="button" class="gamyba-btn" @onclick="RemoveTemplateField">@L("Remove field", "Pašalinti lauką")</button></div>}</section><section class="gamyba-panel"><div class="gamyba-sidebody"><button type="button" class="gamyba-btn" disabled="@(_templateDraftSaved)" @onclick="SaveTemplate">@L("Save draft", "Išsaugoti juodraštį")</button><button type="button" class="gamyba-btn gamyba-btn--primary" disabled="@(!_templateDraftSaved)" @onclick="PublishTemplate">@L("Publish version", "Paskelbti versiją")</button><button type="button" class="gamyba-btn" @onclick="RollbackTemplate">@L("Revert to published", "Grąžinti paskelbtą")</button><small>@L("Published versions are immutable; the previous one stays available for rollback.", "Paskelbtos versijos nekintamos; ankstesnė lieka prieinama grąžinimui.")</small><div class="gamyba-doc-version"><strong class="mono">@_templateVersion</strong><div>@L("Published · added Note column", "Paskelbta · pridėta Pastaba")<small class="mono">2026-10-14</small></div></div><div class="gamyba-doc-version"><strong class="mono">v1</strong><div>@L("Published · imported from Access layout", "Paskelbta · perkelta iš Access")<small class="mono">2026-09-30</small></div></div></div></section></aside>
                     </div>
+                }
                 }
             }
 

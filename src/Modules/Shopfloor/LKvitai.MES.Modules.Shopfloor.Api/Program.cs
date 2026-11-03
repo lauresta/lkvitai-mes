@@ -35,6 +35,7 @@ builder.Services.AddScoped<ProductionQueueReader>();
 builder.Services.AddScoped<ProductionTaskReader>();
 builder.Services.AddScoped<ProductionHistoryReader>();
 builder.Services.AddScoped<ProductionRepairReader>();
+builder.Services.AddScoped<ProductionReportDataReader>();
 
 // Same Portal auth pattern used by Sales: shared Portal cookie + structured
 // bearer, plus a dev-only synthetic identity gated behind Shopfloor:DevAuthEnabled.
@@ -96,6 +97,7 @@ if (productionQueueEnabled)
     shopfloor.MapProductionTaskEndpoints();
     shopfloor.MapProductionHistoryEndpoints();
     shopfloor.MapProductionRepairEndpoints();
+    shopfloor.MapProductionReportDataEndpoints();
 }
 
 await app.RunAsync();

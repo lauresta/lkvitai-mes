@@ -148,6 +148,23 @@ public sealed class ProductionRepairDto
     public bool MissingActual { get; set; }
 }
 
+public sealed class ProductionReportCatalogDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = "";
+    public string Title { get; set; } = "";
+}
+
+public sealed class ProductionReportDataDto
+{
+    public int TaskId { get; set; }
+    public int ReportId { get; set; }
+    public string ReportName { get; set; } = "";
+    public List<string> Columns { get; set; } = [];
+    public List<List<JsonElement>> Rows { get; set; } = [];
+    public bool NoData { get; set; }
+}
+
 /// <summary>
 /// Typed wrapper around the named <c>ShopfloorApi</c> HttpClient. Returns
 /// <see cref="ApiResult{T}"/> so pages can surface API validation/conflict
@@ -204,6 +221,15 @@ public sealed class ShopfloorApiClient
         string filter, CancellationToken ct)
         => SendAsync<ProductionRepairPageDto>(HttpMethod.Get,
             $"/api/shopfloor/production-repairs?page={page}&filter={Uri.EscapeDataString(filter)}", null, ct);
+
+    public Task<ApiResult<List<ProductionReportCatalogDto>>> GetProductionReportCatalogAsync(CancellationToken ct)
+        => SendAsync<List<ProductionReportCatalogDto>>(HttpMethod.Get,
+            "/api/shopfloor/production-reports", null, ct);
+
+    public Task<ApiResult<ProductionReportDataDto>> GetProductionReportDataAsync(int taskId,
+        int reportId, CancellationToken ct)
+        => SendAsync<ProductionReportDataDto>(HttpMethod.Get,
+            $"/api/shopfloor/production-tasks/{taskId}/report-data/{reportId}", null, ct);
 
     // ---- Work centers -------------------------------------------------------
 
