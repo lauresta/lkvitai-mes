@@ -11,7 +11,7 @@ window.gamybaUi = {
     if (input && typeof input.select === "function") input.select();
   },
   print(kind) {
-    const name = kind === "report" ? "gamyba-print-report" : "gamyba-print-output";
+    const name = kind === "roletai" ? "gamyba-print-roletai" : kind === "report" ? "gamyba-print-report" : "gamyba-print-output";
     document.body.classList.add(name);
     let fallback;
     const clean = () => {

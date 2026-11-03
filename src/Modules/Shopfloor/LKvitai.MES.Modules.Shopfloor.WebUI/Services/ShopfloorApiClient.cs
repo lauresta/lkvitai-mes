@@ -5,6 +5,7 @@ using LKvitai.MES.Modules.Shopfloor.Contracts.Common;
 using LKvitai.MES.Modules.Shopfloor.Contracts.Legacy;
 using LKvitai.MES.Modules.Shopfloor.Contracts.Mappings;
 using LKvitai.MES.Modules.Shopfloor.Contracts.Reference;
+using LKvitai.MES.Modules.Shopfloor.Contracts.Reports;
 using LKvitai.MES.Modules.Shopfloor.Contracts.Workflows;
 
 namespace LKvitai.MES.Modules.Shopfloor.WebUI.Services;
@@ -304,6 +305,19 @@ public sealed class ShopfloorApiClient
         int reportId, CancellationToken ct)
         => SendAsync<ProductionReportDataDto>(HttpMethod.Get,
             $"/api/shopfloor/production-tasks/{taskId}/report-data/{reportId}", null, ct);
+
+    public Task<ApiResult<RoletaiTemplateState>> GetRoletaiTemplateAsync(CancellationToken ct)
+        => SendAsync<RoletaiTemplateState>(HttpMethod.Get,
+            "/api/shopfloor/production-reports/roletai/template", null, ct);
+
+    public Task<ApiResult<RoletaiTemplateState>> SaveRoletaiDraftAsync(RoletaiTemplate template, CancellationToken ct)
+        => SendAsync<RoletaiTemplateState>(HttpMethod.Put,
+            "/api/shopfloor/production-reports/roletai/template/draft", template, ct);
+
+    public Task<ApiResult<RoletaiTemplateState>> PublishRoletaiTemplateAsync(int expectedVersion, CancellationToken ct)
+        => SendAsync<RoletaiTemplateState>(HttpMethod.Post,
+            "/api/shopfloor/production-reports/roletai/template/publish",
+            new { expectedVersion }, ct);
 
     // ---- Work centers -------------------------------------------------------
 

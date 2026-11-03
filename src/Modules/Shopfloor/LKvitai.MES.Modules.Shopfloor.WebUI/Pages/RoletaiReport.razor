@@ -1,0 +1,252 @@
+@using System.Globalization
+@using System.Text.Json
+@using System.Text.RegularExpressions
+@using LKvitai.MES.Modules.Shopfloor.Contracts.Reports
+@inject ShopfloorApiClient Api
+@inject IJSRuntime Js
+
+<div class="roletai">
+    @if (_error is not null)
+    {
+        <div class="roletai-alert" role="alert">@_error</div>
+    }
+    @if (_state is null)
+    {
+        <div class="roletai-empty">Įkeliamas ataskaitos šablonas…</div>
+    }
+    else
+    {
+        <div class="roletai-head">
+            <div><div class="roletai-eyebrow">SHOPFLOOR · G05 · @(_editor ? "ŠABLONŲ REDAKTORIUS" : "GAMYBOS DOKUMENTAS")</div>
+                <h2>rptGamDokRoletai — Gamybos dokumentas, Roletai</h2>
+                <p><code>dbo.SP_GamRoletaiByTask</code> · Publikuota v@_state.PublishedVersion · <span class="roletai-chip">@(_dirty ? "NEIŠSAUGOTI PAKEITIMAI" : _draftSaved ? "JUODRAŠTIS IŠSAUGOTAS" : "SUTAMPA SU PUBLIKUOTA")</span></p>
+            </div>
+            <div class="roletai-actions">
+                @if (_state.CanEdit)
+                {
+                    <button type="button" class="roletai-btn" @onclick="() => _editor = !_editor">@(_editor ? "Ataskaita" : "Šablonų redaktorius")</button>
+                }
+                @if (_editor)
+                {
+                    <button type="button" class="roletai-btn" disabled="@(!_dirty && !_draftSaved)" @onclick="Revert">Atstatyti</button>
+                    <button type="button" class="roletai-btn" disabled="@(!_dirty || _busy)" @onclick="SaveAsync">Išsaugoti juodraštį</button>
+                    <button type="button" class="roletai-btn roletai-btn--primary" disabled="@(!_draftSaved || _dirty || _busy || _draft.Validate().Count > 0)" @onclick="PublishAsync">Publikuoti versiją</button>
+                }
+                <button type="button" class="roletai-btn" disabled="@(Data.Rows.Count == 0)" @onclick="PrintAsync">Spausdinti →</button>
+            </div>
+        </div>
+
+        @if (Data.Rows.Count == 0 && !_editor)
+        {
+            <div class="roletai-empty"><strong>NoData</strong><span>Šioje GU roletų nėra. Spausdinimas atšauktas kaip Access Report_NoData.</span></div>
+        }
+        else if (_editor)
+        {
+            <div class="roletai-editor">
+                <aside class="roletai-panel roletai-sections">
+                    <h3>Sekcijos</h3>
+                    @foreach (var key in RoletaiTemplate.SectionKeys)
+                    {
+                        var part = _draft.Sections[key];
+                        <div class="roletai-section-row @(_selectedSection == key ? "is-active" : "")">
+                            <button type="button" @onclick="() => SelectSection(key)"><span class="roletai-mono">@SectionIndex(key)</span><strong>@SectionName(key)</strong><small>@(key == "dt" ? $"{part.Cols.Count} st." : $"{part.Lines.Count} eil.")</small></button>
+                            <input type="checkbox" aria-label="@($"{SectionName(key)} matoma")" checked="@part.Visible" disabled="@(key == "dt" || _publishedView)" @onchange="args => ToggleSection(key, args)" />
+                        </div>
+                    }
+                    <h3>Dataset laukai · @RoletaiTemplate.Fields.Count</h3>
+                    <div class="roletai-fields">
+                        @foreach (var field in FieldOrder)
+                        {
+                            var used = _draft.Sections["dt"].Cols.Any(c => c.Key == field);
+                            <button type="button" disabled="@(_publishedView || _selectedSection == "dt" && used)" @onclick="() => AddField(field)"><code>@field</code><span>@(_selectedSection == "dt" && used ? "✓" : "+")</span></button>
+                        }
+                    </div>
+                    <p class="roletai-hint">Tik dataset laukai. SQL ir formulės čia neleidžiami.</p>
+                </aside>
+
+                <div class="roletai-preview-panel">
+                    <div class="roletai-preview-meta"><div class="roletai-segment"><button type="button" class="@(!_publishedView ? "is-active" : "")" @onclick="() => _publishedView = false">Juodraštis</button><button type="button" class="@(_publishedView ? "is-active" : "")" @onclick="() => _publishedView = true">Publikuota v@_state.PublishedVersion</button></div><span>A4 landscape · Spustelėkite sekciją lape</span></div>
+                    @ReportSheet(EditorTemplate)
+                </div>
+
+                <aside class="roletai-properties">
+                    <div class="roletai-panel"><h3>@SectionName(_selectedSection) <small>@_selectedSection</small></h3>
+                        @if (_publishedView)
+                        {
+                            <p class="roletai-hint">Rodoma publikuota versija — tik peržiūra.</p>
+                        }
+                        else if (_selectedSection == "dt")
+                        {
+                            var part = _draft.Sections["dt"];
+                            <label class="roletai-check"><input type="checkbox" @bind="part.Heads" @bind:after="MarkDirty" /> Stulpelių antraštės po užsakymo</label>
+                            <div class="roletai-rule">Stulpeliai · @part.Cols.Count <strong>Σ @(part.Cols.Sum(c => c.W)) %</strong></div>
+                            <div class="roletai-column-list">
+                                @foreach (var col in part.Cols)
+                                {
+                                    <button type="button" class="@(_selectedColumn == col.Key ? "is-active" : "")" @onclick="() => _selectedColumn = col.Key"><span>@col.Label <small>@col.Key</small></span><code>@col.W %</code></button>
+                                }
+                            </div>
+                            @if (SelectedColumn is { } selected)
+                            {
+                                <div class="roletai-property-card"><strong>@selected.Key</strong>
+                                    <label>Antraštė<input @bind="selected.Label" @bind:after="MarkDirty" /></label>
+                                    <div class="roletai-formrow"><label>Plotis %<input type="number" min="3" max="40" @bind="selected.W" @bind:after="MarkDirty" /></label><label>Šriftas px<input type="number" min="7" max="16" step="0.5" @bind="selected.Size" @bind:after="MarkDirty" /></label></div>
+                                    <div class="roletai-formrow"><label>Lygiavimas<select @bind="selected.Align" @bind:after="MarkDirty"><option value="left">Kairė</option><option value="right">Dešinė</option></select></label><label class="roletai-check"><input type="checkbox" @bind="selected.Bold" @bind:after="MarkDirty" /> B</label><label class="roletai-check"><input type="checkbox" @bind="selected.Mono" @bind:after="MarkDirty" /> M</label></div>
+                                    <div class="roletai-formrow"><button type="button" class="roletai-btn" @onclick="() => MoveColumn(-1)">←</button><button type="button" class="roletai-btn" @onclick="() => MoveColumn(1)">→</button><button type="button" class="roletai-btn roletai-danger" @onclick="RemoveColumn">Pašalinti</button></div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            var part = _draft.Sections[_selectedSection];
+                            @for (var i = 0; i < part.Lines.Count; i++)
+                            {
+                                var line = part.Lines[i]; var index = i;
+                                <div class="roletai-property-card @(_selectedLine == i ? "is-active" : "")">
+                                    <div class="roletai-rule"><button type="button" class="roletai-textbutton" @onclick="() => _selectedLine = index">Eilutė @(index + 1) · įterpimo vieta</button><span><button type="button" class="roletai-textbutton" @onclick="() => MoveLine(index, -1)">↑</button><button type="button" class="roletai-textbutton" @onclick="() => MoveLine(index, 1)">↓</button><button type="button" class="roletai-textbutton roletai-danger" @onclick="() => RemoveLine(index)">×</button></span></div>
+                                    <textarea rows="2" @bind="line.Text" @bind:after="MarkDirty"></textarea>
+                                    <div class="roletai-formrow"><label>px<input type="number" min="7" max="40" step="0.5" @bind="line.Size" @bind:after="MarkDirty" /></label><label>Lygiavimas<select @bind="line.Align" @bind:after="MarkDirty"><option value="left">Kairė</option><option value="center">Centras</option><option value="right">Dešinė</option></select></label><label class="roletai-check"><input type="checkbox" @bind="line.Bold" @bind:after="MarkDirty" /> B</label><label class="roletai-check"><input type="checkbox" @bind="line.Mono" @bind:after="MarkDirty" /> M</label></div>
+                                    <label class="roletai-check"><input type="checkbox" @bind="line.HideIfEmpty" @bind:after="MarkDirty" /> Slėpti, jei laukas tuščias</label>
+                                </div>
+                            }
+                            <button type="button" class="roletai-btn roletai-add" @onclick="AddLine">+ Pridėti eilutę</button>
+                        }
+                    </div>
+                    <div class="roletai-panel"><h3>Versijos</h3>
+                        @foreach (var version in _state.Versions)
+                        {
+                            <div class="roletai-version"><strong>v@version.Version</strong><span>@version.PublishedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")<small>@version.PublishedBy</small></span></div>
+                        }
+                        <p class="roletai-hint">Publikuota versija įšaldoma. Nauja versija keičia tik būsimą spausdinimą.</p>
+                    </div>
+                </aside>
+            </div>
+            @if (_draft.Validate() is { Count: > 0 } errors)
+            {
+                <div class="roletai-alert" role="alert">@string.Join(" ", errors)</div>
+            }
+        }
+        else
+        {
+            <div class="roletai-preview-panel roletai-preview-panel--standalone"><div class="roletai-preview-meta">Publikuota v@_state.PublishedVersion · A4 landscape · GU @TaskNumber</div>@ReportSheet(_state.Published)</div>
+        }
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public ProductionReportDataDto Data { get; set; } = default!;
+    [Parameter] public string TaskNumber { get; set; } = "";
+
+    private RoletaiTemplateState? _state;
+    private RoletaiTemplate _draft = RoletaiTemplate.Default();
+    private bool _editor, _publishedView, _dirty, _draftSaved, _busy, _printPending;
+    private string _selectedSection = "uh", _selectedColumn = "TipoTrPavadinimas";
+    private int _selectedLine;
+    private string? _error;
+    private DateTimeOffset _renderedAt = DateTimeOffset.Now;
+    private RoletaiTemplate EditorTemplate => _publishedView ? _state!.Published : _draft;
+    private RoletaiColumn? SelectedColumn => _draft.Sections["dt"].Cols.FirstOrDefault(c => c.Key == _selectedColumn);
+    private static readonly string[] FieldOrder = ["Cechas", "Uzsakymas", "ParduotoGaminioID", "UzsakymoData", "GamibinesUzduotiesNumeris", "TipoTrPavadinimas", "Valdymas", "Plotis", "Aukstis", "kiekis", "Spalva", "Audinys", "Krepianciuju_tipas", "Kreipianciosios", "Kasete", "Velenas", "Atsvaras", "Dekoras", "Audinio_sunaudojimas", "Pastabos", "Sum(kiekis)", "Page", "Pages", "Now"];
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await Api.GetRoletaiTemplateAsync(CancellationToken.None);
+        if (result.Success && result.Value is not null) ApplyState(result.Value);
+        else _error = result.Error ?? "Nepavyko įkelti šablono.";
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_printPending)
+        {
+            _printPending = false;
+            await Js.InvokeVoidAsync("gamybaUi.print", "roletai");
+        }
+    }
+    private static RoletaiTemplate Clone(RoletaiTemplate template) => JsonSerializer.Deserialize<RoletaiTemplate>(JsonSerializer.Serialize(template))!;
+    private void ApplyState(RoletaiTemplateState state)
+    {
+        _state = state;
+        _draft = Clone(state.Draft);
+        _dirty = false;
+        _draftSaved = JsonSerializer.Serialize(state.Draft) != JsonSerializer.Serialize(state.Published);
+        _error = null;
+    }
+    private void MarkDirty() { _dirty = true; _draftSaved = false; }
+    private void Revert() { if (_state is not null) { _draft = Clone(_state.Published); MarkDirty(); } }
+    private void SelectSection(string key) { _selectedSection = key; _selectedLine = 0; }
+    private static int SectionIndex(string key) => Array.IndexOf(RoletaiTemplate.SectionKeys, key) + 1;
+    private static string SectionName(string key) => key switch { "rh" => "Report Header", "ch" => "Cechas Header", "uh" => "Užsakymas Header", "dt" => "Detail", "pf" => "Gaminio Footer", "pg" => "Page Footer", _ => key };
+    private void ToggleSection(string key, ChangeEventArgs args) { if (key == "dt") return; _draft.Sections[key].Visible = args.Value is true; MarkDirty(); }
+    private void AddField(string field)
+    {
+        if (_selectedSection == "dt")
+        {
+            if (_draft.Sections["dt"].Cols.Any(c => c.Key == field)) return;
+            _draft.Sections["dt"].Cols.Add(new() { Key = field, Label = field, W = 6,
+                Mono = field is "Plotis" or "Aukstis" or "kiekis", Align = field is "Plotis" or "Aukstis" or "kiekis" ? "right" : "left" });
+            _selectedColumn = field;
+        }
+        else
+        {
+            var lines = _draft.Sections[_selectedSection].Lines;
+            if (lines.Count == 0) lines.Add(new());
+            _selectedLine = Math.Clamp(_selectedLine, 0, lines.Count - 1);
+            lines[_selectedLine].Text += $" {{{field}}}";
+        }
+        MarkDirty();
+    }
+    private void AddLine() { _draft.Sections[_selectedSection].Lines.Add(new()); _selectedLine = _draft.Sections[_selectedSection].Lines.Count - 1; MarkDirty(); }
+    private void RemoveLine(int index) { _draft.Sections[_selectedSection].Lines.RemoveAt(index); _selectedLine = Math.Max(0, _selectedLine - 1); MarkDirty(); }
+    private void MoveLine(int index, int delta) { var lines = _draft.Sections[_selectedSection].Lines; var target = index + delta; if (target < 0 || target >= lines.Count) return; (lines[index], lines[target]) = (lines[target], lines[index]); _selectedLine = target; MarkDirty(); }
+    private void RemoveColumn() { _draft.Sections["dt"].Cols.RemoveAll(c => c.Key == _selectedColumn); _selectedColumn = _draft.Sections["dt"].Cols.FirstOrDefault()?.Key ?? ""; MarkDirty(); }
+    private void MoveColumn(int delta) { var cols = _draft.Sections["dt"].Cols; var index = cols.FindIndex(c => c.Key == _selectedColumn); var target = index + delta; if (index < 0 || target < 0 || target >= cols.Count) return; (cols[index], cols[target]) = (cols[target], cols[index]); MarkDirty(); }
+
+    private async Task SaveAsync()
+    {
+        var errors = _draft.Validate();
+        if (errors.Count > 0) { _error = string.Join(" ", errors); return; }
+        _busy = true;
+        try
+        {
+            var result = await Api.SaveRoletaiDraftAsync(_draft, CancellationToken.None);
+            if (result.Success && result.Value is not null) ApplyState(result.Value);
+            else _error = result.Error ?? "Juodraštis neišsaugotas.";
+        }
+        finally { _busy = false; }
+    }
+    private async Task PublishAsync()
+    {
+        if (_state is null || _dirty || !_draftSaved) return;
+        _busy = true;
+        try
+        {
+            var result = await Api.PublishRoletaiTemplateAsync(_state.PublishedVersion, CancellationToken.None);
+            if (result.Success && result.Value is not null) ApplyState(result.Value);
+            else _error = result.Error ?? "Versija nepaskelbta. Atnaujinkite šabloną.";
+        }
+        finally { _busy = false; }
+    }
+    private Task PrintAsync()
+    {
+        if (Data.Rows.Count == 0 || _state is null) return Task.CompletedTask;
+        _renderedAt = DateTimeOffset.Now;
+        _publishedView = true;
+        _printPending = true;
+        return Task.CompletedTask;
+    }
+
+    private RenderFragment ReportSheet(RoletaiTemplate template) => builder =>
+    {
+        // Static Razor markup below is easier to style and remains HTML-encoded.
+        builder.OpenComponent<RoletaiSheet>(0);
+        builder.AddAttribute(1, nameof(RoletaiSheet.Data), Data);
+        builder.AddAttribute(2, nameof(RoletaiSheet.Template), template);
+        builder.AddAttribute(3, nameof(RoletaiSheet.SelectedSection), _editor && !_publishedView ? _selectedSection : null);
+        builder.AddAttribute(4, nameof(RoletaiSheet.SelectedColumn), _editor && !_publishedView ? _selectedColumn : null);
+        builder.AddAttribute(5, nameof(RoletaiSheet.SectionClicked), EventCallback.Factory.Create<string>(this, SelectSection));
+        builder.AddAttribute(6, nameof(RoletaiSheet.ColumnClicked), EventCallback.Factory.Create<string>(this, key => { _selectedSection = "dt"; _selectedColumn = key; }));
+        builder.AddAttribute(7, nameof(RoletaiSheet.RenderedAt), _renderedAt);
+        builder.CloseComponent();
+    };
+}
