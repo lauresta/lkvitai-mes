@@ -1,0 +1,515 @@
+Version =20
+VersionRequired =20
+Checksum =87469337
+Begin Report
+    LayoutForPrint = NotDefault
+    AllowDesignChanges = NotDefault
+    DefaultView =0
+    AllowUpdating =4
+    TabularCharSet =186
+    TabularFamily =48
+    DateGrouping =1
+    GrpKeepTogether =1
+    PictureAlignment =2
+    DatasheetGridlinesBehavior =3
+    GridY =10
+    Width =11170
+    DatasheetFontHeight =10
+    ItemSuffix =60
+    Left =270
+    Top =210
+    Right =13590
+    Bottom =5370
+    DatasheetGridlinesColor =12632256
+    RecSrcDt = Begin
+        0x6718b3cc5b27e340
+    End
+    RecordSource ="SP_GamPanelTrackByTask"
+    OnOpen ="[Event Procedure]"
+    DatasheetFontName ="Arial"
+    PrtMip = Begin
+        0x55010000f000000055010000f000000000000000a22b00001d01000001000000 ,
+        0x010000006801000000000000a10700000100000001000000
+    End
+    PrtDevMode = Begin
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x010400069c0058030fdf0000010009009a0b3408640001000700580201000100 ,
+        0x5802030000004134000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000010000000000000001000000 ,
+        0x0200000001000000ffffffff0000000000000000000000000000000044494e55 ,
+        0x220010014c030c00cad2f6720000000000000000000000000000000000000000 ,
+        0x0000000000000000090000000000000000000100000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x00000000000000000000000001000000000000000000000010010000534d544a ,
+        0x00000000100000014d006900630072006f0073006f0066007400200058005000 ,
+        0x5300200044006f00630075006d0065006e007400200057007200690074006500 ,
+        0x72000000496e70757442696e00464f524d534f5552434500524553444c4c0055 ,
+        0x6e69726573444c4c00496e7465726c656176696e67004f464600496d61676554 ,
+        0x797065004a5045474d6564004f7269656e746174696f6e00504f525452414954 ,
+        0x00436f6c6c617465004f4646005265736f6c7574696f6e004f7074696f6e3100 ,
+        0x506170657253697a65004c455454455200436f6c6f724d6f6465003234627070 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x00000000000000000c0000004d58445701010000
+    End
+    PrtDevNames = Begin
+        0x0800260061000100000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x00545330313300
+    End
+    RecordSourceQualifier ="dbo"
+    Begin
+        Begin Label
+            BackStyle =0
+            TextFontCharSet =186
+            TextFontFamily =2
+            FontName ="Arial"
+        End
+        Begin Line
+            Width =1701
+        End
+        Begin TextBox
+            FELineBreak = NotDefault
+            OldBorderStyle =0
+            TextFontCharSet =186
+            TextFontFamily =2
+            Width =1701
+            LabelX =-1701
+            FontName ="Arial"
+            AsianLineBreak =255
+        End
+        Begin Subform
+            Width =1701
+            Height =1701
+        End
+        Begin BreakLevel
+            GroupHeader = NotDefault
+            GroupFooter = NotDefault
+            KeepTogether =1
+            ControlSource ="Uzsakymas"
+        End
+        Begin BreakLevel
+            GroupHeader = NotDefault
+            GroupFooter = NotDefault
+            ControlSource ="ParduotoGaminioID"
+        End
+        Begin FormHeader
+            KeepTogether = NotDefault
+            Height =375
+            Name ="ReportHeader"
+            GUID = Begin
+                0x1f6b9ed1f152aa499ab04e90edf17d7c
+            End
+            Begin
+                Begin TextBox
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Width =8565
+                    Height =375
+                    FontSize =14
+                    FontWeight =700
+                    Name ="Text58"
+                    ControlSource ="=\"Panel Track (bendras kiekis: \" & Sum([kiekis]) & \" vnt.)\""
+                    FontName ="Arial Baltic"
+                    GUID = Begin
+                        0xddc026934297fe478772e4fa57e389c2
+                    End
+                End
+            End
+        End
+        Begin PageHeader
+            Height =0
+            Name ="PageHeaderSection"
+            GUID = Begin
+                0x02f23d5339d06846becbda9389a37393
+            End
+        End
+        Begin BreakHeader
+            KeepTogether = NotDefault
+            Height =851
+            Name ="GroupHeader0"
+            GUID = Begin
+                0x1e8eb352e3d1954b87ec89d0b9576c19
+            End
+            Begin
+                Begin Label
+                    OldBorderStyle =1
+                    TextFontFamily =34
+                    Top =566
+                    Width =1418
+                    Height =285
+                    FontSize =10
+                    Name ="Label32"
+                    Caption ="Tipas:"
+                    FontName ="Arial Narrow"
+                    GUID = Begin
+                        0x3d037cd64e03ee4f8b16d1ffc832b2f2
+                    End
+                End
+                Begin Label
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =1418
+                    Top =566
+                    Width =567
+                    Height =285
+                    FontSize =10
+                    Name ="Label33"
+                    Caption ="Vald.:"
+                    FontName ="Arial Narrow"
+                    GUID = Begin
+                        0x3aa497a1defe3a489b726c26475e2b1d
+                    End
+                End
+                Begin Label
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =1985
+                    Top =566
+                    Width =851
+                    Height =285
+                    FontSize =10
+                    Name ="Label34"
+                    Caption ="Plotis:"
+                    FontName ="Arial Narrow"
+                    GUID = Begin
+                        0xffa6df5773228c42be51de78e56cc4b7
+                    End
+                End
+                Begin Label
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =2835
+                    Top =566
+                    Width =851
+                    Height =285
+                    FontSize =10
+                    Name ="Label35"
+                    Caption ="Aukstis:"
+                    FontName ="Arial Narrow"
+                    GUID = Begin
+                        0x4af5124718c6434196bfc7c040319816
+                    End
+                End
+                Begin Label
+                    OldBorderStyle =1
+                    TextFontFamily =34
+                    Left =3686
+                    Top =566
+                    Width =567
+                    Height =285
+                    FontSize =10
+                    Name ="Label36"
+                    Caption ="Kiekis:"
+                    FontName ="Arial Narrow"
+                    GUID = Begin
+                        0xd661e780f5894e4c9ead1a9280afb2d4
+                    End
+                End
+                Begin Label
+                    OldBorderStyle =1
+                    TextFontFamily =34
+                    Left =4253
+                    Top =566
+                    Width =1418
+                    Height =285
+                    FontSize =10
+                    Name ="Label37"
+                    Caption ="Spalva:"
+                    FontName ="Arial Narrow"
+                    GUID = Begin
+                        0x9ed8ca83427f6841996d58fe84e275d9
+                    End
+                End
+                Begin Label
+                    OldBorderStyle =1
+                    TextFontFamily =34
+                    Left =5670
+                    Top =566
+                    Width =5500
+                    Height =285
+                    FontSize =10
+                    Name ="Label38"
+                    Caption ="Pastabos:"
+                    FontName ="Arial Narrow"
+                    GUID = Begin
+                        0x311fd56c42afb94e9fb8322456f3e44f
+                    End
+                End
+                Begin TextBox
+                    TextFontCharSet =204
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =1695
+                    Top =285
+                    Width =9475
+                    Height =292
+                    Name ="Text31"
+                    ControlSource ="=\"Uþsakymas Nr.: \" & [Uzsakymas] & \" (data - \" & Format([UzsakymoData],\"mm\\"
+                        ".dd\") & \"),  gam. uþd. Nr.: \" & [GamibinesUzduotiesNumeris]"
+                    FontName ="Arial Narrow"
+                    GUID = Begin
+                        0x88edf1bafa0bec4d99151bb6159601a2
+                    End
+                End
+                Begin TextBox
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Top =226
+                    Width =1690
+                    Height =345
+                    FontSize =12
+                    FontWeight =700
+                    TabIndex =1
+                    Name ="Text103"
+                    ControlSource ="[Uzsakymas]"
+                    FontName ="Arial Narrow"
+                    GUID = Begin
+                        0x3ba02b8df3cc20409b9205d1904f93a4
+                    End
+                End
+            End
+        End
+        Begin BreakHeader
+            KeepTogether = NotDefault
+            Height =0
+            BreakLevel =1
+            Name ="GroupHeader1"
+            GUID = Begin
+                0x6d4aafcc57afa640abdcd19b14b2241b
+            End
+        End
+        Begin Section
+            KeepTogether = NotDefault
+            CanGrow = NotDefault
+            Height =285
+            Name ="Detail"
+            GUID = Begin
+                0xac29c7a5ad866c4ebd6820229df833bc
+            End
+            Begin
+                Begin TextBox
+                    CanGrow = NotDefault
+                    CanShrink = NotDefault
+                    OldBorderStyle =1
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Width =1418
+                    Height =285
+                    FontSize =10
+                    Name ="TipoPavadinimas"
+                    ControlSource ="TipoTrPavadinimas"
+                    FontName ="Helvetica"
+                    GUID = Begin
+                        0x04a9319b2e2f324f910be122b73bdd64
+                    End
+                End
+                Begin TextBox
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =1418
+                    Width =567
+                    Height =285
+                    FontSize =10
+                    TabIndex =1
+                    Name ="Valdymas"
+                    ControlSource ="Valdymas"
+                    FontName ="Helvetica"
+                    GUID = Begin
+                        0xf4f98798bbea68468d554a8da606e20d
+                    End
+                End
+                Begin TextBox
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =1985
+                    Width =851
+                    Height =285
+                    FontSize =10
+                    TabIndex =2
+                    Name ="Plotis"
+                    ControlSource ="Plotis"
+                    FontName ="Helvetica"
+                    GUID = Begin
+                        0xa63f727ce704a64a81a69e24a7486184
+                    End
+                End
+                Begin TextBox
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =2835
+                    Width =851
+                    Height =285
+                    FontSize =10
+                    TabIndex =3
+                    Name ="Aukstis"
+                    ControlSource ="Aukstis"
+                    FontName ="Helvetica"
+                    GUID = Begin
+                        0x7dd23d1919133d4e8359538756dbcd6b
+                    End
+                End
+                Begin TextBox
+                    DecimalPlaces =3
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =3686
+                    Width =567
+                    Height =285
+                    FontSize =10
+                    TabIndex =4
+                    Name ="Kiekis"
+                    ControlSource ="Kiekis"
+                    FontName ="Helvetica"
+                    GUID = Begin
+                        0xa05271d3ffb2294a92d6892f9fb11a66
+                    End
+                End
+                Begin TextBox
+                    OldBorderStyle =1
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =4253
+                    Width =1418
+                    Height =285
+                    FontSize =10
+                    TabIndex =5
+                    Name ="Spalva"
+                    ControlSource ="Spalva"
+                    FontName ="Helvetica"
+                    GUID = Begin
+                        0xac346cfe20801e4dbf481307081ed2d7
+                    End
+                End
+                Begin TextBox
+                    CanGrow = NotDefault
+                    EnterKeyBehavior = NotDefault
+                    ScrollBars =2
+                    OldBorderStyle =1
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =5670
+                    Width =5500
+                    Height =285
+                    ColumnWidth =1005
+                    FontSize =10
+                    TabIndex =6
+                    Name ="Pastabos"
+                    ControlSource ="Pastabos"
+                    FontName ="Helvetica"
+                    GUID = Begin
+                        0xb96faa0ecf413447955dd124386c3211
+                    End
+                End
+            End
+        End
+        Begin BreakFooter
+            KeepTogether = NotDefault
+            CanGrow = NotDefault
+            Height =1
+            BreakLevel =1
+            Name ="GroupFooter2"
+            GUID = Begin
+                0x4bf18521ab25f743bb1049d00bbf0659
+            End
+            Begin
+                Begin Subform
+                    OldBorderStyle =0
+                    Width =10490
+                    Height =1
+                    Name ="rsubParduotiPriedai"
+                    SourceObject ="Report.rsubParduotiPriedai"
+                    LinkChildFields ="ParduotoGaminioID"
+                    LinkMasterFields ="ParduotoGaminioID"
+                    GUID = Begin
+                        0xad79db1a1d2e694b8f84dba47963beaa
+                    End
+                End
+            End
+        End
+        Begin BreakFooter
+            KeepTogether = NotDefault
+            CanGrow = NotDefault
+            Height =0
+            Name ="GroupFooter1"
+            GUID = Begin
+                0x97e7b8cf47d573428fae916c9f6f1aad
+            End
+        End
+        Begin PageFooter
+            Height =285
+            Name ="PageFooterSection"
+            GUID = Begin
+                0x13ff19814c6bd14cbf1824ad6af396a5
+            End
+            Begin
+                Begin TextBox
+                    TextAlign =3
+                    IMESentenceMode =3
+                    Left =3174
+                    Width =7931
+                    Height =285
+                    Name ="Text32"
+                    ControlSource ="=\"Puslapis \" & [Page] & \" ið  \" & [Pages] & \", atspausdinta \" & Now()"
+                    GUID = Begin
+                        0x365714cd0e907e449c0adf237918a15b
+                    End
+                End
+            End
+        End
+        Begin FormFooter
+            KeepTogether = NotDefault
+            Height =0
+            Name ="ReportFooter"
+            GUID = Begin
+                0x2524da96b464d94dbeb6378a705b9644
+            End
+        End
+    End
+End
+CodeBehindForm
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = True
+Attribute VB_PredeclaredId = True
+Attribute VB_Exposed = False
+Option Compare Database
+Option Explicit
+
+Private Sub Report_Open(Cancel As Integer)
+On Error GoTo Err_Report_Open
+
+Me.RecordSource = "EXEC SP_GamPanelTrackByTask '" & Forms!frmBlindsProduction.txtProdTaskID & "'"
+
+Exit_Report_Open:
+    Exit Sub
+    
+Err_Report_Open:
+
+    Resume Exit_Report_Open
+  
+End Sub
