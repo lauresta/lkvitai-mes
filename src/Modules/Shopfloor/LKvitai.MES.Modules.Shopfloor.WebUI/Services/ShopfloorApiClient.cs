@@ -65,6 +65,23 @@ public sealed class ProductionTaskPageDto
     public List<ProductionTaskSummaryDto> Items { get; set; } = [];
 }
 
+public sealed class ProductionDocumentPageDto
+{
+    public int Page { get; set; }
+    public bool HasMore { get; set; }
+    public List<ProductionDocumentSummaryDto> Items { get; set; } = [];
+}
+
+public sealed class ProductionDocumentSummaryDto
+{
+    public int Id { get; set; }
+    public string Number { get; set; } = "";
+    public DateTime Date { get; set; }
+    public string Author { get; set; } = "";
+    public string Operation { get; set; } = "";
+    public int Rows { get; set; }
+}
+
 public sealed class ProductionTaskSummaryDto
 {
     public int Id { get; set; }
@@ -220,6 +237,10 @@ public sealed class ShopfloorApiClient
     public Task<ApiResult<ProductionTaskPageDto>> GetProductionTasksAsync(int page, CancellationToken ct)
         => SendAsync<ProductionTaskPageDto>(HttpMethod.Get,
             $"/api/shopfloor/production-tasks?page={page}&pageSize=50", null, ct);
+
+    public Task<ApiResult<ProductionDocumentPageDto>> GetProductionDocumentsAsync(int page, CancellationToken ct)
+        => SendAsync<ProductionDocumentPageDto>(HttpMethod.Get,
+            $"/api/shopfloor/production-documents?page={page}&pageSize=50", null, ct);
 
     public Task<ApiResult<ProductionTaskDetailDto>> GetProductionTaskAsync(int id, CancellationToken ct)
         => SendAsync<ProductionTaskDetailDto>(HttpMethod.Get,

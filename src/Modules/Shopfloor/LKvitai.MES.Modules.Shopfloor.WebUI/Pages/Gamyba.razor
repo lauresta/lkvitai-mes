@@ -39,7 +39,7 @@
         </nav>
 
         <main class="gamyba-main @(PrototypeControls ? "gamyba-main--demo" : "")">
-            @if (LiveQueueEnabled && _screen is not ("queue" or "tasks" or "task" or "history" or "reports")
+            @if (LiveQueueEnabled && _screen is not ("queue" or "tasks" or "task" or "history" or "reports" or "gt")
                 && !(_screen == "stops" && _stopTab == "repairs"))
             {
                 <div class="gamyba-alert gamyba-alert--info" role="status">@L("Preview: this screen uses sample data and does not change production.", "Peržiūra: šiame ekrane naudojami pavyzdiniai duomenys; gamyba nekeičiama.")</div>
@@ -235,6 +235,27 @@
 
             @if (_screen == "gt")
             {
+                @if (LiveQueueEnabled)
+                {
+                <div class="gamyba-pagehead"><div><div class="gamyba-eyebrow">SHOPFLOOR · G08</div><h1>@L("GT documents", "GT dokumentai")</h1><p>@L("Your recent GT documents from Access.", "Jūsų naujausi GT dokumentai iš Access.")</p></div><div class="gamyba-actions"><span class="chip chip--info">@L("READ ONLY", "TIK PERŽIŪRA")</span><button type="button" class="gamyba-btn" disabled="@_liveDocumentsLoading" @onclick="() => LoadLiveDocumentsAsync(_liveDocumentsPage)">@L("Refresh", "Atnaujinti")</button></div></div>
+                @if (_liveDocumentsError is not null)
+                {
+                    <div class="gamyba-alert gamyba-alert--danger" role="alert">@_liveDocumentsError <button type="button" @onclick="() => LoadLiveDocumentsAsync(_liveDocumentsPage)">@L("Retry", "Kartoti")</button></div>
+                }
+                <section class="gamyba-panel"><div class="gamyba-tablewrap"><table class="gamyba-table"><thead><tr><th>GT</th><th>@L("Date", "Data")</th><th>@L("Author", "Autorius")</th><th>@L("Operation", "Operacija")</th><th class="is-num">@L("Rows", "Eilutės")</th></tr></thead><tbody>
+                    @foreach (var doc in _liveDocuments?.Items ?? [])
+                    {
+                        <tr><td class="mono gamyba-accent"><strong>@doc.Number</strong></td><td class="mono">@doc.Date.ToString("yyyy-MM-dd HH:mm")</td><td>@doc.Author</td><td><span class="chip chip--info">@doc.Operation</span></td><td class="mono is-num"><strong>@doc.Rows</strong></td></tr>
+                    }
+                </tbody></table></div>
+                @if (!_liveDocumentsLoading && _liveDocumentsError is null && _liveDocuments?.Items.Count == 0)
+                {
+                    <div class="gamyba-empty">@L("No GT documents in the Access recent window.", "Access naujausių GT dokumentų laikotarpiu įrašų nėra.")</div>
+                }
+                <div class="gamyba-panel__foot"><span>@L("Source", "Šaltinis") <span class="mono">TAB_ProductionOutputDocuments · Loc_leidimas</span></span><span><button type="button" class="gamyba-btn gamyba-btn--xs" disabled="@(_liveDocumentsLoading || _liveDocumentsPage <= 1)" @onclick="() => LoadLiveDocumentsAsync(_liveDocumentsPage - 1)">← @L("Previous", "Atgal")</button> <span class="mono">@_liveDocumentsPage</span> <button type="button" class="gamyba-btn gamyba-btn--xs" disabled="@(_liveDocumentsLoading || _liveDocuments?.HasMore != true)" @onclick="() => LoadLiveDocumentsAsync(_liveDocumentsPage + 1)">@L("Next", "Toliau") →</button></span></div></section>
+                }
+                else
+                {
                 <div class="gamyba-pagehead"><div><div class="gamyba-eyebrow">SHOPFLOOR · G08</div><h1>@L("GT documents", "GT dokumentai")</h1><p>@L("Production transitions and scan history.", "Gamybos perėjimai ir skenavimo istorija.")</p></div><div class="gamyba-actions"><label class="gamyba-mine-filter"><input type="checkbox" @bind="_mineLastFour" />@L("Mine · last 4 days", "Mano · 4 dienos")</label><button type="button" class="gamyba-btn gamyba-btn--primary" @onclick="NewDocument">+ @L("New GT document", "Naujas GT dokumentas")</button></div></div>
                 <section class="gamyba-panel"><div class="gamyba-tablewrap"><table class="gamyba-table"><thead><tr><th>GT</th><th>@L("Date", "Data")</th><th>@L("Author", "Autorius")</th><th>@L("Operation", "Operacija")</th><th class="is-num">@L("Rows", "Eilutės")</th><th>@L("Note", "Pastaba")</th><th class="is-num">@L("Action", "Veiksmas")</th></tr></thead><tbody>
                     @foreach (var doc in ListedDocuments)
@@ -242,6 +263,7 @@
                         <tr><td class="mono gamyba-accent"><strong>@doc.Number</strong></td><td class="mono">@doc.Created</td><td>@doc.Author</td><td><span class="chip @StageClass(doc.Operation)">@doc.Operation</span></td><td class="mono is-num"><strong>@doc.Scans.Count</strong></td><td class="gamyba-muted">@(CanContinueDocument(doc) ? "—" : L("Older or another author", "Senas arba kitas autorius"))</td><td class="is-num"><button type="button" class="gamyba-btn gamyba-btn--xs gamyba-btn--primary" disabled="@(!CanContinueDocument(doc))" @onclick="() => ContinueDocument(doc.Number)">@L("Continue scanning", "Tęsti skenavimą")</button> <button type="button" class="gamyba-btn gamyba-btn--xs" @onclick="() => OpenDocument(doc.Number)">@L("Details", "Detalės")</button></td></tr>
                     }
                 </tbody></table></div></section>
+                }
             }
 
             @if (_screen == "gt-detail")
