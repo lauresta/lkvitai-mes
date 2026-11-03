@@ -1779,4 +1779,256 @@
   <data name="Shopfloor.StatusArchived" xml:space="preserve">
     <value>Archived</value>
   </data>
+  <data name="Gamyba.JobStateSent" xml:space="preserve">
+    <value>Sent</value>
+  </data>
+  <data name="Gamyba.JobStateCancelled" xml:space="preserve">
+    <value>Cancelled</value>
+  </data>
+  <data name="Gamyba.JobStatePending" xml:space="preserve">
+    <value>Pending</value>
+  </data>
+  <data name="Gamyba.JobStatePaused" xml:space="preserve">
+    <value>Paused</value>
+  </data>
+  <data name="Gamyba.JobStateSending" xml:space="preserve">
+    <value>Sending</value>
+  </data>
+  <data name="Gamyba.JobStateUncertain" xml:space="preserve">
+    <value>Uncertain</value>
+  </data>
+  <data name="Gamyba.JobStateFailed" xml:space="preserve">
+    <value>Failed</value>
+  </data>
+  <data name="Gamyba.MapText.13 reports → NoData / preview / print / archive / version; template editor" xml:space="preserve">
+    <value>13 reports → NoData / preview / print / archive / version; template editor</value>
+  </data>
+  <data name="Gamyba.MapText.2nd click" xml:space="preserve">
+    <value>2nd click</value>
+  </data>
+  <data name="Gamyba.MapText.Access conflict" xml:space="preserve">
+    <value>Access conflict</value>
+  </data>
+  <data name="Gamyba.MapText.All" xml:space="preserve">
+    <value>All</value>
+  </data>
+  <data name="Gamyba.MapText.Allows open GU and empty GU" xml:space="preserve">
+    <value>Allows open GU and empty GU</value>
+  </data>
+  <data name="Gamyba.MapText.Archive preview; browser print" xml:space="preserve">
+    <value>Archive preview; browser print</value>
+  </data>
+  <data name="Gamyba.MapText.Are UNC archives reachable, and is silent printing to a preset printer needed?" xml:space="preserve">
+    <value>Are UNC archives reachable, and is silent printing to a preset printer needed?</value>
+  </data>
+  <data name="Gamyba.MapText.Audible signal required? Mobile and desktop sharing one GT?" xml:space="preserve">
+    <value>Audible signal required? Mobile and desktop sharing one GT?</value>
+  </data>
+  <data name="Gamyba.MapText.CECH-02 · COM3 placeholder" xml:space="preserve">
+    <value>CECH-02 · COM3 placeholder</value>
+  </data>
+  <data name="Gamyba.MapText.Can a partial-rights user see GU with hidden rows?" xml:space="preserve">
+    <value>Can a partial-rights user see GU with hidden rows?</value>
+  </data>
+  <data name="Gamyba.MapText.Closed list of production-only reports and Excel exports undefined." xml:space="preserve">
+    <value>Closed list of production-only reports and Excel exports undefined.</value>
+  </data>
+  <data name="Gamyba.MapText.Concurrent Access and web GU numbering strategy is not decided." xml:space="preserve">
+    <value>Concurrent Access and web GU numbering strategy is not decided.</value>
+  </data>
+  <data name="Gamyba.MapText.Confirm in Sales → queue filtered by order, items pre-selected" xml:space="preserve">
+    <value>Confirm in Sales → queue filtered by order, items pre-selected</value>
+  </data>
+  <data name="Gamyba.MapText.Documents" xml:space="preserve">
+    <value>Documents</value>
+  </data>
+  <data name="Gamyba.MapText.Due, order, item" xml:space="preserve">
+    <value>Due, order, item</value>
+  </data>
+  <data name="Gamyba.MapText.Finished goods" xml:space="preserve">
+    <value>Finished goods</value>
+  </data>
+  <data name="Gamyba.MapText.Fixture documents only" xml:space="preserve">
+    <value>Fixture documents only</value>
+  </data>
+  <data name="Gamyba.MapText.Fixture evaluator" xml:space="preserve">
+    <value>Fixture evaluator</value>
+  </data>
+  <data name="Gamyba.MapText.Formula save" xml:space="preserve">
+    <value>Formula save</value>
+  </data>
+  <data name="Gamyba.MapText.G15 omitted" xml:space="preserve">
+    <value>G15 omitted</value>
+  </data>
+  <data name="Gamyba.MapText.GT documents" xml:space="preserve">
+    <value>GT documents</value>
+  </data>
+  <data name="Gamyba.MapText.GU card" xml:space="preserve">
+    <value>GU card</value>
+  </data>
+  <data name="Gamyba.MapText.GU → Warehouse" xml:space="preserve">
+    <value>GU → Warehouse</value>
+  </data>
+  <data name="Gamyba.MapText.Generic preview, columns only" xml:space="preserve">
+    <value>Generic preview, columns only</value>
+  </data>
+  <data name="Gamyba.MapText.Issue to GU" xml:space="preserve">
+    <value>Issue to GU</value>
+  </data>
+  <data name="Gamyba.MapText.Label queue" xml:space="preserve">
+    <value>Label queue</value>
+  </data>
+  <data name="Gamyba.MapText.Labels" xml:space="preserve">
+    <value>Labels</value>
+  </data>
+  <data name="Gamyba.MapText.Legacy DELETE audit is commented out; actor receipt and deletion rights unconfirmed." xml:space="preserve">
+    <value>Legacy DELETE audit is commented out; actor receipt and deletion rights unconfirmed.</value>
+  </data>
+  <data name="Gamyba.MapText.Limits for adding portions to current or historical GU and empty GU/GT?" xml:space="preserve">
+    <value>Limits for adding portions to current or historical GU and empty GU/GT?</value>
+  </data>
+  <data name="Gamyba.MapText.Menu, button and field rights matrix is not closed." xml:space="preserve">
+    <value>Menu, button and field rights matrix is not closed.</value>
+  </data>
+  <data name="Gamyba.MapText.Mixed GU" xml:space="preserve">
+    <value>Mixed GU</value>
+  </data>
+  <data name="Gamyba.MapText.Number only after success" xml:space="preserve">
+    <value>Number only after success</value>
+  </data>
+  <data name="Gamyba.MapText.Once per GU" xml:space="preserve">
+    <value>Once per GU</value>
+  </data>
+  <data name="Gamyba.MapText.Only last row, later state blocks" xml:space="preserve">
+    <value>Only last row, later state blocks</value>
+  </data>
+  <data name="Gamyba.MapText.Original layouts, expressions and subreports of 13 gam and 4 output reports unknown." xml:space="preserve">
+    <value>Original layouts, expressions and subreports of 13 gam and 4 output reports unknown.</value>
+  </data>
+  <data name="Gamyba.MapText.Product history" xml:space="preserve">
+    <value>Product history</value>
+  </data>
+  <data name="Gamyba.MapText.Production tasks → GU" xml:space="preserve">
+    <value>Production tasks → GU</value>
+  </data>
+  <data name="Gamyba.MapText.Queue" xml:space="preserve">
+    <value>Queue</value>
+  </data>
+  <data name="Gamyba.MapText.Ready for production" xml:space="preserve">
+    <value>Ready for production</value>
+  </data>
+  <data name="Gamyba.MapText.Repairs" xml:space="preserve">
+    <value>Repairs</value>
+  </data>
+  <data name="Gamyba.MapText.Reports" xml:space="preserve">
+    <value>Reports</value>
+  </data>
+  <data name="Gamyba.MapText.Rows hidden" xml:space="preserve">
+    <value>Rows hidden</value>
+  </data>
+  <data name="Gamyba.MapText.SQL side effects, payroll, notifications and stock contracts not examined." xml:space="preserve">
+    <value>SQL side effects, payroll, notifications and stock contracts not examined.</value>
+  </data>
+  <data name="Gamyba.MapText.Sales → Ready for production" xml:space="preserve">
+    <value>Sales → Ready for production</value>
+  </data>
+  <data name="Gamyba.MapText.Scan correction" xml:space="preserve">
+    <value>Scan correction</value>
+  </data>
+  <data name="Gamyba.MapText.Scanning" xml:space="preserve">
+    <value>Scanning</value>
+  </data>
+  <data name="Gamyba.MapText.Scanning (desktop · mobile)" xml:space="preserve">
+    <value>Scanning (desktop · mobile)</value>
+  </data>
+  <data name="Gamyba.MapText.Shows order due date" xml:space="preserve">
+    <value>Shows order due date</value>
+  </data>
+  <data name="Gamyba.MapText.Stops" xml:space="preserve">
+    <value>Stops</value>
+  </data>
+  <data name="Gamyba.MapText.Stops · Repairs · Finished" xml:space="preserve">
+    <value>Stops · Repairs · Finished</value>
+  </data>
+  <data name="Gamyba.MapText.Technology" xml:space="preserve">
+    <value>Technology</value>
+  </data>
+  <data name="Gamyba.MapText.Three fixture roles" xml:space="preserve">
+    <value>Three fixture roles</value>
+  </data>
+  <data name="Gamyba.MapText.Trusted test-before-save calculator API is required." xml:space="preserve">
+    <value>Trusted test-before-save calculator API is required.</value>
+  </data>
+  <data name="Gamyba.MapText.V_WaitingProductionBlinds and SP_fsubProduction differ by date and exclusions: which defines queue and Due?" xml:space="preserve">
+    <value>V_WaitingProductionBlinds and SP_fsubProduction differ by date and exclusions: which defines queue and Due?</value>
+  </data>
+  <data name="Gamyba.MapText.Visual only; same GT" xml:space="preserve">
+    <value>Visual only; same GT</value>
+  </data>
+  <data name="Gamyba.MapText.Warehouse" xml:space="preserve">
+    <value>Warehouse</value>
+  </data>
+  <data name="Gamyba.MapText.Where Access calls SP_WriteOffBlindComponentsNew and repeat policy." xml:space="preserve">
+    <value>Where Access calls SP_WriteOffBlindComponentsNew and repeat policy.</value>
+  </data>
+  <data name="Gamyba.MapText.Which order defines first N: due date, order date or Access list order?" xml:space="preserve">
+    <value>Which order defines first N: due date, order date or Access list order?</value>
+  </data>
+  <data name="Gamyba.MapText.Zebra model, DPI, label size, encoding and COM port per workstation unknown." xml:space="preserve">
+    <value>Zebra model, DPI, label size, encoding and COM port per workstation unknown.</value>
+  </data>
+  <data name="Gamyba.MapText.barcode → item, stage, documents and allowed actions" xml:space="preserve">
+    <value>barcode → item, stage, documents and allowed actions</value>
+  </data>
+  <data name="Gamyba.MapText.composition by portion · history · PDFs · labels · warehouse · add portion" xml:space="preserve">
+    <value>composition by portion · history · PDFs · labels · warehouse · add portion</value>
+  </data>
+  <data name="Gamyba.MapText.empty" xml:space="preserve">
+    <value>empty</value>
+  </data>
+  <data name="Gamyba.MapText.existing write-off action; repeat blocked" xml:space="preserve">
+    <value>existing write-off action; repeat blocked</value>
+  </data>
+  <data name="Gamyba.MapText.handover / dispatch → four output prints, invoice gated" xml:space="preserve">
+    <value>handover / dispatch → four output prints, invoice gated</value>
+  </data>
+  <data name="Gamyba.MapText.job modes → physical labels → pause / resume / cancel / reprint; COM owner" xml:space="preserve">
+    <value>job modes → physical labels → pause / resume / cancel / reprint; COM owner</value>
+  </data>
+  <data name="Gamyba.MapText.long op" xml:space="preserve">
+    <value>long op</value>
+  </data>
+  <data name="Gamyba.MapText.network" xml:space="preserve">
+    <value>network</value>
+  </data>
+  <data name="Gamyba.MapText.new GT → scan; own documents ≤ 4 days; details and last-row correction" xml:space="preserve">
+    <value>new GT → scan; own documents ≤ 4 days; details and last-row correction</value>
+  </data>
+  <data name="Gamyba.MapText.no material" xml:space="preserve">
+    <value>no material</value>
+  </data>
+  <data name="Gamyba.MapText.no rights" xml:space="preserve">
+    <value>no rights</value>
+  </data>
+  <data name="Gamyba.MapText.pick order/items → stop document → view/print; Sales cancellation is separate" xml:space="preserve">
+    <value>pick order/items → stop document → view/print; Sales cancellation is separate</value>
+  </data>
+  <data name="Gamyba.MapText.recovery" xml:space="preserve">
+    <value>recovery</value>
+  </data>
+  <data name="Gamyba.MapText.scan + Enter → result → list; manual pick; import; error log; undo" xml:space="preserve">
+    <value>scan + Enter → result → list; manual pick; import; error log; undo</value>
+  </data>
+  <data name="Gamyba.MapText.select rows / all / first N → target GU → Issue dialog → task card" xml:space="preserve">
+    <value>select rows / all / first N → target GU → Issue dialog → task card</value>
+  </data>
+  <data name="Gamyba.MapText.types → parameters → formula → test → save; other settings by role" xml:space="preserve">
+    <value>types → parameters → formula → test → save; other settings by role</value>
+  </data>
+  <data name="Gamyba.MapText.unfinished / missing actual failure; sFactFailure by role; save &amp; close" xml:space="preserve">
+    <value>unfinished / missing actual failure; sFactFailure by role; save &amp; close</value>
+  </data>
+  <data name="Gamyba.MapText.wrong state" xml:space="preserve">
+    <value>wrong state</value>
+  </data>
 </root>

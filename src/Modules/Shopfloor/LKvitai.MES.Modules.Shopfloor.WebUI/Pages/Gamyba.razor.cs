@@ -176,6 +176,8 @@ public partial class Gamyba : ComponentBase
         Go(target);
     }
 
+    private string MapText(string text) => L["Gamyba.MapText." + text].Value;
+
     private bool Restricted => _role == "restricted";
     private bool Supervisor => _role == "supervisor";
     private string RoleLabel => _role switch
@@ -271,6 +273,18 @@ public partial class Gamyba : ComponentBase
         return task is null ? "—" : TaskItems(task).ElementAtOrDefault(n - 1)?.Barcode ?? "—";
     }
     private string LabelState(GamybaLabelJob job, int n) => n <= job.Sent ? "Sent" : job.State == "Cancelled" ? "Cancelled" : "Pending";
+
+    private string LocalizedJobState(string state) => state switch
+    {
+        "Sent" => L["Gamyba.JobStateSent"].Value,
+        "Cancelled" => L["Gamyba.JobStateCancelled"].Value,
+        "Pending" => L["Gamyba.JobStatePending"].Value,
+        "Paused" => L["Gamyba.JobStatePaused"].Value,
+        "Sending" => L["Gamyba.JobStateSending"].Value,
+        "Uncertain" => L["Gamyba.JobStateUncertain"].Value,
+        "Failed" => L["Gamyba.JobStateFailed"].Value,
+        _ => state
+    };
     private GamybaItem? HistoryItem => _items.FirstOrDefault(x => x.Barcode == _historyBarcode);
     private IEnumerable<GamybaItem> VisibleItems => _items.Where(x => !Restricted || x.Branch == "Kaunas");
     private IEnumerable<GamybaItem> QueueItems => _simEmpty ? [] :
