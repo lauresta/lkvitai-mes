@@ -530,7 +530,7 @@
                             </div></section>
                             @if (_liveReportId == 3 && _liveReportData is not null)
                             {
-                                <div class="roletai-host"><RoletaiReport @key="_liveTask.Task.Id" Data="_liveReportData" TaskNumber="_liveTask.Task.Number" /></div>
+                                <div class="roletai-host"><RoletaiReport @key="_liveTask.Task.Id" Data="_liveReportData" TaskNumber="@_liveTask.Task.Number" /></div>
                             }
                             else
                             {
