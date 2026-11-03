@@ -20,7 +20,7 @@
             </MudSelect>
             @if (_current is not null)
             {
-                <span class="chip @StatusChip(_current.Status)">@_current.Status</span>
+                <span class="chip @StatusChip(_current.Status)">@L[$"Shopfloor.Status{_current.Status}"]</span>
             }
         </div>
         <div class="sf-editor-toolbar__status mono">@_statusMessage</div>

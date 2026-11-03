@@ -50,7 +50,7 @@
                                 <tr>
                                     <td class="mono">@f.Code</td>
                                     <td>@f.Name</td>
-                                    <td><span class="chip @StatusChip(f.Status)">@f.Status</span></td>
+                                    <td><span class="chip @StatusChip(f.Status)">@L[$"Shopfloor.Status{f.Status}"]</span></td>
                                     <td class="mono">@f.MappedLegacyCount</td>
                                     <td class="mono">@f.TaskCount</td>
                                     <td class="mono">@((f.UpdatedAt ?? f.CreatedAt).ToString("yyyy-MM-dd HH:mm"))</td>
