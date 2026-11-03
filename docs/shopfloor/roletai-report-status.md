@@ -8,6 +8,7 @@ The designer handoff spells the guide-type field `Kreipianciuju_tipas`, but the 
 
 Open verification and scope items:
 
+- The `bykovas` account currently has `SalesAdmin` and `WarehouseAdmin`, but no Shopfloor report-editor role. Its live report is visible, while `Template Editor` is hidden. Assigning a Shopfloor editor role is an access-management decision outside this report change.
 - Compare the print output with Access PDF samples for a short, a multipage and an empty GU. The supplied screenshot shows Design view, not a rendered report; exact page breaks and font metrics are therefore unverified.
 - The browser print dialog can save a PDF, but automatic archival of generated PDFs with their template version is not implemented. Existing legacy UNC PDF archives are not touched.
 - Preview page numbers are illustrative; print uses CSS page counters. Check them in the target Windows Chrome print driver on a multipage GU.
