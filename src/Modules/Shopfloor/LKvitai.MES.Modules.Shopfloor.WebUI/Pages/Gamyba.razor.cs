@@ -33,7 +33,6 @@ public partial class Gamyba : ComponentBase
     private readonly List<GamybaTemplateColumn> _publishedColumns = GamybaFixtures.Columns();
 
     private string _screen = "queue";
-    private string _lang = "en";
     private string _viewport = "fit";
     private string _role = "operator";
     private string _branch = "All";
@@ -112,18 +111,18 @@ public partial class Gamyba : ComponentBase
     private bool _simSlow;
     private bool _simZebraNoAck;
 
-    private static readonly (string Key, string En, string Lt)[] Tabs =
+    private static readonly (string Key, string TitleKey)[] Tabs =
     [
-        ("queue", "Ready for production", "Paruošta gamybai"),
-        ("tasks", "Production tasks", "Gamybos užduotys"),
-        ("scan", "Scanning", "Skenavimas"),
-        ("gt", "GT documents", "GT dokumentai"),
-        ("stops", "Stops · Repairs", "Stabdymai · Remontas"),
-        ("finished", "Finished goods", "Gatava produkcija"),
-        ("history", "Product history", "Gaminio istorija"),
-        ("technology", "Technology", "Technologija"),
-        ("reports", "Documents", "Dokumentai"),
-        ("labels", "Label queue", "Etikečių eilė")
+        ("queue", "Gamyba.ReadyForProduction"),
+        ("tasks", "Gamyba.ProductionTasks"),
+        ("scan", "Gamyba.Scanning"),
+        ("gt", "Gamyba.GTDocuments"),
+        ("stops", "Gamyba.StopsRepairs"),
+        ("finished", "Gamyba.FinishedGoods"),
+        ("history", "Gamyba.ProductHistory"),
+        ("technology", "Gamyba.Technology"),
+        ("reports", "Gamyba.Documents"),
+        ("labels", "Gamyba.LabelQueue")
     ];
 
     private static readonly (string Code, string Screen, string Flow, string Target)[] MapRows =
@@ -177,14 +176,13 @@ public partial class Gamyba : ComponentBase
         Go(target);
     }
 
-    private string L(string en, string lt) => _lang == "lt" ? lt : en;
     private bool Restricted => _role == "restricted";
     private bool Supervisor => _role == "supervisor";
     private string RoleLabel => _role switch
     {
-        "supervisor" => L("Supervisor + editor", "Vadovas + redaktorius"),
-        "restricted" => L("Restricted · Kaunas", "Ribota · Kaunas"),
-        _ => L("Operator", "Operatorius")
+        "supervisor" => L["Gamyba.SupervisorEditor"].Value,
+        "restricted" => L["Gamyba.RestrictedKaunas"].Value,
+        _ => L["Gamyba.Operator"].Value
     };
     private GamybaTask CurrentTask => _tasks.First(x => x.Number == _currentTask);
     private GamybaDocument CurrentDocument => _documents.First(x => x.Number == _currentDocument);
@@ -306,9 +304,9 @@ public partial class Gamyba : ComponentBase
     private (string Code, string Name, string Formula, string Unit) CurrentTechParameter => CurrentTechParameters.First(x => x.Code == _techParameter);
     private IEnumerable<(string Name, string Value, string Source, string Rights)> TechOtherRows => _techTab switch
     {
-        "colors" => [("Rolėtai", "Balta · Pilka · Juoda", "frmCategoriesColors", Supervisor ? L("Editable", "Redaguojama") : L("Locked", "Užrakinta")), ("Vertikalios", "Balta · Smėlio", "frmCategoriesColors", Supervisor ? L("Editable", "Redaguojama") : L("Locked", "Užrakinta"))],
-        "acc" => [("Rolėtai", "Grandinėlė · Spyruoklė · Variklis", "frmAccessorisByBlindCategory", Supervisor ? L("Editable", "Redaguojama") : L("Locked", "Užrakinta")), ("Plise", "Rankena · Virvelė", "frmAccessorisByBlindCategory", Supervisor ? L("Editable", "Redaguojama") : L("Locked", "Užrakinta"))],
-        _ => [("Patvirtintas → Gaminamas", "GU issue", "frmRulesStates · fn_CheckStateChange", L("Locked", "Užrakinta")), ("Gaminamas → Pagamintas", "GT pagaminta", "frmRulesStates · fn_CheckStateChange", L("Locked", "Užrakinta")), ("Gaminamas → Sustabdytas", "Stop document", "frmRulesStates", L("Locked", "Užrakinta"))]
+        "colors" => [("Rolėtai", "Balta · Pilka · Juoda", "frmCategoriesColors", Supervisor ? L["Gamyba.Editable"].Value : L["Gamyba.Locked"].Value), ("Vertikalios", "Balta · Smėlio", "frmCategoriesColors", Supervisor ? L["Gamyba.Editable"].Value : L["Gamyba.Locked"].Value)],
+        "acc" => [("Rolėtai", "Grandinėlė · Spyruoklė · Variklis", "frmAccessorisByBlindCategory", Supervisor ? L["Gamyba.Editable"].Value : L["Gamyba.Locked"].Value), ("Plise", "Rankena · Virvelė", "frmAccessorisByBlindCategory", Supervisor ? L["Gamyba.Editable"].Value : L["Gamyba.Locked"].Value)],
+        _ => [("Patvirtintas → Gaminamas", "GU issue", "frmRulesStates · fn_CheckStateChange", L["Gamyba.Locked"].Value), ("Gaminamas → Pagamintas", "GT pagaminta", "frmRulesStates · fn_CheckStateChange", L["Gamyba.Locked"].Value), ("Gaminamas → Sustabdytas", "Stop document", "frmRulesStates", L["Gamyba.Locked"].Value)]
     };
     private static bool MatchesReport(GamybaItem item, string report) => report switch
     {
@@ -534,7 +532,7 @@ public partial class Gamyba : ComponentBase
     private void Notice(string kind, string en, string lt)
     {
         _noticeKind = kind;
-        _notice = L(en, lt);
+        _notice = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "lt" ? lt : en;
     }
 
     private void ToggleSelected(int id)
@@ -584,14 +582,14 @@ public partial class Gamyba : ComponentBase
             _issuePhase = "error";
             _issueConflictId = first.Id;
             _issueProblem = $"{first.Order} · {first.Type} {first.Width}×{first.Height}: " +
-                L("already issued by Access. Remove the conflicting row.", "jau išduota per Access. Pašalinkite konfliktuojančią eilutę.");
+                L["Gamyba.AlreadyIssuedByAccessRemoveTheConflictingRow"].Value;
         }
         else if (_simNoMaterial && _items.FirstOrDefault(x => _selected.Contains(x.Id) && x.NoMaterial) is { } noMaterial)
         {
             _issuePhase = "error";
             _issueConflictId = noMaterial.Id;
             _issueProblem = $"{noMaterial.Order} · {noMaterial.Type}: " +
-                L("insufficient material.", "nepakanka medžiagos.");
+                L["Gamyba.InsufficientMaterial"].Value;
         }
         else if (_simTimeout || _simNetwork)
         {
@@ -702,28 +700,28 @@ public partial class Gamyba : ComponentBase
         _lastScanBarcode = value;
         if (!CanContinueDocument(CurrentDocument))
         {
-            Reject(value, L("This GT document is not editable after four days or by another author.", "Šio GT negalima redaguoti po keturių dienų arba jei jį sukūrė kitas naudotojas."));
+            Reject(value, L["Gamyba.ThisGTDocumentIsNotEditableAfterFourDays"].Value);
             return;
         }
         if (_simNetwork)
         {
-            Reject(value, L("Network unavailable. Scan was not saved.", "Tinklas nepasiekiamas. Skenas neišsaugotas."));
+            Reject(value, L["Gamyba.NetworkUnavailableScanWasNotSaved"].Value);
             return;
         }
         var item = _items.FirstOrDefault(x => x.Barcode == value);
         if (value.Length != 12 || !value.All(char.IsDigit))
-            Reject(value, L("Barcode must contain 12 digits.", "Kodą turi sudaryti 12 skaitmenų."));
+            Reject(value, L["Gamyba.BarcodeMustContain12Digits"].Value);
         else if (item is null)
-            Reject(value, L("Unknown barcode.", "Nežinomas kodas."));
+            Reject(value, L["Gamyba.UnknownBarcode"].Value);
         else if (Restricted && item.Branch != "Kaunas")
-            Reject(value, L("Item belongs to another branch.", "Gaminys priklauso kitam filialui."));
+            Reject(value, L["Gamyba.ItemBelongsToAnotherBranch"].Value);
         else if (CurrentDocument.Scans.Any(x => x.ItemId == item.Id))
         {
             _scanOutcome = "repeat";
-            _scanReason = L("Already scanned in this GT document.", "Jau nuskenuota šiame GT dokumente.");
+            _scanReason = L["Gamyba.AlreadyScannedInThisGTDocument"].Value;
         }
         else if (item.Stage != OperationTransition(CurrentDocument.Operation).Before)
-            Reject(value, L($"Wrong state: {item.Stage}. Expected {OperationTransition(CurrentDocument.Operation).Before}.", $"Netinkama būsena: {item.Stage}. Reikia {OperationTransition(CurrentDocument.Operation).Before}."));
+            Reject(value, L["Gamyba.WrongStateExpected", item.Stage, OperationTransition(CurrentDocument.Operation).Before].Value);
         else
         {
             var after = OperationTransition(CurrentDocument.Operation).After;
@@ -826,7 +824,7 @@ public partial class Gamyba : ComponentBase
         }
         catch (InvalidOperationException)
         {
-            _testResult = L("Cannot evaluate this formula in the fixture. Save is blocked.", "Šios formulės pavyzdyje apskaičiuoti negalima. Išsaugojimas blokuojamas.");
+            _testResult = L["Gamyba.CannotEvaluateThisFormulaInTheFixtureSaveIs"].Value;
             _formulaTested = false;
         }
     }

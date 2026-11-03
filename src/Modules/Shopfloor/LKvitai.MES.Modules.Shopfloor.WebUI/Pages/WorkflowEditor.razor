@@ -6,12 +6,12 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
 
-<PageTitle>Cikada.MES · Workflow Editor</PageTitle>
+<PageTitle>Cikada.MES · @L["Shopfloor.WorkflowEditor"]</PageTitle>
 
 <main class="workflow-page workflow-page--embed">
     <section class="sf-editor-toolbar">
         <div class="sf-editor-toolbar__picker">
-            <MudSelect T="Guid" Value="_selectedId" ValueChanged="OnFamilyChanged" Label="Production family"
+            <MudSelect T="Guid" Value="_selectedId" ValueChanged="OnFamilyChanged" Label="@L["Shopfloor.ProductionFamily"]"
                        Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true">
                 @foreach (var f in _families ?? Array.Empty<WorkflowTemplateSummaryDto>())
                 {
@@ -28,8 +28,8 @@
 
     <iframe id="workflow-editor-frame"
             class="workflow-embed"
-            src="prototypes/shopfloor-workflow-editor-prototype.html"
-            title="Shopfloor workflow editor prototype"></iframe>
+            src="@($"prototypes/shopfloor-workflow-editor-prototype.html?culture={System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName}")"
+            title="@L["Shopfloor.ShopfloorWorkflowEditorPrototype"]"></iframe>
 </main>
 
 @code {
@@ -37,13 +37,14 @@
     private WorkflowTemplateDto? _current;
     private IReadOnlyList<WorkStationDto>? _stations;
     private Guid _selectedId;
-    private string _statusMessage = "Select a production family to begin.";
+    private string _statusMessage = "";
 
     private DotNetObjectReference<WorkflowEditor>? _selfRef;
     private bool _bridgeReady;
 
     protected override async Task OnInitializedAsync()
     {
+        _statusMessage = L["Shopfloor.SelectProductionFamily"].Value;
         _families = await Api.GetWorkflowsAsync(CancellationToken.None) ?? Array.Empty<WorkflowTemplateSummaryDto>();
         _stations = await Api.GetWorkStationsAsync(true, CancellationToken.None) ?? Array.Empty<WorkStationDto>();
 
@@ -117,8 +118,8 @@
         _current = await Api.GetWorkflowAsync(_selectedId, CancellationToken.None);
         if (_current is null)
         {
-            _statusMessage = "Could not load workflow.";
-            Snackbar.Add("Could not load workflow.", Severity.Error);
+            _statusMessage = L["Shopfloor.CouldNotLoadWorkflow"].Value;
+            Snackbar.Add(L["Shopfloor.CouldNotLoadWorkflow"].Value, Severity.Error);
             return;
         }
 
@@ -143,7 +144,7 @@
 
         var json = System.Text.Json.JsonSerializer.Serialize(payload, JsonOptions);
         await JS.InvokeVoidAsync("shopfloorWorkflowBridge.postLoad", json);
-        _statusMessage = $"Loaded {_current.Code}.";
+        _statusMessage = L["Shopfloor.WorkflowLoaded", _current.Code].Value;
     }
 
     [JSInvokable]
@@ -156,14 +157,14 @@
             var workflowId = root.GetProperty("workflowId").GetString();
             if (!Guid.TryParse(workflowId, out var id))
             {
-                await PostSaveResultAsync(false, "Invalid workflow id.");
+                await PostSaveResultAsync(false, L["Shopfloor.InvalidWorkflowId"].Value);
                 return;
             }
 
             var graph = root.GetProperty("graph").Deserialize<WorkflowGraphDto>(JsonOptions);
             if (graph is null)
             {
-                await PostSaveResultAsync(false, "Invalid graph payload.");
+                await PostSaveResultAsync(false, L["Shopfloor.InvalidGraphPayload"].Value);
                 return;
             }
 
@@ -171,15 +172,15 @@
             if (result.Success)
             {
                 _current = result.Value;
-                _statusMessage = "Saved.";
-                Snackbar.Add("Workflow graph saved.", Severity.Success);
+                _statusMessage = L["Shopfloor.Saved"].Value;
+                Snackbar.Add(L["Shopfloor.WorkflowGraphSaved"].Value, Severity.Success);
                 await PostSaveResultAsync(true, "Saved");
             }
             else
             {
-                _statusMessage = result.Error ?? "Save failed.";
-                Snackbar.Add(result.Error ?? "Save failed.", Severity.Error);
-                await PostSaveResultAsync(false, result.Error ?? "Save failed.");
+                _statusMessage = result.Error ?? L["Shopfloor.SaveFailed"].Value;
+                Snackbar.Add(result.Error ?? L["Shopfloor.SaveFailed"].Value, Severity.Error);
+                await PostSaveResultAsync(false, result.Error ?? L["Shopfloor.SaveFailed"].Value);
             }
         }
         catch (Exception ex)
@@ -210,7 +211,7 @@
             var graph = doc.RootElement.GetProperty("graph").Deserialize<WorkflowGraphDto>(JsonOptions);
             if (graph is null)
             {
-                await PostValidateResultAsync(false, "Invalid graph payload.", null);
+                await PostValidateResultAsync(false, L["Shopfloor.InvalidGraphPayload"].Value, null);
                 return;
             }
 

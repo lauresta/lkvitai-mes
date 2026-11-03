@@ -6,14 +6,17 @@
 @using Microsoft.AspNetCore.Components.Web
 @using Microsoft.AspNetCore.Components.Web.Virtualization
 @using Microsoft.JSInterop
+@using Microsoft.Extensions.Localization
 @using MudBlazor
 @using LKvitai.MES.BuildingBlocks.WebUI.Components
 @using LKvitai.MES.BuildingBlocks.WebUI.Services
 @using LKvitai.MES.Modules.Shopfloor.WebUI
 @using LKvitai.MES.Modules.Shopfloor.WebUI.Services
 @using LKvitai.MES.Modules.Shopfloor.WebUI.Shared
+@using LKvitai.MES.Modules.Shopfloor.WebUI.Resources
 @using LKvitai.MES.Modules.Shopfloor.Contracts.Common
 @using LKvitai.MES.Modules.Shopfloor.Contracts.Legacy
 @using LKvitai.MES.Modules.Shopfloor.Contracts.Mappings
 @using LKvitai.MES.Modules.Shopfloor.Contracts.Reference
 @using LKvitai.MES.Modules.Shopfloor.Contracts.Workflows
+@inject IStringLocalizer<ShopfloorResources> L

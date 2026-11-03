@@ -2,17 +2,17 @@
 @inject ShopfloorApiClient Api
 @inject ISnackbar Snackbar
 
-<PageTitle>Cikada.MES · Work Stations</PageTitle>
+<PageTitle>Cikada.MES · @L["Shopfloor.WorkStations"]</PageTitle>
 
 <main class="shopfloor-page">
     <section class="sf-head">
         <div>
-            <div class="eyebrow mono">Shopfloor · Reference Data</div>
-            <h1>Work Stations</h1>
-            <p>Stations belong to a work center and carry an optional WIP limit.</p>
+            <div class="eyebrow mono">@L["Shopfloor.ShopfloorReferenceData"]</div>
+            <h1>@L["Shopfloor.WorkStations"]</h1>
+            <p>@L["Shopfloor.StationsBelongToAWorkCenterAndCarryAnOptionalWIPLimit"]</p>
         </div>
         <div class="sf-head__actions">
-            <MudButton Variant="Variant.Filled" Class="lk-btn lk-btn--primary" OnClick="StartCreate" Disabled="@(_centers is null || _centers.Count == 0)">New work station</MudButton>
+            <MudButton Variant="Variant.Filled" Class="lk-btn lk-btn--primary" OnClick="StartCreate" Disabled="@(_centers is null || _centers.Count == 0)">@L["Shopfloor.NewWorkStation"]</MudButton>
         </div>
     </section>
 
@@ -20,7 +20,7 @@
         <MudPaper Outlined="true" Elevation="0" Class="panel">
             <div class="panel__head">
                 <div>
-                    <h2>Work stations</h2>
+                    <h2>@L["Shopfloor.WorkStations"]</h2>
                     <span>@(_stations?.Count ?? 0) total</span>
                 </div>
             </div>
@@ -31,14 +31,14 @@
             }
             else if (_stations.Count == 0)
             {
-                <p class="sf-empty">No work stations yet.</p>
+                <p class="sf-empty">@L["Shopfloor.NoWorkStationsYet"]</p>
             }
             else
             {
                 <div class="table-wrap">
                     <table class="sf-table">
                         <thead>
-                            <tr><th>Code</th><th>Name</th><th>Work center</th><th>WIP</th><th>Active</th><th class="sf-col-actions">Actions</th></tr>
+                            <tr><th>@L["Shopfloor.Code"]</th><th>@L["Shopfloor.Name"]</th><th>@L["Shopfloor.WorkCenter"]</th><th>WIP</th><th>@L["Shopfloor.Active"]</th><th class="sf-col-actions">@L["Shopfloor.Actions"]</th></tr>
                         </thead>
                         <tbody>
                             @foreach (var s in _stations)
@@ -48,10 +48,10 @@
                                     <td>@s.Name</td>
                                     <td>@s.WorkCenterName</td>
                                     <td class="mono">@(s.WipLimit?.ToString() ?? "—")</td>
-                                    <td><span class="chip @(s.IsActive ? "chip--ok" : "chip--slate")">@(s.IsActive ? "Active" : "Inactive")</span></td>
+                                    <td><span class="chip @(s.IsActive ? "chip--ok" : "chip--slate")">@(s.IsActive ? L["Shopfloor.ActiveStatus"].Value : L["Shopfloor.InactiveStatus"].Value)</span></td>
                                     <td class="sf-col-actions">
-                                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Class="lk-btn" OnClick="@(() => StartEdit(s))">Edit</MudButton>
-                                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Class="lk-btn" OnClick="@(() => Delete(s))">Delete</MudButton>
+                                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Class="lk-btn" OnClick="@(() => StartEdit(s))">@L["Shopfloor.Edit"]</MudButton>
+                                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Class="lk-btn" OnClick="@(() => Delete(s))">@L["Shopfloor.Delete"]</MudButton>
                                     </td>
                                 </tr>
                             }
@@ -66,24 +66,24 @@
             <MudPaper Outlined="true" Elevation="0" Class="panel">
                 <div class="panel__head">
                     <div>
-                        <h2>@(_editingId is null ? "New work station" : "Edit work station")</h2>
-                        <span>Code, name and work center are required</span>
+                        <h2>@(_editingId is null ? L["Shopfloor.NewWorkStation"].Value : L["Shopfloor.EditWorkStation"].Value)</h2>
+                        <span>@L["Shopfloor.CodeNameAndWorkCenterAreRequired"]</span>
                     </div>
                 </div>
                 <div class="sf-form">
-                    <MudTextField @bind-Value="_code" Label="Code" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                    <MudTextField @bind-Value="_name" Label="Name" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                    <MudSelect T="Guid" @bind-Value="_workCenterId" Label="Work center" Variant="Variant.Outlined" Margin="Margin.Dense">
+                    <MudTextField @bind-Value="_code" Label="@L["Shopfloor.Code"]" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    <MudTextField @bind-Value="_name" Label="@L["Shopfloor.Name"]" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    <MudSelect T="Guid" @bind-Value="_workCenterId" Label="@L["Shopfloor.WorkCenter"]" Variant="Variant.Outlined" Margin="Margin.Dense">
                         @foreach (var c in _centers ?? Array.Empty<WorkCenterDto>())
                         {
                             <MudSelectItem T="Guid" Value="c.Id">@c.Code — @c.Name</MudSelectItem>
                         }
                     </MudSelect>
-                    <MudNumericField @bind-Value="_wipLimit" Label="WIP limit (optional)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" />
-                    <MudSwitch T="bool" @bind-Checked="_isActive" Label="Active" Color="Color.Default" />
+                    <MudNumericField @bind-Value="_wipLimit" Label="@L["Shopfloor.WIPLimitOptional"]" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" />
+                    <MudSwitch T="bool" @bind-Checked="_isActive" Label="@L["Shopfloor.Active"]" Color="Color.Default" />
                     <div class="sf-form__actions">
-                        <MudButton Variant="Variant.Outlined" Class="lk-btn" OnClick="CancelForm">Cancel</MudButton>
-                        <MudButton Variant="Variant.Filled" Class="lk-btn lk-btn--primary" Disabled="_saving" OnClick="Save">Save</MudButton>
+                        <MudButton Variant="Variant.Outlined" Class="lk-btn" OnClick="CancelForm">@L["Shopfloor.Cancel"]</MudButton>
+                        <MudButton Variant="Variant.Filled" Class="lk-btn lk-btn--primary" Disabled="_saving" OnClick="Save">@L["Shopfloor.Save"]</MudButton>
                     </div>
                 </div>
             </MudPaper>
@@ -114,7 +114,7 @@
         _stations = await Api.GetWorkStationsAsync(false, CancellationToken.None);
         if (_stations is null)
         {
-            Snackbar.Add("Shopfloor API is unreachable.", Severity.Error);
+            Snackbar.Add(L["Shopfloor.ApiUnreachable"].Value, Severity.Error);
         }
     }
 
@@ -150,12 +150,12 @@
             if (_editingId is { } id)
             {
                 var result = await Api.UpdateWorkStationAsync(id, new UpdateWorkStationRequest(_code, _name, _workCenterId, _wipLimit, _isActive), CancellationToken.None);
-                if (!Handle(result.Success, result.Error, "Work station updated.")) return;
+                if (!Handle(result.Success, result.Error, L["Shopfloor.WorkStationUpdated"].Value)) return;
             }
             else
             {
                 var result = await Api.CreateWorkStationAsync(new CreateWorkStationRequest(_code, _name, _workCenterId, _wipLimit, _isActive), CancellationToken.None);
-                if (!Handle(result.Success, result.Error, "Work station created.")) return;
+                if (!Handle(result.Success, result.Error, L["Shopfloor.WorkStationCreated"].Value)) return;
             }
 
             _formOpen = false;
@@ -170,7 +170,7 @@
     private async Task Delete(WorkStationDto s)
     {
         var result = await Api.DeleteWorkStationAsync(s.Id, CancellationToken.None);
-        if (Handle(result.Success, result.Error, "Work station deleted."))
+        if (Handle(result.Success, result.Error, L["Shopfloor.WorkStationDeleted"].Value))
         {
             await LoadAsync();
         }
@@ -184,7 +184,7 @@
             return true;
         }
 
-        Snackbar.Add(error ?? "Operation failed.", Severity.Error);
+        Snackbar.Add(error ?? L["Shopfloor.OperationFailed"].Value, Severity.Error);
         return false;
     }
 }

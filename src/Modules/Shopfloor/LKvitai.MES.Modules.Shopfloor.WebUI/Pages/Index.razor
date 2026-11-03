@@ -2,28 +2,28 @@
 @page "/dashboard"
 @inject ShopfloorDatabaseStatusService DatabaseStatusService
 
-<PageTitle>Cikada.MES · Shopfloor Dashboard</PageTitle>
+<PageTitle>Cikada.MES · @L["Shopfloor.DashboardTitle"]</PageTitle>
 
 <main class="shopfloor-page">
     <section class="sf-head">
         <div>
-            <div class="eyebrow mono">Shopfloor · Dashboard</div>
-            <h1>Operator execution board</h1>
-            <p>Workstation menu scaffold for production tasks, WIP routing and shift control.</p>
+            <div class="eyebrow mono">@L["Shopfloor.ShopfloorDashboard"]</div>
+            <h1>@L["Shopfloor.OperatorExecutionBoard"]</h1>
+            <p>@L["Shopfloor.WorkstationMenuScaffoldForProductionTasksWIPRoutingAndShiftControl"]</p>
         </div>
         <div class="sf-head__actions">
-            <MudButton Variant="Variant.Outlined" Class="lk-btn" Disabled="true">Scan badge</MudButton>
-            <MudButton Variant="Variant.Filled" Class="lk-btn lk-btn--primary" Disabled="true">Start task</MudButton>
+            <MudButton Variant="Variant.Outlined" Class="lk-btn" Disabled="true">@L["Shopfloor.ScanBadge"]</MudButton>
+            <MudButton Variant="Variant.Filled" Class="lk-btn lk-btn--primary" Disabled="true">@L["Shopfloor.StartTask"]</MudButton>
         </div>
     </section>
 
-    <section class="sf-kpis" aria-label="Shopfloor summary">
+    <section class="sf-kpis" aria-label="@L["Shopfloor.ShopfloorSummary"]">
         @foreach (var metric in Metrics)
         {
             <MudPaper Outlined="true" Elevation="0" Class="panel kpi">
-                <span class="kpi__label mono">@metric.Label</span>
+                <span class="kpi__label mono">@L[metric.Label]</span>
                 <strong class="mono">@metric.Value</strong>
-                <span class="chip @metric.ChipClass">@metric.Status</span>
+                <span class="chip @metric.ChipClass">@L[metric.Status]</span>
             </MudPaper>
         }
     </section>
@@ -32,10 +32,10 @@
         <MudPaper Outlined="true" Elevation="0" Class="panel">
             <div class="panel__head">
                 <div>
-                    <h2>Menu</h2>
-                    <span>Future shopfloor entry points</span>
+                    <h2>@L["Shopfloor.Menu"]</h2>
+                    <span>@L["Shopfloor.FutureShopfloorEntryPoints"]</span>
                 </div>
-                <span class="chip chip--info">Stub</span>
+                <span class="chip chip--info">@L["Shopfloor.Stub"]</span>
             </div>
             <div class="menu-grid">
                 @foreach (var item in MenuItems)
@@ -43,8 +43,8 @@
                     <button class="menu-tile" type="button" disabled>
                         <span class="menu-tile__icon mono">@item.Code</span>
                         <span>
-                            <strong>@item.Title</strong>
-                            <small>@item.Description</small>
+                            <strong>@L[item.Title]</strong>
+                            <small>@L[item.Description]</small>
                         </span>
                     </button>
                 }
@@ -54,12 +54,12 @@
         <MudPaper Outlined="true" Elevation="0" Class="panel db-panel">
             <div class="panel__head">
                 <div>
-                    <h2>Database</h2>
-                    <span>Same PostgreSQL diagnostic</span>
+                    <h2>@L["Shopfloor.Database"]</h2>
+                    <span>@L["Shopfloor.SamePostgreSQLDiagnostic"]</span>
                 </div>
                 @if (_dbStatus is null)
                 {
-                    <span class="chip chip--slate">Loading</span>
+                    <span class="chip chip--slate">@L["Shopfloor.Loading"]</span>
                 }
                 else
                 {
@@ -79,19 +79,19 @@
             {
                 <dl class="db-facts">
                     <div>
-                        <dt>Database</dt>
+                        <dt>@L["Shopfloor.Database"]</dt>
                         <dd class="mono">@(_dbStatus.Database ?? "n/a")</dd>
                     </div>
                     <div>
-                        <dt>Schema</dt>
+                        <dt>@L["Shopfloor.Schema"]</dt>
                         <dd class="mono">@(_dbStatus.Schema ?? "n/a")</dd>
                     </div>
                     <div>
-                        <dt>Endpoint</dt>
+                        <dt>@L["Shopfloor.Endpoint"]</dt>
                         <dd class="mono">@(_dbStatus.ServerEndpoint ?? "n/a")</dd>
                     </div>
                     <div>
-                        <dt>Checked</dt>
+                        <dt>@L["Shopfloor.Checked"]</dt>
                         <dd class="mono">@_dbStatus.CheckedAt.ToString("yyyy-MM-dd HH:mm:ss")</dd>
                     </div>
                 </dl>
@@ -103,12 +103,12 @@
     <MudPaper Outlined="true" Elevation="0" Class="panel">
         <div class="panel__head">
             <div>
-                <h2>Work queue</h2>
-                <span>Static scaffold rows for layout review</span>
+                <h2>@L["Shopfloor.WorkQueue"]</h2>
+                <span>@L["Shopfloor.StaticScaffoldRowsForLayoutReview"]</span>
             </div>
-            <fieldset class="sf-segmented" aria-label="Queue period">
-                <button class="is-active" type="button">Now</button>
-                <button type="button" disabled>Next shift</button>
+            <fieldset class="sf-segmented" aria-label="@L["Shopfloor.QueuePeriod"]">
+                <button class="is-active" type="button">@L["Shopfloor.Now"]</button>
+                <button type="button" disabled>@L["Shopfloor.NextShift"]</button>
             </fieldset>
         </div>
 
@@ -116,13 +116,13 @@
             <table class="sf-table">
                 <thead>
                     <tr>
-                        <th>Task</th>
-                        <th>Description</th>
-                        <th>Station</th>
-                        <th>Order</th>
-                        <th>Operator</th>
-                        <th>Status</th>
-                        <th>Target</th>
+                        <th>@L["Shopfloor.Task"]</th>
+                        <th>@L["Shopfloor.Description"]</th>
+                        <th>@L["Shopfloor.Station"]</th>
+                        <th>@L["Shopfloor.Order"]</th>
+                        <th>@L["Shopfloor.Operator"]</th>
+                        <th>@L["Shopfloor.Status"]</th>
+                        <th>@L["Shopfloor.Target"]</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -149,20 +149,20 @@
 
     private static readonly IReadOnlyList<(string Label, string Value, string Status, string ChipClass)> Metrics =
     [
-        ("Stations active", "08 / 12", "Pilot", "chip--info"),
-        ("WIP tasks", "146", "Sample", "chip--slate"),
-        ("Late operations", "05", "Attention", "chip--warn"),
-        ("Completed today", "312", "On track", "chip--ok"),
+        ("Shopfloor.StationsActive", "08 / 12", "Shopfloor.Pilot", "chip--info"),
+        ("Shopfloor.WipTasks", "146", "Shopfloor.Sample", "chip--slate"),
+        ("Shopfloor.LateOperations", "05", "Shopfloor.Attention", "chip--warn"),
+        ("Shopfloor.CompletedToday", "312", "Shopfloor.OnTrack", "chip--ok"),
     ];
 
     private static readonly IReadOnlyList<(string Code, string Title, string Description)> MenuItems =
     [
-        ("WO", "Work orders", "Open, release and track operation packets."),
-        ("ST", "Stations", "Operator kiosk and workstation load view."),
-        ("WIP", "WIP routing", "Move units between production steps."),
-        ("QC", "Quality hold", "Defect capture and rework routing."),
-        ("MAT", "Material calls", "Request fabrics, fittings and packaging."),
-        ("SHIFT", "Shift handover", "Notes, downtime and line readiness."),
+        ("WO", "Shopfloor.WorkOrders", "Shopfloor.OpenReleaseAndTrackOperationPackets"),
+        ("ST", "Shopfloor.Stations", "Shopfloor.OperatorKioskAndWorkstationLoadView"),
+        ("WIP", "Shopfloor.WipRouting", "Shopfloor.MoveUnitsBetweenProductionSteps"),
+        ("QC", "Shopfloor.QualityHold", "Shopfloor.DefectCaptureAndReworkRouting"),
+        ("MAT", "Shopfloor.MaterialCalls", "Shopfloor.RequestFabricsFittingsAndPackaging"),
+        ("SHIFT", "Shopfloor.ShiftHandover", "Shopfloor.NotesDowntimeAndLineReadiness"),
     ];
 
     private static readonly IReadOnlyList<(string Task, string Description, string Station, string Order, string Operator, string Status, string ChipClass, string Target)> QueueRows =

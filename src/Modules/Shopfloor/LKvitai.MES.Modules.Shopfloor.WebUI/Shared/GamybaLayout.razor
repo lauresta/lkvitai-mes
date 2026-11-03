@@ -1,10 +1,11 @@
 @inherits LayoutComponentBase
+@inject IWebHostEnvironment HostEnvironment
 
-<AuthorizeView>
-    <Authorized>
+<PortalAuthenticatedShell BannerNote="@(HostEnvironment.IsEnvironment("Test") ? L["Gamyba.TestSharedLegacyNotice"].Value : null)">
+    <ChildContent>
         @Body
-    </Authorized>
-    <NotAuthorized>
+    </ChildContent>
+    <NotAuthorizedContent>
         <RedirectToLogin />
-    </NotAuthorized>
-</AuthorizeView>
+    </NotAuthorizedContent>
+</PortalAuthenticatedShell>
