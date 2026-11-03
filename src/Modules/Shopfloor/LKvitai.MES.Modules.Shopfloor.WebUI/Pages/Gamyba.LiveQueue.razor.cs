@@ -16,6 +16,10 @@ public partial class Gamyba
     private string? _liveQueueError;
     private bool _liveQueueLoading;
     private int _liveQueuePage = 1;
+    private readonly HashSet<long> _liveSelected = [];
+    private int _liveFirstN = 5;
+    private IReadOnlyList<ProductionQueueItemDto> LiveSelectedItems =>
+        _liveQueue?.Items.Where(item => _liveSelected.Contains(item.ProductId)).ToArray() ?? [];
     private long? _liveDepartmentId;
     private long? _liveSeriesId;
     private long? _liveCategoryId;
@@ -88,6 +92,7 @@ public partial class Gamyba
     {
         if (page < 1 || _liveQueueLoading) return;
         _liveQueueLoading = true;
+        _liveSelected.Clear();
         _liveQueue = null;
         _liveQueueError = null;
         try
@@ -107,6 +112,28 @@ public partial class Gamyba
             _liveQueueError = L("Could not load the production queue.", "Nepavyko įkelti gamybos eilės.");
         }
         finally { _liveQueueLoading = false; }
+    }
+
+    private void ToggleLiveSelected(long productId)
+    {
+        if (_liveQueue?.Items.Any(item => item.ProductId == productId) != true) return;
+        if (!_liveSelected.Add(productId)) _liveSelected.Remove(productId);
+    }
+
+    private void SelectAllLiveOnPage()
+    {
+        if (_liveQueue is null) return;
+        if (_liveQueue.Items.Count > 0 && _liveQueue.Items.All(item => _liveSelected.Contains(item.ProductId)))
+            _liveSelected.Clear();
+        else
+            foreach (var item in _liveQueue.Items) _liveSelected.Add(item.ProductId);
+    }
+
+    private void SelectFirstLiveOnPage()
+    {
+        _liveSelected.Clear();
+        foreach (var item in (_liveQueue?.Items ?? []).Take(Math.Clamp(_liveFirstN, 1, 100)))
+            _liveSelected.Add(item.ProductId);
     }
 
     private async Task ClearLiveOrderFilterAsync()
