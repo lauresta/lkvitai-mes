@@ -512,8 +512,8 @@
             {
                 @if (LiveQueueEnabled)
                 {
-                    <div class="gamyba-pagehead"><div><div class="gamyba-eyebrow">@L["Gamyba.ShopfloorHeading"] · G05 · @(_liveTask?.Task.Number ?? "GU")</div><h1>@L["Gamyba.ProductionReportData"].Value</h1></div><span class="chip chip--info">@L["Gamyba.READONLY"].Value</span></div>
-                    <div class="gamyba-alert gamyba-alert--info" role="status">@L["Gamyba.LiveAccessReportDatasetsPageLayoutPDFAndPrinting"].Value</div>
+                    <div class="gamyba-pagehead"><div><div class="gamyba-eyebrow">@L["Gamyba.ShopfloorHeading"] · G05 · @(_liveTask?.Task.Number ?? "GU")</div><h1>@L["Gamyba.ProductionReportData"].Value</h1></div>@if (_liveReportId != 3){<span class="chip chip--info">@L["Gamyba.READONLY"].Value</span>}</div>
+                    @if (_liveReportId != 3){<div class="gamyba-alert gamyba-alert--info" role="status">@L["Gamyba.LiveAccessReportDatasetsPageLayoutPDFAndPrinting"].Value</div>}
                     @if (_liveReportError is not null){<div class="gamyba-alert gamyba-alert--danger" role="alert">@_liveReportError</div>}
                     @if (_liveTask is null)
                     {
@@ -521,13 +521,19 @@
                     }
                     else
                     {
-                        <div class="gamyba-docs-grid">
+                        <div class="gamyba-docs-grid @(_liveReportId == 3 ? "gamyba-docs-grid--roletai" : "")">
                             <section class="gamyba-panel"><div class="gamyba-panel__head"><strong>@_liveReportCatalog.Count @L["Gamyba.Reports"].Value</strong><span>DIC_ProjectReports · gam</span></div><div class="gamyba-report-list">
                                 @foreach (var report in _liveReportCatalog)
                                 {
                                     <button type="button" class="@(_liveReportId == report.Id ? "is-active" : "")" @onclick="() => SelectLiveReportAsync(report.Id)"><span class="gamyba-report-radio"></span><span>@report.Title</span></button>
                                 }
                             </div></section>
+                            @if (_liveReportId == 3 && _liveReportData is not null)
+                            {
+                                <div class="roletai-host"><RoletaiReport @key="_liveTask.Task.Id" Data="_liveReportData" TaskNumber="_liveTask.Task.Number" /></div>
+                            }
+                            else
+                            {
                             <section class="gamyba-panel gamyba-docs-preview"><div class="gamyba-panel__head"><div><strong>@(_liveReportCatalog.FirstOrDefault(x => x.Id == _liveReportId)?.Title ?? L["Gamyba.SelectReport"].Value)</strong><span class="mono"> · @_liveTask.Task.Number</span></div><span class="mono">@(_liveReportData?.Rows.Count ?? 0) @L["Gamyba.Rows"].Value</span></div>
                                 @if (_liveReportLoading){<div class="gamyba-empty">@L["Gamyba.LoadingReportData"].Value</div>}
                                 else if (_liveReportData?.Rows.Count == 0){<div class="gamyba-empty"><strong>NoData</strong><span>@L["Gamyba.NoRowsInThisDatasetPrintingIsNotAvailable"].Value</span></div>}
@@ -543,6 +549,7 @@
                                 }
                             </section>
                             <aside class="gamyba-stack"><section class="gamyba-panel"><div class="gamyba-panel__head"><strong>@L["Gamyba.DataPilot"].Value</strong></div><div class="gamyba-sidebody"><span class="chip chip--info">@L["Gamyba.READONLY"].Value</span><small>@L["Gamyba.OnlyTheSelectedGUSLegacyReportRowsAre"].Value</small></div></section></aside>
+                            }
                         </div>
                     }
                 }

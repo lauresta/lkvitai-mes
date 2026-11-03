@@ -2082,4 +2082,52 @@
   <data name="Shopfloor.Fixture.Ready" xml:space="preserve">
     <value>Paruošta</value>
   </data>
+  <data name="Roletai.LoadingTemplate" xml:space="preserve"><value>Įkeliamas ataskaitos šablonas…</value></data>
+  <data name="Roletai.EditorEyebrow" xml:space="preserve"><value>ŠABLONŲ REDAKTORIUS</value></data>
+  <data name="Roletai.ReportEyebrow" xml:space="preserve"><value>GAMYBOS DOKUMENTAS</value></data>
+  <data name="Roletai.ReportTitle" xml:space="preserve"><value>Gamybos dokumentas, Roletai</value></data>
+  <data name="Roletai.Published" xml:space="preserve"><value>Publikuota</value></data>
+  <data name="Roletai.UnsavedChanges" xml:space="preserve"><value>NEIŠSAUGOTI PAKEITIMAI</value></data>
+  <data name="Roletai.DraftSaved" xml:space="preserve"><value>JUODRAŠTIS IŠSAUGOTAS</value></data>
+  <data name="Roletai.MatchesPublished" xml:space="preserve"><value>SUTAMPA SU PUBLIKUOTA</value></data>
+  <data name="Roletai.Report" xml:space="preserve"><value>Ataskaita</value></data>
+  <data name="Roletai.TemplateEditor" xml:space="preserve"><value>Šablonų redaktorius</value></data>
+  <data name="Roletai.Revert" xml:space="preserve"><value>Atstatyti</value></data>
+  <data name="Roletai.SaveDraft" xml:space="preserve"><value>Išsaugoti juodraštį</value></data>
+  <data name="Roletai.PublishVersion" xml:space="preserve"><value>Publikuoti versiją</value></data>
+  <data name="Roletai.Print" xml:space="preserve"><value>Spausdinti</value></data>
+  <data name="Roletai.NoRows" xml:space="preserve"><value>Šioje GU roletų nėra. Spausdinimas atšauktas kaip Access Report_NoData.</value></data>
+  <data name="Roletai.Sections" xml:space="preserve"><value>Sekcijos</value></data>
+  <data name="Roletai.SectionVisible" xml:space="preserve"><value>{0} matoma</value></data>
+  <data name="Roletai.DatasetFields" xml:space="preserve"><value>Dataset laukai</value></data>
+  <data name="Roletai.DatasetOnly" xml:space="preserve"><value>Tik dataset laukai. SQL ir formulės čia neleidžiami.</value></data>
+  <data name="Roletai.Draft" xml:space="preserve"><value>Juodraštis</value></data>
+  <data name="Roletai.ClickSection" xml:space="preserve"><value>Spustelėkite sekciją lape</value></data>
+  <data name="Roletai.PublishedReadOnly" xml:space="preserve"><value>Rodoma publikuota versija — tik peržiūra.</value></data>
+  <data name="Roletai.ColumnHeaders" xml:space="preserve"><value>Stulpelių antraštės po užsakymo</value></data>
+  <data name="Roletai.Columns" xml:space="preserve"><value>Stulpeliai</value></data>
+  <data name="Roletai.Caption" xml:space="preserve"><value>Antraštė</value></data>
+  <data name="Roletai.Width" xml:space="preserve"><value>Plotis</value></data>
+  <data name="Roletai.Font" xml:space="preserve"><value>Šriftas</value></data>
+  <data name="Roletai.Align" xml:space="preserve"><value>Lygiavimas</value></data>
+  <data name="Roletai.Left" xml:space="preserve"><value>Kairė</value></data>
+  <data name="Roletai.Right" xml:space="preserve"><value>Dešinė</value></data>
+  <data name="Roletai.Center" xml:space="preserve"><value>Centras</value></data>
+  <data name="Roletai.Remove" xml:space="preserve"><value>Pašalinti</value></data>
+  <data name="Roletai.LineInsertion" xml:space="preserve"><value>Eilutė {0} · įterpimo vieta</value></data>
+  <data name="Roletai.HideIfEmpty" xml:space="preserve"><value>Slėpti, jei laukas tuščias</value></data>
+  <data name="Roletai.AddLine" xml:space="preserve"><value>Pridėti eilutę</value></data>
+  <data name="Roletai.Versions" xml:space="preserve"><value>Versijos</value></data>
+  <data name="Roletai.ImmutableVersion" xml:space="preserve"><value>Publikuota versija įšaldoma. Nauja versija keičia tik būsimą spausdinimą.</value></data>
+  <data name="Roletai.Section.ReportHeader" xml:space="preserve"><value>Report Header</value></data>
+  <data name="Roletai.Section.ShopHeader" xml:space="preserve"><value>Cechas Header</value></data>
+  <data name="Roletai.Section.OrderHeader" xml:space="preserve"><value>Užsakymas Header</value></data>
+  <data name="Roletai.Section.Detail" xml:space="preserve"><value>Detail</value></data>
+  <data name="Roletai.Section.ProductFooter" xml:space="preserve"><value>Gaminio Footer</value></data>
+  <data name="Roletai.Section.PageFooter" xml:space="preserve"><value>Page Footer</value></data>
+  <data name="Roletai.LoadFailed" xml:space="preserve"><value>Nepavyko įkelti šablono.</value></data>
+  <data name="Roletai.SaveFailed" xml:space="preserve"><value>Juodraštis neišsaugotas.</value></data>
+  <data name="Roletai.PublishFailed" xml:space="preserve"><value>Versija nepaskelbta. Atnaujinkite šabloną.</value></data>
+  <data name="Roletai.ColumnsCount" xml:space="preserve"><value>{0} st.</value></data>
+  <data name="Roletai.LinesCount" xml:space="preserve"><value>{0} eil.</value></data>
 </root>

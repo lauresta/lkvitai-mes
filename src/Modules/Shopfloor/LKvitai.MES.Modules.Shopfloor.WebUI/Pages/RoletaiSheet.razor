@@ -1,0 +1,154 @@
+@using System.Globalization
+@using System.Text.Json
+@using System.Text.RegularExpressions
+@using LKvitai.MES.Modules.Shopfloor.Contracts.Reports
+
+<style>@((MarkupString)PrintFooterCss)</style>
+<article class="roletai-sheet">
+    @if (Template.Sections["rh"].Visible)
+    {
+        <div class="roletai-sheet-section @(SelectedClass("rh"))" @onclick='() => SectionClicked.InvokeAsync("rh")'>
+            @foreach (var line in Template.Sections["rh"].Lines)
+            {
+                var value = Resolve(line, Empty);
+                @if (!string.IsNullOrEmpty(value)) { <div style="@LineStyle(line)">@value</div> }
+            }
+        </div>
+    }
+    @foreach (var shop in _rows.GroupBy(row => Value(row, "Cechas")))
+    {
+        <div class="roletai-shop">
+            @if (Template.Sections["ch"].Visible)
+            {
+                <div class="roletai-sheet-section roletai-shop-head @(SelectedClass("ch"))" @onclick='() => SectionClicked.InvokeAsync("ch")'>
+                    @foreach (var line in Template.Sections["ch"].Lines)
+                    {
+                        var value = Resolve(line, shop.First());
+                        @if (!string.IsNullOrEmpty(value)) { <div style="@LineStyle(line)">@value</div> }
+                    }
+                </div>
+            }
+            @foreach (var order in shop.GroupBy(row => Value(row, "Uzsakymas")))
+            {
+                <section class="roletai-order">
+                    @if (Template.Sections["uh"].Visible)
+                    {
+                        <div class="roletai-sheet-section roletai-order-head @(SelectedClass("uh"))" @onclick='() => SectionClicked.InvokeAsync("uh")'>
+                            @foreach (var line in Template.Sections["uh"].Lines)
+                            {
+                                var value = Resolve(line, order.First());
+                                @if (!string.IsNullOrEmpty(value)) { <div style="@LineStyle(line)">@value</div> }
+                            }
+                        </div>
+                    }
+                    <table class="roletai-detail @(SelectedClass("dt"))" @onclick='() => SectionClicked.InvokeAsync("dt")'>
+                        <colgroup>@foreach (var col in Template.Sections["dt"].Cols){<col style="width:@(col.W.ToString(CultureInfo.InvariantCulture))%" />}</colgroup>
+                        @if (Template.Sections["dt"].Heads)
+                        {
+                            <thead><tr>@foreach (var col in Template.Sections["dt"].Cols){<th class="@(SelectedColumn == col.Key ? "is-selected" : "")" style="@ColumnStyle(col)" @onclick:stopPropagation="true" @onclick="() => ColumnClicked.InvokeAsync(col.Key)">@col.Label</th>}</tr></thead>
+                        }
+                        <tbody>
+                            @foreach (var product in order.GroupBy(row => Value(row, "ParduotoGaminioID")))
+                            {
+                                @foreach (var row in product)
+                                {
+                                    <tr>@foreach (var col in Template.Sections["dt"].Cols){<td class="@(SelectedColumn == col.Key ? "is-selected" : "")" style="@ColumnStyle(col)" @onclick:stopPropagation="true" @onclick="() => ColumnClicked.InvokeAsync(col.Key)">@Value(row, col.Key)</td>}</tr>
+                                }
+                                @if (Template.Sections["pf"].Visible)
+                                {
+                                    <tr class="roletai-product-foot"><td colspan="@(Template.Sections["dt"].Cols.Count)"><div class="roletai-sheet-section @(SelectedClass("pf"))" @onclick:stopPropagation="true" @onclick='() => SectionClicked.InvokeAsync("pf")'>
+                                        @foreach (var line in Template.Sections["pf"].Lines)
+                                        {
+                                            var value = Resolve(line, product.First());
+                                            @if (!string.IsNullOrEmpty(value)) { <span style="@LineStyle(line)">@value</span> }
+                                        }
+                                        @if (long.TryParse(product.Key, out var id))
+                                        {
+                                            @foreach (var accessory in Data.Accessories.Where(a => a.ProductId == id))
+                                            {
+                                                <span>@accessory.AccessoryName · @accessory.Quantity @accessory.Unit</span>
+                                            }
+                                        }
+                                    </div></td></tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </section>
+            }
+        </div>
+    }
+    @if (Template.Sections["pg"].Visible)
+    {
+        <footer class="roletai-sheet-section roletai-page-foot @(SelectedClass("pg"))" @onclick='() => SectionClicked.InvokeAsync("pg")'>
+            @foreach (var line in Template.Sections["pg"].Lines)
+            {
+                var value = Resolve(line, Empty);
+                @if (!string.IsNullOrEmpty(value)) { <div style="@LineStyle(line)">@value</div> }
+            }
+        </footer>
+    }
+</article>
+
+@code {
+    [Parameter, EditorRequired] public ProductionReportDataDto Data { get; set; } = default!;
+    [Parameter, EditorRequired] public RoletaiTemplate Template { get; set; } = default!;
+    [Parameter] public string? SelectedSection { get; set; }
+    [Parameter] public string? SelectedColumn { get; set; }
+    [Parameter] public EventCallback<string> SectionClicked { get; set; }
+    [Parameter] public EventCallback<string> ColumnClicked { get; set; }
+    [Parameter] public DateTimeOffset RenderedAt { get; set; }
+
+    private List<Dictionary<string, string>> _rows = [];
+    protected override void OnParametersSet() => _rows = Data.Rows.Select(cells => Data.Columns
+        .Select((key, i) => (key, value: i < cells.Count ? Cell(cells[i]) : ""))
+        .ToDictionary(x => x.key, x => x.value, StringComparer.OrdinalIgnoreCase)).ToList();
+    private static readonly Dictionary<string, string> Empty = new(StringComparer.OrdinalIgnoreCase);
+    private string SelectedClass(string section) => SelectedSection == section ? "is-selected-section" : "";
+    private static string Cell(JsonElement value) => value.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined ? "" : value.ToString();
+    private static string Value(IReadOnlyDictionary<string, string> row, string key) => row.TryGetValue(key, out var value) ? value : "";
+    private string Resolve(RoletaiLine line, IReadOnlyDictionary<string, string> context)
+    {
+        var missing = false;
+        var value = Regex.Replace(line.Text, @"\{([^{}]+)\}", match =>
+        {
+            var key = match.Groups[1].Value;
+            var result = key switch
+            {
+                "Sum(kiekis)" => _rows.Sum(row => decimal.TryParse(Value(row, "kiekis"), NumberStyles.Any, CultureInfo.InvariantCulture, out var number) ? number : 0).ToString("0.##", CultureInfo.CurrentCulture),
+                "Page" or "Pages" => "1",
+                "Now" => RenderedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm"),
+                "UzsakymoData" => DateTime.TryParse(Value(context, key), out var date) ? date.ToString("MM.dd") : Value(context, key),
+                _ => Value(context, key)
+            };
+            if (string.IsNullOrEmpty(result)) missing = true;
+            return result;
+        }, RegexOptions.None, TimeSpan.FromMilliseconds(100));
+        return line.HideIfEmpty && missing ? "" : value;
+    }
+    private static string LineStyle(RoletaiLine line) => $"font-size:{line.Size.ToString(CultureInfo.InvariantCulture)}px;font-weight:{(line.Bold ? 800 : 400)};font-family:{(line.Mono ? "var(--font-mono,monospace)" : "inherit")};text-align:{line.Align}";
+    private static string ColumnStyle(RoletaiColumn col) => $"font-size:{col.Size.ToString(CultureInfo.InvariantCulture)}px;font-weight:{(col.Bold ? 800 : 400)};font-family:{(col.Mono ? "var(--font-mono,monospace)" : "inherit")};text-align:{col.Align}";
+    private string PrintFooterCss
+    {
+        get
+        {
+            var footer = Template.Sections["pg"];
+            if (!footer.Visible || footer.Lines.Count == 0) return "";
+            var line = footer.Lines[0];
+            var slot = line.Align switch { "left" => "bottom-left", "center" => "bottom-center", _ => "bottom-right" };
+            var parts = Regex.Split(line.Text, @"(\{Page\}|\{Pages\}|\{Now\})",
+                RegexOptions.None, TimeSpan.FromMilliseconds(100));
+            var content = string.Join(" ", parts.Where(part => part.Length > 0).Select(part => part switch
+            {
+                "{Page}" => "counter(page)",
+                "{Pages}" => "counter(pages)",
+                "{Now}" => CssString(RenderedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")),
+                _ => CssString(Regex.Replace(part, @"\{[^{}]+\}", "", RegexOptions.None,
+                    TimeSpan.FromMilliseconds(100)))
+            }));
+            return $"@page{{@{slot}{{content:{content};font-family:{(line.Mono ? "Consolas,monospace" : "Arial,sans-serif")};font-weight:{(line.Bold ? 800 : 400)};font-size:{line.Size.ToString(CultureInfo.InvariantCulture)}px;color:#6f7a88}}}}";
+        }
+    }
+    private static string CssString(string value) => "\"" + value.Replace("\\", "\\\\")
+        .Replace("\"", "\\\"").Replace("<", "\\3C ").Replace("\r", " ").Replace("\n", " ") + "\"";
+}

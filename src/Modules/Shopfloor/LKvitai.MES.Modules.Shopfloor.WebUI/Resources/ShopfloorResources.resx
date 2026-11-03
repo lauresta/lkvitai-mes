@@ -2082,4 +2082,52 @@
   <data name="Shopfloor.Fixture.Ready" xml:space="preserve">
     <value>Ready</value>
   </data>
+  <data name="Roletai.LoadingTemplate" xml:space="preserve"><value>Loading report template…</value></data>
+  <data name="Roletai.EditorEyebrow" xml:space="preserve"><value>TEMPLATE EDITOR</value></data>
+  <data name="Roletai.ReportEyebrow" xml:space="preserve"><value>PRODUCTION DOCUMENT</value></data>
+  <data name="Roletai.ReportTitle" xml:space="preserve"><value>Production document, Roller blinds</value></data>
+  <data name="Roletai.Published" xml:space="preserve"><value>Published</value></data>
+  <data name="Roletai.UnsavedChanges" xml:space="preserve"><value>UNSAVED CHANGES</value></data>
+  <data name="Roletai.DraftSaved" xml:space="preserve"><value>DRAFT SAVED</value></data>
+  <data name="Roletai.MatchesPublished" xml:space="preserve"><value>MATCHES PUBLISHED</value></data>
+  <data name="Roletai.Report" xml:space="preserve"><value>Report</value></data>
+  <data name="Roletai.TemplateEditor" xml:space="preserve"><value>Template editor</value></data>
+  <data name="Roletai.Revert" xml:space="preserve"><value>Revert</value></data>
+  <data name="Roletai.SaveDraft" xml:space="preserve"><value>Save draft</value></data>
+  <data name="Roletai.PublishVersion" xml:space="preserve"><value>Publish version</value></data>
+  <data name="Roletai.Print" xml:space="preserve"><value>Print</value></data>
+  <data name="Roletai.NoRows" xml:space="preserve"><value>This GU has no roller blinds. Printing is cancelled as in Access Report_NoData.</value></data>
+  <data name="Roletai.Sections" xml:space="preserve"><value>Sections</value></data>
+  <data name="Roletai.SectionVisible" xml:space="preserve"><value>{0} visible</value></data>
+  <data name="Roletai.DatasetFields" xml:space="preserve"><value>Dataset fields</value></data>
+  <data name="Roletai.DatasetOnly" xml:space="preserve"><value>Dataset fields only. SQL and formulas are not allowed here.</value></data>
+  <data name="Roletai.Draft" xml:space="preserve"><value>Draft</value></data>
+  <data name="Roletai.ClickSection" xml:space="preserve"><value>Click a section on the sheet</value></data>
+  <data name="Roletai.PublishedReadOnly" xml:space="preserve"><value>Viewing the published version — read only.</value></data>
+  <data name="Roletai.ColumnHeaders" xml:space="preserve"><value>Column headers below the order heading</value></data>
+  <data name="Roletai.Columns" xml:space="preserve"><value>Columns</value></data>
+  <data name="Roletai.Caption" xml:space="preserve"><value>Caption</value></data>
+  <data name="Roletai.Width" xml:space="preserve"><value>Width</value></data>
+  <data name="Roletai.Font" xml:space="preserve"><value>Font</value></data>
+  <data name="Roletai.Align" xml:space="preserve"><value>Alignment</value></data>
+  <data name="Roletai.Left" xml:space="preserve"><value>Left</value></data>
+  <data name="Roletai.Right" xml:space="preserve"><value>Right</value></data>
+  <data name="Roletai.Center" xml:space="preserve"><value>Center</value></data>
+  <data name="Roletai.Remove" xml:space="preserve"><value>Remove</value></data>
+  <data name="Roletai.LineInsertion" xml:space="preserve"><value>Line {0} · insertion point</value></data>
+  <data name="Roletai.HideIfEmpty" xml:space="preserve"><value>Hide if field is empty</value></data>
+  <data name="Roletai.AddLine" xml:space="preserve"><value>Add line</value></data>
+  <data name="Roletai.Versions" xml:space="preserve"><value>Versions</value></data>
+  <data name="Roletai.ImmutableVersion" xml:space="preserve"><value>Published versions are immutable. A new version affects only future prints.</value></data>
+  <data name="Roletai.Section.ReportHeader" xml:space="preserve"><value>Report Header</value></data>
+  <data name="Roletai.Section.ShopHeader" xml:space="preserve"><value>Workshop Header</value></data>
+  <data name="Roletai.Section.OrderHeader" xml:space="preserve"><value>Order Header</value></data>
+  <data name="Roletai.Section.Detail" xml:space="preserve"><value>Detail</value></data>
+  <data name="Roletai.Section.ProductFooter" xml:space="preserve"><value>Product Footer</value></data>
+  <data name="Roletai.Section.PageFooter" xml:space="preserve"><value>Page Footer</value></data>
+  <data name="Roletai.LoadFailed" xml:space="preserve"><value>Could not load the template.</value></data>
+  <data name="Roletai.SaveFailed" xml:space="preserve"><value>Draft was not saved.</value></data>
+  <data name="Roletai.PublishFailed" xml:space="preserve"><value>Version was not published. Refresh the template.</value></data>
+  <data name="Roletai.ColumnsCount" xml:space="preserve"><value>{0} columns</value></data>
+  <data name="Roletai.LinesCount" xml:space="preserve"><value>{0} lines</value></data>
 </root>
