@@ -39,7 +39,7 @@
         </nav>
 
         <main class="gamyba-main @(PrototypeControls ? "gamyba-main--demo" : "")">
-            @if (LiveQueueEnabled && _screen is not ("queue" or "tasks" or "task" or "history" or "reports" or "gt")
+            @if (LiveQueueEnabled && _screen is not ("queue" or "tasks" or "task" or "history" or "reports" or "gt" or "gt-detail")
                 && !(_screen == "stops" && _stopTab == "repairs"))
             {
                 <div class="gamyba-alert gamyba-alert--info" role="status">@L("Preview: this screen uses sample data and does not change production.", "Peržiūra: šiame ekrane naudojami pavyzdiniai duomenys; gamyba nekeičiama.")</div>
@@ -242,10 +242,10 @@
                 {
                     <div class="gamyba-alert gamyba-alert--danger" role="alert">@_liveDocumentsError <button type="button" @onclick="() => LoadLiveDocumentsAsync(_liveDocumentsPage)">@L("Retry", "Kartoti")</button></div>
                 }
-                <section class="gamyba-panel"><div class="gamyba-tablewrap"><table class="gamyba-table"><thead><tr><th>GT</th><th>@L("Date", "Data")</th><th>@L("Author", "Autorius")</th><th>@L("Operation", "Operacija")</th><th class="is-num">@L("Rows", "Eilutės")</th></tr></thead><tbody>
+                <section class="gamyba-panel"><div class="gamyba-tablewrap"><table class="gamyba-table"><thead><tr><th>GT</th><th>@L("Date", "Data")</th><th>@L("Author", "Autorius")</th><th>@L("Operation", "Operacija")</th><th class="is-num">@L("Rows", "Eilutės")</th><th class="is-num">@L("Action", "Veiksmas")</th></tr></thead><tbody>
                     @foreach (var doc in _liveDocuments?.Items ?? [])
                     {
-                        <tr><td class="mono gamyba-accent"><strong>@doc.Number</strong></td><td class="mono">@doc.Date.ToString("yyyy-MM-dd HH:mm")</td><td>@doc.Author</td><td><span class="chip chip--info">@doc.Operation</span></td><td class="mono is-num"><strong>@doc.Rows</strong></td></tr>
+                        <tr><td class="mono gamyba-accent"><strong>@doc.Number</strong></td><td class="mono">@doc.Date.ToString("yyyy-MM-dd HH:mm")</td><td>@doc.Author</td><td><span class="chip chip--info">@doc.Operation</span></td><td class="mono is-num"><strong>@doc.Rows</strong></td><td class="is-num"><button type="button" class="gamyba-btn gamyba-btn--xs" @onclick="() => OpenLiveDocumentAsync(doc.Id)">@L("Details", "Detalės")</button></td></tr>
                     }
                 </tbody></table></div>
                 @if (!_liveDocumentsLoading && _liveDocumentsError is null && _liveDocuments?.Items.Count == 0)
@@ -268,6 +268,30 @@
 
             @if (_screen == "gt-detail")
             {
+                @if (LiveQueueEnabled)
+                {
+                    <div class="gamyba-breadcrumb"><button type="button" @onclick='() => GoLiveAwareAsync("gt")'>@L("GT documents", "GT dokumentai")</button> / <strong class="mono">@(_liveDocument?.Document.Number ?? "…")</strong></div>
+                    @if (_liveDocumentError is not null)
+                    {
+                        <div class="gamyba-alert gamyba-alert--danger" role="alert">@_liveDocumentError</div>
+                    }
+                    @if (_liveDocumentLoading)
+                    {
+                        <div class="gamyba-empty">@L("Loading document…", "Įkeliamas dokumentas…")</div>
+                    }
+                    @if (_liveDocument is not null)
+                    {
+                        <div class="gamyba-taskhead"><div><div class="gamyba-eyebrow">GT · @L("DOCUMENT", "DOKUMENTAS")</div><h1 class="mono">@_liveDocument.Document.Number</h1><p>@L("Operation", "Operacija"): <strong>@_liveDocument.Document.Operation</strong> · @_liveDocument.Document.Author · @_liveDocument.Document.Date.ToString("yyyy-MM-dd HH:mm") · @_liveDocument.Items.Count @L("items", "gaminiai")</p></div><span class="chip chip--info">@L("READ ONLY", "TIK PERŽIŪRA")</span></div>
+                        <section class="gamyba-panel"><div class="gamyba-tablewrap"><table class="gamyba-table"><thead><tr><th>#</th><th>@L("Time", "Laikas")</th><th>@L("Barcode", "Kodas")</th><th>@L("Item", "Gaminys")</th><th>@L("Transition", "Perėjimas")</th><th>@L("Author", "Autorius")</th></tr></thead><tbody>
+                            @foreach (var line in _liveDocument.Items)
+                            {
+                                <tr><td class="mono gamyba-muted">@(_liveDocument.Items.IndexOf(line) + 1)</td><td class="mono gamyba-muted">@line.InsertedAt?.ToString("yyyy-MM-dd HH:mm")</td><td class="mono"><strong>@line.Barcode</strong></td><td>@line.Description</td><td class="mono">@line.Before → @line.After</td><td>@line.InsertedBy</td></tr>
+                            }
+                        </tbody></table></div>@if (_liveDocument.Items.Count == 0){<div class="gamyba-empty">@L("No scans yet", "Skenų dar nėra")</div>}</section>
+                    }
+                }
+                else
+                {
                 <div class="gamyba-breadcrumb"><button type="button" @onclick='() => Go("gt")'>@L("GT documents", "GT dokumentai")</button> / <strong class="mono">@CurrentDocument.Number</strong></div>
                 <div class="gamyba-taskhead"><div><div class="gamyba-eyebrow">GT · @L("DOCUMENT", "DOKUMENTAS")</div><h1 class="mono">@CurrentDocument.Number</h1><p>@L("Operation", "Operacija"): <strong>@CurrentDocument.Operation</strong> · @CurrentDocument.Author · @CurrentDocument.Created · @CurrentDocument.Scans.Count @L("items", "gaminiai")</p></div><div class="gamyba-actions"><button type="button" class="gamyba-btn gamyba-btn--primary" disabled="@(!CanContinueDocument(CurrentDocument))" @onclick='() => Go("scan")'>@L("Continue scanning", "Tęsti skenavimą")</button><button type="button" class="gamyba-btn" disabled="@(CurrentDocument.Scans.Count == 0 || CurrentDocument.Scans.Last().Locked || !CanContinueDocument(CurrentDocument) || Restricted)" @onclick="UndoLastScan">↶ @L("Undo last scan", "Atšaukti paskutinį skeną")</button></div></div>
                 <div class="gamyba-gt-rule"><span class="gamyba-dot"></span><span><strong>@L("Correction rule.", "Taisymo taisyklė.")</strong> @L("Only the last accepted row of your recent document can be removed; a later transition locks it.", "Pašalinti galima tik paskutinę priimtą savo naujausio dokumento eilutę; vėlesnis perėjimas ją užrakina.") <button type="button" class="gamyba-textbutton" @onclick='() => Go("map")'>P08 ?</button></span></div>
@@ -279,6 +303,7 @@
                         <tr><td class="mono gamyba-muted">@(CurrentDocument.Scans.IndexOf(scan) + 1)</td><td class="mono gamyba-muted">@scan.At</td><td class="mono"><strong>@item.Barcode</strong></td><td>@item.Type · @item.Width×@item.Height · @item.Order</td><td class="mono">@scan.Before → @scan.After</td><td>@(Restricted && item.Branch != "Kaunas" ? L("Other branch", "Kitas filialas") : L("Allowed", "Leidžiama"))</td><td class="is-num">@if (last && !scan.Locked){<button type="button" class="gamyba-btn gamyba-btn--xs" disabled="@(!CanContinueDocument(CurrentDocument) || Restricted)" @onclick="UndoLastScan">↶ @L("Delete scan", "Pašalinti skeną")</button>}else if(scan.Locked){<span class="gamyba-muted">@L("Locked", "Užrakinta")</span>}</td></tr>
                     }
                 </tbody></table></div></section>
+                }
             }
 
             @if (_screen == "stops")

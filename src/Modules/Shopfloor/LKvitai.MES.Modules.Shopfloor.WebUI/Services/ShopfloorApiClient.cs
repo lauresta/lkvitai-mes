@@ -82,6 +82,22 @@ public sealed class ProductionDocumentSummaryDto
     public int Rows { get; set; }
 }
 
+public sealed class ProductionDocumentDetailDto
+{
+    public ProductionDocumentSummaryDto Document { get; set; } = new();
+    public List<ProductionDocumentLineDto> Items { get; set; } = [];
+}
+
+public sealed class ProductionDocumentLineDto
+{
+    public string Barcode { get; set; } = "";
+    public string? Description { get; set; }
+    public string? Before { get; set; }
+    public string? After { get; set; }
+    public string? InsertedBy { get; set; }
+    public DateTime? InsertedAt { get; set; }
+}
+
 public sealed class ProductionTaskSummaryDto
 {
     public int Id { get; set; }
@@ -241,6 +257,10 @@ public sealed class ShopfloorApiClient
     public Task<ApiResult<ProductionDocumentPageDto>> GetProductionDocumentsAsync(int page, CancellationToken ct)
         => SendAsync<ProductionDocumentPageDto>(HttpMethod.Get,
             $"/api/shopfloor/production-documents?page={page}&pageSize=50", null, ct);
+
+    public Task<ApiResult<ProductionDocumentDetailDto>> GetProductionDocumentAsync(int id, CancellationToken ct)
+        => SendAsync<ProductionDocumentDetailDto>(HttpMethod.Get,
+            $"/api/shopfloor/production-documents/{id}", null, ct);
 
     public Task<ApiResult<ProductionTaskDetailDto>> GetProductionTaskAsync(int id, CancellationToken ct)
         => SendAsync<ProductionTaskDetailDto>(HttpMethod.Get,
