@@ -36,6 +36,25 @@ public partial class Gamyba
     private int _liveRepairPage = 1;
     private ProductionRepairDto? LiveRepair =>
         _liveRepairs?.Items.FirstOrDefault(x => x.Id == _liveRepairId);
+    private sealed record LiveHistoryEvent(DateTime? Date, string Label, string Detail, int? TaskId);
+    private IEnumerable<LiveHistoryEvent> LiveHistoryEvents
+    {
+        get
+        {
+            if (_liveHistory is null) return [];
+            var documents = _liveHistory.Documents.Select(d => new LiveHistoryEvent(
+                d.Date, d.Number,
+                string.Join(" · ", new[] { d.Operation,
+                    d.Before is not null || d.After is not null ? $"{d.Before} → {d.After}" : null }
+                    .Where(x => !string.IsNullOrWhiteSpace(x))),
+                d.Number.StartsWith("GU", StringComparison.OrdinalIgnoreCase) ? d.Id : null));
+            var repairs = _liveHistory.Repairs.Select(r => new LiveHistoryEvent(
+                r.Registered, $"{L("Repair", "Remontas")} {r.Id}",
+                string.Join(" · ", new[] { r.Reason, r.Claimed, r.Actual }
+                    .Where(x => !string.IsNullOrWhiteSpace(x))), null));
+            return documents.Concat(repairs).OrderBy(x => x.Date).ToArray();
+        }
+    }
     private List<ProductionReportCatalogDto> _liveReportCatalog = [];
     private ProductionReportDataDto? _liveReportData;
     private int? _liveReportId;

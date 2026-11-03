@@ -34,12 +34,15 @@ public static class ProductionHistoryEndpoints
 }
 
 public sealed record ProductionHistoryDocument(int Id, string Number, DateTime? Date,
-    string? Author, string? Before, string? After);
+    string? Author, string? Before, string? After, string? Operation);
+public sealed record ProductionHistoryRepair(int Id, DateTime Registered, string? Reason,
+    string? Claimed, string? Actual);
 public sealed record ProductionProductHistory(long ProductId, string Barcode, string OrderNumber,
     DateTime OrderDate, string Department, string? Customer, string Category,
     string ProductType, string? Control, string? MaterialCode, decimal? WidthMm,
     decimal? HeightMm, decimal Quantity, string? Notes, string State,
-    IReadOnlyList<ProductionHistoryDocument> Documents);
+    IReadOnlyList<ProductionHistoryDocument> Documents,
+    IReadOnlyList<ProductionHistoryRepair> Repairs);
 
 public sealed class ProductionHistoryReader(ProductionQueueReader queue)
 {
@@ -61,20 +64,32 @@ public sealed class ProductionHistoryReader(ProductionQueueReader queue)
                 row.IsDBNull(7) ? null : row.GetString(7), row.IsDBNull(8) ? null : row.GetString(8),
                 row.IsDBNull(9) ? null : Convert.ToDecimal(row.GetValue(9)),
                 row.IsDBNull(10) ? null : Convert.ToDecimal(row.GetValue(10)), row.GetDecimal(11),
-                row.IsDBNull(12) ? null : row.GetString(12), row.GetString(13), []);
+                row.IsDBNull(12) ? null : row.GetString(12), row.GetString(13), [], []);
         }
         await using var documents = new SqlCommand(DocumentsSql, connection) { CommandTimeout = 30 };
         documents.Parameters.Add("@barcode", SqlDbType.NVarChar, 12).Value = barcode;
         var timeline = new List<ProductionHistoryDocument>();
-        await using var rows = await documents.ExecuteReaderAsync(ct);
-        while (await rows.ReadAsync(ct))
-            timeline.Add(new ProductionHistoryDocument(rows.GetInt32(0),
-                rows.IsDBNull(1) ? "—" : rows.GetString(1),
-                rows.IsDBNull(2) ? null : rows.GetDateTime(2),
-                rows.IsDBNull(3) ? null : rows.GetString(3),
-                rows.IsDBNull(4) ? null : rows.GetString(4),
-                rows.IsDBNull(5) ? null : rows.GetString(5)));
-        return result with { Documents = timeline };
+        await using (var rows = await documents.ExecuteReaderAsync(ct))
+        {
+            while (await rows.ReadAsync(ct))
+                timeline.Add(new ProductionHistoryDocument(rows.GetInt32(0),
+                    rows.IsDBNull(1) ? "—" : rows.GetString(1),
+                    rows.IsDBNull(2) ? null : rows.GetDateTime(2),
+                    rows.IsDBNull(3) ? null : rows.GetString(3),
+                    rows.IsDBNull(4) ? null : rows.GetString(4),
+                    rows.IsDBNull(5) ? null : rows.GetString(5),
+                    rows.IsDBNull(6) ? null : rows.GetString(6)));
+        }
+        await using var repairs = new SqlCommand(RepairsSql, connection) { CommandTimeout = 30 };
+        repairs.Parameters.Add("@barcode", SqlDbType.NVarChar, 12).Value = barcode;
+        var repairHistory = new List<ProductionHistoryRepair>();
+        await using var repairRows = await repairs.ExecuteReaderAsync(ct);
+        while (await repairRows.ReadAsync(ct))
+            repairHistory.Add(new ProductionHistoryRepair(repairRows.GetInt32(0),
+                repairRows.GetDateTime(1), repairRows.IsDBNull(2) ? null : repairRows.GetString(2),
+                repairRows.IsDBNull(3) ? null : repairRows.GetString(3),
+                repairRows.IsDBNull(4) ? null : repairRows.GetString(4)));
+        return result with { Documents = timeline, Repairs = repairHistory };
     }
 
     private const string ProductSql = """
@@ -98,13 +113,29 @@ public sealed class ProductionHistoryReader(ProductionQueueReader queue)
 
     private static readonly string DocumentsSql = $"""
         SELECT d.iProductionOutputDocumentID, d.sProductionOutputDocumentNo,
-               d.dtDateTime, d.sUserNameInsert, beforeState.Busena, afterState.Busena
+               d.dtDateTime, d.sUserNameInsert, beforeState.Busena, afterState.Busena,
+               operation.Busena
         FROM dbo.TAB_ProductionOutputDocumentDetails item
         JOIN dbo.TAB_ProductionOutputDocuments d
           ON d.iProductionOutputDocumentID=item.iProductionOutputDocumentID
         LEFT JOIN dbo.Zinynas_busenos beforeState ON beforeState.BusenosID=item.iStateBefore
         LEFT JOIN dbo.Zinynas_busenos afterState ON afterState.BusenosID=item.iStateAfter
+        LEFT JOIN dbo.Zinynas_busenos operation ON operation.BusenosID=d.iAssignedStatusID
         WHERE item.iBarCode=@barcode AND {ProductionTaskReader.Visibility}
         ORDER BY d.dtDateTime, d.iProductionOutputDocumentID;
+        """;
+
+    private const string RepairsSql = """
+        SELECT rep.iRepairmentID,rep.dtDateTime,reason.sReason,
+               CONVERT(nvarchar(max),rep.sFailureDescription),
+               CONVERT(nvarchar(max),rep.sFactFailure)
+        FROM dbo.TAB_BlindRepairments rep
+        JOIN dbo.ParduotiGaminiai pg ON pg.ParduotoGaminioID=rep.iBlindID
+        JOIN dbo.Uzsakymai u ON u.UzsakymasID=pg.UzsakymoID
+        JOIN dbo.Zinynas_UzsakymoSerijos s ON s.UzsakymoSerijaID=u.UzsakymoSerija
+        LEFT JOIN dbo.TBD_RepairmentReasons reason ON reason.iReasonID=rep.iReasonID
+        WHERE pg.iBarCode=@barcode
+          AND EXISTS(SELECT 1 FROM dbo.Loc_leidimas() acl WHERE acl.UKS=s.FilialoID)
+        ORDER BY rep.dtDateTime,rep.iRepairmentID;
         """;
 }

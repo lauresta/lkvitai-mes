@@ -101,6 +101,16 @@ public sealed class ProductionHistoryDocumentDto
     public string? Author { get; set; }
     public string? Before { get; set; }
     public string? After { get; set; }
+    public string? Operation { get; set; }
+}
+
+public sealed class ProductionHistoryRepairDto
+{
+    public int Id { get; set; }
+    public DateTime Registered { get; set; }
+    public string? Reason { get; set; }
+    public string? Claimed { get; set; }
+    public string? Actual { get; set; }
 }
 
 public sealed class ProductionProductHistoryDto
@@ -121,6 +131,7 @@ public sealed class ProductionProductHistoryDto
     public string? Notes { get; set; }
     public string State { get; set; } = "";
     public List<ProductionHistoryDocumentDto> Documents { get; set; } = [];
+    public List<ProductionHistoryRepairDto> Repairs { get; set; } = [];
 }
 
 public sealed class ProductionRepairPageDto

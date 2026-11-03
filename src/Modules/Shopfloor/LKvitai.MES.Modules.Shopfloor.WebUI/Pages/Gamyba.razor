@@ -398,8 +398,8 @@
                                 <small class="chip chip--info">@L("READ ONLY", "TIK PERŽIŪRA")</small>
                             </div></section>
                             <section class="gamyba-panel"><div class="gamyba-panel__head"><strong>@L("Document timeline", "Dokumentų istorija")</strong></div><div class="gamyba-history-lines"><div><span class="mono">@_liveHistory.OrderDate.ToString("yyyy-MM-dd")</span><strong class="mono">@_liveHistory.OrderNumber</strong><span>@L("Order recorded", "Užsakymas įrašytas")</span></div>
-                                @foreach (var doc in _liveHistory.Documents)
-                                {<div><span class="mono">@doc.Date?.ToString("yyyy-MM-dd HH:mm")</span>@if (doc.Number.StartsWith("GU", StringComparison.OrdinalIgnoreCase)){<button type="button" class="gamyba-link mono" @onclick="() => OpenLiveTaskAsync(doc.Id)">@doc.Number</button>}else{<strong class="mono">@doc.Number</strong>}<span>@doc.Before → @doc.After</span></div>}
+                                @foreach (var evt in LiveHistoryEvents)
+                                {<div><span class="mono">@evt.Date?.ToString("yyyy-MM-dd HH:mm")</span>@if (evt.TaskId is int taskId){<button type="button" class="gamyba-link mono" @onclick="() => OpenLiveTaskAsync(taskId)">@evt.Label</button>}else{<strong class="mono">@evt.Label</strong>}<span>@evt.Detail</span></div>}
                             </div></section>
                         </div>
                     }
