@@ -123,6 +123,31 @@ public sealed class ProductionProductHistoryDto
     public List<ProductionHistoryDocumentDto> Documents { get; set; } = [];
 }
 
+public sealed class ProductionRepairPageDto
+{
+    public int Page { get; set; }
+    public bool HasMore { get; set; }
+    public List<ProductionRepairDto> Items { get; set; } = [];
+}
+
+public sealed class ProductionRepairDto
+{
+    public int Id { get; set; }
+    public long ProductId { get; set; }
+    public string Barcode { get; set; } = "";
+    public string OrderNumber { get; set; } = "";
+    public string ProductType { get; set; } = "";
+    public decimal? WidthMm { get; set; }
+    public decimal? HeightMm { get; set; }
+    public DateTime Registered { get; set; }
+    public string Reason { get; set; } = "";
+    public string? Claimed { get; set; }
+    public string? Actual { get; set; }
+    public string ProductState { get; set; } = "";
+    public bool Unfinished { get; set; }
+    public bool MissingActual { get; set; }
+}
+
 /// <summary>
 /// Typed wrapper around the named <c>ShopfloorApi</c> HttpClient. Returns
 /// <see cref="ApiResult{T}"/> so pages can surface API validation/conflict
@@ -174,6 +199,11 @@ public sealed class ShopfloorApiClient
     public Task<ApiResult<ProductionProductHistoryDto>> GetProductionHistoryAsync(string barcode, CancellationToken ct)
         => SendAsync<ProductionProductHistoryDto>(HttpMethod.Get,
             $"/api/shopfloor/production-products/{Uri.EscapeDataString(barcode)}/history", null, ct);
+
+    public Task<ApiResult<ProductionRepairPageDto>> GetProductionRepairsAsync(int page,
+        string filter, CancellationToken ct)
+        => SendAsync<ProductionRepairPageDto>(HttpMethod.Get,
+            $"/api/shopfloor/production-repairs?page={page}&filter={Uri.EscapeDataString(filter)}", null, ct);
 
     // ---- Work centers -------------------------------------------------------
 

@@ -29,6 +29,13 @@ public partial class Gamyba
     private ProductionProductHistoryDto? _liveHistory;
     private string? _liveHistoryError;
     private bool _liveHistoryLoading;
+    private ProductionRepairPageDto? _liveRepairs;
+    private int? _liveRepairId;
+    private string? _liveRepairError;
+    private bool _liveRepairLoading;
+    private int _liveRepairPage = 1;
+    private ProductionRepairDto? LiveRepair =>
+        _liveRepairs?.Items.FirstOrDefault(x => x.Id == _liveRepairId);
 
     protected override async Task OnInitializedAsync()
     {
@@ -106,6 +113,8 @@ public partial class Gamyba
         Go(screen);
         if (LiveQueueEnabled && screen == "tasks" && _liveTasks is null)
             await LoadLiveTasksAsync(1);
+        if (LiveQueueEnabled && screen == "stops" && _stopTab == "repairs" && _liveRepairs is null)
+            await LoadLiveRepairsAsync(1);
     }
 
     private async Task LoadLiveTasksAsync(int page)
@@ -178,5 +187,48 @@ public partial class Gamyba
             _liveHistoryError = L("Could not load product history.", "Nepavyko įkelti gaminio istorijos.");
         }
         finally { _liveHistoryLoading = false; }
+    }
+
+    private async Task LoadLiveRepairsAsync(int page)
+    {
+        if (page < 1 || _liveRepairLoading) return;
+        _liveRepairLoading = true;
+        _liveRepairs = null;
+        _liveRepairError = null;
+        try
+        {
+            var result = await ShopfloorApi.GetProductionRepairsAsync(page, _repairFilter, CancellationToken.None);
+            if (result.Success && result.Value is not null)
+            {
+                _liveRepairs = result.Value;
+                _liveRepairPage = result.Value.Page;
+                if (!result.Value.Items.Any(x => x.Id == _liveRepairId))
+                    _liveRepairId = result.Value.Items.FirstOrDefault()?.Id;
+            }
+            else _liveRepairError = result.Error ?? L("Could not load repairs.", "Nepavyko įkelti remontų.");
+        }
+        catch (Exception)
+        {
+            _liveRepairError = L("Could not load repairs.", "Nepavyko įkelti remontų.");
+        }
+        finally { _liveRepairLoading = false; }
+    }
+
+    private async Task SetLiveRepairFilterAsync(string filter)
+    {
+        _repairFilter = filter;
+        await LoadLiveRepairsAsync(1);
+    }
+
+    private async Task OpenLiveRepairsAsync()
+    {
+        OpenRepairs();
+        if (LiveQueueEnabled && _liveRepairs is null) await LoadLiveRepairsAsync(1);
+    }
+
+    private async Task SetRepairTabAsync()
+    {
+        _stopTab = "repairs";
+        if (LiveQueueEnabled && _liveRepairs is null) await LoadLiveRepairsAsync(1);
     }
 }
