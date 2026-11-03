@@ -34,6 +34,7 @@ builder.Services.AddHttpClient("CikadaUsers", client =>
 builder.Services.AddScoped<ProductionQueueReader>();
 builder.Services.AddScoped<ProductionTaskReader>();
 builder.Services.AddScoped<ProductionHistoryReader>();
+builder.Services.AddScoped<ProductionRepairReader>();
 
 // Same Portal auth pattern used by Sales: shared Portal cookie + structured
 // bearer, plus a dev-only synthetic identity gated behind Shopfloor:DevAuthEnabled.
@@ -90,8 +91,11 @@ shopfloor.MapWorkflowsEndpoints();
 shopfloor.MapLegacyProductTypesEndpoints();
 shopfloor.MapProductTypeMappingsEndpoints();
 if (productionQueueEnabled)
+{
     shopfloor.MapProductionQueueEndpoints();
     shopfloor.MapProductionTaskEndpoints();
     shopfloor.MapProductionHistoryEndpoints();
+    shopfloor.MapProductionRepairEndpoints();
+}
 
 await app.RunAsync();

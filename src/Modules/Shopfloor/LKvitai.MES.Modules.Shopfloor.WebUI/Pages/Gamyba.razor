@@ -39,7 +39,8 @@
         </nav>
 
         <main class="gamyba-main @(PrototypeControls ? "gamyba-main--demo" : "")">
-            @if (LiveQueueEnabled && _screen is not ("queue" or "tasks" or "task" or "history"))
+            @if (LiveQueueEnabled && _screen is not ("queue" or "tasks" or "task" or "history")
+                && !(_screen == "stops" && _stopTab == "repairs"))
             {
                 <div class="gamyba-alert gamyba-alert--info" role="status">@L("Preview: this screen uses sample data and does not change production.", "Peržiūra: šiame ekrane naudojami pavyzdiniai duomenys; gamyba nekeičiama.")</div>
             }
@@ -262,7 +263,7 @@
             {
                 <div class="gamyba-pagehead">
                     <div><div class="gamyba-eyebrow">SHOPFLOOR · G09–G10</div><h1>@L("Production stops · Repairs", "Gamybos stabdymai · Remontai")</h1></div>
-                    <div class="gamyba-segment"><button type="button" class="@(_stopTab == "stops" ? "is-active" : "")" @onclick='() => _stopTab = "stops"'>@L("Stops", "Stabdymai")</button><button type="button" class="@(_stopTab == "repairs" ? "is-active" : "")" @onclick='() => _stopTab = "repairs"'>@L("Repairs", "Remontai")</button></div>
+                    <div class="gamyba-segment"><button type="button" class="@(_stopTab == "stops" ? "is-active" : "")" @onclick='() => _stopTab = "stops"'>@L("Stops", "Stabdymai")</button><button type="button" class="@(_stopTab == "repairs" ? "is-active" : "")" @onclick="SetRepairTabAsync">@L("Repairs", "Remontai")</button></div>
                 </div>
                 @if (_stopTab == "stops")
                 {
@@ -299,6 +300,52 @@
                             </div>
                         </section>
                     </div>
+                }
+                else if (LiveQueueEnabled)
+                {
+                    <div class="gamyba-repair-filters">
+                        @foreach (var filter in new[] { ("all", L("All", "Visi")), ("unfinished", L("Unfinished", "Nebaigti")), ("unknown", L("Missing actual failure", "Nenurodytas faktinis gedimas")) })
+                        {
+                            <button type="button" class="@(_repairFilter == filter.Item1 ? "is-active" : "")" @onclick="() => SetLiveRepairFilterAsync(filter.Item1)">@filter.Item2</button>
+                        }
+                        <span>@L("Legacy repairs · read only", "Legacy remontai · tik peržiūra")</span>
+                    </div>
+                    @if (_liveRepairLoading)
+                    {
+                        <div class="gamyba-empty">@L("Loading repairs…", "Įkeliami remontai…")</div>
+                    }
+                    else if (_liveRepairError is not null)
+                    {
+                        <div class="gamyba-empty">@_liveRepairError</div>
+                    }
+                    else if (_liveRepairs is not null)
+                    {
+                        <div class="gamyba-stops-grid">
+                            <section class="gamyba-panel"><div class="gamyba-tablewrap"><table class="gamyba-table"><thead><tr><th>@L("Repair", "Remontas")</th><th>@L("Barcode", "Kodas")</th><th>@L("Item", "Gaminys")</th><th>@L("Reason", "Priežastis")</th><th>@L("State", "Būsena")</th><th>@L("Actual failure", "Faktinis gedimas")</th></tr></thead><tbody>
+                                @foreach (var rep in _liveRepairs.Items)
+                                {
+                                    <tr class="gamyba-clickrow @(_liveRepairId == rep.Id ? "is-selected" : "")" @onclick="() => _liveRepairId = rep.Id"><td class="mono gamyba-accent"><strong>@rep.Id</strong></td><td class="mono">@rep.Barcode</td><td>@rep.ProductType @rep.WidthMm×@rep.HeightMm</td><td>@rep.Reason</td><td><span class="chip @(rep.Unfinished ? "chip--warn" : "chip--done")">@rep.ProductState</span></td><td class="@(rep.MissingActual ? "gamyba-muted" : "")">@(rep.MissingActual ? "—" : rep.Actual)</td></tr>
+                                }
+                            </tbody></table></div>
+                            @if (_liveRepairs.Items.Count == 0)
+                            {
+                                <div class="gamyba-empty">@L("No repairs in the legacy database for this filter.", "Pagal šį filtrą legacy duomenų bazėje remontų nėra.")</div>
+                            }
+                            <div class="gamyba-actions"><button type="button" class="gamyba-btn gamyba-btn--xs" disabled="@(_liveRepairPage <= 1)" @onclick="() => LoadLiveRepairsAsync(_liveRepairPage - 1)">@L("Previous", "Ankstesnis")</button><span class="mono">@_liveRepairPage</span><button type="button" class="gamyba-btn gamyba-btn--xs" disabled="@(!_liveRepairs.HasMore)" @onclick="() => LoadLiveRepairsAsync(_liveRepairPage + 1)">@L("Next", "Kitas")</button></div>
+                            </section>
+                            <section class="gamyba-panel"><div class="gamyba-panel__head"><strong>@(LiveRepair is null ? L("Repair details", "Remonto informacija") : $"{LiveRepair.Id} · {LiveRepair.ProductType} {LiveRepair.WidthMm}×{LiveRepair.HeightMm}")</strong></div><div class="gamyba-sidebody">
+                                @if (LiveRepair is not null)
+                                {
+                                    <label class="gamyba-fieldlabel">@L("Order", "Užsakymas")</label><div class="gamyba-readonly mono">@LiveRepair.OrderNumber</div>
+                                    <label class="gamyba-fieldlabel">@L("Registered", "Užregistruota")</label><div class="gamyba-readonly mono">@LiveRepair.Registered.ToString("yyyy-MM-dd HH:mm")</div>
+                                    <label class="gamyba-fieldlabel">@L("Reason", "Priežastis") · iReasonID</label><div class="gamyba-readonly">@LiveRepair.Reason</div>
+                                    <label class="gamyba-fieldlabel">@L("Customer reported", "Kliento nurodyta") · sFailureDescription</label><div class="gamyba-readonly">@LiveRepair.Claimed</div>
+                                    <label class="gamyba-fieldlabel">@L("Actual failure", "Faktinis gedimas") · sFactFailure</label><div class="gamyba-readonly">@LiveRepair.Actual</div>
+                                    <small>@L("Repair changes remain disabled until the legacy write contract is verified.", "Remonto keitimai išjungti, kol nepatikrintos legacy įrašymo taisyklės.")</small>
+                                }
+                            </div></section>
+                        </div>
+                    }
                 }
                 else
                 {
@@ -377,7 +424,7 @@
                         <section class="gamyba-panel"><div class="gamyba-history-card"><div class="gamyba-history-card__barcode mono">@HistoryItem.Barcode</div><strong>@HistoryItem.Type · @HistoryItem.Width × @HistoryItem.Height</strong><p>@HistoryItem.Fabric · @HistoryItem.Quantity @L("pcs", "vnt.")</p>
                             <div class="gamyba-history-facts"><span>@L("Order", "Užsakymas")</span><button type="button" class="gamyba-link mono" @onclick="() => OpenSalesFixture(HistoryItem.Order)">@HistoryItem.Order ↗</button><span>@L("Branch", "Filialas")</span><strong>@HistoryItem.Branch</strong><span>@L("Stage", "Būsena")</span><span class="chip @StageClass(HistoryItem.Stage)">@HistoryItem.Stage</span><span>GU</span><strong class="mono">@(HistoryItem.Gu ?? "—")</strong></div>
                             <div class="gamyba-fieldlabel">@L("Allowed actions", "Leidžiami veiksmai")</div>
-                            <div class="gamyba-history-actions"><button type="button" class="gamyba-btn gamyba-btn--xs" disabled="@(HistoryItem.Stage != "patvirtintas" || Restricted)" @onclick="() => IssueHistoryItem(HistoryItem)">@L("Issue to GU", "Išduoti į GU")</button><button type="button" class="gamyba-btn gamyba-btn--xs" disabled="@(HistoryItem.Stage != "gaminamas")" @onclick='() => Go("scan")'>@L("Scan", "Skenuoti")</button><button type="button" class="gamyba-btn gamyba-btn--xs" disabled="@(HistoryItem.Stage != "gaminamas" || Restricted)" @onclick="() => OpenStop(HistoryItem)">@L("Stop", "Stabdyti")</button><button type="button" class="gamyba-btn gamyba-btn--xs" @onclick="OpenRepairs">@L("Repair", "Remontas")</button><button type="button" class="gamyba-btn gamyba-btn--xs" disabled="@(HistoryItem.Gu is null)" @onclick="() => PrintHistoryLabel(HistoryItem)">@L("Print labels", "Spausdinti etiketes")</button></div>
+                            <div class="gamyba-history-actions"><button type="button" class="gamyba-btn gamyba-btn--xs" disabled="@(HistoryItem.Stage != "patvirtintas" || Restricted)" @onclick="() => IssueHistoryItem(HistoryItem)">@L("Issue to GU", "Išduoti į GU")</button><button type="button" class="gamyba-btn gamyba-btn--xs" disabled="@(HistoryItem.Stage != "gaminamas")" @onclick='() => Go("scan")'>@L("Scan", "Skenuoti")</button><button type="button" class="gamyba-btn gamyba-btn--xs" disabled="@(HistoryItem.Stage != "gaminamas" || Restricted)" @onclick="() => OpenStop(HistoryItem)">@L("Stop", "Stabdyti")</button><button type="button" class="gamyba-btn gamyba-btn--xs" @onclick="OpenLiveRepairsAsync">@L("Repair", "Remontas")</button><button type="button" class="gamyba-btn gamyba-btn--xs" disabled="@(HistoryItem.Gu is null)" @onclick="() => PrintHistoryLabel(HistoryItem)">@L("Print labels", "Spausdinti etiketes")</button></div>
                             <small>@L("Actions depend on state and branch rights.", "Veiksmai priklauso nuo būsenos ir filialo teisių.")</small>
                         </div></section>
                         <section class="gamyba-panel"><div class="gamyba-panel__head"><strong>@L("Document timeline", "Dokumentų istorija")</strong></div><div class="gamyba-history-lines"><div><span class="mono">2026-10-28</span><strong class="mono">@HistoryItem.Order</strong><span>@L("Confirmed in Sales", "Patvirtintas Sales")</span></div>@if (HistoryItem.Gu is not null){<div><span class="mono">2026-11-02</span><button type="button" class="gamyba-link mono" @onclick="() => OpenTask(HistoryItem.Gu)">@HistoryItem.Gu</button><span>@L("Issued to production", "Išduota gamybai")</span></div>}@foreach (var doc in _documents.Where(d => d.Scans.Any(scan => scan.ItemId == HistoryItem.Id))){<div><span class="mono">@doc.Created</span><button type="button" class="gamyba-link mono" @onclick="() => OpenDocument(doc.Number)">@doc.Number</button><span>@doc.Operation · @L("scan accepted", "skenas priimtas")</span></div>}</div></section>
