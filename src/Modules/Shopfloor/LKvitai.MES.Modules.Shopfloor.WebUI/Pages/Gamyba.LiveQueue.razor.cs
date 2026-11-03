@@ -30,6 +30,10 @@ public partial class Gamyba
     private string? _liveTaskError;
     private bool _liveTaskLoading;
     private int _liveTaskPage = 1;
+    private ProductionDocumentPageDto? _liveDocuments;
+    private string? _liveDocumentsError;
+    private bool _liveDocumentsLoading;
+    private int _liveDocumentsPage = 1;
     private ProductionProductHistoryDto? _liveHistory;
     private string? _liveHistoryError;
     private bool _liveHistoryLoading;
@@ -164,6 +168,8 @@ public partial class Gamyba
         Go(screen);
         if (LiveQueueEnabled && screen == "tasks" && _liveTasks is null)
             await LoadLiveTasksAsync(1);
+        if (LiveQueueEnabled && screen == "gt" && _liveDocuments is null)
+            await LoadLiveDocumentsAsync(1);
         if (LiveQueueEnabled && screen == "stops" && _stopTab == "repairs" && _liveRepairs is null)
             await LoadLiveRepairsAsync(1);
         if (LiveQueueEnabled && screen == "reports"
@@ -192,6 +198,29 @@ public partial class Gamyba
             _liveTaskError = L("Could not load production tasks.", "Nepavyko įkelti gamybos užduočių.");
         }
         finally { _liveTaskLoading = false; }
+    }
+
+    private async Task LoadLiveDocumentsAsync(int page)
+    {
+        if (page < 1 || _liveDocumentsLoading) return;
+        _liveDocumentsLoading = true;
+        _liveDocuments = null;
+        _liveDocumentsError = null;
+        try
+        {
+            var result = await ShopfloorApi.GetProductionDocumentsAsync(page, CancellationToken.None);
+            if (result.Success && result.Value is not null)
+            {
+                _liveDocuments = result.Value;
+                _liveDocumentsPage = result.Value.Page;
+            }
+            else _liveDocumentsError = result.Error ?? L("Could not load GT documents.", "Nepavyko įkelti GT dokumentų.");
+        }
+        catch (Exception)
+        {
+            _liveDocumentsError = L("Could not load GT documents.", "Nepavyko įkelti GT dokumentų.");
+        }
+        finally { _liveDocumentsLoading = false; }
     }
 
     private async Task OpenLiveTaskAsync(int id)
