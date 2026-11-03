@@ -33,13 +33,13 @@
         <nav class="gamyba-tabs" aria-label="Gamyba">
             @foreach (var tab in Tabs)
             {
-                <button type="button" class="@(_screen == tab.Key || (_screen == "task" && tab.Key == "tasks") || (_screen == "gt-detail" && tab.Key == "gt") ? "is-active" : "")" @onclick="() => Go(tab.Key)">@L(tab.En, tab.Lt) @if(tab.Key == "queue"){<span class="gamyba-tabcount mono">@(LiveQueueEnabled ? _liveQueue?.Items.Count ?? 0 : QueueItems.Count())</span>} @if(tab.Key == "tasks"){<span class="gamyba-tabcount mono">@_tasks.Count</span>} @if(tab.Key == "labels"){<span class="gamyba-tabcount gamyba-tabcount--danger mono">@_jobs.Count(x => x.State != "Sent")</span>}</button>
+                <button type="button" class="@(_screen == tab.Key || (_screen == "task" && tab.Key == "tasks") || (_screen == "gt-detail" && tab.Key == "gt") ? "is-active" : "")" @onclick="() => GoLiveAwareAsync(tab.Key)">@L(tab.En, tab.Lt) @if(tab.Key == "queue" && !LiveQueueEnabled){<span class="gamyba-tabcount mono">@QueueItems.Count()</span>} @if(tab.Key == "tasks" && !LiveQueueEnabled){<span class="gamyba-tabcount mono">@_tasks.Count</span>} @if(tab.Key == "labels" && !LiveQueueEnabled){<span class="gamyba-tabcount gamyba-tabcount--danger mono">@_jobs.Count(x => x.State != "Sent")</span>}</button>
             }
             <button type="button" class="@(_screen == "map" ? "is-active" : "")" @onclick='() => Go("map")'>@L("Map · Questions", "Žemėlapis · Klausimai")</button>
         </nav>
 
         <main class="gamyba-main @(PrototypeControls ? "gamyba-main--demo" : "")">
-            @if (LiveQueueEnabled && _screen != "queue")
+            @if (LiveQueueEnabled && _screen is not ("queue" or "tasks" or "task"))
             {
                 <div class="gamyba-alert gamyba-alert--info" role="status">@L("Preview: this screen uses sample data and does not change production.", "Peržiūra: šiame ekrane naudojami pavyzdiniai duomenys; gamyba nekeičiama.")</div>
             }
@@ -133,6 +133,21 @@
 
             @if (_screen == "tasks")
             {
+                @if (LiveQueueEnabled)
+                {
+                    <div class="gamyba-pagehead"><div><div class="gamyba-eyebrow">SHOPFLOOR · G04</div><h1>@L("Production tasks", "Gamybos užduotys")</h1><p class="mono">@L("Live GU documents", "Gyvi GU dokumentai") · @L("page", "puslapis") @_liveTaskPage</p></div><div class="gamyba-actions"><span class="chip chip--info">@L("READ ONLY", "TIK PERŽIŪRA")</span><button type="button" class="gamyba-btn" disabled="@_liveTaskLoading" @onclick="() => LoadLiveTasksAsync(_liveTaskPage)">@L("Refresh", "Atnaujinti")</button></div></div>
+                    @if (_liveTaskError is not null){<div class="gamyba-alert gamyba-alert--danger" role="alert">@_liveTaskError</div>}
+                    <section class="gamyba-panel"><div class="gamyba-tablewrap"><table class="gamyba-table"><thead><tr><th>GU</th><th>@L("Created", "Sukurta")</th><th>@L("Author", "Autorius")</th><th class="is-num">@L("Items", "Gaminiai")</th><th class="is-num">@L("Orders", "Užsakymai")</th></tr></thead><tbody>
+                    @foreach (var task in _liveTasks?.Items ?? [])
+                    {
+                        <tr class="gamyba-clickrow" @onclick="() => OpenLiveTaskAsync(task.Id)"><td class="mono gamyba-accent"><strong>@task.Number ↗</strong></td><td class="mono">@task.Created?.ToString("yyyy-MM-dd HH:mm")</td><td>@task.Author</td><td class="is-num mono"><strong>@task.ItemRows</strong></td><td class="is-num mono">@task.OrderCount</td></tr>
+                    }
+                    </tbody></table>
+                    @if (!_liveTaskLoading && _liveTaskError is null && _liveTasks?.Items.Count == 0){<div class="gamyba-empty"><strong>@L("No accessible tasks", "Nėra prieinamų užduočių")</strong></div>}
+                    </div><div class="gamyba-panel__foot"><span>@L("Tasks with hidden items are excluded", "Užduotys su neprieinamais gaminiais nerodomos")</span><span><button type="button" class="gamyba-btn gamyba-btn--xs" disabled="@(_liveTaskLoading || _liveTaskPage <= 1)" @onclick="() => LoadLiveTasksAsync(_liveTaskPage - 1)">← @L("Previous", "Atgal")</button> <span class="mono">@_liveTaskPage</span> <button type="button" class="gamyba-btn gamyba-btn--xs" disabled="@(_liveTaskLoading || _liveTasks?.HasMore != true)" @onclick="() => LoadLiveTasksAsync(_liveTaskPage + 1)">@L("Next", "Toliau") →</button></span></div></section>
+                }
+                else
+                {
                 <div class="gamyba-pagehead"><div><div class="gamyba-eyebrow">SHOPFLOOR · G03–G04</div><h1>@L("Production tasks", "Gamybos užduotys")</h1><p>@L("GU documents, portions, composition and print status.", "GU dokumentai, porcijos, sudėtis ir spausdinimo būsena.")</p></div><div class="gamyba-actions"><input class="gamyba-input" @bind="_taskSearch" @bind:event="oninput" placeholder="@L("Search GU", "Ieškoti GU")" /><button type="button" class="gamyba-btn" @onclick="NewEmptyTask">@L("New empty GU", "Nauja tuščia GU")</button></div></div>
                 <section class="gamyba-panel"><div class="gamyba-tablewrap"><table class="gamyba-table"><thead><tr><th>GU</th><th>@L("Created", "Sukurta")</th><th>@L("Author", "Autorius")</th><th class="is-num">@L("Portions", "Porcijos")</th><th class="is-num">@L("Items", "Gaminiai")</th><th>@L("Orders", "Užsakymai")</th><th>@L("State", "Būsena")</th><th>@L("Documents", "Dokumentai")</th><th>@L("Labels", "Etiketės")</th></tr></thead><tbody>
                 @foreach (var task in _tasks.Where(x => x.Number.Contains(_taskSearch, StringComparison.OrdinalIgnoreCase)))
@@ -140,10 +155,28 @@
                     <tr class="gamyba-clickrow" @onclick="() => OpenTask(task.Number)"><td class="mono gamyba-accent"><strong>@task.Number ↗</strong></td><td class="mono">@task.Created</td><td>@task.Author</td><td class="is-num mono">@task.Portions.Count</td><td class="is-num mono"><strong>@TaskItemCount(task)</strong></td><td>@TaskOrders(task)</td><td><span class="chip chip--warn">GAMINAMAS</span></td><td>@task.Pdfs.Count PDF</td><td>@(_jobs.Count(x => x.Task == task.Number)) @L("jobs", "darbai")</td></tr>
                 }
                 </tbody></table></div></section>
+                }
             }
 
             @if (_screen == "task")
             {
+                @if (LiveQueueEnabled)
+                {
+                    <div class="gamyba-breadcrumb"><button type="button" @onclick='() => Go("tasks")'>@L("Production tasks", "Gamybos užduotys")</button> / <strong class="mono">@(_liveTask?.Task.Number ?? "GU")</strong></div>
+                    @if (_liveTaskError is not null){<div class="gamyba-alert gamyba-alert--danger" role="alert">@_liveTaskError</div>}
+                    @if (_liveTask is not null)
+                    {
+                        <div class="gamyba-taskhead"><div><div class="gamyba-eyebrow">@L("TASK", "UŽDUOTIS") GU <span class="chip chip--info">@L("READ ONLY", "TIK PERŽIŪRA")</span></div><h1 class="mono">@_liveTask.Task.Number</h1><p>@_liveTask.Task.Created?.ToString("yyyy-MM-dd HH:mm") · @_liveTask.Task.Author · @_liveTask.Task.ItemRows @L("rows", "eil.") · @_liveTask.Task.OrderCount @L("orders", "užsakymai")</p></div></div>
+                        <section class="gamyba-panel"><div class="gamyba-panel__head"><strong>@L("Composition", "Sudėtis")</strong><span>@L("Live Access document", "Gyvas Access dokumentas")</span></div><div class="gamyba-tablewrap"><table class="gamyba-table"><thead><tr><th>@L("Barcode", "Kodas")</th><th>@L("Order", "Užsakymas")</th><th>@L("Type", "Tipas")</th><th>@L("Material", "Medžiaga")</th><th class="is-num">@L("Size", "Matmenys")</th><th class="is-num">@L("Qty", "Kiekis")</th><th>@L("State", "Būsena")</th></tr></thead><tbody>
+                        @foreach (var item in _liveTask.Items)
+                        {
+                            <tr><td class="mono">@item.Barcode</td><td class="mono">@item.OrderNumber</td><td>@item.ProductType</td><td>@item.MaterialCode</td><td class="is-num mono">@item.WidthMm × @item.HeightMm</td><td class="is-num mono">@item.Quantity</td><td><span class="chip chip--info">@item.State</span></td></tr>
+                        }
+                        </tbody></table></div></section>
+                    }
+                }
+                else
+                {
                 <div class="gamyba-breadcrumb"><button type="button" @onclick='() => Go("tasks")'>@L("Production tasks", "Gamybos užduotys")</button> / <strong class="mono">@CurrentTask.Number</strong></div>
                 <div class="gamyba-taskhead"><div><div class="gamyba-eyebrow">@L("TASK", "UŽDUOTIS") GU <span class="chip chip--warn">GAMINAMAS</span> @if(TaskMixed(CurrentTask)){<span class="chip chip--warn">@L("MIXED BRANCHES", "KELI FILIALAI")</span>}</div><h1 class="mono">@CurrentTask.Number</h1><p>@CurrentTask.Created · @CurrentTask.Author · @TaskItemCount(CurrentTask) @L("items", "vnt.") · @CurrentTask.Portions.Count @L("portions", "porcijos") · @TaskOrders(CurrentTask)</p></div><div class="gamyba-actions"><button type="button" class="gamyba-btn gamyba-btn--primary" @onclick="AddPortion">+ @L("Add portion", "Pridėti porciją")</button><button type="button" class="gamyba-btn" @onclick='() => Go("reports")'>@L("Print documents", "Spausdinti dokumentus")</button><button type="button" class="gamyba-btn" @onclick='() => Go("labels")'>@L("Print labels", "Spausdinti etiketes")</button><button type="button" class="gamyba-btn" @onclick='() => Go("scan")'>@L("Scan", "Skenuoti")</button></div></div>
                 <div class="gamyba-two-col">
@@ -166,6 +199,7 @@
                         <section class="gamyba-panel"><div class="gamyba-panel__head"><strong>@L("Warehouse", "Sandėlis") · G12</strong></div><div class="gamyba-sidebody">@if(CurrentTask.WriteOff is not null){<span class="chip chip--done">@L("WRITTEN OFF", "NURAŠYTA")</span> <span class="mono">@CurrentTask.WriteOff</span>}else{<p>@L("No material movement recorded for this GU.", "Šiai GU medžiagų judėjimas neužfiksuotas.")</p><button type="button" class="gamyba-btn gamyba-btn--xs" @onclick="WriteOffTask">@L("Write off", "Nurašyti")</button>}</div></section>
                     </div>
                 </div>
+                }
             }
             @if (_screen == "scan")
             {

@@ -47,6 +47,42 @@ public sealed class ProductionQueueItemDto
     public string? Notes { get; set; }
 }
 
+public sealed class ProductionTaskPageDto
+{
+    public int Page { get; set; }
+    public bool HasMore { get; set; }
+    public List<ProductionTaskSummaryDto> Items { get; set; } = [];
+}
+
+public sealed class ProductionTaskSummaryDto
+{
+    public int Id { get; set; }
+    public string Number { get; set; } = "";
+    public DateTime? Created { get; set; }
+    public string? Author { get; set; }
+    public int ItemRows { get; set; }
+    public int OrderCount { get; set; }
+}
+
+public sealed class ProductionTaskDetailDto
+{
+    public ProductionTaskSummaryDto Task { get; set; } = new();
+    public List<ProductionTaskLineDto> Items { get; set; } = [];
+}
+
+public sealed class ProductionTaskLineDto
+{
+    public long ProductId { get; set; }
+    public string Barcode { get; set; } = "";
+    public string OrderNumber { get; set; } = "";
+    public string ProductType { get; set; } = "";
+    public string? MaterialCode { get; set; }
+    public decimal? WidthMm { get; set; }
+    public decimal? HeightMm { get; set; }
+    public decimal Quantity { get; set; }
+    public string State { get; set; } = "";
+}
+
 /// <summary>
 /// Typed wrapper around the named <c>ShopfloorApi</c> HttpClient. Returns
 /// <see cref="ApiResult{T}"/> so pages can surface API validation/conflict
@@ -71,6 +107,14 @@ public sealed class ShopfloorApiClient
     public Task<ApiResult<ProductionQueuePageDto>> GetProductionQueueAsync(int page, string? orderNumber, CancellationToken ct)
         => SendAsync<ProductionQueuePageDto>(HttpMethod.Get,
             $"/api/shopfloor/production-queue?page={page}&pageSize=100{(orderNumber is null ? "" : "&orderNumber=" + Uri.EscapeDataString(orderNumber))}", null, ct);
+
+    public Task<ApiResult<ProductionTaskPageDto>> GetProductionTasksAsync(int page, CancellationToken ct)
+        => SendAsync<ProductionTaskPageDto>(HttpMethod.Get,
+            $"/api/shopfloor/production-tasks?page={page}&pageSize=50", null, ct);
+
+    public Task<ApiResult<ProductionTaskDetailDto>> GetProductionTaskAsync(int id, CancellationToken ct)
+        => SendAsync<ProductionTaskDetailDto>(HttpMethod.Get,
+            $"/api/shopfloor/production-tasks/{id}", null, ct);
 
     // ---- Work centers -------------------------------------------------------
 
