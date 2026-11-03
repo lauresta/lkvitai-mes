@@ -274,6 +274,14 @@ public partial class Gamyba : ComponentBase
     }
     private string LabelState(GamybaLabelJob job, int n) => n <= job.Sent ? "Sent" : job.State == "Cancelled" ? "Cancelled" : "Pending";
 
+    private string LocalizedScanOutcome() => _scanOutcome switch
+    {
+        "accepted" => L["Gamyba.ACCEPTED"].Value,
+        "repeat" => L["Gamyba.REPEATED"].Value,
+        "rejected" => L["Gamyba.REJECTED"].Value,
+        _ => _scanOutcome
+    };
+
     private string LocalizedJobState(string state) => state switch
     {
         "Sent" => L["Gamyba.JobStateSent"].Value,
