@@ -1,28 +1,41 @@
 using LKvitai.MES.BuildingBlocks.ModuleStartup;
+using LKvitai.MES.BuildingBlocks.PortalAuth;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.UseScaffoldSerilog("scanning");
 builder.Services.AddScaffoldApiCore();
+builder.Services.AddPortalCookieAuthentication(builder.Environment, builder.Configuration);
+builder.Services.AddCikadaSsoTokenValidation(builder.Configuration);
+builder.Services.AddAuthentication()
+    .AddScheme<AuthenticationSchemeOptions, PortalStructuredBearerAuthenticationHandler>(
+        PortalStructuredBearerAuthenticationDefaults.Scheme, _ => { });
+builder.Services.AddAuthorization(options =>
+{
+    options.DefaultPolicy = new AuthorizationPolicyBuilder(
+        CookieAuthenticationDefaults.AuthenticationScheme,
+        PortalStructuredBearerAuthenticationDefaults.Scheme)
+        .RequireAuthenticatedUser()
+        .Build();
+});
 
 var app = builder.Build();
 
 app.UseScaffoldApiPipeline();
+app.UseAuthentication();
+app.UseAuthorization();
 
-// TODO: tighten auth when roles are defined. Scanning is the cross-cutting
-// mobile barcode lookup surface; it stays anonymous until the role model is
-// finalised, at which point this group will adopt the shared PortalAuth scheme
-// and enforce a minimal "scanner" policy for operator identification. Until
-// then the endpoints are reachable without authentication because this app
-// intentionally does not register AddAuthorization()/UseAuthentication/
-// UseAuthorization — no AllowAnonymous() metadata is emitted here to avoid
-// suggesting otherwise.
-var scanning = app.MapGroup("/api/scan");
+// All future scanner data and commands inherit Portal/SSO authentication.
+// Their handlers must also enforce the mapped legacy identity and row ACL.
+var scanning = app.MapGroup("/api/scan").RequireAuthorization();
 
 scanning.MapGet("/ping", () => Results.Ok(new
 {
     Module = "Scanning",
     Now = DateTimeOffset.UtcNow.ToString("O")
-}));
+})).AllowAnonymous(); // Scaffold health probe has no business data.
 
 await app.RunAsync();
