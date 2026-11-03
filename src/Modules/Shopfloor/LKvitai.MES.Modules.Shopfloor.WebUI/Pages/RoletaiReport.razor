@@ -4,6 +4,7 @@
 @using LKvitai.MES.Modules.Shopfloor.Contracts.Reports
 @inject ShopfloorApiClient Api
 @inject IJSRuntime Js
+@inject IStringLocalizer<ShopfloorResources> L
 
 <div class="roletai">
     @if (_error is not null)
@@ -12,48 +13,48 @@
     }
     @if (_state is null)
     {
-        <div class="roletai-empty">Įkeliamas ataskaitos šablonas…</div>
+        <div class="roletai-empty">@L["Roletai.LoadingTemplate"]</div>
     }
     else
     {
         <div class="roletai-head">
-            <div><div class="roletai-eyebrow">SHOPFLOOR · G05 · @(_editor ? "ŠABLONŲ REDAKTORIUS" : "GAMYBOS DOKUMENTAS")</div>
-                <h2>rptGamDokRoletai — Gamybos dokumentas, Roletai</h2>
-                <p><code>dbo.SP_GamRoletaiByTask</code> · Publikuota v@_state.PublishedVersion · <span class="roletai-chip">@(_dirty ? "NEIŠSAUGOTI PAKEITIMAI" : _draftSaved ? "JUODRAŠTIS IŠSAUGOTAS" : "SUTAMPA SU PUBLIKUOTA")</span></p>
+            <div><div class="roletai-eyebrow">SHOPFLOOR · G05 · @(_editor ? L["Roletai.EditorEyebrow"].Value : L["Roletai.ReportEyebrow"].Value)</div>
+                <h2>rptGamDokRoletai — @L["Roletai.ReportTitle"]</h2>
+                <p><code>dbo.SP_GamRoletaiByTask</code> · @L["Roletai.Published"] v@_state.PublishedVersion · <span class="roletai-chip">@(_dirty ? L["Roletai.UnsavedChanges"].Value : _draftSaved ? L["Roletai.DraftSaved"].Value : L["Roletai.MatchesPublished"].Value)</span></p>
             </div>
             <div class="roletai-actions">
                 @if (_state.CanEdit)
                 {
-                    <button type="button" class="roletai-btn" @onclick="() => _editor = !_editor">@(_editor ? "Ataskaita" : "Šablonų redaktorius")</button>
+                    <button type="button" class="roletai-btn" @onclick="() => _editor = !_editor">@(_editor ? L["Roletai.Report"].Value : L["Roletai.TemplateEditor"].Value)</button>
                 }
                 @if (_editor)
                 {
-                    <button type="button" class="roletai-btn" disabled="@(!_dirty && !_draftSaved)" @onclick="Revert">Atstatyti</button>
-                    <button type="button" class="roletai-btn" disabled="@(!_dirty || _busy)" @onclick="SaveAsync">Išsaugoti juodraštį</button>
-                    <button type="button" class="roletai-btn roletai-btn--primary" disabled="@(!_draftSaved || _dirty || _busy || _draft.Validate().Count > 0)" @onclick="PublishAsync">Publikuoti versiją</button>
+                    <button type="button" class="roletai-btn" disabled="@(!_dirty && !_draftSaved)" @onclick="Revert">@L["Roletai.Revert"]</button>
+                    <button type="button" class="roletai-btn" disabled="@(!_dirty || _busy)" @onclick="SaveAsync">@L["Roletai.SaveDraft"]</button>
+                    <button type="button" class="roletai-btn roletai-btn--primary" disabled="@(!_draftSaved || _dirty || _busy || _draft.Validate().Count > 0)" @onclick="PublishAsync">@L["Roletai.PublishVersion"]</button>
                 }
-                <button type="button" class="roletai-btn" disabled="@(Data.Rows.Count == 0)" @onclick="PrintAsync">Spausdinti →</button>
+                <button type="button" class="roletai-btn" disabled="@(Data.Rows.Count == 0)" @onclick="PrintAsync">@L["Roletai.Print"] →</button>
             </div>
         </div>
 
         @if (Data.Rows.Count == 0 && !_editor)
         {
-            <div class="roletai-empty"><strong>NoData</strong><span>Šioje GU roletų nėra. Spausdinimas atšauktas kaip Access Report_NoData.</span></div>
+            <div class="roletai-empty"><strong>NoData</strong><span>@L["Roletai.NoRows"]</span></div>
         }
         else if (_editor)
         {
             <div class="roletai-editor">
                 <aside class="roletai-panel roletai-sections">
-                    <h3>Sekcijos</h3>
+                    <h3>@L["Roletai.Sections"]</h3>
                     @foreach (var key in RoletaiTemplate.SectionKeys)
                     {
                         var part = _draft.Sections[key];
                         <div class="roletai-section-row @(_selectedSection == key ? "is-active" : "")">
-                            <button type="button" @onclick="() => SelectSection(key)"><span class="roletai-mono">@SectionIndex(key)</span><strong>@SectionName(key)</strong><small>@(key == "dt" ? $"{part.Cols.Count} st." : $"{part.Lines.Count} eil.")</small></button>
-                            <input type="checkbox" aria-label="@($"{SectionName(key)} matoma")" checked="@part.Visible" disabled="@(key == "dt" || _publishedView)" @onchange="args => ToggleSection(key, args)" />
+                            <button type="button" @onclick="() => SelectSection(key)"><span class="roletai-mono">@SectionIndex(key)</span><strong>@SectionName(key)</strong><small>@(key == "dt" ? L["Roletai.ColumnsCount", part.Cols.Count].Value : L["Roletai.LinesCount", part.Lines.Count].Value)</small></button>
+                            <input type="checkbox" aria-label="@L["Roletai.SectionVisible", SectionName(key)]" checked="@part.Visible" disabled="@(key == "dt" || _publishedView)" @onchange="args => ToggleSection(key, args)" />
                         </div>
                     }
-                    <h3>Dataset laukai · @RoletaiTemplate.Fields.Count</h3>
+                    <h3>@L["Roletai.DatasetFields"] · @RoletaiTemplate.Fields.Count</h3>
                     <div class="roletai-fields">
                         @foreach (var field in FieldOrder)
                         {
@@ -61,11 +62,11 @@
                             <button type="button" disabled="@(_publishedView || _selectedSection == "dt" && used)" @onclick="() => AddField(field)"><code>@field</code><span>@(_selectedSection == "dt" && used ? "✓" : "+")</span></button>
                         }
                     </div>
-                    <p class="roletai-hint">Tik dataset laukai. SQL ir formulės čia neleidžiami.</p>
+                    <p class="roletai-hint">@L["Roletai.DatasetOnly"]</p>
                 </aside>
 
                 <div class="roletai-preview-panel">
-                    <div class="roletai-preview-meta"><div class="roletai-segment"><button type="button" class="@(!_publishedView ? "is-active" : "")" @onclick="() => _publishedView = false">Juodraštis</button><button type="button" class="@(_publishedView ? "is-active" : "")" @onclick="() => _publishedView = true">Publikuota v@_state.PublishedVersion</button></div><span>A4 landscape · Spustelėkite sekciją lape</span></div>
+                    <div class="roletai-preview-meta"><div class="roletai-segment"><button type="button" class="@(!_publishedView ? "is-active" : "")" @onclick="() => _publishedView = false">@L["Roletai.Draft"]</button><button type="button" class="@(_publishedView ? "is-active" : "")" @onclick="() => _publishedView = true">@L["Roletai.Published"] v@_state.PublishedVersion</button></div><span>A4 landscape · @L["Roletai.ClickSection"]</span></div>
                     @ReportSheet(EditorTemplate)
                 </div>
 
@@ -73,13 +74,13 @@
                     <div class="roletai-panel"><h3>@SectionName(_selectedSection) <small>@_selectedSection</small></h3>
                         @if (_publishedView)
                         {
-                            <p class="roletai-hint">Rodoma publikuota versija — tik peržiūra.</p>
+                            <p class="roletai-hint">@L["Roletai.PublishedReadOnly"]</p>
                         }
                         else if (_selectedSection == "dt")
                         {
                             var part = _draft.Sections["dt"];
-                            <label class="roletai-check"><input type="checkbox" @bind="part.Heads" @bind:after="MarkDirty" /> Stulpelių antraštės po užsakymo</label>
-                            <div class="roletai-rule">Stulpeliai · @part.Cols.Count <strong>Σ @(part.Cols.Sum(c => c.W)) %</strong></div>
+                            <label class="roletai-check"><input type="checkbox" @bind="part.Heads" @bind:after="MarkDirty" /> @L["Roletai.ColumnHeaders"]</label>
+                            <div class="roletai-rule">@L["Roletai.Columns"] · @part.Cols.Count <strong>Σ @(part.Cols.Sum(c => c.W)) %</strong></div>
                             <div class="roletai-column-list">
                                 @foreach (var col in part.Cols)
                                 {
@@ -89,10 +90,10 @@
                             @if (SelectedColumn is { } selected)
                             {
                                 <div class="roletai-property-card"><strong>@selected.Key</strong>
-                                    <label>Antraštė<input @bind="selected.Label" @bind:after="MarkDirty" /></label>
-                                    <div class="roletai-formrow"><label>Plotis %<input type="number" min="3" max="40" @bind="selected.W" @bind:after="MarkDirty" /></label><label>Šriftas px<input type="number" min="7" max="16" step="0.5" @bind="selected.Size" @bind:after="MarkDirty" /></label></div>
-                                    <div class="roletai-formrow"><label>Lygiavimas<select @bind="selected.Align" @bind:after="MarkDirty"><option value="left">Kairė</option><option value="right">Dešinė</option></select></label><label class="roletai-check"><input type="checkbox" @bind="selected.Bold" @bind:after="MarkDirty" /> B</label><label class="roletai-check"><input type="checkbox" @bind="selected.Mono" @bind:after="MarkDirty" /> M</label></div>
-                                    <div class="roletai-formrow"><button type="button" class="roletai-btn" @onclick="() => MoveColumn(-1)">←</button><button type="button" class="roletai-btn" @onclick="() => MoveColumn(1)">→</button><button type="button" class="roletai-btn roletai-danger" @onclick="RemoveColumn">Pašalinti</button></div>
+                                    <label>@L["Roletai.Caption"]<input @bind="selected.Label" @bind:after="MarkDirty" /></label>
+                                    <div class="roletai-formrow"><label>@L["Roletai.Width"] %<input type="number" min="3" max="40" @bind="selected.W" @bind:after="MarkDirty" /></label><label>@L["Roletai.Font"] px<input type="number" min="7" max="16" step="0.5" @bind="selected.Size" @bind:after="MarkDirty" /></label></div>
+                                    <div class="roletai-formrow"><label>@L["Roletai.Align"]<select @bind="selected.Align" @bind:after="MarkDirty"><option value="left">@L["Roletai.Left"]</option><option value="right">@L["Roletai.Right"]</option></select></label><label class="roletai-check"><input type="checkbox" @bind="selected.Bold" @bind:after="MarkDirty" /> B</label><label class="roletai-check"><input type="checkbox" @bind="selected.Mono" @bind:after="MarkDirty" /> M</label></div>
+                                    <div class="roletai-formrow"><button type="button" class="roletai-btn" @onclick="() => MoveColumn(-1)">←</button><button type="button" class="roletai-btn" @onclick="() => MoveColumn(1)">→</button><button type="button" class="roletai-btn roletai-danger" @onclick="RemoveColumn">@L["Roletai.Remove"]</button></div>
                                 </div>
                             }
                         }
@@ -103,21 +104,21 @@
                             {
                                 var line = part.Lines[i]; var index = i;
                                 <div class="roletai-property-card @(_selectedLine == i ? "is-active" : "")">
-                                    <div class="roletai-rule"><button type="button" class="roletai-textbutton" @onclick="() => _selectedLine = index">Eilutė @(index + 1) · įterpimo vieta</button><span><button type="button" class="roletai-textbutton" @onclick="() => MoveLine(index, -1)">↑</button><button type="button" class="roletai-textbutton" @onclick="() => MoveLine(index, 1)">↓</button><button type="button" class="roletai-textbutton roletai-danger" @onclick="() => RemoveLine(index)">×</button></span></div>
+                                    <div class="roletai-rule"><button type="button" class="roletai-textbutton" @onclick="() => _selectedLine = index">@L["Roletai.LineInsertion", index + 1]</button><span><button type="button" class="roletai-textbutton" @onclick="() => MoveLine(index, -1)">↑</button><button type="button" class="roletai-textbutton" @onclick="() => MoveLine(index, 1)">↓</button><button type="button" class="roletai-textbutton roletai-danger" @onclick="() => RemoveLine(index)">×</button></span></div>
                                     <textarea rows="2" @bind="line.Text" @bind:after="MarkDirty"></textarea>
-                                    <div class="roletai-formrow"><label>px<input type="number" min="7" max="40" step="0.5" @bind="line.Size" @bind:after="MarkDirty" /></label><label>Lygiavimas<select @bind="line.Align" @bind:after="MarkDirty"><option value="left">Kairė</option><option value="center">Centras</option><option value="right">Dešinė</option></select></label><label class="roletai-check"><input type="checkbox" @bind="line.Bold" @bind:after="MarkDirty" /> B</label><label class="roletai-check"><input type="checkbox" @bind="line.Mono" @bind:after="MarkDirty" /> M</label></div>
-                                    <label class="roletai-check"><input type="checkbox" @bind="line.HideIfEmpty" @bind:after="MarkDirty" /> Slėpti, jei laukas tuščias</label>
+                                    <div class="roletai-formrow"><label>px<input type="number" min="7" max="40" step="0.5" @bind="line.Size" @bind:after="MarkDirty" /></label><label>@L["Roletai.Align"]<select @bind="line.Align" @bind:after="MarkDirty"><option value="left">@L["Roletai.Left"]</option><option value="center">@L["Roletai.Center"]</option><option value="right">@L["Roletai.Right"]</option></select></label><label class="roletai-check"><input type="checkbox" @bind="line.Bold" @bind:after="MarkDirty" /> B</label><label class="roletai-check"><input type="checkbox" @bind="line.Mono" @bind:after="MarkDirty" /> M</label></div>
+                                    <label class="roletai-check"><input type="checkbox" @bind="line.HideIfEmpty" @bind:after="MarkDirty" /> @L["Roletai.HideIfEmpty"]</label>
                                 </div>
                             }
-                            <button type="button" class="roletai-btn roletai-add" @onclick="AddLine">+ Pridėti eilutę</button>
+                            <button type="button" class="roletai-btn roletai-add" @onclick="AddLine">+ @L["Roletai.AddLine"]</button>
                         }
                     </div>
-                    <div class="roletai-panel"><h3>Versijos</h3>
+                    <div class="roletai-panel"><h3>@L["Roletai.Versions"]</h3>
                         @foreach (var version in _state.Versions)
                         {
                             <div class="roletai-version"><strong>v@version.Version</strong><span>@version.PublishedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")<small>@version.PublishedBy</small></span></div>
                         }
-                        <p class="roletai-hint">Publikuota versija įšaldoma. Nauja versija keičia tik būsimą spausdinimą.</p>
+                        <p class="roletai-hint">@L["Roletai.ImmutableVersion"]</p>
                     </div>
                 </aside>
             </div>
@@ -128,7 +129,7 @@
         }
         else
         {
-            <div class="roletai-preview-panel roletai-preview-panel--standalone"><div class="roletai-preview-meta">Publikuota v@_state.PublishedVersion · A4 landscape · GU @TaskNumber</div>@ReportSheet(_state.Published)</div>
+            <div class="roletai-preview-panel roletai-preview-panel--standalone"><div class="roletai-preview-meta">@L["Roletai.Published"] v@_state.PublishedVersion · A4 landscape · GU @TaskNumber</div>@ReportSheet(_state.Published)</div>
         }
     }
 </div>
@@ -152,7 +153,7 @@
     {
         var result = await Api.GetRoletaiTemplateAsync(CancellationToken.None);
         if (result.Success && result.Value is not null) ApplyState(result.Value);
-        else _error = result.Error ?? "Nepavyko įkelti šablono.";
+        else _error = result.Error ?? L["Roletai.LoadFailed"].Value;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -176,7 +177,16 @@
     private void Revert() { if (_state is not null) { _draft = Clone(_state.Published); MarkDirty(); } }
     private void SelectSection(string key) { _selectedSection = key; _selectedLine = 0; }
     private static int SectionIndex(string key) => Array.IndexOf(RoletaiTemplate.SectionKeys, key) + 1;
-    private static string SectionName(string key) => key switch { "rh" => "Report Header", "ch" => "Cechas Header", "uh" => "Užsakymas Header", "dt" => "Detail", "pf" => "Gaminio Footer", "pg" => "Page Footer", _ => key };
+    private string SectionName(string key) => key switch
+    {
+        "rh" => L["Roletai.Section.ReportHeader"].Value,
+        "ch" => L["Roletai.Section.ShopHeader"].Value,
+        "uh" => L["Roletai.Section.OrderHeader"].Value,
+        "dt" => L["Roletai.Section.Detail"].Value,
+        "pf" => L["Roletai.Section.ProductFooter"].Value,
+        "pg" => L["Roletai.Section.PageFooter"].Value,
+        _ => key
+    };
     private void ToggleSection(string key, ChangeEventArgs args) { if (key == "dt") return; _draft.Sections[key].Visible = args.Value is true; MarkDirty(); }
     private void AddField(string field)
     {
@@ -211,7 +221,7 @@
         {
             var result = await Api.SaveRoletaiDraftAsync(_draft, CancellationToken.None);
             if (result.Success && result.Value is not null) ApplyState(result.Value);
-            else _error = result.Error ?? "Juodraštis neišsaugotas.";
+            else _error = result.Error ?? L["Roletai.SaveFailed"].Value;
         }
         finally { _busy = false; }
     }
@@ -223,7 +233,7 @@
         {
             var result = await Api.PublishRoletaiTemplateAsync(_state.PublishedVersion, CancellationToken.None);
             if (result.Success && result.Value is not null) ApplyState(result.Value);
-            else _error = result.Error ?? "Versija nepaskelbta. Atnaujinkite šabloną.";
+            else _error = result.Error ?? L["Roletai.PublishFailed"].Value;
         }
         finally { _busy = false; }
     }
