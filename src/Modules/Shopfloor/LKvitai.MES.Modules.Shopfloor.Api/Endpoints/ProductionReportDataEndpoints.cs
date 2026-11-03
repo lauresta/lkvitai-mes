@@ -52,7 +52,8 @@ public sealed class ProductionReportDataReader(ProductionQueueReader queue)
         [17] = new("rptGamDokGarantiniai", "dbo.SP_GamInWarrantyFaultsByTask"),
         [18] = new("rptGamDokNatureConcept", "dbo.SP_rptGamNatureConceptByTask"),
         [19] = new("rptGamDokGrotos", "dbo.SP_GamGrotosByTask"),
-        [20] = new("rptGamDokPleated", "dbo.SP_GamPleatedByTask")
+        // Report_Open replaces its design-time RecordSource with the XL-Plise proc.
+        [20] = new("rptGamDokPleated", "dbo.SP_GamPlisuotasByTask")
     };
 
     public Task<IReadOnlyList<ProductionReportCatalogItem>> CatalogAsync(CancellationToken ct)

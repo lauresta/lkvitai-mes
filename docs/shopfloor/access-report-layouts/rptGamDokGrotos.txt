@@ -1,0 +1,614 @@
+Version =20
+VersionRequired =20
+Checksum =1589055515
+Begin Report
+    LayoutForPrint = NotDefault
+    AllowDesignChanges = NotDefault
+    DefaultView =0
+    AllowUpdating =4
+    TabularCharSet =186
+    TabularFamily =48
+    DateGrouping =1
+    GrpKeepTogether =1
+    PictureAlignment =2
+    DatasheetGridlinesBehavior =3
+    GridY =10
+    Width =11175
+    DatasheetFontHeight =10
+    ItemSuffix =75
+    Left =5385
+    Top =960
+    Right =12825
+    Bottom =11505
+    DatasheetGridlinesColor =12632256
+    RecSrcDt = Begin
+        0x36a0a4a39720e440
+    End
+    RecordSource ="SP_GamGrotosByTask"
+    OnOpen ="[Event Procedure]"
+    DatasheetFontName ="Arial"
+    PrtMip = Begin
+        0x6801000068010000680100006801000000000000a72b00002c01000001000000 ,
+        0x010000006801000000000000a10700000100000001000000
+    End
+    PrtDevMode = Begin
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x01041e029c00640c43ef8105010009009a0b3408640001000f00580201000100 ,
+        0x5802030000004134000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000001000000 ,
+        0x0200000001000000020000000000000000000000000000000000000043616e6f ,
+        0x6e000000840a0000000000000001000001000000020600000904470500600908 ,
+        0x5400430061006e006f006e0020006900520031003000320030002f0031003000 ,
+        0x320034002f00310030003200350020005500460052004900490020004c005400 ,
+        0x0000000002000000ff0700009b02a80100000164010302010303040205020664 ,
+        0x01010201030f0410050600076401010201030f0410050600080309010a010b02 ,
+        0x0c020d020e020f03000a64010102020302040205020602070208020964010302 ,
+        0x0203020401000a640102020103010401050a0664010702070307040205082000 ,
+        0x00000b6401010202030204020502060207020802000c0d0d6401030202040205 ,
+        0x0206020701000e6401030202030204020501060480070440080440000f640103 ,
+        0x0208200308200464010702070307040205082000050a060e0701001064010302 ,
+        0x0203010401050106010701080812090200116401010012640108200013640102 ,
+        0x0204220065640164010302020364010202020302000402050206020702080109 ,
+        0x020a020b020c020d030e010f0110031102120113011401150216021702180219 ,
+        0x031a021b021c021d021e021f0220022102220223022402250226022702000264 ,
+        0x010302060302040205042206020702080209040a040b020c04400d030e030f01 ,
+        0x10011103120213021401150216021702180219021a021b041c041d041e041f06 ,
+        0x20022101220123012402250226022701280129012a012b012c022d642e642f64 ,
+        0x30023101320133013401350136013701380239023a023b033c013d013e013f01 ,
+        0x40014101420243010003640103020203020402050206020702080609060a060b ,
+        0x060c070d070e010f0110011101120113011401150116011701180119011a011b ,
+        0x011c011d01641e01641f01642002210122022301240125012601270128012901 ,
+        0x2a012b012c012d012e012f013001310132013301340100046401082102081100 ,
+        0x0564010300066401020202030810040810000864010102030303040305030009 ,
+        0x64010102030308210406050606060706080609060a060b060c02000a64010202 ,
+        0x020d03020408190007021c000040380020010000000400000009000900340800 ,
+        0x009a0b0000320000003200000002080000680b0000318509000900340800009a ,
+        0x0b0000320000003200000002080000680b000031850102820058025802000101 ,
+        0x1801000000640000000000000000000000000f00320001010001000100000000 ,
+        0x000b00000000000000900100000041007200690061006c000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000070001010001000296000000000000000000 ,
+        0x000000000000000000000000000000000000000000000000000000000201005c ,
+        0x434e5a3030352e49434300000000000000000000000000000000000000000000 ,
+        0x00000000000000000000000000000000000000000201005c434e5a3030352e49 ,
+        0x4343000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000001005c434e5a3030352e494343000000000000 ,
+        0x00000201010101020200000000000000000000ffff0000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000009200 ,
+        0x000043004f004e0046004900440045004e005400490041004c00000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x000043004f004e0046004900440045004e005400490041004c00000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x00004800000000000000900100000041007200690061006c0000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x000000000000000000000000000000808080000000000000000000c201000000 ,
+        0x0000070007000700040007000000000000000000000000000000000000000000 ,
+        0x00000000000000000000000000000000020000440065006600610075006c0074 ,
+        0x002000530065007400740069006e006700730000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x00000000000000000000000000000000000000000000000800000c0000000101 ,
+        0x01185802010c0001010282000700070000080000ffffffffffffffff019601fe ,
+        0xffffff0002000300000002010000000000100000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000100000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000700020001000000000000000000000000000000000001 ,
+        0x0000000008001101000000090009000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000020202020204000000 ,
+        0x00010001007f0000007f00000000000000010001000200020000000100010002 ,
+        0x0001000100000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000500000000000000000000000000000000000200020002000200000002 ,
+        0x0000000400000009000900000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000100000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0101000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000
+    End
+    PrtDevNames = Begin
+        0x0800280048000100000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x000000000000000049505f3139322e3136382e302e3500
+    End
+    RecordSourceQualifier ="dbo"
+    Begin
+        Begin Label
+            BackStyle =0
+            TextFontCharSet =186
+            TextFontFamily =2
+            FontName ="Arial"
+        End
+        Begin Line
+            Width =1701
+        End
+        Begin TextBox
+            FELineBreak = NotDefault
+            OldBorderStyle =0
+            TextFontCharSet =186
+            TextFontFamily =2
+            Width =1701
+            LabelX =-1701
+            FontName ="Arial"
+            AsianLineBreak =255
+        End
+        Begin Subform
+            Width =1701
+            Height =1701
+        End
+        Begin BreakLevel
+            GroupHeader = NotDefault
+            GroupFooter = NotDefault
+            KeepTogether =1
+            ControlSource ="Uzsakymas"
+        End
+        Begin BreakLevel
+            GroupHeader = NotDefault
+            GroupFooter = NotDefault
+            ControlSource ="ParduotoGaminioID"
+        End
+        Begin FormHeader
+            KeepTogether = NotDefault
+            Height =375
+            Name ="ReportHeader"
+            GUID = Begin
+                0x2278c33e00a71247aba9d4b86118675a
+            End
+            Begin
+                Begin TextBox
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Width =8565
+                    Height =375
+                    FontSize =14
+                    FontWeight =700
+                    Name ="Label28"
+                    ControlSource ="=\"Grotos (bendras kiekis: \" & Sum([kiekis]) & \" vnt.)\""
+                    FontName ="Arial Baltic"
+                    GUID = Begin
+                        0x98df724fd1420945919b27dfdd51cfb2
+                    End
+                End
+            End
+        End
+        Begin PageHeader
+            Height =0
+            Name ="PageHeaderSection"
+            GUID = Begin
+                0x755c112d6ad2314ba23416edd9fa2011
+            End
+        End
+        Begin BreakHeader
+            KeepTogether = NotDefault
+            Height =852
+            Name ="GroupHeader0"
+            GUID = Begin
+                0xd3510a9bd5e0b8458e1034d9c05cbeb4
+            End
+            Begin
+                Begin Label
+                    OldBorderStyle =1
+                    TextFontFamily =34
+                    Top =567
+                    Width =1418
+                    Height =285
+                    FontSize =10
+                    Name ="Label46"
+                    Caption ="Tipas:"
+                    FontName ="Arial Narrow"
+                    GUID = Begin
+                        0x48be270ccf73af47addeeaf18d8ecdd3
+                    End
+                End
+                Begin Label
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =1418
+                    Top =567
+                    Width =567
+                    Height =285
+                    FontSize =10
+                    Name ="Label47"
+                    Caption ="Vald.:"
+                    FontName ="Arial Narrow"
+                    GUID = Begin
+                        0x70b82847c09e2e47ae8ab8915b9408a2
+                    End
+                End
+                Begin Label
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =1985
+                    Top =567
+                    Width =851
+                    Height =285
+                    FontSize =10
+                    Name ="Label48"
+                    Caption ="Plotis:"
+                    FontName ="Arial Narrow"
+                    GUID = Begin
+                        0xa0e5ad77d6a62845a6849b414aa3c21f
+                    End
+                End
+                Begin Label
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =2835
+                    Top =567
+                    Width =851
+                    Height =285
+                    FontSize =10
+                    Name ="Label49"
+                    Caption ="Aukstis:"
+                    FontName ="Arial Narrow"
+                    GUID = Begin
+                        0x9f97cd5550de94459a5a1c453587139a
+                    End
+                End
+                Begin Label
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =3686
+                    Top =567
+                    Width =567
+                    Height =285
+                    FontSize =10
+                    Name ="Label50"
+                    Caption ="Kiekis:"
+                    FontName ="Arial Narrow"
+                    GUID = Begin
+                        0x29021e1ad3eb5440ac8200b249e851a5
+                    End
+                End
+                Begin Label
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =34
+                    Left =4253
+                    Top =567
+                    Width =1418
+                    Height =285
+                    FontSize =10
+                    Name ="Label51"
+                    Caption ="Spalva:"
+                    FontName ="Arial Narrow"
+                    GUID = Begin
+                        0xcbca2367ce91a74d9f249d646f74980e
+                    End
+                End
+                Begin Label
+                    OldBorderStyle =1
+                    TextFontFamily =34
+                    Left =5670
+                    Top =567
+                    Width =5500
+                    Height =285
+                    FontSize =10
+                    Name ="Label52"
+                    Caption ="Pastabos:"
+                    FontName ="Arial Narrow"
+                    GUID = Begin
+                        0x2c850b5230c88f4397b1ca548bc4edd8
+                    End
+                End
+                Begin TextBox
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Top =226
+                    Width =1691
+                    Height =345
+                    FontSize =12
+                    FontWeight =700
+                    Name ="Uzsakymas"
+                    ControlSource ="Uzsakymas"
+                    FontName ="Arial Narrow"
+                    GUID = Begin
+                        0x315abadf9d5ede458d5a7fad9dbaa631
+                    End
+                End
+                Begin TextBox
+                    TextFontCharSet =204
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =1700
+                    Top =283
+                    Width =9475
+                    Height =292
+                    TabIndex =1
+                    Name ="Text31"
+                    ControlSource ="=\"Uþsakymas Nr.: \" & [Uzsakymas] & \" (data - \" & Format([UzsakymoData],\"mm\\"
+                        ".dd\") & \"),  gam. uþd. Nr.: \" & [GamibinesUzduotiesNumeris]"
+                    FontName ="Arial Narrow"
+                    GUID = Begin
+                        0xcd35323e08ff7d4d9dac34178f6f8c8f
+                    End
+                End
+            End
+        End
+        Begin BreakHeader
+            KeepTogether = NotDefault
+            CanGrow = NotDefault
+            Height =0
+            BreakLevel =1
+            Name ="GroupHeader1"
+            GUID = Begin
+                0x02b786a8be14c742a8f0e664b9c1424b
+            End
+        End
+        Begin Section
+            KeepTogether = NotDefault
+            CanGrow = NotDefault
+            Height =300
+            Name ="Detail"
+            GUID = Begin
+                0x7064b92a3f66ba4e83eb606120265e07
+            End
+            Begin
+                Begin TextBox
+                    CanGrow = NotDefault
+                    CanShrink = NotDefault
+                    OldBorderStyle =1
+                    TextAlign =1
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Width =1418
+                    Height =300
+                    ColumnOrder =6
+                    FontSize =10
+                    Name ="TipoTrPavadinimas"
+                    ControlSource ="TipoTrPavadinimas"
+                    FontName ="Helvetica"
+                    GUID = Begin
+                        0x1002b4560746bc4f80a922f565ede985
+                    End
+                End
+                Begin TextBox
+                    CanGrow = NotDefault
+                    CanShrink = NotDefault
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =1419
+                    Width =567
+                    Height =300
+                    ColumnOrder =5
+                    FontSize =10
+                    TabIndex =1
+                    Name ="Valdymas"
+                    ControlSource ="Valdymas"
+                    FontName ="Helvetica"
+                    GUID = Begin
+                        0xb1496a064c89f94d8fef40f9c7aee7ec
+                    End
+                End
+                Begin TextBox
+                    CanGrow = NotDefault
+                    CanShrink = NotDefault
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =1984
+                    Width =851
+                    Height =300
+                    ColumnOrder =4
+                    FontSize =10
+                    TabIndex =2
+                    Name ="Plotis"
+                    ControlSource ="Plotis"
+                    FontName ="Helvetica"
+                    GUID = Begin
+                        0xb760c3110d4b3f4d8ab4e996375c3f56
+                    End
+                End
+                Begin TextBox
+                    CanGrow = NotDefault
+                    CanShrink = NotDefault
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =2834
+                    Width =851
+                    Height =300
+                    ColumnOrder =3
+                    FontSize =10
+                    TabIndex =3
+                    Name ="Aukstis"
+                    ControlSource ="Aukstis"
+                    FontName ="Helvetica"
+                    GUID = Begin
+                        0x73abde9efe9f5a4297937d12b513f094
+                    End
+                End
+                Begin TextBox
+                    CanGrow = NotDefault
+                    CanShrink = NotDefault
+                    DecimalPlaces =3
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =3685
+                    Width =567
+                    Height =300
+                    ColumnOrder =2
+                    FontSize =10
+                    TabIndex =4
+                    Name ="Kiekis"
+                    ControlSource ="Kiekis"
+                    FontName ="Helvetica"
+                    GUID = Begin
+                        0xb580ced50354974292a3ed50db9845f5
+                    End
+                End
+                Begin TextBox
+                    CanGrow = NotDefault
+                    CanShrink = NotDefault
+                    OldBorderStyle =1
+                    TextAlign =2
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =4251
+                    Width =1418
+                    Height =300
+                    ColumnOrder =1
+                    FontSize =10
+                    TabIndex =5
+                    Name ="Spalva"
+                    ControlSource ="Spalva"
+                    FontName ="Helvetica"
+                    GUID = Begin
+                        0x492cd2724a5c734fab1e9157c47f1324
+                    End
+                End
+                Begin TextBox
+                    CanGrow = NotDefault
+                    EnterKeyBehavior = NotDefault
+                    ScrollBars =2
+                    OldBorderStyle =1
+                    TextAlign =1
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =5669
+                    Width =5500
+                    Height =300
+                    ColumnWidth =1005
+                    ColumnOrder =7
+                    FontSize =10
+                    TabIndex =6
+                    Name ="Pastabos"
+                    ControlSource ="Pastabos"
+                    FontName ="Helvetica"
+                    GUID = Begin
+                        0xb94b2d64f579254ca9e9ba7c61d04cc9
+                    End
+                End
+            End
+        End
+        Begin BreakFooter
+            KeepTogether = NotDefault
+            CanGrow = NotDefault
+            Height =1
+            BreakLevel =1
+            Name ="GroupFooter2"
+            GUID = Begin
+                0x83c99e32f7bd3245b4b8243c6310f9b3
+            End
+            Begin
+                Begin Subform
+                    OldBorderStyle =0
+                    Width =10490
+                    Height =1
+                    Name ="rsubParduotiPriedai"
+                    SourceObject ="Report.rsubParduotiPriedai"
+                    LinkChildFields ="ParduotoGaminioID"
+                    LinkMasterFields ="ParduotoGaminioID"
+                    GUID = Begin
+                        0xbf56510752a7a941893a6c9fcb169aae
+                    End
+                End
+            End
+        End
+        Begin BreakFooter
+            KeepTogether = NotDefault
+            CanGrow = NotDefault
+            Height =0
+            Name ="GroupFooter1"
+            GUID = Begin
+                0x196550ecb6dfec45a57f75652e220912
+            End
+        End
+        Begin PageFooter
+            Height =285
+            Name ="PageFooterSection"
+            GUID = Begin
+                0x645b8039ab79234f9461b70351175dd4
+            End
+            Begin
+                Begin TextBox
+                    TextAlign =3
+                    IMESentenceMode =3
+                    Left =3239
+                    Width =7931
+                    Height =285
+                    ColumnOrder =0
+                    Name ="Text32"
+                    ControlSource ="=\"Puslapis \" & [Page] & \" ið  \" & [Pages] & \", atspausdinta \" & Now()"
+                    GUID = Begin
+                        0xe2cfecdc65f499428bf02440ea743671
+                    End
+                End
+            End
+        End
+        Begin FormFooter
+            KeepTogether = NotDefault
+            Height =0
+            Name ="ReportFooter"
+            GUID = Begin
+                0xc13c8ae0f17d2e4fa19be23eefd9d30d
+            End
+        End
+    End
+End
+CodeBehindForm
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = True
+Attribute VB_PredeclaredId = True
+Attribute VB_Exposed = False
+Option Compare Database
+
+Private Sub Report_NoData(Cancel As Integer)
+DoCmd.CancelEvent
+End Sub
+
+Private Sub Report_Open(Cancel As Integer)
+On Error GoTo Err_Report_Open
+
+Me.RecordSource = "EXEC SP_GamGrotosByTask '" & Forms!frmBlindsProduction.txtProdTaskID & "'"
+
+Exit_Report_Open:
+    Exit Sub
+    
+Err_Report_Open:
+
+    Resume Exit_Report_Open
+    
+
+End Sub

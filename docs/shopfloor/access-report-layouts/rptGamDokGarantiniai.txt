@@ -1,0 +1,605 @@
+Version =20
+VersionRequired =20
+Checksum =-915234832
+Begin Report
+    LayoutForPrint = NotDefault
+    AllowDesignChanges = NotDefault
+    DefaultView =0
+    AllowUpdating =4
+    TabularCharSet =186
+    TabularFamily =255
+    DateGrouping =1
+    GrpKeepTogether =1
+    PictureAlignment =2
+    DatasheetGridlinesBehavior =3
+    GridY =10
+    Width =10491
+    DatasheetFontHeight =10
+    ItemSuffix =20
+    Left =960
+    Top =165
+    Right =13410
+    Bottom =9945
+    DatasheetGridlinesColor =12632256
+    OnNoData ="[Event Procedure]"
+    RecSrcDt = Begin
+        0xbcb92092d838e340
+    End
+    RecordSource ="SP_GamInWarrantyFaultsByTask"
+    OnOpen ="[Event Procedure]"
+    DatasheetFontName ="Arial"
+    PrtMip = Begin
+        0x3702000037020000370200003702000000000000fb280000dd06000001000000 ,
+        0x010000006801000000000000a10700000100000001000000
+    End
+    PrtDevMode = Begin
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x010400049c00c40343ff8007010009009a0b3408640001000f00580202000100 ,
+        0x5802020000004134000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000044666178 ,
+        0x0000000001000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000
+    End
+    PrtDevNames = Begin
+        0x0800240050000100000000000000000000000000000000000000000000000000 ,
+        0x0000000000000000000000000000000000000000000000000000000000000000 ,
+        0x00000000000000000000000000000000545330313000
+    End
+    RecordSourceQualifier ="dbo"
+    Begin
+        Begin Label
+            BackStyle =0
+            TextFontCharSet =186
+            TextFontFamily =2
+            FontName ="Arial"
+        End
+        Begin Line
+            Width =1701
+        End
+        Begin TextBox
+            FELineBreak = NotDefault
+            OldBorderStyle =0
+            TextFontCharSet =186
+            TextFontFamily =2
+            Width =1701
+            LabelX =-1701
+            FontName ="Arial"
+            AsianLineBreak =255
+        End
+        Begin PageBreak
+            Width =283
+        End
+        Begin BreakLevel
+            GroupHeader = NotDefault
+            GroupFooter = NotDefault
+            KeepTogether =1
+            ControlSource ="sCategoryName"
+        End
+        Begin BreakLevel
+            GroupHeader = NotDefault
+            GroupFooter = NotDefault
+            ControlSource ="iBlindID"
+        End
+        Begin BreakHeader
+            KeepTogether = NotDefault
+            Height =453
+            Name ="GroupHeader0"
+            GUID = Begin
+                0x33b41c204aeb114a88bb6f34367d11b8
+            End
+            Begin
+                Begin TextBox
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Width =10491
+                    Height =375
+                    FontSize =14
+                    FontWeight =700
+                    Name ="txt_sCategoryName"
+                    ControlSource ="=[sCategoryName] & \" (garantiniai remontai)\""
+                    FontName ="Arial Baltic"
+                    GUID = Begin
+                        0xd5ee10f512c44543ae17994ab6781004
+                    End
+                End
+            End
+        End
+        Begin BreakHeader
+            KeepTogether = NotDefault
+            Height =285
+            BreakLevel =1
+            Name ="GroupHeader1"
+            GUID = Begin
+                0xb00e3fcbad750d4a9e2eeb90a0af5cda
+            End
+            Begin
+                Begin Label
+                    TextFontFamily =34
+                    Left =1700
+                    Width =1710
+                    Height =285
+                    FontSize =10
+                    Name ="Label1"
+                    Caption ="Tipas"
+                    FontName ="Arial Narrow"
+                    GUID = Begin
+                        0x99a6cd8f08fb6f459bc2eb8deb5f3db7
+                    End
+                End
+                Begin Label
+                    TextFontFamily =34
+                    Width =1695
+                    Height =285
+                    FontSize =10
+                    Name ="Label2"
+                    Caption ="Uþsakymas"
+                    FontName ="Arial Narrow"
+                    GUID = Begin
+                        0x076b5eecd1426f4da0362667b9024080
+                    End
+                End
+                Begin Label
+                    TextFontFamily =34
+                    Left =3401
+                    Width =570
+                    Height =285
+                    FontSize =10
+                    Name ="Label3"
+                    Caption ="Vald."
+                    FontName ="Arial Narrow"
+                    GUID = Begin
+                        0x1aa8bf9f5ee74d439bcdc04e949511ce
+                    End
+                End
+                Begin Label
+                    TextFontFamily =34
+                    Left =3968
+                    Width =840
+                    Height =285
+                    FontSize =10
+                    Name ="Label4"
+                    Caption ="Plotis"
+                    FontName ="Arial Narrow"
+                    GUID = Begin
+                        0x113a81e21ac2404faeb62aee4e1d1cac
+                    End
+                End
+                Begin Label
+                    TextFontFamily =34
+                    Left =4818
+                    Width =855
+                    Height =285
+                    FontSize =10
+                    Name ="Label5"
+                    Caption ="Aukðtis"
+                    FontName ="Arial Narrow"
+                    GUID = Begin
+                        0x0b6742c54e83f34caefbdb5af133250d
+                    End
+                End
+                Begin Label
+                    TextFontFamily =34
+                    Left =5669
+                    Width =1418
+                    Height =285
+                    FontSize =10
+                    Name ="Label6"
+                    Caption ="Spalva"
+                    FontName ="Arial Narrow"
+                    GUID = Begin
+                        0x230a3327e7cd5d4cb78de416378a2eb2
+                    End
+                End
+                Begin Label
+                    TextFontFamily =34
+                    Left =7086
+                    Width =3405
+                    Height =285
+                    FontSize =10
+                    Name ="Label7"
+                    Caption ="Pastabos"
+                    FontName ="Arial Narrow"
+                    GUID = Begin
+                        0x2295c2adf680e24bbcb2ce02532c522a
+                    End
+                End
+            End
+        End
+        Begin Section
+            KeepTogether = NotDefault
+            CanGrow = NotDefault
+            Height =1757
+            Name ="Detail"
+            GUID = Begin
+                0x05174c9d8e080042a725d3c71ec4ec36
+            End
+            Begin
+                Begin TextBox
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =1700
+                    Height =285
+                    FontSize =10
+                    FontWeight =700
+                    Name ="sTypeName"
+                    ControlSource ="sTypeName"
+                    FontName ="Helvetica"
+                    GUID = Begin
+                        0xce791f47a59dae43adf66fad02039ebd
+                    End
+                End
+                Begin TextBox
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Height =285
+                    FontSize =10
+                    FontWeight =700
+                    TabIndex =1
+                    Name ="sOrderNo"
+                    ControlSource ="sOrderNo"
+                    FontName ="Helvetica"
+                    GUID = Begin
+                        0x1833b51e90425b41b59b39f76b9c05b5
+                    End
+                End
+                Begin TextBox
+                    TextAlign =2
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =3401
+                    Width =576
+                    Height =285
+                    FontSize =10
+                    TabIndex =2
+                    Name ="sControlType"
+                    ControlSource ="sControlType"
+                    FontName ="Helvetica"
+                    GUID = Begin
+                        0x5758f84d9b26874094696b76a7037114
+                    End
+                End
+                Begin TextBox
+                    TextAlign =2
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =3968
+                    Width =846
+                    Height =285
+                    FontSize =10
+                    TabIndex =3
+                    Name ="iWidth"
+                    ControlSource ="iWidth"
+                    FontName ="Helvetica"
+                    GUID = Begin
+                        0xa3628cb639b2874d9e50523674b56b18
+                    End
+                End
+                Begin TextBox
+                    TextAlign =2
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =4818
+                    Width =846
+                    Height =285
+                    FontSize =10
+                    TabIndex =4
+                    Name ="iHeight"
+                    ControlSource ="iHeight"
+                    FontName ="Helvetica"
+                    GUID = Begin
+                        0xc82a490231aff244b089cd81c0a47263
+                    End
+                End
+                Begin TextBox
+                    TextAlign =2
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =5669
+                    Width =1431
+                    Height =285
+                    FontSize =10
+                    TabIndex =5
+                    Name ="sColor"
+                    ControlSource ="sColor"
+                    FontName ="Helvetica"
+                    GUID = Begin
+                        0xfe27ff2dced64a42a06b9d426e074a57
+                    End
+                End
+                Begin TextBox
+                    CanGrow = NotDefault
+                    EnterKeyBehavior = NotDefault
+                    ScrollBars =2
+                    TextAlign =1
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =7086
+                    Width =3396
+                    Height =285
+                    FontSize =10
+                    TabIndex =6
+                    Name ="sNotes"
+                    ControlSource ="sNotes"
+                    FontName ="Helvetica"
+                    GUID = Begin
+                        0xe19d5c7d308b6044925412468de6e899
+                    End
+                End
+                Begin TextBox
+                    TextAlign =1
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =1701
+                    Top =396
+                    Height =285
+                    FontSize =10
+                    TabIndex =7
+                    Name ="iCountOfRepairs"
+                    ControlSource ="iCountOfRepairs"
+                    FontName ="Helvetica"
+                    GUID = Begin
+                        0xf1096225300ad7408e7967d68455e6c8
+                    End
+                    Begin
+                        Begin Label
+                            Top =396
+                            Width =1590
+                            Height =225
+                            Name ="Label8"
+                            Caption ="Remonto Nr.:"
+                            GUID = Begin
+                                0xcee86d3cfc3b9e449c2e992002349341
+                            End
+                        End
+                    End
+                End
+                Begin TextBox
+                    TextAlign =1
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =7598
+                    Top =739
+                    Width =2886
+                    Height =285
+                    FontSize =10
+                    TabIndex =8
+                    Name ="dtFaultDate"
+                    ControlSource ="dtFaultDate"
+                    FontName ="Helvetica"
+                    GUID = Begin
+                        0xdc6726671037d14fae1b7ca18cbbb3e2
+                    End
+                    Begin
+                        Begin Label
+                            Left =5555
+                            Top =737
+                            Width =1950
+                            Height =225
+                            Name ="Label9"
+                            Caption ="Gedimo registravimo data:"
+                            GUID = Begin
+                                0xa405583f870a4a42b0aee32453eebbbd
+                            End
+                        End
+                    End
+                End
+                Begin TextBox
+                    TextAlign =1
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =1701
+                    Top =1077
+                    Width =2826
+                    Height =285
+                    FontSize =10
+                    TabIndex =9
+                    Name ="sFaultReason"
+                    ControlSource ="sFaultReason"
+                    FontName ="Helvetica"
+                    GUID = Begin
+                        0xf1bf72111d086747b716b1a1dec024a7
+                    End
+                    Begin
+                        Begin Label
+                            Top =1080
+                            Width =1410
+                            Height =225
+                            Name ="Label10"
+                            Caption ="Gedimo prieþastis:"
+                            GUID = Begin
+                                0x11c83927a04bb14991f83bebb3e54f67
+                            End
+                        End
+                    End
+                End
+                Begin TextBox
+                    CanGrow = NotDefault
+                    EnterKeyBehavior = NotDefault
+                    ScrollBars =2
+                    TextAlign =1
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =1701
+                    Top =1417
+                    Width =8781
+                    Height =285
+                    FontSize =10
+                    TabIndex =10
+                    Name ="sFaultDescription"
+                    ControlSource ="sFaultDescription"
+                    FontName ="Helvetica"
+                    GUID = Begin
+                        0x788a6a5a796b1c4d8c619753c5cc9358
+                    End
+                    Begin
+                        Begin Label
+                            Top =1417
+                            Width =1635
+                            Height =225
+                            Name ="Label11"
+                            Caption ="Gedimo apraðymas:"
+                            GUID = Begin
+                                0xbc49234d3829c44a98e8308b35f31b68
+                            End
+                        End
+                    End
+                End
+                Begin TextBox
+                    TextAlign =1
+                    TextFontFamily =34
+                    IMESentenceMode =3
+                    Left =1701
+                    Top =737
+                    Width =3396
+                    Height =285
+                    FontSize =10
+                    TabIndex =11
+                    Name ="dtOrderDate"
+                    ControlSource ="dtOrderDate"
+                    FontName ="Helvetica"
+                    GUID = Begin
+                        0xbeb9e08b34e42744a8b23e4af090c60c
+                    End
+                    Begin
+                        Begin Label
+                            Top =737
+                            Width =1485
+                            Height =225
+                            Name ="Label17"
+                            Caption ="Uþsakymo data:"
+                            GUID = Begin
+                                0x3443606fe52a2b4f89f75f7b60f0c6df
+                            End
+                        End
+                    End
+                End
+                Begin TextBox
+                    TextFontFamily =0
+                    IMESentenceMode =3
+                    Left =6233
+                    Top =340
+                    Width =4251
+                    Height =285
+                    FontSize =10
+                    TabIndex =12
+                    Name ="txt_sBarCode"
+                    ControlSource ="=\"Barkodas: \" & [sBarCode]"
+                    FontName ="Helvetica"
+                    GUID = Begin
+                        0xe7ea0198be42df4dbf025878e4d6a906
+                    End
+                End
+            End
+        End
+        Begin BreakFooter
+            KeepTogether = NotDefault
+            CanGrow = NotDefault
+            Height =1134
+            BreakLevel =1
+            Name ="GroupFooter2"
+            GUID = Begin
+                0x38d6a252ffaa114297dbe22d2d1a2505
+            End
+            Begin
+                Begin Label
+                    Width =1845
+                    Height =225
+                    Name ="Label14"
+                    Caption ="Atlikti darbai ir pastabos:"
+                    GUID = Begin
+                        0x4acaabebb756664885fd7db80dc01f49
+                    End
+                End
+                Begin Line
+                    Left =1700
+                    Top =283
+                    Width =8788
+                    Name ="Line15"
+                    GUID = Begin
+                        0xd5fbc8f5bc1fc349a4c95b9d6c8dcc1c
+                    End
+                End
+                Begin Line
+                    Left =1700
+                    Top =566
+                    Width =8788
+                    Name ="Line16"
+                    GUID = Begin
+                        0x55566522aa15ab44aabdcf4de56b3163
+                    End
+                End
+            End
+        End
+        Begin BreakFooter
+            KeepTogether = NotDefault
+            Height =56
+            Name ="GroupFooter0"
+            GUID = Begin
+                0xc65e2a43b4bee74391c70e1fc9e7db70
+            End
+            Begin
+                Begin PageBreak
+                    Name ="PageBreak18"
+                    GUID = Begin
+                        0x0331f0d4701299498993006fd377af05
+                    End
+                End
+            End
+        End
+    End
+End
+CodeBehindForm
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = True
+Attribute VB_PredeclaredId = True
+Attribute VB_Exposed = False
+Option Compare Database
+Option Explicit
+
+Private Sub Report_NoData(Cancel As Integer)
+DoCmd.CancelEvent
+End Sub
+
+Private Sub Report_Open(Cancel As Integer)
+On Error GoTo Err_Report_Open
+
+Me.RecordSource = "EXEC SP_GamInWarrantyFaultsByTask '" & Forms!frmBlindsProduction.txtProdTaskID & "'"
+
+Exit_Report_Open:
+    Exit Sub
+    
+Err_Report_Open:
+
+    Resume Exit_Report_Open
+    
+
+End Sub
