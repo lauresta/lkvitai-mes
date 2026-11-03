@@ -8,15 +8,15 @@ public static class ProductionQueueEndpoints
 {
     public static RouteGroupBuilder MapProductionQueueEndpoints(this RouteGroupBuilder group)
     {
-        group.MapGet("/production-queue", async (int? page, int? pageSize, long? seriesId,
+        group.MapGet("/production-queue", async (int? page, int? pageSize, string? orderNumber, long? seriesId,
             long? typeId, long? priorityId, ProductionQueueReader reader, CancellationToken ct) =>
         {
             if (page is < 1 or > 100000 || pageSize is < 1 or > 100 || seriesId is <= 0
-                || typeId is <= 0 || priorityId is <= 0)
+                || typeId is <= 0 || priorityId is <= 0 || orderNumber?.Length > 80)
                 return Results.BadRequest(new { code = "INVALID_QUEUE_FILTER" });
             try
             {
-                return Results.Ok(await reader.ReadAsync(page ?? 1, pageSize ?? 50,
+                return Results.Ok(await reader.ReadAsync(page ?? 1, pageSize ?? 50, orderNumber,
                     seriesId, typeId, priorityId, ct));
             }
             catch (ProductionQueueAccessException ex)
@@ -40,7 +40,7 @@ public sealed record ProductionQueueItem(long ProductId, long OrderId, string Or
     long CategoryId, string Category, long TypeId, string ProductType,
     string? Control, string? Colour, decimal? WidthMm, decimal? HeightMm,
     decimal Quantity, string? Notes, long? ProductionTaskId, long StateId,
-    long PriorityId, string Priority);
+    long PriorityId, string Priority, string Department, string State, string? Barcode);
 public sealed record ProductionQueuePage(int Page, int PageSize, bool HasMore,
     IReadOnlyList<ProductionQueueItem> Items);
 public sealed class ProductionQueueAccessException(string code, string message, int status)

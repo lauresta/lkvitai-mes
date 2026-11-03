@@ -14,7 +14,7 @@ public sealed class ProductionQueueReader(IHttpContextAccessor accessor, IHttpCl
 {
     private sealed record Mapping(Guid UserId, string? LegacySqlLogin);
 
-    public async Task<ProductionQueuePage> ReadAsync(int page, int pageSize, long? seriesId,
+    public async Task<ProductionQueuePage> ReadAsync(int page, int pageSize, string? orderNumber, long? seriesId,
         long? typeId, long? priorityId, CancellationToken ct)
     {
         var actor = await ResolveActorAsync(ct);
@@ -32,7 +32,7 @@ public sealed class ProductionQueueReader(IHttpContextAccessor accessor, IHttpCl
             throw Denied("LEGACY_SQL_CONTEXT_INVALID", "The legacy SQL connection has an unexpected security context.", 403);
         var canonical = await ResolvePrincipalAsync(connection, login, original, ct);
         var cookie = await SwitchAsync(connection, canonical, original, ct);
-        try { return await ReadRowsAsync(connection, page, pageSize, seriesId, typeId, priorityId, ct); }
+        try { return await ReadRowsAsync(connection, page, pageSize, orderNumber, seriesId, typeId, priorityId, ct); }
         finally { await RestoreBestEffortAsync(connection, cookie, original); }
     }
 
@@ -147,10 +147,11 @@ public sealed class ProductionQueueReader(IHttpContextAccessor accessor, IHttpCl
     }
 
     private static async Task<ProductionQueuePage> ReadRowsAsync(SqlConnection connection,
-        int page, int pageSize, long? seriesId, long? typeId, long? priorityId, CancellationToken ct)
+        int page, int pageSize, string? orderNumber, long? seriesId, long? typeId, long? priorityId, CancellationToken ct)
     {
         await using var command = new SqlCommand(QueueSql, connection) { CommandTimeout = 30 };
         command.Parameters.Add("@seriesId", SqlDbType.BigInt).Value = (object?)seriesId ?? DBNull.Value;
+        command.Parameters.Add("@orderNumber", SqlDbType.NVarChar, 80).Value = (object?)orderNumber ?? DBNull.Value;
         command.Parameters.Add("@typeId", SqlDbType.BigInt).Value = (object?)typeId ?? DBNull.Value;
         command.Parameters.Add("@priorityId", SqlDbType.BigInt).Value = (object?)priorityId ?? DBNull.Value;
         command.Parameters.Add("@offset", SqlDbType.Int).Value = (page - 1) * pageSize;
@@ -172,7 +173,8 @@ public sealed class ProductionQueueReader(IHttpContextAccessor accessor, IHttpCl
         row.IsDBNull(14) ? null : Convert.ToDecimal(row.GetValue(14)), row.GetDecimal(15),
         row.IsDBNull(16) ? null : row.GetString(16),
         row.IsDBNull(17) ? null : Convert.ToInt64(row.GetValue(17)), Convert.ToInt64(row.GetValue(18)),
-        Convert.ToInt64(row.GetValue(19)), row.GetString(20));
+        Convert.ToInt64(row.GetValue(19)), row.GetString(20), row.GetString(21),
+        row.GetString(22), row.IsDBNull(23) ? null : row.GetString(23));
 
     private async Task RestoreBestEffortAsync(SqlConnection connection, byte[] cookie, string original)
     {
@@ -215,10 +217,11 @@ public sealed class ProductionQueueReader(IHttpContextAccessor accessor, IHttpCl
             r.RusiesID, r.RusiesPavadinimas, t.TipoID, t.TipoPavadinimas,
             pg.Valdymas, c.sCodeInternal, pg.Plotis, pg.Aukstis, pg.Kiekis,
             pg.Pastabos, pg.GamibinesUzduotiesID, pg.BusenosID,
-            p.PriorityID, p.sPriority
+            p.PriorityID, p.sPriority, f.FilialoPavadinimas, b.Busena, pg.iBarCode
         FROM dbo.ParduotiGaminiai pg
         JOIN dbo.Uzsakymai u ON u.UzsakymasID=pg.UzsakymoID
         JOIN dbo.Zinynas_UzsakymoSerijos us ON us.UzsakymoSerijaID=u.UzsakymoSerija
+        JOIN dbo.Zinynas_filialai f ON f.FilialoID=us.FilialoID
         JOIN dbo.Zinynas_tipai t ON t.TipoID=pg.ParduotoGaminioTipoID
         JOIN dbo.Zinynas_busenos b ON b.BusenosID=pg.BusenosID
         JOIN dbo.Zinynas_rusys r ON r.RusiesID=t.Rusis
@@ -233,6 +236,7 @@ public sealed class ProductionQueueReader(IHttpContextAccessor accessor, IHttpCl
           AND (DATEDIFF(day,dbo.DATETRIM(u.UzsakymoData),GETDATE())<>0
                OR p.PriorityID>2 OR cs.bIsVIPClientFlag<>0)
           AND (@seriesId IS NULL OR u.UzsakymoSerija=@seriesId)
+          AND (@orderNumber IS NULL OR us.UzsakymoSerijaPav+N'-'+CONVERT(nvarchar(15),u.UzsakymoNumeris)+N'-'+u.UzsakymoGrupe=@orderNumber)
           AND (@typeId IS NULL OR t.TipoID=@typeId)
           AND (@priorityId IS NULL OR u.PriorityID=@priorityId)
         ORDER BY u.UzsakymoTerminas, u.UzsakymoData, pg.ParduotoGaminioID
