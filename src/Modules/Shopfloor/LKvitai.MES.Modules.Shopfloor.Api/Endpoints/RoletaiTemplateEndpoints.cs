@@ -13,46 +13,50 @@ public static class RoletaiTemplateEndpoints
 {
     public static RouteGroupBuilder MapRoletaiTemplateEndpoints(this RouteGroupBuilder group)
     {
-        group.MapGet("/production-reports/roletai/template", async (
-            ProductionQueueReader queue, RoletaiTemplateStore store, HttpContext http, CancellationToken ct) =>
-        {
-            try
-            {
-                await CheckMenuAsync(queue, ct);
-                return Results.Ok(await store.ReadAsync(CanEdit(http.User), ct));
-            }
-            catch (ProductionQueueAccessException ex) { return ProductionReadErrors.Access(ex); }
-        });
-        group.MapPut("/production-reports/roletai/template/draft", async (
-            RoletaiTemplate template, ProductionQueueReader queue, RoletaiTemplateStore store,
-            HttpContext http, CancellationToken ct) =>
-        {
-            if (!CanEdit(http.User)) return Results.Forbid();
-            var errors = template.Validate();
-            if (errors.Count > 0) return Results.BadRequest(new { code = "INVALID_TEMPLATE", errors });
-            try
-            {
-                await CheckMenuAsync(queue, ct);
-                return Results.Ok(await store.SaveDraftAsync(template, ct));
-            }
-            catch (ProductionQueueAccessException ex) { return ProductionReadErrors.Access(ex); }
-        });
-        group.MapPost("/production-reports/roletai/template/publish", async (
-            RoletaiPublishRequest request, ProductionQueueReader queue, RoletaiTemplateStore store,
-            HttpContext http, CancellationToken ct) =>
-        {
-            if (!CanEdit(http.User)) return Results.Forbid();
-            try
-            {
-                await CheckMenuAsync(queue, ct);
-                var state = await store.PublishAsync(request.ExpectedVersion,
-                    http.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? http.User.Identity?.Name ?? "unknown", ct);
-                return state is null ? Results.Conflict(new { code = "TEMPLATE_VERSION_CHANGED" }) : Results.Ok(state);
-            }
-            catch (ProductionQueueAccessException ex) { return ProductionReadErrors.Access(ex); }
-            catch (InvalidDataException ex) { return Results.BadRequest(new { code = "INVALID_TEMPLATE", message = ex.Message }); }
-        });
+        group.MapGet("/production-reports/roletai/template", ReadAsync);
+        group.MapPut("/production-reports/roletai/template/draft", SaveAsync);
+        group.MapPost("/production-reports/roletai/template/publish", PublishAsync);
         return group;
+    }
+
+    private static async Task<IResult> ReadAsync(ProductionQueueReader queue,
+        RoletaiTemplateStore store, HttpContext http, CancellationToken ct)
+    {
+        try
+        {
+            await CheckMenuAsync(queue, ct);
+            return Results.Ok(await store.ReadAsync(CanEdit(http.User), ct));
+        }
+        catch (ProductionQueueAccessException ex) { return ProductionReadErrors.Access(ex); }
+    }
+
+    private static async Task<IResult> SaveAsync(RoletaiTemplate template,
+        ProductionQueueReader queue, RoletaiTemplateStore store, HttpContext http, CancellationToken ct)
+    {
+        if (!CanEdit(http.User)) return Results.Forbid();
+        var errors = template.Validate();
+        if (errors.Count > 0) return Results.BadRequest(new { code = "INVALID_TEMPLATE", errors });
+        try
+        {
+            await CheckMenuAsync(queue, ct);
+            return Results.Ok(await store.SaveDraftAsync(template, ct));
+        }
+        catch (ProductionQueueAccessException ex) { return ProductionReadErrors.Access(ex); }
+    }
+
+    private static async Task<IResult> PublishAsync(RoletaiPublishRequest request,
+        ProductionQueueReader queue, RoletaiTemplateStore store, HttpContext http, CancellationToken ct)
+    {
+        if (!CanEdit(http.User)) return Results.Forbid();
+        try
+        {
+            await CheckMenuAsync(queue, ct);
+            var state = await store.PublishAsync(request.ExpectedVersion,
+                http.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? http.User.Identity?.Name ?? "unknown", ct);
+            return state is null ? Results.Conflict(new { code = "TEMPLATE_VERSION_CHANGED" }) : Results.Ok(state);
+        }
+        catch (ProductionQueueAccessException ex) { return ProductionReadErrors.Access(ex); }
+        catch (InvalidDataException ex) { return Results.BadRequest(new { code = "INVALID_TEMPLATE", message = ex.Message }); }
     }
 
     private static bool CanEdit(ClaimsPrincipal user) =>

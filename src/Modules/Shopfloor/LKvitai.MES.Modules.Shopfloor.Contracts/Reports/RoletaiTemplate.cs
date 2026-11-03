@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using System.Text.RegularExpressions;
 
 namespace LKvitai.MES.Modules.Shopfloor.Contracts.Reports;
@@ -11,14 +12,14 @@ public sealed class RoletaiTemplate
     public Dictionary<string, RoletaiSection> Sections { get; set; } = new(StringComparer.Ordinal);
 
     public static readonly string[] SectionKeys = ["rh", "ch", "uh", "dt", "pf", "pg"];
-    public static readonly HashSet<string> Fields = new(StringComparer.OrdinalIgnoreCase)
+    public static readonly FrozenSet<string> Fields = new[]
     {
         "Cechas", "Uzsakymas", "UzsakymoData", "GamibinesUzduotiesNumeris",
         "ParduotoGaminioID", "TipoTrPavadinimas", "Valdymas", "Plotis", "Aukstis",
         "kiekis", "Spalva", "Audinys", "Krepianciuju_tipas", "Kreipianciosios",
         "Kasete", "Velenas", "Atsvaras", "Dekoras", "Audinio_sunaudojimas", "Pastabos",
         "Sum(kiekis)", "Page", "Pages", "Now"
-    };
+    }.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
 
     public static RoletaiTemplate Default()
     {
@@ -60,32 +61,47 @@ public sealed class RoletaiTemplate
         if (Sections.Count != SectionKeys.Length || SectionKeys.Any(key => !Sections.ContainsKey(key)))
             errors.Add("Trūksta privalomos ataskaitos sekcijos.");
         foreach (var (key, section) in Sections)
-        {
-            if (!SectionKeys.Contains(key) || section is null || section.Lines is null || section.Cols is null)
-            { errors.Add("Nežinoma arba tuščia sekcija."); continue; }
-            if (section.Lines.Count > 30 || section.Cols.Count > 30)
-                errors.Add("Per daug eilučių arba stulpelių.");
-            foreach (var line in section.Lines)
-            {
-                if (line is null || line.Text is null) { errors.Add("Neteisinga eilutė."); continue; }
-                if (line.Text.Length > 500 || line.Size is < 7 or > 40 ||
-                    line.Align is not ("left" or "center" or "right")) errors.Add("Neteisinga eilutė.");
-                foreach (Match token in Regex.Matches(line.Text, @"\{([^{}]+)\}"))
-                    if (!Fields.Contains(token.Groups[1].Value)) errors.Add($"Nežinomas laukas: {token.Groups[1].Value}");
-            }
-            foreach (var col in section.Cols)
-                if (col is null || col.Key is null || col.Label is null || !Fields.Contains(col.Key) || col.Label.Length > 80 || col.W is < 3 or > 40
-                    || col.Size is < 7 or > 16 || col.Align is not ("left" or "right"))
-                    errors.Add("Neteisingas stulpelis.");
-            if (key != "dt" && section.Cols.Count > 0 || key == "dt" && section.Lines.Count > 0)
-                errors.Add("Neteisingos sekcijos laukai.");
-        }
-        if (Sections.TryGetValue("dt", out var detail) &&
-            (detail is null || !detail.Visible || detail.Cols is null || detail.Cols.Count == 0
-             || detail.Cols.Where(c => c is not null).Sum(c => c.W) > 100
-             || detail.Cols.Where(c => c is not null).Select(c => c.Key).Distinct(StringComparer.OrdinalIgnoreCase).Count() != detail.Cols.Count))
-            errors.Add("Stulpeliai: būtinas bent vienas, plotis iki 100 %, be pasikartojimų.");
+            ValidateSection(key, section, errors);
+        ValidateDetail(Sections.GetValueOrDefault("dt"), errors);
         return errors;
+    }
+
+    private static void ValidateSection(string key, RoletaiSection? section, List<string> errors)
+    {
+        if (!SectionKeys.Contains(key) || section?.Lines is null || section.Cols is null)
+        { errors.Add("Nežinoma arba tuščia sekcija."); return; }
+        if (section.Lines.Count > 30 || section.Cols.Count > 30)
+            errors.Add("Per daug eilučių arba stulpelių.");
+        foreach (var line in section.Lines) ValidateLine(line, errors);
+        foreach (var col in section.Cols) ValidateColumn(col, errors);
+        if (key != "dt" && section.Cols.Count > 0 || key == "dt" && section.Lines.Count > 0)
+            errors.Add("Neteisingos sekcijos laukai.");
+    }
+
+    private static void ValidateLine(RoletaiLine? line, List<string> errors)
+    {
+        if (line?.Text is null) { errors.Add("Neteisinga eilutė."); return; }
+        if (line.Text.Length > 500 || line.Size is < 7 or > 40 ||
+            line.Align is not ("left" or "center" or "right")) errors.Add("Neteisinga eilutė.");
+        foreach (Match token in Regex.Matches(line.Text, @"\{([^{}]+)\}", RegexOptions.None,
+            TimeSpan.FromMilliseconds(100)))
+            if (!Fields.Contains(token.Groups[1].Value)) errors.Add($"Nežinomas laukas: {token.Groups[1].Value}");
+    }
+
+    private static void ValidateColumn(RoletaiColumn? col, List<string> errors)
+    {
+        if (col?.Key is null || col.Label is null || !Fields.Contains(col.Key) || col.Label.Length > 80
+            || col.W is < 3 or > 40 || col.Size is < 7 or > 16
+            || col.Align is not ("left" or "right")) errors.Add("Neteisingas stulpelis.");
+    }
+
+    private static void ValidateDetail(RoletaiSection? detail, List<string> errors)
+    {
+        if (detail?.Cols is null || !detail.Visible || detail.Cols.Count == 0)
+        { errors.Add("Stulpeliai: būtinas bent vienas, plotis iki 100 %, be pasikartojimų."); return; }
+        var cols = detail.Cols.Where(c => c is not null).ToArray();
+        if (cols.Sum(c => c.W) > 100 || cols.Select(c => c.Key).Distinct(StringComparer.OrdinalIgnoreCase).Count() != detail.Cols.Count)
+            errors.Add("Stulpeliai: būtinas bent vienas, plotis iki 100 %, be pasikartojimų.");
     }
 }
 

@@ -15,7 +15,7 @@
             }
         </div>
     }
-    @foreach (var shop in Rows.GroupBy(row => Value(row, "Cechas")))
+    @foreach (var shop in _rows.GroupBy(row => Value(row, "Cechas")))
     {
         <div class="roletai-shop">
             @if (Template.Sections["ch"].Visible)
@@ -99,7 +99,9 @@
     [Parameter] public EventCallback<string> ColumnClicked { get; set; }
     [Parameter] public DateTimeOffset RenderedAt { get; set; }
 
-    private List<Dictionary<string, string>> Rows => Data.Rows.Select(cells => Data.Columns.Select((key, i) => (key, value: i < cells.Count ? Cell(cells[i]) : ""))
+    private List<Dictionary<string, string>> _rows = [];
+    protected override void OnParametersSet() => _rows = Data.Rows.Select(cells => Data.Columns
+        .Select((key, i) => (key, value: i < cells.Count ? Cell(cells[i]) : ""))
         .ToDictionary(x => x.key, x => x.value, StringComparer.OrdinalIgnoreCase)).ToList();
     private static readonly Dictionary<string, string> Empty = new(StringComparer.OrdinalIgnoreCase);
     private string SelectedClass(string section) => SelectedSection == section ? "is-selected-section" : "";
@@ -113,7 +115,7 @@
             var key = match.Groups[1].Value;
             var result = key switch
             {
-                "Sum(kiekis)" => Rows.Sum(row => decimal.TryParse(Value(row, "kiekis"), NumberStyles.Any, CultureInfo.InvariantCulture, out var number) ? number : 0).ToString("0.##", CultureInfo.CurrentCulture),
+                "Sum(kiekis)" => _rows.Sum(row => decimal.TryParse(Value(row, "kiekis"), NumberStyles.Any, CultureInfo.InvariantCulture, out var number) ? number : 0).ToString("0.##", CultureInfo.CurrentCulture),
                 "Page" or "Pages" => "1",
                 "Now" => RenderedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm"),
                 "UzsakymoData" => DateTime.TryParse(Value(context, key), out var date) ? date.ToString("MM.dd") : Value(context, key),
@@ -121,7 +123,7 @@
             };
             if (string.IsNullOrEmpty(result)) missing = true;
             return result;
-        });
+        }, RegexOptions.None, TimeSpan.FromMilliseconds(100));
         return line.HideIfEmpty && missing ? "" : value;
     }
     private static string LineStyle(RoletaiLine line) => $"font-size:{line.Size.ToString(CultureInfo.InvariantCulture)}px;font-weight:{(line.Bold ? 800 : 400)};font-family:{(line.Mono ? "var(--font-mono,monospace)" : "inherit")};text-align:{line.Align}";
@@ -134,13 +136,15 @@
             if (!footer.Visible || footer.Lines.Count == 0) return "";
             var line = footer.Lines[0];
             var slot = line.Align switch { "left" => "bottom-left", "center" => "bottom-center", _ => "bottom-right" };
-            var parts = Regex.Split(line.Text, @"(\{Page\}|\{Pages\}|\{Now\})");
+            var parts = Regex.Split(line.Text, @"(\{Page\}|\{Pages\}|\{Now\})",
+                RegexOptions.None, TimeSpan.FromMilliseconds(100));
             var content = string.Join(" ", parts.Where(part => part.Length > 0).Select(part => part switch
             {
                 "{Page}" => "counter(page)",
                 "{Pages}" => "counter(pages)",
                 "{Now}" => CssString(RenderedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")),
-                _ => CssString(Regex.Replace(part, @"\{[^{}]+\}", ""))
+                _ => CssString(Regex.Replace(part, @"\{[^{}]+\}", "", RegexOptions.None,
+                    TimeSpan.FromMilliseconds(100)))
             }));
             return $"@page{{@{slot}{{content:{content};font-family:{(line.Mono ? "Consolas,monospace" : "Arial,sans-serif")};font-weight:{(line.Bold ? 800 : 400)};font-size:{line.Size.ToString(CultureInfo.InvariantCulture)}px;color:#6f7a88}}}}";
         }
