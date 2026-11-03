@@ -34,6 +34,9 @@ public partial class Gamyba
     private string? _liveDocumentsError;
     private bool _liveDocumentsLoading;
     private int _liveDocumentsPage = 1;
+    private ProductionDocumentDetailDto? _liveDocument;
+    private string? _liveDocumentError;
+    private bool _liveDocumentLoading;
     private ProductionProductHistoryDto? _liveHistory;
     private string? _liveHistoryError;
     private bool _liveHistoryLoading;
@@ -221,6 +224,25 @@ public partial class Gamyba
             _liveDocumentsError = L("Could not load GT documents.", "Nepavyko įkelti GT dokumentų.");
         }
         finally { _liveDocumentsLoading = false; }
+    }
+
+    private async Task OpenLiveDocumentAsync(int id)
+    {
+        _liveDocument = null;
+        _liveDocumentError = null;
+        Go("gt-detail");
+        _liveDocumentLoading = true;
+        try
+        {
+            var result = await ShopfloorApi.GetProductionDocumentAsync(id, CancellationToken.None);
+            if (result.Success && result.Value is not null) _liveDocument = result.Value;
+            else _liveDocumentError = result.Error ?? L("Document unavailable or access denied.", "Dokumentas neprieinamas arba neturite teisių.");
+        }
+        catch (Exception)
+        {
+            _liveDocumentError = L("Could not load the document.", "Nepavyko įkelti dokumento.");
+        }
+        finally { _liveDocumentLoading = false; }
     }
 
     private async Task OpenLiveTaskAsync(int id)
