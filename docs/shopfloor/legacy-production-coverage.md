@@ -22,7 +22,7 @@
 | G06.02 | Напечатать этикетку одного изделия или вручную | `dlgPrintDocuments.fraLabelPrintingOptions_AfterUpdate`; `sp_BlindDescriptionByBarCode` | Confirmed | Доступные режимы, права, количество физических этикеток |
 | G06.03 | Приостановить, продолжить или остановить пачку | `dlgPrintDocuments.fPause` в цикле отправки | Confirmed | Остаток пачки, неопределённый исход, занятой COM |
 | G07.01 | Сканировать barcode и получить результат | `frmScanning.CheckNewBarCode`; `fn_CheckStateChange` | Confirmed | Видимый успех/повтор/ошибка, права, состояние, фокус и Enter |
-| G07.02 | Выбрать изделие из списка вручную | `frmScanning.FillTreeView`/input mode | Confirmed | Кандидаты `lnfn_ListReadayForScanningBlinds`, права и статус |
+| G07.02 | Выбрать изделие из списка вручную | `frmScanning.FillTreeView`/input mode | Confirmed | Read-only API кандидатов через `lnfn_ListReadayForScanningBlinds`, разрешённый целевой статус, меню 41 и `Loc_leidimas` проверены; live UI/сканирование пока не включены. |
 | G07.03 | Импортировать список barcode | `frmScanning.cmdOpenFile/cmdReadFile` | Confirmed | 12-символьные коды, порядок и частичный результат по строкам |
 | G07.04 | Просмотреть/выгрузить журнал ошибочных сканов | `modMeniu.OpenScanningErrorLog` | Confirmed | Состав, доступ, период жизни локального журнала |
 | G08.01 | Создать документ операции GT | `frmMadeProductionDocuments` → `dlgNewProductionOutputDocument` | Confirmed | Список разрешённых статусов, номер/дата/автор, ACL |
