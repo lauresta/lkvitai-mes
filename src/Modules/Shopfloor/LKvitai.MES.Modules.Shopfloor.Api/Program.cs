@@ -33,6 +33,7 @@ builder.Services.AddHttpClient("CikadaUsers", client =>
 }).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
 builder.Services.AddScoped<ProductionQueueReader>();
 builder.Services.AddScoped<ProductionTaskReader>();
+builder.Services.AddScoped<ProductionTaskWriter>();
 builder.Services.AddScoped<ProductionHistoryReader>();
 builder.Services.AddScoped<ProductionRepairReader>();
 builder.Services.AddScoped<ProductionReportDataReader>();
@@ -97,6 +98,8 @@ if (productionQueueEnabled)
 {
     shopfloor.MapProductionQueueEndpoints();
     shopfloor.MapProductionTaskEndpoints();
+    if (builder.Configuration.GetValue<bool>("Shopfloor:ProductionTaskWrite:Enabled"))
+        shopfloor.MapProductionTaskWriteEndpoints();
     shopfloor.MapProductionHistoryEndpoints();
     shopfloor.MapProductionRepairEndpoints();
     shopfloor.MapProductionReportDataEndpoints();

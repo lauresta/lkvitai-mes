@@ -65,6 +65,13 @@ public sealed class ProductionTaskPageDto
     public List<ProductionTaskSummaryDto> Items { get; set; } = [];
 }
 
+public sealed class IssueProductionPortionResultDto
+{
+    public int TaskId { get; set; }
+    public string Number { get; set; } = "";
+    public int IssuedRows { get; set; }
+}
+
 public sealed class ProductionDocumentPageDto
 {
     public int Page { get; set; }
@@ -254,6 +261,11 @@ public sealed class ShopfloorApiClient
         => SendAsync<ProductionTaskPageDto>(HttpMethod.Get,
             $"/api/shopfloor/production-tasks?page={page}&pageSize=50", null, ct);
 
+    public Task<ApiResult<IssueProductionPortionResultDto>> IssueProductionPortionAsync(
+        int? taskId, IReadOnlyCollection<long> productIds, CancellationToken ct)
+        => SendAsync<IssueProductionPortionResultDto>(HttpMethod.Post,
+            "/api/shopfloor/production-tasks/issue", new { taskId, productIds }, ct);
+
     public Task<ApiResult<ProductionDocumentPageDto>> GetProductionDocumentsAsync(int page, CancellationToken ct)
         => SendAsync<ProductionDocumentPageDto>(HttpMethod.Get,
             $"/api/shopfloor/production-documents?page={page}&pageSize=50", null, ct);
@@ -432,6 +444,8 @@ public sealed class ShopfloorApiClient
             {
                 return doc.Message;
             }
+            if (doc is not null && !string.IsNullOrWhiteSpace(doc.Detail))
+                return doc.Detail;
         }
         catch
         {
@@ -448,5 +462,6 @@ public sealed class ShopfloorApiClient
         };
     }
 
-    private sealed record ApiError(int Status, string Message, IReadOnlyList<string>? Errors);
+    private sealed record ApiError(int Status, string? Message, string? Detail,
+        IReadOnlyList<string>? Errors);
 }
