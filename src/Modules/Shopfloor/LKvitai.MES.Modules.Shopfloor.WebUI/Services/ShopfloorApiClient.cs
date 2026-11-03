@@ -47,6 +47,16 @@ public sealed class ProductionQueueItemDto
     public string? Notes { get; set; }
 }
 
+public sealed class ProductionQueueFacetDto
+{
+    public string Kind { get; set; } = "";
+    public long Id { get; set; }
+    public string Name { get; set; } = "";
+    public long? ParentId { get; set; }
+    public int Rows { get; set; }
+    public decimal Quantity { get; set; }
+}
+
 public sealed class ProductionTaskPageDto
 {
     public int Page { get; set; }
@@ -134,9 +144,24 @@ public sealed class ShopfloorApiClient
 
     private HttpClient Client => _httpClientFactory.CreateClient(HttpClientName);
 
-    public Task<ApiResult<ProductionQueuePageDto>> GetProductionQueueAsync(int page, string? orderNumber, CancellationToken ct)
-        => SendAsync<ProductionQueuePageDto>(HttpMethod.Get,
-            $"/api/shopfloor/production-queue?page={page}&pageSize=100{(orderNumber is null ? "" : "&orderNumber=" + Uri.EscapeDataString(orderNumber))}", null, ct);
+    public Task<ApiResult<ProductionQueuePageDto>> GetProductionQueueAsync(int page,
+        string? orderNumber, long? departmentId, long? seriesId, long? categoryId,
+        long? typeId, long? priorityId, CancellationToken ct)
+    {
+        var query = new List<string> { $"page={page}", "pageSize=100" };
+        if (orderNumber is not null) query.Add("orderNumber=" + Uri.EscapeDataString(orderNumber));
+        if (departmentId is not null) query.Add($"departmentId={departmentId}");
+        if (seriesId is not null) query.Add($"seriesId={seriesId}");
+        if (categoryId is not null) query.Add($"categoryId={categoryId}");
+        if (typeId is not null) query.Add($"typeId={typeId}");
+        if (priorityId is not null) query.Add($"priorityId={priorityId}");
+        return SendAsync<ProductionQueuePageDto>(HttpMethod.Get,
+            "/api/shopfloor/production-queue?" + string.Join("&", query), null, ct);
+    }
+
+    public Task<ApiResult<List<ProductionQueueFacetDto>>> GetProductionQueueFacetsAsync(CancellationToken ct)
+        => SendAsync<List<ProductionQueueFacetDto>>(HttpMethod.Get,
+            "/api/shopfloor/production-queue/facets", null, ct);
 
     public Task<ApiResult<ProductionTaskPageDto>> GetProductionTasksAsync(int page, CancellationToken ct)
         => SendAsync<ProductionTaskPageDto>(HttpMethod.Get,

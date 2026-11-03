@@ -14,10 +14,15 @@ public sealed class ProductionQueueReader(IHttpContextAccessor accessor, IHttpCl
 {
     private sealed record Mapping(Guid UserId, string? LegacySqlLogin);
 
-    public async Task<ProductionQueuePage> ReadAsync(int page, int pageSize, string? orderNumber, long? seriesId,
-        long? typeId, long? priorityId, CancellationToken ct)
+    public async Task<ProductionQueuePage> ReadAsync(int page, int pageSize, string? orderNumber,
+        long? departmentId, long? seriesId, long? categoryId, long? typeId,
+        long? priorityId, CancellationToken ct)
         => await WithActorConnectionAsync((connection, token) =>
-            ReadRowsAsync(connection, page, pageSize, orderNumber, seriesId, typeId, priorityId, token), ct);
+            ReadRowsAsync(connection, page, pageSize, orderNumber, departmentId, seriesId,
+                categoryId, typeId, priorityId, token), ct);
+
+    public Task<IReadOnlyList<ProductionQueueFacet>> ReadFacetsAsync(CancellationToken ct)
+        => WithActorConnectionAsync(ReadFacetsRowsAsync, ct);
 
     internal async Task<T> WithActorConnectionAsync<T>(Func<SqlConnection, CancellationToken, Task<T>> action,
         CancellationToken ct)
@@ -152,10 +157,13 @@ public sealed class ProductionQueueReader(IHttpContextAccessor accessor, IHttpCl
     }
 
     private static async Task<ProductionQueuePage> ReadRowsAsync(SqlConnection connection,
-        int page, int pageSize, string? orderNumber, long? seriesId, long? typeId, long? priorityId, CancellationToken ct)
+        int page, int pageSize, string? orderNumber, long? departmentId, long? seriesId,
+        long? categoryId, long? typeId, long? priorityId, CancellationToken ct)
     {
         await using var command = new SqlCommand(QueueSql, connection) { CommandTimeout = 30 };
         command.Parameters.Add("@seriesId", SqlDbType.BigInt).Value = (object?)seriesId ?? DBNull.Value;
+        command.Parameters.Add("@departmentId", SqlDbType.BigInt).Value = (object?)departmentId ?? DBNull.Value;
+        command.Parameters.Add("@categoryId", SqlDbType.BigInt).Value = (object?)categoryId ?? DBNull.Value;
         command.Parameters.Add("@orderNumber", SqlDbType.NVarChar, 80).Value = (object?)orderNumber ?? DBNull.Value;
         command.Parameters.Add("@typeId", SqlDbType.BigInt).Value = (object?)typeId ?? DBNull.Value;
         command.Parameters.Add("@priorityId", SqlDbType.BigInt).Value = (object?)priorityId ?? DBNull.Value;
@@ -167,6 +175,19 @@ public sealed class ProductionQueueReader(IHttpContextAccessor accessor, IHttpCl
         var hasMore = items.Count > pageSize;
         if (hasMore) items.RemoveAt(pageSize);
         return new ProductionQueuePage(page, pageSize, hasMore, items);
+    }
+
+    private static async Task<IReadOnlyList<ProductionQueueFacet>> ReadFacetsRowsAsync(
+        SqlConnection connection, CancellationToken ct)
+    {
+        await using var command = new SqlCommand(FacetsSql, connection) { CommandTimeout = 30 };
+        var facets = new List<ProductionQueueFacet>();
+        await using var rows = await command.ExecuteReaderAsync(ct);
+        while (await rows.ReadAsync(ct))
+            facets.Add(new ProductionQueueFacet(rows.GetString(0), Convert.ToInt64(rows.GetValue(1)),
+                rows.GetString(2), rows.IsDBNull(3) ? null : Convert.ToInt64(rows.GetValue(3)),
+                rows.GetInt32(4), rows.GetDecimal(5)));
+        return facets;
     }
 
     private static ProductionQueueItem MapRow(SqlDataReader row) => new(
@@ -215,14 +236,7 @@ public sealed class ProductionQueueReader(IHttpContextAccessor accessor, IHttpCl
 
     // Parenthesized eligibility is the five OR branches in SP_fsubProduction,
     // factored without changing its result. The explicit ACL is outside the OR.
-    private const string QueueSql = """
-        SELECT pg.ParduotoGaminioID, pg.UzsakymoID,
-            us.UzsakymoSerijaPav+N'-'+CONVERT(nvarchar(15),u.UzsakymoNumeris)+N'-'+u.UzsakymoGrupe,
-            u.UzsakymoData, u.UzsakymoTerminas, u.UzsakymoSerija, us.FilialoID,
-            r.RusiesID, r.RusiesPavadinimas, t.TipoID, t.TipoPavadinimas,
-            pg.Valdymas, c.sCodeInternal, pg.Plotis, pg.Aukstis, pg.Kiekis,
-            pg.Pastabos, pg.GamibinesUzduotiesID, pg.BusenosID,
-            p.PriorityID, p.sPriority, f.FilialoPavadinimas, b.Busena, pg.iBarCode
+    private const string QueueSourceSql = """
         FROM dbo.ParduotiGaminiai pg
         JOIN dbo.Uzsakymai u ON u.UzsakymasID=pg.UzsakymoID
         JOIN dbo.Zinynas_UzsakymoSerijos us ON us.UzsakymoSerijaID=u.UzsakymoSerija
@@ -240,11 +254,53 @@ public sealed class ProductionQueueReader(IHttpContextAccessor accessor, IHttpCl
           AND (u.Patvirtintas<>0 OR pg.BusenosID IN (1173102375,1173102377))
           AND (DATEDIFF(day,dbo.DATETRIM(u.UzsakymoData),GETDATE())<>0
                OR p.PriorityID>2 OR cs.bIsVIPClientFlag<>0)
+        """;
+
+    private static readonly string QueueSql = $"""
+        SELECT pg.ParduotoGaminioID, pg.UzsakymoID,
+            us.UzsakymoSerijaPav+N'-'+CONVERT(nvarchar(15),u.UzsakymoNumeris)+N'-'+u.UzsakymoGrupe,
+            u.UzsakymoData, u.UzsakymoTerminas, u.UzsakymoSerija, us.FilialoID,
+            r.RusiesID, r.RusiesPavadinimas, t.TipoID, t.TipoPavadinimas,
+            pg.Valdymas, c.sCodeInternal, pg.Plotis, pg.Aukstis, pg.Kiekis,
+            pg.Pastabos, pg.GamibinesUzduotiesID, pg.BusenosID,
+            p.PriorityID, p.sPriority, f.FilialoPavadinimas, b.Busena, pg.iBarCode
+        {QueueSourceSql}
+          AND (@departmentId IS NULL OR us.FilialoID=@departmentId)
           AND (@seriesId IS NULL OR u.UzsakymoSerija=@seriesId)
+          AND (@categoryId IS NULL OR r.RusiesID=@categoryId)
           AND (@orderNumber IS NULL OR us.UzsakymoSerijaPav+N'-'+CONVERT(nvarchar(15),u.UzsakymoNumeris)+N'-'+u.UzsakymoGrupe=@orderNumber)
           AND (@typeId IS NULL OR t.TipoID=@typeId)
           AND (@priorityId IS NULL OR u.PriorityID=@priorityId)
         ORDER BY u.UzsakymoTerminas, u.UzsakymoData, pg.ParduotoGaminioID
         OFFSET @offset ROWS FETCH NEXT @take ROWS ONLY;
+        """;
+
+    private static readonly string FacetsSql = $"""
+        SELECT N'branch' AS Kind, CONVERT(bigint,f.FilialoID) AS Id,
+               f.FilialoPavadinimas AS Name, CONVERT(bigint,NULL) AS ParentId,
+               COUNT(*) AS Rows, SUM(pg.Kiekis) AS Quantity
+        {QueueSourceSql}
+        GROUP BY f.FilialoID,f.FilialoPavadinimas
+        UNION ALL
+        SELECT N'series',CONVERT(bigint,us.UzsakymoSerijaID),us.UzsakymoSerijaPav,
+               CONVERT(bigint,us.FilialoID),COUNT(*),SUM(pg.Kiekis)
+        {QueueSourceSql}
+        GROUP BY us.UzsakymoSerijaID,us.UzsakymoSerijaPav,us.FilialoID
+        UNION ALL
+        SELECT N'category',CONVERT(bigint,r.RusiesID),r.RusiesPavadinimas,
+               CONVERT(bigint,NULL),COUNT(*),SUM(pg.Kiekis)
+        {QueueSourceSql}
+        GROUP BY r.RusiesID,r.RusiesPavadinimas
+        UNION ALL
+        SELECT N'type',CONVERT(bigint,t.TipoID),t.TipoPavadinimas,
+               CONVERT(bigint,r.RusiesID),COUNT(*),SUM(pg.Kiekis)
+        {QueueSourceSql}
+        GROUP BY t.TipoID,t.TipoPavadinimas,r.RusiesID
+        UNION ALL
+        SELECT N'priority',CONVERT(bigint,p.PriorityID),p.sPriority,
+               CONVERT(bigint,NULL),COUNT(*),SUM(pg.Kiekis)
+        {QueueSourceSql}
+        GROUP BY p.PriorityID,p.sPriority
+        ORDER BY Kind,Name;
         """;
 }
