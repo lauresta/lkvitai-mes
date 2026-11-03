@@ -16,6 +16,11 @@ public sealed class ProductionQueueReader(IHttpContextAccessor accessor, IHttpCl
 
     public async Task<ProductionQueuePage> ReadAsync(int page, int pageSize, string? orderNumber, long? seriesId,
         long? typeId, long? priorityId, CancellationToken ct)
+        => await WithActorConnectionAsync((connection, token) =>
+            ReadRowsAsync(connection, page, pageSize, orderNumber, seriesId, typeId, priorityId, token), ct);
+
+    internal async Task<T> WithActorConnectionAsync<T>(Func<SqlConnection, CancellationToken, Task<T>> action,
+        CancellationToken ct)
     {
         var actor = await ResolveActorAsync(ct);
         var login = await ResolveLoginAsync(actor, ct);
@@ -32,7 +37,7 @@ public sealed class ProductionQueueReader(IHttpContextAccessor accessor, IHttpCl
             throw Denied("LEGACY_SQL_CONTEXT_INVALID", "The legacy SQL connection has an unexpected security context.", 403);
         var canonical = await ResolvePrincipalAsync(connection, login, original, ct);
         var cookie = await SwitchAsync(connection, canonical, original, ct);
-        try { return await ReadRowsAsync(connection, page, pageSize, orderNumber, seriesId, typeId, priorityId, ct); }
+        try { return await action(connection, ct); }
         finally { await RestoreBestEffortAsync(connection, cookie, original); }
     }
 
