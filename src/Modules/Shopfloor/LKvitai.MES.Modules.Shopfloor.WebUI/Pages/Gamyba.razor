@@ -1,0 +1,511 @@
+@page "/gamyba"
+@layout GamybaLayout
+
+<PageTitle>Cikada.MES · Shopfloor · Gamyba</PageTitle>
+
+<div class="gamyba" @onkeydown="PageKey">
+    <div class="gamyba-shell" style="width:@(_viewport == "fit" ? "100%" : _viewport + "px")">
+        <div class="gamyba-test">
+            <span class="gamyba-test__mark">▲</span>
+            <strong>TEST ENVIRONMENT</strong>
+            <span>@L("Data in this environment is not production data and may be reset without notice.", "Šios aplinkos duomenys nėra gamybiniai ir gali būti ištrinti be įspėjimo.")</span>
+            <span class="gamyba-test__right mono">mes-test.lauresta.lt · fit</span>
+        </div>
+        <header class="gamyba-topbar">
+            <button type="button" class="gamyba-brand" @onclick='() => Go("queue")'>
+                <span class="gamyba-brand__mark"><svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"><path d="M12 15 C22 12.5 30 15.5 32 21" /><path d="M11 21 C21 19 28.5 22 31 27" /><circle cx="9" cy="18.5" r="2.8" fill="currentColor" stroke="none" /></svg></span>
+                <span><strong>Cikada<span>.MES</span></strong><small>SHOPFLOOR · GAMYBA</small></span>
+            </button>
+            <span class="gamyba-separator"></span>
+            <label class="gamyba-global-search">
+                <span aria-hidden="true">⌕</span>
+                <input id="gamyba-global-search" @bind="_globalSearch" @bind:event="oninput" placeholder="@L("Barcode, GU, GT or order… (Enter)", "Kodas, GU, GT arba užsakymas… (Enter)")" @onkeydown="GlobalSearchKey" />
+                <kbd>F2</kbd>
+            </label>
+            <span class="gamyba-topbar__spacer"></span>
+            <div class="gamyba-lang" aria-label="Language">
+                <button type="button" class="@(_lang == "en" ? "is-active" : "")" @onclick='() => _lang = "en"'>EN</button>
+                <button type="button" class="@(_lang == "lt" ? "is-active" : "")" @onclick='() => _lang = "lt"'>LT</button>
+            </div>
+            <div class="gamyba-env mono"><span>ENV <strong>TEST</strong></span><span>VER <strong>v0.6.0</strong></span></div>
+            <div class="gamyba-user"><span>RM</span><div><strong>Rūta Markevičienė</strong><small>@RoleLabel</small></div></div>
+        </header>
+        <nav class="gamyba-tabs" aria-label="Gamyba">
+            @foreach (var tab in Tabs)
+            {
+                <button type="button" class="@(_screen == tab.Key || (_screen == "task" && tab.Key == "tasks") || (_screen == "gt-detail" && tab.Key == "gt") ? "is-active" : "")" @onclick="() => Go(tab.Key)">@L(tab.En, tab.Lt) @if(tab.Key == "queue"){<span class="gamyba-tabcount mono">@QueueItems.Count()</span>} @if(tab.Key == "tasks"){<span class="gamyba-tabcount mono">@_tasks.Count</span>} @if(tab.Key == "labels"){<span class="gamyba-tabcount gamyba-tabcount--danger mono">@_jobs.Count(x => x.State != "Sent")</span>}</button>
+            }
+            <button type="button" class="@(_screen == "map" ? "is-active" : "")" @onclick='() => Go("map")'>@L("Map · Questions", "Žemėlapis · Klausimai")</button>
+        </nav>
+
+        <main class="gamyba-main">
+            @if (!string.IsNullOrWhiteSpace(_notice))
+            {
+                <div class="gamyba-alert gamyba-alert--@_noticeKind" role="alert"><span>@_notice</span><button type="button" @onclick='() => _notice = ""'>×</button></div>
+            }
+
+            @if (_screen == "queue")
+            {
+                @if (_fromSales is not null)
+                {
+                    <div class="gamyba-source"><span class="gamyba-dot"></span><span><strong>@L("From Sales order", "Iš Sales užsakymo")</strong> <span class="mono">@_fromSales</span> · @L("The queue is filtered to this order.", "Eilė filtruojama pagal šį užsakymą.")</span><button type="button" @onclick="() => _fromSales = null">@L("Show all", "Rodyti visus")</button></div>
+                }
+                <div class="gamyba-pagehead">
+                    <div><div class="gamyba-eyebrow">SHOPFLOOR · G01–G03</div><h1>@L("Ready for production", "Paruošta gamybai")</h1><p class="mono">@QueueItems.Count() @L("rows", "eil.") · @QueueItems.Sum(x => x.Quantity) @L("items", "vnt.") · <strong>@_selected.Count @L("selected", "pasirinkta")</strong></p></div>
+                    <div class="gamyba-actions">
+                        <label class="gamyba-compact-select"><span>@L("Target GU", "Tikslinė GU")</span><select @bind="_targetGu"><option value="new">@L("New GU", "Nauja GU")</option>@foreach (var task in _tasks){<option value="@task.Number">@task.Number</option>}</select></label>
+                        <button type="button" class="gamyba-btn" @onclick="SelectAll">@L("Select all", "Pasirinkti visus") <kbd>A</kbd></button>
+                        <label class="gamyba-first">@L("First N", "Pirmi N") <input type="number" min="1" max="999" @bind="_firstN" @onfocus="SelectFocusedInput" /><button type="button" @onclick="PickFirstN">@L("Pick", "Rinkti")</button></label>
+                        <button type="button" class="gamyba-btn gamyba-btn--primary" disabled="@(_selected.Count == 0)" @onclick="OpenIssue">@L("Create GU and issue", "Sukurti GU ir išduoti") <kbd>G</kbd></button>
+                    </div>
+                </div>
+                <section class="gamyba-panel">
+                    <div class="gamyba-toolbar">
+                        <span class="gamyba-toolbar__label">@L("Branch", "Filialas")</span>
+                        <div class="gamyba-segment">@foreach (var branch in new[] { "All", "Vilnius", "Kaunas", "Klaipėda" }){<button type="button" class="@(_branch == branch ? "is-active" : "")" @onclick="() => _branch = branch">@branch</button>}</div>
+                        <span class="gamyba-toolbar__label">@L("Type", "Tipas")</span>
+                        <div class="gamyba-pills">@foreach (var type in new[] { "All", "Rolėtai", "Vertikalios", "Plise", "Romanetės", "Tinkleliai", "Horizontalios", "Apsauginės", "Grotos" }){<button type="button" class="@(_type == type ? "is-active" : "")" @onclick="() => _type = type">@type <span class="mono">@(VisibleItems.Count(x => (type == "All" || x.Type == type) && x.Stage == "patvirtintas"))</span></button>}</div>
+                        <span class="gamyba-toolbar__label">@L("Priority", "Prioritetas")</span>
+                        <div class="gamyba-pills">@foreach (var priority in new[] { "All", "urgent", "vip", "repair" }){<button type="button" class="@(_priority == priority ? "is-active" : "")" @onclick="() => _priority = priority">@(priority == "All" ? "All" : char.ToUpperInvariant(priority[0]) + priority[1..])</button>}</div>
+                        <span class="gamyba-keyhint mono">↑↓ · Space · A · G · Enter</span>
+                    </div>
+                    <div class="gamyba-tablewrap" tabindex="0" @onkeydown="QueueKey">
+                        <table class="gamyba-table">
+                            <thead><tr><th class="gamyba-check"><input type="checkbox" checked="@(QueueItems.Any() && QueueItems.All(x => _selected.Contains(x.Id)))" @onclick="SelectAll" /></th><th>@L("Order", "Užsakymas")</th><th>@L("Due · priority", "Terminas · prioritetas") <button type="button" class="gamyba-question" @onclick='() => Go("map")'>?</button></th><th>@L("Type", "Tipas")</th><th>@L("Material", "Medžiaga")</th><th class="is-num">@L("Size", "Matmenys")</th><th class="is-num">@L("Qty", "Kiekis")</th><th>@L("Note", "Pastaba")</th><th>@L("State", "Būsena")</th><th>@L("Barcode", "Kodas")</th><th>@L("Previous GU", "Ankstesnė GU")</th></tr></thead>
+                            <tbody>
+                                @foreach (var item in QueueItems)
+                                {
+                                    <tr class="@(_selected.Contains(item.Id) ? "is-selected" : "") @(QueueItems.ElementAtOrDefault(_cursor)?.Id == item.Id ? "is-cursor" : "")" @onclick="() => ToggleSelected(item.Id)" @ondblclick="() => OpenHistory(item)">
+                                        <td class="gamyba-check"><input type="checkbox" checked="@_selected.Contains(item.Id)" @onclick:stopPropagation="true" @onchange="() => ToggleSelected(item.Id)" /></td>
+                                        <td><button type="button" class="gamyba-link mono" @onclick:stopPropagation="true" @onclick="() => OpenSalesFixture(item.Order)">@item.Order</button><small>@item.Branch</small></td>
+                                        <td class="mono">@item.Due @if (item.Priority != "normal"){<span class="chip @PriorityClass(item.Priority)">@item.Priority</span>}</td>
+                                        <td>@item.Type</td><td><span class="gamyba-swatch"></span>@item.Fabric @if(item.NoMaterial){<span class="gamyba-nomaterial">@L("NO MATERIAL", "TRŪKSTA")</span>}</td>
+                                        <td class="is-num mono">@item.Width × @item.Height</td><td class="is-num mono"><strong>@item.Quantity</strong></td><td class="gamyba-note">@item.Note</td><td><span class="chip @StageClass(item.Stage)">@item.Stage</span></td><td class="mono">@item.Barcode</td><td class="mono">@if(item.PreviousGu is not null){<span class="gamyba-prev">↻ @item.PreviousGu</span>}else{<span class="gamyba-muted">—</span>}</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                        @if (!QueueItems.Any())
+                        {
+                            <div class="gamyba-empty"><strong>@L("No items in this queue", "Eilėje nėra gaminių")</strong><span>@L("Clear filters or change the fixture simulation.", "Išvalykite filtrus arba pakeiskite pavyzdžio būseną.")</span><button type="button" class="gamyba-btn" @onclick="ClearQueueFilters">@L("Clear filters", "Išvalyti filtrus")</button></div>
+                        }
+                    </div>
+                    <div class="gamyba-panel__foot"><span>@L("Queue source", "Eilės šaltinis") <span class="mono">V_WaitingProductionBlinds</span> · @L("fixture snapshot", "pavyzdiniai duomenys")</span><span class="mono">@L("Double-click a row to open history", "Dukart spustelėkite eilutę istorijai")</span></div>
+                </section>
+            }
+
+            @if (_screen == "tasks")
+            {
+                <div class="gamyba-pagehead"><div><div class="gamyba-eyebrow">SHOPFLOOR · G03–G04</div><h1>@L("Production tasks", "Gamybos užduotys")</h1><p>@L("GU documents, portions, composition and print status.", "GU dokumentai, porcijos, sudėtis ir spausdinimo būsena.")</p></div><div class="gamyba-actions"><input class="gamyba-input" @bind="_taskSearch" @bind:event="oninput" placeholder="@L("Search GU", "Ieškoti GU")" /><button type="button" class="gamyba-btn" @onclick="NewEmptyTask">@L("New empty GU", "Nauja tuščia GU")</button></div></div>
+                <section class="gamyba-panel"><div class="gamyba-tablewrap"><table class="gamyba-table"><thead><tr><th>GU</th><th>@L("Created", "Sukurta")</th><th>@L("Author", "Autorius")</th><th class="is-num">@L("Portions", "Porcijos")</th><th class="is-num">@L("Items", "Gaminiai")</th><th>@L("Orders", "Užsakymai")</th><th>@L("State", "Būsena")</th><th>@L("Documents", "Dokumentai")</th><th>@L("Labels", "Etiketės")</th></tr></thead><tbody>
+                @foreach (var task in _tasks.Where(x => x.Number.Contains(_taskSearch, StringComparison.OrdinalIgnoreCase)))
+                {
+                    <tr class="gamyba-clickrow" @onclick="() => OpenTask(task.Number)"><td class="mono gamyba-accent"><strong>@task.Number ↗</strong></td><td class="mono">@task.Created</td><td>@task.Author</td><td class="is-num mono">@task.Portions.Count</td><td class="is-num mono"><strong>@TaskItemCount(task)</strong></td><td>@TaskOrders(task)</td><td><span class="chip chip--warn">GAMINAMAS</span></td><td>@task.Pdfs.Count PDF</td><td>@(_jobs.Count(x => x.Task == task.Number)) @L("jobs", "darbai")</td></tr>
+                }
+                </tbody></table></div></section>
+            }
+
+            @if (_screen == "task")
+            {
+                <div class="gamyba-breadcrumb"><button type="button" @onclick='() => Go("tasks")'>@L("Production tasks", "Gamybos užduotys")</button> / <strong class="mono">@CurrentTask.Number</strong></div>
+                <div class="gamyba-taskhead"><div><div class="gamyba-eyebrow">@L("TASK", "UŽDUOTIS") GU <span class="chip chip--warn">GAMINAMAS</span> @if(TaskMixed(CurrentTask)){<span class="chip chip--warn">@L("MIXED BRANCHES", "KELI FILIALAI")</span>}</div><h1 class="mono">@CurrentTask.Number</h1><p>@CurrentTask.Created · @CurrentTask.Author · @TaskItemCount(CurrentTask) @L("items", "vnt.") · @CurrentTask.Portions.Count @L("portions", "porcijos") · @TaskOrders(CurrentTask)</p></div><div class="gamyba-actions"><button type="button" class="gamyba-btn gamyba-btn--primary" @onclick="AddPortion">+ @L("Add portion", "Pridėti porciją")</button><button type="button" class="gamyba-btn" @onclick='() => Go("reports")'>@L("Print documents", "Spausdinti dokumentus")</button><button type="button" class="gamyba-btn" @onclick='() => Go("labels")'>@L("Print labels", "Spausdinti etiketes")</button><button type="button" class="gamyba-btn" @onclick='() => Go("scan")'>@L("Scan", "Skenuoti")</button></div></div>
+                <div class="gamyba-two-col">
+                    <div class="gamyba-stack">
+                        <section class="gamyba-panel"><div class="gamyba-panel__head"><strong>@L("Composition", "Sudėtis")</strong><span>@L("Issued rows; another portion can be added", "Išduotos eilutės; galima pridėti dar porciją")</span></div><div class="gamyba-tablewrap"><table class="gamyba-table"><thead><tr><th>@L("Barcode", "Kodas")</th><th>@L("Order", "Užsakymas")</th><th>@L("Type", "Tipas")</th><th>@L("Material", "Medžiaga")</th><th class="is-num">@L("Size", "Matmenys")</th><th>@L("State", "Būsena")</th><th>@L("Action", "Veiksmas")</th></tr></thead><tbody>
+                        @foreach(var portion in CurrentTask.Portions)
+                        {
+                            <tr class="gamyba-group"><td colspan="7">@L("PORTION", "PORCIJA") @portion.Number · @portion.At · @portion.By</td></tr>
+                            @foreach(var item in VisibleItems.Where(x => portion.ItemIds.Contains(x.Id)))
+                            {
+                                <tr><td class="mono">@item.Barcode</td><td class="mono">@item.Order</td><td>@item.Type</td><td>@item.Fabric</td><td class="is-num mono">@item.Width × @item.Height</td><td><span class="chip @StageClass(item.Stage)">@item.Stage</span></td><td><button type="button" class="gamyba-btn gamyba-btn--xs" @onclick="() => OpenHistory(item)">@L("History", "Istorija")</button> <button type="button" class="gamyba-btn gamyba-btn--xs gamyba-btn--danger" @onclick="() => OpenStop(item)">@L("Stop", "Stabdyti")</button></td></tr>
+                            }
+                        }
+                        </tbody></table></div>@if(!CurrentTask.Portions.Any()){<div class="gamyba-empty"><strong>@L("This GU is empty", "Ši GU tuščia")</strong><span>@L("Add a portion from the ready queue.", "Pridėkite porciją iš paruoštų gaminių eilės.")</span></div>}</section>
+                        <section class="gamyba-panel"><div class="gamyba-panel__head"><strong>@L("History", "Istorija")</strong></div><div class="gamyba-history-lines">@foreach(var portion in CurrentTask.Portions){<div><span class="mono">@portion.At</span><strong>@L("Portion issued", "Porcija išduota")</strong><span>@portion.ItemIds.Count @L("rows", "eil.") · @portion.By</span></div>}</div></section>
+                    </div>
+                    <div class="gamyba-stack">
+                        <section class="gamyba-panel"><div class="gamyba-panel__head"><strong>@L("Documents", "Dokumentai")</strong><button type="button" class="gamyba-textbutton" @onclick='() => Go("reports")'>@L("Open all", "Atidaryti visus") →</button></div><div class="gamyba-sidebody">@foreach(var pdf in CurrentTask.Pdfs){<div class="gamyba-pdf"><span>PDF</span><strong>@pdf</strong><button type="button" class="gamyba-btn gamyba-btn--xs" @onclick="() => OpenArchivedPdf(pdf)">@L("Open", "Atidaryti")</button></div>}<div class="gamyba-warning">@L("Composition changed after archived PDF? Generate a new version.", "Sudėtis keitėsi po archyvinio PDF? Sukurkite naują versiją.")</div></div></section>
+                        <section class="gamyba-panel"><div class="gamyba-panel__head"><strong>@L("Labels", "Etiketės")</strong><button type="button" class="gamyba-textbutton" @onclick='() => Go("labels")'>@L("Queue", "Eilė") →</button></div><div class="gamyba-sidebody"><span class="chip @JobClass(_jobs.FirstOrDefault(x => x.Task == CurrentTask.Number)?.State ?? "Pending")">@(_jobs.FirstOrDefault(x => x.Task == CurrentTask.Number)?.State ?? "Pending")</span><div class="gamyba-progress"><span style="width:@($"{(_jobs.FirstOrDefault(x => x.Task == CurrentTask.Number)?.Sent ?? 0) * 100 / Math.Max(1, _jobs.FirstOrDefault(x => x.Task == CurrentTask.Number)?.PhysicalLabels ?? 1)}%")"></span></div></div></section>
+                        <section class="gamyba-panel"><div class="gamyba-panel__head"><strong>@L("Warehouse", "Sandėlis") · G12</strong></div><div class="gamyba-sidebody">@if(CurrentTask.WriteOff is not null){<span class="chip chip--done">@L("WRITTEN OFF", "NURAŠYTA")</span> <span class="mono">@CurrentTask.WriteOff</span>}else{<p>@L("No material movement recorded for this GU.", "Šiai GU medžiagų judėjimas neužfiksuotas.")</p><button type="button" class="gamyba-btn gamyba-btn--xs" @onclick="WriteOffTask">@L("Write off", "Nurašyti")</button>}</div></section>
+                    </div>
+                </div>
+            }
+            @if (_screen == "scan")
+            {
+                <div class="gamyba-pagehead"><div><div class="gamyba-eyebrow">SCANNING · G07</div><h1>@L("Scanning", "Skenavimas")</h1></div><div class="gamyba-actions"><label class="gamyba-compact-select"><span>@L("Document", "Dokumentas")</span><select @bind="_currentDocument">@foreach(var doc in _documents){<option value="@doc.Number">@doc.Number</option>}</select></label><div class="gamyba-segment"><button type="button" class="@(_scanMode == "desktop" ? "is-active" : "")" @onclick='() => _scanMode = "desktop"'>Desktop</button><button type="button" class="@(_scanMode == "mobile" ? "is-active" : "")" @onclick='() => _scanMode = "mobile"'>Mobile</button></div><button type="button" class="gamyba-btn" @onclick='() => _modal = "scan-import"'>@L("Import list", "Importuoti sąrašą")</button><button type="button" class="gamyba-btn" @onclick='() => _modal = "scan-errors"'>@L("Error log", "Klaidų žurnalas") <span class="gamyba-danger mono">@_scanErrors.Count</span></button></div></div>
+                @if (_scanMode == "desktop")
+                {
+                    <div class="gamyba-scan-grid">
+                        <div class="gamyba-stack">
+                            <section class="gamyba-panel gamyba-scan-pad"><div class="gamyba-scan-label"><span>@L("Scanner input", "Skaitytuvo įvestis")</span><span>@L("Scan or type + Enter · focus returns here", "Skenuokite arba įveskite + Enter · fokusas grįžta čia")</span></div><input id="gamyba-scan-input" class="gamyba-scan-code" inputmode="numeric" autocomplete="off" @bind="_scanValue" @bind:event="oninput" @onkeydown="ScanKey" @onfocus="SelectFocusedInput" placeholder="000000000000" /><div class="gamyba-scan-actions"><button type="button" class="gamyba-btn" @onclick='() => _modal = "scan-manual"'>@L("Pick from list", "Parinkti iš sąrašo")</button><button type="button" class="gamyba-btn gamyba-btn--primary" @onclick="Scan">@L("Confirm · Enter", "Patvirtinti · Enter")</button></div></section>
+                            <section class="gamyba-scan-status gamyba-scan-status--@(_scanOutcome == "" ? "idle" : _scanOutcome)"><div><i></i><strong>@(_scanOutcome == "" ? L("WAITING FOR SCAN", "LAUKIAMA SKENO") : _scanOutcome.ToUpperInvariant())</strong><span class="mono">@DateTime.Now.ToString("HH:mm:ss")</span></div><b class="mono">@(_lastScanBarcode == "" ? "— — — —" : _lastScanBarcode)</b><p>@(_scanOutcome == "" ? L("Result of each barcode appears here, large enough to read from the bench.", "Kiekvieno kodo rezultatas rodomas čia, pakankamai didelis matyti nuo darbo stalo.") : _scanReason)</p></section>
+                            <div class="gamyba-scan-stats"><div><span>@L("ACCEPTED", "PRIIMTA")</span><strong class="mono">@CurrentDocument.Scans.Count</strong></div><div><span>@L("REPEATED", "PAKARTOTA")</span><strong class="mono">@(_scanOutcome == "repeat" ? 1 : 0)</strong></div><div><span>@L("REJECTED", "ATMESTA")</span><strong class="mono">@_scanErrors.Count</strong></div></div><small class="gamyba-muted">@L("Counters stay with the GT document.", "Skaitikliai lieka su GT dokumentu.")</small>
+                        </div>
+                        <section class="gamyba-panel"><div class="gamyba-panel__head"><div><strong class="mono">@CurrentDocument.Number</strong><span> · @L("Operation", "Operacija"): @CurrentDocument.Operation · @CurrentDocument.Author · @CurrentDocument.Created</span></div><div class="gamyba-actions"><button type="button" class="gamyba-btn gamyba-btn--xs" disabled="@(!CurrentDocument.Scans.Any())" @onclick="UndoLastScan">↶ @L("Undo last", "Atšaukti paskutinį")</button><button type="button" class="gamyba-btn gamyba-btn--xs" @onclick="() => OpenDocument(CurrentDocument.Number)">@L("Details", "Išsamiau")</button></div></div><div class="gamyba-tablewrap"><table class="gamyba-table"><thead><tr><th>@L("Time", "Laikas")</th><th>@L("Barcode", "Kodas")</th><th>@L("Product", "Gaminys")</th><th>@L("Transition", "Perėjimas")</th><th>@L("Status", "Būsena")</th><th>@L("Reason", "Priežastis")</th></tr></thead><tbody>@foreach(var scan in CurrentDocument.Scans.AsEnumerable().Reverse()){var scannedItem = _items.First(x => x.Id == scan.ItemId);<tr><td class="mono">@scan.At</td><td class="mono"><strong>@scannedItem.Barcode</strong></td><td>@scannedItem.Type</td><td class="mono">@scan.Before → @scan.After</td><td><span class="chip @(scan.Locked ? "chip--slate" : "chip--ok")">@(scan.Locked ? L("LOCKED", "UŽRAKINTA") : L("ACCEPTED", "PRIIMTA"))</span></td><td>@(scan.Locked ? L("Later document", "Vėlesnis dokumentas") : "—")</td></tr>}</tbody></table>@if(!CurrentDocument.Scans.Any()){<div class="gamyba-empty">@L("No scans yet", "Skenų dar nėra")</div>}</div></section>
+                    </div>
+                }
+                else
+                {
+                    <div class="gamyba-mobile-wrap"><div class="gamyba-phone"><div class="gamyba-phone__head"><span>SCANNING <b>TEST</b></span><strong class="mono">@CurrentDocument.Number</strong><small>@L("Operation", "Operacija"): @CurrentDocument.Operation</small></div><div class="gamyba-phone__body"><input id="gamyba-scan-input" class="gamyba-scan-code" inputmode="numeric" autocomplete="off" @bind="_scanValue" @bind:event="oninput" @onkeydown="ScanKey" @onfocus="SelectFocusedInput" placeholder="000000000000" /><section class="gamyba-scan-status gamyba-scan-status--@(_scanOutcome == "" ? "idle" : _scanOutcome)"><div><i></i><strong>@(_scanOutcome == "" ? L("WAITING FOR SCAN", "LAUKIAMA SKENO") : _scanOutcome.ToUpperInvariant())</strong></div><b class="mono">@(_lastScanBarcode == "" ? "— — — —" : _lastScanBarcode)</b><p>@(_scanOutcome == "" ? L("Result of each barcode appears here, large enough to read from the bench.", "Kiekvieno kodo rezultatas rodomas čia, pakankamai didelis matyti nuo darbo stalo.") : _scanReason)</p></section><div class="gamyba-scan-stats"><div><span>@L("ACCEPTED", "PRIIMTA")</span><strong class="mono">@CurrentDocument.Scans.Count</strong></div><div><span>@L("REPEATED", "PAKARTOTA")</span><strong class="mono">@(_scanOutcome == "repeat" ? 1 : 0)</strong></div><div><span>@L("REJECTED", "ATMESTA")</span><strong class="mono">@_scanErrors.Count</strong></div></div><div class="gamyba-phone__rows">@foreach(var scan in CurrentDocument.Scans.AsEnumerable().Reverse().Take(4)){var scannedItem = _items.First(x => x.Id == scan.ItemId);<div><span class="mono">@scannedItem.Barcode</span><span>@scannedItem.Type</span><small class="mono">@scan.At</small></div>}</div><div class="gamyba-scan-actions"><button type="button" class="gamyba-btn" @onclick='() => _modal = "scan-manual"'>@L("Pick from list", "Parinkti iš sąrašo")</button><button type="button" class="gamyba-btn" disabled="@(!CurrentDocument.Scans.Any())" @onclick="UndoLastScan">↶ @L("Undo last", "Atšaukti paskutinį")</button></div></div></div><div class="gamyba-mobile-note"><strong>@L("Mobile mode", "Mobilus režimas")</strong><p>@L("The same GT document and scan results are used on desktop and mobile.", "Tas pats GT dokumentas ir skenų rezultatai naudojami kompiuteryje bei mobiliajame įrenginyje.")</p></div></div>
+                }
+            }
+
+            @if (_screen == "gt")
+            {
+                <div class="gamyba-pagehead"><div><div class="gamyba-eyebrow">SHOPFLOOR · G08</div><h1>@L("GT documents", "GT dokumentai")</h1><p>@L("Production transitions and scan history.", "Gamybos perėjimai ir skenavimo istorija.")</p></div><div class="gamyba-actions"><label class="gamyba-mine-filter"><input type="checkbox" @bind="_mineLastFour" />@L("Mine · last 4 days", "Mano · 4 dienos")</label><button type="button" class="gamyba-btn gamyba-btn--primary" @onclick="NewDocument">+ @L("New GT document", "Naujas GT dokumentas")</button></div></div>
+                <section class="gamyba-panel"><div class="gamyba-tablewrap"><table class="gamyba-table"><thead><tr><th>GT</th><th>@L("Date", "Data")</th><th>@L("Author", "Autorius")</th><th>@L("Operation", "Operacija")</th><th class="is-num">@L("Rows", "Eilutės")</th><th>@L("Note", "Pastaba")</th><th class="is-num">@L("Action", "Veiksmas")</th></tr></thead><tbody>
+                    @foreach (var doc in ListedDocuments)
+                    {
+                        <tr><td class="mono gamyba-accent"><strong>@doc.Number</strong></td><td class="mono">@doc.Created</td><td>@doc.Author</td><td><span class="chip @StageClass(doc.Operation)">@doc.Operation</span></td><td class="mono is-num"><strong>@doc.Scans.Count</strong></td><td class="gamyba-muted">@(CanContinueDocument(doc) ? "—" : L("Older or another author", "Senas arba kitas autorius"))</td><td class="is-num"><button type="button" class="gamyba-btn gamyba-btn--xs gamyba-btn--primary" disabled="@(!CanContinueDocument(doc))" @onclick="() => ContinueDocument(doc.Number)">@L("Continue scanning", "Tęsti skenavimą")</button> <button type="button" class="gamyba-btn gamyba-btn--xs" @onclick="() => OpenDocument(doc.Number)">@L("Details", "Detalės")</button></td></tr>
+                    }
+                </tbody></table></div></section>
+            }
+
+            @if (_screen == "gt-detail")
+            {
+                <div class="gamyba-breadcrumb"><button type="button" @onclick='() => Go("gt")'>@L("GT documents", "GT dokumentai")</button> / <strong class="mono">@CurrentDocument.Number</strong></div>
+                <div class="gamyba-taskhead"><div><div class="gamyba-eyebrow">GT · @L("DOCUMENT", "DOKUMENTAS")</div><h1 class="mono">@CurrentDocument.Number</h1><p>@L("Operation", "Operacija"): <strong>@CurrentDocument.Operation</strong> · @CurrentDocument.Author · @CurrentDocument.Created · @CurrentDocument.Scans.Count @L("items", "gaminiai")</p></div><div class="gamyba-actions"><button type="button" class="gamyba-btn gamyba-btn--primary" disabled="@(!CanContinueDocument(CurrentDocument))" @onclick='() => Go("scan")'>@L("Continue scanning", "Tęsti skenavimą")</button><button type="button" class="gamyba-btn" disabled="@(CurrentDocument.Scans.Count == 0 || CurrentDocument.Scans.Last().Locked || !CanContinueDocument(CurrentDocument) || Restricted)" @onclick="UndoLastScan">↶ @L("Undo last scan", "Atšaukti paskutinį skeną")</button></div></div>
+                <div class="gamyba-gt-rule"><span class="gamyba-dot"></span><span><strong>@L("Correction rule.", "Taisymo taisyklė.")</strong> @L("Only the last accepted row of your recent document can be removed; a later transition locks it.", "Pašalinti galima tik paskutinę priimtą savo naujausio dokumento eilutę; vėlesnis perėjimas ją užrakina.") <button type="button" class="gamyba-textbutton" @onclick='() => Go("map")'>P08 ?</button></span></div>
+                <section class="gamyba-panel"><div class="gamyba-tablewrap"><table class="gamyba-table"><thead><tr><th>#</th><th>@L("Time", "Laikas")</th><th>@L("Barcode", "Kodas")</th><th>@L("Item", "Gaminys")</th><th>@L("Transition", "Perėjimas")</th><th>@L("Rights", "Teisės")</th><th class="is-num">@L("Correction", "Taisymas")</th></tr></thead><tbody>
+                    @foreach (var scan in CurrentDocument.Scans)
+                    {
+                        var item = _items.First(x => x.Id == scan.ItemId);
+                        var last = scan == CurrentDocument.Scans.Last();
+                        <tr><td class="mono gamyba-muted">@(CurrentDocument.Scans.IndexOf(scan) + 1)</td><td class="mono gamyba-muted">@scan.At</td><td class="mono"><strong>@item.Barcode</strong></td><td>@item.Type · @item.Width×@item.Height · @item.Order</td><td class="mono">@scan.Before → @scan.After</td><td>@(Restricted && item.Branch != "Kaunas" ? L("Other branch", "Kitas filialas") : L("Allowed", "Leidžiama"))</td><td class="is-num">@if (last && !scan.Locked){<button type="button" class="gamyba-btn gamyba-btn--xs" disabled="@(!CanContinueDocument(CurrentDocument) || Restricted)" @onclick="UndoLastScan">↶ @L("Delete scan", "Pašalinti skeną")</button>}else if(scan.Locked){<span class="gamyba-muted">@L("Locked", "Užrakinta")</span>}</td></tr>
+                    }
+                </tbody></table></div></section>
+            }
+
+            @if (_screen == "stops")
+            {
+                <div class="gamyba-pagehead">
+                    <div><div class="gamyba-eyebrow">SHOPFLOOR · G09–G10</div><h1>@L("Production stops · Repairs", "Gamybos stabdymai · Remontai")</h1></div>
+                    <div class="gamyba-segment"><button type="button" class="@(_stopTab == "stops" ? "is-active" : "")" @onclick='() => _stopTab = "stops"'>@L("Stops", "Stabdymai")</button><button type="button" class="@(_stopTab == "repairs" ? "is-active" : "")" @onclick='() => _stopTab = "repairs"'>@L("Repairs", "Remontai")</button></div>
+                </div>
+                @if (_stopTab == "stops")
+                {
+                    <div class="gamyba-stop-warning"><span class="gamyba-dot"></span><span><strong>@L("This is a production stop, not an order cancellation.", "Tai gamybos stabdymas, ne užsakymo atšaukimas.")</strong> @L("The Sales order stays as it is; items get status Sustabdytas and a separate stop document. Cancelling the order is done in Sales.", "Sales užsakymas nesikeičia; gaminiai gauna būseną Sustabdytas ir atskirą stabdymo dokumentą. Užsakymas atšaukiamas Sales modulyje.")</span></div>
+                    <div class="gamyba-stops-grid">
+                        <section class="gamyba-panel">
+                            <div class="gamyba-panel__head"><strong>@L("Stop documents", "Stabdymo dokumentai")</strong><button type="button" class="gamyba-btn gamyba-btn--xs gamyba-btn--danger" @onclick="ResetStopPicker">+ @L("New stop document", "Naujas stabdymo dokumentas")</button></div>
+                            <div class="gamyba-tablewrap"><table class="gamyba-table"><thead><tr><th>@L("Document", "Dokumentas")</th><th>@L("Date", "Data")</th><th>@L("Order", "Užsakymas")</th><th class="is-num">@L("Rows", "Eilutės")</th><th>@L("Reason", "Priežastis")</th><th></th></tr></thead><tbody>
+                                @foreach (var stop in _stops)
+                                {
+                                    <tr><td class="mono gamyba-accent"><strong>@stop.Number</strong></td><td class="mono">@StopDate(stop.Number)</td><td class="mono">@stop.Order</td><td class="is-num mono">@stop.ItemIds.Count</td><td>@stop.Reason</td><td class="is-num"><button type="button" class="gamyba-btn gamyba-btn--xs" @onclick="() => PreviewStop(stop.Number)">@L("View · Print", "Žiūrėti · Spausdinti")</button></td></tr>
+                                }
+                            </tbody></table></div>
+                        </section>
+                        <section class="gamyba-panel">
+                            <div class="gamyba-panel__head"><strong>@L("Choose order / items", "Pasirinkti užsakymą / gaminius")</strong></div>
+                            <div class="gamyba-sidebody">
+                                <div class="gamyba-stop-order">
+                                    <label>@L("Series", "Serija")<select class="gamyba-input mono" @bind="_stopSeries"><option>KVT</option><option>KLP</option></select></label>
+                                    <label>@L("Group", "Grupė")<select class="gamyba-input mono" @bind="_stopGroup"><option>2611</option><option>2610</option></select></label>
+                                    <label>@L("Number", "Numeris")<input class="gamyba-input mono" @bind="_stopOrder" @bind:event="oninput" @onfocus="SelectFocusedInput" placeholder="012" /></label>
+                                </div>
+                                <small>@L("Only eligible items from this order can be stopped.", "Stabdyti galima tik tinkamos būsenos šio užsakymo gaminius.")</small>
+                                <div class="gamyba-stop-candidates">
+                                    @foreach (var item in StopCandidates)
+                                    {
+                                        <label class="@(item.Stage != "gaminamas" ? "is-disabled" : "")"><input type="checkbox" checked="@_stopSelected.Contains(item.Id)" disabled="@(item.Stage != "gaminamas")" @onchange="() => ToggleStop(item.Id)" /><span class="mono">@item.Barcode</span><strong>@item.Order · @item.Type @item.Width×@item.Height</strong><span class="chip @StageClass(item.Stage)">@item.Stage</span></label>
+                                    }
+                                </div>
+                                <label class="gamyba-fieldlabel">@L("Reason", "Priežastis")</label>
+                                <select class="gamyba-input" @bind="_stopReason"><option>Kliento prašymas</option><option>Audinio defektas</option><option>Matavimo klaida</option><option>Medžiagos trūkumas</option></select>
+                                <button type="button" class="gamyba-btn gamyba-btn--danger" disabled="@(_stopSelected.Count == 0 || Restricted)" @onclick="StopItems">@L("Create stop document", "Sukurti stabdymo dokumentą")</button>
+                                <small>@L("The legacy stop contract is still being checked.", "Legacy stabdymo taisyklės dar tikrinamos.") <button type="button" class="gamyba-textbutton" @onclick='() => Go("map")'>P09 ?</button></small>
+                            </div>
+                        </section>
+                    </div>
+                }
+                else
+                {
+                    <div class="gamyba-repair-filters">
+                        @foreach (var filter in new[] { ("all", L("All", "Visi")), ("unfinished", L("Unfinished", "Nebaigti")), ("unknown", L("Unknown cause", "Nežinoma priežastis")) })
+                        {
+                            <button type="button" class="@(_repairFilter == filter.Item1 ? "is-active" : "")" @onclick="() => _repairFilter = filter.Item1">@filter.Item2 <span class="mono">@(_repairFilter == filter.Item1 ? FilteredRepairs.Count() : _repairs.Count(x => filter.Item1 == "all" || (filter.Item1 == "unfinished" && !x.Done) || (filter.Item1 == "unknown" && string.IsNullOrWhiteSpace(x.Fact))))</span></button>
+                        }
+                        <span>@L("Sales → repair origin", "Sales → remonto šaltinis")</span>
+                    </div>
+                    <div class="gamyba-stops-grid">
+                        <section class="gamyba-panel"><div class="gamyba-tablewrap"><table class="gamyba-table"><thead><tr><th>@L("Repair", "Remontas")</th><th>@L("Barcode", "Kodas")</th><th>@L("Item", "Gaminys")</th><th>@L("Reason", "Priežastis")</th><th>@L("State", "Būsena")</th><th>@L("Actual failure", "Faktinis gedimas")</th></tr></thead><tbody>
+                            @foreach (var rep in FilteredRepairs)
+                            {
+                                var item = _items.First(x => x.Id == rep.ItemId);
+                                <tr class="gamyba-clickrow @(_repairNumber == rep.Number ? "is-selected" : "")" @onclick="() => _repairNumber = rep.Number"><td class="mono gamyba-accent"><strong>@rep.Number</strong></td><td class="mono">@item.Barcode</td><td>@item.Type @item.Width×@item.Height</td><td>@rep.Reason</td><td><span class="chip @(rep.Done ? "chip--done" : "chip--warn")">@(rep.Done ? "DONE" : "OPEN")</span></td><td class="@(string.IsNullOrWhiteSpace(rep.Fact) ? "gamyba-muted" : "")">@(string.IsNullOrWhiteSpace(rep.Fact) ? "—" : rep.Fact)</td></tr>
+                            }
+                        </tbody></table></div></section>
+                        <section class="gamyba-panel"><div class="gamyba-panel__head"><strong>@CurrentRepair.Number · @_items.First(x => x.Id == CurrentRepair.ItemId).Type @_items.First(x => x.Id == CurrentRepair.ItemId).Width×@_items.First(x => x.Id == CurrentRepair.ItemId).Height</strong></div><div class="gamyba-sidebody">
+                            <label class="gamyba-fieldlabel">@L("Reason", "Priežastis") · iReasonID</label><div class="gamyba-readonly">@CurrentRepair.Reason</div>
+                            <label class="gamyba-fieldlabel">@L("Customer reported", "Kliento nurodyta") · sFailureDescription</label><div class="gamyba-readonly">@CurrentRepair.Claimed</div>
+                            <label class="gamyba-fieldlabel">@L("Actual failure", "Faktinis gedimas") · sFactFailure <span>@(Supervisor && !CurrentRepair.Done ? L("Editable", "Redaguojama") : L("Locked", "Užrakinta"))</span></label>
+                            <textarea class="gamyba-input" rows="3" @bind="CurrentRepair.Fact" disabled="@(CurrentRepair.Done || !Supervisor)" placeholder="@L("Describe confirmed cause", "Nurodykite patvirtintą priežastį")"></textarea>
+                            <div class="gamyba-actions"><button type="button" class="gamyba-btn gamyba-btn--primary" disabled="@(CurrentRepair.Done || !Supervisor)" @onclick="SaveRepair">@L("Save & close", "Išsaugoti ir užbaigti")</button><button type="button" class="gamyba-btn" @onclick='() => Go("reports")'>@L("Repair document", "Remonto dokumentas")</button></div>
+                            <small>@L("Repair reason and actual failure use separate legacy fields.", "Remonto priežastis ir faktinis gedimas saugomi atskiruose legacy laukuose.")</small>
+                        </div></section>
+                    </div>
+                }
+            }
+
+            @if (_screen == "finished")
+            {
+                <div class="gamyba-pagehead"><div><div class="gamyba-eyebrow">SHOPFLOOR · G13</div><h1>@L("Finished goods", "Gatava produkcija")</h1><p>@L("Handover and dispatch documents. Invoice remains gated.", "Perdavimo ir siuntimo dokumentai. Sąskaita lieka apribota.")</p></div><button type="button" class="gamyba-btn gamyba-btn--primary" @onclick="NewDocument">+ @L("New handover", "Naujas perdavimas")</button></div>
+                <div class="gamyba-output-grid"><section class="gamyba-panel"><div class="gamyba-tablewrap"><table class="gamyba-table"><thead><tr><th>@L("Document", "Dokumentas")</th><th>@L("Date", "Data")</th><th>@L("Operation", "Operacija")</th><th>@L("Recipient", "Gavėjas")</th><th class="is-num">@L("Items", "Gaminiai")</th><th>@L("Vehicle", "Transportas")</th><th>@L("Author", "Autorius")</th></tr></thead><tbody>@foreach(var doc in FinishedDocs){<tr class="gamyba-clickrow @(_finishedSelected == doc.No ? "is-selected" : "")" @onclick="() => _finishedSelected = doc.No"><td class="mono gamyba-accent"><strong>@doc.No</strong></td><td class="mono">@doc.Date</td><td><span class="chip @StageClass(doc.Operation)">@doc.Operation</span></td><td>@doc.Recipient</td><td class="is-num mono">@doc.Count</td><td>@doc.Vehicle</td><td>@doc.Author</td></tr>}</tbody></table></div></section><section class="gamyba-panel"><div class="gamyba-panel__head"><strong class="mono">@CurrentFinished.No · @L("Print documents", "Spausdinimo dokumentai")</strong></div><div class="gamyba-sidebody"><p>@L("Recipient", "Gavėjas"): <strong>@CurrentFinished.Recipient</strong><br />@L("Vehicle", "Transportas"): <span class="mono">@CurrentFinished.Vehicle</span></p>@foreach(var print in new[] { "Išdavimas klientui", "Siuntimas filialui", "Transporto važtaraštis", "PVM sąskaita faktūra" }){var invoice = print == "PVM sąskaita faktūra";<div class="gamyba-output-row"><span>PDF</span><div><strong>@print</strong>@if(invoice){<small>@L("Invoice requires the existing finance gate.", "Sąskaitai reikia esamos finansų patikros.")</small>}</div><button type="button" class="gamyba-btn gamyba-btn--xs" disabled="@invoice" @onclick="() => PreviewOutput(print)">@L("Preview", "Peržiūra")</button></div>}</div></section></div>
+            }
+
+            @if (_screen == "history")
+            {
+                <div class="gamyba-pagehead">
+                    <div><div class="gamyba-eyebrow">SHOPFLOOR · G11</div><h1>@L("Product history", "Gaminio istorija")</h1></div>
+                    <label class="gamyba-history-search"><span>@L("Barcode", "Kodas")</span><input class="mono" @bind="_historyBarcode" @bind:event="oninput" @onfocus="SelectFocusedInput" placeholder="000000000000" /><kbd>Enter</kbd></label>
+                </div>
+                @if (HistoryItem is null)
+                {
+                    <div class="gamyba-history-empty"><strong>@L("Scan or type a barcode", "Nuskenuokite arba įveskite kodą")</strong><br />@L("You will see the item, current stage and document timeline.", "Matysite gaminį, jo būseną ir dokumentų istoriją.")</div>
+                }
+                else if (Restricted && HistoryItem.Branch != "Kaunas")
+                {
+                    <div class="gamyba-alert gamyba-alert--danger">@L("This item belongs to another branch.", "Šis gaminys priklauso kitam filialui.")</div>
+                }
+                else
+                {
+                    <div class="gamyba-history-grid">
+                        <section class="gamyba-panel"><div class="gamyba-history-card"><div class="gamyba-history-card__barcode mono">@HistoryItem.Barcode</div><strong>@HistoryItem.Type · @HistoryItem.Width × @HistoryItem.Height</strong><p>@HistoryItem.Fabric · @HistoryItem.Quantity @L("pcs", "vnt.")</p>
+                            <div class="gamyba-history-facts"><span>@L("Order", "Užsakymas")</span><button type="button" class="gamyba-link mono" @onclick="() => OpenSalesFixture(HistoryItem.Order)">@HistoryItem.Order ↗</button><span>@L("Branch", "Filialas")</span><strong>@HistoryItem.Branch</strong><span>@L("Stage", "Būsena")</span><span class="chip @StageClass(HistoryItem.Stage)">@HistoryItem.Stage</span><span>GU</span><strong class="mono">@(HistoryItem.Gu ?? "—")</strong></div>
+                            <div class="gamyba-fieldlabel">@L("Allowed actions", "Leidžiami veiksmai")</div>
+                            <div class="gamyba-history-actions"><button type="button" class="gamyba-btn gamyba-btn--xs" disabled="@(HistoryItem.Stage != "patvirtintas" || Restricted)" @onclick="() => IssueHistoryItem(HistoryItem)">@L("Issue to GU", "Išduoti į GU")</button><button type="button" class="gamyba-btn gamyba-btn--xs" disabled="@(HistoryItem.Stage != "gaminamas")" @onclick='() => Go("scan")'>@L("Scan", "Skenuoti")</button><button type="button" class="gamyba-btn gamyba-btn--xs" disabled="@(HistoryItem.Stage != "gaminamas" || Restricted)" @onclick="() => OpenStop(HistoryItem)">@L("Stop", "Stabdyti")</button><button type="button" class="gamyba-btn gamyba-btn--xs" @onclick="OpenRepairs">@L("Repair", "Remontas")</button><button type="button" class="gamyba-btn gamyba-btn--xs" disabled="@(HistoryItem.Gu is null)" @onclick="() => PrintHistoryLabel(HistoryItem)">@L("Print labels", "Spausdinti etiketes")</button></div>
+                            <small>@L("Actions depend on state and branch rights.", "Veiksmai priklauso nuo būsenos ir filialo teisių.")</small>
+                        </div></section>
+                        <section class="gamyba-panel"><div class="gamyba-panel__head"><strong>@L("Document timeline", "Dokumentų istorija")</strong></div><div class="gamyba-history-lines"><div><span class="mono">2026-10-28</span><strong class="mono">@HistoryItem.Order</strong><span>@L("Confirmed in Sales", "Patvirtintas Sales")</span></div>@if (HistoryItem.Gu is not null){<div><span class="mono">2026-11-02</span><button type="button" class="gamyba-link mono" @onclick="() => OpenTask(HistoryItem.Gu)">@HistoryItem.Gu</button><span>@L("Issued to production", "Išduota gamybai")</span></div>}@foreach (var doc in _documents.Where(d => d.Scans.Any(scan => scan.ItemId == HistoryItem.Id))){<div><span class="mono">@doc.Created</span><button type="button" class="gamyba-link mono" @onclick="() => OpenDocument(doc.Number)">@doc.Number</button><span>@doc.Operation · @L("scan accepted", "skenas priimtas")</span></div>}</div></section>
+                    </div>
+                }
+            }
+
+            @if (_screen == "technology")
+            {
+                <div class="gamyba-pagehead">
+                    <div><div class="gamyba-eyebrow">SHOPFLOOR · G14</div><h1>@L("Technology", "Technologija")</h1><p>@L("Existing legacy settings. Formula is computed on test values before it is saved.", "Esami legacy nustatymai. Prieš išsaugant formulė apskaičiuojama su bandomaisiais dydžiais.")</p></div>
+                    <div class="gamyba-segment">
+                        @foreach (var tab in new[] { ("formulas", L("Formulas · PPP", "Formulės · PPP")), ("colors", L("Colours", "Spalvos")), ("acc", L("Accessories", "Priedai")), ("rules", L("State rules", "Būsenų taisyklės")) })
+                        {
+                            <button type="button" class="@(_techTab == tab.Item1 ? "is-active" : "")" @onclick="() => _techTab = tab.Item1">@tab.Item2</button>
+                        }
+                    </div>
+                </div>
+                @if (_techTab == "formulas")
+                {
+                    <div class="gamyba-tech-grid">
+                        <section class="gamyba-panel"><div class="gamyba-panel__head"><strong>@L("Product types", "Gaminių tipai")</strong></div><div class="gamyba-tech-types">
+                            @foreach (var type in _techCatalog.Keys)
+                            {
+                                <button type="button" class="@(_techType == type ? "is-active" : "")" @onclick="() => ChangeTechType(type)"><span>@type</span><span class="mono">@_techCatalog[type].Count</span></button>
+                            }
+                        </div></section>
+                        <section class="gamyba-panel">
+                            <div class="gamyba-panel__head"><strong>@_techType · @L("Parameters", "Parametrai")</strong><span>legacy · PPP</span></div>
+                            <div class="gamyba-tablewrap"><table class="gamyba-table"><thead><tr><th>@L("Code", "Kodas")</th><th>@L("Name", "Pavadinimas")</th><th>@L("Formula", "Formulė")</th><th>@L("Unit", "Vienetas")</th></tr></thead><tbody>
+                                @foreach (var parameter in CurrentTechParameters)
+                                {
+                                    <tr class="gamyba-clickrow @(_techParameter == parameter.Code ? "is-selected" : "")" @onclick="() => ChangeParameter(parameter.Code)"><td class="mono"><strong>@parameter.Code</strong></td><td>@parameter.Name</td><td class="mono">@parameter.Formula</td><td class="mono gamyba-muted">@parameter.Unit</td></tr>
+                                }
+                            </tbody></table></div>
+                            <div class="gamyba-tech-editor">
+                                <div><label class="gamyba-fieldlabel">@L("Formula", "Formulė") · @_techParameter</label><textarea class="gamyba-input mono" rows="3" @bind="_techFormula" @bind:after="() => _formulaTested = false" disabled="@(!Supervisor)"></textarea><small>@L("Allowlist", "Leidžiama"): <span class="mono">W, H, Qty, Round(), Max(), Min(), If()</span></small></div>
+                                <div><label class="gamyba-fieldlabel">@L("Test before save", "Išbandyti prieš išsaugojimą")</label><div class="gamyba-tech-test-inputs"><label>W, mm<input type="number" class="gamyba-input mono" @bind="_testWidth" @onfocus="SelectFocusedInput" /></label><label>H, mm<input type="number" class="gamyba-input mono" @bind="_testHeight" @onfocus="SelectFocusedInput" /></label></div><button type="button" class="gamyba-btn" @onclick="TestFormula">@L("Compute", "Apskaičiuoti")</button><div class="gamyba-tech-result @(_formulaTested ? "is-ok" : "")"><strong>@(_formulaTested ? L("TEST PASSED", "BANDYMAS PAVYKO") : L("NOT TESTED", "NEIŠBANDYTA"))</strong><span class="mono">@(string.IsNullOrWhiteSpace(_testResult) ? "—" : _testResult)</span><small>@L("W", "P")=@_testWidth · H=@_testHeight</small></div><button type="button" class="gamyba-btn gamyba-btn--primary" disabled="@(!_formulaTested || !Supervisor)" @onclick="SaveFormula">@L("Save formula", "Išsaugoti formulę")</button><small>@L("No draft: this stage saves only fixture data.", "Juodraščio nėra: šiame etape išsaugomi tik pavyzdiniai duomenys.") <button type="button" class="gamyba-textbutton" @onclick='() => Go("map")'>P11 ?</button></small></div>
+                            </div>
+                        </section>
+                    </div>
+                }
+                else
+                {
+                    <section class="gamyba-panel"><div class="gamyba-tablewrap"><table class="gamyba-table"><thead><tr><th>@L("Name", "Pavadinimas")</th><th>@L("Value", "Reikšmė")</th><th>@L("Scope", "Sritis")</th><th>@L("Rights", "Teisės")</th></tr></thead><tbody>
+                        @foreach (var row in TechOtherRows)
+                        {
+                            <tr><td><strong>@row.Name</strong></td><td>@row.Value</td><td class="gamyba-muted">@row.Source</td><td>@row.Rights</td></tr>
+                        }
+                    </tbody></table></div></section>
+                }
+            }
+
+            @if (_screen == "reports")
+            {
+                <div class="gamyba-pagehead"><div><div class="gamyba-eyebrow">SHOPFLOOR · G05 · @L("DOCUMENTS FOR", "DOKUMENTAI GU") <span class="mono">@CurrentTask.Number</span></div><h1>@L("Production documents", "Gamybos dokumentai")</h1></div><div class="gamyba-segment"><button type="button" class="@(_reportMode == "preview" ? "is-active" : "")" @onclick='() => _reportMode = "preview"'>@L("Print · PDF", "Spausdinti · PDF")</button><button type="button" class="@(_reportMode == "editor" ? "is-active" : "")" disabled="@(!Supervisor)" @onclick='() => _reportMode = "editor"'>@L("Template editor", "Šablono redaktorius")</button></div></div>
+                @if(_reportMode == "preview")
+                {
+                    <div class="gamyba-docs-grid">
+                        <section class="gamyba-panel"><div class="gamyba-panel__head"><strong>13 @L("reports", "ataskaitų")</strong><span>· DIC_ProjectReports gam</span></div><div class="gamyba-report-list">@foreach(var report in GamybaFixtures.Reports){<button type="button" class="@(_report == report ? "is-active" : "")" @onclick="() => _report = report"><span class="gamyba-report-radio"></span><span>@report</span><span class="mono">@ReportCount(report)</span></button>}</div></section>
+                        <section class="gamyba-panel gamyba-docs-preview"><div class="gamyba-panel__head"><div><strong>@_report</strong><span class="mono"> · @_templateVersion · A4 @L("portrait", "vertikalus")</span></div><span class="mono">1 / 1</span></div>@if(!ReportItems.Any()){<div class="gamyba-empty"><strong>NoData</strong><span>@L("No rows. Printing is cancelled.", "Nėra eilučių. Spausdinimas atšauktas.")</span><span class="mono">Report_NoData → Cancel</span></div>}else{<div class="gamyba-docs-stage"><article class="gamyba-doc-paper"><header><div><strong>@_report</strong><span>UAB Lauresta · Gamyba</span></div><div class="mono"><strong>@CurrentTask.Number</strong><span>@DateTime.Today.ToString("yyyy-MM-dd")</span></div></header><div class="gamyba-doc-meta"><div>@L("Author", "Autorius") <strong>@CurrentTask.Author</strong></div><div>@L("Branch", "Filialas") <strong>@string.Join(", ", TaskItems(CurrentTask).Select(x => x.Branch).Distinct())</strong></div><div>@L("items", "gaminiai") <strong>@ReportItems.Count()</strong></div></div><table class="gamyba-table"><thead><tr><th>@L("Barcode", "Kodas")</th><th>@L("Order", "Užsakymas")</th><th>@L("Material", "Medžiaga")</th><th>@L("Size", "Matmenys")</th><th class="is-num">@L("Qty", "Kiekis")</th></tr></thead><tbody>@foreach(var item in ReportItems){<tr><td class="mono">@item.Barcode</td><td class="mono">@item.Order</td><td>@item.Fabric</td><td class="mono">@item.Width × @item.Height</td><td class="mono is-num">@item.Quantity</td></tr>}</tbody></table><footer><span>@L("Total", "Iš viso"): <strong>@ReportItems.Sum(x => x.Quantity)</strong> · @L("generated from", "sukurta iš"): GU</span><span class="mono">@_templateVersion · 1/1</span></footer></article></div>}</section>
+                        <aside class="gamyba-stack"><section class="gamyba-panel"><div class="gamyba-sidebody"><button type="button" class="gamyba-btn gamyba-btn--primary" disabled="@(!ReportItems.Any())" @onclick="PrintReport">@L("Print… (browser dialog)", "Spausdinti… (naršyklėje)")</button><button type="button" class="gamyba-btn" @onclick="() => OpenArchivedPdf(_report)">@L("Open original PDF", "Atidaryti originalų PDF")</button><button type="button" class="gamyba-btn gamyba-btn--sand" disabled="@(!ReportItems.Any())" @onclick="NewReportVersion">@L("Create new version from current data", "Sukurti naują versiją iš dabartinių duomenų")</button><div class="gamyba-warning">@L("Composition changed after the last PDF. The original is kept; a new version will be marked generated from current data.", "Sudėtis keitėsi po paskutinio PDF. Originalas išsaugomas; nauja versija bus pažymėta kaip sukurta iš dabartinių duomenų.")</div><small>@L("Reprint never changes status or stock. Paper, orientation and 100% scale are set in the browser dialog.", "Pakartotinis spausdinimas nekeičia būsenos ar likučių. Popierius, orientacija ir 100% mastelis nustatomi naršyklėje.")</small></div></section><section class="gamyba-panel"><div class="gamyba-panel__head"><strong>@L("Versions · archive", "Versijos · archyvas")</strong></div><div class="gamyba-sidebody"><div class="gamyba-doc-version"><strong class="mono">v1</strong><div>@_report · @L("generated from GU commit", "sukurta iš GU")<small class="mono">2026-11-02 09:14 · Rūta M. · sha256 9f3a…c21e</small></div></div>@foreach(var pdf in CurrentTask.Pdfs){<div class="gamyba-doc-version"><strong class="mono">@_templateVersion</strong><div>@pdf<small>@L("Archived fixture", "Pavyzdinis archyvas")</small></div></div>}</div></section></aside>
+                    </div>
+                }
+                else
+                {
+                    <div class="gamyba-editor-banner"><span class="gamyba-dot"></span><span><strong>@_report</strong> · @L("editing", "redaguojama") <span class="mono">v3-draft</span> · @L("published", "paskelbta") <span class="mono">@_templateVersion</span> · dataset <span class="mono">GamTaskLines v4</span></span><span>@L("Dataset fields only · no SQL · no EPL", "Tik duomenų laukai · be SQL · be EPL")</span></div>
+                    <div class="gamyba-editor-grid"><section class="gamyba-panel"><div class="gamyba-panel__head"><strong>@L("Dataset fields", "Duomenų laukai")</strong></div><div class="gamyba-dataset-list">@foreach(var field in DatasetFields){var used = _columns.Any(x => x.Field == field.Field);<div><span class="mono">@field.Field</span><small class="mono">@field.Type</small>@if(used){<strong>@L("in use", "naudojamas")</strong>}else{<button type="button" @onclick="() => AddTemplateField(field.Field)">+ @L("Add", "Pridėti")</button>}</div>}</div><div class="gamyba-panel__foot">@L("A missing field requires an API dataset extension, not SQL in this editor.", "Jei lauko trūksta, reikia plėsti API duomenų rinkinį, ne rašyti SQL šiame redaktoriuje.")</div></section>
+                        <section class="gamyba-panel gamyba-editor-preview"><div class="gamyba-panel__head"><div class="gamyba-segment"><button type="button" class="@(!_compareTemplates ? "is-active" : "")" @onclick='() => _compareTemplates = false'>@L("Draft", "Juodraštis")</button><button type="button" class="@(_compareTemplates ? "is-active" : "")" @onclick='() => _compareTemplates = true'>@L("Compare", "Palyginti")</button></div><span>@L("Click a column header to edit it", "Paspauskite stulpelio antraštę redagavimui")</span></div><div class="gamyba-editor-stage"><div class="gamyba-editor-sheet"><div class="gamyba-report-sheet__head"><strong>@_report</strong><span class="mono">v3-draft · @L("Draft", "Juodraštis")</span></div><table class="gamyba-table"><thead><tr>@foreach(var column in _columns){<th><button type="button" class="gamyba-editor-column @(_selectedColumn == column.Field ? "is-active" : "")" @onclick="() => _selectedColumn = column.Field">@column.Label</button></th>}</tr></thead><tbody>@foreach(var item in ReportItems.Take(3)){<tr>@foreach(var column in _columns){<td>@TemplateCell(item,column.Field)</td>}</tr>}</tbody></table></div>@if(_compareTemplates){<div class="gamyba-editor-sheet"><div class="gamyba-report-sheet__head"><strong>@_report</strong><span class="mono">@_templateVersion · @L("Published", "Paskelbta")</span></div><table class="gamyba-table"><thead><tr>@foreach(var column in _publishedColumns){<th>@column.Label</th>}</tr></thead><tbody>@foreach(var item in ReportItems.Take(3)){<tr>@foreach(var column in _publishedColumns){<td>@TemplateCell(item,column.Field)</td>}</tr>}</tbody></table></div>}</div></section>
+                        <aside class="gamyba-stack"><section class="gamyba-panel"><div class="gamyba-panel__head"><strong>@L("Field", "Laukas") · <span class="mono">@_selectedColumn</span></strong></div>@if(CurrentColumn is null){<div class="gamyba-sidebody"><p>@L("Select a column in the draft preview.", "Pasirinkite stulpelį juodraščio peržiūroje.")</p></div>}else{<div class="gamyba-sidebody"><label class="gamyba-fieldlabel">@L("Label", "Pavadinimas")</label><input class="gamyba-input" @bind="CurrentColumn.Label" @bind:after="() => _templateDraftSaved = false" @onfocus="SelectFocusedInput" /><div class="gamyba-formrow"><label>@L("Position", "Vieta")<span class="gamyba-actions"><button type="button" class="gamyba-btn gamyba-btn--xs" @onclick="() => MoveTemplateField(-1)">←</button><button type="button" class="gamyba-btn gamyba-btn--xs" @onclick="() => MoveTemplateField(1)">→</button></span></label><label>@L("Width", "Plotis") %<input type="number" min="4" max="80" class="gamyba-input mono" @bind="CurrentColumn.Width" @bind:after="() => _templateDraftSaved = false" @onfocus="SelectFocusedInput" /></label></div><button type="button" class="gamyba-btn" @onclick="RemoveTemplateField">@L("Remove field", "Pašalinti lauką")</button></div>}</section><section class="gamyba-panel"><div class="gamyba-sidebody"><button type="button" class="gamyba-btn" disabled="@(_templateDraftSaved)" @onclick="SaveTemplate">@L("Save draft", "Išsaugoti juodraštį")</button><button type="button" class="gamyba-btn gamyba-btn--primary" disabled="@(!_templateDraftSaved)" @onclick="PublishTemplate">@L("Publish version", "Paskelbti versiją")</button><button type="button" class="gamyba-btn" @onclick="RollbackTemplate">@L("Revert to published", "Grąžinti paskelbtą")</button><small>@L("Published versions are immutable; the previous one stays available for rollback.", "Paskelbtos versijos nekintamos; ankstesnė lieka prieinama grąžinimui.")</small><div class="gamyba-doc-version"><strong class="mono">@_templateVersion</strong><div>@L("Published · added Note column", "Paskelbta · pridėta Pastaba")<small class="mono">2026-10-14</small></div></div><div class="gamyba-doc-version"><strong class="mono">v1</strong><div>@L("Published · imported from Access layout", "Paskelbta · perkelta iš Access")<small class="mono">2026-09-30</small></div></div></div></section></aside>
+                    </div>
+                }
+            }
+
+            @if (_screen == "labels")
+            {
+                <div class="gamyba-pagehead"><div><div class="gamyba-eyebrow">SHOPFLOOR · G06 · ZEBRA / EPL</div><h1>@L("Label print queue", "Etikečių spausdinimo eilė")</h1></div><div class="gamyba-actions"><div class="gamyba-workstation"><span class="gamyba-dot"></span><strong>@L("Workstation", "Darbo vieta")</strong> CECH-02 · COM3 · ZD421 203dpi <span>|</span> @L("COM owner", "COM savininkas"): <div class="gamyba-segment"><button type="button" class="@(_comOwner == "agent" ? "is-active" : "")" @onclick='() => _comOwner = "agent"'>web-agent</button><button type="button" class="@(_comOwner == "access" ? "is-active" : "")" @onclick='() => _comOwner = "access"'>Access</button></div></div><button type="button" class="gamyba-btn" @onclick='() => _modal = "new-label-job"'>+ @L("New print job", "Nauja spausdinimo užduotis")</button></div></div>
+                @if(_comOwner == "access")
+                {
+                    <div class="gamyba-warning"><strong>@L("COM3 is owned by Access on this workstation.", "COM3 šioje darbo vietoje priklauso Access.")</strong> @L("The web agent will not open the port; new jobs wait as Pending.", "Web agentas porto neatidarys; naujos užduotys lauks Pending.")</div>
+                }
+                <div class="gamyba-label-grid">
+                    <section class="gamyba-panel"><div class="gamyba-tablewrap"><table class="gamyba-table"><thead><tr><th>@L("Job", "Užduotis")</th><th>GU</th><th>@L("Mode", "Režimas")</th><th>@L("State", "Būsena")</th><th>@L("Progress", "Pažanga")</th><th>@L("Counts", "Kiekiai")</th><th>@L("Note", "Pastaba")</th></tr></thead><tbody>@foreach(var job in _jobs){<tr class="gamyba-clickrow @(_labelJob == job.Number ? "is-selected" : "")" @onclick="() => _labelJob = job.Number"><td class="mono gamyba-accent"><strong>@job.Number</strong></td><td class="mono">@job.Task</td><td>@job.Mode</td><td><span class="chip @JobClass(job.State)">@job.State</span></td><td><div class="gamyba-progress"><span style="width:@($"{job.Sent * 100 / Math.Max(1, job.PhysicalLabels)}%")"></span></div><small class="mono">@job.Sent/@job.PhysicalLabels</small></td><td class="mono">@job.PhysicalLabels @L("physical", "fizinės")</td><td>@job.Note</td></tr>}</tbody></table></div><div class="gamyba-panel__foot">@L("Rows, product quantity and physical labels are separate counters.", "Eilutės, gaminių kiekis ir fizinės etiketės skaičiuojamos atskirai.")</div></section>
+                    <section class="gamyba-panel"><div class="gamyba-panel__head"><strong class="mono">@CurrentJob.Number · @CurrentJob.Task</strong><span class="chip @JobClass(CurrentJob.State)">@CurrentJob.State</span></div>@if(CurrentJob.State == "Uncertain"){<div class="gamyba-warning"><strong>@L("No acknowledgement after a label.", "Po etiketės nėra patvirtinimo.")</strong> @L("Select exactly which labels to repeat.", "Pasirinkite tiksliai kurias etiketes kartoti.")</div>}<div class="gamyba-label-actions"><button type="button" class="gamyba-btn" disabled="@(CurrentJob.State is "Sent" or "Cancelled" or "Paused")" @onclick='() => ChangeJobState("Paused")'>❚❚ @L("Pause", "Pauzė")</button><button type="button" class="gamyba-btn" disabled="@(CurrentJob.State != "Paused")" @onclick='() => ChangeJobState("Pending")'>▶ @L("Resume", "Tęsti")</button><button type="button" class="gamyba-btn" disabled="@(CurrentJob.State is "Sent" or "Cancelled")" @onclick='() => ChangeJobState("Cancelled")'>@L("Cancel remaining", "Atšaukti likusias")</button><button type="button" class="gamyba-btn" disabled="@(!_reprintSelected.Any())" @onclick="QueueReprint">@L("Reprint selected", "Perspausdinti pasirinktas") (@_reprintSelected.Count)</button><button type="button" class="gamyba-btn" @onclick="AdvanceJob">@L("Send next", "Siųsti kitą")</button></div><div class="gamyba-tablewrap"><table class="gamyba-table"><thead><tr><th></th><th>#</th><th>@L("Kind", "Rūšis")</th><th>@L("Barcode", "Kodas")</th><th>@L("Text", "Tekstas")</th><th>@L("State", "Būsena")</th></tr></thead><tbody>@foreach(var n in Enumerable.Range(1, CurrentJob.PhysicalLabels)){<tr><td><input type="checkbox" checked="@_reprintSelected.Contains(n)" disabled="@(n <= CurrentJob.Sent || CurrentJob.State != "Uncertain")" @onchange="() => ToggleReprint(n)" /></td><td class="mono">@n</td><td><span class="gamyba-label-kind mono">@LabelKind(CurrentJob,n)</span></td><td class="mono">@LabelBarcode(CurrentJob,n)</td><td>@(LabelKind(CurrentJob,n) == "P1" ? L("Product label", "Gaminio etiketė") : LabelKind(CurrentJob,n) == "SEP" ? L("Group separator", "Grupės skirtukas") : L("Extra label", "Papildoma etiketė"))</td><td><span class="chip @JobClass(LabelState(CurrentJob,n))">@LabelState(CurrentJob,n)</span></td></tr>}</tbody></table></div><div class="gamyba-panel__foot">@L("Sent labels are not cancelled. Bytes sent do not prove physical printing.", "Išsiųstos etiketės neatšaukiamos. Išsiųsti baitai neįrodo fizinio spausdinimo.")</div></section>
+                </div>
+            }
+
+            @if (_screen == "map")
+            {
+                <div class="gamyba-pagehead"><div><div class="gamyba-eyebrow">@L("DELIVERABLES", "REZULTATAI")</div><h1>@L("Screen map · states · open questions", "Ekranų žemėlapis · būsenos · klausimai")</h1></div></div>
+                <div class="gamyba-map-grid">
+                    <section class="gamyba-panel"><div class="gamyba-panel__head"><strong>@L("Screens and transitions", "Ekranai ir perėjimai")</strong></div><div class="gamyba-map-rows">
+                        @foreach (var row in MapRows)
+                        {
+                            <div><span class="mono">@row.Code</span><button type="button" class="gamyba-textbutton" @onclick="() => OpenMapRow(row.Target)">@row.Screen</button><span>@row.Flow</span></div>
+                        }
+                    </div></section>
+                    <section class="gamyba-panel"><div class="gamyba-panel__head"><strong>@L("States per frequent operation", "Būsenos dažnoms operacijoms")</strong></div><div class="gamyba-tablewrap"><table class="gamyba-table gamyba-matrix"><thead><tr><th></th>@foreach (var state in MatrixStates){<th>@state</th>}</tr></thead><tbody>
+                        @foreach (var row in MatrixRows)
+                        {
+                            <tr><td><strong>@row.Operation</strong></td>@for (var i=0; i<row.States.Length; i++){var state=row.States[i];<td title="@MatrixStates[i]"><span class="gamyba-matrix-dot gamyba-matrix-dot--@state"></span></td>}</tr>
+                        }
+                    </tbody></table></div><div class="gamyba-matrix-legend"><span><i class="gamyba-matrix-dot gamyba-matrix-dot--y"></i>@L("covered", "padengta")</span><span><i class="gamyba-matrix-dot gamyba-matrix-dot--p"></i>@L("partial", "iš dalies")</span><span><i class="gamyba-matrix-dot gamyba-matrix-dot--q"></i>@L("business rule", "verslo taisyklė")</span><span><i class="gamyba-matrix-dot gamyba-matrix-dot--n"></i>n/a</span></div></section>
+                </div>
+                <section class="gamyba-map-questions"><div class="gamyba-panel__head"><strong>@L("Questions the design cannot settle", "Klausimai, kurių dizainas neišsprendžia")</strong><span>@L("business rules needed; marked ? in the UI", "reikia verslo taisyklių; UI pažymėta ?")</span></div><div class="gamyba-tablewrap"><table class="gamyba-table"><thead><tr><th>ID</th><th>@L("Where", "Kur")</th><th>@L("Question", "Klausimas")</th><th>@L("Design decision", "Dizaino sprendimas")</th></tr></thead><tbody>
+                    @foreach (var question in MapQuestions)
+                    {
+                        <tr><td class="mono"><strong>@question.Id</strong></td><td>@question.Area</td><td>@question.Question</td><td>@question.Design</td></tr>
+                    }
+                </tbody></table></div></section>
+            }
+
+            @if(_modal is not null)
+            {
+                <div class="gamyba-modal-backdrop" @onclick="() => _modal = null"><section class="gamyba-modal @(_modal == "issue" ? "gamyba-modal--issue" : "")" role="dialog" aria-modal="true" @onclick:stopPropagation="true">
+                    @if(_modal == "issue")
+                    {
+                        <div class="gamyba-panel__head"><div><span class="gamyba-eyebrow">GU · G02–G03</span><strong>@L("Issue selected rows to production", "Išduoti pasirinktas eilutes gamybai")</strong></div><button type="button" class="gamyba-textbutton" @onclick="() => _modal = null">Esc</button></div>
+                        <div class="gamyba-sidebody">
+                            <div class="gamyba-issue-stats"><div><span>@L("Target GU", "Tikslinė GU")</span><strong class="mono">@(_targetGu == "new" ? L("New GU", "Nauja GU") : _targetGu)</strong></div><div><span>@L("Rows", "Eilutės")</span><strong class="mono">@_selected.Count</strong></div><div><span>@L("Items", "Gaminiai")</span><strong class="mono">@_items.Where(x => _selected.Contains(x.Id)).Sum(x => x.Quantity)</strong></div><div><span>@L("Branches", "Filialai")</span><strong>@string.Join(", ", _items.Where(x => _selected.Contains(x.Id)).Select(x => x.Branch).Distinct())</strong></div></div>
+                            @if (_items.Where(x => _selected.Contains(x.Id)).Select(x => x.Branch).Distinct().Count() > 1)
+                            {
+                                <div class="gamyba-warning">@L("This GU contains items from more than one branch.", "Šioje GU yra kelių filialų gaminiai.")</div>
+                            }
+                            <div class="gamyba-issue-rows">
+                                @foreach (var item in _items.Where(x => _selected.Contains(x.Id)))
+                                {
+                                    <div class="@(item.Id == _issueConflictId ? "is-conflict" : "")"><span class="mono">@item.Order</span><span>@item.Type · @item.Fabric @if(item.Id == _issueConflictId){<strong>@L("CONFLICT", "KONFLIKTAS")</strong>}</span><span class="mono">@item.Width × @item.Height</span><b class="mono">@item.Quantity</b></div>
+                                }
+                            </div>
+                            @if (_issuePhase == "idle")
+                            {
+                                <small>@L("Rights, state and version are checked again immediately before issue.", "Teisės, būsena ir versija tikrinamos dar kartą prieš išdavimą.")</small>
+                            }
+                            else if (_issuePhase == "busy")
+                            {
+                                <div class="gamyba-issue-busy"><strong>@L("Issuing portion…", "Išduodama porcija…")</strong><span class="mono">cmd @_pendingCommand</span><div class="gamyba-issue-progress"><span></span></div><small>@L("A second click is ignored while the command is running.", "Kol komanda vykdoma, antras paspaudimas ignoruojamas.")</small></div>
+                            }
+                            else if (_issuePhase == "timeout")
+                            {
+                                <div class="gamyba-warning"><strong>@L("No response.", "Nėra atsakymo.")</strong> @L("Check the original command result; do not issue again.", "Patikrinkite pirminės komandos rezultatą; neišduokite dar kartą.") <span class="mono">cmd @_pendingCommand</span></div>
+                            }
+                            else if (_issuePhase == "error")
+                            {
+                                <div class="gamyba-alert gamyba-alert--danger"><span><strong>@L("Issue blocked.", "Išdavimas blokuojamas.")</strong> @_issueProblem<br />@L("Nothing was issued.", "Niekas neišduota.")</span></div>
+                            }
+                            <div class="gamyba-actions gamyba-issue-footer"><button type="button" class="gamyba-btn" @onclick="() => _modal = null">@L("Cancel", "Atšaukti")</button>@if(_issuePhase == "error"){<button type="button" class="gamyba-btn" @onclick="RemoveIssueConflict">@L("Remove conflicting row", "Pašalinti konfliktuojančią eilutę")</button>}@if(_issuePhase == "timeout"){<button type="button" class="gamyba-btn gamyba-btn--primary" @onclick="CheckIssueResult">@L("Check result", "Tikrinti rezultatą")</button>}else{<button type="button" class="gamyba-btn gamyba-btn--primary" disabled="@(_issuePhase == "busy" || _selected.Count == 0)" @onclick="ConfirmIssue">@(_issuePhase == "busy" ? L("Issuing…", "Išduodama…") : L("Issue portion", "Išduoti porciją"))</button>}</div>
+                        </div>
+                    }
+                    else if(_modal == "new-gt")
+                    {
+                        <div class="gamyba-panel__head"><strong>@L("New GT document", "Naujas GT dokumentas")</strong><button type="button" class="gamyba-textbutton" @onclick="() => _modal = null">×</button></div><div class="gamyba-sidebody"><div class="gamyba-formrow"><label>@L("Number", "Numeris")<input class="gamyba-input mono" value="@($"GT-261102-{_documents.Count + 2:000}")" readonly /></label><label>@L("Date", "Data")<input class="gamyba-input mono" value="2026-11-02" readonly /></label></div><span class="gamyba-fieldlabel">@L("Allowed operation", "Leidžiama operacija")</span><div class="gamyba-gt-options">@foreach(var op in new[] { "pagaminta", "filialui", "atiduota", "sandelis" }){var denied = (op == "atiduota" && !Supervisor) || (op == "sandelis" && Restricted);var transition=OperationTransition(op);<button type="button" class="@(_newGtOp == op ? "is-active" : "")" disabled="@denied" @onclick="() => _newGtOp = op"><span class="gamyba-report-radio"></span><strong>@op</strong><span class="mono">@transition.Before → @transition.After</span>@if(denied){<span class="gamyba-danger">@L("No rights", "Nėra teisių")</span>}</button>}</div><small>@L("Operations follow legacy state and user rights.", "Operacijos priklauso nuo legacy būsenos ir naudotojo teisių.")</small><div class="gamyba-actions"><button type="button" class="gamyba-btn" @onclick="() => _modal = null">@L("Cancel", "Atšaukti")</button><button type="button" class="gamyba-btn gamyba-btn--primary" @onclick="CreateDocument">@L("Create GT", "Sukurti GT")</button></div></div>
+                    }
+                    else if(_modal == "compare")
+                    {
+                        <div class="gamyba-panel__head"><strong>@L("Compare template versions", "Palyginti šablono versijas")</strong><button type="button" class="gamyba-textbutton" @onclick="() => _modal = null">×</button></div><div class="gamyba-sidebody"><p>@L("Published v2 and current draft. Previous published version remains available.", "Paskelbta v2 ir dabartinis juodraštis. Ankstesnė paskelbta versija lieka prieinama.")</p><div class="gamyba-template-list">@foreach(var column in _columns){<div><span class="mono">@column.Field</span><span>@column.Label</span><span class="mono">@column.Width%</span></div>}</div></div>
+                    }
+                    else if(_modal == "reprint")
+                    {
+                        <div class="gamyba-panel__head"><strong>@L("Selective reprint", "Pasirinktinis perspausdinimas")</strong><button type="button" class="gamyba-textbutton" @onclick="() => _modal = null">×</button></div>
+                        <div class="gamyba-sidebody">
+                            <p>@L("Only labels after the last acknowledged one may be repeated.", "Galima kartoti tik etiketes po paskutinės patvirtintos.")</p>
+                            <div class="gamyba-pills">
+                                @foreach(var n in Enumerable.Range(CurrentJob.Sent + 1, Math.Max(0, CurrentJob.PhysicalLabels - CurrentJob.Sent)))
+                                {
+                                    <label class="gamyba-fieldchip mono"><input type="checkbox" checked="@_reprintSelected.Contains(n)" @onchange="() => ToggleReprint(n)" /> #@n</label>
+                                }
+                            </div>
+                            <button type="button" class="gamyba-btn gamyba-btn--primary" @onclick="QueueReprint">@L("Queue selected labels", "Į eilę pasirinktas etiketes")</button>
+                        </div>
+                    }
+                    else if(_modal == "stop-print")
+                    {
+                        var stop = _stops.First(x => x.Number == _stopPrintNumber);
+                        <div class="gamyba-panel__head"><strong>@L("Production stop document", "Gamybos stabdymo dokumentas") · @stop.Number</strong><button type="button" class="gamyba-textbutton" @onclick="() => _modal = null">×</button></div>
+                        <div class="gamyba-sidebody"><div class="gamyba-report-sheet"><div class="gamyba-report-sheet__head"><strong>@L("Production stop", "Gamybos stabdymas")</strong><span class="mono">@stop.Number</span></div><div class="gamyba-facts"><div><span>@L("Date", "Data")</span><strong class="mono">@StopDate(stop.Number)</strong></div><div><span>@L("Order", "Užsakymas")</span><strong class="mono">@stop.Order</strong></div><div><span>@L("Reason", "Priežastis")</span><strong>@stop.Reason</strong></div><div><span>@L("Rows", "Eilutės")</span><strong class="mono">@stop.ItemIds.Count</strong></div></div><table class="gamyba-table"><thead><tr><th>@L("Barcode", "Kodas")</th><th>@L("Product", "Gaminys")</th></tr></thead><tbody>@foreach(var id in stop.ItemIds){var item = _items.First(x => x.Id == id);<tr><td class="mono">@item.Barcode</td><td>@item.Type · @item.Width×@item.Height</td></tr>}</tbody></table></div><button type="button" class="gamyba-btn" @onclick="PrintOutput">@L("Browser print", "Spausdinti naršyklėje")</button></div>
+                    }
+                    else if(_modal == "output")
+                    {
+                        <div class="gamyba-panel__head"><strong>@L("Production output document", "Produkcijos išdavimo dokumentas")</strong><button type="button" class="gamyba-textbutton" @onclick="() => _modal = null">×</button></div>
+                        <div class="gamyba-sidebody">
+                            <div class="gamyba-report-sheet"><div class="gamyba-report-sheet__head"><strong>@_outputPrintKind</strong><span class="mono">@_outputPreview</span></div><div class="gamyba-facts"><div><span>@L("Date", "Data")</span><strong class="mono">@CurrentFinished.Date</strong></div><div><span>@L("Recipient", "Gavėjas")</span><strong>@CurrentFinished.Recipient</strong></div><div><span>@L("Vehicle", "Transportas")</span><strong>@CurrentFinished.Vehicle</strong></div><div><span>@L("Items", "Gaminiai")</span><strong class="mono">@CurrentFinished.Count</strong></div><div><span>@L("Author", "Autorius")</span><strong>@CurrentFinished.Author</strong></div></div><p>@L("Preview uses fixture data; the official document layout will be connected to the report service.", "Peržiūroje naudojami pavyzdiniai duomenys; oficialus maketas bus prijungtas prie ataskaitų tarnybos.")</p></div>
+                            <button type="button" class="gamyba-btn" @onclick="PrintOutput">@L("Browser print", "Spausdinti naršyklėje")</button>
+                        </div>
+                    }
+                    else if(_modal == "scan-manual")
+                    {
+                        <div class="gamyba-panel__head"><strong>@L("Pick product manually", "Parinkti gaminį rankiniu būdu")</strong><button type="button" class="gamyba-textbutton" @onclick="() => _modal = null">×</button></div><div class="gamyba-sidebody"><label class="gamyba-fieldlabel">@L("Barcode", "Kodas")</label><input class="gamyba-input mono" @bind="_manualScan" placeholder="000000000000" /><button type="button" class="gamyba-btn gamyba-btn--primary" @onclick="UseManualScan">@L("Use barcode", "Naudoti kodą")</button></div>
+                    }
+                    else if(_modal == "scan-import")
+                    {
+                        <div class="gamyba-panel__head"><strong>@L("Import barcodes", "Importuoti kodus")</strong><button type="button" class="gamyba-textbutton" @onclick="() => _modal = null">×</button></div><div class="gamyba-sidebody"><p>@L("One barcode per line. Each gets a separate result.", "Po vieną kodą eilutėje. Kiekvienam pateikiamas atskiras rezultatas.")</p><textarea class="gamyba-input mono" rows="8" @bind="_importText"></textarea><button type="button" class="gamyba-btn gamyba-btn--primary" @onclick="ImportScans">@L("Import", "Importuoti")</button></div>
+                    }
+                    else if(_modal == "scan-errors")
+                    {
+                        <div class="gamyba-panel__head"><strong>@L("Scan error log", "Skenavimo klaidų žurnalas")</strong><button type="button" class="gamyba-textbutton" @onclick="() => _modal = null">×</button></div><div class="gamyba-history-lines">@foreach(var error in _scanErrors){<div><span class="mono">@error.Barcode</span><strong class="gamyba-danger">@L("REJECTED", "ATMESTA")</strong><span>@error.Reason</span></div>}</div>
+                    }
+                    else if(_modal == "archive")
+                    {
+                        <div class="gamyba-panel__head"><strong>@L("Original archive", "Originalus archyvas") · @_archiveReport</strong><button type="button" class="gamyba-textbutton" @onclick="() => _modal = null">×</button></div><div class="gamyba-sidebody"><div class="gamyba-warning">@L("Fixture archive preview. The original PDF remains unchanged; file storage is connected in a later stage.", "Pavyzdinė archyvo peržiūra. Originalus PDF nekeičiamas; failų saugykla bus prijungta kitame etape.")</div><div class="gamyba-report-sheet"><div class="gamyba-report-sheet__head"><strong>@_archiveReport</strong><span class="mono">@CurrentTask.Number · @L("archived", "archyvuota")</span></div><table class="gamyba-table"><thead><tr><th>@L("Barcode", "Kodas")</th><th>@L("Order", "Užsakymas")</th><th>@L("Product", "Gaminys")</th><th>@L("Size", "Matmenys")</th></tr></thead><tbody>@foreach(var item in TaskItems(CurrentTask)){<tr><td class="mono">@item.Barcode</td><td class="mono">@item.Order</td><td>@item.Type</td><td class="mono">@item.Width × @item.Height</td></tr>}</tbody></table></div></div>
+                    }
+                    else if(_modal == "new-label-job")
+                    {
+                        <div class="gamyba-panel__head"><strong>@L("New print job", "Nauja spausdinimo užduotis")</strong><button type="button" class="gamyba-textbutton" @onclick="() => _modal = null">Esc</button></div>
+                        <div class="gamyba-sidebody">
+                            <div class="gamyba-label-modes"><button type="button" class="@(_labelMode == "task" ? "is-active" : "")" @onclick='() => _labelMode = "task"'><strong>@L("Whole GU", "Visa GU")</strong><small>@L("Items + separators", "Gaminiai + skirtukai")</small></button><button type="button" class="@(_labelMode == "one" ? "is-active" : "")" @onclick='() => _labelMode = "one"'><strong>@L("One item", "Vienas gaminys")</strong><small>@L("One barcode", "Vienas kodas")</small></button><button type="button" class="@(_labelMode == "manual" ? "is-active" : "")" disabled="@(!Supervisor)" @onclick='() => _labelMode = "manual"'><strong>@L("Manual", "Rankinis")</strong><small>@L("Supervisor only", "Tik vadovui")</small></button></div>
+                            @if(_labelMode == "one")
+                            {
+                                <label class="gamyba-fieldlabel">@L("Barcode", "Kodas")</label><input class="gamyba-input mono" list="gamyba-gu-barcodes" @bind="_labelText" @onfocus="SelectFocusedInput" placeholder="000000000000" /><datalist id="gamyba-gu-barcodes">@foreach(var item in TaskItems(CurrentTask)){<option value="@item.Barcode">@item.Type · @item.Order</option>}</datalist>
+                            }
+                            else if(_labelMode == "manual")
+                            {
+                                <div class="gamyba-formrow"><label>@L("Label text", "Etiketės tekstas")<input class="gamyba-input" @bind="_labelText" /></label><label>@L("Copies", "Kopijos")<input type="number" min="1" class="gamyba-input mono" @bind="_labelCopies" @onfocus="SelectFocusedInput" /></label></div>
+                            }
+                            <div class="gamyba-label-plan"><div><span>@L("Physical labels planned", "Planuojamos fizinės etiketės")</span><strong class="mono">@PlannedLabelCount</strong></div><span class="mono">@PlannedLabelDetail</span><small>@L("P1 is one label per row; quantity prints as text.", "P1 yra viena etiketė eilutei; kiekis spausdinamas tekstu.")</small></div>
+                            <div class="gamyba-workstation"><span class="gamyba-dot"></span> CECH-02 · COM3 · @(_comOwner == "access" ? L("Access owns the port", "Prievadą naudoja Access") : L("Agent online", "Agentas prisijungęs"))</div>
+                            <div class="gamyba-actions gamyba-issue-footer"><button type="button" class="gamyba-btn" @onclick="() => _modal = null">@L("Cancel", "Atšaukti")</button><button type="button" class="gamyba-btn gamyba-btn--primary" disabled="@(_labelMode == "manual" && !Supervisor)" @onclick="QueueLabels">@L("Queue print job", "Įtraukti į spausdinimo eilę")</button></div>
+                        </div>
+                    }
+                </section></div>
+            }
+        </main>
+        <div class="gamyba-demo">
+            <strong>PROTOTYPE CONTROLS</strong>
+            <span>@L("Not part of the product UI — switches used to walk through states.", "Ne produkto sąsaja — jungikliai būsenų peržiūrai.")</span>
+            <span class="gamyba-demo__spacer"></span>
+            <span>@L("Viewport", "Ekranas")</span>
+            <div class="gamyba-demo__group"><button type="button" class="@(_viewport == "fit" ? "is-active" : "")" @onclick='() => _viewport = "fit"'>Fit</button><button type="button" class="@(_viewport == "1440" ? "is-active" : "")" @onclick='() => _viewport = "1440"'>1440×900</button><button type="button" class="@(_viewport == "1366" ? "is-active" : "")" @onclick='() => _viewport = "1366"'>1366×768</button></div>
+            <span>@L("Role", "Rolė")</span>
+            <div class="gamyba-demo__group"><button type="button" class="@(_role == "operator" ? "is-active" : "")" @onclick='() => _role = "operator"'>Operator</button><button type="button" class="@(_role == "supervisor" ? "is-active" : "")" @onclick='() => _role = "supervisor"'>Supervisor</button><button type="button" class="@(_role == "restricted" ? "is-active" : "")" @onclick='() => _role = "restricted"'>Restricted</button></div>
+            <span>Simulate</span>
+            <div class="gamyba-demo__group"><button type="button" class="@(_simConflict ? "is-active" : "")" @onclick='() => _simConflict = !_simConflict'>Access conflict</button><button type="button" class="@(_simNetwork ? "is-active" : "")" @onclick='() => _simNetwork = !_simNetwork'>Network loss</button><button type="button" class="@(_simSlow ? "is-active" : "")" @onclick='() => _simSlow = !_simSlow'>Slow server</button><button type="button" class="@(_simEmpty ? "is-active" : "")" @onclick='() => _simEmpty = !_simEmpty'>Empty queue</button><button type="button" class="@(_simNoMaterial ? "is-active" : "")" @onclick='() => _simNoMaterial = !_simNoMaterial'>No material</button><button type="button" class="@(_simZebraNoAck ? "is-active" : "")" @onclick='() => _simZebraNoAck = !_simZebraNoAck'>Zebra no ack</button><button type="button" class="@(_comOwner == "access" ? "is-active" : "")" @onclick='() => _comOwner = _comOwner == "access" ? "agent" : "access"'>Access COM</button></div>
+        </div>
+    </div>
+</div>
