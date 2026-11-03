@@ -47,3 +47,7 @@
 | G15.02 | Экспортировать производственную выработку | `frmReports`, `sproc_DisplayLastMonthWork` | Confirmed | Поля/группировки и Excel pivot, без коммерческого/зарплатного модуля |
 
 Проверенные старые заглушки: закомментированная Excel-реализация `dlgPrintDocuments.cmdExportToEXL_Click` — `legacy-placeholder`, не G05-обязательство. Остальные формы/подформы и SQL-цепочки ещё сверяются; таблица не объявлена закрытой.
+
+## Реализовано на этапе 2, ожидает UI и приёмку
+
+`GET /api/shopfloor/production-queue` — read-only, page 1–100000, pageSize 1–100, опциональные `seriesId`, `typeId`, `priorityId`. Включается только `Shopfloor:ProductionQueue:Enabled`; на test получает живые строки общей SQL-базы. Сервер определяет Cikada account из проверенной Portal cookie или SSO JWT, получает `LegacySqlLogin` по защищённому внутреннему запросу и выполняет SQL на отдельном непулируемом соединении через `EXECUTE AS LOGIN`. Статический запрос повторяет eligibility `SP_fsubProduction` и добавляет `Loc_leidimas().UKS` вне всех `OR`. Ответ содержит только доступные строки; mutation endpoints и переходы к чужим ID отсутствуют. Совпадение правила с Access проверено read-only SQL-сверкой; полноценная приёмка G02.01 остаётся открытой до UI-сверки и проверки разных mapped users.

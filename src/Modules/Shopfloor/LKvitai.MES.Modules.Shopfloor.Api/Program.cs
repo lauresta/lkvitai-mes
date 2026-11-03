@@ -17,6 +17,21 @@ builder.Services.AddScaffoldApiCore();
 
 builder.Services.AddShopfloorApplication();
 builder.Services.AddShopfloorInfrastructure(builder.Configuration);
+var productionQueueEnabled = builder.Configuration.GetValue<bool>("Shopfloor:ProductionQueue:Enabled");
+var cikadaUsersBaseUrl = builder.Configuration["CikadaUsers:BaseUrl"];
+if (productionQueueEnabled && !Uri.TryCreate(cikadaUsersBaseUrl, UriKind.Absolute, out _))
+    throw new InvalidOperationException("CikadaUsers:BaseUrl is required for the live production queue.");
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<CikadaUserBridgeProof>();
+builder.Services.AddSingleton<CikadaSsoAccountProof>();
+builder.Services.AddScoped<CikadaSsoAccountLookup>();
+builder.Services.AddHttpClient("CikadaUsers", client =>
+{
+    client.BaseAddress = new Uri(cikadaUsersBaseUrl!);
+    client.Timeout = TimeSpan.FromSeconds(10);
+}).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
+builder.Services.AddScoped<ProductionQueueReader>();
 
 // Same Portal auth pattern used by Sales: shared Portal cookie + structured
 // bearer, plus a dev-only synthetic identity gated behind Shopfloor:DevAuthEnabled.
@@ -72,5 +87,7 @@ shopfloor.MapWorkStationsEndpoints();
 shopfloor.MapWorkflowsEndpoints();
 shopfloor.MapLegacyProductTypesEndpoints();
 shopfloor.MapProductTypeMappingsEndpoints();
+if (productionQueueEnabled)
+    shopfloor.MapProductionQueueEndpoints();
 
 await app.RunAsync();
