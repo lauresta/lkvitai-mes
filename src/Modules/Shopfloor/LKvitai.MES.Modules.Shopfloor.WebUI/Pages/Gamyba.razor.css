@@ -38,7 +38,8 @@
 .gamyba-tabs button.is-active { border-bottom-color:var(--accent-600); color:var(--accent-700) }
 .gamyba-tabcount { display:inline-block; margin-left:4px; padding:1px 5px; border-radius:4px; background:var(--n-100); color:var(--n-600); font-size:10px }
 .gamyba-tabcount--danger { background:var(--danger-bg); color:var(--danger-fg) }
-.gamyba-main { display:flex; flex:1; flex-direction:column; gap:12px; min-width:0; padding:14px 20px 90px }
+.gamyba-main { display:flex; flex:1; flex-direction:column; gap:12px; min-width:0; padding:14px 20px 20px }
+.gamyba-main--demo { padding-bottom:90px }
 .gamyba-eyebrow { color:var(--accent-700); font:700 10px var(--font-mono); letter-spacing:1.4px; text-transform:uppercase }
 .gamyba-pagehead { display:flex; align-items:flex-end; justify-content:space-between; gap:14px; flex-wrap:wrap }
 .gamyba-pagehead h1,.gamyba-taskhead h1 { margin:2px 0 0; font-size:22px; line-height:1.1 }
@@ -400,7 +401,7 @@
 @media(max-width:1050px) { .gamyba-two-col,.gamyba-scan-grid,.gamyba-report-grid,.gamyba-label-grid,.gamyba-output-grid,.gamyba-stops-grid,.gamyba-tech-grid,.gamyba-history-grid,.gamyba-map-grid,.gamyba-docs-grid,.gamyba-editor-grid { grid-template-columns:1fr } .gamyba-taskhead { grid-template-columns:1fr } .gamyba-env { display:none } }
 @media(max-width:700px) { .gamyba-tech-editor { grid-template-columns:1fr } }
 @media(max-width:600px) { .gamyba-issue-stats { grid-template-columns:1fr 1fr } .gamyba-issue-rows>div { grid-template-columns:1fr 1fr } }
-@media(max-width:640px) { .gamyba-main { padding:12px 10px 110px } .gamyba-test,.gamyba-topbar,.gamyba-tabs { padding-left:10px; padding-right:10px } .gamyba-test__right,.gamyba-user,.gamyba-separator { display:none } .gamyba-global-search { order:3; max-width:none; flex-basis:100% } .gamyba-demo { max-height:90px; overflow:auto } }
+@media(max-width:640px) { .gamyba-main { padding:12px 10px 20px } .gamyba-main--demo { padding-bottom:110px } .gamyba-test,.gamyba-topbar,.gamyba-tabs { padding-left:10px; padding-right:10px } .gamyba-test__right,.gamyba-user,.gamyba-separator { display:none } .gamyba-global-search { order:3; max-width:none; flex-basis:100% } .gamyba-demo { max-height:90px; overflow:auto } }
 @media(prefers-reduced-motion:reduce) { .gamyba * { transition:none!important; animation:none!important } }
 @media print {
   .gamyba-test,.gamyba-topbar,.gamyba-tabs,.gamyba-demo,.gamyba-actions,.gamyba-subtabs { display:none!important }

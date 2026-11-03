@@ -38,7 +38,7 @@
             <button type="button" class="@(_screen == "map" ? "is-active" : "")" @onclick='() => Go("map")'>@L("Map · Questions", "Žemėlapis · Klausimai")</button>
         </nav>
 
-        <main class="gamyba-main">
+        <main class="gamyba-main @(PrototypeControls ? "gamyba-main--demo" : "")">
             @if (!string.IsNullOrWhiteSpace(_notice))
             {
                 <div class="gamyba-alert gamyba-alert--@_noticeKind" role="alert"><span>@_notice</span><button type="button" @onclick='() => _notice = ""'>×</button></div>
@@ -496,6 +496,8 @@
                 </section></div>
             }
         </main>
+        @if (PrototypeControls)
+        {
         <div class="gamyba-demo">
             <strong>PROTOTYPE CONTROLS</strong>
             <span>@L("Not part of the product UI — switches used to walk through states.", "Ne produkto sąsaja — jungikliai būsenų peržiūrai.")</span>
@@ -507,5 +509,6 @@
             <span>Simulate</span>
             <div class="gamyba-demo__group"><button type="button" class="@(_simConflict ? "is-active" : "")" @onclick='() => _simConflict = !_simConflict'>Access conflict</button><button type="button" class="@(_simNetwork ? "is-active" : "")" @onclick='() => _simNetwork = !_simNetwork'>Network loss</button><button type="button" class="@(_simSlow ? "is-active" : "")" @onclick='() => _simSlow = !_simSlow'>Slow server</button><button type="button" class="@(_simEmpty ? "is-active" : "")" @onclick='() => _simEmpty = !_simEmpty'>Empty queue</button><button type="button" class="@(_simNoMaterial ? "is-active" : "")" @onclick='() => _simNoMaterial = !_simNoMaterial'>No material</button><button type="button" class="@(_simZebraNoAck ? "is-active" : "")" @onclick='() => _simZebraNoAck = !_simZebraNoAck'>Zebra no ack</button><button type="button" class="@(_comOwner == "access" ? "is-active" : "")" @onclick='() => _comOwner = _comOwner == "access" ? "agent" : "access"'>Access COM</button></div>
         </div>
+        }
     </div>
 </div>
