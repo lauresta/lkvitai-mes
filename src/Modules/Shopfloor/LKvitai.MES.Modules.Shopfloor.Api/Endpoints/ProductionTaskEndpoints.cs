@@ -47,10 +47,12 @@ public sealed record ProductionTaskDetail(ProductionTaskSummary Task,
 public sealed class ProductionTaskReader(ProductionQueueReader queue)
 {
     public Task<ProductionTaskPage> ListAsync(int page, int pageSize, CancellationToken ct)
-        => queue.WithActorConnectionAsync((connection, token) => ListRowsAsync(connection, page, pageSize, token), ct);
+        => queue.WithActorConnectionAsync((connection, token) => ListRowsAsync(connection, page, pageSize, token),
+            ct, ProductionQueueReader.ProductionTaskMenuId);
 
     public Task<ProductionTaskDetail?> DetailAsync(long id, CancellationToken ct)
-        => queue.WithActorConnectionAsync((connection, token) => DetailRowsAsync(connection, id, token), ct);
+        => queue.WithActorConnectionAsync((connection, token) => DetailRowsAsync(connection, id, token),
+            ct, ProductionQueueReader.ProductionTaskMenuId);
 
     private static async Task<ProductionTaskPage> ListRowsAsync(SqlConnection connection,
         int page, int pageSize, CancellationToken ct)

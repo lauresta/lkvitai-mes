@@ -12,6 +12,10 @@ public sealed class ProductionQueueReader(IHttpContextAccessor accessor, IHttpCl
     CikadaUserBridgeProof proof, CikadaSsoAccountLookup accounts, IConfiguration configuration,
     ILogger<ProductionQueueReader> logger)
 {
+    // Access modMeniu opens frmBlindsProduction through this menu action.
+    internal const int ProductionTaskMenuId = 49;
+    // Access opens dlgPrintDocuments from frmMadeProductionDocuments too.
+    internal const int FinishedGoodsMenuId = 41;
     private sealed record Mapping(Guid UserId, string? LegacySqlLogin);
 
     public async Task<ProductionQueuePage> ReadAsync(int page, int pageSize, string? orderNumber,
@@ -19,13 +23,13 @@ public sealed class ProductionQueueReader(IHttpContextAccessor accessor, IHttpCl
         long? priorityId, CancellationToken ct)
         => await WithActorConnectionAsync((connection, token) =>
             ReadRowsAsync(connection, page, pageSize, orderNumber, departmentId, seriesId,
-                categoryId, typeId, priorityId, token), ct);
+                categoryId, typeId, priorityId, token), ct, ProductionTaskMenuId);
 
     public Task<IReadOnlyList<ProductionQueueFacet>> ReadFacetsAsync(CancellationToken ct)
-        => WithActorConnectionAsync(ReadFacetsRowsAsync, ct);
+        => WithActorConnectionAsync(ReadFacetsRowsAsync, ct, ProductionTaskMenuId);
 
     internal async Task<T> WithActorConnectionAsync<T>(Func<SqlConnection, CancellationToken, Task<T>> action,
-        CancellationToken ct)
+        CancellationToken ct, int? requiredMenuId = null, int? alternativeMenuId = null)
     {
         var actor = await ResolveActorAsync(ct);
         var login = await ResolveLoginAsync(actor, ct);
@@ -42,8 +46,29 @@ public sealed class ProductionQueueReader(IHttpContextAccessor accessor, IHttpCl
             throw Denied("LEGACY_SQL_CONTEXT_INVALID", "The legacy SQL connection has an unexpected security context.", 403);
         var canonical = await ResolvePrincipalAsync(connection, login, original, ct);
         var cookie = await SwitchAsync(connection, canonical, original, ct);
-        try { return await action(connection, ct); }
+        try
+        {
+            if (requiredMenuId is not null)
+                await EnsureMenuPermissionAsync(connection, requiredMenuId.Value, alternativeMenuId, ct);
+            return await action(connection, ct);
+        }
         finally { await RestoreBestEffortAsync(connection, cookie, original); }
+    }
+
+    private static async Task EnsureMenuPermissionAsync(SqlConnection connection, int menuId,
+        int? alternativeMenuId, CancellationToken ct)
+    {
+        await using var command = new SqlCommand("""
+            SELECT CASE WHEN SYSTEM_USER=N'sa' OR EXISTS (
+                SELECT 1 FROM dbo.PROJECT_TBD_UserMenus
+                WHERE sUserName=SYSTEM_USER AND iProjectMenuButtonID IN (@menuId,@alternativeMenuId)
+                  AND bItemEnabledFlag=1) THEN 1 ELSE 0 END;
+            """, connection);
+        command.Parameters.Add("@menuId", SqlDbType.Int).Value = menuId;
+        command.Parameters.Add("@alternativeMenuId", SqlDbType.Int).Value =
+            (object?)alternativeMenuId ?? DBNull.Value;
+        if (Convert.ToInt32(await command.ExecuteScalarAsync(ct)) != 1)
+            throw Denied("PRODUCTION_MENU_DISABLED", "Your legacy SQL account cannot open this production screen.", 403);
     }
 
     private async Task<Guid> ResolveActorAsync(CancellationToken ct)

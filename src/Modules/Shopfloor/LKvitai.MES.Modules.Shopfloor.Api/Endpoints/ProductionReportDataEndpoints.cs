@@ -56,10 +56,12 @@ public sealed class ProductionReportDataReader(ProductionQueueReader queue)
     };
 
     public Task<IReadOnlyList<ProductionReportCatalogItem>> CatalogAsync(CancellationToken ct)
-        => queue.WithActorConnectionAsync(CatalogRowsAsync, ct);
+        => queue.WithActorConnectionAsync(CatalogRowsAsync, ct,
+            ProductionQueueReader.ProductionTaskMenuId, ProductionQueueReader.FinishedGoodsMenuId);
 
     public Task<ProductionReportData?> ReadAsync(int taskId, int reportId, CancellationToken ct)
-        => queue.WithActorConnectionAsync((connection, token) => ReadRowsAsync(connection, taskId, reportId, token), ct);
+        => queue.WithActorConnectionAsync((connection, token) => ReadRowsAsync(connection, taskId, reportId, token),
+            ct, ProductionQueueReader.ProductionTaskMenuId, ProductionQueueReader.FinishedGoodsMenuId);
 
     private static async Task<IReadOnlyList<ProductionReportCatalogItem>> CatalogRowsAsync(
         SqlConnection connection, CancellationToken ct)
