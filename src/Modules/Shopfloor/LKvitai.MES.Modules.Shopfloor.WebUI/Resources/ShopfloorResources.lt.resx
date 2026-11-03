@@ -2031,4 +2031,55 @@
   <data name="Gamyba.MapText.wrong state" xml:space="preserve">
     <value>netinkama būsena</value>
   </data>
+  <data name="Gamyba.StopsRepairs" xml:space="preserve">
+    <value>Sustabdymai ir taisymai</value>
+  </data>
+  <data name="Gamyba.LabelQueue" xml:space="preserve">
+    <value>Etikečių eilė</value>
+  </data>
+  <data name="Shopfloor.Fixture.Cut roller fabric to width" xml:space="preserve">
+    <value>Iškirpti roletų audinį pagal plotį</value>
+  </data>
+  <data name="Shopfloor.Fixture.Cutting A" xml:space="preserve">
+    <value>Pjovimas A</value>
+  </data>
+  <data name="Shopfloor.Fixture.Running" xml:space="preserve">
+    <value>Vykdoma</value>
+  </data>
+  <data name="Shopfloor.Fixture.Hem and seam panels" xml:space="preserve">
+    <value>Apsiūti ir susiūti plokštes</value>
+  </data>
+  <data name="Shopfloor.Fixture.Sewing 3" xml:space="preserve">
+    <value>Siuvimas 3</value>
+  </data>
+  <data name="Shopfloor.Fixture.Queued" xml:space="preserve">
+    <value>Eilėje</value>
+  </data>
+  <data name="Shopfloor.Fixture.Assemble tube and brackets" xml:space="preserve">
+    <value>Surinkti veleną ir laikiklius</value>
+  </data>
+  <data name="Shopfloor.Fixture.Assembly 2" xml:space="preserve">
+    <value>Surinkimas 2</value>
+  </data>
+  <data name="Shopfloor.Fixture.Blocked" xml:space="preserve">
+    <value>Užblokuota</value>
+  </data>
+  <data name="Shopfloor.Fixture.Inspect finish and dimensions" xml:space="preserve">
+    <value>Patikrinti apdailą ir matmenis</value>
+  </data>
+  <data name="Shopfloor.Fixture.Quality" xml:space="preserve">
+    <value>Kokybė</value>
+  </data>
+  <data name="Shopfloor.Fixture.Hold" xml:space="preserve">
+    <value>Sustabdyta</value>
+  </data>
+  <data name="Shopfloor.Fixture.Pack and label for dispatch" xml:space="preserve">
+    <value>Supakuoti ir pažymėti išsiuntimui</value>
+  </data>
+  <data name="Shopfloor.Fixture.Packing" xml:space="preserve">
+    <value>Pakavimas</value>
+  </data>
+  <data name="Shopfloor.Fixture.Ready" xml:space="preserve">
+    <value>Paruošta</value>
+  </data>
 </root>

@@ -2031,4 +2031,55 @@
   <data name="Gamyba.MapText.wrong state" xml:space="preserve">
     <value>wrong state</value>
   </data>
+  <data name="Gamyba.StopsRepairs" xml:space="preserve">
+    <value>Stops &amp; repairs</value>
+  </data>
+  <data name="Gamyba.LabelQueue" xml:space="preserve">
+    <value>Label queue</value>
+  </data>
+  <data name="Shopfloor.Fixture.Cut roller fabric to width" xml:space="preserve">
+    <value>Cut roller fabric to width</value>
+  </data>
+  <data name="Shopfloor.Fixture.Cutting A" xml:space="preserve">
+    <value>Cutting A</value>
+  </data>
+  <data name="Shopfloor.Fixture.Running" xml:space="preserve">
+    <value>Running</value>
+  </data>
+  <data name="Shopfloor.Fixture.Hem and seam panels" xml:space="preserve">
+    <value>Hem and seam panels</value>
+  </data>
+  <data name="Shopfloor.Fixture.Sewing 3" xml:space="preserve">
+    <value>Sewing 3</value>
+  </data>
+  <data name="Shopfloor.Fixture.Queued" xml:space="preserve">
+    <value>Queued</value>
+  </data>
+  <data name="Shopfloor.Fixture.Assemble tube and brackets" xml:space="preserve">
+    <value>Assemble tube and brackets</value>
+  </data>
+  <data name="Shopfloor.Fixture.Assembly 2" xml:space="preserve">
+    <value>Assembly 2</value>
+  </data>
+  <data name="Shopfloor.Fixture.Blocked" xml:space="preserve">
+    <value>Blocked</value>
+  </data>
+  <data name="Shopfloor.Fixture.Inspect finish and dimensions" xml:space="preserve">
+    <value>Inspect finish and dimensions</value>
+  </data>
+  <data name="Shopfloor.Fixture.Quality" xml:space="preserve">
+    <value>Quality</value>
+  </data>
+  <data name="Shopfloor.Fixture.Hold" xml:space="preserve">
+    <value>Hold</value>
+  </data>
+  <data name="Shopfloor.Fixture.Pack and label for dispatch" xml:space="preserve">
+    <value>Pack and label for dispatch</value>
+  </data>
+  <data name="Shopfloor.Fixture.Packing" xml:space="preserve">
+    <value>Packing</value>
+  </data>
+  <data name="Shopfloor.Fixture.Ready" xml:space="preserve">
+    <value>Ready</value>
+  </data>
 </root>

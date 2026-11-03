@@ -130,11 +130,11 @@
                     {
                         <tr>
                             <td class="mono">@row.Task</td>
-                            <td>@row.Description</td>
-                            <td>@row.Station</td>
+                            <td>@L["Shopfloor.Fixture." + row.Description]</td>
+                            <td>@L["Shopfloor.Fixture." + row.Station]</td>
                             <td class="mono">@row.Order</td>
                             <td>@row.Operator</td>
-                            <td><span class="chip @row.ChipClass">@row.Status</span></td>
+                            <td><span class="chip @row.ChipClass">@L["Shopfloor.Fixture." + row.Status]</span></td>
                             <td class="mono">@row.Target</td>
                         </tr>
                     }
@@ -150,7 +150,7 @@
     private static readonly IReadOnlyList<(string Label, string Value, string Status, string ChipClass)> Metrics =
     [
         ("Shopfloor.StationsActive", "08 / 12", "Shopfloor.Pilot", "chip--info"),
-        ("Shopfloor.WipTasks", "146", "Shopfloor.Sample", "chip--slate"),
+        ("Shopfloor.WIPTasks", "146", "Shopfloor.Sample", "chip--slate"),
         ("Shopfloor.LateOperations", "05", "Shopfloor.Attention", "chip--warn"),
         ("Shopfloor.CompletedToday", "312", "Shopfloor.OnTrack", "chip--ok"),
     ];
@@ -159,7 +159,7 @@
     [
         ("WO", "Shopfloor.WorkOrders", "Shopfloor.OpenReleaseAndTrackOperationPackets"),
         ("ST", "Shopfloor.Stations", "Shopfloor.OperatorKioskAndWorkstationLoadView"),
-        ("WIP", "Shopfloor.WipRouting", "Shopfloor.MoveUnitsBetweenProductionSteps"),
+        ("WIP", "Shopfloor.WIPRouting", "Shopfloor.MoveUnitsBetweenProductionSteps"),
         ("QC", "Shopfloor.QualityHold", "Shopfloor.DefectCaptureAndReworkRouting"),
         ("MAT", "Shopfloor.MaterialCalls", "Shopfloor.RequestFabricsFittingsAndPackaging"),
         ("SHIFT", "Shopfloor.ShiftHandover", "Shopfloor.NotesDowntimeAndLineReadiness"),
