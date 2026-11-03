@@ -51,9 +51,15 @@ public sealed class ProductionTaskWriter(ProductionQueueReader queue)
                     WHERE iProductionOutputDocumentID=@id AND iAssignedStatusID=1
                       AND sProductionOutputDocumentNo LIKE N'GU%'
                       AND sUserNameInsert=SYSTEM_USER
-                      AND (NOT EXISTS (SELECT 1 FROM dbo.TAB_ProductionOutputDocumentDetails n
-                                       WHERE n.iProductionOutputDocumentID=d.iProductionOutputDocumentID)
-                           OR ({ProductionTaskReader.Visibility}));
+                      AND {ProductionTaskReader.Visibility}
+                      AND NOT EXISTS (
+                          SELECT 1 FROM dbo.TAB_ProductionOutputDocumentDetails existing
+                          LEFT JOIN dbo.ParduotiGaminiai epg ON epg.iBarCode=existing.iBarCode
+                          LEFT JOIN dbo.Uzsakymai eu ON eu.UzsakymasID=epg.UzsakymoID
+                          LEFT JOIN dbo.Zinynas_UzsakymoSerijos es ON es.UzsakymoSerijaID=eu.UzsakymoSerija
+                          LEFT JOIN dbo.Zinynas_filialai ef ON ef.FilialoID=es.FilialoID
+                          WHERE existing.iProductionOutputDocumentID=d.iProductionOutputDocumentID
+                            AND UPPER(COALESCE(ef.FilialoPavadinimas,N''))<>N'TESTAVIMAS');
                     """, connection, transaction);
                 task.Parameters.Add("@id", SqlDbType.Int).Value = existing;
                 number = await task.ExecuteScalarAsync(ct) as string
