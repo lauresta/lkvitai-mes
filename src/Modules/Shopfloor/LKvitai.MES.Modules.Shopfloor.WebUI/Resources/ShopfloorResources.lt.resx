@@ -1779,4 +1779,307 @@
   <data name="Shopfloor.StatusArchived" xml:space="preserve">
     <value>Archyvuota</value>
   </data>
+  <data name="Gamyba.JobStateSent" xml:space="preserve">
+    <value>Išsiųsta</value>
+  </data>
+  <data name="Gamyba.JobStateCancelled" xml:space="preserve">
+    <value>Atšaukta</value>
+  </data>
+  <data name="Gamyba.JobStatePending" xml:space="preserve">
+    <value>Laukiama</value>
+  </data>
+  <data name="Gamyba.JobStatePaused" xml:space="preserve">
+    <value>Pristabdyta</value>
+  </data>
+  <data name="Gamyba.JobStateSending" xml:space="preserve">
+    <value>Siunčiama</value>
+  </data>
+  <data name="Gamyba.JobStateUncertain" xml:space="preserve">
+    <value>Neaišku</value>
+  </data>
+  <data name="Gamyba.JobStateFailed" xml:space="preserve">
+    <value>Nepavyko</value>
+  </data>
+  <data name="Gamyba.MapText.13 reports → NoData / preview / print / archive / version; template editor" xml:space="preserve">
+    <value>13 ataskaitų → nėra duomenų / peržiūra / spausdinimas / archyvas / versija; šablonų redaktorius</value>
+  </data>
+  <data name="Gamyba.MapText.2nd click" xml:space="preserve">
+    <value>antras paspaudimas</value>
+  </data>
+  <data name="Gamyba.MapText.Access conflict" xml:space="preserve">
+    <value>Access konfliktas</value>
+  </data>
+  <data name="Gamyba.MapText.All" xml:space="preserve">
+    <value>Visur</value>
+  </data>
+  <data name="Gamyba.MapText.Allows open GU and empty GU" xml:space="preserve">
+    <value>Leidžia atvirą GU ir tuščią GU</value>
+  </data>
+  <data name="Gamyba.MapText.Archive preview; browser print" xml:space="preserve">
+    <value>Archyvo peržiūra; spausdinimas naršyklėje</value>
+  </data>
+  <data name="Gamyba.MapText.Are UNC archives reachable, and is silent printing to a preset printer needed?" xml:space="preserve">
+    <value>Ar pasiekiami UNC archyvai ir ar reikia spausdinti be dialogo į iš anksto nustatytą spausdintuvą?</value>
+  </data>
+  <data name="Gamyba.MapText.Audible signal required? Mobile and desktop sharing one GT?" xml:space="preserve">
+    <value>Ar reikia garso signalo? Ar telefonas ir kompiuteris gali naudoti tą patį GT?</value>
+  </data>
+  <data name="Gamyba.MapText.CECH-02 · COM3 placeholder" xml:space="preserve">
+    <value>CECH-02 · COM3 pavyzdys</value>
+  </data>
+  <data name="Gamyba.MapText.Can a partial-rights user see GU with hidden rows?" xml:space="preserve">
+    <value>Ar ribotų teisių naudotojas gali matyti GU su paslėptomis eilutėmis?</value>
+  </data>
+  <data name="Gamyba.MapText.Closed list of production-only reports and Excel exports undefined." xml:space="preserve">
+    <value>Neapibrėžtas galutinis tik gamybos ataskaitų ir Excel eksportų sąrašas.</value>
+  </data>
+  <data name="Gamyba.MapText.Concurrent Access and web GU numbering strategy is not decided." xml:space="preserve">
+    <value>Nenuspręsta, kaip numeruoti GU, kai Access ir web naudojami vienu metu.</value>
+  </data>
+  <data name="Gamyba.MapText.Confirm in Sales → queue filtered by order, items pre-selected" xml:space="preserve">
+    <value>Patvirtinimas Sales → eilė filtruojama pagal užsakymą, gaminiai pažymėti</value>
+  </data>
+  <data name="Gamyba.MapText.Documents" xml:space="preserve">
+    <value>Dokumentai</value>
+  </data>
+  <data name="Gamyba.MapText.Due, order, item" xml:space="preserve">
+    <value>Terminas, užsakymas, gaminys</value>
+  </data>
+  <data name="Gamyba.MapText.Finished goods" xml:space="preserve">
+    <value>Pagaminti gaminiai</value>
+  </data>
+  <data name="Gamyba.MapText.Fixture documents only" xml:space="preserve">
+    <value>Tik pavyzdiniai dokumentai</value>
+  </data>
+  <data name="Gamyba.MapText.Fixture evaluator" xml:space="preserve">
+    <value>Pavyzdinis skaičiuotuvas</value>
+  </data>
+  <data name="Gamyba.MapText.Formula save" xml:space="preserve">
+    <value>Išsaugoti formulę</value>
+  </data>
+  <data name="Gamyba.MapText.G15 omitted" xml:space="preserve">
+    <value>G15 neįtraukta</value>
+  </data>
+  <data name="Gamyba.MapText.GT documents" xml:space="preserve">
+    <value>GT dokumentai</value>
+  </data>
+  <data name="Gamyba.MapText.GU card" xml:space="preserve">
+    <value>GU kortelė</value>
+  </data>
+  <data name="Gamyba.MapText.GU → Warehouse" xml:space="preserve">
+    <value>GU → Sandėlis</value>
+  </data>
+  <data name="Gamyba.MapText.Generic preview, columns only" xml:space="preserve">
+    <value>Bendroji peržiūra, tik stulpeliai</value>
+  </data>
+  <data name="Gamyba.MapText.Issue to GU" xml:space="preserve">
+    <value>Išduoti į GU</value>
+  </data>
+  <data name="Gamyba.MapText.Label queue" xml:space="preserve">
+    <value>Etikečių eilė</value>
+  </data>
+  <data name="Gamyba.MapText.Labels" xml:space="preserve">
+    <value>Etiketės</value>
+  </data>
+  <data name="Gamyba.MapText.Legacy DELETE audit is commented out; actor receipt and deletion rights unconfirmed." xml:space="preserve">
+    <value>Legacy DELETE auditas išjungtas komentaru; veikėjo patvirtinimas ir trynimo teisės nepatikrinti.</value>
+  </data>
+  <data name="Gamyba.MapText.Limits for adding portions to current or historical GU and empty GU/GT?" xml:space="preserve">
+    <value>Ar ribojamas porcijų pridėjimas į dabartinę ar istorinę GU ir tuščių GU/GT kūrimas?</value>
+  </data>
+  <data name="Gamyba.MapText.Menu, button and field rights matrix is not closed." xml:space="preserve">
+    <value>Meniu, mygtukų ir laukų teisių matrica dar nebaigta.</value>
+  </data>
+  <data name="Gamyba.MapText.Mixed GU" xml:space="preserve">
+    <value>Mišri GU</value>
+  </data>
+  <data name="Gamyba.MapText.Number only after success" xml:space="preserve">
+    <value>Numeris tik po sėkmingo veiksmo</value>
+  </data>
+  <data name="Gamyba.MapText.Once per GU" xml:space="preserve">
+    <value>Vieną kartą kiekvienai GU</value>
+  </data>
+  <data name="Gamyba.MapText.Only last row, later state blocks" xml:space="preserve">
+    <value>Tik paskutinė eilutė; vėlesnė būsena blokuoja</value>
+  </data>
+  <data name="Gamyba.MapText.Original layouts, expressions and subreports of 13 gam and 4 output reports unknown." xml:space="preserve">
+    <value>Nežinomi 13 gam ir 4 išvesties ataskaitų originalūs maketai, išraiškos ir antrinės ataskaitos.</value>
+  </data>
+  <data name="Gamyba.MapText.Product history" xml:space="preserve">
+    <value>Gaminio istorija</value>
+  </data>
+  <data name="Gamyba.MapText.Production tasks → GU" xml:space="preserve">
+    <value>Gamybos užduotys → GU</value>
+  </data>
+  <data name="Gamyba.MapText.Queue" xml:space="preserve">
+    <value>Eilė</value>
+  </data>
+  <data name="Gamyba.MapText.Ready for production" xml:space="preserve">
+    <value>Paruošta gamybai</value>
+  </data>
+  <data name="Gamyba.MapText.Repairs" xml:space="preserve">
+    <value>Taisymai</value>
+  </data>
+  <data name="Gamyba.MapText.Reports" xml:space="preserve">
+    <value>Ataskaitos</value>
+  </data>
+  <data name="Gamyba.MapText.Rows hidden" xml:space="preserve">
+    <value>Eilutės paslėptos</value>
+  </data>
+  <data name="Gamyba.MapText.SQL side effects, payroll, notifications and stock contracts not examined." xml:space="preserve">
+    <value>SQL šalutiniai poveikiai, darbo užmokestis, pranešimai ir atsargų sutartys neišnagrinėti.</value>
+  </data>
+  <data name="Gamyba.MapText.Sales → Ready for production" xml:space="preserve">
+    <value>Sales → Paruošta gamybai</value>
+  </data>
+  <data name="Gamyba.MapText.Scan correction" xml:space="preserve">
+    <value>Skenavimo taisymas</value>
+  </data>
+  <data name="Gamyba.MapText.Scanning" xml:space="preserve">
+    <value>Skenavimas</value>
+  </data>
+  <data name="Gamyba.MapText.Scanning (desktop · mobile)" xml:space="preserve">
+    <value>Skenavimas (kompiuteryje · telefone)</value>
+  </data>
+  <data name="Gamyba.MapText.Shows order due date" xml:space="preserve">
+    <value>Rodo užsakymo terminą</value>
+  </data>
+  <data name="Gamyba.MapText.Stops" xml:space="preserve">
+    <value>Sustabdymai</value>
+  </data>
+  <data name="Gamyba.MapText.Stops · Repairs · Finished" xml:space="preserve">
+    <value>Sustabdymai · Taisymai · Pagaminti gaminiai</value>
+  </data>
+  <data name="Gamyba.MapText.Technology" xml:space="preserve">
+    <value>Technologija</value>
+  </data>
+  <data name="Gamyba.MapText.Three fixture roles" xml:space="preserve">
+    <value>Trys pavyzdinės rolės</value>
+  </data>
+  <data name="Gamyba.MapText.Trusted test-before-save calculator API is required." xml:space="preserve">
+    <value>Reikia patikimos skaičiuoklės API formulei patikrinti prieš išsaugant.</value>
+  </data>
+  <data name="Gamyba.MapText.V_WaitingProductionBlinds and SP_fsubProduction differ by date and exclusions: which defines queue and Due?" xml:space="preserve">
+    <value>V_WaitingProductionBlinds ir SP_fsubProduction skiriasi datomis ir išimtimis: kas apibrėžia eilę ir terminą?</value>
+  </data>
+  <data name="Gamyba.MapText.Visual only; same GT" xml:space="preserve">
+    <value>Tik vaizdinis signalas; tas pats GT</value>
+  </data>
+  <data name="Gamyba.MapText.Warehouse" xml:space="preserve">
+    <value>Sandėlis</value>
+  </data>
+  <data name="Gamyba.MapText.Where Access calls SP_WriteOffBlindComponentsNew and repeat policy." xml:space="preserve">
+    <value>Kur Access kviečia SP_WriteOffBlindComponentsNew ir kokia pakartojimo taisyklė?</value>
+  </data>
+  <data name="Gamyba.MapText.Which order defines first N: due date, order date or Access list order?" xml:space="preserve">
+    <value>Kokia tvarka parenka pirmas N: terminas, užsakymo data ar Access sąrašo tvarka?</value>
+  </data>
+  <data name="Gamyba.MapText.Zebra model, DPI, label size, encoding and COM port per workstation unknown." xml:space="preserve">
+    <value>Nežinomas Zebra modelis, DPI, etiketės dydis, koduotė ir kiekvienos darbo vietos COM prievadas.</value>
+  </data>
+  <data name="Gamyba.MapText.barcode → item, stage, documents and allowed actions" xml:space="preserve">
+    <value>Brūkšninis kodas → gaminys, etapas, dokumentai ir leidžiami veiksmai</value>
+  </data>
+  <data name="Gamyba.MapText.composition by portion · history · PDFs · labels · warehouse · add portion" xml:space="preserve">
+    <value>Sudėtis pagal porciją · istorija · PDF · etiketės · sandėlis · pridėti porciją</value>
+  </data>
+  <data name="Gamyba.MapText.empty" xml:space="preserve">
+    <value>tuščia</value>
+  </data>
+  <data name="Gamyba.MapText.existing write-off action; repeat blocked" xml:space="preserve">
+    <value>Esamas nurašymo veiksmas; pakartojimas blokuojamas</value>
+  </data>
+  <data name="Gamyba.MapText.handover / dispatch → four output prints, invoice gated" xml:space="preserve">
+    <value>Perdavimas / išsiuntimas → keturi spausdinami dokumentai, sąskaita tik įvykdžius sąlygas</value>
+  </data>
+  <data name="Gamyba.MapText.job modes → physical labels → pause / resume / cancel / reprint; COM owner" xml:space="preserve">
+    <value>Užduoties režimai → fizinės etiketės → pristabdyti / tęsti / atšaukti / perspausdinti; COM valdytojas</value>
+  </data>
+  <data name="Gamyba.MapText.long op" xml:space="preserve">
+    <value>ilga operacija</value>
+  </data>
+  <data name="Gamyba.MapText.network" xml:space="preserve">
+    <value>tinklas</value>
+  </data>
+  <data name="Gamyba.MapText.new GT → scan; own documents ≤ 4 days; details and last-row correction" xml:space="preserve">
+    <value>Naujas GT → skenavimas; savi dokumentai iki 4 dienų; detalės ir paskutinės eilutės taisymas</value>
+  </data>
+  <data name="Gamyba.MapText.no material" xml:space="preserve">
+    <value>nėra medžiagos</value>
+  </data>
+  <data name="Gamyba.MapText.no rights" xml:space="preserve">
+    <value>nėra teisių</value>
+  </data>
+  <data name="Gamyba.MapText.pick order/items → stop document → view/print; Sales cancellation is separate" xml:space="preserve">
+    <value>Pasirinkti užsakymą / gaminius → sustabdymo dokumentas → peržiūra / spausdinimas; Sales atšaukimas atskirai</value>
+  </data>
+  <data name="Gamyba.MapText.recovery" xml:space="preserve">
+    <value>atkūrimas</value>
+  </data>
+  <data name="Gamyba.MapText.scan + Enter → result → list; manual pick; import; error log; undo" xml:space="preserve">
+    <value>Skenuoti + Enter → rezultatas → sąrašas; rankinis pasirinkimas; importas; klaidų žurnalas; atšaukimas</value>
+  </data>
+  <data name="Gamyba.MapText.select rows / all / first N → target GU → Issue dialog → task card" xml:space="preserve">
+    <value>Pasirinkti eilutes / visas / pirmas N → GU → išdavimo dialogas → užduoties kortelė</value>
+  </data>
+  <data name="Gamyba.MapText.types → parameters → formula → test → save; other settings by role" xml:space="preserve">
+    <value>Tipai → parametrai → formulė → tikrinimas → išsaugojimas; kiti nustatymai pagal rolę</value>
+  </data>
+  <data name="Gamyba.MapText.unfinished / missing actual failure; sFactFailure by role; save &amp; close" xml:space="preserve">
+    <value>Neužbaigti / trūksta faktinės klaidos; sFactFailure pagal rolę; išsaugoti ir uždaryti</value>
+  </data>
+  <data name="Gamyba.MapText.wrong state" xml:space="preserve">
+    <value>netinkama būsena</value>
+  </data>
+  <data name="Gamyba.StopsRepairs" xml:space="preserve">
+    <value>Sustabdymai ir taisymai</value>
+  </data>
+  <data name="Gamyba.LabelQueue" xml:space="preserve">
+    <value>Etikečių eilė</value>
+  </data>
+  <data name="Shopfloor.Fixture.Cut roller fabric to width" xml:space="preserve">
+    <value>Iškirpti roletų audinį pagal plotį</value>
+  </data>
+  <data name="Shopfloor.Fixture.Cutting A" xml:space="preserve">
+    <value>Pjovimas A</value>
+  </data>
+  <data name="Shopfloor.Fixture.Running" xml:space="preserve">
+    <value>Vykdoma</value>
+  </data>
+  <data name="Shopfloor.Fixture.Hem and seam panels" xml:space="preserve">
+    <value>Apsiūti ir susiūti plokštes</value>
+  </data>
+  <data name="Shopfloor.Fixture.Sewing 3" xml:space="preserve">
+    <value>Siuvimas 3</value>
+  </data>
+  <data name="Shopfloor.Fixture.Queued" xml:space="preserve">
+    <value>Eilėje</value>
+  </data>
+  <data name="Shopfloor.Fixture.Assemble tube and brackets" xml:space="preserve">
+    <value>Surinkti veleną ir laikiklius</value>
+  </data>
+  <data name="Shopfloor.Fixture.Assembly 2" xml:space="preserve">
+    <value>Surinkimas 2</value>
+  </data>
+  <data name="Shopfloor.Fixture.Blocked" xml:space="preserve">
+    <value>Užblokuota</value>
+  </data>
+  <data name="Shopfloor.Fixture.Inspect finish and dimensions" xml:space="preserve">
+    <value>Patikrinti apdailą ir matmenis</value>
+  </data>
+  <data name="Shopfloor.Fixture.Quality" xml:space="preserve">
+    <value>Kokybė</value>
+  </data>
+  <data name="Shopfloor.Fixture.Hold" xml:space="preserve">
+    <value>Sustabdyta</value>
+  </data>
+  <data name="Shopfloor.Fixture.Pack and label for dispatch" xml:space="preserve">
+    <value>Supakuoti ir pažymėti išsiuntimui</value>
+  </data>
+  <data name="Shopfloor.Fixture.Packing" xml:space="preserve">
+    <value>Pakavimas</value>
+  </data>
+  <data name="Shopfloor.Fixture.Ready" xml:space="preserve">
+    <value>Paruošta</value>
+  </data>
 </root>
