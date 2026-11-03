@@ -83,6 +83,36 @@ public sealed class ProductionTaskLineDto
     public string State { get; set; } = "";
 }
 
+public sealed class ProductionHistoryDocumentDto
+{
+    public int Id { get; set; }
+    public string Number { get; set; } = "";
+    public DateTime? Date { get; set; }
+    public string? Author { get; set; }
+    public string? Before { get; set; }
+    public string? After { get; set; }
+}
+
+public sealed class ProductionProductHistoryDto
+{
+    public long ProductId { get; set; }
+    public string Barcode { get; set; } = "";
+    public string OrderNumber { get; set; } = "";
+    public DateTime OrderDate { get; set; }
+    public string Department { get; set; } = "";
+    public string? Customer { get; set; }
+    public string Category { get; set; } = "";
+    public string ProductType { get; set; } = "";
+    public string? Control { get; set; }
+    public string? MaterialCode { get; set; }
+    public decimal? WidthMm { get; set; }
+    public decimal? HeightMm { get; set; }
+    public decimal Quantity { get; set; }
+    public string? Notes { get; set; }
+    public string State { get; set; } = "";
+    public List<ProductionHistoryDocumentDto> Documents { get; set; } = [];
+}
+
 /// <summary>
 /// Typed wrapper around the named <c>ShopfloorApi</c> HttpClient. Returns
 /// <see cref="ApiResult{T}"/> so pages can surface API validation/conflict
@@ -115,6 +145,10 @@ public sealed class ShopfloorApiClient
     public Task<ApiResult<ProductionTaskDetailDto>> GetProductionTaskAsync(int id, CancellationToken ct)
         => SendAsync<ProductionTaskDetailDto>(HttpMethod.Get,
             $"/api/shopfloor/production-tasks/{id}", null, ct);
+
+    public Task<ApiResult<ProductionProductHistoryDto>> GetProductionHistoryAsync(string barcode, CancellationToken ct)
+        => SendAsync<ProductionProductHistoryDto>(HttpMethod.Get,
+            $"/api/shopfloor/production-products/{Uri.EscapeDataString(barcode)}/history", null, ct);
 
     // ---- Work centers -------------------------------------------------------
 

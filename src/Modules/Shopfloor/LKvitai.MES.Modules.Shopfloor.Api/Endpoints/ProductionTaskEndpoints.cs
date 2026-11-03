@@ -100,7 +100,7 @@ public sealed class ProductionTaskReader(ProductionQueueReader queue)
         row.GetInt32(0), row.GetString(1), row.IsDBNull(2) ? null : row.GetDateTime(2),
         row.IsDBNull(3) ? null : row.GetString(3), row.GetInt32(4), row.GetInt32(5));
 
-    private const string Visibility = """
+    internal const string Visibility = """
         EXISTS (SELECT 1 FROM dbo.TAB_ProductionOutputDocumentDetails anyrow
                 WHERE anyrow.iProductionOutputDocumentID=d.iProductionOutputDocumentID)
         AND NOT EXISTS (

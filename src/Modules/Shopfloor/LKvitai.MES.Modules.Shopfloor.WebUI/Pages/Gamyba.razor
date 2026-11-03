@@ -39,7 +39,7 @@
         </nav>
 
         <main class="gamyba-main @(PrototypeControls ? "gamyba-main--demo" : "")">
-            @if (LiveQueueEnabled && _screen is not ("queue" or "tasks" or "task"))
+            @if (LiveQueueEnabled && _screen is not ("queue" or "tasks" or "task" or "history"))
             {
                 <div class="gamyba-alert gamyba-alert--info" role="status">@L("Preview: this screen uses sample data and does not change production.", "Peržiūra: šiame ekrane naudojami pavyzdiniai duomenys; gamyba nekeičiama.")</div>
             }
@@ -326,6 +326,28 @@
 
             @if (_screen == "history")
             {
+                @if (LiveQueueEnabled)
+                {
+                    <div class="gamyba-pagehead"><div><div class="gamyba-eyebrow">SHOPFLOOR · G11</div><h1>@L("Product history", "Gaminio istorija")</h1></div><label class="gamyba-history-search"><span>@L("Barcode", "Kodas")</span><input class="mono" @bind="_historyBarcode" @bind:event="oninput" @onkeydown="HistorySearchKeyAsync" @onfocus="SelectFocusedInput" placeholder="000000000000" /><kbd>Enter</kbd></label></div>
+                    @if (_liveHistoryError is not null){<div class="gamyba-alert gamyba-alert--danger" role="alert">@_liveHistoryError</div>}
+                    @if (_liveHistory is null && _liveHistoryError is null)
+                    {<div class="gamyba-history-empty"><strong>@L("Scan or type a barcode, then press Enter", "Nuskenuokite arba įveskite kodą ir spauskite Enter")</strong></div>}
+                    @if (_liveHistory is not null)
+                    {
+                        <div class="gamyba-history-grid">
+                            <section class="gamyba-panel"><div class="gamyba-history-card"><div class="gamyba-history-card__barcode mono">@_liveHistory.Barcode</div><strong>@_liveHistory.ProductType · @_liveHistory.WidthMm × @_liveHistory.HeightMm</strong><p>@_liveHistory.MaterialCode · @_liveHistory.Quantity @L("pcs", "vnt.")</p>
+                                <div class="gamyba-history-facts"><span>@L("Order", "Užsakymas")</span><strong class="mono">@_liveHistory.OrderNumber</strong><span>@L("Branch", "Filialas")</span><strong>@_liveHistory.Department</strong><span>@L("Stage", "Būsena")</span><span class="chip chip--info">@_liveHistory.State</span><span>@L("Customer", "Užsakovas")</span><strong>@_liveHistory.Customer</strong></div>
+                                <small class="chip chip--info">@L("READ ONLY", "TIK PERŽIŪRA")</small>
+                            </div></section>
+                            <section class="gamyba-panel"><div class="gamyba-panel__head"><strong>@L("Document timeline", "Dokumentų istorija")</strong></div><div class="gamyba-history-lines"><div><span class="mono">@_liveHistory.OrderDate.ToString("yyyy-MM-dd")</span><strong class="mono">@_liveHistory.OrderNumber</strong><span>@L("Order recorded", "Užsakymas įrašytas")</span></div>
+                                @foreach (var doc in _liveHistory.Documents)
+                                {<div><span class="mono">@doc.Date?.ToString("yyyy-MM-dd HH:mm")</span>@if (doc.Number.StartsWith("GU", StringComparison.OrdinalIgnoreCase)){<button type="button" class="gamyba-link mono" @onclick="() => OpenLiveTaskAsync(doc.Id)">@doc.Number</button>}else{<strong class="mono">@doc.Number</strong>}<span>@doc.Before → @doc.After</span></div>}
+                            </div></section>
+                        </div>
+                    }
+                }
+                else
+                {
                 <div class="gamyba-pagehead">
                     <div><div class="gamyba-eyebrow">SHOPFLOOR · G11</div><h1>@L("Product history", "Gaminio istorija")</h1></div>
                     <label class="gamyba-history-search"><span>@L("Barcode", "Kodas")</span><input class="mono" @bind="_historyBarcode" @bind:event="oninput" @onfocus="SelectFocusedInput" placeholder="000000000000" /><kbd>Enter</kbd></label>
@@ -349,6 +371,7 @@
                         </div></section>
                         <section class="gamyba-panel"><div class="gamyba-panel__head"><strong>@L("Document timeline", "Dokumentų istorija")</strong></div><div class="gamyba-history-lines"><div><span class="mono">2026-10-28</span><strong class="mono">@HistoryItem.Order</strong><span>@L("Confirmed in Sales", "Patvirtintas Sales")</span></div>@if (HistoryItem.Gu is not null){<div><span class="mono">2026-11-02</span><button type="button" class="gamyba-link mono" @onclick="() => OpenTask(HistoryItem.Gu)">@HistoryItem.Gu</button><span>@L("Issued to production", "Išduota gamybai")</span></div>}@foreach (var doc in _documents.Where(d => d.Scans.Any(scan => scan.ItemId == HistoryItem.Id))){<div><span class="mono">@doc.Created</span><button type="button" class="gamyba-link mono" @onclick="() => OpenDocument(doc.Number)">@doc.Number</button><span>@doc.Operation · @L("scan accepted", "skenas priimtas")</span></div>}</div></section>
                     </div>
+                }
                 }
             }
 
