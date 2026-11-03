@@ -33,6 +33,7 @@ public sealed class ProductionQueuePageDto
 public sealed class ProductionQueueItemDto
 {
     public long ProductId { get; set; }
+    public long OrderId { get; set; }
     public string OrderNumber { get; set; } = "";
     public DateTime? DueDate { get; set; }
     public string Department { get; set; } = "";

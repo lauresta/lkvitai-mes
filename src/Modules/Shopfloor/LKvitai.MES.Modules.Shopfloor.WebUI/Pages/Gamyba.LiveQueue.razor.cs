@@ -243,6 +243,14 @@ public partial class Gamyba
         finally { _liveHistoryLoading = false; }
     }
 
+    private async Task OpenLiveQueueHistoryAsync(string? barcode)
+    {
+        if (string.IsNullOrWhiteSpace(barcode)) return;
+        _historyBarcode = barcode;
+        Go("history");
+        await LoadLiveHistoryAsync();
+    }
+
     private async Task LoadLiveRepairsAsync(int page)
     {
         if (page < 1 || _liveRepairLoading) return;
