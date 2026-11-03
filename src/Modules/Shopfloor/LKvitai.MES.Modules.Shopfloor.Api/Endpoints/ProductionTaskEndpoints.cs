@@ -14,8 +14,8 @@ public static class ProductionTaskEndpoints
             if (page is < 1 or > 100000 || pageSize is < 1 or > 100)
                 return Results.BadRequest(new { code = "INVALID_TASK_PAGE" });
             try { return Results.Ok(await reader.ListAsync(page ?? 1, pageSize ?? 50, ct)); }
-            catch (ProductionQueueAccessException ex) { return Error(ex); }
-            catch (SqlException ex) when (ex.Number is 229 or 230) { return PermissionDenied(); }
+            catch (ProductionQueueAccessException ex) { return ProductionReadErrors.Access(ex); }
+            catch (SqlException ex) when (ex.Number is 229 or 230) { return ProductionReadErrors.PermissionDenied(); }
         });
         group.MapGet("/production-tasks/{id:long}", async (long id,
             ProductionTaskReader reader, CancellationToken ct) =>
@@ -26,17 +26,12 @@ public static class ProductionTaskEndpoints
                 var task = await reader.DetailAsync(id, ct);
                 return task is null ? Results.NotFound() : Results.Ok(task);
             }
-            catch (ProductionQueueAccessException ex) { return Error(ex); }
-            catch (SqlException ex) when (ex.Number is 229 or 230) { return PermissionDenied(); }
+            catch (ProductionQueueAccessException ex) { return ProductionReadErrors.Access(ex); }
+            catch (SqlException ex) when (ex.Number is 229 or 230) { return ProductionReadErrors.PermissionDenied(); }
         });
         return group;
     }
 
-    private static IResult Error(ProductionQueueAccessException ex) => Results.Problem(ex.Message,
-        statusCode: ex.Status, extensions: new Dictionary<string, object?> { ["code"] = ex.Code });
-    private static IResult PermissionDenied() => Results.Problem(
-        "Your legacy SQL account does not permit this operation.", statusCode: 403,
-        extensions: new Dictionary<string, object?> { ["code"] = "LEGACY_SQL_PERMISSION_DENIED" });
 }
 
 public sealed record ProductionTaskSummary(int Id, string Number, DateTime? Created,
