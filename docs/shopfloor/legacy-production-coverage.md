@@ -6,7 +6,7 @@
 
 | ID | Действие оператора | Источник legacy | Статус | Что проверить до записи/приёмки |
 |---|---|---|---|---|
-| G01.01 | Подтвердить изделия к производству | `frmOrdersConfirmation`; Sales M2 confirmation | Confirmed | Сверка существующего Sales, права, допустимость, материалы и состояние 1173102375 |
+| G01.01 | Подтвердить изделия к производству | `frmOrdersConfirmation`; Sales M2 confirmation | Confirmed | Живая очередь web ведёт в существующий Sales order entry для подтверждения; сверить само подтверждение, права, допустимость, материалы и состояние 1173102375 |
 | G02.01 | Просмотреть очередь готовых изделий | `frmBlindsProduction.FillTvw/FillLvw`; `V_WaitingProductionBlinds`; `SP_fsubProduction` | Confirmed | Дерево из view, строки из процедуры; дата изделия против даты заказа, исключённая категория; оба источника без `Loc_leidimas`, поэтому серверный ACL обязателен |
 | G02.02 | Отобрать отдельные, все или первые N изделий | `frmBlindsProduction.tvwBlinds_NodeCheck/TVCheckNodes`, toolbar | Confirmed | В web живые строки можно выбрать по одной, все или первые N **на текущей странице**; выбор сбрасывается при обновлении/фильтре/пагинации. Выдача выключена; полный отбор по всем страницам, сортировку и смешанные филиалы сверить с Access до включения записи |
 | G03.01 | Создать новый GU, в том числе пустой | `frmBlindsProduction.NewTask` | Confirmed | Формат/уникальность номера, автор, пустой документ, Access+web гонка |
@@ -36,7 +36,7 @@
 | G10.02 | Указать фактическую неисправность | `frmInWarrantyFailures.cmd_SaveAndClose_Click` | Confirmed | `project.TCR_UserFormControls`, право на `sFactFailure` |
 | G10.03 | Найти незавершённые/незаполненные гарантии | `frmNotFinishedWarranties`, `frmInWarrantyUnknown` | Confirmed | Фильтры, статусы, разрешённое завершение |
 | G10.04 | Повторно выдать/закрыть ремонт | связанные формы/`rptGamDokGarantiniai` | Unknown | Полная цепочка документов и переходов, фактическое меню |
-| G11.01 | Найти изделие по barcode и открыть историю | `dlgFindBlindByBarCode` | Confirmed | Parent ACL, разные документы и прямой URL |
+| G11.01 | Найти изделие по barcode и открыть историю | `dlgFindBlindByBarCode` | Confirmed | Живая очередь web открывает историю по barcode под mapped legacy login; сверить Parent ACL, разные документы и прямой URL |
 | G12.01 | Создать складское движение по GU | `SP_WriteOffBlindComponentsNew` | Confirmed | Место вызова, расчёт PPP12, `bConfirmed`, запрет повтора |
 | G12.02 | Просмотреть связанный складской документ/остатки | legacy movement references | Unknown | Фактические переходы из Gamyba, без нового StockLedger |
 | G13.01 | Зарегистрировать выдачу клиенту/отправку филиалу | `frmMadeProductionDocuments`/allowed operation | Unknown | Статусы, recipient, warehouse/finance effects |
