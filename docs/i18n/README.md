@@ -109,3 +109,4 @@ buttons (`Išsaugoti`), and Lithuanian quotes/number words only inside resx valu
 
 - Portal dashboard: reference implementation above.
 - Sales: [coverage, contracts and verification](sales.md).
+- Shopfloor: [resources, embedded editors and shared header](shopfloor.md).

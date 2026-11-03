@@ -3,17 +3,17 @@
 @inject ISnackbar Snackbar
 @inject NavigationManager Navigation
 
-<PageTitle>Cikada.MES · Production Families</PageTitle>
+<PageTitle>Cikada.MES · @L["Shopfloor.ProductionFamilies"]</PageTitle>
 
 <main class="shopfloor-page">
     <section class="sf-head">
         <div>
-            <div class="eyebrow mono">Shopfloor · Workflows</div>
-            <h1>Production Families</h1>
-            <p>Workflow templates authored in the editor and mapped to legacy product types.</p>
+            <div class="eyebrow mono">@L["Shopfloor.ShopfloorWorkflows"]</div>
+            <h1>@L["Shopfloor.ProductionFamilies"]</h1>
+            <p>@L["Shopfloor.WorkflowTemplatesAuthoredInTheEditorAndMappedToLegacyProductTypes"]</p>
         </div>
         <div class="sf-head__actions">
-            <MudButton Variant="Variant.Filled" Class="lk-btn lk-btn--primary" OnClick="StartCreate">New family</MudButton>
+            <MudButton Variant="Variant.Filled" Class="lk-btn lk-btn--primary" OnClick="StartCreate">@L["Shopfloor.NewFamily"]</MudButton>
         </div>
     </section>
 
@@ -21,8 +21,8 @@
         <MudPaper Outlined="true" Elevation="0" Class="panel">
             <div class="panel__head">
                 <div>
-                    <h2>Families</h2>
-                    <span>@(_families?.Count ?? 0) total</span>
+                    <h2>@L["Shopfloor.Families"]</h2>
+                    <span>@L["Shopfloor.Total", _families?.Count ?? 0]</span>
                 </div>
             </div>
 
@@ -32,7 +32,7 @@
             }
             else if (_families.Count == 0)
             {
-                <p class="sf-empty">No production families yet.</p>
+                <p class="sf-empty">@L["Shopfloor.NoProductionFamiliesYet"]</p>
             }
             else
             {
@@ -40,8 +40,8 @@
                     <table class="sf-table">
                         <thead>
                             <tr>
-                                <th>Code</th><th>Name</th><th>Status</th><th>Mapped</th><th>Tasks</th><th>Updated</th>
-                                <th class="sf-col-actions">Actions</th>
+                                <th>@L["Shopfloor.Code"]</th><th>@L["Shopfloor.Name"]</th><th>@L["Shopfloor.Status"]</th><th>@L["Shopfloor.Mapped"]</th><th>@L["Shopfloor.Tasks"]</th><th>@L["Shopfloor.Updated"]</th>
+                                <th class="sf-col-actions">@L["Shopfloor.Actions"]</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -55,11 +55,11 @@
                                     <td class="mono">@f.TaskCount</td>
                                     <td class="mono">@((f.UpdatedAt ?? f.CreatedAt).ToString("yyyy-MM-dd HH:mm"))</td>
                                     <td class="sf-col-actions">
-                                        <MudButton Size="Size.Small" Variant="Variant.Filled" Class="lk-btn lk-btn--primary" OnClick="@(() => OpenEditor(f))">Editor</MudButton>
-                                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Class="lk-btn" OnClick="@(() => Preview(f))">Preview</MudButton>
-                                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Class="lk-btn" OnClick="@(() => Publish(f))">Publish</MudButton>
-                                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Class="lk-btn" OnClick="@(() => StartClone(f))">Clone</MudButton>
-                                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Class="lk-btn" OnClick="@(() => Delete(f))">Delete</MudButton>
+                                        <MudButton Size="Size.Small" Variant="Variant.Filled" Class="lk-btn lk-btn--primary" OnClick="@(() => OpenEditor(f))">@L["Shopfloor.Editor"]</MudButton>
+                                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Class="lk-btn" OnClick="@(() => Preview(f))">@L["Shopfloor.Preview"]</MudButton>
+                                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Class="lk-btn" OnClick="@(() => Publish(f))">@L["Shopfloor.Publish"]</MudButton>
+                                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Class="lk-btn" OnClick="@(() => StartClone(f))">@L["Shopfloor.Clone"]</MudButton>
+                                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Class="lk-btn" OnClick="@(() => Delete(f))">@L["Shopfloor.Delete"]</MudButton>
                                     </td>
                                 </tr>
                             }
@@ -74,17 +74,17 @@
             <MudPaper Outlined="true" Elevation="0" Class="panel">
                 <div class="panel__head">
                     <div>
-                        <h2>@(_cloneSourceId is null ? "New family" : "Clone family")</h2>
-                        <span>Code and name are required</span>
+                        <h2>@(_cloneSourceId is null ? L["Shopfloor.NewFamily"].Value : L["Shopfloor.CloneFamily"].Value)</h2>
+                        <span>@L["Shopfloor.CodeAndNameAreRequired"]</span>
                     </div>
                 </div>
                 <div class="sf-form">
-                    <MudTextField @bind-Value="_code" Label="Code" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                    <MudTextField @bind-Value="_name" Label="Name" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                    <MudTextField @bind-Value="_description" Label="Description (optional)" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="2" />
+                    <MudTextField @bind-Value="_code" Label="@L["Shopfloor.Code"]" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    <MudTextField @bind-Value="_name" Label="@L["Shopfloor.Name"]" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    <MudTextField @bind-Value="_description" Label="@L["Shopfloor.DescriptionOptional"]" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="2" />
                     <div class="sf-form__actions">
-                        <MudButton Variant="Variant.Outlined" Class="lk-btn" OnClick="CancelForm">Cancel</MudButton>
-                        <MudButton Variant="Variant.Filled" Class="lk-btn lk-btn--primary" Disabled="_saving" OnClick="Save">Save</MudButton>
+                        <MudButton Variant="Variant.Outlined" Class="lk-btn" OnClick="CancelForm">@L["Shopfloor.Cancel"]</MudButton>
+                        <MudButton Variant="Variant.Filled" Class="lk-btn lk-btn--primary" Disabled="_saving" OnClick="Save">@L["Shopfloor.Save"]</MudButton>
                     </div>
                 </div>
             </MudPaper>
@@ -95,9 +95,9 @@
                 <div class="panel__head">
                     <div>
                         <h2>Preview · @_preview.FamilyName</h2>
-                        <span>Client-side dry run — topologically ordered task plan</span>
+                        <span>@L["Shopfloor.ClientSideDryRunTopologicallyOrderedTaskPlan"]</span>
                     </div>
-                    <MudButton Size="Size.Small" Variant="Variant.Outlined" Class="lk-btn" OnClick="@(() => _preview = null)">Close</MudButton>
+                    <MudButton Size="Size.Small" Variant="Variant.Outlined" Class="lk-btn" OnClick="@(() => _preview = null)">@L["Shopfloor.Close"]</MudButton>
                 </div>
 
                 @if (_preview.Errors.Count > 0)
@@ -105,7 +105,7 @@
                     <ul class="sf-errors">
                         @foreach (var e in _preview.Errors)
                         {
-                            <li><span class="chip chip--danger">Invalid</span> @e</li>
+                            <li><span class="chip chip--danger">@L["Shopfloor.Invalid"]</span> @e</li>
                         }
                     </ul>
                 }
@@ -114,7 +114,7 @@
                     <div class="table-wrap">
                         <table class="sf-table">
                             <thead>
-                                <tr><th>Step</th><th>Task</th><th>Description</th><th>Station</th><th>Duration</th></tr>
+                                <tr><th>@L["Shopfloor.Step"]</th><th>@L["Shopfloor.Task"]</th><th>@L["Shopfloor.Description"]</th><th>@L["Shopfloor.Station"]</th><th>@L["Shopfloor.Duration"]</th></tr>
                             </thead>
                             <tbody>
                                 @{ var step = 1; }
@@ -165,7 +165,7 @@
         _families = await Api.GetWorkflowsAsync(CancellationToken.None);
         if (_families is null)
         {
-            Snackbar.Add("Shopfloor API is unreachable.", Severity.Error);
+            Snackbar.Add(L["Shopfloor.ApiUnreachable"].Value, Severity.Error);
         }
     }
 
@@ -202,12 +202,12 @@
             if (_cloneSourceId is { } sourceId)
             {
                 var result = await Api.CloneWorkflowAsync(sourceId, new CloneWorkflowTemplateRequest(_code, _name, _description), CancellationToken.None);
-                if (!Handle(result.Success, result.Error, "Family cloned.")) return;
+                if (!Handle(result.Success, result.Error, L["Shopfloor.FamilyCloned"].Value)) return;
             }
             else
             {
                 var result = await Api.CreateWorkflowAsync(new CreateWorkflowTemplateRequest(_code, _name, _description), CancellationToken.None);
-                if (!Handle(result.Success, result.Error, "Family created.")) return;
+                if (!Handle(result.Success, result.Error, L["Shopfloor.FamilyCreated"].Value)) return;
             }
 
             _formOpen = false;
@@ -222,7 +222,7 @@
     private async Task Publish(WorkflowTemplateSummaryDto f)
     {
         var result = await Api.PublishWorkflowAsync(f.Id, CancellationToken.None);
-        if (Handle(result.Success, result.Error, $"{f.Code} published."))
+        if (Handle(result.Success, result.Error, L["Shopfloor.FamilyPublished", f.Code].Value))
         {
             await LoadAsync();
         }
@@ -231,7 +231,7 @@
     private async Task Delete(WorkflowTemplateSummaryDto f)
     {
         var result = await Api.DeleteWorkflowAsync(f.Id, CancellationToken.None);
-        if (Handle(result.Success, result.Error, $"{f.Code} deleted."))
+        if (Handle(result.Success, result.Error, L["Shopfloor.FamilyDeleted", f.Code].Value))
         {
             await LoadAsync();
         }
@@ -243,7 +243,7 @@
         var detail = await Api.GetWorkflowAsync(f.Id, CancellationToken.None);
         if (detail is null)
         {
-            Snackbar.Add("Could not load workflow graph.", Severity.Error);
+            Snackbar.Add(L["Shopfloor.CouldNotLoadWorkflowGraph"].Value, Severity.Error);
             return;
         }
 
@@ -259,13 +259,13 @@
         var starts = graph.Nodes.Where(n => n.Kind == WorkflowNodeKinds.Start).ToList();
         var finishes = graph.Nodes.Where(n => n.Kind == WorkflowNodeKinds.Finish).ToList();
 
-        if (starts.Count != 1) errors.Add("Graph must have exactly one start node.");
-        if (finishes.Count != 1) errors.Add("Graph must have exactly one finish node.");
+        if (starts.Count != 1) errors.Add(L["Shopfloor.GraphMustHaveOneStart"].Value);
+        if (finishes.Count != 1) errors.Add(L["Shopfloor.GraphMustHaveOneFinish"].Value);
 
         foreach (var t in graph.Nodes.Where(n => n.Kind == WorkflowNodeKinds.Task))
         {
-            if (t.WorkStationId is null) errors.Add($"Task '{t.Name}' has no work station.");
-            if (t.DurationSec is null or <= 0) errors.Add($"Task '{t.Name}' has no positive duration.");
+            if (t.WorkStationId is null) errors.Add(L["Shopfloor.TaskNoStation", t.Name].Value);
+            if (t.DurationSec is null or <= 0) errors.Add(L["Shopfloor.TaskNoDuration", t.Name].Value);
         }
 
         var order = TopologicalOrder(graph, nodes, errors);
@@ -291,7 +291,7 @@
         return new PreviewModel(wf.Name, steps, errors);
     }
 
-    private static List<string> TopologicalOrder(
+    private List<string> TopologicalOrder(
         WorkflowGraphDto graph,
         IReadOnlyDictionary<string, WorkflowNodeDto> nodes,
         List<string> errors)
@@ -303,7 +303,7 @@
         {
             if (!nodes.ContainsKey(e.From) || !nodes.ContainsKey(e.To))
             {
-                errors.Add($"Edge {e.From} → {e.To} references a missing node.");
+                errors.Add(L["Shopfloor.EdgeMissingNode", e.From, e.To].Value);
                 continue;
             }
 
@@ -328,7 +328,7 @@
 
         if (order.Count != nodes.Count)
         {
-            errors.Add("Graph contains a cycle.");
+            errors.Add(L["Shopfloor.GraphContainsCycle"].Value);
         }
 
         return order;
@@ -349,7 +349,7 @@
             return true;
         }
 
-        Snackbar.Add(error ?? "Operation failed.", Severity.Error);
+        Snackbar.Add(error ?? L["Shopfloor.OperationFailed"].Value, Severity.Error);
         return false;
     }
 }

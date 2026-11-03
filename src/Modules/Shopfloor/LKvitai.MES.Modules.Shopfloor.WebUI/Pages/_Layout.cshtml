@@ -1,9 +1,13 @@
 @using Microsoft.AspNetCore.Components.Web
+@using System.Globalization
+@using Microsoft.Extensions.Localization
+@using LKvitai.MES.Modules.Shopfloor.WebUI.Resources
+@inject IStringLocalizer<ShopfloorResources> L
 @namespace LKvitai.MES.Modules.Shopfloor.WebUI.Pages
 @addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="@CultureInfo.CurrentUICulture.TwoLetterISOLanguageName">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -27,8 +31,8 @@
     @RenderBody()
 
     <div id="blazor-error-ui">
-        An unhandled error has occurred.
-        <a href="" class="reload">Reload</a>
+        @L["Shopfloor.ErrorOccurred"]
+        <a href="" class="reload">@L["Shopfloor.Reload"]</a>
         <a class="dismiss">x</a>
     </div>
 

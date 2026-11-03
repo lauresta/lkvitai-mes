@@ -2,65 +2,65 @@
 @inject ShopfloorApiClient Api
 @inject ISnackbar Snackbar
 
-<PageTitle>Cikada.MES · Legacy Types & Coverage</PageTitle>
+<PageTitle>Cikada.MES · @L["Shopfloor.LegacyTypesCoverage"]</PageTitle>
 
 <main class="shopfloor-page">
     <section class="sf-head">
         <div>
-            <div class="eyebrow mono">Shopfloor · Mappings</div>
+            <div class="eyebrow mono">@L["Shopfloor.ShopfloorMappings"]</div>
             <h1>Legacy Types &amp; Coverage</h1>
-            <p>Map legacy product types to production families.</p>
+            <p>@L["Shopfloor.MapLegacyProductTypesToProductionFamilies"]</p>
         </div>
         <div class="sf-head__actions">
-            <MudButton Variant="Variant.Outlined" Class="lk-btn" Disabled="_syncing" OnClick="Sync">@(_syncing ? "Syncing…" : "Sync legacy")</MudButton>
+            <MudButton Variant="Variant.Outlined" Class="lk-btn" Disabled="_syncing" OnClick="Sync">@(_syncing ? L["Shopfloor.Syncing"].Value : L["Shopfloor.SyncLegacy"].Value)</MudButton>
         </div>
     </section>
 
-    <section class="sf-kpis" aria-label="Coverage">
+    <section class="sf-kpis" aria-label="@L["Shopfloor.Coverage"]">
         <MudPaper Outlined="true" Elevation="0" Class="panel kpi">
-            <span class="kpi__label mono">Mapped / total</span>
+            <span class="kpi__label mono">@L["Shopfloor.MappedTotal"]</span>
             <strong class="mono">@(_coverage?.MappedLegacyTypes.ToString() ?? "—") / @(_coverage?.TotalLegacyTypes.ToString() ?? "—")</strong>
-            <span class="chip chip--info">Coverage</span>
+            <span class="chip chip--info">@L["Shopfloor.Coverage"]</span>
         </MudPaper>
         <MudPaper Outlined="true" Elevation="0" Class="panel kpi">
-            <span class="kpi__label mono">Unmapped</span>
+            <span class="kpi__label mono">@L["Shopfloor.Unmapped"]</span>
             <strong class="mono">@(_coverage?.UnmappedLegacyTypes.ToString() ?? "—")</strong>
-            <span class="chip @((_coverage?.UnmappedLegacyTypes ?? 0) > 0 ? "chip--warn" : "chip--ok")">@((_coverage?.UnmappedLegacyTypes ?? 0) > 0 ? "Attention" : "Complete")</span>
+            <span class="chip @((_coverage?.UnmappedLegacyTypes ?? 0) > 0 ? "chip--warn" : "chip--ok")">@((_coverage?.UnmappedLegacyTypes ?? 0) > 0 ? L["Shopfloor.Attention"].Value : L["Shopfloor.Complete"].Value)</span>
         </MudPaper>
         <MudPaper Outlined="true" Elevation="0" Class="panel kpi">
-            <span class="kpi__label mono">Families</span>
+            <span class="kpi__label mono">@L["Shopfloor.Families"]</span>
             <strong class="mono">@(_coverage?.FamilyCount.ToString() ?? "—")</strong>
-            <span class="chip chip--slate">Mapped</span>
+            <span class="chip chip--slate">@L["Shopfloor.Mapped"]</span>
         </MudPaper>
     </section>
 
     <MudPaper Outlined="true" Elevation="0" Class="panel">
         <div class="panel__head">
             <div>
-                <h2>Legacy product types</h2>
-                <span>@(_rows?.Count ?? 0) shown@(_total > 0 ? $" of {_total}" : "")</span>
+                <h2>@L["Shopfloor.LegacyProductTypes"]</h2>
+                <span>@L["Shopfloor.ShownOf", _rows?.Count ?? 0, _total]</span>
             </div>
         </div>
 
         <div class="sf-toolbar">
-            <MudTextField @bind-Value="_search" Label="Search" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="false" OnKeyUp="OnSearchKey" />
-            <MudSelect T="string" @bind-Value="_mappedFilter" Label="Mapping" Variant="Variant.Outlined" Margin="Margin.Dense">
-                <MudSelectItem T="string" Value="@("all")">All</MudSelectItem>
-                <MudSelectItem T="string" Value="@("mapped")">Mapped</MudSelectItem>
-                <MudSelectItem T="string" Value="@("unmapped")">Unmapped</MudSelectItem>
+            <MudTextField @bind-Value="_search" Label="@L["Shopfloor.Search"]" Variant="Variant.Outlined" Margin="Margin.Dense" Immediate="false" OnKeyUp="OnSearchKey" />
+            <MudSelect T="string" @bind-Value="_mappedFilter" Label="@L["Shopfloor.Mapping"]" Variant="Variant.Outlined" Margin="Margin.Dense">
+                <MudSelectItem T="string" Value="@("all")">@L["Shopfloor.All"]</MudSelectItem>
+                <MudSelectItem T="string" Value="@("mapped")">@L["Shopfloor.Mapped"]</MudSelectItem>
+                <MudSelectItem T="string" Value="@("unmapped")">@L["Shopfloor.Unmapped"]</MudSelectItem>
             </MudSelect>
-            <MudButton Variant="Variant.Outlined" Class="lk-btn" OnClick="Reload">Apply</MudButton>
+            <MudButton Variant="Variant.Outlined" Class="lk-btn" OnClick="Reload">@L["Shopfloor.Apply"]</MudButton>
         </div>
 
         <div class="sf-bulkbar">
-            <span class="mono">@_selected.Count selected</span>
-            <MudSelect T="Guid" @bind-Value="_assignTarget" Label="Assign to family" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="@(_selected.Count == 0)">
+            <span class="mono">@L["Shopfloor.SelectedCount", _selected.Count]</span>
+            <MudSelect T="Guid" @bind-Value="_assignTarget" Label="@L["Shopfloor.AssignToFamily"]" Variant="Variant.Outlined" Margin="Margin.Dense" Disabled="@(_selected.Count == 0)">
                 @foreach (var f in _families ?? Array.Empty<WorkflowTemplateSummaryDto>())
                 {
                     <MudSelectItem T="Guid" Value="f.Id">@f.Code — @f.Name</MudSelectItem>
                 }
             </MudSelect>
-            <MudButton Variant="Variant.Filled" Class="lk-btn lk-btn--primary" Disabled="@(_selected.Count == 0 || _assignTarget == Guid.Empty)" OnClick="BulkAssign">Assign</MudButton>
+            <MudButton Variant="Variant.Filled" Class="lk-btn lk-btn--primary" Disabled="@(_selected.Count == 0 || _assignTarget == Guid.Empty)" OnClick="BulkAssign">@L["Shopfloor.Assign"]</MudButton>
         </div>
 
         @if (_rows is null)
@@ -69,7 +69,7 @@
         }
         else if (_rows.Count == 0)
         {
-            <p class="sf-empty">No legacy product types match the current filters.</p>
+            <p class="sf-empty">@L["Shopfloor.NoLegacyProductTypesMatchTheCurrentFilters"]</p>
         }
         else
         {
@@ -78,7 +78,7 @@
                     <thead>
                         <tr>
                             <th class="sf-col-check"><input type="checkbox" @onchange="ToggleAll" checked="@AllSelected" /></th>
-                            <th>Code</th><th>Kind</th><th>Name</th><th>Mapped family</th>
+                            <th>@L["Shopfloor.Code"]</th><th>@L["Shopfloor.Kind"]</th><th>@L["Shopfloor.Name"]</th><th>@L["Shopfloor.MappedFamily"]</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -96,7 +96,7 @@
                                     }
                                     else
                                     {
-                                        <span class="chip chip--slate">Unmapped</span>
+                                        <span class="chip chip--slate">@L["Shopfloor.Unmapped"]</span>
                                     }
                                 </td>
                             </tr>
@@ -149,7 +149,7 @@
         var page = await Api.GetLegacyProductTypesAsync(_search, mapped, false, 1, 200, CancellationToken.None);
         if (page is null)
         {
-            Snackbar.Add("Shopfloor API is unreachable.", Severity.Error);
+            Snackbar.Add(L["Shopfloor.ApiUnreachable"].Value, Severity.Error);
             _rows = Array.Empty<LegacyProductTypeDto>();
             _total = 0;
             return;
@@ -202,13 +202,13 @@
         var result = await Api.BulkAssignAsync(request, CancellationToken.None);
         if (result.Success)
         {
-            Snackbar.Add($"Assigned {_selected.Count} product type(s).", Severity.Success);
+            Snackbar.Add(L["Shopfloor.AssignedTypes", _selected.Count].Value, Severity.Success);
             _selected.Clear();
             await Reload();
         }
         else
         {
-            Snackbar.Add(result.Error ?? "Assign failed.", Severity.Error);
+            Snackbar.Add(result.Error ?? L["Shopfloor.AssignFailed"].Value, Severity.Error);
         }
     }
 
@@ -220,12 +220,12 @@
             var result = await Api.SyncLegacyProductTypesAsync(CancellationToken.None);
             if (result.Success)
             {
-                Snackbar.Add("Legacy product types synced.", Severity.Success);
+                Snackbar.Add(L["Shopfloor.LegacyTypesSynced"].Value, Severity.Success);
                 await Reload();
             }
             else
             {
-                Snackbar.Add(result.Error ?? "Sync failed.", Severity.Error);
+                Snackbar.Add(result.Error ?? L["Shopfloor.SyncFailed"].Value, Severity.Error);
             }
         }
         finally

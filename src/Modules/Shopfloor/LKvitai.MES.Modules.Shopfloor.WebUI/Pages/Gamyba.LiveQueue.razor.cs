@@ -64,7 +64,7 @@ public partial class Gamyba
                     .Where(x => !string.IsNullOrWhiteSpace(x))),
                 d.Number.StartsWith("GU", StringComparison.OrdinalIgnoreCase) ? d.Id : null));
             var repairs = _liveHistory.Repairs.Select(r => new LiveHistoryEvent(
-                r.Registered, $"{L("Repair", "Remontas")} {r.Id}",
+                r.Registered, $"{L["Gamyba.Repair"].Value} {r.Id}",
                 string.Join(" · ", new[] { r.Reason, r.Claimed, r.Actual }
                     .Where(x => !string.IsNullOrWhiteSpace(x))), null));
             return documents.Concat(repairs).OrderBy(x => x.Date).ToArray();
@@ -91,11 +91,11 @@ public partial class Gamyba
         {
             var result = await ShopfloorApi.GetProductionQueueFacetsAsync(CancellationToken.None);
             if (result.Success && result.Value is not null) _liveFacets = result.Value;
-            else _liveFacetError = result.Error ?? L("Could not load queue filters.", "Nepavyko įkelti eilės filtrų.");
+            else _liveFacetError = result.Error ?? L["Gamyba.CouldNotLoadQueueFilters"].Value;
         }
         catch (Exception)
         {
-            _liveFacetError = L("Could not load queue filters.", "Nepavyko įkelti eilės filtrų.");
+            _liveFacetError = L["Gamyba.CouldNotLoadQueueFilters"].Value;
         }
     }
 
@@ -116,11 +116,11 @@ public partial class Gamyba
                 _liveQueue = result.Value;
                 _liveQueuePage = result.Value.Page;
             }
-            else _liveQueueError = result.Error ?? L("Could not load the production queue.", "Nepavyko įkelti gamybos eilės.");
+            else _liveQueueError = result.Error ?? L["Gamyba.CouldNotLoadTheProductionQueue"].Value;
         }
         catch (Exception)
         {
-            _liveQueueError = L("Could not load the production queue.", "Nepavyko įkelti gamybos eilės.");
+            _liveQueueError = L["Gamyba.CouldNotLoadTheProductionQueue"].Value;
         }
         finally { _liveQueueLoading = false; }
     }
@@ -167,8 +167,7 @@ public partial class Gamyba
                 LiveSelectedItems.Reverse().Select(item => item.ProductId).ToArray(), CancellationToken.None);
             if (!result.Success || result.Value is null)
             {
-                _liveIssueError = result.Error ?? L("Issue could not be confirmed. Check the GU before retrying.",
-                    "Išdavimas nepatvirtintas. Prieš kartodami patikrinkite GU.");
+                _liveIssueError = result.Error ?? L["Gamyba.IssueCouldNotBeConfirmedCheckTheGUBefore"].Value;
                 return;
             }
             var issued = result.Value;
@@ -182,8 +181,7 @@ public partial class Gamyba
         }
         catch (Exception)
         {
-            _liveIssueError = L("Response lost. Check the GU and refresh the queue before retrying.",
-                "Atsakymas prarastas. Prieš kartodami patikrinkite GU ir atnaujinkite eilę.");
+            _liveIssueError = L["Gamyba.ResponseLostCheckTheGUAndRefreshTheQueue"].Value;
         }
         finally { _liveIssueBusy = false; }
     }
@@ -247,11 +245,11 @@ public partial class Gamyba
                 _liveTasks = result.Value;
                 _liveTaskPage = result.Value.Page;
             }
-            else _liveTaskError = result.Error ?? L("Could not load production tasks.", "Nepavyko įkelti gamybos užduočių.");
+            else _liveTaskError = result.Error ?? L["Gamyba.CouldNotLoadProductionTasks"].Value;
         }
         catch (Exception)
         {
-            _liveTaskError = L("Could not load production tasks.", "Nepavyko įkelti gamybos užduočių.");
+            _liveTaskError = L["Gamyba.CouldNotLoadProductionTasks"].Value;
         }
         finally { _liveTaskLoading = false; }
     }
@@ -270,11 +268,11 @@ public partial class Gamyba
                 _liveDocuments = result.Value;
                 _liveDocumentsPage = result.Value.Page;
             }
-            else _liveDocumentsError = result.Error ?? L("Could not load GT documents.", "Nepavyko įkelti GT dokumentų.");
+            else _liveDocumentsError = result.Error ?? L["Gamyba.CouldNotLoadGTDocuments"].Value;
         }
         catch (Exception)
         {
-            _liveDocumentsError = L("Could not load GT documents.", "Nepavyko įkelti GT dokumentų.");
+            _liveDocumentsError = L["Gamyba.CouldNotLoadGTDocuments"].Value;
         }
         finally { _liveDocumentsLoading = false; }
     }
@@ -289,11 +287,11 @@ public partial class Gamyba
         {
             var result = await ShopfloorApi.GetProductionDocumentAsync(id, CancellationToken.None);
             if (result.Success && result.Value is not null) _liveDocument = result.Value;
-            else _liveDocumentError = result.Error ?? L("Document unavailable or access denied.", "Dokumentas neprieinamas arba neturite teisių.");
+            else _liveDocumentError = result.Error ?? L["Gamyba.DocumentUnavailableOrAccessDenied"].Value;
         }
         catch (Exception)
         {
-            _liveDocumentError = L("Could not load the document.", "Nepavyko įkelti dokumento.");
+            _liveDocumentError = L["Gamyba.CouldNotLoadTheDocument"].Value;
         }
         finally { _liveDocumentLoading = false; }
     }
@@ -308,11 +306,11 @@ public partial class Gamyba
         {
             var result = await ShopfloorApi.GetProductionTaskAsync(id, CancellationToken.None);
             if (result.Success && result.Value is not null) _liveTask = result.Value;
-            else _liveTaskError = result.Error ?? L("Task unavailable or access denied.", "Užduotis neprieinama arba neturite teisių.");
+            else _liveTaskError = result.Error ?? L["Gamyba.TaskUnavailableOrAccessDenied"].Value;
         }
         catch (Exception)
         {
-            _liveTaskError = L("Could not load the task.", "Nepavyko įkelti užduoties.");
+            _liveTaskError = L["Gamyba.CouldNotLoadTheTask"].Value;
         }
         finally { _liveTaskLoading = false; }
     }
@@ -329,7 +327,7 @@ public partial class Gamyba
         _liveHistoryError = null;
         if (barcode.Length != 12 || barcode.Any(c => c is < '0' or > '9'))
         {
-            _liveHistoryError = L("Enter a 12-digit barcode.", "Įveskite 12 skaitmenų kodą.");
+            _liveHistoryError = L["Gamyba.EnterA12DigitBarcode"].Value;
             return;
         }
         if (_liveHistoryLoading) return;
@@ -338,11 +336,11 @@ public partial class Gamyba
         {
             var result = await ShopfloorApi.GetProductionHistoryAsync(barcode, CancellationToken.None);
             if (result.Success && result.Value is not null) _liveHistory = result.Value;
-            else _liveHistoryError = result.Error ?? L("Product not found or access denied.", "Gaminys nerastas arba neturite teisių.");
+            else _liveHistoryError = result.Error ?? L["Gamyba.ProductNotFoundOrAccessDenied"].Value;
         }
         catch (Exception)
         {
-            _liveHistoryError = L("Could not load product history.", "Nepavyko įkelti gaminio istorijos.");
+            _liveHistoryError = L["Gamyba.CouldNotLoadProductHistory"].Value;
         }
         finally { _liveHistoryLoading = false; }
     }
@@ -371,11 +369,11 @@ public partial class Gamyba
                 if (!result.Value.Items.Any(x => x.Id == _liveRepairId))
                     _liveRepairId = result.Value.Items.FirstOrDefault()?.Id;
             }
-            else _liveRepairError = result.Error ?? L("Could not load repairs.", "Nepavyko įkelti remontų.");
+            else _liveRepairError = result.Error ?? L["Gamyba.CouldNotLoadRepairs"].Value;
         }
         catch (Exception)
         {
-            _liveRepairError = L("Could not load repairs.", "Nepavyko įkelti remontų.");
+            _liveRepairError = L["Gamyba.CouldNotLoadRepairs"].Value;
         }
         finally { _liveRepairLoading = false; }
     }
@@ -412,11 +410,11 @@ public partial class Gamyba
             var result = await ShopfloorApi.GetProductionReportCatalogAsync(CancellationToken.None);
             if (result.Success && result.Value is not null)
                 _liveReportCatalog = result.Value;
-            else _liveReportError = result.Error ?? L("Could not load report catalog.", "Nepavyko įkelti ataskaitų sąrašo.");
+            else _liveReportError = result.Error ?? L["Gamyba.CouldNotLoadReportCatalog"].Value;
         }
         catch (Exception)
         {
-            _liveReportError = L("Could not load report catalog.", "Nepavyko įkelti ataskaitų sąrašo.");
+            _liveReportError = L["Gamyba.CouldNotLoadReportCatalog"].Value;
         }
     }
 
@@ -433,11 +431,11 @@ public partial class Gamyba
             var result = await ShopfloorApi.GetProductionReportDataAsync(
                 _liveTask.Task.Id, reportId, CancellationToken.None);
             if (result.Success && result.Value is not null) _liveReportData = result.Value;
-            else _liveReportError = result.Error ?? L("Report unavailable or access denied.", "Ataskaita neprieinama arba neturite teisių.");
+            else _liveReportError = result.Error ?? L["Gamyba.ReportUnavailableOrAccessDenied"].Value;
         }
         catch (Exception)
         {
-            _liveReportError = L("Could not load report data.", "Nepavyko įkelti ataskaitos duomenų.");
+            _liveReportError = L["Gamyba.CouldNotLoadReportData"].Value;
         }
         finally { _liveReportLoading = false; }
     }

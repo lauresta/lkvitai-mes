@@ -1,0 +1,1773 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="Gamyba.ACCEPTED" xml:space="preserve">
+    <value>ACCEPTED</value>
+  </data>
+  <data name="Gamyba.AMissingFieldRequiresAnAPIDatasetExtensionNot" xml:space="preserve">
+    <value>A missing field requires an API dataset extension, not SQL in this editor.</value>
+  </data>
+  <data name="Gamyba.ASecondClickIsIgnoredWhileTheCommandIs" xml:space="preserve">
+    <value>A second click is ignored while the command is running.</value>
+  </data>
+  <data name="Gamyba.AccessOwnsThePort" xml:space="preserve">
+    <value>Access owns the port</value>
+  </data>
+  <data name="Gamyba.Accessories" xml:space="preserve">
+    <value>Accessories</value>
+  </data>
+  <data name="Gamyba.Action" xml:space="preserve">
+    <value>Action</value>
+  </data>
+  <data name="Gamyba.ActionsDependOnStateAndBranchRights" xml:space="preserve">
+    <value>Actions depend on state and branch rights.</value>
+  </data>
+  <data name="Gamyba.ActualFailure" xml:space="preserve">
+    <value>Actual failure</value>
+  </data>
+  <data name="Gamyba.Add" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="Gamyba.AddAPortionFromTheReadyQueue" xml:space="preserve">
+    <value>Add a portion from the ready queue.</value>
+  </data>
+  <data name="Gamyba.AddPortion" xml:space="preserve">
+    <value>Add portion</value>
+  </data>
+  <data name="Gamyba.AgentOnline" xml:space="preserve">
+    <value>Agent online</value>
+  </data>
+  <data name="Gamyba.All" xml:space="preserve">
+    <value>All</value>
+  </data>
+  <data name="Gamyba.AllVisos" xml:space="preserve">
+    <value>All</value>
+  </data>
+  <data name="Gamyba.Allowed" xml:space="preserve">
+    <value>Allowed</value>
+  </data>
+  <data name="Gamyba.AllowedActions" xml:space="preserve">
+    <value>Allowed actions</value>
+  </data>
+  <data name="Gamyba.AllowedOperation" xml:space="preserve">
+    <value>Allowed operation</value>
+  </data>
+  <data name="Gamyba.Allowlist" xml:space="preserve">
+    <value>Allowlist</value>
+  </data>
+  <data name="Gamyba.AlreadyIssuedByAccessRemoveTheConflictingRow" xml:space="preserve">
+    <value>already issued by Access. Remove the conflicting row.</value>
+  </data>
+  <data name="Gamyba.AlreadyScannedInThisGTDocument" xml:space="preserve">
+    <value>Already scanned in this GT document.</value>
+  </data>
+  <data name="Gamyba.Archived" xml:space="preserve">
+    <value>archived</value>
+  </data>
+  <data name="Gamyba.ArchivedFixture" xml:space="preserve">
+    <value>Archived fixture</value>
+  </data>
+  <data name="Gamyba.Author" xml:space="preserve">
+    <value>Author</value>
+  </data>
+  <data name="Gamyba.Barcode" xml:space="preserve">
+    <value>Barcode</value>
+  </data>
+  <data name="Gamyba.BarcodeGUGTOrOrderEnter" xml:space="preserve">
+    <value>Barcode, GU, GT or order… (Enter)</value>
+  </data>
+  <data name="Gamyba.BarcodeMustContain12Digits" xml:space="preserve">
+    <value>Barcode must contain 12 digits.</value>
+  </data>
+  <data name="Gamyba.Branch" xml:space="preserve">
+    <value>Branch</value>
+  </data>
+  <data name="Gamyba.Branches" xml:space="preserve">
+    <value>Branches</value>
+  </data>
+  <data name="Gamyba.BrowserPrint" xml:space="preserve">
+    <value>Browser print</value>
+  </data>
+  <data name="Gamyba.BusinessRule" xml:space="preserve">
+    <value>business rule</value>
+  </data>
+  <data name="Gamyba.BusinessRulesNeededMarkedInTheUI" xml:space="preserve">
+    <value>business rules needed; marked ? in the UI</value>
+  </data>
+  <data name="Gamyba.COM3IsOwnedByAccessOnThisWorkstation" xml:space="preserve">
+    <value>COM3 is owned by Access on this workstation.</value>
+  </data>
+  <data name="Gamyba.COMOwner" xml:space="preserve">
+    <value>COM owner</value>
+  </data>
+  <data name="Gamyba.CONFLICT" xml:space="preserve">
+    <value>CONFLICT</value>
+  </data>
+  <data name="Gamyba.Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Gamyba.CancelRemaining" xml:space="preserve">
+    <value>Cancel remaining</value>
+  </data>
+  <data name="Gamyba.CannotEvaluateThisFormulaInTheFixtureSaveIs" xml:space="preserve">
+    <value>Cannot evaluate this formula in the fixture. Save is blocked.</value>
+  </data>
+  <data name="Gamyba.CheckResult" xml:space="preserve">
+    <value>Check result</value>
+  </data>
+  <data name="Gamyba.CheckTheOriginalCommandResultDoNotIssueAgain" xml:space="preserve">
+    <value>Check the original command result; do not issue again.</value>
+  </data>
+  <data name="Gamyba.ChooseOrderItems" xml:space="preserve">
+    <value>Choose order / items</value>
+  </data>
+  <data name="Gamyba.ClearFilters" xml:space="preserve">
+    <value>Clear filters</value>
+  </data>
+  <data name="Gamyba.ClearFiltersOrChangeTheFixtureSimulation" xml:space="preserve">
+    <value>Clear filters or change the fixture simulation.</value>
+  </data>
+  <data name="Gamyba.ClickAColumnHeaderToEditIt" xml:space="preserve">
+    <value>Click a column header to edit it</value>
+  </data>
+  <data name="Gamyba.Code" xml:space="preserve">
+    <value>Code</value>
+  </data>
+  <data name="Gamyba.Colours" xml:space="preserve">
+    <value>Colours</value>
+  </data>
+  <data name="Gamyba.Compare" xml:space="preserve">
+    <value>Compare</value>
+  </data>
+  <data name="Gamyba.CompareTemplateVersions" xml:space="preserve">
+    <value>Compare template versions</value>
+  </data>
+  <data name="Gamyba.Composition" xml:space="preserve">
+    <value>Composition</value>
+  </data>
+  <data name="Gamyba.CompositionChangedAfterArchivedPDFGenerateANewVersion" xml:space="preserve">
+    <value>Composition changed after archived PDF? Generate a new version.</value>
+  </data>
+  <data name="Gamyba.CompositionChangedAfterTheLastPDFTheOriginalIs" xml:space="preserve">
+    <value>Composition changed after the last PDF. The original is kept; a new version will be marked generated from current data.</value>
+  </data>
+  <data name="Gamyba.Compute" xml:space="preserve">
+    <value>Compute</value>
+  </data>
+  <data name="Gamyba.ConfirmEnter" xml:space="preserve">
+    <value>Confirm · Enter</value>
+  </data>
+  <data name="Gamyba.ConfirmedInSales" xml:space="preserve">
+    <value>Confirmed in Sales</value>
+  </data>
+  <data name="Gamyba.ContinueScanning" xml:space="preserve">
+    <value>Continue scanning</value>
+  </data>
+  <data name="Gamyba.Copies" xml:space="preserve">
+    <value>Copies</value>
+  </data>
+  <data name="Gamyba.Correction" xml:space="preserve">
+    <value>Correction</value>
+  </data>
+  <data name="Gamyba.CorrectionRule" xml:space="preserve">
+    <value>Correction rule.</value>
+  </data>
+  <data name="Gamyba.CouldNotLoadGTDocuments" xml:space="preserve">
+    <value>Could not load GT documents.</value>
+  </data>
+  <data name="Gamyba.CouldNotLoadProductHistory" xml:space="preserve">
+    <value>Could not load product history.</value>
+  </data>
+  <data name="Gamyba.CouldNotLoadProductionTasks" xml:space="preserve">
+    <value>Could not load production tasks.</value>
+  </data>
+  <data name="Gamyba.CouldNotLoadQueueFilters" xml:space="preserve">
+    <value>Could not load queue filters.</value>
+  </data>
+  <data name="Gamyba.CouldNotLoadRepairs" xml:space="preserve">
+    <value>Could not load repairs.</value>
+  </data>
+  <data name="Gamyba.CouldNotLoadReportCatalog" xml:space="preserve">
+    <value>Could not load report catalog.</value>
+  </data>
+  <data name="Gamyba.CouldNotLoadReportData" xml:space="preserve">
+    <value>Could not load report data.</value>
+  </data>
+  <data name="Gamyba.CouldNotLoadTheDocument" xml:space="preserve">
+    <value>Could not load the document.</value>
+  </data>
+  <data name="Gamyba.CouldNotLoadTheProductionQueue" xml:space="preserve">
+    <value>Could not load the production queue.</value>
+  </data>
+  <data name="Gamyba.CouldNotLoadTheTask" xml:space="preserve">
+    <value>Could not load the task.</value>
+  </data>
+  <data name="Gamyba.CountersStayWithTheGTDocument" xml:space="preserve">
+    <value>Counters stay with the GT document.</value>
+  </data>
+  <data name="Gamyba.Counts" xml:space="preserve">
+    <value>Counts</value>
+  </data>
+  <data name="Gamyba.Covered" xml:space="preserve">
+    <value>covered</value>
+  </data>
+  <data name="Gamyba.CreateGT" xml:space="preserve">
+    <value>Create GT</value>
+  </data>
+  <data name="Gamyba.CreateGUAndIssue" xml:space="preserve">
+    <value>Create GU and issue</value>
+  </data>
+  <data name="Gamyba.CreateNewVersionFromCurrentData" xml:space="preserve">
+    <value>Create new version from current data</value>
+  </data>
+  <data name="Gamyba.CreateStopDocument" xml:space="preserve">
+    <value>Create stop document</value>
+  </data>
+  <data name="Gamyba.Created" xml:space="preserve">
+    <value>Created</value>
+  </data>
+  <data name="Gamyba.Customer" xml:space="preserve">
+    <value>Customer</value>
+  </data>
+  <data name="Gamyba.CustomerReported" xml:space="preserve">
+    <value>Customer reported</value>
+  </data>
+  <data name="Gamyba.DELIVERABLES" xml:space="preserve">
+    <value>DELIVERABLES</value>
+  </data>
+  <data name="Gamyba.DocumentHeading" xml:space="preserve">
+    <value>DOCUMENT</value>
+  </data>
+  <data name="Gamyba.DocumentHeadingSFOR" xml:space="preserve">
+    <value>DOCUMENTS FOR</value>
+  </data>
+  <data name="Gamyba.DataInThisEnvironmentIsNotProductionDataAnd" xml:space="preserve">
+    <value>Data in this environment is not production data and may be reset without notice.</value>
+  </data>
+  <data name="Gamyba.DataPilot" xml:space="preserve">
+    <value>Data pilot</value>
+  </data>
+  <data name="Gamyba.DatasetFields" xml:space="preserve">
+    <value>Dataset fields</value>
+  </data>
+  <data name="Gamyba.DatasetFieldsOnlyNoSQLNoEPL" xml:space="preserve">
+    <value>Dataset fields only · no SQL · no EPL</value>
+  </data>
+  <data name="Gamyba.Date" xml:space="preserve">
+    <value>Date</value>
+  </data>
+  <data name="Gamyba.DeleteScan" xml:space="preserve">
+    <value>Delete scan</value>
+  </data>
+  <data name="Gamyba.DescribeConfirmedCause" xml:space="preserve">
+    <value>Describe confirmed cause</value>
+  </data>
+  <data name="Gamyba.DesignDecision" xml:space="preserve">
+    <value>Design decision</value>
+  </data>
+  <data name="Gamyba.Details" xml:space="preserve">
+    <value>Details</value>
+  </data>
+  <data name="Gamyba.DetailsDetalS" xml:space="preserve">
+    <value>Details</value>
+  </data>
+  <data name="Gamyba.Document" xml:space="preserve">
+    <value>Document</value>
+  </data>
+  <data name="Gamyba.DocumentTimeline" xml:space="preserve">
+    <value>Document timeline</value>
+  </data>
+  <data name="Gamyba.DocumentUnavailableOrAccessDenied" xml:space="preserve">
+    <value>Document unavailable or access denied.</value>
+  </data>
+  <data name="Gamyba.Documents" xml:space="preserve">
+    <value>Documents</value>
+  </data>
+  <data name="Gamyba.DoubleClickARowToOpenHistory" xml:space="preserve">
+    <value>Double-click a row to open history</value>
+  </data>
+  <data name="Gamyba.Draft" xml:space="preserve">
+    <value>Draft</value>
+  </data>
+  <data name="Gamyba.Due" xml:space="preserve">
+    <value>Due</value>
+  </data>
+  <data name="Gamyba.DuePriority" xml:space="preserve">
+    <value>Due · priority</value>
+  </data>
+  <data name="Gamyba.Editable" xml:space="preserve">
+    <value>Editable</value>
+  </data>
+  <data name="Gamyba.Editing" xml:space="preserve">
+    <value>editing</value>
+  </data>
+  <data name="Gamyba.EnterA12DigitBarcode" xml:space="preserve">
+    <value>Enter a 12-digit barcode.</value>
+  </data>
+  <data name="Gamyba.ErrorLog" xml:space="preserve">
+    <value>Error log</value>
+  </data>
+  <data name="Gamyba.ExistingLegacySettingsFormulaIsComputedOnTestValues" xml:space="preserve">
+    <value>Existing legacy settings. Formula is computed on test values before it is saved.</value>
+  </data>
+  <data name="Gamyba.ExtraLabel" xml:space="preserve">
+    <value>Extra label</value>
+  </data>
+  <data name="Gamyba.Field" xml:space="preserve">
+    <value>Field</value>
+  </data>
+  <data name="Gamyba.FinishedGoods" xml:space="preserve">
+    <value>Finished goods</value>
+  </data>
+  <data name="Gamyba.First50RowsShownThisIsDatasetInspectionNot" xml:space="preserve">
+    <value>First 50 rows shown; this is dataset inspection, not the final print layout.</value>
+  </data>
+  <data name="Gamyba.FirstN" xml:space="preserve">
+    <value>First N</value>
+  </data>
+  <data name="Gamyba.FirstNOnPage" xml:space="preserve">
+    <value>First N on page</value>
+  </data>
+  <data name="Gamyba.FixtureArchivePreviewTheOriginalPDFRemainsUnchangedFile" xml:space="preserve">
+    <value>Fixture archive preview. The original PDF remains unchanged; file storage is connected in a later stage.</value>
+  </data>
+  <data name="Gamyba.FixtureSnapshot" xml:space="preserve">
+    <value>fixture snapshot</value>
+  </data>
+  <data name="Gamyba.Formula" xml:space="preserve">
+    <value>Formula</value>
+  </data>
+  <data name="Gamyba.FormulasPPP" xml:space="preserve">
+    <value>Formulas · PPP</value>
+  </data>
+  <data name="Gamyba.FromSalesOrder" xml:space="preserve">
+    <value>From Sales order</value>
+  </data>
+  <data name="Gamyba.GTDocuments" xml:space="preserve">
+    <value>GT documents</value>
+  </data>
+  <data name="Gamyba.GUDocumentsPortionsCompositionAndPrintStatus" xml:space="preserve">
+    <value>GU documents, portions, composition and print status.</value>
+  </data>
+  <data name="Gamyba.GeneratedFrom" xml:space="preserve">
+    <value>generated from</value>
+  </data>
+  <data name="Gamyba.GeneratedFromGUCommit" xml:space="preserve">
+    <value>generated from GU commit</value>
+  </data>
+  <data name="Gamyba.Group" xml:space="preserve">
+    <value>Group</value>
+  </data>
+  <data name="Gamyba.GroupSeparator" xml:space="preserve">
+    <value>Group separator</value>
+  </data>
+  <data name="Gamyba.HandoverAndDispatchDocumentsInvoiceRemainsGated" xml:space="preserve">
+    <value>Handover and dispatch documents. Invoice remains gated.</value>
+  </data>
+  <data name="Gamyba.History" xml:space="preserve">
+    <value>History</value>
+  </data>
+  <data name="Gamyba.Import" xml:space="preserve">
+    <value>Import</value>
+  </data>
+  <data name="Gamyba.ImportBarcodes" xml:space="preserve">
+    <value>Import barcodes</value>
+  </data>
+  <data name="Gamyba.ImportList" xml:space="preserve">
+    <value>Import list</value>
+  </data>
+  <data name="Gamyba.InUse" xml:space="preserve">
+    <value>in use</value>
+  </data>
+  <data name="Gamyba.InsufficientMaterial" xml:space="preserve">
+    <value>insufficient material.</value>
+  </data>
+  <data name="Gamyba.InvoiceRequiresTheExistingFinanceGate" xml:space="preserve">
+    <value>Invoice requires the existing finance gate.</value>
+  </data>
+  <data name="Gamyba.IssueBlocked" xml:space="preserve">
+    <value>Issue blocked.</value>
+  </data>
+  <data name="Gamyba.IssueCouldNotBeConfirmedCheckTheGUBefore" xml:space="preserve">
+    <value>Issue could not be confirmed. Check the GU before retrying.</value>
+  </data>
+  <data name="Gamyba.IssuePortion" xml:space="preserve">
+    <value>Issue portion</value>
+  </data>
+  <data name="Gamyba.IssueSelected" xml:space="preserve">
+    <value>Issue selected</value>
+  </data>
+  <data name="Gamyba.IssueSelectedRowsToProduction" xml:space="preserve">
+    <value>Issue selected rows to production</value>
+  </data>
+  <data name="Gamyba.IssueToGU" xml:space="preserve">
+    <value>Issue to GU</value>
+  </data>
+  <data name="Gamyba.IssuedRowsAnotherPortionCanBeAdded" xml:space="preserve">
+    <value>Issued rows; another portion can be added</value>
+  </data>
+  <data name="Gamyba.IssuedToProduction" xml:space="preserve">
+    <value>Issued to production</value>
+  </data>
+  <data name="Gamyba.Issuing" xml:space="preserve">
+    <value>Issuing…</value>
+  </data>
+  <data name="Gamyba.IssuingPortion" xml:space="preserve">
+    <value>Issuing portion…</value>
+  </data>
+  <data name="Gamyba.Item" xml:space="preserve">
+    <value>Item</value>
+  </data>
+  <data name="Gamyba.ItemBelongsToAnotherBranch" xml:space="preserve">
+    <value>Item belongs to another branch.</value>
+  </data>
+  <data name="Gamyba.Items" xml:space="preserve">
+    <value>items</value>
+  </data>
+  <data name="Gamyba.Items2" xml:space="preserve">
+    <value>items</value>
+  </data>
+  <data name="Gamyba.ItemsGaminiai" xml:space="preserve">
+    <value>Items</value>
+  </data>
+  <data name="Gamyba.ItemsSeparators" xml:space="preserve">
+    <value>Items + separators</value>
+  </data>
+  <data name="Gamyba.Job" xml:space="preserve">
+    <value>Job</value>
+  </data>
+  <data name="Gamyba.Jobs" xml:space="preserve">
+    <value>jobs</value>
+  </data>
+  <data name="Gamyba.Kind" xml:space="preserve">
+    <value>Kind</value>
+  </data>
+  <data name="Gamyba.LockedHeading" xml:space="preserve">
+    <value>LOCKED</value>
+  </data>
+  <data name="Gamyba.Label" xml:space="preserve">
+    <value>Label</value>
+  </data>
+  <data name="Gamyba.LabelPrintQueue" xml:space="preserve">
+    <value>Label print queue</value>
+  </data>
+  <data name="Gamyba.LabelText" xml:space="preserve">
+    <value>Label text</value>
+  </data>
+  <data name="Gamyba.Labels" xml:space="preserve">
+    <value>Labels</value>
+  </data>
+  <data name="Gamyba.LaterDocument" xml:space="preserve">
+    <value>Later document</value>
+  </data>
+  <data name="Gamyba.LegacyRepairsReadOnly" xml:space="preserve">
+    <value>Legacy repairs · read only</value>
+  </data>
+  <data name="Gamyba.LiveAccessDocument" xml:space="preserve">
+    <value>Live Access document</value>
+  </data>
+  <data name="Gamyba.LiveAccessQueue" xml:space="preserve">
+    <value>Live Access queue</value>
+  </data>
+  <data name="Gamyba.LiveAccessReportDatasetsPageLayoutPDFAndPrinting" xml:space="preserve">
+    <value>Live Access report datasets. Page layout, PDF and printing are still being verified.</value>
+  </data>
+  <data name="Gamyba.LiveGUDocuments" xml:space="preserve">
+    <value>Live GU documents</value>
+  </data>
+  <data name="Gamyba.LoadingDocument" xml:space="preserve">
+    <value>Loading document…</value>
+  </data>
+  <data name="Gamyba.LoadingRepairs" xml:space="preserve">
+    <value>Loading repairs…</value>
+  </data>
+  <data name="Gamyba.LoadingReportData" xml:space="preserve">
+    <value>Loading report data…</value>
+  </data>
+  <data name="Gamyba.Locked" xml:space="preserve">
+    <value>Locked</value>
+  </data>
+  <data name="Gamyba.MIXEDBRANCHES" xml:space="preserve">
+    <value>MIXED BRANCHES</value>
+  </data>
+  <data name="Gamyba.Manual" xml:space="preserve">
+    <value>Manual</value>
+  </data>
+  <data name="Gamyba.MapQuestions" xml:space="preserve">
+    <value>Map · Questions</value>
+  </data>
+  <data name="Gamyba.Material" xml:space="preserve">
+    <value>Material</value>
+  </data>
+  <data name="Gamyba.MineLast4Days" xml:space="preserve">
+    <value>Mine · last 4 days</value>
+  </data>
+  <data name="Gamyba.MissingActualFailure" xml:space="preserve">
+    <value>Missing actual failure</value>
+  </data>
+  <data name="Gamyba.MobileMode" xml:space="preserve">
+    <value>Mobile mode</value>
+  </data>
+  <data name="Gamyba.Mode" xml:space="preserve">
+    <value>Mode</value>
+  </data>
+  <data name="Gamyba.NoMaterialUpper" xml:space="preserve">
+    <value>NO MATERIAL</value>
+  </data>
+  <data name="Gamyba.NOTTESTED" xml:space="preserve">
+    <value>NOT TESTED</value>
+  </data>
+  <data name="Gamyba.Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Gamyba.NetworkUnavailableScanWasNotSaved" xml:space="preserve">
+    <value>Network unavailable. Scan was not saved.</value>
+  </data>
+  <data name="Gamyba.NewEmptyGU" xml:space="preserve">
+    <value>New empty GU</value>
+  </data>
+  <data name="Gamyba.NewGTDocument" xml:space="preserve">
+    <value>New GT document</value>
+  </data>
+  <data name="Gamyba.NewGU" xml:space="preserve">
+    <value>New GU</value>
+  </data>
+  <data name="Gamyba.NewHandover" xml:space="preserve">
+    <value>New handover</value>
+  </data>
+  <data name="Gamyba.NewPrintJob" xml:space="preserve">
+    <value>New print job</value>
+  </data>
+  <data name="Gamyba.NewStopDocument" xml:space="preserve">
+    <value>New stop document</value>
+  </data>
+  <data name="Gamyba.Next" xml:space="preserve">
+    <value>Next</value>
+  </data>
+  <data name="Gamyba.NextKitas" xml:space="preserve">
+    <value>Next</value>
+  </data>
+  <data name="Gamyba.NoAccessibleTasks" xml:space="preserve">
+    <value>No accessible tasks</value>
+  </data>
+  <data name="Gamyba.NoAcknowledgementAfterALabel" xml:space="preserve">
+    <value>No acknowledgement after a label.</value>
+  </data>
+  <data name="Gamyba.NoDraftThisStageSavesOnlyFixtureData" xml:space="preserve">
+    <value>No draft: this stage saves only fixture data.</value>
+  </data>
+  <data name="Gamyba.NoGTDocumentsInTheAccessRecentWindow" xml:space="preserve">
+    <value>No GT documents in the Access recent window.</value>
+  </data>
+  <data name="Gamyba.NoItemsInThisQueue" xml:space="preserve">
+    <value>No items in this queue</value>
+  </data>
+  <data name="Gamyba.NoMaterialMovementRecordedForThisGU" xml:space="preserve">
+    <value>No material movement recorded for this GU.</value>
+  </data>
+  <data name="Gamyba.NoRepairsInTheLegacyDatabaseForThisFilter" xml:space="preserve">
+    <value>No repairs in the legacy database for this filter.</value>
+  </data>
+  <data name="Gamyba.NoResponse" xml:space="preserve">
+    <value>No response.</value>
+  </data>
+  <data name="Gamyba.NoRights" xml:space="preserve">
+    <value>No rights</value>
+  </data>
+  <data name="Gamyba.NoRowsInThisDatasetPrintingIsNotAvailable" xml:space="preserve">
+    <value>No rows in this dataset. Printing is not available here.</value>
+  </data>
+  <data name="Gamyba.NoRowsPrintingIsCancelled" xml:space="preserve">
+    <value>No rows. Printing is cancelled.</value>
+  </data>
+  <data name="Gamyba.NoScansYet" xml:space="preserve">
+    <value>No scans yet</value>
+  </data>
+  <data name="Gamyba.NotPartOfTheProductUISwitchesUsedTo" xml:space="preserve">
+    <value>Not part of the product UI — switches used to walk through states.</value>
+  </data>
+  <data name="Gamyba.Note" xml:space="preserve">
+    <value>Note</value>
+  </data>
+  <data name="Gamyba.NothingWasIssued" xml:space="preserve">
+    <value>Nothing was issued.</value>
+  </data>
+  <data name="Gamyba.Number" xml:space="preserve">
+    <value>Number</value>
+  </data>
+  <data name="Gamyba.OlderOrAnotherAuthor" xml:space="preserve">
+    <value>Older or another author</value>
+  </data>
+  <data name="Gamyba.OneBarcode" xml:space="preserve">
+    <value>One barcode</value>
+  </data>
+  <data name="Gamyba.OneBarcodePerLineEachGetsASeparateResult" xml:space="preserve">
+    <value>One barcode per line. Each gets a separate result.</value>
+  </data>
+  <data name="Gamyba.OneItem" xml:space="preserve">
+    <value>One item</value>
+  </data>
+  <data name="Gamyba.OnlyEligibleItemsFromThisOrderCanBeStopped" xml:space="preserve">
+    <value>Only eligible items from this order can be stopped.</value>
+  </data>
+  <data name="Gamyba.OnlyLabelsAfterTheLastAcknowledgedOneMayBe" xml:space="preserve">
+    <value>Only labels after the last acknowledged one may be repeated.</value>
+  </data>
+  <data name="Gamyba.OnlyTheLastAcceptedRowOfYourRecentDocument" xml:space="preserve">
+    <value>Only the last accepted row of your recent document can be removed; a later transition locks it.</value>
+  </data>
+  <data name="Gamyba.OnlyTheSelectedGUSLegacyReportRowsAre" xml:space="preserve">
+    <value>Only the selected GU's legacy report rows are shown. Document layout and saved PDFs will be connected after comparison with Access.</value>
+  </data>
+  <data name="Gamyba.Open" xml:space="preserve">
+    <value>Open</value>
+  </data>
+  <data name="Gamyba.OpenAll" xml:space="preserve">
+    <value>Open all</value>
+  </data>
+  <data name="Gamyba.OpenOriginalPDF" xml:space="preserve">
+    <value>Open original PDF</value>
+  </data>
+  <data name="Gamyba.OpenTasks" xml:space="preserve">
+    <value>Open tasks</value>
+  </data>
+  <data name="Gamyba.Operation" xml:space="preserve">
+    <value>Operation</value>
+  </data>
+  <data name="Gamyba.OperationsFollowLegacyStateAndUserRights" xml:space="preserve">
+    <value>Operations follow legacy state and user rights.</value>
+  </data>
+  <data name="Gamyba.Operator" xml:space="preserve">
+    <value>Operator</value>
+  </data>
+  <data name="Gamyba.Order" xml:space="preserve">
+    <value>Order</value>
+  </data>
+  <data name="Gamyba.OrderRecorded" xml:space="preserve">
+    <value>Order recorded</value>
+  </data>
+  <data name="Gamyba.Orders" xml:space="preserve">
+    <value>Orders</value>
+  </data>
+  <data name="Gamyba.OrdersUSakymai" xml:space="preserve">
+    <value>orders</value>
+  </data>
+  <data name="Gamyba.OriginalArchive" xml:space="preserve">
+    <value>Original archive</value>
+  </data>
+  <data name="Gamyba.OtherBranch" xml:space="preserve">
+    <value>Other branch</value>
+  </data>
+  <data name="Gamyba.P1IsOneLabelPerRowQuantityPrintsAs" xml:space="preserve">
+    <value>P1 is one label per row; quantity prints as text.</value>
+  </data>
+  <data name="Gamyba.PORTION" xml:space="preserve">
+    <value>PORTION</value>
+  </data>
+  <data name="Gamyba.Page" xml:space="preserve">
+    <value>page</value>
+  </data>
+  <data name="Gamyba.Parameters" xml:space="preserve">
+    <value>Parameters</value>
+  </data>
+  <data name="Gamyba.Partial" xml:space="preserve">
+    <value>partial</value>
+  </data>
+  <data name="Gamyba.Pause" xml:space="preserve">
+    <value>Pause</value>
+  </data>
+  <data name="Gamyba.Pcs" xml:space="preserve">
+    <value>pcs</value>
+  </data>
+  <data name="Gamyba.Physical" xml:space="preserve">
+    <value>physical</value>
+  </data>
+  <data name="Gamyba.PhysicalLabelsPlanned" xml:space="preserve">
+    <value>Physical labels planned</value>
+  </data>
+  <data name="Gamyba.Pick" xml:space="preserve">
+    <value>Pick</value>
+  </data>
+  <data name="Gamyba.PickFromList" xml:space="preserve">
+    <value>Pick from list</value>
+  </data>
+  <data name="Gamyba.PickProductManually" xml:space="preserve">
+    <value>Pick product manually</value>
+  </data>
+  <data name="Gamyba.PortionIssued" xml:space="preserve">
+    <value>Portion issued</value>
+  </data>
+  <data name="Gamyba.Portions" xml:space="preserve">
+    <value>Portions</value>
+  </data>
+  <data name="Gamyba.PortionsPorcijos" xml:space="preserve">
+    <value>portions</value>
+  </data>
+  <data name="Gamyba.Portrait" xml:space="preserve">
+    <value>portrait</value>
+  </data>
+  <data name="Gamyba.Position" xml:space="preserve">
+    <value>Position</value>
+  </data>
+  <data name="Gamyba.Preview" xml:space="preserve">
+    <value>Preview</value>
+  </data>
+  <data name="Gamyba.PreviewThisScreenUsesSampleDataAndDoesNot" xml:space="preserve">
+    <value>Preview: this screen uses sample data and does not change production.</value>
+  </data>
+  <data name="Gamyba.PreviewUsesFixtureDataTheOfficialDocumentLayoutWill" xml:space="preserve">
+    <value>Preview uses fixture data; the official document layout will be connected to the report service.</value>
+  </data>
+  <data name="Gamyba.Previous" xml:space="preserve">
+    <value>Previous</value>
+  </data>
+  <data name="Gamyba.PreviousAnkstesnis" xml:space="preserve">
+    <value>Previous</value>
+  </data>
+  <data name="Gamyba.PreviousGU" xml:space="preserve">
+    <value>Previous GU</value>
+  </data>
+  <data name="Gamyba.PrintBrowserDialog" xml:space="preserve">
+    <value>Print… (browser dialog)</value>
+  </data>
+  <data name="Gamyba.PrintDocuments" xml:space="preserve">
+    <value>Print documents</value>
+  </data>
+  <data name="Gamyba.PrintDocumentsSpausdinimoDokumentai" xml:space="preserve">
+    <value>Print documents</value>
+  </data>
+  <data name="Gamyba.PrintLabels" xml:space="preserve">
+    <value>Print labels</value>
+  </data>
+  <data name="Gamyba.PrintPDF" xml:space="preserve">
+    <value>Print · PDF</value>
+  </data>
+  <data name="Gamyba.Priority" xml:space="preserve">
+    <value>Priority</value>
+  </data>
+  <data name="Gamyba.Product" xml:space="preserve">
+    <value>Product</value>
+  </data>
+  <data name="Gamyba.ProductHistory" xml:space="preserve">
+    <value>Product history</value>
+  </data>
+  <data name="Gamyba.ProductLabel" xml:space="preserve">
+    <value>Product label</value>
+  </data>
+  <data name="Gamyba.ProductNotFoundOrAccessDenied" xml:space="preserve">
+    <value>Product not found or access denied.</value>
+  </data>
+  <data name="Gamyba.ProductTypes" xml:space="preserve">
+    <value>Product types</value>
+  </data>
+  <data name="Gamyba.ProductionDocuments" xml:space="preserve">
+    <value>Production documents</value>
+  </data>
+  <data name="Gamyba.ProductionOutputDocument" xml:space="preserve">
+    <value>Production output document</value>
+  </data>
+  <data name="Gamyba.ProductionReportData" xml:space="preserve">
+    <value>Production report data</value>
+  </data>
+  <data name="Gamyba.ProductionStop" xml:space="preserve">
+    <value>Production stop</value>
+  </data>
+  <data name="Gamyba.ProductionStopDocument" xml:space="preserve">
+    <value>Production stop document</value>
+  </data>
+  <data name="Gamyba.ProductionStopsRepairs" xml:space="preserve">
+    <value>Production stops · Repairs</value>
+  </data>
+  <data name="Gamyba.ProductionTasks" xml:space="preserve">
+    <value>Production tasks</value>
+  </data>
+  <data name="Gamyba.ProductionTransitionsAndScanHistory" xml:space="preserve">
+    <value>Production transitions and scan history.</value>
+  </data>
+  <data name="Gamyba.Progress" xml:space="preserve">
+    <value>Progress</value>
+  </data>
+  <data name="Gamyba.PublishVersion" xml:space="preserve">
+    <value>Publish version</value>
+  </data>
+  <data name="Gamyba.Published" xml:space="preserve">
+    <value>published</value>
+  </data>
+  <data name="Gamyba.PublishedAddedNoteColumn" xml:space="preserve">
+    <value>Published · added Note column</value>
+  </data>
+  <data name="Gamyba.PublishedImportedFromAccessLayout" xml:space="preserve">
+    <value>Published · imported from Access layout</value>
+  </data>
+  <data name="Gamyba.PublishedPaskelbta" xml:space="preserve">
+    <value>Published</value>
+  </data>
+  <data name="Gamyba.PublishedV2AndCurrentDraftPreviousPublishedVersionRemains" xml:space="preserve">
+    <value>Published v2 and current draft. Previous published version remains available.</value>
+  </data>
+  <data name="Gamyba.PublishedVersionsAreImmutableThePreviousOneStaysAvailable" xml:space="preserve">
+    <value>Published versions are immutable; the previous one stays available for rollback.</value>
+  </data>
+  <data name="Gamyba.Qty" xml:space="preserve">
+    <value>Qty</value>
+  </data>
+  <data name="Gamyba.Question" xml:space="preserve">
+    <value>Question</value>
+  </data>
+  <data name="Gamyba.QuestionsTheDesignCannotSettle" xml:space="preserve">
+    <value>Questions the design cannot settle</value>
+  </data>
+  <data name="Gamyba.Queue" xml:space="preserve">
+    <value>Queue</value>
+  </data>
+  <data name="Gamyba.QueuePrintJob" xml:space="preserve">
+    <value>Queue print job</value>
+  </data>
+  <data name="Gamyba.QueueSelectedLabels" xml:space="preserve">
+    <value>Queue selected labels</value>
+  </data>
+  <data name="Gamyba.QueueSource" xml:space="preserve">
+    <value>Queue source</value>
+  </data>
+  <data name="Gamyba.READONLY" xml:space="preserve">
+    <value>READ ONLY</value>
+  </data>
+  <data name="Gamyba.REJECTED" xml:space="preserve">
+    <value>REJECTED</value>
+  </data>
+  <data name="Gamyba.REPEATED" xml:space="preserve">
+    <value>REPEATED</value>
+  </data>
+  <data name="Gamyba.ReadyForProduction" xml:space="preserve">
+    <value>Ready for production</value>
+  </data>
+  <data name="Gamyba.Reason" xml:space="preserve">
+    <value>Reason</value>
+  </data>
+  <data name="Gamyba.Recipient" xml:space="preserve">
+    <value>Recipient</value>
+  </data>
+  <data name="Gamyba.Refresh" xml:space="preserve">
+    <value>Refresh</value>
+  </data>
+  <data name="Gamyba.Registered" xml:space="preserve">
+    <value>Registered</value>
+  </data>
+  <data name="Gamyba.RemoveConflictingRow" xml:space="preserve">
+    <value>Remove conflicting row</value>
+  </data>
+  <data name="Gamyba.RemoveField" xml:space="preserve">
+    <value>Remove field</value>
+  </data>
+  <data name="Gamyba.Repair" xml:space="preserve">
+    <value>Repair</value>
+  </data>
+  <data name="Gamyba.RepairChangesRemainDisabledUntilTheLegacyWriteContract" xml:space="preserve">
+    <value>Repair changes remain disabled until the legacy write contract is verified.</value>
+  </data>
+  <data name="Gamyba.RepairDetails" xml:space="preserve">
+    <value>Repair details</value>
+  </data>
+  <data name="Gamyba.RepairDocument" xml:space="preserve">
+    <value>Repair document</value>
+  </data>
+  <data name="Gamyba.RepairReasonAndActualFailureUseSeparateLegacyFields" xml:space="preserve">
+    <value>Repair reason and actual failure use separate legacy fields.</value>
+  </data>
+  <data name="Gamyba.Repairs" xml:space="preserve">
+    <value>Repairs</value>
+  </data>
+  <data name="Gamyba.ReportUnavailableOrAccessDenied" xml:space="preserve">
+    <value>Report unavailable or access denied.</value>
+  </data>
+  <data name="Gamyba.Reports" xml:space="preserve">
+    <value>reports</value>
+  </data>
+  <data name="Gamyba.ReprintNeverChangesStatusOrStockPaperOrientationAnd" xml:space="preserve">
+    <value>Reprint never changes status or stock. Paper, orientation and 100% scale are set in the browser dialog.</value>
+  </data>
+  <data name="Gamyba.ReprintSelected" xml:space="preserve">
+    <value>Reprint selected</value>
+  </data>
+  <data name="Gamyba.ResponseLostCheckTheGUAndRefreshTheQueue" xml:space="preserve">
+    <value>Response lost. Check the GU and refresh the queue before retrying.</value>
+  </data>
+  <data name="Gamyba.RestrictedKaunas" xml:space="preserve">
+    <value>Restricted · Kaunas</value>
+  </data>
+  <data name="Gamyba.ResultOfEachBarcodeAppearsHereLargeEnoughTo" xml:space="preserve">
+    <value>Result of each barcode appears here, large enough to read from the bench.</value>
+  </data>
+  <data name="Gamyba.Resume" xml:space="preserve">
+    <value>Resume</value>
+  </data>
+  <data name="Gamyba.Retry" xml:space="preserve">
+    <value>Retry</value>
+  </data>
+  <data name="Gamyba.RevertToPublished" xml:space="preserve">
+    <value>Revert to published</value>
+  </data>
+  <data name="Gamyba.Rights" xml:space="preserve">
+    <value>Rights</value>
+  </data>
+  <data name="Gamyba.RightsStateAndVersionAreCheckedAgainImmediatelyBefore" xml:space="preserve">
+    <value>Rights, state and version are checked again immediately before issue.</value>
+  </data>
+  <data name="Gamyba.Role" xml:space="preserve">
+    <value>Role</value>
+  </data>
+  <data name="Gamyba.Rows" xml:space="preserve">
+    <value>rows</value>
+  </data>
+  <data name="Gamyba.RowsEilutS" xml:space="preserve">
+    <value>Rows</value>
+  </data>
+  <data name="Gamyba.RowsOnThisPage" xml:space="preserve">
+    <value>rows on this page</value>
+  </data>
+  <data name="Gamyba.RowsProductQuantityAndPhysicalLabelsAreSeparateCounters" xml:space="preserve">
+    <value>Rows, product quantity and physical labels are separate counters.</value>
+  </data>
+  <data name="Gamyba.SalesRepairOrigin" xml:space="preserve">
+    <value>Sales → repair origin</value>
+  </data>
+  <data name="Gamyba.SaveClose" xml:space="preserve">
+    <value>Save &amp; close</value>
+  </data>
+  <data name="Gamyba.SaveDraft" xml:space="preserve">
+    <value>Save draft</value>
+  </data>
+  <data name="Gamyba.SaveFormula" xml:space="preserve">
+    <value>Save formula</value>
+  </data>
+  <data name="Gamyba.Scan" xml:space="preserve">
+    <value>Scan</value>
+  </data>
+  <data name="Gamyba.ScanAccepted" xml:space="preserve">
+    <value>scan accepted</value>
+  </data>
+  <data name="Gamyba.ScanErrorLog" xml:space="preserve">
+    <value>Scan error log</value>
+  </data>
+  <data name="Gamyba.ScanOrTypeABarcode" xml:space="preserve">
+    <value>Scan or type a barcode</value>
+  </data>
+  <data name="Gamyba.ScanOrTypeABarcodeThenPressEnter" xml:space="preserve">
+    <value>Scan or type a barcode, then press Enter</value>
+  </data>
+  <data name="Gamyba.ScanOrTypeEnterFocusReturnsHere" xml:space="preserve">
+    <value>Scan or type + Enter · focus returns here</value>
+  </data>
+  <data name="Gamyba.ScannerInput" xml:space="preserve">
+    <value>Scanner input</value>
+  </data>
+  <data name="Gamyba.Scanning" xml:space="preserve">
+    <value>Scanning</value>
+  </data>
+  <data name="Gamyba.Scope" xml:space="preserve">
+    <value>Scope</value>
+  </data>
+  <data name="Gamyba.ScreenMapStatesOpenQuestions" xml:space="preserve">
+    <value>Screen map · states · open questions</value>
+  </data>
+  <data name="Gamyba.ScreensAndTransitions" xml:space="preserve">
+    <value>Screens and transitions</value>
+  </data>
+  <data name="Gamyba.SearchGU" xml:space="preserve">
+    <value>Search GU</value>
+  </data>
+  <data name="Gamyba.SelectAColumnInTheDraftPreview" xml:space="preserve">
+    <value>Select a column in the draft preview.</value>
+  </data>
+  <data name="Gamyba.SelectAGUInProductionTasksFirst" xml:space="preserve">
+    <value>Select a GU in Production tasks first.</value>
+  </data>
+  <data name="Gamyba.SelectAll" xml:space="preserve">
+    <value>Select all</value>
+  </data>
+  <data name="Gamyba.SelectExactlyWhichLabelsToRepeat" xml:space="preserve">
+    <value>Select exactly which labels to repeat.</value>
+  </data>
+  <data name="Gamyba.SelectPage" xml:space="preserve">
+    <value>Select page</value>
+  </data>
+  <data name="Gamyba.SelectReport" xml:space="preserve">
+    <value>Select report</value>
+  </data>
+  <data name="Gamyba.Selected" xml:space="preserve">
+    <value>selected</value>
+  </data>
+  <data name="Gamyba.SelectiveReprint" xml:space="preserve">
+    <value>Selective reprint</value>
+  </data>
+  <data name="Gamyba.SendNext" xml:space="preserve">
+    <value>Send next</value>
+  </data>
+  <data name="Gamyba.SentLabelsAreNotCancelledBytesSentDoNot" xml:space="preserve">
+    <value>Sent labels are not cancelled. Bytes sent do not prove physical printing.</value>
+  </data>
+  <data name="Gamyba.Series" xml:space="preserve">
+    <value>Series</value>
+  </data>
+  <data name="Gamyba.ShowAll" xml:space="preserve">
+    <value>Show all</value>
+  </data>
+  <data name="Gamyba.Size" xml:space="preserve">
+    <value>Size</value>
+  </data>
+  <data name="Gamyba.Source" xml:space="preserve">
+    <value>Source</value>
+  </data>
+  <data name="Gamyba.Stage" xml:space="preserve">
+    <value>Stage</value>
+  </data>
+  <data name="Gamyba.State" xml:space="preserve">
+    <value>State</value>
+  </data>
+  <data name="Gamyba.StateRules" xml:space="preserve">
+    <value>State rules</value>
+  </data>
+  <data name="Gamyba.StatesPerFrequentOperation" xml:space="preserve">
+    <value>States per frequent operation</value>
+  </data>
+  <data name="Gamyba.Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="Gamyba.Stop" xml:space="preserve">
+    <value>Stop</value>
+  </data>
+  <data name="Gamyba.StopDocuments" xml:space="preserve">
+    <value>Stop documents</value>
+  </data>
+  <data name="Gamyba.Stops" xml:space="preserve">
+    <value>Stops</value>
+  </data>
+  <data name="Gamyba.Subtype" xml:space="preserve">
+    <value>Subtype</value>
+  </data>
+  <data name="Gamyba.SupervisorEditor" xml:space="preserve">
+    <value>Supervisor + editor</value>
+  </data>
+  <data name="Gamyba.SupervisorOnly" xml:space="preserve">
+    <value>Supervisor only</value>
+  </data>
+  <data name="Gamyba.TASK" xml:space="preserve">
+    <value>TASK</value>
+  </data>
+  <data name="Gamyba.TESTPASSED" xml:space="preserve">
+    <value>TEST PASSED</value>
+  </data>
+  <data name="Gamyba.TargetGU" xml:space="preserve">
+    <value>Target GU</value>
+  </data>
+  <data name="Gamyba.TaskUnavailableOrAccessDenied" xml:space="preserve">
+    <value>Task unavailable or access denied.</value>
+  </data>
+  <data name="Gamyba.TasksWithHiddenItemsAreExcluded" xml:space="preserve">
+    <value>Tasks with hidden items are excluded</value>
+  </data>
+  <data name="Gamyba.Technology" xml:space="preserve">
+    <value>Technology</value>
+  </data>
+  <data name="Gamyba.TemplateEditor" xml:space="preserve">
+    <value>Template editor</value>
+  </data>
+  <data name="Gamyba.TestBeforeSave" xml:space="preserve">
+    <value>Test before save</value>
+  </data>
+  <data name="Gamyba.Text" xml:space="preserve">
+    <value>Text</value>
+  </data>
+  <data name="Gamyba.TheLegacyStopContractIsStillBeingChecked" xml:space="preserve">
+    <value>The legacy stop contract is still being checked.</value>
+  </data>
+  <data name="Gamyba.TheProductionQueueReadsTheSharedLegacyDatabaseIssuing" xml:space="preserve">
+    <value>The production queue reads the shared legacy database; issuing is disabled here.</value>
+  </data>
+  <data name="Gamyba.TheQueueIsFilteredToThisOrder" xml:space="preserve">
+    <value>The queue is filtered to this order.</value>
+  </data>
+  <data name="Gamyba.TheQueueUsesTheSharedLegacyDatabaseIssuingIs" xml:space="preserve">
+    <value>The queue uses the shared legacy database; issuing is limited to Testavimas.</value>
+  </data>
+  <data name="Gamyba.TheSalesOrderStaysAsItIsItemsGet" xml:space="preserve">
+    <value>The Sales order stays as it is; items get status Sustabdytas and a separate stop document. Cancelling the order is done in Sales.</value>
+  </data>
+  <data name="Gamyba.TheSameGTDocumentAndScanResultsAreUsed" xml:space="preserve">
+    <value>The same GT document and scan results are used on desktop and mobile.</value>
+  </data>
+  <data name="Gamyba.TheWebAgentWillNotOpenThePortNew" xml:space="preserve">
+    <value>The web agent will not open the port; new jobs wait as Pending.</value>
+  </data>
+  <data name="Gamyba.ThisGTDocumentIsNotEditableAfterFourDays" xml:space="preserve">
+    <value>This GT document is not editable after four days or by another author.</value>
+  </data>
+  <data name="Gamyba.ThisGUContainsItemsFromMoreThanOneBranch" xml:space="preserve">
+    <value>This GU contains items from more than one branch.</value>
+  </data>
+  <data name="Gamyba.ThisGUIsEmpty" xml:space="preserve">
+    <value>This GU is empty</value>
+  </data>
+  <data name="Gamyba.ThisIsAProductionStopNotAnOrderCancellation" xml:space="preserve">
+    <value>This is a production stop, not an order cancellation.</value>
+  </data>
+  <data name="Gamyba.ThisItemBelongsToAnotherBranch" xml:space="preserve">
+    <value>This item belongs to another branch.</value>
+  </data>
+  <data name="Gamyba.Time" xml:space="preserve">
+    <value>Time</value>
+  </data>
+  <data name="Gamyba.Total" xml:space="preserve">
+    <value>Total</value>
+  </data>
+  <data name="Gamyba.Transition" xml:space="preserve">
+    <value>Transition</value>
+  </data>
+  <data name="Gamyba.Type" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="Gamyba.UndoLast" xml:space="preserve">
+    <value>Undo last</value>
+  </data>
+  <data name="Gamyba.UndoLastScan" xml:space="preserve">
+    <value>Undo last scan</value>
+  </data>
+  <data name="Gamyba.Unfinished" xml:space="preserve">
+    <value>Unfinished</value>
+  </data>
+  <data name="Gamyba.Unit" xml:space="preserve">
+    <value>Unit</value>
+  </data>
+  <data name="Gamyba.UnknownBarcode" xml:space="preserve">
+    <value>Unknown barcode.</value>
+  </data>
+  <data name="Gamyba.UnknownCause" xml:space="preserve">
+    <value>Unknown cause</value>
+  </data>
+  <data name="Gamyba.UseBarcode" xml:space="preserve">
+    <value>Use barcode</value>
+  </data>
+  <data name="Gamyba.Value" xml:space="preserve">
+    <value>Value</value>
+  </data>
+  <data name="Gamyba.Vehicle" xml:space="preserve">
+    <value>Vehicle</value>
+  </data>
+  <data name="Gamyba.VersionsArchive" xml:space="preserve">
+    <value>Versions · archive</value>
+  </data>
+  <data name="Gamyba.ViewPrint" xml:space="preserve">
+    <value>View · Print</value>
+  </data>
+  <data name="Gamyba.Viewport" xml:space="preserve">
+    <value>Viewport</value>
+  </data>
+  <data name="Gamyba.W" xml:space="preserve">
+    <value>W</value>
+  </data>
+  <data name="Gamyba.WAITINGFORSCAN" xml:space="preserve">
+    <value>WAITING FOR SCAN</value>
+  </data>
+  <data name="Gamyba.WRITTENOFF" xml:space="preserve">
+    <value>WRITTEN OFF</value>
+  </data>
+  <data name="Gamyba.Warehouse" xml:space="preserve">
+    <value>Warehouse</value>
+  </data>
+  <data name="Gamyba.Where" xml:space="preserve">
+    <value>Where</value>
+  </data>
+  <data name="Gamyba.WholeGU" xml:space="preserve">
+    <value>Whole GU</value>
+  </data>
+  <data name="Gamyba.Width" xml:space="preserve">
+    <value>Width</value>
+  </data>
+  <data name="Gamyba.Workstation" xml:space="preserve">
+    <value>Workstation</value>
+  </data>
+  <data name="Gamyba.WriteAccessIsLimitedToTestavimasTheCurrentAccess" xml:space="preserve">
+    <value>Write access is limited to Testavimas. The current Access state is checked again on save.</value>
+  </data>
+  <data name="Gamyba.WriteOff" xml:space="preserve">
+    <value>Write off</value>
+  </data>
+  <data name="Gamyba.YouWillSeeTheItemCurrentStageAndDocument" xml:space="preserve">
+    <value>You will see the item, current stage and document timeline.</value>
+  </data>
+  <data name="Gamyba.YourRecentGTDocumentsFromAccess" xml:space="preserve">
+    <value>Your recent GT documents from Access.</value>
+  </data>
+  <data name="Gamyba.TestSharedLegacyNotice" xml:space="preserve">
+    <value>The queue reads the shared legacy database; issuing is limited to Testavimas.</value>
+  </data>
+  <data name="Gamyba.WrongStateExpected" xml:space="preserve">
+    <value>Wrong state: {0}. Expected {1}.</value>
+  </data>
+  <data name="Shopfloor.Actions" xml:space="preserve">
+    <value>Actions</value>
+  </data>
+  <data name="Shopfloor.Active" xml:space="preserve">
+    <value>Active</value>
+  </data>
+  <data name="Shopfloor.Inactive" xml:space="preserve">
+    <value>Inactive</value>
+  </data>
+  <data name="Shopfloor.Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Shopfloor.Code" xml:space="preserve">
+    <value>Code</value>
+  </data>
+  <data name="Shopfloor.Delete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="Shopfloor.Edit" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="Shopfloor.Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="Shopfloor.Save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="Shopfloor.Status" xml:space="preserve">
+    <value>Status</value>
+  </data>
+  <data name="Shopfloor.Description" xml:space="preserve">
+    <value>Description</value>
+  </data>
+  <data name="Shopfloor.WorkCenter" xml:space="preserve">
+    <value>Work center</value>
+  </data>
+  <data name="Shopfloor.WorkCenters" xml:space="preserve">
+    <value>Work Centers</value>
+  </data>
+  <data name="Shopfloor.NewWorkCenter" xml:space="preserve">
+    <value>New work center</value>
+  </data>
+  <data name="Shopfloor.EditWorkCenter" xml:space="preserve">
+    <value>Edit work center</value>
+  </data>
+  <data name="Shopfloor.NoWorkCentersYet" xml:space="preserve">
+    <value>No work centers yet.</value>
+  </data>
+  <data name="Shopfloor.CodeAndNameAreRequired" xml:space="preserve">
+    <value>Code and name are required</value>
+  </data>
+  <data name="Shopfloor.ProductionWorkCentersGroupingOneOrMoreWorkStations" xml:space="preserve">
+    <value>Production work centers grouping one or more work stations.</value>
+  </data>
+  <data name="Shopfloor.ShopfloorReferenceData" xml:space="preserve">
+    <value>Shopfloor · Reference Data</value>
+  </data>
+  <data name="Shopfloor.WorkStations" xml:space="preserve">
+    <value>Work Stations</value>
+  </data>
+  <data name="Shopfloor.NewWorkStation" xml:space="preserve">
+    <value>New work station</value>
+  </data>
+  <data name="Shopfloor.EditWorkStation" xml:space="preserve">
+    <value>Edit work station</value>
+  </data>
+  <data name="Shopfloor.NoWorkStationsYet" xml:space="preserve">
+    <value>No work stations yet.</value>
+  </data>
+  <data name="Shopfloor.CodeNameAndWorkCenterAreRequired" xml:space="preserve">
+    <value>Code, name and work center are required</value>
+  </data>
+  <data name="Shopfloor.StationsBelongToAWorkCenterAndCarryAnOptionalWIPLimit" xml:space="preserve">
+    <value>Stations belong to a work center and carry an optional WIP limit.</value>
+  </data>
+  <data name="Shopfloor.WIPLimitOptional" xml:space="preserve">
+    <value>WIP limit (optional)</value>
+  </data>
+  <data name="Shopfloor.ProductionFamilies" xml:space="preserve">
+    <value>Production Families</value>
+  </data>
+  <data name="Shopfloor.NewFamily" xml:space="preserve">
+    <value>New family</value>
+  </data>
+  <data name="Shopfloor.CloneFamily" xml:space="preserve">
+    <value>Clone family</value>
+  </data>
+  <data name="Shopfloor.Families" xml:space="preserve">
+    <value>Families</value>
+  </data>
+  <data name="Shopfloor.NoProductionFamiliesYet" xml:space="preserve">
+    <value>No production families yet.</value>
+  </data>
+  <data name="Shopfloor.ShopfloorWorkflows" xml:space="preserve">
+    <value>Shopfloor · Workflows</value>
+  </data>
+  <data name="Shopfloor.WorkflowTemplatesAuthoredInTheEditorAndMappedToLegacyProductTypes" xml:space="preserve">
+    <value>Workflow templates authored in the editor and mapped to legacy product types.</value>
+  </data>
+  <data name="Shopfloor.Mapped" xml:space="preserve">
+    <value>Mapped</value>
+  </data>
+  <data name="Shopfloor.Tasks" xml:space="preserve">
+    <value>Tasks</value>
+  </data>
+  <data name="Shopfloor.Updated" xml:space="preserve">
+    <value>Updated</value>
+  </data>
+  <data name="Shopfloor.Editor" xml:space="preserve">
+    <value>Editor</value>
+  </data>
+  <data name="Shopfloor.Preview" xml:space="preserve">
+    <value>Preview</value>
+  </data>
+  <data name="Shopfloor.Publish" xml:space="preserve">
+    <value>Publish</value>
+  </data>
+  <data name="Shopfloor.Clone" xml:space="preserve">
+    <value>Clone</value>
+  </data>
+  <data name="Shopfloor.DescriptionOptional" xml:space="preserve">
+    <value>Description (optional)</value>
+  </data>
+  <data name="Shopfloor.Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="Shopfloor.Invalid" xml:space="preserve">
+    <value>Invalid</value>
+  </data>
+  <data name="Shopfloor.Step" xml:space="preserve">
+    <value>Step</value>
+  </data>
+  <data name="Shopfloor.Task" xml:space="preserve">
+    <value>Task</value>
+  </data>
+  <data name="Shopfloor.Station" xml:space="preserve">
+    <value>Station</value>
+  </data>
+  <data name="Shopfloor.Duration" xml:space="preserve">
+    <value>Duration</value>
+  </data>
+  <data name="Shopfloor.ProductionFamily" xml:space="preserve">
+    <value>Production family</value>
+  </data>
+  <data name="Shopfloor.ShopfloorWorkflowEditorPrototype" xml:space="preserve">
+    <value>Shopfloor workflow editor prototype</value>
+  </data>
+  <data name="Shopfloor.ShopfloorOperatorWorkQueuePrototype" xml:space="preserve">
+    <value>Shopfloor operator work queue prototype</value>
+  </data>
+  <data name="Shopfloor.OperatorExecutionBoard" xml:space="preserve">
+    <value>Operator execution board</value>
+  </data>
+  <data name="Shopfloor.ShopfloorDashboard" xml:space="preserve">
+    <value>Shopfloor · Dashboard</value>
+  </data>
+  <data name="Shopfloor.WorkstationMenuScaffoldForProductionTasksWIPRoutingAndShiftControl" xml:space="preserve">
+    <value>Workstation menu scaffold for production tasks, WIP routing and shift control.</value>
+  </data>
+  <data name="Shopfloor.ScanBadge" xml:space="preserve">
+    <value>Scan badge</value>
+  </data>
+  <data name="Shopfloor.StartTask" xml:space="preserve">
+    <value>Start task</value>
+  </data>
+  <data name="Shopfloor.ShopfloorSummary" xml:space="preserve">
+    <value>Shopfloor summary</value>
+  </data>
+  <data name="Shopfloor.Menu" xml:space="preserve">
+    <value>Menu</value>
+  </data>
+  <data name="Shopfloor.FutureShopfloorEntryPoints" xml:space="preserve">
+    <value>Future shopfloor entry points</value>
+  </data>
+  <data name="Shopfloor.Stub" xml:space="preserve">
+    <value>Stub</value>
+  </data>
+  <data name="Shopfloor.Database" xml:space="preserve">
+    <value>Database</value>
+  </data>
+  <data name="Shopfloor.SamePostgreSQLDiagnostic" xml:space="preserve">
+    <value>Same PostgreSQL diagnostic</value>
+  </data>
+  <data name="Shopfloor.Loading" xml:space="preserve">
+    <value>Loading</value>
+  </data>
+  <data name="Shopfloor.Schema" xml:space="preserve">
+    <value>Schema</value>
+  </data>
+  <data name="Shopfloor.Endpoint" xml:space="preserve">
+    <value>Endpoint</value>
+  </data>
+  <data name="Shopfloor.Checked" xml:space="preserve">
+    <value>Checked</value>
+  </data>
+  <data name="Shopfloor.WorkQueue" xml:space="preserve">
+    <value>Work queue</value>
+  </data>
+  <data name="Shopfloor.StaticScaffoldRowsForLayoutReview" xml:space="preserve">
+    <value>Static scaffold rows for layout review</value>
+  </data>
+  <data name="Shopfloor.QueuePeriod" xml:space="preserve">
+    <value>Queue period</value>
+  </data>
+  <data name="Shopfloor.Now" xml:space="preserve">
+    <value>Now</value>
+  </data>
+  <data name="Shopfloor.NextShift" xml:space="preserve">
+    <value>Next shift</value>
+  </data>
+  <data name="Shopfloor.Operator" xml:space="preserve">
+    <value>Operator</value>
+  </data>
+  <data name="Shopfloor.Order" xml:space="preserve">
+    <value>Order</value>
+  </data>
+  <data name="Shopfloor.Target" xml:space="preserve">
+    <value>Target</value>
+  </data>
+  <data name="Shopfloor.ShopfloorMappings" xml:space="preserve">
+    <value>Shopfloor · Mappings</value>
+  </data>
+  <data name="Shopfloor.LegacyTypesCoverage" xml:space="preserve">
+    <value>Legacy Types &amp; Coverage</value>
+  </data>
+  <data name="Shopfloor.MapLegacyProductTypesToProductionFamilies" xml:space="preserve">
+    <value>Map legacy product types to production families.</value>
+  </data>
+  <data name="Shopfloor.SyncLegacy" xml:space="preserve">
+    <value>Sync legacy</value>
+  </data>
+  <data name="Shopfloor.Syncing" xml:space="preserve">
+    <value>Syncing…</value>
+  </data>
+  <data name="Shopfloor.Coverage" xml:space="preserve">
+    <value>Coverage</value>
+  </data>
+  <data name="Shopfloor.MappedTotal" xml:space="preserve">
+    <value>Mapped / total</value>
+  </data>
+  <data name="Shopfloor.Unmapped" xml:space="preserve">
+    <value>Unmapped</value>
+  </data>
+  <data name="Shopfloor.Attention" xml:space="preserve">
+    <value>Attention</value>
+  </data>
+  <data name="Shopfloor.Complete" xml:space="preserve">
+    <value>Complete</value>
+  </data>
+  <data name="Shopfloor.LegacyProductTypes" xml:space="preserve">
+    <value>Legacy product types</value>
+  </data>
+  <data name="Shopfloor.Search" xml:space="preserve">
+    <value>Search</value>
+  </data>
+  <data name="Shopfloor.Mapping" xml:space="preserve">
+    <value>Mapping</value>
+  </data>
+  <data name="Shopfloor.All" xml:space="preserve">
+    <value>All</value>
+  </data>
+  <data name="Shopfloor.Apply" xml:space="preserve">
+    <value>Apply</value>
+  </data>
+  <data name="Shopfloor.AssignToFamily" xml:space="preserve">
+    <value>Assign to family</value>
+  </data>
+  <data name="Shopfloor.Assign" xml:space="preserve">
+    <value>Assign</value>
+  </data>
+  <data name="Shopfloor.NoLegacyProductTypesMatchTheCurrentFilters" xml:space="preserve">
+    <value>No legacy product types match the current filters.</value>
+  </data>
+  <data name="Shopfloor.Kind" xml:space="preserve">
+    <value>Kind</value>
+  </data>
+  <data name="Shopfloor.MappedFamily" xml:space="preserve">
+    <value>Mapped family</value>
+  </data>
+  <data name="Shopfloor.Dashboard" xml:space="preserve">
+    <value>Dashboard</value>
+  </data>
+  <data name="Shopfloor.Workflows" xml:space="preserve">
+    <value>Workflows</value>
+  </data>
+  <data name="Shopfloor.WorkflowEditor" xml:space="preserve">
+    <value>Workflow Editor</value>
+  </data>
+  <data name="Shopfloor.ReferenceData" xml:space="preserve">
+    <value>Reference Data</value>
+  </data>
+  <data name="Shopfloor.Mappings" xml:space="preserve">
+    <value>Mappings</value>
+  </data>
+  <data name="Shopfloor.Execution" xml:space="preserve">
+    <value>Execution</value>
+  </data>
+  <data name="Shopfloor.Gamyba" xml:space="preserve">
+    <value>Gamyba</value>
+  </data>
+  <data name="Shopfloor.OperatorQueue" xml:space="preserve">
+    <value>Operator Queue</value>
+  </data>
+  <data name="Shopfloor.ShopfloorNavigation" xml:space="preserve">
+    <value>Shopfloor navigation</value>
+  </data>
+  <data name="Shopfloor.CloseShopfloorNavigation" xml:space="preserve">
+    <value>Close Shopfloor navigation</value>
+  </data>
+  <data name="Shopfloor.OpenShopfloorNavigation" xml:space="preserve">
+    <value>Open Shopfloor navigation</value>
+  </data>
+  <data name="Shopfloor.ExpandSidebar" xml:space="preserve">
+    <value>Expand sidebar</value>
+  </data>
+  <data name="Shopfloor.CollapseSidebar" xml:space="preserve">
+    <value>Collapse sidebar</value>
+  </data>
+  <data name="Shopfloor.Loaded" xml:space="preserve">
+    <value>Loaded</value>
+  </data>
+  <data name="Shopfloor.Shopfloor" xml:space="preserve">
+    <value>Shopfloor</value>
+  </data>
+  <data name="Shopfloor.StationsActive" xml:space="preserve">
+    <value>Stations active</value>
+  </data>
+  <data name="Shopfloor.Pilot" xml:space="preserve">
+    <value>Pilot</value>
+  </data>
+  <data name="Shopfloor.WIPTasks" xml:space="preserve">
+    <value>WIP tasks</value>
+  </data>
+  <data name="Shopfloor.Sample" xml:space="preserve">
+    <value>Sample</value>
+  </data>
+  <data name="Shopfloor.LateOperations" xml:space="preserve">
+    <value>Late operations</value>
+  </data>
+  <data name="Shopfloor.CompletedToday" xml:space="preserve">
+    <value>Completed today</value>
+  </data>
+  <data name="Shopfloor.OnTrack" xml:space="preserve">
+    <value>On track</value>
+  </data>
+  <data name="Shopfloor.WorkOrders" xml:space="preserve">
+    <value>Work orders</value>
+  </data>
+  <data name="Shopfloor.OpenReleaseAndTrackOperationPackets" xml:space="preserve">
+    <value>Open, release and track operation packets.</value>
+  </data>
+  <data name="Shopfloor.Stations" xml:space="preserve">
+    <value>Stations</value>
+  </data>
+  <data name="Shopfloor.OperatorKioskAndWorkstationLoadView" xml:space="preserve">
+    <value>Operator kiosk and workstation load view.</value>
+  </data>
+  <data name="Shopfloor.WIPRouting" xml:space="preserve">
+    <value>WIP routing</value>
+  </data>
+  <data name="Shopfloor.MoveUnitsBetweenProductionSteps" xml:space="preserve">
+    <value>Move units between production steps.</value>
+  </data>
+  <data name="Shopfloor.QualityHold" xml:space="preserve">
+    <value>Quality hold</value>
+  </data>
+  <data name="Shopfloor.DefectCaptureAndReworkRouting" xml:space="preserve">
+    <value>Defect capture and rework routing.</value>
+  </data>
+  <data name="Shopfloor.MaterialCalls" xml:space="preserve">
+    <value>Material calls</value>
+  </data>
+  <data name="Shopfloor.RequestFabricsFittingsAndPackaging" xml:space="preserve">
+    <value>Request fabrics, fittings and packaging.</value>
+  </data>
+  <data name="Shopfloor.ShiftHandover" xml:space="preserve">
+    <value>Shift handover</value>
+  </data>
+  <data name="Shopfloor.NotesDowntimeAndLineReadiness" xml:space="preserve">
+    <value>Notes, downtime and line readiness.</value>
+  </data>
+  <data name="Shopfloor.ClientSideDryRunTopologicallyOrderedTaskPlan" xml:space="preserve">
+    <value>Client-side dry run — topologically ordered task plan</value>
+  </data>
+  <data name="Shopfloor.ApiUnreachable" xml:space="preserve">
+    <value>Shopfloor API is unreachable.</value>
+  </data>
+  <data name="Shopfloor.OperationFailed" xml:space="preserve">
+    <value>Operation failed.</value>
+  </data>
+  <data name="Shopfloor.WorkCenterUpdated" xml:space="preserve">
+    <value>Work center updated.</value>
+  </data>
+  <data name="Shopfloor.WorkCenterCreated" xml:space="preserve">
+    <value>Work center created.</value>
+  </data>
+  <data name="Shopfloor.WorkCenterDeleted" xml:space="preserve">
+    <value>Work center deleted.</value>
+  </data>
+  <data name="Shopfloor.WorkStationUpdated" xml:space="preserve">
+    <value>Work station updated.</value>
+  </data>
+  <data name="Shopfloor.WorkStationCreated" xml:space="preserve">
+    <value>Work station created.</value>
+  </data>
+  <data name="Shopfloor.WorkStationDeleted" xml:space="preserve">
+    <value>Work station deleted.</value>
+  </data>
+  <data name="Shopfloor.FamilyCloned" xml:space="preserve">
+    <value>Family cloned.</value>
+  </data>
+  <data name="Shopfloor.FamilyCreated" xml:space="preserve">
+    <value>Family created.</value>
+  </data>
+  <data name="Shopfloor.CouldNotLoadWorkflowGraph" xml:space="preserve">
+    <value>Could not load workflow graph.</value>
+  </data>
+  <data name="Shopfloor.CouldNotLoadWorkflow" xml:space="preserve">
+    <value>Could not load workflow.</value>
+  </data>
+  <data name="Shopfloor.GraphMustHaveOneStart" xml:space="preserve">
+    <value>Graph must have exactly one start node.</value>
+  </data>
+  <data name="Shopfloor.GraphMustHaveOneFinish" xml:space="preserve">
+    <value>Graph must have exactly one finish node.</value>
+  </data>
+  <data name="Shopfloor.GraphContainsCycle" xml:space="preserve">
+    <value>Graph contains a cycle.</value>
+  </data>
+  <data name="Shopfloor.TaskNoStation" xml:space="preserve">
+    <value>Task '{0}' has no work station.</value>
+  </data>
+  <data name="Shopfloor.TaskNoDuration" xml:space="preserve">
+    <value>Task '{0}' has no positive duration.</value>
+  </data>
+  <data name="Shopfloor.EdgeMissingNode" xml:space="preserve">
+    <value>Edge {0} → {1} references a missing node.</value>
+  </data>
+  <data name="Shopfloor.FamilyPublished" xml:space="preserve">
+    <value>{0} published.</value>
+  </data>
+  <data name="Shopfloor.FamilyDeleted" xml:space="preserve">
+    <value>{0} deleted.</value>
+  </data>
+  <data name="Shopfloor.Total" xml:space="preserve">
+    <value>{0} total</value>
+  </data>
+  <data name="Shopfloor.ShownOf" xml:space="preserve">
+    <value>{0} shown of {1}</value>
+  </data>
+  <data name="Shopfloor.SelectedCount" xml:space="preserve">
+    <value>{0} selected</value>
+  </data>
+  <data name="Shopfloor.AssignedTypes" xml:space="preserve">
+    <value>Assigned {0} product type(s).</value>
+  </data>
+  <data name="Shopfloor.AssignFailed" xml:space="preserve">
+    <value>Assign failed.</value>
+  </data>
+  <data name="Shopfloor.SyncFailed" xml:space="preserve">
+    <value>Sync failed.</value>
+  </data>
+  <data name="Shopfloor.LegacyTypesSynced" xml:space="preserve">
+    <value>Legacy product types synced.</value>
+  </data>
+  <data name="Shopfloor.SelectProductionFamily" xml:space="preserve">
+    <value>Select a production family to begin.</value>
+  </data>
+  <data name="Shopfloor.WorkflowLoaded" xml:space="preserve">
+    <value>Loaded {0}.</value>
+  </data>
+  <data name="Shopfloor.Saved" xml:space="preserve">
+    <value>Saved.</value>
+  </data>
+  <data name="Shopfloor.WorkflowGraphSaved" xml:space="preserve">
+    <value>Workflow graph saved.</value>
+  </data>
+  <data name="Shopfloor.SaveFailed" xml:space="preserve">
+    <value>Save failed.</value>
+  </data>
+  <data name="Shopfloor.InvalidGraphPayload" xml:space="preserve">
+    <value>Invalid graph payload.</value>
+  </data>
+  <data name="Shopfloor.InvalidWorkflowId" xml:space="preserve">
+    <value>Invalid workflow id.</value>
+  </data>
+  <data name="Shopfloor.ActiveStatus" xml:space="preserve">
+    <value>Active</value>
+  </data>
+  <data name="Shopfloor.InactiveStatus" xml:space="preserve">
+    <value>Inactive</value>
+  </data>
+  <data name="Shopfloor.DashboardTitle" xml:space="preserve">
+    <value>Shopfloor Dashboard</value>
+  </data>
+  <data name="Shopfloor.OperatorQueueTitle" xml:space="preserve">
+    <value>Operator Work Queue</value>
+  </data>
+  <data name="Shopfloor.ErrorOccurred" xml:space="preserve">
+    <value>An unhandled error has occurred.</value>
+  </data>
+  <data name="Shopfloor.Reload" xml:space="preserve">
+    <value>Reload</value>
+  </data>
+  <data name="Gamyba.PageTitle" xml:space="preserve">
+    <value>Shopfloor · Gamyba</value>
+  </data>
+  <data name="Gamyba.Desktop" xml:space="preserve">
+    <value>Desktop</value>
+  </data>
+  <data name="Gamyba.Mobile" xml:space="preserve">
+    <value>Mobile</value>
+  </data>
+  <data name="Gamyba.Supervisor" xml:space="preserve">
+    <value>Supervisor</value>
+  </data>
+  <data name="Gamyba.Restricted" xml:space="preserve">
+    <value>Restricted</value>
+  </data>
+  <data name="Gamyba.Simulate" xml:space="preserve">
+    <value>Simulate</value>
+  </data>
+  <data name="Gamyba.AccessConflict" xml:space="preserve">
+    <value>Access conflict</value>
+  </data>
+  <data name="Gamyba.NetworkLoss" xml:space="preserve">
+    <value>Network loss</value>
+  </data>
+  <data name="Gamyba.SlowServer" xml:space="preserve">
+    <value>Slow server</value>
+  </data>
+  <data name="Gamyba.EmptyQueue" xml:space="preserve">
+    <value>Empty queue</value>
+  </data>
+  <data name="Gamyba.NoMaterial" xml:space="preserve">
+    <value>No material</value>
+  </data>
+  <data name="Gamyba.ZebraNoAck" xml:space="preserve">
+    <value>Zebra no ack</value>
+  </data>
+  <data name="Gamyba.AccessCom" xml:space="preserve">
+    <value>Access COM</value>
+  </data>
+  <data name="Gamyba.PrototypeControls" xml:space="preserve">
+    <value>PROTOTYPE CONTROLS</value>
+  </data>
+  <data name="Gamyba.ScanningHeading" xml:space="preserve">
+    <value>SCANNING</value>
+  </data>
+  <data name="Gamyba.ShopfloorHeading" xml:space="preserve">
+    <value>SHOPFLOOR</value>
+  </data>
+  <data name="Gamyba.QueueAll" xml:space="preserve">
+    <value>All</value>
+  </data>
+</root>

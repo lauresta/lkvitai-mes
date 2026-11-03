@@ -1,12 +1,12 @@
 @inject NavigationManager Navigation
 @implements IDisposable
 
-<nav aria-label="Shopfloor navigation" class="sidebar__nav">
-    <a class="nav-dash @(IsDashboardActive ? "is-active" : null)" href="dashboard" title="@(Collapsed ? "Dashboard" : null)">
+<nav aria-label="@L["Shopfloor.ShopfloorNavigation"]" class="sidebar__nav">
+    <a class="nav-dash @(IsDashboardActive ? "is-active" : null)" href="dashboard" title="@(Collapsed ? L["Shopfloor.Dashboard"].Value : null)">
         <i class="bi bi-speedometer2" aria-hidden="true"></i>
         @if (!Collapsed)
         {
-            <span>Dashboard</span>
+            <span>@L["Shopfloor.Dashboard"]</span>
         }
     </a>
 
@@ -21,12 +21,12 @@
                     type="button"
                     aria-expanded="@isOpen.ToString().ToLowerInvariant()"
                     aria-controls="@(Collapsed ? null : sectionId)"
-                    title="@grp.Label"
+                    title="@L[grp.Label]"
                     @onclick="() => Toggle(grp.Key)">
-                <i class="bi @grp.Icon" title="@(Collapsed ? grp.Label : null)" aria-hidden="true"></i>
+                <i class="bi @grp.Icon" title="@(Collapsed ? L[grp.Label].Value : null)" aria-hidden="true"></i>
                 @if (!Collapsed)
                 {
-                    <span class="nav-section-label">@grp.Label</span>
+                    <span class="nav-section-label">@L[grp.Label]</span>
                     <i class="bi bi-chevron-down nav-chevron" aria-hidden="true"></i>
                 }
             </button>
@@ -39,7 +39,7 @@
                         <li>
                             <NavLink class="nav-link" href="@item.Href" Match="NavLinkMatch.Prefix" ActiveClass="is-active">
                                 <i class="bi @item.Icon" aria-hidden="true"></i>
-                                <span>@item.Label</span>
+                                <span>@L[item.Label]</span>
                             </NavLink>
                         </li>
                     }
@@ -111,20 +111,20 @@
 
     private static readonly NavSection[] _sections =
     [
-        new("workflows", "Workflows", "bi-diagram-3", [
-            new("workflows", "bi-diagram-2", "Production Families"),
-            new("workflow-editor", "bi-diagram-3", "Workflow Editor"),
+        new("workflows", "Shopfloor.Workflows", "bi-diagram-3", [
+            new("workflows", "bi-diagram-2", "Shopfloor.ProductionFamilies"),
+            new("workflow-editor", "bi-diagram-3", "Shopfloor.WorkflowEditor"),
         ]),
-        new("reference", "Reference Data", "bi-grid-3x3-gap", [
-            new("ref/work-centers", "bi-buildings", "Work Centers"),
-            new("ref/stations", "bi-pc-display", "Work Stations"),
+        new("reference", "Shopfloor.ReferenceData", "bi-grid-3x3-gap", [
+            new("ref/work-centers", "bi-buildings", "Shopfloor.WorkCenters"),
+            new("ref/stations", "bi-pc-display", "Shopfloor.WorkStations"),
         ]),
-        new("mappings", "Mappings", "bi-link-45deg", [
-            new("map/product-types", "bi-tags", "Legacy Types & Coverage"),
+        new("mappings", "Shopfloor.Mappings", "bi-link-45deg", [
+            new("map/product-types", "bi-tags", "Shopfloor.LegacyTypesCoverage"),
         ]),
-        new("execution", "Execution", "bi-kanban", [
-            new("gamyba", "bi-tools", "Gamyba"),
-            new("operator-work-queue", "bi-list-check", "Operator Queue"),
+        new("execution", "Shopfloor.Execution", "bi-kanban", [
+            new("gamyba", "bi-tools", "Shopfloor.Gamyba"),
+            new("operator-work-queue", "bi-list-check", "Shopfloor.OperatorQueue"),
         ]),
     ];
 }

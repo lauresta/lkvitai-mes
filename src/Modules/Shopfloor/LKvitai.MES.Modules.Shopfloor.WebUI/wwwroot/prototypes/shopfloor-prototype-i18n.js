@@ -1,0 +1,36 @@
+// The embedded legacy HTML editors share the host culture cookie with the Blazor shell.
+// Translate display text only; identifiers and data-* values stay unchanged for their scripts.
+(() => {
+  // The culture cookie is HttpOnly; the Blazor host passes its UI culture in the iframe URL.
+  if (new URLSearchParams(location.search).get('culture') !== 'lt') return;
+  document.documentElement.lang = 'lt';
+  const texts = {
+    'Action':'Veiksmas','Actual cut':'Faktinis pjūvis','As planned':'Pagal planą','Auto-ordered by prioritization engine':'Automatiškai surikiuota pagal prioritetus','Cancel':'Atšaukti','Complete cut · log consumption':'Baigti pjovimą · registruoti sunaudojimą','Confirm complete':'Patvirtinti užbaigimą','Cut completed':'Pjovimas baigtas','Cut length':'Pjūvio ilgis','Done today':'Šiandien baigta','Due':'Terminas','Fabric':'Audinys','Fabric cutting · Line A':'Audinio pjovimas · A linija','Fabric cutting · Line A · Vilnius':'Audinio pjovimas · A linija · Vilnius','Filter order / fabric / product…':'Filtruoti užsakymą / audinį / gaminį…','Filter order, fabric or product':'Ieškoti užsakymo, audinio arba gaminio','Include done today':'Rodyti šiandien baigtus','Machine issue':'Įrangos gedimas','Mark stopped':'Pažymėti sustabdytu','Marks the item':'Pažymi gaminį','Material missing':'Trūksta medžiagos','Miscut':'Netinkamas pjūvis','Note':'Pastaba','Order · Product':'Užsakymas · Gaminys','Other':'Kita','Planned':'Planuota','Qty':'Kiekis','Quality hold':'Sustabdyta dėl kokybės','Ranked: due · changeover · kit impact · fairness':'Rikiuota pagal terminą, perstatymą, komplektą ir teisingumą','Reason':'Priežastis','Reason for difference':'Skirtumo priežastis','Reason to stop':'Stabdymo priežastis','Remaining':'Liko','Shaft cutting · Line A':'Veleno pjovimas · A linija','Shift target':'Pamainos tikslas','Status':'Būsena','Stop job · no consumption':'Sustabdyti darbą · be sunaudojimo','Stopped':'Sustabdyta','Switch station':'Pakeisti darbo vietą','This logs':'Bus užregistruota','Used remnant / offcut':'Panaudota atraiža','Waiting on predecessor':'Laukiama ankstesnio etapo','Work queue':'Darbų eilė','Your stations · queue depth ahead':'Jūsų darbo vietos · laukiančios užduotys','active':'aktyvios','ahead':'eilėje','· optional':'· nebūtina','· optional — workers may use an offcut or hit scrap':'· nebūtina — galima naudoti atraižą arba registruoti broką','· required':'· būtina','● matches plan':'● atitinka planą','mm / unit':'mm / vnt.','of fabric R432 consumed, prints label':'audinio R432 sunaudojimas; spausdinama etiketė','and unblocks the downstream gluing task.':'ir atlaisvinama kita klijavimo užduotis.','e.g. R432 roll empty, replacement not yet received from warehouse':'pvz., R432 rulonas baigėsi, pakaitalas iš sandėlio dar negautas','e.g. used 1.9 m remnant from R432 batch, 40 mm trimmed off edge fray':'pvz., panaudota 1,9 m R432 atraiža, 40 mm nupjauta dėl krašto defekto',
+    '(optional)':'(nebūtina)','(reserved)':'(rezervuota)','Add Task':'Pridėti užduotį','Auto layout':'Automatinis išdėstymas','Close report':'Uždaryti ataskaitą','Copied':'Nukopijuota','Copy':'Kopijuoti','Delete selected':'Ištrinti pasirinktą','Description':'Aprašymas','Done':'Baigta','Download':'Atsisiųsti','Drag nodes · drag a socket to link · click a link to delete · scroll to zoom':'Vilkite mazgus · junkite lizdus · spustelėkite jungtį, kad ištrintumėte · slinkite masteliui keisti','Duration (seconds)':'Trukmė (sekundėmis)','Each':'Kiekvienas','Edit the selected task’s name, work station and duration.':'Redaguokite pasirinktos užduoties pavadinimą, darbo vietą ir trukmę.','Export JSON':'Eksportuoti JSON','Family':'Šeima','Finish':'Pabaiga','Fit to view':'Sutalpinti vaizdą','Graph changed — re-validate for fresh results.':'Schema pakeista — patikrinkite iš naujo.','Inspector':'Parametrai','Links read':'Jungtys perskaitytos','Modeling rules':'Modeliavimo taisyklės','No task selected':'Užduotis nepasirinkta','Operator notes for this task…':'Operatoriaus pastabos šiai užduočiai…','Publish runs full validation from the Families list.':'Paskelbiant iš šeimų sąrašo atliekamas visas tikrinimas.','Reserved for a future execution engine — disabled in the authoring MVP.':'Rezervuota būsimam vykdymo varikliui — šiame etape išjungta.','Reset view (100%)':'Atkurti vaizdą (100 %)','Run smart validation':'Vykdyti išsamų tikrinimą','Save':'Išsaugoti','Select an amber task node on the canvas to edit its name, work station and duration.':'Pasirinkite geltoną užduoties mazgą, kad redaguotumėte pavadinimą, darbo vietą ir trukmę.','Shown on the task card and in the workflow preview.':'Rodoma užduoties kortelėje ir darbų sekos peržiūroje.','Smart validation':'Išsamus tikrinimas','Source → Target':'Šaltinis → Tikslas','Start':'Pradžia','Task':'Užduotis','Task Settings':'Užduoties nustatymai','Task name':'Užduoties pavadinimas','Task type code':'Užduoties tipo kodas','Tips':'Patarimai','Validate':'Patikrinti','Work station':'Darbo vieta','Zoom in':'Didinti','Zoom out':'Mažinti','as a dependency.':'kaip priklausomybė.','graph + runtime model':'schema ir vykdymo modelis','is input-only.':'yra tik įvesties.','needs a name, work station and positive duration.':'reikia pavadinimo, darbo vietos ir teigiamos trukmės.','node is output-only;':'mazgas yra tik išvesties;','persists the graph (lenient draft validation).':'išsaugo schemą su juodraščio patikra.','product · ROLLER_STD':'gaminys · ROLLER_STD','task':'užduotis','— select station —':'— pasirinkite darbo vietą —','Bottleneck':'Apribojimas','Click a finding to locate it on the canvas':'Spustelėkite pastabą, kad rastumėte ją schemoje','Critical path':'Kritinis kelias','Error':'Klaida','Flow is healthy':'Eiga tinkama','Healthy':'Tinkama','Hint':'Patarimas','Issues':'Problemos','No errors, warnings or hints. The graph is balanced and ready to publish.':'Klaidų, įspėjimų ar pastabų nėra. Schema parengta paskelbti.','Publish':'Paskelbti','Smart Validation · Report':'Išsamaus tikrinimo ataskaita','Warning':'Įspėjimas','est. throughput':'numatomas našumas','units / hour':'vnt. / val.',
+  };
+  const excluded = new Set(['SCRIPT', 'STYLE', 'TEXTAREA']);
+  function translate(root) {
+    const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const nodes = [];
+    while (walk.nextNode()) nodes.push(walk.currentNode);
+    for (const node of nodes) {
+      if (excluded.has(node.parentElement?.tagName)) continue;
+      const raw = node.nodeValue || '', trimmed = raw.trim();
+      if (texts[trimmed]) node.nodeValue = raw.replace(trimmed, texts[trimmed]);
+    }
+    for (const el of root.querySelectorAll?.('[placeholder],[title],[aria-label]') || []) {
+      for (const attr of ['placeholder', 'title', 'aria-label']) {
+        const v = el.getAttribute(attr); if (v && texts[v]) el.setAttribute(attr, texts[v]);
+      }
+    }
+  }
+  document.addEventListener('DOMContentLoaded', () => {
+    translate(document.body);
+    new MutationObserver(records => {
+      for (const rec of records) {
+        if (rec.type === 'characterData') translate(rec.target.parentElement || document.body);
+        else for (const node of rec.addedNodes) if (node.nodeType === 1) translate(node);
+      }
+    }).observe(document.body, {childList:true,subtree:true,characterData:true});
+  });
+})();

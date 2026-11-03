@@ -2,17 +2,17 @@
 @inject ShopfloorApiClient Api
 @inject ISnackbar Snackbar
 
-<PageTitle>Cikada.MES · Work Centers</PageTitle>
+<PageTitle>Cikada.MES · @L["Shopfloor.WorkCenters"]</PageTitle>
 
 <main class="shopfloor-page">
     <section class="sf-head">
         <div>
-            <div class="eyebrow mono">Shopfloor · Reference Data</div>
-            <h1>Work Centers</h1>
-            <p>Production work centers grouping one or more work stations.</p>
+            <div class="eyebrow mono">@L["Shopfloor.ShopfloorReferenceData"]</div>
+            <h1>@L["Shopfloor.WorkCenters"]</h1>
+            <p>@L["Shopfloor.ProductionWorkCentersGroupingOneOrMoreWorkStations"]</p>
         </div>
         <div class="sf-head__actions">
-            <MudButton Variant="Variant.Filled" Class="lk-btn lk-btn--primary" OnClick="StartCreate">New work center</MudButton>
+            <MudButton Variant="Variant.Filled" Class="lk-btn lk-btn--primary" OnClick="StartCreate">@L["Shopfloor.NewWorkCenter"]</MudButton>
         </div>
     </section>
 
@@ -20,7 +20,7 @@
         <MudPaper Outlined="true" Elevation="0" Class="panel">
             <div class="panel__head">
                 <div>
-                    <h2>Work centers</h2>
+                    <h2>@L["Shopfloor.WorkCenters"]</h2>
                     <span>@(_centers?.Count ?? 0) total</span>
                 </div>
             </div>
@@ -31,14 +31,14 @@
             }
             else if (_centers.Count == 0)
             {
-                <p class="sf-empty">No work centers yet.</p>
+                <p class="sf-empty">@L["Shopfloor.NoWorkCentersYet"]</p>
             }
             else
             {
                 <div class="table-wrap">
                     <table class="sf-table">
                         <thead>
-                            <tr><th>Code</th><th>Name</th><th class="sf-col-actions">Actions</th></tr>
+                            <tr><th>@L["Shopfloor.Code"]</th><th>@L["Shopfloor.Name"]</th><th class="sf-col-actions">@L["Shopfloor.Actions"]</th></tr>
                         </thead>
                         <tbody>
                             @foreach (var c in _centers)
@@ -47,8 +47,8 @@
                                     <td class="mono">@c.Code</td>
                                     <td>@c.Name</td>
                                     <td class="sf-col-actions">
-                                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Class="lk-btn" OnClick="@(() => StartEdit(c))">Edit</MudButton>
-                                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Class="lk-btn" OnClick="@(() => Delete(c))">Delete</MudButton>
+                                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Class="lk-btn" OnClick="@(() => StartEdit(c))">@L["Shopfloor.Edit"]</MudButton>
+                                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Class="lk-btn" OnClick="@(() => Delete(c))">@L["Shopfloor.Delete"]</MudButton>
                                     </td>
                                 </tr>
                             }
@@ -63,16 +63,16 @@
             <MudPaper Outlined="true" Elevation="0" Class="panel">
                 <div class="panel__head">
                     <div>
-                        <h2>@(_editingId is null ? "New work center" : "Edit work center")</h2>
-                        <span>Code and name are required</span>
+                        <h2>@(_editingId is null ? L["Shopfloor.NewWorkCenter"].Value : L["Shopfloor.EditWorkCenter"].Value)</h2>
+                        <span>@L["Shopfloor.CodeAndNameAreRequired"]</span>
                     </div>
                 </div>
                 <div class="sf-form">
-                    <MudTextField @bind-Value="_code" Label="Code" Variant="Variant.Outlined" Margin="Margin.Dense" />
-                    <MudTextField @bind-Value="_name" Label="Name" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    <MudTextField @bind-Value="_code" Label="@L["Shopfloor.Code"]" Variant="Variant.Outlined" Margin="Margin.Dense" />
+                    <MudTextField @bind-Value="_name" Label="@L["Shopfloor.Name"]" Variant="Variant.Outlined" Margin="Margin.Dense" />
                     <div class="sf-form__actions">
-                        <MudButton Variant="Variant.Outlined" Class="lk-btn" OnClick="CancelForm">Cancel</MudButton>
-                        <MudButton Variant="Variant.Filled" Class="lk-btn lk-btn--primary" Disabled="_saving" OnClick="Save">Save</MudButton>
+                        <MudButton Variant="Variant.Outlined" Class="lk-btn" OnClick="CancelForm">@L["Shopfloor.Cancel"]</MudButton>
+                        <MudButton Variant="Variant.Filled" Class="lk-btn lk-btn--primary" Disabled="_saving" OnClick="Save">@L["Shopfloor.Save"]</MudButton>
                     </div>
                 </div>
             </MudPaper>
@@ -95,7 +95,7 @@
         _centers = await Api.GetWorkCentersAsync(CancellationToken.None);
         if (_centers is null)
         {
-            Snackbar.Add("Shopfloor API is unreachable.", Severity.Error);
+            Snackbar.Add(L["Shopfloor.ApiUnreachable"].Value, Severity.Error);
         }
     }
 
@@ -125,12 +125,12 @@
             if (_editingId is { } id)
             {
                 var result = await Api.UpdateWorkCenterAsync(id, new UpdateWorkCenterRequest(_code, _name), CancellationToken.None);
-                if (!Handle(result.Success, result.Error, "Work center updated.")) return;
+                if (!Handle(result.Success, result.Error, L["Shopfloor.WorkCenterUpdated"].Value)) return;
             }
             else
             {
                 var result = await Api.CreateWorkCenterAsync(new CreateWorkCenterRequest(_code, _name), CancellationToken.None);
-                if (!Handle(result.Success, result.Error, "Work center created.")) return;
+                if (!Handle(result.Success, result.Error, L["Shopfloor.WorkCenterCreated"].Value)) return;
             }
 
             _formOpen = false;
@@ -145,7 +145,7 @@
     private async Task Delete(WorkCenterDto c)
     {
         var result = await Api.DeleteWorkCenterAsync(c.Id, CancellationToken.None);
-        if (Handle(result.Success, result.Error, "Work center deleted."))
+        if (Handle(result.Success, result.Error, L["Shopfloor.WorkCenterDeleted"].Value))
         {
             await LoadAsync();
         }
@@ -159,7 +159,7 @@
             return true;
         }
 
-        Snackbar.Add(error ?? "Operation failed.", Severity.Error);
+        Snackbar.Add(error ?? L["Shopfloor.OperationFailed"].Value, Severity.Error);
         return false;
     }
 }

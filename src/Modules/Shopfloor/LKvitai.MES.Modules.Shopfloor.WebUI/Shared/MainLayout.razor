@@ -9,7 +9,7 @@
 
 <PortalAuthenticatedShell OnMobileNavigationToggle="ToggleDrawer"
                           MobileNavigationOpen="DrawerOpen"
-                          MobileNavigationLabel="@(DrawerOpen ? "Close Shopfloor navigation" : "Open Shopfloor navigation")"
+                          MobileNavigationLabel="@(DrawerOpen ? L["Shopfloor.CloseShopfloorNavigation"].Value : L["Shopfloor.OpenShopfloorNavigation"].Value)"
                           MobileNavigationTargetId="@DrawerId">
     <ChildContent>
         <MudLayout Class="lk sf-shell">
@@ -28,7 +28,7 @@
                         <i class="bi bi-tools"></i>
                         @if (!EffectiveCollapsed)
                         {
-                            <span>Shopfloor</span>
+                            <span>@L["Shopfloor.Shopfloor"]</span>
                         }
                     </span>
                     <button class="sidebar__collapse"
@@ -45,7 +45,7 @@
                 @if (!EffectiveCollapsed)
                 {
                     <div class="sidebar__footer">
-                        <span>Loaded <span class="mono">@_initTime</span></span>
+                        <span>@L["Shopfloor.Loaded"] <span class="mono">@_initTime</span></span>
                     </div>
                 }
             </MudDrawer>
@@ -86,8 +86,8 @@
 
     private bool EffectiveCollapsed => _collapsed && !_mobileNavigationExpanded;
     private string SidebarControlLabel => _mobileNavigationExpanded
-        ? "Close Shopfloor navigation"
-        : _collapsed ? "Expand sidebar" : "Collapse sidebar";
+        ? L["Shopfloor.CloseShopfloorNavigation"].Value
+        : _collapsed ? L["Shopfloor.ExpandSidebar"].Value : L["Shopfloor.CollapseSidebar"].Value;
     private string SidebarControlIcon => _mobileNavigationExpanded
         ? "bi-x-lg"
         : _collapsed ? "bi-chevron-double-right" : "bi-chevron-double-left";
