@@ -502,7 +502,7 @@ public partial class Gamyba : ComponentBase
         await Js.InvokeVoidAsync("gamybaUi.selectActive");
     }
 
-    private void GlobalSearchKey(KeyboardEventArgs args)
+    private async Task GlobalSearchKey(KeyboardEventArgs args)
     {
         if (args.Key != "Enter") return;
         var term = _globalSearch.Trim();
@@ -510,7 +510,10 @@ public partial class Gamyba : ComponentBase
         {
             _historyBarcode = term;
             Go("history");
+            if (LiveQueueEnabled) await LoadLiveHistoryAsync();
         }
+        else if (LiveQueueEnabled && term.StartsWith("GU", StringComparison.OrdinalIgnoreCase))
+            await GoLiveAwareAsync("tasks");
         else if (term.StartsWith("GU-", StringComparison.OrdinalIgnoreCase))
         {
             var task = _tasks.FirstOrDefault(x => x.Number.Contains(term, StringComparison.OrdinalIgnoreCase));

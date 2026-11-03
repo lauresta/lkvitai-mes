@@ -1,5 +1,6 @@
 using LKvitai.MES.Modules.Shopfloor.WebUI.Services;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 
 namespace LKvitai.MES.Modules.Shopfloor.WebUI.Pages;
 
@@ -18,6 +19,9 @@ public partial class Gamyba
     private string? _liveTaskError;
     private bool _liveTaskLoading;
     private int _liveTaskPage = 1;
+    private ProductionProductHistoryDto? _liveHistory;
+    private string? _liveHistoryError;
+    private bool _liveHistoryLoading;
 
     protected override async Task OnInitializedAsync()
     {
@@ -98,5 +102,35 @@ public partial class Gamyba
             _liveTaskError = L("Could not load the task.", "Nepavyko įkelti užduoties.");
         }
         finally { _liveTaskLoading = false; }
+    }
+
+    private async Task HistorySearchKeyAsync(KeyboardEventArgs args)
+    {
+        if (args.Key == "Enter" && LiveQueueEnabled) await LoadLiveHistoryAsync();
+    }
+
+    private async Task LoadLiveHistoryAsync()
+    {
+        var barcode = _historyBarcode.Trim();
+        _liveHistory = null;
+        _liveHistoryError = null;
+        if (barcode.Length != 12 || barcode.Any(c => c is < '0' or > '9'))
+        {
+            _liveHistoryError = L("Enter a 12-digit barcode.", "Įveskite 12 skaitmenų kodą.");
+            return;
+        }
+        if (_liveHistoryLoading) return;
+        _liveHistoryLoading = true;
+        try
+        {
+            var result = await ShopfloorApi.GetProductionHistoryAsync(barcode, CancellationToken.None);
+            if (result.Success && result.Value is not null) _liveHistory = result.Value;
+            else _liveHistoryError = result.Error ?? L("Product not found or access denied.", "Gaminys nerastas arba neturite teisių.");
+        }
+        catch (Exception)
+        {
+            _liveHistoryError = L("Could not load product history.", "Nepavyko įkelti gaminio istorijos.");
+        }
+        finally { _liveHistoryLoading = false; }
     }
 }
