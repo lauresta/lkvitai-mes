@@ -24,7 +24,8 @@ public sealed class CikadaSsoAccountProof(IDataProtectionProvider provider, Time
 
     public string? Create(ClaimsPrincipal principal, CikadaOidcOptions options)
     {
-        var user = FromValidatedPrincipal(principal, options, "Cookies", SalesCredentialProtector.SsoScheme);
+        var user = FromValidatedPrincipal(principal, options, "Cookies", SalesCredentialProtector.SsoScheme,
+            PortalStructuredBearerAuthenticationDefaults.Scheme);
         if (user is null) return null;
         var now = clock.GetUtcNow();
         return _protector.Protect(JsonSerializer.Serialize(new Assertion(1, user, now, now.AddMinutes(2), Guid.NewGuid())));

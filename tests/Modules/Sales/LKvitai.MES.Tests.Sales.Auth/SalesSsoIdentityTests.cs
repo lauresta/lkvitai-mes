@@ -42,7 +42,13 @@ public sealed class SalesSsoIdentityTests
         Assert.False(valid.HasClaim(claim => claim.Type == "legacy_sql_login"));
         Assert.NotNull(assertion);
         Assert.Equal("bykovas", codec.Read(assertion, Settings)!.Username);
-        Assert.Null(codec.Create(SsoPrincipal("external", "PortalStructuredBearer"), Settings));
+        // Shopfloor forwards the JWT through PortalStructuredBearer. Only the
+        // validator's complete SSO metadata can produce this proof.
+        Assert.NotNull(codec.Create(SsoPrincipal("external", PortalStructuredBearerAuthenticationDefaults.Scheme), Settings));
+        Assert.Null(codec.Create(new ClaimsPrincipal(new ClaimsIdentity([
+            new Claim(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString()),
+            new Claim("auth_source", CikadaJwtValidator.AuthSource)],
+            PortalStructuredBearerAuthenticationDefaults.Scheme)), Settings));
         var missing = new ClaimsPrincipal(new ClaimsIdentity([
             new Claim(ClaimTypes.NameIdentifier, Guid.NewGuid().ToString()),
             new Claim(ClaimTypes.Name, "bykovas"), new Claim("auth_source", "oauth"),
