@@ -8,7 +8,7 @@
         <div class="gamyba-test">
             <span class="gamyba-test__mark">▲</span>
             <strong>TEST ENVIRONMENT</strong>
-            <span>@(LiveQueueEnabled ? L("The production queue reads the shared legacy database; issuing is disabled here.", "Gamybos eilė skaitoma iš bendros senosios bazės; išdavimas čia išjungtas.") : L("Data in this environment is not production data and may be reset without notice.", "Šios aplinkos duomenys nėra gamybiniai ir gali būti ištrinti be įspėjimo."))</span>
+            <span>@(LiveQueueEnabled ? (LiveTaskWriteEnabled ? L("The queue uses the shared legacy database; issuing is limited to Testavimas.", "Eilė naudoja bendrą senąją duomenų bazę; išdavimas leidžiamas tik Testavimas filialui.") : L("The production queue reads the shared legacy database; issuing is disabled here.", "Gamybos eilė skaitoma iš bendros senosios bazės; išdavimas čia išjungtas.")) : L("Data in this environment is not production data and may be reset without notice.", "Šios aplinkos duomenys nėra gamybiniai ir gali būti ištrinti be įspėjimo."))</span>
             <span class="gamyba-test__right mono">mes-test.lauresta.lt · fit</span>
         </div>
         <header class="gamyba-topbar">
