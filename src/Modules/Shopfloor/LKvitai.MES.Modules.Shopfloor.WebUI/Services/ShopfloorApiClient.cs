@@ -22,6 +22,31 @@ public sealed record ApiResult(bool Success, string? Error)
     public static ApiResult Fail(string error) => new(false, error);
 }
 
+public sealed class ProductionQueuePageDto
+{
+    public int Page { get; set; }
+    public int PageSize { get; set; }
+    public bool HasMore { get; set; }
+    public List<ProductionQueueItemDto> Items { get; set; } = [];
+}
+
+public sealed class ProductionQueueItemDto
+{
+    public long ProductId { get; set; }
+    public string OrderNumber { get; set; } = "";
+    public DateTime? DueDate { get; set; }
+    public string Department { get; set; } = "";
+    public string ProductType { get; set; } = "";
+    public string Priority { get; set; } = "";
+    public string State { get; set; } = "";
+    public string? Colour { get; set; }
+    public string? Barcode { get; set; }
+    public decimal? WidthMm { get; set; }
+    public decimal? HeightMm { get; set; }
+    public decimal Quantity { get; set; }
+    public string? Notes { get; set; }
+}
+
 /// <summary>
 /// Typed wrapper around the named <c>ShopfloorApi</c> HttpClient. Returns
 /// <see cref="ApiResult{T}"/> so pages can surface API validation/conflict
@@ -42,6 +67,10 @@ public sealed class ShopfloorApiClient
     }
 
     private HttpClient Client => _httpClientFactory.CreateClient(HttpClientName);
+
+    public Task<ApiResult<ProductionQueuePageDto>> GetProductionQueueAsync(int page, string? orderNumber, CancellationToken ct)
+        => SendAsync<ProductionQueuePageDto>(HttpMethod.Get,
+            $"/api/shopfloor/production-queue?page={page}&pageSize=100{(orderNumber is null ? "" : "&orderNumber=" + Uri.EscapeDataString(orderNumber))}", null, ct);
 
     // ---- Work centers -------------------------------------------------------
 

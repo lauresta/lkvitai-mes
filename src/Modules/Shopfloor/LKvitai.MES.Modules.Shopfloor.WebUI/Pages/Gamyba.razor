@@ -8,7 +8,7 @@
         <div class="gamyba-test">
             <span class="gamyba-test__mark">▲</span>
             <strong>TEST ENVIRONMENT</strong>
-            <span>@L("Data in this environment is not production data and may be reset without notice.", "Šios aplinkos duomenys nėra gamybiniai ir gali būti ištrinti be įspėjimo.")</span>
+            <span>@(LiveQueueEnabled ? L("The production queue reads the shared legacy database; issuing is disabled here.", "Gamybos eilė skaitoma iš bendros senosios bazės; išdavimas čia išjungtas.") : L("Data in this environment is not production data and may be reset without notice.", "Šios aplinkos duomenys nėra gamybiniai ir gali būti ištrinti be įspėjimo."))</span>
             <span class="gamyba-test__right mono">mes-test.lauresta.lt · fit</span>
         </div>
         <header class="gamyba-topbar">
@@ -33,12 +33,16 @@
         <nav class="gamyba-tabs" aria-label="Gamyba">
             @foreach (var tab in Tabs)
             {
-                <button type="button" class="@(_screen == tab.Key || (_screen == "task" && tab.Key == "tasks") || (_screen == "gt-detail" && tab.Key == "gt") ? "is-active" : "")" @onclick="() => Go(tab.Key)">@L(tab.En, tab.Lt) @if(tab.Key == "queue"){<span class="gamyba-tabcount mono">@QueueItems.Count()</span>} @if(tab.Key == "tasks"){<span class="gamyba-tabcount mono">@_tasks.Count</span>} @if(tab.Key == "labels"){<span class="gamyba-tabcount gamyba-tabcount--danger mono">@_jobs.Count(x => x.State != "Sent")</span>}</button>
+                <button type="button" class="@(_screen == tab.Key || (_screen == "task" && tab.Key == "tasks") || (_screen == "gt-detail" && tab.Key == "gt") ? "is-active" : "")" @onclick="() => Go(tab.Key)">@L(tab.En, tab.Lt) @if(tab.Key == "queue"){<span class="gamyba-tabcount mono">@(LiveQueueEnabled ? _liveQueue?.Items.Count ?? 0 : QueueItems.Count())</span>} @if(tab.Key == "tasks"){<span class="gamyba-tabcount mono">@_tasks.Count</span>} @if(tab.Key == "labels"){<span class="gamyba-tabcount gamyba-tabcount--danger mono">@_jobs.Count(x => x.State != "Sent")</span>}</button>
             }
             <button type="button" class="@(_screen == "map" ? "is-active" : "")" @onclick='() => Go("map")'>@L("Map · Questions", "Žemėlapis · Klausimai")</button>
         </nav>
 
         <main class="gamyba-main @(PrototypeControls ? "gamyba-main--demo" : "")">
+            @if (LiveQueueEnabled && _screen != "queue")
+            {
+                <div class="gamyba-alert gamyba-alert--info" role="status">@L("Preview: this screen uses sample data and does not change production.", "Peržiūra: šiame ekrane naudojami pavyzdiniai duomenys; gamyba nekeičiama.")</div>
+            }
             @if (!string.IsNullOrWhiteSpace(_notice))
             {
                 <div class="gamyba-alert gamyba-alert--@_noticeKind" role="alert"><span>@_notice</span><button type="button" @onclick='() => _notice = ""'>×</button></div>
@@ -46,6 +50,38 @@
 
             @if (_screen == "queue")
             {
+                @if (LiveQueueEnabled)
+                {
+                    @if (_fromSales is not null)
+                    {
+                        <div class="gamyba-source"><span class="gamyba-dot"></span><span><strong>@L("From Sales order", "Iš Sales užsakymo")</strong> <span class="mono">@_fromSales</span></span><button type="button" @onclick="ClearLiveOrderFilterAsync">@L("Show all", "Rodyti visus")</button></div>
+                    }
+                    <div class="gamyba-pagehead">
+                        <div><div class="gamyba-eyebrow">SHOPFLOOR · G02</div><h1>@L("Ready for production", "Paruošta gamybai")</h1><p class="mono">@L("Live Access queue", "Gyva Access eilė") · @L("page", "puslapis") @_liveQueuePage · @(_liveQueue?.Items.Count ?? 0) @L("rows on this page", "eil. šiame puslapyje")</p></div>
+                        <div class="gamyba-actions"><span class="chip chip--info">@L("READ ONLY", "TIK PERŽIŪRA")</span><button type="button" class="gamyba-btn" disabled="@_liveQueueLoading" @onclick="() => LoadLiveQueueAsync(_liveQueuePage)">@L("Refresh", "Atnaujinti")</button></div>
+                    </div>
+                    @if (_liveQueueError is not null)
+                    {
+                        <div class="gamyba-alert gamyba-alert--danger" role="alert">@_liveQueueError <button type="button" @onclick="() => LoadLiveQueueAsync(_liveQueuePage)">@L("Retry", "Kartoti")</button></div>
+                    }
+                    <section class="gamyba-panel">
+                        <div class="gamyba-tablewrap"><table class="gamyba-table">
+                            <thead><tr><th>@L("Order", "Užsakymas")</th><th>@L("Due", "Terminas")</th><th>@L("Type", "Tipas")</th><th>@L("Material", "Medžiaga")</th><th class="is-num">@L("Size", "Matmenys")</th><th class="is-num">@L("Qty", "Kiekis")</th><th>@L("Note", "Pastaba")</th><th>@L("State", "Būsena")</th><th>@L("Barcode", "Kodas")</th></tr></thead>
+                            <tbody>
+                            @foreach (var item in _liveQueue?.Items ?? [])
+                            {
+                                <tr><td><span class="gamyba-link mono">@item.OrderNumber</span><small>@item.Department</small></td><td class="mono">@item.DueDate?.ToString("yyyy-MM-dd") @if (!string.IsNullOrWhiteSpace(item.Priority)){<span class="chip chip--slate">@item.Priority</span>}</td><td>@item.ProductType</td><td><span class="gamyba-swatch"></span>@item.Colour</td><td class="is-num mono">@item.WidthMm × @item.HeightMm</td><td class="is-num mono"><strong>@item.Quantity</strong></td><td class="gamyba-note">@item.Notes</td><td><span class="chip chip--info">@item.State</span></td><td class="mono">@item.Barcode</td></tr>
+                            }
+                            </tbody>
+                        </table>
+                        @if (!_liveQueueLoading && _liveQueueError is null && _liveQueue?.Items.Count == 0)
+                        {<div class="gamyba-empty"><strong>@L("No items in this queue", "Eilėje nėra gaminių")</strong></div>}
+                        </div>
+                        <div class="gamyba-panel__foot"><span>@L("Queue source", "Eilės šaltinis") <span class="mono">SP_fsubProduction · Loc_leidimas</span></span><span><button type="button" class="gamyba-btn gamyba-btn--xs" disabled="@(_liveQueueLoading || _liveQueuePage <= 1)" @onclick="() => LoadLiveQueueAsync(_liveQueuePage - 1)">← @L("Previous", "Atgal")</button> <span class="mono">@_liveQueuePage</span> <button type="button" class="gamyba-btn gamyba-btn--xs" disabled="@(_liveQueueLoading || _liveQueue?.HasMore != true)" @onclick="() => LoadLiveQueueAsync(_liveQueuePage + 1)">@L("Next", "Toliau") →</button></span></div>
+                    </section>
+                }
+                else
+                {
                 @if (_fromSales is not null)
                 {
                     <div class="gamyba-source"><span class="gamyba-dot"></span><span><strong>@L("From Sales order", "Iš Sales užsakymo")</strong> <span class="mono">@_fromSales</span> · @L("The queue is filtered to this order.", "Eilė filtruojama pagal šį užsakymą.")</span><button type="button" @onclick="() => _fromSales = null">@L("Show all", "Rodyti visus")</button></div>
@@ -92,6 +128,7 @@
                     </div>
                     <div class="gamyba-panel__foot"><span>@L("Queue source", "Eilės šaltinis") <span class="mono">V_WaitingProductionBlinds</span> · @L("fixture snapshot", "pavyzdiniai duomenys")</span><span class="mono">@L("Double-click a row to open history", "Dukart spustelėkite eilutę istorijai")</span></div>
                 </section>
+                }
             }
 
             @if (_screen == "tasks")
