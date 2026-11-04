@@ -59,8 +59,9 @@ public static class RoletaiTemplateEndpoints
         catch (InvalidDataException ex) { return Results.BadRequest(new { code = "INVALID_TEMPLATE", message = ex.Message }); }
     }
 
+    // Cikada's native admin accounts carry WarehouseAdmin, including the Shopfloor administrator.
     private static bool CanEdit(ClaimsPrincipal user) =>
-        user.IsInRole("Admin") || user.IsInRole("PortalAdmin") ||
+        user.IsInRole("Admin") || user.IsInRole("PortalAdmin") || user.IsInRole("WarehouseAdmin") ||
         user.IsInRole("ShopfloorSupervisor") || user.IsInRole("ShopfloorTechnologist");
 
     private static Task<bool> CheckMenuAsync(ProductionQueueReader queue, CancellationToken ct) =>
