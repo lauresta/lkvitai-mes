@@ -1,0 +1,64 @@
+/* Self-hosted Inter + JetBrains Mono (latin subset, woff2 only).
+   Replaces the Google Fonts CDN link to satisfy SonarCloud rule
+   Web:S5725 (Subresource Integrity) without forcing fragile SRI hashes
+   on the constantly-rotating Google Fonts CSS file.
+
+   Source: @fontsource/inter@5.1.0 + @fontsource/jetbrains-mono@5.1.0
+   (jsDelivr-distributed, both fonts SIL OFL 1.1 licensed).
+
+   Subset choice: latin-only is sufficient for the LK MES Lithuanian/English
+   surface. Weights: Inter 400/500/600/700; JetBrains Mono 400/600. The
+   token contract in tokens.css declares system fallbacks ('Segoe UI',
+   'SF Mono', Consolas) so any glyph outside the latin subset still
+   renders correctly via the OS font.
+
+   font-display: swap — render with the fallback immediately, swap to the
+   web font when ready. Keeps first contentful paint fast on slow links. */
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../fonts/inter-latin-400-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('../fonts/inter-latin-500-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('../fonts/inter-latin-600-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('../fonts/inter-latin-700-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../fonts/jetbrains-mono-latin-400-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('../fonts/jetbrains-mono-latin-600-normal.woff2') format('woff2');
+}
