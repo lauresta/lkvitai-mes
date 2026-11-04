@@ -300,46 +300,63 @@
 
         @if (_selectingProduct)
         {
-            <div class="demo-product-page" aria-label="@L["Product.ChooseNew"].Value">
+            <div class="demo-product-page demo-product-page--picker" aria-label="@L["Product.ChooseNew"].Value">
                 <CustomerPrivacyNotice IsRestricted="IsPrivacyRestricted" OnBack="CloseAsync" />
                 <header class="demo-product-page__header">
                     <div><nav class="demo-breadcrumb" aria-label="@L["Product.Breadcrumb"].Value"><button type="button" @onclick="CloseAsync">@L["Common.Home"].Value</button><span>/</span><button type="button" @onclick="CloseProductPicker">@L["Common.Orders"].Value</button><span>/</span><button type="button" @onclick="CloseProductPicker">@_order.Number</button><span>/</span><strong>@L["Product.New"].Value</strong></nav><div class="eyebrow mono">@L["Product.ForOrder", _order.Number].Value</div><h1>@L["Product.NewService"].Value</h1></div>
                     <button class="btn btn--ghost" type="button" @onclick="CloseProductPicker">@L["Product.BackOrderArrow"].Value</button>
                 </header>
-                <div class="demo-product-page__grid">
-                    <aside class="panel demo-product-rail">
-                        <div class="panel__head"><h2>@L["Product.OrderProducts"].Value</h2><span class="mono">@OrderFormat.Money(_order.BeforeDiscount)</span></div>
-                        @foreach (var product in _order.Lines)
-                        {
-                            <button type="button" class="demo-product-rail__item" @onclick="() => OpenConfigurator(product)"><span><CategoryIcon Category="@product.Category" /></span><strong>@product.Name<small class="mono">@LineDimensions(product)</small><span class="chip chip--entered">@(IsLive ? product.StateName : L["Workspace.StageEntered"].Value)</span></strong></button>
-                        }
-                        <button class="demo-product-rail__new" type="button" disabled="@(IsLive && (!_order.WritesAllowed || _order.Cancelled))" @onclick="OpenProductPicker">@L["Product.AddNew"].Value</button>
-                    </aside>
-                    <main class="demo-product-catalog">
-                        <section class="panel demo-product-catalog__categories">
-                            <div class="panel__head"><h2>@L["Product.CategoryStep"].Value</h2><input class="demo-input demo-product-catalog__search" aria-label="@L["Product.FindCategoryType"].Value" @bind="_catalogSearch" @bind:event="oninput" placeholder="@L["Product.SearchCategories", PickerCategoryCount].Value" /></div>
-                            <div class="demo-product-catalog__tiles">
-                                @foreach (var category in FilteredCategories)
+                <div class="picker">
+                    <aside class="panel picker__cats" aria-label="@L["Product.CategoryStep"].Value">
+                        <div class="picker__search-wrap"><input @ref="_catalogSearchElement" class="demo-input picker__search" aria-label="@L["Product.FindCategoryType"].Value" value="@_catalogSearch" @oninput="OnCatalogSearchInput" @onkeydown="OnCatalogSearchKeyDown" placeholder="@L["Product.SearchCategoryOrType"].Value" /></div>
+                        <div class="picker__cat-list" role="listbox" aria-label="@L["Product.CategoryStep"].Value">
+                            @if (FrequentCategories.Count > 0)
+                            {
+                                <div class="picker__section-label">@L["Product.CategoryStep"].Value · @L["Product.Frequent7d"].Value</div>
+                                @foreach (var category in FrequentCategories)
                                 {
-                                    <button type="button" class="demo-product-tile @(_selectedCategoryId == category.Id ? "is-selected" : "")" @onclick="() => SelectCategory(category.Id)"><span><CategoryIcon Category="@category.Name" /></span><strong>@category.Name</strong><small>@L["Product.TypeCount", category.Types.Count].Value</small></button>
+                                    <button type="button" role="option" aria-selected="@(_selectedCategoryId == category.Id)" class="picker__row @(_selectedCategoryId == category.Id ? "is-selected" : "")" @onmouseenter="() => SelectCategory(category.Id)" @onclick="() => SelectCategory(category.Id)"><span class="picker__cat-icon"><CategoryIcon Category="@category.Name" /></span><span class="picker__cat-name">@category.Name</span><small class="picker__usage mono">@CategoryUses(category.Id)×</small></button>
                                 }
-                            </div>
-                        </section>
+                                <div class="picker__divider"></div>
+                            }
+                            <div class="picker__section-label">@L["Product.All"].Value · @AllPickerCategories.Count</div>
+                            @foreach (var category in AllPickerCategories)
+                            {
+                                <button type="button" role="option" aria-selected="@(_selectedCategoryId == category.Id)" class="picker__row @(_selectedCategoryId == category.Id ? "is-selected" : "")" @onmouseenter="() => SelectCategory(category.Id)" @onclick="() => SelectCategory(category.Id)"><span class="picker__cat-icon"><CategoryIcon Category="@category.Name" /></span><span class="picker__cat-name">@category.Name</span><small class="mono">@category.Types.Count</small></button>
+                            }
+                        </div>
+                    </aside>
+                    <main class="panel picker__types" aria-label="@L["Product.TypeStep"].Value">
                         @if (SelectedCategory is not null)
                         {
-                            <section class="panel demo-product-catalog__types">
-                                <div class="panel__head"><h2>@L["Product.TypeStep"].Value</h2><span>@SelectedCategory.Name</span></div>
-                                <div class="demo-product-catalog__type-list">
-                                    @if (FilteredTypes.Count == 0)
+                            <div class="picker__types-head"><span class="picker__head-icon"><CategoryIcon Category="@SelectedCategory.Name" /></span><div><small class="picker__eyebrow">@L["Product.TypeStep"].Value</small><h2>@SelectedCategory.Name</h2></div><span class="picker__hint">@L["Product.HotkeyHint", FilteredTypes.Count].Value</span></div>
+                            <div class="picker__types-body">
+                                @if (FilteredTypes.Count == 0)
+                                {
+                                    <div class="demo-product-editor__empty">@L["Product.NoActiveTypes"].Value</div>
+                                }
+                                else
+                                {
+                                    @if (FrequentTypes.Count > 0)
                                     {
-                                        <div class="demo-product-editor__empty">@L["Product.NoActiveTypes"].Value</div>
+                                        <div class="picker__section-label">@L["Product.Frequent7d"].Value</div>
+                                        <div class="picker__type-grid">
+                                            @foreach (var type in FrequentTypes)
+                                            {
+                                                <button type="button" class="picker__type" disabled="@(IsLive && type.UnsupportedReason is not null)" title="@(IsLive && type.UnsupportedReason is not null ? ApiMessage(type.UnsupportedReason) : null)" aria-keyshortcuts="@(PickerHotkey(type) > 0 ? PickerHotkey(type).ToString(CultureInfo.InvariantCulture) : null)" @onclick="() => CreateProductFromType(type)"><span class="picker__kbd">@(PickerHotkey(type) > 0 ? PickerHotkey(type).ToString(CultureInfo.InvariantCulture) : "")</span><strong>@type.Name</strong><small class="picker__usage mono">@TypeUses(type.Id)×</small><span class="picker__arrow">→</span></button>
+                                            }
+                                        </div>
+                                        <div class="picker__divider"></div>
                                     }
-                                    @foreach (var choice in FilteredTypes.Select((type, index) => (type, index)))
-                                    {
-                                        <button type="button" disabled="@(IsLive && choice.type.UnsupportedReason is not null)" title="@(IsLive && choice.type.UnsupportedReason is not null ? ApiMessage(choice.type.UnsupportedReason) : null)" @onclick="() => CreateProductFromType(choice.type)"><strong>@choice.type.Name<small>@L["Product.ParameterFieldCount", choice.type.ParameterFormulas.Count(x => !string.IsNullOrWhiteSpace(x))].Value</small></strong><span>@(choice.index < 9 ? (choice.index + 1).ToString(CultureInfo.InvariantCulture) : "") →</span></button>
-                                    }
-                                </div>
-                            </section>
+                                    <div class="picker__section-label">@L["Product.All"].Value · @AllPickerTypes.Count</div>
+                                    <div class="picker__type-grid">
+                                        @foreach (var type in AllPickerTypes)
+                                        {
+                                            <button type="button" class="picker__type" disabled="@(IsLive && type.UnsupportedReason is not null)" title="@(IsLive && type.UnsupportedReason is not null ? ApiMessage(type.UnsupportedReason) : null)" aria-keyshortcuts="@(PickerHotkey(type) > 0 ? PickerHotkey(type).ToString(CultureInfo.InvariantCulture) : null)" @onclick="() => CreateProductFromType(type)"><span class="picker__kbd">@(PickerHotkey(type) > 0 ? PickerHotkey(type).ToString(CultureInfo.InvariantCulture) : "")</span><strong>@type.Name</strong><span class="picker__arrow">→</span></button>
+                                        }
+                                    </div>
+                                }
+                            </div>
                         }
                     </main>
                 </div>
@@ -657,6 +674,11 @@
             await _draftModule.InvokeVoidAsync("register", _draftReference, _layerElement);
         }
         if (_draftModule is null) return;
+        if (_pickerFocusPending && _selectingProduct)
+        {
+            _pickerFocusPending = false;
+            await _catalogSearchElement.FocusAsync();
+        }
         await _draftModule.InvokeVoidAsync("updateNoticePosition");
         if (_focusInvalidField is { } invalidField)
         {
@@ -695,9 +717,28 @@
     public async Task SelectProductTypeByShortcut(int number)
     {
         if (!_selectingProduct || number is < 1 or > 9) return;
-        var type = FilteredTypes.ElementAtOrDefault(number - 1);
-        if (type is not null) await CreateProductFromType(type);
+        var type = PickerOrderedTypes.ElementAtOrDefault(number - 1);
+        if (type is not null && (!IsLive || type.UnsupportedReason is null)) await CreateProductFromType(type);
         await InvokeAsync(StateHasChanged);
+    }
+
+    [JSInvokable]
+    public Task MoveProductCategoryByShortcut(int direction)
+    {
+        if (!_selectingProduct || direction is not (-1 or 1)) return Task.CompletedTask;
+        var categories = PickerOrderedCategories;
+        if (categories.Count == 0) return Task.CompletedTask;
+        var index = categories.ToList().FindIndex(x => x.Id == _selectedCategoryId);
+        SelectCategory(categories[Math.Clamp(index + direction, 0, categories.Count - 1)].Id);
+        return InvokeAsync(StateHasChanged);
+    }
+
+    [JSInvokable]
+    public Task CloseProductPickerByShortcut()
+    {
+        if (!_selectingProduct) return Task.CompletedTask;
+        CloseProductPicker();
+        return InvokeAsync(StateHasChanged);
     }
 
     public async ValueTask DisposeAsync()
@@ -948,11 +989,40 @@
              || x.Name.Contains(_catalogSearch, StringComparison.OrdinalIgnoreCase)
              || x.Types.Any(t => t.Name.Contains(_catalogSearch, StringComparison.OrdinalIgnoreCase))))
         .ToList();
+    private IReadOnlyList<DemoCategory> FrequentCategories => FilteredCategories
+        .Where(x => _catalogUsage.Categories.Any(usage => usage.CategoryId == x.Id && usage.Uses > 0))
+        .OrderByDescending(x => CategoryUses(x.Id)).ThenBy(x => x.Name, StringComparer.CurrentCultureIgnoreCase).Take(5).ToList();
+    private IReadOnlyList<DemoCategory> AllPickerCategories => FilteredCategories
+        .Where(x => FrequentCategories.All(frequent => frequent.Id != x.Id)).ToList();
+    private IReadOnlyList<DemoCategory> PickerOrderedCategories => FrequentCategories.Concat(AllPickerCategories).ToList();
+    private int CategoryUses(int id) => _catalogUsage.Categories.FirstOrDefault(x => x.CategoryId == id)?.Uses ?? 0;
+    private int TypeUses(int id) => _catalogUsage.Types.FirstOrDefault(x => x.TypeId == id)?.Uses ?? 0;
     private DemoCategory? SelectedCategory => Catalog.Categories.FirstOrDefault(x => x.Id == _selectedCategoryId && (!IsLive || x.Active));
     private IReadOnlyList<DemoType> FilteredTypes => SelectedCategory?.Types
         .Where(x => string.IsNullOrWhiteSpace(_catalogSearch)
             || SelectedCategory.Name.Contains(_catalogSearch, StringComparison.OrdinalIgnoreCase)
             || x.Name.Contains(_catalogSearch, StringComparison.OrdinalIgnoreCase)).ToList() ?? [];
+    private IReadOnlyList<DemoType> FrequentTypes => FilteredTypes
+        .Where(x => TypeUses(x.Id) > 0)
+        .OrderByDescending(x => TypeUses(x.Id)).ThenBy(x => x.Name, StringComparer.CurrentCultureIgnoreCase).Take(5).ToList();
+    private IReadOnlyList<DemoType> AllPickerTypes => FilteredTypes
+        .Where(x => FrequentTypes.All(frequent => frequent.Id != x.Id)).ToList();
+    private IReadOnlyList<DemoType> PickerOrderedTypes => FrequentTypes.Concat(AllPickerTypes).ToList();
+    private int PickerHotkey(DemoType type) => PickerOrderedTypes.Take(9).ToList().FindIndex(x => x.Id == type.Id) + 1;
+    private void OnCatalogSearchInput(ChangeEventArgs args)
+    {
+        _catalogSearch = args.Value?.ToString() ?? "";
+        if (FilteredCategories.All(x => x.Id != _selectedCategoryId))
+            _selectedCategoryId = FilteredCategories.FirstOrDefault()?.Id ?? 0;
+    }
+    private async Task OnCatalogSearchKeyDown(KeyboardEventArgs args)
+    {
+        if (args.Key == "Enter")
+        {
+            var type = PickerOrderedTypes.FirstOrDefault(x => !IsLive || x.UnsupportedReason is null);
+            if (type is not null) await CreateProductFromType(type);
+        }
+    }
     private DemoCategory? ConfiguredCategory => Catalog.Categories.FirstOrDefault(x => x.Id == _configuringLine?.CategoryId);
     private DemoType? ConfiguredType => ConfiguredCategory?.Types.FirstOrDefault(x => x.Id == _configuringLine?.TypeId);
     private int ConfiguredParameterCount => ConfiguredCategory?.ParameterLabels.Count(x => x is not null) ?? 0;
@@ -986,7 +1056,15 @@
             : Catalog.Categories.FirstOrDefault(x => (!IsLive || x.Active) && x.Name.Equals("Roletai", StringComparison.OrdinalIgnoreCase))?.Id
                 ?? Catalog.Categories.FirstOrDefault(x => !IsLive || x.Active)?.Id ?? 0;
         _configuringLine = null;
+        _catalogUsage = new([], []);
         _selectingProduct = true;
+        _pickerFocusPending = true;
+        StateHasChanged();
+        if (IsLive && _order?.StoreId is > 0)
+        {
+            try { _catalogUsage = await Entry.CatalogUsageAsync(_order.StoreId.Value); }
+            catch (SalesOrderEntryFailure) { /* Usage only affects ordering; the catalog remains usable. */ }
+        }
     }
     private void CloseProductPicker() => _selectingProduct = false;
     private async Task CreateProductFromType(DemoType type)

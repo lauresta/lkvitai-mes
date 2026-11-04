@@ -15,6 +15,7 @@ public sealed partial class SalesOrderEntryClient(IHttpClientFactory factory, Sa
 {
     private readonly IStringLocalizer<SalesResources> L = localizer ?? SalesResourceText.Localizer;
     public Task<LiveOrderEntryCatalogDto> CatalogAsync() => GetAsync<LiveOrderEntryCatalogDto>("/api/sales/order-entry/catalog");
+    public Task<CatalogUsageDto> CatalogUsageAsync(int storeId, int days = 7) => GetAsync<CatalogUsageDto>($"/api/sales/order-entry/catalog/usage?storeId={storeId}&days={days}");
     public Task<IReadOnlyList<OrderAddressReferenceDto>> AddressesAsync(string? search = null, int? parentId = null, int? id = null) => GetAsync<IReadOnlyList<OrderAddressReferenceDto>>("/api/sales/order-entry/addresses?" + string.Join("&",new[] { search is null ? null : "search="+Uri.EscapeDataString(search), parentId is null ? null : "parentId="+parentId, id is null ? null : "id="+id }.Where(x=>x is not null)));
     public Task<LegacyProductPreviewDto> PreviewAsync(LegacyProductPreviewRequest request) => SendAsync<LegacyProductPreviewDto>(HttpMethod.Post,"/api/sales/order-entry/product-preview",request,false);
     public Task<OrderEditorSnapshot> ReadAsync(long id) => GetAsync<OrderEditorSnapshot>($"/api/sales/order-entry/orders/{id}");

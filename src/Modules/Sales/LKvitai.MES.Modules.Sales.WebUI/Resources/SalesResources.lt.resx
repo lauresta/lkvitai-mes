@@ -2166,4 +2166,8 @@
   <data name="Workspace.ValidEmployeeDate" xml:space="preserve">
     <value>Įveskite darbuotoją ir tinkamą datą.</value>
   </data>
+  <data name="Product.Frequent7d" xml:space="preserve"><value>Dažniausiai šią savaitę</value></data>
+  <data name="Product.All" xml:space="preserve"><value>Visi</value></data>
+  <data name="Product.HotkeyHint" xml:space="preserve"><value>{0} tipų · spauskite 1–9 arba pelę</value></data>
+  <data name="Product.SearchCategoryOrType" xml:space="preserve"><value>Ieškoti rūšies ar tipo…</value></data>
 </root>

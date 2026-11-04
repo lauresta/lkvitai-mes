@@ -10,6 +10,37 @@ namespace LKvitai.MES.Modules.Sales.Infrastructure.Sql;
 /// <summary>Fresh live reference read; selected columns only, no credentials, financial balances or customer contact data.</summary>
 public sealed class SqlLiveOrderEntryCatalog(SalesSqlOptions options, ILegacySqlConnectionFactory connections) : ILiveOrderEntryCatalog
 {
+    public async Task<CatalogUsageDto> GetUsageAsync(int storeId, int days, CancellationToken ct)
+    {
+        await using var lease = await connections.OpenAsync(ct).ConfigureAwait(false);
+        await using var command = new SqlCommand("""
+            SELECT t.TipoID, t.Rusis, COUNT_BIG(*) AS Uses
+            FROM dbo.Uzsakymai u
+            JOIN dbo.Zinynas_UzsakymoSerijos s ON s.UzsakymoSerijaID=u.UzsakymoSerija
+            JOIN dbo.ParduotiGaminiai pg ON pg.UzsakymoID=u.UzsakymasID
+            JOIN dbo.Zinynas_tipai t ON t.TipoID=pg.ParduotoGaminioTipoID
+            WHERE u.VietaID=@storeId
+              AND u.UzsakymoData>=DATEADD(day,1-@days,CONVERT(date,GETDATE()))
+              AND EXISTS(SELECT 1 FROM dbo.Loc_leidimas() access WHERE access.UKS=s.FilialoID)
+            GROUP BY t.TipoID,t.Rusis
+            """, lease.Connection)
+        { CommandTimeout = options.CommandTimeoutSeconds > 0 ? options.CommandTimeoutSeconds : 30 };
+        command.Parameters.Add("@storeId", SqlDbType.Int).Value = storeId;
+        command.Parameters.Add("@days", SqlDbType.Int).Value = days;
+        var types = new List<TypeUsageDto>();
+        var categories = new Dictionary<int, int>();
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        while (await reader.ReadAsync(ct).ConfigureAwait(false))
+        {
+            var typeId = reader.GetInt32(0);
+            var categoryId = reader.GetInt32(1);
+            var uses = (int)Math.Min(reader.GetInt64(2), int.MaxValue);
+            types.Add(new TypeUsageDto(typeId, uses));
+            categories[categoryId] = (int)Math.Min(int.MaxValue, (long)categories.GetValueOrDefault(categoryId) + uses);
+        }
+        return new CatalogUsageDto(categories.Select(x => new CategoryUsageDto(x.Key, x.Value)).ToArray(), types);
+    }
+
     public async Task<LiveOrderEntryCatalogDto> GetAsync(CancellationToken ct)
     {
         await using var lease = await connections.OpenAsync(ct).ConfigureAwait(false);

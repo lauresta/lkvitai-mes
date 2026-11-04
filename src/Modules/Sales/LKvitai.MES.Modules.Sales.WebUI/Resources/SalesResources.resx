@@ -2166,4 +2166,8 @@
   <data name="Workspace.ValidEmployeeDate" xml:space="preserve">
     <value>Enter an employee and valid date.</value>
   </data>
+  <data name="Product.Frequent7d" xml:space="preserve"><value>Most used this week</value></data>
+  <data name="Product.All" xml:space="preserve"><value>All</value></data>
+  <data name="Product.HotkeyHint" xml:space="preserve"><value>{0} types · press 1–9 or click</value></data>
+  <data name="Product.SearchCategoryOrType" xml:space="preserve"><value>Search category or type…</value></data>
 </root>

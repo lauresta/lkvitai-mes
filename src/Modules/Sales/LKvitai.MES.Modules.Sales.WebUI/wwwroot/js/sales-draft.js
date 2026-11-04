@@ -44,12 +44,21 @@ function onPopState() {
 }
 
 function onPickerKey(event) {
-    if (!/^[1-9]$/.test(event.key) || event.ctrlKey || event.metaKey || event.altKey) return;
-    if (!document.querySelector('.demo-product-catalog__type-list')) return;
+    if (event.ctrlKey || event.metaKey || event.altKey) return;
+    if (!document.querySelector('.demo-product-page--picker')) return;
     const target = event.target;
-    if (target?.matches?.('input, textarea, select, [contenteditable="true"]')) return;
-    event.preventDefault();
-    reference?.invokeMethodAsync('SelectProductTypeByShortcut', Number(event.key));
+    const isInput = target?.matches?.('input, textarea, select, [contenteditable="true"]');
+    if (event.key === 'Escape') {
+        event.preventDefault();
+        reference?.invokeMethodAsync('CloseProductPickerByShortcut');
+    } else if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+        if (isInput && !target.matches('.picker__search')) return;
+        event.preventDefault();
+        reference?.invokeMethodAsync('MoveProductCategoryByShortcut', event.key === 'ArrowUp' ? -1 : 1);
+    } else if (/^[1-9]$/.test(event.key) && !isInput) {
+        event.preventDefault();
+        reference?.invokeMethodAsync('SelectProductTypeByShortcut', Number(event.key));
+    }
 }
 
 function onInputKey(event) {
