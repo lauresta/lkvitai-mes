@@ -37,6 +37,9 @@ public partial class NewOrderWorkspace
     private IReadOnlyList<LiveNamedReferenceDto> _duties = [];
     private IReadOnlyList<LiveNamedReferenceDto> _priorities = [];
     private DateTimeOffset _catalogLoadedAt;
+    private CatalogUsageDto _catalogUsage = new([], []);
+    private ElementReference _catalogSearchElement;
+    private bool _pickerFocusPending;
     private int? _employeeId, _employeeDutyId;
     private bool HeaderDirty => _order?.LegacyId is not null && JsonSerializer.Serialize(HeaderInput()) != _headerSaved;
     private DateOnly SavedOrderDate => string.IsNullOrEmpty(_headerSaved) ? _order!.Date : JsonSerializer.Deserialize<OrderHeaderInput>(_headerSaved)!.Date;
