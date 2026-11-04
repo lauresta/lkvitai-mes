@@ -7,6 +7,7 @@
   <data name="Shell.EnvironmentBanner" xml:space="preserve"><value>{0} APLINKA</value></data>
   <data name="Shell.BannerNote.Shared" xml:space="preserve"><value>Šios aplinkos duomenys nėra gamybiniai ir gali būti ištrinti be įspėjimo.</value></data>
   <data name="Shell.BannerNote.Local" xml:space="preserve"><value>Vietinė arba privataus tinklo aplinka. Duomenys gali būti ištrinti be įspėjimo.</value></data>
+  <data name="Shell.BannerNote.LiveProduction" xml:space="preserve"><value>Prijungta prie tikros darbinės duomenų bazės. Čia atlikti pakeitimai taip pat matomi programoje „Užsakymai“.</value></data>
   <data name="Shell.EnvironmentAndVersion" xml:space="preserve"><value>Aplinka ir versija</value></data>
   <data name="Shell.Search.Placeholder" xml:space="preserve"><value>Ieškoti visur…</value></data>
   <data name="Shell.Search.Label" xml:space="preserve"><value>Atidaryti bendrą paiešką</value></data>

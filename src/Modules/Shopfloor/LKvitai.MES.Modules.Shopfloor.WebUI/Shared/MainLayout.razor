@@ -2,12 +2,14 @@
 @implements IDisposable
 @inject IJSRuntime JS
 @inject NavigationManager Navigation
+@inject IWebHostEnvironment HostEnvironment
 
 <MudThemeProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
 
 <PortalAuthenticatedShell OnMobileNavigationToggle="ToggleDrawer"
+                          LiveProductionDataWarning="@HostEnvironment.IsEnvironment("Test")"
                           MobileNavigationOpen="DrawerOpen"
                           MobileNavigationLabel="@(DrawerOpen ? L["Shopfloor.CloseShopfloorNavigation"].Value : L["Shopfloor.OpenShopfloorNavigation"].Value)"
                           MobileNavigationTargetId="@DrawerId">
