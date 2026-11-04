@@ -2170,4 +2170,31 @@
   <data name="Product.All" xml:space="preserve"><value>All</value></data>
   <data name="Product.HotkeyHint" xml:space="preserve"><value>{0} types · press 1–9 or click</value></data>
   <data name="Product.SearchCategoryOrType" xml:space="preserve"><value>Search category or type…</value></data>
+  <data name="Common.Edit" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="Order.NextState" xml:space="preserve">
+    <value>{0} / 6 · next: {1}</value>
+  </data>
+  <data name="Order.AddressEmpty" xml:space="preserve">
+    <value>Not provided. Needed only for delivery / installation.</value>
+  </data>
+  <data name="Order.NoteHistory" xml:space="preserve">
+    <value>History ({0})</value>
+  </data>
+  <data name="Order.Unspecified" xml:space="preserve">
+    <value>not specified</value>
+  </data>
+  <data name="Order.LinesAndPieces" xml:space="preserve">
+    <value>{0} lines · {1} pcs</value>
+  </data>
+  <data name="Order.AccessoryToLine" xml:space="preserve">
+    <value>for #{0}</value>
+  </data>
+  <data name="Order.DiscountShort" xml:space="preserve">
+    <value>Discount %</value>
+  </data>
+  <data name="Order.FixedPriceShort" xml:space="preserve">
+    <value>Fixed price €</value>
+  </data>
 </root>

@@ -2,6 +2,8 @@
 let reference = null;
 let layer = null;
 let tabFocus = false;
+let orderDrawer = null;
+let orderDrawerOpener = null;
 
 function baseUrl() {
     return window.location.pathname + window.location.search;
@@ -61,6 +63,48 @@ function onPickerKey(event) {
     }
 }
 
+function onOrderKey(event) {
+    if (event.ctrlKey || event.metaKey || event.altKey) return;
+    if (orderDrawer) {
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            reference?.invokeMethodAsync('CloseOrderDrawerByShortcut');
+        } else if (event.key.toLowerCase() === 'n' && !event.target?.matches?.('input, textarea, select, [contenteditable="true"]')) {
+            event.stopImmediatePropagation();
+        } else if (event.key === 'Tab') {
+            const focusable = [...orderDrawer.querySelectorAll('button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), a[href]')]
+                .filter(element => element.getClientRects().length);
+            if (!focusable.length) return;
+            const first = focusable[0], last = focusable[focusable.length - 1];
+            if (!orderDrawer.contains(document.activeElement)) { event.preventDefault(); first.focus(); }
+            else if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+            else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+        }
+        return;
+    }
+    if (event.key.toLowerCase() !== 'n' || !document.querySelector('.order-workspace') || document.querySelector('.demo-product-page')) return;
+    if (event.target?.closest?.('input, textarea, select, button, [contenteditable="true"], [role="dialog"]')) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    reference?.invokeMethodAsync('OpenOrderProductByShortcut');
+}
+
+export function openOrderDrawer(element) {
+    if (!orderDrawer) orderDrawerOpener = document.activeElement;
+    orderDrawer = element;
+    const first = orderDrawer?.querySelector('.demo-drawer__body input:not(:disabled), .demo-drawer__body select:not(:disabled), .demo-drawer__body textarea:not(:disabled)')
+        ?? orderDrawer?.querySelector('button:not(:disabled)');
+    (first ?? orderDrawer)?.focus();
+}
+
+export function closeOrderDrawer() {
+    if (!orderDrawer) return;
+    orderDrawer = null;
+    if (orderDrawerOpener?.isConnected) orderDrawerOpener.focus();
+    orderDrawerOpener = null;
+}
+
 function onInputKey(event) {
     tabFocus = event.key === 'Tab' && !event.ctrlKey && !event.metaKey && !event.altKey;
 }
@@ -99,6 +143,7 @@ export function register(dotnetReference, element) {
     window.addEventListener('popstate', onPopState);
     document.addEventListener('scroll', updateNoticePosition, true);
     document.addEventListener('keydown', onPickerKey);
+    document.addEventListener('keydown', onOrderKey, true);
     document.addEventListener('keydown', onInputKey, true);
     document.addEventListener('pointerdown', onPointerDown, true);
     document.addEventListener('focusin', onInputFocus, true);
@@ -120,6 +165,8 @@ export function unregister() {
     window.removeEventListener('popstate', onPopState);
     document.removeEventListener('scroll', updateNoticePosition, true);
     document.removeEventListener('keydown', onPickerKey);
+    document.removeEventListener('keydown', onOrderKey, true);
+    closeOrderDrawer();
     document.removeEventListener('keydown', onInputKey, true);
     document.removeEventListener('pointerdown', onPointerDown, true);
     document.removeEventListener('focusin', onInputFocus, true);

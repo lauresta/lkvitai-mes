@@ -2170,4 +2170,31 @@
   <data name="Product.All" xml:space="preserve"><value>Visi</value></data>
   <data name="Product.HotkeyHint" xml:space="preserve"><value>{0} tipų · spauskite 1–9 arba pelę</value></data>
   <data name="Product.SearchCategoryOrType" xml:space="preserve"><value>Ieškoti rūšies ar tipo…</value></data>
+  <data name="Common.Edit" xml:space="preserve">
+    <value>Keisti</value>
+  </data>
+  <data name="Order.NextState" xml:space="preserve">
+    <value>{0} / 6 · kitas: {1}</value>
+  </data>
+  <data name="Order.AddressEmpty" xml:space="preserve">
+    <value>Nenurodytas. Reikalingas tik pristatymui / montavimui.</value>
+  </data>
+  <data name="Order.NoteHistory" xml:space="preserve">
+    <value>Istorija ({0})</value>
+  </data>
+  <data name="Order.Unspecified" xml:space="preserve">
+    <value>nenurodytas</value>
+  </data>
+  <data name="Order.LinesAndPieces" xml:space="preserve">
+    <value>{0} eilutės · {1} vnt.</value>
+  </data>
+  <data name="Order.AccessoryToLine" xml:space="preserve">
+    <value>prie #{0}</value>
+  </data>
+  <data name="Order.DiscountShort" xml:space="preserve">
+    <value>Nuolaida %</value>
+  </data>
+  <data name="Order.FixedPriceShort" xml:space="preserve">
+    <value>Fiksuota kaina €</value>
+  </data>
 </root>
