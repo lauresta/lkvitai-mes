@@ -66,6 +66,7 @@ export function scrollSelectedIntoView() {
 
 function onKey(e) {
     if (!_dotnetRef) return;
+    if (document.querySelector('.demo-layer')) return;
 
     const target = e.target;
     const isEditable = !!(target && target.matches && target.matches(

@@ -33,10 +33,13 @@ body:has(.mud-drawer-overlay--open) {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 8px 28px;
+  height: 22px;
+  padding: 0 28px;
   background: repeating-linear-gradient(-45deg, #ead19b, #ead19b 12px, #dfc07a 12px, #dfc07a 24px);
   color: var(--n-900);
-  font-size: 12px;
+  font: 700 10px var(--font-mono);
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .test-strip__main {
@@ -44,14 +47,17 @@ body:has(.mud-drawer-overlay--open) {
   align-items: center;
   gap: 9px;
   min-width: 0;
+  overflow: hidden;
 }
 
 .test-strip__note {
   opacity: .82;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .test-strip__host {
-  font-size: 11px;
+  font-size: 10px;
   white-space: nowrap;
 }
 

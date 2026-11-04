@@ -126,29 +126,127 @@
     }
     else
     {
-        <div class="demo-editor">
+        <div class="demo-editor order-workspace">
             @if (!_selectingProduct && _configuringLine is null)
             {
                 <CustomerPrivacyNotice IsRestricted="IsPrivacyRestricted" OnBack="CloseAsync" />
             }
-            <header class="demo-editor__top">
-                <div>
-                    <div class="eyebrow mono">@L["Workspace.SalesDraft"].Value</div>
-                    <h1 class="mono">@_order.Number</h1>
-                    <div class="demo-editor__meta">@_order.Customer · @_order.Store</div>
-                </div>
-                <div class="demo-editor__actions">
-                    <span class="chip chip--entered">@(IsLive ? (_busy ? L["Workspace.Saving"].Value : HeaderDirty || ProductDirty || AddressDirty ? L["Workspace.UnsavedChanges"].Value : L["Workspace.SavedOrder"].Value) : L["Workspace.LocalPreview"].Value)</span>
-                    @if(IsLive && _order.Cancelled) { <span class="chip chip--danger">@L["Workspace.Cancelled"].Value</span> }
+            <header class="order-head">
+                <strong class="order-head__number mono">@_order.Number</strong>
+                <span class="chip chip--entered">@(IsLive ? _order.StateName : L["Workspace.StageEntered"].Value)</span>
+                <span class="order-head__next mono">@L["Order.NextState", OrderStepIndex, NextOrderState].Value</span>
+                @if (IsLive && (HeaderDirty || ProductDirty || AddressDirty)) { <span class="order-head__dirty">@L["Workspace.UnsavedChanges"].Value</span> }
+                <div class="order-head__actions">
                     <button class="btn btn--ghost" type="button" @onclick="CloseAsync">@(IsLive ? L["Common.BackToOrders"].Value : L["Workspace.DiscardReturn"].Value)</button>
-                    @if(IsLive) { <button class="btn btn--ghost" type="button" disabled="@(!_order.WritesAllowed || _order.Cancelled || _order.StateId is not (4 or 7) || _order.CancellationUnavailableReason is not null)" title="@ApiMessage(_order.CancellationUnavailableReason)" @onclick="CancelLiveOrderAsync">@L["Workspace.CancelOrder"].Value</button> }
+                    @if (IsLive) { <button class="btn btn--ghost order-head__cancel" type="button" disabled="@(!_order.WritesAllowed || _order.Cancelled || _order.StateId is not (4 or 7) || _order.CancellationUnavailableReason is not null)" title="@ApiMessage(_order.CancellationUnavailableReason)" @onclick="CancelLiveOrderAsync">@L["Workspace.CancelOrder"].Value</button> }
                 </div>
             </header>
-            <div class="demo-editor__banner" role="status">@(IsLive ? (_order.WritesAllowed ? L["Workspace.SaveHelp"].Value : L["Workspace.ReadOnlyTest"].Value) : L["Workspace.DraftHelp"].Value)</div>
-            <div class="demo-stage-strip" aria-label="@L["Workspace.OrderStage"].Value"><span class="is-current">@(IsLive ? _order.StateName : L["Workspace.StageEntered"].Value)</span><span>@L["Workspace.StageConfirmed"].Value</span><span>@L["Workspace.StageManufacturing"].Value</span><span>@L["Workspace.StageManufactured"].Value</span><span>@L["Workspace.StageBranch"].Value</span><span>@L["Workspace.StageDelivered"].Value</span></div>
-            <div class="demo-editor__grid">
-                <div class="demo-editor__main">
-                    <section class="panel demo-panel demo-reference-panel">
+            <div class="order-grid">
+                <aside class="order-context">
+                    <section class="order-card" aria-labelledby="order-people-title">
+                        <div class="order-card__head"><h2 id="order-people-title">@L["Workspace.PeopleDates"].Value</h2><button type="button" @onclick='() => OpenOrderDrawer("people")'>@L["Common.Edit"].Value</button></div>
+                        <dl class="order-card__facts">
+                            <dt>@L["Common.Customer"].Value</dt><dd title="@_order.Customer">@DisplayContext(_order.Customer)</dd>
+                            <dt>@L["Workspace.Store"].Value</dt><dd title="@_order.Store">@DisplayContext(_order.Store)</dd>
+                            <dt>@L["Common.Manager"].Value</dt><dd title="@_order.Manager">@DisplayContext(_order.Manager)</dd>
+                            <dt>@L["Common.Consultant"].Value</dt><dd class="@(string.IsNullOrWhiteSpace(_order.Consultant) ? "order-card__missing" : "")" title="@_order.Consultant">@(string.IsNullOrWhiteSpace(_order.Consultant) ? L["Order.Unspecified"].Value : _order.Consultant)</dd>
+                            <dt>@L["Common.OrderDate"].Value</dt><dd class="mono">@OrderFormat.Date(_order.Date)</dd>
+                            <dt>@L["Common.DueDate"].Value</dt><dd class="mono">@OrderFormat.Date(_order.Due)</dd>
+                            <dt>@L["Workspace.MountingDate"].Value</dt><dd class="mono">@(_order.MountingDate is { } mountingDate ? OrderFormat.Date(mountingDate) : "—")</dd>
+                            <dt>@L["Workspace.Priority"].Value</dt><dd>@DisplayPriority</dd>
+                        </dl>
+                    </section>
+                    <section class="order-card @(HasOrderAddress ? "" : "order-card--empty")" aria-labelledby="order-address-title">
+                        <div class="order-card__head"><h2 id="order-address-title">@L["Common.Address"].Value</h2><button type="button" @onclick='() => OpenOrderDrawer("address")'>@(HasOrderAddress ? L["Common.Edit"].Value : L["Common.Add"].Value)</button></div>
+                        @if (HasOrderAddress)
+                        {
+                            <div class="order-card__address"><strong>@_order.Street @_order.Building@(!string.IsNullOrWhiteSpace(_order.Flat) ? "-" + _order.Flat : "")</strong><span>@_order.City</span><span class="mono">@_order.Phone</span></div>
+                        }
+                        else { <p>@L["Order.AddressEmpty"].Value</p> }
+                    </section>
+                    <section class="order-card" aria-labelledby="order-employees-title">
+                        <div class="order-card__head"><h2 id="order-employees-title">@L["Workspace.ResponsibleEmployees"].Value</h2><button type="button" @onclick='() => OpenOrderDrawer("employees")'>@L["Common.Add"].Value</button></div>
+                        @foreach (var employee in _order.Employees)
+                        {
+                            <div class="order-card__employee"><span><strong>@DisplayDuty(employee.Duty)</strong> — @employee.Name <small class="mono">@OrderFormat.Date(employee.Date)</small></span><button class="demo-small-remove" type="button" disabled="@(IsLive && !_order.WritesAllowed)" title="@L["Workspace.RemoveAssignment"].Value" @onclick="() => RemoveEmployeeAsync(employee)">×</button></div>
+                        }
+                    </section>
+                    @if (!IsPrivacyRestricted)
+                    {
+                        <section class="order-card order-card--note" aria-labelledby="order-note-title">
+                            <div class="order-card__head"><h2 id="order-note-title">@L["Common.Note"].Value</h2><button type="button" @onclick='() => OpenOrderDrawer("history")'>@L["Order.NoteHistory", _order.NoteHistory.Count].Value</button></div>
+                            <textarea class="demo-textarea" maxlength="128" readonly="@(IsLive && (!_order.CanEdit || !_order.WritesAllowed))" @bind="_order.Note" placeholder="@L["Workspace.OrderNote"].Value"></textarea>
+                        </section>
+                    }
+                </aside>
+                <section class="panel order-lines" aria-labelledby="order-lines-title">
+                    <div class="panel__head order-lines__head"><div><h2 id="order-lines-title">@L["Workspace.ProductsServices"].Value</h2><span>@L["Order.LinesAndPieces", _order.Lines.Count, _order.Lines.Sum(x => x.Quantity)].Value</span></div>
+                        <div class="demo-panel__actions"><button class="btn btn--ghost" type="button" disabled="@(IsLive && (!_order.WritesAllowed || _order.Cancelled))" @onclick="() => OpenAccessoryPicker(null)">@L["Workspace.AddPriedai"].Value</button><button class="btn btn--primary" type="button" disabled="@(IsLive && (!_order.WritesAllowed || _order.Cancelled))" @onclick="OpenProductPicker" aria-keyshortcuts="N">@L["Workspace.AddProductService"].Value</button></div>
+                    </div>
+                    @if (_order.Lines.Count == 0) { <div class="demo-empty order-lines__empty">@L["Workspace.NoLines"].Value</div> }
+                    else
+                    {
+                        <div class="order-lines__scroll"><table class="lk-table order-lines__table"><colgroup><col class="order-lines__index"/><col class="order-lines__product"/><col class="order-lines__parameters"/><col class="order-lines__qty"/><col class="order-lines__price"/><col class="order-lines__amount"/><col class="order-lines__actions"/></colgroup>
+                            <thead><tr><th>#</th><th>@L["Workspace.Item"].Value</th><th>@L["Common.Details"].Value</th><th class="is-num">@L["Workspace.Qty"].Value</th><th class="is-num">@L["Common.Price"].Value</th><th class="is-num">@L["Common.Amount"].Value</th><th></th></tr></thead>
+                            <tbody>
+                            @for (var index = 0; index < _order.Lines.Count; index++)
+                            {
+                                var line = _order.Lines[index]; var lineNumber = index + 1;
+                                <tr class="order-lines__row"><td class="mono order-lines__number">@lineNumber</td><td><div class="demo-line-name"><div class="demo-line-sketch"><CategoryIcon Category="@line.Category" /></div><div class="order-lines__product-text"><button class="demo-line-open" type="button" @onclick="() => OpenConfigurator(line)">@line.Name ↗</button><small>@line.Category</small></div></div></td>
+                                <td class="mono order-lines__params">@LineParameterSummary(line)</td>
+                                <td class="is-num"><input class="demo-table-input mono" readonly="@IsLive" type="number" min="0.001" step="0.001" aria-label="@L["Product.QuantityFor", line.Name].Value" @bind="line.Quantity" /></td>
+                                <td class="is-num"><input class="demo-table-input mono" readonly="@IsLive" type="number" min="0" step="0.01" aria-label="@L["Product.PriceFor", line.Name].Value" @bind="line.Price" /></td>
+                                <td class="is-num mono order-lines__sum">@OrderFormat.Money(IsLive ? line.ServerAmount ?? line.Quantity * line.Price : line.Quantity * line.Price)</td>
+                                <td class="demo-line-actions">@if (line.Kind == "Product") { <button type="button" title="@L["Product.AddToProduct"].Value" disabled="@(IsLive && (!line.CanEdit || !_order.WritesAllowed))" @onclick="() => OpenAccessoryPicker(line)">+</button> }<button type="button" title="@L["Workspace.RemoveLine"].Value" disabled="@(IsLive && (!line.CanDelete || !_order.WritesAllowed))" @onclick="() => RemoveLine(line)">×</button></td></tr>
+                                @foreach (var accessory in line.Accessories)
+                                {
+                                    <tr class="order-lines__acc"><td></td><td>@if (IsLive) { <button type="button" class="demo-line-open" @onclick="() => EditAccessoryAsync(line, accessory)">↳ @accessory.Name</button> } else { <span>↳ @accessory.Name</span> }</td><td class="mono">@L["Order.AccessoryToLine", lineNumber].Value · @accessory.Unit</td><td class="is-num"><input class="demo-table-input mono" readonly="@IsLive" type="number" min="0.001" step="0.001" aria-label="@L["Product.QuantityFor", accessory.Name].Value" @bind="accessory.Quantity" /></td><td class="is-num"><input class="demo-table-input mono" readonly="@IsLive" type="number" min="0" step="0.01" aria-label="@L["Product.PriceFor", accessory.Name].Value" @bind="accessory.Price" /></td><td class="is-num mono">@OrderFormat.Money(accessory.Quantity * accessory.Price)</td><td class="demo-line-actions"><button type="button" title="@L["Product.RemoveAccessory"].Value" disabled="@(IsLive && (!line.CanEdit || !_order.WritesAllowed))" @onclick="() => RemoveAccessory(line, accessory)">×</button></td></tr>
+                                }
+                            }
+                            </tbody></table></div>
+                    }
+                </section>
+                <aside class="order-side"><section class="panel demo-receipt">
+                    <div class="panel__head"><h2>@L["Workspace.Receipt"].Value</h2><span>@(IsLive ? L["Workspace.LegacyAmount"].Value : L["Workspace.PreviewAmount"].Value)</span></div>
+                    <div class="demo-receipt__row"><span>@L["Workspace.BeforeDiscount"].Value</span><strong class="mono">@OrderFormat.Money(_order.BeforeDiscount)</strong></div>
+                    <div class="demo-receipt__row"><span>@L["Workspace.Discountable"].Value</span><strong class="mono">@OrderFormat.Money(_order.DiscountableAmount)</strong></div>
+                    <div class="demo-receipt__discount">
+                        <div class="order-discount-grid">
+                            <div><label class="demo-label" for="receipt-discount">@L["Order.DiscountShort"].Value</label><input id="receipt-discount" readonly="@(IsLive && (!_order.CanEdit || !_order.WritesAllowed))" type="number" min="-100" max="100" step="0.01" class="demo-input mono" @bind="_order.DiscountPercent" @bind:after="NormalizeDiscount" /></div>
+                            <div><label class="demo-label" for="receipt-fixed-price">@L["Order.FixedPriceShort"].Value</label><input id="receipt-fixed-price" readonly="@(IsLive && (!_order.CanEdit || !_order.WritesAllowed))" title="@L["Workspace.SetFinalPrice"].Value" type="number" min="0" step="0.01" class="demo-input mono" value="@(_finalPriceInput ?? _order.Total.ToString("0.00", CultureInfo.InvariantCulture))" @onchange="SetFixedPrice" /></div>
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(_discountError)) { <div class="demo-field-error">@_discountError</div> }
+                    </div>
+                    <div class="demo-receipt__row"><span>@(_order.DiscountPercent < 0 ? L["Workspace.Markup"].Value : L["Workspace.Discount"].Value)</span><strong class="mono">@OrderFormat.Money(Math.Abs(_order.DiscountAmount))</strong></div>
+                    <div class="demo-receipt__row demo-receipt__row--total"><span>@L["Common.Total"].Value</span><strong class="mono">@OrderFormat.Money(_order.Total)</strong></div>
+                    <div class="demo-receipt__row"><span>@L["Common.Paid"].Value</span><strong class="mono">@OrderFormat.Money(_order.Paid)</strong></div>
+                    <div class="demo-receipt__row"><span>@L["Common.Debt"].Value</span><strong class="mono">@OrderFormat.Money(_order.Debt)</strong></div>
+                    <button class="btn btn--primary" type="button" disabled="@(IsLive && !_order.WritesAllowed)" @onclick="SavePreview">@(IsLive ? L["Workspace.SaveOrder"].Value : L["Workspace.SaveDraft"].Value)</button>
+                    <p class="order-save-help">@(IsLive ? (_order.WritesAllowed ? L["Workspace.SaveHelp"].Value : L["Workspace.ReadOnlyTest"].Value) : L["Workspace.DraftHelp"].Value)</p>
+                    @if (!string.IsNullOrWhiteSpace(_saveMessage)) { <div class="demo-save-message @(_saveIsError ? "demo-save-message--error" : "")" role="status">@_saveMessage</div> }
+                    <button class="btn btn--ghost" type="button" disabled="@(!CanConfirmLiveProducts)" title="@(!CanConfirmLiveProducts ? L["Confirmation.Unavailable"].Value : null)" @onclick="OpenConfirmationAsync">@L["Confirmation.ConfirmProduction"].Value</button>
+                </section><section class="panel order-payments">                    <div class="demo-receipt__payments">
+                        <div><strong>@L["Common.Payments"].Value</strong><button class="btn btn--ghost" type="button" disabled="@(IsLive && !CanPostLivePayment)" title="@(IsLive && !CanPostLivePayment ? L["Payment.UnavailableOrder"].Value : null)" @onclick="OpenPaymentSheet">@L["Payment.AddNew"].Value</button></div>
+                        @if (_order.Payments.Count == 0)
+                        {
+                            <p>@(IsLive ? L["Payment.NoRecorded"].Value : L["Payment.NoDraft"].Value)</p>
+                        }
+                        @foreach (var payment in _order.Payments)
+                        {
+                            <div class="demo-payment-row"><span>@DisplayPaymentMethod(payment.Method)<br /><small class="mono">@(payment.HasDate ? OrderFormat.Date(payment.Date) : "—") · @payment.Reference @payment.ReceiverOrRegister</small></span><strong class="mono">@(IsLive ? payment.Amount.ToString("N2",CultureInfo.GetCultureInfo("lt-LT")) + " " + payment.CurrencyCode : OrderFormat.Money(payment.Amount))</strong>@if(!IsLive) { <button class="demo-small-remove" type="button" title="@L["Payment.Remove"].Value" @onclick="() => _order.Payments.Remove(payment)">×</button> }</div>
+                        }
+                    </div>
+                </section></aside>
+            </div>
+            @if (_orderDrawer is not null)
+            {
+                <button class="order-drawer-backdrop" type="button" aria-label="@L["Common.Close"].Value" @onclick="CloseOrderDrawer"></button>
+                <aside class="demo-drawer order-drawer" role="dialog" aria-modal="true" aria-labelledby="order-drawer-title" @ref="_orderDrawerElement">
+                    <div class="demo-drawer__head"><h2 id="order-drawer-title">@OrderDrawerTitle</h2><button class="demo-icon-button" type="button" aria-label="@L["Common.Close"].Value" @onclick="CloseOrderDrawer">×</button></div>
+                    <div class="demo-drawer__body">
+                        @if (_orderDrawer == "people")
+                        {
+<section class="panel demo-panel demo-reference-panel">
                         <div class="panel__head"><h2>@L["Workspace.PeopleDates"].Value</h2><span>@L["Workspace.EditableFields"].Value</span></div>
                         <div class="demo-panel__body demo-summary-grid">
                             <div><label class="demo-label" for="edit-customer">@L["Common.Customer"].Value</label>@if (IsLive) { @ReferenceSelect("edit-customer", Catalog.Customers, _order.CustomerId, value => { _order.CustomerId=value; _order.Customer=ReferenceName(Catalog.Customers,value); }, !_order.CanEdit || !_order.WritesAllowed, _order.Customer) } else { <input id="edit-customer" class="demo-input" @bind="_order.Customer" /> }</div>
@@ -161,8 +259,10 @@
                             <div><label class="demo-label" for="edit-priority">@L["Workspace.Priority"].Value</label>@if (IsLive) { @ReferenceSelect("edit-priority", _priorities, _order.PriorityId, value => _order.PriorityId=value ?? 2, !_order.CanEdit || !_order.WritesAllowed) } else { <select id="edit-priority" class="demo-input" @bind="_order.Priority"><option value="Normal">@L["Workspace.PriorityNormal"].Value</option><option value="High">@L["Workspace.PriorityHigh"].Value</option><option value="Urgent">@L["Workspace.PriorityUrgent"].Value</option></select> }</div>
                         </div>
                     </section>
-
-                    <section class="panel demo-panel">
+                        }
+                        else if (_orderDrawer == "address")
+                        {
+<section class="panel demo-panel">
                         <div class="panel__head"><h2>@L["Common.Address"].Value</h2><span>@(IsLive ? L["Workspace.ContactDelivery"].Value : L["Workspace.DraftContactDelivery"].Value)</span></div>
                         <div class="demo-panel__body">
                             <div class="demo-form-grid demo-form-grid--address">
@@ -185,62 +285,10 @@
                             @if(IsLive) { <button type="button" class="btn btn--ghost" disabled="@(!_order.WritesAllowed)" @onclick="SaveLiveAddressAsync">@L["Workspace.SaveAddress"].Value</button><span class="demo-help">@_addressError</span> }
                         </div>
                     </section>
-
-                    <section class="panel demo-panel">
-                        <div class="panel__head">
-                            <div><h2>@L["Workspace.ProductsServices"].Value</h2><span>@L["Workspace.LineCount", _order.Lines.Count].Value</span></div>
-                            <div class="demo-panel__actions">
-                                <button class="btn btn--ghost" type="button" disabled="@(IsLive && (!_order.WritesAllowed || _order.Cancelled))" @onclick="() => OpenAccessoryPicker(null)">@L["Workspace.AddPriedai"].Value</button>
-                                <button class="btn btn--primary" type="button" disabled="@(IsLive && (!_order.WritesAllowed || _order.Cancelled))" @onclick="OpenProductPicker">@L["Workspace.AddProductService"].Value</button>
-                            </div>
-                        </div>
-                        @if (_order.Lines.Count == 0)
-                        {
-                            <div class="demo-empty">@L["Workspace.NoLines"].Value</div>
                         }
-                        else
+                        else if (_orderDrawer == "employees")
                         {
-                            <div class="table-wrap">
-                                <table class="lk-table demo-lines">
-                                    <thead><tr><th>@L["Workspace.Item"].Value</th><th>@L["Common.Details"].Value</th><th class="is-num">@L["Workspace.Qty"].Value</th><th class="is-num">@L["Common.Price"].Value</th><th class="is-num">@L["Common.Amount"].Value</th><th></th></tr></thead>
-                                    <tbody>
-                                        @foreach (var line in _order.Lines)
-                                        {
-                                            <tr>
-                                                <td><div class="demo-line-name"><div class="demo-line-sketch"><CategoryIcon Category="@line.Category" /></div><div>
-                                                    <button class="demo-line-open" type="button" @onclick="() => OpenConfigurator(line)">@line.Name ↗</button>
-                                                    <small>@line.Category</small></div></div></td>
-                                                <td class="mono">@(line.WidthMm > 0 ? $"{line.WidthMm} × {line.HeightMm} mm" : DisplayUnit(line.Unit))</td>
-                                                <td class="is-num"><input class="demo-table-input mono" readonly="@IsLive" type="number" min="0.001" step="0.001" aria-label="@L["Product.QuantityFor", line.Name].Value" @bind="line.Quantity" /></td>
-                                                <td class="is-num"><input class="demo-table-input mono" readonly="@IsLive" type="number" min="0" step="0.01" aria-label="@L["Product.PriceFor", line.Name].Value" @bind="line.Price" /></td>
-                                                <td class="is-num">@OrderFormat.Money(IsLive ? line.ServerAmount ?? line.Quantity * line.Price : line.Quantity * line.Price)</td>
-                                                <td class="demo-line-actions">
-                                                    <label class="demo-discount-flag" title="@L["Workspace.IncludeDiscount"].Value"><input type="checkbox" disabled="@IsLive" @bind="line.Discountable" /> @L["Workspace.DiscountShort"].Value</label>
-                                                    @if (line.Kind == "Product")
-                                                    {
-                                                        <button type="button" title="@L["Product.AddToProduct"].Value" disabled="@(IsLive && (!line.CanEdit || !_order.WritesAllowed))" @onclick="() => OpenAccessoryPicker(line)">@L["Product.AddAccessoryShort"].Value</button>
-                                                    }
-                                                    <button type="button" title="@L["Workspace.RemoveLine"].Value" disabled="@(IsLive && (!line.CanDelete || !_order.WritesAllowed))" @onclick="() => RemoveLine(line)">×</button>
-                                                </td>
-                                            </tr>
-                                            @foreach (var accessory in line.Accessories)
-                                            {
-                                                <tr class="demo-attached-row">
-                                                    <td>@if (IsLive) { <button type="button" class="demo-line-open" @onclick="() => EditAccessoryAsync(line, accessory)">↳ @accessory.Name</button> } else { <span>↳ @accessory.Name</span> }</td><td>@accessory.Unit</td>
-                                                    <td class="is-num"><input class="demo-table-input mono" readonly="@IsLive" type="number" min="0.001" step="0.001" aria-label="@L["Product.QuantityFor", accessory.Name].Value" @bind="accessory.Quantity" /></td>
-                                                    <td class="is-num"><input class="demo-table-input mono" readonly="@IsLive" type="number" min="0" step="0.01" aria-label="@L["Product.PriceFor", accessory.Name].Value" @bind="accessory.Price" /></td>
-                                                    <td class="is-num">@OrderFormat.Money(accessory.Quantity * accessory.Price)</td>
-                                                    <td class="demo-line-actions"><button type="button" title="@L["Product.RemoveAccessory"].Value" disabled="@(IsLive && (!line.CanEdit || !_order.WritesAllowed))" @onclick="() => RemoveAccessory(line, accessory)">×</button></td>
-                                                </tr>
-                                            }
-                                        }
-                                    </tbody>
-                                </table>
-                            </div>
-                        }
-                    </section>
-
-                    <section class="panel demo-panel">
+<section class="panel demo-panel">
                         <div class="panel__head"><h2>@L["Workspace.ResponsibleEmployees"].Value</h2><span>@(IsLive ? L["Workspace.SavedAssignments"].Value : L["Workspace.DraftAssignments"].Value)</span></div>
                         <div class="demo-panel__body">
                             @foreach (var employee in _order.Employees)
@@ -256,46 +304,15 @@
                             @if (!string.IsNullOrWhiteSpace(_employeeError)) { <div class="demo-field-error">@_employeeError</div> }
                         </div>
                     </section>
-
-                    @if (!IsPrivacyRestricted)
-                    {
-                    <section class="panel demo-panel">
-                        <div class="panel__head"><h2>@L["Common.Note"].Value</h2><span>@(IsLive ? L["Workspace.SavedWithOrder"].Value : L["Workspace.DraftOnly"].Value)</span></div>
-                        <div class="demo-panel__body"><textarea class="demo-textarea" maxlength="128" readonly="@(IsLive && (!_order.CanEdit || !_order.WritesAllowed))" @bind="_order.Note" placeholder="@L["Workspace.OrderNote"].Value"></textarea><div class="demo-help">@L["Workspace.NoteLimit"].Value</div></div>
-                    </section>
-                    }
-                    <OrderNoteHistory Entries="_order.NoteHistory" />
-                </div>
-                <aside class="panel demo-receipt">
-                    <div class="panel__head"><h2>@L["Workspace.Receipt"].Value</h2><span>@(IsLive ? L["Workspace.LegacyAmount"].Value : L["Workspace.PreviewAmount"].Value)</span></div>
-                    <div class="demo-receipt__row"><span>@L["Workspace.BeforeDiscount"].Value</span><strong class="mono">@OrderFormat.Money(_order.BeforeDiscount)</strong></div>
-                    <div class="demo-receipt__row"><span>@L["Workspace.Discountable"].Value</span><strong class="mono">@OrderFormat.Money(_order.DiscountableAmount)</strong></div>
-                    <div class="demo-receipt__discount">
-                        <label class="demo-label" for="receipt-discount">@L["Workspace.DiscountPercent"].Value</label><input id="receipt-discount" readonly="@(IsLive && (!_order.CanEdit || !_order.WritesAllowed))" type="number" min="-100" max="100" step="0.01" class="demo-input mono" @bind="_order.DiscountPercent" @bind:after="NormalizeDiscount" />
-                        <label class="demo-label demo-label--spaced" for="receipt-fixed-price">@L["Workspace.FixedFinalPrice"].Value</label><input id="receipt-fixed-price" readonly="@(IsLive && (!_order.CanEdit || !_order.WritesAllowed))" title="@L["Workspace.SetFinalPrice"].Value" type="number" min="0" step="0.01" class="demo-input mono" value="@(_finalPriceInput ?? _order.Total.ToString("0.00", CultureInfo.InvariantCulture))" @onchange="SetFixedPrice" />
-                        @if (!string.IsNullOrWhiteSpace(_discountError)) { <div class="demo-field-error">@_discountError</div> }
-                    </div>
-                    <div class="demo-receipt__row"><span>@(_order.DiscountPercent < 0 ? L["Workspace.Markup"].Value : L["Workspace.Discount"].Value)</span><strong class="mono">@OrderFormat.Money(Math.Abs(_order.DiscountAmount))</strong></div>
-                    <div class="demo-receipt__row demo-receipt__row--total"><span>@L["Common.Total"].Value</span><strong class="mono">@OrderFormat.Money(_order.Total)</strong></div>
-                    <div class="demo-receipt__row"><span>@L["Common.Paid"].Value</span><strong class="mono">@OrderFormat.Money(_order.Paid)</strong></div>
-                    <div class="demo-receipt__row"><span>@L["Common.Debt"].Value</span><strong class="mono">@OrderFormat.Money(_order.Debt)</strong></div>
-                    <p>@(IsLive ? L["Workspace.TotalsAfterSave"].Value : L["Workspace.LocalValuesOnly"].Value)</p>
-                    <button class="btn btn--primary" type="button" disabled="@(IsLive && !_order.WritesAllowed)" @onclick="SavePreview">@(IsLive ? L["Workspace.SaveOrder"].Value : L["Workspace.SaveDraft"].Value)</button>
-                    @if (!string.IsNullOrWhiteSpace(_saveMessage)) { <div class="demo-save-message @(_saveIsError ? "demo-save-message--error" : "")" role="status">@_saveMessage</div> }
-                    <button class="btn btn--ghost" type="button" disabled="@(!CanConfirmLiveProducts)" title="@(!CanConfirmLiveProducts ? L["Confirmation.Unavailable"].Value : null)" @onclick="OpenConfirmationAsync">@L["Confirmation.ConfirmProduction"].Value</button>
-                    <div class="demo-receipt__payments">
-                        <div><strong>@L["Common.Payments"].Value</strong><button class="btn btn--ghost" type="button" disabled="@(IsLive && !CanPostLivePayment)" title="@(IsLive && !CanPostLivePayment ? L["Payment.UnavailableOrder"].Value : null)" @onclick="OpenPaymentSheet">@L["Payment.AddNew"].Value</button></div>
-                        @if (_order.Payments.Count == 0)
-                        {
-                            <p>@(IsLive ? L["Payment.NoRecorded"].Value : L["Payment.NoDraft"].Value)</p>
                         }
-                        @foreach (var payment in _order.Payments)
+                        else if (_orderDrawer == "history")
                         {
-                            <div class="demo-payment-row"><span>@DisplayPaymentMethod(payment.Method)<br /><small class="mono">@(payment.HasDate ? OrderFormat.Date(payment.Date) : "—") · @payment.Reference @payment.ReceiverOrRegister</small></span><strong class="mono">@(IsLive ? payment.Amount.ToString("N2",CultureInfo.GetCultureInfo("lt-LT")) + " " + payment.CurrencyCode : OrderFormat.Money(payment.Amount))</strong>@if(!IsLive) { <button class="demo-small-remove" type="button" title="@L["Payment.Remove"].Value" @onclick="() => _order.Payments.Remove(payment)">×</button> }</div>
+                            <OrderNoteHistory Entries="_order.NoteHistory" />
                         }
                     </div>
+                    <div class="demo-drawer__foot"><button class="btn btn--ghost" type="button" @onclick="CloseOrderDrawer">@L["Common.Close"].Value</button>@if (_orderDrawer == "people") { <button class="btn btn--primary" type="button" disabled="@(IsLive && !_order.WritesAllowed)" @onclick="SaveOrderDrawerAsync">@L["Workspace.SaveOrder"].Value</button> }</div>
                 </aside>
-            </div>
+            }
         </div>
 
         @if (_selectingProduct)
@@ -431,6 +448,7 @@
                                     }
                                     <div><label class="demo-label" for="config-price">@L["Common.Price"].Value</label><div class="lk-price @ProductFieldClass("price")"><div class="field"><input id="config-price" type="text" inputmode="decimal" data-select-on-focus aria-invalid="@(ProductError("price") is not null ? "true" : "false")" aria-describedby="config-price-error" min="0" step="0.01" @bind="_configuringLine.Price" @bind:culture="CultureInfo.InvariantCulture" @bind:event="oninput" @bind:after="MarkManualPrice" placeholder="@L["Product.PriceFocus"].Value" @onfocus="LookupZeroPriceAsync" readonly="@(IsLive && (!CanEnterManualPrice || !_configuringLine.CanEdit))" /><span>€</span></div><button class="btn btn--ghost" type="button" disabled="@(!IsLive || !_configuringLine.CanEdit)" @onclick="LookupLivePriceAsync">@L["Product.FromPriceList"].Value</button><span class="hint">@_priceMessage</span></div>@ProductFieldError("price")</div>
                                 </div>
+                                <label class="demo-discount-flag order-product-discount"><input type="checkbox" disabled="@IsLive" @bind="_configuringLine.Discountable" /> @L["Workspace.IncludeDiscount"].Value</label>
                                 @if ((_configuringLine.Kind == "Product" || IsLive) && !string.IsNullOrWhiteSpace(_configuringLine.ColourCode) && _configuringLine.ColourId is null)
                                 {
                                     <div class="demo-field-error">@L["Product.UnknownCode"].Value</div>
@@ -655,6 +673,64 @@
     private IJSObjectReference? _draftModule;
     private DotNetObjectReference<NewOrderWorkspace>? _draftReference;
     private bool _historyActive;
+    private string? _orderDrawer;
+    private ElementReference _orderDrawerElement;
+    private bool _orderDrawerFocusPending;
+    private bool HasOrderAddress => _order is not null && (_order.StreetId is not null || !string.IsNullOrWhiteSpace(_order.Street) || !string.IsNullOrWhiteSpace(_order.Phone));
+    private string DisplayPriority => ReferenceName(_priorities, _order?.PriorityId) is { Length: > 0 } name ? name : _order?.Priority ?? "—";
+    private static string DisplayContext(string? value) => string.IsNullOrWhiteSpace(value) ? "—" : value;
+    private string OrderDrawerTitle => _orderDrawer switch
+    {
+        "people" => L["Workspace.PeopleDates"].Value,
+        "address" => L["Common.Address"].Value,
+        "employees" => L["Workspace.ResponsibleEmployees"].Value,
+        "history" => L["Order.NoteHistory", _order?.NoteHistory.Count ?? 0].Value,
+        _ => ""
+    };
+    private int OrderStepIndex => _order?.StateName.Trim().ToUpperInvariant() switch
+    {
+        "PATVIRTINTAS" or "PATVIRTINTAS GAMYBAI" or "APPROVED" => 2,
+        "GAMINAMAS" or "IN PRODUCTION" => 3,
+        "PAGAMINTAS" or "MADE" => 4,
+        "FILIALUI" or "IŠSIŲSTAS Į FILIALĄ" or "SENT TO BRANCH" => 5,
+        "ATIDUOTAS" or "IŠDUOTAS KLIENTUI" or "DELIVERED" => 6,
+        _ => 1
+    };
+    private string NextOrderState => OrderStepIndex switch
+    {
+        1 => L["Workspace.StageConfirmed"].Value,
+        2 => L["Workspace.StageManufacturing"].Value,
+        3 => L["Workspace.StageManufactured"].Value,
+        4 => L["Workspace.StageBranch"].Value,
+        5 => L["Workspace.StageDelivered"].Value,
+        _ => "—"
+    };
+    private static string LineParameterSummary(DemoOrderLine line)
+    {
+        var details = new List<string>();
+        if (line.WidthMm > 0 || line.HeightMm > 0) details.Add($"{line.WidthMm} × {line.HeightMm} mm");
+        else details.Add(line.Unit);
+        if (!string.IsNullOrWhiteSpace(line.ControlType)) details.Add(line.ControlType);
+        if (!string.IsNullOrWhiteSpace(line.ColourCode)) details.Add(line.ColourCode);
+        return string.Join(" · ", details);
+    }
+    private void OpenOrderDrawer(string drawer) { _orderDrawer = drawer; _orderDrawerFocusPending = true; }
+    private void CloseOrderDrawer() { _orderDrawer = null; _orderDrawerFocusPending = false; }
+    private async Task SaveOrderDrawerAsync()
+    {
+        await SavePreview();
+        if (!_saveIsError) CloseOrderDrawer();
+    }
+    [JSInvokable] public Task CloseOrderDrawerByShortcut()
+    {
+        CloseOrderDrawer();
+        return InvokeAsync(StateHasChanged);
+    }
+    [JSInvokable] public async Task OpenOrderProductByShortcut()
+    {
+        if (_order is not null && !_selectingProduct && _configuringLine is null && _orderDrawer is null && (!IsLive || _order.WritesAllowed && !_order.Cancelled)) await OpenProductPicker();
+        await InvokeAsync(StateHasChanged);
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -670,10 +746,19 @@
                 await InvokeAsync(StateHasChanged);
             }
             var moduleVersion = BuildVersion.Get();
-            _draftModule = await JS.InvokeAsync<IJSObjectReference>("import", "./js/sales-draft.js?v=" + Uri.EscapeDataString(moduleVersion.GitSha ?? moduleVersion.Version ?? "m2-history-2"));
+            _draftModule = await JS.InvokeAsync<IJSObjectReference>("import", "./js/sales-draft.js?v=" + Uri.EscapeDataString(moduleVersion.GitSha ?? moduleVersion.Version ?? "order-screen-2c"));
             await _draftModule.InvokeVoidAsync("register", _draftReference, _layerElement);
         }
         if (_draftModule is null) return;
+        if (_orderDrawerFocusPending && _orderDrawer is not null)
+        {
+            _orderDrawerFocusPending = false;
+            await _draftModule.InvokeVoidAsync("openOrderDrawer", _orderDrawerElement);
+        }
+        else if (_orderDrawer is null)
+        {
+            await _draftModule.InvokeVoidAsync("closeOrderDrawer");
+        }
         if (_pickerFocusPending && _selectingProduct)
         {
             _pickerFocusPending = false;
