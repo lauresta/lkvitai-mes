@@ -42,6 +42,24 @@ body:has(.mud-drawer-overlay--open) {
   overflow: hidden;
 }
 
+/* Sales and Shop Floor on test write to the live Uzsakymai database. */
+.test-strip--live-production {
+  height: auto;
+  min-height: 22px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  background: var(--danger-dot);
+  color: var(--n-0);
+  border-bottom: 2px solid var(--danger-fg);
+  font: 700 11px/1.35 var(--font-mono);
+  white-space: normal;
+  overflow: visible;
+}
+
+.test-strip--live-production .test-strip__note {
+  opacity: 1;
+}
+
 .test-strip__main {
   display: flex;
   align-items: center;
@@ -398,6 +416,20 @@ body:has(.mud-drawer-overlay--open) {
 
 @media (max-width: 760px) {
   .test-strip {
+    display: none;
+  }
+
+  .test-strip--live-production {
+    display: flex;
+    padding: 7px 14px;
+  }
+
+  .test-strip--live-production .test-strip__main {
+    flex-wrap: wrap;
+    gap: 4px 8px;
+  }
+
+  .test-strip--live-production .test-strip__host {
     display: none;
   }
 

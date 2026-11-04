@@ -14,8 +14,8 @@
           (captured ONCE during prerender so it's stable across re-renders;
           PortalModuleShell falls back to NavigationManager-derived host if
           left null, but we prefer the request host verbatim).
-        * Resolve BannerNote — Production/Test get the standard "not
-          production data" copy; Development swaps in the local-network copy.
+        * Resolve BannerNote — modules connected to the live legacy database
+          opt into an explicit warning; Development uses local-network copy.
         * Resolve DisplayVersion from IBuildVersionAccessor (env-var driven —
           APP_VERSION/GIT_SHA/BUILD_DATE injected by build-and-push.yml +
           each WebUI's Dockerfile).
@@ -40,6 +40,7 @@
         <PortalModuleShell EnvironmentName="@_environmentName"
                            HostLabel="@_hostLabel"
                            BannerNote="@_bannerNote"
+                           LiveProductionDataWarning="@LiveProductionDataWarning"
                            User="@auth.User"
                            Version="@_displayVersion"
                            PortalHomeUrl="@PortalHomeUrl"
@@ -56,6 +57,7 @@
             <PortalModuleShell EnvironmentName="@_environmentName"
                                HostLabel="@_hostLabel"
                                BannerNote="@_bannerNote"
+                               LiveProductionDataWarning="@LiveProductionDataWarning"
                                User="@null"
                                Version="@_displayVersion"
                                PortalHomeUrl="@PortalHomeUrl"
@@ -116,6 +118,9 @@
     /// <summary>Optional module-specific description of the environment's actual data boundary.</summary>
     [Parameter] public string? BannerNote { get; set; }
 
+    /// <summary>Shows the red, localized live-database warning on test modules that share Uzsakymai data.</summary>
+    [Parameter] public bool LiveProductionDataWarning { get; set; }
+
     private string _environmentName = "Development";
     private string? _hostLabel;
     private string? _bannerNote;
@@ -137,6 +142,11 @@
         if (Env.IsDevelopment())
         {
             _bannerNote = L["Shell.BannerNote.Local"].Value;
+        }
+
+        if (LiveProductionDataWarning && Env.IsEnvironment("Test"))
+        {
+            _bannerNote = L["Shell.BannerNote.LiveProduction"].Value;
         }
 
         if (!string.IsNullOrWhiteSpace(BannerNote)) _bannerNote = BannerNote;

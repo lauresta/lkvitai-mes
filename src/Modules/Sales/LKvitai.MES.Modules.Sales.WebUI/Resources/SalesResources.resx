@@ -933,9 +933,6 @@
   <data name="Nav.SignInAnotherTab" xml:space="preserve">
     <value>Sign in in another tab to keep this editor open.</value>
   </data>
-  <data name="Nav.TestDataNotice" xml:space="preserve">
-    <value>Test environment. Legacy production data is shared; changes are restricted to Testavimas.</value>
-  </data>
   <data name="Notes.Current" xml:space="preserve">
     <value>Current note</value>
   </data>

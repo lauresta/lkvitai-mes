@@ -7,6 +7,7 @@
   <data name="Shell.EnvironmentBanner" xml:space="preserve"><value>{0} ENVIRONMENT</value></data>
   <data name="Shell.BannerNote.Shared" xml:space="preserve"><value>Data in this environment is not production data and may be reset without notice.</value></data>
   <data name="Shell.BannerNote.Local" xml:space="preserve"><value>Local or private-network environment. Data may be reset without notice.</value></data>
+  <data name="Shell.BannerNote.LiveProduction" xml:space="preserve"><value>Connected to the live production database. Changes made here also appear in the Uzsakymai program.</value></data>
   <data name="Shell.EnvironmentAndVersion" xml:space="preserve"><value>Environment and version</value></data>
   <data name="Shell.Search.Placeholder" xml:space="preserve"><value>Search everything…</value></data>
   <data name="Shell.Search.Label" xml:space="preserve"><value>Open universal search</value></data>

@@ -933,9 +933,6 @@
   <data name="Nav.SignInAnotherTab" xml:space="preserve">
     <value>Prisijunkite kitame skirtuke, kad šis redaktorius liktų atidarytas.</value>
   </data>
-  <data name="Nav.TestDataNotice" xml:space="preserve">
-    <value>Testavimo aplinka. Naudojama bendra senosios sistemos darbinė duomenų bazė; keitimai leidžiami tik filiale „Testavimas“.</value>
-  </data>
   <data name="Notes.Current" xml:space="preserve">
     <value>Dabartinė pastaba</value>
   </data>
