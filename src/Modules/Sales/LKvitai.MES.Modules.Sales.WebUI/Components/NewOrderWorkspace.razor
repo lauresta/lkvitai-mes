@@ -134,7 +134,7 @@
             <header class="order-head">
                 <strong class="order-head__number mono">@_order.Number</strong>
                 <span class="chip chip--entered">@(IsLive ? _order.StateName : L["Workspace.StageEntered"].Value)</span>
-                <span class="order-head__next mono">@L["Order.NextState", OrderStepIndex, NextOrderState].Value</span>
+                @if (OrderStepIndex > 0) { <span class="order-head__next mono">@L["Order.NextState", OrderStepIndex, NextOrderState].Value</span> }
                 @if (IsLive && (HeaderDirty || ProductDirty || AddressDirty)) { <span class="order-head__dirty">@L["Workspace.UnsavedChanges"].Value</span> }
                 <div class="order-head__actions">
                     <button class="btn btn--ghost" type="button" @onclick="CloseAsync">@(IsLive ? L["Common.BackToOrders"].Value : L["Workspace.DiscardReturn"].Value)</button>
@@ -687,8 +687,9 @@
         "history" => L["Order.NoteHistory", _order?.NoteHistory.Count ?? 0].Value,
         _ => ""
     };
-    private int OrderStepIndex => _order?.StateName.Trim().ToUpperInvariant() switch
+    private int OrderStepIndex => _order is null || _order.Cancelled ? 0 : _order.StateName.Trim().ToUpperInvariant() switch
     {
+        "SKIRTINGAI" or "SKIRTINGOS BŪSENOS" or "MIXED" or "DIFFERENT STATES" => 0,
         "PATVIRTINTAS" or "PATVIRTINTAS GAMYBAI" or "APPROVED" => 2,
         "GAMINAMAS" or "IN PRODUCTION" => 3,
         "PAGAMINTAS" or "MADE" => 4,
