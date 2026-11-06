@@ -386,6 +386,58 @@ services:
       retries: 5
       start_period: 30s
 
+  # --- Finance scaffold: no financial database or command routes --------------
+  finance-api:
+    image: ghcr.io/lauresta/lkvitai-mes-finance-api:${IMAGE_TAG:-latest}
+    container_name: lkvitai-mes-finance-api
+    restart: unless-stopped
+    ports:
+      - "5061:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Test
+      ConnectionStrings__LKvitaiDb: "${LKVITAI_MSACCESS_DB_CONNECTION}"
+      CikadaUsers__BaseUrl: "http://lkvitai-mes-warehouse-api:8080"
+      Finance__AllowedLegacyLogins__0: 'TERMINAL\d.bykovas'
+      PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
+    volumes:
+      - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys
+      - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
+    networks:
+      - lkvitai-mes_default
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  finance-webui:
+    image: ghcr.io/lauresta/lkvitai-mes-finance-webui:${IMAGE_TAG:-latest}
+    container_name: lkvitai-mes-finance-webui
+    restart: unless-stopped
+    ports:
+      - "5060:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Test
+      PathBase: "/finance"
+      FinanceApi__BaseUrl: "http://lkvitai-mes-finance-api:8080"
+      PortalAuth__LoginBasePath: "/portal"
+      PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
+    volumes:
+      - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys
+      - ${LOGS_DIR:-/opt/lkvitai-mes/logs}:/app/logs
+    networks:
+      - lkvitai-mes_default
+    depends_on:
+      - portal-webui
+      - finance-api
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
   # --- Cikada MCP (remote MCP server for ChatGPT / Claude) ---------------------
   # Node service, stateless Streamable HTTP at https://cikada-test.lauresta.com/mcp
   # plus OAuth discovery at the host root (Traefik routes those paths here).

@@ -1,0 +1,92 @@
+@page "/"
+@page "/bank-payments"
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+@inject IWebHostEnvironment HostEnvironment
+
+<PageTitle>@L["Bank.Title"] · Cikada.MES</PageTitle>
+<main class="bp-page">
+  <div class="bp-toolbar">
+    <h1>@L["Bank.Title"]</h1>
+    <div class="bp-seg" role="radiogroup" aria-label="@L["Bank.CountryLt"] / @L["Bank.CountryLv"]">
+      <button type="button" role="radio" aria-checked="@(_country == "LT")" class="@(_country == "LT" ? "active" : "")" @onclick='@(() => ChangeCountry("LT"))'>@L["Bank.CountryLt"]</button>
+      <button type="button" role="radio" aria-checked="@(_country == "LV")" class="@(_country == "LV" ? "active" : "")" @onclick='@(() => ChangeCountry("LV"))'>@L["Bank.CountryLv"]</button>
+    </div>
+    <span class="bp-muted">@L["Bank.Count", _data?.CountryTotal ?? 0, _data?.LastDate?.ToString("yyyy-MM-dd") ?? "—"]</span>
+    <div class="bp-toolbar-spacer"></div>
+    <input class="bp-search" type="search" placeholder="@L["Bank.Search"]" value="@_search" @oninput="SearchChanged" />
+    <div class="bp-seg bp-period" role="radiogroup" aria-label="@L["Bank.PeriodAll"]">
+      <button type="button" role="radio" aria-checked="@(_period == "30")" class="@(_period == "30" ? "active" : "")" @onclick='@(() => ChangePeriod("30"))'>@L["Bank.Period30"]</button>
+      <button type="button" role="radio" aria-checked="@(_period == "90")" class="@(_period == "90" ? "active" : "")" @onclick='@(() => ChangePeriod("90"))'>@L["Bank.Period90"]</button>
+      <button type="button" role="radio" aria-checked="@(_period == "all")" class="@(_period == "all" ? "active" : "")" @onclick='@(() => ChangePeriod("all"))'>@L["Bank.PeriodAll"]</button>
+    </div>
+    <button class="bp-primary" type="button" @onclick="ArmPaste">@L["Bank.Paste"] <kbd>Ctrl+V</kbd></button>
+  </div>
+  @if (_armed)
+  {
+    <div class="bp-paste"><textarea data-paste placeholder="@L["Bank.PasteHint"]"></textarea>
+      @if (!HostEnvironment.IsProduction()) { <button type="button" class="bp-link" @onclick="PasteSample">@L["Bank.Sample"]</button> }
+      <button type="button" class="bp-link" @onclick="CancelPaste">@L["Bank.Cancel"]</button>
+    </div>
+  }
+  @if (!string.IsNullOrWhiteSpace(_error)) { <div class="bp-error" role="alert">@_error</div> }
+  @if (_preview is not null)
+  {
+    <section class="bp-preview" aria-live="polite">
+      <div class="bp-preview-head">
+        <div><strong>@L["Bank.Preview"]</strong><div class="bp-muted">@L["Bank.PreviewSummary", _preview.Rows.Count, CountStatus("New"), CountStatus("Duplicate"), CountStatus("Error")]</div></div>
+        <span class="bp-muted">@L["Bank.SelectedSum", Money(SelectedRows().Sum(x => x.Sum!.Value))]</span>
+        <button class="bp-ghost" type="button" @onclick="CancelPaste">@L["Bank.Cancel"]</button>
+        <button class="bp-primary" type="button" disabled="@(SelectedRows().Count == 0 || _busy)" @onclick="Import">@L["Bank.Import", SelectedRows().Count, _country]</button>
+      </div>
+      <div class="bp-preview-scroll">
+        @foreach (var row in _preview.Rows)
+        {
+          <div class="bp-preview-row @(!_selected.Contains(row.Line) ? "bp-row--off" : "")" @key="row.Line">
+            <input type="checkbox" aria-label="@($"{row.Line}: {Status(row.Status)}")" disabled="@(row.Status == "Error")" checked="@_selected.Contains(row.Line)" @onchange="e => SelectRow(row.Line, e.Value)" />
+            <span class="bp-chip bp-chip--@row.Status.ToLowerInvariant()">@Status(row.Status)</span>
+            <span class="mono">@(row.Date?.ToString("yyyy-MM-dd") ?? "—")</span>
+            <span title="@row.Firm">@row.Firm</span>
+            <span class="@(row.Status == "Error" ? "bp-invalid" : "")" title="@(row.Status == "Error" ? row.Raw : row.Purpose)">@(row.Status == "Error" ? $"{ErrorText(row.Error)}: {row.Raw.Replace('\t', '|')}" : row.Purpose)</span>
+            <span class="mono bp-money">@(row.Sum is null ? "—" : Money(row.Sum.Value))</span>
+          </div>
+        }
+      </div>
+    </section>
+  }
+  <section class="bp-table @(_preview is not null ? "bp-table--dim" : "")" aria-label="@L["Bank.Title"]">
+    <div class="bp-row bp-head">
+      @foreach (var column in Columns)
+      {
+        <button type="button" class="bp-sort @(column.Key == "sum" ? "bp-money" : "")" aria-label="@L["Bank.Sort", L[column.Label]]" @onclick="() => Sort(column.Key)">@L[column.Label] <span>@(column.Key == _sort ? (_desc ? "↓" : "↑") : "↕")</span></button>
+      }
+      <span></span>
+    </div>
+    <div class="bp-table-body">
+      @if (_loading) { <div class="bp-empty">@L["Bank.Loading"]</div> }
+      else if (_data?.Items.Count is null or 0) { <div class="bp-empty">@L["Bank.Empty"]</div> }
+      else
+      {
+        @foreach (var row in _data.Items)
+        {
+          <div class="bp-row bp-data-row @(_justImported.Contains(row.Nr) ? "bp-row--new" : "")" @key="row.Nr">
+            <span class="mono bp-nr">@row.Nr</span>
+            <span class="mono">@row.Date.ToString("yyyy-MM-dd")</span>
+            <strong title="@row.Firm">@row.Firm</strong>
+            <span title="@row.Purpose">@row.Purpose</span>
+            <span class="mono bp-money">@Money(row.Sum)</span>
+            <button type="button" class="bp-delete" aria-label="@L["Bank.Delete", row.Nr]" title="@L["Bank.Delete", row.Nr]" @onclick="() => Delete(row.Nr)">×</button>
+          </div>
+        }
+      }
+    </div>
+    <div class="bp-footer"><span>@L["Bank.Showing", _data?.Items.Count ?? 0, _data?.CountryTotal ?? 0]</span>
+      <div class="bp-pager"><button type="button" disabled="@(_page <= 1)" @onclick="Previous">@L["Bank.Previous"]</button><span class="mono">@_page</span><button type="button" disabled="@(_data is null || _page * _data.PageSize >= _data.Total)" @onclick="Next">@L["Bank.Next"]</button></div>
+      <span class="mono">@L["Bank.VisibleSum", Money(_data?.Items.Sum(x => x.Sum) ?? 0)]</span></div>
+  </section>
+  @if (_toast is not null)
+  {
+    <div class="bp-toast" role="status"><span>@L["Bank.Imported", _toast.Count, _country, _toast.NrFrom, _toast.NrTo]</span>
+      <button type="button" @onclick="Undo">@L["Bank.Undo"]</button><button type="button" aria-label="@L["Bank.Close"]" @onclick="() => _toast = null">×</button></div>
+  }
+</main>

@@ -81,6 +81,22 @@ http:
       tls:
         certResolver: letsencrypt
 
+    mes-test-finance:
+      rule: "(Host(`cikada-test.lauresta.com`) || Host(`lkvitai.lauresta.com`)) && PathPrefix(`/finance`)"
+      entryPoints: [websecure]
+      service: mes-test-finance-webui
+      priority: 100
+      tls:
+        certResolver: letsencrypt
+
+    mes-test-api-finance:
+      rule: "(Host(`cikada-test.lauresta.com`) || Host(`lkvitai.lauresta.com`)) && PathPrefix(`/api/finance`)"
+      entryPoints: [websecure]
+      service: mes-test-finance-api
+      priority: 200
+      tls:
+        certResolver: letsencrypt
+
     mes-test-api-portal:
       rule: "(Host(`cikada-test.lauresta.com`) || Host(`lkvitai.lauresta.com`)) && PathPrefix(`/api/portal`)"
       entryPoints: [websecure]
@@ -229,6 +245,18 @@ http:
         passHostHeader: true
         servers:
           - url: "http://10.11.12.15:5050"
+
+    mes-test-finance-webui:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://10.11.12.15:5060"
+
+    mes-test-finance-api:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: "http://10.11.12.15:5061"
 
     mes-test-mcp:
       loadBalancer:

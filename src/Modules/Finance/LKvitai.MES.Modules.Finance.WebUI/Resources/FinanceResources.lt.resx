@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="Shell.PageTitle" xml:space="preserve"><value>Cikada.MES · Finansai</value></data>
+  <data name="Shell.NotFoundTitle" xml:space="preserve"><value>Puslapis nerastas</value></data>
+  <data name="Shell.NotFoundMessage" xml:space="preserve"><value>Šio adreso Finansų modulyje nėra.</value></data>
+  <data name="Shell.BackToFinance" xml:space="preserve"><value>Grįžti į Finansus</value></data>
+  <data name="Shell.UnhandledError" xml:space="preserve"><value>Įvyko klaida.</value></data>
+  <data name="Shell.Reload" xml:space="preserve"><value>Įkelti iš naujo</value></data>
+  <data name="Shell.Dismiss" xml:space="preserve"><value>Uždaryti</value></data>
+  <data name="Finance.Eyebrow" xml:space="preserve"><value>FINANSAI · DARBO SRITIS</value></data>
+  <data name="Finance.Title" xml:space="preserve"><value>Finansai</value></data>
+  <data name="Finance.ScaffoldStatus" xml:space="preserve"><value>Ruošiama</value></data>
+  <data name="Finance.ScaffoldDescription" xml:space="preserve"><value>Finansų modulis ruošiamas. Finansiniai duomenys ir veiksmai dar neprijungti.</value></data>
+  <data name="Bank.Title" xml:space="preserve"><value>Bankiniai pavedimai</value></data>
+  <data name="Bank.CountryLt" xml:space="preserve"><value>Lietuva</value></data>
+  <data name="Bank.CountryLv" xml:space="preserve"><value>Latvija</value></data>
+  <data name="Bank.Count" xml:space="preserve"><value>{0} įrašų · paskutinis {1}</value></data>
+  <data name="Bank.Search" xml:space="preserve"><value>Firma arba paskirtis…</value></data>
+  <data name="Bank.Period30" xml:space="preserve"><value>30 d</value></data>
+  <data name="Bank.Period90" xml:space="preserve"><value>90 d</value></data>
+  <data name="Bank.PeriodAll" xml:space="preserve"><value>Visi</value></data>
+  <data name="Bank.Paste" xml:space="preserve"><value>Įklijuoti iš Excel</value></data>
+  <data name="Bank.PasteHint" xml:space="preserve"><value>Įklijuokite eilutes iš Excel čia (Ctrl+V).</value></data>
+  <data name="Bank.Sample" xml:space="preserve"><value>Įklijuoti pavyzdį</value></data>
+  <data name="Bank.Cancel" xml:space="preserve"><value>Atšaukti</value></data>
+  <data name="Bank.Nr" xml:space="preserve"><value>Nr</value></data>
+  <data name="Bank.Date" xml:space="preserve"><value>Data</value></data>
+  <data name="Bank.Firm" xml:space="preserve"><value>Firma</value></data>
+  <data name="Bank.Purpose" xml:space="preserve"><value>Paskirtis</value></data>
+  <data name="Bank.Sum" xml:space="preserve"><value>Suma</value></data>
+  <data name="Bank.Preview" xml:space="preserve"><value>Įklijuota iš Excel — peržiūra</value></data>
+  <data name="Bank.PreviewSummary" xml:space="preserve"><value>{0} eilučių: {1} nauj. · {2} dublik. · {3} klaid. Dublikatai ir klaidos neįkeliami; dublikatą galima pažymėti rankiniu būdu.</value></data>
+  <data name="Bank.SelectedSum" xml:space="preserve"><value>Pažymėta suma {0}</value></data>
+  <data name="Bank.Import" xml:space="preserve"><value>Įkelti {0} į {1}</value></data>
+  <data name="Bank.New" xml:space="preserve"><value>Naujas</value></data>
+  <data name="Bank.Duplicate" xml:space="preserve"><value>Dublikatas</value></data>
+  <data name="Bank.Error" xml:space="preserve"><value>Klaida</value></data>
+  <data name="Bank.ErrNoDate" xml:space="preserve"><value>Nerasta data</value></data>
+  <data name="Bank.ErrNoSum" xml:space="preserve"><value>Nerasta suma</value></data>
+  <data name="Bank.ErrNoFirm" xml:space="preserve"><value>Nerasta firma</value></data>
+  <data name="Bank.ErrNoColumns" xml:space="preserve"><value>Nėra stulpelių (laukiama Tab tarp stulpelių)</value></data>
+  <data name="Bank.ErrInvalidValue" xml:space="preserve"><value>Netinkama reikšmė</value></data>
+  <data name="Bank.Showing" xml:space="preserve"><value>Rodoma {0} iš {1}</value></data>
+  <data name="Bank.VisibleSum" xml:space="preserve"><value>Suma: {0}</value></data>
+  <data name="Bank.Empty" xml:space="preserve"><value>Pagal pasirinktą filtrą pavedimų nėra.</value></data>
+  <data name="Bank.Delete" xml:space="preserve"><value>Šalinti įrašą {0}</value></data>
+  <data name="Bank.DeleteConfirm" xml:space="preserve"><value>Ištrinti pavedimą {0}? Šio veiksmo atšaukti negalima.</value></data>
+  <data name="Bank.Imported" xml:space="preserve"><value>Įkelta {0} pavedimų į {1} · Nr {2}–{3}</value></data>
+  <data name="Bank.Undo" xml:space="preserve"><value>Atšaukti įkėlimą</value></data>
+  <data name="Bank.Close" xml:space="preserve"><value>Uždaryti</value></data>
+  <data name="Bank.Previous" xml:space="preserve"><value>Ankstesnis</value></data>
+  <data name="Bank.Next" xml:space="preserve"><value>Kitas</value></data>
+  <data name="Bank.Loading" xml:space="preserve"><value>Įkeliama…</value></data>
+  <data name="Bank.LoadError" xml:space="preserve"><value>Nepavyko įkelti bankinių pavedimų.</value></data>
+  <data name="Bank.ActionError" xml:space="preserve"><value>Veiksmas nepavyko.</value></data>
+  <data name="Bank.Sort" xml:space="preserve"><value>Rikiuoti pagal {0}</value></data>
+  <data name="Bank.UndoConfirm" xml:space="preserve"><value>Atšaukti paskutinį įkėlimą? Visi įkelti pavedimai turi būti nepakeisti ir nepriskirti.</value></data>
+  <data name="Bank.Failed401" xml:space="preserve"><value>Prisijungimo sesija baigėsi. Prisijunkite iš naujo.</value></data>
+  <data name="Bank.Failed403" xml:space="preserve"><value>Šiai paskyrai Finansų prieiga nesuteikta.</value></data>
+  <data name="Bank.Failed409" xml:space="preserve"><value>Pavedimas jau yra, pasikeitė arba buvo priskirtas. Atnaujinkite ir patikrinkite.</value></data>
+  <data name="Bank.Failed400" xml:space="preserve"><value>Patikrinkite pasirinktų pavedimų duomenis ir bandykite dar kartą.</value></data>
+  <data name="Bank.Failed503" xml:space="preserve"><value>Finansų paslauga laikinai nepasiekiama.</value></data>
+</root>

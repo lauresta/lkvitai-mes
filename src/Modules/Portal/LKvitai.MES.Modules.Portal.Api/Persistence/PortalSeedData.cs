@@ -14,7 +14,7 @@ public static class PortalSeedData
         Tile("delivery", "Delivery", "Logistics", "Route planning, driver tasks, proof of delivery, tracking.", "Planned", null, "Q4 2026", "delivery", 80, now),
         Tile("installation", "Installation", "Logistics", "Installer visits, acceptance acts, customer sign-off.", "Planned", null, "Q1 2027", "installation", 90, now),
         Tile("reporting", "Reporting", "Intelligence", "Dashboards, KPIs, production and warehouse analytics.", "Planned", null, "Q1 2027", "reporting", 100, now),
-        Tile("finance", "Finance", "Intelligence", "Accounting exports, payments, posting events.", "Planned", null, "Q2 2027", "finance", 110, now),
+        Tile("finance", "Finance", "Intelligence", "Accounting exports, payments, posting events.", "Pilot", "/finance/", null, "finance", 110, now),
         Tile("audit", "Audit", "Compliance", "Immutable event log, traceability, compliance reports.", "Planned", null, "Q2 2027", "audit", 120, now),
     ];
 
