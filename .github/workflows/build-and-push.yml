@@ -11,6 +11,7 @@ on:
       - src/Modules/Frontline/**
       - src/Modules/Scanning/**
       - src/Modules/Shopfloor/**
+      - src/Modules/Finance/**
       - src/BuildingBlocks/**
       - src/Mcp/**
       - docker-compose.test.yml
@@ -64,6 +65,12 @@ jobs:
           - name: shopfloor-webui
             dockerfile: src/Modules/Shopfloor/LKvitai.MES.Modules.Shopfloor.WebUI/Dockerfile
             image: ghcr.io/${{ github.repository_owner }}/lkvitai-mes-shopfloor-webui
+          - name: finance-api
+            dockerfile: src/Modules/Finance/LKvitai.MES.Modules.Finance.Api/Dockerfile
+            image: ghcr.io/${{ github.repository_owner }}/lkvitai-mes-finance-api
+          - name: finance-webui
+            dockerfile: src/Modules/Finance/LKvitai.MES.Modules.Finance.WebUI/Dockerfile
+            image: ghcr.io/${{ github.repository_owner }}/lkvitai-mes-finance-webui
           # Node service: its own build context (the package directory), not the repo root.
           - name: mcp
             dockerfile: src/Mcp/Cikada.Mcp/Dockerfile

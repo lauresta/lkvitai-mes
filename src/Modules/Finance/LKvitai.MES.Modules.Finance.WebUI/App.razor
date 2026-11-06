@@ -1,0 +1,20 @@
+<CascadingAuthenticationState>
+    <Router AppAssembly="@typeof(App).Assembly">
+        <Found Context="routeData">
+            <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+            <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+        </Found>
+        <NotFound>
+            <PageTitle>@L["Shell.NotFoundTitle"]</PageTitle>
+            <LayoutView Layout="@typeof(MainLayout)">
+                <main class="finance-page">
+                    <MudPaper Outlined="true" Elevation="0" Class="panel finance-panel">
+                        <h1>@L["Shell.NotFoundTitle"]</h1>
+                        <p>@L["Shell.NotFoundMessage"]</p>
+                        <a href="/finance/">@L["Shell.BackToFinance"]</a>
+                    </MudPaper>
+                </main>
+            </LayoutView>
+        </NotFound>
+    </Router>
+</CascadingAuthenticationState>

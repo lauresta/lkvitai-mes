@@ -351,7 +351,9 @@ jobs:
             lkvitai-mes-frontline-webui \
             lkvitai-mes-scanning-api \
             lkvitai-mes-scanning-webui \
-            lkvitai-mes-shopfloor-webui ; do
+            lkvitai-mes-shopfloor-webui \
+            lkvitai-mes-finance-api \
+            lkvitai-mes-finance-webui ; do
             echo "Waiting for ${container} health..."
             ok=0
             for i in $(seq 1 30); do

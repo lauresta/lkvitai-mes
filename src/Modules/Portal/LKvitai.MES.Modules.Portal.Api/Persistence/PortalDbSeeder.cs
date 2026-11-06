@@ -15,10 +15,40 @@ public static class PortalDbSeeder
         if (await db.Tiles.AnyAsync(cancellationToken))
         {
             await PromoteShopfloorTileAsync(db, now, cancellationToken);
+            await PromoteFinanceTileAsync(db, now, cancellationToken);
             return;
         }
 
         db.Tiles.AddRange(PortalSeedData.Tiles(now));
+        await db.SaveChangesAsync(cancellationToken);
+    }
+
+    private static async Task PromoteFinanceTileAsync(
+        PortalDbContext db,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        var finance = await db.Tiles
+            .FirstOrDefaultAsync(t => t.Key == "finance", cancellationToken);
+
+        if (finance is null)
+        {
+            db.Tiles.Add(PortalSeedData.Tiles(now).First(t => t.Key == "finance"));
+            await db.SaveChangesAsync(cancellationToken);
+            return;
+        }
+
+        // Preserve operator edits: promote only the original planned seed row.
+        if (!string.IsNullOrWhiteSpace(finance.Url) ||
+            !string.Equals(finance.Status, "Planned", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        finance.Status = "Pilot";
+        finance.Url = "/finance/";
+        finance.Quarter = null;
+        finance.UpdatedAt = now;
         await db.SaveChangesAsync(cancellationToken);
     }
 
