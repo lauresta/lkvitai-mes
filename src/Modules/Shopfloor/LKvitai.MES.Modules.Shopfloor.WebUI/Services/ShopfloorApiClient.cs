@@ -216,6 +216,14 @@ public sealed class TrapezoidItemListDto
     public List<TrapezoidItemDto> Items { get; set; } = [];
 }
 
+public sealed class TrapezoidRecentOrderDto
+{
+    public long OrderId { get; set; }
+    public string OrderNumber { get; set; } = "";
+    public int TaskId { get; set; }
+    public string TaskNumber { get; set; } = "";
+}
+
 public sealed class TrapezoidItemDto
 {
     public long ProductId { get; set; }
@@ -412,6 +420,10 @@ public sealed class ShopfloorApiClient
     public Task<ApiResult<TrapezoidItemListDto>> GetTrapezoidItemsAsync(int taskId, CancellationToken ct)
         => SendAsync<TrapezoidItemListDto>(HttpMethod.Get,
             $"/api/shopfloor/production-tasks/{taskId}/trapezoid-items", null, ct);
+
+    public Task<ApiResult<List<TrapezoidRecentOrderDto>>> GetRecentTrapezoidOrdersAsync(CancellationToken ct)
+        => SendAsync<List<TrapezoidRecentOrderDto>>(HttpMethod.Get,
+            "/api/shopfloor/trapezoid/recent-orders", null, ct);
 
     public Task<ApiResult<TrapezoidCalculationDto>> CalculateTrapezoidAsync(
         TrapezoidInputsDto inputs, CancellationToken ct)

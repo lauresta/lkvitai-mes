@@ -2160,6 +2160,10 @@
   <data name="Trapezoid.item" xml:space="preserve">
     <value>Gaminys</value>
   </data>
+  <data name="Trapezoid.recentOrders" xml:space="preserve"><value>Paskutiniai trapecijos užsakymai</value></data>
+  <data name="Trapezoid.chooseRecentOrder" xml:space="preserve"><value>Pasirinkite vieną iš 20 paskutinių užsakymų…</value></data>
+  <data name="Trapezoid.recentLoadFailed" xml:space="preserve"><value>Nepavyko įkelti paskutinių trapecijos užsakymų.</value></data>
+  <data name="Trapezoid.orderUnavailable" xml:space="preserve"><value>Šis užsakymas arba jo gamybos dokumentas nebepasiekiamas.</value></data>
   <data name="Trapezoid.material" xml:space="preserve">
     <value>Medžiaga · spalva</value>
   </data>

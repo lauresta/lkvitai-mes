@@ -14,6 +14,8 @@ public sealed record TrapezoidItem(long ProductId, string Barcode, string OrderN
     decimal? OverhangMm, string Revision, bool Supported);
 public sealed record TrapezoidItemList(int TaskId, string TaskNumber, bool CanEdit,
     IReadOnlyList<TrapezoidItem> Items);
+public sealed record TrapezoidRecentOrder(long OrderId, string OrderNumber,
+    int TaskId, string TaskNumber);
 public sealed record TrapezoidCalculateRequest(string? ControlType, int? SlatWidthMm,
     double? WidthMm, double? ShortHeightMm, double? TallHeightMm, double? OverhangMm,
     string? HighSide);
@@ -25,6 +27,13 @@ public static class TrapezoidEndpoints
     public const int ReportId = 100001;
     public static RouteGroupBuilder MapTrapezoidEndpoints(this RouteGroupBuilder group)
     {
+        group.MapGet("/trapezoid/recent-orders", async (
+            TrapezoidItemReader reader, CancellationToken ct) =>
+        {
+            try { return Results.Ok(await reader.ReadRecentOrdersAsync(ct)); }
+            catch (ProductionQueueAccessException ex) { return ProductionReadErrors.Access(ex); }
+            catch (SqlException ex) when (ex.Number is 229 or 230) { return ProductionReadErrors.PermissionDenied(); }
+        });
         group.MapGet("/production-tasks/{taskId:int}/trapezoid-items", async (
             int taskId, TrapezoidItemReader reader, CancellationToken ct) =>
         {
@@ -85,6 +94,48 @@ public sealed class TrapezoidItemReader(ProductionQueueReader queue)
             ct, ProductionQueueReader.ProductionTaskMenuId,
             ProductionQueueReader.FinishedGoodsMenuId);
 
+    public Task<IReadOnlyList<TrapezoidRecentOrder>> ReadRecentOrdersAsync(CancellationToken ct)
+        => queue.WithActorConnectionAsync(ReadRecentOrderRowsAsync, ct,
+            ProductionQueueReader.ProductionTaskMenuId,
+            ProductionQueueReader.FinishedGoodsMenuId);
+
+    private static async Task<IReadOnlyList<TrapezoidRecentOrder>> ReadRecentOrderRowsAsync(
+        SqlConnection connection, CancellationToken ct)
+    {
+        // Only GU documents wholly visible to this legacy SQL actor are offered.
+        // One latest GU per order keeps the selector stable when an order was reissued.
+        await using var command = new SqlCommand($"""
+            WITH eligible AS (
+                SELECT u.UzsakymasID, u.UzsakymoData,
+                    s.UzsakymoSerijaPav+N'-'+CONVERT(nvarchar(15),u.UzsakymoNumeris)+N'-'+u.UzsakymoGrupe AS OrderNumber,
+                    d.iProductionOutputDocumentID AS TaskId,
+                    d.sProductionOutputDocumentNo AS TaskNumber,
+                    ROW_NUMBER() OVER (PARTITION BY u.UzsakymasID
+                        ORDER BY d.dtDateTime DESC, d.iProductionOutputDocumentID DESC) AS rn
+                FROM dbo.TAB_ProductionOutputDocuments d
+                JOIN dbo.TAB_ProductionOutputDocumentDetails n
+                    ON n.iProductionOutputDocumentID=d.iProductionOutputDocumentID
+                JOIN dbo.ParduotiGaminiai pg ON pg.iBarCode=n.iBarCode
+                JOIN dbo.Uzsakymai u ON u.UzsakymasID=pg.UzsakymoID
+                JOIN dbo.Zinynas_UzsakymoSerijos s ON s.UzsakymoSerijaID=u.UzsakymoSerija
+                WHERE d.sProductionOutputDocumentNo LIKE N'GU%'
+                  AND pg.ParduotoGaminioTipoID IN
+                    (1084710449,1171363884,2112842587,2112842588,2112842471,446840360)
+                  AND EXISTS(SELECT 1 FROM dbo.Loc_leidimas() acl WHERE acl.UKS=s.FilialoID)
+                  AND {ProductionTaskReader.Visibility}
+            )
+            SELECT TOP (20) UzsakymasID, OrderNumber, TaskId, TaskNumber
+            FROM eligible WHERE rn=1
+            ORDER BY UzsakymoData DESC, UzsakymasID DESC;
+            """, connection) { CommandTimeout = 30 };
+        var result = new List<TrapezoidRecentOrder>();
+        await using var rows = await command.ExecuteReaderAsync(ct);
+        while (await rows.ReadAsync(ct))
+            result.Add(new TrapezoidRecentOrder(Convert.ToInt64(rows.GetValue(0)),
+                rows.GetString(1), rows.GetInt32(2), rows.GetString(3)));
+        return result;
+    }
+
     private static async Task<TrapezoidItemList?> ReadRowsAsync(SqlConnection connection, int taskId,
         CancellationToken ct)
     {
@@ -124,26 +175,28 @@ public sealed class TrapezoidItemReader(ProductionQueueReader queue)
             """, connection, tx) { CommandTimeout = 30 };
         command.Parameters.Add("@taskId", SqlDbType.Int).Value = taskId;
         var result = new List<TrapezoidItem>();
-        await using var rows = await command.ExecuteReaderAsync(ct);
-        while (await rows.ReadAsync(ct))
+        await using (var rows = await command.ExecuteReaderAsync(ct))
         {
-            var raw = Enumerable.Range(0, rows.FieldCount)
-                .Select(i => rows.IsDBNull(i) ? "" : Convert.ToString(rows.GetValue(i), CultureInfo.InvariantCulture) ?? "")
-                .ToArray();
-            var revision = Convert.ToHexString(SHA256.HashData(
-                Encoding.UTF8.GetBytes(string.Join('\u001f', raw))));
-            var typeId = rows.GetInt32(4);
-            var control = Text(rows, 9)?.Trim();
-            var slat = PositiveInt(Text(rows, 10));
-            var tall = PositiveDecimal(Text(rows, 13)) ?? PositiveDecimal(Text(rows, 12));
-            result.Add(new TrapezoidItem(Convert.ToInt64(rows.GetValue(0)), rows.GetString(1),
-                rows.GetString(2), Convert.ToInt32(rows.GetValue(3)), typeId, rows.GetString(5),
-                Text(rows, 6), Text(rows, 7), Convert.ToDecimal(rows.GetValue(8)), control,
-                control?.ToUpperInvariant() is "A" or "B" ? control.ToUpperInvariant() : null,
-                slat is 89 or 127 ? slat : null,
-                PositiveDecimal(Text(rows, 11)), tall,
-                PositiveDecimal(Text(rows, 14)), NonNegativeDecimal(Text(rows, 15)),
-                revision, SupportedTypes.Contains(typeId)));
+            while (await rows.ReadAsync(ct))
+            {
+                var raw = Enumerable.Range(0, rows.FieldCount)
+                    .Select(i => rows.IsDBNull(i) ? "" : Convert.ToString(rows.GetValue(i), CultureInfo.InvariantCulture) ?? "")
+                    .ToArray();
+                var revision = Convert.ToHexString(SHA256.HashData(
+                    Encoding.UTF8.GetBytes(string.Join('\u001f', raw))));
+                var typeId = rows.GetInt32(4);
+                var control = Text(rows, 9)?.Trim();
+                var slat = PositiveInt(Text(rows, 10));
+                var tall = PositiveDecimal(Text(rows, 13)) ?? PositiveDecimal(Text(rows, 12));
+                result.Add(new TrapezoidItem(Convert.ToInt64(rows.GetValue(0)), rows.GetString(1),
+                    rows.GetString(2), Convert.ToInt32(rows.GetValue(3)), typeId, rows.GetString(5),
+                    Text(rows, 6), Text(rows, 7), Convert.ToDecimal(rows.GetValue(8)), control,
+                    control?.ToUpperInvariant() is "A" or "B" ? control.ToUpperInvariant() : null,
+                    slat is 89 or 127 ? slat : null,
+                    PositiveDecimal(Text(rows, 11)), tall,
+                    PositiveDecimal(Text(rows, 14)), NonNegativeDecimal(Text(rows, 15)),
+                    revision, SupportedTypes.Contains(typeId)));
+            }
         }
         await tx.CommitAsync(ct);
         await using var edit = new SqlCommand("""

@@ -2160,6 +2160,10 @@
   <data name="Trapezoid.item" xml:space="preserve">
     <value>Item</value>
   </data>
+  <data name="Trapezoid.recentOrders" xml:space="preserve"><value>Recent trapezoid orders</value></data>
+  <data name="Trapezoid.chooseRecentOrder" xml:space="preserve"><value>Select one of the last 20 orders…</value></data>
+  <data name="Trapezoid.recentLoadFailed" xml:space="preserve"><value>Could not load recent trapezoid orders.</value></data>
+  <data name="Trapezoid.orderUnavailable" xml:space="preserve"><value>This order or its production document is no longer available.</value></data>
   <data name="Trapezoid.material" xml:space="preserve">
     <value>Material · colour</value>
   </data>

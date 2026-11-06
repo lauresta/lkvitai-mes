@@ -76,6 +76,10 @@ public partial class Gamyba
     private string? _liveReportError;
     private bool _liveReportLoading;
     private TrapezoidItemListDto? _liveTrapezoidItems;
+    private List<TrapezoidRecentOrderDto>? _recentTrapezoidOrders;
+    private string? _recentTrapezoidError;
+    private string? _preferredTrapezoidOrderNumber;
+    private bool _recentTrapezoidLoading;
 
     protected override async Task OnInitializedAsync()
     {
@@ -230,6 +234,8 @@ public partial class Gamyba
         if (LiveQueueEnabled && screen == "reports"
             && (_liveReportCatalog.Count == 0 || _liveReportError is not null))
             await LoadLiveReportCatalogAsync();
+        if (LiveQueueEnabled && screen == "reports" && _recentTrapezoidOrders is null)
+            await LoadRecentTrapezoidOrdersAsync();
         if (LiveQueueEnabled && screen == "reports" && _liveTask is not null &&
             _liveTrapezoidItems is null)
         {
@@ -307,6 +313,7 @@ public partial class Gamyba
     {
         _liveTask = null;
         _liveTrapezoidItems = null;
+        _preferredTrapezoidOrderNumber = null;
         _liveReportId = null;
         _liveTaskError = null;
         Go("task");
@@ -435,6 +442,7 @@ public partial class Gamyba
         {
             if (reportId == 100001)
             {
+                if (_recentTrapezoidOrders is null) await LoadRecentTrapezoidOrdersAsync();
                 var items = await ShopfloorApi.GetTrapezoidItemsAsync(_liveTask.Task.Id, CancellationToken.None);
                 if (items.Success && items.Value is not null) _liveTrapezoidItems = items.Value;
                 else _liveReportError = items.Error ?? L["Gamyba.ReportUnavailableOrAccessDenied"].Value;
@@ -454,4 +462,54 @@ public partial class Gamyba
 
     private Task SelectLiveReportChangeAsync(ChangeEventArgs e) =>
         int.TryParse(e.Value?.ToString(), out var id) ? SelectLiveReportAsync(id) : Task.CompletedTask;
+
+    private async Task LoadRecentTrapezoidOrdersAsync()
+    {
+        if (_recentTrapezoidLoading) return;
+        _recentTrapezoidLoading = true;
+        _recentTrapezoidError = null;
+        try
+        {
+            var result = await ShopfloorApi.GetRecentTrapezoidOrdersAsync(CancellationToken.None);
+            if (result.Success && result.Value is not null) _recentTrapezoidOrders = result.Value;
+            else _recentTrapezoidError = result.Error ?? L["Trapezoid.recentLoadFailed"].Value;
+        }
+        catch (Exception)
+        {
+            _recentTrapezoidError = L["Trapezoid.recentLoadFailed"].Value;
+        }
+        finally { _recentTrapezoidLoading = false; }
+    }
+
+    private async Task SelectRecentTrapezoidOrderAsync(ChangeEventArgs e)
+    {
+        if (!long.TryParse(e.Value?.ToString(), out var orderId)) return;
+        var order = _recentTrapezoidOrders?.FirstOrDefault(x => x.OrderId == orderId);
+        if (order is null) return;
+        _liveReportLoading = true;
+        _liveReportError = null;
+        _liveTrapezoidItems = null;
+        try
+        {
+            var task = await ShopfloorApi.GetProductionTaskAsync(order.TaskId, CancellationToken.None);
+            var items = await ShopfloorApi.GetTrapezoidItemsAsync(order.TaskId, CancellationToken.None);
+            if (!task.Success || task.Value is null || !items.Success || items.Value is null ||
+                !items.Value.Items.Any(x => x.OrderNumber == order.OrderNumber))
+            {
+                _liveReportError = L["Trapezoid.orderUnavailable"].Value;
+                return;
+            }
+            _liveTask = task.Value;
+            _liveTrapezoidItems = items.Value;
+            _preferredTrapezoidOrderNumber = order.OrderNumber;
+            _liveReportId = 100001;
+            _liveReportData = null;
+            Go("reports");
+        }
+        catch (Exception)
+        {
+            _liveReportError = L["Trapezoid.orderUnavailable"].Value;
+        }
+        finally { _liveReportLoading = false; }
+    }
 }

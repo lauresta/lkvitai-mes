@@ -515,6 +515,29 @@
                     <div class="gamyba-pagehead"><div><div class="gamyba-eyebrow">@L["Gamyba.ShopfloorHeading"] · G05 · @(_liveTask?.Task.Number ?? "GU")</div><h1>@(_liveReportId == 100001 ? L["Trapezoid.docsTitle"].Value : L["Gamyba.ProductionReportData"].Value)</h1></div>@if (_liveReportId == 100001){<div class="gamyba-segment"><button type="button" class="is-active">@L["Gamyba.PrintPDF"].Value</button><button type="button" disabled title="@L["Trapezoid.templateEditorUnavailable"].Value">@L["Gamyba.TemplateEditor"].Value</button></div>}else if (_liveReportId != 3){<span class="chip chip--info">@L["Gamyba.READONLY"].Value</span>}</div>
                     @if (_liveReportId is not (3 or 100001)){<div class="gamyba-alert gamyba-alert--info" role="status">@L["Gamyba.LiveAccessReportDatasetsPageLayoutPDFAndPrinting"].Value</div>}
                     @if (_liveReportError is not null){<div class="gamyba-alert gamyba-alert--danger" role="alert">@_liveReportError</div>}
+                    @if (_liveTask is null || _liveReportId == 100001)
+                    {
+                        <div class="gamyba-trap-order-picker">
+                            <label for="recent-trapezoid-order">@L["Trapezoid.recentOrders"].Value</label>
+                            <select id="recent-trapezoid-order" class="gamyba-input" aria-label="@L["Trapezoid.recentOrders"].Value"
+                                    value="@(_recentTrapezoidOrders?.FirstOrDefault(x => x.OrderNumber == _preferredTrapezoidOrderNumber)?.OrderId.ToString() ?? "")"
+                                    disabled="@(_recentTrapezoidLoading || _recentTrapezoidOrders is null)" @onchange="SelectRecentTrapezoidOrderAsync">
+                                <option value="">@L["Trapezoid.chooseRecentOrder"].Value</option>
+                                @if (_recentTrapezoidOrders is not null)
+                                {
+                                    @foreach (var order in _recentTrapezoidOrders)
+                                    {
+                                        <option value="@order.OrderId">@order.OrderNumber · @order.TaskNumber</option>
+                                    }
+                                }
+                            </select>
+                            @if (_recentTrapezoidError is not null)
+                            {
+                                <span role="alert">@_recentTrapezoidError</span>
+                                <button type="button" class="gamyba-btn gamyba-btn--xs" @onclick="LoadRecentTrapezoidOrdersAsync">@L["Trapezoid.retry"].Value</button>
+                            }
+                        </div>
+                    }
                     @if (_liveTask is null)
                     {
                         <div class="gamyba-empty"><strong>@L["Gamyba.SelectAGUInProductionTasksFirst"].Value</strong><button type="button" class="gamyba-btn" @onclick='() => GoLiveAwareAsync("tasks")'>@L["Gamyba.OpenTasks"].Value</button></div>
@@ -541,7 +564,7 @@
                             }
                             else if (_liveReportId == 100001 && _liveTrapezoidItems is not null)
                             {
-                                <TrapezoidDocument @key="_liveTask.Task.Id" Data="_liveTrapezoidItems" />
+                                <TrapezoidDocument @key="(_liveTask.Task.Id, _preferredTrapezoidOrderNumber)" Data="_liveTrapezoidItems" PreferredOrderNumber="_preferredTrapezoidOrderNumber" />
                             }
                             else
                             {
