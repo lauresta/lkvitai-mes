@@ -15,10 +15,12 @@ internal sealed class BankRepository(FinanceAccess access, BankImportSessions se
     private static BankPaymentRow Row(SqlDataReader r) => new(r.GetInt32(0), DateOnly.FromDateTime(r.GetDateTime(1)),
         r.GetString(2).TrimEnd(), r.GetString(3).TrimEnd(), r.GetDecimal(4));
 
-    public async Task<BankPaymentPage> List(FinanceActor actor, string country, DateOnly? from, string? q,
+    public async Task<BankPaymentPage> List(FinanceActor actor, string country, DateOnly? from, DateOnly? to, string? q,
         string? sort, bool desc, int page, CancellationToken ct)
     {
         country = Country(country);
+        if (from.HasValue && to.HasValue && to < from)
+            throw new BankOperationException(400, "The end date precedes the start date.");
         page = Math.Max(1, page);
         if (page > 10000) throw new BankOperationException(400, "Invalid page.");
         var col = SortColumns.TryGetValue(sort ?? "nr", out var selected) ? selected : "NR";
@@ -31,15 +33,17 @@ internal sealed class BankRepository(FinanceAccess access, BankImportSessions se
         using var cmd = Command(c, $"""
             SELECT COUNT(*), MAX(Data) FROM dbo.BankTransfersTable WHERE Country=@country;
             SELECT COUNT(*) FROM dbo.BankTransfersTable WHERE Country=@country
-              AND (@from IS NULL OR Data>=@from)
+              AND (@from IS NULL OR Data>=@from) AND (@to IS NULL OR Data<@to)
               AND (@q='' OR Firma LIKE @pattern OR Paskirtis LIKE @pattern);
             SELECT NR,Data,Firma,Paskirtis,Suma FROM dbo.BankTransfersTable
-            WHERE Country=@country AND (@from IS NULL OR Data>=@from)
+            WHERE Country=@country AND (@from IS NULL OR Data>=@from) AND (@to IS NULL OR Data<@to)
               AND (@q='' OR Firma LIKE @pattern OR Paskirtis LIKE @pattern)
             ORDER BY {order} OFFSET @offset ROWS FETCH NEXT 100 ROWS ONLY;
             """);
         Add(cmd, "@country", country);
         Add(cmd, "@from", from?.ToDateTime(TimeOnly.MinValue));
+        Add(cmd, "@to", to is null || to == DateOnly.MaxValue
+            ? null : to.Value.AddDays(1).ToDateTime(TimeOnly.MinValue));
         Add(cmd, "@q", search);
         Add(cmd, "@pattern", "%" + search.Replace("[", "[[]").Replace("%", "[%]").Replace("_", "[_]") + "%");
         Add(cmd, "@offset", (page - 1) * 100);

@@ -34,6 +34,7 @@ Read (always on):
 | `items_search` | Warehouse `GET /api/warehouse/v1/items`, `GET /api/warehouse/v1/stock/available`, `GET /api/warehouse/v1/price-groups/{id}/item-prices` |
 | `stock_get` | Warehouse `GET /api/warehouse/v1/stock/available` |
 | `whoami` | none: the signed-in user and roles from the token (explains a 403) |
+| `bank_payments_list` | Finance `GET /api/finance/bank-payments`: individual live bank rows with NR, date, payer, full purpose and amount; LT/LV, inclusive date range, text search, sort and pages of 100. Read all pages for a complete list. |
 | `bank_payments_preview` | Finance `POST /api/finance/bank-payments/preview`: validate extracted bank rows against the live legacy table, report exact and possible duplicates with matching NR and payer, errors, latest NR and projected NR range; no writes |
 
 Bank statement import: attach an Excel, CSV, PDF, screenshot, MT940, CAMT.053 or other bank statement in ChatGPT and ask Cikada to preview it. ChatGPT reads the attachment with its available file or vision capabilities and passes the extracted rows to `bank_payments_preview`; the MCP server does not receive or decode the original binary file. Review the complete preview and approve the selected lines explicitly. `bank_payments_import` then writes only rows held in that server-side preview. Import fails if the preview expires (15 minutes) or another entry changes the latest NR. Unreadable fields stay blank and are marked as errors. Both tools require the operator's Finance access and legacy SQL mapping.
