@@ -38,8 +38,8 @@ internal sealed class FinanceAccess(IHttpClientFactory clients, CikadaUserBridge
         {
             await connection.OpenAsync(ct);
             // The login comes only from the active Cikada account lookup. Never accept it from the request body.
-            var escaped = actor.LegacyLogin.Replace("'", "''", StringComparison.Ordinal);
-            using var switchCommand = new SqlCommand($"EXECUTE AS LOGIN = N'{escaped}'", connection);
+            using var switchCommand = new SqlCommand("EXECUTE AS LOGIN = @login", connection);
+            switchCommand.Parameters.Add("@login", System.Data.SqlDbType.NVarChar, 128).Value = actor.LegacyLogin;
             await switchCommand.ExecuteNonQueryAsync(ct);
             using var identity = new SqlCommand("SELECT SUSER_SNAME()", connection);
             if (!string.Equals((string?)await identity.ExecuteScalarAsync(ct), actor.LegacyLogin,
