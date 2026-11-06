@@ -12,6 +12,7 @@ export function testConfig(overrides: Record<string, string> = {}): Config {
     MCP_OAUTH_CLIENT_ID: CLIENT_ID,
     SALES_API_URL: 'https://sales.internal',
     WAREHOUSE_API_URL: 'https://warehouse.internal',
+    FINANCE_API_URL: 'https://finance.internal',
     MCP_PORT: '0',
     ...overrides,
   });

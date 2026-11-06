@@ -4,7 +4,7 @@
 export const VERSION = '0.1.0';
 const TIMEOUT_MS = 30_000;
 
-export type Target = 'sales' | 'warehouse';
+export type Target = 'sales' | 'warehouse' | 'finance';
 
 export interface ApiCall {
   target: Target;
@@ -35,6 +35,7 @@ export class ApiError extends Error {
 export interface ApiOptions {
   salesUrl: string;
   warehouseUrl: string;
+  financeUrl: string;
   token: string;
   fetchImpl?: typeof fetch;
 }
@@ -47,7 +48,8 @@ export class CikadaApi {
   }
 
   async call(input: ApiCall): Promise<ApiResult> {
-    const base = input.target === 'sales' ? this.options.salesUrl : this.options.warehouseUrl;
+    const base = input.target === 'sales' ? this.options.salesUrl :
+      input.target === 'finance' ? this.options.financeUrl : this.options.warehouseUrl;
     const url = new URL(base + input.path);
     for (const [name, value] of Object.entries(input.query ?? {})) {
       if (value !== undefined && value !== null && value !== '') url.searchParams.set(name, String(value));
@@ -88,7 +90,7 @@ export function toApiError(input: ApiCall, result: ApiResult): ApiError {
   const code = typeof problem.code === 'string' ? problem.code : undefined;
   const title = typeof problem.title === 'string' ? problem.title : typeof problem.message === 'string' ? problem.message : typeof problem.error === 'string' ? problem.error : undefined;
   const detail = typeof problem.detail === 'string' ? problem.detail : undefined;
-  const api = input.target === 'sales' ? 'Sales API' : 'Warehouse API';
+  const api = input.target === 'sales' ? 'Sales API' : input.target === 'finance' ? 'Finance API' : 'Warehouse API';
   let message: string;
   switch (result.status) {
     case 401:

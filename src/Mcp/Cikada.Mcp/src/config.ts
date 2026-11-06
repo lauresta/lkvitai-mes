@@ -27,6 +27,7 @@ export interface Config {
   salesApiUrl: string;
   /** Warehouse API on the compose network, e.g. http://lkvitai-mes-warehouse-api:8080. */
   warehouseApiUrl: string;
+  financeApiUrl: string;
   /** MCP_ENABLE_ORDER_ENTRY=true: the order entry tools (writes and their helper reads) are offered. */
   orderEntry: boolean;
 }
@@ -84,6 +85,7 @@ export function loadConfig(env: Readonly<Record<string, string | undefined>>): C
     },
     salesApiUrl: httpUrl('SALES_API_URL', env.SALES_API_URL),
     warehouseApiUrl: httpUrl('WAREHOUSE_API_URL', env.WAREHOUSE_API_URL),
+    financeApiUrl: httpUrl('FINANCE_API_URL', env.FINANCE_API_URL),
     orderEntry: env.MCP_ENABLE_ORDER_ENTRY?.trim().toLowerCase() === 'true',
   };
 }

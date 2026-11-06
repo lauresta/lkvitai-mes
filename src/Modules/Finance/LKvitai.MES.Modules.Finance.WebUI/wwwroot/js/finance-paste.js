@@ -10,7 +10,7 @@ window.financeBank = (() => {
     if (!response.ok) {
       let problem;
       try { problem = await response.json(); } catch { }
-      throw new Error(String(response.status));
+      throw new Error(`finance-http:${response.status}`);
     }
     return response.status === 204 ? '' : await response.text();
   }

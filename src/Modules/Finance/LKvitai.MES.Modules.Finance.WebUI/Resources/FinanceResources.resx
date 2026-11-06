@@ -24,7 +24,7 @@
   <data name="Bank.Period90" xml:space="preserve"><value>90 d</value></data>
   <data name="Bank.PeriodAll" xml:space="preserve"><value>All</value></data>
   <data name="Bank.Paste" xml:space="preserve"><value>Paste from Excel</value></data>
-  <data name="Bank.PasteHint" xml:space="preserve"><value>Paste rows from Excel here (Ctrl+V).</value></data>
+  <data name="Bank.PasteHint" xml:space="preserve"><value>Press Ctrl+V — copied Excel rows (Date · Payer · Purpose · Amount, columns in any order)</value></data>
   <data name="Bank.Sample" xml:space="preserve"><value>Paste sample</value></data>
   <data name="Bank.Cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="Bank.Nr" xml:space="preserve"><value>Nr</value></data>
@@ -33,6 +33,10 @@
   <data name="Bank.Purpose" xml:space="preserve"><value>Purpose</value></data>
   <data name="Bank.Sum" xml:space="preserve"><value>Amount</value></data>
   <data name="Bank.Preview" xml:space="preserve"><value>Pasted from Excel — preview</value></data>
+  <data name="Bank.PreviewNrRange" xml:space="preserve"><value>Latest Nr {0} · new Nr {1}–{2}</value></data>
+  <data name="Bank.PreviewLatestNr" xml:space="preserve"><value>Latest Nr {0}</value></data>
+  <data name="Bank.Status" xml:space="preserve"><value>Status</value></data>
+  <data name="Bank.ErrorLine" xml:space="preserve"><value>{0}: “{1}”</value></data>
   <data name="Bank.PreviewSummary" xml:space="preserve"><value>{0} rows: {1} new · {2} duplicates · {3} errors. Duplicates and errors are skipped; you can select a duplicate manually.</value></data>
   <data name="Bank.SelectedSum" xml:space="preserve"><value>Selected total {0}</value></data>
   <data name="Bank.Import" xml:space="preserve"><value>Import {0} to {1}</value></data>
