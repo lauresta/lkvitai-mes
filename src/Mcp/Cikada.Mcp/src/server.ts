@@ -6,11 +6,12 @@ import { ApiError, VERSION } from './api.js';
 import { promptsFor } from './prompts.js';
 import type { ToolContext, ToolDef } from './tool.js';
 import { ORDER_ENTRY_TOOLS } from './tools-order-entry.js';
+import { FINANCE_TOOLS } from './tools-finance.js';
 import { READ_TOOLS } from './tools-read.js';
 import { REPORT_TOOLS } from './tools-reports.js';
 import { ArgumentError, validateArgs } from './validate.js';
 
-export const ALL_TOOLS: readonly ToolDef[] = [...READ_TOOLS, ...REPORT_TOOLS, ...ORDER_ENTRY_TOOLS];
+export const ALL_TOOLS: readonly ToolDef[] = [...READ_TOOLS, ...REPORT_TOOLS, ...ORDER_ENTRY_TOOLS, ...FINANCE_TOOLS];
 
 export const toolsFor = (orderEntry: boolean): readonly ToolDef[] => ALL_TOOLS.filter((tool) => orderEntry || !tool.orderEntry);
 
@@ -50,6 +51,7 @@ export function instructions(orderEntry: boolean): string {
     'Cikada.MES for Lauresta: sales orders, customers, items with prices and stock, and the management reports.',
     'Orders: orders_filters gives the exact status / store labels; orders_search finds orders; order_get shows one order by number.',
     'Products and prices: items_search (base, purchase and price-group price, available stock), stock_get (per location), price_groups_list; customers_search / customer_get show a customer and its price group.',
+    'Finance: when given a bank statement in Excel, CSV, PDF, image, MT940, CAMT.053 or another format, extract exact transaction rows and call bank_payments_preview. It checks duplicates and reports the latest NR and projected numbers. Show every preview row, then call bank_payments_import only after an explicit user yes. The legacy bank table is shared with production and Access.',
     orderEntry
       ? 'Order entry: order_entry_catalog / order_entry_references give every id; order_entry_get gives the revision every write needs. Never guess an id, a number or a price; summarise and get an explicit yes before order_create, order_confirm, order_cancel or order_product_remove. After a refused write read the order again.'
       : 'Order entry (creating or changing orders) is not enabled on this server.',

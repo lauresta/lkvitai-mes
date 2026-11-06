@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { NOT_DEPLOYED } from '../src/tools-order-entry.js';
 import { fakeJwt, mockFetch, rpc, running, testConfig } from './helpers.js';
 
-const READ_TOOLS = ['whoami', 'orders_search', 'order_get', 'orders_filters', 'customers_search', 'customer_get', 'price_groups_list', 'items_search', 'stock_get', 'report_production', 'report_work', 'report_payments', 'report_dimensions', 'production_queue', 'materials_popularity', 'stopped_products', 'unpaid_orders', 'made_not_delivered', 'customer_debt', 'orders_find'];
+const READ_TOOLS = ['whoami', 'orders_search', 'order_get', 'orders_filters', 'customers_search', 'customer_get', 'price_groups_list', 'items_search', 'stock_get', 'report_production', 'report_work', 'report_payments', 'report_dimensions', 'production_queue', 'materials_popularity', 'stopped_products', 'unpaid_orders', 'made_not_delivered', 'customer_debt', 'orders_find', 'bank_payments_preview'];
 const WRITE_TOOLS = ['order_create', 'order_update', 'order_product_add', 'order_product_update', 'order_product_remove', 'order_address_set', 'order_confirm', 'order_cancel'];
 const DESTRUCTIVE = ['order_product_remove', 'order_confirm', 'order_cancel'];
 
@@ -13,8 +13,9 @@ test('tools/list: the read tools by default, read-only annotated; order entry on
   try {
     const token = fakeJwt();
     const listed = (await rpc(off.base, token, 'tools/list')).body.result.tools as { name: string; annotations: Record<string, unknown> }[];
-    assert.deepEqual(listed.map((t) => t.name), READ_TOOLS);
-    for (const tool of listed) assert.equal(tool.annotations.readOnlyHint, true, tool.name);
+    assert.deepEqual(listed.map((t) => t.name), [...READ_TOOLS, 'bank_payments_import']);
+    for (const tool of listed.filter((t) => t.name !== 'bank_payments_import')) assert.equal(tool.annotations.readOnlyHint, true, tool.name);
+    assert.equal(listed.find((t) => t.name === 'bank_payments_import')?.annotations.destructiveHint, true);
 
     const all = (await rpc(on.base, token, 'tools/list')).body.result.tools as { name: string; annotations: Record<string, unknown> }[];
     for (const name of WRITE_TOOLS) {
@@ -67,6 +68,40 @@ test('orders_search forwards the bearer unchanged to the Sales API and answers c
     assert.equal(call.headers.authorization, `Bearer ${token}`);
     // the token is in no log line
     assert.ok(!JSON.stringify(stand.logs).includes(token));
+  } finally {
+    await stand.close();
+  }
+});
+
+test('bank preview reports live NR and import uses only a confirmed server preview', async () => {
+  const previewId = '00000000-0000-4000-8000-000000000123';
+  const api = mockFetch((seen) => seen.url.pathname.endsWith('/preview')
+    ? { status: 200, body: { previewId, latestNr: 340, rows: [
+      { line: 1, date: '2026-11-06', firm: 'UAB Test', purpose: 'Invoice 1', sum: 24.5, status: 'New', selected: true },
+      { line: 2, date: '2026-11-06', firm: 'UAB Test', purpose: 'Invoice 2', sum: 24.5, status: 'Duplicate', selected: false },
+    ] } }
+    : { status: 200, body: { importId: '00000000-0000-4000-8000-000000000124', nrFrom: 341, nrTo: 341, count: 1 } });
+  const stand = await running(testConfig(), { fetchImpl: api.fetchImpl });
+  try {
+    const token = fakeJwt();
+    const rows = [{ date: '2026-11-06', firm: 'UAB Test', purpose: 'Invoice 1', sum: '24.50' }];
+    const preview = (await rpc(stand.base, token, 'tools/call', { name: 'bank_payments_preview', arguments: { country: 'LT', rows } })).body.result;
+    assert.equal(preview.isError, undefined, JSON.stringify(preview));
+    assert.equal(preview.structuredContent.latestNr, 340);
+    assert.equal(preview.structuredContent.nextNr, 341);
+    assert.deepEqual(preview.structuredContent.selectedNewLines, [1]);
+    assert.deepEqual(api.seen[0]?.body, { country: 'LT', rows });
+    assert.equal(api.seen[0]?.url.origin, 'https://finance.internal');
+    assert.equal(api.seen[0]?.headers.authorization, `Bearer ${token}`);
+
+    const args = { country: 'LT', previewId, expectedNextNr: 341, selectedLines: [1], confirmed: false };
+    const denied = (await rpc(stand.base, token, 'tools/call', { name: 'bank_payments_import', arguments: args })).body.result;
+    assert.equal(denied.isError, true);
+    assert.equal(api.seen.length, 1);
+    const imported = (await rpc(stand.base, token, 'tools/call', { name: 'bank_payments_import', arguments: { ...args, confirmed: true } })).body.result;
+    assert.equal(imported.isError, undefined, JSON.stringify(imported));
+    assert.equal(imported.structuredContent.nrFrom, 341);
+    assert.deepEqual(api.seen[1]?.body, { country: 'LT', previewId, expectedNextNr: 341, selectedLines: [1] });
   } finally {
     await stand.close();
   }

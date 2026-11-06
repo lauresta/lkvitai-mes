@@ -55,29 +55,45 @@ internal sealed class BankRepository(FinanceAccess access, BankImportSessions se
         return new BankPaymentPage(rows, total, countryTotal, last, page, 100);
     }
 
+    public Task<BankPasteResult> PreviewStructured(FinanceActor actor, BankStructuredPreviewRequest request,
+        IConfiguration configuration, CancellationToken ct)
+    {
+        if (request.Rows is not { Count: > 0 and <= 1500 })
+            throw new BankOperationException(400, "Select 1–1500 rows.");
+        static string Cell(string? value) => (value ?? "").Replace('\t', ' ').Replace('\r', ' ').Replace('\n', ' ').Trim();
+        var lines = request.Rows.Select(row => row is null
+            ? "\t\t\t"
+            : $"{Cell(row.Date)}\t{Cell(row.Firm)}\t{Cell(row.Purpose)}\t{Cell(row.Sum)}");
+        return Parse(actor, new BankPasteRequest(request.Country, string.Join('\n', lines)), configuration, ct);
+    }
+
     public async Task<BankPasteResult> Parse(FinanceActor actor, BankPasteRequest request, IConfiguration config, CancellationToken ct)
     {
         var country = Country(request.Country);
         var parsed = BankPasteParser.Parse(request.Text).ToArray();
-        if (parsed.Length == 0) return new BankPasteResult(parsed);
         var dates = parsed.Where(x => x.Date.HasValue).Select(x => x.Date!.Value).ToArray();
-        if (dates.Length == 0) return new BankPasteResult(parsed);
         var mode = config["Finance:DuplicateKey"] == "DateSum" ? "DateSum" : "DateFirmSum";
         static string Key(DateOnly date, string firm, decimal sum, string mode) =>
             $"{date:yyyyMMdd}|{(mode == "DateFirmSum" ? firm.Trim().ToUpperInvariant() : "")}|{sum:0.0000}";
         var existing = new HashSet<string>(StringComparer.Ordinal);
+        int latestNr;
         await using (var lease = await access.OpenAsync(actor, ct))
         {
-            using var cmd = Command(lease.Connection, """
-                SELECT Data,Firma,Suma FROM dbo.BankTransfersTable
-                WHERE Country=@country AND Data>=@from AND Data<@to
-                """);
-            Add(cmd, "@country", country);
-            Add(cmd, "@from", dates.Min().ToDateTime(TimeOnly.MinValue));
-            Add(cmd, "@to", dates.Max().AddDays(1).ToDateTime(TimeOnly.MinValue));
-            await using var reader = await cmd.ExecuteReaderAsync(ct);
-            while (await reader.ReadAsync(ct)) existing.Add(Key(DateOnly.FromDateTime(reader.GetDateTime(0)),
-                reader.GetString(1), reader.GetDecimal(2), mode));
+            using (var latest = Command(lease.Connection, "SELECT ISNULL(MAX(NR),0) FROM dbo.BankTransfersTable"))
+                latestNr = Convert.ToInt32(await latest.ExecuteScalarAsync(ct));
+            if (dates.Length > 0)
+            {
+                using var cmd = Command(lease.Connection, """
+                    SELECT Data,Firma,Suma FROM dbo.BankTransfersTable
+                    WHERE Country=@country AND Data>=@from AND Data<@to
+                    """);
+                Add(cmd, "@country", country);
+                Add(cmd, "@from", dates.Min().ToDateTime(TimeOnly.MinValue));
+                Add(cmd, "@to", dates.Max().AddDays(1).ToDateTime(TimeOnly.MinValue));
+                await using var reader = await cmd.ExecuteReaderAsync(ct);
+                while (await reader.ReadAsync(ct)) existing.Add(Key(DateOnly.FromDateTime(reader.GetDateTime(0)),
+                    reader.GetString(1), reader.GetDecimal(2), mode));
+            }
         }
         var batch = new HashSet<string>(StringComparer.Ordinal);
         for (var i = 0; i < parsed.Length; i++)
@@ -87,14 +103,27 @@ internal sealed class BankRepository(FinanceAccess access, BankImportSessions se
             var key = Key(row.Date.Value, row.Firm, row.Sum.Value, mode);
             if (existing.Contains(key) || !batch.Add(key)) parsed[i] = row with { Status = "Duplicate", Selected = false };
         }
-        return new BankPasteResult(parsed);
+        var previewId = Guid.NewGuid();
+        sessions.SavePreview(new BankPreviewBatch(previewId, actor.UserId, country, latestNr, parsed, DateTimeOffset.UtcNow));
+        return new BankPasteResult(previewId, latestNr, parsed);
     }
 
     public async Task<BankImportResult> Import(FinanceActor actor, BankImportRequest request, CancellationToken ct)
     {
         var country = Country(request.Country);
-        if (request.Rows is not { Count: > 0 and <= 1500 }) throw new BankOperationException(400, "Select 1–1500 rows.");
-        foreach (var row in request.Rows)
+        var preview = sessions.GetPreview(actor.UserId, request.PreviewId);
+        if (preview is null || preview.Country != country || request.ExpectedNextNr != preview.LatestNr + 1)
+            throw new BankOperationException(409, "Preview expired or changed. Paste the statement again.");
+        if (request.SelectedLines is not { Count: > 0 and <= 1500 } ||
+            request.SelectedLines.Distinct().Count() != request.SelectedLines.Count)
+            throw new BankOperationException(400, "Select 1–1500 distinct rows.");
+        var selected = request.SelectedLines.Select(line =>
+            preview.Rows.FirstOrDefault(row => row.Line == line)).ToArray();
+        if (selected.Any(row => row is null || row.Status == "Error" || row.Date is null || row.Sum is null))
+            throw new BankOperationException(400, "Select valid rows from the preview.");
+        var rows = selected.Select(row => new BankImportRow(row!.Date!.Value, row.Firm, row.Purpose,
+            row.Sum!.Value, row.Status == "Duplicate")).ToArray();
+        foreach (var row in rows)
             if (row is null || row.Date.Year is < 2000 or > 2100 || string.IsNullOrWhiteSpace(row.Firm) ||
                 row.Firm.Length > 255 || row.Purpose is null || row.Purpose.Length > 1024 ||
                 row.Sum == 0 || Math.Abs(row.Sum) > 999_999_999m || decimal.Round(row.Sum, 4) != row.Sum)
@@ -106,11 +135,13 @@ internal sealed class BankRepository(FinanceAccess access, BankImportSessions se
         {
             using var next = Command(c, "SELECT ISNULL(MAX(NR),0) FROM dbo.BankTransfersTable WITH (TABLOCKX, HOLDLOCK)", tx);
             var max = Convert.ToInt32(await next.ExecuteScalarAsync(ct));
-            if (max > int.MaxValue - request.Rows.Count) throw new BankOperationException(409, "NR range exhausted.");
+            if (max > int.MaxValue - rows.Length) throw new BankOperationException(409, "NR range exhausted.");
+            if ((long)max + 1 != request.ExpectedNextNr)
+                throw new BankOperationException(409, "The latest NR changed. Paste the statement again.");
             var saved = new List<BankPaymentRow>();
             var seen = new HashSet<string>(StringComparer.Ordinal);
             var byDateSum = config["Finance:DuplicateKey"] == "DateSum";
-            foreach (var row in request.Rows)
+            foreach (var row in rows)
             {
                 var duplicateKey = $"{row.Date:yyyyMMdd}|{(byDateSum ? "" : row.Firm.Trim().ToUpperInvariant())}|{row.Sum:0.0000}";
                 if (!seen.Add(duplicateKey) && !row.AllowDuplicate)
@@ -136,6 +167,7 @@ internal sealed class BankRepository(FinanceAccess access, BankImportSessions se
                 saved.Add(new BankPaymentRow(nr, row.Date, row.Firm.Trim(), row.Purpose.Trim(), row.Sum));
             }
             await tx.CommitAsync(ct);
+            sessions.RemovePreview(request.PreviewId);
             var id = Guid.NewGuid();
             sessions.Save(new BankImportBatch(id, actor.UserId, saved, DateTimeOffset.UtcNow));
             return new BankImportResult(id, saved[0].Nr, saved[^1].Nr, saved.Count);

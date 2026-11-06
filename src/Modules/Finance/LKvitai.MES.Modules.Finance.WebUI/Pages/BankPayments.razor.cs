@@ -13,7 +13,7 @@ public partial class BankPayments
         DateOnly? LastDate, int Page, int PageSize);
     private sealed record PasteRow(int Line, DateOnly? Date, string Firm, string Purpose, decimal? Sum,
         string Status, string? Error, string Raw, bool Selected);
-    private sealed record PasteResult(IReadOnlyList<PasteRow> Rows);
+    private sealed record PasteResult(Guid PreviewId, int LatestNr, IReadOnlyList<PasteRow> Rows);
     private sealed record ImportResult(Guid ImportId, int NrFrom, int NrTo, int Count);
     private static readonly (string Key, string Label)[] Columns =
     [
@@ -42,7 +42,9 @@ public partial class BankPayments
     }
     private string Failure(Exception error)
     {
-        var code = error.Message;
+        var marker = "finance-http:";
+        var offset = error.Message.IndexOf(marker, StringComparison.Ordinal);
+        var code = offset < 0 ? "" : new string(error.Message[(offset + marker.Length)..].TakeWhile(char.IsDigit).ToArray());
         return code is "400" or "401" or "403" or "409" or "503"
             ? L["Bank.Failed" + code].Value : L["Bank.ActionError"].Value;
     }
@@ -130,9 +132,11 @@ public partial class BankPayments
         _busy = true; _error = null;
         try
         {
-            var rows = chosen.Select(x => new { date = x.Date!.Value, firm = x.Firm,
-                purpose = x.Purpose, sum = x.Sum!.Value, allowDuplicate = x.Status == "Duplicate" }).ToArray();
-            _toast = JsonSerializer.Deserialize<ImportResult>(await Request("", "POST", new { country = _country, rows }), Json);
+            _toast = JsonSerializer.Deserialize<ImportResult>(await Request("", "POST", new {
+                country = _country, previewId = _preview!.PreviewId,
+                expectedNextNr = _preview.LatestNr + 1,
+                selectedLines = chosen.Select(x => x.Line).ToArray()
+            }), Json);
             _justImported = _toast is null ? [] : Enumerable.Range(_toast.NrFrom, _toast.Count).ToHashSet();
             _preview = null; _armed = false; _period = "all"; _search = ""; _page = 1; _sort = "nr"; _desc = true;
             await Load();

@@ -114,7 +114,8 @@ export function startRemote(config: Config, log: Log = stderrLog, deps: Dependen
     detail.rpc = rpcSummary(body);
     if (bearer.subject) detail.sub = bearer.subject.slice(0, 64);
 
-    const api = new CikadaApi({ salesUrl: config.salesApiUrl, warehouseUrl: config.warehouseApiUrl, token: bearer.token, ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}) });
+    const api = new CikadaApi({ salesUrl: config.salesApiUrl, warehouseUrl: config.warehouseApiUrl,
+      financeUrl: config.financeApiUrl, token: bearer.token, ...(deps.fetchImpl ? { fetchImpl: deps.fetchImpl } : {}) });
     const server = createServer({ api, newId: deps.newId ?? randomUUID, today: deps.today ?? vilniusToday, user: bearer.user }, config.orderEntry, log);
     const transport = new WebStandardStreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
     try {

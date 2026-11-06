@@ -34,6 +34,13 @@ Read (always on):
 | `items_search` | Warehouse `GET /api/warehouse/v1/items`, `GET /api/warehouse/v1/stock/available`, `GET /api/warehouse/v1/price-groups/{id}/item-prices` |
 | `stock_get` | Warehouse `GET /api/warehouse/v1/stock/available` |
 | `whoami` | none: the signed-in user and roles from the token (explains a 403) |
+| `bank_payments_preview` | Finance `POST /api/finance/bank-payments/preview`: validate extracted bank rows against the live legacy table, report duplicates, errors, latest NR and projected NR range; no writes |
+
+Bank statement import: attach an Excel, CSV, PDF, screenshot, MT940, CAMT.053 or other bank statement in ChatGPT and ask Cikada to preview it. ChatGPT reads the attachment with its available file or vision capabilities and passes the extracted rows to `bank_payments_preview`; the MCP server does not receive or decode the original binary file. Review the complete preview and approve the selected lines explicitly. `bank_payments_import` then writes only rows held in that server-side preview. Import fails if the preview expires (15 minutes) or another entry changes the latest NR. Unreadable fields stay blank and are marked as errors. Both tools require the operator's Finance access and legacy SQL mapping.
+
+| Write tool | API call |
+|---|---|
+| `bank_payments_import` | Finance `POST /api/finance/bank-payments`: import explicitly approved preview lines after rechecking the current NR |
 
 Management reports (live legacy Mango workbook reports; roles SalesAdmin or Reports, plus the caller's legacy SQL permissions):
 
@@ -100,6 +107,7 @@ Prompts: `daily_orders_review`, `take_new_order` (order entry only).
 | `MCP_OAUTH_CLIENT_ID` | yes | | Public client id of authentik app `cikada-mcp` (GitHub var `CIKADA_MCP_CLIENT_ID`) |
 | `SALES_API_URL` | yes | | e.g. `http://lkvitai-mes-sales-api:8080` |
 | `WAREHOUSE_API_URL` | yes | | e.g. `http://lkvitai-mes-warehouse-api:8080` |
+| `FINANCE_API_URL` | yes | | e.g. `http://lkvitai-mes-finance-api:8080` |
 | `MCP_ENABLE_ORDER_ENTRY` | no | `false` | `true` offers the order entry tools |
 | `MCP_PORT` | no | `8080` | |
 | `MCP_OAUTH_ISSUER` | no | `https://sso.lauresta.com/application/o/cikada-mcp/` | Expected `iss` |
@@ -111,7 +119,7 @@ Prompts: `daily_orders_review`, `take_new_order` (order entry only).
 cd src/Mcp/Cikada.Mcp
 npm ci && npm run build && npm test
 MCP_PUBLIC_URL=http://localhost:5070 MCP_PORT=5070 MCP_OAUTH_CLIENT_ID=<client id> \
-  SALES_API_URL=http://localhost:5021 WAREHOUSE_API_URL=http://localhost:5001 npm start
+  SALES_API_URL=http://localhost:5021 WAREHOUSE_API_URL=http://localhost:5001 FINANCE_API_URL=http://localhost:5031 npm start
 docker build -t lkvitai-mes-mcp .
 ```
 

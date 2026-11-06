@@ -25,8 +25,10 @@
   @if (_armed)
   {
     <div class="bp-paste"><textarea data-paste placeholder="@L["Bank.PasteHint"]"></textarea>
-      @if (!HostEnvironment.IsProduction()) { <button type="button" class="bp-link" @onclick="PasteSample">@L["Bank.Sample"]</button> }
-      <button type="button" class="bp-link" @onclick="CancelPaste">@L["Bank.Cancel"]</button>
+      <div class="bp-paste-actions">
+        @if (!HostEnvironment.IsProduction()) { <button type="button" class="bp-link" @onclick="PasteSample">@L["Bank.Sample"]</button> }
+        <button type="button" class="bp-link bp-link--muted" @onclick="CancelPaste">@L["Bank.Cancel"]</button>
+      </div>
     </div>
   }
   @if (!string.IsNullOrWhiteSpace(_error)) { <div class="bp-error" role="alert">@_error</div> }
@@ -35,9 +37,14 @@
     <section class="bp-preview" aria-live="polite">
       <div class="bp-preview-head">
         <div><strong>@L["Bank.Preview"]</strong><div class="bp-muted">@L["Bank.PreviewSummary", _preview.Rows.Count, CountStatus("New"), CountStatus("Duplicate"), CountStatus("Error")]</div></div>
+        <span class="bp-muted mono">@(SelectedRows().Count == 0 ? L["Bank.PreviewLatestNr", _preview.LatestNr] : L["Bank.PreviewNrRange", _preview.LatestNr, _preview.LatestNr + 1, _preview.LatestNr + SelectedRows().Count])</span>
         <span class="bp-muted">@L["Bank.SelectedSum", Money(SelectedRows().Sum(x => x.Sum!.Value))]</span>
         <button class="bp-ghost" type="button" @onclick="CancelPaste">@L["Bank.Cancel"]</button>
         <button class="bp-primary" type="button" disabled="@(SelectedRows().Count == 0 || _busy)" @onclick="Import">@L["Bank.Import", SelectedRows().Count, _country]</button>
+      </div>
+      <div class="bp-preview-columns" aria-hidden="true">
+        <span></span><span>@L["Bank.Status"]</span><span>@L["Bank.Date"]</span>
+        <span>@L["Bank.Firm"]</span><span>@L["Bank.Purpose"]</span><span class="bp-money">@L["Bank.Sum"]</span>
       </div>
       <div class="bp-preview-scroll">
         @foreach (var row in _preview.Rows)
@@ -47,7 +54,7 @@
             <span class="bp-chip bp-chip--@row.Status.ToLowerInvariant()">@Status(row.Status)</span>
             <span class="mono">@(row.Date?.ToString("yyyy-MM-dd") ?? "—")</span>
             <span title="@row.Firm">@row.Firm</span>
-            <span class="@(row.Status == "Error" ? "bp-invalid" : "")" title="@(row.Status == "Error" ? row.Raw : row.Purpose)">@(row.Status == "Error" ? $"{ErrorText(row.Error)}: {row.Raw.Replace('\t', '|')}" : row.Purpose)</span>
+            <span class="@(row.Status == "Error" ? "bp-invalid" : "")" title="@(row.Status == "Error" ? row.Raw : row.Purpose)">@(row.Status == "Error" ? L["Bank.ErrorLine", ErrorText(row.Error), row.Raw.Replace('\t', '|')].Value : row.Purpose)</span>
             <span class="mono bp-money">@(row.Sum is null ? "—" : Money(row.Sum.Value))</span>
           </div>
         }
@@ -64,24 +71,30 @@
     </div>
     <div class="bp-table-body">
       @if (_loading) { <div class="bp-empty">@L["Bank.Loading"]</div> }
-      else if (_data?.Items.Count is null or 0) { <div class="bp-empty">@L["Bank.Empty"]</div> }
-      else
+      else if (_error is null)
       {
-        @foreach (var row in _data.Items)
+        @if (_data?.Items.Count is null or 0) { <div class="bp-empty">@L["Bank.Empty"]</div> }
+        else
         {
-          <div class="bp-row bp-data-row @(_justImported.Contains(row.Nr) ? "bp-row--new" : "")" @key="row.Nr">
-            <span class="mono bp-nr">@row.Nr</span>
-            <span class="mono">@row.Date.ToString("yyyy-MM-dd")</span>
-            <strong title="@row.Firm">@row.Firm</strong>
-            <span title="@row.Purpose">@row.Purpose</span>
-            <span class="mono bp-money">@Money(row.Sum)</span>
-            <button type="button" class="bp-delete" aria-label="@L["Bank.Delete", row.Nr]" title="@L["Bank.Delete", row.Nr]" @onclick="() => Delete(row.Nr)">×</button>
-          </div>
+          @foreach (var row in _data!.Items)
+          {
+            <div class="bp-row bp-data-row @(_justImported.Contains(row.Nr) ? "bp-row--new" : "")" @key="row.Nr">
+              <span class="mono bp-nr">@row.Nr</span>
+              <span class="mono">@row.Date.ToString("yyyy-MM-dd")</span>
+              <strong title="@row.Firm">@row.Firm</strong>
+              <span title="@row.Purpose">@row.Purpose</span>
+              <span class="mono bp-money">@Money(row.Sum)</span>
+              <button type="button" class="bp-delete" aria-label="@L["Bank.Delete", row.Nr]" title="@L["Bank.Delete", row.Nr]" @onclick="() => Delete(row.Nr)">×</button>
+            </div>
+          }
         }
       }
     </div>
     <div class="bp-footer"><span>@L["Bank.Showing", _data?.Items.Count ?? 0, _data?.CountryTotal ?? 0]</span>
-      <div class="bp-pager"><button type="button" disabled="@(_page <= 1)" @onclick="Previous">@L["Bank.Previous"]</button><span class="mono">@_page</span><button type="button" disabled="@(_data is null || _page * _data.PageSize >= _data.Total)" @onclick="Next">@L["Bank.Next"]</button></div>
+      @if (_data is not null && _data.Total > _data.PageSize)
+      {
+        <div class="bp-pager"><button type="button" disabled="@(_page <= 1)" @onclick="Previous">@L["Bank.Previous"]</button><span class="mono">@_page</span><button type="button" disabled="@(_page * _data.PageSize >= _data.Total)" @onclick="Next">@L["Bank.Next"]</button></div>
+      }
       <span class="mono">@L["Bank.VisibleSum", Money(_data?.Items.Sum(x => x.Sum) ?? 0)]</span></div>
   </section>
   @if (_toast is not null)

@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using Microsoft.Data.SqlClient;
+using LKvitai.MES.BuildingBlocks.PortalAuth;
 
 namespace LKvitai.MES.Modules.Finance.Api.BankPayments;
 
@@ -7,18 +8,33 @@ public sealed record BankPaymentRow(int Nr, DateOnly Date, string Firm, string P
 public sealed record BankPaymentPage(IReadOnlyList<BankPaymentRow> Items, int Total, int CountryTotal,
     DateOnly? LastDate, int Page, int PageSize);
 public sealed record BankPasteRequest(string Country, string Text);
-public sealed record BankPasteResult(IReadOnlyList<BankPasteRow> Rows);
+public sealed record BankPasteResult(Guid PreviewId, int LatestNr, IReadOnlyList<BankPasteRow> Rows);
+public sealed record BankStructuredRow(string Date, string Firm, string Purpose, string Sum);
+public sealed record BankStructuredPreviewRequest(string Country, IReadOnlyList<BankStructuredRow> Rows);
 public sealed record BankImportRow(DateOnly Date, string Firm, string Purpose, decimal Sum, bool AllowDuplicate = false);
-public sealed record BankImportRequest(string Country, IReadOnlyList<BankImportRow> Rows);
+public sealed record BankImportRequest(string Country, Guid PreviewId, int ExpectedNextNr, IReadOnlyList<int> SelectedLines);
 public sealed record BankImportResult(Guid ImportId, int NrFrom, int NrTo, int Count);
 internal sealed record BankImportBatch(Guid Id, Guid Actor, IReadOnlyList<BankPaymentRow> Rows, DateTimeOffset Created);
+internal sealed record BankPreviewBatch(Guid Id, Guid Actor, string Country, int LatestNr,
+    IReadOnlyList<BankPasteRow> Rows, DateTimeOffset Created);
 internal sealed class BankImportSessions
 {
     private readonly ConcurrentDictionary<Guid, BankImportBatch> _last = new();
+    private readonly ConcurrentDictionary<Guid, BankPreviewBatch> _previews = new();
     public void Save(BankImportBatch batch) => _last[batch.Actor] = batch;
     public BankImportBatch? Get(Guid actor, Guid id) => _last.TryGetValue(actor, out var batch) && batch.Id == id &&
         batch.Created > DateTimeOffset.UtcNow.AddMinutes(-30) ? batch : null;
     public void Remove(Guid actor, Guid id) { if (Get(actor, id) is not null) _last.TryRemove(actor, out _); }
+    public void SavePreview(BankPreviewBatch batch)
+    {
+        foreach (var stale in _previews.Where(item => item.Value.Created <= DateTimeOffset.UtcNow.AddMinutes(-15)))
+            _previews.TryRemove(stale.Key, out _);
+        _previews[batch.Id] = batch;
+    }
+    public BankPreviewBatch? GetPreview(Guid actor, Guid id) =>
+        _previews.TryGetValue(id, out var batch) && batch.Actor == actor &&
+        batch.Created > DateTimeOffset.UtcNow.AddMinutes(-15) ? batch : null;
+    public void RemovePreview(Guid id) => _previews.TryRemove(id, out _);
 }
 internal sealed class BankOperationException(int status, string message) : Exception(message) { public int Status { get; } = status; }
 
@@ -26,11 +42,12 @@ internal static class BankPaymentsEndpoints
 {
     public static void MapBankPayments(this WebApplication app)
     {
-        var group = app.MapGroup("/api/finance/bank-payments").RequireAuthorization();
+        var group = app.MapGroup("/api/finance/bank-payments").RequireAuthorization("FinanceUser");
         group.AddEndpointFilter(async (context, next) =>
         {
             var http = context.HttpContext;
-            if (http.Request.Method != "GET")
+            if (http.Request.Method != "GET" &&
+                http.User.Identity?.AuthenticationType != SalesCredentialProtector.SsoScheme)
             {
                 var origin = http.Request.Headers.Origin.ToString();
                 if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri) ||
@@ -58,6 +75,8 @@ internal static class BankPaymentsEndpoints
                 sort, desc ?? true, page ?? 1, http.RequestAborted));
         group.MapPost("/parse", (HttpContext http, BankRepository repo, BankPasteRequest request,
             IConfiguration configuration) => repo.Parse(Actor(http), request, configuration, http.RequestAborted));
+        group.MapPost("/preview", (HttpContext http, BankRepository repo, BankStructuredPreviewRequest request,
+            IConfiguration configuration) => repo.PreviewStructured(Actor(http), request, configuration, http.RequestAborted));
         group.MapPost("", (HttpContext http, BankRepository repo, BankImportRequest request) =>
             repo.Import(Actor(http), request, http.RequestAborted));
         group.MapDelete("/{nr:int}", async (HttpContext http, BankRepository repo, int nr) =>

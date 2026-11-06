@@ -9,12 +9,31 @@ namespace LKvitai.MES.Modules.Finance.Api.BankPayments;
 internal sealed record FinanceActor(Guid UserId, string LegacyLogin);
 internal sealed record LegacyMapping(Guid UserId, string? LegacySqlLogin);
 
-internal sealed class FinanceAccess(IHttpClientFactory clients, CikadaUserBridgeProof proof, IConfiguration configuration)
+internal sealed class FinanceAccess(IHttpClientFactory clients, CikadaUserBridgeProof proof,
+    CikadaSsoAccountLookup ssoAccounts, IConfiguration configuration)
 {
     public async Task<FinanceActor?> ResolveAsync(ClaimsPrincipal user, CancellationToken ct)
     {
-        if (user.Identity?.IsAuthenticated != true ||
-            !Guid.TryParse(user.FindFirstValue(ClaimTypes.NameIdentifier), out var id)) return null;
+        var identities = user.Identities.Where(value => value.IsAuthenticated).ToArray();
+        if (identities.Length != 1) return null;
+        var identity = identities[0];
+        if (identity?.AuthenticationType is not ("Cookies" or SalesCredentialProtector.SsoScheme)) return null;
+        Guid id;
+        if (identity.FindFirst("auth_source")?.Value == CikadaJwtValidator.AuthSource)
+        {
+            // The SSO subject is an external string, not the Cikada account GUID.
+            // Resolve it through the same signed, current-account lookup used by Sales.
+            var account = await ssoAccounts.ResolveAsync(user, ct);
+            if (account is null) return null;
+            id = account.UserId;
+        }
+        else if (identity.AuthenticationType == "Cookies" &&
+                 Guid.TryParse(identity.FindFirst(ClaimTypes.NameIdentifier)?.Value, out var localId) &&
+                 localId != Guid.Empty)
+        {
+            id = localId;
+        }
+        else return null;
         using var request = new HttpRequestMessage(HttpMethod.Get, "/api/internal/legacy-sql-identity");
         request.Headers.Add(CikadaUserBridgeProof.HeaderName, proof.Create(id, CikadaUserBridgeProof.LookupLegacySql));
         using var response = await clients.CreateClient("CikadaUsers").SendAsync(request, ct);
