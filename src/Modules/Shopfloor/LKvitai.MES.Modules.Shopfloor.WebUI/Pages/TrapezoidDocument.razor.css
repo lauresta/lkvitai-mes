@@ -68,12 +68,12 @@
 .trap-manualnote { padding:3px 0; color:#666; font:9px var(--font-mono) }
 .trap-paperbody { display:grid; grid-template-columns:1.32fr 1fr; gap:16px; flex:1; min-height:0; padding-top:10px }
 .trap-scheme-area { display:flex; flex-direction:column; min-width:0; min-height:0 }
-.trap-scheme { width:100%; height:260px; max-height:55%; overflow:visible }
+.trap-scheme { width:100%; height:320px; max-height:70%; overflow:visible }
 .trap-scheme rect { fill:white; stroke:#aeb7c0; stroke-width:1; cursor:pointer }
 .trap-scheme rect:hover { fill:var(--accent-50); stroke:var(--accent-400) }
 .trap-scheme rect.selected { fill:var(--accent-50); stroke:var(--accent-700); stroke-width:4 }
-.trap-scheme text { fill:#333; font:20px var(--font-mono) }
-.trap-scheme-num { font-size:17px!important; text-anchor:middle }
+.trap-scheme text { fill:#333; font:700 var(--trap-scheme-font,80px) var(--font-mono) }
+.trap-scheme-num { font-size:var(--trap-scheme-num-font,68px)!important; text-anchor:middle }
 .trap-scheme-num.selected { fill:var(--accent-700) }
 .trap-schemenote { margin:5px 0; color:#555; font-size:9px }
 .trap-summary { display:grid; grid-template-columns:repeat(3,1fr); border:1px solid #ddd; margin-top:auto }
