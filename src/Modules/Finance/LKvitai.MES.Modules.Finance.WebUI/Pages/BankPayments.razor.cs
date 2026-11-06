@@ -12,7 +12,8 @@ public partial class BankPayments
     private sealed record PaymentPage(IReadOnlyList<PaymentRow> Items, int Total, int CountryTotal,
         DateOnly? LastDate, int Page, int PageSize);
     private sealed record PasteRow(int Line, DateOnly? Date, string Firm, string Purpose, decimal? Sum,
-        string Status, string? Error, string Raw, bool Selected);
+        string Status, string? Error, string Raw, bool Selected,
+        int? MatchedNr, string? MatchedFirm);
     private sealed record PasteResult(Guid PreviewId, int LatestNr, IReadOnlyList<PasteRow> Rows);
     private sealed record ImportResult(Guid ImportId, int NrFrom, int NrTo, int Count);
     private static readonly (string Key, string Label)[] Columns =

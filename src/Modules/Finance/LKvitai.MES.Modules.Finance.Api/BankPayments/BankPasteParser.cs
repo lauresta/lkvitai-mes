@@ -4,7 +4,8 @@ using System.Text.RegularExpressions;
 namespace LKvitai.MES.Modules.Finance.Api.BankPayments;
 
 public sealed record BankPasteRow(int Line, DateOnly? Date, string Firm, string Purpose, decimal? Sum,
-    string Status, string? Error, string Raw, bool Selected = false);
+    string Status, string? Error, string Raw, bool Selected = false,
+    int? MatchedNr = null, string? MatchedFirm = null);
 
 public static partial class BankPasteParser
 {
@@ -12,6 +13,46 @@ public static partial class BankPasteParser
     private static partial Regex DateShape();
     [GeneratedRegex(@"^\d{4,6}$")]
     private static partial Regex LegacyNumber();
+
+    public static IReadOnlyList<BankPasteRow> MarkDuplicates(IReadOnlyList<BankPasteRow> rows,
+        IReadOnlyList<BankPaymentRow> existing, bool dateSumOnly)
+    {
+        static string Key(DateOnly date, string firm, decimal sum, bool includeFirm) =>
+            FormattableString.Invariant($"{date:yyyyMMdd}|{(includeFirm ? firm.Trim().ToUpperInvariant() : "")}|{sum:0.0000}");
+        var exact = new Dictionary<string, BankPaymentRow>(StringComparer.Ordinal);
+        var sameDateSum = new Dictionary<string, BankPaymentRow>(StringComparer.Ordinal);
+        foreach (var payment in existing)
+        {
+            exact.TryAdd(Key(payment.Date, payment.Firm, payment.Sum, !dateSumOnly), payment);
+            sameDateSum.TryAdd(Key(payment.Date, "", payment.Sum, false), payment);
+        }
+        var batchExact = new HashSet<string>(StringComparer.Ordinal);
+        var batchDateSum = new HashSet<string>(StringComparer.Ordinal);
+        var result = new List<BankPasteRow>(rows.Count);
+        foreach (var row in rows)
+        {
+            if (row.Status == "Error" || row.Date is null || row.Sum is null)
+            {
+                result.Add(row);
+                continue;
+            }
+            var exactKey = Key(row.Date.Value, row.Firm, row.Sum.Value, !dateSumOnly);
+            var dateSumKey = Key(row.Date.Value, "", row.Sum.Value, false);
+            if (exact.TryGetValue(exactKey, out var exactMatch))
+                result.Add(row with { Status = "Duplicate", Selected = false,
+                    MatchedNr = exactMatch.Nr, MatchedFirm = exactMatch.Firm });
+            else if (!batchExact.Add(exactKey))
+                result.Add(row with { Status = "Duplicate", Selected = false });
+            else if (sameDateSum.TryGetValue(dateSumKey, out var possibleMatch))
+                result.Add(row with { Status = "PossibleDuplicate", Selected = false,
+                    MatchedNr = possibleMatch.Nr, MatchedFirm = possibleMatch.Firm });
+            else if (!batchDateSum.Add(dateSumKey))
+                result.Add(row with { Status = "PossibleDuplicate", Selected = false });
+            else result.Add(row);
+            batchDateSum.Add(dateSumKey);
+        }
+        return result;
+    }
 
     public static IReadOnlyList<BankPasteRow> Parse(string text)
     {

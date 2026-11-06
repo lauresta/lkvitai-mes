@@ -20,7 +20,7 @@ export const FINANCE_TOOLS: readonly ToolDef[] = [
   {
     name: 'bank_payments_preview',
     title: 'Preview a bank statement import',
-    description: 'Read the attached bank statement (Excel/XLSX, CSV, PDF, screenshot, MT940, CAMT.053 or another bank format) using your file or vision capabilities. Extract each transaction into date, payer, purpose and exact signed amount. Never infer unreadable values: use an empty field so the API marks an error. Send at most 100 rows per batch, preserving source order. This read-only tool checks the live legacy bank table for duplicates and returns its latest NR, projected new NR range, errors and previewId. Show the complete preview to the user and get explicit approval before bank_payments_import.',
+    description: 'Read the attached bank statement (Excel/XLSX, CSV, PDF, screenshot, MT940, CAMT.053 or another bank format) using your file or vision capabilities. Extract each transaction into date, payer, purpose and exact signed amount. Never infer unreadable values: use an empty field so the API marks an error. Send at most 100 rows per batch, preserving source order. This read-only tool checks the live legacy bank table. OCR can shorten or misspell payer names: a matching date and amount with a different payer is PossibleDuplicate, never New. Show its matched NR and payer to the user; do not offer it for import by default. Show the complete preview and get explicit approval before bank_payments_import.',
     inputSchema: obj({
       country,
       rows: { type: 'array', description: 'Transactions extracted from one statement, in source order. Split larger statements into batches.', items: payment, minItems: 1, maxItems: 100 },
@@ -33,19 +33,21 @@ export const FINANCE_TOOLS: readonly ToolDef[] = [
       const latestNr = Number(result.latestNr);
       const newLines = rows.filter((row) => row.status === 'New').map((row) => row.line);
       const duplicateCount = rows.filter((row) => row.status === 'Duplicate').length;
+      const possibleDuplicateCount = rows.filter((row) => row.status === 'PossibleDuplicate').length;
       const errorCount = rows.filter((row) => row.status === 'Error').length;
       const nextNr = latestNr + 1;
       return {
-        text: `Latest bank NR: ${latestNr}. ${newLines.length} new (projected NR ${nextNr}–${latestNr + newLines.length}), ${duplicateCount} duplicates, ${errorCount} errors. Review every row and ask for explicit confirmation before importing.`,
+        text: `Latest bank NR: ${latestNr}. ${newLines.length} new (projected NR ${nextNr}–${latestNr + newLines.length}), ${duplicateCount} duplicates, ${possibleDuplicateCount} possible duplicates, ${errorCount} errors. Possible duplicates have a matched NR/payer and are excluded by default. Review every row and ask for explicit confirmation before importing.`,
         data: { country: args.country, previewId: result.previewId, latestNr, nextNr,
-          projectedNrTo: latestNr + newLines.length, selectedNewLines: newLines, rows },
+          projectedNrTo: latestNr + newLines.length, selectedNewLines: newLines,
+          possibleDuplicateCount, rows },
       };
     },
   },
   {
     name: 'bank_payments_import',
     title: 'Import reviewed bank payments',
-    description: 'Writes selected rows from a recent bank_payments_preview into the shared production legacy bank table. The chosen rows are read from the server-side preview; the latest NR must still match. Call only after showing the full preview and receiving an explicit yes from the user. New rows are selected by default; include a duplicate line only if the user explicitly approved that duplicate.',
+    description: 'Writes selected rows from a recent bank_payments_preview into the shared production legacy bank table. The chosen rows are read from the server-side preview; the latest NR must still match. Call only after showing the full preview and receiving an explicit yes from the user. New rows are selected by default; include a Duplicate or PossibleDuplicate line only if the user explicitly approved that specific line after seeing its matched NR and payer.',
     inputSchema: obj({
       country,
       previewId: str('previewId returned by bank_payments_preview.', { pattern: '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$' }),

@@ -79,6 +79,7 @@ test('bank preview reports live NR and import uses only a confirmed server previ
     ? { status: 200, body: { previewId, latestNr: 340, rows: [
       { line: 1, date: '2026-11-06', firm: 'UAB Test', purpose: 'Invoice 1', sum: 24.5, status: 'New', selected: true },
       { line: 2, date: '2026-11-06', firm: 'UAB Test', purpose: 'Invoice 2', sum: 24.5, status: 'Duplicate', selected: false },
+      { line: 3, date: '2026-10-30', firm: 'Vida Rudženskienė', purpose: 'Advance', sum: 225, status: 'PossibleDuplicate', selected: false, matchedNr: 79757, matchedFirm: 'Vida Rudzenskienė' },
     ] } }
     : { status: 200, body: { importId: '00000000-0000-4000-8000-000000000124', nrFrom: 341, nrTo: 341, count: 1 } });
   const stand = await running(testConfig(), { fetchImpl: api.fetchImpl });
@@ -90,6 +91,9 @@ test('bank preview reports live NR and import uses only a confirmed server previ
     assert.equal(preview.structuredContent.latestNr, 340);
     assert.equal(preview.structuredContent.nextNr, 341);
     assert.deepEqual(preview.structuredContent.selectedNewLines, [1]);
+    assert.equal(preview.structuredContent.possibleDuplicateCount, 1);
+    assert.match(preview.content[0].text, /1 possible duplicates/);
+    assert.equal(preview.structuredContent.rows[2].matchedNr, 79757);
     assert.deepEqual(api.seen[0]?.body, { country: 'LT', rows });
     assert.equal(api.seen[0]?.url.origin, 'https://finance.internal');
     assert.equal(api.seen[0]?.headers.authorization, `Bearer ${token}`);
