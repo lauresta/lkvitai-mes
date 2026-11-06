@@ -136,7 +136,7 @@ internal sealed class BankRepository(FinanceAccess access, BankImportSessions se
             using var next = Command(c, "SELECT ISNULL(MAX(NR),0) FROM dbo.BankTransfersTable WITH (TABLOCKX, HOLDLOCK)", tx);
             var max = Convert.ToInt32(await next.ExecuteScalarAsync(ct));
             if (max > int.MaxValue - rows.Length) throw new BankOperationException(409, "NR range exhausted.");
-            if (max + 1 != request.ExpectedNextNr)
+            if ((long)max + 1 != request.ExpectedNextNr)
                 throw new BankOperationException(409, "The latest NR changed. Paste the statement again.");
             var saved = new List<BankPaymentRow>();
             var seen = new HashSet<string>(StringComparer.Ordinal);

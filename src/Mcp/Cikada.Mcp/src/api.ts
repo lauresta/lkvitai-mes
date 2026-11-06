@@ -48,8 +48,12 @@ export class CikadaApi {
   }
 
   async call(input: ApiCall): Promise<ApiResult> {
-    const base = input.target === 'sales' ? this.options.salesUrl :
-      input.target === 'finance' ? this.options.financeUrl : this.options.warehouseUrl;
+    const urls: Record<Target, string> = {
+      sales: this.options.salesUrl,
+      warehouse: this.options.warehouseUrl,
+      finance: this.options.financeUrl,
+    };
+    const base = urls[input.target];
     const url = new URL(base + input.path);
     for (const [name, value] of Object.entries(input.query ?? {})) {
       if (value !== undefined && value !== null && value !== '') url.searchParams.set(name, String(value));
@@ -90,7 +94,7 @@ export function toApiError(input: ApiCall, result: ApiResult): ApiError {
   const code = typeof problem.code === 'string' ? problem.code : undefined;
   const title = typeof problem.title === 'string' ? problem.title : typeof problem.message === 'string' ? problem.message : typeof problem.error === 'string' ? problem.error : undefined;
   const detail = typeof problem.detail === 'string' ? problem.detail : undefined;
-  const api = input.target === 'sales' ? 'Sales API' : input.target === 'finance' ? 'Finance API' : 'Warehouse API';
+  const api = { sales: 'Sales API', warehouse: 'Warehouse API', finance: 'Finance API' }[input.target];
   let message: string;
   switch (result.status) {
     case 401:

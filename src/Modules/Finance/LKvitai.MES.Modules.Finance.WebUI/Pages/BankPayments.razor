@@ -71,20 +71,22 @@
     </div>
     <div class="bp-table-body">
       @if (_loading) { <div class="bp-empty">@L["Bank.Loading"]</div> }
-      else if (_error is not null) { }
-      else if (_data?.Items.Count is null or 0) { <div class="bp-empty">@L["Bank.Empty"]</div> }
-      else
+      else if (_error is null)
       {
-        @foreach (var row in _data.Items)
+        @if (_data?.Items.Count is null or 0) { <div class="bp-empty">@L["Bank.Empty"]</div> }
+        else
         {
-          <div class="bp-row bp-data-row @(_justImported.Contains(row.Nr) ? "bp-row--new" : "")" @key="row.Nr">
-            <span class="mono bp-nr">@row.Nr</span>
-            <span class="mono">@row.Date.ToString("yyyy-MM-dd")</span>
-            <strong title="@row.Firm">@row.Firm</strong>
-            <span title="@row.Purpose">@row.Purpose</span>
-            <span class="mono bp-money">@Money(row.Sum)</span>
-            <button type="button" class="bp-delete" aria-label="@L["Bank.Delete", row.Nr]" title="@L["Bank.Delete", row.Nr]" @onclick="() => Delete(row.Nr)">×</button>
-          </div>
+          @foreach (var row in _data!.Items)
+          {
+            <div class="bp-row bp-data-row @(_justImported.Contains(row.Nr) ? "bp-row--new" : "")" @key="row.Nr">
+              <span class="mono bp-nr">@row.Nr</span>
+              <span class="mono">@row.Date.ToString("yyyy-MM-dd")</span>
+              <strong title="@row.Firm">@row.Firm</strong>
+              <span title="@row.Purpose">@row.Purpose</span>
+              <span class="mono bp-money">@Money(row.Sum)</span>
+              <button type="button" class="bp-delete" aria-label="@L["Bank.Delete", row.Nr]" title="@L["Bank.Delete", row.Nr]" @onclick="() => Delete(row.Nr)">×</button>
+            </div>
+          }
         }
       }
     </div>
