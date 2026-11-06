@@ -127,12 +127,16 @@ public static class TrapezoidVersionEndpoints
     {
         ["controlType"] = inputs.ControlType == item.ControlType ? "item" : "manual",
         ["slatWidthMm"] = inputs.SlatWidthMm == item.SlatWidthItemMm ? "item" : "manual",
-        ["widthMm"] = inputs.WidthMm == (double?)item.WidthMm ? "order" : "manual",
-        ["tallHeightMm"] = inputs.TallHeightMm == (double?)item.TallHeightMm ? "order" : "manual",
-        ["shortHeightMm"] = inputs.ShortHeightMm == (double?)item.ShortHeightMm ? "order" : "manual",
-        ["overhangMm"] = inputs.OverhangMm == (double?)item.OverhangMm ? "order" : "manual",
+        ["widthMm"] = Matches(inputs.WidthMm, item.WidthMm) ? "order" : "manual",
+        ["tallHeightMm"] = Matches(inputs.TallHeightMm, item.TallHeightMm) ? "order" : "manual",
+        ["shortHeightMm"] = Matches(inputs.ShortHeightMm, item.ShortHeightMm) ? "order" : "manual",
+        ["overhangMm"] = Matches(inputs.OverhangMm, item.OverhangMm) ? "order" : "manual",
         ["highSide"] = "manual" // Legacy has no verified orientation field.
     };
+
+    private static bool Matches(double? input, decimal? source) =>
+        input.HasValue && source.HasValue &&
+        Math.Abs(input.Value - (double)source.Value) < 0.000001;
 }
 
 public sealed class TrapezoidVersionStore(ShopfloorDbContext db)
