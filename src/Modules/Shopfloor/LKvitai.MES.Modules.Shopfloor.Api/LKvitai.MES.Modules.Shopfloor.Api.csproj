@@ -12,6 +12,7 @@
     <PackageReference Include="Serilog.AspNetCore" />
     <PackageReference Include="Serilog.Sinks.Console" />
     <PackageReference Include="Serilog.Sinks.File" />
+    <PackageReference Include="PDFsharp" />
   </ItemGroup>
 
   <ItemGroup>

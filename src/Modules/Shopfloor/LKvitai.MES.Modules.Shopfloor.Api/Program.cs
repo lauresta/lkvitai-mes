@@ -37,6 +37,8 @@ builder.Services.AddScoped<ProductionTaskWriter>();
 builder.Services.AddScoped<ProductionHistoryReader>();
 builder.Services.AddScoped<ProductionRepairReader>();
 builder.Services.AddScoped<ProductionReportDataReader>();
+builder.Services.AddScoped<TrapezoidItemReader>();
+builder.Services.AddScoped<TrapezoidVersionStore>();
 builder.Services.AddScoped<RoletaiTemplateStore>();
 builder.Services.AddScoped<ProductionDocumentReader>();
 builder.Services.AddScoped<ProductionScanCandidateReader>();
@@ -104,6 +106,8 @@ if (productionQueueEnabled)
     shopfloor.MapProductionHistoryEndpoints();
     shopfloor.MapProductionRepairEndpoints();
     shopfloor.MapProductionReportDataEndpoints();
+    shopfloor.MapTrapezoidEndpoints();
+    shopfloor.MapTrapezoidVersionEndpoints();
     shopfloor.MapRoletaiTemplateEndpoints();
     shopfloor.MapProductionDocumentEndpoints();
     shopfloor.MapProductionScanCandidateEndpoints();

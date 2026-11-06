@@ -39,7 +39,7 @@ WORKDIR /app
 
 # curl is needed for the docker-compose healthcheck.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl \
+    && apt-get install -y --no-install-recommends curl fonts-dejavu-core \
     && rm -rf /var/lib/apt/lists/*
 
 # Legacy LKvitaiDb (SQL Server 2008/2012) TLS compatibility — see Sales.Api

@@ -208,6 +208,109 @@ public sealed class ProductionReportCatalogDto
     public string Title { get; set; } = "";
 }
 
+public sealed class TrapezoidItemListDto
+{
+    public int TaskId { get; set; }
+    public string TaskNumber { get; set; } = "";
+    public bool CanEdit { get; set; }
+    public List<TrapezoidItemDto> Items { get; set; } = [];
+}
+
+public sealed class TrapezoidItemDto
+{
+    public long ProductId { get; set; }
+    public string Barcode { get; set; } = "";
+    public string OrderNumber { get; set; } = "";
+    public int Position { get; set; }
+    public int TypeId { get; set; }
+    public string ProductType { get; set; } = "";
+    public string? MaterialCode { get; set; }
+    public string? MaterialName { get; set; }
+    public decimal Quantity { get; set; }
+    public string? Control { get; set; }
+    public string? ControlType { get; set; }
+    public int? SlatWidthItemMm { get; set; }
+    public decimal? WidthMm { get; set; }
+    public decimal? TallHeightMm { get; set; }
+    public decimal? ShortHeightMm { get; set; }
+    public decimal? OverhangMm { get; set; }
+    public string Revision { get; set; } = "";
+    public bool Supported { get; set; }
+}
+
+public sealed class TrapezoidInputsDto
+{
+    public string? ControlType { get; set; }
+    public int? SlatWidthMm { get; set; }
+    public double? WidthMm { get; set; }
+    public double? ShortHeightMm { get; set; }
+    public double? TallHeightMm { get; set; }
+    public double? OverhangMm { get; set; }
+    public string? HighSide { get; set; }
+}
+
+public sealed class TrapezoidSlatDto
+{
+    public int Number { get; set; }
+    public double FinishedLengthRawMm { get; set; }
+    public double CutLengthRawMm { get; set; }
+    public double CutLengthDisplayMm { get; set; }
+    public double AlongRailMm { get; set; }
+    public double HorizontalMm { get; set; }
+}
+
+public sealed class TrapezoidResultDto
+{
+    public double Angle { get; set; }
+    public double DiagonalMm { get; set; }
+    public double RailBlankMm { get; set; }
+    public double RailCutMm { get; set; }
+    public double FixedOffsetMm { get; set; }
+    public double FreeOffsetMm { get; set; }
+    public double FixedToMechanismMm { get; set; }
+    public double SpanMm { get; set; }
+    public double LookupWidthMm { get; set; }
+    public int BaseCount { get; set; }
+    public int ExtraCount { get; set; }
+    public int SlatCount { get; set; }
+    public double PitchMm { get; set; }
+    public double SpacerCutMm { get; set; }
+    public double ExtenderMm { get; set; }
+    public double FabricUsagePerProductRawM { get; set; }
+    public List<TrapezoidSlatDto> Slats { get; set; } = [];
+}
+
+public sealed class TrapezoidCalculationDto
+{
+    public TrapezoidResultDto Result { get; set; } = new();
+    public string ProfileVersion { get; set; } = "";
+    public string TableVersion { get; set; } = "";
+    public string AlgorithmVersion { get; set; } = "";
+}
+
+public sealed class TrapezoidVersionDto
+{
+    public int TaskId { get; set; }
+    public string TaskNumber { get; set; } = "";
+    public TrapezoidItemDto Item { get; set; } = new();
+    public int Version { get; set; }
+    public TrapezoidInputsDto Inputs { get; set; } = new();
+    public Dictionary<string, string> Sources { get; set; } = [];
+    public TrapezoidCalculationDto Calculation { get; set; } = new();
+    public DateTimeOffset SavedAt { get; set; }
+    public string SavedBy { get; set; } = "";
+    public string Language { get; set; } = "en";
+}
+
+public sealed class TrapezoidVersionSummaryDto
+{
+    public int Version { get; set; }
+    public DateTimeOffset SavedAt { get; set; }
+    public string SavedBy { get; set; } = "";
+    public bool HasPdf { get; set; }
+    public Dictionary<string, string> Sources { get; set; } = [];
+}
+
 public sealed class ProductionReportDataDto
 {
     public int TaskId { get; set; }
@@ -305,6 +408,38 @@ public sealed class ShopfloorApiClient
         int reportId, CancellationToken ct)
         => SendAsync<ProductionReportDataDto>(HttpMethod.Get,
             $"/api/shopfloor/production-tasks/{taskId}/report-data/{reportId}", null, ct);
+
+    public Task<ApiResult<TrapezoidItemListDto>> GetTrapezoidItemsAsync(int taskId, CancellationToken ct)
+        => SendAsync<TrapezoidItemListDto>(HttpMethod.Get,
+            $"/api/shopfloor/production-tasks/{taskId}/trapezoid-items", null, ct);
+
+    public Task<ApiResult<TrapezoidCalculationDto>> CalculateTrapezoidAsync(
+        TrapezoidInputsDto inputs, CancellationToken ct)
+        => SendAsync<TrapezoidCalculationDto>(HttpMethod.Post,
+            "/api/shopfloor/trapezoid/calculate", inputs, ct);
+
+    public Task<ApiResult<TrapezoidVersionDto>> SaveTrapezoidAsync(int taskId, long productId,
+        Guid requestId, string expectedRevision, TrapezoidInputsDto inputs,
+        IReadOnlyDictionary<string, string> sources, string language, CancellationToken ct)
+        => SendAsync<TrapezoidVersionDto>(HttpMethod.Post,
+            "/api/shopfloor/trapezoid/versions",
+            new { taskId, productId, requestId, expectedRevision, inputs, sources, language }, ct);
+
+    public Task<ApiResult<List<TrapezoidVersionSummaryDto>>> GetTrapezoidVersionsAsync(
+        int taskId, long productId, CancellationToken ct)
+        => SendAsync<List<TrapezoidVersionSummaryDto>>(HttpMethod.Get,
+            $"/api/shopfloor/production-tasks/{taskId}/trapezoid-items/{productId}/versions", null, ct);
+
+    public Task<ApiResult<TrapezoidVersionDto>> GetTrapezoidVersionAsync(
+        int taskId, long productId, int version, CancellationToken ct)
+        => SendAsync<TrapezoidVersionDto>(HttpMethod.Get,
+            $"/api/shopfloor/production-tasks/{taskId}/trapezoid-items/{productId}/versions/{version}", null, ct);
+
+    public Task<ApiResult<JsonElement>> GenerateTrapezoidPdfAsync(int taskId, long productId,
+        int version, CancellationToken ct)
+        => SendAsync<JsonElement>(HttpMethod.Post,
+            $"/api/shopfloor/production-tasks/{taskId}/trapezoid-items/{productId}/versions/{version}/pdf",
+            null, ct);
 
     public Task<ApiResult<RoletaiTemplateState>> GetRoletaiTemplateAsync(CancellationToken ct)
         => SendAsync<RoletaiTemplateState>(HttpMethod.Get,
@@ -469,6 +604,8 @@ public sealed class ShopfloorApiClient
             }
             if (doc is not null && !string.IsNullOrWhiteSpace(doc.Detail))
                 return doc.Detail;
+            if (doc is not null && !string.IsNullOrWhiteSpace(doc.Code))
+                return doc.Code;
         }
         catch
         {
@@ -485,6 +622,6 @@ public sealed class ShopfloorApiClient
         };
     }
 
-    private sealed record ApiError(int Status, string? Message, string? Detail,
+    private sealed record ApiError(int Status, string? Message, string? Detail, string? Code,
         IReadOnlyList<string>? Errors);
 }

@@ -512,8 +512,8 @@
             {
                 @if (LiveQueueEnabled)
                 {
-                    <div class="gamyba-pagehead"><div><div class="gamyba-eyebrow">@L["Gamyba.ShopfloorHeading"] · G05 · @(_liveTask?.Task.Number ?? "GU")</div><h1>@L["Gamyba.ProductionReportData"].Value</h1></div>@if (_liveReportId != 3){<span class="chip chip--info">@L["Gamyba.READONLY"].Value</span>}</div>
-                    @if (_liveReportId != 3){<div class="gamyba-alert gamyba-alert--info" role="status">@L["Gamyba.LiveAccessReportDatasetsPageLayoutPDFAndPrinting"].Value</div>}
+                    <div class="gamyba-pagehead"><div><div class="gamyba-eyebrow">@L["Gamyba.ShopfloorHeading"] · G05 · @(_liveTask?.Task.Number ?? "GU")</div><h1>@(_liveReportId == 100001 ? L["Trapezoid.docsTitle"].Value : L["Gamyba.ProductionReportData"].Value)</h1></div>@if (_liveReportId == 100001){<div class="gamyba-segment"><button type="button" class="is-active">@L["Gamyba.PrintPDF"].Value</button><button type="button" disabled title="@L["Trapezoid.templateEditorUnavailable"].Value">@L["Gamyba.TemplateEditor"].Value</button></div>}else if (_liveReportId != 3){<span class="chip chip--info">@L["Gamyba.READONLY"].Value</span>}</div>
+                    @if (_liveReportId is not (3 or 100001)){<div class="gamyba-alert gamyba-alert--info" role="status">@L["Gamyba.LiveAccessReportDatasetsPageLayoutPDFAndPrinting"].Value</div>}
                     @if (_liveReportError is not null){<div class="gamyba-alert gamyba-alert--danger" role="alert">@_liveReportError</div>}
                     @if (_liveTask is null)
                     {
@@ -521,16 +521,27 @@
                     }
                     else
                     {
-                        <div class="gamyba-docs-grid @(_liveReportId == 3 ? "gamyba-docs-grid--roletai" : "")">
+                        @if (_liveReportId == 100001)
+                        {
+                            <select class="gamyba-trap-report-select gamyba-input" value="@_liveReportId" @onchange="SelectLiveReportChangeAsync" aria-label="@L["Gamyba.SelectReport"].Value">
+                                @foreach (var report in _liveReportCatalog)
+                                {<option value="@report.Id">@(report.Id == 100001 ? L["Trapezoid.reportName"].Value : report.Title)</option>}
+                            </select>
+                        }
+                        <div class="gamyba-docs-grid @(_liveReportId == 3 ? "gamyba-docs-grid--roletai" : _liveReportId == 100001 ? "gamyba-docs-grid--trapezoid" : "")">
                             <section class="gamyba-panel"><div class="gamyba-panel__head"><strong>@_liveReportCatalog.Count @L["Gamyba.Reports"].Value</strong><span>DIC_ProjectReports · gam</span></div><div class="gamyba-report-list">
                                 @foreach (var report in _liveReportCatalog)
                                 {
-                                    <button type="button" class="@(_liveReportId == report.Id ? "is-active" : "")" @onclick="() => SelectLiveReportAsync(report.Id)"><span class="gamyba-report-radio"></span><span>@report.Title</span></button>
+                                    <button type="button" class="@(_liveReportId == report.Id ? "is-active" : "")" @onclick="() => SelectLiveReportAsync(report.Id)"><span class="gamyba-report-radio"></span><span>@(report.Id == 100001 ? L["Trapezoid.reportName"].Value : report.Title) @if(report.Id == 100001){<span class="chip chip--info">@L["Trapezoid.newBadge"].Value</span>}</span>@if(report.Id == 100001 && _liveTrapezoidItems is not null){<span class="mono">@_liveTrapezoidItems.Items.Count</span>}</button>
                                 }
                             </div></section>
                             @if (_liveReportId == 3 && _liveReportData is not null)
                             {
                                 <div class="roletai-host"><RoletaiReport @key="_liveTask.Task.Id" Data="_liveReportData" TaskNumber="@_liveTask.Task.Number" /></div>
+                            }
+                            else if (_liveReportId == 100001 && _liveTrapezoidItems is not null)
+                            {
+                                <TrapezoidDocument @key="_liveTask.Task.Id" Data="_liveTrapezoidItems" />
                             }
                             else
                             {
