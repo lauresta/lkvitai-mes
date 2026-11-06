@@ -83,6 +83,12 @@ public sealed class ProductionReportDataReader(ProductionQueueReader queue)
             if (Reports.TryGetValue(id, out var report) && name == report.Name)
                 result.Add(new ProductionReportCatalogItem(id, name, rows.GetString(2)));
         }
+        // A calculated document is a Shopfloor report, not an Access report row.
+        // Keep its stable synthetic id outside the legacy DIC_ProjectReports key space.
+        var vertical = result.FindIndex(x => x.Id == 8);
+        result.Insert(vertical < 0 ? result.Count : vertical + 1,
+            new ProductionReportCatalogItem(TrapezoidEndpoints.ReportId,
+                "shopfloor-trapezoid", "Vertikalios · Trapecija"));
         return result;
     }
 

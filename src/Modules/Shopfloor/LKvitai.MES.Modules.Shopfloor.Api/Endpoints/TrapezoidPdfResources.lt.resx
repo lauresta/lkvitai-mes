@@ -1,0 +1,492 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="testNote" xml:space="preserve">
+    <value>Šios aplinkos duomenys nėra gamybiniai ir gali būti išvalyti be įspėjimo.</value>
+  </data>
+  <data name="search" xml:space="preserve">
+    <value>Kodas, GU, GT arba užsakymas… (Enter)</value>
+  </data>
+  <data name="operator" xml:space="preserve">
+    <value>Operatorė</value>
+  </data>
+  <data name="docsFor" xml:space="preserve">
+    <value>dokumentai</value>
+  </data>
+  <data name="docsTitle" xml:space="preserve">
+    <value>Gamybos dokumentai</value>
+  </data>
+  <data name="printTab" xml:space="preserve">
+    <value>Spausdinti · PDF</value>
+  </data>
+  <data name="templateEditor" xml:space="preserve">
+    <value>Šablonų redaktorius</value>
+  </data>
+  <data name="reports" xml:space="preserve">
+    <value>ataskaitos</value>
+  </data>
+  <data name="newBadge" xml:space="preserve">
+    <value>Nauja</value>
+  </data>
+  <data name="item" xml:space="preserve">
+    <value>Gaminys</value>
+  </data>
+  <data name="material" xml:space="preserve">
+    <value>Medžiaga · spalva</value>
+  </data>
+  <data name="qty" xml:space="preserve">
+    <value>Kiekis</value>
+  </data>
+  <data name="pcs" xml:space="preserve">
+    <value>vnt.</value>
+  </data>
+  <data name="control" xml:space="preserve">
+    <value>Valdymas</value>
+  </data>
+  <data name="guItemsF" xml:space="preserve">
+    <value>GU yra {0} trapecijų</value>
+  </data>
+  <data name="calcData" xml:space="preserve">
+    <value>Skaičiavimo matmenys</value>
+  </data>
+  <data name="formNoteEdit" xml:space="preserve">
+    <value>Užpildytas reikšmes galima patikslinti; tikslinimai saugomi versijoje, užsakymas neperrašomas.</value>
+  </data>
+  <data name="formNoteRo" xml:space="preserve">
+    <value>Tik peržiūra</value>
+  </data>
+  <data name="typeL" xml:space="preserve">
+    <value>Tipas</value>
+  </data>
+  <data name="typeA" xml:space="preserve">
+    <value>A · valdymas apačioje, susitraukia į viršų</value>
+  </data>
+  <data name="typeB" xml:space="preserve">
+    <value>B · valdymas viršuje, susitraukia į viršų</value>
+  </data>
+  <data name="slatW" xml:space="preserve">
+    <value>Juostos plotis</value>
+  </data>
+  <data name="highSide" xml:space="preserve">
+    <value>Aukštoji pusė · vaizdas iš patalpos</value>
+  </data>
+  <data name="left" xml:space="preserve">
+    <value>Kairėje</value>
+  </data>
+  <data name="right" xml:space="preserve">
+    <value>Dešinėje</value>
+  </data>
+  <data name="AD" xml:space="preserve">
+    <value>AD · plotis</value>
+  </data>
+  <data name="CD" xml:space="preserve">
+    <value>CD · didesnis aukštis</value>
+  </data>
+  <data name="AB" xml:space="preserve">
+    <value>AB · mažesnis aukštis</value>
+  </data>
+  <data name="O" xml:space="preserve">
+    <value>Juostos išsikišimas</value>
+  </data>
+  <data name="src_order" xml:space="preserve">
+    <value>Iš užsakymo</value>
+  </data>
+  <data name="src_material" xml:space="preserve">
+    <value>Iš medžiagos</value>
+  </data>
+  <data name="src_item" xml:space="preserve">
+    <value>Iš gaminio valdymo</value>
+  </data>
+  <data name="src_manual" xml:space="preserve">
+    <value>Įvesta rankiniu būdu</value>
+  </data>
+  <data name="src_empty" xml:space="preserve">
+    <value>Neužpildyta</value>
+  </data>
+  <data name="src_version" xml:space="preserve">
+    <value>Iš išsaugotos versijos</value>
+  </data>
+  <data name="src_chosen" xml:space="preserve">
+    <value>Pasirinkta rankiniu būdu (šaltiniai nesutampa)</value>
+  </data>
+  <data name="restore_order" xml:space="preserve">
+    <value>Grąžinti iš užsakymo</value>
+  </data>
+  <data name="restore_material" xml:space="preserve">
+    <value>Grąžinti iš medžiagos</value>
+  </data>
+  <data name="restore_item" xml:space="preserve">
+    <value>Grąžinti iš gaminio</value>
+  </data>
+  <data name="zeroO" xml:space="preserve">
+    <value>0 mm · be išsikišimo</value>
+  </data>
+  <data name="oUnused" xml:space="preserve">
+    <value>B skaičiavime nenaudojama (Excel)</value>
+  </data>
+  <data name="err_required" xml:space="preserve">
+    <value>Būtina skaičiavimui</value>
+  </data>
+  <data name="err_tallLess" xml:space="preserve">
+    <value>CD turi būti ≥ AB</value>
+  </data>
+  <data name="err_overhang" xml:space="preserve">
+    <value>Pasirinkite 0 mm arba įveskite išsikišimą</value>
+  </data>
+  <data name="err_positive" xml:space="preserve">
+    <value>Turi būti didesnis už 0</value>
+  </data>
+  <data name="conflictTitle" xml:space="preserve">
+    <value>Šaltiniai nesutampa</value>
+  </data>
+  <data name="conflictText" xml:space="preserve">
+    <value>Medžiaga 127 mm · gaminio parametras 89 mm. Pasirinkite plotį šiam skaičiavimui.</value>
+  </data>
+  <data name="sideUnset" xml:space="preserve">
+    <value>Užsakyme nenurodyta — brėžinyje dešinėje</value>
+  </data>
+  <data name="calcOkF" xml:space="preserve">
+    <value>Apskaičiuota · {0} juostų · {1} m komplektui</value>
+  </data>
+  <data name="calcMissingF" xml:space="preserve">
+    <value>Užpildykite {0}, kad būtų apskaičiuota</value>
+  </data>
+  <data name="e_ext" xml:space="preserve">
+    <value>Prailgintojo riba (APRIBOJIMAS): reikia {0} mm, daugiausia 75 mm. Patikrinkite AB/CD arba nuolydį.</value>
+  </data>
+  <data name="e_overhang" xml:space="preserve">
+    <value>Išsikišimas {0} mm iškelia kraštinę juostą už angos ribų (daugiau nei pusė juostos pločio, {1} mm). Patikrinkite reikšmę; knygos užuomina „namukui“ – 10 mm.</value>
+  </data>
+  <data name="e_outside" xml:space="preserve">
+    <value>Su šiais matmenimis juostos išeina už angos ribų.</value>
+  </data>
+  <data name="err_overhangBig" xml:space="preserve">
+    <value>Kraštinė juosta už angos ribų</value>
+  </data>
+  <data name="e_table" xml:space="preserve">
+    <value>AD už žinyno ribų (paieškos plotis q = {0} mm).</value>
+  </data>
+  <data name="e_cap" xml:space="preserve">
+    <value>Daugiau nei 78 juostos — už patikrinto Excel diapazono.</value>
+  </data>
+  <data name="e_geom" xml:space="preserve">
+    <value>Su šiais matmenimis juostų išdėstymas negalimas.</value>
+  </data>
+  <data name="recalc" xml:space="preserve">
+    <value>Perskaičiuojama…</value>
+  </data>
+  <data name="st_unsaved" xml:space="preserve">
+    <value>Neišsaugota</value>
+  </data>
+  <data name="st_saved" xml:space="preserve">
+    <value>Išsaugota</value>
+  </data>
+  <data name="st_archived" xml:space="preserve">
+    <value>Archyvinis PDF</value>
+  </data>
+  <data name="st_incomplete" xml:space="preserve">
+    <value>Nebaigta</value>
+  </data>
+  <data name="st_recalc" xml:space="preserve">
+    <value>Perskaičiuojama</value>
+  </data>
+  <data name="st_error" xml:space="preserve">
+    <value>Klaida</value>
+  </data>
+  <data name="changed" xml:space="preserve">
+    <value>Skaičiavimas pakeistas, versija neišsaugota · paskutinė išsaugota</value>
+  </data>
+  <data name="noVersionYet" xml:space="preserve">
+    <value>Išsaugotos versijos dar nėra</value>
+  </data>
+  <data name="savedTxtF" xml:space="preserve">
+    <value>Tai išsaugota versija v{0}.</value>
+  </data>
+  <data name="incompleteTxt" xml:space="preserve">
+    <value>Užpildykite būtinus matmenis — spausdinti negalima.</value>
+  </data>
+  <data name="front" xml:space="preserve">
+    <value>Vaizdas iš priekio</value>
+  </data>
+  <data name="cut" xml:space="preserve">
+    <value>Pjovimo vaizdas</value>
+  </data>
+  <data name="a4" xml:space="preserve">
+    <value>A4 gulsčias · peržiūra</value>
+  </data>
+  <data name="productionSheet" xml:space="preserve">
+    <value>Gamybos lapas</value>
+  </data>
+  <data name="continued" xml:space="preserve">
+    <value>tęsinys</value>
+  </data>
+  <data name="draft" xml:space="preserve">
+    <value>juodraštis</value>
+  </data>
+  <data name="d_type" xml:space="preserve">
+    <value>TIPAS</value>
+  </data>
+  <data name="d_slat" xml:space="preserve">
+    <value>JUOSTA</value>
+  </data>
+  <data name="d_o" xml:space="preserve">
+    <value>IŠSIKIŠIMAS</value>
+  </data>
+  <data name="d_side" xml:space="preserve">
+    <value>AUKŠTOJI PUSĖ</value>
+  </data>
+  <data name="d_qty" xml:space="preserve">
+    <value>KIEKIS</value>
+  </data>
+  <data name="s_bc" xml:space="preserve">
+    <value>Įstrižainė BC</value>
+  </data>
+  <data name="s_rail" xml:space="preserve">
+    <value>Rėmas pjauti</value>
+  </data>
+  <data name="s_fix" xml:space="preserve">
+    <value>Fiksas / iki mech.</value>
+  </data>
+  <data name="s_pitch" xml:space="preserve">
+    <value>Žingsnis / pjauti +6</value>
+  </data>
+  <data name="s_ext" xml:space="preserve">
+    <value>Prailgintojas</value>
+  </data>
+  <data name="s_slats" xml:space="preserve">
+    <value>Juostų komplektui</value>
+  </data>
+  <data name="cutList" xml:space="preserve">
+    <value>Juostų pjovimo sąrašas</value>
+  </data>
+  <data name="cutRule" xml:space="preserve">
+    <value>Pjauti = ilgis + 45 mm</value>
+  </data>
+  <data name="th_no" xml:space="preserve">
+    <value>Nr.</value>
+  </data>
+  <data name="th_fin" xml:space="preserve">
+    <value>iki +45</value>
+  </data>
+  <data name="th_cut" xml:space="preserve">
+    <value>Pjauti, mm</value>
+  </data>
+  <data name="th_qty" xml:space="preserve">
+    <value>Kiekis</value>
+  </data>
+  <data name="tot_items" xml:space="preserve">
+    <value>Gaminių</value>
+  </data>
+  <data name="tot_ss" xml:space="preserve">
+    <value>Juostų / kompl.</value>
+  </data>
+  <data name="tot_s" xml:space="preserve">
+    <value>Juostų iš viso</value>
+  </data>
+  <data name="tot_fs" xml:space="preserve">
+    <value>Audinys / kompl.</value>
+  </data>
+  <data name="tot_f" xml:space="preserve">
+    <value>Audinys iš viso</value>
+  </data>
+  <data name="footnote" xml:space="preserve">
+    <value>Audinio poreikis apima papildomą 27 mm priedą kiekvienai juostai.</value>
+  </data>
+  <data name="schemeNote" xml:space="preserve">
+    <value>Scheminis vaizdas iš priekio pagal apskaičiuotus juostų ilgius, n1 → n{0} nuo trumpiausios. Vienodas X/Y mastelis, ne 1:1 lekalas. AB/CD – įvesti aukščiai, ne audinio ilgiai.</value>
+  </data>
+  <data name="cutNote" xml:space="preserve">
+    <value>Visi ruošiniai išlygiuoti pagal viršutinę liniją; ilgiai = pjauti su +45. Tai ne ritinio išdėstymo optimizavimas.</value>
+  </data>
+  <data name="noResult" xml:space="preserve">
+    <value>Juostų ilgiai rodomi, kai visi būtini matmenys teisingi.</value>
+  </data>
+  <data name="apiNoResult" xml:space="preserve">
+    <value>Rezultato nėra — skaičiavimo paslauga nepasiekiama.</value>
+  </data>
+  <data name="pageF" xml:space="preserve">
+    <value>Puslapis {0} / {1}</value>
+  </data>
+  <data name="docPanel" xml:space="preserve">
+    <value>Dokumentas</value>
+  </data>
+  <data name="saveCalc" xml:space="preserve">
+    <value>Išsaugoti skaičiavimą</value>
+  </data>
+  <data name="genPdf" xml:space="preserve">
+    <value>Sukurti PDF</value>
+  </data>
+  <data name="printF" xml:space="preserve">
+    <value>Spausdinti v{0}</value>
+  </data>
+  <data name="print" xml:space="preserve">
+    <value>Spausdinti</value>
+  </data>
+  <data name="why_save_ro" xml:space="preserve">
+    <value>Redaguoti reikia teisės Gamyba · Dokumentai · Redaguoti.</value>
+  </data>
+  <data name="why_save_clean" xml:space="preserve">
+    <value>Nuo paskutinės versijos pakeitimų nėra.</value>
+  </data>
+  <data name="why_print_unsaved" xml:space="preserve">
+    <value>Pirmiausia išsaugokite — spausdinama ir PDF kuriamas iš išsaugotos versijos.</value>
+  </data>
+  <data name="why_incomplete" xml:space="preserve">
+    <value>Pirmiausia užpildykite matmenis.</value>
+  </data>
+  <data name="why_recalc" xml:space="preserve">
+    <value>Palaukite, kol bus perskaičiuota.</value>
+  </data>
+  <data name="docNote" xml:space="preserve">
+    <value>Peržiūra ir perskaičiavimas nekeičia gamybos būsenos ar atsargų.</value>
+  </data>
+  <data name="selSlat" xml:space="preserve">
+    <value>Pasirinkta juosta</value>
+  </data>
+  <data name="sel_cut" xml:space="preserve">
+    <value>Pjovimo ilgis +45</value>
+  </data>
+  <data name="sel_fin" xml:space="preserve">
+    <value>Ilgis iki +45</value>
+  </data>
+  <data name="sel_x" xml:space="preserve">
+    <value>Nuo fiksuoto galo</value>
+  </data>
+  <data name="sel_rail" xml:space="preserve">
+    <value>Išilgai bėgio</value>
+  </data>
+  <data name="selHint" xml:space="preserve">
+    <value>Spustelėkite juostą brėžinyje arba eilutę sąraše. ← → brėžinyje, ↑ ↓ sąraše.</value>
+  </data>
+  <data name="versions" xml:space="preserve">
+    <value>Versijos · archyvas</value>
+  </data>
+  <data name="tech" xml:space="preserve">
+    <value>Technologinis profilis</value>
+  </data>
+  <data name="techNote" xml:space="preserve">
+    <value>Fiksuota profilyje, kiekvienam užsakymui neįvedama.</value>
+  </data>
+  <data name="t_mount" xml:space="preserve">
+    <value>Tvirtinimas / profilis</value>
+  </data>
+  <data name="t_hook" xml:space="preserve">
+    <value>Kablis / valdymas</value>
+  </data>
+  <data name="t_max" xml:space="preserve">
+    <value>Maks. žingsnis</value>
+  </data>
+  <data name="t_allow" xml:space="preserve">
+    <value>Žingsnio / juostos / audinio priedas</value>
+  </data>
+  <data name="t_q" xml:space="preserve">
+    <value>Paieškos plotis q</value>
+  </data>
+  <data name="t_base" xml:space="preserve">
+    <value>Bazinės / papildomos juostos</value>
+  </data>
+  <data name="t_off" xml:space="preserve">
+    <value>Fiksuoto / laisvo galo poslinkis</value>
+  </data>
+  <data name="b_ocT" xml:space="preserve">
+    <value>Užsakymas pakeistas po v{0} išsaugojimo.</value>
+  </data>
+  <data name="b_ocX" xml:space="preserve">
+    <value>Sales: AD 2000 → 2010 mm. Išsaugota versija ir jos PDF lieka; niekas neperrašoma automatiškai.</value>
+  </data>
+  <data name="applyOrder" xml:space="preserve">
+    <value>Taikyti užsakymo reikšmes</value>
+  </data>
+  <data name="keepSaved" xml:space="preserve">
+    <value>Palikti išsaugotą</value>
+  </data>
+  <data name="b_oldT" xml:space="preserve">
+    <value>Peržiūrimas archyvinis PDF v{0}.</value>
+  </data>
+  <data name="b_oldX" xml:space="preserve">
+    <value>Tik peržiūra. Skaičiai, tvarka ir geometrija – kaip atspausdinta.</value>
+  </data>
+  <data name="backCurrent" xml:space="preserve">
+    <value>Grįžti į dabartinę</value>
+  </data>
+  <data name="b_apiT" xml:space="preserve">
+    <value>Skaičiavimo paslauga nepasiekiama.</value>
+  </data>
+  <data name="b_apiX" xml:space="preserve">
+    <value>POST /api/shopfloor/trapezoid/calculate → 503. Rezultatas nerodomas, spausdinti negalima; įvestys išsaugotos.</value>
+  </data>
+  <data name="retry" xml:space="preserve">
+    <value>Bandyti dar kartą</value>
+  </data>
+  <data name="b_pdfT" xml:space="preserve">
+    <value>PDF nesukurtas.</value>
+  </data>
+  <data name="b_pdfX" xml:space="preserve">
+    <value>Serverio PDF generatorius grąžino klaidą v{0}. Išsaugotas skaičiavimas nepaveiktas.</value>
+  </data>
+  <data name="b_roT" xml:space="preserve">
+    <value>Tik peržiūra.</value>
+  </data>
+  <data name="b_roX" xml:space="preserve">
+    <value>Galite atidaryti ir spausdinti išsaugotas versijas. Redaguoti ir išsaugoti reikia teisės Gamyba · Dokumentai · Redaguoti.</value>
+  </data>
+  <data name="b_capT" xml:space="preserve">
+    <value>Ilgas juostų sąrašas.</value>
+  </data>
+  <data name="b_capX" xml:space="preserve">
+    <value>{0} juostos — sąrašas tęsiamas 2 puslapyje su pakartota antrašte ir gaminio kodu.</value>
+  </data>
+  <data name="noDataT" xml:space="preserve">
+    <value>Šioje GU trapecijų nėra</value>
+  </data>
+  <data name="noDataX" xml:space="preserve">
+    <value>Kaip Access (Report_NoData), dokumentas nesukuriamas. Pasirinkite kitą GU arba atidarykite Vertikalios.</value>
+  </data>
+  <data name="loadingT" xml:space="preserve">
+    <value>Įkeliami užsakymo duomenys…</value>
+  </data>
+  <data name="toastSaved" xml:space="preserve">
+    <value>Išsaugota kaip v{0}</value>
+  </data>
+  <data name="toastPdf" xml:space="preserve">
+    <value>PDF v{0} sukurtas ir archyvuotas</value>
+  </data>
+  <data name="toastPrint" xml:space="preserve">
+    <value>v{0} išsiųsta į naršyklės spausdinimo dialogą</value>
+  </data>
+  <data name="v_order" xml:space="preserve">
+    <value>Iš užsakymo</value>
+  </data>
+  <data name="v_manualF" xml:space="preserve">
+    <value>Rankiniu būdu: {0}</value>
+  </data>
+  <data name="gathers" xml:space="preserve">
+    <value>susitraukia į viršų</value>
+  </data>
+  <data name="ctrlBottom" xml:space="preserve">
+    <value>valdymas apačioje</value>
+  </data>
+  <data name="ctrlTop" xml:space="preserve">
+    <value>valdymas viršuje</value>
+  </data>
+  <data name="viewRoom" xml:space="preserve">
+    <value>vaizdas iš patalpos</value>
+  </data>
+  <data name="railLbl" xml:space="preserve">
+    <value>rėmas pjauti</value>
+  </data>
+  <data name="topLine" xml:space="preserve">
+    <value>bendra viršaus linija</value>
+  </data>
+</root>

@@ -1,0 +1,137 @@
+@using LKvitai.MES.Modules.Shopfloor.WebUI.Services
+@using Microsoft.AspNetCore.Components.Web
+@using System.Globalization
+@implements IDisposable
+
+<div class="trap-host">
+    @if (_item is not null)
+    {
+        <div class="trap-toolbar">
+            <span class="chip @(CanPrint ? "chip--ok" : "chip--warn")">@(CanPrint ? T("st_saved") : _recalculating ? T("st_recalc") : T("st_unsaved"))</span>
+            <button type="button" class="trap-primary" disabled="@(!CanSave)" @onclick="SaveAsync">@T("saveCalc")</button>
+            <button type="button" disabled="@(!CanPrint)" @onclick="GeneratePdfAsync">@T("genPdf")</button>
+            <button type="button" disabled="@(!CanPrint)" @onclick="PrintAsync">@L["Trapezoid.printF", _saved?.Version ?? 0]</button>
+            <select aria-label="@T("versions")" @onchange="OnVersionChanged"><option value="">@T("versions")</option>@foreach (var v in _versions){<option value="@v.Version">v@v.Version · @v.SavedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</option>}</select>
+        </div>
+    }
+    <div class="trap-center">
+        @if (_loading)
+        {
+            <div class="trap-banner trap-banner--slate" role="status">@T("loadingT")</div>
+        }
+        @if (_error is not null)
+        {
+            <div class="trap-banner trap-banner--danger" role="alert"><strong>@T("st_error")</strong><span>@ErrorText</span><button type="button" @onclick="RefreshAsync">@T("retry")</button></div>
+        }
+        @if (_orderChanged && _saved is not null)
+        {
+            <div class="trap-banner trap-banner--warn" role="status"><strong>@L["Trapezoid.b_ocT", _saved.Version]</strong><span>@T("b_ocX")</span><button type="button" @onclick="ApplyOrderValues">@T("applyOrder")</button></div>
+        }
+        @if (_archived && _saved is not null)
+        {
+            <div class="trap-banner trap-banner--slate"><strong>@L["Trapezoid.b_oldT", _saved.Version]</strong><span>@T("b_oldX")</span><button type="button" @onclick="() => OpenVersionAsync(_versions.First().Version)">@T("backCurrent")</button></div>
+        }
+        @if (Data.Items.Count == 0)
+        {
+            <div class="trap-empty"><strong>@T("noDataT")</strong><span>@T("noDataX")</span></div>
+        }
+        else if (_item is not null)
+        {
+            <section class="trap-panel trap-itemstrip">
+                <div class="trap-itemline"><strong class="trap-mono">@Data.TaskNumber</strong><span>→</span><strong class="trap-mono">@_item.OrderNumber</strong><span>→</span><select value="@_item.ProductId" @onchange="OnItemChanged" aria-label="@T("item")">
+                    @foreach (var item in Data.Items)
+                    {<option value="@item.ProductId">@item.Barcode · @item.OrderNumber @T("position") @item.Position · @(item.ControlType ?? "?")</option>}
+                </select></div>
+                <div class="trap-itemmeta"><div><small>@T("material")</small><strong>@DocumentItem?.MaterialCode · @DocumentItem?.MaterialName</strong></div><div><small>@T("qty")</small><strong class="trap-mono">@DocumentItem?.Quantity @T("pcs")</strong></div><div><small>@T("control")</small><span>@DocumentItem?.Control</span></div></div>
+                <div class="trap-itemcount">@L["Trapezoid.guItemsF", Data.Items.Count]</div>
+            </section>
+            @if (!_item.Supported)
+            {
+                <div class="trap-banner trap-banner--warn" role="alert"><strong>@T("unsupportedType")</strong><span>@_item.ProductType</span></div>
+            }
+            else
+            {
+                <section class="trap-panel trap-form">
+                    <div class="trap-panelhead"><strong>@T("calcData")</strong><span>@T("formNoteEdit")</span></div>
+                    <div class="trap-formgrid">
+                        <div class="trap-choices">
+                            <div class="trap-field"><label>@T("typeL")</label><div class="trap-segment"><button type="button" class="@(_inputs.ControlType == "A" ? "active" : "")" disabled="@_archived" @onclick='() => SetText("controlType","A")'>A</button><button type="button" class="@(_inputs.ControlType == "B" ? "active" : "")" disabled="@_archived" @onclick='() => SetText("controlType","B")'>B</button></div><p>@(_inputs.ControlType == "B" ? T("typeB") : T("typeA"))</p><small>@Source("controlType") · @DocumentItem?.Control</small></div>
+                            <div class="trap-field"><label>@T("slatW")</label><div class="trap-segment"><button type="button" class="@(_inputs.SlatWidthMm == 89 ? "active" : "")" disabled="@_archived" @onclick='() => SetText("slatWidthMm","89")'>89 mm</button><button type="button" class="@(_inputs.SlatWidthMm == 127 ? "active" : "")" disabled="@_archived" @onclick='() => SetText("slatWidthMm","127")'>127 mm</button></div><small>@Source("slatWidthMm") · @T("src_itemParameter")</small></div>
+                            <div class="trap-field"><label>@T("highSide")</label><div class="trap-segment"><button type="button" class="@(_inputs.HighSide == "Left" ? "active" : "")" disabled="@_archived" @onclick='() => SetText("highSide","Left")'>@T("left")</button><button type="button" class="@(_inputs.HighSide == "Right" ? "active" : "")" disabled="@_archived" @onclick='() => SetText("highSide","Right")'>@T("right")</button></div><small class="@(_inputs.HighSide is null ? "trap-warn" : "")">@(_inputs.HighSide is null ? T("sideUnset") : Source("highSide"))</small></div>
+                        </div>
+                        <div class="trap-minidiagram" aria-hidden="true"><svg viewBox="0 0 180 180"><path d="M22 146 L22 85 L154 35 L154 146 Z" fill="var(--n-25)" stroke="var(--n-400)" stroke-width="2"/><path d="M22 162 H154 M8 146 V85 M168 146 V35" stroke="var(--accent-600)" stroke-width="1.5"/><text x="82" y="175">AD</text><text x="1" y="118">AB</text><text x="160" y="92">CD</text><text x="85" y="63">BC</text><text x="15" y="81">B</text><text x="154" y="28">C</text></svg></div>
+                        <div class="trap-dimensions">
+                            <div class="trap-field"><label for="trap-ad">@T("AD")</label><div class="trap-number @(_inputs.WidthMm is null or <= 0 ? "trap-number--missing" : "") @(_error == "SlatsOutsideOpening" && "ad" == "overhang" ? "trap-number--invalid" : "")"><input id="trap-ad" type="number" min="1" step="1" value="@Num(_inputs.WidthMm)" disabled="@_archived" @oninput='e => SetNumber("widthMm",e)'/><span>mm</span></div><small>@Source("widthMm") @if (_sources.GetValueOrDefault("widthMm") == "manual") { <button type="button" @onclick='() => Restore("widthMm")'>@T("restore_order")</button> }</small></div>
+                            <div class="trap-field"><label for="trap-cd">@T("CD")</label><div class="trap-number @(_inputs.TallHeightMm is null or <= 0 ? "trap-number--missing" : "") @(_error == "SlatsOutsideOpening" && "cd" == "overhang" ? "trap-number--invalid" : "")"><input id="trap-cd" type="number" min="1" step="1" value="@Num(_inputs.TallHeightMm)" disabled="@_archived" @oninput='e => SetNumber("tallHeightMm",e)'/><span>mm</span></div><small>@Source("tallHeightMm") @if (_sources.GetValueOrDefault("tallHeightMm") == "manual") { <button type="button" @onclick='() => Restore("tallHeightMm")'>@T("restore_order")</button> }</small></div>
+                            <div class="trap-field"><label for="trap-ab">@T("AB")</label><div class="trap-number @(_inputs.ShortHeightMm is null or <= 0 ? "trap-number--missing" : "") @(_error == "SlatsOutsideOpening" && "ab" == "overhang" ? "trap-number--invalid" : "")"><input id="trap-ab" type="number" min="1" step="1" value="@Num(_inputs.ShortHeightMm)" disabled="@_archived" @oninput='e => SetNumber("shortHeightMm",e)'/><span>mm</span></div><small>@Source("shortHeightMm") @if (_sources.GetValueOrDefault("shortHeightMm") == "manual") { <button type="button" @onclick='() => Restore("shortHeightMm")'>@T("restore_order")</button> }</small></div>
+                            <div class="trap-field"><label for="trap-overhang">@T("O")</label><div class="trap-number @(_inputs.OverhangMm is null ? "trap-number--missing" : "") @(_error == "SlatsOutsideOpening" && "overhang" == "overhang" ? "trap-number--invalid" : "")"><input id="trap-overhang" type="number" min="0" step="1" value="@Num(_inputs.OverhangMm)" disabled="@(_archived || _inputs.ControlType == "B")" @oninput='e => SetNumber("overhangMm",e)'/><span>mm</span></div><small>@(_inputs.ControlType == "B" ? T("oUnused") : Source("overhangMm")) @if (_sources.GetValueOrDefault("overhangMm") == "manual") { <button type="button" @onclick='() => Restore("overhangMm")'>@T("restore_order")</button> }</small></div>
+                        </div>
+                    </div>
+                    <div class="trap-formfoot"><strong class="@(Result is null ? "trap-warn" : "trap-ok")">● @if (_recalculating) { @T("recalc") } else if (Result is not null) { @L["Trapezoid.calcOkF", Result.SlatCount, Result.FabricUsagePerProductRawM.ToString("0.000", CultureInfo.InvariantCulture)] } else { @L["Trapezoid.calcMissingF", MissingFields] }</strong><span>@T("docNote")</span></div>
+                </section>
+                <section class="trap-panel trap-report">
+                    <div class="trap-reportbar"><div class="trap-segment"><button type="button" class="@(_mode == "front" ? "active" : "")" @onclick='() => SetMode("front")'>@T("front")</button><button type="button" class="@(_mode == "cut" ? "active" : "")" @onclick='() => SetMode("cut")'>@T("cut")</button></div><span class="chip @(_saved is not null && !Dirty ? "chip--ok" : "chip--warn")">@(_saved is not null && !Dirty ? T("st_saved") : T("st_unsaved"))</span><span class="trap-reportstatus">@(_saved is null ? T("noVersionYet") : Dirty ? T("changed") + " v" + _saved.Version : L["Trapezoid.savedTxtF", _saved.Version].Value)</span><span class="trap-pages">@T("a4") · @PageCount @T("pagesShort")</span></div>
+                    <div class="trap-desk @(Result is null || _recalculating ? "trap-desk--muted" : "")">
+                        <article class="trap-paper">
+                            <div class="trap-paperhead"><div><h2>@T("reportName")</h2><p>@T("productionSheet") · @DocumentItem?.MaterialCode · @DocumentItem?.MaterialName · @(_inputs.ControlType == "A" ? T("typeA") : T("typeB")) · @_inputs.SlatWidthMm @T("mm")</p></div><div class="trap-mono"><strong>@DocumentItem?.OrderNumber · @T("position") @DocumentItem?.Position</strong><span>@Data.TaskNumber · @DocumentItem?.Barcode</span><span>@(_saved?.SavedAt.ToLocalTime().ToString("yyyy-MM-dd") ?? DateTime.Now.ToString("yyyy-MM-dd")) · @(_saved?.SavedBy ?? T("draft")) · @(_saved is null ? T("draft") : "v" + _saved.Version)</span></div></div>
+                            <div class="trap-paperdims trap-mono"><span>@T("d_type") <b>@_inputs.ControlType</b></span><span>@T("d_slat") <b>@_inputs.SlatWidthMm @T("mm")</b></span><span>AD <b>@UsedDimension("widthMm", _inputs.WidthMm)</b></span><span>AB <b>@UsedDimension("shortHeightMm", _inputs.ShortHeightMm)</b></span><span>CD <b>@UsedDimension("tallHeightMm", _inputs.TallHeightMm)</b></span><span>@T("d_o") <b>@UsedDimension("overhangMm", _inputs.OverhangMm)</b></span><span>@T("d_side") <b>@(_inputs.HighSide == "Left" ? T("left") : T("right"))</b></span><span>@T("d_qty") <b>@DocumentItem?.Quantity</b></span></div>
+                            @if (Result is not null)
+                            {
+                                @if (!string.IsNullOrEmpty(ManualSummary)) { <div class="trap-manualnote">* @T("src_manual"): @ManualSummary</div> }
+                                <div class="trap-paperbody"><div class="trap-scheme-area">
+                                    @if (_mode == "front") { @FrontScheme(Result) } else { @CutScheme(Result) }
+                                    <p class="trap-schemenote">@L["Trapezoid.schemeNote", Result.SlatCount]</p>
+                                    <div class="trap-summary"><div><small>@T("s_bc")</small><strong>@Mm(Result.DiagonalMm) @T("mm")</strong></div><div><small>@T("s_rail")</small><strong>@Mm(Result.RailCutMm) @T("mm")</strong></div><div><small>@T("s_fix")</small><strong>@Mm(Result.FixedOffsetMm) / @Mm(Result.FixedToMechanismMm)</strong></div><div><small>@T("s_pitch")</small><strong>@Mm(Result.PitchMm) / @Mm(Result.SpacerCutMm)</strong></div><div><small>@T("s_ext")</small><strong>@Mm(Result.ExtenderMm) @T("mm")</strong></div><div><small>@T("s_slats")</small><strong>@Result.SlatCount</strong></div></div>
+                                </div><div class="trap-cutlist"><div class="trap-cuthead"><strong>@T("cutList")</strong><small>@T("cutRule")</small></div><div class="trap-cutcols">@foreach (var column in Result.Slats.Take(30).Chunk(Math.Min(15, (Result.SlatCount + 1) / 2))) { <table><thead><tr><th>@T("th_no")</th><th>@T("th_fin")</th><th>@T("th_cut")</th><th>@T("th_qty")</th></tr></thead><tbody>@foreach (var slat in column) { <tr class="@(slat.Number == _selectedSlat ? "selected" : "")" tabindex="0" @onclick="() => SelectSlat(slat.Number)" @onkeydown="e => RowKey(e,slat.Number)"><td>n@slat.Number</td><td>@Mm(slat.FinishedLengthRawMm)</td><td><strong>@slat.CutLengthDisplayMm.ToString("0", CultureInfo.InvariantCulture)</strong></td><td>@DocumentItem?.Quantity</td></tr> }</tbody></table> }</div></div></div>
+                                <div class="trap-totals"><div><small>@T("tot_items")</small><strong>@DocumentItem?.Quantity</strong></div><div><small>@T("tot_ss")</small><strong>@Result.SlatCount</strong></div><div><small>@T("tot_s")</small><strong>@(Result.SlatCount * DocumentItem!.Quantity)</strong></div><div><small>@T("tot_fs")</small><strong>@Result.FabricUsagePerProductRawM.ToString("0.000", CultureInfo.InvariantCulture) m</strong></div><div><small>@T("tot_f")</small><strong>@(Result.FabricUsagePerProductRawM * (double)DocumentItem!.Quantity).ToString("0.000", CultureInfo.InvariantCulture) m</strong></div></div>
+                                <p class="trap-footnote">@T("footnote")</p>
+                            }
+                            else { <div class="trap-paperempty">@T("noResult")</div> }
+                            <div class="trap-paperfoot trap-mono"><span>legacy-trapnew-v1 · calc v1 · trapnew.xls</span><span>@L["Trapezoid.pageF", 1, PageCount]</span></div>
+                        </article>
+                        @if (Result is not null && Result.SlatCount > 30)
+                        {<article class="trap-paper trap-paper--continuation"><div class="trap-paperhead"><h2>@T("reportName") · @T("continued")</h2><strong class="trap-mono">@Data.TaskNumber · @DocumentItem?.Barcode</strong></div><div class="trap-cutlist"><div class="trap-cuthead"><strong>@T("cutList")</strong><small>@T("cutRule")</small></div><div class="trap-cutcols trap-cutcols--three">@foreach (var column in Result.Slats.Skip(30).Chunk(20)){<table><thead><tr><th>@T("th_no")</th><th>@T("th_fin")</th><th>@T("th_cut")</th><th>@T("th_qty")</th></tr></thead><tbody>@foreach (var slat in column){<tr class="@(slat.Number == _selectedSlat ? "selected" : "")" @onclick="() => SelectSlat(slat.Number)"><td>n@slat.Number</td><td>@Mm(slat.FinishedLengthRawMm)</td><td><strong>@slat.CutLengthDisplayMm.ToString("0", CultureInfo.InvariantCulture)</strong></td><td>@DocumentItem?.Quantity</td></tr>}</tbody></table>}</div></div><div class="trap-paperfoot trap-mono"><span>legacy-trapnew-v1 · calc v1 · trapnew.xls</span><span>@L["Trapezoid.pageF", 2, PageCount]</span></div></article>}
+                    </div>
+                </section>
+            }
+        }
+    </div>
+    <aside class="trap-side">
+        <section class="trap-panel"><div class="trap-panelhead"><strong>@T("docPanel")</strong><span class="chip @(CanPrint ? "chip--ok" : "chip--warn")">@(CanPrint ? T("st_saved") : _recalculating ? T("st_recalc") : T("st_unsaved"))</span></div><div class="trap-sidebody"><button type="button" class="trap-primary" disabled="@(!CanSave)" @onclick="SaveAsync">@T("saveCalc")</button><p>@(CanSave ? T("docNote") : _saved is not null && !Dirty ? T("why_save_clean") : !Complete ? T("why_incomplete") : _recalculating ? T("why_recalc") : "")</p><div class="trap-actionrow"><button type="button" disabled="@(!CanPrint)" @onclick="GeneratePdfAsync">@T("genPdf")</button><button type="button" disabled="@(!CanPrint)" @onclick="PrintAsync">@L["Trapezoid.printF", _saved?.Version ?? 0]</button></div>@if (_pdfError){<div class="trap-banner trap-banner--danger">@T("b_pdfT")</div>}</div></section>
+        <section class="trap-panel"><div class="trap-panelhead"><strong>@T("selSlat")</strong><b class="trap-mono">n@_selectedSlat</b></div><div class="trap-sidebody">@if (SelectedSlat is not null){<div class="trap-cutvalue"><small>@T("sel_cut")</small><strong>@SelectedSlat.CutLengthDisplayMm.ToString("0", CultureInfo.InvariantCulture) <em>mm</em></strong></div><dl><dt>@T("sel_fin")</dt><dd>@Mm(SelectedSlat.FinishedLengthRawMm) @T("mm")</dd><dt>@T("sel_x")</dt><dd>@Mm(FromFixedEnd(SelectedSlat)) @T("mm")</dd><dt>@T("sel_rail")</dt><dd>@Mm(SelectedSlat.AlongRailMm) @T("mm")</dd><dt>@T("th_qty")</dt><dd>@_item?.Quantity @T("pcs")</dd></dl><p>@T("selHint")</p>}</div></section>
+        <section class="trap-panel"><div class="trap-panelhead"><strong>@T("versions")</strong></div><div class="trap-sidebody">@foreach (var v in _versions){<button type="button" class="trap-version" @onclick="() => OpenVersionAsync(v.Version)"><strong class="trap-mono">v@v.Version</strong><span>@(v.Sources.Values.Contains("manual") ? L["Trapezoid.v_manualF", ManualSummaryFor(v.Sources)].Value : T("v_order"))<small>@v.SavedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm") · @v.SavedBy · @(v.HasPdf ? "PDF" : "")</small></span></button>}</div></section>
+        <details class="trap-panel trap-tech"><summary>@T("tech") <code>legacy-trapnew-v1</code></summary><div class="trap-sidebody"><p>@T("techNote")</p><dl><dt>@T("t_mount")</dt><dd>5 / 25 mm</dd><dt>@T("t_hook")</dt><dd>16 / 15 mm</dd><dt>@T("t_max")</dt><dd>130 mm</dd><dt>@T("t_allow")</dt><dd>+6 / +45 / +27 mm</dd><dt>@T("t_q")</dt><dd>@Mm(Result?.LookupWidthMm ?? 0) mm</dd><dt>@T("t_base")</dt><dd>@Result?.BaseCount / @Result?.ExtraCount</dd></dl></div></details>
+    </aside>
+</div>
+
+@code {
+    private double ChartWidth => (_inputs.WidthMm ?? 1800) + 200;
+    private double ChartHeight => (_inputs.TallHeightMm ?? 1800) + 200;
+    private double BaseY => ChartHeight - 85;
+    private double SlatX(TrapezoidSlatDto s) =>
+        _inputs.HighSide == "Left" ? ChartWidth - 100 - FromFixedEnd(s) :
+        100 + FromFixedEnd(s);
+    private string ViewBox => $"0 0 {ChartWidth.ToString(CultureInfo.InvariantCulture)} {ChartHeight.ToString(CultureInfo.InvariantCulture)}";
+    private RenderFragment FrontScheme(TrapezoidResultDto result) => @<svg class="trap-scheme" viewBox="@ViewBox" tabindex="0" role="img" aria-label="@T("front")" @onkeydown="SchemeKey">
+        <path d="M 100 @(BaseY - (_inputs.HighSide == "Left" ? _inputs.TallHeightMm : _inputs.ShortHeightMm)) L @(ChartWidth - 100) @(BaseY - (_inputs.HighSide == "Left" ? _inputs.ShortHeightMm : _inputs.TallHeightMm)) L @(ChartWidth - 100) @BaseY L 100 @BaseY Z" fill="none" stroke="var(--n-400)" stroke-dasharray="7 7" stroke-width="2" />
+        <line x1="100" y1="@(BaseY - (_inputs.HighSide == "Left" ? _inputs.TallHeightMm : _inputs.ShortHeightMm) + 30)" x2="@(ChartWidth - 100)" y2="@(BaseY - (_inputs.HighSide == "Left" ? _inputs.ShortHeightMm : _inputs.TallHeightMm) + 30)" stroke="var(--n-900)" stroke-width="9" />
+        @foreach (var slat in result.Slats)
+        {
+            <rect class="@(slat.Number == _selectedSlat ? "selected" : "")" x="@(SlatX(slat) - Math.Min(_inputs.SlatWidthMm ?? 89, result.PitchMm * .72) / 2)" y="@(BaseY - slat.FinishedLengthRawMm)" width="@Math.Min(_inputs.SlatWidthMm ?? 89, result.PitchMm * .72)" height="@slat.FinishedLengthRawMm" tabindex="0" role="button" aria-label="n@slat.Number · @slat.CutLengthDisplayMm mm" @onclick="() => SelectSlat(slat.Number)" />
+            @if (slat.Number == 1 || slat.Number == result.SlatCount || slat.Number == _selectedSlat || slat.Number % Math.Max(1,(int)Math.Ceiling(result.SlatCount / 13.0)) == 0)
+            {@SvgText(SlatX(slat), BaseY + 24, slat.Number.ToString(), slat.Number == _selectedSlat ? "trap-scheme-num selected" : "trap-scheme-num")}
+        }
+        @SvgText(ChartWidth/2, BaseY + 65, "AD " + Num(_inputs.WidthMm), "", "middle")
+        @SvgText(42, BaseY - (_inputs.HighSide == "Left" ? _inputs.TallHeightMm : _inputs.ShortHeightMm)!.Value/2, _inputs.HighSide == "Left" ? "CD" : "AB", "", "middle")
+        @SvgText(ChartWidth - 40, BaseY - (_inputs.HighSide == "Left" ? _inputs.ShortHeightMm : _inputs.TallHeightMm)!.Value/2, _inputs.HighSide == "Left" ? "AB" : "CD", "", "middle")
+        @SvgText(ChartWidth/2, 42, "BC " + Mm(result.DiagonalMm) + " · α " + Mm(result.Angle * 180 / Math.PI) + "° · " + T("railLbl") + " " + Mm(result.RailCutMm), "", "middle")
+    </svg>;
+    private RenderFragment CutScheme(TrapezoidResultDto result) => @<svg class="trap-scheme" viewBox="@ViewBox" tabindex="0" role="img" aria-label="@T("cut")" @onkeydown="SchemeKey">
+        <line x1="100" y1="85" x2="@(ChartWidth - 100)" y2="85" stroke="var(--n-900)" stroke-width="8" />
+        @foreach (var slat in result.Slats)
+        {
+            <rect class="@(slat.Number == _selectedSlat ? "selected" : "")" x="@(SlatX(slat) - Math.Min(_inputs.SlatWidthMm ?? 89, result.PitchMm * .72) / 2)" y="85" width="@Math.Min(_inputs.SlatWidthMm ?? 89, result.PitchMm * .72)" height="@slat.CutLengthRawMm" tabindex="0" role="button" aria-label="n@slat.Number · @slat.CutLengthDisplayMm mm" @onclick="() => SelectSlat(slat.Number)" />
+        }
+        @SvgText(ChartWidth/2, 42, T("topLine") + " · " + T("cutRule"), "", "middle")
+    </svg>;
+}

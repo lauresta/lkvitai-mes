@@ -384,9 +384,18 @@
 @media(prefers-reduced-motion:reduce) { .gamyba * { transition:none!important; animation:none!important } }
 @media print {
   .gamyba-test,.gamyba-topbar,.gamyba-tabs,.gamyba-demo,.gamyba-actions,.gamyba-subtabs { display:none!important }
+  body.gamyba-print-trapezoid .gamyba-pagehead,body.gamyba-print-trapezoid .gamyba-docs-grid--trapezoid>.gamyba-panel { display:none!important }
+  body.gamyba-print-trapezoid .gamyba-docs-grid--trapezoid { display:block!important }
   .gamyba-main { padding:0 }
   .gamyba-panel { border:0; box-shadow:none }
   body.gamyba-print-report .gamyba *,body.gamyba-print-output .gamyba * { visibility:hidden!important }
   body.gamyba-print-report .gamyba-doc-paper,body.gamyba-print-report .gamyba-doc-paper *,body.gamyba-print-output .gamyba-report-sheet,body.gamyba-print-output .gamyba-report-sheet * { visibility:visible!important }
   body.gamyba-print-report .gamyba-doc-paper,body.gamyba-print-output .gamyba-report-sheet { position:absolute; top:0; left:0; width:100%; margin:0; box-shadow:none }
 }
+/* Vertikalios · Trapecija uses the approved G05 catalogue plus its own report/side grid. */
+.gamyba-docs-grid--trapezoid { grid-template-columns:260px minmax(0,1fr); gap:14px }
+.gamyba-docs-grid--trapezoid>.gamyba-panel { position:sticky; top:12px }
+.gamyba-trap-report-select { display:none }
+@media(max-width:1599px) { .gamyba-docs-grid--trapezoid { grid-template-columns:230px minmax(0,1fr) } }
+@media(max-width:1279px) { .gamyba-docs-grid--trapezoid { grid-template-columns:210px minmax(0,1fr) } }
+@media(max-width:1024px) { .gamyba-docs-grid--trapezoid { grid-template-columns:1fr } .gamyba-docs-grid--trapezoid>.gamyba-panel { display:none } .gamyba-trap-report-select { display:block; width:100%; margin:0 0 12px } }

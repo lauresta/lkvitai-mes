@@ -75,6 +75,7 @@ public partial class Gamyba
     private int? _liveReportId;
     private string? _liveReportError;
     private bool _liveReportLoading;
+    private TrapezoidItemListDto? _liveTrapezoidItems;
 
     protected override async Task OnInitializedAsync()
     {
@@ -229,6 +230,12 @@ public partial class Gamyba
         if (LiveQueueEnabled && screen == "reports"
             && (_liveReportCatalog.Count == 0 || _liveReportError is not null))
             await LoadLiveReportCatalogAsync();
+        if (LiveQueueEnabled && screen == "reports" && _liveTask is not null &&
+            _liveTrapezoidItems is null)
+        {
+            var items = await ShopfloorApi.GetTrapezoidItemsAsync(_liveTask.Task.Id, CancellationToken.None);
+            if (items.Success) _liveTrapezoidItems = items.Value;
+        }
     }
 
     private async Task LoadLiveTasksAsync(int page)
@@ -299,6 +306,8 @@ public partial class Gamyba
     private async Task OpenLiveTaskAsync(int id)
     {
         _liveTask = null;
+        _liveTrapezoidItems = null;
+        _liveReportId = null;
         _liveTaskError = null;
         Go("task");
         _liveTaskLoading = true;
@@ -396,11 +405,7 @@ public partial class Gamyba
         if (LiveQueueEnabled && _liveRepairs is null) await LoadLiveRepairsAsync(1);
     }
 
-    private async Task OpenLiveReportsAsync()
-    {
-        Go("reports");
-        if (_liveReportCatalog.Count == 0) await LoadLiveReportCatalogAsync();
-    }
+    private Task OpenLiveReportsAsync() => GoLiveAwareAsync("reports");
 
     private async Task LoadLiveReportCatalogAsync()
     {
@@ -428,6 +433,13 @@ public partial class Gamyba
         _liveReportLoading = true;
         try
         {
+            if (reportId == 100001)
+            {
+                var items = await ShopfloorApi.GetTrapezoidItemsAsync(_liveTask.Task.Id, CancellationToken.None);
+                if (items.Success && items.Value is not null) _liveTrapezoidItems = items.Value;
+                else _liveReportError = items.Error ?? L["Gamyba.ReportUnavailableOrAccessDenied"].Value;
+                return;
+            }
             var result = await ShopfloorApi.GetProductionReportDataAsync(
                 _liveTask.Task.Id, reportId, CancellationToken.None);
             if (result.Success && result.Value is not null) _liveReportData = result.Value;
@@ -439,4 +451,7 @@ public partial class Gamyba
         }
         finally { _liveReportLoading = false; }
     }
+
+    private Task SelectLiveReportChangeAsync(ChangeEventArgs e) =>
+        int.TryParse(e.Value?.ToString(), out var id) ? SelectLiveReportAsync(id) : Task.CompletedTask;
 }

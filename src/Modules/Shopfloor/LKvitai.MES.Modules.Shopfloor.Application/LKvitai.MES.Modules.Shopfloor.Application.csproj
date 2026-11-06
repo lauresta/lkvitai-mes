@@ -22,4 +22,8 @@
     <ProjectReference Include="..\LKvitai.MES.Modules.Shopfloor.Domain\LKvitai.MES.Modules.Shopfloor.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="Trapezoid/legacy-tables.json" />
+  </ItemGroup>
+
 </Project>

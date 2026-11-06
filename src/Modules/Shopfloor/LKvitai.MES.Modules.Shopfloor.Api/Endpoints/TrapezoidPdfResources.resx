@@ -1,0 +1,492 @@
+<?xml version='1.0' encoding='utf-8'?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms</value>
+  </resheader>
+  <data name="testNote" xml:space="preserve">
+    <value>Data in this environment is not production data and may be reset without notice.</value>
+  </data>
+  <data name="search" xml:space="preserve">
+    <value>Barcode, GU, GT or order… (Enter)</value>
+  </data>
+  <data name="operator" xml:space="preserve">
+    <value>Operator</value>
+  </data>
+  <data name="docsFor" xml:space="preserve">
+    <value>documents for</value>
+  </data>
+  <data name="docsTitle" xml:space="preserve">
+    <value>Production documents</value>
+  </data>
+  <data name="printTab" xml:space="preserve">
+    <value>Print · PDF</value>
+  </data>
+  <data name="templateEditor" xml:space="preserve">
+    <value>Template editor</value>
+  </data>
+  <data name="reports" xml:space="preserve">
+    <value>reports</value>
+  </data>
+  <data name="newBadge" xml:space="preserve">
+    <value>New</value>
+  </data>
+  <data name="item" xml:space="preserve">
+    <value>Item</value>
+  </data>
+  <data name="material" xml:space="preserve">
+    <value>Material · colour</value>
+  </data>
+  <data name="qty" xml:space="preserve">
+    <value>Quantity</value>
+  </data>
+  <data name="pcs" xml:space="preserve">
+    <value>pcs</value>
+  </data>
+  <data name="control" xml:space="preserve">
+    <value>Control</value>
+  </data>
+  <data name="guItemsF" xml:space="preserve">
+    <value>{0} trapezoid items in GU</value>
+  </data>
+  <data name="calcData" xml:space="preserve">
+    <value>Dimensions for calculation</value>
+  </data>
+  <data name="formNoteEdit" xml:space="preserve">
+    <value>Pre-filled values can be refined; refinements are stored with the version, not written to the order.</value>
+  </data>
+  <data name="formNoteRo" xml:space="preserve">
+    <value>Read-only</value>
+  </data>
+  <data name="typeL" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="typeA" xml:space="preserve">
+    <value>A · control at bottom, gathers up</value>
+  </data>
+  <data name="typeB" xml:space="preserve">
+    <value>B · control at top, gathers up</value>
+  </data>
+  <data name="slatW" xml:space="preserve">
+    <value>Slat width</value>
+  </data>
+  <data name="highSide" xml:space="preserve">
+    <value>High side · view from room</value>
+  </data>
+  <data name="left" xml:space="preserve">
+    <value>Left</value>
+  </data>
+  <data name="right" xml:space="preserve">
+    <value>Right</value>
+  </data>
+  <data name="AD" xml:space="preserve">
+    <value>AD · width</value>
+  </data>
+  <data name="CD" xml:space="preserve">
+    <value>CD · tall height</value>
+  </data>
+  <data name="AB" xml:space="preserve">
+    <value>AB · short height</value>
+  </data>
+  <data name="O" xml:space="preserve">
+    <value>Edge slat overhang</value>
+  </data>
+  <data name="src_order" xml:space="preserve">
+    <value>From order</value>
+  </data>
+  <data name="src_material" xml:space="preserve">
+    <value>From material</value>
+  </data>
+  <data name="src_item" xml:space="preserve">
+    <value>From item control</value>
+  </data>
+  <data name="src_manual" xml:space="preserve">
+    <value>Entered manually</value>
+  </data>
+  <data name="src_empty" xml:space="preserve">
+    <value>Not filled</value>
+  </data>
+  <data name="src_version" xml:space="preserve">
+    <value>From saved version</value>
+  </data>
+  <data name="src_chosen" xml:space="preserve">
+    <value>Chosen manually (sources disagree)</value>
+  </data>
+  <data name="restore_order" xml:space="preserve">
+    <value>Restore from order</value>
+  </data>
+  <data name="restore_material" xml:space="preserve">
+    <value>Restore from material</value>
+  </data>
+  <data name="restore_item" xml:space="preserve">
+    <value>Restore from item</value>
+  </data>
+  <data name="zeroO" xml:space="preserve">
+    <value>0 mm · no overhang</value>
+  </data>
+  <data name="oUnused" xml:space="preserve">
+    <value>Not used by the B calculation (Excel)</value>
+  </data>
+  <data name="err_required" xml:space="preserve">
+    <value>Required to calculate</value>
+  </data>
+  <data name="err_tallLess" xml:space="preserve">
+    <value>CD must be ≥ AB</value>
+  </data>
+  <data name="err_overhang" xml:space="preserve">
+    <value>Choose 0 mm or enter the overhang</value>
+  </data>
+  <data name="err_positive" xml:space="preserve">
+    <value>Must be greater than 0</value>
+  </data>
+  <data name="conflictTitle" xml:space="preserve">
+    <value>Sources disagree</value>
+  </data>
+  <data name="conflictText" xml:space="preserve">
+    <value>Material 127 mm · item parameter 89 mm. Choose the width for this calculation.</value>
+  </data>
+  <data name="sideUnset" xml:space="preserve">
+    <value>Not set in order — drawing shows right</value>
+  </data>
+  <data name="calcOkF" xml:space="preserve">
+    <value>Calculated · {0} slats · {1} m per set</value>
+  </data>
+  <data name="calcMissingF" xml:space="preserve">
+    <value>Fill {0} to calculate</value>
+  </data>
+  <data name="e_ext" xml:space="preserve">
+    <value>Extender limit (APRIBOJIMAS): {0} mm required, maximum is 75 mm. Check AB/CD or the slope.</value>
+  </data>
+  <data name="e_overhang" xml:space="preserve">
+    <value>Overhang {0} mm moves the edge slat outside the opening (more than half the slat width, {1} mm). Check the value; the workbook hint for "namukas" is 10 mm.</value>
+  </data>
+  <data name="e_outside" xml:space="preserve">
+    <value>Slats fall outside the opening with these dimensions.</value>
+  </data>
+  <data name="err_overhangBig" xml:space="preserve">
+    <value>Edge slat outside the opening</value>
+  </data>
+  <data name="e_table" xml:space="preserve">
+    <value>AD is outside the reference table (lookup width q = {0} mm).</value>
+  </data>
+  <data name="e_cap" xml:space="preserve">
+    <value>More than 78 slats — beyond the verified Excel range.</value>
+  </data>
+  <data name="e_geom" xml:space="preserve">
+    <value>These dimensions give no valid slat layout.</value>
+  </data>
+  <data name="recalc" xml:space="preserve">
+    <value>Recalculating…</value>
+  </data>
+  <data name="st_unsaved" xml:space="preserve">
+    <value>Not saved</value>
+  </data>
+  <data name="st_saved" xml:space="preserve">
+    <value>Saved</value>
+  </data>
+  <data name="st_archived" xml:space="preserve">
+    <value>Archived PDF</value>
+  </data>
+  <data name="st_incomplete" xml:space="preserve">
+    <value>Incomplete</value>
+  </data>
+  <data name="st_recalc" xml:space="preserve">
+    <value>Recalculating</value>
+  </data>
+  <data name="st_error" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="changed" xml:space="preserve">
+    <value>Calculation changed, version not saved · last saved</value>
+  </data>
+  <data name="noVersionYet" xml:space="preserve">
+    <value>No saved version yet</value>
+  </data>
+  <data name="savedTxtF" xml:space="preserve">
+    <value>This is saved version v{0}.</value>
+  </data>
+  <data name="incompleteTxt" xml:space="preserve">
+    <value>Fill the required dimensions — printing is unavailable.</value>
+  </data>
+  <data name="front" xml:space="preserve">
+    <value>Front view</value>
+  </data>
+  <data name="cut" xml:space="preserve">
+    <value>Cut layout</value>
+  </data>
+  <data name="a4" xml:space="preserve">
+    <value>A4 landscape · preview</value>
+  </data>
+  <data name="productionSheet" xml:space="preserve">
+    <value>Production sheet</value>
+  </data>
+  <data name="continued" xml:space="preserve">
+    <value>continued</value>
+  </data>
+  <data name="draft" xml:space="preserve">
+    <value>draft</value>
+  </data>
+  <data name="d_type" xml:space="preserve">
+    <value>TYPE</value>
+  </data>
+  <data name="d_slat" xml:space="preserve">
+    <value>SLAT</value>
+  </data>
+  <data name="d_o" xml:space="preserve">
+    <value>OVERHANG</value>
+  </data>
+  <data name="d_side" xml:space="preserve">
+    <value>HIGH SIDE</value>
+  </data>
+  <data name="d_qty" xml:space="preserve">
+    <value>QTY</value>
+  </data>
+  <data name="s_bc" xml:space="preserve">
+    <value>Diagonal BC</value>
+  </data>
+  <data name="s_rail" xml:space="preserve">
+    <value>Rail cut</value>
+  </data>
+  <data name="s_fix" xml:space="preserve">
+    <value>Fixed / to mech.</value>
+  </data>
+  <data name="s_pitch" xml:space="preserve">
+    <value>Pitch / spacer +6</value>
+  </data>
+  <data name="s_ext" xml:space="preserve">
+    <value>Extender</value>
+  </data>
+  <data name="s_slats" xml:space="preserve">
+    <value>Slats per set</value>
+  </data>
+  <data name="cutList" xml:space="preserve">
+    <value>Slat cut list</value>
+  </data>
+  <data name="cutRule" xml:space="preserve">
+    <value>Cut = length + 45 mm</value>
+  </data>
+  <data name="th_no" xml:space="preserve">
+    <value>No.</value>
+  </data>
+  <data name="th_fin" xml:space="preserve">
+    <value>to +45</value>
+  </data>
+  <data name="th_cut" xml:space="preserve">
+    <value>Cut, mm</value>
+  </data>
+  <data name="th_qty" xml:space="preserve">
+    <value>Qty</value>
+  </data>
+  <data name="tot_items" xml:space="preserve">
+    <value>Items</value>
+  </data>
+  <data name="tot_ss" xml:space="preserve">
+    <value>Slats / set</value>
+  </data>
+  <data name="tot_s" xml:space="preserve">
+    <value>Slats total</value>
+  </data>
+  <data name="tot_fs" xml:space="preserve">
+    <value>Fabric / set</value>
+  </data>
+  <data name="tot_f" xml:space="preserve">
+    <value>Fabric total</value>
+  </data>
+  <data name="footnote" xml:space="preserve">
+    <value>Fabric usage includes an additional allowance of 27 mm per slat.</value>
+  </data>
+  <data name="schemeNote" xml:space="preserve">
+    <value>Schematic front view from calculated slat lengths, n1 → n{0} short to long. Same X/Y scale, not a 1:1 template. AB/CD are entered heights, not fabric lengths.</value>
+  </data>
+  <data name="cutNote" xml:space="preserve">
+    <value>All blanks aligned to one top line; lengths = cut with +45. Not a roll layout optimisation.</value>
+  </data>
+  <data name="noResult" xml:space="preserve">
+    <value>Slat lengths appear when all required dimensions are valid.</value>
+  </data>
+  <data name="apiNoResult" xml:space="preserve">
+    <value>No result — calculation service unavailable.</value>
+  </data>
+  <data name="pageF" xml:space="preserve">
+    <value>Page {0} / {1}</value>
+  </data>
+  <data name="docPanel" xml:space="preserve">
+    <value>Document</value>
+  </data>
+  <data name="saveCalc" xml:space="preserve">
+    <value>Save calculation</value>
+  </data>
+  <data name="genPdf" xml:space="preserve">
+    <value>Generate PDF</value>
+  </data>
+  <data name="printF" xml:space="preserve">
+    <value>Print v{0}</value>
+  </data>
+  <data name="print" xml:space="preserve">
+    <value>Print</value>
+  </data>
+  <data name="why_save_ro" xml:space="preserve">
+    <value>Editing requires Gamyba · Documents · Edit.</value>
+  </data>
+  <data name="why_save_clean" xml:space="preserve">
+    <value>No changes since the last saved version.</value>
+  </data>
+  <data name="why_print_unsaved" xml:space="preserve">
+    <value>Save first — print and PDF use a saved version.</value>
+  </data>
+  <data name="why_incomplete" xml:space="preserve">
+    <value>Complete the dimensions first.</value>
+  </data>
+  <data name="why_recalc" xml:space="preserve">
+    <value>Wait for the recalculation.</value>
+  </data>
+  <data name="docNote" xml:space="preserve">
+    <value>Preview and recalculation never change production status or stock.</value>
+  </data>
+  <data name="selSlat" xml:space="preserve">
+    <value>Selected slat</value>
+  </data>
+  <data name="sel_cut" xml:space="preserve">
+    <value>Cut length +45</value>
+  </data>
+  <data name="sel_fin" xml:space="preserve">
+    <value>Length to +45</value>
+  </data>
+  <data name="sel_x" xml:space="preserve">
+    <value>From fixed end</value>
+  </data>
+  <data name="sel_rail" xml:space="preserve">
+    <value>Along rail</value>
+  </data>
+  <data name="selHint" xml:space="preserve">
+    <value>Click a slat in the drawing or a row in the list. ← → in the drawing, ↑ ↓ in the list.</value>
+  </data>
+  <data name="versions" xml:space="preserve">
+    <value>Versions · archive</value>
+  </data>
+  <data name="tech" xml:space="preserve">
+    <value>Technology profile</value>
+  </data>
+  <data name="techNote" xml:space="preserve">
+    <value>Fixed in the profile, not entered per order.</value>
+  </data>
+  <data name="t_mount" xml:space="preserve">
+    <value>Mounting / profile</value>
+  </data>
+  <data name="t_hook" xml:space="preserve">
+    <value>Hook / control</value>
+  </data>
+  <data name="t_max" xml:space="preserve">
+    <value>Max spacer cut</value>
+  </data>
+  <data name="t_allow" xml:space="preserve">
+    <value>Spacer / slat / fabric</value>
+  </data>
+  <data name="t_q" xml:space="preserve">
+    <value>Lookup width q</value>
+  </data>
+  <data name="t_base" xml:space="preserve">
+    <value>Base / extra slats</value>
+  </data>
+  <data name="t_off" xml:space="preserve">
+    <value>Fixed / free offset</value>
+  </data>
+  <data name="b_ocT" xml:space="preserve">
+    <value>Order changed after v{0} was saved.</value>
+  </data>
+  <data name="b_ocX" xml:space="preserve">
+    <value>Sales: AD 2000 → 2010 mm. The saved version and its PDF are kept; nothing is overwritten automatically.</value>
+  </data>
+  <data name="applyOrder" xml:space="preserve">
+    <value>Apply order values</value>
+  </data>
+  <data name="keepSaved" xml:space="preserve">
+    <value>Keep saved</value>
+  </data>
+  <data name="b_oldT" xml:space="preserve">
+    <value>Viewing archived PDF v{0}.</value>
+  </data>
+  <data name="b_oldX" xml:space="preserve">
+    <value>Read-only. Numbers, order and geometry are exactly as printed.</value>
+  </data>
+  <data name="backCurrent" xml:space="preserve">
+    <value>Back to current</value>
+  </data>
+  <data name="b_apiT" xml:space="preserve">
+    <value>Calculation service unavailable.</value>
+  </data>
+  <data name="b_apiX" xml:space="preserve">
+    <value>POST /api/shopfloor/trapezoid/calculate → 503. No result is shown and printing is disabled; your inputs are kept.</value>
+  </data>
+  <data name="retry" xml:space="preserve">
+    <value>Retry</value>
+  </data>
+  <data name="b_pdfT" xml:space="preserve">
+    <value>PDF was not generated.</value>
+  </data>
+  <data name="b_pdfX" xml:space="preserve">
+    <value>Server PDF renderer returned an error for v{0}. The saved calculation is not affected.</value>
+  </data>
+  <data name="b_roT" xml:space="preserve">
+    <value>View only.</value>
+  </data>
+  <data name="b_roX" xml:space="preserve">
+    <value>You can open and print saved versions. Editing and saving require Gamyba · Documents · Edit.</value>
+  </data>
+  <data name="b_capT" xml:space="preserve">
+    <value>Long slat list.</value>
+  </data>
+  <data name="b_capX" xml:space="preserve">
+    <value>{0} slats — the list continues on page 2 with the repeated header and item id.</value>
+  </data>
+  <data name="noDataT" xml:space="preserve">
+    <value>No trapezoid items in this GU</value>
+  </data>
+  <data name="noDataX" xml:space="preserve">
+    <value>As in Access (Report_NoData), the document is not generated. Choose another GU or open Vertikalios.</value>
+  </data>
+  <data name="loadingT" xml:space="preserve">
+    <value>Loading order data…</value>
+  </data>
+  <data name="toastSaved" xml:space="preserve">
+    <value>Saved as v{0}</value>
+  </data>
+  <data name="toastPdf" xml:space="preserve">
+    <value>PDF v{0} generated and archived</value>
+  </data>
+  <data name="toastPrint" xml:space="preserve">
+    <value>v{0} sent to the browser print dialog</value>
+  </data>
+  <data name="v_order" xml:space="preserve">
+    <value>From order</value>
+  </data>
+  <data name="v_manualF" xml:space="preserve">
+    <value>Manual: {0}</value>
+  </data>
+  <data name="gathers" xml:space="preserve">
+    <value>gathers up</value>
+  </data>
+  <data name="ctrlBottom" xml:space="preserve">
+    <value>control bottom</value>
+  </data>
+  <data name="ctrlTop" xml:space="preserve">
+    <value>control top</value>
+  </data>
+  <data name="viewRoom" xml:space="preserve">
+    <value>view from room</value>
+  </data>
+  <data name="railLbl" xml:space="preserve">
+    <value>rail cut</value>
+  </data>
+  <data name="topLine" xml:space="preserve">
+    <value>common top line</value>
+  </data>
+</root>
