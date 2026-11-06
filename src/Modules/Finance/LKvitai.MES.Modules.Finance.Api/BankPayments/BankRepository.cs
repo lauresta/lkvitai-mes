@@ -72,10 +72,7 @@ internal sealed class BankRepository(FinanceAccess access, BankImportSessions se
         var country = Country(request.Country);
         var parsed = BankPasteParser.Parse(request.Text).ToArray();
         var dates = parsed.Where(x => x.Date.HasValue).Select(x => x.Date!.Value).ToArray();
-        var mode = config["Finance:DuplicateKey"] == "DateSum" ? "DateSum" : "DateFirmSum";
-        static string Key(DateOnly date, string firm, decimal sum, string mode) =>
-            $"{date:yyyyMMdd}|{(mode == "DateFirmSum" ? firm.Trim().ToUpperInvariant() : "")}|{sum:0.0000}";
-        var existing = new HashSet<string>(StringComparer.Ordinal);
+        var existing = new List<BankPaymentRow>();
         int latestNr;
         await using (var lease = await access.OpenAsync(actor, ct))
         {
@@ -84,25 +81,19 @@ internal sealed class BankRepository(FinanceAccess access, BankImportSessions se
             if (dates.Length > 0)
             {
                 using var cmd = Command(lease.Connection, """
-                    SELECT Data,Firma,Suma FROM dbo.BankTransfersTable
+                    SELECT NR,Data,Firma,Paskirtis,Suma FROM dbo.BankTransfersTable
                     WHERE Country=@country AND Data>=@from AND Data<@to
+                    ORDER BY NR DESC
                     """);
                 Add(cmd, "@country", country);
                 Add(cmd, "@from", dates.Min().ToDateTime(TimeOnly.MinValue));
                 Add(cmd, "@to", dates.Max().AddDays(1).ToDateTime(TimeOnly.MinValue));
                 await using var reader = await cmd.ExecuteReaderAsync(ct);
-                while (await reader.ReadAsync(ct)) existing.Add(Key(DateOnly.FromDateTime(reader.GetDateTime(0)),
-                    reader.GetString(1), reader.GetDecimal(2), mode));
+                while (await reader.ReadAsync(ct)) existing.Add(Row(reader));
             }
         }
-        var batch = new HashSet<string>(StringComparer.Ordinal);
-        for (var i = 0; i < parsed.Length; i++)
-        {
-            var row = parsed[i];
-            if (row.Status == "Error" || row.Date is null || row.Sum is null) continue;
-            var key = Key(row.Date.Value, row.Firm, row.Sum.Value, mode);
-            if (existing.Contains(key) || !batch.Add(key)) parsed[i] = row with { Status = "Duplicate", Selected = false };
-        }
+        parsed = BankPasteParser.MarkDuplicates(parsed, existing,
+            config["Finance:DuplicateKey"] == "DateSum").ToArray();
         var previewId = Guid.NewGuid();
         sessions.SavePreview(new BankPreviewBatch(previewId, actor.UserId, country, latestNr, parsed, DateTimeOffset.UtcNow));
         return new BankPasteResult(previewId, latestNr, parsed);
@@ -122,7 +113,7 @@ internal sealed class BankRepository(FinanceAccess access, BankImportSessions se
         if (selected.Any(row => row is null || row.Status == "Error" || row.Date is null || row.Sum is null))
             throw new BankOperationException(400, "Select valid rows from the preview.");
         var rows = selected.Select(row => new BankImportRow(row!.Date!.Value, row.Firm, row.Purpose,
-            row.Sum!.Value, row.Status == "Duplicate")).ToArray();
+            row.Sum!.Value, row.Status is "Duplicate" or "PossibleDuplicate")).ToArray();
         foreach (var row in rows)
             if (row is null || row.Date.Year is < 2000 or > 2100 || string.IsNullOrWhiteSpace(row.Firm) ||
                 row.Firm.Length > 255 || row.Purpose is null || row.Purpose.Length > 1024 ||
@@ -146,13 +137,12 @@ internal sealed class BankRepository(FinanceAccess access, BankImportSessions se
                 var duplicateKey = $"{row.Date:yyyyMMdd}|{(byDateSum ? "" : row.Firm.Trim().ToUpperInvariant())}|{row.Sum:0.0000}";
                 if (!seen.Add(duplicateKey) && !row.AllowDuplicate)
                     throw new BankOperationException(409, "Duplicate row in this import. Review the preview again.");
-                using var duplicate = Command(c, $"""
+                using var duplicate = Command(c, """
                     SELECT COUNT(*) FROM dbo.BankTransfersTable WHERE Country=@country AND Data>=@date
                     AND Data<DATEADD(day,1,@date) AND Suma=@sum
-                    {(byDateSum ? "" : "AND UPPER(LTRIM(RTRIM(Firma)))=UPPER(@firm)")}
                     """, tx);
                 Add(duplicate, "@country", country); Add(duplicate, "@date", row.Date.ToDateTime(TimeOnly.MinValue));
-                Add(duplicate, "@sum", row.Sum); if (!byDateSum) Add(duplicate, "@firm", row.Firm.Trim());
+                Add(duplicate, "@sum", row.Sum);
                 if (Convert.ToInt32(await duplicate.ExecuteScalarAsync(ct)) > 0 && !row.AllowDuplicate)
                     throw new BankOperationException(409, "Transfer already exists. Review the preview again.");
                 var nr = ++max;

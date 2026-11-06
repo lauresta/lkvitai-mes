@@ -37,11 +37,13 @@
   <data name="Bank.PreviewLatestNr" xml:space="preserve"><value>Paskutinis Nr {0}</value></data>
   <data name="Bank.Status" xml:space="preserve"><value>Būsena</value></data>
   <data name="Bank.ErrorLine" xml:space="preserve"><value>{0}: „{1}“</value></data>
-  <data name="Bank.PreviewSummary" xml:space="preserve"><value>{0} eilučių: {1} nauj. · {2} dublik. · {3} klaid. Dublikatai ir klaidos neįkeliami; dublikatą galima pažymėti rankiniu būdu.</value></data>
+  <data name="Bank.PreviewSummary" xml:space="preserve"><value>{0} eilučių: {1} nauj. · {2} dublik. · {3} galimi dublik. · {4} klaid. Galimi dublikatai automatiškai nepažymimi; prieš įkeliant patikrinkite atitinkantį NR.</value></data>
   <data name="Bank.SelectedSum" xml:space="preserve"><value>Pažymėta suma {0}</value></data>
   <data name="Bank.Import" xml:space="preserve"><value>Įkelti {0} į {1}</value></data>
   <data name="Bank.New" xml:space="preserve"><value>Naujas</value></data>
   <data name="Bank.Duplicate" xml:space="preserve"><value>Dublikatas</value></data>
+  <data name="Bank.PossibleDuplicate" xml:space="preserve"><value>Dublikatas?</value></data>
+  <data name="Bank.MatchesExisting" xml:space="preserve"><value>Galimas atitikmuo: NR {0} · {1}</value></data>
   <data name="Bank.Error" xml:space="preserve"><value>Klaida</value></data>
   <data name="Bank.ErrNoDate" xml:space="preserve"><value>Nerasta data</value></data>
   <data name="Bank.ErrNoSum" xml:space="preserve"><value>Nerasta suma</value></data>

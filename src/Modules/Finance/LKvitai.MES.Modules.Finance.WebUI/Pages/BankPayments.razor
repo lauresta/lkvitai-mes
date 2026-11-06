@@ -36,7 +36,7 @@
   {
     <section class="bp-preview" aria-live="polite">
       <div class="bp-preview-head">
-        <div><strong>@L["Bank.Preview"]</strong><div class="bp-muted">@L["Bank.PreviewSummary", _preview.Rows.Count, CountStatus("New"), CountStatus("Duplicate"), CountStatus("Error")]</div></div>
+        <div><strong>@L["Bank.Preview"]</strong><div class="bp-muted">@L["Bank.PreviewSummary", _preview.Rows.Count, CountStatus("New"), CountStatus("Duplicate"), CountStatus("PossibleDuplicate"), CountStatus("Error")]</div></div>
         <span class="bp-muted mono">@(SelectedRows().Count == 0 ? L["Bank.PreviewLatestNr", _preview.LatestNr] : L["Bank.PreviewNrRange", _preview.LatestNr, _preview.LatestNr + 1, _preview.LatestNr + SelectedRows().Count])</span>
         <span class="bp-muted">@L["Bank.SelectedSum", Money(SelectedRows().Sum(x => x.Sum!.Value))]</span>
         <button class="bp-ghost" type="button" @onclick="CancelPaste">@L["Bank.Cancel"]</button>
@@ -49,12 +49,14 @@
       <div class="bp-preview-scroll">
         @foreach (var row in _preview.Rows)
         {
-          <div class="bp-preview-row @(!_selected.Contains(row.Line) ? "bp-row--off" : "")" @key="row.Line">
+          <div class="bp-preview-row @(row.Status == "PossibleDuplicate" ? "bp-preview-row--possible" : "") @(!_selected.Contains(row.Line) ? "bp-row--off" : "")" @key="row.Line">
             <input type="checkbox" aria-label="@($"{row.Line}: {Status(row.Status)}")" disabled="@(row.Status == "Error")" checked="@_selected.Contains(row.Line)" @onchange="e => SelectRow(row.Line, e.Value)" />
             <span class="bp-chip bp-chip--@row.Status.ToLowerInvariant()">@Status(row.Status)</span>
             <span class="mono">@(row.Date?.ToString("yyyy-MM-dd") ?? "—")</span>
             <span title="@row.Firm">@row.Firm</span>
-            <span class="@(row.Status == "Error" ? "bp-invalid" : "")" title="@(row.Status == "Error" ? row.Raw : row.Purpose)">@(row.Status == "Error" ? L["Bank.ErrorLine", ErrorText(row.Error), row.Raw.Replace('\t', '|')].Value : row.Purpose)</span>
+            <span class="@(row.Status == "Error" ? "bp-invalid" : "")" title="@(row.Status == "Error" ? row.Raw : row.Purpose)">@(row.Status == "Error" ? L["Bank.ErrorLine", ErrorText(row.Error), row.Raw.Replace('\t', '|')].Value : row.Purpose)
+              @if (row.MatchedNr is int nr) { <small class="bp-match">@L["Bank.MatchesExisting", nr, row.MatchedFirm ?? ""]</small> }
+            </span>
             <span class="mono bp-money">@(row.Sum is null ? "—" : Money(row.Sum.Value))</span>
           </div>
         }
