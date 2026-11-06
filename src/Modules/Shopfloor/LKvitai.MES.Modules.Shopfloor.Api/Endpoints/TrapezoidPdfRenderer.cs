@@ -128,14 +128,14 @@ public static class TrapezoidPdfRenderer
             var height = slat.FinishedLengthRawMm * scale;
             g.DrawRectangle(Hair, x - 1, bottom - height, 2, height);
             if (slat.Number is 1 || slat.Number == r.SlatCount || slat.Number % Math.Max(1, r.SlatCount / 13) == 0)
-                Text(g, slat.Number.ToString(CultureInfo.InvariantCulture), x - 2, bottom + 10, 6);
+                Text(g, slat.Number.ToString(CultureInfo.InvariantCulture), x - 2, bottom + 10, 8);
         }
         Text(g, $"{(i.HighSide == "Left" ? "CD" : "AB")} {N(leftHeight)}",
-            left - 18, bottom - leftHeight * scale / 2, 7);
+            left - 22, bottom - leftHeight * scale / 2, 9);
         Text(g, $"{(i.HighSide == "Left" ? "AB" : "CD")} {N(rightHeight)}",
-            left + pxWidth + 2, bottom - rightHeight * scale / 2, 7);
-        Text(g, $"AD {N(w)}", left + pxWidth / 2 - 20, bottom + 24, 8, true);
-        Text(g, $"BC {N(r.DiagonalMm)} · {Label(s,"railLbl")} {N(r.RailCutMm)}", left, 137, 8);
+            left + pxWidth + 2, bottom - rightHeight * scale / 2, 9);
+        Text(g, $"AD {N(w)}", left + pxWidth / 2 - 20, bottom + 24, 9, true);
+        Text(g, $"BC {N(r.DiagonalMm)} · {Label(s,"railLbl")} {N(r.RailCutMm)}", left, 137, 9);
         Text(g, Label(s,"schemeNote",r.SlatCount), left, 451, 7, false, Grey);
     }
 
