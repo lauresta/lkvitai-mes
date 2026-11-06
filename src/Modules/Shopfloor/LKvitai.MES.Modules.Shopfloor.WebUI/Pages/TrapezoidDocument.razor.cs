@@ -11,6 +11,7 @@ namespace LKvitai.MES.Modules.Shopfloor.WebUI.Pages;
 public partial class TrapezoidDocument : IDisposable
 {
     [Parameter, EditorRequired] public TrapezoidItemListDto Data { get; set; } = new();
+    [Parameter] public string? PreferredOrderNumber { get; set; }
     [Inject] private ShopfloorApiClient Api { get; set; } = default!;
     [Inject] private IJSRuntime Js { get; set; } = default!;
     private TrapezoidItemDto? _item;
@@ -92,7 +93,9 @@ public partial class TrapezoidDocument : IDisposable
     protected override async Task OnParametersSetAsync()
     {
         if (_item is not null && Data.Items.Any(x => x.ProductId == _item.ProductId)) return;
-        if (Data.Items.Count > 0) await SelectItemAsync(Data.Items[0].ProductId);
+        var preferred = Data.Items.FirstOrDefault(x => x.OrderNumber == PreferredOrderNumber)
+            ?? Data.Items.FirstOrDefault();
+        if (preferred is not null) await SelectItemAsync(preferred.ProductId);
     }
 
     private async Task SelectItemAsync(long id)

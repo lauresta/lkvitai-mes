@@ -396,6 +396,10 @@
 .gamyba-docs-grid--trapezoid { grid-template-columns:260px minmax(0,1fr); gap:14px }
 .gamyba-docs-grid--trapezoid>.gamyba-panel { position:sticky; top:12px }
 .gamyba-trap-report-select { display:none }
+.gamyba-trap-order-picker { display:flex; align-items:center; gap:12px; margin:0 0 14px; flex-wrap:wrap }
+.gamyba-trap-order-picker label { font-weight:600; color:var(--n-700) }
+.gamyba-trap-order-picker select { width:min(100%,390px); font-family:var(--font-mono,monospace) }
+.gamyba-trap-order-picker [role="alert"] { color:var(--danger-700,#a4261c) }
 @media(max-width:1599px) { .gamyba-docs-grid--trapezoid { grid-template-columns:230px minmax(0,1fr) } }
 @media(max-width:1279px) { .gamyba-docs-grid--trapezoid { grid-template-columns:210px minmax(0,1fr) } }
 @media(max-width:1024px) { .gamyba-docs-grid--trapezoid { grid-template-columns:1fr } .gamyba-docs-grid--trapezoid>.gamyba-panel { display:none } .gamyba-trap-report-select { display:block; width:100%; margin:0 0 12px } }
