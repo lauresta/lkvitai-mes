@@ -18,6 +18,44 @@ const payment = obj({
 
 export const FINANCE_TOOLS: readonly ToolDef[] = [
   {
+    name: 'bank_payments_list',
+    title: 'List individual bank payments',
+    description: 'Read individual payments from the live legacy bank table, including NR, date, payer, full purpose and amount. Use this when asked for bank transactions or counterparties: report_payments only provides aggregated totals. Results are paged at 100 rows; fetch every page before claiming to have the complete list. Finance access and the caller’s legacy SQL mapping are required.',
+    inputSchema: obj({
+      country,
+      from: str('First transaction date, inclusive (YYYY-MM-DD).', { pattern: '^\\d{4}-\\d{2}-\\d{2}$' }),
+      to: str('Last transaction date, inclusive (YYYY-MM-DD).', { pattern: '^\\d{4}-\\d{2}-\\d{2}$' }),
+      search: str('Filter payer or payment purpose by text.', { maxLength: 100 }),
+      sort: str('Sort column; default NR.', { enum: ['nr', 'date', 'firm', 'purpose', 'sum'] }),
+      descending: bool('Descending order; default true.'),
+      page: int('Page number, starting at 1; 100 rows per page.', { minimum: 1, maximum: 10000 }),
+    }, ['country']),
+    annotations: READ,
+    handler: async (args, { api }) => {
+      const result = await api.json<Row>({ target: 'finance', method: 'GET', path: BANK,
+        query: { country: args.country as string, from: args.from as string | undefined,
+          to: args.to as string | undefined, q: args.search as string | undefined,
+          sort: args.sort as string | undefined, desc: args.descending as boolean | undefined,
+          page: args.page as number | undefined } });
+      const items = Array.isArray(result.items) ? result.items as Row[] : [];
+      const total = Number(result.total ?? 0);
+      const page = Number(result.page ?? 1);
+      const pageSize = Number(result.pageSize ?? 100);
+      const pages = Math.max(1, Math.ceil(total / pageSize));
+      const lines = items.slice(0, 20).map((row) =>
+        `${row.nr} | ${row.date} | ${row.firm} | ${row.purpose} | ${row.sum}`);
+      const more = items.length > 20 ? `\n${items.length - 20} more rows on this page in data.items.` : '';
+      const next = page < pages ? ` Fetch page ${page + 1} for more payments.` : '';
+      return {
+        text: `Bank payments ${args.country}: page ${page} of ${pages}, ${total} matching payments.\nNR | date | payer | purpose | amount\n${lines.join('\n')}${more}${next}`,
+        data: { country: args.country, from: args.from, to: args.to, search: args.search,
+          sort: args.sort ?? 'nr', descending: args.descending ?? true,
+          total, countryTotal: result.countryTotal, lastDate: result.lastDate,
+          page, pageSize, pages, items },
+      };
+    },
+  },
+  {
     name: 'bank_payments_preview',
     title: 'Preview a bank statement import',
     description: 'Read the attached bank statement (Excel/XLSX, CSV, PDF, screenshot, MT940, CAMT.053 or another bank format) using your file or vision capabilities. Extract each transaction into date, payer, purpose and exact signed amount. Never infer unreadable values: use an empty field so the API marks an error. Send at most 100 rows per batch, preserving source order. This read-only tool checks the live legacy bank table. OCR can shorten or misspell payer names: a matching date and amount with a different payer is PossibleDuplicate, never New. Show its matched NR and payer to the user; do not offer it for import by default. Show the complete preview and get explicit approval before bank_payments_import.',

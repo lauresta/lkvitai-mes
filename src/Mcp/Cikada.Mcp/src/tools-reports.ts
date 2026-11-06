@@ -116,7 +116,7 @@ const paymentsReport: ToolDef = {
   title: 'Payments received report',
   description:
     'Money received from customers in a period by payment method and branch (the "Mėnuo" report): method kasa (cash desk), ppk (card / cash receipt), bankas (bank transfer); branches Vilnius, Kaunas, Šiauliai, Klaipėda, Klaipėda mažmena, Ryga. Amount in EUR and number of payments, by payment date. ' +
-    'Filters are case-insensitive "contains". data.rows is flat and ready for a chart.',
+    'Filters are case-insensitive "contains". data.rows is flat and ready for a chart. This report contains totals only; for individual bank payments with payer and purpose use bank_payments_list.',
   inputSchema: obj({
     ...COMMON,
     groupBy: groupBySchema(['method', 'branch', 'branchCode']),

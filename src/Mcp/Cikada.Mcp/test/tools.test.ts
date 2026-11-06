@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { NOT_DEPLOYED } from '../src/tools-order-entry.js';
 import { fakeJwt, mockFetch, rpc, running, testConfig } from './helpers.js';
 
-const READ_TOOLS = ['whoami', 'orders_search', 'order_get', 'orders_filters', 'customers_search', 'customer_get', 'price_groups_list', 'items_search', 'stock_get', 'report_production', 'report_work', 'report_payments', 'report_dimensions', 'production_queue', 'materials_popularity', 'stopped_products', 'unpaid_orders', 'made_not_delivered', 'customer_debt', 'orders_find', 'bank_payments_preview'];
+const READ_TOOLS = ['whoami', 'orders_search', 'order_get', 'orders_filters', 'customers_search', 'customer_get', 'price_groups_list', 'items_search', 'stock_get', 'report_production', 'report_work', 'report_payments', 'report_dimensions', 'production_queue', 'materials_popularity', 'stopped_products', 'unpaid_orders', 'made_not_delivered', 'customer_debt', 'orders_find', 'bank_payments_list', 'bank_payments_preview'];
 const WRITE_TOOLS = ['order_create', 'order_update', 'order_product_add', 'order_product_update', 'order_product_remove', 'order_address_set', 'order_confirm', 'order_cancel'];
 const DESTRUCTIVE = ['order_product_remove', 'order_confirm', 'order_cancel'];
 
@@ -106,6 +106,61 @@ test('bank preview reports live NR and import uses only a confirmed server previ
     assert.equal(imported.isError, undefined, JSON.stringify(imported));
     assert.equal(imported.structuredContent.nrFrom, 341);
     assert.deepEqual(api.seen[1]?.body, { country: 'LT', previewId, expectedNextNr: 341, selectedLines: [1] });
+  } finally {
+    await stand.close();
+  }
+});
+
+test('bank payments list returns individual payers and full purposes across pages', async () => {
+  const rows = Array.from({ length: 109 }, (_, i) => ({
+    nr: 79755 + i, date: '2026-10-30', firm: `Payer ${i + 1}`,
+    purpose: `Full bank payment purpose ${i + 1}`, sum: 225 + i,
+  }));
+  const api = mockFetch((seen) => {
+    const page = Number(seen.url.searchParams.get('page') ?? 1);
+    return { status: 200, body: { items: rows.slice((page - 1) * 100, page * 100),
+      total: 109, countryTotal: 1000, lastDate: '2026-10-30', page, pageSize: 100 } };
+  });
+  const stand = await running(testConfig(), { fetchImpl: api.fetchImpl });
+  try {
+    const token = fakeJwt();
+    const argumentsBase = { country: 'LT', from: '2026-10-30', to: '2026-10-30' };
+    const first = (await rpc(stand.base, token, 'tools/call', {
+      name: 'bank_payments_list', arguments: { ...argumentsBase, page: 1 },
+    })).body.result;
+    const second = (await rpc(stand.base, token, 'tools/call', {
+      name: 'bank_payments_list', arguments: { ...argumentsBase, page: 2 },
+    })).body.result;
+    assert.equal(first.isError, undefined, JSON.stringify(first));
+    assert.equal(first.structuredContent.total, 109);
+    assert.equal(first.structuredContent.pages, 2);
+    assert.equal(first.structuredContent.items.length, 100);
+    assert.equal(second.structuredContent.items.length, 9);
+    assert.deepEqual(second.structuredContent.items[0], rows[100]);
+    assert.match(first.content[0].text, /Fetch page 2/);
+    assert.equal(api.seen.length, 2);
+    for (const call of api.seen) {
+      assert.equal(call.url.origin, 'https://finance.internal');
+      assert.equal(call.url.pathname, '/api/finance/bank-payments');
+      assert.equal(call.url.searchParams.get('from'), '2026-10-30');
+      assert.equal(call.url.searchParams.get('to'), '2026-10-30');
+      assert.equal(call.headers.authorization, `Bearer ${token}`);
+    }
+  } finally {
+    await stand.close();
+  }
+});
+
+test('bank payments list reports a Finance denial instead of an empty statement', async () => {
+  const api = mockFetch(() => ({ status: 403, body: { title: 'Finance access required.' } }));
+  const stand = await running(testConfig(), { fetchImpl: api.fetchImpl });
+  try {
+    const result = (await rpc(stand.base, fakeJwt(), 'tools/call', {
+      name: 'bank_payments_list', arguments: { country: 'LT' },
+    })).body.result;
+    assert.equal(result.isError, true);
+    assert.equal(result.structuredContent.error.status, 403);
+    assert.match(result.content[0].text, /Finance access required/);
   } finally {
     await stand.close();
   }

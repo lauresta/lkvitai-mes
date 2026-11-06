@@ -70,8 +70,8 @@ internal static class BankPaymentsEndpoints
             catch (Exception ex) when (ex is HttpRequestException or UnauthorizedAccessException or System.Text.Json.JsonException)
             { return Results.Problem(statusCode: 503, title: "Finance access service is unavailable."); }
         });
-        group.MapGet("", (HttpContext http, BankRepository repo, string country, DateOnly? from,
-            string? q, string? sort, bool? desc, int? page) => repo.List(Actor(http), country, from, q,
+        group.MapGet("", (HttpContext http, BankRepository repo, string country, DateOnly? from, DateOnly? to,
+            string? q, string? sort, bool? desc, int? page) => repo.List(Actor(http), country, from, to, q,
                 sort, desc ?? true, page ?? 1, http.RequestAborted));
         group.MapPost("/parse", (HttpContext http, BankRepository repo, BankPasteRequest request,
             IConfiguration configuration) => repo.Parse(Actor(http), request, configuration, http.RequestAborted));
