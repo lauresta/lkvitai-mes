@@ -70,7 +70,7 @@ public static partial class BankPasteParser
             .Replace("€", "").Replace("\u00a0", "").Replace("\u202f", "").Replace(" ", "");
         if (s.Length == 0 || s.Length > 32 || !s.All(c => char.IsDigit(c) || c is '-' or '+' or ',' or '.')) return false;
         var comma = s.LastIndexOf(','); var dot = s.LastIndexOf('.');
-        var separator = comma >= 0 && dot >= 0 ? Math.Max(comma, dot) : Math.Max(comma, dot);
+        var separator = Math.Max(comma, dot);
         if (separator >= 0)
         {
             var fractional = s.Length - separator - 1;
