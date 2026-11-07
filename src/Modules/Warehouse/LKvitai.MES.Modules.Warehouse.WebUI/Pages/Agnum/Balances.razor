@@ -1,8 +1,10 @@
 @page "/agnum/balances"
 @using LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure
 @using LKvitai.MES.Modules.Warehouse.WebUI.Models
+@using LKvitai.MES.Modules.Warehouse.WebUI.Services
 @inject AgnumClient AgnumClient
 @inject MasterDataAdminClient MasterDataAdminClient
+@inject ItemPricesClient ItemPricesClient
 
 <PageTitle>Agnum Balances</PageTitle>
 
@@ -34,7 +36,7 @@
             </div>
             <div class="col-12 col-md-4">
                 <label class="form-label">Search</label>
-                <input class="form-control" @bind="_search" @bind:event="oninput" placeholder="SKU or Agnum product id" />
+                <input class="form-control" @bind="_search" @bind:event="oninput" @bind:after="LoadVisiblePricesAsync" placeholder="SKU or Agnum product id" />
             </div>
             <div class="col-12 col-md-4 d-flex gap-2">
                 <button class="btn btn-outline-secondary" type="button" @onclick="LoadAsync" disabled="@_isLoading">Refresh</button>
@@ -44,6 +46,7 @@
         <div class="d-flex flex-wrap gap-3 text-muted small mt-3">
             <span>Rows: @FilteredRows.Count</span>
             <span>Total qty: @FilteredRows.Sum(x => x.Quantity).ToString("0.###")</span>
+            <span>Value: <span class="is-money is-num">@Money.Format(VisibleValue)</span></span>
             <span>Distributed: @FilteredRows.Sum(x => x.DistributedQty).ToString("0.###")</span>
             <span>Remaining: @FilteredRows.Sum(x => x.RemainingQty).ToString("0.###")</span>
             <span>MES physical: @FilteredRows.Sum(x => x.MesPhysicalQty).ToString("0.###")</span>
@@ -65,6 +68,9 @@
                     <th>Agnum Product</th>
                     <th>MES Item</th>
                     <th class="text-end">Quantity</th>
+                    <th class="text-end">Cost</th>
+                    <th class="text-end">Sale</th>
+                    <th class="text-end">Value</th>
                     <th class="text-end">Distributed</th>
                     <th class="text-end">Remaining</th>
                     <th class="text-end">MES Physical</th>
@@ -79,7 +85,7 @@
                 @if (FilteredRows.Count == 0)
                 {
                     <tr>
-                        <td colspan="12" class="text-muted py-3">No Agnum balances found.</td>
+                        <td colspan="15" class="text-muted py-3">No Agnum balances found.</td>
                     </tr>
                 }
                 else
@@ -91,6 +97,9 @@
                             <td class="font-monospace">@row.AgnumProductId</td>
                             <td>@(row.ItemId?.ToString() ?? "-")</td>
                             <td class="text-end">@row.Quantity.ToString("0.###")</td>
+                            <td class="text-end is-money is-num">@Money.Format(_priceMap.Get(row.ItemId, row.Sku)?.EffectiveCost)</td>
+                            <td class="text-end is-money is-num">@Money.Format(_priceMap.Get(row.ItemId, row.Sku)?.BasePrice)</td>
+                            <td class="text-end is-money is-num">@Money.Format(_priceMap.Value(row.Quantity, row.ItemId, row.Sku))</td>
                             <td class="text-end">@row.DistributedQty.ToString("0.###")</td>
                             <td class="text-end">@row.RemainingQty.ToString("0.###")</td>
                             <td class="text-end">@row.MesPhysicalQty.ToString("0.###")</td>
@@ -206,6 +215,7 @@
 @code {
     private readonly List<AgnumVirtualWarehouseDto> _warehouses = [];
     private AgnumBalancesResponseDto? _balances;
+    private PriceMap _priceMap = PriceMap.Empty;
     private ApiException? _apiError;
     private bool _isLoading;
     private bool _isSubmittingDistribution;
@@ -245,6 +255,23 @@
                     || x.AgnumProductId.ToString().Contains(term, StringComparison.OrdinalIgnoreCase))
                 .ToList();
         }
+    }
+
+    private decimal? VisibleValue
+    {
+        get
+        {
+            var values = FilteredRows.Take(500)
+                .Select(x => _priceMap.Value(x.Quantity, x.ItemId, x.Sku))
+                .Where(x => x.HasValue).ToList();
+            return values.Count == 0 ? null : values.Sum(x => x!.Value);
+        }
+    }
+
+    private async Task LoadVisiblePricesAsync()
+    {
+        var rows = FilteredRows.Take(500).ToList();
+        _priceMap = await ItemPricesClient.GetMapAsync(rows.Select(x => (x.ItemId, x.Sku)));
     }
 
     protected override async Task OnInitializedAsync()
@@ -288,6 +315,7 @@
         if (_selectedSndId <= 0)
         {
             _balances = null;
+            _priceMap = PriceMap.Empty;
             return;
         }
 
@@ -297,6 +325,7 @@
         try
         {
             _balances = await AgnumClient.GetBalancesAsync(_selectedSndId);
+            await LoadVisiblePricesAsync();
             _distributionRow = null;
             _distributionLocations.Clear();
         }

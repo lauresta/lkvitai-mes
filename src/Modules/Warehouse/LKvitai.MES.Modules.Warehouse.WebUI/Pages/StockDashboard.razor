@@ -1,4 +1,5 @@
 @page "/stock/dashboard"
+@using LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure
 @inject ReportsClient ReportsClient
 @inject IJSRuntime JavaScript
 @inject ToastService ToastService
@@ -93,6 +94,7 @@
                         <th>Location</th>
                         <th>Items</th>
                         <th>Total Qty</th>
+                        <th class="text-end">Value</th>
                         <th>Utilization</th>
                     </tr>
                 </thead>
@@ -100,7 +102,7 @@
                     @if (LocationSummaries.Count == 0)
                     {
                         <tr>
-                            <td colspan="4" class="text-muted">No location aggregates.</td>
+                            <td colspan="5" class="text-muted">No location aggregates.</td>
                         </tr>
                     }
                     else
@@ -111,6 +113,7 @@
                                 <td>@row.LocationCode</td>
                                 <td>@row.ItemCount</td>
                                 <td>@row.TotalQty.ToString("0.##")</td>
+                                <td class="text-end is-money is-num">@Money.Format(row.TotalValue)</td>
                                 <td>@row.UtilizationPercent.ToString("0")%</td>
                             </tr>
                         }
@@ -133,6 +136,9 @@
                                 <th>SKU</th>
                                 <th>Location</th>
                                 <th>Available</th>
+                                <th class="text-end">Cost</th>
+                                <th class="text-end">Sale</th>
+                                <th class="text-end">Value</th>
                                 <th>Status</th>
                             </tr>
                         </thead>
@@ -140,7 +146,7 @@
                             @if (LowStockRows.Count == 0)
                             {
                                 <tr>
-                                    <td colspan="4" class="text-muted">No low stock alerts.</td>
+                                    <td colspan="7" class="text-muted">No low stock alerts.</td>
                                 </tr>
                             }
                             else
@@ -151,6 +157,9 @@
                                         <td>@row.InternalSku</td>
                                         <td>@row.LocationCode</td>
                                         <td>@row.AvailableQty.ToString("0.##")</td>
+                                        <td class="text-end is-money is-num">@Money.Format(row.UnitCost)</td>
+                                        <td class="text-end is-money is-num">@Money.Format(row.BasePrice)</td>
+                                        <td class="text-end is-money is-num">@Money.Format(row.TotalValue)</td>
                                         <td>
                                             <span class="badge @(row.AvailableQty <= _lowStockThreshold / 2m ? "bg-danger" : "bg-warning text-dark")">
                                                 @(row.AvailableQty <= _lowStockThreshold / 2m ? "CRITICAL" : "LOW")
@@ -179,13 +188,16 @@
                                 <th>Expiry</th>
                                 <th>Qty</th>
                                 <th>Location</th>
+                                <th class="text-end">Cost</th>
+                                <th class="text-end">Sale</th>
+                                <th class="text-end">Value</th>
                             </tr>
                         </thead>
                         <tbody>
                             @if (ExpiringRows.Count == 0)
                             {
                                 <tr>
-                                    <td colspan="5" class="text-muted">No lots expiring in next 30 days.</td>
+                                    <td colspan="8" class="text-muted">No lots expiring in next 30 days.</td>
                                 </tr>
                             }
                             else
@@ -198,6 +210,9 @@
                                         <td>@row.ExpiryDate?.ToString("yyyy-MM-dd")</td>
                                         <td>@row.AvailableQty.ToString("0.##")</td>
                                         <td>@row.LocationCode</td>
+                                        <td class="text-end is-money is-num">@Money.Format(row.UnitCost)</td>
+                                        <td class="text-end is-money is-num">@Money.Format(row.BasePrice)</td>
+                                        <td class="text-end is-money is-num">@Money.Format(row.TotalValue)</td>
                                     </tr>
                                 }
                             }
@@ -237,7 +252,8 @@
                 {
                     LocationCode = g.Key,
                     ItemCount = g.Select(x => x.ItemId).Distinct().Count(),
-                    TotalQty = g.Sum(x => x.AvailableQty)
+                    TotalQty = g.Sum(x => x.AvailableQty),
+                    TotalValue = g.Any(x => x.TotalValue.HasValue) ? g.Sum(x => x.TotalValue ?? 0m) : (decimal?)null
                 })
                 .OrderByDescending(x => x.TotalQty)
                 .ToList();
@@ -249,6 +265,7 @@
                     x.LocationCode,
                     x.ItemCount,
                     x.TotalQty,
+                    x.TotalValue,
                     maxQty <= 0m ? 0m : (x.TotalQty / maxQty) * 100m))
                 .ToList();
         }
@@ -368,5 +385,6 @@
         string LocationCode,
         int ItemCount,
         decimal TotalQty,
+        decimal? TotalValue,
         decimal UtilizationPercent);
 }
