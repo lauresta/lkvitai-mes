@@ -177,6 +177,17 @@
                                     }
                                 </div>
 
+                                @if (_result.ReferencePrices is { Count: > 0 } referencePrices)
+                                {
+                                    <div class="fa-section-label mt-3">Kainos <span class="text-muted">· Orientacinė kaina</span></div>
+                                    <div class="small">
+                                        @foreach (var price in referencePrices)
+                                        {
+                                            <div><span class="mono">@price.TypeName</span> · @(price.IsFrom ? "nuo " : "")<span class="mono">@price.Price.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture) €</span>@(string.IsNullOrWhiteSpace(price.Unit) ? "" : $" / {price.Unit}")</div>
+                                        }
+                                    </div>
+                                }
+
                                 <div class="status-block @StatusBlockClass(selected.Status)" role="status">
                                     <div class="status-block__icon">
                                         @StatusIcon(selected.Status)
