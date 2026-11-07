@@ -115,6 +115,13 @@ public sealed class ReceivingController : ControllerBase
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize),
             cancellationToken);
+        var shipmentIds = items.Select(x => x.ShipmentId).ToArray();
+        var pricedLines = await _dbContext.InboundShipmentLines.AsNoTracking()
+            .Where(x => shipmentIds.Contains(x.ShipmentId) && x.UnitPrice.HasValue)
+            .Select(x => new { x.ShipmentId, x.ExpectedQty, x.UnitPrice })
+            .ToListAsync(cancellationToken);
+        var expectedValues = pricedLines.GroupBy(x => x.ShipmentId)
+            .ToDictionary(x => x.Key, x => x.Sum(line => line.ExpectedQty * line.UnitPrice!.Value));
 
         return Ok(new PagedResponse<InboundShipmentSummaryDto>(
             items.Select(x => new InboundShipmentSummaryDto(
@@ -128,7 +135,8 @@ public sealed class ReceivingController : ControllerBase
                 x.TotalExpectedQty,
                 x.TotalReceivedQty,
                 x.CreatedAt,
-                x.LastUpdated)).ToList(),
+                x.LastUpdated)
+            { TotalExpectedValue = expectedValues.TryGetValue(x.ShipmentId, out var value) ? value : null }).ToList(),
             totalCount,
             pageNumber,
             pageSize));
@@ -1029,7 +1037,10 @@ public sealed class ReceivingController : ControllerBase
         decimal TotalExpectedQty,
         decimal TotalReceivedQty,
         DateTimeOffset CreatedAt,
-        DateTimeOffset LastUpdated);
+        DateTimeOffset LastUpdated)
+    {
+        public decimal? TotalExpectedValue { get; init; }
+    }
 
     public sealed record InboundShipmentDetailDto(
         int Id,

@@ -1,4 +1,7 @@
 @page "/transfers/create"
+@using LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure
+@using LKvitai.MES.Modules.Warehouse.WebUI.Services
+@inject ItemPricesClient ItemPricesClient
 @inject TransfersClient TransfersClient
 @inject MasterDataAdminClient MasterDataAdminClient
 @inject StockClient StockApiClient
@@ -67,6 +70,8 @@
                         <tr>
                             <th style="width: 35%;">Item</th>
                             <th style="width: 15%;">Qty</th>
+                            <th>Cost</th>
+                            <th>Value (current cost)</th>
                             <th style="width: 20%;">From Location</th>
                             <th style="width: 20%;">To Location</th>
                             <th style="width: 10%;">Actions</th>
@@ -89,6 +94,8 @@
                                 <td>
                                     <input type="number" min="0.01" step="0.01" class="form-control" @bind="line.Qty" />
                                 </td>
+                                <td class="mono">@Money.Format(_priceMap.Get(line.ItemId, null)?.EffectiveCost)</td>
+                                <td class="mono">@Money.Format(_priceMap.Value(line.Qty, line.ItemId, null))</td>
                                 <td>
                                     <select class="form-select" @bind="line.FromLocationId">
                                         <option value="">From location</option>
@@ -131,6 +138,7 @@
     private readonly List<AdminItemDto> _items = [];
     private readonly List<AdminLocationDto> _locations = [];
     private readonly List<TransferLineModel> _lines = [];
+    private PriceMap _priceMap = PriceMap.Empty;
     private IReadOnlyList<WarehouseDto> _warehouses = Array.Empty<WarehouseDto>();
 
     private bool _isLoading;
@@ -163,6 +171,7 @@
             var items = await MasterDataAdminClient.GetItemsAsync(null, null, "Active", 1, 500);
             _items.Clear();
             _items.AddRange(items.Items);
+            _priceMap = await ItemPricesClient.GetMapAsync(_items.Select(x => ((int?)x.Id, (string?)x.InternalSKU)));
 
             var locations = await MasterDataAdminClient.GetLocationsAsync(null, "Active", true, 1, 500);
             _locations.Clear();

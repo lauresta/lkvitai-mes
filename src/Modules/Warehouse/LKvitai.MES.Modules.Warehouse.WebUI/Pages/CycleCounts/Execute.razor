@@ -1,4 +1,7 @@
 @page "/cycle-counts/{Id:guid}/execute"
+@using LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure
+@using LKvitai.MES.Modules.Warehouse.WebUI.Services
+@inject ItemPricesClient ItemPricesClient
 @inject CycleCountsClient CycleCountsClient
 @inject NavigationManager NavigationManager
 @inject ToastService ToastService
@@ -22,6 +25,23 @@
             <div class="mb-3">
                 <div><strong>@_cycleCount.CountNumber</strong></div>
                 <div class="text-muted">Progress: @CountedLocations of @TotalLocations locations counted</div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-sm align-middle">
+                    <thead><tr><th>Item</th><th>Discrepancy</th><th>Cost</th><th>Value (current cost)</th></tr></thead>
+                    <tbody>
+                        @foreach (var line in _cycleCount.Lines)
+                        {
+                            <tr>
+                                <td class="mono">@line.ItemId</td>
+                                <td class="mono">@line.Delta.ToString("0.###")</td>
+                                <td class="mono">@Money.Format(_priceMap.Get(line.ItemId, null)?.EffectiveCost)</td>
+                                <td class="mono">@Money.Format(_priceMap.Value(line.Delta, line.ItemId, null))</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
             </div>
 
             <div class="row g-3">
@@ -52,6 +72,7 @@
     public Guid Id { get; set; }
 
     private CycleCountDto? _cycleCount;
+    private PriceMap _priceMap = PriceMap.Empty;
     private bool _isLoading;
     private bool _isSubmitting;
     private string _locationCode = string.Empty;
@@ -82,6 +103,7 @@
         try
         {
             _cycleCount = await CycleCountsClient.GetCycleCountByIdAsync(Id);
+            _priceMap = await ItemPricesClient.GetMapAsync(_cycleCount.Lines.Select(x => ((int?)x.ItemId, (string?)null)));
         }
         catch (ApiException ex)
         {
@@ -120,6 +142,7 @@
             });
 
             _cycleCount = response.CycleCount;
+            _priceMap = await ItemPricesClient.GetMapAsync(_cycleCount.Lines.Select(x => ((int?)x.ItemId, (string?)null)));
             if (response.HasDiscrepancy && !string.IsNullOrWhiteSpace(response.Warning))
             {
                 ToastService.ShowError(response.Warning);

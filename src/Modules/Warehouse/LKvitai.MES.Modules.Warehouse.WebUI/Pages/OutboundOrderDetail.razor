@@ -3,6 +3,8 @@
 @inject NavigationManager NavigationManager
 @inject ToastService ToastService
 @using LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure
+@using LKvitai.MES.Modules.Warehouse.WebUI.Services
+@inject ItemPricesClient ItemPricesClient
 
 <PageTitle>Outbound Order Detail - Cikada.MES</PageTitle>
 
@@ -73,6 +75,9 @@
                             <th>Item</th>
                             <th>Barcode</th>
                             <th>Qty</th>
+                            <th class="text-end">Cost</th>
+                            <th class="text-end">Sale</th>
+                            <th class="text-end">Value</th>
                             <th>Picked</th>
                             <th>Shipped</th>
                         </tr>
@@ -87,6 +92,9 @@
                                 </td>
                                 <td>@(line.PrimaryBarcode ?? "-")</td>
                                 <td>@line.Qty</td>
+                                <td class="text-end is-money is-num">@Money.Format(_priceMap.Get(line.ItemId, line.ItemSku)?.EffectiveCost)</td>
+                                <td class="text-end is-money is-num">@Money.Format(_priceMap.Get(line.ItemId, line.ItemSku)?.BasePrice)</td>
+                                <td class="text-end is-money is-num">@Money.Format(_priceMap.Value(line.Qty, line.ItemId, line.ItemSku))</td>
                                 <td>@line.PickedQty</td>
                                 <td>@line.ShippedQty</td>
                             </tr>
@@ -128,6 +136,7 @@
     public Guid Id { get; set; }
 
     private OutboundOrderDetailDto? _order;
+    private PriceMap _priceMap = PriceMap.Empty;
     private bool _isLoading;
     private bool _isSubmitting;
     private ApiException? _apiError;
@@ -146,6 +155,7 @@
         try
         {
             _order = await OutboundClient.GetOutboundOrderAsync(Id);
+            _priceMap = await ItemPricesClient.GetMapAsync(_order.Lines.Select(x => ((int?)x.ItemId, (string?)x.ItemSku)));
         }
         catch (ApiException ex)
         {

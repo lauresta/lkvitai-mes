@@ -1,4 +1,7 @@
 @page "/reports/pick-history"
+@using LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure
+@using LKvitai.MES.Modules.Warehouse.WebUI.Services
+@inject ItemPricesClient ItemPricesClient
 @inject ReportsClient ReportsClient
 @inject IJSRuntime JavaScript
 @inject ToastService ToastService
@@ -58,6 +61,8 @@
                     <th>Item</th>
                     <th>Qty</th>
                     <th>Picked</th>
+                    <th>Cost</th>
+                    <th>Value (current cost)</th>
                     <th>Operator</th>
                     <th>Completed</th>
                 </tr>
@@ -66,7 +71,7 @@
                 @if (_items.Count == 0)
                 {
                     <tr>
-                        <td colspan="8" class="text-muted">No rows found.</td>
+                        <td colspan="10" class="text-muted">No rows found.</td>
                     </tr>
                 }
                 else
@@ -80,6 +85,8 @@
                             <td>@row.ItemName</td>
                             <td>@row.Qty</td>
                             <td>@row.PickedQty</td>
+                            <td class="is-money is-num">@Money.Format(_priceMap.Get(row.ItemId, row.InternalSku)?.EffectiveCost)</td>
+                            <td class="is-money is-num">@Money.Format(_priceMap.Value(row.Qty, row.ItemId, row.InternalSku))</td>
                             <td>@(row.CompletedBy ?? row.AssignedToUserId)</td>
                             <td>@row.CompletedAt?.ToString("yyyy-MM-dd HH:mm")</td>
                         </tr>
@@ -102,6 +109,7 @@
 
 @code {
     private readonly List<PickHistoryRowDto> _items = [];
+    private PriceMap _priceMap = PriceMap.Empty;
     private ApiException? _apiError;
     private bool _isLoading;
     private int _pageNumber = 1;
@@ -143,6 +151,7 @@
 
             _items.Clear();
             _items.AddRange(response.Items);
+            _priceMap = await ItemPricesClient.GetMapAsync(_items.Select(x => ((int?)x.ItemId, (string?)x.InternalSku)));
             _totalCount = response.TotalCount;
         }
         catch (ApiException ex)

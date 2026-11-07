@@ -1,4 +1,5 @@
 @page "/reports/stock-movements"
+@using LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure
 @inject ReportsClient ReportsClient
 @inject IJSRuntime JavaScript
 @inject ToastService ToastService
@@ -73,6 +74,8 @@
                         <th>From</th>
                         <th>To</th>
                         <th>Qty</th>
+                        <th class="text-end">Cost</th>
+                        <th class="text-end">Value (current cost)</th>
                         <th>Operator</th>
                         <th>Reason</th>
                         <th>Reference</th>
@@ -82,7 +85,7 @@
                     @if (_rows.Count == 0)
                     {
                         <tr>
-                            <td colspan="9" class="text-muted">No stock movements found.</td>
+                            <td colspan="11" class="text-muted">No stock movements found.</td>
                         </tr>
                     }
                     else
@@ -96,6 +99,8 @@
                                 <td>@(row.FromLocationCode ?? "-")</td>
                                 <td>@(row.ToLocationCode ?? "-")</td>
                                 <td>@row.Qty.ToString("0.##") @row.BaseUoM</td>
+                                <td class="text-end is-money is-num">@Money.Format(row.UnitCost)</td>
+                                <td class="text-end is-money is-num">@Money.Format(row.Value)</td>
                                 <td>@(row.Operator ?? "-")</td>
                                 <td>@(row.Reason ?? "-")</td>
                                 <td>@row.Reference</td>

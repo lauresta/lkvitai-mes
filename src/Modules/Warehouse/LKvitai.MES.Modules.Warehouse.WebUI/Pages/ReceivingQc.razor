@@ -1,4 +1,7 @@
 @page "/inbound/qc"
+@using LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure
+@using LKvitai.MES.Modules.Warehouse.WebUI.Services
+@inject ItemPricesClient ItemPricesClient
 @inject ReceivingClient ReceivingClient
 @inject ToastService ToastService
 
@@ -44,6 +47,8 @@
                         <th>Item</th>
                         <th>Lot</th>
                         <th>Qty</th>
+                        <th class="text-end">Cost</th>
+                        <th class="text-end">Sale</th>
                         <th>UoM</th>
                         <th>Inspector Notes</th>
                         <th>Actions</th>
@@ -53,7 +58,7 @@
                     @if (FilteredRows.Count == 0)
                     {
                         <tr>
-                            <td colspan="7">
+                            <td colspan="9">
                                 <EmptyState Title="No QC pending rows"
                                             Message="Receiving QC queue is empty for current filters."
                                             IconCss="bi bi-shield-check"
@@ -71,6 +76,8 @@
                                 <td>@row.ItemName</td>
                                 <td>@(row.LotNumber ?? "-")</td>
                                 <td>@row.Qty.ToString("0.##")</td>
+                                <td class="text-end is-money is-num">@Money.Format(_priceMap.Get(row.ItemId, row.ItemSku)?.EffectiveCost)</td>
+                                <td class="text-end is-money is-num">@Money.Format(_priceMap.Get(row.ItemId, row.ItemSku)?.BasePrice)</td>
                                 <td>@row.BaseUoM</td>
                                 <td>
                                     <input class="form-control form-control-sm"
@@ -100,6 +107,7 @@
 
 @code {
     private readonly List<QcPendingRowDto> _rows = [];
+    private PriceMap _priceMap = PriceMap.Empty;
     private readonly Dictionary<string, string> _notesByKey = new(StringComparer.OrdinalIgnoreCase);
     private ApiException? _apiError;
     private bool _isLoading;
@@ -126,6 +134,7 @@
             var rows = await ReceivingClient.GetPendingQcAsync();
             _rows.Clear();
             _rows.AddRange(rows);
+            _priceMap = await ItemPricesClient.GetMapAsync(_rows.Select(x => ((int?)x.ItemId, (string?)x.ItemSku)));
         }
         catch (ApiException ex)
         {

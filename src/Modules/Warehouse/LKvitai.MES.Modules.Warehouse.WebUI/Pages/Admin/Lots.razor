@@ -1,4 +1,7 @@
 @page "/admin/lots"
+@using LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure
+@using LKvitai.MES.Modules.Warehouse.WebUI.Services
+@inject ItemPricesClient ItemPricesClient
 @inject LotsClient LotsClient
 @using System.Diagnostics
 
@@ -97,6 +100,12 @@
             <TemplateColumn Title="Qty">
                 <CellTemplate>@context.Item.Qty.ToString("0.###")</CellTemplate>
             </TemplateColumn>
+            <TemplateColumn Title="Cost">
+                <CellTemplate><span class="is-money is-num">@Money.Format(_priceMap.Get(null, context.Item.ItemSku)?.EffectiveCost)</span></CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="Value">
+                <CellTemplate><span class="is-money is-num">@Money.Format(_priceMap.Value(context.Item.Qty, null, context.Item.ItemSku))</span></CellTemplate>
+            </TemplateColumn>
             <TemplateColumn Title="Reserved">
                 <CellTemplate>@context.Item.ReservedQty.ToString("0.###")</CellTemplate>
             </TemplateColumn>
@@ -135,6 +144,7 @@
 
 @code {
     private MudDataGrid<LotListItemDto>? _grid;
+    private PriceMap _priceMap = PriceMap.Empty;
     private string _search = string.Empty;
     private string _status = string.Empty;
     private string? _appliedSearch;
@@ -205,6 +215,7 @@
         try
         {
             var result = await LotsClient.GetLotsAsync(_appliedSearch, _appliedStatus, state.Page + 1, requestedPageSize);
+            _priceMap = await ItemPricesClient.GetMapAsync(result.Items.Select(x => ((int?)null, (string?)x.ItemSku)));
             _totalCount = result.TotalCount;
 
             return new GridData<LotListItemDto>

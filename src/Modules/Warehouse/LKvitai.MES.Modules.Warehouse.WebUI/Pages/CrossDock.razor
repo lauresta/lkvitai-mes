@@ -2,6 +2,8 @@
 @inject AdvancedWarehouseClient AdvancedClient
 @inject ToastService ToastService
 @using LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure
+@using LKvitai.MES.Modules.Warehouse.WebUI.Services
+@inject ItemPricesClient ItemPricesClient
 
 <PageTitle>Cross-Dock - Cikada.MES</PageTitle>
 
@@ -65,6 +67,8 @@
                             <th>Number</th>
                             <th>Item</th>
                             <th>Qty</th>
+                            <th class="text-end">Cost</th>
+                            <th class="text-end">Value</th>
                             <th>Status</th>
                             <th>Created</th>
                             <th></th>
@@ -77,6 +81,8 @@
                                 <td>@row.CrossDockNumber</td>
                                 <td>@row.ItemId</td>
                                 <td>@row.Qty</td>
+                                <td class="text-end is-money is-num">@Money.Format(_priceMap.Get(row.ItemId, null)?.EffectiveCost)</td>
+                                <td class="text-end is-money is-num">@Money.Format(_priceMap.Value(row.Qty, row.ItemId, null))</td>
                                 <td><span class="badge bg-secondary">@row.Status</span></td>
                                 <td>@row.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
                                 <td class="d-flex gap-1">
@@ -94,6 +100,7 @@
 
 @code {
     private readonly List<CrossDockDto> _rows = [];
+    private PriceMap _priceMap = PriceMap.Empty;
     private string _inboundId = string.Empty;
     private string _outboundId = string.Empty;
     private int _itemId = 1;
@@ -113,6 +120,7 @@
             var rows = await AdvancedClient.GetCrossDocksAsync();
             _rows.Clear();
             _rows.AddRange(rows);
+            _priceMap = await ItemPricesClient.GetMapAsync(_rows.Select(x => ((int?)x.ItemId, (string?)null)));
         });
     }
 
