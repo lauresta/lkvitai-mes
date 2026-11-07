@@ -9,6 +9,7 @@ Do not execute this directory as a sequence: the owner deliberately deferred002.
 |002-cancellation-audit-bigint.sql | **Deferred by owner. Do not execute.** Cancellation remains independently disabled |
 |003-sa-work-period-2030.sql | Applied after owner approved both sa end date2030-01-31 and its normal administrative notice. Only the end date changed; original trigger/audit retained. The initial unreviewed-trigger guard had stopped before UPDATE |
 |004-durable-local-users.postgresql.sql | Applied to Cikada Warehouse PostgreSQL for the authorized user mapping. Adds only durable local-user storage; existing admin identity/roles/password behavior were privately preserved before restart, then the approved bykovas account was created. This is not a legacy SQL Server script |
+|005-decolux-material-metres.sql | **Deferred by owner on 2026-11-03. Do not execute without new approval.** Proposed correction for two shared legacy Decolux consumption formulas; affects Access and Sales in every branch |
 
 Current decisions and remaining blockers are tracked in
 [the Sales issue index](../../docs/sales/milestone-2-issues.md).
