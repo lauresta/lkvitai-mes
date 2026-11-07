@@ -140,74 +140,83 @@ public sealed class MasterDataImportService : IMasterDataImportService
     {
         var items = await _dbContext.Items.ToDictionaryAsync(
             x => x.InternalSKU, StringComparer.OrdinalIgnoreCase, cancellationToken);
+        var (changes, skipped) = ValidatePriceRows(rows, items, errors);
+
+        if (errors.Count > 0)
+            return BuildResult(0, 0, rows.Count, dryRun, false, errors, startedAt);
+
+        if (!dryRun)
+            await ApplyPriceChangesAsync(changes, cancellationToken);
+        return BuildResult(0, changes.Count, skipped, dryRun, false, errors, startedAt);
+    }
+
+    private static (List<(Item Item, decimal? Purchase, decimal? Base)> Changes, int Skipped) ValidatePriceRows(
+        IReadOnlyList<RowData> rows,
+        IReadOnlyDictionary<string, Item> items,
+        List<ImportErrorReport> errors)
+    {
+        const string skuColumn = "InternalSKU";
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var changes = new List<(Item Item, decimal? Purchase, decimal? Base)>();
         var skipped = 0;
-
         foreach (var row in rows)
         {
-            var sku = row.Get("InternalSKU");
+            var sku = row.Get(skuColumn);
             if (string.IsNullOrWhiteSpace(sku))
             {
-                errors.Add(new ImportErrorReport(row.RowNumber, "InternalSKU", sku, "InternalSKU is required."));
+                errors.Add(new ImportErrorReport(row.RowNumber, skuColumn, sku, "InternalSKU is required."));
                 continue;
             }
             if (!seen.Add(sku))
-                errors.Add(new ImportErrorReport(row.RowNumber, "InternalSKU", sku, "Duplicate SKU in file."));
+                errors.Add(new ImportErrorReport(row.RowNumber, skuColumn, sku, "Duplicate SKU in file."));
             if (!items.TryGetValue(sku, out var item))
             {
-                errors.Add(new ImportErrorReport(row.RowNumber, "InternalSKU", sku, "InternalSKU does not exist."));
+                errors.Add(new ImportErrorReport(row.RowNumber, skuColumn, sku, "InternalSKU does not exist."));
                 continue;
             }
 
             var purchase = ParsePriceCell(row, "PurchasePrice", errors);
             var basePrice = ParsePriceCell(row, "BasePrice", errors);
-            if (purchase == item.PurchasePrice && basePrice == item.BasePrice ||
-                !purchase.HasValue && !basePrice.HasValue)
-            {
-                skipped++;
-                continue;
-            }
             if (purchase.HasValue && purchase != item.PurchasePrice ||
                 basePrice.HasValue && basePrice != item.BasePrice)
                 changes.Add((item, purchase, basePrice));
             else
                 skipped++;
         }
+        return (changes, skipped);
+    }
 
-        if (errors.Count > 0)
-            return BuildResult(0, 0, rows.Count, dryRun, false, errors, startedAt);
-
-        if (!dryRun && changes.Count > 0)
+    private async Task ApplyPriceChangesAsync(
+        IReadOnlyList<(Item Item, decimal? Purchase, decimal? Base)> changes,
+        CancellationToken cancellationToken)
+    {
+        var changedBy = _currentUserService?.GetCurrentUserId() ?? "unknown";
+        var changedAt = DateTimeOffset.UtcNow;
+        foreach (var (item, purchase, basePrice) in changes)
         {
-            var changedBy = _currentUserService?.GetCurrentUserId() ?? "unknown";
-            var changedAt = DateTimeOffset.UtcNow;
-            foreach (var (item, purchase, basePrice) in changes)
+            if (purchase.HasValue && purchase != item.PurchasePrice)
             {
-                if (purchase.HasValue && purchase != item.PurchasePrice)
+                _dbContext.ItemPriceHistories.Add(new ItemPriceHistory
                 {
-                    _dbContext.ItemPriceHistories.Add(new ItemPriceHistory
-                    {
-                        ItemId = item.Id, PriceType = ItemPriceTypes.Purchase,
-                        OldAmount = item.PurchasePrice, NewAmount = purchase.Value,
-                        ChangedBy = changedBy, ChangedAt = changedAt, Reason = "excel-import"
-                    });
-                    item.PurchasePrice = purchase.Value;
-                }
-                if (basePrice.HasValue && basePrice != item.BasePrice)
-                {
-                    _dbContext.ItemPriceHistories.Add(new ItemPriceHistory
-                    {
-                        ItemId = item.Id, PriceType = ItemPriceTypes.Base,
-                        OldAmount = item.BasePrice, NewAmount = basePrice.Value,
-                        ChangedBy = changedBy, ChangedAt = changedAt, Reason = "excel-import"
-                    });
-                    item.BasePrice = basePrice.Value;
-                }
+                    ItemId = item.Id, PriceType = ItemPriceTypes.Purchase,
+                    OldAmount = item.PurchasePrice, NewAmount = purchase.Value,
+                    ChangedBy = changedBy, ChangedAt = changedAt, Reason = "excel-import"
+                });
+                item.PurchasePrice = purchase.Value;
             }
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            if (basePrice.HasValue && basePrice != item.BasePrice)
+            {
+                _dbContext.ItemPriceHistories.Add(new ItemPriceHistory
+                {
+                    ItemId = item.Id, PriceType = ItemPriceTypes.Base,
+                    OldAmount = item.BasePrice, NewAmount = basePrice.Value,
+                    ChangedBy = changedBy, ChangedAt = changedAt, Reason = "excel-import"
+                });
+                item.BasePrice = basePrice.Value;
+            }
         }
-        return BuildResult(0, changes.Count, skipped, dryRun, false, errors, startedAt);
+        if (changes.Count > 0)
+            await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
     private static decimal? ParsePriceCell(RowData row, string column, ICollection<ImportErrorReport> errors)
