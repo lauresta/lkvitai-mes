@@ -52,11 +52,9 @@ public sealed record IncomingShipmentDto(
     decimal TotalReceivedQty,
     decimal TotalExpectedQty,
     decimal CompletionPercent,
-    bool IsOverdue)
-{
-    public decimal? TotalCostValue { get; init; }
-    public decimal? TotalSaleValue { get; init; }
-}
+    bool IsOverdue,
+    decimal? TotalCostValue,
+    decimal? TotalSaleValue);
 
 public sealed record AgnumHealthDto
 {
