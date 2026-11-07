@@ -72,7 +72,10 @@
                     </div>
                 </div>
 
-                <div class="small text-muted mt-2">Cost <span class="is-money is-num">@Money.Format(_priceMap.Get(_createItemId, null)?.EffectiveCost)</span> · Sale <span class="is-money is-num">@Money.Format(_priceMap.Get(_createItemId, null)?.BasePrice)</span></div>
+                @if (_suggestionItemId.HasValue)
+                {
+                    <div class="small text-muted mt-2">@L["Pricing.Cost"] <span class="is-money is-num">@Money.Format(_priceMap.Get(_suggestionItemId, null)?.EffectiveCost)</span> · @L["Pricing.Sale"] <span class="is-money is-num">@Money.Format(_priceMap.Get(_suggestionItemId, null)?.BasePrice)</span></div>
+                }
 
                 @if (_suggestions.Count > 0)
                 {
@@ -130,6 +133,7 @@
 @code {
     private readonly List<AdminItemDto> _items = [];
     private readonly List<PickLocationSuggestionDto> _suggestions = [];
+    private int? _suggestionItemId;
     private PriceMap _priceMap = PriceMap.Empty;
     private ApiException? _apiError;
     private bool _isSubmitting;
@@ -205,6 +209,7 @@
         try
         {
             var response = await PickingTasksClient.GetLocationSuggestionsAsync(taskId);
+            _suggestionItemId = response.ItemId;
             _suggestions.Clear();
             _suggestions.AddRange(response.Locations);
         }

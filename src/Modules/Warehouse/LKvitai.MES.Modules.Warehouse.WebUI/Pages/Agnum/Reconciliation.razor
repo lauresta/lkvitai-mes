@@ -71,7 +71,8 @@
                     <th class="text-end">Remaining</th>
                     <th class="text-end">MES Physical (actual)</th>
                     <th class="text-end">Delta</th>
-                    <th class="text-end">Cost</th>
+                    <th class="text-end">@L["Pricing.Cost"]</th>
+                    <th class="text-end">@L["Pricing.Sale"]</th>
                     <th class="text-end">Value (current cost)</th>
                     <th>Status</th>
                 </tr>
@@ -80,7 +81,7 @@
                 @if (FilteredRows.Count == 0)
                 {
                     <tr>
-                        <td colspan="11" class="text-muted py-3">No reconciliation rows found.</td>
+                        <td colspan="12" class="text-muted py-3">No reconciliation rows found.</td>
                     </tr>
                 }
                 else
@@ -99,6 +100,7 @@
                                 <span class="@GetDeltaChipClass(row.Delta)">@row.Delta.ToString("0.###")</span>
                             </td>
                             <td class="text-end is-money is-num">@Money.Format(_priceMap.Get(null, row.Sku)?.EffectiveCost)</td>
+                            <td class="text-end is-money is-num">@Money.Format(_priceMap.Get(null, row.Sku)?.BasePrice)</td>
                             <td class="text-end is-money is-num">@Money.Format(_priceMap.Value(row.Delta, null, row.Sku))</td>
                             <td><span class="@GetStatusChipClass(row.Status)">@FormatStatus(row.Status)</span></td>
                         </tr>

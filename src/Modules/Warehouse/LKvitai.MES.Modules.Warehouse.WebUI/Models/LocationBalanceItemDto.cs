@@ -13,4 +13,6 @@ public sealed record LocationBalanceItemDto
     public decimal? UtilizationVolume { get; init; }
     public string Status { get; init; } = string.Empty;
     public decimal TotalValue { get; init; }
+    public decimal? TotalCostValue { get; init; }
+    public decimal? TotalSaleValue { get; init; }
 }

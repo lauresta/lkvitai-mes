@@ -1,6 +1,7 @@
 @page "/reports/stock-movements"
 @using LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure
 @inject ReportsClient ReportsClient
+@inject ItemPricesClient ItemPricesClient
 @inject IJSRuntime JavaScript
 @inject ToastService ToastService
 
@@ -74,7 +75,8 @@
                         <th>From</th>
                         <th>To</th>
                         <th>Qty</th>
-                        <th class="text-end">Cost</th>
+                        <th class="text-end" title="@L["Pricing.CurrentPriceHint"]">@L["Pricing.Cost"]</th>
+                        <th class="text-end" title="@L["Pricing.CurrentPriceHint"]">@L["Pricing.Sale"]</th>
                         <th class="text-end">Value (current cost)</th>
                         <th>Operator</th>
                         <th>Reason</th>
@@ -85,7 +87,7 @@
                     @if (_rows.Count == 0)
                     {
                         <tr>
-                            <td colspan="11" class="text-muted">No stock movements found.</td>
+                            <td colspan="12" class="text-muted">No stock movements found.</td>
                         </tr>
                     }
                     else
@@ -100,6 +102,7 @@
                                 <td>@(row.ToLocationCode ?? "-")</td>
                                 <td>@row.Qty.ToString("0.##") @row.BaseUoM</td>
                                 <td class="text-end is-money is-num">@Money.Format(row.UnitCost)</td>
+                                <td class="text-end is-money is-num">@Money.Format(_priceMap.Get(row.ItemId, row.ItemSku)?.BasePrice)</td>
                                 <td class="text-end is-money is-num">@Money.Format(row.Value)</td>
                                 <td>@(row.Operator ?? "-")</td>
                                 <td>@(row.Reason ?? "-")</td>
@@ -124,6 +127,7 @@
 
 @code {
     private readonly List<StockMovementRowDto> _rows = [];
+    private PriceMap _priceMap = PriceMap.Empty;
     private ApiException? _apiError;
     private bool _isLoading;
 
@@ -169,6 +173,7 @@
 
             _rows.Clear();
             _rows.AddRange(result.Movements);
+            _priceMap = await ItemPricesClient.GetMapAsync(_rows.Select(x => ((int?)x.ItemId, (string?)x.ItemSku)));
             _totalCount = result.TotalCount;
         }
         catch (ApiException ex)

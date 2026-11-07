@@ -100,8 +100,11 @@
             <TemplateColumn Title="Qty">
                 <CellTemplate>@context.Item.Qty.ToString("0.###")</CellTemplate>
             </TemplateColumn>
-            <TemplateColumn Title="Cost">
+            <TemplateColumn Title="@L["Pricing.Cost"]">
                 <CellTemplate><span class="is-money is-num">@Money.Format(_priceMap.Get(null, context.Item.ItemSku)?.EffectiveCost)</span></CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="@L["Pricing.Sale"]">
+                <CellTemplate><span class="is-money is-num">@Money.Format(_priceMap.Get(null, context.Item.ItemSku)?.BasePrice)</span></CellTemplate>
             </TemplateColumn>
             <TemplateColumn Title="Value">
                 <CellTemplate><span class="is-money is-num">@Money.Format(_priceMap.Value(context.Item.Qty, null, context.Item.ItemSku))</span></CellTemplate>

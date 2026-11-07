@@ -52,14 +52,15 @@
                         <th>Utilization Weight</th>
                         <th>Utilization Volume</th>
                         <th>Status</th>
-                        <th class="text-end">Value</th>
+                        <th class="text-end">@L["Pricing.CostTotal"]</th>
+                        <th class="text-end">@L["Pricing.SaleTotal"]</th>
                     </tr>
                 </thead>
                 <tbody>
                     @if (_rows.Count == 0)
                     {
                         <tr>
-                            <td colspan="10" class="text-muted">No rows found.</td>
+                            <td colspan="11" class="text-muted">No rows found.</td>
                         </tr>
                     }
                     else
@@ -76,7 +77,8 @@
                                 <td>@FormatPercent(row.UtilizationWeight)</td>
                                 <td>@FormatPercent(row.UtilizationVolume)</td>
                                 <td>@row.Status</td>
-                                <td class="text-end is-money is-num">@Money.Format(row.TotalValue)</td>
+                                <td class="text-end is-money is-num">@Money.Format(row.TotalCostValue)</td>
+                                <td class="text-end is-money is-num">@Money.Format(row.TotalSaleValue)</td>
                             </tr>
                         }
                     }

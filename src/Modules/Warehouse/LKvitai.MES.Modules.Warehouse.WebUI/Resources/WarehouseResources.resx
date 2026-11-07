@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="Pricing.Cost" xml:space="preserve"><value>Cost</value></data>
+  <data name="Pricing.Sale" xml:space="preserve"><value>Sale</value></data>
+  <data name="Pricing.CostTotal" xml:space="preserve"><value>Cost total</value></data>
+  <data name="Pricing.SaleTotal" xml:space="preserve"><value>Sale total</value></data>
+  <data name="Pricing.PurchaseTotal" xml:space="preserve"><value>Purchase total</value></data>
+  <data name="Pricing.CurrentPriceHint" xml:space="preserve"><value>Current item prices; historical transaction prices remain unchanged.</value></data>
+</root>

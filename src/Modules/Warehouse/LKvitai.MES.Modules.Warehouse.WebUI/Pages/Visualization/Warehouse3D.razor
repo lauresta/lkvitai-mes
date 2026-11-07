@@ -8,6 +8,7 @@
 @using LKvitai.MES.Modules.Warehouse.WebUI.Models
 @using LKvitai.MES.Modules.Warehouse.WebUI.Services
 @inject VisualizationClient VisualizationClient
+@inject ItemPricesClient ItemPricesClient
 @inject StockClient StockClient
 @inject ToastService ToastService
 @inject IJSRuntime JS
@@ -182,6 +183,8 @@
                     @if (!string.IsNullOrWhiteSpace(_itemSearchResolvedSku))
                     {
                         <span class="viz-ctx-sku">@_itemSearchResolvedSku</span>
+                        <span class="is-money is-num">@L["Pricing.Cost"]: @Money.Format(_priceMap.Get(null, _itemSearchResolvedSku)?.EffectiveCost)</span>
+                        <span class="is-money is-num">@L["Pricing.Sale"]: @Money.Format(_priceMap.Get(null, _itemSearchResolvedSku)?.BasePrice)</span>
                     }
                 </span>
 
@@ -501,9 +504,11 @@
                         <ul class="list-group list-group-flush">
                             @foreach (var hu in _selectedBin.HandlingUnits)
                             {
-                                <li class="list-group-item d-flex justify-content-between">
+                                <li class="list-group-item d-flex justify-content-between gap-2">
                                     <span>@hu.Lpn (@hu.Sku)</span>
-                                    <strong>@hu.Qty</strong>
+                                    <span class="mono">@hu.Qty</span>
+                                    <span class="is-money is-num" title="@L["Pricing.Cost"]">@Money.Format(_priceMap.Get(null, hu.Sku)?.EffectiveCost)</span>
+                                    <span class="is-money is-num" title="@L["Pricing.Sale"]">@Money.Format(_priceMap.Get(null, hu.Sku)?.BasePrice)</span>
                                 </li>
                             }
                         </ul>
@@ -535,6 +540,7 @@
     private const decimal SvgWidth = 1000m;
 
     private Visualization3dDto? _model;
+    private PriceMap _priceMap = PriceMap.Empty;
     private VisualizationBinDto? _selectedBin;
     private VisualizationSlotDto? _selectedSlot;
     private VisualizationRackDto? _selectedRack;
@@ -867,6 +873,11 @@
                 .OrderBy(hit => hit.WarehouseCode, StringComparer.OrdinalIgnoreCase)
                 .ThenBy(hit => hit.LocationCode, StringComparer.OrdinalIgnoreCase)
                 .ToList();
+            _priceMap = await ItemPricesClient.GetMapAsync(
+                hits.Select(x => ((int?)null, (string?)x.Sku))
+                    .Concat(_model?.Bins.SelectMany(x => x.HandlingUnits)
+                        .Select(x => ((int?)null, (string?)x.Sku))
+                        ?? Enumerable.Empty<(int?, string?)>()));
 
             _currentWarehouseItemHits = hits
                 .Where(hit => string.Equals(hit.WarehouseCode, _warehouseCode, StringComparison.OrdinalIgnoreCase))
@@ -1019,6 +1030,8 @@
         try
         {
             _model = await VisualizationClient.GetVisualization3dAsync(_warehouseCode);
+            _priceMap = await ItemPricesClient.GetMapAsync(
+                _model.Bins.SelectMany(x => x.HandlingUnits).Select(x => ((int?)null, (string?)x.Sku)));
             _autocompleteSuggestions = WarehouseVisualizationSearch.GetSuggestions(
                 _model.Bins,
                 _unifiedSearchQuery,

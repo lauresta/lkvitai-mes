@@ -2,6 +2,7 @@
 @inject ReceivingClient ReceivingClient
 @inject NavigationManager NavigationManager
 @inject ToastService ToastService
+@inject ItemPricesClient ItemPricesClient
 
 <PageTitle>Inbound Shipment Detail - Cikada.MES</PageTitle>
 
@@ -139,6 +140,8 @@
                             <th>Received</th>
                             <th>Remaining</th>
                             <th>Unit Price</th>
+                            <th class="text-end">@L["Pricing.Cost"]</th>
+                            <th class="text-end">@L["Pricing.Sale"]</th>
                             <th>Flags</th>
                         </tr>
                     </thead>
@@ -175,6 +178,8 @@
                                         <span class="badge bg-warning text-dark">not set</span>
                                     }
                                 </td>
+                                <td class="text-end is-money is-num">@Money.Format(_priceMap.Get(line.ItemId, line.ItemSku)?.EffectiveCost)</td>
+                                <td class="text-end is-money is-num">@Money.Format(_priceMap.Get(line.ItemId, line.ItemSku)?.BasePrice)</td>
                                 <td>
                                     @if (line.IsService)
                                     {
@@ -203,6 +208,7 @@
     public int Id { get; set; }
 
     private InboundShipmentDetailDto? _shipment;
+    private PriceMap _priceMap = PriceMap.Empty;
     private ApiException? _apiError;
     private bool _isLoading;
     private bool _isSubmitting;
@@ -246,6 +252,7 @@
         try
         {
             _shipment = await ReceivingClient.GetShipmentByIdAsync(Id);
+            _priceMap = await ItemPricesClient.GetMapAsync(_shipment.Lines.Select(x => ((int?)x.ItemId, (string?)x.ItemSku)));
 
             if (_shipment.Lines.Count > 0 && !SelectedLineId.HasValue)
             {
@@ -256,6 +263,7 @@
         {
             _apiError = ex;
             _shipment = null;
+            _priceMap = PriceMap.Empty;
             ToastService.ShowError(BuildErrorMessage(ex));
         }
         finally

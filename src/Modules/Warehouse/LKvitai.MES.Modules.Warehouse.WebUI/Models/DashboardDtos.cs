@@ -5,6 +5,8 @@ public sealed record WarehouseOptionDto(string Code, string Name);
 public sealed record DashboardOverviewDto
 {
     public decimal TotalStockValue { get; init; }
+    public decimal? TotalStockCostValue { get; init; }
+    public decimal? TotalStockSaleValue { get; init; }
     public int TotalSKUs { get; init; }
     public decimal TotalQuantity { get; init; }
     public int LowStockCount { get; init; }
@@ -52,7 +54,11 @@ public sealed record IncomingShipmentDto(
     decimal TotalReceivedQty,
     decimal TotalExpectedQty,
     decimal CompletionPercent,
-    bool IsOverdue);
+    bool IsOverdue)
+{
+    public decimal? TotalCostValue { get; init; }
+    public decimal? TotalSaleValue { get; init; }
+}
 
 public sealed record AgnumHealthDto
 {

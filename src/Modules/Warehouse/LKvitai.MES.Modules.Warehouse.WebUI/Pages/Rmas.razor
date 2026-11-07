@@ -68,7 +68,8 @@
                             <th>Status</th>
                             <th>Reason</th>
                             <th>Items</th>
-                            <th class="text-end">Cost</th>
+                            <th class="text-end">@L["Pricing.Cost"]</th>
+                            <th class="text-end">@L["Pricing.Sale"]</th>
                             <th class="text-end">Value</th>
                             <th>Credit</th>
                             <th>Updated By</th>
@@ -84,6 +85,7 @@
                                 <td>@row.Reason</td>
                                 <td class="mono">@string.Join(", ", row.Lines.Select(x => x.ItemId))</td>
                                 <td class="text-end is-money is-num">@string.Join(" / ", row.Lines.Select(x => Money.Format(_priceMap.Get(x.ItemId, null)?.EffectiveCost)))</td>
+                                <td class="text-end is-money is-num">@string.Join(" / ", row.Lines.Select(x => Money.Format(_priceMap.Get(x.ItemId, null)?.BasePrice)))</td>
                                 <td class="text-end is-money is-num">@Money.Format(RmaValue(row))</td>
                                 <td>@(row.CreditAmount?.ToString("0.00") ?? "-")</td>
                                 <td>@(row.UpdatedBy ?? row.CreatedBy)</td>

@@ -94,7 +94,8 @@
                         <th>Location</th>
                         <th>Items</th>
                         <th>Total Qty</th>
-                        <th class="text-end">Value</th>
+                        <th class="text-end">@L["Pricing.CostTotal"]</th>
+                        <th class="text-end">@L["Pricing.SaleTotal"]</th>
                         <th>Utilization</th>
                     </tr>
                 </thead>
@@ -102,7 +103,7 @@
                     @if (LocationSummaries.Count == 0)
                     {
                         <tr>
-                            <td colspan="5" class="text-muted">No location aggregates.</td>
+                            <td colspan="6" class="text-muted">No location aggregates.</td>
                         </tr>
                     }
                     else
@@ -114,6 +115,7 @@
                                 <td>@row.ItemCount</td>
                                 <td>@row.TotalQty.ToString("0.##")</td>
                                 <td class="text-end is-money is-num">@Money.Format(row.TotalValue)</td>
+                                <td class="text-end is-money is-num">@Money.Format(row.TotalSaleValue)</td>
                                 <td>@row.UtilizationPercent.ToString("0")%</td>
                             </tr>
                         }
@@ -136,8 +138,8 @@
                                 <th>SKU</th>
                                 <th>Location</th>
                                 <th>Available</th>
-                                <th class="text-end">Cost</th>
-                                <th class="text-end">Sale</th>
+                                <th class="text-end">@L["Pricing.Cost"]</th>
+                                <th class="text-end">@L["Pricing.Sale"]</th>
                                 <th class="text-end">Value</th>
                                 <th>Status</th>
                             </tr>
@@ -188,8 +190,8 @@
                                 <th>Expiry</th>
                                 <th>Qty</th>
                                 <th>Location</th>
-                                <th class="text-end">Cost</th>
-                                <th class="text-end">Sale</th>
+                                <th class="text-end">@L["Pricing.Cost"]</th>
+                                <th class="text-end">@L["Pricing.Sale"]</th>
                                 <th class="text-end">Value</th>
                             </tr>
                         </thead>
@@ -253,7 +255,10 @@
                     LocationCode = g.Key,
                     ItemCount = g.Select(x => x.ItemId).Distinct().Count(),
                     TotalQty = g.Sum(x => x.AvailableQty),
-                    TotalValue = g.Any(x => x.TotalValue.HasValue) ? g.Sum(x => x.TotalValue ?? 0m) : (decimal?)null
+                    TotalValue = g.All(x => x.TotalValue.HasValue) ? g.Sum(x => x.TotalValue!.Value) : (decimal?)null,
+                    TotalSaleValue = g.All(x => x.BasePrice.HasValue)
+                        ? g.Sum(x => decimal.Round(x.AvailableQty * x.BasePrice!.Value, 2, MidpointRounding.AwayFromZero))
+                        : (decimal?)null
                 })
                 .OrderByDescending(x => x.TotalQty)
                 .ToList();
@@ -266,6 +271,7 @@
                     x.ItemCount,
                     x.TotalQty,
                     x.TotalValue,
+                    x.TotalSaleValue,
                     maxQty <= 0m ? 0m : (x.TotalQty / maxQty) * 100m))
                 .ToList();
         }
@@ -386,5 +392,6 @@
         int ItemCount,
         decimal TotalQty,
         decimal? TotalValue,
+        decimal? TotalSaleValue,
         decimal UtilizationPercent);
 }

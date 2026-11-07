@@ -29,7 +29,7 @@
 
             <div class="table-responsive">
                 <table class="table table-sm align-middle">
-                    <thead><tr><th>Item</th><th>Discrepancy</th><th>Cost</th><th>Value (current cost)</th></tr></thead>
+                    <thead><tr><th>Item</th><th>Discrepancy</th><th>@L["Pricing.Cost"]</th><th>@L["Pricing.Sale"]</th><th>Value (current cost)</th></tr></thead>
                     <tbody>
                         @foreach (var line in _cycleCount.Lines)
                         {
@@ -37,6 +37,7 @@
                                 <td class="mono">@line.ItemId</td>
                                 <td class="mono">@line.Delta.ToString("0.###")</td>
                                 <td class="mono">@Money.Format(_priceMap.Get(line.ItemId, null)?.EffectiveCost)</td>
+                                <td class="mono">@Money.Format(_priceMap.Get(line.ItemId, null)?.BasePrice)</td>
                                 <td class="mono">@Money.Format(_priceMap.Value(line.Delta, line.ItemId, null))</td>
                             </tr>
                         }

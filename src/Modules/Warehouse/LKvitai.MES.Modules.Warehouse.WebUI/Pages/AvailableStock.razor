@@ -133,10 +133,10 @@
                         <TemplateColumn Title="Available">
                             <CellTemplate><span class="is-num"><strong>@FormatQty(context.Item.AvailableQty)</strong></span></CellTemplate>
                         </TemplateColumn>
-                        <TemplateColumn Title="Cost">
+                        <TemplateColumn Title="@L["Pricing.Cost"]">
                             <CellTemplate><span class="is-money is-num">@FormatMoney(context.Item.UnitCost)</span></CellTemplate>
                         </TemplateColumn>
-                        <TemplateColumn Title="Sale">
+                        <TemplateColumn Title="@L["Pricing.Sale"]">
                             <CellTemplate><span class="is-money is-num">@FormatMoney(context.Item.BasePrice)</span></CellTemplate>
                         </TemplateColumn>
                         <TemplateColumn Title="Value">
@@ -182,8 +182,8 @@
                             <div class="stock-list-row__qty">
                                 <div>On hand: <span class="@GetQtyClass(row.PhysicalQty)">@FormatQty(row.PhysicalQty)</span></div>
                                 <div>Available: <strong class="mono">@FormatQty(row.AvailableQty)</strong></div>
-                                <div>Cost: <span class="is-money is-num">@FormatMoney(row.UnitCost)</span></div>
-                                <div>Sale: <span class="is-money is-num">@FormatMoney(row.BasePrice)</span></div>
+                                <div>@L["Pricing.Cost"]: <span class="is-money is-num">@FormatMoney(row.UnitCost)</span></div>
+                                <div>@L["Pricing.Sale"]: <span class="is-money is-num">@FormatMoney(row.BasePrice)</span></div>
                                 <div>Value: <span class="is-money is-num">@FormatMoney(row.TotalValue)</span></div>
                             </div>
                         </div>
@@ -228,8 +228,8 @@
                                 <div>@row.WarehouseId / @row.Location</div>
                                 <div>On hand: <span class="mono">@FormatQty(row.PhysicalQty)</span></div>
                                 <div>Available: <strong class="mono">@FormatQty(row.AvailableQty)</strong></div>
-                                <div>Cost: <span class="is-money is-num">@FormatMoney(row.UnitCost)</span></div>
-                                <div>Sale: <span class="is-money is-num">@FormatMoney(row.BasePrice)</span></div>
+                                <div>@L["Pricing.Cost"]: <span class="is-money is-num">@FormatMoney(row.UnitCost)</span></div>
+                                <div>@L["Pricing.Sale"]: <span class="is-money is-num">@FormatMoney(row.BasePrice)</span></div>
                                 <div>Value: <span class="is-money is-num">@FormatMoney(row.TotalValue)</span></div>
                             </div>
                         </div>

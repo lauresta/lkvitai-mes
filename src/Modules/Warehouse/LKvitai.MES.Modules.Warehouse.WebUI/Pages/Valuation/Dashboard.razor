@@ -4,6 +4,7 @@
 @using LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure
 @using LKvitai.MES.Modules.Warehouse.WebUI.Models
 @inject ValuationClient ValuationClient
+@inject ItemPricesClient ItemPricesClient
 @inject ToastService ToastService
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JS
@@ -74,7 +75,8 @@
                 <tr>
                     <th>Item</th>
                     <th class="text-end">Qty</th>
-                    <th class="text-end">Unit Cost</th>
+                    <th class="text-end">@L["Pricing.Cost"]</th>
+                    <th class="text-end">@L["Pricing.Sale"]</th>
                     <th class="text-end">Total Value</th>
                 </tr>
                 </thead>
@@ -82,7 +84,7 @@
                 @if (_onHandRows.Count == 0)
                 {
                     <tr>
-                        <td colspan="4">
+                        <td colspan="5">
                             <EmptyState Title="No on-hand value rows"
                                         Message="No valuation rows were returned."
                                         IconCss="bi bi-cash-stack" />
@@ -96,8 +98,9 @@
                         <tr>
                             <td><span class="sku-link" role="button" @onclick="() => OpenItem(row.ItemId)">@row.ItemSku</span> - @row.ItemName</td>
                             <td class="text-end">@row.Qty.ToString("0.###", CultureInfo.InvariantCulture)</td>
-                            <td class="text-end">@row.UnitCost.ToString("0.####", CultureInfo.InvariantCulture)</td>
-                            <td class="text-end">@row.TotalValue.ToString("0.####", CultureInfo.InvariantCulture)</td>
+                            <td class="text-end is-money is-num">@Money.Format(row.UnitCost)</td>
+                            <td class="text-end is-money is-num">@Money.Format(_priceMap.Get(row.ItemId, row.ItemSku)?.BasePrice)</td>
+                            <td class="text-end is-money is-num">@Money.Format(row.TotalValue)</td>
                         </tr>
                     }
                 }
@@ -192,6 +195,7 @@
 
 @code {
     private readonly List<OnHandValueRowDto> _onHandRows = [];
+    private PriceMap _priceMap = PriceMap.Empty;
     private readonly List<CostHistoryRowDto> _costHistoryRows = [];
     private ApiException? _apiError;
     private bool _isLoading;
@@ -225,6 +229,7 @@
             var onHand = await ValuationClient.GetOnHandValueAsync();
             _onHandRows.Clear();
             _onHandRows.AddRange(onHand.OrderByDescending(x => x.TotalValue));
+            _priceMap = await ItemPricesClient.GetMapAsync(_onHandRows.Select(x => ((int?)x.ItemId, (string?)x.ItemSku)));
             await LoadHistoryAsync();
         }
         catch (ApiException ex)
@@ -290,13 +295,14 @@
     private async Task ExportOnHandCsvAsync()
     {
         var builder = new StringBuilder();
-        builder.AppendLine("Item,Qty,UnitCost,TotalValue");
+        builder.AppendLine("Item,Qty,UnitCost,Sale,TotalValue");
         foreach (var row in _onHandRows)
         {
             builder.AppendLine(string.Join(",",
                 Csv(row.ItemSku),
                 Csv(row.Qty.ToString("0.###", CultureInfo.InvariantCulture)),
                 Csv(row.UnitCost.ToString("0.####", CultureInfo.InvariantCulture)),
+                Csv(_priceMap.Get(row.ItemId, row.ItemSku)?.BasePrice?.ToString("0.####", CultureInfo.InvariantCulture) ?? string.Empty),
                 Csv(row.TotalValue.ToString("0.####", CultureInfo.InvariantCulture))));
         }
 

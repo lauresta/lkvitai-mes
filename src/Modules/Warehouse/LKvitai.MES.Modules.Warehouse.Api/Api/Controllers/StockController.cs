@@ -339,6 +339,14 @@ public sealed class StockController : ControllerBase
                     ? totalVolume / location.MaxVolume.Value
                     : (decimal?)null;
 
+                var costComplete = group.All(row =>
+                    priceBySku.TryGetValue(row.SKU, out var price) && price.EffectiveCost.HasValue);
+                var saleComplete = group.All(row =>
+                    priceBySku.TryGetValue(row.SKU, out var price) && price.BasePrice.HasValue);
+                var saleValue = saleComplete
+                    ? group.Sum(row => ItemPriceResolver.Value(row.Quantity, priceBySku[row.SKU].BasePrice)!.Value)
+                    : (decimal?)null;
+
                 return new LocationBalanceItemDto(
                     location?.Id,
                     group.Key,
@@ -350,7 +358,11 @@ public sealed class StockController : ControllerBase
                     utilizationWeight,
                     utilizationVolume,
                     location?.Status ?? "Unknown",
-                    totalValue);
+                    totalValue)
+                {
+                    TotalCostValue = costComplete ? totalValue : null,
+                    TotalSaleValue = saleValue
+                };
             })
             .ToList();
 
@@ -415,7 +427,7 @@ public sealed class StockController : ControllerBase
     private static string BuildLocationBalanceCsv(IReadOnlyCollection<LocationBalanceItemDto> rows)
     {
         var sb = new StringBuilder();
-        sb.AppendLine("LocationId,LocationCode,ItemCount,TotalWeight,TotalVolume,MaxWeight,MaxVolume,UtilizationWeight,UtilizationVolume,Status,TotalValue");
+        sb.AppendLine("LocationId,LocationCode,ItemCount,TotalWeight,TotalVolume,MaxWeight,MaxVolume,UtilizationWeight,UtilizationVolume,Status,TotalValue,CostTotal,SaleTotal");
         foreach (var row in rows)
         {
             sb.Append(row.LocationId?.ToString(CultureInfo.InvariantCulture) ?? string.Empty).Append(',');
@@ -428,7 +440,9 @@ public sealed class StockController : ControllerBase
             sb.Append(row.UtilizationWeight?.ToString(CultureInfo.InvariantCulture) ?? string.Empty).Append(',');
             sb.Append(row.UtilizationVolume?.ToString(CultureInfo.InvariantCulture) ?? string.Empty).Append(',');
             sb.Append(EscapeCsv(row.Status)).Append(',');
-            sb.Append(row.TotalValue.ToString(CultureInfo.InvariantCulture));
+            sb.Append(row.TotalValue.ToString(CultureInfo.InvariantCulture)).Append(',');
+            sb.Append(row.TotalCostValue?.ToString(CultureInfo.InvariantCulture) ?? string.Empty).Append(',');
+            sb.Append(row.TotalSaleValue?.ToString(CultureInfo.InvariantCulture) ?? string.Empty);
             sb.AppendLine();
         }
 
@@ -589,7 +603,11 @@ public sealed class StockController : ControllerBase
         decimal? UtilizationWeight,
         decimal? UtilizationVolume,
         string Status,
-        decimal TotalValue);
+        decimal TotalValue)
+    {
+        public decimal? TotalCostValue { get; init; }
+        public decimal? TotalSaleValue { get; init; }
+    }
 
     public sealed record PagedResponse<T>(
         IReadOnlyList<T> Items,

@@ -64,13 +64,16 @@
                     <th>Status</th>
                     <th>Expected Qty</th>
                     <th>Received Qty</th>
+                    <th class="text-end">@L["Pricing.PurchaseTotal"]</th>
+                    <th class="text-end" title="@L["Pricing.CurrentPriceHint"]">@L["Pricing.CostTotal"]</th>
+                    <th class="text-end" title="@L["Pricing.CurrentPriceHint"]">@L["Pricing.SaleTotal"]</th>
                 </tr>
                 </thead>
                 <tbody>
                 @if (_items.Count == 0)
                 {
                     <tr>
-                        <td colspan="7" class="text-muted">No rows found.</td>
+                        <td colspan="10" class="text-muted">No rows found.</td>
                     </tr>
                 }
                 else
@@ -85,6 +88,9 @@
                             <td>@row.Status</td>
                             <td>@row.TotalExpectedQty</td>
                             <td>@row.TotalReceivedQty</td>
+                            <td class="text-end is-money is-num">@Money.Format(row.TotalExpectedValue)</td>
+                            <td class="text-end is-money is-num">@Money.Format(row.TotalCostValue)</td>
+                            <td class="text-end is-money is-num">@Money.Format(row.TotalSaleValue)</td>
                         </tr>
                     }
                 }
