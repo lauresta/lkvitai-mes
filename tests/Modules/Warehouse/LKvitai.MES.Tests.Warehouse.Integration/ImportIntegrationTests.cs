@@ -1,6 +1,7 @@
 using ClosedXML.Excel;
 using FluentAssertions;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
+using LKvitai.MES.Modules.Warehouse.Application.Services;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Imports;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -23,6 +24,7 @@ public class ImportIntegrationTests : IAsyncLifetime
 
         _postgres = new PostgreSqlBuilder()
             .WithImage("pgvector/pgvector:pg16")
+            .WithDatabase("warehouse_import_tests")
             .Build();
         await _postgres.StartAsync();
 
@@ -166,10 +168,92 @@ public class ImportIntegrationTests : IAsyncLifetime
         result.Inserted.Should().Be(1001);
     }
 
+    [SkippableFact]
+    public async Task ImportPrices_UpdatesOnlyChangedValues_AndWritesHistory()
+    {
+        DockerRequirement.EnsureEnabled();
+        await ResetDatabaseAsync();
+        await using var db = new WarehouseDbContext(_options!);
+        await SeedMasterDataAsync(db);
+        var item = new Item { InternalSKU = "SKU-1", Name = "Item", BaseUoM = "PCS",
+            CategoryId = 1, PurchasePrice = 3m, BasePrice = 5m };
+        db.Items.Add(item);
+        await db.SaveChangesAsync();
+        var service = new MasterDataImportService(db, new SkuGenerationService(db), new FixedUser());
+        using var stream = BuildWorkbook(ExcelTemplateService.PriceHeaders,
+            [["SKU-1", "4.25", "6.50"]]);
+
+        var result = await service.ImportAsync("prices", stream, dryRun: false);
+
+        result.Errors.Should().BeEmpty();
+        result.Updated.Should().Be(1);
+        item.PurchasePrice.Should().Be(4.25m);
+        item.BasePrice.Should().Be(6.50m);
+        var history = await db.ItemPriceHistories.ToListAsync();
+        history.Should().HaveCount(2);
+        history.Should().OnlyContain(x => x.ChangedBy == "test-user" && x.Reason == "excel-import");
+        history.Should().Contain(x => x.PriceType == ItemPriceTypes.Purchase && x.OldAmount == 3m && x.NewAmount == 4.25m);
+        history.Should().Contain(x => x.PriceType == ItemPriceTypes.Base && x.OldAmount == 5m && x.NewAmount == 6.50m);
+    }
+
+    [SkippableFact]
+    public async Task ImportPrices_BlankCellDoesNotClear_AndDryRunDoesNotWrite()
+    {
+        DockerRequirement.EnsureEnabled();
+        await ResetDatabaseAsync();
+        await using var db = new WarehouseDbContext(_options!);
+        await SeedMasterDataAsync(db);
+        var item = new Item { InternalSKU = "SKU-2", Name = "Item", BaseUoM = "PCS",
+            CategoryId = 1, PurchasePrice = 3m, BasePrice = 5m };
+        db.Items.Add(item);
+        await db.SaveChangesAsync();
+        var service = new MasterDataImportService(db, new SkuGenerationService(db), new FixedUser());
+        using var dryStream = BuildWorkbook(ExcelTemplateService.PriceHeaders,
+            [["SKU-2", "", "7.00"]]);
+        var preview = await service.ImportAsync("prices", dryStream, dryRun: true);
+        preview.Updated.Should().Be(1);
+        item.BasePrice.Should().Be(5m);
+        (await db.ItemPriceHistories.CountAsync()).Should().Be(0);
+        using var applyStream = BuildWorkbook(ExcelTemplateService.PriceHeaders,
+            [["SKU-2", "", "7.00"]]);
+        var applied = await service.ImportAsync("prices", applyStream, dryRun: false);
+        applied.Updated.Should().Be(1);
+        item.PurchasePrice.Should().Be(3m);
+        item.BasePrice.Should().Be(7m);
+        (await db.ItemPriceHistories.CountAsync()).Should().Be(1);
+    }
+
+    [SkippableFact]
+    public async Task ImportPrices_InvalidOrDuplicateSku_RejectsWholeFile()
+    {
+        DockerRequirement.EnsureEnabled();
+        await ResetDatabaseAsync();
+        await using var db = new WarehouseDbContext(_options!);
+        await SeedMasterDataAsync(db);
+        var item = new Item { InternalSKU = "SKU-3", Name = "Item", BaseUoM = "PCS",
+            CategoryId = 1, PurchasePrice = 3m };
+        db.Items.Add(item);
+        await db.SaveChangesAsync();
+        var service = new MasterDataImportService(db, new SkuGenerationService(db), new FixedUser());
+        using var stream = BuildWorkbook(ExcelTemplateService.PriceHeaders,
+            [["SKU-3", "4", ""], ["sku-3", "5", ""], ["MISSING", "7", ""], ["SKU-3", "-1", "oops"]]);
+        var result = await service.ImportAsync("prices", stream, dryRun: false);
+        result.Errors.Should().Contain(x => x.Column == "InternalSKU" && x.Message.Contains("Duplicate"));
+        result.Errors.Should().Contain(x => x.Column == "InternalSKU" && x.Message.Contains("exist"));
+        result.Errors.Should().Contain(x => x.Column == "PurchasePrice");
+        result.Errors.Should().Contain(x => x.Column == "BasePrice");
+        item.PurchasePrice.Should().Be(3m);
+        (await db.ItemPriceHistories.CountAsync()).Should().Be(0);
+    }
+
+    private sealed class FixedUser : ICurrentUserService
+    {
+        public string GetCurrentUserId() => "test-user";
+    }
+
     private async Task ResetDatabaseAsync()
     {
         await using var db = new WarehouseDbContext(_options!);
-        await db.Database.EnsureDeletedAsync();
         await db.Database.EnsureCreatedAsync();
     }
 
