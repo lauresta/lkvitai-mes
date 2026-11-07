@@ -1,6 +1,7 @@
 # Warehouse: prices everywhere — status and plan
 
-Updated: 2026-11-07. Owner: Denisas Bykovas. Status: **planned, not started** (implementation waits for go).
+Updated: 2026-11-07. Owner: Denisas Bykovas. Status: **handed to Codex** — blueprint and stages A–E per
+`docs/warehouse/pricing-codex-handoff.md`; Codex works strictly inside that blueprint.
 
 Goal (restated 2026-11-07): every Warehouse screen where an operator sees a stock quantity
 also shows the price. Decisions taken:
@@ -63,16 +64,17 @@ The cost join (`OnHandValue.UnitCost` → fallback `Item.PurchasePrice`) is dupl
 
 | Stage | Scope | Estimate |
 |---|---|---|
+| **A0. Demo data on test** | Run the existing Agnum imports (`POST /api/warehouse/v1/agnum/import/products`, `.../import/balances`) on cikada-test so Available Stock and `on_hand_value` are not empty; re-run the price sync from stage A afterwards. Ops step, no code. | 0.5 day |
 | **A. Price source** | Check what `products/price/search` returns. Pull purchase price on Agnum product import and on re-sync, writing `ItemPriceHistory` on change. Supplier mapping price as fallback. Backfill on test so screens show real numbers for the demo. | 2–3 days |
 | **B. One price snapshot** | Replace the three copies of the cost join with one `ItemPriceSnapshot` (purchase, WAC unit cost, base selling, effective group price, value = qty × cost) behind one Application service and one endpoint; all screens read it. | 1–2 days |
 | **C. Stock screens** | Add Unit cost / Value (and base selling price) to every "no" row in section 2: Stock Dashboard, Stock Level report + CSV, Location Balance (value per location), Location Detail, Available Stock list + gallery, Stock Movements (movement value), Stock Adjustments (delta value), Reservations, Picking Tasks suggestions, Putaway, Packing Station, Outbound Order, Inbound Shipments list (shipment value), Receiving QC, Cross-dock, RMA. | 3–4 days |
 | **D. Item pickers** | Show price + available qty next to the item in autocompletes (`AdminItemDto` already carries `BasePrice` / `PurchasePrice`). | 1 day |
-| **E. Frontline** | Fabric card and low-stock list: see section 5. | 1–2 days after mapping |
-| **F. Warehouse dashboard fix** | Requested 2026-11-07, exact defect to be confirmed with the owner. | tbd |
+| **E. Frontline** | Fabric card and low-stock list exactly as section 5 (both prices; `frontline_component_items` mapping seeded by name + supplier code, admin correction screen; reference size 1000 × 1000 mm). Separate PR after A–D. | 2–3 days |
+| **F. Warehouse dashboard fix** | Done in [#280](https://github.com/lauresta/lkvitai-mes/pull/280): Traefik passed `/api/warehouse/*` through (stripPrefix gave 404 on every public call, incl. photo proxy URLs), Bootstrap 5.3.3 + icons vendored into wwwroot. | done |
 | **G. Deferred** | FIFO / lot costing and currency (ADR-002), price export to Agnum (deferred in #206), LT translation of Warehouse screens (module not translated at all — separate task). | — |
 
-Order: A → B → C → D (about two weeks), E after the component↔item mapping decision, F when the
-defect is confirmed. Work starts from `main` on a dedicated branch.
+Order: A0 → A → B → C → D → E, one PR per stage from `main` (branches `codex/warehouse-prices-<stage>`),
+autopilot delivery (commit → PR → admin merge → deploy to test → check on cikada-test).
 
 ## 5. Frontline fabric price — proposal
 
@@ -99,5 +101,4 @@ and link to the Sales calculator for exact prices.
 
 - Response shape of Agnum `products/price/search` (is it purchase or selling price, per
   warehouse?).
-- Warehouse dashboard defect (stage F).
 - Reference size for the Frontline indicative price (1000 × 1000 mm proposed).
