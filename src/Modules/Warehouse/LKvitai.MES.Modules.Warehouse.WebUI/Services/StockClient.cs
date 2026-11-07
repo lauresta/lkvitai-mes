@@ -168,7 +168,8 @@ public class StockClient
             Tags = row.Tags,
             PrimaryThumbnailUrl = row.PrimaryThumbnailUrl,
             UnitCost = row.UnitCost,
-            TotalValue = row.TotalValue
+            TotalValue = row.TotalValue,
+            BasePrice = row.BasePrice
         }).ToList();
 
         return new PagedResult<AvailableStockItemDto>
@@ -237,6 +238,7 @@ public class StockClient
         public string? PrimaryThumbnailUrl { get; init; }
         public decimal? UnitCost { get; init; }
         public decimal? TotalValue { get; init; }
+        public decimal? BasePrice { get; init; }
     }
 
     private sealed record StockSearchResponseDto

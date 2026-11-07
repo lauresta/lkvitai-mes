@@ -9,6 +9,7 @@ using LKvitai.MES.Modules.Warehouse.Infrastructure.EventVersioning;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Imports;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Locking;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.Pricing;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Projections;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Visualization;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Agnum;
@@ -36,6 +37,7 @@ public static class DependencyInjection
         services.AddScoped<IProjectionHealthService, ProjectionHealthService>();
         services.AddScoped<ISkuGenerationService, SkuGenerationService>();
         services.AddScoped<IExcelTemplateService, ExcelTemplateService>();
+        services.AddScoped<IItemPriceSnapshotService, ItemPriceSnapshotService>();
         services.AddScoped<IMasterDataImportService, MasterDataImportService>();
         services.AddSingleton<RackLayoutValidator>();
         services.AddScoped<WarehouseGeometryCalculator>();

@@ -15,4 +15,5 @@ public record AvailableStockItemDto
     public string? PrimaryThumbnailUrl { get; init; }
     public decimal? UnitCost { get; init; }
     public decimal? TotalValue { get; init; }
+    public decimal? BasePrice { get; init; }
 }

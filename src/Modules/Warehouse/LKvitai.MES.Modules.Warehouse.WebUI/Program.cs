@@ -46,6 +46,7 @@ builder.Services.AddHttpClient("WarehouseApi", (sp, client) =>
 
 builder.Services.AddScoped<DashboardClient>();
 builder.Services.AddScoped<StockClient>();
+builder.Services.AddScoped<ItemPricesClient>();
 builder.Services.AddScoped<ReservationsClient>();
 builder.Services.AddScoped<ProjectionsClient>();
 builder.Services.AddScoped<MasterDataAdminClient>();

@@ -454,8 +454,7 @@
     private static string FormatQty(decimal value)
         => value.ToString("0.###");
 
-    private static string FormatMoney(decimal? value)
-        => value.HasValue ? $"{value.Value:0.00} €" : "-";
+    private static string FormatMoney(decimal? value) => LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure.Money.Format(value);
 
     private static string GetQtyClass(decimal value)
         => value < 0m ? "is-num stock-qty stock-qty--negative" : "is-num stock-qty";
