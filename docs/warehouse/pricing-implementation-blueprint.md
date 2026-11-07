@@ -11,8 +11,9 @@
 
 - **Agnum API мёртв.** `agnum-api` (`AgnumDBApi-1.39.jar`) на test отвечает 500 на всё:
   `invalid exp config`, `AppConfigFilter`. Срок работы прошит в jar поставщика константами
-  `2026-08-01`. Последний импорт с данными — 2026-08-01. Лечится только новым jar от поставщика.
-  **Не патчить jar, не обходить фильтр, не ходить напрямую в Firebird.**
+  `2026-08-01`. Последний импорт с данными — 2026-08-01. Замена на свой .NET-сервис описана в
+  `agnum-dotnet-api-blueprint.md`, его правила работы с Firebird и jar главнее. Вне него в Firebird не ходить,
+  jar не патчить.
 - С 2026-08-01 ежедневный импорт пишет `Completed` с 0 товаров: `AgnumApiClient.FetchProductsAsync`
   возвращает `null` на любой не-2xx, `GetProductsAsync` превращает это в пустой список.
 - `GET /api/products/price/search` по байткоду: `List<JSONObject>` с ключами `KOD` + `KN1…KN5`
@@ -228,7 +229,7 @@ ORDER BY Price;
 **Готово:** на test следующий запуск (`0 6 * * *`) или ручной пишет `Failed` с причиной.
 
 **S7b. Условие:** из контейнера `lkvitai-mes-warehouse-api` на test
-`GET http://agnum-api:8181/api/products/price/search?code=2103170012` с `X-API-KEY` даёт 200. Иначе **S7b не начинать**,
+`GET http://agnum-api-net:8181/api/products/price/search?code=2103170012` с `X-API-KEY` даёт 200. Иначе **S7b не начинать**,
 ничего не заготавливать, записать в handoff. Ключ не печатать.
 
 Если 200: сохранить реальный ответ в тест-фикстуру без секретов; `IAgnumApiClient.GetPricesAsync`, разбор ключей без
