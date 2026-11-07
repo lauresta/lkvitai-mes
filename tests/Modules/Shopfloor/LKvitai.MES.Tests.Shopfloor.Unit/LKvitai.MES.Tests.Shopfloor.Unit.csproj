@@ -21,6 +21,7 @@
     <ProjectReference Include="..\..\..\..\src\Modules\Shopfloor\LKvitai.MES.Modules.Shopfloor.Contracts\LKvitai.MES.Modules.Shopfloor.Contracts.csproj" />
     <ProjectReference Include="..\..\..\..\src\Modules\Shopfloor\LKvitai.MES.Modules.Shopfloor.Domain\LKvitai.MES.Modules.Shopfloor.Domain.csproj" />
     <ProjectReference Include="..\..\..\..\src\Modules\Shopfloor\LKvitai.MES.Modules.Shopfloor.Application\LKvitai.MES.Modules.Shopfloor.Application.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Modules\Shopfloor\LKvitai.MES.Modules.Shopfloor.WebUI\LKvitai.MES.Modules.Shopfloor.WebUI.csproj" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Trapezoid/fixtures.json" />

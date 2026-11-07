@@ -2622,4 +2622,92 @@
   <data name="Trapezoid.mm" xml:space="preserve"><value>mm</value></data>
   <data name="Trapezoid.pagesShort" xml:space="preserve"><value>p.</value></data>
   <data name="Trapezoid.templateEditorUnavailable" xml:space="preserve"><value>Trapecijos šablonų redaktorius dar nepasiekiamas.</value></data>
+  <data name="Roletai.Paperless.Accessories" xml:space="preserve"><value>Papildomi priedai šiam gaminiui:</value></data>
+  <data name="Roletai.Paperless.AllDatesSearch" xml:space="preserve"><value>Užsakymas {0} · visos datos</value></data>
+  <data name="Roletai.Paperless.Back" xml:space="preserve"><value>Grįžti į gamybą</value></data>
+  <data name="Roletai.Paperless.Cancel" xml:space="preserve"><value>Atšaukti</value></data>
+  <data name="Roletai.Paperless.Cancelled" xml:space="preserve"><value>Užsakymas {0} anuliuotas.</value></data>
+  <data name="Roletai.Paperless.Cechas" xml:space="preserve"><value>Cechas: {0}</value></data>
+  <data name="Roletai.Paperless.Clear" xml:space="preserve"><value>Išvalyti</value></data>
+  <data name="Roletai.Paperless.ClearFilters" xml:space="preserve"><value>Išvalyti filtrus</value></data>
+  <data name="Roletai.Paperless.ClearSearch" xml:space="preserve"><value>Išvalyti paiešką</value></data>
+  <data name="Roletai.Paperless.Col.Cassette" xml:space="preserve"><value>Kasetė:</value></data>
+  <data name="Roletai.Paperless.Col.Control" xml:space="preserve"><value>Vald.:</value></data>
+  <data name="Roletai.Paperless.Col.Decor" xml:space="preserve"><value>Dekoras:</value></data>
+  <data name="Roletai.Paperless.Col.Fabric" xml:space="preserve"><value>Audinys:</value></data>
+  <data name="Roletai.Paperless.Col.Guides" xml:space="preserve"><value>Kreipiančiosios:</value></data>
+  <data name="Roletai.Paperless.Col.Height" xml:space="preserve"><value>Aukštis:</value></data>
+  <data name="Roletai.Paperless.Col.Order" xml:space="preserve"><value>Užsakymas</value></data>
+  <data name="Roletai.Paperless.Col.Quantity" xml:space="preserve"><value>Kiekis:</value></data>
+  <data name="Roletai.Paperless.Col.Tube" xml:space="preserve"><value>Velenas:</value></data>
+  <data name="Roletai.Paperless.Col.Type" xml:space="preserve"><value>Tipas:</value></data>
+  <data name="Roletai.Paperless.Col.Weight" xml:space="preserve"><value>Atsvaras:</value></data>
+  <data name="Roletai.Paperless.Col.Width" xml:space="preserve"><value>Plotis:</value></data>
+  <data name="Roletai.Paperless.Confirm" xml:space="preserve"><value>Patvirtinti</value></data>
+  <data name="Roletai.Paperless.Consumption" xml:space="preserve"><value>Audinio sunaudojimas:</value></data>
+  <data name="Roletai.Paperless.Count" xml:space="preserve"><value>{0} iš {1} gaminių</value></data>
+  <data name="Roletai.Paperless.DateRange" xml:space="preserve"><value>UŽSAKYMO DATA · {0} – {1}</value></data>
+  <data name="Roletai.Paperless.DoneCount" xml:space="preserve"><value>Baigta · {0} gaminių</value></data>
+  <data name="Roletai.Paperless.ExplainAll" xml:space="preserve"><value>Rodomi visi gaminiai pagal datą ir paiešką.</value></data>
+  <data name="Roletai.Paperless.ExplainMarked" xml:space="preserve"><value>Gaminiai turi visas pasirinktas žymas arba pasirašymą.</value></data>
+  <data name="Roletai.Paperless.ExplainUnmarked" xml:space="preserve"><value>Gaminių trūksta bent vienos pasirinktos žymos arba pasirašymo.</value></data>
+  <data name="Roletai.Paperless.Filter.All" xml:space="preserve"><value>Visi</value></data>
+  <data name="Roletai.Paperless.Filter.Marked" xml:space="preserve"><value>Pažymėti</value></data>
+  <data name="Roletai.Paperless.Filter.Unmarked" xml:space="preserve"><value>Nepažymėti</value></data>
+  <data name="Roletai.Paperless.FilterSummary" xml:space="preserve"><value>{0}: {1}</value></data>
+  <data name="Roletai.Paperless.From" xml:space="preserve"><value>Nuo</value></data>
+  <data name="Roletai.Paperless.GroupMeta" xml:space="preserve"><value>{0} gam. · Kiekis: {1}</value></data>
+  <data name="Roletai.Paperless.HideMine" xml:space="preserve"><value>Slėpti mano pasirašytus gaminius</value></data>
+  <data name="Roletai.Paperless.InvalidDates" xml:space="preserve"><value>Pasirinkite teisingą datų intervalą.</value></data>
+  <data name="Roletai.Paperless.LoadFailed" xml:space="preserve"><value>Nepavyko įkelti roletų. Bandykite dar kartą.</value></data>
+  <data name="Roletai.Paperless.Loading" xml:space="preserve"><value>Įkeliami roletai…</value></data>
+  <data name="Roletai.Paperless.MyMarks" xml:space="preserve"><value>Mano žymos</value></data>
+  <data name="Roletai.Paperless.Nav" xml:space="preserve"><value>Roletai</value></data>
+  <data name="Roletai.Paperless.NoGuides" xml:space="preserve"><value>Be kreipiančiųjų</value></data>
+  <data name="Roletai.Paperless.NoItems" xml:space="preserve"><value>Nerasta atitinkančių gaminių.</value></data>
+  <data name="Roletai.Paperless.NoRollers" xml:space="preserve"><value>Užsakymas {0} yra, tačiau jame nėra roletų.</value></data>
+  <data name="Roletai.Paperless.Notes" xml:space="preserve"><value>Pastabos: {0}</value></data>
+  <data name="Roletai.Paperless.OrderDate" xml:space="preserve"><value>Užsakymo data</value></data>
+  <data name="Roletai.Paperless.OrderLine" xml:space="preserve"><value>Užsakymas Nr.: {0} (data - {1}), gam. užd. Nr.: {2}</value></data>
+  <data name="Roletai.Paperless.OrderNotFound" xml:space="preserve"><value>Užsakymas {0} nerastas arba neturite teisės jo matyti.</value></data>
+  <data name="Roletai.Paperless.PageFooter" xml:space="preserve"><value>Puslapis {0} iš {1}, atspausdinta {2}</value></data>
+  <data name="Roletai.Paperless.Private" xml:space="preserve"><value>Matote tik jūs</value></data>
+  <data name="Roletai.Paperless.Quantity" xml:space="preserve"><value>Kiekis</value></data>
+  <data name="Roletai.Paperless.ReportTitle" xml:space="preserve"><value>Roletai (bendras kiekis: {0} vnt.)</value></data>
+  <data name="Roletai.Paperless.Retry" xml:space="preserve"><value>Bandyti dar kartą</value></data>
+  <data name="Roletai.Paperless.Save.saving" xml:space="preserve"><value>Saugoma…</value></data>
+  <data name="Roletai.Paperless.Save.saved" xml:space="preserve"><value>Išsaugota</value></data>
+  <data name="Roletai.Paperless.Save.error" xml:space="preserve"><value>Neišsaugota — nutrūko ryšys</value></data>
+  <data name="Roletai.Paperless.Search" xml:space="preserve"><value>Ieškoti užsakymo</value></data>
+  <data name="Roletai.Paperless.Shared" xml:space="preserve"><value>Bendros</value></data>
+  <data name="Roletai.Paperless.SharedHint" xml:space="preserve"><value>Pasirašymus mato visi</value></data>
+  <data name="Roletai.Paperless.Show" xml:space="preserve"><value>Rodyti</value></data>
+  <data name="Roletai.Paperless.Showing" xml:space="preserve"><value>RODOMA</value></data>
+  <data name="Roletai.Paperless.SignBody" xml:space="preserve"><value>Patvirtinate, kad jūsų darbas su šiuo gaminiu baigtas.</value></data>
+  <data name="Roletai.Paperless.SignOff" xml:space="preserve"><value>Pasirašyti</value></data>
+  <data name="Roletai.Paperless.SignTitle" xml:space="preserve"><value>Patvirtinti pasirašymą?</value></data>
+  <data name="Roletai.Paperless.Signed" xml:space="preserve"><value>Pasirašyta</value></data>
+  <data name="Roletai.Paperless.SignedCount" xml:space="preserve"><value>Jūs pasirašėte {0}/{1}</value></data>
+  <data name="Roletai.Paperless.Step" xml:space="preserve"><value>Žingsnis {0}</value></data>
+  <data name="Roletai.Paperless.StepShort" xml:space="preserve"><value>ŽINGSNIS</value></data>
+  <data name="Roletai.Paperless.To" xml:space="preserve"><value>Iki</value></data>
+  <data name="Roletai.Paperless.Unit" xml:space="preserve"><value>Matas:</value></data>
+  <data name="Roletai.Paperless.View.Paper" xml:space="preserve"><value>Lapas</value></data>
+  <data name="Roletai.Paperless.View.Fabric" xml:space="preserve"><value>Audinys</value></data>
+  <data name="Roletai.Paperless.View.Type" xml:space="preserve"><value>Tipas</value></data>
+  <data name="Roletai.Paperless.View.Guides" xml:space="preserve"><value>Kreipiančiosios</value></data>
+  <data name="Roletai.Paperless.Views" xml:space="preserve"><value>Rodiniai</value></data>
+  <data name="Roletai.Paperless.Withdraw" xml:space="preserve"><value>Atšaukti pasirašymą</value></data>
+  <data name="Roletai.Paperless.WithdrawBody" xml:space="preserve"><value>Jūsų pasirašymas bus atšauktas. Kiti darbuotojai jo nebematys.</value></data>
+  <data name="Roletai.Paperless.WithdrawTitle" xml:space="preserve"><value>Atšaukti pasirašymą?</value></data>
+  <data name="Roletai.Paperless.Worker" xml:space="preserve"><value>Darbuotojas</value></data>
+  <data name="Roletai.Paperless.You" xml:space="preserve"><value>✓ Jūs</value></data>
+  <data name="Roletai.Paperless.AccessoryLine" xml:space="preserve"><value>Papildomi priedai: {0} — {1} {2}</value></data>
+  <data name="Roletai.Paperless.DefaultDateRange" xml:space="preserve"><value>UŽSAKYMO DATA · {0} – {1} · paskutinės 14 dienų</value></data>
+  <data name="Roletai.Paperless.FabricGroupMeta" xml:space="preserve"><value>{0} gam. · Kiekis: {1} · Audinio sunaudojimas: {2}</value></data>
+  <data name="Roletai.Paperless.Pieces" xml:space="preserve"><value>vnt.</value></data>
+  <data name="Roletai.Paperless.SearchSummary" xml:space="preserve"><value>užsakymas „{0}“</value></data>
+  <data name="Roletai.Paperless.DateSummary" xml:space="preserve"><value>data {0}–{1}</value></data>
+  <data name="Roletai.Paperless.AlreadySigned" xml:space="preserve"><value>Jau pasirašė: {0} · {1}</value></data>
+  <data name="Roletai.Paperless.SignFailed" xml:space="preserve"><value>Pasirašymo išsaugoti nepavyko. Patikrinkite ryšį ir bandykite dar kartą.</value></data>
 </root>

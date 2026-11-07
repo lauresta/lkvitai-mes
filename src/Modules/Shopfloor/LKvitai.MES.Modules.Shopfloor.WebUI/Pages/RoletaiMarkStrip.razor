@@ -1,0 +1,35 @@
+<div class="sfr-marks @(Compact ? "sfr-marks--compact" : "")">
+    @if (!Compact && Others.Count > 0)
+    {
+        <div class="sfr-other-signs"><small>@L["Roletai.Paperless.Signed"]</small>@foreach (var person in Others) { <span>@person.Name · @VilniusTime(person.SignedAt)</span> }</div>
+    }
+    <div class="sfr-step-group"><small>@L["Roletai.Paperless.StepShort"]</small>
+        @for (var step = 1; step <= 3; step++)
+        {
+            var current = step;
+            var marked = Marks.Any(x => x.ProductId == Row.ParduotoGaminioID && x.Step == step && x.Marked);
+            <button type="button" disabled="@(!Row.InProduction)" aria-label="@L["Roletai.Paperless.Step", step]" aria-pressed="@marked" @onclick="() => OnToggle.InvokeAsync((Row.ParduotoGaminioID, current))"><span class="@(marked ? "marked" : "")">@(marked ? "✓" : "")@step</span></button>
+        }
+    </div>
+    @if (Mine is not null)
+    {
+        <button type="button" class="sfr-sign sfr-sign--mine" disabled="@(!Row.InProduction)" @onclick="() => OnSign.InvokeAsync(Row)">@L["Roletai.Paperless.You"] · @VilniusTime(Mine.SignedAt)</button>
+    }
+    else
+    {
+        <button type="button" class="sfr-sign" disabled="@(!Row.InProduction)" @onclick="() => OnSign.InvokeAsync(Row)">@L["Roletai.Paperless.SignOff"]</button>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public RoletaiPaperlessRowDto Row { get; set; } = default!;
+    [Parameter] public IReadOnlyList<RoletaiPaperlessMarkDto> Marks { get; set; } = [];
+    [Parameter] public IReadOnlyList<RoletaiPaperlessSignOffDto> SignOffs { get; set; } = [];
+    [Parameter] public EventCallback<(long ProductId, int Step)> OnToggle { get; set; }
+    [Parameter] public EventCallback<RoletaiPaperlessRowDto> OnSign { get; set; }
+    [Parameter] public bool Compact { get; set; }
+    private static string VilniusTime(DateTimeOffset value) => TimeZoneInfo.ConvertTime(value,
+        TimeZoneInfo.FindSystemTimeZoneById("Europe/Vilnius")).ToString("HH:mm");
+    private RoletaiPaperlessSignOffDto? Mine => SignOffs.FirstOrDefault(x => x.ProductId == Row.ParduotoGaminioID && x.Mine);
+    private List<RoletaiPaperlessSignOffDto> Others => SignOffs.Where(x => x.ProductId == Row.ParduotoGaminioID && !x.Mine).ToList();
+}

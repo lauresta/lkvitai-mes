@@ -338,6 +338,60 @@ public sealed class ProductionReportAccessoryDto
     public string? AccessoryName { get; set; }
 }
 
+public sealed class RoletaiPaperlessDataDto
+{
+    public string OrderStatus { get; set; } = "default";
+    public DateOnly? From { get; set; }
+    public DateOnly? To { get; set; }
+    public List<RoletaiPaperlessRowDto> Rows { get; set; } = [];
+    public List<ProductionReportAccessoryDto> Accessories { get; set; } = [];
+    public List<RoletaiPaperlessMarkDto> MyMarks { get; set; } = [];
+    public List<RoletaiPaperlessSignOffDto> SignOffs { get; set; } = [];
+}
+
+public sealed class RoletaiPaperlessRowDto
+{
+    public string Uzsakymas { get; set; } = "";
+    public DateTime UzsakymoData { get; set; }
+    public long ParduotoGaminioID { get; set; }
+    public string TipoTrPavadinimas { get; set; } = "";
+    public string? Valdymas { get; set; }
+    public long Rusis { get; set; }
+    public decimal? Plotis { get; set; }
+    public decimal? Aukstis { get; set; }
+    public decimal Kiekis { get; set; }
+    public string? Spalva { get; set; }
+    public string? Audinys { get; set; }
+    public string? Kasete { get; set; }
+    public string? Velenas { get; set; }
+    public string? Atsvaras { get; set; }
+    public string? Kreipianciosios { get; set; }
+    public string? KrepianciujuTipas { get; set; }
+    public string? Dekoras { get; set; }
+    public string? AudinioSunaudojimas { get; set; }
+    public string? Pastabos { get; set; }
+    public string? Cechas { get; set; }
+    public string? GamibinesUzduotiesNumeris { get; set; }
+    public bool InProduction { get; set; }
+}
+
+public sealed class RoletaiPaperlessMarkDto
+{
+    public long ProductId { get; set; }
+    public int Step { get; set; }
+    public bool Marked { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; }
+}
+
+public sealed class RoletaiPaperlessSignOffDto
+{
+    public long ProductId { get; set; }
+    public Guid UserId { get; set; }
+    public string Name { get; set; } = "";
+    public DateTimeOffset SignedAt { get; set; }
+    public bool Mine { get; set; }
+}
+
 /// <summary>
 /// Typed wrapper around the named <c>ShopfloorApi</c> HttpClient. Returns
 /// <see cref="ApiResult{T}"/> so pages can surface API validation/conflict
@@ -416,6 +470,33 @@ public sealed class ShopfloorApiClient
         int reportId, CancellationToken ct)
         => SendAsync<ProductionReportDataDto>(HttpMethod.Get,
             $"/api/shopfloor/production-tasks/{taskId}/report-data/{reportId}", null, ct);
+
+    public Task<ApiResult<RoletaiPaperlessDataDto>> GetRoletaiPaperlessAsync(
+        string? order, DateOnly? from, DateOnly? to, CancellationToken ct)
+    {
+        var query = new List<string>();
+        if (!string.IsNullOrWhiteSpace(order)) query.Add("order=" + Uri.EscapeDataString(order.Trim()));
+        else
+        {
+            if (from is not null) query.Add("from=" + from.Value.ToString("yyyy-MM-dd"));
+            if (to is not null) query.Add("to=" + to.Value.ToString("yyyy-MM-dd"));
+        }
+        return SendAsync<RoletaiPaperlessDataDto>(HttpMethod.Get,
+            "/api/shopfloor/roletai" + (query.Count == 0 ? "" : "?" + string.Join("&", query)), null, ct);
+    }
+
+    public Task<ApiResult<RoletaiPaperlessMarkDto>> SetRoletaiMarkAsync(
+        long productId, int step, bool marked, CancellationToken ct)
+        => SendAsync<RoletaiPaperlessMarkDto>(HttpMethod.Put,
+            $"/api/shopfloor/roletai/items/{productId}/marks/{step}", new { marked }, ct);
+
+    public Task<ApiResult<RoletaiPaperlessSignOffDto>> SignRoletaiAsync(long productId, CancellationToken ct)
+        => SendAsync<RoletaiPaperlessSignOffDto>(HttpMethod.Post,
+            $"/api/shopfloor/roletai/items/{productId}/signoff", null, ct);
+
+    public Task<ApiResult> WithdrawRoletaiAsync(long productId, CancellationToken ct)
+        => SendAsync(HttpMethod.Delete,
+            $"/api/shopfloor/roletai/items/{productId}/signoff", null, ct);
 
     public Task<ApiResult<TrapezoidItemListDto>> GetTrapezoidItemsAsync(int taskId, CancellationToken ct)
         => SendAsync<TrapezoidItemListDto>(HttpMethod.Get,
