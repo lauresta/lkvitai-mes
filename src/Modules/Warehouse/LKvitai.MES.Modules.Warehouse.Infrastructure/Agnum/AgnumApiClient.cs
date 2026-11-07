@@ -69,6 +69,11 @@ public sealed class AgnumApiClient : IAgnumApiClient
                     return null;
                 }
 
+                if ((int)response.StatusCode >= 500)
+                {
+                    throw new AgnumApiUnavailableException($"Agnum API GET {requestUri} returned HTTP {(int)response.StatusCode}.");
+                }
+
                 _logger.LogWarning("Agnum API returned HTTP {StatusCode} when fetching products from {RequestUri}.", response.StatusCode, requestUri);
                 return null;
             }
@@ -107,6 +112,14 @@ public sealed class AgnumApiClient : IAgnumApiClient
 
             return products;
         }
+        catch (AgnumApiUnavailableException)
+        {
+            throw;
+        }
+        catch (Exception ex) when (ex is HttpRequestException || ex is TaskCanceledException && !ct.IsCancellationRequested)
+        {
+            throw new AgnumApiUnavailableException($"Agnum API GET {requestUri} failed: {ex.Message}", ex);
+        }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
             _logger.LogWarning(ex, "Agnum API request failed while fetching products.");
@@ -132,6 +145,11 @@ public sealed class AgnumApiClient : IAgnumApiClient
             using var response = await _httpClient.SendAsync(request, ct);
             if (!response.IsSuccessStatusCode)
             {
+                if ((int)response.StatusCode >= 500)
+                {
+                    throw new AgnumApiUnavailableException($"Agnum API GET {requestUri} returned HTTP {(int)response.StatusCode}.");
+                }
+
                 _logger.LogWarning("Agnum API returned HTTP {StatusCode} when fetching clients from {RequestUri}.", response.StatusCode, requestUri);
                 return Array.Empty<AgnumClientDto>();
             }
@@ -154,6 +172,14 @@ public sealed class AgnumApiClient : IAgnumApiClient
                 stopwatch.ElapsedMilliseconds);
 
             return clients;
+        }
+        catch (AgnumApiUnavailableException)
+        {
+            throw;
+        }
+        catch (Exception ex) when (ex is HttpRequestException || ex is TaskCanceledException && !ct.IsCancellationRequested)
+        {
+            throw new AgnumApiUnavailableException($"Agnum API GET {requestUri} failed: {ex.Message}", ex);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {

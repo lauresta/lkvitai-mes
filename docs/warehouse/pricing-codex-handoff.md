@@ -26,11 +26,13 @@ S1 → S2 → S3 → S4 → S5 → S6 → S7a → S7b (только при вы�
 - S3 → PR #285 → Warehouse WebUI Release build, 768 Warehouse unit tests, 29 architecture tests, CI/quality gate, Build and Push, Deploy to Test прошли. `/warehouse/agnum/balances` отвечает 200. Цены двух товаров глазами не проверил: доступного авторизованного браузера не было, Mac заблокирован.
 - S4 → PR #286 → Warehouse WebUI Release build, 768 Warehouse unit tests, 29 architecture tests, CI/quality gate, Build and Push, Deploy to Test прошли. `/warehouse/agnum/balances` отвечает 200, анонимный API отчёта — 401. Экраны и консоль глазами не проверил без авторизованной сессии.
 - S5 → PR #287 → Warehouse WebUI Release build, 768 Warehouse unit tests, 29 architecture tests, CI/quality gate, Build and Push, Deploy to Test прошли. `/warehouse/stock/adjustments` отвечает 200; подсказку глазами без авторизованной сессии не проверил.
+- S6 → PR #288 → Frontline WebUI Release build, 8 Frontline unit tests, CI/quality gate, Build and Push, Deploy to Test прошли. `GET /api/frontline/fabric/R403` отвечает 200 и содержит `referencePrices` (включая `R19 · 28.962 · 1m pločio`); карточку глазами без авторизованной сессии не проверил.
 
 ## Отклонения от blueprint
 
 - S2: `ImportIntegrationTests` запускали контейнер с базой `postgres`; `EnsureDeleted` не мог удалить текущую БД, а повторное создание теряло расширение `vector`. В тестовом fixture задана отдельная БД и удалён лишний `EnsureDeleted`; три новых price-теста проходят. Полный opt-in прогон существующего класса: 7/8, старый `ImportItems_Commit_ThenReimport` падает на конфликте EF tracking — вне scope цен, не исправлял.
 - S4: `/reports/receiving-history` пропущен: `ReceivingHistoryRowDto` не содержит `ItemId` или SKU. Новый API ради ключа запрещён blueprint.
+- S7a: в текущем `AgnumImportRecurringJob` импорт номенклатуры выполнялся до импорта остатков. При недоступном Agnum ошибка прерывала цикл до создания записи `AgnumBalanceImportRun`. Минимально добавлен вызов существующего balance import в обработке этой ошибки; он записывает `Failed`, не удаляя прежние остатки.
 
 ## Осталось и готовый промт
 
