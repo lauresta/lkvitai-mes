@@ -1,6 +1,8 @@
 @page "/picking/tasks"
 @using LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure
 @using LKvitai.MES.Modules.Warehouse.WebUI.Models
+@using LKvitai.MES.Modules.Warehouse.WebUI.Services
+@inject ItemPricesClient ItemPricesClient
 @inject PickingTasksClient PickingTasksClient
 @inject MasterDataAdminClient MasterDataAdminClient
 @inject ToastService ToastService
@@ -69,6 +71,8 @@
                     </div>
                 </div>
 
+                <div class="small text-muted mt-2">Cost <span class="is-money is-num">@Money.Format(_priceMap.Get(_createItemId, null)?.EffectiveCost)</span> · Sale <span class="is-money is-num">@Money.Format(_priceMap.Get(_createItemId, null)?.BasePrice)</span></div>
+
                 @if (_suggestions.Count > 0)
                 {
                     <div class="table-responsive mt-3">
@@ -125,6 +129,7 @@
 @code {
     private readonly List<AdminItemDto> _items = [];
     private readonly List<PickLocationSuggestionDto> _suggestions = [];
+    private PriceMap _priceMap = PriceMap.Empty;
     private ApiException? _apiError;
     private bool _isSubmitting;
 
@@ -148,6 +153,7 @@
         {
             var items = await MasterDataAdminClient.GetItemsAsync(null, null, "Active", 1, 300);
             _items.AddRange(items.Items.OrderBy(x => x.InternalSKU, StringComparer.OrdinalIgnoreCase));
+            _priceMap = await ItemPricesClient.GetMapAsync(_items.Select(x => ((int?)x.Id, (string?)x.InternalSKU)));
         }
         catch (ApiException ex)
         {

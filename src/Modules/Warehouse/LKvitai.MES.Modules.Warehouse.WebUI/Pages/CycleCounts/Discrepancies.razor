@@ -1,4 +1,7 @@
 @page "/cycle-counts/{Id:guid}/discrepancies"
+@using LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure
+@using LKvitai.MES.Modules.Warehouse.WebUI.Services
+@inject ItemPricesClient ItemPricesClient
 @inject CycleCountsClient CycleCountsClient
 @inject NavigationManager NavigationManager
 @inject ToastService ToastService
@@ -25,6 +28,7 @@
                         <th>Physical Qty</th>
                         <th>Variance</th>
                         <th>Variance %</th>
+                        <th>Cost</th>
                         <th>Value Impact</th>
                         <th></th>
                     </tr>
@@ -33,7 +37,7 @@
                     @if (_rows.Count == 0)
                     {
                         <tr>
-                            <td colspan="8">
+                            <td colspan="9">
                                 <EmptyState Title="No discrepancies found."
                                             Message="No variance lines require approval."
                                             IconCss="bi bi-check2-circle"
@@ -52,7 +56,8 @@
                                 <td>@row.PhysicalQty</td>
                                 <td>@row.Variance</td>
                                 <td>@row.VariancePercent%</td>
-                                <td>@row.ValueImpact.ToString("0.##")</td>
+                                <td class="mono">@Money.Format(_priceMap.Get(row.ItemId, null)?.EffectiveCost)</td>
+                                <td class="mono">@Money.Format(_priceMap.Value(row.Variance, row.ItemId, null))</td>
                                 <td>
                                     <button class="btn btn-sm btn-primary" @onclick="() => OpenApprove(row)">Approve</button>
                                 </td>
@@ -94,6 +99,7 @@
     public Guid Id { get; set; }
 
     private readonly List<DiscrepancyLineDto> _rows = [];
+    private PriceMap _priceMap = PriceMap.Empty;
     private bool _isLoading;
     private bool _isSubmitting;
     private DiscrepancyLineDto? _pendingApproval;
@@ -114,6 +120,7 @@
             var rows = await CycleCountsClient.GetDiscrepanciesAsync(Id);
             _rows.Clear();
             _rows.AddRange(rows);
+            _priceMap = await ItemPricesClient.GetMapAsync(_rows.Select(x => ((int?)x.ItemId, (string?)null)));
         }
         catch (ApiException ex)
         {

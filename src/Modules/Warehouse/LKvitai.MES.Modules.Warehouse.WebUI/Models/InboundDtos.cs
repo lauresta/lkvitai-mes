@@ -11,6 +11,7 @@ public record InboundShipmentSummaryDto
     public int TotalLines { get; init; }
     public decimal TotalExpectedQty { get; init; }
     public decimal TotalReceivedQty { get; init; }
+    public decimal? TotalExpectedValue { get; init; }
     public DateTimeOffset CreatedAt { get; init; }
     public DateTimeOffset LastUpdated { get; init; }
 }

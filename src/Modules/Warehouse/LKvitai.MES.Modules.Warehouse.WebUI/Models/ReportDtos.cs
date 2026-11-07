@@ -105,6 +105,8 @@ public record StockMovementRowDto
     public string? Operator { get; init; }
     public string? Reason { get; init; }
     public string Reference { get; init; } = string.Empty;
+    public decimal? UnitCost { get; init; }
+    public decimal? Value { get; init; }
 }
 
 public record StockMovementsResponseDto

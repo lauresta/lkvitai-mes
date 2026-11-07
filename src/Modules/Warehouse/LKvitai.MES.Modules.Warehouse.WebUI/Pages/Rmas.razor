@@ -2,6 +2,8 @@
 @inject AdvancedWarehouseClient AdvancedClient
 @inject ToastService ToastService
 @using LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure
+@using LKvitai.MES.Modules.Warehouse.WebUI.Services
+@inject ItemPricesClient ItemPricesClient
 
 <PageTitle>RMAs - Cikada.MES</PageTitle>
 
@@ -65,6 +67,9 @@
                             <th>RMA</th>
                             <th>Status</th>
                             <th>Reason</th>
+                            <th>Items</th>
+                            <th class="text-end">Cost</th>
+                            <th class="text-end">Value</th>
                             <th>Credit</th>
                             <th>Updated By</th>
                             <th>Actions</th>
@@ -77,6 +82,9 @@
                                 <td>@row.RmaNumber</td>
                                 <td><span class="badge @GetStatusClass(row.Status)">@row.Status</span></td>
                                 <td>@row.Reason</td>
+                                <td class="mono">@string.Join(", ", row.Lines.Select(x => x.ItemId))</td>
+                                <td class="text-end is-money is-num">@string.Join(" / ", row.Lines.Select(x => Money.Format(_priceMap.Get(x.ItemId, null)?.EffectiveCost)))</td>
+                                <td class="text-end is-money is-num">@Money.Format(RmaValue(row))</td>
                                 <td>@(row.CreditAmount?.ToString("0.00") ?? "-")</td>
                                 <td>@(row.UpdatedBy ?? row.CreatedBy)</td>
                                 <td class="d-flex gap-1">
@@ -101,6 +109,7 @@
 
 @code {
     private readonly List<RmaDto> _rows = [];
+    private PriceMap _priceMap = PriceMap.Empty;
     private string _salesOrderIdInput = string.Empty;
     private int _itemId = 1;
     private decimal _qty = 1;
@@ -120,7 +129,14 @@
             var rows = await AdvancedClient.GetRmasAsync();
             _rows.Clear();
             _rows.AddRange(rows.OrderByDescending(x => x.CreatedAt));
+            _priceMap = await ItemPricesClient.GetMapAsync(_rows.SelectMany(x => x.Lines).Select(x => ((int?)x.ItemId, (string?)null)));
         });
+    }
+
+    private decimal? RmaValue(RmaDto row)
+    {
+        var values = row.Lines.Select(x => _priceMap.Value(x.Qty, x.ItemId, null)).Where(x => x.HasValue).ToList();
+        return values.Count == 0 ? null : values.Sum(x => x!.Value);
     }
 
     private async Task CreateAsync()

@@ -1,6 +1,8 @@
 using System.Globalization;
 using System.Text;
 using LKvitai.MES.Modules.Warehouse.Api.Security;
+using LKvitai.MES.Modules.Warehouse.Application.Ports;
+using LKvitai.MES.Modules.Warehouse.Application.Services;
 using LKvitai.MES.Contracts.ReadModels;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
@@ -17,11 +19,14 @@ public sealed class ReportsController : ControllerBase
 {
     private readonly WarehouseDbContext _dbContext;
     private readonly IDocumentStore _documentStore;
+    private readonly IItemPriceSnapshotService _prices;
 
-    public ReportsController(WarehouseDbContext dbContext, IDocumentStore documentStore)
+    public ReportsController(WarehouseDbContext dbContext, IDocumentStore documentStore,
+        IItemPriceSnapshotService prices)
     {
         _dbContext = dbContext;
         _documentStore = documentStore;
+        _prices = prices;
     }
 
     [HttpGet("dispatch-history")]
@@ -552,7 +557,13 @@ public sealed class ReportsController : ControllerBase
             }
         }
 
-        return rows;
+        var snapshots = await _prices.GetAsync(rows.Select(x => x.ItemId).Distinct().ToArray(), [], cancellationToken);
+        var priceById = snapshots.ToDictionary(x => x.ItemId);
+        return rows.Select(row =>
+        {
+            var cost = priceById.GetValueOrDefault(row.ItemId)?.EffectiveCost;
+            return row with { UnitCost = cost, Value = ItemPriceResolver.Value(row.Qty, cost) };
+        }).ToList();
     }
 
     private async Task<TraceabilityEntryResponse?> BuildTraceabilityEntryAsync(
@@ -773,7 +784,7 @@ public sealed class ReportsController : ControllerBase
     private static string BuildStockMovementsCsv(IReadOnlyCollection<StockMovementRow> rows)
     {
         var sb = new StringBuilder();
-        sb.AppendLine("Timestamp,MovementType,ItemSku,ItemName,FromLocation,ToLocation,Qty,UoM,Operator,Reason,Reference");
+        sb.AppendLine("Timestamp,MovementType,ItemSku,ItemName,FromLocation,ToLocation,Qty,UoM,Cost,Value (current cost),Operator,Reason,Reference");
         foreach (var row in rows)
         {
             sb.Append(row.Timestamp.ToString("O", CultureInfo.InvariantCulture)).Append(',');
@@ -784,6 +795,8 @@ public sealed class ReportsController : ControllerBase
             sb.Append(EscapeCsv(row.ToLocationCode)).Append(',');
             sb.Append(row.Qty.ToString(CultureInfo.InvariantCulture)).Append(',');
             sb.Append(EscapeCsv(row.BaseUoM)).Append(',');
+            sb.Append(row.UnitCost?.ToString(CultureInfo.InvariantCulture) ?? string.Empty).Append(',');
+            sb.Append(row.Value?.ToString(CultureInfo.InvariantCulture) ?? string.Empty).Append(',');
             sb.Append(EscapeCsv(row.Operator)).Append(',');
             sb.Append(EscapeCsv(row.Reason)).Append(',');
             sb.Append(EscapeCsv(row.Reference));
@@ -862,7 +875,11 @@ public sealed class ReportsController : ControllerBase
         string BaseUoM,
         string? Operator,
         string? Reason,
-        string Reference);
+        string Reference)
+    {
+        public decimal? UnitCost { get; init; }
+        public decimal? Value { get; init; }
+    }
 
     public sealed record StockMovementsResponse(
         IReadOnlyList<StockMovementRow> Movements,

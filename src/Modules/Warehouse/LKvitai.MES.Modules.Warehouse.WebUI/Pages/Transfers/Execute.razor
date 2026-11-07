@@ -1,4 +1,7 @@
 @page "/transfers/{Id:guid}/execute"
+@using LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure
+@using LKvitai.MES.Modules.Warehouse.WebUI.Services
+@inject ItemPricesClient ItemPricesClient
 @inject TransfersClient TransfersClient
 @inject MasterDataAdminClient MasterDataAdminClient
 @inject NavigationManager NavigationManager
@@ -49,6 +52,8 @@
                         <tr>
                             <th>Item</th>
                             <th>Qty</th>
+                            <th>Cost</th>
+                            <th>Value (current cost)</th>
                             <th>From Location</th>
                             <th>To Location</th>
                         </tr>
@@ -59,6 +64,8 @@
                             <tr>
                                 <td>@GetItemName(line.ItemId)</td>
                                 <td>@line.Qty.ToString("0.##")</td>
+                                <td class="mono">@Money.Format(_priceMap.Get(line.ItemId, null)?.EffectiveCost)</td>
+                                <td class="mono">@Money.Format(_priceMap.Value(line.Qty, line.ItemId, null))</td>
                                 <td>@GetLocationName(line.FromLocationId)</td>
                                 <td>@GetLocationName(line.ToLocationId)</td>
                             </tr>
@@ -102,6 +109,7 @@
     private bool _confirmExecute;
     private readonly List<AdminItemDto> _items = new();
     private readonly List<AdminLocationDto> _locations = new();
+    private PriceMap _priceMap = PriceMap.Empty;
 
     private bool CanExecute => string.Equals(_transfer?.Status, "APPROVED", StringComparison.OrdinalIgnoreCase);
 
@@ -118,6 +126,7 @@
         try
         {
             _transfer = await TransfersClient.GetTransferByIdAsync(Id);
+            _priceMap = await ItemPricesClient.GetMapAsync(_transfer.Lines.Select(x => ((int?)x.ItemId, (string?)null)));
 
             var items = await MasterDataAdminClient.GetItemsAsync(null, null, "Active", 1, 500);
             _items.Clear();
