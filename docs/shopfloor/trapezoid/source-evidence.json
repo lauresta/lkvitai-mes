@@ -1,0 +1,3616 @@
+{
+  "sourceFile": "trapnew.xls",
+  "sha256": "0217614ff4c539e3ce842aff18c23d7bca7dfa187c7ca8d933953194b711b178",
+  "extractedOn": "2026-11-06",
+  "method": "Original BIFF cached values read with xlrd. Formula text normalized through a disposable LibreOffice XLSX conversion (no original changes). All numeric A/B caches matched after conversion within 1e-8. VBA read statically; not executed. Connection strings omitted.",
+  "sheets": [
+    {
+      "name": "B TIPAS",
+      "cells": [
+        {
+          "cell": "C2",
+          "cachedValue": "AP-1273",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C3",
+          "cachedValue": "UŽSAKYMAS Nr.: AP-1273 (1700x1100x2170).",
+          "numberFormat": "General",
+          "formula": "=CONCATENATE(\"UŽSAKYMAS Nr.: \",C2,\" (\",AB,\"x\",AD,\"x\",CD,\").\")"
+        },
+        {
+          "cell": "C4",
+          "cachedValue": "TIPAS \"B\" (valdymas viršuje, susitraukia į viršų)",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C5",
+          "cachedValue": "Tvirtinimas:",
+          "numberFormat": "#\" mm\""
+        },
+        {
+          "cell": "D5",
+          "cachedValue": 5.0,
+          "numberFormat": "#\" mm\""
+        },
+        {
+          "cell": "E5",
+          "cachedValue": " - standartas5 mm",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "J5",
+          "cachedValue": 2170.0,
+          "numberFormat": "General",
+          "formula": "=CD"
+        },
+        {
+          "cell": "C6",
+          "cachedValue": "Profilis:",
+          "numberFormat": "#\" mm\""
+        },
+        {
+          "cell": "D6",
+          "cachedValue": 25.0,
+          "numberFormat": "#\" mm\""
+        },
+        {
+          "cell": "E6",
+          "cachedValue": " - standartas25 mm",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C7",
+          "cachedValue": "Kablis:",
+          "numberFormat": "#\" mm\""
+        },
+        {
+          "cell": "D7",
+          "cachedValue": 16.0,
+          "numberFormat": "#\" mm\""
+        },
+        {
+          "cell": "E7",
+          "cachedValue": " - standartas16 mm",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C8",
+          "cachedValue": "Valdymas:",
+          "numberFormat": "#\" mm\""
+        },
+        {
+          "cell": "D8",
+          "cachedValue": 15.0,
+          "numberFormat": "#\" mm\""
+        },
+        {
+          "cell": "E8",
+          "cachedValue": " - standartas 15mm",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C9",
+          "cachedValue": "Juostos plotis:",
+          "numberFormat": "#\" mm\""
+        },
+        {
+          "cell": "D9",
+          "cachedValue": 89.0,
+          "numberFormat": "#\" mm\"",
+          "formula": "='A TIPAS'!L"
+        },
+        {
+          "cell": "E9",
+          "cachedValue": " - standartas 127mm arba 89mm",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C10",
+          "cachedValue": "Max. žingsnis:",
+          "numberFormat": "#\" mm\""
+        },
+        {
+          "cell": "D10",
+          "cachedValue": 130.0,
+          "numberFormat": "#\" mm\""
+        },
+        {
+          "cell": "E10",
+          "cachedValue": " - standartas 145 mm",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C11",
+          "cachedValue": "Papildomos juostos:",
+          "numberFormat": "#\" mm\""
+        },
+        {
+          "cell": "D11",
+          "cachedValue": 0.0,
+          "numberFormat": "#\" vnt.\"",
+          "formula": "=IF(H32>0,H32,0)"
+        },
+        {
+          "cell": "E11",
+          "cachedValue": " - standartas nereikia",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C12",
+          "cachedValue": "Atsarga rėmui:",
+          "numberFormat": "#\" mm\""
+        },
+        {
+          "cell": "D12",
+          "cachedValue": 0.0,
+          "numberFormat": "#\" mm\""
+        },
+        {
+          "cell": "E12",
+          "cachedValue": " - standartas nereikia",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C15",
+          "cachedValue": "AB =",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "D15",
+          "cachedValue": 1700.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C16",
+          "cachedValue": "AD =",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "D16",
+          "cachedValue": 1100.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C17",
+          "cachedValue": "CD =",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "D17",
+          "cachedValue": 2170.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "G17",
+          "cachedValue": 1700.0,
+          "numberFormat": "General",
+          "formula": "=AB"
+        },
+        {
+          "cell": "C19",
+          "cachedValue": "BC =",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "D19",
+          "cachedValue": 1196.0,
+          "numberFormat": "General",
+          "formula": "=ROUND(BC,0)"
+        },
+        {
+          "cell": "C20",
+          "cachedValue": "L =",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "D20",
+          "cachedValue": 89.0,
+          "numberFormat": "#\" mm\"",
+          "formula": "=D9"
+        },
+        {
+          "cell": "C21",
+          "cachedValue": "H_1 =",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "D21",
+          "cachedValue": 30.0,
+          "numberFormat": "#\" mm\"",
+          "formula": "=D5+D6"
+        },
+        {
+          "cell": "C22",
+          "cachedValue": "H_2 =",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "D22",
+          "cachedValue": 46.0,
+          "numberFormat": "#\" mm\"",
+          "formula": "=D21+D7"
+        },
+        {
+          "cell": "C23",
+          "cachedValue": "BC =",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "D23",
+          "cachedValue": 1196.202324023825,
+          "numberFormat": "General",
+          "formula": "=SQRT((CD-AB)^2+AD^2)"
+        },
+        {
+          "cell": "C24",
+          "cachedValue": "/_ CBH =",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "D24",
+          "cachedValue": 0.4037940918851321,
+          "numberFormat": "General",
+          "formula": "=ASIN((CD-AB)/BC)"
+        },
+        {
+          "cell": "E24",
+          "cachedValue": 23.13569725733583,
+          "numberFormat": "General",
+          "formula": "=DEGREES(CBH)"
+        },
+        {
+          "cell": "C25",
+          "cachedValue": "/_ BCD =",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "D25",
+          "cachedValue": 1.1670022349097646,
+          "numberFormat": "General",
+          "formula": "=ASIN((AD)/BC)"
+        },
+        {
+          "cell": "E25",
+          "cachedValue": 66.86430274266418,
+          "numberFormat": "General",
+          "formula": "=DEGREES(BCD)"
+        },
+        {
+          "cell": "C27",
+          "cachedValue": "RĖMAS:",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "D27",
+          "cachedValue": 1183.3841422056432,
+          "numberFormat": "0.0",
+          "formula": "=BC-(H_1*TAN(CBH))-D12"
+        },
+        {
+          "cell": "E27",
+          "cachedValue": "(pjauti - 1168,4mm)",
+          "numberFormat": "General",
+          "formula": "=CONCATENATE(\"(pjauti - \",ROUND(REMAS-VALDYMAS,1),\"mm)\")"
+        },
+        {
+          "cell": "C28",
+          "cachedValue": "FIKSAS:",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "D28",
+          "cachedValue": 55.22818492641836,
+          "numberFormat": "0.0",
+          "formula": "=((IF(CBH<>0,SQRT((IF(CBH<>0,(H_2-H_1)*TAN(BCD),0))^2+(H_2-H_1)^2),0))+(L/2))/SIN(BCD)-(IF(CBH<>0,(H_2-H_1)*TAN(BCD),0))"
+        },
+        {
+          "cell": "E28",
+          "cachedValue": "(iki mechanizmo - 49,7mm)",
+          "numberFormat": "General",
+          "formula": "=CONCATENATE(\"(iki mechanizmo - \",ROUND(FIKSAS-5.5,1),\"mm)\")"
+        },
+        {
+          "cell": "I28",
+          "cachedValue": 1100.0,
+          "numberFormat": "General",
+          "formula": "=AD"
+        },
+        {
+          "cell": "C29",
+          "cachedValue": "NEFIKSAS",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "D29",
+          "cachedValue": 28.73727583550928,
+          "numberFormat": "0.0",
+          "formula": "=(((L/2-(IF(E25=90,0,H_1*COS(BCD)))))/IF(E25=90,1,SIN(BCD))-I39)-((H_2-H_1)*TAN(CBH))"
+        },
+        {
+          "cell": "C30",
+          "cachedValue": "O1P =",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "D30",
+          "cachedValue": 41.5554576536911,
+          "numberFormat": "General",
+          "formula": "=((L/2/SIN(BCD))-((H_2-H_1)*TAN(CBH)))"
+        },
+        {
+          "cell": "C31",
+          "cachedValue": "PLOTIS =",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "D31",
+          "cachedValue": 1074.0,
+          "numberFormat": "General",
+          "formula": "=ROUND(AD-((H_1*SIN(CBH))+((VALDYMAS+D12)*SIN(BCD))),0)"
+        },
+        {
+          "cell": "C32",
+          "cachedValue": "JUOSTŲ SKAIČIUS:",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "D32",
+          "cachedValue": 14.0,
+          "numberFormat": "General",
+          "formula": "=IF(L=127,LOOKUP(PLOTIS,_HBR127)+D11,IF(L=89,LOOKUP(PLOTIS,_HBR89+D11)+D11,\"APRIBOJIMAS\"))"
+        },
+        {
+          "cell": "G32",
+          "cachedValue": 0.0,
+          "numberFormat": "General",
+          "formula": "=IF(D10-6<G33,ROUNDUP(((REMAS-VALDYMAS-FIKSAS-NEFIKSAS)/(D10-6))+1,0),0)"
+        },
+        {
+          "cell": "H32",
+          "cachedValue": -14.0,
+          "numberFormat": "General",
+          "formula": "=G32-G34"
+        },
+        {
+          "cell": "I32",
+          "cachedValue": "- reikia juostų (papildoma)",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C33",
+          "cachedValue": "ŽINGSNIS:",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "D33",
+          "cachedValue": 83.41682164951658,
+          "numberFormat": "0.0",
+          "formula": "=IF(N=\"APRIBOJIMAS\",\"APRIBOJIMAS\",(REMAS-VALDYMAS-FIKSAS-NEFIKSAS)/(N-1))"
+        },
+        {
+          "cell": "E33",
+          "cachedValue": "(pjauti - 89,4mm)",
+          "numberFormat": "General",
+          "formula": "=IF(N=\"APRIBOJIMAS\",\"APRIBOJIMAS\",(CONCATENATE(\"(pjauti - \",ROUND(Z+6,1),\"mm)\")))"
+        },
+        {
+          "cell": "G33",
+          "cachedValue": 83.41682164951658,
+          "numberFormat": "General",
+          "formula": "=IF(G34=\"APRIBOJIMAS\",\"APRIBOJIMAS\",(REMAS-VALDYMAS-FIKSAS-NEFIKSAS)/(G34-1))"
+        },
+        {
+          "cell": "H33",
+          "cachedValue": "- turi būti",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "G34",
+          "cachedValue": 14.0,
+          "numberFormat": "General",
+          "formula": "=IF(L=127,LOOKUP(PLOTIS,_HBR127),IF(L=89,LOOKUP(PLOTIS,_HBR89),\"APRIBOJIMAS\"))"
+        },
+        {
+          "cell": "H34",
+          "cachedValue": "- turi būti",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C35",
+          "cachedValue": "PRAILGINTOJAS:",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "D35",
+          "cachedValue": 25.0,
+          "numberFormat": "General",
+          "formula": "=IF(0<=(L/2*TAN(CBH)-((H_2-H_1)/COS(CBH))),LOOKUP((ROUND((L/2*TAN(CBH)-((H_2-H_1)/COS(CBH))),0)),PRAILGINTOJAI),0)"
+        },
+        {
+          "cell": "C36",
+          "cachedValue": "N1 =",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "D36",
+          "cachedValue": 1643.9906300862763,
+          "numberFormat": "General",
+          "formula": "=IF(E25=90,AB-(H_1*SIN(BCD))-((H_2-H_1)/COS(CBH))-PRAILGINTOJAS,AB-(H_1*SIN(BCD))+((L/2-(H_1)*COS(BCD))*TAN(CBH))-((H_2-H_1)/COS(CBH))-PRAILGINTOJAS)"
+        },
+        {
+          "cell": "C37",
+          "cachedValue": "DIDEJIMAS",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "D37",
+          "cachedValue": 32.77531349662543,
+          "numberFormat": "General",
+          "formula": "=IF(E25=90,0,Z*COS(BCD))"
+        },
+        {
+          "cell": "C39",
+          "cachedValue": "JUOSTOS (ilgis su 45 mm):",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "E39",
+          "cachedValue": 27.006422349400783,
+          "numberFormat": "\"viso: \"0.000\" m\"",
+          "formula": "=(SUM(D40:D65,G40:G65,J40:J65)+(N*27))/1000"
+        },
+        {
+          "cell": "A40",
+          "cachedValue": 1.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C40",
+          "cachedValue": 1.0,
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A40,N-(N-A40),\"nera\")"
+        },
+        {
+          "cell": "D40",
+          "cachedValue": 1688.9906300862763,
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A40,N_1+45,\"nera\")"
+        },
+        {
+          "cell": "E40",
+          "cachedValue": 27.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "F40",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-E40,N-(N-E40),\"nera\")"
+        },
+        {
+          "cell": "G40",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-E40,45+N_1+(DIDEJIMAS*(E40-1)),\"nera\")"
+        },
+        {
+          "cell": "H40",
+          "cachedValue": 53.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "I40",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-H40,N-(N-H40),\"nera\")"
+        },
+        {
+          "cell": "J40",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-H40,45+N_1+(DIDEJIMAS*(H40-1)),\"nera\")"
+        },
+        {
+          "cell": "A41",
+          "cachedValue": 2.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C41",
+          "cachedValue": 2.0,
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A41,N-(N-A41),\"nera\")"
+        },
+        {
+          "cell": "D41",
+          "cachedValue": 1721.7659435829016,
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A41,45+N_1+(DIDEJIMAS*(A41-1)),\"nera\")"
+        },
+        {
+          "cell": "E41",
+          "cachedValue": 28.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "F41",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-E41,N-(N-E41),\"nera\")"
+        },
+        {
+          "cell": "G41",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-E41,45+N_1+(DIDEJIMAS*(E41-1)),\"nera\")"
+        },
+        {
+          "cell": "H41",
+          "cachedValue": 54.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "I41",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-H41,N-(N-H41),\"nera\")"
+        },
+        {
+          "cell": "J41",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-H41,45+N_1+(DIDEJIMAS*(H41-1)),\"nera\")"
+        },
+        {
+          "cell": "A42",
+          "cachedValue": 3.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C42",
+          "cachedValue": 3.0,
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A42,N-(N-A42),\"nera\")"
+        },
+        {
+          "cell": "D42",
+          "cachedValue": 1754.5412570795272,
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A42,45+N_1+(DIDEJIMAS*(A42-1)),\"nera\")"
+        },
+        {
+          "cell": "E42",
+          "cachedValue": 29.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "F42",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-E42,N-(N-E42),\"nera\")"
+        },
+        {
+          "cell": "G42",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-E42,45+N_1+(DIDEJIMAS*(E42-1)),\"nera\")"
+        },
+        {
+          "cell": "H42",
+          "cachedValue": 55.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "I42",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-H42,N-(N-H42),\"nera\")"
+        },
+        {
+          "cell": "J42",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-H42,45+N_1+(DIDEJIMAS*(H42-1)),\"nera\")"
+        },
+        {
+          "cell": "A43",
+          "cachedValue": 4.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C43",
+          "cachedValue": 4.0,
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A43,N-(N-A43),\"nera\")"
+        },
+        {
+          "cell": "D43",
+          "cachedValue": 1787.3165705761526,
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A43,45+N_1+(DIDEJIMAS*(A43-1)),\"nera\")"
+        },
+        {
+          "cell": "E43",
+          "cachedValue": 30.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "F43",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-E43,N-(N-E43),\"nera\")"
+        },
+        {
+          "cell": "G43",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-E43,45+N_1+(DIDEJIMAS*(E43-1)),\"nera\")"
+        },
+        {
+          "cell": "H43",
+          "cachedValue": 56.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "I43",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-H43,N-(N-H43),\"nera\")"
+        },
+        {
+          "cell": "J43",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-H43,45+N_1+(DIDEJIMAS*(H43-1)),\"nera\")"
+        },
+        {
+          "cell": "A44",
+          "cachedValue": 5.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C44",
+          "cachedValue": 5.0,
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A44,N-(N-A44),\"nera\")"
+        },
+        {
+          "cell": "D44",
+          "cachedValue": 1820.091884072778,
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A44,45+N_1+(DIDEJIMAS*(A44-1)),\"nera\")"
+        },
+        {
+          "cell": "E44",
+          "cachedValue": 31.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "F44",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-E44,N-(N-E44),\"nera\")"
+        },
+        {
+          "cell": "G44",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-E44,45+N_1+(DIDEJIMAS*(E44-1)),\"nera\")"
+        },
+        {
+          "cell": "H44",
+          "cachedValue": 57.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "I44",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-H44,N-(N-H44),\"nera\")"
+        },
+        {
+          "cell": "J44",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-H44,45+N_1+(DIDEJIMAS*(H44-1)),\"nera\")"
+        },
+        {
+          "cell": "A45",
+          "cachedValue": 6.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C45",
+          "cachedValue": 6.0,
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A45,N-(N-A45),\"nera\")"
+        },
+        {
+          "cell": "D45",
+          "cachedValue": 1852.8671975694033,
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A45,45+N_1+(DIDEJIMAS*(A45-1)),\"nera\")"
+        },
+        {
+          "cell": "E45",
+          "cachedValue": 32.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "F45",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-E45,N-(N-E45),\"nera\")"
+        },
+        {
+          "cell": "G45",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-E45,45+N_1+(DIDEJIMAS*(E45-1)),\"nera\")"
+        },
+        {
+          "cell": "H45",
+          "cachedValue": 58.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "I45",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-H45,N-(N-H45),\"nera\")"
+        },
+        {
+          "cell": "J45",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-H45,45+N_1+(DIDEJIMAS*(H45-1)),\"nera\")"
+        },
+        {
+          "cell": "A46",
+          "cachedValue": 7.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C46",
+          "cachedValue": 7.0,
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A46,N-(N-A46),\"nera\")"
+        },
+        {
+          "cell": "D46",
+          "cachedValue": 1885.6425110660289,
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A46,45+N_1+(DIDEJIMAS*(A46-1)),\"nera\")"
+        },
+        {
+          "cell": "E46",
+          "cachedValue": 33.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "F46",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-E46,N-(N-E46),\"nera\")"
+        },
+        {
+          "cell": "G46",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-E46,45+N_1+(DIDEJIMAS*(E46-1)),\"nera\")"
+        },
+        {
+          "cell": "H46",
+          "cachedValue": 59.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "I46",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-H46,N-(N-H46),\"nera\")"
+        },
+        {
+          "cell": "J46",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-H46,45+N_1+(DIDEJIMAS*(H46-1)),\"nera\")"
+        },
+        {
+          "cell": "A47",
+          "cachedValue": 8.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C47",
+          "cachedValue": 8.0,
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A47,N-(N-A47),\"nera\")"
+        },
+        {
+          "cell": "D47",
+          "cachedValue": 1918.4178245626542,
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A47,45+N_1+(DIDEJIMAS*(A47-1)),\"nera\")"
+        },
+        {
+          "cell": "E47",
+          "cachedValue": 34.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "F47",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-E47,N-(N-E47),\"nera\")"
+        },
+        {
+          "cell": "G47",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-E47,45+N_1+(DIDEJIMAS*(E47-1)),\"nera\")"
+        },
+        {
+          "cell": "H47",
+          "cachedValue": 60.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "I47",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-H47,N-(N-H47),\"nera\")"
+        },
+        {
+          "cell": "J47",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-H47,45+N_1+(DIDEJIMAS*(H47-1)),\"nera\")"
+        },
+        {
+          "cell": "A48",
+          "cachedValue": 9.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C48",
+          "cachedValue": 9.0,
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A48,N-(N-A48),\"nera\")"
+        },
+        {
+          "cell": "D48",
+          "cachedValue": 1951.1931380592796,
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A48,45+N_1+(DIDEJIMAS*(A48-1)),\"nera\")"
+        },
+        {
+          "cell": "E48",
+          "cachedValue": 35.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "F48",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-E48,N-(N-E48),\"nera\")"
+        },
+        {
+          "cell": "G48",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-E48,45+N_1+(DIDEJIMAS*(E48-1)),\"nera\")"
+        },
+        {
+          "cell": "H48",
+          "cachedValue": 61.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "I48",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-H48,N-(N-H48),\"nera\")"
+        },
+        {
+          "cell": "J48",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-H48,45+N_1+(DIDEJIMAS*(H48-1)),\"nera\")"
+        },
+        {
+          "cell": "A49",
+          "cachedValue": 10.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C49",
+          "cachedValue": 10.0,
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A49,N-(N-A49),\"nera\")"
+        },
+        {
+          "cell": "D49",
+          "cachedValue": 1983.9684515559052,
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A49,45+N_1+(DIDEJIMAS*(A49-1)),\"nera\")"
+        },
+        {
+          "cell": "E49",
+          "cachedValue": 36.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "F49",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-E49,N-(N-E49),\"nera\")"
+        },
+        {
+          "cell": "G49",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-E49,45+N_1+(DIDEJIMAS*(E49-1)),\"nera\")"
+        },
+        {
+          "cell": "H49",
+          "cachedValue": 62.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "I49",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-H49,N-(N-H49),\"nera\")"
+        },
+        {
+          "cell": "J49",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-H49,45+N_1+(DIDEJIMAS*(H49-1)),\"nera\")"
+        },
+        {
+          "cell": "A50",
+          "cachedValue": 11.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C50",
+          "cachedValue": 11.0,
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A50,N-(N-A50),\"nera\")"
+        },
+        {
+          "cell": "D50",
+          "cachedValue": 2016.7437650525305,
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A50,45+N_1+(DIDEJIMAS*(A50-1)),\"nera\")"
+        },
+        {
+          "cell": "E50",
+          "cachedValue": 37.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "F50",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-E50,N-(N-E50),\"nera\")"
+        },
+        {
+          "cell": "G50",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-E50,45+N_1+(DIDEJIMAS*(E50-1)),\"nera\")"
+        },
+        {
+          "cell": "H50",
+          "cachedValue": 63.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "I50",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-H50,N-(N-H50),\"nera\")"
+        },
+        {
+          "cell": "J50",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-H50,45+N_1+(DIDEJIMAS*(H50-1)),\"nera\")"
+        },
+        {
+          "cell": "A51",
+          "cachedValue": 12.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C51",
+          "cachedValue": 12.0,
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A51,N-(N-A51),\"nera\")"
+        },
+        {
+          "cell": "D51",
+          "cachedValue": 2049.519078549156,
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A51,45+N_1+(DIDEJIMAS*(A51-1)),\"nera\")"
+        },
+        {
+          "cell": "E51",
+          "cachedValue": 38.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "F51",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-E51,N-(N-E51),\"nera\")"
+        },
+        {
+          "cell": "G51",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-E51,45+N_1+(DIDEJIMAS*(E51-1)),\"nera\")"
+        },
+        {
+          "cell": "H51",
+          "cachedValue": 64.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "I51",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-H51,N-(N-H51),\"nera\")"
+        },
+        {
+          "cell": "J51",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-H51,45+N_1+(DIDEJIMAS*(H51-1)),\"nera\")"
+        },
+        {
+          "cell": "A52",
+          "cachedValue": 13.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C52",
+          "cachedValue": 13.0,
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A52,N-(N-A52),\"nera\")"
+        },
+        {
+          "cell": "D52",
+          "cachedValue": 2082.2943920457815,
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A52,45+N_1+(DIDEJIMAS*(A52-1)),\"nera\")"
+        },
+        {
+          "cell": "E52",
+          "cachedValue": 39.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "F52",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-E52,N-(N-E52),\"nera\")"
+        },
+        {
+          "cell": "G52",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-E52,45+N_1+(DIDEJIMAS*(E52-1)),\"nera\")"
+        },
+        {
+          "cell": "H52",
+          "cachedValue": 65.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "I52",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-H52,N-(N-H52),\"nera\")"
+        },
+        {
+          "cell": "J52",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-H52,45+N_1+(DIDEJIMAS*(H52-1)),\"nera\")"
+        },
+        {
+          "cell": "A53",
+          "cachedValue": 14.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C53",
+          "cachedValue": 14.0,
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A53,N-(N-A53),\"nera\")"
+        },
+        {
+          "cell": "D53",
+          "cachedValue": 2115.069705542407,
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A53,45+N_1+(DIDEJIMAS*(A53-1)),\"nera\")"
+        },
+        {
+          "cell": "E53",
+          "cachedValue": 40.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "F53",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-E53,N-(N-E53),\"nera\")"
+        },
+        {
+          "cell": "G53",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-E53,45+N_1+(DIDEJIMAS*(E53-1)),\"nera\")"
+        },
+        {
+          "cell": "H53",
+          "cachedValue": 66.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "I53",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-H53,N-(N-H53),\"nera\")"
+        },
+        {
+          "cell": "J53",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-H53,45+N_1+(DIDEJIMAS*(H53-1)),\"nera\")"
+        },
+        {
+          "cell": "A54",
+          "cachedValue": 15.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C54",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A54,N-(N-A54),\"nera\")"
+        },
+        {
+          "cell": "D54",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A54,45+N_1+(DIDEJIMAS*(A54-1)),\"nera\")"
+        },
+        {
+          "cell": "E54",
+          "cachedValue": 41.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "F54",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-E54,N-(N-E54),\"nera\")"
+        },
+        {
+          "cell": "G54",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-E54,45+N_1+(DIDEJIMAS*(E54-1)),\"nera\")"
+        },
+        {
+          "cell": "H54",
+          "cachedValue": 67.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "I54",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-H54,N-(N-H54),\"nera\")"
+        },
+        {
+          "cell": "J54",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-H54,45+N_1+(DIDEJIMAS*(H54-1)),\"nera\")"
+        },
+        {
+          "cell": "A55",
+          "cachedValue": 16.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C55",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A55,N-(N-A55),\"nera\")"
+        },
+        {
+          "cell": "D55",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A55,45+N_1+(DIDEJIMAS*(A55-1)),\"nera\")"
+        },
+        {
+          "cell": "E55",
+          "cachedValue": 42.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "F55",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-E55,N-(N-E55),\"nera\")"
+        },
+        {
+          "cell": "G55",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-E55,45+N_1+(DIDEJIMAS*(E55-1)),\"nera\")"
+        },
+        {
+          "cell": "H55",
+          "cachedValue": 68.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "I55",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-H55,N-(N-H55),\"nera\")"
+        },
+        {
+          "cell": "J55",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-H55,45+N_1+(DIDEJIMAS*(H55-1)),\"nera\")"
+        },
+        {
+          "cell": "A56",
+          "cachedValue": 17.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C56",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A56,N-(N-A56),\"nera\")"
+        },
+        {
+          "cell": "D56",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A56,45+N_1+(DIDEJIMAS*(A56-1)),\"nera\")"
+        },
+        {
+          "cell": "E56",
+          "cachedValue": 43.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "F56",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-E56,N-(N-E56),\"nera\")"
+        },
+        {
+          "cell": "G56",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-E56,45+N_1+(DIDEJIMAS*(E56-1)),\"nera\")"
+        },
+        {
+          "cell": "H56",
+          "cachedValue": 69.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "I56",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-H56,N-(N-H56),\"nera\")"
+        },
+        {
+          "cell": "J56",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-H56,45+N_1+(DIDEJIMAS*(H56-1)),\"nera\")"
+        },
+        {
+          "cell": "A57",
+          "cachedValue": 18.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C57",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A57,N-(N-A57),\"nera\")"
+        },
+        {
+          "cell": "D57",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A57,45+N_1+(DIDEJIMAS*(A57-1)),\"nera\")"
+        },
+        {
+          "cell": "E57",
+          "cachedValue": 44.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "F57",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-E57,N-(N-E57),\"nera\")"
+        },
+        {
+          "cell": "G57",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-E57,45+N_1+(DIDEJIMAS*(E57-1)),\"nera\")"
+        },
+        {
+          "cell": "H57",
+          "cachedValue": 70.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "I57",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-H57,N-(N-H57),\"nera\")"
+        },
+        {
+          "cell": "J57",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-H57,45+N_1+(DIDEJIMAS*(H57-1)),\"nera\")"
+        },
+        {
+          "cell": "A58",
+          "cachedValue": 19.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C58",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A58,N-(N-A58),\"nera\")"
+        },
+        {
+          "cell": "D58",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A58,45+N_1+(DIDEJIMAS*(A58-1)),\"nera\")"
+        },
+        {
+          "cell": "E58",
+          "cachedValue": 45.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "F58",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-E58,N-(N-E58),\"nera\")"
+        },
+        {
+          "cell": "G58",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-E58,45+N_1+(DIDEJIMAS*(E58-1)),\"nera\")"
+        },
+        {
+          "cell": "H58",
+          "cachedValue": 71.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "I58",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-H58,N-(N-H58),\"nera\")"
+        },
+        {
+          "cell": "J58",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-H58,45+N_1+(DIDEJIMAS*(H58-1)),\"nera\")"
+        },
+        {
+          "cell": "A59",
+          "cachedValue": 20.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C59",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A59,N-(N-A59),\"nera\")"
+        },
+        {
+          "cell": "D59",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A59,45+N_1+(DIDEJIMAS*(A59-1)),\"nera\")"
+        },
+        {
+          "cell": "E59",
+          "cachedValue": 46.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "F59",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-E59,N-(N-E59),\"nera\")"
+        },
+        {
+          "cell": "G59",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-E59,45+N_1+(DIDEJIMAS*(E59-1)),\"nera\")"
+        },
+        {
+          "cell": "H59",
+          "cachedValue": 72.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "I59",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-H59,N-(N-H59),\"nera\")"
+        },
+        {
+          "cell": "J59",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-H59,45+N_1+(DIDEJIMAS*(H59-1)),\"nera\")"
+        },
+        {
+          "cell": "A60",
+          "cachedValue": 21.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C60",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A60,N-(N-A60),\"nera\")"
+        },
+        {
+          "cell": "D60",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A60,45+N_1+(DIDEJIMAS*(A60-1)),\"nera\")"
+        },
+        {
+          "cell": "E60",
+          "cachedValue": 47.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "F60",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-E60,N-(N-E60),\"nera\")"
+        },
+        {
+          "cell": "G60",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-E60,45+N_1+(DIDEJIMAS*(E60-1)),\"nera\")"
+        },
+        {
+          "cell": "H60",
+          "cachedValue": 73.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "I60",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-H60,N-(N-H60),\"nera\")"
+        },
+        {
+          "cell": "J60",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-H60,45+N_1+(DIDEJIMAS*(H60-1)),\"nera\")"
+        },
+        {
+          "cell": "A61",
+          "cachedValue": 22.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C61",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A61,N-(N-A61),\"nera\")"
+        },
+        {
+          "cell": "D61",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A61,45+N_1+(DIDEJIMAS*(A61-1)),\"nera\")"
+        },
+        {
+          "cell": "E61",
+          "cachedValue": 48.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "F61",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-E61,N-(N-E61),\"nera\")"
+        },
+        {
+          "cell": "G61",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-E61,45+N_1+(DIDEJIMAS*(E61-1)),\"nera\")"
+        },
+        {
+          "cell": "H61",
+          "cachedValue": 74.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "I61",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-H61,N-(N-H61),\"nera\")"
+        },
+        {
+          "cell": "J61",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-H61,45+N_1+(DIDEJIMAS*(H61-1)),\"nera\")"
+        },
+        {
+          "cell": "A62",
+          "cachedValue": 23.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C62",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A62,N-(N-A62),\"nera\")"
+        },
+        {
+          "cell": "D62",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A62,45+N_1+(DIDEJIMAS*(A62-1)),\"nera\")"
+        },
+        {
+          "cell": "E62",
+          "cachedValue": 49.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "F62",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-E62,N-(N-E62),\"nera\")"
+        },
+        {
+          "cell": "G62",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-E62,45+N_1+(DIDEJIMAS*(E62-1)),\"nera\")"
+        },
+        {
+          "cell": "H62",
+          "cachedValue": 75.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "I62",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-H62,N-(N-H62),\"nera\")"
+        },
+        {
+          "cell": "J62",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-H62,45+N_1+(DIDEJIMAS*(H62-1)),\"nera\")"
+        },
+        {
+          "cell": "A63",
+          "cachedValue": 24.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C63",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A63,N-(N-A63),\"nera\")"
+        },
+        {
+          "cell": "D63",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A63,45+N_1+(DIDEJIMAS*(A63-1)),\"nera\")"
+        },
+        {
+          "cell": "E63",
+          "cachedValue": 50.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "F63",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-E63,N-(N-E63),\"nera\")"
+        },
+        {
+          "cell": "G63",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-E63,45+N_1+(DIDEJIMAS*(E63-1)),\"nera\")"
+        },
+        {
+          "cell": "H63",
+          "cachedValue": 76.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "I63",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-H63,N-(N-H63),\"nera\")"
+        },
+        {
+          "cell": "J63",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-H63,45+N_1+(DIDEJIMAS*(H63-1)),\"nera\")"
+        },
+        {
+          "cell": "A64",
+          "cachedValue": 25.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C64",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A64,N-(N-A64),\"nera\")"
+        },
+        {
+          "cell": "D64",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A64,45+N_1+(DIDEJIMAS*(A64-1)),\"nera\")"
+        },
+        {
+          "cell": "E64",
+          "cachedValue": 51.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "F64",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-E64,N-(N-E64),\"nera\")"
+        },
+        {
+          "cell": "G64",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-E64,45+N_1+(DIDEJIMAS*(E64-1)),\"nera\")"
+        },
+        {
+          "cell": "H64",
+          "cachedValue": 77.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "I64",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-H64,N-(N-H64),\"nera\")"
+        },
+        {
+          "cell": "J64",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-H64,45+N_1+(DIDEJIMAS*(H64-1)),\"nera\")"
+        },
+        {
+          "cell": "A65",
+          "cachedValue": 26.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C65",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A65,N-(N-A65),\"nera\")"
+        },
+        {
+          "cell": "D65",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A65,45+N_1+(DIDEJIMAS*(A65-1)),\"nera\")"
+        },
+        {
+          "cell": "E65",
+          "cachedValue": 52.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "F65",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-E65,N-(N-E65),\"nera\")"
+        },
+        {
+          "cell": "G65",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-E65,45+N_1+(DIDEJIMAS*(E65-1)),\"nera\")"
+        },
+        {
+          "cell": "H65",
+          "cachedValue": 78.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "I65",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-H65,N-(N-H65),\"nera\")"
+        },
+        {
+          "cell": "J65",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-H65,45+N_1+(DIDEJIMAS*(H65-1)),\"nera\")"
+        }
+      ]
+    },
+    {
+      "name": "A TIPAS",
+      "cells": [
+        {
+          "cell": "B2",
+          "cachedValue": "RL-2186-14 [sp. - 2667]",
+          "numberFormat": "General",
+          "formula": "=Start!M8"
+        },
+        {
+          "cell": "C2",
+          "cachedValue": " - įrašyti užsakymo ir žaliuzės numerį.",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "B3",
+          "cachedValue": "UŽSAKYMAS Nr.: RL-2186-14 [sp. - 2667] (1600x2000x1800).",
+          "numberFormat": "General",
+          "formula": "=CONCATENATE(\"UŽSAKYMAS Nr.: \",B2,\" (\",AB,\"x\",AD,\"x\",CD,\").\")"
+        },
+        {
+          "cell": "B4",
+          "cachedValue": "TIPAS \"A\" (valdymas apačioje, susitraukia į viršų)",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "B5",
+          "cachedValue": "Tvirtinimas:",
+          "numberFormat": "#\" mm\""
+        },
+        {
+          "cell": "C5",
+          "cachedValue": 5.0,
+          "numberFormat": "#\" mm\""
+        },
+        {
+          "cell": "D5",
+          "cachedValue": " - standartas5 mm",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "I5",
+          "cachedValue": 1800.0,
+          "numberFormat": "General",
+          "formula": "=CD"
+        },
+        {
+          "cell": "B6",
+          "cachedValue": "Profilis:",
+          "numberFormat": "#\" mm\""
+        },
+        {
+          "cell": "C6",
+          "cachedValue": 25.0,
+          "numberFormat": "#\" mm\""
+        },
+        {
+          "cell": "D6",
+          "cachedValue": " - standartas25 mm",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "B7",
+          "cachedValue": "Kablis:",
+          "numberFormat": "#\" mm\""
+        },
+        {
+          "cell": "C7",
+          "cachedValue": 16.0,
+          "numberFormat": "#\" mm\""
+        },
+        {
+          "cell": "D7",
+          "cachedValue": " - standartas16 mm",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "B8",
+          "cachedValue": "Valdymas:",
+          "numberFormat": "#\" mm\""
+        },
+        {
+          "cell": "C8",
+          "cachedValue": 15.0,
+          "numberFormat": "#\" mm\""
+        },
+        {
+          "cell": "D8",
+          "cachedValue": " - standartas 15mm",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "B9",
+          "cachedValue": "Juostos plotis:",
+          "numberFormat": "#\" mm\""
+        },
+        {
+          "cell": "C9",
+          "cachedValue": 89.0,
+          "numberFormat": "#\" mm\"",
+          "formula": "=Start!M9"
+        },
+        {
+          "cell": "D9",
+          "cachedValue": " - įrašyti 127 arba 89",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "B10",
+          "cachedValue": "Max. žingsnis:",
+          "numberFormat": "#\" mm\""
+        },
+        {
+          "cell": "C10",
+          "cachedValue": 130.0,
+          "numberFormat": "#\" mm\""
+        },
+        {
+          "cell": "D10",
+          "cachedValue": " - standartas 145 mm",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "B11",
+          "cachedValue": "Papildomos juostos:",
+          "numberFormat": "#\" mm\""
+        },
+        {
+          "cell": "C11",
+          "cachedValue": 0.0,
+          "numberFormat": "#\" vnt.\"",
+          "formula": "=IF(G33>0,G33,0)"
+        },
+        {
+          "cell": "D11",
+          "cachedValue": " - standartas nereikia",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "B12",
+          "cachedValue": "Atsarga rėmui:",
+          "numberFormat": "#\" mm\""
+        },
+        {
+          "cell": "C12",
+          "cachedValue": 0.0,
+          "numberFormat": "#\" mm\""
+        },
+        {
+          "cell": "D12",
+          "cachedValue": " - standartas nereikia",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "B13",
+          "cachedValue": "Juostos išsikišimas:",
+          "numberFormat": "#\" mm\""
+        },
+        {
+          "cell": "C13",
+          "cachedValue": 0.0,
+          "numberFormat": "#\" mm\"",
+          "formula": "=Start!M10"
+        },
+        {
+          "cell": "D13",
+          "cachedValue": " - įrašyti 10 kai \"namukas\"",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "B16",
+          "cachedValue": "AB =",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C16",
+          "cachedValue": 1600.0,
+          "numberFormat": "General",
+          "formula": "=Start!M11"
+        },
+        {
+          "cell": "E16",
+          "cachedValue": " - įrašyti AB aukštį",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "B17",
+          "cachedValue": "AD =",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C17",
+          "cachedValue": 2000.0,
+          "numberFormat": "General",
+          "formula": "=Start!M12"
+        },
+        {
+          "cell": "E17",
+          "cachedValue": " - įrašyti AD plotį",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "B18",
+          "cachedValue": "CD =",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C18",
+          "cachedValue": 1800.0,
+          "numberFormat": "General",
+          "formula": "=Start!M13"
+        },
+        {
+          "cell": "E18",
+          "cachedValue": " - įrašyti CD aukštį",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "F18",
+          "cachedValue": 1600.0,
+          "numberFormat": "General",
+          "formula": "=AB"
+        },
+        {
+          "cell": "B20",
+          "cachedValue": "BC =",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C20",
+          "cachedValue": 2010.0,
+          "numberFormat": "General",
+          "formula": "=ROUND(BC,0)"
+        },
+        {
+          "cell": "B21",
+          "cachedValue": "L =",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C21",
+          "cachedValue": 89.0,
+          "numberFormat": "#\" mm\"",
+          "formula": "=C9"
+        },
+        {
+          "cell": "B22",
+          "cachedValue": "H_1 =",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C22",
+          "cachedValue": 30.0,
+          "numberFormat": "#\" mm\"",
+          "formula": "=C5+C6"
+        },
+        {
+          "cell": "B23",
+          "cachedValue": "H_2 =",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C23",
+          "cachedValue": 46.0,
+          "numberFormat": "#\" mm\"",
+          "formula": "=C22+C7"
+        },
+        {
+          "cell": "B24",
+          "cachedValue": "BC =",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C24",
+          "cachedValue": 2009.975124224178,
+          "numberFormat": "General",
+          "formula": "=SQRT((CD-AB)^2+AD^2)"
+        },
+        {
+          "cell": "B25",
+          "cachedValue": "/_ CBH =",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C25",
+          "cachedValue": 0.09966865249116204,
+          "numberFormat": "General",
+          "formula": "=ASIN((CD-AB)/BC)"
+        },
+        {
+          "cell": "D25",
+          "cachedValue": 5.710593137499643,
+          "numberFormat": "General",
+          "formula": "=DEGREES(CBH)"
+        },
+        {
+          "cell": "B26",
+          "cachedValue": "/_ BCD =",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C26",
+          "cachedValue": 1.4711276743037347,
+          "numberFormat": "General",
+          "formula": "=ASIN((AD)/BC)"
+        },
+        {
+          "cell": "D26",
+          "cachedValue": 84.28940686250037,
+          "numberFormat": "General",
+          "formula": "=DEGREES(BCD)"
+        },
+        {
+          "cell": "B28",
+          "cachedValue": "RĖMAS:",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C28",
+          "cachedValue": 2006.975124224178,
+          "numberFormat": "0.0",
+          "formula": "=BC-(H_1*TAN(CBH))-C12"
+        },
+        {
+          "cell": "D28",
+          "cachedValue": "(pjauti - 1992mm)",
+          "numberFormat": "General",
+          "formula": "=CONCATENATE(\"(pjauti - \",ROUND(REMAS-VALDYMAS,1),\"mm)\")"
+        },
+        {
+          "cell": "B29",
+          "cachedValue": "FIKSAS:",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C29",
+          "cachedValue": 46.32194651398797,
+          "numberFormat": "0.0",
+          "formula": "=((IF(CBH<>0,SQRT((IF(CBH<>0,(H_2-H_1)*TAN(BCD),0))^2+(H_2-H_1)^2),0))+((L/2)-C13))/SIN(BCD)-(IF(CBH<>0,(H_2-H_1)*TAN(BCD),0))"
+        },
+        {
+          "cell": "D29",
+          "cachedValue": "(iki mechanizmo - 40,8mm)",
+          "numberFormat": "General",
+          "formula": "=CONCATENATE(\"(iki mechanizmo - \",ROUND(FIKSAS-5.5,1),\"mm)\")"
+        },
+        {
+          "cell": "H29",
+          "cachedValue": 2000.0,
+          "numberFormat": "General",
+          "formula": "=AD"
+        },
+        {
+          "cell": "B30",
+          "cachedValue": "NEFIKSAS:",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C30",
+          "cachedValue": 43.12194651398796,
+          "numberFormat": "0.0",
+          "formula": "=(L/2)/SIN(BCD)-((H_2-H_1)*TAN(CBH))"
+        },
+        {
+          "cell": "B31",
+          "cachedValue": "O1P =",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C31",
+          "cachedValue": 43.12194651398796,
+          "numberFormat": "General",
+          "formula": "=((L/2/SIN(BCD))-((H_2-H_1)*TAN(CBH)))"
+        },
+        {
+          "cell": "B32",
+          "cachedValue": "PLOTIS =",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C32",
+          "cachedValue": 1982.0,
+          "numberFormat": "General",
+          "formula": "=ROUND(AD-((H_1*SIN(CBH))+((VALDYMAS+C12)*SIN(BCD))),0)"
+        },
+        {
+          "cell": "B33",
+          "cachedValue": "JUOSTŲ SKAIČIUS:",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C33",
+          "cachedValue": 26.0,
+          "numberFormat": "General",
+          "formula": "=IF(L=127,LOOKUP(PLOTIS,_HBR127)+C11,IF(L=89,LOOKUP(PLOTIS,_HBR89+C11)+C11,\"APRIBOJIMAS\"))"
+        },
+        {
+          "cell": "F33",
+          "cachedValue": 0.0,
+          "numberFormat": "General",
+          "formula": "=IF(C10-6<F34,ROUNDUP(((REMAS-VALDYMAS-FIKSAS-NEFIKSAS)/(C10-6))+1,0),0)"
+        },
+        {
+          "cell": "G33",
+          "cachedValue": -26.0,
+          "numberFormat": "General",
+          "formula": "=F33-F35"
+        },
+        {
+          "cell": "H33",
+          "cachedValue": "- reikia juostų (papildoma)",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "B34",
+          "cachedValue": "ŽINGSNIS:",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C34",
+          "cachedValue": 76.10124924784809,
+          "numberFormat": "0.0",
+          "formula": "=IF(N=\"APRIBOJIMAS\",\"APRIBOJIMAS\",(REMAS-VALDYMAS-FIKSAS-NEFIKSAS)/(N-1))"
+        },
+        {
+          "cell": "D34",
+          "cachedValue": "(pjauti - 82,1mm)",
+          "numberFormat": "General",
+          "formula": "=IF(N=\"APRIBOJIMAS\",\"APRIBOJIMAS\",(CONCATENATE(\"(pjauti - \",ROUND(Z+6,1),\"mm)\")))"
+        },
+        {
+          "cell": "F34",
+          "cachedValue": 76.10124924784809,
+          "numberFormat": "General",
+          "formula": "=IF(F35=\"APRIBOJIMAS\",\"APRIBOJIMAS\",(REMAS-VALDYMAS-FIKSAS-NEFIKSAS)/(F35-1))"
+        },
+        {
+          "cell": "G34",
+          "cachedValue": "- turi būti",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "F35",
+          "cachedValue": 26.0,
+          "numberFormat": "General",
+          "formula": "=IF(L=127,LOOKUP(PLOTIS,_HBR127),IF(L=89,LOOKUP(PLOTIS,_HBR89),\"APRIBOJIMAS\"))"
+        },
+        {
+          "cell": "G35",
+          "cachedValue": "- turi būti",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "B36",
+          "cachedValue": "PRAILGINTOJAS:",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C36",
+          "cachedValue": 0.0,
+          "numberFormat": "General",
+          "formula": "=IF(0<=(L/2*TAN(CBH)-((H_2-H_1)/COS(CBH))),LOOKUP((ROUND((L/2*TAN(CBH)-((H_2-H_1)/COS(CBH))),0)),TECH_DATA!F1:G302),0)"
+        },
+        {
+          "cell": "B37",
+          "cachedValue": "N1 =",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C37",
+          "cachedValue": 1560.011639085222,
+          "numberFormat": "General",
+          "formula": "=AB-(H_1*COS(CBH))+(VALDYMAS*COS(BCD))+(L/2*TAN(CBH))-((H_2-H_1)/COS(CBH))-PRAILGINTOJAS"
+        },
+        {
+          "cell": "B38",
+          "cachedValue": "DIDEJIMAS",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "C38",
+          "cachedValue": 7.572357322304873,
+          "numberFormat": "General",
+          "formula": "=Z*COS(BCD)"
+        },
+        {
+          "cell": "B41",
+          "cachedValue": "JUOSTOS (ilgis su 45 mm):",
+          "numberFormat": "General"
+        },
+        {
+          "cell": "D41",
+          "cachedValue": 44.89331874596486,
+          "numberFormat": "\"viso: \"0.000\" m\"",
+          "formula": "=(SUM(C42:C67,F42:F67,I42:I67)+(N*27))/1000"
+        },
+        {
+          "cell": "A42",
+          "cachedValue": 1.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "B42",
+          "cachedValue": 1.0,
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A42,N-(N-A42),\"nera\")"
+        },
+        {
+          "cell": "C42",
+          "cachedValue": 1605.011639085222,
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A42,N_1+45,\"nera\")"
+        },
+        {
+          "cell": "D42",
+          "cachedValue": 27.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "E42",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-D42,N-(N-D42),\"nera\")"
+        },
+        {
+          "cell": "F42",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-D42,45+N_1+(DIDEJIMAS*(D42-1)),\"nera\")"
+        },
+        {
+          "cell": "G42",
+          "cachedValue": 53.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "H42",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-G42,N-(N-G42),\"nera\")"
+        },
+        {
+          "cell": "I42",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-G42,45+N_1+(DIDEJIMAS*(G42-1)),\"nera\")"
+        },
+        {
+          "cell": "A43",
+          "cachedValue": 2.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "B43",
+          "cachedValue": 2.0,
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A43,N-(N-A43),\"nera\")"
+        },
+        {
+          "cell": "C43",
+          "cachedValue": 1612.583996407527,
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A43,45+N_1+(DIDEJIMAS*(A43-1)),\"nera\")"
+        },
+        {
+          "cell": "D43",
+          "cachedValue": 28.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "E43",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-D43,N-(N-D43),\"nera\")"
+        },
+        {
+          "cell": "F43",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-D43,45+N_1+(DIDEJIMAS*(D43-1)),\"nera\")"
+        },
+        {
+          "cell": "G43",
+          "cachedValue": 54.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "H43",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-G43,N-(N-G43),\"nera\")"
+        },
+        {
+          "cell": "I43",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-G43,45+N_1+(DIDEJIMAS*(G43-1)),\"nera\")"
+        },
+        {
+          "cell": "A44",
+          "cachedValue": 3.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "B44",
+          "cachedValue": 3.0,
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A44,N-(N-A44),\"nera\")"
+        },
+        {
+          "cell": "C44",
+          "cachedValue": 1620.1563537298318,
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A44,45+N_1+(DIDEJIMAS*(A44-1)),\"nera\")"
+        },
+        {
+          "cell": "D44",
+          "cachedValue": 29.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "E44",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-D44,N-(N-D44),\"nera\")"
+        },
+        {
+          "cell": "F44",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-D44,45+N_1+(DIDEJIMAS*(D44-1)),\"nera\")"
+        },
+        {
+          "cell": "G44",
+          "cachedValue": 55.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "H44",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-G44,N-(N-G44),\"nera\")"
+        },
+        {
+          "cell": "I44",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-G44,45+N_1+(DIDEJIMAS*(G44-1)),\"nera\")"
+        },
+        {
+          "cell": "A45",
+          "cachedValue": 4.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "B45",
+          "cachedValue": 4.0,
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A45,N-(N-A45),\"nera\")"
+        },
+        {
+          "cell": "C45",
+          "cachedValue": 1627.7287110521365,
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A45,45+N_1+(DIDEJIMAS*(A45-1)),\"nera\")"
+        },
+        {
+          "cell": "D45",
+          "cachedValue": 30.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "E45",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-D45,N-(N-D45),\"nera\")"
+        },
+        {
+          "cell": "F45",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-D45,45+N_1+(DIDEJIMAS*(D45-1)),\"nera\")"
+        },
+        {
+          "cell": "G45",
+          "cachedValue": 56.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "H45",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-G45,N-(N-G45),\"nera\")"
+        },
+        {
+          "cell": "I45",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-G45,45+N_1+(DIDEJIMAS*(G45-1)),\"nera\")"
+        },
+        {
+          "cell": "A46",
+          "cachedValue": 5.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "B46",
+          "cachedValue": 5.0,
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A46,N-(N-A46),\"nera\")"
+        },
+        {
+          "cell": "C46",
+          "cachedValue": 1635.3010683744415,
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A46,45+N_1+(DIDEJIMAS*(A46-1)),\"nera\")"
+        },
+        {
+          "cell": "D46",
+          "cachedValue": 31.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "E46",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-D46,N-(N-D46),\"nera\")"
+        },
+        {
+          "cell": "F46",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-D46,45+N_1+(DIDEJIMAS*(D46-1)),\"nera\")"
+        },
+        {
+          "cell": "G46",
+          "cachedValue": 57.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "H46",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-G46,N-(N-G46),\"nera\")"
+        },
+        {
+          "cell": "I46",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-G46,45+N_1+(DIDEJIMAS*(G46-1)),\"nera\")"
+        },
+        {
+          "cell": "A47",
+          "cachedValue": 6.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "B47",
+          "cachedValue": 6.0,
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A47,N-(N-A47),\"nera\")"
+        },
+        {
+          "cell": "C47",
+          "cachedValue": 1642.8734256967464,
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A47,45+N_1+(DIDEJIMAS*(A47-1)),\"nera\")"
+        },
+        {
+          "cell": "D47",
+          "cachedValue": 32.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "E47",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-D47,N-(N-D47),\"nera\")"
+        },
+        {
+          "cell": "F47",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-D47,45+N_1+(DIDEJIMAS*(D47-1)),\"nera\")"
+        },
+        {
+          "cell": "G47",
+          "cachedValue": 58.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "H47",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-G47,N-(N-G47),\"nera\")"
+        },
+        {
+          "cell": "I47",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-G47,45+N_1+(DIDEJIMAS*(G47-1)),\"nera\")"
+        },
+        {
+          "cell": "A48",
+          "cachedValue": 7.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "B48",
+          "cachedValue": 7.0,
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A48,N-(N-A48),\"nera\")"
+        },
+        {
+          "cell": "C48",
+          "cachedValue": 1650.4457830190513,
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A48,45+N_1+(DIDEJIMAS*(A48-1)),\"nera\")"
+        },
+        {
+          "cell": "D48",
+          "cachedValue": 33.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "E48",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-D48,N-(N-D48),\"nera\")"
+        },
+        {
+          "cell": "F48",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-D48,45+N_1+(DIDEJIMAS*(D48-1)),\"nera\")"
+        },
+        {
+          "cell": "G48",
+          "cachedValue": 59.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "H48",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-G48,N-(N-G48),\"nera\")"
+        },
+        {
+          "cell": "I48",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-G48,45+N_1+(DIDEJIMAS*(G48-1)),\"nera\")"
+        },
+        {
+          "cell": "A49",
+          "cachedValue": 8.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "B49",
+          "cachedValue": 8.0,
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A49,N-(N-A49),\"nera\")"
+        },
+        {
+          "cell": "C49",
+          "cachedValue": 1658.018140341356,
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A49,45+N_1+(DIDEJIMAS*(A49-1)),\"nera\")"
+        },
+        {
+          "cell": "D49",
+          "cachedValue": 34.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "E49",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-D49,N-(N-D49),\"nera\")"
+        },
+        {
+          "cell": "F49",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-D49,45+N_1+(DIDEJIMAS*(D49-1)),\"nera\")"
+        },
+        {
+          "cell": "G49",
+          "cachedValue": 60.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "H49",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-G49,N-(N-G49),\"nera\")"
+        },
+        {
+          "cell": "I49",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-G49,45+N_1+(DIDEJIMAS*(G49-1)),\"nera\")"
+        },
+        {
+          "cell": "A50",
+          "cachedValue": 9.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "B50",
+          "cachedValue": 9.0,
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A50,N-(N-A50),\"nera\")"
+        },
+        {
+          "cell": "C50",
+          "cachedValue": 1665.590497663661,
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A50,45+N_1+(DIDEJIMAS*(A50-1)),\"nera\")"
+        },
+        {
+          "cell": "D50",
+          "cachedValue": 35.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "E50",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-D50,N-(N-D50),\"nera\")"
+        },
+        {
+          "cell": "F50",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-D50,45+N_1+(DIDEJIMAS*(D50-1)),\"nera\")"
+        },
+        {
+          "cell": "G50",
+          "cachedValue": 61.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "H50",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-G50,N-(N-G50),\"nera\")"
+        },
+        {
+          "cell": "I50",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-G50,45+N_1+(DIDEJIMAS*(G50-1)),\"nera\")"
+        },
+        {
+          "cell": "A51",
+          "cachedValue": 10.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "B51",
+          "cachedValue": 10.0,
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A51,N-(N-A51),\"nera\")"
+        },
+        {
+          "cell": "C51",
+          "cachedValue": 1673.1628549859659,
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A51,45+N_1+(DIDEJIMAS*(A51-1)),\"nera\")"
+        },
+        {
+          "cell": "D51",
+          "cachedValue": 36.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "E51",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-D51,N-(N-D51),\"nera\")"
+        },
+        {
+          "cell": "F51",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-D51,45+N_1+(DIDEJIMAS*(D51-1)),\"nera\")"
+        },
+        {
+          "cell": "G51",
+          "cachedValue": 62.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "H51",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-G51,N-(N-G51),\"nera\")"
+        },
+        {
+          "cell": "I51",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-G51,45+N_1+(DIDEJIMAS*(G51-1)),\"nera\")"
+        },
+        {
+          "cell": "A52",
+          "cachedValue": 11.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "B52",
+          "cachedValue": 11.0,
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A52,N-(N-A52),\"nera\")"
+        },
+        {
+          "cell": "C52",
+          "cachedValue": 1680.7352123082708,
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A52,45+N_1+(DIDEJIMAS*(A52-1)),\"nera\")"
+        },
+        {
+          "cell": "D52",
+          "cachedValue": 37.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "E52",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-D52,N-(N-D52),\"nera\")"
+        },
+        {
+          "cell": "F52",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-D52,45+N_1+(DIDEJIMAS*(D52-1)),\"nera\")"
+        },
+        {
+          "cell": "G52",
+          "cachedValue": 63.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "H52",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-G52,N-(N-G52),\"nera\")"
+        },
+        {
+          "cell": "I52",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-G52,45+N_1+(DIDEJIMAS*(G52-1)),\"nera\")"
+        },
+        {
+          "cell": "A53",
+          "cachedValue": 12.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "B53",
+          "cachedValue": 12.0,
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A53,N-(N-A53),\"nera\")"
+        },
+        {
+          "cell": "C53",
+          "cachedValue": 1688.3075696305755,
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A53,45+N_1+(DIDEJIMAS*(A53-1)),\"nera\")"
+        },
+        {
+          "cell": "D53",
+          "cachedValue": 38.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "E53",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-D53,N-(N-D53),\"nera\")"
+        },
+        {
+          "cell": "F53",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-D53,45+N_1+(DIDEJIMAS*(D53-1)),\"nera\")"
+        },
+        {
+          "cell": "G53",
+          "cachedValue": 64.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "H53",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-G53,N-(N-G53),\"nera\")"
+        },
+        {
+          "cell": "I53",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-G53,45+N_1+(DIDEJIMAS*(G53-1)),\"nera\")"
+        },
+        {
+          "cell": "A54",
+          "cachedValue": 13.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "B54",
+          "cachedValue": 13.0,
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A54,N-(N-A54),\"nera\")"
+        },
+        {
+          "cell": "C54",
+          "cachedValue": 1695.8799269528804,
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A54,45+N_1+(DIDEJIMAS*(A54-1)),\"nera\")"
+        },
+        {
+          "cell": "D54",
+          "cachedValue": 39.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "E54",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-D54,N-(N-D54),\"nera\")"
+        },
+        {
+          "cell": "F54",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-D54,45+N_1+(DIDEJIMAS*(D54-1)),\"nera\")"
+        },
+        {
+          "cell": "G54",
+          "cachedValue": 65.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "H54",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-G54,N-(N-G54),\"nera\")"
+        },
+        {
+          "cell": "I54",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-G54,45+N_1+(DIDEJIMAS*(G54-1)),\"nera\")"
+        },
+        {
+          "cell": "A55",
+          "cachedValue": 14.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "B55",
+          "cachedValue": 14.0,
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A55,N-(N-A55),\"nera\")"
+        },
+        {
+          "cell": "C55",
+          "cachedValue": 1703.4522842751853,
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A55,45+N_1+(DIDEJIMAS*(A55-1)),\"nera\")"
+        },
+        {
+          "cell": "D55",
+          "cachedValue": 40.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "E55",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-D55,N-(N-D55),\"nera\")"
+        },
+        {
+          "cell": "F55",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-D55,45+N_1+(DIDEJIMAS*(D55-1)),\"nera\")"
+        },
+        {
+          "cell": "G55",
+          "cachedValue": 66.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "H55",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-G55,N-(N-G55),\"nera\")"
+        },
+        {
+          "cell": "I55",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-G55,45+N_1+(DIDEJIMAS*(G55-1)),\"nera\")"
+        },
+        {
+          "cell": "A56",
+          "cachedValue": 15.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "B56",
+          "cachedValue": 15.0,
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A56,N-(N-A56),\"nera\")"
+        },
+        {
+          "cell": "C56",
+          "cachedValue": 1711.0246415974902,
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A56,45+N_1+(DIDEJIMAS*(A56-1)),\"nera\")"
+        },
+        {
+          "cell": "D56",
+          "cachedValue": 41.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "E56",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-D56,N-(N-D56),\"nera\")"
+        },
+        {
+          "cell": "F56",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-D56,45+N_1+(DIDEJIMAS*(D56-1)),\"nera\")"
+        },
+        {
+          "cell": "G56",
+          "cachedValue": 67.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "H56",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-G56,N-(N-G56),\"nera\")"
+        },
+        {
+          "cell": "I56",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-G56,45+N_1+(DIDEJIMAS*(G56-1)),\"nera\")"
+        },
+        {
+          "cell": "A57",
+          "cachedValue": 16.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "B57",
+          "cachedValue": 16.0,
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A57,N-(N-A57),\"nera\")"
+        },
+        {
+          "cell": "C57",
+          "cachedValue": 1718.5969989197952,
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A57,45+N_1+(DIDEJIMAS*(A57-1)),\"nera\")"
+        },
+        {
+          "cell": "D57",
+          "cachedValue": 42.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "E57",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-D57,N-(N-D57),\"nera\")"
+        },
+        {
+          "cell": "F57",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-D57,45+N_1+(DIDEJIMAS*(D57-1)),\"nera\")"
+        },
+        {
+          "cell": "G57",
+          "cachedValue": 68.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "H57",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-G57,N-(N-G57),\"nera\")"
+        },
+        {
+          "cell": "I57",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-G57,45+N_1+(DIDEJIMAS*(G57-1)),\"nera\")"
+        },
+        {
+          "cell": "A58",
+          "cachedValue": 17.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "B58",
+          "cachedValue": 17.0,
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A58,N-(N-A58),\"nera\")"
+        },
+        {
+          "cell": "C58",
+          "cachedValue": 1726.1693562420999,
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A58,45+N_1+(DIDEJIMAS*(A58-1)),\"nera\")"
+        },
+        {
+          "cell": "D58",
+          "cachedValue": 43.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "E58",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-D58,N-(N-D58),\"nera\")"
+        },
+        {
+          "cell": "F58",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-D58,45+N_1+(DIDEJIMAS*(D58-1)),\"nera\")"
+        },
+        {
+          "cell": "G58",
+          "cachedValue": 69.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "H58",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-G58,N-(N-G58),\"nera\")"
+        },
+        {
+          "cell": "I58",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-G58,45+N_1+(DIDEJIMAS*(G58-1)),\"nera\")"
+        },
+        {
+          "cell": "A59",
+          "cachedValue": 18.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "B59",
+          "cachedValue": 18.0,
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A59,N-(N-A59),\"nera\")"
+        },
+        {
+          "cell": "C59",
+          "cachedValue": 1733.7417135644048,
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A59,45+N_1+(DIDEJIMAS*(A59-1)),\"nera\")"
+        },
+        {
+          "cell": "D59",
+          "cachedValue": 44.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "E59",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-D59,N-(N-D59),\"nera\")"
+        },
+        {
+          "cell": "F59",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-D59,45+N_1+(DIDEJIMAS*(D59-1)),\"nera\")"
+        },
+        {
+          "cell": "G59",
+          "cachedValue": 70.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "H59",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-G59,N-(N-G59),\"nera\")"
+        },
+        {
+          "cell": "I59",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-G59,45+N_1+(DIDEJIMAS*(G59-1)),\"nera\")"
+        },
+        {
+          "cell": "A60",
+          "cachedValue": 19.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "B60",
+          "cachedValue": 19.0,
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A60,N-(N-A60),\"nera\")"
+        },
+        {
+          "cell": "C60",
+          "cachedValue": 1741.3140708867097,
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A60,45+N_1+(DIDEJIMAS*(A60-1)),\"nera\")"
+        },
+        {
+          "cell": "D60",
+          "cachedValue": 45.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "E60",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-D60,N-(N-D60),\"nera\")"
+        },
+        {
+          "cell": "F60",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-D60,45+N_1+(DIDEJIMAS*(D60-1)),\"nera\")"
+        },
+        {
+          "cell": "G60",
+          "cachedValue": 71.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "H60",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-G60,N-(N-G60),\"nera\")"
+        },
+        {
+          "cell": "I60",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-G60,45+N_1+(DIDEJIMAS*(G60-1)),\"nera\")"
+        },
+        {
+          "cell": "A61",
+          "cachedValue": 20.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "B61",
+          "cachedValue": 20.0,
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A61,N-(N-A61),\"nera\")"
+        },
+        {
+          "cell": "C61",
+          "cachedValue": 1748.8864282090146,
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A61,45+N_1+(DIDEJIMAS*(A61-1)),\"nera\")"
+        },
+        {
+          "cell": "D61",
+          "cachedValue": 46.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "E61",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-D61,N-(N-D61),\"nera\")"
+        },
+        {
+          "cell": "F61",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-D61,45+N_1+(DIDEJIMAS*(D61-1)),\"nera\")"
+        },
+        {
+          "cell": "G61",
+          "cachedValue": 72.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "H61",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-G61,N-(N-G61),\"nera\")"
+        },
+        {
+          "cell": "I61",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-G61,45+N_1+(DIDEJIMAS*(G61-1)),\"nera\")"
+        },
+        {
+          "cell": "A62",
+          "cachedValue": 21.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "B62",
+          "cachedValue": 21.0,
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A62,N-(N-A62),\"nera\")"
+        },
+        {
+          "cell": "C62",
+          "cachedValue": 1756.4587855313193,
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A62,45+N_1+(DIDEJIMAS*(A62-1)),\"nera\")"
+        },
+        {
+          "cell": "D62",
+          "cachedValue": 47.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "E62",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-D62,N-(N-D62),\"nera\")"
+        },
+        {
+          "cell": "F62",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-D62,45+N_1+(DIDEJIMAS*(D62-1)),\"nera\")"
+        },
+        {
+          "cell": "G62",
+          "cachedValue": 73.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "H62",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-G62,N-(N-G62),\"nera\")"
+        },
+        {
+          "cell": "I62",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-G62,45+N_1+(DIDEJIMAS*(G62-1)),\"nera\")"
+        },
+        {
+          "cell": "A63",
+          "cachedValue": 22.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "B63",
+          "cachedValue": 22.0,
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A63,N-(N-A63),\"nera\")"
+        },
+        {
+          "cell": "C63",
+          "cachedValue": 1764.0311428536243,
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A63,45+N_1+(DIDEJIMAS*(A63-1)),\"nera\")"
+        },
+        {
+          "cell": "D63",
+          "cachedValue": 48.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "E63",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-D63,N-(N-D63),\"nera\")"
+        },
+        {
+          "cell": "F63",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-D63,45+N_1+(DIDEJIMAS*(D63-1)),\"nera\")"
+        },
+        {
+          "cell": "G63",
+          "cachedValue": 74.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "H63",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-G63,N-(N-G63),\"nera\")"
+        },
+        {
+          "cell": "I63",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-G63,45+N_1+(DIDEJIMAS*(G63-1)),\"nera\")"
+        },
+        {
+          "cell": "A64",
+          "cachedValue": 23.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "B64",
+          "cachedValue": 23.0,
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A64,N-(N-A64),\"nera\")"
+        },
+        {
+          "cell": "C64",
+          "cachedValue": 1771.6035001759292,
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A64,45+N_1+(DIDEJIMAS*(A64-1)),\"nera\")"
+        },
+        {
+          "cell": "D64",
+          "cachedValue": 49.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "E64",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-D64,N-(N-D64),\"nera\")"
+        },
+        {
+          "cell": "F64",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-D64,45+N_1+(DIDEJIMAS*(D64-1)),\"nera\")"
+        },
+        {
+          "cell": "G64",
+          "cachedValue": 75.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "H64",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-G64,N-(N-G64),\"nera\")"
+        },
+        {
+          "cell": "I64",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-G64,45+N_1+(DIDEJIMAS*(G64-1)),\"nera\")"
+        },
+        {
+          "cell": "A65",
+          "cachedValue": 24.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "B65",
+          "cachedValue": 24.0,
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A65,N-(N-A65),\"nera\")"
+        },
+        {
+          "cell": "C65",
+          "cachedValue": 1779.175857498234,
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A65,45+N_1+(DIDEJIMAS*(A65-1)),\"nera\")"
+        },
+        {
+          "cell": "D65",
+          "cachedValue": 50.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "E65",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-D65,N-(N-D65),\"nera\")"
+        },
+        {
+          "cell": "F65",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-D65,45+N_1+(DIDEJIMAS*(D65-1)),\"nera\")"
+        },
+        {
+          "cell": "G65",
+          "cachedValue": 76.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "H65",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-G65,N-(N-G65),\"nera\")"
+        },
+        {
+          "cell": "I65",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-G65,45+N_1+(DIDEJIMAS*(G65-1)),\"nera\")"
+        },
+        {
+          "cell": "A66",
+          "cachedValue": 25.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "B66",
+          "cachedValue": 25.0,
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A66,N-(N-A66),\"nera\")"
+        },
+        {
+          "cell": "C66",
+          "cachedValue": 1786.748214820539,
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A66,45+N_1+(DIDEJIMAS*(A66-1)),\"nera\")"
+        },
+        {
+          "cell": "D66",
+          "cachedValue": 51.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "E66",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-D66,N-(N-D66),\"nera\")"
+        },
+        {
+          "cell": "F66",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-D66,45+N_1+(DIDEJIMAS*(D66-1)),\"nera\")"
+        },
+        {
+          "cell": "G66",
+          "cachedValue": 77.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "H66",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-G66,N-(N-G66),\"nera\")"
+        },
+        {
+          "cell": "I66",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-G66,45+N_1+(DIDEJIMAS*(G66-1)),\"nera\")"
+        },
+        {
+          "cell": "A67",
+          "cachedValue": 26.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "B67",
+          "cachedValue": 26.0,
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-A67,N-(N-A67),\"nera\")"
+        },
+        {
+          "cell": "C67",
+          "cachedValue": 1794.3205721428437,
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-A67,45+N_1+(DIDEJIMAS*(A67-1)),\"nera\")"
+        },
+        {
+          "cell": "D67",
+          "cachedValue": 52.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "E67",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-D67,N-(N-D67),\"nera\")"
+        },
+        {
+          "cell": "F67",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-D67,45+N_1+(DIDEJIMAS*(D67-1)),\"nera\")"
+        },
+        {
+          "cell": "G67",
+          "cachedValue": 78.0,
+          "numberFormat": "General"
+        },
+        {
+          "cell": "H67",
+          "cachedValue": "nera",
+          "numberFormat": "\"n\"#",
+          "formula": "=IF(0<=N-G67,N-(N-G67),\"nera\")"
+        },
+        {
+          "cell": "I67",
+          "cachedValue": "nera",
+          "numberFormat": "0",
+          "formula": "=IF(0<=N-G67,45+N_1+(DIDEJIMAS*(G67-1)),\"nera\")"
+        }
+      ]
+    }
+  ]
+}

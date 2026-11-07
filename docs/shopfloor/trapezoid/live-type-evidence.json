@@ -1,0 +1,642 @@
+{
+  "checkedOn": "2026-11-06",
+  "source": "Cikada Test order_entry_references (read-only)",
+  "types": [
+    {
+      "kind": "type",
+      "type": {
+        "id": 1084710449,
+        "categoryId": -1915720502,
+        "name": "Trapecija 127mm",
+        "isActive": true,
+        "isManufactured": true
+      },
+      "categoryName": "Vertikalios",
+      "categoryIsActive": true,
+      "parameters": [
+        {
+          "slot": 1,
+          "label": "Juostos plotis",
+          "formula": "127",
+          "legacyDefinitionId": 127,
+          "storageKind": 0
+        },
+        {
+          "slot": 2,
+          "label": "Did. krastinė",
+          "formula": "0",
+          "legacyDefinitionId": 0,
+          "storageKind": 0
+        },
+        {
+          "slot": 3,
+          "label": "Trump. krastinė",
+          "formula": "0",
+          "legacyDefinitionId": 0,
+          "storageKind": 0
+        },
+        {
+          "slot": 4,
+          "label": "Išsikišimas",
+          "formula": "0",
+          "legacyDefinitionId": 0,
+          "storageKind": 0
+        },
+        {
+          "slot": 5,
+          "label": null,
+          "formula": "0",
+          "legacyDefinitionId": 0,
+          "storageKind": 0
+        },
+        {
+          "slot": 6,
+          "label": null,
+          "formula": "0",
+          "legacyDefinitionId": 0,
+          "storageKind": 0
+        },
+        {
+          "slot": 7,
+          "label": null,
+          "formula": "0",
+          "legacyDefinitionId": 0,
+          "storageKind": 0
+        },
+        {
+          "slot": 8,
+          "label": null,
+          "formula": "0",
+          "legacyDefinitionId": 0,
+          "storageKind": 0
+        },
+        {
+          "slot": 9,
+          "label": null,
+          "formula": "0",
+          "legacyDefinitionId": 0,
+          "storageKind": 0
+        },
+        {
+          "slot": 10,
+          "label": "Vežimelių skaičius",
+          "formula": "0",
+          "legacyDefinitionId": 0,
+          "storageKind": 0
+        },
+        {
+          "slot": 11,
+          "label": "Korektorių skaičius",
+          "formula": "0",
+          "legacyDefinitionId": 0,
+          "storageKind": 0
+        },
+        {
+          "slot": 12,
+          "label": "Audinio sunaudojimas",
+          "formula": "0",
+          "legacyDefinitionId": 0,
+          "storageKind": 1
+        }
+      ],
+      "pricing": {
+        "priceEntryMode": "fixed",
+        "unitId": -1859919715,
+        "minimumWidthM": 0,
+        "minimumHeightM": 1,
+        "minimumAreaM2": 1,
+        "supportsManualUnitPriceForType": false
+      }
+    },
+    {
+      "kind": "type",
+      "type": {
+        "id": 1171363884,
+        "categoryId": -1915720502,
+        "name": "Trapecija 89mm",
+        "isActive": true,
+        "isManufactured": true
+      },
+      "categoryName": "Vertikalios",
+      "categoryIsActive": true,
+      "parameters": [
+        {
+          "slot": 1,
+          "label": "Juostos plotis",
+          "formula": "89",
+          "legacyDefinitionId": 89,
+          "storageKind": 0
+        },
+        {
+          "slot": 2,
+          "label": "Did. krastinė",
+          "formula": "0",
+          "legacyDefinitionId": 0,
+          "storageKind": 0
+        },
+        {
+          "slot": 3,
+          "label": "Trump. krastinė",
+          "formula": "0",
+          "legacyDefinitionId": 0,
+          "storageKind": 0
+        },
+        {
+          "slot": 4,
+          "label": "Išsikišimas",
+          "formula": "0",
+          "legacyDefinitionId": 0,
+          "storageKind": 0
+        },
+        {
+          "slot": 5,
+          "label": null,
+          "formula": "0",
+          "legacyDefinitionId": 0,
+          "storageKind": 0
+        },
+        {
+          "slot": 6,
+          "label": null,
+          "formula": "0",
+          "legacyDefinitionId": 0,
+          "storageKind": 0
+        },
+        {
+          "slot": 7,
+          "label": null,
+          "formula": "0",
+          "legacyDefinitionId": 0,
+          "storageKind": 0
+        },
+        {
+          "slot": 8,
+          "label": null,
+          "formula": "0",
+          "legacyDefinitionId": 0,
+          "storageKind": 0
+        },
+        {
+          "slot": 9,
+          "label": null,
+          "formula": "0",
+          "legacyDefinitionId": 0,
+          "storageKind": 0
+        },
+        {
+          "slot": 10,
+          "label": "Vežimelių skaičius",
+          "formula": "0",
+          "legacyDefinitionId": 0,
+          "storageKind": 0
+        },
+        {
+          "slot": 11,
+          "label": "Korektorių skaičius",
+          "formula": "0",
+          "legacyDefinitionId": 0,
+          "storageKind": 0
+        },
+        {
+          "slot": 12,
+          "label": "Audinio sunaudojimas",
+          "formula": "0",
+          "legacyDefinitionId": 0,
+          "storageKind": 1
+        }
+      ],
+      "pricing": {
+        "priceEntryMode": "fixed",
+        "unitId": -1859919715,
+        "minimumWidthM": 0,
+        "minimumHeightM": 1,
+        "minimumAreaM2": 1,
+        "supportsManualUnitPriceForType": false
+      }
+    },
+    {
+      "kind": "type",
+      "type": {
+        "id": 2112842587,
+        "categoryId": -1915720502,
+        "name": "Trapecija remas 127mm",
+        "isActive": true,
+        "isManufactured": true
+      },
+      "categoryName": "Vertikalios",
+      "categoryIsActive": true,
+      "parameters": [
+        {
+          "slot": 1,
+          "label": "Juostos plotis",
+          "formula": "127",
+          "legacyDefinitionId": 127,
+          "storageKind": 0
+        },
+        {
+          "slot": 2,
+          "label": "Did. krastinė",
+          "formula": "0",
+          "legacyDefinitionId": 0,
+          "storageKind": 0
+        },
+        {
+          "slot": 3,
+          "label": "Trump. krastinė",
+          "formula": "0",
+          "legacyDefinitionId": 0,
+          "storageKind": 0
+        },
+        {
+          "slot": 4,
+          "label": "Išsikišimas",
+          "formula": "0",
+          "legacyDefinitionId": null,
+          "storageKind": 0
+        },
+        {
+          "slot": 5,
+          "label": null,
+          "formula": "0",
+          "legacyDefinitionId": 0,
+          "storageKind": 0
+        },
+        {
+          "slot": 6,
+          "label": null,
+          "formula": "0",
+          "legacyDefinitionId": null,
+          "storageKind": 0
+        },
+        {
+          "slot": 7,
+          "label": null,
+          "formula": "0",
+          "legacyDefinitionId": null,
+          "storageKind": 0
+        },
+        {
+          "slot": 8,
+          "label": null,
+          "formula": null,
+          "legacyDefinitionId": null,
+          "storageKind": 0
+        },
+        {
+          "slot": 9,
+          "label": null,
+          "formula": null,
+          "legacyDefinitionId": null,
+          "storageKind": 0
+        },
+        {
+          "slot": 10,
+          "label": "Vežimelių skaičius",
+          "formula": "0",
+          "legacyDefinitionId": null,
+          "storageKind": 0
+        },
+        {
+          "slot": 11,
+          "label": "Korektorių skaičius",
+          "formula": "0",
+          "legacyDefinitionId": null,
+          "storageKind": 0
+        },
+        {
+          "slot": 12,
+          "label": "Audinio sunaudojimas",
+          "formula": "0",
+          "legacyDefinitionId": null,
+          "storageKind": 1
+        }
+      ],
+      "pricing": {
+        "priceEntryMode": "fixed",
+        "unitId": 1664584723,
+        "minimumWidthM": 0,
+        "minimumHeightM": 0,
+        "minimumAreaM2": 0,
+        "supportsManualUnitPriceForType": false
+      }
+    },
+    {
+      "kind": "type",
+      "type": {
+        "id": 2112842588,
+        "categoryId": -1915720502,
+        "name": "Trapecija remas 89mm",
+        "isActive": true,
+        "isManufactured": true
+      },
+      "categoryName": "Vertikalios",
+      "categoryIsActive": true,
+      "parameters": [
+        {
+          "slot": 1,
+          "label": "Juostos plotis",
+          "formula": "89",
+          "legacyDefinitionId": 89,
+          "storageKind": 0
+        },
+        {
+          "slot": 2,
+          "label": "Did. krastinė",
+          "formula": "0",
+          "legacyDefinitionId": 0,
+          "storageKind": 0
+        },
+        {
+          "slot": 3,
+          "label": "Trump. krastinė",
+          "formula": "0",
+          "legacyDefinitionId": 0,
+          "storageKind": 0
+        },
+        {
+          "slot": 4,
+          "label": "Išsikišimas",
+          "formula": "0",
+          "legacyDefinitionId": null,
+          "storageKind": 0
+        },
+        {
+          "slot": 5,
+          "label": null,
+          "formula": "0",
+          "legacyDefinitionId": 0,
+          "storageKind": 0
+        },
+        {
+          "slot": 6,
+          "label": null,
+          "formula": "0",
+          "legacyDefinitionId": null,
+          "storageKind": 0
+        },
+        {
+          "slot": 7,
+          "label": null,
+          "formula": "0",
+          "legacyDefinitionId": null,
+          "storageKind": 0
+        },
+        {
+          "slot": 8,
+          "label": null,
+          "formula": null,
+          "legacyDefinitionId": null,
+          "storageKind": 0
+        },
+        {
+          "slot": 9,
+          "label": null,
+          "formula": null,
+          "legacyDefinitionId": null,
+          "storageKind": 0
+        },
+        {
+          "slot": 10,
+          "label": "Vežimelių skaičius",
+          "formula": "0",
+          "legacyDefinitionId": null,
+          "storageKind": 0
+        },
+        {
+          "slot": 11,
+          "label": "Korektorių skaičius",
+          "formula": "0",
+          "legacyDefinitionId": null,
+          "storageKind": 0
+        },
+        {
+          "slot": 12,
+          "label": "Audinio sunaudojimas",
+          "formula": "0",
+          "legacyDefinitionId": null,
+          "storageKind": 1
+        }
+      ],
+      "pricing": {
+        "priceEntryMode": "fixed",
+        "unitId": 1664584723,
+        "minimumWidthM": 0,
+        "minimumHeightM": 0,
+        "minimumAreaM2": 0,
+        "supportsManualUnitPriceForType": false
+      }
+    },
+    {
+      "kind": "type",
+      "type": {
+        "id": 2112842471,
+        "categoryId": -1915720502,
+        "name": "TrapecijaPVC 89mm",
+        "isActive": true,
+        "isManufactured": true
+      },
+      "categoryName": "Vertikalios",
+      "categoryIsActive": true,
+      "parameters": [
+        {
+          "slot": 1,
+          "label": "Juostos plotis",
+          "formula": "89",
+          "legacyDefinitionId": null,
+          "storageKind": 0
+        },
+        {
+          "slot": 2,
+          "label": "Did. krastinė",
+          "formula": null,
+          "legacyDefinitionId": null,
+          "storageKind": 0
+        },
+        {
+          "slot": 3,
+          "label": "Trump. krastinė",
+          "formula": null,
+          "legacyDefinitionId": null,
+          "storageKind": 0
+        },
+        {
+          "slot": 4,
+          "label": "Išsikišimas",
+          "formula": null,
+          "legacyDefinitionId": null,
+          "storageKind": 0
+        },
+        {
+          "slot": 5,
+          "label": null,
+          "formula": null,
+          "legacyDefinitionId": null,
+          "storageKind": 0
+        },
+        {
+          "slot": 6,
+          "label": null,
+          "formula": null,
+          "legacyDefinitionId": null,
+          "storageKind": 0
+        },
+        {
+          "slot": 7,
+          "label": null,
+          "formula": null,
+          "legacyDefinitionId": null,
+          "storageKind": 0
+        },
+        {
+          "slot": 8,
+          "label": null,
+          "formula": null,
+          "legacyDefinitionId": null,
+          "storageKind": 0
+        },
+        {
+          "slot": 9,
+          "label": null,
+          "formula": null,
+          "legacyDefinitionId": null,
+          "storageKind": 0
+        },
+        {
+          "slot": 10,
+          "label": "Vežimelių skaičius",
+          "formula": "0",
+          "legacyDefinitionId": null,
+          "storageKind": 0
+        },
+        {
+          "slot": 11,
+          "label": "Korektorių skaičius",
+          "formula": "0",
+          "legacyDefinitionId": null,
+          "storageKind": 0
+        },
+        {
+          "slot": 12,
+          "label": "Audinio sunaudojimas",
+          "formula": "0",
+          "legacyDefinitionId": null,
+          "storageKind": 1
+        }
+      ],
+      "pricing": {
+        "priceEntryMode": "fixed",
+        "unitId": -1859919715,
+        "minimumWidthM": 0,
+        "minimumHeightM": 1,
+        "minimumAreaM2": 1,
+        "supportsManualUnitPriceForType": false
+      }
+    },
+    {
+      "kind": "type",
+      "type": {
+        "id": 446840360,
+        "categoryId": -1915720502,
+        "name": "Stringai Trapecija",
+        "isActive": true,
+        "isManufactured": true
+      },
+      "categoryName": "Vertikalios",
+      "categoryIsActive": true,
+      "parameters": [
+        {
+          "slot": 1,
+          "label": "Juostos plotis",
+          "formula": "89",
+          "legacyDefinitionId": 89,
+          "storageKind": 0
+        },
+        {
+          "slot": 2,
+          "label": "Did. krastinė",
+          "formula": "0",
+          "legacyDefinitionId": 0,
+          "storageKind": 0
+        },
+        {
+          "slot": 3,
+          "label": "Trump. krastinė",
+          "formula": "0",
+          "legacyDefinitionId": 0,
+          "storageKind": 0
+        },
+        {
+          "slot": 4,
+          "label": "Išsikišimas",
+          "formula": "0",
+          "legacyDefinitionId": 0,
+          "storageKind": 0
+        },
+        {
+          "slot": 5,
+          "label": null,
+          "formula": "0",
+          "legacyDefinitionId": 0,
+          "storageKind": 0
+        },
+        {
+          "slot": 6,
+          "label": null,
+          "formula": "0",
+          "legacyDefinitionId": 0,
+          "storageKind": 0
+        },
+        {
+          "slot": 7,
+          "label": null,
+          "formula": "0",
+          "legacyDefinitionId": 0,
+          "storageKind": 0
+        },
+        {
+          "slot": 8,
+          "label": null,
+          "formula": "0",
+          "legacyDefinitionId": 0,
+          "storageKind": 0
+        },
+        {
+          "slot": 9,
+          "label": null,
+          "formula": "0",
+          "legacyDefinitionId": 0,
+          "storageKind": 0
+        },
+        {
+          "slot": 10,
+          "label": "Vežimelių skaičius",
+          "formula": "0",
+          "legacyDefinitionId": 0,
+          "storageKind": 0
+        },
+        {
+          "slot": 11,
+          "label": "Korektorių skaičius",
+          "formula": "0",
+          "legacyDefinitionId": 0,
+          "storageKind": 0
+        },
+        {
+          "slot": 12,
+          "label": "Audinio sunaudojimas",
+          "formula": "0",
+          "legacyDefinitionId": 0,
+          "storageKind": 1
+        }
+      ],
+      "pricing": {
+        "priceEntryMode": "fixed",
+        "unitId": -1789163110,
+        "minimumWidthM": 1,
+        "minimumHeightM": 0,
+        "minimumAreaM2": 0,
+        "supportsManualUnitPriceForType": false
+      }
+    }
+  ]
+}

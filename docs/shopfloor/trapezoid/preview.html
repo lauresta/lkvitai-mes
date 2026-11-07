@@ -1,0 +1,1119 @@
+<!doctype html>
+<html lang="lt"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Vertikalios · Trapecija — dizaino prototipas</title>
+<style>
+/* Tokens from docs/ux/lkvitai-mes-ux-handoff.html. Static design artifact. */
+:root{--n-0:#fff;--n-25:#fbfcfd;--n-50:#f5f6f8;--n-100:#eef1f4;--n-150:#e2e7ec;--n-200:#d5dce4;--n-300:#b9c3ce;--n-400:#8996a4;--n-500:#66717f;--n-600:#4e5966;--n-700:#323b45;--n-900:#151922;--accent-50:#eaf8f7;--accent-100:#d1eeec;--accent-400:#56aaa7;--accent-500:#2f8f8b;--accent-600:#257773;--accent-700:#1d5d5a;--sand-25:#faf6ee;--sand-100:#ede2c8;--sand-700:#7c5f2a;--warn-bg:#f7eed5;--warn-bd:#e2cf9a;--danger-bg:#fbe7e3;--danger-fg:#8a1f12;--dark:#20242c;--dark-line:#3a404c;--font-ui:Inter,"Segoe UI",system-ui,sans-serif;--font-mono:"JetBrains Mono","SF Mono",Consolas,monospace}
+*{box-sizing:border-box}body{margin:0;background:var(--n-50);color:var(--n-900);font:13px/1.45 var(--font-ui)}button,input,select{font:inherit}button{cursor:pointer}button:disabled{cursor:default;color:var(--n-400);background:var(--n-100)}button:focus-visible,input:focus-visible,select:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent-500);outline-offset:2px}.mono,input{font-family:var(--font-mono);font-variant-numeric:tabular-nums}a{color:var(--accent-700)}
+.strip{padding:5px 22px;background:var(--sand-100);color:var(--sand-700);font-size:11px}.topbar{height:68px;padding:0 22px;background:var(--dark);color:var(--n-0);display:flex;gap:16px;align-items:center}.brand-mark{display:grid;place-items:center;width:38px;height:38px;border:1px solid var(--dark-line);border-radius:6px;color:var(--accent-400);font-weight:700}.brand{font-size:18px;font-weight:700;color:var(--accent-400)}.brand span{color:var(--n-400);font-weight:400}.tagline{font:9px var(--font-mono);letter-spacing:2px;color:var(--n-300)}.topbar small{margin-left:auto;color:var(--n-300)}.nav{display:flex;gap:27px;align-items:center;height:47px;padding:0 24px;border-bottom:1px solid var(--n-200);background:var(--n-0);color:var(--n-600);font-weight:600;overflow:auto;white-space:nowrap}.nav strong{align-self:stretch;display:flex;align-items:center;color:var(--accent-700);border-bottom:3px solid var(--accent-600)}main{padding:20px 22px}.heading{display:flex;justify-content:space-between;align-items:end;margin-bottom:15px}.eyebrow{font:10px var(--font-mono);letter-spacing:1.4px;color:var(--accent-700);margin-bottom:5px}h1{font-size:24px;margin:0}h2{font-size:17px;margin:0}h3{font-size:13px;margin:0}.layout{display:grid;grid-template-columns:210px minmax(0,1fr) 254px;gap:14px;align-items:start}.panel{border:1px solid var(--n-200);border-radius:7px;background:var(--n-0);overflow:hidden}.panel-head{padding:11px 13px;border-bottom:1px solid var(--n-150);background:var(--n-25);display:flex;justify-content:space-between;align-items:center}.body{padding:13px}.stack{display:grid;gap:14px}.muted{color:var(--n-500)}.small{font-size:11px}.catalog{padding:6px}.report-item{display:flex;align-items:center;gap:8px;padding:8px 9px;min-height:35px;color:var(--n-600);font-size:12px}.report-item:before{content:'○';color:var(--n-300);font-size:16px}.report-item em{font-style:normal;margin-left:auto;font-family:var(--font-mono);color:var(--n-400)}.report-item.active{background:var(--accent-50);color:var(--accent-700);font-weight:700;border-radius:4px;box-shadow:inset 3px 0 var(--accent-500)}.report-item.active:before{content:'●';color:var(--accent-600)}.report-item.active em{color:inherit}.btn{min-height:32px;padding:6px 11px;border:1px solid var(--n-200);border-radius:5px;background:var(--n-0);color:var(--n-700);font-weight:600;font-size:12px}.btn.primary{background:var(--accent-600);border-color:var(--accent-600);color:var(--n-0)}.btn.primary:disabled{background:var(--n-100);color:var(--n-400);border-color:var(--n-200)}.btn.full{width:100%;margin-bottom:8px}.pill{padding:3px 8px;border:1px solid var(--n-200);border-radius:20px;background:var(--n-100);font-size:10px;color:var(--n-600);white-space:nowrap}.pill.warn{background:var(--warn-bg);border-color:var(--warn-bd);color:var(--sand-700)}.pill.info{background:var(--accent-50);border-color:var(--accent-100);color:var(--accent-700)}
+.context{display:grid;grid-template-columns:1.4fr 1fr auto;gap:12px;align-items:end;margin-bottom:13px}.field{display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--n-600)}.field input,.field select{width:100%;min-height:34px;border:1px solid var(--n-200);border-radius:4px;padding:6px 8px;color:var(--n-900);background:var(--n-0);font-size:13px}.field .origin{font-size:10px;color:var(--n-500);min-height:14px;line-height:1.25}.field .origin.manual{color:var(--accent-700)}.inputs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.input-foot{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--n-150);padding:10px 13px;font-size:11px}.state{color:var(--accent-700)}.note{background:var(--sand-25);color:var(--sand-700);border-left:3px solid var(--sand-100);padding:10px;font-size:11px}.error{background:var(--danger-bg);color:var(--danger-fg);padding:12px;border-radius:4px}.preview-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 13px;border-bottom:1px solid var(--n-200)}.seg{display:flex;gap:0}.seg .btn{border-radius:0}.seg .btn:first-child{border-radius:4px 0 0 4px}.seg .btn:last-child{border-radius:0 4px 4px 0}.seg .btn.active{background:var(--accent-50);color:var(--accent-700);border-color:var(--accent-500)}.paper-stage{padding:18px;background:var(--n-100)}.paper{background:var(--n-0);padding:22px 25px;min-height:570px;border:1px solid var(--n-150)}.paper-heading{display:flex;justify-content:space-between;gap:15px;border-bottom:2px solid var(--n-900);padding-bottom:9px}.paper-heading .right{text-align:right}.params{padding:9px 0;font:11px var(--font-mono);color:var(--n-600);display:flex;flex-wrap:wrap;gap:9px 18px}.svg-wrap{position:relative}.svg-wrap svg{display:block;width:100%;height:290px}.drawing-note{font-size:10px;color:var(--n-500);margin:0 0 10px}.metrics{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--n-200);margin-bottom:14px}.metric{padding:8px 10px}.metric+.metric{border-left:1px solid var(--n-150)}.metric small{display:block;font-size:9px;color:var(--n-500);text-transform:uppercase}.metric strong{font:600 15px var(--font-mono)}.table-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}.tables{display:grid;grid-template-columns:1fr 1fr;gap:22px}.cut-table{border-collapse:collapse;width:100%;font-size:11px}.cut-table th{font-size:9px;text-align:right;padding:5px 6px;background:var(--n-50);border-bottom:1px solid var(--n-200);color:var(--n-600);font-weight:600}.cut-table td{padding:3px 6px;text-align:right;border-bottom:1px solid var(--n-150);height:23px;font-family:var(--font-mono)}.cut-table td:first-child,.cut-table th:first-child{text-align:left}.cut-table tr{cursor:pointer}.cut-table tr.selected{background:var(--accent-50);color:var(--accent-700)}.cut-table tr.selected td:first-child{box-shadow:inset 3px 0 var(--accent-500)}.cut-table td.cut{font-weight:700}.totals{display:flex;flex-wrap:wrap;gap:9px 22px;justify-content:space-between;border-top:2px solid var(--n-700);padding-top:9px;margin-top:12px;font-size:11px}.totals strong{font:700 14px var(--font-mono)}.paper-footer{margin-top:13px;display:flex;justify-content:space-between;color:var(--n-500);font-size:9px}.detail dl{display:grid;grid-template-columns:1fr auto;gap:8px;margin:10px 0}.detail dt{color:var(--n-500);font-size:11px}.detail dd{margin:0;font-family:var(--font-mono);font-size:12px}.chosen{font-size:26px;color:var(--accent-700);font-family:var(--font-mono);font-weight:700}.legend{display:flex;gap:12px;font-size:10px;color:var(--n-500);margin:6px 0}.legend i{display:inline-block;width:9px;height:9px;margin-right:4px;background:var(--n-100);border:1px solid var(--n-400)}.legend .selected-key{background:var(--accent-100);border-color:var(--accent-600)}details{font-size:11px;color:var(--n-600)}summary{cursor:pointer}details p{line-height:1.7}.empty{min-height:420px;display:grid;place-content:center;text-align:center;color:var(--n-500)}.empty strong{font-size:18px;color:var(--n-700)}.prototype-message{margin-top:8px;font-size:11px;color:var(--accent-700)}.high-side{max-width:165px}.heading .pill{margin-bottom:4px}
+@media(min-width:1800px){.layout{grid-template-columns:235px minmax(0,1fr) 280px}.inputs{grid-template-columns:repeat(6,minmax(0,1fr))}.svg-wrap svg{height:340px}}
+@media(max-width:1250px){.layout{grid-template-columns:190px minmax(0,1fr)}.aside{grid-column:2;grid-template-columns:1fr 1fr}.svg-wrap svg{height:280px}}
+@media(max-width:800px){main{padding:12px}.layout{grid-template-columns:1fr}.catalog-panel{display:none}.aside{grid-column:1}.topbar small{display:none}.nav{gap:20px}.inputs{grid-template-columns:repeat(2,minmax(0,1fr))}.context{grid-template-columns:1fr}.heading{align-items:start;gap:10px}.heading .pill{display:none}.paper-stage{padding:8px}.paper{padding:12px}.metrics{grid-template-columns:1fr 1fr}.tables{gap:10px}.preview-head{flex-wrap:wrap}.aside{grid-template-columns:1fr}.paper-heading{font-size:11px}.cut-table td,.cut-table th{padding:3px}.svg-wrap svg{height:260px}}
+@page{size:A4 landscape;margin:9mm}
+@media print{body{background:white;font-size:10pt}.strip,.topbar,.nav,.heading,.catalog-panel,.input-panel,.aside,.preview-head,.legend{display:none!important}main{padding:0}.layout,.stack{display:block}.preview-panel,.paper-stage,.paper{border:0;padding:0;background:white}.paper{min-height:0}.paper-heading h2{font-size:14pt}.svg-wrap svg{height:65mm}.params{font-size:9pt}.drawing-note{font-size:8pt}.metrics{margin-bottom:3mm}.metric strong{font-size:11pt}.metric small{font-size:8pt}.table-title{margin:2mm 0}.cut-table{font-size:9pt}.cut-table th{font-size:8pt}.cut-table td{height:4.3mm;padding:0 2mm}.tables{gap:10mm}.totals{margin-top:3mm;padding-top:2mm}.paper-footer{margin-top:2mm}tr{break-inside:avoid}.selected{background:white!important;color:black!important}.cut-table tr.selected td:first-child{box-shadow:none}.slat{fill:white!important;stroke:#323b45!important}.paper-heading,.metrics,.totals{break-inside:avoid}body.invalid .paper{display:none}}
+</style></head><body>
+<div class="strip">DIZAINO PROTOTIPAS · Excel pavyzdžiai · duomenys nesaugomi ir nesiunčiami į gamybą</div>
+<header class="topbar"><div class="brand-mark">LK</div><div><div class="brand">LKvitai<span>.MES</span></div><div class="tagline">SHOPFLOOR · GAMYBA</div></div><small>TRAPECIJA · SKAIČIAVIMAS IR DOKUMENTAS</small><span class="pill">LT</span></header>
+<nav class="nav"><span>Paruošta gamybai</span><span>Gamybos užduotys</span><span>Skenavimas</span><span>GT dokumentai</span><span>Technologija</span><strong>Dokumentai</strong><span>Etikečių eilė</span></nav>
+<main><div class="heading"><div><div class="eyebrow">SHOPFLOOR · DOKUMENTAI · VERTIKALIOS</div><h1>Gamybos dokumentai</h1></div><span class="pill info">Naujas ataskaitos punktas · 13 + 1</span></div>
+<div class="layout">
+<section class="panel catalog-panel"><div class="panel-head"><strong>14 ataskaitų</strong><span class="muted small">gam</span></div><div class="catalog" id="catalog"></div></section>
+<div class="stack">
+<section class="panel input-panel"><div class="panel-head"><h3>Gaminys ir skaičiavimo duomenys</h3><span class="pill warn" id="input-status">Pavyzdys iš Excel</span></div><div class="body">
+<div class="context"><label class="field">Užsakymas / gaminys<select id="sample"><option value="A">RL-2186-14 · A · Excel pavyzdys</option><option value="B">AP-1273 · B · Excel pavyzdys</option><option value="missing">AB-4803-24 · trūksta aukščių</option></select></label><div><div class="small muted">Medžiaga / spalva</div><strong id="material-label">2667 · 89 mm</strong><div class="small muted">89/127 bus siūloma pagal medžiagą</div></div><button class="btn" id="reset">Atkurti pavyzdį</button></div>
+<div class="inputs">
+<label class="field">Valdymo tipas<select id="type"><option value="A">A · valdymas apačioje</option><option value="B">B · valdymas viršuje</option></select><span class="origin" data-origin="type">Iš užsakymo · pavyzdys</span></label>
+<label class="field">Juostos plotis, mm<select id="slat"><option value="89">89 mm</option><option value="127">127 mm</option></select><span class="origin" data-origin="slat">Siūloma reikšmė · pavyzdys</span></label>
+<label class="field">AD · plotis, mm<input id="width" type="number" min="1" step="1" value="2000"><span class="origin" data-origin="width">Iš užsakymo · pavyzdys</span></label>
+<label class="field">AB · mažesnis aukštis, mm<input id="short" type="number" min="1" step="1" value="1600"><span class="origin" data-origin="short">Iš užsakymo · pavyzdys</span></label>
+<label class="field">CD · didesnis aukštis, mm<input id="tall" type="number" min="1" step="1" value="1800"><span class="origin" data-origin="tall">Iš užsakymo · pavyzdys</span></label>
+<label class="field">Juostos išsikišimas, mm<input id="overhang" type="number" min="0" step="1" value="0"><span class="origin" data-origin="overhang">Iš užsakymo · pavyzdys</span></label>
+</div></div><div class="input-foot"><span class="state" id="calc-state" aria-live="polite">Skaičiuojama…</span><span>Trūkstamus duomenis įveskite ranka.</span></div></section>
+<section class="panel preview-panel"><div class="preview-head"><div class="seg"><button class="btn active" id="assembly">Žaliuzės</button><button class="btn" id="cutting">Ruošiniai</button></div><label class="field high-side">Aukštoji pusė<select id="side"><option value="right">Dešinėje · pavyzdys</option><option value="left">Kairėje</option></select></label><span class="small muted">A4 landscape · peržiūra</span></div><div class="paper-stage"><article class="paper" id="paper"></article></div></section>
+</div>
+<aside class="stack aside">
+<section class="panel"><div class="panel-head"><h3>Dokumentas</h3><span class="pill warn">Juodraštis</span></div><div class="body"><button class="btn primary full" id="print">Spausdinti prototipą / PDF</button><div class="small muted">Produkte čia bus skaičiavimo išsaugojimas, PDF ir versijų archyvas.</div><div class="note" style="margin-top:12px">Matmenys užpildomi iš užsakymo ir medžiagos. Kiekvieną reikšmę galima patikslinti.</div><p class="small muted">Ši peržiūra keičia tik vietinį pavyzdį. Gamybos būsenos ir atsargos nesikeičia.</p></div></section>
+<section class="panel detail"><div class="panel-head"><h3>Pasirinkta lamelė</h3><span class="pill info" id="chosen-number">n1</span></div><div class="body" id="chosen"></div></section>
+<section class="panel"><div class="panel-head"><h3>Komplektai</h3></div><div class="body"><label class="field">Vienodų gaminių kiekis<input type="number" id="qty" min="1" step="1" value="1"></label><p class="small muted">Lentelės kiekis ir bendras audinio poreikis dauginami iš komplektų skaičiaus.</p><details><summary>Technologiniai parametrai</summary><p class="mono">Tvirtinimas 5 · profilis 25<br>Kablis 16 · valdymas 15<br>Max. žingsnis 130<br>Žingsnio detalė +6<br>Juostos ilgis +45<br>Audinio poreikis +27 / lamelę</p><p>Reikšmės iš trapnew.xls. Bendras poreikis skaičiuojamas iš neapvalintų ilgių.</p></details></div></section>
+</aside></div></main>
+<script>
+// Executable specification, not a production service. Units: mm, radians, metres.
+// Preserve trapnew.xls, including the shifted 89 mm LOOKUP. See excel-analysis.md.
+const legacyProfile = Object.freeze({
+  mountingMm: 5, profileMm: 25, hookMm: 16, controlMm: 15,
+  maxSpacerCutMm: 130, spacerAllowanceMm: 6, railAllowanceMm: 0,
+  fixedMechanismOffsetMm: 5.5, slatCutAllowanceMm: 45, fabricExtraPerSlatMm: 27
+});
+
+function excelRound(value, digits = 0) {
+  const factor = 10 ** digits;
+  return Math.sign(value) * Math.floor(Math.abs(value) * factor + 0.5) / factor;
+}
+
+function lookup(table, key) {
+  if (!Number.isFinite(key) || key < table.bands[0][0] || key > table.maxKey)
+    throw new Error('OutsideReferenceTable');
+  let lo = 0, hi = table.bands.length;
+  while (lo + 1 < hi) {
+    const mid = Math.floor((lo + hi) / 2);
+    if (table.bands[mid][0] <= key) lo = mid; else hi = mid;
+  }
+  return table.bands[lo][1];
+}
+
+function calculate(input, tables, profile = legacyProfile) {
+  const { widthMm: w, shortHeightMm: hs, tallHeightMm: ht, slatWidthMm: b,
+    controlType: type, overhangMm: o = 0 } = input;
+  if (![w, hs, ht, b, o].every(Number.isFinite) || w <= 0 || hs <= 0 || ht < hs || o < 0)
+    throw new Error('InvalidDimensions');
+  if (!['A', 'B'].includes(type) || ![89, 127].includes(b)) throw new Error('UnsupportedConfiguration');
+  const p = profile;
+  if (p.maxSpacerCutMm <= p.spacerAllowanceMm) throw new Error('InvalidTechnologyProfile');
+  const h1 = p.mountingMm + p.profileMm, hook = p.hookMm;
+  const angle = Math.atan2(ht - hs, w), cos = Math.cos(angle), sin = Math.sin(angle), tan = Math.tan(angle);
+  const diagonalMm = Math.hypot(w, ht - hs);
+  const railBlankMm = diagonalMm - h1 * tan - p.railAllowanceMm;
+  const railCutMm = railBlankMm - p.controlMm;
+  // Algebraically equivalent to the legacy nested SQRT/TAN formula for ht >= hs.
+  const fixedOffsetMm = (b / 2 - (type === 'A' ? o : 0)) / cos + hook * tan;
+  const freeOffsetMm = b / (2 * cos) - (type === 'A' ? hook : h1 + hook) * tan;
+  const spanMm = railCutMm - fixedOffsetMm - freeOffsetMm;
+  const lookupWidthMm = excelRound(w - h1 * sin - (p.controlMm + p.railAllowanceMm) * cos);
+  const table = tables[String(b)], baseCount = lookup(table, lookupWidthMm);
+  if (baseCount < 2 || spanMm <= 0) throw new Error('InvalidCarrierSpan');
+  const basePitchMm = spanMm / (baseCount - 1);
+  const extraCount = basePitchMm > p.maxSpacerCutMm - p.spacerAllowanceMm
+    ? Math.max(0, Math.ceil(spanMm / (p.maxSpacerCutMm - p.spacerAllowanceMm) + 1) - baseCount) : 0;
+  // Excel: LOOKUP(PLOTIS, HBR89 + extra) + extra. Both columns shift.
+  const slatCount = b === 89 ? lookup(table, lookupWidthMm - extraCount) + 2 * extraCount : baseCount + extraCount;
+  if (slatCount < 2) throw new Error('InvalidSlatCount');
+  if (slatCount > 78) throw new Error('BeyondLegacyPrintCapacity');
+  const pitchMm = spanMm / (slatCount - 1);
+  const desiredExtenderMm = b / 2 * tan - hook / cos;
+  const extenderMm = desiredExtenderMm < 0 ? 0 : lookup(tables.extender, excelRound(desiredExtenderMm));
+  if (typeof extenderMm !== 'number') throw new Error('UnsupportedExtender');
+  const firstFinishedMm = type === 'A'
+    ? hs - h1 * cos + p.controlMm * sin + b / 2 * tan - hook / cos - extenderMm
+    : hs - h1 / cos + b / 2 * tan - hook / cos - extenderMm;
+  const incrementMm = pitchMm * sin;
+  const slats = Array.from({ length: slatCount }, (_, i) => {
+    const finishedMm = firstFinishedMm + i * incrementMm;
+    const cutMm = finishedMm + p.slatCutAllowanceMm;
+    return { number: i + 1, finishedMm, cutMm, displayedCutMm: excelRound(cutMm),
+      alongRailMm: i * pitchMm, horizontalMm: i * pitchMm * cos };
+  });
+  if (slats.some(s => s.finishedMm <= 0) || railCutMm <= 0) throw new Error('NonPositiveResult');
+  const cutTotalMm = slats.reduce((total, s) => total + s.cutMm, 0);
+  const fabricM = (cutTotalMm + slatCount * p.fabricExtraPerSlatMm) / 1000;
+  return { angle, diagonalMm, railBlankMm, railCutMm, fixedOffsetMm, freeOffsetMm,
+    fixedToMechanismMm: fixedOffsetMm - p.fixedMechanismOffsetMm,
+    spanMm, lookupWidthMm, baseCount, extraCount, slatCount, pitchMm,
+    spacerCutMm: pitchMm + p.spacerAllowanceMm, extenderMm, firstFinishedMm,
+    incrementMm, cutTotalMm, fabricM, slats,
+    notes: [...(type === 'B' && o !== 0 ? ['OverhangUnusedByLegacyB'] : []),
+      ...(b === 89 && extraCount > 0 ? ['Legacy89ShiftedLookup'] : [])] };
+}
+
+const TABLES = {
+  "sourceSha256": "0217614ff4c539e3ce842aff18c23d7bca7dfa187c7ca8d933953194b711b178",
+  "89": {
+    "maxKey": 6030,
+    "bands": [
+      [
+        0,
+        0
+      ],
+      [
+        500,
+        7
+      ],
+      [
+        611,
+        8
+      ],
+      [
+        718,
+        10
+      ],
+      [
+        795,
+        11
+      ],
+      [
+        872,
+        12
+      ],
+      [
+        949,
+        13
+      ],
+      [
+        1026,
+        14
+      ],
+      [
+        1103,
+        15
+      ],
+      [
+        1180,
+        16
+      ],
+      [
+        1257,
+        17
+      ],
+      [
+        1334,
+        18
+      ],
+      [
+        1411,
+        19
+      ],
+      [
+        1488,
+        20
+      ],
+      [
+        1565,
+        21
+      ],
+      [
+        1642,
+        22
+      ],
+      [
+        1719,
+        23
+      ],
+      [
+        1796,
+        24
+      ],
+      [
+        1873,
+        25
+      ],
+      [
+        1950,
+        26
+      ],
+      [
+        2027,
+        27
+      ],
+      [
+        2104,
+        28
+      ],
+      [
+        2181,
+        29
+      ],
+      [
+        2258,
+        30
+      ],
+      [
+        2335,
+        31
+      ],
+      [
+        2412,
+        32
+      ],
+      [
+        2489,
+        33
+      ],
+      [
+        2566,
+        34
+      ],
+      [
+        2643,
+        35
+      ],
+      [
+        2720,
+        36
+      ],
+      [
+        2797,
+        37
+      ],
+      [
+        2874,
+        38
+      ],
+      [
+        2951,
+        39
+      ],
+      [
+        3028,
+        40
+      ],
+      [
+        3105,
+        41
+      ],
+      [
+        3182,
+        42
+      ],
+      [
+        3259,
+        43
+      ],
+      [
+        3336,
+        44
+      ],
+      [
+        3413,
+        45
+      ],
+      [
+        3490,
+        46
+      ],
+      [
+        3567,
+        47
+      ],
+      [
+        3644,
+        48
+      ],
+      [
+        3721,
+        49
+      ],
+      [
+        3798,
+        50
+      ],
+      [
+        3875,
+        51
+      ],
+      [
+        3952,
+        52
+      ],
+      [
+        4029,
+        53
+      ],
+      [
+        4106,
+        54
+      ],
+      [
+        4183,
+        55
+      ],
+      [
+        4260,
+        56
+      ],
+      [
+        4337,
+        57
+      ],
+      [
+        4414,
+        58
+      ],
+      [
+        4491,
+        59
+      ],
+      [
+        4568,
+        60
+      ],
+      [
+        4645,
+        61
+      ],
+      [
+        4722,
+        62
+      ],
+      [
+        4799,
+        63
+      ],
+      [
+        4876,
+        64
+      ],
+      [
+        4953,
+        65
+      ],
+      [
+        5030,
+        66
+      ],
+      [
+        5107,
+        67
+      ],
+      [
+        5184,
+        68
+      ],
+      [
+        5261,
+        69
+      ],
+      [
+        5338,
+        70
+      ],
+      [
+        5415,
+        71
+      ],
+      [
+        5492,
+        72
+      ],
+      [
+        5569,
+        73
+      ],
+      [
+        5646,
+        74
+      ],
+      [
+        5723,
+        75
+      ],
+      [
+        5800,
+        76
+      ],
+      [
+        5877,
+        77
+      ],
+      [
+        5954,
+        78
+      ]
+    ]
+  },
+  "127": {
+    "maxKey": 6004,
+    "bands": [
+      [
+        0,
+        4
+      ],
+      [
+        450,
+        5
+      ],
+      [
+        600,
+        6
+      ],
+      [
+        715,
+        7
+      ],
+      [
+        830,
+        8
+      ],
+      [
+        945,
+        9
+      ],
+      [
+        1060,
+        10
+      ],
+      [
+        1175,
+        11
+      ],
+      [
+        1290,
+        12
+      ],
+      [
+        1405,
+        13
+      ],
+      [
+        1520,
+        14
+      ],
+      [
+        1635,
+        15
+      ],
+      [
+        1750,
+        16
+      ],
+      [
+        1847,
+        17
+      ],
+      [
+        1980,
+        18
+      ],
+      [
+        2095,
+        19
+      ],
+      [
+        2210,
+        20
+      ],
+      [
+        2325,
+        21
+      ],
+      [
+        2440,
+        22
+      ],
+      [
+        2555,
+        23
+      ],
+      [
+        2670,
+        24
+      ],
+      [
+        2785,
+        25
+      ],
+      [
+        2900,
+        26
+      ],
+      [
+        3015,
+        27
+      ],
+      [
+        3130,
+        28
+      ],
+      [
+        3245,
+        29
+      ],
+      [
+        3360,
+        30
+      ],
+      [
+        3475,
+        31
+      ],
+      [
+        3590,
+        32
+      ],
+      [
+        3705,
+        33
+      ],
+      [
+        3820,
+        34
+      ],
+      [
+        3935,
+        35
+      ],
+      [
+        4080,
+        36
+      ],
+      [
+        4165,
+        37
+      ],
+      [
+        4280,
+        38
+      ],
+      [
+        4395,
+        39
+      ],
+      [
+        4510,
+        40
+      ],
+      [
+        4625,
+        41
+      ],
+      [
+        4740,
+        42
+      ],
+      [
+        4855,
+        43
+      ],
+      [
+        4970,
+        44
+      ],
+      [
+        5085,
+        45
+      ],
+      [
+        5200,
+        46
+      ],
+      [
+        5315,
+        47
+      ],
+      [
+        5430,
+        48
+      ],
+      [
+        5545,
+        49
+      ],
+      [
+        5660,
+        50
+      ],
+      [
+        5775,
+        51
+      ],
+      [
+        5890,
+        52
+      ]
+    ]
+  },
+  "extender": {
+    "maxKey": 300,
+    "bands": [
+      [
+        0,
+        0
+      ],
+      [
+        1,
+        25
+      ],
+      [
+        26,
+        50
+      ],
+      [
+        51,
+        75
+      ],
+      [
+        76,
+        "APRIBOJIMAS"
+      ]
+    ]
+  }
+}
+;
+const FIXTURES = {
+  "sourceSha256": "0217614ff4c539e3ce842aff18c23d7bca7dfa187c7ca8d933953194b711b178",
+  "cases": [
+    {
+      "name": "saved-A",
+      "sourceSheet": "A TIPAS",
+      "input": {
+        "controlType": "A",
+        "widthMm": 2000,
+        "shortHeightMm": 1600,
+        "tallHeightMm": 1800,
+        "slatWidthMm": 89,
+        "overhangMm": 0
+      },
+      "expected": {
+        "railBlankMm": 2006.975124224178,
+        "fixedOffsetMm": 46.32194651398797,
+        "freeOffsetMm": 43.12194651398796,
+        "lookupWidthMm": 1982.0,
+        "slatCount": 26.0,
+        "pitchMm": 76.10124924784809,
+        "extenderMm": 0.0,
+        "firstFinishedMm": 1560.011639085222,
+        "incrementMm": 7.572357322304873,
+        "fabricM": 44.89331874596486,
+        "railCutMm": 1991.975124224178,
+        "cutsMm": [
+          1605.011639085222,
+          1612.583996407527,
+          1620.1563537298318,
+          1627.7287110521365,
+          1635.3010683744415,
+          1642.8734256967464,
+          1650.4457830190513,
+          1658.018140341356,
+          1665.590497663661,
+          1673.1628549859659,
+          1680.7352123082708,
+          1688.3075696305755,
+          1695.8799269528804,
+          1703.4522842751853,
+          1711.0246415974902,
+          1718.5969989197952,
+          1726.1693562420999,
+          1733.7417135644048,
+          1741.3140708867097,
+          1748.8864282090146,
+          1756.4587855313193,
+          1764.0311428536243,
+          1771.6035001759292,
+          1779.175857498234,
+          1786.748214820539,
+          1794.3205721428437
+        ]
+      }
+    },
+    {
+      "name": "saved-B",
+      "sourceSheet": "B TIPAS",
+      "input": {
+        "controlType": "B",
+        "widthMm": 1100,
+        "shortHeightMm": 1700,
+        "tallHeightMm": 2170,
+        "slatWidthMm": 89,
+        "overhangMm": 0
+      },
+      "expected": {
+        "railBlankMm": 1183.3841422056432,
+        "fixedOffsetMm": 55.22818492641836,
+        "freeOffsetMm": 28.73727583550928,
+        "lookupWidthMm": 1074.0,
+        "slatCount": 14.0,
+        "pitchMm": 83.41682164951658,
+        "extenderMm": 25.0,
+        "firstFinishedMm": 1643.9906300862763,
+        "incrementMm": 32.77531349662543,
+        "fabricM": 27.006422349400783,
+        "railCutMm": 1168.3841422056432,
+        "cutsMm": [
+          1688.9906300862763,
+          1721.7659435829016,
+          1754.5412570795272,
+          1787.3165705761526,
+          1820.091884072778,
+          1852.8671975694033,
+          1885.6425110660289,
+          1918.4178245626542,
+          1951.1931380592796,
+          1983.9684515559052,
+          2016.7437650525305,
+          2049.519078549156,
+          2082.2943920457815,
+          2115.069705542407
+        ]
+      }
+    },
+    {
+      "name": "calc-extra89",
+      "source": "Disposable LibreOffice recalculation of converted source; not original Excel cache",
+      "sourceSheet": "A TIPAS",
+      "input": {
+        "controlType": "A",
+        "widthMm": 2000,
+        "shortHeightMm": 1600,
+        "tallHeightMm": 1800,
+        "slatWidthMm": 89,
+        "overhangMm": 0
+      },
+      "profileOverride": {
+        "maxSpacerCutMm": 50
+      },
+      "expected": {
+        "railBlankMm": 2006.97512422418,
+        "fixedOffsetMm": 46.321946513988,
+        "freeOffsetMm": 43.121946513988,
+        "lookupWidthMm": 1982,
+        "slatCount": 64,
+        "pitchMm": 30.1989084316857,
+        "extenderMm": 0,
+        "firstFinishedMm": 1560.01163908522,
+        "incrementMm": 3.00490369932733,
+        "fabricM": 110.506630759298,
+        "extraCount": 19,
+        "railCutMm": 1991.97512422418,
+        "cutsMm": [
+          1605.01163908522,
+          1608.01654278455,
+          1611.02144648388,
+          1614.0263501832,
+          1617.03125388253,
+          1620.03615758186,
+          1623.04106128119,
+          1626.04596498051,
+          1629.05086867984,
+          1632.05577237917,
+          1635.0606760785,
+          1638.06557977782,
+          1641.07048347715,
+          1644.07538717648,
+          1647.0802908758,
+          1650.08519457513,
+          1653.09009827446,
+          1656.09500197379,
+          1659.09990567311,
+          1662.10480937244,
+          1665.10971307177,
+          1668.1146167711,
+          1671.11952047042,
+          1674.12442416975,
+          1677.12932786908,
+          1680.13423156841,
+          1683.13913526773,
+          1686.14403896706,
+          1689.14894266639,
+          1692.15384636571,
+          1695.15875006504,
+          1698.16365376437,
+          1701.1685574637,
+          1704.17346116302,
+          1707.17836486235,
+          1710.18326856168,
+          1713.18817226101,
+          1716.19307596033,
+          1719.19797965966,
+          1722.20288335899,
+          1725.20778705832,
+          1728.21269075764,
+          1731.21759445697,
+          1734.2224981563,
+          1737.22740185562,
+          1740.23230555495,
+          1743.23720925428,
+          1746.24211295361,
+          1749.24701665293,
+          1752.25192035226,
+          1755.25682405159,
+          1758.26172775092,
+          1761.26663145024,
+          1764.27153514957,
+          1767.2764388489,
+          1770.28134254823,
+          1773.28624624755,
+          1776.29114994688,
+          1779.29605364621,
+          1782.30095734553,
+          1785.30586104486,
+          1788.31076474419,
+          1791.31566844352,
+          1794.32057214284
+        ]
+      }
+    },
+    {
+      "name": "calc-extra127",
+      "source": "Disposable LibreOffice recalculation of converted source; not original Excel cache",
+      "sourceSheet": "A TIPAS",
+      "input": {
+        "controlType": "A",
+        "widthMm": 2000,
+        "shortHeightMm": 1600,
+        "tallHeightMm": 1800,
+        "slatWidthMm": 127,
+        "overhangMm": 0
+      },
+      "profileOverride": {
+        "maxSpacerCutMm": 50
+      },
+      "expected": {
+        "railBlankMm": 2006.97512422418,
+        "fixedOffsetMm": 65.4167101941177,
+        "freeOffsetMm": 62.2167101941177,
+        "lookupWidthMm": 1982,
+        "slatCount": 44,
+        "pitchMm": 43.3567838101382,
+        "extenderMm": 0,
+        "firstFinishedMm": 1561.91163908522,
+        "incrementMm": 4.31416123389818,
+        "fabricM": 75.9733086470175,
+        "extraCount": 26,
+        "railCutMm": 1991.97512422418,
+        "cutsMm": [
+          1606.91163908522,
+          1611.22580031912,
+          1615.53996155302,
+          1619.85412278692,
+          1624.16828402081,
+          1628.48244525471,
+          1632.79660648861,
+          1637.11076772251,
+          1641.42492895641,
+          1645.73909019031,
+          1650.0532514242,
+          1654.3674126581,
+          1658.681573892,
+          1662.9957351259,
+          1667.3098963598,
+          1671.62405759369,
+          1675.93821882759,
+          1680.25238006149,
+          1684.56654129539,
+          1688.88070252929,
+          1693.19486376319,
+          1697.50902499708,
+          1701.82318623098,
+          1706.13734746488,
+          1710.45150869878,
+          1714.76566993268,
+          1719.07983116657,
+          1723.39399240047,
+          1727.70815363437,
+          1732.02231486827,
+          1736.33647610217,
+          1740.65063733607,
+          1744.96479856996,
+          1749.27895980386,
+          1753.59312103776,
+          1757.90728227166,
+          1762.22144350556,
+          1766.53560473945,
+          1770.84976597335,
+          1775.16392720725,
+          1779.47808844115,
+          1783.79224967505,
+          1788.10641090895,
+          1792.42057214284
+        ]
+      }
+    },
+    {
+      "name": "calc-overhangA",
+      "source": "Disposable LibreOffice recalculation of converted source; not original Excel cache",
+      "sourceSheet": "A TIPAS",
+      "input": {
+        "controlType": "A",
+        "widthMm": 2000,
+        "shortHeightMm": 1600,
+        "tallHeightMm": 1800,
+        "slatWidthMm": 89,
+        "overhangMm": 10
+      },
+      "profileOverride": {},
+      "expected": {
+        "railBlankMm": 2006.97512422418,
+        "fixedOffsetMm": 36.2720708928671,
+        "freeOffsetMm": 43.121946513988,
+        "lookupWidthMm": 1982,
+        "slatCount": 26,
+        "pitchMm": 76.5032442726929,
+        "extenderMm": 0,
+        "firstFinishedMm": 1560.01163908522,
+        "incrementMm": 7.61235732230487,
+        "fabricM": 44.9063187459649,
+        "extraCount": 0,
+        "railCutMm": 1991.97512422418,
+        "cutsMm": [
+          1605.01163908522,
+          1612.62399640753,
+          1620.23635372983,
+          1627.84871105214,
+          1635.46106837444,
+          1643.07342569675,
+          1650.68578301905,
+          1658.29814034136,
+          1665.91049766366,
+          1673.52285498597,
+          1681.13521230827,
+          1688.74756963058,
+          1696.35992695288,
+          1703.97228427519,
+          1711.58464159749,
+          1719.1969989198,
+          1726.8093562421,
+          1734.4217135644,
+          1742.03407088671,
+          1749.64642820901,
+          1757.25878553132,
+          1764.87114285362,
+          1772.48350017593,
+          1780.09585749823,
+          1787.70821482054,
+          1795.32057214284
+        ]
+      }
+    },
+    {
+      "name": "calc-flatA",
+      "source": "Disposable LibreOffice recalculation of converted source; not original Excel cache",
+      "sourceSheet": "A TIPAS",
+      "input": {
+        "controlType": "A",
+        "widthMm": 2000,
+        "shortHeightMm": 1600,
+        "tallHeightMm": 1600,
+        "slatWidthMm": 89,
+        "overhangMm": 0
+      },
+      "profileOverride": {},
+      "expected": {
+        "railBlankMm": 2000,
+        "fixedOffsetMm": 44.5,
+        "freeOffsetMm": 44.5,
+        "lookupWidthMm": 1985,
+        "slatCount": 26,
+        "pitchMm": 75.84,
+        "extenderMm": 0,
+        "firstFinishedMm": 1554,
+        "incrementMm": 4.64386066236676e-15,
+        "fabricM": 42.276,
+        "extraCount": 0,
+        "railCutMm": 1985,
+        "cutsMm": [
+          1599,
+          1599,
+          1599,
+          1599,
+          1599,
+          1599,
+          1599,
+          1599,
+          1599,
+          1599,
+          1599,
+          1599,
+          1599,
+          1599,
+          1599,
+          1599,
+          1599,
+          1599,
+          1599,
+          1599,
+          1599,
+          1599,
+          1599,
+          1599,
+          1599,
+          1599
+        ]
+      }
+    }
+  ]
+}
+;
+// Static prototype: input examples are workbook snapshots, not a live integration.
+const $ = id => document.getElementById(id);
+const fmt = (n,d=1) => Number(n).toFixed(d);
+let selected=1,mode='assembly',current=null,input=null;
+const catalog=['Apsauginės','Garantiniai remontai','Grotos','Horizontalios','Panel Trackai','Pleated Blinds','Remontai / Priedai','Rolėtai','Romanetės','Nature Concept','Tinkleliai','Vertikalios','Vertikalios · Trapecija','XL Plise'];
+$('catalog').innerHTML=catalog.map(name=>`<div class="report-item ${name.includes('Trapecija')?'active':''}"><span>${name}</span><em>${name.includes('Trapecija')?'1':'—'}</em></div>`).join('');
+const readNumber=id=>$(id).value.trim()===''?null:Number($(id).value);
+function read(){return {controlType:$('type').value,slatWidthMm:Number($('slat').value),widthMm:readNumber('width'),shortHeightMm:readNumber('short'),tallHeightMm:readNumber('tall'),overhangMm:readNumber('overhang')};}
+function loadSample(){
+ const missing=$('sample').value==='missing';
+ const f=FIXTURES.cases.find(c=>c.name===`saved-${missing?'A':$('sample').value}`);
+ const x=missing?{...f.input,widthMm:1970,shortHeightMm:null,tallHeightMm:null,slatWidthMm:127}:f.input;
+ for(const [id,key] of Object.entries({type:'controlType',slat:'slatWidthMm',width:'widthMm',short:'shortHeightMm',tall:'tallHeightMm',overhang:'overhangMm'})){
+  $(id).value=x[key]??'';
+  const origin=document.querySelector(`[data-origin="${id}"]`);origin.classList.remove('manual');
+  origin.textContent=x[key]===null?'Neužpildyta · įveskite':id==='slat'?'Siūloma reikšmė · pavyzdys':'Iš užsakymo · pavyzdys';
+ }
+ $('material-label').textContent=missing?'5903 · 127 mm':$('sample').value==='B'?'AP-1273 · 89 mm':'2667 · 89 mm';
+ $('input-status').textContent='Pavyzdys iš Excel';selected=1;render();
+}
+function draw(r,x){
+ const mirrored=$('side').value==='left';
+ const height=mode==='cutting'?r.slats.at(-1).cutMm:r.slats.at(-1).finishedMm;
+ const scale=Math.min(650/Math.max(x.widthMm,r.slats.at(-1).horizontalMm+x.slatWidthMm),220/height);
+ const panelWidth=r.slats.at(-1).horizontalMm+x.slatWidthMm;
+ const start=(820-panelWidth*scale)/2, bottom=263;
+ const px=v=>mirrored?820-v:v;
+ const label=(x,y,text,extra='')=>`<text x="${x}" y="${y}" text-anchor="middle" font-family="var(--font-mono)" font-size="11" fill="var(--n-600)" ${extra}>${text}</text>`;
+ let svg=`<svg viewBox="0 0 820 325" role="img" aria-labelledby="diagram-title"><title id="diagram-title">${mode==='cutting'?'Lamelės pagal pjovimo ilgį':'Žaliuzės pagal apskaičiuotus lamelių ilgius'}</title>`;
+ if(mode==='assembly'){
+  const x0=px(start+x.slatWidthMm*scale/2),x1=px(start+panelWidth*scale-x.slatWidthMm*scale/2);
+  const y0=bottom-r.slats[0].finishedMm*scale-8,y1=bottom-r.slats.at(-1).finishedMm*scale-8;
+  svg+=`<line x1="${x0}" y1="${y0}" x2="${x1}" y2="${y1}" stroke="var(--n-700)" stroke-width="6"/>`;
+  svg+=label(410,19,`Rėmas pjauti ${fmt(r.railCutMm)} mm · α ${fmt(r.angle*180/Math.PI,2)}°`);
+  const cx=x.controlType==='A'?x0:x1,cy=x.controlType==='A'?y0:y1;
+  svg+=`<circle cx="${cx}" cy="${cy}" r="9" fill="var(--accent-600)"/>`+label(cx,cy+4,x.controlType,'style="fill:white;font-size:10px"');
+ }else svg+=label(410,19,'Ruošiniai · ilgis su 45 mm');
+ const rectangles=r.slats.map(s=>{
+  const width=x.slatWidthMm*scale;
+  const center=px(start+s.horizontalMm*scale+width/2);
+  const len=(mode==='cutting'?s.cutMm:s.finishedMm)*scale;
+  const top=mode==='cutting'?35:bottom-len;
+  const isSelected=s.number===selected;
+  const spacing=r.pitchMm*Math.cos(r.angle)*scale;
+  const isEdge=s.number===1||s.number===r.slatCount;
+  const tick=s.number%5===0 && (r.slatCount-s.number)*spacing>=23 && (s.number-1)*spacing>=23 && Math.abs(s.number-selected)*spacing>=23;
+  const numbered=spacing>=23||isEdge||tick||isSelected;
+  return {s,center,top,len,width,isSelected,numbered};
+ });
+ // Selected slat is drawn last so its outline remains visible under overlaps.
+ for(const v of [...rectangles.filter(v=>!v.isSelected),...rectangles.filter(v=>v.isSelected)]){
+  svg+=`<rect class="slat" data-slat="${v.s.number}" tabindex="0" role="button" aria-label="n${v.s.number}, pjauti ${v.s.displayedCutMm} mm" x="${v.center-v.width/2}" y="${v.top}" width="${v.width}" height="${v.len}" fill="${v.isSelected?'var(--accent-100)':'var(--n-50)'}" fill-opacity="${v.isSelected?1:.78}" stroke="${v.isSelected?'var(--accent-600)':'var(--n-400)'}" stroke-width="${v.isSelected?1.7:.65}" style="cursor:pointer"><title>n${v.s.number} · ${v.s.displayedCutMm} mm</title></rect>`;
+ }
+ for(const v of rectangles)if(v.numbered)svg+=label(v.center,280,String(v.s.number),v.isSelected?'style="fill:var(--accent-700);font-weight:700"':'');
+ const first=rectangles[0],last=rectangles.at(-1);
+ for(const [v,offset] of [[first,mirrored?58:-58],[last,mirrored?-58:58]]){
+  const dx=v.center+offset, top=v.top, end=top+v.len;
+  const length=mode==='cutting'?v.s.cutMm:v.s.finishedMm;
+  svg+=`<path d="M${dx-4},${top}h8 M${dx},${top}V${end} M${dx-4},${end}h8" fill="none" stroke="var(--n-500)" stroke-width=".8"/>`;
+  svg+=`<text x="${dx-8}" y="${(top+end)/2}" text-anchor="middle" transform="rotate(-90 ${dx-8} ${(top+end)/2})" font-family="var(--font-mono)" font-size="11" fill="var(--n-600)">n${v.s.number} · ${fmt(length)} mm</text>`;
+ }
+ svg+=label(410,305,`AD ${x.widthMm} mm · AB ${x.shortHeightMm} mm · CD ${x.tallHeightMm} mm`);
+ svg+=label(410,321,`n1 → n${r.slatCount} · ${mirrored?'nuo dešinės į kairę':'nuo kairės į dešinę'} · vaizdas iš patalpos`,'style="font-size:9px"');
+ svg+='</svg>';return svg;
+}
+function table(rows,qty){return `<table class="cut-table"><thead><tr><th>Lamelė</th><th>Iki +45, mm</th><th>Pjauti, mm</th><th>Kiekis</th></tr></thead><tbody>${rows.map(s=>`<tr data-slat="${s.number}" tabindex="0" aria-label="Pasirinkti lamelę ${s.number}" class="${s.number===selected?'selected':''}"><td>n${s.number}</td><td class="muted">${fmt(s.finishedMm)}</td><td class="cut">${s.displayedCutMm}</td><td>${qty}</td></tr>`).join('')}</tbody></table>`;}
+const errors={InvalidDimensions:'Įveskite teisingą plotį ir abu aukščius. CD turi būti ne mažesnis už AB.',InvalidCarrierSpan:'Šiems matmenims lentelėje nėra tinkamo lamelių skaičiaus.',UnsupportedExtender:'Reikalingas prailgintojas viršija Excel lentelės ribą.',OutsideReferenceTable:'Matmenys nepatenka į patikrintą Excel lentelės sritį.',BeyondLegacyPrintCapacity:'Daugiau nei 78 lamelės: reikalinga atskira skaičiavimo patikra.',NonPositiveResult:'Gautas neigiamas arba nulinis ilgis. Patikrinkite matmenis.',Quantity:'Įveskite teigiamą sveiką komplektų skaičių.'};
+function render(){
+ input=read();const qty=readNumber('qty');
+ $('overhang').disabled=input.controlType==='B';
+ try{
+  if(!Number.isInteger(qty)||qty<1)throw new Error('Quantity');
+  current=calculate(input,TABLES);document.body.classList.remove('invalid');$('print').disabled=false;
+ }catch(e){current=null;document.body.classList.add('invalid');$('print').disabled=true;$('calc-state').textContent='Trūksta duomenų arba yra klaida';$('paper').innerHTML=`<div class="empty"><strong>Užpildykite skaičiavimo duomenis</strong><p>AD ${input.widthMm??'—'} · AB ${input.shortHeightMm??'—'} · CD ${input.tallHeightMm??'—'}</p><p class="error">${errors[e.message]??'Patikrinkite įvestus duomenis.'}</p><p>Lamelės ir audinio poreikis bus parodyti po skaičiavimo.</p></div>`;$('chosen').innerHTML='<span class="muted">Skaičiavimas neparengtas.</span>';$('chosen-number').textContent='—';return;}
+ const r=current;selected=Math.min(selected,r.slatCount);
+ $('calc-state').textContent=`Apskaičiuota · ${r.slatCount} lamelių · ${fmt(r.fabricM,3)} m / komplektą`;
+ const order=$('sample').value==='B'?'AP-1273':$('sample').value==='missing'?'AB-4803-24':'RL-2186-14';
+ const half=Math.ceil(r.slatCount/2);
+ $('paper').innerHTML=`<div class="paper-heading"><div><h2>Vertikalios · Trapecija</h2><span class="small muted">Gamybos lapas · ${mode==='assembly'?'žaliuzių vaizdas':'ruošinių vaizdas'}</span></div><div class="right"><strong class="mono">${order}</strong><div class="small muted">Excel pavyzdys · ne gamybos dokumentas</div></div></div>
+ <div class="params"><span>TIPAS ${input.controlType}</span><span>JUOSTA ${input.slatWidthMm} mm</span><span>AD ${input.widthMm}</span><span>AB ${input.shortHeightMm}</span><span>CD ${input.tallHeightMm}</span><span>IŠSIKIŠIMAS ${input.controlType==='A'?input.overhangMm:'n/a'} mm</span><span>KIEKIS ${qty}</span></div>
+ <div class="svg-wrap">${draw(r,input)}</div><p class="drawing-note">Scheminis vaizdas pagal lamelių ilgius. Vienodas X/Y mastelis; ne 1:1 lekalas. AB/CD – įvesti aukščiai, ne audinio ilgiai.</p>
+ <div class="metrics"><div class="metric"><small>Rėmas pjauti</small><strong>${fmt(r.railCutMm)} <span class="small">mm</span></strong></div><div class="metric"><small>Žingsnio detalė +6</small><strong>${fmt(r.spacerCutMm)} <span class="small">mm</span></strong></div><div class="metric"><small>Prailgintojas</small><strong>${r.extenderMm} <span class="small">mm</span></strong></div><div class="metric"><small>Lamelių / komplektą</small><strong>${r.slatCount} <span class="small">vnt.</span></strong></div></div>
+ <div class="table-title"><h3>Lamelių pjovimo sąrašas</h3><span class="small muted">Pjauti = ilgis + 45 mm</span></div><div class="tables">${table(r.slats.slice(0,half),qty)}${table(r.slats.slice(half),qty)}</div>
+ <div class="totals"><span>Viso lamelių <strong>${r.slatCount*qty}</strong></span><span>Audinys / kompl. <strong>${fmt(r.fabricM,3)} m</strong></span><span>Audinys iš viso <strong>${fmt(r.fabricM*qty,3)} m</strong></span></div><div class="small muted" style="margin-top:6px">Poreikis apima papildomus 27 mm kiekvienai lamelei. Sumuojami neapvalinti ilgiai.</div><footer class="paper-footer"><span>trapnew.xls · legacy-trapnew-v1 · dizaino prototipas</span><span>2026-11-06</span></footer>`;
+ const s=r.slats[selected-1];$('chosen-number').textContent=`n${selected}`;
+ $('chosen').innerHTML=`<div class="small muted">PJOVIMO ILGIS</div><div class="chosen">${s.displayedCutMm}<span class="small"> mm</span></div><dl><dt>Iki +45</dt><dd>${fmt(s.finishedMm,3)}</dd><dt>Pjovimo priedas</dt><dd>45 mm</dd><dt>Neapvalintas rez.</dt><dd>${fmt(s.cutMm,3)}</dd><dt>Žingsnis</dt><dd>${fmt(r.pitchMm)} mm</dd><dt>Fiksas / iki mech.</dt><dd>${fmt(r.fixedOffsetMm)} / ${fmt(r.fixedToMechanismMm)}</dd><dt>Kiekis</dt><dd>${qty} vnt.</dd></dl><div class="legend"><span><i></i>Lamelė</span><span><i class="selected-key"></i>Pasirinkta</span></div><div class="small muted">Pasirinkite lamelę brėžinyje arba lentelėje.</div>`;
+}
+function selectSlat(event){const target=event.target.closest('[data-slat]');if(!target)return;if(event.type==='keydown'&&!['Enter',' '].includes(event.key))return;if(event.type==='keydown')event.preventDefault();selected=Number(target.dataset.slat);render();}
+$('paper').addEventListener('click',selectSlat);$('paper').addEventListener('keydown',selectSlat);
+for(const id of ['type','slat','width','short','tall','overhang'])$(id).addEventListener('input',()=>{const origin=document.querySelector(`[data-origin="${id}"]`);origin.textContent='Patikslinta ranka';origin.classList.add('manual');$('input-status').textContent='Pakeista · neišsaugota';render();});
+for(const id of ['side','qty'])$(id).addEventListener('input',render);
+$('sample').addEventListener('change',loadSample);$('reset').addEventListener('click',loadSample);
+for(const id of ['assembly','cutting'])$(id).addEventListener('click',()=>{mode=id;$('assembly').classList.toggle('active',id==='assembly');$('cutting').classList.toggle('active',id==='cutting');render();});
+$('print').addEventListener('click',()=>{if(current)window.print();});
+loadSample();
+</script></body></html>
