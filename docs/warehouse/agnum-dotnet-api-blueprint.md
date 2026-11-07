@@ -249,6 +249,13 @@ Merge запускает обычный `Build and Push` и `Deploy to Test`, к
 
 ### Сделано
 
+- A0 → `lauresta/agnum-api-deploy` PR #1, merged to `main`: `docs/DOTNET_API_SPEC.md` documents all routes, parameters, SQL behavior, JSON names, auth, configuration, and errors in original prose. GitGuardian passed. This documentation-only stage has no test deployment trigger.
+- A1 → `lauresta/agnum-api-deploy` PR #2, merged to `main` (`a41accc`). Build run 42410418864 and test deploy 42410601175 passed. From the Cikada warehouse container, authenticated product search returned 7470 for `sandelys` and 2682 for `pardavimai`; empty search returned 400, missing key 401, price search returned 200 with KN1/KN2, and client search returned 200. Read-only Firebird checks also confirmed Lithuanian text and sample `AUDR` code/balance against the 2026-08-01 warehouse import. The old `agnum-api` container and deployment files were untouched.
+- A2 → `lauresta/lkvitai-mes` branch `codex/warehouse-prices-s7b`: test environment variable `Agnum__Api__BaseUrl` points to `http://agnum-api-net:8181`; S7b price client, mapper, history, opt-in job branch, and deploy variable forwarding implemented. The live price endpoint returned 200 from the Cikada container; the response is stored as a test fixture. Seven focused client and sync tests passed. Deployment verification follows merge.
+
 ### Отклонения от blueprint
+
+- A0: inspection of the jar service showed `/api/products/price/search` serializes an array of `{ "<code>": { "KN1": ..., "KN2": ... } }`, whereas the earlier pricing blueprint described flat rows with `KOD`. The replacement will preserve the inspected wire shape; A2 must parse it. `/api/products/qty/search` uses the same nested-by-code pattern.
+- A1: `FirebirdSql.Data.FirebirdClient` 10.3.4 does not accept Jaybird's `ISO8859_13` client encoding. `UTF8` was required for product/client reads; `WIN1257` failed to transliterate some client rows. The warehouse name in the quantity route is explicitly cast from legacy bytes as `WIN1257` so `Sandėlys` renders correctly. SQL dialect remains 1 and all GET transactions are read-only.
 
 ### Осталось

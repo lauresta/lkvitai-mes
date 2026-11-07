@@ -6,7 +6,10 @@ public interface IAgnumApiClient
 {
     Task<IReadOnlyList<AgnumProductDto>> GetProductsAsync(CancellationToken ct = default);
     Task<IReadOnlyList<AgnumClientDto>> GetClientsAsync(CancellationToken ct = default);
+    Task<IReadOnlyDictionary<string, AgnumPriceDto>> GetPricesAsync(CancellationToken ct = default);
 }
+
+public sealed record AgnumPriceDto(decimal? KN1, decimal? KN2);
 
 public sealed class AgnumProductDto
 {

@@ -1,5 +1,6 @@
 using LKvitai.MES.Modules.Warehouse.Application.Ports;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.Agnum;
 using LKvitai.MES.Modules.Warehouse.Integration.Agnum;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,17 +13,23 @@ public sealed class AgnumImportRecurringJob
     private readonly WarehouseDbContext _dbContext;
     private readonly IAgnumNomenclatureImportService _nomenclatureImportService;
     private readonly IAgnumBalanceImportService _balanceImportService;
+    private readonly AgnumPriceSyncService _priceSyncService;
+    private readonly IConfiguration _configuration;
     private readonly ILogger<AgnumImportRecurringJob> _logger;
 
     public AgnumImportRecurringJob(
         WarehouseDbContext dbContext,
         IAgnumNomenclatureImportService nomenclatureImportService,
         IAgnumBalanceImportService balanceImportService,
+        AgnumPriceSyncService priceSyncService,
+        IConfiguration configuration,
         ILogger<AgnumImportRecurringJob> logger)
     {
         _dbContext = dbContext;
         _nomenclatureImportService = nomenclatureImportService;
         _balanceImportService = balanceImportService;
+        _priceSyncService = priceSyncService;
+        _configuration = configuration;
         _logger = logger;
     }
 
@@ -76,6 +83,11 @@ public sealed class AgnumImportRecurringJob
                     productResult.Conflicts.Count);
 
                 _logger.LogInformation("Agnum balance import started for sndId {SndId}.", mapping.SndId);
+                if (_configuration.GetValue<bool>("Agnum:PriceSync:Enabled", false))
+                {
+                    var changed = await _priceSyncService.SyncAsync(mapping.SndId, cancellationToken);
+                    _logger.LogInformation("Agnum price sync completed for sndId {SndId}. Changes={Changes}", mapping.SndId, changed);
+                }
                 var balanceRunId = await _balanceImportService.StartImportAsync(mapping.SndId, cancellationToken);
 
                 succeeded++;

@@ -35,6 +35,7 @@ services:
       ITEMIMAGES__CACHEMAXAGESECONDS: "${ITEMIMAGES__CACHEMAXAGESECONDS:-86400}"
       ITEMIMAGES__MODEL_PATH: "${ITEMIMAGES__MODEL_PATH:-/models/item-image-model.onnx}"
       Agnum__Api__BaseUrl: "${Agnum__Api__BaseUrl:-http://agnum-api:8181}"
+      Agnum__PriceSync__Enabled: "${Agnum__PriceSync__Enabled:-false}"
       Agnum__Warehouses__sandelys__ApiKey: "${Agnum__Warehouses__sandelys__ApiKey}"
       Agnum__Warehouses__pardavimai__ApiKey: "${Agnum__Warehouses__pardavimai__ApiKey}"
     volumes:

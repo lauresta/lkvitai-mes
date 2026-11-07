@@ -13,6 +13,7 @@ public sealed class AgnumApiClient : IAgnumApiClient
 {
     private const string FallbackProductsSearchQuery = "api/products/search?code=___NO_SUCH_CODE___&filter_type=ne&order=id";
     private const string FallbackClientsSearchQuery = "api/clients/search?code=___NO_SUCH_CODE___&filter_type=ne&order=id";
+    private const string AllPricesSearchQuery = "api/products/price/search?code=___NO_SUCH_CODE___&filter_type=ne&order=id";
 
     private readonly HttpClient _httpClient;
     private readonly string _apiKey;
@@ -45,6 +46,49 @@ public sealed class AgnumApiClient : IAgnumApiClient
 
     public Task<IReadOnlyList<AgnumClientDto>> GetClientsAsync(CancellationToken ct = default)
         => FetchClientsAsync(FallbackClientsSearchQuery, ct);
+
+    public async Task<IReadOnlyDictionary<string, AgnumPriceDto>> GetPricesAsync(CancellationToken ct = default)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, AllPricesSearchQuery);
+        if (!string.IsNullOrWhiteSpace(_apiKey)) request.Headers.Add("X-API-KEY", _apiKey);
+        try
+        {
+            using var response = await _httpClient.SendAsync(request, ct);
+            if (!response.IsSuccessStatusCode)
+                throw new AgnumApiUnavailableException($"Agnum API GET price/search returned HTTP {(int)response.StatusCode}.");
+
+            await using var stream = await response.Content.ReadAsStreamAsync(ct);
+            using var document = await JsonDocument.ParseAsync(stream, cancellationToken: ct);
+            if (document.RootElement.ValueKind != JsonValueKind.Array)
+                throw new JsonException("Agnum price/search response must be an array.");
+
+            var prices = new Dictionary<string, AgnumPriceDto>(StringComparer.OrdinalIgnoreCase);
+            foreach (var row in document.RootElement.EnumerateArray())
+            {
+                if (row.ValueKind != JsonValueKind.Object) throw new JsonException("Invalid Agnum price row.");
+                foreach (var product in row.EnumerateObject())
+                {
+                    if (product.Value.ValueKind != JsonValueKind.Object) throw new JsonException("Invalid Agnum price levels.");
+                    decimal? kn1 = null, kn2 = null;
+                    foreach (var level in product.Value.EnumerateObject())
+                    {
+                        if (level.Value.ValueKind == JsonValueKind.Null) continue;
+                        if (!level.Value.TryGetDecimal(out var amount) || amount < 0)
+                            throw new JsonException("Invalid Agnum price amount.");
+                        if (level.Name.Equals("KN1", StringComparison.OrdinalIgnoreCase)) kn1 = amount;
+                        if (level.Name.Equals("KN2", StringComparison.OrdinalIgnoreCase)) kn2 = amount;
+                    }
+                    if (!prices.TryAdd(product.Name, new AgnumPriceDto(kn1, kn2)))
+                        throw new JsonException("Duplicate Agnum price code.");
+                }
+            }
+            return prices;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or JsonException || ex is TaskCanceledException && !ct.IsCancellationRequested)
+        {
+            throw new AgnumApiUnavailableException("Agnum price/search failed.", ex);
+        }
+    }
 
     private async Task<IReadOnlyList<AgnumProductDto>?> FetchProductsAsync(string requestUri, CancellationToken ct)
     {

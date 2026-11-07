@@ -16,6 +16,27 @@ namespace LKvitai.MES.Tests.Warehouse.Unit;
 public class AgnumApiClientTests
 {
     [Fact]
+    public async Task GetPricesAsync_ParsesActualNestedResponseAndCaseInsensitiveLevels()
+    {
+        var fixture = await System.IO.File.ReadAllTextAsync(System.IO.Path.Combine(
+            System.AppContext.BaseDirectory, "Fixtures", "agnum-prices-2103170012.json"));
+        var response = fixture.Replace("KN1", "kn1", System.StringComparison.Ordinal)
+            .Replace("KN2", "Kn2", System.StringComparison.Ordinal);
+        var handler = new SequentialHttpMessageHandler(new Queue<HttpResponseMessage>(new[] {
+            new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(response, Encoding.UTF8, "application/json") }
+        }));
+        using var httpClient = new HttpClient(handler) { BaseAddress = new System.Uri("https://agnum.example/") };
+        using var loggerFactory = LoggerFactory.Create(builder => builder.AddFilter((_, _) => false));
+        var client = new AgnumApiClient(httpClient, new AgnumWarehouseKeyOptions { ApiKey = "test-key" }, loggerFactory.CreateLogger<AgnumApiClient>());
+
+        var result = await client.GetPricesAsync();
+
+        result["2103170012"].Should().Be(new AgnumPriceDto(0m, 0m));
+        handler.Requests.Should().ContainSingle();
+        handler.Requests[0].RequestUri!.PathAndQuery.Should().Be("/api/products/price/search?code=___NO_SUCH_CODE___&filter_type=ne&order=id");
+    }
+
+    [Fact]
     public async Task GetProductsAsync_WhenEmptySearchReturnsBadRequest_ShouldRetryWithFallbackQuery()
     {
         var products = new[]
