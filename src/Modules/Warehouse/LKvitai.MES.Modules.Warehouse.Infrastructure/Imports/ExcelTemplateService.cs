@@ -29,6 +29,7 @@ public sealed class ExcelTemplateService : IExcelTemplateService
         var headers = normalized switch
         {
             "items" => ItemHeaders,
+            "prices" => PriceHeaders,
             "suppliers" => SupplierHeaders,
             "mappings" => MappingHeaders,
             "barcodes" => BarcodeHeaders,
@@ -109,6 +110,7 @@ public sealed class ExcelTemplateService : IExcelTemplateService
 
     private static string[] BuildSampleRow(string normalizedEntityType) => normalizedEntityType switch
     {
+        "prices" => ["SKU-001", "10.00", "15.00"],
         "items" => ["", "Steel Bolt M8", "High-strength bolt", "RAW", "PCS", "0.015", "0.0001", "false", "false", "Active", "8594156780187", ""],
         "suppliers" => ["SUP-001", "ABC Fasteners Ltd", "ABC", "302345678", "LT100001234567", "Gamyklos g. 1, Vilnius", "Sandėlio g. 5, Vilnius", "Vilnius", "Lithuania", "Jonas Jonaitis", "+370 600 00000", "orders@abc.com", "https://abc.example", "Preferred fastener supplier", ""],
         "mappings" => ["SUP-001", "ABC-M8-BOLT", "RM-0001", "7", "100", "0.45"],
@@ -119,6 +121,8 @@ public sealed class ExcelTemplateService : IExcelTemplateService
 
     private static string NormalizeEntityType(string entityType)
         => entityType.Trim().ToLowerInvariant();
+
+    public static readonly string[] PriceHeaders = ["InternalSKU", "PurchasePrice", "BasePrice"];
 
     public static readonly string[] ItemHeaders =
     [

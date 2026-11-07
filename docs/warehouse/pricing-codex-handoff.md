@@ -21,11 +21,11 @@ S1 → S2 → S3 → S4 → S5 → S6 → S7a → S7b (только при вы�
 
 ## Состояние
 
-_(заполняет Codex: этап → PR → что проверено → что не проверено)_
+- S1 → PR #283 → Release solution build, 768 Warehouse unit tests, 29 architecture tests, CI/quality gate, Build and Push, Deploy to Test прошли; анонимный POST `/api/warehouse/v1/item-price-snapshots` вернул 401. UI глазами без авторизованной сессии не проверял.
 
 ## Отклонения от blueprint
 
-_(заполняет Codex)_
+- S2: `ImportIntegrationTests` запускали контейнер с базой `postgres`; `EnsureDeleted` не мог удалить текущую БД, а повторное создание теряло расширение `vector`. В тестовом fixture задана отдельная БД и удалён лишний `EnsureDeleted`; три новых price-теста проходят. Полный opt-in прогон существующего класса: 7/8, старый `ImportItems_Commit_ThenReimport` падает на конфликте EF tracking — вне scope цен, не исправлял.
 
 ## Осталось и готовый промт
 

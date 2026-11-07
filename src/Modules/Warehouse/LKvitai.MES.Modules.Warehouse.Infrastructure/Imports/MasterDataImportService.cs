@@ -1,4 +1,5 @@
 using ClosedXML.Excel;
+using System.Globalization;
 using EFCore.BulkExtensions;
 using LKvitai.MES.Modules.Warehouse.Application.Models;
 using LKvitai.MES.Modules.Warehouse.Application.Services;
@@ -34,13 +35,16 @@ public sealed class MasterDataImportService : IMasterDataImportService
 
     private readonly WarehouseDbContext _dbContext;
     private readonly ISkuGenerationService _skuGenerationService;
+    private readonly ICurrentUserService? _currentUserService;
 
     public MasterDataImportService(
         WarehouseDbContext dbContext,
-        ISkuGenerationService skuGenerationService)
+        ISkuGenerationService skuGenerationService,
+        ICurrentUserService? currentUserService = null)
     {
         _dbContext = dbContext;
         _skuGenerationService = skuGenerationService;
+        _currentUserService = currentUserService;
     }
 
     public async Task<ImportExecutionResult> ImportAsync(
@@ -58,6 +62,7 @@ public sealed class MasterDataImportService : IMasterDataImportService
         var headers = normalized switch
         {
             "items" => ExcelTemplateService.ItemHeaders,
+            "prices" => ExcelTemplateService.PriceHeaders,
             "suppliers" => ExcelTemplateService.SupplierHeaders,
             "mappings" => ExcelTemplateService.MappingHeaders,
             "barcodes" => ExcelTemplateService.BarcodeHeaders,
@@ -80,6 +85,7 @@ public sealed class MasterDataImportService : IMasterDataImportService
         return normalized switch
         {
             "items" => await ImportItemsAsync(rows, dryRun, errors, startedAt, cancellationToken),
+            "prices" => await ImportPricesAsync(rows, dryRun, errors, startedAt, cancellationToken),
             "suppliers" => await ImportSuppliersAsync(rows, dryRun, errors, startedAt, cancellationToken),
             "mappings" => await ImportMappingsAsync(rows, dryRun, errors, startedAt, cancellationToken),
             "barcodes" => await ImportBarcodesAsync(rows, dryRun, errors, startedAt, cancellationToken),
@@ -123,6 +129,105 @@ public sealed class MasterDataImportService : IMasterDataImportService
         using var ms = new MemoryStream();
         workbook.SaveAs(ms);
         return ms.ToArray();
+    }
+
+    private async Task<ImportExecutionResult> ImportPricesAsync(
+        IReadOnlyList<RowData> rows,
+        bool dryRun,
+        List<ImportErrorReport> errors,
+        DateTime startedAt,
+        CancellationToken cancellationToken)
+    {
+        var items = await _dbContext.Items.ToDictionaryAsync(
+            x => x.InternalSKU, StringComparer.OrdinalIgnoreCase, cancellationToken);
+        var (changes, skipped) = ValidatePriceRows(rows, items, errors);
+
+        if (errors.Count > 0)
+            return BuildResult(0, 0, rows.Count, dryRun, false, errors, startedAt);
+
+        if (!dryRun)
+            await ApplyPriceChangesAsync(changes, cancellationToken);
+        return BuildResult(0, changes.Count, skipped, dryRun, false, errors, startedAt);
+    }
+
+    private static (List<(Item Item, decimal? Purchase, decimal? Base)> Changes, int Skipped) ValidatePriceRows(
+        IReadOnlyList<RowData> rows,
+        IReadOnlyDictionary<string, Item> items,
+        List<ImportErrorReport> errors)
+    {
+        const string skuColumn = "InternalSKU";
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var changes = new List<(Item Item, decimal? Purchase, decimal? Base)>();
+        var skipped = 0;
+        foreach (var row in rows)
+        {
+            var sku = row.Get(skuColumn);
+            if (string.IsNullOrWhiteSpace(sku))
+            {
+                errors.Add(new ImportErrorReport(row.RowNumber, skuColumn, sku, "InternalSKU is required."));
+                continue;
+            }
+            if (!seen.Add(sku))
+                errors.Add(new ImportErrorReport(row.RowNumber, skuColumn, sku, "Duplicate SKU in file."));
+            if (!items.TryGetValue(sku, out var item))
+            {
+                errors.Add(new ImportErrorReport(row.RowNumber, skuColumn, sku, "InternalSKU does not exist."));
+                continue;
+            }
+
+            var purchase = ParsePriceCell(row, "PurchasePrice", errors);
+            var basePrice = ParsePriceCell(row, "BasePrice", errors);
+            if (purchase.HasValue && purchase != item.PurchasePrice ||
+                basePrice.HasValue && basePrice != item.BasePrice)
+                changes.Add((item, purchase, basePrice));
+            else
+                skipped++;
+        }
+        return (changes, skipped);
+    }
+
+    private async Task ApplyPriceChangesAsync(
+        IReadOnlyList<(Item Item, decimal? Purchase, decimal? Base)> changes,
+        CancellationToken cancellationToken)
+    {
+        var changedBy = _currentUserService?.GetCurrentUserId() ?? "unknown";
+        var changedAt = DateTimeOffset.UtcNow;
+        foreach (var (item, purchase, basePrice) in changes)
+        {
+            if (purchase.HasValue && purchase != item.PurchasePrice)
+            {
+                _dbContext.ItemPriceHistories.Add(new ItemPriceHistory
+                {
+                    ItemId = item.Id, PriceType = ItemPriceTypes.Purchase,
+                    OldAmount = item.PurchasePrice, NewAmount = purchase.Value,
+                    ChangedBy = changedBy, ChangedAt = changedAt, Reason = "excel-import"
+                });
+                item.PurchasePrice = purchase.Value;
+            }
+            if (basePrice.HasValue && basePrice != item.BasePrice)
+            {
+                _dbContext.ItemPriceHistories.Add(new ItemPriceHistory
+                {
+                    ItemId = item.Id, PriceType = ItemPriceTypes.Base,
+                    OldAmount = item.BasePrice, NewAmount = basePrice.Value,
+                    ChangedBy = changedBy, ChangedAt = changedAt, Reason = "excel-import"
+                });
+                item.BasePrice = basePrice.Value;
+            }
+        }
+        if (changes.Count > 0)
+            await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    private static decimal? ParsePriceCell(RowData row, string column, ICollection<ImportErrorReport> errors)
+    {
+        var value = row.Get(column);
+        if (string.IsNullOrWhiteSpace(value)) return null;
+        if ((decimal.TryParse(value, NumberStyles.AllowDecimalPoint | NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var parsed) ||
+             decimal.TryParse(value, NumberStyles.AllowDecimalPoint | NumberStyles.AllowLeadingSign, CultureInfo.GetCultureInfo("lt-LT"), out parsed)) && parsed >= 0m)
+            return parsed;
+        errors.Add(new ImportErrorReport(row.RowNumber, column, value, $"{column} must be a non-negative number."));
+        return null;
     }
 
     private async Task<ImportExecutionResult> ImportItemsAsync(
