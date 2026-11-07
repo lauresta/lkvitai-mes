@@ -25,6 +25,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="Fixtures/agnum-prices-2103170012.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\\..\\..\\..\\src\\Modules\\Warehouse\\LKvitai.MES.Modules.Warehouse.Domain\\LKvitai.MES.Modules.Warehouse.Domain.csproj" />
     <ProjectReference Include="..\\..\\..\\..\\src\\Modules\\Warehouse\\LKvitai.MES.Modules.Warehouse.Application\\LKvitai.MES.Modules.Warehouse.Application.csproj" />
     <ProjectReference Include="..\\..\\..\\..\\src\\Modules\\Warehouse\\LKvitai.MES.Modules.Warehouse.Contracts\\LKvitai.MES.Modules.Warehouse.Contracts.csproj" />

@@ -33,6 +33,7 @@ jobs:
       CIKADA_MCP_CLIENT_ID: ${{ vars.CIKADA_MCP_CLIENT_ID }}
       SALES_REVIEW_EXPIRES_AT_UTC: ${{ vars.SALES_REVIEW_EXPIRES_AT_UTC }}
       Agnum__Api__BaseUrl: ${{ vars.Agnum__Api__BaseUrl }}
+      Agnum__PriceSync__Enabled: ${{ vars.Agnum__PriceSync__Enabled }}
       Agnum__Warehouses__sandelys__ApiKey: ${{ secrets.AGNUM__WAREHOUSES__SANDELYS__APIKEY }}
       Agnum__Warehouses__pardavimai__ApiKey: ${{ secrets.AGNUM__WAREHOUSES__PARDAVIMAI__APIKEY }}
       # Not a secret - the Clarity project id is embedded in client-side JS and
