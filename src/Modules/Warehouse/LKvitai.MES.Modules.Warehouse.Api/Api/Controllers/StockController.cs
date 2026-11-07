@@ -6,6 +6,9 @@ using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Caching;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 using LKvitai.MES.Modules.Warehouse.Api.Services;
+using LKvitai.MES.Modules.Warehouse.Application.Ports;
+using LKvitai.MES.Modules.Warehouse.Application.Services;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.Pricing;
 using Marten;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -23,11 +26,13 @@ public sealed class StockController : ControllerBase
 
     private readonly IDocumentStore _documentStore;
     private readonly WarehouseDbContext _dbContext;
+    private readonly IItemPriceSnapshotService _prices;
 
-    public StockController(IDocumentStore documentStore, WarehouseDbContext dbContext)
+    public StockController(IDocumentStore documentStore, WarehouseDbContext dbContext, IItemPriceSnapshotService? prices = null)
     {
         _documentStore = documentStore;
         _dbContext = dbContext;
+        _prices = prices ?? new ItemPriceSnapshotService(dbContext);
     }
 
     [HttpGet("available")]
@@ -139,10 +144,8 @@ public sealed class StockController : ControllerBase
                 x => ItemPhotoService.BuildProxyUrl(x.ItemId, x.Id, "thumb"),
                 cancellationToken);
 
-        var unitCostByItemId = await _dbContext.OnHandValues
-            .AsNoTracking()
-            .Where(x => itemIds.Contains(x.ItemId))
-            .ToDictionaryAsync(x => x.ItemId, x => x.UnitCost, cancellationToken);
+        var priceByItemId = (await _prices.GetAsync(itemIds, skus, cancellationToken))
+            .ToDictionary(x => x.ItemId);
 
         var locationMap = await LoadLocationsByCodeAsync(locationCodes, cancellationToken);
 
@@ -171,9 +174,12 @@ public sealed class StockController : ControllerBase
                 item is not null && primaryPhotoByItemId.TryGetValue(item.Id, out var photoUrl)
                     ? photoUrl
                     : null,
-                item is not null && unitCostByItemId.TryGetValue(item.Id, out var unitCost)
-                    ? unitCost
-                    : item?.PurchasePrice);
+                item is not null && priceByItemId.TryGetValue(item.Id, out var price)
+                    ? price.EffectiveCost
+                    : null,
+                item is not null && priceByItemId.TryGetValue(item.Id, out var sale)
+                    ? sale.BasePrice
+                    : null);
         });
 
         if (itemId.HasValue)
@@ -258,7 +264,8 @@ public sealed class StockController : ControllerBase
                 x.Tags,
                 x.PrimaryThumbnailUrl,
                 x.UnitCost,
-                x.UnitCost.HasValue ? decimal.Round(x.Qty * x.UnitCost.Value, 4, MidpointRounding.AwayFromZero) : null)).ToList(),
+                ItemPriceResolver.Value(x.Qty, x.UnitCost),
+                x.BasePrice)).ToList(),
             totalCount,
             pageNumber,
             pageSize,
@@ -300,6 +307,9 @@ public sealed class StockController : ControllerBase
             .Where(x => skus.Contains(x.InternalSKU))
             .ToDictionaryAsync(x => x.InternalSKU, cancellationToken);
 
+        var priceBySku = (await _prices.GetAsync(items.Values.Select(x => x.Id).ToArray(), skus, cancellationToken))
+            .ToDictionary(x => x.Sku, StringComparer.OrdinalIgnoreCase);
+
         var grouped = rows
             .GroupBy(x => x.Location)
             .Select(group =>
@@ -308,6 +318,7 @@ public sealed class StockController : ControllerBase
 
                 decimal totalWeight = 0m;
                 decimal totalVolume = 0m;
+                decimal totalValue = 0m;
                 foreach (var row in group)
                 {
                     if (!items.TryGetValue(row.SKU, out var item))
@@ -317,6 +328,8 @@ public sealed class StockController : ControllerBase
 
                     totalWeight += (item.Weight ?? 0m) * row.Quantity;
                     totalVolume += (item.Volume ?? 0m) * row.Quantity;
+                    if (priceBySku.TryGetValue(row.SKU, out var price))
+                        totalValue += ItemPriceResolver.Value(row.Quantity, price.EffectiveCost) ?? 0m;
                 }
 
                 var utilizationWeight = location?.MaxWeight > 0m
@@ -336,7 +349,8 @@ public sealed class StockController : ControllerBase
                     location?.MaxVolume,
                     utilizationWeight,
                     utilizationVolume,
-                    location?.Status ?? "Unknown");
+                    location?.Status ?? "Unknown",
+                    totalValue);
             })
             .ToList();
 
@@ -373,7 +387,7 @@ public sealed class StockController : ControllerBase
     private static string BuildAvailableCsv(IReadOnlyCollection<AvailableStockRow> rows)
     {
         var sb = new StringBuilder();
-        sb.AppendLine("ItemId,InternalSKU,ItemName,Tags,LocationId,LocationCode,LotNumber,ExpiryDate,Qty,ReservedQty,AvailableQty,BaseUoM,LastUpdated");
+        sb.AppendLine("ItemId,InternalSKU,ItemName,Tags,LocationId,LocationCode,LotNumber,ExpiryDate,Qty,ReservedQty,AvailableQty,BaseUoM,LastUpdated,UnitCost,TotalValue,BasePrice");
         foreach (var row in rows)
         {
             sb.Append(row.ItemId?.ToString(CultureInfo.InvariantCulture) ?? string.Empty).Append(',');
@@ -388,7 +402,10 @@ public sealed class StockController : ControllerBase
             sb.Append(row.ReservedQty.ToString(CultureInfo.InvariantCulture)).Append(',');
             sb.Append(row.AvailableQty.ToString(CultureInfo.InvariantCulture)).Append(',');
             sb.Append(EscapeCsv(row.BaseUom)).Append(',');
-            sb.Append(row.LastUpdated.ToString("O", CultureInfo.InvariantCulture));
+            sb.Append(row.LastUpdated.ToString("O", CultureInfo.InvariantCulture)).Append(',');
+            sb.Append(row.UnitCost?.ToString(CultureInfo.InvariantCulture) ?? string.Empty).Append(',');
+            sb.Append(ItemPriceResolver.Value(row.Qty, row.UnitCost)?.ToString(CultureInfo.InvariantCulture) ?? string.Empty).Append(',');
+            sb.Append(row.BasePrice?.ToString(CultureInfo.InvariantCulture) ?? string.Empty);
             sb.AppendLine();
         }
 
@@ -398,7 +415,7 @@ public sealed class StockController : ControllerBase
     private static string BuildLocationBalanceCsv(IReadOnlyCollection<LocationBalanceItemDto> rows)
     {
         var sb = new StringBuilder();
-        sb.AppendLine("LocationId,LocationCode,ItemCount,TotalWeight,TotalVolume,MaxWeight,MaxVolume,UtilizationWeight,UtilizationVolume,Status");
+        sb.AppendLine("LocationId,LocationCode,ItemCount,TotalWeight,TotalVolume,MaxWeight,MaxVolume,UtilizationWeight,UtilizationVolume,Status,TotalValue");
         foreach (var row in rows)
         {
             sb.Append(row.LocationId?.ToString(CultureInfo.InvariantCulture) ?? string.Empty).Append(',');
@@ -410,7 +427,8 @@ public sealed class StockController : ControllerBase
             sb.Append(row.MaxVolume?.ToString(CultureInfo.InvariantCulture) ?? string.Empty).Append(',');
             sb.Append(row.UtilizationWeight?.ToString(CultureInfo.InvariantCulture) ?? string.Empty).Append(',');
             sb.Append(row.UtilizationVolume?.ToString(CultureInfo.InvariantCulture) ?? string.Empty).Append(',');
-            sb.Append(EscapeCsv(row.Status));
+            sb.Append(EscapeCsv(row.Status)).Append(',');
+            sb.Append(row.TotalValue.ToString(CultureInfo.InvariantCulture));
             sb.AppendLine();
         }
 
@@ -531,7 +549,8 @@ public sealed class StockController : ControllerBase
         bool IsVirtualLocation,
         IReadOnlyList<string> Tags,
         string? PrimaryThumbnailUrl,
-        decimal? UnitCost);
+        decimal? UnitCost,
+        decimal? BasePrice);
 
     public sealed record AvailableStockItemDto(
         int? ItemId,
@@ -549,7 +568,8 @@ public sealed class StockController : ControllerBase
         IReadOnlyList<string> Tags,
         string? PrimaryThumbnailUrl,
         decimal? UnitCost,
-        decimal? TotalValue);
+        decimal? TotalValue,
+        decimal? BasePrice);
 
     public sealed record PagedStockResponse<T>(
         IReadOnlyList<T> Items,
@@ -568,7 +588,8 @@ public sealed class StockController : ControllerBase
         decimal? MaxVolume,
         decimal? UtilizationWeight,
         decimal? UtilizationVolume,
-        string Status);
+        string Status,
+        decimal TotalValue);
 
     public sealed record PagedResponse<T>(
         IReadOnlyList<T> Items,

@@ -699,8 +699,7 @@
         return elapsed.TotalSeconds < 1 ? "0s" : $"{(int)elapsed.TotalSeconds}s";
     }
 
-    private static string FormatMoney(decimal value)
-        => value.ToString("N0", CultureInfo.GetCultureInfo("lt-LT")) + " €";
+    private static string FormatMoney(decimal value) => LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure.Money.Format(value);
 
     private static decimal WidthPercent(decimal value, decimal max)
         => max <= 0m ? 0m : Math.Clamp(value / max * 100m, 0m, 100m);

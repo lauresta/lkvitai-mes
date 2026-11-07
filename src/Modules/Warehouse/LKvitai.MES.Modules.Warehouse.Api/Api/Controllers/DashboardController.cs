@@ -1,5 +1,7 @@
 using System.Reflection;
 using LKvitai.MES.Modules.Warehouse.Application.Services;
+using LKvitai.MES.Modules.Warehouse.Application.Ports;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.Pricing;
 using LKvitai.MES.Modules.Warehouse.Api.Security;
 using LKvitai.MES.Modules.Warehouse.Api.Services;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
@@ -21,6 +23,7 @@ public sealed class DashboardController : ControllerBase
 
     private readonly IDocumentStore _documentStore;
     private readonly WarehouseDbContext _dbContext;
+    private readonly IItemPriceSnapshotService _prices;
     private readonly IProjectionHealthService _projectionHealthService;
     private readonly IWarehouseSettingsService _warehouseSettingsService;
 
@@ -28,10 +31,11 @@ public sealed class DashboardController : ControllerBase
         IDocumentStore documentStore,
         WarehouseDbContext dbContext,
         IProjectionHealthService projectionHealthService,
-        IWarehouseSettingsService warehouseSettingsService)
+        IWarehouseSettingsService warehouseSettingsService, IItemPriceSnapshotService? prices = null)
     {
         _documentStore = documentStore;
         _dbContext = dbContext;
+        _prices = prices ?? new ItemPriceSnapshotService(dbContext);
         _projectionHealthService = projectionHealthService;
         _warehouseSettingsService = warehouseSettingsService;
     }
@@ -311,9 +315,8 @@ public sealed class DashboardController : ControllerBase
             .Select(g => new { SKU = g.Key, OnHandQty = g.Sum(x => x.OnHandQty) })
             .ToList();
 
-        var unitCostBySku = await _dbContext.OnHandValues
-            .AsNoTracking()
-            .ToDictionaryAsync(x => x.ItemSku, x => x.UnitCost, StringComparer.OrdinalIgnoreCase, cancellationToken);
+        var priceBySku = (await _prices.GetAsync([], bySku.Select(x => x.SKU).ToArray(), cancellationToken))
+            .ToDictionary(x => x.Sku, StringComparer.OrdinalIgnoreCase);
 
         decimal totalValue = 0m;
         var lowStockCount = 0;
@@ -321,10 +324,8 @@ public sealed class DashboardController : ControllerBase
 
         foreach (var row in bySku)
         {
-            if (unitCostBySku.TryGetValue(row.SKU, out var unitCost))
-            {
-                totalValue += row.OnHandQty * unitCost;
-            }
+            if (priceBySku.TryGetValue(row.SKU, out var price))
+                totalValue += ItemPriceResolver.Value(row.OnHandQty, price.EffectiveCost) ?? 0m;
 
             if (row.OnHandQty <= 0m)
             {
@@ -431,16 +432,15 @@ public sealed class DashboardController : ControllerBase
             querySession.Query<AvailableStockView>().Where(x => x.OnHandQty > 0m),
             cancellationToken);
 
-        var unitCostBySku = await _dbContext.OnHandValues
-            .AsNoTracking()
-            .ToDictionaryAsync(x => x.ItemSku, x => x.UnitCost, StringComparer.OrdinalIgnoreCase, cancellationToken);
+        var priceBySku = (await _prices.GetAsync([], stockRows.Select(x => x.SKU).Distinct().ToArray(), cancellationToken))
+            .ToDictionary(x => x.Sku, StringComparer.OrdinalIgnoreCase);
 
         var byWarehouse = stockRows
             .GroupBy(x => x.WarehouseId, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(
                 g => g.Key,
                 g => (
-                    Value: g.Sum(x => (unitCostBySku.TryGetValue(x.SKU, out var cost) ? cost : 0m) * x.OnHandQty),
+                    Value: g.Sum(x => (priceBySku.TryGetValue(x.SKU, out var price) ? ItemPriceResolver.Value(x.OnHandQty, price.EffectiveCost) : null) ?? 0m),
                     Qty: g.Sum(x => x.OnHandQty)),
                 StringComparer.OrdinalIgnoreCase);
 

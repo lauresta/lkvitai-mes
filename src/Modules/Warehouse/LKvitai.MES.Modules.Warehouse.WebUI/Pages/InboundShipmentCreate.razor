@@ -510,7 +510,7 @@
         return unitPrice + (lineShare / line.ExpectedQty);
     }
 
-    private static string FormatMoney(decimal value) => value.ToString("0.00", NumberCulture);
+    private static string FormatMoney(decimal value) => LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure.Money.Format(value);
 
     private async Task SubmitAsync()
     {

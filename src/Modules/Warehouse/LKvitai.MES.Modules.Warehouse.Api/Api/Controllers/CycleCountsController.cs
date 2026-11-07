@@ -6,6 +6,7 @@ using LKvitai.MES.Modules.Warehouse.Application.Services;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.Pricing;
 using LKvitai.MES.BuildingBlocks.SharedKernel;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -24,19 +25,21 @@ public sealed class CycleCountsController : ControllerBase
     private readonly IEventBus _eventBus;
     private readonly ICurrentUserService _currentUserService;
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IItemPriceSnapshotService _prices;
 
     public CycleCountsController(
         IMediator mediator,
         WarehouseDbContext dbContext,
         IEventBus eventBus,
         ICurrentUserService currentUserService,
-        IHttpContextAccessor httpContextAccessor)
+        IHttpContextAccessor httpContextAccessor, IItemPriceSnapshotService? prices = null)
     {
         _mediator = mediator;
         _dbContext = dbContext;
         _eventBus = eventBus;
         _currentUserService = currentUserService;
         _httpContextAccessor = httpContextAccessor;
+        _prices = prices ?? new ItemPriceSnapshotService(dbContext);
     }
 
     [HttpGet]
@@ -224,20 +227,17 @@ public sealed class CycleCountsController : ControllerBase
             return Failure(Result.Fail(DomainErrorCodes.NotFound, "Cycle count not found."));
         }
 
-        var unitCostLookup = await _dbContext.OnHandValues
-            .AsNoTracking()
-            .GroupBy(x => x.ItemId)
-            .Select(x => new { ItemId = x.Key, UnitCost = x.OrderBy(y => y.LastUpdated).Select(y => y.UnitCost).LastOrDefault() })
-            .ToDictionaryAsync(x => x.ItemId, x => x.UnitCost, cancellationToken);
+        var priceById = (await _prices.GetAsync(cycleCount.Lines.Select(x => x.ItemId).Distinct().ToArray(), [], cancellationToken))
+            .ToDictionary(x => x.ItemId);
 
         var rows = cycleCount.Lines
             .Select(line =>
             {
-                unitCostLookup.TryGetValue(line.ItemId, out var unitCost);
+                priceById.TryGetValue(line.ItemId, out var price);
                 var variancePercent = line.SystemQty == 0m
                     ? (line.Delta == 0m ? 0m : 100m)
                     : decimal.Round((line.Delta / line.SystemQty) * 100m, 2, MidpointRounding.AwayFromZero);
-                var valueImpact = decimal.Round(line.Delta * unitCost, 2, MidpointRounding.AwayFromZero);
+                var valueImpact = ItemPriceResolver.Value(line.Delta, price?.EffectiveCost) ?? 0m;
                 return new DiscrepancyLineResponse(
                     line.Id,
                     line.LocationId,
