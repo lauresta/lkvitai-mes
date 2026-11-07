@@ -1,5 +1,6 @@
 @page "/reports/traceability"
 @inject ReportsClient ReportsClient
+@inject ItemPricesClient ItemPricesClient
 @inject ToastService ToastService
 
 <PageTitle>Traceability - Cikada.MES</PageTitle>
@@ -61,6 +62,10 @@
                         <div>
                             <div class="fw-semibold">Lot: @entry.Lot.LotNumber</div>
                             <div class="small text-muted">@entry.Lot.ItemSku - @entry.Lot.ItemName</div>
+                            <div class="small">
+                                @L["Pricing.Cost"]: <span class="is-money is-num">@Money.Format(_priceMap.Get(null, entry.Lot.ItemSku)?.EffectiveCost)</span>
+                                &middot; @L["Pricing.Sale"]: <span class="is-money is-num">@Money.Format(_priceMap.Get(null, entry.Lot.ItemSku)?.BasePrice)</span>
+                            </div>
                         </div>
                         @if (entry.IsApproximate)
                         {
@@ -121,6 +126,7 @@
 
 @code {
     private readonly List<TraceabilityEntryResponseDto> _entries = [];
+    private PriceMap _priceMap = PriceMap.Empty;
     private ApiException? _apiError;
     private bool _isLoading;
 
@@ -144,6 +150,7 @@
             var result = await ReportsClient.GetTraceabilityAsync(_lotNumber, _itemSku, _salesOrder, _supplier);
             _entries.Clear();
             _entries.AddRange(result.Entries);
+            _priceMap = await ItemPricesClient.GetMapAsync(_entries.Select(x => ((int?)null, (string?)x.Lot.ItemSku)));
         }
         catch (ApiException ex)
         {

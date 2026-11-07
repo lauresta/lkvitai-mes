@@ -5,6 +5,7 @@ using LKvitai.MES.Modules.Warehouse.Api.ErrorHandling;
 using LKvitai.MES.Modules.Warehouse.Api.Security;
 using LKvitai.MES.Modules.Warehouse.Api.Services;
 using LKvitai.MES.Modules.Warehouse.Application.Commands;
+using LKvitai.MES.Modules.Warehouse.Application.Ports;
 using LKvitai.MES.Modules.Warehouse.Application.Services;
 using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Contracts.ReadModels;
@@ -40,19 +41,22 @@ public sealed class ReceivingController : ControllerBase
     private readonly ICurrentUserService _currentUserService;
     private readonly IMediator _mediator;
     private readonly ILogger<ReceivingController> _logger;
+    private readonly IItemPriceSnapshotService _itemPriceSnapshots;
 
     public ReceivingController(
         WarehouseDbContext dbContext,
         IDocumentStore documentStore,
         ICurrentUserService currentUserService,
         IMediator mediator,
-        ILogger<ReceivingController> logger)
+        ILogger<ReceivingController> logger,
+        IItemPriceSnapshotService itemPriceSnapshots)
     {
         _dbContext = dbContext;
         _documentStore = documentStore;
         _currentUserService = currentUserService;
         _mediator = mediator;
         _logger = logger;
+        _itemPriceSnapshots = itemPriceSnapshots;
     }
 
     [HttpGet]
@@ -102,9 +106,11 @@ public sealed class ReceivingController : ControllerBase
             var csvRows = await Marten.QueryableExtensions.ToListAsync(
                 query.OrderByDescending(x => x.LastUpdated),
                 cancellationToken);
+            var csvPrices = await LoadShipmentPriceTotalsAsync(
+                csvRows.Select(x => x.ShipmentId).ToArray(), cancellationToken);
 
             return File(
-                Encoding.UTF8.GetBytes(BuildShipmentsCsv(csvRows)),
+                Encoding.UTF8.GetBytes(BuildShipmentsCsv(csvRows, csvPrices)),
                 "text/csv",
                 "receiving-history.csv");
         }
@@ -115,13 +121,8 @@ public sealed class ReceivingController : ControllerBase
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize),
             cancellationToken);
-        var shipmentIds = items.Select(x => x.ShipmentId).ToArray();
-        var pricedLines = await _dbContext.InboundShipmentLines.AsNoTracking()
-            .Where(x => shipmentIds.Contains(x.ShipmentId) && x.UnitPrice.HasValue)
-            .Select(x => new { x.ShipmentId, x.ExpectedQty, x.UnitPrice })
-            .ToListAsync(cancellationToken);
-        var expectedValues = pricedLines.GroupBy(x => x.ShipmentId)
-            .ToDictionary(x => x.Key, x => x.Sum(line => line.ExpectedQty * line.UnitPrice!.Value));
+        var priceTotals = await LoadShipmentPriceTotalsAsync(
+            items.Select(x => x.ShipmentId).ToArray(), cancellationToken);
 
         return Ok(new PagedResponse<InboundShipmentSummaryDto>(
             items.Select(x => new InboundShipmentSummaryDto(
@@ -136,7 +137,11 @@ public sealed class ReceivingController : ControllerBase
                 x.TotalReceivedQty,
                 x.CreatedAt,
                 x.LastUpdated)
-            { TotalExpectedValue = expectedValues.TryGetValue(x.ShipmentId, out var value) ? value : null }).ToList(),
+            {
+                TotalExpectedValue = priceTotals.TryGetValue(x.ShipmentId, out var totals) ? totals.Purchase : null,
+                TotalCostValue = priceTotals.TryGetValue(x.ShipmentId, out totals) ? totals.Cost : null,
+                TotalSaleValue = priceTotals.TryGetValue(x.ShipmentId, out totals) ? totals.Sale : null
+            }).ToList(),
             totalCount,
             pageNumber,
             pageSize));
@@ -941,10 +946,38 @@ public sealed class ReceivingController : ControllerBase
     private static string ShipmentStreamId(int shipmentId)
         => $"inbound-shipment:{shipmentId}";
 
-    private static string BuildShipmentsCsv(IReadOnlyCollection<InboundShipmentSummaryView> rows)
+    private async Task<Dictionary<int, ShipmentPriceTotals>> LoadShipmentPriceTotalsAsync(
+        int[] shipmentIds, CancellationToken cancellationToken)
+    {
+        if (shipmentIds.Length == 0) return [];
+
+        var lines = await _dbContext.InboundShipmentLines.AsNoTracking()
+            .Where(x => shipmentIds.Contains(x.ShipmentId))
+            .Select(x => new { x.ShipmentId, x.ItemId, x.ExpectedQty, x.UnitPrice })
+            .ToListAsync(cancellationToken);
+        var snapshots = await _itemPriceSnapshots.GetAsync(
+            lines.Select(x => x.ItemId).Distinct().ToArray(), Array.Empty<string>(), cancellationToken);
+        var byId = snapshots.ToDictionary(x => x.ItemId);
+
+        return lines.GroupBy(x => x.ShipmentId).ToDictionary(x => x.Key, group =>
+        {
+            var purchase = group.All(x => x.UnitPrice.HasValue)
+                ? group.Sum(x => x.ExpectedQty * x.UnitPrice!.Value) : (decimal?)null;
+            var cost = group.All(x => byId.TryGetValue(x.ItemId, out var price) && price.EffectiveCost.HasValue)
+                ? group.Sum(x => ItemPriceResolver.Value(x.ExpectedQty, byId[x.ItemId].EffectiveCost)!.Value) : (decimal?)null;
+            var sale = group.All(x => byId.TryGetValue(x.ItemId, out var price) && price.BasePrice.HasValue)
+                ? group.Sum(x => ItemPriceResolver.Value(x.ExpectedQty, byId[x.ItemId].BasePrice)!.Value) : (decimal?)null;
+            return new ShipmentPriceTotals(purchase, cost, sale);
+        });
+    }
+
+    private sealed record ShipmentPriceTotals(decimal? Purchase, decimal? Cost, decimal? Sale);
+
+    private static string BuildShipmentsCsv(IReadOnlyCollection<InboundShipmentSummaryView> rows,
+        IReadOnlyDictionary<int, ShipmentPriceTotals> prices)
     {
         var sb = new StringBuilder();
-        sb.AppendLine("ShipmentId,ReferenceNumber,SupplierId,SupplierName,ExpectedDate,Status,TotalLines,TotalExpectedQty,TotalReceivedQty,CreatedAt,LastUpdated");
+        sb.AppendLine("ShipmentId,ReferenceNumber,SupplierId,SupplierName,ExpectedDate,Status,TotalLines,TotalExpectedQty,TotalReceivedQty,PurchaseTotal,CostTotal,SaleTotal,CreatedAt,LastUpdated");
 
         foreach (var row in rows)
         {
@@ -957,6 +990,10 @@ public sealed class ReceivingController : ControllerBase
             sb.Append(row.TotalLines.ToString(CultureInfo.InvariantCulture)).Append(',');
             sb.Append(row.TotalExpectedQty.ToString(CultureInfo.InvariantCulture)).Append(',');
             sb.Append(row.TotalReceivedQty.ToString(CultureInfo.InvariantCulture)).Append(',');
+            prices.TryGetValue(row.ShipmentId, out var totals);
+            sb.Append(totals?.Purchase?.ToString(CultureInfo.InvariantCulture) ?? string.Empty).Append(',');
+            sb.Append(totals?.Cost?.ToString(CultureInfo.InvariantCulture) ?? string.Empty).Append(',');
+            sb.Append(totals?.Sale?.ToString(CultureInfo.InvariantCulture) ?? string.Empty).Append(',');
             sb.Append(row.CreatedAt.ToString("O", CultureInfo.InvariantCulture)).Append(',');
             sb.Append(row.LastUpdated.ToString("O", CultureInfo.InvariantCulture));
             sb.AppendLine();
@@ -1040,6 +1077,8 @@ public sealed class ReceivingController : ControllerBase
         DateTimeOffset LastUpdated)
     {
         public decimal? TotalExpectedValue { get; init; }
+        public decimal? TotalCostValue { get; init; }
+        public decimal? TotalSaleValue { get; init; }
     }
 
     public sealed record InboundShipmentDetailDto(

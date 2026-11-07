@@ -48,7 +48,8 @@
                                     <th>Item</th>
                                     <th>Barcode</th>
                                     <th>Required</th>
-                                    <th class="text-end">Sale</th>
+                                    <th class="text-end">@L["Pricing.Cost"]</th>
+                                    <th class="text-end">@L["Pricing.Sale"]</th>
                                     <th class="text-end">Value</th>
                                     <th>Scanned</th>
                                     <th>Status</th>
@@ -62,6 +63,7 @@
                                         <td>@line.ItemSku</td>
                                         <td>@(line.PrimaryBarcode ?? "-")</td>
                                         <td>@line.Qty</td>
+                                        <td class="text-end is-money is-num">@Money.Format(_priceMap.Get(line.ItemId, line.ItemSku)?.EffectiveCost)</td>
                                         <td class="text-end is-money is-num">@Money.Format(_priceMap.Get(line.ItemId, line.ItemSku)?.BasePrice)</td>
                                         <td class="text-end is-money is-num">@Money.Format(_priceMap.Value(line.Qty, line.ItemId, line.ItemSku))</td>
                                         <td>@scannedQty</td>

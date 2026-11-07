@@ -319,13 +319,30 @@ public sealed class DashboardController : ControllerBase
             .ToDictionary(x => x.Sku, StringComparer.OrdinalIgnoreCase);
 
         decimal totalValue = 0m;
+        decimal totalSaleValue = 0m;
+        var completeCost = true;
+        var completeSale = true;
         var lowStockCount = 0;
         var outOfStockCount = 0;
 
         foreach (var row in bySku)
         {
             if (priceBySku.TryGetValue(row.SKU, out var price))
-                totalValue += ItemPriceResolver.Value(row.OnHandQty, price.EffectiveCost) ?? 0m;
+            {
+                if (price.EffectiveCost.HasValue)
+                    totalValue += ItemPriceResolver.Value(row.OnHandQty, price.EffectiveCost)!.Value;
+                else
+                    completeCost = false;
+                if (price.BasePrice.HasValue)
+                    totalSaleValue += ItemPriceResolver.Value(row.OnHandQty, price.BasePrice)!.Value;
+                else
+                    completeSale = false;
+            }
+            else
+            {
+                completeCost = false;
+                completeSale = false;
+            }
 
             if (row.OnHandQty <= 0m)
             {
@@ -347,6 +364,8 @@ public sealed class DashboardController : ControllerBase
         return Ok(new DashboardOverviewDto
         {
             TotalStockValue = decimal.Round(totalValue, 2, MidpointRounding.AwayFromZero),
+            TotalStockCostValue = completeCost ? decimal.Round(totalValue, 2, MidpointRounding.AwayFromZero) : null,
+            TotalStockSaleValue = completeSale ? decimal.Round(totalSaleValue, 2, MidpointRounding.AwayFromZero) : null,
             TotalSKUs = bySku.Count(x => x.OnHandQty > 0m),
             TotalQuantity = bySku.Sum(x => x.OnHandQty),
             LowStockCount = lowStockCount,
@@ -615,9 +634,19 @@ public sealed class DashboardController : ControllerBase
             cancellationToken);
 
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        var dtos = rows
+        var selected = rows
             .OrderBy(x => x.ExpectedDate ?? DateOnly.MaxValue)
             .Take(take)
+            .ToList();
+        var shipmentIds = selected.Select(x => x.ShipmentId).ToArray();
+        var lines = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.ToListAsync(_dbContext.InboundShipmentLines.AsNoTracking()
+            .Where(x => shipmentIds.Contains(x.ShipmentId))
+            .Select(x => new { x.ShipmentId, x.ItemId, x.ExpectedQty }), cancellationToken);
+        var prices = (await _prices.GetAsync(lines.Select(x => x.ItemId).Distinct().ToArray(),
+                Array.Empty<string>(), cancellationToken))
+            .ToDictionary(x => x.ItemId);
+        var linesByShipment = lines.GroupBy(x => x.ShipmentId).ToDictionary(x => x.Key, x => x.ToList());
+        var dtos = selected
             .Select(x => new IncomingShipmentDto(
                 x.ReferenceNumber,
                 x.SupplierName,
@@ -627,7 +656,15 @@ public sealed class DashboardController : ControllerBase
                 x.TotalReceivedQty,
                 x.TotalExpectedQty,
                 x.CompletionPercent,
-                x.ExpectedDate.HasValue && x.ExpectedDate.Value < today))
+                x.ExpectedDate.HasValue && x.ExpectedDate.Value < today)
+            {
+                TotalCostValue = linesByShipment.TryGetValue(x.ShipmentId, out var shipmentLines)
+                    && shipmentLines.All(line => prices.TryGetValue(line.ItemId, out var price) && price.EffectiveCost.HasValue)
+                    ? shipmentLines.Sum(line => ItemPriceResolver.Value(line.ExpectedQty, prices[line.ItemId].EffectiveCost)!.Value) : null,
+                TotalSaleValue = linesByShipment.TryGetValue(x.ShipmentId, out shipmentLines)
+                    && shipmentLines.All(line => prices.TryGetValue(line.ItemId, out var price) && price.BasePrice.HasValue)
+                    ? shipmentLines.Sum(line => ItemPriceResolver.Value(line.ExpectedQty, prices[line.ItemId].BasePrice)!.Value) : null
+            })
             .ToList();
 
         return Ok(dtos);
@@ -906,6 +943,8 @@ public sealed record WarehouseOptionDto(string Code, string Name);
 public sealed record DashboardOverviewDto
 {
     public decimal TotalStockValue { get; init; }
+    public decimal? TotalStockCostValue { get; init; }
+    public decimal? TotalStockSaleValue { get; init; }
     public int TotalSKUs { get; init; }
     public decimal TotalQuantity { get; init; }
     public int LowStockCount { get; init; }
@@ -953,7 +992,11 @@ public sealed record IncomingShipmentDto(
     decimal TotalReceivedQty,
     decimal TotalExpectedQty,
     decimal CompletionPercent,
-    bool IsOverdue);
+    bool IsOverdue)
+{
+    public decimal? TotalCostValue { get; init; }
+    public decimal? TotalSaleValue { get; init; }
+}
 
 public sealed record AgnumHealthDto
 {

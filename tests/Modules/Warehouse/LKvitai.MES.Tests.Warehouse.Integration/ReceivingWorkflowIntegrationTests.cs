@@ -8,6 +8,7 @@ using LKvitai.MES.Contracts.Events;
 using LKvitai.MES.Contracts.ReadModels;
 using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
+using LKvitai.MES.Modules.Warehouse.Infrastructure.Pricing;
 using LKvitai.MES.Modules.Warehouse.Projections;
 using Marten;
 using Marten.Events.Projections;
@@ -420,7 +421,8 @@ public class ReceivingWorkflowIntegrationTests : IAsyncLifetime
     private ReceivingController CreateReceivingController(WarehouseDbContext db, out NoOpMediator mediator)
     {
         mediator = new NoOpMediator();
-        return new ReceivingController(db, _store!, new StaticCurrentUserService("tester"), mediator, NullLogger<ReceivingController>.Instance)
+        return new ReceivingController(db, _store!, new StaticCurrentUserService("tester"), mediator,
+            NullLogger<ReceivingController>.Instance, new ItemPriceSnapshotService(db))
         {
             ControllerContext = new ControllerContext
             {

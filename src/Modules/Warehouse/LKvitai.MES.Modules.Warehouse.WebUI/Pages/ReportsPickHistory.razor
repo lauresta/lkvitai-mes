@@ -61,7 +61,8 @@
                     <th>Item</th>
                     <th>Qty</th>
                     <th>Picked</th>
-                    <th>Cost</th>
+                    <th title="@L["Pricing.CurrentPriceHint"]">@L["Pricing.Cost"]</th>
+                    <th title="@L["Pricing.CurrentPriceHint"]">@L["Pricing.Sale"]</th>
                     <th>Value (current cost)</th>
                     <th>Operator</th>
                     <th>Completed</th>
@@ -71,7 +72,7 @@
                 @if (_items.Count == 0)
                 {
                     <tr>
-                        <td colspan="10" class="text-muted">No rows found.</td>
+                        <td colspan="11" class="text-muted">No rows found.</td>
                     </tr>
                 }
                 else
@@ -86,6 +87,7 @@
                             <td>@row.Qty</td>
                             <td>@row.PickedQty</td>
                             <td class="is-money is-num">@Money.Format(_priceMap.Get(row.ItemId, row.InternalSku)?.EffectiveCost)</td>
+                            <td class="is-money is-num">@Money.Format(_priceMap.Get(row.ItemId, row.InternalSku)?.BasePrice)</td>
                             <td class="is-money is-num">@Money.Format(_priceMap.Value(row.Qty, row.ItemId, row.InternalSku))</td>
                             <td>@(row.CompletedBy ?? row.AssignedToUserId)</td>
                             <td>@row.CompletedAt?.ToString("yyyy-MM-dd HH:mm")</td>

@@ -52,7 +52,8 @@
                         <tr>
                             <th>Item</th>
                             <th>Qty</th>
-                            <th>Cost</th>
+                            <th>@L["Pricing.Cost"]</th>
+                            <th>@L["Pricing.Sale"]</th>
                             <th>Value (current cost)</th>
                             <th>From Location</th>
                             <th>To Location</th>
@@ -65,6 +66,7 @@
                                 <td>@GetItemName(line.ItemId)</td>
                                 <td>@line.Qty.ToString("0.##")</td>
                                 <td class="mono">@Money.Format(_priceMap.Get(line.ItemId, null)?.EffectiveCost)</td>
+                                <td class="mono">@Money.Format(_priceMap.Get(line.ItemId, null)?.BasePrice)</td>
                                 <td class="mono">@Money.Format(_priceMap.Value(line.Qty, line.ItemId, null))</td>
                                 <td>@GetLocationName(line.FromLocationId)</td>
                                 <td>@GetLocationName(line.ToLocationId)</td>

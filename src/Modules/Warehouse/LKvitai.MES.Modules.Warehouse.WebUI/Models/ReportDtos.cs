@@ -39,6 +39,9 @@ public record ReceivingHistoryRowDto
     public int TotalLines { get; init; }
     public decimal TotalExpectedQty { get; init; }
     public decimal TotalReceivedQty { get; init; }
+    public decimal? TotalExpectedValue { get; init; }
+    public decimal? TotalCostValue { get; init; }
+    public decimal? TotalSaleValue { get; init; }
     public DateTimeOffset CreatedAt { get; init; }
     public DateTimeOffset LastUpdated { get; init; }
 }

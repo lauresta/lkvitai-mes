@@ -1,6 +1,7 @@
 @page "/dashboard"
 @implements IDisposable
 @inject DashboardClient DashboardClient
+@inject ItemPricesClient ItemPricesClient
 @inject IConfiguration Configuration
 @using System.Diagnostics
 @using System.Globalization
@@ -46,10 +47,11 @@
 
 <div class="dash-kpis">
     <div class="kpi">
-        <span class="kpi__label">Total stock value</span>
+        <span class="kpi__label">@L["Pricing.CostTotal"]</span>
         @if (_overview.Data is not null)
         {
-            <span class="kpi__val mono">@FormatMoney(_overview.Data.TotalStockValue)</span>
+            <span class="kpi__val mono">@Money.Format(_overview.Data.TotalStockCostValue)</span>
+            <span class="kpi__delta">@L["Pricing.SaleTotal"]: <span class="is-money is-num">@Money.Format(_overview.Data.TotalStockSaleValue)</span></span>
         }
         else
         {
@@ -193,6 +195,8 @@
                     <th>Item</th>
                     <th>Category</th>
                     <th class="is-num">On-hand</th>
+                    <th class="is-num">@L["Pricing.Cost"]</th>
+                    <th class="is-num">@L["Pricing.Sale"]</th>
                     <th class="is-num">Reorder pt</th>
                     <th>Available</th>
                     <th>Supplier &middot; lead</th>
@@ -206,6 +210,8 @@
                         <td><span class="sku-link">@row.SKU</span> @row.ItemName</td>
                         <td>@row.CategoryName</td>
                         <td class="is-num">@row.OnHandQty.ToString("N0", CultureInfo.InvariantCulture) @row.BaseUoM</td>
+                        <td class="is-money is-num">@Money.Format(_priceMap.Get(null, row.SKU)?.EffectiveCost)</td>
+                        <td class="is-money is-num">@Money.Format(_priceMap.Get(null, row.SKU)?.BasePrice)</td>
                         <td class="is-num">@row.ReorderPoint.ToString("N0", CultureInfo.InvariantCulture) @row.BaseUoM</td>
                         <td>
                             <span class="dash-meter">
@@ -259,6 +265,8 @@
                         <th>Item &middot; lot</th>
                         <th>Location</th>
                         <th class="is-num">Qty</th>
+                        <th class="is-num">@L["Pricing.Cost"]</th>
+                        <th class="is-num">@L["Pricing.Sale"]</th>
                         <th>Expiry</th>
                         <th class="is-num">Days</th>
                     </tr>
@@ -266,13 +274,15 @@
                 <tbody>
                     @foreach (var (bucket, rows) in GroupExpiring(_expiring.Data))
                     {
-                        <tr class="dash-bucket-row"><td colspan="5">@bucket</td></tr>
+                        <tr class="dash-bucket-row"><td colspan="7">@bucket</td></tr>
                         @foreach (var row in rows)
                         {
                             <tr>
                                 <td>@row.ItemName <span class="mono dash-muted">&middot; @(row.LotNumber ?? "-")</span></td>
                                 <td class="mono">@(row.LocationCode ?? "-")</td>
                                 <td class="is-num">@row.Qty.ToString("N0", CultureInfo.InvariantCulture) @row.BaseUoM</td>
+                                <td class="is-money is-num">@Money.Format(_priceMap.Get(null, row.SKU)?.EffectiveCost)</td>
+                                <td class="is-money is-num">@Money.Format(_priceMap.Get(null, row.SKU)?.BasePrice)</td>
                                 <td class="mono">@row.ExpiryDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)</td>
                                 <td class="is-num"><span class="@ExpiryChipClass(row.DaysRemaining)">@($"{row.DaysRemaining}d")</span></td>
                             </tr>
@@ -309,6 +319,8 @@
                         <th>Expected</th>
                         <th>Status</th>
                         <th>Received</th>
+                        <th class="is-num">@L["Pricing.CostTotal"]</th>
+                        <th class="is-num">@L["Pricing.SaleTotal"]</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -326,6 +338,8 @@
                                     <span class="mono dash-muted">@row.TotalReceivedQty.ToString("N0", CultureInfo.InvariantCulture)/@row.TotalExpectedQty.ToString("N0", CultureInfo.InvariantCulture)</span>
                                 </span>
                             </td>
+                            <td class="is-money is-num">@Money.Format(row.TotalCostValue)</td>
+                            <td class="is-money is-num">@Money.Format(row.TotalSaleValue)</td>
                         </tr>
                     }
                 </tbody>
@@ -463,6 +477,8 @@
                     <span class="mono dash-muted">@item.FromLocation &rarr; @item.ToLocation</span>
                     <span class="dash-spacer"></span>
                     <span class="mono @(item.Quantity < 0 ? "is-danger" : "is-ok")">@(item.Quantity >= 0 ? "+" : "")@item.Quantity.ToString("N0", CultureInfo.InvariantCulture)</span>
+                    <span class="is-money is-num" title="@L["Pricing.Cost"]">@Money.Format(_priceMap.Get(null, item.SKU)?.EffectiveCost)</span>
+                    <span class="is-money is-num" title="@L["Pricing.Sale"]">@Money.Format(_priceMap.Get(null, item.SKU)?.BasePrice)</span>
                     <span class="mono dash-muted dash-activity__time">@item.Timestamp.ToLocalTime().ToString("HH:mm", CultureInfo.InvariantCulture)</span>
                 </div>
             }
@@ -506,6 +522,7 @@
     private readonly Section<AgnumHealthDto> _agnum = new();
     private readonly Section<ReservationFunnelDto> _reservations = new();
     private readonly Section<IReadOnlyList<RecentMovementDto>> _recentActivity = new(Array.Empty<RecentMovementDto>());
+    private PriceMap _priceMap = PriceMap.Empty;
 
     private IReadOnlyList<WarehouseOptionDto> _warehouses = Array.Empty<WarehouseOptionDto>();
     private string? _selectedWarehouseId;
@@ -565,11 +582,17 @@
     private Task LoadStockByWarehouseAsync()
         => LoadSectionAsync(_warehouseValues, () => DashboardClient.GetStockByWarehouseAsync());
 
-    private Task LoadLowStockAsync()
-        => LoadSectionAsync(_lowStock, () => DashboardClient.GetLowStockAsync(_selectedWarehouseId, 8));
+    private async Task LoadLowStockAsync()
+    {
+        await LoadSectionAsync(_lowStock, () => DashboardClient.GetLowStockAsync(_selectedWarehouseId, 8));
+        await RefreshPriceMapAsync();
+    }
 
-    private Task LoadExpiringAsync()
-        => LoadSectionAsync(_expiring, () => DashboardClient.GetExpiringAsync(_selectedWarehouseId, 90, 20));
+    private async Task LoadExpiringAsync()
+    {
+        await LoadSectionAsync(_expiring, () => DashboardClient.GetExpiringAsync(_selectedWarehouseId, 90, 20));
+        await RefreshPriceMapAsync();
+    }
 
     private Task LoadIncomingAsync()
         => LoadSectionAsync(_incoming, () => DashboardClient.GetIncomingAsync(8));
@@ -580,8 +603,11 @@
     private Task LoadReservationsAsync()
         => LoadSectionAsync(_reservations, () => DashboardClient.GetReservationFunnelAsync());
 
-    private Task LoadRecentActivityAsync()
-        => LoadSectionAsync(_recentActivity, () => DashboardClient.GetRecentActivityAsync(8));
+    private async Task LoadRecentActivityAsync()
+    {
+        await LoadSectionAsync(_recentActivity, () => DashboardClient.GetRecentActivityAsync(8));
+        await RefreshPriceMapAsync();
+    }
 
     private async Task LoadAllAsync()
     {
@@ -601,6 +627,7 @@
                 LoadSectionAsync(_agnum, () => DashboardClient.GetAgnumHealthAsync(), suppressStateChange: true),
                 LoadSectionAsync(_reservations, () => DashboardClient.GetReservationFunnelAsync(), suppressStateChange: true),
                 LoadSectionAsync(_recentActivity, () => DashboardClient.GetRecentActivityAsync(8), suppressStateChange: true));
+            await RefreshPriceMapAsync();
 
             var errors = new[]
             {
@@ -623,6 +650,14 @@
             _loadLock.Release();
             StateHasChanged();
         }
+    }
+
+    private async Task RefreshPriceMapAsync()
+    {
+        var skus = (_lowStock.Data?.Items.Select(x => x.SKU) ?? Enumerable.Empty<string>())
+            .Concat(_expiring.Data?.Select(x => x.SKU) ?? Enumerable.Empty<string>())
+            .Concat(_recentActivity.Data?.Select(x => x.SKU) ?? Enumerable.Empty<string>());
+        _priceMap = await ItemPricesClient.GetMapAsync(skus.Select(x => ((int?)null, (string?)x)));
     }
 
     private async Task LoadSectionAsync<T>(
