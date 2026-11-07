@@ -71,7 +71,7 @@ public sealed class ProductionQueueReader(IHttpContextAccessor accessor, IHttpCl
             throw Denied("PRODUCTION_MENU_DISABLED", "Your legacy SQL account cannot open this production screen.", 403);
     }
 
-    private async Task<Guid> ResolveActorAsync(CancellationToken ct)
+    internal async Task<Guid> ResolveActorAsync(CancellationToken ct)
     {
         var user = accessor.HttpContext?.User;
         var identities = user?.Identities.Where(x => x.IsAuthenticated).ToArray() ?? [];

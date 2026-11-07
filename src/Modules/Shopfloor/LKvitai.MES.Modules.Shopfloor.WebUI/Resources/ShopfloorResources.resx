@@ -2622,4 +2622,92 @@
   <data name="Trapezoid.mm" xml:space="preserve"><value>mm</value></data>
   <data name="Trapezoid.pagesShort" xml:space="preserve"><value>p.</value></data>
   <data name="Trapezoid.templateEditorUnavailable" xml:space="preserve"><value>The trapezoid template editor is not available yet.</value></data>
+  <data name="Roletai.Paperless.Accessories" xml:space="preserve"><value>Papildomi priedai šiam gaminiui:</value></data>
+  <data name="Roletai.Paperless.AllDatesSearch" xml:space="preserve"><value>Order {0} · all dates</value></data>
+  <data name="Roletai.Paperless.Back" xml:space="preserve"><value>Back to Shopfloor</value></data>
+  <data name="Roletai.Paperless.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Roletai.Paperless.Cancelled" xml:space="preserve"><value>Order {0} was cancelled.</value></data>
+  <data name="Roletai.Paperless.Cechas" xml:space="preserve"><value>Cechas: {0}</value></data>
+  <data name="Roletai.Paperless.Clear" xml:space="preserve"><value>Clear</value></data>
+  <data name="Roletai.Paperless.ClearFilters" xml:space="preserve"><value>Clear filters</value></data>
+  <data name="Roletai.Paperless.ClearSearch" xml:space="preserve"><value>Clear search</value></data>
+  <data name="Roletai.Paperless.Col.Cassette" xml:space="preserve"><value>Kasetė:</value></data>
+  <data name="Roletai.Paperless.Col.Control" xml:space="preserve"><value>Vald.:</value></data>
+  <data name="Roletai.Paperless.Col.Decor" xml:space="preserve"><value>Dekoras:</value></data>
+  <data name="Roletai.Paperless.Col.Fabric" xml:space="preserve"><value>Audinys:</value></data>
+  <data name="Roletai.Paperless.Col.Guides" xml:space="preserve"><value>Kreipiančiosios:</value></data>
+  <data name="Roletai.Paperless.Col.Height" xml:space="preserve"><value>Aukštis:</value></data>
+  <data name="Roletai.Paperless.Col.Order" xml:space="preserve"><value>Užsakymas</value></data>
+  <data name="Roletai.Paperless.Col.Quantity" xml:space="preserve"><value>Kiekis:</value></data>
+  <data name="Roletai.Paperless.Col.Tube" xml:space="preserve"><value>Velenas:</value></data>
+  <data name="Roletai.Paperless.Col.Type" xml:space="preserve"><value>Tipas:</value></data>
+  <data name="Roletai.Paperless.Col.Weight" xml:space="preserve"><value>Atsvaras:</value></data>
+  <data name="Roletai.Paperless.Col.Width" xml:space="preserve"><value>Plotis:</value></data>
+  <data name="Roletai.Paperless.Confirm" xml:space="preserve"><value>Confirm</value></data>
+  <data name="Roletai.Paperless.Consumption" xml:space="preserve"><value>Audinio sunaudojimas:</value></data>
+  <data name="Roletai.Paperless.Count" xml:space="preserve"><value>{0} of {1} items</value></data>
+  <data name="Roletai.Paperless.DateRange" xml:space="preserve"><value>ORDER DATE · {0} – {1}</value></data>
+  <data name="Roletai.Paperless.DoneCount" xml:space="preserve"><value>Done · {0} items</value></data>
+  <data name="Roletai.Paperless.ExplainAll" xml:space="preserve"><value>All items are shown, subject to date and search.</value></data>
+  <data name="Roletai.Paperless.ExplainMarked" xml:space="preserve"><value>Items have every selected mark or sign-off.</value></data>
+  <data name="Roletai.Paperless.ExplainUnmarked" xml:space="preserve"><value>Items are missing at least one selected mark or sign-off.</value></data>
+  <data name="Roletai.Paperless.Filter.All" xml:space="preserve"><value>All</value></data>
+  <data name="Roletai.Paperless.Filter.Marked" xml:space="preserve"><value>Marked</value></data>
+  <data name="Roletai.Paperless.Filter.Unmarked" xml:space="preserve"><value>Unmarked</value></data>
+  <data name="Roletai.Paperless.FilterSummary" xml:space="preserve"><value>{0}: {1}</value></data>
+  <data name="Roletai.Paperless.From" xml:space="preserve"><value>From</value></data>
+  <data name="Roletai.Paperless.GroupMeta" xml:space="preserve"><value>{0} gam. · Kiekis: {1}</value></data>
+  <data name="Roletai.Paperless.HideMine" xml:space="preserve"><value>Hide items I signed off</value></data>
+  <data name="Roletai.Paperless.InvalidDates" xml:space="preserve"><value>Choose a valid date range.</value></data>
+  <data name="Roletai.Paperless.LoadFailed" xml:space="preserve"><value>Could not load roller blinds. Try again.</value></data>
+  <data name="Roletai.Paperless.Loading" xml:space="preserve"><value>Loading roller blinds…</value></data>
+  <data name="Roletai.Paperless.MyMarks" xml:space="preserve"><value>My marks</value></data>
+  <data name="Roletai.Paperless.Nav" xml:space="preserve"><value>Roletai</value></data>
+  <data name="Roletai.Paperless.NoGuides" xml:space="preserve"><value>Be kreipiančiųjų</value></data>
+  <data name="Roletai.Paperless.NoItems" xml:space="preserve"><value>No items match.</value></data>
+  <data name="Roletai.Paperless.NoRollers" xml:space="preserve"><value>Order {0} exists, but has no roller blinds.</value></data>
+  <data name="Roletai.Paperless.Notes" xml:space="preserve"><value>Pastabos: {0}</value></data>
+  <data name="Roletai.Paperless.OrderDate" xml:space="preserve"><value>Order date</value></data>
+  <data name="Roletai.Paperless.OrderLine" xml:space="preserve"><value>Užsakymas Nr.: {0} (data - {1}), gam. užd. Nr.: {2}</value></data>
+  <data name="Roletai.Paperless.OrderNotFound" xml:space="preserve"><value>Order {0} does not exist or you cannot view it.</value></data>
+  <data name="Roletai.Paperless.PageFooter" xml:space="preserve"><value>Puslapis {0} iš {1}, atspausdinta {2}</value></data>
+  <data name="Roletai.Paperless.Private" xml:space="preserve"><value>Only you see these</value></data>
+  <data name="Roletai.Paperless.Quantity" xml:space="preserve"><value>Kiekis</value></data>
+  <data name="Roletai.Paperless.ReportTitle" xml:space="preserve"><value>Roletai (bendras kiekis: {0} vnt.)</value></data>
+  <data name="Roletai.Paperless.Retry" xml:space="preserve"><value>Retry</value></data>
+  <data name="Roletai.Paperless.Save.saving" xml:space="preserve"><value>Saving…</value></data>
+  <data name="Roletai.Paperless.Save.saved" xml:space="preserve"><value>Saved</value></data>
+  <data name="Roletai.Paperless.Save.error" xml:space="preserve"><value>Not saved — connection lost</value></data>
+  <data name="Roletai.Paperless.Search" xml:space="preserve"><value>Search order</value></data>
+  <data name="Roletai.Paperless.Shared" xml:space="preserve"><value>Shared</value></data>
+  <data name="Roletai.Paperless.SharedHint" xml:space="preserve"><value>Everyone sees sign-offs</value></data>
+  <data name="Roletai.Paperless.Show" xml:space="preserve"><value>Show</value></data>
+  <data name="Roletai.Paperless.Showing" xml:space="preserve"><value>SHOWING</value></data>
+  <data name="Roletai.Paperless.SignBody" xml:space="preserve"><value>You are confirming that your work on this item is finished.</value></data>
+  <data name="Roletai.Paperless.SignOff" xml:space="preserve"><value>Sign off</value></data>
+  <data name="Roletai.Paperless.SignTitle" xml:space="preserve"><value>Confirm sign-off?</value></data>
+  <data name="Roletai.Paperless.Signed" xml:space="preserve"><value>Signed</value></data>
+  <data name="Roletai.Paperless.SignedCount" xml:space="preserve"><value>You signed {0}/{1}</value></data>
+  <data name="Roletai.Paperless.Step" xml:space="preserve"><value>Step {0}</value></data>
+  <data name="Roletai.Paperless.StepShort" xml:space="preserve"><value>STEP</value></data>
+  <data name="Roletai.Paperless.To" xml:space="preserve"><value>To</value></data>
+  <data name="Roletai.Paperless.Unit" xml:space="preserve"><value>Matas:</value></data>
+  <data name="Roletai.Paperless.View.Paper" xml:space="preserve"><value>Paper</value></data>
+  <data name="Roletai.Paperless.View.Fabric" xml:space="preserve"><value>Fabric</value></data>
+  <data name="Roletai.Paperless.View.Type" xml:space="preserve"><value>Type</value></data>
+  <data name="Roletai.Paperless.View.Guides" xml:space="preserve"><value>Kreipiančiosios</value></data>
+  <data name="Roletai.Paperless.Views" xml:space="preserve"><value>Views</value></data>
+  <data name="Roletai.Paperless.Withdraw" xml:space="preserve"><value>Withdraw</value></data>
+  <data name="Roletai.Paperless.WithdrawBody" xml:space="preserve"><value>Your sign-off will be removed. Other workers will no longer see it.</value></data>
+  <data name="Roletai.Paperless.WithdrawTitle" xml:space="preserve"><value>Withdraw your sign-off?</value></data>
+  <data name="Roletai.Paperless.Worker" xml:space="preserve"><value>Worker</value></data>
+  <data name="Roletai.Paperless.You" xml:space="preserve"><value>✓ You</value></data>
+  <data name="Roletai.Paperless.AccessoryLine" xml:space="preserve"><value>Papildomi priedai: {0} — {1} {2}</value></data>
+  <data name="Roletai.Paperless.DefaultDateRange" xml:space="preserve"><value>ORDER DATE · {0} – {1} · last 14 days</value></data>
+  <data name="Roletai.Paperless.FabricGroupMeta" xml:space="preserve"><value>{0} gam. · Kiekis: {1} · Audinio sunaudojimas: {2}</value></data>
+  <data name="Roletai.Paperless.Pieces" xml:space="preserve"><value>pcs</value></data>
+  <data name="Roletai.Paperless.SearchSummary" xml:space="preserve"><value>order “{0}”</value></data>
+  <data name="Roletai.Paperless.DateSummary" xml:space="preserve"><value>date {0}–{1}</value></data>
+  <data name="Roletai.Paperless.AlreadySigned" xml:space="preserve"><value>Already signed: {0} · {1}</value></data>
+  <data name="Roletai.Paperless.SignFailed" xml:space="preserve"><value>Sign-off was not saved. Check your connection and try again.</value></data>
 </root>

@@ -17,6 +17,7 @@ builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddBuildVersion();
 builder.Services.AddScoped<ShopfloorDatabaseStatusService>();
+builder.Services.AddSingleton<RoletaiSignOffNotifier>();
 
 builder.Services.AddTransient<ShopfloorApiAuthHandler>();
 builder.Services

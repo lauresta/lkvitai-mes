@@ -1,0 +1,196 @@
+@page "/roletai"
+@layout RoletaiPaperlessLayout
+@inherits RoletaiPaperlessBase
+
+<PageTitle>Cikada.MES · @L["Roletai.Paperless.Nav"]</PageTitle>
+
+<div class="sfr-page">
+    <header class="sfr-head">
+        <a class="sfr-brand" href="shopfloor/gamyba" title="@L["Roletai.Paperless.Back"]">LK</a>
+        <div class="sfr-heading"><small>SHOPFLOOR</small><strong>@L["Roletai.Paperless.Nav"]</strong></div>
+        <nav class="sfr-views" aria-label="@L["Roletai.Paperless.Views"]">
+            @foreach (var view in ViewKeys)
+            {
+                <button type="button" class="@(_view == view ? "active" : "")" @onclick="() => SetViewAsync(view)">@L[$"Roletai.Paperless.View.{view}"]</button>
+            }
+        </nav>
+        <div class="sfr-head-spacer"></div>
+        <form class="sfr-search" @onsubmit="SearchAsync" @onsubmit:preventDefault>
+            <span aria-hidden="true">⌕</span>
+            <input value="@_searchInput" @oninput="e => _searchInput = e.Value?.ToString() ?? string.Empty" placeholder="@L["Roletai.Paperless.Search"]" aria-label="@L["Roletai.Paperless.Search"]" />
+            @if (!string.IsNullOrEmpty(_searchInput))
+            {
+                <button type="button" @onclick="ClearSearchAsync" aria-label="@L["Roletai.Paperless.ClearSearch"]">×</button>
+            }
+        </form>
+        <button type="button" class="sfr-show @(_showFilter ? "active" : "")" @onclick="() => _showFilter = !_showFilter">
+            <span aria-hidden="true">☷</span> @L["Roletai.Paperless.Show"]
+            @if (ActiveFilterCount > 0) { <b>@ActiveFilterCount</b> }
+        </button>
+        <div class="sfr-user" title="@_workerName"><span>@_initials</span><strong>@_workerName</strong></div>
+    </header>
+
+    <nav class="sfr-views sfr-views--portrait" aria-label="@L["Roletai.Paperless.Views"]">
+        @foreach (var view in ViewKeys)
+        {
+            <button type="button" class="@(_view == view ? "active" : "")" @onclick="() => SetViewAsync(view)">@L[$"Roletai.Paperless.View.{view}"]</button>
+        }
+    </nav>
+
+    <div class="sfr-datebar">
+        <span>@(IsSearching ? L["Roletai.Paperless.AllDatesSearch", _searchedOrder].Value : IsDefaultDateRange ? L["Roletai.Paperless.DefaultDateRange", _fromText, _toText].Value : L["Roletai.Paperless.DateRange", _fromText, _toText].Value)</span>
+        <span class="sfr-datebar-count">@L["Roletai.Paperless.Count", VisibleRows.Count, _data?.Rows.Count ?? 0]</span>
+    </div>
+
+    @if (HasMarkFilter)
+    {
+        <div class="sfr-summary"><strong>@L["Roletai.Paperless.Showing"]</strong><span>@FilterSummary</span><button type="button" @onclick="ClearFiltersAsync">@L["Roletai.Paperless.Clear"]</button></div>
+    }
+
+    @if (_showFilter)
+    {
+        <div class="sfr-filter-backdrop" @onclick="() => _showFilter = false"></div>
+        <section class="sfr-filter" aria-label="@L["Roletai.Paperless.Show"]">
+            <div class="sfr-filter-title">@L["Roletai.Paperless.Show"]</div>
+            <div class="sfr-segment">
+                @foreach (var mode in FilterModes)
+                {
+                    <button type="button" class="@(_filterMode == mode ? "active" : "")" @onclick="() => SetFilterMode(mode)">@L[$"Roletai.Paperless.Filter.{mode}"]</button>
+                }
+            </div>
+            <div class="sfr-filter-label">@L["Roletai.Paperless.MyMarks"] <small>@L["Roletai.Paperless.Private"]</small></div>
+            <div class="sfr-filter-tiles">
+                @for (var step = 1; step <= 3; step++)
+                {
+                    var selectedStep = step;
+                    <button type="button" class="@(_selectedSteps.Contains(step) ? "active" : "")" @onclick="() => ToggleFilterStep(selectedStep)">@(_selectedSteps.Contains(step) ? "✓ " : "")@L["Roletai.Paperless.Step", step]</button>
+                }
+            </div>
+            <div class="sfr-filter-label">@L["Roletai.Paperless.Shared"] <small>@L["Roletai.Paperless.SharedHint"]</small></div>
+            <button type="button" class="sfr-filter-tile @(_filterSigned ? "active" : "")" @onclick="ToggleSignedFilter">@L["Roletai.Paperless.Signed"]</button>
+            <button type="button" class="sfr-filter-tile @(_hideMine ? "active" : "")" @onclick="ToggleHideMine">@L["Roletai.Paperless.HideMine"]</button>
+            <div class="sfr-filter-label">@L["Roletai.Paperless.OrderDate"]</div>
+            <div class="sfr-dates"><label>@L["Roletai.Paperless.From"]<input type="date" value="@_fromText" @onchange="e => _fromText = e.Value?.ToString() ?? string.Empty" disabled="@IsSearching" /></label><label>@L["Roletai.Paperless.To"]<input type="date" value="@_toText" @onchange="e => _toText = e.Value?.ToString() ?? string.Empty" disabled="@IsSearching" /></label></div>
+            <p>@FilterExplanation</p>
+            <div class="sfr-filter-actions"><button type="button" @onclick="ClearFiltersAsync">@L["Roletai.Paperless.Clear"]</button><button type="button" @onclick="ApplyFilterAsync">@L["Roletai.Paperless.DoneCount", VisibleRows.Count]</button></div>
+        </section>
+    }
+
+    @if (_loading && _data is null)
+    {
+        <div class="sfr-empty">@L["Roletai.Paperless.Loading"]</div>
+    }
+    else if (_error is not null)
+    {
+        <div class="sfr-empty sfr-empty--error" role="alert"><strong>@_error</strong><button type="button" @onclick="() => LoadAsync(false)">@L["Roletai.Paperless.Retry"]</button></div>
+    }
+    else if (_data?.OrderStatus == "notFound")
+    {
+        <div class="sfr-empty" role="status"><strong>@L["Roletai.Paperless.OrderNotFound", _searchedOrder]</strong><button type="button" @onclick="ClearSearchAsync">@L["Roletai.Paperless.ClearSearch"]</button></div>
+    }
+    else if (_data?.OrderStatus == "noRollers")
+    {
+        <div class="sfr-empty" role="status"><strong>@L["Roletai.Paperless.NoRollers", _searchedOrder]</strong><button type="button" @onclick="ClearSearchAsync">@L["Roletai.Paperless.ClearSearch"]</button></div>
+    }
+    else if (_data?.OrderStatus == "cancelled")
+    {
+        <div class="sfr-empty" role="status"><strong>@L["Roletai.Paperless.Cancelled", _searchedOrder]</strong><button type="button" @onclick="ClearSearchAsync">@L["Roletai.Paperless.ClearSearch"]</button></div>
+    }
+    else if (VisibleRows.Count == 0)
+    {
+        <div class="sfr-empty" role="status"><strong>@L["Roletai.Paperless.NoItems"]</strong><button type="button" @onclick="ClearFiltersAsync">@L["Roletai.Paperless.ClearFilters"]</button></div>
+    }
+    else if (_view == "Paper")
+    {
+        <main class="sfr-paper-scroll">
+            @{ var sheets = VisibleRows.GroupBy(x => x.Cechas ?? "—").OrderBy(x => x.Key).ToList(); }
+            @for (var sheetIndex = 0; sheetIndex < sheets.Count; sheetIndex++)
+            {
+                var sheet = sheets[sheetIndex];
+                <article class="sfr-paper">
+                    @if (sheetIndex == 0) { <h1>@L["Roletai.Paperless.ReportTitle", _data!.Rows.Sum(x => x.Kiekis)]</h1> }
+                    <h2>@L["Roletai.Paperless.Cechas", sheet.Key]</h2>
+                    @foreach (var order in sheet.GroupBy(x => x.Uzsakymas).OrderBy(x => x.Key))
+                    {
+                        var first = order.First();
+                        <section class="sfr-order">
+                            <div class="sfr-order-head"><strong>@order.Key</strong><span>@L["Roletai.Paperless.OrderLine", order.Key, first.UzsakymoData.ToString("MM.dd"), first.GamibinesUzduotiesNumeris ?? "—"]</span></div>
+                            <div class="sfr-report-columns">
+                                <span>@L["Roletai.Paperless.Col.Type"]</span><span>@L["Roletai.Paperless.Col.Control"]</span><span>@L["Roletai.Paperless.Col.Width"]</span><span>@L["Roletai.Paperless.Col.Height"]</span><span>@L["Roletai.Paperless.Col.Quantity"]</span><span class="sfr-span2">@L["Roletai.Paperless.Col.Fabric"]</span><span class="sfr-span2">@L["Roletai.Paperless.Col.Guides"]</span><span>@L["Roletai.Paperless.Col.Cassette"]</span><span>@L["Roletai.Paperless.Col.Tube"]</span><span>@L["Roletai.Paperless.Col.Weight"]</span><span>@L["Roletai.Paperless.Col.Decor"]</span>
+                            </div>
+                            @foreach (var row in order.OrderBy(x => x.Spalva).ThenBy(x => x.ParduotoGaminioID))
+                            {
+                                <div class="sfr-report-row">
+                                    <span>@row.TipoTrPavadinimas</span><span>@row.Valdymas</span><span>@row.Plotis</span><span>@row.Aukstis</span><span>@row.Kiekis</span><strong>@row.Spalva</strong><span>@row.Audinys</span><em>@row.KrepianciujuTipas</em><span>@row.Kreipianciosios</span><span>@row.Kasete</span><span>@row.Velenas</span><span>@row.Atsvaras</span><strong>@row.Dekoras</strong>
+                                </div>
+                                <div class="sfr-under-row">
+                                    <div class="sfr-consumption">@L["Roletai.Paperless.Consumption"] <span>@row.AudinioSunaudojimas</span></div>
+                                    <RoletaiMarkStrip Row="row" Marks="_data!.MyMarks" SignOffs="_data!.SignOffs" OnToggle="ToggleMarkAsync" OnSign="OpenSignDialog" />
+                                </div>
+                                @if (!string.IsNullOrWhiteSpace(row.Pastabos)) { <div class="sfr-notes">@L["Roletai.Paperless.Notes", row.Pastabos]</div> }
+                                var priedai = _data!.Accessories.Where(x => x.ProductId == row.ParduotoGaminioID).ToList();
+                                @if (priedai.Count > 0)
+                                {
+                                    <div class="sfr-accessory-head"><span>@L["Roletai.Paperless.Accessories"]</span><span>@L["Roletai.Paperless.Unit"]</span><span>@L["Roletai.Paperless.Quantity"]</span></div>
+                                    @foreach (var accessory in priedai) { <div class="sfr-accessory"><span>@accessory.AccessoryName</span><span>@accessory.Unit</span><span>@accessory.Quantity</span></div> }
+                                }
+                            }
+                        </section>
+                    }
+                    <footer>@L["Roletai.Paperless.PageFooter", sheetIndex + 1, sheets.Count, VilniusNow()]</footer>
+                </article>
+            }
+        </main>
+    }
+    else
+    {
+        <main class="sfr-groups-scroll">
+            @foreach (var group in GroupedRows)
+            {
+                <section class="sfr-group">
+                    <header><strong>@group.Key</strong><span>@(_view == "Fabric" ? L["Roletai.Paperless.FabricGroupMeta", group.Rows.Count, group.Rows.Sum(x => x.Kiekis), GroupConsumption(group)].Value : L["Roletai.Paperless.GroupMeta", group.Rows.Count, group.Rows.Sum(x => x.Kiekis)].Value)</span><span>@L["Roletai.Paperless.SignedCount", group.Rows.Count(x => MineSigned(x.ParduotoGaminioID)), group.Rows.Count]</span></header>
+                    <div class="sfr-list-head"><span>@L["Roletai.Paperless.Col.Order"]</span><span>@L["Roletai.Paperless.Col.Type"]</span><span>@L["Roletai.Paperless.Col.Control"]</span><span>@L["Roletai.Paperless.Col.Width"]</span><span>@L["Roletai.Paperless.Col.Height"]</span><span>@L["Roletai.Paperless.Col.Quantity"]</span><span>@L["Roletai.Paperless.Col.Fabric"]</span><span>@L["Roletai.Paperless.Col.Guides"]</span><span>@L["Roletai.Paperless.Col.Cassette"]</span><span>@L["Roletai.Paperless.Col.Tube"]</span><span>@L["Roletai.Paperless.Col.Weight"]</span><span>@L["Roletai.Paperless.StepShort"]</span><span>@L["Roletai.Paperless.Signed"]</span></div>
+                    @foreach (var row in group.Rows)
+                    {
+                        <div class="sfr-list-row">
+                            <div class="sfr-row-id"><strong>@row.Uzsakymas</strong><small>@row.Cechas · @row.UzsakymoData.ToString("MM.dd")</small></div>
+                            <span class="sfr-row-type">@row.TipoTrPavadinimas</span><span>@row.Valdymas</span><span>@row.Plotis</span><span>@row.Aukstis</span><span>@row.Kiekis</span><span>@row.Spalva · @row.Audinys</span><span>@row.KrepianciujuTipas · @row.Kreipianciosios</span><span>@row.Kasete</span><span>@row.Velenas</span><span>@row.Atsvaras</span>
+                            <div class="sfr-portrait-overview">@row.Plotis × @row.Aukstis · @row.Kiekis @L["Roletai.Paperless.Pieces"] · @L["Roletai.Paperless.Col.Control"] @row.Valdymas</div>
+                            <div class="sfr-portrait-specs">
+                                @if (!string.IsNullOrWhiteSpace(row.Spalva) || !string.IsNullOrWhiteSpace(row.Audinys)) { <span>@L["Roletai.Paperless.Col.Fabric"] <b>@row.Spalva</b> @row.Audinys</span> }
+                                @if (!string.IsNullOrWhiteSpace(row.KrepianciujuTipas) || !string.IsNullOrWhiteSpace(row.Kreipianciosios)) { <span>@L["Roletai.Paperless.Col.Guides"] <i>@row.KrepianciujuTipas</i> @row.Kreipianciosios</span> }
+                                @if (!string.IsNullOrWhiteSpace(row.Kasete)) { <span>@L["Roletai.Paperless.Col.Cassette"] @row.Kasete</span> }
+                                @if (!string.IsNullOrWhiteSpace(row.Velenas)) { <span>@L["Roletai.Paperless.Col.Tube"] @row.Velenas</span> }
+                                @if (!string.IsNullOrWhiteSpace(row.Atsvaras)) { <span>@L["Roletai.Paperless.Col.Weight"] @row.Atsvaras</span> }
+                            </div>
+                            <RoletaiMarkStrip Row="row" Marks="_data!.MyMarks" SignOffs="_data!.SignOffs" OnToggle="ToggleMarkAsync" OnSign="OpenSignDialog" Compact="true" />
+                            @if (!string.IsNullOrWhiteSpace(row.Pastabos)) { <div class="sfr-row-extra">@L["Roletai.Paperless.Notes", row.Pastabos]</div> }
+                            @if (row.Dekoras is not null and not "0") { <div class="sfr-row-extra">@L["Roletai.Paperless.Col.Decor"] @row.Dekoras</div> }
+                            @foreach (var accessory in _data!.Accessories.Where(x => x.ProductId == row.ParduotoGaminioID)) { <div class="sfr-row-extra">@L["Roletai.Paperless.AccessoryLine", accessory.AccessoryName ?? "", accessory.Quantity, accessory.Unit ?? ""]</div> }
+                            @foreach (var signer in _data!.SignOffs.Where(x => x.ProductId == row.ParduotoGaminioID && !x.Mine)) { <div class="sfr-row-extra">@L["Roletai.Paperless.Signed"] · @signer.Name · @VilniusTime(signer.SignedAt)</div> }
+                        </div>
+                    }
+                </section>
+            }
+        </main>
+    }
+
+    @if (_saveState != "")
+    {
+        <div class="sfr-save sfr-save--@_saveState" role="status">@L[$"Roletai.Paperless.Save.{_saveState}"] @if (_saveState == "error" && HasPendingMarks) { <button type="button" @onclick="RetryMarksAsync">@L["Roletai.Paperless.Retry"]</button> }</div>
+    }
+
+    @if (_dialogRow is not null)
+    {
+        <div class="sfr-dialog-backdrop" @onclick="CloseDialog">
+            <div class="sfr-dialog" role="dialog" aria-modal="true" @onclick:stopPropagation="true">
+                <h2>@(_withdraw ? L["Roletai.Paperless.WithdrawTitle"].Value : L["Roletai.Paperless.SignTitle"].Value)</h2>
+                <p>@(_withdraw ? L["Roletai.Paperless.WithdrawBody"].Value : L["Roletai.Paperless.SignBody"].Value)</p>
+                <div class="sfr-dialog-item"><strong>@_dialogRow.Uzsakymas · @_dialogRow.TipoTrPavadinimas</strong><span>@_dialogRow.Plotis × @_dialogRow.Aukstis · @_dialogRow.Spalva · @L["Roletai.Paperless.Quantity"]: @_dialogRow.Kiekis</span></div>
+                @foreach (var signer in _data?.SignOffs.Where(x => x.ProductId == _dialogRow.ParduotoGaminioID && !x.Mine) ?? []) { <div class="sfr-dialog-existing">@L["Roletai.Paperless.AlreadySigned", signer.Name, VilniusTime(signer.SignedAt)]</div> }
+                @if (_dialogError is not null) { <p class="sfr-dialog-error" role="alert">@_dialogError</p> }
+                <div class="sfr-dialog-actions"><button type="button" @onclick="CloseDialog">@L["Roletai.Paperless.Cancel"]</button><button type="button" class="@(_withdraw ? "danger" : "primary")" disabled="@_signing" @onclick="ConfirmDialogAsync">@(_withdraw ? L["Roletai.Paperless.Withdraw"].Value : L["Roletai.Paperless.Confirm"].Value)</button></div>
+            </div>
+        </div>
+    }
+</div>
