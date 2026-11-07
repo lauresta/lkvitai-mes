@@ -106,10 +106,21 @@ http:
       tls:
         certResolver: letsencrypt
 
+    # Warehouse API controllers are routed as api/warehouse/v1/* (plus /health at the
+    # root), so the public path is passed through unchanged. Only /api/warehouse/health
+    # is stripped to /health so the root health endpoint stays reachable for monitors.
+    mes-test-api-warehouse-health:
+      rule: "(Host(`cikada-test.lauresta.com`) || Host(`lkvitai.lauresta.com`)) && Path(`/api/warehouse/health`)"
+      entryPoints: [websecure]
+      middlewares: [mes-test-strip-api-warehouse]
+      service: mes-test-warehouse-api
+      priority: 210
+      tls:
+        certResolver: letsencrypt
+
     mes-test-api-warehouse:
       rule: "(Host(`cikada-test.lauresta.com`) || Host(`lkvitai.lauresta.com`)) && PathPrefix(`/api/warehouse`)"
       entryPoints: [websecure]
-      middlewares: [mes-test-strip-api-warehouse]
       service: mes-test-warehouse-api
       priority: 200
       tls:
@@ -170,11 +181,12 @@ http:
       stripPrefix:
         prefixes: [/api/portal]
 
+    # Used only by mes-test-api-warehouse-health; the API routers keep the full path.
     mes-test-strip-api-warehouse:
       stripPrefix:
         prefixes: [/api/warehouse]
 
-    # Sales / Frontline / Scanning APIs receive the full /api/<module>/* path
+    # Warehouse / Sales / Frontline / Scanning APIs receive the full /api/<module>/* path
     # so the MapGroup("/api/sales") etc. in each host's Program.cs matches as
     # declared. No stripPrefix middleware is needed, matching the group prefix
     # used by the app.
