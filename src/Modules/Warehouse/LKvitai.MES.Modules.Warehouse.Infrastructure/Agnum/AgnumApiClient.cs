@@ -78,8 +78,9 @@ public sealed class AgnumApiClient : IAgnumApiClient
                         if (level.Name.Equals("KN1", StringComparison.OrdinalIgnoreCase)) kn1 = amount;
                         if (level.Name.Equals("KN2", StringComparison.OrdinalIgnoreCase)) kn2 = amount;
                     }
-                    if (!prices.TryAdd(product.Name, new AgnumPriceDto(kn1, kn2)))
-                        throw new JsonException("Duplicate Agnum price code.");
+                    var value = new AgnumPriceDto(kn1, kn2);
+                    if (!prices.TryAdd(product.Name, value) && prices[product.Name] != value)
+                        throw new JsonException("Conflicting Agnum prices for the same code.");
                 }
             }
             return prices;

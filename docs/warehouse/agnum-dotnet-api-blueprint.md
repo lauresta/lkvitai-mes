@@ -257,5 +257,6 @@ Merge запускает обычный `Build and Push` и `Deploy to Test`, к
 
 - A0: inspection of the jar service showed `/api/products/price/search` serializes an array of `{ "<code>": { "KN1": ..., "KN2": ... } }`, whereas the earlier pricing blueprint described flat rows with `KOD`. The replacement will preserve the inspected wire shape; A2 must parse it. `/api/products/qty/search` uses the same nested-by-code pattern.
 - A1: `FirebirdSql.Data.FirebirdClient` 10.3.4 does not accept Jaybird's `ISO8859_13` client encoding. `UTF8` was required for product/client reads; `WIN1257` failed to transliterate some client rows. The warehouse name in the quantity route is explicitly cast from legacy bytes as `WIN1257` so `Sandėlys` renders correctly. SQL dialect remains 1 and all GET transactions are read-only.
+- A2: the live `sandelys` price response has 7470 rows but 7463 distinct codes; seven repeated codes have identical KN1/KN2 values. The parser accepts identical repetitions and rejects conflicting values.
 
 ### Осталось

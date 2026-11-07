@@ -37,6 +37,20 @@ public class AgnumApiClientTests
     }
 
     [Fact]
+    public async Task GetPricesAsync_AcceptsIdenticalDuplicateCodesInWarehouseResponse()
+    {
+        var payload = "[{\"A\":{\"KN1\":9,\"KN2\":10}},{\"A\":{\"KN1\":9,\"KN2\":10}}]";
+        var handler = new SequentialHttpMessageHandler(new Queue<HttpResponseMessage>(new[] {
+            new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(payload, Encoding.UTF8, "application/json") }
+        }));
+        using var httpClient = new HttpClient(handler) { BaseAddress = new System.Uri("https://agnum.example/") };
+        using var loggerFactory = LoggerFactory.Create(builder => builder.AddFilter((_, _) => false));
+        var client = new AgnumApiClient(httpClient, new AgnumWarehouseKeyOptions(), loggerFactory.CreateLogger<AgnumApiClient>());
+
+        (await client.GetPricesAsync()).Should().ContainSingle().Which.Value.Should().Be(new AgnumPriceDto(9m, 10m));
+    }
+
+    [Fact]
     public async Task GetProductsAsync_WhenEmptySearchReturnsBadRequest_ShouldRetryWithFallbackQuery()
     {
         var products = new[]
