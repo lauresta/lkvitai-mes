@@ -1,6 +1,4 @@
-.sfr-test{height:34px;display:flex;align-items:center;padding:0 16px;background:var(--danger-dot);color:var(--n-0);font:600 12px var(--font-mono)}
 .sfr-page{height:100dvh;min-height:0;display:flex;flex-direction:column;background:var(--n-100);color:var(--n-900);font-family:var(--font-ui);overflow:hidden}
-.sfr-test+.sfr-page{height:calc(100dvh - 34px)}
 .sfr-page *{box-sizing:border-box}
 .sfr-page button,.sfr-page input{font:inherit}
 .sfr-page button{touch-action:manipulation;cursor:pointer}
@@ -123,7 +121,7 @@
  .sfr-groups-scroll{padding:4px}.sfr-list-head{display:none}.sfr-list-row{display:grid;grid-template-columns:minmax(0,1fr) 136px 92px;gap:3px;padding:7px 9px}.sfr-list-row>span{display:none}.sfr-row-id{grid-column:1}.sfr-row-type{display:block!important;grid-column:2;white-space:nowrap}.sfr-list-row .sfr-marks--compact{grid-column:1/-1;justify-content:flex-start}.sfr-row-extra{grid-column:1/-1}
 }
 @media(max-width:540px){.sfr-head{gap:5px;padding:0 6px}.sfr-heading small{display:none}.sfr-heading strong{font-size:14px}.sfr-search{width:130px}.sfr-show{padding:0 7px}.sfr-user{padding:0}.sfr-user span{width:28px;height:28px}.sfr-datebar{font-size:10px}}
-@media print{.sfr-test,.sfr-head,.sfr-views--portrait,.sfr-datebar,.sfr-summary,.sfr-filter,.sfr-save,.sfr-marks{display:none!important}.sfr-page{height:auto;overflow:visible;background:var(--n-0)}.sfr-paper-scroll{display:block;overflow:visible;padding:0;background:var(--n-0)}.sfr-paper{border:0;box-shadow:none;break-after:page}.sfr-paper:last-child{break-after:auto}.sfr-under-row{display:block}.sfr-consumption{width:23%}}
+@media print{.sfr-head,.sfr-views--portrait,.sfr-datebar,.sfr-summary,.sfr-filter,.sfr-save,.sfr-marks{display:none!important}.sfr-page{height:auto;overflow:visible;background:var(--n-0)}.sfr-paper-scroll{display:block;overflow:visible;padding:0;background:var(--n-0)}.sfr-paper{border:0;box-shadow:none;break-after:page}.sfr-paper:last-child{break-after:auto}.sfr-under-row{display:block}.sfr-consumption{width:23%}}
 .sfr-portrait-overview,.sfr-portrait-specs{display:none}
 @media(max-width:719px),(orientation:portrait){
  .sfr-list-row{grid-template-columns:minmax(0,1fr) 136px 92px}
