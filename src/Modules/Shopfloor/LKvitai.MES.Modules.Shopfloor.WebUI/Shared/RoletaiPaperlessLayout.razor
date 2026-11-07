@@ -1,12 +1,7 @@
 @inherits LayoutComponentBase
-@inject IWebHostEnvironment HostEnvironment
 
 <AuthorizeView>
     <Authorized>
-        @if (HostEnvironment.IsEnvironment("Test"))
-        {
-            <div class="sfr-test" role="alert">@L["Gamyba.TestSharedLegacyNotice"]</div>
-        }
         @Body
     </Authorized>
     <NotAuthorized><RedirectToLogin /></NotAuthorized>
