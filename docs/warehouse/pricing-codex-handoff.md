@@ -24,6 +24,7 @@ S1 → S2 → S3 → S4 → S5 → S6 → S7a → S7b (только при вы�
 - S1 → PR #283 → Release solution build, 768 Warehouse unit tests, 29 architecture tests, CI/quality gate, Build and Push, Deploy to Test прошли; анонимный POST `/api/warehouse/v1/item-price-snapshots` вернул 401. UI глазами без авторизованной сессии не проверял.
 - S2 → PR #284 → Release build, три новых PostgreSQL integration tests, CI/quality gate, Build and Push, Deploy to Test прошли. Анонимный GET шаблона `/api/warehouse/v1/admin/import/prices/template` вернул 401; скачивание под админом без авторизованной сессии не проверял. Реальные цены не загружал.
 - S3 → PR #285 → Warehouse WebUI Release build, 768 Warehouse unit tests, 29 architecture tests, CI/quality gate, Build and Push, Deploy to Test прошли. `/warehouse/agnum/balances` отвечает 200. Цены двух товаров глазами не проверил: доступного авторизованного браузера не было, Mac заблокирован.
+- S4 → PR #286 → Warehouse WebUI Release build, 768 Warehouse unit tests, 29 architecture tests, CI/quality gate, Build and Push, Deploy to Test прошли. `/warehouse/agnum/balances` отвечает 200, анонимный API отчёта — 401. Экраны и консоль глазами не проверил без авторизованной сессии.
 
 ## Отклонения от blueprint
 

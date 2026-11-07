@@ -90,6 +90,7 @@
                                             <option value="@item.Id">@item.InternalSKU - @item.Name</option>
                                         }
                                     </select>
+                                    <ItemPriceHint ItemId="@line.ItemId" />
                                 </td>
                                 <td>
                                     <input type="number" min="0.01" step="0.01" class="form-control" @bind="line.Qty" />
