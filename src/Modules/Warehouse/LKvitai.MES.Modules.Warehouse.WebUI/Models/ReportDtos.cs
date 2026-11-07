@@ -12,6 +12,9 @@ public record StockLevelRowDto
     public decimal Qty { get; init; }
     public decimal ReservedQty { get; init; }
     public decimal AvailableQty { get; init; }
+    public decimal? UnitCost { get; init; }
+    public decimal? TotalValue { get; init; }
+    public decimal? BasePrice { get; init; }
     public string BaseUom { get; init; } = string.Empty;
     public DateTime LastUpdated { get; init; }
 }

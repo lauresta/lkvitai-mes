@@ -223,6 +223,11 @@
                         <span class="is-money is-num">@FormatMoney(context.Item.BasePrice)</span>
                     </CellTemplate>
                 </TemplateColumn>
+                <TemplateColumn Title="Purchase">
+                    <CellTemplate>
+                        <span class="is-money is-num">@FormatMoney(context.Item.PurchasePrice)</span>
+                    </CellTemplate>
+                </TemplateColumn>
                 <TemplateColumn Title="Barcode">
                     <CellTemplate>
                         <span class="mono">@FormatNullable(context.Item.PrimaryBarcode)</span>
