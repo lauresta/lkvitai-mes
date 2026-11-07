@@ -172,6 +172,10 @@ public sealed class SqlFabricQueryService : IFabricQueryService
                 ExpectedDate: ReadDateOnlyOrNull(reader, "ExpectedDate")));
         }
 
+        await reader.DisposeAsync().ConfigureAwait(false);
+        var referencePrices = await TryGetReferencePricesAsync(conn, code, cancellationToken)
+            .ConfigureAwait(false);
+
         matSw.Stop();
         totalSw.Stop();
 
@@ -203,8 +207,48 @@ public sealed class SqlFabricQueryService : IFabricQueryService
             DiscountPercent: discount,
             Widths:          widths,
             SelectedWidthMm: selectedWidth,
-            Alternatives:    alternatives);
+            Alternatives:    alternatives,
+            ReferencePrices: referencePrices);
     }
+
+    private async Task<IReadOnlyList<FabricReferencePriceDto>> TryGetReferencePricesAsync(
+        SqlConnection connection, string code, CancellationToken cancellationToken)
+    {
+        try
+        {
+            using var stream = typeof(SqlFabricQueryService).Assembly.GetManifestResourceStream(
+                "LKvitai.MES.Modules.Frontline.Infrastructure.Sql.Queries.FabricReferencePrices.sql")
+                ?? throw new InvalidOperationException("Missing Frontline fabric price query.");
+            using var source = new StreamReader(stream);
+            await using var command = new SqlCommand(source.ReadToEnd(), connection)
+            {
+                CommandTimeout = _options.CommandTimeoutSeconds,
+            };
+            command.Parameters.Add(new SqlParameter("@Code", SqlDbType.NVarChar, 50) { Value = code });
+            command.Parameters.Add(new SqlParameter("@Today", SqlDbType.Date) { Value = DateTime.Today });
+
+            var prices = new List<FabricReferencePriceDto>();
+            await using var priceReader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+            while (await priceReader.ReadAsync(cancellationToken).ConfigureAwait(false))
+            {
+                prices.Add(MapReferencePrice(priceReader));
+            }
+
+            return prices;
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            _logger.LogWarning(ex, "Fabric reference price lookup failed for {Code}; show card without prices.", code);
+            return Array.Empty<FabricReferencePriceDto>();
+        }
+    }
+
+    public static FabricReferencePriceDto MapReferencePrice(IDataRecord row)
+        => new(
+            Convert.ToString(row["TypeName"], CultureInfo.InvariantCulture) ?? string.Empty,
+            row["Unit"] is DBNull ? null : Convert.ToString(row["Unit"], CultureInfo.InvariantCulture),
+            Convert.ToDecimal(row["Price"], CultureInfo.InvariantCulture),
+            Convert.ToInt32(row["IsFrom"], CultureInfo.InvariantCulture) != 0);
 
     public async Task<PagedResult<FabricLowStockDto>> GetLowStockListAsync(
         FabricLowStockQueryParams query,

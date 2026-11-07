@@ -16,6 +16,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Sql/Queries/*.sql" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\..\BuildingBlocks\LKvitai.MES.BuildingBlocks.ObjectStorage\LKvitai.MES.BuildingBlocks.ObjectStorage.csproj" />
     <ProjectReference Include="..\..\..\BuildingBlocks\LKvitai.MES.BuildingBlocks.SharedKernel\LKvitai.MES.BuildingBlocks.SharedKernel.csproj" />
     <ProjectReference Include="..\LKvitai.MES.Modules.Frontline.Application\LKvitai.MES.Modules.Frontline.Application.csproj" />

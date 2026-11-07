@@ -171,6 +171,11 @@ public sealed class StubFabricQueryService : IFabricQueryService
                     new("R118", PlaceholderPhoto, null, 2000, FabricAvailabilityStatus.Enough, 34, null),
                     new("R124", PlaceholderPhoto, null, 2000, FabricAvailabilityStatus.Low,    11, new DateOnly(2026, 5, 6)),
                     new("R130", PlaceholderPhoto, null, 2000, FabricAvailabilityStatus.Enough, 68, null),
+                },
+                ReferencePrices: new FabricReferencePriceDto[]
+                {
+                    new("R19", "1m pločio", 28.96m, false),
+                    new("R25 LP", "1m pločio", 30.70m, true),
                 }),
             ["DN45"] = new(
                 Code: "DN45",
@@ -189,7 +194,8 @@ public sealed class StubFabricQueryService : IFabricQueryService
                 {
                     new("DN47", PlaceholderPhoto, null, 1800, FabricAvailabilityStatus.Enough, 56, null),
                     new("DN51", PlaceholderPhoto, null, 1800, FabricAvailabilityStatus.Low,    14, new DateOnly(2026, 5, 9)),
-                }),
+                },
+                ReferencePrices: Array.Empty<FabricReferencePriceDto>()),
             ["V78"] = new(
                 Code: "V78",
                 Name: "Vertical blind sand",
@@ -205,7 +211,8 @@ public sealed class StubFabricQueryService : IFabricQueryService
                 Alternatives: new FabricAlternativeDto[]
                 {
                     new("V80", PlaceholderPhoto, null, 2500, FabricAvailabilityStatus.Enough, 11, null),
-                }),
+                },
+                ReferencePrices: Array.Empty<FabricReferencePriceDto>()),
         };
     }
 

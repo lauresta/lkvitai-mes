@@ -20,4 +20,5 @@ public sealed record FabricCardDto(
     int? DiscountPercent,
     IReadOnlyList<WidthStockDto> Widths,
     int? SelectedWidthMm,
-    IReadOnlyList<FabricAlternativeDto> Alternatives);
+    IReadOnlyList<FabricAlternativeDto> Alternatives,
+    IReadOnlyList<FabricReferencePriceDto> ReferencePrices);
