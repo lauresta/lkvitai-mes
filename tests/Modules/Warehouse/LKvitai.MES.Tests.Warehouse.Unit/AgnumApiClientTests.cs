@@ -108,6 +108,57 @@ public class AgnumApiClientTests
         handler.Requests[0].RequestUri!.PathAndQuery.Should().Be("/api/clients/search?code=___NO_SUCH_CODE___&filter_type=ne&order=id");
     }
 
+    [Fact]
+    public async Task GetProductsAsync_WhenServerFails_ShouldNotReturnEmptyCatalog()
+    {
+        var handler = new SequentialHttpMessageHandler(new Queue<HttpResponseMessage>(new[]
+        {
+            new HttpResponseMessage(HttpStatusCode.InternalServerError)
+        }));
+        using var httpClient = new HttpClient(handler) { BaseAddress = new System.Uri("https://agnum.example/") };
+        using var loggerFactory = LoggerFactory.Create(builder => builder.AddFilter((_, _) => false));
+        var client = new AgnumApiClient(httpClient, new AgnumWarehouseKeyOptions(), loggerFactory.CreateLogger<AgnumApiClient>());
+
+        await client.Invoking(x => x.GetProductsAsync()).Should().ThrowAsync<AgnumApiUnavailableException>()
+            .WithMessage("*HTTP 500*");
+        handler.Requests.Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task GetClientsAsync_WhenServerFails_ShouldNotReturnEmptyCatalog()
+    {
+        var handler = new SequentialHttpMessageHandler(new Queue<HttpResponseMessage>(new[]
+        {
+            new HttpResponseMessage(HttpStatusCode.BadGateway)
+        }));
+        using var httpClient = new HttpClient(handler) { BaseAddress = new System.Uri("https://agnum.example/") };
+        using var loggerFactory = LoggerFactory.Create(builder => builder.AddFilter((_, _) => false));
+        var client = new AgnumApiClient(httpClient, new AgnumWarehouseKeyOptions(), loggerFactory.CreateLogger<AgnumApiClient>());
+
+        await client.Invoking(x => x.GetClientsAsync()).Should().ThrowAsync<AgnumApiUnavailableException>()
+            .WithMessage("*HTTP 502*");
+    }
+
+    [Fact]
+    public async Task GetProductsAsync_WhenNetworkFails_ShouldReportUnavailable()
+    {
+        using var httpClient = new HttpClient(new FailingHttpMessageHandler())
+        {
+            BaseAddress = new System.Uri("https://agnum.example/")
+        };
+        using var loggerFactory = LoggerFactory.Create(builder => builder.AddFilter((_, _) => false));
+        var client = new AgnumApiClient(httpClient, new AgnumWarehouseKeyOptions(), loggerFactory.CreateLogger<AgnumApiClient>());
+
+        await client.Invoking(x => x.GetProductsAsync()).Should().ThrowAsync<AgnumApiUnavailableException>()
+            .WithMessage("*network unavailable*");
+    }
+
+    private sealed class FailingHttpMessageHandler : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            => throw new HttpRequestException("network unavailable");
+    }
+
     private sealed class SequentialHttpMessageHandler : HttpMessageHandler
     {
         private readonly Queue<HttpResponseMessage> _responses;

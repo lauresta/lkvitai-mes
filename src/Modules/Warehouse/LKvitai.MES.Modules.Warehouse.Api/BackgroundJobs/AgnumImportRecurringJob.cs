@@ -1,5 +1,6 @@
 using LKvitai.MES.Modules.Warehouse.Application.Ports;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
+using LKvitai.MES.Modules.Warehouse.Integration.Agnum;
 using Microsoft.EntityFrameworkCore;
 
 namespace LKvitai.MES.Modules.Warehouse.Api.BackgroundJobs;
@@ -51,10 +52,20 @@ public sealed class AgnumImportRecurringJob
                     mapping.AgnumName);
 
                 _logger.LogInformation("Agnum nomenclature import started for sndId {SndId}.", mapping.SndId);
-                var productResult = await _nomenclatureImportService.ApplyAsync(
-                    mapping.SndId,
-                    cancellationToken,
-                    importPartners: !partnersImported);
+                AgnumImportResult productResult;
+                try
+                {
+                    productResult = await _nomenclatureImportService.ApplyAsync(
+                        mapping.SndId,
+                        cancellationToken,
+                        importPartners: !partnersImported);
+                }
+                catch (AgnumApiUnavailableException)
+                {
+                    // The balance service records a Failed run without replacing the last good balances.
+                    await _balanceImportService.StartImportAsync(mapping.SndId, cancellationToken);
+                    throw;
+                }
                 partnersImported = true;
                 _logger.LogInformation(
                     "Agnum nomenclature import completed for sndId {SndId}. Created={Created} Updated={Updated} Skipped={Skipped} Conflicts={Conflicts}",

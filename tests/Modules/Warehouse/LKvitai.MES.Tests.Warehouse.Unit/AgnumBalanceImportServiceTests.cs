@@ -6,7 +6,6 @@ using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 using LKvitai.MES.Modules.Warehouse.Integration.Agnum;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
 
@@ -83,6 +82,45 @@ public class AgnumBalanceImportServiceTests
         balance!.ItemId.Should().BeNull();
         balance.Sku.Should().Be("SKU-002");
         balance.Quantity.Should().Be(5);
+    }
+
+    [Fact]
+    public async Task StartImportAsync_WhenAgnumIsUnavailable_ShouldRecordFailureAndKeepPreviousBalances()
+    {
+        await using var db = CreateDbContext();
+        var previousRun = new AgnumBalanceImportRun
+        {
+            SndId = 493,
+            StartedAt = DateTime.UtcNow.AddDays(-1),
+            FinishedAt = DateTime.UtcNow.AddDays(-1),
+            Status = "Completed"
+        };
+        db.AgnumBalanceImportRuns.Add(previousRun);
+        await db.SaveChangesAsync();
+        db.AgnumVirtualWarehouseBalances.Add(new AgnumVirtualWarehouseBalance
+        {
+            ImportRunId = previousRun.Id,
+            SndId = 493,
+            AgnumProductId = 1,
+            Sku = "SKU-001",
+            Quantity = 20,
+            ImportedAt = DateTime.UtcNow.AddDays(-1)
+        });
+        await db.SaveChangesAsync();
+
+        var clientMock = new Mock<IAgnumApiClient>();
+        clientMock.Setup(x => x.GetProductsAsync(It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new AgnumApiUnavailableException("Agnum API GET api/products/search returned HTTP 500."));
+        var factoryMock = new Mock<IAgnumApiClientFactory>();
+        factoryMock.Setup(x => x.GetForSndId(493)).Returns(clientMock.Object);
+        var service = new AgnumBalanceImportService(db, factoryMock.Object, new LoggerFactory().CreateLogger<AgnumBalanceImportService>());
+
+        var runId = await service.StartImportAsync(493);
+
+        var run = await service.GetRunStatusAsync(runId);
+        run.Status.Should().Be("Failed");
+        run.ErrorSummary.Should().Contain("HTTP 500");
+        (await db.AgnumVirtualWarehouseBalances.CountAsync(x => x.ImportRunId == previousRun.Id)).Should().Be(1);
     }
 
     private static AgnumBalanceImportService CreateService(WarehouseDbContext db, params AgnumProductDto[] products)
