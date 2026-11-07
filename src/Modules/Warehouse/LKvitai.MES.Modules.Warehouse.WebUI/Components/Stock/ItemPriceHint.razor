@@ -1,0 +1,62 @@
+@using System.Globalization
+@inject ItemPricesClient ItemPricesClient
+@inject StockClient StockClient
+
+<div class="small text-muted mt-1">
+    Available <span class="is-num">@(_available?.ToString("0.00", CultureInfo.InvariantCulture) ?? "–")</span>
+    · Cost <span class="is-money is-num">@Money.Format(_cost)</span>
+    · Sale <span class="is-money is-num">@Money.Format(_sale)</span>
+</div>
+
+@code {
+    [Parameter] public int? ItemId { get; set; }
+
+    private int? _loadedItemId;
+    private int _loadVersion;
+    private decimal? _available;
+    private decimal? _cost;
+    private decimal? _sale;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_loadedItemId == ItemId) return;
+
+        _loadedItemId = ItemId;
+        var version = ++_loadVersion;
+        _available = null;
+        _cost = null;
+        _sale = null;
+        if (ItemId is not > 0) return;
+
+        try
+        {
+            var prices = await ItemPricesClient.GetMapAsync([((int?)ItemId, (string?)null)]);
+            var snapshot = prices.Get(ItemId, null);
+            if (version != _loadVersion || snapshot is null) return;
+
+            _cost = snapshot.EffectiveCost;
+            _sale = snapshot.BasePrice;
+            var quantity = 0m;
+            var page = 1;
+            while (true)
+            {
+                var stock = await StockClient.SearchAvailableStockAsync(
+                    warehouse: null, location: null, sku: snapshot.Sku,
+                    page: page, pageSize: 1000);
+                if (version != _loadVersion) return;
+                quantity += stock.Items.Where(x => x.ItemId == ItemId).Sum(x => x.AvailableQty);
+                if (page * 1000 >= stock.TotalCount) break;
+                page++;
+            }
+
+            _available = quantity;
+        }
+        catch (Exception ex) when (ex is ApiException or HttpRequestException or TaskCanceledException)
+        {
+            if (version != _loadVersion) return;
+            _available = null;
+            _cost = null;
+            _sale = null;
+        }
+    }
+}

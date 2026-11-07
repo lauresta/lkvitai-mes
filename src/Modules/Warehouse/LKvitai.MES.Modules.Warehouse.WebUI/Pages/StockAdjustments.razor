@@ -52,6 +52,7 @@
                     <MudSelectItem T="int" Value="@item.Id">@item.InternalSKU - @item.Name</MudSelectItem>
                 }
             </MudSelect>
+            <ItemPriceHint ItemId="@(_itemId > 0 ? _itemId : null)" />
         </div>
 
         <div class="lk-field--filter adjustment-field adjustment-field--location">

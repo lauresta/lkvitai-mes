@@ -35,6 +35,7 @@
                                 <option value="@item.Id">@item.InternalSKU - @item.Name</option>
                             }
                         </select>
+                        <ItemPriceHint ItemId="@(_createItemId > 0 ? _createItemId : null)" />
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Qty</label>
