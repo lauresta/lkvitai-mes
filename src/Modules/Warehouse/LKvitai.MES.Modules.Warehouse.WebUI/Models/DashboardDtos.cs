@@ -2,19 +2,17 @@ namespace LKvitai.MES.Modules.Warehouse.WebUI.Models;
 
 public sealed record WarehouseOptionDto(string Code, string Name);
 
-public sealed record DashboardOverviewDto
-{
-    public decimal TotalStockValue { get; init; }
-    public decimal? TotalStockCostValue { get; init; }
-    public decimal? TotalStockSaleValue { get; init; }
-    public int TotalSKUs { get; init; }
-    public decimal TotalQuantity { get; init; }
-    public int LowStockCount { get; init; }
-    public int OutOfStockCount { get; init; }
-    public int ExpiringSoonCount { get; init; }
-    public int ExpiredCount { get; init; }
-    public string AgnumStatus { get; init; } = "Unknown";
-}
+public sealed record DashboardOverviewDto(
+    decimal TotalStockValue,
+    decimal? TotalStockCostValue,
+    decimal? TotalStockSaleValue,
+    int TotalSKUs,
+    decimal TotalQuantity,
+    int LowStockCount,
+    int OutOfStockCount,
+    int ExpiringSoonCount,
+    int ExpiredCount,
+    string AgnumStatus = "Unknown");
 
 public sealed record CategoryValueDto(string CategoryName, decimal Value, decimal Percent);
 
