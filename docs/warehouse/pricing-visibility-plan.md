@@ -27,7 +27,7 @@ Goal: every Warehouse screen where an operator sees a stock quantity also shows 
 ## Data findings (2026-11-07)
 
 - **Agnum API is down on test.** The vendor jar has a hard-coded expiry of 2026-08-01; every call returns 500
-  `invalid exp config`. Only a new jar fixes it. Balances are frozen at 2026-08-01, and daily import runs report
+  `invalid exp config`. It is being replaced by our own .NET service, see `agnum-dotnet-api-blueprint.md`. Balances are frozen at 2026-08-01, and daily import runs report
   `Completed` with 0 products, which hid this for three months. Production was not checked.
 - **Agnum exposes selling prices only** (`KN1`–`KN5`). Purchase price is not in the API.
 - Test database: 9505 items, 2 priced, `on_hand_value` empty, available-stock projection empty. The only screen
@@ -52,8 +52,8 @@ Out of scope: FIFO/lot costing, currency, price export to Agnum, LT translation 
 
 ## Owner actions
 
-1. Get a renewed `AgnumDBApi` jar from the vendor and replace `vendor/` in `lauresta/agnum-api-deploy`. Unblocks
-   Agnum imports and S7b.
+1. Decide which Firebird database `agnum-api-net` should read. The configured `LAURESTA-EUR-TESTAPI.GDB` looks like a
+   copy frozen around 2026-05-05. A vendor jar is no longer required.
 2. Provide an Excel file: `InternalSKU`, `PurchasePrice`, `BasePrice` (template from stage S2).
-3. For S7b, enable the price list in `AGNUM_APPLICATION_PROPERTIES` (`prices=KN1,KN2,…`, key name to be
-   confirmed with the vendor).
+3. After S7b, set `Agnum__PriceSync__Enabled=true` on test to write Agnum selling prices. The price levels are set by
+   `deploy-net-test.yml`.

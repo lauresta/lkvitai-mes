@@ -41,6 +41,7 @@ S1 → S2 → S3 → S4 → S5 → S6 → S7a → S7b (только при вы�
 - Дождаться следующего запуска Agnum в 06:00 или вручную вызвать штатный импорт под авторизованной ролью и проверить `AgnumBalanceImportRun.Status = Failed` и `ErrorSummary`; текущий test Agnum возвращает HTTP 500.
 - Под авторизованной сессией проверить глазами цены и пустые значения на экранах S1–S6, а также скачивание шаблона S2. Реальные цены в Warehouse не импортировались; для проверки нужны подготовленные данные и решение владельца об их загрузке.
 - S4 `/reports/receiving-history` не показывает цену: строка не содержит ключа товара, а расширение API было запрещено scope. Старый opt-in тест S2 `ImportItems_Commit_ThenReimport` остаётся красным из-за EF tracking, вне scope цен.
-- S7b можно начать только после того, как точный запрос из test-контейнера с API-ключом вернёт HTTP 200. До этого Agnum цены не синхронизируются.
+- S7b выполняется в этапе A2 из `docs/warehouse/agnum-dotnet-api-blueprint.md`, после подъёма `agnum-api-net`. До этого Agnum цены не синхронизируются.
 
-Готовый промт на продолжение: «Прочитай `docs/warehouse/pricing-implementation-blueprint.md` и этот handoff. Проверь под авторизованной сессией критерии S1–S6, затем статус следующего Agnum balance run. Если endpoint S7b из контейнера `lkvitai-mes-warehouse-api` с `X-API-KEY` вернёт 200, выполни только S7b по blueprint: отдельная ветка от свежего main, один PR, CI/quality gate, merge `--merge --admin --delete-branch`, Deploy to Test, обнови handoff. Если не 200 — пропусти S7b без заготовок. Не меняй legacy SQL и файлы вне scope».
+Следующая работа по Agnum идёт по `docs/warehouse/agnum-dotnet-api-blueprint.md`.
+.
