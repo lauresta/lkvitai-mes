@@ -242,7 +242,7 @@ const orderEntryUnitPrice: ToolDef = {
   name: 'order_entry_unit_price',
   title: 'List unit price',
   description:
-    'The list unit price of a product type in a colour / material for given dimensions and quantity on the order date. A lookup only, not a quote or reservation; `status` says Found, Missing, Ambiguous, InvalidReference or InvalidPriceData.',
+    'The list unit price of a product type in a colour / material for given dimensions and quantity on the order date. For an existing order, pass its header.date from order_entry_get; omitting orderDate uses today and may give a different price. A lookup only, not a quote or reservation; `status` says Found, Missing, Ambiguous, InvalidReference or InvalidPriceData.',
   inputSchema: obj(
     {
       typeId: int('Product type id (order_entry_catalog section types).'),
@@ -436,7 +436,7 @@ const orderProductUpdate: ToolDef = {
   name: 'order_product_update',
   title: 'Configure a product line',
   description:
-    'Sets a product line\'s configuration: dimensions, quantity, colour / material, control, parameters, note and price. Give only what changes; the rest keeps its current value. With useListPrice (default when no unitPrice is given) the list price applies; a manual unitPrice only where the type allows it. Pass the calculationRevision from order_entry_product_preview when you previewed the change.',
+    'Sets a product line\'s configuration: dimensions, quantity, colour / material, control, parameters, note and price. Give only what changes; the rest keeps its current value. With useListPrice (default when no unitPrice is given), the tool looks up the exact price for the order date before saving; omit unitPrice in this mode. A manual unitPrice is allowed only where the type permits it. Pass the calculationRevision from order_entry_product_preview when you previewed the change.',
   inputSchema: obj(
     {
       orderId: ORDER_ID,
@@ -469,6 +469,7 @@ const orderProductUpdate: ToolDef = {
     if (!current) throw new ArgumentError(`order ${orderId} has no product ${productId}: read the order with order_entry_get`);
     const pick = (name: string, fallback: unknown) => (args[name] !== undefined ? args[name] : fallback);
     const unitPrice = asNumber(args.unitPrice);
+    const useListPrice = asBool(args.useListPrice) ?? unitPrice === undefined;
     const product: Row = {
       typeId: pick('typeId', current.typeId),
       widthMm: pick('widthMm', current.widthMm),
@@ -477,7 +478,7 @@ const orderProductUpdate: ToolDef = {
       colourId: pick('colourId', current.colourId),
       control: pick('control', current.control ?? null),
       unitPrice: unitPrice ?? current.unitPrice ?? 0,
-      useListPrice: asBool(args.useListPrice) ?? unitPrice === undefined,
+      useListPrice,
       note: pick('note', current.note ?? null),
       parameters: pick('parameters', Array.isArray(current.parameters) ? current.parameters : []),
       recalculateParameters: asBool(args.recalculateParameters) ?? true,
@@ -485,6 +486,31 @@ const orderProductUpdate: ToolDef = {
     if (asString(args.calculationRevision)) product.calculationRevision = asString(args.calculationRevision);
     for (const field of ['typeId', 'widthMm', 'heightMm', 'quantity', 'colourId']) {
       if (product[field] === null || product[field] === undefined) throw new ArgumentError(`${field} is required: the line has none yet`);
+    }
+    if (useListPrice) {
+      const orderDate = asString((order.header as Row | undefined)?.date);
+      if (!orderDate) throw new ArgumentError('the order has no date: read or complete the order header before using its list price');
+      const quote = await oe<Row>(api, {
+        method: 'GET',
+        path: `${OE}/unit-price`,
+        query: {
+          typeId: product.typeId as number,
+          componentId: product.colourId as number,
+          widthMm: product.widthMm as number,
+          heightMm: product.heightMm as number,
+          quantity: product.quantity as number,
+          orderDate,
+        },
+      });
+      const status = typeof quote.status === 'number' ? ['Found', 'Missing', 'Ambiguous', 'InvalidReference', 'InvalidPriceData'][quote.status] : quote.status;
+      const quotedPrice = asNumber(quote.unitPrice);
+      if (status !== 'Found' || quotedPrice === undefined) {
+        throw new ArgumentError(`no single list price for this configuration on ${orderDate}: ${String(status)}; review the type, material and dimensions`);
+      }
+      if (unitPrice !== undefined && unitPrice !== quotedPrice) {
+        throw new ArgumentError(`the supplied unit price ${unitPrice} differs from the current list price ${quotedPrice} on ${orderDate}; review the price with the user`);
+      }
+      product.unitPrice = quotedPrice;
     }
     const commandId = asString(args.commandId) ?? newId();
     const result = await oe<Row>(
