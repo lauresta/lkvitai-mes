@@ -279,6 +279,42 @@ test('order_update keeps the fields not given, sends the revision and a command 
   }
 });
 
+test('order_product_update uses the exact list price on the saved order date, and refuses a different supplied price', async () => {
+  const order = {
+    header: { id: 5, number: 'VLN-5-26', date: '2026-11-07' },
+    products: [{ id: 7, typeId: 10, widthMm: 750, heightMm: 2200, quantity: 2, colourId: 31, unitPrice: 0, parameters: [] }],
+    revision: 'r1', writesAllowed: true,
+  };
+  const api = mockFetch((seen) => {
+    if (seen.url.pathname.endsWith('/unit-price')) return { status: 200, body: { status: 'Found', unitPrice: 61.9787 } };
+    if (seen.method === 'PUT') return { status: 200, body: { order: { ...order, revision: 'r2' }, productId: 7 } };
+    return { status: 200, body: order };
+  });
+  const stand = await running(testConfig({ MCP_ENABLE_ORDER_ENTRY: 'true' }), {
+    fetchImpl: api.fetchImpl, newId: () => '00000000-0000-4000-8000-000000000001', today: () => '2026-11-08',
+  });
+  try {
+    const args = { orderId: 5, productId: 7, expectedRevision: 'r1' };
+    const saved = (await rpc(stand.base, fakeJwt(), 'tools/call', { name: 'order_product_update', arguments: args })).body.result;
+    assert.equal(saved.isError, undefined, JSON.stringify(saved));
+    const priceCall = api.seen.find((s) => s.url.pathname.endsWith('/unit-price'))!;
+    assert.equal(priceCall.url.searchParams.get('orderDate'), '2026-11-07');
+    assert.equal(priceCall.url.searchParams.get('componentId'), '31');
+    const put = api.seen.find((s) => s.method === 'PUT')!;
+    assert.equal((put.body as { product: { unitPrice: number; useListPrice: boolean } }).product.unitPrice, 61.9787);
+    assert.equal((put.body as { product: { unitPrice: number; useListPrice: boolean } }).product.useListPrice, true);
+
+    const stale = (await rpc(stand.base, fakeJwt(), 'tools/call', {
+      name: 'order_product_update', arguments: { ...args, unitPrice: 61.98, useListPrice: true },
+    })).body.result;
+    assert.equal(stale.isError, true);
+    assert.match(stale.content[0].text, /differs from the current list price 61\.9787/);
+    assert.equal(api.seen.filter((s) => s.method === 'PUT').length, 1);
+  } finally {
+    await stand.close();
+  }
+});
+
 test('order_accessory_set posts exactly the SaveAccessoryCommand fields', async () => {
   const order = { header: { id: 5, number: 'VLN-5-26' }, products: [], revision: 'r2', writesAllowed: true };
   const api = mockFetch(() => ({ status: 200, body: { order, productId: 7, replayed: false } }));
