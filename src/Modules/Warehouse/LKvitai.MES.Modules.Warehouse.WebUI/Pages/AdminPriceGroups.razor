@@ -3,10 +3,10 @@
 @inject ToastService ToastService
 @inject IDialogService DialogService
 
-<PageTitle>Price Groups - Cikada.MES</PageTitle>
+<PageTitle>@L["AdminPriceGroups.PriceGroupsCikadaMES"]</PageTitle>
 
 <div data-testid="admin-price-groups-page">
-    <h3>Price Groups</h3>
+    <h3>@L["AdminPriceGroups.PriceGroups"]</h3>
 
     @if (_apiError is not null)
     {
@@ -20,34 +20,34 @@
 
     <MudPaper Outlined="true" Elevation="0" Class="panel items-list-panel">
         <div class="panel__head">
-            <span class="panel__title">Groups <small>@_groups.Count total</small></span>
+            <span class="panel__title">@L["AdminPriceGroups.Groups"] <small>@L["AdminPriceGroups.Total", _groups.Count]</small></span>
             <div class="panel__actions">
-                <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="RefreshAsync">Refresh</MudButton>
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenCreateDialogAsync">Create Group</MudButton>
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="RefreshAsync">@L["Common.Refresh"]</MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OpenCreateDialogAsync">@L["AdminPriceGroups.CreateGroup"]</MudButton>
             </div>
         </div>
 
         <MudDataGrid T="PriceGroupDto" Items="@_groups" Dense="true" Hover="true" FixedHeader="true" Loading="@_isLoading">
             <Columns>
-                <PropertyColumn Property="x => x.Code" Title="Code" />
-                <PropertyColumn Property="x => x.Name" Title="Name" />
-                <TemplateColumn Title="Status">
+                <PropertyColumn Property="x => x.Code" Title="@L["Common.Code"]" />
+                <PropertyColumn Property="x => x.Name" Title="@L["Common.Name"]" />
+                <TemplateColumn Title="@L["Common.Status"]">
                     <CellTemplate>
-                        <span class="@(context.Item.IsActive ? "chip chip--ok" : "chip chip--locked")">@(context.Item.IsActive ? "Active" : "Inactive")</span>
+                        <span class="@(context.Item.IsActive ? "chip chip--ok" : "chip chip--locked")">@(context.Item.IsActive ? L["Common.Active"] : L["Common.Inactive"])</span>
                     </CellTemplate>
                 </TemplateColumn>
                 <TemplateColumn Title="">
                     <CellTemplate>
-                        <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="@(() => SelectGroupAsync(context.Item))">Customers</MudButton>
-                        <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="@(() => OpenEditDialogAsync(context.Item))">Edit</MudButton>
-                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Error" OnClick="@(() => DeleteAsync(context.Item))">Delete</MudButton>
+                        <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="@(() => SelectGroupAsync(context.Item))">@L["AdminPriceGroups.Customers"]</MudButton>
+                        <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="@(() => OpenEditDialogAsync(context.Item))">@L["Common.Edit"]</MudButton>
+                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Error" OnClick="@(() => DeleteAsync(context.Item))">@L["Common.Delete"]</MudButton>
                     </CellTemplate>
                 </TemplateColumn>
             </Columns>
             <NoRecordsContent>
                 <div class="lots-grid__empty">
-                    <span class="lots-grid__empty-title">No price groups</span>
-                    <span>Create one to start overriding item prices per customer tier.</span>
+                    <span class="lots-grid__empty-title">@L["AdminPriceGroups.NoPriceGroups"]</span>
+                    <span>@L["AdminPriceGroups.CreateOneToStartOverridingItemPricesPerCustomerTier"]</span>
                 </div>
             </NoRecordsContent>
         </MudDataGrid>
@@ -57,12 +57,12 @@
     {
         <MudPaper Outlined="true" Elevation="0" Class="panel items-detail-panel">
             <div class="panel__head">
-                <span class="panel__title">Customers in "@_selectedGroup.Name"</span>
+                <span class="panel__title">@L["AdminPriceGroups.CustomersIn", _selectedGroup.Name]</span>
             </div>
 
             <div class="lk-toolbar">
                 <MudAutocomplete T="CustomerLookupDto"
-                                 Label="Assign customer"
+                                 Label="@L["AdminPriceGroups.AssignCustomer"]"
                                  Variant="Variant.Outlined"
                                  Margin="Margin.Dense"
                                  SearchFunc="SearchCustomersAsync"
@@ -71,13 +71,13 @@
                                  ResetValueOnEmptyText="true"
                                  CoerceValue="true"
                                  MinCharacters="1"
-                                 Placeholder="Search customers by name or code" />
+                                 Placeholder="@L["AdminPriceGroups.SearchCustomersByNameOrCode"]" />
             </div>
 
             @if (_groupCustomers.Count == 0)
             {
                 <div class="lots-grid__empty">
-                    <span class="lots-grid__empty-title">No customers assigned</span>
+                    <span class="lots-grid__empty-title">@L["AdminPriceGroups.NoCustomersAssigned"]</span>
                 </div>
             }
             else
@@ -85,8 +85,8 @@
                 <table class="lk-table">
                     <thead>
                     <tr>
-                        <th>Code</th>
-                        <th>Name</th>
+                        <th>@L["Common.Code"]</th>
+                        <th>@L["Common.Name"]</th>
                         <th></th>
                     </tr>
                     </thead>
@@ -97,7 +97,7 @@
                             <td class="mono">@customer.CustomerCode</td>
                             <td>@customer.Name</td>
                             <td class="text-end">
-                                <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Error" OnClick="@(() => UnassignCustomerAsync(customer))">Remove</MudButton>
+                                <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Error" OnClick="@(() => UnassignCustomerAsync(customer))">@L["Common.Remove"]</MudButton>
                             </td>
                         </tr>
                     }
@@ -180,7 +180,7 @@
         try
         {
             await AdminClient.SetCustomerPriceGroupAsync(customer.Id, _selectedGroup.Id);
-            ToastService.ShowSuccess($"{customer.Name} assigned to {_selectedGroup.Name}.");
+            ToastService.ShowSuccess(L["AdminPriceGroups.Toast.AssignedTo", customer.Name, _selectedGroup.Name].Value);
             await SelectGroupAsync(_selectedGroup);
         }
         catch (ApiException ex)
@@ -199,7 +199,7 @@
         try
         {
             await AdminClient.SetCustomerPriceGroupAsync(customer.Id, null);
-            ToastService.ShowWarning($"{customer.Name} removed from {_selectedGroup.Name}.");
+            ToastService.ShowWarning(L["AdminPriceGroups.Toast.RemovedFrom", customer.Name, _selectedGroup.Name].Value);
             await SelectGroupAsync(_selectedGroup);
         }
         catch (ApiException ex)
@@ -215,7 +215,7 @@
             { x => x.IsEdit, false }
         };
 
-        var dialog = await DialogService.ShowAsync<AdminPriceGroupEditorDialog>("Create Price Group", parameters);
+        var dialog = await DialogService.ShowAsync<AdminPriceGroupEditorDialog>(L["AdminPriceGroups.CreatePriceGroup"].Value, parameters);
         var result = await dialog.Result;
         if (result is null || result.Canceled || result.Data is not CreateOrUpdatePriceGroupRequest request)
         {
@@ -225,7 +225,7 @@
         try
         {
             await AdminClient.CreatePriceGroupAsync(request);
-            ToastService.ShowSuccess("Price group created.");
+            ToastService.ShowSuccess(L["AdminPriceGroups.Toast.PriceGroupCreated"].Value);
             await ReloadAsync();
         }
         catch (ApiException ex)
@@ -242,7 +242,7 @@
             { x => x.Group, group }
         };
 
-        var dialog = await DialogService.ShowAsync<AdminPriceGroupEditorDialog>("Edit Price Group", parameters);
+        var dialog = await DialogService.ShowAsync<AdminPriceGroupEditorDialog>(L["AdminPriceGroups.EditPriceGroup"].Value, parameters);
         var result = await dialog.Result;
         if (result is null || result.Canceled || result.Data is not CreateOrUpdatePriceGroupRequest request)
         {
@@ -252,7 +252,7 @@
         try
         {
             await AdminClient.UpdatePriceGroupAsync(group.Id, request);
-            ToastService.ShowSuccess("Price group updated.");
+            ToastService.ShowSuccess(L["AdminPriceGroups.Toast.PriceGroupUpdated"].Value);
             await ReloadAsync();
         }
         catch (ApiException ex)
@@ -266,7 +266,7 @@
         try
         {
             await AdminClient.DeletePriceGroupAsync(group.Id);
-            ToastService.ShowWarning("Price group deleted.");
+            ToastService.ShowWarning(L["AdminPriceGroups.Toast.PriceGroupDeleted"].Value);
             if (_selectedGroup?.Id == group.Id)
             {
                 _selectedGroup = null;
@@ -281,13 +281,13 @@
         }
     }
 
-    private static string BuildErrorMessage(ApiException error)
+    private string BuildErrorMessage(ApiException error)
     {
         if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
         {
-            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+            return $"{WarehouseErrorText.Get(L, error)} {error.ProblemDetails.Detail}";
         }
 
-        return error.UserMessage;
+        return WarehouseErrorText.Get(L, error);
     }
 }

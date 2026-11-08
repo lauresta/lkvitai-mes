@@ -6,9 +6,9 @@
 @inject IJSRuntime JavaScript
 @inject ToastService ToastService
 
-<PageTitle>Pick History - Cikada.MES</PageTitle>
+<PageTitle>@L["ReportsPickHistory.PickHistoryCikadaMES"]</PageTitle>
 
-<h3>Pick History Report</h3>
+<h3>@L["ReportsPickHistory.PickHistoryReport"]</h3>
 
 @if (_apiError is not null)
 {
@@ -22,26 +22,26 @@
     <div class="card-body">
         <div class="row g-2 align-items-end">
             <div class="col-md-3">
-                <label class="form-label">Order Id</label>
+                <label class="form-label">@L["ReportsPickHistory.OrderId"]</label>
                 <input class="form-control" @bind="_orderId" />
             </div>
             <div class="col-md-3">
-                <label class="form-label">Operator/User</label>
+                <label class="form-label">@L["ReportsPickHistory.OperatorUser"]</label>
                 <input class="form-control" @bind="_userId" />
             </div>
             <div class="col-md-3">
-                <label class="form-label">Completed From</label>
+                <label class="form-label">@L["ReportsPickHistory.CompletedFrom"]</label>
                 <input class="form-control" type="datetime-local" @bind="_dateFrom" />
             </div>
             <div class="col-md-3">
-                <label class="form-label">Completed To</label>
+                <label class="form-label">@L["ReportsPickHistory.CompletedTo"]</label>
                 <input class="form-control" type="datetime-local" @bind="_dateTo" />
             </div>
             <div class="col-md-2 d-grid">
-                <button class="btn btn-primary" @onclick="ApplyFiltersAsync">Apply</button>
+                <button class="btn btn-primary" @onclick="ApplyFiltersAsync">@L["Common.Apply"]</button>
             </div>
             <div class="col-md-2 d-grid">
-                <button class="btn btn-outline-secondary" @onclick="ExportCsvAsync">Export CSV</button>
+                <button class="btn btn-outline-secondary" @onclick="ExportCsvAsync">@L["Common.ExportCSV"]</button>
             </div>
         </div>
     </div>
@@ -50,29 +50,29 @@
 <div class="card shadow-sm position-relative">
     <LoadingSpinner IsLoading="@_isLoading" />
     <div class="card-body">
-        <div class="mb-2"><strong>Total: @_totalCount</strong></div>
+        <div class="mb-2"><strong>@L["ReportsPickHistory.Total", _totalCount]</strong></div>
         <div class="table-responsive">
             <table class="table table-sm table-hover align-middle">
                 <thead>
                 <tr>
-                    <th>Task</th>
-                    <th>Order</th>
+                    <th>@L["ReportsPickHistory.Task"]</th>
+                    <th>@L["Common.Order"]</th>
                     <th>SKU</th>
-                    <th>Item</th>
-                    <th>Qty</th>
-                    <th>Picked</th>
+                    <th>@L["Common.Item"]</th>
+                    <th>@L["Common.Qty"]</th>
+                    <th>@L["Common.Picked"]</th>
                     <th title="@L["Pricing.CurrentPriceHint"]">@L["Pricing.Cost"]</th>
                     <th title="@L["Pricing.CurrentPriceHint"]">@L["Pricing.Sale"]</th>
-                    <th>Value (current cost)</th>
-                    <th>Operator</th>
-                    <th>Completed</th>
+                    <th>@L["Common.ValueCurrentCost"]</th>
+                    <th>@L["Common.Operator"]</th>
+                    <th>@L["Common.Completed"]</th>
                 </tr>
                 </thead>
                 <tbody>
                 @if (_items.Count == 0)
                 {
                     <tr>
-                        <td colspan="11" class="text-muted">No rows found.</td>
+                        <td colspan="11" class="text-muted">@L["Common.NoRowsFound"]</td>
                     </tr>
                 }
                 else
@@ -213,13 +213,13 @@
         return new DateTimeOffset(value, TimeZoneInfo.Local.GetUtcOffset(value));
     }
 
-    private static string BuildErrorMessage(ApiException error)
+    private string BuildErrorMessage(ApiException error)
     {
         if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
         {
-            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+            return $"{WarehouseErrorText.Get(L, error)} {error.ProblemDetails.Detail}";
         }
 
-        return error.UserMessage;
+        return WarehouseErrorText.Get(L, error);
     }
 }

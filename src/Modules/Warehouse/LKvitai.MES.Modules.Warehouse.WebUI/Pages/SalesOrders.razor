@@ -3,9 +3,9 @@
 @inject NavigationManager NavigationManager
 @inject ToastService ToastService
 
-<PageTitle>Sales Orders - Cikada.MES</PageTitle>
+<PageTitle>@L["SalesOrders.SalesOrdersCikadaMES"]</PageTitle>
 
-<h1>Sales Orders</h1>
+<h1>@L["SalesOrders.SalesOrders"]</h1>
 
 @if (_apiError is not null)
 {
@@ -20,31 +20,31 @@
 
     <div class="card-body">
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <strong>Total: @_totalCount</strong>
-            <button class="btn btn-primary" @onclick="OpenCreate">+ Create</button>
+            <strong>@L["SalesOrders.Total2c1fd3", _totalCount]</strong>
+            <button class="btn btn-primary" @onclick="OpenCreate">@L["SalesOrders.Create"]</button>
         </div>
 
         <div class="row g-2 align-items-end mb-3">
             <div class="col-md-3">
-                <label class="form-label" for="status-filter">Status</label>
+                <label class="form-label" for="status-filter">@L["Common.Status"]</label>
                 <select id="status-filter" class="form-select" @bind="_statusFilter">
-                    <option value="">All</option>
-                    <option value="DRAFT">DRAFT</option>
-                    <option value="PENDING_APPROVAL">PENDING_APPROVAL</option>
-                    <option value="ALLOCATED">ALLOCATED</option>
-                    <option value="PENDING_STOCK">PENDING_STOCK</option>
-                    <option value="PICKING">PICKING</option>
-                    <option value="PACKED">PACKED</option>
-                    <option value="SHIPPED">SHIPPED</option>
-                    <option value="DELIVERED">DELIVERED</option>
-                    <option value="INVOICED">INVOICED</option>
-                    <option value="CANCELLED">CANCELLED</option>
+                    <option value="">@L["Common.All"]</option>
+                    <option value="DRAFT">@WarehouseStatusText.Get(L, "DRAFT")</option>
+                    <option value="PENDING_APPROVAL">@WarehouseStatusText.Get(L, "PENDING_APPROVAL")</option>
+                    <option value="ALLOCATED">@WarehouseStatusText.Get(L, "ALLOCATED")</option>
+                    <option value="PENDING_STOCK">@WarehouseStatusText.Get(L, "PENDING_STOCK")</option>
+                    <option value="PICKING">@WarehouseStatusText.Get(L, "PICKING")</option>
+                    <option value="PACKED">@WarehouseStatusText.Get(L, "PACKED")</option>
+                    <option value="SHIPPED">@WarehouseStatusText.Get(L, "SHIPPED")</option>
+                    <option value="DELIVERED">@WarehouseStatusText.Get(L, "DELIVERED")</option>
+                    <option value="INVOICED">@WarehouseStatusText.Get(L, "INVOICED")</option>
+                    <option value="CANCELLED">@WarehouseStatusText.Get(L, "CANCELLED")</option>
                 </select>
             </div>
             <div class="col-md-3">
-                <label class="form-label" for="customer-filter">Customer</label>
+                <label class="form-label" for="customer-filter">@L["Common.Customer"]</label>
                 <select id="customer-filter" class="form-select" @bind="_customerFilter">
-                    <option value="">All</option>
+                    <option value="">@L["Common.All"]</option>
                     @foreach (var customer in _customers)
                     {
                         <option value="@customer.Id">@customer.CustomerCode - @customer.Name</option>
@@ -52,16 +52,16 @@
                 </select>
             </div>
             <div class="col-md-2">
-                <label class="form-label" for="date-from">Date from</label>
+                <label class="form-label" for="date-from">@L["SalesOrders.DateFrom"]</label>
                 <input id="date-from" type="date" class="form-control" @bind="_dateFrom" />
             </div>
             <div class="col-md-2">
-                <label class="form-label" for="date-to">Date to</label>
+                <label class="form-label" for="date-to">@L["SalesOrders.DateTo"]</label>
                 <input id="date-to" type="date" class="form-control" @bind="_dateTo" />
             </div>
             <div class="col-md-2 d-flex gap-2">
-                <button class="btn btn-primary" @onclick="ApplyFiltersAsync" disabled="@_isLoading">Apply</button>
-                <button class="btn btn-outline-secondary" @onclick="ResetFiltersAsync" disabled="@_isLoading">Reset</button>
+                <button class="btn btn-primary" @onclick="ApplyFiltersAsync" disabled="@_isLoading">@L["Common.Apply"]</button>
+                <button class="btn btn-outline-secondary" @onclick="ResetFiltersAsync" disabled="@_isLoading">@L["Common.Reset"]</button>
             </div>
         </div>
 
@@ -69,14 +69,14 @@
             <table class="table table-hover align-middle">
                 <thead>
                     <tr>
-                        <th>Order Number</th>
-                        <th>Customer</th>
-                        <th>Status</th>
-                        <th>Lines</th>
-                        <th>Total</th>
-                        <th>Order Date</th>
-                        <th>Requested Date</th>
-                        <th>Actions</th>
+                        <th>@L["Common.OrderNumber"]</th>
+                        <th>@L["Common.Customer"]</th>
+                        <th>@L["Common.Status"]</th>
+                        <th>@L["Common.Lines"]</th>
+                        <th>@L["SalesOrders.Total"]</th>
+                        <th>@L["SalesOrders.OrderDate"]</th>
+                        <th>@L["SalesOrders.RequestedDate"]</th>
+                        <th>@L["Common.Actions"]</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -84,8 +84,8 @@
                     {
                         <tr>
                             <td colspan="8">
-                                <EmptyState Title="No sales orders found"
-                                            Message="Create a sales order to start outbound workflow."
+                                <EmptyState Title="@L["SalesOrders.NoSalesOrdersFound"]"
+                                            Message="@L["SalesOrders.CreateASalesOrderToStartOutboundWorkflow"]"
                                             IconCss="bi bi-file-earmark-plus"
                                             OnAction="OpenCreateAsync" />
                             </td>
@@ -98,13 +98,13 @@
                             <tr>
                                 <td>@order.OrderNumber</td>
                                 <td>@order.CustomerName</td>
-                                <td><span class="badge @GetStatusBadgeClass(order.Status)">@order.Status</span></td>
+                                <td><span class="badge @GetStatusBadgeClass(order.Status)">@WarehouseStatusText.Get(L, order.Status)</span></td>
                                 <td>@order.Lines.Count</td>
                                 <td>@order.TotalAmount.ToString("0.00")</td>
                                 <td>@FormatDate(order.OrderDate)</td>
                                 <td>@FormatDate(order.RequestedDeliveryDate)</td>
                                 <td>
-                                    <button class="btn btn-sm btn-outline-primary" @onclick="() => OpenDetails(order.Id)">View</button>
+                                    <button class="btn btn-sm btn-outline-primary" @onclick="() => OpenDetails(order.Id)">@L["Common.View"]</button>
                                 </td>
                             </tr>
                         }
@@ -116,10 +116,10 @@
         @if (TotalPages > 1)
         {
             <div class="d-flex justify-content-between align-items-center mt-3">
-                <small class="text-muted">Page @_page of @TotalPages</small>
+                <small class="text-muted">@L["SalesOrders.PageOf", _page, TotalPages]</small>
                 <div class="d-flex gap-2">
-                    <button class="btn btn-sm btn-outline-secondary" @onclick="PreviousPage" disabled="@(_page <= 1)">Previous</button>
-                    <button class="btn btn-sm btn-outline-secondary" @onclick="NextPage" disabled="@(_page >= TotalPages)">Next</button>
+                    <button class="btn btn-sm btn-outline-secondary" @onclick="PreviousPage" disabled="@(_page <= 1)">@L["Common.Previous"]</button>
+                    <button class="btn btn-sm btn-outline-secondary" @onclick="NextPage" disabled="@(_page >= TotalPages)">@L["Common.Next"]</button>
                 </div>
             </div>
         }
@@ -280,15 +280,15 @@
         _ => "bg-secondary"
     };
 
-    private static string BuildErrorMessage(ApiException ex)
+    private string BuildErrorMessage(ApiException ex)
     {
-        if (!string.IsNullOrWhiteSpace(ex.UserMessage))
+        if (!string.IsNullOrWhiteSpace(WarehouseErrorText.Get(L, ex)))
         {
-            return ex.UserMessage;
+            return WarehouseErrorText.Get(L, ex);
         }
 
         return ex.ProblemDetails?.Detail
                ?? ex.ProblemDetails?.Title
-               ?? "Sales order request failed.";
+               ?? L["SalesOrders.RequestFailed"].Value;
     }
 }

@@ -3,10 +3,10 @@
 @inject ToastService ToastService
 @inject IDialogService DialogService
 
-<PageTitle>Admin Customers - Cikada.MES</PageTitle>
+<PageTitle>@L["AdminCustomers.AdminCustomersCikadaMES"]</PageTitle>
 
 <div data-testid="admin-customers-page">
-    <h3>Customers Management</h3>
+    <h3>@L["AdminCustomers.CustomersManagement"]</h3>
 
     @if (_apiError is not null)
     {
@@ -25,44 +25,44 @@
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               @bind-Value="_search"
-                              Placeholder="Code or name" />
+                              Placeholder="@L["AdminCustomers.CodeOrName"]" />
             </div>
             <div class="lots-filter__actions">
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ApplyFilterAsync">Filter</MudButton>
-                <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="RefreshAsync">Refresh</MudButton>
-                <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="OpenCreateDialogAsync">Create Customer</MudButton>
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="ApplyFilterAsync">@L["Common.Filter"]</MudButton>
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="RefreshAsync">@L["Common.Refresh"]</MudButton>
+                <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="OpenCreateDialogAsync">@L["AdminCustomers.CreateCustomer"]</MudButton>
             </div>
         </div>
 
         <div class="lots-grid-head">
-            <strong data-testid="admin-customers-summary">Total: @_customers.Count</strong>
+            <strong data-testid="admin-customers-summary">@L["AdminCustomers.Total", _customers.Count]</strong>
         </div>
 
         <MudDataGrid T="CustomerLookupDto" Items="@_filtered" Dense="true" Hover="true" FixedHeader="true" Loading="@_isLoading" Class="lk-grid">
             <Columns>
-                <TemplateColumn Title="Code">
+                <TemplateColumn Title="@L["Common.Code"]">
                     <CellTemplate>
                         <span class="mono">@context.Item.CustomerCode</span>
                     </CellTemplate>
                 </TemplateColumn>
-                <PropertyColumn Property="x => x.Name" Title="Name" />
-                <TemplateColumn Title="Status">
+                <PropertyColumn Property="x => x.Name" Title="@L["Common.Name"]" />
+                <TemplateColumn Title="@L["Common.Status"]">
                     <CellTemplate>
-                        <span class="@StatusChipClass(context.Item.Status)">@context.Item.Status</span>
+                        <span class="@StatusChipClass(context.Item.Status)">@WarehouseStatusText.Get(L, context.Item.Status)</span>
                     </CellTemplate>
                 </TemplateColumn>
-                <TemplateColumn Title="Price Group">
+                <TemplateColumn Title="@L["AdminCustomers.PriceGroup"]">
                     <CellTemplate>@(context.Item.PriceGroupName ?? "-")</CellTemplate>
                 </TemplateColumn>
                 <TemplateColumn Title="">
                     <CellTemplate>
-                        <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="@(() => OpenEditDialogAsync(context.Item))">Edit</MudButton>
+                        <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="@(() => OpenEditDialogAsync(context.Item))">@L["Common.Edit"]</MudButton>
                     </CellTemplate>
                 </TemplateColumn>
             </Columns>
             <NoRecordsContent>
                 <div class="lots-grid__empty">
-                    <span class="lots-grid__empty-title">No customers found</span>
+                    <span class="lots-grid__empty-title">@L["AdminCustomers.NoCustomersFound"]</span>
                 </div>
             </NoRecordsContent>
         </MudDataGrid>
@@ -124,7 +124,7 @@
             { x => x.IsEdit, false }
         };
 
-        var dialog = await DialogService.ShowAsync<AdminCustomerEditorDialog>("Create Customer", parameters);
+        var dialog = await DialogService.ShowAsync<AdminCustomerEditorDialog>(L["AdminCustomers.CreateCustomer"].Value, parameters);
         var result = await dialog.Result;
         if (result is null || result.Canceled || result.Data is not CreateOrUpdateCustomerRequest request)
         {
@@ -134,7 +134,7 @@
         try
         {
             await AdminClient.CreateCustomerAsync(request);
-            ToastService.ShowSuccess("Customer created.");
+            ToastService.ShowSuccess(L["AdminCustomers.Toast.CustomerCreated"].Value);
             await ReloadAsync();
         }
         catch (ApiException ex)
@@ -162,7 +162,7 @@
             { x => x.Customer, detail }
         };
 
-        var dialog = await DialogService.ShowAsync<AdminCustomerEditorDialog>("Edit Customer", parameters);
+        var dialog = await DialogService.ShowAsync<AdminCustomerEditorDialog>(L["AdminCustomers.EditCustomer"].Value, parameters);
         var result = await dialog.Result;
         if (result is null || result.Canceled || result.Data is not CreateOrUpdateCustomerRequest request)
         {
@@ -172,7 +172,7 @@
         try
         {
             await AdminClient.UpdateCustomerAsync(row.Id, request);
-            ToastService.ShowSuccess("Customer updated.");
+            ToastService.ShowSuccess(L["AdminCustomers.Toast.CustomerUpdated"].Value);
             await ReloadAsync();
         }
         catch (ApiException ex)
@@ -189,13 +189,13 @@
         _ => "chip chip--reserved"
     };
 
-    private static string BuildErrorMessage(ApiException error)
+    private string BuildErrorMessage(ApiException error)
     {
         if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
         {
-            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+            return $"{WarehouseErrorText.Get(L, error)} {error.ProblemDetails.Detail}";
         }
 
-        return error.UserMessage;
+        return WarehouseErrorText.Get(L, error);
     }
 }

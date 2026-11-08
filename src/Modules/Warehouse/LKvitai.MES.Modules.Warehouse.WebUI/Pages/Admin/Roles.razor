@@ -4,14 +4,14 @@
 @inject ToastService ToastService
 @inject IConfiguration Configuration
 
-<PageTitle>Roles - Cikada.MES</PageTitle>
+<PageTitle>@L["Admin.Roles.RolesCikadaMES"]</PageTitle>
 
-<h1>Roles</h1>
+<h1>@L["Common.Roles"]</h1>
 
 @if (!_hasAdminAccess)
 {
     <div class="alert alert-warning" role="alert">
-        Admin role required.
+        @L["Common.AdminRoleRequired"]
     </div>
 }
 else
@@ -28,10 +28,10 @@ else
         <div class="card-body">
             <div class="row g-2 align-items-end">
                 <div class="col-md-3 d-grid">
-                    <button class="btn btn-primary" @onclick="ToggleCreateForm">@(_showCreate ? "Hide Form" : "Add Role")</button>
+                    <button class="btn btn-primary" @onclick="ToggleCreateForm">@(_showCreate ? L["Common.HideForm"] : L["Admin.Roles.AddRole"])</button>
                 </div>
                 <div class="col-md-3 d-grid">
-                    <button class="btn btn-outline-secondary" @onclick="LoadAsync">Refresh</button>
+                    <button class="btn btn-outline-secondary" @onclick="LoadAsync">@L["Common.Refresh"]</button>
                 </div>
             </div>
         </div>
@@ -40,7 +40,7 @@ else
     @if (_showCreate)
     {
         <div class="card shadow-sm mb-3">
-            <div class="card-header">Create Role</div>
+            <div class="card-header">@L["Admin.Roles.CreateRole"]</div>
             <div class="card-body">
                 <EditForm Model="_createForm" OnValidSubmit="CreateAsync">
                     <DataAnnotationsValidator />
@@ -48,17 +48,17 @@ else
 
                     <div class="row g-2 mb-3">
                         <div class="col-md-4">
-                            <label class="form-label">Name</label>
+                            <label class="form-label">@L["Common.Name"]</label>
                             <InputText class="form-control" @bind-Value="_createForm.Name" />
                             <ValidationMessage For="() => _createForm.Name" />
                         </div>
                         <div class="col-md-8">
-                            <label class="form-label">Description</label>
+                            <label class="form-label">@L["Common.Description"]</label>
                             <InputText class="form-control" @bind-Value="_createForm.Description" />
                         </div>
                     </div>
 
-                    <label class="form-label">Permissions</label>
+                    <label class="form-label">@L["Common.Permissions"]</label>
                     <div class="row g-1 mb-2">
                         @foreach (var option in PermissionOptions)
                         {
@@ -79,7 +79,7 @@ else
                         <div class="text-danger mb-2">@_createPermissionError</div>
                     }
 
-                    <button class="btn btn-primary" type="submit" disabled="@_isSubmitting">Save</button>
+                    <button class="btn btn-primary" type="submit" disabled="@_isSubmitting">@L["Common.Save"]</button>
                 </EditForm>
             </div>
         </div>
@@ -92,18 +92,18 @@ else
                 <table class="table table-sm table-hover align-middle">
                     <thead>
                         <tr>
-                            <th>Name</th>
-                            <th>Description</th>
-                            <th>System</th>
-                            <th>Permissions</th>
-                            <th class="text-end">Actions</th>
+                            <th>@L["Common.Name"]</th>
+                            <th>@L["Common.Description"]</th>
+                            <th>@L["Admin.Roles.System"]</th>
+                            <th>@L["Common.Permissions"]</th>
+                            <th class="text-end">@L["Common.Actions"]</th>
                         </tr>
                     </thead>
                     <tbody>
                         @if (_roles.Count == 0)
                         {
                             <tr>
-                                <td colspan="5" class="text-muted">No roles configured.</td>
+                                <td colspan="5" class="text-muted">@L["Admin.Roles.NoRolesConfigured"]</td>
                             </tr>
                         }
                         else
@@ -113,7 +113,7 @@ else
                                 <tr>
                                     <td>@role.Name</td>
                                     <td>@role.Description</td>
-                                    <td>@(role.IsSystemRole ? "Yes" : "No")</td>
+                                    <td>@(role.IsSystemRole ? L["Common.Yes"] : L["Common.No"])</td>
                                     <td>
                                         @foreach (var permission in role.Permissions.OrderBy(x => x.Resource).ThenBy(x => x.Action))
                                         {
@@ -121,8 +121,8 @@ else
                                         }
                                     </td>
                                     <td class="text-end">
-                                        <button class="btn btn-sm btn-outline-secondary me-2" @onclick="() => BeginEdit(role)">Edit</button>
-                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmDelete(role)" disabled="@role.IsSystemRole">Delete</button>
+                                        <button class="btn btn-sm btn-outline-secondary me-2" @onclick="() => BeginEdit(role)">@L["Common.Edit"]</button>
+                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmDelete(role)" disabled="@role.IsSystemRole">@L["Common.Delete"]</button>
                                     </td>
                                 </tr>
                             }
@@ -137,8 +137,8 @@ else
     {
         <div class="card shadow-sm mb-3">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <span>Edit Role @_editing.Name</span>
-                <button class="btn btn-sm btn-outline-secondary" @onclick="CancelEdit">Close</button>
+                <span>@L["Admin.Roles.EditRole", _editing.Name]</span>
+                <button class="btn btn-sm btn-outline-secondary" @onclick="CancelEdit">@L["Common.Close"]</button>
             </div>
             <div class="card-body">
                 <EditForm Model="_editing" OnValidSubmit="UpdateAsync">
@@ -147,17 +147,17 @@ else
 
                     <div class="row g-2 mb-3">
                         <div class="col-md-4">
-                            <label class="form-label">Name</label>
+                            <label class="form-label">@L["Common.Name"]</label>
                             <InputText class="form-control" @bind-Value="_editing.Name" />
                             <ValidationMessage For="() => _editing.Name" />
                         </div>
                         <div class="col-md-8">
-                            <label class="form-label">Description</label>
+                            <label class="form-label">@L["Common.Description"]</label>
                             <InputText class="form-control" @bind-Value="_editing.Description" />
                         </div>
                     </div>
 
-                    <label class="form-label">Permissions</label>
+                    <label class="form-label">@L["Common.Permissions"]</label>
                     <div class="row g-1 mb-2">
                         @foreach (var option in PermissionOptions)
                         {
@@ -178,20 +178,20 @@ else
                         <div class="text-danger mb-2">@_editPermissionError</div>
                     }
 
-                    <button class="btn btn-primary" type="submit" disabled="@_isSubmitting">Save</button>
+                    <button class="btn btn-primary" type="submit" disabled="@_isSubmitting">@L["Common.Save"]</button>
                 </EditForm>
             </div>
         </div>
     }
 
     <div class="card shadow-sm">
-        <div class="card-header">Assign Role To User</div>
+        <div class="card-header">@L["Admin.Roles.AssignRoleToUser"]</div>
         <div class="card-body">
             <div class="row g-2 align-items-end">
                 <div class="col-md-5">
-                    <label class="form-label">User</label>
+                    <label class="form-label">@L["Common.User"]</label>
                     <InputSelect class="form-select" @bind-Value="_selectedUserId">
-                        <option value="">Select user</option>
+                        <option value="">@L["Admin.Roles.SelectUser"]</option>
                         @foreach (var user in _users.OrderBy(x => x.Username, StringComparer.OrdinalIgnoreCase))
                         {
                             <option value="@user.Id">@user.Username (@user.Email)</option>
@@ -199,9 +199,9 @@ else
                     </InputSelect>
                 </div>
                 <div class="col-md-5">
-                    <label class="form-label">Role</label>
+                    <label class="form-label">@L["Common.Role"]</label>
                     <InputSelect class="form-select" @bind-Value="_selectedRoleId">
-                        <option value="0">Select role</option>
+                        <option value="0">@L["Admin.Roles.SelectRole"]</option>
                         @foreach (var role in _roles.OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase))
                         {
                             <option value="@role.Id">@role.Name</option>
@@ -209,7 +209,7 @@ else
                     </InputSelect>
                 </div>
                 <div class="col-md-2 d-grid">
-                    <button class="btn btn-outline-primary" @onclick="AssignRoleAsync" disabled="@_isAssigning">Assign Role</button>
+                    <button class="btn btn-outline-primary" @onclick="AssignRoleAsync" disabled="@_isAssigning">@L["Admin.Roles.AssignRole"]</button>
                 </div>
             </div>
 
@@ -222,9 +222,9 @@ else
         </div>
     </div>
 
-    <ConfirmDialog Title="Delete Role"
+    <ConfirmDialog Title="@L["Admin.Roles.DeleteRole"]"
                    Message="@_deleteMessage"
-                   ConfirmText="Delete"
+                   ConfirmText="@L["Common.Delete"]"
                    IsVisible="@(_pendingDelete is not null)"
                    OnConfirm="DeleteAsync"
                    OnCancel="CancelDelete" />
@@ -334,7 +334,7 @@ else
         try
         {
             var created = await AdminConfigurationClient.CreateRoleAsync(ToRequest(_createForm));
-            ToastService.ShowSuccess($"Role {created.Name} created.");
+            ToastService.ShowSuccess(L["Admin.Roles.Toast.RoleCreated", created.Name].Value);
             _showCreate = false;
             _createForm = new RoleForm();
             await LoadAsync();
@@ -384,7 +384,7 @@ else
         try
         {
             var updated = await AdminConfigurationClient.UpdateRoleAsync(_editing.Id.Value, ToRequest(_editing));
-            ToastService.ShowSuccess($"Role {updated.Name} updated.");
+            ToastService.ShowSuccess(L["Admin.Roles.Toast.RoleUpdated", updated.Name].Value);
             _editing = null;
             await LoadAsync();
         }
@@ -403,13 +403,13 @@ else
     {
         if (!_selectedUserId.HasValue)
         {
-            ToastService.ShowError("Select a user.");
+            ToastService.ShowError(L["Admin.Roles.Toast.SelectAUser"].Value);
             return;
         }
 
         if (_selectedRoleId <= 0)
         {
-            ToastService.ShowError("Select a role.");
+            ToastService.ShowError(L["Admin.Roles.Toast.SelectARole"].Value);
             return;
         }
 
@@ -423,7 +423,7 @@ else
                 RoleId = _selectedRoleId
             });
 
-            ToastService.ShowSuccess("Role assigned successfully.");
+            ToastService.ShowSuccess(L["Admin.Roles.Toast.RoleAssignedSuccessfully"].Value);
         }
         catch (ApiException ex)
         {
@@ -439,7 +439,7 @@ else
     private void ConfirmDelete(RoleDto role)
     {
         _pendingDelete = role;
-        _deleteMessage = $"Delete role {role.Name}?";
+        _deleteMessage = L["Admin.Roles.DeleteRoleConfirmation", role.Name].Value;
     }
 
     private async Task DeleteAsync()
@@ -455,7 +455,7 @@ else
         try
         {
             await AdminConfigurationClient.DeleteRoleAsync(_pendingDelete.Id);
-            ToastService.ShowSuccess($"Role {_pendingDelete.Name} deleted.");
+            ToastService.ShowSuccess(L["Admin.Roles.Toast.RoleDeleted", _pendingDelete.Name].Value);
             _pendingDelete = null;
             _deleteMessage = string.Empty;
             await LoadAsync();
@@ -540,14 +540,14 @@ else
                       string.Equals(x, "Admin", StringComparison.OrdinalIgnoreCase));
     }
 
-    private static string BuildErrorMessage(ApiException error)
+    private string BuildErrorMessage(ApiException error)
     {
         if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
         {
-            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+            return $"{WarehouseErrorText.Get(L, error)} {error.ProblemDetails.Detail}";
         }
 
-        return error.UserMessage;
+        return WarehouseErrorText.Get(L, error);
     }
 
     private void DismissError()

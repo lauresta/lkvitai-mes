@@ -3,13 +3,13 @@
 @inject ToastService ToastService
 @using LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure
 
-<PageTitle>Quality Analytics - Cikada.MES</PageTitle>
+<PageTitle>@L["AnalyticsQuality.QualityAnalyticsCikadaMES"]</PageTitle>
 
-<h3>QC Defects & Late Shipments</h3>
+<h3>@L["AnalyticsQuality.QCDefectsAndLateShipments"]</h3>
 
 @if (_error is not null)
 {
-    <ErrorBanner Message="@_error.UserMessage"
+    <ErrorBanner Message="@WarehouseErrorText.Get(L, _error)"
                  TraceId="@_error.TraceId"
                  OnRetry="LoadAsync"
                  OnDismiss="DismissError" />
@@ -19,7 +19,7 @@
     <div class="col-md-6">
         <div class="card shadow-sm h-100">
             <div class="card-body">
-                <div class="text-muted">QC Defect Count</div>
+                <div class="text-muted">@L["AnalyticsQuality.QCDefectCount"]</div>
                 <div class="display-6">@(_analytics?.DefectCount ?? 0)</div>
             </div>
         </div>
@@ -27,7 +27,7 @@
     <div class="col-md-6">
         <div class="card shadow-sm h-100">
             <div class="card-body">
-                <div class="text-muted">Late Shipments</div>
+                <div class="text-muted">@L["AnalyticsQuality.LateShipments"]</div>
                 <div class="display-6">@(_analytics?.LateShipmentsCount ?? 0)</div>
             </div>
         </div>
@@ -39,14 +39,14 @@
         <div class="card shadow-sm h-100">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h5 class="mb-0">Top Defect Types</h5>
-                    <button class="btn btn-outline-secondary btn-sm" @onclick="LoadAsync" disabled="@_isBusy">Refresh</button>
+                    <h5 class="mb-0">@L["AnalyticsQuality.TopDefectTypes"]</h5>
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="LoadAsync" disabled="@_isBusy">@L["Common.Refresh"]</button>
                 </div>
 
                 @if (_analytics is null || _analytics.DefectsByType.Count == 0)
                 {
-                    <EmptyState Title="No defects recorded"
-                                Message="Defect analytics appears when QC defects are logged."
+                    <EmptyState Title="@L["AnalyticsQuality.NoDefectsRecorded"]"
+                                Message="@L["AnalyticsQuality.DefectAnalyticsAppearsWhenQCDefectsAreLogged"]"
                                 IconCss="bi bi-shield-check"
                                 OnAction="LoadAsync" />
                 }
@@ -56,8 +56,8 @@
                         <table class="table table-sm">
                             <thead>
                                 <tr>
-                                    <th>Type</th>
-                                    <th>Count</th>
+                                    <th>@L["Common.Type"]</th>
+                                    <th>@L["AnalyticsQuality.Count"]</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -79,11 +79,11 @@
     <div class="col-lg-7">
         <div class="card shadow-sm h-100">
             <div class="card-body">
-                <h5>Late Shipment Root Causes</h5>
+                <h5>@L["AnalyticsQuality.LateShipmentRootCauses"]</h5>
                 @if (_analytics is null || _analytics.LateShipments.Count == 0)
                 {
-                    <EmptyState Title="No late shipments"
-                                Message="No delayed outbound orders found in current dataset."
+                    <EmptyState Title="@L["AnalyticsQuality.NoLateShipments"]"
+                                Message="@L["AnalyticsQuality.NoDelayedOutboundOrdersFoundInCurrentDataset"]"
                                 IconCss="bi bi-truck"
                                 OnAction="LoadAsync" />
                 }
@@ -93,10 +93,10 @@
                         <table class="table table-sm">
                             <thead>
                                 <tr>
-                                    <th>Order</th>
-                                    <th>Requested</th>
-                                    <th>Shipped</th>
-                                    <th>Root Cause</th>
+                                    <th>@L["Common.Order"]</th>
+                                    <th>@L["Common.Requested"]</th>
+                                    <th>@L["Common.Shipped"]</th>
+                                    <th>@L["AnalyticsQuality.RootCause"]</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -140,7 +140,7 @@
         catch (ApiException ex)
         {
             _error = ex;
-            ToastService.ShowError(ex.UserMessage);
+            ToastService.ShowError(WarehouseErrorText.Get(L, ex));
         }
         finally
         {

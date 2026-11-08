@@ -4,9 +4,9 @@
 @inject ToastService ToastService
 @inject ItemPricesClient ItemPricesClient
 
-<PageTitle>Inbound Shipment Detail - Cikada.MES</PageTitle>
+<PageTitle>@L["InboundShipmentDetail.InboundShipmentDetailCikadaMES"]</PageTitle>
 
-<h1>Inbound Shipment Detail</h1>
+<h1>@L["InboundShipmentDetail.InboundShipmentDetail"]</h1>
 
 @if (_apiError is not null)
 {
@@ -22,8 +22,8 @@
     <div class="card-body">
         @if (_shipment is null)
         {
-            <EmptyState Title="Shipment not found"
-                        Message="Inbound shipment does not exist or is unavailable."
+            <EmptyState Title="@L["InboundShipmentDetail.ShipmentNotFound"]"
+                        Message="@L["InboundShipmentDetail.InboundShipmentDoesNotExistOrIsUnavailable"]"
                         IconCss="bi bi-box-arrow-in-down"
                         OnAction="BackToListAsync" />
         }
@@ -33,32 +33,32 @@
                 <div>
                     <h4 class="mb-1">ISH-@_shipment.Id</h4>
                     <div class="text-muted">@_shipment.ReferenceNumber</div>
-                    <div class="small text-muted">Supplier: @_shipment.SupplierName (@_shipment.SupplierId)</div>
-                    <div class="small text-muted">Expected: @_shipment.ExpectedDate?.ToString("yyyy-MM-dd")</div>
+                    <div class="small text-muted">@L["InboundShipmentDetail.Supplier", _shipment.SupplierName, _shipment.SupplierId]</div>
+                    <div class="small text-muted">@L["InboundShipmentDetail.Expected", _shipment.ExpectedDate?.ToString("yyyy-MM-dd") ?? "-"]</div>
                 </div>
                 <div class="d-flex align-items-center gap-2">
-                    <span class="badge @GetStatusBadge(_shipment.Status)">@_shipment.Status</span>
+                    <span class="badge @GetStatusBadge(_shipment.Status)">@WarehouseStatusText.Get(L, _shipment.Status)</span>
                     @if (string.Equals(_shipment.Status, "Draft", StringComparison.OrdinalIgnoreCase))
                     {
-                        <button class="btn btn-outline-primary btn-sm" @onclick="OpenEdit">Edit</button>
+                        <button class="btn btn-outline-primary btn-sm" @onclick="OpenEdit">@L["Common.Edit"]</button>
                     }
-                    <button class="btn btn-outline-secondary btn-sm" @onclick="BackToList">Back</button>
-                    <button class="btn btn-outline-secondary btn-sm" @onclick="LoadAsync">Refresh</button>
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="BackToList">@L["Common.Back"]</button>
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="LoadAsync">@L["Common.Refresh"]</button>
                 </div>
             </div>
 
             <div class="alert alert-light border d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <div>
-                    <strong>Received:</strong> @TotalReceived.ToString("0.##") / @TotalExpected.ToString("0.##")
+                    <strong>@L["InboundShipmentDetail.Received"]</strong> @TotalReceived.ToString("0.##") / @TotalExpected.ToString("0.##")
                     (<span>@CompletionPercent.ToString("0.0")%</span>)
                 </div>
-                <button class="btn btn-sm btn-outline-primary" @onclick="OpenQcQueue">Open QC Queue</button>
+                <button class="btn btn-sm btn-outline-primary" @onclick="OpenQcQueue">@L["InboundShipmentDetail.OpenQCQueue"]</button>
             </div>
 
             @if (_shipment.AdditionalCosts.Count > 0)
             {
                 <div class="alert alert-light border">
-                    <strong>Additional costs:</strong>
+                    <strong>@L["InboundShipmentDetail.AdditionalCosts"]</strong>
                     @foreach (var cost in _shipment.AdditionalCosts)
                     {
                         <span class="badge bg-light text-dark border me-1">@cost.CostType: @cost.Amount.ToString("0.00") @cost.Currency</span>
@@ -70,60 +70,60 @@
                 <div class="card-body">
                     <div class="row g-2 align-items-end">
                         <div class="col-md-3">
-                            <label class="form-label">Scan Barcode</label>
-                            <input class="form-control" @bind="_scanBarcode" placeholder="Scan item barcode" />
+                            <label class="form-label">@L["InboundShipmentDetail.ScanBarcode"]</label>
+                            <input class="form-control" @bind="_scanBarcode" placeholder="@L["InboundShipmentDetail.ScanItemBarcode"]" />
                         </div>
                         <div class="col-md-2">
-                            <button class="btn btn-outline-secondary" @onclick="ResolveByBarcode">Resolve</button>
+                            <button class="btn btn-outline-secondary" @onclick="ResolveByBarcode">@L["InboundShipmentDetail.Resolve"]</button>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">Line</label>
+                            <label class="form-label">@L["Common.Line"]</label>
                             <select class="form-select" @bind="_selectedLineId">
-                                <option value="">Select line</option>
+                                <option value="">@L["InboundShipmentDetail.SelectLine"]</option>
                                 @foreach (var line in _shipment.Lines.Where(x => !x.IsService))
                                 {
-                                    <option value="@line.LineId">@line.ItemSku - @line.ItemName (Line @line.LineId)</option>
+                                    <option value="@line.LineId">@L["InboundShipmentDetail.Line", line.ItemSku, line.ItemName, line.LineId]</option>
                                 }
                             </select>
                         </div>
                         <div class="col-md-2">
-                            <label class="form-label">Receive Qty</label>
+                            <label class="form-label">@L["InboundShipmentDetail.ReceiveQty"]</label>
                             <input type="number" min="0.01" step="0.01" class="form-control" @bind="_receivedQty" />
                         </div>
                         <div class="col-md-2 d-flex">
-                            <button class="btn btn-primary mt-auto" @onclick="ReceiveAsync" disabled="@_isSubmitting">Receive</button>
+                            <button class="btn btn-primary mt-auto" @onclick="ReceiveAsync" disabled="@_isSubmitting">@L["Common.Receive"]</button>
                         </div>
                     </div>
 
                     <div class="row g-2 mt-1">
                         <div class="col-md-2">
-                            <label class="form-label">Unit Price @(SelectedLineHasPrice ? "" : "(required)")</label>
+                            <label class="form-label">@L["InboundShipmentDetail.UnitPricec63fff", SelectedLineHasPrice ? "" : "(required)"]</label>
                             <input type="number" min="0" step="0.0001" class="form-control @(SelectedLineHasPrice ? "" : "border-warning")" @bind="_unitPrice" placeholder="@SelectedLinePricePlaceholder" />
                         </div>
                         <div class="col-md-1">
-                            <label class="form-label">Ccy</label>
+                            <label class="form-label">@L["Common.Ccy"]</label>
                             <input class="form-control" maxlength="3" @bind="_currency" />
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">Lot Number</label>
+                            <label class="form-label">@L["Common.LotNumber"]</label>
                             <input class="form-control" @bind="_lotNumber" />
                         </div>
                         <div class="col-md-2">
-                            <label class="form-label">Production Date</label>
+                            <label class="form-label">@L["InboundShipmentDetail.ProductionDate"]</label>
                             <input type="date" class="form-control" @bind="_productionDate" />
                         </div>
                         <div class="col-md-2">
-                            <label class="form-label">Expiry Date</label>
+                            <label class="form-label">@L["InboundShipmentDetail.ExpiryDate"]</label>
                             <input type="date" class="form-control" @bind="_expiryDate" />
                         </div>
                         <div class="col-md-2">
-                            <label class="form-label">Notes</label>
+                            <label class="form-label">@L["Common.Notes"]</label>
                             <input class="form-control" @bind="_notes" />
                         </div>
                     </div>
                     @if (!SelectedLineHasPrice)
                     {
-                        <div class="small text-warning mt-1">This line has no purchase price yet. Enter the unit price before receiving - whoever enters the receipt enters the price.</div>
+                        <div class="small text-warning mt-1">@L["InboundShipmentDetail.ThisLineHasNoPurchasePriceYetEnterTheUnitPriceBeforeReceivingW"]</div>
                     }
                 </div>
             </div>
@@ -132,17 +132,17 @@
                 <table class="table table-sm table-hover align-middle">
                     <thead>
                         <tr>
-                            <th>Line</th>
+                            <th>@L["Common.Line"]</th>
                             <th></th>
-                            <th>Item</th>
-                            <th>Barcode</th>
-                            <th>Expected</th>
-                            <th>Received</th>
-                            <th>Remaining</th>
-                            <th>Unit Price</th>
+                            <th>@L["Common.Item"]</th>
+                            <th>@L["Common.Barcode"]</th>
+                            <th>@L["Common.Expected"]</th>
+                            <th>@L["InboundShipmentDetail.Received27548c"]</th>
+                            <th>@L["Common.Remaining"]</th>
+                            <th>@L["InboundShipmentDetail.UnitPrice"]</th>
                             <th class="text-end">@L["Pricing.Cost"]</th>
                             <th class="text-end">@L["Pricing.Sale"]</th>
-                            <th>Flags</th>
+                            <th>@L["InboundShipmentDetail.Flags"]</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -175,7 +175,7 @@
                                     }
                                     else
                                     {
-                                        <span class="badge bg-warning text-dark">not set</span>
+                                        <span class="badge bg-warning text-dark">@L["InboundShipmentDetail.NotSet"]</span>
                                     }
                                 </td>
                                 <td class="text-end is-money is-num">@Money.Format(_priceMap.Get(line.ItemId, line.ItemSku)?.EffectiveCost)</td>
@@ -183,7 +183,7 @@
                                 <td>
                                     @if (line.IsService)
                                     {
-                                        <span class="badge bg-secondary me-1">SERVICE - @(line.CostType ?? "Other")</span>
+                                        <span class="badge bg-secondary me-1">@L["InboundShipmentDetail.SERVICE", line.CostType ?? "Other"]</span>
                                     }
                                     @if (line.RequiresLotTracking)
                                     {
@@ -285,12 +285,12 @@
 
         if (matched is null)
         {
-            ToastService.ShowWarning("Barcode not found in this shipment lines.");
+            ToastService.ShowWarning(L["InboundShipmentDetail.Toast.BarcodeNotFoundInThisShipmentLines"].Value);
             return;
         }
 
         _selectedLineId = matched.LineId.ToString();
-        ToastService.ShowSuccess($"Selected line {matched.LineId} ({matched.ItemSku}).");
+        ToastService.ShowSuccess(L["InboundShipmentDetail.Toast.SelectedLine", matched.LineId, matched.ItemSku].Value);
     }
 
     private async Task ReceiveAsync()
@@ -302,25 +302,25 @@
 
         if (!SelectedLineId.HasValue)
         {
-            ToastService.ShowError("Select line to receive.");
+            ToastService.ShowError(L["InboundShipmentDetail.Toast.SelectLineToReceive"].Value);
             return;
         }
 
         if (_receivedQty <= 0m)
         {
-            ToastService.ShowError("Received qty must be greater than zero.");
+            ToastService.ShowError(L["InboundShipmentDetail.Toast.ReceivedQtyMustBeGreaterThanZero"].Value);
             return;
         }
 
         if (!SelectedLineHasPrice)
         {
-            ToastService.ShowError("Enter the unit price before receiving this line.");
+            ToastService.ShowError(L["InboundShipmentDetail.Toast.EnterTheUnitPriceBeforeReceivingThisLine"].Value);
             return;
         }
 
         if (_unitPrice is < 0m)
         {
-            ToastService.ShowError("Unit price must be greater than or equal to zero.");
+            ToastService.ShowError(L["InboundShipmentDetail.Toast.UnitPriceMustBeGreaterThanOrEqualToZero"].Value);
             return;
         }
 
@@ -342,7 +342,7 @@
             };
 
             var response = await ReceivingClient.ReceiveItemsAsync(_shipment.Id, request);
-            ToastService.ShowSuccess($"Received {response.ReceivedQty:0.##} units to {response.DestinationLocationCode}.");
+            ToastService.ShowSuccess(L["InboundShipmentDetail.Toast.ReceivedUnitsTo", response.ReceivedQty, response.DestinationLocationCode].Value);
 
             _lotNumber = string.Empty;
             _notes = string.Empty;
@@ -397,15 +397,15 @@
         _ => "bg-secondary"
     };
 
-    private static string BuildErrorMessage(ApiException ex)
+    private string BuildErrorMessage(ApiException ex)
     {
-        if (!string.IsNullOrWhiteSpace(ex.UserMessage))
+        if (!string.IsNullOrWhiteSpace(WarehouseErrorText.Get(L, ex)))
         {
-            return ex.UserMessage;
+            return WarehouseErrorText.Get(L, ex);
         }
 
         return ex.ProblemDetails?.Detail
                ?? ex.ProblemDetails?.Title
-               ?? "Inbound shipment request failed.";
+               ?? L["InboundShipmentDetail.RequestFailed"].Value;
     }
 }

@@ -1,9 +1,9 @@
 @page "/admin/uom"
 @inject UomClient UomClient
 
-<PageTitle>Units of Measure - Cikada.MES</PageTitle>
+<PageTitle>@L["Admin.UnitsOfMeasure.UnitsOfMeasureCikadaMES"]</PageTitle>
 
-<h3>Units of Measure</h3>
+<h3>@L["Admin.UnitsOfMeasure.UnitsOfMeasure"]</h3>
 
 @if (_apiError is not null)
 {
@@ -17,21 +17,21 @@
     <div class="card-body">
         <div class="row g-2 align-items-end">
             <div class="col-md-4">
-                <label class="form-label">Search</label>
-                <input class="form-control" @bind="_search" placeholder="Code, name, item SKU" />
+                <label class="form-label">@L["Common.Search"]</label>
+                <input class="form-control" @bind="_search" placeholder="@L["Admin.UnitsOfMeasure.CodeNameItemSKU"]" />
             </div>
             <div class="col-md-3">
-                <label class="form-label">UoM Type</label>
+                <label class="form-label">@L["Admin.UnitsOfMeasure.UoMType"]</label>
                 <select class="form-select" @bind="_uomType">
-                    <option value="">All</option>
-                    <option value="Weight">Weight</option>
-                    <option value="Volume">Volume</option>
-                    <option value="Piece">Piece</option>
-                    <option value="Length">Length</option>
+                    <option value="">@L["Common.All"]</option>
+                    <option value="Weight">@L["Common.Weight"]</option>
+                    <option value="Volume">@L["Common.Volume"]</option>
+                    <option value="Piece">@L["Admin.UnitsOfMeasure.Piece"]</option>
+                    <option value="Length">@L["Admin.UnitsOfMeasure.Length"]</option>
                 </select>
             </div>
             <div class="col-md-2 d-grid">
-                <button class="btn btn-primary" @onclick="ApplyFiltersAsync">Filter</button>
+                <button class="btn btn-primary" @onclick="ApplyFiltersAsync">@L["Common.Filter"]</button>
             </div>
         </div>
     </div>
@@ -39,21 +39,21 @@
 
 <div class="card shadow-sm mb-3 position-relative">
     <LoadingSpinner IsLoading="@_isLoading" />
-    <div class="card-header">Units</div>
+    <div class="card-header">@L["Admin.UnitsOfMeasure.Units"]</div>
     <div class="card-body">
         <div class="table-responsive">
             <table class="table table-sm table-hover align-middle">
                 <thead>
                 <tr>
-                    <th>Code</th>
-                    <th>Name</th>
-                    <th>Type</th>
+                    <th>@L["Common.Code"]</th>
+                    <th>@L["Common.Name"]</th>
+                    <th>@L["Common.Type"]</th>
                 </tr>
                 </thead>
                 <tbody>
                 @if (_units.Count == 0)
                 {
-                    <tr><td colspan="3" class="text-muted">No units found.</td></tr>
+                    <tr><td colspan="3" class="text-muted">@L["Admin.UnitsOfMeasure.NoUnitsFound"]</td></tr>
                 }
                 else
                 {
@@ -73,20 +73,20 @@
 </div>
 
 <div class="card shadow-sm mb-3">
-    <div class="card-header">Handling Unit Types</div>
+    <div class="card-header">@L["Admin.UnitsOfMeasure.HandlingUnitTypes"]</div>
     <div class="card-body">
         <div class="table-responsive">
             <table class="table table-sm table-hover align-middle">
                 <thead>
                 <tr>
-                    <th>Code</th>
-                    <th>Name</th>
+                    <th>@L["Common.Code"]</th>
+                    <th>@L["Common.Name"]</th>
                 </tr>
                 </thead>
                 <tbody>
                 @if (_handlingUnitTypes.Count == 0)
                 {
-                    <tr><td colspan="2" class="text-muted">No handling unit types found.</td></tr>
+                    <tr><td colspan="2" class="text-muted">@L["Admin.UnitsOfMeasure.NoHandlingUnitTypesFound"]</td></tr>
                 }
                 else
                 {
@@ -105,27 +105,27 @@
 </div>
 
 <div class="card shadow-sm">
-    <div class="card-header">Item UoM Conversions</div>
+    <div class="card-header">@L["Admin.UnitsOfMeasure.ItemUoMConversions"]</div>
     <div class="card-body">
         <div class="d-flex justify-content-between align-items-center mb-2">
-            <strong>Total: @_totalCount</strong>
+            <strong>@L["Admin.UnitsOfMeasure.Total", _totalCount]</strong>
         </div>
 
         <div class="table-responsive">
             <table class="table table-sm table-hover align-middle">
                 <thead>
                 <tr>
-                    <th>Item</th>
-                    <th>From</th>
-                    <th>To</th>
-                    <th>Factor</th>
-                    <th>Rounding</th>
+                    <th>@L["Common.Item"]</th>
+                    <th>@L["Common.From"]</th>
+                    <th>@L["Common.To"]</th>
+                    <th>@L["Admin.UnitsOfMeasure.Factor"]</th>
+                    <th>@L["Admin.UnitsOfMeasure.Rounding"]</th>
                 </tr>
                 </thead>
                 <tbody>
                 @if (_conversions.Count == 0)
                 {
-                    <tr><td colspan="5" class="text-muted">No conversion rules found.</td></tr>
+                    <tr><td colspan="5" class="text-muted">@L["Admin.UnitsOfMeasure.NoConversionRulesFound"]</td></tr>
                 }
                 else
                 {
@@ -225,13 +225,13 @@
         await ReloadAsync();
     }
 
-    private static string BuildErrorMessage(ApiException error)
+    private string BuildErrorMessage(ApiException error)
     {
         if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
         {
-            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+            return $"{WarehouseErrorText.Get(L, error)} {error.ProblemDetails.Detail}";
         }
 
-        return error.UserMessage;
+        return WarehouseErrorText.Get(L, error);
     }
 }

@@ -5,13 +5,13 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">@Title</h5>
-                    <button type="button" class="btn-close" aria-label="Close" @onclick="OnCancel"></button>
+                    <button type="button" class="btn-close" aria-label="@L["Common.Close"]" @onclick="OnCancel"></button>
                 </div>
                 <div class="modal-body">
                     <p class="mb-0">@Message</p>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="OnCancel">Cancel</button>
+                    <button type="button" class="btn btn-secondary" @onclick="OnCancel">@L["Common.Cancel"]</button>
                     <button type="button" class="btn btn-primary" @onclick="OnConfirm">@ConfirmText</button>
                 </div>
             </div>

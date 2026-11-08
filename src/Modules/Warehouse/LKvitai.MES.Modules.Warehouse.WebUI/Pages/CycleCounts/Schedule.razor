@@ -6,29 +6,29 @@
 @inject IConfiguration Configuration
 @using System.Diagnostics
 
-<PageTitle>Schedule Cycle Count - Cikada.MES</PageTitle>
+<PageTitle>@L["CycleCounts.Schedule.ScheduleCycleCountCikadaMES"]</PageTitle>
 
-<h1 data-testid="cycle-counts-schedule-title">Schedule Cycle Count</h1>
+<h1 data-testid="cycle-counts-schedule-title">@L["CycleCounts.Schedule.ScheduleCycleCount"]</h1>
 
 <div class="card shadow-sm position-relative">
     <LoadingSpinner IsLoading="_isLoading || _isSubmitting" />
     <div class="card-body">
         <div class="row g-3">
             <div class="col-md-3">
-                <label class="form-label">Scheduled Date</label>
+                <label class="form-label">@L["CycleCounts.Schedule.ScheduledDate"]</label>
                 <input type="date" class="form-control" @bind="_scheduledDate" data-testid="cycle-counts-schedule-date" />
             </div>
             <div class="col-md-3">
-                <label class="form-label">ABC Class</label>
+                <label class="form-label">@L["CycleCounts.Schedule.ABCClass"]</label>
                 <select class="form-select" @bind="_abcClass" data-testid="cycle-counts-schedule-abc">
-                    <option value="A">A</option>
-                    <option value="B">B</option>
-                    <option value="C">C</option>
+                    <option value="A">@L["CycleCounts.Schedule.A"]</option>
+                    <option value="B">@L["CycleCounts.Schedule.B"]</option>
+                    <option value="C">@L["CycleCounts.Schedule.C"]</option>
                     <option value="ALL">ALL</option>
                 </select>
             </div>
             <div class="col-md-3">
-                <label class="form-label">Assigned Operator</label>
+                <label class="form-label">@L["Common.AssignedOperator"]</label>
                 <select class="form-select" @bind="_assignedOperator" data-testid="cycle-counts-schedule-operator">
                     @foreach (var operatorId in _operatorOptions)
                     {
@@ -40,10 +40,10 @@
 
         <hr />
 
-        <h5>Locations</h5>
+        <h5>@L["CycleCounts.Schedule.Locations"]</h5>
         @if (_locations.Count == 0)
         {
-            <p class="text-muted">No locations loaded.</p>
+            <p class="text-muted">@L["CycleCounts.Schedule.NoLocationsLoaded"]</p>
         }
         else
         {
@@ -64,8 +64,8 @@
         }
 
         <div class="d-flex justify-content-end gap-2 mt-3">
-            <button class="btn btn-outline-secondary" @onclick="BackAsync">Back</button>
-            <button class="btn btn-primary" @onclick="SubmitAsync" disabled="@_isSubmitting">Submit</button>
+            <button class="btn btn-outline-secondary" @onclick="BackAsync">@L["Common.Back"]</button>
+            <button class="btn btn-primary" @onclick="SubmitAsync" disabled="@_isSubmitting">@L["Common.Submit"]</button>
         </div>
     </div>
 </div>
@@ -119,14 +119,14 @@
         }
         catch (ApiException ex)
         {
-            ToastService.ShowError(ex.UserMessage);
+            ToastService.ShowError(WarehouseErrorText.Get(L, ex));
         }
         catch (Exception ex)
         {
             var userMessage = ex.Message;
             if (ex is HttpRequestException)
             {
-                userMessage = "Failed to load schedule lookups. Please verify API connectivity.";
+                userMessage = L["CycleCounts.Schedule.LookupFailed"].Value;
             }
 
             var wrapped = new ApiException(
@@ -168,19 +168,19 @@
     {
         if (_scheduledDate.Date < DateTime.Today)
         {
-            ToastService.ShowError("Scheduled date must be today or later.");
+            ToastService.ShowError(L["CycleCounts.Schedule.Toast.ScheduledDateMustBeTodayOrLater"].Value);
             return;
         }
 
         if (string.IsNullOrWhiteSpace(_assignedOperator))
         {
-            ToastService.ShowError("Assigned operator is required.");
+            ToastService.ShowError(L["CycleCounts.Schedule.Toast.AssignedOperatorIsRequired"].Value);
             return;
         }
 
         if (_selectedLocationIds.Count == 0)
         {
-            ToastService.ShowError("Select at least one location.");
+            ToastService.ShowError(L["CycleCounts.Schedule.Toast.SelectAtLeastOneLocation"].Value);
             return;
         }
 
@@ -196,12 +196,12 @@
                 LocationIds = _selectedLocationIds.ToList()
             });
 
-            ToastService.ShowSuccess($"Cycle count {response.CountNumber} scheduled.");
+            ToastService.ShowSuccess(L["CycleCounts.Schedule.Toast.CycleCountScheduled", response.CountNumber].Value);
             NavigationManager.NavigateTo("/warehouse/cycle-counts");
         }
         catch (ApiException ex)
         {
-            ToastService.ShowError(ex.UserMessage);
+            ToastService.ShowError(WarehouseErrorText.Get(L, ex));
         }
         finally
         {

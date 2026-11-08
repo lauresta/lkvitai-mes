@@ -3,9 +3,9 @@
 @inject StockClient StockClient
 
 <div class="small text-muted mt-1">
-    Available <span class="is-num">@(_available?.ToString("0.00", CultureInfo.InvariantCulture) ?? "–")</span>
-    · Cost <span class="is-money is-num">@Money.Format(_cost)</span>
-    · Sale <span class="is-money is-num">@Money.Format(_sale)</span>
+    @L["Common.Available"] <span class="is-num">@(_available?.ToString("0.00", CultureInfo.InvariantCulture) ?? "–")</span>
+    @L["Stock.ItemPriceHint.Cost"] <span class="is-money is-num">@Money.Format(_cost)</span>
+    @L["Stock.ItemPriceHint.Sale"] <span class="is-money is-num">@Money.Format(_sale)</span>
 </div>
 
 @code {

@@ -1,6 +1,6 @@
 <MudDialog>
     <TitleContent>
-        <span>@(IsEdit ? "Edit Price Group" : "Create Price Group")</span>
+        <span>@(IsEdit ? L["AdminPriceGroupEditorDialog.EditPriceGroup"] : L["AdminPriceGroupEditorDialog.CreatePriceGroup"])</span>
     </TitleContent>
     <DialogContent>
         @if (!string.IsNullOrWhiteSpace(_validationMessage))
@@ -9,24 +9,24 @@
         }
 
         <MudTextField T="string"
-                      Label="Code"
+                      Label="@L["Common.Code"]"
                       Variant="Variant.Outlined"
                       Margin="Margin.Dense"
                       @bind-Value="_code"
                       Required="true" />
 
         <MudTextField T="string"
-                      Label="Name"
+                      Label="@L["Common.Name"]"
                       Variant="Variant.Outlined"
                       Margin="Margin.Dense"
                       @bind-Value="_name"
                       Required="true" />
 
-        <MudCheckBox T="bool" @bind-Checked="_isActive" Label="Active" />
+        <MudCheckBox T="bool" @bind-Checked="_isActive" Label="@L["Common.Active"]" />
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="Cancel">Cancel</MudButton>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Save">@(IsEdit ? "Save Changes" : "Create")</MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="Cancel">@L["Common.Cancel"]</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Save">@(IsEdit ? L["Common.SaveChanges"] : L["Common.Create"])</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -55,13 +55,13 @@
     {
         if (string.IsNullOrWhiteSpace(_code))
         {
-            _validationMessage = "Code is required.";
+            _validationMessage = L["AdminPriceGroupEditorDialog.CodeRequired"].Value;
             return;
         }
 
         if (string.IsNullOrWhiteSpace(_name))
         {
-            _validationMessage = "Name is required.";
+            _validationMessage = L["AdminPriceGroupEditorDialog.NameRequired"].Value;
             return;
         }
 

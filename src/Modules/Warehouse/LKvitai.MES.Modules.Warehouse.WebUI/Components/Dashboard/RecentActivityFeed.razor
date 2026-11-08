@@ -2,7 +2,7 @@
     <LoadingSpinner IsLoading="IsLoading" />
 
     <div class="card-body">
-        <h5 class="card-title mb-3">Recent Activity</h5>
+        <h5 class="card-title mb-3">@L["Dashboard.RecentActivityFeed.RecentActivity"]</h5>
 
         @if (!string.IsNullOrWhiteSpace(ErrorMessage))
         {
@@ -13,7 +13,7 @@
         }
         else if ((Items?.Count ?? 0) == 0)
         {
-            <p class="text-muted mb-0">No recent movements available.</p>
+            <p class="text-muted mb-0">@L["Dashboard.RecentActivityFeed.NoRecentMovementsAvailable"]</p>
         }
         else
         {

@@ -3,13 +3,13 @@
 @inject ToastService ToastService
 @using LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure
 
-<PageTitle>Fulfillment KPIs - Cikada.MES</PageTitle>
+<PageTitle>@L["AnalyticsFulfillment.FulfillmentKPIsCikadaMES"]</PageTitle>
 
-<h3>Fulfillment KPIs</h3>
+<h3>@L["AnalyticsFulfillment.FulfillmentKPIs"]</h3>
 
 @if (_error is not null)
 {
-    <ErrorBanner Message="@_error.UserMessage"
+    <ErrorBanner Message="@WarehouseErrorText.Get(L, _error)"
                  TraceId="@_error.TraceId"
                  OnRetry="LoadAsync"
                  OnDismiss="DismissError" />
@@ -19,7 +19,7 @@
     <div class="col-md-3">
         <div class="card shadow-sm h-100">
             <div class="card-body">
-                <div class="text-muted">Total Orders</div>
+                <div class="text-muted">@L["AnalyticsFulfillment.TotalOrders"]</div>
                 <div class="display-6">@_kpi?.TotalOrders</div>
             </div>
         </div>
@@ -27,7 +27,7 @@
     <div class="col-md-3">
         <div class="card shadow-sm h-100">
             <div class="card-body">
-                <div class="text-muted">Shipped Orders</div>
+                <div class="text-muted">@L["AnalyticsFulfillment.ShippedOrders"]</div>
                 <div class="display-6">@_kpi?.ShippedOrders</div>
             </div>
         </div>
@@ -35,7 +35,7 @@
     <div class="col-md-3">
         <div class="card shadow-sm h-100">
             <div class="card-body">
-                <div class="text-muted">On-Time Delivery</div>
+                <div class="text-muted">@L["AnalyticsFulfillment.OnTimeDelivery"]</div>
                 <div class="display-6">@(_kpi?.OnTimePercent ?? 0)%</div>
             </div>
         </div>
@@ -43,7 +43,7 @@
     <div class="col-md-3">
         <div class="card shadow-sm h-100">
             <div class="card-body">
-                <div class="text-muted">Avg Pick Minutes</div>
+                <div class="text-muted">@L["AnalyticsFulfillment.AvgPickMinutes"]</div>
                 <div class="display-6">@(_kpi?.AveragePickMinutes ?? 0)</div>
             </div>
         </div>
@@ -53,14 +53,14 @@
 <div class="card shadow-sm">
     <div class="card-body">
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="mb-0">14-Day Trend</h5>
-            <button class="btn btn-outline-secondary btn-sm" @onclick="LoadAsync" disabled="@_isBusy">Refresh</button>
+            <h5 class="mb-0">@L["AnalyticsFulfillment.14DayTrend"]</h5>
+            <button class="btn btn-outline-secondary btn-sm" @onclick="LoadAsync" disabled="@_isBusy">@L["Common.Refresh"]</button>
         </div>
 
         @if (_kpi is null || _kpi.Trend.Count == 0)
         {
-            <EmptyState Title="No KPI trend"
-                        Message="No sales order trend data is available yet."
+            <EmptyState Title="@L["AnalyticsFulfillment.NoKPITrend"]"
+                        Message="@L["AnalyticsFulfillment.NoSalesOrderTrendDataIsAvailableYet"]"
                         IconCss="bi bi-graph-up"
                         OnAction="LoadAsync" />
         }
@@ -70,9 +70,9 @@
                 <table class="table table-sm">
                     <thead>
                         <tr>
-                            <th>Date</th>
-                            <th>Orders</th>
-                            <th>Shipped</th>
+                            <th>@L["AnalyticsFulfillment.Date"]</th>
+                            <th>@L["AnalyticsFulfillment.Orders"]</th>
+                            <th>@L["Common.Shipped"]</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -113,7 +113,7 @@
         catch (ApiException ex)
         {
             _error = ex;
-            ToastService.ShowError(ex.UserMessage);
+            ToastService.ShowError(WarehouseErrorText.Get(L, ex));
         }
         finally
         {

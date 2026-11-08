@@ -4,9 +4,9 @@
 @inject IJSRuntime JavaScript
 @inject ToastService ToastService
 
-<PageTitle>Stock Dashboard - Cikada.MES</PageTitle>
+<PageTitle>@L["StockDashboard.StockDashboardCikadaMES"]</PageTitle>
 
-<h1>Stock Dashboard</h1>
+<h1>@L["StockDashboard.StockDashboard"]</h1>
 
 @if (_apiError is not null)
 {
@@ -20,26 +20,26 @@
     <div class="card-body">
         <div class="row g-2 align-items-end">
             <div class="col-md-2">
-                <label class="form-label">Location Id</label>
+                <label class="form-label">@L["Common.LocationId"]</label>
                 <input type="number" class="form-control" @bind="_locationId" />
             </div>
             <div class="col-md-2">
-                <label class="form-label">Category Id</label>
+                <label class="form-label">@L["StockDashboard.CategoryId"]</label>
                 <input type="number" class="form-control" @bind="_categoryId" />
             </div>
             <div class="col-md-2">
-                <label class="form-label">Item Id</label>
+                <label class="form-label">@L["Common.ItemID"]</label>
                 <input type="number" class="form-control" @bind="_itemId" />
             </div>
             <div class="col-md-3">
-                <label class="form-label">Search Item</label>
-                <input class="form-control" @bind="_itemSearch" placeholder="SKU or name" />
+                <label class="form-label">@L["StockDashboard.SearchItem"]</label>
+                <input class="form-control" @bind="_itemSearch" placeholder="@L["StockDashboard.SKUOrName"]" />
             </div>
             <div class="col-md-3 d-flex gap-2">
-                <button class="btn btn-primary" @onclick="ApplyFiltersAsync" disabled="@_isLoading">Apply</button>
-                <button class="btn btn-outline-secondary" @onclick="ResetFiltersAsync" disabled="@_isLoading">Reset</button>
-                <button class="btn btn-outline-secondary" @onclick="LoadAsync" disabled="@_isLoading">Refresh</button>
-                <button class="btn btn-outline-success ms-auto" @onclick="ExportCsvAsync" disabled="@_isLoading">Export CSV</button>
+                <button class="btn btn-primary" @onclick="ApplyFiltersAsync" disabled="@_isLoading">@L["Common.Apply"]</button>
+                <button class="btn btn-outline-secondary" @onclick="ResetFiltersAsync" disabled="@_isLoading">@L["Common.Reset"]</button>
+                <button class="btn btn-outline-secondary" @onclick="LoadAsync" disabled="@_isLoading">@L["Common.Refresh"]</button>
+                <button class="btn btn-outline-success ms-auto" @onclick="ExportCsvAsync" disabled="@_isLoading">@L["Common.ExportCSV"]</button>
             </div>
         </div>
     </div>
@@ -49,7 +49,7 @@
     <div class="col-md-3">
         <div class="card border h-100">
             <div class="card-body">
-                <div class="small text-muted">Total Items</div>
+                <div class="small text-muted">@L["StockDashboard.TotalItems"]</div>
                 <div class="fs-4">@TotalItems</div>
             </div>
         </div>
@@ -57,7 +57,7 @@
     <div class="col-md-3">
         <div class="card border h-100">
             <div class="card-body">
-                <div class="small text-muted">Total Qty</div>
+                <div class="small text-muted">@L["StockDashboard.TotalQty"]</div>
                 <div class="fs-4">@TotalQty.ToString("0.##")</div>
             </div>
         </div>
@@ -65,7 +65,7 @@
     <div class="col-md-3">
         <div class="card border h-100">
             <div class="card-body">
-                <div class="small text-muted">Low Stock</div>
+                <div class="small text-muted">@L["StockDashboard.LowStock"]</div>
                 <div class="fs-4 text-warning">@LowStockRows.Count</div>
             </div>
         </div>
@@ -73,7 +73,7 @@
     <div class="col-md-3">
         <div class="card border h-100">
             <div class="card-body">
-                <div class="small text-muted">Expiring Soon (30d)</div>
+                <div class="small text-muted">@L["StockDashboard.ExpiringSoon30d"]</div>
                 <div class="fs-4 text-danger">@ExpiringRows.Count</div>
             </div>
         </div>
@@ -85,25 +85,25 @@
 
     <div class="card-body">
         <div class="d-flex justify-content-between align-items-center mb-2">
-            <h5 class="mb-0">Stock by Location</h5>
+            <h5 class="mb-0">@L["StockDashboard.StockByLocation"]</h5>
         </div>
         <div class="table-responsive">
             <table class="table table-sm table-hover align-middle">
                 <thead>
                     <tr>
-                        <th>Location</th>
-                        <th>Items</th>
-                        <th>Total Qty</th>
+                        <th>@L["Common.Location"]</th>
+                        <th>@L["Common.Items"]</th>
+                        <th>@L["StockDashboard.TotalQty"]</th>
                         <th class="text-end">@L["Pricing.CostTotal"]</th>
                         <th class="text-end">@L["Pricing.SaleTotal"]</th>
-                        <th>Utilization</th>
+                        <th>@L["StockDashboard.Utilization"]</th>
                     </tr>
                 </thead>
                 <tbody>
                     @if (LocationSummaries.Count == 0)
                     {
                         <tr>
-                            <td colspan="6" class="text-muted">No location aggregates.</td>
+                            <td colspan="6" class="text-muted">@L["StockDashboard.NoLocationAggregates"]</td>
                         </tr>
                     }
                     else
@@ -130,25 +130,25 @@
     <div class="col-lg-6">
         <div class="card shadow-sm h-100">
             <div class="card-body">
-                <h5>Low Stock Alerts (threshold: @_lowStockThreshold)</h5>
+                <h5>@L["StockDashboard.LowStockAlertsThreshold", _lowStockThreshold]</h5>
                 <div class="table-responsive">
                     <table class="table table-sm align-middle">
                         <thead>
                             <tr>
                                 <th>SKU</th>
-                                <th>Location</th>
-                                <th>Available</th>
+                                <th>@L["Common.Location"]</th>
+                                <th>@L["Common.Available"]</th>
                                 <th class="text-end">@L["Pricing.Cost"]</th>
                                 <th class="text-end">@L["Pricing.Sale"]</th>
-                                <th class="text-end">Value</th>
-                                <th>Status</th>
+                                <th class="text-end">@L["Common.Value"]</th>
+                                <th>@L["Common.Status"]</th>
                             </tr>
                         </thead>
                         <tbody>
                             @if (LowStockRows.Count == 0)
                             {
                                 <tr>
-                                    <td colspan="7" class="text-muted">No low stock alerts.</td>
+                                    <td colspan="7" class="text-muted">@L["StockDashboard.NoLowStockAlerts"]</td>
                                 </tr>
                             }
                             else
@@ -164,7 +164,7 @@
                                         <td class="text-end is-money is-num">@Money.Format(row.TotalValue)</td>
                                         <td>
                                             <span class="badge @(row.AvailableQty <= _lowStockThreshold / 2m ? "bg-danger" : "bg-warning text-dark")">
-                                                @(row.AvailableQty <= _lowStockThreshold / 2m ? "CRITICAL" : "LOW")
+                                                @(row.AvailableQty <= _lowStockThreshold / 2m ? L["StockDashboard.Critical"] : L["StockDashboard.Low"])
                                             </span>
                                         </td>
                                     </tr>
@@ -180,26 +180,26 @@
     <div class="col-lg-6">
         <div class="card shadow-sm h-100">
             <div class="card-body">
-                <h5>Expiring Soon</h5>
+                <h5>@L["StockDashboard.ExpiringSoon"]</h5>
                 <div class="table-responsive">
                     <table class="table table-sm align-middle">
                         <thead>
                             <tr>
                                 <th>SKU</th>
-                                <th>Lot</th>
-                                <th>Expiry</th>
-                                <th>Qty</th>
-                                <th>Location</th>
+                                <th>@L["Common.Lot"]</th>
+                                <th>@L["Common.Expiry"]</th>
+                                <th>@L["Common.Qty"]</th>
+                                <th>@L["Common.Location"]</th>
                                 <th class="text-end">@L["Pricing.Cost"]</th>
                                 <th class="text-end">@L["Pricing.Sale"]</th>
-                                <th class="text-end">Value</th>
+                                <th class="text-end">@L["Common.Value"]</th>
                             </tr>
                         </thead>
                         <tbody>
                             @if (ExpiringRows.Count == 0)
                             {
                                 <tr>
-                                    <td colspan="8" class="text-muted">No lots expiring in next 30 days.</td>
+                                    <td colspan="8" class="text-muted">@L["StockDashboard.NoLotsExpiringInNext30Days"]</td>
                                 </tr>
                             }
                             else
@@ -375,16 +375,16 @@
         _apiError = null;
     }
 
-    private static string BuildErrorMessage(ApiException ex)
+    private string BuildErrorMessage(ApiException ex)
     {
-        if (!string.IsNullOrWhiteSpace(ex.UserMessage))
+        if (!string.IsNullOrWhiteSpace(WarehouseErrorText.Get(L, ex)))
         {
-            return ex.UserMessage;
+            return WarehouseErrorText.Get(L, ex);
         }
 
         return ex.ProblemDetails?.Detail
                ?? ex.ProblemDetails?.Title
-               ?? "Stock dashboard request failed.";
+               ?? L["StockDashboard.RequestFailed"].Value;
     }
 
     private sealed record LocationSummary(

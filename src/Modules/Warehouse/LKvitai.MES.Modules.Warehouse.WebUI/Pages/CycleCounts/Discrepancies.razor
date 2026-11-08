@@ -7,30 +7,30 @@
 @inject ToastService ToastService
 @inject IConfiguration Configuration
 
-<PageTitle>Cycle Count Discrepancies - Cikada.MES</PageTitle>
+<PageTitle>@L["CycleCounts.Discrepancies.CycleCountDiscrepanciesCikadaMES"]</PageTitle>
 
-<h1>Cycle Count Discrepancies</h1>
+<h1>@L["CycleCounts.Discrepancies.CycleCountDiscrepancies"]</h1>
 
 <div class="card shadow-sm position-relative">
     <LoadingSpinner IsLoading="_isLoading || _isSubmitting" />
     <div class="card-body">
         <div class="d-flex justify-content-end mb-3">
-            <button class="btn btn-outline-secondary" @onclick="BackAsync">Back</button>
+            <button class="btn btn-outline-secondary" @onclick="BackAsync">@L["Common.Back"]</button>
         </div>
 
         <div class="table-responsive">
             <table class="table table-hover align-middle">
                 <thead>
                     <tr>
-                        <th>Location</th>
-                        <th>Item</th>
-                        <th>System Qty</th>
-                        <th>Physical Qty</th>
-                        <th>Variance</th>
-                        <th>Variance %</th>
+                        <th>@L["Common.Location"]</th>
+                        <th>@L["Common.Item"]</th>
+                        <th>@L["CycleCounts.Discrepancies.SystemQty"]</th>
+                        <th>@L["CycleCounts.Discrepancies.PhysicalQty"]</th>
+                        <th>@L["CycleCounts.Discrepancies.Variance"]</th>
+                        <th>@L["CycleCounts.Discrepancies.Variance393303"]</th>
                         <th>@L["Pricing.Cost"]</th>
                         <th>@L["Pricing.Sale"]</th>
-                        <th>Value Impact</th>
+                        <th>@L["CycleCounts.Discrepancies.ValueImpact"]</th>
                         <th></th>
                     </tr>
                 </thead>
@@ -39,8 +39,8 @@
                     {
                         <tr>
                             <td colspan="10">
-                                <EmptyState Title="No discrepancies found."
-                                            Message="No variance lines require approval."
+                                <EmptyState Title="@L["CycleCounts.Discrepancies.NoDiscrepanciesFound"]"
+                                            Message="@L["CycleCounts.Discrepancies.NoVarianceLinesRequireApproval"]"
                                             IconCss="bi bi-check2-circle"
                                             OnAction="BackAsync" />
                             </td>
@@ -61,7 +61,7 @@
                                 <td class="mono">@Money.Format(_priceMap.Get(row.ItemId, null)?.BasePrice)</td>
                                 <td class="mono">@Money.Format(_priceMap.Value(row.Variance, row.ItemId, null))</td>
                                 <td>
-                                    <button class="btn btn-sm btn-primary" @onclick="() => OpenApprove(row)">Approve</button>
+                                    <button class="btn btn-sm btn-primary" @onclick="() => OpenApprove(row)">@L["Common.Approve"]</button>
                                 </td>
                             </tr>
                         }
@@ -78,18 +78,18 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Approve Adjustment</h5>
+                    <h5 class="modal-title">@L["CycleCounts.Discrepancies.ApproveAdjustment"]</h5>
                     <button type="button" class="btn-close" @onclick="CloseApprove"></button>
                 </div>
                 <div class="modal-body">
-                    <label class="form-label">Approved By</label>
+                    <label class="form-label">@L["Common.ApprovedBy"]</label>
                     <input class="form-control mb-3" value="@_approvedBy" readonly />
-                    <label class="form-label">Reason</label>
+                    <label class="form-label">@L["Common.Reason"]</label>
                     <textarea class="form-control" rows="3" @bind="_approvalReason"></textarea>
                 </div>
                 <div class="modal-footer">
-                    <button class="btn btn-outline-secondary" @onclick="CloseApprove">Cancel</button>
-                    <button class="btn btn-primary" @onclick="ConfirmApproveAsync" disabled="@_isSubmitting">Confirm</button>
+                    <button class="btn btn-outline-secondary" @onclick="CloseApprove">@L["Common.Cancel"]</button>
+                    <button class="btn btn-primary" @onclick="ConfirmApproveAsync" disabled="@_isSubmitting">@L["CycleCounts.Discrepancies.Confirm"]</button>
                 </div>
             </div>
         </div>
@@ -126,7 +126,7 @@
         }
         catch (ApiException ex)
         {
-            ToastService.ShowError(ex.UserMessage);
+            ToastService.ShowError(WarehouseErrorText.Get(L, ex));
         }
         finally
         {
@@ -154,7 +154,7 @@
 
         if (string.IsNullOrWhiteSpace(_approvalReason))
         {
-            ToastService.ShowError("Reason is required.");
+            ToastService.ShowError(L["CycleCounts.Discrepancies.Toast.ReasonIsRequired"].Value);
             return;
         }
 
@@ -169,13 +169,13 @@
                 Reason = _approvalReason.Trim()
             });
 
-            ToastService.ShowSuccess("Adjustment approved.");
+            ToastService.ShowSuccess(L["CycleCounts.Discrepancies.Toast.AdjustmentApproved"].Value);
             _rows.RemoveAll(x => x.LineId == _pendingApproval.LineId);
             _pendingApproval = null;
         }
         catch (ApiException ex)
         {
-            ToastService.ShowError(ex.UserMessage);
+            ToastService.ShowError(WarehouseErrorText.Get(L, ex));
         }
         finally
         {

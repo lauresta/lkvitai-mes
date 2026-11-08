@@ -5,7 +5,7 @@
 
 <PortalAuthenticatedShell OnMobileNavigationToggle="ToggleDrawer"
                           MobileNavigationOpen="DrawerOpen"
-                          MobileNavigationLabel="@(DrawerOpen ? "Close Warehouse navigation" : "Open Warehouse navigation")"
+                          MobileNavigationLabel="@(DrawerOpen ? L["MainLayout.CloseWarehouseNavigation"].Value : L["MainLayout.OpenWarehouseNavigation"].Value)"
                           MobileNavigationTargetId="@DrawerId">
     <ChildContent>
         <MudLayout Class="lk" style="flex:1;min-height:0;overflow:hidden">
@@ -22,7 +22,7 @@
                 <div class="sidebar__head">
                     <span class="sidebar__module">
                         <i class="bi bi-box-seam"></i>
-                        @if (!EffectiveCollapsed) { <span>Warehouse</span> }
+                        @if (!EffectiveCollapsed) { <span>@L["Common.Warehouse"]</span> }
                     </span>
                     <button class="sidebar__collapse"
                             type="button"
@@ -38,7 +38,7 @@
                 @if (!EffectiveCollapsed)
                 {
                     <div class="sidebar__footer">
-                        <span>Loaded <span class="mono">@_initTime</span></span>
+                        <span>@L["MainLayout.Loaded"] <span class="mono">@_initTime</span></span>
                     </div>
                 }
             </MudDrawer>
@@ -82,8 +82,8 @@
 
     private bool EffectiveCollapsed => _collapsed && !_mobileNavigationExpanded;
     private string SidebarControlLabel => _mobileNavigationExpanded
-        ? "Close Warehouse navigation"
-        : _collapsed ? "Expand sidebar" : "Collapse sidebar";
+        ? L["MainLayout.CloseWarehouseNavigation"].Value
+        : _collapsed ? L["MainLayout.ExpandSidebar"].Value : L["MainLayout.CollapseSidebar"].Value;
     private string SidebarControlIcon => _mobileNavigationExpanded
         ? "bi-x-lg"
         : _collapsed ? "bi-chevron-double-right" : "bi-chevron-double-left";

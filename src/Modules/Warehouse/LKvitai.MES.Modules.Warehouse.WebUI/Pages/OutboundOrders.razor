@@ -6,9 +6,9 @@
 @inject IJSRuntime JS
 @using LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure
 
-<PageTitle>Outbound Orders - Cikada.MES</PageTitle>
+<PageTitle>@L["OutboundOrders.OutboundOrdersCikadaMES"]</PageTitle>
 
-<h1>Outbound Orders</h1>
+<h1>@L["OutboundOrders.OutboundOrders"]</h1>
 
 @if (_apiError is not null)
 {
@@ -24,43 +24,43 @@
     <div class="card-body">
         <div class="row g-2 align-items-end mb-3">
             <div class="col-md-2">
-                <label class="form-label" for="status-filter">Status</label>
+                <label class="form-label" for="status-filter">@L["Common.Status"]</label>
                 <select id="status-filter" class="form-select" @bind="_statusFilter">
-                    <option value="">All</option>
-                    <option value="ALLOCATED">ALLOCATED</option>
-                    <option value="PICKING">PICKING</option>
-                    <option value="PICKED">PICKED</option>
-                    <option value="PACKED">PACKED</option>
-                    <option value="SHIPPED">SHIPPED</option>
-                    <option value="DELIVERED">DELIVERED</option>
-                    <option value="CANCELLED">CANCELLED</option>
+                    <option value="">@L["Common.All"]</option>
+                    <option value="ALLOCATED">@WarehouseStatusText.Get(L, "ALLOCATED")</option>
+                    <option value="PICKING">@WarehouseStatusText.Get(L, "PICKING")</option>
+                    <option value="PICKED">@WarehouseStatusText.Get(L, "PICKED")</option>
+                    <option value="PACKED">@WarehouseStatusText.Get(L, "PACKED")</option>
+                    <option value="SHIPPED">@WarehouseStatusText.Get(L, "SHIPPED")</option>
+                    <option value="DELIVERED">@WarehouseStatusText.Get(L, "DELIVERED")</option>
+                    <option value="CANCELLED">@WarehouseStatusText.Get(L, "CANCELLED")</option>
                 </select>
             </div>
 
             <div class="col-md-3">
-                <label class="form-label" for="customer-filter">Customer</label>
+                <label class="form-label" for="customer-filter">@L["Common.Customer"]</label>
                 <input id="customer-filter"
                        class="form-control"
                        type="text"
-                       placeholder="Customer name"
+                       placeholder="@L["OutboundOrders.CustomerName"]"
                        @bind="_customerFilter" />
             </div>
 
             <div class="col-md-2">
-                <label class="form-label" for="date-from">Date from</label>
+                <label class="form-label" for="date-from">@L["OutboundOrders.DateFrom"]</label>
                 <input id="date-from" class="form-control" type="date" @bind="_dateFrom" />
             </div>
 
             <div class="col-md-2">
-                <label class="form-label" for="date-to">Date to</label>
+                <label class="form-label" for="date-to">@L["OutboundOrders.DateTo"]</label>
                 <input id="date-to" class="form-control" type="date" @bind="_dateTo" />
             </div>
 
             <div class="col-md-3 d-flex gap-2">
-                <button class="btn btn-primary" @onclick="ApplyFiltersAsync" disabled="@_isLoading">Apply</button>
-                <button class="btn btn-outline-secondary" @onclick="ResetFiltersAsync" disabled="@_isLoading">Reset</button>
-                <button class="btn btn-outline-secondary" @onclick="RetryAsync" disabled="@_isLoading">Refresh</button>
-                <button class="btn btn-success ms-auto" @onclick="OpenSalesOrderCreate">+ Sales Order</button>
+                <button class="btn btn-primary" @onclick="ApplyFiltersAsync" disabled="@_isLoading">@L["Common.Apply"]</button>
+                <button class="btn btn-outline-secondary" @onclick="ResetFiltersAsync" disabled="@_isLoading">@L["Common.Reset"]</button>
+                <button class="btn btn-outline-secondary" @onclick="RetryAsync" disabled="@_isLoading">@L["Common.Refresh"]</button>
+                <button class="btn btn-success ms-auto" @onclick="OpenSalesOrderCreate">@L["OutboundOrders.SalesOrder"]</button>
             </div>
         </div>
 
@@ -73,19 +73,19 @@
                                    checked="@AreAllCurrentRowsSelected"
                                    @onchange="ToggleSelectAllCurrentPage" />
                         </th>
-                        <th>Order Number</th>
-                        <th>Customer</th>
-                        <th>Status</th>
-                        <th>Items</th>
-                        <th>Requested Ship Date</th>
-                        <th>Actions</th>
+                        <th>@L["Common.OrderNumber"]</th>
+                        <th>@L["Common.Customer"]</th>
+                        <th>@L["Common.Status"]</th>
+                        <th>@L["Common.Items"]</th>
+                        <th>@L["OutboundOrders.RequestedShipDate"]</th>
+                        <th>@L["Common.Actions"]</th>
                     </tr>
                 </thead>
                 <tbody>
                     @if (_orders.Count == 0)
                     {
                         <tr>
-                            <td colspan="7" class="text-center text-muted py-4">No outbound orders found.</td>
+                            <td colspan="7" class="text-center text-muted py-4">@L["OutboundOrders.NoOutboundOrdersFound"]</td>
                         </tr>
                     }
                     else
@@ -103,20 +103,20 @@
                                 </td>
                                 <td>@(order.CustomerName ?? "-")</td>
                                 <td>
-                                    <span class="badge @GetStatusBadgeClass(order.Status)">@order.Status</span>
+                                    <span class="badge @GetStatusBadgeClass(order.Status)">@WarehouseStatusText.Get(L, order.Status)</span>
                                 </td>
                                 <td>@order.ItemCount</td>
                                 <td>@FormatDate(order.RequestedShipDate)</td>
                                 <td class="d-flex gap-2">
                                     <button class="btn btn-sm btn-outline-primary"
                                             @onclick="() => OpenOrder(order.Id)">
-                                        View
+                                        @L["Common.View"]
                                     </button>
                                     @if (string.Equals(order.Status, "PICKED", StringComparison.OrdinalIgnoreCase))
                                     {
                                         <button class="btn btn-sm btn-primary"
                                                 @onclick="() => OpenPacking(order.Id)">
-                                            Pack
+                                            @L["OutboundOrders.Pack"]
                                         </button>
                                     }
                                 </td>
@@ -130,11 +130,11 @@
         @if (_selectedOrderIds.Count > 0)
         {
             <div class="d-flex align-items-center justify-content-between border rounded px-3 py-2 mb-2">
-                <small class="text-muted">@_selectedOrderIds.Count order(s) selected</small>
+                <small class="text-muted">@L["OutboundOrders.OrderSSelected", _selectedOrderIds.Count]</small>
                 <div class="d-flex gap-2">
-                    <button class="btn btn-sm btn-outline-danger" @onclick="BulkCancelAsync" disabled="@_isLoading">Bulk Cancel</button>
-                    <button class="btn btn-sm btn-outline-secondary" @onclick="ExportSelectionCsvAsync">Export CSV</button>
-                    <button class="btn btn-sm btn-light" @onclick="ClearSelection">Clear</button>
+                    <button class="btn btn-sm btn-outline-danger" @onclick="BulkCancelAsync" disabled="@_isLoading">@L["OutboundOrders.BulkCancel"]</button>
+                    <button class="btn btn-sm btn-outline-secondary" @onclick="ExportSelectionCsvAsync">@L["Common.ExportCSV"]</button>
+                    <button class="btn btn-sm btn-light" @onclick="ClearSelection">@L["OutboundOrders.Clear"]</button>
                 </div>
             </div>
         }
@@ -142,10 +142,10 @@
         @if (TotalPages > 1)
         {
             <div class="d-flex justify-content-between align-items-center mt-3">
-                <small class="text-muted">Page @_page of @TotalPages</small>
+                <small class="text-muted">@L["OutboundOrders.PageOf", _page, TotalPages]</small>
                 <div class="d-flex gap-2">
-                    <button class="btn btn-sm btn-outline-secondary" @onclick="PreviousPage" disabled="@(_page <= 1)">Previous</button>
-                    <button class="btn btn-sm btn-outline-secondary" @onclick="NextPage" disabled="@(_page >= TotalPages)">Next</button>
+                    <button class="btn btn-sm btn-outline-secondary" @onclick="PreviousPage" disabled="@(_page <= 1)">@L["Common.Previous"]</button>
+                    <button class="btn btn-sm btn-outline-secondary" @onclick="NextPage" disabled="@(_page >= TotalPages)">@L["Common.Next"]</button>
                 </div>
             </div>
         }
@@ -312,7 +312,7 @@
                 await OutboundClient.CancelSalesOrderAsync(id, "Bulk cancel");
             }
 
-            ToastService.ShowSuccess($"Cancelled {ids.Length} order(s).");
+            ToastService.ShowSuccess(L["OutboundOrders.Toast.CancelledOrderS", ids.Length].Value);
             _selectedOrderIds.Clear();
             await ReloadAsync();
         }
@@ -373,11 +373,11 @@
     private static string FormatDate(DateTimeOffset? value)
         => value.HasValue ? value.Value.ToLocalTime().ToString("yyyy-MM-dd") : "-";
 
-    private static string BuildErrorMessage(ApiException ex)
+    private string BuildErrorMessage(ApiException ex)
     {
-        if (!string.IsNullOrWhiteSpace(ex.UserMessage))
+        if (!string.IsNullOrWhiteSpace(WarehouseErrorText.Get(L, ex)))
         {
-            return ex.UserMessage;
+            return WarehouseErrorText.Get(L, ex);
         }
 
         return ex.StatusCode switch

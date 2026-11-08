@@ -6,10 +6,10 @@
 @inject NavigationManager NavigationManager
 @inject IDialogService DialogService
 
-<PageTitle>Admin Items - Cikada.MES</PageTitle>
+<PageTitle>@L["AdminItems.AdminItemsCikadaMES"]</PageTitle>
 
 <div data-testid="admin-items-page">
-    <h3>Items Management</h3>
+    <h3>@L["AdminItems.ItemsManagement"]</h3>
 
     @if (_apiError is not null)
     {
@@ -28,7 +28,7 @@
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               @bind-Value="_search"
-                              Placeholder="SKU, name, barcode"
+                              Placeholder="@L["AdminItems.SKUNameBarcode"]"
                               InputAttributes="@ItemsSearchAttributes" />
             </div>
             <div class="lk-field--filter lots-field items-filter__category">
@@ -37,7 +37,7 @@
                            Margin="Margin.Dense"
                            @bind-Value="_categoryFilter"
                            InputAttributes="@ItemsCategoryAttributes">
-                    <MudSelectItem T="string" Value="@string.Empty">All categories</MudSelectItem>
+                    <MudSelectItem T="string" Value="@string.Empty">@L["AdminItems.AllCategories"]</MudSelectItem>
                     @foreach (var category in _categories)
                     {
                         <MudSelectItem T="string" Value="@category.Id.ToString()">@($"{category.Code} - {category.Name}")</MudSelectItem>
@@ -50,10 +50,10 @@
                            Margin="Margin.Dense"
                            @bind-Value="_status"
                            InputAttributes="@ItemsStatusAttributes">
-                    <MudSelectItem T="string" Value="@string.Empty">All statuses</MudSelectItem>
-                    <MudSelectItem T="string" Value="@("Active")">Active</MudSelectItem>
-                    <MudSelectItem T="string" Value="@("Discontinued")">Discontinued</MudSelectItem>
-                    <MudSelectItem T="string" Value="@("Obsolete")">Obsolete</MudSelectItem>
+                    <MudSelectItem T="string" Value="@string.Empty">@L["AdminItems.AllStatuses"]</MudSelectItem>
+                    <MudSelectItem T="string" Value="@("Active")">@L["Common.Active"]</MudSelectItem>
+                    <MudSelectItem T="string" Value="@("Discontinued")">@L["AdminItems.Discontinued"]</MudSelectItem>
+                    <MudSelectItem T="string" Value="@("Obsolete")">@L["AdminItems.Obsolete"]</MudSelectItem>
                 </MudSelect>
             </div>
             <div class="lk-field--filter lots-field items-filter__page-size">
@@ -75,26 +75,26 @@
                            Color="Color.Primary"
                            OnClick="ApplyFiltersAsync"
                            UserAttributes="@ItemsSearchButtonAttributes">
-                    Filter
+                    @L["Common.Filter"]
                 </MudButton>
                 <MudButton Variant="Variant.Outlined"
                            Color="Color.Primary"
                            OnClick="RefreshAsync"
                            UserAttributes="@ItemsRefreshAttributes">
-                    Refresh
+                    @L["Common.Refresh"]
                 </MudButton>
                 <MudButton Variant="Variant.Outlined"
                            Color="Color.Primary"
                            OnClick="OpenCreateDialogAsync"
                            UserAttributes="@ItemsCreateAttributes">
-                    Create
+                    @L["Common.Create"]
                 </MudButton>
             </div>
         </div>
 
         <div class="lots-grid-head items-grid-head">
-            <strong data-testid="admin-items-summary">Total: @_totalCount</strong>
-            <span class="mono" data-testid="admin-items-current-page">Page @_currentPage</span>
+            <strong data-testid="admin-items-summary">@L["AdminItems.Total", _totalCount]</strong>
+            <span class="mono" data-testid="admin-items-current-page">@L["AdminItems.Page", _currentPage]</span>
         </div>
 
         <MudDataGrid T="AdminItemDto"
@@ -111,11 +111,11 @@
                      Class="lk-grid lots-grid items-grid"
                      @attributes="@ItemsGridAttributes">
             <Columns>
-                <TemplateColumn Title="Image" Sortable="false">
+                <TemplateColumn Title="@L["AdminItems.Image"]" Sortable="false">
                     <CellTemplate>
                         <button type="button"
                                 class="items-thumb"
-                                title="Open photos"
+                                title="@L["AdminItems.OpenPhotos"]"
                                 @onclick="@(() => OpenPhotosDialogAsync(context.Item))">
                             @if (!string.IsNullOrWhiteSpace(context.Item.PrimaryThumbnailUrl))
                             {
@@ -125,7 +125,7 @@
                             }
                             else
                             {
-                                <span>No img</span>
+                                <span>@L["AdminItems.NoImg"]</span>
                             }
                         </button>
                     </CellTemplate>
@@ -139,7 +139,7 @@
                         </button>
                     </CellTemplate>
                 </TemplateColumn>
-                <TemplateColumn Title="Actions" Sortable="false">
+                <TemplateColumn Title="@L["Common.Actions"]" Sortable="false">
                     <CellTemplate>
                         <MudMenu Dense="true"
                                  AnchorOrigin="Origin.BottomLeft"
@@ -149,33 +149,33 @@
                                            Color="Color.Primary"
                                            Size="Size.Small"
                                            Class="items-actions-button"
-                                           aria-label="@($"Actions for {context.Item.InternalSKU}")">
-                                    Actions
+                                           aria-label="@L["AdminItems.ActionsFor", context.Item.InternalSKU]">
+                                    @L["Common.Actions"]
                                 </MudButton>
                             </ActivatorContent>
                             <ChildContent>
-                                <MudMenuItem OnClick="@(() => OpenEditDialogAsync(context.Item))">Edit</MudMenuItem>
-                                <MudMenuItem OnClick="@(() => OpenDetails(context.Item.Id))">Details</MudMenuItem>
-                                <MudMenuItem OnClick="@(() => OpenPhotosDialogAsync(context.Item))">Photos</MudMenuItem>
+                                <MudMenuItem OnClick="@(() => OpenEditDialogAsync(context.Item))">@L["Common.Edit"]</MudMenuItem>
+                                <MudMenuItem OnClick="@(() => OpenDetails(context.Item.Id))">@L["Common.Details"]</MudMenuItem>
+                                <MudMenuItem OnClick="@(() => OpenPhotosDialogAsync(context.Item))">@L["AdminItems.Photos"]</MudMenuItem>
                                 <MudMenuItem Disabled="@IsDiscontinued(context.Item)"
                                              OnClick="@(() => RequestDeactivate(context.Item))">
-                                    Deactivate
+                                    @L["AdminItems.Deactivate"]
                                 </MudMenuItem>
                             </ChildContent>
                         </MudMenu>
                     </CellTemplate>
                 </TemplateColumn>
-                <TemplateColumn Title="Name">
+                <TemplateColumn Title="@L["Common.Name"]">
                     <CellTemplate>
                         <span class="items-name" title="@context.Item.Name">@context.Item.Name</span>
                     </CellTemplate>
                 </TemplateColumn>
-                <TemplateColumn Title="Tags" Sortable="false">
+                <TemplateColumn Title="@L["Common.Tags"]" Sortable="false">
                     <CellTemplate>
                         <div class="item-tags item-tags--compact">
                             @if (context.Item.Tags.Count == 0)
                             {
-                                <span class="item-tags__empty">No tags</span>
+                                <span class="item-tags__empty">@L["AdminItems.NoTags"]</span>
                             }
                             else
                             {
@@ -191,49 +191,49 @@
                         </div>
                     </CellTemplate>
                 </TemplateColumn>
-                <PropertyColumn Property="x => x.CategoryName" Title="Category" />
+                <PropertyColumn Property="x => x.CategoryName" Title="@L["Common.Category"]" />
                 <PropertyColumn Property="x => x.BaseUoM" Title="UoM" />
-                <TemplateColumn Title="Status">
+                <TemplateColumn Title="@L["Common.Status"]">
                     <CellTemplate>
-                        <span class="@StatusChipClass(context.Item.Status)">@context.Item.Status</span>
+                        <span class="@StatusChipClass(context.Item.Status)">@WarehouseStatusText.Get(L, context.Item.Status)</span>
                     </CellTemplate>
                 </TemplateColumn>
-                <TemplateColumn Title="Lot">
+                <TemplateColumn Title="@L["Common.Lot"]">
                     <CellTemplate>
-                        <span class="@BoolChipClass(context.Item.RequiresLotTracking)">@(context.Item.RequiresLotTracking ? "Lot" : "No")</span>
+                        <span class="@BoolChipClass(context.Item.RequiresLotTracking)">@(context.Item.RequiresLotTracking ? L["AdminItems.Lot"] : L["Common.No"])</span>
                     </CellTemplate>
                 </TemplateColumn>
                 <TemplateColumn Title="QC">
                     <CellTemplate>
-                        <span class="@BoolChipClass(context.Item.RequiresQC)">@(context.Item.RequiresQC ? "QC" : "No")</span>
+                        <span class="@BoolChipClass(context.Item.RequiresQC)">@(context.Item.RequiresQC ? "QC" : L["Common.No"])</span>
                     </CellTemplate>
                 </TemplateColumn>
-                <TemplateColumn Title="Weight">
+                <TemplateColumn Title="@L["Common.Weight"]">
                     <CellTemplate>
                         <span class="is-num">@FormatDecimal(context.Item.Weight)</span>
                     </CellTemplate>
                 </TemplateColumn>
-                <TemplateColumn Title="Volume">
+                <TemplateColumn Title="@L["Common.Volume"]">
                     <CellTemplate>
                         <span class="is-num">@FormatDecimal(context.Item.Volume)</span>
                     </CellTemplate>
                 </TemplateColumn>
-                <TemplateColumn Title="Base Price">
+                <TemplateColumn Title="@L["Common.BasePrice"]">
                     <CellTemplate>
                         <span class="is-money is-num">@FormatMoney(context.Item.BasePrice)</span>
                     </CellTemplate>
                 </TemplateColumn>
-                <TemplateColumn Title="Purchase">
+                <TemplateColumn Title="@L["AdminItems.Purchase"]">
                     <CellTemplate>
                         <span class="is-money is-num">@FormatMoney(context.Item.PurchasePrice)</span>
                     </CellTemplate>
                 </TemplateColumn>
-                <TemplateColumn Title="Barcode">
+                <TemplateColumn Title="@L["Common.Barcode"]">
                     <CellTemplate>
                         <span class="mono">@FormatNullable(context.Item.PrimaryBarcode)</span>
                     </CellTemplate>
                 </TemplateColumn>
-                <TemplateColumn Title="Updated">
+                <TemplateColumn Title="@L["Common.Updated"]">
                     <CellTemplate>
                         <span class="mono">@FormatDate(context.Item.UpdatedAt ?? context.Item.CreatedAt)</span>
                     </CellTemplate>
@@ -241,12 +241,12 @@
             </Columns>
             <NoRecordsContent>
                 <div class="lots-grid__empty">
-                    <span class="lots-grid__empty-title">No items found</span>
+                    <span class="lots-grid__empty-title">@L["AdminItems.NoItemsFound"]</span>
                     <span>
                         No items match the current filter.
                         @if (HasAppliedFilters)
                         {
-                            <button type="button" class="lots-grid__empty-action" @onclick="ClearFiltersAsync">Clear filters</button>
+                            <button type="button" class="lots-grid__empty-action" @onclick="ClearFiltersAsync">@L["Common.ClearFilters"]</button>
                         }
                     </span>
                 </div>
@@ -260,9 +260,9 @@
     </MudPaper>
 
     <SharedConfirmDialog IsVisible="@(_deactivateTarget is not null)"
-                         Title="Deactivate item"
+                         Title="@L["AdminItems.DeactivateItem"]"
                          Message="@DeactivateMessage"
-                         ConfirmText="Deactivate"
+                         ConfirmText="@L["AdminItems.Deactivate"]"
                          OnConfirm="ConfirmDeactivateAsync"
                          OnCancel="@(() => _deactivateTarget = null)" />
 </div>
@@ -302,17 +302,17 @@
     };
 
     private static readonly Dictionary<string, object> ItemsGridAttributes = new() { ["data-testid"] = "admin-items-grid" };
-    private static readonly Dictionary<string, object> ItemsSearchAttributes = new() { ["data-testid"] = "admin-items-search-input", ["aria-label"] = "Search" };
-    private static readonly Dictionary<string, object> ItemsCategoryAttributes = new() { ["data-testid"] = "admin-items-category", ["aria-label"] = "Category" };
-    private static readonly Dictionary<string, object> ItemsStatusAttributes = new() { ["data-testid"] = "admin-items-status", ["aria-label"] = "Status" };
-    private static readonly Dictionary<string, object> ItemsPageSizeAttributes = new() { ["data-testid"] = "admin-items-page-size-select", ["aria-label"] = "Page size" };
+    private Dictionary<string, object> ItemsSearchAttributes => new() { ["data-testid"] = "admin-items-search-input", ["aria-label"] = L["Aria.Search"].Value };
+    private Dictionary<string, object> ItemsCategoryAttributes => new() { ["data-testid"] = "admin-items-category", ["aria-label"] = L["Aria.Category"].Value };
+    private Dictionary<string, object> ItemsStatusAttributes => new() { ["data-testid"] = "admin-items-status", ["aria-label"] = L["Aria.Status"].Value };
+    private Dictionary<string, object> ItemsPageSizeAttributes => new() { ["data-testid"] = "admin-items-page-size-select", ["aria-label"] = L["Aria.PageSize"].Value };
     private static readonly Dictionary<string, object> ItemsSearchButtonAttributes = new() { ["data-testid"] = "admin-items-search-btn" };
     private static readonly Dictionary<string, object> ItemsRefreshAttributes = new() { ["data-testid"] = "admin-items-refresh" };
     private static readonly Dictionary<string, object> ItemsCreateAttributes = new() { ["data-testid"] = "admin-items-create" };
 
     private string DeactivateMessage => _deactivateTarget is null
         ? string.Empty
-        : $"Deactivate {_deactivateTarget.InternalSKU} - {_deactivateTarget.Name}?";
+        : L["AdminItems.DeactivateConfirmation", _deactivateTarget.InternalSKU, _deactivateTarget.Name].Value;
 
     private bool HasAppliedFilters =>
         !string.IsNullOrWhiteSpace(_appliedSearch) ||
@@ -460,7 +460,7 @@
             ["ExistingTags"] = _itemTags
         };
 
-        var dialog = await DialogService.ShowAsync<AdminItemEditorDialog>("Create item", parameters, ItemDialogOptions);
+        var dialog = await DialogService.ShowAsync<AdminItemEditorDialog>(L["AdminItems.CreateItem"].Value, parameters, ItemDialogOptions);
         var result = await dialog.Result;
         if (result.Canceled || result.Data is not CreateOrUpdateItemRequest request)
         {
@@ -471,7 +471,7 @@
         {
             _apiError = null;
             await AdminClient.CreateItemAsync(request);
-            ToastService.ShowSuccess("Item created.");
+            ToastService.ShowSuccess(L["AdminItems.Toast.ItemCreated"].Value);
             await LoadLookupsAsync();
             await RefreshAsync();
         }
@@ -497,7 +497,7 @@
                 ["ExistingTags"] = _itemTags
             };
 
-            var dialog = await DialogService.ShowAsync<AdminItemEditorDialog>("Edit item", parameters, ItemDialogOptions);
+            var dialog = await DialogService.ShowAsync<AdminItemEditorDialog>(L["AdminItems.EditItem"].Value, parameters, ItemDialogOptions);
             var result = await dialog.Result;
             if (result.Canceled || result.Data is not CreateOrUpdateItemRequest request)
             {
@@ -505,7 +505,7 @@
             }
 
             await AdminClient.UpdateItemAsync(row.Id, request);
-            ToastService.ShowSuccess("Item updated.");
+            ToastService.ShowSuccess(L["AdminItems.Toast.ItemUpdated"].Value);
             await LoadLookupsAsync();
             await RefreshAsync();
         }
@@ -525,7 +525,7 @@
             ["Name"] = row.Name
         };
 
-        var dialog = await DialogService.ShowAsync<AdminItemPhotosDialog>("Item photos", parameters, PhotoDialogOptions);
+        var dialog = await DialogService.ShowAsync<AdminItemPhotosDialog>(L["AdminItemPhotosDialog.ItemPhotos"].Value, parameters, PhotoDialogOptions);
         var result = await dialog.Result;
         if (!result.Canceled && result.Data is true)
         {
@@ -552,7 +552,7 @@
         {
             _apiError = null;
             await AdminClient.DeactivateItemAsync(target.Id);
-            ToastService.ShowWarning("Item deactivated.");
+            ToastService.ShowWarning(L["AdminItems.Toast.ItemDeactivated"].Value);
             await RefreshAsync();
         }
         catch (ApiException ex)
@@ -592,13 +592,13 @@
     private static string FormatDate(DateTimeOffset value)
         => value.ToLocalTime().ToString("yyyy-MM-dd");
 
-    private static string BuildErrorMessage(ApiException error)
+    private string BuildErrorMessage(ApiException error)
     {
         if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
         {
-            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+            return $"{WarehouseErrorText.Get(L, error)} {error.ProblemDetails.Detail}";
         }
 
-        return error.UserMessage;
+        return WarehouseErrorText.Get(L, error);
     }
 }

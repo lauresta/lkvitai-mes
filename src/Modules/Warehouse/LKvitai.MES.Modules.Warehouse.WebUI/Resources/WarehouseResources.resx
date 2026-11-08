@@ -10,4 +10,1797 @@
   <data name="Pricing.SaleTotal" xml:space="preserve"><value>Sale total</value></data>
   <data name="Pricing.PurchaseTotal" xml:space="preserve"><value>Purchase total</value></data>
   <data name="Pricing.CurrentPriceHint" xml:space="preserve"><value>Current item prices; historical transaction prices remain unchanged.</value></data>
+  <data name="AccessDenied.AccessDenied" xml:space="preserve"><value>Access denied</value></data>
+  <data name="AccessDenied.AccessDeniedCikadaMES" xml:space="preserve"><value>Access denied - Cikada.MES</value></data>
+  <data name="AccessDenied.BackToDashboard" xml:space="preserve"><value>Back to dashboard</value></data>
+  <data name="AccessDenied.YourAccountDoesNotHavePermissionToOpenThisPage" xml:space="preserve"><value>Your account does not have permission to open this page.</value></data>
+  <data name="Admin.AdminWarehouses.AdminWarehousesCikadaMES" xml:space="preserve"><value>Admin Warehouses - Cikada.MES</value></data>
+  <data name="Admin.AdminWarehouses.CodeNameDescription" xml:space="preserve"><value>Code, name, description</value></data>
+  <data name="Admin.AdminWarehouses.CreateWarehouse" xml:space="preserve"><value>Create Warehouse</value></data>
+  <data name="Admin.AdminWarehouses.CreatedAt" xml:space="preserve"><value>Created At</value></data>
+  <data name="Admin.AdminWarehouses.IncludeVirtualWarehouses" xml:space="preserve"><value>Include virtual warehouses</value></data>
+  <data name="Admin.AdminWarehouses.NoWarehousesFound" xml:space="preserve"><value>No warehouses found.</value></data>
+  <data name="Admin.AdminWarehouses.WarehousesManagement" xml:space="preserve"><value>Warehouses Management</value></data>
+  <data name="Admin.ApiKeys.APIKeys" xml:space="preserve"><value>API Keys</value></data>
+  <data name="Admin.ApiKeys.APIKeysCikadaMES" xml:space="preserve"><value>API Keys - Cikada.MES</value></data>
+  <data name="Admin.ApiKeys.CreateAPIKey" xml:space="preserve"><value>Create API Key</value></data>
+  <data name="Admin.ApiKeys.DeleteAPIKey" xml:space="preserve"><value>Delete API Key</value></data>
+  <data name="Admin.ApiKeys.ExpiresAtOptional" xml:space="preserve"><value>Expires At (optional)</value></data>
+  <data name="Admin.ApiKeys.Key" xml:space="preserve"><value>Key</value></data>
+  <data name="Admin.ApiKeys.LastUsed" xml:space="preserve"><value>Last Used</value></data>
+  <data name="Admin.ApiKeys.NoAPIKeysConfigured" xml:space="preserve"><value>No API keys configured.</value></data>
+  <data name="Admin.ApiKeys.OneTimeKeyValue" xml:space="preserve"><value>One-time key value:</value></data>
+  <data name="Admin.ApiKeys.RateLimitMinute" xml:space="preserve"><value>Rate Limit / Minute</value></data>
+  <data name="Admin.ApiKeys.Rotate" xml:space="preserve"><value>Rotate</value></data>
+  <data name="Admin.ApiKeys.Scopes" xml:space="preserve"><value>Scopes</value></data>
+  <data name="Admin.ApiKeys.StoreThisNowItIsNotShownAgain" xml:space="preserve"><value>store this now. It is not shown again.</value></data>
+  <data name="Admin.ApiKeys.YyyyMMDdHHMm" xml:space="preserve"><value>yyyy-MM-dd HH:mm</value></data>
+  <data name="Admin.ApprovalRules.ApprovalRules" xml:space="preserve"><value>Approval Rules</value></data>
+  <data name="Admin.ApprovalRules.ApprovalRulesCikadaMES" xml:space="preserve"><value>Approval Rules - Cikada.MES</value></data>
+  <data name="Admin.ApprovalRules.CreateApprovalRule" xml:space="preserve"><value>Create Approval Rule</value></data>
+  <data name="Admin.ApprovalRules.DeleteApprovalRule" xml:space="preserve"><value>Delete Approval Rule</value></data>
+  <data name="Admin.ApprovalRules.NoApprovalRequired" xml:space="preserve"><value>No approval required.</value></data>
+  <data name="Admin.ApprovalRules.NoApprovalRulesConfigured" xml:space="preserve"><value>No approval rules configured.</value></data>
+  <data name="Admin.ApprovalRules.TestRule" xml:space="preserve"><value>Test Rule</value></data>
+  <data name="Admin.ApprovalRules.TestRuleEvaluation" xml:space="preserve"><value>Test Rule Evaluation</value></data>
+  <data name="Admin.ApprovalRules.TestValue" xml:space="preserve"><value>Test Value</value></data>
+  <data name="Admin.ApprovalRules.Threshold" xml:space="preserve"><value>Threshold</value></data>
+  <data name="Admin.ApprovalRules.ThresholdType" xml:space="preserve"><value>Threshold Type</value></data>
+  <data name="Admin.ApprovalRules.ThresholdValue" xml:space="preserve"><value>Threshold Value</value></data>
+  <data name="Admin.AuditLogs.AuditLogsCikadaMES" xml:space="preserve"><value>Audit Logs - Cikada.MES</value></data>
+  <data name="Admin.AuditLogs.FetchLimit" xml:space="preserve"><value>Fetch Limit</value></data>
+  <data name="Admin.AuditLogs.NoAuditLogRowsFound" xml:space="preserve"><value>No audit log rows found.</value></data>
+  <data name="Admin.AuditLogs.Resource" xml:space="preserve"><value>Resource</value></data>
+  <data name="Admin.AuditLogs.ResourceID" xml:space="preserve"><value>Resource ID</value></data>
+  <data name="Admin.AuditLogs.SecurityAuditLogs" xml:space="preserve"><value>Security Audit Logs</value></data>
+  <data name="Admin.Backups.Artifact" xml:space="preserve"><value>Artifact</value></data>
+  <data name="Admin.Backups.BackupManagement" xml:space="preserve"><value>Backup Management</value></data>
+  <data name="Admin.Backups.BackupsCikadaMES" xml:space="preserve"><value>Backups - Cikada.MES</value></data>
+  <data name="Admin.Backups.NoBackupsFound" xml:space="preserve"><value>No backups found.</value></data>
+  <data name="Admin.Backups.Restore" xml:space="preserve"><value>Restore</value></data>
+  <data name="Admin.Backups.RestoreTarget" xml:space="preserve"><value>Restore Target</value></data>
+  <data name="Admin.Backups.SizeBytes" xml:space="preserve"><value>Size (bytes)</value></data>
+  <data name="Admin.Backups.Started" xml:space="preserve"><value>Started</value></data>
+  <data name="Admin.Backups.Trigger" xml:space="preserve"><value>Trigger</value></data>
+  <data name="Admin.Backups.TriggerBackup" xml:space="preserve"><value>Trigger Backup</value></data>
+  <data name="Admin.DisasterRecoveryDrills.ActualRTO" xml:space="preserve"><value>Actual RTO</value></data>
+  <data name="Admin.DisasterRecoveryDrills.DRDrillsCikadaMES" xml:space="preserve"><value>DR Drills - Cikada.MES</value></data>
+  <data name="Admin.DisasterRecoveryDrills.DisasterRecoveryDrills" xml:space="preserve"><value>Disaster Recovery Drills</value></data>
+  <data name="Admin.DisasterRecoveryDrills.Issues" xml:space="preserve"><value>Issues</value></data>
+  <data name="Admin.DisasterRecoveryDrills.NoDRDrillsFound" xml:space="preserve"><value>No DR drills found.</value></data>
+  <data name="Admin.DisasterRecoveryDrills.Scenario" xml:space="preserve"><value>Scenario</value></data>
+  <data name="Admin.DisasterRecoveryDrills.Started" xml:space="preserve"><value>Started</value></data>
+  <data name="Admin.DisasterRecoveryDrills.TriggerDrill" xml:space="preserve"><value>Trigger Drill</value></data>
+  <data name="Admin.GdprErasure.ConfirmReject" xml:space="preserve"><value>Confirm Reject</value></data>
+  <data name="Admin.GdprErasure.CustomerID" xml:space="preserve"><value>Customer ID</value></data>
+  <data name="Admin.GdprErasure.GDPRErasureCikadaMES" xml:space="preserve"><value>GDPR Erasure - Cikada.MES</value></data>
+  <data name="Admin.GdprErasure.GDPRErasureRequests" xml:space="preserve"><value>GDPR Erasure Requests</value></data>
+  <data name="Admin.GdprErasure.NewErasureRequest" xml:space="preserve"><value>New Erasure Request</value></data>
+  <data name="Admin.GdprErasure.NoErasureRequestsFound" xml:space="preserve"><value>No erasure requests found.</value></data>
+  <data name="Admin.GdprErasure.Reject" xml:space="preserve"><value>Reject</value></data>
+  <data name="Admin.GdprErasure.Rejection" xml:space="preserve"><value>Rejection</value></data>
+  <data name="Admin.GdprErasure.RejectionReason" xml:space="preserve"><value>Rejection Reason</value></data>
+  <data name="Admin.GdprErasure.Reviewed" xml:space="preserve"><value>Reviewed</value></data>
+  <data name="Admin.LayoutEditor.LayoutEditorCikadaMES" xml:space="preserve"><value>Layout Editor - Cikada.MES</value></data>
+  <data name="Admin.LayoutEditor.LayoutJSON" xml:space="preserve"><value>Layout JSON</value></data>
+  <data name="Admin.LayoutEditor.LeaveEmptyForLegacyWarehouses" xml:space="preserve"><value>. Leave empty for legacy warehouses.</value></data>
+  <data name="Admin.LayoutEditor.OptionalRackStructureDocumentStoredIn" xml:space="preserve"><value>Optional rack structure document stored in</value></data>
+  <data name="Admin.LayoutEditor.RackConfigJSON" xml:space="preserve"><value>Rack Config JSON</value></data>
+  <data name="Admin.LayoutEditor.Reload" xml:space="preserve"><value>Reload</value></data>
+  <data name="Admin.LayoutEditor.RequiredFields" xml:space="preserve"><value>Required fields:</value></data>
+  <data name="Admin.LayoutEditor.SaveLayout" xml:space="preserve"><value>Save Layout</value></data>
+  <data name="Admin.LayoutEditor.WarehouseCode" xml:space="preserve"><value>Warehouse Code</value></data>
+  <data name="Admin.LayoutEditor.WarehouseLayoutEditor" xml:space="preserve"><value>Warehouse Layout Editor</value></data>
+  <data name="Admin.Lots.Depleted" xml:space="preserve"><value>Depleted</value></data>
+  <data name="Admin.Lots.Expired" xml:space="preserve"><value>Expired</value></data>
+  <data name="Admin.Lots.LotNumberSKUItemName" xml:space="preserve"><value>Lot number, SKU, item name</value></data>
+  <data name="Admin.Lots.Lots" xml:space="preserve"><value>Lots</value></data>
+  <data name="Admin.Lots.LotsCikadaMES" xml:space="preserve"><value>Lots - Cikada.MES</value></data>
+  <data name="Admin.Lots.NoLotsFound" xml:space="preserve"><value>No lots found</value></data>
+  <data name="Admin.Lots.Production" xml:space="preserve"><value>Production</value></data>
+  <data name="Admin.ReasonCodes.CreateReasonCode" xml:space="preserve"><value>Create Reason Code</value></data>
+  <data name="Admin.ReasonCodes.DeleteReasonCode" xml:space="preserve"><value>Delete Reason Code</value></data>
+  <data name="Admin.ReasonCodes.NoReasonCodesConfiguredAddYourFirstReasonCode" xml:space="preserve"><value>No reason codes configured. Add your first reason code.</value></data>
+  <data name="Admin.ReasonCodes.None" xml:space="preserve"><value>(None)</value></data>
+  <data name="Admin.ReasonCodes.ReasonCodes" xml:space="preserve"><value>Reason Codes</value></data>
+  <data name="Admin.ReasonCodes.ReasonCodesCikadaMES" xml:space="preserve"><value>Reason Codes - Cikada.MES</value></data>
+  <data name="Admin.ReasonCodes.Usage" xml:space="preserve"><value>Usage</value></data>
+  <data name="Admin.RetentionPolicies.ApplyLegalHold" xml:space="preserve"><value>Apply Legal Hold</value></data>
+  <data name="Admin.RetentionPolicies.Archive" xml:space="preserve"><value>Archive</value></data>
+  <data name="Admin.RetentionPolicies.ArchiveAfter" xml:space="preserve"><value>Archive After</value></data>
+  <data name="Admin.RetentionPolicies.AuditLogID" xml:space="preserve"><value>Audit Log ID</value></data>
+  <data name="Admin.RetentionPolicies.AuditLogLegalHold" xml:space="preserve"><value>Audit Log Legal Hold</value></data>
+  <data name="Admin.RetentionPolicies.CreateRetentionPolicy" xml:space="preserve"><value>Create Retention Policy</value></data>
+  <data name="Admin.RetentionPolicies.DeleteAfter" xml:space="preserve"><value>Delete After</value></data>
+  <data name="Admin.RetentionPolicies.Disabled" xml:space="preserve"><value>Disabled</value></data>
+  <data name="Admin.RetentionPolicies.Enabled" xml:space="preserve"><value>Enabled</value></data>
+  <data name="Admin.RetentionPolicies.ExecuteNow" xml:space="preserve"><value>Execute Now</value></data>
+  <data name="Admin.RetentionPolicies.LegalHold" xml:space="preserve"><value>Legal Hold</value></data>
+  <data name="Admin.RetentionPolicies.NoRetentionPoliciesConfigured" xml:space="preserve"><value>No retention policies configured.</value></data>
+  <data name="Admin.RetentionPolicies.Retention" xml:space="preserve"><value>Retention</value></data>
+  <data name="Admin.RetentionPolicies.RetentionDays" xml:space="preserve"><value>Retention Days</value></data>
+  <data name="Admin.RetentionPolicies.RetentionPolicies" xml:space="preserve"><value>Retention Policies</value></data>
+  <data name="Admin.RetentionPolicies.RetentionPoliciesCikadaMES" xml:space="preserve"><value>Retention Policies - Cikada.MES</value></data>
+  <data name="Admin.Roles.AssignRole" xml:space="preserve"><value>Assign Role</value></data>
+  <data name="Admin.Roles.AssignRoleToUser" xml:space="preserve"><value>Assign Role To User</value></data>
+  <data name="Admin.Roles.CreateRole" xml:space="preserve"><value>Create Role</value></data>
+  <data name="Admin.Roles.DeleteRole" xml:space="preserve"><value>Delete Role</value></data>
+  <data name="Admin.Roles.NoRolesConfigured" xml:space="preserve"><value>No roles configured.</value></data>
+  <data name="Admin.Roles.RolesCikadaMES" xml:space="preserve"><value>Roles - Cikada.MES</value></data>
+  <data name="Admin.Roles.SelectRole" xml:space="preserve"><value>Select role</value></data>
+  <data name="Admin.Roles.SelectUser" xml:space="preserve"><value>Select user</value></data>
+  <data name="Admin.Roles.System" xml:space="preserve"><value>System</value></data>
+  <data name="Admin.SerialNumbers.NoSerialsFound" xml:space="preserve"><value>No serials found.</value></data>
+  <data name="Admin.SerialNumbers.Register" xml:space="preserve"><value>Register</value></data>
+  <data name="Admin.SerialNumbers.RegisterSerial" xml:space="preserve"><value>Register Serial</value></data>
+  <data name="Admin.SerialNumbers.SerialNumbers" xml:space="preserve"><value>Serial Numbers</value></data>
+  <data name="Admin.SerialNumbers.SerialNumbersCikadaMES" xml:space="preserve"><value>Serial Numbers - Cikada.MES</value></data>
+  <data name="Admin.SerialNumbers.UpdateStatus" xml:space="preserve"><value>Update Status</value></data>
+  <data name="Admin.SerialNumbers.WarrantyDate" xml:space="preserve"><value>Warranty Date</value></data>
+  <data name="Admin.SerialNumbers.WarrantyExpiry" xml:space="preserve"><value>Warranty Expiry</value></data>
+  <data name="Admin.Settings.AdminSettingsCikadaMES" xml:space="preserve"><value>Admin Settings - Cikada.MES</value></data>
+  <data name="Admin.Settings.AutoAllocateOrders" xml:space="preserve"><value>Auto allocate orders</value></data>
+  <data name="Admin.Settings.CapacityThreshold" xml:space="preserve"><value>Capacity Threshold (%)</value></data>
+  <data name="Admin.Settings.DefaultPickStrategy" xml:space="preserve"><value>Default Pick Strategy</value></data>
+  <data name="Admin.Settings.LowStockThreshold" xml:space="preserve"><value>Low Stock Threshold</value></data>
+  <data name="Admin.Settings.ReorderPoint" xml:space="preserve"><value>Reorder Point</value></data>
+  <data name="Admin.Settings.WarehouseSettings" xml:space="preserve"><value>Warehouse Settings</value></data>
+  <data name="Admin.UnitsOfMeasure.CodeNameItemSKU" xml:space="preserve"><value>Code, name, item SKU</value></data>
+  <data name="Admin.UnitsOfMeasure.Factor" xml:space="preserve"><value>Factor</value></data>
+  <data name="Admin.UnitsOfMeasure.HandlingUnitTypes" xml:space="preserve"><value>Handling Unit Types</value></data>
+  <data name="Admin.UnitsOfMeasure.ItemUoMConversions" xml:space="preserve"><value>Item UoM Conversions</value></data>
+  <data name="Admin.UnitsOfMeasure.Length" xml:space="preserve"><value>Length</value></data>
+  <data name="Admin.UnitsOfMeasure.NoConversionRulesFound" xml:space="preserve"><value>No conversion rules found.</value></data>
+  <data name="Admin.UnitsOfMeasure.NoHandlingUnitTypesFound" xml:space="preserve"><value>No handling unit types found.</value></data>
+  <data name="Admin.UnitsOfMeasure.NoUnitsFound" xml:space="preserve"><value>No units found.</value></data>
+  <data name="Admin.UnitsOfMeasure.Piece" xml:space="preserve"><value>Piece</value></data>
+  <data name="Admin.UnitsOfMeasure.Rounding" xml:space="preserve"><value>Rounding</value></data>
+  <data name="Admin.UnitsOfMeasure.Units" xml:space="preserve"><value>Units</value></data>
+  <data name="Admin.UnitsOfMeasure.UnitsOfMeasure" xml:space="preserve"><value>Units of Measure</value></data>
+  <data name="Admin.UnitsOfMeasure.UnitsOfMeasureCikadaMES" xml:space="preserve"><value>Units of Measure - Cikada.MES</value></data>
+  <data name="Admin.UnitsOfMeasure.UoMType" xml:space="preserve"><value>UoM Type</value></data>
+  <data name="AdminCategories.AdminCategoriesCikadaMES" xml:space="preserve"><value>Admin Categories - Cikada.MES</value></data>
+  <data name="AdminCategories.CategoriesManagement" xml:space="preserve"><value>Categories Management</value></data>
+  <data name="AdminCategories.CreateCategory" xml:space="preserve"><value>Create Category</value></data>
+  <data name="AdminCategories.NoCategoriesFound" xml:space="preserve"><value>No categories found.</value></data>
+  <data name="AdminCategories.SaveChanges" xml:space="preserve"><value>Save Changes</value></data>
+  <data name="AdminCustomerEditorDialog.BillingAddress" xml:space="preserve"><value>Billing Address</value></data>
+  <data name="AdminCustomerEditorDialog.CashOnDelivery" xml:space="preserve"><value>Cash on delivery</value></data>
+  <data name="AdminCustomerEditorDialog.CreditCard" xml:space="preserve"><value>Credit card</value></data>
+  <data name="AdminCustomerEditorDialog.CreditLimit" xml:space="preserve"><value>Credit Limit</value></data>
+  <data name="AdminCustomerEditorDialog.Net30" xml:space="preserve"><value>Net 30</value></data>
+  <data name="AdminCustomerEditorDialog.Net60" xml:space="preserve"><value>Net 60</value></data>
+  <data name="AdminCustomerEditorDialog.NoneBasePrice" xml:space="preserve"><value>None (base price)</value></data>
+  <data name="AdminCustomerEditorDialog.OnHold" xml:space="preserve"><value>On Hold</value></data>
+  <data name="AdminCustomerEditorDialog.PaymentTerms" xml:space="preserve"><value>Payment Terms</value></data>
+  <data name="AdminCustomerEditorDialog.Prepaid" xml:space="preserve"><value>Prepaid</value></data>
+  <data name="AdminCustomerEditorDialog.PriceGroup" xml:space="preserve"><value>Price Group</value></data>
+  <data name="AdminCustomerEditorDialog.ShippingAddress" xml:space="preserve"><value>Shipping Address</value></data>
+  <data name="AdminCustomerEditorDialog.ShippingAddressSameAsBilling" xml:space="preserve"><value>Shipping address same as billing</value></data>
+  <data name="AdminCustomerEditorDialog.ZipCode" xml:space="preserve"><value>Zip Code</value></data>
+  <data name="AdminCustomers.AdminCustomersCikadaMES" xml:space="preserve"><value>Admin Customers - Cikada.MES</value></data>
+  <data name="AdminCustomers.CodeOrName" xml:space="preserve"><value>Code or name</value></data>
+  <data name="AdminCustomers.CreateCustomer" xml:space="preserve"><value>Create Customer</value></data>
+  <data name="AdminCustomers.CustomersManagement" xml:space="preserve"><value>Customers Management</value></data>
+  <data name="AdminCustomers.NoCustomersFound" xml:space="preserve"><value>No customers found</value></data>
+  <data name="AdminCustomers.PriceGroup" xml:space="preserve"><value>Price Group</value></data>
+  <data name="AdminImport.AdminImportCikadaMES" xml:space="preserve"><value>Admin Import - Cikada.MES</value></data>
+  <data name="AdminImport.Bulk" xml:space="preserve"><value>Bulk:</value></data>
+  <data name="AdminImport.Column" xml:space="preserve"><value>Column</value></data>
+  <data name="AdminImport.CommitChanges" xml:space="preserve"><value>Commit Changes</value></data>
+  <data name="AdminImport.CommitIsDisabledUntilDryRunErrorsAreResolved" xml:space="preserve"><value>Commit is disabled until dry-run errors are resolved.</value></data>
+  <data name="AdminImport.DownloadErrorReport" xml:space="preserve"><value>Download Error Report</value></data>
+  <data name="AdminImport.DownloadTemplate" xml:space="preserve"><value>Download Template</value></data>
+  <data name="AdminImport.DryRun" xml:space="preserve"><value>Dry run</value></data>
+  <data name="AdminImport.DryRun7c5223" xml:space="preserve"><value>Dry run:</value></data>
+  <data name="AdminImport.DryRunIsRecommendedBeforeCommit" xml:space="preserve"><value>Dry-run is recommended before commit.</value></data>
+  <data name="AdminImport.Errors" xml:space="preserve"><value>Errors:</value></data>
+  <data name="AdminImport.File" xml:space="preserve"><value>File</value></data>
+  <data name="AdminImport.ImportMasterData" xml:space="preserve"><value>Import Master Data</value></data>
+  <data name="AdminImport.ImportResult" xml:space="preserve"><value>Import Result</value></data>
+  <data name="AdminImport.Inserted" xml:space="preserve"><value>Inserted:</value></data>
+  <data name="AdminImport.Message" xml:space="preserve"><value>Message</value></data>
+  <data name="AdminImport.Row" xml:space="preserve"><value>Row</value></data>
+  <data name="AdminImport.Skipped" xml:space="preserve"><value>Skipped:</value></data>
+  <data name="AdminImport.Updated" xml:space="preserve"><value>Updated:</value></data>
+  <data name="AdminItemDetail.AsOf" xml:space="preserve"><value>As Of</value></data>
+  <data name="AdminItemDetail.BackToList" xml:space="preserve"><value>Back to list</value></data>
+  <data name="AdminItemDetail.BaseUoM" xml:space="preserve"><value>Base UoM</value></data>
+  <data name="AdminItemDetail.By" xml:space="preserve"><value>By</value></data>
+  <data name="AdminItemDetail.CategoryID" xml:space="preserve"><value>Category ID</value></data>
+  <data name="AdminItemDetail.ChangedBy" xml:space="preserve"><value>Changed By</value></data>
+  <data name="AdminItemDetail.CurrentOnHandValue" xml:space="preserve"><value>Current on-hand value</value></data>
+  <data name="AdminItemDetail.CurrentUnitCostWAC" xml:space="preserve"><value>Current Unit Cost (WAC)</value></data>
+  <data name="AdminItemDetail.EffectivePrice" xml:space="preserve"><value>Effective Price</value></data>
+  <data name="AdminItemDetail.Group" xml:space="preserve"><value>Group</value></data>
+  <data name="AdminItemDetail.ItemDetails" xml:space="preserve"><value>Item Details</value></data>
+  <data name="AdminItemDetail.ItemDetailsCikadaMES" xml:space="preserve"><value>Item Details - Cikada.MES</value></data>
+  <data name="AdminItemDetail.ItemNotFound" xml:space="preserve"><value>Item not found</value></data>
+  <data name="AdminItemDetail.LotTracking" xml:space="preserve"><value>Lot Tracking</value></data>
+  <data name="AdminItemDetail.New" xml:space="preserve"><value>New</value></data>
+  <data name="AdminItemDetail.NewCost" xml:space="preserve"><value>New cost</value></data>
+  <data name="AdminItemDetail.NoOnHandValueData" xml:space="preserve"><value>No on-hand value data</value></data>
+  <data name="AdminItemDetail.NoPhotos" xml:space="preserve"><value>No photos</value></data>
+  <data name="AdminItemDetail.NoPriceChangesYet" xml:space="preserve"><value>No price changes yet</value></data>
+  <data name="AdminItemDetail.NoPriceGroups" xml:space="preserve"><value>No price groups</value></data>
+  <data name="AdminItemDetail.NoPurchaseReceiptsOrCostChangesYet" xml:space="preserve"><value>No purchase receipts or cost changes yet</value></data>
+  <data name="AdminItemDetail.Old" xml:space="preserve"><value>Old</value></data>
+  <data name="AdminItemDetail.OldCost" xml:space="preserve"><value>Old cost</value></data>
+  <data name="AdminItemDetail.OnHandQty" xml:space="preserve"><value>On-hand Qty</value></data>
+  <data name="AdminItemDetail.Open" xml:space="preserve"><value>Open</value></data>
+  <data name="AdminItemDetail.Override" xml:space="preserve"><value>Override</value></data>
+  <data name="AdminItemDetail.Photo" xml:space="preserve"><value>Photo</value></data>
+  <data name="AdminItemDetail.Photos" xml:space="preserve"><value>Photos</value></data>
+  <data name="AdminItemDetail.PriceHistory" xml:space="preserve"><value>Price History</value></data>
+  <data name="AdminItemDetail.PricesByGroup" xml:space="preserve"><value>Prices by group</value></data>
+  <data name="AdminItemDetail.PrimaryBarcode" xml:space="preserve"><value>Primary Barcode</value></data>
+  <data name="AdminItemDetail.ProductConfig" xml:space="preserve"><value>Product Config</value></data>
+  <data name="AdminItemDetail.PurchaseCostHistory" xml:space="preserve"><value>Purchase / cost history</value></data>
+  <data name="AdminItemDetail.PurchasePrice" xml:space="preserve"><value>Purchase Price</value></data>
+  <data name="AdminItemDetail.Recompute" xml:space="preserve"><value>Recompute</value></data>
+  <data name="AdminItemDetail.TheItemCouldNotBeLoaded" xml:space="preserve"><value>The item could not be loaded.</value></data>
+  <data name="AdminItemDetail.ThisItemHasNoRecordedOnHandQuantityOrCostYet" xml:space="preserve"><value>This item has no recorded on-hand quantity or cost yet.</value></data>
+  <data name="AdminItemDetail.UploadAPhotoToShowThumbnailsInItemAndStockLists" xml:space="preserve"><value>Upload a photo to show thumbnails in item and stock lists.</value></data>
+  <data name="AdminItemDetail.When" xml:space="preserve"><value>When</value></data>
+  <data name="AdminItemEditorDialog.Add" xml:space="preserve"><value>Add</value></data>
+  <data name="AdminItemEditorDialog.AutoGeneratedIfEmpty" xml:space="preserve"><value>Auto-generated if empty</value></data>
+  <data name="AdminItemEditorDialog.BaseUoM" xml:space="preserve"><value>Base UoM</value></data>
+  <data name="AdminItemEditorDialog.CostType" xml:space="preserve"><value>Cost Type</value></data>
+  <data name="AdminItemEditorDialog.Discontinued" xml:space="preserve"><value>Discontinued</value></data>
+  <data name="AdminItemEditorDialog.InternalSKU" xml:space="preserve"><value>Internal SKU</value></data>
+  <data name="AdminItemEditorDialog.ItemType" xml:space="preserve"><value>Item Type</value></data>
+  <data name="AdminItemEditorDialog.NoTags" xml:space="preserve"><value>No tags</value></data>
+  <data name="AdminItemEditorDialog.Obsolete" xml:space="preserve"><value>Obsolete</value></data>
+  <data name="AdminItemEditorDialog.PrimaryBarcode" xml:space="preserve"><value>Primary Barcode</value></data>
+  <data name="AdminItemEditorDialog.ProductConfig" xml:space="preserve"><value>Product Config</value></data>
+  <data name="AdminItemEditorDialog.PurchasePrice" xml:space="preserve"><value>Purchase Price</value></data>
+  <data name="AdminItemEditorDialog.RequiresLotTracking" xml:space="preserve"><value>Requires lot tracking</value></data>
+  <data name="AdminItemEditorDialog.RequiresQC" xml:space="preserve"><value>Requires QC</value></data>
+  <data name="AdminItemEditorDialog.Service" xml:space="preserve"><value>Service</value></data>
+  <data name="AdminItemEditorDialog.ServiceItemsEGTransportDeliveryNeverReceivePhysicalStock" xml:space="preserve"><value>Service items (e.g. Transport, Delivery) never receive physical stock.</value></data>
+  <data name="AdminItemEditorDialog.Stock" xml:space="preserve"><value>Stock</value></data>
+  <data name="AdminItemEditorDialog.WhichAdditionalCostBucketThisServiceSAmountFoldsIntoOnInboundS" xml:space="preserve"><value>Which additional-cost bucket this service's amount folds into on inbound shipments. Pick a preset or type a custom value.</value></data>
+  <data name="AdminItemEditorDialog.X" xml:space="preserve"><value>x</value></data>
+  <data name="AdminItemPhotosDialog.ItemPhotos" xml:space="preserve"><value>Item Photos</value></data>
+  <data name="AdminItemPhotosDialog.NoPhotos" xml:space="preserve"><value>No photos</value></data>
+  <data name="AdminItemPhotosDialog.Open" xml:space="preserve"><value>Open</value></data>
+  <data name="AdminItemPhotosDialog.Photo" xml:space="preserve"><value>Photo</value></data>
+  <data name="AdminItemPhotosDialog.Recompute" xml:space="preserve"><value>Recompute</value></data>
+  <data name="AdminItemPhotosDialog.UploadAProductImageToMakeItVisibleInTheItemsGrid" xml:space="preserve"><value>Upload a product image to make it visible in the items grid.</value></data>
+  <data name="AdminItems.AdminItemsCikadaMES" xml:space="preserve"><value>Admin Items - Cikada.MES</value></data>
+  <data name="AdminItems.AllCategories" xml:space="preserve"><value>All categories</value></data>
+  <data name="AdminItems.AllStatuses" xml:space="preserve"><value>All statuses</value></data>
+  <data name="AdminItems.Deactivate" xml:space="preserve"><value>Deactivate</value></data>
+  <data name="AdminItems.DeactivateItem" xml:space="preserve"><value>Deactivate item</value></data>
+  <data name="AdminItems.Discontinued" xml:space="preserve"><value>Discontinued</value></data>
+  <data name="AdminItems.Image" xml:space="preserve"><value>Image</value></data>
+  <data name="AdminItems.ItemsManagement" xml:space="preserve"><value>Items Management</value></data>
+  <data name="AdminItems.NoImg" xml:space="preserve"><value>No img</value></data>
+  <data name="AdminItems.NoItemsFound" xml:space="preserve"><value>No items found</value></data>
+  <data name="AdminItems.NoTags" xml:space="preserve"><value>No tags</value></data>
+  <data name="AdminItems.Obsolete" xml:space="preserve"><value>Obsolete</value></data>
+  <data name="AdminItems.OpenPhotos" xml:space="preserve"><value>Open photos</value></data>
+  <data name="AdminItems.Photos" xml:space="preserve"><value>Photos</value></data>
+  <data name="AdminItems.Purchase" xml:space="preserve"><value>Purchase</value></data>
+  <data name="AdminItems.SKUNameBarcode" xml:space="preserve"><value>SKU, name, barcode</value></data>
+  <data name="AdminLocations.AdminLocationsCikadaMES" xml:space="preserve"><value>Admin Locations - Cikada.MES</value></data>
+  <data name="AdminLocations.Aisle" xml:space="preserve"><value>Aisle</value></data>
+  <data name="AdminLocations.Bulk" xml:space="preserve"><value>Bulk</value></data>
+  <data name="AdminLocations.C" xml:space="preserve"><value>C</value></data>
+  <data name="AdminLocations.Capacity" xml:space="preserve"><value>Capacity</value></data>
+  <data name="AdminLocations.CapacityVolume" xml:space="preserve"><value>Capacity Volume</value></data>
+  <data name="AdminLocations.CapacityWeight" xml:space="preserve"><value>Capacity Weight</value></data>
+  <data name="AdminLocations.Cell" xml:space="preserve"><value>Cell</value></data>
+  <data name="AdminLocations.CodeOrBarcode" xml:space="preserve"><value>Code or barcode</value></data>
+  <data name="AdminLocations.ComputedAddress" xml:space="preserve"><value>Computed Address</value></data>
+  <data name="AdminLocations.CoordinateX" xml:space="preserve"><value>Coordinate X</value></data>
+  <data name="AdminLocations.CoordinateY" xml:space="preserve"><value>Coordinate Y</value></data>
+  <data name="AdminLocations.CoordinateZ" xml:space="preserve"><value>Coordinate Z</value></data>
+  <data name="AdminLocations.CreateLocation" xml:space="preserve"><value>Create Location</value></data>
+  <data name="AdminLocations.DimensionsM" xml:space="preserve"><value>Dimensions (m)</value></data>
+  <data name="AdminLocations.EndCap" xml:space="preserve"><value>EndCap</value></data>
+  <data name="AdminLocations.General" xml:space="preserve"><value>General</value></data>
+  <data name="AdminLocations.GroundSlot" xml:space="preserve"><value>GroundSlot</value></data>
+  <data name="AdminLocations.Hazmat" xml:space="preserve"><value>Hazmat</value></data>
+  <data name="AdminLocations.HeightM" xml:space="preserve"><value>Height (m)</value></data>
+  <data name="AdminLocations.IncludeVirtualLocations" xml:space="preserve"><value>Include virtual locations</value></data>
+  <data name="AdminLocations.LengthM" xml:space="preserve"><value>Length (m)</value></data>
+  <data name="AdminLocations.LocationRole" xml:space="preserve"><value>Location Role</value></data>
+  <data name="AdminLocations.LocationsManagement" xml:space="preserve"><value>Locations Management</value></data>
+  <data name="AdminLocations.NoLocationsFound" xml:space="preserve"><value>No locations found.</value></data>
+  <data name="AdminLocations.Overflow" xml:space="preserve"><value>Overflow</value></data>
+  <data name="AdminLocations.Placement" xml:space="preserve"><value>Placement</value></data>
+  <data name="AdminLocations.PlacementWarehouse" xml:space="preserve"><value>Placement Warehouse</value></data>
+  <data name="AdminLocations.Quarantine" xml:space="preserve"><value>Quarantine</value></data>
+  <data name="AdminLocations.RackPlacement" xml:space="preserve"><value>Rack Placement</value></data>
+  <data name="AdminLocations.RackPlacement542747" xml:space="preserve"><value>Rack placement is available only for eligible non-virtual locations.</value></data>
+  <data name="AdminLocations.RackRowId" xml:space="preserve"><value>Rack Row Id</value></data>
+  <data name="AdminLocations.Refrigerated" xml:space="preserve"><value>Refrigerated</value></data>
+  <data name="AdminLocations.ShelfLevel" xml:space="preserve"><value>Shelf Level</value></data>
+  <data name="AdminLocations.SlotSpan" xml:space="preserve"><value>Slot Span</value></data>
+  <data name="AdminLocations.SlotStart" xml:space="preserve"><value>Slot Start</value></data>
+  <data name="AdminLocations.ViewDetails" xml:space="preserve"><value>View Details</value></data>
+  <data name="AdminLocations.WidthM" xml:space="preserve"><value>Width (m)</value></data>
+  <data name="AdminLocations.ZoneType" xml:space="preserve"><value>Zone Type</value></data>
+  <data name="AdminPriceGroups.AssignCustomer" xml:space="preserve"><value>Assign customer</value></data>
+  <data name="AdminPriceGroups.CreateGroup" xml:space="preserve"><value>Create Group</value></data>
+  <data name="AdminPriceGroups.CreateOneToStartOverridingItemPricesPerCustomerTier" xml:space="preserve"><value>Create one to start overriding item prices per customer tier.</value></data>
+  <data name="AdminPriceGroups.Customers" xml:space="preserve"><value>Customers</value></data>
+  <data name="AdminPriceGroups.Groups" xml:space="preserve"><value>Groups</value></data>
+  <data name="AdminPriceGroups.NoCustomersAssigned" xml:space="preserve"><value>No customers assigned</value></data>
+  <data name="AdminPriceGroups.NoPriceGroups" xml:space="preserve"><value>No price groups</value></data>
+  <data name="AdminPriceGroups.PriceGroups" xml:space="preserve"><value>Price Groups</value></data>
+  <data name="AdminPriceGroups.PriceGroupsCikadaMES" xml:space="preserve"><value>Price Groups - Cikada.MES</value></data>
+  <data name="AdminPriceGroups.SearchCustomersByNameOrCode" xml:space="preserve"><value>Search customers by name or code</value></data>
+  <data name="AdminSlots.2C301OrBIN001" xml:space="preserve"><value>2-C3-01 or BIN-001</value></data>
+  <data name="AdminSlots.AddressOrLocation" xml:space="preserve"><value>Address or location</value></data>
+  <data name="AdminSlots.AllLevels" xml:space="preserve"><value>All levels</value></data>
+  <data name="AdminSlots.AllRacks" xml:space="preserve"><value>All racks</value></data>
+  <data name="AdminSlots.Clear" xml:space="preserve"><value>Clear</value></data>
+  <data name="AdminSlots.ComputedFromRackLayoutAndLiveOccupancy" xml:space="preserve"><value>Computed from rack layout and live occupancy.</value></data>
+  <data name="AdminSlots.FreeOnly" xml:space="preserve"><value>Free only</value></data>
+  <data name="AdminSlots.NoSlotsMatchTheCurrentFilters" xml:space="preserve"><value>No slots match the current filters.</value></data>
+  <data name="AdminSlots.Reload" xml:space="preserve"><value>Reload</value></data>
+  <data name="AdminSlots.Slot" xml:space="preserve"><value>Slot</value></data>
+  <data name="AdminSlots.SlotSpan" xml:space="preserve"><value>Slot span</value></data>
+  <data name="AdminSlots.Span" xml:space="preserve"><value>Span</value></data>
+  <data name="AdminSlots.WarehouseSlots" xml:space="preserve"><value>Warehouse Slots</value></data>
+  <data name="AdminSlots.WarehouseSlotsCikadaMES" xml:space="preserve"><value>Warehouse Slots - Cikada.MES</value></data>
+  <data name="AdminSupplierEditorDialog.AdditionalInfo" xml:space="preserve"><value>Additional info</value></data>
+  <data name="AdminSupplierEditorDialog.AgnumClientId" xml:space="preserve"><value>Agnum Client Id</value></data>
+  <data name="AdminSupplierEditorDialog.CompanyCode" xml:space="preserve"><value>Company code</value></data>
+  <data name="AdminSupplierEditorDialog.ContactName" xml:space="preserve"><value>Contact name</value></data>
+  <data name="AdminSupplierEditorDialog.LinkedToAgnumSyncedFieldsAreRefreshedAutomaticallyManualEditsA" xml:space="preserve"><value>Linked to Agnum. Synced fields are refreshed automatically; manual edits are preserved.</value></data>
+  <data name="AdminSupplierEditorDialog.PickupAddress" xml:space="preserve"><value>Pickup address</value></data>
+  <data name="AdminSupplierEditorDialog.RegisteredAddress" xml:space="preserve"><value>Registered address</value></data>
+  <data name="AdminSupplierEditorDialog.ShortName" xml:space="preserve"><value>Short name</value></data>
+  <data name="AdminSupplierEditorDialog.VATCode" xml:space="preserve"><value>VAT code</value></data>
+  <data name="AdminSupplierEditorDialog.Website" xml:space="preserve"><value>Website</value></data>
+  <data name="AdminSupplierMappings.CreateSupplierMapping" xml:space="preserve"><value>Create Supplier Mapping</value></data>
+  <data name="AdminSupplierMappings.NoMappingsFound" xml:space="preserve"><value>No mappings found.</value></data>
+  <data name="AdminSupplierMappings.SaveChanges" xml:space="preserve"><value>Save Changes</value></data>
+  <data name="AdminSupplierMappings.SaveMapping" xml:space="preserve"><value>Save Mapping</value></data>
+  <data name="AdminSupplierMappings.SupplierMappings" xml:space="preserve"><value>Supplier Mappings</value></data>
+  <data name="AdminSupplierMappings.SupplierMappingsCikadaMES" xml:space="preserve"><value>Supplier Mappings - Cikada.MES</value></data>
+  <data name="AdminSupplierMappings.SupplierSKUSupplierItem" xml:space="preserve"><value>Supplier SKU / supplier / item</value></data>
+  <data name="AdminSuppliers.AdminSuppliersCikadaMES" xml:space="preserve"><value>Admin Suppliers - Cikada.MES</value></data>
+  <data name="AdminSuppliers.AllCountries" xml:space="preserve"><value>All countries</value></data>
+  <data name="AdminSuppliers.CodeNameCompanyVATCodeEmailPhoneCountryCity" xml:space="preserve"><value>Code, name, company/VAT code, email, phone, country, city</value></data>
+  <data name="AdminSuppliers.CompanyCode" xml:space="preserve"><value>Company code</value></data>
+  <data name="AdminSuppliers.Contact" xml:space="preserve"><value>Contact</value></data>
+  <data name="AdminSuppliers.CountryCity" xml:space="preserve"><value>Country / City</value></data>
+  <data name="AdminSuppliers.Mappings" xml:space="preserve"><value>Mappings</value></data>
+  <data name="AdminSuppliers.NoSuppliersFound" xml:space="preserve"><value>No suppliers found</value></data>
+  <data name="AdminSuppliers.OpenSupplierMappings" xml:space="preserve"><value>Open supplier mappings</value></data>
+  <data name="AdminSuppliers.ShortName" xml:space="preserve"><value>Short name</value></data>
+  <data name="AdminSuppliers.SuppliersManagement" xml:space="preserve"><value>Suppliers Management</value></data>
+  <data name="AdminSuppliers.VATCode" xml:space="preserve"><value>VAT code</value></data>
+  <data name="AdminSuppliers.ViewMappings" xml:space="preserve"><value>View mappings</value></data>
+  <data name="AdminSuppliers.Website" xml:space="preserve"><value>Website</value></data>
+  <data name="AdminUsers.AdminUsers" xml:space="preserve"><value>Admin Users</value></data>
+  <data name="AdminUsers.AdminUsersCikadaMES" xml:space="preserve"><value>Admin Users - Cikada.MES</value></data>
+  <data name="AdminUsers.ClearingThisFieldRemovesLegacyAccess" xml:space="preserve"><value>Clearing this field removes legacy access.</value></data>
+  <data name="AdminUsers.CreateUser" xml:space="preserve"><value>Create User</value></data>
+  <data name="AdminUsers.NoUsersFound" xml:space="preserve"><value>No users found.</value></data>
+  <data name="AdminUsers.OptionalExplicitSQLIdentityForLegacyAccessLeaveEmptyToDenyLega" xml:space="preserve"><value>Optional. Explicit SQL identity for legacy access; leave empty to deny legacy access.</value></data>
+  <data name="AdminUsers.Password" xml:space="preserve"><value>Password</value></data>
+  <data name="AdminUsers.Username" xml:space="preserve"><value>Username</value></data>
+  <data name="Agnum.Balances.AgnumBalances" xml:space="preserve"><value>Agnum Balances</value></data>
+  <data name="Agnum.Balances.AgnumProduct" xml:space="preserve"><value>Agnum Product</value></data>
+  <data name="Agnum.Balances.Delta" xml:space="preserve"><value>Delta</value></data>
+  <data name="Agnum.Balances.Distribute" xml:space="preserve"><value>Distribute</value></data>
+  <data name="Agnum.Balances.Distributed" xml:space="preserve"><value>Distributed</value></data>
+  <data name="Agnum.Balances.Imported" xml:space="preserve"><value>Imported</value></data>
+  <data name="Agnum.Balances.Locations" xml:space="preserve"><value>Locations</value></data>
+  <data name="Agnum.Balances.MESItem" xml:space="preserve"><value>MES Item</value></data>
+  <data name="Agnum.Balances.MESPhysical" xml:space="preserve"><value>MES Physical</value></data>
+  <data name="Agnum.Balances.NoAgnumBalancesFound" xml:space="preserve"><value>No Agnum balances found.</value></data>
+  <data name="Agnum.Balances.SKUOrAgnumProductId" xml:space="preserve"><value>SKU or Agnum product id</value></data>
+  <data name="Agnum.Balances.SelectWarehouse" xml:space="preserve"><value>Select warehouse</value></data>
+  <data name="Agnum.Balances.ShowingFirst500RowsUseSearchToNarrowTheList" xml:space="preserve"><value>Showing first 500 rows. Use search to narrow the list.</value></data>
+  <data name="Agnum.Balances.VirtualWarehouse" xml:space="preserve"><value>Virtual warehouse</value></data>
+  <data name="Agnum.Configuration.APIEndpoint" xml:space="preserve"><value>API Endpoint</value></data>
+  <data name="Agnum.Configuration.APIKey" xml:space="preserve"><value>API Key</value></data>
+  <data name="Agnum.Configuration.AddMapping" xml:space="preserve"><value>+ Add Mapping</value></data>
+  <data name="Agnum.Configuration.AgnumAccountCode" xml:space="preserve"><value>Agnum Account Code</value></data>
+  <data name="Agnum.Configuration.AgnumConfiguration" xml:space="preserve"><value>Agnum Configuration</value></data>
+  <data name="Agnum.Configuration.AgnumExportConfiguration" xml:space="preserve"><value>Agnum Export Configuration</value></data>
+  <data name="Agnum.Configuration.Daily2300" xml:space="preserve"><value>Daily 23:00</value></data>
+  <data name="Agnum.Configuration.Error" xml:space="preserve"><value>Error</value></data>
+  <data name="Agnum.Configuration.Example023" xml:space="preserve"><value>Example: 0 23 * * *</value></data>
+  <data name="Agnum.Configuration.Export" xml:space="preserve"><value>Export #</value></data>
+  <data name="Agnum.Configuration.ExportHistory" xml:space="preserve"><value>Export History</value></data>
+  <data name="Agnum.Configuration.ExportScope" xml:space="preserve"><value>Export Scope</value></data>
+  <data name="Agnum.Configuration.Exported" xml:space="preserve"><value>Exported</value></data>
+  <data name="Agnum.Configuration.FilePath" xml:space="preserve"><value>File Path</value></data>
+  <data name="Agnum.Configuration.Hourly" xml:space="preserve"><value>Hourly</value></data>
+  <data name="Agnum.Configuration.Mappings" xml:space="preserve"><value>Mappings</value></data>
+  <data name="Agnum.Configuration.NoExportHistoryFound" xml:space="preserve"><value>No export history found.</value></data>
+  <data name="Agnum.Configuration.NoMappingsConfiguredAddYourFirstMapping" xml:space="preserve"><value>No mappings configured. Add your first mapping.</value></data>
+  <data name="Agnum.Configuration.RefreshHistory" xml:space="preserve"><value>Refresh History</value></data>
+  <data name="Agnum.Configuration.Rows" xml:space="preserve"><value>Rows</value></data>
+  <data name="Agnum.Configuration.ScheduleCron" xml:space="preserve"><value>Schedule (Cron)</value></data>
+  <data name="Agnum.Configuration.SourceType" xml:space="preserve"><value>Source Type</value></data>
+  <data name="Agnum.Configuration.SourceValue" xml:space="preserve"><value>Source Value</value></data>
+  <data name="Agnum.Configuration.TestConnection" xml:space="preserve"><value>Test Connection</value></data>
+  <data name="Agnum.Configuration.Trigger" xml:space="preserve"><value>Trigger</value></data>
+  <data name="Agnum.Configuration.Weekdays0800" xml:space="preserve"><value>Weekdays 08:00</value></data>
+  <data name="Agnum.Reconciliation.AgnumCode" xml:space="preserve"><value>Agnum Code</value></data>
+  <data name="Agnum.Reconciliation.AgnumReconciliation" xml:space="preserve"><value>Agnum Reconciliation</value></data>
+  <data name="Agnum.Reconciliation.Delta" xml:space="preserve"><value>Delta</value></data>
+  <data name="Agnum.Reconciliation.DistributedToMES" xml:space="preserve"><value>Distributed to MES</value></data>
+  <data name="Agnum.Reconciliation.ItemName" xml:space="preserve"><value>Item Name</value></data>
+  <data name="Agnum.Reconciliation.MESPhysicalActual" xml:space="preserve"><value>MES Physical (actual)</value></data>
+  <data name="Agnum.Reconciliation.NoReconciliationRowsFound" xml:space="preserve"><value>No reconciliation rows found.</value></data>
+  <data name="Agnum.Reconciliation.OnlyShowDiscrepancies" xml:space="preserve"><value>Only show discrepancies</value></data>
+  <data name="Agnum.Reconciliation.SKUMES" xml:space="preserve"><value>SKU (MES)</value></data>
+  <data name="Agnum.Reconciliation.SKUOrProductName" xml:space="preserve"><value>SKU or product name</value></data>
+  <data name="Agnum.Reconciliation.ShowingFirst500RowsUseSearchToNarrowTheList" xml:space="preserve"><value>Showing first 500 rows. Use search to narrow the list.</value></data>
+  <data name="Agnum.Reconciliation.VirtualBalanceAgnum" xml:space="preserve"><value>Virtual Balance (Agnum)</value></data>
+  <data name="Agnum.Reconciliation.VirtualWarehouse" xml:space="preserve"><value>Virtual warehouse</value></data>
+  <data name="AllocationDashboard.AllocatedOrders" xml:space="preserve"><value>Allocated Orders</value></data>
+  <data name="AllocationDashboard.AllocationDashboardCikadaMES" xml:space="preserve"><value>Allocation Dashboard - Cikada.MES</value></data>
+  <data name="AllocationDashboard.ManualReallocateEndpointIsNotAvailableInCurrentAPISurface" xml:space="preserve"><value>Manual reallocate endpoint is not available in current API surface.</value></data>
+  <data name="AllocationDashboard.NoAllocatedOrders" xml:space="preserve"><value>No allocated orders.</value></data>
+  <data name="AllocationDashboard.NoOrdersPendingApproval" xml:space="preserve"><value>No orders pending approval.</value></data>
+  <data name="AllocationDashboard.NoOrdersPendingStock" xml:space="preserve"><value>No orders pending stock.</value></data>
+  <data name="AllocationDashboard.PendingApprovals" xml:space="preserve"><value>Pending Approvals</value></data>
+  <data name="AllocationDashboard.PendingStock" xml:space="preserve"><value>Pending Stock</value></data>
+  <data name="AllocationDashboard.Reallocate" xml:space="preserve"><value>Reallocate</value></data>
+  <data name="AllocationDashboard.ReleaseToPicking" xml:space="preserve"><value>Release to Picking</value></data>
+  <data name="AnalyticsFulfillment.14DayTrend" xml:space="preserve"><value>14-Day Trend</value></data>
+  <data name="AnalyticsFulfillment.AvgPickMinutes" xml:space="preserve"><value>Avg Pick Minutes</value></data>
+  <data name="AnalyticsFulfillment.Date" xml:space="preserve"><value>Date</value></data>
+  <data name="AnalyticsFulfillment.FulfillmentKPIs" xml:space="preserve"><value>Fulfillment KPIs</value></data>
+  <data name="AnalyticsFulfillment.FulfillmentKPIsCikadaMES" xml:space="preserve"><value>Fulfillment KPIs - Cikada.MES</value></data>
+  <data name="AnalyticsFulfillment.NoKPITrend" xml:space="preserve"><value>No KPI trend</value></data>
+  <data name="AnalyticsFulfillment.NoSalesOrderTrendDataIsAvailableYet" xml:space="preserve"><value>No sales order trend data is available yet.</value></data>
+  <data name="AnalyticsFulfillment.OnTimeDelivery" xml:space="preserve"><value>On-Time Delivery</value></data>
+  <data name="AnalyticsFulfillment.Orders" xml:space="preserve"><value>Orders</value></data>
+  <data name="AnalyticsFulfillment.ShippedOrders" xml:space="preserve"><value>Shipped Orders</value></data>
+  <data name="AnalyticsFulfillment.TotalOrders" xml:space="preserve"><value>Total Orders</value></data>
+  <data name="AnalyticsQuality.Count" xml:space="preserve"><value>Count</value></data>
+  <data name="AnalyticsQuality.DefectAnalyticsAppearsWhenQCDefectsAreLogged" xml:space="preserve"><value>Defect analytics appears when QC defects are logged.</value></data>
+  <data name="AnalyticsQuality.LateShipmentRootCauses" xml:space="preserve"><value>Late Shipment Root Causes</value></data>
+  <data name="AnalyticsQuality.LateShipments" xml:space="preserve"><value>Late Shipments</value></data>
+  <data name="AnalyticsQuality.NoDefectsRecorded" xml:space="preserve"><value>No defects recorded</value></data>
+  <data name="AnalyticsQuality.NoDelayedOutboundOrdersFoundInCurrentDataset" xml:space="preserve"><value>No delayed outbound orders found in current dataset.</value></data>
+  <data name="AnalyticsQuality.NoLateShipments" xml:space="preserve"><value>No late shipments</value></data>
+  <data name="AnalyticsQuality.QCDefectCount" xml:space="preserve"><value>QC Defect Count</value></data>
+  <data name="AnalyticsQuality.QualityAnalyticsCikadaMES" xml:space="preserve"><value>Quality Analytics - Cikada.MES</value></data>
+  <data name="AnalyticsQuality.RootCause" xml:space="preserve"><value>Root Cause</value></data>
+  <data name="AnalyticsQuality.TopDefectTypes" xml:space="preserve"><value>Top Defect Types</value></data>
+  <data name="App.NotFound" xml:space="preserve"><value>Not found</value></data>
+  <data name="App.SorryThereSNothingAtThisAddress" xml:space="preserve"><value>Sorry, there's nothing at this address.</value></data>
+  <data name="AvailableStock.Available" xml:space="preserve"><value>Available:</value></data>
+  <data name="AvailableStock.AvailableStock" xml:space="preserve"><value>Available Stock</value></data>
+  <data name="AvailableStock.AvailableStockCikadaMES" xml:space="preserve"><value>Available Stock - Cikada.MES</value></data>
+  <data name="AvailableStock.EnterAtLeastOneFilterAndClickSearch" xml:space="preserve"><value>Enter at least one filter and click Search.</value></data>
+  <data name="AvailableStock.Gallery" xml:space="preserve"><value>Gallery</value></data>
+  <data name="AvailableStock.List" xml:space="preserve"><value>List</value></data>
+  <data name="AvailableStock.NoImage" xml:space="preserve"><value>No image</value></data>
+  <data name="AvailableStock.NoStockFound" xml:space="preserve"><value>No stock found</value></data>
+  <data name="AvailableStock.NoStockMatchesTheCurrentFilters" xml:space="preserve"><value>No stock matches the current filters.</value></data>
+  <data name="AvailableStock.OnHand" xml:space="preserve"><value>On hand:</value></data>
+  <data name="AvailableStock.Physical" xml:space="preserve"><value>Physical</value></data>
+  <data name="AvailableStock.ReadyForSearch" xml:space="preserve"><value>Ready for search</value></data>
+  <data name="AvailableStock.Table" xml:space="preserve"><value>Table</value></data>
+  <data name="AvailableStock.ViewMode" xml:space="preserve"><value>View mode</value></data>
+  <data name="Common.Action" xml:space="preserve"><value>Action</value></data>
+  <data name="Common.Actions" xml:space="preserve"><value>Actions</value></data>
+  <data name="Common.Active" xml:space="preserve"><value>Active</value></data>
+  <data name="Common.Address" xml:space="preserve"><value>Address</value></data>
+  <data name="Common.AdjustCost" xml:space="preserve"><value>Adjust Cost</value></data>
+  <data name="Common.AdminRoleRequired" xml:space="preserve"><value>Admin role required.</value></data>
+  <data name="Common.All" xml:space="preserve"><value>All</value></data>
+  <data name="Common.AllWarehouses" xml:space="preserve"><value>All warehouses</value></data>
+  <data name="Common.Amount" xml:space="preserve"><value>Amount</value></data>
+  <data name="Common.Apply" xml:space="preserve"><value>Apply</value></data>
+  <data name="Common.ApplyLandedCost" xml:space="preserve"><value>Apply Landed Cost</value></data>
+  <data name="Common.Approve" xml:space="preserve"><value>Approve</value></data>
+  <data name="Common.ApprovedBy" xml:space="preserve"><value>Approved By</value></data>
+  <data name="Common.ApproverRole" xml:space="preserve"><value>Approver Role</value></data>
+  <data name="Common.Assign" xml:space="preserve"><value>Assign</value></data>
+  <data name="Common.AssignedOperator" xml:space="preserve"><value>Assigned Operator</value></data>
+  <data name="Common.Available" xml:space="preserve"><value>Available</value></data>
+  <data name="Common.Back" xml:space="preserve"><value>Back</value></data>
+  <data name="Common.Barcode" xml:space="preserve"><value>Barcode</value></data>
+  <data name="Common.BasePrice" xml:space="preserve"><value>Base Price</value></data>
+  <data name="Common.Bin" xml:space="preserve"><value>Bin</value></data>
+  <data name="Common.Blocked" xml:space="preserve"><value>Blocked</value></data>
+  <data name="Common.Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Common.Carrier" xml:space="preserve"><value>Carrier</value></data>
+  <data name="Common.Category" xml:space="preserve"><value>Category</value></data>
+  <data name="Common.Ccy" xml:space="preserve"><value>Ccy</value></data>
+  <data name="Common.City" xml:space="preserve"><value>City</value></data>
+  <data name="Common.ClearFilters" xml:space="preserve"><value>Clear filters</value></data>
+  <data name="Common.Close" xml:space="preserve"><value>Close</value></data>
+  <data name="Common.Code" xml:space="preserve"><value>Code</value></data>
+  <data name="Common.Complete" xml:space="preserve"><value>Complete</value></data>
+  <data name="Common.Completed" xml:space="preserve"><value>Completed</value></data>
+  <data name="Common.Coordinates" xml:space="preserve"><value>Coordinates</value></data>
+  <data name="Common.Country" xml:space="preserve"><value>Country</value></data>
+  <data name="Common.Create" xml:space="preserve"><value>Create</value></data>
+  <data name="Common.Created" xml:space="preserve"><value>Created</value></data>
+  <data name="Common.Customer" xml:space="preserve"><value>Customer</value></data>
+  <data name="Common.DataType" xml:space="preserve"><value>Data Type</value></data>
+  <data name="Common.Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="Common.Description" xml:space="preserve"><value>Description</value></data>
+  <data name="Common.Details" xml:space="preserve"><value>Details</value></data>
+  <data name="Common.Dimensions" xml:space="preserve"><value>Dimensions</value></data>
+  <data name="Common.Edit" xml:space="preserve"><value>Edit</value></data>
+  <data name="Common.Email" xml:space="preserve"><value>Email</value></data>
+  <data name="Common.End" xml:space="preserve"><value>End</value></data>
+  <data name="Common.Execute" xml:space="preserve"><value>Execute</value></data>
+  <data name="Common.Expected" xml:space="preserve"><value>Expected</value></data>
+  <data name="Common.ExpiringSoon" xml:space="preserve"><value>Expiring soon</value></data>
+  <data name="Common.Expiry" xml:space="preserve"><value>Expiry</value></data>
+  <data name="Common.ExportCSV" xml:space="preserve"><value>Export CSV</value></data>
+  <data name="Common.Filter" xml:space="preserve"><value>Filter</value></data>
+  <data name="Common.Format" xml:space="preserve"><value>Format</value></data>
+  <data name="Common.From" xml:space="preserve"><value>From</value></data>
+  <data name="Common.Inactive" xml:space="preserve"><value>Inactive</value></data>
+  <data name="Common.Item" xml:space="preserve"><value>Item</value></data>
+  <data name="Common.ItemID" xml:space="preserve"><value>Item ID</value></data>
+  <data name="Common.Items" xml:space="preserve"><value>Items</value></data>
+  <data name="Common.LastUpdated" xml:space="preserve"><value>Last Updated</value></data>
+  <data name="Common.LeadTimeDays" xml:space="preserve"><value>Lead Time (days)</value></data>
+  <data name="Common.LegacySQLLogin" xml:space="preserve"><value>Legacy SQL login</value></data>
+  <data name="Common.Level" xml:space="preserve"><value>Level</value></data>
+  <data name="Common.Line" xml:space="preserve"><value>Line</value></data>
+  <data name="Common.Lines" xml:space="preserve"><value>Lines</value></data>
+  <data name="Common.Location" xml:space="preserve"><value>Location</value></data>
+  <data name="Common.LocationId" xml:space="preserve"><value>Location Id</value></data>
+  <data name="Common.Lot" xml:space="preserve"><value>Lot</value></data>
+  <data name="Common.LotNumber" xml:space="preserve"><value>Lot Number</value></data>
+  <data name="Common.Maintenance" xml:space="preserve"><value>Maintenance</value></data>
+  <data name="Common.MaxVolume" xml:space="preserve"><value>Max Volume</value></data>
+  <data name="Common.MaxWeight" xml:space="preserve"><value>Max Weight</value></data>
+  <data name="Common.Name" xml:space="preserve"><value>Name</value></data>
+  <data name="Common.Next" xml:space="preserve"><value>Next</value></data>
+  <data name="Common.NoRowsFound" xml:space="preserve"><value>No rows found.</value></data>
+  <data name="Common.Notes" xml:space="preserve"><value>Notes</value></data>
+  <data name="Common.OpenInSlots" xml:space="preserve"><value>Open In Slots</value></data>
+  <data name="Common.Operator" xml:space="preserve"><value>Operator</value></data>
+  <data name="Common.Order" xml:space="preserve"><value>Order</value></data>
+  <data name="Common.OrderNumber" xml:space="preserve"><value>Order Number</value></data>
+  <data name="Common.Parent" xml:space="preserve"><value>Parent</value></data>
+  <data name="Common.ParentId" xml:space="preserve"><value>Parent Id</value></data>
+  <data name="Common.Permissions" xml:space="preserve"><value>Permissions</value></data>
+  <data name="Common.Phone" xml:space="preserve"><value>Phone</value></data>
+  <data name="Common.Pick" xml:space="preserve"><value>Pick</value></data>
+  <data name="Common.Picked" xml:space="preserve"><value>Picked</value></data>
+  <data name="Common.Previous" xml:space="preserve"><value>Previous</value></data>
+  <data name="Common.Price" xml:space="preserve"><value>Price</value></data>
+  <data name="Common.Primary" xml:space="preserve"><value>Primary</value></data>
+  <data name="Common.Priority" xml:space="preserve"><value>Priority</value></data>
+  <data name="Common.Projection" xml:space="preserve"><value>Projection</value></data>
+  <data name="Common.Qty" xml:space="preserve"><value>Qty</value></data>
+  <data name="Common.Quantity" xml:space="preserve"><value>Quantity</value></data>
+  <data name="Common.Rack" xml:space="preserve"><value>Rack</value></data>
+  <data name="Common.Reason" xml:space="preserve"><value>Reason</value></data>
+  <data name="Common.Receive" xml:space="preserve"><value>Receive</value></data>
+  <data name="Common.Reference" xml:space="preserve"><value>Reference</value></data>
+  <data name="Common.Refresh" xml:space="preserve"><value>Refresh</value></data>
+  <data name="Common.Remaining" xml:space="preserve"><value>Remaining</value></data>
+  <data name="Common.Remove" xml:space="preserve"><value>Remove</value></data>
+  <data name="Common.Requested" xml:space="preserve"><value>Requested</value></data>
+  <data name="Common.Reservation" xml:space="preserve"><value>Reservation</value></data>
+  <data name="Common.Reserved" xml:space="preserve"><value>Reserved</value></data>
+  <data name="Common.Reset" xml:space="preserve"><value>Reset</value></data>
+  <data name="Common.Retry" xml:space="preserve"><value>Retry</value></data>
+  <data name="Common.Role" xml:space="preserve"><value>Role</value></data>
+  <data name="Common.Roles" xml:space="preserve"><value>Roles</value></data>
+  <data name="Common.RuleType" xml:space="preserve"><value>Rule Type</value></data>
+  <data name="Common.Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Common.Search" xml:space="preserve"><value>Search</value></data>
+  <data name="Common.SelectItem" xml:space="preserve"><value>Select item</value></data>
+  <data name="Common.SelectLocation" xml:space="preserve"><value>Select location</value></data>
+  <data name="Common.Serial" xml:space="preserve"><value>Serial</value></data>
+  <data name="Common.Shipment" xml:space="preserve"><value>Shipment</value></data>
+  <data name="Common.Shipped" xml:space="preserve"><value>Shipped</value></data>
+  <data name="Common.Start" xml:space="preserve"><value>Start</value></data>
+  <data name="Common.State" xml:space="preserve"><value>State</value></data>
+  <data name="Common.Status" xml:space="preserve"><value>Status</value></data>
+  <data name="Common.Street" xml:space="preserve"><value>Street</value></data>
+  <data name="Common.Submit" xml:space="preserve"><value>Submit</value></data>
+  <data name="Common.Supplier" xml:space="preserve"><value>Supplier</value></data>
+  <data name="Common.SupplierSKU" xml:space="preserve"><value>Supplier SKU</value></data>
+  <data name="Common.Tags" xml:space="preserve"><value>Tags</value></data>
+  <data name="Common.Timestamp" xml:space="preserve"><value>Timestamp</value></data>
+  <data name="Common.To" xml:space="preserve"><value>To</value></data>
+  <data name="Common.ToLocation" xml:space="preserve"><value>To Location</value></data>
+  <data name="Common.TotalAmount" xml:space="preserve"><value>Total Amount</value></data>
+  <data name="Common.TotalValue" xml:space="preserve"><value>Total Value</value></data>
+  <data name="Common.Type" xml:space="preserve"><value>Type</value></data>
+  <data name="Common.Updated" xml:space="preserve"><value>Updated</value></data>
+  <data name="Common.User" xml:space="preserve"><value>User</value></data>
+  <data name="Common.Value" xml:space="preserve"><value>Value</value></data>
+  <data name="Common.Value2139d7" xml:space="preserve"><value>Value:</value></data>
+  <data name="Common.ValueCurrentCost" xml:space="preserve"><value>Value (current cost)</value></data>
+  <data name="Common.View" xml:space="preserve"><value>View</value></data>
+  <data name="Common.Virtual" xml:space="preserve"><value>Virtual</value></data>
+  <data name="Common.Volume" xml:space="preserve"><value>Volume</value></data>
+  <data name="Common.Warehouse" xml:space="preserve"><value>Warehouse</value></data>
+  <data name="Common.Weight" xml:space="preserve"><value>Weight</value></data>
+  <data name="Common.WriteDown" xml:space="preserve"><value>Write Down</value></data>
+  <data name="ComplianceDashboard.ComplianceDashboard" xml:space="preserve"><value>Compliance Dashboard</value></data>
+  <data name="ComplianceDashboard.Cron" xml:space="preserve"><value>Cron</value></data>
+  <data name="ComplianceDashboard.CronUTC" xml:space="preserve"><value>Cron (UTC)</value></data>
+  <data name="ComplianceDashboard.Download" xml:space="preserve"><value>Download</value></data>
+  <data name="ComplianceDashboard.EmailRecipientsComma" xml:space="preserve"><value>Email Recipients (comma)</value></data>
+  <data name="ComplianceDashboard.Generated" xml:space="preserve"><value>Generated</value></data>
+  <data name="ComplianceDashboard.LastRun" xml:space="preserve"><value>Last Run</value></data>
+  <data name="ComplianceDashboard.NoReportsYet" xml:space="preserve"><value>No reports yet.</value></data>
+  <data name="ComplianceDashboard.NoSchedulesConfigured" xml:space="preserve"><value>No schedules configured.</value></data>
+  <data name="ComplianceDashboard.PendingExports" xml:space="preserve"><value>Pending Exports</value></data>
+  <data name="ComplianceDashboard.RecentLotTraces" xml:space="preserve"><value>Recent Lot Traces</value></data>
+  <data name="ComplianceDashboard.RecentScheduledReports" xml:space="preserve"><value>Recent Scheduled Reports</value></data>
+  <data name="ComplianceDashboard.ReportType" xml:space="preserve"><value>Report Type</value></data>
+  <data name="ComplianceDashboard.Run" xml:space="preserve"><value>Run</value></data>
+  <data name="ComplianceDashboard.ScheduleReport" xml:space="preserve"><value>Schedule Report</value></data>
+  <data name="ComplianceDashboard.ScheduledJobs" xml:space="preserve"><value>Scheduled Jobs</value></data>
+  <data name="ComplianceDashboard.VarianceAlerts" xml:space="preserve"><value>Variance Alerts</value></data>
+  <data name="ComplianceLotTrace.Approximate" xml:space="preserve"><value>Approximate</value></data>
+  <data name="ComplianceLotTrace.BackwardSupplier" xml:space="preserve"><value>Backward (Supplier)</value></data>
+  <data name="ComplianceLotTrace.BuildTrace" xml:space="preserve"><value>Build Trace</value></data>
+  <data name="ComplianceLotTrace.Direction" xml:space="preserve"><value>Direction</value></data>
+  <data name="ComplianceLotTrace.EnterALotNumberAndRunBuildTrace" xml:space="preserve"><value>Enter a lot number and run Build Trace.</value></data>
+  <data name="ComplianceLotTrace.ForwardCustomer" xml:space="preserve"><value>Forward (Customer)</value></data>
+  <data name="ComplianceLotTrace.LotTraceability" xml:space="preserve"><value>Lot Traceability</value></data>
+  <data name="ComplianceLotTrace.LotTraceabilityCikadaMES" xml:space="preserve"><value>Lot Traceability - Cikada.MES</value></data>
+  <data name="ComplianceLotTrace.NoTraceGenerated" xml:space="preserve"><value>No trace generated</value></data>
+  <data name="CrossDock.CreateAMatchToRouteInboundStockDirectlyToOutboundShipping" xml:space="preserve"><value>Create a match to route inbound stock directly to outbound shipping.</value></data>
+  <data name="CrossDock.CreateCrossDockMatch" xml:space="preserve"><value>Create Cross-Dock Match</value></data>
+  <data name="CrossDock.CrossDockCikadaMES" xml:space="preserve"><value>Cross-Dock - Cikada.MES</value></data>
+  <data name="CrossDock.CrossDockQueue" xml:space="preserve"><value>Cross-Dock Queue</value></data>
+  <data name="CrossDock.CrossDockTracking" xml:space="preserve"><value>Cross-Dock Tracking</value></data>
+  <data name="CrossDock.InboundShipmentId" xml:space="preserve"><value>Inbound Shipment Id</value></data>
+  <data name="CrossDock.Match" xml:space="preserve"><value>Match</value></data>
+  <data name="CrossDock.NoCrossDockRecords" xml:space="preserve"><value>No cross-dock records</value></data>
+  <data name="CrossDock.Number" xml:space="preserve"><value>Number</value></data>
+  <data name="CrossDock.OutboundOrderId" xml:space="preserve"><value>Outbound Order Id</value></data>
+  <data name="CycleCounts.Discrepancies.ApproveAdjustment" xml:space="preserve"><value>Approve Adjustment</value></data>
+  <data name="CycleCounts.Discrepancies.Confirm" xml:space="preserve"><value>Confirm</value></data>
+  <data name="CycleCounts.Discrepancies.CycleCountDiscrepancies" xml:space="preserve"><value>Cycle Count Discrepancies</value></data>
+  <data name="CycleCounts.Discrepancies.CycleCountDiscrepanciesCikadaMES" xml:space="preserve"><value>Cycle Count Discrepancies - Cikada.MES</value></data>
+  <data name="CycleCounts.Discrepancies.NoDiscrepanciesFound" xml:space="preserve"><value>No discrepancies found.</value></data>
+  <data name="CycleCounts.Discrepancies.NoVarianceLinesRequireApproval" xml:space="preserve"><value>No variance lines require approval.</value></data>
+  <data name="CycleCounts.Discrepancies.PhysicalQty" xml:space="preserve"><value>Physical Qty</value></data>
+  <data name="CycleCounts.Discrepancies.SystemQty" xml:space="preserve"><value>System Qty</value></data>
+  <data name="CycleCounts.Discrepancies.ValueImpact" xml:space="preserve"><value>Value Impact</value></data>
+  <data name="CycleCounts.Discrepancies.Variance" xml:space="preserve"><value>Variance</value></data>
+  <data name="CycleCounts.Discrepancies.Variance393303" xml:space="preserve"><value>Variance %</value></data>
+  <data name="CycleCounts.Execute.CycleCountNotFound" xml:space="preserve"><value>Cycle count not found.</value></data>
+  <data name="CycleCounts.Execute.Discrepancy" xml:space="preserve"><value>Discrepancy</value></data>
+  <data name="CycleCounts.Execute.ExecuteCycleCount" xml:space="preserve"><value>Execute Cycle Count</value></data>
+  <data name="CycleCounts.Execute.ExecuteCycleCountCikadaMES" xml:space="preserve"><value>Execute Cycle Count - Cikada.MES</value></data>
+  <data name="CycleCounts.Execute.ItemBarcode" xml:space="preserve"><value>Item Barcode</value></data>
+  <data name="CycleCounts.Execute.LocationBarcode" xml:space="preserve"><value>Location Barcode</value></data>
+  <data name="CycleCounts.Execute.PhysicalQty" xml:space="preserve"><value>Physical Qty</value></data>
+  <data name="CycleCounts.Execute.TheSelectedCycleCountIsUnavailable" xml:space="preserve"><value>The selected cycle count is unavailable.</value></data>
+  <data name="CycleCounts.List.CountNumber" xml:space="preserve"><value>Count Number</value></data>
+  <data name="CycleCounts.List.CreateAScheduleToStartCounting" xml:space="preserve"><value>Create a schedule to start counting.</value></data>
+  <data name="CycleCounts.List.CycleCounts" xml:space="preserve"><value>Cycle Counts</value></data>
+  <data name="CycleCounts.List.CycleCountsCikadaMES" xml:space="preserve"><value>Cycle Counts - Cikada.MES</value></data>
+  <data name="CycleCounts.List.NoCycleCountsScheduled" xml:space="preserve"><value>No cycle counts scheduled.</value></data>
+  <data name="CycleCounts.List.ReviewDiscrepancies" xml:space="preserve"><value>Review Discrepancies</value></data>
+  <data name="CycleCounts.List.ScheduleCycleCount" xml:space="preserve"><value>Schedule Cycle Count</value></data>
+  <data name="CycleCounts.List.ScheduledDate" xml:space="preserve"><value>Scheduled Date</value></data>
+  <data name="CycleCounts.Schedule.A" xml:space="preserve"><value>A</value></data>
+  <data name="CycleCounts.Schedule.ABCClass" xml:space="preserve"><value>ABC Class</value></data>
+  <data name="CycleCounts.Schedule.B" xml:space="preserve"><value>B</value></data>
+  <data name="CycleCounts.Schedule.C" xml:space="preserve"><value>C</value></data>
+  <data name="CycleCounts.Schedule.Locations" xml:space="preserve"><value>Locations</value></data>
+  <data name="CycleCounts.Schedule.NoLocationsLoaded" xml:space="preserve"><value>No locations loaded.</value></data>
+  <data name="CycleCounts.Schedule.ScheduleCycleCount" xml:space="preserve"><value>Schedule Cycle Count</value></data>
+  <data name="CycleCounts.Schedule.ScheduleCycleCountCikadaMES" xml:space="preserve"><value>Schedule Cycle Count - Cikada.MES</value></data>
+  <data name="CycleCounts.Schedule.ScheduledDate" xml:space="preserve"><value>Scheduled Date</value></data>
+  <data name="Dashboard.ActiveHARDLocks" xml:space="preserve"><value>Active HARD locks</value></data>
+  <data name="Dashboard.AgnumIntegrationHealth" xml:space="preserve"><value>Agnum integration health</value></data>
+  <data name="Dashboard.AgnumSync" xml:space="preserve"><value>Agnum sync</value></data>
+  <data name="Dashboard.AllocatedSOFT" xml:space="preserve"><value>Allocated (SOFT)</value></data>
+  <data name="Dashboard.Consumed" xml:space="preserve"><value>Consumed</value></data>
+  <data name="Dashboard.Days" xml:space="preserve"><value>Days</value></data>
+  <data name="Dashboard.Export" xml:space="preserve"><value>Export</value></data>
+  <data name="Dashboard.FlowByStatus" xml:space="preserve"><value>Flow by status</value></data>
+  <data name="Dashboard.HealthStatusCard.LastCheck" xml:space="preserve"><value>Last check</value></data>
+  <data name="Dashboard.HealthStatusCard.NoHealthDataAvailable" xml:space="preserve"><value>No health data available.</value></data>
+  <data name="Dashboard.HealthStatusCard.ProjectionLag" xml:space="preserve"><value>Projection lag</value></data>
+  <data name="Dashboard.HealthStatusCard.ServiceHealth" xml:space="preserve"><value>Service Health</value></data>
+  <data name="Dashboard.Import" xml:space="preserve"><value>Import</value></data>
+  <data name="Dashboard.LotsByRemainingShelfLife" xml:space="preserve"><value>Lots by remaining shelf life</value></data>
+  <data name="Dashboard.LowStockItems" xml:space="preserve"><value>Low stock items</value></data>
+  <data name="Dashboard.NoOpenInboundShipments" xml:space="preserve"><value>No open inbound shipments.</value></data>
+  <data name="Dashboard.NoRecentMovements" xml:space="preserve"><value>No recent movements.</value></data>
+  <data name="Dashboard.NoValuationDataAvailable" xml:space="preserve"><value>No valuation data available.</value></data>
+  <data name="Dashboard.NoWarehousesConfigured" xml:space="preserve"><value>No warehouses configured.</value></data>
+  <data name="Dashboard.NothingBelowReorderPoint" xml:space="preserve"><value>Nothing below reorder point.</value></data>
+  <data name="Dashboard.NothingExpiringInTheSelectedWindow" xml:space="preserve"><value>Nothing expiring in the selected window.</value></data>
+  <data name="Dashboard.OnHand" xml:space="preserve"><value>On-hand</value></data>
+  <data name="Dashboard.PickingHARD" xml:space="preserve"><value>Picking (HARD)</value></data>
+  <data name="Dashboard.ProjectionHealthCard.Lag" xml:space="preserve"><value>Lag</value></data>
+  <data name="Dashboard.ProjectionHealthCard.NoProjectionHealthDataAvailable" xml:space="preserve"><value>No projection health data available.</value></data>
+  <data name="Dashboard.ProjectionHealthCard.ProjectionHealth" xml:space="preserve"><value>Projection Health</value></data>
+  <data name="Dashboard.Received" xml:space="preserve"><value>Received</value></data>
+  <data name="Dashboard.RecentActivity" xml:space="preserve"><value>Recent activity</value></data>
+  <data name="Dashboard.RecentActivityFeed.NoRecentMovementsAvailable" xml:space="preserve"><value>No recent movements available.</value></data>
+  <data name="Dashboard.RecentActivityFeed.RecentActivity" xml:space="preserve"><value>Recent Activity</value></data>
+  <data name="Dashboard.Reconciliation" xml:space="preserve"><value>Reconciliation</value></data>
+  <data name="Dashboard.ReorderPt" xml:space="preserve"><value>Reorder pt</value></data>
+  <data name="Dashboard.ReservationSummaryCard.NoReservationSummaryAvailable" xml:space="preserve"><value>No reservation summary available.</value></data>
+  <data name="Dashboard.ReservationSummaryCard.ReservationSummary" xml:space="preserve"><value>Reservation Summary</value></data>
+  <data name="Dashboard.SKUsOnHand" xml:space="preserve"><value>SKUs on hand</value></data>
+  <data name="Dashboard.SelectASingleWarehouseForAZoneBreakdown" xml:space="preserve"><value>Select a single warehouse for a zone breakdown</value></data>
+  <data name="Dashboard.StockSummaryCard.NoStockSummaryAvailable" xml:space="preserve"><value>No stock summary available.</value></data>
+  <data name="Dashboard.StockSummaryCard.StockSummary" xml:space="preserve"><value>Stock Summary</value></data>
+  <data name="Dashboard.StockSummaryCard.TotalQuantity" xml:space="preserve"><value>Total Quantity</value></data>
+  <data name="Dashboard.StockSummaryCard.TotalSKUs" xml:space="preserve"><value>Total SKUs</value></data>
+  <data name="Dashboard.StockValueByCategory" xml:space="preserve"><value>Stock value by category</value></data>
+  <data name="Dashboard.StockValueByWarehouse" xml:space="preserve"><value>Stock value by warehouse</value></data>
+  <data name="Dashboard.TotalQuantity" xml:space="preserve"><value>Total quantity</value></data>
+  <data name="Dashboard.TotalValue" xml:space="preserve"><value>Total value</value></data>
+  <data name="Dashboard.WarehouseDashboard" xml:space="preserve"><value>Warehouse Dashboard</value></data>
+  <data name="Dashboard.WarehouseDashboardLKvitaiMES" xml:space="preserve"><value>Warehouse Dashboard - LKvitai.MES</value></data>
+  <data name="Dashboard.Warehouses" xml:space="preserve"><value>Warehouses</value></data>
+  <data name="InboundShipmentCreate.ActualUnitPrice" xml:space="preserve"><value>Actual unit price</value></data>
+  <data name="InboundShipmentCreate.AddAtLeastOneItemLine" xml:space="preserve"><value>Add at least one item line.</value></data>
+  <data name="InboundShipmentCreate.AddCost" xml:space="preserve"><value>Add Cost</value></data>
+  <data name="InboundShipmentCreate.AddLine" xml:space="preserve"><value>Add Line</value></data>
+  <data name="InboundShipmentCreate.AdditionalCosts" xml:space="preserve"><value>Additional costs</value></data>
+  <data name="InboundShipmentCreate.AvgActualPrice" xml:space="preserve"><value>Avg Actual Price</value></data>
+  <data name="InboundShipmentCreate.AvgInvoicePrice" xml:space="preserve"><value>Avg Invoice Price</value></data>
+  <data name="InboundShipmentCreate.ExpectedDate" xml:space="preserve"><value>Expected Date</value></data>
+  <data name="InboundShipmentCreate.FreightDutyInsuranceOtherDistributedAcrossStockLinesByValueAtR" xml:space="preserve"><value>Freight/duty/insurance/other, distributed across Stock lines by value at receiving time.</value></data>
+  <data name="InboundShipmentCreate.InvoiceDate" xml:space="preserve"><value>Invoice Date</value></data>
+  <data name="InboundShipmentCreate.InvoiceNumber" xml:space="preserve"><value>Invoice Number</value></data>
+  <data name="InboundShipmentCreate.InvoiceUnitPrice" xml:space="preserve"><value>Invoice unit price</value></data>
+  <data name="InboundShipmentCreate.NoLines" xml:space="preserve"><value>No lines</value></data>
+  <data name="InboundShipmentCreate.Optional" xml:space="preserve"><value>Optional</value></data>
+  <data name="InboundShipmentCreate.ReferenceNumber" xml:space="preserve"><value>Reference Number</value></data>
+  <data name="InboundShipmentCreate.ServiceItemsTransportDeliveryFoldIntoAdditionalCostsBelowInste" xml:space="preserve"><value>Service items (Transport, Delivery...) fold into Additional Costs below instead of holding stock.</value></data>
+  <data name="InboundShipmentCreate.ShipmentDetails" xml:space="preserve"><value>Shipment Details</value></data>
+  <data name="InboundShipmentCreate.TotalActualValue" xml:space="preserve"><value>Total Actual Value</value></data>
+  <data name="InboundShipmentCreate.TotalAdditionalCosts" xml:space="preserve"><value>Total Additional Costs</value></data>
+  <data name="InboundShipmentCreate.TotalInvoiceValue" xml:space="preserve"><value>Total Invoice Value</value></data>
+  <data name="InboundShipmentCreate.TotalQtyStock" xml:space="preserve"><value>Total Qty (Stock)</value></data>
+  <data name="InboundShipmentDetail.AdditionalCosts" xml:space="preserve"><value>Additional costs:</value></data>
+  <data name="InboundShipmentDetail.ExpiryDate" xml:space="preserve"><value>Expiry Date</value></data>
+  <data name="InboundShipmentDetail.Flags" xml:space="preserve"><value>Flags</value></data>
+  <data name="InboundShipmentDetail.InboundShipmentDetail" xml:space="preserve"><value>Inbound Shipment Detail</value></data>
+  <data name="InboundShipmentDetail.InboundShipmentDetailCikadaMES" xml:space="preserve"><value>Inbound Shipment Detail - Cikada.MES</value></data>
+  <data name="InboundShipmentDetail.InboundShipmentDoesNotExistOrIsUnavailable" xml:space="preserve"><value>Inbound shipment does not exist or is unavailable.</value></data>
+  <data name="InboundShipmentDetail.NotSet" xml:space="preserve"><value>not set</value></data>
+  <data name="InboundShipmentDetail.OpenQCQueue" xml:space="preserve"><value>Open QC Queue</value></data>
+  <data name="InboundShipmentDetail.ProductionDate" xml:space="preserve"><value>Production Date</value></data>
+  <data name="InboundShipmentDetail.ReceiveQty" xml:space="preserve"><value>Receive Qty</value></data>
+  <data name="InboundShipmentDetail.Received" xml:space="preserve"><value>Received:</value></data>
+  <data name="InboundShipmentDetail.Received27548c" xml:space="preserve"><value>Received</value></data>
+  <data name="InboundShipmentDetail.Resolve" xml:space="preserve"><value>Resolve</value></data>
+  <data name="InboundShipmentDetail.ScanBarcode" xml:space="preserve"><value>Scan Barcode</value></data>
+  <data name="InboundShipmentDetail.ScanItemBarcode" xml:space="preserve"><value>Scan item barcode</value></data>
+  <data name="InboundShipmentDetail.SelectLine" xml:space="preserve"><value>Select line</value></data>
+  <data name="InboundShipmentDetail.ShipmentNotFound" xml:space="preserve"><value>Shipment not found</value></data>
+  <data name="InboundShipmentDetail.ThisLineHasNoPurchasePriceYetEnterTheUnitPriceBeforeReceivingW" xml:space="preserve"><value>This line has no purchase price yet. Enter the unit price before receiving - whoever enters the receipt enters the price.</value></data>
+  <data name="InboundShipmentDetail.UnitPrice" xml:space="preserve"><value>Unit Price</value></data>
+  <data name="InboundShipments.CreateInbound" xml:space="preserve"><value>+ Create Inbound</value></data>
+  <data name="InboundShipments.CreateInboundShipmentToStartReceivingWorkflow" xml:space="preserve"><value>Create inbound shipment to start receiving workflow.</value></data>
+  <data name="InboundShipments.Draft" xml:space="preserve"><value>Draft</value></data>
+  <data name="InboundShipments.ExpectedDate" xml:space="preserve"><value>Expected Date</value></data>
+  <data name="InboundShipments.ExpectedFrom" xml:space="preserve"><value>Expected From</value></data>
+  <data name="InboundShipments.ExpectedTo" xml:space="preserve"><value>Expected To</value></data>
+  <data name="InboundShipments.InboundShipments" xml:space="preserve"><value>Inbound Shipments</value></data>
+  <data name="InboundShipments.InboundShipmentsCikadaMES" xml:space="preserve"><value>Inbound Shipments - Cikada.MES</value></data>
+  <data name="InboundShipments.NoInboundShipments" xml:space="preserve"><value>No inbound shipments</value></data>
+  <data name="InboundShipments.Partial" xml:space="preserve"><value>Partial</value></data>
+  <data name="InboundShipments.ReceivedExpected" xml:space="preserve"><value>Received / Expected</value></data>
+  <data name="InboundShipments.SupplierId" xml:space="preserve"><value>Supplier Id</value></data>
+  <data name="Labels.DataJSONObject" xml:space="preserve"><value>Data (JSON object)</value></data>
+  <data name="Labels.GetPDF" xml:space="preserve"><value>Get PDF</value></data>
+  <data name="Labels.Id" xml:space="preserve"><value>Id</value></data>
+  <data name="Labels.Labels" xml:space="preserve"><value>Labels</value></data>
+  <data name="Labels.LabelsStation" xml:space="preserve"><value>Labels Station</value></data>
+  <data name="Labels.PDFFileNameFromPrintResult" xml:space="preserve"><value>PDF file name from print result</value></data>
+  <data name="Labels.PreviewPDF" xml:space="preserve"><value>Preview PDF</value></data>
+  <data name="Labels.Print" xml:space="preserve"><value>Print</value></data>
+  <data name="Labels.PrintPreview" xml:space="preserve"><value>Print / Preview</value></data>
+  <data name="Labels.Queue" xml:space="preserve"><value>Queue</value></data>
+  <data name="Labels.QueueIsEmpty" xml:space="preserve"><value>Queue is empty.</value></data>
+  <data name="Labels.Retries" xml:space="preserve"><value>Retries</value></data>
+  <data name="Labels.SelectTemplate" xml:space="preserve"><value>Select template</value></data>
+  <data name="Labels.Template" xml:space="preserve"><value>Template</value></data>
+  <data name="LoadingSpinner.Loading" xml:space="preserve"><value>Loading...</value></data>
+  <data name="MainLayout.Loaded" xml:space="preserve"><value>Loaded</value></data>
+  <data name="NavMenu.Dashboard" xml:space="preserve"><value>Dashboard</value></data>
+  <data name="NavMenu.WarehouseNavigation" xml:space="preserve"><value>Warehouse navigation</value></data>
+  <data name="OutboundDispatch.ConfirmDispatch" xml:space="preserve"><value>Confirm Dispatch</value></data>
+  <data name="OutboundDispatch.Dispatch" xml:space="preserve"><value>Dispatch</value></data>
+  <data name="OutboundDispatch.DispatchConfirmation" xml:space="preserve"><value>Dispatch Confirmation</value></data>
+  <data name="OutboundDispatch.DispatchConfirmationCikadaMES" xml:space="preserve"><value>Dispatch Confirmation - Cikada.MES</value></data>
+  <data name="OutboundDispatch.NoPackedShipmentsAvailable" xml:space="preserve"><value>No packed shipments available.</value></data>
+  <data name="OutboundDispatch.PackedAt" xml:space="preserve"><value>Packed At</value></data>
+  <data name="OutboundDispatch.ShipmentNumber" xml:space="preserve"><value>Shipment Number</value></data>
+  <data name="OutboundDispatch.VehicleID" xml:space="preserve"><value>Vehicle ID</value></data>
+  <data name="OutboundOrderDetail.CancellationReason" xml:space="preserve"><value>Cancellation reason</value></data>
+  <data name="OutboundOrderDetail.OpenPackingStation" xml:space="preserve"><value>Open Packing Station</value></data>
+  <data name="OutboundOrderDetail.OrderActions" xml:space="preserve"><value>Order Actions</value></data>
+  <data name="OutboundOrderDetail.OrderDate" xml:space="preserve"><value>Order Date</value></data>
+  <data name="OutboundOrderDetail.OrderNotFound" xml:space="preserve"><value>Order not found.</value></data>
+  <data name="OutboundOrderDetail.OutboundOrderDetail" xml:space="preserve"><value>Outbound Order Detail</value></data>
+  <data name="OutboundOrderDetail.OutboundOrderDetailCikadaMES" xml:space="preserve"><value>Outbound Order Detail - Cikada.MES</value></data>
+  <data name="OutboundOrderDetail.Release" xml:space="preserve"><value>Release</value></data>
+  <data name="OutboundOrderDetail.RequestedShipDate" xml:space="preserve"><value>Requested Ship Date</value></data>
+  <data name="OutboundOrderDetail.ReservationId" xml:space="preserve"><value>Reservation Id</value></data>
+  <data name="OutboundOrders.BulkCancel" xml:space="preserve"><value>Bulk Cancel</value></data>
+  <data name="OutboundOrders.Clear" xml:space="preserve"><value>Clear</value></data>
+  <data name="OutboundOrders.CustomerName" xml:space="preserve"><value>Customer name</value></data>
+  <data name="OutboundOrders.DateFrom" xml:space="preserve"><value>Date from</value></data>
+  <data name="OutboundOrders.DateTo" xml:space="preserve"><value>Date to</value></data>
+  <data name="OutboundOrders.NoOutboundOrdersFound" xml:space="preserve"><value>No outbound orders found.</value></data>
+  <data name="OutboundOrders.OutboundOrders" xml:space="preserve"><value>Outbound Orders</value></data>
+  <data name="OutboundOrders.OutboundOrdersCikadaMES" xml:space="preserve"><value>Outbound Orders - Cikada.MES</value></data>
+  <data name="OutboundOrders.Pack" xml:space="preserve"><value>Pack</value></data>
+  <data name="OutboundOrders.RequestedShipDate" xml:space="preserve"><value>Requested Ship Date</value></data>
+  <data name="OutboundOrders.SalesOrder" xml:space="preserve"><value>+ Sales Order</value></data>
+  <data name="PackingStation.ClearScans" xml:space="preserve"><value>Clear Scans</value></data>
+  <data name="PackingStation.OrderItems" xml:space="preserve"><value>Order Items</value></data>
+  <data name="PackingStation.OrderNotFound" xml:space="preserve"><value>Order not found.</value></data>
+  <data name="PackingStation.Pack" xml:space="preserve"><value>Pack</value></data>
+  <data name="PackingStation.PackagingType" xml:space="preserve"><value>Packaging type</value></data>
+  <data name="PackingStation.PackingProgress" xml:space="preserve"><value>Packing Progress</value></data>
+  <data name="PackingStation.PackingStation" xml:space="preserve"><value>Packing Station</value></data>
+  <data name="PackingStation.PackingStationCikadaMES" xml:space="preserve"><value>Packing Station - Cikada.MES</value></data>
+  <data name="PackingStation.Pending" xml:space="preserve"><value>Pending</value></data>
+  <data name="PackingStation.PressEnterAfterEachScan" xml:space="preserve"><value>Press Enter after each scan.</value></data>
+  <data name="PackingStation.Ready" xml:space="preserve"><value>Ready</value></data>
+  <data name="PackingStation.Required" xml:space="preserve"><value>Required</value></data>
+  <data name="PackingStation.ScanBarcode" xml:space="preserve"><value>Scan barcode</value></data>
+  <data name="PackingStation.Scanned" xml:space="preserve"><value>Scanned</value></data>
+  <data name="Pagination.PageSize" xml:space="preserve"><value>Page size</value></data>
+  <data name="Pagination.Pagination" xml:space="preserve"><value>Pagination</value></data>
+  <data name="PickingTasks.AssignToOptional" xml:space="preserve"><value>Assign To (optional)</value></data>
+  <data name="PickingTasks.CompleteTask" xml:space="preserve"><value>Complete Task</value></data>
+  <data name="PickingTasks.CreateTask" xml:space="preserve"><value>Create Task</value></data>
+  <data name="PickingTasks.FromLocationId" xml:space="preserve"><value>From Location Id</value></data>
+  <data name="PickingTasks.Guid" xml:space="preserve"><value>guid</value></data>
+  <data name="PickingTasks.LoadLocations" xml:space="preserve"><value>Load Locations</value></data>
+  <data name="PickingTasks.LocationsCompleteTask" xml:space="preserve"><value>Locations + Complete Task</value></data>
+  <data name="PickingTasks.LotIdOptional" xml:space="preserve"><value>Lot Id (optional)</value></data>
+  <data name="PickingTasks.OrderId" xml:space="preserve"><value>Order Id</value></data>
+  <data name="PickingTasks.PickedQty" xml:space="preserve"><value>Picked Qty</value></data>
+  <data name="PickingTasks.PickingTasks" xml:space="preserve"><value>Picking Tasks</value></data>
+  <data name="PickingTasks.ScannedBarcode" xml:space="preserve"><value>Scanned Barcode</value></data>
+  <data name="PickingTasks.ScannedLocationBarcode" xml:space="preserve"><value>Scanned Location Barcode</value></data>
+  <data name="PickingTasks.TaskCreated" xml:space="preserve"><value>Task created:</value></data>
+  <data name="PickingTasks.TaskId" xml:space="preserve"><value>Task Id</value></data>
+  <data name="Projections.AfterRebuildVerifyChecksumMatchTrueAndLagReturnsToHealthy" xml:space="preserve"><value>After rebuild, verify `ChecksumMatch=true` and lag returns to healthy.</value></data>
+  <data name="Projections.AreYouSureThisWillRebuildTheProjectionFromScratch" xml:space="preserve"><value>Are you sure? This will rebuild the projection from scratch.</value></data>
+  <data name="Projections.CaptureTraceIdForFailedOperationsAndShareWithSupport" xml:space="preserve"><value>Capture traceId for failed operations and share with support.</value></data>
+  <data name="Projections.CheckLagTableAboveAndConfirmProjectionStatus" xml:space="preserve"><value>Check lag table above and confirm projection status.</value></data>
+  <data name="Projections.ChecksumMatch" xml:space="preserve"><value>Checksum Match</value></data>
+  <data name="Projections.CopyError" xml:space="preserve"><value>Copy Error</value></data>
+  <data name="Projections.Duration" xml:space="preserve"><value>Duration</value></data>
+  <data name="Projections.EventsProcessed" xml:space="preserve"><value>Events Processed</value></data>
+  <data name="Projections.LagEvents" xml:space="preserve"><value>Lag (events)</value></data>
+  <data name="Projections.LagS" xml:space="preserve"><value>Lag (s)</value></data>
+  <data name="Projections.NoProjectionLagDataAvailable" xml:space="preserve"><value>No projection lag data available.</value></data>
+  <data name="Projections.OpenProjectionRunbook" xml:space="preserve"><value>Open Projection Runbook</value></data>
+  <data name="Projections.ProjectionLag" xml:space="preserve"><value>Projection Lag</value></data>
+  <data name="Projections.Projections" xml:space="preserve"><value>Projections</value></data>
+  <data name="Projections.ProjectionsCikadaMES" xml:space="preserve"><value>Projections - Cikada.MES</value></data>
+  <data name="Projections.Rebuild" xml:space="preserve"><value>Rebuild</value></data>
+  <data name="Projections.RebuildProjection" xml:space="preserve"><value>Rebuild projection?</value></data>
+  <data name="Projections.RebuildResult" xml:space="preserve"><value>Rebuild Result</value></data>
+  <data name="Projections.RebuildVerify" xml:space="preserve"><value>Rebuild / Verify</value></data>
+  <data name="Projections.RunVerifyFirstUseRebuildOnlyWhenMismatchOrCorruptionIsConfirme" xml:space="preserve"><value>Run `Verify` first; use `Rebuild` only when mismatch or corruption is confirmed.</value></data>
+  <data name="Projections.Runbook" xml:space="preserve"><value>Runbook</value></data>
+  <data name="Projections.Swapped" xml:space="preserve"><value>Swapped</value></data>
+  <data name="Projections.Unknown" xml:space="preserve"><value>Unknown</value></data>
+  <data name="Projections.UseThisQuickChecklistBeforeAndAfterProjectionRebuilds" xml:space="preserve"><value>Use this quick checklist before and after projection rebuilds.</value></data>
+  <data name="Projections.Verify" xml:space="preserve"><value>Verify</value></data>
+  <data name="Projections.Verify53ada8" xml:space="preserve"><value>Verify:</value></data>
+  <data name="Putaway.NoPutawayTasksAvailable" xml:space="preserve"><value>No putaway tasks available.</value></data>
+  <data name="Putaway.Putaway" xml:space="preserve"><value>Putaway</value></data>
+  <data name="Putaway.PutawayTasks" xml:space="preserve"><value>Putaway Tasks</value></data>
+  <data name="Putaway.SelectDestination" xml:space="preserve"><value>Select destination</value></data>
+  <data name="Putaway.TasksFromRECEIVING" xml:space="preserve"><value>Tasks from RECEIVING</value></data>
+  <data name="ReceivingQc.FG0001OrLOT202601" xml:space="preserve"><value>FG-0001 or LOT-2026-01</value></data>
+  <data name="ReceivingQc.Fail" xml:space="preserve"><value>Fail</value></data>
+  <data name="ReceivingQc.InspectorNotes" xml:space="preserve"><value>Inspector Notes</value></data>
+  <data name="ReceivingQc.NoQCPendingRows" xml:space="preserve"><value>No QC pending rows</value></data>
+  <data name="ReceivingQc.Pass" xml:space="preserve"><value>Pass</value></data>
+  <data name="ReceivingQc.ReasonCodeForFail" xml:space="preserve"><value>Reason Code (for Fail)</value></data>
+  <data name="ReceivingQc.ReceivingQCCikadaMES" xml:space="preserve"><value>Receiving QC - Cikada.MES</value></data>
+  <data name="ReceivingQc.ReceivingQCQueue" xml:space="preserve"><value>Receiving QC Queue</value></data>
+  <data name="ReceivingQc.ReceivingQCQueueIsEmptyForCurrentFilters" xml:space="preserve"><value>Receiving QC queue is empty for current filters.</value></data>
+  <data name="ReceivingQc.ScanSKULot" xml:space="preserve"><value>Scan SKU / Lot</value></data>
+  <data name="ReportsComplianceAudit.Actor" xml:space="preserve"><value>Actor</value></data>
+  <data name="ReportsComplianceAudit.ComplianceAuditCikadaMES" xml:space="preserve"><value>Compliance Audit - Cikada.MES</value></data>
+  <data name="ReportsComplianceAudit.ComplianceAuditReport" xml:space="preserve"><value>Compliance Audit Report</value></data>
+  <data name="ReportsComplianceAudit.ExportPDF" xml:space="preserve"><value>Export PDF</value></data>
+  <data name="ReportsComplianceAudit.NoComplianceRowsFound" xml:space="preserve"><value>No compliance rows found.</value></data>
+  <data name="ReportsComplianceAudit.ReportType" xml:space="preserve"><value>Report Type</value></data>
+  <data name="ReportsDispatchHistory.DateFrom" xml:space="preserve"><value>Date From</value></data>
+  <data name="ReportsDispatchHistory.DateTo" xml:space="preserve"><value>Date To</value></data>
+  <data name="ReportsDispatchHistory.DeliveryDate" xml:space="preserve"><value>Delivery Date</value></data>
+  <data name="ReportsDispatchHistory.DispatchDate" xml:space="preserve"><value>Dispatch Date</value></data>
+  <data name="ReportsDispatchHistory.DispatchHistoryCikadaMES" xml:space="preserve"><value>Dispatch History - Cikada.MES</value></data>
+  <data name="ReportsDispatchHistory.DispatchHistoryReport" xml:space="preserve"><value>Dispatch History Report</value></data>
+  <data name="ReportsDispatchHistory.FedEx" xml:space="preserve"><value>FedEx</value></data>
+  <data name="ReportsDispatchHistory.NoDispatchHistoryRowsFound" xml:space="preserve"><value>No dispatch history rows found.</value></data>
+  <data name="ReportsDispatchHistory.OnTimeDelivery" xml:space="preserve"><value>On-Time Delivery</value></data>
+  <data name="ReportsDispatchHistory.TotalOrders" xml:space="preserve"><value>Total Orders</value></data>
+  <data name="ReportsDispatchHistory.TotalShipments" xml:space="preserve"><value>Total Shipments</value></data>
+  <data name="ReportsDispatchHistory.Tracking" xml:space="preserve"><value>Tracking</value></data>
+  <data name="ReportsPickHistory.CompletedFrom" xml:space="preserve"><value>Completed From</value></data>
+  <data name="ReportsPickHistory.CompletedTo" xml:space="preserve"><value>Completed To</value></data>
+  <data name="ReportsPickHistory.OperatorUser" xml:space="preserve"><value>Operator/User</value></data>
+  <data name="ReportsPickHistory.OrderId" xml:space="preserve"><value>Order Id</value></data>
+  <data name="ReportsPickHistory.PickHistoryCikadaMES" xml:space="preserve"><value>Pick History - Cikada.MES</value></data>
+  <data name="ReportsPickHistory.PickHistoryReport" xml:space="preserve"><value>Pick History Report</value></data>
+  <data name="ReportsPickHistory.Task" xml:space="preserve"><value>Task</value></data>
+  <data name="ReportsReceivingHistory.Draft" xml:space="preserve"><value>Draft</value></data>
+  <data name="ReportsReceivingHistory.ExpectedFrom" xml:space="preserve"><value>Expected From</value></data>
+  <data name="ReportsReceivingHistory.ExpectedQty" xml:space="preserve"><value>Expected Qty</value></data>
+  <data name="ReportsReceivingHistory.ExpectedTo" xml:space="preserve"><value>Expected To</value></data>
+  <data name="ReportsReceivingHistory.Partial" xml:space="preserve"><value>Partial</value></data>
+  <data name="ReportsReceivingHistory.ReceivedQty" xml:space="preserve"><value>Received Qty</value></data>
+  <data name="ReportsReceivingHistory.ReceivingHistoryCikadaMES" xml:space="preserve"><value>Receiving History - Cikada.MES</value></data>
+  <data name="ReportsReceivingHistory.ReceivingHistoryReport" xml:space="preserve"><value>Receiving History Report</value></data>
+  <data name="ReportsReceivingHistory.ShipmentId" xml:space="preserve"><value>Shipment Id</value></data>
+  <data name="ReportsReceivingHistory.SupplierId" xml:space="preserve"><value>Supplier Id</value></data>
+  <data name="ReportsStockLevel.CategoryId" xml:space="preserve"><value>Category Id</value></data>
+  <data name="ReportsStockLevel.ExpiringBefore" xml:space="preserve"><value>Expiring Before</value></data>
+  <data name="ReportsStockLevel.IncludeReserved" xml:space="preserve"><value>Include reserved</value></data>
+  <data name="ReportsStockLevel.IncludeVirtual" xml:space="preserve"><value>Include virtual</value></data>
+  <data name="ReportsStockLevel.StockLevelReport" xml:space="preserve"><value>Stock Level Report</value></data>
+  <data name="ReportsStockLevel.StockLevelReportCikadaMES" xml:space="preserve"><value>Stock Level Report - Cikada.MES</value></data>
+  <data name="ReportsStockMovements.Adjust" xml:space="preserve"><value>Adjust</value></data>
+  <data name="ReportsStockMovements.Dispatch" xml:space="preserve"><value>Dispatch</value></data>
+  <data name="ReportsStockMovements.MovementType" xml:space="preserve"><value>Movement Type</value></data>
+  <data name="ReportsStockMovements.NoStockMovementsFound" xml:space="preserve"><value>No stock movements found.</value></data>
+  <data name="ReportsStockMovements.StockMovementHistory" xml:space="preserve"><value>Stock Movement History</value></data>
+  <data name="ReportsStockMovements.StockMovementsCikadaMES" xml:space="preserve"><value>Stock Movements - Cikada.MES</value></data>
+  <data name="ReportsStockMovements.Transfer" xml:space="preserve"><value>Transfer</value></data>
+  <data name="ReportsTraceability.ApproximateLinkage" xml:space="preserve"><value>Approximate Linkage</value></data>
+  <data name="ReportsTraceability.Current" xml:space="preserve"><value>Current</value></data>
+  <data name="ReportsTraceability.DownstreamSales" xml:space="preserve"><value>Downstream Sales</value></data>
+  <data name="ReportsTraceability.ItemSKU" xml:space="preserve"><value>Item SKU</value></data>
+  <data name="ReportsTraceability.NoReceivingSourceFound" xml:space="preserve"><value>No receiving source found.</value></data>
+  <data name="ReportsTraceability.NoShippedSalesOrdersFound" xml:space="preserve"><value>No shipped sales orders found.</value></data>
+  <data name="ReportsTraceability.NoTraceabilityEntries" xml:space="preserve"><value>No traceability entries</value></data>
+  <data name="ReportsTraceability.SalesOrder" xml:space="preserve"><value>Sales Order</value></data>
+  <data name="ReportsTraceability.SetAtLeastOneFilterAndRunSearch" xml:space="preserve"><value>Set at least one filter and run search.</value></data>
+  <data name="ReportsTraceability.TraceabilityCikadaMES" xml:space="preserve"><value>Traceability - Cikada.MES</value></data>
+  <data name="ReportsTraceability.Upstream" xml:space="preserve"><value>Upstream</value></data>
+  <data name="Reservations.Allocated" xml:space="preserve"><value>Allocated</value></data>
+  <data name="Reservations.AllocatedHUs" xml:space="preserve"><value>Allocated HUs</value></data>
+  <data name="Reservations.HandlingUnit" xml:space="preserve"><value>Handling Unit</value></data>
+  <data name="Reservations.Lock" xml:space="preserve"><value>Lock</value></data>
+  <data name="Reservations.Purpose" xml:space="preserve"><value>Purpose</value></data>
+  <data name="Reservations.Reservations" xml:space="preserve"><value>Reservations</value></data>
+  <data name="Reservations.ReservationsCikadaMES" xml:space="preserve"><value>Reservations - Cikada.MES</value></data>
+  <data name="Reservations.StartPicking" xml:space="preserve"><value>Start Picking</value></data>
+  <data name="Reservations.StartPickingThisReservationNow" xml:space="preserve"><value>Start picking this reservation now?</value></data>
+  <data name="Reservations.StartPickinge89c64" xml:space="preserve"><value>Start picking?</value></data>
+  <data name="Reservations.SubmitPick" xml:space="preserve"><value>Submit Pick</value></data>
+  <data name="Rmas.CreateAnRMAForCustomerReturnsAndDispositionWorkflow" xml:space="preserve"><value>Create an RMA for customer returns and disposition workflow.</value></data>
+  <data name="Rmas.CreateRMA" xml:space="preserve"><value>Create RMA</value></data>
+  <data name="Rmas.Credit" xml:space="preserve"><value>Credit</value></data>
+  <data name="Rmas.Damaged" xml:space="preserve"><value>Damaged</value></data>
+  <data name="Rmas.NoRMAs" xml:space="preserve"><value>No RMAs</value></data>
+  <data name="Rmas.RMAQueue" xml:space="preserve"><value>RMA Queue</value></data>
+  <data name="Rmas.RMAsCikadaMES" xml:space="preserve"><value>RMAs - Cikada.MES</value></data>
+  <data name="Rmas.Restock" xml:space="preserve"><value>Restock</value></data>
+  <data name="Rmas.ReturnsRMA" xml:space="preserve"><value>Returns / RMA</value></data>
+  <data name="Rmas.SalesOrderId" xml:space="preserve"><value>Sales Order Id</value></data>
+  <data name="Rmas.Scrap" xml:space="preserve"><value>Scrap</value></data>
+  <data name="Rmas.UpdatedBy" xml:space="preserve"><value>Updated By</value></data>
+  <data name="SalesOrderCreate.AddAtLeastOneLineItem" xml:space="preserve"><value>Add at least one line item.</value></data>
+  <data name="SalesOrderCreate.AddLine" xml:space="preserve"><value>+ Add Line</value></data>
+  <data name="SalesOrderCreate.BackToList" xml:space="preserve"><value>Back to List</value></data>
+  <data name="SalesOrderCreate.CreateSalesOrder" xml:space="preserve"><value>Create Sales Order</value></data>
+  <data name="SalesOrderCreate.CreateSalesOrderCikadaMES" xml:space="preserve"><value>Create Sales Order - Cikada.MES</value></data>
+  <data name="SalesOrderCreate.NoLinesAdded" xml:space="preserve"><value>No lines added</value></data>
+  <data name="SalesOrderCreate.OrderLines" xml:space="preserve"><value>Order Lines</value></data>
+  <data name="SalesOrderCreate.RequestedDeliveryDate" xml:space="preserve"><value>Requested Delivery Date</value></data>
+  <data name="SalesOrderCreate.SelectCustomer" xml:space="preserve"><value>Select customer</value></data>
+  <data name="SalesOrderCreate.ShippingAddress" xml:space="preserve"><value>Shipping Address</value></data>
+  <data name="SalesOrderCreate.UnitPrice" xml:space="preserve"><value>Unit Price</value></data>
+  <data name="SalesOrderCreate.Zip" xml:space="preserve"><value>Zip</value></data>
+  <data name="SalesOrderDetail.Allocate" xml:space="preserve"><value>Allocate</value></data>
+  <data name="SalesOrderDetail.Allocated" xml:space="preserve"><value>Allocated</value></data>
+  <data name="SalesOrderDetail.CancelOrder" xml:space="preserve"><value>Cancel Order</value></data>
+  <data name="SalesOrderDetail.CancelReason" xml:space="preserve"><value>Cancel reason</value></data>
+  <data name="SalesOrderDetail.OrderNotFound" xml:space="preserve"><value>Order not found</value></data>
+  <data name="SalesOrderDetail.Ordered" xml:space="preserve"><value>Ordered</value></data>
+  <data name="SalesOrderDetail.OutboundOrder" xml:space="preserve"><value>Outbound Order</value></data>
+  <data name="SalesOrderDetail.ReleaseToPicking" xml:space="preserve"><value>Release to Picking</value></data>
+  <data name="SalesOrderDetail.RequestedDelivery" xml:space="preserve"><value>Requested delivery</value></data>
+  <data name="SalesOrderDetail.SalesOrderDetail" xml:space="preserve"><value>Sales Order Detail</value></data>
+  <data name="SalesOrderDetail.SalesOrderDetailCikadaMES" xml:space="preserve"><value>Sales Order Detail - Cikada.MES</value></data>
+  <data name="SalesOrderDetail.TheSalesOrderDoesNotExistOrIsNotAccessible" xml:space="preserve"><value>The sales order does not exist or is not accessible.</value></data>
+  <data name="SalesOrderDetail.Total" xml:space="preserve"><value>Total</value></data>
+  <data name="SalesOrders.Create" xml:space="preserve"><value>+ Create</value></data>
+  <data name="SalesOrders.CreateASalesOrderToStartOutboundWorkflow" xml:space="preserve"><value>Create a sales order to start outbound workflow.</value></data>
+  <data name="SalesOrders.DateFrom" xml:space="preserve"><value>Date from</value></data>
+  <data name="SalesOrders.DateTo" xml:space="preserve"><value>Date to</value></data>
+  <data name="SalesOrders.NoSalesOrdersFound" xml:space="preserve"><value>No sales orders found</value></data>
+  <data name="SalesOrders.OrderDate" xml:space="preserve"><value>Order Date</value></data>
+  <data name="SalesOrders.RequestedDate" xml:space="preserve"><value>Requested Date</value></data>
+  <data name="SalesOrders.SalesOrders" xml:space="preserve"><value>Sales Orders</value></data>
+  <data name="SalesOrders.SalesOrdersCikadaMES" xml:space="preserve"><value>Sales Orders - Cikada.MES</value></data>
+  <data name="SalesOrders.Total" xml:space="preserve"><value>Total</value></data>
+  <data name="SearchByImage.Identifying" xml:space="preserve"><value>Identifying…</value></data>
+  <data name="SearchByImage.NoImage" xml:space="preserve"><value>No image</value></data>
+  <data name="SearchByImage.NoMatchingItemsFound" xml:space="preserve"><value>No matching items found.</value></data>
+  <data name="SearchByImage.SearchByImage" xml:space="preserve"><value>Search by Image</value></data>
+  <data name="SearchByImage.SearchByImageCikadaMES" xml:space="preserve"><value>Search by Image - Cikada.MES</value></data>
+  <data name="SearchByImage.TryUploadingAClearerPhotoOrAddPhotosToItemsFirst" xml:space="preserve"><value>Try uploading a clearer photo, or add photos to items first.</value></data>
+  <data name="StaleBadge.Stale" xml:space="preserve"><value>Stale</value></data>
+  <data name="StaleBadge.Unknown" xml:space="preserve"><value>Unknown</value></data>
+  <data name="Stock.ItemPriceHint.Cost" xml:space="preserve"><value>· Cost</value></data>
+  <data name="Stock.ItemPriceHint.Sale" xml:space="preserve"><value>· Sale</value></data>
+  <data name="Stock.StockFilters.IncludeVirtual" xml:space="preserve"><value>Include virtual</value></data>
+  <data name="Stock.StockFilters.ItemName" xml:space="preserve"><value>Item name</value></data>
+  <data name="Stock.StockFilters.LocationEGA01" xml:space="preserve"><value>Location e.g. A01*</value></data>
+  <data name="Stock.StockFilters.ProductCodeOrName" xml:space="preserve"><value>Product code or name</value></data>
+  <data name="Stock.StockFilters.ProductItem" xml:space="preserve"><value>Product / item</value></data>
+  <data name="Stock.StockFilters.SKUEGRM" xml:space="preserve"><value>SKU e.g. RM-*</value></data>
+  <data name="Stock.StockFilters.SupplierCodeOrName" xml:space="preserve"><value>Supplier code or name</value></data>
+  <data name="Stock.StockFilters.SupplierCountry" xml:space="preserve"><value>Supplier country</value></data>
+  <data name="Stock.StockFilters.Tag" xml:space="preserve"><value>Tag</value></data>
+  <data name="StockAdjustments.AdjustmentHistory" xml:space="preserve"><value>Adjustment History</value></data>
+  <data name="StockAdjustments.CreateAdjustment" xml:space="preserve"><value>Create Adjustment</value></data>
+  <data name="StockAdjustments.Latest200Records" xml:space="preserve"><value>Latest 200 records</value></data>
+  <data name="StockAdjustments.LotId" xml:space="preserve"><value>Lot Id</value></data>
+  <data name="StockAdjustments.NoAdjustmentRecordsAreAvailableYet" xml:space="preserve"><value>No adjustment records are available yet.</value></data>
+  <data name="StockAdjustments.NoAdjustments" xml:space="preserve"><value>No adjustments</value></data>
+  <data name="StockAdjustments.PostControlledStockCorrectionsWithAReasonCode" xml:space="preserve"><value>Post controlled stock corrections with a reason code.</value></data>
+  <data name="StockAdjustments.QtyDelta" xml:space="preserve"><value>Qty Delta</value></data>
+  <data name="StockAdjustments.RefreshHistory" xml:space="preserve"><value>Refresh History</value></data>
+  <data name="StockAdjustments.SelectReason" xml:space="preserve"><value>Select reason</value></data>
+  <data name="StockAdjustments.StockAdjustments" xml:space="preserve"><value>Stock Adjustments</value></data>
+  <data name="StockDashboard.CategoryId" xml:space="preserve"><value>Category Id</value></data>
+  <data name="StockDashboard.ExpiringSoon" xml:space="preserve"><value>Expiring Soon</value></data>
+  <data name="StockDashboard.ExpiringSoon30d" xml:space="preserve"><value>Expiring Soon (30d)</value></data>
+  <data name="StockDashboard.LowStock" xml:space="preserve"><value>Low Stock</value></data>
+  <data name="StockDashboard.NoLocationAggregates" xml:space="preserve"><value>No location aggregates.</value></data>
+  <data name="StockDashboard.NoLotsExpiringInNext30Days" xml:space="preserve"><value>No lots expiring in next 30 days.</value></data>
+  <data name="StockDashboard.NoLowStockAlerts" xml:space="preserve"><value>No low stock alerts.</value></data>
+  <data name="StockDashboard.SKUOrName" xml:space="preserve"><value>SKU or name</value></data>
+  <data name="StockDashboard.SearchItem" xml:space="preserve"><value>Search Item</value></data>
+  <data name="StockDashboard.StockByLocation" xml:space="preserve"><value>Stock by Location</value></data>
+  <data name="StockDashboard.StockDashboard" xml:space="preserve"><value>Stock Dashboard</value></data>
+  <data name="StockDashboard.StockDashboardCikadaMES" xml:space="preserve"><value>Stock Dashboard - Cikada.MES</value></data>
+  <data name="StockDashboard.TotalItems" xml:space="preserve"><value>Total Items</value></data>
+  <data name="StockDashboard.TotalQty" xml:space="preserve"><value>Total Qty</value></data>
+  <data name="StockDashboard.Utilization" xml:space="preserve"><value>Utilization</value></data>
+  <data name="StockLocationBalance.ItemCount" xml:space="preserve"><value>Item Count</value></data>
+  <data name="StockLocationBalance.LocationBalance" xml:space="preserve"><value>Location Balance</value></data>
+  <data name="StockLocationBalance.LocationBalanceCikadaMES" xml:space="preserve"><value>Location Balance - Cikada.MES</value></data>
+  <data name="StockLocationBalance.TotalVolume" xml:space="preserve"><value>Total Volume</value></data>
+  <data name="StockLocationBalance.TotalWeight" xml:space="preserve"><value>Total Weight</value></data>
+  <data name="StockLocationBalance.UtilizationVolume" xml:space="preserve"><value>Utilization Volume</value></data>
+  <data name="StockLocationBalance.UtilizationWeight" xml:space="preserve"><value>Utilization Weight</value></data>
+  <data name="Transfers.Create.AddLine" xml:space="preserve"><value>+ Add Line</value></data>
+  <data name="Transfers.Create.CreateTransfer" xml:space="preserve"><value>Create Transfer</value></data>
+  <data name="Transfers.Create.CreateTransferCikadaMES" xml:space="preserve"><value>Create Transfer - Cikada.MES</value></data>
+  <data name="Transfers.Create.FromLocation" xml:space="preserve"><value>From Location</value></data>
+  <data name="Transfers.Create.FromLocation764e83" xml:space="preserve"><value>From location</value></data>
+  <data name="Transfers.Create.FromWarehouse" xml:space="preserve"><value>From Warehouse</value></data>
+  <data name="Transfers.Create.NoLinesAdded" xml:space="preserve"><value>No lines added.</value></data>
+  <data name="Transfers.Create.NoLinesAddedAddYourFirstLine" xml:space="preserve"><value>No lines added. Add your first line.</value></data>
+  <data name="Transfers.Create.ToLocation" xml:space="preserve"><value>To location</value></data>
+  <data name="Transfers.Create.ToWarehouse" xml:space="preserve"><value>To Warehouse</value></data>
+  <data name="Transfers.Create.TransferLines" xml:space="preserve"><value>Transfer Lines</value></data>
+  <data name="Transfers.Execute.Confirm" xml:space="preserve"><value>Confirm</value></data>
+  <data name="Transfers.Execute.ConfirmExecution" xml:space="preserve"><value>Confirm Execution</value></data>
+  <data name="Transfers.Execute.ExecuteTransfer" xml:space="preserve"><value>Execute Transfer</value></data>
+  <data name="Transfers.Execute.ExecuteTransferCikadaMES" xml:space="preserve"><value>Execute Transfer - Cikada.MES</value></data>
+  <data name="Transfers.Execute.ExecuteTransferStockWillBeMoved" xml:space="preserve"><value>Execute transfer? Stock will be moved.</value></data>
+  <data name="Transfers.Execute.FromLocation" xml:space="preserve"><value>From Location</value></data>
+  <data name="Transfers.Execute.TransferDoesNotExistOrIsUnavailable" xml:space="preserve"><value>Transfer does not exist or is unavailable.</value></data>
+  <data name="Transfers.Execute.TransferNotFound" xml:space="preserve"><value>Transfer not found</value></data>
+  <data name="Transfers.List.ApproveTransfer" xml:space="preserve"><value>Approve Transfer</value></data>
+  <data name="Transfers.List.CreateTransfer" xml:space="preserve"><value>+ Create Transfer</value></data>
+  <data name="Transfers.List.CreateYourFirstTransferRequest" xml:space="preserve"><value>Create your first transfer request.</value></data>
+  <data name="Transfers.List.NoTransfersFound" xml:space="preserve"><value>No transfers found.</value></data>
+  <data name="Transfers.List.ReasonOptional" xml:space="preserve"><value>Reason (optional)</value></data>
+  <data name="Transfers.List.RequestedBy" xml:space="preserve"><value>Requested By</value></data>
+  <data name="Transfers.List.StockTransfers" xml:space="preserve"><value>Stock Transfers</value></data>
+  <data name="Transfers.List.Transfer" xml:space="preserve"><value>Transfer</value></data>
+  <data name="Transfers.List.Transferf7efad" xml:space="preserve"><value>Transfer:</value></data>
+  <data name="Transfers.List.TransfersCikadaMES" xml:space="preserve"><value>Transfers - Cikada.MES</value></data>
+  <data name="Valuation.AdjustCost.AdjustItemCost" xml:space="preserve"><value>Adjust Item Cost</value></data>
+  <data name="Valuation.AdjustCost.ApprovedByOptional" xml:space="preserve"><value>Approved By (optional)</value></data>
+  <data name="Valuation.AdjustCost.NewCost" xml:space="preserve"><value>New Cost</value></data>
+  <data name="Valuation.ApplyLandedCost.DutyCost" xml:space="preserve"><value>Duty Cost</value></data>
+  <data name="Valuation.ApplyLandedCost.FreightCost" xml:space="preserve"><value>Freight Cost</value></data>
+  <data name="Valuation.ApplyLandedCost.InsuranceCost" xml:space="preserve"><value>Insurance Cost</value></data>
+  <data name="Valuation.ApplyLandedCost.SelectShipment" xml:space="preserve"><value>Select shipment</value></data>
+  <data name="Valuation.Dashboard.AdjustValuationFiltersAndTryAgain" xml:space="preserve"><value>Adjust valuation filters and try again.</value></data>
+  <data name="Valuation.Dashboard.ApplyFilters" xml:space="preserve"><value>Apply Filters</value></data>
+  <data name="Valuation.Dashboard.CostHistoryReport" xml:space="preserve"><value>Cost History Report</value></data>
+  <data name="Valuation.Dashboard.Date" xml:space="preserve"><value>Date</value></data>
+  <data name="Valuation.Dashboard.DateFrom" xml:space="preserve"><value>Date From</value></data>
+  <data name="Valuation.Dashboard.DateTo" xml:space="preserve"><value>Date To</value></data>
+  <data name="Valuation.Dashboard.NewCost" xml:space="preserve"><value>New Cost</value></data>
+  <data name="Valuation.Dashboard.NoHistoryRows" xml:space="preserve"><value>No history rows</value></data>
+  <data name="Valuation.Dashboard.NoOnHandValueRows" xml:space="preserve"><value>No on-hand value rows</value></data>
+  <data name="Valuation.Dashboard.NoValuationRowsWereReturned" xml:space="preserve"><value>No valuation rows were returned.</value></data>
+  <data name="Valuation.Dashboard.OldCost" xml:space="preserve"><value>Old Cost</value></data>
+  <data name="Valuation.Dashboard.OnHandValueReport" xml:space="preserve"><value>On-Hand Value Report</value></data>
+  <data name="Valuation.Dashboard.PendingApprovals" xml:space="preserve"><value>Pending Approvals</value></data>
+  <data name="Valuation.Dashboard.RecentCostChanges7d" xml:space="preserve"><value>Recent Cost Changes (7d)</value></data>
+  <data name="Valuation.Dashboard.TotalOnHandValue" xml:space="preserve"><value>Total On-Hand Value</value></data>
+  <data name="Valuation.Dashboard.ValuationDashboard" xml:space="preserve"><value>Valuation Dashboard</value></data>
+  <data name="Valuation.WriteDown.NewValue" xml:space="preserve"><value>New Value</value></data>
+  <data name="Valuation.WriteDown.WriteDownInventoryValue" xml:space="preserve"><value>Write Down Inventory Value</value></data>
+  <data name="Visualization.Warehouse3D.2D" xml:space="preserve"><value>2D</value></data>
+  <data name="Visualization.Warehouse3D.3D" xml:space="preserve"><value>3D</value></data>
+  <data name="Visualization.Warehouse3D.3DMouseControls" xml:space="preserve"><value>3D mouse controls</value></data>
+  <data name="Visualization.Warehouse3D.BackToBack" xml:space="preserve"><value>Back-to-back</value></data>
+  <data name="Visualization.Warehouse3D.BayCount" xml:space="preserve"><value>Bay count</value></data>
+  <data name="Visualization.Warehouse3D.BinAddress" xml:space="preserve"><value>Bin address</value></data>
+  <data name="Visualization.Warehouse3D.CameraAngle" xml:space="preserve"><value>Camera angle</value></data>
+  <data name="Visualization.Warehouse3D.Capacity" xml:space="preserve"><value>Capacity</value></data>
+  <data name="Visualization.Warehouse3D.ClearAll" xml:space="preserve"><value>Clear all</value></data>
+  <data name="Visualization.Warehouse3D.ClearItemSearch" xml:space="preserve"><value>Clear item search</value></data>
+  <data name="Visualization.Warehouse3D.ClearSearch" xml:space="preserve"><value>Clear search</value></data>
+  <data name="Visualization.Warehouse3D.Done" xml:space="preserve"><value>Done</value></data>
+  <data name="Visualization.Warehouse3D.DragPan" xml:space="preserve"><value>Drag / Pan</value></data>
+  <data name="Visualization.Warehouse3D.Empty" xml:space="preserve"><value>Empty</value></data>
+  <data name="Visualization.Warehouse3D.Filters" xml:space="preserve"><value>Filters</value></data>
+  <data name="Visualization.Warehouse3D.Full" xml:space="preserve"><value>Full</value></data>
+  <data name="Visualization.Warehouse3D.HandlingUnits" xml:space="preserve"><value>Handling Units</value></data>
+  <data name="Visualization.Warehouse3D.Indicator" xml:space="preserve"><value>Indicator</value></data>
+  <data name="Visualization.Warehouse3D.Labels" xml:space="preserve"><value>Labels</value></data>
+  <data name="Visualization.Warehouse3D.Levels" xml:space="preserve"><value>Levels</value></data>
+  <data name="Visualization.Warehouse3D.LoadingWarehouseModel" xml:space="preserve"><value>Loading warehouse model...</value></data>
+  <data name="Visualization.Warehouse3D.Low" xml:space="preserve"><value>Low</value></data>
+  <data name="Visualization.Warehouse3D.LowAngle" xml:space="preserve"><value>Low angle</value></data>
+  <data name="Visualization.Warehouse3D.Medium" xml:space="preserve"><value>Medium</value></data>
+  <data name="Visualization.Warehouse3D.MouseControls" xml:space="preserve"><value>Mouse controls</value></data>
+  <data name="Visualization.Warehouse3D.NoBinsConfiguredWithCoordinatesConfigureLayoutFirst" xml:space="preserve"><value>No bins configured with coordinates. Configure layout first.</value></data>
+  <data name="Visualization.Warehouse3D.NoBinsMatchTheSelectedZoneStatusFilters" xml:space="preserve"><value>No bins match the selected zone/status filters.</value></data>
+  <data name="Visualization.Warehouse3D.NoHandlingUnits" xml:space="preserve"><value>No handling units.</value></data>
+  <data name="Visualization.Warehouse3D.OpenInLocations" xml:space="preserve"><value>Open In Locations</value></data>
+  <data name="Visualization.Warehouse3D.Origin" xml:space="preserve"><value>Origin</value></data>
+  <data name="Visualization.Warehouse3D.OverCapacity" xml:space="preserve"><value>Over capacity</value></data>
+  <data name="Visualization.Warehouse3D.Overview" xml:space="preserve"><value>Overview</value></data>
+  <data name="Visualization.Warehouse3D.PairedRack" xml:space="preserve"><value>Paired rack</value></data>
+  <data name="Visualization.Warehouse3D.RefreshWarehouseData" xml:space="preserve"><value>Refresh warehouse data</value></data>
+  <data name="Visualization.Warehouse3D.RemoveStatusFilter" xml:space="preserve"><value>Remove status filter</value></data>
+  <data name="Visualization.Warehouse3D.RemoveZoneFilter" xml:space="preserve"><value>Remove zone filter</value></data>
+  <data name="Visualization.Warehouse3D.ReservedPattern" xml:space="preserve"><value>Reserved (pattern)</value></data>
+  <data name="Visualization.Warehouse3D.RotateSelect" xml:space="preserve"><value>Rotate / Select</value></data>
+  <data name="Visualization.Warehouse3D.SearchSKUItemNameOrLocation" xml:space="preserve"><value>Search SKU, item name, or location...</value></data>
+  <data name="Visualization.Warehouse3D.SearchWarehouse" xml:space="preserve"><value>Search warehouse</value></data>
+  <data name="Visualization.Warehouse3D.SelectABinSlotOrRackToViewDetails" xml:space="preserve"><value>Select a bin, slot, or rack to view details.</value></data>
+  <data name="Visualization.Warehouse3D.SelectWarehouse" xml:space="preserve"><value>Select warehouse</value></data>
+  <data name="Visualization.Warehouse3D.SelectedPinRingPulse" xml:space="preserve"><value>Selected (pin + ring + pulse)</value></data>
+  <data name="Visualization.Warehouse3D.Slot" xml:space="preserve"><value>Slot</value></data>
+  <data name="Visualization.Warehouse3D.SlotsLevel" xml:space="preserve"><value>Slots / level</value></data>
+  <data name="Visualization.Warehouse3D.Span" xml:space="preserve"><value>Span</value></data>
+  <data name="Visualization.Warehouse3D.ToggleRackLabels" xml:space="preserve"><value>Toggle rack labels</value></data>
+  <data name="Visualization.Warehouse3D.Utilization" xml:space="preserve"><value>Utilization</value></data>
+  <data name="Visualization.Warehouse3D.ViewDetails" xml:space="preserve"><value>View Details</value></data>
+  <data name="Visualization.Warehouse3D.ViewMode" xml:space="preserve"><value>View mode</value></data>
+  <data name="Visualization.Warehouse3D.WarehouseVisualization" xml:space="preserve"><value>Warehouse Visualization</value></data>
+  <data name="Visualization.Warehouse3D.Zone" xml:space="preserve"><value>Zone</value></data>
+  <data name="Visualization.Warehouse3D.Zoom" xml:space="preserve"><value>Zoom</value></data>
+  <data name="Visualization.Warehouse3D.ZoomIn" xml:space="preserve"><value>Zoom in</value></data>
+  <data name="Visualization.Warehouse3D.ZoomOut" xml:space="preserve"><value>Zoom out</value></data>
+  <data name="WarehouseLocationDetail.LocationDetails" xml:space="preserve"><value>Location Details</value></data>
+  <data name="WarehouseLocationDetail.ManageLocationMetadataInTheAdminLocationWorkspace" xml:space="preserve"><value>Manage location metadata in the admin location workspace.</value></data>
+  <data name="WarehouseLocationDetail.OpenAdminLocations" xml:space="preserve"><value>Open Admin Locations</value></data>
+  <data name="WavePicking.1Line" xml:space="preserve"><value>+1 Line</value></data>
+  <data name="WavePicking.ActiveWaves" xml:space="preserve"><value>Active Waves</value></data>
+  <data name="WavePicking.AllStatuses" xml:space="preserve"><value>All statuses</value></data>
+  <data name="WavePicking.CreateAWaveToStartBatchPicking" xml:space="preserve"><value>Create a wave to start batch picking.</value></data>
+  <data name="WavePicking.CreateWave" xml:space="preserve"><value>Create Wave</value></data>
+  <data name="WavePicking.NoWavesFound" xml:space="preserve"><value>No waves found</value></data>
+  <data name="WavePicking.OrderIDsCommaSeparatedGUIDs" xml:space="preserve"><value>Order IDs (comma separated GUIDs)</value></data>
+  <data name="WavePicking.Orders" xml:space="preserve"><value>Orders</value></data>
+  <data name="WavePicking.Picker01" xml:space="preserve"><value>picker-01</value></data>
+  <data name="WavePicking.Progress" xml:space="preserve"><value>Progress</value></data>
+  <data name="WavePicking.Wave" xml:space="preserve"><value>Wave</value></data>
+  <data name="WavePicking.WavePicking" xml:space="preserve"><value>Wave Picking</value></data>
+  <data name="WavePicking.WavePickingCikadaMES" xml:space="preserve"><value>Wave Picking - Cikada.MES</value></data>
+  <data name="Admin.AdminWarehouses.Toast.WarehouseCreated" xml:space="preserve"><value>Warehouse created.</value></data>
+  <data name="Admin.AdminWarehouses.Toast.WarehouseUpdated" xml:space="preserve"><value>Warehouse updated.</value></data>
+  <data name="Admin.Backups.Toast.TargetEnvironmentIsRequired" xml:space="preserve"><value>Target environment is required.</value></data>
+  <data name="Admin.GdprErasure.Toast.CustomerIDMustBeAValidGUID" xml:space="preserve"><value>Customer ID must be a valid GUID.</value></data>
+  <data name="Admin.GdprErasure.Toast.ErasureRequestApproved" xml:space="preserve"><value>Erasure request approved.</value></data>
+  <data name="Admin.GdprErasure.Toast.ErasureRequestCreated" xml:space="preserve"><value>Erasure request created.</value></data>
+  <data name="Admin.GdprErasure.Toast.ErasureRequestRejected" xml:space="preserve"><value>Erasure request rejected.</value></data>
+  <data name="Admin.LayoutEditor.Toast.LayoutUpdatedSuccessfully" xml:space="preserve"><value>Layout updated successfully.</value></data>
+  <data name="Admin.RetentionPolicies.Toast.AuditLogIDMustBeGreaterThanZero" xml:space="preserve"><value>Audit Log ID must be greater than zero.</value></data>
+  <data name="Admin.RetentionPolicies.Toast.LegalHoldUpdated" xml:space="preserve"><value>Legal hold updated.</value></data>
+  <data name="Admin.RetentionPolicies.Toast.RetentionPolicyCreated" xml:space="preserve"><value>Retention policy created.</value></data>
+  <data name="Admin.RetentionPolicies.Toast.RetentionPolicyDeleted" xml:space="preserve"><value>Retention policy deleted.</value></data>
+  <data name="Admin.RetentionPolicies.Toast.RetentionPolicyUpdated" xml:space="preserve"><value>Retention policy updated.</value></data>
+  <data name="Admin.Roles.Toast.RoleAssignedSuccessfully" xml:space="preserve"><value>Role assigned successfully.</value></data>
+  <data name="Admin.Roles.Toast.SelectARole" xml:space="preserve"><value>Select a role.</value></data>
+  <data name="Admin.Roles.Toast.SelectAUser" xml:space="preserve"><value>Select a user.</value></data>
+  <data name="Admin.SerialNumbers.Toast.SerialRegistered" xml:space="preserve"><value>Serial registered.</value></data>
+  <data name="Admin.SerialNumbers.Toast.SerialStatusUpdated" xml:space="preserve"><value>Serial status updated.</value></data>
+  <data name="Admin.Settings.Toast.SettingsSavedSuccessfully" xml:space="preserve"><value>Settings saved successfully</value></data>
+  <data name="AdminCategories.Toast.CategoryCreated" xml:space="preserve"><value>Category created.</value></data>
+  <data name="AdminCategories.Toast.CategoryDeleted" xml:space="preserve"><value>Category deleted.</value></data>
+  <data name="AdminCategories.Toast.CategoryUpdated" xml:space="preserve"><value>Category updated.</value></data>
+  <data name="AdminCustomers.Toast.CustomerCreated" xml:space="preserve"><value>Customer created.</value></data>
+  <data name="AdminCustomers.Toast.CustomerUpdated" xml:space="preserve"><value>Customer updated.</value></data>
+  <data name="AdminImport.Toast.ImportRequestCompleted" xml:space="preserve"><value>Import request completed.</value></data>
+  <data name="AdminItemDetail.Toast.PhotoDeleted" xml:space="preserve"><value>Photo deleted.</value></data>
+  <data name="AdminItemDetail.Toast.PhotoUploaded" xml:space="preserve"><value>Photo uploaded.</value></data>
+  <data name="AdminItemDetail.Toast.PriceOverrideUpdated" xml:space="preserve"><value>Price override updated.</value></data>
+  <data name="AdminItemDetail.Toast.PrimaryPhotoUpdated" xml:space="preserve"><value>Primary photo updated.</value></data>
+  <data name="AdminItemPhotosDialog.Toast.PhotoDeleted" xml:space="preserve"><value>Photo deleted.</value></data>
+  <data name="AdminItemPhotosDialog.Toast.PhotoUploaded" xml:space="preserve"><value>Photo uploaded.</value></data>
+  <data name="AdminItemPhotosDialog.Toast.PrimaryPhotoUpdated" xml:space="preserve"><value>Primary photo updated.</value></data>
+  <data name="AdminItems.Toast.ItemCreated" xml:space="preserve"><value>Item created.</value></data>
+  <data name="AdminItems.Toast.ItemDeactivated" xml:space="preserve"><value>Item deactivated.</value></data>
+  <data name="AdminItems.Toast.ItemUpdated" xml:space="preserve"><value>Item updated.</value></data>
+  <data name="AdminLocations.Toast.LocationCreated" xml:space="preserve"><value>Location created.</value></data>
+  <data name="AdminLocations.Toast.LocationUpdated" xml:space="preserve"><value>Location updated.</value></data>
+  <data name="AdminPriceGroups.Toast.PriceGroupCreated" xml:space="preserve"><value>Price group created.</value></data>
+  <data name="AdminPriceGroups.Toast.PriceGroupDeleted" xml:space="preserve"><value>Price group deleted.</value></data>
+  <data name="AdminPriceGroups.Toast.PriceGroupUpdated" xml:space="preserve"><value>Price group updated.</value></data>
+  <data name="AdminSlots.Toast.Location" xml:space="preserve"><value>Could not find the selected location.</value></data>
+  <data name="AdminSlots.Toast.SelectALocationToAssign" xml:space="preserve"><value>Select a location to assign.</value></data>
+  <data name="AdminSlots.Toast.SelectedLocationWasNotFound" xml:space="preserve"><value>Selected location was not found.</value></data>
+  <data name="AdminSlots.Toast.SelectedSpanOverlapsAnOccupiedOrMissingSlot" xml:space="preserve"><value>Selected span overlaps an occupied or missing slot.</value></data>
+  <data name="AdminSupplierMappings.Toast.SupplierMappingCreated" xml:space="preserve"><value>Supplier mapping created.</value></data>
+  <data name="AdminSupplierMappings.Toast.SupplierMappingUpdated" xml:space="preserve"><value>Supplier mapping updated.</value></data>
+  <data name="AdminSuppliers.Toast.SupplierCreated" xml:space="preserve"><value>Supplier created.</value></data>
+  <data name="AdminSuppliers.Toast.SupplierUpdated" xml:space="preserve"><value>Supplier updated.</value></data>
+  <data name="AdminUsers.Toast.SelectAtLeastOneRole" xml:space="preserve"><value>Select at least one role.</value></data>
+  <data name="AdminUsers.Toast.UsernameEmailAndPasswordAreRequired" xml:space="preserve"><value>Username, email, and password are required.</value></data>
+  <data name="Agnum.Configuration.Toast.AgnumConfigurationSavedSuccessfully" xml:space="preserve"><value>Agnum configuration saved successfully.</value></data>
+  <data name="Agnum.Configuration.Toast.EachMappingRequiresSourceTypeSourceValueAndAccountCode" xml:space="preserve"><value>Each mapping requires source type, source value, and account code.</value></data>
+  <data name="Agnum.Configuration.Toast.ScheduleMustBeAValidCronExpressionWith5Fields" xml:space="preserve"><value>Schedule must be a valid cron expression with 5 fields.</value></data>
+  <data name="ComplianceLotTrace.Toast.LotNumberIsRequired" xml:space="preserve"><value>Lot number is required.</value></data>
+  <data name="CrossDock.Toast.CrossDockRecordCreated" xml:space="preserve"><value>Cross-dock record created.</value></data>
+  <data name="CrossDock.Toast.InboundAndOutboundIDsMustBeValidGUIDValues" xml:space="preserve"><value>Inbound and outbound IDs must be valid GUID values.</value></data>
+  <data name="CycleCounts.Discrepancies.Toast.AdjustmentApproved" xml:space="preserve"><value>Adjustment approved.</value></data>
+  <data name="CycleCounts.Discrepancies.Toast.ReasonIsRequired" xml:space="preserve"><value>Reason is required.</value></data>
+  <data name="CycleCounts.Execute.Toast.LocationAndItemBarcodeAreRequired" xml:space="preserve"><value>Location and item barcode are required.</value></data>
+  <data name="CycleCounts.Execute.Toast.PhysicalQuantityMustBe0" xml:space="preserve"><value>Physical quantity must be &gt;= 0.</value></data>
+  <data name="CycleCounts.Schedule.Toast.AssignedOperatorIsRequired" xml:space="preserve"><value>Assigned operator is required.</value></data>
+  <data name="CycleCounts.Schedule.Toast.ScheduledDateMustBeTodayOrLater" xml:space="preserve"><value>Scheduled date must be today or later.</value></data>
+  <data name="CycleCounts.Schedule.Toast.SelectAtLeastOneLocation" xml:space="preserve"><value>Select at least one location.</value></data>
+  <data name="InboundShipmentCreate.Toast.AddAtLeastOneValidLine" xml:space="preserve"><value>Add at least one valid line.</value></data>
+  <data name="InboundShipmentCreate.Toast.ReferenceNumberIsRequired" xml:space="preserve"><value>Reference number is required.</value></data>
+  <data name="InboundShipmentCreate.Toast.SupplierIsRequired" xml:space="preserve"><value>Supplier is required.</value></data>
+  <data name="InboundShipmentDetail.Toast.BarcodeNotFoundInThisShipmentLines" xml:space="preserve"><value>Barcode not found in this shipment lines.</value></data>
+  <data name="InboundShipmentDetail.Toast.EnterTheUnitPriceBeforeReceivingThisLine" xml:space="preserve"><value>Enter the unit price before receiving this line.</value></data>
+  <data name="InboundShipmentDetail.Toast.ReceivedQtyMustBeGreaterThanZero" xml:space="preserve"><value>Received qty must be greater than zero.</value></data>
+  <data name="InboundShipmentDetail.Toast.SelectLineToReceive" xml:space="preserve"><value>Select line to receive.</value></data>
+  <data name="InboundShipmentDetail.Toast.UnitPriceMustBeGreaterThanOrEqualToZero" xml:space="preserve"><value>Unit price must be greater than or equal to zero.</value></data>
+  <data name="Labels.Toast.DataJSONMustBeAnObject" xml:space="preserve"><value>Data JSON must be an object.</value></data>
+  <data name="Labels.Toast.InvalidDataJSON" xml:space="preserve"><value>Invalid data JSON.</value></data>
+  <data name="Labels.Toast.PDFFileNameIsRequired" xml:space="preserve"><value>PDF file name is required.</value></data>
+  <data name="Labels.Toast.PrintRequestSubmitted" xml:space="preserve"><value>Print request submitted.</value></data>
+  <data name="Labels.Toast.QueueRetrySubmitted" xml:space="preserve"><value>Queue retry submitted.</value></data>
+  <data name="Labels.Toast.TemplateIsRequired" xml:space="preserve"><value>Template is required.</value></data>
+  <data name="Nav.APIKeys" xml:space="preserve"><value>API Keys</value></data>
+  <data name="Nav.Adjustments" xml:space="preserve"><value>Adjustments</value></data>
+  <data name="Nav.AdminSettings" xml:space="preserve"><value>Admin Settings</value></data>
+  <data name="Nav.AgnumBalances" xml:space="preserve"><value>Agnum Balances</value></data>
+  <data name="Nav.AgnumConfig" xml:space="preserve"><value>Agnum Config</value></data>
+  <data name="Nav.AgnumReconcile" xml:space="preserve"><value>Agnum Reconcile</value></data>
+  <data name="Nav.Allocations" xml:space="preserve"><value>Allocations</value></data>
+  <data name="Nav.ApprovalRules" xml:space="preserve"><value>Approval Rules</value></data>
+  <data name="Nav.AuditLogs" xml:space="preserve"><value>Audit Logs</value></data>
+  <data name="Nav.AvailableStock" xml:space="preserve"><value>Available Stock</value></data>
+  <data name="Nav.Backups" xml:space="preserve"><value>Backups</value></data>
+  <data name="Nav.Categories" xml:space="preserve"><value>Categories</value></data>
+  <data name="Nav.ComplianceAudit" xml:space="preserve"><value>Compliance Audit</value></data>
+  <data name="Nav.ComplianceDashboard" xml:space="preserve"><value>Compliance Dashboard</value></data>
+  <data name="Nav.CrossDock" xml:space="preserve"><value>Cross-Dock</value></data>
+  <data name="Nav.Customers" xml:space="preserve"><value>Customers</value></data>
+  <data name="Nav.CycleCounts" xml:space="preserve"><value>Cycle Counts</value></data>
+  <data name="Nav.DRDrills" xml:space="preserve"><value>DR Drills</value></data>
+  <data name="Nav.Dashboard" xml:space="preserve"><value>Dashboard</value></data>
+  <data name="Nav.Dispatch" xml:space="preserve"><value>Dispatch</value></data>
+  <data name="Nav.DispatchHistory" xml:space="preserve"><value>Dispatch History</value></data>
+  <data name="Nav.FulfillmentKPIs" xml:space="preserve"><value>Fulfillment KPIs</value></data>
+  <data name="Nav.GDPRErasure" xml:space="preserve"><value>GDPR Erasure</value></data>
+  <data name="Nav.ImportWizard" xml:space="preserve"><value>Import Wizard</value></data>
+  <data name="Nav.InboundShipments" xml:space="preserve"><value>Inbound Shipments</value></data>
+  <data name="Nav.Items" xml:space="preserve"><value>Items</value></data>
+  <data name="Nav.JobQueue" xml:space="preserve"><value>Job Queue</value></data>
+  <data name="Nav.Labels" xml:space="preserve"><value>Labels</value></data>
+  <data name="Nav.LayoutEditor" xml:space="preserve"><value>Layout Editor</value></data>
+  <data name="Nav.LocationBalance" xml:space="preserve"><value>Location Balance</value></data>
+  <data name="Nav.Locations" xml:space="preserve"><value>Locations</value></data>
+  <data name="Nav.LotTraceability" xml:space="preserve"><value>Lot Traceability</value></data>
+  <data name="Nav.Lots" xml:space="preserve"><value>Lots</value></data>
+  <data name="Nav.OutboundOrders" xml:space="preserve"><value>Outbound Orders</value></data>
+  <data name="Nav.PickHistory" xml:space="preserve"><value>Pick History</value></data>
+  <data name="Nav.PickingTasks" xml:space="preserve"><value>Picking Tasks</value></data>
+  <data name="Nav.PriceGroups" xml:space="preserve"><value>Price Groups</value></data>
+  <data name="Nav.Projections" xml:space="preserve"><value>Projections</value></data>
+  <data name="Nav.Putaway" xml:space="preserve"><value>Putaway</value></data>
+  <data name="Nav.QualityAnalytics" xml:space="preserve"><value>Quality Analytics</value></data>
+  <data name="Nav.RMAs" xml:space="preserve"><value>RMAs</value></data>
+  <data name="Nav.ReasonCodes" xml:space="preserve"><value>Reason Codes</value></data>
+  <data name="Nav.ReceivingHistory" xml:space="preserve"><value>Receiving History</value></data>
+  <data name="Nav.ReceivingQC" xml:space="preserve"><value>Receiving QC</value></data>
+  <data name="Nav.Reservations" xml:space="preserve"><value>Reservations</value></data>
+  <data name="Nav.RetentionPolicies" xml:space="preserve"><value>Retention Policies</value></data>
+  <data name="Nav.Roles" xml:space="preserve"><value>Roles</value></data>
+  <data name="Nav.SalesOrders" xml:space="preserve"><value>Sales Orders</value></data>
+  <data name="Nav.SearchByImage" xml:space="preserve"><value>Search by Image</value></data>
+  <data name="Nav.SerialNumbers" xml:space="preserve"><value>Serial Numbers</value></data>
+  <data name="Nav.Slots" xml:space="preserve"><value>Slots</value></data>
+  <data name="Nav.StockDashboard" xml:space="preserve"><value>Stock Dashboard</value></data>
+  <data name="Nav.StockLevel" xml:space="preserve"><value>Stock Level</value></data>
+  <data name="Nav.StockMovements" xml:space="preserve"><value>Stock Movements</value></data>
+  <data name="Nav.SupplierMappings" xml:space="preserve"><value>Supplier Mappings</value></data>
+  <data name="Nav.Suppliers" xml:space="preserve"><value>Suppliers</value></data>
+  <data name="Nav.Traceability" xml:space="preserve"><value>Traceability</value></data>
+  <data name="Nav.Transfers" xml:space="preserve"><value>Transfers</value></data>
+  <data name="Nav.UnitsOfMeasure" xml:space="preserve"><value>Units of Measure</value></data>
+  <data name="Nav.Users" xml:space="preserve"><value>Users</value></data>
+  <data name="Nav.Valuation" xml:space="preserve"><value>Valuation</value></data>
+  <data name="Nav.WarehouseMap" xml:space="preserve"><value>Warehouse Map</value></data>
+  <data name="Nav.Warehouses" xml:space="preserve"><value>Warehouses</value></data>
+  <data name="Nav.WavePicking" xml:space="preserve"><value>Wave Picking</value></data>
+  <data name="OutboundDispatch.Toast.ShipmentDispatchedSuccessfully" xml:space="preserve"><value>Shipment dispatched successfully.</value></data>
+  <data name="OutboundOrderDetail.Toast.CancellationReasonIsRequired" xml:space="preserve"><value>Cancellation reason is required.</value></data>
+  <data name="OutboundOrderDetail.Toast.OrderCancelledSuccessfully" xml:space="preserve"><value>Order cancelled successfully.</value></data>
+  <data name="OutboundOrderDetail.Toast.OrderReleasedSuccessfully" xml:space="preserve"><value>Order released successfully.</value></data>
+  <data name="PackingStation.Toast.OrderPackedSuccessfully" xml:space="preserve"><value>Order packed successfully.</value></data>
+  <data name="PickingTasks.Toast.OrderIdItemAndQtyAreRequired" xml:space="preserve"><value>Order Id, item and qty are required.</value></data>
+  <data name="PickingTasks.Toast.PickTaskCompleted" xml:space="preserve"><value>Pick task completed.</value></data>
+  <data name="PickingTasks.Toast.TaskIdFromLocationIdAndPickedQtyAreRequired" xml:space="preserve"><value>Task id, from location id and picked qty are required.</value></data>
+  <data name="PickingTasks.Toast.ValidTaskIdIsRequired" xml:space="preserve"><value>Valid task id is required.</value></data>
+  <data name="Projections.Toast.ErrorDetailsCopied" xml:space="preserve"><value>Error details copied.</value></data>
+  <data name="ReceivingQc.Toast.ReasonCodeIsRequiredForQCFail" xml:space="preserve"><value>Reason code is required for QC fail.</value></data>
+  <data name="Rmas.Toast.RMACreated" xml:space="preserve"><value>RMA created.</value></data>
+  <data name="Rmas.Toast.SalesOrderIdMustBeAValidGUID" xml:space="preserve"><value>SalesOrderId must be a valid GUID.</value></data>
+  <data name="SalesOrderCreate.Toast.AddAtLeastOneValidLineItemQty0" xml:space="preserve"><value>Add at least one valid line (item, qty &gt; 0).</value></data>
+  <data name="SalesOrderCreate.Toast.SelectACustomer" xml:space="preserve"><value>Select a customer.</value></data>
+  <data name="SalesOrderDetail.Toast.CancelReasonIsRequired" xml:space="preserve"><value>Cancel reason is required.</value></data>
+  <data name="StockAdjustments.Toast.ItemLocationQtyDeltaAndReasonAreRequired" xml:space="preserve"><value>Item, location, qty delta and reason are required.</value></data>
+  <data name="Transfers.Create.Toast.AddAtLeastOneValidTransferLine" xml:space="preserve"><value>Add at least one valid transfer line.</value></data>
+  <data name="Transfers.Create.Toast.FromToWarehouseAreRequired" xml:space="preserve"><value>From/To warehouse are required.</value></data>
+  <data name="Transfers.Create.Toast.FromWarehouseAndToWarehouseMustBeDifferent" xml:space="preserve"><value>From warehouse and To warehouse must be different.</value></data>
+  <data name="Transfers.Create.Toast.TransferLineCannotMoveToSameLocation" xml:space="preserve"><value>Transfer line cannot move to same location.</value></data>
+  <data name="Transfers.Execute.Toast.TransferExecutedSuccessfully" xml:space="preserve"><value>Transfer executed successfully.</value></data>
+  <data name="Transfers.List.Toast.TransferApproved" xml:space="preserve"><value>Transfer approved.</value></data>
+  <data name="Transfers.List.Toast.TransferSubmittedForApproval" xml:space="preserve"><value>Transfer submitted for approval.</value></data>
+  <data name="Valuation.AdjustCost.Toast.CostAdjustedSuccessfully" xml:space="preserve"><value>Cost adjusted successfully.</value></data>
+  <data name="Valuation.ApplyLandedCost.Toast.LandedCostAppliedSuccessfully" xml:space="preserve"><value>Landed cost applied successfully.</value></data>
+  <data name="Valuation.WriteDown.Toast.WriteDownCompletedSuccessfully" xml:space="preserve"><value>Write-down completed successfully.</value></data>
+  <data name="Visualization.Warehouse3D.Toast.ItemExistsInOtherWarehousesButNotInTheCurrentWarehouse" xml:space="preserve"><value>Item exists in other warehouses, but not in the current warehouse.</value></data>
+  <data name="Visualization.Warehouse3D.Toast.NoPhysicalBinsFoundForThisItem" xml:space="preserve"><value>No physical bins found for this item.</value></data>
+  <data name="WavePicking.Toast.EnterAtLeastOneValidOrderGUID" xml:space="preserve"><value>Enter at least one valid order GUID.</value></data>
+  <data name="WavePicking.Toast.WaveAssigned" xml:space="preserve"><value>Wave assigned.</value></data>
+  <data name="WavePicking.Toast.WaveCreated" xml:space="preserve"><value>Wave created.</value></data>
+  <data name="WavePicking.Toast.WaveStarted" xml:space="preserve"><value>Wave started.</value></data>
+  <data name="Admin.AdminWarehouses.EditWarehouse" xml:space="preserve"><value>Edit Warehouse: {0}</value></data>
+  <data name="Admin.AdminWarehouses.Total" xml:space="preserve"><value>Total: {0}</value></data>
+  <data name="Admin.ApprovalRules.EditRule" xml:space="preserve"><value>Edit Rule #{0}</value></data>
+  <data name="Admin.ApprovalRules.RequiresApproval" xml:space="preserve"><value>Requires approval: {0}</value></data>
+  <data name="Admin.AuditLogs.Total" xml:space="preserve"><value>Total: {0}</value></data>
+  <data name="Admin.Backups.Evidence" xml:space="preserve"><value>Evidence: {0}</value></data>
+  <data name="Admin.GdprErasure.RejectRequest" xml:space="preserve"><value>Reject Request {0}</value></data>
+  <data name="Admin.LayoutEditor.LastUpdatedAt" xml:space="preserve"><value>Last updated at {0}</value></data>
+  <data name="Admin.Lots.Page" xml:space="preserve"><value>Page {0}</value></data>
+  <data name="Admin.Lots.Total" xml:space="preserve"><value>Total: {0}</value></data>
+  <data name="Admin.ReasonCodes.Edit" xml:space="preserve"><value>Edit {0}</value></data>
+  <data name="Admin.RetentionPolicies.EditPolicy" xml:space="preserve"><value>Edit Policy {0}</value></data>
+  <data name="Admin.Roles.EditRole" xml:space="preserve"><value>Edit Role {0}</value></data>
+  <data name="Admin.SerialNumbers.UpdateSerial" xml:space="preserve"><value>Update Serial {0}</value></data>
+  <data name="Admin.Settings.LastUpdatedByAt" xml:space="preserve"><value>Last updated by {0} at {1}</value></data>
+  <data name="Admin.UnitsOfMeasure.Total" xml:space="preserve"><value>Total: {0}</value></data>
+  <data name="AdminCategories.EditCategory" xml:space="preserve"><value>Edit Category: {0}</value></data>
+  <data name="AdminCustomers.Total" xml:space="preserve"><value>Total: {0}</value></data>
+  <data name="AdminItemDetail.Total" xml:space="preserve"><value>{0} total</value></data>
+  <data name="AdminItemPhotosDialog.PhotoS" xml:space="preserve"><value>{0} photo(s)</value></data>
+  <data name="AdminItems.Page" xml:space="preserve"><value>Page {0}</value></data>
+  <data name="AdminItems.Total" xml:space="preserve"><value>Total: {0}</value></data>
+  <data name="AdminLocations.EditLocation" xml:space="preserve"><value>Edit Location: {0}</value></data>
+  <data name="AdminLocations.Total" xml:space="preserve"><value>Total: {0}</value></data>
+  <data name="AdminPriceGroups.CustomersIn" xml:space="preserve"><value>Customers in "{0}"</value></data>
+  <data name="AdminPriceGroups.Total" xml:space="preserve"><value>{0} total</value></data>
+  <data name="AdminSlots.VisibleSlots" xml:space="preserve"><value>Visible slots: {0}</value></data>
+  <data name="AdminSupplierMappings.EditMapping" xml:space="preserve"><value>Edit Mapping: {0}</value></data>
+  <data name="AdminSupplierMappings.Total" xml:space="preserve"><value>Total: {0}</value></data>
+  <data name="AdminSuppliers.Page" xml:space="preserve"><value>Page {0}</value></data>
+  <data name="AdminSuppliers.Total" xml:space="preserve"><value>Total: {0}</value></data>
+  <data name="AdminUsers.Edit" xml:space="preserve"><value>Edit {0}</value></data>
+  <data name="AdminUsers.Users" xml:space="preserve"><value>Users ({0})</value></data>
+  <data name="Agnum.Balances.Distributeaf448a" xml:space="preserve"><value>Distribute {0}</value></data>
+  <data name="Agnum.Balances.Imported9c7986" xml:space="preserve"><value>Imported: {0}</value></data>
+  <data name="Agnum.Balances.More" xml:space="preserve"><value>+{0} more</value></data>
+  <data name="Agnum.Balances.Rows" xml:space="preserve"><value>Rows: {0}</value></data>
+  <data name="Agnum.Balances.Run" xml:space="preserve"><value>Run: {0}</value></data>
+  <data name="Agnum.Reconciliation.Rows" xml:space="preserve"><value>Rows: {0}</value></data>
+  <data name="AvailableStock.PageOf" xml:space="preserve"><value>Page {0} of {1}</value></data>
+  <data name="ComplianceLotTrace.Generated" xml:space="preserve"><value>Generated: {0}</value></data>
+  <data name="ComplianceLotTrace.TraceID" xml:space="preserve"><value>Trace ID: {0}</value></data>
+  <data name="CycleCounts.Execute.ProgressOfLocationsCounted" xml:space="preserve"><value>Progress: {0} of {1} locations counted</value></data>
+  <data name="Dashboard.BelowReorderPoint" xml:space="preserve"><value>{0} below reorder point</value></data>
+  <data name="Dashboard.Expired" xml:space="preserve"><value>{0} expired</value></data>
+  <data name="Dashboard.Last" xml:space="preserve"><value>last {0}</value></data>
+  <data name="Dashboard.Matched" xml:space="preserve"><value>Matched {0}</value></data>
+  <data name="Dashboard.NotLinked" xml:space="preserve"><value>Not linked {0}</value></data>
+  <data name="Dashboard.Out" xml:space="preserve"><value>{0} out</value></data>
+  <data name="Dashboard.Over" xml:space="preserve"><value>Over {0}</value></data>
+  <data name="Dashboard.Under" xml:space="preserve"><value>Under {0}</value></data>
+  <data name="ErrorBanner.ErrorID" xml:space="preserve"><value>Error ID: {0}</value></data>
+  <data name="InboundShipmentCreate.Service" xml:space="preserve"><value>Service - {0}</value></data>
+  <data name="InboundShipmentDetail.Expected" xml:space="preserve"><value>Expected: {0}</value></data>
+  <data name="InboundShipmentDetail.Line" xml:space="preserve"><value>{0} - {1} (Line {2})</value></data>
+  <data name="InboundShipmentDetail.SERVICE" xml:space="preserve"><value>SERVICE - {0}</value></data>
+  <data name="InboundShipmentDetail.Supplier" xml:space="preserve"><value>Supplier: {0} ({1})</value></data>
+  <data name="InboundShipmentDetail.UnitPricec63fff" xml:space="preserve"><value>Unit Price {0}</value></data>
+  <data name="InboundShipments.Total" xml:space="preserve"><value>Total: {0}</value></data>
+  <data name="OutboundDispatch.Dispatch1bc4d8" xml:space="preserve"><value>Dispatch {0}</value></data>
+  <data name="OutboundOrderDetail.Customer" xml:space="preserve"><value>Customer: {0}</value></data>
+  <data name="OutboundOrderDetail.Tracking" xml:space="preserve"><value>Tracking: {0}</value></data>
+  <data name="OutboundOrders.OrderSSelected" xml:space="preserve"><value>{0} order(s) selected</value></data>
+  <data name="OutboundOrders.PageOf" xml:space="preserve"><value>Page {0} of {1}</value></data>
+  <data name="PackingStation.Customer" xml:space="preserve"><value>Customer: {0}</value></data>
+  <data name="Pagination.PageOf" xml:space="preserve"><value>Page {0} of {1}</value></data>
+  <data name="ReportsComplianceAudit.Total" xml:space="preserve"><value>Total: {0}</value></data>
+  <data name="ReportsPickHistory.Total" xml:space="preserve"><value>Total: {0}</value></data>
+  <data name="ReportsReceivingHistory.Total" xml:space="preserve"><value>Total: {0}</value></data>
+  <data name="ReportsStockLevel.Total" xml:space="preserve"><value>Total: {0}</value></data>
+  <data name="ReportsStockMovements.Total" xml:space="preserve"><value>Total: {0}</value></data>
+  <data name="ReportsTraceability.AvailableQty" xml:space="preserve"><value>Available Qty: {0}</value></data>
+  <data name="ReportsTraceability.Location" xml:space="preserve"><value>Location: {0}</value></data>
+  <data name="ReportsTraceability.Lot" xml:space="preserve"><value>Lot: {0}</value></data>
+  <data name="ReportsTraceability.Qty" xml:space="preserve"><value>Qty: {0}</value></data>
+  <data name="ReportsTraceability.QtyShipped" xml:space="preserve"><value>Qty: {0} | Shipped: {1}</value></data>
+  <data name="ReportsTraceability.Receipt" xml:space="preserve"><value>Receipt: {0}</value></data>
+  <data name="ReportsTraceability.Shipment" xml:space="preserve"><value>Shipment: {0}</value></data>
+  <data name="ReportsTraceability.Supplier" xml:space="preserve"><value>Supplier: {0}</value></data>
+  <data name="ReportsTraceability.Tracking" xml:space="preserve"><value>Tracking: {0}</value></data>
+  <data name="Reservations.Allocated5b369e" xml:space="preserve"><value>{0} | {1} | Allocated: {2}</value></data>
+  <data name="Reservations.PickReservation" xml:space="preserve"><value>Pick Reservation {0}</value></data>
+  <data name="Reservations.Reservation" xml:space="preserve"><value>Reservation {0}</value></data>
+  <data name="SalesOrderDetail.OrderDate" xml:space="preserve"><value>Order date: {0}</value></data>
+  <data name="SalesOrders.PageOf" xml:space="preserve"><value>Page {0} of {1}</value></data>
+  <data name="SalesOrders.Total2c1fd3" xml:space="preserve"><value>Total: {0}</value></data>
+  <data name="SharedErrorAlert.ErrorID" xml:space="preserve"><value>Error ID: {0}</value></data>
+  <data name="StockDashboard.LowStockAlertsThreshold" xml:space="preserve"><value>Low Stock Alerts (threshold: {0})</value></data>
+  <data name="Transfers.Execute.Status" xml:space="preserve"><value>Status: {0}</value></data>
+  <data name="Visualization.Warehouse3D.NotIn" xml:space="preserve"><value>Not in {0}</value></data>
+  <data name="Visualization.Warehouse3D.Rack" xml:space="preserve"><value>Rack {0}</value></data>
+  <data name="WarehouseLocationDetail.LocationID" xml:space="preserve"><value>Location ID: {0}</value></data>
+  <data name="Nav.Section.Stock" xml:space="preserve"><value>Stock</value></data>
+  <data name="Nav.Section.Inbound" xml:space="preserve"><value>Inbound</value></data>
+  <data name="Nav.Section.Outbound" xml:space="preserve"><value>Outbound</value></data>
+  <data name="Nav.Section.Operations" xml:space="preserve"><value>Operations</value></data>
+  <data name="Nav.Section.Finance" xml:space="preserve"><value>Finance</value></data>
+  <data name="Nav.Section.Admin" xml:space="preserve"><value>Admin</value></data>
+  <data name="Nav.Section.Reports" xml:space="preserve"><value>Reports</value></data>
+  <data name="Nav.Section.Analytics" xml:space="preserve"><value>Analytics</value></data>
+  <data name="Nav.Section.System" xml:space="preserve"><value>System</value></data>
+  <data name="Admin.ApiKeys.Toast.APIKeyCreated" xml:space="preserve"><value>API key {0} created.</value></data>
+  <data name="Admin.ApiKeys.Toast.APIKeyDeleted" xml:space="preserve"><value>API key {0} deleted.</value></data>
+  <data name="Admin.ApiKeys.Toast.APIKeyRotated" xml:space="preserve"><value>API key {0} rotated.</value></data>
+  <data name="Admin.ApprovalRules.Toast.ApprovalRuleCreated" xml:space="preserve"><value>Approval rule #{0} created.</value></data>
+  <data name="Admin.ApprovalRules.Toast.ApprovalRuleDeleted" xml:space="preserve"><value>Approval rule #{0} deleted.</value></data>
+  <data name="Admin.ApprovalRules.Toast.ApprovalRuleUpdated" xml:space="preserve"><value>Approval rule #{0} updated.</value></data>
+  <data name="Admin.Backups.Toast.BackupTriggered" xml:space="preserve"><value>Backup {0} triggered.</value></data>
+  <data name="Admin.DisasterRecoveryDrills.Toast.DRDrillStarted" xml:space="preserve"><value>DR drill started: {0}</value></data>
+  <data name="Admin.ReasonCodes.Toast.ReasonCodeCreated" xml:space="preserve"><value>Reason code {0} created.</value></data>
+  <data name="Admin.ReasonCodes.Toast.ReasonCodeDeleted" xml:space="preserve"><value>Reason code {0} deleted.</value></data>
+  <data name="Admin.ReasonCodes.Toast.ReasonCodeUpdated" xml:space="preserve"><value>Reason code {0} updated.</value></data>
+  <data name="Admin.RetentionPolicies.Toast.RetentionExecution" xml:space="preserve"><value>Retention execution {0}.</value></data>
+  <data name="Admin.Roles.Toast.RoleCreated" xml:space="preserve"><value>Role {0} created.</value></data>
+  <data name="Admin.Roles.Toast.RoleDeleted" xml:space="preserve"><value>Role {0} deleted.</value></data>
+  <data name="Admin.Roles.Toast.RoleUpdated" xml:space="preserve"><value>Role {0} updated.</value></data>
+  <data name="AdminItemDetail.Toast.EmbeddingsRecomputedForPhotoS" xml:space="preserve"><value>Embeddings recomputed for {0} photo(s).</value></data>
+  <data name="AdminItemPhotosDialog.Toast.EmbeddingsRecomputedForPhotoS" xml:space="preserve"><value>Embeddings recomputed for {0} photo(s).</value></data>
+  <data name="AdminPriceGroups.Toast.AssignedTo" xml:space="preserve"><value>{0} assigned to {1}.</value></data>
+  <data name="AdminPriceGroups.Toast.RemovedFrom" xml:space="preserve"><value>{0} removed from {1}.</value></data>
+  <data name="AdminSlots.Toast.Location3125ac" xml:space="preserve"><value>Location {0} assigned to {1}.</value></data>
+  <data name="AdminSlots.Toast.LocationAssignedTo" xml:space="preserve"><value>Location {0} assigned to {1}.</value></data>
+  <data name="AdminSlots.Toast.Placement" xml:space="preserve"><value>Placement for {0} cleared.</value></data>
+  <data name="AdminSlots.Toast.PlacementForWasCleared" xml:space="preserve"><value>Placement for {0} was cleared.</value></data>
+  <data name="AdminSlots.Toast.SpanMustBeBetween1AndForThisSlot" xml:space="preserve"><value>Span must be between 1 and {0} for this slot.</value></data>
+  <data name="AdminUsers.Toast.UserCreated" xml:space="preserve"><value>User {0} created.</value></data>
+  <data name="AdminUsers.Toast.UserUpdated" xml:space="preserve"><value>User {0} updated.</value></data>
+  <data name="Agnum.Configuration.Toast.AtLeast1MappingRequiredForScope" xml:space="preserve"><value>At least 1 mapping required for scope {0}.</value></data>
+  <data name="AllocationDashboard.Toast.OrderApproved" xml:space="preserve"><value>Order {0} approved.</value></data>
+  <data name="AllocationDashboard.Toast.OrderReleasedToPicking" xml:space="preserve"><value>Order {0} released to picking.</value></data>
+  <data name="CycleCounts.Execute.Toast.CountRecordedFor" xml:space="preserve"><value>Count recorded for {0}.</value></data>
+  <data name="CycleCounts.Schedule.Toast.CycleCountScheduled" xml:space="preserve"><value>Cycle count {0} scheduled.</value></data>
+  <data name="InboundShipmentCreate.Toast.InboundShipmentISHCreated" xml:space="preserve"><value>Inbound shipment ISH-{0} created.</value></data>
+  <data name="InboundShipmentCreate.Toast.InboundShipmentISHUpdated" xml:space="preserve"><value>Inbound shipment ISH-{0} updated.</value></data>
+  <data name="InboundShipmentDetail.Toast.ReceivedUnitsTo" xml:space="preserve"><value>Received {0:0.##} units to {1}.</value></data>
+  <data name="InboundShipmentDetail.Toast.SelectedLine" xml:space="preserve"><value>Selected line {0} ({1}).</value></data>
+  <data name="OutboundOrders.Toast.CancelledOrderS" xml:space="preserve"><value>Cancelled {0} order(s).</value></data>
+  <data name="PickingTasks.Toast.PickTaskCreated" xml:space="preserve"><value>Pick task created: {0}</value></data>
+  <data name="Projections.Toast.RebuildCompletedFor" xml:space="preserve"><value>Rebuild completed for {0}.</value></data>
+  <data name="Projections.Toast.RebuildFinishedWithMismatchFor" xml:space="preserve"><value>Rebuild finished with mismatch for {0}.</value></data>
+  <data name="Projections.Toast.VerifyMismatchFor" xml:space="preserve"><value>Verify mismatch for {0}.</value></data>
+  <data name="Projections.Toast.VerifySucceededFor" xml:space="preserve"><value>Verify succeeded for {0}.</value></data>
+  <data name="Putaway.Toast.PutawayCompletedForTo" xml:space="preserve"><value>Putaway completed for {0} to {1}.</value></data>
+  <data name="ReceivingQc.Toast.QCCompletedMovedTo" xml:space="preserve"><value>QC {0} completed. Moved to {1}.</value></data>
+  <data name="SalesOrderCreate.Toast.SalesOrderCreated" xml:space="preserve"><value>Sales order {0} created.</value></data>
+  <data name="StockAdjustments.Toast.AdjustmentCreated" xml:space="preserve"><value>Adjustment created: {0}</value></data>
+  <data name="Transfers.Create.Toast.TransferCreated" xml:space="preserve"><value>Transfer {0} created.</value></data>
+  <data name="Transfers.List.Toast.CancelActionIsNotAvailableFor" xml:space="preserve"><value>Cancel action is not available for {0}.</value></data>
+  <data name="MainLayout.CloseWarehouseNavigation" xml:space="preserve"><value>Close Warehouse navigation</value></data>
+  <data name="MainLayout.OpenWarehouseNavigation" xml:space="preserve"><value>Open Warehouse navigation</value></data>
+  <data name="MainLayout.ExpandSidebar" xml:space="preserve"><value>Expand sidebar</value></data>
+  <data name="MainLayout.CollapseSidebar" xml:space="preserve"><value>Collapse sidebar</value></data>
+  <data name="Stock.StockTable.NoStockFoundMatchingFilters" xml:space="preserve"><value>No stock found matching filters.</value></data>
+  <data name="Stock.StockTable.PhysicalQty" xml:space="preserve"><value>Physical Qty</value></data>
+  <data name="Stock.StockTable.ReservedQty" xml:space="preserve"><value>Reserved Qty</value></data>
+  <data name="Stock.StockTable.AvailableQty" xml:space="preserve"><value>Available Qty</value></data>
+  <data name="Stock.StockTable.LastUpdated" xml:space="preserve"><value>Last Updated</value></data>
+  <data name="Reservations.NoReservationsFound" xml:space="preserve"><value>No reservations found.</value></data>
+  <data name="AdminSuppliers.AgnumClient" xml:space="preserve"><value>Agnum client {0}</value></data>
+  <data name="AdminSuppliers.ActionsFor" xml:space="preserve"><value>Actions for {0}</value></data>
+  <data name="AdminItems.ActionsFor" xml:space="preserve"><value>Actions for {0}</value></data>
+  <data name="AdminItemEditorDialog.RemoveTag" xml:space="preserve"><value>Remove tag {0}</value></data>
+  <data name="Status.Active" xml:space="preserve"><value>Active</value></data>
+  <data name="Status.Inactive" xml:space="preserve"><value>Inactive</value></data>
+  <data name="Status.OnHold" xml:space="preserve"><value>OnHold</value></data>
+  <data name="Status.Draft" xml:space="preserve"><value>Draft</value></data>
+  <data name="Status.PendingApproval" xml:space="preserve"><value>PendingApproval</value></data>
+  <data name="Status.PendingStock" xml:space="preserve"><value>PendingStock</value></data>
+  <data name="Status.Allocated" xml:space="preserve"><value>Allocated</value></data>
+  <data name="Status.Picking" xml:space="preserve"><value>Picking</value></data>
+  <data name="Status.Picked" xml:space="preserve"><value>Picked</value></data>
+  <data name="Status.Packed" xml:space="preserve"><value>Packed</value></data>
+  <data name="Status.Shipped" xml:space="preserve"><value>Shipped</value></data>
+  <data name="Status.Delivered" xml:space="preserve"><value>Delivered</value></data>
+  <data name="Status.Invoiced" xml:space="preserve"><value>Invoiced</value></data>
+  <data name="Status.Cancelled" xml:space="preserve"><value>Cancelled</value></data>
+  <data name="Status.Expired" xml:space="preserve"><value>Expired</value></data>
+  <data name="Status.Packing" xml:space="preserve"><value>Packing</value></data>
+  <data name="Status.Dispatched" xml:space="preserve"><value>Dispatched</value></data>
+  <data name="Status.InTransit" xml:space="preserve"><value>InTransit</value></data>
+  <data name="Status.Approved" xml:space="preserve"><value>Approved</value></data>
+  <data name="Status.Completed" xml:space="preserve"><value>Completed</value></data>
+  <data name="Status.Scheduled" xml:space="preserve"><value>Scheduled</value></data>
+  <data name="Status.InProgress" xml:space="preserve"><value>InProgress</value></data>
+  <data name="Status.Pending" xml:space="preserve"><value>Pending</value></data>
+  <data name="Status.Rejected" xml:space="preserve"><value>Rejected</value></data>
+  <data name="Status.Recount" xml:space="preserve"><value>Recount</value></data>
+  <data name="Status.Received" xml:space="preserve"><value>Received</value></data>
+  <data name="Status.Available" xml:space="preserve"><value>Available</value></data>
+  <data name="Status.Issued" xml:space="preserve"><value>Issued</value></data>
+  <data name="Status.Returned" xml:space="preserve"><value>Returned</value></data>
+  <data name="Status.Scrapped" xml:space="preserve"><value>Scrapped</value></data>
+  <data name="Status.Out" xml:space="preserve"><value>Out</value></data>
+  <data name="Status.Low" xml:space="preserve"><value>Low</value></data>
+  <data name="Status.Over" xml:space="preserve"><value>Over</value></data>
+  <data name="Status.Under" xml:space="preserve"><value>Under</value></data>
+  <data name="Status.Matched" xml:space="preserve"><value>Matched</value></data>
+  <data name="Status.Unknown" xml:space="preserve"><value>Unknown</value></data>
+  <data name="Status.Failed" xml:space="preserve"><value>Failed</value></data>
+  <data name="Status.Degraded" xml:space="preserve"><value>Degraded</value></data>
+  <data name="Status.Ok" xml:space="preserve"><value>Ok</value></data>
+  <data name="Status.Healthy" xml:space="preserve"><value>Healthy</value></data>
+  <data name="Status.Unhealthy" xml:space="preserve"><value>Unhealthy</value></data>
+  <data name="Status.Running" xml:space="preserve"><value>Running</value></data>
+  <data name="Status.Queued" xml:space="preserve"><value>Queued</value></data>
+  <data name="Status.Ready" xml:space="preserve"><value>Ready</value></data>
+  <data name="Status.Reserved" xml:space="preserve"><value>Reserved</value></data>
+  <data name="Status.Open" xml:space="preserve"><value>Open</value></data>
+  <data name="Status.Closed" xml:space="preserve"><value>Closed</value></data>
+  <data name="Status.Released" xml:space="preserve"><value>Released</value></data>
+  <data name="Status.PartiallyAllocated" xml:space="preserve"><value>PartiallyAllocated</value></data>
+  <data name="Status.Depleted" xml:space="preserve"><value>Depleted</value></data>
+  <data name="Status.Discontinued" xml:space="preserve"><value>Discontinued</value></data>
+  <data name="Status.SEALED" xml:space="preserve"><value>SEALED</value></data>
+  <data name="Status.EMPTY" xml:space="preserve"><value>EMPTY</value></data>
+  <data name="Status.MEDIUM" xml:space="preserve"><value>MEDIUM</value></data>
+  <data name="Status.FULL" xml:space="preserve"><value>FULL</value></data>
+  <data name="Status.OVER_CAPACITY" xml:space="preserve"><value>OVER_CAPACITY</value></data>
+  <data name="Aria.Search" xml:space="preserve"><value>Search</value></data>
+  <data name="Aria.Country" xml:space="preserve"><value>Country</value></data>
+  <data name="Aria.PageSize" xml:space="preserve"><value>Page size</value></data>
+  <data name="Aria.Category" xml:space="preserve"><value>Category</value></data>
+  <data name="Aria.Status" xml:space="preserve"><value>Status</value></data>
+  <data name="Aria.Warehouse" xml:space="preserve"><value>Warehouse</value></data>
+  <data name="Aria.Location" xml:space="preserve"><value>Location</value></data>
+  <data name="Aria.SKU" xml:space="preserve"><value>SKU</value></data>
+  <data name="Aria.ProductOrItem" xml:space="preserve"><value>Product or item</value></data>
+  <data name="Aria.ItemName" xml:space="preserve"><value>Item name</value></data>
+  <data name="Aria.Tag" xml:space="preserve"><value>Tag</value></data>
+  <data name="Aria.Supplier" xml:space="preserve"><value>Supplier</value></data>
+  <data name="Aria.SupplierCountry" xml:space="preserve"><value>Supplier country</value></data>
+  <data name="AdminImport.TabItems" xml:space="preserve"><value>Items</value></data>
+  <data name="AdminImport.TabItemPrices" xml:space="preserve"><value>Item Prices</value></data>
+  <data name="AdminImport.TabSuppliers" xml:space="preserve"><value>Suppliers</value></data>
+  <data name="AdminImport.TabSupplierMappings" xml:space="preserve"><value>Supplier Mappings</value></data>
+  <data name="AdminImport.TabItemBarcodes" xml:space="preserve"><value>Item Barcodes</value></data>
+  <data name="AdminImport.TabLocations" xml:space="preserve"><value>Locations</value></data>
+  <data name="AdminItems.DeactivateConfirmation" xml:space="preserve"><value>Deactivate {0} - {1}?</value></data>
+  <data name="PackingStation.BarcodeNotFound" xml:space="preserve"><value>Barcode {0} not found in order.</value></data>
+  <data name="Admin.Roles.DeleteRoleConfirmation" xml:space="preserve"><value>Delete role {0}?</value></data>
+  <data name="Admin.ApiKeys.DeleteKeyConfirmation" xml:space="preserve"><value>Delete API key {0}?</value></data>
+  <data name="Admin.ApprovalRules.DeleteRuleConfirmation" xml:space="preserve"><value>Delete approval rule #{0}?</value></data>
+  <data name="Admin.ReasonCodes.DeleteReasonConfirmation" xml:space="preserve"><value>Delete reason code {0}?</value></data>
+  <data name="Reservations.SelectReservationLine" xml:space="preserve"><value>Select a reservation line.</value></data>
+  <data name="Reservations.SelectHandlingUnit" xml:space="preserve"><value>Select a handling unit.</value></data>
+  <data name="Reservations.QuantityGreaterThanZero" xml:space="preserve"><value>Quantity must be greater than zero.</value></data>
+  <data name="Reservations.QuantityExceedsAllocated" xml:space="preserve"><value>Quantity exceeds allocated quantity {0}.</value></data>
+  <data name="AdminPriceGroupEditorDialog.CodeRequired" xml:space="preserve"><value>Code is required.</value></data>
+  <data name="AdminPriceGroupEditorDialog.NameRequired" xml:space="preserve"><value>Name is required.</value></data>
+  <data name="Admin.LayoutEditor.NoActiveWarehouses" xml:space="preserve"><value>No active non-virtual warehouses available.</value></data>
+  <data name="CycleCounts.Schedule.LookupFailed" xml:space="preserve"><value>Failed to load schedule lookups. Please verify API connectivity.</value></data>
+  <data name="SalesOrderDetail.AllocatedReservation" xml:space="preserve"><value>Sales order allocated. Reservation: {0}</value></data>
+  <data name="AvailableStock.Summary" xml:space="preserve"><value>Showing {0} item(s) on page {1} of {2}.</value></data>
+  <data name="AvailableStock.SearchNotRun" xml:space="preserve"><value>Search has not been run yet.</value></data>
+  <data name="Labels.PrintStatus" xml:space="preserve"><value>Status: {0}. {1}</value></data>
+  <data name="InboundShipmentCreate.EditPageTitle" xml:space="preserve"><value>Edit ISH-{0} - Cikada.MES</value></data>
+  <data name="InboundShipmentCreate.CreatePageTitle" xml:space="preserve"><value>Create Inbound Shipment - Cikada.MES</value></data>
+  <data name="InboundShipmentCreate.EditTitle" xml:space="preserve"><value>Edit Inbound Shipment ISH-{0}</value></data>
+  <data name="InboundShipmentCreate.CreateTitle" xml:space="preserve"><value>Create Inbound Shipment</value></data>
+  <data name="InboundShipmentCreate.CannotEditAfterReceiving" xml:space="preserve"><value>ISH-{0} has status '{1}' and can no longer be edited - receiving has already started against it.</value></data>
+  <data name="InboundShipmentCreate.DuplicateCostTypeWarning" xml:space="preserve"><value>A manual additional cost row shares a cost type ({0}) with a Service line on this shipment - check this isn't double-counting the same invoice amount.</value></data>
+  <data name="Visualization.Warehouse3D.MinutesAgo" xml:space="preserve"><value>{0}m ago</value></data>
+  <data name="Visualization.Warehouse3D.HoursAgo" xml:space="preserve"><value>{0}h ago</value></data>
+  <data name="Visualization.Warehouse3D.JustNow" xml:space="preserve"><value>just now</value></data>
+  <data name="Dashboard.AgnumInSync" xml:space="preserve"><value>In sync</value></data>
+  <data name="Admin.RetentionPolicies.HideForm" xml:space="preserve"><value>Hide Form</value></data>
+  <data name="Admin.RetentionPolicies.CreatePolicy" xml:space="preserve"><value>Create Policy</value></data>
+  <data name="Admin.RetentionPolicies.ExecutionSummary" xml:space="preserve"><value>Retention execution {0} at {1}. Archived: {2}. Deleted: {3}.</value></data>
+  <data name="Agnum.Balances.TotalQty" xml:space="preserve"><value>Total qty: {0}</value></data>
+  <data name="Agnum.Balances.Remaining" xml:space="preserve"><value>Remaining: {0}</value></data>
+  <data name="Agnum.Balances.MesPhysicalSummary" xml:space="preserve"><value>MES physical: {0}</value></data>
+  <data name="Status.NotLinked" xml:space="preserve"><value>Not linked</value></data>
+  <data name="Agnum.Balances.DistributedSummary" xml:space="preserve"><value>Distributed: {0}</value></data>
+  <data name="Common.Yes" xml:space="preserve"><value>Yes</value></data>
+  <data name="Common.No" xml:space="preserve"><value>No</value></data>
+  <data name="Common.Required" xml:space="preserve"><value>Required</value></data>
+  <data name="Common.NotRequired" xml:space="preserve"><value>Not required</value></data>
+  <data name="Common.HideForm" xml:space="preserve"><value>Hide Form</value></data>
+  <data name="Common.HideCreateForm" xml:space="preserve"><value>Hide Create Form</value></data>
+  <data name="Common.Occupied" xml:space="preserve"><value>Occupied</value></data>
+  <data name="Common.Free" xml:space="preserve"><value>Free</value></data>
+  <data name="Common.Empty" xml:space="preserve"><value>Empty</value></data>
+  <data name="AdminCustomers.EditCustomer" xml:space="preserve"><value>Edit Customer</value></data>
+  <data name="AdminPriceGroups.CreatePriceGroup" xml:space="preserve"><value>Create Price Group</value></data>
+  <data name="AdminPriceGroups.EditPriceGroup" xml:space="preserve"><value>Edit Price Group</value></data>
+  <data name="AdminItems.CreateItem" xml:space="preserve"><value>Create item</value></data>
+  <data name="AdminItems.EditItem" xml:space="preserve"><value>Edit item</value></data>
+  <data name="AdminItems.Lot" xml:space="preserve"><value>Lot</value></data>
+  <data name="AdminSuppliers.CreateSupplier" xml:space="preserve"><value>Create supplier</value></data>
+  <data name="AdminSuppliers.EditSupplier" xml:space="preserve"><value>Edit supplier</value></data>
+  <data name="AdminItemDetail.BasePrice" xml:space="preserve"><value>Base price</value></data>
+  <data name="AdminItemDetail.GroupOverride" xml:space="preserve"><value>Group override</value></data>
+  <data name="SearchByImage.IdentifyingItem" xml:space="preserve"><value>Identifying item…</value></data>
+  <data name="SearchByImage.TapToTakePhoto" xml:space="preserve"><value>Tap to take a photo or choose from gallery</value></data>
+  <data name="AdminImport.Running" xml:space="preserve"><value>Running...</value></data>
+  <data name="AdminImport.RunImport" xml:space="preserve"><value>Run Import</value></data>
+  <data name="AdminSupplierEditorDialog.EditSupplier" xml:space="preserve"><value>Edit Supplier</value></data>
+  <data name="AdminSupplierEditorDialog.CreateSupplier" xml:space="preserve"><value>Create Supplier</value></data>
+  <data name="AdminPriceGroupEditorDialog.EditPriceGroup" xml:space="preserve"><value>Edit Price Group</value></data>
+  <data name="AdminPriceGroupEditorDialog.CreatePriceGroup" xml:space="preserve"><value>Create Price Group</value></data>
+  <data name="AdminCustomerEditorDialog.EditCustomer" xml:space="preserve"><value>Edit Customer</value></data>
+  <data name="AdminCustomerEditorDialog.CreateCustomer" xml:space="preserve"><value>Create Customer</value></data>
+  <data name="AdminItemEditorDialog.EditItem" xml:space="preserve"><value>Edit Item</value></data>
+  <data name="AdminItemEditorDialog.CreateItem" xml:space="preserve"><value>Create Item</value></data>
+  <data name="Admin.Roles.AddRole" xml:space="preserve"><value>Add Role</value></data>
+  <data name="Admin.ApiKeys.CreateNewKey" xml:space="preserve"><value>Create New Key</value></data>
+  <data name="AdminSupplierMappings.CreateMapping" xml:space="preserve"><value>Create Mapping</value></data>
+  <data name="Admin.ReasonCodes.AddReasonCode" xml:space="preserve"><value>Add Reason Code</value></data>
+  <data name="Admin.ApprovalRules.AddApprovalRule" xml:space="preserve"><value>Add Approval Rule</value></data>
+  <data name="StockDashboard.Critical" xml:space="preserve"><value>CRITICAL</value></data>
+  <data name="StockDashboard.Low" xml:space="preserve"><value>LOW</value></data>
+  <data name="Visualization.Warehouse3D.LabelsVisibleClickToHide" xml:space="preserve"><value>Labels visible - click to hide</value></data>
+  <data name="Visualization.Warehouse3D.LabelsHiddenClickToShow" xml:space="preserve"><value>Labels hidden - click to show</value></data>
+  <data name="Common.SaveChanges" xml:space="preserve"><value>Save Changes</value></data>
+  <data name="InboundShipmentCreate.CreateShipment" xml:space="preserve"><value>Create Shipment</value></data>
+  <data name="Dashboard.Adjust" xml:space="preserve"><value>Adjust</value></data>
+  <data name="Dashboard.Transfer" xml:space="preserve"><value>Transfer</value></data>
+  <data name="Status.Pass" xml:space="preserve"><value>pass</value></data>
+  <data name="Status.Fail" xml:space="preserve"><value>fail</value></data>
+  <data name="StockAdjustments.RequestFailed" xml:space="preserve"><value>Adjustment request failed.</value></data>
+  <data name="ReceivingQc.RequestFailed" xml:space="preserve"><value>QC request failed.</value></data>
+  <data name="Labels.RequestFailed" xml:space="preserve"><value>Labels request failed.</value></data>
+  <data name="AdminUsers.RequestFailed" xml:space="preserve"><value>Admin user request failed.</value></data>
+  <data name="ReportsTraceability.RequestFailed" xml:space="preserve"><value>Traceability report request failed.</value></data>
+  <data name="ComplianceLotTrace.RequestFailed" xml:space="preserve"><value>Lot trace request failed.</value></data>
+  <data name="PickingTasks.RequestFailed" xml:space="preserve"><value>Picking task request failed.</value></data>
+  <data name="ReportsComplianceAudit.RequestFailed" xml:space="preserve"><value>Compliance report request failed.</value></data>
+  <data name="SalesOrders.RequestFailed" xml:space="preserve"><value>Sales order request failed.</value></data>
+  <data name="InboundShipments.RequestFailed" xml:space="preserve"><value>Inbound shipment request failed.</value></data>
+  <data name="ReportsDispatchHistory.RequestFailed" xml:space="preserve"><value>Dispatch history request failed.</value></data>
+  <data name="Putaway.RequestFailed" xml:space="preserve"><value>Putaway request failed.</value></data>
+  <data name="AllocationDashboard.RequestFailed" xml:space="preserve"><value>Allocation dashboard request failed.</value></data>
+  <data name="AvailableStock.RequestFailed" xml:space="preserve"><value>Stock request failed.</value></data>
+  <data name="SalesOrderDetail.RequestFailed" xml:space="preserve"><value>Sales order request failed.</value></data>
+  <data name="StockDashboard.RequestFailed" xml:space="preserve"><value>Stock dashboard request failed.</value></data>
+  <data name="ReportsStockMovements.RequestFailed" xml:space="preserve"><value>Stock movement report request failed.</value></data>
+  <data name="InboundShipmentCreate.RequestFailed" xml:space="preserve"><value>Inbound shipment request failed.</value></data>
+  <data name="SalesOrderCreate.RequestFailed" xml:space="preserve"><value>Sales order request failed.</value></data>
+  <data name="InboundShipmentDetail.RequestFailed" xml:space="preserve"><value>Inbound shipment request failed.</value></data>
+  <data name="Configuration.RequestFailed" xml:space="preserve"><value>Agnum configuration request failed.</value></data>
+  <data name="Balances.RequestFailed" xml:space="preserve"><value>Agnum balances request failed.</value></data>
+  <data name="Reconciliation.RequestFailed" xml:space="preserve"><value>Agnum reconciliation request failed.</value></data>
+  <data name="List.RequestFailed" xml:space="preserve"><value>Cycle count request failed.</value></data>
+  <data name="Transfers.List.RequestFailed" xml:space="preserve"><value>Transfer request failed.</value></data>
+  <data name="Create.RequestFailed" xml:space="preserve"><value>Transfer request failed.</value></data>
+  <data name="Execute.RequestFailed" xml:space="preserve"><value>Transfer request failed.</value></data>
+  <data name="ApplyLandedCost.RequestFailed" xml:space="preserve"><value>Landed cost request failed.</value></data>
+  <data name="AdjustCost.RequestFailed" xml:space="preserve"><value>Cost adjustment request failed.</value></data>
+  <data name="Dashboard.RequestFailed" xml:space="preserve"><value>Valuation request failed.</value></data>
+  <data name="WriteDown.RequestFailed" xml:space="preserve"><value>Write-down request failed.</value></data>
+  <data name="Error.Code.INSUFFICIENT_BALANCE" xml:space="preserve"><value>Insufficient balance. Cannot complete operation.</value></data>
+  <data name="Error.Code.INSUFFICIENT_AVAILABLE_STOCK" xml:space="preserve"><value>Insufficient stock at source location. Check available quantities before transferring.</value></data>
+  <data name="Error.Code.RESERVATION_NOT_ALLOCATED" xml:space="preserve"><value>Reservation is not in ALLOCATED state. Cannot start picking.</value></data>
+  <data name="Error.Code.HARD_LOCK_CONFLICT" xml:space="preserve"><value>HARD lock conflict detected. Another reservation is already picking this stock.</value></data>
+  <data name="Error.Code.INVALID_PROJECTION_NAME" xml:space="preserve"><value>Invalid projection name. Must be LocationBalance or AvailableStock.</value></data>
+  <data name="Error.Code.IDEMPOTENCY_IN_PROGRESS" xml:space="preserve"><value>Request is currently being processed. Please wait.</value></data>
+  <data name="Error.Code.IDEMPOTENCY_ALREADY_PROCESSED" xml:space="preserve"><value>Request already processed. Idempotency key conflict.</value></data>
+  <data name="Error.Code.CONCURRENCY_CONFLICT" xml:space="preserve"><value>Concurrent modification detected. Please retry.</value></data>
+  <data name="Error.Code.VALIDATION_ERROR" xml:space="preserve"><value>One or more validation errors occurred.</value></data>
+  <data name="Error.Code.NOT_FOUND" xml:space="preserve"><value>The requested resource was not found.</value></data>
+  <data name="Error.Code.UNAUTHORIZED" xml:space="preserve"><value>Authentication required.</value></data>
+  <data name="Error.Code.FORBIDDEN" xml:space="preserve"><value>You do not have permission to perform this action.</value></data>
+  <data name="Error.Code.INTERNAL_ERROR" xml:space="preserve"><value>Server error. Please try again later.</value></data>
+  <data name="Error.Http.400" xml:space="preserve"><value>Request data is invalid. Check entered values.</value></data>
+  <data name="Error.Http.401" xml:space="preserve"><value>Authentication required.</value></data>
+  <data name="Error.Http.403" xml:space="preserve"><value>You do not have permission to perform this action.</value></data>
+  <data name="Error.Http.404" xml:space="preserve"><value>The requested resource was not found.</value></data>
+  <data name="Error.Http.409" xml:space="preserve"><value>Operation cannot be completed due to a conflict. Refresh data and review current state.</value></data>
+  <data name="Error.Http.422" xml:space="preserve"><value>Operation cannot be completed due to business rules. Review details and adjust input.</value></data>
+  <data name="Error.Http.429" xml:space="preserve"><value>Too many requests. Please wait and try again.</value></data>
+  <data name="Error.Http.500" xml:space="preserve"><value>Server error. Please try again later.</value></data>
+  <data name="Error.Http.503" xml:space="preserve"><value>Backend unavailable. Please check system status.</value></data>
+  <data name="Visualization.Warehouse3D.OpenFiltersActive" xml:space="preserve"><value>Open filters ({0} active)</value></data>
+  <data name="Status.ASSIGNED" xml:space="preserve"><value>Assigned</value></data>
+  <data name="Status.CREATED" xml:space="preserve"><value>Created</value></data>
+  <data name="Status.IN_TRANSIT" xml:space="preserve"><value>In transit</value></data>
+  <data name="Status.PENDING_APPROVAL" xml:space="preserve"><value>Pending approval</value></data>
+  <data name="Status.PENDING_STOCK" xml:space="preserve"><value>Pending stock</value></data>
+  <data name="Status.ADJUSTMENTS" xml:space="preserve"><value>Adjustments</value></data>
+  <data name="Status.STOCK_MOVEMENTS" xml:space="preserve"><value>Stock movements</value></data>
+  <data name="Status.USER_ACTIONS" xml:space="preserve"><value>User actions</value></data>
+  <data name="Status.VALUATIONS" xml:space="preserve"><value>Valuations</value></data>
+  <data name="Dashboard.WarehouseOverview" xml:space="preserve"><value>Warehouse · Overview</value></data>
+  <data name="Dashboard.UpdatedAgoAuto" xml:space="preserve"><value>Updated {0}s ago · auto every {1}s</value></data>
+  <data name="Dashboard.DistinctPositiveQuantity" xml:space="preserve"><value>Distinct · quantity &gt; 0</value></data>
+  <data name="Dashboard.BaseUomMixedUnits" xml:space="preserve"><value>Base unit of measure · mixed units</value></data>
+  <data name="AnalyticsQuality.QCDefectsAndLateShipments" xml:space="preserve"><value>QC defects &amp; late shipments</value></data>
+  <data name="Agnum.Reconciliation.VirtualSummary" xml:space="preserve"><value>Virtual: {0}</value></data>
+  <data name="Agnum.Reconciliation.DistributedSummary" xml:space="preserve"><value>Distributed: {0}</value></data>
+  <data name="Agnum.Reconciliation.MesPhysicalSummary" xml:space="preserve"><value>MES physical: {0}</value></data>
+  <data name="Agnum.Reconciliation.DeltaSummary" xml:space="preserve"><value>Difference: {0}</value></data>
+  <data name="Reservations.HuOption" xml:space="preserve"><value>{0} ({1}) · Qty {2}</value></data>
+  <data name="Common.ItemPhoto" xml:space="preserve"><value>{0} photo</value></data>
+  <data name="Status.Consumed" xml:space="preserve"><value>Consumed</value></data>
+  <data name="Dashboard.GroupedOnHandValue" xml:space="preserve"><value>Grouped from on-hand value · % of total</value></data>
+  <data name="Dashboard.LowStockAndReorder" xml:space="preserve"><value>Low stock &amp; reorder</value></data>
+  <data name="Dashboard.BelowReorderPointExplanation" xml:space="preserve"><value>Below reorder point · available = on-hand minus HARD locks and reservations</value></data>
+  <data name="Dashboard.SupplierAndLead" xml:space="preserve"><value>Supplier · lead time</value></data>
+  <data name="Dashboard.DaysCount" xml:space="preserve"><value>{0} d</value></data>
+  <data name="Dashboard.ItemAndLot" xml:space="preserve"><value>Item · lot</value></data>
+  <data name="Dashboard.IncomingAndExpected" xml:space="preserve"><value>Incoming &amp; expected</value></data>
+  <data name="Dashboard.OpenInboundShipments" xml:space="preserve"><value>Open inbound shipments · soonest first</value></data>
+  <data name="Dashboard.LinesCount" xml:space="preserve"><value>{0} lines</value></data>
+  <data name="Dashboard.AccountingSync" xml:space="preserve"><value>Accounting sync · MES ↔ Agnum</value></data>
+  <data name="Dashboard.RowsCount" xml:space="preserve"><value>{0} rows</value></data>
+  <data name="Dashboard.RetriesCount" xml:space="preserve"><value>{0} retries</value></data>
+  <data name="Dashboard.ProductsCount" xml:space="preserve"><value>{0} products</value></data>
+  <data name="Dashboard.ErrorsCount" xml:space="preserve"><value>{0} errors</value></data>
+  <data name="Dashboard.ReservationsAndPicking" xml:space="preserve"><value>Reservations &amp; picking</value></data>
+  <data name="Dashboard.StuckInPicking" xml:space="preserve"><value>{0} in picking &gt; 2h</value></data>
+  <data name="Dashboard.TransfersAndAdjustments" xml:space="preserve"><value>transfers &amp; adjustments</value></data>
+  <data name="AllocationDashboard.Title" xml:space="preserve"><value>Allocation &amp; Release Dashboard</value></data>
+  <data name="AdminItemDetail.CreatePriceGroupHint" xml:space="preserve"><value>Create a price group under Admin &gt; Price Groups to set group-specific prices.</value></data>
+  <data name="Dashboard.Overdue" xml:space="preserve"><value>Overdue</value></data>
+  <data name="Agnum.Balances.RemainingFromAgnumProduct" xml:space="preserve"><value>Remaining {0} {1} from Agnum product {2}</value></data>
+  <data name="Dashboard.Within30Days" xml:space="preserve"><value>≤ 30 d</value></data>
+  <data name="Dashboard.ExpiryExpired" xml:space="preserve"><value>Expired</value></data>
+  <data name="Dashboard.ExpiryWithin7Days" xml:space="preserve"><value>≤ 7 days</value></data>
+  <data name="Dashboard.Expiry8To30Days" xml:space="preserve"><value>8–30 days</value></data>
+  <data name="Dashboard.Expiry31To90Days" xml:space="preserve"><value>31–90 days</value></data>
+  <data name="ReportsTraceability.ReportLotToOrder" xml:space="preserve"><value>Traceability report (Lot → Order)</value></data>
 </root>

@@ -7,9 +7,9 @@
 @inject MasterDataAdminClient MasterDataAdminClient
 @inject ToastService ToastService
 
-<PageTitle>Agnum Configuration</PageTitle>
+<PageTitle>@L["Agnum.Configuration.AgnumConfiguration"]</PageTitle>
 
-<h1>Agnum Export Configuration</h1>
+<h1>@L["Agnum.Configuration.AgnumExportConfiguration"]</h1>
 
 @if (_apiError is not null)
 {
@@ -29,7 +29,7 @@
 
             <div class="row g-3">
                 <div class="col-12 col-md-3">
-                    <label class="form-label">Export Scope</label>
+                    <label class="form-label">@L["Agnum.Configuration.ExportScope"]</label>
                     <InputSelect class="form-select" @bind-Value="_model.Scope">
                         @foreach (var scope in ExportScopes)
                         {
@@ -38,12 +38,12 @@
                     </InputSelect>
                 </div>
                 <div class="col-12 col-md-3">
-                    <label class="form-label">Schedule (Cron)</label>
+                    <label class="form-label">@L["Agnum.Configuration.ScheduleCron"]</label>
                     <InputText class="form-control" @bind-Value="_model.Schedule" />
-                    <div class="form-text">Example: 0 23 * * *</div>
+                    <div class="form-text">@L["Agnum.Configuration.Example023"]</div>
                 </div>
                 <div class="col-12 col-md-3">
-                    <label class="form-label">Format</label>
+                    <label class="form-label">@L["Common.Format"]</label>
                     <InputSelect class="form-select" @bind-Value="_model.Format">
                         @foreach (var format in ExportFormats)
                         {
@@ -54,39 +54,39 @@
                 <div class="col-12 col-md-3 d-flex align-items-end">
                     <div class="form-check">
                         <InputCheckbox class="form-check-input" @bind-Value="_model.IsActive" />
-                        <label class="form-check-label">Active</label>
+                        <label class="form-check-label">@L["Common.Active"]</label>
                     </div>
                 </div>
                 <div class="col-12 col-md-8">
-                    <label class="form-label">API Endpoint</label>
+                    <label class="form-label">@L["Agnum.Configuration.APIEndpoint"]</label>
                     <InputText class="form-control" @bind-Value="_model.ApiEndpoint" />
                 </div>
                 <div class="col-12 col-md-4">
-                    <label class="form-label">API Key</label>
+                    <label class="form-label">@L["Agnum.Configuration.APIKey"]</label>
                     <input class="form-control" type="password" @bind="_model.ApiKey" />
                 </div>
             </div>
 
             <div class="d-flex flex-wrap gap-2 mt-3">
-                <button class="btn btn-outline-secondary" type="button" @onclick="UseDailyPreset">Daily 23:00</button>
-                <button class="btn btn-outline-secondary" type="button" @onclick="UseHourlyPreset">Hourly</button>
-                <button class="btn btn-outline-secondary" type="button" @onclick="UseWeekdayPreset">Weekdays 08:00</button>
+                <button class="btn btn-outline-secondary" type="button" @onclick="UseDailyPreset">@L["Agnum.Configuration.Daily2300"]</button>
+                <button class="btn btn-outline-secondary" type="button" @onclick="UseHourlyPreset">@L["Agnum.Configuration.Hourly"]</button>
+                <button class="btn btn-outline-secondary" type="button" @onclick="UseWeekdayPreset">@L["Agnum.Configuration.Weekdays0800"]</button>
                 <button class="btn btn-outline-primary ms-auto" type="button" @onclick="TestConnectionAsync" disabled="@_isTestingConnection">
-                    Test Connection
+                    @L["Agnum.Configuration.TestConnection"]
                 </button>
             </div>
 
             <hr />
 
             <div class="d-flex justify-content-between align-items-center mb-2">
-                <h5 class="mb-0">Mappings</h5>
-                <button class="btn btn-sm btn-outline-primary" type="button" @onclick="AddMapping">+ Add Mapping</button>
+                <h5 class="mb-0">@L["Agnum.Configuration.Mappings"]</h5>
+                <button class="btn btn-sm btn-outline-primary" type="button" @onclick="AddMapping">@L["Agnum.Configuration.AddMapping"]</button>
             </div>
 
             @if (_mappings.Count == 0)
             {
                 <div class="alert alert-light border">
-                    No mappings configured. Add your first mapping.
+                    @L["Agnum.Configuration.NoMappingsConfiguredAddYourFirstMapping"]
                 </div>
             }
             else
@@ -95,10 +95,10 @@
                     <table class="table table-sm align-middle">
                         <thead>
                         <tr>
-                            <th style="width: 25%;">Source Type</th>
-                            <th style="width: 35%;">Source Value</th>
-                            <th style="width: 30%;">Agnum Account Code</th>
-                            <th style="width: 10%;">Actions</th>
+                            <th style="width: 25%;">@L["Agnum.Configuration.SourceType"]</th>
+                            <th style="width: 35%;">@L["Agnum.Configuration.SourceValue"]</th>
+                            <th style="width: 30%;">@L["Agnum.Configuration.AgnumAccountCode"]</th>
+                            <th style="width: 10%;">@L["Common.Actions"]</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -128,7 +128,7 @@
                                     <InputText class="form-control" @bind-Value="row.AgnumAccountCode" />
                                 </td>
                                 <td>
-                                    <button class="btn btn-sm btn-outline-danger" type="button" @onclick="@(() => RemoveMapping(i))">Remove</button>
+                                    <button class="btn btn-sm btn-outline-danger" type="button" @onclick="@(() => RemoveMapping(i))">@L["Common.Remove"]</button>
                                 </td>
                             </tr>
                         }
@@ -138,36 +138,36 @@
             }
 
             <div class="d-flex justify-content-end mt-3">
-                <button class="btn btn-primary" type="submit" disabled="@_isSaving">Save</button>
+                <button class="btn btn-primary" type="submit" disabled="@_isSaving">@L["Common.Save"]</button>
             </div>
         </EditForm>
 
         <hr />
 
         <div class="d-flex justify-content-between align-items-center mb-2">
-            <h5 class="mb-0">Export History</h5>
-            <button class="btn btn-sm btn-outline-secondary" type="button" @onclick="LoadHistoryAsync" disabled="@_isLoading">Refresh History</button>
+            <h5 class="mb-0">@L["Agnum.Configuration.ExportHistory"]</h5>
+            <button class="btn btn-sm btn-outline-secondary" type="button" @onclick="LoadHistoryAsync" disabled="@_isLoading">@L["Agnum.Configuration.RefreshHistory"]</button>
         </div>
 
         <div class="table-responsive">
             <table class="table table-sm table-hover align-middle">
                 <thead>
                     <tr>
-                        <th>Exported</th>
-                        <th>Export #</th>
-                        <th>Status</th>
-                        <th>Rows</th>
-                        <th>Trigger</th>
-                        <th>Retry</th>
-                        <th>File Path</th>
-                        <th>Error</th>
+                        <th>@L["Agnum.Configuration.Exported"]</th>
+                        <th>@L["Agnum.Configuration.Export"]</th>
+                        <th>@L["Common.Status"]</th>
+                        <th>@L["Agnum.Configuration.Rows"]</th>
+                        <th>@L["Agnum.Configuration.Trigger"]</th>
+                        <th>@L["Common.Retry"]</th>
+                        <th>@L["Agnum.Configuration.FilePath"]</th>
+                        <th>@L["Agnum.Configuration.Error"]</th>
                     </tr>
                 </thead>
                 <tbody>
                     @if (_history.Count == 0)
                     {
                         <tr>
-                            <td colspan="8" class="text-muted">No export history found.</td>
+                            <td colspan="8" class="text-muted">@L["Agnum.Configuration.NoExportHistoryFound"]</td>
                         </tr>
                     }
                     else
@@ -177,7 +177,7 @@
                             <tr>
                                 <td>@item.ExportedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</td>
                                 <td>@item.ExportNumber</td>
-                                <td>@item.Status</td>
+                                <td>@WarehouseStatusText.Get(L, item.Status)</td>
                                 <td>@item.RowCount</td>
                                 <td>@item.Trigger</td>
                                 <td>@item.RetryCount</td>
@@ -274,13 +274,13 @@
         _apiError = null;
         if (string.IsNullOrWhiteSpace(_model.Schedule) || !CronRegex.IsMatch(_model.Schedule))
         {
-            ToastService.ShowError("Schedule must be a valid cron expression with 5 fields.");
+            ToastService.ShowError(L["Agnum.Configuration.Toast.ScheduleMustBeAValidCronExpressionWith5Fields"].Value);
             return;
         }
 
         if (!string.Equals(_model.Scope, "TOTAL_ONLY", StringComparison.OrdinalIgnoreCase) && _mappings.Count == 0)
         {
-            ToastService.ShowError($"At least 1 mapping required for scope {_model.Scope}.");
+            ToastService.ShowError(L["Agnum.Configuration.Toast.AtLeast1MappingRequiredForScope", _model.Scope].Value);
             return;
         }
 
@@ -289,7 +289,7 @@
                 string.IsNullOrWhiteSpace(x.SourceValue) ||
                 string.IsNullOrWhiteSpace(x.AgnumAccountCode)))
         {
-            ToastService.ShowError("Each mapping requires source type, source value, and account code.");
+            ToastService.ShowError(L["Agnum.Configuration.Toast.EachMappingRequiresSourceTypeSourceValueAndAccountCode"].Value);
             return;
         }
 
@@ -315,7 +315,7 @@
 
             _model.ConfigId = response.Id;
             _model.ApiKey = string.Empty;
-            ToastService.ShowSuccess("Agnum configuration saved successfully.");
+            ToastService.ShowSuccess(L["Agnum.Configuration.Toast.AgnumConfigurationSavedSuccessfully"].Value);
         }
         catch (ApiException ex)
         {
@@ -464,16 +464,16 @@
         _apiError = null;
     }
 
-    private static string BuildErrorMessage(ApiException ex)
+    private string BuildErrorMessage(ApiException ex)
     {
-        if (!string.IsNullOrWhiteSpace(ex.UserMessage))
+        if (!string.IsNullOrWhiteSpace(WarehouseErrorText.Get(L, ex)))
         {
-            return ex.UserMessage;
+            return WarehouseErrorText.Get(L, ex);
         }
 
         return ex.ProblemDetails?.Detail
                ?? ex.ProblemDetails?.Title
-               ?? "Agnum configuration request failed.";
+               ?? L["Configuration.RequestFailed"].Value;
     }
 
     private sealed class AgnumConfigFormModel

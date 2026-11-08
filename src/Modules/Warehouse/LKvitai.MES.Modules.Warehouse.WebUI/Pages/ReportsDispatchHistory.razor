@@ -3,9 +3,9 @@
 @inject IJSRuntime JavaScript
 @inject ToastService ToastService
 
-<PageTitle>Dispatch History - Cikada.MES</PageTitle>
+<PageTitle>@L["ReportsDispatchHistory.DispatchHistoryCikadaMES"]</PageTitle>
 
-<h1>Dispatch History Report</h1>
+<h1>@L["ReportsDispatchHistory.DispatchHistoryReport"]</h1>
 
 @if (_apiError is not null)
 {
@@ -19,22 +19,22 @@
     <div class="card-body">
         <div class="row g-2 align-items-end">
             <div class="col-md-2">
-                <label class="form-label">Date From</label>
+                <label class="form-label">@L["ReportsDispatchHistory.DateFrom"]</label>
                 <input type="date" class="form-control" @bind="_from" />
             </div>
             <div class="col-md-2">
-                <label class="form-label">Date To</label>
+                <label class="form-label">@L["ReportsDispatchHistory.DateTo"]</label>
                 <input type="date" class="form-control" @bind="_to" />
             </div>
             <div class="col-md-3">
-                <label class="form-label">Carrier</label>
-                <input class="form-control" @bind="_carrier" placeholder="FedEx" />
+                <label class="form-label">@L["Common.Carrier"]</label>
+                <input class="form-control" @bind="_carrier" placeholder="@L["ReportsDispatchHistory.FedEx"]" />
             </div>
             <div class="col-md-5 d-flex gap-2">
-                <button class="btn btn-primary" @onclick="ApplyFiltersAsync" disabled="@_isLoading">Apply</button>
-                <button class="btn btn-outline-secondary" @onclick="ResetFiltersAsync" disabled="@_isLoading">Reset</button>
-                <button class="btn btn-outline-secondary" @onclick="LoadAsync" disabled="@_isLoading">Refresh</button>
-                <button class="btn btn-outline-success ms-auto" @onclick="ExportCsvAsync" disabled="@_isLoading">Export CSV</button>
+                <button class="btn btn-primary" @onclick="ApplyFiltersAsync" disabled="@_isLoading">@L["Common.Apply"]</button>
+                <button class="btn btn-outline-secondary" @onclick="ResetFiltersAsync" disabled="@_isLoading">@L["Common.Reset"]</button>
+                <button class="btn btn-outline-secondary" @onclick="LoadAsync" disabled="@_isLoading">@L["Common.Refresh"]</button>
+                <button class="btn btn-outline-success ms-auto" @onclick="ExportCsvAsync" disabled="@_isLoading">@L["Common.ExportCSV"]</button>
             </div>
         </div>
     </div>
@@ -46,7 +46,7 @@
         <div class="col-md-4">
             <div class="card border h-100">
                 <div class="card-body">
-                    <div class="small text-muted">Total Shipments</div>
+                    <div class="small text-muted">@L["ReportsDispatchHistory.TotalShipments"]</div>
                     <div class="fs-4">@_summary.TotalShipments</div>
                 </div>
             </div>
@@ -54,7 +54,7 @@
         <div class="col-md-4">
             <div class="card border h-100">
                 <div class="card-body">
-                    <div class="small text-muted">Total Orders</div>
+                    <div class="small text-muted">@L["ReportsDispatchHistory.TotalOrders"]</div>
                     <div class="fs-4">@_summary.TotalOrders</div>
                 </div>
             </div>
@@ -62,7 +62,7 @@
         <div class="col-md-4">
             <div class="card border h-100">
                 <div class="card-body">
-                    <div class="small text-muted">On-Time Delivery</div>
+                    <div class="small text-muted">@L["ReportsDispatchHistory.OnTimeDelivery"]</div>
                     <div class="fs-4">@_summary.OnTimeDeliveryPercent.ToString("0.0")%</div>
                 </div>
             </div>
@@ -78,21 +78,21 @@
             <table class="table table-sm table-hover align-middle">
                 <thead>
                     <tr>
-                        <th>Shipment</th>
-                        <th>Order</th>
-                        <th>Customer</th>
-                        <th>Carrier</th>
-                        <th>Tracking</th>
-                        <th>Dispatch Date</th>
-                        <th>Delivery Date</th>
-                        <th>Status</th>
+                        <th>@L["Common.Shipment"]</th>
+                        <th>@L["Common.Order"]</th>
+                        <th>@L["Common.Customer"]</th>
+                        <th>@L["Common.Carrier"]</th>
+                        <th>@L["ReportsDispatchHistory.Tracking"]</th>
+                        <th>@L["ReportsDispatchHistory.DispatchDate"]</th>
+                        <th>@L["ReportsDispatchHistory.DeliveryDate"]</th>
+                        <th>@L["Common.Status"]</th>
                     </tr>
                 </thead>
                 <tbody>
                     @if (_rows.Count == 0)
                     {
                         <tr>
-                            <td colspan="8" class="text-muted">No dispatch history rows found.</td>
+                            <td colspan="8" class="text-muted">@L["ReportsDispatchHistory.NoDispatchHistoryRowsFound"]</td>
                         </tr>
                     }
                     else
@@ -107,7 +107,7 @@
                                 <td>@(row.TrackingNumber ?? "-")</td>
                                 <td>@row.DispatchDate.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
                                 <td>@(row.DeliveryDate?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "-")</td>
-                                <td><span class="badge @GetStatusBadge(row.Status)">@row.Status</span></td>
+                                <td><span class="badge @GetStatusBadge(row.Status)">@WarehouseStatusText.Get(L, row.Status)</span></td>
                             </tr>
                         }
                     }
@@ -243,15 +243,15 @@
         _apiError = null;
     }
 
-    private static string BuildErrorMessage(ApiException ex)
+    private string BuildErrorMessage(ApiException ex)
     {
-        if (!string.IsNullOrWhiteSpace(ex.UserMessage))
+        if (!string.IsNullOrWhiteSpace(WarehouseErrorText.Get(L, ex)))
         {
-            return ex.UserMessage;
+            return WarehouseErrorText.Get(L, ex);
         }
 
         return ex.ProblemDetails?.Detail
                ?? ex.ProblemDetails?.Title
-               ?? "Dispatch history request failed.";
+               ?? L["ReportsDispatchHistory.RequestFailed"].Value;
     }
 }

@@ -5,13 +5,13 @@
 @using LKvitai.MES.Modules.Warehouse.WebUI.Services
 @inject ItemPricesClient ItemPricesClient
 
-<PageTitle>Cross-Dock - Cikada.MES</PageTitle>
+<PageTitle>@L["CrossDock.CrossDockCikadaMES"]</PageTitle>
 
-<h3>Cross-Dock Tracking</h3>
+<h3>@L["CrossDock.CrossDockTracking"]</h3>
 
 @if (_error is not null)
 {
-    <ErrorBanner Message="@_error.UserMessage"
+    <ErrorBanner Message="@WarehouseErrorText.Get(L, _error)"
                  TraceId="@_error.TraceId"
                  OnRetry="LoadAsync"
                  OnDismiss="DismissError" />
@@ -19,26 +19,26 @@
 
 <div class="card shadow-sm mb-3">
     <div class="card-body">
-        <h5>Create Cross-Dock Match</h5>
+        <h5>@L["CrossDock.CreateCrossDockMatch"]</h5>
         <div class="row g-2 align-items-end">
             <div class="col-md-3">
-                <label class="form-label">Inbound Shipment Id</label>
+                <label class="form-label">@L["CrossDock.InboundShipmentId"]</label>
                 <input class="form-control" @bind="_inboundId" placeholder="GUID" />
             </div>
             <div class="col-md-3">
-                <label class="form-label">Outbound Order Id</label>
+                <label class="form-label">@L["CrossDock.OutboundOrderId"]</label>
                 <input class="form-control" @bind="_outboundId" placeholder="GUID" />
             </div>
             <div class="col-md-2">
-                <label class="form-label">Item Id</label>
+                <label class="form-label">@L["Common.ItemID"]</label>
                 <input class="form-control" type="number" @bind="_itemId" />
             </div>
             <div class="col-md-2">
-                <label class="form-label">Qty</label>
+                <label class="form-label">@L["Common.Qty"]</label>
                 <input class="form-control" type="number" step="0.01" @bind="_qty" />
             </div>
             <div class="col-md-2">
-                <button class="btn btn-primary w-100" @onclick="CreateAsync" disabled="@_isBusy">Create</button>
+                <button class="btn btn-primary w-100" @onclick="CreateAsync" disabled="@_isBusy">@L["Common.Create"]</button>
             </div>
         </div>
     </div>
@@ -47,14 +47,14 @@
 <div class="card shadow-sm">
     <div class="card-body">
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="mb-0">Cross-Dock Queue</h5>
-            <button class="btn btn-outline-secondary btn-sm" @onclick="LoadAsync" disabled="@_isBusy">Refresh</button>
+            <h5 class="mb-0">@L["CrossDock.CrossDockQueue"]</h5>
+            <button class="btn btn-outline-secondary btn-sm" @onclick="LoadAsync" disabled="@_isBusy">@L["Common.Refresh"]</button>
         </div>
 
         @if (_rows.Count == 0)
         {
-            <EmptyState Title="No cross-dock records"
-                        Message="Create a match to route inbound stock directly to outbound shipping."
+            <EmptyState Title="@L["CrossDock.NoCrossDockRecords"]"
+                        Message="@L["CrossDock.CreateAMatchToRouteInboundStockDirectlyToOutboundShipping"]"
                         IconCss="bi bi-arrow-left-right"
                         OnAction="LoadAsync" />
         }
@@ -64,14 +64,14 @@
                 <table class="table table-sm align-middle">
                     <thead>
                         <tr>
-                            <th>Number</th>
-                            <th>Item</th>
-                            <th>Qty</th>
+                            <th>@L["CrossDock.Number"]</th>
+                            <th>@L["Common.Item"]</th>
+                            <th>@L["Common.Qty"]</th>
                             <th class="text-end">@L["Pricing.Cost"]</th>
                             <th class="text-end">@L["Pricing.Sale"]</th>
-                            <th class="text-end">Value</th>
-                            <th>Status</th>
-                            <th>Created</th>
+                            <th class="text-end">@L["Common.Value"]</th>
+                            <th>@L["Common.Status"]</th>
+                            <th>@L["Common.Created"]</th>
                             <th></th>
                         </tr>
                     </thead>
@@ -85,11 +85,11 @@
                                 <td class="text-end is-money is-num">@Money.Format(_priceMap.Get(row.ItemId, null)?.EffectiveCost)</td>
                                 <td class="text-end is-money is-num">@Money.Format(_priceMap.Get(row.ItemId, null)?.BasePrice)</td>
                                 <td class="text-end is-money is-num">@Money.Format(_priceMap.Value(row.Qty, row.ItemId, null))</td>
-                                <td><span class="badge bg-secondary">@row.Status</span></td>
+                                <td><span class="badge bg-secondary">@WarehouseStatusText.Get(L, row.Status)</span></td>
                                 <td>@row.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
                                 <td class="d-flex gap-1">
-                                    <button class="btn btn-sm btn-outline-success" @onclick='() => SetStatusAsync(row.Id, "MATCHED")'>Match</button>
-                                    <button class="btn btn-sm btn-outline-primary" @onclick='() => SetStatusAsync(row.Id, "COMPLETED")'>Complete</button>
+                                    <button class="btn btn-sm btn-outline-success" @onclick='() => SetStatusAsync(row.Id, "MATCHED")'>@L["CrossDock.Match"]</button>
+                                    <button class="btn btn-sm btn-outline-primary" @onclick='() => SetStatusAsync(row.Id, "COMPLETED")'>@L["Common.Complete"]</button>
                                 </td>
                             </tr>
                         }
@@ -130,14 +130,14 @@
     {
         if (!Guid.TryParse(_inboundId, out var inboundId) || !Guid.TryParse(_outboundId, out var outboundId))
         {
-            ToastService.ShowError("Inbound and outbound IDs must be valid GUID values.");
+            ToastService.ShowError(L["CrossDock.Toast.InboundAndOutboundIDsMustBeValidGUIDValues"].Value);
             return;
         }
 
         await ExecuteAsync(async () =>
         {
             await AdvancedClient.CreateCrossDockAsync(new CrossDockCreateRequestDto(inboundId, outboundId, _itemId, _qty));
-            ToastService.ShowSuccess("Cross-dock record created.");
+            ToastService.ShowSuccess(L["CrossDock.Toast.CrossDockRecordCreated"].Value);
             _inboundId = string.Empty;
             _outboundId = string.Empty;
             await LoadAsync();
@@ -165,7 +165,7 @@
         catch (ApiException ex)
         {
             _error = ex;
-            ToastService.ShowError(ex.UserMessage);
+            ToastService.ShowError(WarehouseErrorText.Get(L, ex));
         }
         finally
         {

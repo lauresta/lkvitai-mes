@@ -4,9 +4,9 @@
 @inject NavigationManager NavigationManager
 @inject ToastService ToastService
 
-<PageTitle>Inbound Shipments - Cikada.MES</PageTitle>
+<PageTitle>@L["InboundShipments.InboundShipmentsCikadaMES"]</PageTitle>
 
-<h1>Inbound Shipments</h1>
+<h1>@L["InboundShipments.InboundShipments"]</h1>
 
 @if (_apiError is not null)
 {
@@ -20,31 +20,31 @@
     <div class="card-body">
         <div class="row g-2 align-items-end">
             <div class="col-md-2">
-                <label class="form-label">Supplier Id</label>
+                <label class="form-label">@L["InboundShipments.SupplierId"]</label>
                 <input type="number" class="form-control" @bind="_supplierId" />
             </div>
             <div class="col-md-2">
-                <label class="form-label">Status</label>
+                <label class="form-label">@L["Common.Status"]</label>
                 <select class="form-select" @bind="_status">
-                    <option value="">All</option>
-                    <option value="Draft">Draft</option>
-                    <option value="Partial">Partial</option>
-                    <option value="Complete">Complete</option>
+                    <option value="">@L["Common.All"]</option>
+                    <option value="Draft">@L["InboundShipments.Draft"]</option>
+                    <option value="Partial">@L["InboundShipments.Partial"]</option>
+                    <option value="Complete">@L["Common.Complete"]</option>
                 </select>
             </div>
             <div class="col-md-2">
-                <label class="form-label">Expected From</label>
+                <label class="form-label">@L["InboundShipments.ExpectedFrom"]</label>
                 <input type="date" class="form-control" @bind="_expectedFrom" />
             </div>
             <div class="col-md-2">
-                <label class="form-label">Expected To</label>
+                <label class="form-label">@L["InboundShipments.ExpectedTo"]</label>
                 <input type="date" class="form-control" @bind="_expectedTo" />
             </div>
             <div class="col-md-4 d-flex gap-2">
-                <button class="btn btn-primary" @onclick="ApplyFiltersAsync" disabled="@_isLoading">Apply</button>
-                <button class="btn btn-outline-secondary" @onclick="ResetFiltersAsync" disabled="@_isLoading">Reset</button>
-                <button class="btn btn-outline-secondary" @onclick="LoadAsync" disabled="@_isLoading">Refresh</button>
-                <button class="btn btn-success ms-auto" @onclick="OpenCreate">+ Create Inbound</button>
+                <button class="btn btn-primary" @onclick="ApplyFiltersAsync" disabled="@_isLoading">@L["Common.Apply"]</button>
+                <button class="btn btn-outline-secondary" @onclick="ResetFiltersAsync" disabled="@_isLoading">@L["Common.Reset"]</button>
+                <button class="btn btn-outline-secondary" @onclick="LoadAsync" disabled="@_isLoading">@L["Common.Refresh"]</button>
+                <button class="btn btn-success ms-auto" @onclick="OpenCreate">@L["InboundShipments.CreateInbound"]</button>
             </div>
         </div>
     </div>
@@ -53,23 +53,23 @@
 <div class="card shadow-sm position-relative">
     <LoadingSpinner IsLoading="_isLoading" />
     <div class="card-body">
-        <div class="mb-2"><strong>Total: @_totalCount</strong></div>
+        <div class="mb-2"><strong>@L["InboundShipments.Total", _totalCount]</strong></div>
 
         <div class="table-responsive">
             <table class="table table-sm table-hover align-middle">
                 <thead>
                     <tr>
-                        <th>Shipment</th>
-                        <th>Reference</th>
-                        <th>Supplier</th>
-                        <th>Status</th>
-                        <th>Expected Date</th>
-                        <th>Lines</th>
-                        <th>Received / Expected</th>
+                        <th>@L["Common.Shipment"]</th>
+                        <th>@L["Common.Reference"]</th>
+                        <th>@L["Common.Supplier"]</th>
+                        <th>@L["Common.Status"]</th>
+                        <th>@L["InboundShipments.ExpectedDate"]</th>
+                        <th>@L["Common.Lines"]</th>
+                        <th>@L["InboundShipments.ReceivedExpected"]</th>
                         <th class="text-end">@L["Pricing.PurchaseTotal"]</th>
                         <th class="text-end">@L["Pricing.CostTotal"]</th>
                         <th class="text-end">@L["Pricing.SaleTotal"]</th>
-                        <th>Actions</th>
+                        <th>@L["Common.Actions"]</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -77,8 +77,8 @@
                     {
                         <tr>
                             <td colspan="11">
-                                <EmptyState Title="No inbound shipments"
-                                            Message="Create inbound shipment to start receiving workflow."
+                                <EmptyState Title="@L["InboundShipments.NoInboundShipments"]"
+                                            Message="@L["InboundShipments.CreateInboundShipmentToStartReceivingWorkflow"]"
                                             IconCss="bi bi-box-arrow-in-down"
                                             OnAction="OpenCreateAsync" />
                             </td>
@@ -92,7 +92,7 @@
                                 <td>ISH-@row.Id</td>
                                 <td>@row.ReferenceNumber</td>
                                 <td>@row.SupplierName (@row.SupplierId)</td>
-                                <td><span class="badge @GetStatusBadge(row.Status)">@row.Status</span></td>
+                                <td><span class="badge @GetStatusBadge(row.Status)">@WarehouseStatusText.Get(L, row.Status)</span></td>
                                 <td>@row.ExpectedDate?.ToString("yyyy-MM-dd")</td>
                                 <td>@row.TotalLines</td>
                                 <td>@row.TotalReceivedQty.ToString("0.##") / @row.TotalExpectedQty.ToString("0.##")</td>
@@ -100,10 +100,10 @@
                                 <td class="text-end is-money is-num">@Money.Format(row.TotalCostValue)</td>
                                 <td class="text-end is-money is-num">@Money.Format(row.TotalSaleValue)</td>
                                 <td>
-                                    <button class="btn btn-sm btn-outline-primary" @onclick="() => OpenDetails(row.Id)">View</button>
+                                    <button class="btn btn-sm btn-outline-primary" @onclick="() => OpenDetails(row.Id)">@L["Common.View"]</button>
                                     @if (string.Equals(row.Status, "Draft", StringComparison.OrdinalIgnoreCase))
                                     {
-                                        <button class="btn btn-sm btn-outline-secondary ms-1" @onclick="() => OpenEdit(row.Id)">Edit</button>
+                                        <button class="btn btn-sm btn-outline-secondary ms-1" @onclick="() => OpenEdit(row.Id)">@L["Common.Edit"]</button>
                                     }
                                 </td>
                             </tr>
@@ -241,15 +241,15 @@
         _ => "bg-secondary"
     };
 
-    private static string BuildErrorMessage(ApiException ex)
+    private string BuildErrorMessage(ApiException ex)
     {
-        if (!string.IsNullOrWhiteSpace(ex.UserMessage))
+        if (!string.IsNullOrWhiteSpace(WarehouseErrorText.Get(L, ex)))
         {
-            return ex.UserMessage;
+            return WarehouseErrorText.Get(L, ex);
         }
 
         return ex.ProblemDetails?.Detail
                ?? ex.ProblemDetails?.Title
-               ?? "Inbound shipment request failed.";
+               ?? L["InboundShipments.RequestFailed"].Value;
     }
 }

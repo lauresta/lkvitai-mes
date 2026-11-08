@@ -6,7 +6,7 @@
 @using System.Diagnostics
 @using System.Globalization
 
-<PageTitle>Warehouse Dashboard - LKvitai.MES</PageTitle>
+<PageTitle>@L["Dashboard.WarehouseDashboardLKvitaiMES"]</PageTitle>
 
 @if (_pageError is not null)
 {
@@ -18,20 +18,20 @@
 
 <div class="page-head">
     <div>
-        <p class="eyebrow">Warehouse &middot; Overview</p>
-        <h1>Warehouse Dashboard</h1>
+        <p class="eyebrow">@L["Dashboard.WarehouseOverview"]</p>
+        <h1>@L["Dashboard.WarehouseDashboard"]</h1>
     </div>
     <div class="dash-controls">
         <div class="dash-refresh">
             <span class="dash-refresh__dot"></span>
-            <span>Updated <b class="mono">@FormatAge(_lastRefreshedAt)</b> ago &middot; auto @(_refreshIntervalSeconds)s</span>
+            <span>@L["Dashboard.UpdatedAgoAuto", FormatAge(_lastRefreshedAt), _refreshIntervalSeconds]</span>
         </div>
 
         <div class="dash-segmented">
             <button type="button"
                     class="dash-segmented__btn @(_selectedWarehouseId is null ? "is-active" : "")"
                     @onclick="@(() => SelectWarehouseAsync(null))">
-                All warehouses
+                @L["Common.AllWarehouses"]
             </button>
             @foreach (var warehouse in _warehouses)
             {
@@ -59,37 +59,37 @@
         }
     </div>
     <div class="kpi">
-        <span class="kpi__label">SKUs on hand</span>
+        <span class="kpi__label">@L["Dashboard.SKUsOnHand"]</span>
         <span class="kpi__val mono">@(_overview.Data?.TotalSKUs.ToString("N0", CultureInfo.InvariantCulture) ?? "-")</span>
-        <span class="kpi__delta">distinct &middot; qty &gt; 0</span>
+        <span class="kpi__delta">@L["Dashboard.DistinctPositiveQuantity"]</span>
     </div>
     <div class="kpi">
-        <span class="kpi__label">Total quantity</span>
+        <span class="kpi__label">@L["Dashboard.TotalQuantity"]</span>
         <span class="kpi__val mono">@(_overview.Data?.TotalQuantity.ToString("N0", CultureInfo.InvariantCulture) ?? "-")</span>
-        <span class="kpi__delta">base UoM &middot; mixed units</span>
+        <span class="kpi__delta">@L["Dashboard.BaseUomMixedUnits"]</span>
     </div>
     <a href="#lowstock" class="kpi @(HasLowStock ? "kpi--warn" : "")">
-        <span class="kpi__label">Low stock items</span>
+        <span class="kpi__label">@L["Dashboard.LowStockItems"]</span>
         <span class="kpi__val mono">@(_overview.Data?.LowStockCount.ToString("N0", CultureInfo.InvariantCulture) ?? "-")</span>
         @if (_overview.Data is { OutOfStockCount: > 0 })
         {
-            <span class="chip chip--out">@_overview.Data.OutOfStockCount out</span>
+            <span class="chip chip--out">@L["Dashboard.Out", _overview.Data.OutOfStockCount]</span>
         }
     </a>
     <a href="#expiring" class="kpi @(HasExpiring ? "kpi--danger" : "")">
-        <span class="kpi__label">Expiring soon</span>
+        <span class="kpi__label">@L["Common.ExpiringSoon"]</span>
         <span class="kpi__val mono">@(_overview.Data?.ExpiringSoonCount.ToString("N0", CultureInfo.InvariantCulture) ?? "-")</span>
         @if (_overview.Data is { ExpiredCount: > 0 })
         {
-            <span class="chip chip--out">@_overview.Data.ExpiredCount expired</span>
+            <span class="chip chip--out">@L["Dashboard.Expired", _overview.Data.ExpiredCount]</span>
         }
         else
         {
-            <span class="kpi__delta">&le;30 d</span>
+            <span class="kpi__delta">@L["Dashboard.Within30Days"]</span>
         }
     </a>
     <a href="#agnum" class="kpi">
-        <span class="kpi__label">Agnum sync</span>
+        <span class="kpi__label">@L["Dashboard.AgnumSync"]</span>
         <span class="@AgnumChipClass(_overview.Data?.AgnumStatus)">@AgnumStatusLabel(_overview.Data?.AgnumStatus)</span>
     </a>
 </div>
@@ -98,8 +98,8 @@
     <div class="panel">
         <div class="panel__head">
             <div>
-                <div class="panel__title">Stock value by category</div>
-                <p class="dash-panel__sub">Grouped from OnHandValue &middot; % of total</p>
+                <div class="panel__title">@L["Dashboard.StockValueByCategory"]</div>
+                <p class="dash-panel__sub">@L["Dashboard.GroupedOnHandValue"]</p>
             </div>
         </div>
         <div class="dash-donut-wrap">
@@ -112,7 +112,7 @@
                 <div class="dash-donut" style="background: conic-gradient(@BuildConicGradient(_categoryValues.Data))">
                     <div class="dash-donut__hole">
                         <span class="mono">@FormatMoney(_categoryValues.Data.Sum(x => x.Value))</span>
-                        <span>Total value</span>
+                        <span>@L["Dashboard.TotalValue"]</span>
                     </div>
                 </div>
                 <div class="dash-legend">
@@ -129,7 +129,7 @@
             }
             else
             {
-                <p class="dash-empty">No valuation data available.</p>
+                <p class="dash-empty">@L["Dashboard.NoValuationDataAvailable"]</p>
             }
         </div>
     </div>
@@ -137,8 +137,8 @@
     <div class="panel">
         <div class="panel__head">
             <div>
-                <div class="panel__title">Stock value by warehouse</div>
-                <p class="dash-panel__sub">Select a single warehouse for a zone breakdown</p>
+                <div class="panel__title">@L["Dashboard.StockValueByWarehouse"]</div>
+                <p class="dash-panel__sub">@L["Dashboard.SelectASingleWarehouseForAZoneBreakdown"]</p>
             </div>
         </div>
         <div class="dash-bars-wrap">
@@ -160,12 +160,12 @@
                     </div>
                 }
                 <div class="dash-bar-foot">
-                    <div><span class="dash-bar-foot__label">Warehouses</span><span class="mono dash-bar-foot__val">@_warehouseValues.Data.Count</span></div>
+                    <div><span class="dash-bar-foot__label">@L["Dashboard.Warehouses"]</span><span class="mono dash-bar-foot__val">@_warehouseValues.Data.Count</span></div>
                 </div>
             }
             else
             {
-                <p class="dash-empty">No warehouses configured.</p>
+                <p class="dash-empty">@L["Dashboard.NoWarehousesConfigured"]</p>
             }
         </div>
     </div>
@@ -174,12 +174,12 @@
 <div id="lowstock" class="panel dash-section">
     <div class="panel__head">
         <div>
-            <div class="panel__title">Low stock &amp; reorder</div>
-            <p class="dash-panel__sub">Below reorder point &middot; available = on-hand minus HARD locks and reservations</p>
+            <div class="panel__title">@L["Dashboard.LowStockAndReorder"]</div>
+            <p class="dash-panel__sub">@L["Dashboard.BelowReorderPointExplanation"]</p>
         </div>
         @if (_lowStock.Data is { TotalCount: > 0 })
         {
-            <span class="mono dash-panel__count">@_lowStock.Data.TotalCount below reorder point</span>
+            <span class="mono dash-panel__count">@L["Dashboard.BelowReorderPoint", _lowStock.Data.TotalCount]</span>
         }
     </div>
     @if (_lowStock.Error is not null)
@@ -192,15 +192,15 @@
         <table class="lk-table">
             <thead>
                 <tr>
-                    <th>Item</th>
-                    <th>Category</th>
-                    <th class="is-num">On-hand</th>
+                    <th>@L["Common.Item"]</th>
+                    <th>@L["Common.Category"]</th>
+                    <th class="is-num">@L["Dashboard.OnHand"]</th>
                     <th class="is-num">@L["Pricing.Cost"]</th>
                     <th class="is-num">@L["Pricing.Sale"]</th>
-                    <th class="is-num">Reorder pt</th>
-                    <th>Available</th>
-                    <th>Supplier &middot; lead</th>
-                    <th>Status</th>
+                    <th class="is-num">@L["Dashboard.ReorderPt"]</th>
+                    <th>@L["Common.Available"]</th>
+                    <th>@L["Dashboard.SupplierAndLead"]</th>
+                    <th>@L["Common.Status"]</th>
                 </tr>
             </thead>
             <tbody>
@@ -224,14 +224,14 @@
                         <td>
                             @if (!string.IsNullOrWhiteSpace(row.SupplierName))
                             {
-                                @row.SupplierName <span class="mono dash-muted">&middot; @(row.LeadTimeDays?.ToString(CultureInfo.InvariantCulture) ?? "-") d</span>
+                                @row.SupplierName <span class="mono dash-muted">&middot; @L["Dashboard.DaysCount", row.LeadTimeDays?.ToString(CultureInfo.InvariantCulture) ?? "-"]</span>
                             }
                             else
                             {
                                 <span class="dash-muted">&mdash;</span>
                             }
                         </td>
-                        <td><span class="@(row.Status == "Out" ? "chip chip--out" : "chip chip--low")">@row.Status</span></td>
+                        <td><span class="@(row.Status == "Out" ? "chip chip--out" : "chip chip--low")">@WarehouseStatusText.Get(L, row.Status)</span></td>
                     </tr>
                 }
             </tbody>
@@ -240,7 +240,7 @@
     }
     else
     {
-        <p class="dash-empty">Nothing below reorder point.</p>
+        <p class="dash-empty">@L["Dashboard.NothingBelowReorderPoint"]</p>
     }
 </div>
 
@@ -248,8 +248,8 @@
     <div id="expiring" class="panel">
         <div class="panel__head">
             <div>
-                <div class="panel__title">Expiring soon</div>
-                <p class="dash-panel__sub">Lots by remaining shelf life</p>
+                <div class="panel__title">@L["Common.ExpiringSoon"]</div>
+                <p class="dash-panel__sub">@L["Dashboard.LotsByRemainingShelfLife"]</p>
             </div>
         </div>
         @if (_expiring.Error is not null)
@@ -262,13 +262,13 @@
             <table class="lk-table">
                 <thead>
                     <tr>
-                        <th>Item &middot; lot</th>
-                        <th>Location</th>
-                        <th class="is-num">Qty</th>
+                        <th>@L["Dashboard.ItemAndLot"]</th>
+                        <th>@L["Common.Location"]</th>
+                        <th class="is-num">@L["Common.Qty"]</th>
                         <th class="is-num">@L["Pricing.Cost"]</th>
                         <th class="is-num">@L["Pricing.Sale"]</th>
-                        <th>Expiry</th>
-                        <th class="is-num">Days</th>
+                        <th>@L["Common.Expiry"]</th>
+                        <th class="is-num">@L["Dashboard.Days"]</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -294,15 +294,15 @@
         }
         else
         {
-            <p class="dash-empty">Nothing expiring in the selected window.</p>
+            <p class="dash-empty">@L["Dashboard.NothingExpiringInTheSelectedWindow"]</p>
         }
     </div>
 
     <div class="panel">
         <div class="panel__head">
             <div>
-                <div class="panel__title">Incoming &amp; expected</div>
-                <p class="dash-panel__sub">Open inbound shipments &middot; soonest first</p>
+                <div class="panel__title">@L["Dashboard.IncomingAndExpected"]</div>
+                <p class="dash-panel__sub">@L["Dashboard.OpenInboundShipments"]</p>
             </div>
         </div>
         @if (_incoming.Error is not null)
@@ -315,10 +315,10 @@
             <table class="lk-table">
                 <thead>
                     <tr>
-                        <th>Reference</th>
-                        <th>Expected</th>
-                        <th>Status</th>
-                        <th>Received</th>
+                        <th>@L["Common.Reference"]</th>
+                        <th>@L["Common.Expected"]</th>
+                        <th>@L["Common.Status"]</th>
+                        <th>@L["Dashboard.Received"]</th>
                         <th class="is-num">@L["Pricing.CostTotal"]</th>
                         <th class="is-num">@L["Pricing.SaleTotal"]</th>
                     </tr>
@@ -327,9 +327,9 @@
                     @foreach (var row in _incoming.Data)
                     {
                         <tr>
-                            <td><span class="sku-link">@row.ReferenceNumber</span><div class="dash-muted">@row.SupplierName &middot; @row.TotalLines lines</div></td>
+                            <td><span class="sku-link">@row.ReferenceNumber</span><div class="dash-muted">@row.SupplierName &middot; @L["Dashboard.LinesCount", row.TotalLines]</div></td>
                             <td class="mono @(row.IsOverdue ? "is-danger" : "")">@(row.ExpectedDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? "-")</td>
-                            <td><span class="@IncomingChipClass(row)">@(row.IsOverdue ? "Overdue" : row.Status)</span></td>
+                            <td><span class="@IncomingChipClass(row)">@(row.IsOverdue ? L["Dashboard.Overdue"].Value : WarehouseStatusText.Get(L, row.Status))</span></td>
                             <td>
                                 <span class="dash-meter">
                                     <span class="dash-meter__track dash-meter__track--sm">
@@ -348,7 +348,7 @@
         }
         else
         {
-            <p class="dash-empty">No open inbound shipments.</p>
+            <p class="dash-empty">@L["Dashboard.NoOpenInboundShipments"]</p>
         }
     </div>
 </div>
@@ -357,8 +357,8 @@
     <div id="agnum" class="panel">
         <div class="panel__head">
             <div>
-                <div class="panel__title">Agnum integration health</div>
-                <p class="dash-panel__sub">Accounting sync &middot; MES &harr; Agnum</p>
+                <div class="panel__title">@L["Dashboard.AgnumIntegrationHealth"]</div>
+                <p class="dash-panel__sub">@L["Dashboard.AccountingSync"]</p>
             </div>
             @if (_agnum.Data is not null)
             {
@@ -373,44 +373,44 @@
         {
             <div class="dash-panel-body">
                 <div class="dash-agnum-row">
-                    <div><div class="dash-agnum-row__title">Export</div><div class="dash-muted">MES &rarr; Agnum</div></div>
+                    <div><div class="dash-agnum-row__title">@L["Dashboard.Export"]</div><div class="dash-muted">MES &rarr; Agnum</div></div>
                     <div class="mono dash-agnum-row__meta">
                         @(_agnum.Data.ExportedAt?.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture) ?? "never")
-                        &middot; @_agnum.Data.ExportRowCount.ToString("N0", CultureInfo.InvariantCulture) rows
+                        &middot; @L["Dashboard.RowsCount", _agnum.Data.ExportRowCount.ToString("N0", CultureInfo.InvariantCulture)]
                         @if (_agnum.Data.ExportRetryCount > 0)
                         {
-                            <span class="is-danger">&middot; @_agnum.Data.ExportRetryCount retries</span>
+                            <span class="is-danger">&middot; @L["Dashboard.RetriesCount", _agnum.Data.ExportRetryCount]</span>
                         }
                     </div>
-                    <span class="@StatusChipClass(_agnum.Data.ExportStatus)">@_agnum.Data.ExportStatus</span>
+                    <span class="@StatusChipClass(_agnum.Data.ExportStatus)">@WarehouseStatusText.Get(L, _agnum.Data.ExportStatus)</span>
                 </div>
                 <div class="dash-agnum-row">
-                    <div><div class="dash-agnum-row__title">Import</div><div class="dash-muted">Agnum &rarr; MES</div></div>
+                    <div><div class="dash-agnum-row__title">@L["Dashboard.Import"]</div><div class="dash-muted">Agnum &rarr; MES</div></div>
                     <div class="mono dash-agnum-row__meta">
                         @(_agnum.Data.ImportFinishedAt?.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture) ?? "never")
-                        &middot; @_agnum.Data.ImportProductCount.ToString("N0", CultureInfo.InvariantCulture) products
+                        &middot; @L["Dashboard.ProductsCount", _agnum.Data.ImportProductCount.ToString("N0", CultureInfo.InvariantCulture)]
                         @if (_agnum.Data.ImportErrorCount > 0)
                         {
-                            <span class="is-danger">&middot; @_agnum.Data.ImportErrorCount errors</span>
+                            <span class="is-danger">&middot; @L["Dashboard.ErrorsCount", _agnum.Data.ImportErrorCount]</span>
                         }
                     </div>
-                    <span class="@StatusChipClass(_agnum.Data.ImportStatus)">@_agnum.Data.ImportStatus</span>
+                    <span class="@StatusChipClass(_agnum.Data.ImportStatus)">@WarehouseStatusText.Get(L, _agnum.Data.ImportStatus)</span>
                 </div>
                 <div class="dash-agnum-recon">
-                    <div class="dash-agnum-row__title">Reconciliation</div>
+                    <div class="dash-agnum-row__title">@L["Dashboard.Reconciliation"]</div>
                     <div class="dash-agnum-recon__chips">
-                        <span class="chip chip--slate">Matched @_agnum.Data.ReconciliationMatched.ToString("N0", CultureInfo.InvariantCulture)</span>
+                        <span class="chip chip--slate">@L["Dashboard.Matched", _agnum.Data.ReconciliationMatched.ToString("N0", CultureInfo.InvariantCulture)]</span>
                         @if (_agnum.Data.ReconciliationOver > 0)
                         {
-                            <span class="chip chip--low">Over @_agnum.Data.ReconciliationOver.ToString("N0", CultureInfo.InvariantCulture)</span>
+                            <span class="chip chip--low">@L["Dashboard.Over", _agnum.Data.ReconciliationOver.ToString("N0", CultureInfo.InvariantCulture)]</span>
                         }
                         @if (_agnum.Data.ReconciliationUnder > 0)
                         {
-                            <span class="chip chip--out">Under @_agnum.Data.ReconciliationUnder.ToString("N0", CultureInfo.InvariantCulture)</span>
+                            <span class="chip chip--out">@L["Dashboard.Under", _agnum.Data.ReconciliationUnder.ToString("N0", CultureInfo.InvariantCulture)]</span>
                         }
                         @if (_agnum.Data.ReconciliationNotLinked > 0)
                         {
-                            <span class="chip chip--locked">Not linked @_agnum.Data.ReconciliationNotLinked.ToString("N0", CultureInfo.InvariantCulture)</span>
+                            <span class="chip chip--locked">@L["Dashboard.NotLinked", _agnum.Data.ReconciliationNotLinked.ToString("N0", CultureInfo.InvariantCulture)]</span>
                         }
                     </div>
                 </div>
@@ -421,8 +421,8 @@
     <div class="panel">
         <div class="panel__head">
             <div>
-                <div class="panel__title">Reservations &amp; picking</div>
-                <p class="dash-panel__sub">Flow by status</p>
+                <div class="panel__title">@L["Dashboard.ReservationsAndPicking"]</div>
+                <p class="dash-panel__sub">@L["Dashboard.FlowByStatus"]</p>
             </div>
         </div>
         @if (_reservations.Error is not null)
@@ -434,22 +434,22 @@
             var maxCount = new[] { _reservations.Data.Allocated, _reservations.Data.Picking, _reservations.Data.Consumed }.DefaultIfEmpty(0).Max();
             <div class="dash-panel-body dash-funnel">
                 <div class="dash-funnel__row">
-                    <div class="dash-funnel__head"><span>Allocated (SOFT)</span><span class="mono">@_reservations.Data.Allocated</span></div>
+                    <div class="dash-funnel__head"><span>@L["Dashboard.AllocatedSOFT"]</span><span class="mono">@_reservations.Data.Allocated</span></div>
                     <div class="dash-funnel__track"><div class="dash-funnel__fill is-allocated" style="width:@(WidthPercent(_reservations.Data.Allocated, maxCount))%"></div></div>
                 </div>
                 <div class="dash-funnel__row">
-                    <div class="dash-funnel__head"><span>Picking (HARD)</span><span class="mono">@_reservations.Data.Picking</span></div>
+                    <div class="dash-funnel__head"><span>@L["Dashboard.PickingHARD"]</span><span class="mono">@_reservations.Data.Picking</span></div>
                     <div class="dash-funnel__track"><div class="dash-funnel__fill is-picking" style="width:@(WidthPercent(_reservations.Data.Picking, maxCount))%"></div></div>
                 </div>
                 <div class="dash-funnel__row">
-                    <div class="dash-funnel__head"><span>Consumed</span><span class="mono">@_reservations.Data.Consumed</span></div>
+                    <div class="dash-funnel__head"><span>@L["Dashboard.Consumed"]</span><span class="mono">@_reservations.Data.Consumed</span></div>
                     <div class="dash-funnel__track"><div class="dash-funnel__fill is-consumed" style="width:@(WidthPercent(_reservations.Data.Consumed, maxCount))%"></div></div>
                 </div>
                 <div class="dash-funnel__foot">
-                    <div><span class="dash-bar-foot__label">Active HARD locks</span><span class="mono dash-bar-foot__val">@_reservations.Data.ActiveHardLocks</span></div>
+                    <div><span class="dash-bar-foot__label">@L["Dashboard.ActiveHARDLocks"]</span><span class="mono dash-bar-foot__val">@_reservations.Data.ActiveHardLocks</span></div>
                     @if (_reservations.Data.StuckInPickingOver2h > 0)
                     {
-                        <span class="chip chip--low">@_reservations.Data.StuckInPickingOver2h in picking &gt; 2h</span>
+                        <span class="chip chip--low">@L["Dashboard.StuckInPicking", _reservations.Data.StuckInPickingOver2h]</span>
                     }
                 </div>
             </div>
@@ -459,8 +459,8 @@
 
 <details class="panel dash-section" open>
     <summary class="panel__head dash-summary">
-        <div><span class="panel__title">Recent activity</span> <span class="dash-panel__sub">transfers &amp; adjustments</span></div>
-        <span class="mono dash-panel__count">last @_recentActivity.Data?.Count</span>
+        <div><span class="panel__title">@L["Dashboard.RecentActivity"]</span> <span class="dash-panel__sub">@L["Dashboard.TransfersAndAdjustments"]</span></div>
+        <span class="mono dash-panel__count">@L["Dashboard.Last", _recentActivity.Data?.Count ?? 0]</span>
     </summary>
     @if (_recentActivity.Error is not null)
     {
@@ -472,7 +472,7 @@
             @foreach (var item in _recentActivity.Data)
             {
                 <div class="dash-activity__row">
-                    <span class="chip chip--slate">@(item.FromLocation == "-" || item.ToLocation == "-" ? "Adjust" : "Transfer")</span>
+                    <span class="chip chip--slate">@(item.FromLocation == "-" || item.ToLocation == "-" ? L["Dashboard.Adjust"] : L["Dashboard.Transfer"])</span>
                     <span class="mono dash-activity__sku">@item.SKU</span>
                     <span class="mono dash-muted">@item.FromLocation &rarr; @item.ToLocation</span>
                     <span class="dash-spacer"></span>
@@ -486,7 +486,7 @@
     }
     else
     {
-        <p class="dash-empty">No recent movements.</p>
+        <p class="dash-empty">@L["Dashboard.NoRecentMovements"]</p>
     }
 </details>
 
@@ -708,7 +708,7 @@
         state.Error = null;
     }
 
-    private static string? BuildErrorMessage(ApiException? error)
+    private string? BuildErrorMessage(ApiException? error)
     {
         if (error is null)
         {
@@ -721,17 +721,17 @@
         if (string.IsNullOrWhiteSpace(detail))
         {
             return string.IsNullOrWhiteSpace(title)
-                ? error.UserMessage
-                : $"{error.UserMessage} {title}";
+                ? WarehouseErrorText.Get(L, error)
+                : $"{WarehouseErrorText.Get(L, error)} {title}";
         }
 
-        return $"{error.UserMessage} {detail}";
+        return $"{WarehouseErrorText.Get(L, error)} {detail}";
     }
 
     private static string FormatAge(DateTime lastRefreshedAt)
     {
         var elapsed = DateTime.UtcNow - lastRefreshedAt;
-        return elapsed.TotalSeconds < 1 ? "0s" : $"{(int)elapsed.TotalSeconds}s";
+        return elapsed.TotalSeconds < 1 ? "0" : ((int)elapsed.TotalSeconds).ToString(CultureInfo.InvariantCulture);
     }
 
     private static string FormatMoney(decimal value) => LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure.Money.Format(value);
@@ -763,15 +763,15 @@
         return string.Join(",", segments);
     }
 
-    private static IEnumerable<(string Bucket, List<ExpiringLotDto> Rows)> GroupExpiring(IReadOnlyList<ExpiringLotDto> rows)
+    private IEnumerable<(string Bucket, List<ExpiringLotDto> Rows)> GroupExpiring(IReadOnlyList<ExpiringLotDto> rows)
     {
         var order = new[] { "Expired", "0-7", "8-30", "31-90" };
         var labels = new Dictionary<string, string>
         {
-            ["Expired"] = "Expired",
-            ["0-7"] = "≤ 7 days",
-            ["8-30"] = "8–30 days",
-            ["31-90"] = "31–90 days"
+            ["Expired"] = L["Dashboard.ExpiryExpired"].Value,
+            ["0-7"] = L["Dashboard.ExpiryWithin7Days"].Value,
+            ["8-30"] = L["Dashboard.Expiry8To30Days"].Value,
+            ["31-90"] = L["Dashboard.Expiry31To90Days"].Value
         };
 
         foreach (var bucketKey in order)
@@ -830,11 +830,11 @@
         _ => "chip chip--locked"
     };
 
-    private static string AgnumStatusLabel(string? status) => status?.ToLowerInvariant() switch
+    private string AgnumStatusLabel(string? status) => status?.ToLowerInvariant() switch
     {
-        "ok" => "In sync",
-        "degraded" => "Degraded",
-        "failed" => "Failed",
-        _ => "Unknown"
+        "ok" => L["Dashboard.AgnumInSync"].Value,
+        "degraded" => L["Status.Degraded"].Value,
+        "failed" => L["Status.Failed"].Value,
+        _ => L["Status.Unknown"].Value
     };
 }

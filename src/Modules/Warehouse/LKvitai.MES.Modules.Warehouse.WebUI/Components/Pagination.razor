@@ -1,17 +1,17 @@
 <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap">
-    <div>Page @CurrentPage of @Math.Max(TotalPages, 1)</div>
-    <nav aria-label="Pagination">
+    <div>@L["Pagination.PageOf", CurrentPage, Math.Max(TotalPages, 1)]</div>
+    <nav aria-label="@L["Pagination.Pagination"]">
         <ul class="pagination mb-0">
             <li class="page-item @(CurrentPage <= 1 ? "disabled" : null)">
-                <button class="page-link" @onclick="PreviousAsync" disabled="@(CurrentPage <= 1)">Previous</button>
+                <button class="page-link" @onclick="PreviousAsync" disabled="@(CurrentPage <= 1)">@L["Common.Previous"]</button>
             </li>
             <li class="page-item @(CurrentPage >= TotalPages ? "disabled" : null)">
-                <button class="page-link" @onclick="NextAsync" disabled="@(CurrentPage >= TotalPages)">Next</button>
+                <button class="page-link" @onclick="NextAsync" disabled="@(CurrentPage >= TotalPages)">@L["Common.Next"]</button>
             </li>
         </ul>
     </nav>
     <div class="d-flex align-items-center gap-2">
-        <label class="form-label mb-0" for="page-size">Page size</label>
+        <label class="form-label mb-0" for="page-size">@L["Pagination.PageSize"]</label>
         <select id="page-size" class="form-select form-select-sm" value="@PageSize" @onchange="OnPageSizeChangedInternalAsync">
             @foreach (var option in EffectivePageSizeOptions)
             {

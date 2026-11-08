@@ -2,9 +2,9 @@
 @inject AdminUsersClient AdminUsersClient
 @inject ToastService ToastService
 
-<PageTitle>Admin Users - Cikada.MES</PageTitle>
+<PageTitle>@L["AdminUsers.AdminUsersCikadaMES"]</PageTitle>
 
-<h1>Admin Users</h1>
+<h1>@L["AdminUsers.AdminUsers"]</h1>
 
 @if (_apiError is not null)
 {
@@ -19,33 +19,33 @@
         <div class="card shadow-sm position-relative">
             <LoadingSpinner IsLoading="_isLoading || _isSubmittingCreate" />
             <div class="card-body">
-                <h5>Create User</h5>
+                <h5>@L["AdminUsers.CreateUser"]</h5>
                 <div class="mb-2">
-                    <label class="form-label" for="create-username">Username</label>
+                    <label class="form-label" for="create-username">@L["AdminUsers.Username"]</label>
                     <input id="create-username" name="new-username" class="form-control" autocomplete="username" @bind="_createUsername" />
                 </div>
                 <div class="mb-2">
-                    <label class="form-label" for="create-email">Email</label>
+                    <label class="form-label" for="create-email">@L["Common.Email"]</label>
                     <input id="create-email" name="new-email" class="form-control" type="email" autocomplete="email" @bind="_createEmail" />
                 </div>
                 <div class="mb-2">
-                    <label class="form-label" for="create-password">Password</label>
+                    <label class="form-label" for="create-password">@L["AdminUsers.Password"]</label>
                     <input id="create-password" name="new-password" class="form-control" type="password" autocomplete="new-password" @bind="_createPassword" />
                 </div>
                 <div class="mb-2">
-                    <label class="form-label" for="create-legacy-sql-login">Legacy SQL login</label>
+                    <label class="form-label" for="create-legacy-sql-login">@L["Common.LegacySQLLogin"]</label>
                     <input id="create-legacy-sql-login" class="form-control font-monospace" maxlength="128" @bind="_createLegacySqlLogin" autocomplete="off" />
-                    <small class="text-muted">Optional. Explicit SQL identity for legacy access; leave empty to deny legacy access.</small>
+                    <small class="text-muted">@L["AdminUsers.OptionalExplicitSQLIdentityForLegacyAccessLeaveEmptyToDenyLega"]</small>
                 </div>
                 <div class="mb-2">
-                    <label class="form-label">Status</label>
+                    <label class="form-label">@L["Common.Status"]</label>
                     <select class="form-select" @bind="_createStatus">
-                        <option value="Active">Active</option>
-                        <option value="Inactive">Inactive</option>
+                        <option value="Active">@L["Common.Active"]</option>
+                        <option value="Inactive">@L["Common.Inactive"]</option>
                     </select>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Roles</label>
+                    <label class="form-label">@L["Common.Roles"]</label>
                     @foreach (var role in AllRoles)
                     {
                         <div class="form-check">
@@ -57,7 +57,7 @@
                         </div>
                     }
                 </div>
-                <button class="btn btn-primary w-100" @onclick="CreateAsync" disabled="@_isSubmittingCreate">Create User</button>
+                <button class="btn btn-primary w-100" @onclick="CreateAsync" disabled="@_isSubmittingCreate">@L["AdminUsers.CreateUser"]</button>
             </div>
         </div>
     </div>
@@ -67,28 +67,28 @@
             <LoadingSpinner IsLoading="_isLoading || _isSubmittingUpdate" />
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h5 class="mb-0">Users (@_users.Count)</h5>
-                    <button class="btn btn-sm btn-outline-secondary" @onclick="LoadAsync" disabled="@_isLoading">Refresh</button>
+                    <h5 class="mb-0">@L["AdminUsers.Users", _users.Count]</h5>
+                    <button class="btn btn-sm btn-outline-secondary" @onclick="LoadAsync" disabled="@_isLoading">@L["Common.Refresh"]</button>
                 </div>
 
                 <div class="table-responsive">
                     <table class="table table-sm table-hover align-middle">
                         <thead>
                             <tr>
-                                <th>Username</th>
-                                <th>Email</th>
-                                <th>Legacy SQL login</th>
-                                <th>Roles</th>
-                                <th>Status</th>
-                                <th>Created</th>
-                                <th>Actions</th>
+                                <th>@L["AdminUsers.Username"]</th>
+                                <th>@L["Common.Email"]</th>
+                                <th>@L["Common.LegacySQLLogin"]</th>
+                                <th>@L["Common.Roles"]</th>
+                                <th>@L["Common.Status"]</th>
+                                <th>@L["Common.Created"]</th>
+                                <th>@L["Common.Actions"]</th>
                             </tr>
                         </thead>
                         <tbody>
                             @if (_users.Count == 0)
                             {
                                 <tr>
-                                    <td colspan="7" class="text-muted">No users found.</td>
+                                    <td colspan="7" class="text-muted">@L["AdminUsers.NoUsersFound"]</td>
                                 </tr>
                             }
                             else
@@ -107,12 +107,12 @@
                                         </td>
                                         <td>
                                             <span class="badge @(user.Status.Equals("Active", StringComparison.OrdinalIgnoreCase) ? "bg-success" : "bg-secondary")">
-                                                @user.Status
+                                                @WarehouseStatusText.Get(L, user.Status)
                                             </span>
                                         </td>
                                         <td>@user.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
                                         <td>
-                                            <button class="btn btn-sm btn-outline-primary" @onclick="() => StartEdit(user)">Edit</button>
+                                            <button class="btn btn-sm btn-outline-primary" @onclick="() => StartEdit(user)">@L["Common.Edit"]</button>
                                         </td>
                                     </tr>
                                 }
@@ -124,28 +124,28 @@
                 @if (_editUser is not null)
                 {
                     <div class="border rounded p-3 mt-3">
-                        <h6>Edit @_editUser.Username</h6>
+                        <h6>@L["AdminUsers.Edit", _editUser.Username]</h6>
                         <div class="row g-2">
                             <div class="col-md-6">
-                                <label class="form-label">Email</label>
+                                <label class="form-label">@L["Common.Email"]</label>
                                 <input class="form-control" @bind="_editEmail" />
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label" for="edit-legacy-sql-login">Legacy SQL login</label>
+                                <label class="form-label" for="edit-legacy-sql-login">@L["Common.LegacySQLLogin"]</label>
                                 <input id="edit-legacy-sql-login" class="form-control font-monospace" maxlength="128" @bind="_editLegacySqlLogin" autocomplete="off" />
-                                <small class="text-muted">Clearing this field removes legacy access.</small>
+                                <small class="text-muted">@L["AdminUsers.ClearingThisFieldRemovesLegacyAccess"]</small>
                             </div>
                             <div class="col-md-3">
-                                <label class="form-label">Status</label>
+                                <label class="form-label">@L["Common.Status"]</label>
                                 <select class="form-select" @bind="_editStatus">
-                                    <option value="Active">Active</option>
-                                    <option value="Inactive">Inactive</option>
+                                    <option value="Active">@L["Common.Active"]</option>
+                                    <option value="Inactive">@L["Common.Inactive"]</option>
                                 </select>
                             </div>
                         </div>
 
                         <div class="mt-2">
-                            <label class="form-label">Roles</label>
+                            <label class="form-label">@L["Common.Roles"]</label>
                             <div class="row g-1">
                                 @foreach (var role in AllRoles)
                                 {
@@ -163,8 +163,8 @@
                         </div>
 
                         <div class="d-flex gap-2 mt-3">
-                            <button class="btn btn-primary" @onclick="SaveEditAsync" disabled="@_isSubmittingUpdate">Save</button>
-                            <button class="btn btn-outline-secondary" @onclick="CancelEdit" disabled="@_isSubmittingUpdate">Cancel</button>
+                            <button class="btn btn-primary" @onclick="SaveEditAsync" disabled="@_isSubmittingUpdate">@L["Common.Save"]</button>
+                            <button class="btn btn-outline-secondary" @onclick="CancelEdit" disabled="@_isSubmittingUpdate">@L["Common.Cancel"]</button>
                         </div>
                     </div>
                 }
@@ -237,13 +237,13 @@
     {
         if (string.IsNullOrWhiteSpace(_createUsername) || string.IsNullOrWhiteSpace(_createEmail) || string.IsNullOrWhiteSpace(_createPassword))
         {
-            ToastService.ShowError("Username, email, and password are required.");
+            ToastService.ShowError(L["AdminUsers.Toast.UsernameEmailAndPasswordAreRequired"].Value);
             return;
         }
 
         if (_createRoles.Count == 0)
         {
-            ToastService.ShowError("Select at least one role.");
+            ToastService.ShowError(L["AdminUsers.Toast.SelectAtLeastOneRole"].Value);
             return;
         }
 
@@ -262,7 +262,7 @@
                 Roles = _createRoles.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList()
             });
 
-            ToastService.ShowSuccess($"User {created.Username} created.");
+            ToastService.ShowSuccess(L["AdminUsers.Toast.UserCreated", created.Username].Value);
             _createUsername = string.Empty;
             _createEmail = string.Empty;
             _createLegacySqlLogin = string.Empty;
@@ -310,7 +310,7 @@
 
         if (_editRoles.Count == 0)
         {
-            ToastService.ShowError("Select at least one role.");
+            ToastService.ShowError(L["AdminUsers.Toast.SelectAtLeastOneRole"].Value);
             return;
         }
 
@@ -328,7 +328,7 @@
                 Roles = _editRoles.OrderBy(x => x, StringComparer.OrdinalIgnoreCase).ToList()
             });
 
-            ToastService.ShowSuccess($"User {updated.Username} updated.");
+            ToastService.ShowSuccess(L["AdminUsers.Toast.UserUpdated", updated.Username].Value);
             CancelEdit();
             await LoadAsync();
         }
@@ -372,15 +372,15 @@
         _apiError = null;
     }
 
-    private static string BuildErrorMessage(ApiException ex)
+    private string BuildErrorMessage(ApiException ex)
     {
-        if (!string.IsNullOrWhiteSpace(ex.UserMessage))
+        if (!string.IsNullOrWhiteSpace(WarehouseErrorText.Get(L, ex)))
         {
-            return ex.UserMessage;
+            return WarehouseErrorText.Get(L, ex);
         }
 
         return ex.ProblemDetails?.Detail
                ?? ex.ProblemDetails?.Title
-               ?? "Admin user request failed.";
+               ?? L["AdminUsers.RequestFailed"].Value;
     }
 }

@@ -5,10 +5,10 @@
 @inject LotsClient LotsClient
 @using System.Diagnostics
 
-<PageTitle>Lots - Cikada.MES</PageTitle>
+<PageTitle>@L["Admin.Lots.LotsCikadaMES"]</PageTitle>
 
 <div data-testid="lots-page">
-<h3>Lots</h3>
+<h3>@L["Admin.Lots.Lots"]</h3>
 
 @if (_apiError is not null)
 {
@@ -27,7 +27,7 @@
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           @bind-Value="_search"
-                          Placeholder="Lot number, SKU, item name"
+                          Placeholder="@L["Admin.Lots.LotNumberSKUItemName"]"
                           InputAttributes="@LotsFilterSearchAttributes" />
         </div>
         <div class="lk-field--filter lots-field lots-filter__status">
@@ -36,11 +36,11 @@
                        Margin="Margin.Dense"
                        @bind-Value="_status"
                        InputAttributes="@LotsFilterStatusAttributes">
-                <MudSelectItem T="string" Value="@string.Empty">All</MudSelectItem>
-                <MudSelectItem T="string" Value="@("Active")">Active</MudSelectItem>
-                <MudSelectItem T="string" Value="@("ExpiringSoon")">Expiring soon</MudSelectItem>
-                <MudSelectItem T="string" Value="@("Expired")">Expired</MudSelectItem>
-                <MudSelectItem T="string" Value="@("Depleted")">Depleted</MudSelectItem>
+                <MudSelectItem T="string" Value="@string.Empty">@L["Common.All"]</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Active")">@L["Common.Active"]</MudSelectItem>
+                <MudSelectItem T="string" Value="@("ExpiringSoon")">@L["Common.ExpiringSoon"]</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Expired")">@L["Admin.Lots.Expired"]</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Depleted")">@L["Admin.Lots.Depleted"]</MudSelectItem>
             </MudSelect>
         </div>
         <div class="lk-field--filter lots-field lots-filter__page-size">
@@ -62,20 +62,20 @@
                        Color="Color.Primary"
                        OnClick="ApplyFiltersAsync"
                        UserAttributes="@LotsSearchButtonAttributes">
-                Filter
+                @L["Common.Filter"]
             </MudButton>
             <MudButton Variant="Variant.Outlined"
                        Color="Color.Primary"
                        OnClick="RefreshAsync"
                        UserAttributes="@LotsRefreshAttributes">
-                Refresh
+                @L["Common.Refresh"]
             </MudButton>
         </div>
     </div>
 
     <div class="lots-grid-head">
-        <strong data-testid="lots-summary">Total: @_totalCount</strong>
-        <span class="mono" data-testid="lots-current-page">Page @_currentPage</span>
+        <strong data-testid="lots-summary">@L["Admin.Lots.Total", _totalCount]</strong>
+        <span class="mono" data-testid="lots-current-page">@L["Admin.Lots.Page", _currentPage]</span>
     </div>
 
     <MudDataGrid T="LotListItemDto"
@@ -91,13 +91,13 @@
                  Class="lk-grid lots-grid"
                  @attributes="@LotsGridAttributes">
         <Columns>
-            <PropertyColumn Property="x => x.LotNumber" Title="Lot" />
-            <TemplateColumn Title="Item">
+            <PropertyColumn Property="x => x.LotNumber" Title="@L["Common.Lot"]" />
+            <TemplateColumn Title="@L["Common.Item"]">
                 <CellTemplate>
                     @($"{context.Item.ItemSku} - {context.Item.ItemName}")
                 </CellTemplate>
             </TemplateColumn>
-            <TemplateColumn Title="Qty">
+            <TemplateColumn Title="@L["Common.Qty"]">
                 <CellTemplate>@context.Item.Qty.ToString("0.###")</CellTemplate>
             </TemplateColumn>
             <TemplateColumn Title="@L["Pricing.Cost"]">
@@ -106,32 +106,32 @@
             <TemplateColumn Title="@L["Pricing.Sale"]">
                 <CellTemplate><span class="is-money is-num">@Money.Format(_priceMap.Get(null, context.Item.ItemSku)?.BasePrice)</span></CellTemplate>
             </TemplateColumn>
-            <TemplateColumn Title="Value">
+            <TemplateColumn Title="@L["Common.Value"]">
                 <CellTemplate><span class="is-money is-num">@Money.Format(_priceMap.Value(context.Item.Qty, null, context.Item.ItemSku))</span></CellTemplate>
             </TemplateColumn>
-            <TemplateColumn Title="Reserved">
+            <TemplateColumn Title="@L["Common.Reserved"]">
                 <CellTemplate>@context.Item.ReservedQty.ToString("0.###")</CellTemplate>
             </TemplateColumn>
-            <TemplateColumn Title="Available">
+            <TemplateColumn Title="@L["Common.Available"]">
                 <CellTemplate>@context.Item.AvailableQty.ToString("0.###")</CellTemplate>
             </TemplateColumn>
             <PropertyColumn Property="x => x.BaseUom" Title="UoM" />
-            <TemplateColumn Title="Production">
+            <TemplateColumn Title="@L["Admin.Lots.Production"]">
                 <CellTemplate>@FormatDate(context.Item.ProductionDate)</CellTemplate>
             </TemplateColumn>
-            <TemplateColumn Title="Expiry">
+            <TemplateColumn Title="@L["Common.Expiry"]">
                 <CellTemplate>@FormatDate(context.Item.ExpiryDate)</CellTemplate>
             </TemplateColumn>
-            <PropertyColumn Property="x => x.Status" Title="Status" />
+            <PropertyColumn Property="x => x.Status" Title="@L["Common.Status"]" />
         </Columns>
         <NoRecordsContent>
             <div class="lots-grid__empty">
-                <span class="lots-grid__empty-title">No lots found</span>
+                <span class="lots-grid__empty-title">@L["Admin.Lots.NoLotsFound"]</span>
                 <span>
                     No lots match the current filter.
                     @if (HasAppliedFilters)
                     {
-                        <button type="button" class="lots-grid__empty-action" @onclick="ClearFiltersAsync">Clear filters</button>
+                        <button type="button" class="lots-grid__empty-action" @onclick="ClearFiltersAsync">@L["Common.ClearFilters"]</button>
                     }
                 </span>
             </div>
@@ -160,9 +160,9 @@
     private ApiException? _apiError;
 
     private static readonly Dictionary<string, object> LotsGridAttributes = new() { ["data-testid"] = "lots-grid" };
-    private static readonly Dictionary<string, object> LotsFilterSearchAttributes = new() { ["data-testid"] = "lots-search-input", ["aria-label"] = "Search" };
-    private static readonly Dictionary<string, object> LotsFilterStatusAttributes = new() { ["data-testid"] = "lots-status", ["aria-label"] = "Status" };
-    private static readonly Dictionary<string, object> LotsPageSizeAttributes = new() { ["data-testid"] = "lots-page-size", ["aria-label"] = "Page size" };
+    private Dictionary<string, object> LotsFilterSearchAttributes => new() { ["data-testid"] = "lots-search-input", ["aria-label"] = L["Aria.Search"].Value };
+    private Dictionary<string, object> LotsFilterStatusAttributes => new() { ["data-testid"] = "lots-status", ["aria-label"] = L["Aria.Status"].Value };
+    private Dictionary<string, object> LotsPageSizeAttributes => new() { ["data-testid"] = "lots-page-size", ["aria-label"] = L["Aria.PageSize"].Value };
     private static readonly Dictionary<string, object> LotsRefreshAttributes = new() { ["data-testid"] = "lots-refresh" };
     private static readonly Dictionary<string, object> LotsSearchButtonAttributes = new() { ["data-testid"] = "lots-search-btn" };
 
@@ -266,13 +266,13 @@
     private static string FormatDate(DateOnly? value)
         => value?.ToString("yyyy-MM-dd") ?? "-";
 
-    private static string BuildErrorMessage(ApiException error)
+    private string BuildErrorMessage(ApiException error)
     {
         if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
         {
-            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+            return $"{WarehouseErrorText.Get(L, error)} {error.ProblemDetails.Detail}";
         }
 
-        return error.UserMessage;
+        return WarehouseErrorText.Get(L, error);
     }
 }

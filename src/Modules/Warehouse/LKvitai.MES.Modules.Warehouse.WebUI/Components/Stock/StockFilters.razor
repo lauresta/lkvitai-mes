@@ -2,14 +2,14 @@
     <MudPaper Outlined="true" Elevation="0" Class="panel stock-filter-panel">
         <div class="lk-toolbar stock-filter-toolbar">
             <div class="lk-field--filter stock-field stock-filter__warehouse" data-testid="stock-warehouse">
-                <span class="stock-field__label">Warehouse</span>
+                <span class="stock-field__label">@L["Common.Warehouse"]</span>
                 <MudSelect T="string"
                            Variant="Variant.Outlined"
                            Margin="Margin.Dense"
-                           Placeholder="All warehouses"
+                           Placeholder="@L["Common.AllWarehouses"]"
                            @bind-Value="_warehouse"
                            InputAttributes="@WarehouseAttributes">
-                    <MudSelectItem T="string" Value="@string.Empty">All warehouses</MudSelectItem>
+                    <MudSelectItem T="string" Value="@string.Empty">@L["Common.AllWarehouses"]</MudSelectItem>
                     @foreach (var warehouse in Warehouses)
                     {
                         <MudSelectItem T="string" Value="@warehouse.Code">@warehouse.Code - @warehouse.Name</MudSelectItem>
@@ -18,12 +18,12 @@
             </div>
 
             <div class="lk-field--filter stock-field stock-filter__location" data-testid="stock-location">
-                <span class="stock-field__label">Location</span>
+                <span class="stock-field__label">@L["Common.Location"]</span>
                 <MudTextField T="string"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               @bind-Value="_location"
-                              Placeholder="Location e.g. A01*"
+                              Placeholder="@L["Stock.StockFilters.LocationEGA01"]"
                               InputAttributes="@LocationAttributes" />
             </div>
 
@@ -33,32 +33,32 @@
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               @bind-Value="_sku"
-                              Placeholder="SKU e.g. RM-*"
+                              Placeholder="@L["Stock.StockFilters.SKUEGRM"]"
                               InputAttributes="@SkuAttributes" />
             </div>
 
             <div class="lk-field--filter stock-field stock-filter__item" data-testid="stock-item">
-                <span class="stock-field__label">Product / item</span>
+                <span class="stock-field__label">@L["Stock.StockFilters.ProductItem"]</span>
                 <MudTextField T="string"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               @bind-Value="_item"
-                              Placeholder="Product code or name"
+                              Placeholder="@L["Stock.StockFilters.ProductCodeOrName"]"
                               InputAttributes="@ItemAttributes" />
             </div>
 
             <div class="lk-field--filter stock-field stock-filter__item-name" data-testid="stock-item-name">
-                <span class="stock-field__label">Name</span>
+                <span class="stock-field__label">@L["Common.Name"]</span>
                 <MudTextField T="string"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               @bind-Value="_itemName"
-                              Placeholder="Item name"
+                              Placeholder="@L["Stock.StockFilters.ItemName"]"
                               InputAttributes="@ItemNameAttributes" />
             </div>
 
             <div class="lk-field--filter stock-field stock-filter__tag" data-testid="stock-tag">
-                <span class="stock-field__label">Tag</span>
+                <span class="stock-field__label">@L["Stock.StockFilters.Tag"]</span>
                 <MudTextField T="string"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
@@ -68,29 +68,29 @@
             </div>
 
             <div class="lk-field--filter stock-field stock-filter__supplier" data-testid="stock-supplier">
-                <span class="stock-field__label">Supplier</span>
+                <span class="stock-field__label">@L["Common.Supplier"]</span>
                 <MudTextField T="string"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               @bind-Value="_supplier"
-                              Placeholder="Supplier code or name"
+                              Placeholder="@L["Stock.StockFilters.SupplierCodeOrName"]"
                               InputAttributes="@SupplierAttributes" />
             </div>
 
             <div class="lk-field--filter stock-field stock-filter__supplier-country" data-testid="stock-supplier-country">
-                <span class="stock-field__label">Supplier country</span>
+                <span class="stock-field__label">@L["Stock.StockFilters.SupplierCountry"]</span>
                 <MudTextField T="string"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               @bind-Value="_supplierCountry"
-                              Placeholder="Country"
+                              Placeholder="@L["Common.Country"]"
                               InputAttributes="@SupplierCountryAttributes" />
             </div>
 
             <div class="stock-filter__toggle" data-testid="stock-include-virtual">
                 <MudCheckBox T="bool"
                              Dense="true"
-                             Label="Include virtual"
+                             Label="@L["Stock.StockFilters.IncludeVirtual"]"
                              @bind-Checked="_includeVirtual" />
             </div>
 
@@ -99,13 +99,13 @@
                            Variant="Variant.Filled"
                            Color="Color.Primary"
                            UserAttributes="@SearchButtonAttributes">
-                    Search
+                    @L["Common.Search"]
                 </MudButton>
                 <MudButton ButtonType="ButtonType.Button"
                            Variant="Variant.Outlined"
                            OnClick="ResetAsync"
                            UserAttributes="@ClearButtonAttributes">
-                    Reset
+                    @L["Common.Reset"]
                 </MudButton>
             </div>
         </div>
@@ -137,14 +137,14 @@
     private string _supplierCountry = string.Empty;
     private bool _includeVirtual;
     private string? _validationError;
-    private static readonly Dictionary<string, object> WarehouseAttributes = new() { ["aria-label"] = "Warehouse" };
-    private static readonly Dictionary<string, object> LocationAttributes = new() { ["aria-label"] = "Location" };
-    private static readonly Dictionary<string, object> SkuAttributes = new() { ["aria-label"] = "SKU" };
-    private static readonly Dictionary<string, object> ItemAttributes = new() { ["aria-label"] = "Product or item" };
-    private static readonly Dictionary<string, object> ItemNameAttributes = new() { ["aria-label"] = "Item name" };
-    private static readonly Dictionary<string, object> TagAttributes = new() { ["aria-label"] = "Tag" };
-    private static readonly Dictionary<string, object> SupplierAttributes = new() { ["aria-label"] = "Supplier" };
-    private static readonly Dictionary<string, object> SupplierCountryAttributes = new() { ["aria-label"] = "Supplier country" };
+    private Dictionary<string, object> WarehouseAttributes => new() { ["aria-label"] = L["Aria.Warehouse"].Value };
+    private Dictionary<string, object> LocationAttributes => new() { ["aria-label"] = L["Aria.Location"].Value };
+    private Dictionary<string, object> SkuAttributes => new() { ["aria-label"] = L["Aria.SKU"].Value };
+    private Dictionary<string, object> ItemAttributes => new() { ["aria-label"] = L["Aria.ProductOrItem"].Value };
+    private Dictionary<string, object> ItemNameAttributes => new() { ["aria-label"] = L["Aria.ItemName"].Value };
+    private Dictionary<string, object> TagAttributes => new() { ["aria-label"] = L["Aria.Tag"].Value };
+    private Dictionary<string, object> SupplierAttributes => new() { ["aria-label"] = L["Aria.Supplier"].Value };
+    private Dictionary<string, object> SupplierCountryAttributes => new() { ["aria-label"] = L["Aria.SupplierCountry"].Value };
     private static readonly Dictionary<string, object> SearchButtonAttributes = new() { ["data-testid"] = "stock-search-btn" };
     private static readonly Dictionary<string, object> ClearButtonAttributes = new() { ["data-testid"] = "stock-clear" };
 

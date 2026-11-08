@@ -10,4 +10,1797 @@
   <data name="Pricing.SaleTotal" xml:space="preserve"><value>Pardavimo suma</value></data>
   <data name="Pricing.PurchaseTotal" xml:space="preserve"><value>Pirkimo suma</value></data>
   <data name="Pricing.CurrentPriceHint" xml:space="preserve"><value>Dabartinės prekių kainos; istorinių operacijų kainos nekeičiamos.</value></data>
+  <data name="AccessDenied.AccessDenied" xml:space="preserve"><value>Prieiga uždrausta</value></data>
+  <data name="AccessDenied.AccessDeniedCikadaMES" xml:space="preserve"><value>Prieiga uždrausta – Cikada.MES</value></data>
+  <data name="AccessDenied.BackToDashboard" xml:space="preserve"><value>Grįžti į prietaisų skydelį</value></data>
+  <data name="AccessDenied.YourAccountDoesNotHavePermissionToOpenThisPage" xml:space="preserve"><value>Jūsų paskyra neturi leidimo atidaryti šio puslapio.</value></data>
+  <data name="Admin.AdminWarehouses.AdminWarehousesCikadaMES" xml:space="preserve"><value>Administravimo sandėliai – Cikada.MES</value></data>
+  <data name="Admin.AdminWarehouses.CodeNameDescription" xml:space="preserve"><value>Kodas, pavadinimas, aprašymas</value></data>
+  <data name="Admin.AdminWarehouses.CreateWarehouse" xml:space="preserve"><value>Sukurti sandėlį</value></data>
+  <data name="Admin.AdminWarehouses.CreatedAt" xml:space="preserve"><value>Sukurta</value></data>
+  <data name="Admin.AdminWarehouses.IncludeVirtualWarehouses" xml:space="preserve"><value>Įtraukite virtualius sandėlius</value></data>
+  <data name="Admin.AdminWarehouses.NoWarehousesFound" xml:space="preserve"><value>Sandėlių nerasta.</value></data>
+  <data name="Admin.AdminWarehouses.WarehousesManagement" xml:space="preserve"><value>Sandėlių valdymas</value></data>
+  <data name="Admin.ApiKeys.APIKeys" xml:space="preserve"><value>API raktai</value></data>
+  <data name="Admin.ApiKeys.APIKeysCikadaMES" xml:space="preserve"><value>API raktai – Cikada.MES</value></data>
+  <data name="Admin.ApiKeys.CreateAPIKey" xml:space="preserve"><value>Sukurkite API raktą</value></data>
+  <data name="Admin.ApiKeys.DeleteAPIKey" xml:space="preserve"><value>Ištrinkite API raktą</value></data>
+  <data name="Admin.ApiKeys.ExpiresAtOptional" xml:space="preserve"><value>Galiojimas baigiasi (neprivaloma)</value></data>
+  <data name="Admin.ApiKeys.Key" xml:space="preserve"><value>Raktas</value></data>
+  <data name="Admin.ApiKeys.LastUsed" xml:space="preserve"><value>Paskutinį kartą naudotas</value></data>
+  <data name="Admin.ApiKeys.NoAPIKeysConfigured" xml:space="preserve"><value>Nėra sukonfigūruotų API raktų.</value></data>
+  <data name="Admin.ApiKeys.OneTimeKeyValue" xml:space="preserve"><value>Vienkartinė rakto reikšmė:</value></data>
+  <data name="Admin.ApiKeys.RateLimitMinute" xml:space="preserve"><value>Kainos riba / Minutė</value></data>
+  <data name="Admin.ApiKeys.Rotate" xml:space="preserve"><value>Pasukti</value></data>
+  <data name="Admin.ApiKeys.Scopes" xml:space="preserve"><value>Taikymo sritis</value></data>
+  <data name="Admin.ApiKeys.StoreThisNowItIsNotShownAgain" xml:space="preserve"><value>saugokite tai dabar. Jis vėl nerodomas.</value></data>
+  <data name="Admin.ApiKeys.YyyyMMDdHHMm" xml:space="preserve"><value>yyyy-MM-dd HH:mm</value></data>
+  <data name="Admin.ApprovalRules.ApprovalRules" xml:space="preserve"><value>Patvirtinimo taisyklės</value></data>
+  <data name="Admin.ApprovalRules.ApprovalRulesCikadaMES" xml:space="preserve"><value>Patvirtinimo taisyklės – Cikada.MES</value></data>
+  <data name="Admin.ApprovalRules.CreateApprovalRule" xml:space="preserve"><value>Sukurkite patvirtinimo taisyklę</value></data>
+  <data name="Admin.ApprovalRules.DeleteApprovalRule" xml:space="preserve"><value>Ištrinkite patvirtinimo taisyklę</value></data>
+  <data name="Admin.ApprovalRules.NoApprovalRequired" xml:space="preserve"><value>Patvirtinimo nereikia.</value></data>
+  <data name="Admin.ApprovalRules.NoApprovalRulesConfigured" xml:space="preserve"><value>Patvirtinimo taisyklių nesukonfigūruota.</value></data>
+  <data name="Admin.ApprovalRules.TestRule" xml:space="preserve"><value>Patikrinti taisyklę</value></data>
+  <data name="Admin.ApprovalRules.TestRuleEvaluation" xml:space="preserve"><value>Taisyklės patikros rezultatas</value></data>
+  <data name="Admin.ApprovalRules.TestValue" xml:space="preserve"><value>Bandymo vertė</value></data>
+  <data name="Admin.ApprovalRules.Threshold" xml:space="preserve"><value>Slenkstis</value></data>
+  <data name="Admin.ApprovalRules.ThresholdType" xml:space="preserve"><value>Slenksčio tipas</value></data>
+  <data name="Admin.ApprovalRules.ThresholdValue" xml:space="preserve"><value>Slenkstinė vertė</value></data>
+  <data name="Admin.AuditLogs.AuditLogsCikadaMES" xml:space="preserve"><value>Audito žurnalai – Cikada.MES</value></data>
+  <data name="Admin.AuditLogs.FetchLimit" xml:space="preserve"><value>Gauti limitą</value></data>
+  <data name="Admin.AuditLogs.NoAuditLogRowsFound" xml:space="preserve"><value>Nerasta jokių audito žurnalo eilučių.</value></data>
+  <data name="Admin.AuditLogs.Resource" xml:space="preserve"><value>Išteklius</value></data>
+  <data name="Admin.AuditLogs.ResourceID" xml:space="preserve"><value>Ištekliaus ID</value></data>
+  <data name="Admin.AuditLogs.SecurityAuditLogs" xml:space="preserve"><value>Saugumo audito žurnalai</value></data>
+  <data name="Admin.Backups.Artifact" xml:space="preserve"><value>Artefaktas</value></data>
+  <data name="Admin.Backups.BackupManagement" xml:space="preserve"><value>Atsarginių kopijų valdymas</value></data>
+  <data name="Admin.Backups.BackupsCikadaMES" xml:space="preserve"><value>Atsarginės kopijos – Cikada.MES</value></data>
+  <data name="Admin.Backups.NoBackupsFound" xml:space="preserve"><value>Atsarginių kopijų nerasta.</value></data>
+  <data name="Admin.Backups.Restore" xml:space="preserve"><value>Atkurti</value></data>
+  <data name="Admin.Backups.RestoreTarget" xml:space="preserve"><value>Atkurti tikslą</value></data>
+  <data name="Admin.Backups.SizeBytes" xml:space="preserve"><value>Dydis (baitai)</value></data>
+  <data name="Admin.Backups.Started" xml:space="preserve"><value>Prasidėjo</value></data>
+  <data name="Admin.Backups.Trigger" xml:space="preserve"><value>Paleisti</value></data>
+  <data name="Admin.Backups.TriggerBackup" xml:space="preserve"><value>Suaktyvinti atsarginę kopiją</value></data>
+  <data name="Admin.DisasterRecoveryDrills.ActualRTO" xml:space="preserve"><value>Tikrasis RTO</value></data>
+  <data name="Admin.DisasterRecoveryDrills.DRDrillsCikadaMES" xml:space="preserve"><value>Atkūrimo pratybos – Cikada.MES</value></data>
+  <data name="Admin.DisasterRecoveryDrills.DisasterRecoveryDrills" xml:space="preserve"><value>Atkūrimo po nelaimių pratybos</value></data>
+  <data name="Admin.DisasterRecoveryDrills.Issues" xml:space="preserve"><value>Problemos</value></data>
+  <data name="Admin.DisasterRecoveryDrills.NoDRDrillsFound" xml:space="preserve"><value>DR treniruočių nerasta.</value></data>
+  <data name="Admin.DisasterRecoveryDrills.Scenario" xml:space="preserve"><value>Scenarijus</value></data>
+  <data name="Admin.DisasterRecoveryDrills.Started" xml:space="preserve"><value>Prasidėjo</value></data>
+  <data name="Admin.DisasterRecoveryDrills.TriggerDrill" xml:space="preserve"><value>Pradėti atkūrimo pratybas</value></data>
+  <data name="Admin.GdprErasure.ConfirmReject" xml:space="preserve"><value>Patvirtinti atmetimą</value></data>
+  <data name="Admin.GdprErasure.CustomerID" xml:space="preserve"><value>Kliento ID</value></data>
+  <data name="Admin.GdprErasure.GDPRErasureCikadaMES" xml:space="preserve"><value>GDPR ištrynimas – Cikada.MES</value></data>
+  <data name="Admin.GdprErasure.GDPRErasureRequests" xml:space="preserve"><value>GDPR ištrynimo užklausos</value></data>
+  <data name="Admin.GdprErasure.NewErasureRequest" xml:space="preserve"><value>Naujas ištrynimo prašymas</value></data>
+  <data name="Admin.GdprErasure.NoErasureRequestsFound" xml:space="preserve"><value>Nerasta jokių ištrynimo užklausų.</value></data>
+  <data name="Admin.GdprErasure.Reject" xml:space="preserve"><value>Atmesti</value></data>
+  <data name="Admin.GdprErasure.Rejection" xml:space="preserve"><value>Atmetimas</value></data>
+  <data name="Admin.GdprErasure.RejectionReason" xml:space="preserve"><value>Atmetimo priežastis</value></data>
+  <data name="Admin.GdprErasure.Reviewed" xml:space="preserve"><value>Peržiūrėta</value></data>
+  <data name="Admin.LayoutEditor.LayoutEditorCikadaMES" xml:space="preserve"><value>Maketo redaktorius – Cikada.MES</value></data>
+  <data name="Admin.LayoutEditor.LayoutJSON" xml:space="preserve"><value>JSON išdėstymas</value></data>
+  <data name="Admin.LayoutEditor.LeaveEmptyForLegacyWarehouses" xml:space="preserve"><value>. Pasenusiems sandėliams palikite tuščią.</value></data>
+  <data name="Admin.LayoutEditor.OptionalRackStructureDocumentStoredIn" xml:space="preserve"><value>Pasirenkamas stovo struktūros dokumentas, saugomas</value></data>
+  <data name="Admin.LayoutEditor.RackConfigJSON" xml:space="preserve"><value>Rack Config JSON</value></data>
+  <data name="Admin.LayoutEditor.Reload" xml:space="preserve"><value>Įkelti iš naujo</value></data>
+  <data name="Admin.LayoutEditor.RequiredFields" xml:space="preserve"><value>Privalomi laukai:</value></data>
+  <data name="Admin.LayoutEditor.SaveLayout" xml:space="preserve"><value>Išsaugoti išdėstymą</value></data>
+  <data name="Admin.LayoutEditor.WarehouseCode" xml:space="preserve"><value>Sandėlio kodas</value></data>
+  <data name="Admin.LayoutEditor.WarehouseLayoutEditor" xml:space="preserve"><value>Sandėlio išdėstymo redaktorius</value></data>
+  <data name="Admin.Lots.Depleted" xml:space="preserve"><value>Išeikvota</value></data>
+  <data name="Admin.Lots.Expired" xml:space="preserve"><value>Baigėsi galiojimo laikas</value></data>
+  <data name="Admin.Lots.LotNumberSKUItemName" xml:space="preserve"><value>Partijos numeris, SKU, prekės pavadinimas</value></data>
+  <data name="Admin.Lots.Lots" xml:space="preserve"><value>Partijos</value></data>
+  <data name="Admin.Lots.LotsCikadaMES" xml:space="preserve"><value>Aikštelės - Cikada.MES</value></data>
+  <data name="Admin.Lots.NoLotsFound" xml:space="preserve"><value>Kelių nerasta</value></data>
+  <data name="Admin.Lots.Production" xml:space="preserve"><value>Gamyboje</value></data>
+  <data name="Admin.ReasonCodes.CreateReasonCode" xml:space="preserve"><value>Sukurkite priežasties kodą</value></data>
+  <data name="Admin.ReasonCodes.DeleteReasonCode" xml:space="preserve"><value>Ištrinkite priežasties kodą</value></data>
+  <data name="Admin.ReasonCodes.NoReasonCodesConfiguredAddYourFirstReasonCode" xml:space="preserve"><value>Priežasčių kodai nesukonfigūruoti. Pridėkite pirmosios priežasties kodą.</value></data>
+  <data name="Admin.ReasonCodes.None" xml:space="preserve"><value>(Nėra)</value></data>
+  <data name="Admin.ReasonCodes.ReasonCodes" xml:space="preserve"><value>Priežasties kodai</value></data>
+  <data name="Admin.ReasonCodes.ReasonCodesCikadaMES" xml:space="preserve"><value>Priežasties kodai – Cikada.MES</value></data>
+  <data name="Admin.ReasonCodes.Usage" xml:space="preserve"><value>Naudojimas</value></data>
+  <data name="Admin.RetentionPolicies.ApplyLegalHold" xml:space="preserve"><value>Taikyti teisinį saugojimo apribojimą</value></data>
+  <data name="Admin.RetentionPolicies.Archive" xml:space="preserve"><value>Archyvas</value></data>
+  <data name="Admin.RetentionPolicies.ArchiveAfter" xml:space="preserve"><value>Archyvuoti po</value></data>
+  <data name="Admin.RetentionPolicies.AuditLogID" xml:space="preserve"><value>Audito žurnalo ID</value></data>
+  <data name="Admin.RetentionPolicies.AuditLogLegalHold" xml:space="preserve"><value>Audito žurnalo teisinis sulaikymas</value></data>
+  <data name="Admin.RetentionPolicies.CreateRetentionPolicy" xml:space="preserve"><value>Sukurti saugojimo taisyklę</value></data>
+  <data name="Admin.RetentionPolicies.DeleteAfter" xml:space="preserve"><value>Ištrinti po</value></data>
+  <data name="Admin.RetentionPolicies.Disabled" xml:space="preserve"><value>Išjungta</value></data>
+  <data name="Admin.RetentionPolicies.Enabled" xml:space="preserve"><value>Įjungta</value></data>
+  <data name="Admin.RetentionPolicies.ExecuteNow" xml:space="preserve"><value>Vykdyti dabar</value></data>
+  <data name="Admin.RetentionPolicies.LegalHold" xml:space="preserve"><value>Teisinis saugojimo apribojimas</value></data>
+  <data name="Admin.RetentionPolicies.NoRetentionPoliciesConfigured" xml:space="preserve"><value>Nekonfigūruota saugojimo politika.</value></data>
+  <data name="Admin.RetentionPolicies.Retention" xml:space="preserve"><value>Saugojimo terminas</value></data>
+  <data name="Admin.RetentionPolicies.RetentionDays" xml:space="preserve"><value>Saugojimo dienos</value></data>
+  <data name="Admin.RetentionPolicies.RetentionPolicies" xml:space="preserve"><value>Saugojimo taisyklės</value></data>
+  <data name="Admin.RetentionPolicies.RetentionPoliciesCikadaMES" xml:space="preserve"><value>Saugojimo taisyklės – Cikada.MES</value></data>
+  <data name="Admin.Roles.AssignRole" xml:space="preserve"><value>Paskirkite vaidmenį</value></data>
+  <data name="Admin.Roles.AssignRoleToUser" xml:space="preserve"><value>Priskirkite vartotojui vaidmenį</value></data>
+  <data name="Admin.Roles.CreateRole" xml:space="preserve"><value>Sukurti vaidmenį</value></data>
+  <data name="Admin.Roles.DeleteRole" xml:space="preserve"><value>Ištrinti vaidmenį</value></data>
+  <data name="Admin.Roles.NoRolesConfigured" xml:space="preserve"><value>Nekonfigūruota jokių vaidmenų.</value></data>
+  <data name="Admin.Roles.RolesCikadaMES" xml:space="preserve"><value>Vaidmenys - Cikada.MES</value></data>
+  <data name="Admin.Roles.SelectRole" xml:space="preserve"><value>Pasirinkite vaidmenį</value></data>
+  <data name="Admin.Roles.SelectUser" xml:space="preserve"><value>Pasirinkite vartotoją</value></data>
+  <data name="Admin.Roles.System" xml:space="preserve"><value>Sistema</value></data>
+  <data name="Admin.SerialNumbers.NoSerialsFound" xml:space="preserve"><value>Serialų nerasta.</value></data>
+  <data name="Admin.SerialNumbers.Register" xml:space="preserve"><value>Registruoti</value></data>
+  <data name="Admin.SerialNumbers.RegisterSerial" xml:space="preserve"><value>Registruoti serijos numerį</value></data>
+  <data name="Admin.SerialNumbers.SerialNumbers" xml:space="preserve"><value>Serijos numeriai</value></data>
+  <data name="Admin.SerialNumbers.SerialNumbersCikadaMES" xml:space="preserve"><value>Serijos numeriai – Cikada.MES</value></data>
+  <data name="Admin.SerialNumbers.UpdateStatus" xml:space="preserve"><value>Atnaujinti būseną</value></data>
+  <data name="Admin.SerialNumbers.WarrantyDate" xml:space="preserve"><value>Garantijos data</value></data>
+  <data name="Admin.SerialNumbers.WarrantyExpiry" xml:space="preserve"><value>Garantijos galiojimo laikas</value></data>
+  <data name="Admin.Settings.AdminSettingsCikadaMES" xml:space="preserve"><value>Administratoriaus nustatymai – Cikada.MES</value></data>
+  <data name="Admin.Settings.AutoAllocateOrders" xml:space="preserve"><value>Automatinis užsakymų paskirstymas</value></data>
+  <data name="Admin.Settings.CapacityThreshold" xml:space="preserve"><value>Pajėgumo riba (%)</value></data>
+  <data name="Admin.Settings.DefaultPickStrategy" xml:space="preserve"><value>Numatytoji komplektavimo strategija</value></data>
+  <data name="Admin.Settings.LowStockThreshold" xml:space="preserve"><value>Mažų atsargų riba</value></data>
+  <data name="Admin.Settings.ReorderPoint" xml:space="preserve"><value>Papildymo riba</value></data>
+  <data name="Admin.Settings.WarehouseSettings" xml:space="preserve"><value>Sandėlio nustatymai</value></data>
+  <data name="Admin.UnitsOfMeasure.CodeNameItemSKU" xml:space="preserve"><value>Kodas, pavadinimas, prekės SKU</value></data>
+  <data name="Admin.UnitsOfMeasure.Factor" xml:space="preserve"><value>Koeficientas</value></data>
+  <data name="Admin.UnitsOfMeasure.HandlingUnitTypes" xml:space="preserve"><value>Krovinių vienetų tipai</value></data>
+  <data name="Admin.UnitsOfMeasure.ItemUoMConversions" xml:space="preserve"><value>Prekių mato vienetų perskaičiavimas</value></data>
+  <data name="Admin.UnitsOfMeasure.Length" xml:space="preserve"><value>Ilgis</value></data>
+  <data name="Admin.UnitsOfMeasure.NoConversionRulesFound" xml:space="preserve"><value>Konvertavimo taisyklių nerasta.</value></data>
+  <data name="Admin.UnitsOfMeasure.NoHandlingUnitTypesFound" xml:space="preserve"><value>Krovinių vienetų tipų nerasta.</value></data>
+  <data name="Admin.UnitsOfMeasure.NoUnitsFound" xml:space="preserve"><value>Nerasta jokių vienetų.</value></data>
+  <data name="Admin.UnitsOfMeasure.Piece" xml:space="preserve"><value>Vienetas</value></data>
+  <data name="Admin.UnitsOfMeasure.Rounding" xml:space="preserve"><value>Apvalinimas</value></data>
+  <data name="Admin.UnitsOfMeasure.Units" xml:space="preserve"><value>Vienetai</value></data>
+  <data name="Admin.UnitsOfMeasure.UnitsOfMeasure" xml:space="preserve"><value>Mato vienetai</value></data>
+  <data name="Admin.UnitsOfMeasure.UnitsOfMeasureCikadaMES" xml:space="preserve"><value>Matavimo vienetai - Cikada.MES</value></data>
+  <data name="Admin.UnitsOfMeasure.UoMType" xml:space="preserve"><value>UoM tipas</value></data>
+  <data name="AdminCategories.AdminCategoriesCikadaMES" xml:space="preserve"><value>Administratoriaus kategorijos – Cikada.MES</value></data>
+  <data name="AdminCategories.CategoriesManagement" xml:space="preserve"><value>Kategorijų valdymas</value></data>
+  <data name="AdminCategories.CreateCategory" xml:space="preserve"><value>Sukurti kategoriją</value></data>
+  <data name="AdminCategories.NoCategoriesFound" xml:space="preserve"><value>Kategorijų nerasta.</value></data>
+  <data name="AdminCategories.SaveChanges" xml:space="preserve"><value>Išsaugoti pakeitimus</value></data>
+  <data name="AdminCustomerEditorDialog.BillingAddress" xml:space="preserve"><value>Atsiskaitymo adresas</value></data>
+  <data name="AdminCustomerEditorDialog.CashOnDelivery" xml:space="preserve"><value>Apmokėjimas pristatymo metu</value></data>
+  <data name="AdminCustomerEditorDialog.CreditCard" xml:space="preserve"><value>Kreditinė kortelė</value></data>
+  <data name="AdminCustomerEditorDialog.CreditLimit" xml:space="preserve"><value>Kredito limitas</value></data>
+  <data name="AdminCustomerEditorDialog.Net30" xml:space="preserve"><value>Apmokėjimas per 30 dienų</value></data>
+  <data name="AdminCustomerEditorDialog.Net60" xml:space="preserve"><value>Apmokėjimas per 60 dienų</value></data>
+  <data name="AdminCustomerEditorDialog.NoneBasePrice" xml:space="preserve"><value>Nėra (bazinė kaina)</value></data>
+  <data name="AdminCustomerEditorDialog.OnHold" xml:space="preserve"><value>Sulaikyta</value></data>
+  <data name="AdminCustomerEditorDialog.PaymentTerms" xml:space="preserve"><value>Mokėjimo sąlygos</value></data>
+  <data name="AdminCustomerEditorDialog.Prepaid" xml:space="preserve"><value>Išankstinis apmokėjimas</value></data>
+  <data name="AdminCustomerEditorDialog.PriceGroup" xml:space="preserve"><value>Kainų grupė</value></data>
+  <data name="AdminCustomerEditorDialog.ShippingAddress" xml:space="preserve"><value>Pristatymo adresas</value></data>
+  <data name="AdminCustomerEditorDialog.ShippingAddressSameAsBilling" xml:space="preserve"><value>Pristatymo adresas toks pat kaip ir atsiskaitymo</value></data>
+  <data name="AdminCustomerEditorDialog.ZipCode" xml:space="preserve"><value>Pašto kodas</value></data>
+  <data name="AdminCustomers.AdminCustomersCikadaMES" xml:space="preserve"><value>Klientų administravimas – Cikada.MES</value></data>
+  <data name="AdminCustomers.CodeOrName" xml:space="preserve"><value>Kodas arba pavadinimas</value></data>
+  <data name="AdminCustomers.CreateCustomer" xml:space="preserve"><value>Sukurti klientą</value></data>
+  <data name="AdminCustomers.CustomersManagement" xml:space="preserve"><value>Klientų valdymas</value></data>
+  <data name="AdminCustomers.NoCustomersFound" xml:space="preserve"><value>Klientų nerasta</value></data>
+  <data name="AdminCustomers.PriceGroup" xml:space="preserve"><value>Kainų grupė</value></data>
+  <data name="AdminImport.AdminImportCikadaMES" xml:space="preserve"><value>Administratoriaus importas – Cikada.MES</value></data>
+  <data name="AdminImport.Bulk" xml:space="preserve"><value>Masinis:</value></data>
+  <data name="AdminImport.Column" xml:space="preserve"><value>Stulpelis</value></data>
+  <data name="AdminImport.CommitChanges" xml:space="preserve"><value>Įvykdykite pakeitimus</value></data>
+  <data name="AdminImport.CommitIsDisabledUntilDryRunErrorsAreResolved" xml:space="preserve"><value>Įvykdymas išjungtas, kol nebus pašalintos sausosios eigos klaidos.</value></data>
+  <data name="AdminImport.DownloadErrorReport" xml:space="preserve"><value>Atsisiųskite klaidų ataskaitą</value></data>
+  <data name="AdminImport.DownloadTemplate" xml:space="preserve"><value>Atsisiųsti šabloną</value></data>
+  <data name="AdminImport.DryRun" xml:space="preserve"><value>Sausas bėgimas</value></data>
+  <data name="AdminImport.DryRun7c5223" xml:space="preserve"><value>Sausas bėgimas:</value></data>
+  <data name="AdminImport.DryRunIsRecommendedBeforeCommit" xml:space="preserve"><value>Prieš apdorojimą rekomenduojama atlikti sausą paleidimą.</value></data>
+  <data name="AdminImport.Errors" xml:space="preserve"><value>Klaidos:</value></data>
+  <data name="AdminImport.File" xml:space="preserve"><value>Failas</value></data>
+  <data name="AdminImport.ImportMasterData" xml:space="preserve"><value>Importuokite pagrindinius duomenis</value></data>
+  <data name="AdminImport.ImportResult" xml:space="preserve"><value>Importuoti rezultatą</value></data>
+  <data name="AdminImport.Inserted" xml:space="preserve"><value>Įterpta:</value></data>
+  <data name="AdminImport.Message" xml:space="preserve"><value>Pranešimas</value></data>
+  <data name="AdminImport.Row" xml:space="preserve"><value>Eilė</value></data>
+  <data name="AdminImport.Skipped" xml:space="preserve"><value>Praleista:</value></data>
+  <data name="AdminImport.Updated" xml:space="preserve"><value>Atnaujinta:</value></data>
+  <data name="AdminItemDetail.AsOf" xml:space="preserve"><value>Kaip iš</value></data>
+  <data name="AdminItemDetail.BackToList" xml:space="preserve"><value>Atgal į sąrašą</value></data>
+  <data name="AdminItemDetail.BaseUoM" xml:space="preserve"><value>Bazinė UoM</value></data>
+  <data name="AdminItemDetail.By" xml:space="preserve"><value>Autorius</value></data>
+  <data name="AdminItemDetail.CategoryID" xml:space="preserve"><value>Kategorijos ID</value></data>
+  <data name="AdminItemDetail.ChangedBy" xml:space="preserve"><value>Pakeitė</value></data>
+  <data name="AdminItemDetail.CurrentOnHandValue" xml:space="preserve"><value>Dabartinė turima vertė</value></data>
+  <data name="AdminItemDetail.CurrentUnitCostWAC" xml:space="preserve"><value>Dabartinė vieneto kaina (WAC)</value></data>
+  <data name="AdminItemDetail.EffectivePrice" xml:space="preserve"><value>Efektyvi kaina</value></data>
+  <data name="AdminItemDetail.Group" xml:space="preserve"><value>Grupė</value></data>
+  <data name="AdminItemDetail.ItemDetails" xml:space="preserve"><value>Prekės informacija</value></data>
+  <data name="AdminItemDetail.ItemDetailsCikadaMES" xml:space="preserve"><value>Prekės detalės – Cikada.MES</value></data>
+  <data name="AdminItemDetail.ItemNotFound" xml:space="preserve"><value>Prekė nerasta</value></data>
+  <data name="AdminItemDetail.LotTracking" xml:space="preserve"><value>Partijos stebėjimas</value></data>
+  <data name="AdminItemDetail.New" xml:space="preserve"><value>Nauja</value></data>
+  <data name="AdminItemDetail.NewCost" xml:space="preserve"><value>Nauja kaina</value></data>
+  <data name="AdminItemDetail.NoOnHandValueData" xml:space="preserve"><value>Nėra turimų vertės duomenų</value></data>
+  <data name="AdminItemDetail.NoPhotos" xml:space="preserve"><value>Nėra nuotraukų</value></data>
+  <data name="AdminItemDetail.NoPriceChangesYet" xml:space="preserve"><value>Kaina kol kas nepasikeitė</value></data>
+  <data name="AdminItemDetail.NoPriceGroups" xml:space="preserve"><value>Nėra kainų grupių</value></data>
+  <data name="AdminItemDetail.NoPurchaseReceiptsOrCostChangesYet" xml:space="preserve"><value>Dar nėra pirkimo kvitų ar kainų pokyčių</value></data>
+  <data name="AdminItemDetail.Old" xml:space="preserve"><value>Senas</value></data>
+  <data name="AdminItemDetail.OldCost" xml:space="preserve"><value>Sena kaina</value></data>
+  <data name="AdminItemDetail.OnHandQty" xml:space="preserve"><value>Kiekis po ranka</value></data>
+  <data name="AdminItemDetail.Open" xml:space="preserve"><value>Atidaryti</value></data>
+  <data name="AdminItemDetail.Override" xml:space="preserve"><value>Nepaisyti</value></data>
+  <data name="AdminItemDetail.Photo" xml:space="preserve"><value>Nuotrauka</value></data>
+  <data name="AdminItemDetail.Photos" xml:space="preserve"><value>Nuotraukos</value></data>
+  <data name="AdminItemDetail.PriceHistory" xml:space="preserve"><value>Kainų istorija</value></data>
+  <data name="AdminItemDetail.PricesByGroup" xml:space="preserve"><value>Kainos pagal grupes</value></data>
+  <data name="AdminItemDetail.PrimaryBarcode" xml:space="preserve"><value>Pirminis brūkšninis kodas</value></data>
+  <data name="AdminItemDetail.ProductConfig" xml:space="preserve"><value>Produkto konfigūracija</value></data>
+  <data name="AdminItemDetail.PurchaseCostHistory" xml:space="preserve"><value>Pirkimo / išlaidų istorija</value></data>
+  <data name="AdminItemDetail.PurchasePrice" xml:space="preserve"><value>Pirkimo Kaina</value></data>
+  <data name="AdminItemDetail.Recompute" xml:space="preserve"><value>Perskaičiuoti</value></data>
+  <data name="AdminItemDetail.TheItemCouldNotBeLoaded" xml:space="preserve"><value>Elemento įkelti nepavyko.</value></data>
+  <data name="AdminItemDetail.ThisItemHasNoRecordedOnHandQuantityOrCostYet" xml:space="preserve"><value>Šios prekės kiekis ar kaina dar neužregistruota.</value></data>
+  <data name="AdminItemDetail.UploadAPhotoToShowThumbnailsInItemAndStockLists" xml:space="preserve"><value>Įkelkite nuotrauką, kad prekių ir atsargų sąrašuose būtų rodomos miniatiūros.</value></data>
+  <data name="AdminItemDetail.When" xml:space="preserve"><value>Kada</value></data>
+  <data name="AdminItemEditorDialog.Add" xml:space="preserve"><value>Pridėti</value></data>
+  <data name="AdminItemEditorDialog.AutoGeneratedIfEmpty" xml:space="preserve"><value>Sugeneruojama automatiškai, jei tuščia</value></data>
+  <data name="AdminItemEditorDialog.BaseUoM" xml:space="preserve"><value>Bazinė UoM</value></data>
+  <data name="AdminItemEditorDialog.CostType" xml:space="preserve"><value>Kainos tipas</value></data>
+  <data name="AdminItemEditorDialog.Discontinued" xml:space="preserve"><value>Nutraukta</value></data>
+  <data name="AdminItemEditorDialog.InternalSKU" xml:space="preserve"><value>Vidinis SKU</value></data>
+  <data name="AdminItemEditorDialog.ItemType" xml:space="preserve"><value>Prekės tipas</value></data>
+  <data name="AdminItemEditorDialog.NoTags" xml:space="preserve"><value>Nėra žymų</value></data>
+  <data name="AdminItemEditorDialog.Obsolete" xml:space="preserve"><value>Pasenęs</value></data>
+  <data name="AdminItemEditorDialog.PrimaryBarcode" xml:space="preserve"><value>Pirminis brūkšninis kodas</value></data>
+  <data name="AdminItemEditorDialog.ProductConfig" xml:space="preserve"><value>Produkto konfigūracija</value></data>
+  <data name="AdminItemEditorDialog.PurchasePrice" xml:space="preserve"><value>Pirkimo kaina</value></data>
+  <data name="AdminItemEditorDialog.RequiresLotTracking" xml:space="preserve"><value>Reikia partijų apskaitos</value></data>
+  <data name="AdminItemEditorDialog.RequiresQC" xml:space="preserve"><value>Reikalingas QC</value></data>
+  <data name="AdminItemEditorDialog.Service" xml:space="preserve"><value>Paslauga</value></data>
+  <data name="AdminItemEditorDialog.ServiceItemsEGTransportDeliveryNeverReceivePhysicalStock" xml:space="preserve"><value>Paslaugos (pvz., transportavimas, pristatymas) neturi fizinių atsargų.</value></data>
+  <data name="AdminItemEditorDialog.Stock" xml:space="preserve"><value>Atsargos</value></data>
+  <data name="AdminItemEditorDialog.WhichAdditionalCostBucketThisServiceSAmountFoldsIntoOnInboundS" xml:space="preserve"><value>Pasirinkite, prie kurių papildomų išlaidų priskirti šios paslaugos sumą gaunamoje siuntoje. Galite pasirinkti iš sąrašo arba įvesti savo reikšmę.</value></data>
+  <data name="AdminItemEditorDialog.X" xml:space="preserve"><value>x</value></data>
+  <data name="AdminItemPhotosDialog.ItemPhotos" xml:space="preserve"><value>Prekės nuotraukos</value></data>
+  <data name="AdminItemPhotosDialog.NoPhotos" xml:space="preserve"><value>Nėra nuotraukų</value></data>
+  <data name="AdminItemPhotosDialog.Open" xml:space="preserve"><value>Atidaryti</value></data>
+  <data name="AdminItemPhotosDialog.Photo" xml:space="preserve"><value>Nuotrauka</value></data>
+  <data name="AdminItemPhotosDialog.Recompute" xml:space="preserve"><value>Perskaičiuoti</value></data>
+  <data name="AdminItemPhotosDialog.UploadAProductImageToMakeItVisibleInTheItemsGrid" xml:space="preserve"><value>Įkelkite produkto vaizdą, kad jis būtų matomas prekių tinklelyje.</value></data>
+  <data name="AdminItems.AdminItemsCikadaMES" xml:space="preserve"><value>Prekių administravimas – Cikada.MES</value></data>
+  <data name="AdminItems.AllCategories" xml:space="preserve"><value>Visos kategorijos</value></data>
+  <data name="AdminItems.AllStatuses" xml:space="preserve"><value>Visos būsenos</value></data>
+  <data name="AdminItems.Deactivate" xml:space="preserve"><value>Išjungti</value></data>
+  <data name="AdminItems.DeactivateItem" xml:space="preserve"><value>Išjungti prekę</value></data>
+  <data name="AdminItems.Discontinued" xml:space="preserve"><value>Nutraukta</value></data>
+  <data name="AdminItems.Image" xml:space="preserve"><value>Vaizdas</value></data>
+  <data name="AdminItems.ItemsManagement" xml:space="preserve"><value>Prekių valdymas</value></data>
+  <data name="AdminItems.NoImg" xml:space="preserve"><value>Nėra nuotraukos</value></data>
+  <data name="AdminItems.NoItemsFound" xml:space="preserve"><value>Prekių nerasta</value></data>
+  <data name="AdminItems.NoTags" xml:space="preserve"><value>Nėra žymų</value></data>
+  <data name="AdminItems.Obsolete" xml:space="preserve"><value>Pasenęs</value></data>
+  <data name="AdminItems.OpenPhotos" xml:space="preserve"><value>Atidaryti nuotraukas</value></data>
+  <data name="AdminItems.Photos" xml:space="preserve"><value>Nuotraukos</value></data>
+  <data name="AdminItems.Purchase" xml:space="preserve"><value>Pirkimas</value></data>
+  <data name="AdminItems.SKUNameBarcode" xml:space="preserve"><value>SKU, pavadinimas, brūkšninis kodas</value></data>
+  <data name="AdminLocations.AdminLocationsCikadaMES" xml:space="preserve"><value>Administratoriaus vietos – Cikada.MES</value></data>
+  <data name="AdminLocations.Aisle" xml:space="preserve"><value>Praėjimas</value></data>
+  <data name="AdminLocations.Bulk" xml:space="preserve"><value>Masinis</value></data>
+  <data name="AdminLocations.C" xml:space="preserve"><value>C</value></data>
+  <data name="AdminLocations.Capacity" xml:space="preserve"><value>Talpa</value></data>
+  <data name="AdminLocations.CapacityVolume" xml:space="preserve"><value>Talpos tūris</value></data>
+  <data name="AdminLocations.CapacityWeight" xml:space="preserve"><value>Didžiausias svoris</value></data>
+  <data name="AdminLocations.Cell" xml:space="preserve"><value>Ląstelė</value></data>
+  <data name="AdminLocations.CodeOrBarcode" xml:space="preserve"><value>Kodas arba brūkšninis kodas</value></data>
+  <data name="AdminLocations.ComputedAddress" xml:space="preserve"><value>Apskaičiuotas adresas</value></data>
+  <data name="AdminLocations.CoordinateX" xml:space="preserve"><value>Koordinatė X</value></data>
+  <data name="AdminLocations.CoordinateY" xml:space="preserve"><value>Koordinatė Y</value></data>
+  <data name="AdminLocations.CoordinateZ" xml:space="preserve"><value>Koordinatė Z</value></data>
+  <data name="AdminLocations.CreateLocation" xml:space="preserve"><value>Sukurti vietą</value></data>
+  <data name="AdminLocations.DimensionsM" xml:space="preserve"><value>Matmenys (m)</value></data>
+  <data name="AdminLocations.EndCap" xml:space="preserve"><value>Stelažo galas</value></data>
+  <data name="AdminLocations.General" xml:space="preserve"><value>Bendra</value></data>
+  <data name="AdminLocations.GroundSlot" xml:space="preserve"><value>Vieta ant grindų</value></data>
+  <data name="AdminLocations.Hazmat" xml:space="preserve"><value>Pavojingos medžiagos</value></data>
+  <data name="AdminLocations.HeightM" xml:space="preserve"><value>Aukštis (m)</value></data>
+  <data name="AdminLocations.IncludeVirtualLocations" xml:space="preserve"><value>Įtraukite virtualias vietas</value></data>
+  <data name="AdminLocations.LengthM" xml:space="preserve"><value>Ilgis (m)</value></data>
+  <data name="AdminLocations.LocationRole" xml:space="preserve"><value>Vietos vaidmuo</value></data>
+  <data name="AdminLocations.LocationsManagement" xml:space="preserve"><value>Vietų valdymas</value></data>
+  <data name="AdminLocations.NoLocationsFound" xml:space="preserve"><value>Vietų nerasta.</value></data>
+  <data name="AdminLocations.Overflow" xml:space="preserve"><value>Perpildymas</value></data>
+  <data name="AdminLocations.Placement" xml:space="preserve"><value>Išdėstymas</value></data>
+  <data name="AdminLocations.PlacementWarehouse" xml:space="preserve"><value>Išdėstymo sandėlis</value></data>
+  <data name="AdminLocations.Quarantine" xml:space="preserve"><value>Karantinas</value></data>
+  <data name="AdminLocations.RackPlacement" xml:space="preserve"><value>Stelažo išdėstymas</value></data>
+  <data name="AdminLocations.RackPlacement542747" xml:space="preserve"><value>Stelažo išdėstymas galimas tik nevirtualioms atitinkamo tipo vietoms.</value></data>
+  <data name="AdminLocations.RackRowId" xml:space="preserve"><value>Rack Row ID</value></data>
+  <data name="AdminLocations.Refrigerated" xml:space="preserve"><value>Atšaldytas</value></data>
+  <data name="AdminLocations.ShelfLevel" xml:space="preserve"><value>Lentynos lygis</value></data>
+  <data name="AdminLocations.SlotSpan" xml:space="preserve"><value>Vietos plotis</value></data>
+  <data name="AdminLocations.SlotStart" xml:space="preserve"><value>Lizdų pradžia</value></data>
+  <data name="AdminLocations.ViewDetails" xml:space="preserve"><value>Peržiūrėti išsamią informaciją</value></data>
+  <data name="AdminLocations.WidthM" xml:space="preserve"><value>Plotis (m)</value></data>
+  <data name="AdminLocations.ZoneType" xml:space="preserve"><value>Zonos tipas</value></data>
+  <data name="AdminPriceGroups.AssignCustomer" xml:space="preserve"><value>Priskirti klientą</value></data>
+  <data name="AdminPriceGroups.CreateGroup" xml:space="preserve"><value>Sukurti grupę</value></data>
+  <data name="AdminPriceGroups.CreateOneToStartOverridingItemPricesPerCustomerTier" xml:space="preserve"><value>Sukurkite vieną, kad pradėtumėte nepaisyti prekių kainų pagal kliento pakopą.</value></data>
+  <data name="AdminPriceGroups.Customers" xml:space="preserve"><value>Klientai</value></data>
+  <data name="AdminPriceGroups.Groups" xml:space="preserve"><value>Grupės</value></data>
+  <data name="AdminPriceGroups.NoCustomersAssigned" xml:space="preserve"><value>Nėra priskirtų klientų</value></data>
+  <data name="AdminPriceGroups.NoPriceGroups" xml:space="preserve"><value>Nėra kainų grupių</value></data>
+  <data name="AdminPriceGroups.PriceGroups" xml:space="preserve"><value>Kainų grupės</value></data>
+  <data name="AdminPriceGroups.PriceGroupsCikadaMES" xml:space="preserve"><value>Kainų grupės - Cikada.MES</value></data>
+  <data name="AdminPriceGroups.SearchCustomersByNameOrCode" xml:space="preserve"><value>Ieškokite klientų pagal vardą arba kodą</value></data>
+  <data name="AdminSlots.2C301OrBIN001" xml:space="preserve"><value>2-C3-01 arba BIN-001</value></data>
+  <data name="AdminSlots.AddressOrLocation" xml:space="preserve"><value>Adresas arba vieta</value></data>
+  <data name="AdminSlots.AllLevels" xml:space="preserve"><value>Visi lygiai</value></data>
+  <data name="AdminSlots.AllRacks" xml:space="preserve"><value>Visos lentynos</value></data>
+  <data name="AdminSlots.Clear" xml:space="preserve"><value>Išvalyti</value></data>
+  <data name="AdminSlots.ComputedFromRackLayoutAndLiveOccupancy" xml:space="preserve"><value>Apskaičiuota pagal stovo išdėstymą ir dabartinį užimtumą.</value></data>
+  <data name="AdminSlots.FreeOnly" xml:space="preserve"><value>Tik laisvos</value></data>
+  <data name="AdminSlots.NoSlotsMatchTheCurrentFilters" xml:space="preserve"><value>Nėra dabartinius filtrus atitinkančių laiko tarpsnių.</value></data>
+  <data name="AdminSlots.Reload" xml:space="preserve"><value>Įkelti iš naujo</value></data>
+  <data name="AdminSlots.Slot" xml:space="preserve"><value>Lizdas</value></data>
+  <data name="AdminSlots.SlotSpan" xml:space="preserve"><value>Plyšio tarpas</value></data>
+  <data name="AdminSlots.Span" xml:space="preserve"><value>Plotis</value></data>
+  <data name="AdminSlots.WarehouseSlots" xml:space="preserve"><value>Sandėlio lizdai</value></data>
+  <data name="AdminSlots.WarehouseSlotsCikadaMES" xml:space="preserve"><value>Sandėlio lizdai - Cikada.MES</value></data>
+  <data name="AdminSupplierEditorDialog.AdditionalInfo" xml:space="preserve"><value>Papildoma informacija</value></data>
+  <data name="AdminSupplierEditorDialog.AgnumClientId" xml:space="preserve"><value>„Agnum“ kliento ID</value></data>
+  <data name="AdminSupplierEditorDialog.CompanyCode" xml:space="preserve"><value>Įmonės kodas</value></data>
+  <data name="AdminSupplierEditorDialog.ContactName" xml:space="preserve"><value>Kontakto vardas</value></data>
+  <data name="AdminSupplierEditorDialog.LinkedToAgnumSyncedFieldsAreRefreshedAutomaticallyManualEditsA" xml:space="preserve"><value>Susieta su Agnum. Sinchronizuoti laukai atnaujinami automatiškai; rankiniu būdu atlikti pakeitimai išsaugomi.</value></data>
+  <data name="AdminSupplierEditorDialog.PickupAddress" xml:space="preserve"><value>Paėmimo adresas</value></data>
+  <data name="AdminSupplierEditorDialog.RegisteredAddress" xml:space="preserve"><value>Registruotas adresas</value></data>
+  <data name="AdminSupplierEditorDialog.ShortName" xml:space="preserve"><value>Trumpas vardas</value></data>
+  <data name="AdminSupplierEditorDialog.VATCode" xml:space="preserve"><value>PVM kodas</value></data>
+  <data name="AdminSupplierEditorDialog.Website" xml:space="preserve"><value>Svetainė</value></data>
+  <data name="AdminSupplierMappings.CreateSupplierMapping" xml:space="preserve"><value>Sukurkite tiekėjų žemėlapius</value></data>
+  <data name="AdminSupplierMappings.NoMappingsFound" xml:space="preserve"><value>Nerasta jokių atvaizdų.</value></data>
+  <data name="AdminSupplierMappings.SaveChanges" xml:space="preserve"><value>Išsaugoti pakeitimus</value></data>
+  <data name="AdminSupplierMappings.SaveMapping" xml:space="preserve"><value>Išsaugoti žemėlapius</value></data>
+  <data name="AdminSupplierMappings.SupplierMappings" xml:space="preserve"><value>Tiekėjų žemėlapiai</value></data>
+  <data name="AdminSupplierMappings.SupplierMappingsCikadaMES" xml:space="preserve"><value>Tiekėjų žemėlapiai - Cikada.MES</value></data>
+  <data name="AdminSupplierMappings.SupplierSKUSupplierItem" xml:space="preserve"><value>Tiekėjo SKU / tiekėjas / prekė</value></data>
+  <data name="AdminSuppliers.AdminSuppliersCikadaMES" xml:space="preserve"><value>Administratoriai - Cikada.MES</value></data>
+  <data name="AdminSuppliers.AllCountries" xml:space="preserve"><value>Visos šalys</value></data>
+  <data name="AdminSuppliers.CodeNameCompanyVATCodeEmailPhoneCountryCity" xml:space="preserve"><value>Kodas, pavadinimas, įmonė/PVM kodas, el. paštas, telefonas, šalis, miestas</value></data>
+  <data name="AdminSuppliers.CompanyCode" xml:space="preserve"><value>Įmonės kodas</value></data>
+  <data name="AdminSuppliers.Contact" xml:space="preserve"><value>Susisiekite</value></data>
+  <data name="AdminSuppliers.CountryCity" xml:space="preserve"><value>Šalis / Miestas</value></data>
+  <data name="AdminSuppliers.Mappings" xml:space="preserve"><value>Sąsajos</value></data>
+  <data name="AdminSuppliers.NoSuppliersFound" xml:space="preserve"><value>Tiekėjų nerasta</value></data>
+  <data name="AdminSuppliers.OpenSupplierMappings" xml:space="preserve"><value>Atidaryti tiekėjų žemėlapius</value></data>
+  <data name="AdminSuppliers.ShortName" xml:space="preserve"><value>Trumpas vardas</value></data>
+  <data name="AdminSuppliers.SuppliersManagement" xml:space="preserve"><value>Tiekėjų valdymas</value></data>
+  <data name="AdminSuppliers.VATCode" xml:space="preserve"><value>PVM kodas</value></data>
+  <data name="AdminSuppliers.ViewMappings" xml:space="preserve"><value>Žiūrėti žemėlapius</value></data>
+  <data name="AdminSuppliers.Website" xml:space="preserve"><value>Svetainė</value></data>
+  <data name="AdminUsers.AdminUsers" xml:space="preserve"><value>Administratoriai</value></data>
+  <data name="AdminUsers.AdminUsersCikadaMES" xml:space="preserve"><value>Administratoriai – Cikada.MES</value></data>
+  <data name="AdminUsers.ClearingThisFieldRemovesLegacyAccess" xml:space="preserve"><value>Išvalius šį lauką pašalinama senoji prieiga.</value></data>
+  <data name="AdminUsers.CreateUser" xml:space="preserve"><value>Sukurti vartotoją</value></data>
+  <data name="AdminUsers.NoUsersFound" xml:space="preserve"><value>Nerasta jokių vartotojų.</value></data>
+  <data name="AdminUsers.OptionalExplicitSQLIdentityForLegacyAccessLeaveEmptyToDenyLega" xml:space="preserve"><value>Neprivaloma. Aiški SQL tapatybė senajai prieigai; palikite tuščią, kad uždraustumėte seną prieigą.</value></data>
+  <data name="AdminUsers.Password" xml:space="preserve"><value>Slaptažodis</value></data>
+  <data name="AdminUsers.Username" xml:space="preserve"><value>Vartotojo vardas</value></data>
+  <data name="Agnum.Balances.AgnumBalances" xml:space="preserve"><value>Agnum likučiai</value></data>
+  <data name="Agnum.Balances.AgnumProduct" xml:space="preserve"><value>Agnum produktas</value></data>
+  <data name="Agnum.Balances.Delta" xml:space="preserve"><value>Skirtumas</value></data>
+  <data name="Agnum.Balances.Distribute" xml:space="preserve"><value>Paskirstyti</value></data>
+  <data name="Agnum.Balances.Distributed" xml:space="preserve"><value>Paskirstyta</value></data>
+  <data name="Agnum.Balances.Imported" xml:space="preserve"><value>Importuota</value></data>
+  <data name="Agnum.Balances.Locations" xml:space="preserve"><value>Vietos</value></data>
+  <data name="Agnum.Balances.MESItem" xml:space="preserve"><value>MES prekė</value></data>
+  <data name="Agnum.Balances.MESPhysical" xml:space="preserve"><value>Fizinis MES likutis</value></data>
+  <data name="Agnum.Balances.NoAgnumBalancesFound" xml:space="preserve"><value>Agnum likučių nerasta.</value></data>
+  <data name="Agnum.Balances.SKUOrAgnumProductId" xml:space="preserve"><value>SKU arba Agnum produkto ID</value></data>
+  <data name="Agnum.Balances.SelectWarehouse" xml:space="preserve"><value>Pasirinkite sandėlį</value></data>
+  <data name="Agnum.Balances.ShowingFirst500RowsUseSearchToNarrowTheList" xml:space="preserve"><value>Rodomos pirmosios 500 eilučių. Norėdami susiaurinti sąrašą, naudokite paiešką.</value></data>
+  <data name="Agnum.Balances.VirtualWarehouse" xml:space="preserve"><value>Virtualus sandėlis</value></data>
+  <data name="Agnum.Configuration.APIEndpoint" xml:space="preserve"><value>API galutinis taškas</value></data>
+  <data name="Agnum.Configuration.APIKey" xml:space="preserve"><value>API raktas</value></data>
+  <data name="Agnum.Configuration.AddMapping" xml:space="preserve"><value>+ Pridėti atvaizdavimą</value></data>
+  <data name="Agnum.Configuration.AgnumAccountCode" xml:space="preserve"><value>Agnum sąskaitos kodas</value></data>
+  <data name="Agnum.Configuration.AgnumConfiguration" xml:space="preserve"><value>Agnum konfigūracija</value></data>
+  <data name="Agnum.Configuration.AgnumExportConfiguration" xml:space="preserve"><value>„Agnum Export“ konfigūracija</value></data>
+  <data name="Agnum.Configuration.Daily2300" xml:space="preserve"><value>Kasdien 23:00</value></data>
+  <data name="Agnum.Configuration.Error" xml:space="preserve"><value>Klaida</value></data>
+  <data name="Agnum.Configuration.Example023" xml:space="preserve"><value>Pavyzdys: 0 23 * * *</value></data>
+  <data name="Agnum.Configuration.Export" xml:space="preserve"><value>Eksportas Nr.</value></data>
+  <data name="Agnum.Configuration.ExportHistory" xml:space="preserve"><value>Eksportuoti istoriją</value></data>
+  <data name="Agnum.Configuration.ExportScope" xml:space="preserve"><value>Eksporto sritis</value></data>
+  <data name="Agnum.Configuration.Exported" xml:space="preserve"><value>Eksportuota</value></data>
+  <data name="Agnum.Configuration.FilePath" xml:space="preserve"><value>Failo kelias</value></data>
+  <data name="Agnum.Configuration.Hourly" xml:space="preserve"><value>Kas valandą</value></data>
+  <data name="Agnum.Configuration.Mappings" xml:space="preserve"><value>Sąsajos</value></data>
+  <data name="Agnum.Configuration.NoExportHistoryFound" xml:space="preserve"><value>Eksporto istorijos nerasta.</value></data>
+  <data name="Agnum.Configuration.NoMappingsConfiguredAddYourFirstMapping" xml:space="preserve"><value>Nėra sukonfigūruotų atvaizdų. Pridėkite pirmąjį atvaizdą.</value></data>
+  <data name="Agnum.Configuration.RefreshHistory" xml:space="preserve"><value>Atnaujinti istoriją</value></data>
+  <data name="Agnum.Configuration.Rows" xml:space="preserve"><value>Eilutės</value></data>
+  <data name="Agnum.Configuration.ScheduleCron" xml:space="preserve"><value>Tvarkaraštis (Cron)</value></data>
+  <data name="Agnum.Configuration.SourceType" xml:space="preserve"><value>Šaltinio tipas</value></data>
+  <data name="Agnum.Configuration.SourceValue" xml:space="preserve"><value>Šaltinio vertė</value></data>
+  <data name="Agnum.Configuration.TestConnection" xml:space="preserve"><value>Bandomasis ryšys</value></data>
+  <data name="Agnum.Configuration.Trigger" xml:space="preserve"><value>Paleisti</value></data>
+  <data name="Agnum.Configuration.Weekdays0800" xml:space="preserve"><value>Darbo dienomis 08:00</value></data>
+  <data name="Agnum.Reconciliation.AgnumCode" xml:space="preserve"><value>Agnum kodas</value></data>
+  <data name="Agnum.Reconciliation.AgnumReconciliation" xml:space="preserve"><value>Agnum sutikrinimas</value></data>
+  <data name="Agnum.Reconciliation.Delta" xml:space="preserve"><value>Skirtumas</value></data>
+  <data name="Agnum.Reconciliation.DistributedToMES" xml:space="preserve"><value>Paskirstyta į MES</value></data>
+  <data name="Agnum.Reconciliation.ItemName" xml:space="preserve"><value>Prekės pavadinimas</value></data>
+  <data name="Agnum.Reconciliation.MESPhysicalActual" xml:space="preserve"><value>MES fizinis (faktinis)</value></data>
+  <data name="Agnum.Reconciliation.NoReconciliationRowsFound" xml:space="preserve"><value>Suderinimo eilučių nerasta.</value></data>
+  <data name="Agnum.Reconciliation.OnlyShowDiscrepancies" xml:space="preserve"><value>Rodyti tik neatitikimus</value></data>
+  <data name="Agnum.Reconciliation.SKUMES" xml:space="preserve"><value>SKU (MES)</value></data>
+  <data name="Agnum.Reconciliation.SKUOrProductName" xml:space="preserve"><value>SKU arba produkto pavadinimas</value></data>
+  <data name="Agnum.Reconciliation.ShowingFirst500RowsUseSearchToNarrowTheList" xml:space="preserve"><value>Rodomos pirmosios 500 eilučių. Norėdami susiaurinti sąrašą, naudokite paiešką.</value></data>
+  <data name="Agnum.Reconciliation.VirtualBalanceAgnum" xml:space="preserve"><value>Virtualus balansas (Agnum)</value></data>
+  <data name="Agnum.Reconciliation.VirtualWarehouse" xml:space="preserve"><value>Virtualus sandėlis</value></data>
+  <data name="AllocationDashboard.AllocatedOrders" xml:space="preserve"><value>Paskirstyti užsakymai</value></data>
+  <data name="AllocationDashboard.AllocationDashboardCikadaMES" xml:space="preserve"><value>Paskirstymo prietaisų skydelis – Cikada.MES</value></data>
+  <data name="AllocationDashboard.ManualReallocateEndpointIsNotAvailableInCurrentAPISurface" xml:space="preserve"><value>Rankinio perskirstymo funkcija šiuo metu nepasiekiama.</value></data>
+  <data name="AllocationDashboard.NoAllocatedOrders" xml:space="preserve"><value>Paskirstytų užsakymų nėra.</value></data>
+  <data name="AllocationDashboard.NoOrdersPendingApproval" xml:space="preserve"><value>Nėra patvirtinimo laukiančių užsakymų.</value></data>
+  <data name="AllocationDashboard.NoOrdersPendingStock" xml:space="preserve"><value>Sandėliuose nėra užsakymų.</value></data>
+  <data name="AllocationDashboard.PendingApprovals" xml:space="preserve"><value>Laukiama patvirtinimų</value></data>
+  <data name="AllocationDashboard.PendingStock" xml:space="preserve"><value>Laukiama atsarga</value></data>
+  <data name="AllocationDashboard.Reallocate" xml:space="preserve"><value>Perskirstyti</value></data>
+  <data name="AllocationDashboard.ReleaseToPicking" xml:space="preserve"><value>Išleisk į rinkimą</value></data>
+  <data name="AnalyticsFulfillment.14DayTrend" xml:space="preserve"><value>14 dienų tendencija</value></data>
+  <data name="AnalyticsFulfillment.AvgPickMinutes" xml:space="preserve"><value>Vid. pasirinkimo minutės</value></data>
+  <data name="AnalyticsFulfillment.Date" xml:space="preserve"><value>Data</value></data>
+  <data name="AnalyticsFulfillment.FulfillmentKPIs" xml:space="preserve"><value>Įvykdymo KPI</value></data>
+  <data name="AnalyticsFulfillment.FulfillmentKPIsCikadaMES" xml:space="preserve"><value>Įvykdymo KPI – Cikada.MES</value></data>
+  <data name="AnalyticsFulfillment.NoKPITrend" xml:space="preserve"><value>Nėra KPI tendencijos</value></data>
+  <data name="AnalyticsFulfillment.NoSalesOrderTrendDataIsAvailableYet" xml:space="preserve"><value>Dar nėra pardavimo užsakymų tendencijų duomenų.</value></data>
+  <data name="AnalyticsFulfillment.OnTimeDelivery" xml:space="preserve"><value>Pristatymas laiku</value></data>
+  <data name="AnalyticsFulfillment.Orders" xml:space="preserve"><value>Užsakymai</value></data>
+  <data name="AnalyticsFulfillment.ShippedOrders" xml:space="preserve"><value>Siunčiami užsakymai</value></data>
+  <data name="AnalyticsFulfillment.TotalOrders" xml:space="preserve"><value>Iš viso užsakymų</value></data>
+  <data name="AnalyticsQuality.Count" xml:space="preserve"><value>Suskaičiuoti</value></data>
+  <data name="AnalyticsQuality.DefectAnalyticsAppearsWhenQCDefectsAreLogged" xml:space="preserve"><value>Defektų analizė rodoma, kai registruojami QC defektai.</value></data>
+  <data name="AnalyticsQuality.LateShipmentRootCauses" xml:space="preserve"><value>Pavėluoto siuntimo pagrindinės priežastys</value></data>
+  <data name="AnalyticsQuality.LateShipments" xml:space="preserve"><value>Pavėluotos siuntos</value></data>
+  <data name="AnalyticsQuality.NoDefectsRecorded" xml:space="preserve"><value>Defektų neužfiksuota</value></data>
+  <data name="AnalyticsQuality.NoDelayedOutboundOrdersFoundInCurrentDataset" xml:space="preserve"><value>Dabartiniame duomenų rinkinyje nerasta atidėtų siunčiamų užsakymų.</value></data>
+  <data name="AnalyticsQuality.NoLateShipments" xml:space="preserve"><value>Jokių vėluojančių siuntų</value></data>
+  <data name="AnalyticsQuality.QCDefectCount" xml:space="preserve"><value>QC defektų skaičius</value></data>
+  <data name="AnalyticsQuality.QualityAnalyticsCikadaMES" xml:space="preserve"><value>Kokybės analizė – Cikada.MES</value></data>
+  <data name="AnalyticsQuality.RootCause" xml:space="preserve"><value>Pagrindinė priežastis</value></data>
+  <data name="AnalyticsQuality.TopDefectTypes" xml:space="preserve"><value>Populiariausi defektų tipai</value></data>
+  <data name="App.NotFound" xml:space="preserve"><value>Nerasta</value></data>
+  <data name="App.SorryThereSNothingAtThisAddress" xml:space="preserve"><value>Atsiprašome, šiuo adresu nieko nėra.</value></data>
+  <data name="AvailableStock.Available" xml:space="preserve"><value>Galima:</value></data>
+  <data name="AvailableStock.AvailableStock" xml:space="preserve"><value>Turimos atsargos</value></data>
+  <data name="AvailableStock.AvailableStockCikadaMES" xml:space="preserve"><value>Turimos atsargos - Cikada.MES</value></data>
+  <data name="AvailableStock.EnterAtLeastOneFilterAndClickSearch" xml:space="preserve"><value>Įveskite bent vieną filtrą ir spustelėkite Ieškoti.</value></data>
+  <data name="AvailableStock.Gallery" xml:space="preserve"><value>Galerija</value></data>
+  <data name="AvailableStock.List" xml:space="preserve"><value>Sąrašas</value></data>
+  <data name="AvailableStock.NoImage" xml:space="preserve"><value>Nėra vaizdo</value></data>
+  <data name="AvailableStock.NoStockFound" xml:space="preserve"><value>Nerasta jokių atsargų</value></data>
+  <data name="AvailableStock.NoStockMatchesTheCurrentFilters" xml:space="preserve"><value>Pagal pasirinktus filtrus atsargų nerasta.</value></data>
+  <data name="AvailableStock.OnHand" xml:space="preserve"><value>Sandėlyje:</value></data>
+  <data name="AvailableStock.Physical" xml:space="preserve"><value>Fizinis kiekis</value></data>
+  <data name="AvailableStock.ReadyForSearch" xml:space="preserve"><value>Paruošta paieškai</value></data>
+  <data name="AvailableStock.Table" xml:space="preserve"><value>Lentelė</value></data>
+  <data name="AvailableStock.ViewMode" xml:space="preserve"><value>Rodymo būdas</value></data>
+  <data name="Common.Action" xml:space="preserve"><value>Veiksmas</value></data>
+  <data name="Common.Actions" xml:space="preserve"><value>Veiksmai</value></data>
+  <data name="Common.Active" xml:space="preserve"><value>Aktyvus</value></data>
+  <data name="Common.Address" xml:space="preserve"><value>Adresas</value></data>
+  <data name="Common.AdjustCost" xml:space="preserve"><value>Koreguoti savikainą</value></data>
+  <data name="Common.AdminRoleRequired" xml:space="preserve"><value>Reikalingas administratoriaus vaidmuo.</value></data>
+  <data name="Common.All" xml:space="preserve"><value>Visi</value></data>
+  <data name="Common.AllWarehouses" xml:space="preserve"><value>Visi sandėliai</value></data>
+  <data name="Common.Amount" xml:space="preserve"><value>Suma</value></data>
+  <data name="Common.Apply" xml:space="preserve"><value>Taikyti</value></data>
+  <data name="Common.ApplyLandedCost" xml:space="preserve"><value>Paskirstyti papildomas įsigijimo išlaidas</value></data>
+  <data name="Common.Approve" xml:space="preserve"><value>Patvirtinti</value></data>
+  <data name="Common.ApprovedBy" xml:space="preserve"><value>Patvirtino</value></data>
+  <data name="Common.ApproverRole" xml:space="preserve"><value>Tvirtintojo vaidmuo</value></data>
+  <data name="Common.Assign" xml:space="preserve"><value>Priskirti</value></data>
+  <data name="Common.AssignedOperator" xml:space="preserve"><value>Paskirtas operatorius</value></data>
+  <data name="Common.Available" xml:space="preserve"><value>Prieinama</value></data>
+  <data name="Common.Back" xml:space="preserve"><value>Grįžti</value></data>
+  <data name="Common.Barcode" xml:space="preserve"><value>Brūkšninis kodas</value></data>
+  <data name="Common.BasePrice" xml:space="preserve"><value>Bazinė kaina</value></data>
+  <data name="Common.Bin" xml:space="preserve"><value>Sandėliavimo vieta</value></data>
+  <data name="Common.Blocked" xml:space="preserve"><value>Užblokuota</value></data>
+  <data name="Common.Cancel" xml:space="preserve"><value>Atšaukti</value></data>
+  <data name="Common.Carrier" xml:space="preserve"><value>Vežėjas</value></data>
+  <data name="Common.Category" xml:space="preserve"><value>Kategorija</value></data>
+  <data name="Common.Ccy" xml:space="preserve"><value>Valiuta</value></data>
+  <data name="Common.City" xml:space="preserve"><value>Miestas</value></data>
+  <data name="Common.ClearFilters" xml:space="preserve"><value>Išvalyti filtrus</value></data>
+  <data name="Common.Close" xml:space="preserve"><value>Uždaryti</value></data>
+  <data name="Common.Code" xml:space="preserve"><value>Kodas</value></data>
+  <data name="Common.Complete" xml:space="preserve"><value>Užbaigti</value></data>
+  <data name="Common.Completed" xml:space="preserve"><value>Užbaigta</value></data>
+  <data name="Common.Coordinates" xml:space="preserve"><value>Koordinatės</value></data>
+  <data name="Common.Country" xml:space="preserve"><value>Šalis</value></data>
+  <data name="Common.Create" xml:space="preserve"><value>Sukurti</value></data>
+  <data name="Common.Created" xml:space="preserve"><value>Sukurta</value></data>
+  <data name="Common.Customer" xml:space="preserve"><value>Klientas</value></data>
+  <data name="Common.DataType" xml:space="preserve"><value>Duomenų tipas</value></data>
+  <data name="Common.Delete" xml:space="preserve"><value>Ištrinti</value></data>
+  <data name="Common.Description" xml:space="preserve"><value>Aprašymas</value></data>
+  <data name="Common.Details" xml:space="preserve"><value>Informacija</value></data>
+  <data name="Common.Dimensions" xml:space="preserve"><value>Matmenys</value></data>
+  <data name="Common.Edit" xml:space="preserve"><value>Redaguoti</value></data>
+  <data name="Common.Email" xml:space="preserve"><value>El. paštas</value></data>
+  <data name="Common.End" xml:space="preserve"><value>Pabaiga</value></data>
+  <data name="Common.Execute" xml:space="preserve"><value>Vykdyti</value></data>
+  <data name="Common.Expected" xml:space="preserve"><value>Numatoma</value></data>
+  <data name="Common.ExpiringSoon" xml:space="preserve"><value>Greitai baigs galioti</value></data>
+  <data name="Common.Expiry" xml:space="preserve"><value>Galiojimo laikas</value></data>
+  <data name="Common.ExportCSV" xml:space="preserve"><value>Eksportuoti CSV</value></data>
+  <data name="Common.Filter" xml:space="preserve"><value>Filtruoti</value></data>
+  <data name="Common.Format" xml:space="preserve"><value>Formatas</value></data>
+  <data name="Common.From" xml:space="preserve"><value>Nuo</value></data>
+  <data name="Common.Inactive" xml:space="preserve"><value>Neaktyvus</value></data>
+  <data name="Common.Item" xml:space="preserve"><value>Prekė</value></data>
+  <data name="Common.ItemID" xml:space="preserve"><value>Prekės ID</value></data>
+  <data name="Common.Items" xml:space="preserve"><value>Prekės</value></data>
+  <data name="Common.LastUpdated" xml:space="preserve"><value>Paskutinį kartą atnaujinta</value></data>
+  <data name="Common.LeadTimeDays" xml:space="preserve"><value>Pristatymo laikas (dienomis)</value></data>
+  <data name="Common.LegacySQLLogin" xml:space="preserve"><value>Senojo SQL prisijungimo vardas</value></data>
+  <data name="Common.Level" xml:space="preserve"><value>Lygis</value></data>
+  <data name="Common.Line" xml:space="preserve"><value>Eilutė</value></data>
+  <data name="Common.Lines" xml:space="preserve"><value>Eilutės</value></data>
+  <data name="Common.Location" xml:space="preserve"><value>Vieta</value></data>
+  <data name="Common.LocationId" xml:space="preserve"><value>Vietos ID</value></data>
+  <data name="Common.Lot" xml:space="preserve"><value>Partija</value></data>
+  <data name="Common.LotNumber" xml:space="preserve"><value>Partijos numeris</value></data>
+  <data name="Common.Maintenance" xml:space="preserve"><value>Priežiūra</value></data>
+  <data name="Common.MaxVolume" xml:space="preserve"><value>Maksimalus tūris</value></data>
+  <data name="Common.MaxWeight" xml:space="preserve"><value>Maksimalus svoris</value></data>
+  <data name="Common.Name" xml:space="preserve"><value>Pavadinimas</value></data>
+  <data name="Common.Next" xml:space="preserve"><value>Toliau</value></data>
+  <data name="Common.NoRowsFound" xml:space="preserve"><value>Eilučių nerasta.</value></data>
+  <data name="Common.Notes" xml:space="preserve"><value>Pastabos</value></data>
+  <data name="Common.OpenInSlots" xml:space="preserve"><value>Atidaryti vietų sąraše</value></data>
+  <data name="Common.Operator" xml:space="preserve"><value>Operatorius</value></data>
+  <data name="Common.Order" xml:space="preserve"><value>Užsakymas</value></data>
+  <data name="Common.OrderNumber" xml:space="preserve"><value>Užsakymo numeris</value></data>
+  <data name="Common.Parent" xml:space="preserve"><value>Pirminis</value></data>
+  <data name="Common.ParentId" xml:space="preserve"><value>Pirminio įrašo ID</value></data>
+  <data name="Common.Permissions" xml:space="preserve"><value>Leidimai</value></data>
+  <data name="Common.Phone" xml:space="preserve"><value>Telefonas</value></data>
+  <data name="Common.Pick" xml:space="preserve"><value>Komplektuoti</value></data>
+  <data name="Common.Picked" xml:space="preserve"><value>Sukomplektuota</value></data>
+  <data name="Common.Previous" xml:space="preserve"><value>Ankstesnis</value></data>
+  <data name="Common.Price" xml:space="preserve"><value>Kaina</value></data>
+  <data name="Common.Primary" xml:space="preserve"><value>Pagrindinis</value></data>
+  <data name="Common.Priority" xml:space="preserve"><value>Prioritetas</value></data>
+  <data name="Common.Projection" xml:space="preserve"><value>Projekcija</value></data>
+  <data name="Common.Qty" xml:space="preserve"><value>Kiekis</value></data>
+  <data name="Common.Quantity" xml:space="preserve"><value>Kiekis</value></data>
+  <data name="Common.Rack" xml:space="preserve"><value>Stovas</value></data>
+  <data name="Common.Reason" xml:space="preserve"><value>Priežastis</value></data>
+  <data name="Common.Receive" xml:space="preserve"><value>Priimti</value></data>
+  <data name="Common.Reference" xml:space="preserve"><value>Nuoroda</value></data>
+  <data name="Common.Refresh" xml:space="preserve"><value>Atnaujinti</value></data>
+  <data name="Common.Remaining" xml:space="preserve"><value>Liko</value></data>
+  <data name="Common.Remove" xml:space="preserve"><value>Pašalinti</value></data>
+  <data name="Common.Requested" xml:space="preserve"><value>Prašyta</value></data>
+  <data name="Common.Reservation" xml:space="preserve"><value>Rezervacija</value></data>
+  <data name="Common.Reserved" xml:space="preserve"><value>Rezervuota</value></data>
+  <data name="Common.Reset" xml:space="preserve"><value>Atkurti</value></data>
+  <data name="Common.Retry" xml:space="preserve"><value>Bandyti dar kartą</value></data>
+  <data name="Common.Role" xml:space="preserve"><value>Vaidmuo</value></data>
+  <data name="Common.Roles" xml:space="preserve"><value>Vaidmenys</value></data>
+  <data name="Common.RuleType" xml:space="preserve"><value>Taisyklės tipas</value></data>
+  <data name="Common.Save" xml:space="preserve"><value>Išsaugoti</value></data>
+  <data name="Common.Search" xml:space="preserve"><value>Ieškoti</value></data>
+  <data name="Common.SelectItem" xml:space="preserve"><value>Pasirinkti prekę</value></data>
+  <data name="Common.SelectLocation" xml:space="preserve"><value>Pasirinkti vietą</value></data>
+  <data name="Common.Serial" xml:space="preserve"><value>Serijos numeris</value></data>
+  <data name="Common.Shipment" xml:space="preserve"><value>Siunta</value></data>
+  <data name="Common.Shipped" xml:space="preserve"><value>Išsiųsta</value></data>
+  <data name="Common.Start" xml:space="preserve"><value>Pradėti</value></data>
+  <data name="Common.State" xml:space="preserve"><value>Būsena</value></data>
+  <data name="Common.Status" xml:space="preserve"><value>Būsena</value></data>
+  <data name="Common.Street" xml:space="preserve"><value>Gatvė</value></data>
+  <data name="Common.Submit" xml:space="preserve"><value>Pateikti</value></data>
+  <data name="Common.Supplier" xml:space="preserve"><value>Tiekėjas</value></data>
+  <data name="Common.SupplierSKU" xml:space="preserve"><value>Tiekėjo SKU</value></data>
+  <data name="Common.Tags" xml:space="preserve"><value>Žymos</value></data>
+  <data name="Common.Timestamp" xml:space="preserve"><value>Laiko žyma</value></data>
+  <data name="Common.To" xml:space="preserve"><value>Iki</value></data>
+  <data name="Common.ToLocation" xml:space="preserve"><value>Į vietą</value></data>
+  <data name="Common.TotalAmount" xml:space="preserve"><value>Bendra suma</value></data>
+  <data name="Common.TotalValue" xml:space="preserve"><value>Bendra vertė</value></data>
+  <data name="Common.Type" xml:space="preserve"><value>Tipas</value></data>
+  <data name="Common.Updated" xml:space="preserve"><value>Atnaujinta</value></data>
+  <data name="Common.User" xml:space="preserve"><value>Naudotojas</value></data>
+  <data name="Common.Value" xml:space="preserve"><value>Vertė</value></data>
+  <data name="Common.Value2139d7" xml:space="preserve"><value>Vertė:</value></data>
+  <data name="Common.ValueCurrentCost" xml:space="preserve"><value>Vertė (pagal dabartinę savikainą)</value></data>
+  <data name="Common.View" xml:space="preserve"><value>Peržiūrėti</value></data>
+  <data name="Common.Virtual" xml:space="preserve"><value>Virtualus</value></data>
+  <data name="Common.Volume" xml:space="preserve"><value>Tūris</value></data>
+  <data name="Common.Warehouse" xml:space="preserve"><value>Sandėlis</value></data>
+  <data name="Common.Weight" xml:space="preserve"><value>Svoris</value></data>
+  <data name="Common.WriteDown" xml:space="preserve"><value>Nurašyti</value></data>
+  <data name="ComplianceDashboard.ComplianceDashboard" xml:space="preserve"><value>Atitikties prietaisų skydelis</value></data>
+  <data name="ComplianceDashboard.Cron" xml:space="preserve"><value>Cron</value></data>
+  <data name="ComplianceDashboard.CronUTC" xml:space="preserve"><value>Cron (UTC)</value></data>
+  <data name="ComplianceDashboard.Download" xml:space="preserve"><value>Atsisiųsti</value></data>
+  <data name="ComplianceDashboard.EmailRecipientsComma" xml:space="preserve"><value>El. pašto gavėjai (kablelis)</value></data>
+  <data name="ComplianceDashboard.Generated" xml:space="preserve"><value>Sukurta</value></data>
+  <data name="ComplianceDashboard.LastRun" xml:space="preserve"><value>Paskutinis bėgimas</value></data>
+  <data name="ComplianceDashboard.NoReportsYet" xml:space="preserve"><value>Ataskaitų dar nėra.</value></data>
+  <data name="ComplianceDashboard.NoSchedulesConfigured" xml:space="preserve"><value>Nėra sukonfigūruotų tvarkaraščių.</value></data>
+  <data name="ComplianceDashboard.PendingExports" xml:space="preserve"><value>Laukiama eksporto</value></data>
+  <data name="ComplianceDashboard.RecentLotTraces" xml:space="preserve"><value>Naujausi sklypo pėdsakai</value></data>
+  <data name="ComplianceDashboard.RecentScheduledReports" xml:space="preserve"><value>Naujausios suplanuotos ataskaitos</value></data>
+  <data name="ComplianceDashboard.ReportType" xml:space="preserve"><value>Ataskaitos tipas</value></data>
+  <data name="ComplianceDashboard.Run" xml:space="preserve"><value>Bėk</value></data>
+  <data name="ComplianceDashboard.ScheduleReport" xml:space="preserve"><value>Suplanuokite ataskaitą</value></data>
+  <data name="ComplianceDashboard.ScheduledJobs" xml:space="preserve"><value>Suplanuoti darbai</value></data>
+  <data name="ComplianceDashboard.VarianceAlerts" xml:space="preserve"><value>Įspėjimai apie skirtumus</value></data>
+  <data name="ComplianceLotTrace.Approximate" xml:space="preserve"><value>Apytikslis</value></data>
+  <data name="ComplianceLotTrace.BackwardSupplier" xml:space="preserve"><value>Atgal (tiekėjas)</value></data>
+  <data name="ComplianceLotTrace.BuildTrace" xml:space="preserve"><value>Sukurkite pėdsaką</value></data>
+  <data name="ComplianceLotTrace.Direction" xml:space="preserve"><value>Kryptis</value></data>
+  <data name="ComplianceLotTrace.EnterALotNumberAndRunBuildTrace" xml:space="preserve"><value>Įveskite partijos numerį ir paleiskite „Build Trace“.</value></data>
+  <data name="ComplianceLotTrace.ForwardCustomer" xml:space="preserve"><value>Persiųsti (klientas)</value></data>
+  <data name="ComplianceLotTrace.LotTraceability" xml:space="preserve"><value>Partijos atsekamumas</value></data>
+  <data name="ComplianceLotTrace.LotTraceabilityCikadaMES" xml:space="preserve"><value>Partijos atsekamumas – Cikada.MES</value></data>
+  <data name="ComplianceLotTrace.NoTraceGenerated" xml:space="preserve"><value>Atsekamumo duomenų nesukurta</value></data>
+  <data name="CrossDock.CreateAMatchToRouteInboundStockDirectlyToOutboundShipping" xml:space="preserve"><value>Sukurkite atitiktį, kad nukreiptumėte gaunamas atsargas tiesiai į siunčiamą siuntą.</value></data>
+  <data name="CrossDock.CreateCrossDockMatch" xml:space="preserve"><value>Sukurkite Cross-Dock Match</value></data>
+  <data name="CrossDock.CrossDockCikadaMES" xml:space="preserve"><value>Cross-Dock – Cikada.MES</value></data>
+  <data name="CrossDock.CrossDockQueue" xml:space="preserve"><value>Cross-Dock eilė</value></data>
+  <data name="CrossDock.CrossDockTracking" xml:space="preserve"><value>Cross-Dock stebėjimas</value></data>
+  <data name="CrossDock.InboundShipmentId" xml:space="preserve"><value>Įeinančios siuntos ID</value></data>
+  <data name="CrossDock.Match" xml:space="preserve"><value>Rungtynės</value></data>
+  <data name="CrossDock.NoCrossDockRecords" xml:space="preserve"><value>Nėra kryžiaus doko įrašų</value></data>
+  <data name="CrossDock.Number" xml:space="preserve"><value>Numeris</value></data>
+  <data name="CrossDock.OutboundOrderId" xml:space="preserve"><value>Siunčiamo užsakymo ID</value></data>
+  <data name="CycleCounts.Discrepancies.ApproveAdjustment" xml:space="preserve"><value>Patvirtinti koregavimą</value></data>
+  <data name="CycleCounts.Discrepancies.Confirm" xml:space="preserve"><value>Patvirtinti</value></data>
+  <data name="CycleCounts.Discrepancies.CycleCountDiscrepancies" xml:space="preserve"><value>Ciklų skaičiavimo neatitikimai</value></data>
+  <data name="CycleCounts.Discrepancies.CycleCountDiscrepanciesCikadaMES" xml:space="preserve"><value>Inventorizacijos neatitikimai – Cikada.MES</value></data>
+  <data name="CycleCounts.Discrepancies.NoDiscrepanciesFound" xml:space="preserve"><value>Nerasta jokių neatitikimų.</value></data>
+  <data name="CycleCounts.Discrepancies.NoVarianceLinesRequireApproval" xml:space="preserve"><value>Jokioms dispersijos linijoms nereikia patvirtinimo.</value></data>
+  <data name="CycleCounts.Discrepancies.PhysicalQty" xml:space="preserve"><value>Fizinis kiekis</value></data>
+  <data name="CycleCounts.Discrepancies.SystemQty" xml:space="preserve"><value>Sistemos kiekis</value></data>
+  <data name="CycleCounts.Discrepancies.ValueImpact" xml:space="preserve"><value>Vertės poveikis</value></data>
+  <data name="CycleCounts.Discrepancies.Variance" xml:space="preserve"><value>Dispersija</value></data>
+  <data name="CycleCounts.Discrepancies.Variance393303" xml:space="preserve"><value>Nuokrypis %</value></data>
+  <data name="CycleCounts.Execute.CycleCountNotFound" xml:space="preserve"><value>Ciklų skaičius nerastas.</value></data>
+  <data name="CycleCounts.Execute.Discrepancy" xml:space="preserve"><value>Neatitikimas</value></data>
+  <data name="CycleCounts.Execute.ExecuteCycleCount" xml:space="preserve"><value>Vykdykite ciklų skaičiavimą</value></data>
+  <data name="CycleCounts.Execute.ExecuteCycleCountCikadaMES" xml:space="preserve"><value>Vykdyti ciklų skaičių – Cikada.MES</value></data>
+  <data name="CycleCounts.Execute.ItemBarcode" xml:space="preserve"><value>Prekė Brūkšninis kodas</value></data>
+  <data name="CycleCounts.Execute.LocationBarcode" xml:space="preserve"><value>Vietos brūkšninis kodas</value></data>
+  <data name="CycleCounts.Execute.PhysicalQty" xml:space="preserve"><value>Fizinis kiekis</value></data>
+  <data name="CycleCounts.Execute.TheSelectedCycleCountIsUnavailable" xml:space="preserve"><value>Pasirinktas ciklų skaičius nepasiekiamas.</value></data>
+  <data name="CycleCounts.List.CountNumber" xml:space="preserve"><value>Skaičiavimo skaičius</value></data>
+  <data name="CycleCounts.List.CreateAScheduleToStartCounting" xml:space="preserve"><value>Sukurkite tvarkaraštį, kad pradėtumėte skaičiuoti.</value></data>
+  <data name="CycleCounts.List.CycleCounts" xml:space="preserve"><value>Inventorizacijos</value></data>
+  <data name="CycleCounts.List.CycleCountsCikadaMES" xml:space="preserve"><value>Ciklų skaičius – Cikada.MES</value></data>
+  <data name="CycleCounts.List.NoCycleCountsScheduled" xml:space="preserve"><value>Nėra suplanuotų ciklo skaičiavimų.</value></data>
+  <data name="CycleCounts.List.ReviewDiscrepancies" xml:space="preserve"><value>Peržiūrėkite neatitikimus</value></data>
+  <data name="CycleCounts.List.ScheduleCycleCount" xml:space="preserve"><value>Suplanuokite ciklo skaičiavimą</value></data>
+  <data name="CycleCounts.List.ScheduledDate" xml:space="preserve"><value>Numatyta data</value></data>
+  <data name="CycleCounts.Schedule.A" xml:space="preserve"><value>A</value></data>
+  <data name="CycleCounts.Schedule.ABCClass" xml:space="preserve"><value>ABC klasė</value></data>
+  <data name="CycleCounts.Schedule.B" xml:space="preserve"><value>B</value></data>
+  <data name="CycleCounts.Schedule.C" xml:space="preserve"><value>C</value></data>
+  <data name="CycleCounts.Schedule.Locations" xml:space="preserve"><value>Vietos</value></data>
+  <data name="CycleCounts.Schedule.NoLocationsLoaded" xml:space="preserve"><value>Vietų neįkelta.</value></data>
+  <data name="CycleCounts.Schedule.ScheduleCycleCount" xml:space="preserve"><value>Suplanuokite ciklo skaičiavimą</value></data>
+  <data name="CycleCounts.Schedule.ScheduleCycleCountCikadaMES" xml:space="preserve"><value>Tvarkaraštis ciklo skaičiavimas – Cikada.MES</value></data>
+  <data name="CycleCounts.Schedule.ScheduledDate" xml:space="preserve"><value>Numatyta data</value></data>
+  <data name="Dashboard.ActiveHARDLocks" xml:space="preserve"><value>Aktyvūs HARD užraktai</value></data>
+  <data name="Dashboard.AgnumIntegrationHealth" xml:space="preserve"><value>Agnum integracijos būklė</value></data>
+  <data name="Dashboard.AgnumSync" xml:space="preserve"><value>Agnum sinchronizavimas</value></data>
+  <data name="Dashboard.AllocatedSOFT" xml:space="preserve"><value>Paskirstyta (SOFT)</value></data>
+  <data name="Dashboard.Consumed" xml:space="preserve"><value>Sunaudota</value></data>
+  <data name="Dashboard.Days" xml:space="preserve"><value>Dienos</value></data>
+  <data name="Dashboard.Export" xml:space="preserve"><value>Eksportuoti</value></data>
+  <data name="Dashboard.FlowByStatus" xml:space="preserve"><value>Srautas pagal būseną</value></data>
+  <data name="Dashboard.HealthStatusCard.LastCheck" xml:space="preserve"><value>Paskutinis patikrinimas</value></data>
+  <data name="Dashboard.HealthStatusCard.NoHealthDataAvailable" xml:space="preserve"><value>Būklės duomenų nėra.</value></data>
+  <data name="Dashboard.HealthStatusCard.ProjectionLag" xml:space="preserve"><value>Projekcijos atsilikimas</value></data>
+  <data name="Dashboard.HealthStatusCard.ServiceHealth" xml:space="preserve"><value>Paslaugų būklė</value></data>
+  <data name="Dashboard.Import" xml:space="preserve"><value>Importuoti</value></data>
+  <data name="Dashboard.LotsByRemainingShelfLife" xml:space="preserve"><value>Partijos pagal likusį galiojimo laiką</value></data>
+  <data name="Dashboard.LowStockItems" xml:space="preserve"><value>Prekės, kurių atsargų mažai</value></data>
+  <data name="Dashboard.NoOpenInboundShipments" xml:space="preserve"><value>Nėra atvirų įvežamų siuntų.</value></data>
+  <data name="Dashboard.NoRecentMovements" xml:space="preserve"><value>Jokių pastarųjų judesių.</value></data>
+  <data name="Dashboard.NoValuationDataAvailable" xml:space="preserve"><value>Vertinimo duomenų nėra.</value></data>
+  <data name="Dashboard.NoWarehousesConfigured" xml:space="preserve"><value>Nėra sukonfigūruotų sandėlių.</value></data>
+  <data name="Dashboard.NothingBelowReorderPoint" xml:space="preserve"><value>Prekių, kurių atsargos nesiekia papildymo ribos, nėra.</value></data>
+  <data name="Dashboard.NothingExpiringInTheSelectedWindow" xml:space="preserve"><value>Pasirinktame lange nieko nesibaigia.</value></data>
+  <data name="Dashboard.OnHand" xml:space="preserve"><value>Sandėlyje</value></data>
+  <data name="Dashboard.PickingHARD" xml:space="preserve"><value>Komplektuojama (HARD)</value></data>
+  <data name="Dashboard.ProjectionHealthCard.Lag" xml:space="preserve"><value>Atsilikimas</value></data>
+  <data name="Dashboard.ProjectionHealthCard.NoProjectionHealthDataAvailable" xml:space="preserve"><value>Projekcijų būklės duomenų nėra.</value></data>
+  <data name="Dashboard.ProjectionHealthCard.ProjectionHealth" xml:space="preserve"><value>Projekcijų būklė</value></data>
+  <data name="Dashboard.Received" xml:space="preserve"><value>Gauta</value></data>
+  <data name="Dashboard.RecentActivity" xml:space="preserve"><value>Naujausia veikla</value></data>
+  <data name="Dashboard.RecentActivityFeed.NoRecentMovementsAvailable" xml:space="preserve"><value>Nėra naujausių judesių.</value></data>
+  <data name="Dashboard.RecentActivityFeed.RecentActivity" xml:space="preserve"><value>Naujausia veikla</value></data>
+  <data name="Dashboard.Reconciliation" xml:space="preserve"><value>Sutikrinimas</value></data>
+  <data name="Dashboard.ReorderPt" xml:space="preserve"><value>Papildymo riba</value></data>
+  <data name="Dashboard.ReservationSummaryCard.NoReservationSummaryAvailable" xml:space="preserve"><value>Nėra rezervacijos suvestinės.</value></data>
+  <data name="Dashboard.ReservationSummaryCard.ReservationSummary" xml:space="preserve"><value>Rezervavimo santrauka</value></data>
+  <data name="Dashboard.SKUsOnHand" xml:space="preserve"><value>Turimų prekių SKU</value></data>
+  <data name="Dashboard.SelectASingleWarehouseForAZoneBreakdown" xml:space="preserve"><value>Norėdami suskirstyti zoną, pasirinkite vieną sandėlį</value></data>
+  <data name="Dashboard.StockSummaryCard.NoStockSummaryAvailable" xml:space="preserve"><value>Atsargų suvestinės nėra.</value></data>
+  <data name="Dashboard.StockSummaryCard.StockSummary" xml:space="preserve"><value>Atsargų santrauka</value></data>
+  <data name="Dashboard.StockSummaryCard.TotalQuantity" xml:space="preserve"><value>Bendras kiekis</value></data>
+  <data name="Dashboard.StockSummaryCard.TotalSKUs" xml:space="preserve"><value>Iš viso SKU</value></data>
+  <data name="Dashboard.StockValueByCategory" xml:space="preserve"><value>Atsargų vertė pagal kategorijas</value></data>
+  <data name="Dashboard.StockValueByWarehouse" xml:space="preserve"><value>Atsargų vertė pagal sandėlį</value></data>
+  <data name="Dashboard.TotalQuantity" xml:space="preserve"><value>Bendras kiekis</value></data>
+  <data name="Dashboard.TotalValue" xml:space="preserve"><value>Bendra vertė</value></data>
+  <data name="Dashboard.WarehouseDashboard" xml:space="preserve"><value>Sandėlio skydelis</value></data>
+  <data name="Dashboard.WarehouseDashboardLKvitaiMES" xml:space="preserve"><value>Sandėlio skydelis – LKvitai.MES</value></data>
+  <data name="Dashboard.Warehouses" xml:space="preserve"><value>Sandėliai</value></data>
+  <data name="InboundShipmentCreate.ActualUnitPrice" xml:space="preserve"><value>Faktinė vieneto kaina</value></data>
+  <data name="InboundShipmentCreate.AddAtLeastOneItemLine" xml:space="preserve"><value>Pridėkite bent vieną prekės eilutę.</value></data>
+  <data name="InboundShipmentCreate.AddCost" xml:space="preserve"><value>Pridėti kainą</value></data>
+  <data name="InboundShipmentCreate.AddLine" xml:space="preserve"><value>Pridėti eilutę</value></data>
+  <data name="InboundShipmentCreate.AdditionalCosts" xml:space="preserve"><value>Papildomos išlaidos</value></data>
+  <data name="InboundShipmentCreate.AvgActualPrice" xml:space="preserve"><value>Vidutinė faktinė kaina</value></data>
+  <data name="InboundShipmentCreate.AvgInvoicePrice" xml:space="preserve"><value>Vidutinė sąskaitos faktūros kaina</value></data>
+  <data name="InboundShipmentCreate.ExpectedDate" xml:space="preserve"><value>Numatoma data</value></data>
+  <data name="InboundShipmentCreate.FreightDutyInsuranceOtherDistributedAcrossStockLinesByValueAtR" xml:space="preserve"><value>Krovinys/muitas/draudimas/kita, paskirstyta atsargų eilutėms pagal vertę gavimo metu.</value></data>
+  <data name="InboundShipmentCreate.InvoiceDate" xml:space="preserve"><value>Sąskaitos faktūros data</value></data>
+  <data name="InboundShipmentCreate.InvoiceNumber" xml:space="preserve"><value>Sąskaitos numeris</value></data>
+  <data name="InboundShipmentCreate.InvoiceUnitPrice" xml:space="preserve"><value>Sąskaitos faktūros vieneto kaina</value></data>
+  <data name="InboundShipmentCreate.NoLines" xml:space="preserve"><value>Jokių eilučių</value></data>
+  <data name="InboundShipmentCreate.Optional" xml:space="preserve"><value>Neprivaloma</value></data>
+  <data name="InboundShipmentCreate.ReferenceNumber" xml:space="preserve"><value>Nuorodos numeris</value></data>
+  <data name="InboundShipmentCreate.ServiceItemsTransportDeliveryFoldIntoAdditionalCostsBelowInste" xml:space="preserve"><value>Aptarnavimo prekės (transportavimas, pristatymas...) užuot laikę atsargas, įtraukiamos į papildomas išlaidas.</value></data>
+  <data name="InboundShipmentCreate.ShipmentDetails" xml:space="preserve"><value>Siuntimo detalės</value></data>
+  <data name="InboundShipmentCreate.TotalActualValue" xml:space="preserve"><value>Bendra faktinė vertė</value></data>
+  <data name="InboundShipmentCreate.TotalAdditionalCosts" xml:space="preserve"><value>Iš viso papildomų išlaidų</value></data>
+  <data name="InboundShipmentCreate.TotalInvoiceValue" xml:space="preserve"><value>Bendra sąskaitos faktūros vertė</value></data>
+  <data name="InboundShipmentCreate.TotalQtyStock" xml:space="preserve"><value>Bendras kiekis (atsargos)</value></data>
+  <data name="InboundShipmentDetail.AdditionalCosts" xml:space="preserve"><value>Papildomos išlaidos:</value></data>
+  <data name="InboundShipmentDetail.ExpiryDate" xml:space="preserve"><value>Galiojimo pabaigos data</value></data>
+  <data name="InboundShipmentDetail.Flags" xml:space="preserve"><value>Žymos</value></data>
+  <data name="InboundShipmentDetail.InboundShipmentDetail" xml:space="preserve"><value>Išsami informacija apie gaunamą siuntą</value></data>
+  <data name="InboundShipmentDetail.InboundShipmentDetailCikadaMES" xml:space="preserve"><value>Išsami informacija apie atvykstančią siuntą – Cikada.MES</value></data>
+  <data name="InboundShipmentDetail.InboundShipmentDoesNotExistOrIsUnavailable" xml:space="preserve"><value>Gaunamos siuntos nėra arba ji nepasiekiama.</value></data>
+  <data name="InboundShipmentDetail.NotSet" xml:space="preserve"><value>nenustatyta</value></data>
+  <data name="InboundShipmentDetail.OpenQCQueue" xml:space="preserve"><value>Atidarykite QC eilę</value></data>
+  <data name="InboundShipmentDetail.ProductionDate" xml:space="preserve"><value>Pagaminimo data</value></data>
+  <data name="InboundShipmentDetail.ReceiveQty" xml:space="preserve"><value>Gauti Kiekis</value></data>
+  <data name="InboundShipmentDetail.Received" xml:space="preserve"><value>Gauta:</value></data>
+  <data name="InboundShipmentDetail.Received27548c" xml:space="preserve"><value>Gauta</value></data>
+  <data name="InboundShipmentDetail.Resolve" xml:space="preserve"><value>Išspręsti</value></data>
+  <data name="InboundShipmentDetail.ScanBarcode" xml:space="preserve"><value>Nuskaityti brūkšninį kodą</value></data>
+  <data name="InboundShipmentDetail.ScanItemBarcode" xml:space="preserve"><value>Nuskaitykite prekės brūkšninį kodą</value></data>
+  <data name="InboundShipmentDetail.SelectLine" xml:space="preserve"><value>Pasirinkite liniją</value></data>
+  <data name="InboundShipmentDetail.ShipmentNotFound" xml:space="preserve"><value>Siunta nerasta</value></data>
+  <data name="InboundShipmentDetail.ThisLineHasNoPurchasePriceYetEnterTheUnitPriceBeforeReceivingW" xml:space="preserve"><value>Ši linija dar neturi pirkimo kainos. Įveskite vieneto kainą prieš gaudami – kas įveda kvitą, įveda kainą.</value></data>
+  <data name="InboundShipmentDetail.UnitPrice" xml:space="preserve"><value>Vieneto kaina</value></data>
+  <data name="InboundShipments.CreateInbound" xml:space="preserve"><value>+ Sukurti gaunamą siuntą</value></data>
+  <data name="InboundShipments.CreateInboundShipmentToStartReceivingWorkflow" xml:space="preserve"><value>Sukurkite gaunamą siuntą, kad pradėtumėte prekių priėmimą.</value></data>
+  <data name="InboundShipments.Draft" xml:space="preserve"><value>Juodraštis</value></data>
+  <data name="InboundShipments.ExpectedDate" xml:space="preserve"><value>Numatoma data</value></data>
+  <data name="InboundShipments.ExpectedFrom" xml:space="preserve"><value>Laukiama nuo</value></data>
+  <data name="InboundShipments.ExpectedTo" xml:space="preserve"><value>Laukiama iki</value></data>
+  <data name="InboundShipments.InboundShipments" xml:space="preserve"><value>Gaunamos siuntos</value></data>
+  <data name="InboundShipments.InboundShipmentsCikadaMES" xml:space="preserve"><value>Gaunamos siuntos – Cikada.MES</value></data>
+  <data name="InboundShipments.NoInboundShipments" xml:space="preserve"><value>Gaunamų siuntų nėra</value></data>
+  <data name="InboundShipments.Partial" xml:space="preserve"><value>Dalinė</value></data>
+  <data name="InboundShipments.ReceivedExpected" xml:space="preserve"><value>Gauta / laukiama</value></data>
+  <data name="InboundShipments.SupplierId" xml:space="preserve"><value>Tiekėjo ID</value></data>
+  <data name="Labels.DataJSONObject" xml:space="preserve"><value>Duomenys (JSON objektas)</value></data>
+  <data name="Labels.GetPDF" xml:space="preserve"><value>Gaukite PDF</value></data>
+  <data name="Labels.Id" xml:space="preserve"><value>Id</value></data>
+  <data name="Labels.Labels" xml:space="preserve"><value>Etiketės</value></data>
+  <data name="Labels.LabelsStation" xml:space="preserve"><value>Etikečių stotis</value></data>
+  <data name="Labels.PDFFileNameFromPrintResult" xml:space="preserve"><value>PDF failo pavadinimas iš spausdinimo rezultato</value></data>
+  <data name="Labels.PreviewPDF" xml:space="preserve"><value>Peržiūrėti PDF</value></data>
+  <data name="Labels.Print" xml:space="preserve"><value>Spausdinti</value></data>
+  <data name="Labels.PrintPreview" xml:space="preserve"><value>Spausdinti / peržiūrėti</value></data>
+  <data name="Labels.Queue" xml:space="preserve"><value>Eilė</value></data>
+  <data name="Labels.QueueIsEmpty" xml:space="preserve"><value>Eilė tuščia.</value></data>
+  <data name="Labels.Retries" xml:space="preserve"><value>Bandymai pakartoti</value></data>
+  <data name="Labels.SelectTemplate" xml:space="preserve"><value>Pasirinkite šabloną</value></data>
+  <data name="Labels.Template" xml:space="preserve"><value>Šablonas</value></data>
+  <data name="LoadingSpinner.Loading" xml:space="preserve"><value>Įkeliama…</value></data>
+  <data name="MainLayout.Loaded" xml:space="preserve"><value>Įkelta</value></data>
+  <data name="NavMenu.Dashboard" xml:space="preserve"><value>Skydelis</value></data>
+  <data name="NavMenu.WarehouseNavigation" xml:space="preserve"><value>Sandėlio navigacija</value></data>
+  <data name="OutboundDispatch.ConfirmDispatch" xml:space="preserve"><value>Patvirtinkite išsiuntimą</value></data>
+  <data name="OutboundDispatch.Dispatch" xml:space="preserve"><value>Išsiuntimas</value></data>
+  <data name="OutboundDispatch.DispatchConfirmation" xml:space="preserve"><value>Išsiuntimo patvirtinimas</value></data>
+  <data name="OutboundDispatch.DispatchConfirmationCikadaMES" xml:space="preserve"><value>Siuntimo patvirtinimas - Cikada.MES</value></data>
+  <data name="OutboundDispatch.NoPackedShipmentsAvailable" xml:space="preserve"><value>Supakuotų siuntų nėra.</value></data>
+  <data name="OutboundDispatch.PackedAt" xml:space="preserve"><value>Supakuota At</value></data>
+  <data name="OutboundDispatch.ShipmentNumber" xml:space="preserve"><value>Siuntos numeris</value></data>
+  <data name="OutboundDispatch.VehicleID" xml:space="preserve"><value>Transporto priemonės ID</value></data>
+  <data name="OutboundOrderDetail.CancellationReason" xml:space="preserve"><value>Atšaukimo priežastis</value></data>
+  <data name="OutboundOrderDetail.OpenPackingStation" xml:space="preserve"><value>Atidarykite pakavimo stotį</value></data>
+  <data name="OutboundOrderDetail.OrderActions" xml:space="preserve"><value>Užsakymo veiksmai</value></data>
+  <data name="OutboundOrderDetail.OrderDate" xml:space="preserve"><value>Užsakymo data</value></data>
+  <data name="OutboundOrderDetail.OrderNotFound" xml:space="preserve"><value>Užsakymas nerastas.</value></data>
+  <data name="OutboundOrderDetail.OutboundOrderDetail" xml:space="preserve"><value>Išsamios užsakymo detalės</value></data>
+  <data name="OutboundOrderDetail.OutboundOrderDetailCikadaMES" xml:space="preserve"><value>Išsamios užsakymo detalės – Cikada.MES</value></data>
+  <data name="OutboundOrderDetail.Release" xml:space="preserve"><value>Paleisti</value></data>
+  <data name="OutboundOrderDetail.RequestedShipDate" xml:space="preserve"><value>Prašoma pristatymo data</value></data>
+  <data name="OutboundOrderDetail.ReservationId" xml:space="preserve"><value>Rezervacijos ID</value></data>
+  <data name="OutboundOrders.BulkCancel" xml:space="preserve"><value>Masinis atšaukimas</value></data>
+  <data name="OutboundOrders.Clear" xml:space="preserve"><value>Išvalyti</value></data>
+  <data name="OutboundOrders.CustomerName" xml:space="preserve"><value>Kliento pavadinimas</value></data>
+  <data name="OutboundOrders.DateFrom" xml:space="preserve"><value>Data nuo</value></data>
+  <data name="OutboundOrders.DateTo" xml:space="preserve"><value>Data iki</value></data>
+  <data name="OutboundOrders.NoOutboundOrdersFound" xml:space="preserve"><value>Išsiunčiamų užsakymų nerasta.</value></data>
+  <data name="OutboundOrders.OutboundOrders" xml:space="preserve"><value>Išsiunčiami užsakymai</value></data>
+  <data name="OutboundOrders.OutboundOrdersCikadaMES" xml:space="preserve"><value>Išsiunčiami užsakymai – Cikada.MES</value></data>
+  <data name="OutboundOrders.Pack" xml:space="preserve"><value>Pakuotė</value></data>
+  <data name="OutboundOrders.RequestedShipDate" xml:space="preserve"><value>Prašoma pristatymo data</value></data>
+  <data name="OutboundOrders.SalesOrder" xml:space="preserve"><value>+ Pardavimo užsakymas</value></data>
+  <data name="PackingStation.ClearScans" xml:space="preserve"><value>Išvalyti nuskaitymus</value></data>
+  <data name="PackingStation.OrderItems" xml:space="preserve"><value>Užsakymo prekės</value></data>
+  <data name="PackingStation.OrderNotFound" xml:space="preserve"><value>Užsakymas nerastas.</value></data>
+  <data name="PackingStation.Pack" xml:space="preserve"><value>Pakuotė</value></data>
+  <data name="PackingStation.PackagingType" xml:space="preserve"><value>Pakuotės tipas</value></data>
+  <data name="PackingStation.PackingProgress" xml:space="preserve"><value>Pakavimo eiga</value></data>
+  <data name="PackingStation.PackingStation" xml:space="preserve"><value>Pakavimo stotis</value></data>
+  <data name="PackingStation.PackingStationCikadaMES" xml:space="preserve"><value>Pakavimo stotis - Cikada.MES</value></data>
+  <data name="PackingStation.Pending" xml:space="preserve"><value>Laukiama</value></data>
+  <data name="PackingStation.PressEnterAfterEachScan" xml:space="preserve"><value>Po kiekvieno nuskaitymo paspauskite Enter.</value></data>
+  <data name="PackingStation.Ready" xml:space="preserve"><value>Paruošta</value></data>
+  <data name="PackingStation.Required" xml:space="preserve"><value>Privaloma</value></data>
+  <data name="PackingStation.ScanBarcode" xml:space="preserve"><value>Nuskaityti brūkšninį kodą</value></data>
+  <data name="PackingStation.Scanned" xml:space="preserve"><value>Nuskaityta</value></data>
+  <data name="Pagination.PageSize" xml:space="preserve"><value>Puslapio dydis</value></data>
+  <data name="Pagination.Pagination" xml:space="preserve"><value>Puslapių naršymas</value></data>
+  <data name="PickingTasks.AssignToOptional" xml:space="preserve"><value>Priskirti (neprivaloma)</value></data>
+  <data name="PickingTasks.CompleteTask" xml:space="preserve"><value>Atlikti užduotį</value></data>
+  <data name="PickingTasks.CreateTask" xml:space="preserve"><value>Sukurti užduotį</value></data>
+  <data name="PickingTasks.FromLocationId" xml:space="preserve"><value>Iš vietos ID</value></data>
+  <data name="PickingTasks.Guid" xml:space="preserve"><value>vadovas</value></data>
+  <data name="PickingTasks.LoadLocations" xml:space="preserve"><value>Įkrovimo vietos</value></data>
+  <data name="PickingTasks.LocationsCompleteTask" xml:space="preserve"><value>Vietos + Užbaikite užduotį</value></data>
+  <data name="PickingTasks.LotIdOptional" xml:space="preserve"><value>Partijos ID (neprivaloma)</value></data>
+  <data name="PickingTasks.OrderId" xml:space="preserve"><value>Užsakymo ID</value></data>
+  <data name="PickingTasks.PickedQty" xml:space="preserve"><value>Pasirinktas Kiekis</value></data>
+  <data name="PickingTasks.PickingTasks" xml:space="preserve"><value>Užduočių rinkimas</value></data>
+  <data name="PickingTasks.ScannedBarcode" xml:space="preserve"><value>Nuskaitytas brūkšninis kodas</value></data>
+  <data name="PickingTasks.ScannedLocationBarcode" xml:space="preserve"><value>Nuskaitytas vietos brūkšninis kodas</value></data>
+  <data name="PickingTasks.TaskCreated" xml:space="preserve"><value>Užduotis sukurta:</value></data>
+  <data name="PickingTasks.TaskId" xml:space="preserve"><value>Užduoties ID</value></data>
+  <data name="Projections.AfterRebuildVerifyChecksumMatchTrueAndLagReturnsToHealthy" xml:space="preserve"><value>Po atkūrimo patikrinkite „ChecksumMatch=true“ ir vėlavimas vėl bus sveikas.</value></data>
+  <data name="Projections.AreYouSureThisWillRebuildTheProjectionFromScratch" xml:space="preserve"><value>Ar esi tikras? Taip projekcija bus atkurta nuo nulio.</value></data>
+  <data name="Projections.CaptureTraceIdForFailedOperationsAndShareWithSupport" xml:space="preserve"><value>Užfiksuokite traceId nesėkmingoms operacijoms ir bendrinkite su palaikymo komanda.</value></data>
+  <data name="Projections.CheckLagTableAboveAndConfirmProjectionStatus" xml:space="preserve"><value>Patikrinkite aukščiau pateiktą vėlavimo lentelę ir patvirtinkite projekcijos būseną.</value></data>
+  <data name="Projections.ChecksumMatch" xml:space="preserve"><value>Kontrolinės sumos atitikimas</value></data>
+  <data name="Projections.CopyError" xml:space="preserve"><value>Kopijavimo klaida</value></data>
+  <data name="Projections.Duration" xml:space="preserve"><value>Trukmė</value></data>
+  <data name="Projections.EventsProcessed" xml:space="preserve"><value>Apdoroti įvykiai</value></data>
+  <data name="Projections.LagEvents" xml:space="preserve"><value>Vėlavimas (įvykiai)</value></data>
+  <data name="Projections.LagS" xml:space="preserve"><value>Vėlavimas (-ai)</value></data>
+  <data name="Projections.NoProjectionLagDataAvailable" xml:space="preserve"><value>Nėra jokių projekcijos delsos duomenų.</value></data>
+  <data name="Projections.OpenProjectionRunbook" xml:space="preserve"><value>Atidarykite Projection Runbook</value></data>
+  <data name="Projections.ProjectionLag" xml:space="preserve"><value>Projekcijos delsa</value></data>
+  <data name="Projections.Projections" xml:space="preserve"><value>Projekcijos</value></data>
+  <data name="Projections.ProjectionsCikadaMES" xml:space="preserve"><value>Projekcijos - Cikada.MES</value></data>
+  <data name="Projections.Rebuild" xml:space="preserve"><value>Atstatyti</value></data>
+  <data name="Projections.RebuildProjection" xml:space="preserve"><value>Atstatyti projekciją?</value></data>
+  <data name="Projections.RebuildResult" xml:space="preserve"><value>Atkūrimo rezultatas</value></data>
+  <data name="Projections.RebuildVerify" xml:space="preserve"><value>Atstatyti / patikrinti</value></data>
+  <data name="Projections.RunVerifyFirstUseRebuildOnlyWhenMismatchOrCorruptionIsConfirme" xml:space="preserve"><value>Pirmiausia paleiskite „Patvirtinti“; naudokite „Rebuild“ tik tada, kai patvirtinamas neatitikimas arba sugadinimas.</value></data>
+  <data name="Projections.Runbook" xml:space="preserve"><value>Runbook</value></data>
+  <data name="Projections.Swapped" xml:space="preserve"><value>Sukeisti</value></data>
+  <data name="Projections.Unknown" xml:space="preserve"><value>Nežinoma</value></data>
+  <data name="Projections.UseThisQuickChecklistBeforeAndAfterProjectionRebuilds" xml:space="preserve"><value>Naudokite šį greitą kontrolinį sąrašą prieš ir po projekcijos atstatymo.</value></data>
+  <data name="Projections.Verify" xml:space="preserve"><value>Patvirtinti</value></data>
+  <data name="Projections.Verify53ada8" xml:space="preserve"><value>Patvirtinti:</value></data>
+  <data name="Putaway.NoPutawayTasksAvailable" xml:space="preserve"><value>Padėjimo į vietas užduočių nėra.</value></data>
+  <data name="Putaway.Putaway" xml:space="preserve"><value>Padėjimas į vietas</value></data>
+  <data name="Putaway.PutawayTasks" xml:space="preserve"><value>Padėjimo į vietas užduotys</value></data>
+  <data name="Putaway.SelectDestination" xml:space="preserve"><value>Pasirinkti paskirties vietą</value></data>
+  <data name="Putaway.TasksFromRECEIVING" xml:space="preserve"><value>Priėmimo užduotys</value></data>
+  <data name="ReceivingQc.FG0001OrLOT202601" xml:space="preserve"><value>FG-0001 arba LOT-2026-01</value></data>
+  <data name="ReceivingQc.Fail" xml:space="preserve"><value>Nepavyko</value></data>
+  <data name="ReceivingQc.InspectorNotes" xml:space="preserve"><value>Inspektoriaus pastabos</value></data>
+  <data name="ReceivingQc.NoQCPendingRows" xml:space="preserve"><value>Nėra laukiančių QC eilučių</value></data>
+  <data name="ReceivingQc.Pass" xml:space="preserve"><value>Praeiti</value></data>
+  <data name="ReceivingQc.ReasonCodeForFail" xml:space="preserve"><value>Priežasties kodas (dėl nesėkmės)</value></data>
+  <data name="ReceivingQc.ReceivingQCCikadaMES" xml:space="preserve"><value>Priėmimo kokybės patikra – Cikada.MES</value></data>
+  <data name="ReceivingQc.ReceivingQCQueue" xml:space="preserve"><value>Priimama QC eilė</value></data>
+  <data name="ReceivingQc.ReceivingQCQueueIsEmptyForCurrentFilters" xml:space="preserve"><value>Gaunamų QC eilė tuščia dabartiniams filtrams.</value></data>
+  <data name="ReceivingQc.ScanSKULot" xml:space="preserve"><value>Nuskaityti SKU / partiją</value></data>
+  <data name="ReportsComplianceAudit.Actor" xml:space="preserve"><value>Aktorius</value></data>
+  <data name="ReportsComplianceAudit.ComplianceAuditCikadaMES" xml:space="preserve"><value>Atitikties auditas – Cikada.MES</value></data>
+  <data name="ReportsComplianceAudit.ComplianceAuditReport" xml:space="preserve"><value>Atitikties audito ataskaita</value></data>
+  <data name="ReportsComplianceAudit.ExportPDF" xml:space="preserve"><value>Eksportuoti PDF</value></data>
+  <data name="ReportsComplianceAudit.NoComplianceRowsFound" xml:space="preserve"><value>Atitikties eilučių nerasta.</value></data>
+  <data name="ReportsComplianceAudit.ReportType" xml:space="preserve"><value>Ataskaitos tipas</value></data>
+  <data name="ReportsDispatchHistory.DateFrom" xml:space="preserve"><value>Data Nuo</value></data>
+  <data name="ReportsDispatchHistory.DateTo" xml:space="preserve"><value>Data Iki</value></data>
+  <data name="ReportsDispatchHistory.DeliveryDate" xml:space="preserve"><value>Pristatymo data</value></data>
+  <data name="ReportsDispatchHistory.DispatchDate" xml:space="preserve"><value>Išsiuntimo data</value></data>
+  <data name="ReportsDispatchHistory.DispatchHistoryCikadaMES" xml:space="preserve"><value>Siuntimo istorija – Cikada.MES</value></data>
+  <data name="ReportsDispatchHistory.DispatchHistoryReport" xml:space="preserve"><value>Siuntimo istorijos ataskaita</value></data>
+  <data name="ReportsDispatchHistory.FedEx" xml:space="preserve"><value>FedEx</value></data>
+  <data name="ReportsDispatchHistory.NoDispatchHistoryRowsFound" xml:space="preserve"><value>Nerasta siuntimo istorijos eilučių.</value></data>
+  <data name="ReportsDispatchHistory.OnTimeDelivery" xml:space="preserve"><value>Pristatymas laiku</value></data>
+  <data name="ReportsDispatchHistory.TotalOrders" xml:space="preserve"><value>Iš viso užsakymų</value></data>
+  <data name="ReportsDispatchHistory.TotalShipments" xml:space="preserve"><value>Iš viso siuntų</value></data>
+  <data name="ReportsDispatchHistory.Tracking" xml:space="preserve"><value>Stebėjimas</value></data>
+  <data name="ReportsPickHistory.CompletedFrom" xml:space="preserve"><value>Baigta nuo</value></data>
+  <data name="ReportsPickHistory.CompletedTo" xml:space="preserve"><value>Baigta iki</value></data>
+  <data name="ReportsPickHistory.OperatorUser" xml:space="preserve"><value>Operatorius/vartotojas</value></data>
+  <data name="ReportsPickHistory.OrderId" xml:space="preserve"><value>Užsakymo ID</value></data>
+  <data name="ReportsPickHistory.PickHistoryCikadaMES" xml:space="preserve"><value>Pasirinkite istoriją – Cikada.MES</value></data>
+  <data name="ReportsPickHistory.PickHistoryReport" xml:space="preserve"><value>Pasirinkite istorijos ataskaitą</value></data>
+  <data name="ReportsPickHistory.Task" xml:space="preserve"><value>Užduotis</value></data>
+  <data name="ReportsReceivingHistory.Draft" xml:space="preserve"><value>Juodraštis</value></data>
+  <data name="ReportsReceivingHistory.ExpectedFrom" xml:space="preserve"><value>Tikimasi nuo</value></data>
+  <data name="ReportsReceivingHistory.ExpectedQty" xml:space="preserve"><value>Numatomas kiekis</value></data>
+  <data name="ReportsReceivingHistory.ExpectedTo" xml:space="preserve"><value>Tikimasi iki</value></data>
+  <data name="ReportsReceivingHistory.Partial" xml:space="preserve"><value>Dalinis</value></data>
+  <data name="ReportsReceivingHistory.ReceivedQty" xml:space="preserve"><value>Gautas vnt</value></data>
+  <data name="ReportsReceivingHistory.ReceivingHistoryCikadaMES" xml:space="preserve"><value>Priėmimo istorija – Cikada.MES</value></data>
+  <data name="ReportsReceivingHistory.ReceivingHistoryReport" xml:space="preserve"><value>Istorijos ataskaitos gavimas</value></data>
+  <data name="ReportsReceivingHistory.ShipmentId" xml:space="preserve"><value>Siuntos ID</value></data>
+  <data name="ReportsReceivingHistory.SupplierId" xml:space="preserve"><value>Tiekėjo ID</value></data>
+  <data name="ReportsStockLevel.CategoryId" xml:space="preserve"><value>Kategorijos ID</value></data>
+  <data name="ReportsStockLevel.ExpiringBefore" xml:space="preserve"><value>Baigia galioti Prieš</value></data>
+  <data name="ReportsStockLevel.IncludeReserved" xml:space="preserve"><value>Įtraukti rezervuotą</value></data>
+  <data name="ReportsStockLevel.IncludeVirtual" xml:space="preserve"><value>Įtraukti virtualų</value></data>
+  <data name="ReportsStockLevel.StockLevelReport" xml:space="preserve"><value>Atsargų lygio ataskaita</value></data>
+  <data name="ReportsStockLevel.StockLevelReportCikadaMES" xml:space="preserve"><value>Atsargų lygio ataskaita – Cikada.MES</value></data>
+  <data name="ReportsStockMovements.Adjust" xml:space="preserve"><value>Sureguliuoti</value></data>
+  <data name="ReportsStockMovements.Dispatch" xml:space="preserve"><value>Išsiuntimas</value></data>
+  <data name="ReportsStockMovements.MovementType" xml:space="preserve"><value>Judėjimo tipas</value></data>
+  <data name="ReportsStockMovements.NoStockMovementsFound" xml:space="preserve"><value>Atsargų judėjimų nerasta.</value></data>
+  <data name="ReportsStockMovements.StockMovementHistory" xml:space="preserve"><value>Atsargų judėjimo istorija</value></data>
+  <data name="ReportsStockMovements.StockMovementsCikadaMES" xml:space="preserve"><value>Atsargų judėjimas – Cikada.MES</value></data>
+  <data name="ReportsStockMovements.Transfer" xml:space="preserve"><value>Perdavimas</value></data>
+  <data name="ReportsTraceability.ApproximateLinkage" xml:space="preserve"><value>Apytikslis ryšys</value></data>
+  <data name="ReportsTraceability.Current" xml:space="preserve"><value>Dabartinė</value></data>
+  <data name="ReportsTraceability.DownstreamSales" xml:space="preserve"><value>Pardavimai paskesniems srautams</value></data>
+  <data name="ReportsTraceability.ItemSKU" xml:space="preserve"><value>Prekės SKU</value></data>
+  <data name="ReportsTraceability.NoReceivingSourceFound" xml:space="preserve"><value>Nerasta priėmimo šaltinio.</value></data>
+  <data name="ReportsTraceability.NoShippedSalesOrdersFound" xml:space="preserve"><value>Nerasta išsiųstų pardavimo užsakymų.</value></data>
+  <data name="ReportsTraceability.NoTraceabilityEntries" xml:space="preserve"><value>Nėra atsekamumo įrašų</value></data>
+  <data name="ReportsTraceability.SalesOrder" xml:space="preserve"><value>Pardavimo užsakymas</value></data>
+  <data name="ReportsTraceability.SetAtLeastOneFilterAndRunSearch" xml:space="preserve"><value>Nustatykite bent vieną filtrą ir paleiskite paiešką.</value></data>
+  <data name="ReportsTraceability.TraceabilityCikadaMES" xml:space="preserve"><value>Atsekamumas – Cikada.MES</value></data>
+  <data name="ReportsTraceability.Upstream" xml:space="preserve"><value>Tiekimo grandinės pradžia</value></data>
+  <data name="Reservations.Allocated" xml:space="preserve"><value>Paskirstyta</value></data>
+  <data name="Reservations.AllocatedHUs" xml:space="preserve"><value>Paskirstyti krovinių vienetai</value></data>
+  <data name="Reservations.HandlingUnit" xml:space="preserve"><value>Krovinio vienetas</value></data>
+  <data name="Reservations.Lock" xml:space="preserve"><value>Užraktas</value></data>
+  <data name="Reservations.Purpose" xml:space="preserve"><value>Paskirtis</value></data>
+  <data name="Reservations.Reservations" xml:space="preserve"><value>Rezervacijos</value></data>
+  <data name="Reservations.ReservationsCikadaMES" xml:space="preserve"><value>Rezervacijos - Cikada.MES</value></data>
+  <data name="Reservations.StartPicking" xml:space="preserve"><value>Pradėti komplektavimą</value></data>
+  <data name="Reservations.StartPickingThisReservationNow" xml:space="preserve"><value>Pradėti šios rezervacijos komplektavimą?</value></data>
+  <data name="Reservations.StartPickinge89c64" xml:space="preserve"><value>Pradėti komplektavimą?</value></data>
+  <data name="Reservations.SubmitPick" xml:space="preserve"><value>Patvirtinti komplektavimą</value></data>
+  <data name="Rmas.CreateAnRMAForCustomerReturnsAndDispositionWorkflow" xml:space="preserve"><value>Sukurkite klientų grąžinimo ir disponavimo darbo eigos RMA.</value></data>
+  <data name="Rmas.CreateRMA" xml:space="preserve"><value>Sukurkite RMA</value></data>
+  <data name="Rmas.Credit" xml:space="preserve"><value>Kreditas</value></data>
+  <data name="Rmas.Damaged" xml:space="preserve"><value>Pažeistas</value></data>
+  <data name="Rmas.NoRMAs" xml:space="preserve"><value>Nėra RMA</value></data>
+  <data name="Rmas.RMAQueue" xml:space="preserve"><value>RMA eilė</value></data>
+  <data name="Rmas.RMAsCikadaMES" xml:space="preserve"><value>RMA – Cikada.MES</value></data>
+  <data name="Rmas.Restock" xml:space="preserve"><value>Atnaujinti atsargas</value></data>
+  <data name="Rmas.ReturnsRMA" xml:space="preserve"><value>Grąžinimai / RMA</value></data>
+  <data name="Rmas.SalesOrderId" xml:space="preserve"><value>Pardavimo užsakymo ID</value></data>
+  <data name="Rmas.Scrap" xml:space="preserve"><value>Laužas</value></data>
+  <data name="Rmas.UpdatedBy" xml:space="preserve"><value>Atnaujino</value></data>
+  <data name="SalesOrderCreate.AddAtLeastOneLineItem" xml:space="preserve"><value>Pridėkite bent vieną prekės eilutę.</value></data>
+  <data name="SalesOrderCreate.AddLine" xml:space="preserve"><value>+ Pridėti eilutę</value></data>
+  <data name="SalesOrderCreate.BackToList" xml:space="preserve"><value>Atgal į sąrašą</value></data>
+  <data name="SalesOrderCreate.CreateSalesOrder" xml:space="preserve"><value>Sukurkite pardavimo užsakymą</value></data>
+  <data name="SalesOrderCreate.CreateSalesOrderCikadaMES" xml:space="preserve"><value>Sukurti pardavimo užsakymą – Cikada.MES</value></data>
+  <data name="SalesOrderCreate.NoLinesAdded" xml:space="preserve"><value>Nepridėta jokių eilučių</value></data>
+  <data name="SalesOrderCreate.OrderLines" xml:space="preserve"><value>Užsakymo eilutės</value></data>
+  <data name="SalesOrderCreate.RequestedDeliveryDate" xml:space="preserve"><value>Prašoma pristatymo data</value></data>
+  <data name="SalesOrderCreate.SelectCustomer" xml:space="preserve"><value>Pasirinkite klientą</value></data>
+  <data name="SalesOrderCreate.ShippingAddress" xml:space="preserve"><value>Pristatymo adresas</value></data>
+  <data name="SalesOrderCreate.UnitPrice" xml:space="preserve"><value>Vieneto kaina</value></data>
+  <data name="SalesOrderCreate.Zip" xml:space="preserve"><value>Zip</value></data>
+  <data name="SalesOrderDetail.Allocate" xml:space="preserve"><value>Paskirstyti</value></data>
+  <data name="SalesOrderDetail.Allocated" xml:space="preserve"><value>Skirta</value></data>
+  <data name="SalesOrderDetail.CancelOrder" xml:space="preserve"><value>Atšaukti užsakymą</value></data>
+  <data name="SalesOrderDetail.CancelReason" xml:space="preserve"><value>Atšaukti priežastį</value></data>
+  <data name="SalesOrderDetail.OrderNotFound" xml:space="preserve"><value>Užsakymas nerastas</value></data>
+  <data name="SalesOrderDetail.Ordered" xml:space="preserve"><value>Užsakyta</value></data>
+  <data name="SalesOrderDetail.OutboundOrder" xml:space="preserve"><value>Išsiuntimo užsakymas</value></data>
+  <data name="SalesOrderDetail.ReleaseToPicking" xml:space="preserve"><value>Išleisk į rinkimą</value></data>
+  <data name="SalesOrderDetail.RequestedDelivery" xml:space="preserve"><value>Prašomas pristatymas</value></data>
+  <data name="SalesOrderDetail.SalesOrderDetail" xml:space="preserve"><value>Išsami pardavimo užsakymo informacija</value></data>
+  <data name="SalesOrderDetail.SalesOrderDetailCikadaMES" xml:space="preserve"><value>Išsami pardavimo užsakymo informacija – Cikada.MES</value></data>
+  <data name="SalesOrderDetail.TheSalesOrderDoesNotExistOrIsNotAccessible" xml:space="preserve"><value>Pardavimo užsakymo nėra arba jis nepasiekiamas.</value></data>
+  <data name="SalesOrderDetail.Total" xml:space="preserve"><value>Iš viso</value></data>
+  <data name="SalesOrders.Create" xml:space="preserve"><value>+ Sukurti</value></data>
+  <data name="SalesOrders.CreateASalesOrderToStartOutboundWorkflow" xml:space="preserve"><value>Sukurkite pardavimo užsakymą, kad pradėtumėte siunčiamą darbo eigą.</value></data>
+  <data name="SalesOrders.DateFrom" xml:space="preserve"><value>Data nuo</value></data>
+  <data name="SalesOrders.DateTo" xml:space="preserve"><value>Data iki</value></data>
+  <data name="SalesOrders.NoSalesOrdersFound" xml:space="preserve"><value>Pardavimo užsakymų nerasta</value></data>
+  <data name="SalesOrders.OrderDate" xml:space="preserve"><value>Užsakymo data</value></data>
+  <data name="SalesOrders.RequestedDate" xml:space="preserve"><value>Prašoma data</value></data>
+  <data name="SalesOrders.SalesOrders" xml:space="preserve"><value>Pardavimo užsakymai</value></data>
+  <data name="SalesOrders.SalesOrdersCikadaMES" xml:space="preserve"><value>Pardavimo užsakymai - Cikada.MES</value></data>
+  <data name="SalesOrders.Total" xml:space="preserve"><value>Iš viso</value></data>
+  <data name="SearchByImage.Identifying" xml:space="preserve"><value>Identifikuojama…</value></data>
+  <data name="SearchByImage.NoImage" xml:space="preserve"><value>Nėra vaizdo</value></data>
+  <data name="SearchByImage.NoMatchingItemsFound" xml:space="preserve"><value>Atitinkančių prekių nerasta.</value></data>
+  <data name="SearchByImage.SearchByImage" xml:space="preserve"><value>Ieškoti pagal vaizdą</value></data>
+  <data name="SearchByImage.SearchByImageCikadaMES" xml:space="preserve"><value>Paieška pagal vaizdą - Cikada.MES</value></data>
+  <data name="SearchByImage.TryUploadingAClearerPhotoOrAddPhotosToItemsFirst" xml:space="preserve"><value>Pabandykite įkelti aiškesnę nuotrauką arba pirmiausia pridėkite nuotraukų prie elementų.</value></data>
+  <data name="StaleBadge.Stale" xml:space="preserve"><value>Pasenęs</value></data>
+  <data name="StaleBadge.Unknown" xml:space="preserve"><value>Nežinoma</value></data>
+  <data name="Stock.ItemPriceHint.Cost" xml:space="preserve"><value>· Savikaina</value></data>
+  <data name="Stock.ItemPriceHint.Sale" xml:space="preserve"><value>· Pardavimo kaina</value></data>
+  <data name="Stock.StockFilters.IncludeVirtual" xml:space="preserve"><value>Įtraukti virtualų</value></data>
+  <data name="Stock.StockFilters.ItemName" xml:space="preserve"><value>Prekės pavadinimas</value></data>
+  <data name="Stock.StockFilters.LocationEGA01" xml:space="preserve"><value>Vieta pvz. A01*</value></data>
+  <data name="Stock.StockFilters.ProductCodeOrName" xml:space="preserve"><value>Prekės kodas arba pavadinimas</value></data>
+  <data name="Stock.StockFilters.ProductItem" xml:space="preserve"><value>Gaminys / prekė</value></data>
+  <data name="Stock.StockFilters.SKUEGRM" xml:space="preserve"><value>SKU pvz. RM-*</value></data>
+  <data name="Stock.StockFilters.SupplierCodeOrName" xml:space="preserve"><value>Tiekėjo kodas arba pavadinimas</value></data>
+  <data name="Stock.StockFilters.SupplierCountry" xml:space="preserve"><value>Tiekėjo šalis</value></data>
+  <data name="Stock.StockFilters.Tag" xml:space="preserve"><value>Žyma</value></data>
+  <data name="StockAdjustments.AdjustmentHistory" xml:space="preserve"><value>Koregavimo istorija</value></data>
+  <data name="StockAdjustments.CreateAdjustment" xml:space="preserve"><value>Sukurti koregavimą</value></data>
+  <data name="StockAdjustments.Latest200Records" xml:space="preserve"><value>200 naujausių įrašų</value></data>
+  <data name="StockAdjustments.LotId" xml:space="preserve"><value>Partijos ID</value></data>
+  <data name="StockAdjustments.NoAdjustmentRecordsAreAvailableYet" xml:space="preserve"><value>Dar nėra jokių koregavimo įrašų.</value></data>
+  <data name="StockAdjustments.NoAdjustments" xml:space="preserve"><value>Jokių koregavimų</value></data>
+  <data name="StockAdjustments.PostControlledStockCorrectionsWithAReasonCode" xml:space="preserve"><value>Užregistruokite atsargų koregavimą ir nurodykite priežasties kodą.</value></data>
+  <data name="StockAdjustments.QtyDelta" xml:space="preserve"><value>Kiekio pokytis</value></data>
+  <data name="StockAdjustments.RefreshHistory" xml:space="preserve"><value>Atnaujinti istoriją</value></data>
+  <data name="StockAdjustments.SelectReason" xml:space="preserve"><value>Pasirinkti priežastį</value></data>
+  <data name="StockAdjustments.StockAdjustments" xml:space="preserve"><value>Atsargų koregavimai</value></data>
+  <data name="StockDashboard.CategoryId" xml:space="preserve"><value>Kategorijos ID</value></data>
+  <data name="StockDashboard.ExpiringSoon" xml:space="preserve"><value>Greitai baigs galioti</value></data>
+  <data name="StockDashboard.ExpiringSoon30d" xml:space="preserve"><value>Greitai baigs galioti (30 d.)</value></data>
+  <data name="StockDashboard.LowStock" xml:space="preserve"><value>Mažos atsargos</value></data>
+  <data name="StockDashboard.NoLocationAggregates" xml:space="preserve"><value>Nėra vietos agregatų.</value></data>
+  <data name="StockDashboard.NoLotsExpiringInNext30Days" xml:space="preserve"><value>Per kitas 30 dienų partijos nesibaigs.</value></data>
+  <data name="StockDashboard.NoLowStockAlerts" xml:space="preserve"><value>Jokių įspėjimų apie mažą atsargų kiekį.</value></data>
+  <data name="StockDashboard.SKUOrName" xml:space="preserve"><value>SKU arba pavadinimas</value></data>
+  <data name="StockDashboard.SearchItem" xml:space="preserve"><value>Ieškoti prekės</value></data>
+  <data name="StockDashboard.StockByLocation" xml:space="preserve"><value>Atsargos pagal vietą</value></data>
+  <data name="StockDashboard.StockDashboard" xml:space="preserve"><value>Atsargų skydelis</value></data>
+  <data name="StockDashboard.StockDashboardCikadaMES" xml:space="preserve"><value>Atsargų skydelis – Cikada.MES</value></data>
+  <data name="StockDashboard.TotalItems" xml:space="preserve"><value>Iš viso prekių</value></data>
+  <data name="StockDashboard.TotalQty" xml:space="preserve"><value>Bendras kiekis</value></data>
+  <data name="StockDashboard.Utilization" xml:space="preserve"><value>Panaudojimas</value></data>
+  <data name="StockLocationBalance.ItemCount" xml:space="preserve"><value>Prekių skaičius</value></data>
+  <data name="StockLocationBalance.LocationBalance" xml:space="preserve"><value>Vietos balansas</value></data>
+  <data name="StockLocationBalance.LocationBalanceCikadaMES" xml:space="preserve"><value>Vietos balansas - Cikada.MES</value></data>
+  <data name="StockLocationBalance.TotalVolume" xml:space="preserve"><value>Bendras tūris</value></data>
+  <data name="StockLocationBalance.TotalWeight" xml:space="preserve"><value>Bendras svoris</value></data>
+  <data name="StockLocationBalance.UtilizationVolume" xml:space="preserve"><value>Naudojimo apimtis</value></data>
+  <data name="StockLocationBalance.UtilizationWeight" xml:space="preserve"><value>Naudojimo svoris</value></data>
+  <data name="Transfers.Create.AddLine" xml:space="preserve"><value>+ Pridėti eilutę</value></data>
+  <data name="Transfers.Create.CreateTransfer" xml:space="preserve"><value>Sukurti perkėlimą</value></data>
+  <data name="Transfers.Create.CreateTransferCikadaMES" xml:space="preserve"><value>Sukurti perkėlimą – Cikada.MES</value></data>
+  <data name="Transfers.Create.FromLocation" xml:space="preserve"><value>Iš vietos</value></data>
+  <data name="Transfers.Create.FromLocation764e83" xml:space="preserve"><value>Iš vietos</value></data>
+  <data name="Transfers.Create.FromWarehouse" xml:space="preserve"><value>Iš sandėlio</value></data>
+  <data name="Transfers.Create.NoLinesAdded" xml:space="preserve"><value>Nepridėta jokių eilučių.</value></data>
+  <data name="Transfers.Create.NoLinesAddedAddYourFirstLine" xml:space="preserve"><value>Nepridėta jokių eilučių. Pridėkite pirmąją eilutę.</value></data>
+  <data name="Transfers.Create.ToLocation" xml:space="preserve"><value>Į vietą</value></data>
+  <data name="Transfers.Create.ToWarehouse" xml:space="preserve"><value>Į sandėlį</value></data>
+  <data name="Transfers.Create.TransferLines" xml:space="preserve"><value>Perkėlimo eilutės</value></data>
+  <data name="Transfers.Execute.Confirm" xml:space="preserve"><value>Patvirtinti</value></data>
+  <data name="Transfers.Execute.ConfirmExecution" xml:space="preserve"><value>Patvirtinti vykdymą</value></data>
+  <data name="Transfers.Execute.ExecuteTransfer" xml:space="preserve"><value>Vykdyti perkėlimą</value></data>
+  <data name="Transfers.Execute.ExecuteTransferCikadaMES" xml:space="preserve"><value>Vykdyti perkėlimą - Cikada.MES</value></data>
+  <data name="Transfers.Execute.ExecuteTransferStockWillBeMoved" xml:space="preserve"><value>Vykdyti perkėlimą? Atsargos bus perkeltos.</value></data>
+  <data name="Transfers.Execute.FromLocation" xml:space="preserve"><value>Iš vietos</value></data>
+  <data name="Transfers.Execute.TransferDoesNotExistOrIsUnavailable" xml:space="preserve"><value>Perkėlimas neegzistuoja arba nepasiekiamas.</value></data>
+  <data name="Transfers.Execute.TransferNotFound" xml:space="preserve"><value>Perkėlimas nerastas</value></data>
+  <data name="Transfers.List.ApproveTransfer" xml:space="preserve"><value>Patvirtinti perkėlimą</value></data>
+  <data name="Transfers.List.CreateTransfer" xml:space="preserve"><value>+ Sukurti perkėlimą</value></data>
+  <data name="Transfers.List.CreateYourFirstTransferRequest" xml:space="preserve"><value>Sukurkite savo pirmąją perkėlimo užklausą.</value></data>
+  <data name="Transfers.List.NoTransfersFound" xml:space="preserve"><value>Perkėlimų nerasta.</value></data>
+  <data name="Transfers.List.ReasonOptional" xml:space="preserve"><value>Priežastis (neprivaloma)</value></data>
+  <data name="Transfers.List.RequestedBy" xml:space="preserve"><value>Prašė</value></data>
+  <data name="Transfers.List.StockTransfers" xml:space="preserve"><value>Atsargų perkėlimai</value></data>
+  <data name="Transfers.List.Transfer" xml:space="preserve"><value>Perkėlimas</value></data>
+  <data name="Transfers.List.Transferf7efad" xml:space="preserve"><value>Perkėlimas:</value></data>
+  <data name="Transfers.List.TransfersCikadaMES" xml:space="preserve"><value>Perkėlimai – Cikada.MES</value></data>
+  <data name="Valuation.AdjustCost.AdjustItemCost" xml:space="preserve"><value>Koreguokite prekės kainą</value></data>
+  <data name="Valuation.AdjustCost.ApprovedByOptional" xml:space="preserve"><value>Patvirtino (neprivaloma)</value></data>
+  <data name="Valuation.AdjustCost.NewCost" xml:space="preserve"><value>Nauja kaina</value></data>
+  <data name="Valuation.ApplyLandedCost.DutyCost" xml:space="preserve"><value>Muito kaina</value></data>
+  <data name="Valuation.ApplyLandedCost.FreightCost" xml:space="preserve"><value>Krovinio gabenimo kaina</value></data>
+  <data name="Valuation.ApplyLandedCost.InsuranceCost" xml:space="preserve"><value>Draudimo kaina</value></data>
+  <data name="Valuation.ApplyLandedCost.SelectShipment" xml:space="preserve"><value>Pasirinkite siuntą</value></data>
+  <data name="Valuation.Dashboard.AdjustValuationFiltersAndTryAgain" xml:space="preserve"><value>Sureguliuokite vertinimo filtrus ir bandykite dar kartą.</value></data>
+  <data name="Valuation.Dashboard.ApplyFilters" xml:space="preserve"><value>Taikyti filtrus</value></data>
+  <data name="Valuation.Dashboard.CostHistoryReport" xml:space="preserve"><value>Išlaidų istorijos ataskaita</value></data>
+  <data name="Valuation.Dashboard.Date" xml:space="preserve"><value>Data</value></data>
+  <data name="Valuation.Dashboard.DateFrom" xml:space="preserve"><value>Data Nuo</value></data>
+  <data name="Valuation.Dashboard.DateTo" xml:space="preserve"><value>Data Iki</value></data>
+  <data name="Valuation.Dashboard.NewCost" xml:space="preserve"><value>Nauja kaina</value></data>
+  <data name="Valuation.Dashboard.NoHistoryRows" xml:space="preserve"><value>Nėra istorijos eilučių</value></data>
+  <data name="Valuation.Dashboard.NoOnHandValueRows" xml:space="preserve"><value>Nėra turimų verčių eilučių</value></data>
+  <data name="Valuation.Dashboard.NoValuationRowsWereReturned" xml:space="preserve"><value>Vertinimo eilučių negrąžinta.</value></data>
+  <data name="Valuation.Dashboard.OldCost" xml:space="preserve"><value>Senoji kaina</value></data>
+  <data name="Valuation.Dashboard.OnHandValueReport" xml:space="preserve"><value>Turimos vertės ataskaita</value></data>
+  <data name="Valuation.Dashboard.PendingApprovals" xml:space="preserve"><value>Laukiama patvirtinimų</value></data>
+  <data name="Valuation.Dashboard.RecentCostChanges7d" xml:space="preserve"><value>Naujausi mokesčių pakeitimai (7 d.)</value></data>
+  <data name="Valuation.Dashboard.TotalOnHandValue" xml:space="preserve"><value>Bendra turima vertė</value></data>
+  <data name="Valuation.Dashboard.ValuationDashboard" xml:space="preserve"><value>Vertinimo prietaisų skydelis</value></data>
+  <data name="Valuation.WriteDown.NewValue" xml:space="preserve"><value>Nauja vertė</value></data>
+  <data name="Valuation.WriteDown.WriteDownInventoryValue" xml:space="preserve"><value>Užsirašykite atsargų vertę</value></data>
+  <data name="Visualization.Warehouse3D.2D" xml:space="preserve"><value>2D</value></data>
+  <data name="Visualization.Warehouse3D.3D" xml:space="preserve"><value>3D</value></data>
+  <data name="Visualization.Warehouse3D.3DMouseControls" xml:space="preserve"><value>3D pelės valdikliai</value></data>
+  <data name="Visualization.Warehouse3D.BackToBack" xml:space="preserve"><value>Atgal į nugarą</value></data>
+  <data name="Visualization.Warehouse3D.BayCount" xml:space="preserve"><value>Įlankos skaičius</value></data>
+  <data name="Visualization.Warehouse3D.BinAddress" xml:space="preserve"><value>Bin adresas</value></data>
+  <data name="Visualization.Warehouse3D.CameraAngle" xml:space="preserve"><value>Kameros kampas</value></data>
+  <data name="Visualization.Warehouse3D.Capacity" xml:space="preserve"><value>Talpa</value></data>
+  <data name="Visualization.Warehouse3D.ClearAll" xml:space="preserve"><value>Išvalyti viską</value></data>
+  <data name="Visualization.Warehouse3D.ClearItemSearch" xml:space="preserve"><value>Išvalyti prekių paiešką</value></data>
+  <data name="Visualization.Warehouse3D.ClearSearch" xml:space="preserve"><value>Išvalyti paiešką</value></data>
+  <data name="Visualization.Warehouse3D.Done" xml:space="preserve"><value>Atlikta</value></data>
+  <data name="Visualization.Warehouse3D.DragPan" xml:space="preserve"><value>Vilkite / Stumkite</value></data>
+  <data name="Visualization.Warehouse3D.Empty" xml:space="preserve"><value>Tuščia</value></data>
+  <data name="Visualization.Warehouse3D.Filters" xml:space="preserve"><value>Filtrai</value></data>
+  <data name="Visualization.Warehouse3D.Full" xml:space="preserve"><value>Pilnas</value></data>
+  <data name="Visualization.Warehouse3D.HandlingUnits" xml:space="preserve"><value>Tvarkymo įrenginiai</value></data>
+  <data name="Visualization.Warehouse3D.Indicator" xml:space="preserve"><value>Rodiklis</value></data>
+  <data name="Visualization.Warehouse3D.Labels" xml:space="preserve"><value>Etiketės</value></data>
+  <data name="Visualization.Warehouse3D.Levels" xml:space="preserve"><value>Lygiai</value></data>
+  <data name="Visualization.Warehouse3D.LoadingWarehouseModel" xml:space="preserve"><value>Įkeliamas sandėlio modelis...</value></data>
+  <data name="Visualization.Warehouse3D.Low" xml:space="preserve"><value>Žemas</value></data>
+  <data name="Visualization.Warehouse3D.LowAngle" xml:space="preserve"><value>Žemas kampas</value></data>
+  <data name="Visualization.Warehouse3D.Medium" xml:space="preserve"><value>Vidutinis</value></data>
+  <data name="Visualization.Warehouse3D.MouseControls" xml:space="preserve"><value>Pelės valdikliai</value></data>
+  <data name="Visualization.Warehouse3D.NoBinsConfiguredWithCoordinatesConfigureLayoutFirst" xml:space="preserve"><value>Nėra sukonfigūruotų dėžių su koordinatėmis. Pirmiausia sukonfigūruokite išdėstymą.</value></data>
+  <data name="Visualization.Warehouse3D.NoBinsMatchTheSelectedZoneStatusFilters" xml:space="preserve"><value>Nė viena dėžė neatitinka pasirinktų zonos / būsenos filtrų.</value></data>
+  <data name="Visualization.Warehouse3D.NoHandlingUnits" xml:space="preserve"><value>Nėra tvarkymo vienetų.</value></data>
+  <data name="Visualization.Warehouse3D.OpenInLocations" xml:space="preserve"><value>Atidaryti Vietose</value></data>
+  <data name="Visualization.Warehouse3D.Origin" xml:space="preserve"><value>Kilmė</value></data>
+  <data name="Visualization.Warehouse3D.OverCapacity" xml:space="preserve"><value>Perteklinis pajėgumas</value></data>
+  <data name="Visualization.Warehouse3D.Overview" xml:space="preserve"><value>Apžvalga</value></data>
+  <data name="Visualization.Warehouse3D.PairedRack" xml:space="preserve"><value>Suporuotas stovas</value></data>
+  <data name="Visualization.Warehouse3D.RefreshWarehouseData" xml:space="preserve"><value>Atnaujinti sandėlio duomenis</value></data>
+  <data name="Visualization.Warehouse3D.RemoveStatusFilter" xml:space="preserve"><value>Pašalinkite būsenos filtrą</value></data>
+  <data name="Visualization.Warehouse3D.RemoveZoneFilter" xml:space="preserve"><value>Nuimkite zonos filtrą</value></data>
+  <data name="Visualization.Warehouse3D.ReservedPattern" xml:space="preserve"><value>Rezervuota (šablonas)</value></data>
+  <data name="Visualization.Warehouse3D.RotateSelect" xml:space="preserve"><value>Pasukti / pasirinkti</value></data>
+  <data name="Visualization.Warehouse3D.SearchSKUItemNameOrLocation" xml:space="preserve"><value>Ieškoti SKU, prekės pavadinimo arba vietos...</value></data>
+  <data name="Visualization.Warehouse3D.SearchWarehouse" xml:space="preserve"><value>Ieškoti sandėlyje</value></data>
+  <data name="Visualization.Warehouse3D.SelectABinSlotOrRackToViewDetails" xml:space="preserve"><value>Norėdami peržiūrėti išsamią informaciją, pasirinkite šiukšliadėžę, angą arba lentyną.</value></data>
+  <data name="Visualization.Warehouse3D.SelectWarehouse" xml:space="preserve"><value>Pasirinkite sandėlį</value></data>
+  <data name="Visualization.Warehouse3D.SelectedPinRingPulse" xml:space="preserve"><value>Pasirinkta (smeigtukas + žiedas + pulsas)</value></data>
+  <data name="Visualization.Warehouse3D.Slot" xml:space="preserve"><value>Lizdas</value></data>
+  <data name="Visualization.Warehouse3D.SlotsLevel" xml:space="preserve"><value>Lizdai / lygis</value></data>
+  <data name="Visualization.Warehouse3D.Span" xml:space="preserve"><value>Span</value></data>
+  <data name="Visualization.Warehouse3D.ToggleRackLabels" xml:space="preserve"><value>Perjungti stovo etiketes</value></data>
+  <data name="Visualization.Warehouse3D.Utilization" xml:space="preserve"><value>Panaudojimas</value></data>
+  <data name="Visualization.Warehouse3D.ViewDetails" xml:space="preserve"><value>Peržiūrėti išsamią informaciją</value></data>
+  <data name="Visualization.Warehouse3D.ViewMode" xml:space="preserve"><value>Žiūrėjimo režimas</value></data>
+  <data name="Visualization.Warehouse3D.WarehouseVisualization" xml:space="preserve"><value>Sandėlio vizualizacija</value></data>
+  <data name="Visualization.Warehouse3D.Zone" xml:space="preserve"><value>Zona</value></data>
+  <data name="Visualization.Warehouse3D.Zoom" xml:space="preserve"><value>Padidinti</value></data>
+  <data name="Visualization.Warehouse3D.ZoomIn" xml:space="preserve"><value>Priartinti</value></data>
+  <data name="Visualization.Warehouse3D.ZoomOut" xml:space="preserve"><value>Nutolinti</value></data>
+  <data name="WarehouseLocationDetail.LocationDetails" xml:space="preserve"><value>Vietovės informacija</value></data>
+  <data name="WarehouseLocationDetail.ManageLocationMetadataInTheAdminLocationWorkspace" xml:space="preserve"><value>Tvarkykite vietos metaduomenis administratoriaus vietos darbo srityje.</value></data>
+  <data name="WarehouseLocationDetail.OpenAdminLocations" xml:space="preserve"><value>Atidarykite administratoriaus vietas</value></data>
+  <data name="WavePicking.1Line" xml:space="preserve"><value>+1 eilutė</value></data>
+  <data name="WavePicking.ActiveWaves" xml:space="preserve"><value>Aktyvios bangos</value></data>
+  <data name="WavePicking.AllStatuses" xml:space="preserve"><value>Visos būsenos</value></data>
+  <data name="WavePicking.CreateAWaveToStartBatchPicking" xml:space="preserve"><value>Sukurkite komplektavimo bangą, kad pradėtumėte grupinį komplektavimą.</value></data>
+  <data name="WavePicking.CreateWave" xml:space="preserve"><value>Sukurti bangą</value></data>
+  <data name="WavePicking.NoWavesFound" xml:space="preserve"><value>Nerasta jokių bangų</value></data>
+  <data name="WavePicking.OrderIDsCommaSeparatedGUIDs" xml:space="preserve"><value>Užsakymų ID (kableliais atskirti GUID)</value></data>
+  <data name="WavePicking.Orders" xml:space="preserve"><value>Užsakymai</value></data>
+  <data name="WavePicking.Picker01" xml:space="preserve"><value>rinktuvas-01</value></data>
+  <data name="WavePicking.Progress" xml:space="preserve"><value>Pažanga</value></data>
+  <data name="WavePicking.Wave" xml:space="preserve"><value>Banga</value></data>
+  <data name="WavePicking.WavePicking" xml:space="preserve"><value>Komplektavimo bangos</value></data>
+  <data name="WavePicking.WavePickingCikadaMES" xml:space="preserve"><value>Komplektavimo bangos – Cikada.MES</value></data>
+  <data name="Admin.AdminWarehouses.Toast.WarehouseCreated" xml:space="preserve"><value>Sukurtas sandėlis.</value></data>
+  <data name="Admin.AdminWarehouses.Toast.WarehouseUpdated" xml:space="preserve"><value>Atnaujintas sandėlis.</value></data>
+  <data name="Admin.Backups.Toast.TargetEnvironmentIsRequired" xml:space="preserve"><value>Būtina tikslinė aplinka.</value></data>
+  <data name="Admin.GdprErasure.Toast.CustomerIDMustBeAValidGUID" xml:space="preserve"><value>Kliento ID turi būti galiojantis GUID.</value></data>
+  <data name="Admin.GdprErasure.Toast.ErasureRequestApproved" xml:space="preserve"><value>Patvirtinta ištrynimo užklausa.</value></data>
+  <data name="Admin.GdprErasure.Toast.ErasureRequestCreated" xml:space="preserve"><value>Sukurta ištrynimo užklausa.</value></data>
+  <data name="Admin.GdprErasure.Toast.ErasureRequestRejected" xml:space="preserve"><value>Ištrynimo užklausa atmesta.</value></data>
+  <data name="Admin.LayoutEditor.Toast.LayoutUpdatedSuccessfully" xml:space="preserve"><value>Išdėstymas sėkmingai atnaujintas.</value></data>
+  <data name="Admin.RetentionPolicies.Toast.AuditLogIDMustBeGreaterThanZero" xml:space="preserve"><value>Audito žurnalo ID turi būti didesnis nei nulis.</value></data>
+  <data name="Admin.RetentionPolicies.Toast.LegalHoldUpdated" xml:space="preserve"><value>Teisinis sulaikymas atnaujintas.</value></data>
+  <data name="Admin.RetentionPolicies.Toast.RetentionPolicyCreated" xml:space="preserve"><value>Sukurta saugojimo politika.</value></data>
+  <data name="Admin.RetentionPolicies.Toast.RetentionPolicyDeleted" xml:space="preserve"><value>Išlaikymo politika ištrinta.</value></data>
+  <data name="Admin.RetentionPolicies.Toast.RetentionPolicyUpdated" xml:space="preserve"><value>Atnaujinta saugojimo politika.</value></data>
+  <data name="Admin.Roles.Toast.RoleAssignedSuccessfully" xml:space="preserve"><value>Vaidmuo priskirtas sėkmingai.</value></data>
+  <data name="Admin.Roles.Toast.SelectARole" xml:space="preserve"><value>Pasirinkite vaidmenį.</value></data>
+  <data name="Admin.Roles.Toast.SelectAUser" xml:space="preserve"><value>Pasirinkite vartotoją.</value></data>
+  <data name="Admin.SerialNumbers.Toast.SerialRegistered" xml:space="preserve"><value>Serijinis registruotas.</value></data>
+  <data name="Admin.SerialNumbers.Toast.SerialStatusUpdated" xml:space="preserve"><value>Serijos būsena atnaujinta.</value></data>
+  <data name="Admin.Settings.Toast.SettingsSavedSuccessfully" xml:space="preserve"><value>Nustatymai sėkmingai išsaugoti</value></data>
+  <data name="AdminCategories.Toast.CategoryCreated" xml:space="preserve"><value>Kategorija sukurta.</value></data>
+  <data name="AdminCategories.Toast.CategoryDeleted" xml:space="preserve"><value>Kategorija ištrinta.</value></data>
+  <data name="AdminCategories.Toast.CategoryUpdated" xml:space="preserve"><value>Kategorija atnaujinta.</value></data>
+  <data name="AdminCustomers.Toast.CustomerCreated" xml:space="preserve"><value>Klientas sukūrė.</value></data>
+  <data name="AdminCustomers.Toast.CustomerUpdated" xml:space="preserve"><value>Klientas atnaujintas.</value></data>
+  <data name="AdminImport.Toast.ImportRequestCompleted" xml:space="preserve"><value>Importavimo užklausa baigta.</value></data>
+  <data name="AdminItemDetail.Toast.PhotoDeleted" xml:space="preserve"><value>Nuotrauka ištrinta.</value></data>
+  <data name="AdminItemDetail.Toast.PhotoUploaded" xml:space="preserve"><value>Nuotrauka įkelta.</value></data>
+  <data name="AdminItemDetail.Toast.PriceOverrideUpdated" xml:space="preserve"><value>Kainos nepaisymas atnaujintas.</value></data>
+  <data name="AdminItemDetail.Toast.PrimaryPhotoUpdated" xml:space="preserve"><value>Pirminė nuotrauka atnaujinta.</value></data>
+  <data name="AdminItemPhotosDialog.Toast.PhotoDeleted" xml:space="preserve"><value>Nuotrauka ištrinta.</value></data>
+  <data name="AdminItemPhotosDialog.Toast.PhotoUploaded" xml:space="preserve"><value>Nuotrauka įkelta.</value></data>
+  <data name="AdminItemPhotosDialog.Toast.PrimaryPhotoUpdated" xml:space="preserve"><value>Pirminė nuotrauka atnaujinta.</value></data>
+  <data name="AdminItems.Toast.ItemCreated" xml:space="preserve"><value>Prekė sukurta.</value></data>
+  <data name="AdminItems.Toast.ItemDeactivated" xml:space="preserve"><value>Prekė išjungta.</value></data>
+  <data name="AdminItems.Toast.ItemUpdated" xml:space="preserve"><value>Prekė atnaujinta.</value></data>
+  <data name="AdminLocations.Toast.LocationCreated" xml:space="preserve"><value>Vieta sukurta.</value></data>
+  <data name="AdminLocations.Toast.LocationUpdated" xml:space="preserve"><value>Vieta atnaujinta.</value></data>
+  <data name="AdminPriceGroups.Toast.PriceGroupCreated" xml:space="preserve"><value>Kainų grupė sukurta.</value></data>
+  <data name="AdminPriceGroups.Toast.PriceGroupDeleted" xml:space="preserve"><value>Kainų grupė ištrinta.</value></data>
+  <data name="AdminPriceGroups.Toast.PriceGroupUpdated" xml:space="preserve"><value>Kainų grupė atnaujinta.</value></data>
+  <data name="AdminSlots.Toast.Location" xml:space="preserve"><value>Nepavyko rasti pasirinktos vietos.</value></data>
+  <data name="AdminSlots.Toast.SelectALocationToAssign" xml:space="preserve"><value>Pasirinkite vietą, kurią norite priskirti.</value></data>
+  <data name="AdminSlots.Toast.SelectedLocationWasNotFound" xml:space="preserve"><value>Pasirinkta vieta nerasta.</value></data>
+  <data name="AdminSlots.Toast.SelectedSpanOverlapsAnOccupiedOrMissingSlot" xml:space="preserve"><value>Pasirinktas intervalas sutampa su užimta arba trūkstama vieta.</value></data>
+  <data name="AdminSupplierMappings.Toast.SupplierMappingCreated" xml:space="preserve"><value>Sukurtas tiekėjo žemėlapis.</value></data>
+  <data name="AdminSupplierMappings.Toast.SupplierMappingUpdated" xml:space="preserve"><value>Tiekėjo žemėlapis atnaujintas.</value></data>
+  <data name="AdminSuppliers.Toast.SupplierCreated" xml:space="preserve"><value>Sukurtas tiekėjas.</value></data>
+  <data name="AdminSuppliers.Toast.SupplierUpdated" xml:space="preserve"><value>Tiekėjas atnaujintas.</value></data>
+  <data name="AdminUsers.Toast.SelectAtLeastOneRole" xml:space="preserve"><value>Pasirinkite bent vieną vaidmenį.</value></data>
+  <data name="AdminUsers.Toast.UsernameEmailAndPasswordAreRequired" xml:space="preserve"><value>Reikalingas vartotojo vardas, el. pašto adresas ir slaptažodis.</value></data>
+  <data name="Agnum.Configuration.Toast.AgnumConfigurationSavedSuccessfully" xml:space="preserve"><value>Agnum konfigūracija sėkmingai išsaugota.</value></data>
+  <data name="Agnum.Configuration.Toast.EachMappingRequiresSourceTypeSourceValueAndAccountCode" xml:space="preserve"><value>Kiekvienam susiejimui reikalingas šaltinio tipas, šaltinio reikšmė ir paskyros kodas.</value></data>
+  <data name="Agnum.Configuration.Toast.ScheduleMustBeAValidCronExpressionWith5Fields" xml:space="preserve"><value>Tvarkaraštis turi būti tinkama cron išraiška su 5 laukais.</value></data>
+  <data name="ComplianceLotTrace.Toast.LotNumberIsRequired" xml:space="preserve"><value>Būtinas partijos numeris.</value></data>
+  <data name="CrossDock.Toast.CrossDockRecordCreated" xml:space="preserve"><value>Sukurtas kryžminio doko įrašas.</value></data>
+  <data name="CrossDock.Toast.InboundAndOutboundIDsMustBeValidGUIDValues" xml:space="preserve"><value>Įeinantys ir išeinantys ID turi būti galiojančios GUID vertės.</value></data>
+  <data name="CycleCounts.Discrepancies.Toast.AdjustmentApproved" xml:space="preserve"><value>Koregavimas patvirtintas.</value></data>
+  <data name="CycleCounts.Discrepancies.Toast.ReasonIsRequired" xml:space="preserve"><value>Priežastis būtina.</value></data>
+  <data name="CycleCounts.Execute.Toast.LocationAndItemBarcodeAreRequired" xml:space="preserve"><value>Reikalinga vieta ir prekės brūkšninis kodas.</value></data>
+  <data name="CycleCounts.Execute.Toast.PhysicalQuantityMustBe0" xml:space="preserve"><value>Fizinis dydis turi būti &gt;= 0.</value></data>
+  <data name="CycleCounts.Schedule.Toast.AssignedOperatorIsRequired" xml:space="preserve"><value>Būtinas priskirtas operatorius.</value></data>
+  <data name="CycleCounts.Schedule.Toast.ScheduledDateMustBeTodayOrLater" xml:space="preserve"><value>Suplanuota data turi būti šiandien arba vėlesnė.</value></data>
+  <data name="CycleCounts.Schedule.Toast.SelectAtLeastOneLocation" xml:space="preserve"><value>Pasirinkite bent vieną vietą.</value></data>
+  <data name="InboundShipmentCreate.Toast.AddAtLeastOneValidLine" xml:space="preserve"><value>Pridėkite bent vieną galiojančią eilutę.</value></data>
+  <data name="InboundShipmentCreate.Toast.ReferenceNumberIsRequired" xml:space="preserve"><value>Būtinas nuorodos numeris.</value></data>
+  <data name="InboundShipmentCreate.Toast.SupplierIsRequired" xml:space="preserve"><value>Reikalingas tiekėjas.</value></data>
+  <data name="InboundShipmentDetail.Toast.BarcodeNotFoundInThisShipmentLines" xml:space="preserve"><value>Brūkšninio kodo šiose siuntos eilutėse nerasta.</value></data>
+  <data name="InboundShipmentDetail.Toast.EnterTheUnitPriceBeforeReceivingThisLine" xml:space="preserve"><value>Prieš gaudami šią eilutę įveskite vieneto kainą.</value></data>
+  <data name="InboundShipmentDetail.Toast.ReceivedQtyMustBeGreaterThanZero" xml:space="preserve"><value>Gautas kiekis turi būti didesnis nei nulis.</value></data>
+  <data name="InboundShipmentDetail.Toast.SelectLineToReceive" xml:space="preserve"><value>Pasirinkite eilutę, kurią norite gauti.</value></data>
+  <data name="InboundShipmentDetail.Toast.UnitPriceMustBeGreaterThanOrEqualToZero" xml:space="preserve"><value>Vieneto kaina turi būti didesnė arba lygi nuliui.</value></data>
+  <data name="Labels.Toast.DataJSONMustBeAnObject" xml:space="preserve"><value>Duomenų JSON turi būti objektas.</value></data>
+  <data name="Labels.Toast.InvalidDataJSON" xml:space="preserve"><value>Netinkami JSON duomenys.</value></data>
+  <data name="Labels.Toast.PDFFileNameIsRequired" xml:space="preserve"><value>Reikalingas PDF failo pavadinimas.</value></data>
+  <data name="Labels.Toast.PrintRequestSubmitted" xml:space="preserve"><value>Spausdinimo užklausa pateikta.</value></data>
+  <data name="Labels.Toast.QueueRetrySubmitted" xml:space="preserve"><value>Pakartotinis bandymas eilėje pateiktas.</value></data>
+  <data name="Labels.Toast.TemplateIsRequired" xml:space="preserve"><value>Šablonas būtinas.</value></data>
+  <data name="Nav.APIKeys" xml:space="preserve"><value>API raktai</value></data>
+  <data name="Nav.Adjustments" xml:space="preserve"><value>Koregavimai</value></data>
+  <data name="Nav.AdminSettings" xml:space="preserve"><value>Administratoriaus nustatymai</value></data>
+  <data name="Nav.AgnumBalances" xml:space="preserve"><value>Agnum likučiai</value></data>
+  <data name="Nav.AgnumConfig" xml:space="preserve"><value>Agnum nustatymai</value></data>
+  <data name="Nav.AgnumReconcile" xml:space="preserve"><value>Agnum sutikrinimas</value></data>
+  <data name="Nav.Allocations" xml:space="preserve"><value>Paskirstymai</value></data>
+  <data name="Nav.ApprovalRules" xml:space="preserve"><value>Patvirtinimo taisyklės</value></data>
+  <data name="Nav.AuditLogs" xml:space="preserve"><value>Audito žurnalai</value></data>
+  <data name="Nav.AvailableStock" xml:space="preserve"><value>Turimos atsargos</value></data>
+  <data name="Nav.Backups" xml:space="preserve"><value>Atsarginės kopijos</value></data>
+  <data name="Nav.Categories" xml:space="preserve"><value>Kategorijos</value></data>
+  <data name="Nav.ComplianceAudit" xml:space="preserve"><value>Atitikties auditas</value></data>
+  <data name="Nav.ComplianceDashboard" xml:space="preserve"><value>Atitikties skydelis</value></data>
+  <data name="Nav.CrossDock" xml:space="preserve"><value>Tiesioginis perkrovimas</value></data>
+  <data name="Nav.Customers" xml:space="preserve"><value>Klientai</value></data>
+  <data name="Nav.CycleCounts" xml:space="preserve"><value>Inventorizacijos</value></data>
+  <data name="Nav.DRDrills" xml:space="preserve"><value>Atkūrimo pratybos</value></data>
+  <data name="Nav.Dashboard" xml:space="preserve"><value>Skydelis</value></data>
+  <data name="Nav.Dispatch" xml:space="preserve"><value>Išsiuntimas</value></data>
+  <data name="Nav.DispatchHistory" xml:space="preserve"><value>Siuntimo istorija</value></data>
+  <data name="Nav.FulfillmentKPIs" xml:space="preserve"><value>Įvykdymo KPI</value></data>
+  <data name="Nav.GDPRErasure" xml:space="preserve"><value>GDPR ištrynimas</value></data>
+  <data name="Nav.ImportWizard" xml:space="preserve"><value>Importavimo vedlys</value></data>
+  <data name="Nav.InboundShipments" xml:space="preserve"><value>Gaunamos siuntos</value></data>
+  <data name="Nav.Items" xml:space="preserve"><value>Prekės</value></data>
+  <data name="Nav.JobQueue" xml:space="preserve"><value>Darbų eilė</value></data>
+  <data name="Nav.Labels" xml:space="preserve"><value>Etiketės</value></data>
+  <data name="Nav.LayoutEditor" xml:space="preserve"><value>Maketo redaktorius</value></data>
+  <data name="Nav.LocationBalance" xml:space="preserve"><value>Vietos balansas</value></data>
+  <data name="Nav.Locations" xml:space="preserve"><value>Vietos</value></data>
+  <data name="Nav.LotTraceability" xml:space="preserve"><value>Partijos atsekamumas</value></data>
+  <data name="Nav.Lots" xml:space="preserve"><value>Partijos</value></data>
+  <data name="Nav.OutboundOrders" xml:space="preserve"><value>Išsiunčiami užsakymai</value></data>
+  <data name="Nav.PickHistory" xml:space="preserve"><value>Komplektavimo istorija</value></data>
+  <data name="Nav.PickingTasks" xml:space="preserve"><value>Komplektavimo užduotys</value></data>
+  <data name="Nav.PriceGroups" xml:space="preserve"><value>Kainų grupės</value></data>
+  <data name="Nav.Projections" xml:space="preserve"><value>Projekcijos</value></data>
+  <data name="Nav.Putaway" xml:space="preserve"><value>Padėjimas į vietas</value></data>
+  <data name="Nav.QualityAnalytics" xml:space="preserve"><value>Kokybės analizė</value></data>
+  <data name="Nav.RMAs" xml:space="preserve"><value>Grąžinimai</value></data>
+  <data name="Nav.ReasonCodes" xml:space="preserve"><value>Priežasties kodai</value></data>
+  <data name="Nav.ReceivingHistory" xml:space="preserve"><value>Priėmimo istorija</value></data>
+  <data name="Nav.ReceivingQC" xml:space="preserve"><value>Priėmimo kokybės patikra</value></data>
+  <data name="Nav.Reservations" xml:space="preserve"><value>Rezervacijos</value></data>
+  <data name="Nav.RetentionPolicies" xml:space="preserve"><value>Saugojimo taisyklės</value></data>
+  <data name="Nav.Roles" xml:space="preserve"><value>Vaidmenys</value></data>
+  <data name="Nav.SalesOrders" xml:space="preserve"><value>Pardavimo užsakymai</value></data>
+  <data name="Nav.SearchByImage" xml:space="preserve"><value>Ieškoti pagal vaizdą</value></data>
+  <data name="Nav.SerialNumbers" xml:space="preserve"><value>Serijos numeriai</value></data>
+  <data name="Nav.Slots" xml:space="preserve"><value>Lizdai</value></data>
+  <data name="Nav.StockDashboard" xml:space="preserve"><value>Atsargų skydelis</value></data>
+  <data name="Nav.StockLevel" xml:space="preserve"><value>Atsargų lygis</value></data>
+  <data name="Nav.StockMovements" xml:space="preserve"><value>Atsargų judėjimas</value></data>
+  <data name="Nav.SupplierMappings" xml:space="preserve"><value>Tiekėjų atitikmenys</value></data>
+  <data name="Nav.Suppliers" xml:space="preserve"><value>Tiekėjai</value></data>
+  <data name="Nav.Traceability" xml:space="preserve"><value>Atsekamumas</value></data>
+  <data name="Nav.Transfers" xml:space="preserve"><value>Perkėlimai</value></data>
+  <data name="Nav.UnitsOfMeasure" xml:space="preserve"><value>Mato vienetai</value></data>
+  <data name="Nav.Users" xml:space="preserve"><value>Vartotojai</value></data>
+  <data name="Nav.Valuation" xml:space="preserve"><value>Atsargų vertinimas</value></data>
+  <data name="Nav.WarehouseMap" xml:space="preserve"><value>Sandėlio žemėlapis</value></data>
+  <data name="Nav.Warehouses" xml:space="preserve"><value>Sandėliai</value></data>
+  <data name="Nav.WavePicking" xml:space="preserve"><value>Komplektavimo bangos</value></data>
+  <data name="OutboundDispatch.Toast.ShipmentDispatchedSuccessfully" xml:space="preserve"><value>Siunta sėkmingai išsiųsta.</value></data>
+  <data name="OutboundOrderDetail.Toast.CancellationReasonIsRequired" xml:space="preserve"><value>Būtina nurodyti atšaukimo priežastį.</value></data>
+  <data name="OutboundOrderDetail.Toast.OrderCancelledSuccessfully" xml:space="preserve"><value>Užsakymas sėkmingai atšauktas.</value></data>
+  <data name="OutboundOrderDetail.Toast.OrderReleasedSuccessfully" xml:space="preserve"><value>Užsakymas sėkmingai išleistas.</value></data>
+  <data name="PackingStation.Toast.OrderPackedSuccessfully" xml:space="preserve"><value>Užsakymas sėkmingai supakuotas.</value></data>
+  <data name="PickingTasks.Toast.OrderIdItemAndQtyAreRequired" xml:space="preserve"><value>Būtina nurodyti užsakymo ID, prekę ir kiekį.</value></data>
+  <data name="PickingTasks.Toast.PickTaskCompleted" xml:space="preserve"><value>Pasirinkite baigtą užduotį.</value></data>
+  <data name="PickingTasks.Toast.TaskIdFromLocationIdAndPickedQtyAreRequired" xml:space="preserve"><value>Reikalingas užduoties ID, iš vietos ID ir paimtas kiekis.</value></data>
+  <data name="PickingTasks.Toast.ValidTaskIdIsRequired" xml:space="preserve"><value>Būtinas galiojantis užduoties ID.</value></data>
+  <data name="Projections.Toast.ErrorDetailsCopied" xml:space="preserve"><value>Išsami informacija apie klaidą nukopijuota.</value></data>
+  <data name="ReceivingQc.Toast.ReasonCodeIsRequiredForQCFail" xml:space="preserve"><value>Priežasties kodas reikalingas dėl kokybės kontrolės nesėkmės.</value></data>
+  <data name="Rmas.Toast.RMACreated" xml:space="preserve"><value>Sukurtas RMA.</value></data>
+  <data name="Rmas.Toast.SalesOrderIdMustBeAValidGUID" xml:space="preserve"><value>SalesOrderId turi būti galiojantis GUID.</value></data>
+  <data name="SalesOrderCreate.Toast.AddAtLeastOneValidLineItemQty0" xml:space="preserve"><value>Pridėkite bent vieną galiojančią eilutę (prekė, kiekis &gt; 0).</value></data>
+  <data name="SalesOrderCreate.Toast.SelectACustomer" xml:space="preserve"><value>Pasirinkite klientą.</value></data>
+  <data name="SalesOrderDetail.Toast.CancelReasonIsRequired" xml:space="preserve"><value>Būtina atšaukti priežastį.</value></data>
+  <data name="StockAdjustments.Toast.ItemLocationQtyDeltaAndReasonAreRequired" xml:space="preserve"><value>Reikalinga prekė, vieta, kiekio delta ir priežastis.</value></data>
+  <data name="Transfers.Create.Toast.AddAtLeastOneValidTransferLine" xml:space="preserve"><value>Pridėkite bent vieną galiojančią perdavimo eilutę.</value></data>
+  <data name="Transfers.Create.Toast.FromToWarehouseAreRequired" xml:space="preserve"><value>Reikalingi iš/į sandėlį.</value></data>
+  <data name="Transfers.Create.Toast.FromWarehouseAndToWarehouseMustBeDifferent" xml:space="preserve"><value>Iš sandėlio ir Į sandėlį turi skirtis.</value></data>
+  <data name="Transfers.Create.Toast.TransferLineCannotMoveToSameLocation" xml:space="preserve"><value>Perdavimo linija negali judėti į tą pačią vietą.</value></data>
+  <data name="Transfers.Execute.Toast.TransferExecutedSuccessfully" xml:space="preserve"><value>Perkėlimas sėkmingai atliktas.</value></data>
+  <data name="Transfers.List.Toast.TransferApproved" xml:space="preserve"><value>Perdavimas patvirtintas.</value></data>
+  <data name="Transfers.List.Toast.TransferSubmittedForApproval" xml:space="preserve"><value>Perdavimas pateiktas tvirtinti.</value></data>
+  <data name="Valuation.AdjustCost.Toast.CostAdjustedSuccessfully" xml:space="preserve"><value>Kaina sėkmingai pakoreguota.</value></data>
+  <data name="Valuation.ApplyLandedCost.Toast.LandedCostAppliedSuccessfully" xml:space="preserve"><value>Iškrovimo kaina sėkmingai pritaikyta.</value></data>
+  <data name="Valuation.WriteDown.Toast.WriteDownCompletedSuccessfully" xml:space="preserve"><value>Nukainojimas sėkmingai baigtas.</value></data>
+  <data name="Visualization.Warehouse3D.Toast.ItemExistsInOtherWarehousesButNotInTheCurrentWarehouse" xml:space="preserve"><value>Prekė yra kituose sandėliuose, bet ne dabartiniame sandėlyje.</value></data>
+  <data name="Visualization.Warehouse3D.Toast.NoPhysicalBinsFoundForThisItem" xml:space="preserve"><value>Šiai prekei nerasta jokių fizinių šiukšliadėžių.</value></data>
+  <data name="WavePicking.Toast.EnterAtLeastOneValidOrderGUID" xml:space="preserve"><value>Įveskite bent vieną galiojantį užsakymo GUID.</value></data>
+  <data name="WavePicking.Toast.WaveAssigned" xml:space="preserve"><value>Priskirta banga.</value></data>
+  <data name="WavePicking.Toast.WaveCreated" xml:space="preserve"><value>Sukurta banga.</value></data>
+  <data name="WavePicking.Toast.WaveStarted" xml:space="preserve"><value>Prasidėjo banga.</value></data>
+  <data name="Admin.AdminWarehouses.EditWarehouse" xml:space="preserve"><value>Redaguoti sandėlį: {0}</value></data>
+  <data name="Admin.AdminWarehouses.Total" xml:space="preserve"><value>Iš viso: {0}</value></data>
+  <data name="Admin.ApprovalRules.EditRule" xml:space="preserve"><value>Redaguoti taisyklę Nr. {0}</value></data>
+  <data name="Admin.ApprovalRules.RequiresApproval" xml:space="preserve"><value>Reikia patvirtinimo: {0}</value></data>
+  <data name="Admin.AuditLogs.Total" xml:space="preserve"><value>Iš viso: {0}</value></data>
+  <data name="Admin.Backups.Evidence" xml:space="preserve"><value>Įrodymai: {0}</value></data>
+  <data name="Admin.GdprErasure.RejectRequest" xml:space="preserve"><value>Atmesti užklausą {0}</value></data>
+  <data name="Admin.LayoutEditor.LastUpdatedAt" xml:space="preserve"><value>Paskutinį kartą atnaujinta {0}</value></data>
+  <data name="Admin.Lots.Page" xml:space="preserve"><value>{0} puslapis</value></data>
+  <data name="Admin.Lots.Total" xml:space="preserve"><value>Iš viso: {0}</value></data>
+  <data name="Admin.ReasonCodes.Edit" xml:space="preserve"><value>Redaguoti {0}</value></data>
+  <data name="Admin.RetentionPolicies.EditPolicy" xml:space="preserve"><value>Redaguoti politiką {0}</value></data>
+  <data name="Admin.Roles.EditRole" xml:space="preserve"><value>Redaguoti vaidmenį {0}</value></data>
+  <data name="Admin.SerialNumbers.UpdateSerial" xml:space="preserve"><value>Atnaujinti seriją {0}</value></data>
+  <data name="Admin.Settings.LastUpdatedByAt" xml:space="preserve"><value>Paskutinį kartą atnaujino {0} {1}</value></data>
+  <data name="Admin.UnitsOfMeasure.Total" xml:space="preserve"><value>Iš viso: {0}</value></data>
+  <data name="AdminCategories.EditCategory" xml:space="preserve"><value>Redaguoti kategoriją: {0}</value></data>
+  <data name="AdminCustomers.Total" xml:space="preserve"><value>Iš viso: {0}</value></data>
+  <data name="AdminItemDetail.Total" xml:space="preserve"><value>Iš viso {0}</value></data>
+  <data name="AdminItemPhotosDialog.PhotoS" xml:space="preserve"><value>{0} nuotrauka (-os)</value></data>
+  <data name="AdminItems.Page" xml:space="preserve"><value>{0} puslapis</value></data>
+  <data name="AdminItems.Total" xml:space="preserve"><value>Iš viso: {0}</value></data>
+  <data name="AdminLocations.EditLocation" xml:space="preserve"><value>Redaguoti vietą: {0}</value></data>
+  <data name="AdminLocations.Total" xml:space="preserve"><value>Iš viso: {0}</value></data>
+  <data name="AdminPriceGroups.CustomersIn" xml:space="preserve"><value>Klientai iš „{0}“</value></data>
+  <data name="AdminPriceGroups.Total" xml:space="preserve"><value>Iš viso {0}</value></data>
+  <data name="AdminSlots.VisibleSlots" xml:space="preserve"><value>Matomos vietos: {0}</value></data>
+  <data name="AdminSupplierMappings.EditMapping" xml:space="preserve"><value>Redaguoti atvaizdavimą: {0}</value></data>
+  <data name="AdminSupplierMappings.Total" xml:space="preserve"><value>Iš viso: {0}</value></data>
+  <data name="AdminSuppliers.Page" xml:space="preserve"><value>{0} puslapis</value></data>
+  <data name="AdminSuppliers.Total" xml:space="preserve"><value>Iš viso: {0}</value></data>
+  <data name="AdminUsers.Edit" xml:space="preserve"><value>Redaguoti {0}</value></data>
+  <data name="AdminUsers.Users" xml:space="preserve"><value>Naudotojai ({0})</value></data>
+  <data name="Agnum.Balances.Distributeaf448a" xml:space="preserve"><value>Paskirstyti {0}</value></data>
+  <data name="Agnum.Balances.Imported9c7986" xml:space="preserve"><value>Importuota: {0}</value></data>
+  <data name="Agnum.Balances.More" xml:space="preserve"><value>ir dar {0}</value></data>
+  <data name="Agnum.Balances.Rows" xml:space="preserve"><value>Eilutės: {0}</value></data>
+  <data name="Agnum.Balances.Run" xml:space="preserve"><value>Vykdyti: {0}</value></data>
+  <data name="Agnum.Reconciliation.Rows" xml:space="preserve"><value>Eilutės: {0}</value></data>
+  <data name="AvailableStock.PageOf" xml:space="preserve"><value>{0} puslapis iš {1}</value></data>
+  <data name="ComplianceLotTrace.Generated" xml:space="preserve"><value>Sugeneruota: {0}</value></data>
+  <data name="ComplianceLotTrace.TraceID" xml:space="preserve"><value>Trace ID: {0}</value></data>
+  <data name="CycleCounts.Execute.ProgressOfLocationsCounted" xml:space="preserve"><value>Pažanga: suskaičiuota vietų: {0} iš {1}</value></data>
+  <data name="Dashboard.BelowReorderPoint" xml:space="preserve"><value>{0} žemiau papildymo ribos</value></data>
+  <data name="Dashboard.Expired" xml:space="preserve"><value>{0} pasibaigė</value></data>
+  <data name="Dashboard.Last" xml:space="preserve"><value>paskutinis {0}</value></data>
+  <data name="Dashboard.Matched" xml:space="preserve"><value>Atitiko {0}</value></data>
+  <data name="Dashboard.NotLinked" xml:space="preserve"><value>Nesusieta {0}</value></data>
+  <data name="Dashboard.Out" xml:space="preserve"><value>Trūksta: {0}</value></data>
+  <data name="Dashboard.Over" xml:space="preserve"><value>Perteklius: {0}</value></data>
+  <data name="Dashboard.Under" xml:space="preserve"><value>Trūkumas: {0}</value></data>
+  <data name="ErrorBanner.ErrorID" xml:space="preserve"><value>Klaidos ID: {0}</value></data>
+  <data name="InboundShipmentCreate.Service" xml:space="preserve"><value>Paslauga – {0}</value></data>
+  <data name="InboundShipmentDetail.Expected" xml:space="preserve"><value>Numatyta: {0}</value></data>
+  <data name="InboundShipmentDetail.Line" xml:space="preserve"><value>{0}–{1} ({2} eilutė)</value></data>
+  <data name="InboundShipmentDetail.SERVICE" xml:space="preserve"><value>PASLAUGA – {0}</value></data>
+  <data name="InboundShipmentDetail.Supplier" xml:space="preserve"><value>Tiekėjas: {0} ({1})</value></data>
+  <data name="InboundShipmentDetail.UnitPricec63fff" xml:space="preserve"><value>Vieneto kaina {0}</value></data>
+  <data name="InboundShipments.Total" xml:space="preserve"><value>Iš viso: {0}</value></data>
+  <data name="OutboundDispatch.Dispatch1bc4d8" xml:space="preserve"><value>Siuntimas {0}</value></data>
+  <data name="OutboundOrderDetail.Customer" xml:space="preserve"><value>Klientas: {0}</value></data>
+  <data name="OutboundOrderDetail.Tracking" xml:space="preserve"><value>Stebėjimas: {0}</value></data>
+  <data name="OutboundOrders.OrderSSelected" xml:space="preserve"><value>Pasirinkta (-ų) užsakymų: {0}</value></data>
+  <data name="OutboundOrders.PageOf" xml:space="preserve"><value>{0} puslapis iš {1}</value></data>
+  <data name="PackingStation.Customer" xml:space="preserve"><value>Klientas: {0}</value></data>
+  <data name="Pagination.PageOf" xml:space="preserve"><value>{0} puslapis iš {1}</value></data>
+  <data name="ReportsComplianceAudit.Total" xml:space="preserve"><value>Iš viso: {0}</value></data>
+  <data name="ReportsPickHistory.Total" xml:space="preserve"><value>Iš viso: {0}</value></data>
+  <data name="ReportsReceivingHistory.Total" xml:space="preserve"><value>Iš viso: {0}</value></data>
+  <data name="ReportsStockLevel.Total" xml:space="preserve"><value>Iš viso: {0}</value></data>
+  <data name="ReportsStockMovements.Total" xml:space="preserve"><value>Iš viso: {0}</value></data>
+  <data name="ReportsTraceability.AvailableQty" xml:space="preserve"><value>Galimas kiekis: {0}</value></data>
+  <data name="ReportsTraceability.Location" xml:space="preserve"><value>Vieta: {0}</value></data>
+  <data name="ReportsTraceability.Lot" xml:space="preserve"><value>Partija: {0}</value></data>
+  <data name="ReportsTraceability.Qty" xml:space="preserve"><value>Kiekis: {0}</value></data>
+  <data name="ReportsTraceability.QtyShipped" xml:space="preserve"><value>Kiekis: {0} | Išsiųsta: {1}</value></data>
+  <data name="ReportsTraceability.Receipt" xml:space="preserve"><value>Kvitas: {0}</value></data>
+  <data name="ReportsTraceability.Shipment" xml:space="preserve"><value>Siuntimas: {0}</value></data>
+  <data name="ReportsTraceability.Supplier" xml:space="preserve"><value>Tiekėjas: {0}</value></data>
+  <data name="ReportsTraceability.Tracking" xml:space="preserve"><value>Stebėjimas: {0}</value></data>
+  <data name="Reservations.Allocated5b369e" xml:space="preserve"><value>{0} | {1} | Paskirstyta: {2}</value></data>
+  <data name="Reservations.PickReservation" xml:space="preserve"><value>Komplektuoti pagal rezervaciją {0}</value></data>
+  <data name="Reservations.Reservation" xml:space="preserve"><value>Rezervacija {0}</value></data>
+  <data name="SalesOrderDetail.OrderDate" xml:space="preserve"><value>Užsakymo data: {0}</value></data>
+  <data name="SalesOrders.PageOf" xml:space="preserve"><value>{0} puslapis iš {1}</value></data>
+  <data name="SalesOrders.Total2c1fd3" xml:space="preserve"><value>Iš viso: {0}</value></data>
+  <data name="SharedErrorAlert.ErrorID" xml:space="preserve"><value>Klaidos ID: {0}</value></data>
+  <data name="StockDashboard.LowStockAlertsThreshold" xml:space="preserve"><value>Įspėjimai apie mažas atsargas (slenkstis: {0})</value></data>
+  <data name="Transfers.Execute.Status" xml:space="preserve"><value>Būsena: {0}</value></data>
+  <data name="Visualization.Warehouse3D.NotIn" xml:space="preserve"><value>Ne {0}</value></data>
+  <data name="Visualization.Warehouse3D.Rack" xml:space="preserve"><value>Stovas {0}</value></data>
+  <data name="WarehouseLocationDetail.LocationID" xml:space="preserve"><value>Vietovės ID: {0}</value></data>
+  <data name="Nav.Section.Stock" xml:space="preserve"><value>Atsargos</value></data>
+  <data name="Nav.Section.Inbound" xml:space="preserve"><value>Priėmimas</value></data>
+  <data name="Nav.Section.Outbound" xml:space="preserve"><value>Išsiuntimas</value></data>
+  <data name="Nav.Section.Operations" xml:space="preserve"><value>Operacijos</value></data>
+  <data name="Nav.Section.Finance" xml:space="preserve"><value>Finansai</value></data>
+  <data name="Nav.Section.Admin" xml:space="preserve"><value>Administravimas</value></data>
+  <data name="Nav.Section.Reports" xml:space="preserve"><value>Ataskaitos</value></data>
+  <data name="Nav.Section.Analytics" xml:space="preserve"><value>Analitika</value></data>
+  <data name="Nav.Section.System" xml:space="preserve"><value>Sistema</value></data>
+  <data name="Admin.ApiKeys.Toast.APIKeyCreated" xml:space="preserve"><value>API raktas {0} sukurtas.</value></data>
+  <data name="Admin.ApiKeys.Toast.APIKeyDeleted" xml:space="preserve"><value>API raktas {0} ištrintas.</value></data>
+  <data name="Admin.ApiKeys.Toast.APIKeyRotated" xml:space="preserve"><value>API raktas {0} pasuktas.</value></data>
+  <data name="Admin.ApprovalRules.Toast.ApprovalRuleCreated" xml:space="preserve"><value>Sukurta patvirtinimo taisyklė Nr. {0}.</value></data>
+  <data name="Admin.ApprovalRules.Toast.ApprovalRuleDeleted" xml:space="preserve"><value>Patvirtinimo taisyklė Nr. {0} ištrinta.</value></data>
+  <data name="Admin.ApprovalRules.Toast.ApprovalRuleUpdated" xml:space="preserve"><value>Patvirtinimo taisyklė Nr. {0} atnaujinta.</value></data>
+  <data name="Admin.Backups.Toast.BackupTriggered" xml:space="preserve"><value>Suaktyvinta atsarginė {0} kopija.</value></data>
+  <data name="Admin.DisasterRecoveryDrills.Toast.DRDrillStarted" xml:space="preserve"><value>Pradėtas DR pratimas: {0}</value></data>
+  <data name="Admin.ReasonCodes.Toast.ReasonCodeCreated" xml:space="preserve"><value>Sukurtas priežasties kodas {0}.</value></data>
+  <data name="Admin.ReasonCodes.Toast.ReasonCodeDeleted" xml:space="preserve"><value>Priežasties kodas {0} ištrintas.</value></data>
+  <data name="Admin.ReasonCodes.Toast.ReasonCodeUpdated" xml:space="preserve"><value>Priežasties kodas {0} atnaujintas.</value></data>
+  <data name="Admin.RetentionPolicies.Toast.RetentionExecution" xml:space="preserve"><value>Išlaikymo vykdymas {0}.</value></data>
+  <data name="Admin.Roles.Toast.RoleCreated" xml:space="preserve"><value>Vaidmuo {0} sukurtas.</value></data>
+  <data name="Admin.Roles.Toast.RoleDeleted" xml:space="preserve"><value>Vaidmuo {0} ištrintas.</value></data>
+  <data name="Admin.Roles.Toast.RoleUpdated" xml:space="preserve"><value>Vaidmuo {0} atnaujintas.</value></data>
+  <data name="AdminItemDetail.Toast.EmbeddingsRecomputedForPhotoS" xml:space="preserve"><value>Įterpimai perskaičiuoti {0} nuotraukoms (-oms).</value></data>
+  <data name="AdminItemPhotosDialog.Toast.EmbeddingsRecomputedForPhotoS" xml:space="preserve"><value>Įterpimai perskaičiuoti {0} nuotraukoms (-oms).</value></data>
+  <data name="AdminPriceGroups.Toast.AssignedTo" xml:space="preserve"><value>{0} priskirta {1}.</value></data>
+  <data name="AdminPriceGroups.Toast.RemovedFrom" xml:space="preserve"><value>{0} pašalintas iš {1}.</value></data>
+  <data name="AdminSlots.Toast.Location3125ac" xml:space="preserve"><value>Vieta {0} priskirta {1}.</value></data>
+  <data name="AdminSlots.Toast.LocationAssignedTo" xml:space="preserve"><value>Vieta {0} priskirta {1}.</value></data>
+  <data name="AdminSlots.Toast.Placement" xml:space="preserve"><value>{0} paskirties vieta išvalyta.</value></data>
+  <data name="AdminSlots.Toast.PlacementForWasCleared" xml:space="preserve"><value>Vieta {0} buvo išvalyta.</value></data>
+  <data name="AdminSlots.Toast.SpanMustBeBetween1AndForThisSlot" xml:space="preserve"><value>Šios srities intervalas turi būti nuo 1 iki {0}.</value></data>
+  <data name="AdminUsers.Toast.UserCreated" xml:space="preserve"><value>Sukūrė naudotojas {0}.</value></data>
+  <data name="AdminUsers.Toast.UserUpdated" xml:space="preserve"><value>Vartotojas {0} atnaujintas.</value></data>
+  <data name="Agnum.Configuration.Toast.AtLeast1MappingRequiredForScope" xml:space="preserve"><value>Apimčiai {0} reikalingas bent 1 susiejimas.</value></data>
+  <data name="AllocationDashboard.Toast.OrderApproved" xml:space="preserve"><value>Užsakymas {0} patvirtintas.</value></data>
+  <data name="AllocationDashboard.Toast.OrderReleasedToPicking" xml:space="preserve"><value>Užsakymas {0} išleistas atsiimti.</value></data>
+  <data name="CycleCounts.Execute.Toast.CountRecordedFor" xml:space="preserve"><value>Skaičius įrašytas {0}.</value></data>
+  <data name="CycleCounts.Schedule.Toast.CycleCountScheduled" xml:space="preserve"><value>Suplanuotas ciklo skaičius {0}.</value></data>
+  <data name="InboundShipmentCreate.Toast.InboundShipmentISHCreated" xml:space="preserve"><value>Sukurta gaunama siunta ISH-{0}.</value></data>
+  <data name="InboundShipmentCreate.Toast.InboundShipmentISHUpdated" xml:space="preserve"><value>Atnaujinta gaunama siunta ISH-{0}.</value></data>
+  <data name="InboundShipmentDetail.Toast.ReceivedUnitsTo" xml:space="preserve"><value>Gauta {0:0.##} vienetų iki {1}.</value></data>
+  <data name="InboundShipmentDetail.Toast.SelectedLine" xml:space="preserve"><value>Pasirinkta eilutė {0} ({1}).</value></data>
+  <data name="OutboundOrders.Toast.CancelledOrderS" xml:space="preserve"><value>Atšauktas {0} užsakymas (-ai).</value></data>
+  <data name="PickingTasks.Toast.PickTaskCreated" xml:space="preserve"><value>Pasirinkite sukurtą užduotį: {0}</value></data>
+  <data name="Projections.Toast.RebuildCompletedFor" xml:space="preserve"><value>{0} atkūrimas baigtas.</value></data>
+  <data name="Projections.Toast.RebuildFinishedWithMismatchFor" xml:space="preserve"><value>Atkūrimas baigtas, nes nesutampa {0}.</value></data>
+  <data name="Projections.Toast.VerifyMismatchFor" xml:space="preserve"><value>Patikrinkite {0} neatitikimą.</value></data>
+  <data name="Projections.Toast.VerifySucceededFor" xml:space="preserve"><value>Patvirtinimas pavyko {0}.</value></data>
+  <data name="Putaway.Toast.PutawayCompletedForTo" xml:space="preserve"><value>Patalpinimas baigtas nuo {0} iki {1}.</value></data>
+  <data name="ReceivingQc.Toast.QCCompletedMovedTo" xml:space="preserve"><value>QC {0} baigtas. Perkelta į {1}.</value></data>
+  <data name="SalesOrderCreate.Toast.SalesOrderCreated" xml:space="preserve"><value>Pardavimo užsakymas {0} sukurtas.</value></data>
+  <data name="StockAdjustments.Toast.AdjustmentCreated" xml:space="preserve"><value>Sukurtas koregavimas: {0}</value></data>
+  <data name="Transfers.Create.Toast.TransferCreated" xml:space="preserve"><value>Perdavimas {0} sukurtas.</value></data>
+  <data name="Transfers.List.Toast.CancelActionIsNotAvailableFor" xml:space="preserve"><value>Atšaukimo veiksmas negalimas {0}.</value></data>
+  <data name="MainLayout.CloseWarehouseNavigation" xml:space="preserve"><value>Uždaryti sandėlio navigaciją</value></data>
+  <data name="MainLayout.OpenWarehouseNavigation" xml:space="preserve"><value>Atidaryti sandėlio navigaciją</value></data>
+  <data name="MainLayout.ExpandSidebar" xml:space="preserve"><value>Išplėsti šoninį meniu</value></data>
+  <data name="MainLayout.CollapseSidebar" xml:space="preserve"><value>Sutraukti šoninį meniu</value></data>
+  <data name="Stock.StockTable.NoStockFoundMatchingFilters" xml:space="preserve"><value>Pagal pasirinktus filtrus atsargų nerasta.</value></data>
+  <data name="Stock.StockTable.PhysicalQty" xml:space="preserve"><value>Fizinis kiekis</value></data>
+  <data name="Stock.StockTable.ReservedQty" xml:space="preserve"><value>Rezervuotas kiekis</value></data>
+  <data name="Stock.StockTable.AvailableQty" xml:space="preserve"><value>Laisvas kiekis</value></data>
+  <data name="Stock.StockTable.LastUpdated" xml:space="preserve"><value>Paskutinį kartą atnaujinta</value></data>
+  <data name="Reservations.NoReservationsFound" xml:space="preserve"><value>Rezervacijų nerasta.</value></data>
+  <data name="AdminSuppliers.AgnumClient" xml:space="preserve"><value>Agnum klientas {0}</value></data>
+  <data name="AdminSuppliers.ActionsFor" xml:space="preserve"><value>Veiksmai: {0}</value></data>
+  <data name="AdminItems.ActionsFor" xml:space="preserve"><value>Veiksmai: {0}</value></data>
+  <data name="AdminItemEditorDialog.RemoveTag" xml:space="preserve"><value>Pašalinti žymą {0}</value></data>
+  <data name="Status.Active" xml:space="preserve"><value>Aktyvus</value></data>
+  <data name="Status.Inactive" xml:space="preserve"><value>Neaktyvus</value></data>
+  <data name="Status.OnHold" xml:space="preserve"><value>Sustabdytas</value></data>
+  <data name="Status.Draft" xml:space="preserve"><value>Juodraštis</value></data>
+  <data name="Status.PendingApproval" xml:space="preserve"><value>Laukia patvirtinimo</value></data>
+  <data name="Status.PendingStock" xml:space="preserve"><value>Laukia atsargų</value></data>
+  <data name="Status.Allocated" xml:space="preserve"><value>Paskirstytas</value></data>
+  <data name="Status.Picking" xml:space="preserve"><value>Komplektuojamas</value></data>
+  <data name="Status.Picked" xml:space="preserve"><value>Sukomplektuotas</value></data>
+  <data name="Status.Packed" xml:space="preserve"><value>Supakuotas</value></data>
+  <data name="Status.Shipped" xml:space="preserve"><value>Išsiųstas</value></data>
+  <data name="Status.Delivered" xml:space="preserve"><value>Pristatytas</value></data>
+  <data name="Status.Invoiced" xml:space="preserve"><value>Išrašyta sąskaita</value></data>
+  <data name="Status.Cancelled" xml:space="preserve"><value>Atšauktas</value></data>
+  <data name="Status.Expired" xml:space="preserve"><value>Pasibaigęs</value></data>
+  <data name="Status.Packing" xml:space="preserve"><value>Pakuojamas</value></data>
+  <data name="Status.Dispatched" xml:space="preserve"><value>Išsiųstas</value></data>
+  <data name="Status.InTransit" xml:space="preserve"><value>Tranzitu</value></data>
+  <data name="Status.Approved" xml:space="preserve"><value>Patvirtintas</value></data>
+  <data name="Status.Completed" xml:space="preserve"><value>Baigtas</value></data>
+  <data name="Status.Scheduled" xml:space="preserve"><value>Suplanuotas</value></data>
+  <data name="Status.InProgress" xml:space="preserve"><value>Vykdomas</value></data>
+  <data name="Status.Pending" xml:space="preserve"><value>Laukia</value></data>
+  <data name="Status.Rejected" xml:space="preserve"><value>Atmestas</value></data>
+  <data name="Status.Recount" xml:space="preserve"><value>Pakartotinis skaičiavimas</value></data>
+  <data name="Status.Received" xml:space="preserve"><value>Gautas</value></data>
+  <data name="Status.Available" xml:space="preserve"><value>Prieinamas</value></data>
+  <data name="Status.Issued" xml:space="preserve"><value>Išduotas</value></data>
+  <data name="Status.Returned" xml:space="preserve"><value>Grąžintas</value></data>
+  <data name="Status.Scrapped" xml:space="preserve"><value>Nurašytas</value></data>
+  <data name="Status.Out" xml:space="preserve"><value>Nėra atsargų</value></data>
+  <data name="Status.Low" xml:space="preserve"><value>Mažai atsargų</value></data>
+  <data name="Status.Over" xml:space="preserve"><value>Perteklius</value></data>
+  <data name="Status.Under" xml:space="preserve"><value>Trūkumas</value></data>
+  <data name="Status.Matched" xml:space="preserve"><value>Sutampa</value></data>
+  <data name="Status.Unknown" xml:space="preserve"><value>Nežinoma</value></data>
+  <data name="Status.Failed" xml:space="preserve"><value>Nepavyko</value></data>
+  <data name="Status.Degraded" xml:space="preserve"><value>Su sutrikimais</value></data>
+  <data name="Status.Ok" xml:space="preserve"><value>Gerai</value></data>
+  <data name="Status.Healthy" xml:space="preserve"><value>Veikia</value></data>
+  <data name="Status.Unhealthy" xml:space="preserve"><value>Neveikia</value></data>
+  <data name="Status.Running" xml:space="preserve"><value>Vykdoma</value></data>
+  <data name="Status.Queued" xml:space="preserve"><value>Eilėje</value></data>
+  <data name="Status.Ready" xml:space="preserve"><value>Paruošta</value></data>
+  <data name="Status.Reserved" xml:space="preserve"><value>Rezervuota</value></data>
+  <data name="Status.Open" xml:space="preserve"><value>Atviras</value></data>
+  <data name="Status.Closed" xml:space="preserve"><value>Uždarytas</value></data>
+  <data name="Status.Released" xml:space="preserve"><value>Paleistas</value></data>
+  <data name="Status.PartiallyAllocated" xml:space="preserve"><value>Iš dalies paskirstytas</value></data>
+  <data name="Status.Depleted" xml:space="preserve"><value>Išeikvota</value></data>
+  <data name="Status.Discontinued" xml:space="preserve"><value>Nebegaminama</value></data>
+  <data name="Status.SEALED" xml:space="preserve"><value>Užplombuotas</value></data>
+  <data name="Status.EMPTY" xml:space="preserve"><value>Tuščia</value></data>
+  <data name="Status.MEDIUM" xml:space="preserve"><value>Vidutiniškai</value></data>
+  <data name="Status.FULL" xml:space="preserve"><value>Pilna</value></data>
+  <data name="Status.OVER_CAPACITY" xml:space="preserve"><value>Viršyta talpa</value></data>
+  <data name="Aria.Search" xml:space="preserve"><value>Ieškoti</value></data>
+  <data name="Aria.Country" xml:space="preserve"><value>Šalis</value></data>
+  <data name="Aria.PageSize" xml:space="preserve"><value>Puslapio dydis</value></data>
+  <data name="Aria.Category" xml:space="preserve"><value>Kategorija</value></data>
+  <data name="Aria.Status" xml:space="preserve"><value>Būsena</value></data>
+  <data name="Aria.Warehouse" xml:space="preserve"><value>Sandėlis</value></data>
+  <data name="Aria.Location" xml:space="preserve"><value>Vieta</value></data>
+  <data name="Aria.SKU" xml:space="preserve"><value>SKU</value></data>
+  <data name="Aria.ProductOrItem" xml:space="preserve"><value>Produktas arba prekė</value></data>
+  <data name="Aria.ItemName" xml:space="preserve"><value>Prekės pavadinimas</value></data>
+  <data name="Aria.Tag" xml:space="preserve"><value>Žyma</value></data>
+  <data name="Aria.Supplier" xml:space="preserve"><value>Tiekėjas</value></data>
+  <data name="Aria.SupplierCountry" xml:space="preserve"><value>Tiekėjo šalis</value></data>
+  <data name="AdminImport.TabItems" xml:space="preserve"><value>Prekės</value></data>
+  <data name="AdminImport.TabItemPrices" xml:space="preserve"><value>Prekių kainos</value></data>
+  <data name="AdminImport.TabSuppliers" xml:space="preserve"><value>Tiekėjai</value></data>
+  <data name="AdminImport.TabSupplierMappings" xml:space="preserve"><value>Tiekėjų atitikmenys</value></data>
+  <data name="AdminImport.TabItemBarcodes" xml:space="preserve"><value>Prekių brūkšniniai kodai</value></data>
+  <data name="AdminImport.TabLocations" xml:space="preserve"><value>Vietos</value></data>
+  <data name="AdminItems.DeactivateConfirmation" xml:space="preserve"><value>Išjungti prekę {0} – {1}?</value></data>
+  <data name="PackingStation.BarcodeNotFound" xml:space="preserve"><value>Brūkšninio kodo {0} užsakyme nėra.</value></data>
+  <data name="Admin.Roles.DeleteRoleConfirmation" xml:space="preserve"><value>Ištrinti rolę {0}?</value></data>
+  <data name="Admin.ApiKeys.DeleteKeyConfirmation" xml:space="preserve"><value>Ištrinti API raktą {0}?</value></data>
+  <data name="Admin.ApprovalRules.DeleteRuleConfirmation" xml:space="preserve"><value>Ištrinti patvirtinimo taisyklę Nr. {0}?</value></data>
+  <data name="Admin.ReasonCodes.DeleteReasonConfirmation" xml:space="preserve"><value>Ištrinti priežasties kodą {0}?</value></data>
+  <data name="Reservations.SelectReservationLine" xml:space="preserve"><value>Pasirinkite rezervacijos eilutę.</value></data>
+  <data name="Reservations.SelectHandlingUnit" xml:space="preserve"><value>Pasirinkite krovos vienetą.</value></data>
+  <data name="Reservations.QuantityGreaterThanZero" xml:space="preserve"><value>Kiekis turi būti didesnis už nulį.</value></data>
+  <data name="Reservations.QuantityExceedsAllocated" xml:space="preserve"><value>Kiekis viršija paskirstytą kiekį {0}.</value></data>
+  <data name="AdminPriceGroupEditorDialog.CodeRequired" xml:space="preserve"><value>Būtina nurodyti kodą.</value></data>
+  <data name="AdminPriceGroupEditorDialog.NameRequired" xml:space="preserve"><value>Būtina nurodyti pavadinimą.</value></data>
+  <data name="Admin.LayoutEditor.NoActiveWarehouses" xml:space="preserve"><value>Nėra aktyvių nevirtualių sandėlių.</value></data>
+  <data name="CycleCounts.Schedule.LookupFailed" xml:space="preserve"><value>Nepavyko įkelti planavimo sąrašų. Patikrinkite API ryšį.</value></data>
+  <data name="SalesOrderDetail.AllocatedReservation" xml:space="preserve"><value>Pardavimo užsakymas paskirstytas. Rezervacija: {0}</value></data>
+  <data name="AvailableStock.Summary" xml:space="preserve"><value>Rodoma {0} prekių, {1} puslapis iš {2}.</value></data>
+  <data name="AvailableStock.SearchNotRun" xml:space="preserve"><value>Paieška dar neatlikta.</value></data>
+  <data name="Labels.PrintStatus" xml:space="preserve"><value>Būsena: {0}. {1}</value></data>
+  <data name="InboundShipmentCreate.EditPageTitle" xml:space="preserve"><value>Redaguoti ISH-{0} – Cikada.MES</value></data>
+  <data name="InboundShipmentCreate.CreatePageTitle" xml:space="preserve"><value>Sukurti gaunamą siuntą – Cikada.MES</value></data>
+  <data name="InboundShipmentCreate.EditTitle" xml:space="preserve"><value>Redaguoti gaunamą siuntą ISH-{0}</value></data>
+  <data name="InboundShipmentCreate.CreateTitle" xml:space="preserve"><value>Sukurti gaunamą siuntą</value></data>
+  <data name="InboundShipmentCreate.CannotEditAfterReceiving" xml:space="preserve"><value>ISH-{0} būsena „{1}“: siuntos redaguoti nebegalima, nes jos priėmimas jau pradėtas.</value></data>
+  <data name="InboundShipmentCreate.DuplicateCostTypeWarning" xml:space="preserve"><value>Rankiniu būdu įvesta papildomų išlaidų eilutė turi tą patį tipą ({0}) kaip šios siuntos paslaugos eilutė. Patikrinkite, ar ta pati sąskaitos suma neskaičiuojama dukart.</value></data>
+  <data name="Visualization.Warehouse3D.MinutesAgo" xml:space="preserve"><value>prieš {0} min.</value></data>
+  <data name="Visualization.Warehouse3D.HoursAgo" xml:space="preserve"><value>prieš {0} val.</value></data>
+  <data name="Visualization.Warehouse3D.JustNow" xml:space="preserve"><value>ką tik</value></data>
+  <data name="Dashboard.AgnumInSync" xml:space="preserve"><value>Sinchronizuota</value></data>
+  <data name="Admin.RetentionPolicies.HideForm" xml:space="preserve"><value>Slėpti formą</value></data>
+  <data name="Admin.RetentionPolicies.CreatePolicy" xml:space="preserve"><value>Kurti taisyklę</value></data>
+  <data name="Admin.RetentionPolicies.ExecutionSummary" xml:space="preserve"><value>Duomenų saugojimo vykdymas: {0}, {1}. Archyvuota: {2}. Ištrinta: {3}.</value></data>
+  <data name="Agnum.Balances.TotalQty" xml:space="preserve"><value>Bendras kiekis: {0}</value></data>
+  <data name="Agnum.Balances.Remaining" xml:space="preserve"><value>Liko: {0}</value></data>
+  <data name="Agnum.Balances.MesPhysicalSummary" xml:space="preserve"><value>Fizinis kiekis MES: {0}</value></data>
+  <data name="Status.NotLinked" xml:space="preserve"><value>Nesusieta</value></data>
+  <data name="Agnum.Balances.DistributedSummary" xml:space="preserve"><value>Paskirstyta: {0}</value></data>
+  <data name="Common.Yes" xml:space="preserve"><value>Taip</value></data>
+  <data name="Common.No" xml:space="preserve"><value>Ne</value></data>
+  <data name="Common.Required" xml:space="preserve"><value>Privaloma</value></data>
+  <data name="Common.NotRequired" xml:space="preserve"><value>Neprivaloma</value></data>
+  <data name="Common.HideForm" xml:space="preserve"><value>Slėpti formą</value></data>
+  <data name="Common.HideCreateForm" xml:space="preserve"><value>Slėpti kūrimo formą</value></data>
+  <data name="Common.Occupied" xml:space="preserve"><value>Užimta</value></data>
+  <data name="Common.Free" xml:space="preserve"><value>Laisva</value></data>
+  <data name="Common.Empty" xml:space="preserve"><value>Tuščia</value></data>
+  <data name="AdminCustomers.EditCustomer" xml:space="preserve"><value>Redaguoti klientą</value></data>
+  <data name="AdminPriceGroups.CreatePriceGroup" xml:space="preserve"><value>Sukurti kainų grupę</value></data>
+  <data name="AdminPriceGroups.EditPriceGroup" xml:space="preserve"><value>Redaguoti kainų grupę</value></data>
+  <data name="AdminItems.CreateItem" xml:space="preserve"><value>Sukurti prekę</value></data>
+  <data name="AdminItems.EditItem" xml:space="preserve"><value>Redaguoti prekę</value></data>
+  <data name="AdminItems.Lot" xml:space="preserve"><value>Partija</value></data>
+  <data name="AdminSuppliers.CreateSupplier" xml:space="preserve"><value>Sukurti tiekėją</value></data>
+  <data name="AdminSuppliers.EditSupplier" xml:space="preserve"><value>Redaguoti tiekėją</value></data>
+  <data name="AdminItemDetail.BasePrice" xml:space="preserve"><value>Bazinė kaina</value></data>
+  <data name="AdminItemDetail.GroupOverride" xml:space="preserve"><value>Grupės kainos pakeitimas</value></data>
+  <data name="SearchByImage.IdentifyingItem" xml:space="preserve"><value>Atpažįstama prekė…</value></data>
+  <data name="SearchByImage.TapToTakePhoto" xml:space="preserve"><value>Palieskite, kad nufotografuotumėte arba pasirinktumėte iš galerijos</value></data>
+  <data name="AdminImport.Running" xml:space="preserve"><value>Vykdoma...</value></data>
+  <data name="AdminImport.RunImport" xml:space="preserve"><value>Vykdyti importą</value></data>
+  <data name="AdminSupplierEditorDialog.EditSupplier" xml:space="preserve"><value>Redaguoti tiekėją</value></data>
+  <data name="AdminSupplierEditorDialog.CreateSupplier" xml:space="preserve"><value>Sukurti tiekėją</value></data>
+  <data name="AdminPriceGroupEditorDialog.EditPriceGroup" xml:space="preserve"><value>Redaguoti kainų grupę</value></data>
+  <data name="AdminPriceGroupEditorDialog.CreatePriceGroup" xml:space="preserve"><value>Sukurti kainų grupę</value></data>
+  <data name="AdminCustomerEditorDialog.EditCustomer" xml:space="preserve"><value>Redaguoti klientą</value></data>
+  <data name="AdminCustomerEditorDialog.CreateCustomer" xml:space="preserve"><value>Sukurti klientą</value></data>
+  <data name="AdminItemEditorDialog.EditItem" xml:space="preserve"><value>Redaguoti prekę</value></data>
+  <data name="AdminItemEditorDialog.CreateItem" xml:space="preserve"><value>Sukurti prekę</value></data>
+  <data name="Admin.Roles.AddRole" xml:space="preserve"><value>Pridėti vaidmenį</value></data>
+  <data name="Admin.ApiKeys.CreateNewKey" xml:space="preserve"><value>Sukurti naują raktą</value></data>
+  <data name="AdminSupplierMappings.CreateMapping" xml:space="preserve"><value>Sukurti atitikmenį</value></data>
+  <data name="Admin.ReasonCodes.AddReasonCode" xml:space="preserve"><value>Pridėti priežasties kodą</value></data>
+  <data name="Admin.ApprovalRules.AddApprovalRule" xml:space="preserve"><value>Pridėti tvirtinimo taisyklę</value></data>
+  <data name="StockDashboard.Critical" xml:space="preserve"><value>KRITINĖ</value></data>
+  <data name="StockDashboard.Low" xml:space="preserve"><value>MAŽAI</value></data>
+  <data name="Visualization.Warehouse3D.LabelsVisibleClickToHide" xml:space="preserve"><value>Etiketės matomos – spustelėkite, kad paslėptumėte</value></data>
+  <data name="Visualization.Warehouse3D.LabelsHiddenClickToShow" xml:space="preserve"><value>Etiketės paslėptos – spustelėkite, kad parodytumėte</value></data>
+  <data name="Common.SaveChanges" xml:space="preserve"><value>Išsaugoti pakeitimus</value></data>
+  <data name="InboundShipmentCreate.CreateShipment" xml:space="preserve"><value>Sukurti siuntą</value></data>
+  <data name="Dashboard.Adjust" xml:space="preserve"><value>Koregavimas</value></data>
+  <data name="Dashboard.Transfer" xml:space="preserve"><value>Perkėlimas</value></data>
+  <data name="Status.Pass" xml:space="preserve"><value>patikrinta</value></data>
+  <data name="Status.Fail" xml:space="preserve"><value>nepatikrinta</value></data>
+  <data name="StockAdjustments.RequestFailed" xml:space="preserve"><value>Nepavyko atlikti koregavimo užklausos.</value></data>
+  <data name="ReceivingQc.RequestFailed" xml:space="preserve"><value>Nepavyko apdoroti kokybės patikros.</value></data>
+  <data name="Labels.RequestFailed" xml:space="preserve"><value>Nepavyko apdoroti etikečių užklausos.</value></data>
+  <data name="AdminUsers.RequestFailed" xml:space="preserve"><value>Nepavyko apdoroti naudotojo užklausos.</value></data>
+  <data name="ReportsTraceability.RequestFailed" xml:space="preserve"><value>Nepavyko gauti atsekamumo ataskaitos.</value></data>
+  <data name="ComplianceLotTrace.RequestFailed" xml:space="preserve"><value>Nepavyko gauti partijos atsekamumo duomenų.</value></data>
+  <data name="PickingTasks.RequestFailed" xml:space="preserve"><value>Nepavyko apdoroti komplektavimo užduoties.</value></data>
+  <data name="ReportsComplianceAudit.RequestFailed" xml:space="preserve"><value>Nepavyko gauti atitikties ataskaitos.</value></data>
+  <data name="SalesOrders.RequestFailed" xml:space="preserve"><value>Nepavyko apdoroti užsakymo užklausos.</value></data>
+  <data name="InboundShipments.RequestFailed" xml:space="preserve"><value>Nepavyko apdoroti gaunamos siuntos užklausos.</value></data>
+  <data name="ReportsDispatchHistory.RequestFailed" xml:space="preserve"><value>Nepavyko gauti išsiuntimo istorijos.</value></data>
+  <data name="Putaway.RequestFailed" xml:space="preserve"><value>Nepavyko apdoroti padėjimo į vietas užklausos.</value></data>
+  <data name="AllocationDashboard.RequestFailed" xml:space="preserve"><value>Nepavyko gauti paskirstymo skydelio duomenų.</value></data>
+  <data name="AvailableStock.RequestFailed" xml:space="preserve"><value>Nepavyko gauti atsargų duomenų.</value></data>
+  <data name="SalesOrderDetail.RequestFailed" xml:space="preserve"><value>Nepavyko apdoroti užsakymo užklausos.</value></data>
+  <data name="StockDashboard.RequestFailed" xml:space="preserve"><value>Nepavyko gauti atsargų skydelio duomenų.</value></data>
+  <data name="ReportsStockMovements.RequestFailed" xml:space="preserve"><value>Nepavyko gauti atsargų judėjimo ataskaitos.</value></data>
+  <data name="InboundShipmentCreate.RequestFailed" xml:space="preserve"><value>Nepavyko apdoroti gaunamos siuntos užklausos.</value></data>
+  <data name="SalesOrderCreate.RequestFailed" xml:space="preserve"><value>Nepavyko apdoroti užsakymo užklausos.</value></data>
+  <data name="InboundShipmentDetail.RequestFailed" xml:space="preserve"><value>Nepavyko apdoroti gaunamos siuntos užklausos.</value></data>
+  <data name="Configuration.RequestFailed" xml:space="preserve"><value>Nepavyko gauti Agnum nustatymų.</value></data>
+  <data name="Balances.RequestFailed" xml:space="preserve"><value>Nepavyko gauti Agnum likučių.</value></data>
+  <data name="Reconciliation.RequestFailed" xml:space="preserve"><value>Nepavyko sutikrinti Agnum duomenų.</value></data>
+  <data name="List.RequestFailed" xml:space="preserve"><value>Nepavyko apdoroti inventorizacijos užklausos.</value></data>
+  <data name="Transfers.List.RequestFailed" xml:space="preserve"><value>Nepavyko apdoroti perkėlimo užklausos.</value></data>
+  <data name="Create.RequestFailed" xml:space="preserve"><value>Nepavyko apdoroti perkėlimo užklausos.</value></data>
+  <data name="Execute.RequestFailed" xml:space="preserve"><value>Nepavyko apdoroti perkėlimo užklausos.</value></data>
+  <data name="ApplyLandedCost.RequestFailed" xml:space="preserve"><value>Nepavyko apdoroti papildomų įsigijimo išlaidų.</value></data>
+  <data name="AdjustCost.RequestFailed" xml:space="preserve"><value>Nepavyko apdoroti savikainos koregavimo.</value></data>
+  <data name="Dashboard.RequestFailed" xml:space="preserve"><value>Nepavyko gauti atsargų vertinimo duomenų.</value></data>
+  <data name="WriteDown.RequestFailed" xml:space="preserve"><value>Nepavyko atlikti nurašymo užklausos.</value></data>
+  <data name="Error.Code.INSUFFICIENT_BALANCE" xml:space="preserve"><value>Nepakanka likučio. Operacijos užbaigti negalima.</value></data>
+  <data name="Error.Code.INSUFFICIENT_AVAILABLE_STOCK" xml:space="preserve"><value>Pradinėje vietoje nepakanka atsargų. Prieš perkeldami patikrinkite turimą kiekį.</value></data>
+  <data name="Error.Code.RESERVATION_NOT_ALLOCATED" xml:space="preserve"><value>Rezervacija dar nepaskirstyta. Komplektavimo pradėti negalima.</value></data>
+  <data name="Error.Code.HARD_LOCK_CONFLICT" xml:space="preserve"><value>Atsargos jau komplektuojamos pagal kitą rezervaciją.</value></data>
+  <data name="Error.Code.INVALID_PROJECTION_NAME" xml:space="preserve"><value>Neteisingas projekcijos pavadinimas. Galimi „LocationBalance“ ir „AvailableStock“.</value></data>
+  <data name="Error.Code.IDEMPOTENCY_IN_PROGRESS" xml:space="preserve"><value>Užklausa jau apdorojama. Palaukite.</value></data>
+  <data name="Error.Code.IDEMPOTENCY_ALREADY_PROCESSED" xml:space="preserve"><value>Užklausa jau apdorota. Pasikartojantis užklausos raktas.</value></data>
+  <data name="Error.Code.CONCURRENCY_CONFLICT" xml:space="preserve"><value>Duomenis tuo pat metu pakeitė kitas naudotojas. Bandykite dar kartą.</value></data>
+  <data name="Error.Code.VALIDATION_ERROR" xml:space="preserve"><value>Rasta įvesties klaidų.</value></data>
+  <data name="Error.Code.NOT_FOUND" xml:space="preserve"><value>Ieškomi duomenys nerasti.</value></data>
+  <data name="Error.Code.UNAUTHORIZED" xml:space="preserve"><value>Reikia prisijungti.</value></data>
+  <data name="Error.Code.FORBIDDEN" xml:space="preserve"><value>Neturite teisės atlikti šio veiksmo.</value></data>
+  <data name="Error.Code.INTERNAL_ERROR" xml:space="preserve"><value>Serverio klaida. Bandykite vėliau.</value></data>
+  <data name="Error.Http.400" xml:space="preserve"><value>Neteisingi užklausos duomenys. Patikrinkite įvestas reikšmes.</value></data>
+  <data name="Error.Http.401" xml:space="preserve"><value>Reikia prisijungti.</value></data>
+  <data name="Error.Http.403" xml:space="preserve"><value>Neturite teisės atlikti šio veiksmo.</value></data>
+  <data name="Error.Http.404" xml:space="preserve"><value>Ieškomi duomenys nerasti.</value></data>
+  <data name="Error.Http.409" xml:space="preserve"><value>Veiksmo atlikti negalima dėl duomenų konflikto. Atnaujinkite duomenis ir patikrinkite esamą būseną.</value></data>
+  <data name="Error.Http.422" xml:space="preserve"><value>Veiksmas neatitinka verslo taisyklių. Patikrinkite duomenis ir pakoreguokite įvestį.</value></data>
+  <data name="Error.Http.429" xml:space="preserve"><value>Per daug užklausų. Palaukite ir bandykite dar kartą.</value></data>
+  <data name="Error.Http.500" xml:space="preserve"><value>Serverio klaida. Bandykite vėliau.</value></data>
+  <data name="Error.Http.503" xml:space="preserve"><value>Serveris nepasiekiamas. Patikrinkite sistemos būklę.</value></data>
+  <data name="Visualization.Warehouse3D.OpenFiltersActive" xml:space="preserve"><value>Atidaryti filtrus (aktyvių: {0})</value></data>
+  <data name="Status.ASSIGNED" xml:space="preserve"><value>Priskirta</value></data>
+  <data name="Status.CREATED" xml:space="preserve"><value>Sukurta</value></data>
+  <data name="Status.IN_TRANSIT" xml:space="preserve"><value>Gabenama</value></data>
+  <data name="Status.PENDING_APPROVAL" xml:space="preserve"><value>Laukia patvirtinimo</value></data>
+  <data name="Status.PENDING_STOCK" xml:space="preserve"><value>Laukia atsargų</value></data>
+  <data name="Status.ADJUSTMENTS" xml:space="preserve"><value>Koregavimai</value></data>
+  <data name="Status.STOCK_MOVEMENTS" xml:space="preserve"><value>Atsargų judėjimas</value></data>
+  <data name="Status.USER_ACTIONS" xml:space="preserve"><value>Naudotojų veiksmai</value></data>
+  <data name="Status.VALUATIONS" xml:space="preserve"><value>Vertinimai</value></data>
+  <data name="Dashboard.WarehouseOverview" xml:space="preserve"><value>Sandėlis · Apžvalga</value></data>
+  <data name="Dashboard.UpdatedAgoAuto" xml:space="preserve"><value>Atnaujinta prieš {0} s · automatiškai kas {1} s</value></data>
+  <data name="Dashboard.DistinctPositiveQuantity" xml:space="preserve"><value>Skirtingos prekės · kiekis &gt; 0</value></data>
+  <data name="Dashboard.BaseUomMixedUnits" xml:space="preserve"><value>Pagrindinis matavimo vienetas · įvairūs vienetai</value></data>
+  <data name="AnalyticsQuality.QCDefectsAndLateShipments" xml:space="preserve"><value>Kokybės defektai ir pavėluotos siuntos</value></data>
+  <data name="Agnum.Reconciliation.VirtualSummary" xml:space="preserve"><value>Virtualus likutis: {0}</value></data>
+  <data name="Agnum.Reconciliation.DistributedSummary" xml:space="preserve"><value>Paskirstyta: {0}</value></data>
+  <data name="Agnum.Reconciliation.MesPhysicalSummary" xml:space="preserve"><value>Fizinis MES likutis: {0}</value></data>
+  <data name="Agnum.Reconciliation.DeltaSummary" xml:space="preserve"><value>Skirtumas: {0}</value></data>
+  <data name="Reservations.HuOption" xml:space="preserve"><value>{0} ({1}) · Kiekis {2}</value></data>
+  <data name="Common.ItemPhoto" xml:space="preserve"><value>{0} nuotrauka</value></data>
+  <data name="Status.Consumed" xml:space="preserve"><value>Sunaudota</value></data>
+  <data name="Dashboard.GroupedOnHandValue" xml:space="preserve"><value>Grupuota pagal turimų atsargų vertę · % nuo bendros vertės</value></data>
+  <data name="Dashboard.LowStockAndReorder" xml:space="preserve"><value>Mažos atsargos ir pakartotinis užsakymas</value></data>
+  <data name="Dashboard.BelowReorderPointExplanation" xml:space="preserve"><value>Žemiau pakartotinio užsakymo ribos · laisvas kiekis = turimas kiekis atėmus griežtus blokavimus ir rezervacijas</value></data>
+  <data name="Dashboard.SupplierAndLead" xml:space="preserve"><value>Tiekėjas · pristatymo laikas</value></data>
+  <data name="Dashboard.DaysCount" xml:space="preserve"><value>{0} d.</value></data>
+  <data name="Dashboard.ItemAndLot" xml:space="preserve"><value>Prekė · partija</value></data>
+  <data name="Dashboard.IncomingAndExpected" xml:space="preserve"><value>Gaunamos ir laukiamos prekės</value></data>
+  <data name="Dashboard.OpenInboundShipments" xml:space="preserve"><value>Atviros gaunamos siuntos · artimiausios pirmiau</value></data>
+  <data name="Dashboard.LinesCount" xml:space="preserve"><value>{0} eil.</value></data>
+  <data name="Dashboard.AccountingSync" xml:space="preserve"><value>Apskaitos sinchronizavimas · MES ↔ Agnum</value></data>
+  <data name="Dashboard.RowsCount" xml:space="preserve"><value>{0} eil.</value></data>
+  <data name="Dashboard.RetriesCount" xml:space="preserve"><value>{0} pakartotiniai bandymai</value></data>
+  <data name="Dashboard.ProductsCount" xml:space="preserve"><value>{0} prekės</value></data>
+  <data name="Dashboard.ErrorsCount" xml:space="preserve"><value>{0} klaidos</value></data>
+  <data name="Dashboard.ReservationsAndPicking" xml:space="preserve"><value>Rezervacijos ir komplektavimas</value></data>
+  <data name="Dashboard.StuckInPicking" xml:space="preserve"><value>{0} komplektuojama &gt; 2 val.</value></data>
+  <data name="Dashboard.TransfersAndAdjustments" xml:space="preserve"><value>perkėlimai ir koregavimai</value></data>
+  <data name="AllocationDashboard.Title" xml:space="preserve"><value>Paskirstymo ir išleidimo skydelis</value></data>
+  <data name="AdminItemDetail.CreatePriceGroupHint" xml:space="preserve"><value>Norėdami nustatyti grupės kainas, sukurkite kainų grupę skiltyje Administravimas &gt; Kainų grupės.</value></data>
+  <data name="Dashboard.Overdue" xml:space="preserve"><value>Vėluoja</value></data>
+  <data name="Agnum.Balances.RemainingFromAgnumProduct" xml:space="preserve"><value>Liko {0} {1} iš Agnum prekės {2}</value></data>
+  <data name="Dashboard.Within30Days" xml:space="preserve"><value>≤ 30 d.</value></data>
+  <data name="Dashboard.ExpiryExpired" xml:space="preserve"><value>Pasibaigęs galiojimas</value></data>
+  <data name="Dashboard.ExpiryWithin7Days" xml:space="preserve"><value>≤ 7 dienos</value></data>
+  <data name="Dashboard.Expiry8To30Days" xml:space="preserve"><value>8–30 dienų</value></data>
+  <data name="Dashboard.Expiry31To90Days" xml:space="preserve"><value>31–90 dienų</value></data>
+  <data name="ReportsTraceability.ReportLotToOrder" xml:space="preserve"><value>Atsekamumo ataskaita (partija → užsakymas)</value></data>
 </root>

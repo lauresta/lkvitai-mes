@@ -6,9 +6,9 @@
 @inject ToastService ToastService
 @inject IJSRuntime JS
 
-<PageTitle>Labels</PageTitle>
+<PageTitle>@L["Labels.Labels"]</PageTitle>
 
-<h1>Labels Station</h1>
+<h1>@L["Labels.LabelsStation"]</h1>
 
 @if (_apiError is not null)
 {
@@ -19,11 +19,11 @@
     <div class="col-12 col-xl-5">
         <div class="card shadow-sm h-100">
             <div class="card-body">
-                <h5>Print / Preview</h5>
+                <h5>@L["Labels.PrintPreview"]</h5>
                 <div class="mb-2">
-                    <label class="form-label">Template</label>
+                    <label class="form-label">@L["Labels.Template"]</label>
                     <select class="form-select" @bind="_templateType">
-                        <option value="">Select template</option>
+                        <option value="">@L["Labels.SelectTemplate"]</option>
                         @foreach (var template in _templates)
                         {
                             <option value="@template.TemplateType">@template.TemplateType</option>
@@ -31,19 +31,19 @@
                     </select>
                 </div>
                 <div class="mb-2">
-                    <label class="form-label">Data (JSON object)</label>
+                    <label class="form-label">@L["Labels.DataJSONObject"]</label>
                     <textarea class="form-control" rows="8" @bind="_dataJson"></textarea>
                 </div>
                 <div class="d-flex gap-2">
-                    <button class="btn btn-primary" @onclick="PrintAsync" disabled="@_isSubmitting">Print</button>
-                    <button class="btn btn-outline-secondary" @onclick="PreviewAsync" disabled="@_isSubmitting">Preview PDF</button>
+                    <button class="btn btn-primary" @onclick="PrintAsync" disabled="@_isSubmitting">@L["Labels.Print"]</button>
+                    <button class="btn btn-outline-secondary" @onclick="PreviewAsync" disabled="@_isSubmitting">@L["Labels.PreviewPDF"]</button>
                 </div>
                 <div class="row g-2 mt-2">
                     <div class="col-9">
-                        <input class="form-control form-control-sm" @bind="_pdfFileName" placeholder="PDF file name from print result" />
+                        <input class="form-control form-control-sm" @bind="_pdfFileName" placeholder="@L["Labels.PDFFileNameFromPrintResult"]" />
                     </div>
                     <div class="col-3">
-                        <button class="btn btn-sm btn-outline-primary w-100" @onclick="DownloadPdfAsync" disabled="@_isSubmitting">Get PDF</button>
+                        <button class="btn btn-sm btn-outline-primary w-100" @onclick="DownloadPdfAsync" disabled="@_isSubmitting">@L["Labels.GetPDF"]</button>
                     </div>
                 </div>
                 @if (!string.IsNullOrWhiteSpace(_lastPrintStatus))
@@ -59,24 +59,24 @@
             <LoadingSpinner IsLoading="_isLoading" />
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h5 class="mb-0">Queue</h5>
-                    <button class="btn btn-sm btn-outline-secondary" @onclick="LoadAsync">Refresh</button>
+                    <h5 class="mb-0">@L["Labels.Queue"]</h5>
+                    <button class="btn btn-sm btn-outline-secondary" @onclick="LoadAsync">@L["Common.Refresh"]</button>
                 </div>
                 <div class="table-responsive">
                     <table class="table table-sm table-hover align-middle">
                         <thead>
                             <tr>
-                                <th>Id</th>
-                                <th>Template</th>
-                                <th>Status</th>
-                                <th>Retries</th>
-                                <th>Action</th>
+                                <th>@L["Labels.Id"]</th>
+                                <th>@L["Labels.Template"]</th>
+                                <th>@L["Common.Status"]</th>
+                                <th>@L["Labels.Retries"]</th>
+                                <th>@L["Common.Action"]</th>
                             </tr>
                         </thead>
                         <tbody>
                             @if (_queue.Count == 0)
                             {
-                                <tr><td colspan="5">Queue is empty.</td></tr>
+                                <tr><td colspan="5">@L["Labels.QueueIsEmpty"]</td></tr>
                             }
                             else
                             {
@@ -85,10 +85,10 @@
                                     <tr>
                                         <td class="small">@row.Id</td>
                                         <td>@row.TemplateType</td>
-                                        <td>@row.Status</td>
+                                        <td>@WarehouseStatusText.Get(L, row.Status)</td>
                                         <td>@row.RetryCount</td>
                                         <td>
-                                            <button class="btn btn-sm btn-outline-primary" @onclick="() => RetryAsync(row.Id)">Retry</button>
+                                            <button class="btn btn-sm btn-outline-primary" @onclick="() => RetryAsync(row.Id)">@L["Common.Retry"]</button>
                                         </td>
                                     </tr>
                                 }
@@ -162,8 +162,8 @@
         try
         {
             var response = await LabelsClient.PrintAsync(new LabelPrintRequestDto(_templateType, data));
-            _lastPrintStatus = $"Status: {response.Status}. {response.Message}";
-            ToastService.ShowSuccess("Print request submitted.");
+            _lastPrintStatus = L["Labels.PrintStatus", WarehouseStatusText.Get(L, response.Status), response.Message ?? string.Empty].Value;
+            ToastService.ShowSuccess(L["Labels.Toast.PrintRequestSubmitted"].Value);
             await LoadAsync();
         }
         catch (ApiException ex)
@@ -207,7 +207,7 @@
         try
         {
             await LabelsClient.RetryAsync(id);
-            ToastService.ShowSuccess("Queue retry submitted.");
+            ToastService.ShowSuccess(L["Labels.Toast.QueueRetrySubmitted"].Value);
             await LoadAsync();
         }
         catch (ApiException ex)
@@ -221,7 +221,7 @@
     {
         if (string.IsNullOrWhiteSpace(_pdfFileName))
         {
-            ToastService.ShowError("PDF file name is required.");
+            ToastService.ShowError(L["Labels.Toast.PDFFileNameIsRequired"].Value);
             return;
         }
 
@@ -246,7 +246,7 @@
     {
         if (string.IsNullOrWhiteSpace(_templateType))
         {
-            ToastService.ShowError("Template is required.");
+            ToastService.ShowError(L["Labels.Toast.TemplateIsRequired"].Value);
             return null;
         }
 
@@ -255,7 +255,7 @@
             var json = JsonDocument.Parse(_dataJson);
             if (json.RootElement.ValueKind != JsonValueKind.Object)
             {
-                ToastService.ShowError("Data JSON must be an object.");
+                ToastService.ShowError(L["Labels.Toast.DataJSONMustBeAnObject"].Value);
                 return null;
             }
 
@@ -271,16 +271,16 @@
         }
         catch
         {
-            ToastService.ShowError("Invalid data JSON.");
+            ToastService.ShowError(L["Labels.Toast.InvalidDataJSON"].Value);
             return null;
         }
     }
 
     private void DismissError() => _apiError = null;
 
-    private static string BuildErrorMessage(ApiException ex)
-        => ex.UserMessage
+    private string BuildErrorMessage(ApiException ex)
+        => WarehouseErrorText.Get(L, ex)
            ?? ex.ProblemDetails?.Detail
            ?? ex.ProblemDetails?.Title
-           ?? "Labels request failed.";
+           ?? L["Labels.RequestFailed"].Value;
 }

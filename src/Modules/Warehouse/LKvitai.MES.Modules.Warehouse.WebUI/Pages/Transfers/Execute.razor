@@ -7,9 +7,9 @@
 @inject NavigationManager NavigationManager
 @inject ToastService ToastService
 
-<PageTitle>Execute Transfer - Cikada.MES</PageTitle>
+<PageTitle>@L["Transfers.Execute.ExecuteTransferCikadaMES"]</PageTitle>
 
-<h1>Execute Transfer</h1>
+<h1>@L["Transfers.Execute.ExecuteTransfer"]</h1>
 
 @if (_apiError is not null)
 {
@@ -26,8 +26,8 @@
     <div class="card-body">
         @if (_transfer is null)
         {
-            <EmptyState Title="Transfer not found"
-                        Message="Transfer does not exist or is unavailable."
+            <EmptyState Title="@L["Transfers.Execute.TransferNotFound"]"
+                        Message="@L["Transfers.Execute.TransferDoesNotExistOrIsUnavailable"]"
                         IconCss="bi bi-arrow-left-right"
                         OnAction="BackToListAsync" />
         }
@@ -37,12 +37,12 @@
                 <div>
                     <h4 class="mb-1">@_transfer.TransferNumber</h4>
                     <div class="text-muted">@_transfer.FromWarehouse -> @_transfer.ToWarehouse</div>
-                    <div class="small text-muted">Status: @_transfer.Status</div>
+                    <div class="small text-muted">@L["Transfers.Execute.Status", _transfer.Status]</div>
                 </div>
                 <div class="d-flex align-items-center gap-2">
-                    <button class="btn btn-outline-secondary btn-sm" @onclick="BackToList">Back</button>
-                    <button class="btn btn-outline-secondary btn-sm" @onclick="LoadAsync">Refresh</button>
-                    <button class="btn btn-primary btn-sm" @onclick="OpenConfirm" disabled="@(!CanExecute || _isSubmitting)">Execute</button>
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="BackToList">@L["Common.Back"]</button>
+                    <button class="btn btn-outline-secondary btn-sm" @onclick="LoadAsync">@L["Common.Refresh"]</button>
+                    <button class="btn btn-primary btn-sm" @onclick="OpenConfirm" disabled="@(!CanExecute || _isSubmitting)">@L["Common.Execute"]</button>
                 </div>
             </div>
 
@@ -50,13 +50,13 @@
                 <table class="table table-sm table-hover align-middle">
                     <thead>
                         <tr>
-                            <th>Item</th>
-                            <th>Qty</th>
+                            <th>@L["Common.Item"]</th>
+                            <th>@L["Common.Qty"]</th>
                             <th>@L["Pricing.Cost"]</th>
                             <th>@L["Pricing.Sale"]</th>
-                            <th>Value (current cost)</th>
-                            <th>From Location</th>
-                            <th>To Location</th>
+                            <th>@L["Common.ValueCurrentCost"]</th>
+                            <th>@L["Transfers.Execute.FromLocation"]</th>
+                            <th>@L["Common.ToLocation"]</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -85,15 +85,15 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Confirm Execution</h5>
+                    <h5 class="modal-title">@L["Transfers.Execute.ConfirmExecution"]</h5>
                     <button type="button" class="btn-close" @onclick="CloseConfirm"></button>
                 </div>
                 <div class="modal-body">
-                    Execute transfer? Stock will be moved.
+                    @L["Transfers.Execute.ExecuteTransferStockWillBeMoved"]
                 </div>
                 <div class="modal-footer">
-                    <button class="btn btn-outline-secondary" @onclick="CloseConfirm">Cancel</button>
-                    <button class="btn btn-primary" @onclick="ConfirmExecuteAsync" disabled="@_isSubmitting">Confirm</button>
+                    <button class="btn btn-outline-secondary" @onclick="CloseConfirm">@L["Common.Cancel"]</button>
+                    <button class="btn btn-primary" @onclick="ConfirmExecuteAsync" disabled="@_isSubmitting">@L["Transfers.Execute.Confirm"]</button>
                 </div>
             </div>
         </div>
@@ -175,7 +175,7 @@
                 });
 
             _confirmExecute = false;
-            ToastService.ShowSuccess("Transfer executed successfully.");
+            ToastService.ShowSuccess(L["Transfers.Execute.Toast.TransferExecutedSuccessfully"].Value);
             await LoadAsync();
         }
         catch (ApiException ex)
@@ -215,21 +215,21 @@
         => _locations.FirstOrDefault(l => l.Id == locationId)?.Code
             ?? $"#{locationId}";
 
-    private static string BuildErrorMessage(ApiException ex)
+    private string BuildErrorMessage(ApiException ex)
     {
         if (ex.IsBusinessError && !string.IsNullOrWhiteSpace(ex.ProblemDetails?.Detail))
         {
             return ex.ProblemDetails.Detail;
         }
 
-        if (!string.IsNullOrWhiteSpace(ex.UserMessage))
+        if (!string.IsNullOrWhiteSpace(WarehouseErrorText.Get(L, ex)))
         {
-            return ex.UserMessage;
+            return WarehouseErrorText.Get(L, ex);
         }
 
         return ex.ProblemDetails?.Detail
                ?? ex.ProblemDetails?.Title
-               ?? "Transfer request failed.";
+               ?? L["Execute.RequestFailed"].Value;
     }
 }
 

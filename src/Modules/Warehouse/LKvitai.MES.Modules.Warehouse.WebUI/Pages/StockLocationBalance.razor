@@ -3,9 +3,9 @@
 @inject StockClient StockClient
 @inject ToastService ToastService
 
-<PageTitle>Location Balance - Cikada.MES</PageTitle>
+<PageTitle>@L["StockLocationBalance.LocationBalanceCikadaMES"]</PageTitle>
 
-<h1>Location Balance</h1>
+<h1>@L["StockLocationBalance.LocationBalance"]</h1>
 
 @if (_apiError is not null)
 {
@@ -19,18 +19,18 @@
     <div class="card-body">
         <div class="row g-2 align-items-end">
             <div class="col-md-3">
-                <label class="form-label">Location Id</label>
+                <label class="form-label">@L["Common.LocationId"]</label>
                 <InputNumber class="form-control" @bind-Value="_locationId" />
             </div>
             <div class="col-md-3">
-                <label class="form-label">Status</label>
+                <label class="form-label">@L["Common.Status"]</label>
                 <InputText class="form-control" @bind-Value="_status" />
             </div>
             <div class="col-md-3 d-grid">
-                <button class="btn btn-primary" @onclick="ApplyFiltersAsync" disabled="@_isLoading">Apply</button>
+                <button class="btn btn-primary" @onclick="ApplyFiltersAsync" disabled="@_isLoading">@L["Common.Apply"]</button>
             </div>
             <div class="col-md-3 d-grid">
-                <button class="btn btn-outline-secondary" @onclick="ResetFiltersAsync" disabled="@_isLoading">Reset</button>
+                <button class="btn btn-outline-secondary" @onclick="ResetFiltersAsync" disabled="@_isLoading">@L["Common.Reset"]</button>
             </div>
         </div>
     </div>
@@ -43,15 +43,15 @@
             <table class="table table-sm table-hover align-middle">
                 <thead>
                     <tr>
-                        <th>Location</th>
-                        <th>Item Count</th>
-                        <th>Total Weight</th>
-                        <th>Total Volume</th>
-                        <th>Max Weight</th>
-                        <th>Max Volume</th>
-                        <th>Utilization Weight</th>
-                        <th>Utilization Volume</th>
-                        <th>Status</th>
+                        <th>@L["Common.Location"]</th>
+                        <th>@L["StockLocationBalance.ItemCount"]</th>
+                        <th>@L["StockLocationBalance.TotalWeight"]</th>
+                        <th>@L["StockLocationBalance.TotalVolume"]</th>
+                        <th>@L["Common.MaxWeight"]</th>
+                        <th>@L["Common.MaxVolume"]</th>
+                        <th>@L["StockLocationBalance.UtilizationWeight"]</th>
+                        <th>@L["StockLocationBalance.UtilizationVolume"]</th>
+                        <th>@L["Common.Status"]</th>
                         <th class="text-end">@L["Pricing.CostTotal"]</th>
                         <th class="text-end">@L["Pricing.SaleTotal"]</th>
                     </tr>
@@ -60,7 +60,7 @@
                     @if (_rows.Count == 0)
                     {
                         <tr>
-                            <td colspan="11" class="text-muted">No rows found.</td>
+                            <td colspan="11" class="text-muted">@L["Common.NoRowsFound"]</td>
                         </tr>
                     }
                     else
@@ -76,7 +76,7 @@
                                 <td>@(row.MaxVolume?.ToString("0.###") ?? "-")</td>
                                 <td>@FormatPercent(row.UtilizationWeight)</td>
                                 <td>@FormatPercent(row.UtilizationVolume)</td>
-                                <td>@row.Status</td>
+                                <td>@WarehouseStatusText.Get(L, row.Status)</td>
                                 <td class="text-end is-money is-num">@Money.Format(row.TotalCostValue)</td>
                                 <td class="text-end is-money is-num">@Money.Format(row.TotalSaleValue)</td>
                             </tr>
@@ -174,13 +174,13 @@
         return $"{(value.Value * 100m):0.##}%";
     }
 
-    private static string BuildErrorMessage(ApiException error)
+    private string BuildErrorMessage(ApiException error)
     {
         if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
         {
-            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+            return $"{WarehouseErrorText.Get(L, error)} {error.ProblemDetails.Detail}";
         }
 
-        return error.UserMessage;
+        return WarehouseErrorText.Get(L, error);
     }
 }

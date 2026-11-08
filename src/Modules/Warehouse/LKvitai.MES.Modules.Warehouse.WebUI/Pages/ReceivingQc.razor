@@ -5,9 +5,9 @@
 @inject ReceivingClient ReceivingClient
 @inject ToastService ToastService
 
-<PageTitle>Receiving QC - Cikada.MES</PageTitle>
+<PageTitle>@L["ReceivingQc.ReceivingQCCikadaMES"]</PageTitle>
 
-<h1>Receiving QC Queue</h1>
+<h1>@L["ReceivingQc.ReceivingQCQueue"]</h1>
 
 @if (_apiError is not null)
 {
@@ -21,15 +21,15 @@
     <div class="card-body">
         <div class="row g-2 align-items-end">
             <div class="col-md-4">
-                <label class="form-label">Scan SKU / Lot</label>
-                <input class="form-control" @bind="_search" placeholder="FG-0001 or LOT-2026-01" />
+                <label class="form-label">@L["ReceivingQc.ScanSKULot"]</label>
+                <input class="form-control" @bind="_search" placeholder="@L["ReceivingQc.FG0001OrLOT202601"]" />
             </div>
             <div class="col-md-4">
-                <label class="form-label">Reason Code (for Fail)</label>
+                <label class="form-label">@L["ReceivingQc.ReasonCodeForFail"]</label>
                 <input class="form-control" @bind="_reasonCode" placeholder="DAMAGED" />
             </div>
             <div class="col-md-2 d-grid">
-                <button class="btn btn-outline-secondary" @onclick="LoadAsync" disabled="@(_isLoading || _isSubmitting)">Refresh</button>
+                <button class="btn btn-outline-secondary" @onclick="LoadAsync" disabled="@(_isLoading || _isSubmitting)">@L["Common.Refresh"]</button>
             </div>
         </div>
     </div>
@@ -44,14 +44,14 @@
                 <thead>
                     <tr>
                         <th>SKU</th>
-                        <th>Item</th>
-                        <th>Lot</th>
-                        <th>Qty</th>
+                        <th>@L["Common.Item"]</th>
+                        <th>@L["Common.Lot"]</th>
+                        <th>@L["Common.Qty"]</th>
                         <th class="text-end">@L["Pricing.Cost"]</th>
                         <th class="text-end">@L["Pricing.Sale"]</th>
                         <th>UoM</th>
-                        <th>Inspector Notes</th>
-                        <th>Actions</th>
+                        <th>@L["ReceivingQc.InspectorNotes"]</th>
+                        <th>@L["Common.Actions"]</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -59,8 +59,8 @@
                     {
                         <tr>
                             <td colspan="9">
-                                <EmptyState Title="No QC pending rows"
-                                            Message="Receiving QC queue is empty for current filters."
+                                <EmptyState Title="@L["ReceivingQc.NoQCPendingRows"]"
+                                            Message="@L["ReceivingQc.ReceivingQCQueueIsEmptyForCurrentFilters"]"
                                             IconCss="bi bi-shield-check"
                                             ActionLabel="Refresh"
                                             OnAction="LoadAsync" />
@@ -88,12 +88,12 @@
                                     <button class="btn btn-sm btn-success"
                                             @onclick="() => PassAsync(row)"
                                             disabled="@_isSubmitting">
-                                        Pass
+                                        @L["ReceivingQc.Pass"]
                                     </button>
                                     <button class="btn btn-sm btn-danger"
                                             @onclick="() => FailAsync(row)"
                                             disabled="@_isSubmitting">
-                                        Fail
+                                        @L["ReceivingQc.Fail"]
                                     </button>
                                 </td>
                             </tr>
@@ -156,7 +156,7 @@
     {
         if (string.IsNullOrWhiteSpace(_reasonCode))
         {
-            ToastService.ShowError("Reason code is required for QC fail.");
+            ToastService.ShowError(L["ReceivingQc.Toast.ReasonCodeIsRequiredForQCFail"].Value);
             return;
         }
 
@@ -183,7 +183,7 @@
                 ? await ReceivingClient.PassQcAsync(request)
                 : await ReceivingClient.FailQcAsync(request);
 
-            ToastService.ShowSuccess($"QC {(isPass ? "pass" : "fail")} completed. Moved to {result.DestinationLocationCode}.");
+            ToastService.ShowSuccess(L["ReceivingQc.Toast.QCCompletedMovedTo", (isPass ? L["Status.Pass"].Value : L["Status.Fail"].Value), result.DestinationLocationCode].Value);
             await LoadAsync();
         }
         catch (ApiException ex)
@@ -238,15 +238,15 @@
         _apiError = null;
     }
 
-    private static string BuildErrorMessage(ApiException ex)
+    private string BuildErrorMessage(ApiException ex)
     {
-        if (!string.IsNullOrWhiteSpace(ex.UserMessage))
+        if (!string.IsNullOrWhiteSpace(WarehouseErrorText.Get(L, ex)))
         {
-            return ex.UserMessage;
+            return WarehouseErrorText.Get(L, ex);
         }
 
         return ex.ProblemDetails?.Detail
                ?? ex.ProblemDetails?.Title
-               ?? "QC request failed.";
+               ?? L["ReceivingQc.RequestFailed"].Value;
     }
 }

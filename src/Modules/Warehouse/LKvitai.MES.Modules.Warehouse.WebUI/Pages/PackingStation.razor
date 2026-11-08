@@ -6,9 +6,9 @@
 @using LKvitai.MES.Modules.Warehouse.WebUI.Services
 @inject ItemPricesClient ItemPricesClient
 
-<PageTitle>Packing Station - Cikada.MES</PageTitle>
+<PageTitle>@L["PackingStation.PackingStationCikadaMES"]</PageTitle>
 
-<h1>Packing Station</h1>
+<h1>@L["PackingStation.PackingStation"]</h1>
 
 @if (_apiError is not null)
 {
@@ -24,35 +24,35 @@
     <div class="card-body">
         @if (_order is null && !_isLoading)
         {
-            <p class="text-muted mb-0">Order not found.</p>
+            <p class="text-muted mb-0">@L["PackingStation.OrderNotFound"]</p>
         }
         else if (_order is not null)
         {
             <div class="d-flex justify-content-between flex-wrap gap-2 mb-3">
                 <div>
                     <h4 class="mb-1">@_order.OrderNumber</h4>
-                    <div class="text-muted">Customer: @(_order.CustomerName ?? "-")</div>
+                    <div class="text-muted">@L["PackingStation.Customer", _order.CustomerName ?? "-"]</div>
                 </div>
                 <div>
-                    <span class="badge @GetStatusBadgeClass(_order.Status)">@_order.Status</span>
+                    <span class="badge @GetStatusBadgeClass(_order.Status)">@WarehouseStatusText.Get(L, _order.Status)</span>
                 </div>
             </div>
 
             <div class="row g-3">
                 <div class="col-lg-7">
-                    <h5>Order Items</h5>
+                    <h5>@L["PackingStation.OrderItems"]</h5>
                     <div class="table-responsive">
                         <table class="table table-sm align-middle">
                             <thead>
                                 <tr>
-                                    <th>Item</th>
-                                    <th>Barcode</th>
-                                    <th>Required</th>
+                                    <th>@L["Common.Item"]</th>
+                                    <th>@L["Common.Barcode"]</th>
+                                    <th>@L["PackingStation.Required"]</th>
                                     <th class="text-end">@L["Pricing.Cost"]</th>
                                     <th class="text-end">@L["Pricing.Sale"]</th>
-                                    <th class="text-end">Value</th>
-                                    <th>Scanned</th>
-                                    <th>Status</th>
+                                    <th class="text-end">@L["Common.Value"]</th>
+                                    <th>@L["PackingStation.Scanned"]</th>
+                                    <th>@L["Common.Status"]</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -70,11 +70,11 @@
                                         <td>
                                             @if (scannedQty >= line.Qty)
                                             {
-                                                <span class="badge bg-success">Ready</span>
+                                                <span class="badge bg-success">@L["PackingStation.Ready"]</span>
                                             }
                                             else
                                             {
-                                                <span class="badge bg-secondary">Pending</span>
+                                                <span class="badge bg-secondary">@L["PackingStation.Pending"]</span>
                                             }
                                         </td>
                                     </tr>
@@ -85,20 +85,20 @@
                 </div>
 
                 <div class="col-lg-5">
-                    <h5>Packing Progress</h5>
+                    <h5>@L["PackingStation.PackingProgress"]</h5>
                     <div class="mb-3">
-                        <label class="form-label" for="barcode-input">Scan barcode</label>
+                        <label class="form-label" for="barcode-input">@L["PackingStation.ScanBarcode"]</label>
                         <input id="barcode-input"
                                class="form-control"
                                type="text"
                                @bind="_barcodeInput"
                                @onkeydown="HandleBarcodeKeyDown"
                                autofocus />
-                        <div class="form-text">Press Enter after each scan.</div>
+                        <div class="form-text">@L["PackingStation.PressEnterAfterEachScan"]</div>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label" for="packaging-type">Packaging type</label>
+                        <label class="form-label" for="packaging-type">@L["PackingStation.PackagingType"]</label>
                         <select id="packaging-type" class="form-select" @bind="_packagingType">
                             <option value="BOX">BOX</option>
                             <option value="PALLET">PALLET</option>
@@ -114,10 +114,10 @@
                         <button class="btn btn-primary"
                                 @onclick="PackAsync"
                                 disabled="@(!CanPack || _isSubmitting)">
-                            Pack
+                            @L["PackingStation.Pack"]
                         </button>
-                        <button class="btn btn-outline-secondary" @onclick="ClearScans" disabled="@_isSubmitting">Clear Scans</button>
-                        <button class="btn btn-outline-secondary" @onclick="BackToOrder" disabled="@_isSubmitting">Back</button>
+                        <button class="btn btn-outline-secondary" @onclick="ClearScans" disabled="@_isSubmitting">@L["PackingStation.ClearScans"]</button>
+                        <button class="btn btn-outline-secondary" @onclick="BackToOrder" disabled="@_isSubmitting">@L["Common.Back"]</button>
                     </div>
                 </div>
             </div>
@@ -204,7 +204,7 @@
 
         if (matchingLine is null)
         {
-            _scanError = $"Barcode {barcode} not found in order.";
+            _scanError = L["PackingStation.BarcodeNotFound", barcode].Value;
             return;
         }
 
@@ -242,7 +242,7 @@
                 ScannedItems = scannedItems
             });
 
-            ToastService.ShowSuccess("Order packed successfully.");
+            ToastService.ShowSuccess(L["PackingStation.Toast.OrderPackedSuccessfully"].Value);
             NavigationManager.NavigateTo("/warehouse/outbound/dispatch");
         }
         catch (ApiException ex)
@@ -287,9 +287,9 @@
             ? line.PrimaryBarcode.Trim()
             : fallback.Trim();
 
-    private static string BuildErrorMessage(ApiException ex)
-        => !string.IsNullOrWhiteSpace(ex.UserMessage)
-            ? ex.UserMessage
+    private string BuildErrorMessage(ApiException ex)
+        => !string.IsNullOrWhiteSpace(WarehouseErrorText.Get(L, ex))
+            ? WarehouseErrorText.Get(L, ex)
             : "Packing request failed.";
 
     private static string GetStatusBadgeClass(string status)

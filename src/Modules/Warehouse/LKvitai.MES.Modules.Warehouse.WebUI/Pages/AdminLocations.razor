@@ -5,9 +5,9 @@
 @inject ToastService ToastService
 @inject NavigationManager NavigationManager
 
-<PageTitle>Admin Locations - Cikada.MES</PageTitle>
+<PageTitle>@L["AdminLocations.AdminLocationsCikadaMES"]</PageTitle>
 
-<h3>Locations Management</h3>
+<h3>@L["AdminLocations.LocationsManagement"]</h3>
 
 @if (_apiError is not null)
 {
@@ -21,26 +21,26 @@
     <div class="card-body">
         <div class="row g-2 align-items-end">
             <div class="col-md-4">
-                <label class="form-label">Search</label>
-                <input class="form-control" @bind="_search" placeholder="Code or barcode" />
+                <label class="form-label">@L["Common.Search"]</label>
+                <input class="form-control" @bind="_search" placeholder="@L["AdminLocations.CodeOrBarcode"]" />
             </div>
             <div class="col-md-3">
-                <label class="form-label">Status</label>
+                <label class="form-label">@L["Common.Status"]</label>
                 <select class="form-select" @bind="_status">
-                    <option value="">All</option>
-                    <option value="Active">Active</option>
-                    <option value="Blocked">Blocked</option>
-                    <option value="Maintenance">Maintenance</option>
+                    <option value="">@L["Common.All"]</option>
+                    <option value="Active">@L["Common.Active"]</option>
+                    <option value="Blocked">@L["Common.Blocked"]</option>
+                    <option value="Maintenance">@L["Common.Maintenance"]</option>
                 </select>
             </div>
             <div class="col-md-3 d-flex align-items-center">
                 <div class="form-check mt-4">
                     <input class="form-check-input" type="checkbox" @bind="_includeVirtual" />
-                    <label class="form-check-label">Include virtual locations</label>
+                    <label class="form-check-label">@L["AdminLocations.IncludeVirtualLocations"]</label>
                 </div>
             </div>
             <div class="col-md-2">
-                <label class="form-label">Placement Warehouse</label>
+                <label class="form-label">@L["AdminLocations.PlacementWarehouse"]</label>
                 <select class="form-select" @bind="_placementWarehouseCode">
                     @foreach (var warehouse in _warehouses)
                     {
@@ -49,7 +49,7 @@
                 </select>
             </div>
             <div class="col-md-2 d-grid">
-                <button class="btn btn-primary" @onclick="ApplyFiltersAsync">Filter</button>
+                <button class="btn btn-primary" @onclick="ApplyFiltersAsync">@L["Common.Filter"]</button>
             </div>
         </div>
     </div>
@@ -59,9 +59,9 @@
     <LoadingSpinner IsLoading="@_isLoading" />
     <div class="card-body">
         <div class="d-flex justify-content-between align-items-center mb-2">
-            <strong>Total: @_totalCount</strong>
+            <strong>@L["AdminLocations.Total", _totalCount]</strong>
             <button class="btn btn-sm btn-outline-primary" @onclick="@(() => _showCreate = !_showCreate)">
-                @(_showCreate ? "Hide Create Form" : "Create Location")
+                @(_showCreate ? L["Common.HideCreateForm"] : L["AdminLocations.CreateLocation"])
             </button>
         </div>
 
@@ -69,18 +69,18 @@
             <table class="table table-sm table-hover align-middle">
                 <thead>
                 <tr>
-                    <th>Code</th>
-                    <th>Barcode</th>
-                    <th>Type</th>
-                    <th>Parent</th>
-                    <th>Status</th>
-                    <th>Coordinates</th>
-                    <th>Dimensions (m)</th>
-                    <th>Address</th>
-                    <th>Placement</th>
-                    <th>Role</th>
-                    <th>Capacity</th>
-                    <th>Virtual</th>
+                    <th>@L["Common.Code"]</th>
+                    <th>@L["Common.Barcode"]</th>
+                    <th>@L["Common.Type"]</th>
+                    <th>@L["Common.Parent"]</th>
+                    <th>@L["Common.Status"]</th>
+                    <th>@L["Common.Coordinates"]</th>
+                    <th>@L["AdminLocations.DimensionsM"]</th>
+                    <th>@L["Common.Address"]</th>
+                    <th>@L["AdminLocations.Placement"]</th>
+                    <th>@L["Common.Role"]</th>
+                    <th>@L["AdminLocations.Capacity"]</th>
+                    <th>@L["Common.Virtual"]</th>
                     <th></th>
                 </tr>
                 </thead>
@@ -88,7 +88,7 @@
                 @if (_locations.Count == 0)
                 {
                     <tr>
-                        <td colspan="13" class="text-muted">No locations found.</td>
+                        <td colspan="13" class="text-muted">@L["AdminLocations.NoLocationsFound"]</td>
                     </tr>
                 }
                 else
@@ -100,17 +100,17 @@
                             <td>@row.Barcode</td>
                             <td>@row.Type</td>
                             <td>@ResolveParentCode(row.ParentLocationId)</td>
-                            <td>@row.Status</td>
+                            <td>@WarehouseStatusText.Get(L, row.Status)</td>
                             <td>@FormatCoordinates(row)</td>
                             <td>@FormatDimensions(row)</td>
                             <td>@FormatAddress(row)</td>
                             <td>@FormatPlacement(row)</td>
                             <td>@(row.LocationRole ?? "-")</td>
                             <td>@FormatCapacity(row)</td>
-                            <td>@(row.IsVirtual ? "Yes" : "No")</td>
+                            <td>@(row.IsVirtual ? L["Common.Yes"] : L["Common.No"])</td>
                             <td class="text-end">
-                                <a class="btn btn-sm btn-outline-info me-1" href="@($"/warehouse/locations/{row.Id}")">View Details</a>
-                                <button class="btn btn-sm btn-outline-secondary" @onclick="@(() => BeginEdit(row))">Edit</button>
+                                <a class="btn btn-sm btn-outline-info me-1" href="@($"/warehouse/locations/{row.Id}")">@L["AdminLocations.ViewDetails"]</a>
+                                <button class="btn btn-sm btn-outline-secondary" @onclick="@(() => BeginEdit(row))">@L["Common.Edit"]</button>
                             </td>
                         </tr>
                     }
@@ -133,107 +133,107 @@
 @if (_showCreate)
 {
     <div class="card shadow-sm mb-3">
-        <div class="card-header">Create Location</div>
+        <div class="card-header">@L["AdminLocations.CreateLocation"]</div>
         <div class="card-body">
             <div class="row g-2">
                 <div class="col-md-3">
-                    <label class="form-label">Code</label>
+                    <label class="form-label">@L["Common.Code"]</label>
                     <input class="form-control" @bind="_create.Code" />
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Barcode</label>
+                    <label class="form-label">@L["Common.Barcode"]</label>
                     <input class="form-control" @bind="_create.Barcode" />
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Type</label>
+                    <label class="form-label">@L["Common.Type"]</label>
                     <input class="form-control" @bind="_create.Type" />
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Parent Id</label>
+                    <label class="form-label">@L["Common.ParentId"]</label>
                     <input class="form-control" type="number" @bind="_create.ParentLocationId" />
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Status</label>
+                    <label class="form-label">@L["Common.Status"]</label>
                     <select class="form-select" @bind="_create.Status">
-                        <option value="Active">Active</option>
-                        <option value="Blocked">Blocked</option>
-                        <option value="Maintenance">Maintenance</option>
+                        <option value="Active">@L["Common.Active"]</option>
+                        <option value="Blocked">@L["Common.Blocked"]</option>
+                        <option value="Maintenance">@L["Common.Maintenance"]</option>
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Max Weight</label>
+                    <label class="form-label">@L["Common.MaxWeight"]</label>
                     <input class="form-control" type="number" step="0.001" @bind="_create.MaxWeight" />
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Max Volume</label>
+                    <label class="form-label">@L["Common.MaxVolume"]</label>
                     <input class="form-control" type="number" step="0.001" @bind="_create.MaxVolume" />
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Zone Type</label>
+                    <label class="form-label">@L["AdminLocations.ZoneType"]</label>
                     <select class="form-select" @bind="_create.ZoneType">
                         <option value="">-</option>
-                        <option value="General">General</option>
-                        <option value="Refrigerated">Refrigerated</option>
-                        <option value="Hazmat">Hazmat</option>
-                        <option value="Quarantine">Quarantine</option>
+                        <option value="General">@L["AdminLocations.General"]</option>
+                        <option value="Refrigerated">@L["AdminLocations.Refrigerated"]</option>
+                        <option value="Hazmat">@L["AdminLocations.Hazmat"]</option>
+                        <option value="Quarantine">@L["AdminLocations.Quarantine"]</option>
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Coordinate X</label>
+                    <label class="form-label">@L["AdminLocations.CoordinateX"]</label>
                     <input class="form-control" type="number" step="0.01" @bind="_create.CoordinateX" />
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Coordinate Y</label>
+                    <label class="form-label">@L["AdminLocations.CoordinateY"]</label>
                     <input class="form-control" type="number" step="0.01" @bind="_create.CoordinateY" />
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Coordinate Z</label>
+                    <label class="form-label">@L["AdminLocations.CoordinateZ"]</label>
                     <input class="form-control" type="number" step="0.01" @bind="_create.CoordinateZ" />
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Width (m)</label>
+                    <label class="form-label">@L["AdminLocations.WidthM"]</label>
                     <input class="form-control" type="number" step="0.001" @bind="_create.WidthMeters" />
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Length (m)</label>
+                    <label class="form-label">@L["AdminLocations.LengthM"]</label>
                     <input class="form-control" type="number" step="0.001" @bind="_create.LengthMeters" />
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Height (m)</label>
+                    <label class="form-label">@L["AdminLocations.HeightM"]</label>
                     <input class="form-control" type="number" step="0.001" @bind="_create.HeightMeters" />
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Aisle</label>
+                    <label class="form-label">@L["AdminLocations.Aisle"]</label>
                     <input class="form-control" @bind="_create.Aisle" />
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Rack</label>
+                    <label class="form-label">@L["Common.Rack"]</label>
                     <input class="form-control" @bind="_create.Rack" />
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Level</label>
+                    <label class="form-label">@L["Common.Level"]</label>
                     <input class="form-control" @bind="_create.Level" />
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Bin</label>
+                    <label class="form-label">@L["Common.Bin"]</label>
                     <input class="form-control" @bind="_create.Bin" />
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Capacity Weight</label>
+                    <label class="form-label">@L["AdminLocations.CapacityWeight"]</label>
                     <input class="form-control" type="number" step="0.001" @bind="_create.CapacityWeight" />
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Capacity Volume</label>
+                    <label class="form-label">@L["AdminLocations.CapacityVolume"]</label>
                     <input class="form-control" type="number" step="0.001" @bind="_create.CapacityVolume" />
                 </div>
                 <div class="col-md-2 d-flex align-items-end">
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" @bind="_create.IsVirtual" />
-                        <label class="form-check-label">Virtual</label>
+                        <label class="form-check-label">@L["Common.Virtual"]</label>
                     </div>
                 </div>
                 <div class="col-md-2 d-flex align-items-end">
-                    <button class="btn btn-primary px-4" @onclick="CreateAsync">Save</button>
+                    <button class="btn btn-primary px-4" @onclick="CreateAsync">@L["Common.Save"]</button>
                 </div>
             </div>
         </div>
@@ -244,135 +244,135 @@
 {
     <div class="card shadow-sm">
         <div class="card-header d-flex justify-content-between align-items-center">
-            <span>Edit Location: @_editing.Code</span>
-            <button class="btn btn-sm btn-outline-secondary" @onclick="@(() => _editing = null)">Close</button>
+            <span>@L["AdminLocations.EditLocation", _editing.Code]</span>
+            <button class="btn btn-sm btn-outline-secondary" @onclick="@(() => _editing = null)">@L["Common.Close"]</button>
         </div>
         <div class="card-body">
             <div class="row g-2">
                 <div class="col-md-3">
-                    <label class="form-label">Code</label>
+                    <label class="form-label">@L["Common.Code"]</label>
                     <input class="form-control" @bind="_editing.Code" disabled="@_editing.IsVirtual" />
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Barcode</label>
+                    <label class="form-label">@L["Common.Barcode"]</label>
                     <input class="form-control" @bind="_editing.Barcode" disabled="@_editing.IsVirtual" />
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Type</label>
+                    <label class="form-label">@L["Common.Type"]</label>
                     <input class="form-control" @bind="_editing.Type" />
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Parent Id</label>
+                    <label class="form-label">@L["Common.ParentId"]</label>
                     <input class="form-control" type="number" @bind="_editing.ParentLocationId" />
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Status</label>
+                    <label class="form-label">@L["Common.Status"]</label>
                     <select class="form-select" @bind="_editing.Status">
-                        <option value="Active">Active</option>
-                        <option value="Blocked">Blocked</option>
-                        <option value="Maintenance">Maintenance</option>
+                        <option value="Active">@L["Common.Active"]</option>
+                        <option value="Blocked">@L["Common.Blocked"]</option>
+                        <option value="Maintenance">@L["Common.Maintenance"]</option>
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Max Weight</label>
+                    <label class="form-label">@L["Common.MaxWeight"]</label>
                     <input class="form-control" type="number" step="0.001" @bind="_editing.MaxWeight" />
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Max Volume</label>
+                    <label class="form-label">@L["Common.MaxVolume"]</label>
                     <input class="form-control" type="number" step="0.001" @bind="_editing.MaxVolume" />
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Zone Type</label>
+                    <label class="form-label">@L["AdminLocations.ZoneType"]</label>
                     <select class="form-select" @bind="_editing.ZoneType">
                         <option value="">-</option>
-                        <option value="General">General</option>
-                        <option value="Refrigerated">Refrigerated</option>
-                        <option value="Hazmat">Hazmat</option>
-                        <option value="Quarantine">Quarantine</option>
+                        <option value="General">@L["AdminLocations.General"]</option>
+                        <option value="Refrigerated">@L["AdminLocations.Refrigerated"]</option>
+                        <option value="Hazmat">@L["AdminLocations.Hazmat"]</option>
+                        <option value="Quarantine">@L["AdminLocations.Quarantine"]</option>
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Coordinate X</label>
+                    <label class="form-label">@L["AdminLocations.CoordinateX"]</label>
                     <input class="form-control" type="number" step="0.01" @bind="_editing.CoordinateX" />
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Coordinate Y</label>
+                    <label class="form-label">@L["AdminLocations.CoordinateY"]</label>
                     <input class="form-control" type="number" step="0.01" @bind="_editing.CoordinateY" />
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Coordinate Z</label>
+                    <label class="form-label">@L["AdminLocations.CoordinateZ"]</label>
                     <input class="form-control" type="number" step="0.01" @bind="_editing.CoordinateZ" />
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Width (m)</label>
+                    <label class="form-label">@L["AdminLocations.WidthM"]</label>
                     <input class="form-control" type="number" step="0.001" @bind="_editing.WidthMeters" />
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Length (m)</label>
+                    <label class="form-label">@L["AdminLocations.LengthM"]</label>
                     <input class="form-control" type="number" step="0.001" @bind="_editing.LengthMeters" />
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Height (m)</label>
+                    <label class="form-label">@L["AdminLocations.HeightM"]</label>
                     <input class="form-control" type="number" step="0.001" @bind="_editing.HeightMeters" />
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Aisle</label>
+                    <label class="form-label">@L["AdminLocations.Aisle"]</label>
                     <input class="form-control" @bind="_editing.Aisle" />
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Rack</label>
+                    <label class="form-label">@L["Common.Rack"]</label>
                     <input class="form-control" @bind="_editing.Rack" />
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Level</label>
+                    <label class="form-label">@L["Common.Level"]</label>
                     <input class="form-control" @bind="_editing.Level" />
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Bin</label>
+                    <label class="form-label">@L["Common.Bin"]</label>
                     <input class="form-control" @bind="_editing.Bin" />
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Capacity Weight</label>
+                    <label class="form-label">@L["AdminLocations.CapacityWeight"]</label>
                     <input class="form-control" type="number" step="0.001" @bind="_editing.CapacityWeight" />
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Capacity Volume</label>
+                    <label class="form-label">@L["AdminLocations.CapacityVolume"]</label>
                     <input class="form-control" type="number" step="0.001" @bind="_editing.CapacityVolume" />
                 </div>
                 <div class="col-md-12 mt-3">
-                    <h6 class="mb-2">Rack Placement</h6>
+                    <h6 class="mb-2">@L["AdminLocations.RackPlacement"]</h6>
                 </div>
                 @if (CanEditRackPlacement(_editing))
                 {
                     <div class="col-md-2">
-                        <label class="form-label">Rack Row Id</label>
-                        <input class="form-control" @bind="_editing.RackRowId" placeholder="C" />
+                        <label class="form-label">@L["AdminLocations.RackRowId"]</label>
+                        <input class="form-control" @bind="_editing.RackRowId" placeholder="@L["AdminLocations.C"]" />
                     </div>
                     <div class="col-md-2">
-                        <label class="form-label">Shelf Level</label>
+                        <label class="form-label">@L["AdminLocations.ShelfLevel"]</label>
                         <input class="form-control" type="number" min="1" @bind="_editing.ShelfLevelIndex" />
                     </div>
                     <div class="col-md-2">
-                        <label class="form-label">Slot Start</label>
+                        <label class="form-label">@L["AdminLocations.SlotStart"]</label>
                         <input class="form-control" type="number" min="1" @bind="_editing.SlotStart" />
                     </div>
                     <div class="col-md-2">
-                        <label class="form-label">Slot Span</label>
+                        <label class="form-label">@L["AdminLocations.SlotSpan"]</label>
                         <input class="form-control" type="number" min="1" @bind="_editing.SlotSpan" />
                     </div>
                     <div class="col-md-2">
-                        <label class="form-label">Location Role</label>
+                        <label class="form-label">@L["AdminLocations.LocationRole"]</label>
                         <select class="form-select" @bind="_editing.LocationRole">
                             <option value="">-</option>
-                            <option value="Cell">Cell</option>
-                            <option value="Bulk">Bulk</option>
-                            <option value="EndCap">EndCap</option>
-                            <option value="Overflow">Overflow</option>
-                            <option value="GroundSlot">GroundSlot</option>
+                            <option value="Cell">@L["AdminLocations.Cell"]</option>
+                            <option value="Bulk">@L["AdminLocations.Bulk"]</option>
+                            <option value="EndCap">@L["AdminLocations.EndCap"]</option>
+                            <option value="Overflow">@L["AdminLocations.Overflow"]</option>
+                            <option value="GroundSlot">@L["AdminLocations.GroundSlot"]</option>
                         </select>
                     </div>
                     <div class="col-md-2">
-                        <label class="form-label">Computed Address</label>
+                        <label class="form-label">@L["AdminLocations.ComputedAddress"]</label>
                         <input class="form-control" value="@BuildPlacementAddress(_editing)" disabled />
                     </div>
                 }
@@ -380,18 +380,18 @@
                 {
                     <div class="col-md-12">
                         <div class="alert alert-secondary mb-0">
-                            Rack placement доступен только для не-виртуальных локаций типа <code>Bin</code>.
+                            @L["AdminLocations.RackPlacement542747"] <code>Bin</code>.
                         </div>
                     </div>
                 }
                 <div class="col-md-2 d-flex align-items-end">
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" @bind="_editing.IsVirtual" disabled />
-                        <label class="form-check-label">Virtual</label>
+                        <label class="form-check-label">@L["Common.Virtual"]</label>
                     </div>
                 </div>
                 <div class="col-md-2 d-flex align-items-end">
-                    <button class="btn btn-primary px-4" @onclick="UpdateAsync">Save</button>
+                    <button class="btn btn-primary px-4" @onclick="UpdateAsync">@L["Common.Save"]</button>
                 </div>
             </div>
         </div>
@@ -593,7 +593,7 @@
         {
             _apiError = null;
             await AdminClient.CreateLocationAsync(_create.ToRequest());
-            ToastService.ShowSuccess("Location created.");
+            ToastService.ShowSuccess(L["AdminLocations.Toast.LocationCreated"].Value);
             _create = new LocationFormModel();
             await LoadLocationsAsync();
         }
@@ -650,7 +650,7 @@
             _apiError = null;
             await AdminClient.UpdateLocationAsync(_editing.Id, _editing.ToRequest());
             await SyncRackPlacementAsync(_editing);
-            ToastService.ShowSuccess("Location updated.");
+            ToastService.ShowSuccess(L["AdminLocations.Toast.LocationUpdated"].Value);
             _editing = null;
             await LoadLocationsAsync();
         }
@@ -665,14 +665,14 @@
         }
     }
 
-    private static string BuildErrorMessage(ApiException error)
+    private string BuildErrorMessage(ApiException error)
     {
         if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
         {
-            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+            return $"{WarehouseErrorText.Get(L, error)} {error.ProblemDetails.Detail}";
         }
 
-        return error.UserMessage;
+        return WarehouseErrorText.Get(L, error);
     }
 
     private async Task SyncRackPlacementAsync(LocationEditFormModel editing)

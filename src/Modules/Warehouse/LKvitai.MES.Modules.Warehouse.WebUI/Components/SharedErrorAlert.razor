@@ -8,7 +8,7 @@
 
                 @if (!string.IsNullOrWhiteSpace(TraceId))
                 {
-                    <MudText Typo="Typo.caption" Class="lk-state__trace shared-error__trace">Error ID: @TraceId</MudText>
+                    <MudText Typo="Typo.caption" Class="lk-state__trace shared-error__trace">@L["SharedErrorAlert.ErrorID", TraceId]</MudText>
                 }
             </div>
         </div>
@@ -20,13 +20,13 @@
                            Color="Color.Error"
                            Size="Size.Small"
                            OnClick="OnRetry"
-                           data-testid="shared-error-retry">Retry</MudButton>
+                           data-testid="shared-error-retry">@L["Common.Retry"]</MudButton>
             }
 
             <MudIconButton Icon="@Icons.Material.Filled.Close"
                            Size="Size.Small"
                            OnClick="OnDismiss"
-                           aria-label="Close"
+                           aria-label="@L["Common.Close"]"
                            data-testid="shared-error-close" />
         </div>
     </MudPaper>

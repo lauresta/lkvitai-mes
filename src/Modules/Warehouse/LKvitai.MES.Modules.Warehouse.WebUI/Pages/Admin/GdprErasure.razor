@@ -3,14 +3,14 @@
 @inject ToastService ToastService
 @inject IConfiguration Configuration
 
-<PageTitle>GDPR Erasure - Cikada.MES</PageTitle>
+<PageTitle>@L["Admin.GdprErasure.GDPRErasureCikadaMES"]</PageTitle>
 
-<h1>GDPR Erasure Requests</h1>
+<h1>@L["Admin.GdprErasure.GDPRErasureRequests"]</h1>
 
 @if (!_hasAdminAccess)
 {
     <div class="alert alert-warning" role="alert">
-        Admin role required.
+        @L["Common.AdminRoleRequired"]
     </div>
 }
 else
@@ -24,7 +24,7 @@ else
     }
 
     <div class="card shadow-sm mb-3">
-        <div class="card-header">New Erasure Request</div>
+        <div class="card-header">@L["Admin.GdprErasure.NewErasureRequest"]</div>
         <div class="card-body">
             <EditForm Model="_createForm" OnValidSubmit="CreateAsync">
                 <DataAnnotationsValidator />
@@ -32,17 +32,17 @@ else
 
                 <div class="row g-2">
                     <div class="col-md-4">
-                        <label class="form-label">Customer ID</label>
+                        <label class="form-label">@L["Admin.GdprErasure.CustomerID"]</label>
                         <InputText class="form-control" @bind-Value="_createForm.CustomerId" />
                         <ValidationMessage For="() => _createForm.CustomerId" />
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Reason</label>
+                        <label class="form-label">@L["Common.Reason"]</label>
                         <InputText class="form-control" @bind-Value="_createForm.Reason" />
                         <ValidationMessage For="() => _createForm.Reason" />
                     </div>
                     <div class="col-md-2 d-grid">
-                        <button class="btn btn-primary mt-md-4" type="submit" disabled="@_isSubmitting">Create</button>
+                        <button class="btn btn-primary mt-md-4" type="submit" disabled="@_isSubmitting">@L["Common.Create"]</button>
                     </div>
                 </div>
             </EditForm>
@@ -56,20 +56,20 @@ else
                 <table class="table table-sm table-hover align-middle">
                     <thead>
                         <tr>
-                            <th>Customer ID</th>
-                            <th>Status</th>
-                            <th>Requested</th>
-                            <th>Reviewed</th>
-                            <th>Reason</th>
-                            <th>Rejection</th>
-                            <th class="text-end">Actions</th>
+                            <th>@L["Admin.GdprErasure.CustomerID"]</th>
+                            <th>@L["Common.Status"]</th>
+                            <th>@L["Common.Requested"]</th>
+                            <th>@L["Admin.GdprErasure.Reviewed"]</th>
+                            <th>@L["Common.Reason"]</th>
+                            <th>@L["Admin.GdprErasure.Rejection"]</th>
+                            <th class="text-end">@L["Common.Actions"]</th>
                         </tr>
                     </thead>
                     <tbody>
                         @if (_requests.Count == 0)
                         {
                             <tr>
-                                <td colspan="7" class="text-muted">No erasure requests found.</td>
+                                <td colspan="7" class="text-muted">@L["Admin.GdprErasure.NoErasureRequestsFound"]</td>
                             </tr>
                         }
                         else
@@ -78,7 +78,7 @@ else
                             {
                                 <tr>
                                     <td><code>@item.CustomerId</code></td>
-                                    <td>@item.Status</td>
+                                    <td>@WarehouseStatusText.Get(L, item.Status)</td>
                                     <td>@item.RequestedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
                                     <td>@(item.ApprovedAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? item.CompletedAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "-")</td>
                                     <td>@item.Reason</td>
@@ -87,12 +87,12 @@ else
                                         <button class="btn btn-sm btn-outline-success me-2"
                                                 @onclick="() => ApproveAsync(item)"
                                                 disabled="@(_isUpdating || !IsPending(item))">
-                                            Approve
+                                            @L["Common.Approve"]
                                         </button>
                                         <button class="btn btn-sm btn-outline-danger"
                                                 @onclick="() => BeginReject(item)"
                                                 disabled="@(_isUpdating || !IsPending(item))">
-                                            Reject
+                                            @L["Admin.GdprErasure.Reject"]
                                         </button>
                                     </td>
                                 </tr>
@@ -108,15 +108,15 @@ else
     {
         <div class="card shadow-sm mt-3">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <span>Reject Request @_rejecting.Id</span>
-                <button class="btn btn-sm btn-outline-secondary" @onclick="CancelReject">Close</button>
+                <span>@L["Admin.GdprErasure.RejectRequest", _rejecting.Id]</span>
+                <button class="btn btn-sm btn-outline-secondary" @onclick="CancelReject">@L["Common.Close"]</button>
             </div>
             <div class="card-body">
                 <div class="mb-2">
-                    <label class="form-label">Rejection Reason</label>
+                    <label class="form-label">@L["Admin.GdprErasure.RejectionReason"]</label>
                     <InputText class="form-control" @bind-Value="_rejectReason" />
                 </div>
-                <button class="btn btn-danger" @onclick="RejectAsync" disabled="@_isUpdating">Confirm Reject</button>
+                <button class="btn btn-danger" @onclick="RejectAsync" disabled="@_isUpdating">@L["Admin.GdprErasure.ConfirmReject"]</button>
             </div>
         </div>
     }
@@ -169,7 +169,7 @@ else
     {
         if (!Guid.TryParse(_createForm.CustomerId, out var customerId))
         {
-            ToastService.ShowError("Customer ID must be a valid GUID.");
+            ToastService.ShowError(L["Admin.GdprErasure.Toast.CustomerIDMustBeAValidGUID"].Value);
             return;
         }
 
@@ -185,7 +185,7 @@ else
             });
 
             _createForm = new ErasureCreateForm();
-            ToastService.ShowSuccess("Erasure request created.");
+            ToastService.ShowSuccess(L["Admin.GdprErasure.Toast.ErasureRequestCreated"].Value);
             await LoadAsync();
         }
         catch (ApiException ex)
@@ -207,7 +207,7 @@ else
         try
         {
             await GdprClient.ApproveRequestAsync(item.Id);
-            ToastService.ShowSuccess("Erasure request approved.");
+            ToastService.ShowSuccess(L["Admin.GdprErasure.Toast.ErasureRequestApproved"].Value);
             await LoadAsync();
         }
         catch (ApiException ex)
@@ -240,7 +240,7 @@ else
         try
         {
             await GdprClient.RejectRequestAsync(_rejecting.Id, _rejectReason);
-            ToastService.ShowSuccess("Erasure request rejected.");
+            ToastService.ShowSuccess(L["Admin.GdprErasure.Toast.ErasureRequestRejected"].Value);
             _rejecting = null;
             _rejectReason = string.Empty;
             await LoadAsync();
@@ -273,14 +273,14 @@ else
                       string.Equals(x, "Admin", StringComparison.OrdinalIgnoreCase));
     }
 
-    private static string BuildErrorMessage(ApiException error)
+    private string BuildErrorMessage(ApiException error)
     {
         if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
         {
-            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+            return $"{WarehouseErrorText.Get(L, error)} {error.ProblemDetails.Detail}";
         }
 
-        return error.UserMessage;
+        return WarehouseErrorText.Get(L, error);
     }
 
     private void DismissError()

@@ -4,7 +4,7 @@
 <MudDialog Class="admin-item-photos-dialog">
     <TitleContent>
         <div class="admin-item-dialog__title">
-            <span>Item Photos</span>
+            <span>@L["AdminItemPhotosDialog.ItemPhotos"]</span>
             <span class="mono">@InternalSKU</span>
         </div>
     </TitleContent>
@@ -25,7 +25,7 @@
         <div class="admin-item-photos-dialog__toolbar">
             <div>
                 <strong>@Name</strong>
-                <span class="mono">@_photos.Count photo(s)</span>
+                <span class="mono">@L["AdminItemPhotosDialog.PhotoS", _photos.Count]</span>
             </div>
             <div class="admin-item-photos-dialog__actions">
                 <InputFile OnChange="HandleFileSelectedAsync" accept="image/jpeg,image/png,image/webp" />
@@ -34,7 +34,7 @@
                            Size="Size.Small"
                            Disabled="@(_photos.Count == 0 || _isLoading)"
                            OnClick="RecomputeEmbeddingsAsync">
-                    Recompute
+                    @L["AdminItemPhotosDialog.Recompute"]
                 </MudButton>
             </div>
         </div>
@@ -42,8 +42,8 @@
         @if (!_isLoading && _photos.Count == 0)
         {
             <div class="admin-item-photos-dialog__empty">
-                <span class="lots-grid__empty-title">No photos</span>
-                <span>Upload a product image to make it visible in the items grid.</span>
+                <span class="lots-grid__empty-title">@L["AdminItemPhotosDialog.NoPhotos"]</span>
+                <span>@L["AdminItemPhotosDialog.UploadAProductImageToMakeItVisibleInTheItemsGrid"]</span>
             </div>
         }
         else
@@ -52,16 +52,16 @@
                 @foreach (var photo in _photos)
                 {
                     <div class="admin-item-photo">
-                        <img src="@photo.ThumbUrl" alt="@($"{Name} photo")" loading="lazy" />
+                        <img src="@photo.ThumbUrl" alt="@L["Common.ItemPhoto", Name]" loading="lazy" />
                         <div class="admin-item-photo__body">
                             <div class="admin-item-photo__meta">
                                 @if (photo.IsPrimary)
                                 {
-                                    <span class="chip chip--info">Primary</span>
+                                    <span class="chip chip--info">@L["Common.Primary"]</span>
                                 }
                                 else
                                 {
-                                    <span class="chip chip--slate">Photo</span>
+                                    <span class="chip chip--slate">@L["AdminItemPhotosDialog.Photo"]</span>
                                 }
                                 <span class="mono">@FormatBytes(photo.SizeBytes)</span>
                             </div>
@@ -72,21 +72,21 @@
                                            Variant="Variant.Outlined"
                                            Color="Color.Primary"
                                            Size="Size.Small">
-                                    Open
+                                    @L["AdminItemPhotosDialog.Open"]
                                 </MudButton>
                                 <MudButton Variant="Variant.Outlined"
                                            Color="Color.Primary"
                                            Size="Size.Small"
                                            Disabled="@(photo.IsPrimary || _isLoading)"
                                            OnClick="@(() => MakePrimaryAsync(photo.Id))">
-                                    Primary
+                                    @L["Common.Primary"]
                                 </MudButton>
                                 <MudButton Variant="Variant.Outlined"
                                            Color="Color.Error"
                                            Size="Size.Small"
                                            Disabled="@_isLoading"
                                            OnClick="@(() => DeletePhotoAsync(photo.Id))">
-                                    Delete
+                                    @L["Common.Delete"]
                                 </MudButton>
                             </div>
                         </div>
@@ -96,7 +96,7 @@
         }
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Close">Close</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Close">@L["Common.Close"]</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -159,7 +159,7 @@
             await stream.CopyToAsync(ms);
             await AdminClient.UploadPhotoAsync(ItemId, file.Name, ms.ToArray(), file.ContentType);
             _changed = true;
-            ToastService.ShowSuccess("Photo uploaded.");
+            ToastService.ShowSuccess(L["AdminItemPhotosDialog.Toast.PhotoUploaded"].Value);
             await LoadPhotosAsync();
         }
         catch (ApiException ex)
@@ -186,7 +186,7 @@
         {
             await AdminClient.MakePrimaryPhotoAsync(ItemId, photoId);
             _changed = true;
-            ToastService.ShowSuccess("Primary photo updated.");
+            ToastService.ShowSuccess(L["AdminItemPhotosDialog.Toast.PrimaryPhotoUpdated"].Value);
             await LoadPhotosAsync();
         }
         catch (ApiException ex)
@@ -209,7 +209,7 @@
         {
             await AdminClient.DeletePhotoAsync(ItemId, photoId);
             _changed = true;
-            ToastService.ShowWarning("Photo deleted.");
+            ToastService.ShowWarning(L["AdminItemPhotosDialog.Toast.PhotoDeleted"].Value);
             await LoadPhotosAsync();
         }
         catch (ApiException ex)
@@ -231,7 +231,7 @@
         try
         {
             var count = await AdminClient.RecomputeEmbeddingsAsync(ItemId);
-            ToastService.ShowSuccess($"Embeddings recomputed for {count} photo(s).");
+            ToastService.ShowSuccess(L["AdminItemPhotosDialog.Toast.EmbeddingsRecomputedForPhotoS", count].Value);
         }
         catch (ApiException ex)
         {
@@ -251,13 +251,13 @@
             ? $"{bytes / 1024m / 1024m:0.#} MB"
             : $"{Math.Max(1, bytes / 1024m):0.#} KB";
 
-    private static string BuildErrorMessage(ApiException error)
+    private string BuildErrorMessage(ApiException error)
     {
         if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
         {
-            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+            return $"{WarehouseErrorText.Get(L, error)} {error.ProblemDetails.Detail}";
         }
 
-        return error.UserMessage;
+        return WarehouseErrorText.Get(L, error);
     }
 }

@@ -8,9 +8,9 @@
 @inject ToastService ToastService
 @inject ItemPricesClient ItemPricesClient
 
-<PageTitle>Stock Adjustments</PageTitle>
+<PageTitle>@L["StockAdjustments.StockAdjustments"]</PageTitle>
 
-<h1>Stock Adjustments</h1>
+<h1>@L["StockAdjustments.StockAdjustments"]</h1>
 
 @if (_apiError is not null)
 {
@@ -20,21 +20,21 @@
 <MudPaper Outlined="true" Elevation="0" Class="panel adjustments-panel">
     <div class="panel__head adjustments-panel__head">
         <div>
-            <div class="panel__title">Create Adjustment</div>
-            <small>Post controlled stock corrections with a reason code.</small>
+            <div class="panel__title">@L["StockAdjustments.CreateAdjustment"]</div>
+            <small>@L["StockAdjustments.PostControlledStockCorrectionsWithAReasonCode"]</small>
         </div>
         <div class="panel__actions adjustments-panel__actions">
             <MudButton Variant="Variant.Outlined"
                        Color="Color.Primary"
                        OnClick="LoadHistoryAsync"
                        Disabled="@_isLoading">
-                Refresh History
+                @L["StockAdjustments.RefreshHistory"]
             </MudButton>
             <MudButton Variant="Variant.Filled"
                        Color="Color.Primary"
                        OnClick="CreateAsync"
                        Disabled="@_isSubmitting">
-                Create
+                @L["Common.Create"]
             </MudButton>
         </div>
     </div>
@@ -42,11 +42,11 @@
     <div class="adjustment-form-grid">
         <div class="lk-field--filter adjustment-field adjustment-field--item">
             <MudSelect T="int"
-                       Label="Item"
+                       Label="@L["Common.Item"]"
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
                        @bind-Value="_itemId">
-                <MudSelectItem T="int" Value="0">Select item</MudSelectItem>
+                <MudSelectItem T="int" Value="0">@L["Common.SelectItem"]</MudSelectItem>
                 @foreach (var item in _items)
                 {
                     <MudSelectItem T="int" Value="@item.Id">@item.InternalSKU - @item.Name</MudSelectItem>
@@ -57,11 +57,11 @@
 
         <div class="lk-field--filter adjustment-field adjustment-field--location">
             <MudSelect T="int"
-                       Label="Location"
+                       Label="@L["Common.Location"]"
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
                        @bind-Value="_locationId">
-                <MudSelectItem T="int" Value="0">Select location</MudSelectItem>
+                <MudSelectItem T="int" Value="0">@L["Common.SelectLocation"]</MudSelectItem>
                 @foreach (var loc in _locations)
                 {
                     <MudSelectItem T="int" Value="@loc.Id">@loc.Code</MudSelectItem>
@@ -71,7 +71,7 @@
 
         <div class="lk-field--filter adjustment-field adjustment-field--qty">
             <MudNumericField T="decimal"
-                             Label="Qty Delta"
+                             Label="@L["StockAdjustments.QtyDelta"]"
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
                              Step="0.01m"
@@ -80,11 +80,11 @@
 
         <div class="lk-field--filter adjustment-field adjustment-field--reason">
             <MudSelect T="string"
-                       Label="Reason"
+                       Label="@L["Common.Reason"]"
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
                        @bind-Value="_reasonCode">
-                <MudSelectItem T="string" Value="@string.Empty">Select reason</MudSelectItem>
+                <MudSelectItem T="string" Value="@string.Empty">@L["StockAdjustments.SelectReason"]</MudSelectItem>
                 @foreach (var reason in _reasons)
                 {
                     <MudSelectItem T="string" Value="@reason.Code">@reason.Code</MudSelectItem>
@@ -94,7 +94,7 @@
 
         <div class="lk-field--filter adjustment-field adjustment-field--lot">
             <MudNumericField T="int?"
-                             Label="Lot Id"
+                             Label="@L["StockAdjustments.LotId"]"
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
                              Min="1"
@@ -103,7 +103,7 @@
 
         <div class="lk-field--filter adjustment-field adjustment-field--notes">
             <MudTextField T="string"
-                          Label="Notes"
+                          Label="@L["Common.Notes"]"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           @bind-Value="_notes" />
@@ -120,8 +120,8 @@
     <LoadingSpinner IsLoading="_isLoading" />
     <div class="panel__head">
         <div>
-            <div class="panel__title">Adjustment History</div>
-            <small>Latest 200 records</small>
+            <div class="panel__title">@L["StockAdjustments.AdjustmentHistory"]</div>
+            <small>@L["StockAdjustments.Latest200Records"]</small>
         </div>
     </div>
 
@@ -129,16 +129,16 @@
         <table class="lk-table adjustments-table">
             <thead>
                 <tr>
-                    <th>Timestamp</th>
+                    <th>@L["Common.Timestamp"]</th>
                     <th>SKU</th>
-                    <th>Location</th>
-                    <th class="is-num">Qty Delta</th>
+                    <th>@L["Common.Location"]</th>
+                    <th class="is-num">@L["StockAdjustments.QtyDelta"]</th>
                     <th class="is-num">@L["Pricing.Cost"]</th>
                     <th class="is-num">@L["Pricing.Sale"]</th>
-                    <th class="is-num">Value (current cost)</th>
-                    <th>Reason</th>
-                    <th>User</th>
-                    <th>Notes</th>
+                    <th class="is-num">@L["Common.ValueCurrentCost"]</th>
+                    <th>@L["Common.Reason"]</th>
+                    <th>@L["Common.User"]</th>
+                    <th>@L["Common.Notes"]</th>
                 </tr>
             </thead>
             <tbody>
@@ -147,8 +147,8 @@
                     <tr>
                         <td colspan="10">
                             <div class="stock-grid__empty adjustments-empty">
-                                <span class="stock-grid__empty-title">No adjustments</span>
-                                <span>No adjustment records are available yet.</span>
+                                <span class="stock-grid__empty-title">@L["StockAdjustments.NoAdjustments"]</span>
+                                <span>@L["StockAdjustments.NoAdjustmentRecordsAreAvailableYet"]</span>
                             </div>
                         </td>
                     </tr>
@@ -253,7 +253,7 @@
     {
         if (_itemId <= 0 || _locationId <= 0 || string.IsNullOrWhiteSpace(_reasonCode) || _qtyDelta == 0)
         {
-            ToastService.ShowError("Item, location, qty delta and reason are required.");
+            ToastService.ShowError(L["StockAdjustments.Toast.ItemLocationQtyDeltaAndReasonAreRequired"].Value);
             return;
         }
 
@@ -271,7 +271,7 @@
                 _lotId));
 
             _warning = response.Warning;
-            ToastService.ShowSuccess($"Adjustment created: {response.AdjustmentId}");
+            ToastService.ShowSuccess(L["StockAdjustments.Toast.AdjustmentCreated", response.AdjustmentId].Value);
             _qtyDelta = 0;
             _notes = null;
             _lotId = null;
@@ -296,9 +296,9 @@
     private static string GetDeltaChipClass(decimal value)
         => value < 0 ? "chip chip--out" : "chip chip--ok";
 
-    private static string BuildErrorMessage(ApiException ex)
-        => ex.UserMessage
+    private string BuildErrorMessage(ApiException ex)
+        => WarehouseErrorText.Get(L, ex)
            ?? ex.ProblemDetails?.Detail
            ?? ex.ProblemDetails?.Title
-           ?? "Adjustment request failed.";
+           ?? L["StockAdjustments.RequestFailed"].Value;
 }

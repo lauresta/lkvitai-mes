@@ -5,10 +5,10 @@
 @inject NavigationManager NavigationManager
 @inject IDialogService DialogService
 
-<PageTitle>Admin Suppliers - Cikada.MES</PageTitle>
+<PageTitle>@L["AdminSuppliers.AdminSuppliersCikadaMES"]</PageTitle>
 
 <div data-testid="admin-suppliers-page">
-    <h3>Suppliers Management</h3>
+    <h3>@L["AdminSuppliers.SuppliersManagement"]</h3>
 
     @if (_apiError is not null)
     {
@@ -27,7 +27,7 @@
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               @bind-Value="_search"
-                              Placeholder="Code, name, company/VAT code, email, phone, country, city"
+                              Placeholder="@L["AdminSuppliers.CodeNameCompanyVATCodeEmailPhoneCountryCity"]"
                               InputAttributes="@SuppliersSearchAttributes" />
             </div>
             <div class="lk-field--filter lots-field suppliers-filter__country">
@@ -36,7 +36,7 @@
                            Margin="Margin.Dense"
                            @bind-Value="_countryFilter"
                            InputAttributes="@SuppliersCountryAttributes">
-                    <MudSelectItem T="string" Value="@string.Empty">All countries</MudSelectItem>
+                    <MudSelectItem T="string" Value="@string.Empty">@L["AdminSuppliers.AllCountries"]</MudSelectItem>
                     @foreach (var country in _countries)
                     {
                         <MudSelectItem T="string" Value="@country">@country</MudSelectItem>
@@ -62,32 +62,32 @@
                            Color="Color.Primary"
                            OnClick="ApplyFiltersAsync"
                            UserAttributes="@SuppliersSearchButtonAttributes">
-                    Filter
+                    @L["Common.Filter"]
                 </MudButton>
                 <MudButton Variant="Variant.Outlined"
                            Color="Color.Primary"
                            OnClick="RefreshAsync"
                            UserAttributes="@SuppliersRefreshAttributes">
-                    Refresh
+                    @L["Common.Refresh"]
                 </MudButton>
                 <MudButton Variant="Variant.Outlined"
                            Color="Color.Primary"
                            OnClick="OpenCreateDialogAsync"
                            UserAttributes="@SuppliersCreateAttributes">
-                    Create
+                    @L["Common.Create"]
                 </MudButton>
                 <MudButton Variant="Variant.Outlined"
                            Color="Color.Primary"
                            OnClick="@(() => OpenMappings(null))"
                            UserAttributes="@SuppliersMappingsAttributes">
-                    Mappings
+                    @L["AdminSuppliers.Mappings"]
                 </MudButton>
             </div>
         </div>
 
         <div class="lots-grid-head suppliers-grid-head">
-            <strong data-testid="admin-suppliers-summary">Total: @_totalCount</strong>
-            <span class="mono" data-testid="admin-suppliers-current-page">Page @_currentPage</span>
+            <strong data-testid="admin-suppliers-summary">@L["AdminSuppliers.Total", _totalCount]</strong>
+            <span class="mono" data-testid="admin-suppliers-current-page">@L["AdminSuppliers.Page", _currentPage]</span>
         </div>
 
         <MudDataGrid T="AdminSupplierDto"
@@ -104,7 +104,7 @@
                      Class="lk-grid lots-grid suppliers-grid"
                      @attributes="@SuppliersGridAttributes">
             <Columns>
-                <TemplateColumn Title="Code">
+                <TemplateColumn Title="@L["Common.Code"]">
                     <CellTemplate>
                         <button type="button"
                                 class="row-action sku-link"
@@ -113,33 +113,33 @@
                         </button>
                         @if (context.Item.IsAgnumLinked)
                         {
-                            <span class="chip chip--reserved suppliers-agnum-chip" title="@($"Agnum client {context.Item.AgnumClientId}")">Agnum</span>
+                            <span class="chip chip--reserved suppliers-agnum-chip" title="@L["AdminSuppliers.AgnumClient", context.Item.AgnumClientId ?? 0]">Agnum</span>
                         }
                     </CellTemplate>
                 </TemplateColumn>
-                <TemplateColumn Title="Name">
+                <TemplateColumn Title="@L["Common.Name"]">
                     <CellTemplate>
                         <span class="suppliers-name" title="@context.Item.Name">@context.Item.Name</span>
                     </CellTemplate>
                 </TemplateColumn>
-                <PropertyColumn Property="x => x.ShortName" Title="Short name" />
-                <TemplateColumn Title="Company code">
+                <PropertyColumn Property="x => x.ShortName" Title="@L["AdminSuppliers.ShortName"]" />
+                <TemplateColumn Title="@L["AdminSuppliers.CompanyCode"]">
                     <CellTemplate><span class="mono">@FormatNullable(context.Item.CompanyCode)</span></CellTemplate>
                 </TemplateColumn>
-                <TemplateColumn Title="VAT code">
+                <TemplateColumn Title="@L["AdminSuppliers.VATCode"]">
                     <CellTemplate><span class="mono">@FormatNullable(context.Item.VatCode)</span></CellTemplate>
                 </TemplateColumn>
-                <TemplateColumn Title="Country / City">
+                <TemplateColumn Title="@L["AdminSuppliers.CountryCity"]">
                     <CellTemplate>@FormatLocation(context.Item)</CellTemplate>
                 </TemplateColumn>
-                <PropertyColumn Property="x => x.ContactName" Title="Contact" />
-                <TemplateColumn Title="Phone">
+                <PropertyColumn Property="x => x.ContactName" Title="@L["AdminSuppliers.Contact"]" />
+                <TemplateColumn Title="@L["Common.Phone"]">
                     <CellTemplate><span class="mono">@FormatNullable(context.Item.Phone)</span></CellTemplate>
                 </TemplateColumn>
-                <TemplateColumn Title="Email">
+                <TemplateColumn Title="@L["Common.Email"]">
                     <CellTemplate><span class="mono">@FormatNullable(context.Item.Email)</span></CellTemplate>
                 </TemplateColumn>
-                <TemplateColumn Title="Website">
+                <TemplateColumn Title="@L["AdminSuppliers.Website"]">
                     <CellTemplate>
                         @if (!string.IsNullOrWhiteSpace(context.Item.Website))
                         {
@@ -151,7 +151,7 @@
                         }
                     </CellTemplate>
                 </TemplateColumn>
-                <TemplateColumn Title="Updated">
+                <TemplateColumn Title="@L["Common.Updated"]">
                     <CellTemplate>
                         <span class="mono">@FormatDate(context.Item.UpdatedAt ?? context.Item.CreatedAt)</span>
                     </CellTemplate>
@@ -165,12 +165,12 @@
                                 <MudIconButton Icon="@Icons.Material.Outlined.MoreVert"
                                                Size="Size.Small"
                                                Color="Color.Primary"
-                                               aria-label="@($"Actions for {context.Item.Code}")" />
+                                               aria-label="@L["AdminSuppliers.ActionsFor", context.Item.Code]" />
                             </ActivatorContent>
                             <ChildContent>
-                                <MudMenuItem OnClick="@(() => OpenEditDialogAsync(context.Item))">Edit</MudMenuItem>
-                                <MudMenuItem OnClick="@(() => OpenMappings(null))">View mappings</MudMenuItem>
-                                <MudMenuItem OnClick="@(() => OpenMappings(context.Item.Id))">Open supplier mappings</MudMenuItem>
+                                <MudMenuItem OnClick="@(() => OpenEditDialogAsync(context.Item))">@L["Common.Edit"]</MudMenuItem>
+                                <MudMenuItem OnClick="@(() => OpenMappings(null))">@L["AdminSuppliers.ViewMappings"]</MudMenuItem>
+                                <MudMenuItem OnClick="@(() => OpenMappings(context.Item.Id))">@L["AdminSuppliers.OpenSupplierMappings"]</MudMenuItem>
                             </ChildContent>
                         </MudMenu>
                     </CellTemplate>
@@ -178,12 +178,12 @@
             </Columns>
             <NoRecordsContent>
                 <div class="lots-grid__empty">
-                    <span class="lots-grid__empty-title">No suppliers found</span>
+                    <span class="lots-grid__empty-title">@L["AdminSuppliers.NoSuppliersFound"]</span>
                     <span>
                         No suppliers match the current filter.
                         @if (HasAppliedFilters)
                         {
-                            <button type="button" class="lots-grid__empty-action" @onclick="ClearFiltersAsync">Clear filters</button>
+                            <button type="button" class="lots-grid__empty-action" @onclick="ClearFiltersAsync">@L["Common.ClearFilters"]</button>
                         }
                     </span>
                 </div>
@@ -220,9 +220,9 @@
     };
 
     private static readonly Dictionary<string, object> SuppliersGridAttributes = new() { ["data-testid"] = "admin-suppliers-grid" };
-    private static readonly Dictionary<string, object> SuppliersSearchAttributes = new() { ["data-testid"] = "admin-suppliers-search-input", ["aria-label"] = "Search" };
-    private static readonly Dictionary<string, object> SuppliersCountryAttributes = new() { ["data-testid"] = "admin-suppliers-country", ["aria-label"] = "Country" };
-    private static readonly Dictionary<string, object> SuppliersPageSizeAttributes = new() { ["data-testid"] = "admin-suppliers-page-size-select", ["aria-label"] = "Page size" };
+    private Dictionary<string, object> SuppliersSearchAttributes => new() { ["data-testid"] = "admin-suppliers-search-input", ["aria-label"] = L["Aria.Search"].Value };
+    private Dictionary<string, object> SuppliersCountryAttributes => new() { ["data-testid"] = "admin-suppliers-country", ["aria-label"] = L["Aria.Country"].Value };
+    private Dictionary<string, object> SuppliersPageSizeAttributes => new() { ["data-testid"] = "admin-suppliers-page-size-select", ["aria-label"] = L["Aria.PageSize"].Value };
     private static readonly Dictionary<string, object> SuppliersSearchButtonAttributes = new() { ["data-testid"] = "admin-suppliers-search-btn" };
     private static readonly Dictionary<string, object> SuppliersRefreshAttributes = new() { ["data-testid"] = "admin-suppliers-refresh" };
     private static readonly Dictionary<string, object> SuppliersCreateAttributes = new() { ["data-testid"] = "admin-suppliers-create" };
@@ -355,7 +355,7 @@
             ["IsEdit"] = false
         };
 
-        var dialog = await DialogService.ShowAsync<AdminSupplierEditorDialog>("Create supplier", parameters, SupplierDialogOptions);
+        var dialog = await DialogService.ShowAsync<AdminSupplierEditorDialog>(L["AdminSuppliers.CreateSupplier"].Value, parameters, SupplierDialogOptions);
         var result = await dialog.Result;
         if (result.Canceled || result.Data is not CreateOrUpdateSupplierRequest request)
         {
@@ -366,7 +366,7 @@
         {
             _apiError = null;
             await AdminClient.CreateSupplierAsync(request);
-            ToastService.ShowSuccess("Supplier created.");
+            ToastService.ShowSuccess(L["AdminSuppliers.Toast.SupplierCreated"].Value);
             await LoadCountriesAsync();
             await RefreshAsync();
         }
@@ -385,7 +385,7 @@
             ["Supplier"] = row
         };
 
-        var dialog = await DialogService.ShowAsync<AdminSupplierEditorDialog>("Edit supplier", parameters, SupplierDialogOptions);
+        var dialog = await DialogService.ShowAsync<AdminSupplierEditorDialog>(L["AdminSuppliers.EditSupplier"].Value, parameters, SupplierDialogOptions);
         var result = await dialog.Result;
         if (result.Canceled || result.Data is not CreateOrUpdateSupplierRequest request)
         {
@@ -396,7 +396,7 @@
         {
             _apiError = null;
             await AdminClient.UpdateSupplierAsync(row.Id, request);
-            ToastService.ShowSuccess("Supplier updated.");
+            ToastService.ShowSuccess(L["AdminSuppliers.Toast.SupplierUpdated"].Value);
             await LoadCountriesAsync();
             await RefreshAsync();
         }
@@ -432,13 +432,13 @@
     private static string FormatDate(DateTimeOffset value)
         => value.ToLocalTime().ToString("yyyy-MM-dd");
 
-    private static string BuildErrorMessage(ApiException error)
+    private string BuildErrorMessage(ApiException error)
     {
         if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
         {
-            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+            return $"{WarehouseErrorText.Get(L, error)} {error.ProblemDetails.Detail}";
         }
 
-        return error.UserMessage;
+        return WarehouseErrorText.Get(L, error);
     }
 }

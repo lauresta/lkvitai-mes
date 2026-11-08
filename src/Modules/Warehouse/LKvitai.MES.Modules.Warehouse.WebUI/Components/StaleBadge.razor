@@ -1,6 +1,6 @@
 @if (!EffectiveLagSeconds.HasValue)
 {
-    <span class="badge bg-secondary">Unknown</span>
+    <span class="badge bg-secondary">@L["StaleBadge.Unknown"]</span>
 }
 else if (EffectiveLagSeconds.Value < WarnSeconds)
 {
@@ -8,11 +8,11 @@ else if (EffectiveLagSeconds.Value < WarnSeconds)
 }
 else if (EffectiveLagSeconds.Value < AlertSeconds)
 {
-    <span class="badge bg-warning text-dark">Stale</span>
+    <span class="badge bg-warning text-dark">@L["StaleBadge.Stale"]</span>
 }
 else
 {
-    <span class="badge bg-danger">Stale</span>
+    <span class="badge bg-danger">@L["StaleBadge.Stale"]</span>
 }
 
 @code {

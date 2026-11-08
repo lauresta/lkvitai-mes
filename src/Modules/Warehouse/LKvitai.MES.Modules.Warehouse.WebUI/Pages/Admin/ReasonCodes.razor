@@ -3,14 +3,14 @@
 @inject ToastService ToastService
 @inject IConfiguration Configuration
 
-<PageTitle>Reason Codes - Cikada.MES</PageTitle>
+<PageTitle>@L["Admin.ReasonCodes.ReasonCodesCikadaMES"]</PageTitle>
 
-<h1>Reason Codes</h1>
+<h1>@L["Admin.ReasonCodes.ReasonCodes"]</h1>
 
 @if (!_hasAdminAccess)
 {
     <div class="alert alert-warning" role="alert">
-        Admin role required.
+        @L["Common.AdminRoleRequired"]
     </div>
 }
 else
@@ -27,9 +27,9 @@ else
         <div class="card-body">
             <div class="row g-2 align-items-end">
                 <div class="col-md-4">
-                    <label class="form-label">Category</label>
+                    <label class="form-label">@L["Common.Category"]</label>
                     <InputSelect class="form-select" @bind-Value="_filterCategory">
-                        <option value="">All</option>
+                        <option value="">@L["Common.All"]</option>
                         @foreach (var category in Categories)
                         {
                             <option value="@category">@category</option>
@@ -37,18 +37,18 @@ else
                     </InputSelect>
                 </div>
                 <div class="col-md-4">
-                    <label class="form-label">Active</label>
+                    <label class="form-label">@L["Common.Active"]</label>
                     <InputSelect class="form-select" @bind-Value="_filterActive">
-                        <option value="">All</option>
-                        <option value="true">Active</option>
-                        <option value="false">Inactive</option>
+                        <option value="">@L["Common.All"]</option>
+                        <option value="true">@L["Common.Active"]</option>
+                        <option value="false">@L["Common.Inactive"]</option>
                     </InputSelect>
                 </div>
                 <div class="col-md-2 d-grid">
-                    <button class="btn btn-outline-secondary" @onclick="ApplyFiltersAsync">Filter</button>
+                    <button class="btn btn-outline-secondary" @onclick="ApplyFiltersAsync">@L["Common.Filter"]</button>
                 </div>
                 <div class="col-md-2 d-grid">
-                    <button class="btn btn-primary" @onclick="ToggleCreateForm">@(_showCreate ? "Hide Form" : "Add Reason Code")</button>
+                    <button class="btn btn-primary" @onclick="ToggleCreateForm">@(_showCreate ? L["Common.HideForm"] : L["Admin.ReasonCodes.AddReasonCode"])</button>
                 </div>
             </div>
         </div>
@@ -57,24 +57,24 @@ else
     @if (_showCreate)
     {
         <div class="card shadow-sm mb-3">
-            <div class="card-header">Create Reason Code</div>
+            <div class="card-header">@L["Admin.ReasonCodes.CreateReasonCode"]</div>
             <div class="card-body">
                 <EditForm Model="_createForm" OnValidSubmit="CreateAsync">
                     <DataAnnotationsValidator />
                     <ValidationSummary />
                     <div class="row g-2">
                         <div class="col-md-3">
-                            <label class="form-label">Code</label>
+                            <label class="form-label">@L["Common.Code"]</label>
                             <InputText class="form-control" @bind-Value="_createForm.Code" />
                             <ValidationMessage For="() => _createForm.Code" />
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">Name</label>
+                            <label class="form-label">@L["Common.Name"]</label>
                             <InputText class="form-control" @bind-Value="_createForm.Name" />
                             <ValidationMessage For="() => _createForm.Name" />
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">Category</label>
+                            <label class="form-label">@L["Common.Category"]</label>
                             <InputSelect class="form-select" @bind-Value="_createForm.Category">
                                 @foreach (var category in Categories)
                                 {
@@ -83,9 +83,9 @@ else
                             </InputSelect>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">Parent</label>
+                            <label class="form-label">@L["Common.Parent"]</label>
                             <InputSelect class="form-select" @bind-Value="_createForm.ParentId">
-                                <option value="">(None)</option>
+                                <option value="">@L["Admin.ReasonCodes.None"]</option>
                                 @foreach (var parent in RootReasonCodes)
                                 {
                                     <option value="@parent.Id">@parent.Code - @parent.Name</option>
@@ -93,17 +93,17 @@ else
                             </InputSelect>
                         </div>
                         <div class="col-md-9">
-                            <label class="form-label">Description</label>
+                            <label class="form-label">@L["Common.Description"]</label>
                             <InputText class="form-control" @bind-Value="_createForm.Description" />
                         </div>
                         <div class="col-md-3 d-flex align-items-end">
                             <div class="form-check mb-2">
                                 <InputCheckbox class="form-check-input" @bind-Value="_createForm.Active" />
-                                <label class="form-check-label">Active</label>
+                                <label class="form-check-label">@L["Common.Active"]</label>
                             </div>
                         </div>
                         <div class="col-md-2 d-grid">
-                            <button class="btn btn-primary" type="submit" disabled="@_isSubmitting">Save</button>
+                            <button class="btn btn-primary" type="submit" disabled="@_isSubmitting">@L["Common.Save"]</button>
                         </div>
                     </div>
                 </EditForm>
@@ -118,19 +118,19 @@ else
                 <table class="table table-sm table-hover align-middle">
                     <thead>
                         <tr>
-                            <th>Code</th>
-                            <th>Name</th>
-                            <th>Category</th>
-                            <th>Active</th>
-                            <th>Usage</th>
-                            <th class="text-end">Actions</th>
+                            <th>@L["Common.Code"]</th>
+                            <th>@L["Common.Name"]</th>
+                            <th>@L["Common.Category"]</th>
+                            <th>@L["Common.Active"]</th>
+                            <th>@L["Admin.ReasonCodes.Usage"]</th>
+                            <th class="text-end">@L["Common.Actions"]</th>
                         </tr>
                     </thead>
                     <tbody>
                         @if (_rows.Count == 0)
                         {
                             <tr>
-                                <td colspan="6" class="text-muted">No reason codes configured. Add your first reason code.</td>
+                                <td colspan="6" class="text-muted">@L["Admin.ReasonCodes.NoReasonCodesConfiguredAddYourFirstReasonCode"]</td>
                             </tr>
                         }
                         else
@@ -141,11 +141,11 @@ else
                                     <td style="padding-left:@($"{row.Level * 1.5}rem")">@row.ReasonCode.Code</td>
                                     <td>@row.ReasonCode.Name</td>
                                     <td>@row.ReasonCode.Category</td>
-                                    <td>@(row.ReasonCode.Active ? "Yes" : "No")</td>
+                                    <td>@(row.ReasonCode.Active ? L["Common.Yes"] : L["Common.No"])</td>
                                     <td>@row.ReasonCode.UsageCount</td>
                                     <td class="text-end">
-                                        <button class="btn btn-sm btn-outline-secondary me-2" @onclick="() => BeginEdit(row.ReasonCode)">Edit</button>
-                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmDelete(row.ReasonCode)">Delete</button>
+                                        <button class="btn btn-sm btn-outline-secondary me-2" @onclick="() => BeginEdit(row.ReasonCode)">@L["Common.Edit"]</button>
+                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmDelete(row.ReasonCode)">@L["Common.Delete"]</button>
                                     </td>
                                 </tr>
                             }
@@ -160,8 +160,8 @@ else
     {
         <div class="card shadow-sm mt-3">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <span>Edit @_editing.Code</span>
-                <button class="btn btn-sm btn-outline-secondary" @onclick="CancelEdit">Close</button>
+                <span>@L["Admin.ReasonCodes.Edit", _editing.Code]</span>
+                <button class="btn btn-sm btn-outline-secondary" @onclick="CancelEdit">@L["Common.Close"]</button>
             </div>
             <div class="card-body">
                 <EditForm Model="_editing" OnValidSubmit="UpdateAsync">
@@ -169,17 +169,17 @@ else
                     <ValidationSummary />
                     <div class="row g-2">
                         <div class="col-md-3">
-                            <label class="form-label">Code</label>
+                            <label class="form-label">@L["Common.Code"]</label>
                             <InputText class="form-control" @bind-Value="_editing.Code" />
                             <ValidationMessage For="() => _editing.Code" />
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">Name</label>
+                            <label class="form-label">@L["Common.Name"]</label>
                             <InputText class="form-control" @bind-Value="_editing.Name" />
                             <ValidationMessage For="() => _editing.Name" />
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">Category</label>
+                            <label class="form-label">@L["Common.Category"]</label>
                             <InputSelect class="form-select" @bind-Value="_editing.Category">
                                 @foreach (var category in Categories)
                                 {
@@ -188,9 +188,9 @@ else
                             </InputSelect>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label">Parent</label>
+                            <label class="form-label">@L["Common.Parent"]</label>
                             <InputSelect class="form-select" @bind-Value="_editing.ParentId">
-                                <option value="">(None)</option>
+                                <option value="">@L["Admin.ReasonCodes.None"]</option>
                                 @foreach (var parent in RootReasonCodes.Where(x => x.Id != _editing.Id))
                                 {
                                     <option value="@parent.Id">@parent.Code - @parent.Name</option>
@@ -198,17 +198,17 @@ else
                             </InputSelect>
                         </div>
                         <div class="col-md-9">
-                            <label class="form-label">Description</label>
+                            <label class="form-label">@L["Common.Description"]</label>
                             <InputText class="form-control" @bind-Value="_editing.Description" />
                         </div>
                         <div class="col-md-3 d-flex align-items-end">
                             <div class="form-check mb-2">
                                 <InputCheckbox class="form-check-input" @bind-Value="_editing.Active" />
-                                <label class="form-check-label">Active</label>
+                                <label class="form-check-label">@L["Common.Active"]</label>
                             </div>
                         </div>
                         <div class="col-md-2 d-grid">
-                            <button class="btn btn-primary" type="submit" disabled="@_isSubmitting">Save</button>
+                            <button class="btn btn-primary" type="submit" disabled="@_isSubmitting">@L["Common.Save"]</button>
                         </div>
                     </div>
                 </EditForm>
@@ -216,9 +216,9 @@ else
         </div>
     }
 
-    <ConfirmDialog Title="Delete Reason Code"
+    <ConfirmDialog Title="@L["Admin.ReasonCodes.DeleteReasonCode"]"
                    Message="@_deleteMessage"
-                   ConfirmText="Delete"
+                   ConfirmText="@L["Common.Delete"]"
                    IsVisible="@(_pendingDelete is not null)"
                    OnConfirm="DeleteAsync"
                    OnCancel="CancelDelete" />
@@ -302,7 +302,7 @@ else
         try
         {
             var created = await AdminConfigurationClient.CreateReasonCodeAsync(ToRequest(_createForm));
-            ToastService.ShowSuccess($"Reason code {created.Code} created.");
+            ToastService.ShowSuccess(L["Admin.ReasonCodes.Toast.ReasonCodeCreated", created.Code].Value);
             _showCreate = false;
             _createForm = new ReasonCodeForm();
             await LoadAsync();
@@ -345,7 +345,7 @@ else
         try
         {
             var updated = await AdminConfigurationClient.UpdateReasonCodeAsync(_editing.Id.Value, ToRequest(_editing));
-            ToastService.ShowSuccess($"Reason code {updated.Code} updated.");
+            ToastService.ShowSuccess(L["Admin.ReasonCodes.Toast.ReasonCodeUpdated", updated.Code].Value);
             _editing = null;
             await LoadAsync();
         }
@@ -363,7 +363,7 @@ else
     private void ConfirmDelete(ReasonCodeDto reasonCode)
     {
         _pendingDelete = reasonCode;
-        _deleteMessage = $"Delete reason code {reasonCode.Code}?";
+        _deleteMessage = L["Admin.ReasonCodes.DeleteReasonConfirmation", reasonCode.Code].Value;
     }
 
     private async Task DeleteAsync()
@@ -379,7 +379,7 @@ else
         try
         {
             await AdminConfigurationClient.DeleteReasonCodeAsync(_pendingDelete.Id);
-            ToastService.ShowSuccess($"Reason code {_pendingDelete.Code} deleted.");
+            ToastService.ShowSuccess(L["Admin.ReasonCodes.Toast.ReasonCodeDeleted", _pendingDelete.Code].Value);
             _pendingDelete = null;
             _deleteMessage = string.Empty;
             await LoadAsync();
@@ -480,14 +480,14 @@ else
         return bool.TryParse(value, out var parsed) ? parsed : null;
     }
 
-    private static string BuildErrorMessage(ApiException error)
+    private string BuildErrorMessage(ApiException error)
     {
         if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
         {
-            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+            return $"{WarehouseErrorText.Get(L, error)} {error.ProblemDetails.Detail}";
         }
 
-        return error.UserMessage;
+        return WarehouseErrorText.Get(L, error);
     }
 
     private void DismissError()
