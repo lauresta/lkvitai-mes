@@ -3,9 +3,9 @@
 @inject NavigationManager NavigationManager
 @inject ToastService ToastService
 
-<PageTitle>Search by Image - Cikada.MES</PageTitle>
+<PageTitle>@L["SearchByImage.SearchByImageCikadaMES"]</PageTitle>
 
-<h3 class="text-center mb-4">Search by Image</h3>
+<h3 class="text-center mb-4">@L["SearchByImage.SearchByImage"]</h3>
 
 @if (_apiError is not null)
 {
@@ -31,7 +31,7 @@
                     @if (_isLoading)
                     {
                         <div class="spinner-border text-white" style="width:2.5rem;height:2.5rem;" role="status">
-                            <span class="visually-hidden">Identifying…</span>
+                            <span class="visually-hidden">@L["SearchByImage.Identifying"]</span>
                         </div>
                     }
                     else
@@ -50,7 +50,7 @@
             </div>
 
             <p class="text-muted mt-3 mb-0 text-center">
-                @(_isLoading ? "Identifying item…" : "Tap to take a photo or choose from gallery")
+                @(_isLoading ? L["SearchByImage.IdentifyingItem"] : L["SearchByImage.TapToTakePhoto"])
             </p>
 
         </div>
@@ -65,8 +65,8 @@
             <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" class="mb-3 opacity-50" viewBox="0 0 16 16">
                 <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0" />
             </svg>
-            <p class="mb-0">No matching items found.</p>
-            <p class="small">Try uploading a clearer photo, or add photos to items first.</p>
+            <p class="mb-0">@L["SearchByImage.NoMatchingItemsFound"]</p>
+            <p class="small">@L["SearchByImage.TryUploadingAClearerPhotoOrAddPhotosToItemsFirst"]</p>
         </div>
     }
     else
@@ -82,7 +82,7 @@
                         }
                         else
                         {
-                            <div class="bg-light border text-muted d-flex align-items-center justify-content-center" style="height:150px;">No image</div>
+                            <div class="bg-light border text-muted d-flex align-items-center justify-content-center" style="height:150px;">@L["SearchByImage.NoImage"]</div>
                         }
                         <div class="card-body">
                             <div><strong>@result.SKU</strong></div>
@@ -171,13 +171,13 @@
         NavigationManager.NavigateTo($"admin/items/{itemId}");
     }
 
-    private static string BuildErrorMessage(ApiException error)
+    private string BuildErrorMessage(ApiException error)
     {
         if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
         {
-            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+            return $"{WarehouseErrorText.Get(L, error)} {error.ProblemDetails.Detail}";
         }
 
-        return error.UserMessage;
+        return WarehouseErrorText.Get(L, error);
     }
 }

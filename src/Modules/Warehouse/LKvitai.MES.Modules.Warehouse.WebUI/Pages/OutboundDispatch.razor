@@ -3,9 +3,9 @@
 @inject ToastService ToastService
 @using LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure
 
-<PageTitle>Dispatch Confirmation - Cikada.MES</PageTitle>
+<PageTitle>@L["OutboundDispatch.DispatchConfirmationCikadaMES"]</PageTitle>
 
-<h1>Dispatch Confirmation</h1>
+<h1>@L["OutboundDispatch.DispatchConfirmation"]</h1>
 
 @if (_apiError is not null)
 {
@@ -20,25 +20,25 @@
 
     <div class="card-body">
         <div class="d-flex gap-2 mb-3">
-            <button class="btn btn-outline-secondary" @onclick="ReloadAsync" disabled="@(_isLoading || _isSubmitting)">Refresh</button>
+            <button class="btn btn-outline-secondary" @onclick="ReloadAsync" disabled="@(_isLoading || _isSubmitting)">@L["Common.Refresh"]</button>
         </div>
 
         <div class="table-responsive">
             <table class="table table-hover align-middle">
                 <thead>
                     <tr>
-                        <th>Shipment Number</th>
-                        <th>Order Number</th>
-                        <th>Customer</th>
-                        <th>Packed At</th>
-                        <th>Actions</th>
+                        <th>@L["OutboundDispatch.ShipmentNumber"]</th>
+                        <th>@L["Common.OrderNumber"]</th>
+                        <th>@L["Common.Customer"]</th>
+                        <th>@L["OutboundDispatch.PackedAt"]</th>
+                        <th>@L["Common.Actions"]</th>
                     </tr>
                 </thead>
                 <tbody>
                     @if (_shipments.Count == 0)
                     {
                         <tr>
-                            <td colspan="5" class="text-center text-muted py-4">No packed shipments available.</td>
+                            <td colspan="5" class="text-center text-muted py-4">@L["OutboundDispatch.NoPackedShipmentsAvailable"]</td>
                         </tr>
                     }
                     else
@@ -54,7 +54,7 @@
                                     <button class="btn btn-sm btn-primary"
                                             @onclick="() => OpenDispatchModal(shipment)"
                                             disabled="@_isSubmitting">
-                                        Dispatch
+                                        @L["OutboundDispatch.Dispatch"]
                                     </button>
                                 </td>
                             </tr>
@@ -72,12 +72,12 @@
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Dispatch @_selectedShipment.ShipmentNumber</h5>
-                    <button type="button" class="btn-close" aria-label="Close" @onclick="CloseModal"></button>
+                    <h5 class="modal-title">@L["OutboundDispatch.Dispatch1bc4d8", _selectedShipment.ShipmentNumber]</h5>
+                    <button type="button" class="btn-close" aria-label="@L["Common.Close"]" @onclick="CloseModal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label" for="dispatch-carrier">Carrier</label>
+                        <label class="form-label" for="dispatch-carrier">@L["Common.Carrier"]</label>
                         <select id="dispatch-carrier" class="form-select" @bind="_carrier">
                             <option value="FEDEX">FEDEX</option>
                             <option value="UPS">UPS</option>
@@ -88,14 +88,14 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label" for="vehicle-id">Vehicle ID</label>
+                        <label class="form-label" for="vehicle-id">@L["OutboundDispatch.VehicleID"]</label>
                         <input id="vehicle-id" class="form-control" type="text" @bind="_vehicleId" />
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="CloseModal" disabled="@_isSubmitting">Cancel</button>
+                    <button type="button" class="btn btn-secondary" @onclick="CloseModal" disabled="@_isSubmitting">@L["Common.Cancel"]</button>
                     <button type="button" class="btn btn-primary" @onclick="ConfirmDispatchAsync" disabled="@_isSubmitting">
-                        Confirm Dispatch
+                        @L["OutboundDispatch.ConfirmDispatch"]
                     </button>
                 </div>
             </div>
@@ -178,7 +178,7 @@
                 VehicleId = string.IsNullOrWhiteSpace(_vehicleId) ? null : _vehicleId.Trim()
             });
 
-            ToastService.ShowSuccess("Shipment dispatched successfully.");
+            ToastService.ShowSuccess(L["OutboundDispatch.Toast.ShipmentDispatchedSuccessfully"].Value);
             CloseModal();
             await ReloadAsync();
         }
@@ -193,9 +193,9 @@
         }
     }
 
-    private static string BuildErrorMessage(ApiException ex)
-        => !string.IsNullOrWhiteSpace(ex.UserMessage)
-            ? ex.UserMessage
+    private string BuildErrorMessage(ApiException ex)
+        => !string.IsNullOrWhiteSpace(WarehouseErrorText.Get(L, ex))
+            ? WarehouseErrorText.Get(L, ex)
             : "Dispatch request failed.";
 
     private static string FormatDate(DateTimeOffset? value)

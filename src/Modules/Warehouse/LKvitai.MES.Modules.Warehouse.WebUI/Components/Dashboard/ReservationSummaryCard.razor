@@ -2,7 +2,7 @@
     <LoadingSpinner IsLoading="IsLoading" />
 
     <div class="card-body">
-        <h5 class="card-title mb-3">Reservation Summary</h5>
+        <h5 class="card-title mb-3">@L["Dashboard.ReservationSummaryCard.ReservationSummary"]</h5>
 
         @if (!string.IsNullOrWhiteSpace(ErrorMessage))
         {
@@ -13,21 +13,21 @@
         }
         else if (Data is null)
         {
-            <p class="text-muted mb-0">No reservation summary available.</p>
+            <p class="text-muted mb-0">@L["Dashboard.ReservationSummaryCard.NoReservationSummaryAvailable"]</p>
         }
         else
         {
             <ul class="list-group list-group-flush">
                 <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                    <span>ALLOCATED</span>
+                    <span>@WarehouseStatusText.Get(L, "ALLOCATED")</span>
                     <span class="badge bg-primary rounded-pill">@Data.Allocated</span>
                 </li>
                 <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                    <span>PICKING</span>
+                    <span>@WarehouseStatusText.Get(L, "PICKING")</span>
                     <span class="badge bg-warning text-dark rounded-pill">@Data.Picking</span>
                 </li>
                 <li class="list-group-item d-flex justify-content-between align-items-center px-0">
-                    <span>CONSUMED</span>
+                    <span>@WarehouseStatusText.Get(L, "CONSUMED")</span>
                     <span class="badge bg-success rounded-pill">@Data.Consumed</span>
                 </li>
             </ul>

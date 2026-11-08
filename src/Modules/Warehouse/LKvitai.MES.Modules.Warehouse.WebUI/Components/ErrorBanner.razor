@@ -4,14 +4,14 @@
         <div>@Message</div>
         @if (!string.IsNullOrWhiteSpace(TraceId))
         {
-            <small class="text-muted d-block">Error ID: @TraceId</small>
+            <small class="text-muted d-block">@L["ErrorBanner.ErrorID", TraceId]</small>
         }
         <div class="mt-2 d-flex gap-2 align-items-center">
             @if (CanShowRetry)
             {
-                <button type="button" class="btn btn-outline-danger btn-sm" @onclick="OnRetry">Retry</button>
+                <button type="button" class="btn btn-outline-danger btn-sm" @onclick="OnRetry">@L["Common.Retry"]</button>
             }
-            <button type="button" class="btn-close" aria-label="Close" @onclick="OnDismiss"></button>
+            <button type="button" class="btn-close" aria-label="@L["Common.Close"]" @onclick="OnDismiss"></button>
         </div>
     </div>
 }

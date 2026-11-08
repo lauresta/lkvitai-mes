@@ -3,9 +3,9 @@
 @inject IJSRuntime JavaScript
 @inject ToastService ToastService
 
-<PageTitle>Admin Import - Cikada.MES</PageTitle>
+<PageTitle>@L["AdminImport.AdminImportCikadaMES"]</PageTitle>
 
-<h3>Import Master Data</h3>
+<h3>@L["AdminImport.ImportMasterData"]</h3>
 
 @if (_apiError is not null)
 {
@@ -16,7 +16,7 @@
 }
 
 <div class="alert alert-info">
-    Dry-run is recommended before commit.
+    @L["AdminImport.DryRunIsRecommendedBeforeCommit"]
 </div>
 
 <div class="card shadow-sm mb-3">
@@ -34,11 +34,11 @@
         <div class="row g-2 align-items-end">
             <div class="col-md-4">
                 <button class="btn btn-outline-secondary" @onclick="DownloadTemplateAsync">
-                    Download Template
+                    @L["AdminImport.DownloadTemplate"]
                 </button>
             </div>
             <div class="col-md-4">
-                <label class="form-label">File</label>
+                <label class="form-label">@L["AdminImport.File"]</label>
                 <InputFile OnChange="OnFileSelectedAsync" />
                 @if (!string.IsNullOrWhiteSpace(_fileName))
                 {
@@ -48,12 +48,12 @@
             <div class="col-md-2 d-flex align-items-center">
                 <div class="form-check mt-4">
                     <input class="form-check-input" type="checkbox" @bind="_dryRun" />
-                    <label class="form-check-label">Dry run</label>
+                    <label class="form-check-label">@L["AdminImport.DryRun"]</label>
                 </div>
             </div>
             <div class="col-md-2 d-grid">
                 <button class="btn btn-primary" disabled="@(_fileBytes is null || _isBusy)" @onclick="RunImportAsync">
-                    @(_isBusy ? "Running..." : "Run Import")
+                    @(_isBusy ? L["AdminImport.Running"] : L["AdminImport.RunImport"])
                 </button>
             </div>
         </div>
@@ -63,15 +63,15 @@
 @if (_lastResult is not null)
 {
     <div class="card shadow-sm">
-        <div class="card-header">Import Result</div>
+        <div class="card-header">@L["AdminImport.ImportResult"]</div>
         <div class="card-body">
             <div class="row g-2 mb-3">
-                <div class="col-md-2"><strong>Inserted:</strong> @_lastResult.Inserted</div>
-                <div class="col-md-2"><strong>Updated:</strong> @_lastResult.Updated</div>
-                <div class="col-md-2"><strong>Skipped:</strong> @_lastResult.Skipped</div>
-                <div class="col-md-2"><strong>Errors:</strong> @_lastResult.Errors.Count</div>
-                <div class="col-md-2"><strong>Dry run:</strong> @_lastResult.DryRun</div>
-                <div class="col-md-2"><strong>Bulk:</strong> @_lastResult.UsedBulk</div>
+                <div class="col-md-2"><strong>@L["AdminImport.Inserted"]</strong> @_lastResult.Inserted</div>
+                <div class="col-md-2"><strong>@L["AdminImport.Updated"]</strong> @_lastResult.Updated</div>
+                <div class="col-md-2"><strong>@L["AdminImport.Skipped"]</strong> @_lastResult.Skipped</div>
+                <div class="col-md-2"><strong>@L["AdminImport.Errors"]</strong> @_lastResult.Errors.Count</div>
+                <div class="col-md-2"><strong>@L["AdminImport.DryRun7c5223"]</strong> @L[_lastResult.DryRun ? "Common.Yes" : "Common.No"]</div>
+                <div class="col-md-2"><strong>@L["AdminImport.Bulk"]</strong> @L[_lastResult.UsedBulk ? "Common.Yes" : "Common.No"]</div>
             </div>
 
             @if (_lastResult.Errors.Count > 0)
@@ -80,10 +80,10 @@
                     <table class="table table-sm table-striped">
                         <thead>
                         <tr>
-                            <th>Row</th>
-                            <th>Column</th>
-                            <th>Value</th>
-                            <th>Message</th>
+                            <th>@L["AdminImport.Row"]</th>
+                            <th>@L["AdminImport.Column"]</th>
+                            <th>@L["Common.Value"]</th>
+                            <th>@L["AdminImport.Message"]</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -105,19 +105,19 @@
                 <button class="btn btn-outline-secondary"
                         disabled="@(_lastResult.Errors.Count == 0)"
                         @onclick="DownloadErrorReportAsync">
-                    Download Error Report
+                    @L["AdminImport.DownloadErrorReport"]
                 </button>
                 <button class="btn btn-success"
                         disabled="@(!CanCommit)"
                         @onclick="CommitAsync">
-                    Commit Changes
+                    @L["AdminImport.CommitChanges"]
                 </button>
             </div>
 
             @if (_lastResult.DryRun && _lastResult.Errors.Count > 0)
             {
                 <div class="alert alert-warning mt-3 mb-0">
-                    Commit is disabled until dry-run errors are resolved.
+                    @L["AdminImport.CommitIsDisabledUntilDryRunErrorsAreResolved"]
                 </div>
             }
         </div>
@@ -127,17 +127,19 @@
 @code {
     private sealed record ImportTab(string EntityType, string DisplayName);
 
-    private static readonly ImportTab[] _tabs =
+    private ImportTab[] _tabs =>
     [
-        new("items", "Items"),
-        new("prices", "Item Prices"),
-        new("suppliers", "Suppliers"),
-        new("mappings", "Supplier Mappings"),
-        new("barcodes", "Item Barcodes"),
-        new("locations", "Locations")
+        new("items", L["AdminImport.TabItems"].Value),
+        new("prices", L["AdminImport.TabItemPrices"].Value),
+        new("suppliers", L["AdminImport.TabSuppliers"].Value),
+        new("mappings", L["AdminImport.TabSupplierMappings"].Value),
+        new("barcodes", L["AdminImport.TabItemBarcodes"].Value),
+        new("locations", L["AdminImport.TabLocations"].Value)
     ];
 
-    private ImportTab _selectedTab = _tabs[0];
+    private ImportTab _selectedTab = new("items", "");
+
+    protected override void OnInitialized() => _selectedTab = _tabs[0];
     private string? _fileName;
     private byte[]? _fileBytes;
     private bool _dryRun = true;
@@ -205,7 +207,7 @@
                 _fileName,
                 _fileBytes,
                 _dryRun);
-            ToastService.ShowSuccess("Import request completed.");
+            ToastService.ShowSuccess(L["AdminImport.Toast.ImportRequestCompleted"].Value);
         }
         catch (ApiException ex)
         {
@@ -265,13 +267,13 @@
         await RunImportAsync();
     }
 
-    private static string BuildErrorMessage(ApiException error)
+    private string BuildErrorMessage(ApiException error)
     {
         if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
         {
-            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+            return $"{WarehouseErrorText.Get(L, error)} {error.ProblemDetails.Detail}";
         }
 
-        return error.UserMessage;
+        return WarehouseErrorText.Get(L, error);
     }
 }

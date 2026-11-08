@@ -2,7 +2,7 @@
     <LoadingSpinner IsLoading="IsLoading" />
 
     <div class="card-body">
-        <h5 class="card-title mb-3">Projection Health</h5>
+        <h5 class="card-title mb-3">@L["Dashboard.ProjectionHealthCard.ProjectionHealth"]</h5>
 
         @if (!string.IsNullOrWhiteSpace(ErrorMessage))
         {
@@ -13,7 +13,7 @@
         }
         else if (Data is null)
         {
-            <p class="text-muted mb-0">No projection health data available.</p>
+            <p class="text-muted mb-0">@L["Dashboard.ProjectionHealthCard.NoProjectionHealthDataAvailable"]</p>
         }
         else
         {
@@ -21,9 +21,9 @@
                 <table class="table table-sm align-middle mb-0">
                     <thead>
                         <tr>
-                            <th scope="col">Projection</th>
-                            <th scope="col">Lag</th>
-                            <th scope="col">Last Updated</th>
+                            <th scope="col">@L["Common.Projection"]</th>
+                            <th scope="col">@L["Dashboard.ProjectionHealthCard.Lag"]</th>
+                            <th scope="col">@L["Common.LastUpdated"]</th>
                         </tr>
                     </thead>
                     <tbody>

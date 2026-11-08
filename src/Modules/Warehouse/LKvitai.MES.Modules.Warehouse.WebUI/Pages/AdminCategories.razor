@@ -2,9 +2,9 @@
 @inject MasterDataAdminClient AdminClient
 @inject ToastService ToastService
 
-<PageTitle>Admin Categories - Cikada.MES</PageTitle>
+<PageTitle>@L["AdminCategories.AdminCategoriesCikadaMES"]</PageTitle>
 
-<h3>Categories Management</h3>
+<h3>@L["AdminCategories.CategoriesManagement"]</h3>
 
 @if (_apiError is not null)
 {
@@ -15,23 +15,23 @@
 }
 
 <div class="card shadow-sm mb-3">
-    <div class="card-header">Create Category</div>
+    <div class="card-header">@L["AdminCategories.CreateCategory"]</div>
     <div class="card-body">
         <div class="row g-2">
             <div class="col-md-3">
-                <label class="form-label">Code</label>
+                <label class="form-label">@L["Common.Code"]</label>
                 <input class="form-control" @bind="_create.Code" />
             </div>
             <div class="col-md-5">
-                <label class="form-label">Name</label>
+                <label class="form-label">@L["Common.Name"]</label>
                 <input class="form-control" @bind="_create.Name" />
             </div>
             <div class="col-md-2">
-                <label class="form-label">Parent Id</label>
+                <label class="form-label">@L["Common.ParentId"]</label>
                 <input class="form-control" type="number" @bind="_create.ParentCategoryId" />
             </div>
             <div class="col-md-2 d-grid">
-                <button class="btn btn-primary" @onclick="CreateAsync">Save</button>
+                <button class="btn btn-primary" @onclick="CreateAsync">@L["Common.Save"]</button>
             </div>
         </div>
     </div>
@@ -44,9 +44,9 @@
             <table class="table table-sm table-hover align-middle">
                 <thead>
                 <tr>
-                    <th>Code</th>
-                    <th>Name</th>
-                    <th>Parent</th>
+                    <th>@L["Common.Code"]</th>
+                    <th>@L["Common.Name"]</th>
+                    <th>@L["Common.Parent"]</th>
                     <th></th>
                 </tr>
                 </thead>
@@ -54,7 +54,7 @@
                 @if (_categories.Count == 0)
                 {
                     <tr>
-                        <td colspan="4" class="text-muted">No categories found.</td>
+                        <td colspan="4" class="text-muted">@L["AdminCategories.NoCategoriesFound"]</td>
                     </tr>
                 }
                 else
@@ -66,8 +66,8 @@
                             <td>@row.Name</td>
                             <td>@ResolveParent(row.ParentCategoryId)</td>
                             <td class="text-end">
-                                <button class="btn btn-sm btn-outline-secondary me-1" @onclick="@(() => BeginEdit(row))">Edit</button>
-                                <button class="btn btn-sm btn-outline-danger" @onclick="@(() => DeleteAsync(row.Id))">Delete</button>
+                                <button class="btn btn-sm btn-outline-secondary me-1" @onclick="@(() => BeginEdit(row))">@L["Common.Edit"]</button>
+                                <button class="btn btn-sm btn-outline-danger" @onclick="@(() => DeleteAsync(row.Id))">@L["Common.Delete"]</button>
                             </td>
                         </tr>
                     }
@@ -82,25 +82,25 @@
 {
     <div class="card shadow-sm mt-3">
         <div class="card-header d-flex justify-content-between align-items-center">
-            <span>Edit Category: @_editing.Code</span>
-            <button class="btn btn-sm btn-outline-secondary" @onclick="@(() => _editing = null)">Close</button>
+            <span>@L["AdminCategories.EditCategory", _editing.Code]</span>
+            <button class="btn btn-sm btn-outline-secondary" @onclick="@(() => _editing = null)">@L["Common.Close"]</button>
         </div>
         <div class="card-body">
             <div class="row g-2">
                 <div class="col-md-3">
-                    <label class="form-label">Code</label>
+                    <label class="form-label">@L["Common.Code"]</label>
                     <input class="form-control" @bind="_editing.Code" />
                 </div>
                 <div class="col-md-5">
-                    <label class="form-label">Name</label>
+                    <label class="form-label">@L["Common.Name"]</label>
                     <input class="form-control" @bind="_editing.Name" />
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Parent Id</label>
+                    <label class="form-label">@L["Common.ParentId"]</label>
                     <input class="form-control" type="number" @bind="_editing.ParentCategoryId" />
                 </div>
                 <div class="col-md-2 d-grid">
-                    <button class="btn btn-primary" @onclick="UpdateAsync">Save Changes</button>
+                    <button class="btn btn-primary" @onclick="UpdateAsync">@L["AdminCategories.SaveChanges"]</button>
                 </div>
             </div>
         </div>
@@ -159,7 +159,7 @@
                 _create.Code,
                 _create.Name,
                 _create.ParentCategoryId));
-            ToastService.ShowSuccess("Category created.");
+            ToastService.ShowSuccess(L["AdminCategories.Toast.CategoryCreated"].Value);
             _create = new CategoryForm();
             await ReloadAsync();
         }
@@ -194,7 +194,7 @@
             await AdminClient.UpdateCategoryAsync(
                 _editing.Id,
                 new CreateOrUpdateCategoryRequest(_editing.Code, _editing.Name, _editing.ParentCategoryId));
-            ToastService.ShowSuccess("Category updated.");
+            ToastService.ShowSuccess(L["AdminCategories.Toast.CategoryUpdated"].Value);
             _editing = null;
             await ReloadAsync();
         }
@@ -211,7 +211,7 @@
         {
             _apiError = null;
             await AdminClient.DeleteCategoryAsync(id);
-            ToastService.ShowWarning("Category deleted.");
+            ToastService.ShowWarning(L["AdminCategories.Toast.CategoryDeleted"].Value);
             await ReloadAsync();
         }
         catch (ApiException ex)
@@ -221,14 +221,14 @@
         }
     }
 
-    private static string BuildErrorMessage(ApiException error)
+    private string BuildErrorMessage(ApiException error)
     {
         if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
         {
-            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+            return $"{WarehouseErrorText.Get(L, error)} {error.ProblemDetails.Detail}";
         }
 
-        return error.UserMessage;
+        return WarehouseErrorText.Get(L, error);
     }
 
     private class CategoryForm

@@ -3,13 +3,13 @@
 @inject ToastService ToastService
 @using LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure
 
-<PageTitle>Wave Picking - Cikada.MES</PageTitle>
+<PageTitle>@L["WavePicking.WavePickingCikadaMES"]</PageTitle>
 
-<h3>Wave Picking</h3>
+<h3>@L["WavePicking.WavePicking"]</h3>
 
 @if (_error is not null)
 {
-    <ErrorBanner Message="@_error.UserMessage"
+    <ErrorBanner Message="@WarehouseErrorText.Get(L, _error)"
                  TraceId="@_error.TraceId"
                  OnRetry="LoadAsync"
                  OnDismiss="DismissError" />
@@ -17,18 +17,18 @@
 
 <div class="card shadow-sm mb-3">
     <div class="card-body">
-        <h5>Create Wave</h5>
+        <h5>@L["WavePicking.CreateWave"]</h5>
         <div class="row g-2 align-items-end">
             <div class="col-md-6">
-                <label class="form-label">Order IDs (comma separated GUIDs)</label>
+                <label class="form-label">@L["WavePicking.OrderIDsCommaSeparatedGUIDs"]</label>
                 <input class="form-control" @bind="_orderIdsInput" placeholder="11111111-1111-1111-1111-111111111111,..." />
             </div>
             <div class="col-md-3">
-                <label class="form-label">Assigned Operator</label>
-                <input class="form-control" @bind="_assignedOperator" placeholder="picker-01" />
+                <label class="form-label">@L["Common.AssignedOperator"]</label>
+                <input class="form-control" @bind="_assignedOperator" placeholder="@L["WavePicking.Picker01"]" />
             </div>
             <div class="col-md-3">
-                <button class="btn btn-primary w-100" @onclick="CreateWaveAsync" disabled="@_isBusy">Create Wave</button>
+                <button class="btn btn-primary w-100" @onclick="CreateWaveAsync" disabled="@_isBusy">@L["WavePicking.CreateWave"]</button>
             </div>
         </div>
     </div>
@@ -37,23 +37,23 @@
 <div class="card shadow-sm">
     <div class="card-body">
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="mb-0">Active Waves</h5>
+            <h5 class="mb-0">@L["WavePicking.ActiveWaves"]</h5>
             <div class="d-flex gap-2">
                 <select class="form-select form-select-sm" style="width: 180px" @bind="_statusFilter" @bind:after="LoadAsync">
-                    <option value="">All statuses</option>
-                    <option value="CREATED">CREATED</option>
-                    <option value="ASSIGNED">ASSIGNED</option>
-                    <option value="PICKING">PICKING</option>
-                    <option value="COMPLETED">COMPLETED</option>
+                    <option value="">@L["WavePicking.AllStatuses"]</option>
+                    <option value="CREATED">@WarehouseStatusText.Get(L, "CREATED")</option>
+                    <option value="ASSIGNED">@WarehouseStatusText.Get(L, "ASSIGNED")</option>
+                    <option value="PICKING">@WarehouseStatusText.Get(L, "PICKING")</option>
+                    <option value="COMPLETED">@WarehouseStatusText.Get(L, "COMPLETED")</option>
                 </select>
-                <button class="btn btn-outline-secondary btn-sm" @onclick="LoadAsync" disabled="@_isBusy">Refresh</button>
+                <button class="btn btn-outline-secondary btn-sm" @onclick="LoadAsync" disabled="@_isBusy">@L["Common.Refresh"]</button>
             </div>
         </div>
 
         @if (_waves.Count == 0)
         {
-            <EmptyState Title="No waves found"
-                        Message="Create a wave to start batch picking."
+            <EmptyState Title="@L["WavePicking.NoWavesFound"]"
+                        Message="@L["WavePicking.CreateAWaveToStartBatchPicking"]"
                         IconCss="bi bi-layers"
                         OnAction="LoadAsync" />
         }
@@ -63,12 +63,12 @@
                 <table class="table table-sm align-middle">
                     <thead>
                         <tr>
-                            <th>Wave</th>
-                            <th>Status</th>
-                            <th>Operator</th>
-                            <th>Orders</th>
-                            <th>Progress</th>
-                            <th>Actions</th>
+                            <th>@L["WavePicking.Wave"]</th>
+                            <th>@L["Common.Status"]</th>
+                            <th>@L["Common.Operator"]</th>
+                            <th>@L["WavePicking.Orders"]</th>
+                            <th>@L["WavePicking.Progress"]</th>
+                            <th>@L["Common.Actions"]</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -76,22 +76,22 @@
                         {
                             <tr>
                                 <td>@wave.WaveNumber</td>
-                                <td><span class="badge @GetStatusClass(wave.Status)">@wave.Status</span></td>
+                                <td><span class="badge @GetStatusClass(wave.Status)">@WarehouseStatusText.Get(L, wave.Status)</span></td>
                                 <td>@(wave.AssignedOperator ?? "-")</td>
                                 <td>@wave.OrderIds.Count</td>
                                 <td>@wave.CompletedLines/@wave.TotalLines</td>
                                 <td class="d-flex gap-1">
                                     @if (wave.Status == "CREATED")
                                     {
-                                        <button class="btn btn-sm btn-outline-primary" @onclick="() => AssignAsync(wave.Id)">Assign</button>
+                                        <button class="btn btn-sm btn-outline-primary" @onclick="() => AssignAsync(wave.Id)">@L["Common.Assign"]</button>
                                     }
                                     @if (wave.Status == "ASSIGNED")
                                     {
-                                        <button class="btn btn-sm btn-outline-success" @onclick="() => StartAsync(wave.Id)">Start</button>
+                                        <button class="btn btn-sm btn-outline-success" @onclick="() => StartAsync(wave.Id)">@L["Common.Start"]</button>
                                     }
                                     @if (wave.Status is "ASSIGNED" or "PICKING")
                                     {
-                                        <button class="btn btn-sm btn-outline-secondary" @onclick="() => CompleteLineAsync(wave.Id)">+1 Line</button>
+                                        <button class="btn btn-sm btn-outline-secondary" @onclick="() => CompleteLineAsync(wave.Id)">@L["WavePicking.1Line"]</button>
                                     }
                                 </td>
                             </tr>
@@ -137,7 +137,7 @@
 
         if (orderIds.Count == 0)
         {
-            ToastService.ShowError("Enter at least one valid order GUID.");
+            ToastService.ShowError(L["WavePicking.Toast.EnterAtLeastOneValidOrderGUID"].Value);
             return;
         }
 
@@ -145,7 +145,7 @@
         {
             await AdvancedClient.CreateWaveAsync(new WaveCreateRequestDto(orderIds, _assignedOperator));
             _orderIdsInput = string.Empty;
-            ToastService.ShowSuccess("Wave created.");
+            ToastService.ShowSuccess(L["WavePicking.Toast.WaveCreated"].Value);
             await LoadAsync();
         });
     }
@@ -156,7 +156,7 @@
         await ExecuteAsync(async () =>
         {
             await AdvancedClient.AssignWaveAsync(id, operatorName);
-            ToastService.ShowSuccess("Wave assigned.");
+            ToastService.ShowSuccess(L["WavePicking.Toast.WaveAssigned"].Value);
             await LoadAsync();
         });
     }
@@ -166,7 +166,7 @@
         await ExecuteAsync(async () =>
         {
             await AdvancedClient.StartWaveAsync(id);
-            ToastService.ShowSuccess("Wave started.");
+            ToastService.ShowSuccess(L["WavePicking.Toast.WaveStarted"].Value);
             await LoadAsync();
         });
     }
@@ -192,7 +192,7 @@
         catch (ApiException ex)
         {
             _error = ex;
-            ToastService.ShowError(ex.UserMessage);
+            ToastService.ShowError(WarehouseErrorText.Get(L, ex));
         }
         finally
         {

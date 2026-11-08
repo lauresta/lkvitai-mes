@@ -14,7 +14,7 @@
 @inject IJSRuntime JS
 @inject NavigationManager NavigationManager
 
-<PageTitle>Warehouse Visualization</PageTitle>
+<PageTitle>@L["Visualization.Warehouse3D.WarehouseVisualization"]</PageTitle>
 
 <div class="viz-page">
     @if (_filtersPopoverOpen)
@@ -27,7 +27,7 @@
             <select class="viz-warehouse-pill"
                     @bind="_warehouseCode"
                     @bind:after="OnWarehouseChangedAsync"
-                    aria-label="Select warehouse">
+                    aria-label="@L["Visualization.Warehouse3D.SelectWarehouse"]">
                 @foreach (var warehouse in _warehouses)
                 {
                     <option value="@warehouse.Code">@warehouse.Code - @warehouse.Name</option>
@@ -35,8 +35,8 @@
             </select>
 
             <button class="viz-icon-btn"
-                    title="Refresh"
-                    aria-label="Refresh warehouse data"
+                    title="@L["Common.Refresh"]"
+                    aria-label="@L["Visualization.Warehouse3D.RefreshWarehouseData"]"
                     @onclick="RefreshAsync">
                 <i class="bi bi-arrow-clockwise @(_isLoading ? "viz-spin" : "")"></i>
             </button>
@@ -52,17 +52,17 @@
             <div class="viz-search-box @(_searchExpanded ? "viz-search-expanded" : "")">
                 <i class="bi bi-search viz-search-icon"></i>
                 <input class="viz-search-input"
-                       placeholder="Search SKU, item name, or location..."
+                       placeholder="@L["Visualization.Warehouse3D.SearchSKUItemNameOrLocation"]"
                        value="@_unifiedSearchQuery"
                        @oninput="OnUnifiedSearchInput"
                        @onfocus="() => _searchExpanded = true"
                        @onblur="OnSearchBlur"
                        @onkeydown="HandleUnifiedSearchKeyAsync"
-                       aria-label="Search warehouse" />
+                       aria-label="@L["Visualization.Warehouse3D.SearchWarehouse"]" />
                 @if (!string.IsNullOrWhiteSpace(_unifiedSearchQuery))
                 {
                     <button class="viz-search-clear"
-                            aria-label="Clear search"
+                            aria-label="@L["Visualization.Warehouse3D.ClearSearch"]"
                             @onclick="ClearUnifiedSearchAsync">
                         <i class="bi bi-x"></i>
                     </button>
@@ -82,29 +82,29 @@
                 }
             </div>
 
-            <div class="viz-segmented" role="group" aria-label="View mode">
+            <div class="viz-segmented" role="group" aria-label="@L["Visualization.Warehouse3D.ViewMode"]">
                 <button class="viz-seg-btn @(_is3dView ? "viz-seg-active" : "")"
                         @onclick="() => EnsureViewModeAsync(true)"
                         aria-pressed="@_is3dView.ToString().ToLowerInvariant()">
-                    3D
+                    @L["Visualization.Warehouse3D.3D"]
                 </button>
                 <button class="viz-seg-btn @(!_is3dView ? "viz-seg-active" : "")"
                         @onclick="() => EnsureViewModeAsync(false)"
                         aria-pressed="@(!_is3dView).ToString().ToLowerInvariant()">
-                    2D
+                    @L["Visualization.Warehouse3D.2D"]
                 </button>
             </div>
 
             @if (_is3dView)
             {
                 <button class="viz-toggle-pill @(_showRackLabels ? "viz-toggle-on" : "viz-toggle-off")"
-                        title="@(_showRackLabels ? "Labels visible - click to hide" : "Labels hidden - click to show")"
-                        aria-label="Toggle rack labels"
+                        title="@(_showRackLabels ? L["Visualization.Warehouse3D.LabelsVisibleClickToHide"] : L["Visualization.Warehouse3D.LabelsHiddenClickToShow"])"
+                        aria-label="@L["Visualization.Warehouse3D.ToggleRackLabels"]"
                         aria-checked="@_showRackLabels.ToString().ToLowerInvariant()"
                         role="switch"
                         @onclick="ToggleRackLabelsAsync">
                     <i class="bi bi-tag"></i>
-                    Labels
+                    @L["Visualization.Warehouse3D.Labels"]
                     <span class="viz-toggle-dot"></span>
                 </button>
             }
@@ -114,16 +114,16 @@
                 <select class="viz-cam-select"
                         value="@_cameraMode"
                         @onchange="OnCameraModeChangedAsync"
-                        aria-label="Camera angle"
-                        title="Camera angle">
-                    <option value="overview">Overview</option>
-                    <option value="low">Low angle</option>
+                        aria-label="@L["Visualization.Warehouse3D.CameraAngle"]"
+                        title="@L["Visualization.Warehouse3D.CameraAngle"]">
+                    <option value="overview">@L["Visualization.Warehouse3D.Overview"]</option>
+                    <option value="low">@L["Visualization.Warehouse3D.LowAngle"]</option>
                 </select>
             }
 
             <div class="viz-filters-wrap">
                 <button class="viz-filters-btn @(_filtersPopoverOpen ? "viz-filters-open" : "")"
-                        aria-label="Open filters (@ActiveFilterCount active)"
+                        aria-label="@L["Visualization.Warehouse3D.OpenFiltersActive", ActiveFilterCount]"
                         @onclick="ToggleFiltersPopover">
                     <i class="bi bi-funnel"></i>
                     Filters
@@ -135,9 +135,9 @@
 
                 @if (_filtersPopoverOpen)
                 {
-                    <div class="viz-filters-popover" role="dialog" aria-label="Filters">
+                    <div class="viz-filters-popover" role="dialog" aria-label="@L["Visualization.Warehouse3D.Filters"]">
                         <div class="viz-filters-section">
-                            <div class="viz-filters-section-label">Zone</div>
+                            <div class="viz-filters-section-label">@L["Visualization.Warehouse3D.Zone"]</div>
                             <div class="viz-filters-chips">
                                 @foreach (var zone in ZoneOptions)
                                 {
@@ -149,7 +149,7 @@
                             </div>
                         </div>
                         <div class="viz-filters-section">
-                            <div class="viz-filters-section-label">Status</div>
+                            <div class="viz-filters-section-label">@L["Common.Status"]</div>
                             <div class="viz-filters-chips">
                                 @foreach (var (value, label) in StatusOptions)
                                 {
@@ -161,8 +161,8 @@
                             </div>
                         </div>
                         <div class="viz-filters-footer">
-                            <button class="btn btn-sm btn-outline-secondary" @onclick="ResetFiltersAsync">Reset</button>
-                            <button class="btn btn-sm btn-primary" @onclick="() => _filtersPopoverOpen = false">Done</button>
+                            <button class="btn btn-sm btn-outline-secondary" @onclick="ResetFiltersAsync">@L["Common.Reset"]</button>
+                            <button class="btn btn-sm btn-primary" @onclick="() => _filtersPopoverOpen = false">@L["Visualization.Warehouse3D.Done"]</button>
                         </div>
                     </div>
                 }
@@ -202,7 +202,7 @@
                 }
                 else
                 {
-                    <span class="viz-ctx-warn">Not in @CurrentWarehouseCode</span>
+                    <span class="viz-ctx-warn">@L["Visualization.Warehouse3D.NotIn", CurrentWarehouseCode]</span>
                 }
 
                 @if (_otherWarehouseSummaries.Count > 0)
@@ -213,7 +213,7 @@
                 }
 
                 <button class="viz-ctx-clear"
-                        aria-label="Clear item search"
+                        aria-label="@L["Visualization.Warehouse3D.ClearItemSearch"]"
                         @onclick="ClearItemSearchAsync">
                     <i class="bi bi-x"></i>
                 </button>
@@ -224,7 +224,7 @@
                 {
                     <span class="viz-filter-chip">
                         Zone: @_zoneFilter
-                        <button aria-label="Remove zone filter" @onclick='() => SetZoneFilterAsync("ALL")'>
+                        <button aria-label="@L["Visualization.Warehouse3D.RemoveZoneFilter"]" @onclick='() => SetZoneFilterAsync("ALL")'>
                             <i class="bi bi-x"></i>
                         </button>
                     </span>
@@ -233,12 +233,12 @@
                 {
                     <span class="viz-filter-chip">
                         Status: @_statusFilter
-                        <button aria-label="Remove status filter" @onclick='() => SetStatusFilterAsync("ALL")'>
+                        <button aria-label="@L["Visualization.Warehouse3D.RemoveStatusFilter"]" @onclick='() => SetStatusFilterAsync("ALL")'>
                             <i class="bi bi-x"></i>
                         </button>
                     </span>
                 }
-                <button class="viz-ctx-clear-all" @onclick="ResetFiltersAsync">Clear all</button>
+                <button class="viz-ctx-clear-all" @onclick="ResetFiltersAsync">@L["Visualization.Warehouse3D.ClearAll"]</button>
             }
         </div>
     }
@@ -247,7 +247,7 @@
     {
         <div class="viz-loading">
             <div class="spinner-border text-primary" role="status"></div>
-            <span>Loading warehouse model...</span>
+            <span>@L["Visualization.Warehouse3D.LoadingWarehouseModel"]</span>
         </div>
     }
     else if (!string.IsNullOrWhiteSpace(_error))
@@ -260,13 +260,13 @@
         if (_model.Bins.Count == 0)
         {
             <div class="alert alert-warning mt-3">
-                No bins configured with coordinates. Configure layout first.
+                @L["Visualization.Warehouse3D.NoBinsConfiguredWithCoordinatesConfigureLayoutFirst"]
             </div>
         }
         else if (visibleBins.Count == 0)
         {
             <div class="alert alert-warning mt-3">
-                No bins match the selected zone/status filters.
+                @L["Visualization.Warehouse3D.NoBinsMatchTheSelectedZoneStatusFilters"]
             </div>
         }
 
@@ -275,8 +275,8 @@
                 @if (_is3dView)
                 {
                     <div id="@CanvasId" class="viz-canvas"></div>
-                    <div class="viz-mouse-help" aria-label="3D mouse controls">
-                        <div class="viz-mouse-help-title">Mouse controls</div>
+                    <div class="viz-mouse-help" aria-label="@L["Visualization.Warehouse3D.3DMouseControls"]">
+                        <div class="viz-mouse-help-title">@L["Visualization.Warehouse3D.MouseControls"]</div>
                         <div class="viz-mouse-help-grid">
                             <div class="viz-mouse-help-item">
                                 <svg class="viz-mouse-icon" viewBox="0 0 34 46" aria-hidden="true" focusable="false">
@@ -286,7 +286,7 @@
                                     <line x1="6" y1="22" x2="28" y2="22" />
                                     <rect class="viz-mouse-wheel" x="15" y="8" width="4" height="8" rx="2" />
                                 </svg>
-                                <span>Rotate / Select</span>
+                                <span>@L["Visualization.Warehouse3D.RotateSelect"]</span>
                             </div>
                             <div class="viz-mouse-help-item">
                                 <svg class="viz-mouse-icon" viewBox="0 0 34 46" aria-hidden="true" focusable="false">
@@ -296,7 +296,7 @@
                                     <rect class="viz-mouse-active" x="15" y="8" width="4" height="8" rx="2" />
                                     <path class="viz-mouse-arrow" d="M27 9v10m0-10l-3 3m3-3l3 3m-3 7l-3-3m3 3l3-3" />
                                 </svg>
-                                <span>Zoom</span>
+                                <span>@L["Visualization.Warehouse3D.Zoom"]</span>
                             </div>
                             <div class="viz-mouse-help-item">
                                 <svg class="viz-mouse-icon" viewBox="0 0 34 46" aria-hidden="true" focusable="false">
@@ -307,7 +307,7 @@
                                     <rect class="viz-mouse-wheel" x="15" y="8" width="4" height="8" rx="2" />
                                     <path class="viz-mouse-arrow" d="M25 31h-9m9 0l-3-3m3 3l-3 3m-6-3l3-3m-3 3l3 3" />
                                 </svg>
-                                <span>Drag / Pan</span>
+                                <span>@L["Visualization.Warehouse3D.DragPan"]</span>
                             </div>
                         </div>
                     </div>
@@ -315,8 +315,8 @@
                 else
                 {
                     <div class="viz-2d-controls">
-                        <button class="btn btn-sm btn-outline-secondary" @onclick="ZoomOut2dAsync" title="Zoom out">-</button>
-                        <button class="btn btn-sm btn-outline-secondary" @onclick="ZoomIn2dAsync" title="Zoom in">+</button>
+                        <button class="btn btn-sm btn-outline-secondary" @onclick="ZoomOut2dAsync" title="@L["Visualization.Warehouse3D.ZoomOut"]">-</button>
+                        <button class="btn btn-sm btn-outline-secondary" @onclick="ZoomIn2dAsync" title="@L["Visualization.Warehouse3D.ZoomIn"]">+</button>
                     </div>
                     <div class="viz-2d-wrap">
                         <svg class="viz-2d-canvas"
@@ -365,16 +365,16 @@
                     </div>
                 }
                 <div class="viz-legend">
-                    <div class="viz-legend-title">Status</div>
-                    <div class="viz-legend-item"><span class="viz-legend-color viz-status-empty"></span>Empty</div>
-                    <div class="viz-legend-item"><span class="viz-legend-color viz-status-low"></span>Low</div>
-                    <div class="viz-legend-item"><span class="viz-legend-color viz-status-medium"></span>Medium</div>
-                    <div class="viz-legend-item"><span class="viz-legend-color viz-status-full"></span>Full</div>
-                    <div class="viz-legend-item"><span class="viz-legend-color viz-status-over"></span>Over capacity</div>
-                    <div class="viz-legend-item"><span class="viz-legend-color viz-status-reserved"></span>Reserved (pattern)</div>
+                    <div class="viz-legend-title">@L["Common.Status"]</div>
+                    <div class="viz-legend-item"><span class="viz-legend-color viz-status-empty"></span>@L["Visualization.Warehouse3D.Empty"]</div>
+                    <div class="viz-legend-item"><span class="viz-legend-color viz-status-low"></span>@L["Visualization.Warehouse3D.Low"]</div>
+                    <div class="viz-legend-item"><span class="viz-legend-color viz-status-medium"></span>@L["Visualization.Warehouse3D.Medium"]</div>
+                    <div class="viz-legend-item"><span class="viz-legend-color viz-status-full"></span>@L["Visualization.Warehouse3D.Full"]</div>
+                    <div class="viz-legend-item"><span class="viz-legend-color viz-status-over"></span>@L["Visualization.Warehouse3D.OverCapacity"]</div>
+                    <div class="viz-legend-item"><span class="viz-legend-color viz-status-reserved"></span>@L["Visualization.Warehouse3D.ReservedPattern"]</div>
                     <div class="viz-legend-divider"></div>
-                    <div class="viz-legend-title">Indicator</div>
-                    <div class="viz-legend-item"><span class="viz-legend-color viz-selected-hint"></span>Selected (pin + ring + pulse)</div>
+                    <div class="viz-legend-title">@L["Visualization.Warehouse3D.Indicator"]</div>
+                    <div class="viz-legend-item"><span class="viz-legend-color viz-selected-hint"></span>@L["Visualization.Warehouse3D.SelectedPinRingPulse"]</div>
                 </div>
             </div>
             <div class="viz-details">
@@ -386,37 +386,37 @@
                         {
                             <div class="viz-empty-selection">
                                 <i class="bi bi-cursor"></i>
-                                <span>Select a bin, slot, or rack to view details.</span>
+                                <span>@L["Visualization.Warehouse3D.SelectABinSlotOrRackToViewDetails"]</span>
                             </div>
                         }
                         else
                         {
-                            <h2>Rack @_selectedRack.Id</h2>
+                            <h2>@L["Visualization.Warehouse3D.Rack", _selectedRack.Id]</h2>
                             <dl class="row">
-                                <dt class="col-5">Type</dt>
+                                <dt class="col-5">@L["Common.Type"]</dt>
                                 <dd class="col-7">@_selectedRack.Type</dd>
-                                <dt class="col-5">Origin</dt>
+                                <dt class="col-5">@L["Visualization.Warehouse3D.Origin"]</dt>
                                 <dd class="col-7">@FormatCoordinates(_selectedRack.Origin)</dd>
-                                <dt class="col-5">Dimensions</dt>
+                                <dt class="col-5">@L["Common.Dimensions"]</dt>
                                 <dd class="col-7">@FormatRackDimensions(_selectedRack.Dimensions)</dd>
-                                <dt class="col-5">Levels</dt>
+                                <dt class="col-5">@L["Visualization.Warehouse3D.Levels"]</dt>
                                 <dd class="col-7">@_selectedRack.Levels.Count</dd>
-                                <dt class="col-5">Slots / level</dt>
+                                <dt class="col-5">@L["Visualization.Warehouse3D.SlotsLevel"]</dt>
                                 <dd class="col-7">@_selectedRack.SlotsPerLevel</dd>
-                                <dt class="col-5">Bay count</dt>
+                                <dt class="col-5">@L["Visualization.Warehouse3D.BayCount"]</dt>
                                 <dd class="col-7">@_selectedRack.BayCount</dd>
-                                <dt class="col-5">Back-to-back</dt>
-                                <dd class="col-7">@(_selectedRack.BackToBack ? "Yes" : "No")</dd>
+                                <dt class="col-5">@L["Visualization.Warehouse3D.BackToBack"]</dt>
+                                <dd class="col-7">@(_selectedRack.BackToBack ? L["Common.Yes"] : L["Common.No"])</dd>
                                 @if (!string.IsNullOrWhiteSpace(_selectedRack.PairedWithRackId))
                                 {
-                                    <dt class="col-5">Paired rack</dt>
+                                    <dt class="col-5">@L["Visualization.Warehouse3D.PairedRack"]</dt>
                                     <dd class="col-7">@_selectedRack.PairedWithRackId</dd>
                                 }
                             </dl>
 
                             <a class="btn btn-sm btn-outline-secondary"
                                href="@BuildSlotsLink(rackId: _selectedRack.Id)">
-                                Open In Slots
+                                @L["Common.OpenInSlots"]
                             </a>
                         }
                     }
@@ -424,45 +424,45 @@
                     {
                         <h2>@_selectedSlot.Address</h2>
                         <dl class="row">
-                            <dt class="col-5">Status</dt>
-                            <dd class="col-7">@(_selectedSlot.Occupied ? "Occupied" : "Empty")</dd>
-                            <dt class="col-5">Rack</dt>
+                            <dt class="col-5">@L["Common.Status"]</dt>
+                            <dd class="col-7">@(_selectedSlot.Occupied ? L["Common.Occupied"] : L["Common.Empty"])</dd>
+                            <dt class="col-5">@L["Common.Rack"]</dt>
                             <dd class="col-7">@_selectedSlot.RackId</dd>
-                            <dt class="col-5">Level</dt>
+                            <dt class="col-5">@L["Common.Level"]</dt>
                             <dd class="col-7">@_selectedSlot.Level</dd>
-                            <dt class="col-5">Slot</dt>
+                            <dt class="col-5">@L["Visualization.Warehouse3D.Slot"]</dt>
                             <dd class="col-7">@_selectedSlot.Slot</dd>
                             @if (ResolveBinForSlot(_selectedSlot) is { } slotBin)
                             {
-                                <dt class="col-5">Location</dt>
+                                <dt class="col-5">@L["Common.Location"]</dt>
                                 <dd class="col-7">@slotBin.Code</dd>
                                 @if (!string.IsNullOrWhiteSpace(slotBin.Address))
                                 {
-                                    <dt class="col-5">Bin address</dt>
+                                    <dt class="col-5">@L["Visualization.Warehouse3D.BinAddress"]</dt>
                                     <dd class="col-7">@slotBin.Address</dd>
                                 }
                                 @if (slotBin.Span.HasValue && slotBin.Span.Value > 1)
                                 {
-                                    <dt class="col-5">Span</dt>
+                                    <dt class="col-5">@L["Visualization.Warehouse3D.Span"]</dt>
                                     <dd class="col-7">@FormatSpan(slotBin)</dd>
                                 }
                             }
-                            <dt class="col-5">Coordinates</dt>
+                            <dt class="col-5">@L["Common.Coordinates"]</dt>
                             <dd class="col-7">@FormatCoordinates(_selectedSlot.Origin)</dd>
-                            <dt class="col-5">Dimensions</dt>
+                            <dt class="col-5">@L["Common.Dimensions"]</dt>
                             <dd class="col-7">@FormatRackDimensions(_selectedSlot.Dimensions)</dd>
                         </dl>
 
                         <div class="d-flex gap-2 flex-wrap">
                             <a class="btn btn-sm btn-outline-secondary"
                                href="@BuildSlotsLink(rackId: _selectedSlot.RackId, level: _selectedSlot.Level, address: _selectedSlot.Address)">
-                                Open In Slots
+                                @L["Common.OpenInSlots"]
                             </a>
                             @if (ResolveBinForSlot(_selectedSlot) is { } occupiedSlotBin)
                             {
                                 <a class="btn btn-sm btn-outline-secondary"
                                    href="@BuildLocationsLink(occupiedSlotBin.Code)">
-                                    Open In Locations
+                                    @L["Visualization.Warehouse3D.OpenInLocations"]
                                 </a>
                             }
                         </div>
@@ -472,32 +472,32 @@
                 {
                     <h2>@_selectedBin.Code</h2>
                     <dl class="row">
-                        <dt class="col-5">Status</dt>
-                        <dd class="col-7">@_selectedBin.Status</dd>
-                        <dt class="col-5">Utilization</dt>
+                        <dt class="col-5">@L["Common.Status"]</dt>
+                        <dd class="col-7">@WarehouseStatusText.Get(L, _selectedBin.Status)</dd>
+                        <dt class="col-5">@L["Visualization.Warehouse3D.Utilization"]</dt>
                         <dd class="col-7">@_selectedBin.UtilizationPercent.ToString("0.##", CultureInfo.InvariantCulture)%</dd>
-                        <dt class="col-5">Coordinates</dt>
+                        <dt class="col-5">@L["Common.Coordinates"]</dt>
                         <dd class="col-7">@FormatCoordinates(_selectedBin.Coordinates)</dd>
                         @if (!string.IsNullOrWhiteSpace(_selectedBin.Address))
                         {
-                            <dt class="col-5">Address</dt>
+                            <dt class="col-5">@L["Common.Address"]</dt>
                             <dd class="col-7">@_selectedBin.Address</dd>
                         }
                         @if (!string.IsNullOrWhiteSpace(_selectedBin.LocationRole))
                         {
-                            <dt class="col-5">Role</dt>
+                            <dt class="col-5">@L["Common.Role"]</dt>
                             <dd class="col-7">@_selectedBin.LocationRole</dd>
                         }
-                        <dt class="col-5">Dimensions</dt>
+                        <dt class="col-5">@L["Common.Dimensions"]</dt>
                         <dd class="col-7">@FormatDimensions(_selectedBin.Dimensions)</dd>
-                        <dt class="col-5">Capacity</dt>
+                        <dt class="col-5">@L["Visualization.Warehouse3D.Capacity"]</dt>
                         <dd class="col-7">@FormatCapacity(_selectedBin.Capacity)</dd>
                     </dl>
 
-                    <h3>Handling Units</h3>
+                    <h3>@L["Visualization.Warehouse3D.HandlingUnits"]</h3>
                     @if (_selectedBin.HandlingUnits.Count == 0)
                     {
-                        <p class="text-muted">No handling units.</p>
+                        <p class="text-muted">@L["Visualization.Warehouse3D.NoHandlingUnits"]</p>
                     }
                     else
                     {
@@ -516,15 +516,15 @@
 
                     <a class="btn btn-sm btn-outline-secondary mt-3"
                        href="@($"/warehouse/locations/{_selectedBin.LocationId}")">
-                        View Details
+                        @L["Visualization.Warehouse3D.ViewDetails"]
                     </a>
                     <a class="btn btn-sm btn-outline-secondary mt-3 ms-2"
                        href="@BuildSlotsLink(rackId: _selectedBin.RackId, level: _selectedBin.Level, address: _selectedBin.Address)">
-                        Open In Slots
+                        @L["Common.OpenInSlots"]
                     </a>
                     <a class="btn btn-sm btn-outline-secondary mt-3 ms-2"
                        href="@BuildLocationsLink(_selectedBin.Code)">
-                        Open In Locations
+                        @L["Visualization.Warehouse3D.OpenInLocations"]
                     </a>
                 }
             </div>
@@ -904,16 +904,16 @@
             }
             else if (_otherWarehouseSummaries.Count > 0)
             {
-                ToastService.ShowWarning("Item exists in other warehouses, but not in the current warehouse.");
+                ToastService.ShowWarning(L["Visualization.Warehouse3D.Toast.ItemExistsInOtherWarehousesButNotInTheCurrentWarehouse"].Value);
             }
             else
             {
-                ToastService.ShowWarning("No physical bins found for this item.");
+                ToastService.ShowWarning(L["Visualization.Warehouse3D.Toast.NoPhysicalBinsFoundForThisItem"].Value);
             }
         }
         catch (ApiException ex)
         {
-            _error = ex.ProblemDetails?.Detail ?? ex.UserMessage;
+            _error = ex.ProblemDetails?.Detail ?? WarehouseErrorText.Get(L, ex);
         }
     }
 
@@ -1063,7 +1063,7 @@
         }
         catch (ApiException ex)
         {
-            _error = ex.ProblemDetails?.Detail ?? ex.UserMessage;
+            _error = ex.ProblemDetails?.Detail ?? WarehouseErrorText.Get(L, ex);
         }
         catch (Exception ex)
         {
@@ -1102,20 +1102,20 @@
         await LoadVisualizationAsync();
     }
 
-    private static string FormatRefreshAge(DateTimeOffset refreshedAt)
+    private string FormatRefreshAge(DateTimeOffset refreshedAt)
     {
         var age = DateTimeOffset.Now - refreshedAt;
         if (age.TotalSeconds < 60)
         {
-            return "just now";
+            return L["Visualization.Warehouse3D.JustNow"].Value;
         }
 
         if (age.TotalMinutes < 60)
         {
-            return $"{(int)age.TotalMinutes}m ago";
+            return L["Visualization.Warehouse3D.MinutesAgo", (int)age.TotalMinutes].Value;
         }
 
-        return $"{(int)age.TotalHours}h ago";
+        return L["Visualization.Warehouse3D.HoursAgo", (int)age.TotalHours].Value;
     }
 
     private string? GetSelectedQueryValue()

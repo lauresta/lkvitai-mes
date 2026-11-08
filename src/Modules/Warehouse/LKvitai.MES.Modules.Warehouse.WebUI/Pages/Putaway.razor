@@ -7,9 +7,9 @@
 @inject MasterDataAdminClient MasterDataAdminClient
 @inject ToastService ToastService
 
-<PageTitle>Putaway</PageTitle>
+<PageTitle>@L["Putaway.Putaway"]</PageTitle>
 
-<h1>Putaway Tasks</h1>
+<h1>@L["Putaway.PutawayTasks"]</h1>
 
 @if (_apiError is not null)
 {
@@ -20,8 +20,8 @@
     <LoadingSpinner IsLoading="_isLoading || _isSubmitting" />
     <div class="card-body">
         <div class="d-flex justify-content-between align-items-center mb-2">
-            <h5 class="mb-0">Tasks from RECEIVING</h5>
-            <button class="btn btn-outline-secondary btn-sm" @onclick="LoadAsync">Refresh</button>
+            <h5 class="mb-0">@L["Putaway.TasksFromRECEIVING"]</h5>
+            <button class="btn btn-outline-secondary btn-sm" @onclick="LoadAsync">@L["Common.Refresh"]</button>
         </div>
 
         <div class="table-responsive">
@@ -29,21 +29,21 @@
                 <thead>
                     <tr>
                         <th>SKU</th>
-                        <th>Item</th>
-                        <th class="text-end">Qty</th>
+                        <th>@L["Common.Item"]</th>
+                        <th class="text-end">@L["Common.Qty"]</th>
                         <th class="text-end">@L["Pricing.Cost"]</th>
                         <th class="text-end">@L["Pricing.Sale"]</th>
-                        <th class="text-end">Value</th>
-                        <th>From</th>
-                        <th>To Location</th>
-                        <th>Notes</th>
-                        <th>Action</th>
+                        <th class="text-end">@L["Common.Value"]</th>
+                        <th>@L["Common.From"]</th>
+                        <th>@L["Common.ToLocation"]</th>
+                        <th>@L["Common.Notes"]</th>
+                        <th>@L["Common.Action"]</th>
                     </tr>
                 </thead>
                 <tbody>
                     @if (_tasks.Count == 0)
                     {
-                        <tr><td colspan="10">No putaway tasks available.</td></tr>
+                        <tr><td colspan="10">@L["Putaway.NoPutawayTasksAvailable"]</td></tr>
                     }
                     else
                     {
@@ -59,7 +59,7 @@
                                 <td>@task.FromLocationCode</td>
                                 <td>
                                     <select class="form-select form-select-sm" @bind="task.ToLocationId">
-                                        <option value="0">Select destination</option>
+                                        <option value="0">@L["Putaway.SelectDestination"]</option>
                                         @foreach (var loc in _toLocations)
                                         {
                                             <option value="@loc.Id">@loc.Code</option>
@@ -70,7 +70,7 @@
                                     <input class="form-control form-control-sm" @bind="task.Notes" />
                                 </td>
                                 <td>
-                                    <button class="btn btn-sm btn-primary" @onclick="() => ExecuteAsync(task)" disabled="@(task.ToLocationId <= 0 || _fromReceivingLocationId <= 0)">Putaway</button>
+                                    <button class="btn btn-sm btn-primary" @onclick="() => ExecuteAsync(task)" disabled="@(task.ToLocationId <= 0 || _fromReceivingLocationId <= 0)">@L["Putaway.Putaway"]</button>
                                 </td>
                             </tr>
                         }
@@ -167,7 +167,7 @@
                 string.IsNullOrWhiteSpace(row.Notes) ? null : row.Notes.Trim()));
 
             _lastWarning = response.Warning;
-            ToastService.ShowSuccess($"Putaway completed for {row.InternalSKU} to {response.ToLocationCode}.");
+            ToastService.ShowSuccess(L["Putaway.Toast.PutawayCompletedForTo", row.InternalSKU, response.ToLocationCode].Value);
             await LoadAsync();
         }
         catch (ApiException ex)
@@ -183,11 +183,11 @@
 
     private void DismissError() => _apiError = null;
 
-    private static string BuildErrorMessage(ApiException ex)
-        => ex.UserMessage
+    private string BuildErrorMessage(ApiException ex)
+        => WarehouseErrorText.Get(L, ex)
            ?? ex.ProblemDetails?.Detail
            ?? ex.ProblemDetails?.Title
-           ?? "Putaway request failed.";
+           ?? L["Putaway.RequestFailed"].Value;
 
     private sealed class PutawayTaskRow
     {

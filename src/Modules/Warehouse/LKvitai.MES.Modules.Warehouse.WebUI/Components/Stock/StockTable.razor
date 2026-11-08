@@ -1,7 +1,7 @@
 <DataTable TItem="AvailableStockItemDto"
            Items="Items"
            TotalCount="TotalCount"
-           EmptyMessage="No stock found matching filters."
+           EmptyMessage="@L["Stock.StockTable.NoStockFoundMatchingFilters"]"
            Columns="@Columns"
            RowTemplate="@RowTemplate" />
 
@@ -13,13 +13,13 @@
     public int TotalCount { get; set; }
 
     private RenderFragment Columns => @<text>
-        <th scope="col">Warehouse</th>
-        <th scope="col">Location</th>
+        <th scope="col">@L["Common.Warehouse"]</th>
+        <th scope="col">@L["Common.Location"]</th>
         <th scope="col">SKU</th>
-        <th scope="col" class="text-end">Physical Qty</th>
-        <th scope="col" class="text-end">Reserved Qty</th>
-        <th scope="col" class="text-end">Available Qty</th>
-        <th scope="col">Last Updated</th>
+        <th scope="col" class="text-end">@L["Stock.StockTable.PhysicalQty"]</th>
+        <th scope="col" class="text-end">@L["Stock.StockTable.ReservedQty"]</th>
+        <th scope="col" class="text-end">@L["Stock.StockTable.AvailableQty"]</th>
+        <th scope="col">@L["Stock.StockTable.LastUpdated"]</th>
     </text>;
 
     private RenderFragment<AvailableStockItemDto> RowTemplate => item => @<text>

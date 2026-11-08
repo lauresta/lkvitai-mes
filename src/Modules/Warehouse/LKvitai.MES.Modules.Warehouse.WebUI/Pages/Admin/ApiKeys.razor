@@ -4,14 +4,14 @@
 @inject ToastService ToastService
 @inject IConfiguration Configuration
 
-<PageTitle>API Keys - Cikada.MES</PageTitle>
+<PageTitle>@L["Admin.ApiKeys.APIKeysCikadaMES"]</PageTitle>
 
-<h1>API Keys</h1>
+<h1>@L["Admin.ApiKeys.APIKeys"]</h1>
 
 @if (!_hasAdminAccess)
 {
     <div class="alert alert-warning" role="alert">
-        Admin role required.
+        @L["Common.AdminRoleRequired"]
     </div>
 }
 else
@@ -27,7 +27,7 @@ else
     @if (_latestPlainKey is not null)
     {
         <div class="alert alert-info" role="alert">
-            <div><strong>One-time key value:</strong> store this now. It is not shown again.</div>
+            <div><strong>@L["Admin.ApiKeys.OneTimeKeyValue"]</strong> @L["Admin.ApiKeys.StoreThisNowItIsNotShownAgain"]</div>
             <code>@_latestPlainKey</code>
         </div>
     }
@@ -36,10 +36,10 @@ else
         <div class="card-body">
             <div class="row g-2 align-items-end">
                 <div class="col-md-3 d-grid">
-                    <button class="btn btn-primary" @onclick="ToggleCreateForm">@(_showCreate ? "Hide Form" : "Create New Key")</button>
+                    <button class="btn btn-primary" @onclick="ToggleCreateForm">@(_showCreate ? L["Common.HideForm"] : L["Admin.ApiKeys.CreateNewKey"])</button>
                 </div>
                 <div class="col-md-3 d-grid">
-                    <button class="btn btn-outline-secondary" @onclick="LoadAsync">Refresh</button>
+                    <button class="btn btn-outline-secondary" @onclick="LoadAsync">@L["Common.Refresh"]</button>
                 </div>
             </div>
         </div>
@@ -48,7 +48,7 @@ else
     @if (_showCreate)
     {
         <div class="card shadow-sm mb-3">
-            <div class="card-header">Create API Key</div>
+            <div class="card-header">@L["Admin.ApiKeys.CreateAPIKey"]</div>
             <div class="card-body">
                 <EditForm Model="_createForm" OnValidSubmit="CreateAsync">
                     <DataAnnotationsValidator />
@@ -56,24 +56,24 @@ else
 
                     <div class="row g-2 mb-3">
                         <div class="col-md-4">
-                            <label class="form-label">Name</label>
+                            <label class="form-label">@L["Common.Name"]</label>
                             <InputText class="form-control" @bind-Value="_createForm.Name" />
                             <ValidationMessage For="() => _createForm.Name" />
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">Rate Limit / Minute</label>
+                            <label class="form-label">@L["Admin.ApiKeys.RateLimitMinute"]</label>
                             <InputNumber class="form-control" @bind-Value="_createForm.RateLimitPerMinute" />
                             <ValidationMessage For="() => _createForm.RateLimitPerMinute" />
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">Expires At (optional)</label>
+                            <label class="form-label">@L["Admin.ApiKeys.ExpiresAtOptional"]</label>
                             <InputText class="form-control"
                                        @bind-Value="_createForm.ExpiresAtLocal"
-                                       placeholder="yyyy-MM-dd HH:mm" />
+                                       placeholder="@L["Admin.ApiKeys.YyyyMMDdHHMm"]" />
                         </div>
                     </div>
 
-                    <label class="form-label">Scopes</label>
+                    <label class="form-label">@L["Admin.ApiKeys.Scopes"]</label>
                     <div class="row g-1 mb-2">
                         @foreach (var scope in ScopeOptions)
                         {
@@ -94,7 +94,7 @@ else
                         <div class="text-danger mb-2">@_scopeError</div>
                     }
 
-                    <button class="btn btn-primary" type="submit" disabled="@_isSubmitting">Save</button>
+                    <button class="btn btn-primary" type="submit" disabled="@_isSubmitting">@L["Common.Save"]</button>
                 </EditForm>
             </div>
         </div>
@@ -107,21 +107,21 @@ else
                 <table class="table table-sm table-hover align-middle">
                     <thead>
                         <tr>
-                            <th>Name</th>
-                            <th>Key</th>
-                            <th>Scopes</th>
-                            <th>Created</th>
-                            <th>Last Used</th>
-                            <th>Expiry</th>
-                            <th>Status</th>
-                            <th class="text-end">Actions</th>
+                            <th>@L["Common.Name"]</th>
+                            <th>@L["Admin.ApiKeys.Key"]</th>
+                            <th>@L["Admin.ApiKeys.Scopes"]</th>
+                            <th>@L["Common.Created"]</th>
+                            <th>@L["Admin.ApiKeys.LastUsed"]</th>
+                            <th>@L["Common.Expiry"]</th>
+                            <th>@L["Common.Status"]</th>
+                            <th class="text-end">@L["Common.Actions"]</th>
                         </tr>
                     </thead>
                     <tbody>
                         @if (_keys.Count == 0)
                         {
                             <tr>
-                                <td colspan="8" class="text-muted">No API keys configured.</td>
+                                <td colspan="8" class="text-muted">@L["Admin.ApiKeys.NoAPIKeysConfigured"]</td>
                             </tr>
                         }
                         else
@@ -140,17 +140,17 @@ else
                                     <td>@key.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
                                     <td>@(key.LastUsedAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "-")</td>
                                     <td>@(key.ExpiresAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "Never")</td>
-                                    <td>@(key.Active ? "Active" : "Inactive")</td>
+                                    <td>@(key.Active ? L["Common.Active"] : L["Common.Inactive"])</td>
                                     <td class="text-end">
                                         <button class="btn btn-sm btn-outline-secondary me-2"
                                                 @onclick="() => RotateAsync(key)"
                                                 disabled="@_isRotating">
-                                            Rotate
+                                            @L["Admin.ApiKeys.Rotate"]
                                         </button>
                                         <button class="btn btn-sm btn-outline-danger"
                                                 @onclick="() => ConfirmDelete(key)"
                                                 disabled="@_isDeleting || !key.Active">
-                                            Delete
+                                            @L["Common.Delete"]
                                         </button>
                                     </td>
                                 </tr>
@@ -162,9 +162,9 @@ else
         </div>
     </div>
 
-    <ConfirmDialog Title="Delete API Key"
+    <ConfirmDialog Title="@L["Admin.ApiKeys.DeleteAPIKey"]"
                    Message="@_deleteMessage"
-                   ConfirmText="Delete"
+                   ConfirmText="@L["Common.Delete"]"
                    IsVisible="@(_pendingDelete is not null)"
                    OnConfirm="DeleteAsync"
                    OnCancel="CancelDelete" />
@@ -270,7 +270,7 @@ else
             _latestPlainKey = created.PlainKey;
             _showCreate = false;
             _createForm = new CreateApiKeyForm();
-            ToastService.ShowSuccess($"API key {created.Name} created.");
+            ToastService.ShowSuccess(L["Admin.ApiKeys.Toast.APIKeyCreated", created.Name].Value);
             await LoadAsync();
         }
         catch (FormatException ex)
@@ -297,7 +297,7 @@ else
         {
             var rotated = await ApiKeysClient.RotateKeyAsync(key.Id);
             _latestPlainKey = rotated.PlainKey;
-            ToastService.ShowSuccess($"API key {rotated.Name} rotated.");
+            ToastService.ShowSuccess(L["Admin.ApiKeys.Toast.APIKeyRotated", rotated.Name].Value);
             await LoadAsync();
         }
         catch (ApiException ex)
@@ -314,7 +314,7 @@ else
     private void ConfirmDelete(ApiKeyViewDto key)
     {
         _pendingDelete = key;
-        _deleteMessage = $"Delete API key {key.Name}?";
+        _deleteMessage = L["Admin.ApiKeys.DeleteKeyConfirmation", key.Name].Value;
     }
 
     private async Task DeleteAsync()
@@ -330,7 +330,7 @@ else
         try
         {
             await ApiKeysClient.DeleteKeyAsync(_pendingDelete.Id);
-            ToastService.ShowSuccess($"API key {_pendingDelete.Name} deleted.");
+            ToastService.ShowSuccess(L["Admin.ApiKeys.Toast.APIKeyDeleted", _pendingDelete.Name].Value);
             _pendingDelete = null;
             _deleteMessage = string.Empty;
             await LoadAsync();
@@ -375,14 +375,14 @@ else
         return new DateTimeOffset(parsed);
     }
 
-    private static string BuildErrorMessage(ApiException error)
+    private string BuildErrorMessage(ApiException error)
     {
         if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
         {
-            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+            return $"{WarehouseErrorText.Get(L, error)} {error.ProblemDetails.Detail}";
         }
 
-        return error.UserMessage;
+        return WarehouseErrorText.Get(L, error);
     }
 
     private void DismissError()

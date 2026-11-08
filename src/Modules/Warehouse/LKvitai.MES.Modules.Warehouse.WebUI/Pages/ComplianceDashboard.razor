@@ -2,20 +2,20 @@
 @inject ReportsClient ReportsClient
 @inject ToastService Toast
 
-<PageTitle>Compliance Dashboard</PageTitle>
+<PageTitle>@L["ComplianceDashboard.ComplianceDashboard"]</PageTitle>
 
-<h1 class="mb-3">Compliance Dashboard</h1>
+<h1 class="mb-3">@L["ComplianceDashboard.ComplianceDashboard"]</h1>
 
 @if (_apiError is not null)
 {
-    <ErrorBanner Message="@_apiError.UserMessage" TraceId="@_apiError.TraceId" OnRetry="LoadAsync" OnDismiss="DismissError" />
+    <ErrorBanner Message="@WarehouseErrorText.Get(L, _apiError)" TraceId="@_apiError.TraceId" OnRetry="LoadAsync" OnDismiss="DismissError" />
 }
 
 <div class="row g-3 mb-3">
     <div class="col-md-4">
         <div class="card shadow-sm h-100">
             <div class="card-body">
-                <h6 class="text-muted">Pending Exports</h6>
+                <h6 class="text-muted">@L["ComplianceDashboard.PendingExports"]</h6>
                 <div class="display-6">@_summary.PendingExports</div>
             </div>
         </div>
@@ -23,7 +23,7 @@
     <div class="col-md-4">
         <div class="card shadow-sm h-100">
             <div class="card-body">
-                <h6 class="text-muted">Recent Lot Traces</h6>
+                <h6 class="text-muted">@L["ComplianceDashboard.RecentLotTraces"]</h6>
                 <div class="display-6">@_summary.RecentTraces</div>
             </div>
         </div>
@@ -31,7 +31,7 @@
     <div class="col-md-4">
         <div class="card shadow-sm h-100">
             <div class="card-body">
-                <h6 class="text-muted">Variance Alerts</h6>
+                <h6 class="text-muted">@L["ComplianceDashboard.VarianceAlerts"]</h6>
                 <div class="display-6 text-danger">@_summary.VarianceAlerts</div>
             </div>
         </div>
@@ -43,15 +43,15 @@
         <div class="card shadow-sm">
             <div class="card-body">
                 <div class="d-flex align-items-center mb-2">
-                    <h5 class="mb-0">Schedule Report</h5>
-                    <button class="btn btn-outline-primary btn-sm ms-auto" @onclick="ResetForm">Reset</button>
+                    <h5 class="mb-0">@L["ComplianceDashboard.ScheduleReport"]</h5>
+                    <button class="btn btn-outline-primary btn-sm ms-auto" @onclick="ResetForm">@L["Common.Reset"]</button>
                 </div>
 
                 <EditForm Model="@_form" OnValidSubmit="SaveAsync">
                     <DataAnnotationsValidator />
                     <ValidationSummary />
                     <div class="mb-2">
-                        <label class="form-label">Report Type</label>
+                        <label class="form-label">@L["ComplianceDashboard.ReportType"]</label>
                         <select class="form-select" @bind="_form.ReportType">
                             <option value="VARIANCEANALYSIS">VARIANCE_ANALYSIS</option>
                             <option value="TRANSACTIONEXPORT">TRANSACTION_EXPORT</option>
@@ -59,15 +59,15 @@
                         </select>
                     </div>
                     <div class="mb-2">
-                        <label class="form-label">Cron (UTC)</label>
+                        <label class="form-label">@L["ComplianceDashboard.CronUTC"]</label>
                         <input class="form-control" @bind="_form.Schedule" />
                     </div>
                     <div class="mb-2">
-                        <label class="form-label">Email Recipients (comma)</label>
+                        <label class="form-label">@L["ComplianceDashboard.EmailRecipientsComma"]</label>
                         <input class="form-control" @bind="_form.EmailRecipients" />
                     </div>
                     <div class="mb-2">
-                        <label class="form-label">Format</label>
+                        <label class="form-label">@L["Common.Format"]</label>
                         <select class="form-select" @bind="_form.Format">
                             <option value="PDF">PDF</option>
                             <option value="CSV">CSV</option>
@@ -75,9 +75,9 @@
                     </div>
                     <div class="form-check mb-3">
                         <input class="form-check-input" type="checkbox" id="activeCheck" @bind="_form.Active" />
-                        <label class="form-check-label" for="activeCheck">Active</label>
+                        <label class="form-check-label" for="activeCheck">@L["Common.Active"]</label>
                     </div>
-                    <button class="btn btn-primary" type="submit" disabled="@_isSaving">Save</button>
+                    <button class="btn btn-primary" type="submit" disabled="@_isSaving">@L["Common.Save"]</button>
                 </EditForm>
             </div>
         </div>
@@ -87,23 +87,23 @@
         <div class="card shadow-sm h-100">
             <div class="card-body">
                 <div class="d-flex align-items-center mb-2">
-                    <h5 class="mb-0">Recent Scheduled Reports</h5>
-                    <button class="btn btn-outline-secondary btn-sm ms-auto" @onclick="LoadAsync" disabled="@_isLoading">Refresh</button>
+                    <h5 class="mb-0">@L["ComplianceDashboard.RecentScheduledReports"]</h5>
+                    <button class="btn btn-outline-secondary btn-sm ms-auto" @onclick="LoadAsync" disabled="@_isLoading">@L["Common.Refresh"]</button>
                 </div>
                 <div class="table-responsive">
                     <table class="table table-sm table-hover align-middle">
                         <thead>
                             <tr>
-                                <th>Type</th>
-                                <th>Status</th>
-                                <th>Generated</th>
-                                <th>Action</th>
+                                <th>@L["Common.Type"]</th>
+                                <th>@L["Common.Status"]</th>
+                                <th>@L["ComplianceDashboard.Generated"]</th>
+                                <th>@L["Common.Action"]</th>
                             </tr>
                         </thead>
                         <tbody>
                             @if (_summary.RecentReports.Count == 0)
                             {
-                                <tr><td colspan="4" class="text-muted">No reports yet.</td></tr>
+                                <tr><td colspan="4" class="text-muted">@L["ComplianceDashboard.NoReportsYet"]</td></tr>
                             }
                             else
                             {
@@ -111,10 +111,10 @@
                                 {
                                     <tr>
                                         <td>@row.ReportType</td>
-                                        <td>@row.Status</td>
+                                        <td>@WarehouseStatusText.Get(L, row.Status)</td>
                                         <td>@row.GeneratedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
                                         <td>
-                                            <a class="btn btn-outline-secondary btn-sm" href="@row.FilePath" target="_blank">Download</a>
+                                            <a class="btn btn-outline-secondary btn-sm" href="@row.FilePath" target="_blank">@L["ComplianceDashboard.Download"]</a>
                                         </td>
                                     </tr>
                                 }
@@ -130,25 +130,25 @@
 <div class="card shadow-sm mt-3">
     <div class="card-body">
         <div class="d-flex align-items-center mb-2">
-            <h5 class="mb-0">Scheduled Jobs</h5>
+            <h5 class="mb-0">@L["ComplianceDashboard.ScheduledJobs"]</h5>
         </div>
         <div class="table-responsive">
             <table class="table table-sm table-hover align-middle">
                 <thead>
                     <tr>
                         <th>ID</th>
-                        <th>Type</th>
-                        <th>Cron</th>
-                        <th>Format</th>
-                        <th>Status</th>
-                        <th>Last Run</th>
+                        <th>@L["Common.Type"]</th>
+                        <th>@L["ComplianceDashboard.Cron"]</th>
+                        <th>@L["Common.Format"]</th>
+                        <th>@L["Common.Status"]</th>
+                        <th>@L["ComplianceDashboard.LastRun"]</th>
                         <th></th>
                     </tr>
                 </thead>
                 <tbody>
                     @if (_schedules.Count == 0)
                     {
-                        <tr><td colspan="7" class="text-muted">No schedules configured.</td></tr>
+                        <tr><td colspan="7" class="text-muted">@L["ComplianceDashboard.NoSchedulesConfigured"]</td></tr>
                     }
                     else
                     {
@@ -159,11 +159,11 @@
                                 <td>@s.ReportType</td>
                                 <td><code>@s.Schedule</code></td>
                                 <td>@s.Format</td>
-                                <td>@s.LastStatus</td>
+                                <td>@WarehouseStatusText.Get(L, s.LastStatus)</td>
                                 <td>@(s.LastRunAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "-")</td>
                                 <td class="text-end">
-                                    <button class="btn btn-outline-primary btn-sm me-1" @onclick="() => RunAsync(s.Id)" disabled="@_isLoading">Run</button>
-                                    <button class="btn btn-outline-danger btn-sm" @onclick="() => DeleteAsync(s.Id)" disabled="@_isLoading">Delete</button>
+                                    <button class="btn btn-outline-primary btn-sm me-1" @onclick="() => RunAsync(s.Id)" disabled="@_isLoading">@L["ComplianceDashboard.Run"]</button>
+                                    <button class="btn btn-outline-danger btn-sm" @onclick="() => DeleteAsync(s.Id)" disabled="@_isLoading">@L["Common.Delete"]</button>
                                 </td>
                             </tr>
                         }
@@ -201,7 +201,7 @@
         catch (ApiException ex)
         {
             _apiError = ex;
-            Toast.ShowError(ex.UserMessage);
+            Toast.ShowError(WarehouseErrorText.Get(L, ex));
         }
         finally
         {
@@ -242,7 +242,7 @@
         catch (ApiException ex)
         {
             _apiError = ex;
-            Toast.ShowError(ex.UserMessage);
+            Toast.ShowError(WarehouseErrorText.Get(L, ex));
         }
         finally
         {
@@ -262,7 +262,7 @@
         catch (ApiException ex)
         {
             _apiError = ex;
-            Toast.ShowError(ex.UserMessage);
+            Toast.ShowError(WarehouseErrorText.Get(L, ex));
         }
         finally
         {
@@ -282,7 +282,7 @@
         catch (ApiException ex)
         {
             _apiError = ex;
-            Toast.ShowError(ex.UserMessage);
+            Toast.ShowError(WarehouseErrorText.Get(L, ex));
         }
         finally
         {

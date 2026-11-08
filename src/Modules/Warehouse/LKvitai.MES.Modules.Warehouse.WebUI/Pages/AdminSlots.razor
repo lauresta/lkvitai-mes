@@ -7,9 +7,9 @@
 @inject ToastService ToastService
 @inject NavigationManager NavigationManager
 
-<PageTitle>Warehouse Slots - Cikada.MES</PageTitle>
+<PageTitle>@L["AdminSlots.WarehouseSlotsCikadaMES"]</PageTitle>
 
-<h3>Warehouse Slots</h3>
+<h3>@L["AdminSlots.WarehouseSlots"]</h3>
 
 @if (_apiError is not null)
 {
@@ -23,7 +23,7 @@
     <div class="card-body">
         <div class="row g-2 align-items-end">
             <div class="col-md-3">
-                <label class="form-label">Warehouse</label>
+                <label class="form-label">@L["Common.Warehouse"]</label>
                 <select class="form-select" @bind="_warehouseCode">
                     @foreach (var warehouse in _warehouses)
                     {
@@ -32,13 +32,13 @@
                 </select>
             </div>
             <div class="col-md-3">
-                <label class="form-label">Address or location</label>
-                <input class="form-control" @bind="_search" placeholder="2-C3-01 or BIN-001" />
+                <label class="form-label">@L["AdminSlots.AddressOrLocation"]</label>
+                <input class="form-control" @bind="_search" placeholder="@L["AdminSlots.2C301OrBIN001"]" />
             </div>
             <div class="col-md-2">
-                <label class="form-label">Rack</label>
+                <label class="form-label">@L["Common.Rack"]</label>
                 <select class="form-select" @bind="_rackFilter">
-                    <option value="">All racks</option>
+                    <option value="">@L["AdminSlots.AllRacks"]</option>
                     @foreach (var rackId in _rackOptions)
                     {
                         <option value="@rackId">@rackId</option>
@@ -46,9 +46,9 @@
                 </select>
             </div>
             <div class="col-md-2">
-                <label class="form-label">Level</label>
+                <label class="form-label">@L["Common.Level"]</label>
                 <select class="form-select" @bind="_levelFilterText">
-                    <option value="">All levels</option>
+                    <option value="">@L["AdminSlots.AllLevels"]</option>
                     @foreach (var level in _levelOptions)
                     {
                         <option value="@level.ToString()">@level</option>
@@ -58,11 +58,11 @@
             <div class="col-md-2">
                 <div class="form-check mt-4">
                     <input class="form-check-input" type="checkbox" @bind="_freeOnly" />
-                    <label class="form-check-label">Free only</label>
+                    <label class="form-check-label">@L["AdminSlots.FreeOnly"]</label>
                 </div>
             </div>
             <div class="col-md-2 d-grid">
-                <button class="btn btn-primary" @onclick="ReloadAsync">Reload</button>
+                <button class="btn btn-primary" @onclick="ReloadAsync">@L["AdminSlots.Reload"]</button>
             </div>
         </div>
     </div>
@@ -72,22 +72,22 @@
     <LoadingSpinner IsLoading="@_isLoading" />
     <div class="card-body">
         <div class="d-flex justify-content-between align-items-center mb-2">
-            <strong>Visible slots: @FilteredSlots.Count</strong>
-            <span class="text-muted">Computed from rack layout and live occupancy.</span>
+            <strong>@L["AdminSlots.VisibleSlots", FilteredSlots.Count]</strong>
+            <span class="text-muted">@L["AdminSlots.ComputedFromRackLayoutAndLiveOccupancy"]</span>
         </div>
 
         <div class="table-responsive">
             <table class="table table-sm table-hover align-middle">
                 <thead>
                 <tr>
-                    <th>Address</th>
-                    <th>Rack</th>
-                    <th>Level</th>
-                    <th>Slot</th>
-                    <th>Status</th>
-                    <th>Location</th>
-                    <th>Role</th>
-                    <th>Span</th>
+                    <th>@L["Common.Address"]</th>
+                    <th>@L["Common.Rack"]</th>
+                    <th>@L["Common.Level"]</th>
+                    <th>@L["AdminSlots.Slot"]</th>
+                    <th>@L["Common.Status"]</th>
+                    <th>@L["Common.Location"]</th>
+                    <th>@L["Common.Role"]</th>
+                    <th>@L["AdminSlots.Span"]</th>
                     <th></th>
                 </tr>
                 </thead>
@@ -95,7 +95,7 @@
                 @if (FilteredSlots.Count == 0)
                 {
                     <tr>
-                        <td colspan="9" class="text-muted">No slots match the current filters.</td>
+                        <td colspan="9" class="text-muted">@L["AdminSlots.NoSlotsMatchTheCurrentFilters"]</td>
                     </tr>
                 }
                 else
@@ -109,7 +109,7 @@
                             <td>@row.Slot</td>
                             <td>
                                 <span class="badge @(row.Occupied ? "bg-warning text-dark" : "bg-success")">
-                                    @(row.Occupied ? "Occupied" : "Free")
+                                    @(row.Occupied ? L["Common.Occupied"] : L["Common.Free"])
                                 </span>
                             </td>
                             <td>@(row.LocationCode ?? "-")</td>
@@ -120,18 +120,18 @@
                                 {
                                     <a class="btn btn-sm btn-outline-secondary me-1"
                                        href="@BuildLocationsLink(row.LocationCode, row.LocationCode)">
-                                        Location
+                                        @L["Common.Location"]
                                     </a>
                                     <button class="btn btn-sm btn-outline-danger"
                                             @onclick="() => ClearPlacementFromSlotAsync(row)">
-                                        Clear
+                                        @L["AdminSlots.Clear"]
                                     </button>
                                 }
                                 else if (_assigningSlotAddress == row.Address)
                                 {
                                     <div class="d-flex gap-1 justify-content-end align-items-center">
                                         <select class="form-select form-select-sm" style="min-width: 220px;" @bind="_selectedLocationIdText">
-                                            <option value="">Select location</option>
+                                            <option value="">@L["Common.SelectLocation"]</option>
                                             @foreach (var candidate in AssignableLocations)
                                             {
                                                 <option value="@candidate.Id.ToString()">@candidate.Code</option>
@@ -142,18 +142,18 @@
                                                type="number"
                                                min="1"
                                                max="@GetMaxAssignableSpan(row)"
-                                               title="Slot span"
+                                               title="@L["AdminSlots.SlotSpan"]"
                                                @bind="_assignSlotSpan" />
                                         <span class="text-muted small" style="white-space: nowrap;">@BuildAssignPreview(row)</span>
-                                        <button class="btn btn-sm btn-primary" @onclick="() => AssignWithSpanAsync(row)">Assign</button>
-                                        <button class="btn btn-sm btn-outline-secondary" @onclick="CancelAssign">Cancel</button>
+                                        <button class="btn btn-sm btn-primary" @onclick="() => AssignWithSpanAsync(row)">@L["Common.Assign"]</button>
+                                        <button class="btn btn-sm btn-outline-secondary" @onclick="CancelAssign">@L["Common.Cancel"]</button>
                                     </div>
                                 }
                                 else
                                 {
                                     <button class="btn btn-sm btn-outline-primary"
                                             @onclick="() => BeginAssign(row)">
-                                        Assign
+                                        @L["Common.Assign"]
                                     </button>
                                 }
                             </td>
@@ -336,14 +336,14 @@
     {
         if (!int.TryParse(_selectedLocationIdText, out var locationId))
         {
-            ToastService.ShowError("Выбери location для назначения.");
+            ToastService.ShowError(L["AdminSlots.Toast.Location"].Value);
             return;
         }
 
         var location = _locations.FirstOrDefault(x => x.Id == locationId);
         if (location is null)
         {
-            ToastService.ShowError("Не удалось найти выбранную location.");
+            ToastService.ShowError(L["AdminSlots.Toast.Location"].Value);
             return;
         }
 
@@ -359,7 +359,7 @@
                     1,
                     string.IsNullOrWhiteSpace(location.LocationRole) ? null : location.LocationRole));
 
-            ToastService.ShowSuccess($"Location {location.Code} назначена в {row.Address}.");
+            ToastService.ShowSuccess(L["AdminSlots.Toast.Location3125ac", location.Code, row.Address].Value);
             CancelAssign();
             await ReloadAsync();
         }
@@ -379,7 +379,7 @@
         try
         {
             await AdminClient.ClearLocationRackPlacementAsync(row.LocationId.Value);
-            ToastService.ShowWarning($"Placement для {row.LocationCode} очищен.");
+            ToastService.ShowWarning(L["AdminSlots.Toast.Placement", row.LocationCode ?? "-"].Value);
             await ReloadAsync();
         }
         catch (ApiException ex)
@@ -392,27 +392,27 @@
     {
         if (!int.TryParse(_selectedLocationIdText, out var locationId))
         {
-            ToastService.ShowError("Select a location to assign.");
+            ToastService.ShowError(L["AdminSlots.Toast.SelectALocationToAssign"].Value);
             return;
         }
 
         var location = _locations.FirstOrDefault(x => x.Id == locationId);
         if (location is null)
         {
-            ToastService.ShowError("Selected location was not found.");
+            ToastService.ShowError(L["AdminSlots.Toast.SelectedLocationWasNotFound"].Value);
             return;
         }
 
         var maxSpan = GetMaxAssignableSpan(row);
         if (_assignSlotSpan < 1 || _assignSlotSpan > maxSpan)
         {
-            ToastService.ShowError($"Span must be between 1 and {maxSpan} for this slot.");
+            ToastService.ShowError(L["AdminSlots.Toast.SpanMustBeBetween1AndForThisSlot", maxSpan].Value);
             return;
         }
 
         if (!IsSpanFree(row, _assignSlotSpan))
         {
-            ToastService.ShowError("Selected span overlaps an occupied or missing slot.");
+            ToastService.ShowError(L["AdminSlots.Toast.SelectedSpanOverlapsAnOccupiedOrMissingSlot"].Value);
             return;
         }
 
@@ -428,7 +428,7 @@
                     _assignSlotSpan,
                     string.IsNullOrWhiteSpace(location.LocationRole) ? null : location.LocationRole));
 
-            ToastService.ShowSuccess($"Location {location.Code} assigned to {BuildAssignPreview(row)}.");
+            ToastService.ShowSuccess(L["AdminSlots.Toast.LocationAssignedTo", location.Code, BuildAssignPreview(row)].Value);
             CancelAssign();
             await ReloadAsync();
         }
@@ -448,7 +448,7 @@
         try
         {
             await AdminClient.ClearLocationRackPlacementAsync(row.LocationId.Value);
-            ToastService.ShowWarning($"Placement for {row.LocationCode} was cleared.");
+            ToastService.ShowWarning(L["AdminSlots.Toast.PlacementForWasCleared", row.LocationCode ?? "-"].Value);
             await ReloadAsync();
         }
         catch (ApiException ex)
@@ -561,14 +561,14 @@
         return QueryHelpers.AddQueryString("/admin/locations", query);
     }
 
-    private static string BuildErrorMessage(ApiException error)
+    private string BuildErrorMessage(ApiException error)
     {
         if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
         {
-            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+            return $"{WarehouseErrorText.Get(L, error)} {error.ProblemDetails.Detail}";
         }
 
-        return error.UserMessage;
+        return WarehouseErrorText.Get(L, error);
     }
 
     private sealed record SlotRow(

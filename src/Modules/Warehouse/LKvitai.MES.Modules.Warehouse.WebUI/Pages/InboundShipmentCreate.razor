@@ -6,9 +6,9 @@
 @inject NavigationManager NavigationManager
 @inject ToastService ToastService
 
-<PageTitle>@(IsEditMode ? $"Edit ISH-{Id} - Cikada.MES" : "Create Inbound Shipment - Cikada.MES")</PageTitle>
+<PageTitle>@(IsEditMode ? L["InboundShipmentCreate.EditPageTitle", Id ?? 0] : L["InboundShipmentCreate.CreatePageTitle"])</PageTitle>
 
-<h1>@(IsEditMode ? $"Edit Inbound Shipment ISH-{Id}" : "Create Inbound Shipment")</h1>
+<h1>@(IsEditMode ? L["InboundShipmentCreate.EditTitle", Id ?? 0] : L["InboundShipmentCreate.CreateTitle"])</h1>
 
 @if (_apiError is not null)
 {
@@ -22,22 +22,22 @@
     <LoadingSpinner IsLoading="_isLoading || _isSubmitting" />
 
     <div class="panel__head">
-        <div class="panel__title">Shipment Details</div>
+        <div class="panel__title">@L["InboundShipmentCreate.ShipmentDetails"]</div>
         <div class="panel__actions">
-            <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Default" OnClick="BackToList">Back</MudButton>
+            <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Default" OnClick="BackToList">@L["Common.Back"]</MudButton>
         </div>
     </div>
 
     <div class="ish-create__body">
         <div class="ish-create__header-grid">
             <div class="lk-form-field">
-                <span class="lk-form-field__label">Reference Number</span>
+                <span class="lk-form-field__label">@L["InboundShipmentCreate.ReferenceNumber"]</span>
                 <div class="lk-form-field__control">
                     <MudTextField T="string" Variant="Variant.Text" @bind-Value="_referenceNumber" Required="true" />
                 </div>
             </div>
             <div class="lk-form-field">
-                <span class="lk-form-field__label">Supplier</span>
+                <span class="lk-form-field__label">@L["Common.Supplier"]</span>
                 <div class="lk-form-field__control">
                     <MudAutocomplete T="AdminSupplierDto"
                                       Variant="Variant.Text"
@@ -50,19 +50,19 @@
                 </div>
             </div>
             <div class="lk-form-field">
-                <span class="lk-form-field__label">Expected Date</span>
+                <span class="lk-form-field__label">@L["InboundShipmentCreate.ExpectedDate"]</span>
                 <div class="lk-form-field__control">
                     <MudDatePicker Variant="Variant.Text" DateFormat="yyyy-MM-dd" @bind-Date="_expectedDate" />
                 </div>
             </div>
             <div class="lk-form-field">
-                <span class="lk-form-field__label">Invoice Number</span>
+                <span class="lk-form-field__label">@L["InboundShipmentCreate.InvoiceNumber"]</span>
                 <div class="lk-form-field__control">
-                    <MudTextField T="string" Variant="Variant.Text" @bind-Value="_invoiceNumber" Placeholder="Optional" />
+                    <MudTextField T="string" Variant="Variant.Text" @bind-Value="_invoiceNumber" Placeholder="@L["InboundShipmentCreate.Optional"]" />
                 </div>
             </div>
             <div class="lk-form-field">
-                <span class="lk-form-field__label">Invoice Date</span>
+                <span class="lk-form-field__label">@L["InboundShipmentCreate.InvoiceDate"]</span>
                 <div class="lk-form-field__control">
                     <MudDatePicker Variant="Variant.Text" DateFormat="yyyy-MM-dd" @bind-Date="_invoiceDate" />
                 </div>
@@ -71,23 +71,23 @@
 
         <div class="ish-create__section-head">
             <div class="ish-create__section-title">
-                Lines
-                <small>Service items (Transport, Delivery...) fold into Additional Costs below instead of holding stock.</small>
+                @L["Common.Lines"]
+                <small>@L["InboundShipmentCreate.ServiceItemsTransportDeliveryFoldIntoAdditionalCostsBelowInste"]</small>
             </div>
-            <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AddLine" Disabled="@_isSubmitting">Add Line</MudButton>
+            <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AddLine" Disabled="@_isSubmitting">@L["InboundShipmentCreate.AddLine"]</MudButton>
         </div>
 
         <MudTable Items="@_lines" Dense="true" Hover="true" Class="lk-grid ish-create__grid">
             <HeaderContent>
-                <MudTh>Item</MudTh>
-                <MudTh>Qty</MudTh>
-                <MudTh>Invoice unit price</MudTh>
-                <MudTh>Ccy</MudTh>
-                <MudTh>Actual unit price</MudTh>
+                <MudTh>@L["Common.Item"]</MudTh>
+                <MudTh>@L["Common.Qty"]</MudTh>
+                <MudTh>@L["InboundShipmentCreate.InvoiceUnitPrice"]</MudTh>
+                <MudTh>@L["Common.Ccy"]</MudTh>
+                <MudTh>@L["InboundShipmentCreate.ActualUnitPrice"]</MudTh>
                 <MudTh></MudTh>
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="Item" Style="min-width: 240px;">
+                <MudTd DataLabel="@L["Common.Item"]" Style="min-width: 240px;">
                     <div class="ish-create__item-cell">
                         <div class="lk-field--inline">
                             <MudAutocomplete T="AdminItemDto"
@@ -98,31 +98,31 @@
                                               ToStringFunc="@(i => i is null ? string.Empty : $"{i.InternalSKU} - {i.Name}")"
                                               CoerceText="true"
                                               ResetValueOnEmptyText="true"
-                                              Placeholder="Select item" />
+                                              Placeholder="@L["Common.SelectItem"]" />
                         </div>
                         <ItemPriceHint ItemId="@context.Item?.Id" />
                         @if (context.Item?.IsService == true)
                         {
-                            <span class="chip chip--reserved ish-create__service-chip">Service - @(context.Item.CostType ?? "Other")</span>
+                            <span class="chip chip--reserved ish-create__service-chip">@L["InboundShipmentCreate.Service", context.Item.CostType ?? "Other"]</span>
                         }
                     </div>
                 </MudTd>
-                <MudTd DataLabel="Qty" Style="width: 90px;">
+                <MudTd DataLabel="@L["Common.Qty"]" Style="width: 90px;">
                     <div class="lk-field--inline">
                         <MudNumericField T="decimal" Variant="Variant.Text" Culture="NumberCulture" Min="0.001m" @bind-Value="context.ExpectedQty" />
                     </div>
                 </MudTd>
-                <MudTd DataLabel="Invoice unit price" Style="width: 130px;">
+                <MudTd DataLabel="@L["InboundShipmentCreate.InvoiceUnitPrice"]" Style="width: 130px;">
                     <div class="lk-field--inline">
                         <MudNumericField T="decimal?" Variant="Variant.Text" Culture="NumberCulture" Min="0m" Format="0.####" @bind-Value="context.UnitPrice" />
                     </div>
                 </MudTd>
-                <MudTd DataLabel="Ccy" Style="width: 76px;">
+                <MudTd DataLabel="@L["Common.Ccy"]" Style="width: 76px;">
                     <div class="lk-field--inline">
                         <MudTextField T="string" Variant="Variant.Text" MaxLength="3" @bind-Value="context.Currency" />
                     </div>
                 </MudTd>
-                <MudTd DataLabel="Actual unit price" Style="width: 120px;" Class="is-num">
+                <MudTd DataLabel="@L["InboundShipmentCreate.ActualUnitPrice"]" Style="width: 120px;" Class="is-num">
                     @if (context.Item?.IsService == true)
                     {
                         <span class="text-muted">-</span>
@@ -137,16 +137,16 @@
                 </MudTd>
             </RowTemplate>
             <NoRecordsContent>
-                <EmptyState Title="No lines" Message="Add at least one item line." IconCss="bi bi-list-ul" OnAction="AddLineAsync" />
+                <EmptyState Title="@L["InboundShipmentCreate.NoLines"]" Message="@L["InboundShipmentCreate.AddAtLeastOneItemLine"]" IconCss="bi bi-list-ul" OnAction="AddLineAsync" />
             </NoRecordsContent>
         </MudTable>
 
         <div class="ish-create__section-head">
             <div class="ish-create__section-title">
-                Additional costs
-                <small>Freight/duty/insurance/other, distributed across Stock lines by value at receiving time.</small>
+                @L["InboundShipmentCreate.AdditionalCosts"]
+                <small>@L["InboundShipmentCreate.FreightDutyInsuranceOtherDistributedAcrossStockLinesByValueAtR"]</small>
             </div>
-            <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AddAdditionalCost" Disabled="@_isSubmitting">Add Cost</MudButton>
+            <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" OnClick="AddAdditionalCost" Disabled="@_isSubmitting">@L["InboundShipmentCreate.AddCost"]</MudButton>
         </div>
 
         @if (_duplicateCostTypeWarning is not null)
@@ -156,13 +156,13 @@
 
         <MudTable Items="@_additionalCosts" Dense="true" Hover="true" Class="lk-grid ish-create__grid">
             <HeaderContent>
-                <MudTh>Type</MudTh>
-                <MudTh>Amount</MudTh>
-                <MudTh>Ccy</MudTh>
+                <MudTh>@L["Common.Type"]</MudTh>
+                <MudTh>@L["Common.Amount"]</MudTh>
+                <MudTh>@L["Common.Ccy"]</MudTh>
                 <MudTh></MudTh>
             </HeaderContent>
             <RowTemplate>
-                <MudTd DataLabel="Type" Style="min-width: 180px;">
+                <MudTd DataLabel="@L["Common.Type"]" Style="min-width: 180px;">
                     <div class="lk-field--inline">
                         <MudAutocomplete T="string"
                                           Variant="Variant.Text"
@@ -172,12 +172,12 @@
                                           CoerceValue="true" />
                     </div>
                 </MudTd>
-                <MudTd DataLabel="Amount" Style="width: 140px;">
+                <MudTd DataLabel="@L["Common.Amount"]" Style="width: 140px;">
                     <div class="lk-field--inline">
                         <MudNumericField T="decimal" Variant="Variant.Text" Culture="NumberCulture" Min="0m" Format="0.00" Adornment="Adornment.End" AdornmentText="€" @bind-Value="context.Amount" />
                     </div>
                 </MudTd>
-                <MudTd DataLabel="Ccy" Style="width: 76px;">
+                <MudTd DataLabel="@L["Common.Ccy"]" Style="width: 76px;">
                     <div class="lk-field--inline">
                         <MudTextField T="string" Variant="Variant.Text" MaxLength="3" @bind-Value="context.Currency" />
                     </div>
@@ -190,33 +190,33 @@
 
         <div class="ish-create__totals">
             <div class="ish-create__totals-item">
-                <span class="ish-create__totals-label">Total Qty (Stock)</span>
+                <span class="ish-create__totals-label">@L["InboundShipmentCreate.TotalQtyStock"]</span>
                 <span class="ish-create__totals-value">@TotalStockQty.ToString("0.###", NumberCulture)</span>
             </div>
             <div class="ish-create__totals-item">
-                <span class="ish-create__totals-label">Total Invoice Value</span>
+                <span class="ish-create__totals-label">@L["InboundShipmentCreate.TotalInvoiceValue"]</span>
                 <span class="ish-create__totals-value">@FormatMoney(TotalInvoiceValue)</span>
             </div>
             <div class="ish-create__totals-item">
-                <span class="ish-create__totals-label">Total Additional Costs</span>
+                <span class="ish-create__totals-label">@L["InboundShipmentCreate.TotalAdditionalCosts"]</span>
                 <span class="ish-create__totals-value">@FormatMoney(TotalAdditionalCostPool)</span>
             </div>
             <div class="ish-create__totals-item">
-                <span class="ish-create__totals-label">Total Actual Value</span>
+                <span class="ish-create__totals-label">@L["InboundShipmentCreate.TotalActualValue"]</span>
                 <span class="ish-create__totals-value">@FormatMoney(TotalActualValue)</span>
             </div>
             <div class="ish-create__totals-item">
-                <span class="ish-create__totals-label">Avg Invoice Price</span>
+                <span class="ish-create__totals-label">@L["InboundShipmentCreate.AvgInvoicePrice"]</span>
                 <span class="ish-create__totals-value">@FormatMoney(AverageInvoiceUnitPrice)</span>
             </div>
             <div class="ish-create__totals-item">
-                <span class="ish-create__totals-label">Avg Actual Price</span>
+                <span class="ish-create__totals-label">@L["InboundShipmentCreate.AvgActualPrice"]</span>
                 <span class="ish-create__totals-value">@FormatMoney(AverageActualUnitPrice)</span>
             </div>
         </div>
 
         <div class="ish-create__footer">
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SubmitAsync" Disabled="@_isSubmitting">@(IsEditMode ? "Save Changes" : "Create Shipment")</MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SubmitAsync" Disabled="@_isSubmitting">@(IsEditMode ? L["Common.SaveChanges"] : L["InboundShipmentCreate.CreateShipment"])</MudButton>
         </div>
     </div>
 </MudPaper>
@@ -304,8 +304,7 @@
             if (!string.Equals(shipment.Status, "Draft", StringComparison.OrdinalIgnoreCase))
             {
                 ToastService.ShowError(
-                    $"ISH-{shipment.Id} has status '{shipment.Status}' and can no longer be edited - " +
-                    "receiving has already started against it.");
+                    L["InboundShipmentCreate.CannotEditAfterReceiving", shipment.Id, WarehouseStatusText.Get(L, shipment.Status)].Value);
                 NavigationManager.NavigateTo($"/warehouse/inbound/shipments/{shipment.Id}");
                 return;
             }
@@ -469,7 +468,7 @@
 
         _duplicateCostTypeWarning = manualDuplicates.Count == 0
             ? null
-            : $"A manual additional cost row shares a cost type ({string.Join(", ", manualDuplicates)}) with a Service line on this shipment - check this isn't double-counting the same invoice amount.";
+            : L["InboundShipmentCreate.DuplicateCostTypeWarning", string.Join(", ", manualDuplicates)].Value;
     }
 
     private static string NormalizeCostType(string? value)
@@ -517,20 +516,20 @@
     {
         if (string.IsNullOrWhiteSpace(_referenceNumber))
         {
-            ToastService.ShowError("Reference number is required.");
+            ToastService.ShowError(L["InboundShipmentCreate.Toast.ReferenceNumberIsRequired"].Value);
             return;
         }
 
         if (_supplier is null)
         {
-            ToastService.ShowError("Supplier is required.");
+            ToastService.ShowError(L["InboundShipmentCreate.Toast.SupplierIsRequired"].Value);
             return;
         }
 
         var lines = BuildLineRequests();
         if (lines.Count == 0)
         {
-            ToastService.ShowError("Add at least one valid line.");
+            ToastService.ShowError(L["InboundShipmentCreate.Toast.AddAtLeastOneValidLine"].Value);
             return;
         }
 
@@ -554,13 +553,13 @@
             if (IsEditMode && Id is { } shipmentId)
             {
                 var updated = await ReceivingClient.UpdateShipmentAsync(shipmentId, request);
-                ToastService.ShowSuccess($"Inbound shipment ISH-{updated.Id} updated.");
+                ToastService.ShowSuccess(L["InboundShipmentCreate.Toast.InboundShipmentISHUpdated", updated.Id].Value);
                 NavigationManager.NavigateTo($"/warehouse/inbound/shipments/{updated.Id}");
             }
             else
             {
                 var created = await ReceivingClient.CreateShipmentAsync(request);
-                ToastService.ShowSuccess($"Inbound shipment ISH-{created.Id} created.");
+                ToastService.ShowSuccess(L["InboundShipmentCreate.Toast.InboundShipmentISHCreated", created.Id].Value);
                 NavigationManager.NavigateTo($"/warehouse/inbound/shipments/{created.Id}");
             }
         }
@@ -614,16 +613,16 @@
         _apiError = null;
     }
 
-    private static string BuildErrorMessage(ApiException ex)
+    private string BuildErrorMessage(ApiException ex)
     {
-        if (!string.IsNullOrWhiteSpace(ex.UserMessage))
+        if (!string.IsNullOrWhiteSpace(WarehouseErrorText.Get(L, ex)))
         {
-            return ex.UserMessage;
+            return WarehouseErrorText.Get(L, ex);
         }
 
         return ex.ProblemDetails?.Detail
                ?? ex.ProblemDetails?.Title
-               ?? "Inbound shipment request failed.";
+               ?? L["InboundShipmentCreate.RequestFailed"].Value;
     }
 
     private sealed class InboundLineModel

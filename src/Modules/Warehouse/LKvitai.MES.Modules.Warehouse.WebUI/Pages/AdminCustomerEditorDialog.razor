@@ -3,7 +3,7 @@
 <MudDialog Class="admin-item-dialog admin-customer-dialog">
     <TitleContent>
         <div class="admin-item-dialog__title">
-            <span>@(IsEdit ? "Edit Customer" : "Create Customer")</span>
+            <span>@(IsEdit ? L["AdminCustomerEditorDialog.EditCustomer"] : L["AdminCustomerEditorDialog.CreateCustomer"])</span>
             @if (IsEdit && !string.IsNullOrWhiteSpace(Customer?.CustomerCode))
             {
                 <span class="mono">@Customer.CustomerCode</span>
@@ -18,21 +18,21 @@
 
         <div class="admin-item-dialog__grid">
             <MudTextField T="string"
-                          Label="Name"
+                          Label="@L["Common.Name"]"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           @bind-Value="_model.Name"
                           Required="true" />
 
             <MudTextField T="string"
-                          Label="Email"
+                          Label="@L["Common.Email"]"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           @bind-Value="_model.Email"
                           Required="true" />
 
             <MudTextField T="string"
-                          Label="Phone"
+                          Label="@L["Common.Phone"]"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           @bind-Value="_model.Phone" />
@@ -40,30 +40,30 @@
             @if (IsEdit)
             {
                 <MudSelect T="string"
-                           Label="Status"
+                           Label="@L["Common.Status"]"
                            Variant="Variant.Outlined"
                            Margin="Margin.Dense"
                            @bind-Value="_model.Status">
-                    <MudSelectItem T="string" Value="@("Active")">Active</MudSelectItem>
-                    <MudSelectItem T="string" Value="@("OnHold")">On Hold</MudSelectItem>
-                    <MudSelectItem T="string" Value="@("Inactive")">Inactive</MudSelectItem>
+                    <MudSelectItem T="string" Value="@("Active")">@L["Common.Active"]</MudSelectItem>
+                    <MudSelectItem T="string" Value="@("OnHold")">@L["AdminCustomerEditorDialog.OnHold"]</MudSelectItem>
+                    <MudSelectItem T="string" Value="@("Inactive")">@L["Common.Inactive"]</MudSelectItem>
                 </MudSelect>
             }
 
             <MudSelect T="string"
-                       Label="Payment Terms"
+                       Label="@L["AdminCustomerEditorDialog.PaymentTerms"]"
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
                        @bind-Value="_model.PaymentTerms">
-                <MudSelectItem T="string" Value="@("Net30")">Net 30</MudSelectItem>
-                <MudSelectItem T="string" Value="@("Net60")">Net 60</MudSelectItem>
-                <MudSelectItem T="string" Value="@("Cod")">Cash on delivery</MudSelectItem>
-                <MudSelectItem T="string" Value="@("Prepaid")">Prepaid</MudSelectItem>
-                <MudSelectItem T="string" Value="@("CreditCard")">Credit card</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Net30")">@L["AdminCustomerEditorDialog.Net30"]</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Net60")">@L["AdminCustomerEditorDialog.Net60"]</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Cod")">@L["AdminCustomerEditorDialog.CashOnDelivery"]</MudSelectItem>
+                <MudSelectItem T="string" Value="@("Prepaid")">@L["AdminCustomerEditorDialog.Prepaid"]</MudSelectItem>
+                <MudSelectItem T="string" Value="@("CreditCard")">@L["AdminCustomerEditorDialog.CreditCard"]</MudSelectItem>
             </MudSelect>
 
             <MudNumericField T="decimal?"
-                             Label="Credit Limit"
+                             Label="@L["AdminCustomerEditorDialog.CreditLimit"]"
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
                              Min="0m"
@@ -73,11 +73,11 @@
                              @bind-Value="_model.CreditLimit" />
 
             <MudSelect T="int?"
-                       Label="Price Group"
+                       Label="@L["AdminCustomerEditorDialog.PriceGroup"]"
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
                        @bind-Value="_model.PriceGroupId">
-                <MudSelectItem T="int?" Value="@((int?)null)">None (base price)</MudSelectItem>
+                <MudSelectItem T="int?" Value="@((int?)null)">@L["AdminCustomerEditorDialog.NoneBasePrice"]</MudSelectItem>
                 @foreach (var group in _priceGroups)
                 {
                     <MudSelectItem T="int?" Value="@group.Id">@($"{group.Code} - {group.Name}")</MudSelectItem>
@@ -85,34 +85,34 @@
             </MudSelect>
 
             <div class="admin-item-dialog__description">
-                <h4>Billing Address</h4>
+                <h4>@L["AdminCustomerEditorDialog.BillingAddress"]</h4>
             </div>
-            <MudTextField T="string" Label="Street" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="_model.BillingStreet" />
-            <MudTextField T="string" Label="City" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="_model.BillingCity" />
-            <MudTextField T="string" Label="State" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="_model.BillingState" />
-            <MudTextField T="string" Label="Zip Code" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="_model.BillingZipCode" />
-            <MudTextField T="string" Label="Country" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="_model.BillingCountry" />
+            <MudTextField T="string" Label="@L["Common.Street"]" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="_model.BillingStreet" />
+            <MudTextField T="string" Label="@L["Common.City"]" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="_model.BillingCity" />
+            <MudTextField T="string" Label="@L["Common.State"]" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="_model.BillingState" />
+            <MudTextField T="string" Label="@L["AdminCustomerEditorDialog.ZipCode"]" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="_model.BillingZipCode" />
+            <MudTextField T="string" Label="@L["Common.Country"]" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="_model.BillingCountry" />
 
             <div class="admin-item-dialog__description">
-                <MudCheckBox T="bool" @bind-Checked="_model.ShippingSameAsBilling" Label="Shipping address same as billing" />
+                <MudCheckBox T="bool" @bind-Checked="_model.ShippingSameAsBilling" Label="@L["AdminCustomerEditorDialog.ShippingAddressSameAsBilling"]" />
             </div>
 
             @if (!_model.ShippingSameAsBilling)
             {
                 <div class="admin-item-dialog__description">
-                    <h4>Shipping Address</h4>
+                    <h4>@L["AdminCustomerEditorDialog.ShippingAddress"]</h4>
                 </div>
-                <MudTextField T="string" Label="Street" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="_model.ShippingStreet" />
-                <MudTextField T="string" Label="City" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="_model.ShippingCity" />
-                <MudTextField T="string" Label="State" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="_model.ShippingState" />
-                <MudTextField T="string" Label="Zip Code" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="_model.ShippingZipCode" />
-                <MudTextField T="string" Label="Country" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="_model.ShippingCountry" />
+                <MudTextField T="string" Label="@L["Common.Street"]" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="_model.ShippingStreet" />
+                <MudTextField T="string" Label="@L["Common.City"]" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="_model.ShippingCity" />
+                <MudTextField T="string" Label="@L["Common.State"]" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="_model.ShippingState" />
+                <MudTextField T="string" Label="@L["AdminCustomerEditorDialog.ZipCode"]" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="_model.ShippingZipCode" />
+                <MudTextField T="string" Label="@L["Common.Country"]" Variant="Variant.Outlined" Margin="Margin.Dense" @bind-Value="_model.ShippingCountry" />
             }
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="Cancel">Cancel</MudButton>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveAsync">@(IsEdit ? "Save Changes" : "Create Customer")</MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="Cancel">@L["Common.Cancel"]</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveAsync">@(IsEdit ? L["Common.SaveChanges"] : L["AdminCustomerEditorDialog.CreateCustomer"])</MudButton>
     </DialogActions>
 </MudDialog>
 

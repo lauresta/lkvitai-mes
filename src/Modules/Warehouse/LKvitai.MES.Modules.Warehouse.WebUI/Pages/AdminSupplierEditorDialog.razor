@@ -1,7 +1,7 @@
 <MudDialog Class="admin-item-dialog admin-supplier-dialog">
     <TitleContent>
         <div class="admin-item-dialog__title">
-            <span>@(IsEdit ? "Edit Supplier" : "Create Supplier")</span>
+            <span>@(IsEdit ? L["AdminSupplierEditorDialog.EditSupplier"] : L["AdminSupplierEditorDialog.CreateSupplier"])</span>
             @if (IsEdit && !string.IsNullOrWhiteSpace(Supplier?.Code))
             {
                 <span class="mono">@Supplier.Code</span>
@@ -17,87 +17,87 @@
         @if (Supplier?.IsAgnumLinked == true)
         {
             <MudTextField T="string"
-                          Label="Agnum Client Id"
+                          Label="@L["AdminSupplierEditorDialog.AgnumClientId"]"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Value="@Supplier.AgnumClientId?.ToString()"
                           ReadOnly="true"
                           Disabled="true"
                           Class="admin-supplier-dialog__agnum"
-                          HelperText="Linked to Agnum. Synced fields are refreshed automatically; manual edits are preserved." />
+                          HelperText="@L["AdminSupplierEditorDialog.LinkedToAgnumSyncedFieldsAreRefreshedAutomaticallyManualEditsA"]" />
         }
 
         <div class="admin-item-dialog__grid">
             <MudTextField T="string"
-                          Label="Code"
+                          Label="@L["Common.Code"]"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           @bind-Value="_model.Code"
                           Required="true" />
 
             <MudTextField T="string"
-                          Label="Name"
+                          Label="@L["Common.Name"]"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           @bind-Value="_model.Name"
                           Required="true" />
 
             <MudTextField T="string"
-                          Label="Short name"
+                          Label="@L["AdminSupplierEditorDialog.ShortName"]"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           @bind-Value="_model.ShortName" />
 
             <MudTextField T="string"
-                          Label="Company code"
+                          Label="@L["AdminSupplierEditorDialog.CompanyCode"]"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           @bind-Value="_model.CompanyCode" />
 
             <MudTextField T="string"
-                          Label="VAT code"
+                          Label="@L["AdminSupplierEditorDialog.VATCode"]"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           @bind-Value="_model.VatCode" />
 
             <MudTextField T="string"
-                          Label="Country"
+                          Label="@L["Common.Country"]"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           @bind-Value="_model.Country" />
 
             <MudTextField T="string"
-                          Label="City"
+                          Label="@L["Common.City"]"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           @bind-Value="_model.City" />
 
             <MudTextField T="string"
-                          Label="Contact name"
+                          Label="@L["AdminSupplierEditorDialog.ContactName"]"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           @bind-Value="_model.ContactName" />
 
             <MudTextField T="string"
-                          Label="Phone"
+                          Label="@L["Common.Phone"]"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           @bind-Value="_model.Phone" />
 
             <MudTextField T="string"
-                          Label="Email"
+                          Label="@L["Common.Email"]"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           @bind-Value="_model.Email" />
 
             <MudTextField T="string"
-                          Label="Website"
+                          Label="@L["AdminSupplierEditorDialog.Website"]"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           @bind-Value="_model.Website" />
 
             <MudTextField T="string"
-                          Label="Registered address"
+                          Label="@L["AdminSupplierEditorDialog.RegisteredAddress"]"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Lines="2"
@@ -105,7 +105,7 @@
                           @bind-Value="_model.RegisteredAddress" />
 
             <MudTextField T="string"
-                          Label="Pickup address"
+                          Label="@L["AdminSupplierEditorDialog.PickupAddress"]"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Lines="2"
@@ -113,7 +113,7 @@
                           @bind-Value="_model.PickupAddress" />
 
             <MudTextField T="string"
-                          Label="Additional info"
+                          Label="@L["AdminSupplierEditorDialog.AdditionalInfo"]"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Lines="2"
@@ -122,8 +122,8 @@
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="Cancel">Cancel</MudButton>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveAsync">@(IsEdit ? "Save Changes" : "Create Supplier")</MudButton>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="Cancel">@L["Common.Cancel"]</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="SaveAsync">@(IsEdit ? L["Common.SaveChanges"] : L["AdminSupplierEditorDialog.CreateSupplier"])</MudButton>
     </DialogActions>
 </MudDialog>
 

@@ -8,9 +8,9 @@
 @inject NavigationManager NavigationManager
 @inject ToastService ToastService
 
-<PageTitle>Create Transfer - Cikada.MES</PageTitle>
+<PageTitle>@L["Transfers.Create.CreateTransferCikadaMES"]</PageTitle>
 
-<h1>Create Transfer</h1>
+<h1>@L["Transfers.Create.CreateTransfer"]</h1>
 
 @if (_apiError is not null)
 {
@@ -26,7 +26,7 @@
     <div class="card-body">
         <div class="row g-3">
             <div class="col-md-3">
-                <label class="form-label">From Warehouse</label>
+                <label class="form-label">@L["Transfers.Create.FromWarehouse"]</label>
                 <select class="form-select" @bind="_fromWarehouse">
                     @foreach (var warehouse in _warehouses)
                     {
@@ -35,7 +35,7 @@
                 </select>
             </div>
             <div class="col-md-3">
-                <label class="form-label">To Warehouse</label>
+                <label class="form-label">@L["Transfers.Create.ToWarehouse"]</label>
                 <select class="form-select" @bind="_toWarehouse">
                     @foreach (var warehouse in _warehouses)
                     {
@@ -44,21 +44,21 @@
                 </select>
             </div>
             <div class="col-md-3 d-flex align-items-end">
-                <button class="btn btn-outline-secondary" @onclick="BackToList">Back</button>
+                <button class="btn btn-outline-secondary" @onclick="BackToList">@L["Common.Back"]</button>
             </div>
         </div>
 
         <hr />
 
         <div class="d-flex justify-content-between align-items-center mb-2">
-            <h5 class="mb-0">Transfer Lines</h5>
-            <button class="btn btn-sm btn-outline-primary" @onclick="AddLine" disabled="@_isSubmitting">+ Add Line</button>
+            <h5 class="mb-0">@L["Transfers.Create.TransferLines"]</h5>
+            <button class="btn btn-sm btn-outline-primary" @onclick="AddLine" disabled="@_isSubmitting">@L["Transfers.Create.AddLine"]</button>
         </div>
 
         @if (_lines.Count == 0)
         {
-            <EmptyState Title="No lines added."
-                        Message="No lines added. Add your first line."
+            <EmptyState Title="@L["Transfers.Create.NoLinesAdded"]"
+                        Message="@L["Transfers.Create.NoLinesAddedAddYourFirstLine"]"
                         IconCss="bi bi-list-ul"
                         OnAction="AddLineAsync" />
         }
@@ -68,14 +68,14 @@
                 <table class="table table-hover align-middle">
                     <thead>
                         <tr>
-                            <th style="width: 35%;">Item</th>
-                            <th style="width: 15%;">Qty</th>
+                            <th style="width: 35%;">@L["Common.Item"]</th>
+                            <th style="width: 15%;">@L["Common.Qty"]</th>
                             <th>@L["Pricing.Cost"]</th>
                             <th>@L["Pricing.Sale"]</th>
-                            <th>Value (current cost)</th>
-                            <th style="width: 20%;">From Location</th>
-                            <th style="width: 20%;">To Location</th>
-                            <th style="width: 10%;">Actions</th>
+                            <th>@L["Common.ValueCurrentCost"]</th>
+                            <th style="width: 20%;">@L["Transfers.Create.FromLocation"]</th>
+                            <th style="width: 20%;">@L["Common.ToLocation"]</th>
+                            <th style="width: 10%;">@L["Common.Actions"]</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -85,7 +85,7 @@
                             <tr>
                                 <td>
                                     <select class="form-select" @bind="line.ItemId">
-                                        <option value="">Select item</option>
+                                        <option value="">@L["Common.SelectItem"]</option>
                                         @foreach (var item in _items)
                                         {
                                             <option value="@item.Id">@item.InternalSKU - @item.Name</option>
@@ -101,7 +101,7 @@
                                 <td class="mono">@Money.Format(_priceMap.Value(line.Qty, line.ItemId, null))</td>
                                 <td>
                                     <select class="form-select" @bind="line.FromLocationId">
-                                        <option value="">From location</option>
+                                        <option value="">@L["Transfers.Create.FromLocation764e83"]</option>
                                         @foreach (var location in _locations)
                                         {
                                             <option value="@location.Id">@location.Code (@location.Type)</option>
@@ -110,7 +110,7 @@
                                 </td>
                                 <td>
                                     <select class="form-select" @bind="line.ToLocationId">
-                                        <option value="">To location</option>
+                                        <option value="">@L["Transfers.Create.ToLocation"]</option>
                                         @foreach (var location in _locations)
                                         {
                                             <option value="@location.Id">@location.Code (@location.Type)</option>
@@ -121,7 +121,7 @@
                                     <button class="btn btn-sm btn-outline-danger"
                                             disabled="@(_isSubmitting || _lines.Count == 1)"
                                             @onclick="() => RemoveLine(i)">
-                                        Remove
+                                        @L["Common.Remove"]
                                     </button>
                                 </td>
                             </tr>
@@ -132,7 +132,7 @@
         }
 
         <div class="d-flex justify-content-end mt-3">
-            <button class="btn btn-primary" @onclick="CreateAsync" disabled="@_isSubmitting">Submit</button>
+            <button class="btn btn-primary" @onclick="CreateAsync" disabled="@_isSubmitting">@L["Common.Submit"]</button>
         </div>
     </div>
 </div>
@@ -216,13 +216,13 @@
     {
         if (string.IsNullOrWhiteSpace(_fromWarehouse) || string.IsNullOrWhiteSpace(_toWarehouse))
         {
-            ToastService.ShowError("From/To warehouse are required.");
+            ToastService.ShowError(L["Transfers.Create.Toast.FromToWarehouseAreRequired"].Value);
             return;
         }
 
         if (string.Equals(_fromWarehouse.Trim(), _toWarehouse.Trim(), StringComparison.OrdinalIgnoreCase))
         {
-            ToastService.ShowError("From warehouse and To warehouse must be different.");
+            ToastService.ShowError(L["Transfers.Create.Toast.FromWarehouseAndToWarehouseMustBeDifferent"].Value);
             return;
         }
 
@@ -239,13 +239,13 @@
 
         if (lines.Count == 0)
         {
-            ToastService.ShowError("Add at least one valid transfer line.");
+            ToastService.ShowError(L["Transfers.Create.Toast.AddAtLeastOneValidTransferLine"].Value);
             return;
         }
 
         if (lines.Any(x => x.FromLocationId == x.ToLocationId))
         {
-            ToastService.ShowError("Transfer line cannot move to same location.");
+            ToastService.ShowError(L["Transfers.Create.Toast.TransferLineCannotMoveToSameLocation"].Value);
             return;
         }
 
@@ -263,7 +263,7 @@
             };
 
             var created = await TransfersClient.CreateTransferAsync(request);
-            ToastService.ShowSuccess($"Transfer {created.TransferNumber} created.");
+            ToastService.ShowSuccess(L["Transfers.Create.Toast.TransferCreated", created.TransferNumber].Value);
             NavigationManager.NavigateTo("/warehouse/transfers");
         }
         catch (ApiException ex)
@@ -287,16 +287,16 @@
         _apiError = null;
     }
 
-    private static string BuildErrorMessage(ApiException ex)
+    private string BuildErrorMessage(ApiException ex)
     {
-        if (!string.IsNullOrWhiteSpace(ex.UserMessage))
+        if (!string.IsNullOrWhiteSpace(WarehouseErrorText.Get(L, ex)))
         {
-            return ex.UserMessage;
+            return WarehouseErrorText.Get(L, ex);
         }
 
         return ex.ProblemDetails?.Detail
                ?? ex.ProblemDetails?.Title
-               ?? "Transfer request failed.";
+               ?? L["Create.RequestFailed"].Value;
     }
 
     private sealed class TransferLineModel

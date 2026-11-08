@@ -3,9 +3,9 @@
 @inject ItemPricesClient ItemPricesClient
 @inject ToastService ToastService
 
-<PageTitle>Traceability - Cikada.MES</PageTitle>
+<PageTitle>@L["ReportsTraceability.TraceabilityCikadaMES"]</PageTitle>
 
-<h1>Traceability Report (Lot -> Order)</h1>
+<h1>@L["ReportsTraceability.ReportLotToOrder"]</h1>
 
 @if (_apiError is not null)
 {
@@ -19,24 +19,24 @@
     <div class="card-body">
         <div class="row g-2 align-items-end">
             <div class="col-md-3">
-                <label class="form-label">Lot Number</label>
+                <label class="form-label">@L["Common.LotNumber"]</label>
                 <input class="form-control" @bind="_lotNumber" placeholder="LOT-2026-001" />
             </div>
             <div class="col-md-3">
-                <label class="form-label">Item SKU</label>
+                <label class="form-label">@L["ReportsTraceability.ItemSKU"]</label>
                 <input class="form-control" @bind="_itemSku" placeholder="FG-0001" />
             </div>
             <div class="col-md-3">
-                <label class="form-label">Sales Order</label>
+                <label class="form-label">@L["ReportsTraceability.SalesOrder"]</label>
                 <input class="form-control" @bind="_salesOrder" placeholder="SO-0001" />
             </div>
             <div class="col-md-3">
-                <label class="form-label">Supplier</label>
+                <label class="form-label">@L["Common.Supplier"]</label>
                 <input class="form-control" @bind="_supplier" placeholder="ACME" />
             </div>
             <div class="col-md-12 d-flex gap-2 mt-2">
-                <button class="btn btn-primary" @onclick="SearchAsync" disabled="@_isLoading">Search</button>
-                <button class="btn btn-outline-secondary" @onclick="ResetAsync" disabled="@_isLoading">Reset</button>
+                <button class="btn btn-primary" @onclick="SearchAsync" disabled="@_isLoading">@L["Common.Search"]</button>
+                <button class="btn btn-outline-secondary" @onclick="ResetAsync" disabled="@_isLoading">@L["Common.Reset"]</button>
             </div>
         </div>
     </div>
@@ -48,8 +48,8 @@
     <div class="card-body">
         @if (_entries.Count == 0)
         {
-            <EmptyState Title="No traceability entries"
-                        Message="Set at least one filter and run search."
+            <EmptyState Title="@L["ReportsTraceability.NoTraceabilityEntries"]"
+                        Message="@L["ReportsTraceability.SetAtLeastOneFilterAndRunSearch"]"
                         IconCss="bi bi-diagram-3"
                         OnAction="SearchAsync" />
         }
@@ -60,7 +60,7 @@
                 <div class="border rounded p-3 mb-3">
                     <div class="d-flex justify-content-between flex-wrap gap-2 mb-2">
                         <div>
-                            <div class="fw-semibold">Lot: @entry.Lot.LotNumber</div>
+                            <div class="fw-semibold">@L["ReportsTraceability.Lot", entry.Lot.LotNumber]</div>
                             <div class="small text-muted">@entry.Lot.ItemSku - @entry.Lot.ItemName</div>
                             <div class="small">
                                 @L["Pricing.Cost"]: <span class="is-money is-num">@Money.Format(_priceMap.Get(null, entry.Lot.ItemSku)?.EffectiveCost)</span>
@@ -69,40 +69,40 @@
                         </div>
                         @if (entry.IsApproximate)
                         {
-                            <span class="badge bg-warning text-dark">Approximate Linkage</span>
+                            <span class="badge bg-warning text-dark">@L["ReportsTraceability.ApproximateLinkage"]</span>
                         }
                     </div>
 
                     <div class="row g-2">
                         <div class="col-md-4">
                             <div class="border rounded p-2 h-100">
-                                <div class="small text-muted mb-1">Upstream</div>
+                                <div class="small text-muted mb-1">@L["ReportsTraceability.Upstream"]</div>
                                 @if (entry.Upstream is null)
                                 {
-                                    <div class="text-muted">No receiving source found.</div>
+                                    <div class="text-muted">@L["ReportsTraceability.NoReceivingSourceFound"]</div>
                                 }
                                 else
                                 {
-                                    <div>Supplier: @entry.Upstream.Supplier</div>
-                                    <div>Shipment: @entry.Upstream.InboundShipment</div>
-                                    <div>Receipt: @entry.Upstream.ReceiptDate.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</div>
-                                    <div>Qty: @entry.Upstream.QtyReceived.ToString("0.##")</div>
+                                    <div>@L["ReportsTraceability.Supplier", entry.Upstream.Supplier]</div>
+                                    <div>@L["ReportsTraceability.Shipment", entry.Upstream.InboundShipment]</div>
+                                    <div>@L["ReportsTraceability.Receipt", entry.Upstream.ReceiptDate.ToLocalTime().ToString("yyyy-MM-dd HH:mm")]</div>
+                                    <div>@L["ReportsTraceability.Qty", entry.Upstream.QtyReceived.ToString("0.##")]</div>
                                 }
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="border rounded p-2 h-100">
-                                <div class="small text-muted mb-1">Current</div>
-                                <div>Location: @(entry.Current.Location ?? "-")</div>
-                                <div>Available Qty: @entry.Current.AvailableQty.ToString("0.##")</div>
+                                <div class="small text-muted mb-1">@L["ReportsTraceability.Current"]</div>
+                                <div>@L["ReportsTraceability.Location", entry.Current.Location ?? "-"]</div>
+                                <div>@L["ReportsTraceability.AvailableQty", entry.Current.AvailableQty.ToString("0.##")]</div>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="border rounded p-2 h-100">
-                                <div class="small text-muted mb-1">Downstream Sales</div>
+                                <div class="small text-muted mb-1">@L["ReportsTraceability.DownstreamSales"]</div>
                                 @if (entry.Downstream.SalesOrders.Count == 0)
                                 {
-                                    <div class="text-muted">No shipped sales orders found.</div>
+                                    <div class="text-muted">@L["ReportsTraceability.NoShippedSalesOrdersFound"]</div>
                                 }
                                 else
                                 {
@@ -110,8 +110,8 @@
                                     {
                                         <div class="mb-1">
                                             <div class="fw-semibold">@so.OrderNumber (@so.Customer)</div>
-                                            <div class="small text-muted">Qty: @so.QtyShipped.ToString("0.##") | Shipped: @(so.ShippedDate?.ToLocalTime().ToString("yyyy-MM-dd") ?? "-")</div>
-                                            <div class="small text-muted">Tracking: @(so.TrackingNumber ?? "-")</div>
+                                            <div class="small text-muted">@L["ReportsTraceability.QtyShipped", so.QtyShipped.ToString("0.##"), so.ShippedDate?.ToLocalTime().ToString("yyyy-MM-dd") ?? "-"]</div>
+                                            <div class="small text-muted">@L["ReportsTraceability.Tracking", so.TrackingNumber ?? "-"]</div>
                                         </div>
                                     }
                                 }
@@ -177,15 +177,15 @@
         _apiError = null;
     }
 
-    private static string BuildErrorMessage(ApiException ex)
+    private string BuildErrorMessage(ApiException ex)
     {
-        if (!string.IsNullOrWhiteSpace(ex.UserMessage))
+        if (!string.IsNullOrWhiteSpace(WarehouseErrorText.Get(L, ex)))
         {
-            return ex.UserMessage;
+            return WarehouseErrorText.Get(L, ex);
         }
 
         return ex.ProblemDetails?.Detail
                ?? ex.ProblemDetails?.Title
-               ?? "Traceability report request failed.";
+               ?? L["ReportsTraceability.RequestFailed"].Value;
     }
 }

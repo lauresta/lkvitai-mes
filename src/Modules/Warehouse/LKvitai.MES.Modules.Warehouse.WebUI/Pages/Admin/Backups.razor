@@ -3,14 +3,14 @@
 @inject ToastService ToastService
 @inject IConfiguration Configuration
 
-<PageTitle>Backups - Cikada.MES</PageTitle>
+<PageTitle>@L["Admin.Backups.BackupsCikadaMES"]</PageTitle>
 
-<h1>Backup Management</h1>
+<h1>@L["Admin.Backups.BackupManagement"]</h1>
 
 @if (!_hasAdminAccess)
 {
     <div class="alert alert-warning" role="alert">
-        Admin role required.
+        @L["Common.AdminRoleRequired"]
     </div>
 }
 else
@@ -27,13 +27,13 @@ else
         <div class="card-body">
             <div class="row g-2 align-items-end">
                 <div class="col-md-3 d-grid">
-                    <button class="btn btn-primary" @onclick="TriggerBackupAsync" disabled="@_isWorking">Trigger Backup</button>
+                    <button class="btn btn-primary" @onclick="TriggerBackupAsync" disabled="@_isWorking">@L["Admin.Backups.TriggerBackup"]</button>
                 </div>
                 <div class="col-md-3 d-grid">
-                    <button class="btn btn-outline-secondary" @onclick="LoadAsync" disabled="@_isWorking">Refresh</button>
+                    <button class="btn btn-outline-secondary" @onclick="LoadAsync" disabled="@_isWorking">@L["Common.Refresh"]</button>
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Restore Target</label>
+                    <label class="form-label">@L["Admin.Backups.RestoreTarget"]</label>
                     <InputText class="form-control" @bind-Value="_targetEnvironment" />
                 </div>
             </div>
@@ -44,7 +44,7 @@ else
                     @_lastRestoreResult.Message
                     @if (!string.IsNullOrWhiteSpace(_lastRestoreResult.EvidencePath))
                     {
-                        <div><small>Evidence: @_lastRestoreResult.EvidencePath</small></div>
+                        <div><small>@L["Admin.Backups.Evidence", _lastRestoreResult.EvidencePath]</small></div>
                     }
                 </div>
             }
@@ -58,21 +58,21 @@ else
                 <table class="table table-sm table-hover align-middle">
                     <thead>
                         <tr>
-                            <th>Started</th>
-                            <th>Completed</th>
-                            <th>Type</th>
-                            <th>Trigger</th>
-                            <th>Status</th>
-                            <th>Size (bytes)</th>
-                            <th>Artifact</th>
-                            <th class="text-end">Actions</th>
+                            <th>@L["Admin.Backups.Started"]</th>
+                            <th>@L["Common.Completed"]</th>
+                            <th>@L["Common.Type"]</th>
+                            <th>@L["Admin.Backups.Trigger"]</th>
+                            <th>@L["Common.Status"]</th>
+                            <th>@L["Admin.Backups.SizeBytes"]</th>
+                            <th>@L["Admin.Backups.Artifact"]</th>
+                            <th class="text-end">@L["Common.Actions"]</th>
                         </tr>
                     </thead>
                     <tbody>
                         @if (_backups.Count == 0)
                         {
                             <tr>
-                                <td colspan="8" class="text-muted">No backups found.</td>
+                                <td colspan="8" class="text-muted">@L["Admin.Backups.NoBackupsFound"]</td>
                             </tr>
                         }
                         else
@@ -84,14 +84,14 @@ else
                                     <td>@(backup.BackupCompletedAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss") ?? "-")</td>
                                     <td>@backup.Type</td>
                                     <td>@backup.Trigger</td>
-                                    <td>@backup.Status</td>
+                                    <td>@WarehouseStatusText.Get(L, backup.Status)</td>
                                     <td>@backup.BackupSizeBytes</td>
                                     <td class="text-truncate" style="max-width:300px;" title="@backup.BlobPath">@backup.BlobPath</td>
                                     <td class="text-end">
                                         <button class="btn btn-sm btn-outline-warning"
                                                 @onclick="() => RestoreAsync(backup)"
                                                 disabled="@(_isWorking || !CanRestore(backup))">
-                                            Restore
+                                            @L["Admin.Backups.Restore"]
                                         </button>
                                     </td>
                                 </tr>
@@ -151,7 +151,7 @@ else
         try
         {
             var backup = await BackupsClient.TriggerBackupAsync();
-            ToastService.ShowSuccess($"Backup {backup.Id} triggered.");
+            ToastService.ShowSuccess(L["Admin.Backups.Toast.BackupTriggered", backup.Id].Value);
             await LoadAsync();
         }
         catch (ApiException ex)
@@ -169,7 +169,7 @@ else
     {
         if (string.IsNullOrWhiteSpace(_targetEnvironment))
         {
-            ToastService.ShowError("Target environment is required.");
+            ToastService.ShowError(L["Admin.Backups.Toast.TargetEnvironmentIsRequired"].Value);
             return;
         }
 
@@ -203,14 +203,14 @@ else
                       string.Equals(x, "Admin", StringComparison.OrdinalIgnoreCase));
     }
 
-    private static string BuildErrorMessage(ApiException error)
+    private string BuildErrorMessage(ApiException error)
     {
         if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
         {
-            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+            return $"{WarehouseErrorText.Get(L, error)} {error.ProblemDetails.Detail}";
         }
 
-        return error.UserMessage;
+        return WarehouseErrorText.Get(L, error);
     }
 
     private void DismissError()

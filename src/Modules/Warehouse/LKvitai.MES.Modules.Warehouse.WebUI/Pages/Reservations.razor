@@ -6,9 +6,9 @@
 @inject ToastService ToastService
 @using System.Diagnostics
 
-<PageTitle>Reservations - Cikada.MES</PageTitle>
+<PageTitle>@L["Reservations.ReservationsCikadaMES"]</PageTitle>
 
-<h3>Reservations</h3>
+<h3>@L["Reservations.Reservations"]</h3>
 
 @if (_apiError is not null)
 {
@@ -24,16 +24,16 @@
     <div class="card-body">
         <div class="row g-2 align-items-end mb-3">
             <div class="col-sm-6 col-md-4">
-                <label class="form-label">Status</label>
+                <label class="form-label">@L["Common.Status"]</label>
                 <select class="form-select" value="@_statusFilter" @onchange="OnStatusChangedAsync">
-                    <option value="ALL">All</option>
-                    <option value="ALLOCATED">ALLOCATED</option>
-                    <option value="PICKING">PICKING</option>
+                    <option value="ALL">@L["Common.All"]</option>
+                    <option value="ALLOCATED">@WarehouseStatusText.Get(L, "ALLOCATED")</option>
+                    <option value="PICKING">@WarehouseStatusText.Get(L, "PICKING")</option>
                 </select>
             </div>
             <div class="col-auto">
                 <button class="btn btn-outline-secondary" @onclick="ReloadAsync" disabled="@(_isLoading || _isSubmitting)">
-                    Refresh
+                    @L["Common.Refresh"]
                 </button>
             </div>
         </div>
@@ -41,22 +41,22 @@
         <DataTable TItem="ReservationDto"
                    Items="@_reservations"
                    TotalCount="@_totalCount"
-                   EmptyMessage="No reservations found."
+                   EmptyMessage="@L["Reservations.NoReservationsFound"]"
                    OnRowClick="OpenDetails">
             <Columns>
-                <th>Reservation</th>
-                <th>Purpose</th>
-                <th>Priority</th>
-                <th>Status</th>
-                <th>Lock</th>
-                <th>Created</th>
-                <th>Actions</th>
+                <th>@L["Common.Reservation"]</th>
+                <th>@L["Reservations.Purpose"]</th>
+                <th>@L["Common.Priority"]</th>
+                <th>@L["Common.Status"]</th>
+                <th>@L["Reservations.Lock"]</th>
+                <th>@L["Common.Created"]</th>
+                <th>@L["Common.Actions"]</th>
             </Columns>
             <RowTemplate Context="reservation">
                 <td><code>@ShortId(reservation.ReservationId)</code></td>
                 <td>@reservation.Purpose</td>
                 <td>@reservation.Priority</td>
-                <td>@reservation.Status</td>
+                <td>@WarehouseStatusText.Get(L, reservation.Status)</td>
                 <td>@reservation.LockType</td>
                 <td>@reservation.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
                 <td class="d-flex gap-2">
@@ -66,7 +66,7 @@
                                 @onclick="() => OpenStartPickingConfirmation(reservation)"
                                 @onclick:stopPropagation="true"
                                 disabled="@_isSubmitting">
-                            Start Picking
+                            @L["Reservations.StartPicking"]
                         </button>
                     }
                     @if (reservation.Status == "PICKING")
@@ -75,7 +75,7 @@
                                 @onclick="() => OpenPickModal(reservation)"
                                 @onclick:stopPropagation="true"
                                 disabled="@_isSubmitting">
-                            Pick
+                            @L["Common.Pick"]
                         </button>
                     }
                 </td>
@@ -101,21 +101,21 @@
         <div class="modal-dialog modal-lg modal-dialog-scrollable" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Reservation @ShortId(_selectedReservation.ReservationId)</h5>
-                    <button type="button" class="btn-close" aria-label="Close" @onclick="CloseDetailModal"></button>
+                    <h5 class="modal-title">@L["Reservations.Reservation", ShortId(_selectedReservation.ReservationId)]</h5>
+                    <button type="button" class="btn-close" aria-label="@L["Common.Close"]" @onclick="CloseDetailModal"></button>
                 </div>
                 <div class="modal-body">
                     <dl class="row mb-3">
-                        <dt class="col-sm-4">Purpose</dt>
+                        <dt class="col-sm-4">@L["Reservations.Purpose"]</dt>
                         <dd class="col-sm-8">@_selectedReservation.Purpose</dd>
 
-                        <dt class="col-sm-4">Priority</dt>
+                        <dt class="col-sm-4">@L["Common.Priority"]</dt>
                         <dd class="col-sm-8">@_selectedReservation.Priority</dd>
 
-                        <dt class="col-sm-4">Status</dt>
-                        <dd class="col-sm-8">@_selectedReservation.Status</dd>
+                        <dt class="col-sm-4">@L["Common.Status"]</dt>
+                        <dd class="col-sm-8">@WarehouseStatusText.Get(L, _selectedReservation.Status)</dd>
 
-                        <dt class="col-sm-4">Lock</dt>
+                        <dt class="col-sm-4">@L["Reservations.Lock"]</dt>
                         <dd class="col-sm-8">@_selectedReservation.LockType</dd>
                     </dl>
 
@@ -124,14 +124,14 @@
                             <thead>
                                 <tr>
                                     <th>SKU</th>
-                                    <th>Requested</th>
+                                    <th>@L["Common.Requested"]</th>
                                     <th class="text-end">@L["Pricing.Cost"]</th>
                                     <th class="text-end">@L["Pricing.Sale"]</th>
-                                    <th class="text-end">Value</th>
-                                    <th>Allocated</th>
-                                    <th>Warehouse</th>
-                                    <th>Location</th>
-                                    <th>Allocated HUs</th>
+                                    <th class="text-end">@L["Common.Value"]</th>
+                                    <th>@L["Reservations.Allocated"]</th>
+                                    <th>@L["Common.Warehouse"]</th>
+                                    <th>@L["Common.Location"]</th>
+                                    <th>@L["Reservations.AllocatedHUs"]</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -169,7 +169,7 @@
                                 class="btn btn-primary"
                                 @onclick="() => OpenStartPickingConfirmation(_selectedReservation)"
                                 disabled="@_isSubmitting">
-                            Start Picking
+                            @L["Reservations.StartPicking"]
                         </button>
                     }
                     @if (_selectedReservation.Status == "PICKING")
@@ -178,10 +178,10 @@
                                 class="btn btn-primary"
                                 @onclick="() => OpenPickModal(_selectedReservation)"
                                 disabled="@_isSubmitting">
-                            Pick
+                            @L["Common.Pick"]
                         </button>
                     }
-                    <button type="button" class="btn btn-secondary" @onclick="CloseDetailModal">Close</button>
+                    <button type="button" class="btn btn-secondary" @onclick="CloseDetailModal">@L["Common.Close"]</button>
                 </div>
             </div>
         </div>
@@ -195,36 +195,36 @@
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Pick Reservation @ShortId(_pickReservation.ReservationId)</h5>
-                    <button type="button" class="btn-close" aria-label="Close" @onclick="ClosePickModal"></button>
+                    <h5 class="modal-title">@L["Reservations.PickReservation", ShortId(_pickReservation.ReservationId)]</h5>
+                    <button type="button" class="btn-close" aria-label="@L["Common.Close"]" @onclick="ClosePickModal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label">Line</label>
+                        <label class="form-label">@L["Common.Line"]</label>
                         <select class="form-select" value="@_selectedPickLineIndex" @onchange="OnPickLineChanged">
                             @for (var i = 0; i < _pickReservation.Lines.Count; i++)
                             {
                                 var line = _pickReservation.Lines[i];
-                                <option value="@i">@line.SKU | @line.Location | Allocated: @line.AllocatedQty</option>
+                                <option value="@i">@L["Reservations.Allocated5b369e", line.SKU, line.Location, line.AllocatedQty]</option>
                             }
                         </select>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">Handling Unit</label>
+                        <label class="form-label">@L["Reservations.HandlingUnit"]</label>
                         <select class="form-select" value="@_selectedPickHuId" @onchange="OnPickHuChanged">
                             @if (SelectedPickLine is not null)
                             {
                                 @foreach (var hu in SelectedPickLine.AllocatedHUs)
                                 {
-                                    <option value="@hu.HuId">@hu.LPN (@hu.HuId:N) - Qty @hu.Qty</option>
+                                    <option value="@hu.HuId">@L["Reservations.HuOption", hu.LPN, hu.HuId.ToString("N"), hu.Qty]</option>
                                 }
                             }
                         </select>
                     </div>
 
                     <div class="mb-1">
-                        <label class="form-label">Quantity</label>
+                        <label class="form-label">@L["Common.Quantity"]</label>
                         <input type="number" min="0.01" step="0.01" class="form-control" @bind="_pickQuantity" />
                     </div>
                     @if (!string.IsNullOrWhiteSpace(_pickValidationMessage))
@@ -233,12 +233,12 @@
                     }
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="ClosePickModal">Cancel</button>
+                    <button type="button" class="btn btn-secondary" @onclick="ClosePickModal">@L["Common.Cancel"]</button>
                     <button type="button"
                             class="btn btn-primary"
                             @onclick="SubmitPickAsync"
                             disabled="@(_isSubmitting || !CanSubmitPick)">
-                        Submit Pick
+                        @L["Reservations.SubmitPick"]
                     </button>
                 </div>
             </div>
@@ -247,9 +247,9 @@
     <div class="modal-backdrop fade show"></div>
 }
 
-<ConfirmDialog Title="Start picking?"
-               Message="Start picking this reservation now?"
-               ConfirmText="Start"
+<ConfirmDialog Title="@L["Reservations.StartPickinge89c64"]"
+               Message="@L["Reservations.StartPickingThisReservationNow"]"
+               ConfirmText="@L["Common.Start"]"
                IsVisible="@_showStartPickingConfirm"
                OnConfirm="ConfirmStartPickingAsync"
                OnCancel="CancelStartPickingConfirm" />
@@ -478,25 +478,25 @@
 
         if (_pickReservation is null || SelectedPickLine is null)
         {
-            _pickValidationMessage = "Select a reservation line.";
+            _pickValidationMessage = L["Reservations.SelectReservationLine"].Value;
             return;
         }
 
         if (_selectedPickHuId == Guid.Empty)
         {
-            _pickValidationMessage = "Select a handling unit.";
+            _pickValidationMessage = L["Reservations.SelectHandlingUnit"].Value;
             return;
         }
 
         if (_pickQuantity <= 0m)
         {
-            _pickValidationMessage = "Quantity must be greater than zero.";
+            _pickValidationMessage = L["Reservations.QuantityGreaterThanZero"].Value;
             return;
         }
 
         if (SelectedPickLine.AllocatedQty > 0m && _pickQuantity > SelectedPickLine.AllocatedQty)
         {
-            _pickValidationMessage = $"Quantity exceeds allocated quantity {SelectedPickLine.AllocatedQty}.";
+            _pickValidationMessage = L["Reservations.QuantityExceedsAllocated", SelectedPickLine.AllocatedQty].Value;
             return;
         }
 
@@ -536,21 +536,21 @@
 
     private static string ShortId(Guid id) => id.ToString("N")[..8];
 
-    private static string BuildErrorMessage(ApiException error)
+    private string BuildErrorMessage(ApiException error)
     {
         if (error.ProblemDetails?.Errors is { Count: > 0 } fieldErrors)
         {
             var flattened = fieldErrors
                 .SelectMany(entry => entry.Value.Select(message => $"{entry.Key}: {message}"));
             var details = string.Join("; ", flattened);
-            return string.IsNullOrWhiteSpace(details) ? error.UserMessage : $"{error.UserMessage} {details}";
+            return string.IsNullOrWhiteSpace(details) ? WarehouseErrorText.Get(L, error) : $"{WarehouseErrorText.Get(L, error)} {details}";
         }
 
         if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
         {
-            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+            return $"{WarehouseErrorText.Get(L, error)} {error.ProblemDetails.Detail}";
         }
 
-        return error.UserMessage;
+        return WarehouseErrorText.Get(L, error);
     }
 }

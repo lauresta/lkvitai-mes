@@ -3,9 +3,9 @@
 @inject NavigationManager NavigationManager
 @inject ToastService ToastService
 
-<PageTitle>Allocation Dashboard - Cikada.MES</PageTitle>
+<PageTitle>@L["AllocationDashboard.AllocationDashboardCikadaMES"]</PageTitle>
 
-<h1>Allocation & Release Dashboard</h1>
+<h1>@L["AllocationDashboard.Title"]</h1>
 
 @if (_apiError is not null)
 {
@@ -16,28 +16,28 @@
 }
 
 <div class="d-flex justify-content-end mb-2">
-    <button class="btn btn-outline-secondary" @onclick="LoadAsync" disabled="@(_isLoading || _isBusy)">Refresh</button>
+    <button class="btn btn-outline-secondary" @onclick="LoadAsync" disabled="@(_isLoading || _isBusy)">@L["Common.Refresh"]</button>
 </div>
 
 <div class="card shadow-sm mb-3 position-relative">
     <LoadingSpinner IsLoading="_isLoading || _isBusy" />
     <div class="card-body">
-        <h5>Pending Approvals</h5>
+        <h5>@L["AllocationDashboard.PendingApprovals"]</h5>
         <div class="table-responsive">
             <table class="table table-sm align-middle">
                 <thead>
                     <tr>
-                        <th>Order</th>
-                        <th>Customer</th>
-                        <th>Total Amount</th>
-                        <th>Created</th>
-                        <th>Actions</th>
+                        <th>@L["Common.Order"]</th>
+                        <th>@L["Common.Customer"]</th>
+                        <th>@L["Common.TotalAmount"]</th>
+                        <th>@L["Common.Created"]</th>
+                        <th>@L["Common.Actions"]</th>
                     </tr>
                 </thead>
                 <tbody>
                     @if (_pendingApprovals.Count == 0)
                     {
-                        <tr><td colspan="5" class="text-muted">No orders pending approval.</td></tr>
+                        <tr><td colspan="5" class="text-muted">@L["AllocationDashboard.NoOrdersPendingApproval"]</td></tr>
                     }
                     else
                     {
@@ -52,7 +52,7 @@
                                     <button class="btn btn-sm btn-warning"
                                             @onclick="() => ApproveAsync(order.Id, order.OrderNumber)"
                                             disabled="@_isBusy">
-                                        Approve
+                                        @L["Common.Approve"]
                                     </button>
                                 </td>
                             </tr>
@@ -67,22 +67,22 @@
 <div class="card shadow-sm mb-3 position-relative">
     <LoadingSpinner IsLoading="_isLoading || _isBusy" />
     <div class="card-body">
-        <h5>Pending Stock</h5>
+        <h5>@L["AllocationDashboard.PendingStock"]</h5>
         <div class="table-responsive">
             <table class="table table-sm align-middle">
                 <thead>
                     <tr>
-                        <th>Order</th>
-                        <th>Customer</th>
-                        <th>Lines</th>
-                        <th>Total Amount</th>
-                        <th>Actions</th>
+                        <th>@L["Common.Order"]</th>
+                        <th>@L["Common.Customer"]</th>
+                        <th>@L["Common.Lines"]</th>
+                        <th>@L["Common.TotalAmount"]</th>
+                        <th>@L["Common.Actions"]</th>
                     </tr>
                 </thead>
                 <tbody>
                     @if (_pendingStock.Count == 0)
                     {
-                        <tr><td colspan="5" class="text-muted">No orders pending stock.</td></tr>
+                        <tr><td colspan="5" class="text-muted">@L["AllocationDashboard.NoOrdersPendingStock"]</td></tr>
                     }
                     else
                     {
@@ -95,10 +95,10 @@
                                 <td>@order.TotalAmount.ToString("0.00")</td>
                                 <td>
                                     <button class="btn btn-sm btn-outline-secondary" @onclick="() => OpenOrder(order.Id)">
-                                        View
+                                        @L["Common.View"]
                                     </button>
-                                    <button class="btn btn-sm btn-outline-warning ms-1" disabled title="Manual reallocate endpoint is not available in current API surface.">
-                                        Reallocate
+                                    <button class="btn btn-sm btn-outline-warning ms-1" disabled title="@L["AllocationDashboard.ManualReallocateEndpointIsNotAvailableInCurrentAPISurface"]">
+                                        @L["AllocationDashboard.Reallocate"]
                                     </button>
                                 </td>
                             </tr>
@@ -113,22 +113,22 @@
 <div class="card shadow-sm position-relative">
     <LoadingSpinner IsLoading="_isLoading || _isBusy" />
     <div class="card-body">
-        <h5>Allocated Orders</h5>
+        <h5>@L["AllocationDashboard.AllocatedOrders"]</h5>
         <div class="table-responsive">
             <table class="table table-sm align-middle">
                 <thead>
                     <tr>
-                        <th>Order</th>
-                        <th>Customer</th>
-                        <th>Reservation</th>
-                        <th>Total Amount</th>
-                        <th>Actions</th>
+                        <th>@L["Common.Order"]</th>
+                        <th>@L["Common.Customer"]</th>
+                        <th>@L["Common.Reservation"]</th>
+                        <th>@L["Common.TotalAmount"]</th>
+                        <th>@L["Common.Actions"]</th>
                     </tr>
                 </thead>
                 <tbody>
                     @if (_allocated.Count == 0)
                     {
-                        <tr><td colspan="5" class="text-muted">No allocated orders.</td></tr>
+                        <tr><td colspan="5" class="text-muted">@L["AllocationDashboard.NoAllocatedOrders"]</td></tr>
                     }
                     else
                     {
@@ -143,7 +143,7 @@
                                     <button class="btn btn-sm btn-primary"
                                             @onclick="() => ReleaseAsync(order.Id, order.OrderNumber)"
                                             disabled="@_isBusy">
-                                        Release to Picking
+                                        @L["AllocationDashboard.ReleaseToPicking"]
                                     </button>
                                 </td>
                             </tr>
@@ -227,7 +227,7 @@
         try
         {
             await SalesOrdersClient.ApproveSalesOrderAsync(id);
-            ToastService.ShowSuccess($"Order {orderNumber} approved.");
+            ToastService.ShowSuccess(L["AllocationDashboard.Toast.OrderApproved", orderNumber].Value);
             await LoadAsync();
         }
         catch (ApiException ex)
@@ -249,7 +249,7 @@
         try
         {
             await SalesOrdersClient.ReleaseSalesOrderAsync(id);
-            ToastService.ShowSuccess($"Order {orderNumber} released to picking.");
+            ToastService.ShowSuccess(L["AllocationDashboard.Toast.OrderReleasedToPicking", orderNumber].Value);
             await LoadAsync();
         }
         catch (ApiException ex)
@@ -273,15 +273,15 @@
         _apiError = null;
     }
 
-    private static string BuildErrorMessage(ApiException ex)
+    private string BuildErrorMessage(ApiException ex)
     {
-        if (!string.IsNullOrWhiteSpace(ex.UserMessage))
+        if (!string.IsNullOrWhiteSpace(WarehouseErrorText.Get(L, ex)))
         {
-            return ex.UserMessage;
+            return WarehouseErrorText.Get(L, ex);
         }
 
         return ex.ProblemDetails?.Detail
                ?? ex.ProblemDetails?.Title
-               ?? "Allocation dashboard request failed.";
+               ?? L["AllocationDashboard.RequestFailed"].Value;
     }
 }

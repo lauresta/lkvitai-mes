@@ -2,11 +2,11 @@
 @inject IConfiguration Configuration
 @implements IDisposable
 
-<nav aria-label="Warehouse navigation" class="sidebar__nav">
+<nav aria-label="@L["NavMenu.WarehouseNavigation"]" class="sidebar__nav">
 
     <NavLink class="nav-dash" href="dashboard" Match="NavLinkMatch.All" ActiveClass="is-active">
-        <i class="bi bi-speedometer2" title="@(Collapsed ? "Dashboard" : null)"></i>
-        @if (!Collapsed) { <span>Dashboard</span> }
+        <i class="bi bi-speedometer2" title="@(Collapsed ? L["Nav.Dashboard"].Value : null)"></i>
+        @if (!Collapsed) { <span>@L["Nav.Dashboard"]</span> }
     </NavLink>
 
     @foreach (var grp in _sections)
@@ -109,96 +109,96 @@
         Navigation.LocationChanged -= OnLocationChanged;
     }
 
-    private static readonly NavSection[] _sections =
+    private NavSection[] _sections =>
     [
-        new("stock", "Stock", "bi-box-seam", [
-            new("available-stock", "bi-box-seam", "Available Stock"),
-            new("search-by-image", "bi-camera", "Search by Image"),
-            new("stock/dashboard", "bi-grid", "Stock Dashboard"),
-            new("stock/location-balance", "bi-columns-gap", "Location Balance"),
-            new("stock/adjustments", "bi-journal-minus", "Adjustments"),
-            new("reservations", "bi-clipboard-check", "Reservations"),
+        new("stock", L["Nav.Section.Stock"].Value, "bi-box-seam", [
+            new("available-stock", "bi-box-seam", L["Nav.AvailableStock"].Value),
+            new("search-by-image", "bi-camera", L["Nav.SearchByImage"].Value),
+            new("stock/dashboard", "bi-grid", L["Nav.StockDashboard"].Value),
+            new("stock/location-balance", "bi-columns-gap", L["Nav.LocationBalance"].Value),
+            new("stock/adjustments", "bi-journal-minus", L["Nav.Adjustments"].Value),
+            new("reservations", "bi-clipboard-check", L["Nav.Reservations"].Value),
         ]),
 
-        new("inbound", "Inbound", "bi-box-arrow-in-down", [
-            new("inbound/shipments", "bi-box-arrow-in-down", "Inbound Shipments"),
-            new("inbound/qc", "bi-clipboard2-pulse", "Receiving QC"),
-            new("putaway", "bi-box-arrow-up-right", "Putaway"),
+        new("inbound", L["Nav.Section.Inbound"].Value, "bi-box-arrow-in-down", [
+            new("inbound/shipments", "bi-box-arrow-in-down", L["Nav.InboundShipments"].Value),
+            new("inbound/qc", "bi-clipboard2-pulse", L["Nav.ReceivingQC"].Value),
+            new("putaway", "bi-box-arrow-up-right", L["Nav.Putaway"].Value),
         ]),
 
-        new("outbound", "Outbound", "bi-box-arrow-right", [
-            new("sales/orders", "bi-file-earmark-text", "Sales Orders"),
-            new("sales/allocations", "bi-sliders", "Allocations"),
-            new("outbound/orders", "bi-box-arrow-right", "Outbound Orders"),
-            new("outbound/dispatch", "bi-truck", "Dispatch"),
-            new("waves", "bi-layers", "Wave Picking"),
-            new("picking/tasks", "bi-list-task", "Picking Tasks"),
-            new("labels", "bi-upc-scan", "Labels"),
-            new("cross-dock", "bi-arrow-left-right", "Cross-Dock"),
-            new("rmas", "bi-arrow-counterclockwise", "RMAs"),
+        new("outbound", L["Nav.Section.Outbound"].Value, "bi-box-arrow-right", [
+            new("sales/orders", "bi-file-earmark-text", L["Nav.SalesOrders"].Value),
+            new("sales/allocations", "bi-sliders", L["Nav.Allocations"].Value),
+            new("outbound/orders", "bi-box-arrow-right", L["Nav.OutboundOrders"].Value),
+            new("outbound/dispatch", "bi-truck", L["Nav.Dispatch"].Value),
+            new("waves", "bi-layers", L["Nav.WavePicking"].Value),
+            new("picking/tasks", "bi-list-task", L["Nav.PickingTasks"].Value),
+            new("labels", "bi-upc-scan", L["Nav.Labels"].Value),
+            new("cross-dock", "bi-arrow-left-right", L["Nav.CrossDock"].Value),
+            new("rmas", "bi-arrow-counterclockwise", L["Nav.RMAs"].Value),
         ]),
 
-        new("operations", "Operations", "bi-gear", [
-            new("transfers", "bi-arrow-left-right", "Transfers"),
-            new("cycle-counts", "bi-clipboard-check", "Cycle Counts"),
-            new("visualization/3d", "bi-bounding-box-circles", "Warehouse Map"),
-            new("projections", "bi-database-gear", "Projections"),
+        new("operations", L["Nav.Section.Operations"].Value, "bi-gear", [
+            new("transfers", "bi-arrow-left-right", L["Nav.Transfers"].Value),
+            new("cycle-counts", "bi-clipboard-check", L["Nav.CycleCounts"].Value),
+            new("visualization/3d", "bi-bounding-box-circles", L["Nav.WarehouseMap"].Value),
+            new("projections", "bi-database-gear", L["Nav.Projections"].Value),
         ]),
 
-        new("finance", "Finance", "bi-cash-stack", [
-            new("valuation/dashboard", "bi-cash-stack", "Valuation"),
-            new("agnum/config", "bi-journal-text", "Agnum Config"),
-            new("agnum/balances", "bi-boxes", "Agnum Balances"),
-            new("agnum/reconcile", "bi-calculator", "Agnum Reconcile"),
+        new("finance", L["Nav.Section.Finance"].Value, "bi-cash-stack", [
+            new("valuation/dashboard", "bi-cash-stack", L["Nav.Valuation"].Value),
+            new("agnum/config", "bi-journal-text", L["Nav.AgnumConfig"].Value),
+            new("agnum/balances", "bi-boxes", L["Nav.AgnumBalances"].Value),
+            new("agnum/reconcile", "bi-calculator", L["Nav.AgnumReconcile"].Value),
         ]),
 
-        new("admin", "Admin", "bi-shield-lock", [
-            new("admin/users", "bi-people", "Users"),
-            new("admin/settings", "bi-sliders", "Admin Settings"),
-            new("admin/reason-codes", "bi-list-check", "Reason Codes"),
-            new("admin/approval-rules", "bi-ui-checks-grid", "Approval Rules"),
-            new("admin/roles", "bi-person-gear", "Roles"),
-            new("admin/api-keys", "bi-key", "API Keys"),
-            new("admin/gdpr-erasure", "bi-shield-exclamation", "GDPR Erasure"),
-            new("admin/audit-logs", "bi-journal-text", "Audit Logs"),
-            new("admin/backups", "bi-hdd-stack", "Backups"),
-            new("admin/retention-policies", "bi-hourglass-split", "Retention Policies"),
-            new("admin/dr-drills", "bi-life-preserver", "DR Drills"),
-            new("admin/serial-numbers", "bi-upc-scan", "Serial Numbers"),
-            new("admin/lots", "bi-box2", "Lots"),
-            new("admin/uom", "bi-rulers", "Units of Measure"),
-            new("admin/items", "bi-boxes", "Items"),
-            new("admin/suppliers", "bi-truck", "Suppliers"),
-            new("admin/supplier-mappings", "bi-link-45deg", "Supplier Mappings"),
-            new("admin/customers", "bi-person-badge", "Customers"),
-            new("admin/locations", "bi-geo-alt", "Locations"),
-            new("admin/slots", "bi-grid-3x3-gap", "Slots"),
-            new("admin/warehouses", "bi-building", "Warehouses"),
-            new("admin/categories", "bi-diagram-3", "Categories"),
-            new("admin/price-groups", "bi-currency-euro", "Price Groups"),
-            new("admin/import", "bi-upload", "Import Wizard"),
-            new("admin/layout-editor", "bi-layout-text-window-reverse", "Layout Editor"),
+        new("admin", L["Nav.Section.Admin"].Value, "bi-shield-lock", [
+            new("admin/users", "bi-people", L["Nav.Users"].Value),
+            new("admin/settings", "bi-sliders", L["Nav.AdminSettings"].Value),
+            new("admin/reason-codes", "bi-list-check", L["Nav.ReasonCodes"].Value),
+            new("admin/approval-rules", "bi-ui-checks-grid", L["Nav.ApprovalRules"].Value),
+            new("admin/roles", "bi-person-gear", L["Nav.Roles"].Value),
+            new("admin/api-keys", "bi-key", L["Nav.APIKeys"].Value),
+            new("admin/gdpr-erasure", "bi-shield-exclamation", L["Nav.GDPRErasure"].Value),
+            new("admin/audit-logs", "bi-journal-text", L["Nav.AuditLogs"].Value),
+            new("admin/backups", "bi-hdd-stack", L["Nav.Backups"].Value),
+            new("admin/retention-policies", "bi-hourglass-split", L["Nav.RetentionPolicies"].Value),
+            new("admin/dr-drills", "bi-life-preserver", L["Nav.DRDrills"].Value),
+            new("admin/serial-numbers", "bi-upc-scan", L["Nav.SerialNumbers"].Value),
+            new("admin/lots", "bi-box2", L["Nav.Lots"].Value),
+            new("admin/uom", "bi-rulers", L["Nav.UnitsOfMeasure"].Value),
+            new("admin/items", "bi-boxes", L["Nav.Items"].Value),
+            new("admin/suppliers", "bi-truck", L["Nav.Suppliers"].Value),
+            new("admin/supplier-mappings", "bi-link-45deg", L["Nav.SupplierMappings"].Value),
+            new("admin/customers", "bi-person-badge", L["Nav.Customers"].Value),
+            new("admin/locations", "bi-geo-alt", L["Nav.Locations"].Value),
+            new("admin/slots", "bi-grid-3x3-gap", L["Nav.Slots"].Value),
+            new("admin/warehouses", "bi-building", L["Nav.Warehouses"].Value),
+            new("admin/categories", "bi-diagram-3", L["Nav.Categories"].Value),
+            new("admin/price-groups", "bi-currency-euro", L["Nav.PriceGroups"].Value),
+            new("admin/import", "bi-upload", L["Nav.ImportWizard"].Value),
+            new("admin/layout-editor", "bi-layout-text-window-reverse", L["Nav.LayoutEditor"].Value),
         ]),
 
-        new("reports", "Reports", "bi-clipboard-data", [
-            new("reports/stock-level", "bi-clipboard-data", "Stock Level"),
-            new("reports/receiving-history", "bi-box-arrow-in-down", "Receiving History"),
-            new("reports/pick-history", "bi-list-check", "Pick History"),
-            new("reports/dispatch-history", "bi-truck-flatbed", "Dispatch History"),
-            new("reports/stock-movements", "bi-arrow-repeat", "Stock Movements"),
-            new("reports/traceability", "bi-diagram-3", "Traceability"),
-            new("compliance/lot-trace", "bi-diagram-3-fill", "Lot Traceability"),
-            new("reports/compliance-audit", "bi-shield-check", "Compliance Audit"),
-            new("compliance/dashboard", "bi-clock-history", "Compliance Dashboard"),
+        new("reports", L["Nav.Section.Reports"].Value, "bi-clipboard-data", [
+            new("reports/stock-level", "bi-clipboard-data", L["Nav.StockLevel"].Value),
+            new("reports/receiving-history", "bi-box-arrow-in-down", L["Nav.ReceivingHistory"].Value),
+            new("reports/pick-history", "bi-list-check", L["Nav.PickHistory"].Value),
+            new("reports/dispatch-history", "bi-truck-flatbed", L["Nav.DispatchHistory"].Value),
+            new("reports/stock-movements", "bi-arrow-repeat", L["Nav.StockMovements"].Value),
+            new("reports/traceability", "bi-diagram-3", L["Nav.Traceability"].Value),
+            new("compliance/lot-trace", "bi-diagram-3-fill", L["Nav.LotTraceability"].Value),
+            new("reports/compliance-audit", "bi-shield-check", L["Nav.ComplianceAudit"].Value),
+            new("compliance/dashboard", "bi-clock-history", L["Nav.ComplianceDashboard"].Value),
         ]),
 
-        new("analytics", "Analytics", "bi-graph-up-arrow", [
-            new("analytics/fulfillment", "bi-graph-up-arrow", "Fulfillment KPIs"),
-            new("analytics/quality", "bi-shield-exclamation", "Quality Analytics"),
+        new("analytics", L["Nav.Section.Analytics"].Value, "bi-graph-up-arrow", [
+            new("analytics/fulfillment", "bi-graph-up-arrow", L["Nav.FulfillmentKPIs"].Value),
+            new("analytics/quality", "bi-shield-exclamation", L["Nav.QualityAnalytics"].Value),
         ]),
 
-        new("system", "System", "bi-terminal", [
-            new("__hangfire__", "bi-clock-history", "Job Queue", External: true),
+        new("system", L["Nav.Section.System"].Value, "bi-terminal", [
+            new("__hangfire__", "bi-clock-history", L["Nav.JobQueue"].Value, External: true),
         ]),
     ];
 }

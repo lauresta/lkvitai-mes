@@ -3,14 +3,14 @@
 @inject ToastService ToastService
 @inject IConfiguration Configuration
 
-<PageTitle>Approval Rules - Cikada.MES</PageTitle>
+<PageTitle>@L["Admin.ApprovalRules.ApprovalRulesCikadaMES"]</PageTitle>
 
-<h1>Approval Rules</h1>
+<h1>@L["Admin.ApprovalRules.ApprovalRules"]</h1>
 
 @if (!_hasAdminAccess)
 {
     <div class="alert alert-warning" role="alert">
-        Admin role required.
+        @L["Common.AdminRoleRequired"]
     </div>
 }
 else
@@ -27,10 +27,10 @@ else
         <div class="card-body">
             <div class="row g-2 align-items-end">
                 <div class="col-md-3 d-grid">
-                    <button class="btn btn-primary" @onclick="ToggleCreateForm">@(_showCreate ? "Hide Form" : "Add Approval Rule")</button>
+                    <button class="btn btn-primary" @onclick="ToggleCreateForm">@(_showCreate ? L["Common.HideForm"] : L["Admin.ApprovalRules.AddApprovalRule"])</button>
                 </div>
                 <div class="col-md-3 d-grid">
-                    <button class="btn btn-outline-secondary" @onclick="LoadAsync">Refresh</button>
+                    <button class="btn btn-outline-secondary" @onclick="LoadAsync">@L["Common.Refresh"]</button>
                 </div>
             </div>
         </div>
@@ -39,14 +39,14 @@ else
     @if (_showCreate)
     {
         <div class="card shadow-sm mb-3">
-            <div class="card-header">Create Approval Rule</div>
+            <div class="card-header">@L["Admin.ApprovalRules.CreateApprovalRule"]</div>
             <div class="card-body">
                 <EditForm Model="_createForm" OnValidSubmit="CreateAsync">
                     <DataAnnotationsValidator />
                     <ValidationSummary />
                     <div class="row g-2">
                         <div class="col-md-2">
-                            <label class="form-label">Rule Type</label>
+                            <label class="form-label">@L["Common.RuleType"]</label>
                             <InputSelect class="form-select" @bind-Value="_createForm.RuleType">
                                 @foreach (var type in RuleTypes)
                                 {
@@ -55,7 +55,7 @@ else
                             </InputSelect>
                         </div>
                         <div class="col-md-2">
-                            <label class="form-label">Threshold Type</label>
+                            <label class="form-label">@L["Admin.ApprovalRules.ThresholdType"]</label>
                             <InputSelect class="form-select" @bind-Value="_createForm.ThresholdType">
                                 @foreach (var type in ThresholdTypes)
                                 {
@@ -64,17 +64,17 @@ else
                             </InputSelect>
                         </div>
                         <div class="col-md-2">
-                            <label class="form-label">Threshold Value</label>
+                            <label class="form-label">@L["Admin.ApprovalRules.ThresholdValue"]</label>
                             <InputNumber class="form-control" @bind-Value="_createForm.ThresholdValue" />
                             <ValidationMessage For="() => _createForm.ThresholdValue" />
                         </div>
                         <div class="col-md-2">
-                            <label class="form-label">Priority</label>
+                            <label class="form-label">@L["Common.Priority"]</label>
                             <InputNumber class="form-control" @bind-Value="_createForm.Priority" />
                             <ValidationMessage For="() => _createForm.Priority" />
                         </div>
                         <div class="col-md-2">
-                            <label class="form-label">Approver Role</label>
+                            <label class="form-label">@L["Common.ApproverRole"]</label>
                             <InputSelect class="form-select" @bind-Value="_createForm.ApproverRole">
                                 @foreach (var role in ApproverRoles)
                                 {
@@ -85,11 +85,11 @@ else
                         <div class="col-md-2 d-flex align-items-end">
                             <div class="form-check mb-2">
                                 <InputCheckbox class="form-check-input" @bind-Value="_createForm.Active" />
-                                <label class="form-check-label">Active</label>
+                                <label class="form-check-label">@L["Common.Active"]</label>
                             </div>
                         </div>
                         <div class="col-md-2 d-grid">
-                            <button class="btn btn-primary" type="submit" disabled="@_isSubmitting">Save</button>
+                            <button class="btn btn-primary" type="submit" disabled="@_isSubmitting">@L["Common.Save"]</button>
                         </div>
                     </div>
                 </EditForm>
@@ -104,19 +104,19 @@ else
                 <table class="table table-sm table-hover align-middle">
                     <thead>
                         <tr>
-                            <th>Rule Type</th>
-                            <th>Threshold</th>
-                            <th>Approver Role</th>
-                            <th>Priority</th>
-                            <th>Active</th>
-                            <th class="text-end">Actions</th>
+                            <th>@L["Common.RuleType"]</th>
+                            <th>@L["Admin.ApprovalRules.Threshold"]</th>
+                            <th>@L["Common.ApproverRole"]</th>
+                            <th>@L["Common.Priority"]</th>
+                            <th>@L["Common.Active"]</th>
+                            <th class="text-end">@L["Common.Actions"]</th>
                         </tr>
                     </thead>
                     <tbody>
                         @if (_rules.Count == 0)
                         {
                             <tr>
-                                <td colspan="6" class="text-muted">No approval rules configured.</td>
+                                <td colspan="6" class="text-muted">@L["Admin.ApprovalRules.NoApprovalRulesConfigured"]</td>
                             </tr>
                         }
                         else
@@ -128,10 +128,10 @@ else
                                     <td>@rule.ThresholdType @rule.ThresholdValue</td>
                                     <td>@rule.ApproverRole</td>
                                     <td>@rule.Priority</td>
-                                    <td>@(rule.Active ? "Yes" : "No")</td>
+                                    <td>@(rule.Active ? L["Common.Yes"] : L["Common.No"])</td>
                                     <td class="text-end">
-                                        <button class="btn btn-sm btn-outline-secondary me-2" @onclick="() => BeginEdit(rule)">Edit</button>
-                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmDelete(rule)">Delete</button>
+                                        <button class="btn btn-sm btn-outline-secondary me-2" @onclick="() => BeginEdit(rule)">@L["Common.Edit"]</button>
+                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => ConfirmDelete(rule)">@L["Common.Delete"]</button>
                                     </td>
                                 </tr>
                             }
@@ -146,8 +146,8 @@ else
     {
         <div class="card shadow-sm mb-3">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <span>Edit Rule #@_editing.Id</span>
-                <button class="btn btn-sm btn-outline-secondary" @onclick="CancelEdit">Close</button>
+                <span>@L["Admin.ApprovalRules.EditRule", _editing.Id ?? 0]</span>
+                <button class="btn btn-sm btn-outline-secondary" @onclick="CancelEdit">@L["Common.Close"]</button>
             </div>
             <div class="card-body">
                 <EditForm Model="_editing" OnValidSubmit="UpdateAsync">
@@ -155,7 +155,7 @@ else
                     <ValidationSummary />
                     <div class="row g-2">
                         <div class="col-md-2">
-                            <label class="form-label">Rule Type</label>
+                            <label class="form-label">@L["Common.RuleType"]</label>
                             <InputSelect class="form-select" @bind-Value="_editing.RuleType">
                                 @foreach (var type in RuleTypes)
                                 {
@@ -164,7 +164,7 @@ else
                             </InputSelect>
                         </div>
                         <div class="col-md-2">
-                            <label class="form-label">Threshold Type</label>
+                            <label class="form-label">@L["Admin.ApprovalRules.ThresholdType"]</label>
                             <InputSelect class="form-select" @bind-Value="_editing.ThresholdType">
                                 @foreach (var type in ThresholdTypes)
                                 {
@@ -173,17 +173,17 @@ else
                             </InputSelect>
                         </div>
                         <div class="col-md-2">
-                            <label class="form-label">Threshold Value</label>
+                            <label class="form-label">@L["Admin.ApprovalRules.ThresholdValue"]</label>
                             <InputNumber class="form-control" @bind-Value="_editing.ThresholdValue" />
                             <ValidationMessage For="() => _editing.ThresholdValue" />
                         </div>
                         <div class="col-md-2">
-                            <label class="form-label">Priority</label>
+                            <label class="form-label">@L["Common.Priority"]</label>
                             <InputNumber class="form-control" @bind-Value="_editing.Priority" />
                             <ValidationMessage For="() => _editing.Priority" />
                         </div>
                         <div class="col-md-2">
-                            <label class="form-label">Approver Role</label>
+                            <label class="form-label">@L["Common.ApproverRole"]</label>
                             <InputSelect class="form-select" @bind-Value="_editing.ApproverRole">
                                 @foreach (var role in ApproverRoles)
                                 {
@@ -194,11 +194,11 @@ else
                         <div class="col-md-2 d-flex align-items-end">
                             <div class="form-check mb-2">
                                 <InputCheckbox class="form-check-input" @bind-Value="_editing.Active" />
-                                <label class="form-check-label">Active</label>
+                                <label class="form-check-label">@L["Common.Active"]</label>
                             </div>
                         </div>
                         <div class="col-md-2 d-grid">
-                            <button class="btn btn-primary" type="submit" disabled="@_isSubmitting">Save</button>
+                            <button class="btn btn-primary" type="submit" disabled="@_isSubmitting">@L["Common.Save"]</button>
                         </div>
                     </div>
                 </EditForm>
@@ -207,14 +207,14 @@ else
     }
 
     <div class="card shadow-sm">
-        <div class="card-header">Test Rule Evaluation</div>
+        <div class="card-header">@L["Admin.ApprovalRules.TestRuleEvaluation"]</div>
         <div class="card-body">
             <EditForm Model="_testForm" OnValidSubmit="TestRuleAsync">
                 <DataAnnotationsValidator />
                 <ValidationSummary />
                 <div class="row g-2 align-items-end">
                     <div class="col-md-4">
-                        <label class="form-label">Rule Type</label>
+                        <label class="form-label">@L["Common.RuleType"]</label>
                         <InputSelect class="form-select" @bind-Value="_testForm.RuleType">
                             @foreach (var type in RuleTypes)
                             {
@@ -223,12 +223,12 @@ else
                         </InputSelect>
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">Test Value</label>
+                        <label class="form-label">@L["Admin.ApprovalRules.TestValue"]</label>
                         <InputNumber class="form-control" @bind-Value="_testForm.Value" />
                         <ValidationMessage For="() => _testForm.Value" />
                     </div>
                     <div class="col-md-2 d-grid">
-                        <button class="btn btn-outline-primary" type="submit">Test Rule</button>
+                        <button class="btn btn-outline-primary" type="submit">@L["Admin.ApprovalRules.TestRule"]</button>
                     </div>
                     <div class="col-md-12">
                         @if (_testResult is not null)
@@ -236,11 +236,11 @@ else
                             <div class="alert alert-info mt-2 mb-0" role="alert">
                                 @if (_testResult.RequiresApproval)
                                 {
-                                    <span>Requires approval: @_testResult.ApproverRole</span>
+                                    <span>@L["Admin.ApprovalRules.RequiresApproval", _testResult.ApproverRole ?? "-"]</span>
                                 }
                                 else
                                 {
-                                    <span>No approval required.</span>
+                                    <span>@L["Admin.ApprovalRules.NoApprovalRequired"]</span>
                                 }
                             </div>
                         }
@@ -250,9 +250,9 @@ else
         </div>
     </div>
 
-    <ConfirmDialog Title="Delete Approval Rule"
+    <ConfirmDialog Title="@L["Admin.ApprovalRules.DeleteApprovalRule"]"
                    Message="@_deleteMessage"
-                   ConfirmText="Delete"
+                   ConfirmText="@L["Common.Delete"]"
                    IsVisible="@(_pendingDelete is not null)"
                    OnConfirm="DeleteAsync"
                    OnCancel="CancelDelete" />
@@ -341,7 +341,7 @@ else
         try
         {
             var created = await AdminConfigurationClient.CreateApprovalRuleAsync(ToRequest(_createForm));
-            ToastService.ShowSuccess($"Approval rule #{created.Id} created.");
+            ToastService.ShowSuccess(L["Admin.ApprovalRules.Toast.ApprovalRuleCreated", created.Id].Value);
             _showCreate = false;
             _createForm = new ApprovalRuleForm();
             await LoadAsync();
@@ -384,7 +384,7 @@ else
         try
         {
             var updated = await AdminConfigurationClient.UpdateApprovalRuleAsync(_editing.Id.Value, ToRequest(_editing));
-            ToastService.ShowSuccess($"Approval rule #{updated.Id} updated.");
+            ToastService.ShowSuccess(L["Admin.ApprovalRules.Toast.ApprovalRuleUpdated", updated.Id].Value);
             _editing = null;
             await LoadAsync();
         }
@@ -422,7 +422,7 @@ else
     private void ConfirmDelete(ApprovalRuleDto rule)
     {
         _pendingDelete = rule;
-        _deleteMessage = $"Delete approval rule #{rule.Id}?";
+        _deleteMessage = L["Admin.ApprovalRules.DeleteRuleConfirmation", rule.Id].Value;
     }
 
     private async Task DeleteAsync()
@@ -438,7 +438,7 @@ else
         try
         {
             await AdminConfigurationClient.DeleteApprovalRuleAsync(_pendingDelete.Id);
-            ToastService.ShowSuccess($"Approval rule #{_pendingDelete.Id} deleted.");
+            ToastService.ShowSuccess(L["Admin.ApprovalRules.Toast.ApprovalRuleDeleted", _pendingDelete.Id].Value);
             _pendingDelete = null;
             _deleteMessage = string.Empty;
             await LoadAsync();
@@ -484,14 +484,14 @@ else
                       string.Equals(x, "Admin", StringComparison.OrdinalIgnoreCase));
     }
 
-    private static string BuildErrorMessage(ApiException error)
+    private string BuildErrorMessage(ApiException error)
     {
         if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
         {
-            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+            return $"{WarehouseErrorText.Get(L, error)} {error.ProblemDetails.Detail}";
         }
 
-        return error.UserMessage;
+        return WarehouseErrorText.Get(L, error);
     }
 
     private void DismissError()

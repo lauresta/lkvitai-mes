@@ -5,14 +5,14 @@
 @inject ToastService ToastService
 @inject IConfiguration Configuration
 
-<PageTitle>Layout Editor - Cikada.MES</PageTitle>
+<PageTitle>@L["Admin.LayoutEditor.LayoutEditorCikadaMES"]</PageTitle>
 
-<h1>Warehouse Layout Editor</h1>
+<h1>@L["Admin.LayoutEditor.WarehouseLayoutEditor"]</h1>
 
 @if (!_hasAdminAccess)
 {
     <div class="alert alert-warning" role="alert">
-        Admin role required.
+        @L["Common.AdminRoleRequired"]
     </div>
 }
 else
@@ -37,7 +37,7 @@ else
         <div class="card-body">
             <div class="row g-3">
                 <div class="col-md-6">
-                    <label class="form-label">Warehouse Code</label>
+                    <label class="form-label">@L["Admin.LayoutEditor.WarehouseCode"]</label>
                     <select class="form-select" value="@_warehouseCode" @onchange="OnWarehouseChangedAsync">
                         @foreach (var warehouse in _warehouses)
                         {
@@ -46,33 +46,33 @@ else
                     </select>
                 </div>
                 <div class="col-12">
-                    <label class="form-label">Layout JSON</label>
+                    <label class="form-label">@L["Admin.LayoutEditor.LayoutJSON"]</label>
                     <textarea class="form-control font-monospace"
                               rows="20"
                               @bind="_layoutJson"></textarea>
                     <div class="form-text">
-                        Required fields: <code>warehouseCode</code>, <code>widthMeters</code>, <code>lengthMeters</code>, <code>heightMeters</code>, <code>zones</code>.
+                        @L["Admin.LayoutEditor.RequiredFields"] <code>warehouseCode</code>, <code>widthMeters</code>, <code>lengthMeters</code>, <code>heightMeters</code>, <code>zones</code>.
                     </div>
                 </div>
                 <div class="col-12">
-                    <label class="form-label">Rack Config JSON</label>
+                    <label class="form-label">@L["Admin.LayoutEditor.RackConfigJSON"]</label>
                     <textarea class="form-control font-monospace"
                               rows="18"
                               @bind="_rackConfigJson"></textarea>
                     <div class="form-text">
-                        Optional rack structure document stored in <code>warehouse_layouts.RacksJson</code>. Leave empty for legacy warehouses.
+                        @L["Admin.LayoutEditor.OptionalRackStructureDocumentStoredIn"] <code>warehouse_layouts.RacksJson</code>@L["Admin.LayoutEditor.LeaveEmptyForLegacyWarehouses"]
                     </div>
                 </div>
                 <div class="col-12 d-flex align-items-center gap-3">
                     <button class="btn btn-outline-secondary" type="button" @onclick="LoadAsync" disabled="@(_isLoading || _isSaving)">
-                        Reload
+                        @L["Admin.LayoutEditor.Reload"]
                     </button>
                     <button class="btn btn-primary" type="button" @onclick="SaveAsync" disabled="@(_isLoading || _isSaving)">
-                        Save Layout
+                        @L["Admin.LayoutEditor.SaveLayout"]
                     </button>
                     @if (_updatedAt is not null)
                     {
-                        <span class="text-muted small">Last updated at @_updatedAt.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</span>
+                        <span class="text-muted small">@L["Admin.LayoutEditor.LastUpdatedAt", _updatedAt.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm")]</span>
                     }
                 </div>
             </div>
@@ -111,7 +111,7 @@ else
             }
             else
             {
-                _validationMessage = "No active non-virtual warehouses available.";
+                _validationMessage = L["Admin.LayoutEditor.NoActiveWarehouses"].Value;
             }
         }
     }
@@ -180,7 +180,7 @@ else
             _layoutJson = SerializeLayout(updated, _warehouseCode);
             _rackConfigJson = rackConfig.RacksJson ?? string.Empty;
             _updatedAt = updated.UpdatedAt > rackConfig.UpdatedAt ? updated.UpdatedAt : rackConfig.UpdatedAt;
-            ToastService.ShowSuccess("Layout updated successfully.");
+            ToastService.ShowSuccess(L["Admin.LayoutEditor.Toast.LayoutUpdatedSuccessfully"].Value);
         }
         catch (InvalidOperationException ex)
         {
@@ -326,14 +326,14 @@ else
                       string.Equals(x, "Admin", StringComparison.OrdinalIgnoreCase));
     }
 
-    private static string BuildErrorMessage(ApiException error)
+    private string BuildErrorMessage(ApiException error)
     {
         if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
         {
-            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+            return $"{WarehouseErrorText.Get(L, error)} {error.ProblemDetails.Detail}";
         }
 
-        return error.UserMessage;
+        return WarehouseErrorText.Get(L, error);
     }
 
     private void DismissError()

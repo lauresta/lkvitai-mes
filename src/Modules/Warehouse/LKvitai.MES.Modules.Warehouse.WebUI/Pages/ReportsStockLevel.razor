@@ -4,9 +4,9 @@
 @inject IJSRuntime JavaScript
 @inject ToastService ToastService
 
-<PageTitle>Stock Level Report - Cikada.MES</PageTitle>
+<PageTitle>@L["ReportsStockLevel.StockLevelReportCikadaMES"]</PageTitle>
 
-<h3>Stock Level Report</h3>
+<h3>@L["ReportsStockLevel.StockLevelReport"]</h3>
 
 @if (_apiError is not null)
 {
@@ -20,36 +20,36 @@
     <div class="card-body">
         <div class="row g-2 align-items-end">
             <div class="col-md-2">
-                <label class="form-label">Item Id</label>
+                <label class="form-label">@L["Common.ItemID"]</label>
                 <input class="form-control" type="number" @bind="_itemId" />
             </div>
             <div class="col-md-2">
-                <label class="form-label">Location Id</label>
+                <label class="form-label">@L["Common.LocationId"]</label>
                 <input class="form-control" type="number" @bind="_locationId" />
             </div>
             <div class="col-md-2">
-                <label class="form-label">Category Id</label>
+                <label class="form-label">@L["ReportsStockLevel.CategoryId"]</label>
                 <input class="form-control" type="number" @bind="_categoryId" />
             </div>
             <div class="col-md-3">
-                <label class="form-label">Expiring Before</label>
+                <label class="form-label">@L["ReportsStockLevel.ExpiringBefore"]</label>
                 <input class="form-control" type="date" @bind="_expiringBefore" />
             </div>
             <div class="col-md-3 d-flex gap-3 align-items-center">
                 <div class="form-check mt-4">
                     <input class="form-check-input" type="checkbox" @bind="_includeReserved" />
-                    <label class="form-check-label">Include reserved</label>
+                    <label class="form-check-label">@L["ReportsStockLevel.IncludeReserved"]</label>
                 </div>
                 <div class="form-check mt-4">
                     <input class="form-check-input" type="checkbox" @bind="_includeVirtualLocations" />
-                    <label class="form-check-label">Include virtual</label>
+                    <label class="form-check-label">@L["ReportsStockLevel.IncludeVirtual"]</label>
                 </div>
             </div>
             <div class="col-md-2 d-grid">
-                <button class="btn btn-primary" @onclick="ApplyFiltersAsync">Apply</button>
+                <button class="btn btn-primary" @onclick="ApplyFiltersAsync">@L["Common.Apply"]</button>
             </div>
             <div class="col-md-2 d-grid">
-                <button class="btn btn-outline-secondary" @onclick="ExportCsvAsync">Export CSV</button>
+                <button class="btn btn-outline-secondary" @onclick="ExportCsvAsync">@L["Common.ExportCSV"]</button>
             </div>
         </div>
     </div>
@@ -59,7 +59,7 @@
     <LoadingSpinner IsLoading="@_isLoading" />
     <div class="card-body">
         <div class="d-flex justify-content-between align-items-center mb-2">
-            <strong>Total: @_totalCount</strong>
+            <strong>@L["ReportsStockLevel.Total", _totalCount]</strong>
             <div>
                 Stock as of @_projectionTimestamp.ToString("HH:mm:ss")
                 <span class="ms-2"><StaleBadge LastUpdated="_projectionTimestamp" /></span>
@@ -71,23 +71,23 @@
                 <thead>
                 <tr>
                     <th>SKU</th>
-                    <th>Item</th>
-                    <th>Location</th>
-                    <th>Lot</th>
-                    <th>Expiry</th>
-                    <th>Qty</th>
-                    <th>Reserved</th>
-                    <th>Available</th>
+                    <th>@L["Common.Item"]</th>
+                    <th>@L["Common.Location"]</th>
+                    <th>@L["Common.Lot"]</th>
+                    <th>@L["Common.Expiry"]</th>
+                    <th>@L["Common.Qty"]</th>
+                    <th>@L["Common.Reserved"]</th>
+                    <th>@L["Common.Available"]</th>
                     <th class="text-end">@L["Pricing.Cost"]</th>
                     <th class="text-end">@L["Pricing.Sale"]</th>
-                    <th class="text-end">Value</th>
+                    <th class="text-end">@L["Common.Value"]</th>
                 </tr>
                 </thead>
                 <tbody>
                 @if (_items.Count == 0)
                 {
                     <tr>
-                        <td colspan="11" class="text-muted">No rows found.</td>
+                        <td colspan="11" class="text-muted">@L["Common.NoRowsFound"]</td>
                     </tr>
                 }
                 else
@@ -231,13 +231,13 @@
         }
     }
 
-    private static string BuildErrorMessage(ApiException error)
+    private string BuildErrorMessage(ApiException error)
     {
         if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
         {
-            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+            return $"{WarehouseErrorText.Get(L, error)} {error.ProblemDetails.Detail}";
         }
 
-        return error.UserMessage;
+        return WarehouseErrorText.Get(L, error);
     }
 }

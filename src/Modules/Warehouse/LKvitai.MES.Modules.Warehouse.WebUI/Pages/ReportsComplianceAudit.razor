@@ -3,9 +3,9 @@
 @inject IJSRuntime JavaScript
 @inject ToastService ToastService
 
-<PageTitle>Compliance Audit - Cikada.MES</PageTitle>
+<PageTitle>@L["ReportsComplianceAudit.ComplianceAuditCikadaMES"]</PageTitle>
 
-<h1>Compliance Audit Report</h1>
+<h1>@L["ReportsComplianceAudit.ComplianceAuditReport"]</h1>
 
 @if (_apiError is not null)
 {
@@ -19,27 +19,27 @@
     <div class="card-body">
         <div class="row g-2 align-items-end">
             <div class="col-md-2">
-                <label class="form-label">Start</label>
+                <label class="form-label">@L["Common.Start"]</label>
                 <input type="date" class="form-control" @bind="_startDate" />
             </div>
             <div class="col-md-2">
-                <label class="form-label">End</label>
+                <label class="form-label">@L["Common.End"]</label>
                 <input type="date" class="form-control" @bind="_endDate" />
             </div>
             <div class="col-md-3">
-                <label class="form-label">Report Type</label>
+                <label class="form-label">@L["ReportsComplianceAudit.ReportType"]</label>
                 <select class="form-select" @bind="_reportType">
-                    <option value="STOCK_MOVEMENTS">STOCK_MOVEMENTS</option>
-                    <option value="ADJUSTMENTS">ADJUSTMENTS</option>
-                    <option value="VALUATIONS">VALUATIONS</option>
-                    <option value="USER_ACTIONS">USER_ACTIONS</option>
+                    <option value="STOCK_MOVEMENTS">@WarehouseStatusText.Get(L, "STOCK_MOVEMENTS")</option>
+                    <option value="ADJUSTMENTS">@WarehouseStatusText.Get(L, "ADJUSTMENTS")</option>
+                    <option value="VALUATIONS">@WarehouseStatusText.Get(L, "VALUATIONS")</option>
+                    <option value="USER_ACTIONS">@WarehouseStatusText.Get(L, "USER_ACTIONS")</option>
                 </select>
             </div>
             <div class="col-md-5 d-flex gap-2">
-                <button class="btn btn-primary" @onclick="ApplyFiltersAsync" disabled="@_isLoading">Apply</button>
-                <button class="btn btn-outline-secondary" @onclick="LoadAsync" disabled="@_isLoading">Refresh</button>
-                <button class="btn btn-outline-success ms-auto" @onclick="ExportCsvAsync" disabled="@_isLoading">Export CSV</button>
-                <button class="btn btn-outline-danger" @onclick="ExportPdfAsync" disabled="@_isLoading">Export PDF</button>
+                <button class="btn btn-primary" @onclick="ApplyFiltersAsync" disabled="@_isLoading">@L["Common.Apply"]</button>
+                <button class="btn btn-outline-secondary" @onclick="LoadAsync" disabled="@_isLoading">@L["Common.Refresh"]</button>
+                <button class="btn btn-outline-success ms-auto" @onclick="ExportCsvAsync" disabled="@_isLoading">@L["Common.ExportCSV"]</button>
+                <button class="btn btn-outline-danger" @onclick="ExportPdfAsync" disabled="@_isLoading">@L["ReportsComplianceAudit.ExportPDF"]</button>
             </div>
         </div>
     </div>
@@ -49,26 +49,26 @@
     <LoadingSpinner IsLoading="_isLoading" />
 
     <div class="card-body">
-        <div class="mb-2"><strong>Total: @_totalCount</strong></div>
+        <div class="mb-2"><strong>@L["ReportsComplianceAudit.Total", _totalCount]</strong></div>
 
         <div class="table-responsive">
             <table class="table table-sm table-hover align-middle">
                 <thead>
                     <tr>
-                        <th>Timestamp</th>
-                        <th>Type</th>
-                        <th>Actor</th>
-                        <th>Reference</th>
-                        <th>Category</th>
-                        <th>Details</th>
-                        <th>Notes</th>
+                        <th>@L["Common.Timestamp"]</th>
+                        <th>@L["Common.Type"]</th>
+                        <th>@L["ReportsComplianceAudit.Actor"]</th>
+                        <th>@L["Common.Reference"]</th>
+                        <th>@L["Common.Category"]</th>
+                        <th>@L["Common.Details"]</th>
+                        <th>@L["Common.Notes"]</th>
                     </tr>
                 </thead>
                 <tbody>
                     @if (_rows.Count == 0)
                     {
                         <tr>
-                            <td colspan="7" class="text-muted">No compliance rows found.</td>
+                            <td colspan="7" class="text-muted">@L["ReportsComplianceAudit.NoComplianceRowsFound"]</td>
                         </tr>
                     }
                     else
@@ -232,15 +232,15 @@
         _apiError = null;
     }
 
-    private static string BuildErrorMessage(ApiException ex)
+    private string BuildErrorMessage(ApiException ex)
     {
-        if (!string.IsNullOrWhiteSpace(ex.UserMessage))
+        if (!string.IsNullOrWhiteSpace(WarehouseErrorText.Get(L, ex)))
         {
-            return ex.UserMessage;
+            return WarehouseErrorText.Get(L, ex);
         }
 
         return ex.ProblemDetails?.Detail
                ?? ex.ProblemDetails?.Title
-               ?? "Compliance report request failed.";
+               ?? L["ReportsComplianceAudit.RequestFailed"].Value;
     }
 }

@@ -5,9 +5,9 @@
 @inject AgnumClient AgnumClient
 @inject ItemPricesClient ItemPricesClient
 
-<PageTitle>Agnum Reconciliation</PageTitle>
+<PageTitle>@L["Agnum.Reconciliation.AgnumReconciliation"]</PageTitle>
 
-<h1>Agnum Reconciliation</h1>
+<h1>@L["Agnum.Reconciliation.AgnumReconciliation"]</h1>
 
 @if (_apiError is not null)
 {
@@ -23,7 +23,7 @@
     <div class="card-body">
         <div class="row g-3 align-items-end">
             <div class="col-12 col-md-4">
-                <label class="form-label">Virtual warehouse</label>
+                <label class="form-label">@L["Agnum.Reconciliation.VirtualWarehouse"]</label>
                 <select class="form-select" @bind="_selectedSndId" @bind:after="LoadReconciliationAsync">
                     @foreach (var warehouse in _warehouses)
                     {
@@ -34,8 +34,8 @@
                 </select>
             </div>
             <div class="col-12 col-md-4">
-                <label class="form-label">Search</label>
-                <input class="form-control" @bind="_search" @bind:event="oninput" @bind:after="LoadVisiblePricesAsync" placeholder="SKU or product name" />
+                <label class="form-label">@L["Common.Search"]</label>
+                <input class="form-control" @bind="_search" @bind:event="oninput" @bind:after="LoadVisiblePricesAsync" placeholder="@L["Agnum.Reconciliation.SKUOrProductName"]" />
             </div>
             <div class="col-12 col-md-2">
                 <div class="form-check">
@@ -43,45 +43,45 @@
                            class="form-check-input"
                            type="checkbox"
                            @bind="_onlyDiscrepancies" />
-                    <label class="form-check-label" for="only-discrepancies">Only show discrepancies</label>
+                    <label class="form-check-label" for="only-discrepancies">@L["Agnum.Reconciliation.OnlyShowDiscrepancies"]</label>
                 </div>
             </div>
             <div class="col-12 col-md-2 d-flex gap-2">
-                <button class="btn btn-outline-secondary" type="button" @onclick="LoadAsync" disabled="@_isLoading">Refresh</button>
+                <button class="btn btn-outline-secondary" type="button" @onclick="LoadAsync" disabled="@_isLoading">@L["Common.Refresh"]</button>
             </div>
         </div>
 
         <div class="d-flex flex-wrap gap-3 text-muted small mt-3">
-            <span>Rows: @FilteredRows.Count</span>
-            <span>Virtual: @FilteredRows.Sum(x => x.VirtualQty).ToString("0.###")</span>
-            <span>Distributed: @FilteredRows.Sum(x => x.DistributedQty).ToString("0.###")</span>
-            <span>MES physical: @FilteredRows.Sum(x => x.MesPhysicalQty).ToString("0.###")</span>
-            <span>Delta: @FilteredRows.Sum(x => x.Delta).ToString("0.###")</span>
+            <span>@L["Agnum.Reconciliation.Rows", FilteredRows.Count]</span>
+            <span>@L["Agnum.Reconciliation.VirtualSummary", FilteredRows.Sum(x => x.VirtualQty).ToString("0.###")]</span>
+            <span>@L["Agnum.Reconciliation.DistributedSummary", FilteredRows.Sum(x => x.DistributedQty).ToString("0.###")]</span>
+            <span>@L["Agnum.Reconciliation.MesPhysicalSummary", FilteredRows.Sum(x => x.MesPhysicalQty).ToString("0.###")]</span>
+            <span>@L["Agnum.Reconciliation.DeltaSummary", FilteredRows.Sum(x => x.Delta).ToString("0.###")]</span>
         </div>
 
         <div class="table-responsive mt-3">
             <table class="table table-sm align-middle">
                 <thead>
                 <tr>
-                    <th>Agnum Code</th>
-                    <th>SKU (MES)</th>
-                    <th>Item Name</th>
-                    <th class="text-end">Virtual Balance (Agnum)</th>
-                    <th class="text-end">Distributed to MES</th>
-                    <th class="text-end">Remaining</th>
-                    <th class="text-end">MES Physical (actual)</th>
-                    <th class="text-end">Delta</th>
+                    <th>@L["Agnum.Reconciliation.AgnumCode"]</th>
+                    <th>@L["Agnum.Reconciliation.SKUMES"]</th>
+                    <th>@L["Agnum.Reconciliation.ItemName"]</th>
+                    <th class="text-end">@L["Agnum.Reconciliation.VirtualBalanceAgnum"]</th>
+                    <th class="text-end">@L["Agnum.Reconciliation.DistributedToMES"]</th>
+                    <th class="text-end">@L["Common.Remaining"]</th>
+                    <th class="text-end">@L["Agnum.Reconciliation.MESPhysicalActual"]</th>
+                    <th class="text-end">@L["Agnum.Reconciliation.Delta"]</th>
                     <th class="text-end">@L["Pricing.Cost"]</th>
                     <th class="text-end">@L["Pricing.Sale"]</th>
-                    <th class="text-end">Value (current cost)</th>
-                    <th>Status</th>
+                    <th class="text-end">@L["Common.ValueCurrentCost"]</th>
+                    <th>@L["Common.Status"]</th>
                 </tr>
                 </thead>
                 <tbody>
                 @if (FilteredRows.Count == 0)
                 {
                     <tr>
-                        <td colspan="12" class="text-muted py-3">No reconciliation rows found.</td>
+                        <td colspan="12" class="text-muted py-3">@L["Agnum.Reconciliation.NoReconciliationRowsFound"]</td>
                     </tr>
                 }
                 else
@@ -102,7 +102,7 @@
                             <td class="text-end is-money is-num">@Money.Format(_priceMap.Get(null, row.Sku)?.EffectiveCost)</td>
                             <td class="text-end is-money is-num">@Money.Format(_priceMap.Get(null, row.Sku)?.BasePrice)</td>
                             <td class="text-end is-money is-num">@Money.Format(_priceMap.Value(row.Delta, null, row.Sku))</td>
-                            <td><span class="@GetStatusChipClass(row.Status)">@FormatStatus(row.Status)</span></td>
+                            <td><span class="@GetStatusChipClass(row.Status)">@WarehouseStatusText.Get(L, row.Status)</span></td>
                         </tr>
                     }
                 }
@@ -112,7 +112,7 @@
 
         @if (FilteredRows.Count > 500)
         {
-            <div class="text-muted small">Showing first 500 rows. Use search to narrow the list.</div>
+            <div class="text-muted small">@L["Agnum.Reconciliation.ShowingFirst500RowsUseSearchToNarrowTheList"]</div>
         }
     </div>
 </div>
@@ -248,12 +248,9 @@
             _ => "chip chip--slate"
         };
 
-    private static string FormatStatus(string status)
-        => status == "NotLinked" ? "Not linked" : status;
-
-    private static string BuildErrorMessage(ApiException ex)
-        => ex.UserMessage
+    private string BuildErrorMessage(ApiException ex)
+        => WarehouseErrorText.Get(L, ex)
            ?? ex.ProblemDetails?.Detail
            ?? ex.ProblemDetails?.Title
-           ?? "Agnum reconciliation request failed.";
+           ?? L["Reconciliation.RequestFailed"].Value;
 }

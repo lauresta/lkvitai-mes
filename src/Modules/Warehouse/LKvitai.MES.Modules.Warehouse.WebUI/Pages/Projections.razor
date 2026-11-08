@@ -4,9 +4,9 @@
 @inject IJSRuntime JavaScript
 @using System.Diagnostics
 
-<PageTitle>Projections - Cikada.MES</PageTitle>
+<PageTitle>@L["Projections.ProjectionsCikadaMES"]</PageTitle>
 
-<h3>Projections</h3>
+<h3>@L["Projections.Projections"]</h3>
 
 @if (_apiError is not null)
 {
@@ -18,20 +18,20 @@
     <div class="alert alert-warning">
         <div class="d-flex justify-content-between align-items-center">
             <span>@BuildFriendlyHint(_apiError, _lastFailedOperation)</span>
-            <button class="btn btn-sm btn-outline-secondary" @onclick="CopyErrorAsync">Copy Error</button>
+            <button class="btn btn-sm btn-outline-secondary" @onclick="CopyErrorAsync">@L["Projections.CopyError"]</button>
         </div>
     </div>
 }
 
 <div class="card shadow-sm mb-3">
     <div class="card-header d-flex justify-content-between align-items-center">
-        <span>Projection Lag</span>
-        <button class="btn btn-sm btn-outline-secondary" @onclick="RefreshLagFromToolbarAsync">Refresh</button>
+        <span>@L["Projections.ProjectionLag"]</span>
+        <button class="btn btn-sm btn-outline-secondary" @onclick="RefreshLagFromToolbarAsync">@L["Common.Refresh"]</button>
     </div>
     <div class="card-body">
         @if (_projectionLag.Count == 0)
         {
-            <span class="text-muted">No projection lag data available.</span>
+            <span class="text-muted">@L["Projections.NoProjectionLagDataAvailable"]</span>
         }
         else
         {
@@ -39,11 +39,11 @@
                 <table class="table table-sm">
                     <thead>
                     <tr>
-                        <th>Projection</th>
-                        <th>Status</th>
-                        <th>Lag (s)</th>
-                        <th>Lag (events)</th>
-                        <th>Last Updated</th>
+                        <th>@L["Common.Projection"]</th>
+                        <th>@L["Common.Status"]</th>
+                        <th>@L["Projections.LagS"]</th>
+                        <th>@L["Projections.LagEvents"]</th>
+                        <th>@L["Common.LastUpdated"]</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -51,7 +51,7 @@
                     {
                         <tr>
                             <td>@row.ProjectionName</td>
-                            <td>@row.Status</td>
+                            <td>@WarehouseStatusText.Get(L, row.Status)</td>
                             <td>@(row.LagSeconds?.ToString("0.##") ?? "-")</td>
                             <td>@(row.LagEvents?.ToString() ?? "-")</td>
                             <td>
@@ -62,7 +62,7 @@
                                 }
                                 else
                                 {
-                                    <span class="text-muted">Unknown</span>
+                                    <span class="text-muted">@L["Projections.Unknown"]</span>
                                 }
                             </td>
                         </tr>
@@ -75,10 +75,10 @@
 </div>
 
 <div class="card shadow-sm mb-3">
-    <div class="card-header">Rebuild / Verify</div>
+    <div class="card-header">@L["Projections.RebuildVerify"]</div>
     <div class="card-body">
         <div class="mb-3">
-            <label class="form-label">Projection</label>
+            <label class="form-label">@L["Common.Projection"]</label>
             <select class="form-select" value="@_selectedProjection" @onchange="OnProjectionChanged">
                 @foreach (var projection in _projections)
                 {
@@ -89,10 +89,10 @@
 
         <div class="d-flex gap-2 mb-3">
             <button class="btn btn-primary" @onclick="OpenRebuildConfirmation" disabled="@_isBusy">
-                Rebuild
+                @L["Projections.Rebuild"]
             </button>
             <button class="btn btn-outline-primary" @onclick="VerifyAsync" disabled="@_isBusy">
-                Verify
+                @L["Projections.Verify"]
             </button>
         </div>
 
@@ -103,22 +103,22 @@
                 : "border-danger";
 
             <div class="card mb-3 @resultClass">
-                <div class="card-header">Rebuild Result</div>
+                <div class="card-header">@L["Projections.RebuildResult"]</div>
                 <div class="card-body">
                     <dl class="row mb-0">
-                        <dt class="col-sm-4">Projection</dt>
+                        <dt class="col-sm-4">@L["Common.Projection"]</dt>
                         <dd class="col-sm-8">@_rebuildResult.ProjectionName</dd>
 
-                        <dt class="col-sm-4">Events Processed</dt>
+                        <dt class="col-sm-4">@L["Projections.EventsProcessed"]</dt>
                         <dd class="col-sm-8">@_rebuildResult.EventsProcessed</dd>
 
-                        <dt class="col-sm-4">Checksum Match</dt>
+                        <dt class="col-sm-4">@L["Projections.ChecksumMatch"]</dt>
                         <dd class="col-sm-8">@_rebuildResult.ChecksumMatch</dd>
 
-                        <dt class="col-sm-4">Swapped</dt>
+                        <dt class="col-sm-4">@L["Projections.Swapped"]</dt>
                         <dd class="col-sm-8">@_rebuildResult.Swapped</dd>
 
-                        <dt class="col-sm-4">Duration</dt>
+                        <dt class="col-sm-4">@L["Projections.Duration"]</dt>
                         <dd class="col-sm-8">@_rebuildResult.Duration</dd>
                     </dl>
                 </div>
@@ -132,7 +132,7 @@
                 : "alert-danger";
 
             <div class="alert @verifyClass mb-0" role="alert">
-                <strong>Verify:</strong> ChecksumMatch=@_verifyResult.ChecksumMatch,
+                <strong>@L["Projections.Verify53ada8"]</strong> ChecksumMatch=@_verifyResult.ChecksumMatch,
                 ProductionRows=@_verifyResult.ProductionRowCount,
                 ShadowRows=@_verifyResult.ShadowRowCount
             </div>
@@ -141,24 +141,24 @@
 </div>
 
 <div class="card shadow-sm">
-    <div class="card-header">Runbook</div>
+    <div class="card-header">@L["Projections.Runbook"]</div>
     <div class="card-body">
-        <p class="mb-2">Use this quick checklist before and after projection rebuilds.</p>
+        <p class="mb-2">@L["Projections.UseThisQuickChecklistBeforeAndAfterProjectionRebuilds"]</p>
         <ol class="mb-2">
-            <li>Check lag table above and confirm projection status.</li>
-            <li>Run `Verify` first; use `Rebuild` only when mismatch or corruption is confirmed.</li>
-            <li>After rebuild, verify `ChecksumMatch=true` and lag returns to healthy.</li>
-            <li>Capture traceId for failed operations and share with support.</li>
+            <li>@L["Projections.CheckLagTableAboveAndConfirmProjectionStatus"]</li>
+            <li>@L["Projections.RunVerifyFirstUseRebuildOnlyWhenMismatchOrCorruptionIsConfirme"]</li>
+            <li>@L["Projections.AfterRebuildVerifyChecksumMatchTrueAndLagReturnsToHealthy"]</li>
+            <li>@L["Projections.CaptureTraceIdForFailedOperationsAndShareWithSupport"]</li>
         </ol>
         <a href="docs/master-data/master-data-06-ops-runbook-projections.md" target="_blank" rel="noopener noreferrer">
-            Open Projection Runbook
+            @L["Projections.OpenProjectionRunbook"]
         </a>
     </div>
 </div>
 
-<ConfirmDialog Title="Rebuild projection?"
-               Message="Are you sure? This will rebuild the projection from scratch."
-               ConfirmText="Rebuild"
+<ConfirmDialog Title="@L["Projections.RebuildProjection"]"
+               Message="@L["Projections.AreYouSureThisWillRebuildTheProjectionFromScratch"]"
+               ConfirmText="@L["Projections.Rebuild"]"
                IsVisible="@_showRebuildConfirm"
                OnConfirm="ConfirmRebuildAsync"
                OnCancel="CancelRebuildConfirm" />
@@ -217,11 +217,11 @@
 
             if (_rebuildResult.ChecksumMatch && _rebuildResult.Swapped)
             {
-                ToastService.ShowSuccess($"Rebuild completed for {_selectedProjection}.");
+                ToastService.ShowSuccess(L["Projections.Toast.RebuildCompletedFor", _selectedProjection].Value);
             }
             else
             {
-                ToastService.ShowWarning($"Rebuild finished with mismatch for {_selectedProjection}.");
+                ToastService.ShowWarning(L["Projections.Toast.RebuildFinishedWithMismatchFor", _selectedProjection].Value);
             }
         }
         catch (ApiException ex)
@@ -242,7 +242,7 @@
                 },
                 500);
             _lastFailedOperation = FailedOperation.Rebuild;
-            ToastService.ShowError(_apiError.UserMessage);
+            ToastService.ShowError(WarehouseErrorText.Get(L, _apiError));
         }
         finally
         {
@@ -261,11 +261,11 @@
             _verifyResult = await ProjectionsClient.VerifyAsync(_selectedProjection);
             if (_verifyResult.ChecksumMatch)
             {
-                ToastService.ShowSuccess($"Verify succeeded for {_selectedProjection}.");
+                ToastService.ShowSuccess(L["Projections.Toast.VerifySucceededFor", _selectedProjection].Value);
             }
             else
             {
-                ToastService.ShowWarning($"Verify mismatch for {_selectedProjection}.");
+                ToastService.ShowWarning(L["Projections.Toast.VerifyMismatchFor", _selectedProjection].Value);
             }
         }
         catch (ApiException ex)
@@ -286,7 +286,7 @@
                 },
                 500);
             _lastFailedOperation = FailedOperation.Verify;
-            ToastService.ShowError(_apiError.UserMessage);
+            ToastService.ShowError(WarehouseErrorText.Get(L, _apiError));
         }
         finally
         {
@@ -344,12 +344,12 @@
 
         var payload = $"traceId={_apiError.TraceId}; message={BuildErrorMessage(_apiError)}";
         await JavaScript.InvokeVoidAsync("navigator.clipboard.writeText", payload);
-        ToastService.ShowSuccess("Error details copied.");
+        ToastService.ShowSuccess(L["Projections.Toast.ErrorDetailsCopied"].Value);
     }
 
     private void DismissError() => _apiError = null;
 
-    private static string BuildFriendlyHint(ApiException error, FailedOperation operation)
+    private string BuildFriendlyHint(ApiException error, FailedOperation operation)
     {
         if (operation == FailedOperation.RefreshLag)
         {
@@ -373,22 +373,22 @@
         return "Projection operation failed. Use the runbook below and copy the error details for investigation.";
     }
 
-    private static string BuildErrorMessage(ApiException error)
+    private string BuildErrorMessage(ApiException error)
     {
         if (error.ProblemDetails?.Errors is { Count: > 0 } fieldErrors)
         {
             var flattened = fieldErrors
                 .SelectMany(entry => entry.Value.Select(message => $"{entry.Key}: {message}"));
             var details = string.Join("; ", flattened);
-            return string.IsNullOrWhiteSpace(details) ? error.UserMessage : $"{error.UserMessage} {details}";
+            return string.IsNullOrWhiteSpace(details) ? WarehouseErrorText.Get(L, error) : $"{WarehouseErrorText.Get(L, error)} {details}";
         }
 
         if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
         {
-            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+            return $"{WarehouseErrorText.Get(L, error)} {error.ProblemDetails.Detail}";
         }
 
-        return error.UserMessage;
+        return WarehouseErrorText.Get(L, error);
     }
 
     private enum FailedOperation

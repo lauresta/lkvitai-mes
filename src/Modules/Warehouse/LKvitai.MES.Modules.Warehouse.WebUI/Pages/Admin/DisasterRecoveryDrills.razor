@@ -3,14 +3,14 @@
 @inject ToastService ToastService
 @inject IConfiguration Configuration
 
-<PageTitle>DR Drills - Cikada.MES</PageTitle>
+<PageTitle>@L["Admin.DisasterRecoveryDrills.DRDrillsCikadaMES"]</PageTitle>
 
-<h1>Disaster Recovery Drills</h1>
+<h1>@L["Admin.DisasterRecoveryDrills.DisasterRecoveryDrills"]</h1>
 
 @if (!_hasAdminAccess)
 {
     <div class="alert alert-warning" role="alert">
-        Admin role required.
+        @L["Common.AdminRoleRequired"]
     </div>
 }
 else
@@ -27,7 +27,7 @@ else
         <div class="card-body">
             <div class="row g-2 align-items-end">
                 <div class="col-md-4">
-                    <label class="form-label">Scenario</label>
+                    <label class="form-label">@L["Admin.DisasterRecoveryDrills.Scenario"]</label>
                     <InputSelect class="form-select" @bind-Value="_selectedScenario">
                         @foreach (var scenario in ScenarioOptions)
                         {
@@ -36,10 +36,10 @@ else
                     </InputSelect>
                 </div>
                 <div class="col-md-3 d-grid">
-                    <button class="btn btn-primary" @onclick="TriggerDrillAsync" disabled="@_isWorking">Trigger Drill</button>
+                    <button class="btn btn-primary" @onclick="TriggerDrillAsync" disabled="@_isWorking">@L["Admin.DisasterRecoveryDrills.TriggerDrill"]</button>
                 </div>
                 <div class="col-md-3 d-grid">
-                    <button class="btn btn-outline-secondary" @onclick="LoadAsync" disabled="@_isWorking">Refresh</button>
+                    <button class="btn btn-outline-secondary" @onclick="LoadAsync" disabled="@_isWorking">@L["Common.Refresh"]</button>
                 </div>
             </div>
         </div>
@@ -52,20 +52,20 @@ else
                 <table class="table table-sm table-hover align-middle">
                     <thead>
                         <tr>
-                            <th>Started</th>
-                            <th>Completed</th>
-                            <th>Scenario</th>
-                            <th>Status</th>
-                            <th>Actual RTO</th>
-                            <th>Issues</th>
-                            <th>Notes</th>
+                            <th>@L["Admin.DisasterRecoveryDrills.Started"]</th>
+                            <th>@L["Common.Completed"]</th>
+                            <th>@L["Admin.DisasterRecoveryDrills.Scenario"]</th>
+                            <th>@L["Common.Status"]</th>
+                            <th>@L["Admin.DisasterRecoveryDrills.ActualRTO"]</th>
+                            <th>@L["Admin.DisasterRecoveryDrills.Issues"]</th>
+                            <th>@L["Common.Notes"]</th>
                         </tr>
                     </thead>
                     <tbody>
                         @if (_drills.Count == 0)
                         {
                             <tr>
-                                <td colspan="7" class="text-muted">No DR drills found.</td>
+                                <td colspan="7" class="text-muted">@L["Admin.DisasterRecoveryDrills.NoDRDrillsFound"]</td>
                             </tr>
                         }
                         else
@@ -76,7 +76,7 @@ else
                                     <td>@drill.DrillStartedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</td>
                                     <td>@(drill.DrillCompletedAt?.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss") ?? "-")</td>
                                     <td>@drill.Scenario</td>
-                                    <td>@drill.Status</td>
+                                    <td>@WarehouseStatusText.Get(L, drill.Status)</td>
                                     <td>@drill.ActualRTO</td>
                                     <td>
                                         @if (drill.IssuesIdentified.Count == 0)
@@ -155,7 +155,7 @@ else
         try
         {
             var drill = await DisasterRecoveryClient.TriggerDrillAsync(_selectedScenario);
-            ToastService.ShowSuccess($"DR drill started: {drill.Id}");
+            ToastService.ShowSuccess(L["Admin.DisasterRecoveryDrills.Toast.DRDrillStarted", drill.Id].Value);
             await LoadAsync();
         }
         catch (ApiException ex)
@@ -177,14 +177,14 @@ else
                       string.Equals(x, "Admin", StringComparison.OrdinalIgnoreCase));
     }
 
-    private static string BuildErrorMessage(ApiException error)
+    private string BuildErrorMessage(ApiException error)
     {
         if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
         {
-            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+            return $"{WarehouseErrorText.Get(L, error)} {error.ProblemDetails.Detail}";
         }
 
-        return error.UserMessage;
+        return WarehouseErrorText.Get(L, error);
     }
 
     private void DismissError()

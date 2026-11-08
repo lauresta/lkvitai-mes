@@ -3,14 +3,14 @@
 @inject ToastService ToastService
 @inject IConfiguration Configuration
 
-<PageTitle>Audit Logs - Cikada.MES</PageTitle>
+<PageTitle>@L["Admin.AuditLogs.AuditLogsCikadaMES"]</PageTitle>
 
-<h1>Security Audit Logs</h1>
+<h1>@L["Admin.AuditLogs.SecurityAuditLogs"]</h1>
 
 @if (!_hasAdminAccess)
 {
     <div class="alert alert-warning" role="alert">
-        Admin role required.
+        @L["Common.AdminRoleRequired"]
     </div>
 }
 else
@@ -27,32 +27,32 @@ else
         <div class="card-body">
             <div class="row g-2 align-items-end">
                 <div class="col-md-2">
-                    <label class="form-label">User</label>
+                    <label class="form-label">@L["Common.User"]</label>
                     <InputText class="form-control" @bind-Value="_filters.UserId" />
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Action</label>
+                    <label class="form-label">@L["Common.Action"]</label>
                     <InputText class="form-control" @bind-Value="_filters.Action" />
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Resource</label>
+                    <label class="form-label">@L["Admin.AuditLogs.Resource"]</label>
                     <InputText class="form-control" @bind-Value="_filters.Resource" />
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Start</label>
+                    <label class="form-label">@L["Common.Start"]</label>
                     <input type="date" class="form-control" @bind="_startDate" />
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">End</label>
+                    <label class="form-label">@L["Common.End"]</label>
                     <input type="date" class="form-control" @bind="_endDate" />
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Fetch Limit</label>
+                    <label class="form-label">@L["Admin.AuditLogs.FetchLimit"]</label>
                     <InputNumber class="form-control" @bind-Value="_fetchLimit" />
                 </div>
                 <div class="col-12 d-flex gap-2">
-                    <button class="btn btn-primary" @onclick="ApplyFiltersAsync" disabled="@_isLoading">Apply</button>
-                    <button class="btn btn-outline-secondary" @onclick="LoadAsync" disabled="@_isLoading">Refresh</button>
+                    <button class="btn btn-primary" @onclick="ApplyFiltersAsync" disabled="@_isLoading">@L["Common.Apply"]</button>
+                    <button class="btn btn-outline-secondary" @onclick="LoadAsync" disabled="@_isLoading">@L["Common.Refresh"]</button>
                 </div>
             </div>
         </div>
@@ -61,25 +61,25 @@ else
     <div class="card shadow-sm position-relative">
         <LoadingSpinner IsLoading="_isLoading" />
         <div class="card-body">
-            <div class="mb-2"><strong>Total: @_allRows.Count</strong></div>
+            <div class="mb-2"><strong>@L["Admin.AuditLogs.Total", _allRows.Count]</strong></div>
             <div class="table-responsive">
                 <table class="table table-sm table-hover align-middle">
                     <thead>
                         <tr>
-                            <th>Timestamp</th>
-                            <th>User</th>
-                            <th>Action</th>
-                            <th>Resource</th>
-                            <th>Resource ID</th>
+                            <th>@L["Common.Timestamp"]</th>
+                            <th>@L["Common.User"]</th>
+                            <th>@L["Common.Action"]</th>
+                            <th>@L["Admin.AuditLogs.Resource"]</th>
+                            <th>@L["Admin.AuditLogs.ResourceID"]</th>
                             <th>IP</th>
-                            <th>Details</th>
+                            <th>@L["Common.Details"]</th>
                         </tr>
                     </thead>
                     <tbody>
                         @if (CurrentPageRows.Count == 0)
                         {
                             <tr>
-                                <td colspan="7" class="text-muted">No audit log rows found.</td>
+                                <td colspan="7" class="text-muted">@L["Admin.AuditLogs.NoAuditLogRowsFound"]</td>
                             </tr>
                         }
                         else
@@ -212,14 +212,14 @@ else
         return value;
     }
 
-    private static string BuildErrorMessage(ApiException error)
+    private string BuildErrorMessage(ApiException error)
     {
         if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
         {
-            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+            return $"{WarehouseErrorText.Get(L, error)} {error.ProblemDetails.Detail}";
         }
 
-        return error.UserMessage;
+        return WarehouseErrorText.Get(L, error);
     }
 
     private void DismissError()

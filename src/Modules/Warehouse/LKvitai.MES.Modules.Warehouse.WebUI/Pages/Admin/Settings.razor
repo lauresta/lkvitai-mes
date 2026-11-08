@@ -3,14 +3,14 @@
 @inject ToastService ToastService
 @inject IConfiguration Configuration
 
-<PageTitle>Admin Settings - Cikada.MES</PageTitle>
+<PageTitle>@L["Admin.Settings.AdminSettingsCikadaMES"]</PageTitle>
 
-<h1>Warehouse Settings</h1>
+<h1>@L["Admin.Settings.WarehouseSettings"]</h1>
 
 @if (!_hasAdminAccess)
 {
     <div class="alert alert-warning" role="alert">
-        Admin role required.
+        @L["Common.AdminRoleRequired"]
     </div>
 }
 else
@@ -32,13 +32,13 @@ else
 
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label class="form-label">Capacity Threshold (%)</label>
+                        <label class="form-label">@L["Admin.Settings.CapacityThreshold"]</label>
                         <InputNumber class="form-control" @bind-Value="_form.CapacityThresholdPercent" />
                         <ValidationMessage For="() => _form.CapacityThresholdPercent" />
                     </div>
 
                     <div class="col-md-6">
-                        <label class="form-label">Default Pick Strategy</label>
+                        <label class="form-label">@L["Admin.Settings.DefaultPickStrategy"]</label>
                         <InputSelect class="form-select" @bind-Value="_form.DefaultPickStrategy">
                             <option value="FEFO">FEFO</option>
                             <option value="FIFO">FIFO</option>
@@ -47,13 +47,13 @@ else
                     </div>
 
                     <div class="col-md-6">
-                        <label class="form-label">Low Stock Threshold</label>
+                        <label class="form-label">@L["Admin.Settings.LowStockThreshold"]</label>
                         <InputNumber class="form-control" @bind-Value="_form.LowStockThreshold" />
                         <ValidationMessage For="() => _form.LowStockThreshold" />
                     </div>
 
                     <div class="col-md-6">
-                        <label class="form-label">Reorder Point</label>
+                        <label class="form-label">@L["Admin.Settings.ReorderPoint"]</label>
                         <InputNumber class="form-control" @bind-Value="_form.ReorderPoint" />
                         <ValidationMessage For="() => _form.ReorderPoint" />
                     </div>
@@ -61,15 +61,15 @@ else
                     <div class="col-12">
                         <div class="form-check mt-2">
                             <InputCheckbox class="form-check-input" @bind-Value="_form.AutoAllocateOrders" />
-                            <label class="form-check-label">Auto allocate orders</label>
+                            <label class="form-check-label">@L["Admin.Settings.AutoAllocateOrders"]</label>
                         </div>
                     </div>
 
                     <div class="col-12 d-flex align-items-center gap-3">
-                        <button class="btn btn-primary" type="submit" disabled="@(_isLoading || _isSaving)">Save</button>
+                        <button class="btn btn-primary" type="submit" disabled="@(_isLoading || _isSaving)">@L["Common.Save"]</button>
                         @if (_updatedAt is not null)
                         {
-                            <span class="text-muted small">Last updated by @_updatedBy at @_updatedAt.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</span>
+                            <span class="text-muted small">@L["Admin.Settings.LastUpdatedByAt", _updatedBy ?? "-", _updatedAt.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm")]</span>
                         }
                     </div>
                 </div>
@@ -144,7 +144,7 @@ else
 
             _updatedBy = updated.UpdatedBy;
             _updatedAt = updated.UpdatedAt;
-            ToastService.ShowSuccess("Settings saved successfully");
+            ToastService.ShowSuccess(L["Admin.Settings.Toast.SettingsSavedSuccessfully"].Value);
         }
         catch (ApiException ex)
         {
@@ -165,14 +165,14 @@ else
                       string.Equals(x, "Admin", StringComparison.OrdinalIgnoreCase));
     }
 
-    private static string BuildErrorMessage(ApiException error)
+    private string BuildErrorMessage(ApiException error)
     {
         if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
         {
-            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+            return $"{WarehouseErrorText.Get(L, error)} {error.ProblemDetails.Detail}";
         }
 
-        return error.UserMessage;
+        return WarehouseErrorText.Get(L, error);
     }
 
     private void DismissError()

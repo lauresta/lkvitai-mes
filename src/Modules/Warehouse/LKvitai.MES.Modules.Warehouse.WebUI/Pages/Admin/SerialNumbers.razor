@@ -3,14 +3,14 @@
 @inject ToastService ToastService
 @inject IConfiguration Configuration
 
-<PageTitle>Serial Numbers - Cikada.MES</PageTitle>
+<PageTitle>@L["Admin.SerialNumbers.SerialNumbersCikadaMES"]</PageTitle>
 
-<h1>Serial Numbers</h1>
+<h1>@L["Admin.SerialNumbers.SerialNumbers"]</h1>
 
 @if (!_hasAdminAccess)
 {
     <div class="alert alert-warning" role="alert">
-        Admin role required.
+        @L["Common.AdminRoleRequired"]
     </div>
 }
 else
@@ -24,7 +24,7 @@ else
     }
 
     <div class="card shadow-sm mb-3">
-        <div class="card-header">Register Serial</div>
+        <div class="card-header">@L["Admin.SerialNumbers.RegisterSerial"]</div>
         <div class="card-body">
             <EditForm Model="_createForm" OnValidSubmit="CreateAsync">
                 <DataAnnotationsValidator />
@@ -32,23 +32,23 @@ else
 
                 <div class="row g-2 align-items-end">
                     <div class="col-md-2">
-                        <label class="form-label">Item ID</label>
+                        <label class="form-label">@L["Common.ItemID"]</label>
                         <InputNumber class="form-control" @bind-Value="_createForm.ItemId" />
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label">Serial</label>
+                        <label class="form-label">@L["Common.Serial"]</label>
                         <InputText class="form-control" @bind-Value="_createForm.Value" />
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label">Location</label>
+                        <label class="form-label">@L["Common.Location"]</label>
                         <InputText class="form-control" @bind-Value="_createForm.Location" />
                     </div>
                     <div class="col-md-2">
-                        <label class="form-label">Warranty Date</label>
+                        <label class="form-label">@L["Admin.SerialNumbers.WarrantyDate"]</label>
                         <InputDate class="form-control" @bind-Value="_createForm.WarrantyExpiryDate" />
                     </div>
                     <div class="col-md-2 d-grid">
-                        <button class="btn btn-primary" type="submit" disabled="@_isWorking">Register</button>
+                        <button class="btn btn-primary" type="submit" disabled="@_isWorking">@L["Admin.SerialNumbers.Register"]</button>
                     </div>
                 </div>
             </EditForm>
@@ -59,24 +59,24 @@ else
         <div class="card-body">
             <div class="row g-2 align-items-end">
                 <div class="col-md-3">
-                    <label class="form-label">Serial</label>
+                    <label class="form-label">@L["Common.Serial"]</label>
                     <InputText class="form-control" @bind-Value="_searchSerial" />
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Item ID</label>
+                    <label class="form-label">@L["Common.ItemID"]</label>
                     <InputNumber class="form-control" @bind-Value="_searchItemId" />
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Status</label>
+                    <label class="form-label">@L["Common.Status"]</label>
                     <InputText class="form-control" @bind-Value="_searchStatus" />
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Location</label>
+                    <label class="form-label">@L["Common.Location"]</label>
                     <InputText class="form-control" @bind-Value="_searchLocation" />
                 </div>
                 <div class="col-md-3 d-flex gap-2">
-                    <button class="btn btn-primary" @onclick="LoadAsync" disabled="@_isWorking">Search</button>
-                    <button class="btn btn-outline-secondary" @onclick="ResetFilters" disabled="@_isWorking">Reset</button>
+                    <button class="btn btn-primary" @onclick="LoadAsync" disabled="@_isWorking">@L["Common.Search"]</button>
+                    <button class="btn btn-outline-secondary" @onclick="ResetFilters" disabled="@_isWorking">@L["Common.Reset"]</button>
                 </div>
             </div>
         </div>
@@ -89,19 +89,19 @@ else
                 <table class="table table-sm table-hover align-middle">
                     <thead>
                         <tr>
-                            <th>Serial</th>
-                            <th>Item ID</th>
-                            <th>Status</th>
-                            <th>Location</th>
-                            <th>Warranty Expiry</th>
-                            <th class="text-end">Actions</th>
+                            <th>@L["Common.Serial"]</th>
+                            <th>@L["Common.ItemID"]</th>
+                            <th>@L["Common.Status"]</th>
+                            <th>@L["Common.Location"]</th>
+                            <th>@L["Admin.SerialNumbers.WarrantyExpiry"]</th>
+                            <th class="text-end">@L["Common.Actions"]</th>
                         </tr>
                     </thead>
                     <tbody>
                         @if (_serials.Count == 0)
                         {
                             <tr>
-                                <td colspan="6" class="text-muted">No serials found.</td>
+                                <td colspan="6" class="text-muted">@L["Admin.SerialNumbers.NoSerialsFound"]</td>
                             </tr>
                         }
                         else
@@ -111,11 +111,11 @@ else
                                 <tr>
                                     <td>@serial.Value</td>
                                     <td>@serial.ItemId</td>
-                                    <td>@serial.Status</td>
+                                    <td>@WarehouseStatusText.Get(L, serial.Status)</td>
                                     <td>@(serial.Location ?? "-")</td>
                                     <td>@(serial.WarrantyExpiryDate?.ToString("yyyy-MM-dd") ?? "-")</td>
                                     <td class="text-end">
-                                        <button class="btn btn-sm btn-outline-secondary" @onclick="() => BeginUpdate(serial)">Update Status</button>
+                                        <button class="btn btn-sm btn-outline-secondary" @onclick="() => BeginUpdate(serial)">@L["Admin.SerialNumbers.UpdateStatus"]</button>
                                     </td>
                                 </tr>
                             }
@@ -130,26 +130,26 @@ else
     {
         <div class="card shadow-sm mt-3">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <span>Update Serial @_updating.Value</span>
-                <button class="btn btn-sm btn-outline-secondary" @onclick="CancelUpdate">Close</button>
+                <span>@L["Admin.SerialNumbers.UpdateSerial", _updating.Value]</span>
+                <button class="btn btn-sm btn-outline-secondary" @onclick="CancelUpdate">@L["Common.Close"]</button>
             </div>
             <div class="card-body">
                 <div class="row g-2 align-items-end">
                     <div class="col-md-3">
-                        <label class="form-label">Status</label>
+                        <label class="form-label">@L["Common.Status"]</label>
                         <InputSelect class="form-select" @bind-Value="_updateStatus">
                             @foreach (var status in StatusOptions)
                             {
-                                <option value="@status">@status</option>
+                                <option value="@status">@WarehouseStatusText.Get(L, status)</option>
                             }
                         </InputSelect>
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">Location</label>
+                        <label class="form-label">@L["Common.Location"]</label>
                         <InputText class="form-control" @bind-Value="_updateLocation" />
                     </div>
                     <div class="col-md-3 d-grid">
-                        <button class="btn btn-primary" @onclick="UpdateStatusAsync" disabled="@_isWorking">Save</button>
+                        <button class="btn btn-primary" @onclick="UpdateStatusAsync" disabled="@_isWorking">@L["Common.Save"]</button>
                     </div>
                 </div>
             </div>
@@ -227,7 +227,7 @@ else
                 _createForm.WarrantyExpiryDate));
 
             _createForm = new SerialCreateForm();
-            ToastService.ShowSuccess("Serial registered.");
+            ToastService.ShowSuccess(L["Admin.SerialNumbers.Toast.SerialRegistered"].Value);
             await LoadAsync();
         }
         catch (ApiException ex)
@@ -278,7 +278,7 @@ else
                 _updateStatus,
                 string.IsNullOrWhiteSpace(_updateLocation) ? null : _updateLocation.Trim());
 
-            ToastService.ShowSuccess("Serial status updated.");
+            ToastService.ShowSuccess(L["Admin.SerialNumbers.Toast.SerialStatusUpdated"].Value);
             _updating = null;
             await LoadAsync();
         }
@@ -301,14 +301,14 @@ else
                       string.Equals(x, "Admin", StringComparison.OrdinalIgnoreCase));
     }
 
-    private static string BuildErrorMessage(ApiException error)
+    private string BuildErrorMessage(ApiException error)
     {
         if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
         {
-            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+            return $"{WarehouseErrorText.Get(L, error)} {error.ProblemDetails.Detail}";
         }
 
-        return error.UserMessage;
+        return WarehouseErrorText.Get(L, error);
     }
 
     private void DismissError()

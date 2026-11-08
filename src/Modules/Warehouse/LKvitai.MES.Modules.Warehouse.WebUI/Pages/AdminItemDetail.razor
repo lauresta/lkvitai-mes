@@ -4,17 +4,17 @@
 @inject ToastService ToastService
 @inject NavigationManager NavigationManager
 
-<PageTitle>Item Details - Cikada.MES</PageTitle>
+<PageTitle>@L["AdminItemDetail.ItemDetailsCikadaMES"]</PageTitle>
 
 <div data-testid="admin-item-detail-page">
     <div class="items-detail-title">
         <div>
-            <h3>Item Details</h3>
+            <h3>@L["AdminItemDetail.ItemDetails"]</h3>
             @if (_item is not null)
             {
                 <div class="items-detail-title__meta">
                     <span class="mono">@_item.InternalSKU</span>
-                    <span class="@StatusChipClass(_item.Status)">@_item.Status</span>
+                    <span class="@StatusChipClass(_item.Status)">@WarehouseStatusText.Get(L, _item.Status)</span>
                 </div>
             }
         </div>
@@ -22,7 +22,7 @@
                    Color="Color.Primary"
                    OnClick="BackToList"
                    data-testid="admin-item-detail-back">
-            Back to list
+            @L["AdminItemDetail.BackToList"]
         </MudButton>
     </div>
 
@@ -45,8 +45,8 @@
         @if (_item is null && !_isLoading)
         {
             <div class="lots-grid__empty">
-                <span class="lots-grid__empty-title">Item not found</span>
-                <span>The item could not be loaded.</span>
+                <span class="lots-grid__empty-title">@L["AdminItemDetail.ItemNotFound"]</span>
+                <span>@L["AdminItemDetail.TheItemCouldNotBeLoaded"]</span>
             </div>
         }
         else if (_item is not null)
@@ -57,17 +57,17 @@
             </div>
             <div class="items-detail-fields">
                 <AdminItemFieldBlock Label="SKU" Value="@_item.InternalSKU" IsMono="true" />
-                <AdminItemFieldBlock Label="Name" Value="@_item.Name" />
-                <AdminItemFieldBlock Label="Category ID" Value="@_item.CategoryId.ToString()" IsMono="true" />
-                <AdminItemFieldBlock Label="Base UoM" Value="@_item.BaseUoM" IsMono="true" />
-                <AdminItemFieldBlock Label="Weight" Value="@FormatDecimal(_item.Weight)" IsMono="true" />
-                <AdminItemFieldBlock Label="Volume" Value="@FormatDecimal(_item.Volume)" IsMono="true" />
-                <AdminItemFieldBlock Label="Base Price" Value="@FormatMoney(_item.BasePrice)" IsMono="true" />
-                <AdminItemFieldBlock Label="Purchase Price" Value="@FormatMoney(_item.PurchasePrice)" IsMono="true" />
-                <AdminItemFieldBlock Label="Primary Barcode" Value="@FormatNullable(_item.PrimaryBarcode)" IsMono="true" />
-                <AdminItemFieldBlock Label="Product Config" Value="@FormatNullable(_item.ProductConfigId)" IsMono="true" />
+                <AdminItemFieldBlock Label="@L["Common.Name"]" Value="@_item.Name" />
+                <AdminItemFieldBlock Label="@L["AdminItemDetail.CategoryID"]" Value="@_item.CategoryId.ToString()" IsMono="true" />
+                <AdminItemFieldBlock Label="@L["AdminItemDetail.BaseUoM"]" Value="@_item.BaseUoM" IsMono="true" />
+                <AdminItemFieldBlock Label="@L["Common.Weight"]" Value="@FormatDecimal(_item.Weight)" IsMono="true" />
+                <AdminItemFieldBlock Label="@L["Common.Volume"]" Value="@FormatDecimal(_item.Volume)" IsMono="true" />
+                <AdminItemFieldBlock Label="@L["Common.BasePrice"]" Value="@FormatMoney(_item.BasePrice)" IsMono="true" />
+                <AdminItemFieldBlock Label="@L["AdminItemDetail.PurchasePrice"]" Value="@FormatMoney(_item.PurchasePrice)" IsMono="true" />
+                <AdminItemFieldBlock Label="@L["AdminItemDetail.PrimaryBarcode"]" Value="@FormatNullable(_item.PrimaryBarcode)" IsMono="true" />
+                <AdminItemFieldBlock Label="@L["AdminItemDetail.ProductConfig"]" Value="@FormatNullable(_item.ProductConfigId)" IsMono="true" />
                 <div class="items-detail-field">
-                    <span>Tags</span>
+                    <span>@L["Common.Tags"]</span>
                     <div class="item-tags item-tags--detail">
                         @if (_item.Tags.Count == 0)
                         {
@@ -82,12 +82,12 @@
                         }
                     </div>
                 </div>
-                <AdminItemFieldBlock Label="Lot Tracking" Value="@(_item.RequiresLotTracking ? "Required" : "Not required")" />
-                <AdminItemFieldBlock Label="QC" Value="@(_item.RequiresQC ? "Required" : "Not required")" />
-                <AdminItemFieldBlock Label="Created" Value="@FormatDateTime(_item.CreatedAt)" IsMono="true" />
-                <AdminItemFieldBlock Label="Updated" Value="@(_item.UpdatedAt.HasValue ? FormatDateTime(_item.UpdatedAt.Value) : "-")" IsMono="true" />
+                <AdminItemFieldBlock Label="@L["AdminItemDetail.LotTracking"]" Value="@(_item.RequiresLotTracking ? L["Common.Required"] : L["Common.NotRequired"])" />
+                <AdminItemFieldBlock Label="QC" Value="@(_item.RequiresQC ? L["Common.Required"] : L["Common.NotRequired"])" />
+                <AdminItemFieldBlock Label="@L["Common.Created"]" Value="@FormatDateTime(_item.CreatedAt)" IsMono="true" />
+                <AdminItemFieldBlock Label="@L["Common.Updated"]" Value="@(_item.UpdatedAt.HasValue ? FormatDateTime(_item.UpdatedAt.Value) : "-")" IsMono="true" />
                 <div class="items-detail-field items-detail-field--wide">
-                    <span>Description</span>
+                    <span>@L["Common.Description"]</span>
                     <strong>@FormatNullable(_item.Description)</strong>
                 </div>
             </div>
@@ -101,7 +101,7 @@
         }
 
         <div class="panel__head">
-            <span class="panel__title">Photos <small>@_photos.Count total</small></span>
+            <span class="panel__title">@L["AdminItemDetail.Photos"] <small>@L["AdminItemDetail.Total", _photos.Count]</small></span>
             <div class="panel__actions items-photo-actions">
                 <InputFile OnChange="HandleFileSelectedAsync" accept="image/jpeg,image/png,image/webp" />
                 <MudButton Variant="Variant.Outlined"
@@ -109,7 +109,7 @@
                            Size="Size.Small"
                            Disabled="@(_photos.Count == 0 || _isLoading)"
                            OnClick="RecomputeEmbeddingsAsync">
-                    Recompute
+                    @L["AdminItemDetail.Recompute"]
                 </MudButton>
             </div>
         </div>
@@ -117,8 +117,8 @@
         @if (!_isLoading && _photos.Count == 0)
         {
             <div class="lots-grid__empty">
-                <span class="lots-grid__empty-title">No photos</span>
-                <span>Upload a photo to show thumbnails in item and stock lists.</span>
+                <span class="lots-grid__empty-title">@L["AdminItemDetail.NoPhotos"]</span>
+                <span>@L["AdminItemDetail.UploadAPhotoToShowThumbnailsInItemAndStockLists"]</span>
             </div>
         }
         else
@@ -127,16 +127,16 @@
                 @foreach (var photo in _photos)
                 {
                     <div class="admin-item-photo">
-                        <img src="@photo.ThumbUrl" alt="@($"{_item?.Name ?? "Item"} photo")" loading="lazy" />
+                        <img src="@photo.ThumbUrl" alt="@L["Common.ItemPhoto", _item?.Name ?? L["Common.Item"].Value]" loading="lazy" />
                         <div class="admin-item-photo__body">
                             <div class="admin-item-photo__meta">
                                 @if (photo.IsPrimary)
                                 {
-                                    <span class="chip chip--reserved">Primary</span>
+                                    <span class="chip chip--reserved">@L["Common.Primary"]</span>
                                 }
                                 else
                                 {
-                                    <span class="chip chip--locked">Photo</span>
+                                    <span class="chip chip--locked">@L["AdminItemDetail.Photo"]</span>
                                 }
                                 <span class="mono">@FormatBytes(photo.SizeBytes)</span>
                             </div>
@@ -147,21 +147,21 @@
                                            Variant="Variant.Outlined"
                                            Color="Color.Primary"
                                            Size="Size.Small">
-                                    Open
+                                    @L["AdminItemDetail.Open"]
                                 </MudButton>
                                 <MudButton Variant="Variant.Outlined"
                                            Color="Color.Primary"
                                            Size="Size.Small"
                                            Disabled="@(photo.IsPrimary || _isLoading)"
                                            OnClick="@(() => MakePrimaryAsync(photo.Id))">
-                                    Primary
+                                    @L["Common.Primary"]
                                 </MudButton>
                                 <MudButton Variant="Variant.Outlined"
                                            Color="Color.Error"
                                            Size="Size.Small"
                                            Disabled="@_isLoading"
                                            OnClick="@(() => DeletePhotoAsync(photo.Id))">
-                                    Delete
+                                    @L["Common.Delete"]
                                 </MudButton>
                             </div>
                         </div>
@@ -178,23 +178,23 @@
         }
 
         <div class="panel__head">
-            <span class="panel__title">Current on-hand value</span>
+            <span class="panel__title">@L["AdminItemDetail.CurrentOnHandValue"]</span>
         </div>
 
         @if (_onHandValue is null)
         {
             <div class="lots-grid__empty">
-                <span class="lots-grid__empty-title">No on-hand value data</span>
-                <span>This item has no recorded on-hand quantity or cost yet.</span>
+                <span class="lots-grid__empty-title">@L["AdminItemDetail.NoOnHandValueData"]</span>
+                <span>@L["AdminItemDetail.ThisItemHasNoRecordedOnHandQuantityOrCostYet"]</span>
             </div>
         }
         else
         {
             <div class="items-detail-fields">
-                <AdminItemFieldBlock Label="On-hand Qty" Value="@_onHandValue.Qty.ToString("0.##")" IsMono="true" />
-                <AdminItemFieldBlock Label="Current Unit Cost (WAC)" Value="@FormatMoney(_onHandValue.UnitCost)" IsMono="true" />
-                <AdminItemFieldBlock Label="Total Value" Value="@FormatMoney(_onHandValue.TotalValue)" IsMono="true" />
-                <AdminItemFieldBlock Label="As Of" Value="@FormatDateTime(_onHandValue.LastUpdated)" IsMono="true" />
+                <AdminItemFieldBlock Label="@L["AdminItemDetail.OnHandQty"]" Value="@_onHandValue.Qty.ToString("0.##")" IsMono="true" />
+                <AdminItemFieldBlock Label="@L["AdminItemDetail.CurrentUnitCostWAC"]" Value="@FormatMoney(_onHandValue.UnitCost)" IsMono="true" />
+                <AdminItemFieldBlock Label="@L["Common.TotalValue"]" Value="@FormatMoney(_onHandValue.TotalValue)" IsMono="true" />
+                <AdminItemFieldBlock Label="@L["AdminItemDetail.AsOf"]" Value="@FormatDateTime(_onHandValue.LastUpdated)" IsMono="true" />
             </div>
         }
     </MudPaper>
@@ -206,14 +206,14 @@
         }
 
         <div class="panel__head">
-            <span class="panel__title">Prices by group</span>
+            <span class="panel__title">@L["AdminItemDetail.PricesByGroup"]</span>
         </div>
 
         @if (_priceOverrides.Count == 0)
         {
             <div class="lots-grid__empty">
-                <span class="lots-grid__empty-title">No price groups</span>
-                <span>Create a price group under Admin &gt; Price Groups to set group-specific prices.</span>
+                <span class="lots-grid__empty-title">@L["AdminItemDetail.NoPriceGroups"]</span>
+                <span>@L["AdminItemDetail.CreatePriceGroupHint"]</span>
             </div>
         }
         else
@@ -221,9 +221,9 @@
             <table class="lk-table">
                 <thead>
                 <tr>
-                    <th>Group</th>
-                    <th class="is-num">Override</th>
-                    <th class="is-num">Effective Price</th>
+                    <th>@L["AdminItemDetail.Group"]</th>
+                    <th class="is-num">@L["AdminItemDetail.Override"]</th>
+                    <th class="is-num">@L["AdminItemDetail.EffectivePrice"]</th>
                     <th></th>
                 </tr>
                 </thead>
@@ -239,8 +239,8 @@
                             </td>
                             <td class="is-num">-</td>
                             <td class="text-end">
-                                <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" OnClick="SavePriceOverrideAsync">Save</MudButton>
-                                <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="CancelEditOverride">Cancel</MudButton>
+                                <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" OnClick="SavePriceOverrideAsync">@L["Common.Save"]</MudButton>
+                                <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="CancelEditOverride">@L["Common.Cancel"]</MudButton>
                             </td>
                         }
                         else
@@ -248,7 +248,7 @@
                             <td class="is-money is-num">@(row.OverrideAmount.HasValue ? FormatMoney(row.OverrideAmount) : "-")</td>
                             <td class="is-money is-num">@FormatMoney(row.EffectivePrice)</td>
                             <td class="text-end">
-                                <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="@(() => BeginEditOverride(row))">Edit</MudButton>
+                                <MudButton Size="Size.Small" Variant="Variant.Outlined" OnClick="@(() => BeginEditOverride(row))">@L["Common.Edit"]</MudButton>
                             </td>
                         }
                     </tr>
@@ -260,13 +260,13 @@
 
     <MudPaper Outlined="true" Elevation="0" Class="panel items-detail-panel" data-testid="admin-item-detail-price-history">
         <div class="panel__head">
-            <span class="panel__title">Price History</span>
+            <span class="panel__title">@L["AdminItemDetail.PriceHistory"]</span>
         </div>
 
         @if (_priceHistory.Count == 0)
         {
             <div class="lots-grid__empty">
-                <span class="lots-grid__empty-title">No price changes yet</span>
+                <span class="lots-grid__empty-title">@L["AdminItemDetail.NoPriceChangesYet"]</span>
             </div>
         }
         else
@@ -274,12 +274,12 @@
             <table class="lk-table">
                 <thead>
                 <tr>
-                    <th>When</th>
-                    <th>Type</th>
-                    <th class="is-num">Old</th>
-                    <th class="is-num">New</th>
-                    <th>Changed By</th>
-                    <th>Reason</th>
+                    <th>@L["AdminItemDetail.When"]</th>
+                    <th>@L["Common.Type"]</th>
+                    <th class="is-num">@L["AdminItemDetail.Old"]</th>
+                    <th class="is-num">@L["AdminItemDetail.New"]</th>
+                    <th>@L["AdminItemDetail.ChangedBy"]</th>
+                    <th>@L["Common.Reason"]</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -301,13 +301,13 @@
 
     <MudPaper Outlined="true" Elevation="0" Class="panel items-detail-panel" data-testid="admin-item-detail-purchase-history">
         <div class="panel__head">
-            <span class="panel__title">Purchase / cost history</span>
+            <span class="panel__title">@L["AdminItemDetail.PurchaseCostHistory"]</span>
         </div>
 
         @if (_purchaseHistory.Count == 0)
         {
             <div class="lots-grid__empty">
-                <span class="lots-grid__empty-title">No purchase receipts or cost changes yet</span>
+                <span class="lots-grid__empty-title">@L["AdminItemDetail.NoPurchaseReceiptsOrCostChangesYet"]</span>
             </div>
         }
         else
@@ -315,12 +315,12 @@
             <table class="lk-table">
                 <thead>
                 <tr>
-                    <th>When</th>
-                    <th>Type</th>
-                    <th class="is-num">Old cost</th>
-                    <th class="is-num">New cost</th>
-                    <th>By</th>
-                    <th>Reason</th>
+                    <th>@L["AdminItemDetail.When"]</th>
+                    <th>@L["Common.Type"]</th>
+                    <th class="is-num">@L["AdminItemDetail.OldCost"]</th>
+                    <th class="is-num">@L["AdminItemDetail.NewCost"]</th>
+                    <th>@L["AdminItemDetail.By"]</th>
+                    <th>@L["Common.Reason"]</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -423,7 +423,7 @@
         try
         {
             await AdminClient.SetItemPriceOverrideAsync(Id, _editingGroupId.Value, _editingAmount);
-            ToastService.ShowSuccess("Price override updated.");
+            ToastService.ShowSuccess(L["AdminItemDetail.Toast.PriceOverrideUpdated"].Value);
             _editingGroupId = null;
             _editingAmount = null;
             await ReloadAsync();
@@ -434,11 +434,11 @@
         }
     }
 
-    private static string DescribePriceType(ItemPriceHistoryDto row) => row.PriceType switch
+    private string DescribePriceType(ItemPriceHistoryDto row) => row.PriceType switch
     {
-        "Base" => "Base price",
-        "Purchase" => "Purchase price",
-        "GroupOverride" => "Group override",
+        "Base" => L["AdminItemDetail.BasePrice"].Value,
+        "Purchase" => L["AdminItemDetail.PurchasePrice"].Value,
+        "GroupOverride" => L["AdminItemDetail.GroupOverride"].Value,
         _ => row.PriceType
     };
 
@@ -459,7 +459,7 @@
             using var ms = new MemoryStream();
             await stream.CopyToAsync(ms);
             await AdminClient.UploadPhotoAsync(Id, file.Name, ms.ToArray(), file.ContentType);
-            ToastService.ShowSuccess("Photo uploaded.");
+            ToastService.ShowSuccess(L["AdminItemDetail.Toast.PhotoUploaded"].Value);
             await ReloadAsync();
         }
         catch (ApiException ex)
@@ -485,7 +485,7 @@
         try
         {
             await AdminClient.MakePrimaryPhotoAsync(Id, photoId);
-            ToastService.ShowSuccess("Primary photo updated.");
+            ToastService.ShowSuccess(L["AdminItemDetail.Toast.PrimaryPhotoUpdated"].Value);
             await ReloadAsync();
         }
         catch (ApiException ex)
@@ -507,7 +507,7 @@
         try
         {
             await AdminClient.DeletePhotoAsync(Id, photoId);
-            ToastService.ShowWarning("Photo deleted.");
+            ToastService.ShowWarning(L["AdminItemDetail.Toast.PhotoDeleted"].Value);
             await ReloadAsync();
         }
         catch (ApiException ex)
@@ -529,7 +529,7 @@
         try
         {
             var count = await AdminClient.RecomputeEmbeddingsAsync(Id);
-            ToastService.ShowSuccess($"Embeddings recomputed for {count} photo(s).");
+            ToastService.ShowSuccess(L["AdminItemDetail.Toast.EmbeddingsRecomputedForPhotoS", count].Value);
         }
         catch (ApiException ex)
         {
@@ -571,13 +571,13 @@
             ? $"{bytes / 1024m / 1024m:0.#} MB"
             : $"{Math.Max(1, bytes / 1024m):0.#} KB";
 
-    private static string BuildErrorMessage(ApiException error)
+    private string BuildErrorMessage(ApiException error)
     {
         if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
         {
-            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+            return $"{WarehouseErrorText.Get(L, error)} {error.ProblemDetails.Detail}";
         }
 
-        return error.UserMessage;
+        return WarehouseErrorText.Get(L, error);
     }
 }

@@ -1,13 +1,13 @@
 @page "/locations/{Id:int}"
 
-<PageTitle>Location Details</PageTitle>
+<PageTitle>@L["WarehouseLocationDetail.LocationDetails"]</PageTitle>
 
-<h1>Location Details</h1>
-<p class="text-muted">Location ID: @Id</p>
+<h1>@L["WarehouseLocationDetail.LocationDetails"]</h1>
+<p class="text-muted">@L["WarehouseLocationDetail.LocationID", Id]</p>
 <p>
-    Manage location metadata in the admin location workspace.
+    @L["WarehouseLocationDetail.ManageLocationMetadataInTheAdminLocationWorkspace"]
 </p>
-<a class="btn btn-outline-secondary" href="admin/locations">Open Admin Locations</a>
+<a class="btn btn-outline-secondary" href="admin/locations">@L["WarehouseLocationDetail.OpenAdminLocations"]</a>
 
 @code {
     [Parameter]

@@ -3,12 +3,12 @@
 @inject StockClient StockApiClient
 @inject NavigationManager NavigationManager
 
-<PageTitle>Available Stock - Cikada.MES</PageTitle>
+<PageTitle>@L["AvailableStock.AvailableStockCikadaMES"]</PageTitle>
 
 <div class="stock-page" data-testid="stock-page">
 <header class="page-head stock-page-head">
     <div>
-        <h1>Available Stock</h1>
+        <h1>@L["AvailableStock.AvailableStock"]</h1>
     </div>
 </header>
 
@@ -34,10 +34,10 @@
                 @_summaryText
             </div>
             <div class="stock-grid-head__actions">
-                <div class="stock-view-toggle" role="group" aria-label="View mode">
-                    <MudButton Size="Size.Small" Variant="@GetModeVariant(StockViewMode.Table)" Color="Color.Primary" OnClick="@(() => SetMode(StockViewMode.Table))">Table</MudButton>
-                    <MudButton Size="Size.Small" Variant="@GetModeVariant(StockViewMode.List)" Color="Color.Primary" OnClick="@(() => SetMode(StockViewMode.List))">List</MudButton>
-                    <MudButton Size="Size.Small" Variant="@GetModeVariant(StockViewMode.Gallery)" Color="Color.Primary" OnClick="@(() => SetMode(StockViewMode.Gallery))">Gallery</MudButton>
+                <div class="stock-view-toggle" role="group" aria-label="@L["AvailableStock.ViewMode"]">
+                    <MudButton Size="Size.Small" Variant="@GetModeVariant(StockViewMode.Table)" Color="Color.Primary" OnClick="@(() => SetMode(StockViewMode.Table))">@L["AvailableStock.Table"]</MudButton>
+                    <MudButton Size="Size.Small" Variant="@GetModeVariant(StockViewMode.List)" Color="Color.Primary" OnClick="@(() => SetMode(StockViewMode.List))">@L["AvailableStock.List"]</MudButton>
+                    <MudButton Size="Size.Small" Variant="@GetModeVariant(StockViewMode.Gallery)" Color="Color.Primary" OnClick="@(() => SetMode(StockViewMode.Gallery))">@L["AvailableStock.Gallery"]</MudButton>
                 </div>
                 <div class="lk-field--filter stock-page-size" data-testid="stock-page-size">
                     <MudSelect T="int"
@@ -56,14 +56,14 @@
                            OnClick="RefreshAsync"
                            Disabled="@(_isLoadingWarehouses || _isSearching)"
                            UserAttributes="@StockRefreshAttributes">
-                    Refresh
+                    @L["Common.Refresh"]
                 </MudButton>
                 <MudButton Variant="Variant.Outlined"
                            Size="Size.Small"
                            OnClick="ExportCsvAsync"
                            Disabled="@(_items.Count == 0)"
                            UserAttributes="@StockExportAttributes">
-                    Export CSV
+                    @L["Common.ExportCSV"]
                 </MudButton>
             </div>
         </div>
@@ -71,8 +71,8 @@
         @if (!_hasSearched)
         {
             <div class="stock-grid__empty" data-testid="stock-before-search">
-                <span class="stock-grid__empty-title">Ready for search</span>
-                <span>Enter at least one filter and click Search.</span>
+                <span class="stock-grid__empty-title">@L["AvailableStock.ReadyForSearch"]</span>
+                <span>@L["AvailableStock.EnterAtLeastOneFilterAndClickSearch"]</span>
             </div>
         }
         else
@@ -90,13 +90,13 @@
                              @attributes="@StockGridAttributes">
                     <NoRecordsContent>
                         <div class="stock-grid__empty">
-                            <span class="stock-grid__empty-title">No stock found</span>
-                            <span>No stock matches the current filters.</span>
+                            <span class="stock-grid__empty-title">@L["AvailableStock.NoStockFound"]</span>
+                            <span>@L["AvailableStock.NoStockMatchesTheCurrentFilters"]</span>
                         </div>
                     </NoRecordsContent>
                     <Columns>
-                        <PropertyColumn Property="x => x.WarehouseId" Title="Warehouse" />
-                        <PropertyColumn Property="x => x.Location" Title="Location" />
+                        <PropertyColumn Property="x => x.WarehouseId" Title="@L["Common.Warehouse"]" />
+                        <PropertyColumn Property="x => x.Location" Title="@L["Common.Location"]" />
                         <TemplateColumn Title="SKU">
                             <CellTemplate>
                                 @if (context.Item.ItemId.HasValue)
@@ -109,8 +109,8 @@
                                 }
                             </CellTemplate>
                         </TemplateColumn>
-                        <PropertyColumn Property="x => x.ItemName" Title="Name" />
-                        <TemplateColumn Title="Tags" Sortable="false">
+                        <PropertyColumn Property="x => x.ItemName" Title="@L["Common.Name"]" />
+                        <TemplateColumn Title="@L["Common.Tags"]" Sortable="false">
                             <CellTemplate>
                                 <div class="item-tags item-tags--compact">
                                     @foreach (var tag in context.Item.Tags.Take(3))
@@ -124,13 +124,13 @@
                                 </div>
                             </CellTemplate>
                         </TemplateColumn>
-                        <TemplateColumn Title="Physical">
+                        <TemplateColumn Title="@L["AvailableStock.Physical"]">
                             <CellTemplate><span class="@GetQtyClass(context.Item.PhysicalQty)">@FormatQty(context.Item.PhysicalQty)</span></CellTemplate>
                         </TemplateColumn>
-                        <TemplateColumn Title="Reserved">
+                        <TemplateColumn Title="@L["Common.Reserved"]">
                             <CellTemplate><span class="is-num">@FormatQty(context.Item.ReservedQty)</span></CellTemplate>
                         </TemplateColumn>
-                        <TemplateColumn Title="Available">
+                        <TemplateColumn Title="@L["Common.Available"]">
                             <CellTemplate><span class="is-num"><strong>@FormatQty(context.Item.AvailableQty)</strong></span></CellTemplate>
                         </TemplateColumn>
                         <TemplateColumn Title="@L["Pricing.Cost"]">
@@ -139,10 +139,10 @@
                         <TemplateColumn Title="@L["Pricing.Sale"]">
                             <CellTemplate><span class="is-money is-num">@FormatMoney(context.Item.BasePrice)</span></CellTemplate>
                         </TemplateColumn>
-                        <TemplateColumn Title="Value">
+                        <TemplateColumn Title="@L["Common.Value"]">
                             <CellTemplate><span class="is-money is-num">@FormatMoney(context.Item.TotalValue)</span></CellTemplate>
                         </TemplateColumn>
-                        <TemplateColumn Title="Last Updated">
+                        <TemplateColumn Title="@L["Common.LastUpdated"]">
                             <CellTemplate>
                                 <span class="mono">@context.Item.LastUpdated.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</span>
                             </CellTemplate>
@@ -180,11 +180,11 @@
                                 <div class="stock-list-row__meta">@row.WarehouseId / @row.Location</div>
                             </div>
                             <div class="stock-list-row__qty">
-                                <div>On hand: <span class="@GetQtyClass(row.PhysicalQty)">@FormatQty(row.PhysicalQty)</span></div>
-                                <div>Available: <strong class="mono">@FormatQty(row.AvailableQty)</strong></div>
+                                <div>@L["AvailableStock.OnHand"] <span class="@GetQtyClass(row.PhysicalQty)">@FormatQty(row.PhysicalQty)</span></div>
+                                <div>@L["AvailableStock.Available"] <strong class="mono">@FormatQty(row.AvailableQty)</strong></div>
                                 <div>@L["Pricing.Cost"]: <span class="is-money is-num">@FormatMoney(row.UnitCost)</span></div>
                                 <div>@L["Pricing.Sale"]: <span class="is-money is-num">@FormatMoney(row.BasePrice)</span></div>
-                                <div>Value: <span class="is-money is-num">@FormatMoney(row.TotalValue)</span></div>
+                                <div>@L["Common.Value2139d7"] <span class="is-money is-num">@FormatMoney(row.TotalValue)</span></div>
                             </div>
                         </div>
                     }
@@ -202,7 +202,7 @@
                             }
                             else
                             {
-                                <div class="stock-gallery-card__image stock-thumb--empty">No image</div>
+                                <div class="stock-gallery-card__image stock-thumb--empty">@L["AvailableStock.NoImage"]</div>
                             }
                             <div class="stock-gallery-card__body">
                                 <div>
@@ -226,11 +226,11 @@
                                     </div>
                                 }
                                 <div>@row.WarehouseId / @row.Location</div>
-                                <div>On hand: <span class="mono">@FormatQty(row.PhysicalQty)</span></div>
-                                <div>Available: <strong class="mono">@FormatQty(row.AvailableQty)</strong></div>
+                                <div>@L["AvailableStock.OnHand"] <span class="mono">@FormatQty(row.PhysicalQty)</span></div>
+                                <div>@L["AvailableStock.Available"] <strong class="mono">@FormatQty(row.AvailableQty)</strong></div>
                                 <div>@L["Pricing.Cost"]: <span class="is-money is-num">@FormatMoney(row.UnitCost)</span></div>
                                 <div>@L["Pricing.Sale"]: <span class="is-money is-num">@FormatMoney(row.BasePrice)</span></div>
-                                <div>Value: <span class="is-money is-num">@FormatMoney(row.TotalValue)</span></div>
+                                <div>@L["Common.Value2139d7"] <span class="is-money is-num">@FormatMoney(row.TotalValue)</span></div>
                             </div>
                         </div>
                     }
@@ -238,10 +238,10 @@
             }
 
             <div class="stock-grid-footer" data-testid="stock-pager">
-                <span class="mono">Page @_page of @_totalPages</span>
+                <span class="mono">@L["AvailableStock.PageOf", _page, _totalPages]</span>
                 <div class="stock-grid-footer__actions">
-                    <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="@(() => OnPageChangedAsync(_page - 1))" Disabled="@(_page <= 1)">Previous</MudButton>
-                    <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="@(() => OnPageChangedAsync(_page + 1))" Disabled="@(_page >= _totalPages)">Next</MudButton>
+                    <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="@(() => OnPageChangedAsync(_page - 1))" Disabled="@(_page <= 1)">@L["Common.Previous"]</MudButton>
+                    <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="@(() => OnPageChangedAsync(_page + 1))" Disabled="@(_page >= _totalPages)">@L["Common.Next"]</MudButton>
                 </div>
             </div>
         }
@@ -265,7 +265,7 @@
     private bool _isDisposed;
     private readonly CancellationTokenSource _disposeCts = new();
     private static readonly Dictionary<string, object> StockGridAttributes = new() { ["data-testid"] = "stock-grid" };
-    private static readonly Dictionary<string, object> StockPageSizeAttributes = new() { ["aria-label"] = "Page size" };
+    private Dictionary<string, object> StockPageSizeAttributes => new() { ["aria-label"] = L["Aria.PageSize"].Value };
     private static readonly Dictionary<string, object> StockRefreshAttributes = new() { ["data-testid"] = "stock-refresh" };
     private static readonly Dictionary<string, object> StockExportAttributes = new() { ["data-testid"] = "stock-export" };
 
@@ -273,8 +273,8 @@
     private int _totalPages => Math.Max(1, (int)Math.Ceiling(_totalCount / (double)Math.Max(1, _pageSize)));
 
     private string _summaryText => _hasSearched
-        ? $"Showing {_items.Count} item(s) on page {_page} of {_totalPages}."
-        : "Search has not been run yet.";
+        ? L["AvailableStock.Summary", _items.Count, _page, _totalPages].Value
+        : L["AvailableStock.SearchNotRun"].Value;
 
     protected override async Task OnInitializedAsync()
     {
@@ -468,16 +468,16 @@
     private static string GetQtyClass(decimal value)
         => value < 0m ? "is-num stock-qty stock-qty--negative" : "is-num stock-qty";
 
-    private static string BuildErrorMessage(ApiException ex)
+    private string BuildErrorMessage(ApiException ex)
     {
-        if (!string.IsNullOrWhiteSpace(ex.UserMessage))
+        if (!string.IsNullOrWhiteSpace(WarehouseErrorText.Get(L, ex)))
         {
-            return ex.UserMessage;
+            return WarehouseErrorText.Get(L, ex);
         }
 
         return ex.ProblemDetails?.Detail
                ?? ex.ProblemDetails?.Title
-               ?? "Stock request failed.";
+               ?? L["AvailableStock.RequestFailed"].Value;
     }
 
     private void DismissError()

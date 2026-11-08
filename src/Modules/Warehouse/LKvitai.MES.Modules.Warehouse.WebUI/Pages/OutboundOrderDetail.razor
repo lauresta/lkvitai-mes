@@ -6,9 +6,9 @@
 @using LKvitai.MES.Modules.Warehouse.WebUI.Services
 @inject ItemPricesClient ItemPricesClient
 
-<PageTitle>Outbound Order Detail - Cikada.MES</PageTitle>
+<PageTitle>@L["OutboundOrderDetail.OutboundOrderDetailCikadaMES"]</PageTitle>
 
-<h1>Outbound Order Detail</h1>
+<h1>@L["OutboundOrderDetail.OutboundOrderDetail"]</h1>
 
 @if (_apiError is not null)
 {
@@ -24,45 +24,45 @@
     <div class="card-body">
         @if (_order is null && !_isLoading)
         {
-            <p class="text-muted mb-0">Order not found.</p>
+            <p class="text-muted mb-0">@L["OutboundOrderDetail.OrderNotFound"]</p>
         }
         else if (_order is not null)
         {
             <div class="d-flex justify-content-between flex-wrap gap-2 mb-3">
                 <div>
                     <h4 class="mb-1">@_order.OrderNumber</h4>
-                    <div class="text-muted">Customer: @(_order.CustomerName ?? "-")</div>
+                    <div class="text-muted">@L["OutboundOrderDetail.Customer", _order.CustomerName ?? "-"]</div>
                 </div>
                 <div class="d-flex gap-2">
-                    <button class="btn btn-outline-secondary" @onclick="BackToList">Back</button>
+                    <button class="btn btn-outline-secondary" @onclick="BackToList">@L["Common.Back"]</button>
                     @if (CanPack)
                     {
-                        <button class="btn btn-primary" @onclick="OpenPackingStation">Open Packing Station</button>
+                        <button class="btn btn-primary" @onclick="OpenPackingStation">@L["OutboundOrderDetail.OpenPackingStation"]</button>
                     }
                 </div>
             </div>
 
             <dl class="row mb-3">
-                <dt class="col-sm-3">Status</dt>
-                <dd class="col-sm-9"><span class="badge @GetStatusBadgeClass(_order.Status)">@_order.Status</span></dd>
+                <dt class="col-sm-3">@L["Common.Status"]</dt>
+                <dd class="col-sm-9"><span class="badge @GetStatusBadgeClass(_order.Status)">@WarehouseStatusText.Get(L, _order.Status)</span></dd>
 
-                <dt class="col-sm-3">Order Date</dt>
+                <dt class="col-sm-3">@L["OutboundOrderDetail.OrderDate"]</dt>
                 <dd class="col-sm-9">@FormatDate(_order.OrderDate)</dd>
 
-                <dt class="col-sm-3">Requested Ship Date</dt>
+                <dt class="col-sm-3">@L["OutboundOrderDetail.RequestedShipDate"]</dt>
                 <dd class="col-sm-9">@FormatDate(_order.RequestedShipDate)</dd>
 
-                <dt class="col-sm-3">Reservation Id</dt>
+                <dt class="col-sm-3">@L["OutboundOrderDetail.ReservationId"]</dt>
                 <dd class="col-sm-9"><code>@_order.ReservationId</code></dd>
 
                 @if (_order.Shipment is not null)
                 {
-                    <dt class="col-sm-3">Shipment</dt>
+                    <dt class="col-sm-3">@L["Common.Shipment"]</dt>
                     <dd class="col-sm-9">
                         @_order.Shipment.ShipmentNumber
                         @if (!string.IsNullOrWhiteSpace(_order.Shipment.TrackingNumber))
                         {
-                            <span class="ms-2 text-muted">Tracking: @_order.Shipment.TrackingNumber</span>
+                            <span class="ms-2 text-muted">@L["OutboundOrderDetail.Tracking", _order.Shipment.TrackingNumber]</span>
                         }
                     </dd>
                 }
@@ -72,14 +72,14 @@
                 <table class="table table-sm align-middle">
                     <thead>
                         <tr>
-                            <th>Item</th>
-                            <th>Barcode</th>
-                            <th>Qty</th>
+                            <th>@L["Common.Item"]</th>
+                            <th>@L["Common.Barcode"]</th>
+                            <th>@L["Common.Qty"]</th>
                             <th class="text-end">@L["Pricing.Cost"]</th>
                             <th class="text-end">@L["Pricing.Sale"]</th>
-                            <th class="text-end">Value</th>
-                            <th>Picked</th>
-                            <th>Shipped</th>
+                            <th class="text-end">@L["Common.Value"]</th>
+                            <th>@L["Common.Picked"]</th>
+                            <th>@L["Common.Shipped"]</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -106,23 +106,23 @@
             @if (_order.SalesOrderId.HasValue)
             {
                 <div class="border rounded p-3 bg-light-subtle">
-                    <h5 class="mb-3">Order Actions</h5>
+                    <h5 class="mb-3">@L["OutboundOrderDetail.OrderActions"]</h5>
 
                     <div class="d-flex flex-wrap gap-2 mb-2">
                         @if (CanRelease)
                         {
-                            <button class="btn btn-outline-primary" @onclick="ReleaseAsync" disabled="@_isSubmitting">Release</button>
+                            <button class="btn btn-outline-primary" @onclick="ReleaseAsync" disabled="@_isSubmitting">@L["OutboundOrderDetail.Release"]</button>
                         }
 
                         @if (CanCancel)
                         {
-                            <button class="btn btn-outline-danger" @onclick="CancelAsync" disabled="@_isSubmitting">Cancel</button>
+                            <button class="btn btn-outline-danger" @onclick="CancelAsync" disabled="@_isSubmitting">@L["Common.Cancel"]</button>
                         }
                     </div>
 
                     @if (CanCancel)
                     {
-                        <label class="form-label" for="cancel-reason">Cancellation reason</label>
+                        <label class="form-label" for="cancel-reason">@L["OutboundOrderDetail.CancellationReason"]</label>
                         <input id="cancel-reason" class="form-control" type="text" @bind="_cancelReason" />
                     }
                 </div>
@@ -200,7 +200,7 @@
         try
         {
             await OutboundClient.ReleaseSalesOrderAsync(_order.SalesOrderId.Value);
-            ToastService.ShowSuccess("Order released successfully.");
+            ToastService.ShowSuccess(L["OutboundOrderDetail.Toast.OrderReleasedSuccessfully"].Value);
             await ReloadAsync();
         }
         catch (ApiException ex)
@@ -228,7 +228,7 @@
 
         if (string.IsNullOrWhiteSpace(_cancelReason))
         {
-            ToastService.ShowError("Cancellation reason is required.");
+            ToastService.ShowError(L["OutboundOrderDetail.Toast.CancellationReasonIsRequired"].Value);
             return;
         }
 
@@ -237,7 +237,7 @@
         try
         {
             await OutboundClient.CancelSalesOrderAsync(_order.SalesOrderId.Value, _cancelReason.Trim());
-            ToastService.ShowSuccess("Order cancelled successfully.");
+            ToastService.ShowSuccess(L["OutboundOrderDetail.Toast.OrderCancelledSuccessfully"].Value);
             await ReloadAsync();
         }
         catch (ApiException ex)
@@ -267,9 +267,9 @@
     private static string FormatDate(DateTimeOffset? value)
         => value.HasValue ? value.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm") : "-";
 
-    private static string BuildErrorMessage(ApiException ex)
-        => !string.IsNullOrWhiteSpace(ex.UserMessage)
-            ? ex.UserMessage
+    private string BuildErrorMessage(ApiException ex)
+        => !string.IsNullOrWhiteSpace(WarehouseErrorText.Get(L, ex))
+            ? WarehouseErrorText.Get(L, ex)
             : "Request failed.";
 
     private static string GetStatusBadgeClass(string status)

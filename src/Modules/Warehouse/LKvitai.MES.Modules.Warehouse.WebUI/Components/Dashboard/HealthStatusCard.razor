@@ -2,7 +2,7 @@
     <LoadingSpinner IsLoading="IsLoading" />
 
     <div class="card-body">
-        <h5 class="card-title mb-3">Service Health</h5>
+        <h5 class="card-title mb-3">@L["Dashboard.HealthStatusCard.ServiceHealth"]</h5>
 
         @if (!string.IsNullOrWhiteSpace(ErrorMessage))
         {
@@ -13,20 +13,20 @@
         }
         else if (Data is null)
         {
-            <p class="text-muted mb-0">No health data available.</p>
+            <p class="text-muted mb-0">@L["Dashboard.HealthStatusCard.NoHealthDataAvailable"]</p>
         }
         else
         {
             <dl class="row mb-0">
-                <dt class="col-5">Status</dt>
+                <dt class="col-5">@L["Common.Status"]</dt>
                 <dd class="col-7">
-                    <span class="badge @GetStatusClass(Data)">@Data.EffectiveStatus.ToUpperInvariant()</span>
+                    <span class="badge @GetStatusClass(Data)">@WarehouseStatusText.Get(L, Data.EffectiveStatus)</span>
                 </dd>
 
-                <dt class="col-5">Projection lag</dt>
+                <dt class="col-5">@L["Dashboard.HealthStatusCard.ProjectionLag"]</dt>
                 <dd class="col-7">@FormatLag(Data.ProjectionLag)</dd>
 
-                <dt class="col-5">Last check</dt>
+                <dt class="col-5">@L["Dashboard.HealthStatusCard.LastCheck"]</dt>
                 <dd class="col-7">@FormatTimestamp(Data.EffectiveLastCheck)</dd>
             </dl>
         }

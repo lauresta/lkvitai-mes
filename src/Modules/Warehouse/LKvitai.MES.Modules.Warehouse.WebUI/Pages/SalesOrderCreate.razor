@@ -3,9 +3,9 @@
 @inject NavigationManager NavigationManager
 @inject ToastService ToastService
 
-<PageTitle>Create Sales Order - Cikada.MES</PageTitle>
+<PageTitle>@L["SalesOrderCreate.CreateSalesOrderCikadaMES"]</PageTitle>
 
-<h1>Create Sales Order</h1>
+<h1>@L["SalesOrderCreate.CreateSalesOrder"]</h1>
 
 @if (_apiError is not null)
 {
@@ -21,12 +21,12 @@
     <div class="card-body">
         <div class="row g-3">
             <div class="col-md-6">
-                <label class="form-label" for="customer">Customer</label>
+                <label class="form-label" for="customer">@L["Common.Customer"]</label>
                 <select id="customer"
                         class="form-select"
                         @bind="_selectedCustomerId"
                         @bind:after="OnCustomerChangedAsync">
-                    <option value="">Select customer</option>
+                    <option value="">@L["SalesOrderCreate.SelectCustomer"]</option>
                     @foreach (var customer in _customers)
                     {
                         <option value="@customer.Id">@customer.CustomerCode - @customer.Name</option>
@@ -34,36 +34,36 @@
                 </select>
             </div>
             <div class="col-md-3">
-                <label class="form-label" for="delivery-date">Requested Delivery Date</label>
+                <label class="form-label" for="delivery-date">@L["SalesOrderCreate.RequestedDeliveryDate"]</label>
                 <input id="delivery-date" type="date" class="form-control" @bind="_requestedDeliveryDate" />
             </div>
             <div class="col-md-3 d-flex align-items-end">
-                <button class="btn btn-outline-secondary" @onclick="BackToList" disabled="@_isSubmitting">Back to List</button>
+                <button class="btn btn-outline-secondary" @onclick="BackToList" disabled="@_isSubmitting">@L["SalesOrderCreate.BackToList"]</button>
             </div>
         </div>
 
         <hr />
 
-        <h5>Shipping Address</h5>
+        <h5>@L["SalesOrderCreate.ShippingAddress"]</h5>
         <div class="row g-2">
             <div class="col-md-6">
-                <label class="form-label">Street</label>
+                <label class="form-label">@L["Common.Street"]</label>
                 <input class="form-control" @bind="_shippingStreet" />
             </div>
             <div class="col-md-3">
-                <label class="form-label">City</label>
+                <label class="form-label">@L["Common.City"]</label>
                 <input class="form-control" @bind="_shippingCity" />
             </div>
             <div class="col-md-3">
-                <label class="form-label">State</label>
+                <label class="form-label">@L["Common.State"]</label>
                 <input class="form-control" @bind="_shippingState" />
             </div>
             <div class="col-md-3">
-                <label class="form-label">Zip</label>
+                <label class="form-label">@L["SalesOrderCreate.Zip"]</label>
                 <input class="form-control" @bind="_shippingZipCode" />
             </div>
             <div class="col-md-3">
-                <label class="form-label">Country</label>
+                <label class="form-label">@L["Common.Country"]</label>
                 <input class="form-control" @bind="_shippingCountry" />
             </div>
         </div>
@@ -71,14 +71,14 @@
         <hr />
 
         <div class="d-flex justify-content-between align-items-center mb-2">
-            <h5 class="mb-0">Order Lines</h5>
-            <button class="btn btn-sm btn-outline-primary" @onclick="AddLine" disabled="@_isSubmitting">+ Add Line</button>
+            <h5 class="mb-0">@L["SalesOrderCreate.OrderLines"]</h5>
+            <button class="btn btn-sm btn-outline-primary" @onclick="AddLine" disabled="@_isSubmitting">@L["SalesOrderCreate.AddLine"]</button>
         </div>
 
         @if (_lines.Count == 0)
         {
-            <EmptyState Title="No lines added"
-                        Message="Add at least one line item."
+            <EmptyState Title="@L["SalesOrderCreate.NoLinesAdded"]"
+                        Message="@L["SalesOrderCreate.AddAtLeastOneLineItem"]"
                         IconCss="bi bi-list-ul"
                         OnAction="AddLineAsync" />
         }
@@ -88,10 +88,10 @@
                 <table class="table table-hover align-middle">
                     <thead>
                         <tr>
-                            <th style="width: 50%;">Item</th>
-                            <th style="width: 15%;">Qty</th>
-                            <th style="width: 20%;">Unit Price</th>
-                            <th style="width: 15%;">Actions</th>
+                            <th style="width: 50%;">@L["Common.Item"]</th>
+                            <th style="width: 15%;">@L["Common.Qty"]</th>
+                            <th style="width: 20%;">@L["SalesOrderCreate.UnitPrice"]</th>
+                            <th style="width: 15%;">@L["Common.Actions"]</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -101,7 +101,7 @@
                             <tr>
                                 <td>
                                     <select class="form-select" @bind="line.ItemId" @bind:after="() => OnLineItemChangedAsync(line)">
-                                        <option value="">Select item</option>
+                                        <option value="">@L["Common.SelectItem"]</option>
                                         @foreach (var item in _items)
                                         {
                                             <option value="@item.Id">@item.InternalSKU - @item.Name</option>
@@ -119,7 +119,7 @@
                                     <button class="btn btn-sm btn-outline-danger"
                                             @onclick="() => RemoveLine(i)"
                                             disabled="@(_isSubmitting || _lines.Count == 1)">
-                                        Remove
+                                        @L["Common.Remove"]
                                     </button>
                                 </td>
                             </tr>
@@ -130,7 +130,7 @@
         }
 
         <div class="d-flex justify-content-end mt-3">
-            <button class="btn btn-primary" @onclick="CreateAsync" disabled="@_isSubmitting">Create Sales Order</button>
+            <button class="btn btn-primary" @onclick="CreateAsync" disabled="@_isSubmitting">@L["SalesOrderCreate.CreateSalesOrder"]</button>
         </div>
     </div>
 </div>
@@ -279,7 +279,7 @@
     {
         if (!Guid.TryParse(_selectedCustomerId, out var customerId))
         {
-            ToastService.ShowError("Select a customer.");
+            ToastService.ShowError(L["SalesOrderCreate.Toast.SelectACustomer"].Value);
             return;
         }
 
@@ -295,7 +295,7 @@
 
         if (normalizedLines.Count == 0)
         {
-            ToastService.ShowError("Add at least one valid line (item, qty > 0).");
+            ToastService.ShowError(L["SalesOrderCreate.Toast.AddAtLeastOneValidLineItemQty0"].Value);
             return;
         }
 
@@ -314,7 +314,7 @@
             };
 
             var created = await SalesOrdersClient.CreateSalesOrderAsync(request);
-            ToastService.ShowSuccess($"Sales order {created.OrderNumber} created.");
+            ToastService.ShowSuccess(L["SalesOrderCreate.Toast.SalesOrderCreated", created.OrderNumber].Value);
             NavigationManager.NavigateTo($"/warehouse/sales/orders/{created.Id}");
         }
         catch (ApiException ex)
@@ -359,16 +359,16 @@
         _apiError = null;
     }
 
-    private static string BuildErrorMessage(ApiException ex)
+    private string BuildErrorMessage(ApiException ex)
     {
-        if (!string.IsNullOrWhiteSpace(ex.UserMessage))
+        if (!string.IsNullOrWhiteSpace(WarehouseErrorText.Get(L, ex)))
         {
-            return ex.UserMessage;
+            return WarehouseErrorText.Get(L, ex);
         }
 
         return ex.ProblemDetails?.Detail
                ?? ex.ProblemDetails?.Title
-               ?? "Sales order request failed.";
+               ?? L["SalesOrderCreate.RequestFailed"].Value;
     }
 
     private sealed class LineFormModel

@@ -7,9 +7,9 @@
 @inject MasterDataAdminClient MasterDataAdminClient
 @inject ToastService ToastService
 
-<PageTitle>Picking Tasks</PageTitle>
+<PageTitle>@L["PickingTasks.PickingTasks"]</PageTitle>
 
-<h1>Picking Tasks</h1>
+<h1>@L["PickingTasks.PickingTasks"]</h1>
 
 @if (_apiError is not null)
 {
@@ -20,16 +20,16 @@
     <div class="col-12 col-xl-6">
         <div class="card shadow-sm h-100">
             <div class="card-body">
-                <h5>Create Task</h5>
+                <h5>@L["PickingTasks.CreateTask"]</h5>
                 <div class="row g-2">
                     <div class="col-md-6">
-                        <label class="form-label">Order Id</label>
+                        <label class="form-label">@L["PickingTasks.OrderId"]</label>
                         <input class="form-control" @bind="_createOrderId" />
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Item</label>
+                        <label class="form-label">@L["Common.Item"]</label>
                         <select class="form-select" @bind="_createItemId">
-                            <option value="0">Select item</option>
+                            <option value="0">@L["Common.SelectItem"]</option>
                             @foreach (var item in _items)
                             {
                                 <option value="@item.Id">@item.InternalSKU - @item.Name</option>
@@ -38,20 +38,20 @@
                         <ItemPriceHint ItemId="@(_createItemId > 0 ? _createItemId : null)" />
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">Qty</label>
+                        <label class="form-label">@L["Common.Qty"]</label>
                         <input type="number" step="0.01" min="0.01" class="form-control" @bind="_createQty" />
                     </div>
                     <div class="col-md-8">
-                        <label class="form-label">Assign To (optional)</label>
+                        <label class="form-label">@L["PickingTasks.AssignToOptional"]</label>
                         <input class="form-control" @bind="_createAssignedTo" />
                     </div>
                 </div>
-                <button class="btn btn-primary mt-3" @onclick="CreateTaskAsync" disabled="@_isSubmitting">Create</button>
+                <button class="btn btn-primary mt-3" @onclick="CreateTaskAsync" disabled="@_isSubmitting">@L["Common.Create"]</button>
 
                 @if (_createdTask is not null)
                 {
                     <div class="alert alert-success mt-3 mb-0">
-                        Task created: <strong>@_createdTask.TaskId</strong>
+                        @L["PickingTasks.TaskCreated"] <strong>@_createdTask.TaskId</strong>
                     </div>
                 }
             </div>
@@ -61,14 +61,14 @@
     <div class="col-12 col-xl-6">
         <div class="card shadow-sm h-100">
             <div class="card-body">
-                <h5>Locations + Complete Task</h5>
+                <h5>@L["PickingTasks.LocationsCompleteTask"]</h5>
                 <div class="row g-2">
                     <div class="col-md-8">
-                        <label class="form-label">Task Id</label>
-                        <input class="form-control" @bind="_taskIdInput" placeholder="guid" />
+                        <label class="form-label">@L["PickingTasks.TaskId"]</label>
+                        <input class="form-control" @bind="_taskIdInput" placeholder="@L["PickingTasks.Guid"]" />
                     </div>
                     <div class="col-md-4 d-flex align-items-end">
-                        <button class="btn btn-outline-secondary w-100" @onclick="LoadSuggestionsAsync">Load Locations</button>
+                        <button class="btn btn-outline-secondary w-100" @onclick="LoadSuggestionsAsync">@L["PickingTasks.LoadLocations"]</button>
                     </div>
                 </div>
 
@@ -82,7 +82,7 @@
                     <div class="table-responsive mt-3">
                         <table class="table table-sm align-middle">
                             <thead>
-                                <tr><th>Location</th><th class="text-end">Available</th><th>Lot</th></tr>
+                                <tr><th>@L["Common.Location"]</th><th class="text-end">@L["Common.Available"]</th><th>@L["Common.Lot"]</th></tr>
                             </thead>
                             <tbody>
                                 @foreach (var row in _suggestions)
@@ -100,31 +100,31 @@
 
                 <div class="row g-2 mt-1">
                     <div class="col-md-4">
-                        <label class="form-label">From Location Id</label>
+                        <label class="form-label">@L["PickingTasks.FromLocationId"]</label>
                         <input type="number" min="1" class="form-control" @bind="_completeFromLocationId" />
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">Picked Qty</label>
+                        <label class="form-label">@L["PickingTasks.PickedQty"]</label>
                         <input type="number" step="0.01" min="0.01" class="form-control" @bind="_completeQty" />
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">Lot Id (optional)</label>
+                        <label class="form-label">@L["PickingTasks.LotIdOptional"]</label>
                         <input type="number" min="1" class="form-control" @bind="_completeLotId" />
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Scanned Barcode</label>
+                        <label class="form-label">@L["PickingTasks.ScannedBarcode"]</label>
                         <input class="form-control" @bind="_completeBarcode" />
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Scanned Location Barcode</label>
+                        <label class="form-label">@L["PickingTasks.ScannedLocationBarcode"]</label>
                         <input class="form-control" @bind="_completeLocationBarcode" />
                     </div>
                     <div class="col-12">
-                        <label class="form-label">Notes</label>
+                        <label class="form-label">@L["Common.Notes"]</label>
                         <input class="form-control" @bind="_completeNotes" />
                     </div>
                 </div>
-                <button class="btn btn-success mt-3" @onclick="CompleteTaskAsync" disabled="@_isSubmitting">Complete Task</button>
+                <button class="btn btn-success mt-3" @onclick="CompleteTaskAsync" disabled="@_isSubmitting">@L["PickingTasks.CompleteTask"]</button>
             </div>
         </div>
     </div>
@@ -171,7 +171,7 @@
     {
         if (string.IsNullOrWhiteSpace(_createOrderId) || _createItemId <= 0 || _createQty <= 0m)
         {
-            ToastService.ShowError("Order Id, item and qty are required.");
+            ToastService.ShowError(L["PickingTasks.Toast.OrderIdItemAndQtyAreRequired"].Value);
             return;
         }
 
@@ -185,7 +185,7 @@
                 string.IsNullOrWhiteSpace(_createAssignedTo) ? null : _createAssignedTo.Trim()));
 
             _taskIdInput = _createdTask.TaskId.ToString();
-            ToastService.ShowSuccess($"Pick task created: {_createdTask.TaskId}");
+            ToastService.ShowSuccess(L["PickingTasks.Toast.PickTaskCreated", _createdTask.TaskId].Value);
         }
         catch (ApiException ex)
         {
@@ -202,7 +202,7 @@
     {
         if (!Guid.TryParse(_taskIdInput, out var taskId))
         {
-            ToastService.ShowError("Valid task id is required.");
+            ToastService.ShowError(L["PickingTasks.Toast.ValidTaskIdIsRequired"].Value);
             return;
         }
 
@@ -224,7 +224,7 @@
     {
         if (!Guid.TryParse(_taskIdInput, out var taskId) || _completeFromLocationId <= 0 || _completeQty <= 0m)
         {
-            ToastService.ShowError("Task id, from location id and picked qty are required.");
+            ToastService.ShowError(L["PickingTasks.Toast.TaskIdFromLocationIdAndPickedQtyAreRequired"].Value);
             return;
         }
 
@@ -239,7 +239,7 @@
                 string.IsNullOrWhiteSpace(_completeLocationBarcode) ? null : _completeLocationBarcode.Trim(),
                 string.IsNullOrWhiteSpace(_completeNotes) ? null : _completeNotes.Trim()));
 
-            ToastService.ShowSuccess("Pick task completed.");
+            ToastService.ShowSuccess(L["PickingTasks.Toast.PickTaskCompleted"].Value);
         }
         catch (ApiException ex)
         {
@@ -255,9 +255,9 @@
     private void DismissError() => _apiError = null;
     private Task NoopAsync() => Task.CompletedTask;
 
-    private static string BuildErrorMessage(ApiException ex)
-        => ex.UserMessage
+    private string BuildErrorMessage(ApiException ex)
+        => WarehouseErrorText.Get(L, ex)
            ?? ex.ProblemDetails?.Detail
            ?? ex.ProblemDetails?.Title
-           ?? "Picking task request failed.";
+           ?? L["PickingTasks.RequestFailed"].Value;
 }

@@ -5,9 +5,9 @@
 @inject IJSRuntime JavaScript
 @inject ToastService ToastService
 
-<PageTitle>Stock Movements - Cikada.MES</PageTitle>
+<PageTitle>@L["ReportsStockMovements.StockMovementsCikadaMES"]</PageTitle>
 
-<h1>Stock Movement History</h1>
+<h1>@L["ReportsStockMovements.StockMovementHistory"]</h1>
 
 @if (_apiError is not null)
 {
@@ -21,38 +21,38 @@
     <div class="card-body">
         <div class="row g-2 align-items-end">
             <div class="col-md-2">
-                <label class="form-label">Start</label>
+                <label class="form-label">@L["Common.Start"]</label>
                 <input type="date" class="form-control" @bind="_startDate" />
             </div>
             <div class="col-md-2">
-                <label class="form-label">End</label>
+                <label class="form-label">@L["Common.End"]</label>
                 <input type="date" class="form-control" @bind="_endDate" />
             </div>
             <div class="col-md-1">
-                <label class="form-label">Item Id</label>
+                <label class="form-label">@L["Common.ItemID"]</label>
                 <input type="number" class="form-control" @bind="_itemId" />
             </div>
             <div class="col-md-1">
-                <label class="form-label">Location Id</label>
+                <label class="form-label">@L["Common.LocationId"]</label>
                 <input type="number" class="form-control" @bind="_locationId" />
             </div>
             <div class="col-md-2">
-                <label class="form-label">Operator</label>
+                <label class="form-label">@L["Common.Operator"]</label>
                 <input class="form-control" @bind="_operatorId" />
             </div>
             <div class="col-md-2">
-                <label class="form-label">Movement Type</label>
+                <label class="form-label">@L["ReportsStockMovements.MovementType"]</label>
                 <select class="form-select" @bind="_movementType">
-                    <option value="">All</option>
-                    <option value="Receive">Receive</option>
-                    <option value="Transfer">Transfer</option>
-                    <option value="Pick">Pick</option>
-                    <option value="Adjust">Adjust</option>
-                    <option value="Dispatch">Dispatch</option>
+                    <option value="">@L["Common.All"]</option>
+                    <option value="Receive">@L["Common.Receive"]</option>
+                    <option value="Transfer">@L["ReportsStockMovements.Transfer"]</option>
+                    <option value="Pick">@L["Common.Pick"]</option>
+                    <option value="Adjust">@L["ReportsStockMovements.Adjust"]</option>
+                    <option value="Dispatch">@L["ReportsStockMovements.Dispatch"]</option>
                 </select>
             </div>
             <div class="col-md-2 d-flex gap-2">
-                <button class="btn btn-primary" @onclick="ApplyFiltersAsync" disabled="@_isLoading">Apply</button>
+                <button class="btn btn-primary" @onclick="ApplyFiltersAsync" disabled="@_isLoading">@L["Common.Apply"]</button>
                 <button class="btn btn-outline-success" @onclick="ExportCsvAsync" disabled="@_isLoading">CSV</button>
             </div>
         </div>
@@ -63,31 +63,31 @@
     <LoadingSpinner IsLoading="_isLoading" />
 
     <div class="card-body">
-        <div class="mb-2"><strong>Total: @_totalCount</strong></div>
+        <div class="mb-2"><strong>@L["ReportsStockMovements.Total", _totalCount]</strong></div>
 
         <div class="table-responsive">
             <table class="table table-sm table-hover align-middle">
                 <thead>
                     <tr>
-                        <th>Timestamp</th>
-                        <th>Type</th>
+                        <th>@L["Common.Timestamp"]</th>
+                        <th>@L["Common.Type"]</th>
                         <th>SKU</th>
-                        <th>From</th>
-                        <th>To</th>
-                        <th>Qty</th>
+                        <th>@L["Common.From"]</th>
+                        <th>@L["Common.To"]</th>
+                        <th>@L["Common.Qty"]</th>
                         <th class="text-end" title="@L["Pricing.CurrentPriceHint"]">@L["Pricing.Cost"]</th>
                         <th class="text-end" title="@L["Pricing.CurrentPriceHint"]">@L["Pricing.Sale"]</th>
-                        <th class="text-end">Value (current cost)</th>
-                        <th>Operator</th>
-                        <th>Reason</th>
-                        <th>Reference</th>
+                        <th class="text-end">@L["Common.ValueCurrentCost"]</th>
+                        <th>@L["Common.Operator"]</th>
+                        <th>@L["Common.Reason"]</th>
+                        <th>@L["Common.Reference"]</th>
                     </tr>
                 </thead>
                 <tbody>
                     @if (_rows.Count == 0)
                     {
                         <tr>
-                            <td colspan="12" class="text-muted">No stock movements found.</td>
+                            <td colspan="12" class="text-muted">@L["ReportsStockMovements.NoStockMovementsFound"]</td>
                         </tr>
                     }
                     else
@@ -245,15 +245,15 @@
         _apiError = null;
     }
 
-    private static string BuildErrorMessage(ApiException ex)
+    private string BuildErrorMessage(ApiException ex)
     {
-        if (!string.IsNullOrWhiteSpace(ex.UserMessage))
+        if (!string.IsNullOrWhiteSpace(WarehouseErrorText.Get(L, ex)))
         {
-            return ex.UserMessage;
+            return WarehouseErrorText.Get(L, ex);
         }
 
         return ex.ProblemDetails?.Detail
                ?? ex.ProblemDetails?.Title
-               ?? "Stock movement report request failed.";
+               ?? L["ReportsStockMovements.RequestFailed"].Value;
     }
 }

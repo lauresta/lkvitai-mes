@@ -3,9 +3,9 @@
 @inject IJSRuntime JavaScript
 @inject ToastService ToastService
 
-<PageTitle>Receiving History - Cikada.MES</PageTitle>
+<PageTitle>@L["ReportsReceivingHistory.ReceivingHistoryCikadaMES"]</PageTitle>
 
-<h3>Receiving History Report</h3>
+<h3>@L["ReportsReceivingHistory.ReceivingHistoryReport"]</h3>
 
 @if (_apiError is not null)
 {
@@ -19,31 +19,31 @@
     <div class="card-body">
         <div class="row g-2 align-items-end">
             <div class="col-md-2">
-                <label class="form-label">Supplier Id</label>
+                <label class="form-label">@L["ReportsReceivingHistory.SupplierId"]</label>
                 <input class="form-control" type="number" @bind="_supplierId" />
             </div>
             <div class="col-md-3">
-                <label class="form-label">Status</label>
+                <label class="form-label">@L["Common.Status"]</label>
                 <select class="form-select" @bind="_status">
-                    <option value="">All</option>
-                    <option value="Draft">Draft</option>
-                    <option value="Partial">Partial</option>
-                    <option value="Complete">Complete</option>
+                    <option value="">@L["Common.All"]</option>
+                    <option value="Draft">@L["ReportsReceivingHistory.Draft"]</option>
+                    <option value="Partial">@L["ReportsReceivingHistory.Partial"]</option>
+                    <option value="Complete">@L["Common.Complete"]</option>
                 </select>
             </div>
             <div class="col-md-3">
-                <label class="form-label">Expected From</label>
+                <label class="form-label">@L["ReportsReceivingHistory.ExpectedFrom"]</label>
                 <input class="form-control" type="date" @bind="_dateFrom" />
             </div>
             <div class="col-md-3">
-                <label class="form-label">Expected To</label>
+                <label class="form-label">@L["ReportsReceivingHistory.ExpectedTo"]</label>
                 <input class="form-control" type="date" @bind="_dateTo" />
             </div>
             <div class="col-md-2 d-grid">
-                <button class="btn btn-primary" @onclick="ApplyFiltersAsync">Apply</button>
+                <button class="btn btn-primary" @onclick="ApplyFiltersAsync">@L["Common.Apply"]</button>
             </div>
             <div class="col-md-2 d-grid">
-                <button class="btn btn-outline-secondary" @onclick="ExportCsvAsync">Export CSV</button>
+                <button class="btn btn-outline-secondary" @onclick="ExportCsvAsync">@L["Common.ExportCSV"]</button>
             </div>
         </div>
     </div>
@@ -52,18 +52,18 @@
 <div class="card shadow-sm position-relative">
     <LoadingSpinner IsLoading="@_isLoading" />
     <div class="card-body">
-        <div class="mb-2"><strong>Total: @_totalCount</strong></div>
+        <div class="mb-2"><strong>@L["ReportsReceivingHistory.Total", _totalCount]</strong></div>
         <div class="table-responsive">
             <table class="table table-sm table-hover align-middle">
                 <thead>
                 <tr>
-                    <th>Shipment Id</th>
-                    <th>Reference</th>
-                    <th>Supplier</th>
-                    <th>Expected</th>
-                    <th>Status</th>
-                    <th>Expected Qty</th>
-                    <th>Received Qty</th>
+                    <th>@L["ReportsReceivingHistory.ShipmentId"]</th>
+                    <th>@L["Common.Reference"]</th>
+                    <th>@L["Common.Supplier"]</th>
+                    <th>@L["Common.Expected"]</th>
+                    <th>@L["Common.Status"]</th>
+                    <th>@L["ReportsReceivingHistory.ExpectedQty"]</th>
+                    <th>@L["ReportsReceivingHistory.ReceivedQty"]</th>
                     <th class="text-end">@L["Pricing.PurchaseTotal"]</th>
                     <th class="text-end" title="@L["Pricing.CurrentPriceHint"]">@L["Pricing.CostTotal"]</th>
                     <th class="text-end" title="@L["Pricing.CurrentPriceHint"]">@L["Pricing.SaleTotal"]</th>
@@ -73,7 +73,7 @@
                 @if (_items.Count == 0)
                 {
                     <tr>
-                        <td colspan="10" class="text-muted">No rows found.</td>
+                        <td colspan="10" class="text-muted">@L["Common.NoRowsFound"]</td>
                     </tr>
                 }
                 else
@@ -85,7 +85,7 @@
                             <td>@row.ReferenceNumber</td>
                             <td>@row.SupplierName</td>
                             <td>@row.ExpectedDate?.ToString("yyyy-MM-dd")</td>
-                            <td>@row.Status</td>
+                            <td>@WarehouseStatusText.Get(L, row.Status)</td>
                             <td>@row.TotalExpectedQty</td>
                             <td>@row.TotalReceivedQty</td>
                             <td class="text-end is-money is-num">@Money.Format(row.TotalExpectedValue)</td>
@@ -210,13 +210,13 @@
             : null;
     }
 
-    private static string BuildErrorMessage(ApiException error)
+    private string BuildErrorMessage(ApiException error)
     {
         if (!string.IsNullOrWhiteSpace(error.ProblemDetails?.Detail))
         {
-            return $"{error.UserMessage} {error.ProblemDetails.Detail}";
+            return $"{WarehouseErrorText.Get(L, error)} {error.ProblemDetails.Detail}";
         }
 
-        return error.UserMessage;
+        return WarehouseErrorText.Get(L, error);
     }
 }
