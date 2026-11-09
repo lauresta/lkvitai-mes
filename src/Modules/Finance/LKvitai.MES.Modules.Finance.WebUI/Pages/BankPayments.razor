@@ -3,6 +3,9 @@
 @implements IAsyncDisposable
 @inject IJSRuntime JS
 @inject IWebHostEnvironment HostEnvironment
+@inject IHttpClientFactory HttpClients
+@inject IHttpContextAccessor HttpContexts
+@inject PersistentComponentState ApplicationState
 
 <PageTitle>@L["Bank.Title"] · Cikada.MES</PageTitle>
 <main class="bp-page">
