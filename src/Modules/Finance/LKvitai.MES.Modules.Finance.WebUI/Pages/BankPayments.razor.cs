@@ -1,5 +1,8 @@
 using System.Globalization;
+using System.IO.Compression;
+using System.Net.Http.Json;
 using System.Text.Json;
+using LKvitai.MES.BuildingBlocks.PortalAuth;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
@@ -8,8 +11,8 @@ namespace LKvitai.MES.Modules.Finance.WebUI.Pages;
 
 public partial class BankPayments
 {
-    private sealed record PaymentRow(int Nr, DateOnly Date, string Firm, string Purpose, decimal Sum);
-    private sealed record PaymentPage(IReadOnlyList<PaymentRow> Items, int Total, int CountryTotal,
+    public sealed record PaymentRow(int Nr, DateOnly Date, string Firm, string Purpose, decimal Sum);
+    public sealed record PaymentPage(IReadOnlyList<PaymentRow> Items, int Total, int CountryTotal,
         DateOnly? LastDate, int Page, int PageSize);
     private sealed record PasteRow(int Line, DateOnly? Date, string Firm, string Purpose, decimal? Sum,
         string Status, string? Error, string Raw, bool Selected,
@@ -23,6 +26,9 @@ public partial class BankPayments
     ];
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
     private static readonly CultureInfo Lithuanian = CultureInfo.GetCultureInfo("lt-LT");
+    private const string InitialPageKey = "finance.bank-payments.initial-page";
+    private const int MaxPersistedPageLength = 180_000;
+    private PersistingComponentStateSubscription _persistingSub;
     private DotNetObjectReference<BankPayments>? _reference;
     private PaymentPage? _data;
     private PasteResult? _preview;
@@ -34,12 +40,80 @@ public partial class BankPayments
     private bool _desc = true, _armed, _loading = true, _busy;
     private int _page = 1, _searchGeneration, _loadGeneration;
 
+    protected override void OnInitialized()
+    {
+        _persistingSub = ApplicationState.RegisterOnPersisting(() =>
+        {
+            if (_data is not null)
+            {
+                var packed = Pack(_data);
+                if (packed.Length <= MaxPersistedPageLength)
+                    ApplicationState.PersistAsJson(InitialPageKey, packed);
+            }
+            return Task.CompletedTask;
+        });
+    }
+
+    private static string Pack(PaymentPage page)
+    {
+        using var output = new MemoryStream();
+        using (var compressed = new BrotliStream(output, CompressionLevel.Fastest, leaveOpen: true))
+            JsonSerializer.Serialize(compressed, page, Json);
+        return Convert.ToBase64String(output.ToArray());
+    }
+
+    private static PaymentPage? Unpack(string packed)
+    {
+        using var input = new MemoryStream(Convert.FromBase64String(packed));
+        using var compressed = new BrotliStream(input, CompressionMode.Decompress);
+        return JsonSerializer.Deserialize<PaymentPage>(compressed, Json);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            if (ApplicationState.TryTakeFromJson<string>(InitialPageKey, out var state) && state is not null &&
+                Unpack(state) is { } persisted)
+            {
+                _data = persisted;
+                _loading = false;
+                return;
+            }
+        }
+        catch (Exception ex) when (ex is JsonException or FormatException or InvalidDataException or InvalidOperationException)
+        { /* Fall back to the API if persisted data is incompatible. */ }
+
+        // Prerender the first page so rows appear with the HTML response, before
+        // Blazor Server connects. The shared Portal cookie is forwarded only to
+        // the internal Finance API. Interactive loads continue using browser fetch.
+        var context = HttpContexts.HttpContext;
+        if (context?.User.Identity?.IsAuthenticated != true || context.Response.HasStarted ||
+            !context.Request.Cookies.TryGetValue(PortalAuthDefaults.CookieName, out var cookie)) return;
+        context.Response.Headers.CacheControl = "private, no-store";
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get,
+                "/api/finance/bank-payments?country=LT&sort=nr&desc=true&page=1");
+            request.Headers.TryAddWithoutValidation("Cookie", $"{PortalAuthDefaults.CookieName}={cookie}");
+            using var response = await HttpClients.CreateClient("FinanceApi")
+                .SendAsync(request, context.RequestAborted);
+            if (!response.IsSuccessStatusCode) return;
+            _data = await response.Content.ReadFromJsonAsync<PaymentPage>(Json, context.RequestAborted);
+            _loading = _data is null;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException)
+        {
+            // The interactive browser request retains the existing error UI.
+        }
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender) return;
         _reference = DotNetObjectReference.Create(this);
         await JS.InvokeVoidAsync("financeBank.attach", _reference);
-        await Load();
+        if (_data is null) await Load();
     }
     private string Failure(Exception error)
     {
@@ -159,7 +233,13 @@ public partial class BankPayments
     }
     public async ValueTask DisposeAsync()
     {
-        try { await JS.InvokeVoidAsync("financeBank.detach"); } catch (JSDisconnectedException) { }
+        _persistingSub.Dispose();
+        // Dispose also runs for the static prerender instance, where JS interop
+        // is unavailable and attach was never called.
+        if (_reference is not null)
+        {
+            try { await JS.InvokeVoidAsync("financeBank.detach"); } catch (JSDisconnectedException) { }
+        }
         _reference?.Dispose();
     }
 }
