@@ -139,7 +139,6 @@ builder.Services.AddDataProtection()
     .DisableAutomaticKeyGeneration();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<LKvitai.MES.BuildingBlocks.PortalAuth.CikadaUserBridgeProof>();
-builder.Services.AddSingleton<WarehouseQaProof>();
 builder.Services.AddSingleton<CikadaSsoAccountProof>();
 builder.Services.AddScoped<TrustedUserAdministrationFilter>();
 
