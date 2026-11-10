@@ -12,7 +12,9 @@ public sealed record StockMovementSliceEvent(
     string Location,
     string SKU,
     decimal QuantityDelta,
-    DateTime OccurredAt);
+    DateTime OccurredAt,
+    int? ItemId = null,
+    string? LotNumber = null);
 
 public sealed class ProjectedStockMovementEvent : IEvent<StockMovementSliceEvent>
 {

@@ -115,16 +115,24 @@ public sealed class PickingController : ControllerBase
         }
 
         await using var querySession = _documentStore.QuerySession();
-        IQueryable<AvailableStockView> query = querySession.Query<AvailableStockView>()
-            .Where(x => x.WarehouseId == DefaultWarehouseId && x.SKU == item.InternalSKU && x.AvailableQty > 0m)
-            .OrderBy(x => x.ExpiryDate == null)
-            .ThenBy(x => x.ExpiryDate)
-            .ThenByDescending(x => x.AvailableQty)
-            .Take(5);
+        var stock = querySession.Query<AvailableStockView>()
+            .Where(x => x.WarehouseId == DefaultWarehouseId && x.SKU == item.InternalSKU && x.AvailableQty > 0m);
 
-        var rows = await Marten.QueryableExtensions.ToListAsync(query, cancellationToken);
+        var rows = await Marten.QueryableExtensions.ToListAsync(
+            stock.Where(x => x.ExpiryDate != null)
+                .OrderBy(x => x.ExpiryDate)
+                .ThenByDescending(x => x.AvailableQty)
+                .Take(5), cancellationToken);
+        var suggestions = rows.ToList();
+        if (suggestions.Count < 5)
+        {
+            suggestions.AddRange(await Marten.QueryableExtensions.ToListAsync(
+                stock.Where(x => x.ExpiryDate == null)
+                    .OrderByDescending(x => x.AvailableQty)
+                    .Take(5 - suggestions.Count), cancellationToken));
+        }
 
-        var response = rows.Select(x => new PickLocationSuggestion(
+        var response = suggestions.Select(x => new PickLocationSuggestion(
             x.Location,
             x.AvailableQty,
             x.ExpiryDate,
@@ -161,6 +169,38 @@ public sealed class PickingController : ControllerBase
         if (!string.Equals(task.Status, "Pending", StringComparison.OrdinalIgnoreCase))
         {
             return ValidationFailure($"Pick task '{id}' is already '{task.Status}'.");
+        }
+
+        if (request.PickedQty > task.Qty)
+        {
+            return UnprocessableFailure($"Picked quantity {request.PickedQty} exceeds task quantity {task.Qty}.");
+        }
+
+        var hasOutboundId = Guid.TryParse(task.OrderId, out var outboundId);
+        var outboundOrder = await _dbContext.OutboundOrders
+            .Include(x => x.Lines)
+            .Include(x => x.SalesOrder)
+                .ThenInclude(x => x!.Lines)
+            .FirstOrDefaultAsync(x =>
+                x.OrderNumber == task.OrderId ||
+                (hasOutboundId && x.Id == outboundId) ||
+                (x.SalesOrder != null && x.SalesOrder.OrderNumber == task.OrderId),
+                cancellationToken);
+
+        if (outboundOrder is not null)
+        {
+            if (outboundOrder.Status != OutboundOrderStatus.Picking)
+            {
+                return UnprocessableFailure($"Outbound order '{outboundOrder.OrderNumber}' is not in picking status.");
+            }
+
+            var remainingQty = outboundOrder.Lines
+                .Where(x => x.ItemId == task.ItemId)
+                .Sum(x => x.Qty - x.PickedQty);
+            if (request.PickedQty > remainingQty)
+            {
+                return UnprocessableFailure($"Picked quantity {request.PickedQty} exceeds remaining order quantity {remainingQty}.");
+            }
         }
 
         var item = await _dbContext.Items
@@ -265,6 +305,36 @@ public sealed class PickingController : ControllerBase
         task.ToLocationId = toLocation.Id;
         task.LotId = request.LotId;
         task.CompletedAt = now;
+
+        if (outboundOrder is not null)
+        {
+            var remaining = request.PickedQty;
+            foreach (var line in outboundOrder.Lines.Where(x => x.ItemId == task.ItemId).OrderBy(x => x.Id))
+            {
+                var picked = Math.Min(remaining, line.Qty - line.PickedQty);
+                line.PickedQty += picked;
+                remaining -= picked;
+                if (remaining == 0m) break;
+            }
+
+            if (outboundOrder.SalesOrder is { } salesOrder)
+            {
+                remaining = request.PickedQty;
+                foreach (var line in salesOrder.Lines.Where(x => x.ItemId == task.ItemId).OrderBy(x => x.Id))
+                {
+                    var picked = Math.Min(remaining, line.OrderedQty - line.PickedQty);
+                    line.PickedQty += picked;
+                    remaining -= picked;
+                    if (remaining == 0m) break;
+                }
+            }
+
+            if (outboundOrder.Lines.All(x => x.PickedQty >= x.Qty))
+            {
+                var result = outboundOrder.CompletePicking(now);
+                if (!result.IsSuccess) return Failure(result);
+            }
+        }
 
         await _dbContext.SaveChangesAsync(cancellationToken);
 

@@ -38,6 +38,8 @@ public class AvailableStockProjection : MultiStreamProjection<AvailableStockView
     public AvailableStockView Apply(StockMovementSliceEvent evt, AvailableStockView current)
     {
         EnsureIdentity(current, evt.WarehouseId, evt.Location, evt.SKU);
+        if (evt.ItemId.HasValue) current.ItemId = evt.ItemId;
+        if (evt.LotNumber is not null) current.LotNumber = evt.LotNumber;
         current.OnHandQty += evt.QuantityDelta;
         current.RecomputeAvailable();
         current.LastUpdated = evt.OccurredAt;
@@ -103,31 +105,7 @@ public class AvailableStockProjection : MultiStreamProjection<AvailableStockView
         return current;
     }
 
-    public AvailableStockView Apply(PickCompletedEvent evt, AvailableStockView current)
-    {
-        var isFromLocation = current.Id == AvailableStockView.ComputeId(evt.WarehouseId, evt.FromLocation, evt.SKU);
-        var isToLocation = current.Id == AvailableStockView.ComputeId(evt.WarehouseId, evt.ToLocation, evt.SKU);
-
-        EnsureIdentity(current, current.WarehouseId, current.Location, evt.SKU);
-        current.ItemId = evt.ItemId;
-        current.LotNumber = evt.LotNumber;
-
-        if (isFromLocation)
-        {
-            current.OnHandQty -= evt.PickedQty;
-            current.LocationCode = evt.FromLocation;
-        }
-
-        if (isToLocation)
-        {
-            current.OnHandQty += evt.PickedQty;
-            current.LocationCode = evt.ToLocation;
-        }
-
-        current.RecomputeAvailable();
-        current.LastUpdated = evt.Timestamp;
-        return current;
-    }
+    public AvailableStockView Apply(PickCompletedEvent _, AvailableStockView current) => current;
 
     public AvailableStockView Apply(StockAdjustedEvent evt, AvailableStockView current)
     {
@@ -163,56 +141,8 @@ public class AvailableStockProjection : MultiStreamProjection<AvailableStockView
         return current;
     }
 
-    public AvailableStockView Apply(QCPassedEvent evt, AvailableStockView current)
-        => ApplyQcMovement(evt, current, evt.Qty, evt.FromLocation, evt.ToLocation);
-
-    public AvailableStockView Apply(QCFailedEvent evt, AvailableStockView current)
-        => ApplyQcMovement(evt, current, evt.Qty, evt.FromLocation, evt.ToLocation);
-
-    private static AvailableStockView ApplyQcMovement(
-        WarehouseOperationalEvent evt,
-        AvailableStockView current,
-        decimal qty,
-        string fromLocation,
-        string toLocation)
-    {
-        var sku = evt switch
-        {
-            QCPassedEvent passed => passed.SKU,
-            QCFailedEvent failed => failed.SKU,
-            _ => string.Empty
-        };
-
-        var warehouseId = evt switch
-        {
-            QCPassedEvent passed => passed.WarehouseId,
-            QCFailedEvent failed => failed.WarehouseId,
-            _ => string.Empty
-        };
-
-        var isFromLocation = current.Id == AvailableStockView.ComputeId(warehouseId, fromLocation, sku);
-        var isToLocation = current.Id == AvailableStockView.ComputeId(warehouseId, toLocation, sku);
-
-        EnsureIdentity(current, warehouseId, current.Location, sku);
-
-        if (isFromLocation)
-        {
-            current.OnHandQty -= qty;
-            current.Location = fromLocation;
-            current.LocationCode = fromLocation;
-        }
-
-        if (isToLocation)
-        {
-            current.OnHandQty += qty;
-            current.Location = toLocation;
-            current.LocationCode = toLocation;
-        }
-
-        current.RecomputeAvailable();
-        current.LastUpdated = evt.Timestamp;
-        return current;
-    }
+    public AvailableStockView Apply(QCPassedEvent _, AvailableStockView current) => current;
+    public AvailableStockView Apply(QCFailedEvent _, AvailableStockView current) => current;
 
     private static void InitializeFromId(AvailableStockView current)
     {
@@ -279,7 +209,9 @@ public class AvailableStockGrouper : IAggregateGrouper<string>
                     GroupSingle(evt, goodsReceived.WarehouseId, goodsReceived.DestinationLocation, goodsReceived.SKU, grouping);
                     break;
                 case PickCompletedEvent pickCompleted:
-                    GroupDual(evt, pickCompleted.WarehouseId, pickCompleted.FromLocation, pickCompleted.ToLocation, pickCompleted.SKU, grouping);
+                    GroupMovement(evt, pickCompleted.WarehouseId, pickCompleted.FromLocation,
+                        pickCompleted.ToLocation, pickCompleted.SKU, pickCompleted.PickedQty,
+                        pickCompleted.Timestamp, grouping, pickCompleted.ItemId, pickCompleted.LotNumber);
                     break;
                 case StockAdjustedEvent adjusted:
                     GroupSingle(evt, adjusted.WarehouseId, adjusted.Location, adjusted.SKU, grouping);
@@ -304,10 +236,12 @@ public class AvailableStockGrouper : IAggregateGrouper<string>
                     }
                     break;
                 case QCPassedEvent qcPassed:
-                    GroupDual(evt, qcPassed.WarehouseId, qcPassed.FromLocation, qcPassed.ToLocation, qcPassed.SKU, grouping);
+                    GroupMovement(evt, qcPassed.WarehouseId, qcPassed.FromLocation,
+                        qcPassed.ToLocation, qcPassed.SKU, qcPassed.Qty, qcPassed.Timestamp, grouping);
                     break;
                 case QCFailedEvent qcFailed:
-                    GroupDual(evt, qcFailed.WarehouseId, qcFailed.FromLocation, qcFailed.ToLocation, qcFailed.SKU, grouping);
+                    GroupMovement(evt, qcFailed.WarehouseId, qcFailed.FromLocation,
+                        qcFailed.ToLocation, qcFailed.SKU, qcFailed.Qty, qcFailed.Timestamp, grouping);
                     break;
             }
         }
@@ -331,6 +265,21 @@ public class AvailableStockGrouper : IAggregateGrouper<string>
         grouping.AddEvent(toKey, new ProjectedStockMovementEvent(evt,
             new StockMovementSliceEvent(warehouseId, stockMoved.ToLocation, stockMoved.SKU,
                 stockMoved.Quantity, stockMoved.Timestamp)));
+    }
+
+    private static void GroupMovement(IEvent evt, string warehouseId, string fromLocation,
+        string toLocation, string sku, decimal quantity, DateTime timestamp,
+        ITenantSliceGroup<string> grouping, int? itemId = null, string? lotNumber = null)
+    {
+        GroupSignedSlice(fromLocation, -quantity);
+        GroupSignedSlice(toLocation, quantity);
+
+        void GroupSignedSlice(string location, decimal delta)
+        {
+            var key = AvailableStockView.ComputeId(warehouseId, location, sku);
+            grouping.AddEvent(key, new ProjectedStockMovementEvent(evt,
+                new StockMovementSliceEvent(warehouseId, location, sku, delta, timestamp, itemId, lotNumber)));
+        }
     }
 
     private static void GroupPickingStarted(IEvent evt, PickingStartedEvent pickingStarted, ITenantSliceGroup<string> grouping)
@@ -378,17 +327,6 @@ public class AvailableStockGrouper : IAggregateGrouper<string>
         grouping.AddEvent(key, evt);
     }
 
-    private static void GroupDual(
-        IEvent evt,
-        string warehouseId,
-        string fromLocation,
-        string toLocation,
-        string sku,
-        ITenantSliceGroup<string> grouping)
-    {
-        GroupSingle(evt, warehouseId, fromLocation, sku, grouping);
-        GroupSingle(evt, warehouseId, toLocation, sku, grouping);
-    }
 }
 
 public static class AvailableStockAggregation

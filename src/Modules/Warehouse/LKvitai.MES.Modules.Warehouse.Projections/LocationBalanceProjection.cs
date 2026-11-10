@@ -50,26 +50,7 @@ public class LocationBalanceProjection : MultiStreamProjection<LocationBalanceVi
         return current;
     }
 
-    public LocationBalanceView Apply(PickCompletedEvent evt, LocationBalanceView current)
-    {
-        EnsureIdentity(current, evt.WarehouseId, current.Location, evt.SKU);
-
-        var isFromLocation = current.Id == BuildKey(evt.WarehouseId, evt.FromLocation, evt.SKU);
-        var isToLocation = current.Id == BuildKey(evt.WarehouseId, evt.ToLocation, evt.SKU);
-
-        if (isFromLocation)
-        {
-            current.Quantity -= evt.PickedQty;
-        }
-
-        if (isToLocation)
-        {
-            current.Quantity += evt.PickedQty;
-        }
-
-        current.LastUpdated = evt.Timestamp;
-        return current;
-    }
+    public LocationBalanceView Apply(PickCompletedEvent _, LocationBalanceView current) => current;
 
     public LocationBalanceView Apply(StockAdjustedEvent evt, LocationBalanceView current)
     {
@@ -79,48 +60,8 @@ public class LocationBalanceProjection : MultiStreamProjection<LocationBalanceVi
         return current;
     }
 
-    public LocationBalanceView Apply(QCPassedEvent evt, LocationBalanceView current)
-        => ApplyQc(evt, current, evt.Qty, evt.FromLocation, evt.ToLocation);
-
-    public LocationBalanceView Apply(QCFailedEvent evt, LocationBalanceView current)
-        => ApplyQc(evt, current, evt.Qty, evt.FromLocation, evt.ToLocation);
-
-    private static LocationBalanceView ApplyQc(
-        WarehouseOperationalEvent evt,
-        LocationBalanceView current,
-        decimal qty,
-        string fromLocation,
-        string toLocation)
-    {
-        var warehouseId = evt switch
-        {
-            QCPassedEvent passed => passed.WarehouseId,
-            QCFailedEvent failed => failed.WarehouseId,
-            _ => string.Empty
-        };
-
-        var sku = evt switch
-        {
-            QCPassedEvent passed => passed.SKU,
-            QCFailedEvent failed => failed.SKU,
-            _ => string.Empty
-        };
-
-        EnsureIdentity(current, warehouseId, current.Location, sku);
-
-        if (current.Id == BuildKey(warehouseId, fromLocation, sku))
-        {
-            current.Quantity -= qty;
-        }
-
-        if (current.Id == BuildKey(warehouseId, toLocation, sku))
-        {
-            current.Quantity += qty;
-        }
-
-        current.LastUpdated = evt.Timestamp;
-        return current;
-    }
+    public LocationBalanceView Apply(QCPassedEvent _, LocationBalanceView current) => current;
+    public LocationBalanceView Apply(QCFailedEvent _, LocationBalanceView current) => current;
 
     private static void InitializeIdentityFields(LocationBalanceView current)
     {
@@ -179,16 +120,20 @@ public class LocationBalanceGrouper : IAggregateGrouper<string>
                     GroupSingle(evt, goodsReceived.WarehouseId, goodsReceived.DestinationLocation, goodsReceived.SKU, grouping);
                     break;
                 case PickCompletedEvent pickCompleted:
-                    GroupDual(evt, pickCompleted.WarehouseId, pickCompleted.FromLocation, pickCompleted.ToLocation, pickCompleted.SKU, grouping);
+                    GroupMovement(evt, pickCompleted.WarehouseId, pickCompleted.FromLocation,
+                        pickCompleted.ToLocation, pickCompleted.SKU, pickCompleted.PickedQty,
+                        pickCompleted.Timestamp, grouping);
                     break;
                 case StockAdjustedEvent adjusted:
                     GroupSingle(evt, adjusted.WarehouseId, adjusted.Location, adjusted.SKU, grouping);
                     break;
                 case QCPassedEvent qcPassed:
-                    GroupDual(evt, qcPassed.WarehouseId, qcPassed.FromLocation, qcPassed.ToLocation, qcPassed.SKU, grouping);
+                    GroupMovement(evt, qcPassed.WarehouseId, qcPassed.FromLocation,
+                        qcPassed.ToLocation, qcPassed.SKU, qcPassed.Qty, qcPassed.Timestamp, grouping);
                     break;
                 case QCFailedEvent qcFailed:
-                    GroupDual(evt, qcFailed.WarehouseId, qcFailed.FromLocation, qcFailed.ToLocation, qcFailed.SKU, grouping);
+                    GroupMovement(evt, qcFailed.WarehouseId, qcFailed.FromLocation,
+                        qcFailed.ToLocation, qcFailed.SKU, qcFailed.Qty, qcFailed.Timestamp, grouping);
                     break;
             }
         }
@@ -213,6 +158,20 @@ public class LocationBalanceGrouper : IAggregateGrouper<string>
                 stockMoved.Quantity, stockMoved.Timestamp)));
     }
 
+    private static void GroupMovement(IEvent evt, string warehouseId, string fromLocation,
+        string toLocation, string sku, decimal quantity, DateTime timestamp,
+        ITenantSliceGroup<string> grouping)
+    {
+        GroupSignedSlice(fromLocation, -quantity);
+        GroupSignedSlice(toLocation, quantity);
+
+        void GroupSignedSlice(string location, decimal delta)
+        {
+            grouping.AddEvent($"{warehouseId}:{location}:{sku}", new ProjectedStockMovementEvent(evt,
+                new StockMovementSliceEvent(warehouseId, location, sku, delta, timestamp)));
+        }
+    }
+
     private static void GroupSingle(
         IEvent evt,
         string warehouseId,
@@ -230,17 +189,6 @@ public class LocationBalanceGrouper : IAggregateGrouper<string>
         grouping.AddEvent($"{warehouseId}:{location}:{sku}", evt);
     }
 
-    private static void GroupDual(
-        IEvent evt,
-        string warehouseId,
-        string fromLocation,
-        string toLocation,
-        string sku,
-        ITenantSliceGroup<string> grouping)
-    {
-        GroupSingle(evt, warehouseId, fromLocation, sku, grouping);
-        GroupSingle(evt, warehouseId, toLocation, sku, grouping);
-    }
 }
 
 public static class LocationBalanceAggregation

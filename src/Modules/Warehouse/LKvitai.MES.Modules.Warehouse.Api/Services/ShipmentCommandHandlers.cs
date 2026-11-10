@@ -54,6 +54,9 @@ public sealed class DispatchShipmentCommandHandler : IRequestHandler<DispatchShi
         }
 
         var outboundOrder = await _dbContext.OutboundOrders
+            .Include(x => x.SalesOrder)
+                .ThenInclude(x => x!.Lines)
+            .Include(x => x.Lines)
             .FirstOrDefaultAsync(x => x.Id == shipment.OutboundOrderId, cancellationToken);
 
         if (outboundOrder is null)
@@ -119,6 +122,25 @@ public sealed class DispatchShipmentCommandHandler : IRequestHandler<DispatchShi
         if (!orderResult.IsSuccess)
         {
             return orderResult;
+        }
+
+        foreach (var line in outboundOrder.Lines)
+        {
+            line.ShippedQty = line.Qty;
+        }
+
+        if (outboundOrder.SalesOrder is { } salesOrder)
+        {
+            var salesOrderResult = salesOrder.Ship(dispatchAt);
+            if (!salesOrderResult.IsSuccess)
+            {
+                return salesOrderResult;
+            }
+
+            foreach (var line in salesOrder.Lines)
+            {
+                line.ShippedQty = line.OrderedQty;
+            }
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);

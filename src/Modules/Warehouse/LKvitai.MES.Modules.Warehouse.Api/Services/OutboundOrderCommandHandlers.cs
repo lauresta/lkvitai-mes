@@ -33,6 +33,7 @@ public sealed class PackOrderCommandHandler : IRequestHandler<PackOrderCommand, 
         var order = await _dbContext.OutboundOrders
             .Include(x => x.Lines)
                 .ThenInclude(x => x.Item)
+            .Include(x => x.SalesOrder)
             .FirstOrDefaultAsync(x => x.Id == request.OutboundOrderId, cancellationToken);
 
         if (order is null)
@@ -178,7 +179,6 @@ public sealed class PackOrderCommandHandler : IRequestHandler<PackOrderCommand, 
 
         foreach (var line in order.Lines)
         {
-            line.ShippedQty = line.Qty;
             shipment.Lines.Add(new ShipmentLine
             {
                 ItemId = line.ItemId,
@@ -191,6 +191,15 @@ public sealed class PackOrderCommandHandler : IRequestHandler<PackOrderCommand, 
         if (!packOrderResult.IsSuccess)
         {
             return packOrderResult;
+        }
+
+        if (order.SalesOrder is { } salesOrder)
+        {
+            var packSalesOrderResult = salesOrder.Pack(order.Id);
+            if (!packSalesOrderResult.IsSuccess)
+            {
+                return packSalesOrderResult;
+            }
         }
 
         await using var tx = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
