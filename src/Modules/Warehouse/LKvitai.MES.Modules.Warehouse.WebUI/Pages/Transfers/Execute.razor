@@ -65,7 +65,7 @@
                             <tr>
                                 <td>@GetItemName(line.ItemId)</td>
                                 <td>@line.Qty.ToString("0.##")</td>
-                                <td class="mono">@Money.Format(_priceMap.Get(line.ItemId, null)?.EffectiveCost)</td>
+                                <td class="mono">@Money.FormatUnit(_priceMap.Get(line.ItemId, null)?.EffectiveCost)</td>
                                 <td class="mono">@Money.Format(_priceMap.Get(line.ItemId, null)?.BasePrice)</td>
                                 <td class="mono">@Money.Format(_priceMap.Value(line.Qty, line.ItemId, null))</td>
                                 <td>@GetLocationName(line.FromLocationId)</td>

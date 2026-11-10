@@ -53,7 +53,7 @@
                                 <td>@task.InternalSKU</td>
                                 <td>@task.ItemName</td>
                                 <td class="text-end">@task.Qty</td>
-                                <td class="text-end is-money is-num">@Money.Format(_priceMap.Get(task.ItemId, task.InternalSKU)?.EffectiveCost)</td>
+                                <td class="text-end is-money is-num">@Money.FormatUnit(_priceMap.Get(task.ItemId, task.InternalSKU)?.EffectiveCost)</td>
                                 <td class="text-end is-money is-num">@Money.Format(_priceMap.Get(task.ItemId, task.InternalSKU)?.BasePrice)</td>
                                 <td class="text-end is-money is-num">@Money.Format(_priceMap.Value(task.Qty, task.ItemId, task.InternalSKU))</td>
                                 <td>@task.FromLocationCode</td>

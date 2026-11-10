@@ -398,6 +398,7 @@
   <data name="Agnum.Balances.SKUOrAgnumProductId" xml:space="preserve"><value>SKU arba Agnum produkto ID</value></data>
   <data name="Agnum.Balances.SelectWarehouse" xml:space="preserve"><value>Pasirinkite sandėlį</value></data>
   <data name="Agnum.Balances.ShowingFirst500RowsUseSearchToNarrowTheList" xml:space="preserve"><value>Rodomos pirmosios 500 eilučių. Norėdami susiaurinti sąrašą, naudokite paiešką.</value></data>
+  <data name="Agnum.Balances.DisplayedValue" xml:space="preserve"><value>Rodomų eilučių vertė:</value></data>
   <data name="Agnum.Balances.VirtualWarehouse" xml:space="preserve"><value>Virtualus sandėlis</value></data>
   <data name="Agnum.Configuration.APIEndpoint" xml:space="preserve"><value>API galutinis taškas</value></data>
   <data name="Agnum.Configuration.APIKey" xml:space="preserve"><value>API raktas</value></data>
@@ -714,6 +715,7 @@
   <data name="Dashboard.NoOpenInboundShipments" xml:space="preserve"><value>Nėra atvirų įvežamų siuntų.</value></data>
   <data name="Dashboard.NoRecentMovements" xml:space="preserve"><value>Jokių pastarųjų judesių.</value></data>
   <data name="Dashboard.NoValuationDataAvailable" xml:space="preserve"><value>Vertinimo duomenų nėra.</value></data>
+  <data name="Dashboard.MissingCostPrices" xml:space="preserve"><value>Daliai atsargų trūksta savikainos. Bendros vertės apskaičiuoti negalima.</value></data>
   <data name="Dashboard.NoWarehousesConfigured" xml:space="preserve"><value>Nėra sukonfigūruotų sandėlių.</value></data>
   <data name="Dashboard.NothingBelowReorderPoint" xml:space="preserve"><value>Prekių, kurių atsargos nesiekia papildymo ribos, nėra.</value></data>
   <data name="Dashboard.NothingExpiringInTheSelectedWindow" xml:space="preserve"><value>Pasirinktame lange nieko nesibaigia.</value></data>
@@ -1363,6 +1365,7 @@
   <data name="Rmas.Toast.RMACreated" xml:space="preserve"><value>Sukurtas RMA.</value></data>
   <data name="Rmas.Toast.SalesOrderIdMustBeAValidGUID" xml:space="preserve"><value>SalesOrderId turi būti galiojantis GUID.</value></data>
   <data name="SalesOrderCreate.Toast.AddAtLeastOneValidLineItemQty0" xml:space="preserve"><value>Pridėkite bent vieną galiojančią eilutę (prekė, kiekis &gt; 0).</value></data>
+  <data name="SalesOrderCreate.Toast.EnterPriceForEveryItem" xml:space="preserve"><value>Įveskite kiekvienos pasirinktos prekės pardavimo kainą.</value></data>
   <data name="SalesOrderCreate.Toast.SelectACustomer" xml:space="preserve"><value>Pasirinkite klientą.</value></data>
   <data name="SalesOrderDetail.Toast.CancelReasonIsRequired" xml:space="preserve"><value>Būtina atšaukti priežastį.</value></data>
   <data name="StockAdjustments.Toast.ItemLocationQtyDeltaAndReasonAreRequired" xml:space="preserve"><value>Reikalinga prekė, vieta, kiekio delta ir priežastis.</value></data>

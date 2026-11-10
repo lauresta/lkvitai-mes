@@ -178,7 +178,7 @@
                                         <span class="badge bg-warning text-dark">@L["InboundShipmentDetail.NotSet"]</span>
                                     }
                                 </td>
-                                <td class="text-end is-money is-num">@Money.Format(_priceMap.Get(line.ItemId, line.ItemSku)?.EffectiveCost)</td>
+                                <td class="text-end is-money is-num">@Money.FormatUnit(_priceMap.Get(line.ItemId, line.ItemSku)?.EffectiveCost)</td>
                                 <td class="text-end is-money is-num">@Money.Format(_priceMap.Get(line.ItemId, line.ItemSku)?.BasePrice)</td>
                                 <td>
                                     @if (line.IsService)

@@ -108,12 +108,13 @@ public sealed class StockController : ControllerBase
         var rows = await Marten.QueryableExtensions.ToListAsync(query, cancellationToken);
 
         var skus = rows.Select(x => x.SKU).Distinct().ToList();
+        var normalizedSkus = skus.Select(x => x.ToLowerInvariant()).ToArray();
         var locationCodes = rows.Select(x => x.LocationCode ?? x.Location).Distinct().ToList();
 
         var itemMap = await _dbContext.Items
             .AsNoTracking()
-            .Where(x => skus.Contains(x.InternalSKU))
-            .ToDictionaryAsync(x => x.InternalSKU, cancellationToken);
+            .Where(x => normalizedSkus.Contains(x.InternalSKU.ToLower()))
+            .ToDictionaryAsync(x => x.InternalSKU, x => x, StringComparer.OrdinalIgnoreCase, cancellationToken);
 
         var itemIds = itemMap.Values.Select(x => x.Id).Distinct().ToList();
         var metadataFilters = new AvailableStockMetadataFilters(item, itemName, tag, supplier, supplierCountry);
@@ -210,6 +211,7 @@ public sealed class StockController : ControllerBase
 
         var filtered = mapped
             .OrderBy(x => x.InternalSku)
+            .ThenBy(x => x.WarehouseId)
             .ThenBy(x => x.LocationCode)
             .ThenBy(x => x.LotNumber)
             .ToList();
@@ -301,13 +303,14 @@ public sealed class StockController : ControllerBase
 
         var locationCodes = rows.Select(x => x.Location).Distinct().ToList();
         var skus = rows.Select(x => x.SKU).Distinct().ToList();
+        var normalizedSkus = skus.Select(x => x.ToLowerInvariant()).ToArray();
 
         var locations = await LoadLocationsByCodeAsync(locationCodes, cancellationToken);
 
         var items = await _dbContext.Items
             .AsNoTracking()
-            .Where(x => skus.Contains(x.InternalSKU))
-            .ToDictionaryAsync(x => x.InternalSKU, cancellationToken);
+            .Where(x => normalizedSkus.Contains(x.InternalSKU.ToLower()))
+            .ToDictionaryAsync(x => x.InternalSKU, x => x, StringComparer.OrdinalIgnoreCase, cancellationToken);
 
         var priceBySku = (await _prices.GetAsync(items.Values.Select(x => x.Id).ToArray(), skus, cancellationToken))
             .ToDictionary(x => x.Sku, StringComparer.OrdinalIgnoreCase);
@@ -360,7 +363,7 @@ public sealed class StockController : ControllerBase
                     utilizationWeight,
                     utilizationVolume,
                     location?.Status ?? "Unknown",
-                    totalValue)
+                    costComplete ? totalValue : null)
                 {
                     TotalCostValue = costComplete ? totalValue : null,
                     TotalSaleValue = saleValue
@@ -442,7 +445,7 @@ public sealed class StockController : ControllerBase
             sb.Append(row.UtilizationWeight?.ToString(CultureInfo.InvariantCulture) ?? string.Empty).Append(',');
             sb.Append(row.UtilizationVolume?.ToString(CultureInfo.InvariantCulture) ?? string.Empty).Append(',');
             sb.Append(EscapeCsv(row.Status)).Append(',');
-            sb.Append(row.TotalValue.ToString(CultureInfo.InvariantCulture)).Append(',');
+            sb.Append(row.TotalValue?.ToString(CultureInfo.InvariantCulture) ?? string.Empty).Append(',');
             sb.Append(row.TotalCostValue?.ToString(CultureInfo.InvariantCulture) ?? string.Empty).Append(',');
             sb.Append(row.TotalSaleValue?.ToString(CultureInfo.InvariantCulture) ?? string.Empty);
             sb.AppendLine();
@@ -610,7 +613,7 @@ public sealed class StockController : ControllerBase
         decimal? UtilizationWeight,
         decimal? UtilizationVolume,
         string Status,
-        decimal TotalValue)
+        decimal? TotalValue)
     {
         public decimal? TotalCostValue { get; init; }
         public decimal? TotalSaleValue { get; init; }

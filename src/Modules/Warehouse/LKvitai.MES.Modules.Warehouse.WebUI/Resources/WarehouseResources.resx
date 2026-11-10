@@ -398,6 +398,7 @@
   <data name="Agnum.Balances.SKUOrAgnumProductId" xml:space="preserve"><value>SKU or Agnum product id</value></data>
   <data name="Agnum.Balances.SelectWarehouse" xml:space="preserve"><value>Select warehouse</value></data>
   <data name="Agnum.Balances.ShowingFirst500RowsUseSearchToNarrowTheList" xml:space="preserve"><value>Showing first 500 rows. Use search to narrow the list.</value></data>
+  <data name="Agnum.Balances.DisplayedValue" xml:space="preserve"><value>Displayed value:</value></data>
   <data name="Agnum.Balances.VirtualWarehouse" xml:space="preserve"><value>Virtual warehouse</value></data>
   <data name="Agnum.Configuration.APIEndpoint" xml:space="preserve"><value>API Endpoint</value></data>
   <data name="Agnum.Configuration.APIKey" xml:space="preserve"><value>API Key</value></data>
@@ -714,6 +715,7 @@
   <data name="Dashboard.NoOpenInboundShipments" xml:space="preserve"><value>No open inbound shipments.</value></data>
   <data name="Dashboard.NoRecentMovements" xml:space="preserve"><value>No recent movements.</value></data>
   <data name="Dashboard.NoValuationDataAvailable" xml:space="preserve"><value>No valuation data available.</value></data>
+  <data name="Dashboard.MissingCostPrices" xml:space="preserve"><value>Some stock has no cost price. The total cannot be calculated.</value></data>
   <data name="Dashboard.NoWarehousesConfigured" xml:space="preserve"><value>No warehouses configured.</value></data>
   <data name="Dashboard.NothingBelowReorderPoint" xml:space="preserve"><value>Nothing below reorder point.</value></data>
   <data name="Dashboard.NothingExpiringInTheSelectedWindow" xml:space="preserve"><value>Nothing expiring in the selected window.</value></data>
@@ -1363,6 +1365,7 @@
   <data name="Rmas.Toast.RMACreated" xml:space="preserve"><value>RMA created.</value></data>
   <data name="Rmas.Toast.SalesOrderIdMustBeAValidGUID" xml:space="preserve"><value>SalesOrderId must be a valid GUID.</value></data>
   <data name="SalesOrderCreate.Toast.AddAtLeastOneValidLineItemQty0" xml:space="preserve"><value>Add at least one valid line (item, qty &gt; 0).</value></data>
+  <data name="SalesOrderCreate.Toast.EnterPriceForEveryItem" xml:space="preserve"><value>Enter a selling price for every selected item.</value></data>
   <data name="SalesOrderCreate.Toast.SelectACustomer" xml:space="preserve"><value>Select a customer.</value></data>
   <data name="SalesOrderDetail.Toast.CancelReasonIsRequired" xml:space="preserve"><value>Cancel reason is required.</value></data>
   <data name="StockAdjustments.Toast.ItemLocationQtyDeltaAndReasonAreRequired" xml:space="preserve"><value>Item, location, qty delta and reason are required.</value></data>

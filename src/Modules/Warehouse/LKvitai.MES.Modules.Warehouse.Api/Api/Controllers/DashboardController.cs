@@ -363,7 +363,7 @@ public sealed class DashboardController : ControllerBase
 
         return Ok(new DashboardOverviewDto
         {
-            TotalStockValue = decimal.Round(totalValue, 2, MidpointRounding.AwayFromZero),
+            TotalStockValue = completeCost ? decimal.Round(totalValue, 2, MidpointRounding.AwayFromZero) : null,
             TotalStockCostValue = completeCost ? decimal.Round(totalValue, 2, MidpointRounding.AwayFromZero) : null,
             TotalStockSaleValue = completeSale ? decimal.Round(totalSaleValue, 2, MidpointRounding.AwayFromZero) : null,
             TotalSKUs = bySku.Count(x => x.OnHandQty > 0m),
@@ -381,40 +381,38 @@ public sealed class DashboardController : ControllerBase
         [FromQuery] string? warehouseId,
         CancellationToken cancellationToken)
     {
-        List<(string Category, decimal Value)> rows;
+        await using var querySession = _documentStore.QuerySession();
+        IQueryable<AvailableStockView> stockQuery = querySession.Query<AvailableStockView>()
+            .Where(x => x.OnHandQty > 0m);
+        if (!string.IsNullOrWhiteSpace(warehouseId))
+            stockQuery = stockQuery.Where(x => x.WarehouseId == warehouseId);
 
-        if (string.IsNullOrWhiteSpace(warehouseId))
-        {
-            var groupedQuery = _dbContext.OnHandValues
-                .AsNoTracking()
-                .GroupBy(x => x.CategoryName ?? "Uncategorized")
-                .Select(g => new { Category = g.Key, Value = g.Sum(x => x.TotalValue) });
-            var grouped = await EntityFrameworkQueryableExtensions.ToListAsync(groupedQuery, cancellationToken);
+        var stockRows = await Marten.QueryableExtensions.ToListAsync(stockQuery, cancellationToken);
+        var qtyBySku = stockRows
+            .GroupBy(x => x.SKU, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.Sum(x => x.OnHandQty), StringComparer.OrdinalIgnoreCase);
+        if (qtyBySku.Count == 0) return Ok(Array.Empty<CategoryValueDto>());
 
-            rows = grouped.Select(x => (x.Category, x.Value)).ToList();
-        }
-        else
-        {
-            await using var querySession = _documentStore.QuerySession();
-            var stockRows = await Marten.QueryableExtensions.ToListAsync(
-                querySession.Query<AvailableStockView>().Where(x => x.WarehouseId == warehouseId && x.OnHandQty > 0m),
-                cancellationToken);
+        var priceBySku = (await _prices.GetAsync([], qtyBySku.Keys.ToArray(), cancellationToken))
+            .ToDictionary(x => x.Sku, StringComparer.OrdinalIgnoreCase);
+        if (qtyBySku.Keys.Any(sku => !priceBySku.TryGetValue(sku, out var price) || !price.EffectiveCost.HasValue))
+            return Ok(Array.Empty<CategoryValueDto>());
 
-            var qtyBySku = stockRows
-                .GroupBy(x => x.SKU, StringComparer.OrdinalIgnoreCase)
-                .ToDictionary(g => g.Key, g => g.Sum(x => x.OnHandQty), StringComparer.OrdinalIgnoreCase);
+        var normalizedSkus = qtyBySku.Keys.Select(x => x.ToLowerInvariant()).ToArray();
+        var categories = await EntityFrameworkQueryableExtensions.ToListAsync(
+            _dbContext.Items.AsNoTracking()
+                .Where(x => normalizedSkus.Contains(x.InternalSKU.ToLower()))
+                .Select(x => new { x.InternalSKU, CategoryName = x.Category == null ? "Uncategorized" : x.Category.Name }),
+            cancellationToken);
+        var categoryBySku = categories.ToDictionary(x => x.InternalSKU, x => x.CategoryName, StringComparer.OrdinalIgnoreCase);
 
-            var skuList = qtyBySku.Keys.ToList();
-            var valuationsQuery = _dbContext.OnHandValues
-                .AsNoTracking()
-                .Where(x => skuList.Contains(x.ItemSku));
-            var valuations = await EntityFrameworkQueryableExtensions.ToListAsync(valuationsQuery, cancellationToken);
-
-            rows = valuations
-                .GroupBy(x => x.CategoryName ?? "Uncategorized")
-                .Select(g => (g.Key, g.Sum(x => qtyBySku.GetValueOrDefault(x.ItemSku) * x.UnitCost)))
-                .ToList();
-        }
+        var rows = qtyBySku
+            .Select(x => (
+                Category: categoryBySku.GetValueOrDefault(x.Key) ?? "Uncategorized",
+                Value: ItemPriceResolver.Value(x.Value, priceBySku[x.Key].EffectiveCost)!.Value))
+            .GroupBy(x => x.Category)
+            .Select(g => (Category: g.Key, Value: g.Sum(x => x.Value)))
+            .ToList();
 
         var total = rows.Sum(x => x.Value);
         var ordered = rows.Where(x => x.Value > 0m).OrderByDescending(x => x.Value).ToList();
@@ -459,7 +457,9 @@ public sealed class DashboardController : ControllerBase
             .ToDictionary(
                 g => g.Key,
                 g => (
-                    Value: g.Sum(x => (priceBySku.TryGetValue(x.SKU, out var price) ? ItemPriceResolver.Value(x.OnHandQty, price.EffectiveCost) : null) ?? 0m),
+                    Value: g.All(x => priceBySku.TryGetValue(x.SKU, out var price) && price.EffectiveCost.HasValue)
+                        ? g.Sum(x => ItemPriceResolver.Value(x.OnHandQty, priceBySku[x.SKU].EffectiveCost)!.Value)
+                        : (decimal?)null,
                     Qty: g.Sum(x => x.OnHandQty)),
                 StringComparer.OrdinalIgnoreCase);
 
@@ -467,9 +467,10 @@ public sealed class DashboardController : ControllerBase
             .Select(w =>
             {
                 var (value, qty) = byWarehouse.GetValueOrDefault(w.Code, (0m, 0m));
-                return new WarehouseValueDto(w.Code, w.Name, decimal.Round(value, 2, MidpointRounding.AwayFromZero), qty);
+                return new WarehouseValueDto(w.Code, w.Name,
+                    value.HasValue ? decimal.Round(value.Value, 2, MidpointRounding.AwayFromZero) : null, qty);
             })
-            .OrderByDescending(x => x.Value)
+            .OrderByDescending(x => x.Value ?? -1m)
             .ToList();
 
         return Ok(result);
@@ -944,7 +945,7 @@ public sealed record WarehouseOptionDto(string Code, string Name);
 
 public sealed record DashboardOverviewDto
 {
-    public decimal TotalStockValue { get; init; }
+    public decimal? TotalStockValue { get; init; }
     public decimal? TotalStockCostValue { get; init; }
     public decimal? TotalStockSaleValue { get; init; }
     public int TotalSKUs { get; init; }
@@ -958,7 +959,7 @@ public sealed record DashboardOverviewDto
 
 public sealed record CategoryValueDto(string CategoryName, decimal Value, decimal Percent);
 
-public sealed record WarehouseValueDto(string WarehouseCode, string WarehouseName, decimal Value, decimal Quantity);
+public sealed record WarehouseValueDto(string WarehouseCode, string WarehouseName, decimal? Value, decimal Quantity);
 
 public sealed record LowStockResponseDto(IReadOnlyList<LowStockItemDto> Items, int TotalCount);
 

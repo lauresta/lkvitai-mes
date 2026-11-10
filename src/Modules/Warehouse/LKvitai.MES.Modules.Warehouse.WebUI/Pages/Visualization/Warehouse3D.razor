@@ -183,7 +183,7 @@
                     @if (!string.IsNullOrWhiteSpace(_itemSearchResolvedSku))
                     {
                         <span class="viz-ctx-sku">@_itemSearchResolvedSku</span>
-                        <span class="is-money is-num">@L["Pricing.Cost"]: @Money.Format(_priceMap.Get(null, _itemSearchResolvedSku)?.EffectiveCost)</span>
+                        <span class="is-money is-num">@L["Pricing.Cost"]: @Money.FormatUnit(_priceMap.Get(null, _itemSearchResolvedSku)?.EffectiveCost)</span>
                         <span class="is-money is-num">@L["Pricing.Sale"]: @Money.Format(_priceMap.Get(null, _itemSearchResolvedSku)?.BasePrice)</span>
                     }
                 </span>
@@ -507,7 +507,7 @@
                                 <li class="list-group-item d-flex justify-content-between gap-2">
                                     <span>@hu.Lpn (@hu.Sku)</span>
                                     <span class="mono">@hu.Qty</span>
-                                    <span class="is-money is-num" title="@L["Pricing.Cost"]">@Money.Format(_priceMap.Get(null, hu.Sku)?.EffectiveCost)</span>
+                                    <span class="is-money is-num" title="@L["Pricing.Cost"]">@Money.FormatUnit(_priceMap.Get(null, hu.Sku)?.EffectiveCost)</span>
                                     <span class="is-money is-num" title="@L["Pricing.Sale"]">@Money.Format(_priceMap.Get(null, hu.Sku)?.BasePrice)</span>
                                 </li>
                             }

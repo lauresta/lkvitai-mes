@@ -76,7 +76,7 @@
                                 <td>@row.ItemName</td>
                                 <td>@(row.LotNumber ?? "-")</td>
                                 <td>@row.Qty.ToString("0.##")</td>
-                                <td class="text-end is-money is-num">@Money.Format(_priceMap.Get(row.ItemId, row.ItemSku)?.EffectiveCost)</td>
+                                <td class="text-end is-money is-num">@Money.FormatUnit(_priceMap.Get(row.ItemId, row.ItemSku)?.EffectiveCost)</td>
                                 <td class="text-end is-money is-num">@Money.Format(_priceMap.Get(row.ItemId, row.ItemSku)?.BasePrice)</td>
                                 <td>@row.BaseUoM</td>
                                 <td>

@@ -134,7 +134,7 @@
                             <CellTemplate><span class="is-num"><strong>@FormatQty(context.Item.AvailableQty)</strong></span></CellTemplate>
                         </TemplateColumn>
                         <TemplateColumn Title="@L["Pricing.Cost"]">
-                            <CellTemplate><span class="is-money is-num">@FormatMoney(context.Item.UnitCost)</span></CellTemplate>
+                            <CellTemplate><span class="is-money is-num">@Money.FormatUnit(context.Item.UnitCost)</span></CellTemplate>
                         </TemplateColumn>
                         <TemplateColumn Title="@L["Pricing.Sale"]">
                             <CellTemplate><span class="is-money is-num">@FormatMoney(context.Item.BasePrice)</span></CellTemplate>
@@ -182,7 +182,7 @@
                             <div class="stock-list-row__qty">
                                 <div>@L["AvailableStock.OnHand"] <span class="@GetQtyClass(row.PhysicalQty)">@FormatQty(row.PhysicalQty)</span></div>
                                 <div>@L["AvailableStock.Available"] <strong class="mono">@FormatQty(row.AvailableQty)</strong></div>
-                                <div>@L["Pricing.Cost"]: <span class="is-money is-num">@FormatMoney(row.UnitCost)</span></div>
+                                <div>@L["Pricing.Cost"]: <span class="is-money is-num">@Money.FormatUnit(row.UnitCost)</span></div>
                                 <div>@L["Pricing.Sale"]: <span class="is-money is-num">@FormatMoney(row.BasePrice)</span></div>
                                 <div>@L["Common.Value2139d7"] <span class="is-money is-num">@FormatMoney(row.TotalValue)</span></div>
                             </div>
@@ -228,7 +228,7 @@
                                 <div>@row.WarehouseId / @row.Location</div>
                                 <div>@L["AvailableStock.OnHand"] <span class="mono">@FormatQty(row.PhysicalQty)</span></div>
                                 <div>@L["AvailableStock.Available"] <strong class="mono">@FormatQty(row.AvailableQty)</strong></div>
-                                <div>@L["Pricing.Cost"]: <span class="is-money is-num">@FormatMoney(row.UnitCost)</span></div>
+                                <div>@L["Pricing.Cost"]: <span class="is-money is-num">@Money.FormatUnit(row.UnitCost)</span></div>
                                 <div>@L["Pricing.Sale"]: <span class="is-money is-num">@FormatMoney(row.BasePrice)</span></div>
                                 <div>@L["Common.Value2139d7"] <span class="is-money is-num">@FormatMoney(row.TotalValue)</span></div>
                             </div>

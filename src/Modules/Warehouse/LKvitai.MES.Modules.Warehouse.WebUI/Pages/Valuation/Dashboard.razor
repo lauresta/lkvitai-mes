@@ -98,7 +98,7 @@
                         <tr>
                             <td><span class="sku-link" role="button" @onclick="() => OpenItem(row.ItemId)">@row.ItemSku</span> - @row.ItemName</td>
                             <td class="text-end">@row.Qty.ToString("0.###", CultureInfo.InvariantCulture)</td>
-                            <td class="text-end is-money is-num">@Money.Format(row.UnitCost)</td>
+                            <td class="text-end is-money is-num">@Money.FormatUnit(row.UnitCost)</td>
                             <td class="text-end is-money is-num">@Money.Format(_priceMap.Get(row.ItemId, row.ItemSku)?.BasePrice)</td>
                             <td class="text-end is-money is-num">@Money.Format(row.TotalValue)</td>
                         </tr>

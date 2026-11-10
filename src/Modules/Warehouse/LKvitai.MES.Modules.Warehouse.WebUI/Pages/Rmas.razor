@@ -84,7 +84,7 @@
                                 <td><span class="badge @GetStatusClass(row.Status)">@WarehouseStatusText.Get(L, row.Status)</span></td>
                                 <td>@row.Reason</td>
                                 <td class="mono">@string.Join(", ", row.Lines.Select(x => x.ItemId))</td>
-                                <td class="text-end is-money is-num">@string.Join(" / ", row.Lines.Select(x => Money.Format(_priceMap.Get(x.ItemId, null)?.EffectiveCost)))</td>
+                                <td class="text-end is-money is-num">@string.Join(" / ", row.Lines.Select(x => Money.FormatUnit(_priceMap.Get(x.ItemId, null)?.EffectiveCost)))</td>
                                 <td class="text-end is-money is-num">@string.Join(" / ", row.Lines.Select(x => Money.Format(_priceMap.Get(x.ItemId, null)?.BasePrice)))</td>
                                 <td class="text-end is-money is-num">@Money.Format(RmaValue(row))</td>
                                 <td>@(row.CreditAmount?.ToString("0.00") ?? "-")</td>
@@ -137,8 +137,10 @@
 
     private decimal? RmaValue(RmaDto row)
     {
-        var values = row.Lines.Select(x => _priceMap.Value(x.Qty, x.ItemId, null)).Where(x => x.HasValue).ToList();
-        return values.Count == 0 ? null : values.Sum(x => x!.Value);
+        var values = row.Lines.Select(x => _priceMap.Value(x.Qty, x.ItemId, null)).ToList();
+        return values.Count > 0 && values.All(x => x.HasValue)
+            ? values.Sum(x => x!.Value)
+            : null;
     }
 
     private async Task CreateAsync()

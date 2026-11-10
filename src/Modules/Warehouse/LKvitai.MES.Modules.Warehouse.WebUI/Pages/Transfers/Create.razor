@@ -96,7 +96,7 @@
                                 <td>
                                     <input type="number" min="0.01" step="0.01" class="form-control" @bind="line.Qty" />
                                 </td>
-                                <td class="mono">@Money.Format(_priceMap.Get(line.ItemId, null)?.EffectiveCost)</td>
+                                <td class="mono">@Money.FormatUnit(_priceMap.Get(line.ItemId, null)?.EffectiveCost)</td>
                                 <td class="mono">@Money.Format(_priceMap.Get(line.ItemId, null)?.BasePrice)</td>
                                 <td class="mono">@Money.Format(_priceMap.Value(line.Qty, line.ItemId, null))</td>
                                 <td>

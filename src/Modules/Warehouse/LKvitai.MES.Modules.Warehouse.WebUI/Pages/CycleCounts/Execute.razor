@@ -36,7 +36,7 @@
                             <tr>
                                 <td class="mono">@line.ItemId</td>
                                 <td class="mono">@line.Delta.ToString("0.###")</td>
-                                <td class="mono">@Money.Format(_priceMap.Get(line.ItemId, null)?.EffectiveCost)</td>
+                                <td class="mono">@Money.FormatUnit(_priceMap.Get(line.ItemId, null)?.EffectiveCost)</td>
                                 <td class="mono">@Money.Format(_priceMap.Get(line.ItemId, null)?.BasePrice)</td>
                                 <td class="mono">@Money.Format(_priceMap.Value(line.Delta, line.ItemId, null))</td>
                             </tr>

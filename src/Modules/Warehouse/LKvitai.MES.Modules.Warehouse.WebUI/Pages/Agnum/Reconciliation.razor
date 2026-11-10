@@ -99,7 +99,7 @@
                             <td class="text-end">
                                 <span class="@GetDeltaChipClass(row.Delta)">@row.Delta.ToString("0.###")</span>
                             </td>
-                            <td class="text-end is-money is-num">@Money.Format(_priceMap.Get(null, row.Sku)?.EffectiveCost)</td>
+                            <td class="text-end is-money is-num">@Money.FormatUnit(_priceMap.Get(null, row.Sku)?.EffectiveCost)</td>
                             <td class="text-end is-money is-num">@Money.Format(_priceMap.Get(null, row.Sku)?.BasePrice)</td>
                             <td class="text-end is-money is-num">@Money.Format(_priceMap.Value(row.Delta, null, row.Sku))</td>
                             <td><span class="@GetStatusChipClass(row.Status)">@WarehouseStatusText.Get(L, row.Status)</span></td>

@@ -93,7 +93,7 @@
                                 </td>
                                 <td>@(line.PrimaryBarcode ?? "-")</td>
                                 <td>@line.Qty</td>
-                                <td class="text-end is-money is-num">@Money.Format(_priceMap.Get(line.ItemId, line.ItemSku)?.EffectiveCost)</td>
+                                <td class="text-end is-money is-num">@Money.FormatUnit(_priceMap.Get(line.ItemId, line.ItemSku)?.EffectiveCost)</td>
                                 <td class="text-end is-money is-num">@Money.Format(salePrice)</td>
                                 <td class="text-end is-money is-num">@Money.Format(salePrice * line.Qty)</td>
                                 <td>@line.PickedQty</td>

@@ -82,7 +82,7 @@
                                 <td>@row.CrossDockNumber</td>
                                 <td>@row.ItemId</td>
                                 <td>@row.Qty</td>
-                                <td class="text-end is-money is-num">@Money.Format(_priceMap.Get(row.ItemId, null)?.EffectiveCost)</td>
+                                <td class="text-end is-money is-num">@Money.FormatUnit(_priceMap.Get(row.ItemId, null)?.EffectiveCost)</td>
                                 <td class="text-end is-money is-num">@Money.Format(_priceMap.Get(row.ItemId, null)?.BasePrice)</td>
                                 <td class="text-end is-money is-num">@Money.Format(_priceMap.Value(row.Qty, row.ItemId, null))</td>
                                 <td><span class="badge bg-secondary">@WarehouseStatusText.Get(L, row.Status)</span></td>

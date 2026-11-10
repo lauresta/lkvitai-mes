@@ -164,7 +164,7 @@
                             <td class="is-num">
                                 <span class="@GetDeltaChipClass(row.QtyDelta)">@FormatDelta(row.QtyDelta)</span>
                             </td>
-                            <td class="is-money is-num">@Money.Format(_priceMap.Get(row.ItemId, row.ItemSku)?.EffectiveCost)</td>
+                            <td class="is-money is-num">@Money.FormatUnit(_priceMap.Get(row.ItemId, row.ItemSku)?.EffectiveCost)</td>
                             <td class="is-money is-num">@Money.Format(_priceMap.Get(row.ItemId, row.ItemSku)?.BasePrice)</td>
                             <td class="is-money is-num">@Money.Format(_priceMap.Value(row.QtyDelta, row.ItemId, row.ItemSku))</td>
                             <td><span class="chip chip--slate">@row.ReasonCode</span></td>

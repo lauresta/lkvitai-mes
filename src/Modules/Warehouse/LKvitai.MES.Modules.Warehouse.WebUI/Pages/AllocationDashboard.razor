@@ -46,7 +46,7 @@
                             <tr>
                                 <td><a href="@($"/warehouse/sales/orders/{order.Id}")">@order.OrderNumber</a></td>
                                 <td>@order.CustomerName</td>
-                                <td>@order.TotalAmount.ToString("0.00")</td>
+                                <td class="is-money is-num">@Money.Format(order.TotalAmount)</td>
                                 <td>@order.OrderDate.ToString("yyyy-MM-dd HH:mm")</td>
                                 <td>
                                     <button class="btn btn-sm btn-warning"
@@ -92,7 +92,7 @@
                                 <td><a href="@($"/warehouse/sales/orders/{order.Id}")">@order.OrderNumber</a></td>
                                 <td>@order.CustomerName</td>
                                 <td>@order.Lines.Count</td>
-                                <td>@order.TotalAmount.ToString("0.00")</td>
+                                <td class="is-money is-num">@Money.Format(order.TotalAmount)</td>
                                 <td>
                                     <button class="btn btn-sm btn-outline-secondary" @onclick="() => OpenOrder(order.Id)">
                                         @L["Common.View"]
@@ -138,7 +138,7 @@
                                 <td><a href="@($"/warehouse/sales/orders/{order.Id}")">@order.OrderNumber</a></td>
                                 <td>@order.CustomerName</td>
                                 <td>@(order.ReservationId?.ToString() ?? "-")</td>
-                                <td>@order.TotalAmount.ToString("0.00")</td>
+                                <td class="is-money is-num">@Money.Format(order.TotalAmount)</td>
                                 <td>
                                     <button class="btn btn-sm btn-primary"
                                             @onclick="() => ReleaseAsync(order.Id, order.OrderNumber)"

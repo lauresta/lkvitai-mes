@@ -74,7 +74,7 @@
 
                 @if (_suggestionItemId.HasValue)
                 {
-                    <div class="small text-muted mt-2">@L["Pricing.Cost"] <span class="is-money is-num">@Money.Format(_priceMap.Get(_suggestionItemId, null)?.EffectiveCost)</span> · @L["Pricing.Sale"] <span class="is-money is-num">@Money.Format(_priceMap.Get(_suggestionItemId, null)?.BasePrice)</span></div>
+                    <div class="small text-muted mt-2">@L["Pricing.Cost"] <span class="is-money is-num">@Money.FormatUnit(_priceMap.Get(_suggestionItemId, null)?.EffectiveCost)</span> · @L["Pricing.Sale"] <span class="is-money is-num">@Money.Format(_priceMap.Get(_suggestionItemId, null)?.BasePrice)</span></div>
                 }
 
                 @if (_suggestions.Count > 0)
