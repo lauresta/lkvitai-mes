@@ -1,5 +1,6 @@
 using LKvitai.MES.BuildingBlocks.WebUI.Localization;
 using System.Net.Http.Headers;
+using System.Security.Claims;
 using LKvitai.MES.BuildingBlocks.PortalAuth;
 using LKvitai.MES.BuildingBlocks.WebUI.Services;
 using LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure;
@@ -100,6 +101,21 @@ app.UseWarehouseDevAuth();
 app.UseAuthorization();
 
 app.MapGet("/health", () => Results.Ok());
+
+// Temporary test-only bridge for repairing QA stock projections. The API proof
+// stays server-side in WarehouseApiAuthHandler and never reaches the browser.
+app.MapPost("/qa/rebuild-stock", async (HttpContext context, IHttpClientFactory factory,
+    IHostEnvironment environment, CancellationToken cancellationToken) =>
+{
+    if (!environment.IsEnvironment("Test") ||
+        context.User.FindFirstValue(ClaimTypes.NameIdentifier) != WarehouseQaProof.UserId)
+        return Results.NotFound();
+
+    using var response = await factory.CreateClient("WarehouseApi").PostAsync(
+        "/api/warehouse/v1/admin/projections/qa-rebuild-stock", null, cancellationToken);
+    var body = await response.Content.ReadAsStringAsync(cancellationToken);
+    return Results.Content(body, "application/json", statusCode: (int)response.StatusCode);
+});
 
 app.MapPortalLogout();
 
