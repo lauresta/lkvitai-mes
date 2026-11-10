@@ -25,6 +25,7 @@ services:
       PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
       ConnectionStrings__WarehouseDb: "Host=pg;Port=5432;Database=${TEST_DB_NAME:-lkvitai_warehouse_test};Username=${TEST_DB_USER:-postgres};Password=${TEST_DB_PASSWORD}"
       SkipSchemaValidation: "true"
+      WarehouseQa__Enabled: "${WAREHOUSE_QA_ENABLED:-false}"
       Caching__RedisConnectionString: "redis:6379,abortConnect=false,connectRetry=3,connectTimeout=1000,syncTimeout=1000"
       ITEMIMAGES__ENDPOINT: "${ITEMIMAGES__ENDPOINT}"
       ITEMIMAGES__BUCKET: "${ITEMIMAGES__BUCKET}"
@@ -65,6 +66,8 @@ services:
       PathBase: "/warehouse"
       PortalAuth__LoginBasePath: "/portal"
       PortalAuth__DataProtectionKeysPath: "/app/auth-keys"
+      WarehouseQa__Key: "${WAREHOUSE_QA_KEY:-}"
+      WarehouseQa__ExpiresAtUtc: "${WAREHOUSE_QA_EXPIRES_AT_UTC:-}"
       Clarity__ProjectId: "${CLARITY_PROJECT_ID:-}"
     volumes:
       - ${AUTH_KEYS_DIR:-/opt/lkvitai-mes/auth-keys}:/app/auth-keys
