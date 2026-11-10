@@ -1132,10 +1132,11 @@
   <data name="Valuation.Dashboard.NoOnHandValueRows" xml:space="preserve"><value>Nėra turimų verčių eilučių</value></data>
   <data name="Valuation.Dashboard.NoValuationRowsWereReturned" xml:space="preserve"><value>Vertinimo eilučių negrąžinta.</value></data>
   <data name="Valuation.Dashboard.OldCost" xml:space="preserve"><value>Senoji kaina</value></data>
-  <data name="Valuation.Dashboard.OnHandValueReport" xml:space="preserve"><value>Turimos vertės ataskaita</value></data>
+  <data name="Valuation.Dashboard.OnHandValueReport" xml:space="preserve"><value>Atsargų vertinimo registras</value></data>
   <data name="Valuation.Dashboard.PendingApprovals" xml:space="preserve"><value>Laukiama patvirtinimų</value></data>
   <data name="Valuation.Dashboard.RecentCostChanges7d" xml:space="preserve"><value>Naujausi mokesčių pakeitimai (7 d.)</value></data>
-  <data name="Valuation.Dashboard.TotalOnHandValue" xml:space="preserve"><value>Bendra turima vertė</value></data>
+  <data name="Valuation.Dashboard.RegisterOnlyNote" xml:space="preserve"><value>Atsargos be vertinimo įrašo neįtraukiamos.</value></data>
+  <data name="Valuation.Dashboard.TotalOnHandValue" xml:space="preserve"><value>Įvertintų atsargų suma</value></data>
   <data name="Valuation.Dashboard.ValuationDashboard" xml:space="preserve"><value>Vertinimo prietaisų skydelis</value></data>
   <data name="Valuation.WriteDown.NewValue" xml:space="preserve"><value>Nauja vertė</value></data>
   <data name="Valuation.WriteDown.WriteDownInventoryValue" xml:space="preserve"><value>Užsirašykite atsargų vertę</value></data>

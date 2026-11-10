@@ -171,7 +171,9 @@ public sealed class StockController : ControllerBase
                 row.BaseUoM ?? item?.BaseUoM ?? string.Empty,
                 row.LastUpdated,
                 item?.CategoryId,
-                location?.IsVirtual ?? false,
+                location?.IsVirtual == true
+                    || code.Equals("AGNUM", StringComparison.OrdinalIgnoreCase)
+                    || code.StartsWith("IN_TRANSIT_", StringComparison.OrdinalIgnoreCase),
                 StockMetadataFilter.SplitTags(item?.Tags),
                 item is not null && primaryPhotoByItemId.TryGetValue(item.Id, out var photoUrl)
                     ? photoUrl

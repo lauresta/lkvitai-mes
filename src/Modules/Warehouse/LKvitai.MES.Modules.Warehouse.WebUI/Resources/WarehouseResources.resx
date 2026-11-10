@@ -1132,10 +1132,11 @@
   <data name="Valuation.Dashboard.NoOnHandValueRows" xml:space="preserve"><value>No on-hand value rows</value></data>
   <data name="Valuation.Dashboard.NoValuationRowsWereReturned" xml:space="preserve"><value>No valuation rows were returned.</value></data>
   <data name="Valuation.Dashboard.OldCost" xml:space="preserve"><value>Old Cost</value></data>
-  <data name="Valuation.Dashboard.OnHandValueReport" xml:space="preserve"><value>On-Hand Value Report</value></data>
+  <data name="Valuation.Dashboard.OnHandValueReport" xml:space="preserve"><value>Valuation register</value></data>
   <data name="Valuation.Dashboard.PendingApprovals" xml:space="preserve"><value>Pending Approvals</value></data>
   <data name="Valuation.Dashboard.RecentCostChanges7d" xml:space="preserve"><value>Recent Cost Changes (7d)</value></data>
-  <data name="Valuation.Dashboard.TotalOnHandValue" xml:space="preserve"><value>Total On-Hand Value</value></data>
+  <data name="Valuation.Dashboard.RegisterOnlyNote" xml:space="preserve"><value>Stock without a valuation record is excluded.</value></data>
+  <data name="Valuation.Dashboard.TotalOnHandValue" xml:space="preserve"><value>Valued stock total</value></data>
   <data name="Valuation.Dashboard.ValuationDashboard" xml:space="preserve"><value>Valuation Dashboard</value></data>
   <data name="Valuation.WriteDown.NewValue" xml:space="preserve"><value>New Value</value></data>
   <data name="Valuation.WriteDown.WriteDownInventoryValue" xml:space="preserve"><value>Write Down Inventory Value</value></data>
