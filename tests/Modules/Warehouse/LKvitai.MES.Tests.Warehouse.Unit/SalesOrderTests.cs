@@ -9,6 +9,19 @@ namespace LKvitai.MES.Tests.Warehouse.Unit;
 public sealed class SalesOrderTests
 {
     [Fact]
+    public void Allocate_AfterStockValidation_ShouldShowAllocatedLineQuantity()
+    {
+        var order = BuildOrder();
+        order.Lines.Add(new SalesOrderLine { ItemId = 1, OrderedQty = 2m, UnitPrice = 10m });
+
+        var result = order.Allocate(Guid.NewGuid());
+
+        result.IsSuccess.Should().BeTrue();
+        order.Lines.Single().AllocatedQty.Should().Be(2m);
+        order.Status.Should().Be(SalesOrderStatus.Allocated);
+    }
+
+    [Fact]
     public void Submit_FromDraft_WithoutApproval_ShouldAllocate()
     {
         var order = BuildOrder();

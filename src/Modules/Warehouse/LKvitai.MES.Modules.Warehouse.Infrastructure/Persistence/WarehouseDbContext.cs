@@ -611,11 +611,12 @@ public class WarehouseDbContext : DbContext
             entity.Property(e => e.OrderNumber)
                 .HasMaxLength(50)
                 .IsRequired()
+                .HasSentinel(string.Empty)
                 .HasDefaultValueSql("'OUT-' || LPAD(nextval('outbound_order_number_seq')::text, 4, '0')");
             entity.Property(e => e.Type).HasConversion<string>().HasMaxLength(50).IsRequired();
             entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(50).IsRequired();
             entity.Property(e => e.OrderDate).IsRequired();
-            entity.Property(e => e.RowVersion).IsRowVersion();
+            entity.Property(e => e.RowVersion).IsConcurrencyToken().ValueGeneratedNever();
             entity.Property(e => e.IsDeleted).HasDefaultValue(false);
             entity.HasIndex(e => e.OrderNumber).IsUnique();
             entity.HasIndex(e => e.Status);
@@ -666,13 +667,14 @@ public class WarehouseDbContext : DbContext
             entity.Property(e => e.ShipmentNumber)
                 .HasMaxLength(50)
                 .IsRequired()
+                .HasSentinel(string.Empty)
                 .HasDefaultValueSql("'SHIP-' || LPAD(nextval('shipment_number_seq')::text, 4, '0')");
             entity.Property(e => e.Carrier).HasConversion<string>().HasMaxLength(50).IsRequired();
             entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(50).IsRequired();
             entity.Property(e => e.TrackingNumber).HasMaxLength(200);
             entity.Property(e => e.DeliverySignature).HasMaxLength(500);
             entity.Property(e => e.DeliveryPhotoUrl).HasMaxLength(1000);
-            entity.Property(e => e.RowVersion).IsRowVersion();
+            entity.Property(e => e.RowVersion).IsConcurrencyToken().ValueGeneratedNever();
             entity.Property(e => e.IsDeleted).HasDefaultValue(false);
             entity.HasIndex(e => e.ShipmentNumber).IsUnique();
             entity.HasIndex(e => e.OutboundOrderId).IsUnique();
@@ -1683,6 +1685,13 @@ public class WarehouseDbContext : DbContext
                                  (e.State == EntityState.Added || e.State == EntityState.Modified)))
         {
             var auditable = (IAuditable)entry.Entity;
+            // These bytea columns have no database generator. Supply a fresh
+            // token on insert and update so PostgreSQL never receives NULL and
+            // EF's concurrency predicate detects concurrent changes.
+            if (entry.Entity is OutboundOrder outboundOrder)
+                outboundOrder.RowVersion = Guid.NewGuid().ToByteArray();
+            else if (entry.Entity is Shipment shipment)
+                shipment.RowVersion = Guid.NewGuid().ToByteArray();
             var action = entry.State == EntityState.Added ? "Created" : "Updated";
 
             if (entry.State == EntityState.Added)

@@ -44,6 +44,7 @@ public class AvailableStockIntegrationTests : IAsyncLifetime
 
             // Register projections the same way the app does
             opts.Projections.Add<AvailableStockProjection>(ProjectionLifecycle.Async);
+            opts.Projections.Add<LocationBalanceProjection>(ProjectionLifecycle.Async);
         });
     }
 
@@ -91,6 +92,66 @@ public class AvailableStockIntegrationTests : IAsyncLifetime
         view!.OnHandQty.Should().Be(200m);
         view.HardLockedQty.Should().Be(0m);
         view.AvailableQty.Should().Be(200m);
+    }
+
+    [SkippableFact]
+    public async Task Projection_StockMovedToNewLocation_UpdatesBothSides()
+    {
+        DockerRequirement.EnsureEnabled();
+
+        var streamKey = StockLedgerStreamId.For(WarehouseId, Location, Sku);
+        await using (var session = _store!.LightweightSession())
+        {
+            session.Events.Append(streamKey,
+                new StockMovedEvent
+                {
+                    MovementId = Guid.NewGuid(), SKU = Sku, Quantity = 10m,
+                    FromLocation = "SUPPLIER", ToLocation = Location,
+                    MovementType = "RECEIPT", OperatorId = Guid.NewGuid(), Timestamp = DateTime.UtcNow
+                },
+                new StockMovedEvent
+                {
+                    MovementId = Guid.NewGuid(), SKU = Sku, Quantity = 4m,
+                    FromLocation = Location, ToLocation = "LOC-B",
+                    MovementType = "TRANSFER", OperatorId = Guid.NewGuid(), Timestamp = DateTime.UtcNow
+                });
+            await session.SaveChangesAsync();
+        }
+
+        using var daemon = await _store!.BuildProjectionDaemonAsync();
+        await daemon.StartAllAsync();
+        await daemon.WaitForNonStaleData(TimeSpan.FromSeconds(10));
+
+        await using var query = _store.QuerySession();
+        var from = await query.LoadAsync<AvailableStockView>(AvailableStockView.ComputeId(WarehouseId, Location, Sku));
+        var to = await query.LoadAsync<AvailableStockView>(AvailableStockView.ComputeId(WarehouseId, "LOC-B", Sku));
+        var fromBalance = await query.LoadAsync<LocationBalanceView>($"{WarehouseId}:{Location}:{Sku}");
+        var toBalance = await query.LoadAsync<LocationBalanceView>($"{WarehouseId}:LOC-B:{Sku}");
+
+        from.Should().NotBeNull();
+        from!.OnHandQty.Should().Be(6m);
+        from.AvailableQty.Should().Be(6m);
+        to.Should().NotBeNull();
+        to!.OnHandQty.Should().Be(4m);
+        to.AvailableQty.Should().Be(4m);
+        to.Location.Should().Be("LOC-B");
+        fromBalance.Should().NotBeNull();
+        fromBalance!.Quantity.Should().Be(6m);
+        toBalance.Should().NotBeNull();
+        toBalance!.Quantity.Should().Be(4m);
+
+        await using (var corrupt = _store.LightweightSession())
+        {
+            to!.OnHandQty = 999m;
+            corrupt.Store(to);
+            await corrupt.SaveChangesAsync();
+        }
+
+        await daemon.RebuildProjectionAsync<AvailableStockView>(CancellationToken.None);
+        await using var rebuiltQuery = _store.QuerySession();
+        var repaired = await rebuiltQuery.LoadAsync<AvailableStockView>(AvailableStockView.ComputeId(WarehouseId, "LOC-B", Sku));
+        repaired.Should().NotBeNull();
+        repaired!.OnHandQty.Should().Be(4m);
     }
 
     [SkippableFact]

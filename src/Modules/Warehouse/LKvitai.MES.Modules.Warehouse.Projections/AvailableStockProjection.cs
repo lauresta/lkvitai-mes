@@ -18,26 +18,29 @@ public class AvailableStockProjection : MultiStreamProjection<AvailableStockView
         CustomGrouping(new AvailableStockGrouper());
     }
 
-    public AvailableStockView Apply(StockMovedEvent evt, AvailableStockView current)
+    // Register the persisted event with Marten; the grouper replaces it with
+    // one signed StockMovementSliceEvent per affected location.
+    public AvailableStockView Apply(StockMovedEvent _, AvailableStockView current) => current;
+
+    public AvailableStockView Create(StockMovementSliceEvent evt)
     {
-        var isFromLocation = current.Id.EndsWith($":{evt.FromLocation}:{evt.SKU}", StringComparison.Ordinal);
-        var isToLocation = current.Id.EndsWith($":{evt.ToLocation}:{evt.SKU}", StringComparison.Ordinal);
-
-        InitializeFromId(current);
-
-        if (isFromLocation)
+        var current = new AvailableStockView
         {
-            current.OnHandQty -= evt.Quantity;
-            current.LocationCode ??= evt.FromLocation;
-        }
-        else if (isToLocation)
-        {
-            current.OnHandQty += evt.Quantity;
-            current.LocationCode ??= evt.ToLocation;
-        }
+            Id = AvailableStockView.ComputeId(evt.WarehouseId, evt.Location, evt.SKU),
+            WarehouseId = evt.WarehouseId,
+            Location = evt.Location,
+            LocationCode = evt.Location,
+            SKU = evt.SKU
+        };
+        return Apply(evt, current);
+    }
 
+    public AvailableStockView Apply(StockMovementSliceEvent evt, AvailableStockView current)
+    {
+        EnsureIdentity(current, evt.WarehouseId, evt.Location, evt.SKU);
+        current.OnHandQty += evt.QuantityDelta;
         current.RecomputeAvailable();
-        current.LastUpdated = evt.Timestamp;
+        current.LastUpdated = evt.OccurredAt;
         return current;
     }
 
@@ -320,10 +323,14 @@ public class AvailableStockGrouper : IAggregateGrouper<string>
         var warehouseId = streamId.WarehouseId;
 
         var fromKey = AvailableStockView.ComputeId(warehouseId, stockMoved.FromLocation, stockMoved.SKU);
-        grouping.AddEvent(fromKey, evt);
+        grouping.AddEvent(fromKey, new ProjectedStockMovementEvent(evt,
+            new StockMovementSliceEvent(warehouseId, stockMoved.FromLocation, stockMoved.SKU,
+                -stockMoved.Quantity, stockMoved.Timestamp)));
 
         var toKey = AvailableStockView.ComputeId(warehouseId, stockMoved.ToLocation, stockMoved.SKU);
-        grouping.AddEvent(toKey, evt);
+        grouping.AddEvent(toKey, new ProjectedStockMovementEvent(evt,
+            new StockMovementSliceEvent(warehouseId, stockMoved.ToLocation, stockMoved.SKU,
+                stockMoved.Quantity, stockMoved.Timestamp)));
     }
 
     private static void GroupPickingStarted(IEvent evt, PickingStartedEvent pickingStarted, ITenantSliceGroup<string> grouping)
