@@ -46,7 +46,7 @@
         <div class="d-flex flex-wrap gap-3 text-muted small mt-3">
             <span>@L["Agnum.Balances.Rows", FilteredRows.Count]</span>
             <span>@L["Agnum.Balances.TotalQty", FilteredRows.Sum(x => x.Quantity).ToString("0.###")]</span>
-            <span>@L["Common.Value2139d7"] <span class="is-money is-num">@Money.Format(VisibleValue)</span></span>
+            <span>@L["Agnum.Balances.DisplayedValue"] <span class="is-money is-num">@Money.Format(VisibleValue)</span></span>
             <span>@L["Agnum.Balances.DistributedSummary", FilteredRows.Sum(x => x.DistributedQty).ToString("0.###")]</span>
             <span>@L["Agnum.Balances.Remaining", FilteredRows.Sum(x => x.RemainingQty).ToString("0.###")]</span>
             <span>@L["Agnum.Balances.MesPhysicalSummary", FilteredRows.Sum(x => x.MesPhysicalQty).ToString("0.###")]</span>
@@ -97,7 +97,7 @@
                             <td class="font-monospace">@row.AgnumProductId</td>
                             <td>@(row.ItemId?.ToString() ?? "-")</td>
                             <td class="text-end">@row.Quantity.ToString("0.###")</td>
-                            <td class="text-end is-money is-num">@Money.Format(_priceMap.Get(row.ItemId, row.Sku)?.EffectiveCost)</td>
+                            <td class="text-end is-money is-num">@Money.FormatUnit(_priceMap.Get(row.ItemId, row.Sku)?.EffectiveCost)</td>
                             <td class="text-end is-money is-num">@Money.Format(_priceMap.Get(row.ItemId, row.Sku)?.BasePrice)</td>
                             <td class="text-end is-money is-num">@Money.Format(_priceMap.Value(row.Quantity, row.ItemId, row.Sku))</td>
                             <td class="text-end">@row.DistributedQty.ToString("0.###")</td>
@@ -261,10 +261,12 @@
     {
         get
         {
-            var values = FilteredRows.Take(500)
-                .Select(x => _priceMap.Value(x.Quantity, x.ItemId, x.Sku))
-                .Where(x => x.HasValue).ToList();
-            return values.Count == 0 ? null : values.Sum(x => x!.Value);
+            var rows = FilteredRows.Take(500).ToList();
+            if (rows.Count == 0) return null;
+
+            var values = rows.Where(x => x.Quantity != 0m)
+                .Select(x => _priceMap.Value(x.Quantity, x.ItemId, x.Sku)).ToList();
+            return values.All(x => x.HasValue) ? values.Sum(x => x!.Value) : null;
         }
     }
 

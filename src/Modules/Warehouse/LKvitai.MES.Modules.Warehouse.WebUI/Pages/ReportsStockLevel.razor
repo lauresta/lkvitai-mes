@@ -103,7 +103,7 @@
                             <td>@row.Qty</td>
                             <td>@row.ReservedQty</td>
                             <td>@row.AvailableQty</td>
-                            <td class="text-end is-money is-num">@Money.Format(row.UnitCost)</td>
+                            <td class="text-end is-money is-num">@Money.FormatUnit(row.UnitCost)</td>
                             <td class="text-end is-money is-num">@Money.Format(row.BasePrice)</td>
                             <td class="text-end is-money is-num">@Money.Format(row.TotalValue)</td>
                         </tr>

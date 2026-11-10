@@ -140,7 +140,7 @@
                                     <tr>
                                         <td>@line.SKU</td>
                                         <td>@line.RequestedQty</td>
-                                        <td class="text-end is-money is-num">@Money.Format(_priceMap.Get(null, line.SKU)?.EffectiveCost)</td>
+                                        <td class="text-end is-money is-num">@Money.FormatUnit(_priceMap.Get(null, line.SKU)?.EffectiveCost)</td>
                                         <td class="text-end is-money is-num">@Money.Format(_priceMap.Get(null, line.SKU)?.BasePrice)</td>
                                         <td class="text-end is-money is-num">@Money.Format(_priceMap.Value(line.RequestedQty, null, line.SKU))</td>
                                         <td>@line.AllocatedQty</td>

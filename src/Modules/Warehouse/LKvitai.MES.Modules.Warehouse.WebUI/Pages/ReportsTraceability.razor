@@ -63,7 +63,7 @@
                             <div class="fw-semibold">@L["ReportsTraceability.Lot", entry.Lot.LotNumber]</div>
                             <div class="small text-muted">@entry.Lot.ItemSku - @entry.Lot.ItemName</div>
                             <div class="small">
-                                @L["Pricing.Cost"]: <span class="is-money is-num">@Money.Format(_priceMap.Get(null, entry.Lot.ItemSku)?.EffectiveCost)</span>
+                                @L["Pricing.Cost"]: <span class="is-money is-num">@Money.FormatUnit(_priceMap.Get(null, entry.Lot.ItemSku)?.EffectiveCost)</span>
                                 &middot; @L["Pricing.Sale"]: <span class="is-money is-num">@Money.Format(_priceMap.Get(null, entry.Lot.ItemSku)?.BasePrice)</span>
                             </div>
                         </div>

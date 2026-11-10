@@ -100,7 +100,7 @@
                                 <td>@order.CustomerName</td>
                                 <td><span class="badge @GetStatusBadgeClass(order.Status)">@WarehouseStatusText.Get(L, order.Status)</span></td>
                                 <td>@order.Lines.Count</td>
-                                <td>@order.TotalAmount.ToString("0.00")</td>
+                                <td class="is-money is-num">@Money.Format(order.TotalAmount)</td>
                                 <td>@FormatDate(order.OrderDate)</td>
                                 <td>@FormatDate(order.RequestedDeliveryDate)</td>
                                 <td>

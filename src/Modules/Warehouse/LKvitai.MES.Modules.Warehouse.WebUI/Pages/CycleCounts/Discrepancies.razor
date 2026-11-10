@@ -57,7 +57,7 @@
                                 <td>@row.PhysicalQty</td>
                                 <td>@row.Variance</td>
                                 <td>@row.VariancePercent%</td>
-                                <td class="mono">@Money.Format(_priceMap.Get(row.ItemId, null)?.EffectiveCost)</td>
+                                <td class="mono">@Money.FormatUnit(_priceMap.Get(row.ItemId, null)?.EffectiveCost)</td>
                                 <td class="mono">@Money.Format(_priceMap.Get(row.ItemId, null)?.BasePrice)</td>
                                 <td class="mono">@Money.Format(_priceMap.Value(row.Variance, row.ItemId, null))</td>
                                 <td>

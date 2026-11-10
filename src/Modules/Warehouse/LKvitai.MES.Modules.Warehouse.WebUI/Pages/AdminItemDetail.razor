@@ -192,7 +192,7 @@
         {
             <div class="items-detail-fields">
                 <AdminItemFieldBlock Label="@L["AdminItemDetail.OnHandQty"]" Value="@_onHandValue.Qty.ToString("0.##")" IsMono="true" />
-                <AdminItemFieldBlock Label="@L["AdminItemDetail.CurrentUnitCostWAC"]" Value="@FormatMoney(_onHandValue.UnitCost)" IsMono="true" />
+                <AdminItemFieldBlock Label="@L["AdminItemDetail.CurrentUnitCostWAC"]" Value="@Money.FormatUnit(_onHandValue.UnitCost)" IsMono="true" />
                 <AdminItemFieldBlock Label="@L["Common.TotalValue"]" Value="@FormatMoney(_onHandValue.TotalValue)" IsMono="true" />
                 <AdminItemFieldBlock Label="@L["AdminItemDetail.AsOf"]" Value="@FormatDateTime(_onHandValue.LastUpdated)" IsMono="true" />
             </div>

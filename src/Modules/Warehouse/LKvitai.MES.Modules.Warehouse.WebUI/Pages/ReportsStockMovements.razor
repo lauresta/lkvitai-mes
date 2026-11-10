@@ -101,7 +101,7 @@
                                 <td>@(row.FromLocationCode ?? "-")</td>
                                 <td>@(row.ToLocationCode ?? "-")</td>
                                 <td>@row.Qty.ToString("0.##") @row.BaseUoM</td>
-                                <td class="text-end is-money is-num">@Money.Format(row.UnitCost)</td>
+                                <td class="text-end is-money is-num">@Money.FormatUnit(row.UnitCost)</td>
                                 <td class="text-end is-money is-num">@Money.Format(_priceMap.Get(row.ItemId, row.ItemSku)?.BasePrice)</td>
                                 <td class="text-end is-money is-num">@Money.Format(row.Value)</td>
                                 <td>@(row.Operator ?? "-")</td>

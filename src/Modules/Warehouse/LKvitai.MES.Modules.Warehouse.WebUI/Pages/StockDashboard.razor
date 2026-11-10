@@ -159,9 +159,9 @@
                                         <td>@row.InternalSku</td>
                                         <td>@row.LocationCode</td>
                                         <td>@row.AvailableQty.ToString("0.##")</td>
-                                        <td class="text-end is-money is-num">@Money.Format(row.UnitCost)</td>
+                                        <td class="text-end is-money is-num">@Money.FormatUnit(row.UnitCost)</td>
                                         <td class="text-end is-money is-num">@Money.Format(row.BasePrice)</td>
-                                        <td class="text-end is-money is-num">@Money.Format(row.TotalValue)</td>
+                                        <td class="text-end is-money is-num">@Money.Format(AvailableCostValue(row))</td>
                                         <td>
                                             <span class="badge @(row.AvailableQty <= _lowStockThreshold / 2m ? "bg-danger" : "bg-warning text-dark")">
                                                 @(row.AvailableQty <= _lowStockThreshold / 2m ? L["StockDashboard.Critical"] : L["StockDashboard.Low"])
@@ -212,9 +212,9 @@
                                         <td>@row.ExpiryDate?.ToString("yyyy-MM-dd")</td>
                                         <td>@row.AvailableQty.ToString("0.##")</td>
                                         <td>@row.LocationCode</td>
-                                        <td class="text-end is-money is-num">@Money.Format(row.UnitCost)</td>
+                                        <td class="text-end is-money is-num">@Money.FormatUnit(row.UnitCost)</td>
                                         <td class="text-end is-money is-num">@Money.Format(row.BasePrice)</td>
-                                        <td class="text-end is-money is-num">@Money.Format(row.TotalValue)</td>
+                                        <td class="text-end is-money is-num">@Money.Format(AvailableCostValue(row))</td>
                                     </tr>
                                 }
                             }
@@ -244,6 +244,11 @@
                 || x.ItemName.Contains(_itemSearch, StringComparison.OrdinalIgnoreCase))
             .ToList();
 
+    private static decimal? AvailableCostValue(StockLevelRowDto row)
+        => row.UnitCost.HasValue
+            ? decimal.Round(row.AvailableQty * row.UnitCost.Value, 2, MidpointRounding.AwayFromZero)
+            : null;
+
     private IReadOnlyList<LocationSummary> LocationSummaries
     {
         get
@@ -255,7 +260,7 @@
                     LocationCode = g.Key,
                     ItemCount = g.Select(x => x.ItemId).Distinct().Count(),
                     TotalQty = g.Sum(x => x.AvailableQty),
-                    TotalValue = g.All(x => x.TotalValue.HasValue) ? g.Sum(x => x.TotalValue!.Value) : (decimal?)null,
+                    TotalValue = g.All(x => x.UnitCost.HasValue) ? g.Sum(x => AvailableCostValue(x)!.Value) : (decimal?)null,
                     TotalSaleValue = g.All(x => x.BasePrice.HasValue)
                         ? g.Sum(x => decimal.Round(x.AvailableQty * x.BasePrice!.Value, 2, MidpointRounding.AwayFromZero))
                         : (decimal?)null
@@ -287,7 +292,8 @@
     private IReadOnlyList<StockLevelRowDto> ExpiringRows =>
         FilteredRows
             .Where(x => x.ExpiryDate.HasValue)
-            .Where(x => x.ExpiryDate!.Value <= DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(30)))
+            .Where(x => x.ExpiryDate!.Value >= DateOnly.FromDateTime(DateTime.UtcNow.Date)
+                && x.ExpiryDate.Value <= DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(30)))
             .OrderBy(x => x.ExpiryDate)
             .Take(20)
             .ToList();
@@ -321,18 +327,23 @@
 
         try
         {
-            var response = await ReportsClient.GetStockLevelAsync(
-                _itemId,
-                _locationId,
-                _categoryId,
-                includeReserved: true,
-                includeVirtualLocations: true,
-                expiringBefore: DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(30)),
-                pageNumber: 1,
-                pageSize: 500);
-
             _rows.Clear();
-            _rows.AddRange(response.Items);
+            const int pageSize = 1000;
+            for (var page = 1; ; page++)
+            {
+                var response = await ReportsClient.GetStockLevelAsync(
+                    _itemId,
+                    _locationId,
+                    _categoryId,
+                    includeReserved: true,
+                    includeVirtualLocations: true,
+                    expiringBefore: null,
+                    pageNumber: page,
+                    pageSize: pageSize);
+
+                _rows.AddRange(response.Items);
+                if (_rows.Count >= response.TotalCount || response.Items.Count == 0) break;
+            }
         }
         catch (ApiException ex)
         {
@@ -355,7 +366,7 @@
                 _categoryId,
                 includeReserved: true,
                 includeVirtualLocations: true,
-                expiringBefore: DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(30)));
+                expiringBefore: null);
 
             await JavaScript.InvokeVoidAsync(
                 "csvExport.downloadBytes",

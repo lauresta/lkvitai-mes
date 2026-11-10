@@ -3,7 +3,7 @@ namespace LKvitai.MES.Modules.Warehouse.WebUI.Models;
 public sealed record WarehouseOptionDto(string Code, string Name);
 
 public sealed record DashboardOverviewDto(
-    decimal TotalStockValue,
+    decimal? TotalStockValue,
     decimal? TotalStockCostValue,
     decimal? TotalStockSaleValue,
     int TotalSKUs,
@@ -16,7 +16,7 @@ public sealed record DashboardOverviewDto(
 
 public sealed record CategoryValueDto(string CategoryName, decimal Value, decimal Percent);
 
-public sealed record WarehouseValueDto(string WarehouseCode, string WarehouseName, decimal Value, decimal Quantity);
+public sealed record WarehouseValueDto(string WarehouseCode, string WarehouseName, decimal? Value, decimal Quantity);
 
 public sealed record LowStockResponseDto(IReadOnlyList<LowStockItemDto> Items, int TotalCount);
 

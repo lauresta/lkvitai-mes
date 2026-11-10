@@ -117,15 +117,15 @@
                                 <td>@line.AllocatedQty.ToString("0.##")</td>
                                 <td>@line.PickedQty.ToString("0.##")</td>
                                 <td>@line.ShippedQty.ToString("0.##")</td>
-                                <td>@line.UnitPrice.ToString("0.00")</td>
-                                <td>@line.LineAmount.ToString("0.00")</td>
+                                <td class="is-money is-num">@Money.Format(line.UnitPrice)</td>
+                                <td class="is-money is-num">@Money.Format(line.LineAmount)</td>
                             </tr>
                         }
                     </tbody>
                     <tfoot>
                         <tr>
                             <td colspan="7" class="text-end"><strong>@L["SalesOrderDetail.Total"]</strong></td>
-                            <td><strong>@_order.TotalAmount.ToString("0.00")</strong></td>
+                            <td class="is-money is-num"><strong>@Money.Format(_order.TotalAmount)</strong></td>
                         </tr>
                     </tfoot>
                 </table>

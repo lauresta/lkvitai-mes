@@ -85,6 +85,19 @@ public sealed class SalesOrderTests
     }
 
     [Fact]
+    public void RecalculateTotals_RoundsEachLineToCentsBeforeSumming()
+    {
+        var order = BuildOrder();
+        order.Lines.Add(new SalesOrderLine { ItemId = 1, OrderedQty = 0.5m, UnitPrice = 0.01m });
+        order.Lines.Add(new SalesOrderLine { ItemId = 2, OrderedQty = 0.5m, UnitPrice = 0.01m });
+
+        order.RecalculateTotals();
+
+        order.Lines.Select(x => x.LineAmount).Should().Equal(0.01m, 0.01m);
+        order.TotalAmount.Should().Be(0.02m);
+    }
+
+    [Fact]
     public void Cancel_WithoutReason_ShouldFailValidation()
     {
         var order = BuildOrder();

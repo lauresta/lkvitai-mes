@@ -129,7 +129,7 @@
                     }
                     else
                     {
-                        <span class="mono">@FormatMoney(ComputeActualUnitPrice(context))</span>
+                        <span class="mono">@Money.FormatUnit(ComputeActualUnitPrice(context))</span>
                     }
                 </MudTd>
                 <MudTd Style="width: 40px;">
@@ -207,11 +207,11 @@
             </div>
             <div class="ish-create__totals-item">
                 <span class="ish-create__totals-label">@L["InboundShipmentCreate.AvgInvoicePrice"]</span>
-                <span class="ish-create__totals-value">@FormatMoney(AverageInvoiceUnitPrice)</span>
+                <span class="ish-create__totals-value">@Money.FormatUnit(AverageInvoiceUnitPrice)</span>
             </div>
             <div class="ish-create__totals-item">
                 <span class="ish-create__totals-label">@L["InboundShipmentCreate.AvgActualPrice"]</span>
-                <span class="ish-create__totals-value">@FormatMoney(AverageActualUnitPrice)</span>
+                <span class="ish-create__totals-value">@Money.FormatUnit(AverageActualUnitPrice)</span>
             </div>
         </div>
 
@@ -476,41 +476,61 @@
 
     // --- Live totals / landed-cost preview (mirrors ReceivingController.UpdateItemValuationForReceiptAsync) ---
 
-    private IEnumerable<InboundLineModel> StockLines => _lines.Where(x => x.Item is null || !x.Item.IsService);
-    private IEnumerable<InboundLineModel> ServiceLines => _lines.Where(x => x.Item?.IsService == true);
+    private IEnumerable<InboundLineModel> StockLines => _lines.Where(x => x.Item is { IsService: false } && x.ExpectedQty > 0m);
+    private IEnumerable<InboundLineModel> ServiceLines => _lines.Where(x => x.Item?.IsService == true && x.ExpectedQty > 0m);
 
     private decimal TotalStockQty => StockLines.Sum(x => x.ExpectedQty);
 
-    private decimal TotalInvoiceValue => _lines.Sum(x => x.ExpectedQty * (x.UnitPrice ?? 0m));
+    private decimal? TotalInvoiceValue => SumPricedLines(_lines.Where(x => x.Item is not null && x.ExpectedQty > 0m));
 
-    private decimal TotalStockExpectedValue => StockLines.Sum(x => x.ExpectedQty * (x.UnitPrice ?? 0m));
+    private decimal? TotalStockExpectedValue => SumPricedLines(StockLines);
 
-    private decimal TotalAdditionalCostPool
-        => _additionalCosts.Sum(x => x.Amount) + ServiceLines.Sum(x => x.ExpectedQty * (x.UnitPrice ?? 0m));
-
-    private decimal TotalActualValue => TotalStockExpectedValue + TotalAdditionalCostPool;
-
-    private decimal AverageInvoiceUnitPrice => TotalStockQty > 0m ? TotalStockExpectedValue / TotalStockQty : 0m;
-
-    private decimal AverageActualUnitPrice => TotalStockQty > 0m ? TotalActualValue / TotalStockQty : 0m;
-
-    private decimal ComputeActualUnitPrice(InboundLineModel line)
+    private decimal? TotalAdditionalCostPool
     {
-        var unitPrice = line.UnitPrice ?? 0m;
+        get
+        {
+            var serviceValue = SumPricedLines(ServiceLines, emptyIsZero: true);
+            return serviceValue.HasValue ? _additionalCosts.Sum(x => x.Amount) + serviceValue.Value : null;
+        }
+    }
+
+    private decimal? TotalActualValue => TotalStockExpectedValue + TotalAdditionalCostPool;
+
+    private decimal? AverageInvoiceUnitPrice => TotalStockQty > 0m ? TotalStockExpectedValue / TotalStockQty : null;
+
+    private decimal? AverageActualUnitPrice => TotalStockQty > 0m ? TotalActualValue / TotalStockQty : null;
+
+    private decimal? ComputeActualUnitPrice(InboundLineModel line)
+    {
+        if (line.Item is null || !line.UnitPrice.HasValue) return null;
+
+        var unitPrice = line.UnitPrice.Value;
         var totalPool = TotalAdditionalCostPool;
         var totalStockValue = TotalStockExpectedValue;
 
-        if (totalPool <= 0m || totalStockValue <= 0m || line.ExpectedQty <= 0m)
+        if (!totalPool.HasValue || !totalStockValue.HasValue || line.ExpectedQty <= 0m)
+            return null;
+
+        if (totalPool <= 0m || totalStockValue <= 0m)
         {
             return unitPrice;
         }
 
         var lineValue = line.ExpectedQty * unitPrice;
-        var lineShare = totalPool * lineValue / totalStockValue;
+        var lineShare = totalPool.Value * lineValue / totalStockValue.Value;
         return unitPrice + (lineShare / line.ExpectedQty);
     }
 
-    private static string FormatMoney(decimal value) => LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure.Money.Format(value);
+    private static decimal? SumPricedLines(IEnumerable<InboundLineModel> lines, bool emptyIsZero = false)
+    {
+        var rows = lines.ToList();
+        if (rows.Count == 0) return emptyIsZero ? 0m : null;
+        return rows.All(x => x.UnitPrice.HasValue)
+            ? rows.Sum(x => x.ExpectedQty * x.UnitPrice!.Value)
+            : null;
+    }
+
+    private static string FormatMoney(decimal? value) => LKvitai.MES.Modules.Warehouse.WebUI.Infrastructure.Money.Format(value);
 
     private async Task SubmitAsync()
     {

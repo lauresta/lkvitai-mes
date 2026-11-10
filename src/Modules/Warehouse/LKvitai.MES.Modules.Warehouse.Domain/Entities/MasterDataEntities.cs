@@ -283,7 +283,7 @@ public sealed class SalesOrder : AuditableEntity
     {
         foreach (var line in Lines)
         {
-            line.LineAmount = line.OrderedQty * line.UnitPrice;
+            line.LineAmount = decimal.Round(line.OrderedQty * line.UnitPrice, 2, MidpointRounding.AwayFromZero);
         }
 
         TotalAmount = Lines.Sum(x => x.LineAmount);

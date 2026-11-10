@@ -191,6 +191,7 @@
 
         if (!Guid.TryParse(_selectedCustomerId, out var customerId))
         {
+            foreach (var line in _lines) ApplyEffectivePrice(line);
             return;
         }
 
@@ -204,22 +205,20 @@
             _shippingCountry = customer.DefaultShippingAddress.Country;
         }
 
-        if (customer?.PriceGroupId is not { } priceGroupId)
+        if (customer?.PriceGroupId is { } priceGroupId)
         {
-            return;
-        }
-
-        try
-        {
-            var overrides = await SalesOrdersClient.GetPriceGroupItemPricesAsync(priceGroupId);
-            foreach (var row in overrides)
+            try
             {
-                _priceOverridesByItemId[row.ItemId] = row.Amount;
+                var overrides = await SalesOrdersClient.GetPriceGroupItemPricesAsync(priceGroupId);
+                foreach (var row in overrides)
+                {
+                    _priceOverridesByItemId[row.ItemId] = row.Amount;
+                }
             }
-        }
-        catch (ApiException)
-        {
-            // Keep the form usable even if price-group lookup fails; unit price stays manually editable.
+            catch (ApiException)
+            {
+                // Keep the form usable if price-group lookup fails; unit price stays manually editable.
+            }
         }
 
         foreach (var line in _lines)
@@ -238,6 +237,7 @@
     {
         if (line.ItemId is not { } itemId)
         {
+            line.UnitPrice = null;
             return;
         }
 
@@ -248,10 +248,7 @@
         }
 
         var item = _items.FirstOrDefault(x => x.Id == itemId);
-        if (item?.BasePrice is { } basePrice)
-        {
-            line.UnitPrice = basePrice;
-        }
+        line.UnitPrice = item?.BasePrice;
     }
 
     private void AddLine()
@@ -283,13 +280,25 @@
             return;
         }
 
-        var normalizedLines = _lines
-            .Where(x => x.ItemId.HasValue && x.Qty > 0 && x.UnitPrice >= 0)
+        var selectedLines = _lines.Where(x => x.ItemId.HasValue).ToList();
+        if (selectedLines.Any(x => !x.UnitPrice.HasValue))
+        {
+            ToastService.ShowError(L["SalesOrderCreate.Toast.EnterPriceForEveryItem"].Value);
+            return;
+        }
+
+        if (selectedLines.Any(x => x.Qty <= 0m || x.UnitPrice < 0m))
+        {
+            ToastService.ShowError(L["SalesOrderCreate.Toast.AddAtLeastOneValidLineItemQty0"].Value);
+            return;
+        }
+
+        var normalizedLines = selectedLines
             .Select(x => new SalesOrderLineCreateRequestDto
             {
                 ItemId = x.ItemId!.Value,
                 Qty = x.Qty,
-                UnitPrice = x.UnitPrice
+                UnitPrice = x.UnitPrice!.Value
             })
             .ToList();
 
@@ -375,6 +384,6 @@
     {
         public int? ItemId { get; set; }
         public decimal Qty { get; set; } = 1m;
-        public decimal UnitPrice { get; set; }
+        public decimal? UnitPrice { get; set; }
     }
 }

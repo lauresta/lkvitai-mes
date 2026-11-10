@@ -86,7 +86,7 @@
                             <td>@row.ItemName</td>
                             <td>@row.Qty</td>
                             <td>@row.PickedQty</td>
-                            <td class="is-money is-num">@Money.Format(_priceMap.Get(row.ItemId, row.InternalSku)?.EffectiveCost)</td>
+                            <td class="is-money is-num">@Money.FormatUnit(_priceMap.Get(row.ItemId, row.InternalSku)?.EffectiveCost)</td>
                             <td class="is-money is-num">@Money.Format(_priceMap.Get(row.ItemId, row.InternalSku)?.BasePrice)</td>
                             <td class="is-money is-num">@Money.Format(_priceMap.Value(row.Qty, row.ItemId, row.InternalSku))</td>
                             <td>@(row.CompletedBy ?? row.AssignedToUserId)</td>
