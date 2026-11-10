@@ -157,7 +157,7 @@ public class StockClient
         var items = payload.Items.Select(row => new AvailableStockItemDto
         {
             ItemId = row.ItemId,
-            WarehouseId = string.IsNullOrWhiteSpace(row.WarehouseId) ? "WH1" : row.WarehouseId,
+            WarehouseId = row.WarehouseId,
             Location = row.LocationCode ?? string.Empty,
             SKU = row.InternalSku ?? string.Empty,
             ItemName = row.ItemName ?? string.Empty,

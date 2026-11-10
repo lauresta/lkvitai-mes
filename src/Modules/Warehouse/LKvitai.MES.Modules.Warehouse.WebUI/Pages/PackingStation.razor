@@ -92,6 +92,7 @@
                                class="form-control"
                                type="text"
                                @bind="_barcodeInput"
+                               @bind:event="oninput"
                                @onkeydown="HandleBarcodeKeyDown"
                                autofocus />
                         <div class="form-text">@L["PackingStation.PressEnterAfterEachScan"]</div>

@@ -156,6 +156,7 @@ public sealed class StockController : ControllerBase
             locationMap.TryGetValue(code, out var location);
 
             return new AvailableStockRow(
+                row.WarehouseId,
                 item?.Id ?? row.ItemId,
                 row.SKU,
                 item?.Name ?? row.ItemName ?? row.SKU,
@@ -249,6 +250,7 @@ public sealed class StockController : ControllerBase
 
         var response = new PagedStockResponse<AvailableStockItemDto>(
             items.Select(x => new AvailableStockItemDto(
+                x.WarehouseId,
                 x.ItemId,
                 x.InternalSku,
                 x.ItemName,
@@ -547,6 +549,7 @@ public sealed class StockController : ControllerBase
     private ICacheService Cache => HttpContext?.RequestServices?.GetService<ICacheService>() ?? new LKvitai.MES.Modules.Warehouse.Infrastructure.Caching.NoOpCacheService();
 
     private sealed record AvailableStockRow(
+        string WarehouseId,
         int? ItemId,
         string InternalSku,
         string ItemName,
@@ -567,6 +570,7 @@ public sealed class StockController : ControllerBase
         decimal? BasePrice);
 
     public sealed record AvailableStockItemDto(
+        string WarehouseId,
         int? ItemId,
         string InternalSku,
         string ItemName,
