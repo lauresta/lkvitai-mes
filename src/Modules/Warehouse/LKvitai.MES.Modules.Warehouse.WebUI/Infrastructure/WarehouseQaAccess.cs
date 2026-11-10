@@ -48,13 +48,18 @@ public static class WarehouseQaAccess
                 return;
             }
 
+            var hasQueryKey = context.Request.Query.TryGetValue("qa", out var queryKey);
+            var hasHeaderKey = context.Request.Headers.TryGetValue("X-Warehouse-QA-Key", out var headerKey);
             if (HttpMethods.IsGet(context.Request.Method)
                 && context.Request.Path == "/"
-                && context.Request.Query.TryGetValue("qa", out var supplied))
+                && (hasQueryKey || hasHeaderKey))
             {
                 context.Response.Headers.CacheControl = "no-store";
                 context.Response.Headers["Referrer-Policy"] = "no-referrer";
-                if (supplied.Count != 1 || !ValidKey(supplied[0], key))
+                var supplied = hasQueryKey ? queryKey : headerKey;
+                if (hasQueryKey && hasHeaderKey
+                    || supplied.Count != 1
+                    || !ValidKey(supplied[0], key))
                 {
                     context.Response.StatusCode = StatusCodes.Status404NotFound;
                     return;

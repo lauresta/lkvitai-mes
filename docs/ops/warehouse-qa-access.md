@@ -6,6 +6,9 @@ for a 12-hour HTTP-only cookie scoped to `/warehouse`, then redirects to
 the `Test` environment while the following GitHub Environment `test`
 settings are present and unexpired:
 
+Automated tests send the key in `X-Warehouse-QA-Key` on `GET /warehouse/`
+before Playwright tracing starts, so the key is absent from URLs and trace files.
+
 - Secret `WAREHOUSE_QA_KEY` (32 random bytes, hex encoded).
 - Variable `WAREHOUSE_QA_EXPIRES_AT_UTC` (ISO 8601 UTC).
 - Variable `WAREHOUSE_QA_ENABLED=true` for Warehouse API proof validation.
