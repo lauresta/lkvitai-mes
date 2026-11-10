@@ -155,6 +155,47 @@ public class AvailableStockIntegrationTests : IAsyncLifetime
     }
 
     [SkippableFact]
+    public async Task Projection_PickToNewShippingLocation_UpdatesBothSides()
+    {
+        DockerRequirement.EnsureEnabled();
+
+        await using (var session = _store!.LightweightSession())
+        {
+            session.Events.Append(StockLedgerStreamId.For(WarehouseId, Location, Sku),
+                new StockMovedEvent
+                {
+                    MovementId = Guid.NewGuid(), SKU = Sku, Quantity = 5m,
+                    FromLocation = "SUPPLIER", ToLocation = Location,
+                    MovementType = "RECEIPT", OperatorId = Guid.NewGuid(), Timestamp = DateTime.UtcNow
+                });
+            session.Events.Append($"pick-task:{Guid.NewGuid():N}", new PickCompletedEvent
+            {
+                WarehouseId = WarehouseId, PickTaskId = Guid.NewGuid(), OrderId = "OUT-1",
+                ItemId = 42, SKU = Sku, PickedQty = 2m,
+                FromLocation = Location, ToLocation = "SHIPPING", Timestamp = DateTime.UtcNow
+            });
+            await session.SaveChangesAsync();
+        }
+
+        using var daemon = await _store!.BuildProjectionDaemonAsync();
+        await daemon.StartAllAsync();
+        await daemon.WaitForNonStaleData(TimeSpan.FromSeconds(10));
+
+        await using var query = _store.QuerySession();
+        var from = await query.LoadAsync<AvailableStockView>(AvailableStockView.ComputeId(WarehouseId, Location, Sku));
+        var to = await query.LoadAsync<AvailableStockView>(AvailableStockView.ComputeId(WarehouseId, "SHIPPING", Sku));
+        var toBalance = await query.LoadAsync<LocationBalanceView>($"{WarehouseId}:SHIPPING:{Sku}");
+
+        from.Should().NotBeNull();
+        from!.OnHandQty.Should().Be(3m);
+        to.Should().NotBeNull();
+        to!.OnHandQty.Should().Be(2m);
+        to.ItemId.Should().Be(42);
+        toBalance.Should().NotBeNull();
+        toBalance!.Quantity.Should().Be(2m);
+    }
+
+    [SkippableFact]
     public async Task Projection_StockMovedPlusPickingStarted_ReducesAvailable()
     {
         DockerRequirement.EnsureEnabled();

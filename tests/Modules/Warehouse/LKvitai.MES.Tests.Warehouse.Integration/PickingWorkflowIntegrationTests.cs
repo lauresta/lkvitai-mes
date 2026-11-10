@@ -46,6 +46,11 @@ public class PickingWorkflowIntegrationTests : IAsyncLifetime
             .UseNpgsql(_postgres.GetConnectionString())
             .Options;
 
+        await using (var db = CreateDbContext())
+        {
+            await db.Database.EnsureCreatedAsync();
+        }
+
         _store = DocumentStore.For(opts =>
         {
             opts.Connection(_postgres.GetConnectionString());
@@ -55,10 +60,6 @@ public class PickingWorkflowIntegrationTests : IAsyncLifetime
             opts.RegisterProjections();
         });
         await _store.Storage.ApplyAllConfiguredChangesToDatabaseAsync();
-
-        await using var db = CreateDbContext();
-        await db.Database.EnsureDeletedAsync();
-        await db.Database.EnsureCreatedAsync();
     }
 
     public async Task DisposeAsync()
@@ -82,7 +83,7 @@ public class PickingWorkflowIntegrationTests : IAsyncLifetime
 
         var result = await controller.CreateTaskAsync(new PickingController.CreatePickTaskRequest("ORD-1", 1, 10m, null));
 
-        var created = result.Should().BeOfType<CreatedAtActionResult>().Subject;
+        var created = result.Should().BeOfType<CreatedResult>().Subject;
         var payload = created.Value.Should().BeOfType<PickingController.PickTaskCreatedResponse>().Subject;
 
         payload.Status.Should().Be("Pending");
@@ -152,6 +153,50 @@ public class PickingWorkflowIntegrationTests : IAsyncLifetime
         var historyOk = historyResult.Should().BeOfType<OkObjectResult>().Subject;
         var history = historyOk.Value.Should().BeOfType<PickingController.PagedResponse<PickingController.PickHistoryItemDto>>().Subject;
         history.TotalCount.Should().Be(1);
+    }
+
+    [SkippableFact]
+    public async Task CompletePickTask_ForOutboundOrder_ShouldMarkOrderPicked()
+    {
+        DockerRequirement.EnsureEnabled();
+
+        await SeedBaseDataAsync();
+        await SeedAvailableStockAsync(5m);
+
+        await using var db = CreateDbContext();
+        var order = new OutboundOrder { OrderNumber = "OUT-PICK-1" };
+        order.MarkAllocated(Guid.NewGuid()).IsSuccess.Should().BeTrue();
+        order.StartPicking().IsSuccess.Should().BeTrue();
+        order.Lines.Add(new OutboundOrderLine { ItemId = 1, Qty = 5m });
+        db.OutboundOrders.Add(order);
+        await db.SaveChangesAsync();
+
+        var task = await CreateTaskAsync(db, order.OrderNumber, 1, 5m);
+        var controller = CreateController(db);
+        var result = await controller.CompleteTaskAsync(task.TaskId,
+            new PickingController.CompletePickTaskRequest(2, 5m, null, "BAR-ITEM-1", "LOC-A01", null));
+
+        result.Should().BeOfType<OkObjectResult>();
+        await using var verify = CreateDbContext();
+        var saved = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.SingleAsync(
+            verify.OutboundOrders.Include(x => x.Lines), x => x.Id == order.Id);
+        saved.Status.Should().Be(OutboundOrderStatus.Picked);
+        saved.Lines.Single().PickedQty.Should().Be(5m);
+
+        var summaryResult = await new OutboundOrdersController(null!, verify).GetSummaryAsync(null, null, null, null);
+        var summary = summaryResult.Should().BeOfType<OkObjectResult>().Subject;
+        var rows = summary.Value.Should().BeAssignableTo<IEnumerable<OutboundOrdersController.OutboundOrderSummaryResponse>>().Subject;
+        rows.Should().ContainSingle(x => x.Id == order.Id && x.Status == "PICKED" && x.ItemCount == 1);
+
+        var shipment = new Shipment { OutboundOrderId = order.Id };
+        shipment.Pack(DateTimeOffset.UtcNow).IsSuccess.Should().BeTrue();
+        verify.Shipments.Add(shipment);
+        await verify.SaveChangesAsync();
+
+        var shipmentsResult = await new ShipmentsController(null!, verify).GetSummaryAsync("PACKED", null, null, null);
+        var shipments = shipmentsResult.Should().BeOfType<OkObjectResult>().Subject;
+        var shipmentRows = shipments.Value.Should().BeAssignableTo<IEnumerable<ShipmentsController.ShipmentSummaryResponse>>().Subject;
+        shipmentRows.Should().ContainSingle(x => x.Id == shipment.Id && x.OutboundOrderNumber == order.OrderNumber);
     }
 
     [SkippableFact]

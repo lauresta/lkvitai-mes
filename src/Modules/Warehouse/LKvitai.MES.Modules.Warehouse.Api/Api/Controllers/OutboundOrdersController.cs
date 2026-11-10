@@ -1,6 +1,7 @@
 using LKvitai.MES.Modules.Warehouse.Api.ErrorHandling;
 using LKvitai.MES.Modules.Warehouse.Api.Security;
 using LKvitai.MES.Modules.Warehouse.Application.Commands;
+using LKvitai.MES.Modules.Warehouse.Domain.Entities;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Persistence;
 using LKvitai.MES.BuildingBlocks.SharedKernel;
 using MediatR;
@@ -84,17 +85,23 @@ public sealed class OutboundOrdersController : ControllerBase
         [FromQuery] DateTimeOffset? dateTo,
         CancellationToken cancellationToken = default)
     {
-        var query = _dbContext.OutboundOrderSummaries.AsNoTracking().AsQueryable();
+        var query = _dbContext.OutboundOrders.AsNoTracking().Where(x => !x.IsDeleted);
 
         if (!string.IsNullOrWhiteSpace(status))
         {
-            query = query.Where(x => x.Status == status.ToUpperInvariant());
+            if (!Enum.TryParse<OutboundOrderStatus>(status, true, out var requestedStatus))
+            {
+                return Ok(Array.Empty<OutboundOrderSummaryResponse>());
+            }
+
+            query = query.Where(x => x.Status == requestedStatus);
         }
 
         if (!string.IsNullOrWhiteSpace(customer))
         {
             var customerFilter = customer.Trim();
-            query = query.Where(x => x.CustomerName != null && x.CustomerName.Contains(customerFilter));
+            query = query.Where(x => x.SalesOrder != null && x.SalesOrder.Customer != null &&
+                x.SalesOrder.Customer.Name.Contains(customerFilter));
         }
 
         if (dateFrom.HasValue)
@@ -107,23 +114,41 @@ public sealed class OutboundOrdersController : ControllerBase
             query = query.Where(x => x.OrderDate <= dateTo.Value);
         }
 
-        var rows = await query
+        var sourceRows = await query
             .OrderByDescending(x => x.OrderDate)
-            .Select(x => new OutboundOrderSummaryResponse(
+            .Select(x => new
+            {
                 x.Id,
                 x.OrderNumber,
                 x.Type,
                 x.Status,
-                x.CustomerName,
-                x.ItemCount,
+                CustomerName = x.SalesOrder != null && x.SalesOrder.Customer != null
+                    ? x.SalesOrder.Customer.Name : null,
+                ItemCount = x.Lines.Count,
                 x.OrderDate,
                 x.RequestedShipDate,
                 x.PackedAt,
                 x.ShippedAt,
-                x.ShipmentId,
-                x.ShipmentNumber,
-                x.TrackingNumber))
+                ShipmentId = x.Shipment == null ? (Guid?)null : x.Shipment.Id,
+                ShipmentNumber = x.Shipment == null ? null : x.Shipment.ShipmentNumber,
+                TrackingNumber = x.Shipment == null ? null : x.Shipment.TrackingNumber
+            })
             .ToListAsync(cancellationToken);
+
+        var rows = sourceRows.Select(x => new OutboundOrderSummaryResponse(
+            x.Id,
+            x.OrderNumber,
+            x.Type.ToString().ToUpperInvariant(),
+            x.Status.ToString().ToUpperInvariant(),
+            x.CustomerName,
+            x.ItemCount,
+            x.OrderDate,
+            x.RequestedShipDate,
+            x.PackedAt,
+            x.ShippedAt,
+            x.ShipmentId,
+            x.ShipmentNumber,
+            x.TrackingNumber)).ToList();
 
         return Ok(rows);
     }

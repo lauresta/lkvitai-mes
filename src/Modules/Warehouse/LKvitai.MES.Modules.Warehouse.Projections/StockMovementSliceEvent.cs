@@ -1,4 +1,6 @@
 using Marten.Events;
+using Marten.Events.Aggregation;
+using Marten.Events.Projections;
 
 namespace LKvitai.MES.Modules.Warehouse.Projections;
 
@@ -12,7 +14,28 @@ public sealed record StockMovementSliceEvent(
     string Location,
     string SKU,
     decimal QuantityDelta,
-    DateTime OccurredAt);
+    DateTime OccurredAt,
+    int? ItemId = null,
+    string? LotNumber = null);
+
+internal static class StockMovementSliceGrouping
+{
+    public static void Group(IEvent source, string warehouseId, string fromLocation,
+        string toLocation, string sku, decimal quantity, DateTime timestamp,
+        ITenantSliceGroup<string> grouping, Func<string, string, string, string> keyFor,
+        int? itemId = null, string? lotNumber = null)
+    {
+        Add(fromLocation, -quantity);
+        Add(toLocation, quantity);
+
+        void Add(string location, decimal delta)
+        {
+            grouping.AddEvent(keyFor(warehouseId, location, sku),
+                new ProjectedStockMovementEvent(source,
+                    new StockMovementSliceEvent(warehouseId, location, sku, delta, timestamp, itemId, lotNumber)));
+        }
+    }
+}
 
 public sealed class ProjectedStockMovementEvent : IEvent<StockMovementSliceEvent>
 {

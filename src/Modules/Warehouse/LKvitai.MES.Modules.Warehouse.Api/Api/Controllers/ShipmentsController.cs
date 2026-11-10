@@ -79,16 +79,24 @@ public sealed class ShipmentsController : ControllerBase
         [FromQuery] DateTimeOffset? dateTo,
         CancellationToken cancellationToken = default)
     {
-        var query = _dbContext.ShipmentSummaries.AsNoTracking().AsQueryable();
+        var query = _dbContext.Shipments.AsNoTracking().Where(x => !x.IsDeleted);
         if (!string.IsNullOrWhiteSpace(status))
         {
-            query = query.Where(x => x.Status == status.ToUpperInvariant());
+            if (!Enum.TryParse<ShipmentStatus>(status, true, out var requestedStatus))
+            {
+                return Ok(Array.Empty<ShipmentSummaryResponse>());
+            }
+
+            query = query.Where(x => x.Status == requestedStatus);
         }
 
         if (!string.IsNullOrWhiteSpace(customer))
         {
             var customerFilter = customer.Trim();
-            query = query.Where(x => x.CustomerName != null && x.CustomerName.Contains(customerFilter));
+            query = query.Where(x => x.OutboundOrder != null &&
+                x.OutboundOrder.SalesOrder != null &&
+                x.OutboundOrder.SalesOrder.Customer != null &&
+                x.OutboundOrder.SalesOrder.Customer.Name.Contains(customerFilter));
         }
 
         if (dateFrom.HasValue)
@@ -101,23 +109,42 @@ public sealed class ShipmentsController : ControllerBase
             query = query.Where(x => x.DispatchedAt == null || x.DispatchedAt <= dateTo.Value);
         }
 
-        var rows = await query
+        var sourceRows = await query
             .OrderByDescending(x => x.PackedAt)
-            .Select(x => new ShipmentSummaryResponse(
+            .Select(x => new
+            {
                 x.Id,
                 x.ShipmentNumber,
                 x.OutboundOrderId,
-                x.OutboundOrderNumber,
-                x.CustomerName,
+                OutboundOrderNumber = x.OutboundOrder == null ? null : x.OutboundOrder.OrderNumber,
+                CustomerName = x.OutboundOrder != null && x.OutboundOrder.SalesOrder != null &&
+                    x.OutboundOrder.SalesOrder.Customer != null
+                    ? x.OutboundOrder.SalesOrder.Customer.Name : null,
                 x.Carrier,
                 x.TrackingNumber,
                 x.Status,
                 x.PackedAt,
                 x.DispatchedAt,
                 x.DeliveredAt,
-                x.PackedBy,
-                x.DispatchedBy))
+                x.CreatedBy,
+                x.UpdatedBy
+            })
             .ToListAsync(cancellationToken);
+
+        var rows = sourceRows.Select(x => new ShipmentSummaryResponse(
+            x.Id,
+            x.ShipmentNumber,
+            x.OutboundOrderId,
+            x.OutboundOrderNumber ?? string.Empty,
+            x.CustomerName,
+            x.Carrier.ToString().ToUpperInvariant(),
+            x.TrackingNumber,
+            x.Status.ToString().ToUpperInvariant(),
+            x.PackedAt,
+            x.DispatchedAt,
+            x.DeliveredAt,
+            x.CreatedBy,
+            x.UpdatedBy)).ToList();
 
         return Ok(rows);
     }
