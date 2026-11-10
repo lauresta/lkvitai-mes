@@ -114,9 +114,17 @@ public sealed class PickingController : ControllerBase
             return Failure(Result.Fail(DomainErrorCodes.NotFound, $"Item '{task.ItemId}' does not exist."));
         }
 
+        // Transit, receiving and shipping balances are not locations an operator can pick from.
+        var virtualLocationCodes = await _dbContext.Locations
+            .AsNoTracking()
+            .Where(x => x.IsVirtual)
+            .Select(x => x.Code)
+            .ToListAsync(cancellationToken);
+
         await using var querySession = _documentStore.QuerySession();
         var stock = querySession.Query<AvailableStockView>()
-            .Where(x => x.WarehouseId == DefaultWarehouseId && x.SKU == item.InternalSKU && x.AvailableQty > 0m);
+            .Where(x => x.WarehouseId == DefaultWarehouseId && x.SKU == item.InternalSKU && x.AvailableQty > 0m &&
+                        !virtualLocationCodes.Contains(x.Location));
 
         var rows = await Marten.QueryableExtensions.ToListAsync(
             stock.Where(x => x.ExpiryDate != null)
@@ -217,6 +225,11 @@ public sealed class PickingController : ControllerBase
         if (fromLocation is null)
         {
             return Failure(Result.Fail(DomainErrorCodes.NotFound, $"From location '{request.FromLocationId}' does not exist."));
+        }
+
+        if (fromLocation.IsVirtual)
+        {
+            return UnprocessableFailure($"Location '{fromLocation.Code}' cannot be used for picking.");
         }
 
         if (!string.IsNullOrWhiteSpace(request.ScannedLocationBarcode) &&
