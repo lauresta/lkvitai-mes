@@ -687,7 +687,9 @@ public sealed class DashboardController : ControllerBase
         var picking = await Marten.QueryableExtensions.CountAsync(reservations.Where(x => x.Status == "PICKING"), cancellationToken);
         var consumed = await Marten.QueryableExtensions.CountAsync(reservations.Where(x => x.Status == "CONSUMED"), cancellationToken);
 
-        var cutoff = DateTime.UtcNow.AddHours(-2);
+        // Marten stores PickingStartedAt as PostgreSQL timestamp without time zone.
+        // Keep the UTC clock value, but pass it with Unspecified kind for Npgsql.
+        var cutoff = DateTime.SpecifyKind(DateTime.UtcNow.AddHours(-2), DateTimeKind.Unspecified);
         var stuck = await Marten.QueryableExtensions.CountAsync(
             reservations.Where(x => x.Status == "PICKING" && x.PickingStartedAt != null && x.PickingStartedAt < cutoff),
             cancellationToken);
