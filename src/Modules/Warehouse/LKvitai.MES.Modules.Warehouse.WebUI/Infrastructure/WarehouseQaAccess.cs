@@ -28,8 +28,9 @@ public static class WarehouseQaAccess
             options.ExpireTimeSpan = TimeSpan.FromHours(12);
             options.Events.OnValidatePrincipal = context =>
             {
-                if (!TryGetSettings(environment, configuration, out var key, out _)
-                    || context.Principal?.FindFirstValue(KeyIdClaim) != KeyId(key))
+                var settings = ReadSettings(environment, configuration);
+                if (settings is null
+                    || context.Principal?.FindFirstValue(KeyIdClaim) != KeyId(settings.Key))
                     context.RejectPrincipal();
                 return Task.CompletedTask;
             };
@@ -42,7 +43,8 @@ public static class WarehouseQaAccess
         {
             var environment = context.RequestServices.GetRequiredService<IHostEnvironment>();
             var configuration = context.RequestServices.GetRequiredService<IConfiguration>();
-            if (!TryGetSettings(environment, configuration, out var key, out var expiresAt))
+            var settings = ReadSettings(environment, configuration);
+            if (settings is null)
             {
                 await next();
                 return;
@@ -59,14 +61,14 @@ public static class WarehouseQaAccess
                 var supplied = hasQueryKey ? queryKey : headerKey;
                 if (hasQueryKey && hasHeaderKey
                     || supplied.Count != 1
-                    || !ValidKey(supplied[0], key))
+                    || !ValidKey(supplied[0], settings.Key))
                 {
                     context.Response.StatusCode = StatusCodes.Status404NotFound;
                     return;
                 }
 
                 var sessionExpires = DateTimeOffset.UtcNow.AddHours(12);
-                if (expiresAt < sessionExpires) sessionExpires = expiresAt;
+                if (settings.ExpiresAt < sessionExpires) sessionExpires = settings.ExpiresAt;
                 var proof = context.RequestServices.GetRequiredService<WarehouseQaProof>()
                     .Create(sessionExpires);
                 var claims = new List<Claim>
@@ -74,7 +76,7 @@ public static class WarehouseQaAccess
                     new(ClaimTypes.NameIdentifier, WarehouseQaProof.UserId),
                     new(ClaimTypes.Name, "Warehouse QA"),
                     new("warehouse_access_token", proof),
-                    new(KeyIdClaim, KeyId(key))
+                    new(KeyIdClaim, KeyId(settings.Key))
                 };
                 claims.AddRange(WarehouseQaProof.Roles.Select(role => new Claim(ClaimTypes.Role, role)));
                 await context.SignInAsync(Scheme,
@@ -94,20 +96,20 @@ public static class WarehouseQaAccess
             await next();
         });
 
-    private static bool TryGetSettings(
-        IHostEnvironment environment, IConfiguration configuration,
-        out string key, out DateTimeOffset expiresAt)
+    private sealed record QaSettings(string Key, DateTimeOffset ExpiresAt);
+
+    private static QaSettings? ReadSettings(IHostEnvironment environment, IConfiguration configuration)
     {
-        key = configuration["WarehouseQa:Key"] ?? "";
-        expiresAt = default;
-        return string.Equals(environment.EnvironmentName, "Test", StringComparison.OrdinalIgnoreCase)
-            && key.Length == 64
-            && key.All(Uri.IsHexDigit)
-            && DateTimeOffset.TryParse(configuration["WarehouseQa:ExpiresAtUtc"],
+        if (!environment.IsEnvironment("Test")) return null;
+        var configuredKey = configuration["WarehouseQa:Key"];
+        if (configuredKey is null || configuredKey.Length != 64 || !configuredKey.All(Uri.IsHexDigit))
+            return null;
+        if (!DateTimeOffset.TryParse(configuration["WarehouseQa:ExpiresAtUtc"],
                 CultureInfo.InvariantCulture,
                 DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal,
-                out expiresAt)
-            && expiresAt > DateTimeOffset.UtcNow;
+                out var expiry) || expiry <= DateTimeOffset.UtcNow)
+            return null;
+        return new QaSettings(configuredKey, expiry);
     }
 
     private static bool ValidKey(string? supplied, string configured)
