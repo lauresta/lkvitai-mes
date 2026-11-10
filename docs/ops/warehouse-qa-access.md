@@ -24,3 +24,10 @@ To revoke access early, clear `WAREHOUSE_QA_KEY` and redeploy the Warehouse
 WebUI; also set `WAREHOUSE_QA_ENABLED=false` and redeploy the Warehouse API to
 invalidate outstanding API proofs. The configured expiry ends entry and cookie
 use without another deploy. Remove this temporary feature after the QA run.
+
+The test-only `POST /api/warehouse/v1/admin/projections/qa-rebuild-stock`
+operation is available only to this QA identity in the `Test` environment.
+It uses Marten's event replay to repair AvailableStock and LocationBalance
+after the stock movement projection fix. The WebUI exposes
+`POST /warehouse/qa/rebuild-stock` to the same QA identity and forwards the
+server-side proof to the API. Remove both operations after the QA run.

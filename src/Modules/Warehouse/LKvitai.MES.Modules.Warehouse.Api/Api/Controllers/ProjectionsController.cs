@@ -5,9 +5,13 @@ using LKvitai.MES.Modules.Warehouse.Application.Queries;
 using LKvitai.MES.Modules.Warehouse.Api.Security;
 using LKvitai.MES.Modules.Warehouse.Infrastructure.Projections;
 using LKvitai.MES.BuildingBlocks.SharedKernel;
+using LKvitai.MES.BuildingBlocks.PortalAuth;
+using LKvitai.MES.Contracts.ReadModels;
+using Marten.Events.Daemon.Coordination;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace LKvitai.MES.Modules.Warehouse.Api.Controllers;
 
@@ -56,6 +60,27 @@ public sealed class ProjectionsController : ControllerBase
         }
 
         return Failure(result);
+    }
+
+    // Temporary repair operation for the isolated test Warehouse after the
+    // stock-movement projection fix. Marten replays every registered event type;
+    // the older shadow-table rebuild only replays a subset of stock events.
+    [HttpPost("qa-rebuild-stock")]
+    public async Task<IActionResult> RebuildStockForQaAsync(
+        [FromServices] ProjectionCoordinator coordinator,
+        [FromServices] IHostEnvironment environment,
+        CancellationToken cancellationToken = default)
+    {
+        if (!environment.IsEnvironment("Test") ||
+            User.FindFirstValue(ClaimTypes.NameIdentifier) != WarehouseQaProof.UserId)
+        {
+            return NotFound();
+        }
+
+        var daemon = coordinator.DaemonForMainDatabase();
+        await daemon.RebuildProjectionAsync<AvailableStockView>(cancellationToken);
+        await daemon.RebuildProjectionAsync<LocationBalanceView>(cancellationToken);
+        return Ok(new { AvailableStock = "rebuilt", LocationBalance = "rebuilt" });
     }
 
     [HttpPost("verify")]

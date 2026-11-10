@@ -349,6 +349,10 @@ public sealed class SalesOrder : AuditableEntity
         }
 
         ReservationId = reservationId;
+        foreach (var line in Lines)
+        {
+            line.AllocatedQty = line.OrderedQty;
+        }
         Status = SalesOrderStatus.Allocated;
         AllocatedAt = DateTimeOffset.UtcNow;
         return Result.Ok();

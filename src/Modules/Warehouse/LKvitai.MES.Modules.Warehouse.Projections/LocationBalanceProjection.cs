@@ -18,27 +18,27 @@ public class LocationBalanceProjection : MultiStreamProjection<LocationBalanceVi
         CustomGrouping(new LocationBalanceGrouper());
     }
 
-    public LocationBalanceView Apply(StockMovedEvent evt, LocationBalanceView current)
+    // Register the persisted event with Marten; the grouper replaces it with
+    // one signed StockMovementSliceEvent per affected location.
+    public LocationBalanceView Apply(StockMovedEvent _, LocationBalanceView current) => current;
+
+    public LocationBalanceView Create(StockMovementSliceEvent evt)
     {
-        var isFromLocation = current.Id.EndsWith($":{evt.FromLocation}:{evt.SKU}", StringComparison.Ordinal);
-        var isToLocation = current.Id.EndsWith($":{evt.ToLocation}:{evt.SKU}", StringComparison.Ordinal);
-
-        if (string.IsNullOrEmpty(current.WarehouseId))
+        var current = new LocationBalanceView
         {
-            InitializeIdentityFields(current);
-        }
+            Id = BuildKey(evt.WarehouseId, evt.Location, evt.SKU),
+            WarehouseId = evt.WarehouseId,
+            Location = evt.Location,
+            SKU = evt.SKU
+        };
+        return Apply(evt, current);
+    }
 
-        if (isFromLocation)
-        {
-            current.Quantity -= evt.Quantity;
-        }
-
-        if (isToLocation)
-        {
-            current.Quantity += evt.Quantity;
-        }
-
-        current.LastUpdated = evt.Timestamp;
+    public LocationBalanceView Apply(StockMovementSliceEvent evt, LocationBalanceView current)
+    {
+        EnsureIdentity(current, evt.WarehouseId, evt.Location, evt.SKU);
+        current.Quantity += evt.QuantityDelta;
+        current.LastUpdated = evt.OccurredAt;
         return current;
     }
 
@@ -203,10 +203,14 @@ public class LocationBalanceGrouper : IAggregateGrouper<string>
         var warehouseId = streamId.WarehouseId;
 
         var fromKey = $"{warehouseId}:{stockMoved.FromLocation}:{stockMoved.SKU}";
-        grouping.AddEvent(fromKey, evt);
+        grouping.AddEvent(fromKey, new ProjectedStockMovementEvent(evt,
+            new StockMovementSliceEvent(warehouseId, stockMoved.FromLocation, stockMoved.SKU,
+                -stockMoved.Quantity, stockMoved.Timestamp)));
 
         var toKey = $"{warehouseId}:{stockMoved.ToLocation}:{stockMoved.SKU}";
-        grouping.AddEvent(toKey, evt);
+        grouping.AddEvent(toKey, new ProjectedStockMovementEvent(evt,
+            new StockMovementSliceEvent(warehouseId, stockMoved.ToLocation, stockMoved.SKU,
+                stockMoved.Quantity, stockMoved.Timestamp)));
     }
 
     private static void GroupSingle(
