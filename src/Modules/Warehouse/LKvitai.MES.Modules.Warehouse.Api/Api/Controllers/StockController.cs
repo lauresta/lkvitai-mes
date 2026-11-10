@@ -569,6 +569,9 @@ public sealed class StockController : ControllerBase
         decimal? UnitCost,
         decimal? BasePrice);
 
+    /// <summary>
+    /// Keeps the projection warehouse identity so cross-warehouse stock is not inferred from a location code.
+    /// </summary>
     public sealed record AvailableStockItemDto(
         string WarehouseId,
         int? ItemId,
