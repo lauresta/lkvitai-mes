@@ -30,6 +30,17 @@ public sealed class PackOrderCommandHandler : IRequestHandler<PackOrderCommand, 
 
     public async Task<Result> Handle(PackOrderCommand request, CancellationToken cancellationToken)
     {
+        // The order, shipment and handling unit share an explicit transaction.
+        var executionStrategy = _dbContext.Database.CreateExecutionStrategy();
+        return await executionStrategy.ExecuteAsync(async () =>
+        {
+            _dbContext.ChangeTracker.Clear();
+            return await PackAsync(request, cancellationToken);
+        });
+    }
+
+    private async Task<Result> PackAsync(PackOrderCommand request, CancellationToken cancellationToken)
+    {
         var order = await _dbContext.OutboundOrders
             .Include(x => x.Lines)
                 .ThenInclude(x => x.Item)
