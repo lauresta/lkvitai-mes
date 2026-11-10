@@ -45,6 +45,7 @@ public record OutboundOrderLineDto
     public decimal Qty { get; init; }
     public decimal PickedQty { get; init; }
     public decimal ShippedQty { get; init; }
+    public decimal? SaleUnitPrice { get; init; }
 }
 
 public record OutboundShipmentInfoDto

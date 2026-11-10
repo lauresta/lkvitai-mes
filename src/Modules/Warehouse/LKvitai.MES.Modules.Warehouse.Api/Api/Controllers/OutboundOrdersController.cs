@@ -163,6 +163,8 @@ public sealed class OutboundOrdersController : ControllerBase
                 .ThenInclude(x => x.Item)
             .Include(x => x.SalesOrder)
                 .ThenInclude(x => x!.Customer)
+            .Include(x => x.SalesOrder)
+                .ThenInclude(x => x!.Lines)
             .Include(x => x.Shipment)
             .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
@@ -170,6 +172,15 @@ public sealed class OutboundOrdersController : ControllerBase
         {
             return Failure(Result.Fail(DomainErrorCodes.NotFound, "Outbound order not found."));
         }
+
+        // Preserve the order's agreed price; ambiguous prices for the same item use the item-price fallback.
+        var salePrices = order.SalesOrder?.Lines
+            .GroupBy(x => x.ItemId)
+            .ToDictionary(
+                group => group.Key,
+                group => group.Select(x => x.UnitPrice).Distinct().Count() == 1
+                    ? (decimal?)group.First().UnitPrice
+                    : null);
 
         var response = new OutboundOrderDetailResponse(
             order.Id,
@@ -204,7 +215,10 @@ public sealed class OutboundOrdersController : ControllerBase
                     x.Item?.PrimaryBarcode,
                     x.Qty,
                     x.PickedQty,
-                    x.ShippedQty))
+                    x.ShippedQty,
+                    salePrices is not null && salePrices.TryGetValue(x.ItemId, out var salePrice)
+                        ? salePrice
+                        : null))
                 .ToList());
 
         return Ok(response);
@@ -291,7 +305,8 @@ public sealed class OutboundOrdersController : ControllerBase
         string? PrimaryBarcode,
         decimal Qty,
         decimal PickedQty,
-        decimal ShippedQty);
+        decimal ShippedQty,
+        decimal? SaleUnitPrice);
 
     public sealed record OutboundShipmentInfoResponse(
         Guid ShipmentId,

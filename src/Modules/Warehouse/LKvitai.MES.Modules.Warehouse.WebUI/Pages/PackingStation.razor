@@ -59,13 +59,14 @@
                                 @foreach (var line in _order.Lines)
                                 {
                                     var scannedQty = GetScannedQty(line);
+                                    var salePrice = line.SaleUnitPrice ?? _priceMap.Get(line.ItemId, line.ItemSku)?.BasePrice;
                                     <tr>
                                         <td>@line.ItemSku</td>
                                         <td>@(line.PrimaryBarcode ?? "-")</td>
                                         <td>@line.Qty</td>
                                         <td class="text-end is-money is-num">@Money.Format(_priceMap.Get(line.ItemId, line.ItemSku)?.EffectiveCost)</td>
-                                        <td class="text-end is-money is-num">@Money.Format(_priceMap.Get(line.ItemId, line.ItemSku)?.BasePrice)</td>
-                                        <td class="text-end is-money is-num">@Money.Format(_priceMap.Value(line.Qty, line.ItemId, line.ItemSku))</td>
+                                        <td class="text-end is-money is-num">@Money.Format(salePrice)</td>
+                                        <td class="text-end is-money is-num">@Money.Format(salePrice * line.Qty)</td>
                                         <td>@scannedQty</td>
                                         <td>
                                             @if (scannedQty >= line.Qty)
