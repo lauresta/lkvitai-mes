@@ -536,6 +536,7 @@ public class WarehouseDbContext : DbContext
             entity.Property(e => e.OrderNumber)
                 .HasMaxLength(50)
                 .IsRequired()
+                .HasSentinel(string.Empty)
                 .HasDefaultValueSql("'SO-' || LPAD(nextval('sales_order_number_seq')::text, 4, '0')");
             entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(50).IsRequired();
             entity.Property(e => e.OrderDate).IsRequired();

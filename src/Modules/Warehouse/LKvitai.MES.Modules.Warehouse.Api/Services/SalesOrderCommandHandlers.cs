@@ -71,7 +71,7 @@ public sealed class CreateSalesOrderCommandHandler : IRequestHandler<CreateSales
         {
             Id = request.SalesOrderId,
             CustomerId = request.CustomerId,
-            ShippingAddress = request.ShippingAddress ?? customer.DefaultShippingAddress ?? customer.BillingAddress,
+            ShippingAddress = CopyAddress(request.ShippingAddress ?? customer.DefaultShippingAddress ?? customer.BillingAddress),
             RequestedDeliveryDate = request.RequestedDeliveryDate.HasValue
                 ? DateOnly.FromDateTime(request.RequestedDeliveryDate.Value.Date)
                 : null
@@ -126,6 +126,15 @@ public sealed class CreateSalesOrderCommandHandler : IRequestHandler<CreateSales
 
         return Result.Ok();
     }
+
+    private static Address CopyAddress(Address source) => new()
+    {
+        Street = source.Street,
+        City = source.City,
+        State = source.State,
+        ZipCode = source.ZipCode,
+        Country = source.Country
+    };
 }
 
 public sealed class SubmitSalesOrderCommandHandler : IRequestHandler<SubmitSalesOrderCommand, Result>
