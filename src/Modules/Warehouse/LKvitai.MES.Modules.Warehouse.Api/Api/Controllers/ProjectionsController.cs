@@ -7,7 +7,7 @@ using LKvitai.MES.Modules.Warehouse.Infrastructure.Projections;
 using LKvitai.MES.BuildingBlocks.SharedKernel;
 using LKvitai.MES.BuildingBlocks.PortalAuth;
 using LKvitai.MES.Contracts.ReadModels;
-using Marten.Events.Daemon.Coordination;
+using Marten;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -67,7 +67,7 @@ public sealed class ProjectionsController : ControllerBase
     // the older shadow-table rebuild only replays a subset of stock events.
     [HttpPost("qa-rebuild-stock")]
     public async Task<IActionResult> RebuildStockForQaAsync(
-        [FromServices] ProjectionCoordinator coordinator,
+        [FromServices] IDocumentStore store,
         [FromServices] IHostEnvironment environment,
         CancellationToken cancellationToken = default)
     {
@@ -77,7 +77,7 @@ public sealed class ProjectionsController : ControllerBase
             return NotFound();
         }
 
-        var daemon = coordinator.DaemonForMainDatabase();
+        using var daemon = await store.BuildProjectionDaemonAsync();
         await daemon.RebuildProjectionAsync<AvailableStockView>(cancellationToken);
         await daemon.RebuildProjectionAsync<LocationBalanceView>(cancellationToken);
         return Ok(new { AvailableStock = "rebuilt", LocationBalance = "rebuilt" });
