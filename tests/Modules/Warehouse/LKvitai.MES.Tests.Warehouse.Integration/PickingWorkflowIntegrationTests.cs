@@ -187,6 +187,16 @@ public class PickingWorkflowIntegrationTests : IAsyncLifetime
         var summary = summaryResult.Should().BeOfType<OkObjectResult>().Subject;
         var rows = summary.Value.Should().BeAssignableTo<IEnumerable<OutboundOrdersController.OutboundOrderSummaryResponse>>().Subject;
         rows.Should().ContainSingle(x => x.Id == order.Id && x.Status == "PICKED" && x.ItemCount == 1);
+
+        var shipment = new Shipment { OutboundOrderId = order.Id };
+        shipment.Pack(DateTimeOffset.UtcNow).IsSuccess.Should().BeTrue();
+        verify.Shipments.Add(shipment);
+        await verify.SaveChangesAsync();
+
+        var shipmentsResult = await new ShipmentsController(null!, verify).GetSummaryAsync("PACKED", null, null, null);
+        var shipments = shipmentsResult.Should().BeOfType<OkObjectResult>().Subject;
+        var shipmentRows = shipments.Value.Should().BeAssignableTo<IEnumerable<ShipmentsController.ShipmentSummaryResponse>>().Subject;
+        shipmentRows.Should().ContainSingle(x => x.Id == shipment.Id && x.OutboundOrderNumber == order.OrderNumber);
     }
 
     [SkippableFact]
