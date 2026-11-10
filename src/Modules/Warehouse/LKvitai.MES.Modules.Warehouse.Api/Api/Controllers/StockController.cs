@@ -211,6 +211,7 @@ public sealed class StockController : ControllerBase
 
         var filtered = mapped
             .OrderBy(x => x.InternalSku)
+            .ThenBy(x => x.WarehouseId)
             .ThenBy(x => x.LocationCode)
             .ThenBy(x => x.LotNumber)
             .ToList();
