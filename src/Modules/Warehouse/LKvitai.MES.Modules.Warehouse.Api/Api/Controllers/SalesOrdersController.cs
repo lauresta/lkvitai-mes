@@ -65,7 +65,7 @@ public sealed class SalesOrdersController : ControllerBase
             return Failure(Result.Fail(DomainErrorCodes.NotFound, "Sales order was not created."));
         }
 
-        return CreatedAtAction(nameof(GetByIdAsync), new { id = response.Id }, response);
+        return Created($"/api/warehouse/v1/sales-orders/{response.Id}", response);
     }
 
     [HttpPost("{id:guid}/submit")]
