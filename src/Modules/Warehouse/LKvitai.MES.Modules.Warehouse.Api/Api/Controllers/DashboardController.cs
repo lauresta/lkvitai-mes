@@ -318,32 +318,12 @@ public sealed class DashboardController : ControllerBase
         var priceBySku = (await _prices.GetAsync([], bySku.Select(x => x.SKU).ToArray(), cancellationToken))
             .ToDictionary(x => x.Sku, StringComparer.OrdinalIgnoreCase);
 
-        decimal totalValue = 0m;
-        decimal totalSaleValue = 0m;
-        var completeCost = true;
-        var completeSale = true;
+        var totals = DashboardPricing.Calculate(bySku.Select(x => (x.SKU, x.OnHandQty)), priceBySku);
         var lowStockCount = 0;
         var outOfStockCount = 0;
 
         foreach (var row in bySku)
         {
-            if (priceBySku.TryGetValue(row.SKU, out var price))
-            {
-                if (price.EffectiveCost.HasValue)
-                    totalValue += ItemPriceResolver.Value(row.OnHandQty, price.EffectiveCost)!.Value;
-                else
-                    completeCost = false;
-                if (price.BasePrice.HasValue)
-                    totalSaleValue += ItemPriceResolver.Value(row.OnHandQty, price.BasePrice)!.Value;
-                else
-                    completeSale = false;
-            }
-            else
-            {
-                completeCost = false;
-                completeSale = false;
-            }
-
             if (row.OnHandQty <= 0m)
             {
                 outOfStockCount++;
@@ -363,9 +343,9 @@ public sealed class DashboardController : ControllerBase
 
         return Ok(new DashboardOverviewDto
         {
-            TotalStockValue = completeCost ? decimal.Round(totalValue, 2, MidpointRounding.AwayFromZero) : null,
-            TotalStockCostValue = completeCost ? decimal.Round(totalValue, 2, MidpointRounding.AwayFromZero) : null,
-            TotalStockSaleValue = completeSale ? decimal.Round(totalSaleValue, 2, MidpointRounding.AwayFromZero) : null,
+            TotalStockValue = totals.Cost,
+            TotalStockCostValue = totals.Cost,
+            TotalStockSaleValue = totals.Sale,
             TotalSKUs = bySku.Count(x => x.OnHandQty > 0m),
             TotalQuantity = bySku.Sum(x => x.OnHandQty),
             LowStockCount = lowStockCount,
@@ -395,7 +375,7 @@ public sealed class DashboardController : ControllerBase
 
         var priceBySku = (await _prices.GetAsync([], qtyBySku.Keys.ToArray(), cancellationToken))
             .ToDictionary(x => x.Sku, StringComparer.OrdinalIgnoreCase);
-        if (qtyBySku.Keys.Any(sku => !priceBySku.TryGetValue(sku, out var price) || !price.EffectiveCost.HasValue))
+        if (!DashboardPricing.Calculate(qtyBySku.Select(x => (x.Key, x.Value)), priceBySku).Cost.HasValue)
             return Ok(Array.Empty<CategoryValueDto>());
 
         var normalizedSkus = qtyBySku.Keys.Select(x => x.ToLowerInvariant()).ToArray();
@@ -457,9 +437,7 @@ public sealed class DashboardController : ControllerBase
             .ToDictionary(
                 g => g.Key,
                 g => (
-                    Value: g.All(x => priceBySku.TryGetValue(x.SKU, out var price) && price.EffectiveCost.HasValue)
-                        ? g.Sum(x => ItemPriceResolver.Value(x.OnHandQty, priceBySku[x.SKU].EffectiveCost)!.Value)
-                        : (decimal?)null,
+                    Value: DashboardPricing.Calculate(g.Select(x => (x.SKU, x.OnHandQty)), priceBySku).Cost,
                     Qty: g.Sum(x => x.OnHandQty)),
                 StringComparer.OrdinalIgnoreCase);
 
