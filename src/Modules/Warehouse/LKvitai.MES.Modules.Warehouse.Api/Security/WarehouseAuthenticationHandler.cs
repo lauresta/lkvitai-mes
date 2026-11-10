@@ -92,6 +92,33 @@ public sealed class WarehouseAuthenticationHandler : AuthenticationHandler<Authe
             authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
         {
             var token = authHeader["Bearer ".Length..].Trim();
+            if (token.StartsWith(WarehouseQaProof.Prefix, StringComparison.Ordinal))
+            {
+                var environment = Context.RequestServices.GetRequiredService<IHostEnvironment>();
+                var configuration = Context.RequestServices.GetRequiredService<IConfiguration>();
+                var proof = Context.RequestServices.GetRequiredService<WarehouseQaProof>();
+                if (!string.Equals(environment.EnvironmentName, "Test", StringComparison.OrdinalIgnoreCase)
+                    || !configuration.GetValue<bool>("WarehouseQa:Enabled")
+                    || !proof.IsValid(token))
+                    return AuthenticateResult.Fail("Invalid Warehouse QA token.");
+
+                var qaClaims = new List<Claim>
+                {
+                    new(ClaimTypes.NameIdentifier, WarehouseQaProof.UserId),
+                    new(ClaimTypes.Name, WarehouseQaProof.UserId),
+                    new("auth_source", "warehouse_qa"),
+                    new("mfa_verified", "true")
+                };
+                foreach (var role in WarehouseQaProof.Roles)
+                {
+                    qaClaims.Add(new Claim(ClaimTypes.Role, role));
+                    qaClaims.Add(new Claim("role", role));
+                }
+                var qaPrincipal = new ClaimsPrincipal(new ClaimsIdentity(
+                    qaClaims, WarehouseAuthenticationDefaults.Scheme));
+                return AuthenticateResult.Success(new AuthenticationTicket(
+                    qaPrincipal, WarehouseAuthenticationDefaults.Scheme));
+            }
             if (LooksLikeJwt(token) && sso?.IsEnabled == true)
             {
                 var ssoPrincipal = await sso.ValidateAsync(token, WarehouseAuthenticationDefaults.Scheme, Context.RequestAborted);

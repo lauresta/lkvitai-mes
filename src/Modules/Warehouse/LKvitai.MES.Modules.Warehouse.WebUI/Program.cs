@@ -14,11 +14,13 @@ builder.Services.AddCikadaLocalization(builder.Configuration);
 builder.Services.AddMudServices();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddPortalCookieAuthentication(builder.Environment, builder.Configuration);
+builder.Services.AddWarehouseQaAccess(builder.Environment, builder.Configuration);
 builder.Services.AddAuthorization();
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddBuildVersion();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton<CikadaUserBridgeProof>();
+builder.Services.AddSingleton<WarehouseQaProof>();
 if (builder.Configuration.IsCikadaSsoEnabled())
 {
     builder.Services.AddCikadaSsoTokenValidation(builder.Configuration);
@@ -93,6 +95,7 @@ app.UsePortalSecureHosting(app.Environment);
 app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication();
+app.UseWarehouseQaAccess();
 app.UseWarehouseDevAuth();
 app.UseAuthorization();
 
