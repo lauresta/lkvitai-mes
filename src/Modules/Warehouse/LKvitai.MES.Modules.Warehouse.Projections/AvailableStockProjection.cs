@@ -209,9 +209,10 @@ public class AvailableStockGrouper : IAggregateGrouper<string>
                     GroupSingle(evt, goodsReceived.WarehouseId, goodsReceived.DestinationLocation, goodsReceived.SKU, grouping);
                     break;
                 case PickCompletedEvent pickCompleted:
-                    GroupMovement(evt, pickCompleted.WarehouseId, pickCompleted.FromLocation,
+                    StockMovementSliceGrouping.Group(evt, pickCompleted.WarehouseId, pickCompleted.FromLocation,
                         pickCompleted.ToLocation, pickCompleted.SKU, pickCompleted.PickedQty,
-                        pickCompleted.Timestamp, grouping, pickCompleted.ItemId, pickCompleted.LotNumber);
+                        pickCompleted.Timestamp, grouping, AvailableStockView.ComputeId,
+                        pickCompleted.ItemId, pickCompleted.LotNumber);
                     break;
                 case StockAdjustedEvent adjusted:
                     GroupSingle(evt, adjusted.WarehouseId, adjusted.Location, adjusted.SKU, grouping);
@@ -236,12 +237,14 @@ public class AvailableStockGrouper : IAggregateGrouper<string>
                     }
                     break;
                 case QCPassedEvent qcPassed:
-                    GroupMovement(evt, qcPassed.WarehouseId, qcPassed.FromLocation,
-                        qcPassed.ToLocation, qcPassed.SKU, qcPassed.Qty, qcPassed.Timestamp, grouping);
+                    StockMovementSliceGrouping.Group(evt, qcPassed.WarehouseId, qcPassed.FromLocation,
+                        qcPassed.ToLocation, qcPassed.SKU, qcPassed.Qty, qcPassed.Timestamp, grouping,
+                        AvailableStockView.ComputeId);
                     break;
                 case QCFailedEvent qcFailed:
-                    GroupMovement(evt, qcFailed.WarehouseId, qcFailed.FromLocation,
-                        qcFailed.ToLocation, qcFailed.SKU, qcFailed.Qty, qcFailed.Timestamp, grouping);
+                    StockMovementSliceGrouping.Group(evt, qcFailed.WarehouseId, qcFailed.FromLocation,
+                        qcFailed.ToLocation, qcFailed.SKU, qcFailed.Qty, qcFailed.Timestamp, grouping,
+                        AvailableStockView.ComputeId);
                     break;
             }
         }
@@ -265,21 +268,6 @@ public class AvailableStockGrouper : IAggregateGrouper<string>
         grouping.AddEvent(toKey, new ProjectedStockMovementEvent(evt,
             new StockMovementSliceEvent(warehouseId, stockMoved.ToLocation, stockMoved.SKU,
                 stockMoved.Quantity, stockMoved.Timestamp)));
-    }
-
-    private static void GroupMovement(IEvent evt, string warehouseId, string fromLocation,
-        string toLocation, string sku, decimal quantity, DateTime timestamp,
-        ITenantSliceGroup<string> grouping, int? itemId = null, string? lotNumber = null)
-    {
-        GroupSignedSlice(fromLocation, -quantity);
-        GroupSignedSlice(toLocation, quantity);
-
-        void GroupSignedSlice(string location, decimal delta)
-        {
-            var key = AvailableStockView.ComputeId(warehouseId, location, sku);
-            grouping.AddEvent(key, new ProjectedStockMovementEvent(evt,
-                new StockMovementSliceEvent(warehouseId, location, sku, delta, timestamp, itemId, lotNumber)));
-        }
     }
 
     private static void GroupPickingStarted(IEvent evt, PickingStartedEvent pickingStarted, ITenantSliceGroup<string> grouping)

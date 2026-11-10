@@ -102,6 +102,7 @@ public sealed class PackOrderCommandHandler : IRequestHandler<PackOrderCommand, 
 
         foreach (var item in itemBarcodes)
         {
+            AddBarcodeAlias(barcodeToItemId, ambiguousBarcodes, item.InternalSKU, item.Id);
             AddBarcodeAlias(barcodeToItemId, ambiguousBarcodes, item.PrimaryBarcode, item.Id);
         }
 

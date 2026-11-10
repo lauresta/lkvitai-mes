@@ -182,6 +182,11 @@ public class PickingWorkflowIntegrationTests : IAsyncLifetime
             verify.OutboundOrders.Include(x => x.Lines), x => x.Id == order.Id);
         saved.Status.Should().Be(OutboundOrderStatus.Picked);
         saved.Lines.Single().PickedQty.Should().Be(5m);
+
+        var summaryResult = await new OutboundOrdersController(null!, verify).GetSummaryAsync(null, null, null, null);
+        var summary = summaryResult.Should().BeOfType<OkObjectResult>().Subject;
+        var rows = summary.Value.Should().BeAssignableTo<IEnumerable<OutboundOrdersController.OutboundOrderSummaryResponse>>().Subject;
+        rows.Should().ContainSingle(x => x.Id == order.Id && x.Status == "PICKED" && x.ItemCount == 1);
     }
 
     [SkippableFact]
