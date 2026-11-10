@@ -226,7 +226,7 @@ public sealed class ReceivingController : ControllerBase
 
         var (inputs, inputsError) = await LoadShipmentInputsAsync(
             request.SupplierId, request.Lines, request.AdditionalCosts, cancellationToken);
-        if (inputs is null || inputsError is null)
+        if (inputs is null)
         {
             return inputsError ?? Failure(Result.Fail(DomainErrorCodes.InternalError, "Shipment input validation failed unexpectedly."));
         }
@@ -355,7 +355,7 @@ public sealed class ReceivingController : ControllerBase
 
         var (inputs, inputsError) = await LoadShipmentInputsAsync(
             request.SupplierId, request.Lines, request.AdditionalCosts, cancellationToken);
-        if (inputs is null || inputsError is null)
+        if (inputs is null)
         {
             return inputsError ?? Failure(Result.Fail(DomainErrorCodes.InternalError, "Shipment input validation failed unexpectedly."));
         }
