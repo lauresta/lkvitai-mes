@@ -62,8 +62,9 @@ public class CycleCountDiscrepancyControllerTests
         var cycleCount = await SeedCycleCountAsync(db, delta: -5m, systemQty: 50m, physicalQty: 45m, unitCost: 10m);
         var lineId = cycleCount.Lines.Single().Id;
         var bus = new RecordingEventBus();
+        var writer = new ProjectedCycleCountAdjustmentWriter(db);
 
-        var controller = CreateController(db, bus, roles: []);
+        var controller = CreateController(db, bus, roles: [], writer: writer);
         var response = await controller.ApproveAdjustmentAsync(
             cycleCount.Id,
             new CycleCountsController.ApproveAdjustmentRequest(
@@ -78,6 +79,13 @@ public class CycleCountDiscrepancyControllerTests
         persisted.AdjustmentApprovedAt.Should().NotBeNull();
         persisted.Status.Should().Be(CycleCountLineStatus.Approved);
         bus.Published.OfType<StockAdjustedEvent>().Should().ContainSingle();
+        writer.Stock["LOC-001:ITEM-001"].OnHandQty.Should().Be(45m);
+        writer.Stock["LOC-001:ITEM-001"].AvailableQty.Should().Be(45m);
+        var repeated = await controller.ApproveAdjustmentAsync(cycleCount.Id,
+            new CycleCountsController.ApproveAdjustmentRequest(Guid.NewGuid(), [lineId], "manager", "QA-repeat"));
+        repeated.Should().BeOfType<OkObjectResult>();
+        writer.Events.Should().ContainSingle();
+        writer.Stock["LOC-001:ITEM-001"].OnHandQty.Should().Be(45m);
     }
 
     private static WarehouseDbContext CreateDbContext()
@@ -91,7 +99,8 @@ public class CycleCountDiscrepancyControllerTests
     private static CycleCountsController CreateController(
         WarehouseDbContext db,
         RecordingEventBus? bus = null,
-        string[]? roles = null)
+        string[]? roles = null,
+        ProjectedCycleCountAdjustmentWriter? writer = null)
     {
         var currentUser = new Mock<ICurrentUserService>(MockBehavior.Strict);
         currentUser.Setup(x => x.GetCurrentUserId()).Returns("user-1");
@@ -104,7 +113,8 @@ public class CycleCountDiscrepancyControllerTests
             db,
             bus ?? new RecordingEventBus(),
             currentUser.Object,
-            accessor)
+            accessor,
+            writer ?? new ProjectedCycleCountAdjustmentWriter(db))
         {
             ControllerContext = new ControllerContext
             {

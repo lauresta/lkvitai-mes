@@ -277,6 +277,7 @@ builder.Services.AddScoped<ILabelPrintQueueProcessor, LabelPrintQueueProcessor>(
 builder.Services.AddScoped<LabelPrintQueueRecurringJob>();
 builder.Services.AddScoped<ITransferStockAvailabilityService, MartenTransferStockAvailabilityService>();
 builder.Services.AddScoped<ICycleCountQuantityResolver, MartenCycleCountQuantityResolver>();
+builder.Services.AddScoped<ICycleCountAdjustmentWriter, CycleCountAdjustmentWriter>();
 builder.Services.AddSingleton<IAdvancedWarehouseStore, AdvancedWarehouseStore>();
 builder.Services.AddScoped<IWarehouseSettingsService, WarehouseSettingsService>();
 builder.Services.AddScoped<IReasonCodeService, ReasonCodeService>();

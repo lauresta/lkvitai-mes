@@ -98,13 +98,15 @@ public class CycleCountCommandHandlersTests
         var cycleCountId = await SeedScheduledCycleCountAsync(db, 100m, 95m);
 
         var bus = new RecordingEventBus();
+        var writer = new ProjectedCycleCountAdjustmentWriter(db);
         var handler = new ApplyAdjustmentCommandHandler(
             db,
             bus,
             MockCurrentUser("operator-1"),
             new HttpContextAccessor { HttpContext = BuildHttpContextWithRoles() },
             Mock.Of<IBusinessTelemetryService>(),
-            Mock.Of<ILogger<ApplyAdjustmentCommandHandler>>());
+            Mock.Of<ILogger<ApplyAdjustmentCommandHandler>>(),
+            writer);
 
         var result = await handler.Handle(new ApplyAdjustmentCommand
         {
@@ -118,6 +120,15 @@ public class CycleCountCommandHandlersTests
         cycleCount.Lines.Single().Status.Should().Be(CycleCountLineStatus.Approved);
         bus.Published.OfType<StockAdjustedEvent>().Should().ContainSingle();
         bus.Published.OfType<CycleCountCompletedEvent>().Should().ContainSingle();
+        writer.Stock["LOC-001:ITEM-001"].OnHandQty.Should().Be(95m);
+        writer.Stock["LOC-001:ITEM-001"].AvailableQty.Should().Be(95m);
+        var repeated = await handler.Handle(new ApplyAdjustmentCommand
+        {
+            CommandId = Guid.NewGuid(), CycleCountId = cycleCountId
+        }, CancellationToken.None);
+        repeated.IsSuccess.Should().BeTrue();
+        writer.Events.Should().ContainSingle();
+        writer.Stock["LOC-001:ITEM-001"].OnHandQty.Should().Be(95m);
     }
 
     [Fact]
@@ -134,7 +145,8 @@ public class CycleCountCommandHandlersTests
             MockCurrentUser("operator-1"),
             new HttpContextAccessor { HttpContext = BuildHttpContextWithRoles() },
             Mock.Of<IBusinessTelemetryService>(),
-            Mock.Of<ILogger<ApplyAdjustmentCommandHandler>>());
+            Mock.Of<ILogger<ApplyAdjustmentCommandHandler>>(),
+            new ProjectedCycleCountAdjustmentWriter(db));
 
         var result = await handler.Handle(new ApplyAdjustmentCommand
         {
@@ -165,7 +177,8 @@ public class CycleCountCommandHandlersTests
                 HttpContext = BuildHttpContextWithRoles(WarehouseRoles.WarehouseManager)
             },
             Mock.Of<IBusinessTelemetryService>(),
-            Mock.Of<ILogger<ApplyAdjustmentCommandHandler>>());
+            Mock.Of<ILogger<ApplyAdjustmentCommandHandler>>(),
+            new ProjectedCycleCountAdjustmentWriter(db));
 
         var result = await handler.Handle(new ApplyAdjustmentCommand
         {

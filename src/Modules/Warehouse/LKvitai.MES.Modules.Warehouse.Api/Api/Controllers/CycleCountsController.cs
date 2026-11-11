@@ -1,5 +1,6 @@
 using LKvitai.MES.Modules.Warehouse.Api.ErrorHandling;
 using LKvitai.MES.Modules.Warehouse.Api.Security;
+using LKvitai.MES.Modules.Warehouse.Api.Services;
 using LKvitai.MES.Modules.Warehouse.Application.Commands;
 using LKvitai.MES.Modules.Warehouse.Application.Ports;
 using LKvitai.MES.Modules.Warehouse.Application.Services;
@@ -26,13 +27,16 @@ public sealed class CycleCountsController : ControllerBase
     private readonly ICurrentUserService _currentUserService;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IItemPriceSnapshotService _prices;
+    private readonly ICycleCountAdjustmentWriter _adjustmentWriter;
 
     public CycleCountsController(
         IMediator mediator,
         WarehouseDbContext dbContext,
         IEventBus eventBus,
         ICurrentUserService currentUserService,
-        IHttpContextAccessor httpContextAccessor, IItemPriceSnapshotService? prices = null)
+        IHttpContextAccessor httpContextAccessor,
+        ICycleCountAdjustmentWriter adjustmentWriter,
+        IItemPriceSnapshotService? prices = null)
     {
         _mediator = mediator;
         _dbContext = dbContext;
@@ -40,6 +44,7 @@ public sealed class CycleCountsController : ControllerBase
         _currentUserService = currentUserService;
         _httpContextAccessor = httpContextAccessor;
         _prices = prices ?? new ItemPriceSnapshotService(dbContext);
+        _adjustmentWriter = adjustmentWriter;
     }
 
     [HttpGet]
@@ -318,14 +323,15 @@ public sealed class CycleCountsController : ControllerBase
         }
 
         var operatorId = _currentUserService.GetCurrentUserId();
-        foreach (var line in lines)
+        var adjustments = new List<StockAdjustedEvent>();
+        foreach (var line in lines.Where(x => x.Status != CycleCountLineStatus.Approved))
         {
-            await _eventBus.PublishAsync(new StockAdjustedEvent
+            adjustments.Add(new StockAdjustedEvent
             {
                 AggregateId = cycleCount.Id,
                 UserId = operatorId,
                 WarehouseId = DefaultWarehouseId,
-                AdjustmentId = Guid.NewGuid(),
+                AdjustmentId = line.Id,
                 ItemId = line.ItemId,
                 SKU = line.Item?.InternalSKU ?? string.Empty,
                 LocationId = line.LocationId,
@@ -334,16 +340,18 @@ public sealed class CycleCountsController : ControllerBase
                 ReasonCode = "CYCLE_COUNT",
                 Notes = request.Reason,
                 Timestamp = DateTime.UtcNow
-            }, cancellationToken);
+            });
 
             line.AdjustmentApprovedBy = approvedBy;
             line.AdjustmentApprovedAt = DateTimeOffset.UtcNow;
             line.Status = CycleCountLineStatus.Approved;
         }
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _adjustmentWriter.CommitAsync(adjustments, cancellationToken);
+        foreach (var adjustment in adjustments)
+            await _eventBus.PublishAsync(adjustment, cancellationToken);
 
-        return Ok(new ApproveAdjustmentResponse(lines.Count, approvedBy, DateTimeOffset.UtcNow));
+        return Ok(new ApproveAdjustmentResponse(adjustments.Count, approvedBy, DateTimeOffset.UtcNow));
     }
 
     [HttpPost("{id:guid}/apply-adjustment")]
